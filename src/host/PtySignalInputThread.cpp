@@ -50,14 +50,13 @@ DWORD PtySignalInputThread::StaticThreadProc(_In_ LPVOID lpParameter)
 // Method Description:
 // - The ThreadProc for the PTY Signal Input Thread. 
 // Return Value:
-// - <none>
+// - S_OK if the thread runs to completion.
+// - Otherwise it may cause an application termination another route and never return.
 HRESULT PtySignalInputThread::_InputThread()
 {
     unsigned short signalId;
-    while (true)
+    while (_GetData(&signalId, sizeof(signalId)))
     {
-        _GetData(&signalId, sizeof(signalId));
-
         switch (signalId)
         {
         case PTY_SIGNAL_RESIZE_WINDOW:
@@ -81,6 +80,7 @@ HRESULT PtySignalInputThread::_InputThread()
         }
         }
     }
+    return S_OK;
 }
 
 // Method Description:
@@ -90,8 +90,8 @@ HRESULT PtySignalInputThread::_InputThread()
 // - pBuffer - Buffer to fill with data.
 // - cbBuffer - Count of bytes in the given buffer.
 // Return Value:
-// - <none> - Either exits the process if the pipe is broken or throws an exception.
-void PtySignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pBuffer,
+// - True if data was retrieved successfully. False otherwise.
+bool PtySignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pBuffer,
                                     _In_ const DWORD cbBuffer)
 {
     DWORD dwRead = 0;
@@ -104,14 +104,23 @@ void PtySignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pBu
         DWORD lastError = GetLastError();
         if (lastError == ERROR_BROKEN_PIPE)
         {
-            // This won't return. We'll be terminated.
+            // Trigger process shutdown.
             CloseConsoleProcessState();
+            return false;
         }
         else
         {
             THROW_WIN32(lastError);
         }
     }
+    else if (dwRead != cbBuffer)
+    {
+        // Trigger process shutdown.
+        CloseConsoleProcessState();
+        return false;
+    }
+
+    return true;
 }
 
 // Method Description:
@@ -119,7 +128,7 @@ void PtySignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pBu
 HRESULT PtySignalInputThread::Start()
 {
     RETURN_IF_HANDLE_INVALID(_hFile.get());
-    
+
     HANDLE hThread = nullptr;
     // 0 is the right value, https://blogs.msdn.microsoft.com/oldnewthing/20040223-00/?p=40503
     DWORD dwThreadId = 0;
