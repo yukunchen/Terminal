@@ -78,6 +78,7 @@
     <ClInclude Include="..\conwinuserrefs.h" />
     <ClInclude Include="..\cursor.h" />
     <ClInclude Include="..\dbcs.h" />
+    <ClInclude Include="..\DbcsAttribute.hpp" />
     <ClInclude Include="..\directio.h" />
     <ClInclude Include="..\getset.h" />
     <ClInclude Include="..\globals.h" />

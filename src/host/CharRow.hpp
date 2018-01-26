@@ -22,109 +22,11 @@ Revision History:
 #include <memory>
 #include <vector>
 
+#include "DbcsAttribute.hpp"
+
 // Characters used for padding out the buffer with invalid/empty space
 #define PADDING_CHAR UNICODE_SPACE
 
-
-// TODO which methods can be made constexpr?
-// TODO should this have a constructor that rejects invalid byte sequences?
-class DbcsAttribute final
-{
-public:
-
-    bool IsSingle() const noexcept
-    {
-        return _attribute == Attribute::Single;
-    }
-
-    bool IsLeading() const noexcept
-    {
-        return _attribute == Attribute::Leading;
-    }
-
-    bool IsTrailing() const noexcept
-    {
-        return _attribute == Attribute::Trailing;
-    }
-
-    bool IsDbcs() const noexcept
-    {
-        return _attribute == Attribute::Dbcs;
-    }
-
-    void SetSingle() noexcept
-    {
-        _attribute = Attribute::Single;
-    }
-
-    void SetLeading() noexcept
-    {
-        _attribute = Attribute::Leading;
-    }
-
-    void SetTrailing() noexcept
-    {
-        _attribute = Attribute::Trailing;
-    }
-
-    WORD GeneratePublicApiAttributeFormat() const noexcept
-    {
-        WORD publicAttribute = 0;
-        if (IsLeading())
-        {
-            SetFlag(publicAttribute, COMMON_LVB_LEADING_BYTE);
-        }
-        if (IsTrailing())
-        {
-            SetFlag(publicAttribute, COMMON_LVB_TRAILING_BYTE);
-        }
-        return publicAttribute;
-    }
-
-    static DbcsAttribute FromPublicApiAttributeFormat(WORD publicAttribute)
-    {
-        // it's not valid to be both a leading and trailing byte
-        if (AreAllFlagsSet(publicAttribute, COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE))
-        {
-            THROW_HR(E_INVALIDARG);
-        }
-
-        DbcsAttribute attr;
-        if (IsFlagSet(publicAttribute, COMMON_LVB_LEADING_BYTE))
-        {
-            attr.SetLeading();
-        }
-        else if (IsFlagSet(publicAttribute, COMMON_LVB_TRAILING_BYTE))
-        {
-            attr.SetTrailing();
-        }
-        return attr;
-    }
-
-    friend constexpr bool operator==(const DbcsAttribute& a, const DbcsAttribute& b) noexcept;
-private:
-    enum class Attribute : BYTE
-    {
-        Single = 0x00,
-        Leading = 0x01,
-        Trailing = 0x02,
-        Dbcs = Leading | Trailing
-    };
-
-    Attribute _attribute = Attribute::Single;
-
-#ifdef UNIT_TESTING
-    friend class TextBufferTests;
-#endif
-};
-
-constexpr bool operator==(const DbcsAttribute& a, const DbcsAttribute& b) noexcept
-{
-    return a._attribute == b._attribute;
-}
-
-static_assert(sizeof(DbcsAttribute) == sizeof(BYTE), "DbcsAttribute should be one byte big. if this changes then it needs"
-    " either an implicit conversion to a BYTE or an update to all places that assume it's a byte big");
 
 
 // the characters of one row of screen buffer
