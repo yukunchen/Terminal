@@ -404,7 +404,7 @@ bool TEXT_BUFFER_INFO::AssertValidDoubleByteSequence(_In_ const DbcsAttribute db
     {
         // Erase previous character into an N type.
         prevRow.CharRow.Chars[coordPrevPosition.X] = PADDING_CHAR;
-        prevRow.CharRow.ClearAttribute(coordPrevPosition.X);
+        prevRow.CharRow.GetAttribute(coordPrevPosition.X).SetSingle();
 
         // Sequence is now N N or N L, which are both okay. Set sequence back to valid.
         fValidSequence = true;
@@ -481,7 +481,7 @@ bool TEXT_BUFFER_INFO::InsertCharacter(_In_ const wchar_t wch,
         short const cBufferWidth = this->_coordBufferSize.X;
 
         pCharRow->Chars[iCol] = wch;
-        pCharRow->SetAttribute(iCol, dbcsAttribute);
+        pCharRow->GetAttribute(iCol) = dbcsAttribute;
 
         // Update positioning
         if (wch == PADDING_CHAR)

@@ -157,31 +157,6 @@ std::vector<DbcsAttribute>::const_iterator CHAR_ROW::GetAttributeIterator(_In_ c
 }
 
 // Routine Description:
-// - resets attributes at specified column
-// Arguments:
-// - column - column to clear attribute at
-// Return Value:
-// - <none>
-// Note: will throw exception if column is out of bounds
-void CHAR_ROW::ClearAttribute(_In_ const size_t column)
-{
-    _attributes.at(column).SetSingle();
-}
-
-// Routine Description:
-// - sets the attribute at specified column to provided value
-// Arguments:
-// - column - column to set attribute for
-// - DbcsAttribute - attribute value to set
-// Return Value:
-// - <none>
-// Note: will throw exception if column is out of bounds
-void CHAR_ROW::SetAttribute(_In_ const size_t column, _In_ const DbcsAttribute dbcsAttribute)
-{
-    _attributes.at(column) = dbcsAttribute;
-}
-
-// Routine Description:
 // - gets the size of the char row, in text elements
 // Arguments:
 // - <none>

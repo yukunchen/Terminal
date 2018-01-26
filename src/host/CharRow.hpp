@@ -24,7 +24,6 @@ Revision History:
 
 // Characters used for padding out the buffer with invalid/empty space
 #define PADDING_CHAR UNICODE_SPACE
-#define PADDING_KATTR '\0'
 
 
 // TODO which methods can be made constexpr?
@@ -143,16 +142,6 @@ class CHAR_ROW final
 public:
     static const SHORT INVALID_OLD_LENGTH = -1;
 
-    // for use with pbKAttrs
-    /*
-    static const BYTE ATTR_SINGLE_BYTE = 0x00;
-    static const BYTE ATTR_LEADING_BYTE = 0x01;
-    static const BYTE ATTR_TRAILING_BYTE = 0x02;
-    static const BYTE ATTR_DBCSSBCS_BYTE = 0x03;
-    static const BYTE ATTR_SEPARATE_BYTE = 0x10;
-    static const BYTE ATTR_EUDCFLAG_BYTE = 0x20;
-    */
-
     CHAR_ROW(short rowWidth);
     CHAR_ROW(const CHAR_ROW& a);
     CHAR_ROW& operator=(const CHAR_ROW& a);
@@ -170,8 +159,6 @@ public:
 
     std::vector<DbcsAttribute>::iterator GetAttributeIterator(_In_ const size_t column);
     std::vector<DbcsAttribute>::const_iterator CHAR_ROW::GetAttributeIterator(_In_ const size_t column) const;
-    void ClearAttribute(_In_ const size_t column);
-    void SetAttribute(_In_ const size_t column, _In_ const DbcsAttribute dbcsAttribute);
 
     void Reset(_In_ short const sRowWidth);
 
