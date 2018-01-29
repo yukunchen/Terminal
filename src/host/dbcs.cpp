@@ -70,11 +70,6 @@ bool CheckBisectStringA(_In_reads_bytes_(cbBuf) PCHAR pchBuf, _In_ DWORD cbBuf, 
 void BisectWrite(_In_ const SHORT sStringLen, _In_ const COORD coordTarget, _In_ PSCREEN_INFORMATION pScreenInfo)
 {
     PTEXT_BUFFER_INFO const pTextInfo = pScreenInfo->TextInfo;
-
-#if DBG && defined(DBG_KATTR)
-    BeginKAttrCheck(pScreenInfo);
-#endif
-
     const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
     const SHORT rowIndex = (pTextInfo->GetFirstRowIndex() + coordTarget.Y) % coordScreenBufferSize.Y;
 

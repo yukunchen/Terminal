@@ -209,11 +209,6 @@ void Selection::s_BisectSelection(_In_ short const sStringLength,
                                   _Inout_ SMALL_RECT* const pSmallRect)
 {
     const TEXT_BUFFER_INFO* const pTextInfo = pScreenInfo->TextInfo;
-
-#if DBG && defined(DBG_KATTR)
-    BeginKAttrCheck(pScreenInfo);
-#endif
-
     const ROW& Row = pTextInfo->GetRowByOffset(coordTargetPoint.Y);
 
     // Check start position of strings
