@@ -62,6 +62,8 @@ public:
     std::vector<DbcsAttribute>::iterator GetAttributeIterator(_In_ const size_t column);
     std::vector<DbcsAttribute>::const_iterator CHAR_ROW::GetAttributeIterator(_In_ const size_t column) const;
 
+    std::vector<DbcsAttribute>::const_iterator CHAR_ROW::GetAttributeIteratorEnd() const noexcept;
+
     void Reset(_In_ short const sRowWidth);
 
     HRESULT Resize(_In_ size_t const newSize);

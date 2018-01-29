@@ -91,6 +91,7 @@ namespace Microsoft
                                                         _In_ const ROW& pRow,
                                                         _In_reads_(cchLine) PCWCHAR const pwsLine,
                                                         _In_ const std::vector<DbcsAttribute>::const_iterator itAttr,
+                                                        _In_ const std::vector<DbcsAttribute>::const_iterator itEnd,
                                                         _In_ size_t cchLine,
                                                         _In_ size_t iFirstAttr,
                                                         _In_ COORD const coordTarget);
@@ -98,12 +99,14 @@ namespace Microsoft
                                                    _In_ const ROW& pRow,
                                                    _In_reads_(cchLine) PCWCHAR const pwsLine,
                                                    _In_ const std::vector<DbcsAttribute>::const_iterator itAttr,
+                                                   _In_ const std::vector<DbcsAttribute>::const_iterator itEnd,
                                                    _In_ size_t cchLine,
                                                    _In_ size_t iFirstAttr,
                                                    _In_ COORD const coordTarget);
                 HRESULT _PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const pEngine,
                                                            _In_reads_(cchLine) PCWCHAR const pwsLine,
                                                            _In_ const std::vector<DbcsAttribute>::const_iterator itAttr,
+                                                           _In_ const std::vector<DbcsAttribute>::const_iterator itEnd,
                                                            _In_ size_t const cchLine,
                                                            _In_ COORD const coordTarget);
                 void _PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine, _In_ const TextAttribute textAttribute, _In_ size_t const cchLine, _In_ COORD const coordTarget);

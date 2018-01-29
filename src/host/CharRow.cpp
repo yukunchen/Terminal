@@ -156,6 +156,11 @@ std::vector<DbcsAttribute>::const_iterator CHAR_ROW::GetAttributeIterator(_In_ c
     return std::next(_attributes.cbegin(), column);
 }
 
+std::vector<DbcsAttribute>::const_iterator CHAR_ROW::GetAttributeIteratorEnd() const noexcept
+{
+    return _attributes.cend();
+}
+
 // Routine Description:
 // - gets the size of the char row, in text elements
 // Arguments:

@@ -572,7 +572,18 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
             // Get the pointer to the beginning of the text and the maximum length of the line we'll be writing.
             PWCHAR const pwsLine = Row.CharRow.Chars.get() + iLeft;
             // the double byte flags corresponding to the characters above.
-            const std::vector<DbcsAttribute>::const_iterator itAttr = Row.CharRow.GetAttributeIterator(iLeft);
+            std::vector<DbcsAttribute>::const_iterator itAttr;
+            try
+            {
+                itAttr = Row.CharRow.GetAttributeIterator(iLeft);
+            }
+            catch (...)
+            {
+                LOG_HR(wil::ResultFromCaughtException());
+                return;
+            }
+            const std::vector<DbcsAttribute>::const_iterator itEnd = Row.CharRow.GetAttributeIteratorEnd();
+
             size_t const cchLine = iRight - iLeft;
 
             // Calculate the target position in the buffer where we should start writing.
@@ -581,7 +592,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
             coordTarget.Y = iRow - view.Top();
 
             // Now draw it.
-            _PaintBufferOutputRasterFontHelper(pEngine, Row, pwsLine, itAttr, cchLine, iLeft, coordTarget);
+            _PaintBufferOutputRasterFontHelper(pEngine, Row, pwsLine, itAttr, itEnd, cchLine, iLeft, coordTarget);
 
 #if DBG
             if (_fDebug)
@@ -611,6 +622,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
 // - Row - reference to the row structure for the current line of text
 // - pwsLine - Pointer to the first character in the string/substring to be drawn.
 // - itAttr - iterator pointing to the first attribute in a sequence that is perfectly in sync with the pwsLine parameter. e.g. The first attribute here goes with the first character in pwsLine.
+// - itEnd - corresponding end iterator to itAttr
 // - cchLine - The length of pwsLine and the minimum number of itAttr steps.
 // - iFirstAttr - Index into the row corresponding to pwsLine[0] to match up the appropriate color.
 // - coordTarget - The X/Y coordinate position on the screen which we're attempting to render to.
@@ -620,6 +632,7 @@ void Renderer::_PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEng
                                                   _In_ const ROW& Row,
                                                   _In_reads_(cchLine) PCWCHAR const pwsLine,
                                                   _In_ const std::vector<DbcsAttribute>::const_iterator itAttr,
+                                                  _In_ const std::vector<DbcsAttribute>::const_iterator itEnd,
                                                   _In_ size_t cchLine,
                                                   _In_ size_t iFirstAttr,
                                                   _In_ COORD const coordTarget)
@@ -681,7 +694,7 @@ void Renderer::_PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEng
     }
 
     // If we are using a TrueType font, just call the next helper down.
-    _PaintBufferOutputColorHelper(pEngine, Row, pwsData, itAttr, cchLine, iFirstAttr, coordTarget);
+    _PaintBufferOutputColorHelper(pEngine, Row, pwsData, itAttr, itEnd, cchLine, iFirstAttr, coordTarget);
 
     if (pwsConvert != nullptr)
     {
@@ -698,6 +711,7 @@ void Renderer::_PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEng
 // - Row - Reference to the row structure for the current line of text
 // - pwsLine - Pointer to the first character in the string/substring to be drawn.
 // - itAttr - iterator pointing to the first attribute in a sequence that is perfectly in sync with the pwsLine parameter. e.g. The first attribute here goes with the first character in pwsLine.
+// - itEnd - corresponding end iterator to itAttr
 // - cchLine - The length of pwsLine and the minimum number of itAttr steps.
 // - iFirstAttr - Index into the row corresponding to pwsLine[0] to match up the appropriate color.
 // - coordTarget - The X/Y coordinate position on the screen which we're attempting to render to.
@@ -707,6 +721,7 @@ void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
                                              _In_ const ROW& Row,
                                              _In_reads_(cchLine) PCWCHAR const pwsLine,
                                              _In_ const std::vector<DbcsAttribute>::const_iterator itAttr,
+                                             _In_ const std::vector<DbcsAttribute>::const_iterator itEnd,
                                              _In_ size_t cchLine,
                                              _In_ size_t iFirstAttr,
                                              _In_ COORD const coordTarget)
@@ -745,7 +760,7 @@ void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
         }
 
         // Draw the line via double-byte helper to strip duplicates
-        LOG_IF_FAILED(_PaintBufferOutputDoubleByteHelper(pEngine, pwsSegment, itAttrSegment, cchSegment, coordOffset));
+        LOG_IF_FAILED(_PaintBufferOutputDoubleByteHelper(pEngine, pwsSegment, itAttrSegment, itEnd, cchSegment, coordOffset));
 
         // Draw the grid shapes without the double-byte helper as they need to be exactly proportional to what's in the buffer
         if (_pData->IsGridLineDrawingAllowed())
@@ -760,7 +775,18 @@ void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
         // Update the offset and text segment pointer by moving right by the previously written segment length
         coordOffset.X += (SHORT)cchSegment;
         pwsSegment += cchSegment;
-        itAttrSegment += cchSegment;
+
+        // check to make sure we're not moving past the end of the iterator
+        if (itEnd - itAttrSegment > 0 &&
+            static_cast<size_t>(itEnd - itAttrSegment) >= cchSegment)
+        {
+            itAttrSegment += cchSegment;
+        }
+        else
+        {
+            LOG_HR_MSG(E_ACCESSDENIED, "cannot increment beyond end of iterator");
+            return;
+        }
 
     } while (cchWritten < cchLine);
 }
@@ -772,6 +798,7 @@ void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
 // Arguments:
 // - pwsLine - Pointer to the first character in the string/substring to be drawn.
 // - itAttr - iterator pointing to the first attribute in a sequence that is perfectly in sync with the pwsLine parameter. e.g. The first attribute here goes with the first character in pwsLine.
+// - itEnd - corresponding end iterator to itAttr
 // - cchLine - The length of pwsLine and the minimum number of itAttr steps.
 // - coordTarget - The X/Y coordinate position in the buffer which we're attempting to start rendering from. pwsLine[0] will be the character at position coordTarget within the original console buffer before it was prepared for this function.
 // Return Value:
@@ -779,6 +806,7 @@ void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
 HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const pEngine,
                                                      _In_reads_(cchLine) PCWCHAR const pwsLine,
                                                      _In_ const std::vector<DbcsAttribute>::const_iterator itAttr,
+                                                     _In_ const std::vector<DbcsAttribute>::const_iterator itEnd,
                                                      _In_ size_t const cchLine,
                                                      _In_ COORD const coordTarget)
 {
@@ -797,7 +825,7 @@ HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const p
     std::vector<DbcsAttribute>::const_iterator it = itAttr;
     size_t cchSegment = 0;
     // Walk through the line given character by character and copy necessary items into our local array.
-    for (size_t iLine = 0; iLine < cchLine; iLine++)
+    for (size_t iLine = 0; iLine < cchLine, it != itEnd; iLine++, ++it)
     {
         // skip copy of trailing bytes. we'll copy leading and single bytes into the final write array.
         if (!it->IsTrailing())
@@ -836,7 +864,6 @@ HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const p
             // which have no knowledge of the half/fullwidthness of characters and won't necessarily restrike the lines on the left half of the character.
             fTrimLeft = true;
         }
-        ++it;
     }
 
     // Draw the line
@@ -993,7 +1020,18 @@ void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
                 // Get the pointer to the beginning of the text and the maximum length of the line we'll be writing.
                 PWCHAR const pwsLine = Row.CharRow.Chars.get() + viewDirty.Left() - AreaInfo->CaInfo.coordConView.X;
                 // the double byte flags corresponding to the characters above.
-                const std::vector<DbcsAttribute>::const_iterator itAttr = Row.CharRow.GetAttributeIterator(viewDirty.Left() - AreaInfo->CaInfo.coordConView.X);
+                std::vector<DbcsAttribute>::const_iterator itAttr;
+                try
+                {
+                    itAttr = Row.CharRow.GetAttributeIterator(viewDirty.Left() - AreaInfo->CaInfo.coordConView.X);
+                }
+                catch (...)
+                {
+                    LOG_HR(wil::ResultFromCaughtException());
+                    return;
+                }
+                std::vector<DbcsAttribute>::const_iterator itEnd = Row.CharRow.GetAttributeIteratorEnd();
+
                 size_t const cchLine = viewDirty.Width() - 1;
 
                 // Calculate the target position in the buffer where we should start writing.
@@ -1001,7 +1039,7 @@ void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
                 coordTarget.X = viewDirty.Left();
                 coordTarget.Y = iRow;
 
-                _PaintBufferOutputRasterFontHelper(pEngine, Row, pwsLine, itAttr, cchLine, viewDirty.Left(), coordTarget);
+                _PaintBufferOutputRasterFontHelper(pEngine, Row, pwsLine, itAttr, itEnd, cchLine, viewDirty.Left(), coordTarget);
             }
         }
     }

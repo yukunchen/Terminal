@@ -184,7 +184,15 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
 
             WCHAR* Char = &pRow->CharRow.Chars[coordDest.X];
             // CJK Languages
-            std::vector<DbcsAttribute>::iterator it = pRow->CharRow.GetAttributeIterator(coordDest.X);
+            std::vector<DbcsAttribute>::iterator it;
+            try
+            {
+                it = pRow->CharRow.GetAttributeIterator(coordDest.X);
+            }
+            catch (...)
+            {
+                return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+            }
 
             TextAttributeRun* pAttrRun = rAttrRunsBuff;
             pAttrRun->SetLength(0);
@@ -582,7 +590,16 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
 
             // copy the chars into their arrays
             PWCHAR Char = &pRow->CharRow.Chars[X];
-            std::vector<DbcsAttribute>::iterator it = pRow->CharRow.GetAttributeIterator(X);
+            std::vector<DbcsAttribute>::iterator it;
+            try
+            {
+                it = pRow->CharRow.GetAttributeIterator(X);
+            }
+            catch (...)
+            {
+                return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+            }
+
             if ((ULONG)(coordScreenBufferSize.X - X) >= (*pcRecords - NumWritten))
             {
                 // The text will not hit the right hand edge, copy it all
@@ -607,7 +624,15 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
                     }
                 }
 
-                std::copy(BufferA, BufferA + (*pcRecords - NumWritten), it);
+                try
+                {
+                    std::copy(BufferA, BufferA + (*pcRecords - NumWritten), it);
+                }
+                catch (...)
+                {
+                    return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+                }
+
                 #pragma prefast(suppress:__WARNING_BUFFER_OVERFLOW, "Code appears to be fine.")
                 memmove(Char, pvBuffer, (*pcRecords - NumWritten) * sizeof(WCHAR));
 
@@ -634,7 +659,14 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
                         BufferA[coordScreenBufferSize.X - TPoint.X].SetSingle();
                     }
                 }
-                std::copy(BufferA, BufferA + (coordScreenBufferSize.X - X), it);
+                try
+                {
+                    std::copy(BufferA, BufferA + (coordScreenBufferSize.X - X), it);
+                }
+                catch (...)
+                {
+                    return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+                }
                 BufferA = BufferA + (coordScreenBufferSize.X - X);
                 memmove(Char, pvBuffer, (coordScreenBufferSize.X - X) * sizeof(WCHAR));
                 pvBuffer = (PVOID)((PBYTE)pvBuffer + ((coordScreenBufferSize.X - X) * sizeof(WCHAR)));
@@ -898,7 +930,15 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
             // copy the chars into their arrays
             SHORT LeftX = X;
             PWCHAR Char = &pRow->CharRow.Chars[X];
-            std::vector<DbcsAttribute>::iterator it = pRow->CharRow.GetAttributeIterator(X);
+            std::vector<DbcsAttribute>::iterator it;
+            try
+            {
+                it = pRow->CharRow.GetAttributeIterator(X);
+            }
+            catch (...)
+            {
+                return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+            }
             if ((ULONG) (coordScreenBufferSize.X - X) >= (*pcElements - NumWritten))
             {
                 {
@@ -1179,8 +1219,19 @@ void FillRectangle(_In_ const CHAR_INFO * const pciFill,
         CleanupDbcsEdgesForWrite(XSize, TPoint, pScreenInfo);
         BOOL Width = IsCharFullWidth(pciFill->Char.UnicodeChar);
         PWCHAR Char = &pRow->CharRow.Chars[psrTarget->Left];
-        std::vector<DbcsAttribute>::iterator it = pRow->CharRow.GetAttributeIterator(psrTarget->Left);
-        for (SHORT j = 0; j < XSize; j++)
+        std::vector<DbcsAttribute>::iterator it;
+        try
+        {
+            it = pRow->CharRow.GetAttributeIterator(psrTarget->Left);
+        }
+        catch (...)
+        {
+            LOG_HR(wil::ResultFromCaughtException());
+            return;
+        }
+        std::vector<DbcsAttribute>::const_iterator itEnd = pRow->CharRow.GetAttributeIteratorEnd();
+
+        for (SHORT j = 0; j < XSize, it != itEnd; j++)
         {
             if (Width)
             {

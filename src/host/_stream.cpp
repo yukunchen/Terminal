@@ -750,18 +750,25 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
 
                 PWCHAR const CharTmp = &Row.CharRow.Chars[TargetPoint.X];
 
-                if (Row.CharRow.GetAttribute(TargetPoint.X).IsTrailing())
+                try
                 {
-                    *(CharTmp - 1) = UNICODE_SPACE;
-                    *CharTmp = UNICODE_SPACE;
-                    Row.CharRow.GetAttribute(TargetPoint.X).SetSingle();
-                    Row.CharRow.GetAttribute(TargetPoint.X - 1).SetSingle();
+                    if (Row.CharRow.GetAttribute(TargetPoint.X).IsTrailing())
+                    {
+                        *(CharTmp - 1) = UNICODE_SPACE;
+                        *CharTmp = UNICODE_SPACE;
+                        Row.CharRow.GetAttribute(TargetPoint.X).SetSingle();
+                        Row.CharRow.GetAttribute(TargetPoint.X - 1).SetSingle();
 
-                    Region.Left = TargetPoint.X - 1;
-                    Region.Right = (SHORT)(TargetPoint.X);
-                    Region.Top = TargetPoint.Y;
-                    Region.Bottom = TargetPoint.Y;
-                    WriteToScreen(pScreenInfo, Region);
+                        Region.Left = TargetPoint.X - 1;
+                        Region.Right = (SHORT)(TargetPoint.X);
+                        Region.Top = TargetPoint.Y;
+                        Region.Bottom = TargetPoint.Y;
+                        WriteToScreen(pScreenInfo, Region);
+                    }
+                }
+                catch (...)
+                {
+                    return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
                 }
 
                 CursorPosition.X = 0;

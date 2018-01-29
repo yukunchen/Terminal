@@ -211,30 +211,30 @@ void Selection::s_BisectSelection(_In_ short const sStringLength,
     const TEXT_BUFFER_INFO* const pTextInfo = pScreenInfo->TextInfo;
     const ROW& Row = pTextInfo->GetRowByOffset(coordTargetPoint.Y);
 
-    // Check start position of strings
-    if (Row.CharRow.GetAttribute(coordTargetPoint.X).IsTrailing())
+    try
     {
-        if (coordTargetPoint.X == 0)
+        // Check start position of strings
+        if (Row.CharRow.GetAttribute(coordTargetPoint.X).IsTrailing())
         {
-            pSmallRect->Left++;
+            if (coordTargetPoint.X == 0)
+            {
+                pSmallRect->Left++;
+            }
+            else
+            {
+                pSmallRect->Left--;
+            }
+        }
+
+        // Check end position of strings
+        if (coordTargetPoint.X + sStringLength < pScreenInfo->GetScreenBufferSize().X)
+        {
+            if (Row.CharRow.GetAttribute(coordTargetPoint.X + sStringLength).IsTrailing())
+            {
+                pSmallRect->Right++;
+            }
         }
         else
-        {
-            pSmallRect->Left--;
-        }
-    }
-
-    // Check end position of strings
-    if (coordTargetPoint.X + sStringLength < pScreenInfo->GetScreenBufferSize().X)
-    {
-        if (Row.CharRow.GetAttribute(coordTargetPoint.X + sStringLength).IsTrailing())
-        {
-            pSmallRect->Right++;
-        }
-    }
-    else
-    {
-        try
         {
             const ROW& RowNext = pTextInfo->GetNextRowNoWrap(Row);
             if (RowNext.CharRow.GetAttribute(0).IsTrailing())
@@ -242,10 +242,10 @@ void Selection::s_BisectSelection(_In_ short const sStringLength,
                 pSmallRect->Right--;
             }
         }
-        catch (...)
-        {
-            LOG_HR(wil::ResultFromCaughtException());
-        }
+    }
+    catch (...)
+    {
+        LOG_HR(wil::ResultFromCaughtException());
     }
 }
 
