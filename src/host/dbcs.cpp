@@ -66,8 +66,17 @@ bool CheckBisectStringA(_In_reads_bytes_(cbBuf) PCHAR pchBuf, _In_ DWORD cbBuf, 
 }
 
 // Routine Description:
-// - This routine write buffer with bisect.
-void BisectWrite(_In_ const SHORT sStringLen, _In_ const COORD coordTarget, _In_ PSCREEN_INFORMATION pScreenInfo)
+// - updates dbcs attributes of output buffer cells at the beginning and end of where a string will be
+// written. This is to clean up leading trailing pairs when one of the cells in the pair is about to be overwritten.
+// Arguments:
+// - sStringLen - the length of the string to write
+// - coordTarget - the location the string will be written to
+// - pScreenInfo - the screen buffer to update
+// Return Value:
+// - <none>
+void CleanupDbcsEdgesForWrite(_In_ const SHORT sStringLen,
+                              _In_ const COORD coordTarget,
+                              _Inout_ SCREEN_INFORMATION* const pScreenInfo)
 {
     PTEXT_BUFFER_INFO const pTextInfo = pScreenInfo->TextInfo;
     const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();

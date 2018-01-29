@@ -35,9 +35,9 @@ void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
     ROW& Row = pScreenInfo->TextInfo->GetRowByOffset(TargetPoint.Y);
     DBGOUTPUT(("&Row = 0x%p, TargetPoint = (0x%x,0x%x)\n", &Row, TargetPoint.X, TargetPoint.Y));
 
-    // TODO: from BisectWrite to the end of the if statement seems to never execute
+    // TODO: from CleanupDbcsEdgesForWrite to the end of the if statement seems to never execute
     // both callers of this function appear to already have handled the line length for double-width characters
-    BisectWrite(cchBuffer, TargetPoint, pScreenInfo);
+    CleanupDbcsEdgesForWrite(cchBuffer, TargetPoint, pScreenInfo);
     const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
     if (TargetPoint.Y == coordScreenBufferSize.Y - 1 &&
         TargetPoint.X + cchBuffer >= coordScreenBufferSize.X &&
@@ -151,7 +151,7 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
 
             TPoint.X = coordDest.X;
             TPoint.Y = coordDest.Y + i;
-            BisectWrite(XSize, TPoint, pScreenInfo);
+            CleanupDbcsEdgesForWrite(XSize, TPoint, pScreenInfo);
 
             if (TPoint.Y == coordScreenBufferSize.Y - 1 &&
                 TPoint.X + XSize - 1 >= coordScreenBufferSize.X)
@@ -590,7 +590,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
 
                 TPoint.X = X;
                 TPoint.Y = Y;
-                BisectWrite((SHORT)(*pcRecords - NumWritten), TPoint, pScreenInfo);
+                CleanupDbcsEdgesForWrite((SHORT)(*pcRecords - NumWritten), TPoint, pScreenInfo);
 
                 if (TPoint.Y == coordScreenBufferSize.Y - 1 &&
                     (SHORT)(TPoint.X + *pcRecords - NumWritten) >= coordScreenBufferSize.X &&
@@ -621,7 +621,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
 
                 TPoint.X = X;
                 TPoint.Y = Y;
-                BisectWrite((SHORT)(coordScreenBufferSize.X - X), TPoint, pScreenInfo);
+                CleanupDbcsEdgesForWrite((SHORT)(coordScreenBufferSize.X - X), TPoint, pScreenInfo);
                 if (TPoint.Y == coordScreenBufferSize.Y - 1 &&
                     TPoint.X + coordScreenBufferSize.X - X >= coordScreenBufferSize.X &&
                     BufferA[coordScreenBufferSize.X - TPoint.X - 1].IsLeading())
@@ -906,7 +906,7 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
 
                     TPoint.X = X;
                     TPoint.Y = Y;
-                    BisectWrite((SHORT)(*pcElements - NumWritten), TPoint, pScreenInfo);
+                    CleanupDbcsEdgesForWrite((SHORT)(*pcElements - NumWritten), TPoint, pScreenInfo);
                 }
                 if (IsCharFullWidth((WCHAR)wElement))
                 {
@@ -949,7 +949,7 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
 
                     TPoint.X = X;
                     TPoint.Y = Y;
-                    BisectWrite((SHORT)(coordScreenBufferSize.X - X), TPoint, pScreenInfo);
+                    CleanupDbcsEdgesForWrite((SHORT)(coordScreenBufferSize.X - X), TPoint, pScreenInfo);
                 }
                 if (IsCharFullWidth((WCHAR)wElement))
                 {
@@ -1176,7 +1176,7 @@ void FillRectangle(_In_ const CHAR_INFO * const pciFill,
 
         TPoint.X = psrTarget->Left;
         TPoint.Y = i;
-        BisectWrite(XSize, TPoint, pScreenInfo);
+        CleanupDbcsEdgesForWrite(XSize, TPoint, pScreenInfo);
         BOOL Width = IsCharFullWidth(pciFill->Char.UnicodeChar);
         PWCHAR Char = &pRow->CharRow.Chars[psrTarget->Left];
         std::vector<DbcsAttribute>::iterator it = pRow->CharRow.GetAttributeIterator(psrTarget->Left);

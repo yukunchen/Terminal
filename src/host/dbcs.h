@@ -30,7 +30,9 @@ Revision History:
 
 void SetLineChar(_In_ SCREEN_INFORMATION * const pScreenInfo);
 bool CheckBisectStringA(_In_reads_bytes_(cbBuf) PCHAR pchBuf, _In_ DWORD cbBuf, _In_ const CPINFO * const pCPInfo);
-void BisectWrite(_In_ const SHORT sStringLen, _In_ const COORD coordTarget, _In_ PSCREEN_INFORMATION pScreenInfo);
+void CleanupDbcsEdgesForWrite(_In_ const SHORT sStringLen,
+                              _In_ const COORD coordTarget,
+                              _Inout_ SCREEN_INFORMATION* const pScreenInfo);
 
 DWORD RemoveDbcsMarkCell(_Out_writes_(cch) PCHAR_INFO pciDst, _In_reads_(cch) const CHAR_INFO * pciSrc, _In_ DWORD cch);
 

@@ -711,7 +711,7 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
     DBGOUTPUT(("&Row = 0x%p, TargetPoint = (0x%x,0x%x)\n", &Row, TargetPoint.X, TargetPoint.Y));
 
     // copy chars
-    BisectWrite(StringLength, TargetPoint, ScreenInfo);
+    CleanupDbcsEdgesForWrite(StringLength, TargetPoint, ScreenInfo);
 
     const COORD coordScreenBufferSize = ScreenInfo->GetScreenBufferSize();
 
