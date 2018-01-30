@@ -24,7 +24,7 @@ void ConsoleImeWindowInfo(_In_ ConversionAreaInfo* ConvAreaInfo, _In_ SMALL_RECT
 NTSTATUS ConsoleImeResizeScreenBuffer(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ COORD NewScreenSize, _In_ ConversionAreaInfo* ConvAreaInfo);
 bool InsertConvertedString(_In_ LPCWSTR lpStr);
 void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
-                                  _In_ USHORT StringLength,
+                                  _In_ const size_t StringLength,
                                   _In_ PSCREEN_INFORMATION ScreenInfo,
                                   _In_reads_(StringLength) DbcsAttribute* const pDbcsAttributes);
 
@@ -186,15 +186,16 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
 
         while (NumChars < BufferSize)
         {
-            ULONG i = 0;
+
+            size_t currentBufferIndex = 0;
             WCHAR LocalBuffer[LOCAL_BUFFER_SIZE];
             DbcsAttribute dbcsAttributes[LOCAL_BUFFER_SIZE];
 
-            PWCHAR LocalBufPtr = LocalBuffer;
-
             WCHAR Char = 0;
             WORD Attr = 0;
-            while (NumChars < BufferSize && i < LOCAL_BUFFER_SIZE && Position.X < ScreenInfo->GetScreenWindowSizeX())
+            while (NumChars < BufferSize &&
+                   currentBufferIndex < LOCAL_BUFFER_SIZE &&
+                   Position.X < ScreenInfo->GetScreenWindowSizeX())
             {
                 Char = *lpString;
     #pragma prefast(suppress:__WARNING_INCORRECT_ANNOTATION, "Precarious but this is internal-only code so we can live with it")
@@ -203,15 +204,19 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
                 {
                     if (IsCharFullWidth(Char))
                     {
-                        if (i < (LOCAL_BUFFER_SIZE - 1) && Position.X < ScreenInfo->GetScreenWindowSizeX() - 1)
+                        if (currentBufferIndex < (LOCAL_BUFFER_SIZE - 1)
+                            && Position.X < ScreenInfo->GetScreenWindowSizeX() - 1)
                         {
-                            *LocalBufPtr++ = Char;
-                            dbcsAttributes[i].SetLeading();
-                            *LocalBufPtr++ = Char;
-                            ++i;
-                            dbcsAttributes[i].SetTrailing();
+                            // leading byte
+                            LocalBuffer[currentBufferIndex] = Char;
+                            dbcsAttributes[currentBufferIndex].SetLeading();
+                            ++currentBufferIndex;
+                            // trailing byte
+                            LocalBuffer[currentBufferIndex] = Char;
+                            dbcsAttributes[currentBufferIndex].SetTrailing();
+                            ++currentBufferIndex;
+
                             Position.X += 2;
-                            ++i;
                         }
                         else
                         {
@@ -221,10 +226,10 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
                     }
                     else
                     {
-                        *LocalBufPtr++ = Char;
-                        dbcsAttributes[i].SetSingle();
+                        LocalBuffer[currentBufferIndex] = Char;
+                        dbcsAttributes[currentBufferIndex].SetSingle();
+                        ++currentBufferIndex;
                         Position.X++;
-                        i++;
                     }
                 }
                 lpString++;
@@ -237,7 +242,7 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
                 }
             }
 
-            if (i != 0)
+            if (currentBufferIndex != 0)
             {
                 WORD wLegacyAttr = lpAtrIdx[Attr & 0x07];
                 if (Attr & 0x10)
@@ -251,9 +256,9 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
                 TextAttribute taAttribute = TextAttribute(wLegacyAttr);
                 ConvScreenInfo->SetAttributes(taAttribute);
 
-                StreamWriteToScreenBufferIME(LocalBuffer, (USHORT) i, ConvScreenInfo, dbcsAttributes);
+                StreamWriteToScreenBufferIME(LocalBuffer, currentBufferIndex, ConvScreenInfo, dbcsAttributes);
 
-                ConvScreenInfo->TextInfo->GetCursor()->IncrementXPosition(i);
+                ConvScreenInfo->TextInfo->GetCursor()->IncrementXPosition(static_cast<int>(currentBufferIndex));
 
                 if (NumChars == BufferSize ||
                     Position.X >= ScreenInfo->GetScreenWindowSizeX() ||
@@ -699,7 +704,7 @@ bool InsertConvertedString(_In_ LPCWSTR lpStr)
 }
 
 void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
-                                  _In_ USHORT StringLength,
+                                  _In_ const size_t StringLength,
                                   _In_ PSCREEN_INFORMATION ScreenInfo,
                                   _In_reads_(StringLength) DbcsAttribute* const pDbcsAttributes)
 {
@@ -818,5 +823,5 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
         }
     }
 
-    ScreenInfo->ResetTextFlags(TargetPoint.X, TargetPoint.Y, TargetPoint.X + StringLength - 1, TargetPoint.Y);
+    ScreenInfo->ResetTextFlags(TargetPoint.X, TargetPoint.Y, static_cast<short>(TargetPoint.X + StringLength - 1), TargetPoint.Y);
 }

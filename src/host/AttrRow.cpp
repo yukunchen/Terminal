@@ -120,8 +120,7 @@ HRESULT ATTR_ROW::Resize(_In_ const short sOldWidth, _In_ const short sNewWidth)
     {
         // Get the attribute that covers the final column of old width.
         TextAttributeRun* pIndexedRun;
-        unsigned int CountOfAttr;
-        this->FindAttrIndex((SHORT)(sOldWidth - 1), &pIndexedRun, &CountOfAttr);
+        FindAttrIndex((SHORT)(sOldWidth - 1), &pIndexedRun, nullptr);
         ASSERT(pIndexedRun <= &_rgList[_cList - 1]);
 
         // Extend its length by the additional columns we're adding.
@@ -135,8 +134,8 @@ HRESULT ATTR_ROW::Resize(_In_ const short sOldWidth, _In_ const short sNewWidth)
     {
         // Get the attribute that covers the final column of the new width
         TextAttributeRun* pIndexedRun;
-        unsigned int CountOfAttr;
-        this->FindAttrIndex((SHORT)(sNewWidth - 1), &pIndexedRun, &CountOfAttr);
+        size_t CountOfAttr = 0;
+        FindAttrIndex((SHORT)(sNewWidth - 1), &pIndexedRun, &CountOfAttr);
         ASSERT(pIndexedRun <= &_rgList[_cList - 1]);
 
         // CountOfAttr was given to us as "how many columns left from this point forward are covered by the returned run"
@@ -163,45 +162,45 @@ HRESULT ATTR_ROW::Resize(_In_ const short sOldWidth, _In_ const short sNewWidth)
 // Routine Description:
 // - This routine finds the nth attribute in this ATTR_ROW.
 // Arguments:
-// - uiIndex - which attribute to find
+// - index - which attribute to find
 // - ppIndexedAttr - pointer to attribute within string
 // - pcAttrApplies - on output, contains corrected length of indexed attr.
 //                  for example, if the attribute string was { 5, BLUE } and the requested
 //                  index was 3, CountOfAttr would be 2.
 // Return Value:
 // <none>
-void ATTR_ROW::FindAttrIndex(_In_ UINT const uiIndex,
+void ATTR_ROW::FindAttrIndex(_In_ size_t const index,
                              _Outptr_ TextAttributeRun** const ppIndexedAttr,
-                             _Out_opt_ UINT* const pcAttrApplies) const
+                             _Out_opt_ size_t* const pcAttrApplies) const
 {
-    ASSERT(uiIndex < _cchRowWidth); // The requested index cannot be longer than the total length described by this set of Attrs.
+    ASSERT(index < _cchRowWidth); // The requested index cannot be longer than the total length described by this set of Attrs.
 
-    UINT cTotalLength = 0;
-    UINT uiAttrsArrayPos;
+    size_t cTotalLength = 0;
+    size_t uiAttrsArrayPos;
 
-    ASSERT(this->_cList > 0); // There should be a non-zero and positive number of items in the array.
+    ASSERT(_cList > 0); // There should be a non-zero and positive number of items in the array.
 
     // Scan through the internal array from position 0 adding up the lengths that each attribute applies to
-    for (uiAttrsArrayPos = 0; uiAttrsArrayPos < (UINT)this->_cList; uiAttrsArrayPos++)
+    for (uiAttrsArrayPos = 0; uiAttrsArrayPos < _cList; uiAttrsArrayPos++)
     {
         cTotalLength += _rgList[uiAttrsArrayPos].GetLength();
 
-        if (cTotalLength > uiIndex)
+        if (cTotalLength > index)
         {
             // If we've just passed up the requested index with the length we added, break early
             break;
         }
     }
 
-    // The leftover array position (uiAttrsArrayPos) stored at this point in time is the position of the attribute that is applicable at the position requested (uiIndex)
+    // The leftover array position (uiAttrsArrayPos) stored at this point in time is the position of the attribute that is applicable at the position requested (index)
     // Save it off and calculate its remaining applicability
     *ppIndexedAttr = &_rgList[uiAttrsArrayPos];
     // The length on which the found attribute applies is the total length seen so far minus the index we were searching for.
-    ASSERT(cTotalLength > uiIndex); // The length of all attributes we counted up so far should be longer than the index requested or we'll underflow.
+    ASSERT(cTotalLength > index); // The length of all attributes we counted up so far should be longer than the index requested or we'll underflow.
 
     if (nullptr != pcAttrApplies)
     {
-        *pcAttrApplies = cTotalLength - uiIndex;
+        *pcAttrApplies = cTotalLength - index;
 
         ASSERT(*pcAttrApplies > 0); // An attribute applies for >0 characters
         ASSERT(*pcAttrApplies <= _cchRowWidth); // An attribute applies for a maximum of the total length available to us
@@ -215,23 +214,13 @@ void ATTR_ROW::FindAttrIndex(_In_ UINT const uiIndex,
 // - cRowLength - Length of this array
 //  Return Value:
 // - Success if unpacked. Buffer too small if row length is incorrect
-NTSTATUS ATTR_ROW::UnpackAttrs(_Out_writes_(cRowLength) TextAttribute* const rgAttrs, _In_ UINT const cRowLength) const
+NTSTATUS ATTR_ROW::UnpackAttrs(_Out_writes_(cRowLength) TextAttribute* const rgAttrs, _In_ const size_t cRowLength) const
 {
     NTSTATUS status = STATUS_SUCCESS;
 
-    unsigned short cTotalLength = 0;
-
-    if (SUCCEEDED(UIntToUShort(_cchRowWidth, &cTotalLength)))
+    if (cRowLength < _cchRowWidth)
     {
-        if (cRowLength < cTotalLength)
-        {
-            status = STATUS_BUFFER_TOO_SMALL;
-        }
-    }
-    else
-    {
-        ASSERT(false); // assert if math problem occurred
-        status = STATUS_UNSUCCESSFUL;
+        status = STATUS_BUFFER_TOO_SMALL;
     }
 
     if (NT_SUCCESS(status))
@@ -241,13 +230,13 @@ NTSTATUS ATTR_ROW::UnpackAttrs(_Out_writes_(cRowLength) TextAttribute* const rgA
         bool fOutOfSpace = false;
 
         // Iterate through every packed ATTR_PAIR that is in our internal run length encoding
-        for (unsigned short uiPackedIndex = 0; uiPackedIndex < _cList; uiPackedIndex++)
+        for (size_t packedIndex = 0; packedIndex < _cList; packedIndex++)
         {
             // Pull out the length of the current run
-            const unsigned int uiRunLength = _rgList[uiPackedIndex].GetLength();
+            const size_t runLength = _rgList[packedIndex].GetLength();
 
             // Fill the output array with the associated attribute for the current run length
-            for (unsigned int uiRunCount = 0; uiRunCount < uiRunLength; uiRunCount++)
+            for (size_t runCount = 0; runCount < runLength; runCount++)
             {
                 if (iOutputIndex >= cRowLength)
                 {
@@ -255,7 +244,7 @@ NTSTATUS ATTR_ROW::UnpackAttrs(_Out_writes_(cRowLength) TextAttribute* const rgA
                     break;
                 }
 
-                rgAttrs[iOutputIndex].SetFrom(_rgList[uiPackedIndex].GetAttributes());
+                rgAttrs[iOutputIndex].SetFrom(_rgList[packedIndex].GetAttributes());
 
                 // Increment output array index after every insertion.
                 iOutputIndex++;
@@ -286,11 +275,11 @@ NTSTATUS ATTR_ROW::UnpackAttrs(_Out_writes_(cRowLength) TextAttribute* const rgA
 // - <none>
 bool ATTR_ROW::SetAttrToEnd(_In_ UINT const iStart, _In_ const TextAttribute attr)
 {
-    UINT const iLength = _cchRowWidth - iStart;
+    size_t const length = _cchRowWidth - iStart;
 
     TextAttributeRun run;
     run.SetAttributes(attr);
-    run.SetLength(iLength);
+    run.SetLength(length);
 
     return SUCCEEDED(InsertAttrRuns(&run, 1, iStart, _cchRowWidth - 1, _cchRowWidth));
 }
@@ -369,10 +358,10 @@ size_t _DebugGetTotalLength(_In_reads_(cRun) const TextAttributeRun* const rgRun
 // - STATUS_NO_MEMORY if there wasn't enough memory to insert the runs
 //   otherwise STATUS_SUCCESS if we were successful.
 HRESULT ATTR_ROW::InsertAttrRuns(_In_reads_(cAttrs) const TextAttributeRun* const rgInsertAttrs,
-                                  _In_ const UINT cInsertAttrs,
-                                  _In_ const UINT iStart,
-                                  _In_ const UINT iEnd,
-                                  _In_ const UINT cBufferWidth)
+                                  _In_ const size_t cInsertAttrs,
+                                  _In_ const size_t iStart,
+                                  _In_ const size_t iEnd,
+                                  _In_ const size_t cBufferWidth)
 {
     assert((iEnd - iStart + 1) == _DebugGetTotalLength(rgInsertAttrs, cInsertAttrs));
 
@@ -392,7 +381,7 @@ HRESULT ATTR_ROW::InsertAttrRuns(_In_reads_(cAttrs) const TextAttributeRun* cons
     // We'll need to know what the last valid column is for some calculations versus iEnd
     // because iEnd is specified to us as an inclusive index value.
     // Do the -1 math here now so we don't have to have -1s scattered all over this function.
-    UINT const iLastBufferCol = cBufferWidth - 1;
+    const size_t iLastBufferCol = cBufferWidth - 1;
 
     // Get the existing run that we'll be updating/manipulating.
     TextAttributeRun* const pExistingRun = _rgList.get();
@@ -402,7 +391,7 @@ HRESULT ATTR_ROW::InsertAttrRuns(_In_reads_(cAttrs) const TextAttributeRun* cons
     if (cInsertAttrs == 1 && _cList == 1)
     {
         // Get the new color attribute we're trying to apply
-        TextAttribute const NewAttr = rgInsertAttrs[0].GetAttributes();
+        const TextAttribute NewAttr = rgInsertAttrs[0].GetAttributes();
 
         // If the new color is the same as the old, we don't have to do anything and can exit quick.
         if (pExistingRun->GetAttributes().IsEqual(NewAttr))
@@ -431,7 +420,7 @@ HRESULT ATTR_ROW::InsertAttrRuns(_In_reads_(cAttrs) const TextAttributeRun* cons
     // becomes R3->B2->Y2->B1->G2.
     // The original run was 3 long. The insertion run was 1 long. We need 1 more for the
     // fact that an existing piece of the run was split in half (to hold the latter half).
-    UINT const cNewRun = _cList + cInsertAttrs + 1;
+    const size_t cNewRun = _cList + cInsertAttrs + 1;
     wistd::unique_ptr<TextAttributeRun[]> pNewRun = wil::make_unique_nothrow<TextAttributeRun[]>(cNewRun);
     RETURN_IF_NULL_ALLOC(pNewRun);
 
@@ -440,9 +429,9 @@ HRESULT ATTR_ROW::InsertAttrRuns(_In_reads_(cAttrs) const TextAttributeRun* cons
     const TextAttributeRun* pExistingRunPos = pExistingRun;
     const TextAttributeRun* const pExistingRunEnd = pExistingRun + _cList;
     const TextAttributeRun* pInsertRunPos = rgInsertAttrs;
-    UINT cInsertRunRemaining = cInsertAttrs;
+    size_t cInsertRunRemaining = cInsertAttrs;
     TextAttributeRun* pNewRunPos = pNewRun.get();
-    UINT iExistingRunCoverage = 0;
+    size_t iExistingRunCoverage = 0;
 
     // Copy the existing run into the new buffer up to the "start index" where the new run will be injected.
     // If the new run starts at 0, we have nothing to copy from the beginning.
@@ -479,7 +468,7 @@ HRESULT ATTR_ROW::InsertAttrRuns(_In_reads_(cAttrs) const TextAttributeRun* cons
         pNewRunPos--;
 
         // Fetch out the length so we can fix it up based on the below conditions.
-        UINT uiLength = pNewRunPos->GetLength();
+        size_t length = pNewRunPos->GetLength();
 
         // If we've covered more cells already than the start of the attributes to be inserted...
         if (iExistingRunCoverage > iStart)
@@ -488,7 +477,7 @@ HRESULT ATTR_ROW::InsertAttrRuns(_In_reads_(cAttrs) const TextAttributeRun* cons
             // We want to take remove the difference in distance between the cells we've covered in the new
             // run and the insertion point.
             // (This turns G5 into G2 from Example 2 just above)
-            uiLength -= (iExistingRunCoverage - iStart);
+            length -= (iExistingRunCoverage - iStart);
         }
 
         // Now we're still on that "last cell copied" into the new run.
@@ -496,7 +485,7 @@ HRESULT ATTR_ROW::InsertAttrRuns(_In_reads_(cAttrs) const TextAttributeRun* cons
         // of the run we're about to insert, we can just increment the length to extend the coverage.
         if (pNewRunPos->GetAttributes().IsEqual(pInsertRunPos->GetAttributes()))
         {
-            uiLength += pInsertRunPos->GetLength();
+            length += pInsertRunPos->GetLength();
 
             // Since the color matched, we have already "used up" part of the insert run
             // and can skip it in our big "memcopy" step below that will copy the bulk of the insert run.
@@ -505,7 +494,7 @@ HRESULT ATTR_ROW::InsertAttrRuns(_In_reads_(cAttrs) const TextAttributeRun* cons
         }
 
         // We're done manipulating the length. Store it back.
-        pNewRunPos->SetLength(uiLength);
+        pNewRunPos->SetLength(length);
 
         // Now that we're done adjusting the last copied item, advance the pointer into a fresh/blank
         // part of the new run array.
@@ -561,9 +550,9 @@ HRESULT ATTR_ROW::InsertAttrRuns(_In_reads_(cAttrs) const TextAttributeRun* cons
             // so we can just adjust the final run's column count instead of adding another segment here.
             if (pNewRunPos->GetAttributes().IsEqual(pExistingRunPos->GetAttributes()))
             {
-                UINT uiLength = pNewRunPos->GetLength();
-                uiLength += (iExistingRunCoverage - (iEnd + 1));
-                pNewRunPos->SetLength(uiLength);
+                size_t length = pNewRunPos->GetLength();
+                length += (iExistingRunCoverage - (iEnd + 1));
+                pNewRunPos->SetLength(length);
             }
             else
             {
@@ -599,9 +588,9 @@ HRESULT ATTR_ROW::InsertAttrRuns(_In_reads_(cAttrs) const TextAttributeRun* cons
         else if (pNewRunPos->GetAttributes().IsEqual(pExistingRunPos->GetAttributes()))
         {
             // Add the value from the existing run into the current new run position.
-            UINT uiLength = pNewRunPos->GetLength();
-            uiLength += pExistingRunPos->GetLength();
-            pNewRunPos->SetLength(uiLength);
+            size_t length = pNewRunPos->GetLength();
+            length += pExistingRunPos->GetLength();
+            pNewRunPos->SetLength(length);
 
             // Advance the existing run position since we consumed its value and merged it in.
             pExistingRunPos++;

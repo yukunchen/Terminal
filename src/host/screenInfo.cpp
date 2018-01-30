@@ -614,7 +614,6 @@ void SCREEN_INFORMATION::ResetTextFlags(_In_ short const sStartX,
 {
     SHORT RowIndex;
     WCHAR Char;
-    UINT CountOfAttr;
     PTEXT_BUFFER_INFO pTextInfo = this->TextInfo;
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
@@ -633,7 +632,7 @@ void SCREEN_INFORMATION::ResetTextFlags(_In_ short const sStartX,
             {
                 const ROW& Row = pTextInfo->GetRowAtIndex(RowIndex);
                 Char = Row.CharRow.Chars[sStartX];
-                Row.AttrRow.FindAttrIndex(sStartX, &pAttrRun, &CountOfAttr);
+                Row.AttrRow.FindAttrIndex(sStartX, &pAttrRun, nullptr);
             }
             catch (...)
             {
@@ -1490,9 +1489,8 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
 
             // Extract the color attribute that applies to this character
             TextAttributeRun* rAttrRun;
-            UINT cAttrApplies;
 
-            Row.AttrRow.FindAttrIndex(iOldCol, &rAttrRun, &cAttrApplies);
+            Row.AttrRow.FindAttrIndex(iOldCol, &rAttrRun, nullptr);
 
             if (iOldCol == cOldCursorPos.X && iOldRow == cOldCursorPos.Y)
             {

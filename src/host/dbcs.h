@@ -30,7 +30,7 @@ Revision History:
 
 void SetLineChar(_In_ SCREEN_INFORMATION * const pScreenInfo);
 bool CheckBisectStringA(_In_reads_bytes_(cbBuf) PCHAR pchBuf, _In_ DWORD cbBuf, _In_ const CPINFO * const pCPInfo);
-void CleanupDbcsEdgesForWrite(_In_ const SHORT sStringLen,
+void CleanupDbcsEdgesForWrite(_In_ const size_t stringLen,
                               _In_ const COORD coordTarget,
                               _Inout_ SCREEN_INFORMATION* const pScreenInfo);
 

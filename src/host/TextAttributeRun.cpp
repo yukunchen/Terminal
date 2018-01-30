@@ -7,12 +7,12 @@
 #include "precomp.h"
 #include "TextAttributeRun.hpp"
 
-UINT TextAttributeRun::GetLength() const
+size_t TextAttributeRun::GetLength() const
 {
     return _cchLength;
 }
 
-void TextAttributeRun::SetLength(_In_ UINT const cchLength)
+void TextAttributeRun::SetLength(_In_ size_t const cchLength)
 {
     _cchLength = cchLength;
 }

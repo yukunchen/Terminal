@@ -386,8 +386,7 @@ void TextBufferTests::TestInsertCharacter()
     VERIFY_ARE_NOT_EQUAL(Row.CharRow.GetAttribute(coordCursorBefore.X), dbcsAttribute);
 
     TextAttributeRun* pAttrRun;
-    UINT cAttrApplies;
-    Row.AttrRow.FindAttrIndex(coordCursorBefore.X, &pAttrRun, &cAttrApplies);
+    Row.AttrRow.FindAttrIndex(coordCursorBefore.X, &pAttrRun, nullptr);
 
     VERIFY_IS_FALSE(pAttrRun->GetAttributes().IsEqual(TestAttributes));
 
@@ -398,7 +397,7 @@ void TextBufferTests::TestInsertCharacter()
     VERIFY_ARE_EQUAL(Row.CharRow.Chars[coordCursorBefore.X], wchTest);
     VERIFY_ARE_EQUAL(Row.CharRow.GetAttribute(coordCursorBefore.X), dbcsAttribute);
 
-    Row.AttrRow.FindAttrIndex(coordCursorBefore.X, &pAttrRun, &cAttrApplies);
+    Row.AttrRow.FindAttrIndex(coordCursorBefore.X, &pAttrRun, nullptr);
     VERIFY_IS_TRUE(pAttrRun->GetAttributes().IsEqual(TestAttributes));
 
     // ensure that the cursor moved to a new position (X or Y or both have changed)

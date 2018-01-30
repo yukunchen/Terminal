@@ -69,12 +69,12 @@ bool CheckBisectStringA(_In_reads_bytes_(cbBuf) PCHAR pchBuf, _In_ DWORD cbBuf, 
 // - updates dbcs attributes of output buffer cells at the beginning and end of where a string will be
 // written. This is to clean up leading trailing pairs when one of the cells in the pair is about to be overwritten.
 // Arguments:
-// - sStringLen - the length of the string to write
+// - stringLen - the length of the string to write
 // - coordTarget - the location the string will be written to
 // - pScreenInfo - the screen buffer to update
 // Return Value:
 // - <none>
-void CleanupDbcsEdgesForWrite(_In_ const SHORT sStringLen,
+void CleanupDbcsEdgesForWrite(_In_ const size_t stringLen,
                               _In_ const COORD coordTarget,
                               _Inout_ SCREEN_INFORMATION* const pScreenInfo)
 {
@@ -100,9 +100,9 @@ void CleanupDbcsEdgesForWrite(_In_ const SHORT sStringLen,
         }
 
         // Check end position of strings
-        if (coordTarget.X + sStringLen < coordScreenBufferSize.X)
+        if (coordTarget.X + stringLen < coordScreenBufferSize.X)
         {
-            size_t column = coordTarget.X + sStringLen;
+            size_t column = coordTarget.X + stringLen;
             if (row.CharRow.GetAttribute(column).IsTrailing())
             {
                 row.ClearColumn(column);

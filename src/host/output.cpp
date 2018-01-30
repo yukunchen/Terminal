@@ -524,7 +524,7 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
         }
         else if (ulStringType == CONSOLE_ATTRIBUTE)
         {
-            SHORT CountOfAttr;
+            size_t CountOfAttr = 0;
             TextAttributeRun* pAttrRun;
             PWORD TargetPtr = (PWORD)BufPtr;
 
@@ -542,16 +542,7 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                 }
                 std::vector<DbcsAttribute>::const_iterator itEnd = pRow->CharRow.GetAttributeIteratorEnd();
 
-
-                UINT uiCountOfAttr;
-                pRow->AttrRow.FindAttrIndex(X, &pAttrRun, &uiCountOfAttr);
-
-                // attempt safe cast. bail early if failed.
-                if (FAILED(UIntToShort(uiCountOfAttr, &CountOfAttr)))
-                {
-                    ASSERT(false);
-                    return STATUS_UNSUCCESSFUL;
-                }
+                pRow->AttrRow.FindAttrIndex(X, &pAttrRun, &CountOfAttr);
 
                 k = 0;
                 for (j = X; j < coordScreenBufferSize.X && it != itEnd; TargetPtr++, ++it)
@@ -579,15 +570,13 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
 
                     NumRead++;
                     j += 1;
-                    if (++k == CountOfAttr && j < coordScreenBufferSize.X)
+
+                    ++k;
+                    if (static_cast<size_t>(k) == CountOfAttr && j < coordScreenBufferSize.X)
                     {
                         pAttrRun++;
                         k = 0;
-                        if (!SUCCEEDED(UIntToShort(pAttrRun->GetLength(), &CountOfAttr)))
-                        {
-                            ASSERT(false);
-                            return STATUS_UNSUCCESSFUL;
-                        }
+                        CountOfAttr = pAttrRun->GetLength();
                     }
 
                     if (NumRead == *pcRecords)

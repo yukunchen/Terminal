@@ -173,9 +173,9 @@ class AttrRowTests
     // Return Value:
     // - Success if success. Buffer too small if row length is incorrect.
     HRESULT PackAttrs(_In_reads_(cRowLength) const TextAttribute* const rgAttrs,
-                      _In_ UINT const cRowLength,
+                      _In_ const size_t cRowLength,
                       _Inout_ std::unique_ptr<TextAttributeRun[]>& outAttrRun,
-                      _Out_ UINT* cOutAttrRun)
+                      _Out_ size_t* const cOutAttrRun)
     {
         NTSTATUS status = STATUS_SUCCESS;
 
@@ -187,11 +187,11 @@ class AttrRowTests
         if (NT_SUCCESS(status))
         {
             // first count up the deltas in the array
-            int cDeltas = 1;
+            size_t cDeltas = 1;
 
             const TextAttribute* pPrevAttr = &rgAttrs[0];
 
-            for (unsigned int i = 1; i < cRowLength; i++)
+            for (size_t i = 1; i < cRowLength; i++)
             {
                 const TextAttribute* pCurAttr = &rgAttrs[i];
 
@@ -209,38 +209,29 @@ class AttrRowTests
             // make a new buffer, one run + one run for each change
             // set the values for each run one run index at a time
 
-            short cAttrLength;
-            if (SUCCEEDED(IntToShort(cDeltas, &cAttrLength)))
+            std::unique_ptr<TextAttributeRun[]> attrRun = std::make_unique<TextAttributeRun[]>(cDeltas);
+            status = NT_TESTNULL(attrRun.get());
+            if (NT_SUCCESS(status))
             {
-                std::unique_ptr<TextAttributeRun[]> attrRun = std::make_unique<TextAttributeRun[]>(cAttrLength);
-                status = NT_TESTNULL(attrRun.get());
-                if (NT_SUCCESS(status))
+                TextAttributeRun* pCurrentRun = attrRun.get();
+                pCurrentRun->SetAttributes(rgAttrs[0]);
+                pCurrentRun->SetLength(1);
+                for (size_t i = 1; i < cRowLength; i++)
                 {
-                    TextAttributeRun* pCurrentRun = attrRun.get();
-                    pCurrentRun->SetAttributes(rgAttrs[0]);
-                    pCurrentRun->SetLength(1);
-                    for (unsigned int i = 1; i < cRowLength; i++)
+                    if (pCurrentRun->GetAttributes().IsEqual(rgAttrs[i]))
                     {
-                        if (pCurrentRun->GetAttributes().IsEqual(rgAttrs[i]))
-                        {
-                            pCurrentRun->SetLength(pCurrentRun->GetLength() + 1);
-                        }
-                        else
-                        {
-                            pCurrentRun++;
-                            pCurrentRun->SetAttributes(rgAttrs[i]);
-                            pCurrentRun->SetLength(1);
-                        }
+                        pCurrentRun->SetLength(pCurrentRun->GetLength() + 1);
                     }
-                    attrRun.swap(outAttrRun);
-                    *cOutAttrRun = static_cast<UINT>(cAttrLength);
+                    else
+                    {
+                        pCurrentRun++;
+                        pCurrentRun->SetAttributes(rgAttrs[i]);
+                        pCurrentRun->SetLength(1);
+                    }
                 }
+                attrRun.swap(outAttrRun);
+                *cOutAttrRun = cDeltas;
             }
-            else
-            {
-                status = STATUS_UNSUCCESSFUL;
-            }
-
         }
 
         return HRESULT_FROM_NT(status);
@@ -359,7 +350,7 @@ class AttrRowTests
 
         // - 3. Pack.
         std::unique_ptr<TextAttributeRun[]> packedRun;
-        UINT cPackedRun;
+        size_t cPackedRun = 0;
         VERIFY_SUCCEEDED(PackAttrs(unpackedOriginal.get(), originalRow._cchRowWidth, packedRun, &cPackedRun));
 
         // Now send parameters into InsertAttrRuns and get its opinion on the subject.
@@ -371,9 +362,9 @@ class AttrRowTests
         LogChain(L"Expected: ", packedRun.get(), cPackedRun);
         LogChain(L"Actual: ", originalRow._rgList.get(), originalRow._cList);
 
-        for (UINT uiTestIndex = 0; uiTestIndex < cPackedRun; uiTestIndex++)
+        for (size_t testIndex = 0; testIndex < cPackedRun; testIndex++)
         {
-            VERIFY_ARE_EQUAL(packedRun[uiTestIndex], originalRow._rgList[uiTestIndex]);
+            VERIFY_ARE_EQUAL(packedRun[testIndex], originalRow._rgList[testIndex]);
         }
     }
 
@@ -470,15 +461,15 @@ class AttrRowTests
     TEST_METHOD(TestUnpackAttrs)
     {
         TextAttribute* rAttrs;
-        UINT cAttrs;
+        size_t cAttrs;
 
         Log::Comment(L"Checking unpack of a single color for the entire length");
         cAttrs = pSingle->_cchRowWidth;
         rAttrs = new TextAttribute[cAttrs];
 
-        VERIFY_IS_TRUE(NT_SUCCESS(pSingle->UnpackAttrs(rAttrs, (int)cAttrs)));
+        VERIFY_IS_TRUE(NT_SUCCESS(pSingle->UnpackAttrs(rAttrs, cAttrs)));
 
-        for (UINT iAttrIndex = 0; iAttrIndex < cAttrs; iAttrIndex++)
+        for (size_t iAttrIndex = 0; iAttrIndex < cAttrs; iAttrIndex++)
         {
             VERIFY_IS_TRUE(rAttrs[iAttrIndex].IsEqual(_DefaultAttr));
         }
@@ -494,7 +485,7 @@ class AttrRowTests
         short cChainRun = 0; // how long we've been looking at the current piece of the chain
         short iChainSegIndex = 0; // which piece of the chain we should be on right now
 
-        for (UINT iAttrIndex = 0; iAttrIndex < cAttrs; iAttrIndex++)
+        for (size_t iAttrIndex = 0; iAttrIndex < cAttrs; iAttrIndex++)
         {
             // by default the chain was assembled above to have the chain segment index be the attribute
             TextAttribute MatchingAttr = TextAttribute(iChainSegIndex);
@@ -596,9 +587,9 @@ class AttrRowTests
         {
             ATTR_ROW* pUnderTest = pTestItems[iIndex];
 
-            const UINT sResult = pUnderTest->_cchRowWidth;
+            const size_t Result = pUnderTest->_cchRowWidth;
 
-            VERIFY_ARE_EQUAL((short)sResult, _sDefaultLength);
+            VERIFY_ARE_EQUAL((short)Result, _sDefaultLength);
         }
     }
 };
