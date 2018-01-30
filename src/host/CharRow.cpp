@@ -156,6 +156,13 @@ std::vector<DbcsAttribute>::const_iterator CHAR_ROW::GetAttributeIterator(_In_ c
     return std::next(_attributes.cbegin(), column);
 }
 
+// Routine Description:
+// - returns a const iterator that represents the end of the dbcs attributes.
+// Arguments:
+// - <none>
+// Return Value:
+// - const iterator to the end of the attributes
+// Note: this is an end iterator and not an iterator to the last valid element
 std::vector<DbcsAttribute>::const_iterator CHAR_ROW::GetAttributeIteratorEnd() const noexcept
 {
     return _attributes.cend();
