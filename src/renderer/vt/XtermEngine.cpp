@@ -23,7 +23,9 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     _fUseAsciiOnly(fUseAsciiOnly),
     _firstPaint(true)
 {
-    _lastText = {-1, -1};
+    // Set out initial cursor position to -1, -1. This will force our initial 
+    //      paint to manually move the cursor to 0, 0, not just ignore it.
+    _lastText = VtEngine::INVALID_COORDS;
 }
 
 // Method Description:
@@ -43,7 +45,7 @@ HRESULT XtermEngine::StartPaint()
     {
         if (_firstPaint)
         {
-            // Immediately paint a clear screen
+            // Immediately paint a clear screen, and move the cursor to the origin.
             _ClearScreen();
             _MoveCursor({0, 0});
             _firstPaint = false;

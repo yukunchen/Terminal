@@ -50,6 +50,7 @@ public:
 COLORREF g_ColorTable[COLOR_TABLE_SIZE];
 VtRenderTestColorProvider p;
 static const std::string CLEAR_SCREEN = "\x1b[2J";
+static const std::string CURSOR_HOME = "\x1b[H";
 // Sometimes when we're expecting the renderengine to not write anything,
 // we'll add this to the expected input, and manually write this to the callback
 // to make sure nothing else gets written. 
@@ -187,7 +188,6 @@ void VtRendererTest::TestPaintXterm(XtermEngine& engine, std::function<void()> p
 void VtRendererTest::VtSequenceHelperTests()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    qExpectedInput.push_back(CLEAR_SCREEN); // Creating a Xterm*Engine will emit a Clear Screen
     std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), p, SetUpViewport(), g_ColorTable, static_cast<WORD>(COLOR_TABLE_SIZE));
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
 
@@ -245,10 +245,15 @@ void VtRendererTest::VtSequenceHelperTests()
 void VtRendererTest::Xterm256TestInvalidate()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    qExpectedInput.push_back(CLEAR_SCREEN); // Creating a Xterm*Engine will emit a Clear Screen
     std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), p, SetUpViewport(), g_ColorTable, static_cast<WORD>(COLOR_TABLE_SIZE));
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
+
+    // Creating a Xterm*Engine will emit a Clear Screen and Cursor Home
+    qExpectedInput.push_back(CLEAR_SCREEN); 
+    qExpectedInput.push_back(CURSOR_HOME);
+    // Do a paint to verify those two sequences were sent for the first paint.
+    TestPaint(*engine, [&]() {});
 
     Viewport view = SetUpViewport();
 
@@ -394,10 +399,15 @@ void VtRendererTest::Xterm256TestInvalidate()
 void VtRendererTest::Xterm256TestColors()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    qExpectedInput.push_back(CLEAR_SCREEN); // Creating a Xterm*Engine will emit a Clear Screen
     std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), p, SetUpViewport(), g_ColorTable, static_cast<WORD>(COLOR_TABLE_SIZE));
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
+
+    // Creating a Xterm*Engine will emit a Clear Screen and Cursor Home
+    qExpectedInput.push_back(CLEAR_SCREEN); 
+    qExpectedInput.push_back(CURSOR_HOME);
+    // Do a paint to verify those two sequences were sent for the first paint.
+    TestPaint(*engine, [&]() {});
 
     Viewport view = SetUpViewport();
 
@@ -501,10 +511,15 @@ void VtRendererTest::Xterm256TestColors()
 void VtRendererTest::Xterm256TestCursor()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    qExpectedInput.push_back(CLEAR_SCREEN); // Creating a Xterm*Engine will emit a Clear Screen
     std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), p, SetUpViewport(), g_ColorTable, static_cast<WORD>(COLOR_TABLE_SIZE));
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
+
+    // Creating a Xterm*Engine will emit a Clear Screen and Cursor Home
+    qExpectedInput.push_back(CLEAR_SCREEN); 
+    qExpectedInput.push_back(CURSOR_HOME);
+    // Do a paint to verify those two sequences were sent for the first paint.
+    TestPaint(*engine, [&]() {});
 
     Viewport view = SetUpViewport();
 
@@ -615,10 +630,15 @@ void VtRendererTest::Xterm256TestCursor()
 void VtRendererTest::XtermTestInvalidate()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    qExpectedInput.push_back(CLEAR_SCREEN); // Creating a Xterm*Engine will emit a Clear Screen
     std::unique_ptr<XtermEngine> engine = std::make_unique<XtermEngine>(std::move(hFile), p, SetUpViewport(), g_ColorTable, static_cast<WORD>(COLOR_TABLE_SIZE), false);
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
+
+    // Creating a Xterm*Engine will emit a Clear Screen and Cursor Home
+    qExpectedInput.push_back(CLEAR_SCREEN); 
+    qExpectedInput.push_back(CURSOR_HOME);
+    // Do a paint to verify those two sequences were sent for the first paint.
+    TestPaint(*engine, [&]() {});
 
     Viewport view = SetUpViewport();
 
@@ -763,10 +783,15 @@ void VtRendererTest::XtermTestInvalidate()
 void VtRendererTest::XtermTestColors()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    qExpectedInput.push_back(CLEAR_SCREEN); // Creating a Xterm*Engine will emit a Clear Screen
     std::unique_ptr<XtermEngine> engine = std::make_unique<XtermEngine>(std::move(hFile), p, SetUpViewport(), g_ColorTable, static_cast<WORD>(COLOR_TABLE_SIZE), false);
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
+
+    // Creating a Xterm*Engine will emit a Clear Screen and Cursor Home
+    qExpectedInput.push_back(CLEAR_SCREEN); 
+    qExpectedInput.push_back(CURSOR_HOME);
+    // Do a paint to verify those two sequences were sent for the first paint.
+    TestPaint(*engine, [&]() {});
 
     Viewport view = SetUpViewport();
 
@@ -832,10 +857,15 @@ void VtRendererTest::XtermTestColors()
 void VtRendererTest::XtermTestCursor()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    qExpectedInput.push_back(CLEAR_SCREEN); // Creating a Xterm*Engine will emit a Clear Screen
     std::unique_ptr<XtermEngine> engine = std::make_unique<XtermEngine>(std::move(hFile), p, SetUpViewport(), g_ColorTable, static_cast<WORD>(COLOR_TABLE_SIZE), false);
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
+
+    // Creating a Xterm*Engine will emit a Clear Screen and Cursor Home
+    qExpectedInput.push_back(CLEAR_SCREEN); 
+    qExpectedInput.push_back(CURSOR_HOME);
+    // Do a paint to verify those two sequences were sent for the first paint.
+    TestPaint(*engine, [&]() {});
 
     Viewport view = SetUpViewport();
     
