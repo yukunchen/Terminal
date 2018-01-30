@@ -20,7 +20,8 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     VtEngine(std::move(hPipe), colorProvider, initialViewport),
     _ColorTable(ColorTable),
     _cColorTable(cColorTable),
-    _fUseAsciiOnly(fUseAsciiOnly)
+    _fUseAsciiOnly(fUseAsciiOnly),
+    _firstPaint(true)
 {
 }
 
@@ -39,6 +40,12 @@ HRESULT XtermEngine::StartPaint()
     HRESULT hr = VtEngine::StartPaint();
     if (SUCCEEDED(hr))
     {
+        if (_firstPaint)
+        {
+            // Immediately paint a clear screen
+            _ClearScreen();
+            _firstPaint = false;
+        }
         if (!_quickReturn)
         {
             if (!_WillWriteSingleChar()) 

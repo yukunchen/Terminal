@@ -39,6 +39,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _quickReturn(false),
     _fInvalidRectUsed(false),
     _clearedAllThisFrame(false),
+    _cursorMoved(false),
     _suppressResizeRepaint(false)
 {
 #ifndef UNIT_TESTING

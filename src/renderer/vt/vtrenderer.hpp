@@ -112,6 +112,7 @@ protected:
 
     bool _quickReturn;
     bool _clearedAllThisFrame;
+    bool _cursorMoved;
 
     bool _suppressResizeRepaint;
 

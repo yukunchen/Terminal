@@ -66,6 +66,7 @@ HRESULT VtEngine::Invalidate(const SMALL_RECT* const psrRegion)
 // - S_OK
 HRESULT VtEngine::InvalidateCursor(const COORD* const /*pcoordCursor*/)
 {
+    _cursorMoved = true;
     return S_OK;
 }
 
