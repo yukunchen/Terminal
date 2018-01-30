@@ -23,6 +23,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     _fUseAsciiOnly(fUseAsciiOnly),
     _firstPaint(true)
 {
+    _lastText = {-1, -1};
 }
 
 // Method Description:
@@ -44,6 +45,7 @@ HRESULT XtermEngine::StartPaint()
         {
             // Immediately paint a clear screen
             _ClearScreen();
+            _MoveCursor({0, 0});
             _firstPaint = false;
         }
         if (!_quickReturn)
