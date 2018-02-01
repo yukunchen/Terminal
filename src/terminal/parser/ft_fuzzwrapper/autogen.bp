@@ -1,0 +1,129 @@
+namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzwrapper {
+
+    export declare const qualifier: WdgBuild.StandardPlatformsQualifier;
+
+    const dotDot = d`${srcRoot}\onecore\windows\core\console\open\src\terminal\parser`;
+
+    const o = d`${objRoot}\onecore\windows\core\console\open\src\terminal\parser\ft_fuzzwrapper\${buildAlt}`;
+
+    const prePass = LegacyBuild.build({
+        template: template_NMake,
+        classification: "test",
+        targetPass: "prePass",
+        
+        consumes: [
+            f`autogen.bp`,
+            f`autogen.bp`,
+            f`fuzzwrapper.vcxproj`,
+        ],
+    });
+
+    const pass1 = LegacyBuild.build({
+        template: template_NMake,
+        classification: "test",
+        targetPass: "pass1",
+        
+        consumes: [
+            f`autogen.bp`,
+            f`autogen.bp`,
+            f`echodispatch.cpp`,
+            f`echodispatch.hpp`,
+            f`fuzzwrapper.vcxproj`,
+            f`main.cpp`,
+            f`precomp.cpp`,
+            f`precomp.h`,
+            f`${dotDot}\istatemachineengine.hpp`,
+            f`${dotDot}\outputstatemachineengine.hpp`,
+            f`${dotDot}\statemachine.hpp`,
+            f`${dotDot}\telemetry.hpp`,
+            f`${dotDot}\tracing.hpp`,
+            f`${objRoot}\${buildAlt}\onecorefeaturestaging.inc`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\terminal\adapter\congetset.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\terminal\adapter\dispatchcommon.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\terminal\adapter\termdispatch.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\types\inc\iinputevent.hpp`,
+
+            prePass,
+
+            MsWinCrts.Public.Internal.Sdk.Inc.Ucrt.header,
+            MsWinCrts.Public.Internal.Sdk.Inc.Ucrt.Stl120.header,
+            MsWinCrts.Public.Sdk.Inc.Ucrt.header,
+            MsWinCrts.Public.Sdk.Inc.Ucrt.Sys.header,
+            MsWinOnecoreBase.Public.Sdk.Inc.header,
+            MsWinOnecoreBase.Public.Shared.Inc.header,
+            MsWinOnecoreCom.Public.Sdk.Inc.header,
+            MsWinOnecoreCom.Public.Shared.Inc.header,
+            MsWinOnecoreNet.Public.Sdk.Inc.header,
+            MsWinOnecoreSdkTools.Public.Internal.Onecoresdktools.Inc.header,
+            MsWinOnecoreSdkTools.Public.Internal.Sdk.Inc.header,
+            MsWinOnecoreSdkTools.Public.Shared.Inc.header,
+            MsWinOnecoreShell.Public.Internal.Sdk.Inc.Wil.header,
+            MsWinOnecoreShell.Public.Sdk.Inc.idl,
+            MsWinOnecore_ApiSet.Public.Sdk.Inc.Mincore.header,
+            MsWinOnecore_MinIo.Private.Internal.Minwin.Priv_sdk.Inc.header,
+            MsWinOnecore_MinIo.Public.Shared.Inc.header,
+            MsWinOnecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Inc.idl,
+            MsWinOnecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Inc.Telemetry.header,
+            MsWinOnecore_MinKernel.Public.Internal.Base.Inc.header,
+            MsWinOnecore_MinKernel.Public.Sdk.Inc.idl,
+            MsWinOnecore_MinKernel.Public.Sdk.Inc.Minwin.header,
+            MsWinOnecore_MinKernel.Public.Shared.Inc.header,
+            MsWinOnecore_MinKernel.Public.Shared.Inc.Minwin.header,
+            Public.Internal.Onecorewindows.Inc.header,
+            Public.Sdk.Inc.header,
+            Public.Sdk.Inc.idl,
+            Public.Shared.Inc.header,
+        ],
+        
+        produces: [
+            p`${o}\echodispatch.obj`,
+            p`${o}\main.obj`,
+            p`${o}\pch_hdr.src`,
+            p`${o}\precomp.obj`,
+            p`${o}\precomp.pch`,
+        ],
+    });
+
+    const pass2 = LegacyBuild.build({
+        template: template_NMake,
+        classification: "test",
+        targetPass: "pass2",
+        
+        consumes: [
+            f`autogen.bp`,
+            f`autogen.bp`,
+            f`echodispatch.cpp`,
+            f`fuzzwrapper.vcxproj`,
+            f`main.cpp`,
+            f`precomp.cpp`,
+            f`precomp.h`,
+            f`${objRoot}\${buildAlt}\onecorefeaturestaging.inc`,
+            f`${srcRoot}\build\scripts\fixtsversionstringappend.cmd`,
+
+            pass1,
+            prePass,
+
+            MsWinCrts.Public.Internal.Sdk.Lib.Ucrt.library,
+            MsWinOnecoreMerged.Public.Sdk.Lib.Onecore.V1_8.library,
+            MsWinOnecore_MinKernel.Public.Internal.Sdk.Lib.library,
+            MsWinOnecore_MinKernel.Public.Sdk.Lib.library,
+            MsWinOnecore_MinKernel.Public.Sdk.Lib.Minwin.V1_9.library,
+            Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Lib.pass1,
+
+            ...addIf(isBuildArm32 || isBuildArm64, () => [
+                    MsWinCrts.Public.Sdk.Lib.library,
+                ]),
+            ...addIf(isBuildDebug && isBuildCommonArchitecture, () => [
+                    MsWinCrts.Public.Internal.Sdk.Lib.library,
+                ]),
+        ],
+        
+        produces: [
+            p`${binRoot}\blg\unittests\conterm.parser.fuzzwrapper.exe.br`,
+            p`${binRoot}\symbols.pri\unittests\exe\conterm.parser.fuzzwrapper.pdb`,
+            p`${binRoot}\unittests\conterm.parser.fuzzwrapper.exe`,
+            p`${o}\conterm.parser.fuzzwrapper.exe`,
+            p`${o}\conterm.parser.fuzzwrapper.pdb`,
+        ],
+    });
+}

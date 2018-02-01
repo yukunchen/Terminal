@@ -19,43 +19,74 @@
 #include "..\server\IoSorter.h"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
+#include "..\interactivity\base\ApiDetector.hpp"
+
+#include "renderData.hpp"
+#include "../renderer/base/renderer.hpp"
 
 #pragma hdrstop
 
 const UINT CONSOLE_EVENT_FAILURE_ID = 21790;
 const UINT CONSOLE_LPC_PORT_FAILURE_ID = 21791;
 
-HRESULT UseVtPipe(_In_ const std::wstring& InPipeName, _In_ const std::wstring& OutPipeName, _In_ const std::wstring& VtMode)
-{
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    return gci->GetVtIo()->Initialize(InPipeName, OutPipeName, VtMode);
-}
-
 HRESULT ConsoleServerInitialization(_In_ HANDLE Server, _In_ const ConsoleArguments* const args)
 {
+    Globals* const pGlobals = ServiceLocator::LocateGlobals();
+
     try
     {
-        ServiceLocator::LocateGlobals()->pDeviceComm = new DeviceComm(Server);
+        pGlobals->pDeviceComm = new DeviceComm(Server);
     }
     CATCH_RETURN();
 
-    ServiceLocator::LocateGlobals()->launchArgs = *args;
+    pGlobals->launchArgs = *args;
 
-    if (args->IsUsingVtPipe())
-    {
-        RETURN_IF_FAILED(UseVtPipe(args->GetVtInPipe(), args->GetVtOutPipe(), args->GetVtMode()));
-    }
+    CONSOLE_INFORMATION* const pGci = pGlobals->getConsoleInformation();
 
-    ServiceLocator::LocateGlobals()->uiOEMCP = GetOEMCP();
-    ServiceLocator::LocateGlobals()->uiWindowsCP = GetACP();
+    // Give VT an opportunity to set itself up based on the args given.
+    RETURN_IF_FAILED(pGci->GetVtIo()->Initialize(args));
 
-    ServiceLocator::LocateGlobals()->pFontDefaultList = new RenderFontDefaults();
-    RETURN_IF_NULL_ALLOC(ServiceLocator::LocateGlobals()->pFontDefaultList);
+    pGlobals->uiOEMCP = GetOEMCP();
+    pGlobals->uiWindowsCP = GetACP();
 
-    FontInfo::s_SetFontDefaultList(ServiceLocator::LocateGlobals()->pFontDefaultList);
+    pGlobals->pFontDefaultList = new RenderFontDefaults();
+    RETURN_IF_NULL_ALLOC(pGlobals->pFontDefaultList);
+
+    FontInfo::s_SetFontDefaultList(pGlobals->pFontDefaultList);
 
     // Removed allocation of scroll buffer here.
     return S_OK;
+}
+
+static bool s_IsOnDesktop()
+{
+    // Persist this across calls so we don't dig it out a whole bunch of times. Once is good enough for the system.
+    static bool fAlreadyQueried = false;
+    static bool fIsDesktop = false;
+
+    if (!fAlreadyQueried)
+    {
+        Microsoft::Console::Interactivity::ApiLevel level;
+        const NTSTATUS status = Microsoft::Console::Interactivity::ApiDetector::DetectNtUserWindow(&level);
+        LOG_IF_NTSTATUS_FAILED(status);
+
+        if (NT_SUCCESS(status))
+        {
+            switch (level)
+            {
+            case Microsoft::Console::Interactivity::ApiLevel::OneCore:
+                fIsDesktop = false;
+                break;
+            case Microsoft::Console::Interactivity::ApiLevel::Win32:
+                fIsDesktop = true;
+                break;
+            }
+        }
+
+        fAlreadyQueried = true;
+    }
+
+    return fIsDesktop;
 }
 
 NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
@@ -66,6 +97,7 @@ NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
 {
     // We will find and locate all relevant preference settings and then create the console here.
     // The precedence order for settings is:
+    // 0. Launch arguments passed on the commandline.
     // 1. STARTUPINFO settings
     // 2a. Shortcut/Link settings
     // 2b. Registry specific settings
@@ -76,6 +108,13 @@ NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
     // 4. Initializing Settings will establish hardcoded defaults.
     // Set to reference of global console information since that's the only place we need to hold the settings.
     CONSOLE_INFORMATION* const settings = ServiceLocator::LocateGlobals()->getConsoleInformation();
+
+    // 4b. On Desktop editions, we need to apply a series of Desktop-specific defaults that are better than the
+    // ones from the constructor (which are great for OneCore systems.)
+    if (s_IsOnDesktop())
+    {
+        settings->ApplyDesktopSpecificDefaults();
+    }
 
     // 3. Read the default registry values.
     Registry reg(settings);
@@ -100,6 +139,9 @@ NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
 
     // 1. The settings we were passed contains STARTUPINFO structure settings to be applied last.
     settings->ApplyStartupInfo(pStartupSettings);
+
+    // 0. The settings passed in via commandline arguments. These should override anything else.
+    settings->ApplyCommandlineArguments(ServiceLocator::LocateGlobals()->launchArgs);
 
     // Validate all applied settings for correctness against final rules.
     settings->Validate();
@@ -381,7 +423,6 @@ HRESULT ApiRoutines::GetConsoleLangIdImpl(_Out_ LANGID* const pLangId)
 NTSTATUS ConsoleInitializeConnectInfo(_In_ PCONSOLE_API_MSG Message, _Out_ PCONSOLE_API_CONNECTINFO Cac)
 {
     CONSOLE_SERVER_MSG Data = { 0 };
-
     // Try to receive the data sent by the client.
     NTSTATUS Status = NTSTATUS_FROM_HRESULT(Message->ReadMessageInput(0, &Data, sizeof(Data)));
     if (!NT_SUCCESS(Status))
@@ -430,7 +471,10 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
 {
     // AllocConsole is outside our codebase, but we should be able to mostly track the call here.
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::AllocConsole);
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+
+    Globals* const g = ServiceLocator::LocateGlobals();
+
+    CONSOLE_INFORMATION* const gci = g->getConsoleInformation();
 
     NTSTATUS Status = SetUpConsole(&p->ConsoleInfo, p->TitleLength, p->Title, p->CurDir, p->AppName);
     if (!NT_SUCCESS(Status))
@@ -438,7 +482,32 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
         return Status;
     }
 
-    if (NT_SUCCESS(Status) && p->WindowVisible)
+    // No matter what, create a renderer.
+    try
+    {
+        std::unique_ptr<IRenderData> renderData = std::make_unique<RenderData>();
+        Status = NT_TESTNULL(renderData.get());
+        if (NT_SUCCESS(Status))
+        {
+            Renderer* pRender = nullptr;
+            g->pRender = nullptr;
+            Status = NTSTATUS_FROM_HRESULT(Renderer::s_CreateInstance(std::move(renderData), &(pRender)));
+            
+            if (NT_SUCCESS(Status))
+            {
+                g->pRender = pRender;
+                // Allow the renderer to paint.
+                g->pRender->EnablePainting();
+            }
+        }
+    }
+    catch (...)
+    {
+        Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+    }
+
+
+    if (NT_SUCCESS(Status) && p->WindowVisible && !g->launchArgs.IsHeadless())
     {
         HANDLE Thread = nullptr;
 
@@ -458,15 +527,15 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
 
             // The ConsoleInputThread needs to lock the console so we must first unlock it ourselves.
             UnlockConsole();
-            ServiceLocator::LocateGlobals()->hConsoleInputInitEvent.wait();
+            g->hConsoleInputInitEvent.wait();
             LockConsole();
 
             CloseHandle(Thread);
-            ServiceLocator::LocateGlobals()->hConsoleInputInitEvent.release();
+            g->hConsoleInputInitEvent.release();
 
-            if (!NT_SUCCESS(ServiceLocator::LocateGlobals()->ntstatusConsoleInputInitStatus))
+            if (!NT_SUCCESS(g->ntstatusConsoleInputInitStatus))
             {
-                Status = ServiceLocator::LocateGlobals()->ntstatusConsoleInputInitStatus;
+                Status = g->ntstatusConsoleInputInitStatus;
             }
             else
             {
@@ -484,12 +553,8 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
              *      is only called when a window is created.
              */
 
-            LOG_IF_FAILED(ServiceLocator::LocateGlobals()->pDeviceComm->AllowUIAccess());
+            LOG_IF_FAILED(g->pDeviceComm->AllowUIAccess());
         }
-    }
-    else
-    {
-        gci->Flags |= CONSOLE_NO_WINDOW;
     }
 
     // Potentially start the VT IO (if needed)

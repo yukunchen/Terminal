@@ -9,6 +9,7 @@
 #include "InteractDispatch.hpp"
 #include "conGetSet.hpp"
 #include "../../types/inc/Viewport.hpp"
+#include "../../inc/unicode.hpp"
 
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
@@ -21,7 +22,10 @@ InteractDispatch::InteractDispatch(_In_ std::unique_ptr<ConGetSet> pConApi)
 
 // Method Description:
 // - Writes a collection of input to the host. The new input is appended to the 
-//      end of the input buffer.
+//      end of the input buffer. 
+//  If Ctrl+C is written with this function, it will not trigger a Ctrl-C 
+//      interrupt in the client, but instead write a Ctrl+C to the input buffer 
+//      to be read by the client.
 // Arguments:
 // - inputEvents: a collection of IInputEvents
 // Return Value:
@@ -30,6 +34,20 @@ bool InteractDispatch::WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>&
 {
     size_t dwWritten = 0;
     return !!_pConApi->WriteConsoleInputW(inputEvents, dwWritten);
+}
+
+// Method Description:
+// - Writes a Ctrl-C event to the host. The host will then decide what to do 
+//      with it, including potentially sending an interrupt to a client 
+//      application. 
+// Arguments:
+// <none>
+// Return Value:
+// True if handled successfully. False otherwise.
+bool InteractDispatch::WriteCtrlC() 
+{
+    KeyEvent key = KeyEvent(true, 1, 'C', 0, UNICODE_ETX, LEFT_CTRL_PRESSED);
+    return !!_pConApi->PrivateWriteConsoleControlInput(key);
 }
 
 //Method Description:
@@ -52,13 +70,22 @@ bool InteractDispatch::WindowManipulation(_In_ const DispatchCommon::WindowManip
     // Other Window Manipulation functions:
     //  MSFT:13271098 - QueryViewport
     //  MSFT:13271146 - QueryScreenSize
-    //  MSFT:14179497 - RefreshWindow
     switch (uiFunction)
     {
+        case DispatchCommon::WindowManipulationType::RefreshWindow:
+            if (cParams == 0)
+            {
+                fSuccess = DispatchCommon::s_RefreshWindow(_pConApi.get());
+            }
+            break;
         case DispatchCommon::WindowManipulationType::ResizeWindowInCharacters:
             if (cParams == 2)
             {
                 fSuccess = DispatchCommon::s_ResizeWindow(_pConApi.get(), rgusParams[1], rgusParams[0]);
+                if (fSuccess)
+                {
+                    DispatchCommon::s_SuppressResizeRepaint(_pConApi.get());
+                }
             }
             break;
         default:

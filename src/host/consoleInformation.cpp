@@ -87,6 +87,11 @@ VtIo* CONSOLE_INFORMATION::GetVtIo()
     return &_vtIo;
 }
 
+bool CONSOLE_INFORMATION::IsInVtIoMode() const
+{
+    return _vtIo.IsUsingVt();
+}
+
 // Routine Description:
 // - Handler for inserting key sequences into the buffer when the terminal emulation layer
 //   has determined a key can be converted appropriately into a sequence of inputs
@@ -97,4 +102,48 @@ VtIo* CONSOLE_INFORMATION::GetVtIo()
 void CONSOLE_INFORMATION::HandleTerminalKeyEventCallback(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events)
 {
     ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer->Write(events);
+}
+
+// Method Description:
+// - Return the active screen buffer of the console.
+// Arguments:
+// - <none>
+// Return Value:
+// - the active screen buffer of the console.
+SCREEN_INFORMATION* const CONSOLE_INFORMATION::GetActiveOutputBuffer() const
+{
+    return CurrentScreenBuffer;
+}
+
+// Method Description:
+// - Return the active input buffer of the console.
+// Arguments:
+// - <none>
+// Return Value:
+// - the active input buffer of the console.
+InputBuffer* const CONSOLE_INFORMATION::GetActiveInputBuffer() const
+{
+    return pInputBuffer;
+}
+
+// Method Description:
+// - Return the default foreground color of the console.
+// Arguments:
+// - <none>
+// Return Value:
+// - the default foreground color of the console.
+COLORREF CONSOLE_INFORMATION::GetDefaultForeground() const
+{
+    return ForegroundColor(GetFillAttribute(), GetColorTable(), GetColorTableSize());
+}
+
+// Method Description:
+// - Return the default background color of the console.
+// Arguments:
+// - <none>
+// Return Value:
+// - the default background color of the console.
+COLORREF CONSOLE_INFORMATION::GetDefaultBackground() const
+{
+    return BackgroundColor(GetFillAttribute(), GetColorTable(), GetColorTableSize());
 }

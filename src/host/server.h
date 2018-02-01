@@ -15,10 +15,9 @@ Revision History:
 
 #pragma once
 
-#include "screenInfo.hpp"
+#include "IIoProvider.hpp"
 
 #include "settings.hpp"
-#include "inputBuffer.hpp"
 
 #include "conimeinfo.h"
 #include "..\terminal\adapter\MouseInput.hpp"
@@ -26,6 +25,8 @@ Revision History:
 
 #include "..\server\ProcessList.h"
 #include "..\server\WaitQueue.h"
+
+#include "..\inc\IDefaultColorProvider.hpp"
 
 // Flags flags
 #define CONSOLE_IS_ICONIC               0x00000001
@@ -36,7 +37,11 @@ Revision History:
 #define CONSOLE_SCROLLING               0x00000020
 // unused (CONSOLE_DISABLE_CLOSE)       0x00000040
 // unused (CONSOLE_USE_POLY_TEXT)       0x00000080
-#define CONSOLE_NO_WINDOW               0x00000100
+
+// Removed Oct 2017 - added a headless mode, which revealed that the consumption
+//      of this flag was redundant.
+// unused (CONSOLE_NO_WINDOW)               0x00000100
+
 // unused (CONSOLE_VDM_REGISTERED)      0x00000200
 #define CONSOLE_UPDATING_SCROLL_BARS    0x00000400
 #define CONSOLE_QUICK_EDIT_MODE         0x00000800
@@ -62,11 +67,14 @@ Revision History:
 
 class COOKED_READ_DATA;
 
-class CONSOLE_INFORMATION : public Settings
+class CONSOLE_INFORMATION : 
+    public Settings, 
+    public Microsoft::Console::IIoProvider, 
+    public Microsoft::Console::IDefaultColorProvider
 {
 public:
     CONSOLE_INFORMATION();
-    ~CONSOLE_INFORMATION();
+    virtual ~CONSOLE_INFORMATION();
 
     ConsoleProcessList ProcessHandleList;
     InputBuffer* pInputBuffer;
@@ -112,6 +120,14 @@ public:
     
     static void HandleTerminalKeyEventCallback(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events);
 
+    SCREEN_INFORMATION* const GetActiveOutputBuffer() const;
+    InputBuffer* const GetActiveInputBuffer() const;
+
+    bool IsInVtIoMode() const;
+
+    COLORREF GetDefaultForeground() const;
+    COLORREF GetDefaultBackground() const;
+    
 private:
     CRITICAL_SECTION _csConsoleLock;   // serialize input and output using this
     

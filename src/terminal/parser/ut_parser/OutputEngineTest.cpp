@@ -1229,7 +1229,7 @@ class StateMachineExternalTest : public TermDispatch
 
             if (!fOptionsValid)
             {
-                Log::Comment(NoThrowString().Format(L"Graphics option match failed. Expected: '%d' Actual: '%d'", expectedOption, _rgOptions[i]));
+                Log::Comment(NoThrowString().Format(L"Graphics option match failed, index [%zu]. Expected: '%d' Actual: '%d'", i, expectedOption, _rgOptions[i]));
                 break;
             }
         }
@@ -1294,7 +1294,7 @@ class StateMachineExternalTest : public TermDispatch
 
         ClearState();
 
-        Log::Comment(L"Test 3: Check 'too many options' (>16) case.");
+        Log::Comment(L"Test 4: Check 'too many options' (>16) case.");
 
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'[');
@@ -1354,6 +1354,43 @@ class StateMachineExternalTest : public TermDispatch
 
         ClearState();
 
+        Log::Comment(L"Test 5.a: Test an empty param at the end of a sequence");
+
+        std::wstring sequence = L"\x1b[1;m";
+        mach.ProcessString(&sequence[0], sequence.length());
+        VERIFY_IS_TRUE(_fSetGraphics);
+
+        rgExpected[0] = GraphicsOptions::BoldBright;
+        rgExpected[1] = GraphicsOptions::Off;
+        VerifyGraphicsOptions(rgExpected, 2);
+
+        ClearState();
+
+        Log::Comment(L"Test 5.b: Test an empty param in the middle of a sequence");
+
+        sequence = L"\x1b[1;;1m";
+        mach.ProcessString(&sequence[0], sequence.length());
+        VERIFY_IS_TRUE(_fSetGraphics);
+
+        rgExpected[0] = GraphicsOptions::BoldBright;
+        rgExpected[1] = GraphicsOptions::Off;
+        rgExpected[2] = GraphicsOptions::BoldBright;
+        VerifyGraphicsOptions(rgExpected, 3);
+
+        ClearState();
+
+        Log::Comment(L"Test 5.c: Test an empty param at the start of a sequence");
+
+        sequence = L"\x1b[;31;1m";
+        mach.ProcessString(&sequence[0], sequence.length());
+        VERIFY_IS_TRUE(_fSetGraphics);
+
+        rgExpected[0] = GraphicsOptions::Off;
+        rgExpected[1] = GraphicsOptions::ForegroundRed;
+        rgExpected[2] = GraphicsOptions::BoldBright;
+        VerifyGraphicsOptions(rgExpected, 3);
+
+        ClearState();
     }
 
     TEST_METHOD(TestDeviceStatusReport)

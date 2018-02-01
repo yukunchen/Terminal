@@ -334,7 +334,7 @@ public:
         if (_fWriteConsoleInputWResult)
         {
             // move all the input events we were given into local storage so we can test against them
-            Log::Comment(NoThrowString().Format(L"Moving %d input events into local storage...", events.size()));
+            Log::Comment(NoThrowString().Format(L"Moving %zu input events into local storage...", events.size()));
 
             _events.clear();
             _events.swap(events);
@@ -352,7 +352,7 @@ public:
         if (_fPrivatePrependConsoleInputResult)
         {
             // move all the input events we were given into local storage so we can test against them
-            Log::Comment(NoThrowString().Format(L"Moving %d input events into local storage...", events.size()));
+            Log::Comment(NoThrowString().Format(L"Moving %zu input events into local storage...", events.size()));
 
             _events.clear();
             _events.swap(events);
@@ -360,6 +360,20 @@ public:
         }
 
         return _fPrivatePrependConsoleInputResult;
+    }
+
+    virtual BOOL PrivateWriteConsoleControlInput(_In_ KeyEvent key)
+    {
+        Log::Comment(L"PrivateWriteConsoleControlInput MOCK called...");
+
+        if (_fPrivateWriteConsoleControlInputResult)
+        {
+            VERIFY_ARE_EQUAL('C', key.GetVirtualKeyCode());
+            VERIFY_ARE_EQUAL(0x3, key.GetCharData());
+            VERIFY_ARE_EQUAL(true, key.IsCtrlPressed());
+        }
+
+        return _fPrivateWriteConsoleControlInputResult;
     }
 
     bool _IsInsideClip(_In_ const SMALL_RECT* const pClipRectangle, _In_ SHORT const iRow, _In_ SHORT const iCol)
@@ -406,7 +420,7 @@ public:
             CHAR_INFO* const ciBuffer = new CHAR_INFO[cch];
             size_t cciFilled = 0;
 
-            Log::Comment(NoThrowString().Format(L"\tCopy buffer size is %d chars", cch));
+            Log::Comment(NoThrowString().Format(L"\tCopy buffer size is %zu chars", cch));
 
             for (SHORT iCharY = pScrollRectangle->Top; iCharY <= pScrollRectangle->Bottom; iCharY++)
             {
@@ -432,7 +446,7 @@ public:
                 }
 
             }
-            Log::Comment(NoThrowString().Format(L"\tCopied a total %d chars", cciFilled));
+            Log::Comment(NoThrowString().Format(L"\tCopied a total %zu chars", cciFilled));
             Log::Comment(L"\tCopying chars back");
             for (SHORT iCharY = pScrollRectangle->Top; iCharY <= pScrollRectangle->Bottom; iCharY++)
             {
@@ -625,6 +639,19 @@ public:
 
         return _fPrivateGetConsoleScreenBufferAttributesResult;
     }
+    
+    virtual BOOL PrivateRefreshWindow()
+    {
+        Log::Comment(L"PrivateRefreshWindow MOCK called...");
+        // We made it through the adapter, woo! Return true.
+        return TRUE;
+    }
+    virtual BOOL PrivateSuppressResizeRepaint()
+    {
+        Log::Comment(L"PrivateSuppressResizeRepaint MOCK called...");
+        VERIFY_IS_TRUE(false, L"AdaptDispatch should never be calling this function.");
+        return FALSE;
+    }
 
     void _IncrementCoordPos(_Inout_ COORD* pcoord)
     {
@@ -685,6 +712,7 @@ public:
         _fSetConsoleTextAttributeResult = TRUE;
         _fWriteConsoleInputWResult = TRUE;
         _fPrivatePrependConsoleInputResult = TRUE;
+        _fPrivateWriteConsoleControlInputResult = TRUE;
         _fScrollConsoleScreenBufferWResult = TRUE;
         _fSetConsoleWindowInfoResult = TRUE;
         _fPrivateGetConsoleScreenBufferAttributesResult = TRUE;
@@ -816,7 +844,7 @@ public:
             }
         }
 
-        Log::Comment(NoThrowString().Format(L"Wrote %d characters into buffer.", cchModified));
+        Log::Comment(NoThrowString().Format(L"Wrote %zu characters into buffer.", cchModified));
     }
 
     void FillRectangle(SMALL_RECT srRect, wchar_t wch, WORD wAttr)
@@ -837,7 +865,7 @@ public:
             }
         }
 
-        Log::Comment(NoThrowString().Format(L"Filled %d characters.", cchModified));
+        Log::Comment(NoThrowString().Format(L"Filled %zu characters.", cchModified));
     }
 
     void ValidateInputEvent(_In_ PCWSTR pwszExpectedResponse)
@@ -997,12 +1025,12 @@ public:
     {
         bool fStateValid = true;
 
-        Log::Comment(NoThrowString().Format(L"The following %d regions are used as in-bounds for this test:", cRegions));
+        Log::Comment(NoThrowString().Format(L"The following %zu regions are used as in-bounds for this test:", cRegions));
         for (size_t iRegion = 0; iRegion < cRegions; iRegion++)
         {
             SMALL_RECT srRegion = rgsrRegions[iRegion];
 
-            Log::Comment(NoThrowString().Format(L"#%d - (T: %d, B: %d, L: %d, R:%d)", iRegion, srRegion.Top, srRegion.Bottom, srRegion.Left, srRegion.Right));
+            Log::Comment(NoThrowString().Format(L"#%zu - (T: %d, B: %d, L: %d, R:%d)", iRegion, srRegion.Top, srRegion.Bottom, srRegion.Left, srRegion.Right));
         }
 
         Log::Comment(L"Now checking every character within the buffer...");
@@ -1160,6 +1188,7 @@ public:
     BOOL _fSetConsoleTextAttributeResult;
     BOOL _fWriteConsoleInputWResult;
     BOOL _fPrivatePrependConsoleInputResult;
+    BOOL _fPrivateWriteConsoleControlInputResult;
     BOOL _fScrollConsoleScreenBufferWResult;
 
     BOOL _fSetConsoleWindowInfoResult;
@@ -2919,56 +2948,56 @@ public:
         Log::Comment(L"Test 1: Verify having both values is valid.");
         _pTest->_SetMarginsHelper(&srTestMargins, 2, 6);
         _pTest->_fPrivateSetScrollingRegionResult = TRUE;
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom, true));
 
         Log::Comment(L"Test 2: Verify having only top is valid.");
 
         _pTest->_SetMarginsHelper(&srTestMargins, 7, 0);
         _pTest->_srExpectedScrollRegion.Bottom = _pTest->_srViewport.Bottom - 1; // We expect the bottom to be the bottom of the viewport, exclusive.
         _pTest->_fPrivateSetScrollingRegionResult = TRUE;
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom, true));
 
         Log::Comment(L"Test 3: Verify having only bottom is valid.");
 
         _pTest->_SetMarginsHelper(&srTestMargins, 0, 7);
         _pTest->_fPrivateSetScrollingRegionResult = TRUE;
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom, true));
 
         Log::Comment(L"Test 4: Verify having no values is valid.");
 
         _pTest->_SetMarginsHelper(&srTestMargins, 0, 0);
         _pTest->_fPrivateSetScrollingRegionResult = TRUE;
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom, true));
 
         Log::Comment(L"Test 5: Verify having both values, but bad bounds is invalid.");
 
         _pTest->_SetMarginsHelper(&srTestMargins, 7, 3);
         _pTest->_fPrivateSetScrollingRegionResult = TRUE;
-        VERIFY_IS_FALSE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_FALSE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom, true));
 
 
         Log::Comment(L"Test 6: Verify Setting margins to (0, height) clears them");
         // First set,
         _pTest->_fPrivateSetScrollingRegionResult = TRUE;
         _pTest->_SetMarginsHelper(&srTestMargins, 2, 6);
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom, true));
         // Then clear
         _pTest->_srExpectedScrollRegion.Top = 0;
         _pTest->_srExpectedScrollRegion.Bottom = 0;
         _pTest->_SetMarginsHelper(&srTestMargins, 0, 7);
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom, true));
 
 
         Log::Comment(L"Test 7: Verify Setting margins to (1, height) clears them");
         // First set,
         _pTest->_fPrivateSetScrollingRegionResult = TRUE;
         _pTest->_SetMarginsHelper(&srTestMargins, 2, 6);
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom, true));
         // Then clear
         _pTest->_srExpectedScrollRegion.Top = 0;
         _pTest->_srExpectedScrollRegion.Bottom = 0;
         _pTest->_SetMarginsHelper(&srTestMargins, 0, 7);
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom, true));
 
     }
 

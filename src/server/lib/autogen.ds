@@ -5,26 +5,37 @@
 -->
 
 <DominoSpec xmlns:d="http://schemas.microsoft.com/domino/extension/0.5" xmlns="http://schemas.microsoft.com/domino/0.5">
-  <Namespace Name="MsWin.OnecoreUap.Onecore.Windows.Core.Console.Open.Src.Server">
+  <Namespace Name="MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Server">
     <Path Name="DotDot" Visibility="Private">{SrcRoot}\onecore\windows\core\console\open\src\server</Path>
     <Path Name="O" Visibility="Private">{ObjRoot}\onecore\windows\core\console\open\src\server\lib\{BuildAlt}</Path>
 
-    <!--DEF: MsWin.OnecoreUap.Onecore.Windows.Core.Console.Open.Src.Server.Lib_PrePass-->
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Server.Lib_PrePass-->
 
     <LegacyBuilder Output="Lib_PrePass" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
       <Classification>Product</Classification>
       <TargetPass>PrePass</TargetPass>
+
+      <!--Consumes-->
+
+      <Consumes>
+        <Item>autogen.bp</Item>
+        <Item>autogen.ds</Item>
+        <Item>server.vcxproj</Item>
+      </Consumes>
     </LegacyBuilder>
 
-    <!--DEF: MsWin.OnecoreUap.Onecore.Windows.Core.Console.Open.Src.Server.Lib_Pass1-->
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Server.Lib_Pass1-->
 
-    <LegacyBuilder Output="Lib_Pass1" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake">
+    <LegacyBuilder Output="Lib_Pass1" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Internal">
       <Classification>Product</Classification>
       <TargetPass>Pass1</TargetPass>
 
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.bp</Item>
+        <Item>autogen.ds</Item>
+        <Item>server.vcxproj</Item>
         <Item>{DotDot}\apidispatchers.cpp</Item>
         <Item>{DotDot}\apidispatchers.h</Item>
         <Item>{DotDot}\apidispatchersinternal.cpp</Item>
@@ -58,6 +69,8 @@
         <Item>{DotDot}\processhandle.h</Item>
         <Item>{DotDot}\processlist.cpp</Item>
         <Item>{DotDot}\processlist.h</Item>
+        <Item>{DotDot}\processpolicy.cpp</Item>
+        <Item>{DotDot}\processpolicy.h</Item>
         <Item>{DotDot}\waitblock.cpp</Item>
         <Item>{DotDot}\waitblock.h</Item>
         <Item>{DotDot}\waitqueue.cpp</Item>
@@ -66,10 +79,12 @@
         <Item>{DotDot}\winbasep.h</Item>
         <Item>{DotDot}\winntcontrol.cpp</Item>
         <Item>{DotDot}\winntcontrol.h</Item>
+        <Item>{ObjRoot}\{BuildAlt}\onecorefeaturestaging.inc</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\cmdline.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\conapi.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\conddkrefs.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\conimeinfo.h</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\consolearguments.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\consrv.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\conwinuserrefs.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\cursor.h</Item>
@@ -94,7 +109,11 @@
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\textbuffer.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\tracing.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\utils.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\vtinputthread.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\vtio.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\conime.h</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\unicode.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\vtiomodes.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\interactivity\inc\iaccessibilitynotifier.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\interactivity\inc\iconsolecontrol.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\interactivity\inc\iconsoleinputthread.hpp</Item>
@@ -109,71 +128,62 @@
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\fontinfobase.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\fontinfodesired.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\ifontdefaultlist.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\irendercursor.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderdata.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderengine.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderer.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\minimalcursor.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\vt\vtcursor.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\vt\vtrenderer.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\adaptdefaults.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\adaptdispatch.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\congetset.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\dispatchcommon.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\mouseinput.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\termdispatch.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\terminalinput.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\terminaloutput.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\istatemachineengine.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\statemachine.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\telemetry.hpp</Item>
-        <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\termdispatch.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\tracing.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\types\inc\iinputevent.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\types\inc\viewport.hpp</Item>
 
         <!--References-->
 
-        <Item>{MsWin.OnecoreUap.Mincore.Apiset.Libs.Job.Current_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Mincore.Apiset.Libs.Namespace_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Mincore.Apiset.Libs.Processtopology.Current_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Mincore.Apiset.Libs.Systemtopology.Current_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Inc_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Console.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Datetime.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Debug.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Enclave.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Errorhandling.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Fibers.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.File.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Handle.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Heap.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Interlocked.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Io.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Job_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Libloader.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Localregistry.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Memory.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Namedpipe.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Processenv.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Processthreads.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Profile.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Realtime.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Securityappcontainer_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Securitybase.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.String.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Synch.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Sysinfo.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Threadpool.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Threadpoollegacy.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Timezone.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Util.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Wow64.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Console.Published_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Crts.Ucrt.Published_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Inc_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Published.Base_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Published.Internal_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Published.Sdk_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Base.Published2_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Base.Published_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Drivers.Published.Sdk.Inc_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Net.Published.Inc_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Sdktools.Analysis.Prefast.Suppression.Inc_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Shell.Published.Inc.Inc_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Windows.Core.Console.Open.Src.Server.Lib_PrePass}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Windows.Published.Main_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Windows.Published.Movedfromdrivers_Pass0}</Item>
+        <Item>{MsWin.Crts.Public.Internal.Sdk.Inc.Ucrt.Stl120.Thr.__Header}</Item>
+        <Item>{MsWin.Crts.Public.Internal.Sdk.Inc.Ucrt.Stl120.__Header}</Item>
+        <Item>{MsWin.Crts.Public.Internal.Sdk.Inc.Ucrt.__Header}</Item>
+        <Item>{MsWin.Crts.Public.Sdk.Inc.Ucrt.Sys.__Header}</Item>
+        <Item>{MsWin.Crts.Public.Sdk.Inc.Ucrt.__Header}</Item>
+        <Item>{MsWin.OnecoreBase.Public.Sdk.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreBase.Public.Shared.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreCom.Public.Sdk.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreCom.Public.Shared.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreDrivers.Public.Sdk.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreNet.Public.Sdk.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreSdkTools.Public.Internal.Sdk.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreSdkTools.Public.Shared.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreShell.Public.Internal.Sdk.Inc.Wil.__Header}</Item>
+        <Item>{MsWin.OnecoreShell.Public.Sdk.Inc.__Idl}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Server.Lib_PrePass}</Item>
+        <Item>{MsWin.OnecoreWindows.Public.Internal.Onecorewindows.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreWindows.Public.Sdk.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreWindows.Public.Sdk.Inc.__Idl}</Item>
+        <Item>{MsWin.OnecoreWindows.Public.Shared.Inc.__Header}</Item>
+        <Item>{MsWin.Onecore_ApiSet.Private.Internal.Mincore.Priv_sdk.Inc.__Header}</Item>
+        <Item>{MsWin.Onecore_ApiSet.Public.Sdk.Inc.Mincore.__Header}</Item>
+        <Item>{MsWin.Onecore_MinIo.Private.Internal.Minwin.Priv_sdk.Inc.__Header}</Item>
+        <Item>{MsWin.Onecore_MinIo.Public.Shared.Inc.__Header}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Inc.Telemetry.__Header}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Inc.__Header}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Inc.__Idl}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Internal.Base.Inc.__Header}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Sdk.Inc.Minwin.__Header}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Sdk.Inc.__Idl}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Shared.Inc.Minwin.__Header}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Shared.Inc.__Header}</Item>
       </Consumes>
 
       <!--Produces-->
@@ -198,6 +208,7 @@
         <Item>{O}\precomp.pch</Item>
         <Item>{O}\processhandle.obj</Item>
         <Item>{O}\processlist.obj</Item>
+        <Item>{O}\processpolicy.obj</Item>
         <Item>{O}\waitblock.obj</Item>
         <Item>{O}\waitqueue.obj</Item>
         <Item>{O}\winntcontrol.obj</Item>

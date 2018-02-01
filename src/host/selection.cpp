@@ -340,7 +340,11 @@ void Selection::InitializeMouseSelection(_In_ const COORD coordBufferPos)
     CheckAndSetAlternateSelection();
 
     // set window title to mouse selection mode
-    ServiceLocator::LocateConsoleWindow()->UpdateWindowText();
+    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+    if (pWindow != nullptr)
+    {
+        pWindow->UpdateWindowText();
+    } 
 
     // Fire off an event to let accessibility apps know the selection has changed.
 
@@ -452,7 +456,11 @@ void Selection::_CancelMouseSelection()
     // turn off selection flag
     _SetSelectingState(false);
 
-    ServiceLocator::LocateConsoleWindow()->UpdateWindowText();
+    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+    if (pWindow != nullptr)
+    {
+        pWindow->UpdateWindowText();
+    }
 
     // Mark the cursor position as changed so we'll fire off a win event.
     pScreenInfo->TextInfo->GetCursor()->SetHasMoved(TRUE);
@@ -478,7 +486,11 @@ void Selection::_CancelMarkSelection()
     // Turn off selection flag.
     _SetSelectingState(false);
 
-    ServiceLocator::LocateConsoleWindow()->UpdateWindowText();
+    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+    if (pWindow != nullptr)
+    {
+        pWindow->UpdateWindowText();
+    }
 
     // restore text cursor
     _RestoreCursorData(pScreenInfo);
@@ -596,7 +608,11 @@ void Selection::InitializeMarkSelection()
     _coordSelectionAnchor = coordPosition;
 
     // set frame title text
-    ServiceLocator::LocateConsoleWindow()->UpdateWindowText();
+    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+    if (pWindow != nullptr)
+    {
+        pWindow->UpdateWindowText();
+    } 
 }
 
 // Routine Description:

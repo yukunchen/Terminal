@@ -417,15 +417,14 @@ HRESULT GdiEngine::PaintBufferGridLines(_In_ GridLines const lines, _In_ COLORRE
     return S_OK;
 }
 
-HRESULT GdiEngine::PaintCursor(_In_ ULONG const ulCursorHeightPercent,
+HRESULT GdiEngine::PaintCursor(_In_ COORD const coordCursor, 
+                               _In_ ULONG const ulCursorHeightPercent,
                                _In_ bool const fIsDoubleWidth,
                                _In_ CursorType const cursorType,
                                _In_ bool const fUseColor,
                                _In_ COLORREF const cursorColor)
 {
     LOG_IF_FAILED(_FlushBufferLines());
-    
-    COORD const coordCursor = _cursor.GetPosition();  
 
     COORD const coordFontSize = _GetFontSize();
     RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.X == 0 || coordFontSize.Y == 0);

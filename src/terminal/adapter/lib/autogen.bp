@@ -1,0 +1,108 @@
+namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Lib {
+
+    export declare const qualifier: WdgBuild.StandardPlatformsQualifier;
+
+    const dotDot = d`${srcRoot}\onecore\windows\core\console\open\src\terminal\adapter`;
+
+    const o = d`${objRoot}\onecore\windows\core\console\open\src\terminal\adapter\lib\${buildAlt}`;
+
+    const prePass = LegacyBuild.build({
+        template: template_NMake,
+        classification: "product",
+        targetPass: "prePass",
+        
+        consumes: [
+            f`adapter.vcxproj`,
+            f`autogen.bp`,
+            f`autogen.bp`,
+        ],
+    });
+
+    export const pass1 = LegacyBuild.build({
+        template: template_NMake,
+        classification: "product",
+        targetPass: "pass1",
+        
+        consumes: [
+            f`adapter.vcxproj`,
+            f`autogen.bp`,
+            f`autogen.bp`,
+            f`${dotDot}\adaptdefaults.hpp`,
+            f`${dotDot}\adaptdispatch.cpp`,
+            f`${dotDot}\adaptdispatch.hpp`,
+            f`${dotDot}\adaptdispatchgraphics.cpp`,
+            f`${dotDot}\congetset.hpp`,
+            f`${dotDot}\dispatchcommon.cpp`,
+            f`${dotDot}\dispatchcommon.hpp`,
+            f`${dotDot}\iinteractdispatch.hpp`,
+            f`${dotDot}\interactdispatch.cpp`,
+            f`${dotDot}\interactdispatch.hpp`,
+            f`${dotDot}\mouseinput.cpp`,
+            f`${dotDot}\mouseinput.hpp`,
+            f`${dotDot}\precomp.cpp`,
+            f`${dotDot}\precomp.h`,
+            f`${dotDot}\telemetry.cpp`,
+            f`${dotDot}\telemetry.hpp`,
+            f`${dotDot}\termdispatch.hpp`,
+            f`${dotDot}\terminalinput.cpp`,
+            f`${dotDot}\terminalinput.hpp`,
+            f`${dotDot}\terminaloutput.cpp`,
+            f`${dotDot}\terminaloutput.hpp`,
+            f`${dotDot}\tracing.cpp`,
+            f`${dotDot}\tracing.hpp`,
+            f`${objRoot}\${buildAlt}\onecorefeaturestaging.inc`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\inc\conattrs.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\inc\unicode.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\interactivity\inc\vtapiredirection.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\types\inc\iinputevent.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\types\inc\viewport.hpp`,
+
+            prePass,
+
+            MsWinCrts.Public.Internal.Sdk.Inc.Ucrt.header,
+            MsWinCrts.Public.Internal.Sdk.Inc.Ucrt.Stl120.header,
+            MsWinCrts.Public.Sdk.Inc.Ucrt.header,
+            MsWinCrts.Public.Sdk.Inc.Ucrt.Sys.header,
+            MsWinOnecoreBase.Public.Sdk.Inc.header,
+            MsWinOnecoreBase.Public.Shared.Inc.header,
+            MsWinOnecoreCom.Public.Sdk.Inc.header,
+            MsWinOnecoreCom.Public.Shared.Inc.header,
+            MsWinOnecoreNet.Public.Sdk.Inc.header,
+            MsWinOnecoreSdkTools.Public.Internal.Sdk.Inc.header,
+            MsWinOnecoreSdkTools.Public.Shared.Inc.header,
+            MsWinOnecoreShell.Public.Internal.Sdk.Inc.Wil.header,
+            MsWinOnecoreShell.Public.Sdk.Inc.idl,
+            MsWinOnecore_ApiSet.Public.Sdk.Inc.Mincore.header,
+            MsWinOnecore_MinIo.Private.Internal.Minwin.Priv_sdk.Inc.header,
+            MsWinOnecore_MinIo.Public.Shared.Inc.header,
+            MsWinOnecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Inc.idl,
+            MsWinOnecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Inc.Telemetry.header,
+            MsWinOnecore_MinKernel.Public.Internal.Base.Inc.header,
+            MsWinOnecore_MinKernel.Public.Sdk.Inc.idl,
+            MsWinOnecore_MinKernel.Public.Sdk.Inc.Minwin.header,
+            MsWinOnecore_MinKernel.Public.Shared.Inc.header,
+            MsWinOnecore_MinKernel.Public.Shared.Inc.Minwin.header,
+            Public.Internal.Onecorewindows.Inc.header,
+            Public.Sdk.Inc.header,
+            Public.Sdk.Inc.idl,
+            Public.Shared.Inc.header,
+        ],
+        
+        produces: [
+            p`${o}\adaptdispatch.obj`,
+            p`${o}\adaptdispatchgraphics.obj`,
+            p`${o}\contermadapter.lib`,
+            p`${o}\dispatchcommon.obj`,
+            p`${o}\interactdispatch.obj`,
+            p`${o}\mouseinput.obj`,
+            p`${o}\pch_hdr.src`,
+            p`${o}\precomp.obj`,
+            p`${o}\precomp.pch`,
+            p`${o}\targetlibs.txt`,
+            p`${o}\telemetry.obj`,
+            p`${o}\terminalinput.obj`,
+            p`${o}\terminaloutput.obj`,
+            p`${o}\tracing.obj`,
+        ],
+    });
+}

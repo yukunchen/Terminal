@@ -1,0 +1,84 @@
+namespace Onecore.Windows.Core.Console.Open.Src.Propslib {
+
+    export declare const qualifier: WdgBuild.StandardPlatformsQualifier;
+
+    const dotDot = d`${srcRoot}\onecore\windows\core\console\open\src`;
+
+    const o = d`${objRoot}\onecore\windows\core\console\open\src\propslib\${buildAlt}`;
+
+    const prePass = LegacyBuild.build({
+        template: template_NMake,
+        classification: "product",
+        targetPass: "prePass",
+        
+        consumes: [
+            f`autogen.bp`,
+            f`autogen.bp`,
+            f`propslib.vcxproj`,
+        ],
+    });
+
+    export const pass1 = LegacyBuild.build({
+        template: template_NMake,
+        classification: "product",
+        targetPass: "pass1",
+        
+        consumes: [
+            f`autogen.bp`,
+            f`autogen.bp`,
+            f`conpropsp.hpp`,
+            f`precomp.cpp`,
+            f`precomp.h`,
+            f`propslib.vcxproj`,
+            f`registryserialization.cpp`,
+            f`registryserialization.hpp`,
+            f`shortcutserialization.cpp`,
+            f`shortcutserialization.hpp`,
+            f`truetypefontlist.cpp`,
+            f`truetypefontlist.hpp`,
+            f`${dotDot}\host\settings.hpp`,
+            f`${objRoot}\${buildAlt}\onecorefeaturestaging.inc`,
+
+            prePass,
+
+            MsWinCrts.Public.Internal.Sdk.Inc.Ucrt.header,
+            MsWinCrts.Public.Sdk.Inc.Ucrt.header,
+            MsWinOnecoreBase.Public.Shared.Inc.header,
+            MsWinOnecoreCom.Public.Sdk.Inc.header,
+            MsWinOnecoreCom.Public.Sdk.Inc.idl,
+            MsWinOnecoreCom.Public.Shared.Inc.header,
+            MsWinOnecoreEndUser.Public.Sdk.Inc.idl,
+            MsWinOnecoreInetCore.Public.Sdk.Inc.idl,
+            MsWinOnecoreNet.Public.Sdk.Inc.header,
+            MsWinOnecoreSdkTools.Public.Internal.Sdk.Inc.header,
+            MsWinOnecoreSdkTools.Public.Shared.Inc.header,
+            MsWinOnecoreShell.Public.Internal.Sdk.Inc.Wil.header,
+            MsWinOnecoreShell.Public.Sdk.Inc.header,
+            MsWinOnecoreShell.Public.Sdk.Inc.idl,
+            MsWinOnecoreUapBase.Public.Sdk.Inc.idl,
+            MsWinOnecoreUapShell.Public.Sdk.Inc.header,
+            MsWinOnecoreUapShell.Public.Sdk.Inc.idl,
+            MsWinOnecore_ApiSet.Public.Sdk.Inc.Mincore.header,
+            MsWinOnecore_MinIo.Public.Shared.Inc.header,
+            MsWinOnecore_MinKernel.Public.Internal.Base.Inc.header,
+            MsWinOnecore_MinKernel.Public.Sdk.Inc.idl,
+            MsWinOnecore_MinKernel.Public.Sdk.Inc.Minwin.header,
+            MsWinOnecore_MinKernel.Public.Shared.Inc.header,
+            MsWinOnecore_MinKernel.Public.Shared.Inc.Minwin.header,
+            Public.Internal.Onecorewindows.Inc.header,
+            Public.Sdk.Inc.header,
+            Public.Sdk.Inc.idl,
+            Public.Shared.Inc.header,
+        ],
+        
+        produces: [
+            p`${o}\conprops.lib`,
+            p`${o}\pch_hdr.src`,
+            p`${o}\precomp.obj`,
+            p`${o}\precomp.pch`,
+            p`${o}\registryserialization.obj`,
+            p`${o}\shortcutserialization.obj`,
+            p`${o}\truetypefontlist.obj`,
+        ],
+    });
+}

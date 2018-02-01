@@ -7,14 +7,17 @@
 #include "precomp.h"
 #include "XtermEngine.hpp"
 #pragma hdrstop
+using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 
 XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
+                         _In_ const IDefaultColorProvider& colorProvider,
+                         _In_ const Viewport initialViewport,
                          _In_reads_(cColorTable) const COLORREF* const ColorTable,
                          _In_ const WORD cColorTable,
                          _In_ const bool fUseAsciiOnly) :
-    VtEngine(std::move(hPipe)),
+    VtEngine(std::move(hPipe), colorProvider, initialViewport),
     _ColorTable(ColorTable),
     _cColorTable(cColorTable),
     _fUseAsciiOnly(fUseAsciiOnly)
@@ -184,14 +187,29 @@ HRESULT XtermEngine::ScrollFrame()
     const short dy = _scrollDelta.Y;
     const short absDy = static_cast<short>(abs(dy));
 
-    HRESULT hr = _MoveCursor({0,0});
-    if (SUCCEEDED(hr))
+    HRESULT hr = S_OK;
+    if (dy < 0)
     {
-        if (dy < 0)
+        // Instead of deleting the first line (causing everything to move up)
+        // move to the bottom of the buffer, and newline.
+        //      That will cause everything to move up, by moving the viewport down.
+        // This will let remote conhosts scroll up to see history like normal.
+        const short bottom = _lastViewport.ToOrigin().BottomInclusive();
+        hr = _MoveCursor({0, bottom});
+        if (SUCCEEDED(hr))
         {
-            hr = _DeleteLine(absDy);
+            std::string seq = std::string(absDy, '\n');
+            hr = _Write(seq);
         }
-        else if (dy > 0)
+        // We don't need to _MoveCursor the cursor again, because it's still 
+        //      at the bottom of the viewport.
+    }
+    else if (dy > 0)
+    {
+        // Move to the top of the buffer, and insert some lines of text, to
+        //      cause the viewport contents to shift down.
+        hr = _MoveCursor({0, 0});
+        if (SUCCEEDED(hr))
         {
             hr = _InsertLine(absDy);
         }
@@ -220,7 +238,7 @@ HRESULT XtermEngine::InvalidateScroll(_In_ const COORD* const pcoordDelta)
         RETURN_IF_FAILED(_InvalidOffset(pcoordDelta));
 
         // Add the top/bottom of the window to the invalid area
-        SMALL_RECT invalid = _lastViewport.ToOrigin().ToInclusive();
+        SMALL_RECT invalid = _lastViewport.ToOrigin().ToExclusive();
 
         if (dy > 0)
         {
@@ -230,7 +248,7 @@ HRESULT XtermEngine::InvalidateScroll(_In_ const COORD* const pcoordDelta)
         {
             invalid.Top = invalid.Bottom + dy;
         }
-        _InvalidCombine(&invalid);
+        _InvalidCombine(Viewport::FromExclusive(invalid));
 
         COORD invalidScrollNew;
         RETURN_IF_FAILED(ShortAdd(_scrollDelta.X, dx, &invalidScrollNew.X));

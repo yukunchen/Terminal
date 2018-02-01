@@ -15,6 +15,7 @@
 #include "handle.h"
 #include "misc.h"
 #include "../types/inc/convert.hpp"
+#include "../types/inc/viewport.hpp"
 
 #include "ApiRoutines.h"
 
@@ -28,6 +29,8 @@
 #define INPUT_MODES (ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_ECHO_INPUT | ENABLE_WINDOW_INPUT | ENABLE_MOUSE_INPUT | ENABLE_VIRTUAL_TERMINAL_INPUT)
 #define OUTPUT_MODES (ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN | ENABLE_LVB_GRID_WORLDWIDE)
 #define PRIVATE_MODES (ENABLE_INSERT_MODE | ENABLE_QUICK_EDIT_MODE | ENABLE_AUTO_POSITION | ENABLE_EXTENDED_FLAGS)
+
+using namespace Microsoft::Console::Types;
 
 HRESULT ApiRoutines::GetConsoleInputModeImpl(_In_ InputBuffer* const pContext, _Out_ ULONG* const pMode)
 {
@@ -386,12 +389,15 @@ HRESULT ApiRoutines::SetConsoleScreenBufferInfoExImpl(_In_ SCREEN_INFORMATION* c
     return DoSrvSetScreenBufferInfo(pContext->GetActiveBuffer(), pScreenBufferInfoEx);
 }
 
-HRESULT DoSrvSetScreenBufferInfo(_In_ SCREEN_INFORMATION* const pScreenInfo, _In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pInfo)
+HRESULT DoSrvSetScreenBufferInfo(_In_ SCREEN_INFORMATION* const pScreenInfo,
+                                 _In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pInfo)
 {
     CONSOLE_INFORMATION* const pConsoleInfo = ServiceLocator::LocateGlobals()->getConsoleInformation();
 
     COORD const coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
-    if (pInfo->dwSize.X != coordScreenBufferSize.X || (pInfo->dwSize.Y != coordScreenBufferSize.Y))
+    COORD const requestedBufferSize = pInfo->dwSize;
+    if (requestedBufferSize.X != coordScreenBufferSize.X ||
+        requestedBufferSize.Y != coordScreenBufferSize.Y)
     {
         CommandLine* const pCommandLine = &CommandLine::Instance();
 
@@ -405,9 +411,11 @@ HRESULT DoSrvSetScreenBufferInfo(_In_ SCREEN_INFORMATION* const pScreenInfo, _In
     pConsoleInfo->SetColorTable(pInfo->ColorTable, ARRAYSIZE(pInfo->ColorTable));
     SetScreenColors(pScreenInfo, pInfo->wAttributes, pInfo->wPopupAttributes, TRUE);
 
+    const Viewport requestedViewport = Viewport::FromExclusive(pInfo->srWindow);
+
     COORD NewSize;
-    NewSize.X = min((pInfo->srWindow.Right - pInfo->srWindow.Left), pInfo->dwMaximumWindowSize.X);
-    NewSize.Y = min((pInfo->srWindow.Bottom - pInfo->srWindow.Top), pInfo->dwMaximumWindowSize.Y);
+    NewSize.X = min(requestedViewport.Width(), pInfo->dwMaximumWindowSize.X);
+    NewSize.Y = min(requestedViewport.Height(), pInfo->dwMaximumWindowSize.Y);
 
     // If wrap text is on, then the window width must be the same size as the buffer width
     if (pConsoleInfo->GetWrapText())
@@ -415,7 +423,8 @@ HRESULT DoSrvSetScreenBufferInfo(_In_ SCREEN_INFORMATION* const pScreenInfo, _In
         NewSize.X = coordScreenBufferSize.X;
     }
 
-    if (NewSize.X != pScreenInfo->GetScreenWindowSizeX() || NewSize.Y != pScreenInfo->GetScreenWindowSizeY())
+    if (NewSize.X != pScreenInfo->GetScreenWindowSizeX() ||
+        NewSize.Y != pScreenInfo->GetScreenWindowSizeY())
     {
         pConsoleInfo->CurrentScreenBuffer->SetViewportSize(&NewSize);
 
@@ -675,29 +684,24 @@ VOID UpdatePopups(IN WORD NewAttributes, IN WORD NewPopupAttributes, IN WORD Old
 NTSTATUS SetScreenColors(_In_ SCREEN_INFORMATION* ScreenInfo, _In_ WORD Attributes, _In_ WORD PopupAttributes, _In_ BOOL UpdateWholeScreen)
 {
     CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    WORD const DefaultAttributes = ScreenInfo->GetAttributes().GetLegacyAttributes();
-    WORD const DefaultPopupAttributes = ScreenInfo->GetPopupAttributes()->GetLegacyAttributes();
-    TextAttribute NewPrimaryAttributes = TextAttribute(Attributes);
-    TextAttribute NewPopupAttributes = TextAttribute(PopupAttributes);
-    ScreenInfo->SetAttributes(NewPrimaryAttributes);
-    ScreenInfo->SetPopupAttributes(&NewPopupAttributes);
+
+    const TextAttribute oldPrimaryAttributes = ScreenInfo->GetAttributes();
+    const TextAttribute oldPopupAttributes = *ScreenInfo->GetPopupAttributes();
+    const WORD DefaultAttributes = oldPrimaryAttributes.GetLegacyAttributes();
+    const WORD DefaultPopupAttributes = oldPopupAttributes.GetLegacyAttributes();
+
+    const TextAttribute NewPrimaryAttributes = TextAttribute(Attributes);
+    const TextAttribute NewPopupAttributes = TextAttribute(PopupAttributes);
+
+    ScreenInfo->SetDefaultAttributes(NewPrimaryAttributes, NewPopupAttributes);
     gci->ConsoleIme.RefreshAreaAttributes();
 
     if (UpdateWholeScreen)
     {
-        // TODO: MSFT 9354902: Fix this up to be clearer with less magic bit shifting and less magic numbers. http://osgvsowi/9354902
-        WORD const InvertedOldPopupAttributes = (WORD)(((DefaultPopupAttributes << 4) & 0xf0) | ((DefaultPopupAttributes >> 4) & 0x0f));
-        WORD const InvertedNewPopupAttributes = (WORD)(((PopupAttributes << 4) & 0xf0) | ((PopupAttributes >> 4) & 0x0f));
-
-        // change all chars with default color
-        const SHORT sScreenBufferSizeY = ScreenInfo->GetScreenBufferSize().Y;
-        for (SHORT i = 0; i < sScreenBufferSizeY; i++)
-        {
-            ROW* const Row = &ScreenInfo->TextInfo->Rows[i];
-            Row->AttrRow.ReplaceLegacyAttrs(DefaultAttributes, Attributes);
-            Row->AttrRow.ReplaceLegacyAttrs(DefaultPopupAttributes, PopupAttributes);
-            Row->AttrRow.ReplaceLegacyAttrs(InvertedOldPopupAttributes, InvertedNewPopupAttributes);
-        }
+        ScreenInfo->ReplaceDefaultAttributes(oldPrimaryAttributes,
+                                             oldPopupAttributes,
+                                             NewPrimaryAttributes,
+                                             NewPopupAttributes);
 
         if (gci->PopupCount)
         {
@@ -727,7 +731,11 @@ HRESULT DoSrvSetConsoleTextAttribute(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ 
     RETURN_NTSTATUS(SetScreenColors(pScreenInfo, Attribute, pScreenInfo->GetPopupAttributes()->GetLegacyAttributes(), FALSE));
 }
 
-HRESULT DoSrvPrivateSetLegacyAttributes(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ WORD const Attribute, _In_ const bool fForeground, _In_ const bool fBackground, _In_ const bool fMeta)
+HRESULT DoSrvPrivateSetLegacyAttributes(_In_ SCREEN_INFORMATION* pScreenInfo,
+                                        _In_ WORD const Attribute,
+                                        _In_ const bool fForeground,
+                                        _In_ const bool fBackground,
+                                        _In_ const bool fMeta)
 {
     const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     const TextAttribute OldAttributes = pScreenInfo->GetAttributes();
@@ -751,13 +759,27 @@ HRESULT DoSrvPrivateSetLegacyAttributes(_In_ SCREEN_INFORMATION* pScreenInfo, _I
         UpdateFlagsInMask(wNewLegacy, META_ATTRS, Attribute);
     }
     NewAttributes.SetFromLegacy(wNewLegacy);
- 
+
     if (!OldAttributes.IsLegacy())
     {
         // The previous call to SetFromLegacy is going to trash our RGB.
         // Restore it.
-        NewAttributes.SetForeground(OldAttributes.GetRgbForeground());
-        NewAttributes.SetBackground(OldAttributes.GetRgbBackground());
+        // If the old attributes were "reversed", and the new ones aren't,
+        //  then flip the colors back.
+        bool resetReverse = fMeta &&
+            (IsFlagClear(Attribute, COMMON_LVB_REVERSE_VIDEO)) &&
+            (IsFlagSet(OldAttributes.GetLegacyAttributes(), COMMON_LVB_REVERSE_VIDEO));
+        if (resetReverse)
+        {
+            NewAttributes.SetForeground(OldAttributes.CalculateRgbBackground());
+            NewAttributes.SetBackground(OldAttributes.CalculateRgbForeground());
+        }
+        else
+        {
+            NewAttributes.SetForeground(OldAttributes.CalculateRgbForeground());
+            NewAttributes.SetBackground(OldAttributes.CalculateRgbBackground());
+        }
+
         if (fForeground)
         {
             COLORREF rgbColor = gci->GetColorTableEntry(Attribute & FG_ATTRS);
@@ -884,7 +906,7 @@ HRESULT ApiRoutines::GetConsoleWindowImpl(_Out_ HWND* const pHwnd)
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
     IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
-    if (pWindow != nullptr) 
+    if (pWindow != nullptr)
     {
         *pHwnd = pWindow->GetWindowHandle();
     }
@@ -1079,8 +1101,6 @@ NTSTATUS DoSrvPrivateSetScrollingRegion(_In_ SCREEN_INFORMATION* pScreenInfo, _I
         srScrollMargins.Bottom = psrScrollMargins->Bottom;
         pScreenInfo->SetScrollMargins(&srScrollMargins);
 
-        COORD newCursorPosition = { 0 };
-        Status = pScreenInfo->SetCursorPosition(newCursorPosition, TRUE);
     }
 
     return Status;
@@ -1110,7 +1130,7 @@ NTSTATUS DoSrvPrivateReverseLineFeed(_In_ SCREEN_INFORMATION* pScreenInfo)
         newCursorPosition.Y -= 1;
         Status = AdjustCursorPosition(pScreenInfo, newCursorPosition, TRUE, nullptr);
     }
-    else 
+    else
     {
         // Cursor is at the top of the viewport
         const COORD bufferSize = pScreenInfo->GetScreenBufferSize();
@@ -1376,4 +1396,290 @@ NTSTATUS DoSrvPrivateGetConsoleScreenBufferAttributes(_In_ SCREEN_INFORMATION* c
     }
 
     return Status;
+}
+
+// Routine Description:
+// - A private API call for forcing the renderer to repaint the screen. If the
+//      input screen buffer is not the active one, then just do nothing. We only
+//      want to redraw the screen buffer that requested the repaint, and
+//      switching screen buffers will already force a repaint.
+// Parameters:
+//  The ScreenBuffer to perform the repaint for.
+// Return value:
+// - STATUS_SUCCESS if we succeeded, otherwise the NTSTATUS version of the failure.
+NTSTATUS DoSrvPrivateRefreshWindow(_In_ SCREEN_INFORMATION* const pScreenInfo)
+{
+    Globals* const g = ServiceLocator::LocateGlobals();
+    if (pScreenInfo == g->getConsoleInformation()->CurrentScreenBuffer)
+    {
+        g->pRender->TriggerRedrawAll();
+    }
+
+    return STATUS_SUCCESS;
+}
+
+HRESULT GetConsoleTitleWImplHelper(_Out_writes_to_opt_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) wchar_t* const pwsTitleBuffer,
+                                   _In_ size_t const cchTitleBufferSize,
+                                   _Out_ size_t* const pcchTitleBufferWritten,
+                                   _Out_ size_t* const pcchTitleBufferNeeded,
+                                   _In_ bool const fIsOriginal)
+{
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    // Ensure output variables are initialized.
+    *pcchTitleBufferWritten = 0;
+    *pcchTitleBufferNeeded = 0;
+
+    if (nullptr != pwsTitleBuffer)
+    {
+        *pwsTitleBuffer = L'\0';
+    }
+
+    // Get the appropriate title and length depending on the mode.
+    LPWSTR pwszTitle;
+    size_t cchTitleLength;
+
+    if (fIsOriginal)
+    {
+        pwszTitle = gci->OriginalTitle;
+        cchTitleLength = wcslen(gci->OriginalTitle);
+    }
+    else
+    {
+        pwszTitle = gci->Title;
+        cchTitleLength = wcslen(gci->Title);
+    }
+
+    // Always report how much space we would need.
+    *pcchTitleBufferNeeded = cchTitleLength;
+
+    // If we have a pointer to receive the data, then copy it out.
+    if (nullptr != pwsTitleBuffer)
+    {
+        HRESULT const hr = StringCchCopyNW(pwsTitleBuffer, cchTitleBufferSize, pwszTitle, cchTitleLength);
+
+        // Insufficient buffer is allowed. If we return a partial string, that's still OK by historical/compat standards.
+        // Just say how much we managed to return.
+        if (SUCCEEDED(hr) || STRSAFE_E_INSUFFICIENT_BUFFER == hr)
+        {
+            *pcchTitleBufferWritten = min(cchTitleBufferSize, cchTitleLength);
+        }
+    }
+
+    return S_OK;
+}
+
+HRESULT GetConsoleTitleAImplHelper(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) char* const psTitleBuffer,
+                                   _In_ size_t const cchTitleBufferSize,
+                                   _Out_ size_t* const pcchTitleBufferWritten,
+                                   _Out_ size_t* const pcchTitleBufferNeeded,
+                                   _In_ bool const fIsOriginal)
+{
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    // Ensure output variables are initialized.
+    *pcchTitleBufferWritten = 0;
+    *pcchTitleBufferNeeded = 0;
+
+    if (nullptr != psTitleBuffer)
+    {
+        *psTitleBuffer = '\0';
+    }
+
+    // Figure out how big our temporary Unicode buffer must be to get the title.
+    size_t cchUnicodeTitleBufferNeeded;
+    size_t cchUnicodeTitleBufferWritten;
+    RETURN_IF_FAILED(GetConsoleTitleWImplHelper(nullptr, 0, &cchUnicodeTitleBufferWritten, &cchUnicodeTitleBufferNeeded, fIsOriginal));
+
+    // If there's nothing to get, then simply return.
+    RETURN_HR_IF(S_OK, 0 == cchUnicodeTitleBufferNeeded);
+
+    // Allocate a unicode buffer of the right size.
+    size_t const cchUnicodeTitleBufferSize = cchUnicodeTitleBufferNeeded + 1; // add one for null terminator space
+    wistd::unique_ptr<wchar_t[]> pwsUnicodeTitleBuffer = wil::make_unique_nothrow<wchar_t[]>(cchUnicodeTitleBufferSize);
+    RETURN_IF_NULL_ALLOC(pwsUnicodeTitleBuffer);
+
+    // Retrieve the title in Unicode.
+    RETURN_IF_FAILED(GetConsoleTitleWImplHelper(pwsUnicodeTitleBuffer.get(), cchUnicodeTitleBufferSize, &cchUnicodeTitleBufferWritten, &cchUnicodeTitleBufferNeeded, fIsOriginal));
+
+    // Convert result to A
+    wistd::unique_ptr<char[]> psConverted;
+    size_t cchConverted;
+    RETURN_IF_FAILED(ConvertToA(gci->CP,
+                                pwsUnicodeTitleBuffer.get(),
+                                cchUnicodeTitleBufferWritten,
+                                psConverted,
+                                cchConverted));
+
+    // The legacy A behavior is a bit strange. If the buffer given doesn't have enough space to hold
+    // the string without null termination (e.g. the title is 9 long, 10 with null. The buffer given isn't >= 9).
+    // then do not copy anything back and do not report how much space we need.
+    if (cchTitleBufferSize >= cchConverted)
+    {
+        // Say how many characters of buffer we would need to hold the entire result.
+        *pcchTitleBufferNeeded = cchConverted;
+
+        // Copy safely to output buffer
+        HRESULT const hr = StringCchCopyNA(psTitleBuffer,
+                                           cchTitleBufferSize,
+                                           psConverted.get(),
+                                           cchConverted);
+
+
+        // Insufficient buffer is allowed. If we return a partial string, that's still OK by historical/compat standards.
+        // Just say how much we managed to return.
+        if (SUCCEEDED(hr) || STRSAFE_E_INSUFFICIENT_BUFFER == hr)
+        {
+            // And return the size copied (either the size of the buffer or the null terminated length of the string we filled it with.)
+            *pcchTitleBufferWritten = min(cchTitleBufferSize, cchConverted + 1);
+
+            // Another compatibility fix... If we had exactly the number of bytes needed for an unterminated string,
+            // then replace the terminator left behind by StringCchCopyNA with the final character of the title string.
+            if (cchTitleBufferSize == cchConverted)
+            {
+                psTitleBuffer[cchTitleBufferSize - 1] = psConverted.get()[cchConverted - 1];
+            }
+        }
+    }
+    else
+    {
+        // If we didn't copy anything back and there is space, null terminate the given buffer and return.
+        if (cchTitleBufferSize > 0)
+        {
+            psTitleBuffer[0] = '\0';
+            *pcchTitleBufferWritten = 1;
+        }
+    }
+
+    return S_OK;
+}
+
+HRESULT ApiRoutines::GetConsoleTitleAImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) char* const psTitleBuffer,
+                                          _In_ size_t const cchTitleBufferSize,
+                                          _Out_ size_t* const pcchTitleBufferWritten,
+                                          _Out_ size_t* const pcchTitleBufferNeeded)
+{
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    return GetConsoleTitleAImplHelper(psTitleBuffer,
+                                      cchTitleBufferSize,
+                                      pcchTitleBufferWritten,
+                                      pcchTitleBufferNeeded,
+                                      false);
+}
+
+HRESULT ApiRoutines::GetConsoleTitleWImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) wchar_t* const pwsTitleBuffer,
+                                          _In_ size_t const cchTitleBufferSize,
+                                          _Out_ size_t* const pcchTitleBufferWritten,
+                                          _Out_ size_t* const pcchTitleBufferNeeded)
+{
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    return GetConsoleTitleWImplHelper(pwsTitleBuffer,
+                                      cchTitleBufferSize,
+                                      pcchTitleBufferWritten,
+                                      pcchTitleBufferNeeded,
+                                      false);
+}
+
+HRESULT ApiRoutines::GetConsoleOriginalTitleAImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) char* const psTitleBuffer,
+                                                  _In_ size_t const cchTitleBufferSize,
+                                                  _Out_ size_t* const pcchTitleBufferWritten,
+                                                  _Out_ size_t* const pcchTitleBufferNeeded)
+{
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    return GetConsoleTitleAImplHelper(psTitleBuffer,
+                                      cchTitleBufferSize,
+                                      pcchTitleBufferWritten,
+                                      pcchTitleBufferNeeded,
+                                      true);
+}
+
+HRESULT ApiRoutines::GetConsoleOriginalTitleWImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) wchar_t* const pwsTitleBuffer,
+                                                  _In_ size_t const cchTitleBufferSize,
+                                                  _Out_ size_t* const pcchTitleBufferWritten,
+                                                  _Out_ size_t* const pcchTitleBufferNeeded)
+{
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    return GetConsoleTitleWImplHelper(pwsTitleBuffer,
+                                      cchTitleBufferSize,
+                                      pcchTitleBufferWritten,
+                                      pcchTitleBufferNeeded,
+                                      true);
+}
+
+HRESULT ApiRoutines::SetConsoleTitleAImpl(_In_reads_or_z_(cchTitleBufferSize) const char* const psTitleBuffer,
+                                          _In_ size_t const cchTitleBufferSize)
+{
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    wistd::unique_ptr<wchar_t[]> pwsUnicodeTitleBuffer;
+    size_t cchUnicodeTitleBuffer;
+    RETURN_IF_FAILED(ConvertToW(gci->CP,
+                                psTitleBuffer,
+                                cchTitleBufferSize,
+                                pwsUnicodeTitleBuffer,
+                                cchUnicodeTitleBuffer));
+
+    return SetConsoleTitleWImpl(pwsUnicodeTitleBuffer.get(), cchUnicodeTitleBuffer);
+}
+
+HRESULT ApiRoutines::SetConsoleTitleWImpl(_In_reads_or_z_(cchTitleBufferSize) const wchar_t* const pwsTitleBuffer,
+                                          _In_ size_t const cchTitleBufferSize)
+{
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    return DoSrvSetConsoleTitleW(pwsTitleBuffer,
+                                 cchTitleBufferSize);
+}
+
+HRESULT DoSrvSetConsoleTitleW(_In_reads_or_z_(cchBuffer) const wchar_t* const pwsBuffer,
+                              _In_ size_t const cchBuffer)
+{
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    // Ensure that we add 1 to the length to leave room for a null if it's not already null terminated.
+    size_t cchDest;
+    RETURN_IF_FAILED(SizeTAdd(cchBuffer, 1, &cchDest));
+
+    wistd::unique_ptr<wchar_t[]> pwszNewTitle = wil::make_unique_nothrow<wchar_t[]>(cchDest);
+    RETURN_IF_NULL_ALLOC(pwszNewTitle);
+    if (cchBuffer == 0)
+    {
+        pwszNewTitle[0] = L'\0';
+    }
+    else
+    {
+        // Safe string copy will ensure null termination.
+        RETURN_IF_FAILED(StringCchCopyNW(pwszNewTitle.get(), cchDest, pwsBuffer, cchBuffer));
+    }
+    delete[] gci->Title;
+    gci->Title = pwszNewTitle.release();
+
+    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+    if (pWindow != nullptr)
+    {
+        RETURN_HR_IF_FALSE(E_FAIL, pWindow->PostUpdateTitleWithCopy(gci->Title));
+    }
+
+    return S_OK;
+}
+
+// Routine Description:
+// - A private API call for forcing the VT Renderer to NOT paint the next resize
+//      event. This is used by InteractDispatch, to prevent resizes from echoing
+//      between terminal and host.
+// Parameters:
+//  The ScreenBuffer to perform the repaint for.
+// Return value:
+// - STATUS_SUCCESS if we succeeded, otherwise the NTSTATUS version of the failure.
+NTSTATUS DoSrvPrivateSuppressResizeRepaint()
+{
+    Globals* const g = ServiceLocator::LocateGlobals();
+    CONSOLE_INFORMATION* const gci = g->getConsoleInformation();
+    assert(gci->IsInVtIoMode());
+    return NTSTATUS_FROM_HRESULT(gci->GetVtIo()->SuppressResizeRepaint());
 }

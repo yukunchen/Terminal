@@ -120,3 +120,66 @@ WORD XtermToWindowsIndex(_In_ const size_t xtermTableEntry)
            (fBlue ? WINDOWS_BLUE_ATTR : 0x0) +
            (fBright ? WINDOWS_BRIGHT_ATTR : 0x0);
 }
+
+//Routine Description:
+// Returns the exact entry from the color table, if it's in there.
+//Arguments:
+// - Color - The RGB color to fine the nearest color to.
+// - ColorTable - The array of colors to find a nearest color from.
+// - cColorTable - The number of elements in ColorTable
+// Return value:
+// The index in ColorTable of the nearest match to Color.
+bool FindTableIndex(_In_ COLORREF const Color,
+                    _In_reads_(cColorTable) const COLORREF* const ColorTable,
+                    _In_ const WORD cColorTable,
+                    _Out_ WORD* const pFoundIndex)
+{
+    *pFoundIndex = 0;
+    for (WORD i = 0; i < cColorTable; i++)
+    {
+        if (ColorTable[i] == Color)
+        {
+            *pFoundIndex = i;
+            return true;
+        }
+    }
+    return false;
+}
+
+// Method Description:
+// - Get a COLORREF for the foreground component of the given legacy attributes.
+// Arguments:
+// - wLegacyAttrs - The legacy attributes to get the foreground color from.
+// - ColorTable - The array of colors to to get the color from.
+// - cColorTable - The number of elements in ColorTable
+// Return Value:
+// - the COLORREF for the foreground component
+COLORREF ForegroundColor(_In_ const WORD wLegacyAttrs,
+                         _In_reads_(cColorTable) const COLORREF* const ColorTable,
+                         _In_ const size_t cColorTable)
+{
+    const byte iColorTableIndex = LOBYTE(wLegacyAttrs) & FG_ATTRS;
+
+    return (iColorTableIndex < cColorTable && iColorTableIndex >= 0) ?
+           ColorTable[iColorTableIndex] :
+           INVALID_COLOR;
+}
+
+// Method Description:
+// - Get a COLORREF for the background component of the given legacy attributes.
+// Arguments:
+// - wLegacyAttrs - The legacy attributes to get the background color from.
+// - ColorTable - The array of colors to to get the color from.
+// - cColorTable - The number of elements in ColorTable
+// Return Value:
+// - the COLORREF for the background component
+COLORREF BackgroundColor(_In_ const WORD wLegacyAttrs,
+                         _In_reads_(cColorTable) const COLORREF* const ColorTable,
+                         _In_ const size_t cColorTable)
+{
+    const byte iColorTableIndex = (LOBYTE(wLegacyAttrs) & BG_ATTRS) >> 4;
+
+    return (iColorTableIndex < cColorTable && iColorTableIndex >= 0) ?
+           ColorTable[iColorTableIndex] :
+           INVALID_COLOR;
+}

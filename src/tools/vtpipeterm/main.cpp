@@ -24,33 +24,41 @@ using namespace std;
 // State
 HANDLE hOut;
 HANDLE hIn;
+short lastTerminalWidth;
+short lastTerminalHeight;
 
 std::deque<VtConsole*> consoles;
 // A console for printing debug output to
 VtConsole* debug;
 
 bool prefixPressed = false;
-
+bool g_headless = false;
 ////////////////////////////////////////////////////////////////////////////////
 // Forward decls
 std::string toPrintableString(std::string& inString);
 void toPrintableBuffer(char c, char* printBuffer, int* printCch);
+std::string csi(string seq);
+void PrintInputToDebug(std::string& rawInput);
+void PrintOutputToDebug(std::string& rawOutput);
 ////////////////////////////////////////////////////////////////////////////////
 
-void ReadCallback(byte* buffer, DWORD dwRead)
+void ReadCallback(BYTE* buffer, DWORD dwRead)
 {
     // We already set the console to UTF-8 CP, so we can just write straight to it
-    THROW_LAST_ERROR_IF_FALSE(WriteFile(hOut, buffer, dwRead, nullptr, nullptr));
-
-    std::string renderData = std::string((char*)buffer, dwRead);
-    std::string printable = toPrintableString(renderData);
-    std::string seq = "\n";
-    debug->WriteInput(printable);
-    debug->WriteInput(seq);
-
+    bool fSuccess = !!WriteFile(hOut, buffer, dwRead, nullptr, nullptr);
+    if (fSuccess)
+    {
+        std::string renderData = std::string((char*)buffer, dwRead);
+        PrintOutputToDebug(renderData);
+    }
+    else
+    {
+        HRESULT hr = GetLastError();
+        exit(hr);
+    }
 }
 
-void DebugReadCallback(byte* /*buffer*/, DWORD /*dwRead*/)
+void DebugReadCallback(BYTE* /*buffer*/, DWORD /*dwRead*/)
 {
     // do nothing.
 }
@@ -68,6 +76,9 @@ void nextConsole()
     consoles.push_back(con);
     con = consoles[0];
     con->activate();
+    // Force the new console to repaint.
+    std::string seq = csi("7t");
+    con->WriteInput(seq);
 }
 
 HANDLE inPipe()
@@ -82,9 +93,16 @@ HANDLE outPipe()
 
 void newConsole()
 {
-    auto con = new VtConsole(ReadCallback);
+    auto con = new VtConsole(ReadCallback, g_headless, {lastTerminalWidth, lastTerminalHeight});
     con->spawn();
     consoles.push_back(con);
+}
+
+void signalConsole()
+{
+    // The 0th console is always our active one.
+    // This is a test-only scenario to set the window to 30 wide by 10 tall.
+    consoles.at(0)->signalWindow(30, 10);
 }
 
 std::string csi(string seq)
@@ -203,6 +221,38 @@ std::string toPrintableString(std::string& inString)
     return retval;
 }
 
+void doResize(const short width, const short height)
+{
+    lastTerminalWidth = width;
+    lastTerminalHeight = height;
+
+    for (auto console : consoles)
+    {
+        console->Resize(height, width);
+    }
+
+    std::stringstream ss;
+    ss << "\x1b[8;" << height << ";" << width << "t";
+    std::string seq = ss.str();
+    PrintInputToDebug(seq);
+}
+
+void handleResize()
+{
+    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
+    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
+    bool fSuccess = !!GetConsoleScreenBufferInfoEx(hOut, &csbiex);
+    if (fSuccess)
+    {
+        SMALL_RECT srViewport = csbiex.srWindow;
+        
+        short width = srViewport.Right - srViewport.Left + 1;
+        short height = srViewport.Bottom - srViewport.Top + 1;
+
+        doResize(width, height);        
+    }
+}
+
 void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
 {
     char* const buffer = new char[cEvents];
@@ -254,12 +304,12 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
                         case '\t':
                             nextConsole();
                             break;
-                        case 'c':
-                            newConsole();
-                            break;
                         case 't':
                             newConsole();
                             nextConsole();
+                            break;
+                        case 'r':
+                            signalConsole();
                             break;
                         default:
                             *nextBuffer = c;
@@ -277,40 +327,7 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
         else if (event.EventType == WINDOW_BUFFER_SIZE_EVENT)
         {
             WINDOW_BUFFER_SIZE_RECORD resize = event.Event.WindowBufferSizeEvent;
-            // the resize event doesn't actually have the info we want.
-            CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
-            csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-            bool fSuccess = !!GetConsoleScreenBufferInfoEx(hOut, &csbiex);
-            if (fSuccess)
-            {
-                SMALL_RECT srViewport = csbiex.srWindow;
-                
-                std::stringstream ss;
-                std::stringstream debugSs;
-                ss << "\x1b[8;";
-                debugSs << "\\x1b[8;";
-                short width = srViewport.Right - srViewport.Left + 1;
-                short height = srViewport.Bottom - srViewport.Top + 1;
-                
-                ss << height;
-                debugSs << height;
-
-                ss << ";";
-                debugSs << ";";
-                
-                ss << width;
-                debugSs << width;
-                
-                ss << "t";
-                debugSs << "t";
-
-                std::string seq;
-                std::string debugSeq;
-                ss >> seq;
-                debugSs >> debugSeq;
-                getConsole()->WriteInput(seq);
-                debug->WriteInput(debugSeq);
-            }
+            handleResize();
         }
 
     }
@@ -321,11 +338,31 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
         std::string printSeq = std::string(printableBuffer, printableCch);
 
         getConsole()->WriteInput(vtseq);
+        PrintInputToDebug(vtseq);
+    }
+}
 
+void PrintInputToDebug(std::string& rawInput)
+{
+    if (debug != nullptr)
+    {
+        std::string printable = toPrintableString(rawInput);
         std::stringstream ss;
-        ss << "Input \"" << printSeq.c_str() << "\" [" << vtseq.length() << "]\n";
-        std::string debugString = ss.str();
-        debug->WriteInput(debugString);
+        ss << "Input \"" << printable << "\" [" << rawInput.length() << "]\n";
+        std::string output = ss.str();
+        debug->WriteInput(output);
+    }
+}
+
+void PrintOutputToDebug(std::string& rawOutput)
+{
+    if (debug != nullptr)
+    {
+        std::string printable = toPrintableString(rawOutput);
+        std::stringstream ss;
+        ss << printable << "\n";
+        std::string output = ss.str();
+        debug->WriteInput(output);
     }
 }
 
@@ -365,8 +402,15 @@ DWORD InputThread(LPVOID lpParameter)
     {
         INPUT_RECORD rc[256];
         DWORD dwRead = 0;
-        ReadConsoleInputA(hIn, rc, 256, &dwRead);
-        handleManyEvents(rc, dwRead);
+        bool fSuccess = !!ReadConsoleInputA(hIn, rc, 256, &dwRead);
+        if (fSuccess)
+        {
+            handleManyEvents(rc, dwRead);
+        }
+        else
+        {
+            exit(GetLastError());
+        }
     }
 }
 
@@ -403,7 +447,7 @@ BOOL CtrlHandler( DWORD fdwCtrlType )
 // disable the warning about it here.
 #pragma warning(push)
 #pragma warning(disable:4702)
-int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
+int __cdecl wmain(int argc, WCHAR* argv[])
 {
     // initialize random seed: 
     srand((unsigned int)time(NULL));
@@ -412,18 +456,42 @@ int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
     hOut = GetStdHandle(STD_OUTPUT_HANDLE);
     hIn = GetStdHandle(STD_INPUT_HANDLE);
 
+    bool fUseDebug = false;
+
+    if (argc > 1)
+    {
+        for (int i = 0; i < argc; ++i)
+        {
+            std::wstring arg = argv[i];
+            if (arg == std::wstring(L"--headless"))
+            {
+                g_headless = true;
+            }
+            else if (arg == std::wstring(L"--debug"))
+            {
+                fUseDebug = true;
+            }
+        }
+    }
+
     SetupOutput();
     SetupInput();
+
+    // handleResize will get our initial terminal dimensions.
+    handleResize();
 
     newConsole();  
     getConsole()->activate();
     CreateIOThreads();
 
-    // Create a debug console for writting debugging output to.
-    debug = new VtConsole(DebugReadCallback);
-    // Echo stdin to stdout, but ignore newlines (so cat doesn't echo the input)
-    debug->spawn(L"ubuntu run tr -d '\n' | cat -sA");
-    debug->activate();
+    if (fUseDebug)
+    {
+        // Create a debug console for writting debugging output to.
+        debug = new VtConsole(DebugReadCallback, false, {0});
+        // Echo stdin to stdout, but ignore newlines (so cat doesn't echo the input)
+        debug->spawn(L"ubuntu run tr -d '\n' | cat -sA");
+        debug->activate();
+    }
 
     // Exit the thread so the CRT won't clean us up and kill. The IO thread owns the lifetime now.
     ExitThread(S_OK);

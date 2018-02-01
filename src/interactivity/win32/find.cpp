@@ -130,11 +130,16 @@ INT_PTR FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 
 void DoFind()
 {
-    HWND const hwnd = ServiceLocator::LocateConsoleWindow()->GetWindowHandle();
-
+    Globals* const g = ServiceLocator::LocateGlobals();
+    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+    
     UnlockConsole();
-
-    ++ServiceLocator::LocateGlobals()->uiDialogBoxCount;
-    DialogBoxParamW(ServiceLocator::LocateGlobals()->hInstance, MAKEINTRESOURCE(ID_CONSOLE_FINDDLG), hwnd, (DLGPROC)FindDialogProc, (LPARAM) nullptr);
-    --ServiceLocator::LocateGlobals()->uiDialogBoxCount;
+    if (pWindow != nullptr)
+    {
+        HWND const hwnd = pWindow->GetWindowHandle();
+        
+        ++g->uiDialogBoxCount;
+        DialogBoxParamW(g->hInstance, MAKEINTRESOURCE(ID_CONSOLE_FINDDLG), hwnd, (DLGPROC)FindDialogProc, (LPARAM) nullptr);
+        --g->uiDialogBoxCount;
+    }
 }

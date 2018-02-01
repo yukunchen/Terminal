@@ -163,6 +163,11 @@ HRESULT WddmConEngine::Invalidate(const SMALL_RECT* const psrRegion)
     return S_OK;
 }
 
+HRESULT WddmConEngine::InvalidateCursor(const COORD* const /*pcoordCursor*/)
+{
+    return S_OK;
+}
+
 HRESULT WddmConEngine::InvalidateSystem(const RECT* const prcDirtyClient)
 {
     UNREFERENCED_PARAMETER(prcDirtyClient);
@@ -188,6 +193,18 @@ HRESULT WddmConEngine::InvalidateScroll(const COORD* const pcoordDelta)
 HRESULT WddmConEngine::InvalidateAll()
 {
     return S_OK;
+}
+
+HRESULT WddmConEngine::InvalidateCircling(_Out_ bool* const pForcePaint)
+{
+    *pForcePaint = false;
+    return S_FALSE;
+}
+
+HRESULT WddmConEngine::PrepareForTeardown(_Out_ bool* const pForcePaint)
+{
+    *pForcePaint = false;
+    return S_FALSE;
 }
 
 HRESULT WddmConEngine::StartPaint()
@@ -276,7 +293,8 @@ HRESULT WddmConEngine::PaintSelection(const SMALL_RECT* const rgsrSelection, UIN
     return S_OK;
 }
 
-HRESULT WddmConEngine::PaintCursor(_In_ ULONG const /*ulCursorHeightPercent*/,
+HRESULT WddmConEngine::PaintCursor(_In_ COORD const /*coordCursor*/,
+                                   _In_ ULONG const /*ulCursorHeightPercent*/,
                                    _In_ bool const /*fIsDoubleWidth*/,
                                    _In_ CursorType const /*cursorType*/,
                                    _In_ bool const /*fUseColor*/,
@@ -305,7 +323,8 @@ HRESULT WddmConEngine::UpdateFont(FontInfoDesired const* const pfiFontInfoDesire
 {
     UNREFERENCED_PARAMETER(pfiFontInfoDesired);
 
-    const COORD coordSize = GetFontSize();
+    COORD coordSize = {0};
+    GetFontSize(&coordSize);
 
     pfiFontInfo->SetFromEngine(pfiFontInfo->GetFaceName(),
                                pfiFontInfo->GetFamily(),
@@ -362,12 +381,12 @@ RECT WddmConEngine::GetDisplaySize()
     r.top = 0;
     r.left = 0;
     r.bottom = _displayHeight;
-    r.right = _displayHeight;
+    r.right = _displayWidth;
 
     return r;
 }
 
-COORD WddmConEngine::GetFontSize()
+HRESULT WddmConEngine::GetFontSize(_Out_ COORD* const pFontSize)
 {
     // In order to retrieve the font size being used by DirectX, it is necessary
     // to modify the API set that defines the contract for WddmCon. However, the
@@ -384,23 +403,12 @@ COORD WddmConEngine::GetFontSize()
     c.X = DEFAULT_FONT_WIDTH;
     c.Y = DEFAULT_FONT_HEIGHT;
 
-    return c;
+    *pFontSize = c;
+    return S_OK;
 }
 
-bool WddmConEngine::IsCharFullWidthByFont(WCHAR const wch)
+HRESULT WddmConEngine::IsCharFullWidthByFont(WCHAR const /*wch*/, _Out_ bool* const pResult)
 {
-    UNREFERENCED_PARAMETER(wch);
-
-    return false;
-}
-
-// Method Description:
-// - Returns a reference to this engine's cursor implementation.
-// Arguments:
-// - <none>
-// Return Value:
-// - A referenct to this engine's cursor implementation.
-IRenderCursor* const WddmConEngine::GetCursor()
-{
-    return &_cursor;
+    *pResult = false;
+    return S_OK;
 }

@@ -13,10 +13,8 @@ Author(s):
 
 #pragma once
 
-#include "IRenderer.hpp"
-#include "IRenderCursor.hpp"
-#include "FontInfo.hpp"
-#include "..\..\host\Cursor.h"
+#include "../../inc/conattrs.hpp"
+#include "FontInfoDesired.hpp"
 
 namespace Microsoft
 {
@@ -37,23 +35,29 @@ namespace Microsoft
                     Right = 0x8
                 };
 
+                virtual ~IRenderEngine() = default;
+
                 virtual HRESULT StartPaint() = 0;
                 virtual HRESULT EndPaint() = 0;
+                virtual HRESULT PrepareForTeardown(_Out_ bool* const pForcePaint) = 0;
 
                 virtual HRESULT ScrollFrame() = 0;
 
                 virtual HRESULT Invalidate(const SMALL_RECT* const psrRegion) = 0;
+                virtual HRESULT InvalidateCursor(_In_ const COORD* const pcoordCursor) = 0;
                 virtual HRESULT InvalidateSystem(const RECT* const prcDirtyClient) = 0;
                 virtual HRESULT InvalidateSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles) = 0;
                 virtual HRESULT InvalidateScroll(const COORD* const pcoordDelta) = 0;
                 virtual HRESULT InvalidateAll() = 0;
+                virtual HRESULT InvalidateCircling(_Out_ bool* const pForcePaint) = 0;
                 
                 virtual HRESULT PaintBackground() = 0;
                 virtual HRESULT PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine, _In_reads_(cchLine) const unsigned char* const rgWidths, _In_ size_t const cchLine, _In_ COORD const coord, _In_ bool const fTrimLeft) = 0;
                 virtual HRESULT PaintBufferGridLines(_In_ GridLines const lines, _In_ COLORREF const color, _In_ size_t const cchLine, _In_ COORD const coordTarget) = 0;
                 virtual HRESULT PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles) = 0;
 
-                virtual HRESULT PaintCursor(_In_ ULONG const ulCursorHeightPercent,
+                virtual HRESULT PaintCursor(_In_ COORD const coordCursor,
+                                            _In_ ULONG const ulCursorHeightPercent,
                                             _In_ bool const fIsDoubleWidth,
                                             _In_ CursorType const cursorType,
                                             _In_ bool const fUseColor,
@@ -69,10 +73,8 @@ namespace Microsoft
                 virtual HRESULT GetProposedFont(_In_ FontInfoDesired const * const pfiFontInfoDesired, _Out_ FontInfo* const pfiFontInfo, _In_ int const iDpi) = 0;
 
                 virtual SMALL_RECT GetDirtyRectInChars() = 0;
-                virtual COORD GetFontSize() = 0;
-                virtual bool IsCharFullWidthByFont(_In_ WCHAR const wch) = 0;
-
-                virtual IRenderCursor* const GetCursor() = 0;
+                virtual HRESULT GetFontSize(_Out_ COORD* const pFontSize) = 0;
+                virtual HRESULT IsCharFullWidthByFont(_In_ WCHAR const wch, _Out_ bool* const pResult) = 0;
             };
         };
     };

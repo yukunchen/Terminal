@@ -22,7 +22,6 @@ Author(s):
 #pragma once
 
 #include "..\..\renderer\inc\IRenderEngine.hpp"
-#include "..\..\renderer\inc\MinimalCursor.hpp"
 
 namespace Microsoft
 {
@@ -34,14 +33,17 @@ namespace Microsoft
             {
             public:
                 BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWidth, LONG FontWidth, LONG FontHeight);
-                ~BgfxEngine();
+                ~BgfxEngine() override = default;
 
                 // IRenderEngine Members
                 HRESULT Invalidate(const SMALL_RECT* const psrRegion);
+                HRESULT InvalidateCursor(_In_ const COORD* const pcoordCursor) override;
                 HRESULT InvalidateSystem(const RECT* const prcDirtyClient);
                 HRESULT InvalidateSelection(const SMALL_RECT* const rgsrSelection, UINT const cRectangles);
                 HRESULT InvalidateScroll(const COORD* const pcoordDelta);
                 HRESULT InvalidateAll();
+                HRESULT InvalidateCircling(_Out_ bool* const pForcePaint) override;
+                HRESULT PrepareForTeardown(_Out_ bool* const pForcePaint) override;
 
                 HRESULT StartPaint();
                 HRESULT EndPaint();
@@ -53,12 +55,13 @@ namespace Microsoft
                 HRESULT PaintBufferGridLines(GridLines const lines, COLORREF const color, size_t const cchLine, COORD const coordTarget);
                 HRESULT PaintSelection(const SMALL_RECT* const rgsrSelection, UINT const cRectangles);
 
-                HRESULT PaintCursor(_In_ ULONG const ulCursorHeightPercent,
+                HRESULT PaintCursor(_In_ COORD const coordCursor,
+                                    _In_ ULONG const ulCursorHeightPercent,
                                     _In_ bool const fIsDoubleWidth,
                                     _In_ CursorType const cursorType,
                                     _In_ bool const fUseColor,
                                     _In_ COLORREF const cursorColor) override;
-                HRESULT ClearCursor() 
+                HRESULT ClearCursor() override;
 
                 HRESULT UpdateDrawingBrushes(COLORREF const colorForeground, COLORREF const colorBackground, _In_ WORD const legacyColorAttribute, bool const fIncludeBackgrounds);
                 HRESULT UpdateFont(FontInfoDesired const* const pfiFontInfoDesired, FontInfo* const pfiFontInfo);
@@ -68,11 +71,9 @@ namespace Microsoft
                 HRESULT GetProposedFont(FontInfoDesired const* const pfiFontInfoDesired, FontInfo* const pfiFontInfo, int const iDpi);
 
                 SMALL_RECT GetDirtyRectInChars();
-                COORD GetFontSize();
-                bool IsCharFullWidthByFont(WCHAR const wch);
+                HRESULT GetFontSize(_Out_ COORD* const pFontSize) override;
+                HRESULT IsCharFullWidthByFont(_In_ WCHAR const wch, _Out_ bool* const pResult) override;
                 
-                IRenderCursor* const GetCursor() override;
-
             private:
                 ULONG_PTR _sharedViewBase;
                 SIZE_T _runLength;
@@ -83,8 +84,6 @@ namespace Microsoft
                 COORD _fontSize;
 
                 WORD _currentLegacyColorAttribute;
-
-                MinimalCursor _cursor;
             };
         };
     };

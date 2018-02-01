@@ -89,7 +89,6 @@ public:
     void SetType(_In_ CursorType type);
 
 private:
-    void RendererMoveCursor();
     Microsoft::Console::Interactivity::IAccessibilityNotifier *_pAccessibilityNotifier;
 
     //TODO: seperate the rendering and text placement

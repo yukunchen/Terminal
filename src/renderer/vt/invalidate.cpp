@@ -54,7 +54,19 @@ HRESULT VtEngine::InvalidateSelection(_In_reads_(cRectangles) const SMALL_RECT* 
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
 HRESULT VtEngine::Invalidate(const SMALL_RECT* const psrRegion)
 {
-    return this->_InvalidCombine(psrRegion);
+    Viewport newInvalid = Viewport::FromExclusive(*psrRegion);
+    return this->_InvalidCombine(newInvalid);
+}
+
+// Routine Description:
+// - Notifies us that the console has changed the position of the cursor.
+// Arguments:
+// - pcoordCursor - the new position of the cursor
+// Return Value:
+// - S_OK
+HRESULT VtEngine::InvalidateCursor(const COORD* const /*pcoordCursor*/)
+{
+    return S_OK;
 }
 
 // Routine Description:
@@ -67,28 +79,56 @@ HRESULT VtEngine::Invalidate(const SMALL_RECT* const psrRegion)
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
 HRESULT VtEngine::InvalidateAll()
 {
-    SMALL_RECT rc = _lastViewport.ToOrigin().ToInclusive();
+    return this->_InvalidCombine(_lastViewport.ToOrigin());
+}
 
-    return this->_InvalidCombine(&rc);
+// Method Description:
+// - Notifies us that we're about to circle the buffer, giving us a chance to 
+//      force a repaint before the buffer contents are lost. The VT renderer 
+//      needs to be able to render all text before it's lost, so we return true.
+// Arguments:
+// - Recieves a bool indicating if we should force the repaint.
+// Return Value:
+// - S_OK
+HRESULT VtEngine::InvalidateCircling(_Out_ bool* const pForcePaint)
+{
+    *pForcePaint = true;
+    return S_OK;
+}
+
+// Method Description:
+// - Notifies us that we're about to be torn down. This gives us a last chance 
+//      to force a repaint before the buffer contents are lost. The VT renderer 
+//      needs to be able to render all text before it's lost, so we return true.
+// Arguments:
+// - Recieves a bool indicating if we should force the repaint.
+// Return Value:
+// - S_OK
+HRESULT VtEngine::PrepareForTeardown(_Out_ bool* const pForcePaint)
+{
+    *pForcePaint = true;
+    return S_OK;
 }
 
 // Routine Description:
 // - Helper to combine the given rectangle into the invalid region to be 
 //      updated on the next paint
+// Expects EXCLUSIVE rectangles.
 // Arguments:
-// - prc - Pixel region (RECT) that should be repainted on the next frame
+// - invalid - A viewport containing the character region that should be 
+//      repainted on the next frame
 // Return Value:
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
-HRESULT VtEngine::_InvalidCombine(_In_ const SMALL_RECT* const prc)
+HRESULT VtEngine::_InvalidCombine(_In_ const Viewport invalid)
 {
     if (!_fInvalidRectUsed)
     {
-        _srcInvalid = *prc;
+        _invalidRect = invalid;
         _fInvalidRectUsed = true;
     }
     else
     {
-        _OrRect(&_srcInvalid, prc);
+        _invalidRect = Viewport::OrViewports(_invalidRect, invalid);
     }
 
     // Ensure invalid areas remain within bounds of window.
@@ -108,16 +148,12 @@ HRESULT VtEngine::_InvalidOffset(_In_ const COORD* const pCoord)
 {
     if (_fInvalidRectUsed)
     {
-        SMALL_RECT rcInvalidNew;
-
-        RETURN_IF_FAILED(ShortAdd(_srcInvalid.Left, pCoord->X, &rcInvalidNew.Left));
-        RETURN_IF_FAILED(ShortAdd(_srcInvalid.Right, pCoord->X, &rcInvalidNew.Right));
-        RETURN_IF_FAILED(ShortAdd(_srcInvalid.Top, pCoord->Y, &rcInvalidNew.Top));
-        RETURN_IF_FAILED(ShortAdd(_srcInvalid.Bottom, pCoord->Y, &rcInvalidNew.Bottom));
+        Viewport newInvalid = _invalidRect;
+        RETURN_IF_FAILED(Viewport::AddCoord(_invalidRect, *pCoord, newInvalid));
 
         // Add the scrolled invalid rectangle to what was left behind to get the new invalid area.
         // This is the equivalent of adding in the "update rectangle" that we would get out of ScrollWindowEx/ScrollDC.
-        _OrRect(&_srcInvalid, &rcInvalidNew);
+        _invalidRect = Viewport::OrViewports(_invalidRect, newInvalid);
 
         // Ensure invalid areas remain within bounds of window.
         RETURN_IF_FAILED(_InvalidRestrict());
@@ -134,8 +170,11 @@ HRESULT VtEngine::_InvalidOffset(_In_ const COORD* const pCoord)
 // - S_OK, else an appropriate HRESULT for failing to allocate or safemath failure.
 HRESULT VtEngine::_InvalidRestrict()
 {
+    SMALL_RECT oldInvalid = _invalidRect.ToExclusive();
 
-    _lastViewport.ToOrigin().TrimToViewport(&_srcInvalid);
+    _lastViewport.ToOrigin().TrimToViewport(&oldInvalid);
+
+    _invalidRect = Viewport::FromExclusive(oldInvalid);
 
     return S_OK;
 }

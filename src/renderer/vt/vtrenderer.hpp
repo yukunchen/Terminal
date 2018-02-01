@@ -14,8 +14,8 @@ Author(s):
 
 #pragma once
 
-#include "VtCursor.hpp"
 #include "../inc/IRenderEngine.hpp"
+#include "../../inc/IDefaultColorProvider.hpp"
 #include "../../types/inc/Viewport.hpp"
 #include <string>
 #include <functional>
@@ -34,15 +34,24 @@ namespace Microsoft
 class Microsoft::Console::Render::VtEngine : public IRenderEngine
 {
 public:
-    VtEngine(_In_ wil::unique_hfile hPipe);
-    ~VtEngine();
+    // See _PaintUtf8BufferLine for explanation of this value.
+    static const size_t ERASE_CHARACTER_STRING_LENGTH = 8;
+
+    VtEngine(_In_ wil::unique_hfile hPipe,
+             _In_ const Microsoft::Console::IDefaultColorProvider& colorProvider,
+             _In_ const Microsoft::Console::Types::Viewport initialViewport);
+
+    virtual ~VtEngine() override = default;
 
     HRESULT InvalidateSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection,
                                 _In_ UINT const cRectangles) override;
     virtual HRESULT InvalidateScroll(_In_ const COORD* const pcoordDelta) = 0;
     HRESULT InvalidateSystem(_In_ const RECT* const prcDirtyClient) override;
     HRESULT Invalidate(_In_ const SMALL_RECT* const psrRegion) override;
+    HRESULT InvalidateCursor(_In_ const COORD* const pcoordCursor) override;
     HRESULT InvalidateAll() override;
+    HRESULT InvalidateCircling(_Out_ bool* const pForcePaint) override;
+    HRESULT PrepareForTeardown(_Out_ bool* const pForcePaint) override;
 
     virtual HRESULT StartPaint() override;
     virtual HRESULT EndPaint() override;
@@ -62,7 +71,8 @@ public:
     HRESULT PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection,
                            _In_ UINT const cRectangles) override;
 
-    HRESULT PaintCursor(_In_ ULONG const ulCursorHeightPercent,
+    HRESULT PaintCursor(_In_ COORD const coordCursor,
+                        _In_ ULONG const ulCursorHeightPercent,
                         _In_ bool const fIsDoubleWidth,
                         _In_ CursorType const cursorType,
                         _In_ bool const fUseColor,
@@ -83,40 +93,42 @@ public:
                             _Out_ FontInfo* const pfiFont, _In_ int const iDpi) override;
 
     SMALL_RECT GetDirtyRectInChars() override;
-    COORD GetFontSize() override;
-    bool IsCharFullWidthByFont(_In_ WCHAR const wch) override;
-            
-    IRenderCursor* const GetCursor() override;
-                
+    HRESULT GetFontSize(_Out_ COORD* const pFontSize) override;
+    HRESULT IsCharFullWidthByFont(_In_ WCHAR const wch, _Out_ bool* const pResult) override;
+
+    HRESULT SuppressResizeRepaint();
 
 protected:
     wil::unique_hfile _hFile;
+
+    const Microsoft::Console::IDefaultColorProvider& _colorProvider;
 
     COLORREF _LastFG;
     COLORREF _LastBG;
 
     Microsoft::Console::Types::Viewport _lastViewport;
+    Microsoft::Console::Types::Viewport _invalidRect;
 
-    SMALL_RECT _srcInvalid;
     bool _fInvalidRectUsed;
     COORD _lastRealCursor;
     COORD _lastText;
     COORD _scrollDelta;
 
     bool _quickReturn;
-    
-    VtCursor _cursor;
+    bool _clearedAllThisFrame;
+
+    bool _suppressResizeRepaint;
 
     HRESULT _Write(_In_reads_(cch) const char* const psz, _In_ size_t const cch);
     HRESULT _Write(_In_ const std::string& str);
-    HRESULT _Write(_In_ const char* const psz);
-    HRESULT _WriteFormattedString(_In_ const char* const pszFormat, ...);
-    
+    HRESULT _WriteFormattedString(_In_ const std::string* const pFormat, ...);
+
     void _OrRect(_Inout_ SMALL_RECT* const pRectExisting, _In_ const SMALL_RECT* const pRectToOr) const;
-    HRESULT _InvalidCombine(_In_ const SMALL_RECT* const psrc);
+    HRESULT _InvalidCombine(_In_ const Microsoft::Console::Types::Viewport invalid);
     HRESULT _InvalidOffset(_In_ const COORD* const ppt);
     HRESULT _InvalidRestrict();
-    
+    bool _AllIsInvalid() const;
+
     HRESULT _StopCursorBlinking();
     HRESULT _StartCursorBlinking();
     HRESULT _HideCursor();
@@ -125,17 +137,23 @@ protected:
     HRESULT _InsertDeleteLine(_In_ const short sLines, _In_ const bool fInsertLine);
     HRESULT _DeleteLine(_In_ const short sLines);
     HRESULT _InsertLine(_In_ const short sLines);
+    HRESULT _CursorForward(_In_ const short chars);
+    HRESULT _EraseCharacter(_In_ const short chars);
     HRESULT _CursorPosition(_In_ const COORD coord);
     HRESULT _CursorHome();
+    HRESULT _ClearScreen();
     HRESULT _SetGraphicsRendition16Color(_In_ const WORD wAttr,
                                          _In_ const bool fIsForeground);
     HRESULT _SetGraphicsRenditionRGBColor(_In_ const COLORREF color,
                                           _In_ const bool fIsForeground);
+    HRESULT _SetGraphicsRenditionDefaultColor(_In_ const bool fIsForeground);
     HRESULT _ResizeWindow(_In_ const short sWidth, _In_ const short sHeight);
-    
+
     virtual HRESULT _MoveCursor(_In_ const COORD coord) = 0;
     HRESULT _RgbUpdateDrawingBrushes(_In_ COLORREF const colorForeground,
-                                     _In_ COLORREF const colorBackground);
+                                     _In_ COLORREF const colorBackground,
+                                     _In_reads_(cColorTable) const COLORREF* const ColorTable,
+                                     _In_ const WORD cColorTable);
     HRESULT _16ColorUpdateDrawingBrushes(_In_ COLORREF const colorForeground,
                                          _In_ COLORREF const colorBackground,
                                          _In_reads_(cColorTable) const COLORREF* const ColorTable,
@@ -160,6 +178,7 @@ protected:
 
     friend class VtRendererTest;
 #endif
-    
+
     void SetTestCallback(_In_ std::function<bool(const char* const, size_t const)> pfn);
+
 };

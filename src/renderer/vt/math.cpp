@@ -22,7 +22,7 @@ using namespace Microsoft::Console::Types;
 //      This is an Inclusive rect.
 SMALL_RECT VtEngine::GetDirtyRectInChars()
 {
-    return Viewport::FromExclusive(_srcInvalid).ToInclusive();
+    return _invalidRect.ToInclusive();
 }
 
 // Routine Description:
@@ -30,11 +30,13 @@ SMALL_RECT VtEngine::GetDirtyRectInChars()
 // - NOTE: Only supports determining half-width/full-width status for CJK-type languages (e.g. is it 1 character wide or 2. a.k.a. is it a rectangle or square.)
 // Arguments:
 // - wch - Character to check
+// - pResult - recieves return value, True if it is full-width (2 wide). False if it is half-width (1 wide).
 // Return Value:
-// - True if it is full-width (2 wide). False if it is half-width (1 wide).
-bool VtEngine::IsCharFullWidthByFont(_In_ WCHAR const /*wch*/)
+// - S_FALSE: This is unsupported by the VT Renderer and should use another engine's value.
+HRESULT VtEngine::IsCharFullWidthByFont(_In_ WCHAR const /*wch*/, _Out_ bool* const pResult)
 {
-    return false;
+    *pResult = false;
+    return S_FALSE;
 }
 
 // Routine Description:
@@ -65,12 +67,11 @@ void VtEngine::_OrRect(_Inout_ SMALL_RECT* const pRectExisting, _In_ const SMALL
 bool VtEngine::_WillWriteSingleChar() const
 {
     COORD currentCursor = _lastText;
-
+    SMALL_RECT _srcInvalid = _invalidRect.ToExclusive();
     bool noScrollDelta = (_scrollDelta.X == 0 && _scrollDelta.Y == 0);
 
-    bool invalidIsOneChar = (_srcInvalid.Bottom ==_srcInvalid.Top+1) &&
-                            (_srcInvalid.Right == (_srcInvalid.Left+1));
-
+    bool invalidIsOneChar = (_invalidRect.Width() == 1) &&
+                            (_invalidRect.Height() == 1);
     // Either the next character to the right or the immediately previous 
     //      character should follow this code path
     //      (The immediate previous character would suggest a backspace)

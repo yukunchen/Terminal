@@ -51,7 +51,6 @@ SOURCES = \
     ..\WinTelnetEngine.cpp \
     ..\XtermEngine.cpp \
     ..\Xterm256Engine.cpp \
-    ..\VtCursor.cpp \
     ..\VtSequences.cpp \
 
 INCLUDES = \

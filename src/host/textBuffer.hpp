@@ -133,6 +133,9 @@ public:
 
     WORD GetLegacyAttributes() const;
 
+    COLORREF CalculateRgbForeground() const;
+    COLORREF CalculateRgbBackground() const;
+
     COLORREF GetRgbForeground() const;
     COLORREF GetRgbBackground() const;
 
@@ -158,15 +161,16 @@ public:
     void SetColor(_In_ const COLORREF rgbColor, _In_ const bool fIsForeground);
 
 private:
-    COLORREF _GetRgbForeground() const;
-    COLORREF _GetRgbBackground() const;
-
     bool _IsReverseVideo() const;
 
     WORD _wAttrLegacy;
     bool _fUseRgbColor;
     COLORREF _rgbForeground;
     COLORREF _rgbBackground;
+
+#ifdef UNIT_TESTING
+    friend class TextBufferTests;
+#endif
 };
 
 class TextAttributeRun sealed

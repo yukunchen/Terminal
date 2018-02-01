@@ -10,6 +10,7 @@
 #include "InputStateMachineEngine.hpp"
 #include "../adapter/terminalInput.hpp"
 #include "../../inc/consoletaeftemplates.hpp"
+#include "../../inc/unicode.hpp"
 
 #include <vector>
 #include <functional>
@@ -70,6 +71,7 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
     std::vector<INPUT_RECORD> vExpectedInput;
 
     bool _expectedToCallWindowManipulation;
+    bool _expectSendCtrlC;
     DispatchCommon::WindowManipulationType _expectedWindowManipulation;
     unsigned short _expectedParams[16];
     size_t _expectedCParams;
@@ -83,6 +85,7 @@ class Microsoft::Console::VirtualTerminal::TestInteractDispatch : public IIntera
 public:
     TestInteractDispatch(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn, InputEngineTest* testInstance);
     virtual bool WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& inputEvents) override;
+    virtual bool WriteCtrlC() override;
     virtual bool WindowManipulation(_In_ const DispatchCommon::WindowManipulationType uiFunction,
                                 _In_reads_(cParams) const unsigned short* const rgusParams,
                                 _In_ size_t const cParams) override; // DTTERM_WindowManipulation
@@ -102,6 +105,15 @@ bool TestInteractDispatch::WriteInput(_In_ std::deque<std::unique_ptr<IInputEven
 {
     _pfnWriteInputCallback(inputEvents);
     return true;
+}
+
+bool TestInteractDispatch::WriteCtrlC()
+{
+    VERIFY_IS_TRUE(_testInstance->_expectSendCtrlC);
+    KeyEvent key = KeyEvent(true, 1, 'C', 0, UNICODE_ETX, LEFT_CTRL_PRESSED);
+    std::deque<std::unique_ptr<IInputEvent>> inputEvents;
+    inputEvents.push_back(std::make_unique<KeyEvent>(key));
+    return WriteInput(inputEvents);
 }
 
 bool TestInteractDispatch::WindowManipulation(_In_ const DispatchCommon::WindowManipulationType uiFunction,
@@ -163,7 +175,7 @@ void InputEngineTest::RoundtripTerminalInputCallback(_In_ std::deque<std::unique
         }
     }
     Log::Comment(
-        NoThrowString().Format(L"\tvtseq: \"%s\"(%d)", vtseq.c_str(), vtseq.length())
+        NoThrowString().Format(L"\tvtseq: \"%s\"(%zu)", vtseq.c_str(), vtseq.length())
     );
 
     _pStateMachine->ProcessString(&vtseq[0], vtseq.length());
@@ -242,6 +254,10 @@ void InputEngineTest::C0Test()
                 expectedWch = wch;
                 writeCtrl = false;
                 break;
+            case L'\x1b': // Escape
+                expectedWch = wch;
+                writeCtrl = false;
+                break;
             case L'\t': // Tab
                 writeCtrl = false;
                 break;
@@ -262,6 +278,28 @@ void InputEngineTest::C0Test()
         if (IsFlagSet(keyscanModifiers, 1) && (expectedWch < L'A' || expectedWch > L'Z' ))
         {
             dwModifierState = SetFlag(dwModifierState, SHIFT_PRESSED);
+        }
+
+        // Just make sure we write the same thing telnetd did:
+        if (wch == UNICODE_ETX)
+        {
+            Log::Comment(NoThrowString().Format(
+                L"We used to expect 0x%x, 0x%x, 0x%x, 0x%x here",
+                vkey, scanCode, wch, dwModifierState
+            ));
+            vkey = 'C';
+            scanCode = 0;
+            wch = UNICODE_ETX;
+            dwModifierState = LEFT_CTRL_PRESSED;
+            Log::Comment(NoThrowString().Format(
+                L"Now we expect 0x%x, 0x%x, 0x%x, 0x%x here",
+                vkey, scanCode, wch, dwModifierState
+            ));
+            _expectSendCtrlC = true;
+        }
+        else
+        {
+            _expectSendCtrlC = false;
         }
 
         Log::Comment(NoThrowString().Format(L"Testing char 0x%x", wch));
@@ -307,9 +345,9 @@ void InputEngineTest::AlphanumericTest()
         short keyscanModifiers = (keyscan >> 8) & 0xff;
         // Because of course, these are not the same flags.
         DWORD dwModifierState = 0 |
-            IsFlagSet(keyscanModifiers, 1) ? SHIFT_PRESSED : 0 |
-            IsFlagSet(keyscanModifiers, 2) ? LEFT_CTRL_PRESSED : 0 |
-            IsFlagSet(keyscanModifiers, 4) ? LEFT_ALT_PRESSED : 0 ;
+            (IsFlagSet(keyscanModifiers, 1) ? SHIFT_PRESSED : 0) |
+            (IsFlagSet(keyscanModifiers, 2) ? LEFT_CTRL_PRESSED : 0) |
+            (IsFlagSet(keyscanModifiers, 4) ? LEFT_ALT_PRESSED : 0) ;
 
         Log::Comment(NoThrowString().Format(L"Testing char 0x%x", wch));
         Log::Comment(NoThrowString().Format(L"Input Sequence=\"%s\"", inputSeq.c_str()));
@@ -364,9 +402,10 @@ void InputEngineTest::RoundTripTest()
         {
             uiActualKeystate = SetFlag(uiActualKeystate, LEFT_CTRL_PRESSED);
         }
-        else if (vkey == VK_ESCAPE)
+
+        if (vkey == UNICODE_ETX)
         {
-            uiActualKeystate = SetFlag(uiActualKeystate, LEFT_CTRL_PRESSED);
+            _expectSendCtrlC = true;
         }
 
         INPUT_RECORD irTest = { 0 };
@@ -423,21 +462,28 @@ void InputEngineTest::WindowManipulationTest()
         }
 
         std::wstringstream seqBuilder;
-        // We need to build the string with the params as strings for some reason - 
-        //      x86 would implicitly convert them to chars (eg 123 -> '{') 
-        //      before appending them to the string 
-        seqBuilder << L"\x1b[" << i << L";" << wszParam1 << L";" << wszParam2 << L"t";
-        std::wstring seq = seqBuilder.str();
-        Log::Comment(NoThrowString().Format(
-            L"Processing \"%s\"", seq.c_str()
-        ));
+        seqBuilder << L"\x1b[" << i;
 
-        if (fValidType)
+
+        if (i == DispatchCommon::WindowManipulationType::ResizeWindowInCharacters)
         {
+            // We need to build the string with the params as strings for some reason - 
+            //      x86 would implicitly convert them to chars (eg 123 -> '{') 
+            //      before appending them to the string 
+            seqBuilder << L";" << wszParam1 << L";" << wszParam2;
+
             _expectedToCallWindowManipulation = true;
             _expectedCParams = 2;
             _expectedParams[0] = param1;
             _expectedParams[1] = param2;
+            _expectedWindowManipulation = static_cast<DispatchCommon::WindowManipulationType>(i);
+        }
+        else if (i == DispatchCommon::WindowManipulationType::RefreshWindow)
+        {
+            // refresh window doesn't expect any params.
+
+            _expectedToCallWindowManipulation = true;
+            _expectedCParams = 0;
             _expectedWindowManipulation = static_cast<DispatchCommon::WindowManipulationType>(i);
         }
         else
@@ -446,7 +492,11 @@ void InputEngineTest::WindowManipulationTest()
             _expectedCParams = 0;
             _expectedWindowManipulation = DispatchCommon::WindowManipulationType::Invalid;
         }
-
+        seqBuilder << L"t";
+        std::wstring seq = seqBuilder.str();
+        Log::Comment(NoThrowString().Format(
+            L"Processing \"%s\"", seq.c_str()
+        ));
         _pStateMachine->ProcessString(&seq[0], seq.length());
     }
 }

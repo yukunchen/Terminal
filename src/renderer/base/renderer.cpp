@@ -27,10 +27,14 @@ using namespace Microsoft::Console::Types;
 // Return Value:
 // - An instance of a Renderer.
 // NOTE: CAN THROW IF MEMORY ALLOCATION FAILS.
-Renderer::Renderer(_In_ IRenderData* const pData, _In_reads_(cEngines) IRenderEngine** const rgpEngines, _In_ size_t const cEngines) :
-    _pData(pData),
+Renderer::Renderer(_In_ std::unique_ptr<IRenderData> pData,
+                   _In_reads_(cEngines) IRenderEngine** const rgpEngines,
+                   _In_ size_t const cEngines) :
+    _pData(std::move(pData)),
     _pThread(nullptr)
 {
+    THROW_IF_NULL_ALLOC(_pData);
+
     _srViewportPrevious = { 0 };
 
     for (size_t i = 0; i < cEngines; i++)
@@ -53,10 +57,20 @@ Renderer::~Renderer()
     {
         delete _pThread;
     }
+
+    std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
+        delete pEngine;
+    });
 }
 
-HRESULT Renderer::s_CreateInstance(_In_ IRenderData* const pData, 
-                                   _In_reads_(cEngines) IRenderEngine** const rgpEngines, 
+HRESULT Renderer::s_CreateInstance(_In_ std::unique_ptr<IRenderData> pData,
+                                   _Outptr_result_nullonfailure_ Renderer** const ppRenderer)
+{
+    return Renderer::s_CreateInstance(std::move(pData), nullptr, 0,  ppRenderer);
+}
+
+HRESULT Renderer::s_CreateInstance(_In_ std::unique_ptr<IRenderData> pData,
+                                   _In_reads_(cEngines) IRenderEngine** const rgpEngines,
                                    _In_ size_t const cEngines,
                                    _Outptr_result_nullonfailure_ Renderer** const ppRenderer)
 {
@@ -65,7 +79,7 @@ HRESULT Renderer::s_CreateInstance(_In_ IRenderData* const pData,
     Renderer* pNewRenderer = nullptr;
     try
     {
-        pNewRenderer = new Renderer(pData, rgpEngines, cEngines);
+        pNewRenderer = new Renderer(std::move(pData), rgpEngines, cEngines);
 
         if (pNewRenderer == nullptr)
         {
@@ -107,53 +121,59 @@ HRESULT Renderer::s_CreateInstance(_In_ IRenderData* const pData,
 // - HRESULT S_OK, GDI error, Safe Math error, or state/argument errors.
 HRESULT Renderer::PaintFrame()
 {
-    std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
-        THROW_HR_IF_NULL(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), pEngine);
+    for (IRenderEngine* const pEngine : _rgpEngines)
+    {
+        LOG_IF_FAILED(_PaintFrameForEngine(pEngine));
+    }
 
-        // Last chance check if anything scrolled without an explicit invalidate notification since the last frame.
-        _CheckViewportAndScroll();
+    return S_OK;
+}
 
-        // Try to start painting a frame
-        HRESULT const hr = pEngine->StartPaint();
-        THROW_IF_FAILED(hr); // Return errors
-        RETURN_HR_IF(S_OK, S_FALSE == hr); // Return early if there's nothing to paint.
+HRESULT Renderer::_PaintFrameForEngine(_In_ IRenderEngine* const pEngine)
+{
+    THROW_HR_IF_NULL(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), pEngine);
 
-        auto endPaint = wil::ScopeExit([&]()
-        {
-            LOG_IF_FAILED(pEngine->EndPaint());
-        });
+    // Last chance check if anything scrolled without an explicit invalidate notification since the last frame.
+    _CheckViewportAndScroll();
 
-        // A. Prep Colors
-        RETURN_IF_FAILED(_UpdateDrawingBrushes(pEngine, _pData->GetDefaultBrushColors(), true));
+    // Try to start painting a frame
+    HRESULT const hr = pEngine->StartPaint();
+    THROW_IF_FAILED(hr); // Return errors
+    RETURN_HR_IF(S_OK, S_FALSE == hr); // Return early if there's nothing to paint.
 
-        // B. Clear Overlays
-        RETURN_IF_FAILED(_ClearOverlays(pEngine));
-
-        // C. Perform Scroll Operations
-        RETURN_IF_FAILED(_PerformScrolling(pEngine));
-
-        // 1. Paint Background
-        RETURN_IF_FAILED(_PaintBackground(pEngine));
-
-        // 2. Paint Rows of Text
-        _PaintBufferOutput(pEngine);
-
-        // 3. Paint Input
-        //_PaintCookedInput(); // unnecessary, input is also stored in the output buffer.
-
-        // 4. Paint IME composition area
-        _PaintImeCompositionString(pEngine);
-
-        // 5. Paint Selection
-        _PaintSelection(pEngine);
-
-        // 6. Paint Cursor
-        _PaintCursor(pEngine);
-
-        // As we leave the scope, EndPaint will be called (declared above)
-        return S_OK;
+    auto endPaint = wil::ScopeExit([&]()
+    {
+        LOG_IF_FAILED(pEngine->EndPaint());
     });
 
+    // A. Prep Colors
+    RETURN_IF_FAILED(_UpdateDrawingBrushes(pEngine, _pData->GetDefaultBrushColors(), true));
+
+    // B. Clear Overlays
+    RETURN_IF_FAILED(_ClearOverlays(pEngine));
+
+    // C. Perform Scroll Operations
+    RETURN_IF_FAILED(_PerformScrolling(pEngine));
+
+    // 1. Paint Background
+    RETURN_IF_FAILED(_PaintBackground(pEngine));
+
+    // 2. Paint Rows of Text
+    _PaintBufferOutput(pEngine);
+
+    // 3. Paint Input
+    //_PaintCookedInput(); // unnecessary, input is also stored in the output buffer.
+
+    // 4. Paint IME composition area
+    _PaintImeCompositionString(pEngine);
+
+    // 5. Paint Selection
+    _PaintSelection(pEngine);
+
+    // 6. Paint Cursor
+    _PaintCursor(pEngine);
+
+    // As we leave the scope, EndPaint will be called (declared above)
     return S_OK;
 }
 
@@ -203,13 +223,39 @@ void Renderer::TriggerRedraw(_In_ const SMALL_RECT* const psrRegion)
 // Routine Description:
 // - Called when a particular coordinate within the console buffer has changed.
 // Arguments:
-// - <none>
+// - pcoord: The buffer-space coordinate that has changed.
 // Return Value:
 // - <none>
 void Renderer::TriggerRedraw(_In_ const COORD* const pcoord)
 {
     SMALL_RECT srRegion = _RegionFromCoord(pcoord);
     TriggerRedraw(&srRegion); // this will notify to paint if we need it.
+}
+
+// Routine Description:
+// - Called when the cursor has moved in the buffer. Allows for RenderEngines to 
+//      differentiate between cursor movements and other invalidates. 
+//   Visual Renderers (ex GDI) sohuld invalidate the position, while the VT 
+//      engine ignores this. See MSFT:14711161.
+// Arguments:
+// - pcoord: The buffer-space position of the cursor.
+// Return Value:
+// - <none>
+void Renderer::TriggerRedrawCursor(_In_ const COORD* const pcoord)
+{
+    Viewport view(_pData->GetViewport());
+    COORD updateCoord = *pcoord;
+
+    if (view.IsWithinViewport(&updateCoord))
+    {
+        view.ConvertToOrigin(&updateCoord);
+        for (IRenderEngine* pEngine : _rgpEngines)
+        {
+            LOG_IF_FAILED(pEngine->InvalidateCursor(&updateCoord));
+        }
+
+        _NotifyPaintFrame();
+    }
 }
 
 // Routine Description:
@@ -226,6 +272,28 @@ void Renderer::TriggerRedrawAll()
     });
 
     _NotifyPaintFrame();
+}
+
+// Method Description:
+// - Called when the host is about to die, to give the renderer one last chance 
+//      to paint before the host exits. 
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Renderer::TriggerTeardown()
+{
+    for (IRenderEngine* const pEngine : _rgpEngines)
+    {
+        bool fEngineRequestsRepaint = false;
+        HRESULT hr = pEngine->PrepareForTeardown(&fEngineRequestsRepaint);
+        LOG_IF_FAILED(hr);
+
+        if (SUCCEEDED(hr) && fEngineRequestsRepaint)
+        {
+            _PaintFrameForEngine(pEngine);
+        }
+    }
 }
 
 // Routine Description:
@@ -310,6 +378,28 @@ void Renderer::TriggerScroll(_In_ const COORD* const pcoordDelta)
 }
 
 // Routine Description:
+// - Called when the text buffer is about to circle it's backing buffer.
+//      A renderer might want to get painted before that happens.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Renderer::TriggerCircling()
+{
+    for (IRenderEngine* const pEngine : _rgpEngines)
+    {
+        bool fEngineRequestsRepaint = false;
+        HRESULT hr = pEngine->InvalidateCircling(&fEngineRequestsRepaint);
+        LOG_IF_FAILED(hr);
+
+        if (SUCCEEDED(hr) && fEngineRequestsRepaint)
+        {
+            _PaintFrameForEngine(pEngine);
+        }
+    }
+}
+
+// Routine Description:
 // - Called when a change in font or DPI has been detected.
 // Arguments:
 // - iDpi - New DPI value
@@ -338,8 +428,31 @@ void Renderer::TriggerFontChange(_In_ int const iDpi, _In_ FontInfoDesired const
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 HRESULT Renderer::GetProposedFont(_In_ int const iDpi, _In_ FontInfoDesired const * const pFontInfoDesired, _Out_ FontInfo* const pFontInfo)
 {
-    // MSFT:13631640 Figure out what to do with this when there's no head.
-    return _rgpEngines[0]->GetProposedFont(pFontInfoDesired, pFontInfo, iDpi);
+    // If there's no head, return E_FAIL. The caller should decide how to
+    //      handle this.
+    // Currently, the only caller is the WindowProc:WM_GETDPISCALEDSIZE handler.
+    //      It will assume that the proposed font is 1x1, regardless of DPI.
+    if (_rgpEngines.size() < 1)
+    {
+        return E_FAIL;
+    }
+
+    // There will only every really be two engines - the real head and the VT
+    //      renderer. We won't know which is which, so iterate over them.
+    //      Only return the result of the successful one if it's not S_FALSE (which is the VT renderer)
+    // TODO: 14560740 - The Window might be able to get at this info in a more sane manner
+    assert(_rgpEngines.size() <= 2);
+    for (IRenderEngine* const pEngine : _rgpEngines)
+    {
+        const HRESULT hr = LOG_IF_FAILED(pEngine->GetProposedFont(pFontInfoDesired, pFontInfo, iDpi));
+        // We're looking for specifically S_OK, S_FALSE is not good enough.
+        if (hr == S_OK)
+        {
+            return hr;
+        }
+    };
+
+    return E_FAIL;
 }
 
 // Routine Description:
@@ -351,8 +464,24 @@ HRESULT Renderer::GetProposedFont(_In_ int const iDpi, _In_ FontInfoDesired cons
 // - COORD representing the current pixel size of the selected font
 COORD Renderer::GetFontSize()
 {
-    // MSFT:13631640 Figure out what to do with this when there's no head.
-    return _rgpEngines[0]->GetFontSize();
+    COORD fontSize = {1, 1};
+    // There will only every really be two engines - the real head and the VT
+    //      renderer. We won't know which is which, so iterate over them.
+    //      Only return the result of the successful one if it's not S_FALSE (which is the VT renderer)
+    // TODO: 14560740 - The Window might be able to get at this info in a more sane manner
+    assert(_rgpEngines.size() <= 2);
+
+    for (IRenderEngine* const pEngine : _rgpEngines)
+    {
+        const HRESULT hr = LOG_IF_FAILED(pEngine->GetFontSize(&fontSize));
+        // We're looking for specifically S_OK, S_FALSE is not good enough.
+        if (hr == S_OK)
+        {
+            return fontSize;
+        }
+    };
+
+    return fontSize;
 }
 
 // Routine Description:
@@ -365,8 +494,24 @@ COORD Renderer::GetFontSize()
 // - True if the character is full-width (two wide), false if it is half-width (one wide).
 bool Renderer::IsCharFullWidthByFont(_In_ WCHAR const wch)
 {
-    // MSFT:13631640 Figure out what to do with this when there's no head.
-    return _rgpEngines[0]->IsCharFullWidthByFont(wch);
+    bool fIsFullWidth = false;
+
+    // There will only every really be two engines - the real head and the VT
+    //      renderer. We won't know which is which, so iterate over them.
+    //      Only return the result of the successful one if it's not S_FALSE (which is the VT renderer)
+    // TODO: 14560740 - The Window might be able to get at this info in a more sane manner
+    assert(_rgpEngines.size() <= 2);
+    for (IRenderEngine* const pEngine : _rgpEngines)
+    {
+        const HRESULT hr = LOG_IF_FAILED(pEngine->IsCharFullWidthByFont(wch, &fIsFullWidth));
+        // We're looking for specifically S_OK, S_FALSE is not good enough.
+        if (hr == S_OK)
+        {
+            return fIsFullWidth;
+        }
+    }
+
+    return fIsFullWidth;
 }
 
 // Routine Description:
@@ -461,6 +606,21 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
 
             // Now draw it.
             _PaintBufferOutputRasterFontHelper(pEngine, pRow, pwsLine, pbKAttrs, cchLine, iLeft, coordTarget);
+
+#if DBG
+            if (_fDebug)
+            {
+                // Draw a frame shape around the last character of a wrapped row to identify where there are soft wraps versus hard newlines.
+                if (iRight == (size_t)pRow->CharRow.Right && pRow->CharRow.WasWrapForced())
+                {
+                    IRenderEngine::GridLines lines = IRenderEngine::GridLines::Right | IRenderEngine::GridLines::Bottom;
+                    COORD coordDebugTarget;
+                    coordDebugTarget.Y = iRow - view.Top();
+                    coordDebugTarget.X = (SHORT)iRight - view.Left() - 1;
+                    pEngine->PaintBufferGridLines(lines, RGB(0x99, 0x77, 0x31), 1, coordDebugTarget);
+                }
+            }
+#endif
         }
     }
 }
@@ -479,7 +639,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
 // - coordTarget - The X/Y coordinate position on the screen which we're attempting to render to.
 // Return Value:
 // - <none>
-void Renderer::_PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEngine, 
+void Renderer::_PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEngine,
                                                   _In_ const ROW* const pRow,
                                                   _In_reads_(cchLine) PCWCHAR const pwsLine,
                                                   _In_reads_(cchLine) PBYTE pbKAttrsLine,
@@ -566,12 +726,12 @@ void Renderer::_PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEng
 // - coordTarget - The X/Y coordinate position on the screen which we're attempting to render to.
 // Return Value:
 // - <none>
-void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine, 
-                                             _In_ const ROW* const pRow, 
-                                             _In_reads_(cchLine) PCWCHAR const pwsLine, 
-                                             _In_reads_(cchLine) PBYTE pbKAttrsLine, 
-                                             _In_ size_t cchLine, 
-                                             _In_ size_t iFirstAttr, 
+void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
+                                             _In_ const ROW* const pRow,
+                                             _In_reads_(cchLine) PCWCHAR const pwsLine,
+                                             _In_reads_(cchLine) PBYTE pbKAttrsLine,
+                                             _In_ size_t cchLine,
+                                             _In_ size_t iFirstAttr,
                                              _In_ COORD const coordTarget)
 {
     // We may have to write this string in several pieces based on the colors.
@@ -638,10 +798,10 @@ void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
 // - coordTarget - The X/Y coordinate position in the buffer which we're attempting to start rendering from. pwsLine[0] will be the character at position coordTarget within the original console buffer before it was prepared for this function.
 // Return Value:
 // - S_OK or memory allocation error
-HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const pEngine, 
-                                                     _In_reads_(cchLine) PCWCHAR const pwsLine, 
-                                                     _In_reads_(cchLine) PBYTE const pbKAttrsLine, 
-                                                     _In_ size_t const cchLine, 
+HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const pEngine,
+                                                     _In_reads_(cchLine) PCWCHAR const pwsLine,
+                                                     _In_reads_(cchLine) PBYTE const pbKAttrsLine,
+                                                     _In_ size_t const cchLine,
                                                      _In_ COORD const coordTarget)
 {
     // We need the ability to move the target back to the left slightly in case we start with a trailing byte character.
@@ -715,12 +875,12 @@ HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const p
 // - coordTarget - The X/Y coordinate position in the buffer which we're attempting to start rendering from.
 // Return Value:
 // - <none>
-void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine, 
-                                                _In_ const TextAttribute textAttribute, 
-                                                _In_ size_t const cchLine, 
+void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine,
+                                                _In_ const TextAttribute textAttribute,
+                                                _In_ size_t const cchLine,
                                                 _In_ COORD const coordTarget)
 {
-    COLORREF rgb = textAttribute.GetRgbForeground();
+    COLORREF rgb = textAttribute.CalculateRgbForeground();
 
     // Convert console grid line representations into rendering engine enum representations.
     IRenderEngine::GridLines lines = IRenderEngine::GridLines::None;
@@ -758,7 +918,6 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
 void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
 {
     const Cursor* const pCursor = _pData->GetCursor();
-    const IRenderCursor* const pRenderCursor = pEngine->GetCursor();
 
     if (pCursor->IsVisible() && pCursor->IsOn() && !pCursor->IsPopupShown())
     {
@@ -767,43 +926,40 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
 
         Viewport view(_pData->GetViewport());
 
-        SMALL_RECT srDirty = pEngine->GetDirtyRectInChars();
-        view.ConvertFromOrigin(&srDirty);
+        // Always attempt to paint the cursor, even if it's not within the 
+        //      "dirty" part of the viewport.
 
-        Viewport viewDirty(srDirty);
+        // Determine cursor height
+        ULONG ulHeight = pCursor->GetSize();
 
-        // Check if cursor is within dirty area, or if the cursor wants to be painted regardless.
-        if (viewDirty.IsWithinViewport(&coordCursor) || pRenderCursor->ForcePaint())
+        // Now adjust the height for the overwrite/insert mode. If we're in overwrite mode, IsDouble will be set.
+        // When IsDouble is set, we either need to double the height of the cursor, or if it's already too big,
+        // then we need to shrink it by half.
+        if (pCursor->IsDouble())
         {
-            // Determine cursor height
-            ULONG ulHeight = pCursor->GetSize();
-
-            // Now adjust the height for the overwrite/insert mode. If we're in overwrite mode, IsDouble will be set.
-            // When IsDouble is set, we either need to double the height of the cursor, or if it's already too big,
-            // then we need to shrink it by half.
-            if (pCursor->IsDouble())
+            if (ulHeight > 50) // 50 because 50 percent is half of 100 percent which is the max size.
             {
-                if (ulHeight > 50) // 50 because 50 percent is half of 100 percent which is the max size.
-                {
-                    ulHeight >>= 1;
-                }
-                else
-                {
-                    ulHeight <<= 1;
-                }
+                ulHeight >>= 1;
             }
-
-            // Determine cursor width
-            bool const fIsDoubleWidth = !!pCursor->IsDoubleWidth();
-
-            // Draw it within the viewport 
-            LOG_IF_FAILED(pEngine->PaintCursor(ulHeight,
-                                               fIsDoubleWidth,
-                                               pCursor->GetCursorType(),
-                                               pCursor->IsUsingColor(),
-                                               pCursor->GetColor()));
+            else
+            {
+                ulHeight <<= 1;
+            }
         }
 
+        // Determine cursor width
+        bool const fIsDoubleWidth = !!pCursor->IsDoubleWidth();
+
+        // Adjust cursor to viewport
+        view.ConvertToOrigin(&coordCursor);
+
+        // Draw it within the viewport
+        LOG_IF_FAILED(pEngine->PaintCursor(coordCursor, 
+                                           ulHeight,
+                                           fIsDoubleWidth,
+                                           pCursor->GetCursorType(),
+                                           pCursor->IsUsingColor(),
+                                           pCursor->GetColor()));
     }
 }
 
@@ -923,8 +1079,8 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 // - <none>
 HRESULT Renderer::_UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, _In_ const TextAttribute textAttributes, _In_ bool const fIncludeBackground)
 {
-    COLORREF rgbForeground = textAttributes.GetRgbForeground();
-    COLORREF rgbBackground = textAttributes.GetRgbBackground();
+    COLORREF rgbForeground = textAttributes.CalculateRgbForeground();
+    COLORREF rgbBackground = textAttributes.CalculateRgbBackground();
     WORD legacyAttributes = textAttributes.GetLegacyAttributes();
 
     // The last color need's to be each engine's responsibility. If it's local to this function,
@@ -998,58 +1154,11 @@ NTSTATUS Renderer::_GetSelectionRects(
 // - pEngine: The new render engine to be added
 // Return Value:
 // - <none>
-// Throws if we ran out of memory or there was some other error appending the 
+// Throws if we ran out of memory or there was some other error appending the
 //      engine to our collection.
 void Renderer::AddRenderEngine(_In_ IRenderEngine* const pEngine)
 {
+    THROW_IF_NULL_ALLOC(pEngine);
     _rgpEngines.push_back(pEngine);
 }
 
-// Method Description:
-// - Updates each renderer's cursor with the new cursor position, in viewport 
-//      origin, character coordinates
-// Arguments:
-// - the new cursor position, in buffer origin character coordinates
-// Return Value:
-// - <none>
-void Renderer::MoveCursor(_In_ const COORD cPosition)
-{
-    Viewport view(_pData->GetViewport());
-    if (view.IsWithinViewport(&cPosition))
-    {
-        COORD relativePosition = cPosition;
-        view.ConvertToOrigin(&relativePosition);
-
-        std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
-            pEngine->GetCursor()->Move(relativePosition);
-        });
-    }
-
-    _NotifyPaintFrame();
-}
-
-// Method Description:
-// - Updates each renderer's cursor with the new cursor position, in viewport 
-//      origin, character coordinates
-// Arguments:
-// - the new cursor position, in buffer origin character coordinates
-// Return Value:
-// - <none>
-void Renderer::SetCursorAttributes(_In_ const COLORREF color,
-                                   _In_ const CursorType type)
-{
-    std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
-        IRenderCursor* pCursor = pEngine->GetCursor();
-        
-        if (pCursor->GetColor() != color)
-        {
-            pCursor->SetColor(color);
-        }
-        if (pCursor->GetType() != type)
-        {
-            pCursor->SetType(type);
-        }
-    });
-
-    _NotifyPaintFrame();
-}

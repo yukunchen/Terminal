@@ -5,85 +5,84 @@
 -->
 
 <DominoSpec xmlns:d="http://schemas.microsoft.com/domino/extension/0.5" xmlns="http://schemas.microsoft.com/domino/0.5">
-  <Namespace Name="MsWin.OnecoreUap.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser">
+  <Namespace Name="MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser">
     <Path Name="DotDot" Visibility="Private">{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser</Path>
     <Path Name="O" Visibility="Private">{ObjRoot}\onecore\windows\core\console\open\src\terminal\parser\ft_fuzzwrapper\{BuildAlt}</Path>
 
-    <!--DEF: MsWin.OnecoreUap.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzwrapper_PrePass-->
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzwrapper_PrePass-->
 
     <LegacyBuilder Output="Ft_fuzzwrapper_PrePass" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
       <Classification>Test</Classification>
       <TargetPass>PrePass</TargetPass>
+
+      <!--Consumes-->
+
+      <Consumes>
+        <Item>autogen.bp</Item>
+        <Item>autogen.ds</Item>
+        <Item>fuzzwrapper.vcxproj</Item>
+      </Consumes>
     </LegacyBuilder>
 
-    <!--DEF: MsWin.OnecoreUap.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzwrapper_Pass1-->
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzwrapper_Pass1-->
 
-    <LegacyBuilder Output="Ft_fuzzwrapper_Pass1" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake">
+    <LegacyBuilder Output="Ft_fuzzwrapper_Pass1" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
       <Classification>Test</Classification>
       <TargetPass>Pass1</TargetPass>
 
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.bp</Item>
+        <Item>autogen.ds</Item>
         <Item>echodispatch.cpp</Item>
         <Item>echodispatch.hpp</Item>
+        <Item>fuzzwrapper.vcxproj</Item>
         <Item>main.cpp</Item>
         <Item>precomp.cpp</Item>
         <Item>precomp.h</Item>
+        <Item>{DotDot}\istatemachineengine.hpp</Item>
+        <Item>{DotDot}\outputstatemachineengine.hpp</Item>
         <Item>{DotDot}\statemachine.hpp</Item>
         <Item>{DotDot}\telemetry.hpp</Item>
-        <Item>{DotDot}\termdispatch.hpp</Item>
+        <Item>{DotDot}\tracing.hpp</Item>
+        <Item>{ObjRoot}\{BuildAlt}\onecorefeaturestaging.inc</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\congetset.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\dispatchcommon.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\termdispatch.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\types\inc\iinputevent.hpp</Item>
 
         <!--References-->
 
-        <Item>{MsWin.OnecoreUap.Mincore.Apiset.Libs.Job.Current_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Mincore.Apiset.Libs.Namespace_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Mincore.Apiset.Libs.Processtopology.Current_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Mincore.Apiset.Libs.Systemtopology.Current_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Inc_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Console.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Datetime.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Debug.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Enclave.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Errorhandling.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Fibers.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.File.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Handle.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Heap.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Interlocked.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Io.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Job_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Libloader.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Localregistry.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Memory.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Namedpipe.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Processenv.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Processthreads.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Profile.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Realtime.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Securityappcontainer_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Securitybase.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.String.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Synch.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Sysinfo.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Threadpool.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Threadpoollegacy.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Timezone.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Util.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Wow64.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Crts.Ucrt.Published_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Published.Base_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Published.Internal_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Published.Sdk_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Base.Published2_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Base.Published_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Net.Published.Inc_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Sdktools.Analysis.Prefast.Suppression.Inc_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Sdktools.Testlog.Testcode_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Shell.Published.Inc.Inc_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzwrapper_PrePass}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Windows.Published.Main_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Windows.Published.Movedfromdrivers_Pass0}</Item>
+        <Item>{MsWin.Crts.Public.Internal.Sdk.Inc.Ucrt.Stl120.__Header}</Item>
+        <Item>{MsWin.Crts.Public.Internal.Sdk.Inc.Ucrt.__Header}</Item>
+        <Item>{MsWin.Crts.Public.Sdk.Inc.Ucrt.Sys.__Header}</Item>
+        <Item>{MsWin.Crts.Public.Sdk.Inc.Ucrt.__Header}</Item>
+        <Item>{MsWin.OnecoreBase.Public.Sdk.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreBase.Public.Shared.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreCom.Public.Sdk.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreCom.Public.Shared.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreNet.Public.Sdk.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreSdkTools.Public.Internal.Onecoresdktools.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreSdkTools.Public.Internal.Sdk.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreSdkTools.Public.Shared.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreShell.Public.Internal.Sdk.Inc.Wil.__Header}</Item>
+        <Item>{MsWin.OnecoreShell.Public.Sdk.Inc.__Idl}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzwrapper_PrePass}</Item>
+        <Item>{MsWin.OnecoreWindows.Public.Internal.Onecorewindows.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreWindows.Public.Sdk.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreWindows.Public.Sdk.Inc.__Idl}</Item>
+        <Item>{MsWin.OnecoreWindows.Public.Shared.Inc.__Header}</Item>
+        <Item>{MsWin.Onecore_ApiSet.Public.Sdk.Inc.Mincore.__Header}</Item>
+        <Item>{MsWin.Onecore_MinIo.Private.Internal.Minwin.Priv_sdk.Inc.__Header}</Item>
+        <Item>{MsWin.Onecore_MinIo.Public.Shared.Inc.__Header}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Inc.Telemetry.__Header}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Inc.__Idl}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Internal.Base.Inc.__Header}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Sdk.Inc.Minwin.__Header}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Sdk.Inc.__Idl}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Shared.Inc.Minwin.__Header}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Shared.Inc.__Header}</Item>
       </Consumes>
 
       <!--Produces-->
@@ -97,37 +96,37 @@
       </Produces>
     </LegacyBuilder>
 
-    <!--DEF: MsWin.OnecoreUap.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzwrapper_Pass2-->
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzwrapper_Pass2-->
 
-    <LegacyBuilder Output="Ft_fuzzwrapper_Pass2" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake">
+    <LegacyBuilder Output="Ft_fuzzwrapper_Pass2" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
       <Classification>Test</Classification>
       <TargetPass>Pass2</TargetPass>
 
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.bp</Item>
+        <Item>autogen.ds</Item>
         <Item>echodispatch.cpp</Item>
+        <Item>fuzzwrapper.vcxproj</Item>
         <Item>main.cpp</Item>
         <Item>precomp.cpp</Item>
         <Item>precomp.h</Item>
-        <Item>{SrcRoot}\public\sdk\inc\ntverp.h</Item>
+        <Item>{ObjRoot}\{BuildAlt}\onecorefeaturestaging.inc</Item>
+        <Item>{SrcRoot}\build\scripts\fixtsversionstringappend.cmd</Item>
 
         <!--References-->
 
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Ucrt.Lib_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Ucrt.Ucrtprivate._10_Pass1}</Item>
-        <Item Condition="{IsBuildArm32 OR IsBuildArm64}">{MsWin.OnecoreUap.Minkernel.Crts.Crtw32.Helper.Nt_Pass1}</Item>
-        <Item Condition="{IsBuildDebug}">{MsWin.OnecoreUap.Minkernel.Crts.Crtw32.Linkopts.Ucrt_dbgcrt_shims_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Crts.Ucrt.Devdiv.Vcstartup.Src.Lib.Md_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Crts.Ucrt.Devdiv.Vcstartup.Src.Linkopts.Mt_legacy_stdio_definitions_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Crts.Ucrt.Devdiv.Vcstartup.Src.Linkopts.Mt_legacy_stdio_msvcrt_compatibility_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Crts.Ucrt.Devdiv.Vcstartup.Src.Linkopts.Mt_legacy_stdio_wide_specifiers_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Crts.Ucrt.Src.Appcrt.Dll.Osmode_function_map_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Tools.Guard_support_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Merged.Umbrellalibs.Current_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzwrapper_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzwrapper_PrePass}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Lib_Pass1}</Item>
+        <Item>{MsWin.Crts.Public.Internal.Sdk.Lib.Ucrt.__Library}</Item>
+        <Item Condition="{IsBuildDebug AND IsBuildCommonArchitecture}">{MsWin.Crts.Public.Internal.Sdk.Lib.__Library}</Item>
+        <Item Condition="{(IsBuildArm32 OR IsBuildArm64)}">{MsWin.Crts.Public.Sdk.Lib.__Library}</Item>
+        <Item>{MsWin.OnecoreMerged.Public.Sdk.Lib.Onecore.v1_8.__Library}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzwrapper_Pass1}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzwrapper_PrePass}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Lib_Pass1}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Internal.Sdk.Lib.__Library}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Sdk.Lib.Minwin.v1_9.__Library}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Sdk.Lib.__Library}</Item>
       </Consumes>
 
       <!--Produces-->

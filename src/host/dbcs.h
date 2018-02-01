@@ -19,7 +19,7 @@ Revision History:
 
 #include "screenInfo.hpp"
 
-#define CP_USA                 1252
+#define CP_USA                 437
 #define CP_KOREAN              949
 #define CP_JAPANESE            932
 #define CP_CHINESE_SIMPLIFIED  936
@@ -54,4 +54,4 @@ ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
                             _In_ const ULONG cchUnicode,
                             _Out_writes_bytes_(cbAnsi) PCHAR pchAnsi,
                             _In_ const ULONG cbAnsi,
-                            _Outref_result_maybenull_ std::unique_ptr<IInputEvent>& partialEvent);
+                            _Out_ std::unique_ptr<IInputEvent>& partialEvent);

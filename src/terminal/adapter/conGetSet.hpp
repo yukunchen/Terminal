@@ -83,6 +83,9 @@ namespace Microsoft
                 virtual BOOL PrivateGetConsoleScreenBufferAttributes(_Out_ WORD* const pwAttributes) = 0;
                 virtual BOOL PrivatePrependConsoleInput(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
                                                         _Out_ size_t& eventsWritten) = 0;
+                virtual BOOL PrivateWriteConsoleControlInput(_In_ KeyEvent key) = 0;
+                virtual BOOL PrivateRefreshWindow() = 0;
+                virtual BOOL PrivateSuppressResizeRepaint() = 0;
             };
         };
     };

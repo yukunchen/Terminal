@@ -1,0 +1,120 @@
+namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzer {
+
+    export declare const qualifier: WdgBuild.StandardPlatformsQualifier;
+
+    const dotDot = d`${srcRoot}\onecore\windows\core\console\open\src\terminal\parser`;
+
+    const o = d`${objRoot}\onecore\windows\core\console\open\src\terminal\parser\ft_fuzzer\${buildAlt}`;
+
+    const prePass = LegacyBuild.build({
+        template: template_NMake,
+        classification: "test",
+        targetPass: "prePass",
+        
+        consumes: [
+            f`autogen.bp`,
+            f`autogen.bp`,
+            f`vtcommandfuzzer.vcxproj`,
+        ],
+    });
+
+    const pass1 = LegacyBuild.build({
+        template: template_NMake,
+        classification: "test",
+        targetPass: "pass1",
+        
+        consumes: [
+            f`autogen.bp`,
+            f`autogen.bp`,
+            f`fuzzing_directed.h`,
+            f`fuzzing_logic.h`,
+            f`stdafx.cpp`,
+            f`stdafx.h`,
+            f`vtcommandfuzzer.cpp`,
+            f`vtcommandfuzzer.vcxproj`,
+            f`${objRoot}\${buildAlt}\onecorefeaturestaging.inc`,
+
+            prePass,
+
+            MsWinCrts.Public.Internal.Sdk.Inc.Ucrt.header,
+            MsWinCrts.Public.Internal.Sdk.Inc.Ucrt.Stl120.header,
+            MsWinCrts.Public.Sdk.Inc.Ucrt.header,
+            MsWinCrts.Public.Sdk.Inc.Ucrt.Sys.header,
+            MsWinOnecoreBase.Public.Shared.Inc.header,
+            MsWinOnecoreCom.Public.Sdk.Inc.header,
+            MsWinOnecoreCom.Public.Sdk.Inc.idl,
+            MsWinOnecoreCom.Public.Shared.Inc.header,
+            MsWinOnecoreEndUser.Public.Sdk.Inc.idl,
+            MsWinOnecoreEndUser.Public.Sdk.Inc.Atlmfc.idl,
+            MsWinOnecoreInetCore.Public.Sdk.Inc.idl,
+            MsWinOnecoreNet.Public.Sdk.Inc.header,
+            MsWinOnecoreSdkTools.Public.Internal.Onecoresdktools.Inc.header,
+            MsWinOnecoreSdkTools.Public.Internal.Sdk.Inc.header,
+            MsWinOnecoreSdkTools.Public.Shared.Inc.header,
+            MsWinOnecoreShell.Public.Sdk.Inc.idl,
+            MsWinOnecore_ApiSet.Public.Sdk.Inc.Mincore.header,
+            MsWinOnecore_MinIo.Public.Sdk.Inc.header,
+            MsWinOnecore_MinIo.Public.Shared.Inc.header,
+            MsWinOnecore_MinIo.Public.Shared.Inc.Minwin.header,
+            MsWinOnecore_MinKernel.Public.Internal.Base.Inc.header,
+            MsWinOnecore_MinKernel.Public.Sdk.Inc.idl,
+            MsWinOnecore_MinKernel.Public.Sdk.Inc.Minwin.header,
+            MsWinOnecore_MinKernel.Public.Shared.Inc.header,
+            MsWinOnecore_MinKernel.Public.Shared.Inc.Minwin.header,
+            Public.Sdk.Inc.header,
+            Public.Sdk.Inc.idl,
+            Public.Shared.Inc.header,
+        ],
+        
+        produces: [
+            p`${o}\pch_hdr.src`,
+            p`${o}\stdafx.obj`,
+            p`${o}\stdafx.pch`,
+            p`${o}\vtcommandfuzzer.obj`,
+        ],
+    });
+
+    const pass2 = LegacyBuild.build({
+        template: template_NMake,
+        classification: "test",
+        targetPass: "pass2",
+        
+        consumes: [
+            f`autogen.bp`,
+            f`autogen.bp`,
+            f`stdafx.cpp`,
+            f`stdafx.h`,
+            f`vtcommandfuzzer.cpp`,
+            f`vtcommandfuzzer.vcxproj`,
+            f`${objRoot}\${buildAlt}\onecorefeaturestaging.inc`,
+            f`${srcRoot}\build\scripts\fixtsversionstringappend.cmd`,
+
+            pass1,
+            prePass,
+
+            MsWinCrts.Public.Internal.Sdk.Lib.Ucrt.library,
+            MsWinOnecoreEndUser.Public.Internal.Sdk.Lib.library,
+            MsWinOnecoreEndUser.Public.Sdk.Lib.library,
+            MsWinOnecoreMerged.Private.Internal.Onecore.Priv_sdk.Lib.V1_8.library,
+            MsWinOnecoreMerged.Public.Sdk.Lib.Onecore.V1_8.library,
+            MsWinOnecore_MinKernel.Public.Internal.Sdk.Lib.library,
+            MsWinOnecore_MinKernel.Public.Sdk.Lib.library,
+            MsWinOnecore_MinKernel.Public.Sdk.Lib.Minwin.V1_9.library,
+
+            ...addIf(isBuildArm32 || isBuildArm64, () => [
+                    MsWinCrts.Public.Sdk.Lib.library,
+                ]),
+            ...addIf(isBuildDebug && isBuildCommonArchitecture, () => [
+                    MsWinCrts.Public.Internal.Sdk.Lib.library,
+                ]),
+        ],
+        
+        produces: [
+            p`${binRoot}\blg\unittests\vtcommandfuzzer.exe.br`,
+            p`${binRoot}\symbols.pri\unittests\exe\vtcommandfuzzer.pdb`,
+            p`${binRoot}\unittests\vtcommandfuzzer.exe`,
+            p`${o}\vtcommandfuzzer.exe`,
+            p`${o}\vtcommandfuzzer.pdb`,
+        ],
+    });
+}

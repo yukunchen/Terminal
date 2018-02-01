@@ -7,9 +7,11 @@
 #include "precomp.h"
 
 #include "gdirenderer.hpp"
+#include "../../types/inc/Viewport.hpp"
 
 #pragma hdrstop
 
+using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Render;
 
 // Routine Description:
@@ -95,6 +97,18 @@ HRESULT GdiEngine::Invalidate(const SMALL_RECT* const psrRegion)
 }
 
 // Routine Description:
+// - Notifies us that the console has changed the position of the cursor.
+// Arguments:
+// - pcoordCursor - the new position of the cursor
+// Return Value:
+// - S_OK, else an appropriate HRESULT for failing to allocate or write.
+HRESULT GdiEngine::InvalidateCursor(const COORD* const pcoordCursor)
+{
+    SMALL_RECT sr = Viewport::FromCoord(*pcoordCursor).ToExclusive();
+    return this->Invalidate(&sr);
+}
+
+// Routine Description:
 // - Notifies to repaint everything.
 // - NOTE: Use sparingly. Only use when something that could affect the entire frame simultaneously occurs.
 // Arguments:
@@ -106,6 +120,36 @@ HRESULT GdiEngine::InvalidateAll()
     RECT rc;
     RETURN_LAST_ERROR_IF_FALSE(GetClientRect(_hwndTargetWindow, &rc));
     RETURN_HR(InvalidateSystem(&rc));
+}
+
+// Method Description:
+// - Notifies us that we're about to circle the buffer, giving us a chance to 
+//      force a repaint before the buffer contents are lost. The GDI renderer 
+//      doesn't care if we lose text - we're only painting visible text anyways,
+//      so we return false.
+// Arguments:
+// - Recieves a bool indicating if we should force the repaint.
+// Return Value:
+// - S_FALSE - we succeeded, but the result was false.
+HRESULT GdiEngine::InvalidateCircling(_Out_ bool* const pForcePaint)
+{
+    *pForcePaint = false;
+    return S_FALSE;
+}
+
+// Method Description:
+// - Notifies us that we're about to be torn down. This gives us a last chance 
+//      to force a repaint before the buffer contents are lost. The GDI renderer 
+//      doesn't care if we lose text - we're only painting visible text anyways,
+//      so we return false.
+// Arguments:
+// - Recieves a bool indicating if we should force the repaint.
+// Return Value:
+// - S_FALSE - we succeeded, but the result was false.
+HRESULT GdiEngine::PrepareForTeardown(_Out_ bool* const pForcePaint)
+{
+    *pForcePaint = false;
+    return S_FALSE;
 }
 
 // Routine Description:

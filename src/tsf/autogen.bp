@@ -1,0 +1,97 @@
+namespace Onecore.Windows.Core.Console.Open.Src.Tsf {
+
+    export declare const qualifier: WdgBuild.StandardPlatformsQualifier;
+
+    const dotDot = d`${srcRoot}\onecore\windows\core\console\open\src`;
+
+    const o = d`${objRoot}\onecore\windows\core\console\open\src\tsf\${buildAlt}`;
+
+    const prePass = LegacyBuild.build({
+        template: template_NMake,
+        classification: "product",
+        targetPass: "prePass",
+        
+        consumes: [
+            f`autogen.bp`,
+            f`autogen.bp`,
+            f`tsf.vcxproj`,
+        ],
+    });
+
+    export const pass1 = LegacyBuild.build({
+        template: template_NMake,
+        classification: "product",
+        targetPass: "pass1",
+        
+        consumes: [
+            f`autogen.bp`,
+            f`autogen.bp`,
+            f`consoletsf.cpp`,
+            f`consoletsf.h`,
+            f`contsf.cpp`,
+            f`debug.h`,
+            f`globals.h`,
+            f`precomp.cpp`,
+            f`precomp.h`,
+            f`structurearray.h`,
+            f`tfcatutil.cpp`,
+            f`tfcatutil.h`,
+            f`tfconvarea.cpp`,
+            f`tfconvarea.h`,
+            f`tfctxtcomp.h`,
+            f`tfdispattr.cpp`,
+            f`tfdispattr.h`,
+            f`tfeditses.cpp`,
+            f`tfeditses.h`,
+            f`tftxtevcb.cpp`,
+            f`tsf.vcxproj`,
+            f`${dotDot}\inc\conime.h`,
+            f`${dotDot}\inc\contsf.h`,
+            f`${objRoot}\${buildAlt}\onecorefeaturestaging.inc`,
+
+            prePass,
+
+            MsWinCrts.Public.Sdk.Inc.Crt.header,
+            MsWinOnecoreBase.Public.Shared.Inc.header,
+            MsWinOnecoreCom.Public.Sdk.Inc.header,
+            MsWinOnecoreCom.Public.Sdk.Inc.idl,
+            MsWinOnecoreCom.Public.Shared.Inc.header,
+            MsWinOnecoreEndUser.Public.Sdk.Inc.header,
+            MsWinOnecoreEndUser.Public.Sdk.Inc.idl,
+            MsWinOnecoreEndUser.Public.Sdk.Inc.Atl30.idl,
+            MsWinOnecoreInetCore.Public.Sdk.Inc.idl,
+            MsWinOnecoreNet.Public.Sdk.Inc.header,
+            MsWinOnecoreSdkTools.Public.Internal.Sdk.Inc.header,
+            MsWinOnecoreSdkTools.Public.Shared.Inc.header,
+            MsWinOnecoreShell.Public.Sdk.Inc.header,
+            MsWinOnecoreShell.Public.Sdk.Inc.idl,
+            MsWinOnecoreUapWindows.Public.Sdk.Inc.header,
+            MsWinOnecore_ApiSet.Public.Sdk.Inc.Mincore.header,
+            MsWinOnecore_MinIo.Private.Internal.Minwin.Priv_sdk.Inc.header,
+            MsWinOnecore_MinIo.Public.Shared.Inc.header,
+            MsWinOnecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Inc.idl,
+            MsWinOnecore_MinKernel.Public.Internal.Base.Inc.header,
+            MsWinOnecore_MinKernel.Public.Sdk.Inc.idl,
+            MsWinOnecore_MinKernel.Public.Sdk.Inc.Minwin.header,
+            MsWinOnecore_MinKernel.Public.Shared.Inc.header,
+            MsWinOnecore_MinKernel.Public.Shared.Inc.Minwin.header,
+            Public.Sdk.Inc.header,
+            Public.Sdk.Inc.idl,
+            Public.Shared.Inc.header,
+        ],
+        
+        produces: [
+            p`${o}\consoletsf.obj`,
+            p`${o}\contsf.lib`,
+            p`${o}\contsf.obj`,
+            p`${o}\pch_hdr.src`,
+            p`${o}\precomp.obj`,
+            p`${o}\precomp.pch`,
+            p`${o}\tfcatutil.obj`,
+            p`${o}\tfconvarea.obj`,
+            p`${o}\tfdispattr.obj`,
+            p`${o}\tfeditses.obj`,
+            p`${o}\tftxtevcb.obj`,
+        ],
+    });
+}

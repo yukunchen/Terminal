@@ -66,3 +66,7 @@ NTSTATUS DoSrvPrivateEraseAll(_In_ SCREEN_INFORMATION* const pScreenInfo);
 NTSTATUS DoSrvSetCursorStyle(_In_ SCREEN_INFORMATION* const pScreenInfo, _In_ CursorType const cursorType);
 
 NTSTATUS DoSrvPrivateGetConsoleScreenBufferAttributes(_In_ SCREEN_INFORMATION* const pScreenInfo, _Out_ WORD* const pwAttributes);
+
+NTSTATUS DoSrvPrivateRefreshWindow(_In_ SCREEN_INFORMATION* const pScreenInfo);
+
+NTSTATUS DoSrvPrivateSuppressResizeRepaint();

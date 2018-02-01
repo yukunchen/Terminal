@@ -438,7 +438,7 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
 
         if (gci->GetWrapText())
         {
-            // Then if wrap text is on, the buffer size gets fixed to the window size value.
+            // Then if wrap text is on, the buffer width gets fixed to the window width value.
             coordBuffer.X = coordWindow.X;
 
             // However, we're not done. The "max window size" is if we had no scroll bar.
@@ -475,7 +475,8 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
         coordWindow.X = min(coordWindow.X, coordMaxForBuffer.X);
         coordWindow.Y = min(coordWindow.Y, coordMaxForBuffer.Y);
 
-        // Then finish by updating the window.
+        // Then finish by updating the window. This will update the window size,
+        //      as well as the screen buffer's viewport.
         ServiceLocator::LocateConsoleWindow<Window>()->UpdateWindowSize(coordWindow);
     }
 
@@ -520,7 +521,6 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
     ClearAllFlags(pStateInfo->PopupAttributes, ~(FG_ATTRS | BG_ATTRS));
 
     SetScreenColors(ScreenInfo, pStateInfo->ScreenAttributes, pStateInfo->PopupAttributes, TRUE);
-    ScreenInfo->GetAdapterDispatch()->UpdateDefaultColor(pStateInfo->ScreenAttributes);
 
     ResizeCommandHistoryBuffers(pStateInfo->HistoryBufferSize);
     gci->SetNumberOfHistoryBuffers(pStateInfo->NumberOfHistoryBuffers);

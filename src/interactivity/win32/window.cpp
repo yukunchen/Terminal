@@ -69,16 +69,6 @@ Window::~Window()
     {
         delete ServiceLocator::LocateGlobals()->pRender;
     }
-
-    if (ServiceLocator::LocateGlobals()->pRenderData != nullptr)
-    {
-        delete ServiceLocator::LocateGlobals()->pRenderData;
-    }
-
-    if (ServiceLocator::LocateGlobals()->pRenderEngine != nullptr)
-    {
-        delete ServiceLocator::LocateGlobals()->pRenderEngine;
-    }
 }
 
 // Routine Description:
@@ -207,41 +197,23 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
     // Ensure we have appropriate system metrics before we start constructing the window.
     _UpdateSystemMetrics();
 
-    g->pRenderData = new RenderData();
-    status = NT_TESTNULL(g->pRenderData);
-    if (NT_SUCCESS(status))
+    GdiEngine* pGdiEngine = nullptr;
+    try
     {
-        GdiEngine* pGdiEngine = nullptr;
-
-        try
-        {
-            pGdiEngine = new GdiEngine();
-            status = NT_TESTNULL(pGdiEngine);
-        }
-        catch (...)
-        {
-            status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-        }
-
+        pGdiEngine = new GdiEngine();
+        status = NT_TESTNULL(pGdiEngine);
         if (NT_SUCCESS(status))
         {
-            g->pRenderEngine = pGdiEngine;
-            Renderer* pNewRenderer = nullptr;
-
-            if (SUCCEEDED(Renderer::s_CreateInstance(g->pRenderData,
-                                                     &g->pRenderEngine,
-                                                     1,
-                                                     &pNewRenderer)))
-            {
-                g->pRender = pNewRenderer;
-            }
-
-            status = NT_TESTNULL(g->pRender);
-
-            // Allow the renderer to paint.
-            pNewRenderer->EnablePainting();
+            g->pRender->AddRenderEngine(pGdiEngine);
         }
+    }
+    catch (...)
+    {
+        status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+    }
 
+    if (NT_SUCCESS(status))
+    {
         if (NT_SUCCESS(status))
         {
             SCREEN_INFORMATION* const psiAttached = GetScreenInfo();
@@ -422,13 +394,18 @@ NTSTATUS Window::SetViewportOrigin(_In_ SMALL_RECT NewWindow)
 
     COORD const FontSize = ScreenInfo->GetScreenFontSize();
 
-    if (AreAllFlagsClear(gci->Flags, (CONSOLE_IS_ICONIC | CONSOLE_NO_WINDOW)))
+    if (IsFlagClear(gci->Flags, CONSOLE_IS_ICONIC))
     {
         Selection* pSelection = &Selection::Instance();
         pSelection->HideSelection();
 
         // Fire off an event to let accessibility apps know we've scrolled.
-        NotifyWinEvent(EVENT_CONSOLE_UPDATE_SCROLL, _hWnd, ScreenInfo->GetBufferViewport().Left - NewWindow.Left, ScreenInfo->GetBufferViewport().Top - NewWindow.Top);
+        IAccessibilityNotifier *pNotifier = ServiceLocator::LocateAccessibilityNotifier();
+        if (pNotifier != nullptr)
+        {
+            pNotifier->NotifyConsoleUpdateScrollEvent(ScreenInfo->GetBufferViewport().Left - NewWindow.Left,
+                                                      ScreenInfo->GetBufferViewport().Top - NewWindow.Top);   
+        }
 
         // The new window is OK. Store it in screeninfo and refresh screen.
         ScreenInfo->SetBufferViewport(NewWindow);
@@ -599,7 +576,7 @@ NTSTATUS Window::_InternalSetWindowSize() const
     CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     SCREEN_INFORMATION* const psiAttached = GetScreenInfo();
 
-    gci->Flags &= ~CONSOLE_SETTING_WINDOW_SIZE;
+    ClearFlag(gci->Flags, CONSOLE_SETTING_WINDOW_SIZE);
     if (!IsInFullscreen())
     {
         // Figure out how big to make the window, given the desired client area size.
@@ -1087,8 +1064,9 @@ bool Window::IsInFullscreen() const
 
 void Window::SetIsFullscreen(_In_ bool const fFullscreenEnabled)
 {
-    // it shouldn't be possible to enter fullscreen while in fullscreen (and vice versa)
-    ASSERT(_fIsInFullscreen != fFullscreenEnabled);
+    // It is possible to enter SetIsFullScreen even if we're already in full screen.
+    // Use the old is in fullscreen flag to gate checks that rely on the current state.
+    bool fOldIsInFullscreen = _fIsInFullscreen;
     _fIsInFullscreen = fFullscreenEnabled;
 
     HWND const hWnd = GetWindowHandle();
@@ -1124,16 +1102,20 @@ void Window::SetIsFullscreen(_In_ bool const fFullscreenEnabled)
     }
     SetWindowLongW(hWnd, GWL_EXSTYLE, dwExWindowStyle);
 
-    _BackupWindowSizes();
+    _BackupWindowSizes(fOldIsInFullscreen);
     _ApplyWindowSize();
 }
 
-void Window::_BackupWindowSizes()
+void Window::_BackupWindowSizes(_In_ bool const fCurrentIsInFullscreen)
 {
     if (_fIsInFullscreen)
     {
-        // back up current window size
-        _rcNonFullscreenWindowSize = GetWindowRect();
+        // Note: the current window size depends on the current state of the window.
+        // So don't back it up if we're already in full screen.
+        if (!fCurrentIsInFullscreen)
+        {
+            _rcNonFullscreenWindowSize = GetWindowRect();
+        }
 
         // get and back up the current monitor's size
         HMONITOR const hCurrentMonitor = MonitorFromWindow(GetWindowHandle(), MONITOR_DEFAULTTONEAREST);

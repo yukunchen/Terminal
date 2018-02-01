@@ -143,7 +143,7 @@ std::deque<std::unique_ptr<IInputEvent>> Clipboard::TextToKeyEvents(_In_reads_(c
         }
 
         const short invalidKey = -1;
-        short keyState = VkKeyScanW(currentChar);
+        short keyState = ServiceLocator::LocateInputServices()->VkKeyScanW(currentChar);
 
         if (keyState == invalidKey)
         {
@@ -222,8 +222,24 @@ std::deque<std::unique_ptr<KeyEvent>> Clipboard::CharToKeyboardEvents(_In_ const
                                                        SHIFT_PRESSED));
     }
 
-    const WORD virtualScanCode = static_cast<WORD>(MapVirtualKeyW(wch, MAPVK_VK_TO_VSC));
-    KeyEvent keyEvent{ true, 1, LOBYTE(keyState), virtualScanCode, wch, 0 };
+    // MSFT:12123975 / WSL GH#2006
+    // If you paste text with ONLY linefeed line endings (unix style) in wsl,
+    //      then we faithfully pass those along, which the underlying terminal
+    //      interprets as C-j. In nano, C-j is mapped to "Justify text", which 
+    //      causes the pasted text to get broken at the width of the terminal.
+    // This behavior doesn't occur in gnome-terminal, and nothing like it occurs
+    //      in vi or emacs.
+    // This change doesn't break pasting text into any of those applications 
+    //      with CR/LF (Windows) line endings either. That apparently always 
+    //      worked right.
+    wchar_t wchActual = wch;
+    if (IsInVirtualTerminalInputMode() && wch == UNICODE_LINEFEED)
+    {
+        wchActual = UNICODE_CARRIAGERETURN;
+    }
+
+    const WORD virtualScanCode = static_cast<WORD>(ServiceLocator::LocateInputServices()->MapVirtualKeyW(wchActual, MAPVK_VK_TO_VSC));
+    KeyEvent keyEvent{ true, 1, LOBYTE(keyState), virtualScanCode, wchActual, 0 };
 
     // add modifier flags if necessary
     if (IsFlagSet(modifierState, VkKeyScanModState::ShiftPressed))
@@ -310,7 +326,7 @@ std::deque<std::unique_ptr<KeyEvent>> Clipboard::CharToNumpad(_In_ const wchar_t
                 break;
             }
             const WORD virtualKey = charString[i] - '0' + VK_NUMPAD0;
-            const WORD virtualScanCode = static_cast<WORD>(MapVirtualKeyW(virtualKey, MAPVK_VK_TO_VSC));
+            const WORD virtualScanCode = static_cast<WORD>(ServiceLocator::LocateInputServices()->MapVirtualKeyW(virtualKey, MAPVK_VK_TO_VSC));
 
             keyEvents.push_back(std::make_unique<KeyEvent>(true,
                                                            1ui16,

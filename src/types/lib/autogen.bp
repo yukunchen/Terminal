@@ -1,0 +1,96 @@
+namespace Onecore.Windows.Core.Console.Open.Src.Types.Lib {
+
+    export declare const qualifier: WdgBuild.StandardPlatformsQualifier;
+
+    const dotDot = d`${srcRoot}\onecore\windows\core\console\open\src\types`;
+
+    const o = d`${objRoot}\onecore\windows\core\console\open\src\types\lib\${buildAlt}`;
+
+    const prePass = LegacyBuild.build({
+        template: template_NMake,
+        classification: "product",
+        targetPass: "prePass",
+        
+        consumes: [
+            f`autogen.bp`,
+            f`autogen.bp`,
+            f`types.vcxproj`,
+        ],
+    });
+
+    export const pass1 = LegacyBuild.build({
+        template: template_NMake,
+        classification: "product",
+        targetPass: "pass1",
+        
+        consumes: [
+            f`autogen.bp`,
+            f`autogen.bp`,
+            f`types.vcxproj`,
+            f`${dotDot}\convert.cpp`,
+            f`${dotDot}\focusevent.cpp`,
+            f`${dotDot}\iinputevent.cpp`,
+            f`${dotDot}\keyevent.cpp`,
+            f`${dotDot}\menuevent.cpp`,
+            f`${dotDot}\modifierkeystate.cpp`,
+            f`${dotDot}\mouseevent.cpp`,
+            f`${dotDot}\precomp.cpp`,
+            f`${dotDot}\precomp.h`,
+            f`${dotDot}\viewport.cpp`,
+            f`${dotDot}\windowbuffersizeevent.cpp`,
+            f`${dotDot}\inc\convert.hpp`,
+            f`${dotDot}\inc\iinputevent.hpp`,
+            f`${dotDot}\inc\viewport.hpp`,
+            f`${objRoot}\${buildAlt}\onecorefeaturestaging.inc`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\host\conddkrefs.h`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\inc\cpp2017.hpp`,
+
+            prePass,
+
+            MsWinCrts.Public.Internal.Sdk.Inc.Ucrt.header,
+            MsWinCrts.Public.Internal.Sdk.Inc.Ucrt.Stl120.header,
+            MsWinCrts.Public.Internal.Sdk.Inc.Ucrt.Stl120.Thr.header,
+            MsWinCrts.Public.Sdk.Inc.Ucrt.header,
+            MsWinCrts.Public.Sdk.Inc.Ucrt.Sys.header,
+            MsWinOnecoreBase.Public.Shared.Inc.header,
+            MsWinOnecoreCom.Public.Sdk.Inc.header,
+            MsWinOnecoreCom.Public.Shared.Inc.header,
+            MsWinOnecoreDrivers.Public.Sdk.Inc.header,
+            MsWinOnecoreNet.Public.Sdk.Inc.header,
+            MsWinOnecoreSdkTools.Public.Internal.Sdk.Inc.header,
+            MsWinOnecoreSdkTools.Public.Shared.Inc.header,
+            MsWinOnecoreShell.Public.Internal.Sdk.Inc.Wil.header,
+            MsWinOnecoreShell.Public.Sdk.Inc.idl,
+            MsWinOnecore_ApiSet.Public.Sdk.Inc.Mincore.header,
+            MsWinOnecore_MinIo.Private.Internal.Minwin.Priv_sdk.Inc.header,
+            MsWinOnecore_MinIo.Public.Shared.Inc.header,
+            MsWinOnecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Inc.header,
+            MsWinOnecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Inc.idl,
+            MsWinOnecore_MinKernel.Public.Internal.Base.Inc.header,
+            MsWinOnecore_MinKernel.Public.Sdk.Inc.idl,
+            MsWinOnecore_MinKernel.Public.Sdk.Inc.Minwin.header,
+            MsWinOnecore_MinKernel.Public.Shared.Inc.header,
+            MsWinOnecore_MinKernel.Public.Shared.Inc.Minwin.header,
+            Public.Internal.Onecorewindows.Inc.header,
+            Public.Sdk.Inc.header,
+            Public.Sdk.Inc.idl,
+            Public.Shared.Inc.header,
+        ],
+        
+        produces: [
+            p`${o}\contypes.lib`,
+            p`${o}\convert.obj`,
+            p`${o}\focusevent.obj`,
+            p`${o}\iinputevent.obj`,
+            p`${o}\keyevent.obj`,
+            p`${o}\menuevent.obj`,
+            p`${o}\modifierkeystate.obj`,
+            p`${o}\mouseevent.obj`,
+            p`${o}\pch_hdr.src`,
+            p`${o}\precomp.obj`,
+            p`${o}\precomp.pch`,
+            p`${o}\viewport.obj`,
+            p`${o}\windowbuffersizeevent.obj`,
+        ],
+    });
+}

@@ -14,7 +14,6 @@ Author(s):
 #pragma once
 
 #include "..\inc\IRenderEngine.hpp"
-#include "GdiCursor.hpp"
 
 namespace Microsoft
 {
@@ -26,7 +25,7 @@ namespace Microsoft
             {
             public:
                 GdiEngine();
-                ~GdiEngine();
+                ~GdiEngine() override;
 
                 HRESULT SetHwnd(_In_ HWND const hwnd);
 
@@ -35,7 +34,10 @@ namespace Microsoft
                 HRESULT InvalidateScroll(_In_ const COORD* const pcoordDelta) override;
                 HRESULT InvalidateSystem(_In_ const RECT* const prcDirtyClient) override;
                 HRESULT Invalidate(_In_ const SMALL_RECT* const psrRegion) override;
+                HRESULT InvalidateCursor(_In_ const COORD* const pcoordCursor) override;
                 HRESULT InvalidateAll() override;
+                HRESULT InvalidateCircling(_Out_ bool* const pForcePaint) override;
+                HRESULT PrepareForTeardown(_Out_ bool* const pForcePaint) override;
 
                 HRESULT StartPaint() override;
                 HRESULT EndPaint() override;
@@ -55,12 +57,13 @@ namespace Microsoft
                 HRESULT PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection,
                                        _In_ UINT const cRectangles) override;
 
-                HRESULT PaintCursor(_In_ ULONG const ulCursorHeightPercent,
+                HRESULT PaintCursor(_In_ COORD const coordCursor,
+                                    _In_ ULONG const ulCursorHeightPercent,
                                     _In_ bool const fIsDoubleWidth,
                                     _In_ CursorType const cursorType,
                                     _In_ bool const fUseColor,
                                     _In_ COLORREF const cursorColor) override;
-
+                
                 HRESULT ClearCursor() override;
 
                 HRESULT UpdateDrawingBrushes(_In_ COLORREF const colorForeground,
@@ -77,10 +80,8 @@ namespace Microsoft
                                         _In_ int const iDpi) override;
 
                 SMALL_RECT GetDirtyRectInChars() override;
-                COORD GetFontSize() override;
-                bool IsCharFullWidthByFont(_In_ WCHAR const wch) override;
-
-                IRenderCursor* const GetCursor() override;
+                HRESULT GetFontSize(_Out_ COORD* const pFontSize) override;
+                HRESULT IsCharFullWidthByFont(_In_ WCHAR const wch, _Out_ bool* const pResult) override;
 
             private:
                 HWND _hwndTargetWindow;
@@ -103,8 +104,6 @@ namespace Microsoft
 
                 RECT _rcCursorInvert;
 
-                GdiCursor _cursor;
-
                 COORD _coordFontLast;
                 int _iCurrentDpi;
 
@@ -118,10 +117,8 @@ namespace Microsoft
                 RECT _rcInvalid;
                 bool _fInvalidRectUsed;
 
-                // NOTE: Valid COLORREFs are of the pattern 0x00bbggrr. 
-                //  Set the initial one in the static to -1 as the highest byte of a valid color is always 0.
-                COLORREF _lastFg = INVALID_COLOR;
-                COLORREF _lastBg = INVALID_COLOR;
+                COLORREF _lastFg;
+                COLORREF _lastBg;
 
                 HRESULT _InvalidCombine(_In_ const RECT* const prc);
                 HRESULT _InvalidOffset(_In_ const POINT* const ppt);

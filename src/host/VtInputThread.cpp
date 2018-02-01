@@ -15,6 +15,7 @@
 #include "../terminal/adapter/InteractDispatch.hpp"
 #include "../types/inc/convert.hpp"
 #include "server.h"
+#include "output.h"
 
 using namespace Microsoft::Console;
 
@@ -32,9 +33,6 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe)
     : _hFile(std::move(hPipe))
 {
     THROW_IF_HANDLE_INVALID(_hFile.get());
-
-
-
 }
 
 // Method Description:
@@ -48,7 +46,6 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe)
 // - S_OK on success, otherwise an appropriate failure.
 HRESULT VtInputThread::_HandleRunInput(_In_reads_(cch) const char* const charBuffer, _In_ const int cch)
 {
-
     CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     gci->LockConsole();
     auto Unlock = wil::ScopeExit([&] { gci->UnlockConsole(); });
@@ -89,11 +86,30 @@ DWORD VtInputThread::_InputThread()
 {
     char buffer[256];
     DWORD dwRead;
+
     while (true)
     {
         dwRead = 0;
-        THROW_LAST_ERROR_IF_FALSE(ReadFile(_hFile.get(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr));
-
+        bool fSuccess = !!ReadFile(_hFile.get(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr);
+        
+        // If we failed to read because the terminal broke our pipe (usually due
+        //      to dying itself), close gracefully with ERROR_BROKEN_PIPE.
+        // Otherwise throw an exception. ERROR_BROKEN_PIPE is the only case that
+        //       we want to gracefully close in.
+        if (!fSuccess)
+        {
+            DWORD lastError = GetLastError();
+            if (lastError == ERROR_BROKEN_PIPE)
+            {
+                // This won't return. We'll be terminated.
+                CloseConsoleProcessState();
+            }
+            else
+            {
+                THROW_WIN32(lastError);
+            }
+        }
+        
         THROW_IF_FAILED(_HandleRunInput(buffer, dwRead));
     }
 }
@@ -106,10 +122,10 @@ HRESULT VtInputThread::Start()
     
     //Initialize the state machine here, because the gci->pInputBuffer 
     // hasn't been initialized when we initialize the VtInputThread object.
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     
     std::unique_ptr<ConhostInternalGetSet> pGetSet = 
-        std::make_unique<ConhostInternalGetSet>(gci->CurrentScreenBuffer, gci->pInputBuffer);
+        std::make_unique<ConhostInternalGetSet>(gci);
     THROW_IF_NULL_ALLOC(pGetSet);
 
     std::unique_ptr<InteractDispatch> pDispatch = std::make_unique<InteractDispatch>(std::move(pGetSet));

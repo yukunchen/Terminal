@@ -29,8 +29,20 @@ RECT WindowMetrics::GetMinClientRectInPixels()
 
     ConIoSrvComm *Server;
 
-    COORD FontSize = { 1 };
+    // We need to always return something viable for this call,
+    // so by default, set the font and display size to our headless
+    // constants.
+    // If we get information from the Server, great. We'll calculate
+    // the values for that at the end.
+    // If we don't... then at least we have a non-zero rectangle.
+    COORD FontSize = { 0 };
+    FontSize.X = HEADLESS_FONT_SIZE_WIDTH;
+    FontSize.Y = HEADLESS_FONT_SIZE_HEIGHT;
+
     RECT DisplaySize = { 0 };
+    DisplaySize.right = HEADLESS_DISPLAY_SIZE_WIDTH;
+    DisplaySize.bottom = HEADLESS_DISPLAY_SIZE_HEIGHT;
+
     CD_IO_FONT_SIZE FontSizeIoctl = { 0 };
     CD_IO_DISPLAY_SIZE DisplaySizeIoctl = { 0 };
 
@@ -90,36 +102,29 @@ RECT WindowMetrics::GetMinClientRectInPixels()
 
             case CIS_DISPLAY_MODE_DIRECTX:
             {
-                WddmConEngine *WddmEngine = (WddmConEngine *)ServiceLocator::LocateGlobals()->pRenderEngine;
-
-                FontSize = WddmEngine->GetFontSize();
-                DisplaySize = WddmEngine->GetDisplaySize();
+                Server->pWddmConEngine->GetFontSize(&FontSize);
+                DisplaySize = Server->pWddmConEngine->GetDisplaySize();
             }
             break;
 
             case CIS_DISPLAY_MODE_NONE:
             {
                 // When in headless mode and using EMS (Emergency Management
-                // Services), ensure that the buffer isn't zero-sized.
-                FontSize.X = HEADLESS_FONT_SIZE_WIDTH;
-                FontSize.Y = HEADLESS_FONT_SIZE_HEIGHT;
-
-                DisplaySize.top = 0;
-                DisplaySize.left = 0;
-                DisplaySize.right = HEADLESS_DISPLAY_SIZE_WIDTH;
-                DisplaySize.bottom = HEADLESS_DISPLAY_SIZE_HEIGHT;
+                // Services), ensure that the buffer isn't zero-sized by
+                // using the default values.
             }
             break;
         }
-
-        // The result is expected to be in pixels, not rows/columns.
-        DisplaySize.right *= FontSize.X;
-        DisplaySize.bottom *= FontSize.Y;
     }
     else
     {
+        // If we errored, set the error. But we're still going to give a reasonable value back.
         SetLastError(Status);
     }
+
+    // The result is expected to be in pixels, not rows/columns.
+    DisplaySize.right *= FontSize.X;
+    DisplaySize.bottom *= FontSize.Y;
 
     return DisplaySize;
 }

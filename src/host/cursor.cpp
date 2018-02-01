@@ -206,21 +206,6 @@ void Cursor::SetSize(_In_ ULONG const ulSize)
     _RedrawCursor();
 }
 
-// Method Description:
-// - Tells the renderer that the cursor has moved. It will handle any possible 
-//      invalidating.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void Cursor::RendererMoveCursor()
-{
-    if (ServiceLocator::LocateGlobals()->pRender != nullptr)
-    {
-        ServiceLocator::LocateGlobals()->pRender->MoveCursor(_cPosition);
-    }
-}
-
 // Routine Description:
 // - Sends a redraw message to the renderer only if the cursor is currently on.
 // - NOTE: For use with most methods in this class.
@@ -260,65 +245,72 @@ void Cursor::_RedrawCursorAlways()
     if (ServiceLocator::LocateGlobals()->pRender != nullptr)
     {
         // Always trigger update of the cursor as one character width
-        ServiceLocator::LocateGlobals()->pRender->TriggerRedraw(&_cPosition);
+        ServiceLocator::LocateGlobals()->pRender->TriggerRedrawCursor(&_cPosition);
 
         // In case of a double width character, we need to invalidate the spot one to the right of the cursor as well.
         if (IsDoubleWidth())
         {
             COORD cExtra = _cPosition;
             cExtra.X++;
-            ServiceLocator::LocateGlobals()->pRender->TriggerRedraw(&cExtra);
+            ServiceLocator::LocateGlobals()->pRender->TriggerRedrawCursor(&cExtra);
         }
     }
 }
 
 void Cursor::SetPosition(_In_ COORD const cPosition)
 {
+    _RedrawCursor();
     _cPosition.X = cPosition.X;
     _cPosition.Y = cPosition.Y;
-    RendererMoveCursor();
+    _RedrawCursor();
     ResetDelayEOLWrap();
 }
 
 void Cursor::SetXPosition(_In_ int const NewX)
 {
+    _RedrawCursor();
     _cPosition.X = (SHORT)NewX;
-    RendererMoveCursor();
+    _RedrawCursor();
     ResetDelayEOLWrap();
 }
 
 void Cursor::SetYPosition(_In_ int const NewY)
 {
+    _RedrawCursor();
     _cPosition.Y = (SHORT)NewY;
-    RendererMoveCursor();
+    _RedrawCursor();
     ResetDelayEOLWrap();
 }
 
 void Cursor::IncrementXPosition(_In_ int const DeltaX)
 {
+    _RedrawCursor();
     _cPosition.X += (SHORT)DeltaX;
-    RendererMoveCursor();
+    _RedrawCursor();
     ResetDelayEOLWrap();
 }
 
 void Cursor::IncrementYPosition(_In_ int const DeltaY)
 {
+    _RedrawCursor();
     _cPosition.Y += (SHORT)DeltaY;
-    RendererMoveCursor();
+    _RedrawCursor();
     ResetDelayEOLWrap();
 }
 
 void Cursor::DecrementXPosition(_In_ int const DeltaX)
 {
+    _RedrawCursor();
     _cPosition.X -= (SHORT)DeltaX;
-    RendererMoveCursor();
+    _RedrawCursor();
     ResetDelayEOLWrap();
 }
 
 void Cursor::DecrementYPosition(_In_ int const DeltaY)
 {
+    _RedrawCursor();
     _cPosition.Y -= (SHORT)DeltaY;
-    RendererMoveCursor();
+    _RedrawCursor();
     ResetDelayEOLWrap();
 }
 
@@ -371,9 +363,13 @@ void Cursor::CopyProperties(_In_ const Cursor* const pOtherCursor)
 void Cursor::TimerRoutine(_In_ PSCREEN_INFORMATION const ScreenInfo)
 {
     const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    ServiceLocator::LocateConsoleWindow()->SetWindowHasMoved(false);
+    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+    if (pWindow != nullptr)
+    {
+        pWindow->SetWindowHasMoved(false);
+    } 
 
-    if ((gci->Flags & CONSOLE_HAS_FOCUS) == 0)
+    if (!IsFlagSet(gci->Flags, CONSOLE_HAS_FOCUS))
     {
         goto DoScroll;
     }
@@ -472,7 +468,6 @@ void Cursor::EndDeferDrawing()
     }
 
     _fDeferCursorRedraw = FALSE;
-    SetCaretTimer();
 }
 
 void Cursor::UpdateSystemMetrics()
@@ -621,10 +616,6 @@ void Cursor::SetColor(_In_ unsigned int color)
     Globals* const g = ServiceLocator::LocateGlobals();
     CONSOLE_INFORMATION* const gci = g->getConsoleInformation();
     gci->SetCursorColor(color);
-    if (g->pRender != nullptr)
-    {
-        g->pRender->SetCursorAttributes(gci->GetCursorColor(), gci->GetCursorType());
-    }
 }
 
 void Cursor::SetType(_In_ CursorType type)
@@ -632,8 +623,4 @@ void Cursor::SetType(_In_ CursorType type)
     Globals* const g = ServiceLocator::LocateGlobals();
     CONSOLE_INFORMATION* const gci = g->getConsoleInformation();
     gci->SetCursorType(type);
-    if (g->pRender != nullptr)
-    {
-        g->pRender->SetCursorAttributes(gci->GetCursorColor(), gci->GetCursorType());
-    }
 }

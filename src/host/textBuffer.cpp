@@ -237,6 +237,7 @@ TextAttribute::TextAttribute(_In_ const WORD wLegacyAttr)
 
 TextAttribute::TextAttribute(_In_ const COLORREF rgbForeground, _In_ const COLORREF rgbBackground)
 {
+    _wAttrLegacy = 0;
     _rgbForeground = rgbForeground;
     _rgbBackground = rgbBackground;
     _fUseRgbColor = true;
@@ -252,17 +253,36 @@ bool TextAttribute::IsLegacy() const
     return _fUseRgbColor == false;
 }
 
+// Routine Description:
+// - Calculates rgb foreground color based off of current color table and active modification attributes
+// Arguments:
+// - None
+// Return Value:
+// - color that should be displayed as the foreground color
+COLORREF TextAttribute::CalculateRgbForeground() const
+{
+    return _IsReverseVideo() ? GetRgbBackground() : GetRgbForeground();
+}
+
+// Routine Description:
+// - Calculates rgb background color based off of current color table and active modification attributes
+// Arguments:
+// - None
+// Return Value:
+// - color that should be displayed as the background color
+COLORREF TextAttribute::CalculateRgbBackground() const
+{
+    return _IsReverseVideo() ? GetRgbForeground() : GetRgbBackground();
+}
+
+// Routine Description:
+// - gets rgb foreground color, possibly based off of current color table. Does not take active modification
+// attributes into account
+// Arguments:
+// - None
+// Return Value:
+// - color that is stored as the foreground color
 COLORREF TextAttribute::GetRgbForeground() const
-{
-    return _IsReverseVideo()? _GetRgbBackground() : _GetRgbForeground();
-}
-
-COLORREF TextAttribute::GetRgbBackground() const
-{
-    return _IsReverseVideo()? _GetRgbForeground() : _GetRgbBackground();
-}
-
-COLORREF TextAttribute::_GetRgbForeground() const
 {
     const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     COLORREF rgbColor;
@@ -282,7 +302,14 @@ COLORREF TextAttribute::_GetRgbForeground() const
     return rgbColor;
 }
 
-COLORREF TextAttribute::_GetRgbBackground() const
+// Routine Description:
+// - gets rgb background color, possibly based off of current color table. Does not take active modification
+// attributes into account
+// Arguments:
+// - None
+// Return Value:
+// - color that is stored as the background color
+COLORREF TextAttribute::GetRgbBackground() const
 {
     const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     COLORREF rgbColor;
@@ -323,7 +350,7 @@ void TextAttribute::SetForeground(_In_ const COLORREF rgbForeground)
     _rgbForeground = rgbForeground;
     if (!_fUseRgbColor)
     {
-        _rgbBackground = _GetRgbBackground();
+        _rgbBackground = GetRgbBackground();
     }
     _fUseRgbColor = true;
 }
@@ -333,7 +360,7 @@ void TextAttribute::SetBackground(_In_ const COLORREF rgbBackground)
     _rgbBackground = rgbBackground;
     if (!_fUseRgbColor)
     {
-        _rgbForeground = _GetRgbForeground();
+        _rgbForeground = GetRgbForeground();
     }
     _fUseRgbColor = true;
 }
@@ -433,9 +460,24 @@ void TextAttributeRun::SetAttributes(_In_ const TextAttribute textAttribute)
 // - pAttr - The default text attributes to use on text in this row.
 // Return Value:
 // - <none>
+// Note:
+// - We suppress C4702 (unreachable code) because we really do want to have the try/catch block around calls
+// to wil::make_unique_nothrow even though currently the catch block can't be reached. We want to guard
+// against the possibility of TextAttributeRun's constructor changing from the default one to one that may
+// throw.
+#pragma warning(suppress:4702)
 bool ATTR_ROW::Initialize(_In_ UINT const cchRowWidth, _In_ const TextAttribute attr)
 {
-    wistd::unique_ptr<TextAttributeRun[]> pNewRun = wil::make_unique_nothrow<TextAttributeRun[]>(1);
+    wistd::unique_ptr<TextAttributeRun[]> pNewRun;
+    try
+    {
+        pNewRun = wil::make_unique_nothrow<TextAttributeRun[]>(1);
+    }
+    catch (...)
+    {
+        return false;
+    }
+
     bool fSuccess = pNewRun != nullptr;
     if (fSuccess)
     {
@@ -718,6 +760,12 @@ size_t _DebugGetTotalLength(_In_reads_(cRun) const TextAttributeRun* const rgRun
 // Return Value:
 // - STATUS_NO_MEMORY if there wasn't enough memory to insert the runs
 //   otherwise STATUS_SUCCESS if we were successful.
+// Note:
+// - We suppress C4702 (unreachable code) because we really do want to have the try/catch block around calls
+// to wil::make_unique_nothrow even though currently the catch block can't be reached. We want to guard
+// against the possibility of TextAttributeRun's constructor changing from the default one to one that may
+// throw.
+#pragma warning(suppress:4702)
 HRESULT ATTR_ROW::InsertAttrRuns(_In_reads_(cAttrs) const TextAttributeRun* const rgInsertAttrs,
                                   _In_ const UINT cInsertAttrs,
                                   _In_ const UINT iStart,
@@ -782,7 +830,14 @@ HRESULT ATTR_ROW::InsertAttrRuns(_In_reads_(cAttrs) const TextAttributeRun* cons
     // The original run was 3 long. The insertion run was 1 long. We need 1 more for the
     // fact that an existing piece of the run was split in half (to hold the latter half).
     UINT const cNewRun = _cList + cInsertAttrs + 1;
-    wistd::unique_ptr<TextAttributeRun[]> pNewRun = wil::make_unique_nothrow<TextAttributeRun[]>(cNewRun);
+
+    wistd::unique_ptr<TextAttributeRun[]> pNewRun;
+    try
+    {
+        pNewRun = wil::make_unique_nothrow<TextAttributeRun[]>(cNewRun);
+    }
+    CATCH_RETURN();
+
     RETURN_IF_NULL_ALLOC(pNewRun);
 
     // We will start analyzing from the beginning of our existing run.
@@ -1641,6 +1696,11 @@ bool TEXT_BUFFER_INFO::IncrementCircularBuffer()
 {
     // FirstRow is at any given point in time the array index in the circular buffer that corresponds
     // to the logical position 0 in the window (cursor coordinates and all other coordinates).
+    auto g = ServiceLocator::LocateGlobals();
+    if (g->pRender)
+    {
+        g->pRender->TriggerCircling();
+    }
 
     // First, clean out the old "first row" as it will become the "last row" of the buffer after the circle is performed.
     TextAttribute FillAttributes;

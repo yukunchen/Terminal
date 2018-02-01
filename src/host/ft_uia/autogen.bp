@@ -1,0 +1,209 @@
+namespace Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia {
+
+    export declare const qualifier: WdgBuild.StandardPlatformsQualifier;
+
+    const dotDot = d`${srcRoot}\onecore\windows\core\console\open\src\host`;
+
+    const o = d`${objRoot}\onecore\windows\core\console\open\src\host\ft_uia\${buildAlt}`;
+
+    const prePass = LegacyBuild.build({
+        template: template_NMake,
+        classification: "test",
+        targetPass: "prePass",
+        
+        consumes: [
+            f`autogen.bp`,
+            f`autogen.bp`,
+            f`host.tests.uia.csproj`,
+            f`product.pbxproj`,
+        ],
+    });
+
+    const pass0 = LegacyBuild.build({
+        template: template_NMake,
+        classification: "test",
+        targetPass: "pass0",
+        
+        consumes: [
+            f`autogen.bp`,
+            f`autogen.bp`,
+            f`host.tests.uia.csproj`,
+            f`product.pbxproj`,
+            f`${objRoot}\${buildAlt}\onecorefeaturestaging.inc`,
+            f`${srcRoot}\public\sdk\inc\ntverp.h`,
+
+            prePass,
+        ],
+        
+        produces: [
+            p`${binRoot}\blg\msbuildprops\nmakeprops\onecore-windows-core-console-open-src-host-ft_uia-nmake_to_mbs_pass0.props.br`,
+            p`${binRoot}\msbuildprops\nmakeprops\onecore-windows-core-console-open-src-host-ft_uia-nmake_to_mbs_pass0.props`,
+            p`${o}\_asmid.inc`,
+            p`${o}\_asmid.xml`,
+            p`${o}\nmake_to_mbs_pass0.props`,
+        ],
+    });
+
+    export const pass1 = LegacyBuild.build({
+        template: template_NMake,
+        classification: "test",
+        targetPass: "pass1",
+        
+        consumes: [
+            f`autogen.bp`,
+            f`autogen.bp`,
+            f`experimentaltabtests.cs`,
+            f`host.tests.uia.csproj`,
+            f`init.cs`,
+            f`misctests.cs`,
+            f`mousewheeltests.cs`,
+            f`product.pbxproj`,
+            f`selectionapitests.cs`,
+            f`testmd.definition`,
+            f`virtualterminaltests.cs`,
+            f`wineventtests.cs`,
+            f`common\autohelpers.cs`,
+            f`common\checkboxmeta.cs`,
+            f`common\globals.cs`,
+            f`common\nativemethods.cs`,
+            f`common\registryhelper.cs`,
+            f`common\shortcuthelper.cs`,
+            f`common\slidermeta.cs`,
+            f`common\versionselector.cs`,
+            f`elements\cmdapp.cs`,
+            f`elements\colorstab.cs`,
+            f`elements\fonttab.cs`,
+            f`elements\layouttab.cs`,
+            f`elements\optionstab.cs`,
+            f`elements\propertiesdialog.cs`,
+            f`elements\tabbase.cs`,
+            f`elements\tabs.cs`,
+            f`elements\viewportarea.cs`,
+            f`elements\wineventsystem.cs`,
+            f`properties\assemblyinfo.cs`,
+            f`${objRoot}\${buildAlt}\onecorefeaturestaging.inc`,
+            f`${srcRoot}\build\scripts\csc.cmd`,
+            f`${srcRoot}\build\scripts\fixtsversionstringappend.cmd`,
+            f`${srcRoot}\build\scripts\generatetestlist.cmd`,
+
+            pass0,
+            prePass,
+
+            MsDevClr_Pkgv45.Clr_Pkg.V45.Public.Sdk.Ref.Clr45.metadata,
+            MsWinOnecoreSdkTools.Public.Internal.Sdktools.Ref.content,
+            MsWinOnecoreSdkTools.Public.Internal.Sdktools.Ref.Winappdriver.metadata,
+            MsWinOnecore_Taef.Public.Internal.Sdktools.Ref.Wextest.Cue.metadata,
+        ],
+        
+        produces: [
+            p`${binRoot}\blg\msbuildprops\nmakeprops\onecore-windows-core-console-open-src-host-ft_uia-nmake_to_mbs_pass1.props.br`,
+            p`${binRoot}\blg\strongnamesigning\onecore-windows-core-console-open-src-host-ft_uia-sn-targ-req.xml.br`,
+            p`${binRoot}\blg\unittests\microsoft.console.host.uiautomationtests.dll.br`,
+            p`${binRoot}\msbuildprops\nmakeprops\onecore-windows-core-console-open-src-host-ft_uia-nmake_to_mbs_pass1.props`,
+            p`${binRoot}\strongnamesigning\onecore-windows-core-console-open-src-host-ft_uia-sn-targ-req.xml`,
+            p`${binRoot}\symbols.pri\unittests\dll\microsoft.console.host.uiautomationtests.pdb`,
+            p`${binRoot}\unittests\microsoft.console.host.uiautomationtests.dll`,
+            p`${o}\_generated.cs`,
+            p`${o}\microsoft.console.host.uiautomationtests.asmmeta`,
+            p`${o}\microsoft.console.host.uiautomationtests.dll`,
+            p`${o}\microsoft.console.host.uiautomationtests.metadata_dll`,
+            p`${o}\microsoft.console.host.uiautomationtests.pdb`,
+            p`${o}\microsoft.console.host.uiautomationtests.testmd_metadata`,
+            p`${o}\nmake_to_mbs_pass1.props`,
+            p`${o}\sn-targ-req.xml`,
+        ],
+    });
+
+    const pass2 = LegacyBuild.build({
+        template: template_NMake,
+        classification: "test",
+        targetPass: "pass2",
+        
+        consumes: [
+            f`autogen.bp`,
+            f`autogen.bp`,
+            f`host.tests.uia.csproj`,
+            f`product.pbxproj`,
+            f`testmd.definition`,
+            f`${objRoot}\${buildAlt}\onecorefeaturestaging.inc`,
+            f`${srcRoot}\build\scripts\testmdgen.cmd`,
+
+            pass0,
+            pass1,
+            prePass,
+        ],
+        
+        produces: [
+            p`${binRoot}\blg\msbuildprops\nmakeprops\onecore-windows-core-console-open-src-host-ft_uia-nmake_to_mbs_pass2.props.br`,
+            p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}\microsoft.console.host.uiautomationtests.testmd.br`,
+            p`${binRoot}\blg\prebuilt\windows\microsoft.console.host.uiautomationtests.testmd.br`,
+            p`${binRoot}\msbuildprops\nmakeprops\onecore-windows-core-console-open-src-host-ft_uia-nmake_to_mbs_pass2.props`,
+            p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft.console.host.uiautomationtests.testmd`,
+            p`${binRoot}\prebuilt\windows\microsoft.console.host.uiautomationtests.testmd`,
+            p`${o}\microsoft-console-host-uiautomationtests.spkg.meta.xml`,
+            p`${o}\microsoft.console.host.uiautomationtests.macros`,
+            p`${o}\microsoft.console.host.uiautomationtests.testmd`,
+            p`${o}\microsoft.console.host.uiautomationtests.wm.xml`,
+            p`${o}\nmake_to_mbs_pass2.props`,
+        ],
+    });
+
+    const pass3 = LegacyBuild.build({
+        template: template_NMake,
+        classification: "test",
+        targetPass: "pass3",
+        tags: [
+            "Packages",
+        ],
+        
+        consumes: [
+            f`autogen.bp`,
+            f`autogen.bp`,
+            f`host.tests.uia.csproj`,
+
+            pass0,
+            pass1,
+            pass2,
+            prePass,
+
+            ...addIf(
+                isBuildRelease,
+                () => [
+                    f`product.pbxproj`,
+                    f`${srcRoot}\build\scripts\signer.cmd`,
+                    f`${srcRoot}\onecore\windows\project.props`,
+                    f`${srcRoot}\public\sdk\inc\ntverp.h`,
+                ]
+            ),
+            ...addIf(
+                (isBuildRelease && isBuildArm32 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildArm64 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildX64 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildX86 && MsWinBuild.isOfficialBuild),
+                (
+                )
+                => [
+                    MsWinOnecore_Pkg.BinPublic.Imagingtools.content,
+                ]
+            ),
+        ],
+        
+        produces: [
+            ...addIf(
+                isBuildRelease,
+                () => [
+                    p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft-console-host-uiautomationtests.cab`,
+                    p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft-console-host-uiautomationtests.man.dsm.xml`,
+                ]
+            ),
+        ],
+    });
+
+    @@public
+    export const bin_PrebuiltTest_content = WdgBuild.SdkCombine.evaluate({
+        outputDirectory: d`${binRoot}\prebuilt\test\${buildArch}\${buildType}`,
+        sources: [
+            pass2.directories.get(p`${binRoot}\prebuilt\test\${buildArch}\${buildType}`),
+            ...addIf(isBuildCommonArchitecture && isBuildRelease, () => [
+                    pass3.directories.get(p`${binRoot}\prebuilt\test\${buildArch}\${buildType}`),
+                ]),
+        ],
+    });
+}

@@ -914,7 +914,6 @@ bool AdaptDispatch::_ScrollMovement(_In_ ScrollDirection const sdDirection, _In_
         if (fSuccess)
         {
             SMALL_RECT srScreen = csbiex.srWindow;
-            COORD Cursor = csbiex.dwCursorPosition;
 
             // Paste coordinate for cut text above
             COORD coordDestination;
@@ -1006,7 +1005,7 @@ bool AdaptDispatch::_DoDECCOLMHelper(_In_ unsigned int const uiColumns)
             fSuccess = EraseInDisplay(EraseType::All);
             if (fSuccess)
             {
-                fSuccess = SetTopBottomScrollingMargins(0, 0);
+                fSuccess = SetTopBottomScrollingMargins(0, 0, false);
             }
         }
     }
@@ -1226,7 +1225,9 @@ bool AdaptDispatch::DeleteLine(_In_ unsigned int const uiDistance)
 // - sBottomMargin - the line number for the bottom margin.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::SetTopBottomScrollingMargins(_In_ SHORT const sTopMargin, _In_ SHORT const sBottomMargin)
+bool AdaptDispatch::SetTopBottomScrollingMargins(_In_ SHORT const sTopMargin,
+                                                 _In_ SHORT const sBottomMargin,
+                                                 _In_ const bool fResetCursor)
 {
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
@@ -1278,7 +1279,7 @@ bool AdaptDispatch::SetTopBottomScrollingMargins(_In_ SHORT const sTopMargin, _I
             _srScrollMargins.Top = sActualTop;
             _srScrollMargins.Bottom = sActualBottom;
             fSuccess = !!_pConApi->PrivateSetScrollingRegion(&_srScrollMargins);
-            if (fSuccess)
+            if (fSuccess && fResetCursor)
             {
                 this->CursorPosition(1,1);
             }
@@ -1306,7 +1307,8 @@ bool AdaptDispatch::ReverseLineFeed()
 // - cchTitleLength - The length of the title string specified by pwchWindowTitle
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::SetWindowTitle(_In_ const wchar_t* const pwchWindowTitle, _In_ unsigned short cchTitleLength)
+bool AdaptDispatch::SetWindowTitle(_In_reads_(cchTitleLength) const wchar_t* const pwchWindowTitle,
+                                   _In_ unsigned short cchTitleLength)
 {
     return !!_pConApi->SetConsoleTitleW(pwchWindowTitle, cchTitleLength);
 }
@@ -1454,7 +1456,8 @@ bool AdaptDispatch::SoftReset()
     }
     if (fSuccess)
     {
-        fSuccess = SetTopBottomScrollingMargins(0, 0); // Top margin = 1; bottom margin = page length.
+        // Top margin = 1; bottom margin = page length.
+        fSuccess = SetTopBottomScrollingMargins(0, 0, false); 
     }
     if (fSuccess)
     {
@@ -1465,10 +1468,10 @@ bool AdaptDispatch::SoftReset()
         GraphicsOptions opt = GraphicsOptions::Off;
         fSuccess = SetGraphicsRendition(&opt, 1); // Normal rendition.
     }
-    // SetTopBottomMargins already moved the cursor to 1,1
     if (fSuccess)
     {
-        fSuccess = CursorSavePosition(); // Home position.
+        // Save cursor state: Home position.
+        _coordSavedCursor = {1, 1};
     }
 
     return fSuccess;
@@ -1562,9 +1565,11 @@ bool AdaptDispatch::_EraseScrollback()
         fSuccess = !!_pConApi->ScrollConsoleScreenBufferW(&srScroll, nullptr, coordDestination, &ciFill);
         if (fSuccess)
         {
-            // Clear everything after the viewport.
+            // Clear everything after the viewport. This is two regions:
+            // A. below the viewport
+            // B. to the right of the viewport.
 
-            // This is two regions, below the viewport and to the right of the viewport.
+            // First clear section A
             const DWORD dwTotalAreaBelow = csbiex.dwSize.X * (csbiex.dwSize.Y - sHeight);
             const COORD coordBelowStartPosition = {0, sHeight};
             // We don't use the _EraseAreaHelper here because _EraseSingleLineDistanceHelper does it all in one operation
@@ -1572,12 +1577,15 @@ bool AdaptDispatch::_EraseScrollback()
 
             if (fSuccess)
             {
+                // If there is a section B, clear it.
                 const COORD coordBottomRight = {csbiex.dwSize.X, coordBelowStartPosition.Y};
-
                 const COORD coordRightStartPosition = {sWidth, 0};
-                // We use the Area helper here because the Line helper would
-                //      erase the parts of the screen we want to keep too
-                fSuccess = _EraseAreaHelper(coordRightStartPosition, coordBottomRight, csbiex.wAttributes);
+                if (coordBottomRight.X > coordRightStartPosition.X)
+                {
+                    // We use the Area helper here because the Line helper would
+                    //      erase the parts of the screen we want to keep too
+                    fSuccess = _EraseAreaHelper(coordRightStartPosition, coordBottomRight, csbiex.wAttributes);
+                }
 
                 if (fSuccess)
                 {
@@ -1786,9 +1794,14 @@ bool AdaptDispatch::WindowManipulation(_In_ const DispatchCommon::WindowManipula
     // Other Window Manipulation functions:
     //  MSFT:13271098 - QueryViewport
     //  MSFT:13271146 - QueryScreenSize
-    //  MSFT:14179497 - RefreshWindow
     switch (uiFunction)
     {
+        case DispatchCommon::WindowManipulationType::RefreshWindow:
+            if (cParams == 0)
+            {
+                fSuccess = DispatchCommon::s_RefreshWindow(_pConApi);
+            }
+            break;
         case DispatchCommon::WindowManipulationType::ResizeWindowInCharacters:
             if (cParams == 2)
             {

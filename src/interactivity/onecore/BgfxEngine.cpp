@@ -41,6 +41,11 @@ HRESULT BgfxEngine::Invalidate(const SMALL_RECT* const psrRegion)
     return S_OK;
 }
 
+HRESULT BgfxEngine::InvalidateCursor(const COORD* const /*pcoordCursor*/)
+{
+    return S_OK;
+}
+
 HRESULT BgfxEngine::InvalidateSystem(const RECT* const prcDirtyClient)
 {
     UNREFERENCED_PARAMETER(prcDirtyClient);
@@ -66,6 +71,18 @@ HRESULT BgfxEngine::InvalidateScroll(const COORD* const pcoordDelta)
 HRESULT BgfxEngine::InvalidateAll()
 {
     return S_OK;
+}
+
+HRESULT BgfxEngine::InvalidateCircling(_Out_ bool* const pForcePaint)
+{
+    *pForcePaint = false;
+    return S_FALSE;
+}
+
+HRESULT BgfxEngine::PrepareForTeardown(_Out_ bool* const pForcePaint)
+{
+    *pForcePaint = false;
+    return S_FALSE;
 }
 
 HRESULT BgfxEngine::StartPaint()
@@ -160,7 +177,9 @@ HRESULT BgfxEngine::PaintSelection(const SMALL_RECT* const rgsrSelection, UINT c
 
     return S_OK;
 }
-HRESULT BgfxEngine::PaintCursor(_In_ ULONG const ulCursorHeightPercent,
+
+HRESULT BgfxEngine::PaintCursor(_In_ COORD const coordCursor,
+                                _In_ ULONG const ulCursorHeightPercent,
                                 _In_ bool const /*fIsDoubleWidth*/,
                                 _In_ CursorType const /*cursorType*/,
                                 _In_ bool const /*fUseColor*/,
@@ -169,8 +188,6 @@ HRESULT BgfxEngine::PaintCursor(_In_ ULONG const ulCursorHeightPercent,
     // TODO: MSFT: 11448021 - Modify BGFX to support rendering full-width
     // characters and a full-width cursor.
     
-    const COORD coordCursor = _cursor.GetPosition();
-
     CD_IO_CURSOR_INFORMATION CursorInfo;
     CursorInfo.Row = coordCursor.Y;
     CursorInfo.Column = coordCursor.X;
@@ -233,12 +250,8 @@ HRESULT BgfxEngine::UpdateViewport(_In_ SMALL_RECT const /*srNewViewport*/)
     return S_OK;
 }
 
-HRESULT BgfxEngine::GetProposedFont(FontInfoDesired const* const pfiFontInfoDesired, FontInfo* const pfiFontInfo, int const iDpi)
+HRESULT BgfxEngine::GetProposedFont(FontInfoDesired const* const /*pfiFontInfoDesired*/, FontInfo* const /*pfiFontInfo*/, int const /*iDpi*/)
 {
-    UNREFERENCED_PARAMETER(pfiFontInfoDesired);
-    UNREFERENCED_PARAMETER(pfiFontInfo);
-    UNREFERENCED_PARAMETER(iDpi);
-
     return S_OK;
 }
 
@@ -253,25 +266,15 @@ SMALL_RECT BgfxEngine::GetDirtyRectInChars()
     return r;
 }
 
-COORD BgfxEngine::GetFontSize()
+HRESULT BgfxEngine::GetFontSize(_Out_ COORD* const pFontSize)
 {
-    return _fontSize;
+    *pFontSize =_fontSize;
+    return S_OK;
 }
 
-bool BgfxEngine::IsCharFullWidthByFont(WCHAR const wch)
+HRESULT BgfxEngine::IsCharFullWidthByFont(WCHAR const /*wch*/, _Out_ bool* const pResult)
 {
-    UNREFERENCED_PARAMETER(wch);
 
-    return false;
-}
-
-// Method Description:
-// - Returns a reference to this engine's cursor implementation.
-// Arguments:
-// - <none>
-// Return Value:
-// - A referenct to this engine's cursor implementation.
-IRenderCursor* const BgfxEngine::GetCursor()
-{
-    return &_cursor;
+    *pResult = false;
+    return S_OK;
 }

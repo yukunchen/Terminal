@@ -11,7 +11,6 @@
 
 #include "..\..\host\dbcs.h"
 #include "..\..\host\input.h"
-#include "..\..\renderer\wddmcon\wddmconrenderer.hpp"
 #include "..\..\types\inc\IInputEvent.hpp"
 
 #include "..\inc\ServiceLocator.hpp"
@@ -309,7 +308,6 @@ VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
     USHORT DisplayMode;
 
     IRenderer *Renderer;
-    WddmConEngine *WddmEngine;
 
     CIS_EVENT ReplyEvent;
 
@@ -337,8 +335,6 @@ VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
             {
                 Globals* const pGlobals = ServiceLocator::LocateGlobals();
 
-                WddmEngine = (WddmConEngine *)pGlobals->pRenderEngine;
-
                 if (Event->FocusEvent.IsActive)
                 {
                     HRESULT hr = S_OK;
@@ -348,9 +344,9 @@ VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
                     // This is necessary because the engine cannot be allowed to
                     // request ownership of the display before whatever instance
                     // of conhost was using it before has relinquished it.
-                    if (!WddmEngine->IsInitialized())
+                    if (!pWddmConEngine->IsInitialized())
                     {
-                        hr = WddmEngine->Initialize();
+                        hr = pWddmConEngine->Initialize();
                         LOG_IF_FAILED(hr);
 
                         // Right after we initialize, synchronize the screen/viewport states with the WddmCon surface dimensions
@@ -359,10 +355,12 @@ VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
                             const RECT rcOld = { 0 };
 
                             // WddmEngine reports display size in characters, adjust to pixels for resize window calc.
-                            RECT rcDisplay = WddmEngine->GetDisplaySize();
+                            RECT rcDisplay = pWddmConEngine->GetDisplaySize();
 
                             // Get font to adjust char to pixels.
-                            const COORD coordFont = WddmEngine->GetFontSize();
+                            COORD coordFont = {0};
+                            pWddmConEngine->GetFontSize(&coordFont);
+                            
                             rcDisplay.right *= coordFont.X;
                             rcDisplay.bottom *= coordFont.Y;
 
@@ -374,7 +372,7 @@ VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
                     if (SUCCEEDED(hr))
                     {
                         // Allow acquiring device resources before drawing.
-                        hr = WddmEngine->Enable();
+                        hr = pWddmConEngine->Enable();
                         LOG_IF_FAILED(hr);
                         if (SUCCEEDED(hr))
                         {
@@ -388,7 +386,7 @@ VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
                 }
                 else
                 {
-                    if (WddmEngine->IsInitialized())
+                    if (pWddmConEngine->IsInitialized())
                     {
                         // Wait for the currently running paint operation, if any,
                         // and prevent further attempts to render.
@@ -397,7 +395,7 @@ VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
                         // Relinquish control of the graphics device (only one
                         // DirectX application may control the device at any one
                         // time).
-                        LOG_IF_FAILED(WddmEngine->Disable());
+                        LOG_IF_FAILED(pWddmConEngine->Disable());
 
                         // Let the Console IO Server that we have relinquished
                         // control of the display.
@@ -702,3 +700,74 @@ BOOL ConIoSrvComm::TranslateCharsetInfo(DWORD * lpSrc, LPCHARSETINFO lpCs, DWORD
 }
 
 #pragma endregion
+
+
+NTSTATUS ConIoSrvComm::InitializeBgfx()
+{
+    NTSTATUS Status;
+
+    Globals * const Globals = ServiceLocator::LocateGlobals();
+    assert(Globals->pRender != nullptr);
+    IWindowMetrics * const Metrics = ServiceLocator::LocateWindowMetrics();
+
+    // Fetch the display size from the console driver.
+    const RECT DisplaySize = Metrics->GetMaxClientRectInPixels();
+    Status = GetLastError();
+
+    if (NT_SUCCESS(Status))
+    {
+        // Same with the font size.
+        CD_IO_FONT_SIZE FontSize = { 0 };
+        Status = RequestGetFontSize(&FontSize);
+
+        if (NT_SUCCESS(Status))
+        {
+            // Create and set the render engine.
+            BgfxEngine* const pBgfxEngine = new BgfxEngine(GetSharedViewBase(),
+                                                           DisplaySize.bottom / FontSize.Height,
+                                                           DisplaySize.right / FontSize.Width,
+                                                           FontSize.Width,
+                                                           FontSize.Height);
+            Status = NT_TESTNULL(pBgfxEngine);
+
+            if (NT_SUCCESS(Status))
+            {
+                try
+                {
+                    Globals->pRender->AddRenderEngine(pBgfxEngine);
+                }
+                catch(...)
+                {
+                    Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+                }
+            }
+        }
+    }
+
+    return Status;
+}
+
+NTSTATUS ConIoSrvComm::InitializeWddmCon()
+{
+    NTSTATUS Status;
+
+    Globals * const Globals = ServiceLocator::LocateGlobals();
+    assert(Globals->pRender != nullptr);
+
+    pWddmConEngine = new WddmConEngine();
+    Status = NT_TESTNULL(pWddmConEngine);
+
+    if (NT_SUCCESS(Status))
+    {
+        try
+        {
+            Globals->pRender->AddRenderEngine(pWddmConEngine);
+        }
+        catch(...)
+        {
+            Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+        }
+    }
+
+    return Status;
+}

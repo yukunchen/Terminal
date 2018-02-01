@@ -29,7 +29,14 @@ namespace Microsoft
 class Microsoft::Console::Render::Xterm256Engine : public XtermEngine
 {
 public:
-    Xterm256Engine(_In_ wil::unique_hfile hPipe);
+    Xterm256Engine(_In_ wil::unique_hfile hPipe,
+                   _In_ const Microsoft::Console::IDefaultColorProvider& colorProvider,
+                   _In_ const Microsoft::Console::Types::Viewport initialViewport,
+                   _In_reads_(cColorTable) const COLORREF* const ColorTable,
+                   _In_ const WORD cColorTable);
+
+    virtual ~Xterm256Engine() override = default;
+
     HRESULT UpdateDrawingBrushes(_In_ COLORREF const colorForeground,
                                  _In_ COLORREF const colorBackground,
                                  _In_ WORD const legacyColorAttribute,

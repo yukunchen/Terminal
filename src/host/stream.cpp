@@ -307,6 +307,12 @@ NTSTATUS ReadPendingInput(_Inout_ InputBuffer* const pInputBuffer,
     ULONG NumToBytes = 0;
     wchar_t* pBuffer = pwchBuffer;
     DWORD bufferRemaining = static_cast<DWORD>(OutputBufferSize);
+    *pReadByteCount = 0;
+
+    if (OutputBufferSize < sizeof(wchar_t))
+    {
+        return STATUS_BUFFER_TOO_SMALL;
+    }
 
     if (IsFlagSet(pHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::MultiLineInput))
     {
@@ -344,8 +350,16 @@ NTSTATUS ReadPendingInput(_Inout_ InputBuffer* const pInputBuffer,
             }
         }
 
-        for (NumToWrite = 0, Tmp = pHandleData->CurrentBufPtr;
-                NumToWrite < pHandleData->BytesAvailable && *Tmp != UNICODE_LINEFEED; Tmp++, NumToWrite += sizeof(wchar_t));
+
+        NumToWrite = 0;
+        Tmp = pHandleData->CurrentBufPtr;
+        while (NumToWrite < pHandleData->BytesAvailable &&
+               *Tmp != UNICODE_LINEFEED)
+        {
+            ++Tmp;
+            NumToWrite += sizeof(wchar_t);
+        }
+
         NumToWrite += sizeof(wchar_t);
         if (NumToWrite > bufferRemaining)
         {
@@ -534,25 +548,25 @@ NTSTATUS ReadLineInput(_Inout_ InputBuffer* const pInputBuffer,
     COORD invalidCoord;
     invalidCoord.X = -1;
     invalidCoord.Y = -1;
-    COOKED_READ_DATA CookedReadData(pInputBuffer,
-                                    pHandleData,
-                                    pScreenInfo,
-                                    TempBufferSize,
-                                    0,
-                                    0,
-                                    TempBuffer,
-                                    TempBuffer,
-                                    static_cast<ULONG>(OutputBufferSize),
-                                    pwchBuffer,
-                                    invalidCoord,
-                                    0,
-                                    dwCtrlWakeupMask,
-                                    pCommandHistory,
-                                    !!Echo,
-                                    !!gci->GetInsertMode(),
-                                    IsFlagSet(pInputBuffer->InputMode, ENABLE_PROCESSED_INPUT),
-                                    IsFlagSet(pInputBuffer->InputMode, ENABLE_LINE_INPUT),
-                                    pTempHandleData);
+    COOKED_READ_DATA CookedReadData(pInputBuffer, // pInputBuffer
+                                    pHandleData, // pInputReadHandleData
+                                    pScreenInfo, // pScreenInfo
+                                    TempBufferSize, // BufferSize
+                                    0, // BytesRead
+                                    0, // CurrentPosition
+                                    TempBuffer, // BufferPtr
+                                    TempBuffer, // BackupLimit
+                                    static_cast<ULONG>(OutputBufferSize), // UserBufferSize
+                                    pwchBuffer, // UserBuffer
+                                    invalidCoord, // OriginalCursorPosition
+                                    0, // NumberOfVisibleChars
+                                    dwCtrlWakeupMask, // CtrlWakeupMask
+                                    pCommandHistory, // CommandHistory
+                                    !!Echo, // Echo
+                                    !!gci->GetInsertMode(), // InsertMode
+                                    IsFlagSet(pInputBuffer->InputMode, ENABLE_PROCESSED_INPUT), // Processed
+                                    IsFlagSet(pInputBuffer->InputMode, ENABLE_LINE_INPUT), // Line
+                                    pTempHandleData); // pTempHandle
 
     if (cbInitialData > 0)
     {
@@ -650,6 +664,12 @@ NTSTATUS ReadCharacterInput(_Inout_ InputBuffer* const pInputBuffer,
     NTSTATUS Status = STATUS_SUCCESS;
     wchar_t* pBuffer = pwchBuffer;
     size_t bufferRemaining = OutputBufferSize;
+    *pReadByteCount = 0;
+
+    if (OutputBufferSize < sizeof(wchar_t))
+    {
+        return STATUS_BUFFER_TOO_SMALL;
+    }
 
     if (*pReadByteCount < static_cast<ULONG>(bufferRemaining))
     {

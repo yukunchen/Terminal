@@ -7,7 +7,7 @@
 #include "precomp.h"
 
 #include "gdirenderer.hpp"
-
+#include "../../inc/conattrs.hpp"
 #include <winuserp.h> // for GWL_CONSOLE_BKCOLOR
 
 #pragma hdrstop
@@ -27,8 +27,9 @@ GdiEngine::GdiEngine() :
     _hbitmapMemorySurface(nullptr),
     _cPolyText(0),
     _fInvalidRectUsed(false),
-    _fPaintStarted(false),
-    _cursor{this}
+    _lastFg(INVALID_COLOR),
+    _lastBg(INVALID_COLOR),
+    _fPaintStarted(false)
 {
     ZeroMemory(_pPolyText, sizeof(POLYTEXTW) * s_cPolyTextCache);
     _rcInvalid = { 0 };
@@ -428,12 +429,13 @@ HRESULT GdiEngine::_GetProposedFont(_In_ FontInfoDesired const * const pfiFontDe
 // Routine Description:
 // - Retrieves the current pixel size of the font we have selected for drawing.
 // Arguments:
-// - <none>
+// - pFontSize - recieves the current X by Y size of the font.
 // Return Value:
-// - X by Y size of the font.
-COORD GdiEngine::GetFontSize()
+// - S_OK
+HRESULT GdiEngine::GetFontSize(_Out_ COORD* const pFontSize)
 {
-    return _GetFontSize();
+    *pFontSize = _GetFontSize();
+    return S_OK;
 }
 
 // Routine Description:
@@ -468,15 +470,4 @@ bool GdiEngine::_IsMinimized() const
 bool GdiEngine::_IsFontTrueType() const
 {
     return !!(_tmFontMetrics.tmPitchAndFamily & TMPF_TRUETYPE);
-}
-
-// Method Description:
-// - Returns a reference to this engine's cursor implementation.
-// Arguments:
-// - <none>
-// Return Value:
-// - A referenct to this engine's cursor implementation.
-IRenderCursor* const GdiEngine::GetCursor()
-{
-    return &_cursor;
 }
