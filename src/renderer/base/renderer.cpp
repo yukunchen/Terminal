@@ -775,20 +775,10 @@ void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
         // Update the offset and text segment pointer by moving right by the previously written segment length
         coordOffset.X += (SHORT)cchSegment;
         pwsSegment += cchSegment;
+        itAttrSegment += cchSegment;
 
-        // check to make sure we're not moving past the end of the iterator
-        if (itEnd - itAttrSegment > 0 &&
-            static_cast<size_t>(itEnd - itAttrSegment) >= cchSegment)
-        {
-            itAttrSegment += cchSegment;
-        }
-        else
-        {
-            LOG_HR_MSG(E_ACCESSDENIED, "cannot increment beyond end of iterator");
-            return;
-        }
 
-    } while (cchWritten < cchLine);
+    } while (cchWritten < cchLine && itAttrSegment < itEnd);
 }
 
 // Routine Description:
@@ -825,7 +815,7 @@ HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const p
     std::vector<DbcsAttribute>::const_iterator it = itAttr;
     size_t cchSegment = 0;
     // Walk through the line given character by character and copy necessary items into our local array.
-    for (size_t iLine = 0; iLine < cchLine, it != itEnd; iLine++, ++it)
+    for (size_t iLine = 0; iLine < cchLine && it < itEnd; ++iLine, ++it)
     {
         // skip copy of trailing bytes. we'll copy leading and single bytes into the final write array.
         if (!it->IsTrailing())
@@ -867,7 +857,7 @@ HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const p
     }
 
     // Draw the line
-    RETURN_IF_FAILED(pEngine->PaintBufferLine(pwsSegment.get(), rgSegmentWidth.get(), cchSegment, coordTargetAdjustable, fTrimLeft));
+    RETURN_IF_FAILED(pEngine->PaintBufferLine(pwsSegment.get(), rgSegmentWidth.get(), min(cchSegment, cchLine), coordTargetAdjustable, fTrimLeft));
 
     return S_OK;
 }
@@ -1030,7 +1020,7 @@ void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
                     LOG_HR(wil::ResultFromCaughtException());
                     return;
                 }
-                std::vector<DbcsAttribute>::const_iterator itEnd = Row.CharRow.GetAttributeIteratorEnd();
+                const std::vector<DbcsAttribute>::const_iterator itEnd = Row.CharRow.GetAttributeIteratorEnd();
 
                 size_t const cchLine = viewDirty.Width() - 1;
 

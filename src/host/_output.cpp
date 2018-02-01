@@ -1235,6 +1235,9 @@ void FillRectangle(_In_ const CHAR_INFO * const pciFill,
         {
             if (Width)
             {
+                // we set leading an trailing in pairs so make sure that checking against the end of the
+                // iterator won't be off by 1
+                assert((itEnd - it) % 2 == 0);
                 if (j < XSize - 1)
                 {
                     *Char++ = pciFill->Char.UnicodeChar;
