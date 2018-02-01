@@ -25,7 +25,8 @@ HRESULT VtEngine::StartPaint()
 {
     // If there's nothing to do, quick return
     bool somethingToDo = _fInvalidRectUsed ||
-        (_scrollDelta.X != 0 || _scrollDelta.Y != 0);
+        (_scrollDelta.X != 0 || _scrollDelta.Y != 0) ||
+        _cursorMoved;
 
     _quickReturn = !somethingToDo;
 
@@ -47,7 +48,7 @@ HRESULT VtEngine::EndPaint()
     _fInvalidRectUsed = false;
     _scrollDelta = {0};
     _clearedAllThisFrame = false;
-
+    _cursorMoved = false;
     return S_OK;
 }
 
