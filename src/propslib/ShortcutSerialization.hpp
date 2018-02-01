@@ -20,6 +20,13 @@ Revision History:
 
 #pragma once
 
+// Refer to console/published/wincon.w
+// #define PID_CONSOLE_WINDOWMAXIMIZED    7
+// #define PID_CONSOLE_CURSOR_COLOR    8
+// #define PID_CONSOLE_CURSOR_TYPE    9
+// DEFINE_PROPERTYKEY(PKEY_Console_CursorColor, 0x0C570607, 0x0396, 0x43DE, 0x9D, 0x61, 0xE3, 0x21, 0xD7, 0xDF, 0x50, 0x26, PID_CONSOLE_CURSOR_COLOR);
+// DEFINE_PROPERTYKEY(PKEY_Console_CursorType, 0x0C570607, 0x0396, 0x43DE, 0x9D, 0x61, 0xE3, 0x21, 0xD7, 0xDF, 0x50, 0x26, PID_CONSOLE_CURSOR_TYPE);
+
 #ifdef __cplusplus
 
 class ShortcutSerialization
@@ -38,14 +45,23 @@ public:
                                     _Out_opt_ WORD * const pwHotKey);
 
 private:
+
+
     static void s_InitPropVarFromBool(_In_ BOOL fVal, _Out_ PROPVARIANT *ppropvar);
     static void s_InitPropVarFromByte(_In_ BYTE bVal, _Out_ PROPVARIANT *ppropvar);
+    static void s_InitPropVarFromDword(_In_ DWORD dwVal, _Out_ PROPVARIANT *ppropvar);
+
     static void s_SetLinkPropertyBoolValue(_In_ IPropertyStore *pps, _In_ REFPROPERTYKEY refPropKey,_In_ const BOOL fVal);
     static void s_SetLinkPropertyByteValue(_In_ IPropertyStore *pps, _In_ REFPROPERTYKEY refPropKey,_In_ const BYTE bVal);
+    static void s_SetLinkPropertyDwordValue(_In_ IPropertyStore *pps, _In_ REFPROPERTYKEY refPropKey,_In_ const DWORD dwVal);
+
     static HRESULT s_GetPropertyBoolValue(_In_ IPropertyStore * const pPropStore, _In_ REFPROPERTYKEY refPropKey, _Out_ BOOL * const pfValue);
     static HRESULT s_GetPropertyByteValue(_In_ IPropertyStore * const pPropStore, _In_ REFPROPERTYKEY refPropKey, _Out_ BYTE * const pbValue);
+    static HRESULT s_GetPropertyDwordValue(_In_ IPropertyStore * const pPropStore, _In_ REFPROPERTYKEY refPropKey, _Out_ DWORD * const pdwValue);
+    
     static HRESULT s_PopulateV1Properties(_In_ IShellLink * const pslConsole, _In_ PCONSOLE_STATE_INFO pStateInfo);
     static HRESULT s_PopulateV2Properties(_In_ IShellLink * const pslConsole, _In_ PCONSOLE_STATE_INFO pStateInfo);
+    
     static void s_GetLinkTitle(_In_ PCWSTR pwszShortcutFilename, _Out_writes_(cchShortcutTitle) PWSTR pwszShortcutTitle, _In_ const size_t cchShortcutTitle);
     static HRESULT s_GetLoadedShellLinkForShortcut(_In_ PCWSTR pwszShortcutFileName, _In_ const DWORD dwMode, _COM_Outptr_ IShellLink **ppsl, _COM_Outptr_ IPersistFile **ppPf);
 };

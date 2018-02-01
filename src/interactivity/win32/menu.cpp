@@ -338,6 +338,9 @@ void Menu::s_GetConsoleState(CONSOLE_STATE_INFO * const pStateInfo)
     pStateInfo->fCtrlKeyShortcutsDisabled = gci->GetCtrlKeyShortcutsDisabled();
     pStateInfo->fLineSelection = gci->GetLineSelection();
     pStateInfo->bWindowTransparency = ServiceLocator::LocateConsoleWindow<Window>()->GetWindowOpacity();
+    
+    pStateInfo->CursorType = static_cast<unsigned int>(gci->GetCursorType());
+    pStateInfo->CursorColor = gci->GetCursorColor();
     // end console v2 properties
 }
 
