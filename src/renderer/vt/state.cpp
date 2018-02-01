@@ -18,6 +18,8 @@ using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 
+const COORD VtEngine::INVALID_COORDS = {-1, -1};
+
 // Routine Description:
 // - Creates a new VT-based rendering engine
 // - NOTE: Will throw if initialization failure. Caller must catch.
@@ -39,6 +41,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _quickReturn(false),
     _fInvalidRectUsed(false),
     _clearedAllThisFrame(false),
+    _cursorMoved(false),
     _suppressResizeRepaint(false)
 {
 #ifndef UNIT_TESTING
