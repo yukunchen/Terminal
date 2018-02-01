@@ -595,6 +595,13 @@ bool OutputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch,
     case OscActionCodes::SetColor:
         fSuccess = _GetOscSetColorTable(pwchOscStringBuffer, cchOscString, &tableIndex, &dwColor);
         break;
+    case OscActionCodes::SetCursorColor:
+        fSuccess = _GetOscSetCursorColor(pwchOscStringBuffer, cchOscString, &dwColor);
+        break;
+    case OscActionCodes::ResetCursorColor:
+        dwColor = INVALID_COLOR;
+        fSuccess = true;
+        break;
     default:
         // If no functions to call, overall dispatch was a failure.
         fSuccess = false;
@@ -613,6 +620,14 @@ bool OutputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch,
         case OscActionCodes::SetColor:
             fSuccess = _pDispatch->SetColorTableEntry(tableIndex, dwColor);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCCT);
+            break;
+        case OscActionCodes::SetCursorColor:
+            fSuccess = _pDispatch->SetCursorColor(dwColor);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCSCC);
+            break;
+        case OscActionCodes::ResetCursorColor:
+            fSuccess = _pDispatch->SetCursorColor(dwColor);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCRCC);
             break;
         default:
             // If no functions to call, overall dispatch was a failure.
@@ -1205,82 +1220,39 @@ bool OutputStateMachineEngine::s_IsHexNumber(_In_ wchar_t const wch)
            (wch >= L'a' && wch <= L'f');
 }
 
-// Routine Description:
-// - OSC 4 ; c ; spec ST
-//      c: the index of the ansi color table
-//      spec: a color in the following format:
-//          "rgb:<red>/<green>/<blue>"
-//          where <color> is two hex digits
-// Arguments:
-// - ppwchTitle - a pointer to point to the Osc String to use as a title.
-// - pcchTitleLength - a pointer place the length of ppwchTitle into.
-// Return Value:
-// - True if there was a title to output. (a title with length=0 is still valid)
-bool OutputStateMachineEngine::_GetOscSetColorTable(_In_reads_(cchOscString) const wchar_t* const pwchOscStringBuffer,
-                                                    _In_ const size_t cchOscString,
-                                                    _Out_ size_t* const pTableIndex,
-                                                    _Out_ DWORD* const pRgb) const
-{
-    *pTableIndex = 0;
-    *pRgb = 0;
-    const wchar_t* pwchCurr = pwchOscStringBuffer;
-    const wchar_t*const pwchEnd = pwchOscStringBuffer + cchOscString;
-    size_t _TableIndex = 0;
-    unsigned int rguiColorValues[3] = {0};
 
-    bool foundTableIndex = false;
+bool OutputStateMachineEngine::s_ParseColorSpec(_In_reads_(cchBuffer) const wchar_t* const pwchBuffer,
+                                                _In_ const size_t cchBuffer,
+                                                _Out_ DWORD* const pRgb)
+{ 
+    const wchar_t* pwchCurr = pwchBuffer;
+    const wchar_t* const pwchEnd = pwchBuffer + cchBuffer;
     bool foundRGB = false;
     bool foundValidColorSpec = false;
+    unsigned int rguiColorValues[3] = {0};
     bool fSuccess = false;
     // We can have anywhere between [11,15] characters
-    // 11 "#;rgb:h/h/h"
-    // 15 "##;rgb:hh/hh/hh"
+    // 9 "rgb:h/h/h"
+    // 12 "rgb:hh/hh/hh"
     // Any fewer cannot be valid, and any more will be too many.
     // Return early in this case.
     //      We'll still have to bounds check when parsing the hh/hh/hh values
-    if (cchOscString < 11 || cchOscString > 15)
+    if (cchBuffer < 9 || cchBuffer > 12)
     {
         return false;
     }
 
-    // First try to get the table index, a number between [0,15]
-    for (size_t i = 0; i < 3; i++)
-    {
-        const wchar_t wch = *pwchCurr;
-        if (s_IsNumber(wch))
-        {
-            _TableIndex *= 10;
-            _TableIndex += wch - L'0';
-
-            pwchCurr++;
-        }
-        else if (wch == L';' && i > 0)
-        {
-            // We need to explicitly pass in a number, we can't default to 0 if
-            //  there's no param
-            pwchCurr++;
-            foundTableIndex = true;
-            break;
-        }
-        else
-        {
-            // Found an unexpected character, fail.
-            break;
-        }
-    }
     // Now we look for "rgb:"
     // Other colorspaces are theoretically possible, but we don't support them.
-    if (foundTableIndex)
+
+    if ((pwchCurr[0] == L'r') &&
+        (pwchCurr[1] == L'g') &&
+        (pwchCurr[2] == L'b') &&
+        (pwchCurr[3] == L':') )
     {
-        if ((pwchCurr[0] == L'r') &&
-            (pwchCurr[1] == L'g') &&
-            (pwchCurr[2] == L'b') &&
-            (pwchCurr[3] == L':') )
-        {
-            foundRGB = true;
-        }
-        pwchCurr += 4;
+        foundRGB = true;
     }
+    pwchCurr += 4;
 
     if (foundRGB)
     {
@@ -1338,7 +1310,6 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(_In_reads_(cchOscString) con
             }
         }
     }
-
     // Only if we find a valid colorspec can we pass it out successfully.
     if (foundValidColorSpec)
     {
@@ -1346,11 +1317,118 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(_In_reads_(cchOscString) con
                           LOBYTE(rguiColorValues[1]),
                           LOBYTE(rguiColorValues[2]));
 
-        *pTableIndex = _TableIndex;
         *pRgb = color;
         fSuccess = true;
     }
+    return fSuccess;
+}
 
+// Routine Description:
+// - OSC 4 ; c ; spec ST
+//      c: the index of the ansi color table
+//      spec: a color in the following format:
+//          "rgb:<red>/<green>/<blue>"
+//          where <color> is two hex digits
+// Arguments:
+// - ppwchTitle - a pointer to point to the Osc String to use as a title.
+// - pcchTitleLength - a pointer place the length of ppwchTitle into.
+// Return Value:
+// - True if there was a title to output. (a title with length=0 is still valid)
+bool OutputStateMachineEngine::_GetOscSetColorTable(_In_reads_(cchOscString) const wchar_t* const pwchOscStringBuffer,
+                                                    _In_ const size_t cchOscString,
+                                                    _Out_ size_t* const pTableIndex,
+                                                    _Out_ DWORD* const pRgb) const
+{
+    *pTableIndex = 0;
+    *pRgb = 0;
+    const wchar_t* pwchCurr = pwchOscStringBuffer;
+    const wchar_t* const pwchEnd = pwchOscStringBuffer + cchOscString;
+    size_t _TableIndex = 0;
+
+    bool foundTableIndex = false;
+    bool fSuccess = false;
+    // We can have anywhere between [11,15] characters
+    // 11 "#;rgb:h/h/h"
+    // 15 "##;rgb:hh/hh/hh"
+    // Any fewer cannot be valid, and any more will be too many.
+    // Return early in this case.
+    //      We'll still have to bounds check when parsing the hh/hh/hh values
+    if (cchOscString < 11 || cchOscString > 15)
+    {
+        return false;
+    }
+
+    // First try to get the table index, a number between [0,15]
+    for (size_t i = 0; i < 3; i++)
+    {
+        const wchar_t wch = *pwchCurr;
+        if (s_IsNumber(wch))
+        {
+            _TableIndex *= 10;
+            _TableIndex += wch - L'0';
+
+            pwchCurr++;
+        }
+        else if (wch == L';' && i > 0)
+        {
+            // We need to explicitly pass in a number, we can't default to 0 if
+            //  there's no param
+            pwchCurr++;
+            foundTableIndex = true;
+            break;
+        }
+        else
+        {
+            // Found an unexpected character, fail.
+            break;
+        }
+    }
+    // Now we look for "rgb:"
+    // Other colorspaces are theoretically possible, but we don't support them.
+    if (foundTableIndex)
+    {
+        DWORD color = 0;
+        fSuccess = s_ParseColorSpec(pwchCurr, pwchEnd - pwchCurr, &color);
+
+        if (fSuccess)
+        {
+            *pTableIndex = _TableIndex;
+            *pRgb = color;
+        }
+    }
+
+
+    return fSuccess;
+}
+
+// Routine Description:
+// - OSC 12 ; spec ST
+//      spec: a color in the following format:
+//          "rgb:<red>/<green>/<blue>"
+//          where <color> is two hex digits
+// Arguments:
+// - ppwchTitle - a pointer to point to the Osc String to use as a title.
+// - pcchTitleLength - a pointer place the length of ppwchTitle into.
+// Return Value:
+// - True if there was a title to output. (a title with length=0 is still valid)
+bool OutputStateMachineEngine::_GetOscSetCursorColor(_In_reads_(cchOscString) const wchar_t* const pwchOscStringBuffer,
+                                                     _In_ const size_t cchOscString,
+                                                     _Out_ DWORD* const pRgb) const
+{
+    *pRgb = 0;
+    const wchar_t* pwchCurr = pwchOscStringBuffer;
+    const wchar_t* const pwchEnd = pwchOscStringBuffer + cchOscString;
+
+    bool fSuccess = false;
+
+    DWORD color = 0;
+    fSuccess = s_ParseColorSpec(pwchCurr, pwchEnd - pwchCurr, &color);
+
+    if (fSuccess)
+    {
+        *pRgb = color;
+    }
+    
     return fSuccess;
 }
 

@@ -116,6 +116,8 @@ namespace Microsoft
                     SetWindowIcon = 1,
                     SetWindowTitle = 2,
                     SetColor = 4,
+                    SetCursorColor = 12,
+                    ResetCursorColor = 112,
                 };
 
                 enum class DesignateCharsetTypes
@@ -228,6 +230,14 @@ namespace Microsoft
                                           _In_ const size_t cchOscString,
                                           _Out_ size_t* const pTableIndex,
                                           _Out_ DWORD* const pRgb) const;
+
+                static bool s_ParseColorSpec(_In_reads_(cchBuffer) const wchar_t* const pwchBuffer,
+                                             _In_ const size_t cchBuffer,
+                                             _Out_ DWORD* const pRgb);
+
+                bool _GetOscSetCursorColor(_In_reads_(cchOscString) const wchar_t* const pwchOscStringBuffer,
+                                           _In_ const size_t cchOscString,
+                                           _Out_ DWORD* const pRgb) const;
 
                 static const DispatchCommon::CursorStyle s_defaultCursorStyle = DispatchCommon::CursorStyle::BlinkingBlockDefault;
                 _Success_(return)

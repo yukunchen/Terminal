@@ -85,6 +85,8 @@ namespace Microsoft
                     DECSCUSR,
                     DTTERM_WM,
                     OSCCT,
+                    OSCSCC,
+                    OSCRCC,
                     // Only use this last enum as a count of the number of codes.
                     NUMBER_OF_CODES
                 };

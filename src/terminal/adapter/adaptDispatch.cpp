@@ -1754,6 +1754,18 @@ bool AdaptDispatch::SetCursorStyle(_In_ DispatchCommon::CursorStyle cursorStyle)
 // - dwColor: The new RGB color value to use.
 // Return Value:
 // True if handled successfully. False othewise.
+bool AdaptDispatch::SetCursorColor(_In_ const COLORREF cursorColor)
+{
+    return !!_pConApi->SetCursorColor(cursorColor);
+}
+
+// Method Description:
+// - Sets a single entry of the colortable to a new value
+// Arguments:
+// - tableIndex: The VT color table index
+// - dwColor: The new RGB color value to use.
+// Return Value:
+// True if handled successfully. False othewise.
 bool AdaptDispatch::SetColorTableEntry(_In_ const size_t tableIndex,
                                        _In_ const DWORD dwColor)
 {

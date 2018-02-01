@@ -182,6 +182,7 @@ namespace Microsoft
                 virtual bool HardReset(){ return false; } // RIS
 
                 virtual bool SetCursorStyle(_In_ DispatchCommon::CursorStyle /*cursorStyle*/){ return false; } // DECSCUSR
+                virtual bool SetCursorColor(_In_ const COLORREF /*Color*/) { return false; } // OSCSetCursorColor, OSCResetCursorColor
 
                 // DTTERM_WindowManipulation
                 virtual bool WindowManipulation(_In_ const DispatchCommon::WindowManipulationType /*uiFunction*/,

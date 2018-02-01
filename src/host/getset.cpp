@@ -1371,6 +1371,13 @@ NTSTATUS DoSrvSetCursorStyle(_In_ SCREEN_INFORMATION* const pScreenInfo,
     return STATUS_SUCCESS;
 }
 
+NTSTATUS DoSrvSetCursorColor(_In_ SCREEN_INFORMATION* const pScreenInfo,
+                             _In_ COLORREF const cursorColor)
+{
+    pScreenInfo->TextInfo->GetCursor()->SetColor(cursorColor);
+    return STATUS_SUCCESS;
+}
+
 // Routine Description:
 // - A private API call to get only the default color attributes of the screen buffer.
 // - This is used as a performance optimization by the VT adapter in SGR (Set Graphics Rendition) instead

@@ -127,6 +127,7 @@ public:
                                             _Out_ size_t& eventsWritten) override;
 
     virtual BOOL SetCursorStyle(_In_ CursorType const cursorType) override;
+    virtual BOOL SetCursorColor(_In_ COLORREF const cursorColor) override;
 
     virtual BOOL PrivateRefreshWindow() override;
    

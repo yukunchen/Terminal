@@ -638,3 +638,16 @@ BOOL ConhostInternalGetSet::PrivateSuppressResizeRepaint()
 {
     return SUCCEEDED(DoSrvPrivateSuppressResizeRepaint());
 }
+
+// Routine Description:
+// - Connects the SetCursorStyle call directly into our Driver Message servicing call inside Conhost.exe
+//   SetCursorStyle is an internal-only "API" call that the vt commands can execute,
+//     but it is not represented as a function call on our public API surface.
+// Arguments:
+// <none>
+// Return Value:
+// - TRUE if successful (see DoSrvSetCursorStyle). FALSE otherwise.
+BOOL ConhostInternalGetSet::SetCursorColor(_In_ COLORREF const cursorColor)
+{
+    return NT_SUCCESS(DoSrvSetCursorColor(_pIo->GetActiveOutputBuffer(), cursorColor));
+}

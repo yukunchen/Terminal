@@ -63,7 +63,10 @@ NTSTATUS DoSrvPrivateSetConsoleRGBTextAttribute(_In_ SCREEN_INFORMATION* pScreen
 
 NTSTATUS DoSrvPrivateEraseAll(_In_ SCREEN_INFORMATION* const pScreenInfo);
 
-NTSTATUS DoSrvSetCursorStyle(_In_ SCREEN_INFORMATION* const pScreenInfo, _In_ CursorType const cursorType);
+NTSTATUS DoSrvSetCursorStyle(_In_ SCREEN_INFORMATION* const pScreenInfo,
+                             _In_ CursorType const cursorType);
+NTSTATUS DoSrvSetCursorColor(_In_ SCREEN_INFORMATION* const pScreenInfo,
+                             _In_ COLORREF const cursorColor);
 
 NTSTATUS DoSrvPrivateGetConsoleScreenBufferAttributes(_In_ SCREEN_INFORMATION* const pScreenInfo, _Out_ WORD* const pwAttributes);
 
