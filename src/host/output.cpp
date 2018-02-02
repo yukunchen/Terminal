@@ -554,7 +554,7 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                 }
 
                 k = 0;
-                for (j = X; j < coordScreenBufferSize.X, it != itEnd; TargetPtr++, ++it)
+                for (j = X; j < coordScreenBufferSize.X && it != itEnd; TargetPtr++, ++it)
                 {
                     const WORD wLegacyAttributes = pAttrRun->GetAttributes().GetLegacyAttributes();
                     if ((j == X) && it->IsTrailing())

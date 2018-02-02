@@ -1231,7 +1231,7 @@ void FillRectangle(_In_ const CHAR_INFO * const pciFill,
         }
         std::vector<DbcsAttribute>::const_iterator itEnd = pRow->CharRow.GetAttributeIteratorEnd();
 
-        for (SHORT j = 0; j < XSize, it != itEnd; j++)
+        for (SHORT j = 0; j < XSize && it < itEnd; j++)
         {
             if (Width)
             {
@@ -1240,6 +1240,7 @@ void FillRectangle(_In_ const CHAR_INFO * const pciFill,
                     // we set leading an trailing in pairs so make sure that checking against the end of the
                     // iterator won't be off by 1
                     assert((itEnd - it) % 2 == 0);
+                    assert((itEnd - it) >= 2);
 
                     *Char++ = pciFill->Char.UnicodeChar;
                     *Char++ = pciFill->Char.UnicodeChar;
