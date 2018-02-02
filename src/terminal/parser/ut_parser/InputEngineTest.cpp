@@ -270,7 +270,6 @@ void InputEngineTest::TestInputStringCallback(std::deque<std::unique_ptr<IInputE
     // VERIFY_ARE_EQUAL((size_t)1, vExpectedInput.size());
     auto cleanup = wil::ScopeExit([&]{delete[] rgInput;});
 
-    bool foundEqual = false;
 
     for (auto expected : vExpectedInput)
     {
@@ -306,20 +305,25 @@ void InputEngineTest::TestInputStringCallback(std::deque<std::unique_ptr<IInputE
             (irExpected.Event.KeyEvent.uChar.UnicodeChar == inRec.Event.KeyEvent.uChar.UnicodeChar) &&
             ModifiersEquivalent(irExpected.Event.KeyEvent.dwControlKeyState, inRec.Event.KeyEvent.dwControlKeyState);
 
-        // foundEqual |= areEqual;
         if (areEqual)
         {
             Log::Comment(L"\t\tFound Match");
             vExpectedInput.pop_front();
-            irExpected = vExpectedInput.front();
-            Log::Comment(
-                NoThrowString().Format(L"\tLooking for:\t") +
-                VerifyOutputTraits<INPUT_RECORD>::ToString(irExpected)
-            );
+            if (vExpectedInput.size() > 0)
+            {
+                irExpected = vExpectedInput.front();
+                Log::Comment(
+                    NoThrowString().Format(L"\tLooking for:\t") +
+                    VerifyOutputTraits<INPUT_RECORD>::ToString(irExpected)
+                );
+            }
+            // else
+            // {
+            //     VERIFY_ARE_EQUAL(i+1, cInput, L"Verify there are no more records remaining to look at");
+            // }
         }
     }
-
-    VERIFY_IS_TRUE(foundEqual);
+    VERIFY_ARE_EQUAL(0, vExpectedInput.size(), L"Verify we found all the inputs we were expecting");
     vExpectedInput.clear();
 }
 
@@ -660,12 +664,20 @@ void InputEngineTest::UTF8Test()
     ));
     _pStateMachine->ProcessString(&utf8Input[0], utf8Input.length());
 
-    utf8Input = L"旅";
+
+    utf8Input = L"\u65C5";
     INPUT_RECORD test = {0};
-    test.Event.KeyEvent.uChar.UnicodeChar = L'旅';
+    test.EventType = KEY_EVENT;
+    test.Event.KeyEvent.bKeyDown = TRUE;
+    test.Event.KeyEvent.wRepeatCount = 1;
+    test.Event.KeyEvent.uChar.UnicodeChar = L'\u65C5';
     Log::Comment(NoThrowString().Format(
         L"Processing \"%s\"", utf8Input.c_str()
     ));
+    vExpectedInput.clear();
+    vExpectedInput.push_back(test);
+    test.Event.KeyEvent.bKeyDown = FALSE;
+    vExpectedInput.push_back(test);
     _pStateMachine->ProcessString(&utf8Input[0], utf8Input.length());
 
 
