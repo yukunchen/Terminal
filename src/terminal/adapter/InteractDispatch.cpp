@@ -60,7 +60,7 @@ bool InteractDispatch::WriteString(_In_reads_(cch) const wchar_t* const pws,
     {
         std::deque<std::unique_ptr<IInputEvent>> keyEvents;
         
-        for (int i = 0; i < cch; ++i)
+        for (size_t i = 0; i < cch; ++i)
         {
             const wchar_t wch = pws[i];
             std::deque<std::unique_ptr<KeyEvent>> convertedEvents = CharToKeyEvents(wch, codepage);
