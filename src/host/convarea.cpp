@@ -727,12 +727,12 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
     {
 
         if (TargetPoint.Y == coordScreenBufferSize.Y - 1 &&
-            TargetPoint.X + StringLength >= coordScreenBufferSize.X &&
+            TargetPoint.X + static_cast<short>(StringLength) >= coordScreenBufferSize.X &&
             pDbcsAttributes[ScreenEndOfString - 1].IsLeading())
         {
             *(String + ScreenEndOfString - 1) = UNICODE_SPACE;
             pDbcsAttributes[ScreenEndOfString - 1].SetSingle();
-            if (StringLength > ScreenEndOfString - 1)
+            if (StringLength > static_cast<size_t>(ScreenEndOfString) - 1)
             {
                 *(String + ScreenEndOfString) = UNICODE_SPACE;
                 pDbcsAttributes[ScreenEndOfString].SetSingle();
@@ -765,7 +765,7 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
         if (fLVerticalSet || fRVerticalSet)
         {
             const int iFlag = fRVerticalSet? COMMON_LVB_GRID_RVERTICAL : COMMON_LVB_GRID_LVERTICAL;
-            for (short i = 0; i < StringLength; i++)
+            for (size_t i = 0; i < StringLength; i++)
             {
                 InsertedRun.SetLength(1);
                 const bool IsLeadingOrTrailing = fRVerticalSet ? pDbcsAttributes[i].IsLeading() : pDbcsAttributes[i].IsTrailing();

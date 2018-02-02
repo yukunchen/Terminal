@@ -100,7 +100,7 @@ void CleanupDbcsEdgesForWrite(_In_ const size_t stringLen,
         }
 
         // Check end position of strings
-        if (coordTarget.X + stringLen < coordScreenBufferSize.X)
+        if (coordTarget.X + static_cast<short>(stringLen) < coordScreenBufferSize.X)
         {
             size_t column = coordTarget.X + stringLen;
             if (row.CharRow.GetAttribute(column).IsTrailing())
