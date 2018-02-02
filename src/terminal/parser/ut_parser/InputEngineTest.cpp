@@ -145,7 +145,7 @@ bool TestInteractDispatch::WriteString(_In_reads_(cch) const wchar_t* const pws,
 {
     std::deque<std::unique_ptr<IInputEvent>> keyEvents;
 
-    for (int i = 0; i < cch; ++i)
+    for (size_t i = 0; i < cch; ++i)
     {
         const wchar_t wch = pws[i];
         // We're forcing the translation to CP_USA, so that it'll be constant
@@ -314,7 +314,7 @@ void InputEngineTest::TestInputStringCallback(std::deque<std::unique_ptr<IInputE
             }
         }
     }
-    VERIFY_ARE_EQUAL(0, vExpectedInput.size(), L"Verify we found all the inputs we were expecting");
+    VERIFY_ARE_EQUAL(static_cast<size_t>(0), vExpectedInput.size(), L"Verify we found all the inputs we were expecting");
     vExpectedInput.clear();
 }
 

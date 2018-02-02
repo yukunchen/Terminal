@@ -24,6 +24,16 @@ Abstract:
 #define ENABLE_INTSAFE_SIGNED_FUNCTIONS
 #include <intsafe.h>
 
+// STL
+#include <string>
+#include <list>
+#include <memory>
+#include <utility>
+#include <vector>
+#include <memory>
+#include <algorithm>
+#include <iterator>
+
 // WIL
 #define WIL_SUPPORT_BITOPERATION_PASCAL_NAMES
 #include <wil\Common.h>

@@ -57,7 +57,6 @@ if "%PROCESSOR_ARCHITECTURE%" == "AMD64" (
 ) else (
     set ARCH=x86
 )
-set TAEF=%OPENCON%\dep\DDK\TAEF\%ARCH%\TE.exe
 set DEFAULT_CONFIGURATION=Debug
 
 rem call .razzlerc - for your generic razzle environment stuff
@@ -85,6 +84,11 @@ if (%1) == (rel) (
     shift
     goto :ARGS_LOOP
 )
+if (%1) == (x86) (
+    set ARCH=x86
+    shift
+    goto :ARGS_LOOP
+)
 if exist %1 (
     call %1
 ) else (
@@ -94,6 +98,7 @@ shift
 goto :ARGS_LOOP
 
 :POST_ARGS_LOOP
+set TAEF=%OPENCON%\dep\DDK\TAEF\%ARCH%\TE.exe
 rem Set this envvar so setup won't repeat itself
 set OpenConBuild=true
 

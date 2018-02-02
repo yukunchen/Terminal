@@ -53,6 +53,8 @@ Abstract:
 #include <utility>
 #include <vector>
 #include <memory>
+#include <algorithm>
+#include <iterator>
 
 // WIL
 #include <wil\Common.h>
