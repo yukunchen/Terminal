@@ -13,6 +13,11 @@
 
 #pragma hdrstop
 
+// TODO: MSFT 14150722 - can these const values be generated at
+// runtime without breaking compatibility?
+static const WORD altScanCode = 0x38;
+static const WORD leftShiftScanCode = 0x2A;
+
 // Routine Description:
 // - Takes a multibyte string, allocates the appropriate amount of memory for the conversion, performs the conversion,
 //   and returns the Unicode UCS-2 result in the smart pointer (and the length).
@@ -373,7 +378,6 @@ std::deque<std::unique_ptr<KeyEvent>> SynthesizeNumpadEvents(_In_ const wchar_t 
                                                    UNICODE_NULL,
                                                    LEFT_ALT_PRESSED));
 
-    // const UINT codepage = ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP;
     const int radix = 10;
     std::wstring wstr{ wch };
     std::deque<char> convertedChars;

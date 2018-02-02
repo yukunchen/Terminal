@@ -76,7 +76,7 @@ void DebugReadCallback(BYTE* /*buffer*/, DWORD /*dwRead*/)
 VtConsole* getConsole()
 {
     return consoles[0];
-} 
+}
 
 void nextConsole()
 {
@@ -117,7 +117,7 @@ void signalConsole()
 
 std::string csi(string seq)
 {
-    // Note: This doesn't do anything for the debug console currently. 
+    // Note: This doesn't do anything for the debug console currently.
     //      Somewhere, the TTY eats the control sequences. Still useful though.
     string fullSeq = "\x1b[";
     fullSeq += seq;
@@ -255,11 +255,11 @@ void handleResize()
     if (fSuccess)
     {
         SMALL_RECT srViewport = csbiex.srWindow;
-        
+
         short width = srViewport.Right - srViewport.Left + 1;
         short height = srViewport.Bottom - srViewport.Top + 1;
 
-        doResize(width, height);        
+        doResize(width, height);
     }
 }
 
@@ -396,7 +396,7 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
         }
         getConsole()->WriteInput(str);
         PrintInputToDebug(str);
-        
+
         doUnicode = false;
         lang = TEST_LANG_NONE;
     }
@@ -446,26 +446,26 @@ void SetupInput()
 DWORD InputThread(LPVOID lpParameter)
 {
     UNREFERENCED_PARAMETER(lpParameter);
-    
-    // Because the input thread ends up owning the lifetime of the application, 
+
+    // Because the input thread ends up owning the lifetime of the application,
     // Set/restore the CP here.
 
     unsigned int launchOutputCP = GetConsoleOutputCP();
     unsigned int launchCP = GetConsoleCP();
     THROW_LAST_ERROR_IF_FALSE(SetConsoleOutputCP(CP_UTF8));
     THROW_LAST_ERROR_IF_FALSE(SetConsoleCP(CP_UTF8));
-    auto restore = wil::ScopeExit([&] 
+    auto restore = wil::ScopeExit([&]
     {
         SetConsoleOutputCP(launchOutputCP);
         SetConsoleCP(launchCP);
     });
 
-    
+
     for (;;)
     {
         INPUT_RECORD rc[256];
         DWORD dwRead = 0;
-        // bool fSuccess = !!ReadConsoleInputA(hIn, rc, 256, &dwRead);
+        // Not to future self: You can't read utf-8 from the console yet.
         bool fSuccess = !!ReadConsoleInput(hIn, rc, 256, &dwRead);
         if (fSuccess)
         {
@@ -494,13 +494,13 @@ void CreateIOThreads()
 }
 
 
-BOOL CtrlHandler( DWORD fdwCtrlType ) 
+BOOL CtrlHandler( DWORD fdwCtrlType )
 {
-    switch( fdwCtrlType ) 
-    { 
-    // Handle the CTRL-C signal. 
-    case CTRL_C_EVENT: 
-    case CTRL_BREAK_EVENT: 
+    switch( fdwCtrlType )
+    {
+    // Handle the CTRL-C signal.
+    case CTRL_C_EVENT:
+    case CTRL_BREAK_EVENT:
         return true;
     }
 
@@ -513,7 +513,7 @@ BOOL CtrlHandler( DWORD fdwCtrlType )
 #pragma warning(disable:4702)
 int __cdecl wmain(int argc, WCHAR* argv[])
 {
-    // initialize random seed: 
+    // initialize random seed:
     srand((unsigned int)time(NULL));
     SetConsoleCtrlHandler( (PHANDLER_ROUTINE) CtrlHandler, TRUE );
 
@@ -544,7 +544,7 @@ int __cdecl wmain(int argc, WCHAR* argv[])
     // handleResize will get our initial terminal dimensions.
     handleResize();
 
-    newConsole();  
+    newConsole();
     getConsole()->activate();
     CreateIOThreads();
 

@@ -617,7 +617,7 @@ BOOL ConhostInternalGetSet::PrivateWriteConsoleControlInput(_In_ KeyEvent key)
 // Routine Description:
 // - Connects the GetConsoleOutputCP API call directly into our Driver Message servicing call inside Conhost.exe
 // Arguments:
-// - key - a KeyEvent representing a special type of keypress, typically Ctrl-C
+// - puiOutputCP - recieves the outputCP of the console.
 // Return Value:
 // - TRUE if successful (see DoSrvPrivateWriteConsoleControlInput). FALSE otherwise.
 BOOL ConhostInternalGetSet::GetConsoleOutputCP(_Out_ unsigned int* const puiOutputCP)

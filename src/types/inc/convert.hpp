@@ -18,11 +18,6 @@ Author:
 #include <memory>
 #include "IInputEvent.hpp"
 
-// TODO: MSFT 14150722 - can these const values be generated at
-// runtime without breaking compatibility?
-static const WORD altScanCode = 0x38;
-static const WORD leftShiftScanCode = 0x2A;
-
 HRESULT ConvertToW(_In_ const UINT uiCodePage,
                    _In_reads_or_z_(cchSource) const char* const rgchSource,
                    _In_ size_t const cchSource,
