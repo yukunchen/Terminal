@@ -30,7 +30,8 @@ void _HandleTerminalKeyEventCallback(_In_ std::deque<std::unique_ptr<IInputEvent
 // Arguments:
 // - hPipe - a handle to the file representing the read end of the VT pipe.
 VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe)
-    : _hFile(std::move(hPipe))
+    : _hFile(std::move(hPipe)),
+    _utf8Parser(CP_UTF8)
 {
     THROW_IF_HANDLE_INVALID(_hFile.get());
 }
@@ -44,7 +45,7 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe)
 // - cch - number of UTF-8 characters in charBuffer
 // Return Value:
 // - S_OK on success, otherwise an appropriate failure.
-HRESULT VtInputThread::_HandleRunInput(_In_reads_(cch) const char* const charBuffer, _In_ const int cch)
+HRESULT VtInputThread::_HandleRunInput(_In_reads_(cch) const byte* const charBuffer, _In_ const int cch)
 {
     CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     gci->LockConsole();
@@ -52,11 +53,11 @@ HRESULT VtInputThread::_HandleRunInput(_In_reads_(cch) const char* const charBuf
 
     try
     {
-        wistd::unique_ptr<wchar_t[]> pwsSequence;
-        size_t cchSequence;
-        // TODO: This probably needs to use the utf8ToWideChar parser.
-        RETURN_IF_FAILED(ConvertToW(CP_UTF8, charBuffer, cch, pwsSequence, cchSequence));
+        std::unique_ptr<wchar_t[]> pwsSequence;
+        unsigned int cchConsumed;
+        unsigned int cchSequence;
 
+         RETURN_IF_FAILED(_utf8Parser.Parse(charBuffer, cch, cchConsumed, pwsSequence, cchSequence));
         _pInputStateMachine->ProcessString(pwsSequence.get(), cchSequence);
     }
     CATCH_RETURN();
@@ -84,7 +85,7 @@ DWORD VtInputThread::StaticVtInputThreadProc(_In_ LPVOID lpParameter)
 // - <none>
 DWORD VtInputThread::_InputThread()
 {
-    char buffer[256];
+    byte buffer[256];
     DWORD dwRead;
 
     while (true)

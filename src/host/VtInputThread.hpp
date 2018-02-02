@@ -14,6 +14,7 @@ Author(s):
 #pragma once
 
 #include "..\terminal\parser\StateMachine.hpp"
+#include "utf8ToWideCharParser.hpp"
 
 namespace Microsoft
 {
@@ -28,7 +29,7 @@ namespace Microsoft
             static DWORD StaticVtInputThreadProc(_In_ LPVOID lpParameter);
 
         private:
-            HRESULT _HandleRunInput(_In_reads_(cch) const char* const charBuffer, _In_ const int cch);
+            HRESULT _HandleRunInput(_In_reads_(cch) const byte* const charBuffer, _In_ const int cch);
             DWORD _InputThread();
 
             wil::unique_hfile _hFile;
@@ -36,6 +37,7 @@ namespace Microsoft
             DWORD _dwThreadId;
 
             std::unique_ptr<StateMachine> _pInputStateMachine;
+            Utf8ToWideCharParser _utf8Parser;
         };
     }
 };
