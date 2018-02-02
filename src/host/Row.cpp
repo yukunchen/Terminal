@@ -114,18 +114,6 @@ HRESULT ROW::Resize(_In_ size_t const width)
 }
 
 // Routine Description:
-// - checks if column in row is a trailing byte
-// Arguments:
-// - column - 0-indexed column index
-// Return Value:
-// - true if column is a trailing byte, false otherwise
-bool ROW::IsTrailingByteAtColumn(_In_ const size_t column) const
-{
-    THROW_HR_IF(E_INVALIDARG, column >= CharRow.GetWidth());
-    return IsFlagSet(CharRow.KAttrs[column], CHAR_ROW::ATTR_TRAILING_BYTE);
-}
-
-// Routine Description:
 // - clears char data in column in row
 // Arguments:
 // - column - 0-indexed column index
@@ -135,5 +123,5 @@ void ROW::ClearColumn(_In_ const size_t column)
 {
     THROW_HR_IF(E_INVALIDARG, column >= CharRow.GetWidth());
     CharRow.Chars[column] = UNICODE_SPACE;
-    CharRow.KAttrs[column] = 0;
+    CharRow.GetAttribute(column).SetSingle();
 }

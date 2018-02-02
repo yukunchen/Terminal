@@ -99,7 +99,7 @@ public:
     ROW& GetNextRow(_In_ const ROW& row) noexcept;
 
     // Text insertion functions
-    bool InsertCharacter(_In_ wchar_t const wch, _In_ BYTE const bKAttr, _In_ const TextAttribute attr);
+    bool InsertCharacter(_In_ const wchar_t wch, _In_ const DbcsAttribute dbcsAttribute, _In_ const TextAttribute attr);
     bool IncrementCursor();
     bool NewlineCursor();
 
@@ -152,8 +152,8 @@ private:
     void AdjustWrapOnCurrentRow(_In_ bool const fSet);
 
     // Assist with maintaining proper buffer state for Double Byte character sequences
-    bool _PrepareForDoubleByteSequence(_In_ BYTE const bKAttr);
-    bool AssertValidDoubleByteSequence(_In_ BYTE const bKAttr);
+    bool _PrepareForDoubleByteSequence(_In_ const DbcsAttribute dbcsAttribute);
+    bool AssertValidDoubleByteSequence(_In_ const DbcsAttribute dbcsAttribute);
 
     CHAR_INFO _ciFill;
 

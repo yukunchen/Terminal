@@ -20,10 +20,13 @@ Revision History:
 #pragma once
 
 #include <memory>
+#include <vector>
+
+#include "DbcsAttribute.hpp"
 
 // Characters used for padding out the buffer with invalid/empty space
 #define PADDING_CHAR UNICODE_SPACE
-#define PADDING_KATTR '\0'
+
 
 
 // the characters of one row of screen buffer
@@ -41,14 +44,6 @@ class CHAR_ROW final
 public:
     static const SHORT INVALID_OLD_LENGTH = -1;
 
-    // for use with pbKAttrs
-    static const BYTE ATTR_SINGLE_BYTE = 0x00;
-    static const BYTE ATTR_LEADING_BYTE = 0x01;
-    static const BYTE ATTR_TRAILING_BYTE = 0x02;
-    static const BYTE ATTR_DBCSSBCS_BYTE = 0x03;
-    static const BYTE ATTR_SEPARATE_BYTE = 0x10;
-    static const BYTE ATTR_EUDCFLAG_BYTE = 0x20;
-
     CHAR_ROW(short rowWidth);
     CHAR_ROW(const CHAR_ROW& a);
     CHAR_ROW& operator=(const CHAR_ROW& a);
@@ -60,7 +55,14 @@ public:
     SHORT Right;    // one past rightmost bound of chars in Chars array (array will be full width)
     SHORT Left; // leftmost bound of chars in Chars array (array will be full width)
     std::unique_ptr<wchar_t[]> Chars; // all chars in row
-    std::unique_ptr<BYTE[]> KAttrs; // all DBCS lead & trail bit in row
+
+    const DbcsAttribute& GetAttribute(_In_ const size_t column) const;
+    DbcsAttribute& GetAttribute(_In_ const size_t column);
+
+    std::vector<DbcsAttribute>::iterator GetAttributeIterator(_In_ const size_t column);
+    std::vector<DbcsAttribute>::const_iterator CHAR_ROW::GetAttributeIterator(_In_ const size_t column) const;
+
+    std::vector<DbcsAttribute>::const_iterator CHAR_ROW::GetAttributeIteratorEnd() const noexcept;
 
     void Reset(_In_ short const sRowWidth);
 
@@ -87,10 +89,6 @@ public:
     short MeasureLeft(_In_ short const sRowWidth) const;
     short MeasureRight(_In_ short const sRowWidth) const;
 
-    static bool IsLeadingByte(_In_ BYTE const bKAttr);
-    static bool IsTrailingByte(_In_ BYTE const bKAttr);
-    static bool IsSingleByte(_In_ BYTE const bKAttr);
-
     bool ContainsText() const;
 
     size_t GetWidth() const;
@@ -101,6 +99,7 @@ public:
 private:
     RowFlags bRowFlags;
     size_t _rowWidth;
+    std::vector<DbcsAttribute> _attributes; // all DBCS lead & trail bit in row
 
 #ifdef UNIT_TESTING
     friend class CharRowTests;
@@ -117,7 +116,7 @@ constexpr bool operator==(const CHAR_ROW& a, const CHAR_ROW& b) noexcept
             a.Right == b.Right &&
             a.Left == b.Left &&
             a.Chars == b.Chars &&
-            a.KAttrs == b.KAttrs);
+            a._attributes == b._attributes);
 }
 
 // this sticks specialization of swap() into the std::namespace for CHAR_ROW, so that callers that use

@@ -39,8 +39,6 @@ public:
     bool Reset(_In_ short const sRowWidth, _In_ const TextAttribute Attr);
     HRESULT Resize(_In_ size_t const width);
 
-    bool IsTrailingByteAtColumn(_In_ const size_t column) const;
-
     void ClearColumn(_In_ const size_t column);
 
     friend constexpr bool operator==(const ROW& a, const ROW& b) noexcept;

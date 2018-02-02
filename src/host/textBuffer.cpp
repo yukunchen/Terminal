@@ -350,20 +350,23 @@ ROW& TEXT_BUFFER_INFO::GetNextRow(_In_ const ROW& row) noexcept
 //   at the current cursor position.
 // - It will correct the buffer (by erasing the character prior to the cursor) if necessary to make a consistent state.
 //Arguments:
-// - bKAttr - Double byte information associated with the character about to be inserted into the buffer
+// - dbcsAttribute - Double byte information associated with the character about to be inserted into the buffer
 //Return Value:
 // - True if it is valid to insert a character with the given double byte attributes. False otherwise.
-bool TEXT_BUFFER_INFO::AssertValidDoubleByteSequence(_In_ BYTE const bKAttr)
+bool TEXT_BUFFER_INFO::AssertValidDoubleByteSequence(_In_ const DbcsAttribute dbcsAttribute)
 {
     // To figure out if the sequence is valid, we have to look at the character that comes before the current one
     const COORD coordPrevPosition = GetPreviousFromCursor();
-    const ROW& prevRow = GetRowByOffset(coordPrevPosition.Y);
-
-    // By default, assume it's a single byte character if no KAttrs data exists
-    BYTE bPrevKAttr = CHAR_ROW::ATTR_SINGLE_BYTE;
-    if (prevRow.CharRow.KAttrs != nullptr)
+    ROW& prevRow = GetRowByOffset(coordPrevPosition.Y);
+    DbcsAttribute prevDbcsAttr;
+    try
     {
-        bPrevKAttr = prevRow.CharRow.KAttrs[coordPrevPosition.X];
+        prevDbcsAttr = prevRow.CharRow.GetAttribute(coordPrevPosition.X);
+    }
+    catch (...)
+    {
+        LOG_HR(wil::ResultFromCaughtException());
+        return false;
     }
 
     bool fValidSequence = true; // Valid until proven otherwise
@@ -385,21 +388,21 @@ bool TEXT_BUFFER_INFO::AssertValidDoubleByteSequence(_In_ BYTE const bKAttr)
     // T    T       Fail, uncorrectable. New trailing byte must have had leading before it.
 
     // Check for only failing portions of the matrix:
-    if (CHAR_ROW::IsSingleByte(bPrevKAttr) && CHAR_ROW::IsTrailingByte(bKAttr))
+    if (prevDbcsAttr.IsSingle() && dbcsAttribute.IsTrailing())
     {
         // N, T failing case (uncorrectable)
         fValidSequence = false;
     }
-    else if (CHAR_ROW::IsLeadingByte(bPrevKAttr))
+    else if (prevDbcsAttr.IsLeading())
     {
-        if (CHAR_ROW::IsSingleByte(bKAttr) || CHAR_ROW::IsLeadingByte(bKAttr))
+        if (dbcsAttribute.IsSingle() || dbcsAttribute.IsLeading())
         {
             // L, N and L, L failing cases (correctable)
             fValidSequence = false;
             fCorrectableByErase = true;
         }
     }
-    else if (CHAR_ROW::IsTrailingByte(bPrevKAttr) && CHAR_ROW::IsTrailingByte(bKAttr))
+    else if (prevDbcsAttr.IsTrailing() && dbcsAttribute.IsTrailing())
     {
         // T, T failing case (uncorrectable)
         fValidSequence = false;
@@ -410,10 +413,14 @@ bool TEXT_BUFFER_INFO::AssertValidDoubleByteSequence(_In_ BYTE const bKAttr)
     {
         // Erase previous character into an N type.
         prevRow.CharRow.Chars[coordPrevPosition.X] = PADDING_CHAR;
-
-        if (prevRow.CharRow.KAttrs != nullptr)
+        try
         {
-            prevRow.CharRow.KAttrs[coordPrevPosition.X] = PADDING_KATTR;
+            prevRow.CharRow.GetAttribute(coordPrevPosition.X).SetSingle();
+        }
+        catch (...)
+        {
+            LOG_HR(wil::ResultFromCaughtException());
+            return false;
         }
 
         // Sequence is now N N or N L, which are both okay. Set sequence back to valid.
@@ -429,22 +436,22 @@ bool TEXT_BUFFER_INFO::AssertValidDoubleByteSequence(_In_ BYTE const bKAttr)
 // - It will attempt to correct the buffer if we're inserting an unexpected double byte character type
 //   and it will pad out the buffer if we're going to split a double byte sequence across two rows.
 //Arguments:
-// - bKAttr - Double byte information associated with the character about to be inserted into the buffer
+// - dbcsAttribute - Double byte information associated with the character about to be inserted into the buffer
 //Return Value:
 // - true if we successfully prepared the buffer and moved the cursor
 // - false otherwise (out of memory)
-bool TEXT_BUFFER_INFO::_PrepareForDoubleByteSequence(_In_ BYTE const bKAttr)
+bool TEXT_BUFFER_INFO::_PrepareForDoubleByteSequence(_In_ const DbcsAttribute dbcsAttribute)
 {
     // Assert the buffer state is ready for this character
     // This function corrects most errors. If this is false, we had an uncorrectable one.
-    bool const fValidSequence = AssertValidDoubleByteSequence(bKAttr);
+    bool const fValidSequence = AssertValidDoubleByteSequence(dbcsAttribute);
     ASSERT(fValidSequence); // Shouldn't be uncorrectable sequences unless something is very wrong.
     UNREFERENCED_PARAMETER(fValidSequence);
 
     bool fSuccess = true;
     // Now compensate if we don't have enough space for the upcoming double byte sequence
     // We only need to compensate for leading bytes
-    if (CHAR_ROW::IsLeadingByte(bKAttr))
+    if (dbcsAttribute.IsLeading())
     {
         short const sBufferWidth = this->_coordBufferSize.X;
 
@@ -465,15 +472,17 @@ bool TEXT_BUFFER_INFO::_PrepareForDoubleByteSequence(_In_ BYTE const bKAttr)
 // - Inserts one character into the buffer at the current character position and advances the cursor as appropriate.
 //Arguments:
 // - wchChar - The character to insert
-// - bKAttr - Double byte information associated with the charadcter
+// - dbcsAttribute - Double byte information associated with the charadcter
 // - bAttr - Color data associated with the character
 //Return Value:
 // - true if we successfully inserted the character
 // - false otherwise (out of memory)
-bool TEXT_BUFFER_INFO::InsertCharacter(_In_ wchar_t const wch, _In_ BYTE const bKAttr, _In_ const TextAttribute attr)
+bool TEXT_BUFFER_INFO::InsertCharacter(_In_ const wchar_t wch,
+                                       _In_ const DbcsAttribute dbcsAttribute,
+                                       _In_ const TextAttribute attr)
 {
     // Ensure consistent buffer state for double byte characters based on the character type we're about to insert
-    bool fSuccess = _PrepareForDoubleByteSequence(bKAttr);
+    bool fSuccess = _PrepareForDoubleByteSequence(dbcsAttribute);
 
     if (fSuccess)
     {
@@ -489,9 +498,14 @@ bool TEXT_BUFFER_INFO::InsertCharacter(_In_ wchar_t const wch, _In_ BYTE const b
         short const cBufferWidth = this->_coordBufferSize.X;
 
         pCharRow->Chars[iCol] = wch;
-        if (pCharRow->KAttrs != nullptr)
+        try
         {
-            pCharRow->KAttrs[iCol] = bKAttr;
+            pCharRow->GetAttribute(iCol) = dbcsAttribute;
+        }
+        catch (...)
+        {
+            LOG_HR(wil::ResultFromCaughtException());
+            return false;
         }
 
         // Update positioning

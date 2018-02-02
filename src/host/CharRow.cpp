@@ -29,16 +29,12 @@ void swap(CHAR_ROW& a, CHAR_ROW& b) noexcept
 CHAR_ROW::CHAR_ROW(short rowWidth) :
     _rowWidth{ static_cast<size_t>(rowWidth) },
     Left{ rowWidth },
-    Right{ 0 }
+    Right{ 0 },
+    _attributes(rowWidth)
 {
     Chars = std::make_unique<wchar_t[]>(rowWidth);
     THROW_IF_NULL_ALLOC(Chars.get());
-
-    KAttrs = std::make_unique<BYTE[]>(rowWidth);
-    THROW_IF_NULL_ALLOC(KAttrs.get());
-
     wmemset(Chars.get(), PADDING_CHAR, rowWidth);
-    memset(KAttrs.get(), PADDING_KATTR, rowWidth);
 
     SetWrapStatus(false);
     SetDoubleBytePadded(false);
@@ -55,16 +51,12 @@ CHAR_ROW::CHAR_ROW(const CHAR_ROW& a) :
     Left{ a.Left },
     Right{ a.Right },
     bRowFlags{ a.bRowFlags },
-    _rowWidth{ a._rowWidth }
+    _rowWidth{ a._rowWidth },
+    _attributes{ a._attributes }
 {
     Chars = std::make_unique<wchar_t[]>(_rowWidth);
     THROW_IF_NULL_ALLOC(Chars.get());
-
-    KAttrs = std::make_unique<BYTE[]>(_rowWidth);
-    THROW_IF_NULL_ALLOC(KAttrs.get());
-
     std::copy(a.Chars.get(), a.Chars.get() + a._rowWidth, Chars.get());
-    std::copy(a.KAttrs.get(), a.KAttrs.get() + a._rowWidth, KAttrs.get());
 }
 
 // Routine Description:
@@ -109,9 +101,71 @@ void CHAR_ROW::swap(CHAR_ROW& other) noexcept
     swap(Left, other.Left);
     swap(Right, other.Right);
     swap(Chars, other.Chars);
-    swap(KAttrs, other.KAttrs);
     swap(bRowFlags, other.bRowFlags);
     swap(_rowWidth, other._rowWidth);
+    swap(_attributes, other._attributes);
+}
+
+// Routine Description:
+// - gets the attribute at the specified column
+// Arguments:
+// - column - the column to get the attribute for
+// Return Value:
+// - the attribute
+// Note: will throw exception if column is out of bounds
+const DbcsAttribute& CHAR_ROW::GetAttribute(_In_ const size_t column) const
+{
+    return _attributes.at(column);
+}
+
+// Routine Description:
+// - gets the attribute at the specified column
+// Arguments:
+// - column - the column to get the attribute for
+// Return Value:
+// - the attribute
+// Note: will throw exception if column is out of bounds
+DbcsAttribute& CHAR_ROW::GetAttribute(_In_ const size_t column)
+{
+    return const_cast<DbcsAttribute&>(static_cast<const CHAR_ROW* const>(this)->GetAttribute(column));
+}
+
+// Routine Description:
+// - returns an iterator to the data at specified column
+// Arguments:
+// - column - the column to start the iterator at (0-indexed)
+// Return Value:
+// - iterator starting at column
+// Note: will throw exception if column is out of bounds
+std::vector<DbcsAttribute>::iterator CHAR_ROW::GetAttributeIterator(_In_ const size_t column)
+{
+    THROW_HR_IF(E_INVALIDARG, column >= _attributes.size());
+    return std::next(_attributes.begin(), column);
+}
+
+// Routine Description:
+// - returns a const iterator to the data at specified column
+// Arguments:
+// - column - the column to start the const iterator at (0-indexed)
+// Return Value:
+// - const iterator starting at column
+// Note: will throw exception if column is out of bounds
+std::vector<DbcsAttribute>::const_iterator CHAR_ROW::GetAttributeIterator(_In_ const size_t column) const
+{
+    THROW_HR_IF(E_INVALIDARG, column >= _attributes.size());
+    return std::next(_attributes.cbegin(), column);
+}
+
+// Routine Description:
+// - returns a const iterator that represents the end of the dbcs attributes.
+// Arguments:
+// - <none>
+// Return Value:
+// - const iterator to the end of the attributes
+// Note: this is an end iterator and not an iterator to the last valid element
+std::vector<DbcsAttribute>::const_iterator CHAR_ROW::GetAttributeIteratorEnd() const noexcept
+{
+    return _attributes.cend();
 }
 
 // Routine Description:
@@ -139,10 +193,9 @@ void CHAR_ROW::Reset(_In_ short const sRowWidth)
     Right = 0;
 
     wmemset(Chars.get(), PADDING_CHAR, sRowWidth);
-
-    if (KAttrs.get() != nullptr)
+    for (DbcsAttribute& attr : _attributes)
     {
-        memset(KAttrs.get(), PADDING_KATTR, sRowWidth);
+        attr.SetSingle();
     }
 
     SetWrapStatus(false);
@@ -175,18 +228,16 @@ HRESULT CHAR_ROW::Resize(_In_ size_t const newSize)
 
     const size_t copySize = min(newSize, _rowWidth);
     std::copy(Chars.get(), Chars.get() + copySize, charBuffer.get());
-    std::copy(KAttrs.get(), KAttrs.get() + copySize, attributesBuffer.get());
 
     if (newSize > _rowWidth)
     {
-        // last attribute in a row gets extended to the end
-        BYTE lastAttribute = attributesBuffer[copySize - 1];
-        std::fill(attributesBuffer.get() + copySize, attributesBuffer.get() + newSize, lastAttribute);
         std::fill(charBuffer.get() + copySize, charBuffer.get() + newSize, UNICODE_SPACE);
     }
 
+    // last attribute in a row gets extended to the end
+    _attributes.resize(newSize, _attributes.back());
+
     Chars.swap(charBuffer);
-    KAttrs.swap(attributesBuffer);
     Left = static_cast<short>(newSize);
     Right = 0;
     _rowWidth = newSize;
@@ -333,38 +384,4 @@ void CHAR_ROW::MeasureAndSaveRight(_In_ short const sRowWidth)
 bool CHAR_ROW::ContainsText() const
 {
     return this->Right > this->Left;
-}
-
-// Routine Description:
-// - Tells whether the given KAttribute is a leading byte marker
-// Arguments:
-// - bKAttr - KAttr bit flag field
-// Return Value:
-// - True if leading byte. False if not.
-bool CHAR_ROW::IsLeadingByte(_In_ BYTE const bKAttr)
-{
-    return IsFlagSet((DWORD)bKAttr, (DWORD)CHAR_ROW::ATTR_LEADING_BYTE);
-}
-
-// Routine Description:
-// - Tells whether the given KAttribute is a trailing byte marker
-// Arguments:
-// - bKAttr - KAttr bit flag field
-// Return Value:
-// - True if trailing byte. False if not.
-bool CHAR_ROW::IsTrailingByte(_In_ BYTE const bKAttr)
-{
-    return IsFlagSet((DWORD)bKAttr, (DWORD)CHAR_ROW::ATTR_TRAILING_BYTE);
-}
-
-// Routine Description:
-// - Tells whether the given KAttribute has no leading/trailing specification
-// - e.g. Tells that this is a standalone, single-byte character
-// Arguments:
-// - bKAttr - KAttr bit flag field
-// Return Value:
-// - True if standalone single byte character. False otherwise.
-bool CHAR_ROW::IsSingleByte(_In_ BYTE const bKAttr)
-{
-    return !IsLeadingByte(bKAttr) && !IsTrailingByte(bKAttr);
 }

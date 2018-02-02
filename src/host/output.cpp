@@ -118,22 +118,20 @@ NTSTATUS ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenI
             // Unpack the attributes into an array so we can iterate over them.
             pRow->AttrRow.UnpackAttrs(rgUnpackedRowAttributes, ScreenBufferWidth);
 
-            PBYTE pbAttrP = &pRow->CharRow.KAttrs[coordSourcePoint.X];
-
             for (short iCol = 0; iCol < sXSize; pciTargetPtr++)
             {
-                BYTE bAttrR = *pbAttrP++;
                 TextAttribute textAttr = rgUnpackedRowAttributes[coordSourcePoint.X + iCol];
+                DbcsAttribute dbcsAttribute = pRow->CharRow.GetAttribute(coordSourcePoint.X + iCol);
 
-                if (iCol == 0 && bAttrR & CHAR_ROW::ATTR_TRAILING_BYTE)
+                if (iCol == 0 && dbcsAttribute.IsTrailing())
                 {
                     pciTargetPtr->Char.UnicodeChar = UNICODE_SPACE;
-                    bAttrR = 0;
+                    dbcsAttribute.SetSingle();
                 }
-                else if (iCol + 1 >= sXSize && bAttrR & CHAR_ROW::ATTR_LEADING_BYTE)
+                else if (iCol + 1 >= sXSize && dbcsAttribute.IsLeading())
                 {
                     pciTargetPtr->Char.UnicodeChar = UNICODE_SPACE;
-                    bAttrR = 0;
+                    dbcsAttribute.SetSingle();
                 }
                 else
                 {
@@ -141,7 +139,7 @@ NTSTATUS ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenI
                 }
 
                 pwChar++;
-                pciTargetPtr->Attributes = (bAttrR & CHAR_ROW::ATTR_DBCSSBCS_BYTE) << 8;
+                pciTargetPtr->Attributes = dbcsAttribute.GeneratePublicApiAttributeFormat();
 
                 // Always copy the legacy attributes to the CHAR_INFO.
                 pciTargetPtr->Attributes |= gci.GenerateLegacyAttributes(textAttr);
@@ -413,11 +411,11 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
         BufPtr = (PWCHAR)pvBuffer;
     }
 
-    PBYTE TransBufferA = nullptr;
-    PBYTE BufPtrA = nullptr;
+    DbcsAttribute* TransBufferA = nullptr;
+    DbcsAttribute* BufPtrA = nullptr;
 
     {
-        TransBufferA = new BYTE[*pcRecords];
+        TransBufferA = new DbcsAttribute[*pcRecords];
         if (TransBufferA == nullptr)
         {
             if (TransBuffer != nullptr)
@@ -435,35 +433,36 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
         const ROW* pRow = &pScreenInfo->TextInfo->GetRowByOffset(coordRead.Y);
         PWCHAR Char;
         SHORT j, k;
-        PBYTE AttrP = nullptr;
 
-        if ((ulStringType == CONSOLE_ASCII) || (ulStringType == CONSOLE_REAL_UNICODE) || (ulStringType == CONSOLE_FALSE_UNICODE))
+        if (ulStringType == CONSOLE_ASCII ||
+            ulStringType == CONSOLE_REAL_UNICODE ||
+            ulStringType == CONSOLE_FALSE_UNICODE)
         {
             while (NumRead < *pcRecords)
             {
                 // copy the chars from its array
                 Char = &pRow->CharRow.Chars[X];
-                AttrP = &pRow->CharRow.KAttrs[X];
-
-                if ((ULONG)(coordScreenBufferSize.X - X) >(*pcRecords - NumRead))
-                {
-                    memmove(BufPtr, Char, (*pcRecords - NumRead) * sizeof(WCHAR));
-                    memmove(BufPtrA, AttrP, (*pcRecords - NumRead) * sizeof(CHAR));
-
-                    NumRead += *pcRecords - NumRead;
-                    break;
-                }
-
-                memmove(BufPtr, Char, (coordScreenBufferSize.X - X) * sizeof(WCHAR));
-                BufPtr = (PWCHAR)((PBYTE)BufPtr + ((coordScreenBufferSize.X - X) * sizeof(WCHAR)));
-
-                memmove(BufPtrA, AttrP, (coordScreenBufferSize.X - X) * sizeof(CHAR));
-                BufPtrA = (PBYTE)((PBYTE)BufPtrA + ((coordScreenBufferSize.X - X) * sizeof(CHAR)));
-
-                NumRead += coordScreenBufferSize.X - X;
-
                 try
                 {
+                    std::vector<DbcsAttribute>::const_iterator it = pRow->CharRow.GetAttributeIterator(X);
+
+                    if ((ULONG)(coordScreenBufferSize.X - X) > (*pcRecords - NumRead))
+                    {
+                        memmove(BufPtr, Char, (*pcRecords - NumRead) * sizeof(WCHAR));
+                        std::copy(it, it + (*pcRecords - NumRead), BufPtrA);
+
+                        NumRead += *pcRecords - NumRead;
+                        break;
+                    }
+
+                    memmove(BufPtr, Char, (coordScreenBufferSize.X - X) * sizeof(WCHAR));
+                    BufPtr = (PWCHAR)((PBYTE)BufPtr + ((coordScreenBufferSize.X - X) * sizeof(WCHAR)));
+
+                    std::copy(it, it + (coordScreenBufferSize.X - X), BufPtrA);
+                    BufPtrA += coordScreenBufferSize.X - X;
+
+                    NumRead += coordScreenBufferSize.X - X;
+
                     pRow = &pScreenInfo->TextInfo->GetNextRowNoWrap(*pRow);
                 }
                 catch (...)
@@ -492,7 +491,7 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
 
                 BufPtrA = TransBufferA;
 #pragma prefast(suppress:__WARNING_BUFFER_OVERFLOW, "This code is fine")
-                if (*BufPtrA & CHAR_ROW::ATTR_TRAILING_BYTE)
+                if (BufPtrA->IsTrailing())
                 {
                     j = k = (SHORT)(NumRead - 1);
                     BufPtr++;
@@ -508,7 +507,7 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
 
                 while (j--)
                 {
-                    if (!(*BufPtrA & CHAR_ROW::ATTR_TRAILING_BYTE))
+                    if (!BufPtrA->IsTrailing())
                     {
                         *Char++ = *BufPtr;
                         NumRead++;
@@ -517,7 +516,7 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                     BufPtrA++;
                 }
 
-                if (k && *(BufPtrA - 1) & CHAR_ROW::ATTR_LEADING_BYTE)
+                if (k && (BufPtrA - 1)->IsLeading())
                 {
                     *(Char - 1) = UNICODE_SPACE;
                 }
@@ -532,7 +531,17 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
             while (NumRead < *pcRecords)
             {
                 // Copy the attrs from its array.
-                AttrP = &pRow->CharRow.KAttrs[X];
+                std::vector<DbcsAttribute>::const_iterator it;
+                try
+                {
+                    it = pRow->CharRow.GetAttributeIterator(X);
+                }
+                catch (...)
+                {
+                    return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+                }
+                std::vector<DbcsAttribute>::const_iterator itEnd = pRow->CharRow.GetAttributeIteratorEnd();
+
 
                 UINT uiCountOfAttr;
                 pRow->AttrRow.FindAttrIndex(X, &pAttrRun, &uiCountOfAttr);
@@ -545,14 +554,14 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                 }
 
                 k = 0;
-                for (j = X; j < coordScreenBufferSize.X; TargetPtr++)
+                for (j = X; j < coordScreenBufferSize.X && it != itEnd; TargetPtr++, ++it)
                 {
                     const WORD wLegacyAttributes = pAttrRun->GetAttributes().GetLegacyAttributes();
-                    if ((j == X) && (*AttrP & CHAR_ROW::ATTR_TRAILING_BYTE))
+                    if ((j == X) && it->IsTrailing())
                     {
                         *TargetPtr = wLegacyAttributes;
                     }
-                    else if (*AttrP & CHAR_ROW::ATTR_LEADING_BYTE)
+                    else if (it->IsLeading())
                     {
                         if ((NumRead == *pcRecords - 1) || (j == coordScreenBufferSize.X - 1))
                         {
@@ -560,12 +569,12 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                         }
                         else
                         {
-                            *TargetPtr = wLegacyAttributes | (WCHAR)(*AttrP & CHAR_ROW::ATTR_DBCSSBCS_BYTE) << 8;
+                            *TargetPtr = wLegacyAttributes | it->GeneratePublicApiAttributeFormat();
                         }
                     }
                     else
                     {
-                        *TargetPtr = wLegacyAttributes | (WCHAR)(*AttrP & CHAR_ROW::ATTR_DBCSSBCS_BYTE) << 8;
+                        *TargetPtr = wLegacyAttributes | it->GeneratePublicApiAttributeFormat();
                     }
 
                     NumRead++;
@@ -586,8 +595,6 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                         delete[] TransBufferA;
                         return STATUS_SUCCESS;
                     }
-
-                    AttrP++;
                 }
 
                 try

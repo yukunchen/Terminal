@@ -354,13 +354,17 @@ bool Selection::HandleKeyboardLineSelectionEvent(_In_ const INPUT_KEY_INFO* cons
             Utils::s_DoIncrementScreenCoordinate(srectEdges, &coordSelPoint);
 
             const TEXT_BUFFER_INFO* const pTextInfo = gci.CurrentScreenBuffer->TextInfo;
-            const BYTE bAttr = pTextInfo->GetRowByOffset(coordSelPoint.Y).CharRow.KAttrs[coordSelPoint.X];
 
             // if we're about to split a character in half, keep moving right
-            if (bAttr & CHAR_ROW::ATTR_TRAILING_BYTE)
+            try
             {
-                Utils::s_DoIncrementScreenCoordinate(srectEdges, &coordSelPoint);
+                if (pTextInfo->GetRowByOffset(coordSelPoint.Y).CharRow.GetAttribute(coordSelPoint.X).IsTrailing())
+                {
+                    Utils::s_DoIncrementScreenCoordinate(srectEdges, &coordSelPoint);
+                }
             }
+            CATCH_LOG();
+
             break;
         }
             // shift + up/down extends the selection by one row, stopping at top or bottom of screen
@@ -575,19 +579,22 @@ bool Selection::HandleKeyboardLineSelectionEvent(_In_ const INPUT_KEY_INFO* cons
 
     // ensure we're not planting the cursor in the middle of a double-wide character.
     const TEXT_BUFFER_INFO* const pTextInfo = gci.CurrentScreenBuffer->TextInfo;
-    const BYTE bAttr = pTextInfo->GetRowByOffset(coordSelPoint.Y).CharRow.KAttrs[coordSelPoint.X];
 
-    if (bAttr & CHAR_ROW::ATTR_TRAILING_BYTE)
+    try
     {
-        // try to move off by highlighting the lead half too.
-        bool fSuccess = Utils::s_DoDecrementScreenCoordinate(srectEdges, &coordSelPoint);
-
-        // if that fails, move off to the next character
-        if (!fSuccess)
+        if (pTextInfo->GetRowByOffset(coordSelPoint.Y).CharRow.GetAttribute(coordSelPoint.X).IsTrailing())
         {
-            Utils::s_DoIncrementScreenCoordinate(srectEdges, &coordSelPoint);
+            // try to move off by highlighting the lead half too.
+            bool fSuccess = Utils::s_DoDecrementScreenCoordinate(srectEdges, &coordSelPoint);
+
+            // if that fails, move off to the next character
+            if (!fSuccess)
+            {
+                Utils::s_DoIncrementScreenCoordinate(srectEdges, &coordSelPoint);
+            }
         }
     }
+    CATCH_LOG();
 
     ExtendSelection(coordSelPoint);
 
@@ -723,42 +730,45 @@ bool Selection::_HandleMarkModeSelectionNav(_In_ const INPUT_KEY_INFO* const pIn
     {
         SCREEN_INFORMATION* const pScreenInfo = gci.CurrentScreenBuffer;
         TEXT_BUFFER_INFO* const pTextInfo = pScreenInfo->TextInfo;
-        SHORT iNextRightX;
+        SHORT iNextRightX = 0;
         SHORT iNextLeftX = 0;
 
         const COORD cursorPos = pTextInfo->GetCursor()->GetPosition();
         const ROW& Row = pTextInfo->GetRowByOffset(cursorPos.Y);
 
-
-        BYTE bKAttrs = Row.CharRow.KAttrs[cursorPos.X];
-        if (bKAttrs & CHAR_ROW::ATTR_LEADING_BYTE)
+        try
         {
-            iNextRightX = 2;
-        }
-        else
-        {
-            iNextRightX = 1;
-        }
-
-        if (cursorPos.X > 0)
-        {
-            bKAttrs = Row.CharRow.KAttrs[cursorPos.X - 1];
-            if (bKAttrs & CHAR_ROW::ATTR_TRAILING_BYTE)
+            if (Row.CharRow.GetAttribute(cursorPos.X).IsLeading())
             {
-                iNextLeftX = 2;
+                iNextRightX = 2;
             }
-            else if (bKAttrs & CHAR_ROW::ATTR_LEADING_BYTE)
+            else
             {
-                if (cursorPos.X - 1 > 0)
+                iNextRightX = 1;
+            }
+
+            if (cursorPos.X > 0)
+            {
+                if (Row.CharRow.GetAttribute(cursorPos.X - 1).IsTrailing())
                 {
-                    bKAttrs = Row.CharRow.KAttrs[cursorPos.X - 2];
-                    if (bKAttrs & CHAR_ROW::ATTR_TRAILING_BYTE)
+                    iNextLeftX = 2;
+                }
+                else if (Row.CharRow.GetAttribute(cursorPos.X - 1).IsLeading())
+                {
+                    if (cursorPos.X - 1 > 0)
                     {
-                        iNextLeftX = 3;
+                        if (Row.CharRow.GetAttribute(cursorPos.X - 2).IsTrailing())
+                        {
+                            iNextLeftX = 3;
+                        }
+                        else
+                        {
+                            iNextLeftX = 2;
+                        }
                     }
                     else
                     {
-                        iNextLeftX = 2;
+                        iNextLeftX = 1;
                     }
                 }
                 else
@@ -766,11 +776,9 @@ bool Selection::_HandleMarkModeSelectionNav(_In_ const INPUT_KEY_INFO* const pIn
                     iNextLeftX = 1;
                 }
             }
-            else
-            {
-                iNextLeftX = 1;
-            }
         }
+        CATCH_LOG();
+
         Cursor* pCursor = pTextInfo->GetCursor();
         switch (wVirtualKeyCode)
         {

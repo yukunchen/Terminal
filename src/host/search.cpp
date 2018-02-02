@@ -158,7 +158,7 @@ USHORT SearchForString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
             ASSERT(nLoop++ < 2);
             try
             {
-                if (pRow->CharRow.KAttrs && pRow->IsTrailingByteAtColumn(Position.X))
+                if (pRow->CharRow.GetAttribute(Position.X).IsTrailing())
                 {
                     goto recalc;
                 }
