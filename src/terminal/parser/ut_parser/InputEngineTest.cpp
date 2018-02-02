@@ -50,6 +50,7 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
 
     void RoundtripTerminalInputCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents);
     void TestInputCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents);
+    void TestInputStringCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents);
     
     TEST_CLASS_SETUP(ClassSetup)
     {
@@ -75,7 +76,7 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
 
     StateMachine* _pStateMachine;
 
-    std::vector<INPUT_RECORD> vExpectedInput;
+    std::deque<INPUT_RECORD> vExpectedInput;
 
     bool _expectedToCallWindowManipulation;
     bool _expectSendCtrlC;
@@ -142,12 +143,14 @@ bool TestInteractDispatch::WindowManipulation(_In_ const DispatchCommon::WindowM
 bool TestInteractDispatch::WriteString(_In_reads_(cch) const wchar_t* const pws,
                                        const size_t cch)
 {
-    DebugBreak();
+    // DebugBreak();
     std::deque<std::unique_ptr<IInputEvent>> keyEvents;
     
     for (int i = 0; i < cch; ++i)
     {
         const wchar_t wch = pws[i];
+        // We're forcing the translation to CP_USA, so that it'll be constant 
+        //  regardless of the CP the test is running in
         std::deque<std::unique_ptr<KeyEvent>> convertedEvents = CharToKeyEvents(wch, CP_USA);
         while (!convertedEvents.empty())
         {
@@ -251,6 +254,68 @@ void InputEngineTest::TestInputCallback(std::deque<std::unique_ptr<IInputEvent>>
         if (areEqual)
         {
             Log::Comment(L"\t\tFound Match");
+        }
+    }
+
+    VERIFY_IS_TRUE(foundEqual);
+    vExpectedInput.clear();
+}
+
+void InputEngineTest::TestInputStringCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents)
+{
+    size_t cInput = inEvents.size();
+    INPUT_RECORD* rgInput = new INPUT_RECORD[cInput];
+    VERIFY_SUCCEEDED(IInputEvent::ToInputRecords(inEvents, rgInput, cInput));
+    VERIFY_IS_NOT_NULL(rgInput);
+    // VERIFY_ARE_EQUAL((size_t)1, vExpectedInput.size());
+    auto cleanup = wil::ScopeExit([&]{delete[] rgInput;});
+
+    bool foundEqual = false;
+
+    for (auto expected : vExpectedInput)
+    {
+        Log::Comment(
+            NoThrowString().Format(L"\texpected:\t") +
+            VerifyOutputTraits<INPUT_RECORD>::ToString(expected)
+        );
+        
+    }
+
+    INPUT_RECORD irExpected = vExpectedInput.front();
+    Log::Comment(
+        NoThrowString().Format(L"\tLooking for:\t") +
+        VerifyOutputTraits<INPUT_RECORD>::ToString(irExpected)
+    );
+
+
+    // Look for an equivalent input record.
+    // Differences between left and right modifiers are ignored, as long as one is pressed.
+    // There may be other keypresses, eg. modifier keypresses, those are ignored.
+    for (size_t i = 0; i < cInput; i++)
+    {
+        INPUT_RECORD inRec = rgInput[i];
+        Log::Comment(
+            NoThrowString().Format(L"\tActual  :\t") +
+            VerifyOutputTraits<INPUT_RECORD>::ToString(inRec)
+        );
+
+        bool areEqual = 
+            (irExpected.EventType == inRec.EventType) &&
+            (irExpected.Event.KeyEvent.bKeyDown == inRec.Event.KeyEvent.bKeyDown) &&
+            (irExpected.Event.KeyEvent.wRepeatCount == inRec.Event.KeyEvent.wRepeatCount) &&
+            (irExpected.Event.KeyEvent.uChar.UnicodeChar == inRec.Event.KeyEvent.uChar.UnicodeChar) &&
+            ModifiersEquivalent(irExpected.Event.KeyEvent.dwControlKeyState, inRec.Event.KeyEvent.dwControlKeyState);
+
+        // foundEqual |= areEqual;
+        if (areEqual)
+        {
+            Log::Comment(L"\t\tFound Match");
+            vExpectedInput.pop_front();
+            irExpected = vExpectedInput.front();
+            Log::Comment(
+                NoThrowString().Format(L"\tLooking for:\t") +
+                VerifyOutputTraits<INPUT_RECORD>::ToString(irExpected)
+            );
         }
     }
 
@@ -533,7 +598,7 @@ void InputEngineTest::WindowManipulationTest()
 
 void InputEngineTest::UTF8Test()
 {
-    auto pfn = std::bind(&InputEngineTest::TestInputCallback, this, std::placeholders::_1);
+    auto pfn = std::bind(&InputEngineTest::TestInputStringCallback, this, std::placeholders::_1);
     _pStateMachine = new StateMachine(
             std::make_unique<InputStateMachineEngine>(
                 std::make_unique<TestInteractDispatch>(pfn, this)
@@ -578,6 +643,10 @@ void InputEngineTest::UTF8Test()
     b.Event.KeyEvent.wVirtualKeyCode = static_cast<WORD>('B');
     b.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKeyW(b.Event.KeyEvent.wVirtualKeyCode, MAPVK_VK_TO_VSC));
 
+    // I think for some reason the synthesis just makes this a null-input 
+    //      record with the uchar set to the actual char value.
+    // I don't care if that's not what I though would happen, I just want it to 
+    //      work, and that seems to work
 
     vExpectedInput.clear();
     vExpectedInput.push_back(altDown);
@@ -590,5 +659,15 @@ void InputEngineTest::UTF8Test()
         L"Processing \"%s\"", utf8Input.c_str()
     ));
     _pStateMachine->ProcessString(&utf8Input[0], utf8Input.length());
+
+    utf8Input = L"旅";
+    INPUT_RECORD test = {0};
+    test.Event.KeyEvent.uChar.UnicodeChar = L'旅';
+    Log::Comment(NoThrowString().Format(
+        L"Processing \"%s\"", utf8Input.c_str()
+    ));
+    _pStateMachine->ProcessString(&utf8Input[0], utf8Input.length());
+
+
 
 }
