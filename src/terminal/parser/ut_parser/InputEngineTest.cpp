@@ -72,7 +72,7 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
     TEST_METHOD(AlphanumericTest);
     TEST_METHOD(RoundTripTest);
     TEST_METHOD(WindowManipulationTest);
-    TEST_METHOD(UTF8Test);
+    TEST_METHOD(NonAsciiTest);
 
     StateMachine* _pStateMachine;
 
@@ -600,7 +600,7 @@ void InputEngineTest::WindowManipulationTest()
     }
 }
 
-void InputEngineTest::UTF8Test()
+void InputEngineTest::NonAsciiTest()
 {
     auto pfn = std::bind(&InputEngineTest::TestInputStringCallback, this, std::placeholders::_1);
     _pStateMachine = new StateMachine(
@@ -609,77 +609,51 @@ void InputEngineTest::UTF8Test()
             )
     );
     VERIFY_IS_NOT_NULL(_pStateMachine);
-    DisableVerifyExceptions disable;
-    Log::Comment(L"Sending various utf-8 strings, and seeing what we get out");
-    std::wstring utf8Input = L"\x041B"; // "Л", UTF-16: 041B,  utf8: "\xd09b"
-    // std::string utf8Input = "Л"; //UTF-16: 041B
+    Log::Comment(L"Sending various non-ascii strings, and seeing what we get out");
 
     INPUT_RECORD proto = {0};
     proto.EventType = KEY_EVENT;
-    proto.Event.KeyEvent.dwControlKeyState = LEFT_ALT_PRESSED;
+    proto.Event.KeyEvent.dwControlKeyState = 0;
     proto.Event.KeyEvent.wRepeatCount = 1;
-    proto.Event.KeyEvent.uChar.UnicodeChar = UNICODE_NULL;
-    // Fill these in for each char
     proto.Event.KeyEvent.wVirtualKeyCode = 0;
-    proto.Event.KeyEvent.bKeyDown = TRUE;
     proto.Event.KeyEvent.wVirtualScanCode = 0;
+    // Fill these in for each char
+    proto.Event.KeyEvent.bKeyDown = TRUE;
+    proto.Event.KeyEvent.uChar.UnicodeChar = UNICODE_NULL;
 
-    INPUT_RECORD altDown = proto;
-    altDown.Event.KeyEvent.wVirtualKeyCode = VK_MENU;
-    altDown.Event.KeyEvent.wVirtualScanCode = altScanCode;
-    INPUT_RECORD altUp = altDown;
-    altUp.Event.KeyEvent.bKeyDown = FALSE;
-    altUp.Event.KeyEvent.uChar.UnicodeChar = L'\x041B';
+    Log::Comment(NoThrowString().Format(
+        L"We're sending utf-16 characters here, because the VtInputThread has "
+        L"already converted the ut8 input to utf16 by the time it calls the state machine."
+    ));
 
-
-    // So this whole thing might be fucked all the way from VtInputThread::_HandleRunInput
-    // VtInputThread::_HandleRunInput takes in the utf8 buffer, 
-    // then calls ConvertToW
-    INPUT_RECORD four = proto;
-    four.Event.KeyEvent.wVirtualKeyCode = VK_NUMPAD4;
-    four.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKeyW(four.Event.KeyEvent.wVirtualKeyCode, MAPVK_VK_TO_VSC));
-
-    INPUT_RECORD one = proto;
-    one.Event.KeyEvent.wVirtualKeyCode = VK_NUMPAD1;
-    one.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKeyW(one.Event.KeyEvent.wVirtualKeyCode, MAPVK_VK_TO_VSC));
-
-    INPUT_RECORD b = proto;
-    b.Event.KeyEvent.wVirtualKeyCode = static_cast<WORD>('B');
-    b.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKeyW(b.Event.KeyEvent.wVirtualKeyCode, MAPVK_VK_TO_VSC));
-
-    // I think for some reason the synthesis just makes this a null-input 
-    //      record with the uchar set to the actual char value.
-    // I don't care if that's not what I though would happen, I just want it to 
-    //      work, and that seems to work
-
-    vExpectedInput.clear();
-    vExpectedInput.push_back(altDown);
-    vExpectedInput.push_back(four);
-    vExpectedInput.push_back(one);
-    vExpectedInput.push_back(b);
-    vExpectedInput.push_back(altUp);
+    // "Л", UTF-16: 0x041B, utf8: "\xd09b"
+    std::wstring utf8Input = L"\x041B";
+    INPUT_RECORD test = proto;
+    test.Event.KeyEvent.uChar.UnicodeChar = utf8Input[0];
 
     Log::Comment(NoThrowString().Format(
         L"Processing \"%s\"", utf8Input.c_str()
     ));
-    _pStateMachine->ProcessString(&utf8Input[0], utf8Input.length());
 
-
-    utf8Input = L"\u65C5";
-    INPUT_RECORD test = {0};
-    test.EventType = KEY_EVENT;
-    test.Event.KeyEvent.bKeyDown = TRUE;
-    test.Event.KeyEvent.wRepeatCount = 1;
-    test.Event.KeyEvent.uChar.UnicodeChar = L'\u65C5';
-    Log::Comment(NoThrowString().Format(
-        L"Processing \"%s\"", utf8Input.c_str()
-    ));
     vExpectedInput.clear();
     vExpectedInput.push_back(test);
     test.Event.KeyEvent.bKeyDown = FALSE;
     vExpectedInput.push_back(test);
     _pStateMachine->ProcessString(&utf8Input[0], utf8Input.length());
 
-
+    // "旅", UTF-16: 0x65C5, utf8: "0xE6 0x97 0x85"
+    utf8Input = L"\u65C5";
+    test = proto;
+    test.Event.KeyEvent.uChar.UnicodeChar = utf8Input[0];
+    
+    Log::Comment(NoThrowString().Format(
+        L"Processing \"%s\"", utf8Input.c_str()
+    ));
+    
+    vExpectedInput.clear();
+    vExpectedInput.push_back(test);
+    test.Event.KeyEvent.bKeyDown = FALSE;
+    vExpectedInput.push_back(test);
+    _pStateMachine->ProcessString(&utf8Input[0], utf8Input.length());
 
 }
