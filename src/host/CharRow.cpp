@@ -30,12 +30,9 @@ CHAR_ROW::CHAR_ROW(short rowWidth) :
     _rowWidth{ static_cast<size_t>(rowWidth) },
     Left{ rowWidth },
     Right{ 0 },
-    _attributes(rowWidth)
+    _attributes(rowWidth),
+    _chars(rowWidth, UNICODE_SPACE)
 {
-    Chars = std::make_unique<wchar_t[]>(rowWidth);
-    THROW_IF_NULL_ALLOC(Chars.get());
-    wmemset(Chars.get(), PADDING_CHAR, rowWidth);
-
     SetWrapStatus(false);
     SetDoubleBytePadded(false);
 }
@@ -52,11 +49,9 @@ CHAR_ROW::CHAR_ROW(const CHAR_ROW& a) :
     Right{ a.Right },
     bRowFlags{ a.bRowFlags },
     _rowWidth{ a._rowWidth },
-    _attributes{ a._attributes }
+    _attributes{ a._attributes },
+    _chars{ a._chars }
 {
-    Chars = std::make_unique<wchar_t[]>(_rowWidth);
-    THROW_IF_NULL_ALLOC(Chars.get());
-    std::copy(a.Chars.get(), a.Chars.get() + a._rowWidth, Chars.get());
 }
 
 // Routine Description:
@@ -100,10 +95,10 @@ void CHAR_ROW::swap(CHAR_ROW& other) noexcept
     using std::swap;
     swap(Left, other.Left);
     swap(Right, other.Right);
-    swap(Chars, other.Chars);
     swap(bRowFlags, other.bRowFlags);
     swap(_rowWidth, other._rowWidth);
     swap(_attributes, other._attributes);
+    swap(_chars, other._chars);
 }
 
 // Routine Description:
@@ -169,6 +164,91 @@ std::vector<DbcsAttribute>::const_iterator CHAR_ROW::GetAttributeIteratorEnd() c
 }
 
 // Routine Description:
+// - returns an iterator to the text data at column.
+// Arguments:
+// - column - index of row to get text data for
+// Return Value:
+// - iterator to char data at column
+// Note: will throw exception if column is out of bounds
+std::vector<wchar_t>::iterator CHAR_ROW::GetTextIterator(_In_ const size_t column)
+{
+    THROW_HR_IF(E_INVALIDARG, column >= _chars.size());
+    return std::next(_chars.begin(), column);
+}
+
+// Routine Description:
+// - returns a const iterator to the text data at column.
+// Arguments:
+// - column - index of row to get text data for
+// Return Value:
+// - const iterator to char data at column
+// Note: will throw exception if column is out of bounds
+std::vector<wchar_t>::const_iterator CHAR_ROW::GetTextIterator(_In_ const size_t column) const
+{
+    THROW_HR_IF(E_INVALIDARG, column >= _chars.size());
+    return std::next(_chars.cbegin(), column);
+}
+
+// Routine Description:
+// - returns a const iterator that represents the end of the text data.
+// Arguments:
+// - <none>
+// Return Value:
+// - const iterator to the end of the text data
+// Note: this is an end iterator and not an iterator to the last valid element
+std::vector<wchar_t>::const_iterator CHAR_ROW::GetTextIteratorEnd() const noexcept
+{
+    return _chars.cend();
+}
+
+// Routine Description:
+// - resets text data at column
+// Arguments:
+// - column - column index to clear text data from
+// Return Value:
+// - <none>
+// Note: will throw exception if column is out of bounds
+void CHAR_ROW::ClearGlyph(const size_t column)
+{
+    _chars.at(column) = UNICODE_SPACE;
+}
+
+// Routine Description:
+// - returns text data at column as a const reference.
+// Arguments:
+// - column - column to get text data for
+// Return Value:
+// - text data at column
+// - Note: will throw exception if column is out of bounds
+const wchar_t& CHAR_ROW::GetGlyphAt(const size_t column) const
+{
+    return _chars.at(column);
+}
+
+// Routine Description:
+// - returns text data at column as a reference.
+// Arguments:
+// - column - column to get text data for
+// Return Value:
+// - text data at column
+// - Note: will throw exception if column is out of bounds
+wchar_t& CHAR_ROW::GetGlyphAt(const size_t column)
+{
+    return const_cast<wchar_t&>(static_cast<const CHAR_ROW* const>(this)->GetGlyphAt(column));
+}
+
+// Routine Description:
+// - returns the all of the text in a row, including leading and trailing whitespace.
+// Arguments:
+// - <none>
+// Return Value:
+// - all text data in the row
+std::wstring CHAR_ROW::GetText() const
+{
+    return std::wstring{ _chars.begin(), _chars.end() };
+}
+
+// Routine Description:
 // - gets the size of the char row, in text elements
 // Arguments:
 // - <none>
@@ -192,11 +272,14 @@ void CHAR_ROW::Reset(_In_ short const sRowWidth)
     Left = sRowWidth;
     Right = 0;
 
-    wmemset(Chars.get(), PADDING_CHAR, sRowWidth);
     for (DbcsAttribute& attr : _attributes)
     {
         attr.SetSingle();
     }
+    _attributes.resize(sRowWidth, _attributes.back());
+
+    std::fill(_chars.begin(), _chars.end(), UNICODE_SPACE);
+    _chars.resize(sRowWidth, UNICODE_SPACE);
 
     SetWrapStatus(false);
     SetDoubleBytePadded(false);
@@ -210,34 +293,10 @@ void CHAR_ROW::Reset(_In_ short const sRowWidth)
 // - S_OK on success, otherwise relevant error code
 HRESULT CHAR_ROW::Resize(_In_ size_t const newSize)
 {
-    std::unique_ptr<wchar_t[]> charBuffer;
-    try
-    {
-        charBuffer = std::make_unique<wchar_t[]>(newSize);
-    }
-    CATCH_RETURN();
-    RETURN_IF_NULL_ALLOC(charBuffer.get());
-
-    std::unique_ptr<BYTE[]> attributesBuffer;
-    try
-    {
-        attributesBuffer = std::make_unique<BYTE[]>(newSize);
-    }
-    CATCH_RETURN();
-    RETURN_IF_NULL_ALLOC(attributesBuffer.get());
-
-    const size_t copySize = min(newSize, _rowWidth);
-    std::copy(Chars.get(), Chars.get() + copySize, charBuffer.get());
-
-    if (newSize > _rowWidth)
-    {
-        std::fill(charBuffer.get() + copySize, charBuffer.get() + newSize, UNICODE_SPACE);
-    }
-
+    _chars.resize(newSize, UNICODE_SPACE);
     // last attribute in a row gets extended to the end
     _attributes.resize(newSize, _attributes.back());
 
-    Chars.swap(charBuffer);
     Left = static_cast<short>(newSize);
     Right = 0;
     _rowWidth = newSize;
@@ -306,73 +365,68 @@ bool CHAR_ROW::WasDoubleBytePadded() const
 // Routine Description:
 // - Inspects the current row contents and sets the Left/Right/OldLeft/OldRight boundary values as appropriate.
 // Arguments:
-// - sRowWidth - The width of the row.
+// - <none>
 // Return Value:
 // - <none>
-void CHAR_ROW::RemeasureBoundaryValues(_In_ short const sRowWidth)
+void CHAR_ROW::RemeasureBoundaryValues()
 {
-    this->MeasureAndSaveLeft(sRowWidth);
-    this->MeasureAndSaveRight(sRowWidth);
+    MeasureAndSaveLeft();
+    MeasureAndSaveRight();
 }
 
 // Routine Description:
 // - Inspects the current internal string to find the left edge of it
 // Arguments:
-// - sRowWidth - The width of the row.
+// - <none>
 // Return Value:
 // - The calculated left boundary of the internal string.
-short CHAR_ROW::MeasureLeft(_In_ short const sRowWidth) const
+short CHAR_ROW::MeasureLeft() const
 {
-    wchar_t* pLastChar = &this->Chars[sRowWidth];
-    wchar_t* pChar = this->Chars.get();
-
-    for (; pChar < pLastChar && *pChar == PADDING_CHAR; pChar++)
+    std::vector<wchar_t>::const_iterator it = _chars.cbegin();
+    while (it != _chars.cend() && *it == UNICODE_SPACE)
     {
-        /* do nothing */
+        ++it;
     }
-
-    return short(pChar - this->Chars.get());
+    const size_t index = it - _chars.begin();
+    return static_cast<short>(index);
 }
 
 // Routine Description:
 // - Inspects the current internal string to find the right edge of it
 // Arguments:
-// - sRowWidth - The width of the row.
+// - <none>
 // Return Value:
 // - The calculated right boundary of the internal string.
-short CHAR_ROW::MeasureRight(_In_ short const sRowWidth) const
+short CHAR_ROW::MeasureRight() const
 {
-    wchar_t* pFirstChar = this->Chars.get();
-    wchar_t* pChar = &this->Chars[sRowWidth - 1];
-
-    for (; pChar >= pFirstChar && *pChar == PADDING_CHAR; pChar--)
+    std::vector<wchar_t>::const_reverse_iterator it = _chars.crbegin();
+    while (it != _chars.crend() && *it == UNICODE_SPACE)
     {
-        /* do nothing */
+        ++it;
     }
-
-    return short((pChar - this->Chars.get()) + 1);
+    return static_cast<short>(_chars.crend() - it);
 }
 
 // Routine Description:
 // - Updates the Left and OldLeft fields for this structure.
 // Arguments:
-// - sRowWidth - The width of the row.
+// - <none>
 // Return Value:
 // - <none>
-void CHAR_ROW::MeasureAndSaveLeft(_In_ short const sRowWidth)
+void CHAR_ROW::MeasureAndSaveLeft()
 {
-    this->Left = MeasureLeft(sRowWidth);
+    Left = MeasureLeft();
 }
 
 // Routine Description:
 // - Updates the Right and OldRight fields for this structure.
 // Arguments:
-// - sRowWidth - The width of the row.
+// - <none>
 // Return Value:
 // - <none>
-void CHAR_ROW::MeasureAndSaveRight(_In_ short const sRowWidth)
+void CHAR_ROW::MeasureAndSaveRight()
 {
-    this->Right = MeasureRight(sRowWidth);
+    Right = MeasureRight();
 }
 
 // Routine Description:
@@ -383,5 +437,5 @@ void CHAR_ROW::MeasureAndSaveRight(_In_ short const sRowWidth)
 // - True if there is valid text in this row. False otherwise.
 bool CHAR_ROW::ContainsText() const
 {
-    return this->Right > this->Left;
+    return Right > Left;
 }

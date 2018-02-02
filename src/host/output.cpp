@@ -113,12 +113,19 @@ NTSTATUS ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenI
             }
 
             // copy the chars and attrs from their respective arrays
-            PWCHAR pwChar = &pRow->CharRow.Chars[coordSourcePoint.X];
+            std::vector<wchar_t>::const_iterator currentChar;
+            try
+            {
+                currentChar = pRow->CharRow.GetTextIterator(coordSourcePoint.X);
+            }
+            CATCH_LOG();
+            std::vector<wchar_t>::const_iterator itEnd = pRow->CharRow.GetTextIteratorEnd();
+
 
             // Unpack the attributes into an array so we can iterate over them.
             pRow->AttrRow.UnpackAttrs(rgUnpackedRowAttributes, ScreenBufferWidth);
 
-            for (short iCol = 0; iCol < sXSize; pciTargetPtr++)
+            for (short iCol = 0; iCol < sXSize && currentChar != itEnd; ++pciTargetPtr, ++currentChar)
             {
                 TextAttribute textAttr = rgUnpackedRowAttributes[coordSourcePoint.X + iCol];
                 DbcsAttribute dbcsAttribute = pRow->CharRow.GetAttribute(coordSourcePoint.X + iCol);
@@ -135,10 +142,9 @@ NTSTATUS ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenI
                 }
                 else
                 {
-                    pciTargetPtr->Char.UnicodeChar = *pwChar;
+                    pciTargetPtr->Char.UnicodeChar = *currentChar;
                 }
 
-                pwChar++;
                 pciTargetPtr->Attributes = dbcsAttribute.GeneratePublicApiAttributeFormat();
 
                 // Always copy the legacy attributes to the CHAR_INFO.
@@ -431,7 +437,6 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
 
     {
         const ROW* pRow = &pScreenInfo->TextInfo->GetRowByOffset(coordRead.Y);
-        PWCHAR Char;
         SHORT j, k;
 
         if (ulStringType == CONSOLE_ASCII ||
@@ -441,24 +446,24 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
             while (NumRead < *pcRecords)
             {
                 // copy the chars from its array
-                Char = &pRow->CharRow.Chars[X];
                 try
                 {
-                    std::vector<DbcsAttribute>::const_iterator it = pRow->CharRow.GetAttributeIterator(X);
+                    const std::vector<DbcsAttribute>::const_iterator itAttr = pRow->CharRow.GetAttributeIterator(X);
+                    const std::vector<wchar_t>::const_iterator itText = pRow->CharRow.GetTextIterator(X);
 
                     if ((ULONG)(coordScreenBufferSize.X - X) > (*pcRecords - NumRead))
                     {
-                        memmove(BufPtr, Char, (*pcRecords - NumRead) * sizeof(WCHAR));
-                        std::copy(it, it + (*pcRecords - NumRead), BufPtrA);
+                        std::copy(itText, itText + (*pcRecords - NumRead), BufPtr);
+                        std::copy(itAttr, itAttr + (*pcRecords - NumRead), BufPtrA);
 
                         NumRead += *pcRecords - NumRead;
                         break;
                     }
 
-                    memmove(BufPtr, Char, (coordScreenBufferSize.X - X) * sizeof(WCHAR));
+                    std::copy(itText, itText + (coordScreenBufferSize.X - X), BufPtr);
                     BufPtr = (PWCHAR)((PBYTE)BufPtr + ((coordScreenBufferSize.X - X) * sizeof(WCHAR)));
 
-                    std::copy(it, it + (coordScreenBufferSize.X - X), BufPtrA);
+                    std::copy(itAttr, itAttr + (coordScreenBufferSize.X - X), BufPtrA);
                     BufPtrA += coordScreenBufferSize.X - X;
 
                     NumRead += coordScreenBufferSize.X - X;
@@ -480,6 +485,7 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
 
             if (NumRead)
             {
+                PWCHAR Char;
                 if (ulStringType == CONSOLE_ASCII)
                 {
                     Char = BufPtr = TransBuffer;

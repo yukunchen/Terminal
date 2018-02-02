@@ -156,7 +156,7 @@ void Selection::WordByWordSelection(_In_ const bool fReverse,
     }
 
     // get the character at the new position
-    WCHAR wchTest = pTextInfo->GetRowByOffset(pcoordSelPoint->Y).CharRow.Chars[pcoordSelPoint->X];
+    WCHAR wchTest = pTextInfo->GetRowByOffset(pcoordSelPoint->Y).CharRow.GetGlyphAt(pcoordSelPoint->X);
 
     // we want to go until the state change from delim to non-delim
     bool fCurrIsDelim = IS_WORD_DELIM(wchTest);
@@ -234,7 +234,7 @@ void Selection::WordByWordSelection(_In_ const bool fReverse,
         }
 
         // get the character associated with the new position
-        wchTest = gci.CurrentScreenBuffer->TextInfo->GetRowByOffset(pcoordSelPoint->Y).CharRow.Chars[pcoordSelPoint->X];
+        wchTest = gci.CurrentScreenBuffer->TextInfo->GetRowByOffset(pcoordSelPoint->Y).CharRow.GetGlyphAt(pcoordSelPoint->X);
         fCurrIsDelim = IS_WORD_DELIM(wchTest);
 
         // This is a bit confusing.
@@ -686,7 +686,13 @@ bool Selection::_HandleColorSelection(_In_ const INPUT_KEY_INFO* const pInputKey
             const ROW& Row = pScreenInfo->TextInfo->GetRowByOffset(psrSelection->Top);
 
             WCHAR pwszSearchString[SEARCH_STRING_LENGTH + 1];
-            memmove(pwszSearchString, &Row.CharRow.Chars[psrSelection->Left], cLength * sizeof(WCHAR));
+            try
+            {
+                std::vector<wchar_t>::const_iterator startIt = Row.CharRow.GetTextIterator(psrSelection->Left);
+                std::vector<wchar_t>::const_iterator stopIt = std::next(startIt, cLength);
+                std::copy(startIt, stopIt, pwszSearchString);
+            }
+            CATCH_LOG();
 
             pwszSearchString[cLength] = L'\0';
 

@@ -412,9 +412,9 @@ bool TEXT_BUFFER_INFO::AssertValidDoubleByteSequence(_In_ const DbcsAttribute db
     if (fCorrectableByErase)
     {
         // Erase previous character into an N type.
-        prevRow.CharRow.Chars[coordPrevPosition.X] = PADDING_CHAR;
         try
         {
+            prevRow.CharRow.ClearGlyph(coordPrevPosition.X);
             prevRow.CharRow.GetAttribute(coordPrevPosition.X).SetSingle();
         }
         catch (...)
@@ -494,13 +494,13 @@ bool TEXT_BUFFER_INFO::InsertCharacter(_In_ const wchar_t wch,
         ROW& Row = GetRowByOffset(iRow);
 
         // Store character and double byte data
-        CHAR_ROW* const pCharRow = &Row.CharRow;
+        CHAR_ROW& charRow = Row.CharRow;
         short const cBufferWidth = this->_coordBufferSize.X;
 
-        pCharRow->Chars[iCol] = wch;
         try
         {
-            pCharRow->GetAttribute(iCol) = dbcsAttribute;
+            charRow.GetGlyphAt(iCol) = wch;
+            charRow.GetAttribute(iCol) = dbcsAttribute;
         }
         catch (...)
         {
@@ -512,13 +512,13 @@ bool TEXT_BUFFER_INFO::InsertCharacter(_In_ const wchar_t wch,
         if (wch == PADDING_CHAR)
         {
             // If we inserted the padding char, remeasure everything.
-            pCharRow->MeasureAndSaveLeft(cBufferWidth);
-            pCharRow->MeasureAndSaveRight(cBufferWidth);
+            charRow.MeasureAndSaveLeft();
+            charRow.MeasureAndSaveRight();
         }
         else
         {
             // Otherwise the new right is just one past the column we inserted into.
-            pCharRow->Right = iCol + 1;
+            charRow.Right = iCol + 1;
         }
 
         // Store color data

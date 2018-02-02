@@ -122,6 +122,6 @@ HRESULT ROW::Resize(_In_ size_t const width)
 void ROW::ClearColumn(_In_ const size_t column)
 {
     THROW_HR_IF(E_INVALIDARG, column >= CharRow.GetWidth());
-    CharRow.Chars[column] = UNICODE_SPACE;
+    CharRow.ClearGlyph(column);
     CharRow.GetAttribute(column).SetSingle();
 }

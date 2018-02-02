@@ -631,7 +631,7 @@ void SCREEN_INFORMATION::ResetTextFlags(_In_ short const sStartX,
             try
             {
                 const ROW& Row = pTextInfo->GetRowAtIndex(RowIndex);
-                Char = Row.CharRow.Chars[sStartX];
+                Char = Row.CharRow.GetGlyphAt(sStartX);
                 Row.AttrRow.FindAttrIndex(sStartX, &pAttrRun, nullptr);
             }
             catch (...)
@@ -1476,10 +1476,11 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
         for (short iOldCol = 0; iOldCol < iRight; iOldCol++)
         {
             // Retrieve old character and double-byte attributes
-            const WCHAR wchChar = Row.CharRow.Chars[iOldCol];
+            WCHAR wchChar;
             DbcsAttribute bKAttr;
             try
             {
+                wchChar = Row.CharRow.GetGlyphAt(iOldCol);
                 bKAttr = Row.CharRow.GetAttribute(iOldCol);
             }
             catch (...)

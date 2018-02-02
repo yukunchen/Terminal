@@ -740,39 +740,15 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
         }
     }
 
-    memmove(&Row.CharRow.Chars[TargetPoint.X], String, StringLength * sizeof(WCHAR));
     try
     {
+        std::copy(String, String + StringLength, Row.CharRow.GetTextIterator(TargetPoint.X));
         std::copy(pDbcsAttributes, pDbcsAttributes + StringLength, Row.CharRow.GetAttributeIterator(TargetPoint.X));
     }
     CATCH_LOG();
 
     // recalculate first and last non-space char
-    if (TargetPoint.X < Row.CharRow.Left)
-    {
-        // CharRow.Left is leftmost bound of chars in Chars array (array will be full width) i.e. type is COORD
-        PWCHAR LastChar = &Row.CharRow.Chars[coordScreenBufferSize.X - 1];
-        PWCHAR Char;
-
-        for (Char = &Row.CharRow.Chars[TargetPoint.X]; Char < LastChar && *Char == (WCHAR)' '; Char++)
-        {
-            /* do nothing */ ;
-        }
-        Row.CharRow.Left = (SHORT)(Char - Row.CharRow.Chars.get());
-    }
-
-    if ((TargetPoint.X + StringLength) >= Row.CharRow.Right)
-    {
-        PWCHAR FirstChar = Row.CharRow.Chars.get();
-        PWCHAR Char;
-
-        for (Char = &Row.CharRow.Chars[TargetPoint.X + StringLength - 1]; *Char == (WCHAR)' ' && Char >= FirstChar; Char--)
-        {
-            /* do nothing */ ;
-        }
-
-        Row.CharRow.Right = (SHORT)(Char + 1 - FirstChar);
-    }
+    Row.CharRow.RemeasureBoundaryValues();
 
     // see if attr string is different.  if so, allocate a new attr buffer and merge the two strings.
     TextAttributeRun* pExistingHead;
