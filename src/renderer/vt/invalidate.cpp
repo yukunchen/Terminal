@@ -59,6 +59,18 @@ HRESULT VtEngine::Invalidate(const SMALL_RECT* const psrRegion)
 }
 
 // Routine Description:
+// - Notifies us that the console has changed the position of the cursor.
+// Arguments:
+// - pcoordCursor - the new position of the cursor
+// Return Value:
+// - S_OK
+HRESULT VtEngine::InvalidateCursor(const COORD* const /*pcoordCursor*/)
+{
+    _cursorMoved = true;
+    return S_OK;
+}
+
+// Routine Description:
 // - Notifies to repaint everything.
 // - NOTE: Use sparingly. Only use when something that could affect the entire 
 //      frame simultaneously occurs.

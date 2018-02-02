@@ -27,6 +27,7 @@ namespace Microsoft
 
                 // IRenderEngine Members
                 HRESULT Invalidate(const SMALL_RECT* const psrRegion);
+                HRESULT InvalidateCursor(_In_ const COORD* const pcoordCursor) override;
                 HRESULT InvalidateSystem(const RECT* const prcDirtyClient);
                 HRESULT InvalidateSelection(const SMALL_RECT* const rgsrSelection, UINT const cRectangles);
                 HRESULT InvalidateScroll(const COORD* const pcoordDelta);

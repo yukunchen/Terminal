@@ -36,7 +36,8 @@ class Microsoft::Console::Render::VtEngine : public IRenderEngine
 public:
     // See _PaintUtf8BufferLine for explanation of this value.
     static const size_t ERASE_CHARACTER_STRING_LENGTH = 8;
-
+    static const COORD INVALID_COORDS;
+    
     VtEngine(_In_ wil::unique_hfile hPipe,
              _In_ const Microsoft::Console::IDefaultColorProvider& colorProvider,
              _In_ const Microsoft::Console::Types::Viewport initialViewport);
@@ -48,6 +49,7 @@ public:
     virtual HRESULT InvalidateScroll(_In_ const COORD* const pcoordDelta) = 0;
     HRESULT InvalidateSystem(_In_ const RECT* const prcDirtyClient) override;
     HRESULT Invalidate(_In_ const SMALL_RECT* const psrRegion) override;
+    HRESULT InvalidateCursor(_In_ const COORD* const pcoordCursor) override;
     HRESULT InvalidateAll() override;
     HRESULT InvalidateCircling(_Out_ bool* const pForcePaint) override;
     HRESULT PrepareForTeardown(_Out_ bool* const pForcePaint) override;
@@ -111,6 +113,7 @@ protected:
 
     bool _quickReturn;
     bool _clearedAllThisFrame;
+    bool _cursorMoved;
 
     bool _suppressResizeRepaint;
 

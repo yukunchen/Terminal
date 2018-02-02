@@ -49,6 +49,7 @@ namespace Microsoft
                 void TriggerSystemRedraw(_In_ const RECT* const prcDirtyClient);
                 void TriggerRedraw(_In_ const SMALL_RECT* const psrRegion);
                 void TriggerRedraw(_In_ const COORD* const pcoord);
+                void TriggerRedrawCursor(_In_ const COORD* const pcoord) override;
                 void TriggerRedrawAll();
                 void TriggerTeardown() override;
 

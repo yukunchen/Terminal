@@ -20,8 +20,12 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     VtEngine(std::move(hPipe), colorProvider, initialViewport),
     _ColorTable(ColorTable),
     _cColorTable(cColorTable),
-    _fUseAsciiOnly(fUseAsciiOnly)
+    _fUseAsciiOnly(fUseAsciiOnly),
+    _firstPaint(true)
 {
+    // Set out initial cursor position to -1, -1. This will force our initial 
+    //      paint to manually move the cursor to 0, 0, not just ignore it.
+    _lastText = VtEngine::INVALID_COORDS;
 }
 
 // Method Description:
@@ -39,6 +43,13 @@ HRESULT XtermEngine::StartPaint()
     HRESULT hr = VtEngine::StartPaint();
     if (SUCCEEDED(hr))
     {
+        if (_firstPaint)
+        {
+            // Immediately paint a clear screen, and move the cursor to the origin.
+            _ClearScreen();
+            _MoveCursor({0, 0});
+            _firstPaint = false;
+        }
         if (!_quickReturn)
         {
             if (!_WillWriteSingleChar()) 

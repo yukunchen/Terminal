@@ -60,6 +60,7 @@ protected:
     const COLORREF* const _ColorTable;
     const WORD _cColorTable;
     const bool _fUseAsciiOnly;
+    bool _firstPaint;
     
 #ifdef UNIT_TESTING
     friend class VtRendererTest;
