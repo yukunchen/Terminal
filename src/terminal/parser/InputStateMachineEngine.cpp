@@ -52,7 +52,7 @@ const InputStateMachineEngine::CSI_TO_VKEY InputStateMachineEngine::s_rgCsiMap[]
     { CsiActionCodes::End, VK_END },
     { CsiActionCodes::CSI_F1, VK_F1 },
     { CsiActionCodes::CSI_F2, VK_F2 },
-    { CsiActionCodes::CSI_F3, VK_F3 },
+    // { CsiActionCodes::CSI_F3, VK_F3 },
     { CsiActionCodes::CSI_F4, VK_F4 },
 };
 
@@ -123,11 +123,11 @@ bool InputStateMachineEngine::ActionExecute(_In_ wchar_t const wch)
             break;
         case L'\x1b':
             // Translate escape as the ESC key, NOT C-[.
-            // This means that C-[ won't insert ^[ into the buffer anymore, 
+            // This means that C-[ won't insert ^[ into the buffer anymore,
             //      which isn't the worst tradeoff.
-            vkey = VK_ESCAPE; 
+            vkey = VK_ESCAPE;
             writeCtrl = false;
-            fSuccess = true; 
+            fSuccess = true;
             break;
         case L'\t':
             writeCtrl = false;
@@ -264,6 +264,8 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
     DWORD dwModifierState = 0;
     short vkey = 0;
     unsigned int uiFunction = 0;
+    unsigned int x = 0;
+    unsigned int y = 0;
 
     // This is all the args after the first arg, and the count of args not including the first one.
     const unsigned short* const rgusRemainingArgs = (cParams > 1) ? rgusParams + 1 : rgusParams;
@@ -284,7 +286,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
         case CsiActionCodes::End:
         case CsiActionCodes::CSI_F1:
         case CsiActionCodes::CSI_F2:
-        case CsiActionCodes::CSI_F3:
+        // case CsiActionCodes::CSI_F3:
         case CsiActionCodes::CSI_F4:
             dwModifierState = _GetCursorKeysModifierState(rgusParams, cParams);
             fSuccess = _GetCursorKeysVkey(wch, &vkey);
@@ -294,7 +296,11 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
                                                   cParams,
                                                   &uiFunction);
             break;
-
+        case CsiActionCodes::DSR_DeviceStatusReportResponse:
+            fSuccess = true;
+            y = rgusParams[0]-1;
+            x = rgusParams[1]-1;
+            break;
         default:
             fSuccess = false;
             break;
@@ -314,7 +320,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
             case CsiActionCodes::End:
             case CsiActionCodes::CSI_F1:
             case CsiActionCodes::CSI_F2:
-            case CsiActionCodes::CSI_F3:
+            // case CsiActionCodes::CSI_F3:
             case CsiActionCodes::CSI_F4:
                 fSuccess = _WriteSingleKey(vkey, dwModifierState);
                 break;
@@ -322,6 +328,9 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
                 fSuccess = _pDispatch->WindowManipulation(static_cast<DispatchCommon::WindowManipulationType>(uiFunction),
                                                           rgusRemainingArgs,
                                                           cRemainingArgs);
+                break;
+            case CsiActionCodes::DSR_DeviceStatusReportResponse:
+                fSuccess = _pDispatch->MoveCursor(x, y);
                 break;
             default:
                 fSuccess = false;

@@ -21,30 +21,30 @@ InteractDispatch::InteractDispatch(_In_ std::unique_ptr<ConGetSet> pConApi)
 }
 
 // Method Description:
-// - Writes a collection of input to the host. The new input is appended to the 
-//      end of the input buffer. 
-//  If Ctrl+C is written with this function, it will not trigger a Ctrl-C 
-//      interrupt in the client, but instead write a Ctrl+C to the input buffer 
+// - Writes a collection of input to the host. The new input is appended to the
+//      end of the input buffer.
+//  If Ctrl+C is written with this function, it will not trigger a Ctrl-C
+//      interrupt in the client, but instead write a Ctrl+C to the input buffer
 //      to be read by the client.
 // Arguments:
 // - inputEvents: a collection of IInputEvents
 // Return Value:
 // True if handled successfully. False otherwise.
-bool InteractDispatch::WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& inputEvents) 
+bool InteractDispatch::WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& inputEvents)
 {
     size_t dwWritten = 0;
     return !!_pConApi->WriteConsoleInputW(inputEvents, dwWritten);
 }
 
 // Method Description:
-// - Writes a Ctrl-C event to the host. The host will then decide what to do 
-//      with it, including potentially sending an interrupt to a client 
-//      application. 
+// - Writes a Ctrl-C event to the host. The host will then decide what to do
+//      with it, including potentially sending an interrupt to a client
+//      application.
 // Arguments:
 // <none>
 // Return Value:
 // True if handled successfully. False otherwise.
-bool InteractDispatch::WriteCtrlC() 
+bool InteractDispatch::WriteCtrlC()
 {
     KeyEvent key = KeyEvent(true, 1, 'C', 0, UNICODE_ETX, LEFT_CTRL_PRESSED);
     return !!_pConApi->PrivateWriteConsoleControlInput(key);
@@ -52,7 +52,7 @@ bool InteractDispatch::WriteCtrlC()
 
 //Method Description:
 // Window Manipulation - Performs a variety of actions relating to the window,
-//      such as moving the window position, resizing the window, querying 
+//      such as moving the window position, resizing the window, querying
 //      window state, forcing the window to repaint, etc.
 //  This is kept seperate from the output version, as there may be
 //      codes that are supported in one direction but not the other.
@@ -92,6 +92,49 @@ bool InteractDispatch::WindowManipulation(_In_ const DispatchCommon::WindowManip
             fSuccess = false;
             break;
     }
+
+    return fSuccess;
+}
+
+bool InteractDispatch::MoveCursor(unsigned int x, unsigned int y)
+{
+    unsigned int uiRow = y;
+    unsigned int uiCol = x;
+
+    bool fSuccess = true;
+
+    // First retrieve some information about the buffer
+    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
+    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
+    fSuccess = !!_pConApi->GetConsoleScreenBufferInfoEx(&csbiex);
+
+
+    if (fSuccess)
+    {
+        COORD coordCursor = csbiex.dwCursorPosition;
+
+        // Safely convert the UINT positions we were given into shorts (which is the size the console deals with)
+        fSuccess = SUCCEEDED(UIntToShort(uiRow, &coordCursor.Y)) &&
+         SUCCEEDED(UIntToShort(uiCol, &coordCursor.X));
+
+        if (fSuccess)
+        {
+            // Set the line and column values as offsets from the viewport edge. Use safe math to prevent overflow.
+            fSuccess = SUCCEEDED(ShortAdd(coordCursor.Y, csbiex.srWindow.Top, &coordCursor.Y)) &&
+                SUCCEEDED(ShortAdd(coordCursor.X, csbiex.srWindow.Left, &coordCursor.X));
+
+            if (fSuccess)
+            {
+                // Apply boundary tests to ensure the cursor isn't outside the viewport rectangle.
+                coordCursor.Y = max(min(coordCursor.Y, csbiex.srWindow.Bottom - 1), csbiex.srWindow.Top);
+                coordCursor.X = max(min(coordCursor.X, csbiex.srWindow.Right - 1), csbiex.srWindow.Left);
+
+                // Finally, attempt to set the adjusted cursor position back into the console.
+                fSuccess = !!_pConApi->SetConsoleCursorPosition(coordCursor);
+            }
+        }
+    }
+
 
     return fSuccess;
 }

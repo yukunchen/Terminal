@@ -76,9 +76,10 @@ private:
         Generic = L'~', // Used for a whole bunch of possible keys
         CSI_F1 = L'P',
         CSI_F2 = L'Q',
-        CSI_F3 = L'R',
+        // CSI_F3 = L'R',
         CSI_F4 = L'S',
         DTTERM_WindowManipulation = L't',
+        DSR_DeviceStatusReportResponse = L'R',
     };
 
     enum Ss3ActionCodes : wchar_t
