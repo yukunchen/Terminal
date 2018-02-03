@@ -63,16 +63,6 @@ void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
     // caller knows the wrap status as this func is called only for drawing one line at a time
     Row.CharRow.SetWrapStatus(fWasLineWrapped);
 
-    // recalculate first and last non-space char
-    if (TargetPoint.X < Row.CharRow.Left)
-    {
-        Row.CharRow.MeasureAndSaveLeft();
-    }
-
-    if ((TargetPoint.X + cchBuffer) >= Row.CharRow.Right)
-    {
-        Row.CharRow.MeasureAndSaveRight();
-    }
     TextAttributeRun CurrentBufferAttrs;
     CurrentBufferAttrs.SetLength(cchBuffer);
     CurrentBufferAttrs.SetAttributes(pScreenInfo->GetAttributes());
@@ -239,9 +229,6 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
                     NumAttrRuns += 1;
                 }
             }
-
-            // recalculate first and last non-space char
-            pRow->CharRow.RemeasureBoundaryValues();
 
             pRow->AttrRow.InsertAttrRuns(rAttrRunsBuff,
                                          NumAttrRuns,
@@ -566,8 +553,6 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
                 break;
             }
 
-            SHORT LeftX = X;
-
             // copy the chars into their arrays
             std::vector<DbcsAttribute>::iterator itAttr;
             std::vector<wchar_t>::iterator itText;
@@ -653,17 +638,6 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
                 pvBuffer = (PVOID)((PBYTE)pvBuffer + ((coordScreenBufferSize.X - X) * sizeof(WCHAR)));
                 NumWritten += coordScreenBufferSize.X - X;
                 X = (SHORT)(coordScreenBufferSize.X - 1);
-            }
-
-            // recalculate first and last non-space char
-            if (LeftX < pRow->CharRow.Left)
-            {
-                pRow->CharRow.MeasureAndSaveLeft();
-            }
-
-            if ((X + 1) >= pRow->CharRow.Right)
-            {
-                pRow->CharRow.MeasureAndSaveRight();
             }
 
             if (NumWritten < *pcRecords)
@@ -909,7 +883,6 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
             }
 
             // copy the chars into their arrays
-            SHORT LeftX = X;
             std::vector<DbcsAttribute>::iterator itAttr;
             std::vector<wchar_t>::iterator itText;
             try
@@ -1004,17 +977,6 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
                 }
                 NumWritten += coordScreenBufferSize.X - X;
                 X = (SHORT)(coordScreenBufferSize.X - 1);
-            }
-
-            // recalculate first and last non-space char
-            if (LeftX < pRow->CharRow.Left)
-            {
-                pRow->CharRow.MeasureAndSaveLeft();
-            }
-
-            if ((X + 1) >= pRow->CharRow.Right)
-            {
-                pRow->CharRow.MeasureAndSaveRight();
             }
 
             // invalidate row wrap status for any bulk fill of text characters
@@ -1262,18 +1224,7 @@ void FillRectangle(_In_ const CHAR_INFO * const pciFill,
             }
         }
 
-        // recalculate first and last non-space char
-
         const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
-        if (psrTarget->Left < pRow->CharRow.Left)
-        {
-            pRow->CharRow.MeasureAndSaveLeft();
-        }
-
-        if (psrTarget->Right >= pRow->CharRow.Right)
-        {
-            pRow->CharRow.MeasureAndSaveRight();
-        }
 
         TextAttributeRun AttrRun;
         AttrRun.SetLength(XSize);

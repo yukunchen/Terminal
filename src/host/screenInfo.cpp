@@ -1444,7 +1444,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
     {
         // Fetch the row and its "right" which is the last printable character.
         const ROW& Row = TextInfo->GetRowByOffset(iOldRow);
-        short iRight = Row.CharRow.Right;
+        short iRight = Row.CharRow.MeasureRight();
 
         // There is a special case here. If the row has a "wrap"
         // flag on it, but the right isn't equal to the width (one

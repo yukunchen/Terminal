@@ -224,8 +224,6 @@ private:
         // き = \x304d
         PCWSTR pwszText = L"AB" L"\x304b\x304b" L"C" L"\x304d\x304d" L"DE      ";
         std::copy_n(pwszText, wcslen(pwszText), pRow->CharRow.GetTextIterator(0));
-        pRow->CharRow.Left = 0;
-        pRow->CharRow.Right = 9; // 1 past the last valid character in the array
 
         // set double-byte/double-width attributes
         pRow->CharRow.GetAttribute(2).SetLeading();
@@ -283,8 +281,6 @@ private:
             L"0123456789"
             L"\x304d";
         std::copy_n(pwszText, min(CommonState::s_csBufferWidth, wcslen(pwszText)), pRow->CharRow.GetTextIterator(0));
-        pRow->CharRow.Left = 0;
-        pRow->CharRow.Right = 80; // 1 past the last valid character in the array
 
         // set double-byte/double-width attributes
         pRow->CharRow.GetAttribute(0).SetTrailing();

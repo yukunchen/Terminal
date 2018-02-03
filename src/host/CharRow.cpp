@@ -28,8 +28,6 @@ void swap(CHAR_ROW& a, CHAR_ROW& b) noexcept
 // Note: will through if unable to allocate char/attribute buffers
 CHAR_ROW::CHAR_ROW(short rowWidth) :
     _rowWidth{ static_cast<size_t>(rowWidth) },
-    Left{ rowWidth },
-    Right{ 0 },
     _attributes(rowWidth),
     _chars(rowWidth, UNICODE_SPACE)
 {
@@ -45,8 +43,6 @@ CHAR_ROW::CHAR_ROW(short rowWidth) :
 // - instantiated object
 // Note: will through if unable to allocate char/attribute buffers
 CHAR_ROW::CHAR_ROW(const CHAR_ROW& a) :
-    Left{ a.Left },
-    Right{ a.Right },
     bRowFlags{ a.bRowFlags },
     _rowWidth{ a._rowWidth },
     _attributes{ a._attributes },
@@ -93,8 +89,6 @@ void CHAR_ROW::swap(CHAR_ROW& other) noexcept
     // this looks kinda weird, but we want the compiler to be able to choose between std::swap and a
     // specialized swap, so we include both in the same namespace and let it sort it out.
     using std::swap;
-    swap(Left, other.Left);
-    swap(Right, other.Right);
     swap(bRowFlags, other.bRowFlags);
     swap(_rowWidth, other._rowWidth);
     swap(_attributes, other._attributes);
@@ -269,8 +263,6 @@ size_t CHAR_ROW::GetWidth() const
 void CHAR_ROW::Reset(_In_ short const sRowWidth)
 {
     _rowWidth = static_cast<size_t>(sRowWidth);
-    Left = sRowWidth;
-    Right = 0;
 
     for (DbcsAttribute& attr : _attributes)
     {
@@ -297,8 +289,6 @@ HRESULT CHAR_ROW::Resize(_In_ size_t const newSize)
     // last attribute in a row gets extended to the end
     _attributes.resize(newSize, _attributes.back());
 
-    Left = static_cast<short>(newSize);
-    Right = 0;
     _rowWidth = newSize;
 
     return S_OK;
@@ -363,18 +353,6 @@ bool CHAR_ROW::WasDoubleBytePadded() const
 }
 
 // Routine Description:
-// - Inspects the current row contents and sets the Left/Right/OldLeft/OldRight boundary values as appropriate.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void CHAR_ROW::RemeasureBoundaryValues()
-{
-    MeasureAndSaveLeft();
-    MeasureAndSaveRight();
-}
-
-// Routine Description:
 // - Inspects the current internal string to find the left edge of it
 // Arguments:
 // - <none>
@@ -408,28 +386,6 @@ short CHAR_ROW::MeasureRight() const
 }
 
 // Routine Description:
-// - Updates the Left and OldLeft fields for this structure.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void CHAR_ROW::MeasureAndSaveLeft()
-{
-    Left = MeasureLeft();
-}
-
-// Routine Description:
-// - Updates the Right and OldRight fields for this structure.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void CHAR_ROW::MeasureAndSaveRight()
-{
-    Right = MeasureRight();
-}
-
-// Routine Description:
 // - Tells you whether or not this row contains any valid text.
 // Arguments:
 // - <none>
@@ -437,5 +393,12 @@ void CHAR_ROW::MeasureAndSaveRight()
 // - True if there is valid text in this row. False otherwise.
 bool CHAR_ROW::ContainsText() const
 {
-    return Right > Left;
+    for (wchar_t wch : _chars)
+    {
+        if (wch != UNICODE_SPACE)
+        {
+            return true;
+        }
+    }
+    return false;
 }
