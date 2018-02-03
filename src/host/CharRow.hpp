@@ -92,8 +92,8 @@ public:
     bool ContainsText() const;
 
     size_t GetWidth() const;
-    short MeasureLeft() const;
-    short MeasureRight() const;
+    size_t MeasureLeft() const;
+    size_t MeasureRight() const;
 
     friend constexpr bool operator==(const CHAR_ROW& a, const CHAR_ROW& b) noexcept;
 

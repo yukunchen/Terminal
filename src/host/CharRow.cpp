@@ -358,15 +358,14 @@ bool CHAR_ROW::WasDoubleBytePadded() const
 // - <none>
 // Return Value:
 // - The calculated left boundary of the internal string.
-short CHAR_ROW::MeasureLeft() const
+size_t CHAR_ROW::MeasureLeft() const
 {
     std::vector<wchar_t>::const_iterator it = _chars.cbegin();
     while (it != _chars.cend() && *it == UNICODE_SPACE)
     {
         ++it;
     }
-    const size_t index = it - _chars.begin();
-    return static_cast<short>(index);
+    return it - _chars.begin();
 }
 
 // Routine Description:
@@ -375,14 +374,14 @@ short CHAR_ROW::MeasureLeft() const
 // - <none>
 // Return Value:
 // - The calculated right boundary of the internal string.
-short CHAR_ROW::MeasureRight() const
+size_t CHAR_ROW::MeasureRight() const
 {
     std::vector<wchar_t>::const_reverse_iterator it = _chars.crbegin();
     while (it != _chars.crend() && *it == UNICODE_SPACE)
     {
         ++it;
     }
-    return static_cast<short>(_chars.crend() - it);
+    return _chars.crend() - it;
 }
 
 // Routine Description:

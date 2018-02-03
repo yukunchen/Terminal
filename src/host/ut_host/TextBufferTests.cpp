@@ -489,7 +489,7 @@ void TextBufferTests::TestLastNonSpace(short const cursorPosY)
     COORD coordExpected = pTbi->GetCursor()->GetPosition();
 
     // Try to get the X position from the current cursor position.
-    coordExpected.X = pTbi->GetRowByOffset(coordExpected.Y).CharRow.MeasureRight() - 1;
+    coordExpected.X = static_cast<short>(pTbi->GetRowByOffset(coordExpected.Y).CharRow.MeasureRight()) - 1;
 
     // If we went negative, this row was empty and we need to continue seeking upward...
     // - As long as X is negative (empty rows)
@@ -497,7 +497,7 @@ void TextBufferTests::TestLastNonSpace(short const cursorPosY)
     while (coordExpected.X < 0 && coordExpected.Y > 0)
     {
         coordExpected.Y--;
-        coordExpected.X = pTbi->GetRowByOffset(coordExpected.Y).CharRow.MeasureRight() - 1;
+        coordExpected.X = static_cast<short>(pTbi->GetRowByOffset(coordExpected.Y).CharRow.MeasureRight()) - 1;
     }
 
     VERIFY_ARE_EQUAL(coordLastNonSpace.X, coordExpected.X);

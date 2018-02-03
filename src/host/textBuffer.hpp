@@ -74,8 +74,6 @@ public:
     // Used for duplicating properties to another text buffer
     void CopyProperties(_In_ TEXT_BUFFER_INFO* const pOtherBuffer);
 
-    short GetMinBufferWidthNeeded() const; // TODO: just store this when the row is manipulated
-
     // row manipulation
     const ROW& GetFirstRow() const;
     ROW& GetFirstRow();

@@ -94,31 +94,6 @@ FontInfoDesired* TEXT_BUFFER_INFO::GetDesiredFont()
     return &_fiDesiredFont;
 }
 
-//Routine Description:
-// - The minimum text buffer width needed to hold all rows and not lose information.
-//Arguments:
-// - <none>
-//Return Value:
-// - Width required in character count.
-short TEXT_BUFFER_INFO::GetMinBufferWidthNeeded() const
-{
-    short sMaxRight = 0;
-
-    for (const ROW& row : _storage)
-    {
-        // note that .Right is always one position past the final character.
-        // therefore a row with characters in array positions 0-19 will have a .Right of 20
-        const SHORT sRowRight = row.CharRow.MeasureRight();
-
-        if (sRowRight > sMaxRight)
-        {
-            sMaxRight = sRowRight;
-        }
-    }
-
-    return sMaxRight;
-}
-
 // Routine Description:
 // - Gets the number of rows in the buffer
 // Arguments:
@@ -703,7 +678,7 @@ COORD TEXT_BUFFER_INFO::GetLastNonSpaceCharacter() const
 
     const ROW* pCurrRow = &GetRowByOffset(coordEndOfText.Y);
     // The X position of the end of the valid text is the Right draw boundary (which is one beyond the final valid character)
-    coordEndOfText.X = pCurrRow->CharRow.MeasureRight() - 1;
+    coordEndOfText.X = static_cast<short>(pCurrRow->CharRow.MeasureRight()) - 1;
 
     // If the X coordinate turns out to be -1, the row was empty, we need to search backwards for the real end of text.
     bool fDoBackUp = (coordEndOfText.X < 0 && coordEndOfText.Y > 0); // this row is empty, and we're not at the top
@@ -713,7 +688,7 @@ COORD TEXT_BUFFER_INFO::GetLastNonSpaceCharacter() const
         pCurrRow = &GetRowByOffset(coordEndOfText.Y);
         // We need to back up to the previous row if this line is empty, AND there are more rows
 
-        coordEndOfText.X = pCurrRow->CharRow.MeasureRight() - 1;
+        coordEndOfText.X = static_cast<short>(pCurrRow->CharRow.MeasureRight()) - 1;
         fDoBackUp = (coordEndOfText.X < 0 && coordEndOfText.Y > 0);
     }
 
