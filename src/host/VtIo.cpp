@@ -19,7 +19,8 @@ using namespace Microsoft::Console::Types;
 
 VtIo::VtIo() :
     _usingVt(false),
-    _hasSignalThread(false)
+    _hasSignalThread(false),
+    _lookingForCursorPosition(false)
 {
 }
 
@@ -319,8 +320,12 @@ HRESULT VtIo::StartIfNeeded()
     }
     CATCH_RETURN();
 
+    _lookingForCursorPosition = true;
     _pVtRenderEngine->RequestCursor();
-    _pVtInputThread->DoReadInput(false);
+    while(_lookingForCursorPosition)
+    {
+        _pVtInputThread->DoReadInput(false);
+    }
 
     _pVtInputThread->Start();
 
@@ -346,6 +351,21 @@ HRESULT VtIo::SuppressResizeRepaint()
     if (_pVtRenderEngine)
     {
         hr = _pVtRenderEngine->SuppressResizeRepaint();
+    }
+    return hr;
+}
+
+HRESULT VtIo::SetCursorPosition(_In_ const COORD coordCursor)
+{
+    HRESULT hr = S_OK;
+    if (_lookingForCursorPosition)
+    {
+        if (_pVtRenderEngine)
+        {
+            hr = _pVtRenderEngine->SetVirtualTop(coordCursor.Y);
+        }
+
+        _lookingForCursorPosition = false;
     }
     return hr;
 }

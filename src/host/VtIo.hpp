@@ -38,11 +38,12 @@ public:
 
     HRESULT SuppressResizeRepaint();
     void DoReadInput();
-
+    HRESULT SetCursorPosition(_In_ const COORD coordCursor);
 private:
     bool _usingVt;
     bool _hasSignalThread;
     VtIoMode _IoMode;
+    bool _lookingForCursorPosition;
 
     HRESULT _Initialize(_In_ const HANDLE InHandle, _In_ const HANDLE OutHandle, _In_ const std::wstring& VtMode);
     HRESULT _Initialize(_In_ const HANDLE InHandle, _In_ const HANDLE OutHandle, _In_ const std::wstring& VtMode, _In_opt_ HANDLE SignalHandle);

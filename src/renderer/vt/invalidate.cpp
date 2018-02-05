@@ -64,15 +64,15 @@ HRESULT VtEngine::Invalidate(const SMALL_RECT* const psrRegion)
 // - pcoordCursor - the new position of the cursor
 // Return Value:
 // - S_OK
-HRESULT VtEngine::InvalidateCursor(const COORD* const pcoordCursor)
+HRESULT VtEngine::InvalidateCursor(const COORD* const /*pcoordCursor*/)
 {
-    COORD bad = {0};
-    if (_firstCursor == INVALID_COORDS && *pcoordCursor != bad)
-    {
-        // DebugBreak();
-        _firstCursor = *pcoordCursor;
-        _virtualTop = _firstCursor.Y;
-    }
+    // COORD bad = {0};
+    // if (_firstCursor == INVALID_COORDS && *pcoordCursor != bad)
+    // {
+    //     // DebugBreak();
+    //     _firstCursor = *pcoordCursor;
+    //     _virtualTop = _firstCursor.Y;
+    // }
 
     _cursorMoved = true;
     return S_OK;
@@ -170,6 +170,12 @@ HRESULT VtEngine::_InvalidOffset(_In_ const COORD* const pCoord)
 
         // Ensure invalid areas remain within bounds of window.
         RETURN_IF_FAILED(_InvalidRestrict());
+
+        if (_virtualTop > 0)
+        {
+            _virtualTop += pCoord->Y;
+        }
+
     }
 
     return S_OK;

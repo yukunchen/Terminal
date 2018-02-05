@@ -43,7 +43,6 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _clearedAllThisFrame(false),
     _cursorMoved(false),
     _suppressResizeRepaint(true),
-    _firstCursor(INVALID_COORDS),
     _virtualTop(0)
 {
 #ifndef UNIT_TESTING
@@ -259,5 +258,11 @@ bool VtEngine::_AllIsInvalid() const
 HRESULT VtEngine::SuppressResizeRepaint()
 {
     _suppressResizeRepaint = true;
+    return S_OK;
+}
+
+HRESULT VtEngine::SetVirtualTop(_In_ const short vTop)
+{
+    _virtualTop = vTop;
     return S_OK;
 }

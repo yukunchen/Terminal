@@ -96,6 +96,7 @@ public:
     HRESULT SuppressResizeRepaint();
 
     HRESULT RequestCursor();
+    HRESULT SetVirtualTop(_In_ const short virtualTop);
 
 protected:
     wil::unique_hfile _hFile;
@@ -119,7 +120,7 @@ protected:
 
     bool _suppressResizeRepaint;
 
-    COORD _firstCursor;
+    // COORD _firstCursor;
     SHORT _virtualTop;
 
     HRESULT _Write(_In_reads_(cch) const char* const psz, _In_ size_t const cch);

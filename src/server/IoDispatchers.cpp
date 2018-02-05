@@ -227,12 +227,6 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
         goto Error;
     }
 
-    // if( gci->IsInVtIoMode())
-    // {
-    //     // DebugBreak();
-    //     gci->GetVtIo()->DoReadInput();
-    // }
-
     // Complete the request.
     pReceiveMsg->SetReplyStatus(STATUS_SUCCESS);
     pReceiveMsg->SetReplyInformation(sizeof(CD_CONNECTION_INFORMATION));
