@@ -37,6 +37,8 @@ class Microsoft::Console::VirtualTerminal::InputStateMachineEngine : public ISta
 {
 public:
     InputStateMachineEngine(_In_ std::unique_ptr<IInteractDispatch> pDispatch);
+    InputStateMachineEngine(_In_ std::unique_ptr<IInteractDispatch> pDispatch,
+                            _In_ const bool lookingForDSR);
 
     bool ActionExecute(_In_ wchar_t const wch) override;
     bool ActionPrint(_In_ wchar_t const wch) override;
@@ -64,6 +66,7 @@ public:
 private:
 
     const std::unique_ptr<IInteractDispatch> _pDispatch;
+    bool _lookingForDSR;
 
     enum CsiActionCodes : wchar_t
     {
@@ -76,10 +79,10 @@ private:
         Generic = L'~', // Used for a whole bunch of possible keys
         CSI_F1 = L'P',
         CSI_F2 = L'Q',
-        // CSI_F3 = L'R',
+        CSI_F3 = L'R', // Both F3 and DSR are on R.
+        // DSR_DeviceStatusReportResponse = L'R',
         CSI_F4 = L'S',
         DTTERM_WindowManipulation = L't',
-        DSR_DeviceStatusReportResponse = L'R',
     };
 
     enum Ss3ActionCodes : wchar_t

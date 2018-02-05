@@ -108,7 +108,6 @@ bool InteractDispatch::MoveCursor(unsigned int x, unsigned int y)
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
     fSuccess = !!_pConApi->GetConsoleScreenBufferInfoEx(&csbiex);
 
-
     if (fSuccess)
     {
         COORD coordCursor = csbiex.dwCursorPosition;

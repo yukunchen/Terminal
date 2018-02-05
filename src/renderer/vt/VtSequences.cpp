@@ -277,3 +277,14 @@ HRESULT VtEngine::_ResizeWindow(_In_ const short sWidth, _In_ const short sHeigh
 
     return _WriteFormattedString(&resizeFormat, sHeight, sWidth);
 }
+
+// Method Description:
+// - Formats and writes a sequence to move the cursor to the origin.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+HRESULT VtEngine::RequestCursor()
+{
+    return _Write("\x1b[6n");
+}

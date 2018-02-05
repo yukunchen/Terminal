@@ -42,7 +42,9 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _fInvalidRectUsed(false),
     _clearedAllThisFrame(false),
     _cursorMoved(false),
-    _suppressResizeRepaint(false)
+    _suppressResizeRepaint(true),
+    _firstCursor(INVALID_COORDS),
+    _virtualTop(0)
 {
 #ifndef UNIT_TESTING
     // When unit testing, we can instantiate a VtEngine without a pipe.

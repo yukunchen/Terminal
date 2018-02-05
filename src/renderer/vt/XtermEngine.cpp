@@ -48,6 +48,7 @@ HRESULT XtermEngine::StartPaint()
             // Immediately paint a clear screen, and move the cursor to the origin.
             // _ClearScreen();
             // _MoveCursor({0, 0});
+            // DebugBreak();
             _firstPaint = false;
         }
         if (!_quickReturn)

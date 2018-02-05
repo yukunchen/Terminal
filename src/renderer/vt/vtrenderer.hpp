@@ -37,7 +37,7 @@ public:
     // See _PaintUtf8BufferLine for explanation of this value.
     static const size_t ERASE_CHARACTER_STRING_LENGTH = 8;
     static const COORD INVALID_COORDS;
-    
+
     VtEngine(_In_ wil::unique_hfile hPipe,
              _In_ const Microsoft::Console::IDefaultColorProvider& colorProvider,
              _In_ const Microsoft::Console::Types::Viewport initialViewport);
@@ -95,6 +95,8 @@ public:
 
     HRESULT SuppressResizeRepaint();
 
+    HRESULT RequestCursor();
+
 protected:
     wil::unique_hfile _hFile;
 
@@ -116,6 +118,9 @@ protected:
     bool _cursorMoved;
 
     bool _suppressResizeRepaint;
+
+    COORD _firstCursor;
+    SHORT _virtualTop;
 
     HRESULT _Write(_In_reads_(cch) const char* const psz, _In_ size_t const cch);
     HRESULT _Write(_In_ const std::string& str);

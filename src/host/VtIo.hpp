@@ -29,14 +29,15 @@ public:
     VtIo();
 
     HRESULT Initialize(_In_ const ConsoleArguments* const pArgs);
-    
+
     bool IsUsingVt() const;
 
     HRESULT StartIfNeeded();
 
     static HRESULT ParseIoMode(_In_ const std::wstring& VtMode, _Out_ VtIoMode& ioMode);
-    
+
     HRESULT SuppressResizeRepaint();
+    void DoReadInput();
 
 private:
     bool _usingVt;

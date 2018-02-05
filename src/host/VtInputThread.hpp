@@ -26,6 +26,7 @@ namespace Microsoft
 
             HRESULT Start();
             static DWORD StaticVtInputThreadProc(_In_ LPVOID lpParameter);
+            void DoReadInput(_In_ const bool throwOnFail);
 
         private:
             HRESULT _HandleRunInput(_In_reads_(cch) const char* const charBuffer, _In_ const int cch);

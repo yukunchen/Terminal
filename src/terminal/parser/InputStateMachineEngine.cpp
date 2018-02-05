@@ -52,7 +52,7 @@ const InputStateMachineEngine::CSI_TO_VKEY InputStateMachineEngine::s_rgCsiMap[]
     { CsiActionCodes::End, VK_END },
     { CsiActionCodes::CSI_F1, VK_F1 },
     { CsiActionCodes::CSI_F2, VK_F2 },
-    // { CsiActionCodes::CSI_F3, VK_F3 },
+    { CsiActionCodes::CSI_F3, VK_F3 },
     { CsiActionCodes::CSI_F4, VK_F4 },
 };
 
@@ -83,7 +83,12 @@ const InputStateMachineEngine::SS3_TO_VKEY InputStateMachineEngine::s_rgSs3Map[]
 };
 
 InputStateMachineEngine::InputStateMachineEngine(_In_ std::unique_ptr<IInteractDispatch> pDispatch) :
-    _pDispatch(std::move(pDispatch))
+    InputStateMachineEngine(std::move(pDispatch), false)
+{}
+
+InputStateMachineEngine::InputStateMachineEngine(_In_ std::unique_ptr<IInteractDispatch> pDispatch, _In_ const bool lookingForDSR) :
+    _pDispatch(std::move(pDispatch)),
+    _lookingForDSR(lookingForDSR)
 {
 }
 
@@ -278,6 +283,18 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
             dwModifierState = _GetGenericKeysModifierState(rgusParams, cParams);
             fSuccess = _GetGenericVkey(rgusParams, cParams, &vkey);
             break;
+        // case CsiActionCodes::DSR_DeviceStatusReportResponse:
+        case CsiActionCodes::CSI_F3:
+            // The F3 case is special - it shares a code with the DeviceStatusResponse.
+            // If we're looking for that response, then do that, and break out.
+            // Else, fall though to the _GetCursorKeysModifierState handler.
+            if (_lookingForDSR)
+            {
+                fSuccess = true;
+                y = rgusParams[0]-1;
+                x = rgusParams[1]-1;
+                break;
+            }
         case CsiActionCodes::ArrowUp:
         case CsiActionCodes::ArrowDown:
         case CsiActionCodes::ArrowRight:
@@ -286,7 +303,6 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
         case CsiActionCodes::End:
         case CsiActionCodes::CSI_F1:
         case CsiActionCodes::CSI_F2:
-        // case CsiActionCodes::CSI_F3:
         case CsiActionCodes::CSI_F4:
             dwModifierState = _GetCursorKeysModifierState(rgusParams, cParams);
             fSuccess = _GetCursorKeysVkey(wch, &vkey);
@@ -295,11 +311,6 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
             fSuccess = _GetWindowManipulationType(rgusParams,
                                                   cParams,
                                                   &uiFunction);
-            break;
-        case CsiActionCodes::DSR_DeviceStatusReportResponse:
-            fSuccess = true;
-            y = rgusParams[0]-1;
-            x = rgusParams[1]-1;
             break;
         default:
             fSuccess = false;
@@ -311,6 +322,19 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
     {
         switch(wch)
         {
+            // case CsiActionCodes::DSR_DeviceStatusReportResponse:
+            case CsiActionCodes::CSI_F3:
+            // The F3 case is special - it shares a code with the DeviceStatusResponse.
+            // If we're looking for that response, then do that, and break out.
+            // Else, fall though to the _GetCursorKeysModifierState handler.
+                if (_lookingForDSR)
+                {
+                    fSuccess = _pDispatch->MoveCursor(x, y);
+                    // Right now we're only looking for on initial cursor
+                    //      position response. After that, only look for F3.
+                    _lookingForDSR = false;
+                    break;
+                }
             case CsiActionCodes::Generic:
             case CsiActionCodes::ArrowUp:
             case CsiActionCodes::ArrowDown:
@@ -320,7 +344,6 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
             case CsiActionCodes::End:
             case CsiActionCodes::CSI_F1:
             case CsiActionCodes::CSI_F2:
-            // case CsiActionCodes::CSI_F3:
             case CsiActionCodes::CSI_F4:
                 fSuccess = _WriteSingleKey(vkey, dwModifierState);
                 break;
@@ -328,9 +351,6 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
                 fSuccess = _pDispatch->WindowManipulation(static_cast<DispatchCommon::WindowManipulationType>(uiFunction),
                                                           rgusRemainingArgs,
                                                           cRemainingArgs);
-                break;
-            case CsiActionCodes::DSR_DeviceStatusReportResponse:
-                fSuccess = _pDispatch->MoveCursor(x, y);
                 break;
             default:
                 fSuccess = false;

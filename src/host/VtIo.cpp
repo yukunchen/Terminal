@@ -104,6 +104,14 @@ HRESULT VtIo::_Initialize(_In_ const HANDLE InHandle, _In_ const HANDLE OutHandl
     return _Initialize(InHandle, OutHandle, VtMode, INVALID_HANDLE_VALUE);
 }
 
+void VtIo::DoReadInput()
+{
+    if (_pVtInputThread)
+    {
+        _pVtInputThread->DoReadInput(false);
+    }
+}
+
 // Routine Description:
 //  Tries to initialize this VtIo instance from the given pipe handles and
 //      VtIoMode. The pipes should have been created already (by the caller of
@@ -137,16 +145,26 @@ HRESULT VtIo::_Initialize(_In_ const HANDLE InHandle, _In_ const HANDLE OutHandl
     hOutputFile.reset(OutHandle);
     RETURN_LAST_ERROR_IF(hOutputFile.get() == INVALID_HANDLE_VALUE);
 
-    // Immediately request the cursor position.
-    std::string str = "\x1b[6n";
-    WriteFile(hOutputFile.get(), str.c_str(), static_cast<DWORD>(str.length()), nullptr, nullptr);
+    try
+    {
+        // Immediately request the cursor position.
+        // std::string str = "\x1b[6n";
+        // WriteFile(hOutputFile.get(), str.c_str(), static_cast<DWORD>(str.length()), nullptr, nullptr);
+
+        _pVtInputThread = std::make_unique<VtInputThread>(std::move(hInputFile));
+
+        // _pVtInputThread->DoReadInput();
+
+    }
+    CATCH_RETURN();
 
     try
     {
-        _pVtInputThread = std::make_unique<VtInputThread>(std::move(hInputFile));
-
         // The Screen info hasn't been created yet, but SetUpConsole did get
         //      the launch settings already.
+        // FIXME Nope, this isn't the case. SetUpConsole parses the launch
+        //      args after initialize is called here.
+
         Viewport initialViewport = Viewport::FromDimensions({0, 0},
                                                             gci->GetWindowSize().X,
                                                             gci->GetWindowSize().Y);
@@ -300,6 +318,9 @@ HRESULT VtIo::StartIfNeeded()
         g->pRender->AddRenderEngine(_pVtRenderEngine.get());
     }
     CATCH_RETURN();
+
+    _pVtRenderEngine->RequestCursor();
+    _pVtInputThread->DoReadInput(false);
 
     _pVtInputThread->Start();
 
