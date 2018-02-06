@@ -746,7 +746,7 @@ void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
         // First retrieve the attribute that applies starting at the target position and the length for which it applies.
         TextAttributeRun* pRun = nullptr;
         size_t cAttrApplies = 0;
-        Row.AttrRow.FindAttrIndex((UINT)(iFirstAttr + cchWritten), &pRun, &cAttrApplies);
+        Row.GetAttrRow().FindAttrIndex((UINT)(iFirstAttr + cchWritten), &pRun, &cAttrApplies);
 
         // Set the brushes in GDI to this color
         LOG_IF_FAILED(_UpdateDrawingBrushes(pEngine, pRun->GetAttributes(), false));

@@ -245,26 +245,26 @@ private:
 
         // set some colors
         TextAttribute Attr = TextAttribute(0);
-        pRow->AttrRow.Reset(15, Attr);
+        pRow->GetAttrRow().Reset(15, Attr);
         // A = bright red on dark gray
         // This string starts at index 0
         Attr = TextAttribute(FOREGROUND_RED | FOREGROUND_INTENSITY | BACKGROUND_INTENSITY);
-        pRow->AttrRow.SetAttrToEnd(0, Attr);
+        pRow->GetAttrRow().SetAttrToEnd(0, Attr);
 
         // BかC = dark gold on bright blue
         // This string starts at index 1
         Attr = TextAttribute(FOREGROUND_RED | FOREGROUND_GREEN | BACKGROUND_BLUE | BACKGROUND_INTENSITY);
-        pRow->AttrRow.SetAttrToEnd(1, Attr);
+        pRow->GetAttrRow().SetAttrToEnd(1, Attr);
 
         // き = bright white on dark purple
         // This string starts at index 5
         Attr = TextAttribute(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_RED | BACKGROUND_BLUE);
-        pRow->AttrRow.SetAttrToEnd(5, Attr);
+        pRow->GetAttrRow().SetAttrToEnd(5, Attr);
 
         // DE = black on dark green
         // This string starts at index 7
         Attr = TextAttribute(BACKGROUND_GREEN);
-        pRow->AttrRow.SetAttrToEnd(7, Attr);
+        pRow->GetAttrRow().SetAttrToEnd(7, Attr);
 
         // odd rows forced a wrap
         if (pRow->sRowId % 2 != 0)
@@ -315,7 +315,7 @@ private:
         });
 
         // everything gets default attributes
-        pRow->AttrRow.Reset(80, gci.CurrentScreenBuffer->GetAttributes());
+        pRow->GetAttrRow().Reset(80, gci.CurrentScreenBuffer->GetAttributes());
 
         pRow->GetCharRow().SetWrapStatus(true);
     }

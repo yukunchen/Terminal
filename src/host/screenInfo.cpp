@@ -632,7 +632,7 @@ void SCREEN_INFORMATION::ResetTextFlags(_In_ short const sStartX,
             {
                 const ROW& Row = pTextInfo->GetRowAtIndex(RowIndex);
                 Char = Row.GetCharRow().GetGlyphAt(sStartX);
-                Row.AttrRow.FindAttrIndex(sStartX, &pAttrRun, nullptr);
+                Row.GetAttrRow().FindAttrIndex(sStartX, &pAttrRun, nullptr);
             }
             catch (...)
             {
@@ -1491,7 +1491,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
             // Extract the color attribute that applies to this character
             TextAttributeRun* rAttrRun;
 
-            Row.AttrRow.FindAttrIndex(iOldCol, &rAttrRun, nullptr);
+            Row.GetAttrRow().FindAttrIndex(iOldCol, &rAttrRun, nullptr);
 
             if (iOldCol == cOldCursorPos.X && iOldRow == cOldCursorPos.Y)
             {
@@ -2450,9 +2450,9 @@ void SCREEN_INFORMATION::ReplaceDefaultAttributes(_In_ const TextAttribute& oldA
     for (SHORT i = 0; i < sScreenBufferSizeY; i++)
     {
         ROW& Row = TextInfo->GetRowByOffset(i);
-        Row.AttrRow.ReplaceLegacyAttrs(oldLegacyAttributes, newLegacyAttributes);
-        Row.AttrRow.ReplaceLegacyAttrs(oldLegacyPopupAttributes, newLegacyPopupAttributes);
-        Row.AttrRow.ReplaceLegacyAttrs(InvertedOldPopupAttributes, InvertedNewPopupAttributes);
+        Row.GetAttrRow().ReplaceLegacyAttrs(oldLegacyAttributes, newLegacyAttributes);
+        Row.GetAttrRow().ReplaceLegacyAttrs(oldLegacyPopupAttributes, newLegacyPopupAttributes);
+        Row.GetAttrRow().ReplaceLegacyAttrs(InvertedOldPopupAttributes, InvertedNewPopupAttributes);
     }
 
     if (_psiMainBuffer)

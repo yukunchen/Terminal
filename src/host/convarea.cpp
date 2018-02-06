@@ -756,9 +756,9 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
 
     // see if attr string is different.  if so, allocate a new attr buffer and merge the two strings.
     TextAttributeRun* pExistingHead;
-    Row.AttrRow.FindAttrIndex(0, &pExistingHead, nullptr);
+    Row.GetAttrRow().FindAttrIndex(0, &pExistingHead, nullptr);
 
-    if (Row.AttrRow._cList != 1 || !(pExistingHead->GetAttributes().IsEqual(ScreenInfo->GetAttributes())))
+    if (Row.GetAttrRow()._cList != 1 || !(pExistingHead->GetAttributes().IsEqual(ScreenInfo->GetAttributes())))
     {
         TextAttributeRun InsertedRun;
 
@@ -784,7 +784,7 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
 
                 // Each time around the loop, take our new 1-length attribute with the appropriate line attributes (underlines, etc.)
                 // and insert it into the existing Run-Length-Encoded attribute list.
-                Row.AttrRow.InsertAttrRuns(&InsertedRun,
+                Row.GetAttrRow().InsertAttrRuns(&InsertedRun,
                                            1,
                                            TargetPoint.X + i,
                                            (SHORT)(TargetPoint.X + i),
@@ -795,11 +795,11 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
         {
             InsertedRun.SetLength(StringLength);
             InsertedRun.SetAttributesFromLegacy(wScreenAttributes);
-            Row.AttrRow.InsertAttrRuns(&InsertedRun,
-                                       1,
-                                       TargetPoint.X,
-                                       (SHORT)(TargetPoint.X + StringLength - 1),
-                                       coordScreenBufferSize.X);
+            Row.GetAttrRow().InsertAttrRuns(&InsertedRun,
+                                            1,
+                                            TargetPoint.X,
+                                            (SHORT)(TargetPoint.X + StringLength - 1),
+                                            coordScreenBufferSize.X);
         }
     }
 

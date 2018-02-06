@@ -484,7 +484,7 @@ bool TEXT_BUFFER_INFO::InsertCharacter(_In_ const wchar_t wch,
         }
 
         // Store color data
-        fSuccess = Row.AttrRow.SetAttrToEnd(iCol, attr);
+        fSuccess = Row.GetAttrRow().SetAttrToEnd(iCol, attr);
         if (fSuccess)
         {
             // Advance the cursor

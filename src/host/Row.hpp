@@ -35,7 +35,9 @@ public:
     const CHAR_ROW& GetCharRow() const;
     CHAR_ROW& GetCharRow();
 
-    ATTR_ROW AttrRow;
+    const ATTR_ROW& GetAttrRow() const;
+    ATTR_ROW& GetAttrRow();
+
     SHORT sRowId;
 
     bool Reset(_In_ short const sRowWidth, _In_ const TextAttribute Attr);
@@ -51,6 +53,7 @@ public:
 
 private:
     CHAR_ROW CharRow;
+    ATTR_ROW AttrRow;
 
 };
 

@@ -96,6 +96,16 @@ CHAR_ROW& ROW::GetCharRow()
     return const_cast<CHAR_ROW&>(static_cast<const ROW* const>(this)->GetCharRow());
 }
 
+const ATTR_ROW& ROW::GetAttrRow() const
+{
+    return AttrRow;
+}
+
+ATTR_ROW& ROW::GetAttrRow()
+{
+    return const_cast<ATTR_ROW&>(static_cast<const ROW* const>(this)->GetAttrRow());
+}
+
 // Routine Description:
 // - Sets all properties of the ROW to default values
 // Arguments:
