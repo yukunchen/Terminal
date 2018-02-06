@@ -220,7 +220,7 @@ void TextBufferTests::TestBufferRowByOffset()
     short sId = csBufferHeight / 2 - 5;
 
     const ROW& row = tbi->GetRowByOffset(sId);
-    VERIFY_ARE_EQUAL(row.sRowId, sId);
+    VERIFY_ARE_EQUAL(row.GetId(), sId);
 }
 
 void TextBufferTests::TestWrapFlag()

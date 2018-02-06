@@ -106,6 +106,16 @@ ATTR_ROW& ROW::GetAttrRow()
     return const_cast<ATTR_ROW&>(static_cast<const ROW* const>(this)->GetAttrRow());
 }
 
+SHORT ROW::GetId() const noexcept
+{
+    return sRowId;
+}
+
+void ROW::SetId(_In_ const SHORT id)
+{
+    sRowId = id;
+}
+
 // Routine Description:
 // - Sets all properties of the ROW to default values
 // Arguments:

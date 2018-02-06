@@ -38,7 +38,8 @@ public:
     const ATTR_ROW& GetAttrRow() const;
     ATTR_ROW& GetAttrRow();
 
-    SHORT sRowId;
+    SHORT GetId() const noexcept;
+    void SetId(_In_ const SHORT id);
 
     bool Reset(_In_ short const sRowWidth, _In_ const TextAttribute Attr);
     HRESULT Resize(_In_ size_t const width);
@@ -54,6 +55,7 @@ public:
 private:
     CHAR_ROW CharRow;
     ATTR_ROW AttrRow;
+    SHORT sRowId;
 
 };
 

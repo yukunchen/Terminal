@@ -168,13 +168,13 @@ ROW& TEXT_BUFFER_INFO::GetRowByOffset(_In_ const UINT index)
 // - will throw exception if called with the first row of the text buffer
 const ROW& TEXT_BUFFER_INFO::GetPrevRowNoWrap(_In_ const ROW& Row) const
 {
-    int prevRowIndex = Row.sRowId - 1;
+    int prevRowIndex = Row.GetId() - 1;
     if (prevRowIndex < 0)
     {
         prevRowIndex = TotalRowCount() - 1;
     }
 
-    THROW_HR_IF(E_FAIL, Row.sRowId == _FirstRow);
+    THROW_HR_IF(E_FAIL, Row.GetId() == _FirstRow);
     return _storage[prevRowIndex];
 }
 
@@ -203,7 +203,7 @@ ROW& TEXT_BUFFER_INFO::GetPrevRowNoWrap(_In_ const ROW& Row)
 // - will throw exception if the row passed in is the last row of the screen buffer.
 const ROW& TEXT_BUFFER_INFO::GetNextRowNoWrap(_In_ const ROW& row) const
 {
-    UINT nextRowIndex = row.sRowId + 1;
+    UINT nextRowIndex = row.GetId() + 1;
     UINT totalRows = this->TotalRowCount();
 
     if (nextRowIndex >= totalRows)
@@ -270,7 +270,7 @@ ROW& TEXT_BUFFER_INFO::GetRowAtIndex(_In_ const UINT index)
 // - const reference to the previous row.
 const ROW& TEXT_BUFFER_INFO::GetPrevRow(_In_ const ROW& row) const noexcept
 {
-    const SHORT rowIndex = row.sRowId;
+    const SHORT rowIndex = row.GetId();
     if (rowIndex == 0)
     {
         return _storage[TotalRowCount() - 1];
@@ -299,7 +299,7 @@ ROW& TEXT_BUFFER_INFO::GetPrevRow(_In_ const ROW& row) noexcept
 // - const reference to the next row.
 const ROW& TEXT_BUFFER_INFO::GetNextRow(_In_ const ROW& row) const noexcept
 {
-    const UINT rowIndex = static_cast<UINT>(row.sRowId);
+    const UINT rowIndex = static_cast<UINT>(row.GetId());
     if (rowIndex == TotalRowCount() - 1)
     {
         return _storage[0];
@@ -827,7 +827,7 @@ NTSTATUS TEXT_BUFFER_INFO::ResizeTraditional(_In_ COORD const currentScreenBuffe
     for (SHORT i = 0; static_cast<size_t>(i) < _storage.size(); ++i)
     {
         // fix values for sRowId on each row
-        _storage[i].sRowId = i;
+        _storage[i].SetId(i);
 
         // realloc in the X direction
         hr = _storage[i].Resize(newScreenBufferSize.X);

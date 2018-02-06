@@ -267,7 +267,7 @@ private:
         pRow->GetAttrRow().SetAttrToEnd(7, Attr);
 
         // odd rows forced a wrap
-        if (pRow->sRowId % 2 != 0)
+        if (pRow->GetId() % 2 != 0)
         {
             pRow->GetCharRow().SetWrapStatus(true);
         }
