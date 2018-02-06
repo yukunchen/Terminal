@@ -279,7 +279,8 @@ HRESULT VtEngine::_ResizeWindow(_In_ const short sWidth, _In_ const short sHeigh
 }
 
 // Method Description:
-// - Formats and writes a sequence to move the cursor to the origin.
+// - Formats and writes a sequence to request the end terminal to tell us the
+//      cursor position. The terminal will reply back on the vt input handle.
 // Arguments:
 // - <none>
 // Return Value:

@@ -67,6 +67,8 @@ HRESULT VtIo::ParseIoMode(_In_ const std::wstring& VtMode, _Out_ VtIoMode& ioMod
 
 HRESULT VtIo::Initialize(const ConsoleArguments * const pArgs)
 {
+    _lookingForCursorPosition = pArgs->GetInheritCursor();
+
     // If we were already given VT handles, set up the VT IO engine to use those.
     if (pArgs->HasVtHandles())
     {
@@ -320,11 +322,20 @@ HRESULT VtIo::StartIfNeeded()
     }
     CATCH_RETURN();
 
-    _lookingForCursorPosition = true;
-    _pVtRenderEngine->RequestCursor();
-    while(_lookingForCursorPosition)
+    // MSFT: 15813316
+    // If the terminal application wants us to inherit the cursor position,
+    //  we're going to emit a VT sequence to ask for the cursor position, then
+    //  read input until we get a response. Terminals who request this behavior
+    //  but don't respond will hang.
+    // If we get a response, the InteractDispatch will call SetCursorPosition,
+    //      which will call to our VtIo::SetCursorPosition method.
+    if (_lookingForCursorPosition)
     {
-        _pVtInputThread->DoReadInput(false);
+        _pVtRenderEngine->RequestCursor();
+        while(_lookingForCursorPosition)
+        {
+            _pVtInputThread->DoReadInput(false);
+        }
     }
 
     _pVtInputThread->Start();
@@ -378,15 +389,3 @@ HRESULT VtIo::SetCursorPosition(_In_ const COORD coordCursor)
     return hr;
 }
 
-// HRESULT VtIo::Teardown()
-// {
-//     if (ServiceLocator::LocateGlobals()->pRender)
-//     {
-//         ServiceLocator::LocateGlobals()->pRender->TriggerTeardown();
-//     }
-//     if (_pPtySignalInputThread)
-//     {
-//         _pPtySignalInputThread->TriggerTeardown();
-//     }
-//     return S_OK;
-// }

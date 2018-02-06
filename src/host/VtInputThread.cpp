@@ -94,6 +94,14 @@ DWORD VtInputThread::StaticVtInputThreadProc(_In_ LPVOID lpParameter)
     return pInstance->_InputThread();
 }
 
+// Method Description:
+// - Do a single ReadFile from our pipe, and try and handle it. If handling
+//      failed, throw or log, depending on what the caller wants.
+// Arguments:
+// - throwOnFail: If true, throw an exception if there was an error processing
+//      the input recieved. Otherwise, log the error.
+// Return Value:
+// - <none>
 void VtInputThread::DoReadInput(_In_ const bool throwOnFail)
 {
     char buffer[256];

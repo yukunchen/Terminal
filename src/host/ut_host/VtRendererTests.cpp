@@ -128,6 +128,7 @@ Viewport VtRendererTest::SetUpViewport()
 bool VtRendererTest::WriteCallback(const char* const pch, size_t const cch)
 {
     std::string first = qExpectedInput.front();
+    qExpectedInput.pop_front();
 
     std::string actualString = std::string(pch);
 
@@ -137,7 +138,6 @@ bool VtRendererTest::WriteCallback(const char* const pch, size_t const cch)
     VERIFY_ARE_EQUAL(first.length(), cch);
     VERIFY_ARE_EQUAL(first, actualString);
 
-    qExpectedInput.pop_front();
 
     return true;
 }
@@ -293,6 +293,7 @@ void VtRendererTest::Xterm256TestInvalidate()
         // We would expect a CUP here, but the cursor is already at the home position
         // qExpectedInput.push_back("\x1b[H");
 
+        qExpectedInput.push_back("\x1b[H"); // Go Home
         qExpectedInput.push_back("\x1b[L"); // insert a line
         VERIFY_SUCCEEDED(engine->ScrollFrame());
     });
@@ -677,6 +678,7 @@ void VtRendererTest::XtermTestInvalidate()
         VERIFY_ARE_EQUAL(invalid, engine->_invalidRect.ToExclusive());
         // We would expect a CUP here, but the cursor is already at the home position
 
+        qExpectedInput.push_back("\x1b[H"); // Go Home
         qExpectedInput.push_back("\x1b[L"); // insert a line
         VERIFY_SUCCEEDED(engine->ScrollFrame());
     });

@@ -40,7 +40,7 @@ ConsoleArguments::ConsoleArguments(_In_ const std::wstring& commandline,
     _forceV1 = false;
     _width = 0;
     _height = 0;
-    _inheritCursor = true;
+    _inheritCursor = false;
 }
 
 ConsoleArguments& ConsoleArguments::operator=(const ConsoleArguments & other)

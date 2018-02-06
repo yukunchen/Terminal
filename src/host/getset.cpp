@@ -463,6 +463,7 @@ HRESULT DoSrvSetConsoleCursorPosition(_In_ SCREEN_INFORMATION* pScreenInfo,
                                 pCursorPosition->X < 0 ||
                                 pCursorPosition->Y < 0));
 
+    // MSFT: 15813316 - Try to use this SetCursorPosition call to inherit the cursor position.
     RETURN_IF_FAILED(gci->GetVtIo()->SetCursorPosition(*pCursorPosition));
 
     RETURN_IF_NTSTATUS_FAILED(pScreenInfo->SetCursorPosition(*pCursorPosition, TRUE));
