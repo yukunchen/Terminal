@@ -158,7 +158,7 @@ void Selection::WordByWordSelection(_In_ const bool fReverse,
     }
 
     // get the character at the new position
-    WCHAR wchTest = pTextInfo->GetRowByOffset(pcoordSelPoint->Y).CharRow.GetGlyphAt(pcoordSelPoint->X);
+    WCHAR wchTest = pTextInfo->GetRowByOffset(pcoordSelPoint->Y).GetCharRow().GetGlyphAt(pcoordSelPoint->X);
 
     // we want to go until the state change from delim to non-delim
     bool fCurrIsDelim = IS_WORD_DELIM(wchTest);
@@ -236,7 +236,7 @@ void Selection::WordByWordSelection(_In_ const bool fReverse,
         }
 
         // get the character associated with the new position
-        wchTest = gci.CurrentScreenBuffer->TextInfo->GetRowByOffset(pcoordSelPoint->Y).CharRow.GetGlyphAt(pcoordSelPoint->X);
+        wchTest = gci.CurrentScreenBuffer->TextInfo->GetRowByOffset(pcoordSelPoint->Y).GetCharRow().GetGlyphAt(pcoordSelPoint->X);
         fCurrIsDelim = IS_WORD_DELIM(wchTest);
 
         // This is a bit confusing.
@@ -360,7 +360,7 @@ bool Selection::HandleKeyboardLineSelectionEvent(_In_ const INPUT_KEY_INFO* cons
             // if we're about to split a character in half, keep moving right
             try
             {
-                if (pTextInfo->GetRowByOffset(coordSelPoint.Y).CharRow.GetAttribute(coordSelPoint.X).IsTrailing())
+                if (pTextInfo->GetRowByOffset(coordSelPoint.Y).GetCharRow().GetAttribute(coordSelPoint.X).IsTrailing())
                 {
                     Utils::s_DoIncrementScreenCoordinate(srectEdges, &coordSelPoint);
                 }
@@ -584,7 +584,7 @@ bool Selection::HandleKeyboardLineSelectionEvent(_In_ const INPUT_KEY_INFO* cons
 
     try
     {
-        if (pTextInfo->GetRowByOffset(coordSelPoint.Y).CharRow.GetAttribute(coordSelPoint.X).IsTrailing())
+        if (pTextInfo->GetRowByOffset(coordSelPoint.Y).GetCharRow().GetAttribute(coordSelPoint.X).IsTrailing())
         {
             // try to move off by highlighting the lead half too.
             bool fSuccess = Utils::s_DoDecrementScreenCoordinate(srectEdges, &coordSelPoint);
@@ -690,7 +690,7 @@ bool Selection::_HandleColorSelection(_In_ const INPUT_KEY_INFO* const pInputKey
             WCHAR pwszSearchString[SEARCH_STRING_LENGTH + 1];
             try
             {
-                const CHAR_ROW::const_iterator startIt = std::next(Row.CharRow.cbegin(), psrSelection->Left);
+                const CHAR_ROW::const_iterator startIt = std::next(Row.GetCharRow().cbegin(), psrSelection->Left);
                 const CHAR_ROW::const_iterator stopIt = std::next(startIt, cLength);
                 std::transform(startIt, stopIt, pwszSearchString, [](const CHAR_ROW::value_type& vals)
                 {
@@ -749,7 +749,7 @@ bool Selection::_HandleMarkModeSelectionNav(_In_ const INPUT_KEY_INFO* const pIn
 
         try
         {
-            if (Row.CharRow.GetAttribute(cursorPos.X).IsLeading())
+            if (Row.GetCharRow().GetAttribute(cursorPos.X).IsLeading())
             {
                 iNextRightX = 2;
             }
@@ -760,15 +760,15 @@ bool Selection::_HandleMarkModeSelectionNav(_In_ const INPUT_KEY_INFO* const pIn
 
             if (cursorPos.X > 0)
             {
-                if (Row.CharRow.GetAttribute(cursorPos.X - 1).IsTrailing())
+                if (Row.GetCharRow().GetAttribute(cursorPos.X - 1).IsTrailing())
                 {
                     iNextLeftX = 2;
                 }
-                else if (Row.CharRow.GetAttribute(cursorPos.X - 1).IsLeading())
+                else if (Row.GetCharRow().GetAttribute(cursorPos.X - 1).IsLeading())
                 {
                     if (cursorPos.X - 1 > 0)
                     {
-                        if (Row.CharRow.GetAttribute(cursorPos.X - 2).IsTrailing())
+                        if (Row.GetCharRow().GetAttribute(cursorPos.X - 2).IsTrailing())
                         {
                             iNextLeftX = 3;
                         }

@@ -158,7 +158,7 @@ USHORT SearchForString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
             ASSERT(nLoop++ < 2);
             try
             {
-                if (pRow->CharRow.GetAttribute(Position.X).IsTrailing())
+                if (pRow->GetCharRow().GetAttribute(Position.X).IsTrailing())
                 {
                     goto recalc;
                 }
@@ -169,7 +169,7 @@ USHORT SearchForString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                 return 0;
             }
     #endif
-            const std::wstring rowText = pRow->CharRow.GetText();
+            const std::wstring rowText = pRow->GetCharRow().GetText();
             if (IgnoreCase ?
                 0 == _wcsnicmp(pwszSearch, &rowText.c_str()[Position.X], cchSearch) :
                 0 == wcsncmp(pwszSearch, &rowText.c_str()[Position.X], cchSearch))

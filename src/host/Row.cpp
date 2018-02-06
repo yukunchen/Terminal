@@ -86,6 +86,16 @@ void ROW::swap(ROW& other) noexcept
     swap(sRowId, other.sRowId);
 }
 
+const CHAR_ROW& ROW::GetCharRow() const
+{
+    return CharRow;
+}
+
+CHAR_ROW& ROW::GetCharRow()
+{
+    return const_cast<CHAR_ROW&>(static_cast<const ROW* const>(this)->GetCharRow());
+}
+
 // Routine Description:
 // - Sets all properties of the ROW to default values
 // Arguments:

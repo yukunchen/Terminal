@@ -225,12 +225,12 @@ std::deque<std::unique_ptr<KeyEvent>> Clipboard::CharToKeyboardEvents(_In_ const
     // MSFT:12123975 / WSL GH#2006
     // If you paste text with ONLY linefeed line endings (unix style) in wsl,
     //      then we faithfully pass those along, which the underlying terminal
-    //      interprets as C-j. In nano, C-j is mapped to "Justify text", which 
+    //      interprets as C-j. In nano, C-j is mapped to "Justify text", which
     //      causes the pasted text to get broken at the width of the terminal.
     // This behavior doesn't occur in gnome-terminal, and nothing like it occurs
     //      in vi or emacs.
-    // This change doesn't break pasting text into any of those applications 
-    //      with CR/LF (Windows) line endings either. That apparently always 
+    // This change doesn't break pasting text into any of those applications
+    //      with CR/LF (Windows) line endings either. That apparently always
     //      worked right.
     wchar_t wchActual = wch;
     if (IsInVirtualTerminalInputMode() && wch == UNICODE_LINEFEED)
@@ -528,7 +528,7 @@ NTSTATUS Clipboard::RetrieveTextFromBuffer(_In_ SCREEN_INFORMATION* const pScree
 
                             // FOR LINE SELECTION ONLY: if the row was wrapped, don't remove the spaces at the end.
                             if (!fLineSelection
-                                || !Row.CharRow.WasWrapForced())
+                                || !Row.GetCharRow().WasWrapForced())
                             {
                                 for (int iCol = (int)(sStringLength - 1); iCol >= 0; iCol--)
                                 {
@@ -567,7 +567,7 @@ NTSTATUS Clipboard::RetrieveTextFromBuffer(_In_ SCREEN_INFORMATION* const pScree
                                     // a.k.a. if the row was NOT wrapped, then we can assume a CR/LF is proper
                                     // always apply \r\n for box selection
                                     if (!fLineSelection
-                                        || !pScreenInfo->TextInfo->GetRowByOffset(iRow).CharRow.WasWrapForced())
+                                        || !pScreenInfo->TextInfo->GetRowByOffset(iRow).GetCharRow().WasWrapForced())
                                     {
                                         pwszSelection[cSelectionLength++] = UNICODE_CARRIAGERETURN;
                                         pwszSelection[cSelectionLength++] = UNICODE_LINEFEED;

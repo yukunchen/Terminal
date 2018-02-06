@@ -122,7 +122,7 @@ const BOOLEAN Cursor::IsDoubleWidth() const
         .CurrentScreenBuffer
         ->TextInfo
         ->GetRowByOffset(_cPosition.Y)
-        .CharRow.GetGlyphAt(_cPosition.X);
+        .GetCharRow().GetGlyphAt(_cPosition.X);
     return !!IsCharFullWidth(c);
 }
 

@@ -237,7 +237,7 @@ private:
         std::transform(pwszText,
                        pwszText + length,
                        attrs.cbegin(),
-                       pRow->CharRow.begin(),
+                       pRow->GetCharRow().begin(),
                        [](const wchar_t wch, const DbcsAttribute attr)
         {
             return CHAR_ROW::value_type{ wch, attr};
@@ -269,11 +269,11 @@ private:
         // odd rows forced a wrap
         if (pRow->sRowId % 2 != 0)
         {
-            pRow->CharRow.SetWrapStatus(true);
+            pRow->GetCharRow().SetWrapStatus(true);
         }
         else
         {
-            pRow->CharRow.SetWrapStatus(false);
+            pRow->GetCharRow().SetWrapStatus(false);
         }
     }
 
@@ -308,7 +308,7 @@ private:
         std::transform(pwszText,
                        pwszText + length,
                        attrs.cbegin(),
-                       pRow->CharRow.begin(),
+                       pRow->GetCharRow().begin(),
                        [](const wchar_t wch, const DbcsAttribute attr)
         {
             return CHAR_ROW::value_type{ wch, attr};
@@ -317,6 +317,6 @@ private:
         // everything gets default attributes
         pRow->AttrRow.Reset(80, gci.CurrentScreenBuffer->GetAttributes());
 
-        pRow->CharRow.SetWrapStatus(true);
+        pRow->GetCharRow().SetWrapStatus(true);
     }
 };

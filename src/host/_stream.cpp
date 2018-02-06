@@ -578,7 +578,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
 
                         // since you just backspaced yourself back up into the previous row, unset the wrap
                         // flag on the prev row if it was set
-                        pTextBuffer->GetRowByOffset(CursorPosition.Y).CharRow.SetWrapStatus(false);
+                        pTextBuffer->GetRowByOffset(CursorPosition.Y).GetCharRow().SetWrapStatus(false);
                     }
                 }
                 else if (IS_CONTROL_CHAR(LastChar))
@@ -644,7 +644,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
 
                     // since you just backspaced yourself back up into the previous row, unset the wrap flag
                     // on the prev row if it was set
-                    pTextBuffer->GetRowByOffset(CursorPosition.Y).CharRow.SetWrapStatus(false);
+                    pTextBuffer->GetRowByOffset(CursorPosition.Y).GetCharRow().SetWrapStatus(false);
 
                     Status = AdjustCursorPosition(pScreenInfo, CursorPosition, dwFlags & WC_KEEP_CURSOR_VISIBLE, psScrollY);
                 }
@@ -680,7 +680,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                     CursorPosition.Y = pCursor->GetPosition().Y + 1;
 
                     // since you just tabbed yourself past the end of the row, set the wrap
-                    pTextBuffer->GetRowByOffset(pCursor->GetPosition().Y).CharRow.SetWrapStatus(true);
+                    pTextBuffer->GetRowByOffset(pCursor->GetPosition().Y).GetCharRow().SetWrapStatus(true);
                 }
                 else
                 {
@@ -731,7 +731,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
 
             {
                 // since we explicitly just moved down a row, clear the wrap status on the row we just came from
-                pTextBuffer->GetRowByOffset(pCursor->GetPosition().Y).CharRow.SetWrapStatus(false);
+                pTextBuffer->GetRowByOffset(pCursor->GetPosition().Y).GetCharRow().SetWrapStatus(false);
             }
 
             Status = AdjustCursorPosition(pScreenInfo, CursorPosition, (dwFlags & WC_KEEP_CURSOR_VISIBLE) != 0, psScrollY);
@@ -750,12 +750,12 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
 
                 try
                 {
-                    if (Row.CharRow.GetAttribute(TargetPoint.X).IsTrailing())
+                    if (Row.GetCharRow().GetAttribute(TargetPoint.X).IsTrailing())
                     {
-                        Row.CharRow.ClearGlyph(TargetPoint.X);
-                        Row.CharRow.ClearGlyph(TargetPoint.X - 1);
-                        Row.CharRow.GetAttribute(TargetPoint.X).SetSingle();
-                        Row.CharRow.GetAttribute(TargetPoint.X - 1).SetSingle();
+                        Row.GetCharRow().ClearGlyph(TargetPoint.X);
+                        Row.GetCharRow().ClearGlyph(TargetPoint.X - 1);
+                        Row.GetCharRow().GetAttribute(TargetPoint.X).SetSingle();
+                        Row.GetCharRow().GetAttribute(TargetPoint.X - 1).SetSingle();
 
                         Region.Left = TargetPoint.X - 1;
                         Region.Right = (SHORT)(TargetPoint.X);
@@ -774,11 +774,11 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
 
                 // since you just moved yourself down onto the next row with 1 character, that sounds like a
                 // forced wrap so set the flag
-                Row.CharRow.SetWrapStatus(true);
+                Row.GetCharRow().SetWrapStatus(true);
 
                 // Additionally, this padding is only called for IsConsoleFullWidth (a.k.a. when a character
                 // is too wide to fit on the current line).
-                Row.CharRow.SetDoubleBytePadded(true);
+                Row.GetCharRow().SetDoubleBytePadded(true);
 
                 Status = AdjustCursorPosition(pScreenInfo, CursorPosition, dwFlags & WC_KEEP_CURSOR_VISIBLE, psScrollY);
                 continue;

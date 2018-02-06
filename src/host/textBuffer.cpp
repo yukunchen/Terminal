@@ -336,7 +336,7 @@ bool TEXT_BUFFER_INFO::AssertValidDoubleByteSequence(_In_ const DbcsAttribute db
     DbcsAttribute prevDbcsAttr;
     try
     {
-        prevDbcsAttr = prevRow.CharRow.GetAttribute(coordPrevPosition.X);
+        prevDbcsAttr = prevRow.GetCharRow().GetAttribute(coordPrevPosition.X);
     }
     catch (...)
     {
@@ -389,8 +389,8 @@ bool TEXT_BUFFER_INFO::AssertValidDoubleByteSequence(_In_ const DbcsAttribute db
         // Erase previous character into an N type.
         try
         {
-            prevRow.CharRow.ClearGlyph(coordPrevPosition.X);
-            prevRow.CharRow.GetAttribute(coordPrevPosition.X).SetSingle();
+            prevRow.GetCharRow().ClearGlyph(coordPrevPosition.X);
+            prevRow.GetCharRow().GetAttribute(coordPrevPosition.X).SetSingle();
         }
         catch (...)
         {
@@ -434,7 +434,7 @@ bool TEXT_BUFFER_INFO::_PrepareForDoubleByteSequence(_In_ const DbcsAttribute db
         if (this->GetCursor()->GetPosition().X == sBufferWidth - 1)
         {
             // set that we're wrapping for double byte reasons
-            GetRowByOffset(this->GetCursor()->GetPosition().Y).CharRow.SetDoubleBytePadded(true);
+            GetRowByOffset(this->GetCursor()->GetPosition().Y).GetCharRow().SetDoubleBytePadded(true);
 
             // then move the cursor forward and onto the next row
             fSuccess = IncrementCursor();
@@ -469,7 +469,7 @@ bool TEXT_BUFFER_INFO::InsertCharacter(_In_ const wchar_t wch,
         ROW& Row = GetRowByOffset(iRow);
 
         // Store character and double byte data
-        CHAR_ROW& charRow = Row.CharRow;
+        CHAR_ROW& charRow = Row.GetCharRow();
         short const cBufferWidth = this->_coordBufferSize.X;
 
         try
@@ -519,7 +519,7 @@ void TEXT_BUFFER_INFO::AdjustWrapOnCurrentRow(_In_ bool const fSet)
     const UINT uiCurrentRowOffset = this->GetCursor()->GetPosition().Y;
 
     // Set the wrap status as appropriate
-    GetRowByOffset(uiCurrentRowOffset).CharRow.SetWrapStatus(fSet);
+    GetRowByOffset(uiCurrentRowOffset).GetCharRow().SetWrapStatus(fSet);
 }
 
 //Routine Description:
@@ -678,7 +678,7 @@ COORD TEXT_BUFFER_INFO::GetLastNonSpaceCharacter() const
 
     const ROW* pCurrRow = &GetRowByOffset(coordEndOfText.Y);
     // The X position of the end of the valid text is the Right draw boundary (which is one beyond the final valid character)
-    coordEndOfText.X = static_cast<short>(pCurrRow->CharRow.MeasureRight()) - 1;
+    coordEndOfText.X = static_cast<short>(pCurrRow->GetCharRow().MeasureRight()) - 1;
 
     // If the X coordinate turns out to be -1, the row was empty, we need to search backwards for the real end of text.
     bool fDoBackUp = (coordEndOfText.X < 0 && coordEndOfText.Y > 0); // this row is empty, and we're not at the top
@@ -688,7 +688,7 @@ COORD TEXT_BUFFER_INFO::GetLastNonSpaceCharacter() const
         pCurrRow = &GetRowByOffset(coordEndOfText.Y);
         // We need to back up to the previous row if this line is empty, AND there are more rows
 
-        coordEndOfText.X = static_cast<short>(pCurrRow->CharRow.MeasureRight()) - 1;
+        coordEndOfText.X = static_cast<short>(pCurrRow->GetCharRow().MeasureRight()) - 1;
         fDoBackUp = (coordEndOfText.X < 0 && coordEndOfText.Y > 0);
     }
 

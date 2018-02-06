@@ -87,7 +87,7 @@ void CleanupDbcsEdgesForWrite(_In_ const size_t stringLen,
         ROW& row = pTextInfo->GetRowAtIndex(rowIndex);
 
         // Check start position of strings
-        if (row.CharRow.GetAttribute(coordTarget.X).IsTrailing())
+        if (row.GetCharRow().GetAttribute(coordTarget.X).IsTrailing())
         {
             if (coordTarget.X == 0)
             {
@@ -103,7 +103,7 @@ void CleanupDbcsEdgesForWrite(_In_ const size_t stringLen,
         if (coordTarget.X + static_cast<short>(stringLen) < coordScreenBufferSize.X)
         {
             size_t column = coordTarget.X + stringLen;
-            if (row.CharRow.GetAttribute(column).IsTrailing())
+            if (row.GetCharRow().GetAttribute(column).IsTrailing())
             {
                 row.ClearColumn(column);
             }
@@ -111,7 +111,7 @@ void CleanupDbcsEdgesForWrite(_In_ const size_t stringLen,
         else if (coordTarget.Y + 1 < coordScreenBufferSize.Y)
         {
             ROW& rowNext = pTextInfo->GetNextRow(row);
-            if (rowNext.CharRow.GetAttribute(0).IsTrailing())
+            if (rowNext.GetCharRow().GetAttribute(0).IsTrailing())
             {
                 rowNext.ClearColumn(0);
             }

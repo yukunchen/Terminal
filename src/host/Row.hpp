@@ -32,7 +32,9 @@ public:
 
     void swap(ROW& other) noexcept;
 
-    CHAR_ROW CharRow;
+    const CHAR_ROW& GetCharRow() const;
+    CHAR_ROW& GetCharRow();
+
     ATTR_ROW AttrRow;
     SHORT sRowId;
 
@@ -46,6 +48,10 @@ public:
 #ifdef UNIT_TESTING
     friend class RowTests;
 #endif
+
+private:
+    CHAR_ROW CharRow;
+
 };
 
 void swap(ROW& a, ROW& b) noexcept;

@@ -60,7 +60,7 @@ void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
         std::transform(pwchBuffer,
                        pwchBuffer + cchBuffer,
                        pDbcsAttributes,
-                       std::next(Row.CharRow.begin(), TargetPoint.X),
+                       std::next(Row.GetCharRow().begin(), TargetPoint.X),
                        [](wchar_t wch, DbcsAttribute attr)
         {
             return CHAR_ROW::value_type{ wch, attr };
@@ -69,7 +69,7 @@ void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
     CATCH_LOG();
 
     // caller knows the wrap status as this func is called only for drawing one line at a time
-    Row.CharRow.SetWrapStatus(fWasLineWrapped);
+    Row.GetCharRow().SetWrapStatus(fWasLineWrapped);
 
     TextAttributeRun CurrentBufferAttrs;
     CurrentBufferAttrs.SetLength(cchBuffer);
@@ -184,14 +184,14 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
             CHAR_ROW::iterator it;
             try
             {
-                it = std::next(pRow->CharRow.begin(), coordDest.X);
+                it = std::next(pRow->GetCharRow().begin(), coordDest.X);
             }
             catch (...)
             {
                 return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
             }
 
-            const CHAR_ROW::const_iterator itEnd = pRow->CharRow.cend();
+            const CHAR_ROW::const_iterator itEnd = pRow->GetCharRow().cend();
 
             TextAttributeRun* pAttrRun = rAttrRunsBuff;
             pAttrRun->SetLength(0);
@@ -199,7 +199,7 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
 
             pAttrRun->SetAttributesFromLegacy(ATTR_OF_PCI(SourcePtr) & ~COMMON_LVB_SBCSDBCS);
 
-            pRow->CharRow.SetWrapStatus(false); // clear wrap status for rectangle drawing
+            pRow->GetCharRow().SetWrapStatus(false); // clear wrap status for rectangle drawing
 
             for (SHORT j = psrSrc->Left;
                  j <= psrSrc->Right && it != itEnd;
@@ -562,7 +562,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
             CHAR_ROW::iterator it;
             try
             {
-                it = std::next(pRow->CharRow.begin(), X);
+                it = std::next(pRow->GetCharRow().begin(), X);
             }
             catch (...)
             {
@@ -659,7 +659,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
                 Y++;
 
                 // if we are wrapping around, set that this row is wrapping
-                pRow->CharRow.SetWrapStatus(true);
+                pRow->GetCharRow().SetWrapStatus(true);
 
                 if (Y >= coordScreenBufferSize.Y)
                 {
@@ -669,7 +669,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
             else
             {
                 // if we're not wrapping around, set that this row isn't wrapped.
-                pRow->CharRow.SetWrapStatus(false);
+                pRow->GetCharRow().SetWrapStatus(false);
                 break;
             }
 
@@ -897,7 +897,7 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
             CHAR_ROW::iterator it;
             try
             {
-                it = std::next(pRow->CharRow.begin(), X);
+                it = std::next(pRow->GetCharRow().begin(), X);
             }
             catch (...)
             {
@@ -984,7 +984,7 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
             }
 
             // invalidate row wrap status for any bulk fill of text characters
-            pRow->CharRow.SetWrapStatus(false);
+            pRow->GetCharRow().SetWrapStatus(false);
 
             if (NumWritten < *pcElements)
             {
@@ -1174,14 +1174,14 @@ void FillRectangle(_In_ const CHAR_INFO * const pciFill,
         CHAR_ROW::iterator it;
         try
         {
-            it = std::next(pRow->CharRow.begin(), psrTarget->Left);
+            it = std::next(pRow->GetCharRow().begin(), psrTarget->Left);
         }
         catch (...)
         {
             LOG_HR(wil::ResultFromCaughtException());
             return;
         }
-        const CHAR_ROW::const_iterator itEnd = pRow->CharRow.cend();
+        const CHAR_ROW::const_iterator itEnd = pRow->GetCharRow().cend();
 
         for (SHORT j = 0; j < XSize && it < itEnd; j++)
         {
@@ -1228,7 +1228,7 @@ void FillRectangle(_In_ const CHAR_INFO * const pciFill,
         pRow->AttrRow.InsertAttrRuns(&AttrRun, 1, psrTarget->Left, psrTarget->Right, coordScreenBufferSize.X);
 
         // invalidate row wrapping for rectangular drawing
-        pRow->CharRow.SetWrapStatus(false);
+        pRow->GetCharRow().SetWrapStatus(false);
 
         try
         {
