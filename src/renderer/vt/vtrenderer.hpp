@@ -120,10 +120,10 @@ protected:
 
     bool _suppressResizeRepaint;
 
-    // COORD _firstCursor;
     SHORT _virtualTop;
     bool _circled;
     bool _firstPaint;
+    bool _skipCursor;
 
     HRESULT _Write(_In_reads_(cch) const char* const psz, _In_ size_t const cch);
     HRESULT _Write(_In_ const std::string& str);

@@ -34,8 +34,6 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe)
 {
     THROW_IF_HANDLE_INVALID(_hFile.get());
 
-    //Initialize the state machine here, because the gci->pInputBuffer
-    // hasn't been initialized when we initialize the VtInputThread object.
     CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
 
     std::unique_ptr<ConhostInternalGetSet> pGetSet =

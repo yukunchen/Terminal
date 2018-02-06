@@ -14,15 +14,11 @@
 #include "..\terminal\adapter\DispatchCommon.hpp"
 
 #define PTY_SIGNAL_RESIZE_WINDOW 8u
-#define PTY_SIGNAL_FLUSH_BUFFER 7u
-
 struct PTY_SIGNAL_RESIZE
 {
     unsigned short sx;
     unsigned short sy;
 };
-// For reference, the Flush message is 0 bytes long / has no payload
-// struct PTY_SIGNAL_FLUSH {};
 
 using namespace Microsoft::Console;
 
@@ -57,11 +53,9 @@ DWORD PtySignalInputThread::StaticThreadProc(_In_ LPVOID lpParameter)
 // - Otherwise it may cause an application termination another route and never return.
 HRESULT PtySignalInputThread::_InputThread()
 {
-    // DebugBreak();
     unsigned short signalId;
     while (_GetData(&signalId, sizeof(signalId)))
     {
-        // DebugBreak();
         switch (signalId)
         {
         case PTY_SIGNAL_RESIZE_WINDOW:
@@ -77,21 +71,6 @@ HRESULT PtySignalInputThread::_InputThread()
                 DispatchCommon::s_SuppressResizeRepaint(_pConApi.get());
             }
 
-            break;
-        }
-        case PTY_SIGNAL_FLUSH_BUFFER:
-        {
-            // DebugBreak();
-            LockConsole();
-            auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
-
-            if (ServiceLocator::LocateGlobals()->pRender)
-            {
-                ServiceLocator::LocateGlobals()->pRender->TriggerTeardown();
-            }
-            unsigned short buffer = 7u;
-            DWORD cbBuffer = sizeof(buffer);
-            WriteFile(_hFile.get(), &buffer, cbBuffer, nullptr, nullptr);
             break;
         }
         default:
@@ -121,7 +100,6 @@ bool PtySignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pBu
     //       we want to gracefully close in.
     if (FALSE == ReadFile(_hFile.get(), pBuffer, cbBuffer, &dwRead, nullptr))
     {
-            // DebugBreak();
         DWORD lastError = GetLastError();
         if (lastError == ERROR_BROKEN_PIPE)
         {
@@ -136,12 +114,10 @@ bool PtySignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pBu
     }
     else if (dwRead != cbBuffer)
     {
-        // DebugBreak();
         // Trigger process shutdown.
         CloseConsoleProcessState();
         return false;
     }
-    // DebugBreak();
     return true;
 }
 
@@ -168,11 +144,3 @@ HRESULT PtySignalInputThread::Start()
 
     return S_OK;
 }
-
-// HRESULT PtySignalInputThread::TriggerTeardown()
-// {
-//     unsigned short buffer = 7u;
-//     DWORD cbBuffer = sizeof(buffer);
-//     WriteFile(_hFile.get(), &buffer, cbBuffer, nullptr, nullptr);
-//     return S_OK;
-// }

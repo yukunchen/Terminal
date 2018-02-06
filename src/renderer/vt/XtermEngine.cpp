@@ -44,10 +44,7 @@ HRESULT XtermEngine::StartPaint()
     {
         if (_firstPaint)
         {
-            // Immediately paint a clear screen, and move the cursor to the origin.
-            // _ClearScreen();
-            // _MoveCursor({0, 0});
-            // DebugBreak();
+            // As of MSFT:15813316 we are no longer clearing on the first paint.
             _firstPaint = false;
         }
         if (!_quickReturn)
@@ -80,7 +77,6 @@ HRESULT XtermEngine::EndPaint()
     HRESULT hr = VtEngine::EndPaint();
     if (SUCCEEDED(hr))
     {
-        // todo come back to this before the PR is finished.
         if (!_quickReturn)
         {
             // Turn on cursor

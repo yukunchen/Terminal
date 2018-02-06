@@ -50,6 +50,7 @@ HRESULT VtEngine::EndPaint()
     _clearedAllThisFrame = false;
     _cursorMoved = false;
     _firstPaint = false;
+    _skipCursor = false;
     // If we've circled the buffer this frame, move our virtual top upwards.
     // We do this at the END of the frame, so that during the paint, we still
     //      use the original virtual top.

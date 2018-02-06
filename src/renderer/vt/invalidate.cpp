@@ -66,10 +66,17 @@ HRESULT VtEngine::Invalidate(const SMALL_RECT* const psrRegion)
 // - S_OK
 HRESULT VtEngine::InvalidateCursor(const COORD* const pcoordCursor)
 {
-    if (!_firstPaint && _virtualTop > pcoordCursor->Y)
+    // If we just inherited the cursor, we're going to get an InvalidateCursor
+    //      for both where the old cursor was, and where the new cursor is
+    //      (the inherited location). (See Cursor.cpp:Cursor::SetPosition)
+    // We should ignore the first one, but after that, if the client application
+    //      is moving the cursor around in the viewport, move our virtual top
+    //      up to meet their changes.
+    if (!_skipCursor && _virtualTop > pcoordCursor->Y)
     {
         _virtualTop = pcoordCursor->Y;
     }
+    _skipCursor = false;
 
     _cursorMoved = true;
     return S_OK;
@@ -100,6 +107,8 @@ HRESULT VtEngine::InvalidateCircling(_Out_ bool* const pForcePaint)
 {
     *pForcePaint = true;
 
+    // Keep track of the fact that we circled, we'll need to do some work on
+    //      end paint to specifically handle this.
     _circled = true;
 
     return S_OK;

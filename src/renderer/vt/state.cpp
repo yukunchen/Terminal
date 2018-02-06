@@ -45,7 +45,8 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _suppressResizeRepaint(true),
     _virtualTop(0),
     _circled(false),
-    _firstPaint(true)
+    _firstPaint(false),
+    _skipCursor(false)
 {
 #ifndef UNIT_TESTING
     // When unit testing, we can instantiate a VtEngine without a pipe.
@@ -263,10 +264,20 @@ HRESULT VtEngine::SuppressResizeRepaint()
     return S_OK;
 }
 
+// Method Description:
+// - "Inherit" the cursor at the given position. We won't need to move it
+//      anywhere, so update where we last thought the cursor was.
+//  Also update our "virtual top", indicating where should clip all updates to
+//      (we don't want to paint the empty region above the inherited cursor).
+//  Also ignore the next InvalidateCursor call.
+// Arguments:
+// - coordCursor: The cursor position to inherit from.
+// Return Value:
+// - S_OK
 HRESULT VtEngine::InheritCursor(_In_ const COORD coordCursor)
 {
-    // DebugBreak();
     _virtualTop = coordCursor.Y;
     _lastText = coordCursor;
+    _skipCursor = true;
     return S_OK;
 }

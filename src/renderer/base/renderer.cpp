@@ -267,7 +267,6 @@ void Renderer::TriggerRedrawCursor(_In_ const COORD* const pcoord)
 // - <none>
 void Renderer::TriggerRedrawAll()
 {
-    // DebugBreak();
     std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
         LOG_IF_FAILED(pEngine->InvalidateAll());
     });
@@ -329,7 +328,6 @@ void Renderer::TriggerSelection()
 // - True if something changed and we scrolled. False otherwise.
 bool Renderer::_CheckViewportAndScroll()
 {
-    // DebugBreak();
     SMALL_RECT const srOldViewport = _srViewportPrevious;
     SMALL_RECT const srNewViewport = _pData->GetViewport();
 

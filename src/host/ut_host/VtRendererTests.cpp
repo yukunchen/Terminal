@@ -290,8 +290,6 @@ void VtRendererTest::Xterm256TestInvalidate()
         invalid.Bottom = 1;
 
         VERIFY_ARE_EQUAL(invalid, engine->_invalidRect.ToExclusive());
-        // We would expect a CUP here, but the cursor is already at the home position
-        // qExpectedInput.push_back("\x1b[H");
 
         qExpectedInput.push_back("\x1b[H"); // Go Home
         qExpectedInput.push_back("\x1b[L"); // insert a line
@@ -676,7 +674,6 @@ void VtRendererTest::XtermTestInvalidate()
         invalid.Bottom = 1;
 
         VERIFY_ARE_EQUAL(invalid, engine->_invalidRect.ToExclusive());
-        // We would expect a CUP here, but the cursor is already at the home position
 
         qExpectedInput.push_back("\x1b[H"); // Go Home
         qExpectedInput.push_back("\x1b[L"); // insert a line
