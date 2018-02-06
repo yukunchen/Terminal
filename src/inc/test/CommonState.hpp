@@ -26,6 +26,8 @@ unit testing projects in the codebase without a bunch of overhead.
 #include "../host/newdelete.hpp"
 #include "../interactivity/inc/ServiceLocator.hpp"
 
+#include <algorithm>
+
 
 class CommonState
 {
@@ -222,14 +224,24 @@ private:
         // 9 characters, 6 spaces. 15 total
         // か = \x304b
         // き = \x304d
-        PCWSTR pwszText = L"AB" L"\x304b\x304b" L"C" L"\x304d\x304d" L"DE      ";
-        std::copy_n(pwszText, wcslen(pwszText), pRow->CharRow.GetTextIterator(0));
+        const PCWSTR pwszText = L"AB" L"\x304b\x304b" L"C" L"\x304d\x304d" L"DE      ";
+        const size_t length = wcslen(pwszText);
 
+        std::vector<DbcsAttribute> attrs(length, DbcsAttribute());
         // set double-byte/double-width attributes
-        pRow->CharRow.GetAttribute(2).SetLeading();
-        pRow->CharRow.GetAttribute(3).SetTrailing();
-        pRow->CharRow.GetAttribute(5).SetLeading();
-        pRow->CharRow.GetAttribute(6).SetTrailing();
+        attrs[2].SetLeading();
+        attrs[3].SetTrailing();
+        attrs[5].SetLeading();
+        attrs[6].SetTrailing();
+
+        std::transform(pwszText,
+                       pwszText + length,
+                       attrs.cbegin(),
+                       pRow->CharRow.begin(),
+                       [](const wchar_t wch, const DbcsAttribute attr)
+        {
+            return CHAR_ROW::value_type{ wch, attr};
+        });
 
         // set some colors
         TextAttribute Attr = TextAttribute(0);
@@ -280,17 +292,27 @@ private:
             L"\x304d\x304d"
             L"0123456789"
             L"\x304d";
-        std::copy_n(pwszText, min(CommonState::s_csBufferWidth, wcslen(pwszText)), pRow->CharRow.GetTextIterator(0));
+        const size_t length = wcslen(pwszText);
 
+        std::vector<DbcsAttribute> attrs(length, DbcsAttribute());
         // set double-byte/double-width attributes
-        pRow->CharRow.GetAttribute(0).SetTrailing();
-        pRow->CharRow.GetAttribute(27).SetLeading();
-        pRow->CharRow.GetAttribute(28).SetTrailing();
-        pRow->CharRow.GetAttribute(39).SetLeading();
-        pRow->CharRow.GetAttribute(40).SetTrailing();
-        pRow->CharRow.GetAttribute(67).SetLeading();
-        pRow->CharRow.GetAttribute(68).SetTrailing();
-        pRow->CharRow.GetAttribute(79).SetLeading();
+        attrs[0].SetTrailing();
+        attrs[27].SetLeading();
+        attrs[28].SetTrailing();
+        attrs[39].SetLeading();
+        attrs[40].SetTrailing();
+        attrs[67].SetLeading();
+        attrs[68].SetTrailing();
+        attrs[79].SetLeading();
+
+        std::transform(pwszText,
+                       pwszText + length,
+                       attrs.cbegin(),
+                       pRow->CharRow.begin(),
+                       [](const wchar_t wch, const DbcsAttribute attr)
+        {
+            return CHAR_ROW::value_type{ wch, attr};
+        });
 
         // everything gets default attributes
         pRow->AttrRow.Reset(80, gci.CurrentScreenBuffer->GetAttributes());

@@ -107,7 +107,7 @@ bool ROW::Reset(_In_ short const sRowWidth, _In_ const TextAttribute Attr)
 // - S_OK if successful, otherwise relevant error
 HRESULT ROW::Resize(_In_ size_t const width)
 {
-    size_t oldWidth = CharRow.GetWidth();
+    size_t oldWidth = CharRow.size();
     RETURN_IF_FAILED(CharRow.Resize(width));
     RETURN_IF_FAILED(AttrRow.Resize(static_cast<short>(oldWidth), static_cast<short>(width)));
     return S_OK;
@@ -121,7 +121,7 @@ HRESULT ROW::Resize(_In_ size_t const width)
 // - <none>
 void ROW::ClearColumn(_In_ const size_t column)
 {
-    THROW_HR_IF(E_INVALIDARG, column >= CharRow.GetWidth());
+    THROW_HR_IF(E_INVALIDARG, column >= CharRow.size());
     CharRow.ClearGlyph(column);
     CharRow.GetAttribute(column).SetSingle();
 }

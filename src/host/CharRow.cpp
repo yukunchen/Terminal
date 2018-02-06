@@ -27,9 +27,7 @@ void swap(CHAR_ROW& a, CHAR_ROW& b) noexcept
 // - instantiated object
 // Note: will through if unable to allocate char/attribute buffers
 CHAR_ROW::CHAR_ROW(short rowWidth) :
-    _rowWidth{ static_cast<size_t>(rowWidth) },
-    _attributes(rowWidth),
-    _chars(rowWidth, UNICODE_SPACE)
+    _data(rowWidth, std::pair<wchar_t, DbcsAttribute>(UNICODE_SPACE, DbcsAttribute{}))
 {
     SetWrapStatus(false);
     SetDoubleBytePadded(false);
@@ -44,9 +42,7 @@ CHAR_ROW::CHAR_ROW(short rowWidth) :
 // Note: will through if unable to allocate char/attribute buffers
 CHAR_ROW::CHAR_ROW(const CHAR_ROW& a) :
     bRowFlags{ a.bRowFlags },
-    _rowWidth{ a._rowWidth },
-    _attributes{ a._attributes },
-    _chars{ a._chars }
+    _data{ a._data }
 {
 }
 
@@ -90,9 +86,7 @@ void CHAR_ROW::swap(CHAR_ROW& other) noexcept
     // specialized swap, so we include both in the same namespace and let it sort it out.
     using std::swap;
     swap(bRowFlags, other.bRowFlags);
-    swap(_rowWidth, other._rowWidth);
-    swap(_attributes, other._attributes);
-    swap(_chars, other._chars);
+    swap(_data, other._data);
 }
 
 // Routine Description:
@@ -104,7 +98,7 @@ void CHAR_ROW::swap(CHAR_ROW& other) noexcept
 // Note: will throw exception if column is out of bounds
 const DbcsAttribute& CHAR_ROW::GetAttribute(_In_ const size_t column) const
 {
-    return _attributes.at(column);
+    return _data.at(column).second;
 }
 
 // Routine Description:
@@ -119,80 +113,29 @@ DbcsAttribute& CHAR_ROW::GetAttribute(_In_ const size_t column)
     return const_cast<DbcsAttribute&>(static_cast<const CHAR_ROW* const>(this)->GetAttribute(column));
 }
 
-// Routine Description:
-// - returns an iterator to the data at specified column
-// Arguments:
-// - column - the column to start the iterator at (0-indexed)
-// Return Value:
-// - iterator starting at column
-// Note: will throw exception if column is out of bounds
-std::vector<DbcsAttribute>::iterator CHAR_ROW::GetAttributeIterator(_In_ const size_t column)
+CHAR_ROW::iterator CHAR_ROW::begin() noexcept
 {
-    THROW_HR_IF(E_INVALIDARG, column >= _attributes.size());
-    return std::next(_attributes.begin(), column);
+    return _data.begin();
 }
 
-// Routine Description:
-// - returns a const iterator to the data at specified column
-// Arguments:
-// - column - the column to start the const iterator at (0-indexed)
-// Return Value:
-// - const iterator starting at column
-// Note: will throw exception if column is out of bounds
-std::vector<DbcsAttribute>::const_iterator CHAR_ROW::GetAttributeIterator(_In_ const size_t column) const
+CHAR_ROW::const_iterator CHAR_ROW::cbegin() const noexcept
 {
-    THROW_HR_IF(E_INVALIDARG, column >= _attributes.size());
-    return std::next(_attributes.cbegin(), column);
+    return _data.cbegin();
 }
 
-// Routine Description:
-// - returns a const iterator that represents the end of the dbcs attributes.
-// Arguments:
-// - <none>
-// Return Value:
-// - const iterator to the end of the attributes
-// Note: this is an end iterator and not an iterator to the last valid element
-std::vector<DbcsAttribute>::const_iterator CHAR_ROW::GetAttributeIteratorEnd() const noexcept
+CHAR_ROW::iterator CHAR_ROW::end() noexcept
 {
-    return _attributes.cend();
+    return _data.end();
 }
 
-// Routine Description:
-// - returns an iterator to the text data at column.
-// Arguments:
-// - column - index of row to get text data for
-// Return Value:
-// - iterator to char data at column
-// Note: will throw exception if column is out of bounds
-std::vector<wchar_t>::iterator CHAR_ROW::GetTextIterator(_In_ const size_t column)
+CHAR_ROW::const_iterator CHAR_ROW::cend() const noexcept
 {
-    THROW_HR_IF(E_INVALIDARG, column >= _chars.size());
-    return std::next(_chars.begin(), column);
+    return _data.cend();
 }
 
-// Routine Description:
-// - returns a const iterator to the text data at column.
-// Arguments:
-// - column - index of row to get text data for
-// Return Value:
-// - const iterator to char data at column
-// Note: will throw exception if column is out of bounds
-std::vector<wchar_t>::const_iterator CHAR_ROW::GetTextIterator(_In_ const size_t column) const
+size_t CHAR_ROW::size() const noexcept
 {
-    THROW_HR_IF(E_INVALIDARG, column >= _chars.size());
-    return std::next(_chars.cbegin(), column);
-}
-
-// Routine Description:
-// - returns a const iterator that represents the end of the text data.
-// Arguments:
-// - <none>
-// Return Value:
-// - const iterator to the end of the text data
-// Note: this is an end iterator and not an iterator to the last valid element
-std::vector<wchar_t>::const_iterator CHAR_ROW::GetTextIteratorEnd() const noexcept
-{
-    return _chars.cend();
+    return _data.size();
 }
 
 // Routine Description:
@@ -204,7 +147,7 @@ std::vector<wchar_t>::const_iterator CHAR_ROW::GetTextIteratorEnd() const noexce
 // Note: will throw exception if column is out of bounds
 void CHAR_ROW::ClearGlyph(const size_t column)
 {
-    _chars.at(column) = UNICODE_SPACE;
+    _data.at(column).first = UNICODE_SPACE;
 }
 
 // Routine Description:
@@ -216,7 +159,7 @@ void CHAR_ROW::ClearGlyph(const size_t column)
 // - Note: will throw exception if column is out of bounds
 const wchar_t& CHAR_ROW::GetGlyphAt(const size_t column) const
 {
-    return _chars.at(column);
+    return _data.at(column).first;
 }
 
 // Routine Description:
@@ -239,20 +182,13 @@ wchar_t& CHAR_ROW::GetGlyphAt(const size_t column)
 // - all text data in the row
 std::wstring CHAR_ROW::GetText() const
 {
-    return std::wstring{ _chars.begin(), _chars.end() };
+    std::wstring temp(_data.size(), UNICODE_SPACE);
+    for (size_t i = 0; i < _data.size(); ++i)
+    {
+        temp[i] = _data[i].first;
+    }
+    return temp;
 }
-
-// Routine Description:
-// - gets the size of the char row, in text elements
-// Arguments:
-// - <none>
-// Return Value:
-// - the size of the wchar_t and attribute buffer, in their respective elements
-size_t CHAR_ROW::GetWidth() const
-{
-    return _rowWidth;
-}
-
 
 // Routine Description:
 // - Sets all properties of the CHAR_ROW to default values
@@ -262,16 +198,10 @@ size_t CHAR_ROW::GetWidth() const
 // - <none>
 void CHAR_ROW::Reset(_In_ short const sRowWidth)
 {
-    _rowWidth = static_cast<size_t>(sRowWidth);
+    const value_type insertVals{ UNICODE_SPACE, DbcsAttribute() };
 
-    for (DbcsAttribute& attr : _attributes)
-    {
-        attr.SetSingle();
-    }
-    _attributes.resize(sRowWidth, _attributes.back());
-
-    std::fill(_chars.begin(), _chars.end(), UNICODE_SPACE);
-    _chars.resize(sRowWidth, UNICODE_SPACE);
+    std::fill(_data.begin(), _data.end(), insertVals);
+    _data.resize(sRowWidth, insertVals);
 
     SetWrapStatus(false);
     SetDoubleBytePadded(false);
@@ -285,11 +215,9 @@ void CHAR_ROW::Reset(_In_ short const sRowWidth)
 // - S_OK on success, otherwise relevant error code
 HRESULT CHAR_ROW::Resize(_In_ size_t const newSize)
 {
-    _chars.resize(newSize, UNICODE_SPACE);
     // last attribute in a row gets extended to the end
-    _attributes.resize(newSize, _attributes.back());
-
-    _rowWidth = newSize;
+    const value_type insertVals{ UNICODE_SPACE, _data.back().second };
+    _data.resize(newSize, insertVals);
 
     return S_OK;
 }
@@ -360,12 +288,12 @@ bool CHAR_ROW::WasDoubleBytePadded() const
 // - The calculated left boundary of the internal string.
 size_t CHAR_ROW::MeasureLeft() const
 {
-    std::vector<wchar_t>::const_iterator it = _chars.cbegin();
-    while (it != _chars.cend() && *it == UNICODE_SPACE)
+    std::vector<value_type>::const_iterator it = _data.cbegin();
+    while (it != _data.cend() && it->first == UNICODE_SPACE)
     {
         ++it;
     }
-    return it - _chars.begin();
+    return it - _data.begin();
 }
 
 // Routine Description:
@@ -376,12 +304,12 @@ size_t CHAR_ROW::MeasureLeft() const
 // - The calculated right boundary of the internal string.
 size_t CHAR_ROW::MeasureRight() const
 {
-    std::vector<wchar_t>::const_reverse_iterator it = _chars.crbegin();
-    while (it != _chars.crend() && *it == UNICODE_SPACE)
+    std::vector<value_type>::const_reverse_iterator it = _data.crbegin();
+    while (it != _data.crend() && it->first == UNICODE_SPACE)
     {
         ++it;
     }
-    return _chars.crend() - it;
+    return _data.crend() - it;
 }
 
 // Routine Description:
@@ -392,9 +320,9 @@ size_t CHAR_ROW::MeasureRight() const
 // - True if there is valid text in this row. False otherwise.
 bool CHAR_ROW::ContainsText() const
 {
-    for (wchar_t wch : _chars)
+    for (const value_type& vals : _data)
     {
-        if (wch != UNICODE_SPACE)
+        if (vals.first != UNICODE_SPACE)
         {
             return true;
         }

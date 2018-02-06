@@ -10,6 +10,8 @@
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
+#include <algorithm>
+
 // Routine Description:
 // - Handles a keyboard event for extending the current selection
 // - Must be called when the console is in selecting state.
@@ -688,9 +690,12 @@ bool Selection::_HandleColorSelection(_In_ const INPUT_KEY_INFO* const pInputKey
             WCHAR pwszSearchString[SEARCH_STRING_LENGTH + 1];
             try
             {
-                std::vector<wchar_t>::const_iterator startIt = Row.CharRow.GetTextIterator(psrSelection->Left);
-                std::vector<wchar_t>::const_iterator stopIt = std::next(startIt, cLength);
-                std::copy(startIt, stopIt, pwszSearchString);
+                const CHAR_ROW::const_iterator startIt = std::next(Row.CharRow.cbegin(), psrSelection->Left);
+                const CHAR_ROW::const_iterator stopIt = std::next(startIt, cLength);
+                std::transform(startIt, stopIt, pwszSearchString, [](const CHAR_ROW::value_type& vals)
+                {
+                    return vals.first;
+                });
             }
             CATCH_LOG();
 

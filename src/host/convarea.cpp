@@ -11,6 +11,7 @@
 #include "dbcs.h"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
+#include <algorithm>
 
 #pragma hdrstop
 
@@ -742,8 +743,14 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
 
     try
     {
-        std::copy(String, String + StringLength, Row.CharRow.GetTextIterator(TargetPoint.X));
-        std::copy(pDbcsAttributes, pDbcsAttributes + StringLength, Row.CharRow.GetAttributeIterator(TargetPoint.X));
+        std::transform(String,
+                       String + StringLength,
+                       pDbcsAttributes,
+                       std::next(Row.CharRow.begin(), TargetPoint.X),
+                       [](const wchar_t wch, const DbcsAttribute attr)
+        {
+            return CHAR_ROW::value_type{ wch, attr };
+        });
     }
     CATCH_LOG();
 
