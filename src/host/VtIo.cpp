@@ -355,6 +355,14 @@ HRESULT VtIo::SuppressResizeRepaint()
     return hr;
 }
 
+// Method Description:
+// - Attempts to set the initial cursor position, if we're looking for it.
+//      If we're not trying to inherit the cursor, does nothing.
+// Arguments:
+// - coordCursor: The initial position of the cursor.
+// Return Value:
+// - S_OK if we successfully inherited the cursor or did nothing, else an
+//      appropriate HRESULT
 HRESULT VtIo::SetCursorPosition(_In_ const COORD coordCursor)
 {
     HRESULT hr = S_OK;
