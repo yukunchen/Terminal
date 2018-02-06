@@ -53,18 +53,18 @@ public:
 #endif
 
 private:
-    CHAR_ROW CharRow;
-    ATTR_ROW AttrRow;
-    SHORT sRowId;
+    CHAR_ROW _charRow;
+    ATTR_ROW _attrRow;
+    SHORT _id;
 
 };
 
 void swap(ROW& a, ROW& b) noexcept;
 constexpr bool operator==(const ROW& a, const ROW& b) noexcept
 {
-    return (a.CharRow == b.CharRow &&
-            a.AttrRow == b.AttrRow &&
-            a.sRowId == b.sRowId);
+    return (a._charRow == b._charRow &&
+            a._attrRow == b._attrRow &&
+            a._id == b._id);
 }
 
 // this sticks specialization of swap() into the std::namespace for Row, so that callers that use
