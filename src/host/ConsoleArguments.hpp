@@ -38,7 +38,7 @@ public:
     HANDLE GetServerHandle() const;
     HANDLE GetVtInHandle() const;
     HANDLE GetVtOutHandle() const;
-    
+
     bool HasSignalHandle() const;
     HANDLE GetSignalHandle() const;
 
@@ -50,6 +50,7 @@ public:
 
     short GetWidth() const;
     short GetHeight() const;
+    bool GetInheritCursor() const;
 
     static const std::wstring VT_IN_PIPE_ARG;
     static const std::wstring VT_OUT_PIPE_ARG;
@@ -63,6 +64,7 @@ public:
     static const std::wstring FILEPATH_LEADER_PREFIX;
     static const std::wstring WIDTH_ARG;
     static const std::wstring HEIGHT_ARG;
+    static const std::wstring INHERIT_CURSOR_ARG;
 
 private:
 #ifdef UNIT_TESTING
@@ -80,7 +82,8 @@ private:
                      _In_ const bool headless,
                      _In_ const bool createServerHandle,
                      _In_ const DWORD serverHandle,
-                     _In_ const DWORD signalHandle) :
+                     _In_ const DWORD signalHandle,
+                     _In_ const bool inheritCursor) :
         _commandline(commandline),
         _clientCommandline(clientCommandline),
         _vtInHandle(vtInHandle),
@@ -94,7 +97,8 @@ private:
         _headless(headless),
         _createServerHandle(createServerHandle),
         _serverHandle(serverHandle),
-        _signalHandle(signalHandle)
+        _signalHandle(signalHandle),
+        _inheritCursor(inheritCursor)
     {
 
     }
@@ -121,6 +125,7 @@ private:
     bool _createServerHandle;
     DWORD _serverHandle;
     DWORD _signalHandle;
+    bool _inheritCursor;
 
     HRESULT _GetClientCommandline(_In_ std::vector<std::wstring>& args,
                                   _In_ const size_t index,
@@ -134,7 +139,7 @@ private:
     static HRESULT s_GetArgumentValue(_Inout_ std::vector<std::wstring>& args,
                                       _Inout_ size_t& index,
                                       _Out_opt_ short* const pSetting);
-    
+
     static HRESULT s_ParseHandleArg(_In_ const std::wstring& handleAsText,
                                     _Inout_ DWORD& handleAsVal);
 
@@ -169,6 +174,7 @@ namespace WEX {
                                                            L"Server Handle: '0x%x'\r\n"
                                                            L"Use Signal Handle: '%ws'\r\n"
                                                            L"Signal Handle: '0x%x'\r\n",
+                                                           L"Inherit Cursor: '%ws'\r\n",
                                                            ci.GetClientCommandline().c_str(),
                                                            s_ToBoolString(ci.HasVtHandles()),
                                                            ci.GetVtInHandle(),
@@ -177,14 +183,15 @@ namespace WEX {
                                                            ci.GetVtInPipe().c_str(),
                                                            ci.GetVtOutPipe().c_str(),
                                                            ci.GetVtMode().c_str(),
-                                                           ci.GetWidth(), 
+                                                           ci.GetWidth(),
                                                            ci.GetHeight(),
                                                            s_ToBoolString(ci.GetForceV1()),
                                                            s_ToBoolString(ci.IsHeadless()),
                                                            s_ToBoolString(ci.ShouldCreateServerHandle()),
                                                            ci.GetServerHandle(),
                                                            s_ToBoolString(ci.HasSignalHandle()),
-                                                           ci.GetSignalHandle());
+                                                           ci.GetSignalHandle(),
+                                                           s_ToBoolString(ci.GetInheritCursor()));
             }
 
         private:
@@ -216,7 +223,8 @@ namespace WEX {
                     expected.ShouldCreateServerHandle() == actual.ShouldCreateServerHandle() &&
                     expected.GetServerHandle() == actual.GetServerHandle() &&
                     expected.HasSignalHandle() == actual.HasSignalHandle() &&
-                    expected.GetSignalHandle() == actual.GetSignalHandle();
+                    expected.GetSignalHandle() == actual.GetSignalHandle() &&
+                    expected.GetInheritCursor() == actual.GetInheritCursor();
             }
 
             static bool AreSame(const ConsoleArguments& expected, const ConsoleArguments& actual)
@@ -233,7 +241,7 @@ namespace WEX {
                 return
                     object.GetClientCommandline().empty() &&
                     (object.GetVtInHandle() == 0 || object.GetVtInHandle() == INVALID_HANDLE_VALUE) &&
-                    (object.GetVtOutHandle() == 0 || object.GetVtOutHandle() == INVALID_HANDLE_VALUE) && 
+                    (object.GetVtOutHandle() == 0 || object.GetVtOutHandle() == INVALID_HANDLE_VALUE) &&
                     object.GetVtInPipe().empty() &&
                     object.GetVtOutPipe().empty() &&
                     object.GetVtMode().empty() &&
@@ -243,7 +251,8 @@ namespace WEX {
                     !object.IsHeadless() &&
                     !object.ShouldCreateServerHandle() &&
                     object.GetServerHandle() == 0 &&
-                    (object.GetSignalHandle() == 0 || object.GetSignalHandle() == INVALID_HANDLE_VALUE);
+                    (object.GetSignalHandle() == 0 || object.GetSignalHandle() == INVALID_HANDLE_VALUE) &&
+                    !object.GetInheritCursor();
             }
         };
     }

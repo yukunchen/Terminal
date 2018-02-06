@@ -377,3 +377,16 @@ HRESULT VtIo::SetCursorPosition(_In_ const COORD coordCursor)
     }
     return hr;
 }
+
+// HRESULT VtIo::Teardown()
+// {
+//     if (ServiceLocator::LocateGlobals()->pRender)
+//     {
+//         ServiceLocator::LocateGlobals()->pRender->TriggerTeardown();
+//     }
+//     if (_pPtySignalInputThread)
+//     {
+//         _pPtySignalInputThread->TriggerTeardown();
+//     }
+//     return S_OK;
+// }

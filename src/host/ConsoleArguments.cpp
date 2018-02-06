@@ -20,6 +20,7 @@ const std::wstring ConsoleArguments::FORCE_V1_ARG = L"-ForceV1";
 const std::wstring ConsoleArguments::FILEPATH_LEADER_PREFIX = L"\\??\\";
 const std::wstring ConsoleArguments::WIDTH_ARG = L"--width";
 const std::wstring ConsoleArguments::HEIGHT_ARG = L"--height";
+const std::wstring ConsoleArguments::INHERIT_CURSOR_ARG = L"--inheritcursor";
 
 ConsoleArguments::ConsoleArguments(_In_ const std::wstring& commandline,
                                    _In_ const HANDLE hStdIn,
@@ -39,6 +40,7 @@ ConsoleArguments::ConsoleArguments(_In_ const std::wstring& commandline,
     _forceV1 = false;
     _width = 0;
     _height = 0;
+    _inheritCursor = true;
 }
 
 ConsoleArguments& ConsoleArguments::operator=(const ConsoleArguments & other)
@@ -59,6 +61,7 @@ ConsoleArguments& ConsoleArguments::operator=(const ConsoleArguments & other)
         _forceV1 = other._forceV1;
         _width = other._width;
         _height = other._height;
+        _inheritCursor = other._inheritCursor;
     }
 
     return *this;
@@ -77,22 +80,22 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
 }
 
 // Routine Description:
-//  Given the commandline of tokens `args`, tries to find the argument at 
+//  Given the commandline of tokens `args`, tries to find the argument at
 //      index+1, and places it's value into pSetting.
 //  If there aren't enough args, then returns E_INVALIDARG.
 //  If we found a value, then we take the elements at both index and index+1 out
 //      of args. We'll also decrement index, so that a caller who is using index
-//      as a loop index will autoincrement it to have it point at the correct 
+//      as a loop index will autoincrement it to have it point at the correct
 //      next index.
-//   
+//
 // EX: for args=[--foo, bar, --baz]
-//      index=0 would place "bar" in pSetting, 
+//      index=0 would place "bar" in pSetting,
 //          args is now [--baz], index is now -1, caller increments to 0
 //      index=2 would return E_INVALIDARG,
 //          args is still [--foo, bar, --baz], index is still 2, caller increments to 3.
 // Arguments:
 //  args: A collection of wstrings representing command-line arguments
-//  index: the index of the argument of which to get the value for. The value 
+//  index: the index of the argument of which to get the value for. The value
 //      should be at (index+1). index will be decremented by one on success.
 //  pSetting: recieves the string at index+1
 // Return Value:
@@ -115,12 +118,12 @@ HRESULT ConsoleArguments::s_GetArgumentValue(_Inout_ std::vector<std::wstring>& 
 
 // Method Description:
 // Routine Description:
-//  Given the commandline of tokens `args`, tries to find the argument at 
+//  Given the commandline of tokens `args`, tries to find the argument at
 //      index+1, and places it's value into pSetting. See above for examples.
 //  This implementation attempts to parse a short from the argument.
 // Arguments:
 //  args: A collection of wstrings representing command-line arguments
-//  index: the index of the argument of which to get the value for. The value 
+//  index: the index of the argument of which to get the value for. The value
 //      should be at (index+1). index will be decremented by one on success.
 //  pSetting: recieves the short at index+1
 // Return Value:
@@ -140,10 +143,10 @@ HRESULT ConsoleArguments::s_GetArgumentValue(_Inout_ std::vector<std::wstring>& 
             {
                 size_t pos = 0;
                 int value = std::stoi(args[index], &pos);
-                // If the entire string was a number, pos will be equal to the 
+                // If the entire string was a number, pos will be equal to the
                 //      length of the string. Otherwise, a string like 8foo will
                 //       be parsed as "8"
-                if (value > SHORT_MAX || pos != args[index].length()) 
+                if (value > SHORT_MAX || pos != args[index].length())
                 {
                     succeeded = false;
                 }
@@ -152,7 +155,7 @@ HRESULT ConsoleArguments::s_GetArgumentValue(_Inout_ std::vector<std::wstring>& 
                     *pSetting = static_cast<short>(value);
                     succeeded = true;
                 }
-            } 
+            }
             catch (...)
             {
                 succeeded = false;
@@ -196,17 +199,17 @@ HRESULT ConsoleArguments::s_ParseHandleArg(_In_ const std::wstring& handleAsText
     {
         // If we're trying to set the handle a second time, invalid.
         hr = E_INVALIDARG;
-    }   
-    
+    }
+
     return hr;
 }
 
 // Routine Description:
-//  Given the commandline of tokens `args`, creates a wstring containing all of 
-//      the remaining args after index joined with spaces.  If skipFirst==true, 
-//      then we omit the argument at index from this finished string. skipFirst 
-//      should only be true if the first arg is 
-//      ConsoleArguments::CLIENT_COMMANDLINE_ARG. Removes all the args starting 
+//  Given the commandline of tokens `args`, creates a wstring containing all of
+//      the remaining args after index joined with spaces.  If skipFirst==true,
+//      then we omit the argument at index from this finished string. skipFirst
+//      should only be true if the first arg is
+//      ConsoleArguments::CLIENT_COMMANDLINE_ARG. Removes all the args starting
 //      at index from the collection.
 //  The finished commandline is placed in _clientCommandline
 // Arguments:
@@ -245,13 +248,13 @@ HRESULT ConsoleArguments::_GetClientCommandline(_In_ std::vector<std::wstring>& 
 }
 
 // Routine Description:
-//  Attempts to parse the commandline that this ConsoleArguments was initialized 
-//      with. Fills all of our members with values that were specified on the 
+//  Attempts to parse the commandline that this ConsoleArguments was initialized
+//      with. Fills all of our members with values that were specified on the
 //      commandline.
 // Arguments:
 //  <none>
 // Return Value:
-//  S_OK if we parsed our _commandline successfully, otherwise E_INVALIDARG 
+//  S_OK if we parsed our _commandline successfully, otherwise E_INVALIDARG
 //      indicating failure.
 HRESULT ConsoleArguments::ParseCommandline()
 {
@@ -266,7 +269,7 @@ HRESULT ConsoleArguments::ParseCommandline()
 
     // Make a mutable copy of the commandline for tokenizing
     std::wstring copy = _commandline;
-    
+
     // Tokenize the commandline
     int argc = 0;
     wil::unique_hlocal_ptr<PWSTR[]> argv;
@@ -286,7 +289,7 @@ HRESULT ConsoleArguments::ParseCommandline()
         hr = E_INVALIDARG;
 
         std::wstring arg = args[i];
-               
+
         if (arg.substr(0, HANDLE_PREFIX.length()) == HANDLE_PREFIX ||
                  arg == SERVER_HANDLE_ARG)
         {
@@ -319,7 +322,7 @@ HRESULT ConsoleArguments::ParseCommandline()
         {
             std::wstring signalHandleVal;
             hr = s_GetArgumentValue(args, i, &signalHandleVal);
-            
+
             if (SUCCEEDED(hr))
             {
                 hr = s_ParseHandleArg(signalHandleVal, _signalHandle);
@@ -381,6 +384,12 @@ HRESULT ConsoleArguments::ParseCommandline()
             s_ConsumeArg(args, i);
             hr = S_OK;
         }
+        else if (arg == INHERIT_CURSOR_ARG)
+        {
+            _inheritCursor = true;
+            s_ConsumeArg(args, i);
+            hr = S_OK;
+        }
         else if (arg == CLIENT_COMMANDLINE_ARG)
         {
             // Everything after this is the explicit commandline
@@ -388,11 +397,11 @@ HRESULT ConsoleArguments::ParseCommandline()
             break;
         }
         // TODO: handle the rest of the possible params (MSFT:13271366, MSFT:13631640)
-        // TODO: handle invalid args 
+        // TODO: handle invalid args
         //  eg "conhost --foo bar" should not make the clientCommandline "--foo bar"
         else
         {
-            // If we encounter something that doesn't match one of our other 
+            // If we encounter something that doesn't match one of our other
             //      args, then it's the start of the commandline
             hr = _GetClientCommandline(args, i, false);
             break;
@@ -404,8 +413,8 @@ HRESULT ConsoleArguments::ParseCommandline()
         }
     }
 
-    // We should have consumed every token at this point.    
-    // if not, it is some sort of parsing error. 
+    // We should have consumed every token at this point.
+    // if not, it is some sort of parsing error.
     // If we failed to parse an arg, then no need to assert.
     if (SUCCEEDED(hr))
     {
@@ -440,16 +449,16 @@ bool ConsoleArguments::HasSignalHandle() const
 }
 
 // Routine Description:
-//  Returns true if according to the arguments parsed from _commandline we 
+//  Returns true if according to the arguments parsed from _commandline we
 //      should start with the VT pipe enabled. This is when we have both a VT
-//      input and output pipe name given. Guarentees nothing about the pipe 
+//      input and output pipe name given. Guarentees nothing about the pipe
 //      itself or even the strings, just whether or not they were specified.
 // Arguments:
 //  <none>
 // Return Value:
 //  true iff we have parsed both a VT input and output pipe name.
 bool ConsoleArguments::IsUsingVtPipe() const
-{    
+{
     return (_vtInPipe.length() > 0) && (_vtOutPipe.length() > 0);
 }
 
@@ -527,4 +536,9 @@ short ConsoleArguments::GetHeight() const
 bool ConsoleArguments::s_IsValidHandle(_In_ const HANDLE handle)
 {
     return handle != 0 && handle != INVALID_HANDLE_VALUE;
+}
+
+bool ConsoleArguments::GetInheritCursor() const
+{
+    return _inheritCursor;
 }

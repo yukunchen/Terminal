@@ -168,3 +168,11 @@ HRESULT PtySignalInputThread::Start()
 
     return S_OK;
 }
+
+// HRESULT PtySignalInputThread::TriggerTeardown()
+// {
+//     unsigned short buffer = 7u;
+//     DWORD cbBuffer = sizeof(buffer);
+//     WriteFile(_hFile.get(), &buffer, cbBuffer, nullptr, nullptr);
+//     return S_OK;
+// }
