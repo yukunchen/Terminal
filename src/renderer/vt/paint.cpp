@@ -30,6 +30,10 @@ HRESULT VtEngine::StartPaint()
 
     _quickReturn = !somethingToDo;
 
+    // if (_circled){
+    //     DebugBreak();
+    // }
+
     return _quickReturn ? S_FALSE : S_OK;
 }
 
@@ -49,6 +53,17 @@ HRESULT VtEngine::EndPaint()
     _scrollDelta = {0};
     _clearedAllThisFrame = false;
     _cursorMoved = false;
+    _firstPaint = false;
+    if (_circled)
+    {
+        // _lastText.Y++;
+        _lastText.Y--;
+        if (_virtualTop > 0)
+        {
+            _virtualTop--;
+        }
+    }
+    _circled = false;
     return S_OK;
 }
 

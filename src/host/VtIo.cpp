@@ -362,7 +362,7 @@ HRESULT VtIo::SetCursorPosition(_In_ const COORD coordCursor)
     {
         if (_pVtRenderEngine)
         {
-            hr = _pVtRenderEngine->SetVirtualTop(coordCursor.Y);
+            hr = _pVtRenderEngine->InheritCursor(coordCursor);
         }
 
         _lookingForCursorPosition = false;

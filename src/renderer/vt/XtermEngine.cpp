@@ -20,8 +20,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     VtEngine(std::move(hPipe), colorProvider, initialViewport),
     _ColorTable(ColorTable),
     _cColorTable(cColorTable),
-    _fUseAsciiOnly(fUseAsciiOnly),
-    _firstPaint(true)
+    _fUseAsciiOnly(fUseAsciiOnly)
 {
     // Set out initial cursor position to -1, -1. This will force our initial
     //      paint to manually move the cursor to 0, 0, not just ignore it.

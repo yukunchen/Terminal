@@ -329,6 +329,7 @@ void Renderer::TriggerSelection()
 // - True if something changed and we scrolled. False otherwise.
 bool Renderer::_CheckViewportAndScroll()
 {
+    // DebugBreak();
     SMALL_RECT const srOldViewport = _srViewportPrevious;
     SMALL_RECT const srNewViewport = _pData->GetViewport();
 

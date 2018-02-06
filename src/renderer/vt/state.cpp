@@ -43,7 +43,9 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _clearedAllThisFrame(false),
     _cursorMoved(false),
     _suppressResizeRepaint(true),
-    _virtualTop(0)
+    _virtualTop(0),
+    _circled(false),
+    _firstPaint(true)
 {
 #ifndef UNIT_TESTING
     // When unit testing, we can instantiate a VtEngine without a pipe.
@@ -261,8 +263,10 @@ HRESULT VtEngine::SuppressResizeRepaint()
     return S_OK;
 }
 
-HRESULT VtEngine::SetVirtualTop(_In_ const short vTop)
+HRESULT VtEngine::InheritCursor(_In_ const COORD coordCursor)
 {
-    _virtualTop = vTop;
+    // DebugBreak();
+    _virtualTop = coordCursor.Y;
+    _lastText = coordCursor;
     return S_OK;
 }
