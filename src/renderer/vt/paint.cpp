@@ -30,10 +30,6 @@ HRESULT VtEngine::StartPaint()
 
     _quickReturn = !somethingToDo;
 
-    // if (_circled){
-    //     DebugBreak();
-    // }
-
     return _quickReturn ? S_FALSE : S_OK;
 }
 
@@ -54,10 +50,11 @@ HRESULT VtEngine::EndPaint()
     _clearedAllThisFrame = false;
     _cursorMoved = false;
     _firstPaint = false;
+    // If we've circled the buffer this frame, move our virtual top upwards.
+    // We do this at the END of the frame, so that during the paint, we still
+    //      use the original virtual top.
     if (_circled)
     {
-        // _lastText.Y++;
-        _lastText.Y--;
         if (_virtualTop > 0)
         {
             _virtualTop--;

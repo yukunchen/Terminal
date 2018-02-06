@@ -703,7 +703,7 @@ bool StreamScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo)
     if (fSuccess)
     {
         // Trigger a graphical update if we're active.
-        if (pScreenInfo->IsActiveScreenBuffer() && !ServiceLocator::LocateGlobals()->getConsoleInformation()->IsInVtIoMode())
+        if (pScreenInfo->IsActiveScreenBuffer())
         {
             COORD coordDelta = { 0 };
             coordDelta.Y = -1;
