@@ -96,44 +96,76 @@ bool InteractDispatch::WindowManipulation(_In_ const DispatchCommon::WindowManip
     return fSuccess;
 }
 
-bool InteractDispatch::MoveCursor(unsigned int x, unsigned int y)
+//Method Description:
+// Move Cursor: Moves the cursor to the provided VT coordinates. This is the
+//      coordinate space where 1,1 is the top left cell of the viewport.
+//Arguments:
+// - row: The row to move the cursor to.
+// - col: The column to move the cursor to.
+// Return value:
+// True if we successfully moved the cursor to the given location.
+// False otherwise, including if given invalid coordinates (either component being 0)
+//  or if any API calls failed.
+bool InteractDispatch::MoveCursor(_In_ const unsigned int row, _In_ const unsigned int col)
 {
-    unsigned int uiRow = y;
-    unsigned int uiCol = x;
+    unsigned int uiRow = row;
+    unsigned int uiCol = col;
 
     bool fSuccess = true;
+    // In VT, the origin is 1,1. For our array, it's 0,0. So subtract 1.
+    if (row != 0)
+    {
+        uiRow = row - 1;
+    }
+    else
+    {
+        // The parser should never return 0 (0 maps to 1), so this is a failure condition.
+        fSuccess = false;
+    }
 
-    // First retrieve some information about the buffer
-    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
-    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    fSuccess = !!_pConApi->GetConsoleScreenBufferInfoEx(&csbiex);
+    if (col != 0)
+    {
+        uiCol = col - 1;
+    }
+    else
+    {
+        // The parser should never return 0 (0 maps to 1), so this is a failure condition.
+        fSuccess = false;
+    }
 
     if (fSuccess)
     {
-        COORD coordCursor = csbiex.dwCursorPosition;
-
-        // Safely convert the UINT positions we were given into shorts (which is the size the console deals with)
-        fSuccess = SUCCEEDED(UIntToShort(uiRow, &coordCursor.Y)) &&
-         SUCCEEDED(UIntToShort(uiCol, &coordCursor.X));
+        // First retrieve some information about the buffer
+        CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
+        csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
+        fSuccess = !!_pConApi->GetConsoleScreenBufferInfoEx(&csbiex);
 
         if (fSuccess)
         {
-            // Set the line and column values as offsets from the viewport edge. Use safe math to prevent overflow.
-            fSuccess = SUCCEEDED(ShortAdd(coordCursor.Y, csbiex.srWindow.Top, &coordCursor.Y)) &&
-                SUCCEEDED(ShortAdd(coordCursor.X, csbiex.srWindow.Left, &coordCursor.X));
+            COORD coordCursor = csbiex.dwCursorPosition;
+
+            // Safely convert the UINT positions we were given into shorts (which is the size the console deals with)
+            fSuccess = SUCCEEDED(UIntToShort(uiRow, &coordCursor.Y)) &&
+             SUCCEEDED(UIntToShort(uiCol, &coordCursor.X));
 
             if (fSuccess)
             {
-                // Apply boundary tests to ensure the cursor isn't outside the viewport rectangle.
-                coordCursor.Y = max(min(coordCursor.Y, csbiex.srWindow.Bottom - 1), csbiex.srWindow.Top);
-                coordCursor.X = max(min(coordCursor.X, csbiex.srWindow.Right - 1), csbiex.srWindow.Left);
+                // Set the line and column values as offsets from the viewport edge. Use safe math to prevent overflow.
+                fSuccess = SUCCEEDED(ShortAdd(coordCursor.Y, csbiex.srWindow.Top, &coordCursor.Y)) &&
+                    SUCCEEDED(ShortAdd(coordCursor.X, csbiex.srWindow.Left, &coordCursor.X));
 
-                // Finally, attempt to set the adjusted cursor position back into the console.
-                fSuccess = !!_pConApi->SetConsoleCursorPosition(coordCursor);
+                if (fSuccess)
+                {
+                    // Apply boundary tests to ensure the cursor isn't outside the viewport rectangle.
+                    coordCursor.Y = max(min(coordCursor.Y, csbiex.srWindow.Bottom - 1), csbiex.srWindow.Top);
+                    coordCursor.X = max(min(coordCursor.X, csbiex.srWindow.Right - 1), csbiex.srWindow.Left);
+
+                    // Finally, attempt to set the adjusted cursor position back into the console.
+                    fSuccess = !!_pConApi->SetConsoleCursorPosition(coordCursor);
+                }
             }
         }
     }
-
 
     return fSuccess;
 }

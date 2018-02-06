@@ -269,8 +269,8 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
     DWORD dwModifierState = 0;
     short vkey = 0;
     unsigned int uiFunction = 0;
-    unsigned int x = 0;
-    unsigned int y = 0;
+    unsigned int col = 0;
+    unsigned int row = 0;
 
     // This is all the args after the first arg, and the count of args not including the first one.
     const unsigned short* const rgusRemainingArgs = (cParams > 1) ? rgusParams + 1 : rgusParams;
@@ -291,8 +291,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
             if (_lookingForDSR)
             {
                 fSuccess = true;
-                y = rgusParams[0]-1;
-                x = rgusParams[1]-1;
+                fSuccess = _GetXYPosition(rgusParams, cParams, &row, &col);
                 break;
             }
         case CsiActionCodes::ArrowUp:
@@ -329,7 +328,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
             // Else, fall though to the _GetCursorKeysModifierState handler.
                 if (_lookingForDSR)
                 {
-                    fSuccess = _pDispatch->MoveCursor(x, y);
+                    fSuccess = _pDispatch->MoveCursor(row, col);
                     // Right now we're only looking for on initial cursor
                     //      position response. After that, only look for F3.
                     _lookingForDSR = false;
@@ -872,6 +871,56 @@ bool InputStateMachineEngine::_GetWindowManipulationType(_In_reads_(cParams) con
             default:
                 fSuccess = false;
         }
+    }
+
+    return fSuccess;
+}
+
+// Routine Description:
+// - Retrieves an X/Y coordinate pair for a cursor operation from the parameter pool stored during Param actions.
+// Arguments:
+// - puiLine - Memory location to receive the Y/Line/Row position
+// - puiColumn - Memory location to receive the X/Column position
+// Return Value:
+// - True if we successfully pulled the cursor coordinates from the parameters we've stored. False otherwise.
+_Success_(return)
+bool InputStateMachineEngine::_GetXYPosition(_In_reads_(cParams) const unsigned short* const rgusParams,
+                                             _In_ const unsigned short cParams,
+                                             _Out_ unsigned int* const puiLine,
+                                             _Out_ unsigned int* const puiColumn) const
+{
+    bool fSuccess = false;
+    *puiLine = s_uiDefaultLine;
+    *puiColumn = s_uiDefaultColumn;
+
+    if (cParams == 0)
+    {
+        // Empty parameter sequences should use the default
+        fSuccess = true;
+    }
+    else if (cParams == 1)
+    {
+        // If there's only one param, leave the default for the column, and retrieve the specified row.
+        *puiLine = rgusParams[0];
+        fSuccess = true;
+    }
+    else if (cParams == 2)
+    {
+        // If there are exactly two parameters, use them.
+        *puiLine = rgusParams[0];
+        *puiColumn = rgusParams[1];
+        fSuccess = true;
+    }
+
+    // Distances of 0 should be changed to 1.
+    if (*puiLine == 0)
+    {
+        *puiLine = s_uiDefaultLine;
+    }
+
+    if (*puiColumn == 0)
+    {
+        *puiColumn = s_uiDefaultColumn;
     }
 
     return fSuccess;

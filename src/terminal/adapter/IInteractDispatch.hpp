@@ -41,6 +41,6 @@ public:
                                     _In_reads_(cParams) const unsigned short* const rgusParams,
                                     _In_ size_t const cParams) = 0;
 
-    virtual bool MoveCursor(unsigned int x, unsigned int y) = 0;
+    virtual bool MoveCursor(unsigned int row, unsigned int col) = 0;
 
 };

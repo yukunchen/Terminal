@@ -175,4 +175,10 @@ private:
                                     _In_ const unsigned short cParams,
                                     _Out_ unsigned int* const puiFunction) const;
 
+    static const unsigned int s_uiDefaultLine = 1;
+    static const unsigned int s_uiDefaultColumn = 1;
+    bool _GetXYPosition(_In_reads_(cParams) const unsigned short* const rgusParams,
+                        _In_ const unsigned short cParams,
+                        _Out_ unsigned int* const puiLine,
+                        _Out_ unsigned int* const puiColumn) const;
 };
