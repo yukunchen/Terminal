@@ -70,13 +70,6 @@ HRESULT VtEngine::InvalidateCursor(const COORD* const pcoordCursor)
     {
         _virtualTop = pcoordCursor->Y;
     }
-    // COORD bad = {0};
-    // if (_firstCursor == INVALID_COORDS && *pcoordCursor != bad)
-    // {
-    //     // DebugBreak();
-    //     _firstCursor = *pcoordCursor;
-    //     _virtualTop = _firstCursor.Y;
-    // }
 
     _cursorMoved = true;
     return S_OK;
@@ -106,28 +99,9 @@ HRESULT VtEngine::InvalidateAll()
 HRESULT VtEngine::InvalidateCircling(_Out_ bool* const pForcePaint)
 {
     *pForcePaint = true;
-    // COORD test = {0, 0};
-    // if (_invalidRect.IsWithinViewport(&test))
-    // {
-    //     *pForcePaint = true;
 
-    // }
-    // else
-    // {
-    //     *pForcePaint = false;
-    // }
-    // if (_virtualTop > 0)
-    // {
-    //     _virtualTop--;
-    // }
     _circled = true;
-    // COORD delta = {0, -1};
-    // InvalidateScroll(&delta);
-    // if (_lastText.Y > 0)
-    // // if (_lastText.Y > 0 && !(*pForcePaint))
-    // {
-    //     _lastText.Y--;
-    // }
+
     return S_OK;
 }
 
