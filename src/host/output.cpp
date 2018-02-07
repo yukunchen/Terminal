@@ -118,7 +118,10 @@ NTSTATUS ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenI
             {
                 currentChar = pRow->CharRow.GetTextIterator(coordSourcePoint.X);
             }
-            CATCH_LOG();
+            catch (...)
+            {
+                return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+            }
             std::vector<wchar_t>::const_iterator itEnd = pRow->CharRow.GetTextIteratorEnd();
 
 

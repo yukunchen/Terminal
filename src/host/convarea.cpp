@@ -727,7 +727,7 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
     {
 
         if (TargetPoint.Y == coordScreenBufferSize.Y - 1 &&
-            TargetPoint.X + static_cast<short>(StringLength) >= coordScreenBufferSize.X &&
+            TargetPoint.X + static_cast<USHORT>(StringLength) >= coordScreenBufferSize.X &&
             pDbcsAttributes[ScreenEndOfString - 1].IsLeading())
         {
             *(String + ScreenEndOfString - 1) = UNICODE_SPACE;
@@ -796,5 +796,18 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
         }
     }
 
-    ScreenInfo->ResetTextFlags(TargetPoint.X, TargetPoint.Y, static_cast<short>(TargetPoint.X + StringLength - 1), TargetPoint.Y);
+    int tempInt;
+    HRESULT hr = SizeTToInt(TargetPoint.X + StringLength - 1, &tempInt);
+    if (FAILED(hr))
+    {
+        return;
+    }
+    short tempShort;
+    hr = IntToShort(tempInt, &tempShort);
+    if (FAILED(hr))
+    {
+        return;
+    }
+
+    ScreenInfo->ResetTextFlags(TargetPoint.X, TargetPoint.Y, tempShort, TargetPoint.Y);
 }
