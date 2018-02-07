@@ -120,7 +120,10 @@ NTSTATUS ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenI
             {
                 it = std::next(pRow->CharRow.cbegin(), coordSourcePoint.X);
             }
-            CATCH_LOG();
+            catch (...)
+            {
+                return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+            }
             const CHAR_ROW::const_iterator itEnd = pRow->CharRow.cend();
 
 
