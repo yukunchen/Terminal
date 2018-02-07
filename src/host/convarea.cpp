@@ -24,7 +24,7 @@ void ConsoleImeWindowInfo(_In_ ConversionAreaInfo* ConvAreaInfo, _In_ SMALL_RECT
 NTSTATUS ConsoleImeResizeScreenBuffer(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ COORD NewScreenSize, _In_ ConversionAreaInfo* ConvAreaInfo);
 bool InsertConvertedString(_In_ LPCWSTR lpStr);
 void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
-                                  _In_ USHORT StringLength,
+                                  _In_ const size_t StringLength,
                                   _In_ PSCREEN_INFORMATION ScreenInfo,
                                   _In_reads_(StringLength) DbcsAttribute* const pDbcsAttributes);
 
@@ -186,15 +186,16 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
 
         while (NumChars < BufferSize)
         {
-            ULONG i = 0;
+
+            size_t currentBufferIndex = 0;
             WCHAR LocalBuffer[LOCAL_BUFFER_SIZE];
             DbcsAttribute dbcsAttributes[LOCAL_BUFFER_SIZE];
 
-            PWCHAR LocalBufPtr = LocalBuffer;
-
             WCHAR Char = 0;
             WORD Attr = 0;
-            while (NumChars < BufferSize && i < LOCAL_BUFFER_SIZE && Position.X < ScreenInfo->GetScreenWindowSizeX())
+            while (NumChars < BufferSize &&
+                   currentBufferIndex < LOCAL_BUFFER_SIZE &&
+                   Position.X < ScreenInfo->GetScreenWindowSizeX())
             {
                 Char = *lpString;
     #pragma prefast(suppress:__WARNING_INCORRECT_ANNOTATION, "Precarious but this is internal-only code so we can live with it")
@@ -203,15 +204,19 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
                 {
                     if (IsCharFullWidth(Char))
                     {
-                        if (i < (LOCAL_BUFFER_SIZE - 1) && Position.X < ScreenInfo->GetScreenWindowSizeX() - 1)
+                        if (currentBufferIndex < (LOCAL_BUFFER_SIZE - 1)
+                            && Position.X < ScreenInfo->GetScreenWindowSizeX() - 1)
                         {
-                            *LocalBufPtr++ = Char;
-                            dbcsAttributes[i].SetLeading();
-                            *LocalBufPtr++ = Char;
-                            ++i;
-                            dbcsAttributes[i].SetTrailing();
+                            // leading byte
+                            LocalBuffer[currentBufferIndex] = Char;
+                            dbcsAttributes[currentBufferIndex].SetLeading();
+                            ++currentBufferIndex;
+                            // trailing byte
+                            LocalBuffer[currentBufferIndex] = Char;
+                            dbcsAttributes[currentBufferIndex].SetTrailing();
+                            ++currentBufferIndex;
+
                             Position.X += 2;
-                            ++i;
                         }
                         else
                         {
@@ -221,10 +226,10 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
                     }
                     else
                     {
-                        *LocalBufPtr++ = Char;
-                        dbcsAttributes[i].SetSingle();
+                        LocalBuffer[currentBufferIndex] = Char;
+                        dbcsAttributes[currentBufferIndex].SetSingle();
+                        ++currentBufferIndex;
                         Position.X++;
-                        i++;
                     }
                 }
                 lpString++;
@@ -237,7 +242,7 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
                 }
             }
 
-            if (i != 0)
+            if (currentBufferIndex != 0)
             {
                 WORD wLegacyAttr = lpAtrIdx[Attr & 0x07];
                 if (Attr & 0x10)
@@ -251,9 +256,9 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
                 TextAttribute taAttribute = TextAttribute(wLegacyAttr);
                 ConvScreenInfo->SetAttributes(taAttribute);
 
-                StreamWriteToScreenBufferIME(LocalBuffer, (USHORT) i, ConvScreenInfo, dbcsAttributes);
+                StreamWriteToScreenBufferIME(LocalBuffer, currentBufferIndex, ConvScreenInfo, dbcsAttributes);
 
-                ConvScreenInfo->TextInfo->GetCursor()->IncrementXPosition(i);
+                ConvScreenInfo->TextInfo->GetCursor()->IncrementXPosition(static_cast<int>(currentBufferIndex));
 
                 if (NumChars == BufferSize ||
                     Position.X >= ScreenInfo->GetScreenWindowSizeX() ||
@@ -699,7 +704,7 @@ bool InsertConvertedString(_In_ LPCWSTR lpStr)
 }
 
 void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
-                                  _In_ USHORT StringLength,
+                                  _In_ const size_t StringLength,
                                   _In_ PSCREEN_INFORMATION ScreenInfo,
                                   _In_reads_(StringLength) DbcsAttribute* const pDbcsAttributes)
 {
@@ -722,12 +727,12 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
     {
 
         if (TargetPoint.Y == coordScreenBufferSize.Y - 1 &&
-            TargetPoint.X + StringLength >= coordScreenBufferSize.X &&
+            TargetPoint.X + static_cast<USHORT>(StringLength) >= coordScreenBufferSize.X &&
             pDbcsAttributes[ScreenEndOfString - 1].IsLeading())
         {
             *(String + ScreenEndOfString - 1) = UNICODE_SPACE;
             pDbcsAttributes[ScreenEndOfString - 1].SetSingle();
-            if (StringLength > ScreenEndOfString - 1)
+            if (StringLength > static_cast<size_t>(ScreenEndOfString) - 1)
             {
                 *(String + ScreenEndOfString) = UNICODE_SPACE;
                 pDbcsAttributes[ScreenEndOfString].SetSingle();
@@ -735,39 +740,15 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
         }
     }
 
-    memmove(&Row.CharRow.Chars[TargetPoint.X], String, StringLength * sizeof(WCHAR));
     try
     {
+        std::copy(String, String + StringLength, Row.CharRow.GetTextIterator(TargetPoint.X));
         std::copy(pDbcsAttributes, pDbcsAttributes + StringLength, Row.CharRow.GetAttributeIterator(TargetPoint.X));
     }
     CATCH_LOG();
 
     // recalculate first and last non-space char
-    if (TargetPoint.X < Row.CharRow.Left)
-    {
-        // CharRow.Left is leftmost bound of chars in Chars array (array will be full width) i.e. type is COORD
-        PWCHAR LastChar = &Row.CharRow.Chars[coordScreenBufferSize.X - 1];
-        PWCHAR Char;
-
-        for (Char = &Row.CharRow.Chars[TargetPoint.X]; Char < LastChar && *Char == (WCHAR)' '; Char++)
-        {
-            /* do nothing */ ;
-        }
-        Row.CharRow.Left = (SHORT)(Char - Row.CharRow.Chars.get());
-    }
-
-    if ((TargetPoint.X + StringLength) >= Row.CharRow.Right)
-    {
-        PWCHAR FirstChar = Row.CharRow.Chars.get();
-        PWCHAR Char;
-
-        for (Char = &Row.CharRow.Chars[TargetPoint.X + StringLength - 1]; *Char == (WCHAR)' ' && Char >= FirstChar; Char--)
-        {
-            /* do nothing */ ;
-        }
-
-        Row.CharRow.Right = (SHORT)(Char + 1 - FirstChar);
-    }
+    Row.CharRow.RemeasureBoundaryValues();
 
     // see if attr string is different.  if so, allocate a new attr buffer and merge the two strings.
     TextAttributeRun* pExistingHead;
@@ -784,7 +765,7 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
         if (fLVerticalSet || fRVerticalSet)
         {
             const int iFlag = fRVerticalSet? COMMON_LVB_GRID_RVERTICAL : COMMON_LVB_GRID_LVERTICAL;
-            for (short i = 0; i < StringLength; i++)
+            for (size_t i = 0; i < StringLength; i++)
             {
                 InsertedRun.SetLength(1);
                 const bool IsLeadingOrTrailing = fRVerticalSet ? pDbcsAttributes[i].IsLeading() : pDbcsAttributes[i].IsTrailing();
@@ -818,5 +799,18 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
         }
     }
 
-    ScreenInfo->ResetTextFlags(TargetPoint.X, TargetPoint.Y, TargetPoint.X + StringLength - 1, TargetPoint.Y);
+    int tempInt;
+    HRESULT hr = SizeTToInt(TargetPoint.X + StringLength - 1, &tempInt);
+    if (FAILED(hr))
+    {
+        return;
+    }
+    short tempShort;
+    hr = IntToShort(tempInt, &tempShort);
+    if (FAILED(hr))
+    {
+        return;
+    }
+
+    ScreenInfo->ResetTextFlags(TargetPoint.X, TargetPoint.Y, tempShort, TargetPoint.Y);
 }

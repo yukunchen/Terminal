@@ -741,10 +741,8 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
                     // wouldn't be any text to grab.
                     if (startIndex < endIndex)
                     {
-                        std::wstring tempString = std::wstring(row.CharRow.Chars.get() + startIndex,
-                                                               row.CharRow.Chars.get() + endIndex);
                         // add to result string
-                        wstr += tempString;
+                        wstr += row.CharRow.GetText().substr(startIndex, endIndex - startIndex);
                     }
                 }
 

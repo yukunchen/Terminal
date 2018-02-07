@@ -33,28 +33,28 @@ public:
 
     bool Reset(_In_ UINT const cchRowWidth, _In_ const TextAttribute attr);
 
-    void FindAttrIndex(_In_ UINT const iIndex,
+    void FindAttrIndex(_In_ size_t const index,
                        _Outptr_ TextAttributeRun** const ppIndexedAttr,
-                       _Out_opt_ UINT* const pcAttrApplies) const;
+                       _Out_opt_ size_t* const pcAttrApplies) const;
     bool SetAttrToEnd(_In_ UINT const iStart, _In_ const TextAttribute attr);
     void ReplaceLegacyAttrs(_In_ const WORD wToBeReplacedAttr, _In_ const WORD wReplaceWith);
     HRESULT Resize(_In_ const short sOldWidth, _In_ const short sNewWidth);
 
     HRESULT InsertAttrRuns(_In_reads_(cAttrs) const TextAttributeRun* const prgAttrs,
-                           _In_ const UINT cAttrs,
-                           _In_ const UINT iStart,
-                           _In_ const UINT iEnd,
-                           _In_ const UINT cBufferWidth);
+                           _In_ const size_t cAttrs,
+                           _In_ const size_t iStart,
+                           _In_ const size_t iEnd,
+                           _In_ const size_t cBufferWidth);
 
-    NTSTATUS UnpackAttrs(_Out_writes_(cRowLength) TextAttribute* const rgAttrs, _In_ UINT const cRowLength) const;
+    NTSTATUS UnpackAttrs(_Out_writes_(cRowLength) TextAttribute* const rgAttrs, _In_ const size_t cRowLength) const;
 
     friend constexpr bool operator==(const ATTR_ROW& a, const ATTR_ROW& b) noexcept;
 
-    UINT _cList;   // length of attr pair array
+    size_t _cList;   // length of attr pair array
     wistd::unique_ptr<TextAttributeRun[]> _rgList;
 private:
 
-    UINT _cchRowWidth;
+    size_t _cchRowWidth;
 
 
 #ifdef UNIT_TESTING

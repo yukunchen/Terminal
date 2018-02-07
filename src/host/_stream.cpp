@@ -748,14 +748,12 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                 COORD const TargetPoint = pCursor->GetPosition();
                 ROW& Row = pTextBuffer->GetRowByOffset(TargetPoint.Y);
 
-                PWCHAR const CharTmp = &Row.CharRow.Chars[TargetPoint.X];
-
                 try
                 {
                     if (Row.CharRow.GetAttribute(TargetPoint.X).IsTrailing())
                     {
-                        *(CharTmp - 1) = UNICODE_SPACE;
-                        *CharTmp = UNICODE_SPACE;
+                        Row.CharRow.ClearGlyph(TargetPoint.X);
+                        Row.CharRow.ClearGlyph(TargetPoint.X - 1);
                         Row.CharRow.GetAttribute(TargetPoint.X).SetSingle();
                         Row.CharRow.GetAttribute(TargetPoint.X - 1).SetSingle();
 

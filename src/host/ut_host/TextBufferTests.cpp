@@ -271,38 +271,36 @@ void TextBufferTests::DoBoundaryTest(PWCHAR const pwszInputString,
     CHAR_ROW* const pCharRow = &tbi->GetFirstRow().CharRow;
 
     // copy string into buffer
-    CopyMemory(pCharRow->Chars.get(), pwszInputString, cLength * sizeof(WCHAR));
+    std::copy_n(pwszInputString, cLength, pCharRow->GetTextIterator(0));
 
     // space pad the rest of the string
     if (cLength < cMax)
     {
-        PWCHAR pChars= pCharRow->Chars.get();
-
         for (short cStart = cLength; cStart < cMax; cStart++)
         {
-            pChars[cStart] = UNICODE_SPACE;
+            pCharRow->ClearGlyph(cStart);
         }
     }
 
     // left edge should be 0 since there are no leading spaces
-    VERIFY_ARE_EQUAL(pCharRow->MeasureLeft(cMax), cLeft);
+    VERIFY_ARE_EQUAL(pCharRow->MeasureLeft(), cLeft);
     // right edge should be one past the index of the last character or the string length
-    VERIFY_ARE_EQUAL(pCharRow->MeasureRight(cMax), cRight);
+    VERIFY_ARE_EQUAL(pCharRow->MeasureRight(), cRight);
 
     const short csLeftBefore = -1234;
     const short csRightBefore = -4567;
 
     pCharRow->Left = csLeftBefore;
-    pCharRow->MeasureAndSaveLeft(cMax);
+    pCharRow->MeasureAndSaveLeft();
     VERIFY_ARE_EQUAL(pCharRow->Left, cLeft);
 
     pCharRow->Right = csRightBefore;
-    pCharRow->MeasureAndSaveRight(cMax);
+    pCharRow->MeasureAndSaveRight();
     VERIFY_ARE_EQUAL(pCharRow->Right, cRight);
 
     pCharRow->Left = csLeftBefore;
     pCharRow->Right = csRightBefore;
-    pCharRow->RemeasureBoundaryValues(cMax);
+    pCharRow->RemeasureBoundaryValues();
     VERIFY_ARE_EQUAL(pCharRow->Left, cLeft);
     VERIFY_ARE_EQUAL(pCharRow->Right, cRight);
 }
@@ -382,12 +380,11 @@ void TextBufferTests::TestInsertCharacter()
     TextAttribute TestAttributes = TextAttribute(wAttrTest);
 
     // ensure that the buffer didn't start with these fields
-    VERIFY_ARE_NOT_EQUAL(Row.CharRow.Chars[coordCursorBefore.X], wchTest);
+    VERIFY_ARE_NOT_EQUAL(Row.CharRow.GetGlyphAt(coordCursorBefore.X), wchTest);
     VERIFY_ARE_NOT_EQUAL(Row.CharRow.GetAttribute(coordCursorBefore.X), dbcsAttribute);
 
     TextAttributeRun* pAttrRun;
-    UINT cAttrApplies;
-    Row.AttrRow.FindAttrIndex(coordCursorBefore.X, &pAttrRun, &cAttrApplies);
+    Row.AttrRow.FindAttrIndex(coordCursorBefore.X, &pAttrRun, nullptr);
 
     VERIFY_IS_FALSE(pAttrRun->GetAttributes().IsEqual(TestAttributes));
 
@@ -395,10 +392,10 @@ void TextBufferTests::TestInsertCharacter()
     pTbi->InsertCharacter(wchTest, dbcsAttribute, TestAttributes);
 
     // ensure that the buffer position where the cursor WAS contains the test items
-    VERIFY_ARE_EQUAL(Row.CharRow.Chars[coordCursorBefore.X], wchTest);
+    VERIFY_ARE_EQUAL(Row.CharRow.GetGlyphAt(coordCursorBefore.X), wchTest);
     VERIFY_ARE_EQUAL(Row.CharRow.GetAttribute(coordCursorBefore.X), dbcsAttribute);
 
-    Row.AttrRow.FindAttrIndex(coordCursorBefore.X, &pAttrRun, &cAttrApplies);
+    Row.AttrRow.FindAttrIndex(coordCursorBefore.X, &pAttrRun, nullptr);
     VERIFY_IS_TRUE(pAttrRun->GetAttributes().IsEqual(TestAttributes));
 
     // ensure that the cursor moved to a new position (X or Y or both have changed)

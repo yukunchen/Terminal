@@ -54,15 +54,26 @@ public:
 
     SHORT Right;    // one past rightmost bound of chars in Chars array (array will be full width)
     SHORT Left; // leftmost bound of chars in Chars array (array will be full width)
-    std::unique_ptr<wchar_t[]> Chars; // all chars in row
 
     const DbcsAttribute& GetAttribute(_In_ const size_t column) const;
     DbcsAttribute& GetAttribute(_In_ const size_t column);
 
     std::vector<DbcsAttribute>::iterator GetAttributeIterator(_In_ const size_t column);
-    std::vector<DbcsAttribute>::const_iterator CHAR_ROW::GetAttributeIterator(_In_ const size_t column) const;
+    std::vector<DbcsAttribute>::const_iterator GetAttributeIterator(_In_ const size_t column) const;
 
-    std::vector<DbcsAttribute>::const_iterator CHAR_ROW::GetAttributeIteratorEnd() const noexcept;
+    std::vector<DbcsAttribute>::const_iterator GetAttributeIteratorEnd() const noexcept;
+
+    std::vector<wchar_t>::iterator GetTextIterator(_In_ const size_t column);
+    std::vector<wchar_t>::const_iterator GetTextIterator(_In_ const size_t column) const;
+
+    std::vector<wchar_t>::const_iterator GetTextIteratorEnd() const noexcept;
+
+    std::wstring GetText() const;
+
+    void ClearGlyph(const size_t column);
+
+    const wchar_t& GetGlyphAt(const size_t column) const;
+    wchar_t& GetGlyphAt(const size_t column);
 
     void Reset(_In_ short const sRowWidth);
 
@@ -81,13 +92,11 @@ public:
         DoubleBytePadded = 0x2, // Occurs when the user runs out of text to support a double byte character and we're forced to the next line
     };
 
-    // TODO: this class should know the width of itself and use that instead of the caller needing to know.
-    // caller knowing more often than not means passing the SCREEN_INFO width... which is also silly.
-    void RemeasureBoundaryValues(_In_ short const sRowWidth);
-    void MeasureAndSaveLeft(_In_ short const sRowWidth);
-    void MeasureAndSaveRight(_In_ short const sRowWidth);
-    short MeasureLeft(_In_ short const sRowWidth) const;
-    short MeasureRight(_In_ short const sRowWidth) const;
+    void RemeasureBoundaryValues();
+    void MeasureAndSaveLeft();
+    void MeasureAndSaveRight();
+    short MeasureLeft() const;
+    short MeasureRight() const;
 
     bool ContainsText() const;
 
@@ -100,6 +109,7 @@ private:
     RowFlags bRowFlags;
     size_t _rowWidth;
     std::vector<DbcsAttribute> _attributes; // all DBCS lead & trail bit in row
+    std::vector<wchar_t> _chars;
 
 #ifdef UNIT_TESTING
     friend class CharRowTests;
@@ -115,7 +125,7 @@ constexpr bool operator==(const CHAR_ROW& a, const CHAR_ROW& b) noexcept
             a._rowWidth == b._rowWidth &&
             a.Right == b.Right &&
             a.Left == b.Left &&
-            a.Chars == b.Chars &&
+            a._chars == b._chars &&
             a._attributes == b._attributes);
 }
 

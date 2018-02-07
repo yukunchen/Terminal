@@ -24,15 +24,15 @@ Revision History:
 class TextAttributeRun final
 {
 public:
-    UINT GetLength() const;
-    void SetLength(_In_ UINT const cchLength);
+    size_t GetLength() const;
+    void SetLength(_In_ size_t const cchLength);
 
     const TextAttribute GetAttributes() const;
     void SetAttributes(_In_ const TextAttribute textAttribute);
     void SetAttributesFromLegacy(_In_ const WORD wNew);
 
 private:
-    UINT _cchLength;
+    size_t _cchLength;
     TextAttribute _attributes;
 
 #ifdef UNIT_TESTING

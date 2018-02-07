@@ -169,9 +169,10 @@ USHORT SearchForString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                 return 0;
             }
     #endif
+            const std::wstring rowText = pRow->CharRow.GetText();
             if (IgnoreCase ?
-                0 == _wcsnicmp(pwszSearch, &pRow->CharRow.Chars[Position.X], cchSearch) :
-                0 == wcsncmp(pwszSearch, &pRow->CharRow.Chars[Position.X], cchSearch))
+                0 == _wcsnicmp(pwszSearch, &rowText.c_str()[Position.X], cchSearch) :
+                0 == wcsncmp(pwszSearch, &rowText.c_str()[Position.X], cchSearch))
             {
                 //  If this operation was a normal user find, then return now. Otherwise set the attributes of this match,
                 //  and continue searching the whole buffer.
