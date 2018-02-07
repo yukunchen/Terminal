@@ -572,6 +572,10 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
             {
                 Status = NTSTATUS_FROM_HRESULT(hr);
             }
+            else
+            {
+                Status = ERROR_SUCCESS;
+            }
         }
         else
         {

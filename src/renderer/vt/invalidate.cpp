@@ -175,7 +175,6 @@ HRESULT VtEngine::_InvalidOffset(_In_ const COORD* const pCoord)
 
         // Ensure invalid areas remain within bounds of window.
         RETURN_IF_FAILED(_InvalidRestrict());
-
     }
 
     return S_OK;

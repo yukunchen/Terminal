@@ -19,17 +19,14 @@
 
 using namespace Microsoft::Console;
 
-void _HandleTerminalKeyEventCallback(_In_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
-{
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    gci->pInputBuffer->Write(inEvents);
-}
-
 // Constructor Description:
 // - Creates the VT Input Thread.
 // Arguments:
 // - hPipe - a handle to the file representing the read end of the VT pipe.
-VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe, _In_ const bool inheritCursor)
+// - inheritCursor - a bool indicating if the state machine should expect a
+//      cursor positioning sequence. See MSFT:15681311.
+VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
+                             _In_ const bool inheritCursor)
     : _hFile(std::move(hPipe))
 {
     THROW_IF_HANDLE_INVALID(_hFile.get());
