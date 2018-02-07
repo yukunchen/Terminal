@@ -233,29 +233,17 @@ HRESULT VtEngine::_16ColorUpdateDrawingBrushes(_In_ COLORREF const colorForegrou
 {
     if (colorForeground != _LastFG)
     {
-        if (colorForeground == _colorProvider.GetDefaultForeground())
-        {
-            RETURN_IF_FAILED(_SetGraphicsRenditionDefaultColor(true));
-        }
-        else
-        {
-            const WORD wNearestFg = ::FindNearestTableIndex(colorForeground, ColorTable, cColorTable);
-            RETURN_IF_FAILED(_SetGraphicsRendition16Color(wNearestFg, true));
-        }
+        const WORD wNearestFg = ::FindNearestTableIndex(colorForeground, ColorTable, cColorTable);
+        RETURN_IF_FAILED(_SetGraphicsRendition16Color(wNearestFg, true));
+
         _LastFG = colorForeground;
     }
 
     if (colorBackground != _LastBG)
     {
-        if (colorBackground == _colorProvider.GetDefaultBackground())
-        {
-            RETURN_IF_FAILED(_SetGraphicsRenditionDefaultColor(false));
-        }
-        else
-        {
-            const WORD wNearestBg = ::FindNearestTableIndex(colorBackground, ColorTable, cColorTable);
-            RETURN_IF_FAILED(_SetGraphicsRendition16Color(wNearestBg, false));
-        }
+        const WORD wNearestBg = ::FindNearestTableIndex(colorBackground, ColorTable, cColorTable);
+        RETURN_IF_FAILED(_SetGraphicsRendition16Color(wNearestBg, false));
+
         _LastBG = colorBackground;
     }
 
