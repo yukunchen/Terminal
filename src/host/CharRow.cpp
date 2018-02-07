@@ -293,9 +293,13 @@ void CHAR_ROW::Reset(_In_ short const sRowWidth)
 // - S_OK on success, otherwise relevant error code
 HRESULT CHAR_ROW::Resize(_In_ size_t const newSize)
 {
-    _chars.resize(newSize, UNICODE_SPACE);
-    // last attribute in a row gets extended to the end
-    _attributes.resize(newSize, _attributes.back());
+    try
+    {
+        _chars.resize(newSize, UNICODE_SPACE);
+        // last attribute in a row gets extended to the end
+        _attributes.resize(newSize, _attributes.back());
+    }
+    CATCH_RETURN();
 
     Left = static_cast<short>(newSize);
     Right = 0;
