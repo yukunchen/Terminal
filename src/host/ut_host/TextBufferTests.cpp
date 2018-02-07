@@ -283,9 +283,9 @@ void TextBufferTests::DoBoundaryTest(PWCHAR const pwszInputString,
     }
 
     // left edge should be 0 since there are no leading spaces
-    VERIFY_ARE_EQUAL(pCharRow->MeasureLeft(), cLeft);
+    VERIFY_ARE_EQUAL(pCharRow->MeasureLeft(), static_cast<size_t>(cLeft));
     // right edge should be one past the index of the last character or the string length
-    VERIFY_ARE_EQUAL(pCharRow->MeasureRight(), cRight);
+    VERIFY_ARE_EQUAL(pCharRow->MeasureRight(), static_cast<size_t>(cRight));
 }
 
 void TextBufferTests::TestBoundaryMeasuresRegularString()
