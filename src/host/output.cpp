@@ -457,7 +457,7 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                     size_t copyAmount = *pcRecords - NumRead;
                     wchar_t* pChars = BufPtr;
                     DbcsAttribute* pAttrs = BufPtrA;
-                    if (coordScreenBufferSize.X - X > copyAmount)
+                    if (static_cast<size_t>(coordScreenBufferSize.X - X) > copyAmount)
                     {
                         std::for_each(startIt, std::next(startIt, copyAmount), [&](const auto& vals)
                         {
