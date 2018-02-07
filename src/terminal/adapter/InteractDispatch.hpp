@@ -40,7 +40,8 @@ public:
     virtual bool WindowManipulation(_In_ const DispatchCommon::WindowManipulationType uiFunction,
                                     _In_reads_(cParams) const unsigned short* const rgusParams,
                                     _In_ size_t const cParams) override; // DTTERM_WindowManipulation
-    virtual bool MoveCursor(unsigned int row, unsigned int col) override;
+    virtual bool MoveCursor(_In_ const unsigned int row,
+                            _In_ const unsigned int col) override;
 private:
 
     std::unique_ptr<ConGetSet> _pConApi;

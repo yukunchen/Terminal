@@ -142,7 +142,7 @@ HRESULT VtIo::_Initialize(_In_ const HANDLE InHandle, _In_ const HANDLE OutHandl
 
     try
     {
-        _pVtInputThread = std::make_unique<VtInputThread>(std::move(hInputFile));
+        _pVtInputThread = std::make_unique<VtInputThread>(std::move(hInputFile), _lookingForCursorPosition);
 
         Viewport initialViewport = Viewport::FromDimensions({0, 0},
                                                             gci->GetWindowSize().X,

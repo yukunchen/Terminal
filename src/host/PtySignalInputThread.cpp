@@ -14,6 +14,7 @@
 #include "..\terminal\adapter\DispatchCommon.hpp"
 
 #define PTY_SIGNAL_RESIZE_WINDOW 8u
+
 struct PTY_SIGNAL_RESIZE
 {
     unsigned short sx;
@@ -118,6 +119,7 @@ bool PtySignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pBu
         CloseConsoleProcessState();
         return false;
     }
+
     return true;
 }
 

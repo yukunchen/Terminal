@@ -22,7 +22,7 @@ namespace Microsoft
         class VtInputThread
         {
         public:
-            VtInputThread(_In_ wil::unique_hfile hPipe);
+            VtInputThread(_In_ wil::unique_hfile hPipe, _In_ const bool inheritCursor);
 
             HRESULT Start();
             static DWORD StaticVtInputThreadProc(_In_ LPVOID lpParameter);

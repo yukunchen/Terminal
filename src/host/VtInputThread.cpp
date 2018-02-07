@@ -29,7 +29,7 @@ void _HandleTerminalKeyEventCallback(_In_ std::deque<std::unique_ptr<IInputEvent
 // - Creates the VT Input Thread.
 // Arguments:
 // - hPipe - a handle to the file representing the read end of the VT pipe.
-VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe)
+VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe, _In_ const bool inheritCursor)
     : _hFile(std::move(hPipe))
 {
     THROW_IF_HANDLE_INVALID(_hFile.get());
@@ -44,7 +44,7 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe)
     THROW_IF_NULL_ALLOC(pDispatch);
 
     std::unique_ptr<InputStateMachineEngine> pEngine =
-        std::make_unique<InputStateMachineEngine>(std::move(pDispatch), true);
+        std::make_unique<InputStateMachineEngine>(std::move(pDispatch), inheritCursor);
     THROW_IF_NULL_ALLOC(pEngine);
 
     _pInputStateMachine = std::make_unique<StateMachine>(std::move(pEngine));
@@ -140,13 +140,14 @@ void VtInputThread::DoReadInput(_In_ const bool throwOnFail)
 //      passes it to _HandleRunInput to be processed by the
 //      InputStateMachineEngine.
 // Return Value:
-// - <none>
+// - Does not return.
 DWORD VtInputThread::_InputThread()
 {
     while (true)
     {
         DoReadInput(true);
     }
+    // Above loop will never return.
 }
 
 // Method Description:
@@ -154,7 +155,6 @@ DWORD VtInputThread::_InputThread()
 HRESULT VtInputThread::Start()
 {
     RETURN_IF_HANDLE_INVALID(_hFile.get());
-
 
     HANDLE hThread = nullptr;
     // 0 is the right value, https://blogs.msdn.microsoft.com/oldnewthing/20040223-00/?p=40503
