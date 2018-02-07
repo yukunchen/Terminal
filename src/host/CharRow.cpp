@@ -329,3 +329,13 @@ bool CHAR_ROW::ContainsText() const
     }
     return false;
 }
+
+ICharRow::SupportedEncoding CHAR_ROW::GetSupportedEncoding() const noexcept
+{
+    return ICharRow::SupportedEncoding::Ucs2;
+}
+
+void CHAR_ROW::ClearCell(_In_ const size_t column)
+{
+    _data.at(column) = { UNICODE_SPACE, DbcsAttribute() };
+}

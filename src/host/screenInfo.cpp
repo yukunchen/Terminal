@@ -9,6 +9,7 @@
 #include "screenInfo.hpp"
 #include "dbcs.h"
 #include "output.h"
+#include "CharRow.hpp"
 #include <math.h>
 #include "..\interactivity\inc\ServiceLocator.hpp"
 #include "..\types\inc\Viewport.hpp"
@@ -631,8 +632,17 @@ void SCREEN_INFORMATION::ResetTextFlags(_In_ short const sStartX,
             try
             {
                 const ROW& Row = pTextInfo->GetRowAtIndex(RowIndex);
-                Char = Row.GetCharRow().GetGlyphAt(sStartX);
-                Row.GetAttrRow().FindAttrIndex(sStartX, &pAttrRun, nullptr);
+                const ICharRow& iCharRow = Row.GetCharRow();
+                if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
+                {
+                    const CHAR_ROW& charRow = static_cast<const CHAR_ROW&>(iCharRow);
+                    Char = charRow.GetGlyphAt(sStartX);
+                    Row.GetAttrRow().FindAttrIndex(sStartX, &pAttrRun, nullptr);
+                }
+                else
+                {
+                    return;
+                }
             }
             catch (...)
             {
@@ -1480,8 +1490,17 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
             DbcsAttribute bKAttr;
             try
             {
-                wchChar = Row.GetCharRow().GetGlyphAt(iOldCol);
-                bKAttr = Row.GetCharRow().GetAttribute(iOldCol);
+                const ICharRow& iCharRow = Row.GetCharRow();
+                if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
+                {
+                    const CHAR_ROW& charRow = static_cast<const CHAR_ROW&>(iCharRow);
+                    wchChar = charRow.GetGlyphAt(iOldCol);
+                    bKAttr = charRow.GetAttribute(iOldCol);
+                }
+                else
+                {
+                    return STATUS_UNSUCCESSFUL;
+                }
             }
             catch (...)
             {

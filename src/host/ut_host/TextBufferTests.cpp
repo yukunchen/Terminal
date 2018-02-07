@@ -10,6 +10,7 @@
 
 #include "globals.h"
 #include "textBuffer.hpp"
+#include "CharRow.hpp"
 
 #include "input.h"
 
@@ -268,7 +269,10 @@ void TextBufferTests::DoBoundaryTest(PWCHAR const pwszInputString,
 {
     TEXT_BUFFER_INFO* const tbi = GetTbi();
 
-    CHAR_ROW& charRow = tbi->GetFirstRow().GetCharRow();
+    ICharRow& iCharRow = tbi->GetFirstRow().GetCharRow();
+    // for the time being, we only support UCS2 char rows
+    VERIFY_ARE_EQUAL(ICharRow::SupportedEncoding::Ucs2, iCharRow.GetSupportedEncoding());
+    CHAR_ROW& charRow = static_cast<CHAR_ROW&>(iCharRow);
 
     // copy string into buffer
     for (size_t i = 0; i < cLength; ++i)
@@ -365,9 +369,13 @@ void TextBufferTests::TestInsertCharacter()
     WORD const wAttrTest = BACKGROUND_INTENSITY | FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_BLUE;
     TextAttribute TestAttributes = TextAttribute(wAttrTest);
 
+    const ICharRow& iCharRow = Row.GetCharRow();
+    // for the time being, we only support UCS2 char rows
+    VERIFY_ARE_EQUAL(ICharRow::SupportedEncoding::Ucs2, iCharRow.GetSupportedEncoding());
+    const CHAR_ROW& charRow = static_cast<const CHAR_ROW&>(iCharRow);
     // ensure that the buffer didn't start with these fields
-    VERIFY_ARE_NOT_EQUAL(Row.GetCharRow().GetGlyphAt(coordCursorBefore.X), wchTest);
-    VERIFY_ARE_NOT_EQUAL(Row.GetCharRow().GetAttribute(coordCursorBefore.X), dbcsAttribute);
+    VERIFY_ARE_NOT_EQUAL(charRow.GetGlyphAt(coordCursorBefore.X), wchTest);
+    VERIFY_ARE_NOT_EQUAL(charRow.GetAttribute(coordCursorBefore.X), dbcsAttribute);
 
     TextAttributeRun* pAttrRun;
     Row.GetAttrRow().FindAttrIndex(coordCursorBefore.X, &pAttrRun, nullptr);
@@ -378,8 +386,8 @@ void TextBufferTests::TestInsertCharacter()
     pTbi->InsertCharacter(wchTest, dbcsAttribute, TestAttributes);
 
     // ensure that the buffer position where the cursor WAS contains the test items
-    VERIFY_ARE_EQUAL(Row.GetCharRow().GetGlyphAt(coordCursorBefore.X), wchTest);
-    VERIFY_ARE_EQUAL(Row.GetCharRow().GetAttribute(coordCursorBefore.X), dbcsAttribute);
+    VERIFY_ARE_EQUAL(charRow.GetGlyphAt(coordCursorBefore.X), wchTest);
+    VERIFY_ARE_EQUAL(charRow.GetAttribute(coordCursorBefore.X), dbcsAttribute);
 
     Row.GetAttrRow().FindAttrIndex(coordCursorBefore.X, &pAttrRun, nullptr);
     VERIFY_IS_TRUE(pAttrRun->GetAttributes().IsEqual(TestAttributes));
@@ -579,7 +587,11 @@ void TextBufferTests::TestIncrementCircularBuffer()
 
         // fill first row with some stuff
         ROW& FirstRow = pTbi->GetFirstRow();
-        FirstRow.GetCharRow().GetGlyphAt(0) = L'A';
+        ICharRow& iCharRow = FirstRow.GetCharRow();
+        // for the time being, we only support UCS2 char rows
+        VERIFY_ARE_EQUAL(ICharRow::SupportedEncoding::Ucs2, iCharRow.GetSupportedEncoding());
+        CHAR_ROW& charRow = static_cast<CHAR_ROW&>(iCharRow);
+        charRow.GetGlyphAt(0) = L'A';
 
         // ensure it does say that it contains text
         VERIFY_IS_TRUE(FirstRow.GetCharRow().ContainsText());

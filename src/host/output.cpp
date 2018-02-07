@@ -11,6 +11,7 @@
 
 #include "getset.h"
 #include "misc.h"
+#include "CharRow.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 #include "..\types\inc\Viewport.hpp"
@@ -116,13 +117,22 @@ NTSTATUS ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenI
 
             // copy the chars and attrs from their respective arrays
             CHAR_ROW::const_iterator it;
+            CHAR_ROW::const_iterator itEnd;
             try
             {
-                it = std::next(pRow->GetCharRow().cbegin(), coordSourcePoint.X);
+                const ICharRow& iCharRow = pRow->GetCharRow();
+                if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
+                {
+                    const CHAR_ROW& charRow = static_cast<const CHAR_ROW&>(iCharRow);
+                    it = std::next(charRow.cbegin(), coordSourcePoint.X);
+                    itEnd = charRow.cend();
+                }
+                else
+                {
+                    return STATUS_UNSUCCESSFUL;
+                }
             }
             CATCH_LOG();
-            const CHAR_ROW::const_iterator itEnd = pRow->GetCharRow().cend();
-
 
             // Unpack the attributes into an array so we can iterate over them.
             pRow->GetAttrRow().UnpackAttrs(rgUnpackedRowAttributes, ScreenBufferWidth);
@@ -450,7 +460,14 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                 // copy the chars from its array
                 try
                 {
-                    CHAR_ROW::const_iterator startIt = std::next(pRow->GetCharRow().cbegin(), X);
+                    const ICharRow& iCharRow = pRow->GetCharRow();
+                    if (iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2)
+                    {
+                        return STATUS_UNSUCCESSFUL;
+                    }
+
+                    const CHAR_ROW& charRow = static_cast<const CHAR_ROW&>(iCharRow);
+                    const CHAR_ROW::const_iterator startIt = std::next(charRow.cbegin(), X);
                     size_t copyAmount = *pcRecords - NumRead;
                     wchar_t* pChars = BufPtr;
                     DbcsAttribute* pAttrs = BufPtrA;
@@ -554,15 +571,25 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
             {
                 // Copy the attrs from its array.
                 CHAR_ROW::const_iterator it;
+                CHAR_ROW::const_iterator itEnd;
                 try
                 {
-                    it = std::next(pRow->GetCharRow().cbegin(), X);
+                    const ICharRow& iCharRow = pRow->GetCharRow();
+                    if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
+                    {
+                        const CHAR_ROW& charRow = static_cast<const CHAR_ROW&>(iCharRow);
+                        it = std::next(charRow.cbegin(), X);
+                        itEnd = charRow.cend();
+                    }
+                    else
+                    {
+                        return STATUS_UNSUCCESSFUL;
+                    }
                 }
                 catch (...)
                 {
                     return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
                 }
-                const CHAR_ROW::const_iterator itEnd = pRow->GetCharRow().cend();
 
                 pRow->GetAttrRow().FindAttrIndex(X, &pAttrRun, &CountOfAttr);
 

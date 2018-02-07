@@ -24,6 +24,7 @@ unit testing projects in the codebase without a bunch of overhead.
 #include "precomp.h"
 #include "../host/globals.h"
 #include "../host/newdelete.hpp"
+#include "../host/CharRow.hpp"
 #include "../interactivity/inc/ServiceLocator.hpp"
 
 #include <algorithm>
@@ -234,10 +235,17 @@ private:
         attrs[5].SetLeading();
         attrs[6].SetTrailing();
 
+        ICharRow& iCharRow = pRow->GetCharRow();
+        if (iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2)
+        {
+            LOG_HR_MSG(E_FAIL, "we don't support non UCS2 encoded char rows");
+            return;
+        }
+        CHAR_ROW& charRow = static_cast<CHAR_ROW&>(iCharRow);
         std::transform(pwszText,
                        pwszText + length,
                        attrs.cbegin(),
-                       pRow->GetCharRow().begin(),
+                       charRow.begin(),
                        [](const wchar_t wch, const DbcsAttribute attr)
         {
             return CHAR_ROW::value_type{ wch, attr};
@@ -305,10 +313,17 @@ private:
         attrs[68].SetTrailing();
         attrs[79].SetLeading();
 
+        ICharRow& iCharRow = pRow->GetCharRow();
+        if (iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2)
+        {
+            LOG_HR_MSG(E_FAIL, "we don't support non UCS2 encoded char rows");
+            return;
+        }
+        CHAR_ROW& charRow = static_cast<CHAR_ROW&>(iCharRow);
         std::transform(pwszText,
                        pwszText + length,
                        attrs.cbegin(),
-                       pRow->GetCharRow().begin(),
+                       charRow.begin(),
                        [](const wchar_t wch, const DbcsAttribute attr)
         {
             return CHAR_ROW::value_type{ wch, attr};

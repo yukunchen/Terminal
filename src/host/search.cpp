@@ -3,6 +3,7 @@
 #include "search.h"
 
 #include "dbcs.h"
+#include "CharRow.hpp"
 
 USHORT SearchForString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                        _In_reads_(cchSearch) PCWSTR pwszSearch,
@@ -158,9 +159,18 @@ USHORT SearchForString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
             ASSERT(nLoop++ < 2);
             try
             {
-                if (pRow->GetCharRow().GetAttribute(Position.X).IsTrailing())
+                const ICharRow& iCharRow = pRow->GetCharRow();
+                if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
                 {
-                    goto recalc;
+                    const CHAR_ROW& charRow = static_cast<const CHAR_ROW&>(iCharRow);
+                    if (charRow.GetAttribute(Position.X).IsTrailing())
+                    {
+                        goto recalc;
+                    }
+                }
+                else
+                {
+                    return 0;
                 }
             }
             catch (...)
@@ -169,7 +179,18 @@ USHORT SearchForString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                 return 0;
             }
     #endif
-            const std::wstring rowText = pRow->GetCharRow().GetText();
+            std::wstring rowText;
+            const ICharRow& iCharRow = pRow->GetCharRow();
+            if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
+            {
+                const CHAR_ROW& charRow = static_cast<const CHAR_ROW&>(iCharRow);
+                rowText = charRow.GetText();
+            }
+            else
+            {
+                return 0;
+            }
+
             if (IgnoreCase ?
                 0 == _wcsnicmp(pwszSearch, &rowText.c_str()[Position.X], cchSearch) :
                 0 == wcsncmp(pwszSearch, &rowText.c_str()[Position.X], cchSearch))

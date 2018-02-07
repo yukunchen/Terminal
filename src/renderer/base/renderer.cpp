@@ -569,21 +569,29 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
         // If there's anything to draw... draw it.
         if (iRight > iLeft)
         {
+            const ICharRow& iCharRow = Row.GetCharRow();
+            if (iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2)
+            {
+                LOG_HR_MSG(E_FAIL, "we don't support non UCS2 encoded char rows");
+                return;
+            }
+            const CHAR_ROW& charRow = static_cast<const CHAR_ROW&>(iCharRow);
+
             // Get the pointer to the beginning of the text and the maximum length of the line we'll be writing.
-            const std::wstring rowText = Row.GetCharRow().GetText();
+            const std::wstring rowText = charRow.GetText();
             const wchar_t* const pwsLine = rowText.c_str() + iLeft;
 
             CHAR_ROW::const_iterator it;
             try
             {
-                it = std::next(Row.GetCharRow().cbegin(), iLeft);
+                it = std::next(charRow.cbegin(), iLeft);
             }
             catch (...)
             {
                 LOG_HR(wil::ResultFromCaughtException());
                 return;
             }
-            const CHAR_ROW::const_iterator itEnd = Row.GetCharRow().cend();
+            const CHAR_ROW::const_iterator itEnd = charRow.cend();
 
             size_t const cchLine = iRight - iLeft;
 
@@ -1007,21 +1015,28 @@ void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
                 // Get row of text data
                 const ROW& Row = pTextInfo->GetRowByOffset(iRow - AreaInfo->CaInfo.coordConView.Y);
 
+                const ICharRow& iCharRow = Row.GetCharRow();
+                if (iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2)
+                {
+                    LOG_HR_MSG(E_FAIL, "we don't support non UCS2 encoded char rows");
+                    return;
+                }
+                const CHAR_ROW& charRow = static_cast<const CHAR_ROW&>(iCharRow);
                 // Get the pointer to the beginning of the text and the maximum length of the line we'll be writing.
-                const std::wstring rowText = Row.GetCharRow().GetText();
+                const std::wstring rowText = charRow.GetText();
                 const wchar_t* const pwsLine = rowText.c_str() + viewDirty.Left() - AreaInfo->CaInfo.coordConView.X;
 
                 CHAR_ROW::const_iterator it;
                 try
                 {
-                    it = std::next(Row.GetCharRow().cbegin(), viewDirty.Left() - AreaInfo->CaInfo.coordConView.X);
+                    it = std::next(charRow.cbegin(), viewDirty.Left() - AreaInfo->CaInfo.coordConView.X);
                 }
                 catch (...)
                 {
                     LOG_HR(wil::ResultFromCaughtException());
                     return;
                 }
-                const CHAR_ROW::const_iterator itEnd = Row.GetCharRow().cend();
+                const CHAR_ROW::const_iterator itEnd = charRow.cend();
 
                 size_t const cchLine = viewDirty.Width() - 1;
 

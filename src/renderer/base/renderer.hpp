@@ -24,6 +24,7 @@ Author(s):
 #include <memory>
 
 #include "..\..\host\textBuffer.hpp"
+#include "..\..\host\CharRow.hpp"
 
 namespace Microsoft
 {

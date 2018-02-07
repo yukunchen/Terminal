@@ -19,8 +19,10 @@ Revision History:
 
 #pragma once
 
-#include "CharRow.hpp"
+#include "ICharRow.hpp"
 #include "AttrRow.hpp"
+
+#include <memory>
 
 class ROW final
 {
@@ -29,11 +31,12 @@ public:
     ROW(const ROW& a);
     ROW& operator=(const ROW& a);
     ROW(ROW&& a) noexcept;
+    ~ROW() = default;
 
     void swap(ROW& other) noexcept;
 
-    const CHAR_ROW& GetCharRow() const;
-    CHAR_ROW& GetCharRow();
+    const ICharRow& GetCharRow() const;
+    ICharRow& GetCharRow();
 
     const ATTR_ROW& GetAttrRow() const;
     ATTR_ROW& GetAttrRow();
@@ -53,7 +56,7 @@ public:
 #endif
 
 private:
-    CHAR_ROW _charRow;
+    std::unique_ptr<ICharRow> _charRow;
     ATTR_ROW _attrRow;
     SHORT _id;
 

@@ -23,6 +23,7 @@ Revision History:
 #include <vector>
 
 #include "DbcsAttribute.hpp"
+#include "ICharRow.hpp"
 
 // Characters used for padding out the buffer with invalid/empty space
 #define PADDING_CHAR UNICODE_SPACE
@@ -39,7 +40,7 @@ Revision History:
 //       ^    ^                  ^                     ^
 //       |    |                  |                     |
 //     Chars Left               Right                end of Chars buffer
-class CHAR_ROW final
+class CHAR_ROW final : public ICharRow
 {
 public:
     using value_type = std::pair<wchar_t, DbcsAttribute>;
@@ -54,38 +55,37 @@ public:
 
     void swap(CHAR_ROW& other) noexcept;
 
+    // ICharRow methods
+    ICharRow::SupportedEncoding GetSupportedEncoding() const noexcept override;
+    size_t size() const noexcept override;
+    HRESULT Resize(_In_ size_t const newSize) override;
+    void Reset(_In_ short const sRowWidth) override;
+    size_t MeasureLeft() const override;
+    size_t MeasureRight() const override;
+    void ClearCell(_In_ const size_t column) override;
+    void SetWrapStatus(_In_ bool const fWrapWasForced) override;
+    bool WasWrapForced() const override;
+    bool ContainsText() const override;
+    const DbcsAttribute& GetAttribute(_In_ const size_t column) const override;
+    DbcsAttribute& GetAttribute(_In_ const size_t column) override;
+    void SetDoubleBytePadded(_In_ bool const fDoubleBytePadded) override;
+    bool WasDoubleBytePadded() const override;
+
+
+    // iterators
     iterator begin() noexcept;
     const_iterator cbegin() const noexcept;
 
     iterator end() noexcept;
     const_iterator cend() const noexcept;
 
-    size_t size() const noexcept;
-
-    const DbcsAttribute& GetAttribute(_In_ const size_t column) const;
-    DbcsAttribute& GetAttribute(_In_ const size_t column);
 
     std::wstring GetText() const;
 
     void ClearGlyph(const size_t column);
-
     const wchar_t& GetGlyphAt(const size_t column) const;
     wchar_t& GetGlyphAt(const size_t column);
 
-    void Reset(_In_ short const sRowWidth);
-
-    HRESULT Resize(_In_ size_t const newSize);
-
-    void SetWrapStatus(_In_ bool const fWrapWasForced);
-    bool WasWrapForced() const;
-
-    void SetDoubleBytePadded(_In_ bool const fDoubleBytePadded);
-    bool WasDoubleBytePadded() const;
-
-    bool ContainsText() const;
-
-    size_t MeasureLeft() const;
-    size_t MeasureRight() const;
 
     friend constexpr bool operator==(const CHAR_ROW& a, const CHAR_ROW& b) noexcept;
 

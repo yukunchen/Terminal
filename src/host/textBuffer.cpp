@@ -7,6 +7,7 @@
 #include "precomp.h"
 
 #include "textBuffer.hpp"
+#include "CharRow.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
@@ -333,10 +334,16 @@ bool TEXT_BUFFER_INFO::AssertValidDoubleByteSequence(_In_ const DbcsAttribute db
     // To figure out if the sequence is valid, we have to look at the character that comes before the current one
     const COORD coordPrevPosition = GetPreviousFromCursor();
     ROW& prevRow = GetRowByOffset(coordPrevPosition.Y);
+    ICharRow& iCharRow = prevRow.GetCharRow();
+    if (iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2)
+    {
+        return false;
+    }
+    CHAR_ROW& charRow = static_cast<CHAR_ROW&>(iCharRow);
     DbcsAttribute prevDbcsAttr;
     try
     {
-        prevDbcsAttr = prevRow.GetCharRow().GetAttribute(coordPrevPosition.X);
+        prevDbcsAttr = charRow.GetAttribute(coordPrevPosition.X);
     }
     catch (...)
     {
@@ -389,8 +396,7 @@ bool TEXT_BUFFER_INFO::AssertValidDoubleByteSequence(_In_ const DbcsAttribute db
         // Erase previous character into an N type.
         try
         {
-            prevRow.GetCharRow().ClearGlyph(coordPrevPosition.X);
-            prevRow.GetCharRow().GetAttribute(coordPrevPosition.X).SetSingle();
+            prevRow.GetCharRow().ClearCell(coordPrevPosition.X);
         }
         catch (...)
         {
@@ -434,7 +440,11 @@ bool TEXT_BUFFER_INFO::_PrepareForDoubleByteSequence(_In_ const DbcsAttribute db
         if (this->GetCursor()->GetPosition().X == sBufferWidth - 1)
         {
             // set that we're wrapping for double byte reasons
-            GetRowByOffset(this->GetCursor()->GetPosition().Y).GetCharRow().SetDoubleBytePadded(true);
+            ICharRow& iCharRow = GetRowByOffset(this->GetCursor()->GetPosition().Y).GetCharRow();
+            if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
+            {
+                static_cast<CHAR_ROW&>(iCharRow).SetDoubleBytePadded(true);
+            }
 
             // then move the cursor forward and onto the next row
             fSuccess = IncrementCursor();
@@ -469,26 +479,34 @@ bool TEXT_BUFFER_INFO::InsertCharacter(_In_ const wchar_t wch,
         ROW& Row = GetRowByOffset(iRow);
 
         // Store character and double byte data
-        CHAR_ROW& charRow = Row.GetCharRow();
-        short const cBufferWidth = this->_coordBufferSize.X;
+        ICharRow& iCharRow = Row.GetCharRow();
+        if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
+        {
+            CHAR_ROW& charRow = static_cast<CHAR_ROW&>(iCharRow);;
+            short const cBufferWidth = this->_coordBufferSize.X;
 
-        try
-        {
-            charRow.GetGlyphAt(iCol) = wch;
-            charRow.GetAttribute(iCol) = dbcsAttribute;
-        }
-        catch (...)
-        {
-            LOG_HR(wil::ResultFromCaughtException());
-            return false;
-        }
+            try
+            {
+                charRow.GetGlyphAt(iCol) = wch;
+                charRow.GetAttribute(iCol) = dbcsAttribute;
+            }
+            catch (...)
+            {
+                LOG_HR(wil::ResultFromCaughtException());
+                return false;
+            }
 
-        // Store color data
-        fSuccess = Row.GetAttrRow().SetAttrToEnd(iCol, attr);
-        if (fSuccess)
+            // Store color data
+            fSuccess = Row.GetAttrRow().SetAttrToEnd(iCol, attr);
+            if (fSuccess)
+            {
+                // Advance the cursor
+                fSuccess = this->IncrementCursor();
+            }
+        }
+        else
         {
-            // Advance the cursor
-            fSuccess = this->IncrementCursor();
+            fSuccess = false;
         }
     }
     return fSuccess;

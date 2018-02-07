@@ -10,6 +10,7 @@
 
 #include "dbcs.h"
 #include "misc.h"
+#include "CharRow.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 #include "..\types\inc\Viewport.hpp"
@@ -57,14 +58,23 @@ void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
     // copy chars
     try
     {
-        std::transform(pwchBuffer,
-                       pwchBuffer + cchBuffer,
-                       pDbcsAttributes,
-                       std::next(Row.GetCharRow().begin(), TargetPoint.X),
-                       [](wchar_t wch, DbcsAttribute attr)
+        ICharRow& iCharRow = Row.GetCharRow();
+        if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
         {
-            return CHAR_ROW::value_type{ wch, attr };
-        });
+            CHAR_ROW& charRow = static_cast<CHAR_ROW&>(iCharRow);
+            std::transform(pwchBuffer,
+                        pwchBuffer + cchBuffer,
+                        pDbcsAttributes,
+                        std::next(charRow.begin(), TargetPoint.X),
+                        [](wchar_t wch, DbcsAttribute attr)
+            {
+                return CHAR_ROW::value_type{ wch, attr };
+            });
+        }
+        else
+        {
+            THROW_HR_MSG(E_FAIL, "we only support utf16 rows right now");
+        }
     }
     CATCH_LOG();
 
@@ -182,16 +192,26 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
 
             // CJK Languages
             CHAR_ROW::iterator it;
+            CHAR_ROW::const_iterator itEnd;
             try
             {
-                it = std::next(pRow->GetCharRow().begin(), coordDest.X);
+                ICharRow& iCharRow = pRow->GetCharRow();
+                if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
+                {
+                    CHAR_ROW& charRow = static_cast<CHAR_ROW&>(iCharRow);
+                    it = std::next(charRow.begin(), coordDest.X);
+                    itEnd = charRow.cend();
+                }
+                else
+                {
+                    return STATUS_UNSUCCESSFUL;
+                }
             }
             catch (...)
             {
                 return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
             }
 
-            const CHAR_ROW::const_iterator itEnd = pRow->GetCharRow().cend();
 
             TextAttributeRun* pAttrRun = rAttrRunsBuff;
             pAttrRun->SetLength(0);
@@ -562,7 +582,16 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
             CHAR_ROW::iterator it;
             try
             {
-                it = std::next(pRow->GetCharRow().begin(), X);
+                ICharRow& iCharRow = pRow->GetCharRow();
+                if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
+                {
+                    CHAR_ROW& charRow = static_cast<CHAR_ROW&>(iCharRow);
+                    it = std::next(charRow.begin(), X);
+                }
+                else
+                {
+                    return STATUS_UNSUCCESSFUL;
+                }
             }
             catch (...)
             {
@@ -897,7 +926,16 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
             CHAR_ROW::iterator it;
             try
             {
-                it = std::next(pRow->GetCharRow().begin(), X);
+                ICharRow& iCharRow = pRow->GetCharRow();
+                if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
+                {
+                    CHAR_ROW& charRow = static_cast<CHAR_ROW&>(iCharRow);
+                    it = std::next(charRow.begin(), X);
+                }
+                else
+                {
+                    return STATUS_UNSUCCESSFUL;
+                }
             }
             catch (...)
             {
@@ -1172,16 +1210,27 @@ void FillRectangle(_In_ const CHAR_INFO * const pciFill,
         BOOL Width = IsCharFullWidth(pciFill->Char.UnicodeChar);
 
         CHAR_ROW::iterator it;
+        CHAR_ROW::const_iterator itEnd;
         try
         {
-            it = std::next(pRow->GetCharRow().begin(), psrTarget->Left);
+            ICharRow& iCharRow = pRow->GetCharRow();
+            if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
+            {
+                CHAR_ROW& charRow = static_cast<CHAR_ROW&>(iCharRow);
+                it = std::next(charRow.begin(), psrTarget->Left);
+                itEnd = charRow.cend();
+            }
+            else
+            {
+                LOG_HR_MSG(E_FAIL, "we don't support non UCS2 encoded char rows");
+                return;
+            }
         }
         catch (...)
         {
             LOG_HR(wil::ResultFromCaughtException());
             return;
         }
-        const CHAR_ROW::const_iterator itEnd = pRow->GetCharRow().cend();
 
         for (SHORT j = 0; j < XSize && it < itEnd; j++)
         {

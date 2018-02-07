@@ -11,6 +11,7 @@
 #include "dbcs.h"
 #include "handle.h"
 #include "scrolling.hpp"
+#include "CharRow.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
@@ -117,13 +118,21 @@ const BOOLEAN Cursor::IsDouble() const
 const BOOLEAN Cursor::IsDoubleWidth() const
 {
     // Check with the current screen buffer to see if the character under the cursor is double-width.
-    auto c = ServiceLocator::LocateGlobals()
+    const ICharRow& iCharRow = ServiceLocator::LocateGlobals()
         .getConsoleInformation()
         .CurrentScreenBuffer
         ->TextInfo
         ->GetRowByOffset(_cPosition.Y)
-        .GetCharRow().GetGlyphAt(_cPosition.X);
-    return !!IsCharFullWidth(c);
+        .GetCharRow();
+    if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
+    {
+        const CHAR_ROW& charRow = static_cast<const CHAR_ROW&>(iCharRow);
+        return !!IsCharFullWidth(charRow.GetGlyphAt(_cPosition.X));
+    }
+    else
+    {
+        return false;
+    }
 }
 
 const BOOLEAN Cursor::IsConversionArea() const

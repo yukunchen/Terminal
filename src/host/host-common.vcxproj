@@ -84,6 +84,7 @@
     <ClInclude Include="..\globals.h" />
     <ClInclude Include="..\handle.h" />
     <ClInclude Include="..\history.h" />
+    <ClInclude Include="..\ICharRow.hpp" />
     <ClInclude Include="..\init.hpp" />
     <ClInclude Include="..\input.h" />
     <ClInclude Include="..\inputBuffer.hpp" />

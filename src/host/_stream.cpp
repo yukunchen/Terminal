@@ -752,10 +752,8 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                 {
                     if (Row.GetCharRow().GetAttribute(TargetPoint.X).IsTrailing())
                     {
-                        Row.GetCharRow().ClearGlyph(TargetPoint.X);
-                        Row.GetCharRow().ClearGlyph(TargetPoint.X - 1);
-                        Row.GetCharRow().GetAttribute(TargetPoint.X).SetSingle();
-                        Row.GetCharRow().GetAttribute(TargetPoint.X - 1).SetSingle();
+                        Row.GetCharRow().ClearCell(TargetPoint.X);
+                        Row.GetCharRow().ClearCell(TargetPoint.X - 1);
 
                         Region.Left = TargetPoint.X - 1;
                         Region.Right = (SHORT)(TargetPoint.X);

@@ -9,6 +9,7 @@
 #include "_output.h"
 #include "stream.h"
 #include "scrolling.hpp"
+#include "CharRow.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
@@ -213,33 +214,43 @@ void Selection::s_BisectSelection(_In_ short const sStringLength,
 
     try
     {
-        // Check start position of strings
-        if (Row.GetCharRow().GetAttribute(coordTargetPoint.X).IsTrailing())
+        const ICharRow& iCharRow = Row.GetCharRow();
+        if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
         {
-            if (coordTargetPoint.X == 0)
+            const CHAR_ROW& charRow = static_cast<const CHAR_ROW&>(iCharRow);
+            // Check start position of strings
+            if (charRow.GetAttribute(coordTargetPoint.X).IsTrailing())
             {
-                pSmallRect->Left++;
+                if (coordTargetPoint.X == 0)
+                {
+                    pSmallRect->Left++;
+                }
+                else
+                {
+                    pSmallRect->Left--;
+                }
+            }
+
+            // Check end position of strings
+            if (coordTargetPoint.X + sStringLength < pScreenInfo->GetScreenBufferSize().X)
+            {
+                if (charRow.GetAttribute(coordTargetPoint.X + sStringLength).IsTrailing())
+                {
+                    pSmallRect->Right++;
+                }
             }
             else
             {
-                pSmallRect->Left--;
-            }
-        }
-
-        // Check end position of strings
-        if (coordTargetPoint.X + sStringLength < pScreenInfo->GetScreenBufferSize().X)
-        {
-            if (Row.GetCharRow().GetAttribute(coordTargetPoint.X + sStringLength).IsTrailing())
-            {
-                pSmallRect->Right++;
-            }
-        }
-        else
-        {
-            const ROW& RowNext = pTextInfo->GetNextRowNoWrap(Row);
-            if (RowNext.GetCharRow().GetAttribute(0).IsTrailing())
-            {
-                pSmallRect->Right--;
+                const ROW& RowNext = pTextInfo->GetNextRowNoWrap(Row);
+                const ICharRow& iCharRowNext = RowNext.GetCharRow();
+                if (iCharRowNext.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
+                {
+                    const CHAR_ROW& charRowNext = static_cast<const CHAR_ROW&>(iCharRowNext);
+                    if (charRowNext.GetAttribute(0).IsTrailing())
+                    {
+                        pSmallRect->Right--;
+                    }
+                }
             }
         }
     }

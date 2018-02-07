@@ -9,6 +9,7 @@
 #include "_output.h"
 
 #include "dbcs.h"
+#include "CharRow.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 #include <algorithm>
@@ -743,14 +744,23 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
 
     try
     {
-        std::transform(String,
-                       String + StringLength,
-                       pDbcsAttributes,
-                       std::next(Row.GetCharRow().begin(), TargetPoint.X),
-                       [](const wchar_t wch, const DbcsAttribute attr)
+        ICharRow& iCharRow = Row.GetCharRow();
+        if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
         {
-            return CHAR_ROW::value_type{ wch, attr };
-        });
+            CHAR_ROW& charRow = static_cast<CHAR_ROW&>(iCharRow);
+            std::transform(String,
+                          String + StringLength,
+                          pDbcsAttributes,
+                          std::next(charRow.begin(), TargetPoint.X),
+                          [](const wchar_t wch, const DbcsAttribute attr)
+            {
+                return CHAR_ROW::value_type{ wch, attr };
+            });
+        }
+        else
+        {
+            THROW_HR_MSG(E_FAIL, "we only support utf16 encoded char rows");
+        }
     }
     CATCH_LOG();
 

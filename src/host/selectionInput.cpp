@@ -7,6 +7,7 @@
 #include "precomp.h"
 
 #include "search.h"
+#include "CharRow.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
@@ -158,7 +159,16 @@ void Selection::WordByWordSelection(_In_ const bool fReverse,
     }
 
     // get the character at the new position
-    WCHAR wchTest = pTextInfo->GetRowByOffset(pcoordSelPoint->Y).GetCharRow().GetGlyphAt(pcoordSelPoint->X);
+    WCHAR wchTest = L'\0';
+    {
+        ICharRow& iCharRow = pTextInfo->GetRowByOffset(pcoordSelPoint->Y).GetCharRow();
+        if (iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2)
+        {
+            return;
+        }
+        CHAR_ROW& charRow = static_cast<CHAR_ROW&>(iCharRow);
+        wchTest = charRow.GetGlyphAt(pcoordSelPoint->X);
+    }
 
     // we want to go until the state change from delim to non-delim
     bool fCurrIsDelim = IS_WORD_DELIM(wchTest);
@@ -236,7 +246,15 @@ void Selection::WordByWordSelection(_In_ const bool fReverse,
         }
 
         // get the character associated with the new position
-        wchTest = gci.CurrentScreenBuffer->TextInfo->GetRowByOffset(pcoordSelPoint->Y).GetCharRow().GetGlyphAt(pcoordSelPoint->X);
+        {
+            ICharRow& iCharRow = gci.CurrentScreenBuffer->TextInfo->GetRowByOffset(pcoordSelPoint->Y).GetCharRow();
+            if (iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2)
+            {
+                return;
+            }
+            CHAR_ROW& charRow = static_cast<CHAR_ROW&>(iCharRow);
+            wchTest = charRow.GetGlyphAt(pcoordSelPoint->X);
+        }
         fCurrIsDelim = IS_WORD_DELIM(wchTest);
 
         // This is a bit confusing.
@@ -360,9 +378,14 @@ bool Selection::HandleKeyboardLineSelectionEvent(_In_ const INPUT_KEY_INFO* cons
             // if we're about to split a character in half, keep moving right
             try
             {
-                if (pTextInfo->GetRowByOffset(coordSelPoint.Y).GetCharRow().GetAttribute(coordSelPoint.X).IsTrailing())
+                const ICharRow& iCharRow = pTextInfo->GetRowByOffset(coordSelPoint.Y).GetCharRow();
+                if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
                 {
-                    Utils::s_DoIncrementScreenCoordinate(srectEdges, &coordSelPoint);
+                    const CHAR_ROW& charRow = static_cast<const CHAR_ROW&>(iCharRow);
+                    if (charRow.GetAttribute(coordSelPoint.X).IsTrailing())
+                    {
+                        Utils::s_DoIncrementScreenCoordinate(srectEdges, &coordSelPoint);
+                    }
                 }
             }
             CATCH_LOG();
@@ -584,15 +607,20 @@ bool Selection::HandleKeyboardLineSelectionEvent(_In_ const INPUT_KEY_INFO* cons
 
     try
     {
-        if (pTextInfo->GetRowByOffset(coordSelPoint.Y).GetCharRow().GetAttribute(coordSelPoint.X).IsTrailing())
+        const ICharRow& iCharRow = pTextInfo->GetRowByOffset(coordSelPoint.Y).GetCharRow();
+        if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
         {
-            // try to move off by highlighting the lead half too.
-            bool fSuccess = Utils::s_DoDecrementScreenCoordinate(srectEdges, &coordSelPoint);
-
-            // if that fails, move off to the next character
-            if (!fSuccess)
+            const CHAR_ROW& charRow = static_cast<const CHAR_ROW&>(iCharRow);
+            if (charRow.GetAttribute(coordSelPoint.X).IsTrailing())
             {
-                Utils::s_DoIncrementScreenCoordinate(srectEdges, &coordSelPoint);
+                // try to move off by highlighting the lead half too.
+                bool fSuccess = Utils::s_DoDecrementScreenCoordinate(srectEdges, &coordSelPoint);
+
+                // if that fails, move off to the next character
+                if (!fSuccess)
+                {
+                    Utils::s_DoIncrementScreenCoordinate(srectEdges, &coordSelPoint);
+                }
             }
         }
     }
@@ -690,12 +718,17 @@ bool Selection::_HandleColorSelection(_In_ const INPUT_KEY_INFO* const pInputKey
             WCHAR pwszSearchString[SEARCH_STRING_LENGTH + 1];
             try
             {
-                const CHAR_ROW::const_iterator startIt = std::next(Row.GetCharRow().cbegin(), psrSelection->Left);
-                const CHAR_ROW::const_iterator stopIt = std::next(startIt, cLength);
-                std::transform(startIt, stopIt, pwszSearchString, [](const CHAR_ROW::value_type& vals)
+                const ICharRow& iCharRow = Row.GetCharRow();
+                if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
                 {
-                    return vals.first;
-                });
+                    const CHAR_ROW& charRow = static_cast<const CHAR_ROW&>(iCharRow);
+                    const CHAR_ROW::const_iterator startIt = std::next(charRow.cbegin(), psrSelection->Left);
+                    const CHAR_ROW::const_iterator stopIt = std::next(startIt, cLength);
+                    std::transform(startIt, stopIt, pwszSearchString, [](const CHAR_ROW::value_type& vals)
+                    {
+                        return vals.first;
+                    });
+                }
             }
             CATCH_LOG();
 
@@ -746,10 +779,16 @@ bool Selection::_HandleMarkModeSelectionNav(_In_ const INPUT_KEY_INFO* const pIn
 
         const COORD cursorPos = pTextInfo->GetCursor()->GetPosition();
         const ROW& Row = pTextInfo->GetRowByOffset(cursorPos.Y);
+        const ICharRow& iCharRow = Row.GetCharRow();
+        if (iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2)
+        {
+            return false;
+        }
+        const CHAR_ROW& charRow = static_cast<const CHAR_ROW&>(iCharRow);
 
         try
         {
-            if (Row.GetCharRow().GetAttribute(cursorPos.X).IsLeading())
+            if (charRow.GetAttribute(cursorPos.X).IsLeading())
             {
                 iNextRightX = 2;
             }
@@ -760,15 +799,15 @@ bool Selection::_HandleMarkModeSelectionNav(_In_ const INPUT_KEY_INFO* const pIn
 
             if (cursorPos.X > 0)
             {
-                if (Row.GetCharRow().GetAttribute(cursorPos.X - 1).IsTrailing())
+                if (charRow.GetAttribute(cursorPos.X - 1).IsTrailing())
                 {
                     iNextLeftX = 2;
                 }
-                else if (Row.GetCharRow().GetAttribute(cursorPos.X - 1).IsLeading())
+                else if (charRow.GetAttribute(cursorPos.X - 1).IsLeading())
                 {
                     if (cursorPos.X - 1 > 0)
                     {
-                        if (Row.GetCharRow().GetAttribute(cursorPos.X - 2).IsTrailing())
+                        if (charRow.GetAttribute(cursorPos.X - 2).IsTrailing())
                         {
                             iNextLeftX = 3;
                         }
