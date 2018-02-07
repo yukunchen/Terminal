@@ -37,7 +37,7 @@ public:
     // See _PaintUtf8BufferLine for explanation of this value.
     static const size_t ERASE_CHARACTER_STRING_LENGTH = 8;
     static const COORD INVALID_COORDS;
-
+    
     VtEngine(_In_ wil::unique_hfile hPipe,
              _In_ const Microsoft::Console::IDefaultColorProvider& colorProvider,
              _In_ const Microsoft::Console::Types::Viewport initialViewport);
@@ -145,8 +145,6 @@ protected:
     HRESULT _SetGraphicsRenditionRGBColor(_In_ const COLORREF color,
                                           _In_ const bool fIsForeground);
     HRESULT _SetGraphicsRenditionDefaultColor(_In_ const bool fIsForeground);
-    HRESULT _SetGraphicsRenditionResetColors();
-
     HRESULT _ResizeWindow(_In_ const short sWidth, _In_ const short sHeight);
 
     virtual HRESULT _MoveCursor(_In_ const COORD coord) = 0;
