@@ -19,7 +19,7 @@ using namespace Microsoft::Console::Types;
 // Arguments:
 // - <none>
 // Return Value:
-// - S_OK if we started to paint. S_FALSE if we didn't need to paint. 
+// - S_OK if we started to paint. S_FALSE if we didn't need to paint.
 //      HRESULT error code if painting didn't start successfully.
 HRESULT VtEngine::StartPaint()
 {
@@ -34,8 +34,8 @@ HRESULT VtEngine::StartPaint()
 }
 
 // Routine Description:
-// - EndPaint helper to perform the final cleanup after painting. If we 
-//      returned S_FALSE from StartPaint, there's no guarantee this was called. 
+// - EndPaint helper to perform the final cleanup after painting. If we
+//      returned S_FALSE from StartPaint, there's no guarantee this was called.
 //      That's okay however, EndPaint only zeros structs that would be zero if
 //      StartPaint returns S_FALSE.
 // Arguments:
@@ -49,6 +49,19 @@ HRESULT VtEngine::EndPaint()
     _scrollDelta = {0};
     _clearedAllThisFrame = false;
     _cursorMoved = false;
+    _firstPaint = false;
+    _skipCursor = false;
+    // If we've circled the buffer this frame, move our virtual top upwards.
+    // We do this at the END of the frame, so that during the paint, we still
+    //      use the original virtual top.
+    if (_circled)
+    {
+        if (_virtualTop > 0)
+        {
+            _virtualTop--;
+        }
+    }
+    _circled = false;
     return S_OK;
 }
 
@@ -64,17 +77,17 @@ HRESULT VtEngine::PaintBackground()
 }
 
 // Routine Description:
-// - Draws one line of the buffer to the screen. Writes the characters to the 
-//      pipe. If the characters are outside the ASCII range (0-0x7f), then 
+// - Draws one line of the buffer to the screen. Writes the characters to the
+//      pipe. If the characters are outside the ASCII range (0-0x7f), then
 //      instead writes a '?'
 // Arguments:
 // - pwsLine - string of text to be written
-// - rgWidths - array specifying how many column widths that the console is 
+// - rgWidths - array specifying how many column widths that the console is
 //      expecting each character to take
 // - cchLine - length of line to be read
 // - coord - character coordinate target to render within viewport
 // - fTrimLeft - This specifies whether to trim one character width off the left
-//      side of the output. Used for drawing the right-half only of a 
+//      side of the output. Used for drawing the right-half only of a
 //      double-wide character.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
@@ -107,12 +120,12 @@ HRESULT VtEngine::PaintBufferGridLines(_In_ GridLines const /*lines*/,
 // Routine Description:
 // - Draws the cursor on the screen
 // Arguments:
-// - ulHeightPercent - The cursor will be drawn at this percentage of the 
+// - ulHeightPercent - The cursor will be drawn at this percentage of the
 //      current font height.
 // - fIsDoubleWidth - The cursor should be drawn twice as wide as usual.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-HRESULT VtEngine::PaintCursor(_In_ COORD const coordCursor, 
+HRESULT VtEngine::PaintCursor(_In_ COORD const coordCursor,
                               _In_ ULONG const /*ulHeightPercent*/,
                               _In_ bool const /*fIsDoubleWidth*/)
 {
@@ -137,7 +150,7 @@ HRESULT VtEngine::ClearCursor()
 //  - Inverts the selected region on the current screen buffer.
 //  - Reads the selected area, selection mode, and active screen buffer
 //    from the global properties and dispatches a GDI invert on the selected text area.
-//  Because the selection is the responsibility of the terminal, and not the 
+//  Because the selection is the responsibility of the terminal, and not the
 //      host, render nothing.
 // Arguments:
 //  - rgsrSelection - Array of rectangles, one per line, that should be inverted to make the selection area
@@ -151,7 +164,7 @@ HRESULT VtEngine::PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* const
 }
 
 // Routine Description:
-// - Write a VT sequence to change the current colors of text. Writes true RGB 
+// - Write a VT sequence to change the current colors of text. Writes true RGB
 //      color sequences.
 // Arguments:
 // - colorForeground: The RGB Color to use to paint the foreground text.
@@ -179,10 +192,10 @@ HRESULT VtEngine::_RgbUpdateDrawingBrushes(_In_ COLORREF const colorForeground,
             RETURN_IF_FAILED(_SetGraphicsRenditionRGBColor(colorForeground, true));
         }
         _LastFG = colorForeground;
-        
+
     }
 
-    if (colorBackground != _LastBG) 
+    if (colorBackground != _LastBG)
     {
         if (colorBackground == _colorProvider.GetDefaultBackground())
         {
@@ -198,12 +211,12 @@ HRESULT VtEngine::_RgbUpdateDrawingBrushes(_In_ COLORREF const colorForeground,
         }
         _LastBG = colorBackground;
     }
-    
+
     return S_OK;
 }
 
 // Routine Description:
-// - Write a VT sequence to change the current colors of text. It will try to 
+// - Write a VT sequence to change the current colors of text. It will try to
 //      find the colors in the color table that are nearest to the input colors,
 //       and write those indicies to the pipe.
 // Arguments:
@@ -232,7 +245,7 @@ HRESULT VtEngine::_16ColorUpdateDrawingBrushes(_In_ COLORREF const colorForegrou
         _LastFG = colorForeground;
     }
 
-    if (colorBackground != _LastBG) 
+    if (colorBackground != _LastBG)
     {
         if (colorBackground == _colorProvider.GetDefaultBackground())
         {
@@ -250,17 +263,17 @@ HRESULT VtEngine::_16ColorUpdateDrawingBrushes(_In_ COLORREF const colorForegrou
 }
 
 // Routine Description:
-// - Draws one line of the buffer to the screen. Writes the characters to the 
-//      pipe. If the characters are outside the ASCII range (0-0x7f), then 
+// - Draws one line of the buffer to the screen. Writes the characters to the
+//      pipe. If the characters are outside the ASCII range (0-0x7f), then
 //      instead writes a '?'.
 //   This is needed because the Windows internal telnet client implementation
-//      doesn't know how to handle >ASCII characters. The old telnetd would 
-//      just replace them with '?' characters. If we render the >ASCII 
-//      characters to telnet, it will likely end up drawing them wrong, which 
+//      doesn't know how to handle >ASCII characters. The old telnetd would
+//      just replace them with '?' characters. If we render the >ASCII
+//      characters to telnet, it will likely end up drawing them wrong, which
 //      will make the client appear buggy and broken.
 // Arguments:
 // - pwsLine - string of text to be written
-// - rgWidths - array specifying how many column widths that the console is 
+// - rgWidths - array specifying how many column widths that the console is
 //      expecting each character to take
 // - cchLine - length of line to be read
 // - coord - character coordinate target to render within viewport
@@ -282,7 +295,7 @@ HRESULT VtEngine::_PaintAsciiBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLin
 
     wistd::unique_ptr<char[]> rgchNeeded = wil::make_unique_nothrow<char[]>(cchActual + 1);
     RETURN_IF_NULL_ALLOC(rgchNeeded);
-    
+
     char* nextChar = &rgchNeeded[0];
     for (size_t i = 0; i < cchLine; i++)
     {
@@ -302,7 +315,7 @@ HRESULT VtEngine::_PaintAsciiBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLin
     rgchNeeded[cchActual] = '\0';
 
     RETURN_IF_FAILED(_Write(rgchNeeded.get(), cchActual));
-    
+
     // Update our internal tracker of the cursor's position
     _lastText.X += totalWidth;
 
@@ -310,11 +323,11 @@ HRESULT VtEngine::_PaintAsciiBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLin
 }
 
 // Routine Description:
-// - Draws one line of the buffer to the screen. Writes the characters to the 
+// - Draws one line of the buffer to the screen. Writes the characters to the
 //      pipe, encoded in UTF-8.
 // Arguments:
 // - pwsLine - string of text to be written
-// - rgWidths - array specifying how many column widths that the console is 
+// - rgWidths - array specifying how many column widths that the console is
 //      expecting each character to take
 // - cchLine - length of line to be read
 // - coord - character coordinate target to render within viewport
@@ -325,6 +338,11 @@ HRESULT VtEngine::_PaintUtf8BufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine
                                        _In_ size_t const cchLine,
                                        _In_ COORD const coord)
 {
+    if (coord.Y < _virtualTop)
+    {
+        return S_OK;
+    }
+
     RETURN_IF_FAILED(_MoveCursor(coord));
 
     short totalWidth = 0;
@@ -359,15 +377,15 @@ HRESULT VtEngine::_PaintUtf8BufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine
     const size_t numSpaces = cchLine - lastNonSpace - (foundNonspace ? 1 : 0);
 
     // Optimizations:
-    // If there are lots of spaces at the end of the line, we can try to Erase 
+    // If there are lots of spaces at the end of the line, we can try to Erase
     //      Character that number of spaces, then move the cursor forward (to
     //      where it would be if we had written the spaces)
-    // An erase character and move right sequence is 8 chars, and possibly 10 
+    // An erase character and move right sequence is 8 chars, and possibly 10
     //      (if there are at least 10 spaces, 2 digits to print)
     // ESC [ %d X ESC [ %d C
     // ESC [ %d %d X ESC [ %d %d C
     // So we need at least 9 spaces for the optimized sequence to make sense.
-    // Also, if we already erased the entire display this frame, then 
+    // Also, if we already erased the entire display this frame, then
     //    don't do ANYTHING with erasing at all.
 
     // Note: We're only doing these optimizations along the UTF-8 path, because
@@ -376,13 +394,13 @@ HRESULT VtEngine::_PaintUtf8BufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine
     // get the enhancements, and telnet isn't broken.
 
     const bool useEraseChar = (numSpaces > ERASE_CHARACTER_STRING_LENGTH) &&
-                              (!_clearedAllThisFrame); 
-    // If we're not using erase char, but we did erase all at the start of the 
+                              (!_clearedAllThisFrame);
+    // If we're not using erase char, but we did erase all at the start of the
     //      frame, don't add spaces at the end.
-    const size_t cchActual = (useEraseChar || _clearedAllThisFrame) ? 
+    const size_t cchActual = (useEraseChar || _clearedAllThisFrame) ?
                                 min(cchLine - numSpaces, cchLine) :
                                 cchLine;
-    
+
     // Write the actual text string
     {
         wistd::unique_ptr<char[]> rgchNeeded;
@@ -391,13 +409,13 @@ HRESULT VtEngine::_PaintUtf8BufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine
 
         RETURN_IF_FAILED(_Write(rgchNeeded.get(), needed));
     }
-    
+
     if (useEraseChar)
     {
         RETURN_IF_FAILED(_EraseCharacter(static_cast<short>(numSpaces)));
         RETURN_IF_FAILED(_CursorForward(static_cast<short>(numSpaces)));
     }
-  
+
     // Update our internal tracker of the cursor's position
     _lastText.X += totalWidth;
 

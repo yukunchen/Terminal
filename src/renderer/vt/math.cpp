@@ -18,11 +18,16 @@ using namespace Microsoft::Console::Types;
 // Arguments:
 // - <none>
 // Return Value:
-// - The character dimensions of the current dirty area of the frame. 
+// - The character dimensions of the current dirty area of the frame.
 //      This is an Inclusive rect.
 SMALL_RECT VtEngine::GetDirtyRectInChars()
 {
-    return _invalidRect.ToInclusive();
+    SMALL_RECT dirty = _invalidRect.ToInclusive();
+    if (dirty.Top < _virtualTop)
+    {
+        dirty.Top = _virtualTop;
+    }
+    return dirty;
 }
 
 // Routine Description:
@@ -56,9 +61,9 @@ void VtEngine::_OrRect(_Inout_ SMALL_RECT* const pRectExisting, _In_ const SMALL
 }
 
 // Method Description:
-// - Returns true if the invalidated region indicates that we only need to 
+// - Returns true if the invalidated region indicates that we only need to
 //      simply print text from the current cursor position. This will prevent us
-//      from sending extra VT set-up/tear down sequences (?12h/l) when all we 
+//      from sending extra VT set-up/tear down sequences (?12h/l) when all we
 //      need to do is print more text at the current cursor position.
 // Arguments:
 // - <none>
@@ -72,7 +77,7 @@ bool VtEngine::_WillWriteSingleChar() const
 
     bool invalidIsOneChar = (_invalidRect.Width() == 1) &&
                             (_invalidRect.Height() == 1);
-    // Either the next character to the right or the immediately previous 
+    // Either the next character to the right or the immediately previous
     //      character should follow this code path
     //      (The immediate previous character would suggest a backspace)
     bool invalidIsNext = (_srcInvalid.Top == _lastText.Y)

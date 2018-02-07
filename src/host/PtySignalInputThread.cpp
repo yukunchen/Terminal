@@ -26,7 +26,7 @@ using namespace Microsoft::Console;
 // Constructor Description:
 // - Creates the PTY Signal Input Thread.
 // Arguments:
-// - hPipe - a handle to the file representing the read end of the VT pipe. 
+// - hPipe - a handle to the file representing the read end of the VT pipe.
 PtySignalInputThread::PtySignalInputThread(_In_ wil::unique_hfile hPipe) :
     _hFile(std::move(hPipe)),
     _pConApi(new ConhostInternalGetSet(Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals()->getConsoleInformation()))
@@ -48,7 +48,7 @@ DWORD PtySignalInputThread::StaticThreadProc(_In_ LPVOID lpParameter)
 }
 
 // Method Description:
-// - The ThreadProc for the PTY Signal Input Thread. 
+// - The ThreadProc for the PTY Signal Input Thread.
 // Return Value:
 // - S_OK if the thread runs to completion.
 // - Otherwise it may cause an application termination another route and never return.
