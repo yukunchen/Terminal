@@ -261,6 +261,19 @@ HRESULT VtEngine::_SetGraphicsRenditionDefaultColor(_In_ const bool fIsForegroun
 }
 
 // Method Description:
+// - Formats and writes a sequence to change the current text attributes.
+// Arguments:
+// - fIsForeground: true if we should emit the foreground sequence, false for background
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+HRESULT VtEngine::_SetGraphicsRenditionResetColors()
+{
+    const std::string fmt = "\x1b[0m";
+
+    return _Write(fmt);
+}
+
+// Method Description:
 // - Formats and writes a sequence to change the terminal's window size.
 // Arguments:
 // - sWidth: number of columns the terminal should display
