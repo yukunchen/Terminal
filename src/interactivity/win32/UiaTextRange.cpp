@@ -723,8 +723,9 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
                 const ROW& row = pTextBuffer->GetRowAtIndex(rowIndex);
                 if (row.CharRow.ContainsText())
                 {
-                    int startIndex = 0;
-                    int endIndex = row.CharRow.Right;
+                    const size_t rowRight = row.CharRow.MeasureRight();
+                    size_t startIndex = 0;
+                    size_t endIndex = rowRight;
                     if (currentScreenInfoRow == startScreenInfoRow)
                     {
                         startIndex = startColumn;
@@ -732,7 +733,7 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
                     if (currentScreenInfoRow == endScreenInfoRow)
                     {
                         // prevent the end from going past the last non-whitespace char in the row
-                        endIndex = min(static_cast<int>(endColumn + 1), row.CharRow.Right);
+                        endIndex = min(endColumn + 1, rowRight);
                     }
 
                     // if startIndex >= endIndex then _start is

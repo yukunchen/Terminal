@@ -52,9 +52,6 @@ public:
 
     void swap(CHAR_ROW& other) noexcept;
 
-    SHORT Right;    // one past rightmost bound of chars in Chars array (array will be full width)
-    SHORT Left; // leftmost bound of chars in Chars array (array will be full width)
-
     const DbcsAttribute& GetAttribute(_In_ const size_t column) const;
     DbcsAttribute& GetAttribute(_In_ const size_t column);
 
@@ -92,16 +89,11 @@ public:
         DoubleBytePadded = 0x2, // Occurs when the user runs out of text to support a double byte character and we're forced to the next line
     };
 
-    void RemeasureBoundaryValues();
-    void MeasureAndSaveLeft();
-    void MeasureAndSaveRight();
-    short MeasureLeft() const;
-    short MeasureRight() const;
-
     bool ContainsText() const;
 
     size_t GetWidth() const;
-
+    size_t MeasureLeft() const;
+    size_t MeasureRight() const;
 
     friend constexpr bool operator==(const CHAR_ROW& a, const CHAR_ROW& b) noexcept;
 
@@ -123,8 +115,6 @@ constexpr bool operator==(const CHAR_ROW& a, const CHAR_ROW& b) noexcept
 {
     return (a.bRowFlags == b.bRowFlags &&
             a._rowWidth == b._rowWidth &&
-            a.Right == b.Right &&
-            a.Left == b.Left &&
             a._chars == b._chars &&
             a._attributes == b._attributes);
 }

@@ -286,23 +286,6 @@ void TextBufferTests::DoBoundaryTest(PWCHAR const pwszInputString,
     VERIFY_ARE_EQUAL(pCharRow->MeasureLeft(), cLeft);
     // right edge should be one past the index of the last character or the string length
     VERIFY_ARE_EQUAL(pCharRow->MeasureRight(), cRight);
-
-    const short csLeftBefore = -1234;
-    const short csRightBefore = -4567;
-
-    pCharRow->Left = csLeftBefore;
-    pCharRow->MeasureAndSaveLeft();
-    VERIFY_ARE_EQUAL(pCharRow->Left, cLeft);
-
-    pCharRow->Right = csRightBefore;
-    pCharRow->MeasureAndSaveRight();
-    VERIFY_ARE_EQUAL(pCharRow->Right, cRight);
-
-    pCharRow->Left = csLeftBefore;
-    pCharRow->Right = csRightBefore;
-    pCharRow->RemeasureBoundaryValues();
-    VERIFY_ARE_EQUAL(pCharRow->Left, cLeft);
-    VERIFY_ARE_EQUAL(pCharRow->Right, cRight);
 }
 
 void TextBufferTests::TestBoundaryMeasuresRegularString()
@@ -506,7 +489,7 @@ void TextBufferTests::TestLastNonSpace(short const cursorPosY)
     COORD coordExpected = pTbi->GetCursor()->GetPosition();
 
     // Try to get the X position from the current cursor position.
-    coordExpected.X = pTbi->GetRowByOffset(coordExpected.Y).CharRow.Right - 1;
+    coordExpected.X = static_cast<short>(pTbi->GetRowByOffset(coordExpected.Y).CharRow.MeasureRight()) - 1;
 
     // If we went negative, this row was empty and we need to continue seeking upward...
     // - As long as X is negative (empty rows)
@@ -514,7 +497,7 @@ void TextBufferTests::TestLastNonSpace(short const cursorPosY)
     while (coordExpected.X < 0 && coordExpected.Y > 0)
     {
         coordExpected.Y--;
-        coordExpected.X = pTbi->GetRowByOffset(coordExpected.Y).CharRow.Right - 1;
+        coordExpected.X = static_cast<short>(pTbi->GetRowByOffset(coordExpected.Y).CharRow.MeasureRight()) - 1;
     }
 
     VERIFY_ARE_EQUAL(coordLastNonSpace.X, coordExpected.X);
@@ -593,8 +576,7 @@ void TextBufferTests::TestIncrementCircularBuffer()
 
         // fill first row with some stuff
         ROW& FirstRow = pTbi->GetFirstRow();
-        FirstRow.CharRow.Left = 0;
-        FirstRow.CharRow.Right = 15;
+        FirstRow.CharRow.GetGlyphAt(0) = L'A';
 
         // ensure it does say that it contains text
         VERIFY_IS_TRUE(FirstRow.CharRow.ContainsText());

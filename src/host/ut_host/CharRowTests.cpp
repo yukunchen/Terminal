@@ -28,14 +28,10 @@ class CharRowTests
     TEST_METHOD_SETUP(MethodSetup)
     {
         pSingleByte = new CHAR_ROW(_sRowWidth);
-        pSingleByte->Left = 5;
-        pSingleByte->Right = 15;
         pSingleByte->SetWrapStatus(true);
         pSingleByte->SetDoubleBytePadded(true);
 
         pDoubleByte = new CHAR_ROW(_sRowWidth);
-        pDoubleByte->Left = 5;
-        pDoubleByte->Right = 15;
         pDoubleByte->SetWrapStatus(true);
         pDoubleByte->SetDoubleBytePadded(true);
 
@@ -64,8 +60,6 @@ class CharRowTests
 
             pUnderTest->Reset(sRowWidth);
 
-            VERIFY_ARE_EQUAL(pUnderTest->Left, sRowWidth);
-            VERIFY_ARE_EQUAL(pUnderTest->Right, 0);
             VERIFY_IS_FALSE(pUnderTest->WasWrapForced());
             VERIFY_IS_FALSE(pUnderTest->WasDoubleBytePadded());
 
@@ -83,19 +77,10 @@ class CharRowTests
         pSingleByte->Reset(_sRowWidth);
         VERIFY_IS_FALSE(pSingleByte->ContainsText());
 
-        // Set right greater than Left, should have text
-        pSingleByte->Right = 15;
-        pSingleByte->Left = 5;
+        // add some text
+        pSingleByte->GetGlyphAt(10) = L'a';
+
+        // should have text
         VERIFY_IS_TRUE(pSingleByte->ContainsText());
-
-        // Right = Left, should not have text
-        pSingleByte->Right = 6;
-        pSingleByte->Left = 6;
-        VERIFY_IS_FALSE(pSingleByte->ContainsText());
-
-        // Right less than left, should not have text
-        pSingleByte->Right = 0;
-        pSingleByte->Left = 5;
-        VERIFY_IS_FALSE(pSingleByte->ContainsText());
     }
 };

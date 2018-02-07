@@ -747,9 +747,6 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
     }
     CATCH_LOG();
 
-    // recalculate first and last non-space char
-    Row.CharRow.RemeasureBoundaryValues();
-
     // see if attr string is different.  if so, allocate a new attr buffer and merge the two strings.
     TextAttributeRun* pExistingHead;
     Row.AttrRow.FindAttrIndex(0, &pExistingHead, nullptr);
