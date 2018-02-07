@@ -828,7 +828,7 @@ void VtRendererTest::XtermTestColors()
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG to the 'Default' background----"
         ));
-        qExpectedInput.push_back("\x1b[49m"); // Background DARK_BLACK
+        qExpectedInput.push_back("\x1b[40m"); // Background DARK_BLACK
         engine->UpdateDrawingBrushes(g_ColorTable[7], 0x000000, 0, false);
 
 
@@ -1099,7 +1099,7 @@ void VtRendererTest::WinTelnetTestColors()
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG to the 'Default' background----"
         ));
-        qExpectedInput.push_back("\x1b[49m"); // Background DARK_BLACK
+        qExpectedInput.push_back("\x1b[40m"); // Background DARK_BLACK
         engine->UpdateDrawingBrushes(g_ColorTable[7], 0x000000, 0, false);
 
 
