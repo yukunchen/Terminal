@@ -233,9 +233,9 @@ void Renderer::TriggerRedraw(_In_ const COORD* const pcoord)
 }
 
 // Routine Description:
-// - Called when the cursor has moved in the buffer. Allows for RenderEngines to 
-//      differentiate between cursor movements and other invalidates. 
-//   Visual Renderers (ex GDI) sohuld invalidate the position, while the VT 
+// - Called when the cursor has moved in the buffer. Allows for RenderEngines to
+//      differentiate between cursor movements and other invalidates.
+//   Visual Renderers (ex GDI) sohuld invalidate the position, while the VT
 //      engine ignores this. See MSFT:14711161.
 // Arguments:
 // - pcoord: The buffer-space position of the cursor.
@@ -275,8 +275,8 @@ void Renderer::TriggerRedrawAll()
 }
 
 // Method Description:
-// - Called when the host is about to die, to give the renderer one last chance 
-//      to paint before the host exits. 
+// - Called when the host is about to die, to give the renderer one last chance
+//      to paint before the host exits.
 // Arguments:
 // - <none>
 // Return Value:
@@ -926,7 +926,7 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
 
         Viewport view(_pData->GetViewport());
 
-        // Always attempt to paint the cursor, even if it's not within the 
+        // Always attempt to paint the cursor, even if it's not within the
         //      "dirty" part of the viewport.
 
         // Determine cursor height

@@ -452,13 +452,19 @@ HRESULT ApiRoutines::SetConsoleCursorPositionImpl(_In_ SCREEN_INFORMATION* const
     return DoSrvSetConsoleCursorPosition(pContext->GetActiveBuffer(), pCursorPosition);
 }
 
-HRESULT DoSrvSetConsoleCursorPosition(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ const COORD* const pCursorPosition)
+HRESULT DoSrvSetConsoleCursorPosition(_In_ SCREEN_INFORMATION* pScreenInfo,
+                                      _In_ const COORD* const pCursorPosition)
 {
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+
     const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
     RETURN_HR_IF(E_INVALIDARG, (pCursorPosition->X >= coordScreenBufferSize.X ||
                                 pCursorPosition->Y >= coordScreenBufferSize.Y ||
                                 pCursorPosition->X < 0 ||
                                 pCursorPosition->Y < 0));
+
+    // MSFT: 15813316 - Try to use this SetCursorPosition call to inherit the cursor position.
+    RETURN_IF_FAILED(gci->GetVtIo()->SetCursorPosition(*pCursorPosition));
 
     RETURN_IF_NTSTATUS_FAILED(pScreenInfo->SetCursorPosition(*pCursorPosition, TRUE));
 

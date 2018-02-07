@@ -277,3 +277,15 @@ HRESULT VtEngine::_ResizeWindow(_In_ const short sWidth, _In_ const short sHeigh
 
     return _WriteFormattedString(&resizeFormat, sHeight, sWidth);
 }
+
+// Method Description:
+// - Formats and writes a sequence to request the end terminal to tell us the
+//      cursor position. The terminal will reply back on the vt input handle.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+HRESULT VtEngine::RequestCursor()
+{
+    return _Write("\x1b[6n");
+}

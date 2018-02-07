@@ -49,6 +49,19 @@ HRESULT VtEngine::EndPaint()
     _scrollDelta = {0};
     _clearedAllThisFrame = false;
     _cursorMoved = false;
+    _firstPaint = false;
+    _skipCursor = false;
+    // If we've circled the buffer this frame, move our virtual top upwards.
+    // We do this at the END of the frame, so that during the paint, we still
+    //      use the original virtual top.
+    if (_circled)
+    {
+        if (_virtualTop > 0)
+        {
+            _virtualTop--;
+        }
+    }
+    _circled = false;
     return S_OK;
 }
 
@@ -313,6 +326,11 @@ HRESULT VtEngine::_PaintUtf8BufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine
                                        _In_ size_t const cchLine,
                                        _In_ COORD const coord)
 {
+    if (coord.Y < _virtualTop)
+    {
+        return S_OK;
+    }
+
     RETURN_IF_FAILED(_MoveCursor(coord));
 
     short totalWidth = 0;
