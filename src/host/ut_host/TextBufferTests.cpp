@@ -271,7 +271,7 @@ void TextBufferTests::DoBoundaryTest(PWCHAR const pwszInputString,
     CHAR_ROW* const pCharRow = &tbi->GetFirstRow().CharRow;
 
     // copy string into buffer
-    for (size_t i = 0; i < cLength; ++i)
+    for (size_t i = 0; i < static_cast<size_t>(cLength); ++i)
     {
         pCharRow->GetGlyphAt(i) = pwszInputString[i];
     }
