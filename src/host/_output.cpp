@@ -940,6 +940,7 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
                     {
                         it->first = static_cast<wchar_t>(wElement);
                         it->second.SetSingle();
+                        ++it;
                     }
                 }
                 X = (SHORT)(X + *pcElements - NumWritten - 1);
