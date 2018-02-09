@@ -10,7 +10,7 @@ Abstract:
     inserting and deleting lines, but only 16 colors.
 
     This engine supports both xterm and xterm-ascii VT modes.
-    The difference being that xterm-ascii will render any characters above 0x7f 
+    The difference being that xterm-ascii will render any characters above 0x7f
         as '?', in order to support older legacy tools.
 
 Author(s):
@@ -37,11 +37,11 @@ public:
                 _In_ const Microsoft::Console::IDefaultColorProvider& colorProvider,
                 _In_ const Microsoft::Console::Types::Viewport initialViewport,
                 _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                _In_ const WORD cColorTable, 
+                _In_ const WORD cColorTable,
                 _In_ const bool fUseAsciiOnly);
-    
+
     virtual ~XtermEngine() override = default;
-    
+
     HRESULT StartPaint() override;
     HRESULT EndPaint() override;
     virtual HRESULT UpdateDrawingBrushes(_In_ COLORREF const colorForeground,
@@ -60,7 +60,7 @@ protected:
     const COLORREF* const _ColorTable;
     const WORD _cColorTable;
     const bool _fUseAsciiOnly;
-    
+
 #ifdef UNIT_TESTING
     friend class VtRendererTest;
 #endif

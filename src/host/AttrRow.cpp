@@ -421,7 +421,12 @@ HRESULT ATTR_ROW::InsertAttrRuns(_In_reads_(cAttrs) const TextAttributeRun* cons
     // The original run was 3 long. The insertion run was 1 long. We need 1 more for the
     // fact that an existing piece of the run was split in half (to hold the latter half).
     const size_t cNewRun = _cList + cInsertAttrs + 1;
-    wistd::unique_ptr<TextAttributeRun[]> pNewRun = wil::make_unique_nothrow<TextAttributeRun[]>(cNewRun);
+    wistd::unique_ptr<TextAttributeRun[]> pNewRun;
+    try
+    {
+        pNewRun = wil::make_unique_nothrow<TextAttributeRun[]>(cNewRun);
+    }
+    CATCH_RETURN();
     RETURN_IF_NULL_ALLOC(pNewRun);
 
     // We will start analyzing from the beginning of our existing run.

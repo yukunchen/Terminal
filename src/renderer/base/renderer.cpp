@@ -223,13 +223,39 @@ void Renderer::TriggerRedraw(_In_ const SMALL_RECT* const psrRegion)
 // Routine Description:
 // - Called when a particular coordinate within the console buffer has changed.
 // Arguments:
-// - <none>
+// - pcoord: The buffer-space coordinate that has changed.
 // Return Value:
 // - <none>
 void Renderer::TriggerRedraw(_In_ const COORD* const pcoord)
 {
     SMALL_RECT srRegion = _RegionFromCoord(pcoord);
     TriggerRedraw(&srRegion); // this will notify to paint if we need it.
+}
+
+// Routine Description:
+// - Called when the cursor has moved in the buffer. Allows for RenderEngines to
+//      differentiate between cursor movements and other invalidates.
+//   Visual Renderers (ex GDI) sohuld invalidate the position, while the VT
+//      engine ignores this. See MSFT:14711161.
+// Arguments:
+// - pcoord: The buffer-space position of the cursor.
+// Return Value:
+// - <none>
+void Renderer::TriggerRedrawCursor(_In_ const COORD* const pcoord)
+{
+    Viewport view(_pData->GetViewport());
+    COORD updateCoord = *pcoord;
+
+    if (view.IsWithinViewport(&updateCoord))
+    {
+        view.ConvertToOrigin(&updateCoord);
+        for (IRenderEngine* pEngine : _rgpEngines)
+        {
+            LOG_IF_FAILED(pEngine->InvalidateCursor(&updateCoord));
+        }
+
+        _NotifyPaintFrame();
+    }
 }
 
 // Routine Description:
@@ -360,17 +386,16 @@ void Renderer::TriggerScroll(_In_ const COORD* const pcoordDelta)
 // - <none>
 void Renderer::TriggerCircling()
 {
-    bool fForcePaint = false;
-
     for (IRenderEngine* const pEngine : _rgpEngines)
     {
         bool fEngineRequestsRepaint = false;
-        LOG_IF_FAILED(pEngine->InvalidateCircling(&fEngineRequestsRepaint));
-        fForcePaint |= fEngineRequestsRepaint;
-    }
-    if (fForcePaint)
-    {
-        PaintFrame();
+        HRESULT hr = pEngine->InvalidateCircling(&fEngineRequestsRepaint);
+        LOG_IF_FAILED(hr);
+
+        if (SUCCEEDED(hr) && fEngineRequestsRepaint)
+        {
+            _PaintFrameForEngine(pEngine);
+        }
     }
 }
 
@@ -877,7 +902,7 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
                                                 _In_ size_t const cchLine,
                                                 _In_ COORD const coordTarget)
 {
-    COLORREF rgb = textAttribute.GetRgbForeground();
+    COLORREF rgb = textAttribute.CalculateRgbForeground();
 
     // Convert console grid line representations into rendering engine enum representations.
     IRenderEngine::GridLines lines = IRenderEngine::GridLines::None;
@@ -923,41 +948,35 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
 
         Viewport view(_pData->GetViewport());
 
-        SMALL_RECT srDirty = pEngine->GetDirtyRectInChars();
-        view.ConvertFromOrigin(&srDirty);
+        // Always attempt to paint the cursor, even if it's not within the
+        //      "dirty" part of the viewport.
 
-        Viewport viewDirty(srDirty);
+        // Determine cursor height
+        ULONG ulHeight = pCursor->GetSize();
 
-        // Check if cursor is within dirty area
-        if (viewDirty.IsWithinViewport(&coordCursor))
+        // Now adjust the height for the overwrite/insert mode. If we're in overwrite mode, IsDouble will be set.
+        // When IsDouble is set, we either need to double the height of the cursor, or if it's already too big,
+        // then we need to shrink it by half.
+        if (pCursor->IsDouble())
         {
-            // Determine cursor height
-            ULONG ulHeight = pCursor->GetSize();
-
-            // Now adjust the height for the overwrite/insert mode. If we're in overwrite mode, IsDouble will be set.
-            // When IsDouble is set, we either need to double the height of the cursor, or if it's already too big,
-            // then we need to shrink it by half.
-            if (pCursor->IsDouble())
+            if (ulHeight > 50) // 50 because 50 percent is half of 100 percent which is the max size.
             {
-                if (ulHeight > 50) // 50 because 50 percent is half of 100 percent which is the max size.
-                {
-                    ulHeight >>= 1;
-                }
-                else
-                {
-                    ulHeight <<= 1;
-                }
+                ulHeight >>= 1;
             }
-
-            // Determine cursor width
-            bool const fIsDoubleWidth = !!pCursor->IsDoubleWidth();
-
-            // Adjust cursor to viewport
-            view.ConvertToOrigin(&coordCursor);
-
-            // Draw it within the viewport
-            LOG_IF_FAILED(pEngine->PaintCursor(coordCursor, ulHeight, fIsDoubleWidth));
+            else
+            {
+                ulHeight <<= 1;
+            }
         }
+
+        // Determine cursor width
+        bool const fIsDoubleWidth = !!pCursor->IsDoubleWidth();
+
+        // Adjust cursor to viewport
+        view.ConvertToOrigin(&coordCursor);
+
+        // Draw it within the viewport
+        LOG_IF_FAILED(pEngine->PaintCursor(coordCursor, ulHeight, fIsDoubleWidth));
     }
 }
 
@@ -1092,8 +1111,8 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 // - <none>
 HRESULT Renderer::_UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, _In_ const TextAttribute textAttributes, _In_ bool const fIncludeBackground)
 {
-    COLORREF rgbForeground = textAttributes.GetRgbForeground();
-    COLORREF rgbBackground = textAttributes.GetRgbBackground();
+    COLORREF rgbForeground = textAttributes.CalculateRgbForeground();
+    COLORREF rgbBackground = textAttributes.CalculateRgbBackground();
     WORD legacyAttributes = textAttributes.GetLegacyAttributes();
 
     // The last color need's to be each engine's responsibility. If it's local to this function,

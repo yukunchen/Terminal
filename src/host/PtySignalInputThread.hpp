@@ -32,7 +32,7 @@ namespace Microsoft
 
         private:
             HRESULT _InputThread();
-            void _GetData(_Out_writes_bytes_(cbBuffer) void* const pBuffer, _In_ const DWORD cbBuffer);
+            bool _GetData(_Out_writes_bytes_(cbBuffer) void* const pBuffer, _In_ const DWORD cbBuffer);
 
             wil::unique_hfile _hFile;
             wil::unique_handle _hThread;

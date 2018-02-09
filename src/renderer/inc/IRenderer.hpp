@@ -33,6 +33,7 @@ namespace Microsoft
 
                 virtual void TriggerRedraw(_In_ const SMALL_RECT* const psrRegion) = 0;
                 virtual void TriggerRedraw(_In_ const COORD* const pcoord) = 0;
+                virtual void TriggerRedrawCursor(_In_ const COORD* const pcoord) = 0;
 
                 virtual void TriggerRedrawAll() = 0;
                 virtual void TriggerTeardown() = 0;
