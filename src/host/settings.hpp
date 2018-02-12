@@ -17,13 +17,15 @@ Revision History:
 --*/
 #pragma once
 
+#include "TextAttribute.hpp"
+
 // To prevent invisible windows, set a lower threshold on window alpha channel.
 #define MIN_WINDOW_OPACITY 0x4D // 0x4D is approximately 30% visible/opaque (70% transparent). Valid range is 0x00-0xff.
 #define COLOR_TABLE_SIZE (16)
 #define XTERM_COLOR_TABLE_SIZE (256)
-#include "ConsoleArguments.hpp"
 
-class TextAttribute;
+#include "ConsoleArguments.hpp"
+#include "TextAttribute.hpp"
 enum class CursorType : unsigned int;
 
 class Settings
@@ -165,7 +167,7 @@ public:
 
     COLORREF GetCursorColor() const;
     CursorType GetCursorType() const;
-    
+
     void SetCursorColor(_In_ const COLORREF CursorColor);
     void SetCursorType(_In_ const CursorType cursorType);
 
@@ -220,7 +222,7 @@ private:
     // this is used for the special STARTF_USESIZE mode.
     bool _fUseWindowSizePixels;
     COORD _dwWindowSizePixels;
-    
+
     // Technically a COLORREF, but using 0xffffffff as "Invert Colors"
     unsigned int _CursorColor;
     CursorType _CursorType;

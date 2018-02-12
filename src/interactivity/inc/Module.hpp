@@ -30,6 +30,6 @@ namespace Microsoft
                 InputServices,
                 SystemConfigurationProvider
             };
-        };
-    };
-};
+        }
+    }
+}

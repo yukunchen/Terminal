@@ -83,7 +83,12 @@ const InputStateMachineEngine::SS3_TO_VKEY InputStateMachineEngine::s_rgSs3Map[]
 };
 
 InputStateMachineEngine::InputStateMachineEngine(_In_ std::unique_ptr<IInteractDispatch> pDispatch) :
-    _pDispatch(std::move(pDispatch))
+    InputStateMachineEngine(std::move(pDispatch), false)
+{}
+
+InputStateMachineEngine::InputStateMachineEngine(_In_ std::unique_ptr<IInteractDispatch> pDispatch, _In_ const bool lookingForDSR) :
+    _pDispatch(std::move(pDispatch)),
+    _lookingForDSR(lookingForDSR)
 {
 }
 
@@ -123,11 +128,11 @@ bool InputStateMachineEngine::ActionExecute(_In_ wchar_t const wch)
             break;
         case L'\x1b':
             // Translate escape as the ESC key, NOT C-[.
-            // This means that C-[ won't insert ^[ into the buffer anymore, 
+            // This means that C-[ won't insert ^[ into the buffer anymore,
             //      which isn't the worst tradeoff.
-            vkey = VK_ESCAPE; 
+            vkey = VK_ESCAPE;
             writeCtrl = false;
-            fSuccess = true; 
+            fSuccess = true;
             break;
         case L'\t':
             writeCtrl = false;
@@ -220,12 +225,9 @@ bool InputStateMachineEngine::ActionPrintString(_Inout_updates_(cch) wchar_t* co
 // Return Value:
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch,
-                                                _In_ const unsigned short cIntermediate,
-                                                _In_ const wchar_t wchIntermediate)
+                                                _In_ const unsigned short /*cIntermediate*/,
+                                                _In_ const wchar_t /*wchIntermediate*/)
 {
-    UNREFERENCED_PARAMETER(cIntermediate);
-    UNREFERENCED_PARAMETER(wchIntermediate);
-
     DWORD dwModifierState = 0;
     short vk = 0;
     bool fSuccess = _GenerateKeyFromChar(wch, &vk, &dwModifierState);
@@ -253,17 +255,16 @@ bool InputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch,
 // Return Value:
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
-                                                _In_ const unsigned short cIntermediate,
-                                                _In_ const wchar_t wchIntermediate,
+                                                _In_ const unsigned short /*cIntermediate*/,
+                                                _In_ const wchar_t /*wchIntermediate*/,
                                                 _In_reads_(cParams) const unsigned short* const rgusParams,
                                                 _In_ const unsigned short cParams)
 {
-    UNREFERENCED_PARAMETER(cIntermediate);
-    UNREFERENCED_PARAMETER(wchIntermediate);
-
     DWORD dwModifierState = 0;
     short vkey = 0;
     unsigned int uiFunction = 0;
+    unsigned int col = 0;
+    unsigned int row = 0;
 
     // This is all the args after the first arg, and the count of args not including the first one.
     const unsigned short* const rgusRemainingArgs = (cParams > 1) ? rgusParams + 1 : rgusParams;
@@ -276,6 +277,17 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
             dwModifierState = _GetGenericKeysModifierState(rgusParams, cParams);
             fSuccess = _GetGenericVkey(rgusParams, cParams, &vkey);
             break;
+        // case CsiActionCodes::DSR_DeviceStatusReportResponse:
+        case CsiActionCodes::CSI_F3:
+            // The F3 case is special - it shares a code with the DeviceStatusResponse.
+            // If we're looking for that response, then do that, and break out.
+            // Else, fall though to the _GetCursorKeysModifierState handler.
+            if (_lookingForDSR)
+            {
+                fSuccess = true;
+                fSuccess = _GetXYPosition(rgusParams, cParams, &row, &col);
+                break;
+            }
         case CsiActionCodes::ArrowUp:
         case CsiActionCodes::ArrowDown:
         case CsiActionCodes::ArrowRight:
@@ -284,7 +296,6 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
         case CsiActionCodes::End:
         case CsiActionCodes::CSI_F1:
         case CsiActionCodes::CSI_F2:
-        case CsiActionCodes::CSI_F3:
         case CsiActionCodes::CSI_F4:
             dwModifierState = _GetCursorKeysModifierState(rgusParams, cParams);
             fSuccess = _GetCursorKeysVkey(wch, &vkey);
@@ -294,7 +305,6 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
                                                   cParams,
                                                   &uiFunction);
             break;
-
         default:
             fSuccess = false;
             break;
@@ -305,6 +315,19 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
     {
         switch(wch)
         {
+            // case CsiActionCodes::DSR_DeviceStatusReportResponse:
+            case CsiActionCodes::CSI_F3:
+            // The F3 case is special - it shares a code with the DeviceStatusResponse.
+            // If we're looking for that response, then do that, and break out.
+            // Else, fall though to the _GetCursorKeysModifierState handler.
+                if (_lookingForDSR)
+                {
+                    fSuccess = _pDispatch->MoveCursor(row, col);
+                    // Right now we're only looking for on initial cursor
+                    //      position response. After that, only look for F3.
+                    _lookingForDSR = false;
+                    break;
+                }
             case CsiActionCodes::Generic:
             case CsiActionCodes::ArrowUp:
             case CsiActionCodes::ArrowDown:
@@ -314,7 +337,6 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
             case CsiActionCodes::End:
             case CsiActionCodes::CSI_F1:
             case CsiActionCodes::CSI_F2:
-            case CsiActionCodes::CSI_F3:
             case CsiActionCodes::CSI_F4:
                 fSuccess = _WriteSingleKey(vkey, dwModifierState);
                 break;
@@ -397,15 +419,11 @@ bool InputStateMachineEngine::ActionIgnore()
 // - cchOscString - length of pwchOscStringBuffer
 // Return Value:
 // - true if we handled the dsipatch.
-bool InputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch,
-                                                _In_ const unsigned short sOscParam,
-                                                _Inout_updates_(cchOscString) wchar_t* const pwchOscStringBuffer,
-                                                _In_ const unsigned short cchOscString)
+bool InputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const /*wch*/,
+                                                _In_ const unsigned short /*sOscParam*/,
+                                                _Inout_updates_(_Param_(4)) wchar_t* const /*pwchOscStringBuffer*/,
+                                                _In_ const unsigned short /*cchOscString*/)
 {
-    UNREFERENCED_PARAMETER(wch);
-    UNREFERENCED_PARAMETER(sOscParam);
-    UNREFERENCED_PARAMETER(pwchOscStringBuffer);
-    UNREFERENCED_PARAMETER(cchOscString);
     return false;
 }
 
@@ -843,6 +861,56 @@ bool InputStateMachineEngine::_GetWindowManipulationType(_In_reads_(cParams) con
             default:
                 fSuccess = false;
         }
+    }
+
+    return fSuccess;
+}
+
+// Routine Description:
+// - Retrieves an X/Y coordinate pair for a cursor operation from the parameter pool stored during Param actions.
+// Arguments:
+// - puiLine - Memory location to receive the Y/Line/Row position
+// - puiColumn - Memory location to receive the X/Column position
+// Return Value:
+// - True if we successfully pulled the cursor coordinates from the parameters we've stored. False otherwise.
+_Success_(return)
+bool InputStateMachineEngine::_GetXYPosition(_In_reads_(cParams) const unsigned short* const rgusParams,
+                                             _In_ const unsigned short cParams,
+                                             _Out_ unsigned int* const puiLine,
+                                             _Out_ unsigned int* const puiColumn) const
+{
+    bool fSuccess = false;
+    *puiLine = s_uiDefaultLine;
+    *puiColumn = s_uiDefaultColumn;
+
+    if (cParams == 0)
+    {
+        // Empty parameter sequences should use the default
+        fSuccess = true;
+    }
+    else if (cParams == 1)
+    {
+        // If there's only one param, leave the default for the column, and retrieve the specified row.
+        *puiLine = rgusParams[0];
+        fSuccess = true;
+    }
+    else if (cParams == 2)
+    {
+        // If there are exactly two parameters, use them.
+        *puiLine = rgusParams[0];
+        *puiColumn = rgusParams[1];
+        fSuccess = true;
+    }
+
+    // Distances of 0 should be changed to 1.
+    if (*puiLine == 0)
+    {
+        *puiLine = s_uiDefaultLine;
+    }
+
+    if (*puiColumn == 0)
+    {
+        *puiColumn = s_uiDefaultColumn;
     }
 
     return fSuccess;

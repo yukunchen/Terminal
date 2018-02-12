@@ -156,10 +156,8 @@ HRESULT WddmConEngine::Disable()
     return WDDMConEnableDisplayAccess((PHANDLE)_hWddmConCtx, FALSE);
 }
 
-HRESULT WddmConEngine::Invalidate(const SMALL_RECT* const psrRegion)
+HRESULT WddmConEngine::Invalidate(const SMALL_RECT* const /*psrRegion*/)
 {
-    UNREFERENCED_PARAMETER(psrRegion);
-
     return S_OK;
 }
 
@@ -168,25 +166,18 @@ HRESULT WddmConEngine::InvalidateCursor(const COORD* const /*pcoordCursor*/)
     return S_OK;
 }
 
-HRESULT WddmConEngine::InvalidateSystem(const RECT* const prcDirtyClient)
+HRESULT WddmConEngine::InvalidateSystem(const RECT* const /*prcDirtyClient*/)
 {
-    UNREFERENCED_PARAMETER(prcDirtyClient);
-
     return S_OK;
 }
 
-HRESULT WddmConEngine::InvalidateSelection(const SMALL_RECT* const rgsrSelection, UINT const cRectangles)
+HRESULT WddmConEngine::InvalidateSelection(const SMALL_RECT* const /*rgsrSelection*/, UINT const /*cRectangles*/)
 {
-    UNREFERENCED_PARAMETER(rgsrSelection);
-    UNREFERENCED_PARAMETER(cRectangles);
-
     return S_OK;
 }
 
-HRESULT WddmConEngine::InvalidateScroll(const COORD* const pcoordDelta)
+HRESULT WddmConEngine::InvalidateScroll(const COORD* const /*pcoordDelta*/)
 {
-    UNREFERENCED_PARAMETER(pcoordDelta);
-
     return S_OK;
 }
 
@@ -250,11 +241,12 @@ HRESULT WddmConEngine::PaintBackground()
     return S_OK;
 }
 
-HRESULT WddmConEngine::PaintBufferLine(PCWCHAR const pwsLine, const unsigned char* const rgWidths, size_t const cchLine, COORD const coord, bool const fTrimLeft)
+HRESULT WddmConEngine::PaintBufferLine(PCWCHAR const pwsLine,
+                                       const unsigned char* const /*rgWidths*/,
+                                       size_t const cchLine,
+                                       COORD const coord,
+                                       bool const /*fTrimLeft*/)
 {
-    UNREFERENCED_PARAMETER(rgWidths);
-    UNREFERENCED_PARAMETER(fTrimLeft);
-
     RETURN_IF_HANDLE_INVALID(_hWddmConCtx);
 
     PCD_IO_CHARACTER OldChar;
@@ -275,21 +267,16 @@ HRESULT WddmConEngine::PaintBufferLine(PCWCHAR const pwsLine, const unsigned cha
     return WDDMConUpdateDisplay(_hWddmConCtx, _displayState[coord.Y], FALSE);
 }
 
-HRESULT WddmConEngine::PaintBufferGridLines(GridLines const lines, COLORREF const color, size_t const cchLine, COORD const coordTarget)
+HRESULT WddmConEngine::PaintBufferGridLines(GridLines const /*lines*/,
+                                            COLORREF const /*color*/,
+                                            size_t const /*cchLine*/,
+                                            COORD const /*coordTarget*/)
 {
-    UNREFERENCED_PARAMETER(lines);
-    UNREFERENCED_PARAMETER(color);
-    UNREFERENCED_PARAMETER(cchLine);
-    UNREFERENCED_PARAMETER(coordTarget);
-
     return S_OK;
 }
 
-HRESULT WddmConEngine::PaintSelection(const SMALL_RECT* const rgsrSelection, UINT const cRectangles)
+HRESULT WddmConEngine::PaintSelection(const SMALL_RECT* const /*rgsrSelection*/, UINT const /*cRectangles*/)
 {
-    UNREFERENCED_PARAMETER(rgsrSelection);
-    UNREFERENCED_PARAMETER(cRectangles);
-
     return S_OK;
 }
 
@@ -308,21 +295,18 @@ HRESULT WddmConEngine::ClearCursor()
     return S_OK;
 }
 
-HRESULT WddmConEngine::UpdateDrawingBrushes(COLORREF const colorForeground, COLORREF const colorBackground, _In_ WORD const legacyColorAttribute, bool const fIncludeBackgrounds)
+HRESULT WddmConEngine::UpdateDrawingBrushes(COLORREF const /*colorForeground*/,
+                                            COLORREF const /*colorBackground*/,
+                                            _In_ WORD const legacyColorAttribute,
+                                            bool const /*fIncludeBackgrounds*/)
 {
-    UNREFERENCED_PARAMETER(colorForeground);
-    UNREFERENCED_PARAMETER(colorBackground);
-    UNREFERENCED_PARAMETER(fIncludeBackgrounds);
-
     _currentLegacyColorAttribute = legacyColorAttribute;
 
     return S_OK;
 }
 
-HRESULT WddmConEngine::UpdateFont(FontInfoDesired const* const pfiFontInfoDesired, FontInfo* const pfiFontInfo)
+HRESULT WddmConEngine::UpdateFont(FontInfoDesired const* const /*pfiFontInfoDesired*/, FontInfo* const pfiFontInfo)
 {
-    UNREFERENCED_PARAMETER(pfiFontInfoDesired);
-
     COORD coordSize = {0};
     GetFontSize(&coordSize);
 
@@ -336,31 +320,27 @@ HRESULT WddmConEngine::UpdateFont(FontInfoDesired const* const pfiFontInfoDesire
     return S_OK;
 }
 
-HRESULT WddmConEngine::UpdateDpi(int const iDpi)
+HRESULT WddmConEngine::UpdateDpi(int const /*iDpi*/)
 {
-    UNREFERENCED_PARAMETER(iDpi);
-
     return S_OK;
 }
-              
+
 // Method Description:
 // - This method will update our internal reference for how big the viewport is.
 //      Does nothing for WDDMCon.
 // Arguments:
 // - srNewViewport - The bounds of the new viewport.
 // Return Value:
-// - HRESULT S_OK  
+// - HRESULT S_OK
 HRESULT WddmConEngine::UpdateViewport(_In_ SMALL_RECT const /*srNewViewport*/)
 {
     return S_OK;
 }
 
-HRESULT WddmConEngine::GetProposedFont(FontInfoDesired const* const pfiFontInfoDesired, FontInfo* const pfiFontInfo, int const iDpi)
+HRESULT WddmConEngine::GetProposedFont(FontInfoDesired const* const /*pfiFontInfoDesired*/,
+                                       FontInfo* const /*pfiFontInfo*/,
+                                       int const /*iDpi*/)
 {
-    UNREFERENCED_PARAMETER(pfiFontInfoDesired);
-    UNREFERENCED_PARAMETER(pfiFontInfo);
-    UNREFERENCED_PARAMETER(iDpi);
-
     return S_OK;
 }
 

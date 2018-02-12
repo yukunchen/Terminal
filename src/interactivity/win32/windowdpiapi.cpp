@@ -248,6 +248,7 @@ WindowDpiApi::WindowDpiApi()
     //       This has triggered CPG boot IO warnings in the past.
     _hUser32 = LoadLibraryExW(L"user32.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
 }
+#endif
 
 WindowDpiApi::~WindowDpiApi()
 {
@@ -257,6 +258,5 @@ WindowDpiApi::~WindowDpiApi()
         _hUser32 = nullptr;
     }
 }
-#endif
 
 #pragma endregion

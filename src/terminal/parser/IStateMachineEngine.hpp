@@ -24,6 +24,8 @@ namespace Microsoft
             {
             public:
 
+                virtual ~IStateMachineEngine() = 0;
+
                 virtual bool ActionExecute(_In_ wchar_t const wch) = 0;
                 virtual bool ActionPrint(_In_ wchar_t const wch) = 0;
                 virtual bool ActionPrintString(_Inout_updates_(cch) wchar_t* const rgwch,
@@ -48,6 +50,8 @@ namespace Microsoft
                 virtual bool FlushAtEndOfString() const = 0;
 
             };
+
+            inline IStateMachineEngine::~IStateMachineEngine() {}
         }
     }
 }

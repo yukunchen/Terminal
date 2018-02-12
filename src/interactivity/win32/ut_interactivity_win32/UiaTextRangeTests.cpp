@@ -76,7 +76,7 @@ class UiaTextRangeTests
 
     TEST_METHOD_SETUP(MethodSetup)
     {
-        const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // set up common state
         _state = new CommonState();
         _state->PrepareGlobalFont();
@@ -84,7 +84,7 @@ class UiaTextRangeTests
         _state->PrepareNewTextBufferInfo();
 
         // set up pointers
-        _pScreenInfo = gci->CurrentScreenBuffer;
+        _pScreenInfo = gci.CurrentScreenBuffer;
         _pTextBuffer = _pScreenInfo->TextInfo;
 
         // set up default range
@@ -112,10 +112,10 @@ class UiaTextRangeTests
         return true;
     }
 
-    const unsigned int _getRowWidth() const
+    const size_t _getRowWidth() const
     {
-        const CHAR_ROW charRow = _pTextBuffer->GetFirstRow()->CharRow;
-        return charRow.Left - charRow.Right;
+        const CHAR_ROW charRow = _pTextBuffer->GetFirstRow().CharRow;
+        return charRow.MeasureLeft() - charRow.MeasureRight();
     }
 
     TEST_METHOD(DegenerateRangesDetected)

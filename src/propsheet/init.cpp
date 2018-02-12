@@ -30,9 +30,8 @@ HINSTANCE ghInstance;
 BOOL WINAPI DllMain(
     HINSTANCE hInstDLL,
     DWORD dwReason,
-    LPVOID lpvReserved)
+    LPVOID /*lpvReserved*/)
 {
-    UNREFERENCED_PARAMETER(lpvReserved);
     if (dwReason != DLL_PROCESS_ATTACH) {
         return TRUE;
     }

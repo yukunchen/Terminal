@@ -66,74 +66,58 @@ bool CheckBisectStringA(_In_reads_bytes_(cbBuf) PCHAR pchBuf, _In_ DWORD cbBuf, 
 }
 
 // Routine Description:
-// - This routine write buffer with bisect.
-void BisectWrite(_In_ const SHORT sStringLen, _In_ const COORD coordTarget, _In_ PSCREEN_INFORMATION pScreenInfo)
+// - updates dbcs attributes of output buffer cells at the beginning and end of where a string will be
+// written. This is to clean up leading trailing pairs when one of the cells in the pair is about to be overwritten.
+// Arguments:
+// - stringLen - the length of the string to write
+// - coordTarget - the location the string will be written to
+// - pScreenInfo - the screen buffer to update
+// Return Value:
+// - <none>
+void CleanupDbcsEdgesForWrite(_In_ const size_t stringLen,
+                              _In_ const COORD coordTarget,
+                              _Inout_ SCREEN_INFORMATION* const pScreenInfo)
 {
     PTEXT_BUFFER_INFO const pTextInfo = pScreenInfo->TextInfo;
-
-#if DBG && defined(DBG_KATTR)
-    BeginKAttrCheck(pScreenInfo);
-#endif
-
     const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
-    SHORT const RowIndex = (pTextInfo->GetFirstRowIndex() + coordTarget.Y) % coordScreenBufferSize.Y;
-    ROW* const Row = &pTextInfo->Rows[RowIndex];
+    const SHORT rowIndex = (pTextInfo->GetFirstRowIndex() + coordTarget.Y) % coordScreenBufferSize.Y;
 
-    ROW* RowPrev;
-    if (RowIndex > 0)
+    try
     {
-        RowPrev = &pTextInfo->Rows[RowIndex - 1];
-    }
-    else
-    {
-        RowPrev = &pTextInfo->Rows[coordScreenBufferSize.Y - 1];
-    }
+        ROW& row = pTextInfo->GetRowAtIndex(rowIndex);
 
-    ROW* RowNext;
-    if (RowIndex + 1 < coordScreenBufferSize.Y)
-    {
-        RowNext = &pTextInfo->Rows[RowIndex + 1];
-    }
-    else
-    {
-        RowNext = &pTextInfo->Rows[0];
-    }
-
-    if (Row->CharRow.KAttrs != nullptr)
-    {
         // Check start position of strings
-        if (Row->CharRow.KAttrs[coordTarget.X] & CHAR_ROW::ATTR_TRAILING_BYTE)
+        if (row.CharRow.GetAttribute(coordTarget.X).IsTrailing())
         {
             if (coordTarget.X == 0)
             {
-                RowPrev->CharRow.Chars[coordScreenBufferSize.X - 1] = UNICODE_SPACE;
-                RowPrev->CharRow.KAttrs[coordScreenBufferSize.X - 1] = 0;
+                pTextInfo->GetPrevRow(row).ClearColumn(coordScreenBufferSize.X - 1);
             }
             else
             {
-                Row->CharRow.Chars[coordTarget.X - 1] = UNICODE_SPACE;
-                Row->CharRow.KAttrs[coordTarget.X - 1] = 0;
+                row.ClearColumn(coordTarget.X - 1);
             }
         }
 
         // Check end position of strings
-        if (coordTarget.X + sStringLen < coordScreenBufferSize.X)
+        if (coordTarget.X + static_cast<short>(stringLen) < coordScreenBufferSize.X)
         {
-            if (Row->CharRow.KAttrs[coordTarget.X + sStringLen] & CHAR_ROW::ATTR_TRAILING_BYTE)
+            size_t column = coordTarget.X + stringLen;
+            if (row.CharRow.GetAttribute(column).IsTrailing())
             {
-                Row->CharRow.Chars[coordTarget.X + sStringLen] = UNICODE_SPACE;
-                Row->CharRow.KAttrs[coordTarget.X + sStringLen] = 0;
+                row.ClearColumn(column);
             }
         }
         else if (coordTarget.Y + 1 < coordScreenBufferSize.Y)
         {
-            if (RowNext->CharRow.KAttrs[0] & CHAR_ROW::ATTR_TRAILING_BYTE)
+            ROW& rowNext = pTextInfo->GetNextRow(row);
+            if (rowNext.CharRow.GetAttribute(0).IsTrailing())
             {
-                RowNext->CharRow.Chars[0] = UNICODE_SPACE;
-                RowNext->CharRow.KAttrs[0] = 0;
+                rowNext.ClearColumn(0);
             }
         }
     }
+    CATCH_LOG_RETURN();
 }
 
 // Routine Description:
@@ -315,58 +299,14 @@ BOOL IsCharFullWidth(_In_ WCHAR wch)
     // Currently we do not support codepoints above 0xffff
     else
     {
-        if (ServiceLocator::LocateGlobals()->pRender != nullptr)
+        if (ServiceLocator::LocateGlobals().pRender != nullptr)
         {
-            return ServiceLocator::LocateGlobals()->pRender->IsCharFullWidthByFont(wch);
+            return ServiceLocator::LocateGlobals().pRender->IsCharFullWidthByFont(wch);
         }
     }
 
     ASSERT(FALSE);
     return FALSE;
-}
-
-// Routine Description:
-// - This routine remove DBCS padding code.
-// Arguments:
-// - Dst - Pointer to destination.
-// - Src - Pointer to source.
-// - NumBytes - Number of string.
-// Return Value:
-DWORD RemoveDbcsMark(_Inout_updates_(NumChars) PWCHAR Dst,
-                     _In_reads_(NumChars) PWCHAR Src,
-                     _In_ DWORD NumChars,
-                     _In_reads_opt_(NumChars) PCHAR SrcA)
-{
-    if (NumChars == 0 || NumChars == 0xFFFFFFFF)
-    {
-        return 0;
-    }
-
-    if (SrcA)
-    {
-        DWORD cTotalChars = NumChars;
-        PWCHAR const Tmp = Dst;
-        while (NumChars--)
-        {
-            if (Dst >= Tmp + cTotalChars)
-            {
-                ASSERT(false);
-                return 0;
-            }
-
-            if (!(*SrcA++ & CHAR_ROW::ATTR_TRAILING_BYTE))
-            {
-                *Dst++ = *Src;
-            }
-            Src++;
-        }
-        return (ULONG) (Dst - Tmp);
-    }
-    else
-    {
-        memmove(Dst, Src, NumChars * sizeof(WCHAR));
-        return NumChars;
-    }
 }
 
 // Routine Description:
@@ -415,43 +355,6 @@ DWORD RemoveDbcsMarkCell(_Out_writes_(cch) PCHAR_INFO pciDst, _In_reads_(cch) co
     ASSERT(iDst == cch);
 
     return iDst;
-}
-
-DWORD RemoveDbcsMarkAll(_In_ const SCREEN_INFORMATION * const pScreenInfo,
-                        _In_ ROW* pRow,
-                        _In_ SHORT * const psLeftChar,
-                        _In_ PRECT prcText,
-                        _Inout_opt_ int * const piTextLeft,
-                        _Inout_updates_(cchBuf) PWCHAR pwchBuf,
-                        _In_ const SHORT cchBuf)
-{
-    if (cchBuf <= 0)
-    {
-        return cchBuf;
-    }
-
-    if (*psLeftChar > pScreenInfo->GetBufferViewport().Left && pRow->CharRow.KAttrs[*psLeftChar] & CHAR_ROW::ATTR_TRAILING_BYTE)
-    {
-        prcText->left -= pScreenInfo->GetScreenFontSize().X;
-        --*psLeftChar;
-
-        if (nullptr != piTextLeft)
-        {
-            *piTextLeft = prcText->left;
-        }
-
-#pragma prefast(suppress:__WARNING_BUFFER_OVERFLOW, "We're guaranteed to be able to make this access.")
-        return RemoveDbcsMark(pwchBuf, &pRow->CharRow.Chars[*psLeftChar], cchBuf + 1, (PCHAR) & pRow->CharRow.KAttrs[*psLeftChar]);
-    }
-    else if (*psLeftChar == pScreenInfo->GetBufferViewport().Left && pRow->CharRow.KAttrs[*psLeftChar] & CHAR_ROW::ATTR_TRAILING_BYTE)
-    {
-        *pwchBuf = UNICODE_SPACE;
-        return RemoveDbcsMark(pwchBuf + 1, &pRow->CharRow.Chars[*psLeftChar + 1], cchBuf - 1, (PCHAR) & pRow->CharRow.KAttrs[*psLeftChar + 1]) + 1;
-    }
-    else
-    {
-        return RemoveDbcsMark(pwchBuf, &pRow->CharRow.Chars[*psLeftChar], cchBuf, (PCHAR) & pRow->CharRow.KAttrs[*psLeftChar]);
-    }
 }
 
 // Routine Description:
@@ -517,7 +420,7 @@ ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
                             _In_ const ULONG cbAnsi,
                             _Out_ std::unique_ptr<IInputEvent>& partialEvent)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     PWCHAR const TmpUni = new WCHAR[cchUnicode];
     if (TmpUni == nullptr)
     {
@@ -535,8 +438,8 @@ ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
         if (IsCharFullWidth(TmpUni[i]))
         {
             ULONG const NumBytes = sizeof(AsciiDbcs);
-            ConvertToOem(gci->CP, &TmpUni[i], 1, (LPSTR) & AsciiDbcs[0], NumBytes);
-            if (IsDBCSLeadByteConsole(AsciiDbcs[0], &gci->CPInfo))
+            ConvertToOem(gci.CP, &TmpUni[i], 1, (LPSTR) & AsciiDbcs[0], NumBytes);
+            if (IsDBCSLeadByteConsole(AsciiDbcs[0], &gci.CPInfo))
             {
                 if (j < cbAnsi - 1)
                 {   // -1 is safe DBCS in buffer
@@ -559,7 +462,7 @@ ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
         }
         else
         {
-            ConvertToOem(gci->CP, &TmpUni[i], 1, &pchAnsi[j], 1);
+            ConvertToOem(gci.CP, &TmpUni[i], 1, &pchAnsi[j], 1);
         }
     }
 

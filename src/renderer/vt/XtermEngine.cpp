@@ -22,26 +22,34 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     _cColorTable(cColorTable),
     _fUseAsciiOnly(fUseAsciiOnly)
 {
+    // Set out initial cursor position to -1, -1. This will force our initial
+    //      paint to manually move the cursor to 0, 0, not just ignore it.
+    _lastText = VtEngine::INVALID_COORDS;
 }
 
 // Method Description:
-// - Prepares internal structures for a painting operation. Turns the cursor 
-//      off, so we don't see it flashing all over the client's screen as we 
+// - Prepares internal structures for a painting operation. Turns the cursor
+//      off, so we don't see it flashing all over the client's screen as we
 //      paint the new contents.
 // Arguments:
 // - <none>
 // Return Value:
 // - S_OK if we started to paint. S_FALSE if we didn't need to paint. HRESULT
-//      error code if painting didn't start successfully, or we failed to write 
+//      error code if painting didn't start successfully, or we failed to write
 //      the pipe.
 HRESULT XtermEngine::StartPaint()
-{    
+{
     HRESULT hr = VtEngine::StartPaint();
     if (SUCCEEDED(hr))
     {
+        if (_firstPaint)
+        {
+            // As of MSFT:15813316 we are no longer clearing on the first paint.
+            _firstPaint = false;
+        }
         if (!_quickReturn)
         {
-            if (!_WillWriteSingleChar()) 
+            if (!_WillWriteSingleChar())
             {
                 // Turn off cursor
                 hr = _HideCursor();
@@ -58,7 +66,7 @@ HRESULT XtermEngine::StartPaint()
 }
 
 // Routine Description:
-// - EndPaint helper to perform the final rendering steps. Turn the cursor back 
+// - EndPaint helper to perform the final rendering steps. Turn the cursor back
 //      on.
 // Arguments:
 // - <none>
@@ -69,12 +77,11 @@ HRESULT XtermEngine::EndPaint()
     HRESULT hr = VtEngine::EndPaint();
     if (SUCCEEDED(hr))
     {
-        // todo come back to this before the PR is finished.
         if (!_quickReturn)
         {
             // Turn on cursor
             hr = _ShowCursor();
-        }        
+        }
     }
 
 
@@ -82,14 +89,14 @@ HRESULT XtermEngine::EndPaint()
 }
 
 // Routine Description:
-// - Write a VT sequence to change the current colors of text. Only writes 
+// - Write a VT sequence to change the current colors of text. Only writes
 //      16-color attributes.
 // Arguments:
 // - colorForeground: The RGB Color to use to paint the foreground text.
 // - colorBackground: The RGB Color to use to paint the background of the text.
 // - legacyColorAttribute: A console attributes bit field specifying the brush
 //      colors we should use.
-// - fIncludeBackgrounds: indicates if we should change the background color of 
+// - fIncludeBackgrounds: indicates if we should change the background color of
 //      the window. Unused for VT
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
@@ -103,11 +110,11 @@ HRESULT XtermEngine::UpdateDrawingBrushes(_In_ COLORREF const colorForeground,
 }
 
 // Routine Description:
-// - Write a VT sequence to move the cursor to the specified coordinates. We 
+// - Write a VT sequence to move the cursor to the specified coordinates. We
 //      also store the last place we left the cursor for future optimizations.
 //  If the cursor only needs to go to the origin, only write the home sequence.
 //  If the new cursor is only down one line from the current, only write a newline
-//  If the new cursor is only down one line and at the start of the line, write 
+//  If the new cursor is only down one line and at the start of the line, write
 //      a carriage return.
 //  Otherwise just write the whole sequence for moving it.
 // Arguments:
@@ -161,8 +168,8 @@ HRESULT XtermEngine::_MoveCursor(COORD const coord)
 }
 
 // Routine Description:
-// - Scrolls the existing data on the in-memory frame by the scroll region 
-//      deltas we have collectively received through the Invalidate methods 
+// - Scrolls the existing data on the in-memory frame by the scroll region
+//      deltas we have collectively received through the Invalidate methods
 //      since the last time this was called.
 //  Move the cursor to the origin, and insert or delete rows as appropriate.
 //      The inserted rows will be blank, but marked invalid by InvalidateScroll,
@@ -201,7 +208,7 @@ HRESULT XtermEngine::ScrollFrame()
             std::string seq = std::string(absDy, '\n');
             hr = _Write(seq);
         }
-        // We don't need to _MoveCursor the cursor again, because it's still 
+        // We don't need to _MoveCursor the cursor again, because it's still
         //      at the bottom of the viewport.
     }
     else if (dy > 0)
@@ -219,11 +226,11 @@ HRESULT XtermEngine::ScrollFrame()
 }
 
 // Routine Description:
-// - Notifies us that the console is attempting to scroll the existing screen 
+// - Notifies us that the console is attempting to scroll the existing screen
 //      area. Add the top or bottom rows to the invalid region, and update the
 //      total scroll delta accumulated this frame.
 // Arguments:
-// - pcoordDelta - Pointer to character dimension (COORD) of the distance the 
+// - pcoordDelta - Pointer to character dimension (COORD) of the distance the
 //      console would like us to move while scrolling.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for safemath failure
@@ -263,17 +270,17 @@ HRESULT XtermEngine::InvalidateScroll(_In_ const COORD* const pcoordDelta)
 }
 
 // Routine Description:
-// - Draws one line of the buffer to the screen. Writes the characters to the 
+// - Draws one line of the buffer to the screen. Writes the characters to the
 //      pipe, encoded in UTF-8 or ASCII only, depending on the VtIoMode.
 //      (See descriptions of both implementations for details.)
 // Arguments:
 // - pwsLine - string of text to be written
-// - rgWidths - array specifying how many column widths that the console is 
+// - rgWidths - array specifying how many column widths that the console is
 //      expecting each character to take
 // - cchLine - length of line to be read
 // - coord - character coordinate target to render within viewport
 // - fTrimLeft - This specifies whether to trim one character width off the left
-//      side of the output. Used for drawing the right-half only of a 
+//      side of the output. Used for drawing the right-half only of a
 //      double-wide character.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.

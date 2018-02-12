@@ -23,6 +23,7 @@ namespace Microsoft
             class IWindowMetrics
             {
             public:
+                virtual ~IWindowMetrics() = 0;
                 virtual RECT GetMinClientRectInPixels() = 0;
                 virtual RECT GetMaxClientRectInPixels() = 0;
 
@@ -32,6 +33,8 @@ namespace Microsoft
                 IWindowMetrics(IWindowMetrics const&) = delete;
                 IWindowMetrics& operator=(IWindowMetrics const&) = delete;
             };
-        };
-    };
-};
+
+            inline IWindowMetrics::~IWindowMetrics() {}
+        }
+    }
+}

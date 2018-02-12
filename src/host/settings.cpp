@@ -36,7 +36,7 @@ Settings::Settings() :
     _uNumberOfHistoryBuffers(DEFAULT_NUMBER_OF_BUFFERS),
     _bHistoryNoDup(false),
     // ColorTable initialized below
-    _uCodePage(ServiceLocator::LocateGlobals()->uiOEMCP),
+    _uCodePage(ServiceLocator::LocateGlobals().uiOEMCP),
     _uScrollScale(1),
     _bLineSelection(true),
     _bWrapText(true),
@@ -599,9 +599,9 @@ void Settings::SetGridRenderingAllowedWorldwide(_In_ bool const fGridRenderingAl
     {
         this->_fRenderGridWorldwide = fGridRenderingAllowed;
 
-        if (ServiceLocator::LocateGlobals()->pRender != nullptr)
+        if (ServiceLocator::LocateGlobals().pRender != nullptr)
         {
-            ServiceLocator::LocateGlobals()->pRender->TriggerRedrawAll();
+            ServiceLocator::LocateGlobals().pRender->TriggerRedrawAll();
         }
     }
 }

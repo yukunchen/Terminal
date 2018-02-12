@@ -343,7 +343,7 @@ public:
 
         return _fWriteConsoleInputWResult;
     }
-    
+
     virtual BOOL PrivatePrependConsoleInput(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
                                             _Out_ size_t& eventsWritten)
     {
@@ -651,7 +651,7 @@ public:
 
         return _fPrivateGetConsoleScreenBufferAttributesResult;
     }
-    
+
     virtual BOOL PrivateRefreshWindow()
     {
         Log::Comment(L"PrivateRefreshWindow MOCK called...");
@@ -1284,20 +1284,16 @@ public:
         return true;
     }
 
-    void Print(_In_ wchar_t const wch)
+    void Print(_In_ wchar_t const /*wch*/)
     {
-        UNREFERENCED_PARAMETER(wch);
     }
 
-    void PrintString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch)
+    void PrintString(_In_reads_(_Param_(2)) wchar_t* const /*rgwch*/, _In_ size_t const /*cch*/)
     {
-        UNREFERENCED_PARAMETER(rgwch);
-        UNREFERENCED_PARAMETER(cch);
     }
 
-    void Execute(_In_ wchar_t const wch)
+    void Execute(_In_ wchar_t const /*wch*/)
     {
-        UNREFERENCED_PARAMETER(wch);
     }
 
     TEST_METHOD(CursorMovementTest)

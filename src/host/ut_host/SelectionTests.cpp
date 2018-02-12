@@ -65,8 +65,8 @@ class SelectionTests
         UINT cRectangles;
 
         NTSTATUS status = m_pSelection->GetSelectionRects(&rgsrSelection, &cRectangles);
-
         VERIFY_IS_TRUE(NT_SUCCESS(status));
+        auto scopeExit = wil::ScopeExit([&]() { delete[] rgsrSelection; });
 
         const UINT cRectanglesExpected = m_pSelection->_srSelectionRect.Bottom - m_pSelection->_srSelectionRect.Top + 1;
 
@@ -136,13 +136,14 @@ class SelectionTests
 
     void VerifyGetSelectionRects_LineMode()
     {
-        const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         SMALL_RECT* rgsrSelection;
         UINT cRectangles;
 
         NTSTATUS status = m_pSelection->GetSelectionRects(&rgsrSelection, &cRectangles);
 
         VERIFY_IS_TRUE(NT_SUCCESS(status));
+        auto scopeExit = wil::ScopeExit([&]() { delete[] rgsrSelection; });
 
         const UINT cRectanglesExpected = m_pSelection->_srSelectionRect.Bottom - m_pSelection->_srSelectionRect.Top + 1;
 
@@ -195,7 +196,7 @@ class SelectionTests
                     if (!fIsLastLine)
                     {
                         // buffer size = 80, then selection goes 0 to 79. Thus X - 1.
-                        VERIFY_ARE_EQUAL(psrRect->Right, gci->CurrentScreenBuffer->TextInfo->GetCoordBufferSize().X - 1);
+                        VERIFY_ARE_EQUAL(psrRect->Right, gci.CurrentScreenBuffer->TextInfo->GetCoordBufferSize().X - 1);
                     }
 
                     // for all lines except the first, the line should reach the left edge of the buffer
@@ -319,8 +320,8 @@ class SelectionTests
 
     void TestBisectSelectionDelta(SHORT sTargetX, SHORT sTargetY, SHORT sLength, SHORT sDeltaLeft, SHORT sDeltaRight)
     {
-        const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-        SCREEN_INFORMATION* pScreenInfo = gci->CurrentScreenBuffer;
+        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        SCREEN_INFORMATION* pScreenInfo = gci.CurrentScreenBuffer;
 
         short sStringLength;
         COORD coordTargetPoint;
@@ -443,7 +444,7 @@ class SelectionInputTests
 
     TEST_METHOD(TestGetInputLineBoundaries)
     {
-        const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // 80x80 box
         const SHORT sRowWidth = 80;
 
@@ -452,17 +453,17 @@ class SelectionInputTests
         srectEdges.Right = srectEdges.Bottom = sRowWidth - 1;
 
         // false when no cooked read data exists
-        ASSERT(gci->lpCookedReadData == nullptr);
+        ASSERT(gci.lpCookedReadData == nullptr);
 
         bool fResult = Selection::s_GetInputLineBoundaries(nullptr, nullptr);
         VERIFY_IS_FALSE(fResult);
 
         // prepare some read data
         m_state->PrepareCookedReadData();
-        COOKED_READ_DATA* pCooked = gci->lpCookedReadData;
+        COOKED_READ_DATA* pCooked = gci.lpCookedReadData;
 
         // backup text info position over remainder of text execution duration
-        TEXT_BUFFER_INFO* pTextInfo = gci->CurrentScreenBuffer->TextInfo;
+        TEXT_BUFFER_INFO* pTextInfo = gci.CurrentScreenBuffer->TextInfo;
         COORD coordOldTextInfoPos;
         coordOldTextInfoPos.X = pTextInfo->GetCursor()->GetPosition().X;
         coordOldTextInfoPos.Y = pTextInfo->GetCursor()->GetPosition().Y;

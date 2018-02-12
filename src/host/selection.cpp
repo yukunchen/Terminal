@@ -44,9 +44,10 @@ Selection& Selection::Instance()
 // Return Value:
 // - Success if success. Invalid parameter if global state is incorrect. No memory if out of memory.
 _Check_return_
-NTSTATUS Selection::GetSelectionRects(_Outptr_result_buffer_all_(*pcRectangles) SMALL_RECT** const prgsrSelection, _Out_ UINT* const pcRectangles) const
+NTSTATUS Selection::GetSelectionRects(_Outptr_result_buffer_all_(*pcRectangles) SMALL_RECT** const prgsrSelection,
+                                      _Out_ UINT* const pcRectangles) const
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     NTSTATUS status = STATUS_SUCCESS;
     SMALL_RECT* rgsrSelection = nullptr;
     *prgsrSelection = nullptr;
@@ -59,7 +60,7 @@ NTSTATUS Selection::GetSelectionRects(_Outptr_result_buffer_all_(*pcRectangles) 
 
     if (NT_SUCCESS(status))
     {
-        const PSCREEN_INFORMATION pScreenInfo = gci->CurrentScreenBuffer;
+        const PSCREEN_INFORMATION pScreenInfo = gci.CurrentScreenBuffer;
 
         const SMALL_RECT * const pSelectionRect = &_srSelectionRect;
         const UINT cRectangles = pSelectionRect->Bottom - pSelectionRect->Top + 1;
@@ -208,46 +209,43 @@ void Selection::s_BisectSelection(_In_ short const sStringLength,
                                   _Inout_ SMALL_RECT* const pSmallRect)
 {
     const TEXT_BUFFER_INFO* const pTextInfo = pScreenInfo->TextInfo;
+    const ROW& Row = pTextInfo->GetRowByOffset(coordTargetPoint.Y);
 
-#if DBG && defined(DBG_KATTR)
-    BeginKAttrCheck(pScreenInfo);
-#endif
-
-    ROW* pRow = pTextInfo->GetRowByOffset(coordTargetPoint.Y);
-    if (pRow == nullptr)
+    try
     {
-        return;
-    }
-
-    ROW* pRowNext = pTextInfo->GetNextRowNoWrap(pRow);
-
-    // Check start position of strings
-    if (pRow->CharRow.KAttrs[coordTargetPoint.X] & CHAR_ROW::ATTR_TRAILING_BYTE)
-    {
-        if (coordTargetPoint.X == 0)
+        // Check start position of strings
+        if (Row.CharRow.GetAttribute(coordTargetPoint.X).IsTrailing())
         {
-            pSmallRect->Left++;
+            if (coordTargetPoint.X == 0)
+            {
+                pSmallRect->Left++;
+            }
+            else
+            {
+                pSmallRect->Left--;
+            }
+        }
+
+        // Check end position of strings
+        if (coordTargetPoint.X + sStringLength < pScreenInfo->GetScreenBufferSize().X)
+        {
+            if (Row.CharRow.GetAttribute(coordTargetPoint.X + sStringLength).IsTrailing())
+            {
+                pSmallRect->Right++;
+            }
         }
         else
         {
-            pSmallRect->Left--;
+            const ROW& RowNext = pTextInfo->GetNextRowNoWrap(Row);
+            if (RowNext.CharRow.GetAttribute(0).IsTrailing())
+            {
+                pSmallRect->Right--;
+            }
         }
     }
-
-    // Check end position of strings
-    if (coordTargetPoint.X + sStringLength < pScreenInfo->GetScreenBufferSize().X)
+    catch (...)
     {
-        if (pRow->CharRow.KAttrs[coordTargetPoint.X + sStringLength] & CHAR_ROW::ATTR_TRAILING_BYTE)
-        {
-            pSmallRect->Right++;
-        }
-    }
-    else if (pRowNext != nullptr)
-    {
-        if (pRowNext->CharRow.KAttrs[0] & CHAR_ROW::ATTR_TRAILING_BYTE)
-        {
-            pSmallRect->Right--;
-        }
+        LOG_HR(wil::ResultFromCaughtException());
     }
 }
 
@@ -307,9 +305,9 @@ void Selection::_SetSelectionVisibility(_In_ bool const fMakeVisible)
 //  - <none>
 void Selection::_PaintSelection() const
 {
-    if (ServiceLocator::LocateGlobals()->pRender != nullptr)
+    if (ServiceLocator::LocateGlobals().pRender != nullptr)
     {
-        ServiceLocator::LocateGlobals()->pRender->TriggerSelection();
+        ServiceLocator::LocateGlobals().pRender->TriggerSelection();
     }
 }
 
@@ -344,7 +342,7 @@ void Selection::InitializeMouseSelection(_In_ const COORD coordBufferPos)
     if (pWindow != nullptr)
     {
         pWindow->UpdateWindowText();
-    } 
+    }
 
     // Fire off an event to let accessibility apps know the selection has changed.
 
@@ -375,8 +373,8 @@ void Selection::AdjustSelection(_In_ const COORD coordSelectionStart, _In_ const
 // - <none>
 void Selection::ExtendSelection(_In_ COORD coordBufferPos)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    SCREEN_INFORMATION* pScreenInfo = gci->CurrentScreenBuffer;
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION* pScreenInfo = gci.CurrentScreenBuffer;
 
     // ensure position is within buffer bounds. Not less than 0 and not greater than the screen buffer size.
     pScreenInfo->ClipToScreenBuffer(&coordBufferPos);
@@ -446,8 +444,8 @@ void Selection::ExtendSelection(_In_ COORD coordBufferPos)
 // - <none>
 void Selection::_CancelMouseSelection()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    SCREEN_INFORMATION* pScreenInfo = gci->CurrentScreenBuffer;
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION* pScreenInfo = gci.CurrentScreenBuffer;
 
     // invert old select rect.  if we're selecting by mouse, we
     // always have a selection rect.
@@ -474,8 +472,8 @@ void Selection::_CancelMouseSelection()
 // - <none>
 void Selection::_CancelMarkSelection()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    SCREEN_INFORMATION* pScreenInfo = gci->CurrentScreenBuffer;
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION* pScreenInfo = gci.CurrentScreenBuffer;
 
     // Hide existing selection, if we have one.
     if (IsAreaSelected())
@@ -552,12 +550,12 @@ void Selection::ClearSelection(_In_ bool const fStartingNewSelection)
 // - <none>
 void Selection::ColorSelection(_In_ SMALL_RECT* const psrRect, _In_ ULONG const ulAttr)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // TODO: psrRect should likely one day be replaced with an array of rectangles (in case we have a line selection we want colored)
     ASSERT(ulAttr <= 0xff);
 
     // Read selection rectangle, assumed already clipped to buffer.
-    SCREEN_INFORMATION* pScreenInfo = gci->CurrentScreenBuffer;
+    SCREEN_INFORMATION* pScreenInfo = gci.CurrentScreenBuffer;
 
     COORD coordTargetSize;
     coordTargetSize.X = CalcWindowSizeX(&_srSelectionRect);
@@ -584,7 +582,7 @@ void Selection::ColorSelection(_In_ SMALL_RECT* const psrRect, _In_ ULONG const 
 // - <none>
 void Selection::InitializeMarkSelection()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // clear any existing selection.
     ClearSelection(true);
 
@@ -595,7 +593,7 @@ void Selection::InitializeMarkSelection()
     _dwSelectionFlags = 0;
 
     // save old cursor position and make console cursor into selection cursor.
-    SCREEN_INFORMATION* pScreenInfo = gci->CurrentScreenBuffer;
+    SCREEN_INFORMATION* pScreenInfo = gci.CurrentScreenBuffer;
     _SaveCursorData(pScreenInfo->TextInfo);
     pScreenInfo->SetCursorInformation(100, TRUE, pScreenInfo->TextInfo->GetCursor()->GetColor(), pScreenInfo->TextInfo->GetCursor()->GetCursorType());
 
@@ -612,7 +610,7 @@ void Selection::InitializeMarkSelection()
     if (pWindow != nullptr)
     {
         pWindow->UpdateWindowText();
-    } 
+    }
 }
 
 // Routine Description:
@@ -646,9 +644,9 @@ void Selection::SelectNewRegion(_In_ COORD const coordStart, _In_ COORD const co
 // - <none>
 void Selection::SelectAll()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // save the old window position
-    SCREEN_INFORMATION* pScreenInfo = gci->CurrentScreenBuffer;
+    SCREEN_INFORMATION* pScreenInfo = gci.CurrentScreenBuffer;
 
     COORD coordWindowOrigin;
     coordWindowOrigin.X = pScreenInfo->GetBufferViewport().Left;

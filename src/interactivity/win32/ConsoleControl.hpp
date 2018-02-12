@@ -34,7 +34,7 @@ namespace Microsoft
         {
             namespace Win32
             {
-                class ConsoleControl sealed : public IConsoleControl
+                class ConsoleControl final : public IConsoleControl
                 {
                 public:
                     enum ControlType {
@@ -71,7 +71,7 @@ namespace Microsoft
                     HMODULE _hUser32;
 #endif
                 };
-            };
-        };
-    };
-};
+            }
+        }
+    }
+}

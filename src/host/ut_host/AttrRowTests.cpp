@@ -85,8 +85,7 @@ class AttrRowTests
 
     TEST_METHOD_SETUP(MethodSetup)
     {
-        pSingle = new ATTR_ROW();
-        VERIFY_IS_TRUE(pSingle->Initialize(_sDefaultLength, _DefaultAttr));
+        pSingle = new ATTR_ROW(_sDefaultLength, _DefaultAttr);
 
         // Segment length is the expected length divided by the row length
         // E.g. row of 80, 4 segments, 20 segment length each
@@ -106,7 +105,7 @@ class AttrRowTests
         }
 
         // Create the chain
-        pChain = new ATTR_ROW();
+        pChain = new ATTR_ROW(_sDefaultLength, _DefaultAttr);
         pChain->_cList = sChainSegmentsNeeded;
         pChain->_rgList = wil::make_unique_nothrow<TextAttributeRun[]>(sChainSegmentsNeeded);
         pChain->_cchRowWidth = _sDefaultLength;
@@ -157,7 +156,7 @@ class AttrRowTests
         {
             ATTR_ROW* pUnderTest = pTestItems[iIndex];
 
-            pUnderTest->Initialize(sRowWidth, attr);
+            pUnderTest->Reset(sRowWidth, attr);
 
             VERIFY_ARE_EQUAL(pUnderTest->_cList, 1u);
             VERIFY_IS_TRUE(pUnderTest->_rgList.get()->GetAttributes().IsEqual(attr));
@@ -170,16 +169,14 @@ class AttrRowTests
     // Arguments:
     // - rgAttrs - Array of words representing the attribute associated with each character position in the row.
     // - cRowLength - Length of preceeding array.
-    // - ppAttrRun - Filled with pointer to newly allocate run-length-encoded array. CALLER MUST FREE.
-    // - pcAttrRun - Filled with length of newly allocated array.
+    // - outAttrRun - reference to unique_ptr that will contain packed attr run on success.
     // Return Value:
     // - Success if success. Buffer too small if row length is incorrect.
     HRESULT PackAttrs(_In_reads_(cRowLength) const TextAttribute* const rgAttrs,
-                      _In_ UINT const cRowLength,
-                      _Out_writes_(*pcAttrRun) TextAttributeRun** const ppAttrRun,
-                      _Out_ UINT* const pcAttrRun)
+                      _In_ const size_t cRowLength,
+                      _Inout_ std::unique_ptr<TextAttributeRun[]>& outAttrRun,
+                      _Out_ size_t* const cOutAttrRun)
     {
-
         NTSTATUS status = STATUS_SUCCESS;
 
         if (cRowLength == 0)
@@ -190,11 +187,11 @@ class AttrRowTests
         if (NT_SUCCESS(status))
         {
             // first count up the deltas in the array
-            int cDeltas = 1;
+            size_t cDeltas = 1;
 
             const TextAttribute* pPrevAttr = &rgAttrs[0];
 
-            for (unsigned int i = 1; i < cRowLength; i++)
+            for (size_t i = 1; i < cRowLength; i++)
             {
                 const TextAttribute* pCurAttr = &rgAttrs[i];
 
@@ -212,39 +209,29 @@ class AttrRowTests
             // make a new buffer, one run + one run for each change
             // set the values for each run one run index at a time
 
-            short cAttrLength;
-            if (SUCCEEDED(IntToShort(cDeltas, &cAttrLength)))
+            std::unique_ptr<TextAttributeRun[]> attrRun = std::make_unique<TextAttributeRun[]>(cDeltas);
+            status = NT_TESTNULL(attrRun.get());
+            if (NT_SUCCESS(status))
             {
-                TextAttributeRun* const pAttrRun = new TextAttributeRun[cAttrLength];
-                status = NT_TESTNULL(pAttrRun);
-                if (NT_SUCCESS(status))
+                TextAttributeRun* pCurrentRun = attrRun.get();
+                pCurrentRun->SetAttributes(rgAttrs[0]);
+                pCurrentRun->SetLength(1);
+                for (size_t i = 1; i < cRowLength; i++)
                 {
-                    TextAttributeRun* pCurrentRun = pAttrRun;
-                    pCurrentRun->SetAttributes(rgAttrs[0]);
-                    pCurrentRun->SetLength(1);
-                    for (unsigned int i = 1; i < cRowLength; i++)
+                    if (pCurrentRun->GetAttributes().IsEqual(rgAttrs[i]))
                     {
-                        if (pCurrentRun->GetAttributes().IsEqual(rgAttrs[i]))
-                        {
-                            pCurrentRun->SetLength(pCurrentRun->GetLength() + 1);
-                        }
-                        else
-                        {
-                            pCurrentRun++;
-                            pCurrentRun->SetAttributes(rgAttrs[i]);
-                            pCurrentRun->SetLength(1);
-                        }
+                        pCurrentRun->SetLength(pCurrentRun->GetLength() + 1);
                     }
-
-                    *ppAttrRun = pAttrRun;
-                    *pcAttrRun = cAttrLength;
+                    else
+                    {
+                        pCurrentRun++;
+                        pCurrentRun->SetAttributes(rgAttrs[i]);
+                        pCurrentRun->SetLength(1);
+                    }
                 }
+                attrRun.swap(outAttrRun);
+                *cOutAttrRun = cDeltas;
             }
-            else
-            {
-                status = STATUS_UNSUCCESSFUL;
-            }
-
         }
 
         return HRESULT_FROM_NT(status);
@@ -287,7 +274,7 @@ class AttrRowTests
 
         // Set up our "original row" that we are going to try to insert into.
         // This will represent a 10 column run of R3->B5->G2 that we will use for all tests.
-        ATTR_ROW originalRow;
+        ATTR_ROW originalRow{ static_cast<UINT>(_sDefaultLength), _DefaultAttr };
         originalRow._cList = 3;
         originalRow._rgList = wil::make_unique_failfast<TextAttributeRun[]>(originalRow._cList);
         originalRow._cchRowWidth = 10;
@@ -362,9 +349,9 @@ class AttrRowTests
         }
 
         // - 3. Pack.
-        TextAttributeRun* pPackedRun;
-        UINT cPackedRun;
-        VERIFY_SUCCEEDED(PackAttrs(unpackedOriginal.get(), originalRow._cchRowWidth, &pPackedRun, &cPackedRun));
+        std::unique_ptr<TextAttributeRun[]> packedRun;
+        size_t cPackedRun = 0;
+        VERIFY_SUCCEEDED(PackAttrs(unpackedOriginal.get(), originalRow._cchRowWidth, packedRun, &cPackedRun));
 
         // Now send parameters into InsertAttrRuns and get its opinion on the subject.
         VERIFY_SUCCEEDED(originalRow.InsertAttrRuns(insertRow.get(), (UINT)cInsertRow, uiStartPos, uiEndPos, (UINT)originalRow._cchRowWidth));
@@ -372,12 +359,12 @@ class AttrRowTests
         // Compare and ensure that the expected and actual match.
         VERIFY_ARE_EQUAL(cPackedRun, originalRow._cList, L"Ensure that number of array elements required for RLE are the same.");
 
-        LogChain(L"Expected: ", pPackedRun, cPackedRun);
+        LogChain(L"Expected: ", packedRun.get(), cPackedRun);
         LogChain(L"Actual: ", originalRow._rgList.get(), originalRow._cList);
 
-        for (UINT uiTestIndex = 0; uiTestIndex < cPackedRun; uiTestIndex++)
+        for (size_t testIndex = 0; testIndex < cPackedRun; testIndex++)
         {
-            VERIFY_ARE_EQUAL(pPackedRun[uiTestIndex], originalRow._rgList[uiTestIndex]);
+            VERIFY_ARE_EQUAL(packedRun[testIndex], originalRow._rgList[testIndex]);
         }
     }
 
@@ -474,15 +461,15 @@ class AttrRowTests
     TEST_METHOD(TestUnpackAttrs)
     {
         TextAttribute* rAttrs;
-        UINT cAttrs;
+        size_t cAttrs;
 
         Log::Comment(L"Checking unpack of a single color for the entire length");
         cAttrs = pSingle->_cchRowWidth;
         rAttrs = new TextAttribute[cAttrs];
 
-        VERIFY_IS_TRUE(NT_SUCCESS(pSingle->UnpackAttrs(rAttrs, (int)cAttrs)));
+        VERIFY_IS_TRUE(NT_SUCCESS(pSingle->UnpackAttrs(rAttrs, cAttrs)));
 
-        for (UINT iAttrIndex = 0; iAttrIndex < cAttrs; iAttrIndex++)
+        for (size_t iAttrIndex = 0; iAttrIndex < cAttrs; iAttrIndex++)
         {
             VERIFY_IS_TRUE(rAttrs[iAttrIndex].IsEqual(_DefaultAttr));
         }
@@ -498,7 +485,7 @@ class AttrRowTests
         short cChainRun = 0; // how long we've been looking at the current piece of the chain
         short iChainSegIndex = 0; // which piece of the chain we should be on right now
 
-        for (UINT iAttrIndex = 0; iAttrIndex < cAttrs; iAttrIndex++)
+        for (size_t iAttrIndex = 0; iAttrIndex < cAttrs; iAttrIndex++)
         {
             // by default the chain was assembled above to have the chain segment index be the attribute
             TextAttribute MatchingAttr = TextAttribute(iChainSegIndex);
@@ -600,9 +587,9 @@ class AttrRowTests
         {
             ATTR_ROW* pUnderTest = pTestItems[iIndex];
 
-            const UINT sResult = pUnderTest->_cchRowWidth;
+            const size_t Result = pUnderTest->_cchRowWidth;
 
-            VERIFY_ARE_EQUAL((short)sResult, _sDefaultLength);
+            VERIFY_ARE_EQUAL((short)Result, _sDefaultLength);
         }
     }
 };

@@ -29,15 +29,13 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
       _currentLegacyColorAttribute(DEFAULT_COLOR_ATTRIBUTE)
 {
     _runLength = sizeof(CD_IO_CHARACTER) * DisplayWidth;
-    
+
     _fontSize.X = FontWidth > SHORT_MAX ? SHORT_MAX : (SHORT)FontWidth;
     _fontSize.Y = FontHeight > SHORT_MAX ? SHORT_MAX : (SHORT)FontHeight;
 }
 
-HRESULT BgfxEngine::Invalidate(const SMALL_RECT* const psrRegion)
+HRESULT BgfxEngine::Invalidate(const SMALL_RECT* const /*psrRegion*/)
 {
-    UNREFERENCED_PARAMETER(psrRegion);
-
     return S_OK;
 }
 
@@ -46,25 +44,18 @@ HRESULT BgfxEngine::InvalidateCursor(const COORD* const /*pcoordCursor*/)
     return S_OK;
 }
 
-HRESULT BgfxEngine::InvalidateSystem(const RECT* const prcDirtyClient)
+HRESULT BgfxEngine::InvalidateSystem(const RECT* const /*prcDirtyClient*/)
 {
-    UNREFERENCED_PARAMETER(prcDirtyClient);
-
     return S_OK;
 }
 
-HRESULT BgfxEngine::InvalidateSelection(const SMALL_RECT* const rgsrSelection, UINT const cRectangles)
+HRESULT BgfxEngine::InvalidateSelection(const SMALL_RECT* const /*rgsrSelection*/, UINT const /*cRectangles*/)
 {
-    UNREFERENCED_PARAMETER(rgsrSelection);
-    UNREFERENCED_PARAMETER(cRectangles);
-
     return S_OK;
 }
 
-HRESULT BgfxEngine::InvalidateScroll(const COORD* const pcoordDelta)
+HRESULT BgfxEngine::InvalidateScroll(const COORD* const /*pcoordDelta*/)
 {
-    UNREFERENCED_PARAMETER(pcoordDelta);
-
     return S_OK;
 }
 
@@ -98,7 +89,7 @@ HRESULT BgfxEngine::EndPaint()
     PVOID NewRunBase;
 
     Status = ServiceLocator::LocateInputServices<ConIoSrvComm>()->RequestUpdateDisplay(0);
-    
+
     if (NT_SUCCESS(Status))
     {
         for (SHORT i = 0 ; i < _displayHeight ; i++)
@@ -129,7 +120,7 @@ HRESULT BgfxEngine::PaintBackground()
     {
         OldRunBase = (PVOID)(_sharedViewBase + (i * 2 * _runLength));
         NewRunBase = (PVOID)(_sharedViewBase + (i * 2 * _runLength) + _runLength);
-        
+
         OldRun = (PCD_IO_CHARACTER)OldRunBase;
         NewRun = (PCD_IO_CHARACTER)NewRunBase;
 
@@ -143,11 +134,12 @@ HRESULT BgfxEngine::PaintBackground()
     return S_OK;
 }
 
-HRESULT BgfxEngine::PaintBufferLine(PCWCHAR const pwsLine, const unsigned char* const rgWidths, size_t const cchLine, COORD const coord, bool const fTrimLeft)
+HRESULT BgfxEngine::PaintBufferLine(PCWCHAR const pwsLine,
+                                    const unsigned char* const /*rgWidths*/,
+                                    size_t const cchLine,
+                                    COORD const coord,
+                                    bool const /*fTrimLeft*/)
 {
-    UNREFERENCED_PARAMETER(rgWidths);
-    UNREFERENCED_PARAMETER(fTrimLeft);
-
     PVOID NewRunBase = (PVOID)(_sharedViewBase + (coord.Y * 2 * _runLength) + _runLength);
     PCD_IO_CHARACTER NewRun = (PCD_IO_CHARACTER)NewRunBase;
 
@@ -160,21 +152,16 @@ HRESULT BgfxEngine::PaintBufferLine(PCWCHAR const pwsLine, const unsigned char* 
     return S_OK;
 }
 
-HRESULT BgfxEngine::PaintBufferGridLines(GridLines const lines, COLORREF const color, size_t const cchLine, COORD const coordTarget)
+HRESULT BgfxEngine::PaintBufferGridLines(GridLines const /*lines*/,
+                                         COLORREF const /*color*/,
+                                         size_t const /*cchLine*/,
+                                         COORD const /*coordTarget*/)
 {
-    UNREFERENCED_PARAMETER(lines);
-    UNREFERENCED_PARAMETER(color);
-    UNREFERENCED_PARAMETER(cchLine);
-    UNREFERENCED_PARAMETER(coordTarget);
-
     return S_OK;
 }
 
-HRESULT BgfxEngine::PaintSelection(const SMALL_RECT* const rgsrSelection, UINT const cRectangles)
+HRESULT BgfxEngine::PaintSelection(const SMALL_RECT* const /*rgsrSelection*/, UINT const /*cRectangles*/)
 {
-    UNREFERENCED_PARAMETER(rgsrSelection);
-    UNREFERENCED_PARAMETER(cRectangles);
-
     return S_OK;
 }
 
@@ -187,7 +174,6 @@ HRESULT BgfxEngine::PaintCursor(_In_ COORD const coordCursor,
 {
     // TODO: MSFT: 11448021 - Modify BGFX to support rendering full-width
     // characters and a full-width cursor.
-    
     CD_IO_CURSOR_INFORMATION CursorInfo;
     CursorInfo.Row = coordCursor.Y;
     CursorInfo.Column = coordCursor.X;
@@ -212,31 +198,25 @@ HRESULT BgfxEngine::ClearCursor()
     return HRESULT_FROM_NT(Status);
 }
 
-HRESULT BgfxEngine::UpdateDrawingBrushes(COLORREF const colorForeground, COLORREF const colorBackground, _In_ WORD const legacyColorAttribute, bool const fIncludeBackgrounds)
+HRESULT BgfxEngine::UpdateDrawingBrushes(COLORREF const /*colorForeground*/,
+                                         COLORREF const /*colorBackground*/,
+                                         _In_ WORD const legacyColorAttribute,
+                                         bool const /*fIncludeBackgrounds*/)
 {
-    UNREFERENCED_PARAMETER(colorForeground);
-    UNREFERENCED_PARAMETER(colorBackground);
-    UNREFERENCED_PARAMETER(fIncludeBackgrounds);
-
     _currentLegacyColorAttribute = legacyColorAttribute;
 
     return S_OK;
 }
 
-HRESULT BgfxEngine::UpdateFont(FontInfoDesired const* const pfiFontInfoDesired, FontInfo* const pfiFontInfo)
+HRESULT BgfxEngine::UpdateFont(FontInfoDesired const* const /*pfiFontInfoDesired*/, FontInfo* const /*pfiFontInfo*/)
 {
-    UNREFERENCED_PARAMETER(pfiFontInfoDesired);
-    UNREFERENCED_PARAMETER(pfiFontInfo);
-
     return S_OK;
 }
 
-HRESULT BgfxEngine::UpdateDpi(int const iDpi)
+HRESULT BgfxEngine::UpdateDpi(int const /*iDpi*/)
 {
-    UNREFERENCED_PARAMETER(iDpi);
-
     return S_OK;
-}    
+}
 
 // Method Description:
 // - This method will update our internal reference for how big the viewport is.

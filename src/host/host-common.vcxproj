@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <ClCompile Include="..\AttrRow.cpp" />
+    <ClCompile Include="..\CharRow.cpp" />
     <ClCompile Include="..\alias.cpp" />
     <ClCompile Include="..\cmdline.cpp" />
     <ClCompile Include="..\conattrs.cpp" />
@@ -37,6 +39,7 @@
     <ClCompile Include="..\registry.cpp" />
     <ClCompile Include="..\renderData.cpp" />
     <ClCompile Include="..\renderFontDefaults.cpp" />
+    <ClCompile Include="..\Row.cpp" />
     <ClCompile Include="..\screenInfo.cpp" />
     <ClCompile Include="..\scrolling.cpp" />
     <ClCompile Include="..\search.cpp" />
@@ -47,6 +50,8 @@
     <ClCompile Include="..\srvinit.cpp" />
     <ClCompile Include="..\stream.cpp" />
     <ClCompile Include="..\telemetry.cpp" />
+    <ClCompile Include="..\TextAttribute.cpp" />
+    <ClCompile Include="..\TextAttributeRun.cpp" />
     <ClCompile Include="..\textBuffer.cpp" />
     <ClCompile Include="..\tracing.cpp" />
     <ClCompile Include="..\utils.cpp" />
@@ -58,6 +63,8 @@
     <ClCompile Include="..\_stream.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\AttrRow.hpp" />
+    <ClInclude Include="..\CharRow.hpp" />
     <ClInclude Include="..\IIoProvider.hpp" />
     <ClInclude Include="..\alias.h" />
     <ClInclude Include="..\ApiRoutines.h" />
@@ -71,6 +78,7 @@
     <ClInclude Include="..\conwinuserrefs.h" />
     <ClInclude Include="..\cursor.h" />
     <ClInclude Include="..\dbcs.h" />
+    <ClInclude Include="..\DbcsAttribute.hpp" />
     <ClInclude Include="..\directio.h" />
     <ClInclude Include="..\getset.h" />
     <ClInclude Include="..\globals.h" />
@@ -94,6 +102,7 @@
     <ClInclude Include="..\renderData.hpp" />
     <ClInclude Include="..\renderFontDefaults.hpp" />
     <ClInclude Include="..\resource.h" />
+    <ClInclude Include="..\Row.hpp" />
     <ClInclude Include="..\screenInfo.hpp" />
     <ClInclude Include="..\scrolling.hpp" />
     <ClInclude Include="..\search.h" />
@@ -103,6 +112,8 @@
     <ClInclude Include="..\srvinit.h" />
     <ClInclude Include="..\stream.h" />
     <ClInclude Include="..\telemetry.hpp" />
+    <ClInclude Include="..\TextAttribute.hpp" />
+    <ClInclude Include="..\TextAttributeRun.hpp" />
     <ClInclude Include="..\textbuffer.hpp" />
     <ClInclude Include="..\tracing.hpp" />
     <ClInclude Include="..\utils.hpp" />

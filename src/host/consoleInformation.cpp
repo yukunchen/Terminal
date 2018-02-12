@@ -34,7 +34,7 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     // CPInfo initialized below
     // OutputCPInfo initialized below
     lpCookedReadData(nullptr),
-    // ConsoleIme initialized below
+    ConsoleIme{},
     terminalMouseInput(HandleTerminalKeyEventCallback),
     _vtIo()
 {
@@ -43,7 +43,6 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
 
     ZeroMemory((void*)&CPInfo, sizeof(CPInfo));
     ZeroMemory((void*)&OutputCPInfo, sizeof(OutputCPInfo));
-    ZeroMemory((void*)&ConsoleIme, sizeof(ConsoleIme));
     InitializeCriticalSection(&_csConsoleLock);
 }
 
@@ -101,7 +100,7 @@ bool CONSOLE_INFORMATION::IsInVtIoMode() const
 // - <none>
 void CONSOLE_INFORMATION::HandleTerminalKeyEventCallback(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events)
 {
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer->Write(events);
+    ServiceLocator::LocateGlobals().getConsoleInformation().pInputBuffer->Write(events);
 }
 
 // Method Description:

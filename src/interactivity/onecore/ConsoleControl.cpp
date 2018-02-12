@@ -15,18 +15,13 @@ using namespace Microsoft::Console::Interactivity::OneCore;
 
 #pragma region IConsoleControl Members
 
-NTSTATUS ConsoleControl::NotifyConsoleApplication(_In_ DWORD dwProcessId)
+NTSTATUS ConsoleControl::NotifyConsoleApplication(_In_ DWORD /*dwProcessId*/)
 {
-    UNREFERENCED_PARAMETER(dwProcessId);
-
     return STATUS_SUCCESS;
 }
 
-NTSTATUS ConsoleControl::SetForeground(_In_ HANDLE hProcess, _In_ BOOL fForeground)
+NTSTATUS ConsoleControl::SetForeground(_In_ HANDLE /*hProcess*/, _In_ BOOL /*fForeground*/)
 {
-    UNREFERENCED_PARAMETER(hProcess);
-    UNREFERENCED_PARAMETER(fForeground);
-
     return STATUS_SUCCESS;
 }
 

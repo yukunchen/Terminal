@@ -572,13 +572,11 @@ bool OutputStateMachineEngine::ActionIgnore()
 // - cchOscString - length of pwchOscStringBuffer
 // Return Value:
 // - true if we handled the dsipatch.
-bool OutputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch,
+bool OutputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const /*wch*/,
                                                  _In_ const unsigned short sOscParam,
                                                  _Inout_updates_(cchOscString) wchar_t* const pwchOscStringBuffer,
                                                  _In_ const unsigned short cchOscString)
 {
-    // The wch here is just the string terminator for the OSC string
-    UNREFERENCED_PARAMETER(wch);
     bool fSuccess = false;
     wchar_t* pwchTitle = nullptr;
     unsigned short sCchTitleLength = 0;

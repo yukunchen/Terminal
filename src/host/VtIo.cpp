@@ -19,17 +19,18 @@ using namespace Microsoft::Console::Types;
 
 VtIo::VtIo() :
     _usingVt(false),
-    _hasSignalThread(false)
+    _hasSignalThread(false),
+    _lookingForCursorPosition(false)
 {
 }
 
 // Routine Description:
-//  Tries to get the VtIoMode from the given string. If it's not one of the 
+//  Tries to get the VtIoMode from the given string. If it's not one of the
 //      *_STRING constants in VtIoMode.hpp, then it returns E_INVALIDARG.
 // Arguments:
-//  VtIoMode: A string containing the console's requested VT mode. This can be 
+//  VtIoMode: A string containing the console's requested VT mode. This can be
 //      any of the strings in VtIoModes.hpp
-//  pIoMode: recieves the VtIoMode that the string prepresents if it's a valid 
+//  pIoMode: recieves the VtIoMode that the string prepresents if it's a valid
 //      IO mode string
 // Return Value:
 //  S_OK if we parsed the string successfully, otherwise E_INVALIDARG indicating failure.
@@ -66,6 +67,8 @@ HRESULT VtIo::ParseIoMode(_In_ const std::wstring& VtMode, _Out_ VtIoMode& ioMod
 
 HRESULT VtIo::Initialize(const ConsoleArguments * const pArgs)
 {
+    _lookingForCursorPosition = pArgs->GetInheritCursor();
+
     // If we were already given VT handles, set up the VT IO engine to use those.
     if (pArgs->HasVtHandles())
     {
@@ -87,12 +90,12 @@ HRESULT VtIo::Initialize(const ConsoleArguments * const pArgs)
 // - See _Initialize with 4 parameters. This one is for back-compat with old function signatures that have no signal handle.
 //   It sets the signal handle to 0.
 // Arguments:
-//  InHandle: a valid file handle. The console will 
-//      read VT sequences from this pipe to generate INPUT_RECORDs and other 
+//  InHandle: a valid file handle. The console will
+//      read VT sequences from this pipe to generate INPUT_RECORDs and other
 //      input events.
-//  OutHandle: a valid file handle. The console 
+//  OutHandle: a valid file handle. The console
 //      will be "rendered" to this pipe using VT sequences
-//  VtIoMode: A string containing the console's requested VT mode. This can be 
+//  VtIoMode: A string containing the console's requested VT mode. This can be
 //      any of the strings in VtIoModes.hpp
 //  SignalHandle: an optional file handle that will be used to send signals into the console.
 //      This represents the ability to send signals to a *nix tty/pty.
@@ -105,17 +108,17 @@ HRESULT VtIo::_Initialize(_In_ const HANDLE InHandle, _In_ const HANDLE OutHandl
 }
 
 // Routine Description:
-//  Tries to initialize this VtIo instance from the given pipe handles and 
-//      VtIoMode. The pipes should have been created already (by the caller of 
+//  Tries to initialize this VtIo instance from the given pipe handles and
+//      VtIoMode. The pipes should have been created already (by the caller of
 //      conhost), in non-overlapped mode.
 //  The VtIoMode string can be the empty string as a default value.
 // Arguments:
-//  InHandle: a valid file handle. The console will 
-//      read VT sequences from this pipe to generate INPUT_RECORDs and other 
+//  InHandle: a valid file handle. The console will
+//      read VT sequences from this pipe to generate INPUT_RECORDs and other
 //      input events.
-//  OutHandle: a valid file handle. The console 
+//  OutHandle: a valid file handle. The console
 //      will be "rendered" to this pipe using VT sequences
-//  VtIoMode: A string containing the console's requested VT mode. This can be 
+//  VtIoMode: A string containing the console's requested VT mode. This can be
 //      any of the strings in VtIoModes.hpp
 //  SignalHandle: an optional file handle that will be used to send signals into the console.
 //      This represents the ability to send signals to a *nix tty/pty.
@@ -124,7 +127,7 @@ HRESULT VtIo::_Initialize(_In_ const HANDLE InHandle, _In_ const HANDLE OutHandl
 //      indicating failure.
 HRESULT VtIo::_Initialize(_In_ const HANDLE InHandle, _In_ const HANDLE OutHandle, _In_ const std::wstring& VtMode, _In_opt_ HANDLE SignalHandle)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     RETURN_IF_FAILED(ParseIoMode(VtMode, _IoMode));
 
@@ -139,44 +142,42 @@ HRESULT VtIo::_Initialize(_In_ const HANDLE InHandle, _In_ const HANDLE OutHandl
 
     try
     {
-        _pVtInputThread = std::make_unique<VtInputThread>(std::move(hInputFile));
+        _pVtInputThread = std::make_unique<VtInputThread>(std::move(hInputFile), _lookingForCursorPosition);
 
-        // The Screen info hasn't been created yet, but SetUpConsole did get 
-        //      the launch settings already.
         Viewport initialViewport = Viewport::FromDimensions({0, 0},
-                                                            gci->GetWindowSize().X,
-                                                            gci->GetWindowSize().Y);
+                                                            gci.GetWindowSize().X,
+                                                            gci.GetWindowSize().Y);
         switch (_IoMode)
         {
         case VtIoMode::XTERM_256:
             _pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(hOutputFile),
-                                                                *gci,
+                                                                gci,
                                                                 initialViewport,
-                                                                gci->GetColorTable(),
-                                                                static_cast<WORD>(gci->GetColorTableSize()));
+                                                                gci.GetColorTable(),
+                                                                static_cast<WORD>(gci.GetColorTableSize()));
             break;
         case VtIoMode::XTERM:
             _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
-                                                             *gci,
+                                                             gci,
                                                              initialViewport,
-                                                             gci->GetColorTable(),
-                                                             static_cast<WORD>(gci->GetColorTableSize()),
+                                                             gci.GetColorTable(),
+                                                             static_cast<WORD>(gci.GetColorTableSize()),
                                                              false);
             break;
         case VtIoMode::XTERM_ASCII:
             _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
-                                                             *gci,
+                                                             gci,
                                                              initialViewport,
-                                                             gci->GetColorTable(),
-                                                             static_cast<WORD>(gci->GetColorTableSize()),
+                                                             gci.GetColorTable(),
+                                                             static_cast<WORD>(gci.GetColorTableSize()),
                                                              true);
             break;
         case VtIoMode::WIN_TELNET:
             _pVtRenderEngine = std::make_unique<WinTelnetEngine>(std::move(hOutputFile),
-                                                                 *gci,
+                                                                 gci,
                                                                  initialViewport,
-                                                                 gci->GetColorTable(),
-                                                                 static_cast<WORD>(gci->GetColorTableSize()));
+                                                                 gci.GetColorTable(),
+                                                                 static_cast<WORD>(gci.GetColorTableSize()));
             break;
         default:
             return E_FAIL;
@@ -204,12 +205,12 @@ HRESULT VtIo::_Initialize(_In_ const HANDLE InHandle, _In_ const HANDLE OutHandl
 // - See _Initialize with 4 parameters. This one is for back-compat with old function signatures that have no signal handle.
 //   It sets the signal handle to 0.
 // Arguments:
-//  InPipeName: a wstring containing the vt input pipe's name. The console will 
-//      read VT sequences from this pipe to generate INPUT_RECORDs and other 
+//  InPipeName: a wstring containing the vt input pipe's name. The console will
+//      read VT sequences from this pipe to generate INPUT_RECORDs and other
 //      input events.
-//  OutPipeName: a wstring containing the vt output pipe's name. The console 
+//  OutPipeName: a wstring containing the vt output pipe's name. The console
 //      will be "rendered" to this pipe using VT sequences
-//  VtIoMode: A string containing the console's requested VT mode. This can be 
+//  VtIoMode: A string containing the console's requested VT mode. This can be
 //      any of the strings in VtIoModes.hpp
 // Return Value:
 //  S_OK if we initialized successfully, otherwise an appropriate HRESULT
@@ -220,17 +221,17 @@ HRESULT VtIo::_Initialize(_In_ const std::wstring& InPipeName, _In_ const std::w
 }
 
 // Routine Description:
-//  Tries to initialize this VtIo instance from the given pipe names and 
-//      VtIoMode. The pipes should have been created already (by the caller of 
+//  Tries to initialize this VtIo instance from the given pipe names and
+//      VtIoMode. The pipes should have been created already (by the caller of
 //      conhost), in non-overlapped mode.
 //  The VtIoMode string can be the empty string as a default value.
 // Arguments:
-//  InPipeName: a wstring containing the vt input pipe's name. The console will 
-//      read VT sequences from this pipe to generate INPUT_RECORDs and other 
+//  InPipeName: a wstring containing the vt input pipe's name. The console will
+//      read VT sequences from this pipe to generate INPUT_RECORDs and other
 //      input events.
-//  OutPipeName: a wstring containing the vt output pipe's name. The console 
+//  OutPipeName: a wstring containing the vt output pipe's name. The console
 //      will be "rendered" to this pipe using VT sequences
-//  VtIoMode: A string containing the console's requested VT mode. This can be 
+//  VtIoMode: A string containing the console's requested VT mode. This can be
 //      any of the strings in VtIoModes.hpp
 // Return Value:
 //  S_OK if we initialized successfully, otherwise an appropriate HRESULT
@@ -240,11 +241,11 @@ HRESULT VtIo::_Initialize(_In_ const std::wstring& InPipeName, _In_ const std::w
     wil::unique_hfile hInputFile;
     hInputFile.reset(
         CreateFileW(InPipeName.c_str(),
-                    GENERIC_READ, 
-                    0, 
-                    nullptr, 
-                    OPEN_EXISTING, 
-                    FILE_ATTRIBUTE_NORMAL, 
+                    GENERIC_READ,
+                    0,
+                    nullptr,
+                    OPEN_EXISTING,
+                    FILE_ATTRIBUTE_NORMAL,
                     nullptr)
     );
     RETURN_LAST_ERROR_IF(hInputFile.get() == INVALID_HANDLE_VALUE);
@@ -252,11 +253,11 @@ HRESULT VtIo::_Initialize(_In_ const std::wstring& InPipeName, _In_ const std::w
     wil::unique_hfile hOutputFile;
     hOutputFile.reset(
         CreateFileW(OutPipeName.c_str(),
-                    GENERIC_WRITE, 
-                    0, 
-                    nullptr, 
-                    OPEN_EXISTING, 
-                    FILE_ATTRIBUTE_NORMAL, 
+                    GENERIC_WRITE,
+                    0,
+                    nullptr,
+                    OPEN_EXISTING,
+                    FILE_ATTRIBUTE_NORMAL,
                     nullptr)
     );
     RETURN_LAST_ERROR_IF(hOutputFile.get() == INVALID_HANDLE_VALUE);
@@ -271,13 +272,13 @@ bool VtIo::IsUsingVt() const
 
 // Routine Description:
 //  Potentially starts this VtIo's input thread and render engine.
-//      If the VtIo hasn't yet been given pipes, then this function will 
-//      silently do nothing. It's the responsibility of the caller to make sure 
+//      If the VtIo hasn't yet been given pipes, then this function will
+//      silently do nothing. It's the responsibility of the caller to make sure
 //      that the pipes are initialized first with VtIo::Initialize
 // Arguments:
 //  <none>
 // Return Value:
-//  S_OK if we started successfully or had nothing to start, otherwise an 
+//  S_OK if we started successfully or had nothing to start, otherwise an
 //      appropriate HRESULT indicating failure.
 HRESULT VtIo::StartIfNeeded()
 {
@@ -286,16 +287,31 @@ HRESULT VtIo::StartIfNeeded()
     {
         return S_FALSE;
     }
-    // Hmm. We only have one Renderer implementation, 
-    //  but its stored as a IRenderer. 
-    //  IRenderer doesn't know about IRenderEngine. 
+    // Hmm. We only have one Renderer implementation,
+    //  but its stored as a IRenderer.
+    //  IRenderer doesn't know about IRenderEngine.
     // todo: msft:13631640
-    const Globals* const g = ServiceLocator::LocateGlobals();
     try
     {
-        g->pRender->AddRenderEngine(_pVtRenderEngine.get());
+        ServiceLocator::LocateGlobals().pRender->AddRenderEngine(_pVtRenderEngine.get());
     }
     CATCH_RETURN();
+
+    // MSFT: 15813316
+    // If the terminal application wants us to inherit the cursor position,
+    //  we're going to emit a VT sequence to ask for the cursor position, then
+    //  read input until we get a response. Terminals who request this behavior
+    //  but don't respond will hang.
+    // If we get a response, the InteractDispatch will call SetCursorPosition,
+    //      which will call to our VtIo::SetCursorPosition method.
+    if (_lookingForCursorPosition)
+    {
+        _pVtRenderEngine->RequestCursor();
+        while(_lookingForCursorPosition)
+        {
+            _pVtInputThread->DoReadInput(false);
+        }
+    }
 
     _pVtInputThread->Start();
 
@@ -313,7 +329,7 @@ HRESULT VtIo::StartIfNeeded()
 // Arguments:
 // - <none>
 // Return Value:
-// - S_OK if the renderer successfully suppressed the next repaint, otherwise an 
+// - S_OK if the renderer successfully suppressed the next repaint, otherwise an
 //      appropriate HRESULT indicating failure.
 HRESULT VtIo::SuppressResizeRepaint()
 {
@@ -321,6 +337,29 @@ HRESULT VtIo::SuppressResizeRepaint()
     if (_pVtRenderEngine)
     {
         hr = _pVtRenderEngine->SuppressResizeRepaint();
+    }
+    return hr;
+}
+
+// Method Description:
+// - Attempts to set the initial cursor position, if we're looking for it.
+//      If we're not trying to inherit the cursor, does nothing.
+// Arguments:
+// - coordCursor: The initial position of the cursor.
+// Return Value:
+// - S_OK if we successfully inherited the cursor or did nothing, else an
+//      appropriate HRESULT
+HRESULT VtIo::SetCursorPosition(_In_ const COORD coordCursor)
+{
+    HRESULT hr = S_OK;
+    if (_lookingForCursorPosition)
+    {
+        if (_pVtRenderEngine)
+        {
+            hr = _pVtRenderEngine->InheritCursor(coordCursor);
+        }
+
+        _lookingForCursorPosition = false;
     }
     return hr;
 }

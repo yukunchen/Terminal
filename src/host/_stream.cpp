@@ -188,7 +188,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                           _In_ const DWORD dwFlags,
                           _Inout_opt_ PSHORT const psScrollY)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     PTEXT_BUFFER_INFO pTextBuffer = pScreenInfo->TextInfo;
     Cursor* const pCursor = pTextBuffer->GetCursor();
     COORD CursorPosition = pCursor->GetPosition();
@@ -213,8 +213,8 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
     WCHAR Char;
     WCHAR RealUnicodeChar;
     BOOL fUnprocessed = ((pScreenInfo->OutputMode & ENABLE_PROCESSED_OUTPUT) == 0);
-    CHAR LocalBufferA[LOCAL_BUFFER_SIZE];
-    PCHAR LocalBufPtrA;
+    DbcsAttribute dbcsAttributes[LOCAL_BUFFER_SIZE];
+    DbcsAttribute* currentDbcsAttribute = nullptr;
 
     // Must not adjust cursor here. It has to stay on for many write scenarios. Consumers should call for the cursor to be turned off if they want that.
 
@@ -278,7 +278,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
         XPosition = pCursor->GetPosition().X;
         i = 0;
         LocalBufPtr = LocalBuffer;
-        LocalBufPtrA = LocalBufferA;
+        currentDbcsAttribute = dbcsAttributes;
         while (*pcb < BufferSize && i < LOCAL_BUFFER_SIZE && XPosition < coordScreenBufferSize.X)
         {
 #pragma prefast(suppress:26019, "Buffer is taken in multiples of 2. Validation is ok.")
@@ -291,9 +291,13 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                     if (i < (LOCAL_BUFFER_SIZE - 1) && XPosition < (coordScreenBufferSize.X - 1))
                     {
                         *LocalBufPtr++ = Char;
-                        *LocalBufPtrA++ = CHAR_ROW::ATTR_LEADING_BYTE;
+                        currentDbcsAttribute->SetLeading();
+                        ++currentDbcsAttribute;
+
                         *LocalBufPtr++ = Char;
-                        *LocalBufPtrA++ = CHAR_ROW::ATTR_TRAILING_BYTE;
+                        currentDbcsAttribute->SetTrailing();
+                        ++currentDbcsAttribute;
+
                         XPosition += 2;
                         i += 2;
                         pwchBuffer++;
@@ -310,7 +314,8 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                     XPosition++;
                     i++;
                     pwchBuffer++;
-                    *LocalBufPtrA++ = 0;
+                    currentDbcsAttribute->SetSingle();
+                    ++currentDbcsAttribute;
                 }
             }
             else
@@ -357,7 +362,8 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                         {
                             *LocalBufPtr = (WCHAR)' ';
                             LocalBufPtr++;
-                            *LocalBufPtrA++ = 0;
+                            currentDbcsAttribute->SetSingle();
+                            ++currentDbcsAttribute;
                         }
                     }
 
@@ -383,8 +389,10 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                         XPosition++;
                         i++;
                         pwchBuffer++;
-                        *LocalBufPtrA++ = 0;
-                        *LocalBufPtrA++ = 0;
+                        currentDbcsAttribute->SetSingle();
+                        ++currentDbcsAttribute;
+                        currentDbcsAttribute->SetSingle();
+                        ++currentDbcsAttribute;
                     }
                                        else
                                        {
@@ -399,7 +407,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                         GetStringTypeW(CT_CTYPE1, &RealUnicodeChar, 1, &CharType);
                         if (CharType == C1_CNTRL)
                         {
-                            ConvertOutputToUnicode(gci->OutputCP,
+                            ConvertOutputToUnicode(gci.OutputCP,
                                                    (LPSTR)& RealUnicodeChar,
                                                    1,
                                                    LocalBufPtr,
@@ -418,7 +426,8 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                         XPosition++;
                         i++;
                         pwchBuffer++;
-                        *LocalBufPtrA++ = 0;
+                        currentDbcsAttribute->SetSingle();
+                        ++currentDbcsAttribute;
                     }
                 }
             }
@@ -438,7 +447,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
             // line was wrapped if we're writing up to the end of the current row
             bool fWasLineWrapped = XPosition >= coordScreenBufferSize.X;
 
-            StreamWriteToScreenBuffer(LocalBuffer, (SHORT)i, pScreenInfo, LocalBufferA, fWasLineWrapped);
+            StreamWriteToScreenBuffer(LocalBuffer, (SHORT)i, pScreenInfo, dbcsAttributes, fWasLineWrapped);
             Region.Left = pCursor->GetPosition().X;
             Region.Right = (SHORT)(pCursor->GetPosition().X + i - 1);
             Region.Top = pCursor->GetPosition().Y;
@@ -567,9 +576,9 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                         CursorPosition.X += 1;
                         CursorPosition.Y -= 1;
 
-                        // since you just backspaced yourself back up into the previous row, unset the wrap flag on the prev row if it was set
-                        ROW* pRow = pTextBuffer->GetRowByOffset(CursorPosition.Y);
-                        pRow->CharRow.SetWrapStatus(false);
+                        // since you just backspaced yourself back up into the previous row, unset the wrap
+                        // flag on the prev row if it was set
+                        pTextBuffer->GetRowByOffset(CursorPosition.Y).CharRow.SetWrapStatus(false);
                     }
                 }
                 else if (IS_CONTROL_CHAR(LastChar))
@@ -633,11 +642,9 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                     CursorPosition.X = coordScreenBufferSize.X - 1;
                     CursorPosition.Y = (SHORT)(pCursor->GetPosition().Y - 1);
 
-                    // since you just backspaced yourself back up into the previous row, unset the wrap flag on the prev row if it was set
-                    ROW* pRow = pTextBuffer->GetRowByOffset(CursorPosition.Y);
-                    ASSERT(pRow != nullptr);
-                    __analysis_assume(pRow != nullptr);
-                    pRow->CharRow.SetWrapStatus(false);
+                    // since you just backspaced yourself back up into the previous row, unset the wrap flag
+                    // on the prev row if it was set
+                    pTextBuffer->GetRowByOffset(CursorPosition.Y).CharRow.SetWrapStatus(false);
 
                     Status = AdjustCursorPosition(pScreenInfo, CursorPosition, dwFlags & WC_KEEP_CURSOR_VISIBLE, psScrollY);
                 }
@@ -673,8 +680,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                     CursorPosition.Y = pCursor->GetPosition().Y + 1;
 
                     // since you just tabbed yourself past the end of the row, set the wrap
-                    ROW* pRow = pTextBuffer->GetRowByOffset(pCursor->GetPosition().Y);
-                    pRow->CharRow.SetWrapStatus(true);
+                    pTextBuffer->GetRowByOffset(pCursor->GetPosition().Y).CharRow.SetWrapStatus(true);
                 }
                 else
                 {
@@ -684,8 +690,12 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
 
                 if (!IsFlagSet(dwFlags, WC_NONDESTRUCTIVE_TAB))
                 {
-                    WriteOutputString(pScreenInfo, Blanks, pCursor->GetPosition(), CONSOLE_FALSE_UNICODE,  // faster than real unicode
-                                      &NumChars, nullptr);
+                    WriteOutputString(pScreenInfo,
+                                      Blanks,
+                                      pCursor->GetPosition(),
+                                      CONSOLE_FALSE_UNICODE,  // faster than real unicode
+                                      &NumChars,
+                                      nullptr);
                     FillOutput(pScreenInfo, Attributes, pCursor->GetPosition(), CONSOLE_ATTRIBUTE, &NumChars);
                 }
 
@@ -709,7 +719,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
             // move cursor to the next line.
             pwchBuffer++;
 
-            if (gci->IsReturnOnNewlineAutomatic())
+            if (gci.IsReturnOnNewlineAutomatic())
             {
                 // Traditionally, we reset the X position to 0 with a newline automatically.
                 // Some things might not want this automatic "ONLCR line discipline" (for example, things that are expecting a *NIX behavior.)
@@ -721,8 +731,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
 
             {
                 // since we explicitly just moved down a row, clear the wrap status on the row we just came from
-                ROW* pRow = pTextBuffer->GetRowByOffset(pCursor->GetPosition().Y);
-                pRow->CharRow.SetWrapStatus(false);
+                pTextBuffer->GetRowByOffset(pCursor->GetPosition().Y).CharRow.SetWrapStatus(false);
             }
 
             Status = AdjustCursorPosition(pScreenInfo, CursorPosition, (dwFlags & WC_KEEP_CURSOR_VISIBLE) != 0, psScrollY);
@@ -737,34 +746,39 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                 (pScreenInfo->OutputMode & ENABLE_WRAP_AT_EOL_OUTPUT))
             {
                 COORD const TargetPoint = pCursor->GetPosition();
-                ROW* const pRow = pTextBuffer->GetRowByOffset(TargetPoint.Y);
-                ASSERT(pRow != nullptr);
+                ROW& Row = pTextBuffer->GetRowByOffset(TargetPoint.Y);
 
-                PWCHAR const CharTmp = &pRow->CharRow.Chars[TargetPoint.X];
-                PCHAR const AttrP = (PCHAR)&pRow->CharRow.KAttrs[TargetPoint.X];
-
-                if (*AttrP & CHAR_ROW::ATTR_TRAILING_BYTE)
+                try
                 {
-                    *(CharTmp - 1) = UNICODE_SPACE;
-                    *CharTmp = UNICODE_SPACE;
-                    *AttrP = 0;
-                    *(AttrP - 1) = 0;
+                    if (Row.CharRow.GetAttribute(TargetPoint.X).IsTrailing())
+                    {
+                        Row.CharRow.ClearGlyph(TargetPoint.X);
+                        Row.CharRow.ClearGlyph(TargetPoint.X - 1);
+                        Row.CharRow.GetAttribute(TargetPoint.X).SetSingle();
+                        Row.CharRow.GetAttribute(TargetPoint.X - 1).SetSingle();
 
-                    Region.Left = TargetPoint.X - 1;
-                    Region.Right = (SHORT)(TargetPoint.X);
-                    Region.Top = TargetPoint.Y;
-                    Region.Bottom = TargetPoint.Y;
-                    WriteToScreen(pScreenInfo, Region);
+                        Region.Left = TargetPoint.X - 1;
+                        Region.Right = (SHORT)(TargetPoint.X);
+                        Region.Top = TargetPoint.Y;
+                        Region.Bottom = TargetPoint.Y;
+                        WriteToScreen(pScreenInfo, Region);
+                    }
+                }
+                catch (...)
+                {
+                    return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
                 }
 
                 CursorPosition.X = 0;
                 CursorPosition.Y = (SHORT)(TargetPoint.Y + 1);
 
-                // since you just moved yourself down onto the next row with 1 character, that sounds like a forced wrap so set the flag
-                pRow->CharRow.SetWrapStatus(true);
+                // since you just moved yourself down onto the next row with 1 character, that sounds like a
+                // forced wrap so set the flag
+                Row.CharRow.SetWrapStatus(true);
 
-                // Additionally, this padding is only called for IsConsoleFullWidth (a.k.a. when a character is too wide to fit on the current line).
-                pRow->CharRow.SetDoubleBytePadded(true);
+                // Additionally, this padding is only called for IsConsoleFullWidth (a.k.a. when a character
+                // is too wide to fit on the current line).
+                Row.CharRow.SetDoubleBytePadded(true);
 
                 Status = AdjustCursorPosition(pScreenInfo, CursorPosition, dwFlags & WC_KEEP_CURSOR_VISIBLE, psScrollY);
                 continue;
@@ -890,15 +904,15 @@ NTSTATUS DoWriteConsole(_In_reads_bytes_(*pcbBuffer) PWCHAR pwchBuffer,
                         _In_ PSCREEN_INFORMATION pScreenInfo,
                         _Outptr_result_maybenull_ WriteData** const ppWaiter)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    if (IsAnyFlagSet(gci->Flags, (CONSOLE_SUSPENDED | CONSOLE_SELECTING | CONSOLE_SCROLLBAR_TRACKING)))
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    if (IsAnyFlagSet(gci.Flags, (CONSOLE_SUSPENDED | CONSOLE_SELECTING | CONSOLE_SCROLLBAR_TRACKING)))
     {
         try
         {
             *ppWaiter = new WriteData(pScreenInfo,
                                       (wchar_t*)pwchBuffer,
                                       *pcbBuffer,
-                                      gci->OutputCP);
+                                      gci.OutputCP);
         }
         catch (...)
         {
@@ -986,7 +1000,7 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutCont
                                        _Out_ size_t* const pcchTextBufferRead,
                                        _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // Ensure output variables are initialized.
     *pcchTextBufferRead = 0;
     *ppWaiter = nullptr;
@@ -1002,16 +1016,16 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutCont
         return S_OK;
     }
 
-    UINT const uiCodePage = gci->OutputCP;
+    UINT const uiCodePage = gci.OutputCP;
 
     // Convert our input parameters to Unicode
     std::unique_ptr<wchar_t[]> wideCharBuffer{ nullptr };
-    static Utf8ToWideCharParser parser{ gci->OutputCP };
+    static Utf8ToWideCharParser parser{ gci.OutputCP };
 
     // update current codepage in case it was changed from last time
     // this was called. We do this outside the UTF-8 check because the parser drops its state
     // when the codepage changes.
-    parser.SetCodePage(gci->OutputCP);
+    parser.SetCodePage(gci.OutputCP);
 
     PSCREEN_INFORMATION const ScreenInfo = pOutContext->GetActiveBuffer();
     wchar_t* pwchBuffer;
@@ -1068,7 +1082,7 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutCont
 
             wistd::unique_ptr<wchar_t[]> convertedChars;
             size_t cchConverted = 0;
-            if (FAILED(ConvertToW(gci->OutputCP,
+            if (FAILED(ConvertToW(gci.OutputCP,
                                   reinterpret_cast<const char* const>(ScreenInfo->WriteConsoleDbcsLeadByte),
                                   ARRAYSIZE(ScreenInfo->WriteConsoleDbcsLeadByte),
                                   convertedChars,
@@ -1107,7 +1121,7 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutCont
         // save it for the next time this function is called and we can piece it
         // back together then
         __analysis_assume(BufPtrNumBytes <= uiTextBufferLength);
-        if (BufPtrNumBytes && CheckBisectStringA((PCHAR)BufPtr, BufPtrNumBytes, &gci->OutputCPInfo))
+        if (BufPtrNumBytes && CheckBisectStringA((PCHAR)BufPtr, BufPtrNumBytes, &gci.OutputCPInfo))
         {
             ScreenInfo->WriteConsoleDbcsLeadByte[0] = *((PCHAR)BufPtr + BufPtrNumBytes - 1);
             BufPtrNumBytes--;
@@ -1121,7 +1135,7 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutCont
         if (BufPtrNumBytes != 0)
         {
             // convert the remaining bytes in BufPtr to wide chars
-            Length = sizeof(WCHAR) * MultiByteToWideChar(gci->OutputCP,
+            Length = sizeof(WCHAR) * MultiByteToWideChar(gci.OutputCP,
                                                          0,
                                                          (LPCCH)BufPtr,
                                                          BufPtrNumBytes,
@@ -1180,7 +1194,7 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutCont
     }
     else
     {
-        // If there is a waiter, then we need to stow some additional information in the wait structure so 
+        // If there is a waiter, then we need to stow some additional information in the wait structure so
         // we can synthesize the correct byte count later when the wait routine is triggered.
         if (CP_UTF8 != uiCodePage)
         {
