@@ -596,8 +596,8 @@ void Cursor::KillCaretTimer()
 
 const CursorType Cursor::GetCursorType() const
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    return gci->GetCursorType();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.GetCursorType();
 }
 
 const bool Cursor::IsUsingColor() const
@@ -607,20 +607,18 @@ const bool Cursor::IsUsingColor() const
 
 const COLORREF Cursor::GetColor() const
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    return gci->GetCursorColor();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.GetCursorColor();
 }
 
 void Cursor::SetColor(_In_ unsigned int color)
 {
-    Globals* const g = ServiceLocator::LocateGlobals();
-    CONSOLE_INFORMATION* const gci = g->getConsoleInformation();
-    gci->SetCursorColor(color);
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.SetCursorColor(color);
 }
 
 void Cursor::SetType(_In_ CursorType type)
 {
-    Globals* const g = ServiceLocator::LocateGlobals();
-    CONSOLE_INFORMATION* const gci = g->getConsoleInformation();
-    gci->SetCursorType(type);
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.SetCursorType(type);
 }
