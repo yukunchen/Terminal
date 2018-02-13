@@ -52,7 +52,7 @@ bool InteractDispatch::WriteCtrlC()
 }
 
 // Method Description:
-// - Writes a string of input to the host. The string is converted to keystrokes 
+// - Writes a string of input to the host. The string is converted to keystrokes
 //      that will faithfully represent the input by CharToKeyEvents.
 // Arguments:
 // - pws: a string to write to the console.
@@ -62,22 +62,26 @@ bool InteractDispatch::WriteCtrlC()
 bool InteractDispatch::WriteString(_In_reads_(cch) const wchar_t* const pws,
                                    _In_ const size_t cch)
 {
+    if (cch == 0)
+    {
+        return true;
+    }
+
     unsigned int codepage = 0;
     bool fSuccess = !!_pConApi->GetConsoleOutputCP(&codepage);
     if (fSuccess)
     {
         std::deque<std::unique_ptr<IInputEvent>> keyEvents;
-        
+
         for (size_t i = 0; i < cch; ++i)
         {
-            const wchar_t wch = pws[i];
-            std::deque<std::unique_ptr<KeyEvent>> convertedEvents = CharToKeyEvents(wch, codepage);
+            std::deque<std::unique_ptr<KeyEvent>> convertedEvents = CharToKeyEvents(pws[i], codepage);
 
             std::move(convertedEvents.begin(),
                       convertedEvents.end(),
                       std::back_inserter(keyEvents));
         }
-        
+
         fSuccess = WriteInput(keyEvents);
     }
     return fSuccess;
