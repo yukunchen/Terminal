@@ -635,7 +635,7 @@ void SCREEN_INFORMATION::ResetTextFlags(_In_ short const sStartX,
                 const ICharRow& iCharRow = Row.GetCharRow();
                 if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
                 {
-                    const CHAR_ROW& charRow = static_cast<const CHAR_ROW&>(iCharRow);
+                    const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
                     Char = charRow.GetGlyphAt(sStartX);
                     Row.GetAttrRow().FindAttrIndex(sStartX, &pAttrRun, nullptr);
                 }
@@ -1493,7 +1493,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
             {
                 if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
                 {
-                    const CHAR_ROW& charRow = static_cast<const CHAR_ROW&>(iCharRow);
+                    const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
                     wchChar = charRow.GetGlyphAt(iOldCol);
                     bKAttr = charRow.GetAttribute(iOldCol);
                 }

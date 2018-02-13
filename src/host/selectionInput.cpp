@@ -166,7 +166,7 @@ void Selection::WordByWordSelection(_In_ const bool fReverse,
         {
             return;
         }
-        CHAR_ROW& charRow = static_cast<CHAR_ROW&>(iCharRow);
+        Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
         wchTest = charRow.GetGlyphAt(pcoordSelPoint->X);
     }
 
@@ -252,7 +252,7 @@ void Selection::WordByWordSelection(_In_ const bool fReverse,
             {
                 return;
             }
-            CHAR_ROW& charRow = static_cast<CHAR_ROW&>(iCharRow);
+            Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
             wchTest = charRow.GetGlyphAt(pcoordSelPoint->X);
         }
         fCurrIsDelim = IS_WORD_DELIM(wchTest);
@@ -381,7 +381,7 @@ bool Selection::HandleKeyboardLineSelectionEvent(_In_ const INPUT_KEY_INFO* cons
                 const ICharRow& iCharRow = pTextInfo->GetRowByOffset(coordSelPoint.Y).GetCharRow();
                 if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
                 {
-                    const CHAR_ROW& charRow = static_cast<const CHAR_ROW&>(iCharRow);
+                    const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
                     if (charRow.GetAttribute(coordSelPoint.X).IsTrailing())
                     {
                         Utils::s_DoIncrementScreenCoordinate(srectEdges, &coordSelPoint);
@@ -610,7 +610,7 @@ bool Selection::HandleKeyboardLineSelectionEvent(_In_ const INPUT_KEY_INFO* cons
         const ICharRow& iCharRow = pTextInfo->GetRowByOffset(coordSelPoint.Y).GetCharRow();
         if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
         {
-            const CHAR_ROW& charRow = static_cast<const CHAR_ROW&>(iCharRow);
+            const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
             if (charRow.GetAttribute(coordSelPoint.X).IsTrailing())
             {
                 // try to move off by highlighting the lead half too.
@@ -721,10 +721,10 @@ bool Selection::_HandleColorSelection(_In_ const INPUT_KEY_INFO* const pInputKey
                 const ICharRow& iCharRow = Row.GetCharRow();
                 if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
                 {
-                    const CHAR_ROW& charRow = static_cast<const CHAR_ROW&>(iCharRow);
-                    const CHAR_ROW::const_iterator startIt = std::next(charRow.cbegin(), psrSelection->Left);
-                    const CHAR_ROW::const_iterator stopIt = std::next(startIt, cLength);
-                    std::transform(startIt, stopIt, pwszSearchString, [](const CHAR_ROW::value_type& vals)
+                    const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
+                    const Ucs2CharRow::const_iterator startIt = std::next(charRow.cbegin(), psrSelection->Left);
+                    const Ucs2CharRow::const_iterator stopIt = std::next(startIt, cLength);
+                    std::transform(startIt, stopIt, pwszSearchString, [](const Ucs2CharRow::value_type& vals)
                     {
                         return vals.first;
                     });
@@ -784,7 +784,7 @@ bool Selection::_HandleMarkModeSelectionNav(_In_ const INPUT_KEY_INFO* const pIn
         {
             return false;
         }
-        const CHAR_ROW& charRow = static_cast<const CHAR_ROW&>(iCharRow);
+        const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
 
         try
         {

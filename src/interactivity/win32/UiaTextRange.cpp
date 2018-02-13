@@ -746,7 +746,7 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
                         const ICharRow& iCharRow = row.GetCharRow();
                         if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
                         {
-                            const CHAR_ROW& charRow = static_cast<const CHAR_ROW&>(iCharRow);
+                            const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
                             // add to result string
                             wstr += charRow.GetText().substr(startIndex, endIndex - startIndex);
                         }

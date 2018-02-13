@@ -91,7 +91,7 @@ void CleanupDbcsEdgesForWrite(_In_ const size_t stringLen,
         // we only care about dbcs for ucs2 encoded rows
         if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
         {
-            CHAR_ROW& charRow = static_cast<CHAR_ROW&>(iCharRow);
+            Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
             // Check start position of strings
             if (charRow.GetAttribute(coordTarget.X).IsTrailing())
             {
@@ -120,7 +120,7 @@ void CleanupDbcsEdgesForWrite(_In_ const size_t stringLen,
                 ICharRow& iCharRowNext = rowNext.GetCharRow();
                 if (iCharRowNext.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
                 {
-                    CHAR_ROW& charRowNext = static_cast<CHAR_ROW&>(iCharRowNext);
+                    Ucs2CharRow& charRowNext = static_cast<Ucs2CharRow&>(iCharRowNext);
                     if (charRowNext.GetAttribute(0).IsTrailing())
                     {
                         rowNext.ClearColumn(0);

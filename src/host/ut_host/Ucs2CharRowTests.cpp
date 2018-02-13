@@ -16,22 +16,22 @@
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 
-class CharRowTests
+class Ucs2CharRowTests
 {
-    TEST_CLASS(CharRowTests);
+    TEST_CLASS(Ucs2CharRowTests);
 
-    CHAR_ROW* pSingleByte;
-    CHAR_ROW* pDoubleByte;
+    Ucs2CharRow* pSingleByte;
+    Ucs2CharRow* pDoubleByte;
 
     short _sRowWidth = 80;
 
     TEST_METHOD_SETUP(MethodSetup)
     {
-        pSingleByte = new CHAR_ROW(_sRowWidth);
+        pSingleByte = new Ucs2CharRow(_sRowWidth);
         pSingleByte->SetWrapStatus(true);
         pSingleByte->SetDoubleBytePadded(true);
 
-        pDoubleByte = new CHAR_ROW(_sRowWidth);
+        pDoubleByte = new Ucs2CharRow(_sRowWidth);
         pDoubleByte->SetWrapStatus(true);
         pDoubleByte->SetDoubleBytePadded(true);
 
@@ -51,12 +51,12 @@ class CharRowTests
         const short sRowWidth = 44;
 
         // Cases to test
-        CHAR_ROW* pTestItems[] { pSingleByte, pDoubleByte };
+        Ucs2CharRow* pTestItems[] { pSingleByte, pDoubleByte };
 
         // Loop cases
         for (UINT iIndex = 0; iIndex < ARRAYSIZE(pTestItems); iIndex++)
         {
-            CHAR_ROW* pUnderTest = pTestItems[iIndex];
+            Ucs2CharRow* pUnderTest = pTestItems[iIndex];
 
             pUnderTest->Reset(sRowWidth);
 

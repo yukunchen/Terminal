@@ -8,13 +8,13 @@
 #include "Ucs2CharRow.hpp"
 
 // Routine Description:
-// - swaps two CHAR_ROWs
+// - swaps two Ucs2CharRows
 // Arguments:
-// - a - the first CHAR_ROW to swap
-// - b - the second CHAR_ROW to swap
+// - a - the first Ucs2CharRow to swap
+// - b - the second Ucs2CharRow to swap
 // Return Value:
 // - <none>
-void swap(CHAR_ROW& a, CHAR_ROW& b) noexcept
+void swap(Ucs2CharRow& a, Ucs2CharRow& b) noexcept
 {
     a.swap(b);
 }
@@ -26,7 +26,7 @@ void swap(CHAR_ROW& a, CHAR_ROW& b) noexcept
 // Return Value:
 // - instantiated object
 // Note: will through if unable to allocate char/attribute buffers
-CHAR_ROW::CHAR_ROW(short rowWidth) :
+Ucs2CharRow::Ucs2CharRow(short rowWidth) :
     _data(rowWidth, std::pair<wchar_t, DbcsAttribute>(UNICODE_SPACE, DbcsAttribute{}))
 {
     SetWrapStatus(false);
@@ -36,11 +36,11 @@ CHAR_ROW::CHAR_ROW(short rowWidth) :
 // Routine Description:
 // - copy constructor
 // Arguments:
-// - CHAR_ROW to copy
+// - Ucs2CharRow to copy
 // Return Value:
 // - instantiated object
 // Note: will through if unable to allocate char/attribute buffers
-CHAR_ROW::CHAR_ROW(const CHAR_ROW& a) :
+Ucs2CharRow::Ucs2CharRow(const Ucs2CharRow& a) :
     bRowFlags{ a.bRowFlags },
     _data{ a._data }
 {
@@ -49,12 +49,12 @@ CHAR_ROW::CHAR_ROW(const CHAR_ROW& a) :
 // Routine Description:
 // - assignment operator
 // Arguments:
-// - CHAR_ROW to copy
+// - Ucs2CharRow to copy
 // Return Value:
 // - reference to this object
-CHAR_ROW& CHAR_ROW::operator=(const CHAR_ROW& a)
+Ucs2CharRow& Ucs2CharRow::operator=(const Ucs2CharRow& a)
 {
-    CHAR_ROW temp(a);
+    Ucs2CharRow temp(a);
     this->swap(temp);
     return *this;
 }
@@ -62,25 +62,25 @@ CHAR_ROW& CHAR_ROW::operator=(const CHAR_ROW& a)
 // Routine Description:
 // - move constructor
 // Arguments:
-// - CHAR_ROW to move
+// - Ucs2CharRow to move
 // Return Value:
 // - instantiated object
-CHAR_ROW::CHAR_ROW(CHAR_ROW&& a) noexcept
+Ucs2CharRow::Ucs2CharRow(Ucs2CharRow&& a) noexcept
 {
     this->swap(a);
 }
 
-CHAR_ROW::~CHAR_ROW()
+Ucs2CharRow::~Ucs2CharRow()
 {
 }
 
 // Routine Description:
-// - swaps values with another CHAR_ROW
+// - swaps values with another Ucs2CharRow
 // Arguments:
-// - other - the CHAR_ROW to swap with
+// - other - the Ucs2CharRow to swap with
 // Return Value:
 // - <none>
-void CHAR_ROW::swap(CHAR_ROW& other) noexcept
+void Ucs2CharRow::swap(Ucs2CharRow& other) noexcept
 {
     // this looks kinda weird, but we want the compiler to be able to choose between std::swap and a
     // specialized swap, so we include both in the same namespace and let it sort it out.
@@ -96,7 +96,7 @@ void CHAR_ROW::swap(CHAR_ROW& other) noexcept
 // Return Value:
 // - the attribute
 // Note: will throw exception if column is out of bounds
-const DbcsAttribute& CHAR_ROW::GetAttribute(_In_ const size_t column) const
+const DbcsAttribute& Ucs2CharRow::GetAttribute(_In_ const size_t column) const
 {
     return _data.at(column).second;
 }
@@ -108,32 +108,32 @@ const DbcsAttribute& CHAR_ROW::GetAttribute(_In_ const size_t column) const
 // Return Value:
 // - the attribute
 // Note: will throw exception if column is out of bounds
-DbcsAttribute& CHAR_ROW::GetAttribute(_In_ const size_t column)
+DbcsAttribute& Ucs2CharRow::GetAttribute(_In_ const size_t column)
 {
-    return const_cast<DbcsAttribute&>(static_cast<const CHAR_ROW* const>(this)->GetAttribute(column));
+    return const_cast<DbcsAttribute&>(static_cast<const Ucs2CharRow* const>(this)->GetAttribute(column));
 }
 
-CHAR_ROW::iterator CHAR_ROW::begin() noexcept
+Ucs2CharRow::iterator Ucs2CharRow::begin() noexcept
 {
     return _data.begin();
 }
 
-CHAR_ROW::const_iterator CHAR_ROW::cbegin() const noexcept
+Ucs2CharRow::const_iterator Ucs2CharRow::cbegin() const noexcept
 {
     return _data.cbegin();
 }
 
-CHAR_ROW::iterator CHAR_ROW::end() noexcept
+Ucs2CharRow::iterator Ucs2CharRow::end() noexcept
 {
     return _data.end();
 }
 
-CHAR_ROW::const_iterator CHAR_ROW::cend() const noexcept
+Ucs2CharRow::const_iterator Ucs2CharRow::cend() const noexcept
 {
     return _data.cend();
 }
 
-size_t CHAR_ROW::size() const noexcept
+size_t Ucs2CharRow::size() const noexcept
 {
     return _data.size();
 }
@@ -145,7 +145,7 @@ size_t CHAR_ROW::size() const noexcept
 // Return Value:
 // - <none>
 // Note: will throw exception if column is out of bounds
-void CHAR_ROW::ClearGlyph(const size_t column)
+void Ucs2CharRow::ClearGlyph(const size_t column)
 {
     _data.at(column).first = UNICODE_SPACE;
 }
@@ -157,7 +157,7 @@ void CHAR_ROW::ClearGlyph(const size_t column)
 // Return Value:
 // - text data at column
 // - Note: will throw exception if column is out of bounds
-const wchar_t& CHAR_ROW::GetGlyphAt(const size_t column) const
+const wchar_t& Ucs2CharRow::GetGlyphAt(const size_t column) const
 {
     return _data.at(column).first;
 }
@@ -169,9 +169,9 @@ const wchar_t& CHAR_ROW::GetGlyphAt(const size_t column) const
 // Return Value:
 // - text data at column
 // - Note: will throw exception if column is out of bounds
-wchar_t& CHAR_ROW::GetGlyphAt(const size_t column)
+wchar_t& Ucs2CharRow::GetGlyphAt(const size_t column)
 {
-    return const_cast<wchar_t&>(static_cast<const CHAR_ROW* const>(this)->GetGlyphAt(column));
+    return const_cast<wchar_t&>(static_cast<const Ucs2CharRow* const>(this)->GetGlyphAt(column));
 }
 
 // Routine Description:
@@ -180,7 +180,7 @@ wchar_t& CHAR_ROW::GetGlyphAt(const size_t column)
 // - <none>
 // Return Value:
 // - all text data in the row
-std::wstring CHAR_ROW::GetText() const
+std::wstring Ucs2CharRow::GetText() const
 {
     std::wstring temp(_data.size(), UNICODE_SPACE);
     for (size_t i = 0; i < _data.size(); ++i)
@@ -191,12 +191,12 @@ std::wstring CHAR_ROW::GetText() const
 }
 
 // Routine Description:
-// - Sets all properties of the CHAR_ROW to default values
+// - Sets all properties of the Ucs2CharRow to default values
 // Arguments:
 // - sRowWidth - The width of the row.
 // Return Value:
 // - <none>
-void CHAR_ROW::Reset(_In_ short const sRowWidth)
+void Ucs2CharRow::Reset(_In_ short const sRowWidth)
 {
     const value_type insertVals{ UNICODE_SPACE, DbcsAttribute() };
 
@@ -208,12 +208,12 @@ void CHAR_ROW::Reset(_In_ short const sRowWidth)
 }
 
 // Routine Description:
-// - resizes the width of the CHAR_ROW
+// - resizes the width of the Ucs2CharRow
 // Arguments:
 // - newSize - the new width of the character and attributes rows
 // Return Value:
 // - S_OK on success, otherwise relevant error code
-HRESULT CHAR_ROW::Resize(_In_ size_t const newSize)
+HRESULT Ucs2CharRow::Resize(_In_ size_t const newSize)
 {
     // last attribute in a row gets extended to the end
     const value_type insertVals{ UNICODE_SPACE, _data.back().second };
@@ -232,7 +232,7 @@ HRESULT CHAR_ROW::Resize(_In_ size_t const newSize)
 // - fWrapWasForced - True if the row ran out of space and we forced to wrap to the next row. False otherwise.
 // Return Value:
 // - <none>
-void CHAR_ROW::SetWrapStatus(_In_ bool const fWrapWasForced)
+void Ucs2CharRow::SetWrapStatus(_In_ bool const fWrapWasForced)
 {
     if (fWrapWasForced)
     {
@@ -250,7 +250,7 @@ void CHAR_ROW::SetWrapStatus(_In_ bool const fWrapWasForced)
 // - <none>
 // Return Value:
 // - True if the row ran out of space and we were forced to wrap to the next row. False otherwise.
-bool CHAR_ROW::WasWrapForced() const
+bool Ucs2CharRow::WasWrapForced() const
 {
     return IsFlagSet((DWORD)this->bRowFlags, (DWORD)RowFlags::WrapForced);
 }
@@ -261,7 +261,7 @@ bool CHAR_ROW::WasWrapForced() const
 // - fWrapWasForced - True if the row ran out of space for a double byte character and we padded out the row. False otherwise.
 // Return Value:
 // - <none>
-void CHAR_ROW::SetDoubleBytePadded(_In_ bool const fDoubleBytePadded)
+void Ucs2CharRow::SetDoubleBytePadded(_In_ bool const fDoubleBytePadded)
 {
     if (fDoubleBytePadded)
     {
@@ -279,7 +279,7 @@ void CHAR_ROW::SetDoubleBytePadded(_In_ bool const fDoubleBytePadded)
 // - <none>
 // Return Value:
 // - True if the row didn't have space for a double byte character and we were padded out the row. False otherwise.
-bool CHAR_ROW::WasDoubleBytePadded() const
+bool Ucs2CharRow::WasDoubleBytePadded() const
 {
     return IsFlagSet((DWORD)this->bRowFlags, (DWORD)RowFlags::DoubleBytePadded);
 }
@@ -290,7 +290,7 @@ bool CHAR_ROW::WasDoubleBytePadded() const
 // - <none>
 // Return Value:
 // - The calculated left boundary of the internal string.
-size_t CHAR_ROW::MeasureLeft() const
+size_t Ucs2CharRow::MeasureLeft() const
 {
     std::vector<value_type>::const_iterator it = _data.cbegin();
     while (it != _data.cend() && it->first == UNICODE_SPACE)
@@ -306,7 +306,7 @@ size_t CHAR_ROW::MeasureLeft() const
 // - <none>
 // Return Value:
 // - The calculated right boundary of the internal string.
-size_t CHAR_ROW::MeasureRight() const
+size_t Ucs2CharRow::MeasureRight() const
 {
     std::vector<value_type>::const_reverse_iterator it = _data.crbegin();
     while (it != _data.crend() && it->first == UNICODE_SPACE)
@@ -322,7 +322,7 @@ size_t CHAR_ROW::MeasureRight() const
 // - <none>
 // Return Value:
 // - True if there is valid text in this row. False otherwise.
-bool CHAR_ROW::ContainsText() const
+bool Ucs2CharRow::ContainsText() const
 {
     for (const value_type& vals : _data)
     {
@@ -334,12 +334,12 @@ bool CHAR_ROW::ContainsText() const
     return false;
 }
 
-ICharRow::SupportedEncoding CHAR_ROW::GetSupportedEncoding() const noexcept
+ICharRow::SupportedEncoding Ucs2CharRow::GetSupportedEncoding() const noexcept
 {
     return ICharRow::SupportedEncoding::Ucs2;
 }
 
-void CHAR_ROW::ClearCell(_In_ const size_t column)
+void Ucs2CharRow::ClearCell(_In_ const size_t column)
 {
     _data.at(column) = { UNICODE_SPACE, DbcsAttribute() };
 }

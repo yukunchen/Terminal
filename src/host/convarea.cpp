@@ -746,7 +746,7 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
         ICharRow& iCharRow = Row.GetCharRow();
         if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
         {
-            CHAR_ROW& charRow = static_cast<CHAR_ROW&>(iCharRow);
+            Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
             OverwriteColumns(String,
                             String + StringLength,
                             pDbcsAttributes,

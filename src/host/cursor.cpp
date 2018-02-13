@@ -122,7 +122,7 @@ const BOOLEAN Cursor::IsDoubleWidth() const
     const ICharRow& iCharRow = gci.CurrentScreenBuffer->TextInfo->GetRowByOffset(_cPosition.Y).GetCharRow();
     if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
     {
-        const CHAR_ROW& charRow = static_cast<const CHAR_ROW&>(iCharRow);
+        const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
         return !!IsCharFullWidth(charRow.GetGlyphAt(_cPosition.X));
     }
     else

@@ -114,14 +114,14 @@ NTSTATUS ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenI
             }
 
             // copy the chars and attrs from their respective arrays
-            CHAR_ROW::const_iterator it;
-            CHAR_ROW::const_iterator itEnd;
+            Ucs2CharRow::const_iterator it;
+            Ucs2CharRow::const_iterator itEnd;
             try
             {
                 const ICharRow& iCharRow = pRow->GetCharRow();
                 if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
                 {
-                    const CHAR_ROW& charRow = static_cast<const CHAR_ROW&>(iCharRow);
+                    const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
                     it = std::next(charRow.cbegin(), coordSourcePoint.X);
                     itEnd = charRow.cend();
                 }
@@ -467,8 +467,8 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                         return STATUS_UNSUCCESSFUL;
                     }
 
-                    const CHAR_ROW& charRow = static_cast<const CHAR_ROW&>(iCharRow);
-                    const CHAR_ROW::const_iterator startIt = std::next(charRow.cbegin(), X);
+                    const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
+                    const Ucs2CharRow::const_iterator startIt = std::next(charRow.cbegin(), X);
                     size_t copyAmount = *pcRecords - NumRead;
                     wchar_t* pChars = BufPtr;
                     DbcsAttribute* pAttrs = BufPtrA;
@@ -571,14 +571,14 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
             while (NumRead < *pcRecords)
             {
                 // Copy the attrs from its array.
-                CHAR_ROW::const_iterator it;
-                CHAR_ROW::const_iterator itEnd;
+                Ucs2CharRow::const_iterator it;
+                Ucs2CharRow::const_iterator itEnd;
                 try
                 {
                     const ICharRow& iCharRow = pRow->GetCharRow();
                     if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
                     {
-                        const CHAR_ROW& charRow = static_cast<const CHAR_ROW&>(iCharRow);
+                        const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
                         it = std::next(charRow.cbegin(), X);
                         itEnd = charRow.cend();
                     }

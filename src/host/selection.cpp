@@ -217,7 +217,7 @@ void Selection::s_BisectSelection(_In_ short const sStringLength,
         const ICharRow& iCharRow = Row.GetCharRow();
         if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
         {
-            const CHAR_ROW& charRow = static_cast<const CHAR_ROW&>(iCharRow);
+            const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
             // Check start position of strings
             if (charRow.GetAttribute(coordTargetPoint.X).IsTrailing())
             {
@@ -245,7 +245,7 @@ void Selection::s_BisectSelection(_In_ short const sStringLength,
                 const ICharRow& iCharRowNext = RowNext.GetCharRow();
                 if (iCharRowNext.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
                 {
-                    const CHAR_ROW& charRowNext = static_cast<const CHAR_ROW&>(iCharRowNext);
+                    const Ucs2CharRow& charRowNext = static_cast<const Ucs2CharRow&>(iCharRowNext);
                     if (charRowNext.GetAttribute(0).IsTrailing())
                     {
                         pSmallRect->Right--;

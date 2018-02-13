@@ -61,14 +61,14 @@ void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
         ICharRow& iCharRow = Row.GetCharRow();
         if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
         {
-            CHAR_ROW& charRow = static_cast<CHAR_ROW&>(iCharRow);
+            Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
             std::transform(pwchBuffer,
                         pwchBuffer + cchBuffer,
                         pDbcsAttributes,
                         std::next(charRow.begin(), TargetPoint.X),
                         [](wchar_t wch, DbcsAttribute attr)
             {
-                return CHAR_ROW::value_type{ wch, attr };
+                return Ucs2CharRow::value_type{ wch, attr };
             });
             OverwriteColumns(pwchBuffer,
                             pwchBuffer + cchBuffer,
@@ -195,14 +195,14 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
             }
 
             // CJK Languages
-            CHAR_ROW::iterator it;
-            CHAR_ROW::const_iterator itEnd;
+            Ucs2CharRow::iterator it;
+            Ucs2CharRow::const_iterator itEnd;
             try
             {
                 ICharRow& iCharRow = pRow->GetCharRow();
                 if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
                 {
-                    CHAR_ROW& charRow = static_cast<CHAR_ROW&>(iCharRow);
+                    Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
                     it = std::next(charRow.begin(), coordDest.X);
                     itEnd = charRow.cend();
                 }
@@ -583,13 +583,13 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
             }
 
             // copy the chars into their arrays
-            CHAR_ROW::iterator it;
+            Ucs2CharRow::iterator it;
             try
             {
                 ICharRow& iCharRow = pRow->GetCharRow();
                 if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
                 {
-                    CHAR_ROW& charRow = static_cast<CHAR_ROW&>(iCharRow);
+                    Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
                     it = std::next(charRow.begin(), X);
                 }
                 else
@@ -921,13 +921,13 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
             }
 
             // copy the chars into their arrays
-            CHAR_ROW::iterator it;
+            Ucs2CharRow::iterator it;
             try
             {
                 ICharRow& iCharRow = pRow->GetCharRow();
                 if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
                 {
-                    CHAR_ROW& charRow = static_cast<CHAR_ROW&>(iCharRow);
+                    Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
                     it = std::next(charRow.begin(), X);
                 }
                 else
@@ -1208,14 +1208,14 @@ void FillRectangle(_In_ const CHAR_INFO * const pciFill,
         CleanupDbcsEdgesForWrite(XSize, TPoint, pScreenInfo);
         BOOL Width = IsCharFullWidth(pciFill->Char.UnicodeChar);
 
-        CHAR_ROW::iterator it;
-        CHAR_ROW::const_iterator itEnd;
+        Ucs2CharRow::iterator it;
+        Ucs2CharRow::const_iterator itEnd;
         try
         {
             ICharRow& iCharRow = pRow->GetCharRow();
             if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
             {
-                CHAR_ROW& charRow = static_cast<CHAR_ROW&>(iCharRow);
+                Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
                 it = std::next(charRow.begin(), psrTarget->Left);
                 itEnd = charRow.cend();
             }

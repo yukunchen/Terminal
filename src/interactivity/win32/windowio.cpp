@@ -731,7 +731,7 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION* const pScreenInfo,
                 {
                     return FALSE;
                 }
-                const CHAR_ROW& charRow = static_cast<const CHAR_ROW&>(iCharRow);
+                const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
 
 
                 while (coordSelectionAnchor.X > 0)

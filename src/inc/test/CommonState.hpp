@@ -241,7 +241,7 @@ private:
             LOG_HR_MSG(E_FAIL, "we don't support non UCS2 encoded char rows");
             return;
         }
-        CHAR_ROW& charRow = static_cast<CHAR_ROW&>(iCharRow);
+        Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
         OverwriteColumns(pwszText, pwszText + length, attrs.cbegin(), charRow.begin());
 
         // set some colors
@@ -312,7 +312,7 @@ private:
             LOG_HR_MSG(E_FAIL, "we don't support non UCS2 encoded char rows");
             return;
         }
-        CHAR_ROW& charRow = static_cast<CHAR_ROW&>(iCharRow);
+        Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
         OverwriteColumns(pwszText, pwszText + length, attrs.cbegin(), charRow.begin());
 
         // everything gets default attributes

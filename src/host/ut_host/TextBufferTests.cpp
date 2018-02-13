@@ -274,7 +274,7 @@ void TextBufferTests::DoBoundaryTest(PWCHAR const pwszInputString,
     ICharRow& iCharRow = tbi->GetFirstRow().GetCharRow();
     // for the time being, we only support UCS2 char rows
     VERIFY_ARE_EQUAL(ICharRow::SupportedEncoding::Ucs2, iCharRow.GetSupportedEncoding());
-    CHAR_ROW& charRow = static_cast<CHAR_ROW&>(iCharRow);
+    Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
 
     // copy string into buffer
     for (size_t i = 0; i < static_cast<size_t>(cLength); ++i)
@@ -374,7 +374,7 @@ void TextBufferTests::TestInsertCharacter()
     const ICharRow& iCharRow = Row.GetCharRow();
     // for the time being, we only support UCS2 char rows
     VERIFY_ARE_EQUAL(ICharRow::SupportedEncoding::Ucs2, iCharRow.GetSupportedEncoding());
-    const CHAR_ROW& charRow = static_cast<const CHAR_ROW&>(iCharRow);
+    const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
     // ensure that the buffer didn't start with these fields
     VERIFY_ARE_NOT_EQUAL(charRow.GetGlyphAt(coordCursorBefore.X), wchTest);
     VERIFY_ARE_NOT_EQUAL(charRow.GetAttribute(coordCursorBefore.X), dbcsAttribute);
@@ -592,7 +592,7 @@ void TextBufferTests::TestIncrementCircularBuffer()
         ICharRow& iCharRow = FirstRow.GetCharRow();
         // for the time being, we only support UCS2 char rows
         VERIFY_ARE_EQUAL(ICharRow::SupportedEncoding::Ucs2, iCharRow.GetSupportedEncoding());
-        CHAR_ROW& charRow = static_cast<CHAR_ROW&>(iCharRow);
+        Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
         charRow.GetGlyphAt(0) = L'A';
 
         // ensure it does say that it contains text

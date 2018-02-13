@@ -29,7 +29,7 @@ void swap(ROW& a, ROW& b) noexcept
 // - constructed object
 ROW::ROW(_In_ const SHORT rowId, _In_ const short rowWidth, _In_ const TextAttribute fillAttribute) :
     _id{ rowId },
-    _charRow{ std::make_unique<CHAR_ROW>(rowWidth) },
+    _charRow{ std::make_unique<Ucs2CharRow>(rowWidth) },
     _attrRow{ rowWidth, fillAttribute }
 {
 }
@@ -46,8 +46,8 @@ ROW::ROW(const ROW& a) :
 {
     if (a._charRow->GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
     {
-        CHAR_ROW charRow = *static_cast<const CHAR_ROW* const>(a._charRow.get());
-        _charRow = std::make_unique<CHAR_ROW>(charRow);
+        Ucs2CharRow charRow = *static_cast<const Ucs2CharRow* const>(a._charRow.get());
+        _charRow = std::make_unique<Ucs2CharRow>(charRow);
     }
     else
     {

@@ -162,7 +162,7 @@ USHORT SearchForString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                 const ICharRow& iCharRow = pRow->GetCharRow();
                 if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
                 {
-                    const CHAR_ROW& charRow = static_cast<const CHAR_ROW&>(iCharRow);
+                    const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
                     if (charRow.GetAttribute(Position.X).IsTrailing())
                     {
                         goto recalc;
@@ -183,7 +183,7 @@ USHORT SearchForString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
             const ICharRow& iCharRow = pRow->GetCharRow();
             if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
             {
-                const CHAR_ROW& charRow = static_cast<const CHAR_ROW&>(iCharRow);
+                const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
                 rowText = charRow.GetText();
             }
             else

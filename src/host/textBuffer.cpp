@@ -339,7 +339,7 @@ bool TEXT_BUFFER_INFO::AssertValidDoubleByteSequence(_In_ const DbcsAttribute db
     {
         return false;
     }
-    CHAR_ROW& charRow = static_cast<CHAR_ROW&>(iCharRow);
+    Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
     DbcsAttribute prevDbcsAttr;
     try
     {
@@ -443,7 +443,7 @@ bool TEXT_BUFFER_INFO::_PrepareForDoubleByteSequence(_In_ const DbcsAttribute db
             ICharRow& iCharRow = GetRowByOffset(this->GetCursor()->GetPosition().Y).GetCharRow();
             if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
             {
-                static_cast<CHAR_ROW&>(iCharRow).SetDoubleBytePadded(true);
+                static_cast<Ucs2CharRow&>(iCharRow).SetDoubleBytePadded(true);
             }
 
             // then move the cursor forward and onto the next row
@@ -482,7 +482,7 @@ bool TEXT_BUFFER_INFO::InsertCharacter(_In_ const wchar_t wch,
         ICharRow& iCharRow = Row.GetCharRow();
         if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
         {
-            CHAR_ROW& charRow = static_cast<CHAR_ROW&>(iCharRow);;
+            Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);;
             short const cBufferWidth = this->_coordBufferSize.X;
 
             try
