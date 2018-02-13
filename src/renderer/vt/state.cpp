@@ -18,6 +18,8 @@ using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 
+const COORD VtEngine::INVALID_COORDS = {-1, -1};
+
 // Routine Description:
 // - Creates a new VT-based rendering engine
 // - NOTE: Will throw if initialization failure. Caller must catch.
@@ -39,7 +41,12 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _quickReturn(false),
     _fInvalidRectUsed(false),
     _clearedAllThisFrame(false),
-    _suppressResizeRepaint(false)
+    _cursorMoved(false),
+    _suppressResizeRepaint(true),
+    _virtualTop(0),
+    _circled(false),
+    _firstPaint(false),
+    _skipCursor(false)
 {
 #ifndef UNIT_TESTING
     // When unit testing, we can instantiate a VtEngine without a pipe.
@@ -254,5 +261,23 @@ bool VtEngine::_AllIsInvalid() const
 HRESULT VtEngine::SuppressResizeRepaint()
 {
     _suppressResizeRepaint = true;
+    return S_OK;
+}
+
+// Method Description:
+// - "Inherit" the cursor at the given position. We won't need to move it
+//      anywhere, so update where we last thought the cursor was.
+//  Also update our "virtual top", indicating where should clip all updates to
+//      (we don't want to paint the empty region above the inherited cursor).
+//  Also ignore the next InvalidateCursor call.
+// Arguments:
+// - coordCursor: The cursor position to inherit from.
+// Return Value:
+// - S_OK
+HRESULT VtEngine::InheritCursor(_In_ const COORD coordCursor)
+{
+    _virtualTop = coordCursor.Y;
+    _lastText = coordCursor;
+    _skipCursor = true;
     return S_OK;
 }

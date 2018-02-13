@@ -161,6 +161,11 @@ HRESULT WddmConEngine::Invalidate(const SMALL_RECT* const /*psrRegion*/)
     return S_OK;
 }
 
+HRESULT WddmConEngine::InvalidateCursor(const COORD* const /*pcoordCursor*/)
+{
+    return S_OK;
+}
+
 HRESULT WddmConEngine::InvalidateSystem(const RECT* const /*prcDirtyClient*/)
 {
     return S_OK;

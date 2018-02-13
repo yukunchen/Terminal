@@ -5,10 +5,10 @@ Module Name:
 - adaptDispatch.hpp
 
 Abstract:
-- This serves as the Windows Console API-specific implementation of the 
+- This serves as the Windows Console API-specific implementation of the
     callbacks from our generic Virtual Terminal Input parser.
 
-Author(s): 
+Author(s):
 - Mike Griese (migrie) 11 Oct 2017
 --*/
 #pragma once
@@ -40,8 +40,10 @@ public:
     virtual bool WindowManipulation(_In_ const DispatchCommon::WindowManipulationType uiFunction,
                                     _In_reads_(cParams) const unsigned short* const rgusParams,
                                     _In_ size_t const cParams) override; // DTTERM_WindowManipulation
+    virtual bool MoveCursor(_In_ const unsigned int row,
+                            _In_ const unsigned int col) override;
 private:
-    
+
     std::unique_ptr<ConGetSet> _pConApi;
-    
+
 };

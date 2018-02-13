@@ -57,14 +57,10 @@ void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
     // copy chars
     try
     {
-        std::transform(pwchBuffer,
-                       pwchBuffer + cchBuffer,
-                       pDbcsAttributes,
-                       std::next(Row.GetCharRow().begin(), TargetPoint.X),
-                       [](wchar_t wch, DbcsAttribute attr)
-        {
-            return CHAR_ROW::value_type{ wch, attr };
-        });
+        OverwriteColumns(pwchBuffer,
+                         pwchBuffer + cchBuffer,
+                         pDbcsAttributes,
+                         std::next(Row.GetCharRow().begin(), TargetPoint.X));
     }
     CATCH_LOG();
 
@@ -598,10 +594,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
                 {
                     const wchar_t* const pChars = reinterpret_cast<const wchar_t* const>(pvBuffer);
                     const DbcsAttribute* const pAttrs = static_cast<const DbcsAttribute* const>(BufferA);
-                    std::transform(pChars, pChars + numToWrite, pAttrs, it, [](const wchar_t wch, const DbcsAttribute attr)
-                    {
-                        return CHAR_ROW::value_type{ wch, attr };
-                    });
+                    OverwriteColumns(pChars, pChars + numToWrite, pAttrs, it);
                 }
                 catch (...)
                 {
@@ -636,10 +629,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
                 {
                     const wchar_t* const pChars = reinterpret_cast<const wchar_t* const>(pvBuffer);
                     const DbcsAttribute* const pAttrs = static_cast<const DbcsAttribute* const>(BufferA);
-                    std::transform(pChars, pChars + numToWrite, pAttrs, it, [](const wchar_t wch, const DbcsAttribute attr)
-                    {
-                        return CHAR_ROW::value_type{ wch, attr };
-                    });
+                    OverwriteColumns(pChars, pChars + numToWrite, pAttrs, it);
                 }
                 catch (...)
                 {
@@ -940,6 +930,7 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
                     {
                         it->first = static_cast<wchar_t>(wElement);
                         it->second.SetSingle();
+                        ++it;
                     }
                 }
                 X = (SHORT)(X + *pcElements - NumWritten - 1);

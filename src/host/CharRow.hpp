@@ -114,6 +114,19 @@ constexpr bool operator==(const CHAR_ROW& a, const CHAR_ROW& b) noexcept
             a._data == b._data);
 }
 
+template<typename InputIt1, typename InputIt2>
+void OverwriteColumns(_In_ InputIt1 startChars, _In_ InputIt1 endChars, _In_ InputIt2 startAttrs, _Out_ CHAR_ROW::iterator outIt)
+{
+    std::transform(startChars,
+                   endChars,
+                   startAttrs,
+                   outIt,
+                   [](const wchar_t wch, const DbcsAttribute attr)
+    {
+        return CHAR_ROW::value_type{ wch, attr };
+    });
+}
+
 // this sticks specialization of swap() into the std::namespace for CHAR_ROW, so that callers that use
 // std::swap explicitly over calling the global swap can still get the performance benefit.
 namespace std
