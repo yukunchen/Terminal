@@ -31,8 +31,8 @@ namespace WEX {
                                                            tar.GetLength(),
                                                            tar.GetAttributes().IsLegacy(),
                                                            tar.GetAttributes().GetLegacyAttributes(),
-                                                           tar.GetAttributes().GetRgbForeground(),
-                                                           tar.GetAttributes().GetRgbBackground());
+                                                           tar.GetAttributes().CalculateRgbForeground(),
+                                                           tar.GetAttributes().CalculateRgbBackground());
             }
         };
 

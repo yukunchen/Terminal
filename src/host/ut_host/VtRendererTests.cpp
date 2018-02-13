@@ -49,7 +49,8 @@ public:
 
 COLORREF g_ColorTable[COLOR_TABLE_SIZE];
 VtRenderTestColorProvider p;
-
+static const std::string CLEAR_SCREEN = "\x1b[2J";
+static const std::string CURSOR_HOME = "\x1b[H";
 // Sometimes when we're expecting the renderengine to not write anything,
 // we'll add this to the expected input, and manually write this to the callback
 // to make sure nothing else gets written.
@@ -127,6 +128,7 @@ Viewport VtRendererTest::SetUpViewport()
 bool VtRendererTest::WriteCallback(const char* const pch, size_t const cch)
 {
     std::string first = qExpectedInput.front();
+    qExpectedInput.pop_front();
 
     std::string actualString = std::string(pch, cch);
 
@@ -136,7 +138,6 @@ bool VtRendererTest::WriteCallback(const char* const pch, size_t const cch)
     VERIFY_ARE_EQUAL(first.length(), cch);
     VERIFY_ARE_EQUAL(first, actualString);
 
-    qExpectedInput.pop_front();
 
     return true;
 }
@@ -237,6 +238,8 @@ void VtRendererTest::VtSequenceHelperTests()
     qExpectedInput.push_back("\x1b[2J");
     engine->_ClearScreen();
 
+    qExpectedInput.push_back("\x1b[10C");
+    engine->_CursorForward(10);
 }
 
 void VtRendererTest::Xterm256TestInvalidate()
@@ -245,6 +248,12 @@ void VtRendererTest::Xterm256TestInvalidate()
     std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), p, SetUpViewport(), g_ColorTable, static_cast<WORD>(COLOR_TABLE_SIZE));
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
+
+    // Verify the first paint does not emit a clear and go home
+    qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
+    TestPaint(*engine, [&]() {
+        WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
+    });
 
     Viewport view = SetUpViewport();
 
@@ -281,9 +290,8 @@ void VtRendererTest::Xterm256TestInvalidate()
         invalid.Bottom = 1;
 
         VERIFY_ARE_EQUAL(invalid, engine->_invalidRect.ToExclusive());
-        // We would expect a CUP here, but the cursor is already at the home position
-        // qExpectedInput.push_back("\x1b[H");
 
+        qExpectedInput.push_back("\x1b[H"); // Go Home
         qExpectedInput.push_back("\x1b[L"); // insert a line
         VERIFY_SUCCEEDED(engine->ScrollFrame());
     });
@@ -394,6 +402,12 @@ void VtRendererTest::Xterm256TestColors()
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
+    // Verify the first paint does not emit a clear and go home
+    qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
+    TestPaint(*engine, [&]() {
+        WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
+    });
+
     Viewport view = SetUpViewport();
 
     Log::Comment(NoThrowString().Format(
@@ -499,6 +513,12 @@ void VtRendererTest::Xterm256TestCursor()
     std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), p, SetUpViewport(), g_ColorTable, static_cast<WORD>(COLOR_TABLE_SIZE));
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
+
+    // Verify the first paint does not emit a clear and go home
+    qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
+    TestPaint(*engine, [&]() {
+        WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
+    });
 
     Viewport view = SetUpViewport();
 
@@ -613,6 +633,12 @@ void VtRendererTest::XtermTestInvalidate()
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
+    // Verify the first paint does not emit a clear and go home
+    qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
+    TestPaint(*engine, [&]() {
+        WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
+    });
+
     Viewport view = SetUpViewport();
 
     Log::Comment(NoThrowString().Format(
@@ -648,8 +674,8 @@ void VtRendererTest::XtermTestInvalidate()
         invalid.Bottom = 1;
 
         VERIFY_ARE_EQUAL(invalid, engine->_invalidRect.ToExclusive());
-        // We would expect a CUP here, but the cursor is already at the home position
 
+        qExpectedInput.push_back("\x1b[H"); // Go Home
         qExpectedInput.push_back("\x1b[L"); // insert a line
         VERIFY_SUCCEEDED(engine->ScrollFrame());
     });
@@ -760,6 +786,12 @@ void VtRendererTest::XtermTestColors()
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
+    // Verify the first paint does not emit a clear and go home
+    qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
+    TestPaint(*engine, [&]() {
+        WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
+    });
+
     Viewport view = SetUpViewport();
 
     Log::Comment(NoThrowString().Format(
@@ -796,7 +828,7 @@ void VtRendererTest::XtermTestColors()
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG to the 'Default' background----"
         ));
-        qExpectedInput.push_back("\x1b[49m"); // Background DARK_BLACK
+        qExpectedInput.push_back("\x1b[40m"); // Background DARK_BLACK
         engine->UpdateDrawingBrushes(g_ColorTable[7], 0x000000, 0, false);
 
 
@@ -827,6 +859,12 @@ void VtRendererTest::XtermTestCursor()
     std::unique_ptr<XtermEngine> engine = std::make_unique<XtermEngine>(std::move(hFile), p, SetUpViewport(), g_ColorTable, static_cast<WORD>(COLOR_TABLE_SIZE), false);
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
+
+    // Verify the first paint does not emit a clear and go home
+    qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
+    TestPaint(*engine, [&]() {
+        WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
+    });
 
     Viewport view = SetUpViewport();
 
@@ -1061,7 +1099,7 @@ void VtRendererTest::WinTelnetTestColors()
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG to the 'Default' background----"
         ));
-        qExpectedInput.push_back("\x1b[49m"); // Background DARK_BLACK
+        qExpectedInput.push_back("\x1b[40m"); // Background DARK_BLACK
         engine->UpdateDrawingBrushes(g_ColorTable[7], 0x000000, 0, false);
 
 

@@ -41,11 +41,6 @@ HRESULT ConsoleServerInitialization(_In_ HANDLE Server, _In_ const ConsoleArgume
 
     Globals.launchArgs = *args;
 
-    CONSOLE_INFORMATION& gci = Globals.getConsoleInformation();
-
-    // Give VT an opportunity to set itself up based on the args given.
-    RETURN_IF_FAILED(gci.GetVtIo()->Initialize(args));
-
     Globals.uiOEMCP = GetOEMCP();
     Globals.uiWindowsCP = GetACP();
 
@@ -557,9 +552,34 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
     }
 
     // Potentially start the VT IO (if needed)
+    // Make sure to do this after the i/o buffers have been created.
+    // We'll need the size of the screen buffer in the vt i/o initialization
     if (NT_SUCCESS(Status))
     {
-        gci.GetVtIo()->StartIfNeeded();
+        HRESULT hr = gci.GetVtIo()->Initialize(&g.launchArgs);
+        if (hr == S_FALSE)
+        {
+            // We're not in VT I/O mode, this is fine.
+        }
+        else if (SUCCEEDED(hr))
+        {
+            // Actually start the VT I/O threads
+            hr = gci.GetVtIo()->StartIfNeeded();
+            // Don't convert S_FALSE to an NTSTATUS - the equivalent NTSTATUS
+            //      is treated as an error
+            if (hr != S_FALSE)
+            {
+                Status = NTSTATUS_FROM_HRESULT(hr);
+            }
+            else
+            {
+                Status = ERROR_SUCCESS;
+            }
+        }
+        else
+        {
+            Status = NTSTATUS_FROM_HRESULT(hr);
+        }
     }
 
     return Status;

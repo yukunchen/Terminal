@@ -19,7 +19,8 @@ using namespace Microsoft::Console::Types;
 
 VtIo::VtIo() :
     _usingVt(false),
-    _hasSignalThread(false)
+    _hasSignalThread(false),
+    _lookingForCursorPosition(false)
 {
 }
 
@@ -66,6 +67,8 @@ HRESULT VtIo::ParseIoMode(_In_ const std::wstring& VtMode, _Out_ VtIoMode& ioMod
 
 HRESULT VtIo::Initialize(const ConsoleArguments * const pArgs)
 {
+    _lookingForCursorPosition = pArgs->GetInheritCursor();
+
     // If we were already given VT handles, set up the VT IO engine to use those.
     if (pArgs->HasVtHandles())
     {
@@ -139,10 +142,8 @@ HRESULT VtIo::_Initialize(_In_ const HANDLE InHandle, _In_ const HANDLE OutHandl
 
     try
     {
-        _pVtInputThread = std::make_unique<VtInputThread>(std::move(hInputFile));
+        _pVtInputThread = std::make_unique<VtInputThread>(std::move(hInputFile), _lookingForCursorPosition);
 
-        // The Screen info hasn't been created yet, but SetUpConsole did get
-        //      the launch settings already.
         Viewport initialViewport = Viewport::FromDimensions({0, 0},
                                                             gci.GetWindowSize().X,
                                                             gci.GetWindowSize().Y);
@@ -296,6 +297,22 @@ HRESULT VtIo::StartIfNeeded()
     }
     CATCH_RETURN();
 
+    // MSFT: 15813316
+    // If the terminal application wants us to inherit the cursor position,
+    //  we're going to emit a VT sequence to ask for the cursor position, then
+    //  read input until we get a response. Terminals who request this behavior
+    //  but don't respond will hang.
+    // If we get a response, the InteractDispatch will call SetCursorPosition,
+    //      which will call to our VtIo::SetCursorPosition method.
+    if (_lookingForCursorPosition)
+    {
+        _pVtRenderEngine->RequestCursor();
+        while(_lookingForCursorPosition)
+        {
+            _pVtInputThread->DoReadInput(false);
+        }
+    }
+
     _pVtInputThread->Start();
 
     if (_hasSignalThread)
@@ -320,6 +337,29 @@ HRESULT VtIo::SuppressResizeRepaint()
     if (_pVtRenderEngine)
     {
         hr = _pVtRenderEngine->SuppressResizeRepaint();
+    }
+    return hr;
+}
+
+// Method Description:
+// - Attempts to set the initial cursor position, if we're looking for it.
+//      If we're not trying to inherit the cursor, does nothing.
+// Arguments:
+// - coordCursor: The initial position of the cursor.
+// Return Value:
+// - S_OK if we successfully inherited the cursor or did nothing, else an
+//      appropriate HRESULT
+HRESULT VtIo::SetCursorPosition(_In_ const COORD coordCursor)
+{
+    HRESULT hr = S_OK;
+    if (_lookingForCursorPosition)
+    {
+        if (_pVtRenderEngine)
+        {
+            hr = _pVtRenderEngine->InheritCursor(coordCursor);
+        }
+
+        _lookingForCursorPosition = false;
     }
     return hr;
 }

@@ -229,7 +229,7 @@ void DimensionsTests::TestSetConsoleWindowInfo()
         (srViewport.Right - srViewport.Left) < 1 ||
         (srViewport.Bottom - srViewport.Top) < 1)
     {
-        VERIFY_FAIL(NoThrowString().Format(L"Adjusted viewport is invalid. %s", VerifyOutputTraits<SMALL_RECT>::ToString(srViewport)));
+        VERIFY_FAIL(NoThrowString().Format(L"Adjusted viewport is invalid. %s", VerifyOutputTraits<SMALL_RECT>::ToString(srViewport).GetBuffer()));
     }
 
     // Store a copy of the original (for comparison in case the relative translation is applied).

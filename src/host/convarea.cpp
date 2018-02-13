@@ -12,7 +12,6 @@
 #include "CharRow.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
-#include <algorithm>
 
 #pragma hdrstop
 
@@ -729,7 +728,7 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
     {
 
         if (TargetPoint.Y == coordScreenBufferSize.Y - 1 &&
-            TargetPoint.X + static_cast<short>(StringLength) >= coordScreenBufferSize.X &&
+            TargetPoint.X + static_cast<USHORT>(StringLength) >= coordScreenBufferSize.X &&
             pDbcsAttributes[ScreenEndOfString - 1].IsLeading())
         {
             *(String + ScreenEndOfString - 1) = UNICODE_SPACE;
@@ -748,14 +747,10 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
         if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
         {
             CHAR_ROW& charRow = static_cast<CHAR_ROW&>(iCharRow);
-            std::transform(String,
-                          String + StringLength,
-                          pDbcsAttributes,
-                          std::next(charRow.begin(), TargetPoint.X),
-                          [](const wchar_t wch, const DbcsAttribute attr)
-            {
-                return CHAR_ROW::value_type{ wch, attr };
-            });
+            OverwriteColumns(String,
+                            String + StringLength,
+                            pDbcsAttributes,
+                            std::next(charRow.begin(), TargetPoint.X));
         }
         else
         {
@@ -813,5 +808,18 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
         }
     }
 
-    ScreenInfo->ResetTextFlags(TargetPoint.X, TargetPoint.Y, static_cast<short>(TargetPoint.X + StringLength - 1), TargetPoint.Y);
+    int tempInt;
+    HRESULT hr = SizeTToInt(TargetPoint.X + StringLength - 1, &tempInt);
+    if (FAILED(hr))
+    {
+        return;
+    }
+    short tempShort;
+    hr = IntToShort(tempInt, &tempShort);
+    if (FAILED(hr))
+    {
+        return;
+    }
+
+    ScreenInfo->ResetTextFlags(TargetPoint.X, TargetPoint.Y, tempShort, TargetPoint.Y);
 }

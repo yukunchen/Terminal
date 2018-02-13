@@ -242,14 +242,7 @@ private:
             return;
         }
         CHAR_ROW& charRow = static_cast<CHAR_ROW&>(iCharRow);
-        std::transform(pwszText,
-                       pwszText + length,
-                       attrs.cbegin(),
-                       charRow.begin(),
-                       [](const wchar_t wch, const DbcsAttribute attr)
-        {
-            return CHAR_ROW::value_type{ wch, attr};
-        });
+        OverwriteColumns(pwszText, pwszText + length, attrs.cbegin(), charRow.begin());
 
         // set some colors
         TextAttribute Attr = TextAttribute(0);
@@ -320,14 +313,7 @@ private:
             return;
         }
         CHAR_ROW& charRow = static_cast<CHAR_ROW&>(iCharRow);
-        std::transform(pwszText,
-                       pwszText + length,
-                       attrs.cbegin(),
-                       charRow.begin(),
-                       [](const wchar_t wch, const DbcsAttribute attr)
-        {
-            return CHAR_ROW::value_type{ wch, attr};
-        });
+        OverwriteColumns(pwszText, pwszText + length, attrs.cbegin(), charRow.begin());
 
         // everything gets default attributes
         pRow->GetAttrRow().Reset(80, gci.CurrentScreenBuffer->GetAttributes());

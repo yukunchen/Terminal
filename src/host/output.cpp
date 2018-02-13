@@ -15,8 +15,6 @@
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 #include "..\types\inc\Viewport.hpp"
-#include <iterator>
-#include <algorithm>
 
 #pragma hdrstop
 using namespace Microsoft::Console::Types;
@@ -132,7 +130,10 @@ NTSTATUS ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenI
                     return STATUS_UNSUCCESSFUL;
                 }
             }
-            CATCH_LOG();
+            catch (...)
+            {
+                return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+            }
 
             // Unpack the attributes into an array so we can iterate over them.
             pRow->GetAttrRow().UnpackAttrs(rgUnpackedRowAttributes, ScreenBufferWidth);
@@ -471,7 +472,7 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                     size_t copyAmount = *pcRecords - NumRead;
                     wchar_t* pChars = BufPtr;
                     DbcsAttribute* pAttrs = BufPtrA;
-                    if (coordScreenBufferSize.X - X > copyAmount)
+                    if (static_cast<size_t>(coordScreenBufferSize.X - X) > copyAmount)
                     {
                         std::for_each(startIt, std::next(startIt, copyAmount), [&](const auto& vals)
                         {

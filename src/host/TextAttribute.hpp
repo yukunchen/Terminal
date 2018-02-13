@@ -28,6 +28,9 @@ public:
 
     WORD GetLegacyAttributes() const;
 
+    COLORREF CalculateRgbForeground() const;
+    COLORREF CalculateRgbBackground() const;
+
     COLORREF GetRgbForeground() const;
     COLORREF GetRgbBackground() const;
 
@@ -62,4 +65,8 @@ private:
     bool _fUseRgbColor;
     COLORREF _rgbForeground;
     COLORREF _rgbBackground;
+
+#ifdef UNIT_TESTING
+    friend class TextBufferTests;
+#endif
 };

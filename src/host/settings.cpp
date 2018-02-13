@@ -373,7 +373,7 @@ void Settings::_InitColorTable()
 //   are optimized for OneCore.
 // Arguments:
 // - <none>
-// Return Value: 
+// Return Value:
 // - <none> - Adjusts internal state only.
 void Settings::ApplyDesktopSpecificDefaults()
 {

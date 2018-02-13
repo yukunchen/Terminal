@@ -217,7 +217,11 @@ HRESULT CHAR_ROW::Resize(_In_ size_t const newSize)
 {
     // last attribute in a row gets extended to the end
     const value_type insertVals{ UNICODE_SPACE, _data.back().second };
-    _data.resize(newSize, insertVals);
+    try
+    {
+        _data.resize(newSize, insertVals);
+    }
+    CATCH_RETURN();
 
     return S_OK;
 }

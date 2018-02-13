@@ -39,6 +39,11 @@ HRESULT BgfxEngine::Invalidate(const SMALL_RECT* const /*psrRegion*/)
     return S_OK;
 }
 
+HRESULT BgfxEngine::InvalidateCursor(const COORD* const /*pcoordCursor*/)
+{
+    return S_OK;
+}
+
 HRESULT BgfxEngine::InvalidateSystem(const RECT* const /*prcDirtyClient*/)
 {
     return S_OK;

@@ -43,6 +43,7 @@ namespace Microsoft
                 virtual HRESULT ScrollFrame() = 0;
 
                 virtual HRESULT Invalidate(const SMALL_RECT* const psrRegion) = 0;
+                virtual HRESULT InvalidateCursor(_In_ const COORD* const pcoordCursor) = 0;
                 virtual HRESULT InvalidateSystem(const RECT* const prcDirtyClient) = 0;
                 virtual HRESULT InvalidateSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles) = 0;
                 virtual HRESULT InvalidateScroll(const COORD* const pcoordDelta) = 0;
