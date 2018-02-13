@@ -746,10 +746,11 @@ bool Selection::_HandleMarkModeSelectionNav(_In_ const INPUT_KEY_INFO* const pIn
 
         const COORD cursorPos = pTextInfo->GetCursor()->GetPosition();
         const ROW& Row = pTextInfo->GetRowByOffset(cursorPos.Y);
+        const CHAR_ROW& charRow = Row.GetCharRow();
 
         try
         {
-            if (Row.GetCharRow().GetAttribute(cursorPos.X).IsLeading())
+            if (charRow.GetAttribute(cursorPos.X).IsLeading())
             {
                 iNextRightX = 2;
             }
@@ -760,15 +761,15 @@ bool Selection::_HandleMarkModeSelectionNav(_In_ const INPUT_KEY_INFO* const pIn
 
             if (cursorPos.X > 0)
             {
-                if (Row.GetCharRow().GetAttribute(cursorPos.X - 1).IsTrailing())
+                if (charRow.GetAttribute(cursorPos.X - 1).IsTrailing())
                 {
                     iNextLeftX = 2;
                 }
-                else if (Row.GetCharRow().GetAttribute(cursorPos.X - 1).IsLeading())
+                else if (charRow.GetAttribute(cursorPos.X - 1).IsLeading())
                 {
                     if (cursorPos.X - 1 > 0)
                     {
-                        if (Row.GetCharRow().GetAttribute(cursorPos.X - 2).IsTrailing())
+                        if (charRow.GetAttribute(cursorPos.X - 2).IsTrailing())
                         {
                             iNextLeftX = 3;
                         }

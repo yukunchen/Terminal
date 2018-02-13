@@ -747,15 +747,16 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
             {
                 COORD const TargetPoint = pCursor->GetPosition();
                 ROW& Row = pTextBuffer->GetRowByOffset(TargetPoint.Y);
+                CHAR_ROW& charRow = Row.GetCharRow();
 
                 try
                 {
-                    if (Row.GetCharRow().GetAttribute(TargetPoint.X).IsTrailing())
+                    if (charRow.GetAttribute(TargetPoint.X).IsTrailing())
                     {
-                        Row.GetCharRow().ClearGlyph(TargetPoint.X);
-                        Row.GetCharRow().ClearGlyph(TargetPoint.X - 1);
-                        Row.GetCharRow().GetAttribute(TargetPoint.X).SetSingle();
-                        Row.GetCharRow().GetAttribute(TargetPoint.X - 1).SetSingle();
+                        charRow.ClearGlyph(TargetPoint.X);
+                        charRow.ClearGlyph(TargetPoint.X - 1);
+                        charRow.GetAttribute(TargetPoint.X).SetSingle();
+                        charRow.GetAttribute(TargetPoint.X - 1).SetSingle();
 
                         Region.Left = TargetPoint.X - 1;
                         Region.Right = (SHORT)(TargetPoint.X);
@@ -774,11 +775,11 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
 
                 // since you just moved yourself down onto the next row with 1 character, that sounds like a
                 // forced wrap so set the flag
-                Row.GetCharRow().SetWrapStatus(true);
+                charRow.SetWrapStatus(true);
 
                 // Additionally, this padding is only called for IsConsoleFullWidth (a.k.a. when a character
                 // is too wide to fit on the current line).
-                Row.GetCharRow().SetDoubleBytePadded(true);
+                charRow.SetDoubleBytePadded(true);
 
                 Status = AdjustCursorPosition(pScreenInfo, CursorPosition, dwFlags & WC_KEEP_CURSOR_VISIBLE, psScrollY);
                 continue;
