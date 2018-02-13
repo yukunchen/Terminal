@@ -54,7 +54,7 @@ HRESULT ShortcutSerialization::s_GetPropertyBoolValue(_In_ IPropertyStore * cons
     return hr;
 }
 
-void ShortcutSerialization::s_SetLinkPropertyDwordValue(_In_ IPropertyStore *pps,
+void ShortcutSerialization::s_SetLinkPropertyDwordValue(_Inout_ IPropertyStore *pps,
                                                         _In_ REFPROPERTYKEY refPropKey,
                                                         _In_ const DWORD dwVal)
 {
