@@ -17,10 +17,12 @@
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 #include "..\..\inc\conattrs.hpp"
+#include "..\..\types\inc\Viewport.hpp"
 
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
+using namespace Microsoft::Console::Types;
 
 #define VERIFY_SUCCESS_NTSTATUS(x) VERIFY_IS_TRUE(SUCCEEDED_NTSTATUS(x))
 
@@ -98,12 +100,15 @@ class ScreenBufferTests
     TEST_METHOD(EraseAllTests);
 
     TEST_METHOD(VtResize);
-    
+
     TEST_METHOD(VtSoftResetCursorPosition);
-    
+
     TEST_METHOD(VtSetColorTable);
 
     TEST_METHOD(ResizeTraditionalDoesntDoubleFreeAttrRows);
+
+    TEST_METHOD(ResizeAltBuffer);
+
 };
 
 SCREEN_INFORMATION::TabStop** ScreenBufferTests::CreateSampleList()
@@ -977,7 +982,7 @@ void ScreenBufferTests::VtSetColorTable()
 
     // Start with a known value
     gci->SetColorTableEntry(0, RGB(0, 0, 0));
-    
+
     Log::Comment(NoThrowString().Format(
         L"Process some valid sequences for setting the table"
     ));
@@ -997,7 +1002,7 @@ void ScreenBufferTests::VtSetColorTable()
     seq = L"\x1b]4;3;rgb:12/23/12\x7";
     stateMachine->ProcessString(&seq[0], seq.length());
     VERIFY_ARE_EQUAL(RGB(0x12,0x23,0x12), gci->GetColorTableEntry(::XtermToWindowsIndex(3)));
-    
+
     seq = L"\x1b]4;4;rgb:ff/a1/1b\x7";
     stateMachine->ProcessString(&seq[0], seq.length());
     VERIFY_ARE_EQUAL(RGB(0xff,0xa1,0x1b), gci->GetColorTableEntry(::XtermToWindowsIndex(4)));
@@ -1099,4 +1104,39 @@ void ScreenBufferTests::ResizeTraditionalDoesntDoubleFreeAttrRows()
 
     VERIFY_SUCCESS_NTSTATUS(psi->ResizeTraditional(newBufferSize));
 
+}
+
+void ScreenBufferTests::ResizeAltBuffer()
+{
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer->GetActiveBuffer();
+    StateMachine* const stateMachine = psi->GetStateMachine();
+
+
+    Log::Comment(NoThrowString().Format(
+        L"Try resizing the alt buffer. Make sure the call doesn't stack overflow."
+    ));
+
+    VERIFY_IS_FALSE(psi->_IsAltBuffer());
+    const Viewport originalMainSize = Viewport::FromInclusive(psi->_srBufferViewport);
+
+    Log::Comment(NoThrowString().Format(
+        L"Switch to alt buffer"
+    ));
+    std::wstring seq = L"\x1b[?1049h";
+    stateMachine->ProcessString(&seq[0], seq.length());
+
+    VERIFY_IS_FALSE(psi->_IsAltBuffer());
+    VERIFY_IS_NOT_NULL(psi->_psiAlternateBuffer);
+    SCREEN_INFORMATION* const psiAlt = psi->_psiAlternateBuffer;
+
+    COORD newSize = originalMainSize.Dimensions();
+    newSize.X += 2;
+    newSize.Y += 2;
+
+    Log::Comment(NoThrowString().Format(
+        L"MSFT:15917333 This call shouldn't stack overflow"
+    ));
+    psiAlt->SetViewportSize(&newSize);
+    VERIFY_IS_TRUE(true);
 }
