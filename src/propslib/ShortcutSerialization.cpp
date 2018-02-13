@@ -85,7 +85,7 @@ HRESULT ShortcutSerialization::s_GetPropertyByteValue(_In_ IPropertyStore * cons
     return hr;
 }
 
-HRESULT ShortcutSerialization::s_GetPropertyDwordValue(_In_ IPropertyStore * const pPropStore, _In_ REFPROPERTYKEY refPropKey, _Out_ DWORD * const pdwValue)
+HRESULT ShortcutSerialization::s_GetPropertyDwordValue(_Inout_ IPropertyStore * const pPropStore, _In_ REFPROPERTYKEY refPropKey, _Out_ DWORD * const pdwValue)
 {
     PROPVARIANT propvar;
     HRESULT hr = pPropStore->GetValue(refPropKey, &propvar);
@@ -179,9 +179,8 @@ HRESULT ShortcutSerialization::s_PopulateV2Properties(_In_ IShellLink * const ps
         if (SUCCEEDED(hr))
         {
             DWORD placeholder = 0;
-            // hr = s_GetPropertyDwordValue(pPropStoreLnk, PKEY_Console_CursorType, static_cast<DWORD*>(&pStateInfo->CursorType));
             hr = s_GetPropertyDwordValue(pPropStoreLnk, PKEY_Console_CursorType, &placeholder);
-            if (SUCCEEDED(hr)) 
+            if (SUCCEEDED(hr))
             {
                 pStateInfo->CursorType = (unsigned int) placeholder;
             }
@@ -443,7 +442,6 @@ NTSTATUS ShortcutSerialization::s_SetLinkValues(_In_ PCONSOLE_STATE_INFO pStateI
                     s_SetLinkPropertyBoolValue(pps, PKEY_Console_CtrlKeyShortcutsDisabled, pStateInfo->fCtrlKeyShortcutsDisabled);
                     s_SetLinkPropertyBoolValue(pps, PKEY_Console_LineSelection, pStateInfo->fLineSelection);
                     s_SetLinkPropertyByteValue(pps, PKEY_Console_WindowTransparency, pStateInfo->bWindowTransparency);
-                    // Add the cursor props here TODO
                     s_SetLinkPropertyDwordValue(pps, PKEY_Console_CursorType, pStateInfo->CursorType);
                     s_SetLinkPropertyDwordValue(pps, PKEY_Console_CursorColor, pStateInfo->CursorColor);
                     hr = pps->Commit();

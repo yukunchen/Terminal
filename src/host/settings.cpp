@@ -418,8 +418,8 @@ void Settings::ApplyStartupInfo(_In_ const Settings* const pStartupSettings)
 
     // See: http://msdn.microsoft.com/en-us/library/windows/desktop/ms686331(v=vs.85).aspx
 
-    // Note: These attributes do not get sent to us if we started conhost 
-    //      directly.  See minkernel/console/client/dllinit for the 
+    // Note: These attributes do not get sent to us if we started conhost
+    //      directly.  See minkernel/console/client/dllinit for the
     //      initialization of these values for cmdline applications.
 
     if (IsFlagSet(dwFlags, STARTF_USECOUNTCHARS))
@@ -455,7 +455,7 @@ void Settings::ApplyStartupInfo(_In_ const Settings* const pStartupSettings)
 
 // Method Description:
 // - Applies settings passed on the commandline to this settings structure.
-//      Currently, the only settings that can be passed on the commandline are 
+//      Currently, the only settings that can be passed on the commandline are
 //      the initial width and height of the screenbuffer/viewport.
 // Arguments:
 // - consoleArgs: A reference to a parsed command-line args object.
@@ -465,7 +465,7 @@ void Settings::ApplyCommandlineArguments(_In_ const ConsoleArguments& consoleArg
 {
     const short width = consoleArgs.GetWidth();
     const short height = consoleArgs.GetHeight();
-    
+
     if (width > 0)
     {
         _dwScreenBufferSize.X = width;
@@ -1020,22 +1020,22 @@ WORD Settings::FindNearestTableIndex(_In_ COLORREF const Color) const
     return ::FindNearestTableIndex(Color, _ColorTable, ARRAYSIZE(_ColorTable));
 }
 
-COLORREF Settings::GetCursorColor() const
+COLORREF Settings::GetCursorColor() const noexcept
 {
     return _CursorColor;
 }
 
-CursorType Settings::GetCursorType() const
+CursorType Settings::GetCursorType() const noexcept
 {
     return _CursorType;
 }
 
-void Settings::SetCursorColor(_In_ const COLORREF CursorColor)
+void Settings::SetCursorColor(_In_ const COLORREF CursorColor) noexcept
 {
     _CursorColor = CursorColor;
 }
 
-void Settings::SetCursorType(_In_ const CursorType cursorType)
+void Settings::SetCursorType(_In_ const CursorType cursorType) noexcept
 {
     _CursorType = cursorType;
 }

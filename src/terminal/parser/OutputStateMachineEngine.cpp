@@ -1218,11 +1218,22 @@ bool OutputStateMachineEngine::s_IsHexNumber(_In_ wchar_t const wch)
            (wch >= L'a' && wch <= L'f');
 }
 
-
+// Routine Description:
+// - Given a color spec string, attempts to parse the color that's encoded.
+//   The only supported spec currently is the following:
+//      spec: a color in the following format:
+//          "rgb:<red>/<green>/<blue>"
+//          where <color> is one or two hex digits, upper or lower case.
+// Arguments:
+// - pwchBuffer - The string containing the color spec string to parse.
+// - cchBuffer - a the length of the pwchBuffer
+// - pRgb - recieves the color that we parsed
+// Return Value:
+// - True if a color was successfully parsed
 bool OutputStateMachineEngine::s_ParseColorSpec(_In_reads_(cchBuffer) const wchar_t* const pwchBuffer,
                                                 _In_ const size_t cchBuffer,
                                                 _Out_ DWORD* const pRgb)
-{ 
+{
     const wchar_t* pwchCurr = pwchBuffer;
     const wchar_t* const pwchEnd = pwchBuffer + cchBuffer;
     bool foundRGB = false;
@@ -1426,7 +1437,7 @@ bool OutputStateMachineEngine::_GetOscSetCursorColor(_In_reads_(cchOscString) co
     {
         *pRgb = color;
     }
-    
+
     return fSuccess;
 }
 

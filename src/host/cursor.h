@@ -28,7 +28,7 @@ typedef SCREEN_INFORMATION *PSCREEN_INFORMATION;
 class Cursor sealed
 {
 public:
-    
+
     static const unsigned int s_InvertCursorColor = INVALID_COLOR;
 
     Cursor(_In_ Microsoft::Console::Interactivity::IAccessibilityNotifier *pNotifier, _In_ ULONG const ulSize);
@@ -85,8 +85,8 @@ public:
     COORD GetDelayedAtPosition() const;
     BOOL IsDelayedEOLWrap() const;
 
-    void SetColor(_In_ unsigned int color);
-    void SetType(_In_ CursorType type);
+    void SetColor(_In_ const unsigned int color);
+    void SetType(_In_ const CursorType type);
 
 private:
     Microsoft::Console::Interactivity::IAccessibilityNotifier *_pAccessibilityNotifier;
@@ -94,7 +94,7 @@ private:
     //TODO: seperate the rendering and text placement
 
     // NOTE: If you are adding a property here, go add it to CopyProperties.
-    
+
     COORD _cPosition;   // current position on screen (in screen buffer coords).
 
     BOOLEAN _fHasMoved;
@@ -130,5 +130,4 @@ private:
     CursorType _cursorType;
     bool _fUseColor;
     COLORREF _color;
-    void _colorShift();
 };

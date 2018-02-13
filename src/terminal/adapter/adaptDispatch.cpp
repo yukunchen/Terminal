@@ -1457,7 +1457,7 @@ bool AdaptDispatch::SoftReset()
     if (fSuccess)
     {
         // Top margin = 1; bottom margin = page length.
-        fSuccess = SetTopBottomScrollingMargins(0, 0, false); 
+        fSuccess = SetTopBottomScrollingMargins(0, 0, false);
     }
     if (fSuccess)
     {
@@ -1697,12 +1697,13 @@ bool AdaptDispatch::EnableAlternateScroll(_In_ bool const fEnabled)
 }
 
 //Routine Description:
-// Set Cursor Style - 
+// Set Cursor Style - Changes the cursor's style to match the given Dispatch
+//      cursor style. Unix styles are a combination of the shape and the blinking state.
 //Arguments:
-// - cursorStyle - 
+// - cursorStyle - The unix-like cursor style to apply to the cursor
 // Return value:
 // True if handled successfully. False othewise.
-bool AdaptDispatch::SetCursorStyle(_In_ DispatchCommon::CursorStyle cursorStyle)
+bool AdaptDispatch::SetCursorStyle(_In_ const DispatchCommon::CursorStyle cursorStyle)
 {
     CursorType actualType = CursorType::Legacy;
     bool fEnableBlinking = false;
@@ -1788,7 +1789,7 @@ bool AdaptDispatch::SetColorTableEntry(_In_ const size_t tableIndex,
 
 //Routine Description:
 // Window Manipulation - Performs a variety of actions relating to the window,
-//      such as moving the window position, resizing the window, querying 
+//      such as moving the window position, resizing the window, querying
 //      window state, forcing the window to repaint, etc.
 //  This is kept seperate from the input version, as there may be
 //      codes that are supported in one direction but not the other.

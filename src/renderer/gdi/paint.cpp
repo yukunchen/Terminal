@@ -50,8 +50,8 @@ HRESULT GdiEngine::StartPaint()
 }
 
 // Routine Description:
-// - Scrolls the existing data on the in-memory frame by the scroll region 
-//      deltas we have collectively received through the Invalidate methods 
+// - Scrolls the existing data on the in-memory frame by the scroll region
+//      deltas we have collectively received through the Invalidate methods
 //      since the last time this was called.
 // Arguments:
 // - <none>
@@ -395,7 +395,7 @@ HRESULT GdiEngine::PaintBufferGridLines(_In_ GridLines const lines, _In_ COLORRE
 
         // NOTE: Watch out for inclusive/exclusive rectangles here.
         // We have to remove 1 from the font size for the bottom and right lines to ensure that the
-        // starting point remains within the clipping rectangle. 
+        // starting point remains within the clipping rectangle.
         // For example, if we're drawing a letter at 0,0 and the font size is 8x16....
         // The bottom left corner inclusive is at 0,15 which is Y (0) + Font Height (16) - 1 = 15.
         // The top right corner inclusive is at 7,0 which is X (0) + Font Height (8) - 1 = 7.
@@ -417,7 +417,14 @@ HRESULT GdiEngine::PaintBufferGridLines(_In_ GridLines const lines, _In_ COLORRE
     return S_OK;
 }
 
-HRESULT GdiEngine::PaintCursor(_In_ COORD const coordCursor, 
+// Routine Description:
+// - Draws the cursor on the screen
+// Arguments:
+// - ulHeightPercent - The cursor will be drawn at this percentage of the current font height.
+// - fIsDoubleWidth - The cursor should be drawn twice as wide as usual.
+// Return Value:
+// - S_OK, suitable GDI HRESULT error, or safemath error, or E_FAIL in a GDI error where a specific error isn't set.
+HRESULT GdiEngine::PaintCursor(_In_ COORD const coordCursor,
                                _In_ ULONG const ulCursorHeightPercent,
                                _In_ bool const fIsDoubleWidth,
                                _In_ CursorType const cursorType,

@@ -1373,14 +1373,14 @@ NTSTATUS DoSrvPrivateEraseAll(_In_ SCREEN_INFORMATION* const pScreenInfo)
     return NTSTATUS_FROM_HRESULT(pScreenInfo->GetActiveBuffer()->VtEraseAll());
 }
 
-NTSTATUS DoSrvSetCursorStyle(_In_ SCREEN_INFORMATION* const pScreenInfo,
+NTSTATUS DoSrvSetCursorStyle(_In_ const SCREEN_INFORMATION* const pScreenInfo,
                              _In_ CursorType const cursorType)
 {
     pScreenInfo->TextInfo->GetCursor()->SetType(cursorType);
     return STATUS_SUCCESS;
 }
 
-NTSTATUS DoSrvSetCursorColor(_In_ SCREEN_INFORMATION* const pScreenInfo,
+NTSTATUS DoSrvSetCursorColor(_In_ const SCREEN_INFORMATION* const pScreenInfo,
                              _In_ COLORREF const cursorColor)
 {
     pScreenInfo->TextInfo->GetCursor()->SetColor(cursorColor);

@@ -20,13 +20,6 @@ Revision History:
 
 #pragma once
 
-// Refer to console/published/wincon.w
-// #define PID_CONSOLE_WINDOWMAXIMIZED    7
-// #define PID_CONSOLE_CURSOR_COLOR    8
-// #define PID_CONSOLE_CURSOR_TYPE    9
-// DEFINE_PROPERTYKEY(PKEY_Console_CursorColor, 0x0C570607, 0x0396, 0x43DE, 0x9D, 0x61, 0xE3, 0x21, 0xD7, 0xDF, 0x50, 0x26, PID_CONSOLE_CURSOR_COLOR);
-// DEFINE_PROPERTYKEY(PKEY_Console_CursorType, 0x0C570607, 0x0396, 0x43DE, 0x9D, 0x61, 0xE3, 0x21, 0xD7, 0xDF, 0x50, 0x26, PID_CONSOLE_CURSOR_TYPE);
-
 #ifdef __cplusplus
 
 class ShortcutSerialization
@@ -58,10 +51,10 @@ private:
     static HRESULT s_GetPropertyBoolValue(_In_ IPropertyStore * const pPropStore, _In_ REFPROPERTYKEY refPropKey, _Out_ BOOL * const pfValue);
     static HRESULT s_GetPropertyByteValue(_In_ IPropertyStore * const pPropStore, _In_ REFPROPERTYKEY refPropKey, _Out_ BYTE * const pbValue);
     static HRESULT s_GetPropertyDwordValue(_In_ IPropertyStore * const pPropStore, _In_ REFPROPERTYKEY refPropKey, _Out_ DWORD * const pdwValue);
-    
+
     static HRESULT s_PopulateV1Properties(_In_ IShellLink * const pslConsole, _In_ PCONSOLE_STATE_INFO pStateInfo);
     static HRESULT s_PopulateV2Properties(_In_ IShellLink * const pslConsole, _In_ PCONSOLE_STATE_INFO pStateInfo);
-    
+
     static void s_GetLinkTitle(_In_ PCWSTR pwszShortcutFilename, _Out_writes_(cchShortcutTitle) PWSTR pwszShortcutTitle, _In_ const size_t cchShortcutTitle);
     static HRESULT s_GetLoadedShellLinkForShortcut(_In_ PCWSTR pwszShortcutFileName, _In_ const DWORD dwMode, _COM_Outptr_ IShellLink **ppsl, _COM_Outptr_ IPersistFile **ppPf);
 };

@@ -611,13 +611,13 @@ const COLORREF Cursor::GetColor() const
     return gci.GetCursorColor();
 }
 
-void Cursor::SetColor(_In_ unsigned int color)
+void Cursor::SetColor(_In_ const unsigned int color)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.SetCursorColor(color);
 }
 
-void Cursor::SetType(_In_ CursorType type)
+void Cursor::SetType(_In_ const CursorType type)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.SetCursorType(type);

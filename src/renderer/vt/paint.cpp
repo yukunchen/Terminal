@@ -132,7 +132,7 @@ HRESULT VtEngine::PaintCursor(_In_ COORD const coordCursor,
                               _In_ bool const /*fUseColor*/,
                               _In_ COLORREF const /*cursorColor*/)
 {
-    // TODO before CR is finished, render an update to the VT pipe if needed.
+    // MSFT:15933349 - Send the terminal the updated cursor information, if it's changed.
     _MoveCursor(coordCursor);
 
     return S_OK;

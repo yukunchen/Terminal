@@ -568,7 +568,7 @@ BOOL ConhostInternalGetSet::PrivateEraseAll()
 //   SetCursorStyle is an internal-only "API" call that the vt commands can execute,
 //     but it is not represented as a function call on our public API surface.
 // Arguments:
-// <none>
+// - cursorType: The style of cursor to change the cursor to.
 // Return Value:
 // - TRUE if successful (see DoSrvSetCursorStyle). FALSE otherwise.
 BOOL ConhostInternalGetSet::SetCursorStyle(_In_ CursorType const cursorType)
@@ -644,7 +644,8 @@ BOOL ConhostInternalGetSet::PrivateSuppressResizeRepaint()
 //   SetCursorStyle is an internal-only "API" call that the vt commands can execute,
 //     but it is not represented as a function call on our public API surface.
 // Arguments:
-// <none>
+// - cursorColor: The color to change the cursor to. INVALID_COLOR will revert
+//      it to the legacy inverting behavior.
 // Return Value:
 // - TRUE if successful (see DoSrvSetCursorStyle). FALSE otherwise.
 BOOL ConhostInternalGetSet::SetCursorColor(_In_ COLORREF const cursorColor)
