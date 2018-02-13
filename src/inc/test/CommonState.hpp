@@ -234,14 +234,7 @@ private:
         attrs[5].SetLeading();
         attrs[6].SetTrailing();
 
-        std::transform(pwszText,
-                       pwszText + length,
-                       attrs.cbegin(),
-                       pRow->CharRow.begin(),
-                       [](const wchar_t wch, const DbcsAttribute attr)
-        {
-            return CHAR_ROW::value_type{ wch, attr};
-        });
+        OverwriteColumns(pwszText, pwszText + length, attrs.cbegin(), pRow->CharRow.begin());
 
         // set some colors
         TextAttribute Attr = TextAttribute(0);
@@ -305,14 +298,7 @@ private:
         attrs[68].SetTrailing();
         attrs[79].SetLeading();
 
-        std::transform(pwszText,
-                       pwszText + length,
-                       attrs.cbegin(),
-                       pRow->CharRow.begin(),
-                       [](const wchar_t wch, const DbcsAttribute attr)
-        {
-            return CHAR_ROW::value_type{ wch, attr};
-        });
+        OverwriteColumns(pwszText, pwszText + length, attrs.cbegin(), pRow->CharRow.begin());
 
         // everything gets default attributes
         pRow->AttrRow.Reset(80, gci.CurrentScreenBuffer->GetAttributes());

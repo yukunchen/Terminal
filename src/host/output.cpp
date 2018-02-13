@@ -14,8 +14,6 @@
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 #include "..\types\inc\Viewport.hpp"
-#include <iterator>
-#include <algorithm>
 
 #pragma hdrstop
 using namespace Microsoft::Console::Types;
