@@ -749,7 +749,7 @@ void SCREEN_INFORMATION::SetViewportSize(_In_ const COORD* const pcoordSize)
 
         if (_psiMainBuffer)
         {
-            this->SetViewportSize(&_coordScreenBufferSize);
+            _psiMainBuffer->SetViewportSize(&_coordScreenBufferSize);
         }
     }
     _InternalSetViewportSize(pcoordSize, false, false);
