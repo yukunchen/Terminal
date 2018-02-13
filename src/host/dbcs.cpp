@@ -9,7 +9,7 @@
 #include "dbcs.h"
 
 #include "misc.h"
-#include "CharRow.hpp"
+#include "Ucs2CharRow.hpp"
 #include "../types/inc/convert.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"

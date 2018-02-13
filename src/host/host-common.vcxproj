@@ -2,7 +2,7 @@
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="..\AttrRow.cpp" />
-    <ClCompile Include="..\CharRow.cpp" />
+    <ClCompile Include="..\Ucs2CharRow.cpp" />
     <ClCompile Include="..\alias.cpp" />
     <ClCompile Include="..\cmdline.cpp" />
     <ClCompile Include="..\conattrs.cpp" />
@@ -64,7 +64,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\AttrRow.hpp" />
-    <ClInclude Include="..\CharRow.hpp" />
+    <ClInclude Include="..\Ucs2CharRow.hpp" />
     <ClInclude Include="..\IIoProvider.hpp" />
     <ClInclude Include="..\alias.h" />
     <ClInclude Include="..\ApiRoutines.h" />

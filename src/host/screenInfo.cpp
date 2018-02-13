@@ -9,7 +9,7 @@
 #include "screenInfo.hpp"
 #include "dbcs.h"
 #include "output.h"
-#include "CharRow.hpp"
+#include "Ucs2CharRow.hpp"
 #include <math.h>
 #include "..\interactivity\inc\ServiceLocator.hpp"
 #include "..\types\inc\Viewport.hpp"

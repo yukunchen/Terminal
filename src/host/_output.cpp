@@ -10,7 +10,7 @@
 
 #include "dbcs.h"
 #include "misc.h"
-#include "CharRow.hpp"
+#include "Ucs2CharRow.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 #include "..\types\inc\Viewport.hpp"

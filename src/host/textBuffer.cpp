@@ -7,7 +7,7 @@
 #include "precomp.h"
 
 #include "textBuffer.hpp"
-#include "CharRow.hpp"
+#include "Ucs2CharRow.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 

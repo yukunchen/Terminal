@@ -5,7 +5,7 @@
  ********************************************************/
 
 #include "precomp.h"
-#include "CharRow.hpp"
+#include "Ucs2CharRow.hpp"
 
 // Routine Description:
 // - swaps two CHAR_ROWs

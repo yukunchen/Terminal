@@ -9,7 +9,7 @@
 #include "_output.h"
 #include "stream.h"
 #include "scrolling.hpp"
-#include "CharRow.hpp"
+#include "Ucs2CharRow.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 

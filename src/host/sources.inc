@@ -109,7 +109,7 @@ SOURCES = \
     ..\KeyEventHelpers.cpp \
     ..\ConsoleArguments.cpp \
     ..\AttrRow.cpp \
-    ..\CharRow.cpp \
+    ..\Ucs2CharRow.cpp \
     ..\Row.cpp \
     ..\TextAttribute.cpp \
     ..\TextAttributeRun.cpp \

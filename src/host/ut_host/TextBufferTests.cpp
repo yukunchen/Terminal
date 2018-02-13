@@ -10,7 +10,7 @@
 
 #include "globals.h"
 #include "textBuffer.hpp"
-#include "CharRow.hpp"
+#include "Ucs2CharRow.hpp"
 
 #include "input.h"
 

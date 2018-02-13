@@ -7,7 +7,7 @@
 #include "precomp.h"
 
 #include "search.h"
-#include "CharRow.hpp"
+#include "Ucs2CharRow.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
