@@ -631,8 +631,8 @@ void SCREEN_INFORMATION::ResetTextFlags(_In_ short const sStartX,
             try
             {
                 const ROW& Row = pTextInfo->GetRowAtIndex(RowIndex);
-                Char = Row.CharRow.GetGlyphAt(sStartX);
-                Row.AttrRow.FindAttrIndex(sStartX, &pAttrRun, nullptr);
+                Char = Row.GetCharRow().GetGlyphAt(sStartX);
+                Row.GetAttrRow().FindAttrIndex(sStartX, &pAttrRun, nullptr);
             }
             catch (...)
             {
@@ -1444,7 +1444,8 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
     {
         // Fetch the row and its "right" which is the last printable character.
         const ROW& Row = TextInfo->GetRowByOffset(iOldRow);
-        short iRight = static_cast<short>(Row.CharRow.MeasureRight());
+        const CHAR_ROW& charRow = Row.GetCharRow();
+        short iRight = static_cast<short>(charRow.MeasureRight());
 
         // There is a special case here. If the row has a "wrap"
         // flag on it, but the right isn't equal to the width (one
@@ -1455,7 +1456,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
         // included.)
         // As such, adjust the "right" to be the width of the row
         // to capture all these spaces
-        if (Row.CharRow.WasWrapForced())
+        if (charRow.WasWrapForced())
         {
             iRight = cOldColsTotal;
 
@@ -1464,7 +1465,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
             // piece of padding because of a double byte LEADING
             // character, then remove one from the "right" to
             // leave this padding out of the copy process.
-            if (Row.CharRow.WasDoubleBytePadded())
+            if (charRow.WasDoubleBytePadded())
             {
                 iRight--;
             }
@@ -1480,8 +1481,8 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
             DbcsAttribute bKAttr;
             try
             {
-                wchChar = Row.CharRow.GetGlyphAt(iOldCol);
-                bKAttr = Row.CharRow.GetAttribute(iOldCol);
+                wchChar = charRow.GetGlyphAt(iOldCol);
+                bKAttr = charRow.GetAttribute(iOldCol);
             }
             catch (...)
             {
@@ -1491,7 +1492,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
             // Extract the color attribute that applies to this character
             TextAttributeRun* rAttrRun;
 
-            Row.AttrRow.FindAttrIndex(iOldCol, &rAttrRun, nullptr);
+            Row.GetAttrRow().FindAttrIndex(iOldCol, &rAttrRun, nullptr);
 
             if (iOldCol == cOldCursorPos.X && iOldRow == cOldCursorPos.Y)
             {
@@ -1513,7 +1514,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
             // Only do so if we were not forced to wrap. If we did
             // force a word wrap, then the existing line break was
             // only because we ran out of space.
-            if (iRight < cOldColsTotal && !Row.CharRow.WasWrapForced())
+            if (iRight < cOldColsTotal && !charRow.WasWrapForced())
             {
                 if (iRight == cOldCursorPos.X && iOldRow == cOldCursorPos.Y)
                 {
@@ -1557,7 +1558,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
                     const COORD coordNewCursor = pNewCursor->GetPosition();
                     if (coordNewCursor.X == 0 && coordNewCursor.Y > 0)
                     {
-                        if (newTextBuffer->GetRowByOffset(coordNewCursor.Y - 1).CharRow.WasWrapForced())
+                        if (newTextBuffer->GetRowByOffset(coordNewCursor.Y - 1).GetCharRow().WasWrapForced())
                         {
                             status = newTextBuffer->NewlineCursor() ? status : STATUS_NO_MEMORY;
                         }
@@ -1588,7 +1589,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
 
             // If the last row of the new buffer wrapped, there's going to be one less newline needed,
             //   because the cursor is already on the next line
-            if (newTextBuffer->GetRowByOffset(cNewLastChar.Y).CharRow.WasWrapForced())
+            if (newTextBuffer->GetRowByOffset(cNewLastChar.Y).GetCharRow().WasWrapForced())
             {
                 iNewlines = max(iNewlines - 1, 0);
             }
@@ -1596,7 +1597,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
             {
                 // if this buffer didn't wrap, but the old one DID, then the d(columns) of the
                 //   old buffer will be one more than in this buffer, so new need one LESS.
-                if (TextInfo->GetRowByOffset(cOldLastChar.Y).CharRow.WasWrapForced())
+                if (TextInfo->GetRowByOffset(cOldLastChar.Y).GetCharRow().WasWrapForced())
                 {
                     iNewlines = max(iNewlines - 1, 0);
                 }
@@ -2450,9 +2451,10 @@ void SCREEN_INFORMATION::ReplaceDefaultAttributes(_In_ const TextAttribute& oldA
     for (SHORT i = 0; i < sScreenBufferSizeY; i++)
     {
         ROW& Row = TextInfo->GetRowByOffset(i);
-        Row.AttrRow.ReplaceLegacyAttrs(oldLegacyAttributes, newLegacyAttributes);
-        Row.AttrRow.ReplaceLegacyAttrs(oldLegacyPopupAttributes, newLegacyPopupAttributes);
-        Row.AttrRow.ReplaceLegacyAttrs(InvertedOldPopupAttributes, InvertedNewPopupAttributes);
+        ATTR_ROW& attrRow = Row.GetAttrRow();
+        attrRow.ReplaceLegacyAttrs(oldLegacyAttributes, newLegacyAttributes);
+        attrRow.ReplaceLegacyAttrs(oldLegacyPopupAttributes, newLegacyPopupAttributes);
+        attrRow.ReplaceLegacyAttrs(InvertedOldPopupAttributes, InvertedNewPopupAttributes);
     }
 
     if (_psiMainBuffer)

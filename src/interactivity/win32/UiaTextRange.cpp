@@ -721,9 +721,9 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
                 }
 
                 const ROW& row = pTextBuffer->GetRowAtIndex(rowIndex);
-                if (row.CharRow.ContainsText())
+                if (row.GetCharRow().ContainsText())
                 {
-                    const size_t rowRight = row.CharRow.MeasureRight();
+                    const size_t rowRight = row.GetCharRow().MeasureRight();
                     size_t startIndex = 0;
                     size_t endIndex = rowRight;
                     if (currentScreenInfoRow == startScreenInfoRow)
@@ -743,7 +743,7 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
                     if (startIndex < endIndex)
                     {
                         // add to result string
-                        wstr += row.CharRow.GetText().substr(startIndex, endIndex - startIndex);
+                        wstr += row.GetCharRow().GetText().substr(startIndex, endIndex - startIndex);
                     }
                 }
 

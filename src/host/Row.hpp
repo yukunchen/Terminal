@@ -32,9 +32,14 @@ public:
 
     void swap(ROW& other) noexcept;
 
-    CHAR_ROW CharRow;
-    ATTR_ROW AttrRow;
-    SHORT sRowId;
+    const CHAR_ROW& GetCharRow() const;
+    CHAR_ROW& GetCharRow();
+
+    const ATTR_ROW& GetAttrRow() const;
+    ATTR_ROW& GetAttrRow();
+
+    SHORT GetId() const noexcept;
+    void SetId(_In_ const SHORT id);
 
     bool Reset(_In_ short const sRowWidth, _In_ const TextAttribute Attr);
     HRESULT Resize(_In_ size_t const width);
@@ -46,14 +51,20 @@ public:
 #ifdef UNIT_TESTING
     friend class RowTests;
 #endif
+
+private:
+    CHAR_ROW _charRow;
+    ATTR_ROW _attrRow;
+    SHORT _id;
+
 };
 
 void swap(ROW& a, ROW& b) noexcept;
 constexpr bool operator==(const ROW& a, const ROW& b) noexcept
 {
-    return (a.CharRow == b.CharRow &&
-            a.AttrRow == b.AttrRow &&
-            a.sRowId == b.sRowId);
+    return (a._charRow == b._charRow &&
+            a._attrRow == b._attrRow &&
+            a._id == b._id);
 }
 
 // this sticks specialization of swap() into the std::namespace for Row, so that callers that use

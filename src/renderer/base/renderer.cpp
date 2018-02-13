@@ -595,20 +595,20 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
         if (iRight > iLeft)
         {
             // Get the pointer to the beginning of the text and the maximum length of the line we'll be writing.
-            const std::wstring rowText = Row.CharRow.GetText();
+            const std::wstring rowText = Row.GetCharRow().GetText();
             const wchar_t* const pwsLine = rowText.c_str() + iLeft;
 
             CHAR_ROW::const_iterator it;
             try
             {
-                it = std::next(Row.CharRow.cbegin(), iLeft);
+                it = std::next(Row.GetCharRow().cbegin(), iLeft);
             }
             catch (...)
             {
                 LOG_HR(wil::ResultFromCaughtException());
                 return;
             }
-            const CHAR_ROW::const_iterator itEnd = Row.CharRow.cend();
+            const CHAR_ROW::const_iterator itEnd = Row.GetCharRow().cend();
 
             size_t const cchLine = iRight - iLeft;
 
@@ -625,7 +625,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
             {
                 // Draw a frame shape around the last character of a wrapped row to identify where there are
                 // soft wraps versus hard newlines.
-                if (iRight == static_cast<size_t>(Row.CharRow.MeasureRight()) && Row.CharRow.WasWrapForced())
+                if (iRight == static_cast<size_t>(Row.GetCharRow().MeasureRight()) && Row.GetCharRow().WasWrapForced())
                 {
                     IRenderEngine::GridLines lines = IRenderEngine::GridLines::Right | IRenderEngine::GridLines::Bottom;
                     COORD coordDebugTarget;
@@ -771,7 +771,7 @@ void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
         // First retrieve the attribute that applies starting at the target position and the length for which it applies.
         TextAttributeRun* pRun = nullptr;
         size_t cAttrApplies = 0;
-        Row.AttrRow.FindAttrIndex((UINT)(iFirstAttr + cchWritten), &pRun, &cAttrApplies);
+        Row.GetAttrRow().FindAttrIndex((UINT)(iFirstAttr + cchWritten), &pRun, &cAttrApplies);
 
         // Set the brushes in GDI to this color
         LOG_IF_FAILED(_UpdateDrawingBrushes(pEngine, pRun->GetAttributes(), false));
@@ -1027,20 +1027,20 @@ void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
                 const ROW& Row = pTextInfo->GetRowByOffset(iRow - AreaInfo->CaInfo.coordConView.Y);
 
                 // Get the pointer to the beginning of the text and the maximum length of the line we'll be writing.
-                const std::wstring rowText = Row.CharRow.GetText();
+                const std::wstring rowText = Row.GetCharRow().GetText();
                 const wchar_t* const pwsLine = rowText.c_str() + viewDirty.Left() - AreaInfo->CaInfo.coordConView.X;
 
                 CHAR_ROW::const_iterator it;
                 try
                 {
-                    it = std::next(Row.CharRow.cbegin(), viewDirty.Left() - AreaInfo->CaInfo.coordConView.X);
+                    it = std::next(Row.GetCharRow().cbegin(), viewDirty.Left() - AreaInfo->CaInfo.coordConView.X);
                 }
                 catch (...)
                 {
                     LOG_HR(wil::ResultFromCaughtException());
                     return;
                 }
-                const CHAR_ROW::const_iterator itEnd = Row.CharRow.cend();
+                const CHAR_ROW::const_iterator itEnd = Row.GetCharRow().cend();
 
                 size_t const cchLine = viewDirty.Width() - 1;
 

@@ -116,22 +116,22 @@ NTSTATUS ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenI
             CHAR_ROW::const_iterator it;
             try
             {
-                it = std::next(pRow->CharRow.cbegin(), coordSourcePoint.X);
+                it = std::next(pRow->GetCharRow().cbegin(), coordSourcePoint.X);
             }
             catch (...)
             {
                 return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
             }
-            const CHAR_ROW::const_iterator itEnd = pRow->CharRow.cend();
+            const CHAR_ROW::const_iterator itEnd = pRow->GetCharRow().cend();
 
 
             // Unpack the attributes into an array so we can iterate over them.
-            pRow->AttrRow.UnpackAttrs(rgUnpackedRowAttributes, ScreenBufferWidth);
+            pRow->GetAttrRow().UnpackAttrs(rgUnpackedRowAttributes, ScreenBufferWidth);
 
             for (short iCol = 0; iCol < sXSize && it != itEnd; ++pciTargetPtr, ++it)
             {
                 TextAttribute textAttr = rgUnpackedRowAttributes[coordSourcePoint.X + iCol];
-                DbcsAttribute dbcsAttribute = pRow->CharRow.GetAttribute(coordSourcePoint.X + iCol);
+                DbcsAttribute dbcsAttribute = pRow->GetCharRow().GetAttribute(coordSourcePoint.X + iCol);
 
                 if (iCol == 0 && dbcsAttribute.IsTrailing())
                 {
@@ -451,7 +451,7 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                 // copy the chars from its array
                 try
                 {
-                    CHAR_ROW::const_iterator startIt = std::next(pRow->CharRow.cbegin(), X);
+                    CHAR_ROW::const_iterator startIt = std::next(pRow->GetCharRow().cbegin(), X);
                     size_t copyAmount = *pcRecords - NumRead;
                     wchar_t* pChars = BufPtr;
                     DbcsAttribute* pAttrs = BufPtrA;
@@ -557,15 +557,15 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                 CHAR_ROW::const_iterator it;
                 try
                 {
-                    it = std::next(pRow->CharRow.cbegin(), X);
+                    it = std::next(pRow->GetCharRow().cbegin(), X);
                 }
                 catch (...)
                 {
                     return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
                 }
-                const CHAR_ROW::const_iterator itEnd = pRow->CharRow.cend();
+                const CHAR_ROW::const_iterator itEnd = pRow->GetCharRow().cend();
 
-                pRow->AttrRow.FindAttrIndex(X, &pAttrRun, &CountOfAttr);
+                pRow->GetAttrRow().FindAttrIndex(X, &pAttrRun, &CountOfAttr);
 
                 k = 0;
                 for (j = X; j < coordScreenBufferSize.X && it != itEnd; TargetPtr++, ++it)

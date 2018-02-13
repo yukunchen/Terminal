@@ -27,9 +27,9 @@ void swap(ROW& a, ROW& b) noexcept
 // Return Value:
 // - constructed object
 ROW::ROW(_In_ const SHORT rowId, _In_ const short rowWidth, _In_ const TextAttribute fillAttribute) :
-    sRowId{ rowId },
-    CharRow{ rowWidth },
-    AttrRow{ rowWidth, fillAttribute }
+    _id{ rowId },
+    _charRow{ rowWidth },
+    _attrRow{ rowWidth, fillAttribute }
 {
 }
 
@@ -40,9 +40,9 @@ ROW::ROW(_In_ const SHORT rowId, _In_ const short rowWidth, _In_ const TextAttri
 // Return Value:
 // - the copied object
 ROW::ROW(const ROW& a) :
-    CharRow{ a.CharRow },
-    AttrRow{ a.AttrRow },
-    sRowId{ a.sRowId }
+    _charRow{ a._charRow },
+    _attrRow{ a._attrRow },
+    _id{ a._id }
 {
 }
 
@@ -66,9 +66,9 @@ ROW& ROW::operator=(const ROW& a)
 // Return Value:
 // - the constructed object
 ROW::ROW(ROW&& a) noexcept :
-    CharRow{ std::move(a.CharRow) },
-    AttrRow{ std::move(a.AttrRow) },
-    sRowId{ std::move(a.sRowId) }
+    _charRow{ std::move(a._charRow) },
+    _attrRow{ std::move(a._attrRow) },
+    _id{ std::move(a._id) }
 {
 }
 
@@ -81,9 +81,39 @@ ROW::ROW(ROW&& a) noexcept :
 void ROW::swap(ROW& other) noexcept
 {
     using std::swap;
-    swap(CharRow, other.CharRow);
-    swap(AttrRow, other.AttrRow);
-    swap(sRowId, other.sRowId);
+    swap(_charRow, other._charRow);
+    swap(_attrRow, other._attrRow);
+    swap(_id, other._id);
+}
+
+const CHAR_ROW& ROW::GetCharRow() const
+{
+    return _charRow;
+}
+
+CHAR_ROW& ROW::GetCharRow()
+{
+    return const_cast<CHAR_ROW&>(static_cast<const ROW* const>(this)->GetCharRow());
+}
+
+const ATTR_ROW& ROW::GetAttrRow() const
+{
+    return _attrRow;
+}
+
+ATTR_ROW& ROW::GetAttrRow()
+{
+    return const_cast<ATTR_ROW&>(static_cast<const ROW* const>(this)->GetAttrRow());
+}
+
+SHORT ROW::GetId() const noexcept
+{
+    return _id;
+}
+
+void ROW::SetId(_In_ const SHORT id)
+{
+    _id = id;
 }
 
 // Routine Description:
@@ -95,8 +125,8 @@ void ROW::swap(ROW& other) noexcept
 // - <none>
 bool ROW::Reset(_In_ short const sRowWidth, _In_ const TextAttribute Attr)
 {
-    CharRow.Reset(sRowWidth);
-    return AttrRow.Reset(sRowWidth, Attr);
+    _charRow.Reset(sRowWidth);
+    return _attrRow.Reset(sRowWidth, Attr);
 }
 
 // Routine Description:
@@ -107,9 +137,9 @@ bool ROW::Reset(_In_ short const sRowWidth, _In_ const TextAttribute Attr)
 // - S_OK if successful, otherwise relevant error
 HRESULT ROW::Resize(_In_ size_t const width)
 {
-    size_t oldWidth = CharRow.size();
-    RETURN_IF_FAILED(CharRow.Resize(width));
-    RETURN_IF_FAILED(AttrRow.Resize(static_cast<short>(oldWidth), static_cast<short>(width)));
+    size_t oldWidth = _charRow.size();
+    RETURN_IF_FAILED(_charRow.Resize(width));
+    RETURN_IF_FAILED(_attrRow.Resize(static_cast<short>(oldWidth), static_cast<short>(width)));
     return S_OK;
 }
 
@@ -121,7 +151,7 @@ HRESULT ROW::Resize(_In_ size_t const width)
 // - <none>
 void ROW::ClearColumn(_In_ const size_t column)
 {
-    THROW_HR_IF(E_INVALIDARG, column >= CharRow.size());
-    CharRow.ClearGlyph(column);
-    CharRow.GetAttribute(column).SetSingle();
+    THROW_HR_IF(E_INVALIDARG, column >= _charRow.size());
+    _charRow.ClearGlyph(column);
+    _charRow.GetAttribute(column).SetSingle();
 }

@@ -168,13 +168,13 @@ ROW& TEXT_BUFFER_INFO::GetRowByOffset(_In_ const UINT index)
 // - will throw exception if called with the first row of the text buffer
 const ROW& TEXT_BUFFER_INFO::GetPrevRowNoWrap(_In_ const ROW& Row) const
 {
-    int prevRowIndex = Row.sRowId - 1;
+    int prevRowIndex = Row.GetId() - 1;
     if (prevRowIndex < 0)
     {
         prevRowIndex = TotalRowCount() - 1;
     }
 
-    THROW_HR_IF(E_FAIL, Row.sRowId == _FirstRow);
+    THROW_HR_IF(E_FAIL, Row.GetId() == _FirstRow);
     return _storage[prevRowIndex];
 }
 
@@ -203,7 +203,7 @@ ROW& TEXT_BUFFER_INFO::GetPrevRowNoWrap(_In_ const ROW& Row)
 // - will throw exception if the row passed in is the last row of the screen buffer.
 const ROW& TEXT_BUFFER_INFO::GetNextRowNoWrap(_In_ const ROW& row) const
 {
-    UINT nextRowIndex = row.sRowId + 1;
+    UINT nextRowIndex = row.GetId() + 1;
     UINT totalRows = this->TotalRowCount();
 
     if (nextRowIndex >= totalRows)
@@ -270,7 +270,7 @@ ROW& TEXT_BUFFER_INFO::GetRowAtIndex(_In_ const UINT index)
 // - const reference to the previous row.
 const ROW& TEXT_BUFFER_INFO::GetPrevRow(_In_ const ROW& row) const noexcept
 {
-    const SHORT rowIndex = row.sRowId;
+    const SHORT rowIndex = row.GetId();
     if (rowIndex == 0)
     {
         return _storage[TotalRowCount() - 1];
@@ -299,7 +299,7 @@ ROW& TEXT_BUFFER_INFO::GetPrevRow(_In_ const ROW& row) noexcept
 // - const reference to the next row.
 const ROW& TEXT_BUFFER_INFO::GetNextRow(_In_ const ROW& row) const noexcept
 {
-    const UINT rowIndex = static_cast<UINT>(row.sRowId);
+    const UINT rowIndex = static_cast<UINT>(row.GetId());
     if (rowIndex == TotalRowCount() - 1)
     {
         return _storage[0];
@@ -336,7 +336,7 @@ bool TEXT_BUFFER_INFO::AssertValidDoubleByteSequence(_In_ const DbcsAttribute db
     DbcsAttribute prevDbcsAttr;
     try
     {
-        prevDbcsAttr = prevRow.CharRow.GetAttribute(coordPrevPosition.X);
+        prevDbcsAttr = prevRow.GetCharRow().GetAttribute(coordPrevPosition.X);
     }
     catch (...)
     {
@@ -389,8 +389,8 @@ bool TEXT_BUFFER_INFO::AssertValidDoubleByteSequence(_In_ const DbcsAttribute db
         // Erase previous character into an N type.
         try
         {
-            prevRow.CharRow.ClearGlyph(coordPrevPosition.X);
-            prevRow.CharRow.GetAttribute(coordPrevPosition.X).SetSingle();
+            prevRow.GetCharRow().ClearGlyph(coordPrevPosition.X);
+            prevRow.GetCharRow().GetAttribute(coordPrevPosition.X).SetSingle();
         }
         catch (...)
         {
@@ -434,7 +434,7 @@ bool TEXT_BUFFER_INFO::_PrepareForDoubleByteSequence(_In_ const DbcsAttribute db
         if (this->GetCursor()->GetPosition().X == sBufferWidth - 1)
         {
             // set that we're wrapping for double byte reasons
-            GetRowByOffset(this->GetCursor()->GetPosition().Y).CharRow.SetDoubleBytePadded(true);
+            GetRowByOffset(this->GetCursor()->GetPosition().Y).GetCharRow().SetDoubleBytePadded(true);
 
             // then move the cursor forward and onto the next row
             fSuccess = IncrementCursor();
@@ -469,7 +469,7 @@ bool TEXT_BUFFER_INFO::InsertCharacter(_In_ const wchar_t wch,
         ROW& Row = GetRowByOffset(iRow);
 
         // Store character and double byte data
-        CHAR_ROW& charRow = Row.CharRow;
+        CHAR_ROW& charRow = Row.GetCharRow();
         short const cBufferWidth = this->_coordBufferSize.X;
 
         try
@@ -484,7 +484,7 @@ bool TEXT_BUFFER_INFO::InsertCharacter(_In_ const wchar_t wch,
         }
 
         // Store color data
-        fSuccess = Row.AttrRow.SetAttrToEnd(iCol, attr);
+        fSuccess = Row.GetAttrRow().SetAttrToEnd(iCol, attr);
         if (fSuccess)
         {
             // Advance the cursor
@@ -519,7 +519,7 @@ void TEXT_BUFFER_INFO::AdjustWrapOnCurrentRow(_In_ bool const fSet)
     const UINT uiCurrentRowOffset = this->GetCursor()->GetPosition().Y;
 
     // Set the wrap status as appropriate
-    GetRowByOffset(uiCurrentRowOffset).CharRow.SetWrapStatus(fSet);
+    GetRowByOffset(uiCurrentRowOffset).GetCharRow().SetWrapStatus(fSet);
 }
 
 //Routine Description:
@@ -678,7 +678,7 @@ COORD TEXT_BUFFER_INFO::GetLastNonSpaceCharacter() const
 
     const ROW* pCurrRow = &GetRowByOffset(coordEndOfText.Y);
     // The X position of the end of the valid text is the Right draw boundary (which is one beyond the final valid character)
-    coordEndOfText.X = static_cast<short>(pCurrRow->CharRow.MeasureRight()) - 1;
+    coordEndOfText.X = static_cast<short>(pCurrRow->GetCharRow().MeasureRight()) - 1;
 
     // If the X coordinate turns out to be -1, the row was empty, we need to search backwards for the real end of text.
     bool fDoBackUp = (coordEndOfText.X < 0 && coordEndOfText.Y > 0); // this row is empty, and we're not at the top
@@ -688,7 +688,7 @@ COORD TEXT_BUFFER_INFO::GetLastNonSpaceCharacter() const
         pCurrRow = &GetRowByOffset(coordEndOfText.Y);
         // We need to back up to the previous row if this line is empty, AND there are more rows
 
-        coordEndOfText.X = static_cast<short>(pCurrRow->CharRow.MeasureRight()) - 1;
+        coordEndOfText.X = static_cast<short>(pCurrRow->GetCharRow().MeasureRight()) - 1;
         fDoBackUp = (coordEndOfText.X < 0 && coordEndOfText.Y > 0);
     }
 
@@ -827,7 +827,7 @@ NTSTATUS TEXT_BUFFER_INFO::ResizeTraditional(_In_ COORD const currentScreenBuffe
     for (SHORT i = 0; static_cast<size_t>(i) < _storage.size(); ++i)
     {
         // fix values for sRowId on each row
-        _storage[i].sRowId = i;
+        _storage[i].SetId(i);
 
         // realloc in the X direction
         hr = _storage[i].Resize(newScreenBufferSize.X);
