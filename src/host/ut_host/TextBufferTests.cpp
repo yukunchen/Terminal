@@ -273,7 +273,10 @@ void TextBufferTests::DoBoundaryTest(PWCHAR const pwszInputString,
     CHAR_ROW* const pCharRow = &tbi->GetFirstRow().CharRow;
 
     // copy string into buffer
-    std::copy_n(pwszInputString, cLength, pCharRow->GetTextIterator(0));
+    for (size_t i = 0; i < static_cast<size_t>(cLength); ++i)
+    {
+        pCharRow->GetGlyphAt(i) = pwszInputString[i];
+    }
 
     // space pad the rest of the string
     if (cLength < cMax)

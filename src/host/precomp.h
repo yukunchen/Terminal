@@ -53,6 +53,8 @@ Abstract:
 #include <utility>
 #include <vector>
 #include <deque>
+#include <iterator>
+#include <algorithm>
 
 // WIL
 #include <wil/Common.h>

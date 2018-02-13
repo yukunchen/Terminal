@@ -18,6 +18,22 @@ Revision History:
 class DbcsAttribute final
 {
 public:
+    enum class Attribute : BYTE
+    {
+        Single = 0x00,
+        Leading = 0x01,
+        Trailing = 0x02
+    };
+
+    DbcsAttribute() :
+        _attribute{ Attribute::Single }
+    {
+    }
+
+    DbcsAttribute(_In_ const Attribute attribute) :
+        _attribute{ attribute }
+    {
+    }
 
     constexpr bool IsSingle() const noexcept
     {
@@ -89,14 +105,8 @@ public:
     }
 
     friend constexpr bool operator==(const DbcsAttribute& a, const DbcsAttribute& b) noexcept;
-private:
-    enum class Attribute : BYTE
-    {
-        Single = 0x00,
-        Leading = 0x01,
-        Trailing = 0x02
-    };
 
+private:
     Attribute _attribute = Attribute::Single;
 
 #ifdef UNIT_TESTING

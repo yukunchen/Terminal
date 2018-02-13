@@ -42,7 +42,9 @@ Revision History:
 class CHAR_ROW final
 {
 public:
-    static const SHORT INVALID_OLD_LENGTH = -1;
+    using value_type = std::pair<wchar_t, DbcsAttribute>;
+    using iterator = std::vector<value_type>::iterator;
+    using const_iterator = std::vector<value_type>::const_iterator;
 
     CHAR_ROW(short rowWidth);
     CHAR_ROW(const CHAR_ROW& a);
@@ -52,18 +54,16 @@ public:
 
     void swap(CHAR_ROW& other) noexcept;
 
+    iterator begin() noexcept;
+    const_iterator cbegin() const noexcept;
+
+    iterator end() noexcept;
+    const_iterator cend() const noexcept;
+
+    size_t size() const noexcept;
+
     const DbcsAttribute& GetAttribute(_In_ const size_t column) const;
     DbcsAttribute& GetAttribute(_In_ const size_t column);
-
-    std::vector<DbcsAttribute>::iterator GetAttributeIterator(_In_ const size_t column);
-    std::vector<DbcsAttribute>::const_iterator GetAttributeIterator(_In_ const size_t column) const;
-
-    std::vector<DbcsAttribute>::const_iterator GetAttributeIteratorEnd() const noexcept;
-
-    std::vector<wchar_t>::iterator GetTextIterator(_In_ const size_t column);
-    std::vector<wchar_t>::const_iterator GetTextIterator(_In_ const size_t column) const;
-
-    std::vector<wchar_t>::const_iterator GetTextIteratorEnd() const noexcept;
 
     std::wstring GetText() const;
 
@@ -82,6 +82,13 @@ public:
     void SetDoubleBytePadded(_In_ bool const fDoubleBytePadded);
     bool WasDoubleBytePadded() const;
 
+    bool ContainsText() const;
+
+    size_t MeasureLeft() const;
+    size_t MeasureRight() const;
+
+    friend constexpr bool operator==(const CHAR_ROW& a, const CHAR_ROW& b) noexcept;
+
     enum class RowFlags
     {
         NoFlags = 0x0,
@@ -89,19 +96,9 @@ public:
         DoubleBytePadded = 0x2, // Occurs when the user runs out of text to support a double byte character and we're forced to the next line
     };
 
-    bool ContainsText() const;
-
-    size_t GetWidth() const;
-    size_t MeasureLeft() const;
-    size_t MeasureRight() const;
-
-    friend constexpr bool operator==(const CHAR_ROW& a, const CHAR_ROW& b) noexcept;
-
 private:
     RowFlags bRowFlags;
-    size_t _rowWidth;
-    std::vector<DbcsAttribute> _attributes; // all DBCS lead & trail bit in row
-    std::vector<wchar_t> _chars;
+    std::vector<value_type> _data;
 
 #ifdef UNIT_TESTING
     friend class CharRowTests;
@@ -114,9 +111,20 @@ void swap(CHAR_ROW& a, CHAR_ROW& b) noexcept;
 constexpr bool operator==(const CHAR_ROW& a, const CHAR_ROW& b) noexcept
 {
     return (a.bRowFlags == b.bRowFlags &&
-            a._rowWidth == b._rowWidth &&
-            a._chars == b._chars &&
-            a._attributes == b._attributes);
+            a._data == b._data);
+}
+
+template<typename InputIt1, typename InputIt2>
+void OverwriteColumns(_In_ InputIt1 startChars, _In_ InputIt1 endChars, _In_ InputIt2 startAttrs, _Out_ CHAR_ROW::iterator outIt)
+{
+    std::transform(startChars,
+                   endChars,
+                   startAttrs,
+                   outIt,
+                   [](const wchar_t wch, const DbcsAttribute attr)
+    {
+        return CHAR_ROW::value_type{ wch, attr };
+    });
 }
 
 // this sticks specialization of swap() into the std::namespace for CHAR_ROW, so that callers that use

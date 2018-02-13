@@ -13,6 +13,8 @@
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 #include "..\types\inc\Viewport.hpp"
+#include <algorithm>
+#include <iterator>
 
 #pragma hdrstop
 
@@ -55,8 +57,10 @@ void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
     // copy chars
     try
     {
-        std::copy(pDbcsAttributes, pDbcsAttributes + cchBuffer, Row.CharRow.GetAttributeIterator(TargetPoint.X));
-        std::copy(pwchBuffer, pwchBuffer + cchBuffer, Row.CharRow.GetTextIterator(TargetPoint.X));
+        OverwriteColumns(pwchBuffer,
+                         pwchBuffer + cchBuffer,
+                         pDbcsAttributes,
+                         std::next(Row.CharRow.begin(), TargetPoint.X));
     }
     CATCH_LOG();
 
@@ -173,20 +177,17 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
             }
 
             // CJK Languages
-            std::vector<DbcsAttribute>::iterator itAttr;
-            std::vector<wchar_t>::iterator itChar;
+            CHAR_ROW::iterator it;
             try
             {
-                itAttr = pRow->CharRow.GetAttributeIterator(coordDest.X);
-                itChar = pRow->CharRow.GetTextIterator(coordDest.X);
+                it = std::next(pRow->CharRow.begin(), coordDest.X);
             }
             catch (...)
             {
                 return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
             }
 
-            const std::vector<DbcsAttribute>::const_iterator itAttrEnd = pRow->CharRow.GetAttributeIteratorEnd();
-            const std::vector<wchar_t>::const_iterator itCharEnd = pRow->CharRow.GetTextIteratorEnd();
+            const CHAR_ROW::const_iterator itEnd = pRow->CharRow.cend();
 
             TextAttributeRun* pAttrRun = rAttrRunsBuff;
             pAttrRun->SetLength(0);
@@ -197,8 +198,8 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
             pRow->CharRow.SetWrapStatus(false); // clear wrap status for rectangle drawing
 
             for (SHORT j = psrSrc->Left;
-                 j <= psrSrc->Right && itAttr != itAttrEnd && itChar != itCharEnd;
-                 j++, SourcePtr += SIZEOF_CI_CELL, ++itAttr, ++itChar)
+                 j <= psrSrc->Right && it != itEnd;
+                 j++, SourcePtr += SIZEOF_CI_CELL, ++it)
             {
                 if (SourcePtr + sizeof(CHAR_INFO) > pbSourceEnd || SourcePtr < prgbSrc)
                 {
@@ -208,8 +209,8 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
 
                 try
                 {
-                    *itAttr = DbcsAttribute::FromPublicApiAttributeFormat(reinterpret_cast<const CHAR_INFO* const>(SourcePtr)->Attributes);
-                    *itChar = WCHAR_OF_PCI(SourcePtr);
+                    it->first = WCHAR_OF_PCI(SourcePtr);
+                    it->second = DbcsAttribute::FromPublicApiAttributeFormat(reinterpret_cast<const CHAR_INFO* const>(SourcePtr)->Attributes);
                 }
                 catch (...)
                 {
@@ -554,12 +555,10 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
             }
 
             // copy the chars into their arrays
-            std::vector<DbcsAttribute>::iterator itAttr;
-            std::vector<wchar_t>::iterator itText;
+            CHAR_ROW::iterator it;
             try
             {
-                itAttr = pRow->CharRow.GetAttributeIterator(X);
-                itText = pRow->CharRow.GetTextIterator(X);
+                it = std::next(pRow->CharRow.begin(), X);
             }
             catch (...)
             {
@@ -590,18 +589,19 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
                     }
                 }
 
+                const size_t numToWrite = *pcRecords - NumWritten;
                 try
                 {
-                    std::copy(BufferA, BufferA + (*pcRecords - NumWritten), itAttr);
-                    const wchar_t* const pText = static_cast<const wchar_t* const>(pvBuffer);
-                    std::copy(pText, pText + (*pcRecords - NumWritten), itText);
+                    const wchar_t* const pChars = reinterpret_cast<const wchar_t* const>(pvBuffer);
+                    const DbcsAttribute* const pAttrs = static_cast<const DbcsAttribute* const>(BufferA);
+                    OverwriteColumns(pChars, pChars + numToWrite, pAttrs, it);
                 }
                 catch (...)
                 {
                     return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
                 }
 
-                X = (SHORT)(X + *pcRecords - NumWritten - 1);
+                X = (SHORT)(X + numToWrite - 1);
                 NumWritten = *pcRecords;
             }
             else
@@ -624,20 +624,21 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
                         BufferA[coordScreenBufferSize.X - TPoint.X].SetSingle();
                     }
                 }
+                const size_t numToWrite = coordScreenBufferSize.X - X;
                 try
                 {
-                    std::copy(BufferA, BufferA + (coordScreenBufferSize.X - X), itAttr);
-                    const wchar_t* const pText = static_cast<const wchar_t* const>(pvBuffer);
-                    std::copy(pText, pText + (coordScreenBufferSize.X - X), itText);
+                    const wchar_t* const pChars = reinterpret_cast<const wchar_t* const>(pvBuffer);
+                    const DbcsAttribute* const pAttrs = static_cast<const DbcsAttribute* const>(BufferA);
+                    OverwriteColumns(pChars, pChars + numToWrite, pAttrs, it);
                 }
                 catch (...)
                 {
                     return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
                 }
-                BufferA = BufferA + (coordScreenBufferSize.X - X);
-                pvBuffer = (PVOID)((PBYTE)pvBuffer + ((coordScreenBufferSize.X - X) * sizeof(WCHAR)));
-                NumWritten += coordScreenBufferSize.X - X;
-                X = (SHORT)(coordScreenBufferSize.X - 1);
+                BufferA = BufferA + numToWrite;
+                pvBuffer = (PVOID)((PBYTE)pvBuffer + (numToWrite * sizeof(WCHAR)));
+                NumWritten += static_cast<ULONG>(numToWrite);
+                X = (SHORT)(numToWrite);
             }
 
             if (NumWritten < *pcRecords)
@@ -883,12 +884,10 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
             }
 
             // copy the chars into their arrays
-            std::vector<DbcsAttribute>::iterator itAttr;
-            std::vector<wchar_t>::iterator itText;
+            CHAR_ROW::iterator it;
             try
             {
-                itAttr = pRow->CharRow.GetAttributeIterator(X);
-                itText = pRow->CharRow.GetTextIterator(X);
+                it = std::next(pRow->CharRow.begin(), X);
             }
             catch (...)
             {
@@ -907,33 +906,31 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
                 {
                     for (SHORT j = 0; j < (SHORT)(*pcElements - NumWritten); j++)
                     {
-                        *itText = static_cast<wchar_t>(wElement);
-                        ++itText;
+                        it->first = static_cast<wchar_t>(wElement);
                         if (StartPosFlag++ & 1)
                         {
-                            itAttr->SetTrailing();
+                            it->second.SetTrailing();
                         }
                         else
                         {
-                            itAttr->SetLeading();
+                            it->second.SetLeading();
                         }
-                        ++itAttr;
+                        ++it;
                     }
 
                     if (StartPosFlag & 1)
                     {
-                        *(itText - 1) = UNICODE_SPACE;
-                        (itAttr - 1)->SetSingle();
+                        (it - 1)->first = UNICODE_SPACE;
+                        (it - 1)->second.SetSingle();
                     }
                 }
                 else
                 {
                     for (SHORT j = 0; j < (SHORT)(*pcElements - NumWritten); j++)
                     {
-                        *itText = static_cast<wchar_t>(wElement);
-                        ++itText;
-                        itAttr->SetSingle();
-                        ++itAttr;
+                        it->first = static_cast<wchar_t>(wElement);
+                        it->second.SetSingle();
+                        ++it;
                     }
                 }
                 X = (SHORT)(X + *pcElements - NumWritten - 1);
@@ -952,27 +949,25 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
                 {
                     for (SHORT j = 0; j < coordScreenBufferSize.X - X; j++)
                     {
-                        *itText = static_cast<wchar_t>(wElement);
-                        ++itText;
+                        it->first = static_cast<wchar_t>(wElement);
                         if (StartPosFlag++ & 1)
                         {
-                            itAttr->SetTrailing();
+                            it->second.SetTrailing();
                         }
                         else
                         {
-                            itAttr->SetLeading();
+                            it->second.SetLeading();
                         }
-                        ++itAttr;
+                        ++it;
                     }
                 }
                 else
                 {
                     for (SHORT j = 0; j < coordScreenBufferSize.X - X; j++)
                     {
-                        *itText = static_cast<wchar_t>(wElement);
-                        ++itText;
-                        itAttr->SetSingle();
-                        ++itAttr;
+                        it->first = static_cast<wchar_t>(wElement);
+                        it->second.SetSingle();
+                        ++it;
                     }
                 }
                 NumWritten += coordScreenBufferSize.X - X;
@@ -1166,21 +1161,20 @@ void FillRectangle(_In_ const CHAR_INFO * const pciFill,
         TPoint.Y = i;
         CleanupDbcsEdgesForWrite(XSize, TPoint, pScreenInfo);
         BOOL Width = IsCharFullWidth(pciFill->Char.UnicodeChar);
-        std::vector<DbcsAttribute>::iterator itAttr;
-        std::vector<wchar_t>::iterator itText;
+
+        CHAR_ROW::iterator it;
         try
         {
-            itAttr = pRow->CharRow.GetAttributeIterator(psrTarget->Left);
-            itText = pRow->CharRow.GetTextIterator(psrTarget->Left);
+            it = std::next(pRow->CharRow.begin(), psrTarget->Left);
         }
         catch (...)
         {
             LOG_HR(wil::ResultFromCaughtException());
             return;
         }
-        std::vector<DbcsAttribute>::const_iterator itAttrEnd = pRow->CharRow.GetAttributeIteratorEnd();
+        const CHAR_ROW::const_iterator itEnd = pRow->CharRow.cend();
 
-        for (SHORT j = 0; j < XSize && itAttr < itAttrEnd; j++)
+        for (SHORT j = 0; j < XSize && it < itEnd; j++)
         {
             if (Width)
             {
@@ -1188,39 +1182,31 @@ void FillRectangle(_In_ const CHAR_INFO * const pciFill,
                 {
                     // we set leading an trailing in pairs so make sure that checking against the end of the
                     // iterator won't be off by 1
-                    assert((itAttrEnd - itAttr) % 2 == 0);
-                    assert((itAttrEnd - itAttr) >= 2);
+                    assert((itEnd - it) % 2 == 0);
+                    assert((itEnd - it) >= 2);
 
-                    *itText = pciFill->Char.UnicodeChar;
-                    ++itText;
+                    it->first = pciFill->Char.UnicodeChar;
+                    it->second.SetLeading();
+                    ++it;
 
-                    *itText = pciFill->Char.UnicodeChar;
-                    ++itText;
+                    it->first = pciFill->Char.UnicodeChar;
+                    it->second.SetTrailing();
+                    ++it;
 
-                    itAttr->SetLeading();
-                    ++itAttr;
-
-                    itAttr->SetTrailing();
-                    ++itAttr;
-
-                    j++;
+                    ++j;
                 }
                 else
                 {
-                    *itText = UNICODE_NULL;
-                    ++itText;
-
-                    itAttr->SetSingle();
-                    ++itAttr;
+                    it->first = UNICODE_NULL;
+                    it->second.SetSingle();
+                    ++it;
                 }
             }
             else
             {
-                *itText = pciFill->Char.UnicodeChar;
-                ++itText;
-
-                itAttr->SetSingle();
-                ++itAttr;
+                it->first = pciFill->Char.UnicodeChar;
+                it->second.SetSingle();
+                ++it;
             }
         }
 

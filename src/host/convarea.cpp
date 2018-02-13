@@ -742,8 +742,10 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
 
     try
     {
-        std::copy(String, String + StringLength, Row.CharRow.GetTextIterator(TargetPoint.X));
-        std::copy(pDbcsAttributes, pDbcsAttributes + StringLength, Row.CharRow.GetAttributeIterator(TargetPoint.X));
+        OverwriteColumns(String,
+                         String + StringLength,
+                         pDbcsAttributes,
+                         std::next(Row.CharRow.begin(), TargetPoint.X));
     }
     CATCH_LOG();
 
