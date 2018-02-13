@@ -2,10 +2,10 @@
 Copyright (c) Microsoft Corporation
 
 Module Name:
-- CharRow.hpp
+- Ucs2CharRow.hpp
 
 Abstract:
-- contains data structure for character data of a row
+- contains data structure for UCS2 encoded character data of a row
 
 Author(s):
 - Michael Niksa (miniksa) 10-Apr-2014
@@ -88,13 +88,6 @@ public:
 
 
     friend constexpr bool operator==(const Ucs2CharRow& a, const Ucs2CharRow& b) noexcept;
-
-    enum class RowFlags
-    {
-        NoFlags = 0x0,
-        WrapForced = 0x1, // Occurs when the user runs out of text in a given row and we're forced to wrap the cursor to the next line
-        DoubleBytePadded = 0x2, // Occurs when the user runs out of text to support a double byte character and we're forced to the next line
-    };
 
 private:
     RowFlags bRowFlags;
