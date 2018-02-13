@@ -759,7 +759,7 @@ void SCREEN_INFORMATION::SetViewportSize(_In_ const COORD* const pcoordSize)
 
         if (_psiMainBuffer)
         {
-            this->SetViewportSize(&_coordScreenBufferSize);
+            _psiMainBuffer->SetViewportSize(&_coordScreenBufferSize);
         }
     }
     _InternalSetViewportSize(pcoordSize, false, false);
@@ -1454,7 +1454,8 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
     {
         // Fetch the row and its "right" which is the last printable character.
         const ROW& Row = TextInfo->GetRowByOffset(iOldRow);
-        short iRight = static_cast<short>(Row.GetCharRow().MeasureRight());
+        const ICharRow& iCharRow = Row.GetCharRow();
+        short iRight = static_cast<short>(iCharRow.MeasureRight());
 
         // There is a special case here. If the row has a "wrap"
         // flag on it, but the right isn't equal to the width (one
@@ -1465,7 +1466,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
         // included.)
         // As such, adjust the "right" to be the width of the row
         // to capture all these spaces
-        if (Row.GetCharRow().WasWrapForced())
+        if (iCharRow.WasWrapForced())
         {
             iRight = cOldColsTotal;
 
@@ -1474,7 +1475,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
             // piece of padding because of a double byte LEADING
             // character, then remove one from the "right" to
             // leave this padding out of the copy process.
-            if (Row.GetCharRow().WasDoubleBytePadded())
+            if (iCharRow.WasDoubleBytePadded())
             {
                 iRight--;
             }
@@ -1490,7 +1491,6 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
             DbcsAttribute bKAttr;
             try
             {
-                const ICharRow& iCharRow = Row.GetCharRow();
                 if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
                 {
                     const CHAR_ROW& charRow = static_cast<const CHAR_ROW&>(iCharRow);
@@ -1532,7 +1532,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
             // Only do so if we were not forced to wrap. If we did
             // force a word wrap, then the existing line break was
             // only because we ran out of space.
-            if (iRight < cOldColsTotal && !Row.GetCharRow().WasWrapForced())
+            if (iRight < cOldColsTotal && !iCharRow.WasWrapForced())
             {
                 if (iRight == cOldCursorPos.X && iOldRow == cOldCursorPos.Y)
                 {
@@ -2469,9 +2469,10 @@ void SCREEN_INFORMATION::ReplaceDefaultAttributes(_In_ const TextAttribute& oldA
     for (SHORT i = 0; i < sScreenBufferSizeY; i++)
     {
         ROW& Row = TextInfo->GetRowByOffset(i);
-        Row.GetAttrRow().ReplaceLegacyAttrs(oldLegacyAttributes, newLegacyAttributes);
-        Row.GetAttrRow().ReplaceLegacyAttrs(oldLegacyPopupAttributes, newLegacyPopupAttributes);
-        Row.GetAttrRow().ReplaceLegacyAttrs(InvertedOldPopupAttributes, InvertedNewPopupAttributes);
+        ATTR_ROW& attrRow = Row.GetAttrRow();
+        attrRow.ReplaceLegacyAttrs(oldLegacyAttributes, newLegacyAttributes);
+        attrRow.ReplaceLegacyAttrs(oldLegacyPopupAttributes, newLegacyPopupAttributes);
+        attrRow.ReplaceLegacyAttrs(InvertedOldPopupAttributes, InvertedNewPopupAttributes);
     }
 
     if (_psiMainBuffer)

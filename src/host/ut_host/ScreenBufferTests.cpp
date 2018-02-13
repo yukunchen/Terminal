@@ -17,10 +17,12 @@
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 #include "..\..\inc\conattrs.hpp"
+#include "..\..\types\inc\Viewport.hpp"
 
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
+using namespace Microsoft::Console::Types;
 
 class ScreenBufferTests
 {
@@ -103,6 +105,9 @@ class ScreenBufferTests
     TEST_METHOD(VtSetColorTable);
 
     TEST_METHOD(ResizeTraditionalDoesntDoubleFreeAttrRows);
+
+    TEST_METHOD(ResizeAltBuffer);
+
 };
 
 SCREEN_INFORMATION::TabStop** ScreenBufferTests::CreateSampleList()
@@ -1098,4 +1103,39 @@ void ScreenBufferTests::ResizeTraditionalDoesntDoubleFreeAttrRows()
 
     VERIFY_SUCCESS_NTSTATUS(psi->ResizeTraditional(newBufferSize));
 
+}
+
+void ScreenBufferTests::ResizeAltBuffer()
+{
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
+    StateMachine* const stateMachine = psi->GetStateMachine();
+
+
+    Log::Comment(NoThrowString().Format(
+        L"Try resizing the alt buffer. Make sure the call doesn't stack overflow."
+    ));
+
+    VERIFY_IS_FALSE(psi->_IsAltBuffer());
+    const Viewport originalMainSize = Viewport::FromInclusive(psi->_srBufferViewport);
+
+    Log::Comment(NoThrowString().Format(
+        L"Switch to alt buffer"
+    ));
+    std::wstring seq = L"\x1b[?1049h";
+    stateMachine->ProcessString(&seq[0], seq.length());
+
+    VERIFY_IS_FALSE(psi->_IsAltBuffer());
+    VERIFY_IS_NOT_NULL(psi->_psiAlternateBuffer);
+    SCREEN_INFORMATION* const psiAlt = psi->_psiAlternateBuffer;
+
+    COORD newSize = originalMainSize.Dimensions();
+    newSize.X += 2;
+    newSize.Y += 2;
+
+    Log::Comment(NoThrowString().Format(
+        L"MSFT:15917333 This call shouldn't stack overflow"
+    ));
+    psiAlt->SetViewportSize(&newSize);
+    VERIFY_IS_TRUE(true);
 }

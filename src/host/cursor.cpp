@@ -118,12 +118,8 @@ const BOOLEAN Cursor::IsDouble() const
 const BOOLEAN Cursor::IsDoubleWidth() const
 {
     // Check with the current screen buffer to see if the character under the cursor is double-width.
-    const ICharRow& iCharRow = ServiceLocator::LocateGlobals()
-        .getConsoleInformation()
-        .CurrentScreenBuffer
-        ->TextInfo
-        ->GetRowByOffset(_cPosition.Y)
-        .GetCharRow();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const ICharRow& iCharRow = gci.CurrentScreenBuffer->TextInfo->GetRowByOffset(_cPosition.Y).GetCharRow();
     if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
     {
         const CHAR_ROW& charRow = static_cast<const CHAR_ROW&>(iCharRow);
