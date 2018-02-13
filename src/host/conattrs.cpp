@@ -87,6 +87,17 @@ static double _FindDifference(_In_ const _HSL* const phslColorA, _In_ const COLO
 // The index in ColorTable of the nearest match to Color.
 WORD FindNearestTableIndex(_In_ COLORREF const Color, _In_reads_(cColorTable) const COLORREF* const ColorTable, _In_ const WORD cColorTable)
 {
+    // Quick check for an exact match in the color table:
+    for (WORD i = 0; i < cColorTable; i++)
+    {
+        if (Color == ColorTable[i])
+        {
+            return i;
+        }
+    } 
+
+    // Did not find an exact match - do an expensive comparison to the elements 
+    //      of the table to find the nearest color.
     const _HSL hslColor = _HSL(Color);
     WORD closest = 0;
     double minDiff = _FindDifference(&hslColor, ColorTable[0]);

@@ -65,6 +65,8 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
     TEST_METHOD_SETUP(MethodSetup)
     {
         vExpectedInput.clear();
+        _expectCursorPosition = false;
+        _expectedCursor = {-1, -1};
         return true;
     }
 
@@ -73,6 +75,7 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
     TEST_METHOD(RoundTripTest);
     TEST_METHOD(WindowManipulationTest);
     TEST_METHOD(NonAsciiTest);
+    TEST_METHOD(CursorPositioningTest);
 
     StateMachine* _pStateMachine;
 
@@ -80,6 +83,8 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
 
     bool _expectedToCallWindowManipulation;
     bool _expectSendCtrlC;
+    bool _expectCursorPosition;
+    COORD _expectedCursor;
     DispatchCommon::WindowManipulationType _expectedWindowManipulation;
     unsigned short _expectedParams[16];
     size_t _expectedCParams;
@@ -97,8 +102,12 @@ public:
     virtual bool WindowManipulation(_In_ const DispatchCommon::WindowManipulationType uiFunction,
                                 _In_reads_(cParams) const unsigned short* const rgusParams,
                                 _In_ size_t const cParams) override; // DTTERM_WindowManipulation
+
     virtual bool WriteString(_In_reads_(cch) const wchar_t* const pws,
                              _In_ const size_t cch) override;
+
+    virtual bool MoveCursor(_In_ const unsigned int row,
+                            _In_ const unsigned int col) override;
 private:
     std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> _pfnWriteInputCallback;
     InputEngineTest* _testInstance;
@@ -159,6 +168,14 @@ bool TestInteractDispatch::WriteString(_In_reads_(cch) const wchar_t* const pws,
     return WriteInput(keyEvents);
 }
 
+bool TestInteractDispatch::MoveCursor(_In_ const unsigned int row,
+                                      _In_ const unsigned int col)
+{
+    VERIFY_IS_TRUE(_testInstance->_expectCursorPosition);
+    COORD received = { static_cast<short>(col), static_cast<short>(row) };
+    VERIFY_ARE_EQUAL(_testInstance->_expectedCursor, received);
+    return true;
+}
 
 bool IsShiftPressed(const DWORD modifierState)
 {
@@ -646,5 +663,50 @@ void InputEngineTest::NonAsciiTest()
     test.Event.KeyEvent.bKeyDown = FALSE;
     vExpectedInput.push_back(test);
     _pStateMachine->ProcessString(&utf8Input[0], utf8Input.length());
+}
+
+void InputEngineTest::CursorPositioningTest()
+{
+    auto pfn = std::bind(&InputEngineTest::TestInputCallback, this, std::placeholders::_1);
+    _pStateMachine = new StateMachine(
+            std::make_unique<InputStateMachineEngine>(
+                std::make_unique<TestInteractDispatch>(pfn, this),
+                true
+            )
+    );
+    VERIFY_IS_NOT_NULL(_pStateMachine);
+
+    Log::Comment(NoThrowString().Format(
+        L"Try sending a cursor position response, then send it again. "
+        L"The first time, it should be interpreted as a cursor position. "
+        L"The state machine engine should reset itself to normal operation "
+        L"after that, and treat the second as an F3."
+    ));
+
+    std::wstring seq = L"\x1b[1;4R";
+    _expectCursorPosition = true;
+    _expectedCursor = { 4, 1 };
+
+    Log::Comment(NoThrowString().Format(
+        L"Processing \"%s\"", seq.c_str()
+    ));
+    _pStateMachine->ProcessString(&seq[0], seq.length());
+
+    _expectCursorPosition = false;
+
+    INPUT_RECORD inputRec;
+    inputRec.EventType = KEY_EVENT;
+    inputRec.Event.KeyEvent.bKeyDown = TRUE;
+    inputRec.Event.KeyEvent.dwControlKeyState = LEFT_ALT_PRESSED | SHIFT_PRESSED;
+    inputRec.Event.KeyEvent.wRepeatCount = 1;
+    inputRec.Event.KeyEvent.wVirtualKeyCode = VK_F3;
+    inputRec.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKey(VK_F3, MAPVK_VK_TO_VSC));
+    inputRec.Event.KeyEvent.uChar.UnicodeChar = L'\0';
+
+    vExpectedInput.push_back(inputRec);
+    Log::Comment(NoThrowString().Format(
+        L"Processing \"%s\"", seq.c_str()
+    ));
+    _pStateMachine->ProcessString(&seq[0], seq.length());
 
 }

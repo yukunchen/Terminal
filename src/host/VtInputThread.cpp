@@ -19,21 +19,34 @@
 
 using namespace Microsoft::Console;
 
-void _HandleTerminalKeyEventCallback(_In_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
-{
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    gci->pInputBuffer->Write(inEvents);
-}
-
 // Constructor Description:
 // - Creates the VT Input Thread.
 // Arguments:
 // - hPipe - a handle to the file representing the read end of the VT pipe.
-VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe)
+// - inheritCursor - a bool indicating if the state machine should expect a
+//      cursor positioning sequence. See MSFT:15681311.
+VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
+                             _In_ const bool inheritCursor)
     : _hFile(std::move(hPipe)),
     _utf8Parser(CP_UTF8)
 {
     THROW_IF_HANDLE_INVALID(_hFile.get());
+
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+
+    std::unique_ptr<ConhostInternalGetSet> pGetSet =
+        std::make_unique<ConhostInternalGetSet>(gci);
+    THROW_IF_NULL_ALLOC(pGetSet);
+
+    std::unique_ptr<InteractDispatch> pDispatch = std::make_unique<InteractDispatch>(std::move(pGetSet));
+    THROW_IF_NULL_ALLOC(pDispatch);
+
+    std::unique_ptr<InputStateMachineEngine> pEngine =
+        std::make_unique<InputStateMachineEngine>(std::move(pDispatch), inheritCursor);
+    THROW_IF_NULL_ALLOC(pEngine);
+
+    _pInputStateMachine = std::make_unique<StateMachine>(std::move(pEngine));
+    THROW_IF_NULL_ALLOC(_pInputStateMachine);
 }
 
 // Method Description:
@@ -78,41 +91,61 @@ DWORD VtInputThread::StaticVtInputThreadProc(_In_ LPVOID lpParameter)
 }
 
 // Method Description:
+// - Do a single ReadFile from our pipe, and try and handle it. If handling
+//      failed, throw or log, depending on what the caller wants.
+// Arguments:
+// - throwOnFail: If true, throw an exception if there was an error processing
+//      the input recieved. Otherwise, log the error.
+// Return Value:
+// - <none>
+void VtInputThread::DoReadInput(_In_ const bool throwOnFail)
+{
+    byte buffer[256];
+    DWORD dwRead = 0;
+    bool fSuccess = !!ReadFile(_hFile.get(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr);
+
+    // If we failed to read because the terminal broke our pipe (usually due
+    //      to dying itself), close gracefully with ERROR_BROKEN_PIPE.
+    // Otherwise throw an exception. ERROR_BROKEN_PIPE is the only case that
+    //       we want to gracefully close in.
+    if (!fSuccess)
+    {
+        DWORD lastError = GetLastError();
+        if (lastError == ERROR_BROKEN_PIPE)
+        {
+            // This won't return. We'll be terminated.
+            CloseConsoleProcessState();
+        }
+        else
+        {
+            THROW_WIN32(lastError);
+        }
+    }
+
+    HRESULT hr = _HandleRunInput(buffer, dwRead);
+    if (throwOnFail)
+    {
+        THROW_IF_FAILED(hr);
+    }
+    else
+    {
+        LOG_IF_FAILED(hr);
+    }
+}
+
+// Method Description:
 // - The ThreadProc for the VT Input Thread. Reads input from the pipe, and
 //      passes it to _HandleRunInput to be processed by the
 //      InputStateMachineEngine.
 // Return Value:
-// - <none>
+// - Does not return.
 DWORD VtInputThread::_InputThread()
 {
-    byte buffer[256];
-    DWORD dwRead;
-
     while (true)
     {
-        dwRead = 0;
-        bool fSuccess = !!ReadFile(_hFile.get(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr);
-
-        // If we failed to read because the terminal broke our pipe (usually due
-        //      to dying itself), close gracefully with ERROR_BROKEN_PIPE.
-        // Otherwise throw an exception. ERROR_BROKEN_PIPE is the only case that
-        //       we want to gracefully close in.
-        if (!fSuccess)
-        {
-            DWORD lastError = GetLastError();
-            if (lastError == ERROR_BROKEN_PIPE)
-            {
-                // This won't return. We'll be terminated.
-                CloseConsoleProcessState();
-            }
-            else
-            {
-                THROW_WIN32(lastError);
-            }
-        }
-
-        THROW_IF_FAILED(_HandleRunInput(buffer, dwRead));
+        DoReadInput(true);
     }
+    // Above loop will never return.
 }
 
 // Method Description:
@@ -120,24 +153,6 @@ DWORD VtInputThread::_InputThread()
 HRESULT VtInputThread::Start()
 {
     RETURN_IF_HANDLE_INVALID(_hFile.get());
-
-    //Initialize the state machine here, because the gci->pInputBuffer
-    // hasn't been initialized when we initialize the VtInputThread object.
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-
-    std::unique_ptr<ConhostInternalGetSet> pGetSet =
-        std::make_unique<ConhostInternalGetSet>(gci);
-    THROW_IF_NULL_ALLOC(pGetSet);
-
-    std::unique_ptr<InteractDispatch> pDispatch = std::make_unique<InteractDispatch>(std::move(pGetSet));
-    THROW_IF_NULL_ALLOC(pDispatch);
-
-    std::unique_ptr<InputStateMachineEngine> pEngine =
-        std::make_unique<InputStateMachineEngine>(std::move(pDispatch));
-    THROW_IF_NULL_ALLOC(pEngine);
-
-    _pInputStateMachine = std::make_unique<StateMachine>(std::move(pEngine));
-    THROW_IF_NULL_ALLOC(_pInputStateMachine);
 
     HANDLE hThread = nullptr;
     // 0 is the right value, https://blogs.msdn.microsoft.com/oldnewthing/20040223-00/?p=40503

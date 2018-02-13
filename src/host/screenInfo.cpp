@@ -103,7 +103,7 @@ NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
         pScreen->_InitializeBufferDimensions(coordScreenBufferSize, coordWindowSize);
 
         status = TEXT_BUFFER_INFO::CreateInstance(pfiFont,
-                                                  pScreen->GetScreenBufferSize(), 
+                                                  pScreen->GetScreenBufferSize(),
                                                   ciFill,
                                                   uiCursorSize,
                                                   &pScreen->TextInfo);
@@ -423,9 +423,9 @@ COORD SCREEN_INFORMATION::GetMaxWindowSizeInCharacters(_In_ COORD const coordFon
 
     const COORD coordScreenBufferSize = GetScreenBufferSize();
     COORD coordClientAreaSize = coordScreenBufferSize;
-    
+
     //  Important re: headless consoles on onecore (for telnetd, etc.)
-    // GetConsoleScreenBufferInfoEx hits this to get the max size of the display. 
+    // GetConsoleScreenBufferInfoEx hits this to get the max size of the display.
     // Because we're headless, we don't really care about the max size of the display.
     // In that case, we'll just return the buffer size as the "max" window size.
     if (!ServiceLocator::LocateGlobals()->IsHeadless())
@@ -678,9 +678,9 @@ VOID SCREEN_INFORMATION::InternalUpdateScrollBars()
     if (pWindow != nullptr)
     {
         const COORD coordScreenBufferSize = GetScreenBufferSize();
-    
+
         // If this is the main buffer, make sure we enable both of the scroll bars.
-        //      The alt buffer likely disabled the scroll bars, this is the only 
+        //      The alt buffer likely disabled the scroll bars, this is the only
         //      way to re-enable it.
         if(!_IsAltBuffer())
         {
@@ -716,15 +716,15 @@ void SCREEN_INFORMATION::SetViewportSize(_In_ const COORD* const pcoordSize)
 {
     // If this is the alt buffer or a VT I/O buffer:
     //      first resize ourselves to match the new viewport
-    //      then also make sure that the main buffer gets the same call 
+    //      then also make sure that the main buffer gets the same call
     //      (if necessary)
     if (_IsInPtyMode())
     {
         ResizeScreenBuffer(*pcoordSize, TRUE);
 
-        if (_psiMainBuffer) 
+        if (_psiMainBuffer)
         {
-            this->SetViewportSize(&_coordScreenBufferSize);
+            _psiMainBuffer->SetViewportSize(&_coordScreenBufferSize);
         }
     }
     _InternalSetViewportSize(pcoordSize, false, false);
@@ -1248,18 +1248,18 @@ void SCREEN_INFORMATION::_AdjustViewportSize(_In_ const RECT* const prcClientNew
     _InternalSetViewportSize(pcoordSize, fResizeFromLeft, fResizeFromTop);
 
     // MSFT 13194969, related to 12092729.
-    // If we're in virtual terminal mode, and the viewport dimensions change, 
+    // If we're in virtual terminal mode, and the viewport dimensions change,
     //      send a WindowBufferSizeEvent. If the client wants VT mode, then they
-    //      probably want the viewport resizes, not just the screen buffer 
-    //      resizes. This does change the behavior of the API for v2 callers, 
-    //      but only callers who've requested VT mode. In 12092729, we enabled 
-    //      sending notifications from window resizes in cases where the buffer 
-    //      didn't resize, so this applies the same expansion to resizes using 
+    //      probably want the viewport resizes, not just the screen buffer
+    //      resizes. This does change the behavior of the API for v2 callers,
+    //      but only callers who've requested VT mode. In 12092729, we enabled
+    //      sending notifications from window resizes in cases where the buffer
+    //      didn't resize, so this applies the same expansion to resizes using
     //      the window, not the API.
     if (IsInVirtualTerminalInputMode())
     {
         Viewport newViewport = Viewport::FromInclusive(_srBufferViewport);
-        if ((newViewport.Width() != oldViewport.Width()) || 
+        if ((newViewport.Width() != oldViewport.Width()) ||
             (newViewport.Height() != oldViewport.Height()))
         {
             ScreenBufferSizeChange(GetScreenBufferSize());
@@ -1490,17 +1490,17 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
                     {
                         status = pNewBuffer->NewlineCursor() ? status : STATUS_NO_MEMORY;
                     }
-                    else 
+                    else
                     {
                         // If we are on the final line of the buffer, we have one more check.
                         // We got into this code path because we are at the right most column of a row in the old buffer
                         // that had a hard return (no wrap was forced).
-                        // However, as we're inserting, the old row might have just barely fit into the new buffer and 
+                        // However, as we're inserting, the old row might have just barely fit into the new buffer and
                         // caused a new soft return (wrap was forced) putting the cursor at x=0 on the line just below.
-                        // We need to preserve the memory of the hard return at this point by inserting one additional 
+                        // We need to preserve the memory of the hard return at this point by inserting one additional
                         // hard newline, otherwise we've lost that information.
                         // We only do this when the cursor has just barely poured over onto the next line so the hard return
-                        // isn't covered by the soft one. 
+                        // isn't covered by the soft one.
                         // e.g.
                         // The old line was:
                         // |aaaaaaaaaaaaaaaaaaa | with no wrap which means there was a newline after that final a.
@@ -1510,7 +1510,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
                         // |                   |
                         //  ^ and the cursor is now there.
                         // If we leave it like this, we've lost the newline information.
-                        // So we insert one more newline so a continued reflow of this buffer by resizing larger will 
+                        // So we insert one more newline so a continued reflow of this buffer by resizing larger will
                         // continue to look as the original output intended with the newline data.
                         // After this fix, it looks like this:
                         // |aaaaaaaaaaaaaaaaaaa| no wrap at the end (preserved hard newline)
@@ -1929,8 +1929,8 @@ void SCREEN_INFORMATION::MakeCurrentCursorVisible()
 }
 
 // Routine Description:
-// - This routine sets the cursor size and visibility both in the data 
-//      structures and on the screen. Also updates the cursor information of 
+// - This routine sets the cursor size and visibility both in the data
+//      structures and on the screen. Also updates the cursor information of
 //      this buffer's main buffer, if this buffer is an alt buffer.
 // Arguments:
 // - ScreenInfo - pointer to screen info structure.
@@ -2251,8 +2251,8 @@ bool SCREEN_INFORMATION::_IsAltBuffer() const
 }
 
 // Routine Description:
-// - Helper indicating if the buffer is acting as a pty - with the screenbuffer 
-//      clamped to the viewport size. This can be the case either when we're in 
+// - Helper indicating if the buffer is acting as a pty - with the screenbuffer
+//      clamped to the viewport size. This can be the case either when we're in
 //      VT I/O mode, or when this buffer is an alt buffer.
 // Parameters:
 // - None
@@ -2557,12 +2557,12 @@ void SCREEN_INFORMATION::SetDefaultAttributes(_In_ const TextAttribute& attribut
 }
 
 // Method Description:
-// - Replaces the given oldAttributes and oldPopupAttributes with the 
-//      newAttributes thoughout the entirety of our buffer. 
-//   This is called when the default screen attributes change, (eg through the 
-//      propsheet or the API) and we want to replace all of the attributes of 
+// - Replaces the given oldAttributes and oldPopupAttributes with the
+//      newAttributes thoughout the entirety of our buffer.
+//   This is called when the default screen attributes change, (eg through the
+//      propsheet or the API) and we want to replace all of the attributes of
 //      characters that had the old default attributes with the new setting.
-// NOTE: Only replaces legacy style attributes. If a character had RGB 
+// NOTE: Only replaces legacy style attributes. If a character had RGB
 //      attributes, then we know that it wasn't using the default attributes.
 // Parameters:
 // - oldAttributes - The old attributes containing legacy attributes to replace.
@@ -2575,7 +2575,7 @@ void SCREEN_INFORMATION::ReplaceDefaultAttributes(_In_ const TextAttribute& oldA
                                                   _In_ const TextAttribute& oldPopupAttributes,
                                                   _In_ const TextAttribute& newAttributes,
                                                   _In_ const TextAttribute& newPopupAttributes)
-{        
+{
     const WORD oldLegacyAttributes = oldAttributes.GetLegacyAttributes();
     const WORD oldLegacyPopupAttributes = oldPopupAttributes.GetLegacyAttributes();
     const WORD newLegacyAttributes = newAttributes.GetLegacyAttributes();
@@ -2656,7 +2656,7 @@ HRESULT SCREEN_INFORMATION::VtEraseAll()
 }
 
 // Method Description:
-// - Initialize the dimensions of the screenbuffer. If we're in VT I/O mode, 
+// - Initialize the dimensions of the screenbuffer. If we're in VT I/O mode,
 //      then use the screen buffer dimensions as the size of the viewport.
 // Arguments:
 // - coordScreenBufferSize: The initial dimensions of the screen buffer, in characters.
@@ -2666,11 +2666,11 @@ HRESULT SCREEN_INFORMATION::VtEraseAll()
 void SCREEN_INFORMATION::_InitializeBufferDimensions(_In_ const COORD coordScreenBufferSize,
                                                      _In_ const COORD coordViewportSize)
 {
-    Viewport viewport = Viewport::FromDimensions({0, 0}, 
-                                                 _IsInPtyMode() ? 
-                                                    coordScreenBufferSize : 
+    Viewport viewport = Viewport::FromDimensions({0, 0},
+                                                 _IsInPtyMode() ?
+                                                    coordScreenBufferSize :
                                                     coordViewportSize);
     _srBufferViewport = viewport.ToInclusive();
-    
+
     SetScreenBufferSize(coordScreenBufferSize);
 }

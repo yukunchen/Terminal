@@ -23,10 +23,11 @@ namespace Microsoft
         class VtInputThread
         {
         public:
-            VtInputThread(_In_ wil::unique_hfile hPipe);
+            VtInputThread(_In_ wil::unique_hfile hPipe, _In_ const bool inheritCursor);
 
             HRESULT Start();
             static DWORD StaticVtInputThreadProc(_In_ LPVOID lpParameter);
+            void DoReadInput(_In_ const bool throwOnFail);
 
         private:
             HRESULT _HandleRunInput(_In_reads_(cch) const byte* const charBuffer, _In_ const int cch);
