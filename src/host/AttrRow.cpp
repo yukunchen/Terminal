@@ -7,6 +7,9 @@
 #include "precomp.h"
 #include "AttrRow.hpp"
 
+#include "../interactivity/inc/ServiceLocator.hpp"
+#include "handle.h"
+
 // Routine Description:
 // - swaps two ATTR_ROWs
 // Arguments:
@@ -118,14 +121,38 @@ HRESULT ATTR_ROW::Resize(_In_ const short sOldWidth, _In_ const short sNewWidth)
     // Easy case. If the new row is longer, increase the length of the last run by how much new space there is.
     if (sNewWidth > sOldWidth)
     {
+        LockConsole();
+        auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+        // get the default attributes
+        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        TextAttribute defaultAttrs = gci.CurrentScreenBuffer->GetAttributes();
+
         // Get the attribute that covers the final column of old width.
         TextAttributeRun* pIndexedRun;
         FindAttrIndex((SHORT)(sOldWidth - 1), &pIndexedRun, nullptr);
         ASSERT(pIndexedRun <= &_rgList[_cList - 1]);
 
-        // Extend its length by the additional columns we're adding.
-        pIndexedRun->SetLength(pIndexedRun->GetLength() + sNewWidth - sOldWidth);
+        // if the last attribute is the same as the current default then extend it
+        if (pIndexedRun->GetAttributes().IsEqual(defaultAttrs))
+        {
+            // Extend its length by the additional columns we're adding.
+            pIndexedRun->SetLength(pIndexedRun->GetLength() + sNewWidth - sOldWidth);
+        }
+        else
+        {
+            // add a new attribute on the end with the defaults
+            TextAttributeRun endRun;
+            endRun.SetAttributes(defaultAttrs);
+            endRun.SetLength(sNewWidth - sOldWidth);
 
+            wistd::unique_ptr<TextAttributeRun[]> pNewRun = wil::make_unique_nothrow<TextAttributeRun[]>(_cList + 1);
+            RETURN_IF_NULL_ALLOC(pNewRun);
+            std::copy(_rgList.get(), _rgList.get() + _cList, pNewRun.get());
+            pNewRun[_cList] = endRun;
+
+            _rgList.swap(pNewRun);
+            ++_cList;
+        }
         // Store that the new total width we represent is the new width.
         _cchRowWidth = sNewWidth;
     }
