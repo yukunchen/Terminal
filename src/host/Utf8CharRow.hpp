@@ -37,9 +37,6 @@ public:
 
     // ICharRow methods
     ICharRow::SupportedEncoding GetSupportedEncoding() const noexcept override;
-    size_t size() const noexcept override;
-    size_t MeasureLeft() const override;
-    size_t MeasureRight() const override;
     void ClearCell(_In_ const size_t column) override;
     bool ContainsText() const override;
     const DbcsAttribute& GetAttribute(_In_ const size_t column) const override;

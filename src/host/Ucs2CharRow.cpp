@@ -82,26 +82,6 @@ DbcsAttribute& Ucs2CharRow::GetAttribute(_In_ const size_t column)
     return const_cast<DbcsAttribute&>(static_cast<const Ucs2CharRow* const>(this)->GetAttribute(column));
 }
 
-Ucs2CharRow::iterator Ucs2CharRow::begin() noexcept
-{
-    return _data.begin();
-}
-
-Ucs2CharRow::const_iterator Ucs2CharRow::cbegin() const noexcept
-{
-    return _data.cbegin();
-}
-
-Ucs2CharRow::iterator Ucs2CharRow::end() noexcept
-{
-    return _data.end();
-}
-
-Ucs2CharRow::const_iterator Ucs2CharRow::cend() const noexcept
-{
-    return _data.cend();
-}
-
 // Routine Description:
 // - resets text data at column
 // Arguments:
@@ -152,38 +132,6 @@ std::wstring Ucs2CharRow::GetText() const
         temp[i] = _data[i].first;
     }
     return temp;
-}
-
-// Routine Description:
-// - Inspects the current internal string to find the left edge of it
-// Arguments:
-// - <none>
-// Return Value:
-// - The calculated left boundary of the internal string.
-size_t Ucs2CharRow::MeasureLeft() const
-{
-    std::vector<value_type>::const_iterator it = _data.cbegin();
-    while (it != _data.cend() && it->first == UNICODE_SPACE)
-    {
-        ++it;
-    }
-    return it - _data.begin();
-}
-
-// Routine Description:
-// - Inspects the current internal string to find the right edge of it
-// Arguments:
-// - <none>
-// Return Value:
-// - The calculated right boundary of the internal string.
-size_t Ucs2CharRow::MeasureRight() const
-{
-    std::vector<value_type>::const_reverse_iterator it = _data.crbegin();
-    while (it != _data.crend() && it->first == UNICODE_SPACE)
-    {
-        ++it;
-    }
-    return _data.crend() - it;
 }
 
 // Routine Description:

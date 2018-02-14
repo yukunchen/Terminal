@@ -40,8 +40,18 @@ public:
     // TODO does Reset also resize the row?
     void Reset(_In_ short const sRowWidth);
     HRESULT Resize(_In_ const size_t newSize) noexcept;
+    size_t MeasureLeft() const override;
+    size_t MeasureRight() const override;
+
+    // iterators
+    iterator begin() noexcept;
+    const_iterator cbegin() const noexcept;
+
+    iterator end() noexcept;
+    const_iterator cend() const noexcept;
 
     friend constexpr bool operator==(const CharRowBase& a, const CharRowBase& b) noexcept;
+
 protected:
     // Occurs when the user runs out of text in a given row and we're forced to wrap the cursor to the next line
     bool _wrapForced;
@@ -49,7 +59,7 @@ protected:
     // Occurs when the user runs out of text to support a double byte character and we're forced to the next line
     bool _doubleBytePadded;
 
-    T _defaultValue;
+    const T _defaultValue;
 
     std::vector<value_type> _data;
 };
@@ -205,6 +215,64 @@ HRESULT CharRowBase<T>::Resize(_In_ const size_t newSize) noexcept
     CATCH_RETURN();
 
     return S_OK;
+}
+
+template<typename T>
+typename CharRowBase<T>::iterator CharRowBase<T>::begin() noexcept
+{
+    return _data.begin();
+}
+
+template<typename T>
+typename CharRowBase<T>::const_iterator CharRowBase<T>::cbegin() const noexcept
+{
+    return _data.cbegin();
+}
+
+template<typename T>
+typename CharRowBase<T>::iterator CharRowBase<T>::end() noexcept
+{
+    return _data.end();
+}
+
+template<typename T>
+typename CharRowBase<T>::const_iterator CharRowBase<T>::cend() const noexcept
+{
+    return _data.cend();
+}
+
+// Routine Description:
+// - Inspects the current internal string to find the left edge of it
+// Arguments:
+// - <none>
+// Return Value:
+// - The calculated left boundary of the internal string.
+template<typename T>
+size_t CharRowBase<T>::MeasureLeft() const
+{
+    std::vector<value_type>::const_iterator it = _data.cbegin();
+    while (it != _data.cend() && it->first == _defaultValue)
+    {
+        ++it;
+    }
+    return it - _data.begin();
+}
+
+// Routine Description:
+// - Inspects the current internal string to find the right edge of it
+// Arguments:
+// - <none>
+// Return Value:
+// - The calculated right boundary of the internal string.
+template<typename T>
+size_t CharRowBase<T>::MeasureRight() const
+{
+    std::vector<value_type>::const_reverse_iterator it = _data.crbegin();
+    while (it != _data.crend() && it->first == _defaultValue)
+    {
+        ++it;
+    }
+    return _data.crend() - it;
 }
 
 #pragma warning(pop)

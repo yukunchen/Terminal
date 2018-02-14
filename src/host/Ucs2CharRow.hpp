@@ -44,10 +44,6 @@ Revision History:
 class Ucs2CharRow final : public CharRowBase<wchar_t>
 {
 public:
-    using value_type = std::pair<wchar_t, DbcsAttribute>;
-    using iterator = std::vector<value_type>::iterator;
-    using const_iterator = std::vector<value_type>::const_iterator;
-
     Ucs2CharRow(short rowWidth);
     Ucs2CharRow(const Ucs2CharRow& a) = default;
     Ucs2CharRow& operator=(const Ucs2CharRow& a);
@@ -58,19 +54,11 @@ public:
 
     // ICharRow methods
     ICharRow::SupportedEncoding GetSupportedEncoding() const noexcept override;
-    size_t MeasureLeft() const override;
-    size_t MeasureRight() const override;
     void ClearCell(_In_ const size_t column) override;
     bool ContainsText() const override;
     const DbcsAttribute& GetAttribute(_In_ const size_t column) const override;
     DbcsAttribute& GetAttribute(_In_ const size_t column) override;
 
-    // iterators
-    iterator begin() noexcept;
-    const_iterator cbegin() const noexcept;
-
-    iterator end() noexcept;
-    const_iterator cend() const noexcept;
 
 
     std::wstring GetText() const;
@@ -85,7 +73,7 @@ public:
 private:
 
 #ifdef UNIT_TESTING
-    friend class CharRowTests;
+    friend class Ucs2CharRowTests;
 #endif
 
 };
