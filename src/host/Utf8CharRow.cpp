@@ -58,6 +58,11 @@ void Utf8CharRow::swap(Utf8CharRow& other) noexcept
     swap(static_cast<CharRowBase&>(*this), static_cast<CharRowBase&>(other));
 }
 
+ICharRow::SupportedEncoding Utf8CharRow::GetSupportedEncoding() const noexcept
+{
+    return ICharRow::SupportedEncoding::Utf8;
+}
+
 // TODO
 std::string Utf8CharRow::GetText() const
 {

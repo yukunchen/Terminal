@@ -22,7 +22,8 @@ class ICharRow
 public:
     enum class SupportedEncoding
     {
-        Ucs2
+        Ucs2,
+        Utf8
     };
 
     virtual ~ICharRow() = 0;
