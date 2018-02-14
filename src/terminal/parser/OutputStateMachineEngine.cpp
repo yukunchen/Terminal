@@ -493,7 +493,7 @@ bool OutputStateMachineEngine::_IntermediateExclamationDispatch(_In_ wchar_t con
 }
 
 // Routine Description:
-// - Handles actions that have an intermediate ' ', such as DECSCUSR
+// - Handles actions that have an intermediate ' ' (0x20), such as DECSCUSR
 // Arguments:
 // - wch - Character to dispatch.
 // Return Value:

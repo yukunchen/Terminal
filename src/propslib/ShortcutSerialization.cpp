@@ -95,7 +95,7 @@ HRESULT ShortcutSerialization::s_GetPropertyDwordValue(_Inout_ IPropertyStore * 
         hr = PropVariantToUInt32(propvar, &dwValue);
         if (SUCCEEDED(hr))
         {
-                *pdwValue = dwValue;
+            *pdwValue = dwValue;
         }
     }
 
