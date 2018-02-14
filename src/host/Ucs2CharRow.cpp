@@ -155,42 +155,6 @@ std::wstring Ucs2CharRow::GetText() const
 }
 
 // Routine Description:
-// - Sets all properties of the Ucs2CharRow to default values
-// Arguments:
-// - sRowWidth - The width of the row.
-// Return Value:
-// - <none>
-void Ucs2CharRow::Reset(_In_ short const sRowWidth)
-{
-    const value_type insertVals{ UNICODE_SPACE, DbcsAttribute() };
-
-    std::fill(_data.begin(), _data.end(), insertVals);
-    _data.resize(sRowWidth, insertVals);
-
-    _wrapForced = false;
-    _doubleBytePadded = false;
-}
-
-// Routine Description:
-// - resizes the width of the Ucs2CharRow
-// Arguments:
-// - newSize - the new width of the character and attributes rows
-// Return Value:
-// - S_OK on success, otherwise relevant error code
-HRESULT Ucs2CharRow::Resize(_In_ size_t const newSize)
-{
-    // last attribute in a row gets extended to the end
-    const value_type insertVals{ UNICODE_SPACE, _data.back().second };
-    try
-    {
-        _data.resize(newSize, insertVals);
-    }
-    CATCH_RETURN();
-
-    return S_OK;
-}
-
-// Routine Description:
 // - Inspects the current internal string to find the left edge of it
 // Arguments:
 // - <none>

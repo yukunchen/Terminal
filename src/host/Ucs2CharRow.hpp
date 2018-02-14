@@ -58,8 +58,6 @@ public:
 
     // ICharRow methods
     ICharRow::SupportedEncoding GetSupportedEncoding() const noexcept override;
-    HRESULT Resize(_In_ size_t const newSize) override;
-    void Reset(_In_ short const sRowWidth) override;
     size_t MeasureLeft() const override;
     size_t MeasureRight() const override;
     void ClearCell(_In_ const size_t column) override;

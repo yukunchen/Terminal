@@ -37,6 +37,9 @@ public:
     void SetDoubleBytePadded(_In_ bool const doubleBytePadded) noexcept;
     bool WasDoubleBytePadded() const noexcept;
     size_t size() const noexcept override;
+    // TODO does Reset also resize the row?
+    void Reset(_In_ short const sRowWidth);
+    HRESULT Resize(_In_ const size_t newSize) noexcept;
 
     friend constexpr bool operator==(const CharRowBase& a, const CharRowBase& b) noexcept;
 protected:
@@ -167,6 +170,41 @@ template<typename T>
 size_t CharRowBase<T>::size() const noexcept
 {
     return _data.size();
+}
+
+// Routine Description:
+// - Sets all properties of the CharRowBase to default values
+// Arguments:
+// - sRowWidth - The width of the row.
+// Return Value:
+// - <none>
+template<typename T>
+void CharRowBase<T>::Reset(_In_ const short sRowWidth)
+{
+    const value_type insertVals{ _defaultValue, DbcsAttribute{} };
+    std::fill(_data.begin(), _data.end(), insertVals);
+    _data.resize(sRowWidth, insertVals);
+    _wrapForced = false;
+    _doubleBytePadded = false;
+}
+
+// Routine Description:
+// - resizes the width of the CharRowBase
+// Arguments:
+// - newSize - the new width of the character and attributes rows
+// Return Value:
+// - S_OK on success, otherwise relevant error code
+template<typename T>
+HRESULT CharRowBase<T>::Resize(_In_ const size_t newSize) noexcept
+{
+    try
+    {
+        const value_type insertVals{ _defaultValue, DbcsAttribute{} };
+        _data.resize(newSize, insertVals);
+    }
+    CATCH_RETURN();
+
+    return S_OK;
 }
 
 #pragma warning(pop)
