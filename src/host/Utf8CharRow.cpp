@@ -56,5 +56,4 @@ void Utf8CharRow::swap(Utf8CharRow& other) noexcept
     // specialized swap, so we include both in the same namespace and let it sort it out.
     using std::swap;
     swap(static_cast<CharRowBase&>(*this), static_cast<CharRowBase&>(other));
-    swap(_data, other._data);
 }
