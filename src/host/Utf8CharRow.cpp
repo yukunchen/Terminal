@@ -64,7 +64,7 @@ ICharRow::SupportedEncoding Utf8CharRow::GetSupportedEncoding() const noexcept
 }
 
 // TODO
-std::string Utf8CharRow::GetText() const
+Utf8CharRow::string_type Utf8CharRow::GetText() const
 {
     return std::string();
 }

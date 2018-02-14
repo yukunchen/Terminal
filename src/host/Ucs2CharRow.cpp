@@ -64,7 +64,7 @@ void Ucs2CharRow::swap(Ucs2CharRow& other) noexcept
 // - <none>
 // Return Value:
 // - all text data in the row
-std::wstring Ucs2CharRow::GetText() const
+Ucs2CharRow::string_type Ucs2CharRow::GetText() const
 {
     std::wstring temp(_data.size(), UNICODE_SPACE);
     for (size_t i = 0; i < _data.size(); ++i)

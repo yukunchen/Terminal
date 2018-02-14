@@ -17,16 +17,19 @@ Revision History:
 
 #include "ICharRow.hpp"
 
-template <typename T, typename StringType>
+template <typename GlyphType, typename StringType>
 class CharRowBase : public ICharRow
 {
 public:
-    using value_type = typename std::pair<T, DbcsAttribute>;
+    using value_type = typename std::pair<GlyphType, DbcsAttribute>;
     using iterator = typename std::vector<value_type>::iterator;
     using const_iterator = typename std::vector<value_type>::const_iterator;
 
+    // template type params are saved here for use by child classes
+    using glyph_type = typename GlyphType;
+    using string_type = typename StringType;
 
-    CharRowBase(_In_ const size_t rowWidth, _In_ const T defaultValue);
+    CharRowBase(_In_ const size_t rowWidth, _In_ const GlyphType defaultValue);
     virtual ~CharRowBase() = default;
 
     void swap(CharRowBase& other) noexcept;
@@ -51,8 +54,8 @@ public:
 
     virtual StringType GetText() const = 0;
 
-    const T& GetGlyphAt(const size_t column) const;
-    T& GetGlyphAt(const size_t column);
+    const GlyphType& GetGlyphAt(const size_t column) const;
+    GlyphType& GetGlyphAt(const size_t column);
 
     // iterators
     iterator begin() noexcept;
@@ -70,16 +73,16 @@ protected:
     // Occurs when the user runs out of text to support a double byte character and we're forced to the next line
     bool _doubleBytePadded;
 
-    const T _defaultValue;
+    const GlyphType _defaultValue;
 
     std::vector<value_type> _data;
 };
 
-template <typename T, typename StringType>
-void swap(CharRowBase<T, StringType>& a, CharRowBase<T, StringType>& b) noexcept;
+template <typename GlyphType, typename StringType>
+void swap(CharRowBase<GlyphType, StringType>& a, CharRowBase<GlyphType, StringType>& b) noexcept;
 
-template <typename T, typename StringType>
-constexpr bool operator==(const CharRowBase<T, StringType>& a, const CharRowBase<T, StringType>& b) noexcept
+template <typename GlyphType, typename StringType>
+constexpr bool operator==(const CharRowBase<GlyphType, StringType>& a, const CharRowBase<GlyphType, StringType>& b) noexcept
 {
     return (a._wrapForced == b._wrapForced &&
             a._doubleBytePadded == b._doubleBytePadded &&
@@ -94,7 +97,7 @@ namespace std
     /*
       // TODO
     template<>
-    inline void swap<CharRowBase<T, StringType>>(CharRowBase<T, StringType>& a, CharRowBase<T, StringType>& b) noexcept
+    inline void swap<CharRowBase<GlyphType, StringType>>(CharRowBase<GlyphType, StringType>& a, CharRowBase<GlyphType, StringType>& b) noexcept
     {
         a.swap(b);
     }

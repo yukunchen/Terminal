@@ -35,26 +35,21 @@ public:
 
     void swap(Utf8CharRow& other) noexcept;
 
-    std::string GetText() const;
+    string_type GetText() const;
 
     // ICharRow methods
     ICharRow::SupportedEncoding GetSupportedEncoding() const noexcept override;
 
 
     friend constexpr bool operator==(const Utf8CharRow& a, const Utf8CharRow& b) noexcept;
-
-private:
-    using CharType = std::vector<char>;
-    using StringType = std::string;
-
 };
 
 void swap(Utf8CharRow& a, Utf8CharRow& b) noexcept;
 
 constexpr bool operator==(const Utf8CharRow& a, const Utf8CharRow& b) noexcept
 {
-    return (static_cast<const CharRowBase<Utf8CharRow::CharType, Utf8CharRow::StringType>&>(a) ==
-            static_cast<const CharRowBase<Utf8CharRow::CharType, Utf8CharRow::StringType>&>(b));
+    return (static_cast<const CharRowBase<Utf8CharRow::glyph_type, Utf8CharRow::string_type>&>(a) ==
+            static_cast<const CharRowBase<Utf8CharRow::glyph_type, Utf8CharRow::string_type>&>(b));
 }
 
 // this sticks specialization of swap() into the std::namespace for Utf8CharRow, so that callers that use

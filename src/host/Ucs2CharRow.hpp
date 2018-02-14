@@ -55,16 +55,11 @@ public:
     // ICharRow methods
     ICharRow::SupportedEncoding GetSupportedEncoding() const noexcept override;
 
-    std::wstring GetText() const;
-
+    string_type GetText() const;
 
     friend constexpr bool operator==(const Ucs2CharRow& a, const Ucs2CharRow& b) noexcept;
 
 private:
-
-    using CharType = wchar_t;
-    using StringType = std::wstring;
-
 #ifdef UNIT_TESTING
     friend class Ucs2CharRowTests;
 #endif
@@ -75,8 +70,8 @@ void swap(Ucs2CharRow& a, Ucs2CharRow& b) noexcept;
 
 constexpr bool operator==(const Ucs2CharRow& a, const Ucs2CharRow& b) noexcept
 {
-    return (static_cast<const CharRowBase<Ucs2CharRow::CharType, Ucs2CharRow::StringType>&>(a) ==
-            static_cast<const CharRowBase<Ucs2CharRow::CharType, Ucs2CharRow::StringType>&>(b));
+    return (static_cast<const CharRowBase<Ucs2CharRow::glyph_type, Ucs2CharRow::string_type>&>(a) ==
+            static_cast<const CharRowBase<Ucs2CharRow::glyph_type, Ucs2CharRow::string_type>&>(b));
 }
 
 template<typename InputIt1, typename InputIt2>
