@@ -13,12 +13,14 @@ Author(s):
 Revision History:
 --*/
 
+#pragma once
 
 #include "ICharRow.hpp"
+#include "CharRowBase.hpp"
 
 #include <vector>
 
-class Utf8CharRow final : public ICharRow
+class Utf8CharRow final : public CharRowBase
 {
 public:
     using value_type = std::pair<std::vector<char>, DbcsAttribute>;
@@ -41,13 +43,9 @@ public:
     size_t MeasureLeft() const override;
     size_t MeasureRight() const override;
     void ClearCell(_In_ const size_t column) override;
-    void SetWrapStatus(_In_ bool const fWrapWasForced) override;
-    bool WasWrapForced() const override;
     bool ContainsText() const override;
     const DbcsAttribute& GetAttribute(_In_ const size_t column) const override;
     DbcsAttribute& GetAttribute(_In_ const size_t column) override;
-    void SetDoubleBytePadded(_In_ bool const fDoubleBytePadded) override;
-    bool WasDoubleBytePadded() const override;
 
     // iterators
     iterator begin() noexcept;
@@ -56,8 +54,27 @@ public:
     iterator end() noexcept;
     const_iterator cend() const noexcept;
 
+    friend constexpr bool operator==(const Utf8CharRow& a, const Utf8CharRow& b) noexcept;
 
 private:
-    RowFlags bRowFlags;
     std::vector<value_type> _data;
 };
+
+void swap(Utf8CharRow& a, Utf8CharRow& b) noexcept;
+
+constexpr bool operator==(const Utf8CharRow& a, const Utf8CharRow& b) noexcept
+{
+    return (static_cast<const CharRowBase&>(a) == static_cast<const CharRowBase&>(b) &&
+            a._data == b._data);
+}
+
+// this sticks specialization of swap() into the std::namespace for Utf8CharRow, so that callers that use
+// std::swap explicitly over calling the global swap can still get the performance benefit.
+namespace std
+{
+    template<>
+    inline void swap<Utf8CharRow>(Utf8CharRow& a, Utf8CharRow& b) noexcept
+    {
+        a.swap(b);
+    }
+}

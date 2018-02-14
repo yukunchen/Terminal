@@ -27,10 +27,9 @@ void swap(Utf8CharRow& a, Utf8CharRow& b) noexcept
 // - instantiated object
 // Note: will through if unable to allocate char/attribute buffers
 Utf8CharRow::Utf8CharRow(short rowWidth) :
+    CharRowBase(),
     _data(rowWidth, value_type({ UNICODE_SPACE }, DbcsAttribute{}))
 {
-    SetWrapStatus(false);
-    SetDoubleBytePadded(false);
 }
 
 // Routine Description:
@@ -41,7 +40,7 @@ Utf8CharRow::Utf8CharRow(short rowWidth) :
 // - instantiated object
 // Note: will through if unable to allocate char/attribute buffers
 Utf8CharRow::Utf8CharRow(const Utf8CharRow& a) :
-    bRowFlags{ a.bRowFlags },
+    CharRowBase(a),
     _data{ a._data }
 {
 }
@@ -85,6 +84,6 @@ void Utf8CharRow::swap(Utf8CharRow& other) noexcept
     // this looks kinda weird, but we want the compiler to be able to choose between std::swap and a
     // specialized swap, so we include both in the same namespace and let it sort it out.
     using std::swap;
-    swap(bRowFlags, other.bRowFlags);
+    swap(static_cast<CharRowBase&>(*this), static_cast<CharRowBase&>(other));
     swap(_data, other._data);
 }

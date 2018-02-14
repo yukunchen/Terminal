@@ -4,6 +4,7 @@
     <ClCompile Include="..\AttrRow.cpp" />
     <ClCompile Include="..\Ucs2CharRow.cpp" />
     <ClCompile Include="..\Utf8CharRow.cpp" />
+    <ClCompile Include="..\CharRowBase.cpp" />
     <ClCompile Include="..\alias.cpp" />
     <ClCompile Include="..\cmdline.cpp" />
     <ClCompile Include="..\conattrs.cpp" />
@@ -67,6 +68,7 @@
     <ClInclude Include="..\AttrRow.hpp" />
     <ClInclude Include="..\Ucs2CharRow.hpp" />
     <ClInclude Include="..\Utf8CharRow.hpp" />
+    <ClInclude Include="..\CharRowBase.hpp" />
     <ClInclude Include="..\IIoProvider.hpp" />
     <ClInclude Include="..\alias.h" />
     <ClInclude Include="..\ApiRoutines.h" />

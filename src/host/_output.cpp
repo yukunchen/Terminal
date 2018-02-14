@@ -83,7 +83,7 @@ void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
     CATCH_LOG();
 
     // caller knows the wrap status as this func is called only for drawing one line at a time
-    Row.GetCharRow().SetWrapStatus(fWasLineWrapped);
+    Row.GetCharRow().SetWrapForced(fWasLineWrapped);
 
     TextAttributeRun CurrentBufferAttrs;
     CurrentBufferAttrs.SetLength(cchBuffer);
@@ -223,7 +223,7 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
 
             pAttrRun->SetAttributesFromLegacy(ATTR_OF_PCI(SourcePtr) & ~COMMON_LVB_SBCSDBCS);
 
-            pRow->GetCharRow().SetWrapStatus(false); // clear wrap status for rectangle drawing
+            pRow->GetCharRow().SetWrapForced(false); // clear wrap status for rectangle drawing
 
             for (SHORT j = psrSrc->Left;
                  j <= psrSrc->Right && it != itEnd;
@@ -686,7 +686,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
                 Y++;
 
                 // if we are wrapping around, set that this row is wrapping
-                pRow->GetCharRow().SetWrapStatus(true);
+                pRow->GetCharRow().SetWrapForced(true);
 
                 if (Y >= coordScreenBufferSize.Y)
                 {
@@ -696,7 +696,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
             else
             {
                 // if we're not wrapping around, set that this row isn't wrapped.
-                pRow->GetCharRow().SetWrapStatus(false);
+                pRow->GetCharRow().SetWrapForced(false);
                 break;
             }
 
@@ -1021,7 +1021,7 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
             }
 
             // invalidate row wrap status for any bulk fill of text characters
-            pRow->GetCharRow().SetWrapStatus(false);
+            pRow->GetCharRow().SetWrapForced(false);
 
             if (NumWritten < *pcElements)
             {
@@ -1276,7 +1276,7 @@ void FillRectangle(_In_ const CHAR_INFO * const pciFill,
         pRow->GetAttrRow().InsertAttrRuns(&AttrRun, 1, psrTarget->Left, psrTarget->Right, coordScreenBufferSize.X);
 
         // invalidate row wrapping for rectangular drawing
-        pRow->GetCharRow().SetWrapStatus(false);
+        pRow->GetCharRow().SetWrapForced(false);
 
         try
         {

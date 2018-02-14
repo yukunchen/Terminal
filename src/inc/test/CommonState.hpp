@@ -270,11 +270,11 @@ private:
         // odd rows forced a wrap
         if (pRow->GetId() % 2 != 0)
         {
-            pRow->GetCharRow().SetWrapStatus(true);
+            pRow->GetCharRow().SetWrapForced(true);
         }
         else
         {
-            pRow->GetCharRow().SetWrapStatus(false);
+            pRow->GetCharRow().SetWrapForced(false);
         }
     }
 
@@ -318,6 +318,6 @@ private:
         // everything gets default attributes
         pRow->GetAttrRow().Reset(80, gci.CurrentScreenBuffer->GetAttributes());
 
-        pRow->GetCharRow().SetWrapStatus(true);
+        pRow->GetCharRow().SetWrapForced(true);
     }
 };

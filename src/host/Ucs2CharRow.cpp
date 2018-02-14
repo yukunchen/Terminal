@@ -27,10 +27,9 @@ void swap(Ucs2CharRow& a, Ucs2CharRow& b) noexcept
 // - instantiated object
 // Note: will through if unable to allocate char/attribute buffers
 Ucs2CharRow::Ucs2CharRow(short rowWidth) :
+    CharRowBase(),
     _data(rowWidth, std::pair<wchar_t, DbcsAttribute>(UNICODE_SPACE, DbcsAttribute{}))
 {
-    SetWrapStatus(false);
-    SetDoubleBytePadded(false);
 }
 
 // Routine Description:
@@ -41,7 +40,7 @@ Ucs2CharRow::Ucs2CharRow(short rowWidth) :
 // - instantiated object
 // Note: will through if unable to allocate char/attribute buffers
 Ucs2CharRow::Ucs2CharRow(const Ucs2CharRow& a) :
-    bRowFlags{ a.bRowFlags },
+    CharRowBase(a),
     _data{ a._data }
 {
 }
@@ -85,7 +84,7 @@ void Ucs2CharRow::swap(Ucs2CharRow& other) noexcept
     // this looks kinda weird, but we want the compiler to be able to choose between std::swap and a
     // specialized swap, so we include both in the same namespace and let it sort it out.
     using std::swap;
-    swap(bRowFlags, other.bRowFlags);
+    swap(static_cast<CharRowBase&>(*this), static_cast<CharRowBase&>(other));
     swap(_data, other._data);
 }
 
@@ -203,8 +202,8 @@ void Ucs2CharRow::Reset(_In_ short const sRowWidth)
     std::fill(_data.begin(), _data.end(), insertVals);
     _data.resize(sRowWidth, insertVals);
 
-    SetWrapStatus(false);
-    SetDoubleBytePadded(false);
+    _wrapForced = false;
+    _doubleBytePadded = false;
 }
 
 // Routine Description:
@@ -224,64 +223,6 @@ HRESULT Ucs2CharRow::Resize(_In_ size_t const newSize)
     CATCH_RETURN();
 
     return S_OK;
-}
-
-// Routine Description:
-// - Sets the wrap status for the current row
-// Arguments:
-// - fWrapWasForced - True if the row ran out of space and we forced to wrap to the next row. False otherwise.
-// Return Value:
-// - <none>
-void Ucs2CharRow::SetWrapStatus(_In_ bool const fWrapWasForced)
-{
-    if (fWrapWasForced)
-    {
-        this->bRowFlags |= RowFlags::WrapForced;
-    }
-    else
-    {
-        this->bRowFlags &= ~RowFlags::WrapForced;
-    }
-}
-
-// Routine Description:
-// - Gets the wrap status for the current row
-// Arguments:
-// - <none>
-// Return Value:
-// - True if the row ran out of space and we were forced to wrap to the next row. False otherwise.
-bool Ucs2CharRow::WasWrapForced() const
-{
-    return IsFlagSet((DWORD)this->bRowFlags, (DWORD)RowFlags::WrapForced);
-}
-
-// Routine Description:
-// - Sets the double byte padding for the current row
-// Arguments:
-// - fWrapWasForced - True if the row ran out of space for a double byte character and we padded out the row. False otherwise.
-// Return Value:
-// - <none>
-void Ucs2CharRow::SetDoubleBytePadded(_In_ bool const fDoubleBytePadded)
-{
-    if (fDoubleBytePadded)
-    {
-        this->bRowFlags |= RowFlags::DoubleBytePadded;
-    }
-    else
-    {
-        this->bRowFlags &= ~RowFlags::DoubleBytePadded;
-    }
-}
-
-// Routine Description:
-// - Gets the double byte padding status for the current row.
-// Arguments:
-// - <none>
-// Return Value:
-// - True if the row didn't have space for a double byte character and we were padded out the row. False otherwise.
-bool Ucs2CharRow::WasDoubleBytePadded() const
-{
-    return IsFlagSet((DWORD)this->bRowFlags, (DWORD)RowFlags::DoubleBytePadded);
 }
 
 // Routine Description:

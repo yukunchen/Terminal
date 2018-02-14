@@ -24,6 +24,7 @@ Revision History:
 
 #include "DbcsAttribute.hpp"
 #include "ICharRow.hpp"
+#include "CharRowBase.hpp"
 
 // Characters used for padding out the buffer with invalid/empty space
 #define PADDING_CHAR UNICODE_SPACE
@@ -40,7 +41,7 @@ Revision History:
 //       ^    ^                  ^                     ^
 //       |    |                  |                     |
 //     Chars Left               Right                end of Chars buffer
-class Ucs2CharRow final : public ICharRow
+class Ucs2CharRow final : public CharRowBase
 {
 public:
     using value_type = std::pair<wchar_t, DbcsAttribute>;
@@ -63,14 +64,9 @@ public:
     size_t MeasureLeft() const override;
     size_t MeasureRight() const override;
     void ClearCell(_In_ const size_t column) override;
-    void SetWrapStatus(_In_ bool const fWrapWasForced) override;
-    bool WasWrapForced() const override;
     bool ContainsText() const override;
     const DbcsAttribute& GetAttribute(_In_ const size_t column) const override;
     DbcsAttribute& GetAttribute(_In_ const size_t column) override;
-    void SetDoubleBytePadded(_In_ bool const fDoubleBytePadded) override;
-    bool WasDoubleBytePadded() const override;
-
 
     // iterators
     iterator begin() noexcept;
@@ -90,7 +86,6 @@ public:
     friend constexpr bool operator==(const Ucs2CharRow& a, const Ucs2CharRow& b) noexcept;
 
 private:
-    RowFlags bRowFlags;
     std::vector<value_type> _data;
 
 #ifdef UNIT_TESTING
@@ -99,11 +94,11 @@ private:
 
 };
 
-DEFINE_ENUM_FLAG_OPERATORS(Ucs2CharRow::RowFlags);
 void swap(Ucs2CharRow& a, Ucs2CharRow& b) noexcept;
+
 constexpr bool operator==(const Ucs2CharRow& a, const Ucs2CharRow& b) noexcept
 {
-    return (a.bRowFlags == b.bRowFlags &&
+    return (static_cast<const CharRowBase&>(a) == static_cast<const CharRowBase&>(b) &&
             a._data == b._data);
 }
 

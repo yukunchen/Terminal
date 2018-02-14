@@ -236,11 +236,11 @@ void TextBufferTests::TestWrapFlag()
     VERIFY_IS_FALSE(Row.GetCharRow().WasWrapForced());
 
     // try set wrap and check
-    Row.GetCharRow().SetWrapStatus(true);
+    Row.GetCharRow().SetWrapForced(true);
     VERIFY_IS_TRUE(Row.GetCharRow().WasWrapForced());
 
     // try unset wrap and check
-    Row.GetCharRow().SetWrapStatus(false);
+    Row.GetCharRow().SetWrapForced(false);
     VERIFY_IS_FALSE(Row.GetCharRow().WasWrapForced());
 }
 
@@ -542,7 +542,7 @@ void TextBufferTests::TestSetWrapOnCurrentRow()
     Log::Comment(L"Testing off to on");
 
     // turn wrap status off first
-    Row.GetCharRow().SetWrapStatus(false);
+    Row.GetCharRow().SetWrapForced(false);
 
     // trigger wrap
     pTbi->SetWrapOnCurrentRow();
@@ -553,7 +553,7 @@ void TextBufferTests::TestSetWrapOnCurrentRow()
     Log::Comment(L"Testing on stays on");
 
     // make sure wrap status is on
-    Row.GetCharRow().SetWrapStatus(true);
+    Row.GetCharRow().SetWrapForced(true);
 
     // trigger wrap
     pTbi->SetWrapOnCurrentRow();

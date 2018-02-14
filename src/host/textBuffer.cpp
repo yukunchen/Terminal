@@ -537,7 +537,7 @@ void TEXT_BUFFER_INFO::AdjustWrapOnCurrentRow(_In_ bool const fSet)
     const UINT uiCurrentRowOffset = this->GetCursor()->GetPosition().Y;
 
     // Set the wrap status as appropriate
-    GetRowByOffset(uiCurrentRowOffset).GetCharRow().SetWrapStatus(fSet);
+    GetRowByOffset(uiCurrentRowOffset).GetCharRow().SetWrapForced(fSet);
 }
 
 //Routine Description:

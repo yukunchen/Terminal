@@ -28,11 +28,11 @@ class Ucs2CharRowTests
     TEST_METHOD_SETUP(MethodSetup)
     {
         pSingleByte = new Ucs2CharRow(_sRowWidth);
-        pSingleByte->SetWrapStatus(true);
+        pSingleByte->SetWrapForced(true);
         pSingleByte->SetDoubleBytePadded(true);
 
         pDoubleByte = new Ucs2CharRow(_sRowWidth);
-        pDoubleByte->SetWrapStatus(true);
+        pDoubleByte->SetWrapForced(true);
         pDoubleByte->SetDoubleBytePadded(true);
 
         return true;
