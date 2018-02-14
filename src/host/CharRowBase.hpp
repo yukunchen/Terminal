@@ -50,9 +50,10 @@ public:
     DbcsAttribute& GetAttribute(_In_ const size_t column) override;
     void ClearGlyph(const size_t column);
 
-
+    // new pure virtual methods
     virtual StringType GetText() const = 0;
 
+    // working with glyphs
     const GlyphType& GetGlyphAt(const size_t column) const;
     GlyphType& GetGlyphAt(const size_t column);
 
@@ -72,8 +73,10 @@ protected:
     // Occurs when the user runs out of text to support a double byte character and we're forced to the next line
     bool _doubleBytePadded;
 
+    // default glyph value, used for reseting the character data portion of a cell
     const GlyphType _defaultValue;
 
+    // storage for glyph data and dbcs attributes
     std::vector<value_type> _data;
 };
 
@@ -87,20 +90,6 @@ constexpr bool operator==(const CharRowBase<GlyphType, StringType>& a, const Cha
             a._doubleBytePadded == b._doubleBytePadded &&
             a._defaultValue == b._defaultValue &&
             a._data == b._data);
-}
-
-// this sticks specialization of swap() into the std::namespace for CharRowBase, so that callers that use
-// std::swap explicitly over calling the global swap can still get the performance benefit.
-namespace std
-{
-    /*
-      // TODO
-    template<>
-    inline void swap<CharRowBase<GlyphType, StringType>>(CharRowBase<GlyphType, StringType>& a, CharRowBase<GlyphType, StringType>& b) noexcept
-    {
-        a.swap(b);
-    }
-    */
 }
 
 #include "CharRowBaseImpl.hpp"

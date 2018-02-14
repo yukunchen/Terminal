@@ -4,7 +4,6 @@
     <ClCompile Include="..\AttrRow.cpp" />
     <ClCompile Include="..\Ucs2CharRow.cpp" />
     <ClCompile Include="..\Utf8CharRow.cpp" />
-    <ClCompile Include="..\CharRowBase.cpp" />
     <ClCompile Include="..\alias.cpp" />
     <ClCompile Include="..\cmdline.cpp" />
     <ClCompile Include="..\conattrs.cpp" />
