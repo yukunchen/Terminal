@@ -49,7 +49,7 @@ public:
     using const_iterator = std::vector<value_type>::const_iterator;
 
     Ucs2CharRow(short rowWidth);
-    Ucs2CharRow(const Ucs2CharRow& a);
+    Ucs2CharRow(const Ucs2CharRow& a) = default;
     Ucs2CharRow& operator=(const Ucs2CharRow& a);
     Ucs2CharRow(Ucs2CharRow&& a) noexcept = default;
     ~Ucs2CharRow() = default;

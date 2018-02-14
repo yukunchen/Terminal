@@ -28,7 +28,7 @@ public:
     using const_iterator = std::vector<value_type>::const_iterator;
 
     Utf8CharRow(short rowWidth);
-    Utf8CharRow(const Utf8CharRow& a);
+    Utf8CharRow(const Utf8CharRow& a) = default;
     Utf8CharRow& operator=(const Utf8CharRow& a);
     Utf8CharRow(Utf8CharRow&& a) noexcept = default;
     ~Utf8CharRow() = default;

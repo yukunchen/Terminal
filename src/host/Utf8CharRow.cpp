@@ -32,18 +32,6 @@ Utf8CharRow::Utf8CharRow(short rowWidth) :
 }
 
 // Routine Description:
-// - copy constructor
-// Arguments:
-// - Utf8CharRow to copy
-// Return Value:
-// - instantiated object
-// Note: will through if unable to allocate char/attribute buffers
-Utf8CharRow::Utf8CharRow(const Utf8CharRow& a) :
-    CharRowBase(a)
-{
-}
-
-// Routine Description:
 // - assignment operator
 // Arguments:
 // - Utf8CharRow to copy

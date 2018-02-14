@@ -32,18 +32,6 @@ Ucs2CharRow::Ucs2CharRow(short rowWidth) :
 }
 
 // Routine Description:
-// - copy constructor
-// Arguments:
-// - Ucs2CharRow to copy
-// Return Value:
-// - instantiated object
-// Note: will through if unable to allocate char/attribute buffers
-Ucs2CharRow::Ucs2CharRow(const Ucs2CharRow& a) :
-    CharRowBase(a)
-{
-}
-
-// Routine Description:
 // - assignment operator
 // Arguments:
 // - Ucs2CharRow to copy
