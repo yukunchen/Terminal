@@ -666,7 +666,7 @@ bool TEXT_BUFFER_INFO::IncrementCircularBuffer()
     // First, clean out the old "first row" as it will become the "last row" of the buffer after the circle is performed.
     TextAttribute FillAttributes;
     FillAttributes.SetFromLegacy(_ciFill.Attributes);
-    bool fSuccess = _storage[_FirstRow].Reset(_coordBufferSize.X, FillAttributes);
+    bool fSuccess = _storage[_FirstRow].Reset(FillAttributes);
     if (fSuccess)
     {
         // Now proceed to increment.

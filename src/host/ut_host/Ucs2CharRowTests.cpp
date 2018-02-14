@@ -23,15 +23,15 @@ class Ucs2CharRowTests
     Ucs2CharRow* pSingleByte;
     Ucs2CharRow* pDoubleByte;
 
-    short _sRowWidth = 80;
+    size_t _sRowWidth = 80;
 
     TEST_METHOD_SETUP(MethodSetup)
     {
-        pSingleByte = new Ucs2CharRow(_sRowWidth);
+        pSingleByte = new Ucs2CharRow(static_cast<short>(_sRowWidth));
         pSingleByte->SetWrapForced(true);
         pSingleByte->SetDoubleBytePadded(true);
 
-        pDoubleByte = new Ucs2CharRow(_sRowWidth);
+        pDoubleByte = new Ucs2CharRow(static_cast<short>(_sRowWidth));
         pDoubleByte->SetWrapForced(true);
         pDoubleByte->SetDoubleBytePadded(true);
 
@@ -47,9 +47,6 @@ class Ucs2CharRowTests
 
     TEST_METHOD(TestInitialize)
     {
-        // Properties needed for test
-        const short sRowWidth = 44;
-
         // Cases to test
         Ucs2CharRow* pTestItems[] { pSingleByte, pDoubleByte };
 
@@ -58,12 +55,12 @@ class Ucs2CharRowTests
         {
             Ucs2CharRow* pUnderTest = pTestItems[iIndex];
 
-            pUnderTest->Reset(sRowWidth);
+            pUnderTest->Reset();
 
             VERIFY_IS_FALSE(pUnderTest->WasWrapForced());
             VERIFY_IS_FALSE(pUnderTest->WasDoubleBytePadded());
 
-            for (UINT iStrLength = 0; iStrLength < sRowWidth; iStrLength++)
+            for (UINT iStrLength = 0; iStrLength < _sRowWidth; iStrLength++)
             {
                 VERIFY_ARE_EQUAL(pUnderTest->GetGlyphAt(iStrLength), UNICODE_SPACE);
                 VERIFY_IS_TRUE(pUnderTest->GetAttribute(iStrLength).IsSingle());
@@ -74,7 +71,7 @@ class Ucs2CharRowTests
     TEST_METHOD(TestContainsText)
     {
         // After init, should have no text
-        pSingleByte->Reset(_sRowWidth);
+        pSingleByte->Reset();
         VERIFY_IS_FALSE(pSingleByte->ContainsText());
 
         // add some text

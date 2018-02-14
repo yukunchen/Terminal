@@ -30,8 +30,8 @@ public:
 
     virtual SupportedEncoding GetSupportedEncoding() const noexcept = 0;
     virtual size_t size() const noexcept = 0;
+    virtual void Reset() = 0;
     virtual HRESULT Resize(_In_ const size_t newSize) noexcept = 0;
-    virtual void Reset(_In_ const short newSize) = 0;
     virtual size_t MeasureRight() const = 0;
     virtual size_t MeasureLeft() const = 0;
     virtual void ClearCell(_In_ const size_t column) = 0;

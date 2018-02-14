@@ -128,14 +128,13 @@ void ROW::SetId(_In_ const SHORT id)
 // Routine Description:
 // - Sets all properties of the ROW to default values
 // Arguments:
-// - sRowWidth - The width of the row.
 // - Attr - The default attribute (color) to fill
 // Return Value:
 // - <none>
-bool ROW::Reset(_In_ short const sRowWidth, _In_ const TextAttribute Attr)
+bool ROW::Reset(_In_ const TextAttribute Attr)
 {
-    _charRow->Reset(sRowWidth);
-    return _attrRow.Reset(sRowWidth, Attr);
+    _charRow->Reset();
+    return _attrRow.Reset(Attr);
 }
 
 // Routine Description:

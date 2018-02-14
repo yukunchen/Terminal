@@ -31,7 +31,7 @@ public:
 
     void swap(ATTR_ROW& other) noexcept;
 
-    bool Reset(_In_ UINT const cchRowWidth, _In_ const TextAttribute attr);
+    bool Reset(_In_ const TextAttribute attr);
 
     void FindAttrIndex(_In_ size_t const index,
                        _Outptr_ TextAttributeRun** const ppIndexedAttr,

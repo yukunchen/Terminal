@@ -40,8 +40,7 @@ public:
     void SetDoubleBytePadded(_In_ bool const doubleBytePadded) noexcept;
     bool WasDoubleBytePadded() const noexcept;
     size_t size() const noexcept override;
-    // TODO does Reset also resize the row?
-    void Reset(_In_ short const sRowWidth);
+    void Reset();
     HRESULT Resize(_In_ const size_t newSize) noexcept;
     size_t MeasureLeft() const override;
     size_t MeasureRight() const override;

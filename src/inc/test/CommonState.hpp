@@ -246,7 +246,7 @@ private:
 
         // set some colors
         TextAttribute Attr = TextAttribute(0);
-        pRow->GetAttrRow().Reset(15, Attr);
+        pRow->GetAttrRow().Reset(Attr);
         // A = bright red on dark gray
         // This string starts at index 0
         Attr = TextAttribute(FOREGROUND_RED | FOREGROUND_INTENSITY | BACKGROUND_INTENSITY);
@@ -316,7 +316,7 @@ private:
         OverwriteColumns(pwszText, pwszText + length, attrs.cbegin(), charRow.begin());
 
         // everything gets default attributes
-        pRow->GetAttrRow().Reset(80, gci.CurrentScreenBuffer->GetAttributes());
+        pRow->GetAttrRow().Reset(gci.CurrentScreenBuffer->GetAttributes());
 
         pRow->GetCharRow().SetWrapForced(true);
     }

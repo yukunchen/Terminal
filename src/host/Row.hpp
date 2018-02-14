@@ -44,7 +44,7 @@ public:
     SHORT GetId() const noexcept;
     void SetId(_In_ const SHORT id);
 
-    bool Reset(_In_ short const sRowWidth, _In_ const TextAttribute Attr);
+    bool Reset(_In_ const TextAttribute Attr);
     HRESULT Resize(_In_ size_t const width);
 
     void ClearColumn(_In_ const size_t column);

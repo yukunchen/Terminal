@@ -112,11 +112,11 @@ inline size_t CharRowBase<GlyphType, StringType>::size() const noexcept
 // Return Value:
 // - <none>
 template<typename GlyphType, typename StringType>
-inline void CharRowBase<GlyphType, StringType>::Reset(_In_ const short sRowWidth)
+inline void CharRowBase<GlyphType, StringType>::Reset()
 {
     const value_type insertVals{ _defaultValue, DbcsAttribute{} };
     std::fill(_data.begin(), _data.end(), insertVals);
-    _data.resize(sRowWidth, insertVals);
+
     _wrapForced = false;
     _doubleBytePadded = false;
 }
