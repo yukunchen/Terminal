@@ -892,20 +892,17 @@ bool InputStateMachineEngine::_GetXYPosition(_In_reads_(cParams) const unsigned 
     if (cParams == 0)
     {
         // Empty parameter sequences should use the default
-        fSuccess = true;
     }
     else if (cParams == 1)
     {
         // If there's only one param, leave the default for the column, and retrieve the specified row.
         *puiLine = rgusParams[0];
-        fSuccess = true;
     }
     else if (cParams == 2)
     {
         // If there are exactly two parameters, use them.
         *puiLine = rgusParams[0];
         *puiColumn = rgusParams[1];
-        fSuccess = true;
     }
     else
     {
