@@ -407,6 +407,9 @@ bool OutputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
         case L'!':
             fSuccess = _IntermediateExclamationDispatch(wch);
             break;
+        case L' ':
+            fSuccess = _IntermediateSpaceDispatch(wch, rgusParams, cParams);
+            break;
         default:
             // If no functions to call, overall dispatch was a failure.
             fSuccess = false;
@@ -489,6 +492,49 @@ bool OutputStateMachineEngine::_IntermediateExclamationDispatch(_In_ wchar_t con
     return fSuccess;
 }
 
+// Routine Description:
+// - Handles actions that have an intermediate ' ' (0x20), such as DECSCUSR
+// Arguments:
+// - wch - Character to dispatch.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool OutputStateMachineEngine::_IntermediateSpaceDispatch(_In_ wchar_t const wchAction,
+                                                          _In_reads_(cParams) const unsigned short* const rgusParams,
+                                                          _In_ const unsigned short cParams)
+{
+    bool fSuccess = false;
+    DispatchCommon::CursorStyle cursorStyle = s_defaultCursorStyle;
+
+    // Parse params
+    switch(wchAction)
+    {
+    case VTActionCodes::DECSCUSR_SetCursorStyle:
+        fSuccess = _GetCursorStyle(rgusParams, cParams, &cursorStyle);
+        break;
+    default:
+        // If no functions to call, overall dispatch was a failure.
+        fSuccess = false;
+        break;
+    }
+
+    // if param filling successful, try to dispatch
+    if (fSuccess)
+    {
+        switch(wchAction)
+        {
+        case VTActionCodes::DECSCUSR_SetCursorStyle:
+            fSuccess = _pDispatch->SetCursorStyle(cursorStyle);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSCUSR);
+            break;
+        default:
+            // If no functions to call, overall dispatch was a failure.
+            fSuccess = false;
+            break;
+        }
+    }
+
+    return fSuccess;
+}
 
 // Routine Description:
 // - Triggers the Clear action to indicate that the state machine should erase
@@ -547,6 +593,13 @@ bool OutputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const /*wch*/,
     case OscActionCodes::SetColor:
         fSuccess = _GetOscSetColorTable(pwchOscStringBuffer, cchOscString, &tableIndex, &dwColor);
         break;
+    case OscActionCodes::SetCursorColor:
+        fSuccess = _GetOscSetCursorColor(pwchOscStringBuffer, cchOscString, &dwColor);
+        break;
+    case OscActionCodes::ResetCursorColor:
+        dwColor = INVALID_COLOR;
+        fSuccess = true;
+        break;
     default:
         // If no functions to call, overall dispatch was a failure.
         fSuccess = false;
@@ -565,6 +618,14 @@ bool OutputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const /*wch*/,
         case OscActionCodes::SetColor:
             fSuccess = _pDispatch->SetColorTableEntry(tableIndex, dwColor);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCCT);
+            break;
+        case OscActionCodes::SetCursorColor:
+            fSuccess = _pDispatch->SetCursorColor(dwColor);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCSCC);
+            break;
+        case OscActionCodes::ResetCursorColor:
+            fSuccess = _pDispatch->SetCursorColor(dwColor);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCRCC);
             break;
         default:
             // If no functions to call, overall dispatch was a failure.
@@ -1158,81 +1219,49 @@ bool OutputStateMachineEngine::s_IsHexNumber(_In_ wchar_t const wch)
 }
 
 // Routine Description:
-// - OSC 4 ; c ; spec ST
-//      c: the index of the ansi color table
+// - Given a color spec string, attempts to parse the color that's encoded.
+//   The only supported spec currently is the following:
 //      spec: a color in the following format:
 //          "rgb:<red>/<green>/<blue>"
-//          where <color> is two hex digits
+//          where <color> is one or two hex digits, upper or lower case.
 // Arguments:
-// - ppwchTitle - a pointer to point to the Osc String to use as a title.
-// - pcchTitleLength - a pointer place the length of ppwchTitle into.
+// - pwchBuffer - The string containing the color spec string to parse.
+// - cchBuffer - a the length of the pwchBuffer
+// - pRgb - recieves the color that we parsed
 // Return Value:
-// - True if there was a title to output. (a title with length=0 is still valid)
-bool OutputStateMachineEngine::_GetOscSetColorTable(_In_reads_(cchOscString) const wchar_t* const pwchOscStringBuffer,
-                                                    _In_ const size_t cchOscString,
-                                                    _Out_ size_t* const pTableIndex,
-                                                    _Out_ DWORD* const pRgb) const
+// - True if a color was successfully parsed
+bool OutputStateMachineEngine::s_ParseColorSpec(_In_reads_(cchBuffer) const wchar_t* const pwchBuffer,
+                                                _In_ const size_t cchBuffer,
+                                                _Out_ DWORD* const pRgb)
 {
-    *pTableIndex = 0;
-    *pRgb = 0;
-    const wchar_t* pwchCurr = pwchOscStringBuffer;
-    const wchar_t*const pwchEnd = pwchOscStringBuffer + cchOscString;
-    size_t _TableIndex = 0;
-    unsigned int rguiColorValues[3] = {0};
-
-    bool foundTableIndex = false;
+    const wchar_t* pwchCurr = pwchBuffer;
+    const wchar_t* const pwchEnd = pwchBuffer + cchBuffer;
     bool foundRGB = false;
     bool foundValidColorSpec = false;
+    unsigned int rguiColorValues[3] = {0};
     bool fSuccess = false;
     // We can have anywhere between [11,15] characters
-    // 11 "#;rgb:h/h/h"
-    // 15 "##;rgb:hh/hh/hh"
+    // 9 "rgb:h/h/h"
+    // 12 "rgb:hh/hh/hh"
     // Any fewer cannot be valid, and any more will be too many.
     // Return early in this case.
     //      We'll still have to bounds check when parsing the hh/hh/hh values
-    if (cchOscString < 11 || cchOscString > 15)
+    if (cchBuffer < 9 || cchBuffer > 12)
     {
         return false;
     }
 
-    // First try to get the table index, a number between [0,15]
-    for (size_t i = 0; i < 3; i++)
-    {
-        const wchar_t wch = *pwchCurr;
-        if (s_IsNumber(wch))
-        {
-            _TableIndex *= 10;
-            _TableIndex += wch - L'0';
-
-            pwchCurr++;
-        }
-        else if (wch == L';' && i > 0)
-        {
-            // We need to explicitly pass in a number, we can't default to 0 if
-            //  there's no param
-            pwchCurr++;
-            foundTableIndex = true;
-            break;
-        }
-        else
-        {
-            // Found an unexpected character, fail.
-            break;
-        }
-    }
     // Now we look for "rgb:"
     // Other colorspaces are theoretically possible, but we don't support them.
-    if (foundTableIndex)
+
+    if ((pwchCurr[0] == L'r') &&
+        (pwchCurr[1] == L'g') &&
+        (pwchCurr[2] == L'b') &&
+        (pwchCurr[3] == L':') )
     {
-        if ((pwchCurr[0] == L'r') &&
-            (pwchCurr[1] == L'g') &&
-            (pwchCurr[2] == L'b') &&
-            (pwchCurr[3] == L':') )
-        {
-            foundRGB = true;
-        }
-        pwchCurr += 4;
+        foundRGB = true;
     }
+    pwchCurr += 4;
 
     if (foundRGB)
     {
@@ -1290,7 +1319,6 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(_In_reads_(cchOscString) con
             }
         }
     }
-
     // Only if we find a valid colorspec can we pass it out successfully.
     if (foundValidColorSpec)
     {
@@ -1298,9 +1326,116 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(_In_reads_(cchOscString) con
                           LOBYTE(rguiColorValues[1]),
                           LOBYTE(rguiColorValues[2]));
 
-        *pTableIndex = _TableIndex;
         *pRgb = color;
         fSuccess = true;
+    }
+    return fSuccess;
+}
+
+// Routine Description:
+// - OSC 4 ; c ; spec ST
+//      c: the index of the ansi color table
+//      spec: a color in the following format:
+//          "rgb:<red>/<green>/<blue>"
+//          where <color> is two hex digits
+// Arguments:
+// - ppwchTitle - a pointer to point to the Osc String to use as a title.
+// - pcchTitleLength - a pointer place the length of ppwchTitle into.
+// Return Value:
+// - True if there was a title to output. (a title with length=0 is still valid)
+bool OutputStateMachineEngine::_GetOscSetColorTable(_In_reads_(cchOscString) const wchar_t* const pwchOscStringBuffer,
+                                                    _In_ const size_t cchOscString,
+                                                    _Out_ size_t* const pTableIndex,
+                                                    _Out_ DWORD* const pRgb) const
+{
+    *pTableIndex = 0;
+    *pRgb = 0;
+    const wchar_t* pwchCurr = pwchOscStringBuffer;
+    const wchar_t* const pwchEnd = pwchOscStringBuffer + cchOscString;
+    size_t _TableIndex = 0;
+
+    bool foundTableIndex = false;
+    bool fSuccess = false;
+    // We can have anywhere between [11,15] characters
+    // 11 "#;rgb:h/h/h"
+    // 15 "##;rgb:hh/hh/hh"
+    // Any fewer cannot be valid, and any more will be too many.
+    // Return early in this case.
+    //      We'll still have to bounds check when parsing the hh/hh/hh values
+    if (cchOscString < 11 || cchOscString > 15)
+    {
+        return false;
+    }
+
+    // First try to get the table index, a number between [0,15]
+    for (size_t i = 0; i < 3; i++)
+    {
+        const wchar_t wch = *pwchCurr;
+        if (s_IsNumber(wch))
+        {
+            _TableIndex *= 10;
+            _TableIndex += wch - L'0';
+
+            pwchCurr++;
+        }
+        else if (wch == L';' && i > 0)
+        {
+            // We need to explicitly pass in a number, we can't default to 0 if
+            //  there's no param
+            pwchCurr++;
+            foundTableIndex = true;
+            break;
+        }
+        else
+        {
+            // Found an unexpected character, fail.
+            break;
+        }
+    }
+    // Now we look for "rgb:"
+    // Other colorspaces are theoretically possible, but we don't support them.
+    if (foundTableIndex)
+    {
+        DWORD color = 0;
+        fSuccess = s_ParseColorSpec(pwchCurr, pwchEnd - pwchCurr, &color);
+
+        if (fSuccess)
+        {
+            *pTableIndex = _TableIndex;
+            *pRgb = color;
+        }
+    }
+
+
+    return fSuccess;
+}
+
+// Routine Description:
+// - OSC 12 ; spec ST
+//      spec: a color in the following format:
+//          "rgb:<red>/<green>/<blue>"
+//          where <color> is two hex digits
+// Arguments:
+// - ppwchTitle - a pointer to point to the Osc String to use as a title.
+// - pcchTitleLength - a pointer place the length of ppwchTitle into.
+// Return Value:
+// - True if there was a title to output. (a title with length=0 is still valid)
+bool OutputStateMachineEngine::_GetOscSetCursorColor(_In_reads_(cchOscString) const wchar_t* const pwchOscStringBuffer,
+                                                     _In_ const size_t cchOscString,
+                                                     _Out_ DWORD* const pRgb) const
+{
+    *pRgb = 0;
+    const wchar_t* pwchCurr = pwchOscStringBuffer;
+    const wchar_t* const pwchEnd = pwchOscStringBuffer + cchOscString;
+
+    bool fSuccess = false;
+
+    DWORD color = 0;
+    fSuccess = s_ParseColorSpec(pwchCurr, pwchEnd - pwchCurr, &color);
+
+    if (fSuccess)
+    {
+        *pRgb = color;
     }
 
     return fSuccess;
@@ -1340,6 +1475,36 @@ bool OutputStateMachineEngine::_GetWindowManipulationType(_In_reads_(cParams) co
                 fSuccess = false;
                 break;
         }
+    }
+
+    return fSuccess;
+}
+
+
+// Routine Description:
+// - Retrieves a distance for a scroll operation from the parameter pool stored during Param actions.
+// Arguments:
+// - puiDistance - Memory location to receive the distance
+// Return Value:
+// - True if we successfully pulled the scroll distance from the parameters we've stored. False otherwise.
+_Success_(return)
+bool OutputStateMachineEngine::_GetCursorStyle(_In_reads_(cParams) const unsigned short* const rgusParams,
+                                               _In_ const unsigned short cParams,
+                                               _Out_ DispatchCommon::CursorStyle* const pCursorStyle) const
+{
+    bool fSuccess = false;
+    *pCursorStyle = s_defaultCursorStyle;
+
+    if (cParams == 0)
+    {
+        // Empty parameter sequences should use the default
+        fSuccess = true;
+    }
+    else if (cParams == 1)
+    {
+        // If there's one parameter, use it.
+        *pCursorStyle = (DispatchCommon::CursorStyle)rgusParams[0];
+        fSuccess = true;
     }
 
     return fSuccess;

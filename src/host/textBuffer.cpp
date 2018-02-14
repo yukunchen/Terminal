@@ -37,6 +37,10 @@ TEXT_BUFFER_INFO::TEXT_BUFFER_INFO(_In_ const FontInfo* const pFontInfo,
 {
     THROW_IF_FAILED(HRESULT_FROM_NT(Cursor::CreateInstance(static_cast<ULONG>(cursorSize), &_pCursor)));
 
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    _pCursor->SetColor(gci.GetCursorColor());
+    _pCursor->SetType(gci.GetCursorType());
+
     // initialize ROWs
     for (size_t i = 0; i < static_cast<size_t>(screenBufferSize.Y); ++i)
     {

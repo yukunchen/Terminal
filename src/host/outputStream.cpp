@@ -564,6 +564,19 @@ BOOL ConhostInternalGetSet::PrivateEraseAll()
 }
 
 // Routine Description:
+// - Connects the SetCursorStyle call directly into our Driver Message servicing call inside Conhost.exe
+//   SetCursorStyle is an internal-only "API" call that the vt commands can execute,
+//     but it is not represented as a function call on our public API surface.
+// Arguments:
+// - cursorType: The style of cursor to change the cursor to.
+// Return Value:
+// - TRUE if successful (see DoSrvSetCursorStyle). FALSE otherwise.
+BOOL ConhostInternalGetSet::SetCursorStyle(_In_ CursorType const cursorType)
+{
+    return NT_SUCCESS(DoSrvSetCursorStyle(_pIo->GetActiveOutputBuffer(), cursorType));
+}
+
+// Routine Description:
 // - Retrieves the default color attributes information for the active screen buffer.
 // - This function is used to optimize SGR calls in lieu of calling GetConsoleScreenBufferInfoEx.
 // Arguments:
@@ -624,4 +637,18 @@ BOOL ConhostInternalGetSet::PrivateWriteConsoleControlInput(_In_ KeyEvent key)
 BOOL ConhostInternalGetSet::PrivateSuppressResizeRepaint()
 {
     return SUCCEEDED(DoSrvPrivateSuppressResizeRepaint());
+}
+
+// Routine Description:
+// - Connects the SetCursorStyle call directly into our Driver Message servicing call inside Conhost.exe
+//   SetCursorStyle is an internal-only "API" call that the vt commands can execute,
+//     but it is not represented as a function call on our public API surface.
+// Arguments:
+// - cursorColor: The color to change the cursor to. INVALID_COLOR will revert
+//      it to the legacy inverting behavior.
+// Return Value:
+// - TRUE if successful (see DoSrvSetCursorStyle). FALSE otherwise.
+BOOL ConhostInternalGetSet::SetCursorColor(_In_ COLORREF const cursorColor)
+{
+    return NT_SUCCESS(DoSrvSetCursorColor(_pIo->GetActiveOutputBuffer(), cursorColor));
 }

@@ -45,7 +45,13 @@ namespace Microsoft
                 HRESULT PaintBufferGridLines(GridLines const lines, COLORREF const color, size_t const cchLine, COORD const coordTarget);
                 HRESULT PaintSelection(const SMALL_RECT* const rgsrSelection, UINT const cRectangles);
 
-                HRESULT PaintCursor(COORD const coordCursor, ULONG const ulCursorHeightPercent, bool const fIsDoubleWidth);
+                HRESULT PaintCursor(_In_ COORD const coordCursor,
+                                    _In_ ULONG const ulCursorHeightPercent,
+                                    _In_ bool const fIsDoubleWidth,
+                                    _In_ CursorType const cursorType,
+                                    _In_ bool const fUseColor,
+                                    _In_ COLORREF const cursorColor) override;
+
                 HRESULT ClearCursor();
 
                 HRESULT UpdateDrawingBrushes(COLORREF const colorForeground, COLORREF const colorBackground, _In_ WORD const legacyColorAttribute, bool const fIncludeBackgrounds);

@@ -1793,13 +1793,17 @@ void SCREEN_INFORMATION::MakeCurrentCursorVisible()
 // - This routine sets the cursor size and visibility both in the data
 //      structures and on the screen. Also updates the cursor information of
 //      this buffer's main buffer, if this buffer is an alt buffer.
+// TODO: MSFT:15954781 - split this into one method for each param.
 // Arguments:
 // - ScreenInfo - pointer to screen info structure.
 // - Size - cursor size
 // - Visible - cursor visibility
 // Return Value:
 // - Status
-NTSTATUS SCREEN_INFORMATION::SetCursorInformation(_In_ ULONG const Size, _In_ BOOLEAN const Visible)
+NTSTATUS SCREEN_INFORMATION::SetCursorInformation(_In_ ULONG const Size,
+                                                  _In_ BOOLEAN const Visible,
+                                                  _In_ unsigned int const Color,
+                                                  _In_ CursorType const Type)
 {
     PTEXT_BUFFER_INFO const pTextInfo = this->TextInfo;
     Cursor* const pCursor = pTextInfo->GetCursor();
@@ -1807,10 +1811,13 @@ NTSTATUS SCREEN_INFORMATION::SetCursorInformation(_In_ ULONG const Size, _In_ BO
     pCursor->SetSize(Size);
     pCursor->SetIsVisible(Visible);
 
+    pCursor->SetColor(Color);
+    pCursor->SetType(Type);
+
     // If we're an alt buffer, also update our main buffer.
     if (_psiMainBuffer)
     {
-        _psiMainBuffer->SetCursorInformation(Size, Visible);
+        _psiMainBuffer->SetCursorInformation(Size, Visible, Color, Type);
     }
 
     return STATUS_SUCCESS;

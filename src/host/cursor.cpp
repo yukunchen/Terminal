@@ -40,6 +40,10 @@ Cursor::Cursor(IAccessibilityNotifier *pNotifier, _In_ ULONG const ulSize) :
     _coordDelayedAt = {0};
 
     _hCaretBlinkTimerQueue = CreateTimerQueue();
+
+    _fUseColor = false;
+    _color = s_InvertCursorColor;
+    _cursorType = CursorType::Legacy;
 }
 
 Cursor::~Cursor()
@@ -584,4 +588,33 @@ void Cursor::KillCaretTimer()
             _hCaretBlinkTimer = INVALID_HANDLE_VALUE;
         }
     }
+}
+
+const CursorType Cursor::GetCursorType() const
+{
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.GetCursorType();
+}
+
+const bool Cursor::IsUsingColor() const
+{
+    return GetColor() != INVALID_COLOR;
+}
+
+const COLORREF Cursor::GetColor() const
+{
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.GetCursorColor();
+}
+
+void Cursor::SetColor(_In_ const unsigned int color)
+{
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.SetCursorColor(color);
+}
+
+void Cursor::SetType(_In_ const CursorType type)
+{
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.SetCursorType(type);
 }

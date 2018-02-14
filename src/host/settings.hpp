@@ -26,6 +26,7 @@ Revision History:
 
 #include "ConsoleArguments.hpp"
 #include "TextAttribute.hpp"
+#include "../inc/conattrs.hpp"
 
 class Settings
 {
@@ -164,6 +165,11 @@ public:
     void SetColorTableEntry(_In_ size_t const index, _In_ COLORREF const ColorValue);
     COLORREF GetColorTableEntry(_In_ size_t const index) const;
 
+    COLORREF GetCursorColor() const noexcept;
+    CursorType GetCursorType() const noexcept;
+
+    void SetCursorColor(_In_ const COLORREF CursorColor) noexcept;
+    void SetCursorType(_In_ const CursorType cursorType) noexcept;
 
 private:
     DWORD _dwHotKey;
@@ -217,9 +223,11 @@ private:
     bool _fUseWindowSizePixels;
     COORD _dwWindowSizePixels;
 
+    // Technically a COLORREF, but using INVALID_COLOR as "Invert Colors"
+    unsigned int _CursorColor;
+    CursorType _CursorType;
+
     friend class RegistrySerialization;
-
-
 
 public:
 

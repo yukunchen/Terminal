@@ -620,6 +620,26 @@ public:
         return TRUE;
     }
 
+    virtual BOOL SetCursorStyle(_In_ CursorType const cursorType)
+    {
+        Log::Comment(L"SetCursorStyle MOCK called...");
+        if (_fSetCursorStyleResult)
+        {
+            VERIFY_ARE_EQUAL(_ExpectedCursorStyle, cursorType);
+        }
+        return _fSetCursorStyleResult;
+    }
+
+    virtual BOOL SetCursorColor(_In_ COLORREF const cursorColor)
+    {
+        Log::Comment(L"SetCursorColor MOCK called...");
+        if (_fSetCursorColorResult)
+        {
+            VERIFY_ARE_EQUAL(_ExpectedCursorColor, cursorColor);
+        }
+        return _fSetCursorColorResult;
+    }
+
     virtual BOOL PrivateGetConsoleScreenBufferAttributes(_Out_ WORD* const pwAttributes)
     {
         Log::Comment(L"PrivateGetConsoleScreenBufferAttributes MOCK returning data...");
@@ -1220,6 +1240,10 @@ public:
     BOOL _fSetConsoleRGBTextAttributeResult;
     BOOL _fPrivateSetLegacyAttributesResult;
     BOOL _fPrivateGetConsoleScreenBufferAttributesResult;
+    BOOL _fSetCursorStyleResult;
+    CursorType _ExpectedCursorStyle;
+    BOOL _fSetCursorColorResult;
+    COLORREF _ExpectedCursorColor;
 
 private:
     HANDLE _hCon;

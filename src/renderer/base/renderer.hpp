@@ -70,7 +70,7 @@ namespace Microsoft
                 void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs);
 
                 void AddRenderEngine(_In_ IRenderEngine* const pEngine) override;
-
+                
             private:
                 Renderer(_In_ std::unique_ptr<IRenderData> pData,
                          _In_reads_(cEngines) IRenderEngine** const pEngine,

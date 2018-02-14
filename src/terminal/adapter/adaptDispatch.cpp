@@ -1457,7 +1457,7 @@ bool AdaptDispatch::SoftReset()
     if (fSuccess)
     {
         // Top margin = 1; bottom margin = page length.
-        fSuccess = SetTopBottomScrollingMargins(0, 0, false); 
+        fSuccess = SetTopBottomScrollingMargins(0, 0, false);
     }
     if (fSuccess)
     {
@@ -1696,6 +1696,70 @@ bool AdaptDispatch::EnableAlternateScroll(_In_ bool const fEnabled)
     return !!_pConApi->PrivateEnableAlternateScroll(fEnabled);
 }
 
+//Routine Description:
+// Set Cursor Style - Changes the cursor's style to match the given Dispatch
+//      cursor style. Unix styles are a combination of the shape and the blinking state.
+//Arguments:
+// - cursorStyle - The unix-like cursor style to apply to the cursor
+// Return value:
+// True if handled successfully. False othewise.
+bool AdaptDispatch::SetCursorStyle(_In_ const DispatchCommon::CursorStyle cursorStyle)
+{
+    CursorType actualType = CursorType::Legacy;
+    bool fEnableBlinking = false;
+
+    switch(cursorStyle)
+    {
+    case DispatchCommon::CursorStyle::BlinkingBlock:
+    case DispatchCommon::CursorStyle::BlinkingBlockDefault:
+        fEnableBlinking = true;
+        actualType = CursorType::FullBox;
+        break;
+    case DispatchCommon::CursorStyle::SteadyBlock:
+        fEnableBlinking = false;
+        actualType = CursorType::FullBox;
+        break;
+
+    case DispatchCommon::CursorStyle::BlinkingUnderline:
+        fEnableBlinking = true;
+        actualType = CursorType::Underscore;
+        break;
+    case DispatchCommon::CursorStyle::SteadyUnderline:
+        fEnableBlinking = false;
+        actualType = CursorType::Underscore;
+        break;
+
+    case DispatchCommon::CursorStyle::BlinkingBar:
+        fEnableBlinking = true;
+        actualType = CursorType::VerticalBar;
+        break;
+    case DispatchCommon::CursorStyle::SteadyBar:
+        fEnableBlinking = false;
+        actualType = CursorType::VerticalBar;
+        break;
+    }
+
+    bool fSuccess = !!_pConApi->SetCursorStyle(actualType);
+    if (fSuccess)
+    {
+        fSuccess = !!_pConApi->PrivateAllowCursorBlinking(fEnableBlinking);
+    }
+
+    return fSuccess;
+}
+
+// Method Description:
+// - Sets a single entry of the colortable to a new value
+// Arguments:
+// - tableIndex: The VT color table index
+// - dwColor: The new RGB color value to use.
+// Return Value:
+// True if handled successfully. False othewise.
+bool AdaptDispatch::SetCursorColor(_In_ const COLORREF cursorColor)
+{
+    return !!_pConApi->SetCursorColor(cursorColor);
+}
+
 // Method Description:
 // - Sets a single entry of the colortable to a new value
 // Arguments:
@@ -1725,7 +1789,7 @@ bool AdaptDispatch::SetColorTableEntry(_In_ const size_t tableIndex,
 
 //Routine Description:
 // Window Manipulation - Performs a variety of actions relating to the window,
-//      such as moving the window position, resizing the window, querying 
+//      such as moving the window position, resizing the window, querying
 //      window state, forcing the window to repaint, etc.
 //  This is kept seperate from the input version, as there may be
 //      codes that are supported in one direction but not the other.

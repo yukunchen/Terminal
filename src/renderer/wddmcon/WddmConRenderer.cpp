@@ -280,9 +280,12 @@ HRESULT WddmConEngine::PaintSelection(const SMALL_RECT* const /*rgsrSelection*/,
     return S_OK;
 }
 
-HRESULT WddmConEngine::PaintCursor(COORD const /*coordCursor*/,
-                                   ULONG const /*ulCursorHeightPercent*/,
-                                   bool const /*fIsDoubleWidth*/)
+HRESULT WddmConEngine::PaintCursor(_In_ COORD const /*coordCursor*/,
+                                   _In_ ULONG const /*ulCursorHeightPercent*/,
+                                   _In_ bool const /*fIsDoubleWidth*/,
+                                   _In_ CursorType const /*cursorType*/,
+                                   _In_ bool const /*fUseColor*/,
+                                   _In_ COLORREF const /*cursorColor*/)
 {
     return S_OK;
 }

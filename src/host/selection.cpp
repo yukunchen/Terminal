@@ -596,9 +596,10 @@ void Selection::InitializeMarkSelection()
     // save old cursor position and make console cursor into selection cursor.
     SCREEN_INFORMATION* pScreenInfo = gci.CurrentScreenBuffer;
     _SaveCursorData(pScreenInfo->TextInfo);
-    pScreenInfo->SetCursorInformation(100, TRUE);
+    Cursor* const pCursor = pScreenInfo->TextInfo->GetCursor();
+    pScreenInfo->SetCursorInformation(100, TRUE, pCursor->GetColor(), pCursor->GetCursorType());
 
-    const COORD coordPosition = pScreenInfo->TextInfo->GetCursor()->GetPosition();
+    const COORD coordPosition = pCursor->GetPosition();
     pScreenInfo->SetCursorPosition(coordPosition, TRUE);
 
     // set the cursor position as the anchor position

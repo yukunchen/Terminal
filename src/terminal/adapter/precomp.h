@@ -30,3 +30,4 @@ Abstract:
 #include <wil\Result.h>
 
 #include "..\..\inc\conattrs.hpp"
+#include "..\..\host\cursor.h"

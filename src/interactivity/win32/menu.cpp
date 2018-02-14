@@ -302,7 +302,10 @@ void Menu::s_GetConsoleState(CONSOLE_STATE_INFO * const pStateInfo)
     pStateInfo->FontWeight = pfiCurrentFont->GetWeight();
     StringCchCopyW(pStateInfo->FaceName, ARRAYSIZE(pStateInfo->FaceName), pfiCurrentFont->GetFaceName());
 
-    pStateInfo->CursorSize = ScreenInfo->TextInfo->GetCursor()->GetSize();
+    Cursor* pCursor = ScreenInfo->TextInfo->GetCursor();
+    pStateInfo->CursorSize = pCursor->GetSize();
+    pStateInfo->CursorColor = pCursor->GetColor();
+    pStateInfo->CursorType = static_cast<unsigned int>(pCursor->GetCursorType());
 
     // Retrieve small icon for use in displaying the dialog
     Icon::Instance().GetIcons(nullptr, &pStateInfo->hIcon);
@@ -335,6 +338,9 @@ void Menu::s_GetConsoleState(CONSOLE_STATE_INFO * const pStateInfo)
     pStateInfo->fCtrlKeyShortcutsDisabled = gci.GetCtrlKeyShortcutsDisabled();
     pStateInfo->fLineSelection = gci.GetLineSelection();
     pStateInfo->bWindowTransparency = ServiceLocator::LocateConsoleWindow<Window>()->GetWindowOpacity();
+
+    pStateInfo->CursorType = static_cast<unsigned int>(gci.GetCursorType());
+    pStateInfo->CursorColor = gci.GetCursorColor();
     // end console v2 properties
 }
 
@@ -413,7 +419,11 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
     gci.SetFontWeight(pfiFontApplied->GetWeight());
     gci.SetFaceName(pfiFontApplied->GetFaceName(), LF_FACESIZE);
 
-    ScreenInfo->SetCursorInformation(pStateInfo->CursorSize, ScreenInfo->TextInfo->GetCursor()->IsVisible());
+    ScreenInfo->SetCursorInformation(pStateInfo->CursorSize,
+        ScreenInfo->TextInfo->GetCursor()->IsVisible(),
+        pStateInfo->CursorColor,
+        static_cast<CursorType>(pStateInfo->CursorType)
+    );
 
     {
         // Requested window in characters

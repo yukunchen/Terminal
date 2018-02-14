@@ -337,6 +337,7 @@ NTSTATUS FillUndetermineChars(_In_ ConversionAreaInfo* const ConvAreaInfo)
 NTSTATUS ConsoleImeCompStr(_In_ LPCONIME_UICOMPMESSAGE CompStr)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    Cursor* pCursor = gci.CurrentScreenBuffer->TextInfo->GetCursor();
     ConsoleImeInfo* const pIme = &gci.ConsoleIme;
 
     if (CompStr->dwCompStrLen == 0 || CompStr->dwResultStrLen != 0)
@@ -345,9 +346,14 @@ NTSTATUS ConsoleImeCompStr(_In_ LPCONIME_UICOMPMESSAGE CompStr)
         if (pIme->SavedCursorVisible)
         {
             pIme->SavedCursorVisible = FALSE;
-            gci.CurrentScreenBuffer
-                ->SetCursorInformation(gci.CurrentScreenBuffer->TextInfo->GetCursor()->GetSize(),
-                                       TRUE);
+
+            gci.CurrentScreenBuffer->SetCursorInformation(
+                pCursor->GetSize(),
+                TRUE,
+                pCursor->GetColor(),
+                pCursor->GetCursorType()
+            );
+
         }
 
         // Determine string.
@@ -382,12 +388,17 @@ NTSTATUS ConsoleImeCompStr(_In_ LPCONIME_UICOMPMESSAGE CompStr)
         PWORD lpAtrIdx;
 
         // Cursor turn OFF.
-        if (gci.CurrentScreenBuffer->TextInfo->GetCursor()->IsVisible())
+        if (pCursor->IsVisible())
         {
             pIme->SavedCursorVisible = TRUE;
-            gci.CurrentScreenBuffer
-                ->SetCursorInformation(gci.CurrentScreenBuffer->TextInfo->GetCursor()->GetSize(),
-                                       FALSE);
+
+            gci.CurrentScreenBuffer->SetCursorInformation(
+                pCursor->GetSize(),
+                FALSE,
+                pCursor->GetColor(),
+                pCursor->GetCursorType()
+            );
+
         }
 
         // Composition string.

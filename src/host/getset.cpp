@@ -516,7 +516,12 @@ HRESULT DoSrvSetConsoleCursorInfo(_In_ SCREEN_INFORMATION* pScreenInfo,
     // If more than 100% or less than 0% cursor height, reject it.
     RETURN_HR_IF(E_INVALIDARG, (CursorSize > 100 || CursorSize == 0));
 
-    RETURN_IF_NTSTATUS_FAILED(pScreenInfo->SetCursorInformation(CursorSize, IsVisible));
+    RETURN_IF_NTSTATUS_FAILED(pScreenInfo->SetCursorInformation(
+        CursorSize,
+        IsVisible,
+        pScreenInfo->TextInfo->GetCursor()->GetColor(),
+        pScreenInfo->TextInfo->GetCursor()->GetCursorType()
+    ));
 
     return S_OK;
 }
@@ -1366,6 +1371,20 @@ NTSTATUS DoSrvPrivateEnableAlternateScroll(_In_ bool const fEnable)
 NTSTATUS DoSrvPrivateEraseAll(_In_ SCREEN_INFORMATION* const pScreenInfo)
 {
     return NTSTATUS_FROM_HRESULT(pScreenInfo->GetActiveBuffer()->VtEraseAll());
+}
+
+NTSTATUS DoSrvSetCursorStyle(_In_ const SCREEN_INFORMATION* const pScreenInfo,
+                             _In_ CursorType const cursorType)
+{
+    pScreenInfo->TextInfo->GetCursor()->SetType(cursorType);
+    return STATUS_SUCCESS;
+}
+
+NTSTATUS DoSrvSetCursorColor(_In_ const SCREEN_INFORMATION* const pScreenInfo,
+                             _In_ COLORREF const cursorColor)
+{
+    pScreenInfo->TextInfo->GetCursor()->SetColor(cursorColor);
+    return STATUS_SUCCESS;
 }
 
 // Routine Description:
