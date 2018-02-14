@@ -41,6 +41,7 @@ public:
     virtual bool WasWrapForced() const noexcept = 0;
     virtual void SetDoubleBytePadded(_In_ bool const fDoubleBytePadded) noexcept = 0;
     virtual bool WasDoubleBytePadded() const noexcept = 0;
+    virtual void ClearGlyph(const size_t column) = 0;
 };
 
 inline ICharRow::~ICharRow() {}

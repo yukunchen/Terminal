@@ -57,3 +57,9 @@ void Utf8CharRow::swap(Utf8CharRow& other) noexcept
     using std::swap;
     swap(static_cast<CharRowBase&>(*this), static_cast<CharRowBase&>(other));
 }
+
+// TODO
+std::string Utf8CharRow::GetText() const
+{
+    return std::string();
+}

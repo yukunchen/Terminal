@@ -41,7 +41,7 @@ Revision History:
 //       ^    ^                  ^                     ^
 //       |    |                  |                     |
 //     Chars Left               Right                end of Chars buffer
-class Ucs2CharRow final : public CharRowBase<wchar_t>
+class Ucs2CharRow final : public CharRowBase<wchar_t, std::wstring>
 {
 public:
     Ucs2CharRow(short rowWidth);
@@ -54,23 +54,16 @@ public:
 
     // ICharRow methods
     ICharRow::SupportedEncoding GetSupportedEncoding() const noexcept override;
-    void ClearCell(_In_ const size_t column) override;
-    bool ContainsText() const override;
-    const DbcsAttribute& GetAttribute(_In_ const size_t column) const override;
-    DbcsAttribute& GetAttribute(_In_ const size_t column) override;
-
-
 
     std::wstring GetText() const;
-
-    void ClearGlyph(const size_t column);
-    const wchar_t& GetGlyphAt(const size_t column) const;
-    wchar_t& GetGlyphAt(const size_t column);
 
 
     friend constexpr bool operator==(const Ucs2CharRow& a, const Ucs2CharRow& b) noexcept;
 
 private:
+
+    using CharType = wchar_t;
+    using StringType = std::wstring;
 
 #ifdef UNIT_TESTING
     friend class Ucs2CharRowTests;
@@ -82,7 +75,8 @@ void swap(Ucs2CharRow& a, Ucs2CharRow& b) noexcept;
 
 constexpr bool operator==(const Ucs2CharRow& a, const Ucs2CharRow& b) noexcept
 {
-    return (static_cast<const CharRowBase<wchar_t>&>(a) == static_cast<const CharRowBase<wchar_t>&>(b));
+    return (static_cast<const CharRowBase<Ucs2CharRow::CharType, Ucs2CharRow::StringType>&>(a) ==
+            static_cast<const CharRowBase<Ucs2CharRow::CharType, Ucs2CharRow::StringType>&>(b));
 }
 
 template<typename InputIt1, typename InputIt2>

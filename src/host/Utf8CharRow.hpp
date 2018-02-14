@@ -20,7 +20,7 @@ Revision History:
 
 #include <vector>
 
-class Utf8CharRow final : public CharRowBase<std::vector<char>>
+class Utf8CharRow final : public CharRowBase<std::vector<char>, std::string>
 {
 public:
     using value_type = std::pair<std::vector<char>, DbcsAttribute>;
@@ -35,21 +35,17 @@ public:
 
     void swap(Utf8CharRow& other) noexcept;
 
+    std::string GetText() const;
+
     // ICharRow methods
     ICharRow::SupportedEncoding GetSupportedEncoding() const noexcept override;
-    void ClearCell(_In_ const size_t column) override;
-    bool ContainsText() const override;
-    const DbcsAttribute& GetAttribute(_In_ const size_t column) const override;
-    DbcsAttribute& GetAttribute(_In_ const size_t column) override;
 
-    // iterators
-    iterator begin() noexcept;
-    const_iterator cbegin() const noexcept;
-
-    iterator end() noexcept;
-    const_iterator cend() const noexcept;
 
     friend constexpr bool operator==(const Utf8CharRow& a, const Utf8CharRow& b) noexcept;
+
+private:
+    using CharType = std::vector<char>;
+    using StringType = std::string;
 
 };
 
@@ -57,7 +53,8 @@ void swap(Utf8CharRow& a, Utf8CharRow& b) noexcept;
 
 constexpr bool operator==(const Utf8CharRow& a, const Utf8CharRow& b) noexcept
 {
-    return (static_cast<const CharRowBase<std::vector<char>>&>(a) == static_cast<const CharRowBase<std::vector<char>>&>(b));
+    return (static_cast<const CharRowBase<Utf8CharRow::CharType, Utf8CharRow::StringType>&>(a) ==
+            static_cast<const CharRowBase<Utf8CharRow::CharType, Utf8CharRow::StringType>&>(b));
 }
 
 // this sticks specialization of swap() into the std::namespace for Utf8CharRow, so that callers that use

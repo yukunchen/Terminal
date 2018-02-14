@@ -59,66 +59,6 @@ void Ucs2CharRow::swap(Ucs2CharRow& other) noexcept
 }
 
 // Routine Description:
-// - gets the attribute at the specified column
-// Arguments:
-// - column - the column to get the attribute for
-// Return Value:
-// - the attribute
-// Note: will throw exception if column is out of bounds
-const DbcsAttribute& Ucs2CharRow::GetAttribute(_In_ const size_t column) const
-{
-    return _data.at(column).second;
-}
-
-// Routine Description:
-// - gets the attribute at the specified column
-// Arguments:
-// - column - the column to get the attribute for
-// Return Value:
-// - the attribute
-// Note: will throw exception if column is out of bounds
-DbcsAttribute& Ucs2CharRow::GetAttribute(_In_ const size_t column)
-{
-    return const_cast<DbcsAttribute&>(static_cast<const Ucs2CharRow* const>(this)->GetAttribute(column));
-}
-
-// Routine Description:
-// - resets text data at column
-// Arguments:
-// - column - column index to clear text data from
-// Return Value:
-// - <none>
-// Note: will throw exception if column is out of bounds
-void Ucs2CharRow::ClearGlyph(const size_t column)
-{
-    _data.at(column).first = UNICODE_SPACE;
-}
-
-// Routine Description:
-// - returns text data at column as a const reference.
-// Arguments:
-// - column - column to get text data for
-// Return Value:
-// - text data at column
-// - Note: will throw exception if column is out of bounds
-const wchar_t& Ucs2CharRow::GetGlyphAt(const size_t column) const
-{
-    return _data.at(column).first;
-}
-
-// Routine Description:
-// - returns text data at column as a reference.
-// Arguments:
-// - column - column to get text data for
-// Return Value:
-// - text data at column
-// - Note: will throw exception if column is out of bounds
-wchar_t& Ucs2CharRow::GetGlyphAt(const size_t column)
-{
-    return const_cast<wchar_t&>(static_cast<const Ucs2CharRow* const>(this)->GetGlyphAt(column));
-}
-
-// Routine Description:
 // - returns the all of the text in a row, including leading and trailing whitespace.
 // Arguments:
 // - <none>
@@ -133,31 +73,7 @@ std::wstring Ucs2CharRow::GetText() const
     }
     return temp;
 }
-
-// Routine Description:
-// - Tells you whether or not this row contains any valid text.
-// Arguments:
-// - <none>
-// Return Value:
-// - True if there is valid text in this row. False otherwise.
-bool Ucs2CharRow::ContainsText() const
-{
-    for (const value_type& vals : _data)
-    {
-        if (vals.first != UNICODE_SPACE)
-        {
-            return true;
-        }
-    }
-    return false;
-}
-
 ICharRow::SupportedEncoding Ucs2CharRow::GetSupportedEncoding() const noexcept
 {
     return ICharRow::SupportedEncoding::Ucs2;
-}
-
-void Ucs2CharRow::ClearCell(_In_ const size_t column)
-{
-    _data.at(column) = { UNICODE_SPACE, DbcsAttribute() };
 }
