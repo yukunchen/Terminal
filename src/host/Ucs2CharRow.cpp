@@ -27,8 +27,7 @@ void swap(Ucs2CharRow& a, Ucs2CharRow& b) noexcept
 // - instantiated object
 // Note: will through if unable to allocate char/attribute buffers
 Ucs2CharRow::Ucs2CharRow(short rowWidth) :
-    CharRowBase(),
-    _data(rowWidth, std::pair<wchar_t, DbcsAttribute>(UNICODE_SPACE, DbcsAttribute{}))
+    CharRowBase(static_cast<size_t>(rowWidth), UNICODE_SPACE)
 {
 }
 
@@ -40,8 +39,7 @@ Ucs2CharRow::Ucs2CharRow(short rowWidth) :
 // - instantiated object
 // Note: will through if unable to allocate char/attribute buffers
 Ucs2CharRow::Ucs2CharRow(const Ucs2CharRow& a) :
-    CharRowBase(a),
-    _data{ a._data }
+    CharRowBase(a)
 {
 }
 
@@ -56,21 +54,6 @@ Ucs2CharRow& Ucs2CharRow::operator=(const Ucs2CharRow& a)
     Ucs2CharRow temp(a);
     this->swap(temp);
     return *this;
-}
-
-// Routine Description:
-// - move constructor
-// Arguments:
-// - Ucs2CharRow to move
-// Return Value:
-// - instantiated object
-Ucs2CharRow::Ucs2CharRow(Ucs2CharRow&& a) noexcept
-{
-    this->swap(a);
-}
-
-Ucs2CharRow::~Ucs2CharRow()
-{
 }
 
 // Routine Description:
@@ -130,11 +113,6 @@ Ucs2CharRow::iterator Ucs2CharRow::end() noexcept
 Ucs2CharRow::const_iterator Ucs2CharRow::cend() const noexcept
 {
     return _data.cend();
-}
-
-size_t Ucs2CharRow::size() const noexcept
-{
-    return _data.size();
 }
 
 // Routine Description:

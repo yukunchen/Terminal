@@ -27,8 +27,7 @@ void swap(Utf8CharRow& a, Utf8CharRow& b) noexcept
 // - instantiated object
 // Note: will through if unable to allocate char/attribute buffers
 Utf8CharRow::Utf8CharRow(short rowWidth) :
-    CharRowBase(),
-    _data(rowWidth, value_type({ UNICODE_SPACE }, DbcsAttribute{}))
+    CharRowBase(static_cast<size_t>(rowWidth), { UNICODE_SPACE })
 {
 }
 
@@ -40,8 +39,7 @@ Utf8CharRow::Utf8CharRow(short rowWidth) :
 // - instantiated object
 // Note: will through if unable to allocate char/attribute buffers
 Utf8CharRow::Utf8CharRow(const Utf8CharRow& a) :
-    CharRowBase(a),
-    _data{ a._data }
+    CharRowBase(a)
 {
 }
 
@@ -56,21 +54,6 @@ Utf8CharRow& Utf8CharRow::operator=(const Utf8CharRow& a)
     Utf8CharRow temp(a);
     this->swap(temp);
     return *this;
-}
-
-// Routine Description:
-// - move constructor
-// Arguments:
-// - Utf8CharRow to move
-// Return Value:
-// - instantiated object
-Utf8CharRow::Utf8CharRow(Utf8CharRow&& a) noexcept
-{
-    this->swap(a);
-}
-
-Utf8CharRow::~Utf8CharRow()
-{
 }
 
 // Routine Description:

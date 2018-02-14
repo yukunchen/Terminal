@@ -20,7 +20,7 @@ Revision History:
 
 #include <vector>
 
-class Utf8CharRow final : public CharRowBase
+class Utf8CharRow final : public CharRowBase<std::vector<char>>
 {
 public:
     using value_type = std::pair<std::vector<char>, DbcsAttribute>;
@@ -30,8 +30,8 @@ public:
     Utf8CharRow(short rowWidth);
     Utf8CharRow(const Utf8CharRow& a);
     Utf8CharRow& operator=(const Utf8CharRow& a);
-    Utf8CharRow(Utf8CharRow&& a) noexcept;
-    ~Utf8CharRow();
+    Utf8CharRow(Utf8CharRow&& a) noexcept = default;
+    ~Utf8CharRow() = default;
 
     void swap(Utf8CharRow& other) noexcept;
 
@@ -56,16 +56,13 @@ public:
 
     friend constexpr bool operator==(const Utf8CharRow& a, const Utf8CharRow& b) noexcept;
 
-private:
-    std::vector<value_type> _data;
 };
 
 void swap(Utf8CharRow& a, Utf8CharRow& b) noexcept;
 
 constexpr bool operator==(const Utf8CharRow& a, const Utf8CharRow& b) noexcept
 {
-    return (static_cast<const CharRowBase&>(a) == static_cast<const CharRowBase&>(b) &&
-            a._data == b._data);
+    return (static_cast<const CharRowBase<std::vector<char>>&>(a) == static_cast<const CharRowBase<std::vector<char>>&>(b));
 }
 
 // this sticks specialization of swap() into the std::namespace for Utf8CharRow, so that callers that use

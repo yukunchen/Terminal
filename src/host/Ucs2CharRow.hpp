@@ -41,7 +41,7 @@ Revision History:
 //       ^    ^                  ^                     ^
 //       |    |                  |                     |
 //     Chars Left               Right                end of Chars buffer
-class Ucs2CharRow final : public CharRowBase
+class Ucs2CharRow final : public CharRowBase<wchar_t>
 {
 public:
     using value_type = std::pair<wchar_t, DbcsAttribute>;
@@ -51,14 +51,13 @@ public:
     Ucs2CharRow(short rowWidth);
     Ucs2CharRow(const Ucs2CharRow& a);
     Ucs2CharRow& operator=(const Ucs2CharRow& a);
-    Ucs2CharRow(Ucs2CharRow&& a) noexcept;
-    ~Ucs2CharRow();
+    Ucs2CharRow(Ucs2CharRow&& a) noexcept = default;
+    ~Ucs2CharRow() = default;
 
     void swap(Ucs2CharRow& other) noexcept;
 
     // ICharRow methods
     ICharRow::SupportedEncoding GetSupportedEncoding() const noexcept override;
-    size_t size() const noexcept override;
     HRESULT Resize(_In_ size_t const newSize) override;
     void Reset(_In_ short const sRowWidth) override;
     size_t MeasureLeft() const override;
@@ -86,7 +85,6 @@ public:
     friend constexpr bool operator==(const Ucs2CharRow& a, const Ucs2CharRow& b) noexcept;
 
 private:
-    std::vector<value_type> _data;
 
 #ifdef UNIT_TESTING
     friend class CharRowTests;
@@ -98,8 +96,7 @@ void swap(Ucs2CharRow& a, Ucs2CharRow& b) noexcept;
 
 constexpr bool operator==(const Ucs2CharRow& a, const Ucs2CharRow& b) noexcept
 {
-    return (static_cast<const CharRowBase&>(a) == static_cast<const CharRowBase&>(b) &&
-            a._data == b._data);
+    return (static_cast<const CharRowBase<wchar_t>&>(a) == static_cast<const CharRowBase<wchar_t>&>(b));
 }
 
 template<typename InputIt1, typename InputIt2>

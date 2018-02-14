@@ -17,18 +17,26 @@ Revision History:
 
 #include "ICharRow.hpp"
 
+template <typename T>
 class CharRowBase : public ICharRow
 {
 public:
-    CharRowBase();
-    virtual ~CharRowBase() = 0;
+    using value_type = typename std::pair<T, DbcsAttribute>;
+    using iterator = typename std::vector<value_type>::iterator;
+    using const_iterator = typename std::vector<value_type>::const_iterator;
+
+
+    CharRowBase(_In_ const size_t rowWidth, _In_ const T defaultValue);
+    virtual ~CharRowBase() = default;
 
     void swap(CharRowBase& other) noexcept;
 
-    virtual void SetWrapForced(_In_ bool const wrap) noexcept;
-    virtual bool WasWrapForced() const noexcept;
-    virtual void SetDoubleBytePadded(_In_ bool const doubleBytePadded) noexcept;
-    virtual bool WasDoubleBytePadded() const noexcept;
+    // ICharRow methods
+    void SetWrapForced(_In_ bool const wrap) noexcept;
+    bool WasWrapForced() const noexcept;
+    void SetDoubleBytePadded(_In_ bool const doubleBytePadded) noexcept;
+    bool WasDoubleBytePadded() const noexcept;
+    size_t size() const noexcept override;
 
     friend constexpr bool operator==(const CharRowBase& a, const CharRowBase& b) noexcept;
 protected:
@@ -37,25 +45,128 @@ protected:
 
     // Occurs when the user runs out of text to support a double byte character and we're forced to the next line
     bool _doubleBytePadded;
+
+    T _defaultValue;
+
+    std::vector<value_type> _data;
 };
 
-inline CharRowBase::~CharRowBase() {}
+template <typename T>
+void swap(CharRowBase<T>& a, CharRowBase<T>& b) noexcept;
 
-void swap(CharRowBase& a, CharRowBase& b) noexcept;
-
-constexpr bool operator==(const CharRowBase& a, const CharRowBase& b) noexcept
+template <typename T>
+constexpr bool operator==(const CharRowBase<T>& a, const CharRowBase<T>& b) noexcept
 {
     return (a._wrapForced == b._wrapForced &&
-            a._doubleBytePadded == b._doubleBytePadded);
+            a._doubleBytePadded == b._doubleBytePadded &&
+            a._defaultValue == b._defaultValue &&
+            a._data == b._data);
 }
 
 // this sticks specialization of swap() into the std::namespace for CharRowBase, so that callers that use
 // std::swap explicitly over calling the global swap can still get the performance benefit.
 namespace std
 {
+    /*
+      // TODO
     template<>
-    inline void swap<CharRowBase>(CharRowBase& a, CharRowBase& b) noexcept
+    inline void swap<CharRowBase<T>>(CharRowBase<T>& a, CharRowBase<T>& b) noexcept
     {
         a.swap(b);
     }
+    */
 }
+
+// Routine Description:
+// - swaps two CharRowBases
+// Arguments:
+// - a - the first CharRowBase to swap
+// - b - the second CharRowBase to swap
+// Return Value:
+// - <none>
+template<typename T>
+void swap(CharRowBase<T>& a, CharRowBase<T>& b) noexcept
+{
+    a.swap(b);
+}
+
+#pragma warning(push)
+#pragma warning(disable:4505)
+template<typename T>
+CharRowBase<T>::CharRowBase(_In_ const size_t rowWidth, _In_ const T defaultValue) :
+    _wrapForced{ false },
+    _doubleBytePadded{ false },
+    _defaultValue{ defaultValue },
+    _data(rowWidth, value_type(defaultValue, DbcsAttribute{}))
+{
+}
+
+// Routine Description:
+// - swaps values with another CharRowBase
+// Arguments:
+// - other - the CharRowBase to swap with
+// Return Value:
+// - <none>
+template<typename T>
+void CharRowBase<T>::swap(_In_ CharRowBase<T>& other) noexcept
+{
+    using std::swap;
+    swap(_wrapForced, other._wrapForced);
+    swap(_doubleBytePadded, other._doubleBytePadded);
+}
+
+// Routine Description:
+// - Sets the wrap status for the current row
+// Arguments:
+// - wrapForced - True if the row ran out of space and we forced to wrap to the next row. False otherwise.
+// Return Value:
+// - <none>
+template<typename T>
+void CharRowBase<T>::SetWrapForced(_In_ bool const wrapForced) noexcept
+{
+    _wrapForced = wrapForced;
+}
+
+// Routine Description:
+// - Gets the wrap status for the current row
+// Arguments:
+// - <none>
+// Return Value:
+// - True if the row ran out of space and we were forced to wrap to the next row. False otherwise.
+template<typename T>
+bool CharRowBase<T>::WasWrapForced() const noexcept
+{
+    return _wrapForced;
+}
+
+// Routine Description:
+// - Sets the double byte padding for the current row
+// Arguments:
+// - fWrapWasForced - True if the row ran out of space for a double byte character and we padded out the row. False otherwise.
+// Return Value:
+// - <none>
+template<typename T>
+void CharRowBase<T>::SetDoubleBytePadded(_In_ bool const doubleBytePadded) noexcept
+{
+    _doubleBytePadded = doubleBytePadded;
+}
+
+// Routine Description:
+// - Gets the double byte padding status for the current row.
+// Arguments:
+// - <none>
+// Return Value:
+// - True if the row didn't have space for a double byte character and we were padded out the row. False otherwise.
+template<typename T>
+bool CharRowBase<T>::WasDoubleBytePadded() const noexcept
+{
+    return _doubleBytePadded;
+}
+
+template<typename T>
+size_t CharRowBase<T>::size() const noexcept
+{
+    return _data.size();
+}
+
+#pragma warning(pop)
