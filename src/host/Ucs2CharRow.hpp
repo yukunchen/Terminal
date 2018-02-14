@@ -26,21 +26,7 @@ Revision History:
 #include "ICharRow.hpp"
 #include "CharRowBase.hpp"
 
-// Characters used for padding out the buffer with invalid/empty space
-#define PADDING_CHAR UNICODE_SPACE
 
-
-
-// the characters of one row of screen buffer
-// we keep the following values so that we don't write
-// more pixels to the screen than we have to:
-// left is initialized to screenbuffer width.  right is
-// initialized to zero.
-//
-//      [     foo.bar    12-12-61                       ]
-//       ^    ^                  ^                     ^
-//       |    |                  |                     |
-//     Chars Left               Right                end of Chars buffer
 class Ucs2CharRow final : public CharRowBase<wchar_t, std::wstring>
 {
 public:
@@ -55,15 +41,14 @@ public:
     // ICharRow methods
     ICharRow::SupportedEncoding GetSupportedEncoding() const noexcept override;
 
+    // CharRowBase methods
     string_type GetText() const;
 
     friend constexpr bool operator==(const Ucs2CharRow& a, const Ucs2CharRow& b) noexcept;
 
-private:
 #ifdef UNIT_TESTING
     friend class Ucs2CharRowTests;
 #endif
-
 };
 
 void swap(Ucs2CharRow& a, Ucs2CharRow& b) noexcept;

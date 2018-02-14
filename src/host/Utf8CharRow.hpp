@@ -23,10 +23,6 @@ Revision History:
 class Utf8CharRow final : public CharRowBase<std::vector<char>, std::string>
 {
 public:
-    using value_type = std::pair<std::vector<char>, DbcsAttribute>;
-    using iterator = std::vector<value_type>::iterator;
-    using const_iterator = std::vector<value_type>::const_iterator;
-
     Utf8CharRow(short rowWidth);
     Utf8CharRow(const Utf8CharRow& a) = default;
     Utf8CharRow& operator=(const Utf8CharRow& a);
@@ -35,11 +31,11 @@ public:
 
     void swap(Utf8CharRow& other) noexcept;
 
-    string_type GetText() const;
-
     // ICharRow methods
     ICharRow::SupportedEncoding GetSupportedEncoding() const noexcept override;
 
+    // CharRowBase methods
+    string_type GetText() const;
 
     friend constexpr bool operator==(const Utf8CharRow& a, const Utf8CharRow& b) noexcept;
 };

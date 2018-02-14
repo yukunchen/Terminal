@@ -63,8 +63,19 @@ ICharRow::SupportedEncoding Utf8CharRow::GetSupportedEncoding() const noexcept
     return ICharRow::SupportedEncoding::Utf8;
 }
 
-// TODO
+
+// Routine Description:
+// - returns a UTF8 encoded string of the text in the row
+// Arguments:
+// - <none>
+// Return Value:
+// - UTF8 encoded string of row text
 Utf8CharRow::string_type Utf8CharRow::GetText() const
 {
-    return std::string();
+    string_type str;
+    for (const value_type& cell : _data)
+    {
+        str += string_type(cell.first.cbegin(), cell.first.cend());
+    }
+    return str;
 }
