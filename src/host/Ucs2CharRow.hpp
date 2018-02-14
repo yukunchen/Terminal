@@ -15,6 +15,7 @@ Revision History:
 - From components of output.h/.c
   by Therese Stowell (ThereseS) 1990-1991
 - Pulled into its own file from textBuffer.hpp/cpp (AustDi, 2017)
+- moved most of the implemention to parent class (AustDi, 2018)
 --*/
 
 #pragma once

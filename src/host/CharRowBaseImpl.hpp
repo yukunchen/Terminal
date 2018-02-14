@@ -99,6 +99,12 @@ inline bool CharRowBase<GlyphType, StringType>::WasDoubleBytePadded() const noex
     return _doubleBytePadded;
 }
 
+// Routine Description:
+// - gets the size of the row, in glyph cells
+// Arguments:
+// - <none>
+// Return Value:
+// - the size of the row
 template<typename GlyphType, typename StringType>
 inline size_t CharRowBase<GlyphType, StringType>::size() const noexcept
 {
