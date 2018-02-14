@@ -201,7 +201,7 @@ bool InputStateMachineEngine::ActionPrint(_In_ wchar_t const wch)
 bool InputStateMachineEngine::ActionPrintString(_Inout_updates_(cch) wchar_t* const rgwch,
                                                 _In_ size_t const cch)
 {
-    if (cch == 0) 
+    if (cch == 0)
     {
         return true;
     }
@@ -329,6 +329,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
                     _lookingForDSR = false;
                     break;
                 }
+                __fallthrough;
             case CsiActionCodes::Generic:
             case CsiActionCodes::ArrowUp:
             case CsiActionCodes::ArrowDown:
@@ -884,7 +885,7 @@ bool InputStateMachineEngine::_GetXYPosition(_In_reads_(cParams) const unsigned 
                                              _Out_ unsigned int* const puiLine,
                                              _Out_ unsigned int* const puiColumn) const
 {
-    bool fSuccess = false;
+    bool fSuccess = true;
     *puiLine = s_uiDefaultLine;
     *puiColumn = s_uiDefaultColumn;
 
@@ -905,6 +906,10 @@ bool InputStateMachineEngine::_GetXYPosition(_In_reads_(cParams) const unsigned 
         *puiLine = rgusParams[0];
         *puiColumn = rgusParams[1];
         fSuccess = true;
+    }
+    else
+    {
+        fSuccess = false;
     }
 
     // Distances of 0 should be changed to 1.
