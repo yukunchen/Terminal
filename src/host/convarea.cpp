@@ -754,7 +754,7 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
         }
         else
         {
-            THROW_HR_MSG(E_FAIL, "we only support utf16 encoded char rows");
+            THROW_HR_MSG(E_FAIL, "we only support ucs2 encoded char rows");
         }
     }
     CATCH_LOG();

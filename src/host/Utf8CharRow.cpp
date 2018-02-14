@@ -22,12 +22,12 @@ void swap(Utf8CharRow& a, Utf8CharRow& b) noexcept
 // Routine Description:
 // - constructor
 // Arguments:
-// - rowWidth - the size (in wchar_t) of the char and attribute rows
+// - rowWidth - the number of char and attribute cells in row
 // Return Value:
 // - instantiated object
 // Note: will through if unable to allocate char/attribute buffers
-Utf8CharRow::Utf8CharRow(short rowWidth) :
-    CharRowBase(static_cast<size_t>(rowWidth), { UNICODE_SPACE })
+Utf8CharRow::Utf8CharRow(size_t rowWidth) :
+    CharRowBase(rowWidth, { UNICODE_SPACE })
 {
 }
 

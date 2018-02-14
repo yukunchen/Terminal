@@ -23,7 +23,7 @@ Revision History:
 class Utf8CharRow final : public CharRowBase<std::vector<char>, std::string>
 {
 public:
-    Utf8CharRow(short rowWidth);
+    Utf8CharRow(size_t rowWidth);
     Utf8CharRow(const Utf8CharRow& a) = default;
     Utf8CharRow& operator=(const Utf8CharRow& a);
     Utf8CharRow(Utf8CharRow&& a) noexcept = default;

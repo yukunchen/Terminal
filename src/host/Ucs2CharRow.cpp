@@ -26,8 +26,8 @@ void swap(Ucs2CharRow& a, Ucs2CharRow& b) noexcept
 // Return Value:
 // - instantiated object
 // Note: will through if unable to allocate char/attribute buffers
-Ucs2CharRow::Ucs2CharRow(short rowWidth) :
-    CharRowBase(static_cast<size_t>(rowWidth), UNICODE_SPACE)
+Ucs2CharRow::Ucs2CharRow(size_t rowWidth) :
+    CharRowBase(rowWidth, UNICODE_SPACE)
 {
 }
 
@@ -66,12 +66,12 @@ void Ucs2CharRow::swap(Ucs2CharRow& other) noexcept
 // - all text data in the row
 Ucs2CharRow::string_type Ucs2CharRow::GetText() const
 {
-    std::wstring temp(_data.size(), UNICODE_SPACE);
+    string_type str(_data.size(), UNICODE_SPACE);
     for (size_t i = 0; i < _data.size(); ++i)
     {
-        temp[i] = _data[i].first;
+        str[i] = _data[i].first;
     }
-    return temp;
+    return str;
 }
 ICharRow::SupportedEncoding Ucs2CharRow::GetSupportedEncoding() const noexcept
 {

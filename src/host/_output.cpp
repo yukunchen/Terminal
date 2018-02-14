@@ -62,14 +62,6 @@ void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
         if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
         {
             Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
-            std::transform(pwchBuffer,
-                        pwchBuffer + cchBuffer,
-                        pDbcsAttributes,
-                        std::next(charRow.begin(), TargetPoint.X),
-                        [](wchar_t wch, DbcsAttribute attr)
-            {
-                return Ucs2CharRow::value_type{ wch, attr };
-            });
             OverwriteColumns(pwchBuffer,
                             pwchBuffer + cchBuffer,
                             pDbcsAttributes,
@@ -77,7 +69,7 @@ void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
         }
         else
         {
-            THROW_HR_MSG(E_FAIL, "we only support utf16 rows right now");
+            THROW_HR_MSG(E_FAIL, "we only support ucs2 rows right now");
         }
     }
     CATCH_LOG();
