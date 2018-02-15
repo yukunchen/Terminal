@@ -615,6 +615,17 @@ BOOL ConhostInternalGetSet::PrivateWriteConsoleControlInput(_In_ KeyEvent key)
 }
 
 // Routine Description:
+// - Connects the GetConsoleOutputCP API call directly into our Driver Message servicing call inside Conhost.exe
+// Arguments:
+// - puiOutputCP - recieves the outputCP of the console.
+// Return Value:
+// - TRUE if successful (see DoSrvPrivateWriteConsoleControlInput). FALSE otherwise.
+BOOL ConhostInternalGetSet::GetConsoleOutputCP(_Out_ unsigned int* const puiOutputCP)
+{
+    return SUCCEEDED(DoSrvGetConsoleOutputCodePage(puiOutputCP));
+}
+
+// Routine Description:
 // - Connects the PrivateSuppressResizeRepaint API call directly into our Driver
 //      Message servicing call inside Conhost.exe
 // Arguments:

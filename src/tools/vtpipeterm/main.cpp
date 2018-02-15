@@ -21,6 +21,13 @@
 
 using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
+const int TEST_LANG_NONE = 0;
+const int TEST_LANG_CYRILLIC = 1;
+const int TEST_LANG_CHINESE = 2;
+const int TEST_LANG_JAPANESE = 3;
+const int TEST_LANG_KOREAN = 4;
+
+////////////////////////////////////////////////////////////////////////////////
 // State
 HANDLE hOut;
 HANDLE hIn;
@@ -32,6 +39,9 @@ std::deque<VtConsole*> consoles;
 VtConsole* debug;
 
 bool prefixPressed = false;
+bool doUnicode = false;
+int lang = TEST_LANG_NONE;
+
 bool g_headless = false;
 ////////////////////////////////////////////////////////////////////////////////
 // Forward decls
@@ -66,7 +76,7 @@ void DebugReadCallback(BYTE* /*buffer*/, DWORD /*dwRead*/)
 VtConsole* getConsole()
 {
     return consoles[0];
-} 
+}
 
 void nextConsole()
 {
@@ -107,7 +117,7 @@ void signalConsole()
 
 std::string csi(string seq)
 {
-    // Note: This doesn't do anything for the debug console currently. 
+    // Note: This doesn't do anything for the debug console currently.
     //      Somewhere, the TTY eats the control sequences. Still useful though.
     string fullSeq = "\x1b[";
     fullSeq += seq;
@@ -245,11 +255,11 @@ void handleResize()
     if (fSuccess)
     {
         SMALL_RECT srViewport = csbiex.srWindow;
-        
+
         short width = srViewport.Right - srViewport.Left + 1;
         short height = srViewport.Bottom - srViewport.Top + 1;
 
-        doResize(width, height);        
+        doResize(width, height);
     }
 }
 
@@ -264,7 +274,6 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
     char* nextPrintable = printableBuffer;
     int bufferCch = 0;
     int printableCch = 0;
-
 
     for (int i = 0; i < cEvents; ++i)
     {
@@ -282,8 +291,29 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
                     // This is a special keyboard key that was pressed, not actually NUL
                     continue;
                 }
-
-                if (!prefixPressed)
+                if (doUnicode)
+                {
+                    switch(c)
+                    {
+                        case '1':
+                            lang = TEST_LANG_CYRILLIC;
+                            break;
+                        case '2':
+                            lang = TEST_LANG_CHINESE;
+                            break;
+                        case '3':
+                            lang = TEST_LANG_JAPANESE;
+                            break;
+                        case '4':
+                            lang = TEST_LANG_KOREAN;
+                            break;
+                        default:
+                            doUnicode = false;
+                            lang = TEST_LANG_NONE;
+                            break;
+                    }
+                }
+                else if (!prefixPressed)
                 {
                     if (c == '\x2')
                     {
@@ -307,6 +337,9 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
                         case 't':
                             newConsole();
                             nextConsole();
+                            break;
+                        case 'u':
+                            doUnicode = true;
                             break;
                         case 'r':
                             signalConsole();
@@ -339,6 +372,33 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
 
         getConsole()->WriteInput(vtseq);
         PrintInputToDebug(vtseq);
+    }
+    if (doUnicode && lang != TEST_LANG_NONE)
+    {
+        std::string str;
+        switch(lang)
+        {
+            case TEST_LANG_CYRILLIC:
+                str = "Лорем ипсум долор сит амет, пер цлита поссит ех, ат мунере фабулас петентиум сит.";
+                break;
+            case TEST_LANG_CHINESE:
+                str = "側経意責家方家閉討店暖育田庁載社転線宇。";
+                break;
+            case TEST_LANG_JAPANESE:
+                str = "旅ロ京青利セムレ弱改フヨス波府かばぼ意送でぼ調掲察たス日西重ケアナ住橋ユムミク順待ふかんぼ人奨貯鏡すびそ。";
+                break;
+            case TEST_LANG_KOREAN:
+                str = "국민경제의 발전을 위한 중요정책의 수립에 관하여 대통령의 자문에 응하기 위하여 국민경제자문회의를 둘 수 있다.";
+                break;
+            default:
+                str = "";
+                break;
+        }
+        getConsole()->WriteInput(str);
+        PrintInputToDebug(str);
+
+        doUnicode = false;
+        lang = TEST_LANG_NONE;
     }
 }
 
@@ -386,23 +446,27 @@ void SetupInput()
 DWORD InputThread(LPVOID lpParameter)
 {
     UNREFERENCED_PARAMETER(lpParameter);
-    
-    // Because the input thread ends up owning the lifetime of the application, 
+
+    // Because the input thread ends up owning the lifetime of the application,
     // Set/restore the CP here.
 
-    unsigned int launchCP = GetConsoleOutputCP();
+    unsigned int launchOutputCP = GetConsoleOutputCP();
+    unsigned int launchCP = GetConsoleCP();
     THROW_LAST_ERROR_IF_FALSE(SetConsoleOutputCP(CP_UTF8));
-    auto restore = wil::ScopeExit([&] 
+    THROW_LAST_ERROR_IF_FALSE(SetConsoleCP(CP_UTF8));
+    auto restore = wil::ScopeExit([&]
     {
-        SetConsoleOutputCP(launchCP);
+        SetConsoleOutputCP(launchOutputCP);
+        SetConsoleCP(launchCP);
     });
 
-    
+
     for (;;)
     {
         INPUT_RECORD rc[256];
         DWORD dwRead = 0;
-        bool fSuccess = !!ReadConsoleInputA(hIn, rc, 256, &dwRead);
+        // Not to future self: You can't read utf-8 from the console yet.
+        bool fSuccess = !!ReadConsoleInput(hIn, rc, 256, &dwRead);
         if (fSuccess)
         {
             handleManyEvents(rc, dwRead);
@@ -430,13 +494,13 @@ void CreateIOThreads()
 }
 
 
-BOOL CtrlHandler( DWORD fdwCtrlType ) 
+BOOL CtrlHandler( DWORD fdwCtrlType )
 {
-    switch( fdwCtrlType ) 
-    { 
-    // Handle the CTRL-C signal. 
-    case CTRL_C_EVENT: 
-    case CTRL_BREAK_EVENT: 
+    switch( fdwCtrlType )
+    {
+    // Handle the CTRL-C signal.
+    case CTRL_C_EVENT:
+    case CTRL_BREAK_EVENT:
         return true;
     }
 
@@ -449,7 +513,7 @@ BOOL CtrlHandler( DWORD fdwCtrlType )
 #pragma warning(disable:4702)
 int __cdecl wmain(int argc, WCHAR* argv[])
 {
-    // initialize random seed: 
+    // initialize random seed:
     srand((unsigned int)time(NULL));
     SetConsoleCtrlHandler( (PHANDLER_ROUTINE) CtrlHandler, TRUE );
 
@@ -480,7 +544,7 @@ int __cdecl wmain(int argc, WCHAR* argv[])
     // handleResize will get our initial terminal dimensions.
     handleResize();
 
-    newConsole();  
+    newConsole();
     getConsole()->activate();
     CreateIOThreads();
 

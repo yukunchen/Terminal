@@ -83,6 +83,9 @@ namespace Microsoft
                                                         _Out_ size_t& eventsWritten) = 0;
                 virtual BOOL PrivateWriteConsoleControlInput(_In_ KeyEvent key) = 0;
                 virtual BOOL PrivateRefreshWindow() = 0;
+                
+                virtual BOOL GetConsoleOutputCP(_Out_ unsigned int* const puiOutputCP) = 0;
+
                 virtual BOOL PrivateSuppressResizeRepaint() = 0;
             };
         };

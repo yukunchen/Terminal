@@ -16,6 +16,7 @@ Author:
 #pragma once
 #include <deque>
 #include <memory>
+#include "IInputEvent.hpp"
 
 HRESULT ConvertToW(_In_ const UINT uiCodePage,
                    _In_reads_or_z_(cchSource) const char* const rgchSource,
@@ -42,3 +43,12 @@ HRESULT GetDwordByteCount(_In_ size_t cchUnicode,
 
 std::deque<char> ConvertToOem(_In_ const UINT codepage,
                               _In_ const std::wstring& source);
+
+std::deque<std::unique_ptr<KeyEvent>> CharToKeyEvents(_In_ const wchar_t wch, _In_ const unsigned int codepage);
+
+std::deque<std::unique_ptr<KeyEvent>> SynthesizeKeyboardEvents(_In_ const wchar_t wch,
+                                                               _In_ const short keyState);
+
+std::deque<std::unique_ptr<KeyEvent>> SynthesizeNumpadEvents(_In_ const wchar_t wch, _In_ const unsigned int codepage);
+
+HRESULT IsCharFullWidth(_In_ wchar_t wch, _Out_ bool* const isFullWidth);
