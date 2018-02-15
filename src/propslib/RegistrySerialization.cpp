@@ -43,7 +43,8 @@ const RegistrySerialization::_RegPropertyMap RegistrySerialization::s_PropertyMa
     { _RegPropertyType::Boolean,        CONSOLE_REGISTRY_ENABLE_COLOR_SELECTION,        SET_FIELD_AND_SIZE(_fEnableColorSelection)       },
     { _RegPropertyType::Coordinate,     CONSOLE_REGISTRY_WINDOWPOS,                     SET_FIELD_AND_SIZE(_dwWindowOrigin)              },
     { _RegPropertyType::Dword,          CONSOLE_REGISTRY_CURSORCOLOR,                   SET_FIELD_AND_SIZE(_CursorColor)                 },
-    { _RegPropertyType::Dword,          CONSOLE_REGISTRY_CURSORTYPE,                    SET_FIELD_AND_SIZE(_CursorType)                  }
+    { _RegPropertyType::Dword,          CONSOLE_REGISTRY_CURSORTYPE,                    SET_FIELD_AND_SIZE(_CursorType)                  },
+    { _RegPropertyType::Boolean,        CONSOLE_REGISTRY_INTERCEPTCOPYPASTE,            SET_FIELD_AND_SIZE(_fInterceptCopyPaste)         }
 };
 const size_t RegistrySerialization::s_PropertyMappingsSize = ARRAYSIZE(s_PropertyMappings);
 

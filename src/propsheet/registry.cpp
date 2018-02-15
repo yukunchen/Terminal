@@ -118,7 +118,7 @@ VOID InitRegistryValues(
         pStateInfo->ColorTable[14] = RGB(0xFF,0xFF,0   );
         pStateInfo->ColorTable[15] = RGB(0xFF,0xFF,0xFF);
     }
-    
+
     pStateInfo->CodePage = OEMCP;
     pStateInfo->hWnd = NULL;
     pStateInfo->OriginalTitle = NULL;
@@ -789,7 +789,6 @@ VOID SetRegistryValues(
 
     SetGlobalRegistryValues();
 
-
     //
     // Save cursor type and color
     //
@@ -801,11 +800,19 @@ VOID SetRegistryValues(
                      REG_DWORD,
                      (BYTE*)&dwValue,
                      sizeof(dwValue));
-    
+
     dwValue = pStateInfo->CursorColor;
     RegistrySerialization::s_UpdateValue(hConsoleKey,
                      hTitleKey,
                      CONSOLE_REGISTRY_CURSORCOLOR,
+                     REG_DWORD,
+                     (BYTE*)&dwValue,
+                     sizeof(dwValue));
+
+    dwValue = pStateInfo->InterceptCopyPaste;
+    RegistrySerialization::s_UpdateValue(hConsoleKey,
+                     hTitleKey,
+                     CONSOLE_REGISTRY_INTERCEPTCOPYPASTE,
                      REG_DWORD,
                      (BYTE*)&dwValue,
                      sizeof(dwValue));

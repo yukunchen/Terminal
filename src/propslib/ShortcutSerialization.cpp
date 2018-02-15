@@ -189,6 +189,10 @@ HRESULT ShortcutSerialization::s_PopulateV2Properties(_In_ IShellLink * const ps
         {
             hr = s_GetPropertyDwordValue(pPropStoreLnk, PKEY_Console_CursorColor, &pStateInfo->CursorColor);
         }
+        if (SUCCEEDED(hr))
+        {
+            hr = s_GetPropertyBoolValue(pPropStoreLnk, PKEY_Console_InterceptCopyPaste, &pStateInfo->InterceptCopyPaste);
+        }
 
         pPropStoreLnk->Release();
     }
@@ -444,6 +448,7 @@ NTSTATUS ShortcutSerialization::s_SetLinkValues(_In_ PCONSOLE_STATE_INFO pStateI
                     s_SetLinkPropertyByteValue(pps, PKEY_Console_WindowTransparency, pStateInfo->bWindowTransparency);
                     s_SetLinkPropertyDwordValue(pps, PKEY_Console_CursorType, pStateInfo->CursorType);
                     s_SetLinkPropertyDwordValue(pps, PKEY_Console_CursorColor, pStateInfo->CursorColor);
+                    s_SetLinkPropertyDwordValue(pps, PKEY_Console_InterceptCopyPaste, pStateInfo->InterceptCopyPaste);
                     hr = pps->Commit();
                     pps->Release();
                 }
