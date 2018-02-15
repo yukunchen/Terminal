@@ -38,7 +38,8 @@ Selection::KeySelectionEventResult Selection::HandleKeySelectionEvent(_In_ const
                  ((ServiceLocator::LocateInputServices()->GetKeyState(VK_CONTROL) & KEY_PRESSED) &&
                   (wVirtualKeyCode == 'C' || // Ctrl-c
                    wVirtualKeyCode == VK_INSERT)) ||
-                 ((ServiceLocator::LocateInputServices()->GetKeyState(VK_CONTROL) & KEY_PRESSED) &&
+                 (gci.GetInterceptCopyPaste() &&
+                  (ServiceLocator::LocateInputServices()->GetKeyState(VK_CONTROL) & KEY_PRESSED) &&
                   (ServiceLocator::LocateInputServices()->GetKeyState(VK_SHIFT) & KEY_PRESSED) &&
                   (wVirtualKeyCode == 'C'))) // C-S-c
         {
