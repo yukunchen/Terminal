@@ -66,4 +66,6 @@ NTSTATUS DoSrvPrivateGetConsoleScreenBufferAttributes(_In_ SCREEN_INFORMATION* c
 
 NTSTATUS DoSrvPrivateRefreshWindow(_In_ SCREEN_INFORMATION* const pScreenInfo);
 
+HRESULT DoSrvGetConsoleOutputCodePage(_Out_ unsigned int* const pCodePage);
+
 NTSTATUS DoSrvPrivateSuppressResizeRepaint();

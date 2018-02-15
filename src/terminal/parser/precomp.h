@@ -26,6 +26,7 @@ Abstract:
 #include <wil\Common.h>
 #include <wil\Result.h>
 
+// STL
 #include <string>
 #include <list>
 #include <memory>
@@ -34,3 +35,5 @@ Abstract:
 #include <memory>
 #include <deque>
 #include <assert.h>
+#include <algorithm>
+#include <iterator>
