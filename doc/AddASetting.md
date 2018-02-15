@@ -7,10 +7,13 @@
         - Yes, the large majority of the `DEFINE_PROPERTYKEY` defs are the same, it's only the last byte of the guid that changes
 2. Add matching fields to Settings.hpp
     - add getters, setters, the whole dirll.
-3. Add to the propsheet registry handler, `src/propsheet/registry.cpp`
+3. Add to the propsheet.
+    - We need to add it to *writing* the rigistry from the propsheet, and *reading* the link from the propsheet. Yes, that's weird, but the propsheet is smart enough to re-use ShortcutSerialization::s_SetLinkValues, but not smart enough to do the same with RegistrySerialization.
+    - `src/propsheet/registry.cpp`
+    - `src/propsheet/readlink.cpp`, `LoadConsoleV2LinkProperties`
 4. Add the field to the propslib registry map
 5. Add the value to `ShortcutSerialization.cpp`
     - Read the value in `ShortcutSerialization::s_PopulateV2Properties`
     - Write the value in `ShortcutSerialization::s_SetLinkValues`
-
+6. Add the setting to `Menu::s_GetConsoleState`, and `Menu::s_PropertiesUpdate`
 Now, your new setting should be stored just like all the other properties.

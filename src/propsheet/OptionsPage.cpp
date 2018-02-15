@@ -100,6 +100,14 @@ bool OptionsCommandCallback(HWND hDlg, const unsigned int Item, const unsigned i
         return TRUE;
     }
 
+    case IDD_INTERCEPT_COPY_PASTE:
+    {
+        const BOOL fCurrentInterceptCopyPaste = (IsDlgButtonChecked(hDlg, IDD_INTERCEPT_COPY_PASTE) == BST_CHECKED);
+        gpStateInfo->InterceptCopyPaste = fCurrentInterceptCopyPaste;
+        UpdateApplyButton(hDlg);
+        return TRUE;
+    }
+
     case IDD_CTRL_KEYS_ENABLED:
     {
         // NOTE: the checkbox being checked means that Ctrl keys should be enabled, hence the negation here
@@ -141,12 +149,14 @@ INT_PTR WINAPI SettingsDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lPara
         CheckDlgButton(hDlg, IDD_FILTER_ON_PASTE, gpStateInfo->fFilterOnPaste);
         CheckDlgButton(hDlg, IDD_CTRL_KEYS_ENABLED, !gpStateInfo->fCtrlKeyShortcutsDisabled);
         CheckDlgButton(hDlg, IDD_EDIT_KEYS, g_fEditKeys);
+        CheckDlgButton(hDlg, IDD_INTERCEPT_COPY_PASTE, gpStateInfo->InterceptCopyPaste);
 
         // tooltips
         CreateAndAssociateToolTipToControl(IDD_LINE_SELECTION, hDlg, IDS_TOOLTIP_LINE_SELECTION);
         CreateAndAssociateToolTipToControl(IDD_FILTER_ON_PASTE, hDlg, IDS_TOOLTIP_FILTER_ON_PASTE);
         CreateAndAssociateToolTipToControl(IDD_CTRL_KEYS_ENABLED, hDlg, IDS_TOOLTIP_CTRL_KEYS);
         CreateAndAssociateToolTipToControl(IDD_EDIT_KEYS, hDlg, IDS_TOOLTIP_EDIT_KEYS);
+        CreateAndAssociateToolTipToControl(IDD_INTERCEPT_COPY_PASTE, hDlg, IDS_TOOLTIP_INTERCEPT_COPY_PASTE);
 
         // initialize cursor radio buttons
         if (gpStateInfo->CursorSize <= 25) {
@@ -290,4 +300,7 @@ void ToggleV2OptionsControls(__in const HWND hDlg)
 
     EnableWindow(GetDlgItem(hDlg, IDD_EDIT_KEYS), g_fForceV2);
     CheckDlgButton(hDlg, IDD_EDIT_KEYS, g_fForceV2 ? g_fEditKeys : FALSE);
+
+    EnableWindow(GetDlgItem(hDlg, IDD_INTERCEPT_COPY_PASTE), g_fForceV2);
+    CheckDlgButton(hDlg, IDD_INTERCEPT_COPY_PASTE, g_fForceV2 ? gpStateInfo->InterceptCopyPaste : FALSE);
 }

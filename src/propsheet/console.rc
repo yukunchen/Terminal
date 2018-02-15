@@ -56,7 +56,7 @@ BEGIN
                     UDS_ARROWKEYS | UDS_NOTHOUSANDS, 0, 0, 0, 0
     AUTOCHECKBOX    "&Discard Old Duplicates", IDD_HISTORY_NODUP, 119,55, 108, 9
 
-    GROUPBOX        "Edit Options",-1,10,70,225,54
+    GROUPBOX        "Edit Options",-1,10,70,225,64
     CONTROL         "&QuickEdit Mode", IDD_QUICKEDIT, "Button",
                     BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP, 14, 82, 75, 10
     CONTROL         "&Insert Mode", IDD_INSERT, "Button",
@@ -65,24 +65,23 @@ BEGIN
                     BS_AUTOCHECKBOX | WS_TABSTOP, 14, 102, 200, 10
     CONTROL         "&Filter clipboard contents on paste", IDD_FILTER_ON_PASTE, "Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP, 14, 112, 200, 10
+    CONTROL         "Intercept Ctrl+Shift+C/V as &Copy/Paste", IDD_INTERCEPT_COPY_PASTE, "Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP, 14, 122, 200, 10
 
-    GROUPBOX        "Text Selection",-1,10,126,225,32
+    GROUPBOX        "Text Selection",-1,10,136,225,32
     CONTROL         "&Enable line wrapping selection", IDD_LINE_SELECTION, "Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP, 14, 136, 200, 10
-    CONTROL         "E&xtended text selection keys", IDD_EDIT_KEYS, "Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP, 14, 146, 200, 10
+    CONTROL         "E&xtended text selection keys", IDD_EDIT_KEYS, "Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP, 14, 156, 200, 10
 
-    GROUPBOX        "Default code page", IDD_LANGUAGE_GROUPBOX,   10, 160, 225, 29, WS_GROUP
-    COMBOBOX        IDD_LANGUAGELIST, 16, 171, 213, 78,
-                    CBS_SORT |
-                    CBS_DISABLENOSCROLL |
-                    CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP | WS_GROUP
+    GROUPBOX        "Current code page", IDD_LANGUAGE_GROUPBOX, 10, 170, 225, 24, WS_GROUP
+    LTEXT           "",IDD_LANGUAGE, 16, 181, 184, 10, WS_GROUP
 
     CONTROL         "&Use legacy console (requires relaunch)", IDD_FORCEV2, "Button",
-                    BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP, 10, 194, 200, 10
+                    BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP, 10, 199, 200, 10
 
     CONTROL         "Find out more about <A HREF=""https://go.microsoft.com/fwlink/?LinkId=507549"">new console features</A>",
-                    IDD_HELP_SYSLINK, "SysLink", WS_TABSTOP, 10, 206, 200, 10
+                    IDD_HELP_SYSLINK, "SysLink", WS_TABSTOP, 10, 211, 200, 10
 
 
 END
@@ -115,7 +114,7 @@ BEGIN
                     UDS_ARROWKEYS | UDS_NOTHOUSANDS, 0, 0, 0, 0
     AUTOCHECKBOX    "&Discard Old Duplicates", IDD_HISTORY_NODUP, 119,55, 108, 9
 
-    GROUPBOX        "Edit Options",-1,10,70,225,54
+    GROUPBOX        "Edit Options",-1,10,70,225,64
     CONTROL         "&QuickEdit Mode", IDD_QUICKEDIT, "Button",
                     BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP, 14, 82, 75, 10
     CONTROL         "&Insert Mode", IDD_INSERT, "Button",
@@ -124,21 +123,23 @@ BEGIN
                     BS_AUTOCHECKBOX | WS_TABSTOP, 14, 102, 200, 10
     CONTROL         "&Filter clipboard contents on paste", IDD_FILTER_ON_PASTE, "Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP, 14, 112, 200, 10
+    CONTROL         "Intercept Ctrl+Shift+C/V as &Copy/Paste", IDD_INTERCEPT_COPY_PASTE, "Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP, 14, 122, 200, 10
 
-    GROUPBOX        "Text Selection",-1,10,126,225,32
+    GROUPBOX        "Text Selection",-1,10,136,225,32
     CONTROL         "&Enable line wrapping selection", IDD_LINE_SELECTION, "Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP, 14, 136, 200, 10
-    CONTROL         "E&xtended text selection keys", IDD_EDIT_KEYS, "Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP, 14, 146, 200, 10
+    CONTROL         "E&xtended text selection keys", IDD_EDIT_KEYS, "Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP, 14, 156, 200, 10
 
-    GROUPBOX        "Current code page", IDD_LANGUAGE_GROUPBOX, 10, 160, 225, 24, WS_GROUP
-    LTEXT           "",IDD_LANGUAGE, 16, 171, 184, 10, WS_GROUP
+    GROUPBOX        "Current code page", IDD_LANGUAGE_GROUPBOX, 10, 170, 225, 24, WS_GROUP
+    LTEXT           "",IDD_LANGUAGE, 16, 181, 184, 10, WS_GROUP
 
     CONTROL         "&Use legacy console (requires relaunch)", IDD_FORCEV2, "Button",
-                    BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP, 10, 194, 200, 10
+                    BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP, 10, 199, 200, 10
 
     CONTROL         "Find out more about <A HREF=""https://go.microsoft.com/fwlink/?LinkId=507549"">new console features</A>",
-                    IDD_HELP_SYSLINK, "SysLink", WS_TABSTOP, 10, 206, 200, 10
+                    IDD_HELP_SYSLINK, "SysLink", WS_TABSTOP, 10, 211, 200, 10
 END
 
 //
@@ -470,6 +471,7 @@ BEGIN
     IDS_TOOLTIP_CTRL_KEYS,       "Allow new Ctrl-key shortcuts (may interfere with some applications)."
     IDS_TOOLTIP_EDIT_KEYS,       "Enable enhanced keyboard editing on command line."
     IDS_TOOLTIP_OPACITY,         "Adjust the transparency of the console window."
+    IDS_TOOLTIP_INTERCEPT_COPY_PASTE,   "Use Ctrl+Shift+C/V as copy/paste shortcuts, regardless of input mode"
 END
 
 
