@@ -119,16 +119,13 @@ NTSTATUS ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenI
             try
             {
                 const ICharRow& iCharRow = pRow->GetCharRow();
-                if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
-                {
-                    const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
-                    it = std::next(charRow.cbegin(), coordSourcePoint.X);
-                    itEnd = charRow.cend();
-                }
-                else
-                {
-                    return STATUS_UNSUCCESSFUL;
-                }
+                // we only support ucs2 encoded char rows
+                FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                                "only support UCS2 char rows currently");
+
+                const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
+                it = std::next(charRow.cbegin(), coordSourcePoint.X);
+                itEnd = charRow.cend();
             }
             catch (...)
             {
@@ -462,10 +459,9 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                 try
                 {
                     const ICharRow& iCharRow = pRow->GetCharRow();
-                    if (iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2)
-                    {
-                        return STATUS_UNSUCCESSFUL;
-                    }
+                    // we only support ucs2 encoded char rows
+                    FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                                    "only support UCS2 char rows currently");
 
                     const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
                     const Ucs2CharRow::const_iterator startIt = std::next(charRow.cbegin(), X);
@@ -576,16 +572,13 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                 try
                 {
                     const ICharRow& iCharRow = pRow->GetCharRow();
-                    if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
-                    {
-                        const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
-                        it = std::next(charRow.cbegin(), X);
-                        itEnd = charRow.cend();
-                    }
-                    else
-                    {
-                        return STATUS_UNSUCCESSFUL;
-                    }
+                    // we only support ucs2 encoded char rows
+                    FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                                    "only support UCS2 char rows currently");
+
+                    const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
+                    it = std::next(charRow.cbegin(), X);
+                    itEnd = charRow.cend();
                 }
                 catch (...)
                 {

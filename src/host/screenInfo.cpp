@@ -633,16 +633,13 @@ void SCREEN_INFORMATION::ResetTextFlags(_In_ short const sStartX,
             {
                 const ROW& Row = pTextInfo->GetRowAtIndex(RowIndex);
                 const ICharRow& iCharRow = Row.GetCharRow();
-                if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
-                {
-                    const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
-                    Char = charRow.GetGlyphAt(sStartX);
-                    Row.GetAttrRow().FindAttrIndex(sStartX, &pAttrRun, nullptr);
-                }
-                else
-                {
-                    return;
-                }
+                // we only support ucs2 encoded char rows
+                FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                                "only support UCS2 char rows currently");
+
+                const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
+                Char = charRow.GetGlyphAt(sStartX);
+                Row.GetAttrRow().FindAttrIndex(sStartX, &pAttrRun, nullptr);
             }
             catch (...)
             {
@@ -1491,16 +1488,13 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
             DbcsAttribute bKAttr;
             try
             {
-                if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
-                {
-                    const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
-                    wchChar = charRow.GetGlyphAt(iOldCol);
-                    bKAttr = charRow.GetAttribute(iOldCol);
-                }
-                else
-                {
-                    return STATUS_UNSUCCESSFUL;
-                }
+                // we only support ucs2 encoded char rows
+                FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                                "only support UCS2 char rows currently");
+
+                const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
+                wchChar = charRow.GetGlyphAt(iOldCol);
+                bKAttr = charRow.GetAttribute(iOldCol);
             }
             catch (...)
             {

@@ -595,11 +595,10 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
         if (iRight > iLeft)
         {
             const ICharRow& iCharRow = Row.GetCharRow();
-            if (iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2)
-            {
-                LOG_HR_MSG(E_FAIL, "we don't support non UCS2 encoded char rows");
-                return;
-            }
+            // we only support ucs2 encoded char rows
+            FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                            "only support UCS2 char rows currently");
+
             const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
 
             // Get the pointer to the beginning of the text and the maximum length of the line we'll be writing.
@@ -1035,11 +1034,10 @@ void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
                 const ROW& Row = pTextInfo->GetRowByOffset(iRow - AreaInfo->CaInfo.coordConView.Y);
 
                 const ICharRow& iCharRow = Row.GetCharRow();
-                if (iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2)
-                {
-                    LOG_HR_MSG(E_FAIL, "we don't support non UCS2 encoded char rows");
-                    return;
-                }
+                // we only support ucs2 encoded char rows
+                FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                                "only support UCS2 char rows currently");
+
                 const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
                 // Get the pointer to the beginning of the text and the maximum length of the line we'll be writing.
                 const std::wstring rowText = charRow.GetText();

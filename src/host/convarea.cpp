@@ -744,18 +744,15 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
     try
     {
         ICharRow& iCharRow = Row.GetCharRow();
-        if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
-        {
-            Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
-            OverwriteColumns(String,
-                            String + StringLength,
-                            pDbcsAttributes,
-                            std::next(charRow.begin(), TargetPoint.X));
-        }
-        else
-        {
-            THROW_HR_MSG(E_FAIL, "we only support ucs2 encoded char rows");
-        }
+        // we only support ucs2 encoded char rows
+        FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                        "only support UCS2 char rows currently");
+
+        Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
+        OverwriteColumns(String,
+                        String + StringLength,
+                        pDbcsAttributes,
+                        std::next(charRow.begin(), TargetPoint.X));
     }
     CATCH_LOG();
 

@@ -727,10 +727,10 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION* const pScreenInfo,
             {
                 const ROW& Row = pScreenInfo->TextInfo->GetRowByOffset(MousePosition.Y);
                 const ICharRow& iCharRow = Row.GetCharRow();
-                if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
-                {
-                    return FALSE;
-                }
+                // we only support ucs2 encoded char rows
+                FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                                "only support UCS2 char rows currently");
+
                 const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
 
 

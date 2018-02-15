@@ -59,18 +59,15 @@ void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
     try
     {
         ICharRow& iCharRow = Row.GetCharRow();
-        if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
-        {
-            Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
-            OverwriteColumns(pwchBuffer,
-                            pwchBuffer + cchBuffer,
-                            pDbcsAttributes,
-                            std::next(charRow.begin(), TargetPoint.X));
-        }
-        else
-        {
-            THROW_HR_MSG(E_FAIL, "we only support ucs2 rows right now");
-        }
+        // we only support ucs2 encoded char rows
+        FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                        "only support UCS2 char rows currently");
+
+        Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
+        OverwriteColumns(pwchBuffer,
+                        pwchBuffer + cchBuffer,
+                        pDbcsAttributes,
+                        std::next(charRow.begin(), TargetPoint.X));
     }
     CATCH_LOG();
 
@@ -192,16 +189,13 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
             try
             {
                 ICharRow& iCharRow = pRow->GetCharRow();
-                if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
-                {
-                    Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
-                    it = std::next(charRow.begin(), coordDest.X);
-                    itEnd = charRow.cend();
-                }
-                else
-                {
-                    return STATUS_UNSUCCESSFUL;
-                }
+                // we only support ucs2 encoded char rows
+                FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                                "only support UCS2 char rows currently");
+
+                Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
+                it = std::next(charRow.begin(), coordDest.X);
+                itEnd = charRow.cend();
             }
             catch (...)
             {
@@ -579,15 +573,12 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
             try
             {
                 ICharRow& iCharRow = pRow->GetCharRow();
-                if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
-                {
-                    Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
-                    it = std::next(charRow.begin(), X);
-                }
-                else
-                {
-                    return STATUS_UNSUCCESSFUL;
-                }
+                // we only support ucs2 encoded char rows
+                FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                                "only support UCS2 char rows currently");
+
+                Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
+                it = std::next(charRow.begin(), X);
             }
             catch (...)
             {
@@ -917,15 +908,12 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
             try
             {
                 ICharRow& iCharRow = pRow->GetCharRow();
-                if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
-                {
-                    Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
-                    it = std::next(charRow.begin(), X);
-                }
-                else
-                {
-                    return STATUS_UNSUCCESSFUL;
-                }
+                // we only support ucs2 encoded char rows
+                FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                                "only support UCS2 char rows currently");
+
+                Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
+                it = std::next(charRow.begin(), X);
             }
             catch (...)
             {
@@ -1205,17 +1193,13 @@ void FillRectangle(_In_ const CHAR_INFO * const pciFill,
         try
         {
             ICharRow& iCharRow = pRow->GetCharRow();
-            if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
-            {
-                Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
-                it = std::next(charRow.begin(), psrTarget->Left);
-                itEnd = charRow.cend();
-            }
-            else
-            {
-                LOG_HR_MSG(E_FAIL, "we don't support non UCS2 encoded char rows");
-                return;
-            }
+            // we only support ucs2 encoded char rows
+            FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                            "only support UCS2 char rows currently");
+
+            Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
+            it = std::next(charRow.begin(), psrTarget->Left);
+            itEnd = charRow.cend();
         }
         catch (...)
         {

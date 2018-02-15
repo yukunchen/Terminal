@@ -215,42 +215,44 @@ void Selection::s_BisectSelection(_In_ short const sStringLength,
     try
     {
         const ICharRow& iCharRow = Row.GetCharRow();
-        if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
-        {
-            const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
-            // Check start position of strings
-            if (charRow.GetAttribute(coordTargetPoint.X).IsTrailing())
-            {
-                if (coordTargetPoint.X == 0)
-                {
-                    pSmallRect->Left++;
-                }
-                else
-                {
-                    pSmallRect->Left--;
-                }
-            }
+        // we only support ucs2 encoded char rows
+        FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                        "only support UCS2 char rows currently");
 
-            // Check end position of strings
-            if (coordTargetPoint.X + sStringLength < pScreenInfo->GetScreenBufferSize().X)
+        const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
+        // Check start position of strings
+        if (charRow.GetAttribute(coordTargetPoint.X).IsTrailing())
+        {
+            if (coordTargetPoint.X == 0)
             {
-                if (charRow.GetAttribute(coordTargetPoint.X + sStringLength).IsTrailing())
-                {
-                    pSmallRect->Right++;
-                }
+                pSmallRect->Left++;
             }
             else
             {
-                const ROW& RowNext = pTextInfo->GetNextRowNoWrap(Row);
-                const ICharRow& iCharRowNext = RowNext.GetCharRow();
-                if (iCharRowNext.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
-                {
-                    const Ucs2CharRow& charRowNext = static_cast<const Ucs2CharRow&>(iCharRowNext);
-                    if (charRowNext.GetAttribute(0).IsTrailing())
-                    {
-                        pSmallRect->Right--;
-                    }
-                }
+                pSmallRect->Left--;
+            }
+        }
+
+        // Check end position of strings
+        if (coordTargetPoint.X + sStringLength < pScreenInfo->GetScreenBufferSize().X)
+        {
+            if (charRow.GetAttribute(coordTargetPoint.X + sStringLength).IsTrailing())
+            {
+                pSmallRect->Right++;
+            }
+        }
+        else
+        {
+            const ROW& RowNext = pTextInfo->GetNextRowNoWrap(Row);
+            const ICharRow& iCharRowNext = RowNext.GetCharRow();
+            // we only support ucs2 encoded char rows
+            FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                            "only support UCS2 char rows currently");
+
+            const Ucs2CharRow& charRowNext = static_cast<const Ucs2CharRow&>(iCharRowNext);
+            if (charRowNext.GetAttribute(0).IsTrailing())
+            {
+                pSmallRect->Right--;
             }
         }
     }

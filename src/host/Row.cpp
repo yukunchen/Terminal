@@ -44,15 +44,12 @@ ROW::ROW(const ROW& a) :
     _attrRow{ a._attrRow },
     _id{ a._id }
 {
-    if (a._charRow->GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
-    {
-        Ucs2CharRow charRow = *static_cast<const Ucs2CharRow* const>(a._charRow.get());
-        _charRow = std::make_unique<Ucs2CharRow>(charRow);
-    }
-    else
-    {
-        THROW_HR_MSG(E_INVALIDARG, "ROW doesn't support copy constructor for non ucs2 ICharRow implementations");
-    }
+    // we only support ucs2 encoded char rows
+    FAIL_FAST_IF_MSG(a._charRow->GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                     "only support UCS2 char rows currently");
+
+    Ucs2CharRow charRow = *static_cast<const Ucs2CharRow* const>(a._charRow.get());
+    _charRow = std::make_unique<Ucs2CharRow>(charRow);
 }
 
 // Routine Description:

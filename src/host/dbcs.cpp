@@ -88,44 +88,45 @@ void CleanupDbcsEdgesForWrite(_In_ const size_t stringLen,
         ROW& row = pTextInfo->GetRowAtIndex(rowIndex);
 
         ICharRow& iCharRow = row.GetCharRow();
-        // we only care about dbcs for ucs2 encoded rows
-        if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
-        {
-            Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
-            // Check start position of strings
-            if (charRow.GetAttribute(coordTarget.X).IsTrailing())
-            {
-                if (coordTarget.X == 0)
-                {
-                    pTextInfo->GetPrevRow(row).ClearColumn(coordScreenBufferSize.X - 1);
-                }
-                else
-                {
-                    row.ClearColumn(coordTarget.X - 1);
-                }
-            }
+        // we only support ucs2 encoded char rows
+        FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                        "only support UCS2 char rows currently");
 
-            // Check end position of strings
-            if (coordTarget.X + static_cast<short>(stringLen) < coordScreenBufferSize.X)
+        Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
+        // Check start position of strings
+        if (charRow.GetAttribute(coordTarget.X).IsTrailing())
+        {
+            if (coordTarget.X == 0)
             {
-                size_t column = coordTarget.X + stringLen;
-                if (charRow.GetAttribute(column).IsTrailing())
-                {
-                    row.ClearColumn(column);
-                }
+                pTextInfo->GetPrevRow(row).ClearColumn(coordScreenBufferSize.X - 1);
             }
-            else if (coordTarget.Y + 1 < coordScreenBufferSize.Y)
+            else
             {
-                ROW& rowNext = pTextInfo->GetNextRow(row);
-                ICharRow& iCharRowNext = rowNext.GetCharRow();
-                if (iCharRowNext.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
-                {
-                    Ucs2CharRow& charRowNext = static_cast<Ucs2CharRow&>(iCharRowNext);
-                    if (charRowNext.GetAttribute(0).IsTrailing())
-                    {
-                        rowNext.ClearColumn(0);
-                    }
-                }
+                row.ClearColumn(coordTarget.X - 1);
+            }
+        }
+
+        // Check end position of strings
+        if (coordTarget.X + static_cast<short>(stringLen) < coordScreenBufferSize.X)
+        {
+            size_t column = coordTarget.X + stringLen;
+            if (charRow.GetAttribute(column).IsTrailing())
+            {
+                row.ClearColumn(column);
+            }
+        }
+        else if (coordTarget.Y + 1 < coordScreenBufferSize.Y)
+        {
+            ROW& rowNext = pTextInfo->GetNextRow(row);
+            ICharRow& iCharRowNext = rowNext.GetCharRow();
+            // we only support ucs2 encoded char rows
+            FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                            "only support UCS2 char rows currently");
+
+            Ucs2CharRow& charRowNext = static_cast<Ucs2CharRow&>(iCharRowNext);
+            if (charRowNext.GetAttribute(0).IsTrailing())
+            {
+                rowNext.ClearColumn(0);
             }
         }
     }

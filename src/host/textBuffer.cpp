@@ -335,10 +335,10 @@ bool TEXT_BUFFER_INFO::AssertValidDoubleByteSequence(_In_ const DbcsAttribute db
     const COORD coordPrevPosition = GetPreviousFromCursor();
     ROW& prevRow = GetRowByOffset(coordPrevPosition.Y);
     ICharRow& iCharRow = prevRow.GetCharRow();
-    if (iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2)
-    {
-        return false;
-    }
+    // we only support ucs2 encoded char rows
+    FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                     "only support UCS2 char rows currently");
+
     Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
     DbcsAttribute prevDbcsAttr;
     try
@@ -441,10 +441,11 @@ bool TEXT_BUFFER_INFO::_PrepareForDoubleByteSequence(_In_ const DbcsAttribute db
         {
             // set that we're wrapping for double byte reasons
             ICharRow& iCharRow = GetRowByOffset(this->GetCursor()->GetPosition().Y).GetCharRow();
-            if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
-            {
-                static_cast<Ucs2CharRow&>(iCharRow).SetDoubleBytePadded(true);
-            }
+            // we only support ucs2 encoded char rows
+            FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                            "only support UCS2 char rows currently");
+
+            static_cast<Ucs2CharRow&>(iCharRow).SetDoubleBytePadded(true);
 
             // then move the cursor forward and onto the next row
             fSuccess = IncrementCursor();
@@ -480,33 +481,30 @@ bool TEXT_BUFFER_INFO::InsertCharacter(_In_ const wchar_t wch,
 
         // Store character and double byte data
         ICharRow& iCharRow = Row.GetCharRow();
-        if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
+        // we only support ucs2 encoded char rows
+        FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                        "only support UCS2 char rows currently");
+
+        Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);;
+        short const cBufferWidth = this->_coordBufferSize.X;
+
+        try
         {
-            Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);;
-            short const cBufferWidth = this->_coordBufferSize.X;
-
-            try
-            {
-                charRow.GetGlyphAt(iCol) = wch;
-                charRow.GetAttribute(iCol) = dbcsAttribute;
-            }
-            catch (...)
-            {
-                LOG_HR(wil::ResultFromCaughtException());
-                return false;
-            }
-
-            // Store color data
-            fSuccess = Row.GetAttrRow().SetAttrToEnd(iCol, attr);
-            if (fSuccess)
-            {
-                // Advance the cursor
-                fSuccess = this->IncrementCursor();
-            }
+            charRow.GetGlyphAt(iCol) = wch;
+            charRow.GetAttribute(iCol) = dbcsAttribute;
         }
-        else
+        catch (...)
         {
-            fSuccess = false;
+            LOG_HR(wil::ResultFromCaughtException());
+            return false;
+        }
+
+        // Store color data
+        fSuccess = Row.GetAttrRow().SetAttrToEnd(iCol, attr);
+        if (fSuccess)
+        {
+            // Advance the cursor
+            fSuccess = this->IncrementCursor();
         }
     }
     return fSuccess;

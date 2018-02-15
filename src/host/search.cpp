@@ -160,17 +160,14 @@ USHORT SearchForString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
             try
             {
                 const ICharRow& iCharRow = pRow->GetCharRow();
-                if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
+                // we only support ucs2 encoded char rows
+                FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                                "only support UCS2 char rows currently");
+
+                const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
+                if (charRow.GetAttribute(Position.X).IsTrailing())
                 {
-                    const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
-                    if (charRow.GetAttribute(Position.X).IsTrailing())
-                    {
-                        goto recalc;
-                    }
-                }
-                else
-                {
-                    return 0;
+                    goto recalc;
                 }
             }
             catch (...)
@@ -181,15 +178,12 @@ USHORT SearchForString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
     #endif
             std::wstring rowText;
             const ICharRow& iCharRow = pRow->GetCharRow();
-            if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
-            {
-                const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
-                rowText = charRow.GetText();
-            }
-            else
-            {
-                return 0;
-            }
+            // we only support ucs2 encoded char rows
+            FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                            "only support UCS2 char rows currently");
+
+            const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
+            rowText = charRow.GetText();
 
             if (IgnoreCase ?
                 0 == _wcsnicmp(pwszSearch, &rowText.c_str()[Position.X], cchSearch) :

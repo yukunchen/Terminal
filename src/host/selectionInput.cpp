@@ -162,10 +162,10 @@ void Selection::WordByWordSelection(_In_ const bool fReverse,
     WCHAR wchTest = L'\0';
     {
         ICharRow& iCharRow = pTextInfo->GetRowByOffset(pcoordSelPoint->Y).GetCharRow();
-        if (iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2)
-        {
-            return;
-        }
+        // we only support ucs2 encoded char rows
+        FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                        "only support UCS2 char rows currently");
+
         Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
         wchTest = charRow.GetGlyphAt(pcoordSelPoint->X);
     }
@@ -248,10 +248,10 @@ void Selection::WordByWordSelection(_In_ const bool fReverse,
         // get the character associated with the new position
         {
             ICharRow& iCharRow = gci.CurrentScreenBuffer->TextInfo->GetRowByOffset(pcoordSelPoint->Y).GetCharRow();
-            if (iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2)
-            {
-                return;
-            }
+            // we only support ucs2 encoded char rows
+            FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                            "only support UCS2 char rows currently");
+
             Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
             wchTest = charRow.GetGlyphAt(pcoordSelPoint->X);
         }
@@ -379,13 +379,14 @@ bool Selection::HandleKeyboardLineSelectionEvent(_In_ const INPUT_KEY_INFO* cons
             try
             {
                 const ICharRow& iCharRow = pTextInfo->GetRowByOffset(coordSelPoint.Y).GetCharRow();
-                if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
+                // we only support ucs2 encoded char rows
+                FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                                "only support UCS2 char rows currently");
+
+                const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
+                if (charRow.GetAttribute(coordSelPoint.X).IsTrailing())
                 {
-                    const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
-                    if (charRow.GetAttribute(coordSelPoint.X).IsTrailing())
-                    {
-                        Utils::s_DoIncrementScreenCoordinate(srectEdges, &coordSelPoint);
-                    }
+                    Utils::s_DoIncrementScreenCoordinate(srectEdges, &coordSelPoint);
                 }
             }
             CATCH_LOG();
@@ -608,19 +609,20 @@ bool Selection::HandleKeyboardLineSelectionEvent(_In_ const INPUT_KEY_INFO* cons
     try
     {
         const ICharRow& iCharRow = pTextInfo->GetRowByOffset(coordSelPoint.Y).GetCharRow();
-        if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
-        {
-            const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
-            if (charRow.GetAttribute(coordSelPoint.X).IsTrailing())
-            {
-                // try to move off by highlighting the lead half too.
-                bool fSuccess = Utils::s_DoDecrementScreenCoordinate(srectEdges, &coordSelPoint);
+        // we only support ucs2 encoded char rows
+        FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                        "only support UCS2 char rows currently");
 
-                // if that fails, move off to the next character
-                if (!fSuccess)
-                {
-                    Utils::s_DoIncrementScreenCoordinate(srectEdges, &coordSelPoint);
-                }
+        const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
+        if (charRow.GetAttribute(coordSelPoint.X).IsTrailing())
+        {
+            // try to move off by highlighting the lead half too.
+            bool fSuccess = Utils::s_DoDecrementScreenCoordinate(srectEdges, &coordSelPoint);
+
+            // if that fails, move off to the next character
+            if (!fSuccess)
+            {
+                Utils::s_DoIncrementScreenCoordinate(srectEdges, &coordSelPoint);
             }
         }
     }
@@ -719,16 +721,17 @@ bool Selection::_HandleColorSelection(_In_ const INPUT_KEY_INFO* const pInputKey
             try
             {
                 const ICharRow& iCharRow = Row.GetCharRow();
-                if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
+                // we only support ucs2 encoded char rows
+                FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                                "only support UCS2 char rows currently");
+
+                const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
+                const Ucs2CharRow::const_iterator startIt = std::next(charRow.cbegin(), psrSelection->Left);
+                const Ucs2CharRow::const_iterator stopIt = std::next(startIt, cLength);
+                std::transform(startIt, stopIt, pwszSearchString, [](const Ucs2CharRow::value_type& vals)
                 {
-                    const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
-                    const Ucs2CharRow::const_iterator startIt = std::next(charRow.cbegin(), psrSelection->Left);
-                    const Ucs2CharRow::const_iterator stopIt = std::next(startIt, cLength);
-                    std::transform(startIt, stopIt, pwszSearchString, [](const Ucs2CharRow::value_type& vals)
-                    {
-                        return vals.first;
-                    });
-                }
+                    return vals.first;
+                });
             }
             CATCH_LOG();
 
@@ -780,10 +783,10 @@ bool Selection::_HandleMarkModeSelectionNav(_In_ const INPUT_KEY_INFO* const pIn
         const COORD cursorPos = pTextInfo->GetCursor()->GetPosition();
         const ROW& Row = pTextInfo->GetRowByOffset(cursorPos.Y);
         const ICharRow& iCharRow = Row.GetCharRow();
-        if (iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2)
-        {
-            return false;
-        }
+        // we only support ucs2 encoded char rows
+        FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                        "only support UCS2 char rows currently");
+
         const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
 
         try

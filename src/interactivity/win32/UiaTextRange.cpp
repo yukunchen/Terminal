@@ -744,17 +744,13 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
                     if (startIndex < endIndex)
                     {
                         const ICharRow& iCharRow = row.GetCharRow();
-                        if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
-                        {
-                            const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
-                            // add to result string
-                            wstr += charRow.GetText().substr(startIndex, endIndex - startIndex);
-                        }
-                        else
-                        {
-                            LOG_HR_MSG(E_FAIL, "we don't support non UCS2 encoded char rows");
-                            return E_FAIL;
-                        }
+                        // we only support ucs2 encoded char rows
+                        FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                                        "only support UCS2 char rows currently");
+
+                        const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
+                        // add to result string
+                        wstr += charRow.GetText().substr(startIndex, endIndex - startIndex);
                     }
                 }
 

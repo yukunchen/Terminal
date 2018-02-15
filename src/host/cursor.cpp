@@ -120,15 +120,12 @@ const BOOLEAN Cursor::IsDoubleWidth() const
     // Check with the current screen buffer to see if the character under the cursor is double-width.
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const ICharRow& iCharRow = gci.CurrentScreenBuffer->TextInfo->GetRowByOffset(_cPosition.Y).GetCharRow();
-    if (iCharRow.GetSupportedEncoding() == ICharRow::SupportedEncoding::Ucs2)
-    {
-        const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
-        return !!IsCharFullWidth(charRow.GetGlyphAt(_cPosition.X));
-    }
-    else
-    {
-        return false;
-    }
+    // we only support ucs2 encoded char rows
+    FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                     "only support UCS2 char rows currently");
+
+    const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
+    return !!IsCharFullWidth(charRow.GetGlyphAt(_cPosition.X));
 }
 
 const BOOLEAN Cursor::IsConversionArea() const
