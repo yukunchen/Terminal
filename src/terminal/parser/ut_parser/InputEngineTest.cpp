@@ -52,6 +52,7 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
     void TestInputCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents);
     void TestInputStringCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents);
 
+
     TEST_CLASS_SETUP(ClassSetup)
     {
         return true;
@@ -102,7 +103,6 @@ public:
     virtual bool WindowManipulation(_In_ const DispatchCommon::WindowManipulationType uiFunction,
                                 _In_reads_(cParams) const unsigned short* const rgusParams,
                                 _In_ size_t const cParams) override; // DTTERM_WindowManipulation
-
     virtual bool WriteString(_In_reads_(cch) const wchar_t* const pws,
                              _In_ const size_t cch) override;
 
@@ -708,5 +708,4 @@ void InputEngineTest::CursorPositioningTest()
         L"Processing \"%s\"", seq.c_str()
     ));
     _pStateMachine->ProcessString(&seq[0], seq.length());
-
 }
