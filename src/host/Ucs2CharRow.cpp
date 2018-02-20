@@ -67,9 +67,14 @@ void Ucs2CharRow::swap(Ucs2CharRow& other) noexcept
 Ucs2CharRow::string_type Ucs2CharRow::GetText() const
 {
     string_type str(_data.size(), UNICODE_SPACE);
+    size_t currentIndex = 0;
     for (size_t i = 0; i < _data.size(); ++i)
     {
-        str[i] = _data[i].first;
+        if (!_data[i].second.IsTrailing())
+        {
+            str[currentIndex] = _data[i].first;
+            ++currentIndex;
+        }
     }
     return str;
 }

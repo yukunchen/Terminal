@@ -75,7 +75,10 @@ Utf8CharRow::string_type Utf8CharRow::GetText() const
     string_type str;
     for (const value_type& cell : _data)
     {
-        str += string_type(cell.first.cbegin(), cell.first.cend());
+        if (!cell.second.IsTrailing())
+        {
+            str += string_type(cell.first.cbegin(), cell.first.cend());
+        }
     }
     return str;
 }
