@@ -63,7 +63,7 @@ void Ucs2CharRow::swap(Ucs2CharRow& other) noexcept
 // Arguments:
 // - <none>
 // Return Value:
-// - all text data in the row
+// - all text data in the row. May be shorter than width of cell if double-width glyphs are present.
 Ucs2CharRow::string_type Ucs2CharRow::GetText() const
 {
     string_type str(_data.size(), UNICODE_SPACE);
@@ -76,8 +76,10 @@ Ucs2CharRow::string_type Ucs2CharRow::GetText() const
             ++currentIndex;
         }
     }
+    str.resize(currentIndex);
     return str;
 }
+
 ICharRow::SupportedEncoding Ucs2CharRow::GetSupportedEncoding() const noexcept
 {
     return ICharRow::SupportedEncoding::Ucs2;

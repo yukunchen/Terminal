@@ -188,7 +188,7 @@ size_t CharRowBase<GlyphType, StringType>::MeasureLeft() const
     {
         ++it;
     }
-    return it - _data.begin();
+    return it - _data.cbegin();
 }
 
 // Routine Description:
