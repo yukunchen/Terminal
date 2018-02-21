@@ -46,10 +46,6 @@ public:
     string_type GetText() const;
 
     friend constexpr bool operator==(const Ucs2CharRow& a, const Ucs2CharRow& b) noexcept;
-
-#ifdef UNIT_TESTING
-    friend class Ucs2CharRowTests;
-#endif
 };
 
 void swap(Ucs2CharRow& a, Ucs2CharRow& b) noexcept;

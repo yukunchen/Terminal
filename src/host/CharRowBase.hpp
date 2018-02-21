@@ -78,6 +78,10 @@ protected:
 
     // storage for glyph data and dbcs attributes
     std::vector<value_type> _data;
+
+#ifdef UNIT_TESTING
+    friend class CharRowBaseTests;
+#endif
 };
 
 template <typename GlyphType, typename StringType>
