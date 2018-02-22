@@ -45,12 +45,14 @@ class ClipboardTests
 
         m_state->PrepareGlobalFont();
         m_state->PrepareGlobalScreenBuffer();
+        m_state->PrepareGlobalInputBuffer();
 
         return true;
     }
 
     TEST_CLASS_CLEANUP(ClassCleanup)
     {
+        m_state->CleanupGlobalInputBuffer();
         m_state->CleanupGlobalScreenBuffer();
         m_state->CleanupGlobalFont();
 
