@@ -198,20 +198,15 @@ bool InputStateMachineEngine::ActionPrint(_In_ wchar_t const wch)
 // - cch - length of rgwch
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool InputStateMachineEngine::ActionPrintString(_Inout_updates_(cch) wchar_t* const rgwch, _In_ size_t const cch)
+bool InputStateMachineEngine::ActionPrintString(_Inout_updates_(cch) wchar_t* const rgwch,
+                                                _In_ size_t const cch)
 {
-    bool fSuccess = true;
-    for(size_t i = 0; i < cch; i++)
+    if (cch == 0)
     {
-        // Split into two steps so compiler doesn't optimize out the fn call.
-        bool result = ActionPrint(rgwch[i]);
-        fSuccess &= result;
-        if (!fSuccess)
-        {
-            break;
-        }
+        return true;
     }
-    return fSuccess;
+
+    return _pDispatch->WriteString(rgwch, cch);
 }
 
 // Method Description:
@@ -328,6 +323,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
                     _lookingForDSR = false;
                     break;
                 }
+                __fallthrough;
             case CsiActionCodes::Generic:
             case CsiActionCodes::ArrowUp:
             case CsiActionCodes::ArrowDown:
@@ -879,27 +875,28 @@ bool InputStateMachineEngine::_GetXYPosition(_In_reads_(cParams) const unsigned 
                                              _Out_ unsigned int* const puiLine,
                                              _Out_ unsigned int* const puiColumn) const
 {
-    bool fSuccess = false;
+    bool fSuccess = true;
     *puiLine = s_uiDefaultLine;
     *puiColumn = s_uiDefaultColumn;
 
     if (cParams == 0)
     {
         // Empty parameter sequences should use the default
-        fSuccess = true;
     }
     else if (cParams == 1)
     {
         // If there's only one param, leave the default for the column, and retrieve the specified row.
         *puiLine = rgusParams[0];
-        fSuccess = true;
     }
     else if (cParams == 2)
     {
         // If there are exactly two parameters, use them.
         *puiLine = rgusParams[0];
         *puiColumn = rgusParams[1];
-        fSuccess = true;
+    }
+    else
+    {
+        fSuccess = false;
     }
 
     // Distances of 0 should be changed to 1.

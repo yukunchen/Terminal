@@ -130,14 +130,16 @@ public:
     virtual BOOL SetCursorColor(_In_ COLORREF const cursorColor) override;
 
     virtual BOOL PrivateRefreshWindow() override;
-   
+
     virtual BOOL PrivateSuppressResizeRepaint() override;
-    
+
     virtual BOOL PrivateWriteConsoleControlInput(_In_ KeyEvent key) override;
+
+    virtual BOOL GetConsoleOutputCP(_Out_ unsigned int* const puiOutputCP) override;
 
 private:
     const Microsoft::Console::IIoProvider* const _pIo;
-    
+
     BOOL _FillConsoleOutput(_In_ USHORT const usElement,
                             _In_ ULONG const ulElementType,
                             _In_ DWORD const nLength,

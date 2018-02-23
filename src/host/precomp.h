@@ -55,6 +55,8 @@ Abstract:
 #include <deque>
 #include <iterator>
 #include <algorithm>
+#include <memory>
+#include <iterator>
 
 // WIL
 #include <wil/Common.h>

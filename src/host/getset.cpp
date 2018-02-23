@@ -899,15 +899,24 @@ HRESULT ApiRoutines::GetConsoleInputCodePageImpl(_Out_ ULONG* const pCodePage)
     return S_OK;
 }
 
-HRESULT ApiRoutines::GetConsoleOutputCodePageImpl(_Out_ ULONG* const pCodePage)
+HRESULT DoSrvGetConsoleOutputCodePage(_Out_ unsigned int* const pCodePage)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    *pCodePage = gci.OutputCP;
+   return S_OK;
+}
+
+HRESULT ApiRoutines::GetConsoleOutputCodePageImpl(_Out_ ULONG* const pCodePage)
+{
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
-
-    *pCodePage = gci.OutputCP;
-
-    return S_OK;
+    unsigned int uiCodepage;
+    HRESULT hr = DoSrvGetConsoleOutputCodePage(&uiCodepage);
+    if (SUCCEEDED(hr))
+    {
+        *pCodePage = uiCodepage;
+    }
+    return hr;
 }
 
 HRESULT ApiRoutines::GetConsoleWindowImpl(_Out_ HWND* const pHwnd)

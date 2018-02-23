@@ -665,6 +665,16 @@ public:
         return FALSE;
     }
 
+    virtual BOOL GetConsoleOutputCP(_Out_ unsigned int* const puiOutputCP)
+    {
+        Log::Comment(L"GetConsoleOutputCP MOCK called...");
+        if (_fGetConsoleOutputCPResult)
+        {
+            *puiOutputCP = _uiExpectedOutputCP;
+        }
+        return _fGetConsoleOutputCPResult;
+    }
+
     void _IncrementCoordPos(_Inout_ COORD* pcoord)
     {
         pcoord->X++;
@@ -1190,6 +1200,7 @@ public:
     bool _fExpectedForeground = false;
     bool _fExpectedBackground = false;
     bool _fExpectedMeta = false;
+    unsigned int _uiExpectedOutputCP;
 
     BOOL _fGetConsoleScreenBufferInfoExResult;
     BOOL _fSetConsoleCursorPositionResult;
@@ -1244,6 +1255,7 @@ public:
     CursorType _ExpectedCursorStyle;
     BOOL _fSetCursorColorResult;
     COLORREF _ExpectedCursorColor;
+    BOOL _fGetConsoleOutputCPResult;
 
 private:
     HANDLE _hCon;
