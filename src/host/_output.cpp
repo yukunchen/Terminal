@@ -10,6 +10,7 @@
 
 #include "dbcs.h"
 #include "misc.h"
+#include "Ucs2CharRow.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 #include "..\types\inc\Viewport.hpp"
@@ -57,15 +58,21 @@ void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
     // copy chars
     try
     {
+        ICharRow& iCharRow = Row.GetCharRow();
+        // we only support ucs2 encoded char rows
+        FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                        "only support UCS2 char rows currently");
+
+        Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
         OverwriteColumns(pwchBuffer,
-                         pwchBuffer + cchBuffer,
-                         pDbcsAttributes,
-                         std::next(Row.GetCharRow().begin(), TargetPoint.X));
+                        pwchBuffer + cchBuffer,
+                        pDbcsAttributes,
+                        std::next(charRow.begin(), TargetPoint.X));
     }
     CATCH_LOG();
 
     // caller knows the wrap status as this func is called only for drawing one line at a time
-    Row.GetCharRow().SetWrapStatus(fWasLineWrapped);
+    Row.GetCharRow().SetWrapForced(fWasLineWrapped);
 
     TextAttributeRun CurrentBufferAttrs;
     CurrentBufferAttrs.SetLength(cchBuffer);
@@ -177,17 +184,24 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
             }
 
             // CJK Languages
-            CHAR_ROW::iterator it;
+            Ucs2CharRow::iterator it;
+            Ucs2CharRow::const_iterator itEnd;
             try
             {
-                it = std::next(pRow->GetCharRow().begin(), coordDest.X);
+                ICharRow& iCharRow = pRow->GetCharRow();
+                // we only support ucs2 encoded char rows
+                FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                                "only support UCS2 char rows currently");
+
+                Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
+                it = std::next(charRow.begin(), coordDest.X);
+                itEnd = charRow.cend();
             }
             catch (...)
             {
                 return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
             }
 
-            const CHAR_ROW::const_iterator itEnd = pRow->GetCharRow().cend();
 
             TextAttributeRun* pAttrRun = rAttrRunsBuff;
             pAttrRun->SetLength(0);
@@ -195,7 +209,7 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
 
             pAttrRun->SetAttributesFromLegacy(ATTR_OF_PCI(SourcePtr) & ~COMMON_LVB_SBCSDBCS);
 
-            pRow->GetCharRow().SetWrapStatus(false); // clear wrap status for rectangle drawing
+            pRow->GetCharRow().SetWrapForced(false); // clear wrap status for rectangle drawing
 
             for (SHORT j = psrSrc->Left;
                  j <= psrSrc->Right && it != itEnd;
@@ -555,10 +569,16 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
             }
 
             // copy the chars into their arrays
-            CHAR_ROW::iterator it;
+            Ucs2CharRow::iterator it;
             try
             {
-                it = std::next(pRow->GetCharRow().begin(), X);
+                ICharRow& iCharRow = pRow->GetCharRow();
+                // we only support ucs2 encoded char rows
+                FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                                "only support UCS2 char rows currently");
+
+                Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
+                it = std::next(charRow.begin(), X);
             }
             catch (...)
             {
@@ -649,7 +669,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
                 Y++;
 
                 // if we are wrapping around, set that this row is wrapping
-                pRow->GetCharRow().SetWrapStatus(true);
+                pRow->GetCharRow().SetWrapForced(true);
 
                 if (Y >= coordScreenBufferSize.Y)
                 {
@@ -659,7 +679,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
             else
             {
                 // if we're not wrapping around, set that this row isn't wrapped.
-                pRow->GetCharRow().SetWrapStatus(false);
+                pRow->GetCharRow().SetWrapForced(false);
                 break;
             }
 
@@ -884,10 +904,16 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
             }
 
             // copy the chars into their arrays
-            CHAR_ROW::iterator it;
+            Ucs2CharRow::iterator it;
             try
             {
-                it = std::next(pRow->GetCharRow().begin(), X);
+                ICharRow& iCharRow = pRow->GetCharRow();
+                // we only support ucs2 encoded char rows
+                FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                                "only support UCS2 char rows currently");
+
+                Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
+                it = std::next(charRow.begin(), X);
             }
             catch (...)
             {
@@ -975,7 +1001,7 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
             }
 
             // invalidate row wrap status for any bulk fill of text characters
-            pRow->GetCharRow().SetWrapStatus(false);
+            pRow->GetCharRow().SetWrapForced(false);
 
             if (NumWritten < *pcElements)
             {
@@ -1162,17 +1188,24 @@ void FillRectangle(_In_ const CHAR_INFO * const pciFill,
         CleanupDbcsEdgesForWrite(XSize, TPoint, pScreenInfo);
         BOOL Width = IsCharFullWidth(pciFill->Char.UnicodeChar);
 
-        CHAR_ROW::iterator it;
+        Ucs2CharRow::iterator it;
+        Ucs2CharRow::const_iterator itEnd;
         try
         {
-            it = std::next(pRow->GetCharRow().begin(), psrTarget->Left);
+            ICharRow& iCharRow = pRow->GetCharRow();
+            // we only support ucs2 encoded char rows
+            FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                            "only support UCS2 char rows currently");
+
+            Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
+            it = std::next(charRow.begin(), psrTarget->Left);
+            itEnd = charRow.cend();
         }
         catch (...)
         {
             LOG_HR(wil::ResultFromCaughtException());
             return;
         }
-        const CHAR_ROW::const_iterator itEnd = pRow->GetCharRow().cend();
 
         for (SHORT j = 0; j < XSize && it < itEnd; j++)
         {
@@ -1219,7 +1252,7 @@ void FillRectangle(_In_ const CHAR_INFO * const pciFill,
         pRow->GetAttrRow().InsertAttrRuns(&AttrRun, 1, psrTarget->Left, psrTarget->Right, coordScreenBufferSize.X);
 
         // invalidate row wrapping for rectangular drawing
-        pRow->GetCharRow().SetWrapStatus(false);
+        pRow->GetCharRow().SetWrapForced(false);
 
         try
         {

@@ -10,6 +10,7 @@
 
 #include "globals.h"
 #include "textBuffer.hpp"
+#include "Ucs2CharRow.hpp"
 
 #include "input.h"
 
@@ -235,11 +236,11 @@ void TextBufferTests::TestWrapFlag()
     VERIFY_IS_FALSE(Row.GetCharRow().WasWrapForced());
 
     // try set wrap and check
-    Row.GetCharRow().SetWrapStatus(true);
+    Row.GetCharRow().SetWrapForced(true);
     VERIFY_IS_TRUE(Row.GetCharRow().WasWrapForced());
 
     // try unset wrap and check
-    Row.GetCharRow().SetWrapStatus(false);
+    Row.GetCharRow().SetWrapForced(false);
     VERIFY_IS_FALSE(Row.GetCharRow().WasWrapForced());
 }
 
@@ -270,7 +271,10 @@ void TextBufferTests::DoBoundaryTest(PWCHAR const pwszInputString,
 {
     TEXT_BUFFER_INFO* const tbi = GetTbi();
 
-    CHAR_ROW& charRow = tbi->GetFirstRow().GetCharRow();
+    ICharRow& iCharRow = tbi->GetFirstRow().GetCharRow();
+    // for the time being, we only support UCS2 char rows
+    VERIFY_ARE_EQUAL(ICharRow::SupportedEncoding::Ucs2, iCharRow.GetSupportedEncoding());
+    Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
 
     // copy string into buffer
     for (size_t i = 0; i < static_cast<size_t>(cLength); ++i)
@@ -367,9 +371,13 @@ void TextBufferTests::TestInsertCharacter()
     WORD const wAttrTest = BACKGROUND_INTENSITY | FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_BLUE;
     TextAttribute TestAttributes = TextAttribute(wAttrTest);
 
+    const ICharRow& iCharRow = Row.GetCharRow();
+    // for the time being, we only support UCS2 char rows
+    VERIFY_ARE_EQUAL(ICharRow::SupportedEncoding::Ucs2, iCharRow.GetSupportedEncoding());
+    const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
     // ensure that the buffer didn't start with these fields
-    VERIFY_ARE_NOT_EQUAL(Row.GetCharRow().GetGlyphAt(coordCursorBefore.X), wchTest);
-    VERIFY_ARE_NOT_EQUAL(Row.GetCharRow().GetAttribute(coordCursorBefore.X), dbcsAttribute);
+    VERIFY_ARE_NOT_EQUAL(charRow.GetGlyphAt(coordCursorBefore.X), wchTest);
+    VERIFY_ARE_NOT_EQUAL(charRow.GetAttribute(coordCursorBefore.X), dbcsAttribute);
 
     TextAttributeRun* pAttrRun;
     Row.GetAttrRow().FindAttrIndex(coordCursorBefore.X, &pAttrRun, nullptr);
@@ -380,8 +388,8 @@ void TextBufferTests::TestInsertCharacter()
     pTbi->InsertCharacter(wchTest, dbcsAttribute, TestAttributes);
 
     // ensure that the buffer position where the cursor WAS contains the test items
-    VERIFY_ARE_EQUAL(Row.GetCharRow().GetGlyphAt(coordCursorBefore.X), wchTest);
-    VERIFY_ARE_EQUAL(Row.GetCharRow().GetAttribute(coordCursorBefore.X), dbcsAttribute);
+    VERIFY_ARE_EQUAL(charRow.GetGlyphAt(coordCursorBefore.X), wchTest);
+    VERIFY_ARE_EQUAL(charRow.GetAttribute(coordCursorBefore.X), dbcsAttribute);
 
     Row.GetAttrRow().FindAttrIndex(coordCursorBefore.X, &pAttrRun, nullptr);
     VERIFY_IS_TRUE(pAttrRun->GetAttributes().IsEqual(TestAttributes));
@@ -534,7 +542,7 @@ void TextBufferTests::TestSetWrapOnCurrentRow()
     Log::Comment(L"Testing off to on");
 
     // turn wrap status off first
-    Row.GetCharRow().SetWrapStatus(false);
+    Row.GetCharRow().SetWrapForced(false);
 
     // trigger wrap
     pTbi->SetWrapOnCurrentRow();
@@ -545,7 +553,7 @@ void TextBufferTests::TestSetWrapOnCurrentRow()
     Log::Comment(L"Testing on stays on");
 
     // make sure wrap status is on
-    Row.GetCharRow().SetWrapStatus(true);
+    Row.GetCharRow().SetWrapForced(true);
 
     // trigger wrap
     pTbi->SetWrapOnCurrentRow();
@@ -581,7 +589,11 @@ void TextBufferTests::TestIncrementCircularBuffer()
 
         // fill first row with some stuff
         ROW& FirstRow = pTbi->GetFirstRow();
-        FirstRow.GetCharRow().GetGlyphAt(0) = L'A';
+        ICharRow& iCharRow = FirstRow.GetCharRow();
+        // for the time being, we only support UCS2 char rows
+        VERIFY_ARE_EQUAL(ICharRow::SupportedEncoding::Ucs2, iCharRow.GetSupportedEncoding());
+        Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
+        charRow.GetGlyphAt(0) = L'A';
 
         // ensure it does say that it contains text
         VERIFY_IS_TRUE(FirstRow.GetCharRow().ContainsText());

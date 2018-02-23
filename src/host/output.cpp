@@ -11,6 +11,7 @@
 
 #include "getset.h"
 #include "misc.h"
+#include "Ucs2CharRow.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 #include "..\types\inc\Viewport.hpp"
@@ -113,17 +114,23 @@ NTSTATUS ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenI
             }
 
             // copy the chars and attrs from their respective arrays
-            CHAR_ROW::const_iterator it;
+            Ucs2CharRow::const_iterator it;
+            Ucs2CharRow::const_iterator itEnd;
             try
             {
-                it = std::next(pRow->GetCharRow().cbegin(), coordSourcePoint.X);
+                const ICharRow& iCharRow = pRow->GetCharRow();
+                // we only support ucs2 encoded char rows
+                FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                                "only support UCS2 char rows currently");
+
+                const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
+                it = std::next(charRow.cbegin(), coordSourcePoint.X);
+                itEnd = charRow.cend();
             }
             catch (...)
             {
                 return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
             }
-            const CHAR_ROW::const_iterator itEnd = pRow->GetCharRow().cend();
-
 
             // Unpack the attributes into an array so we can iterate over them.
             pRow->GetAttrRow().UnpackAttrs(rgUnpackedRowAttributes, ScreenBufferWidth);
@@ -451,7 +458,13 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                 // copy the chars from its array
                 try
                 {
-                    CHAR_ROW::const_iterator startIt = std::next(pRow->GetCharRow().cbegin(), X);
+                    const ICharRow& iCharRow = pRow->GetCharRow();
+                    // we only support ucs2 encoded char rows
+                    FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                                    "only support UCS2 char rows currently");
+
+                    const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
+                    const Ucs2CharRow::const_iterator startIt = std::next(charRow.cbegin(), X);
                     size_t copyAmount = *pcRecords - NumRead;
                     wchar_t* pChars = BufPtr;
                     DbcsAttribute* pAttrs = BufPtrA;
@@ -554,16 +567,23 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
             while (NumRead < *pcRecords)
             {
                 // Copy the attrs from its array.
-                CHAR_ROW::const_iterator it;
+                Ucs2CharRow::const_iterator it;
+                Ucs2CharRow::const_iterator itEnd;
                 try
                 {
-                    it = std::next(pRow->GetCharRow().cbegin(), X);
+                    const ICharRow& iCharRow = pRow->GetCharRow();
+                    // we only support ucs2 encoded char rows
+                    FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                                    "only support UCS2 char rows currently");
+
+                    const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
+                    it = std::next(charRow.cbegin(), X);
+                    itEnd = charRow.cend();
                 }
                 catch (...)
                 {
                     return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
                 }
-                const CHAR_ROW::const_iterator itEnd = pRow->GetCharRow().cend();
 
                 pRow->GetAttrRow().FindAttrIndex(X, &pAttrRun, &CountOfAttr);
 

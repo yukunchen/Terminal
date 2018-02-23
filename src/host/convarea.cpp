@@ -9,6 +9,7 @@
 #include "_output.h"
 
 #include "dbcs.h"
+#include "Ucs2CharRow.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
@@ -753,10 +754,16 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
 
     try
     {
+        ICharRow& iCharRow = Row.GetCharRow();
+        // we only support ucs2 encoded char rows
+        FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                        "only support UCS2 char rows currently");
+
+        Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
         OverwriteColumns(String,
-                         String + StringLength,
-                         pDbcsAttributes,
-                         std::next(Row.GetCharRow().begin(), TargetPoint.X));
+                        String + StringLength,
+                        pDbcsAttributes,
+                        std::next(charRow.begin(), TargetPoint.X));
     }
     CATCH_LOG();
 

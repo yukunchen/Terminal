@@ -9,6 +9,7 @@
 #include "_output.h"
 #include "stream.h"
 #include "scrolling.hpp"
+#include "Ucs2CharRow.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
@@ -210,10 +211,15 @@ void Selection::s_BisectSelection(_In_ short const sStringLength,
 {
     const TEXT_BUFFER_INFO* const pTextInfo = pScreenInfo->TextInfo;
     const ROW& Row = pTextInfo->GetRowByOffset(coordTargetPoint.Y);
-    const CHAR_ROW charRow = Row.GetCharRow();
 
     try
     {
+        const ICharRow& iCharRow = Row.GetCharRow();
+        // we only support ucs2 encoded char rows
+        FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                        "only support UCS2 char rows currently");
+
+        const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
         // Check start position of strings
         if (charRow.GetAttribute(coordTargetPoint.X).IsTrailing())
         {
@@ -238,7 +244,13 @@ void Selection::s_BisectSelection(_In_ short const sStringLength,
         else
         {
             const ROW& RowNext = pTextInfo->GetNextRowNoWrap(Row);
-            if (RowNext.GetCharRow().GetAttribute(0).IsTrailing())
+            const ICharRow& iCharRowNext = RowNext.GetCharRow();
+            // we only support ucs2 encoded char rows
+            FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                            "only support UCS2 char rows currently");
+
+            const Ucs2CharRow& charRowNext = static_cast<const Ucs2CharRow&>(iCharRowNext);
+            if (charRowNext.GetAttribute(0).IsTrailing())
             {
                 pSmallRect->Right--;
             }

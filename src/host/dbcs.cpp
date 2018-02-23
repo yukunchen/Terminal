@@ -9,6 +9,7 @@
 #include "dbcs.h"
 
 #include "misc.h"
+#include "Ucs2CharRow.hpp"
 #include "../types/inc/convert.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
@@ -86,8 +87,14 @@ void CleanupDbcsEdgesForWrite(_In_ const size_t stringLen,
     {
         ROW& row = pTextInfo->GetRowAtIndex(rowIndex);
 
+        ICharRow& iCharRow = row.GetCharRow();
+        // we only support ucs2 encoded char rows
+        FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                        "only support UCS2 char rows currently");
+
+        Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
         // Check start position of strings
-        if (row.GetCharRow().GetAttribute(coordTarget.X).IsTrailing())
+        if (charRow.GetAttribute(coordTarget.X).IsTrailing())
         {
             if (coordTarget.X == 0)
             {
@@ -103,7 +110,7 @@ void CleanupDbcsEdgesForWrite(_In_ const size_t stringLen,
         if (coordTarget.X + static_cast<short>(stringLen) < coordScreenBufferSize.X)
         {
             size_t column = coordTarget.X + stringLen;
-            if (row.GetCharRow().GetAttribute(column).IsTrailing())
+            if (charRow.GetAttribute(column).IsTrailing())
             {
                 row.ClearColumn(column);
             }
@@ -111,7 +118,13 @@ void CleanupDbcsEdgesForWrite(_In_ const size_t stringLen,
         else if (coordTarget.Y + 1 < coordScreenBufferSize.Y)
         {
             ROW& rowNext = pTextInfo->GetNextRow(row);
-            if (rowNext.GetCharRow().GetAttribute(0).IsTrailing())
+            ICharRow& iCharRowNext = rowNext.GetCharRow();
+            // we only support ucs2 encoded char rows
+            FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                            "only support UCS2 char rows currently");
+
+            Ucs2CharRow& charRowNext = static_cast<Ucs2CharRow&>(iCharRowNext);
+            if (charRowNext.GetAttribute(0).IsTrailing())
             {
                 rowNext.ClearColumn(0);
             }

@@ -91,7 +91,7 @@ void ATTR_ROW::swap(ATTR_ROW& other) noexcept
 // - pAttr - The default text attributes to use on text in this row.
 // Return Value:
 // - <none>
-bool ATTR_ROW::Reset(_In_ UINT const cchRowWidth, _In_ const TextAttribute attr)
+bool ATTR_ROW::Reset(_In_ const TextAttribute attr)
 {
     wistd::unique_ptr<TextAttributeRun[]> pNewRun = wil::make_unique_nothrow<TextAttributeRun[]>(1);
     bool fSuccess = pNewRun != nullptr;
@@ -99,9 +99,8 @@ bool ATTR_ROW::Reset(_In_ UINT const cchRowWidth, _In_ const TextAttribute attr)
     {
         _rgList.swap(pNewRun);
         _rgList.get()->SetAttributes(attr);
-        _rgList.get()->SetLength(cchRowWidth);
+        _rgList.get()->SetLength(_cchRowWidth);
         _cList = 1;
-        _cchRowWidth = cchRowWidth;
     }
 
     return fSuccess;

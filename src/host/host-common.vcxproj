@@ -2,7 +2,8 @@
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="..\AttrRow.cpp" />
-    <ClCompile Include="..\CharRow.cpp" />
+    <ClCompile Include="..\Ucs2CharRow.cpp" />
+    <ClCompile Include="..\Utf8CharRow.cpp" />
     <ClCompile Include="..\alias.cpp" />
     <ClCompile Include="..\cmdline.cpp" />
     <ClCompile Include="..\conattrs.cpp" />
@@ -64,7 +65,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\AttrRow.hpp" />
-    <ClInclude Include="..\CharRow.hpp" />
+    <ClInclude Include="..\Ucs2CharRow.hpp" />
+    <ClInclude Include="..\Utf8CharRow.hpp" />
+    <ClInclude Include="..\CharRowBase.hpp" />
     <ClInclude Include="..\IIoProvider.hpp" />
     <ClInclude Include="..\alias.h" />
     <ClInclude Include="..\ApiRoutines.h" />
@@ -84,6 +87,7 @@
     <ClInclude Include="..\globals.h" />
     <ClInclude Include="..\handle.h" />
     <ClInclude Include="..\history.h" />
+    <ClInclude Include="..\ICharRow.hpp" />
     <ClInclude Include="..\init.hpp" />
     <ClInclude Include="..\input.h" />
     <ClInclude Include="..\inputBuffer.hpp" />

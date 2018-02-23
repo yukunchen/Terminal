@@ -578,7 +578,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
 
                         // since you just backspaced yourself back up into the previous row, unset the wrap
                         // flag on the prev row if it was set
-                        pTextBuffer->GetRowByOffset(CursorPosition.Y).GetCharRow().SetWrapStatus(false);
+                        pTextBuffer->GetRowByOffset(CursorPosition.Y).GetCharRow().SetWrapForced(false);
                     }
                 }
                 else if (IS_CONTROL_CHAR(LastChar))
@@ -644,7 +644,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
 
                     // since you just backspaced yourself back up into the previous row, unset the wrap flag
                     // on the prev row if it was set
-                    pTextBuffer->GetRowByOffset(CursorPosition.Y).GetCharRow().SetWrapStatus(false);
+                    pTextBuffer->GetRowByOffset(CursorPosition.Y).GetCharRow().SetWrapForced(false);
 
                     Status = AdjustCursorPosition(pScreenInfo, CursorPosition, dwFlags & WC_KEEP_CURSOR_VISIBLE, psScrollY);
                 }
@@ -680,7 +680,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                     CursorPosition.Y = pCursor->GetPosition().Y + 1;
 
                     // since you just tabbed yourself past the end of the row, set the wrap
-                    pTextBuffer->GetRowByOffset(pCursor->GetPosition().Y).GetCharRow().SetWrapStatus(true);
+                    pTextBuffer->GetRowByOffset(pCursor->GetPosition().Y).GetCharRow().SetWrapForced(true);
                 }
                 else
                 {
@@ -731,7 +731,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
 
             {
                 // since we explicitly just moved down a row, clear the wrap status on the row we just came from
-                pTextBuffer->GetRowByOffset(pCursor->GetPosition().Y).GetCharRow().SetWrapStatus(false);
+                pTextBuffer->GetRowByOffset(pCursor->GetPosition().Y).GetCharRow().SetWrapForced(false);
             }
 
             Status = AdjustCursorPosition(pScreenInfo, CursorPosition, (dwFlags & WC_KEEP_CURSOR_VISIBLE) != 0, psScrollY);
@@ -747,16 +747,14 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
             {
                 COORD const TargetPoint = pCursor->GetPosition();
                 ROW& Row = pTextBuffer->GetRowByOffset(TargetPoint.Y);
-                CHAR_ROW& charRow = Row.GetCharRow();
+                ICharRow& iCharRow = Row.GetCharRow();
 
                 try
                 {
-                    if (charRow.GetAttribute(TargetPoint.X).IsTrailing())
+                    if (iCharRow.GetAttribute(TargetPoint.X).IsTrailing())
                     {
-                        charRow.ClearGlyph(TargetPoint.X);
-                        charRow.ClearGlyph(TargetPoint.X - 1);
-                        charRow.GetAttribute(TargetPoint.X).SetSingle();
-                        charRow.GetAttribute(TargetPoint.X - 1).SetSingle();
+                        iCharRow.ClearCell(TargetPoint.X);
+                        iCharRow.ClearCell(TargetPoint.X - 1);
 
                         Region.Left = TargetPoint.X - 1;
                         Region.Right = (SHORT)(TargetPoint.X);
@@ -775,11 +773,11 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
 
                 // since you just moved yourself down onto the next row with 1 character, that sounds like a
                 // forced wrap so set the flag
-                charRow.SetWrapStatus(true);
+                iCharRow.SetWrapForced(true);
 
                 // Additionally, this padding is only called for IsConsoleFullWidth (a.k.a. when a character
                 // is too wide to fit on the current line).
-                charRow.SetDoubleBytePadded(true);
+                iCharRow.SetDoubleBytePadded(true);
 
                 Status = AdjustCursorPosition(pScreenInfo, CursorPosition, dwFlags & WC_KEEP_CURSOR_VISIBLE, psScrollY);
                 continue;

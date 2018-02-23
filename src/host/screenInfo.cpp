@@ -9,6 +9,7 @@
 #include "screenInfo.hpp"
 #include "dbcs.h"
 #include "output.h"
+#include "Ucs2CharRow.hpp"
 #include <math.h>
 #include "..\interactivity\inc\ServiceLocator.hpp"
 #include "..\types\inc\Viewport.hpp"
@@ -631,7 +632,13 @@ void SCREEN_INFORMATION::ResetTextFlags(_In_ short const sStartX,
             try
             {
                 const ROW& Row = pTextInfo->GetRowAtIndex(RowIndex);
-                Char = Row.GetCharRow().GetGlyphAt(sStartX);
+                const ICharRow& iCharRow = Row.GetCharRow();
+                // we only support ucs2 encoded char rows
+                FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                                "only support UCS2 char rows currently");
+
+                const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
+                Char = charRow.GetGlyphAt(sStartX);
                 Row.GetAttrRow().FindAttrIndex(sStartX, &pAttrRun, nullptr);
             }
             catch (...)
@@ -1444,8 +1451,8 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
     {
         // Fetch the row and its "right" which is the last printable character.
         const ROW& Row = TextInfo->GetRowByOffset(iOldRow);
-        const CHAR_ROW& charRow = Row.GetCharRow();
-        short iRight = static_cast<short>(charRow.MeasureRight());
+        const ICharRow& iCharRow = Row.GetCharRow();
+        short iRight = static_cast<short>(iCharRow.MeasureRight());
 
         // There is a special case here. If the row has a "wrap"
         // flag on it, but the right isn't equal to the width (one
@@ -1456,7 +1463,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
         // included.)
         // As such, adjust the "right" to be the width of the row
         // to capture all these spaces
-        if (charRow.WasWrapForced())
+        if (iCharRow.WasWrapForced())
         {
             iRight = cOldColsTotal;
 
@@ -1465,7 +1472,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
             // piece of padding because of a double byte LEADING
             // character, then remove one from the "right" to
             // leave this padding out of the copy process.
-            if (charRow.WasDoubleBytePadded())
+            if (iCharRow.WasDoubleBytePadded())
             {
                 iRight--;
             }
@@ -1481,6 +1488,11 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
             DbcsAttribute bKAttr;
             try
             {
+                // we only support ucs2 encoded char rows
+                FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                                "only support UCS2 char rows currently");
+
+                const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
                 wchChar = charRow.GetGlyphAt(iOldCol);
                 bKAttr = charRow.GetAttribute(iOldCol);
             }
@@ -1514,7 +1526,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
             // Only do so if we were not forced to wrap. If we did
             // force a word wrap, then the existing line break was
             // only because we ran out of space.
-            if (iRight < cOldColsTotal && !charRow.WasWrapForced())
+            if (iRight < cOldColsTotal && !iCharRow.WasWrapForced())
             {
                 if (iRight == cOldCursorPos.X && iOldRow == cOldCursorPos.Y)
                 {

@@ -3,6 +3,7 @@
 #include "search.h"
 
 #include "dbcs.h"
+#include "Ucs2CharRow.hpp"
 
 USHORT SearchForString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                        _In_reads_(cchSearch) PCWSTR pwszSearch,
@@ -158,7 +159,13 @@ USHORT SearchForString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
             ASSERT(nLoop++ < 2);
             try
             {
-                if (pRow->GetCharRow().GetAttribute(Position.X).IsTrailing())
+                const ICharRow& iCharRow = pRow->GetCharRow();
+                // we only support ucs2 encoded char rows
+                FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                                "only support UCS2 char rows currently");
+
+                const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
+                if (charRow.GetAttribute(Position.X).IsTrailing())
                 {
                     goto recalc;
                 }
@@ -169,7 +176,15 @@ USHORT SearchForString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                 return 0;
             }
     #endif
-            const std::wstring rowText = pRow->GetCharRow().GetText();
+            std::wstring rowText;
+            const ICharRow& iCharRow = pRow->GetCharRow();
+            // we only support ucs2 encoded char rows
+            FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                            "only support UCS2 char rows currently");
+
+            const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
+            rowText = charRow.GetText();
+
             if (IgnoreCase ?
                 0 == _wcsnicmp(pwszSearch, &rowText.c_str()[Position.X], cchSearch) :
                 0 == wcsncmp(pwszSearch, &rowText.c_str()[Position.X], cchSearch))

@@ -5,6 +5,7 @@
  ********************************************************/
 
 #include "precomp.h"
+#include "Ucs2CharRow.hpp"
 
 // Routine Description:
 // - swaps two ROWs
@@ -28,7 +29,7 @@ void swap(ROW& a, ROW& b) noexcept
 // - constructed object
 ROW::ROW(_In_ const SHORT rowId, _In_ const short rowWidth, _In_ const TextAttribute fillAttribute) :
     _id{ rowId },
-    _charRow{ rowWidth },
+    _charRow{ std::make_unique<Ucs2CharRow>(rowWidth) },
     _attrRow{ rowWidth, fillAttribute }
 {
 }
@@ -40,10 +41,15 @@ ROW::ROW(_In_ const SHORT rowId, _In_ const short rowWidth, _In_ const TextAttri
 // Return Value:
 // - the copied object
 ROW::ROW(const ROW& a) :
-    _charRow{ a._charRow },
     _attrRow{ a._attrRow },
     _id{ a._id }
 {
+    // we only support ucs2 encoded char rows
+    FAIL_FAST_IF_MSG(a._charRow->GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                     "only support UCS2 char rows currently");
+
+    Ucs2CharRow charRow = *static_cast<const Ucs2CharRow* const>(a._charRow.get());
+    _charRow = std::make_unique<Ucs2CharRow>(charRow);
 }
 
 // Routine Description:
@@ -86,14 +92,14 @@ void ROW::swap(ROW& other) noexcept
     swap(_id, other._id);
 }
 
-const CHAR_ROW& ROW::GetCharRow() const
+const ICharRow& ROW::GetCharRow() const
 {
-    return _charRow;
+    return *_charRow;
 }
 
-CHAR_ROW& ROW::GetCharRow()
+ICharRow& ROW::GetCharRow()
 {
-    return const_cast<CHAR_ROW&>(static_cast<const ROW* const>(this)->GetCharRow());
+    return const_cast<ICharRow&>(static_cast<const ROW* const>(this)->GetCharRow());
 }
 
 const ATTR_ROW& ROW::GetAttrRow() const
@@ -119,14 +125,13 @@ void ROW::SetId(_In_ const SHORT id)
 // Routine Description:
 // - Sets all properties of the ROW to default values
 // Arguments:
-// - sRowWidth - The width of the row.
 // - Attr - The default attribute (color) to fill
 // Return Value:
 // - <none>
-bool ROW::Reset(_In_ short const sRowWidth, _In_ const TextAttribute Attr)
+bool ROW::Reset(_In_ const TextAttribute Attr)
 {
-    _charRow.Reset(sRowWidth);
-    return _attrRow.Reset(sRowWidth, Attr);
+    _charRow->Reset();
+    return _attrRow.Reset(Attr);
 }
 
 // Routine Description:
@@ -137,8 +142,8 @@ bool ROW::Reset(_In_ short const sRowWidth, _In_ const TextAttribute Attr)
 // - S_OK if successful, otherwise relevant error
 HRESULT ROW::Resize(_In_ size_t const width)
 {
-    size_t oldWidth = _charRow.size();
-    RETURN_IF_FAILED(_charRow.Resize(width));
+    size_t oldWidth = _charRow->size();
+    RETURN_IF_FAILED(_charRow->Resize(width));
     RETURN_IF_FAILED(_attrRow.Resize(static_cast<short>(oldWidth), static_cast<short>(width)));
     return S_OK;
 }
@@ -151,7 +156,6 @@ HRESULT ROW::Resize(_In_ size_t const width)
 // - <none>
 void ROW::ClearColumn(_In_ const size_t column)
 {
-    THROW_HR_IF(E_INVALIDARG, column >= _charRow.size());
-    _charRow.ClearGlyph(column);
-    _charRow.GetAttribute(column).SetSingle();
+    THROW_HR_IF(E_INVALIDARG, column >= _charRow->size());
+    _charRow->ClearCell(column);
 }
