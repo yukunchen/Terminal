@@ -609,7 +609,7 @@ void Selection::InitializeMarkSelection()
     SCREEN_INFORMATION* pScreenInfo = gci.CurrentScreenBuffer;
     _SaveCursorData(pScreenInfo->TextInfo);
     Cursor* const pCursor = pScreenInfo->TextInfo->GetCursor();
-    pScreenInfo->SetCursorInformation(100, TRUE, pCursor->GetColor(), pCursor->GetCursorType());
+    pScreenInfo->SetCursorInformation(100, TRUE, pCursor->GetColor(), pCursor->GetType());
 
     const COORD coordPosition = pCursor->GetPosition();
     pScreenInfo->SetCursorPosition(coordPosition, TRUE);

@@ -352,7 +352,7 @@ NTSTATUS ConsoleImeCompStr(_In_ LPCONIME_UICOMPMESSAGE CompStr)
                 pCursor->GetSize(),
                 TRUE,
                 pCursor->GetColor(),
-                pCursor->GetCursorType()
+                pCursor->GetType()
             );
 
         }
@@ -397,7 +397,7 @@ NTSTATUS ConsoleImeCompStr(_In_ LPCONIME_UICOMPMESSAGE CompStr)
                 pCursor->GetSize(),
                 FALSE,
                 pCursor->GetColor(),
-                pCursor->GetCursorType()
+                pCursor->GetType()
             );
 
         }

@@ -305,7 +305,7 @@ void Menu::s_GetConsoleState(CONSOLE_STATE_INFO * const pStateInfo)
     Cursor* pCursor = ScreenInfo->TextInfo->GetCursor();
     pStateInfo->CursorSize = pCursor->GetSize();
     pStateInfo->CursorColor = pCursor->GetColor();
-    pStateInfo->CursorType = static_cast<unsigned int>(pCursor->GetCursorType());
+    pStateInfo->CursorType = static_cast<unsigned int>(pCursor->GetType());
 
     // Retrieve small icon for use in displaying the dialog
     Icon::Instance().GetIcons(nullptr, &pStateInfo->hIcon);

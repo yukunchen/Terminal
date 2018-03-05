@@ -520,7 +520,7 @@ HRESULT DoSrvSetConsoleCursorInfo(_In_ SCREEN_INFORMATION* pScreenInfo,
         CursorSize,
         IsVisible,
         pScreenInfo->TextInfo->GetCursor()->GetColor(),
-        pScreenInfo->TextInfo->GetCursor()->GetCursorType()
+        pScreenInfo->TextInfo->GetCursor()->GetType()
     ));
 
     return S_OK;

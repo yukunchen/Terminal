@@ -983,10 +983,10 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
         view.ConvertToOrigin(&coordCursor);
 
         // Draw it within the viewport
-        LOG_IF_FAILED(pEngine->PaintCursor(coordCursor, 
+        LOG_IF_FAILED(pEngine->PaintCursor(coordCursor,
                                            ulHeight,
                                            fIsDoubleWidth,
-                                           pCursor->GetCursorType(),
+                                           pCursor->GetType(),
                                            pCursor->IsUsingColor(),
                                            pCursor->GetColor()));
     }
@@ -1211,4 +1211,3 @@ void Renderer::AddRenderEngine(_In_ IRenderEngine* const pEngine)
     THROW_IF_NULL_ALLOC(pEngine);
     _rgpEngines.push_back(pEngine);
 }
-

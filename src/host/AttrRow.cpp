@@ -47,7 +47,7 @@ ATTR_ROW::ATTR_ROW(_In_ const UINT cchRowWidth, _In_ const TextAttribute attr)
 // - object to copy
 // Return Value:
 // - copied object
-// Note: will throw exception if unable to allocated memory
+// Note: will throw exception if unable to allocate memory
 ATTR_ROW::ATTR_ROW(const ATTR_ROW& a) :
     _cList{ a._cList },
     _cchRowWidth{ a._cchRowWidth }
@@ -90,7 +90,7 @@ void ATTR_ROW::swap(ATTR_ROW& other) noexcept
 // - cchRowWidth - The width of the row.
 // - pAttr - The default text attributes to use on text in this row.
 // Return Value:
-// - <none>
+// - bool indicating success or failure
 bool ATTR_ROW::Reset(_In_ const TextAttribute attr)
 {
     wistd::unique_ptr<TextAttributeRun[]> pNewRun = wil::make_unique_nothrow<TextAttributeRun[]>(1);

@@ -52,7 +52,7 @@ public:
     const ULONG GetSize() const;
     const COORD GetPosition() const;
 
-    const CursorType GetCursorType() const;
+    const CursorType GetType() const;
     const bool IsUsingColor() const;
     const COLORREF GetColor() const;
 

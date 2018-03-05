@@ -596,7 +596,7 @@ void Cursor::KillCaretTimer()
     }
 }
 
-const CursorType Cursor::GetCursorType() const
+const CursorType Cursor::GetType() const
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetCursorType();
