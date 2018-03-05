@@ -30,7 +30,8 @@ UiaTextRange::MoveState::MoveState(const UiaTextRange& range,
     StartScreenInfoRow{ UiaTextRange::_endpointToScreenInfoRow(range.GetStart()) },
     StartColumn{ UiaTextRange::_endpointToColumn(range.GetStart()) },
     EndScreenInfoRow{ UiaTextRange::_endpointToScreenInfoRow(range.GetEnd()) },
-    EndColumn{ UiaTextRange::_endpointToColumn(range.GetEnd()) }
+    EndColumn{ UiaTextRange::_endpointToColumn(range.GetEnd()) },
+    Direction{ direction }
 {
     if (direction == MovementDirection::Forward)
     {
@@ -55,7 +56,8 @@ UiaTextRange::MoveState::MoveState(const ScreenInfoRow startScreenInfoRow,
                                    const ScreenInfoRow limitingRow,
                                    const Column firstColumnInRow,
                                    const Column lastColumnInRow,
-                                   const MovementIncrement increment) :
+                                   const MovementIncrement increment,
+                                   const MovementDirection direction) :
     StartScreenInfoRow{ startScreenInfoRow },
     StartColumn{ startColumn },
     EndScreenInfoRow{ endScreenInfoRow },
@@ -63,7 +65,8 @@ UiaTextRange::MoveState::MoveState(const ScreenInfoRow startScreenInfoRow,
     LimitingRow{ limitingRow },
     FirstColumnInRow{ firstColumnInRow },
     LastColumnInRow{ lastColumnInRow },
-    Increment{ increment }
+    Increment{ increment },
+    Direction{ direction }
 {
 }
 
@@ -880,6 +883,8 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByUnit(_In_ TextPatternRangeEndpoint en
     _outputRowConversions();
 #endif
 
+    MovementDirection moveDirection = (count > 0) ? MovementDirection::Forward : MovementDirection::Backward;
+
     auto moveFunc = &_moveEndpointByUnitDocument;
     if (unit == TextUnit::TextUnit_Character)
     {
@@ -890,7 +895,6 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByUnit(_In_ TextPatternRangeEndpoint en
         moveFunc = &_moveEndpointByUnitLine;
     }
 
-    MovementDirection moveDirection = (count > 0) ? MovementDirection::Forward : MovementDirection::Backward;
     std::tuple<Endpoint, Endpoint, bool> moveResults;
     try
     {
@@ -1615,24 +1619,92 @@ std::pair<Endpoint, Endpoint> UiaTextRange::_moveByCharacter(_In_ const int move
                                                              _In_ const MoveState moveState,
                                                              _Out_ int* const pAmountMoved)
 {
+    if (moveState.Direction == MovementDirection::Forward)
+    {
+        return _moveByCharacterForward(moveCount, moveState, pAmountMoved);
+    }
+    else
+    {
+        return _moveByCharacterBackward(moveCount, moveState, pAmountMoved);
+    }
+}
+
+std::pair<Endpoint, Endpoint> UiaTextRange::_moveByCharacterForward(_In_ const int moveCount,
+                                                                    _In_ const MoveState moveState,
+                                                                    _Out_ int* const pAmountMoved)
+{
     *pAmountMoved = 0;
     int count = moveCount;
     ScreenInfoRow currentScreenInfoRow = moveState.StartScreenInfoRow;
     Column currentColumn = moveState.StartColumn;
+
+    for (int i = 0; i < abs(count); ++i)
+    {
+        // get the current row's right
+        const int rowIndex = _screenInfoRowToTextBufferRow(currentScreenInfoRow);
+        const ROW& row = _getTextBuffer()->GetRowAtIndex(rowIndex);
+        const size_t right = row.GetCharRow().MeasureRight();
+
+        // check if we're at the edge of the screen info buffer
+        if (currentScreenInfoRow == moveState.LimitingRow &&
+            currentColumn + 1>= right)
+
+        {
+            break;
+        }
+        else if (currentColumn + 1 >= right)
+        {
+            // we're at the edge of a row and need to go to the next one
+            currentColumn = moveState.FirstColumnInRow;
+            currentScreenInfoRow += static_cast<int>(moveState.Increment);
+        }
+        else
+        {
+            // moving somewhere away from the edges of a row
+            currentColumn += static_cast<int>(moveState.Increment);
+        }
+        *pAmountMoved += static_cast<int>(moveState.Increment);
+
+        assert(currentColumn >= _getFirstColumnIndex());
+        assert(currentColumn <= _getLastColumnIndex());
+        assert(currentScreenInfoRow >= _getFirstScreenInfoRowIndex());
+        assert(currentScreenInfoRow <= _getLastScreenInfoRowIndex());
+    }
+
+    Endpoint start = _screenInfoRowToEndpoint(currentScreenInfoRow) + currentColumn;
+    Endpoint end = start;
+    return std::make_pair<Endpoint, Endpoint>(std::move(start), std::move(end));
+}
+
+std::pair<Endpoint, Endpoint> UiaTextRange::_moveByCharacterBackward(_In_ const int moveCount,
+                                                                     _In_ const MoveState moveState,
+                                                                     _Out_ int* const pAmountMoved)
+{
+    *pAmountMoved = 0;
+    int count = moveCount;
+    ScreenInfoRow currentScreenInfoRow = moveState.StartScreenInfoRow;
+    Column currentColumn = moveState.StartColumn;
+
     for (int i = 0; i < abs(count); ++i)
     {
         // check if we're at the edge of the screen info buffer
         if (currentScreenInfoRow == moveState.LimitingRow &&
             currentColumn == moveState.LastColumnInRow)
+
         {
             break;
         }
-        if (currentColumn == moveState.LastColumnInRow)
+        else if (currentColumn == moveState.LastColumnInRow)
         {
             // we're at the edge of a row and need to go to the
-            // next one
-            currentColumn = moveState.FirstColumnInRow;
+            // next one. move to the cell with the last non-whitespace charactor
+
             currentScreenInfoRow += static_cast<int>(moveState.Increment);
+            // get the right cell for the next row
+            const int rowIndex = _screenInfoRowToTextBufferRow(currentScreenInfoRow);
+            const ROW& row = _getTextBuffer()->GetRowAtIndex(rowIndex);
+            const size_t right = row.GetCharRow().MeasureRight();
+            currentColumn = static_cast<Column>((right == 0) ? 0 : right - 1);
         }
         else
         {
@@ -1714,11 +1786,116 @@ std::tuple<Endpoint, Endpoint, bool> UiaTextRange::_moveEndpointByUnitCharacter(
                                                                                 _In_ const MoveState moveState,
                                                                                 _Out_ int* const pAmountMoved)
 {
+    if (moveState.Direction == MovementDirection::Forward)
+    {
+        return _moveEndpointByUnitCharacterForward(moveCount, endpoint, moveState, pAmountMoved);
+    }
+    else
+    {
+        return _moveEndpointByUnitCharacterBackward(moveCount, endpoint, moveState, pAmountMoved);
+    }
+}
+
+std::tuple<Endpoint, Endpoint, bool>
+UiaTextRange::_moveEndpointByUnitCharacterForward(_In_ const int moveCount,
+                                                  _In_ const TextPatternRangeEndpoint endpoint,
+                                                  _In_ const MoveState moveState,
+                                                  _Out_ int* const pAmountMoved)
+{
     *pAmountMoved = 0;
     int count = moveCount;
     ScreenInfoRow currentScreenInfoRow;
     Column currentColumn;
 
+    // set current location vars
+    if (endpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start)
+    {
+        currentScreenInfoRow = moveState.StartScreenInfoRow;
+        currentColumn = moveState.StartColumn;
+    }
+    else
+    {
+        currentScreenInfoRow = moveState.EndScreenInfoRow;
+        currentColumn = moveState.EndColumn;
+    }
+
+    for (int i = 0; i < abs(count); ++i)
+    {
+        // get the current row's right
+        const int rowIndex = _screenInfoRowToTextBufferRow(currentScreenInfoRow);
+        const ROW& row = _getTextBuffer()->GetRowAtIndex(rowIndex);
+        const size_t right = row.GetCharRow().MeasureRight();
+
+        // check if we're at the edge of the screen info buffer
+        if (currentScreenInfoRow == moveState.LimitingRow &&
+            currentColumn + 1 >= right)
+
+        {
+            break;
+        }
+        else if (currentColumn + 1 >= right)
+        {
+            // we're at the edge of a row and need to go to the next one
+            currentColumn = moveState.FirstColumnInRow;
+            currentScreenInfoRow += static_cast<int>(moveState.Increment);
+        }
+        else
+        {
+            // moving somewhere away from the edges of a row
+            currentColumn += static_cast<int>(moveState.Increment);
+        }
+        *pAmountMoved += static_cast<int>(moveState.Increment);
+
+        assert(currentColumn >= _getFirstColumnIndex());
+        assert(currentColumn <= _getLastColumnIndex());
+        assert(currentScreenInfoRow >= _getFirstScreenInfoRowIndex());
+        assert(currentScreenInfoRow <= _getLastScreenInfoRowIndex());
+    }
+
+    // translate the row back to an endpoint and handle any crossed endpoints
+    Endpoint convertedEndpoint = _screenInfoRowToEndpoint(currentScreenInfoRow) + currentColumn;
+    Endpoint start = _screenInfoRowToEndpoint(moveState.StartScreenInfoRow) + moveState.StartColumn;
+    Endpoint end = _screenInfoRowToEndpoint(moveState.EndScreenInfoRow) + moveState.EndColumn;
+    bool degenerate = false;
+    if (endpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start)
+    {
+        start = convertedEndpoint;
+        if (_compareScreenCoords(currentScreenInfoRow,
+                                 currentColumn,
+                                 moveState.EndScreenInfoRow,
+                                 moveState.EndColumn) == 1)
+        {
+            end = start;
+            degenerate = true;
+        }
+    }
+    else
+    {
+        end = convertedEndpoint;
+        if (_compareScreenCoords(currentScreenInfoRow,
+                                 currentColumn,
+                                 moveState.StartScreenInfoRow,
+                                 moveState.StartColumn) == -1)
+        {
+            start = end;
+            degenerate = true;
+        }
+    }
+    return std::make_tuple(start, end, degenerate);
+}
+
+std::tuple<Endpoint, Endpoint, bool>
+UiaTextRange::_moveEndpointByUnitCharacterBackward(_In_ const int moveCount,
+                                                   _In_ const TextPatternRangeEndpoint endpoint,
+                                                   _In_ const MoveState moveState,
+                                                   _Out_ int* const pAmountMoved)
+{
+    *pAmountMoved = 0;
+    int count = moveCount;
+    ScreenInfoRow currentScreenInfoRow;
+    Column currentColumn;
+
+    // set current location vars
     if (endpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start)
     {
         currentScreenInfoRow = moveState.StartScreenInfoRow;
@@ -1735,15 +1912,21 @@ std::tuple<Endpoint, Endpoint, bool> UiaTextRange::_moveEndpointByUnitCharacter(
         // check if we're at the edge of the screen info buffer
         if (currentScreenInfoRow == moveState.LimitingRow &&
             currentColumn == moveState.LastColumnInRow)
+
         {
             break;
         }
         else if (currentColumn == moveState.LastColumnInRow)
         {
             // we're at the edge of a row and need to go to the
-            // next one
-            currentColumn = moveState.FirstColumnInRow;
+            // next one. move to the cell with the last non-whitespace charactor
+
             currentScreenInfoRow += static_cast<int>(moveState.Increment);
+            // get the right cell for the next row
+            const int rowIndex = _screenInfoRowToTextBufferRow(currentScreenInfoRow);
+            const ROW& row = _getTextBuffer()->GetRowAtIndex(rowIndex);
+            const size_t right = row.GetCharRow().MeasureRight();
+            currentColumn = static_cast<Column>((right == 0) ? 0 : right - 1);
         }
         else
         {
