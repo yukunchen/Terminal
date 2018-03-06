@@ -23,6 +23,7 @@ namespace Microsoft
             class IConsoleControl
             {
             public:
+                virtual ~IConsoleControl() = 0;
                 virtual NTSTATUS NotifyConsoleApplication(DWORD dwProcessId) = 0;
                 virtual NTSTATUS SetForeground(HANDLE hProcess, BOOL fForeground) = 0;
                 virtual NTSTATUS EndTask(HANDLE hProcessId, DWORD dwEventType, ULONG ulCtrlFlags) = 0;
@@ -33,6 +34,8 @@ namespace Microsoft
                 IConsoleControl(IConsoleControl const&) = delete;
                 IConsoleControl& operator=(IConsoleControl const &) = delete;
             };
-        };
-    };
-};
+
+            inline IConsoleControl::~IConsoleControl() {}
+        }
+    }
+}

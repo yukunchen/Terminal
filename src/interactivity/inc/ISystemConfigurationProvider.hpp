@@ -25,6 +25,8 @@ namespace Microsoft
             class ISystemConfigurationProvider
             {
             public:
+                virtual ~ISystemConfigurationProvider() = 0;
+
                 virtual bool IsCaretBlinkingEnabled() = 0;
 
                 virtual UINT GetCaretBlinkTime() = 0;
@@ -44,6 +46,8 @@ namespace Microsoft
                 ISystemConfigurationProvider(ISystemConfigurationProvider const&) = delete;
                 ISystemConfigurationProvider& operator=(ISystemConfigurationProvider const&) = delete;
             };
-        };
-    };
-};
+
+            inline ISystemConfigurationProvider::~ISystemConfigurationProvider() {}
+        }
+    }
+}

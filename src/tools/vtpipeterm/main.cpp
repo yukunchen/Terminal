@@ -443,10 +443,8 @@ void SetupInput()
     SetConsoleMode(hIn, dwInMode);
 }
 
-DWORD InputThread(LPVOID lpParameter)
+DWORD InputThread(LPVOID /*lpParameter*/)
 {
-    UNREFERENCED_PARAMETER(lpParameter);
-
     // Because the input thread ends up owning the lifetime of the application,
     // Set/restore the CP here.
 

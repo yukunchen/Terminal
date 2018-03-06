@@ -21,10 +21,11 @@ namespace Microsoft
         {
             namespace Win32
             {
-                class WindowMetrics : public IWindowMetrics
+                class WindowMetrics final : public IWindowMetrics
                 {
                 public:
                     // IWindowMetrics Members
+                    ~WindowMetrics() = default;
                     RECT GetMinClientRectInPixels();
                     RECT GetMaxClientRectInPixels();
 
@@ -32,8 +33,15 @@ namespace Microsoft
                     RECT GetMaxWindowRectInPixels();
                     RECT GetMaxWindowRectInPixels(_In_ const RECT * const prcSuggested, _Out_opt_ UINT * pDpiSuggested);
 
-                    BOOL AdjustWindowRectEx(_Inout_ LPRECT prc, _In_ const DWORD dwStyle, _In_ const BOOL fMenu, _In_ const DWORD dwExStyle);
-                    BOOL AdjustWindowRectEx(_Inout_ LPRECT prc, _In_ const DWORD dwStyle, _In_ const BOOL fMenu, _In_ const DWORD dwExStyle, _In_ const int iDpi);
+                    BOOL AdjustWindowRectEx(_Inout_ LPRECT prc,
+                                            _In_ const DWORD dwStyle,
+                                            _In_ const BOOL fMenu,
+                                            _In_ const DWORD dwExStyle);
+                    BOOL AdjustWindowRectEx(_Inout_ LPRECT prc,
+                                            _In_ const DWORD dwStyle,
+                                            _In_ const BOOL fMenu,
+                                            _In_ const DWORD dwExStyle,
+                                            _In_ const int iDpi);
 
                     void ConvertClientRectToWindowRect(_Inout_ RECT * const prc);
                     void ConvertWindowRectToClientRect(_Inout_ RECT * const prc);
@@ -45,11 +53,14 @@ namespace Microsoft
                         WINDOW_TO_CLIENT
                     };
 
-                    BOOL UnadjustWindowRectEx(_Inout_ LPRECT prc, _In_ const DWORD dwStyle, _In_ const BOOL fMenu, _In_ const DWORD dwExStyle);
+                    BOOL UnadjustWindowRectEx(_Inout_ LPRECT prc,
+                                              _In_ const DWORD dwStyle,
+                                              _In_ const BOOL fMenu,
+                                              _In_ const DWORD dwExStyle);
 
                     void ConvertRect(_Inout_ RECT* const prc, _In_ ConvertRectangle const crDirection);
                 };
-            };
-        };
-    };
-};
+            }
+        }
+    }
+}

@@ -107,6 +107,9 @@ namespace Microsoft
                 virtual bool EnableButtonEventMouseMode(_In_ bool const fEnabled); // ?1002
                 virtual bool EnableAnyEventMouseMode(_In_ bool const fEnabled); // ?1003
                 virtual bool EnableAlternateScroll(_In_ bool const fEnabled); // ?1007
+                virtual bool SetCursorStyle(_In_ const DispatchCommon::CursorStyle cursorStyle); // DECSCUSR
+                virtual bool SetCursorColor(_In_ const COLORREF cursorColor);
+
                 virtual bool SetColorTableEntry(_In_ const size_t tableIndex,
                                                 _In_ const DWORD dwColor); // OscColorTable
                 virtual bool WindowManipulation(_In_ const DispatchCommon::WindowManipulationType uiFunction,
@@ -151,7 +154,7 @@ namespace Microsoft
                 bool _SetResetPrivateModes(_In_reads_(cParams) const PrivateModeParams* const rgParams, _In_ size_t const cParams, _In_ bool const fEnable);
                 bool _PrivateModeParamsHelper(_In_ PrivateModeParams const param, _In_ bool const fEnable);
                 bool _DoDECCOLMHelper(_In_ unsigned int uiColumns);
-                
+
                 ConGetSet* _pConApi;
                 AdaptDefaults* _pDefaults;
                 TerminalOutput _TermOutput;

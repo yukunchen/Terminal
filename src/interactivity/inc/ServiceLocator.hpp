@@ -18,6 +18,8 @@ Author(s):
 #include "IConsoleWindow.hpp"
 #include "../../host/globals.h"
 
+#include <memory>
+
 #pragma hdrstop
 
 namespace Microsoft
@@ -26,7 +28,7 @@ namespace Microsoft
     {
         namespace Interactivity
         {
-            class ServiceLocator
+            class ServiceLocator final
             {
             public:
 
@@ -80,28 +82,31 @@ namespace Microsoft
 
                 static ISystemConfigurationProvider *LocateSystemConfigurationProvider();
 
-                static Globals *LocateGlobals();
+                static Globals& LocateGlobals();
 
             protected:
                 ServiceLocator(ServiceLocator const&) = delete;
                 ServiceLocator& operator=(ServiceLocator const&) = delete;
 
             private:
-                static NTSTATUS LocateInteractivityFactory(_Outptr_result_nullonfailure_ IInteractivityFactory** factory);
+                static NTSTATUS LoadInteractivityFactory();
 
-                static IInteractivityFactory *s_interactivityFactory;
+                static std::unique_ptr<IInteractivityFactory> s_interactivityFactory;
 
-                static IAccessibilityNotifier *s_accessibilityNotifier;
-                static IConsoleControl *s_consoleControl;
-                static IConsoleInputThread *s_consoleInputThread;
-                static IConsoleWindow *s_consoleWindow;
-                static IWindowMetrics *s_windowMetrics;
-                static IHighDpiApi *s_highDpiApi;
-                static IInputServices *s_inputServices;
-                static ISystemConfigurationProvider *s_systemConfigurationProvider;
+                static std::unique_ptr<IAccessibilityNotifier> s_accessibilityNotifier;
+                static std::unique_ptr<IConsoleControl> s_consoleControl;
+                static std::unique_ptr<IConsoleInputThread> s_consoleInputThread;
+                // TODO: MSFT 15344939 - some implementations of IConsoleWindow are currently singleton
+                // classes so we can't own a pointer to them here. fix this so s_consoleWindow can follow the
+                // pattern of the rest of the service interface pointers.
+                static IConsoleWindow* s_consoleWindow;
+                static std::unique_ptr<IWindowMetrics> s_windowMetrics;
+                static std::unique_ptr<IHighDpiApi> s_highDpiApi;
+                static std::unique_ptr<ISystemConfigurationProvider> s_systemConfigurationProvider;
+                static std::unique_ptr<IInputServices> s_inputServices;
 
-                static Globals *s_globals;
+                static Globals s_globals;
             };
-        };
-    };
-};
+        }
+    }
+}

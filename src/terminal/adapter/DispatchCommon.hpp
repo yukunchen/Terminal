@@ -38,6 +38,17 @@ public:
         ResizeWindowInCharacters = 8,
     };
 
+    enum class CursorStyle : unsigned int
+    {
+        BlinkingBlock = 0,
+        BlinkingBlockDefault = 1,
+        SteadyBlock = 2,
+        BlinkingUnderline = 3,
+        SteadyUnderline = 4,
+        BlinkingBar = 5,
+        SteadyBar = 6
+    };
+
     static bool s_ResizeWindow(_Inout_ ConGetSet* const pConApi,
                                _In_ const unsigned short usWidth,
                                _In_ const unsigned short usHeight);

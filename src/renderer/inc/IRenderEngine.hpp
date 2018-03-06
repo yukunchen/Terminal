@@ -13,6 +13,7 @@ Author(s):
 
 #pragma once
 
+#include "../../inc/conattrs.hpp"
 #include "FontInfoDesired.hpp"
 
 namespace Microsoft
@@ -55,8 +56,14 @@ namespace Microsoft
                 virtual HRESULT PaintBufferGridLines(_In_ GridLines const lines, _In_ COLORREF const color, _In_ size_t const cchLine, _In_ COORD const coordTarget) = 0;
                 virtual HRESULT PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles) = 0;
 
-                virtual HRESULT PaintCursor(_In_ COORD const coordCursor, _In_ ULONG const ulCursorHeightPercent, _In_ bool const fIsDoubleWidth) = 0;
-                virtual HRESULT ClearCursor() = 0;                
+                virtual HRESULT PaintCursor(_In_ COORD const coordCursor,
+                                            _In_ ULONG const ulCursorHeightPercent,
+                                            _In_ bool const fIsDoubleWidth,
+                                            _In_ CursorType const cursorType,
+                                            _In_ bool const fUseColor,
+                                            _In_ COLORREF const cursorColor) = 0;
+
+                virtual HRESULT ClearCursor() = 0;
 
                 virtual HRESULT UpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In_ COLORREF const colorBackground, _In_ WORD const legacyColorAttribute, _In_ bool const fIncludeBackgrounds) = 0;
                 virtual HRESULT UpdateFont(_In_ FontInfoDesired const * const pfiFontInfoDesired, _Out_ FontInfo* const pfiFontInfo) = 0;

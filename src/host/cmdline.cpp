@@ -282,11 +282,11 @@ const ExtKeyDef* const GetKeyDef(WORD virtualKeyCode)
 bool IsWordDelim(_In_ WCHAR const wch)
 {
     // Before it reaches here, L' ' case should have beeen already detected, and ServiceLocator::LocateGlobals()->aWordDelimChars is specified.
-    ASSERT(wch != L' ' && ServiceLocator::LocateGlobals()->aWordDelimChars[0]);
+    ASSERT(wch != L' ' && ServiceLocator::LocateGlobals().aWordDelimChars[0]);
 
-    for (int i = 0; i < WORD_DELIM_MAX && ServiceLocator::LocateGlobals()->aWordDelimChars[i]; ++i)
+    for (int i = 0; i < WORD_DELIM_MAX && ServiceLocator::LocateGlobals().aWordDelimChars[i]; ++i)
     {
-        if (wch == ServiceLocator::LocateGlobals()->aWordDelimChars[i])
+        if (wch == ServiceLocator::LocateGlobals().aWordDelimChars[i])
         {
             return true;
         }
@@ -297,7 +297,7 @@ bool IsWordDelim(_In_ WCHAR const wch)
 
 NTSTATUS BeginPopup(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ PCOMMAND_HISTORY CommandHistory, _In_ COORD PopupSize)
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // determine popup dimensions
     COORD Size = PopupSize;
     Size.X += 2;    // add borders
@@ -356,8 +356,8 @@ NTSTATUS BeginPopup(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ PCOMMAND_HISTORY C
     TargetRect.Bottom = Popup->Region.Bottom;
     ReadScreenBuffer(ScreenInfo, Popup->OldContents, &TargetRect);
 
-    gci->PopupCount++;
-    if (1 == gci->PopupCount)
+    gci.PopupCount++;
+    if (1 == gci.PopupCount)
     {
         // If this is the first popup to be shown, stop the cursor from appearing/blinking
         ScreenInfo->TextInfo->GetCursor()->SetIsPopupShown(TRUE);
@@ -369,7 +369,7 @@ NTSTATUS BeginPopup(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ PCOMMAND_HISTORY C
 
 NTSTATUS EndPopup(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ PCOMMAND_HISTORY CommandHistory)
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     ASSERT(!CLE_NO_POPUPS(CommandHistory));
     if (CLE_NO_POPUPS(CommandHistory))
     {
@@ -396,9 +396,9 @@ NTSTATUS EndPopup(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ PCOMMAND_HISTORY Com
     RemoveEntryList(&Popup->ListLink);
     delete[] Popup->OldContents;
     delete Popup;
-    gci->PopupCount--;
+    gci.PopupCount--;
 
-    if (gci->PopupCount == 0)
+    if (gci.PopupCount == 0)
     {
         // Notify we're done showing popups.
         ScreenInfo->TextInfo->GetCursor()->SetIsPopupShown(FALSE);
@@ -439,8 +439,8 @@ CommandLine& CommandLine::Instance()
 
 bool CommandLine::IsEditLineEmpty() const
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    const COOKED_READ_DATA* const pTyped = gci->lpCookedReadData;
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const COOKED_READ_DATA* const pTyped = gci.lpCookedReadData;
 
     if (nullptr == pTyped)
     {
@@ -461,20 +461,20 @@ bool CommandLine::IsEditLineEmpty() const
 
 void CommandLine::Hide(_In_ bool const fUpdateFields)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (!IsEditLineEmpty())
     {
-        COOKED_READ_DATA* CookedReadData = gci->lpCookedReadData;
+        COOKED_READ_DATA* CookedReadData = gci.lpCookedReadData;
         DeleteCommandLine(CookedReadData, fUpdateFields);
     }
 }
 
 void CommandLine::Show()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (!IsEditLineEmpty())
     {
-        COOKED_READ_DATA* CookedReadData = gci->lpCookedReadData;
+        COOKED_READ_DATA* CookedReadData = gci.lpCookedReadData;
         RedrawCommandLine(CookedReadData);
     }
 }
@@ -595,7 +595,7 @@ void SetCurrentCommandLine(_In_ COOKED_READ_DATA* const CookedReadData, _In_ SHO
 // - CONSOLE_STATUS_READ_COMPLETE - user hit return
 NTSTATUS ProcessCommandListInput(_In_ COOKED_READ_DATA* const pCookedReadData)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     PCOMMAND_HISTORY const pCommandHistory = pCookedReadData->_CommandHistory;
     PCLE_POPUP const Popup = CONTAINING_RECORD(pCommandHistory->PopupList.Flink, CLE_POPUP, ListLink);
     NTSTATUS Status = STATUS_SUCCESS;
@@ -765,7 +765,7 @@ NTSTATUS ProcessCommandListInput(_In_ COOKED_READ_DATA* const pCookedReadData)
                     return STATUS_NO_MEMORY;
                 }
 
-                dwNumBytes = (ULONG)ConvertToOem(gci->CP,
+                dwNumBytes = (ULONG)ConvertToOem(gci.CP,
                                                  pCookedReadData->_UserBuffer,
                                                  dwNumBytes / sizeof(WCHAR),
                                                  TransBuffer,
@@ -1164,19 +1164,19 @@ VOID DrawPromptPopup(_In_ PCLE_POPUP Popup, _In_ PSCREEN_INFORMATION ScreenInfo,
 // - STATUS_SUCCESS - read was fully completed (user hit return)
 NTSTATUS CopyFromCharPopup(_In_ COOKED_READ_DATA* CookedReadData)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     WCHAR ItemString[70];
     int ItemLength = 0;
     LANGID LangId;
-    NTSTATUS Status = GetConsoleLangId(gci->OutputCP, &LangId);
+    NTSTATUS Status = GetConsoleLangId(gci.OutputCP, &LangId);
     if (NT_SUCCESS(Status))
     {
-        ItemLength = LoadStringEx(ServiceLocator::LocateGlobals()->hInstance, ID_CONSOLE_MSGCMDLINEF4, ItemString, ARRAYSIZE(ItemString), LangId);
+        ItemLength = LoadStringEx(ServiceLocator::LocateGlobals().hInstance, ID_CONSOLE_MSGCMDLINEF4, ItemString, ARRAYSIZE(ItemString), LangId);
     }
 
     if (!NT_SUCCESS(Status) || ItemLength == 0)
     {
-        ItemLength = LoadStringW(ServiceLocator::LocateGlobals()->hInstance, ID_CONSOLE_MSGCMDLINEF4, ItemString, ARRAYSIZE(ItemString));
+        ItemLength = LoadStringW(ServiceLocator::LocateGlobals().hInstance, ID_CONSOLE_MSGCMDLINEF4, ItemString, ARRAYSIZE(ItemString));
     }
 
     PCOMMAND_HISTORY const CommandHistory = CookedReadData->_CommandHistory;
@@ -1195,20 +1195,20 @@ NTSTATUS CopyFromCharPopup(_In_ COOKED_READ_DATA* CookedReadData)
 // - STATUS_SUCCESS - read was fully completed (user hit return)
 NTSTATUS CopyToCharPopup(_In_ COOKED_READ_DATA* CookedReadData)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     WCHAR ItemString[70];
     int ItemLength = 0;
     LANGID LangId;
 
-    NTSTATUS Status = GetConsoleLangId(gci->OutputCP, &LangId);
+    NTSTATUS Status = GetConsoleLangId(gci.OutputCP, &LangId);
     if (NT_SUCCESS(Status))
     {
-        ItemLength = LoadStringEx(ServiceLocator::LocateGlobals()->hInstance, ID_CONSOLE_MSGCMDLINEF2, ItemString, ARRAYSIZE(ItemString), LangId);
+        ItemLength = LoadStringEx(ServiceLocator::LocateGlobals().hInstance, ID_CONSOLE_MSGCMDLINEF2, ItemString, ARRAYSIZE(ItemString), LangId);
     }
 
     if (!NT_SUCCESS(Status) || ItemLength == 0)
     {
-        ItemLength = LoadStringW(ServiceLocator::LocateGlobals()->hInstance, ID_CONSOLE_MSGCMDLINEF2, ItemString, ARRAYSIZE(ItemString));
+        ItemLength = LoadStringW(ServiceLocator::LocateGlobals().hInstance, ID_CONSOLE_MSGCMDLINEF2, ItemString, ARRAYSIZE(ItemString));
     }
 
     PCOMMAND_HISTORY const CommandHistory = CookedReadData->_CommandHistory;
@@ -1225,19 +1225,19 @@ NTSTATUS CopyToCharPopup(_In_ COOKED_READ_DATA* CookedReadData)
 // - STATUS_SUCCESS - read was fully completed (user hit return)
 NTSTATUS CommandNumberPopup(_In_ COOKED_READ_DATA* const CookedReadData)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     WCHAR ItemString[70];
     int ItemLength = 0;
     LANGID LangId;
 
-    NTSTATUS Status = GetConsoleLangId(gci->OutputCP, &LangId);
+    NTSTATUS Status = GetConsoleLangId(gci.OutputCP, &LangId);
     if (NT_SUCCESS(Status))
     {
-        ItemLength = LoadStringEx(ServiceLocator::LocateGlobals()->hInstance, ID_CONSOLE_MSGCMDLINEF9, ItemString, ARRAYSIZE(ItemString), LangId);
+        ItemLength = LoadStringEx(ServiceLocator::LocateGlobals().hInstance, ID_CONSOLE_MSGCMDLINEF9, ItemString, ARRAYSIZE(ItemString), LangId);
     }
     if (!NT_SUCCESS(Status) || ItemLength == 0)
     {
-        ItemLength = LoadStringW(ServiceLocator::LocateGlobals()->hInstance, ID_CONSOLE_MSGCMDLINEF9, ItemString, ARRAYSIZE(ItemString));
+        ItemLength = LoadStringW(ServiceLocator::LocateGlobals().hInstance, ID_CONSOLE_MSGCMDLINEF9, ItemString, ARRAYSIZE(ItemString));
     }
 
     PCOMMAND_HISTORY const CommandHistory = CookedReadData->_CommandHistory;
@@ -1278,7 +1278,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                             _In_ WCHAR wch,
                             _In_ const DWORD dwKeyState)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     COORD CurrentPosition = { 0 };
     DWORD CharsToWrite;
     NTSTATUS Status;
@@ -1459,7 +1459,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                 BOOL NonSpaceCharSeen = FALSE;
                 if (pCookedReadData->_BufPtr != pCookedReadData->_BackupLimit)
                 {
-                    if (!gci->GetExtendedEditKey())
+                    if (!gci.GetExtendedEditKey())
                     {
                         LastWord = pCookedReadData->_BufPtr - 1;
                         while (LastWord != pCookedReadData->_BackupLimit)
@@ -1602,7 +1602,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                     {
                         PWCHAR NextWord = pCookedReadData->_BufPtr;
 
-                        if (!gci->GetExtendedEditKey())
+                        if (!gci.GetExtendedEditKey())
                         {
                             SHORT i;
 
@@ -1938,7 +1938,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
             break;
         case VK_INSERT:
             pCookedReadData->_InsertMode = !pCookedReadData->_InsertMode;
-            pCookedReadData->_pScreenInfo->SetCursorDBMode((BOOLEAN)(pCookedReadData->_InsertMode != gci->GetInsertMode()));
+            pCookedReadData->_pScreenInfo->SetCursorDBMode((BOOLEAN)(pCookedReadData->_InsertMode != gci.GetInsertMode()));
             break;
         case VK_DELETE:
             if (!AT_EOL(pCookedReadData))
@@ -2297,7 +2297,6 @@ void UpdateCommandListPopup(_In_ SHORT Delta,
 
     *CurrentCommand = COMMAND_NUM_TO_INDEX(NewCmdNum, CommandHistory);
 }
-
 
 UINT LoadStringEx(_In_ HINSTANCE hModule, _In_ UINT wID, _Out_writes_(cchBufferMax) LPWSTR lpBuffer, _In_ UINT cchBufferMax, _In_ WORD wLangId)
 {

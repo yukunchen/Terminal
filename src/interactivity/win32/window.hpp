@@ -193,7 +193,7 @@ namespace Microsoft
 
                     BOOL _fHasMoved;
                 };
-            };
-        };
-    };
-};
+            }
+        }
+    }
+}

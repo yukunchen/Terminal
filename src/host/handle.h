@@ -24,5 +24,4 @@ Revision History:
 void LockConsole();
 void UnlockConsole();
 
-NTSTATUS RevalidateConsole(_Out_ CONSOLE_INFORMATION ** const ppConsole);
 NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle, _In_ const DWORD cbTitle);

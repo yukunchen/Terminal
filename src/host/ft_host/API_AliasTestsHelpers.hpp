@@ -138,6 +138,14 @@ void TestGetConsoleAliasHelper(TCH* ptszSourceGiven,
         ZeroMemory(ptchTargetBuffer, cbTargetBuffer);
     }
 
+    auto freeTargetBuffer = wil::ScopeExit([&]()
+    {
+        if (ptchTargetBuffer != nullptr)
+        {
+            delete[] ptchTargetBuffer;
+        }
+    });
+
     Log::Comment(String().Format(L"Using target buffer size: '%d'", cbTargetBuffer));
 
     // Set the alias if we're supposed to and prepare for cleanup later.
@@ -160,7 +168,7 @@ void TestGetConsoleAliasHelper(TCH* ptszSourceGiven,
     // a->TargetLength on the server side will become the return value
     // The returned status will be put into SetLastError
     // If there is an error and it's not STATUS_BUFFER_TOO_SMALL, then a->TargetLength (and the return) will be zeroed.
-    // Some sample errors: 
+    // Some sample errors:
     // - 87 = 0x57 = ERROR_INVALID_PARAMETER
     // - 122 = 0x7a = ERROR_INSUFFICIENT_BUFFER
 
@@ -182,13 +190,13 @@ void TestGetConsoleAliasHelper(TCH* ptszSourceGiven,
         dwExpectedLastError = ERROR_GEN_FAILURE;
     }
     else if (ptchTargetBuffer == nullptr ||
-             cbTargetBuffer < (cbExpectedTargetString + sizeof(TCH))) // expected target plus a null terminator. 
+             cbTargetBuffer < (cbExpectedTargetString + sizeof(TCH))) // expected target plus a null terminator.
     {
         // If the target isn't enough space, insufficient buffer.
         dwExpectedResult = cbTargetBuffer;
 
         // For some reason, the console API *ALWAYS* says it needs enough space as if we were copying Unicode,
-        // even if the final result will be ANSI. 
+        // even if the final result will be ANSI.
         // Therefore, if we're mathing based on a char size buffer, multiple the expected result by 2.
         #pragma warning(suppress:4127) // This is a constant, but conditionally compiled twice so we need the check.
         if (1 == sizeof(TCH))
@@ -249,4 +257,3 @@ void TestGetConsoleAliasHelper(TCH* ptszSourceGiven,
         }
     }
 }
-

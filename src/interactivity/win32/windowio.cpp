@@ -13,6 +13,7 @@
 #include "..\..\host\handle.h"
 #include "..\..\host\scrolling.hpp"
 #include "..\..\host\output.h"
+#include "..\..\host\Ucs2CharRow.hpp"
 
 #include "..\inc\ServiceLocator.hpp"
 
@@ -51,8 +52,8 @@ ULONG ConvertMouseButtonState(_In_ ULONG Flag, _In_ ULONG State)
 */
 VOID SetConsoleWindowOwner(_In_ const HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pProcessData)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    ASSERT(gci->IsConsoleLocked());
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    ASSERT(gci.IsConsoleLocked());
 
     DWORD dwProcessId;
     DWORD dwThreadId;
@@ -64,7 +65,7 @@ VOID SetConsoleWindowOwner(_In_ const HWND hwnd, _Inout_opt_ ConsoleProcessHandl
     else
     {
         // Find a process to own the console window. If there are none then let's use conhost's.
-        pProcessData = gci->ProcessHandleList.GetFirstProcess();
+        pProcessData = gci.ProcessHandleList.GetFirstProcess();
         if (pProcessData != nullptr)
         {
             dwProcessId = pProcessData->dwProcessId;
@@ -107,14 +108,14 @@ bool HandleTerminalMouseEvent(_In_ const COORD cMousePosition,
                               _In_ const short sModifierKeystate,
                               _In_ const short sWheelDelta)
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // If the modes don't align, this is unhandled by default.
     bool fWasHandled = false;
 
     // Virtual terminal input mode
     if (IsInVirtualTerminalInputMode())
     {
-        fWasHandled = gci->terminalMouseInput.HandleMouse(cMousePosition, uiButton, sModifierKeystate, sWheelDelta);
+        fWasHandled = gci.terminalMouseInput.HandleMouse(cMousePosition, uiButton, sModifierKeystate, sWheelDelta);
     }
 
     return fWasHandled;
@@ -126,7 +127,7 @@ void HandleKeyEvent(_In_ const HWND hWnd,
                     _In_ const LPARAM lParam,
                     _Inout_opt_ PBOOL pfUnlockConsole)
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     // BOGUS for WM_CHAR/WM_DEADCHAR, in which LOWORD(lParam) is a character
     WORD VirtualKeyCode = LOWORD(wParam);
@@ -163,7 +164,7 @@ void HandleKeyEvent(_In_ const HWND hWnd,
         RetrieveKeyInfo(hWnd,
                         &VirtualKeyCode,
                         &VirtualScanCode,
-                        !gci->pInputBuffer->fInComposition);
+                        !gci.pInputBuffer->fInComposition);
 
         // --- END LOAD BEARING CODE ---
     }
@@ -234,9 +235,9 @@ void HandleKeyEvent(_In_ const HWND hWnd,
 
     // If this is a key up message, should we ignore it? We do this so that if a process reads a line from the input
     // buffer, the key up event won't get put in the buffer after the read completes.
-    if (gci->Flags & CONSOLE_IGNORE_NEXT_KEYUP)
+    if (gci.Flags & CONSOLE_IGNORE_NEXT_KEYUP)
     {
-        gci->Flags &= ~CONSOLE_IGNORE_NEXT_KEYUP;
+        gci.Flags &= ~CONSOLE_IGNORE_NEXT_KEYUP;
         if (!bKeyDown)
         {
             return;
@@ -347,7 +348,7 @@ void HandleKeyEvent(_In_ const HWND hWnd,
     // Then attempt to process more complicated selection/scrolling commands that require state.
     // These selection and scrolling functions must go after the simple key-chord combinations
     // as they have the potential to modify state in a way those functions do not expect.
-    if (gci->Flags & CONSOLE_SELECTING)
+    if (gci.Flags & CONSOLE_SELECTING)
     {
         if (!bKeyDown)
         {
@@ -372,7 +373,7 @@ void HandleKeyEvent(_In_ const HWND hWnd,
             return;
         }
     }
-    if (pSelection->s_IsValidKeyboardLineSelection(&inputKeyInfo) && IsInProcessedInputMode() && gci->GetExtendedEditKey())
+    if (pSelection->s_IsValidKeyboardLineSelection(&inputKeyInfo) && IsInProcessedInputMode() && gci.GetExtendedEditKey())
     {
         if (!bKeyDown || pSelection->HandleKeyboardLineSelectionEvent(&inputKeyInfo))
         {
@@ -381,7 +382,7 @@ void HandleKeyEvent(_In_ const HWND hWnd,
     }
 
     // if the user is inputting chars at an inappropriate time, beep.
-    if ((gci->Flags & (CONSOLE_SELECTING | CONSOLE_SCROLLING | CONSOLE_SCROLLBAR_TRACKING)) &&
+    if ((gci.Flags & (CONSOLE_SELECTING | CONSOLE_SCROLLING | CONSOLE_SCROLLBAR_TRACKING)) &&
         bKeyDown &&
         !IsSystemKey(VirtualKeyCode))
     {
@@ -389,14 +390,14 @@ void HandleKeyEvent(_In_ const HWND hWnd,
         return;
     }
 
-    if (gci->pInputBuffer->fInComposition)
+    if (gci.pInputBuffer->fInComposition)
     {
         return;
     }
 
     bool generateBreak = false;
     // ignore key strokes that will generate CHAR messages. this is only necessary while a dialog box is up.
-    if (ServiceLocator::LocateGlobals()->uiDialogBoxCount != 0)
+    if (ServiceLocator::LocateGlobals().uiDialogBoxCount != 0)
     {
         if (Message != WM_CHAR && Message != WM_SYSCHAR && Message != WM_DEADCHAR && Message != WM_SYSDEADCHAR)
         {
@@ -432,7 +433,7 @@ void HandleKeyEvent(_In_ const HWND hWnd,
 // - Returns TRUE if DefWindowProc should be called.
 BOOL HandleSysKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const WPARAM wParam, _In_ const LPARAM lParam, _Inout_opt_ PBOOL pfUnlockConsole)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     WORD VirtualKeyCode;
 
     if (Message == WM_SYSCHAR || Message == WM_SYSDEADCHAR)
@@ -457,7 +458,7 @@ BOOL HandleSysKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const
     }
 
     // check for alt-f4
-    if (VirtualKeyCode == VK_F4 && (GetKeyState(VK_MENU) & KEY_PRESSED) && IsInProcessedInputMode() && gci->IsAltF4CloseAllowed())
+    if (VirtualKeyCode == VK_F4 && (GetKeyState(VK_MENU) & KEY_PRESSED) && IsInProcessedInputMode() && gci.IsAltF4CloseAllowed())
     {
         return TRUE; // let DefWindowProc generate WM_CLOSE
     }
@@ -524,7 +525,7 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION* const pScreenInfo,
                       _In_ const WPARAM wParam,
                       _In_ const LPARAM lParam)
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (Message != WM_MOUSEMOVE)
     {
         // Log a telemetry flag saying the user interacted with the Console
@@ -533,17 +534,17 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION* const pScreenInfo,
 
     Selection* const pSelection = &Selection::Instance();
 
-    if (!(gci->Flags & CONSOLE_HAS_FOCUS) && !pSelection->IsMouseButtonDown())
+    if (!(gci.Flags & CONSOLE_HAS_FOCUS) && !pSelection->IsMouseButtonDown())
     {
         return TRUE;
     }
 
-    if (gci->Flags & CONSOLE_IGNORE_NEXT_MOUSE_INPUT)
+    if (gci.Flags & CONSOLE_IGNORE_NEXT_MOUSE_INPUT)
     {
         // only reset on up transition
         if (Message != WM_LBUTTONDOWN && Message != WM_MBUTTONDOWN && Message != WM_RBUTTONDOWN)
         {
-            gci->Flags &= ~CONSOLE_IGNORE_NEXT_MOUSE_INPUT;
+            gci.Flags &= ~CONSOLE_IGNORE_NEXT_MOUSE_INPUT;
             return FALSE;
         }
         return TRUE;
@@ -724,12 +725,18 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION* const pScreenInfo,
 
             if ((MousePosition.X == coordSelectionAnchor.X) && (MousePosition.Y == coordSelectionAnchor.Y))
             {
-                ROW* const Row = pScreenInfo->TextInfo->GetRowByOffset(MousePosition.Y);
-                ASSERT(Row != nullptr);
+                const ROW& Row = pScreenInfo->TextInfo->GetRowByOffset(MousePosition.Y);
+                const ICharRow& iCharRow = Row.GetCharRow();
+                // we only support ucs2 encoded char rows
+                FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                                "only support UCS2 char rows currently");
+
+                const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
+
 
                 while (coordSelectionAnchor.X > 0)
                 {
-                    if (IS_WORD_DELIM(Row->CharRow.Chars[coordSelectionAnchor.X - 1]))
+                    if (IS_WORD_DELIM(charRow.GetGlyphAt(coordSelectionAnchor.X - 1)))
                     {
                         break;
                     }
@@ -737,22 +744,24 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION* const pScreenInfo,
                 }
                 while (MousePosition.X < coordScreenBufferSize.X)
                 {
-                    if (IS_WORD_DELIM(Row->CharRow.Chars[MousePosition.X]))
+                    if (IS_WORD_DELIM(charRow.GetGlyphAt(MousePosition.X)))
                     {
                         break;
                     }
                     MousePosition.X++;
                 }
-                if (gci->GetTrimLeadingZeros())
+                if (gci.GetTrimLeadingZeros())
                 {
                     // Trim the leading zeros: 000fe12 -> fe12, except 0x and 0n.
                     // Useful for debugging
                     if (MousePosition.X > coordSelectionAnchor.X + 2 &&
-                        Row->CharRow.Chars[coordSelectionAnchor.X + 1] != L'x' &&
-                        Row->CharRow.Chars[coordSelectionAnchor.X + 1] != L'X' && Row->CharRow.Chars[coordSelectionAnchor.X + 1] != L'n')
+                        charRow.GetGlyphAt(coordSelectionAnchor.X + 1) != L'x' &&
+                        charRow.GetGlyphAt(coordSelectionAnchor.X + 1) != L'X' &&
+                        charRow.GetGlyphAt(coordSelectionAnchor.X + 1) != L'n')
                     {
                         // Don't touch the selection begins with 0x
-                        while (Row->CharRow.Chars[coordSelectionAnchor.X] == L'0' && coordSelectionAnchor.X < MousePosition.X - 1)
+                        while (charRow.GetGlyphAt(coordSelectionAnchor.X) == L'0' &&
+                               coordSelectionAnchor.X < MousePosition.X - 1)
                         {
                             coordSelectionAnchor.X++;
                         }
@@ -781,7 +790,7 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION* const pScreenInfo,
 
                     Clipboard::Instance().Copy();
                 }
-                else if (gci->Flags & CONSOLE_QUICK_EDIT_MODE)
+                else if (gci.Flags & CONSOLE_QUICK_EDIT_MODE)
                 {
                     // Capture data on when quick edit paste is used in proc or raw mode
                     if (IsInProcessedInputMode())
@@ -795,7 +804,7 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION* const pScreenInfo,
 
                     Clipboard::Instance().Paste();
                 }
-                gci->Flags |= CONSOLE_IGNORE_NEXT_MOUSE_INPUT;
+                gci.Flags |= CONSOLE_IGNORE_NEXT_MOUSE_INPUT;
             }
         }
         else if (Message == WM_MBUTTONDOWN)
@@ -819,7 +828,7 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION* const pScreenInfo,
         return FALSE;
     }
 
-    if (IsFlagClear(gci->pInputBuffer->InputMode, ENABLE_MOUSE_INPUT))
+    if (IsFlagClear(gci.pInputBuffer->InputMode, ENABLE_MOUSE_INPUT))
     {
         ReleaseCapture();
         return TRUE;
@@ -889,7 +898,7 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION* const pScreenInfo,
             ConvertMouseButtonState(ButtonFlags, static_cast<UINT>(wParam)),
             GetControlKeyState(0),
             EventFlags);
-        EventsWritten = static_cast<ULONG>(gci->pInputBuffer->Write(std::move(mouseEvent)));
+        EventsWritten = static_cast<ULONG>(gci.pInputBuffer->Write(std::move(mouseEvent)));
     }
     catch(...)
     {
@@ -911,11 +920,9 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION* const pScreenInfo,
 
 // Routine Description:
 // - This routine gets called to filter input to console dialogs so that we can do the special processing that StoreKeyInfo does.
-LRESULT DialogHookProc(int nCode, WPARAM wParam, LPARAM lParam)
+LRESULT DialogHookProc(int nCode, WPARAM /*wParam*/, LPARAM lParam)
 {
     MSG msg = *((PMSG)lParam);
-
-    UNREFERENCED_PARAMETER(wParam);
 
     if (nCode == MSGF_DIALOGBOX)
     {
@@ -940,12 +947,12 @@ LRESULT DialogHookProc(int nCode, WPARAM wParam, LPARAM lParam)
 // - This routine gets called by the console input thread to set up the console window.
 NTSTATUS InitWindowsSubsystem(_Out_ HHOOK * phhook)
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    ConsoleProcessHandle* ProcessData = gci->ProcessHandleList.FindProcessInList(ConsoleProcessList::ROOT_PROCESS_ID);
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    ConsoleProcessHandle* ProcessData = gci.ProcessHandleList.FindProcessInList(ConsoleProcessList::ROOT_PROCESS_ID);
     ASSERT(ProcessData != nullptr && ProcessData->fRootProcess);
 
     // Create and activate the main window
-    NTSTATUS Status = Window::CreateInstance(gci, gci->ScreenBuffers);
+    NTSTATUS Status = Window::CreateInstance(&gci, gci.ScreenBuffers);
 
     if (!NT_SUCCESS(Status))
     {
@@ -959,7 +966,7 @@ NTSTATUS InitWindowsSubsystem(_Out_ HHOOK * phhook)
 
     SetConsoleWindowOwner(ServiceLocator::LocateConsoleWindow()->GetWindowHandle(), ProcessData);
 
-    ServiceLocator::LocateConsoleWindow<Window>()->ActivateAndShow(gci->GetShowWindow());
+    ServiceLocator::LocateConsoleWindow<Window>()->ActivateAndShow(gci.GetShowWindow());
 
     NotifyWinEvent(EVENT_CONSOLE_START_APPLICATION, ServiceLocator::LocateConsoleWindow()->GetWindowHandle(), ProcessData->dwProcessId, 0);
 
@@ -981,12 +988,12 @@ DWORD ConsoleInputThreadProcWin32(LPVOID /*lpParameter*/)
     UnlockConsole();
     if (!NT_SUCCESS(Status))
     {
-        ServiceLocator::LocateGlobals()->ntstatusConsoleInputInitStatus = Status;
-        ServiceLocator::LocateGlobals()->hConsoleInputInitEvent.SetEvent();
+        ServiceLocator::LocateGlobals().ntstatusConsoleInputInitStatus = Status;
+        ServiceLocator::LocateGlobals().hConsoleInputInitEvent.SetEvent();
         return Status;
     }
 
-    ServiceLocator::LocateGlobals()->hConsoleInputInitEvent.SetEvent();
+    ServiceLocator::LocateGlobals().hConsoleInputInitEvent.SetEvent();
 
     for (;;)
     {
