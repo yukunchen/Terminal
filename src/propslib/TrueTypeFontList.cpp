@@ -186,31 +186,3 @@ NTSTATUS TrueTypeFontList::s_SearchByCodePage(_In_ const UINT uiCodePage,
 
     return status;
 }
-
-extern "C"
-{
-    NTSTATUS TrueTypeFontListInitialize()
-    {
-        return TrueTypeFontList::s_Initialize();
-    }
-
-    NTSTATUS TrueTypeFontListDestroy()
-    {
-        return TrueTypeFontList::s_Destroy();
-    }
-
-    LPTTFONTLIST TrueTypeFontListSearchByName(_In_opt_ LPCWSTR pwszFace,
-                                              _In_ BOOL fCodePage,
-                                              _In_ UINT CodePage)
-    {
-        return TrueTypeFontList::s_SearchByName(pwszFace, fCodePage, CodePage);
-    }
-
-    NTSTATUS TrueTypeFontListSearchByCodePage(_In_ const UINT uiCodePage,
-                                              _Out_writes_(cchFaceName) PWSTR pwszFaceName,
-                                              _In_ const size_t cchFaceName)
-    {
-        return TrueTypeFontList::s_SearchByCodePage(uiCodePage, pwszFaceName, cchFaceName);
-    }
-
-}

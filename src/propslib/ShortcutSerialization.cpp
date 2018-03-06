@@ -464,29 +464,3 @@ NTSTATUS ShortcutSerialization::s_SetLinkValues(_In_ PCONSOLE_STATE_INFO pStateI
 
     return (SUCCEEDED(hr)) ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
 }
-
-extern "C"
-{
-NTSTATUS ShortcutSerializationSetLinkValues(_In_ PCONSOLE_STATE_INFO pStateInfo , _In_ BOOL fEastAsianSystem, _In_ BOOL fForceV2)
-{
-    return ShortcutSerialization::s_SetLinkValues(pStateInfo, fEastAsianSystem, fForceV2);
-}
-
-NTSTATUS ShortcutSerializationGetLinkConsoleProperties(_In_ PCONSOLE_STATE_INFO pStateInfo)
-{
-    return ShortcutSerialization::s_GetLinkConsoleProperties(pStateInfo);
-}
-
-NTSTATUS ShortcutSerializationGetLinkValues(_In_ PCONSOLE_STATE_INFO pStateInfo,
-                                            _Out_ BOOL * const pfReadConsoleProperties,
-                                            _Out_writes_opt_(cchShortcutTitle) PWSTR pwszShortcutTitle,
-                                            _In_ const size_t cchShortcutTitle,
-                                            _Out_writes_opt_(cchIconLocation) PWSTR pwszIconLocation,
-                                            _In_ const size_t cchIconLocation,
-                                            _Out_opt_ int * const piIcon,
-                                            _Out_opt_ int * const piShowCmd,
-                                            _Out_opt_ WORD * const pwHotKey)
-{
-    return ShortcutSerialization::s_GetLinkValues(pStateInfo, pfReadConsoleProperties, pwszShortcutTitle, cchShortcutTitle, pwszIconLocation, cchIconLocation, piIcon, piShowCmd, pwHotKey);
-}
-}
