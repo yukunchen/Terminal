@@ -903,7 +903,7 @@ HRESULT DoSrvGetConsoleOutputCodePage(_Out_ unsigned int* const pCodePage)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     *pCodePage = gci.OutputCP;
-   return S_OK;
+    return S_OK;
 }
 
 HRESULT ApiRoutines::GetConsoleOutputCodePageImpl(_Out_ ULONG* const pCodePage)

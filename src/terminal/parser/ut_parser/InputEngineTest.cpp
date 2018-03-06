@@ -711,5 +711,4 @@ void InputEngineTest::CursorPositioningTest()
         L"Processing \"%s\"", seq.c_str()
     ));
     _stateMachine->ProcessString(&seq[0], seq.length());
-
 }

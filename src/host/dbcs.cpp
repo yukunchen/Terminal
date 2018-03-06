@@ -134,7 +134,7 @@ void CleanupDbcsEdgesForWrite(_In_ const size_t stringLen,
 }
 
 // Routine Description:
-// - Determine if the given Unicode char is fullwidth or not. If we fail the 
+// - Determine if the given Unicode char is fullwidth or not. If we fail the
 //      simple lookup, we'll fall back to asking the current renderer whether or
 //      not the character is full width.
 // Return:
