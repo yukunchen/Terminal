@@ -8,6 +8,7 @@
 
 #include "newdelete.hpp"
 #include "ConsoleArguments.hpp"
+#include "srvinit.h"
 #include "..\server\Entrypoints.h"
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
@@ -127,7 +128,7 @@ static HRESULT ActivateLegacyConhost(_In_ const HANDLE handle)
         // setup status error
         hr = HRESULT_FROM_WIN32(GetLastError());
     }
-    
+
     if (SUCCEEDED(hr))
     {
         hConhostBin.release();
@@ -135,9 +136,6 @@ static HRESULT ActivateLegacyConhost(_In_ const HANDLE handle)
 
     return hr;
 }
-
-// from srvinit.cpp, fwd declare.
-void ConsoleCheckDebug();
 
 // Routine Description:
 // - Main entry point for EXE version of console launching.
@@ -164,7 +162,7 @@ int CALLBACK wWinMain(
     // Register Trace provider by GUID
     TraceLoggingRegister(g_ConhostLauncherProvider);
 
-    // Pass command line and standard handles at this point in time as 
+    // Pass command line and standard handles at this point in time as
     // potential preferences for execution that were passed on process creation.
     ConsoleArguments args(GetCommandLineW(),
                           GetStdHandle(STD_INPUT_HANDLE),

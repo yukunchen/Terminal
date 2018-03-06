@@ -14,6 +14,23 @@
 
 #define NT_TESTNULL(var) (((var) == nullptr) ? STATUS_NO_MEMORY : STATUS_SUCCESS)
 
+DWORD RegistrySerialization::ToWin32RegistryType(_In_ const _RegPropertyType type)
+{
+    switch (type)
+    {
+        case _RegPropertyType::Boolean:
+        case _RegPropertyType::Dword:
+        case _RegPropertyType::Word:
+        case _RegPropertyType::Byte:
+        case _RegPropertyType::Coordinate:
+            return REG_DWORD;
+        case _RegPropertyType::String:
+            return REG_SZ;
+        default:
+            return REG_NONE;
+    }
+}
+
 // Registry settings to load (not all of them, some are special)
 const RegistrySerialization::_RegPropertyMap RegistrySerialization::s_PropertyMappings[] =
 {
@@ -70,7 +87,12 @@ NTSTATUS RegistrySerialization::s_LoadRegDword(_In_ HKEY const hKey, _In_ const 
     // attempt to load number into this field
     // If we're not successful, it's ok. Just don't fill it.
     DWORD dwValue;
-    NTSTATUS Status = s_QueryValue(hKey, pPropMap->pwszValueName, sizeof(dwValue), (PBYTE)& dwValue, nullptr);
+    NTSTATUS Status = s_QueryValue(hKey,
+                                   pPropMap->pwszValueName,
+                                   sizeof(dwValue),
+                                   ToWin32RegistryType(pPropMap->propertyType),
+                                   (PBYTE)& dwValue,
+                                   nullptr);
     if (NT_SUCCESS(Status))
     {
         switch (pPropMap->propertyType)
@@ -129,7 +151,12 @@ NTSTATUS RegistrySerialization::s_LoadRegString(_In_ HKEY const hKey, _In_ const
     NTSTATUS Status = NT_TESTNULL(pwchString);
     if (NT_SUCCESS(Status))
     {
-        Status = s_QueryValue(hKey, pPropMap->pwszValueName, (DWORD)(cchField) * sizeof(WCHAR), (PBYTE)pwchString, nullptr);
+        Status = s_QueryValue(hKey,
+                              pPropMap->pwszValueName,
+                              (DWORD)(cchField) * sizeof(WCHAR),
+                              ToWin32RegistryType(pPropMap->propertyType),
+                              (PBYTE)pwchString,
+                              nullptr);
         if (NT_SUCCESS(Status))
         {
             // ensure pwchString is null terminated
@@ -261,6 +288,7 @@ NTSTATUS RegistrySerialization::s_SetValue(_In_ HKEY const hKey,
 // - hKey - Handle to a registry key
 // - pwszValueName - Name of the value to query
 // - cbValueLength - Length of the provided data buffer.
+// - regType - the type of the registry key.
 // - pbData - Pointer to byte stream of data to fill with the registry value data.
 // - pcbDataLength - Number of bytes filled in the given data buffer
 // Return Value:
@@ -269,17 +297,23 @@ _Check_return_
 NTSTATUS RegistrySerialization::s_QueryValue(_In_ HKEY const hKey,
                                              _In_ PCWSTR const pwszValueName,
                                              _In_ DWORD const cbValueLength,
+                                             _In_ const DWORD regType,
                                              _Out_writes_bytes_(cbValueLength) BYTE* const pbData,
                                              _Out_opt_ _Out_range_(0, cbValueLength) DWORD* const pcbDataLength)
 {
     DWORD cbData = cbValueLength;
 
+    DWORD actualRegType = 0;
     LONG const Result = RegQueryValueExW(hKey,
                                          pwszValueName,
                                          nullptr,
-                                         nullptr,
+                                         &actualRegType,
                                          pbData,
                                          &cbData);
+    if (actualRegType != regType)
+    {
+        return STATUS_OBJECT_TYPE_MISMATCH;
+    }
 
     if (nullptr != pcbDataLength)
     {
@@ -352,7 +386,7 @@ NTSTATUS RegistrySerialization::s_UpdateValue(_In_ HKEY const hConsoleKey,
         bool fDeleteKey = false;
         if (hConsoleKey != hKey)
         {
-            Status = s_QueryValue(hConsoleKey, pwszValueName, sizeof(Data), Data, nullptr);
+            Status = s_QueryValue(hConsoleKey, pwszValueName, sizeof(Data), dwType, Data, nullptr);
             if (NT_SUCCESS(Status))
             {
                 fDeleteKey = (memcmp(pbData, Data, cbDataLength) == 0);

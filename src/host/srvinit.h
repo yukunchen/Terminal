@@ -24,3 +24,5 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, _In_ const BOOL fUnexp
 NTSTATUS ConsoleInitializeConnectInfo(_In_ PCONSOLE_API_MSG Message, _Out_ PCONSOLE_API_CONNECTINFO Cac);
 NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p);
 NTSTATUS RemoveConsole(_In_ ConsoleProcessHandle* ProcessData);
+
+void ConsoleCheckDebug();

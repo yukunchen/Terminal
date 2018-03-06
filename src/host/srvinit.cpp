@@ -221,7 +221,12 @@ void ConsoleCheckDebug()
     if (NT_SUCCESS(status))
     {
         DWORD dwData = 0;
-        status = RegistrySerialization::s_QueryValue(hConsole.get(), L"DebugLaunch", sizeof(dwData), (BYTE*)&dwData, nullptr);
+        status = RegistrySerialization::s_QueryValue(hConsole.get(),
+                                                     L"DebugLaunch",
+                                                     sizeof(dwData),
+                                                     REG_DWORD,
+                                                     (BYTE*)&dwData,
+                                                     nullptr);
 
         if (NT_SUCCESS(status))
         {

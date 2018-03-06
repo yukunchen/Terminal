@@ -118,7 +118,7 @@ VOID InitRegistryValues(
         pStateInfo->ColorTable[14] = RGB(0xFF,0xFF,0   );
         pStateInfo->ColorTable[15] = RGB(0xFF,0xFF,0xFF);
     }
-    
+
     pStateInfo->CodePage = OEMCP;
     pStateInfo->hWnd = NULL;
     pStateInfo->OriginalTitle = NULL;
@@ -180,6 +180,7 @@ DWORD GetRegistryValues(
         Status = RegistrySerialization::s_QueryValue(hConsoleKey,
                                                      CONSOLE_REGISTRY_CURRENTPAGE,
                                                      sizeof(dwValue),
+                                                     REG_DWORD,
                                                      (PBYTE)&dwValue,
                                                      NULL);
         if (NT_SUCCESS(Status)) {
@@ -212,6 +213,7 @@ DWORD GetRegistryValues(
     Status = RegistrySerialization::s_QueryValue(hTitleKey,
                                                  CONSOLE_REGISTRY_FILLATTR,
                                                  sizeof(dwValue),
+                                                 REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  NULL);
     if (NT_SUCCESS(Status)) {
@@ -225,6 +227,7 @@ DWORD GetRegistryValues(
     Status = RegistrySerialization::s_QueryValue(hTitleKey,
                                                  CONSOLE_REGISTRY_POPUPATTR,
                                                  sizeof(dwValue),
+                                                 REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  NULL);
     if (NT_SUCCESS(Status)) {
@@ -243,6 +246,7 @@ DWORD GetRegistryValues(
         Status = RegistrySerialization::s_QueryValue(hTitleKey,
                                                      awchBuffer,
                                                      sizeof(dwValue),
+                                                     REG_DWORD,
                                                      (PBYTE)&dwValue,
                                                      NULL);
         if (NT_SUCCESS(Status)) {
@@ -256,6 +260,7 @@ DWORD GetRegistryValues(
     Status = RegistrySerialization::s_QueryValue(hTitleKey,
                                                  CONSOLE_REGISTRY_INSERTMODE,
                                                  sizeof(dwValue),
+                                                 REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  NULL);
     if (NT_SUCCESS(Status)) {
@@ -268,6 +273,7 @@ DWORD GetRegistryValues(
     Status = RegistrySerialization::s_QueryValue(hTitleKey,
                                                  CONSOLE_REGISTRY_QUICKEDIT,
                                                  sizeof(dwValue),
+                                                 REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  NULL);
     if (NT_SUCCESS(Status)) {
@@ -282,6 +288,7 @@ DWORD GetRegistryValues(
     Status = RegistrySerialization::s_QueryValue(hTitleKey,
                                                  CONSOLE_REGISTRY_CODEPAGE,
                                                  sizeof(dwValue),
+                                                 REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  NULL);
     if (NT_SUCCESS(Status)) {
@@ -296,6 +303,7 @@ DWORD GetRegistryValues(
     Status = RegistrySerialization::s_QueryValue(hTitleKey,
                                                  CONSOLE_REGISTRY_BUFFERSIZE,
                                                  sizeof(dwValue),
+                                                 REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  NULL);
     if (NT_SUCCESS(Status)) {
@@ -309,6 +317,7 @@ DWORD GetRegistryValues(
     Status = RegistrySerialization::s_QueryValue(hTitleKey,
                                                  CONSOLE_REGISTRY_WINDOWSIZE,
                                                  sizeof(dwValue),
+                                                 REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  NULL);
     if (NT_SUCCESS(Status)) {
@@ -322,6 +331,7 @@ DWORD GetRegistryValues(
     Status = RegistrySerialization::s_QueryValue(hTitleKey,
                                                  CONSOLE_REGISTRY_WINDOWPOS,
                                                  sizeof(dwValue),
+                                                 REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  NULL);
     if (NT_SUCCESS(Status)) {
@@ -337,6 +347,7 @@ DWORD GetRegistryValues(
     Status = RegistrySerialization::s_QueryValue(hTitleKey,
                                                  CONSOLE_REGISTRY_FONTSIZE,
                                                  sizeof(dwValue),
+                                                 REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  NULL);
     if (NT_SUCCESS(Status)) {
@@ -350,6 +361,7 @@ DWORD GetRegistryValues(
     Status = RegistrySerialization::s_QueryValue(hTitleKey,
                                                  CONSOLE_REGISTRY_FONTFAMILY,
                                                  sizeof(dwValue),
+                                                 REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  NULL);
     if (NT_SUCCESS(Status)) {
@@ -362,6 +374,7 @@ DWORD GetRegistryValues(
     Status = RegistrySerialization::s_QueryValue(hTitleKey,
                                                  CONSOLE_REGISTRY_FONTWEIGHT,
                                                  sizeof(dwValue),
+                                                 REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  NULL);
     if (NT_SUCCESS(Status)) {
@@ -374,6 +387,7 @@ DWORD GetRegistryValues(
     Status = RegistrySerialization::s_QueryValue(hTitleKey,
                                                  CONSOLE_REGISTRY_FACENAME,
                                                  sizeof(awchBuffer),
+                                                 REG_SZ,
                                                  (PBYTE)awchBuffer,
                                                  NULL);
     if (NT_SUCCESS(Status)) {
@@ -386,6 +400,7 @@ DWORD GetRegistryValues(
     Status = RegistrySerialization::s_QueryValue(hTitleKey,
                                                  CONSOLE_REGISTRY_CURSORSIZE,
                                                  sizeof(dwValue),
+                                                 REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  NULL);
     if (NT_SUCCESS(Status)) {
@@ -398,6 +413,7 @@ DWORD GetRegistryValues(
     Status = RegistrySerialization::s_QueryValue(hTitleKey,
                                                  CONSOLE_REGISTRY_HISTORYSIZE,
                                                  sizeof(dwValue),
+                                                 REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  NULL);
     if (NT_SUCCESS(Status)) {
@@ -410,6 +426,7 @@ DWORD GetRegistryValues(
     Status = RegistrySerialization::s_QueryValue(hTitleKey,
                                                  CONSOLE_REGISTRY_HISTORYBUFS,
                                                  sizeof(dwValue),
+                                                 REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  NULL);
     if (NT_SUCCESS(Status)) {
@@ -422,6 +439,7 @@ DWORD GetRegistryValues(
     Status = RegistrySerialization::s_QueryValue(hTitleKey,
                                                  CONSOLE_REGISTRY_HISTORYNODUP,
                                                  sizeof(dwValue),
+                                                 REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  NULL);
     if (NT_SUCCESS(Status)) {
@@ -434,6 +452,7 @@ DWORD GetRegistryValues(
     Status = RegistrySerialization::s_QueryValue(hTitleKey,
                                                  CONSOLE_REGISTRY_LINEWRAP,
                                                  sizeof(dwValue),
+                                                 REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  NULL);
     if (NT_SUCCESS(Status)) {
@@ -446,6 +465,7 @@ DWORD GetRegistryValues(
     Status = RegistrySerialization::s_QueryValue(hTitleKey,
                                                  CONSOLE_REGISTRY_FILTERONPASTE,
                                                  sizeof(dwValue),
+                                                 REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  NULL);
     if (NT_SUCCESS(Status)) {
@@ -458,6 +478,7 @@ DWORD GetRegistryValues(
     Status = RegistrySerialization::s_QueryValue(hTitleKey,
                                                  CONSOLE_REGISTRY_CTRLKEYSHORTCUTS_DISABLED,
                                                  sizeof(dwValue),
+                                                 REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  NULL);
     if (NT_SUCCESS(Status)) {
@@ -470,6 +491,7 @@ DWORD GetRegistryValues(
     Status = RegistrySerialization::s_QueryValue(hTitleKey,
                                                  CONSOLE_REGISTRY_LINESELECTION,
                                                  sizeof(dwValue),
+                                                 REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  NULL);
     if (NT_SUCCESS(Status)) {
@@ -482,6 +504,7 @@ DWORD GetRegistryValues(
     Status = RegistrySerialization::s_QueryValue(hTitleKey,
                                                  CONSOLE_REGISTRY_WINDOWALPHA,
                                                  sizeof(dwValue),
+                                                 REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  NULL);
     if (NT_SUCCESS(Status)) {

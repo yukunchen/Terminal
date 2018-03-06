@@ -33,6 +33,7 @@ public:
     static NTSTATUS s_QueryValue(_In_ HKEY const hKey,
                                  _In_ PCWSTR const pwszValueName,
                                  _In_ DWORD const cbValueLength,
+                                 _In_ DWORD const regType,
                                  _Out_writes_bytes_(cbValueLength) BYTE* const pbData,
                                  _Out_opt_ _Out_range_(0, cbValueLength) DWORD* const pcbDataLength);
 
@@ -83,6 +84,8 @@ public:
         Coordinate,
         String,
     };
+
+    static DWORD ToWin32RegistryType(_In_ const _RegPropertyType type);
 
     typedef struct _RegPropertyMap
     {
