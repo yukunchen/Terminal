@@ -73,14 +73,11 @@ HRESULT PrintMonitorInfo(LPCWSTR pwszLabel, HMONITOR hmon)
 
 BOOL CALLBACK MonitorEnumProc(
     _In_ HMONITOR hMonitor,
-    _In_ HDC      hdcMonitor,
-    _In_ LPRECT   lprcMonitor,
-    _In_ LPARAM   dwData
+    _In_ HDC      /*hdcMonitor*/,
+    _In_ LPRECT   /*lprcMonitor*/,
+    _In_ LPARAM   /*dwData*/
     )
 {
-    UNREFERENCED_PARAMETER(hdcMonitor);
-    UNREFERENCED_PARAMETER(lprcMonitor);
-    UNREFERENCED_PARAMETER(dwData);
     PrintMonitorInfo(L"--- Monitor ---", hMonitor);
     wcout << endl;
     return TRUE;
@@ -126,11 +123,8 @@ BOOL s_UnadjustWindowRectExForDpi(_Inout_ LPRECT prc, _In_ const DWORD dwStyle, 
     return fRc;
 }
 
-int __cdecl wmain(int argc, WCHAR* argv[])
+int __cdecl wmain(int /*argc*/, WCHAR* /*argv*/[])
 {
-    UNREFERENCED_PARAMETER(argc);
-    UNREFERENCED_PARAMETER(argv);
-
     // set this or we'll get false values when asking for the DPI.
     SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
 
@@ -153,7 +147,7 @@ int __cdecl wmain(int argc, WCHAR* argv[])
     UINT dpix;
     UINT dpiy;
     RETURN_IF_FAILED(GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy));
-    
+
     RECT rc = { 0 };
     RETURN_IF_WIN32_BOOL_FALSE(GetWindowRect(hwnd, &rc));
 
@@ -171,7 +165,7 @@ int __cdecl wmain(int argc, WCHAR* argv[])
     SIZE szClient;
     szClient.cx = rc.right - rc.left;
     szClient.cy = rc.bottom - rc.top;
-    
+
     RETURN_IF_WIN32_BOOL_FALSE(GetClientRect(hwnd, &rc));
 
     PrintRect(L"Client Rect:", rc);
@@ -181,7 +175,7 @@ int __cdecl wmain(int argc, WCHAR* argv[])
     sz.cy = GetSystemMetrics(SM_CYVSCROLL);
 
     PrintSize(L"Scroll Bar Reservations (unscaled):", sz);
-    
+
     HMODULE hUser32 = LoadLibraryW(L"user32.dll");
     typedef int(*PfnGetDpiMetrics)(int nIndex, int dpi);
     bool fGotMetrics = false;
@@ -236,7 +230,7 @@ int __cdecl wmain(int argc, WCHAR* argv[])
     {
         wcout << GetLastError() << endl;
     }
-    
+
     PrintRect(L"Viewport (chars):", csbiex.srWindow);
     PrintSize(L"Max Window Size (chars):", csbiex.dwMaximumWindowSize);
     PrintSize(L"Cursor Pos (chars):", csbiex.dwCursorPosition);

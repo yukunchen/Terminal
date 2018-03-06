@@ -19,13 +19,11 @@
 using namespace Microsoft::Console::Interactivity::OneCore;
 
 
-DWORD ConsoleInputThreadProcOneCore(LPVOID lpParam)
+DWORD ConsoleInputThreadProcOneCore(LPVOID /*lpParam*/)
 {
-    UNREFERENCED_PARAMETER(lpParam);
-    
-    Globals * const Globals = ServiceLocator::LocateGlobals();
+    Globals& globals = ServiceLocator::LocateGlobals();
     ConIoSrvComm * const Server = ServiceLocator::LocateInputServices<ConIoSrvComm>();
-    
+
     NTSTATUS Status = Server->Connect();
 
     if (NT_SUCCESS(Status))
@@ -44,7 +42,7 @@ DWORD ConsoleInputThreadProcOneCore(LPVOID lpParam)
                 ServiceLocator::SetConsoleWindowInstance(wnd);
 
                 // The console's renderer should be created before we get here.
-                ASSERT(Globals->pRender != nullptr);
+                ASSERT(globals.pRender != nullptr);
 
                 switch (DisplayMode)
                 {
@@ -59,8 +57,8 @@ DWORD ConsoleInputThreadProcOneCore(LPVOID lpParam)
 
                 if (NT_SUCCESS(Status))
                 {
-                    Globals->ntstatusConsoleInputInitStatus = Status;
-                    Globals->hConsoleInputInitEvent.SetEvent();
+                    globals.ntstatusConsoleInputInitStatus = Status;
+                    globals.hConsoleInputInitEvent.SetEvent();
 
                     // Start listening for input (returns on failure only).
                     // This will never return.
@@ -86,7 +84,7 @@ DWORD ConsoleInputThreadProcOneCore(LPVOID lpParam)
         {
             Status = STATUS_SUCCESS;
         }
-        
+
         // Notify IO thread of our status.
         Server->CleanupForHeadless(Status);
     }

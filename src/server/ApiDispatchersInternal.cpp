@@ -25,7 +25,7 @@ HRESULT ApiDispatchers::ServerDeprecatedApi(_Inout_ CONSOLE_API_MSG * const m, _
 
 HRESULT ApiDispatchers::ServerGetConsoleProcessList(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     PCONSOLE_GETCONSOLEPROCESSLIST_MSG const a = &m->u.consoleMsgL3.GetConsoleProcessList;
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleProcessList);
 
@@ -46,7 +46,7 @@ HRESULT ApiDispatchers::ServerGetConsoleProcessList(_Inout_ CONSOLE_API_MSG * co
 
     LPDWORD lpdwProcessList = (PDWORD)Buffer;
     size_t cProcessList = a->dwProcessCount;
-    if (SUCCEEDED(gci->ProcessHandleList.GetProcessList(lpdwProcessList, &cProcessList)))
+    if (SUCCEEDED(gci.ProcessHandleList.GetProcessList(lpdwProcessList, &cProcessList)))
     {
         m->SetReplyInformation(cProcessList * sizeof(ULONG));
     }
@@ -67,7 +67,7 @@ HRESULT ApiDispatchers::ServerGetConsoleLangId(_Inout_ CONSOLE_API_MSG * const m
 
 HRESULT ApiDispatchers::ServerGenerateConsoleCtrlEvent(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     CONSOLE_CTRLEVENT_MSG* const a = &m->u.consoleMsgL2.GenerateConsoleCtrlEvent;
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GenerateConsoleCtrlEvent);
 
@@ -78,7 +78,7 @@ HRESULT ApiDispatchers::ServerGenerateConsoleCtrlEvent(_Inout_ CONSOLE_API_MSG *
     if (a->ProcessGroupId != 0)
     {
         ConsoleProcessHandle* ProcessHandle;
-        ProcessHandle = gci->ProcessHandleList.FindProcessByGroupId(a->ProcessGroupId);
+        ProcessHandle = gci.ProcessHandleList.FindProcessByGroupId(a->ProcessGroupId);
         if (ProcessHandle == nullptr)
         {
             ULONG ProcessId = a->ProcessGroupId;
@@ -86,9 +86,9 @@ HRESULT ApiDispatchers::ServerGenerateConsoleCtrlEvent(_Inout_ CONSOLE_API_MSG *
             // We didn't find a process with that group ID.
             // Let's see if the process with that ID exists and has a parent that is a member of this console.
             RETURN_IF_NTSTATUS_FAILED((NtPrivApi::s_GetProcessParentId(&ProcessId)));
-            ProcessHandle = gci->ProcessHandleList.FindProcessInList(ProcessId);
+            ProcessHandle = gci.ProcessHandleList.FindProcessInList(ProcessId);
             RETURN_HR_IF_NULL(E_INVALIDARG, ProcessHandle);
-            RETURN_IF_FAILED(gci->ProcessHandleList.AllocProcessData(a->ProcessGroupId,
+            RETURN_IF_FAILED(gci.ProcessHandleList.AllocProcessData(a->ProcessGroupId,
                                                                                        0,
                                                                                        a->ProcessGroupId,
                                                                                        ProcessHandle,
@@ -96,7 +96,7 @@ HRESULT ApiDispatchers::ServerGenerateConsoleCtrlEvent(_Inout_ CONSOLE_API_MSG *
         }
     }
 
-    gci->LimitingProcessId = a->ProcessGroupId;
+    gci.LimitingProcessId = a->ProcessGroupId;
     HandleCtrlEvent(a->CtrlEvent);
 
     return S_OK;

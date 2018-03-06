@@ -23,7 +23,7 @@ Revision History:
 void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
                                _In_ SHORT cchBuffer,
                                _In_ PSCREEN_INFORMATION pScreenInfo,
-                               _Inout_updates_(cchBuffer) PCHAR const pchBuffer,
+                               _Inout_updates_(cchBuffer) DbcsAttribute* const pDbcsAttributes,
                                _In_ const bool fWasLineWrapped);
 
 NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimensions.Y * sizeof(CHAR_INFO)) PBYTE const prgbSrc,

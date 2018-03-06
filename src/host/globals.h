@@ -45,7 +45,7 @@ public:
 
      ConsoleArguments launchArgs;
 
-     CONSOLE_INFORMATION* getConsoleInformation();
+     CONSOLE_INFORMATION& getConsoleInformation();
 
      DeviceComm* pDeviceComm;
 
@@ -63,11 +63,11 @@ public:
      WCHAR aWordDelimChars[WORD_DELIM_MAX];
 
      IRenderer* pRender;
-     
+
      IFontDefaultList* pFontDefaultList;
 
      bool IsHeadless() const;
 
 private:
-     CONSOLE_INFORMATION* ciConsoleInformation;
+     CONSOLE_INFORMATION ciConsoleInformation;
 };

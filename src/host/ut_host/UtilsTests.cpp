@@ -209,7 +209,7 @@ class UtilsTests
 
     TEST_METHOD(TestCompareCoords)
     {
-        const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         int result = 5; // not 1, 0, or -1
         COORD coordA;
         COORD coordB;
@@ -218,7 +218,7 @@ class UtilsTests
         COORD coordMaxBuffer;
         coordMaxBuffer.X = SHORT_MAX;
         coordMaxBuffer.Y = SHORT_MAX;
-        gci->CurrentScreenBuffer->SetScreenBufferSize(coordMaxBuffer);
+        gci.CurrentScreenBuffer->SetScreenBufferSize(coordMaxBuffer);
 
         Log::Comment(L"#1: 0 case. Coords equal");
         FillBothCoordsSameRandom(&coordA, &coordB);

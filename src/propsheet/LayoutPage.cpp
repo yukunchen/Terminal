@@ -9,9 +9,8 @@ BOOL g_fScreenSizeDlgInitialized = FALSE;
 BOOL g_fInScreenSizeSETACTIVE = FALSE;
 
 
-BOOL GetStateInfo(HWND hDlg, UINT Item, __out LPINT lpValue)
+BOOL GetStateInfo(HWND /*hDlg*/, UINT Item, __out LPINT lpValue)
 {
-    UNREFERENCED_PARAMETER(hDlg);
     BOOL bRet = TRUE;
     int Value;
 

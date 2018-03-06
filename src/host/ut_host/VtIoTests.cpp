@@ -41,7 +41,7 @@ class Microsoft::Console::VirtualTerminal::VtIoTests
     TEST_METHOD(OnePipeMultipleInstancesTest);
     TEST_METHOD(PipeAlreadyOpenedTest);
     TEST_METHOD(MultipleInstancesPipeAlreadyOpenedTest);
-    
+
     TEST_METHOD(DtorTestJustEngine);
     TEST_METHOD(DtorTestDeleteVtio);
     TEST_METHOD(DtorTestStackAlloc);
@@ -73,12 +73,11 @@ using namespace Microsoft::Console::Types;
 
 void VtIoTests::NoOpStartTest()
 {
-    VtIo* vtio = new VtIo();
-    VERIFY_IS_NOT_NULL(vtio);
-    VERIFY_IS_FALSE(vtio->IsUsingVt());
+    VtIo vtio;
+    VERIFY_IS_FALSE(vtio.IsUsingVt());
 
     Log::Comment(L"Verify we succeed at StartIfNeeded even if we weren't initialized");
-    VERIFY_SUCCEEDED(vtio->StartIfNeeded());
+    VERIFY_SUCCEEDED(vtio.StartIfNeeded());
 }
 
 void VtIoTests::ModeParsingTest()
@@ -98,10 +97,9 @@ void VtIoTests::ModeParsingTest()
 
     VERIFY_SUCCEEDED(VtIo::ParseIoMode(L"", mode));
     VERIFY_ARE_EQUAL(mode, VtIoMode::XTERM_256);
-    
+
     VERIFY_FAILED(VtIo::ParseIoMode(L"garbage", mode));
     VERIFY_ARE_EQUAL(mode, VtIoMode::INVALID);
-
 }
 
 void VtIoTests::BasicPipeOpeningTest()
@@ -159,7 +157,7 @@ void VtIoTests::BasicPipeOpeningTest()
     {
         HRESULT lastError = (HRESULT)GetLastError();
         VERIFY_ARE_EQUAL(lastError, ERROR_PIPE_CONNECTED);
-    }    
+    }
 
 }
 
@@ -277,7 +275,7 @@ void VtIoTests::NonOverlappedInModeTest()
     {
         HRESULT lastError = (HRESULT)GetLastError();
         VERIFY_ARE_EQUAL(lastError, ERROR_PIPE_CONNECTED);
-    }    
+    }
 }
 
 void VtIoTests::NonDuplexInModeTest()
@@ -334,7 +332,7 @@ void VtIoTests::NonDuplexInModeTest()
     {
         HRESULT lastError = (HRESULT)GetLastError();
         VERIFY_ARE_EQUAL(lastError, ERROR_PIPE_CONNECTED);
-    }    
+    }
 
 }
 
@@ -422,7 +420,7 @@ void VtIoTests::WrongOutModeTest()
 
 void VtIoTests::MultipleInstanceTest()
 {
-    
+
     Log::Comment(L"The basic case but multiple instances of the named pipe can be opened");
     // DUPLEX is definitely acceptable for the inpipe, but I think we ideally want non-overlapped...
     // I don't do anything overlapped, so I thin k that flag doesn't need to be there.
@@ -476,7 +474,7 @@ void VtIoTests::MultipleInstanceTest()
     {
         HRESULT lastError = (HRESULT)GetLastError();
         VERIFY_ARE_EQUAL(lastError, ERROR_PIPE_CONNECTED);
-    }    
+    }
 }
 
 void VtIoTests::OnePipeForBothTest()
@@ -577,11 +575,11 @@ void VtIoTests::PipeAlreadyOpenedTest()
     Log::Comment(L"\topen one of the pipes");
 
     HANDLE blocker = CreateFileW(inPipeName.c_str(),
-                                 GENERIC_READ, 
-                                 0, 
-                                 nullptr, 
-                                 OPEN_EXISTING, 
-                                 FILE_ATTRIBUTE_NORMAL, 
+                                 GENERIC_READ,
+                                 0,
+                                 nullptr,
+                                 OPEN_EXISTING,
+                                 FILE_ATTRIBUTE_NORMAL,
                                  nullptr);
     VERIFY_ARE_NOT_EQUAL(blocker, INVALID_HANDLE_VALUE);
     auto blockerCleanup = wil::ScopeExit([&]{
@@ -636,11 +634,11 @@ void VtIoTests::MultipleInstancesPipeAlreadyOpenedTest()
     Log::Comment(L"\topen one of the pipes");
 
     HANDLE blocker = CreateFileW(inPipeName.c_str(),
-                                 GENERIC_READ, 
-                                 0, 
-                                 nullptr, 
-                                 OPEN_EXISTING, 
-                                 FILE_ATTRIBUTE_NORMAL, 
+                                 GENERIC_READ,
+                                 0,
+                                 nullptr,
+                                 OPEN_EXISTING,
+                                 FILE_ATTRIBUTE_NORMAL,
                                  nullptr);
     VERIFY_ARE_NOT_EQUAL(blocker, INVALID_HANDLE_VALUE);
     auto blockerCleanup = wil::ScopeExit([&]{
@@ -709,7 +707,7 @@ void VtIoTests::DtorTestJustEngine()
         Log::Comment(NoThrowString().Format(L"Made XtermEngine"));
         delete pRenderEngineXtermAscii;
         Log::Comment(NoThrowString().Format(L"Deleted."));
-        
+
         hOutputFile.reset(INVALID_HANDLE_VALUE);
 
         auto pRenderEngineWinTelnet = new WinTelnetEngine(std::move(hOutputFile), p, SetUpViewport(), colorTable, colorTableSize);
@@ -757,7 +755,7 @@ void VtIoTests::DtorTestDeleteVtio()
         delete vtio;
         Log::Comment(NoThrowString().Format(L"Deleted."));
 
-        hOutputFile = wil::unique_hfile(INVALID_HANDLE_VALUE);      
+        hOutputFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
         vtio = new VtIo();
         Log::Comment(NoThrowString().Format(L"Made VtIo"));
         vtio->_pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
@@ -782,7 +780,7 @@ void VtIoTests::DtorTestDeleteVtio()
         Log::Comment(NoThrowString().Format(L"Made XtermEngine"));
         delete vtio;
         Log::Comment(NoThrowString().Format(L"Deleted."));
-        
+
         hOutputFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
         vtio = new VtIo();
         Log::Comment(NoThrowString().Format(L"Made VtIo"));
@@ -819,7 +817,7 @@ void VtIoTests::DtorTestStackAlloc()
         Log::Comment(NoThrowString().Format(
             L"Scope Exit Auto cleanup #%d", i
         ));
-    
+
         wil::unique_hfile hOutputFile;
 
         hOutputFile.reset(INVALID_HANDLE_VALUE);
@@ -853,7 +851,7 @@ void VtIoTests::DtorTestStackAlloc()
                                                                   colorTableSize,
                                                                   true);
         }
-        
+
         hOutputFile.reset(INVALID_HANDLE_VALUE);
         {
             VtIo vtio = VtIo();
@@ -888,7 +886,7 @@ void VtIoTests::DtorTestStackAllocMany()
         Log::Comment(NoThrowString().Format(
             L"Multiple engines, one scope loop #%d", i
         ));
-    
+
         wil::unique_hfile hOutputFile;
         {
             hOutputFile.reset(INVALID_HANDLE_VALUE);
@@ -989,10 +987,10 @@ void VtIoTests::DtorTestNonDuplexInModeTest()
             VERIFY_SUCCEEDED(vtio._Initialize(inPipeName, outPipeName, L""));
             VERIFY_IS_TRUE(vtio.IsUsingVt());
 
-            Log::Comment(L"\tconnecting the pipes isn't relevant here, repros without that part.");   
+            Log::Comment(L"\tconnecting the pipes isn't relevant here, repros without that part.");
 
         }
-        Log::Comment(L"Bottom of scope.");  
+        Log::Comment(L"Bottom of scope.");
     }
 
 }
@@ -1042,10 +1040,10 @@ void VtIoTests::DtorTestNonDuplexInModeTestModified()
             VERIFY_IS_FALSE(vtio.IsUsingVt());
             VERIFY_SUCCEEDED(vtio._Initialize(inPipeName, outPipeName, L""));
             VERIFY_IS_NOT_NULL(vtio._pVtRenderEngine);
-            Log::Comment(L"\tconnecting the pipes isn't relevant here, repros without that part.");   
+            Log::Comment(L"\tconnecting the pipes isn't relevant here, repros without that part.");
 
         }
-        Log::Comment(L"Bottom of scope.");  
+        Log::Comment(L"Bottom of scope.");
     }
 }
 

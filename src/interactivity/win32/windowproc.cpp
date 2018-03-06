@@ -87,8 +87,8 @@ LRESULT CALLBACK Window::s_ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, 
 
 LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _In_ WPARAM wParam, _In_ LPARAM lParam)
 {
-    Globals* const g = ServiceLocator::LocateGlobals();
-    CONSOLE_INFORMATION* const gci = g->getConsoleInformation();
+    Globals& g = ServiceLocator::LocateGlobals();
+    CONSOLE_INFORMATION& gci = g.getConsoleInformation();
     LRESULT Status = 0;
     BOOL Unlock = TRUE;
 
@@ -145,7 +145,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy); // If this fails, we'll use the default of 96.
 
         // Pick one and set it to the global DPI.
-        ServiceLocator::LocateGlobals()->dpi = (int)dpix;
+        ServiceLocator::LocateGlobals().dpi = (int)dpix;
 
         _UpdateSystemMetrics(); // scroll bars and cursors and such.
         s_ReinitializeFontsForDPIChange(); // font sizes.
@@ -204,14 +204,14 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
         // First retrieve the new DPI and the current DPI.
         DWORD const dpiProposed = (WORD)wParam;
-        DWORD const dpiCurrent = g->dpi;
+        DWORD const dpiCurrent = g.dpi;
 
         // Now we need to get what the font size *would be* if we had this new DPI. We need to ask the renderer about that.
         FontInfo* pfiCurrent = ScreenInfo->TextInfo->GetCurrentFont();
         FontInfoDesired fiDesired(*pfiCurrent);
         FontInfo fiProposed(nullptr, 0, 0, { 0, 0 }, 0);
 
-        const HRESULT hr = g->pRender->GetProposedFont(dpiProposed, &fiDesired, &fiProposed); 
+        const HRESULT hr = g.pRender->GetProposedFont(dpiProposed, &fiDesired, &fiProposed);
         // fiProposal will be updated by the renderer for this new font.
         // GetProposedFont can fail if there's no render engine yet.
         // This can happen if we're headless.
@@ -248,7 +248,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
     case WM_DPICHANGED:
     {
         _fInDPIChange = true;
-        ServiceLocator::LocateGlobals()->dpi = HIWORD(wParam);
+        ServiceLocator::LocateGlobals().dpi = HIWORD(wParam);
         _UpdateSystemMetrics();
         s_ReinitializeFontsForDPIChange();
 
@@ -276,7 +276,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         // we don't pass the click on to the app.
         if (LOWORD(wParam) == WA_CLICKACTIVE)
         {
-            gci->Flags |= CONSOLE_IGNORE_NEXT_MOUSE_INPUT;
+            gci.Flags |= CONSOLE_IGNORE_NEXT_MOUSE_INPUT;
         }
         goto CallDefWin;
         break;
@@ -284,11 +284,11 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
     case WM_SETFOCUS:
     {
-        gci->ProcessHandleList.ModifyConsoleProcessFocus(TRUE);
+        gci.ProcessHandleList.ModifyConsoleProcessFocus(TRUE);
 
-        gci->Flags |= CONSOLE_HAS_FOCUS;
+        gci.Flags |= CONSOLE_HAS_FOCUS;
 
-        gci->CurrentScreenBuffer->TextInfo->GetCursor()->FocusStart();
+        gci.CurrentScreenBuffer->TextInfo->GetCursor()->FocusStart();
 
         HandleFocusEvent(TRUE);
 
@@ -306,13 +306,13 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
     case WM_KILLFOCUS:
     {
-        gci->ProcessHandleList.ModifyConsoleProcessFocus(FALSE);
+        gci.ProcessHandleList.ModifyConsoleProcessFocus(FALSE);
 
-        gci->Flags &= ~CONSOLE_HAS_FOCUS;
+        gci.Flags &= ~CONSOLE_HAS_FOCUS;
 
         // turn it off when we lose focus.
-        gci->CurrentScreenBuffer->TextInfo->GetCursor()->SetIsOn(FALSE);
-        gci->CurrentScreenBuffer->TextInfo->GetCursor()->FocusEnd();
+        gci.CurrentScreenBuffer->TextInfo->GetCursor()->SetIsOn(FALSE);
+        gci.CurrentScreenBuffer->TextInfo->GetCursor()->FocusEnd();
 
         HandleFocusEvent(FALSE);
 
@@ -328,11 +328,11 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         //       That means this CONSOLE_IS_ICONIC is unnnecessary when/if we can decouple the drawing with D2D.
         if (IsIconic(hWnd))
         {
-            SetFlag(gci->Flags, CONSOLE_IS_ICONIC);
+            SetFlag(gci.Flags, CONSOLE_IS_ICONIC);
         }
         else
         {
-            ClearFlag(gci->Flags, CONSOLE_IS_ICONIC);
+            ClearFlag(gci.Flags, CONSOLE_IS_ICONIC);
         }
 
         LOG_IF_FAILED(_HandlePaint());
@@ -363,7 +363,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
     case WM_SETTINGCHANGE:
     {
-        gci->CurrentScreenBuffer->TextInfo->GetCursor()->SettingsChanged();
+        gci.CurrentScreenBuffer->TextInfo->GetCursor()->SettingsChanged();
     }
     __fallthrough;
 
@@ -457,7 +457,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
                 // for the DPI change, so we're likely to shrink the window too much.
                 // We'll get a WM_DPICHANGED, resize the window, and then process the restriction
                 // in a few window messages.
-                if (((int)suggestedDpi == g->dpi) || ((_sizeMaximum.cx == 0) && (_sizeMaximum.cy == 0)))
+                if (((int)suggestedDpi == g.dpi) || ((_sizeMaximum.cx == 0) && (_sizeMaximum.cy == 0)))
                 {
                     _sizeMaximum.cx = RECT_WIDTH(&rcMaximum);
                     _sizeMaximum.cy = RECT_HEIGHT(&rcMaximum);
@@ -498,7 +498,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         // NOTE: This stopped being possible in RS4 as the DPI now changes when and only when
         // we receive WM_DPICHANGED. We keep this check around so that we perform better downlevel.
         int const dpi = ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->GetWindowDPI(hWnd);
-        if (dpi == g->dpi)
+        if (dpi == ServiceLocator::LocateGlobals().dpi)
         {
             _HandleWindowPosChanged(lParam);
         }
@@ -724,10 +724,8 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
     case CM_UPDATE_EDITKEYS:
     {
-        auto settings = gci;
-
         // Re-read the edit key settings from registry.
-        Registry reg(settings);
+        Registry reg(&gci);
         reg.GetEditKeys(NULL);
         break;
     }
@@ -873,12 +871,12 @@ HRESULT Window::_HandlePaint() const
     HDC const hdc = BeginPaint(hwnd, &ps);
     RETURN_HR_IF_NULL(E_FAIL, hdc);
 
-    if (ServiceLocator::LocateGlobals()->pRender != nullptr)
+    if (ServiceLocator::LocateGlobals().pRender != nullptr)
     {
         // In lieu of actually painting right now, we're just going to aggregate this information in the renderer
         // and let it paint whenever it feels appropriate.
         RECT const rcUpdate = ps.rcPaint;
-        ServiceLocator::LocateGlobals()->pRender->TriggerSystemRedraw(&rcUpdate);
+        ServiceLocator::LocateGlobals().pRender->TriggerSystemRedraw(&rcUpdate);
     }
 
     LOG_IF_WIN32_BOOL_FALSE(EndPaint(hwnd, &ps));
@@ -949,7 +947,7 @@ LRESULT Window::_HandleGetObject(_In_ HWND const hwnd, _In_ WPARAM const wParam,
 
 BOOL Window::PostUpdateWindowSize() const
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION* const ScreenInfo = GetScreenInfo();
 
     if (ScreenInfo->ConvScreenInfo != nullptr)
@@ -957,12 +955,12 @@ BOOL Window::PostUpdateWindowSize() const
         return FALSE;
     }
 
-    if (gci->Flags & CONSOLE_SETTING_WINDOW_SIZE)
+    if (gci.Flags & CONSOLE_SETTING_WINDOW_SIZE)
     {
         return FALSE;
     }
 
-    gci->Flags |= CONSOLE_SETTING_WINDOW_SIZE;
+    gci.Flags |= CONSOLE_SETTING_WINDOW_SIZE;
     return PostMessageW(GetWindowHandle(), CM_SET_WINDOW_SIZE, (WPARAM)ScreenInfo, 0);
 }
 

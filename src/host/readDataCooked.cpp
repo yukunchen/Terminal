@@ -113,8 +113,8 @@ BOOL COOKED_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason
                               _Out_ DWORD* const pControlKeyState,
                               _Out_ void* const /*pOutputData*/)
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    ASSERT(gci->IsConsoleLocked());
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    ASSERT(gci.IsConsoleLocked());
 
     *pNumBytes = 0;
     *pControlKeyState = 0;
@@ -136,7 +136,7 @@ BOOL COOKED_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason
         *pReplyStatus = STATUS_ALERTED;
         delete[] _BackupLimit;
         delete[] ExeName;
-        gci->lpCookedReadData = nullptr;
+        gci.lpCookedReadData = nullptr;
         _pTempHandle->CloseHandle();
         return TRUE;
     }
@@ -150,7 +150,7 @@ BOOL COOKED_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason
         CleanUpPopups(this);
         delete[] _BackupLimit;
         delete[] ExeName;
-        gci->lpCookedReadData = nullptr;
+        gci.lpCookedReadData = nullptr;
         _pTempHandle->CloseHandle();
         return TRUE;
     }
@@ -167,7 +167,7 @@ BOOL COOKED_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason
         CleanUpPopups(this);
         delete[] _BackupLimit;
         delete[] ExeName;
-        gci->lpCookedReadData = nullptr;
+        gci.lpCookedReadData = nullptr;
         _pTempHandle->CloseHandle();
         return TRUE;
     }
@@ -179,7 +179,7 @@ BOOL COOKED_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason
     // this routine should be called by a thread owning the same
     // lock on the same console as we're reading from.
 
-    ASSERT(gci->IsConsoleLocked());
+    ASSERT(gci.IsConsoleLocked());
 
     // MSFT:13994975 This is REALLY weird.
     // When we're doing cooked reading for popups, we come through this method
@@ -228,7 +228,7 @@ BOOL COOKED_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason
                     delete[] _BackupLimit;
                 }
                 delete[] ExeName;
-                gci->lpCookedReadData = nullptr;
+                gci.lpCookedReadData = nullptr;
                 _pTempHandle->CloseHandle();
 
                 return TRUE;
@@ -240,7 +240,7 @@ BOOL COOKED_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason
     *pReplyStatus = CookedRead(this, !!fIsUnicode, pNumBytes, pControlKeyState);
     if (*pReplyStatus != CONSOLE_STATUS_WAIT)
     {
-        gci->lpCookedReadData = nullptr;
+        gci.lpCookedReadData = nullptr;
         _pTempHandle->CloseHandle();
         return TRUE;
     }
@@ -266,7 +266,7 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
                     _Inout_ ULONG* const cbNumBytes,
                     _Out_ ULONG* const ulControlKeyState)
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     NTSTATUS Status = STATUS_SUCCESS;
     *ulControlKeyState = 0;
 
@@ -335,7 +335,7 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
         {
             if (ProcessCookedReadInput(pCookedReadData, Char, KeyState, &Status))
             {
-                gci->Flags |= CONSOLE_IGNORE_NEXT_KEYUP;
+                gci.Flags |= CONSOLE_IGNORE_NEXT_KEYUP;
                 break;
             }
         }
@@ -375,7 +375,7 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
                 AddCommand(pCookedReadData->_CommandHistory,
                            pCookedReadData->_BackupLimit,
                            (USHORT)StringLength,
-                           IsFlagSet(gci->Flags, CONSOLE_HISTORY_NODUP));
+                           IsFlagSet(gci.Flags, CONSOLE_HISTORY_NODUP));
 
                 // check for alias
                 i = pCookedReadData->_BufferSize;
@@ -565,7 +565,7 @@ BOOL ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
                             _In_ const DWORD dwKeyState,
                             _Out_ NTSTATUS* pStatus)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     DWORD NumSpaces = 0;
     SHORT ScrollY = 0;
     ULONG NumToWrite;
@@ -603,7 +603,7 @@ BOOL ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
 
         if (wch != UNICODE_BACKSPACE || pCookedReadData->_BufPtr != pCookedReadData->_BackupLimit)
         {
-            fStartFromDelim = gci->GetExtendedEditKey() && IS_WORD_DELIM(pCookedReadData->_BufPtr[-1]);
+            fStartFromDelim = gci.GetExtendedEditKey() && IS_WORD_DELIM(pCookedReadData->_BufPtr[-1]);
 
         eol_repeat:
             if (pCookedReadData->_Echo)
@@ -638,7 +638,7 @@ BOOL ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
                 pCookedReadData->_CurrentPosition -= 1;
 
                 // Repeat until it hits the word boundary
-                if (gci->GetExtendedEditKey() &&
+                if (gci.GetExtendedEditKey() &&
                     wchOrig == EXTKEY_ERASE_PREV_WORD &&
                     pCookedReadData->_BufPtr != pCookedReadData->_BackupLimit &&
                     fStartFromDelim ^ !IS_WORD_DELIM(pCookedReadData->_BufPtr[-1]))
@@ -677,7 +677,7 @@ BOOL ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
             if (pCookedReadData->_BufPtr != pCookedReadData->_BackupLimit)
             {
 
-                fStartFromDelim = gci->GetExtendedEditKey() && IS_WORD_DELIM(pCookedReadData->_BufPtr[-1]);
+                fStartFromDelim = gci.GetExtendedEditKey() && IS_WORD_DELIM(pCookedReadData->_BufPtr[-1]);
 
             bs_repeat:
                 // we call writechar here so that cursor position gets updated
@@ -714,7 +714,7 @@ BOOL ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
                 NumSpaces = 0;
 
                 // Repeat until it hits the word boundary
-                if (gci->GetExtendedEditKey() &&
+                if (gci.GetExtendedEditKey() &&
                     wchOrig == EXTKEY_ERASE_PREV_WORD &&
                     pCookedReadData->_BufPtr != pCookedReadData->_BackupLimit &&
                     fStartFromDelim ^ !IS_WORD_DELIM(pCookedReadData->_BufPtr[-1]))
@@ -878,7 +878,7 @@ BOOL ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
         // reset the cursor back to 25% if necessary
         if (pCookedReadData->_Line)
         {
-            if (pCookedReadData->_InsertMode != gci->GetInsertMode())
+            if (pCookedReadData->_InsertMode != gci.GetInsertMode())
             {
                 // Make cursor small.
                 ProcessCommandLine(pCookedReadData, VK_INSERT, 0);

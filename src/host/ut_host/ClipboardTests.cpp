@@ -74,14 +74,14 @@ class ClipboardTests
 
     void SetupRetrieveFromBuffers(bool fLineSelection, SMALL_RECT** prgsrSelection, PWCHAR** prgTempRows, size_t** prgTempRowLengths)
     {
-        const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // NOTE: This test requires innate knowledge of how the common buffer text is emitted in order to test all cases
         // Please see CommonState.hpp for information on the buffer state per row, the row contents, etc.
 
         // set up and try to retrieve the first 4 rows from the buffer
-        SCREEN_INFORMATION* pScreenInfo = gci->CurrentScreenBuffer;
+        const SCREEN_INFORMATION* const pScreenInfo = gci.CurrentScreenBuffer;
 
-        SMALL_RECT* rgsrSelection = new SMALL_RECT[cRectsSelected];
+        SMALL_RECT* const rgsrSelection = new SMALL_RECT[cRectsSelected];
 
         rgsrSelection[0].Top = rgsrSelection[0].Bottom = 0;
         rgsrSelection[0].Left = 0;
@@ -374,7 +374,7 @@ class ClipboardTests
     {
         const std::wstring wstr = L"\xbc"; // ¼ char U+00BC
         const UINT outputCodepage = CP_JAPANESE;
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP = outputCodepage;
+        ServiceLocator::LocateGlobals().getConsoleInformation().OutputCP = outputCodepage;
         std::deque<std::unique_ptr<IInputEvent>> events = Clipboard::Instance().TextToKeyEvents(wstr.c_str(),
                                                                                                 wstr.size());
 

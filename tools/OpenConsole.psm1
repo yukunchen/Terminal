@@ -112,10 +112,15 @@ function Invoke-OpenConsoleTests()
         Write-Host "Invalid combination of flags" -ForegroundColor Red
         return
     }
-    $OpenConsolePath = "$env:OpenConsoleroot\bin\$Platform\$Configuration\OpenConsole.exe"
+    $OpenConsolePlatform = $Platform
+    if ($Platform -eq 'x86')
+    {
+        $OpenConsolePlatform = 'Win32'
+    }
+    $OpenConsolePath = "$env:OpenConsoleroot\bin\$OpenConsolePlatform\$Configuration\OpenConsole.exe"
     $RunTePath = "$env:OpenConsoleRoot\tools\runte.cmd"
     $TaefExePath = "$env:OpenConsoleRoot\dep\ddk\TAEF\$Platform\te.exe"
-    $BinDir = "$env:OpenConsoleRoot\bin\$Platform\$Configuration"
+    $BinDir = "$env:OpenConsoleRoot\bin\$OpenConsolePlatform\$Configuration"
     [xml]$TestConfig = Get-Content "$env:OpenConsoleRoot\tools\tests.xml"
 
     # check if WinAppDriver needs to be started
