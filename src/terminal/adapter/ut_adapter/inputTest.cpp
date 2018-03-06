@@ -118,7 +118,7 @@ void InputTest::s_TerminalInputTestNullCallback(_In_ std::deque<std::unique_ptr<
     VERIFY_SUCCEEDED(IInputEvent::ToInputRecords(inEvents, rgInput, cInput));
     VERIFY_IS_NOT_NULL(rgInput);
     auto cleanup = wil::ScopeExit([&]{delete[] rgInput;});
-    
+
     if (cInput == 1)
     {
         Log::Comment(L"We are expecting a null input event.");
@@ -133,7 +133,6 @@ void InputTest::s_TerminalInputTestNullCallback(_In_ std::deque<std::unique_ptr<
         irExpected.Event.KeyEvent.uChar.UnicodeChar = L'\x0';
 
         VERIFY_ARE_EQUAL(irExpected, rgInput[0]);
-
     }
     else if (cInput == 2)
     {
@@ -506,12 +505,12 @@ void InputTest::TerminalInputModifierKeyTests()
             break;
         default:
             // Alt+Key generates [0x1b, key] into the stream
-            if (AltPressed(uiKeystate) && (vkey > 0x40 && vkey <= 0x5A)) 
+            if (AltPressed(uiKeystate) && (vkey > 0x40 && vkey <= 0x5A))
             {
                 wcscpy_s(s_pwsInputBuffer, L"\x1bm");
                 wchar_t wchShifted = vkey;
                 // Alt + Ctrl + key generates [0x1b, control key] in the stream.
-                if (ControlPressed(uiKeystate)) 
+                if (ControlPressed(uiKeystate))
                 {
                     // Generally the control key is key-0x40
                     wchShifted = vkey - 0x40;

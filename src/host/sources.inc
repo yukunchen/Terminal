@@ -1,5 +1,5 @@
 # -------------------------------------
-# Windows Console 
+# Windows Console
 # - Console Host
 # -------------------------------------
 
@@ -108,6 +108,12 @@ SOURCES = \
     ..\conattrs.cpp \
     ..\KeyEventHelpers.cpp \
     ..\ConsoleArguments.cpp \
+    ..\AttrRow.cpp \
+    ..\Ucs2CharRow.cpp \
+    ..\Utf8CharRow.cpp \
+    ..\Row.cpp \
+    ..\TextAttribute.cpp \
+    ..\TextAttributeRun.cpp \
 
 
 # -------------------------------------

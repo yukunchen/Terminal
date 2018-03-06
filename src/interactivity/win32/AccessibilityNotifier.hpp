@@ -30,6 +30,8 @@ namespace Microsoft
                 class AccessibilityNotifier final : public IAccessibilityNotifier
                 {
                 public:
+                    ~AccessibilityNotifier() = default;
+
                     void NotifyConsoleCaretEvent(_In_ RECT rectangle);
                     void NotifyConsoleCaretEvent(_In_ ConsoleCaretEventFlags flags, _In_ LONG position);
                     void NotifyConsoleUpdateScrollEvent(_In_ LONG x, _In_ LONG y);

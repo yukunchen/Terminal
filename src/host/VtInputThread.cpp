@@ -32,10 +32,9 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
 {
     THROW_IF_HANDLE_INVALID(_hFile.get());
 
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-    std::unique_ptr<ConhostInternalGetSet> pGetSet =
-        std::make_unique<ConhostInternalGetSet>(gci);
+    std::unique_ptr<ConhostInternalGetSet> pGetSet = std::make_unique<ConhostInternalGetSet>(&gci);
     THROW_IF_NULL_ALLOC(pGetSet);
 
     std::unique_ptr<InteractDispatch> pDispatch = std::make_unique<InteractDispatch>(std::move(pGetSet));
@@ -60,9 +59,9 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
 // - S_OK on success, otherwise an appropriate failure.
 HRESULT VtInputThread::_HandleRunInput(_In_reads_(cch) const byte* const charBuffer, _In_ const int cch)
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    gci->LockConsole();
-    auto Unlock = wil::ScopeExit([&] { gci->UnlockConsole(); });
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.LockConsole();
+    auto Unlock = wil::ScopeExit([&] { gci.UnlockConsole(); });
 
     try
     {

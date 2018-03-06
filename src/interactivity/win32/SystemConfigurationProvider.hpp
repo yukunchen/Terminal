@@ -25,9 +25,11 @@ namespace Microsoft
         {
             namespace Win32
             {
-                class SystemConfigurationProvider sealed : public ISystemConfigurationProvider
+                class SystemConfigurationProvider final : public ISystemConfigurationProvider
                 {
                 public:
+                    ~SystemConfigurationProvider() = default;
+
                     bool IsCaretBlinkingEnabled();
 
                     UINT GetCaretBlinkTime();
@@ -41,7 +43,7 @@ namespace Microsoft
                         _In_ PCWSTR pwszCurrDir,
                         _In_ PCWSTR pwszAppName);
                 };
-            };
-        };
-    };
-};
+            }
+        }
+    }
+}

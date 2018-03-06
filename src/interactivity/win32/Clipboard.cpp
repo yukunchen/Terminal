@@ -82,12 +82,12 @@ void Clipboard::StringPaste(_In_reads_(cchData) const wchar_t* const pData,
         return;
     }
 
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     try
     {
         std::deque<std::unique_ptr<IInputEvent>> inEvents = TextToKeyEvents(pData, cchData);
-        gci->pInputBuffer->Write(inEvents);
+        gci.pInputBuffer->Write(inEvents);
     }
     catch (...)
     {
@@ -152,15 +152,13 @@ std::deque<std::unique_ptr<IInputEvent>> Clipboard::TextToKeyEvents(_In_reads_(c
             currentChar = UNICODE_CARRIAGERETURN;
         }
 
-        const UINT codepage = ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP;
+        const UINT codepage = ServiceLocator::LocateGlobals().getConsoleInformation().OutputCP;
         std::deque<std::unique_ptr<KeyEvent>> convertedEvents = CharToKeyEvents(currentChar, codepage);
         while (!convertedEvents.empty())
         {
             keyEvents.push_back(std::move(convertedEvents.front()));
             convertedEvents.pop_front();
         }
-
-
     }
     return keyEvents;
 }
@@ -173,7 +171,7 @@ std::deque<std::unique_ptr<IInputEvent>> Clipboard::TextToKeyEvents(_In_reads_(c
 //  <none>
 void Clipboard::StoreSelectionToClipboard()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     Selection* pSelection = &Selection::Instance();
 
     // See if there is a selection to get
@@ -183,7 +181,7 @@ void Clipboard::StoreSelectionToClipboard()
     }
 
     // read selection area.
-    SCREEN_INFORMATION* const pScreenInfo = gci->CurrentScreenBuffer;
+    SCREEN_INFORMATION* const pScreenInfo = gci.CurrentScreenBuffer;
 
     SMALL_RECT* rgsrSelection;
     UINT cRectsSelected;
@@ -235,7 +233,7 @@ void Clipboard::StoreSelectionToClipboard()
 }
 
 _Check_return_
-NTSTATUS Clipboard::RetrieveTextFromBuffer(_In_ SCREEN_INFORMATION* const pScreenInfo,
+NTSTATUS Clipboard::RetrieveTextFromBuffer(_In_ const SCREEN_INFORMATION* const pScreenInfo,
                                            _In_ bool const fLineSelection,
                                            _In_ UINT const cRectsSelected,
                                            _In_reads_(cRectsSelected) const SMALL_RECT* const rgsrSelection,
@@ -336,17 +334,11 @@ NTSTATUS Clipboard::RetrieveTextFromBuffer(_In_ SCREEN_INFORMATION* const pScree
                         BOOL bMungeData = (GetKeyState(VK_SHIFT) & KEY_PRESSED) == 0;
                         if (bMungeData)
                         {
-                            ROW* pRow = pScreenInfo->TextInfo->GetRowByOffset(iRow);
-
-                            if (pRow == nullptr)
-                            {
-                                status = STATUS_UNSUCCESSFUL;
-                                break;
-                            }
+                            const ROW& Row = pScreenInfo->TextInfo->GetRowByOffset(iRow);
 
                             // FOR LINE SELECTION ONLY: if the row was wrapped, don't remove the spaces at the end.
                             if (!fLineSelection
-                                || !pRow->CharRow.WasWrapForced())
+                                || !Row.GetCharRow().WasWrapForced())
                             {
                                 for (int iCol = (int)(sStringLength - 1); iCol >= 0; iCol--)
                                 {
@@ -385,7 +377,7 @@ NTSTATUS Clipboard::RetrieveTextFromBuffer(_In_ SCREEN_INFORMATION* const pScree
                                     // a.k.a. if the row was NOT wrapped, then we can assume a CR/LF is proper
                                     // always apply \r\n for box selection
                                     if (!fLineSelection
-                                        || !pScreenInfo->TextInfo->GetRowByOffset(iRow)->CharRow.WasWrapForced())
+                                        || !pScreenInfo->TextInfo->GetRowByOffset(iRow).GetCharRow().WasWrapForced())
                                     {
                                         pwszSelection[cSelectionLength++] = UNICODE_CARRIAGERETURN;
                                         pwszSelection[cSelectionLength++] = UNICODE_LINEFEED;
@@ -574,10 +566,10 @@ NTSTATUS Clipboard::CopyTextToSystemClipboard(_In_ const UINT cTotalRows,
 // Returns false if the character should not be emitted (e.g. <TAB>)
 bool Clipboard::FilterCharacterOnPaste(_Inout_ WCHAR * const pwch)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     bool fAllowChar = true;
-    if (gci->GetFilterOnPaste() &&
-        (IsFlagSet(gci->pInputBuffer->InputMode, ENABLE_PROCESSED_INPUT)))
+    if (gci.GetFilterOnPaste() &&
+        (IsFlagSet(gci.pInputBuffer->InputMode, ENABLE_PROCESSED_INPUT)))
     {
         switch (*pwch)
         {

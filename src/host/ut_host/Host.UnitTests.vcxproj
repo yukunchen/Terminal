@@ -4,7 +4,7 @@
   <ItemGroup>
     <ClCompile Include="ApiRoutinesTests.cpp" />
     <ClCompile Include="AttrRowTests.cpp" />
-    <ClCompile Include="CharRowTests.cpp" />
+    <ClCompile Include="CharRowBaseTests.cpp" />
     <ClCompile Include="ClipboardTests.cpp" />
     <ClCompile Include="ConsoleArgumentsTests.cpp" />
     <ClCompile Include="DbcsTests.cpp" />

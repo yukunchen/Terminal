@@ -11,6 +11,7 @@
 
 #include "getset.h"
 #include "misc.h"
+#include "Ucs2CharRow.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 #include "..\types\inc\Viewport.hpp"
@@ -22,42 +23,42 @@ using namespace Microsoft::Console::Types;
 // registry defaults, and then calls CreateScreenBuffer.
 NTSTATUS DoCreateScreenBuffer()
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     CHAR_INFO Fill;
-    Fill.Attributes = gci->GetFillAttribute();
+    Fill.Attributes = gci.GetFillAttribute();
     Fill.Char.UnicodeChar = UNICODE_SPACE;
 
     CHAR_INFO PopupFill;
-    PopupFill.Attributes = gci->GetPopupFillAttribute();
+    PopupFill.Attributes = gci.GetPopupFillAttribute();
     PopupFill.Char.UnicodeChar = UNICODE_SPACE;
 
-    FontInfo fiFont(gci->GetFaceName(),
-                    static_cast<BYTE>(gci->GetFontFamily()),
-                    gci->GetFontWeight(),
-                    gci->GetFontSize(),
-                    gci->GetCodePage());
+    FontInfo fiFont(gci.GetFaceName(),
+                    static_cast<BYTE>(gci.GetFontFamily()),
+                    gci.GetFontWeight(),
+                    gci.GetFontSize(),
+                    gci.GetCodePage());
 
     // For East Asian version, we want to get the code page from the registry or shell32, so we can specify console
     // codepage by console.cpl or shell32. The default codepage is OEMCP.
-    gci->CP = gci->GetCodePage();
-    gci->OutputCP = gci->GetCodePage();
+    gci.CP = gci.GetCodePage();
+    gci.OutputCP = gci.GetCodePage();
 
-    gci->Flags |= CONSOLE_USE_PRIVATE_FLAGS;
+    gci.Flags |= CONSOLE_USE_PRIVATE_FLAGS;
 
-    NTSTATUS Status = SCREEN_INFORMATION::CreateInstance(gci->GetWindowSize(),
+    NTSTATUS Status = SCREEN_INFORMATION::CreateInstance(gci.GetWindowSize(),
                                                          &fiFont,
-                                                         gci->GetScreenBufferSize(),
+                                                         gci.GetScreenBufferSize(),
                                                          Fill,
                                                          PopupFill,
-                                                         gci->GetCursorSize(),
-                                                         &gci->ScreenBuffers);
+                                                         gci.GetCursorSize(),
+                                                         &gci.ScreenBuffers);
 
     // TODO: MSFT 9355013: This needs to be resolved. We increment it once with no handle to ensure it's never cleaned up
     // and one always exists for the renderer (and potentially other functions.)
     // It's currently a load-bearing piece of code. http://osgvsowi/9355013
     if (NT_SUCCESS(Status))
     {
-        gci->ScreenBuffers[0].Header.IncrementOriginalScreenBuffer();
+        gci.ScreenBuffers[0].Header.IncrementOriginalScreenBuffer();
     }
 
     return Status;
@@ -81,7 +82,7 @@ NTSTATUS ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenI
                                   _Inout_opt_ TextAttribute* const pTextAttributes)
 {
     DBGOUTPUT(("ReadRectFromScreenBuffer\n"));
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     const bool fOutputTextAttributes = pTextAttributes != nullptr;
     short const sXSize = (short)(psrTargetRect->Right - psrTargetRect->Left + 1);
@@ -89,7 +90,7 @@ NTSTATUS ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenI
     ASSERT(sYSize > 0);
     const int ScreenBufferWidth = pScreenInfo->GetScreenBufferSize().X;
 
-    ROW* pRow = pScreenInfo->TextInfo->GetRowByOffset(coordSourcePoint.Y);
+    const ROW* pRow = &pScreenInfo->TextInfo->GetRowByOffset(coordSourcePoint.Y);
 
     // Allocate the TextAttributes once for every row to unpack them
     TextAttribute* rgUnpackedRowAttributes = new TextAttribute[ScreenBufferWidth];
@@ -113,38 +114,51 @@ NTSTATUS ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenI
             }
 
             // copy the chars and attrs from their respective arrays
-            PWCHAR pwChar = &pRow->CharRow.Chars[coordSourcePoint.X];
+            Ucs2CharRow::const_iterator it;
+            Ucs2CharRow::const_iterator itEnd;
+            try
+            {
+                const ICharRow& iCharRow = pRow->GetCharRow();
+                // we only support ucs2 encoded char rows
+                FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                                "only support UCS2 char rows currently");
+
+                const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
+                it = std::next(charRow.cbegin(), coordSourcePoint.X);
+                itEnd = charRow.cend();
+            }
+            catch (...)
+            {
+                return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+            }
 
             // Unpack the attributes into an array so we can iterate over them.
-            pRow->AttrRow.UnpackAttrs(rgUnpackedRowAttributes, ScreenBufferWidth);
+            pRow->GetAttrRow().UnpackAttrs(rgUnpackedRowAttributes, ScreenBufferWidth);
 
-            PBYTE pbAttrP = &pRow->CharRow.KAttrs[coordSourcePoint.X];
-
-            for (short iCol = 0; iCol < sXSize; pciTargetPtr++)
+            for (short iCol = 0; iCol < sXSize && it != itEnd; ++pciTargetPtr, ++it)
             {
-                BYTE bAttrR = *pbAttrP++;
                 TextAttribute textAttr = rgUnpackedRowAttributes[coordSourcePoint.X + iCol];
+                DbcsAttribute dbcsAttribute = pRow->GetCharRow().GetAttribute(coordSourcePoint.X + iCol);
 
-                if (iCol == 0 && bAttrR & CHAR_ROW::ATTR_TRAILING_BYTE)
+                if (iCol == 0 && dbcsAttribute.IsTrailing())
                 {
                     pciTargetPtr->Char.UnicodeChar = UNICODE_SPACE;
-                    bAttrR = 0;
+                    dbcsAttribute.SetSingle();
                 }
-                else if (iCol + 1 >= sXSize && bAttrR & CHAR_ROW::ATTR_LEADING_BYTE)
+                else if (iCol + 1 >= sXSize && dbcsAttribute.IsLeading())
                 {
                     pciTargetPtr->Char.UnicodeChar = UNICODE_SPACE;
-                    bAttrR = 0;
+                    dbcsAttribute.SetSingle();
                 }
                 else
                 {
-                    pciTargetPtr->Char.UnicodeChar = *pwChar;
+                    pciTargetPtr->Char.UnicodeChar = it->first;
                 }
 
-                pwChar++;
-                pciTargetPtr->Attributes = (bAttrR & CHAR_ROW::ATTR_DBCSSBCS_BYTE) << 8;
+                pciTargetPtr->Attributes = dbcsAttribute.GeneratePublicApiAttributeFormat();
 
                 // Always copy the legacy attributes to the CHAR_INFO.
-                pciTargetPtr->Attributes |= gci->GenerateLegacyAttributes(textAttr);
+                pciTargetPtr->Attributes |= gci.GenerateLegacyAttributes(textAttr);
 
                 if (fOutputTextAttributes)
                 {
@@ -155,7 +169,14 @@ NTSTATUS ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenI
                 iCol += 1;
             }
 
-            pRow = pScreenInfo->TextInfo->GetNextRowNoWrap(pRow);
+            try
+            {
+                pRow = &pScreenInfo->TextInfo->GetNextRowNoWrap(*pRow);
+            }
+            catch (...)
+            {
+                LOG_HR(wil::ResultFromCaughtException());
+            }
         }
         delete[] rgUnpackedRowAttributes;
     }
@@ -373,7 +394,7 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                           _Inout_ PULONG pcRecords)
 {
     DBGOUTPUT(("ReadOutputString\n"));
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     if (*pcRecords == 0)
     {
@@ -406,11 +427,11 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
         BufPtr = (PWCHAR)pvBuffer;
     }
 
-    PBYTE TransBufferA = nullptr;
-    PBYTE BufPtrA = nullptr;
+    DbcsAttribute* TransBufferA = nullptr;
+    DbcsAttribute* BufPtrA = nullptr;
 
     {
-        TransBufferA = new BYTE[*pcRecords];
+        TransBufferA = new DbcsAttribute[*pcRecords];
         if (TransBufferA == nullptr)
         {
             if (TransBuffer != nullptr)
@@ -425,44 +446,64 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
     }
 
     {
-        ROW* Row = pScreenInfo->TextInfo->GetRowByOffset(coordRead.Y);
-        ASSERT(Row != nullptr);
-        PWCHAR Char;
+        const ROW* pRow = &pScreenInfo->TextInfo->GetRowByOffset(coordRead.Y);
         SHORT j, k;
-        PBYTE AttrP = nullptr;
 
-        if ((ulStringType == CONSOLE_ASCII) || (ulStringType == CONSOLE_REAL_UNICODE) || (ulStringType == CONSOLE_FALSE_UNICODE))
+        if (ulStringType == CONSOLE_ASCII ||
+            ulStringType == CONSOLE_REAL_UNICODE ||
+            ulStringType == CONSOLE_FALSE_UNICODE)
         {
             while (NumRead < *pcRecords)
             {
-                if (Row == nullptr)
-                {
-                    ASSERT(false);
-                    break;
-                }
-
                 // copy the chars from its array
-                Char = &Row->CharRow.Chars[X];
-                AttrP = &Row->CharRow.KAttrs[X];
-
-                if ((ULONG)(coordScreenBufferSize.X - X) >(*pcRecords - NumRead))
+                try
                 {
-                    memmove(BufPtr, Char, (*pcRecords - NumRead) * sizeof(WCHAR));
-                    memmove(BufPtrA, AttrP, (*pcRecords - NumRead) * sizeof(CHAR));
+                    const ICharRow& iCharRow = pRow->GetCharRow();
+                    // we only support ucs2 encoded char rows
+                    FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                                    "only support UCS2 char rows currently");
 
-                    NumRead += *pcRecords - NumRead;
-                    break;
+                    const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
+                    const Ucs2CharRow::const_iterator startIt = std::next(charRow.cbegin(), X);
+                    size_t copyAmount = *pcRecords - NumRead;
+                    wchar_t* pChars = BufPtr;
+                    DbcsAttribute* pAttrs = BufPtrA;
+                    if (static_cast<size_t>(coordScreenBufferSize.X - X) > copyAmount)
+                    {
+                        std::for_each(startIt, std::next(startIt, copyAmount), [&](const auto& vals)
+                        {
+                            *pChars = vals.first;
+                            ++pChars;
+                            *pAttrs = vals.second;
+                            ++pAttrs;
+                        });
+
+                        NumRead += static_cast<ULONG>(copyAmount);
+                        break;
+                    }
+                    else
+                    {
+                        copyAmount = coordScreenBufferSize.X - X;
+
+                        std::for_each(startIt, std::next(startIt, copyAmount), [&](const auto& vals)
+                        {
+                            *pChars = vals.first;
+                            ++pChars;
+                            *pAttrs = vals.second;
+                            ++pAttrs;
+                        });
+
+                        BufPtr += copyAmount;
+                        BufPtrA += copyAmount;
+
+                        NumRead += static_cast<ULONG>(copyAmount);
+                        pRow = &pScreenInfo->TextInfo->GetNextRowNoWrap(*pRow);
+                    }
                 }
-
-                memmove(BufPtr, Char, (coordScreenBufferSize.X - X) * sizeof(WCHAR));
-                BufPtr = (PWCHAR)((PBYTE)BufPtr + ((coordScreenBufferSize.X - X) * sizeof(WCHAR)));
-
-                memmove(BufPtrA, AttrP, (coordScreenBufferSize.X - X) * sizeof(CHAR));
-                BufPtrA = (PBYTE)((PBYTE)BufPtrA + ((coordScreenBufferSize.X - X) * sizeof(CHAR)));
-
-                NumRead += coordScreenBufferSize.X - X;
-
-                Row = pScreenInfo->TextInfo->GetNextRowNoWrap(Row);
+                catch (...)
+                {
+                    return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+                }
 
                 X = 0;
                 Y++;
@@ -474,6 +515,7 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
 
             if (NumRead)
             {
+                PWCHAR Char;
                 if (ulStringType == CONSOLE_ASCII)
                 {
                     Char = BufPtr = TransBuffer;
@@ -485,7 +527,7 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
 
                 BufPtrA = TransBufferA;
 #pragma prefast(suppress:__WARNING_BUFFER_OVERFLOW, "This code is fine")
-                if (*BufPtrA & CHAR_ROW::ATTR_TRAILING_BYTE)
+                if (BufPtrA->IsTrailing())
                 {
                     j = k = (SHORT)(NumRead - 1);
                     BufPtr++;
@@ -501,7 +543,7 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
 
                 while (j--)
                 {
-                    if (!(*BufPtrA & CHAR_ROW::ATTR_TRAILING_BYTE))
+                    if (!BufPtrA->IsTrailing())
                     {
                         *Char++ = *BufPtr;
                         NumRead++;
@@ -510,7 +552,7 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                     BufPtrA++;
                 }
 
-                if (k && *(BufPtrA - 1) & CHAR_ROW::ATTR_LEADING_BYTE)
+                if (k && (BufPtrA - 1)->IsLeading())
                 {
                     *(Char - 1) = UNICODE_SPACE;
                 }
@@ -518,40 +560,42 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
         }
         else if (ulStringType == CONSOLE_ATTRIBUTE)
         {
-            SHORT CountOfAttr;
+            size_t CountOfAttr = 0;
             TextAttributeRun* pAttrRun;
             PWORD TargetPtr = (PWORD)BufPtr;
 
             while (NumRead < *pcRecords)
             {
-                if (Row == nullptr)
-                {
-                    ASSERT(false);
-                    break;
-                }
-
                 // Copy the attrs from its array.
-                AttrP = &Row->CharRow.KAttrs[X];
-
-                UINT uiCountOfAttr;
-                Row->AttrRow.FindAttrIndex(X, &pAttrRun, &uiCountOfAttr);
-
-                // attempt safe cast. bail early if failed.
-                if (FAILED(UIntToShort(uiCountOfAttr, &CountOfAttr)))
+                Ucs2CharRow::const_iterator it;
+                Ucs2CharRow::const_iterator itEnd;
+                try
                 {
-                    ASSERT(false);
-                    return STATUS_UNSUCCESSFUL;
+                    const ICharRow& iCharRow = pRow->GetCharRow();
+                    // we only support ucs2 encoded char rows
+                    FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                                    "only support UCS2 char rows currently");
+
+                    const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
+                    it = std::next(charRow.cbegin(), X);
+                    itEnd = charRow.cend();
                 }
+                catch (...)
+                {
+                    return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+                }
+
+                pRow->GetAttrRow().FindAttrIndex(X, &pAttrRun, &CountOfAttr);
 
                 k = 0;
-                for (j = X; j < coordScreenBufferSize.X; TargetPtr++)
+                for (j = X; j < coordScreenBufferSize.X && it != itEnd; TargetPtr++, ++it)
                 {
                     const WORD wLegacyAttributes = pAttrRun->GetAttributes().GetLegacyAttributes();
-                    if ((j == X) && (*AttrP & CHAR_ROW::ATTR_TRAILING_BYTE))
+                    if ((j == X) && it->second.IsTrailing())
                     {
                         *TargetPtr = wLegacyAttributes;
                     }
-                    else if (*AttrP & CHAR_ROW::ATTR_LEADING_BYTE)
+                    else if (it->second.IsLeading())
                     {
                         if ((NumRead == *pcRecords - 1) || (j == coordScreenBufferSize.X - 1))
                         {
@@ -559,25 +603,23 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                         }
                         else
                         {
-                            *TargetPtr = wLegacyAttributes | (WCHAR)(*AttrP & CHAR_ROW::ATTR_DBCSSBCS_BYTE) << 8;
+                            *TargetPtr = wLegacyAttributes | it->second.GeneratePublicApiAttributeFormat();
                         }
                     }
                     else
                     {
-                        *TargetPtr = wLegacyAttributes | (WCHAR)(*AttrP & CHAR_ROW::ATTR_DBCSSBCS_BYTE) << 8;
+                        *TargetPtr = wLegacyAttributes | it->second.GeneratePublicApiAttributeFormat();
                     }
 
                     NumRead++;
                     j += 1;
-                    if (++k == CountOfAttr && j < coordScreenBufferSize.X)
+
+                    ++k;
+                    if (static_cast<size_t>(k) == CountOfAttr && j < coordScreenBufferSize.X)
                     {
                         pAttrRun++;
                         k = 0;
-                        if (!SUCCEEDED(UIntToShort(pAttrRun->GetLength(), &CountOfAttr)))
-                        {
-                            ASSERT(false);
-                            return STATUS_UNSUCCESSFUL;
-                        }
+                        CountOfAttr = pAttrRun->GetLength();
                     }
 
                     if (NumRead == *pcRecords)
@@ -585,11 +627,16 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                         delete[] TransBufferA;
                         return STATUS_SUCCESS;
                     }
-
-                    AttrP++;
                 }
 
-                Row = pScreenInfo->TextInfo->GetNextRowNoWrap(Row);
+                try
+                {
+                    pRow = &pScreenInfo->TextInfo->GetNextRowNoWrap(*pRow);
+                }
+                catch (...)
+                {
+                    return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+                }
 
                 X = 0;
                 Y++;
@@ -610,7 +657,7 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
 
     if (ulStringType == CONSOLE_ASCII)
     {
-        UINT const Codepage = gci->OutputCP;
+        UINT const Codepage = gci.OutputCP;
 
         NumRead = ConvertToOem(Codepage, TransBuffer, NumRead, (LPSTR) pvBuffer, *pcRecords);
 
@@ -625,11 +672,11 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
 
 void ScreenBufferSizeChange(_In_ COORD const coordNewSize)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     try
     {
-        gci->pInputBuffer->Write(std::make_unique<WindowBufferSizeEvent>(coordNewSize));
+        gci.pInputBuffer->Write(std::make_unique<WindowBufferSizeEvent>(coordNewSize));
     }
     catch (...)
     {
@@ -653,7 +700,7 @@ void ScrollScreen(_Inout_ PSCREEN_INFORMATION pScreenInfo,
         {
             pNotifier->NotifyConsoleUpdateScrollEvent(coordTarget.X - psrScroll->Left, coordTarget.Y - psrScroll->Right);
         }
-        IRenderer* const pRender = ServiceLocator::LocateGlobals()->pRender;
+        IRenderer* const pRender = ServiceLocator::LocateGlobals().pRender;
         if (pRender != nullptr)
         {
             // psrScroll is the source rectangle which gets written with the same dimensions to the coordTarget position.
@@ -715,9 +762,9 @@ bool StreamScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo)
                 pNotifier->NotifyConsoleUpdateScrollEvent(coordDelta.X, coordDelta.Y);
             }
 
-            if (ServiceLocator::LocateGlobals()->pRender != nullptr)
+            if (ServiceLocator::LocateGlobals().pRender != nullptr)
             {
-                ServiceLocator::LocateGlobals()->pRender->TriggerScroll(&coordDelta);
+                ServiceLocator::LocateGlobals().pRender->TriggerScroll(&coordDelta);
             }
         }
     }
@@ -1042,8 +1089,8 @@ NTSTATUS ScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo,
 
 NTSTATUS SetActiveScreenBuffer(_Inout_ PSCREEN_INFORMATION pScreenInfo)
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    gci->CurrentScreenBuffer = pScreenInfo;
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.CurrentScreenBuffer = pScreenInfo;
 
     // initialize cursor
     pScreenInfo->TextInfo->GetCursor()->SetIsOn(FALSE);
@@ -1052,13 +1099,13 @@ NTSTATUS SetActiveScreenBuffer(_Inout_ PSCREEN_INFORMATION pScreenInfo)
     pScreenInfo->RefreshFontWithRenderer();
 
     // Empty input buffer.
-    gci->pInputBuffer->FlushAllButKeys();
+    gci.pInputBuffer->FlushAllButKeys();
     SetScreenColors(pScreenInfo, pScreenInfo->GetAttributes().GetLegacyAttributes(), pScreenInfo->GetPopupAttributes()->GetLegacyAttributes(), FALSE);
 
     // Set window size.
     pScreenInfo->PostUpdateWindowSize();
 
-    gci->ConsoleIme.RefreshAreaAttributes();
+    gci.ConsoleIme.RefreshAreaAttributes();
 
     // Write data to screen.
     WriteToScreen(pScreenInfo, pScreenInfo->GetBufferViewport());
@@ -1069,13 +1116,13 @@ NTSTATUS SetActiveScreenBuffer(_Inout_ PSCREEN_INFORMATION pScreenInfo)
 // TODO: MSFT 9450717 This should join the ProcessList class when CtrlEvents become moved into the server. https://osgvsowi/9450717
 void CloseConsoleProcessState()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // If there are no connected processes, sending control events is pointless as there's no one do send them to. In
     // this case we'll just exit conhost.
 
     // N.B. We can get into this state when a process has a reference to the console but hasn't connected. For example,
     //      when it's created suspended and never resumed.
-    if (gci->ProcessHandleList.IsEmpty())
+    if (gci.ProcessHandleList.IsEmpty())
     {
         ServiceLocator::RundownAndExit(STATUS_SUCCESS);
     }

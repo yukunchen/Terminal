@@ -562,12 +562,11 @@ void DbcsWriteRead::SendOutput(_In_ HANDLE const hOut, _In_ unsigned int const u
 // "W" means that we intend Unicode data to be browsed in the resulting struct (even though wchar and char are unioned.)
 void DbcsWriteRead::PrepPattern::NullPaddedDedupeW(_In_ unsigned int const uiCodePage,
                                                    _In_ PCSTR pszTestData,
-                                                   _In_ WORD const wAttrOriginal,
+                                                   _In_ WORD const /*wAttrOriginal*/,
                                                    _In_ WORD const wAttrWritten,
                                                    _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
                                                    _In_ size_t const cExpected)
 {
-    UNREFERENCED_PARAMETER(wAttrOriginal);
     Log::Comment(L"Pattern 3");
     int const iwchNeeded = MultiByteToWideChar(uiCodePage, 0, pszTestData, -1, nullptr, 0);
     PWSTR pwszTestData = new wchar_t[iwchNeeded];
@@ -855,12 +854,11 @@ void DbcsWriteRead::PrepPattern::SpacePaddedDedupeA(_In_ unsigned int const uiCo
 // "W" means that we intend Unicode data to be browsed in the resulting struct (even though wchar and char are unioned.)
 void DbcsWriteRead::PrepPattern::DoubledW(_In_ unsigned int const uiCodePage,
                                           _In_ PCSTR pszTestData,
-                                          _In_ WORD const wAttrOriginal,
+                                          _In_ WORD const /*wAttrOriginal*/,
                                           _In_ WORD const wAttrWritten,
                                           _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
                                           _In_ size_t const cExpected)
 {
-    UNREFERENCED_PARAMETER(wAttrOriginal);
     Log::Comment(L"Pattern 5");
     size_t const cTestData = strlen(pszTestData);
     VERIFY_IS_GREATER_THAN_OR_EQUAL(cExpected, cTestData);
@@ -1061,12 +1059,11 @@ void DbcsWriteRead::PrepPattern::AStompsWNegativeOnePatternTruncateSpacePadded(_
 // This one returns pretty much exactly as expected.
 void DbcsWriteRead::PrepPattern::A(_In_ unsigned int const uiCodePage,
                                    _In_ PCSTR pszTestData,
-                                   _In_ WORD const wAttrOriginal,
+                                   _In_ WORD const /*wAttrOriginal*/,
                                    _In_ WORD const wAttrWritten,
                                    _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
                                    _In_ size_t const cExpected)
 {
-    UNREFERENCED_PARAMETER(wAttrOriginal);
     Log::Comment(L"Pattern 6");
     size_t const cTestData = strlen(pszTestData);
     VERIFY_IS_GREATER_THAN_OR_EQUAL(cExpected, cTestData);

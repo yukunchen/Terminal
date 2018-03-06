@@ -681,11 +681,10 @@ void Tracing::s_TraceUia(_In_ const UiaTextRange* const range,
     }
 }
 
-void Tracing::s_TraceUia(_In_ const ScreenInfoUiaProvider* const pProvider,
+void Tracing::s_TraceUia(_In_ const ScreenInfoUiaProvider* const /*pProvider*/,
                          _In_ const ScreenInfoUiaProviderTracing::ApiCall apiCall,
                          _In_ const ScreenInfoUiaProviderTracing::IApiMsg* const apiMsg)
 {
-    UNREFERENCED_PARAMETER(pProvider);
     switch (apiCall)
     {
     case ScreenInfoUiaProviderTracing::ApiCall::Constructor:
@@ -872,11 +871,10 @@ void Tracing::s_TraceUia(_In_ const ScreenInfoUiaProvider* const pProvider,
     }
 }
 
-void Tracing::s_TraceUia(_In_ const WindowUiaProvider* const pProvider,
+void Tracing::s_TraceUia(_In_ const WindowUiaProvider* const /*pProvider*/,
                          _In_ const WindowUiaProviderTracing::ApiCall apiCall,
                          _In_ const WindowUiaProviderTracing::IApiMsg* const apiMsg)
 {
-    UNREFERENCED_PARAMETER(pProvider);
     switch (apiCall)
     {
     case WindowUiaProviderTracing::ApiCall::Create:

@@ -74,7 +74,11 @@ public:
 
     HRESULT PaintCursor(_In_ COORD const coordCursor,
                         _In_ ULONG const ulCursorHeightPercent,
-                        _In_ bool const fIsDoubleWidth) override;
+                        _In_ bool const fIsDoubleWidth,
+                        _In_ CursorType const cursorType,
+                        _In_ bool const fUseColor,
+                        _In_ COLORREF const cursorColor) override;
+
     HRESULT ClearCursor() override;
 
     virtual HRESULT UpdateDrawingBrushes(_In_ COLORREF const colorForeground,

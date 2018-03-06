@@ -127,7 +127,7 @@ HRESULT VtIo::_Initialize(_In_ const HANDLE InHandle, _In_ const HANDLE OutHandl
 //      indicating failure.
 HRESULT VtIo::_Initialize(_In_ const HANDLE InHandle, _In_ const HANDLE OutHandle, _In_ const std::wstring& VtMode, _In_opt_ HANDLE SignalHandle)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     RETURN_IF_FAILED(ParseIoMode(VtMode, _IoMode));
 
@@ -145,39 +145,39 @@ HRESULT VtIo::_Initialize(_In_ const HANDLE InHandle, _In_ const HANDLE OutHandl
         _pVtInputThread = std::make_unique<VtInputThread>(std::move(hInputFile), _lookingForCursorPosition);
 
         Viewport initialViewport = Viewport::FromDimensions({0, 0},
-                                                            gci->GetWindowSize().X,
-                                                            gci->GetWindowSize().Y);
+                                                            gci.GetWindowSize().X,
+                                                            gci.GetWindowSize().Y);
         switch (_IoMode)
         {
         case VtIoMode::XTERM_256:
             _pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(hOutputFile),
-                                                                *gci,
+                                                                gci,
                                                                 initialViewport,
-                                                                gci->GetColorTable(),
-                                                                static_cast<WORD>(gci->GetColorTableSize()));
+                                                                gci.GetColorTable(),
+                                                                static_cast<WORD>(gci.GetColorTableSize()));
             break;
         case VtIoMode::XTERM:
             _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
-                                                             *gci,
+                                                             gci,
                                                              initialViewport,
-                                                             gci->GetColorTable(),
-                                                             static_cast<WORD>(gci->GetColorTableSize()),
+                                                             gci.GetColorTable(),
+                                                             static_cast<WORD>(gci.GetColorTableSize()),
                                                              false);
             break;
         case VtIoMode::XTERM_ASCII:
             _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
-                                                             *gci,
+                                                             gci,
                                                              initialViewport,
-                                                             gci->GetColorTable(),
-                                                             static_cast<WORD>(gci->GetColorTableSize()),
+                                                             gci.GetColorTable(),
+                                                             static_cast<WORD>(gci.GetColorTableSize()),
                                                              true);
             break;
         case VtIoMode::WIN_TELNET:
             _pVtRenderEngine = std::make_unique<WinTelnetEngine>(std::move(hOutputFile),
-                                                                 *gci,
+                                                                 gci,
                                                                  initialViewport,
-                                                                 gci->GetColorTable(),
-                                                                 static_cast<WORD>(gci->GetColorTableSize()));
+                                                                 gci.GetColorTable(),
+                                                                 static_cast<WORD>(gci.GetColorTableSize()));
             break;
         default:
             return E_FAIL;
@@ -291,10 +291,9 @@ HRESULT VtIo::StartIfNeeded()
     //  but its stored as a IRenderer.
     //  IRenderer doesn't know about IRenderEngine.
     // todo: msft:13631640
-    const Globals* const g = ServiceLocator::LocateGlobals();
     try
     {
-        g->pRender->AddRenderEngine(_pVtRenderEngine.get());
+        ServiceLocator::LocateGlobals().pRender->AddRenderEngine(_pVtRenderEngine.get());
     }
     CATCH_RETURN();
 
@@ -364,4 +363,3 @@ HRESULT VtIo::SetCursorPosition(_In_ const COORD coordCursor)
     }
     return hr;
 }
-

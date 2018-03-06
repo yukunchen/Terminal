@@ -39,7 +39,7 @@ Registry::~Registry()
 // - <none>
 void Registry::GetEditKeys(_In_opt_ HKEY hConsoleKey) const
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     NTSTATUS Status;
     HKEY hCurrentUserKey = nullptr;
     if (hConsoleKey == nullptr)
@@ -56,7 +56,7 @@ void Registry::GetEditKeys(_In_opt_ HKEY hConsoleKey) const
     Status = RegistrySerialization::s_QueryValue(hConsoleKey, CONSOLE_REGISTRY_ALLOW_ALTF4_CLOSE, sizeof(dwValue), (PBYTE)& dwValue, nullptr);
     if (NT_SUCCESS(Status) && dwValue <= 1)
     {
-        gci->SetAltF4CloseAllowed(!!dwValue);
+        gci.SetAltF4CloseAllowed(!!dwValue);
     }
 
     // get extended edit mode and keys from registry.
@@ -65,7 +65,7 @@ void Registry::GetEditKeys(_In_opt_ HKEY hConsoleKey) const
     {
         ExtKeyDefBuf buf = { 0 };
 
-        gci->SetExtendedEditKey(!!dwValue);
+        gci.SetExtendedEditKey(!!dwValue);
 
         // Initialize Extended Edit keys.
         InitExtendedEditKeys(nullptr);
@@ -78,21 +78,21 @@ void Registry::GetEditKeys(_In_opt_ HKEY hConsoleKey) const
     }
     else
     {
-        gci->SetExtendedEditKey(false);
+        gci.SetExtendedEditKey(false);
     }
 
     // Word delimiters
-    if (gci->GetExtendedEditKey())
+    if (gci.GetExtendedEditKey())
     {
         // If extended edit key is given, provide extended word delimiters by default.
-        memmove(ServiceLocator::LocateGlobals()->aWordDelimChars,
+        memmove(ServiceLocator::LocateGlobals().aWordDelimChars,
                 aWordDelimCharsDefault,
-                sizeof(ServiceLocator::LocateGlobals()->aWordDelimChars[0]) * WORD_DELIM_MAX);
+                sizeof(ServiceLocator::LocateGlobals().aWordDelimChars[0]) * WORD_DELIM_MAX);
     }
     else
     {
         // Otherwise, stick to the original word delimiter.
-        ServiceLocator::LocateGlobals()->aWordDelimChars[0] = L'\0';
+        ServiceLocator::LocateGlobals().aWordDelimChars[0] = L'\0';
     }
 
     // Read word delimiters from registry
@@ -102,8 +102,8 @@ void Registry::GetEditKeys(_In_opt_ HKEY hConsoleKey) const
     {
         // OK, copy it to the word delimiter array.
         #pragma prefast(suppress:26035, "RegistrySerialization::s_QueryValue will properly terminate strings.")
-        StringCchCopyW(ServiceLocator::LocateGlobals()->aWordDelimChars, WORD_DELIM_MAX, awchBuffer);
-        ServiceLocator::LocateGlobals()->aWordDelimChars[WORD_DELIM_MAX - 1] = 0;
+        StringCchCopyW(ServiceLocator::LocateGlobals().aWordDelimChars, WORD_DELIM_MAX, awchBuffer);
+        ServiceLocator::LocateGlobals().aWordDelimChars[WORD_DELIM_MAX - 1] = 0;
     }
 
     if (hCurrentUserKey)
@@ -263,9 +263,9 @@ void Registry::LoadFromRegistry(_In_ PCWSTR const pwszConsoleTitle)
         // Content of user defined property has responsibility to themselves.
         if (wcscmp(pwszConsoleTitle, L"") == 0 &&
             IsAvailableEastAsianCodePage(_pSettings->GetCodePage()) &&
-            ServiceLocator::LocateGlobals()->uiOEMCP != _pSettings->GetCodePage())
+            ServiceLocator::LocateGlobals().uiOEMCP != _pSettings->GetCodePage())
         {
-            _pSettings->SetCodePage(ServiceLocator::LocateGlobals()->uiOEMCP);
+            _pSettings->SetCodePage(ServiceLocator::LocateGlobals().uiOEMCP);
         }
     }
 

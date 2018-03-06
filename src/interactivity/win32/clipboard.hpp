@@ -45,7 +45,7 @@ namespace Microsoft
                     void StoreSelectionToClipboard();
 
                     _Check_return_
-                        NTSTATUS RetrieveTextFromBuffer(_In_ SCREEN_INFORMATION* const pScreenInfo,
+                        NTSTATUS RetrieveTextFromBuffer(_In_ const SCREEN_INFORMATION* const pScreenInfo,
                             _In_ bool const fLineSelection,
                             _In_ UINT const cRectsSelected,
                             _In_reads_(cRectsSelected) const SMALL_RECT* const rgsrSelection,

@@ -315,7 +315,7 @@ VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
 
     if (NT_SUCCESS(Status))
     {
-        Renderer = ServiceLocator::LocateGlobals()->pRender;
+        Renderer = ServiceLocator::LocateGlobals().pRender;
 
         switch (DisplayMode)
         {
@@ -333,7 +333,7 @@ VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
 
             case CIS_DISPLAY_MODE_DIRECTX:
             {
-                Globals* const pGlobals = ServiceLocator::LocateGlobals();
+                Globals& globals = ServiceLocator::LocateGlobals();
 
                 if (Event->FocusEvent.IsActive)
                 {
@@ -360,12 +360,12 @@ VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
                             // Get font to adjust char to pixels.
                             COORD coordFont = {0};
                             pWddmConEngine->GetFontSize(&coordFont);
-                            
+
                             rcDisplay.right *= coordFont.X;
                             rcDisplay.bottom *= coordFont.Y;
 
                             // Ask the screen buffer to resize itself (and all related components) based on the screen size.
-                            pGlobals->getConsoleInformation()->CurrentScreenBuffer->ProcessResizeWindow(&rcDisplay, &rcOld);
+                            globals.getConsoleInformation().CurrentScreenBuffer->ProcessResizeWindow(&rcDisplay, &rcOld);
                         }
                     }
 
@@ -441,10 +441,10 @@ VOID ConIoSrvComm::CleanupForHeadless(_In_ NTSTATUS const status)
         }
 
         // Set the status for the IO thread to find.
-        ServiceLocator::LocateGlobals()->ntstatusConsoleInputInitStatus = status;
+        ServiceLocator::LocateGlobals().ntstatusConsoleInputInitStatus = status;
 
         // Signal that input is ready to go.
-        ServiceLocator::LocateGlobals()->hConsoleInputInitEvent.SetEvent();
+        ServiceLocator::LocateGlobals().hConsoleInputInitEvent.SetEvent();
 
         _fIsInputInitialized = true;
     }
@@ -676,7 +676,7 @@ BOOL ConIoSrvComm::TranslateCharsetInfo(DWORD * lpSrc, LPCHARSETINFO lpCs, DWORD
     if (TCI_SRCCODEPAGE == dwFlags)
     {
         *lpCs = { 0 };
-        
+
         DWORD dwSrc = (DWORD)lpSrc;
         switch (dwSrc)
         {
@@ -706,8 +706,8 @@ NTSTATUS ConIoSrvComm::InitializeBgfx()
 {
     NTSTATUS Status;
 
-    Globals * const Globals = ServiceLocator::LocateGlobals();
-    assert(Globals->pRender != nullptr);
+    Globals& globals = ServiceLocator::LocateGlobals();
+    assert(globals.pRender != nullptr);
     IWindowMetrics * const Metrics = ServiceLocator::LocateWindowMetrics();
 
     // Fetch the display size from the console driver.
@@ -734,7 +734,7 @@ NTSTATUS ConIoSrvComm::InitializeBgfx()
             {
                 try
                 {
-                    Globals->pRender->AddRenderEngine(pBgfxEngine);
+                    globals.pRender->AddRenderEngine(pBgfxEngine);
                 }
                 catch(...)
                 {
@@ -751,8 +751,8 @@ NTSTATUS ConIoSrvComm::InitializeWddmCon()
 {
     NTSTATUS Status;
 
-    Globals * const Globals = ServiceLocator::LocateGlobals();
-    assert(Globals->pRender != nullptr);
+    Globals& globals = ServiceLocator::LocateGlobals();
+    assert(globals.pRender != nullptr);
 
     pWddmConEngine = new WddmConEngine();
     Status = NT_TESTNULL(pWddmConEngine);
@@ -761,7 +761,7 @@ NTSTATUS ConIoSrvComm::InitializeWddmCon()
     {
         try
         {
-            Globals->pRender->AddRenderEngine(pWddmConEngine);
+            globals.pRender->AddRenderEngine(pWddmConEngine);
         }
         catch(...)
         {

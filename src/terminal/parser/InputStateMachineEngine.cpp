@@ -220,12 +220,9 @@ bool InputStateMachineEngine::ActionPrintString(_Inout_updates_(cch) wchar_t* co
 // Return Value:
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch,
-                                                _In_ const unsigned short cIntermediate,
-                                                _In_ const wchar_t wchIntermediate)
+                                                _In_ const unsigned short /*cIntermediate*/,
+                                                _In_ const wchar_t /*wchIntermediate*/)
 {
-    UNREFERENCED_PARAMETER(cIntermediate);
-    UNREFERENCED_PARAMETER(wchIntermediate);
-
     DWORD dwModifierState = 0;
     short vk = 0;
     bool fSuccess = _GenerateKeyFromChar(wch, &vk, &dwModifierState);
@@ -253,14 +250,11 @@ bool InputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch,
 // Return Value:
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
-                                                _In_ const unsigned short cIntermediate,
-                                                _In_ const wchar_t wchIntermediate,
+                                                _In_ const unsigned short /*cIntermediate*/,
+                                                _In_ const wchar_t /*wchIntermediate*/,
                                                 _In_reads_(cParams) const unsigned short* const rgusParams,
                                                 _In_ const unsigned short cParams)
 {
-    UNREFERENCED_PARAMETER(cIntermediate);
-    UNREFERENCED_PARAMETER(wchIntermediate);
-
     DWORD dwModifierState = 0;
     short vkey = 0;
     unsigned int uiFunction = 0;
@@ -421,15 +415,11 @@ bool InputStateMachineEngine::ActionIgnore()
 // - cchOscString - length of pwchOscStringBuffer
 // Return Value:
 // - true if we handled the dsipatch.
-bool InputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch,
-                                                _In_ const unsigned short sOscParam,
-                                                _Inout_updates_(cchOscString) wchar_t* const pwchOscStringBuffer,
-                                                _In_ const unsigned short cchOscString)
+bool InputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const /*wch*/,
+                                                _In_ const unsigned short /*sOscParam*/,
+                                                _Inout_updates_(_Param_(4)) wchar_t* const /*pwchOscStringBuffer*/,
+                                                _In_ const unsigned short /*cchOscString*/)
 {
-    UNREFERENCED_PARAMETER(wch);
-    UNREFERENCED_PARAMETER(sOscParam);
-    UNREFERENCED_PARAMETER(pwchOscStringBuffer);
-    UNREFERENCED_PARAMETER(cchOscString);
     return false;
 }
 

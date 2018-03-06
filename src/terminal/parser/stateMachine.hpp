@@ -81,8 +81,6 @@ namespace Microsoft
                 void _ActionOscParam(_In_ wchar_t const wch);
                 void _ActionOscPut(_In_ wchar_t const wch);
                 void _ActionOscDispatch(_In_ wchar_t const wch);
-                bool _IntermediateQuestionMarkDispatch(_In_ wchar_t const wchAction);
-                bool _IntermediateExclamationDispatch(_In_ wchar_t const wchAction);
                 void _ActionSs3Dispatch(_In_ wchar_t const wch);
 
                 void _ActionClear();

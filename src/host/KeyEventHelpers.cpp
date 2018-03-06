@@ -61,7 +61,7 @@ bool IsCommandLineEditingKey(_In_ const KeyEvent& keyEvent)
     }
 
     // Extended edit key handling
-    if (ServiceLocator::LocateGlobals()->getConsoleInformation()->GetExtendedEditKey() && ::GetKeySubst(keyEvent))
+    if (ServiceLocator::LocateGlobals().getConsoleInformation().GetExtendedEditKey() && ::GetKeySubst(keyEvent))
     {
         // If wUnicodeChar is specified in KeySubst,
         // the key should be handled as a normal key.
@@ -115,7 +115,7 @@ bool IsCommandLinePopupKey(_In_ const KeyEvent& keyEvent)
     }
 
     // Extended key handling
-    if (ServiceLocator::LocateGlobals()->getConsoleInformation()->GetExtendedEditKey() && ::GetKeySubst(keyEvent))
+    if (ServiceLocator::LocateGlobals().getConsoleInformation().GetExtendedEditKey() && ::GetKeySubst(keyEvent))
     {
         return (keyEvent.GetCharData() == 0);
     }
@@ -158,7 +158,7 @@ const ExtKeySubst* const ParseEditKeyInfo(_Inout_ KeyEvent& keyEvent)
 const ExtKeySubst* const GetKeySubst(_In_ const KeyEvent& keyEvent)
 {
     // If not extended mode, or Control key or Alt key is not pressed, or virtual keycode is out of range, just bail.
-    if (!ServiceLocator::LocateGlobals()->getConsoleInformation()->GetExtendedEditKey() ||
+    if (!ServiceLocator::LocateGlobals().getConsoleInformation().GetExtendedEditKey() ||
         (!keyEvent.IsCtrlPressed() && !keyEvent.IsAltPressed()) ||
         keyEvent.GetVirtualKeyCode() < 'A' || keyEvent.GetVirtualKeyCode() > 'Z')
     {
@@ -206,7 +206,7 @@ const ExtKeySubst* const GetKeySubst(_In_ const KeyEvent& keyEvent)
 bool IsPauseKey(_In_ const KeyEvent& keyEvent)
 {
     bool isPauseKey = false;
-    if (ServiceLocator::LocateGlobals()->getConsoleInformation()->GetExtendedEditKey())
+    if (ServiceLocator::LocateGlobals().getConsoleInformation().GetExtendedEditKey())
     {
         const ExtKeySubst* const pKeySubst = ::GetKeySubst(keyEvent);
         isPauseKey = (pKeySubst != nullptr && pKeySubst->wVirKey == VK_PAUSE);
