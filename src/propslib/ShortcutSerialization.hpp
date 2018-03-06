@@ -20,8 +20,6 @@ Revision History:
 
 #pragma once
 
-#ifdef __cplusplus
-
 class ShortcutSerialization
 {
 public:
@@ -49,21 +47,3 @@ private:
     static void s_GetLinkTitle(_In_ PCWSTR pwszShortcutFilename, _Out_writes_(cchShortcutTitle) PWSTR pwszShortcutTitle, _In_ const size_t cchShortcutTitle);
     static HRESULT s_GetLoadedShellLinkForShortcut(_In_ PCWSTR pwszShortcutFileName, _In_ const DWORD dwMode, _COM_Outptr_ IShellLink **ppsl, _COM_Outptr_ IPersistFile **ppPf);
 };
-
-#else // not __cplusplus
-
-    // The following registry methods remain public for DBCS and EUDC lookups.
-
-    NTSTATUS ShortcutSerializationSetLinkValues(_In_ PCONSOLE_STATE_INFO pStateInfo, _In_ const BOOL fEastAsianSystem, _In_ const BOOL fForceV2);
-    NTSTATUS ShortcutSerializationGetLinkConsoleProperties(_In_ PCONSOLE_STATE_INFO pStateInfo);
-    NTSTATUS ShortcutSerializationGetLinkValues(_In_ PCONSOLE_STATE_INFO pStateInfo,
-                                                _Out_opt_ BOOL * const pfReadConsoleProperties,
-                                                _Out_writes_opt_(cchShortcutTitle) PWSTR pwszShortcutTitle,
-                                                _In_opt_ const size_t cchShortcutTitle,
-                                                _Out_writes_opt_(cchIconLocation) PWSTR pwszIconLocation,
-                                                _In_opt_ const size_t cchIconLocation,
-                                                _Out_opt_ int * const piIcon,
-                                                _Out_opt_ int * const piShowCmd,
-                                                _Out_opt_ int * const piHotKey);
-
-#endif
