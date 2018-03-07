@@ -562,7 +562,7 @@ HRESULT DoSrvSetConsoleWindowInfo(_In_ SCREEN_INFORMATION* pScreenInfo,
     RETURN_HR_IF(E_INVALIDARG, (NewWindowSize.X > coordMax.X || NewWindowSize.Y > coordMax.Y));
 
     // Even if it's the same size, we need to post an update in case the scroll bars need to go away.
-    NTSTATUS Status = pScreenInfo->SetViewportRect(&Window);
+    NTSTATUS Status = pScreenInfo->SetViewportRect(Viewport::FromInclusive(Window));
     if (pScreenInfo->IsActiveScreenBuffer())
     {
         // TODO: MSFT: 9574827 - shouldn't we be looking at or at least logging the failure codes here? (Or making them non-void?)

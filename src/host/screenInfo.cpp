@@ -763,12 +763,11 @@ void SCREEN_INFORMATION::SetViewportSize(_In_ const COORD* const pcoordSize)
     _InternalSetViewportSize(pcoordSize, false, false);
 }
 
-NTSTATUS SCREEN_INFORMATION::SetViewportOrigin(_In_ const BOOL fAbsolute, _In_ const COORD coordWindowOrigin)
+NTSTATUS SCREEN_INFORMATION::SetViewportOrigin(_In_ const BOOL fAbsolute,
+                                               _In_ const COORD coordWindowOrigin)
 {
     // calculate window size
-    COORD WindowSize;
-    WindowSize.X = (SHORT)GetScreenWindowSizeX();
-    WindowSize.Y = (SHORT)GetScreenWindowSizeY();
+    COORD WindowSize = _viewport.Dimensions();
 
     SMALL_RECT NewWindow;
     // if relative coordinates, figure out absolute coords.
@@ -830,37 +829,39 @@ NTSTATUS SCREEN_INFORMATION::SetViewportOrigin(_In_ const BOOL fAbsolute, _In_ c
 //                          This is not documented functionality (http://msdn.microsoft.com/en-us/library/windows/desktop/ms686125(v=vs.85).aspx)
 //                          however, it remains this way to preserve compatibility with apps that might be using it.
 // Return Value:
-NTSTATUS SCREEN_INFORMATION::SetViewportRect(_In_ SMALL_RECT* const prcNewViewport)
+NTSTATUS SCREEN_INFORMATION::SetViewportRect(_In_ const Viewport newViewport)
 {
     // make sure there's something to do
-    if (*prcNewViewport == _viewport.ToInclusive())
+    if (newViewport == _viewport)
     {
         return STATUS_SUCCESS;
     }
 
-    if (prcNewViewport->Left < 0)
+    SMALL_RECT srCorrected = newViewport.ToInclusive();
+
+    if (srCorrected.Left < 0)
     {
-        prcNewViewport->Right -= prcNewViewport->Left;
-        prcNewViewport->Left = 0;
+        srCorrected.Right -= srCorrected.Left;
+        srCorrected.Left = 0;
     }
-    if (prcNewViewport->Top < 0)
+    if (srCorrected.Top < 0)
     {
-        prcNewViewport->Bottom -= prcNewViewport->Top;
-        prcNewViewport->Top = 0;
+        srCorrected.Bottom -= srCorrected.Top;
+        srCorrected.Top = 0;
     }
 
     const COORD coordScreenBufferSize = GetScreenBufferSize();
-    if (prcNewViewport->Right >= coordScreenBufferSize.X)
+    if (srCorrected.Right >= coordScreenBufferSize.X)
     {
-        prcNewViewport->Right = coordScreenBufferSize.X;
+        srCorrected.Right = coordScreenBufferSize.X;
     }
-    if (prcNewViewport->Bottom >= coordScreenBufferSize.Y)
+    if (srCorrected.Bottom >= coordScreenBufferSize.Y)
     {
-        prcNewViewport->Bottom = coordScreenBufferSize.Y;
+        srCorrected.Bottom = coordScreenBufferSize.Y;
     }
 
-    _viewport = Viewport::FromInclusive(*prcNewViewport);
-    Tracing::s_TraceWindowViewport(*prcNewViewport);
+    _viewport = Viewport::FromInclusive(srCorrected);
+    Tracing::s_TraceWindowViewport(srCorrected);
 
     return STATUS_SUCCESS;
 }

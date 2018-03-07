@@ -99,7 +99,7 @@ public:
     void SetBufferViewport(_In_ const Microsoft::Console::Types::Viewport newViewport);
     // Forwarders to Window if we're the active buffer.
     NTSTATUS SetViewportOrigin(_In_ const BOOL fAbsolute, _In_ const COORD coordWindowOrigin);
-    NTSTATUS SetViewportRect(_In_ SMALL_RECT* const prcNewViewport);
+    NTSTATUS SetViewportRect(_In_ const Microsoft::Console::Types::Viewport newViewport);
     BOOL SendNotifyBeep() const;
     BOOL PostUpdateWindowSize() const;
 
@@ -149,7 +149,7 @@ public:
                                   _In_ BOOLEAN const Visible,
                                   _In_ unsigned int const Color,
                                   _In_ CursorType const Type);
-    
+
     NTSTATUS SetCursorDBMode(_In_ const BOOLEAN DoubleCursor);
     NTSTATUS SetCursorPosition(_In_ COORD const Position, _In_ BOOL const TurnOn);
 

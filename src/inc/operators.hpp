@@ -16,7 +16,7 @@ Author(s):
 inline bool operator==(const COORD& a, const COORD& b)
 {
     return (a.X == b.X &&
-            a.X == b.Y);
+            a.Y == b.Y);
 }
 
 inline bool operator!=(const COORD& a, const COORD& b)
