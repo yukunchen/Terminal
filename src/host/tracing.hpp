@@ -83,7 +83,7 @@ public:
     static void s_TraceWindowMessage(_In_ const MSG& msg);
     static void s_TraceInputRecord(_In_ const INPUT_RECORD& inputRecord);
 
-    static void __stdcall TraceFailure(const wil::FailureInfo& failure);
+    static void __stdcall TraceFailure(const wil::FailureInfo& failure) noexcept;
 
     static void s_TraceUia(_In_ const Microsoft::Console::Interactivity::Win32::UiaTextRange* const range,
                            _In_ const Microsoft::Console::Interactivity::Win32::UiaTextRangeTracing::ApiCall apiCall,
