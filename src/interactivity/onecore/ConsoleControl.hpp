@@ -17,23 +17,14 @@ Author(s):
 
 #pragma hdrstop
 
-namespace Microsoft
+namespace Microsoft::Console::Interactivity::OneCore
 {
-    namespace Console
+    class ConsoleControl sealed : public IConsoleControl
     {
-        namespace Interactivity
-        {
-            namespace OneCore
-            {
-                class ConsoleControl sealed : public IConsoleControl
-                {
-                public:
-                    // IConsoleControl Members
-                    NTSTATUS NotifyConsoleApplication(_In_ DWORD dwProcessId);
-                    NTSTATUS SetForeground(_In_ HANDLE hProcess, _In_ BOOL fForeground);
-                    NTSTATUS EndTask(_In_ HANDLE hProcessId, _In_ DWORD dwEventType, _In_ ULONG ulCtrlFlags);
-                };
-            };
-        };
+    public:
+        // IConsoleControl Members
+        NTSTATUS NotifyConsoleApplication(_In_ DWORD dwProcessId);
+        NTSTATUS SetForeground(_In_ HANDLE hProcess, _In_ BOOL fForeground);
+        NTSTATUS EndTask(_In_ HANDLE hProcessId, _In_ DWORD dwEventType, _In_ ULONG ulCtrlFlags);
     };
-};
+}

@@ -15,20 +15,14 @@ Author(s):
 --*/
 #pragma once
 
-namespace Microsoft
+namespace Microsoft::Console::VirtualTerminal
 {
-    namespace Console
+    class AdaptDefaults
     {
-        namespace VirtualTerminal
-        {
-            class AdaptDefaults
-            {
-            public:
-                virtual void Print(_In_ wchar_t const wch) = 0;
-                // These characters need to be mutable so that they can be processed by the TerminalInput translater.
-                virtual void PrintString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch) = 0;
-                virtual void Execute(_In_ wchar_t const wch) = 0;
-            };
-        };
+    public:
+        virtual void Print(_In_ wchar_t const wch) = 0;
+        // These characters need to be mutable so that they can be processed by the TerminalInput translater.
+        virtual void PrintString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch) = 0;
+        virtual void Execute(_In_ wchar_t const wch) = 0;
     };
-};
+}
