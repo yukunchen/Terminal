@@ -28,13 +28,13 @@ namespace Microsoft
 class Microsoft::Console::Types::Viewport final
 {
 public:
-    
+
     Viewport(_In_ const SMALL_RECT sr);
     Viewport(_In_ const Viewport& other);
     ~Viewport();
 
     static Viewport FromInclusive(_In_ const SMALL_RECT sr);
-    
+
     static Viewport FromExclusive(_In_ const SMALL_RECT sr);
 
     static Viewport FromDimensions(_In_ const COORD origin,
@@ -45,7 +45,7 @@ public:
                                    _In_ const COORD dimensions);
 
     static Viewport FromCoord(_In_ const COORD origin);
-    
+
     SHORT Left() const;
     SHORT RightInclusive() const;
     SHORT RightExclusive() const;
@@ -69,7 +69,9 @@ public:
     SMALL_RECT ToInclusive() const;
 
     Viewport ToOrigin() const;
-    
+
+    bool IsValid() const;
+
     static HRESULT AddCoord(_In_ const Viewport& original,
                             _In_ const COORD delta,
                             _Out_ Viewport& modified);

@@ -824,11 +824,11 @@ NTSTATUS SCREEN_INFORMATION::SetViewportOrigin(_In_ const BOOL fAbsolute,
 // - It is specified in character count within the buffer.
 // - It will be corrected to not exceed the limits of the current screen buffer dimensions.
 // Arguments:
-// - prcNewViewport - Specifies boundaries for the new viewport.
-//                    NOTE: A pointer is used here so the updated value (if corrected) is passed back out to the API call (SetConsoleWindowInfo)
-//                          This is not documented functionality (http://msdn.microsoft.com/en-us/library/windows/desktop/ms686125(v=vs.85).aspx)
-//                          however, it remains this way to preserve compatibility with apps that might be using it.
+// newViewport: The new viewport to use. If it's out of bounds in the negative
+//      direction it will be shifted to positive coordinates. If it's bigger
+//      that the screen buffer, it will be clamped to the size of the buffer.
 // Return Value:
+// STATUS_SUCCESS always.
 NTSTATUS SCREEN_INFORMATION::SetViewportRect(_In_ const Viewport newViewport)
 {
     // make sure there's something to do
@@ -837,6 +837,7 @@ NTSTATUS SCREEN_INFORMATION::SetViewportRect(_In_ const Viewport newViewport)
         return STATUS_SUCCESS;
     }
 
+    // do adjustments on a copy that's easily manipulated.
     SMALL_RECT srCorrected = newViewport.ToInclusive();
 
     if (srCorrected.Left < 0)
@@ -924,8 +925,7 @@ void SCREEN_INFORMATION::ProcessResizeWindow(_In_ const RECT* const prcClientNew
     UpdateScrollBars();
 
     ASSERT(_viewport.Top() >= 0);
-    ASSERT(_viewport.Top() < _viewport.BottomInclusive());
-    ASSERT(_viewport.Left() < _viewport.RightInclusive());
+    ASSERT(_viewport.IsValid());
 }
 
 #pragma endregion
@@ -1107,6 +1107,7 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(_In_ const COORD* const pcoord
     const short DeltaY = pcoordSize->Y - GetScreenWindowSizeY();
     const COORD coordScreenBufferSize = GetScreenBufferSize();
 
+    // do adjustments on a copy that's easily manipulated.
     SMALL_RECT srNewViewport = _viewport.ToInclusive();
 
     // Now we need to determine what our new Window size should
