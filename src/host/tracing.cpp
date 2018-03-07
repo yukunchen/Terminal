@@ -310,7 +310,7 @@ void Tracing::s_TraceInputRecord(_In_ const INPUT_RECORD& inputRecord)
     }
 }
 
-void __stdcall Tracing::TraceFailure(const wil::FailureInfo& failure)
+void __stdcall Tracing::TraceFailure(const wil::FailureInfo& failure) noexcept
 {
     TraceLoggingWrite(
         g_hConhostV2EventTraceProvider,
