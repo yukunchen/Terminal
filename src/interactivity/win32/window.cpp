@@ -34,6 +34,7 @@
 #include "..\..\renderer\gdi\gdirenderer.hpp"
 
 #include "..\inc\ServiceLocator.hpp"
+#include "..\..\types\inc\Viewport.hpp"
 
 // The following default masks are used in creating windows
 // Make sure that these flags match when switching to fullscreen and back
@@ -44,6 +45,7 @@
 #define CONSOLE_WINDOW_CLASS (L"ConsoleWindowClass")
 
 using namespace Microsoft::Console::Interactivity::Win32;
+using namespace Microsoft::Console::Types;
 
 ATOM Window::s_atomWindowClass = 0;
 Window* Window::s_Instance = nullptr;
@@ -404,11 +406,11 @@ NTSTATUS Window::SetViewportOrigin(_In_ SMALL_RECT NewWindow)
         if (pNotifier != nullptr)
         {
             pNotifier->NotifyConsoleUpdateScrollEvent(ScreenInfo->GetBufferViewport().Left - NewWindow.Left,
-                                                      ScreenInfo->GetBufferViewport().Top - NewWindow.Top);   
+                                                      ScreenInfo->GetBufferViewport().Top - NewWindow.Top);
         }
 
         // The new window is OK. Store it in screeninfo and refresh screen.
-        ScreenInfo->SetBufferViewport(NewWindow);
+        ScreenInfo->SetBufferViewport(Viewport::FromInclusive(NewWindow));
         Tracing::s_TraceWindowViewport(ScreenInfo->GetBufferViewport());
 
         if (ServiceLocator::LocateGlobals()->pRender != nullptr)
@@ -421,7 +423,7 @@ NTSTATUS Window::SetViewportOrigin(_In_ SMALL_RECT NewWindow)
     else
     {
         // we're iconic
-        ScreenInfo->SetBufferViewport(NewWindow);
+        ScreenInfo->SetBufferViewport(Viewport::FromInclusive(NewWindow));
         Tracing::s_TraceWindowViewport(ScreenInfo->GetBufferViewport());
     }
 
@@ -661,14 +663,14 @@ NTSTATUS Window::_InternalSetWindowSize() const
         // - The specific scenario that this impacts is ConEmu (wrapping our console) to use Bash in WSL.
         // - The reason this is a problem is because ConEmu has to programatically manipulate our buffer and window size
         //   one after another to get our dimensions to change.
-        // - The WSL layer watches our Buffer change message to know when to get the new Window size and send it into the 
+        // - The WSL layer watches our Buffer change message to know when to get the new Window size and send it into the
         //   WSL environment. This isn't technically correct to use a Buffer message to know when Window changes, but
         //   it's not totally their fault because we do not provide a Window changed message at all.
         // - If our window is adjusted directly, the Buffer and Window dimensions are both updated simultaneously under lock
         //   and WSL gets one message and updates appropriately.
-        // - If ConEmu updates it via the API, one is updated, then the other with an unlocked time interval. 
-        //   The WSL layer will potentially get the Window size that hasn't been updated yet or is out of sync before the 
-        //   other API call is completed which results in the application in the WSL environment thinking the window is 
+        // - If ConEmu updates it via the API, one is updated, then the other with an unlocked time interval.
+        //   The WSL layer will potentially get the Window size that hasn't been updated yet or is out of sync before the
+        //   other API call is completed which results in the application in the WSL environment thinking the window is
         //   a different size and outputting VT sequences with an invalid assumption.
         // - If we make it so a Window change also emits a Buffer change message, then WSL will be notified appropriately
         //   and can pass that information into the WSL environment.

@@ -31,6 +31,8 @@ Revision History:
 #include "..\interactivity\inc\IConsoleWindow.hpp"
 #include "..\interactivity\inc\IWindowMetrics.hpp"
 
+#include "..\types\inc\Viewport.hpp"
+
 using namespace Microsoft::Console::Interactivity;
 using namespace Microsoft::Console::VirtualTerminal;
 
@@ -93,7 +95,7 @@ public:
     bool IsMaximizedY() const;
 
     SMALL_RECT GetBufferViewport() const;
-    void SetBufferViewport(SMALL_RECT srBufferViewport);
+    void SetBufferViewport(_In_ const Microsoft::Console::Types::Viewport newViewport);
     // Forwarders to Window if we're the active buffer.
     NTSTATUS SetViewportOrigin(_In_ const BOOL fAbsolute, _In_ const COORD coordWindowOrigin);
     NTSTATUS SetViewportRect(_In_ SMALL_RECT* const prcNewViewport);
@@ -225,11 +227,11 @@ private:
     COORD _coordScreenBufferSize; // dimensions of buffer
 
     SMALL_RECT _srScrollMargins; //The margins of the VT specified scroll region. Left and Right are currently unused, but could be in the future.
-    
-    // specifies which coordinates of the screen buffer are visible in the 
+
+    // specifies which coordinates of the screen buffer are visible in the
     //      window client (the "viewport" into the buffer)
     // This is an Inclusive rectangle
-    SMALL_RECT _srBufferViewport;  
+    Microsoft::Console::Types::Viewport _viewport;
 
     SCREEN_INFORMATION* _psiAlternateBuffer = nullptr; // The VT "Alternate" screen buffer.
     SCREEN_INFORMATION* _psiMainBuffer = nullptr; // A pointer to the main buffer, if this is the alternate buffer.
