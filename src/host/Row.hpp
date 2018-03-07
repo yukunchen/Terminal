@@ -49,7 +49,7 @@ public:
 
     void ClearColumn(_In_ const size_t column);
 
-    friend constexpr bool operator==(const ROW& a, const ROW& b) noexcept;
+    friend bool operator==(const ROW& a, const ROW& b) noexcept;
 
 #ifdef UNIT_TESTING
     friend class RowTests;
@@ -63,7 +63,7 @@ private:
 };
 
 void swap(ROW& a, ROW& b) noexcept;
-constexpr bool operator==(const ROW& a, const ROW& b) noexcept
+inline bool operator==(const ROW& a, const ROW& b) noexcept
 {
     return (a._charRow == b._charRow &&
             a._attrRow == b._attrRow &&
