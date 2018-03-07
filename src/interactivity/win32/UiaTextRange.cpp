@@ -1648,7 +1648,6 @@ std::pair<Endpoint, Endpoint> UiaTextRange::_moveByCharacterForward(_In_ const i
         // check if we're at the edge of the screen info buffer
         if (currentScreenInfoRow == moveState.LimitingRow &&
             currentColumn + 1>= right)
-
         {
             break;
         }
@@ -1690,7 +1689,6 @@ std::pair<Endpoint, Endpoint> UiaTextRange::_moveByCharacterBackward(_In_ const 
         // check if we're at the edge of the screen info buffer
         if (currentScreenInfoRow == moveState.LimitingRow &&
             currentColumn == moveState.LastColumnInRow)
-
         {
             break;
         }
@@ -1829,7 +1827,6 @@ UiaTextRange::_moveEndpointByUnitCharacterForward(_In_ const int moveCount,
         // check if we're at the edge of the screen info buffer
         if (currentScreenInfoRow == moveState.LimitingRow &&
             currentColumn + 1 >= right)
-
         {
             break;
         }
@@ -1912,7 +1909,6 @@ UiaTextRange::_moveEndpointByUnitCharacterBackward(_In_ const int moveCount,
         // check if we're at the edge of the screen info buffer
         if (currentScreenInfoRow == moveState.LimitingRow &&
             currentColumn == moveState.LastColumnInRow)
-
         {
             break;
         }
