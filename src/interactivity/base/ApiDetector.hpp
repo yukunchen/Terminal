@@ -14,7 +14,7 @@ namespace Microsoft
                 OneCore
             };
 
-            class ApiDetector
+            class ApiDetector final
             {
             public:
                 static NTSTATUS DetectNtUserWindow(_Out_ ApiLevel* level);
@@ -24,8 +24,10 @@ namespace Microsoft
                 static NTSTATUS TryLoadWellKnownLibrary(_In_ LPCWSTR library, _Outptr_result_nullonfailure_ HMODULE* module);
                 static NTSTATUS TryLocateProcedure(_In_ HMODULE hModule, _In_ LPCSTR lpProcedure);
                 static void SetLevelAndFreeIfNecessary(_In_ NTSTATUS status, _In_ HMODULE hModule, _Out_ ApiLevel* level);
-                static NTSTATUS TryLoadWellKnownLibrary(_In_ LPCWSTR lpLibrary, _In_ DWORD dwLoaderFlags, _Outptr_result_nullonfailure_ HMODULE *phModule);
+                static NTSTATUS TryLoadWellKnownLibrary(_In_ LPCWSTR lpLibrary,
+                                                        _In_ DWORD dwLoaderFlags,
+                                                        _Outptr_result_nullonfailure_ HMODULE *phModule);
             };
-        };
-    };
-};
+        }
+    }
+}

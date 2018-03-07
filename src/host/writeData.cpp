@@ -120,7 +120,7 @@ BOOL WriteData::Notify(_In_ WaitTerminationReason const TerminationReason,
     // This routine should be called by a thread owning the same lock on the
     // same console as we're reading from.
 
-    assert(ServiceLocator::LocateGlobals()->getConsoleInformation()->IsConsoleLocked());
+    assert(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
 
     WriteData* pWaiter = nullptr;
     ULONG cbContext = _cbContext;

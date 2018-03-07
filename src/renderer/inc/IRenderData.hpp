@@ -13,10 +13,10 @@ Author(s):
 
 #pragma once
 
-#include "..\..\host\conimeinfo.h"
+#include "../../host/conimeinfo.h"
+#include "../../host/TextAttribute.hpp"
 
 class TEXT_BUFFER_INFO;
-class TextAttribute;
 class Cursor;
 class SCREEN_INFORMATION;
 
@@ -29,11 +29,13 @@ namespace Microsoft
             class IRenderData
             {
             public:
+                virtual ~IRenderData() = 0;
                 virtual const SMALL_RECT GetViewport() = 0;
                 virtual const TEXT_BUFFER_INFO* GetTextBuffer() = 0;
                 virtual const FontInfo* GetFontInfo() = 0;
                 virtual const TextAttribute GetDefaultBrushColors() = 0;
-                virtual const void GetColorTable(_Outptr_result_buffer_all_(*pcColors) COLORREF** const ppColorTable, _Out_ size_t* const pcColors) = 0;
+                virtual const void GetColorTable(_Outptr_result_buffer_all_(*pcColors) COLORREF** const ppColorTable,
+                                                 _Out_ size_t* const pcColors) = 0;
                 virtual const Cursor* GetCursor() = 0;
                 virtual const ConsoleImeInfo* GetImeData() = 0;
                 virtual const TEXT_BUFFER_INFO* GetImeCompositionStringBuffer(_In_ size_t iIndex) = 0;
@@ -45,6 +47,8 @@ namespace Microsoft
                         _Outptr_result_buffer_all_(*pcRectangles) SMALL_RECT** const prgsrSelection,
                         _Out_ UINT* const pcRectangles) = 0;
             };
-        };
-    };
-};
+
+            inline IRenderData::~IRenderData() {}
+        }
+    }
+}

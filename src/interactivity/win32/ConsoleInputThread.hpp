@@ -23,12 +23,13 @@ namespace Microsoft
         {
             namespace Win32
             {
-                class ConsoleInputThread sealed : public IConsoleInputThread
+                class ConsoleInputThread final : public IConsoleInputThread
                 {
                 public:
+                    ~ConsoleInputThread() = default;
                     HANDLE Start();
                 };
             }
-        };
-    };
-};
+        }
+    }
+}

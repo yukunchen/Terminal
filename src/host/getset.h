@@ -14,7 +14,7 @@ Revision History:
 --*/
 
 #pragma once
-
+#include "../inc/conattrs.hpp"
 class SCREEN_INFORMATION;
 
 HRESULT DoSrvGetConsoleScreenBufferInfo(_In_ SCREEN_INFORMATION* const pScreenInfo, _Out_ CONSOLE_SCREEN_BUFFER_INFOEX* const pInfo);
@@ -61,6 +61,11 @@ NTSTATUS DoSrvPrivateSetConsoleXtermTextAttribute(_In_ SCREEN_INFORMATION* pScre
 NTSTATUS DoSrvPrivateSetConsoleRGBTextAttribute(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ COLORREF const rgbColor, _In_ const bool fIsForeground);
 
 NTSTATUS DoSrvPrivateEraseAll(_In_ SCREEN_INFORMATION* const pScreenInfo);
+
+NTSTATUS DoSrvSetCursorStyle(_In_ const SCREEN_INFORMATION* const pScreenInfo,
+                             _In_ CursorType const cursorType);
+NTSTATUS DoSrvSetCursorColor(_In_ const SCREEN_INFORMATION* const pScreenInfo,
+                             _In_ COLORREF const cursorColor);
 
 NTSTATUS DoSrvPrivateGetConsoleScreenBufferAttributes(_In_ SCREEN_INFORMATION* const pScreenInfo, _Out_ WORD* const pwAttributes);
 

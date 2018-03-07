@@ -16,17 +16,17 @@ namespace Microsoft
     {
         namespace Interactivity
         {
-            class InteractivityFactory sealed : public IInteractivityFactory
+            class InteractivityFactory final : public IInteractivityFactory
             {
             public:
-                NTSTATUS CreateConsoleControl(_Outptr_result_nullonfailure_ IConsoleControl** control);
-                NTSTATUS CreateConsoleInputThread(_Outptr_result_nullonfailure_ IConsoleInputThread** thread);
+                NTSTATUS CreateConsoleControl(_Inout_ std::unique_ptr<IConsoleControl>& control);
+                NTSTATUS CreateConsoleInputThread(_Inout_ std::unique_ptr<IConsoleInputThread>& thread);
 
-                NTSTATUS CreateHighDpiApi(_Outptr_result_nullonfailure_ IHighDpiApi** api);
-                NTSTATUS CreateWindowMetrics(_Outptr_result_nullonfailure_ IWindowMetrics** metrics);
-                NTSTATUS CreateAccessibilityNotifier(_Outptr_result_nullonfailure_ IAccessibilityNotifier** notifier);
-                NTSTATUS CreateSystemConfigurationProvider(_Outptr_result_nullonfailure_ ISystemConfigurationProvider** provider);
-                NTSTATUS CreateInputServices(_Outptr_result_nullonfailure_ IInputServices** services);
+                NTSTATUS CreateHighDpiApi(_Inout_ std::unique_ptr<IHighDpiApi>& api);
+                NTSTATUS CreateWindowMetrics(_Inout_ std::unique_ptr<IWindowMetrics>& metrics);
+                NTSTATUS CreateAccessibilityNotifier(_Inout_ std::unique_ptr<IAccessibilityNotifier>& notifier);
+                NTSTATUS CreateSystemConfigurationProvider(_Inout_ std::unique_ptr<ISystemConfigurationProvider>& provider);
+                NTSTATUS CreateInputServices(_Inout_ std::unique_ptr<IInputServices>& services);
             };
         };
     };

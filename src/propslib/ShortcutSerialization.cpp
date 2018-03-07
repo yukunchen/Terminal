@@ -19,6 +19,13 @@ void ShortcutSerialization::s_InitPropVarFromByte(_In_ BYTE bVal, _Out_ PROPVARI
     ppropvar->iVal = bVal;
 }
 
+void ShortcutSerialization::s_InitPropVarFromDword(_In_ DWORD dwVal, _Out_ PROPVARIANT *ppropvar)
+{
+    // A DWORD is a 4-byte unsigned int value, so use the uint member.
+    ppropvar->vt = VT_UINT;
+    ppropvar->uintVal = dwVal;
+}
+
 void ShortcutSerialization::s_SetLinkPropertyBoolValue(_In_ IPropertyStore *pps, _In_ REFPROPERTYKEY refPropKey,_In_ const BOOL fVal)
 {
     PROPVARIANT propvarBool;
@@ -47,6 +54,16 @@ HRESULT ShortcutSerialization::s_GetPropertyBoolValue(_In_ IPropertyStore * cons
     return hr;
 }
 
+void ShortcutSerialization::s_SetLinkPropertyDwordValue(_Inout_ IPropertyStore *pps,
+                                                        _In_ REFPROPERTYKEY refPropKey,
+                                                        _In_ const DWORD dwVal)
+{
+    PROPVARIANT propvarDword;
+    s_InitPropVarFromDword(dwVal, &propvarDword);
+    pps->SetValue(refPropKey, propvarDword);
+    PropVariantClear(&propvarDword);
+}
+
 HRESULT ShortcutSerialization::s_GetPropertyByteValue(_In_ IPropertyStore * const pPropStore, _In_ REFPROPERTYKEY refPropKey, _Out_ BYTE * const pbValue)
 {
     PROPVARIANT propvar;
@@ -62,6 +79,23 @@ HRESULT ShortcutSerialization::s_GetPropertyByteValue(_In_ IPropertyStore * cons
             {
                 *pbValue = (BYTE)sValue;
             }
+        }
+    }
+
+    return hr;
+}
+
+HRESULT ShortcutSerialization::s_GetPropertyDwordValue(_Inout_ IPropertyStore * const pPropStore, _In_ REFPROPERTYKEY refPropKey, _Out_ DWORD * const pdwValue)
+{
+    PROPVARIANT propvar;
+    HRESULT hr = pPropStore->GetValue(refPropKey, &propvar);
+    if (SUCCEEDED(hr))
+    {
+        DWORD dwValue;
+        hr = PropVariantToUInt32(propvar, &dwValue);
+        if (SUCCEEDED(hr))
+        {
+            *pdwValue = dwValue;
         }
     }
 
@@ -129,18 +163,31 @@ HRESULT ShortcutSerialization::s_PopulateV2Properties(_In_ IShellLink * const ps
         if (SUCCEEDED(hr))
         {
             hr = s_GetPropertyBoolValue(pPropStoreLnk, PKEY_Console_FilterOnPaste, &pStateInfo->fFilterOnPaste);
+        }
+        if (SUCCEEDED(hr))
+        {
+            hr = s_GetPropertyBoolValue(pPropStoreLnk, PKEY_Console_CtrlKeyShortcutsDisabled, &pStateInfo->fCtrlKeyShortcutsDisabled);
+        }
+        if (SUCCEEDED(hr))
+        {
+            hr = s_GetPropertyBoolValue(pPropStoreLnk, PKEY_Console_LineSelection, &pStateInfo->fLineSelection);
+        }
+        if (SUCCEEDED(hr))
+        {
+            hr = s_GetPropertyByteValue(pPropStoreLnk, PKEY_Console_WindowTransparency, &pStateInfo->bWindowTransparency);
+        }
+        if (SUCCEEDED(hr))
+        {
+            DWORD placeholder = 0;
+            hr = s_GetPropertyDwordValue(pPropStoreLnk, PKEY_Console_CursorType, &placeholder);
             if (SUCCEEDED(hr))
             {
-                hr = s_GetPropertyBoolValue(pPropStoreLnk, PKEY_Console_CtrlKeyShortcutsDisabled, &pStateInfo->fCtrlKeyShortcutsDisabled);
-                if (SUCCEEDED(hr))
-                {
-                    hr = s_GetPropertyBoolValue(pPropStoreLnk, PKEY_Console_LineSelection, &pStateInfo->fLineSelection);
-                    if (SUCCEEDED(hr))
-                    {
-                        hr = s_GetPropertyByteValue(pPropStoreLnk, PKEY_Console_WindowTransparency, &pStateInfo->bWindowTransparency);
-                    }
-                }
+                pStateInfo->CursorType = (unsigned int) placeholder;
             }
+        }
+        if (SUCCEEDED(hr))
+        {
+            hr = s_GetPropertyDwordValue(pPropStoreLnk, PKEY_Console_CursorColor, &pStateInfo->CursorColor);
         }
 
         pPropStoreLnk->Release();
@@ -395,7 +442,8 @@ NTSTATUS ShortcutSerialization::s_SetLinkValues(_In_ PCONSOLE_STATE_INFO pStateI
                     s_SetLinkPropertyBoolValue(pps, PKEY_Console_CtrlKeyShortcutsDisabled, pStateInfo->fCtrlKeyShortcutsDisabled);
                     s_SetLinkPropertyBoolValue(pps, PKEY_Console_LineSelection, pStateInfo->fLineSelection);
                     s_SetLinkPropertyByteValue(pps, PKEY_Console_WindowTransparency, pStateInfo->bWindowTransparency);
-
+                    s_SetLinkPropertyDwordValue(pps, PKEY_Console_CursorType, pStateInfo->CursorType);
+                    s_SetLinkPropertyDwordValue(pps, PKEY_Console_CursorColor, pStateInfo->CursorColor);
                     hr = pps->Commit();
                     pps->Release();
                 }
@@ -415,30 +463,4 @@ NTSTATUS ShortcutSerialization::s_SetLinkValues(_In_ PCONSOLE_STATE_INFO pStateI
     }
 
     return (SUCCEEDED(hr)) ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
-}
-
-extern "C"
-{
-NTSTATUS ShortcutSerializationSetLinkValues(_In_ PCONSOLE_STATE_INFO pStateInfo , _In_ BOOL fEastAsianSystem, _In_ BOOL fForceV2)
-{
-    return ShortcutSerialization::s_SetLinkValues(pStateInfo, fEastAsianSystem, fForceV2);
-}
-
-NTSTATUS ShortcutSerializationGetLinkConsoleProperties(_In_ PCONSOLE_STATE_INFO pStateInfo)
-{
-    return ShortcutSerialization::s_GetLinkConsoleProperties(pStateInfo);
-}
-
-NTSTATUS ShortcutSerializationGetLinkValues(_In_ PCONSOLE_STATE_INFO pStateInfo,
-                                            _Out_ BOOL * const pfReadConsoleProperties,
-                                            _Out_writes_opt_(cchShortcutTitle) PWSTR pwszShortcutTitle,
-                                            _In_ const size_t cchShortcutTitle,
-                                            _Out_writes_opt_(cchIconLocation) PWSTR pwszIconLocation,
-                                            _In_ const size_t cchIconLocation,
-                                            _Out_opt_ int * const piIcon,
-                                            _Out_opt_ int * const piShowCmd,
-                                            _Out_opt_ WORD * const pwHotKey)
-{
-    return ShortcutSerialization::s_GetLinkValues(pStateInfo, pfReadConsoleProperties, pwszShortcutTitle, cchShortcutTitle, pwszIconLocation, cchIconLocation, piIcon, piShowCmd, pwHotKey);
-}
 }

@@ -23,20 +23,20 @@ void Scrolling::s_UpdateSystemMetrics()
 
 bool Scrolling::s_IsInScrollMode()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    return IsFlagSet(gci->Flags, CONSOLE_SCROLLING);
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return IsFlagSet(gci.Flags, CONSOLE_SCROLLING);
 }
 
 void Scrolling::s_DoScroll()
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
     if (!s_IsInScrollMode())
     {
         // clear any selection we may have -- can't scroll and select at the same time
         Selection::Instance().ClearSelection();
 
-        SetFlag(gci->Flags, CONSOLE_SCROLLING);
+        SetFlag(gci.Flags, CONSOLE_SCROLLING);
 
         if (pWindow != nullptr)
         {
@@ -47,9 +47,9 @@ void Scrolling::s_DoScroll()
 
 void Scrolling::s_ClearScroll()
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
-    ClearFlag(gci->Flags, CONSOLE_SCROLLING);
+    ClearFlag(gci.Flags, CONSOLE_SCROLLING);
     if (pWindow != nullptr)
     {
         pWindow->UpdateWindowText();
@@ -199,7 +199,7 @@ void Scrolling::s_HandleMouseWheel(_In_ bool isMouseWheel, _In_ bool isMouseHWhe
 
 bool Scrolling::s_HandleKeyScrollingEvent(_In_ const INPUT_KEY_INFO* const pKeyInfo)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     IConsoleWindow *pWindow = ServiceLocator::LocateConsoleWindow();
     ASSERT(pWindow);
 
@@ -259,7 +259,7 @@ bool Scrolling::s_HandleKeyScrollingEvent(_In_ const INPUT_KEY_INFO* const pKeyI
                 if (fIsEditLineEmpty)
                 {
                     // Ctrl-End when edit line is empty will scroll to last line in the buffer.
-                    gci->CurrentScreenBuffer->MakeCurrentCursorVisible();
+                    gci.CurrentScreenBuffer->MakeCurrentCursorVisible();
                     return true;
                 }
                 else

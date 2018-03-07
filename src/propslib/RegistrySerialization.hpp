@@ -19,8 +19,6 @@ Revision History:
 
 #pragma once
 
-#ifdef __cplusplus
-
 class Settings;
 
 class RegistrySerialization
@@ -116,54 +114,3 @@ public:
     static NTSTATUS s_LoadRegString(_In_ HKEY const hKey, _In_ const _RegPropertyMap* const pPropMap, _In_ Settings* const pSettings);
 
 };
-
-#else // not __cplusplus
-
-    // The following registry methods remain public for DBCS and EUDC lookups.
-    _Check_return_
-    NTSTATUS RegistrySerializationOpenKey(_In_opt_ HKEY const hKey, _In_ PCWSTR const pwszSubKey, _Out_ HKEY* const phResult);
-
-    _Check_return_
-    NTSTATUS RegistrySerializationQueryValue(_In_ HKEY const hKey,
-                                             _In_ PCWSTR const pwszValueName,
-                                             _In_ DWORD const cbValueLength,
-                                             _Out_writes_bytes_(cbValueLength) BYTE* const pbData,
-                                             _Out_opt_ _Out_range_(0, cbValueLength) DWORD* const pcbDataLength);
-
-    _Check_return_
-    NTSTATUS RegistrySerializationEnumValue(_In_ HKEY const hKey,
-                                            _In_ DWORD const dwIndex,
-                                            _In_ DWORD const cbValueLength,
-                                            _Out_writes_bytes_(cbValueLength) PWSTR const pwszValueName,
-                                            _In_ DWORD const cbDataLength,
-                                            _Out_writes_bytes_(cbDataLength) BYTE* const pbData);
-
-    _Check_return_
-    NTSTATUS RegistrySerializationOpenConsoleKey(_Out_ HKEY* phCurrentUserKey, _Out_ HKEY* phConsoleKey);
-
-    _Check_return_
-    NTSTATUS RegistrySerializationCreateKey(_In_ HKEY const hKey, _In_ PCWSTR const pwszSubKey, _Out_ HKEY* const phResult);
-
-    _Check_return_
-    NTSTATUS RegistrySerializationDeleteValue(_In_ HKEY const hKey, _In_ PCWSTR const pwszValueName);
-
-    _Check_return_
-    NTSTATUS RegistrySerializationSetValue(_In_ HKEY const hKey,
-                                           _In_ PCWSTR const pwszValueName,
-                                           _In_ DWORD const dwType,
-                                           _In_reads_bytes_(cbDataLength) BYTE* const pbData,
-                                           _In_ DWORD const cbDataLength);
-
-    _Check_return_
-    NTSTATUS RegistrySerializationUpdateValue(_In_ HKEY const hConsoleKey,
-                                              _In_ HKEY const hKey,
-                                              _In_ PCWSTR const pwszValueName,
-                                              _In_ DWORD const dwType,
-                                              _In_reads_bytes_(dwDataLength) BYTE* pbData,
-                                              _In_ DWORD const dwDataLength);
-
-    NTSTATUS RegistrySerializationOpenCurrentUserConsoleTitleKey(_In_ PCWSTR const title,
-                                                                 _Out_ HKEY* phCurrentUserKey,
-                                                                 _Out_ HKEY* phConsoleKey,
-                                                                 _Out_ HKEY* phTitleKey );
-#endif

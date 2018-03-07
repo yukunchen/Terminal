@@ -21,14 +21,14 @@ class ApiRoutinesTests
 {
     TEST_CLASS(ApiRoutinesTests);
 
-    CommonState* m_state;
+    std::unique_ptr<CommonState> m_state;
 
     ApiRoutines _Routines;
     IApiRoutines* _pApiRoutines = &_Routines;
 
     TEST_METHOD_SETUP(MethodSetup)
     {
-        m_state = new CommonState();
+        m_state = std::make_unique<CommonState>();
 
         m_state->PrepareGlobalFont();
         m_state->PrepareGlobalScreenBuffer();
@@ -45,31 +45,33 @@ class ApiRoutinesTests
         m_state->CleanupGlobalScreenBuffer();
         m_state->CleanupGlobalFont();
 
+        m_state.reset(nullptr);
+
         return true;
     }
 
     BOOL _fPrevInsertMode;
     void PrepVerifySetConsoleInputModeImpl(_In_ ULONG const ulOriginalInputMode)
     {
-        CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-        gci->Flags = 0;
-        gci->pInputBuffer->InputMode = ulOriginalInputMode & ~(ENABLE_QUICK_EDIT_MODE | ENABLE_AUTO_POSITION | ENABLE_INSERT_MODE | ENABLE_EXTENDED_FLAGS);
-        gci->SetInsertMode(IsFlagSet(ulOriginalInputMode, ENABLE_INSERT_MODE));
-        UpdateFlag(gci->Flags, CONSOLE_QUICK_EDIT_MODE, IsFlagSet(ulOriginalInputMode, ENABLE_QUICK_EDIT_MODE));
-        UpdateFlag(gci->Flags, CONSOLE_AUTO_POSITION, IsFlagSet(ulOriginalInputMode, ENABLE_AUTO_POSITION));
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        gci.Flags = 0;
+        gci.pInputBuffer->InputMode = ulOriginalInputMode & ~(ENABLE_QUICK_EDIT_MODE | ENABLE_AUTO_POSITION | ENABLE_INSERT_MODE | ENABLE_EXTENDED_FLAGS);
+        gci.SetInsertMode(IsFlagSet(ulOriginalInputMode, ENABLE_INSERT_MODE));
+        UpdateFlag(gci.Flags, CONSOLE_QUICK_EDIT_MODE, IsFlagSet(ulOriginalInputMode, ENABLE_QUICK_EDIT_MODE));
+        UpdateFlag(gci.Flags, CONSOLE_AUTO_POSITION, IsFlagSet(ulOriginalInputMode, ENABLE_AUTO_POSITION));
 
         // Set cursor DB to on so we can verify that it turned off when the Insert Mode changes.
-        gci->CurrentScreenBuffer->SetCursorDBMode(TRUE);
+        gci.CurrentScreenBuffer->SetCursorDBMode(TRUE);
 
         // Record the insert mode at this time to see if it changed.
-        _fPrevInsertMode = gci->GetInsertMode();
+        _fPrevInsertMode = gci.GetInsertMode();
     }
 
     void VerifySetConsoleInputModeImpl(_In_ HRESULT const hrExpected,
                                        _In_ ULONG const ulNewMode)
     {
-        CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-        InputBuffer* const pii = gci->pInputBuffer;
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        InputBuffer* const pii = gci.pInputBuffer;
 
         // The expected mode set in the buffer is the mode given minus the flags that are stored in different fields.
         ULONG ulModeExpected = ulNewMode;
@@ -87,10 +89,10 @@ class ApiRoutinesTests
         // Now do verifications of final state.
         VERIFY_ARE_EQUAL(hrExpected, hrActual);
         VERIFY_ARE_EQUAL(ulModeExpected, pii->InputMode);
-        VERIFY_ARE_EQUAL(fQuickEditExpected, IsFlagSet(gci->Flags, CONSOLE_QUICK_EDIT_MODE));
-        VERIFY_ARE_EQUAL(fAutoPositionExpected, IsFlagSet(gci->Flags, CONSOLE_AUTO_POSITION));
-        VERIFY_ARE_EQUAL(!!fInsertModeExpected, !!gci->GetInsertMode());
-        VERIFY_ARE_EQUAL(!!fCursorDBModeExpected, !!gci->CurrentScreenBuffer->TextInfo->GetCursor()->IsDouble());
+        VERIFY_ARE_EQUAL(fQuickEditExpected, IsFlagSet(gci.Flags, CONSOLE_QUICK_EDIT_MODE));
+        VERIFY_ARE_EQUAL(fAutoPositionExpected, IsFlagSet(gci.Flags, CONSOLE_AUTO_POSITION));
+        VERIFY_ARE_EQUAL(!!fInsertModeExpected, !!gci.GetInsertMode());
+        VERIFY_ARE_EQUAL(!!fCursorDBModeExpected, !!gci.CurrentScreenBuffer->TextInfo->GetCursor()->IsDouble());
     }
 
     TEST_METHOD(ApiSetConsoleInputModeImplValidNonExtended)
@@ -143,9 +145,9 @@ class ApiRoutinesTests
 
     TEST_METHOD(ApiSetConsoleInputModeImplInsertCookedRead)
     {
-        CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         Log::Comment(L"Turn on insert mode with cooked read data.");
-        gci->lpCookedReadData = new COOKED_READ_DATA();
+        gci.lpCookedReadData = new COOKED_READ_DATA();
 
         PrepVerifySetConsoleInputModeImpl(0);
         Log::Comment(L"Success code should result from setting valid flags.");
@@ -155,8 +157,8 @@ class ApiRoutinesTests
         PrepVerifySetConsoleInputModeImpl(0);
         VerifySetConsoleInputModeImpl(S_OK, ENABLE_EXTENDED_FLAGS);
 
-        delete gci->lpCookedReadData;
-        gci->lpCookedReadData = nullptr;
+        delete gci.lpCookedReadData;
+        gci.lpCookedReadData = nullptr;
     }
 
     TEST_METHOD(ApiSetConsoleInputModeImplEchoOnLineOff)
@@ -170,7 +172,7 @@ class ApiRoutinesTests
 
     TEST_METHOD(ApiSetConsoleInputModeExtendedFlagBehaviors)
     {
-        CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         Log::Comment(L"Verify that we can set various extended flags even without the ENABLE_EXTENDED_FLAGS flag.");
         PrepVerifySetConsoleInputModeImpl(0);
         VerifySetConsoleInputModeImpl(S_OK, ENABLE_INSERT_MODE);
@@ -181,13 +183,13 @@ class ApiRoutinesTests
 
         Log::Comment(L"Verify that we cannot unset various extended flags without the ENABLE_EXTENDED_FLAGS flag.");
         PrepVerifySetConsoleInputModeImpl(ENABLE_INSERT_MODE | ENABLE_QUICK_EDIT_MODE | ENABLE_AUTO_POSITION);
-        InputBuffer* const pii = gci->pInputBuffer;
+        InputBuffer* const pii = gci.pInputBuffer;
         HRESULT const hr = _pApiRoutines->SetConsoleInputModeImpl(pii, 0);
 
         VERIFY_ARE_EQUAL(S_OK, hr);
-        VERIFY_ARE_EQUAL(true, !!gci->GetInsertMode());
-        VERIFY_ARE_EQUAL(true, IsFlagSet(gci->Flags, CONSOLE_QUICK_EDIT_MODE));
-        VERIFY_ARE_EQUAL(true, IsFlagSet(gci->Flags, CONSOLE_AUTO_POSITION));
+        VERIFY_ARE_EQUAL(true, !!gci.GetInsertMode());
+        VERIFY_ARE_EQUAL(true, IsFlagSet(gci.Flags, CONSOLE_QUICK_EDIT_MODE));
+        VERIFY_ARE_EQUAL(true, IsFlagSet(gci.Flags, CONSOLE_AUTO_POSITION));
     }
 
     TEST_METHOD(ApiSetConsoleInputModeImplPSReadlineScenario)
@@ -198,16 +200,16 @@ class ApiRoutinesTests
         Log::Comment(L"Input mode should be set anyway despite FAILED return code.");
         VerifySetConsoleInputModeImpl(E_INVALIDARG, 0x1E4);
     }
-    
+
     TEST_METHOD(ApiGetConsoleTitleA)
     {
-        CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-        gci->Title = L"Test window title.";
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        gci.Title = L"Test window title.";
 
-        int const iBytesNeeded = WideCharToMultiByte(gci->OutputCP,
+        int const iBytesNeeded = WideCharToMultiByte(gci.OutputCP,
                                                      0,
-                                                     gci->Title,
-                                                     (int)wcslen(gci->Title),
+                                                     gci.Title,
+                                                     -1,
                                                      nullptr,
                                                      0,
                                                      nullptr,
@@ -216,10 +218,10 @@ class ApiRoutinesTests
         wistd::unique_ptr<char[]> pszExpected = wil::make_unique_nothrow<char[]>(iBytesNeeded);
         VERIFY_IS_NOT_NULL(pszExpected);
 
-        VERIFY_WIN32_BOOL_SUCCEEDED(WideCharToMultiByte(gci->OutputCP,
+        VERIFY_WIN32_BOOL_SUCCEEDED(WideCharToMultiByte(gci.OutputCP,
                                                         0,
-                                                        gci->Title,
-                                                        (int)wcslen(gci->Title),
+                                                        gci.Title,
+                                                        -1,
                                                         pszExpected.get(),
                                                         iBytesNeeded,
                                                         nullptr,
@@ -232,15 +234,15 @@ class ApiRoutinesTests
 
         VERIFY_ARE_NOT_EQUAL(0u, cchWritten);
         // NOTE: W version of API returns string length. A version of API returns buffer length (string + null).
-        VERIFY_ARE_EQUAL(wcslen(gci->Title) + 1, cchWritten);
-        VERIFY_ARE_EQUAL(wcslen(gci->Title), cchNeeded);
+        VERIFY_ARE_EQUAL(wcslen(gci.Title) + 1, cchWritten);
+        VERIFY_ARE_EQUAL(wcslen(gci.Title), cchNeeded);
         VERIFY_IS_TRUE(0 == strcmp(pszExpected.get(), pszTitle));
     }
 
     TEST_METHOD(ApiGetConsoleTitleW)
     {
-        CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-        gci->Title = L"Test window title.";
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        gci.Title = L"Test window title.";
 
         wchar_t pwszTitle[MAX_PATH]; // most applications use MAX_PATH
         size_t cchWritten = 0;
@@ -249,20 +251,20 @@ class ApiRoutinesTests
 
         VERIFY_ARE_NOT_EQUAL(0u, cchWritten);
         // NOTE: W version of API returns string length. A version of API returns buffer length (string + null).
-        VERIFY_ARE_EQUAL(wcslen(gci->Title), cchWritten);
-        VERIFY_ARE_EQUAL(wcslen(gci->Title), cchNeeded);
-        VERIFY_IS_TRUE(0 == wcscmp(gci->Title, pwszTitle));
+        VERIFY_ARE_EQUAL(wcslen(gci.Title), cchWritten);
+        VERIFY_ARE_EQUAL(wcslen(gci.Title), cchNeeded);
+        VERIFY_IS_TRUE(0 == wcscmp(gci.Title, pwszTitle));
     }
 
     TEST_METHOD(ApiGetConsoleOriginalTitleA)
     {
-        CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-        gci->OriginalTitle = L"Test original window title.";
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        gci.OriginalTitle = L"Test original window title.";
 
-        int const iBytesNeeded = WideCharToMultiByte(gci->OutputCP,
+        int const iBytesNeeded = WideCharToMultiByte(gci.OutputCP,
                                                      0,
-                                                     gci->OriginalTitle,
-                                                     (int)wcslen(gci->OriginalTitle),
+                                                     gci.OriginalTitle,
+                                                     -1,
                                                      nullptr,
                                                      0,
                                                      nullptr,
@@ -271,10 +273,10 @@ class ApiRoutinesTests
         wistd::unique_ptr<char[]> pszExpected = wil::make_unique_nothrow<char[]>(iBytesNeeded);
         VERIFY_IS_NOT_NULL(pszExpected);
 
-        VERIFY_WIN32_BOOL_SUCCEEDED(WideCharToMultiByte(gci->OutputCP,
+        VERIFY_WIN32_BOOL_SUCCEEDED(WideCharToMultiByte(gci.OutputCP,
                                                         0,
-                                                        gci->OriginalTitle,
-                                                        (int)wcslen(gci->OriginalTitle),
+                                                        gci.OriginalTitle,
+                                                        -1,
                                                         pszExpected.get(),
                                                         iBytesNeeded,
                                                         nullptr,
@@ -287,15 +289,15 @@ class ApiRoutinesTests
 
         VERIFY_ARE_NOT_EQUAL(0u, cchWritten);
         // NOTE: W version of API returns string length. A version of API returns buffer length (string + null).
-        VERIFY_ARE_EQUAL(wcslen(gci->OriginalTitle) + 1, cchWritten);
-        VERIFY_ARE_EQUAL(wcslen(gci->OriginalTitle), cchNeeded);
+        VERIFY_ARE_EQUAL(wcslen(gci.OriginalTitle) + 1, cchWritten);
+        VERIFY_ARE_EQUAL(wcslen(gci.OriginalTitle), cchNeeded);
         VERIFY_IS_TRUE(0 == strcmp(pszExpected.get(), pszTitle));
     }
 
     TEST_METHOD(ApiGetConsoleOriginalTitleW)
     {
-        CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-        gci->OriginalTitle = L"Test original window title.";
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        gci.OriginalTitle = L"Test original window title.";
 
         wchar_t pwszTitle[MAX_PATH]; // most applications use MAX_PATH
         size_t cchWritten = 0;
@@ -304,22 +306,22 @@ class ApiRoutinesTests
 
         VERIFY_ARE_NOT_EQUAL(0u, cchWritten);
         // NOTE: W version of API returns string length. A version of API returns buffer length (string + null).
-        VERIFY_ARE_EQUAL(wcslen(gci->OriginalTitle), cchWritten);
-        VERIFY_ARE_EQUAL(wcslen(gci->OriginalTitle), cchNeeded);
-        VERIFY_IS_TRUE(0 == wcscmp(gci->OriginalTitle, pwszTitle));
+        VERIFY_ARE_EQUAL(wcslen(gci.OriginalTitle), cchWritten);
+        VERIFY_ARE_EQUAL(wcslen(gci.OriginalTitle), cchNeeded);
+        VERIFY_IS_TRUE(0 == wcscmp(gci.OriginalTitle, pwszTitle));
     }
 
     static void s_AdjustOutputWait(_In_ const bool fShouldBlock)
     {
-        SetFlagIf(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, CONSOLE_SELECTING, fShouldBlock);
-        ClearFlagIf(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, CONSOLE_SELECTING, !fShouldBlock);
+        SetFlagIf(ServiceLocator::LocateGlobals().getConsoleInformation().Flags, CONSOLE_SELECTING, fShouldBlock);
+        ClearFlagIf(ServiceLocator::LocateGlobals().getConsoleInformation().Flags, CONSOLE_SELECTING, !fShouldBlock);
     }
 
     TEST_METHOD(ApiWriteConsoleA)
     {
         BEGIN_TEST_METHOD_PROPERTIES()
             TEST_METHOD_PROPERTY(L"Data:fInduceWait", L"{false, true}")
-            TEST_METHOD_PROPERTY(L"Data:dwCodePage", L"{437, 932, 65001}")        
+            TEST_METHOD_PROPERTY(L"Data:dwCodePage", L"{437, 932, 65001}")
             TEST_METHOD_PROPERTY(L"Data:dwIncrement", L"{0, 1, 2}")
         END_TEST_METHOD_PROPERTIES();
 
@@ -333,11 +335,11 @@ class ApiRoutinesTests
         VERIFY_SUCCEEDED(TestData::TryGetValue(L"dwIncrement", dwIncrement),
                          L"Get how many chars we should feed in at a time. This validates lead bytes and bytes held across calls.");
 
-        CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-        SCREEN_INFORMATION* const si = gci->CurrentScreenBuffer;
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        SCREEN_INFORMATION* const si = gci.CurrentScreenBuffer;
 
-        gci->LockConsole();
-        auto Unlock = wil::ScopeExit([&] { gci->UnlockConsole(); });
+        gci.LockConsole();
+        auto Unlock = wil::ScopeExit([&] { gci.UnlockConsole(); });
 
         PCSTR pszTestText;
         switch (dwCodePage)
@@ -361,7 +363,7 @@ class ApiRoutinesTests
         // 0 represents the special case of feeding the whole string in at at time.
         // Otherwise, we try different segment sizes to ensure preservation across calls
         // for appropriate handling of DBCS and UTF-8 sequences.
-        const size_t cchIncrement = dwIncrement == 0 ? cchTestText : dwIncrement; 
+        const size_t cchIncrement = dwIncrement == 0 ? cchTestText : dwIncrement;
 
         for (size_t i = 0; i < cchTestText; i += cchIncrement)
         {
@@ -415,16 +417,16 @@ class ApiRoutinesTests
         BEGIN_TEST_METHOD_PROPERTIES()
             TEST_METHOD_PROPERTY(L"Data:fInduceWait", L"{false, true}")
         END_TEST_METHOD_PROPERTIES();
-        
+
         bool fInduceWait;
         VERIFY_SUCCEEDED(TestData::TryGetValue(L"fInduceWait", fInduceWait), L"Get whether or not we should exercise this function off a wait state.");
 
-        CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-        SCREEN_INFORMATION* const si = gci->CurrentScreenBuffer;
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        SCREEN_INFORMATION* const si = gci.CurrentScreenBuffer;
 
-        gci->LockConsole();
-        auto Unlock = wil::ScopeExit([&] { gci->UnlockConsole(); });
-        
+        gci.LockConsole();
+        auto Unlock = wil::ScopeExit([&] { gci.UnlockConsole(); });
+
         PCWSTR pwszTestText = L"Test Text";
         const size_t cchTestText = wcslen(pwszTestText);
 

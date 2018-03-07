@@ -36,6 +36,15 @@ const WORD XTERM_GREEN_ATTR     = 0x02;
 const WORD XTERM_BLUE_ATTR      = 0x04;
 const WORD XTERM_BRIGHT_ATTR    = 0x08;
 
-// Valid COLORREFs are of the pattern 0x00bbggrr. -1 works as an invalid color, 
+enum class CursorType : unsigned int
+{
+    Legacy = 0x0, // uses the cursor's height value to range from underscore-like to full box
+    VerticalBar = 0x1, // A single vertical line, '|'
+    Underscore = 0x2, // a single horizontal underscore, smaller that the min height legacy cursor.
+    EmptyBox = 0x3, // Just the outline of a full box
+    FullBox = 0x4 // a full box, similar to legacy with height=100%
+};
+
+// Valid COLORREFs are of the pattern 0x00bbggrr. -1 works as an invalid color,
 //      as the highest byte of a valid color is always 0.
 const COLORREF INVALID_COLOR = 0xffffffff;

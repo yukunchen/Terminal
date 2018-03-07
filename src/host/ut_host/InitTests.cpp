@@ -44,25 +44,25 @@ class InitTests
             // Korean Unified Hangul = 949
             // Chinese Traditional Big5 = 950
             TEST_METHOD_PROPERTY(L"Data:uiStartupCP", L"{437, 850, 932, 936, 949, 950}")
-            TEST_METHOD_PROPERTY(L"Data:uiOutputCP", L"{437, 850, 932, 936, 949, 950}") 
+            TEST_METHOD_PROPERTY(L"Data:uiOutputCP", L"{437, 850, 932, 936, 949, 950}")
         END_TEST_METHOD_PROPERTIES()
 
-        // if ServiceLocator::LocateGlobals()->uiWindowsCP = a CJK one
+        // if ServiceLocator::LocateGlobals().uiWindowsCP = a CJK one
         // we should get SUCCESS and a matching result to our input
-        // for any other ServiceLocator::LocateGlobals()->uiWindowsCP we should get STATUS_NOT_SUPPORTED and do nothing with the langid.
+        // for any other ServiceLocator::LocateGlobals().uiWindowsCP we should get STATUS_NOT_SUPPORTED and do nothing with the langid.
 
-        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiStartupCP", ServiceLocator::LocateGlobals()->uiWindowsCP));
+        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiStartupCP", ServiceLocator::LocateGlobals().uiWindowsCP));
 
         UINT outputCP;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiOutputCP", outputCP));
-        
+
         LANGID langId = 0;
         NTSTATUS const status = GetConsoleLangId(outputCP, &langId);
 
-        if (s_uiOEMJapaneseCP == ServiceLocator::LocateGlobals()->uiWindowsCP ||
-            s_uiOEMSimplifiedChineseCP == ServiceLocator::LocateGlobals()->uiWindowsCP ||
-            s_uiOEMKoreanCP == ServiceLocator::LocateGlobals()->uiWindowsCP ||
-            s_uiOEMTraditionalChineseCP == ServiceLocator::LocateGlobals()->uiWindowsCP)
+        if (s_uiOEMJapaneseCP == ServiceLocator::LocateGlobals().uiWindowsCP ||
+            s_uiOEMSimplifiedChineseCP == ServiceLocator::LocateGlobals().uiWindowsCP ||
+            s_uiOEMKoreanCP == ServiceLocator::LocateGlobals().uiWindowsCP ||
+            s_uiOEMTraditionalChineseCP == ServiceLocator::LocateGlobals().uiWindowsCP)
         {
             VERIFY_ARE_EQUAL(STATUS_SUCCESS, status);
 

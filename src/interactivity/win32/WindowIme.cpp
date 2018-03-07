@@ -15,8 +15,8 @@
 // - Rectangle specifying current command line edit area.
 RECT GetImeSuggestionWindowPos()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    TEXT_BUFFER_INFO* const ptbi = gci->CurrentScreenBuffer->TextInfo;
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    TEXT_BUFFER_INFO* const ptbi = gci.CurrentScreenBuffer->TextInfo;
 
     COORD const coordFont = ptbi->GetCurrentFont()->GetSize();
     COORD coordCursor = ptbi->GetCursor()->GetPosition();
@@ -25,7 +25,7 @@ RECT GetImeSuggestionWindowPos()
     // This means that if the cursor is at row 30 in the buffer but the viewport is showing rows 20-40 right now on screen
     // that the "relative" position is that it is on the 11th line from the top (or 10th by index).
     // Correct by subtracting the top/left corner from the cursor's position.
-    SMALL_RECT const srViewport = gci->CurrentScreenBuffer->GetBufferViewport();
+    SMALL_RECT const srViewport = gci.CurrentScreenBuffer->GetBufferViewport();
     coordCursor.X -= srViewport.Left;
     coordCursor.Y -= srViewport.Top;
 

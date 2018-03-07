@@ -23,6 +23,7 @@ namespace Microsoft
             class IConsoleInputThread
             {
             public:
+                virtual ~IConsoleInputThread() = 0;
                 virtual HANDLE Start() = 0;
 
                 HANDLE GetHandle()   { return _hThread; }
@@ -42,6 +43,8 @@ namespace Microsoft
                 HANDLE _hThread;
                 DWORD  _dwThreadId;
             };
-        };
-    };
-};
+
+            inline IConsoleInputThread::~IConsoleInputThread() {}
+        }
+    }
+}

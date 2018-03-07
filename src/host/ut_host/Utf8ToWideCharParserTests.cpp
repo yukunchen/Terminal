@@ -133,7 +133,7 @@ class Utf8ToWideCharParserTests
         count = 1;
         consumed = 0;
         generated = 0;
-        output.release();
+        output.reset(nullptr);
         parser.Parse(sushi + 4, count, consumed, output, generated);
         VERIFY_ARE_EQUAL(consumed, (unsigned int)1);
         VERIFY_ARE_EQUAL(generated, (unsigned int)0);
@@ -143,7 +143,7 @@ class Utf8ToWideCharParserTests
         count = 1;
         consumed = 0;
         generated = 0;
-        output.release();
+        output.reset(nullptr);
         parser.Parse(sushi + 5, count, consumed, output, generated);
         VERIFY_ARE_EQUAL(consumed, (unsigned int)1);
         VERIFY_ARE_EQUAL(generated, (unsigned int)1);
@@ -202,7 +202,7 @@ class Utf8ToWideCharParserTests
         count = 16;
         consumed = 0;
         generated = 0;
-        output.release();
+        output.reset(nullptr);
         parser.Parse(doomoArigatoo + 4, count, consumed, output, generated);
         VERIFY_ARE_EQUAL(consumed, (unsigned int)16);
         VERIFY_ARE_EQUAL(generated, (unsigned int)5);
@@ -218,7 +218,7 @@ class Utf8ToWideCharParserTests
         count = 4;
         consumed = 0;
         generated = 0;
-        output.release();
+        output.reset(nullptr);
         parser.Parse(doomoArigatoo + 20, count, consumed, output, generated);
         VERIFY_ARE_EQUAL(consumed, (unsigned int)4);
         VERIFY_ARE_EQUAL(generated, (unsigned int)2);
@@ -307,7 +307,7 @@ class Utf8ToWideCharParserTests
     {
         Log::Comment(L"Testing that _IsContinuationByte properly differentiates correct from incorrect sequences");
         auto parser = Utf8ToWideCharParser { utf8CodePage };
-        for (byte i = 0x00; i < 0xFF; ++i)
+        for (BYTE i = 0x00; i < 0xFF; ++i)
         {
             if (IsBitSet(i, 0x80) && !IsBitSet(i, 0x40))
             {
@@ -325,11 +325,11 @@ class Utf8ToWideCharParserTests
     {
         Log::Comment(L"Testing that _IsAsciiByte properly differentiates correct from incorrect sequences");
         auto parser = Utf8ToWideCharParser { utf8CodePage };
-        for (byte i = 0x00; i < 0x80; ++i)
+        for (BYTE i = 0x00; i < 0x80; ++i)
         {
             VERIFY_IS_TRUE(parser._IsAsciiByte(i), NoThrowString().Format(L"Byte is 0x%02x", i));
         }
-        for (byte i = 0xFF; i > 0x7F; --i)
+        for (BYTE i = 0xFF; i > 0x7F; --i)
         {
             VERIFY_IS_FALSE(parser._IsAsciiByte(i), NoThrowString().Format(L"Byte is 0x%02x", i));
         }

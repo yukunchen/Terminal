@@ -187,8 +187,6 @@ AddFont(
     HDC hDC,
     PFACENODE pFN)
 {
-    UNREFERENCED_PARAMETER(pntm);
-
     HFONT hFont;
     TEXTMETRIC tm;
     ULONG nFont;

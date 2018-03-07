@@ -151,7 +151,7 @@ RECT WindowMetrics::GetMaxWindowRectInPixels(_In_ const RECT * const prcSuggeste
         }
         else
         {
-            *pDpiSuggested = ServiceLocator::LocateGlobals()->dpi;
+            *pDpiSuggested = ServiceLocator::LocateGlobals().dpi;
         }
     }
 
@@ -170,7 +170,7 @@ RECT WindowMetrics::GetMaxWindowRectInPixels(_In_ const RECT * const prcSuggeste
 // - BOOL if adjustment was successful. (See AdjustWindowRectEx definition for details).
 BOOL WindowMetrics::AdjustWindowRectEx(_Inout_ LPRECT prc, _In_ const DWORD dwStyle, _In_ const BOOL fMenu, _In_ const DWORD dwExStyle)
 {
-    return ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->AdjustWindowRectExForDpi(prc, dwStyle, fMenu, dwExStyle, ServiceLocator::LocateGlobals()->dpi);
+    return ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->AdjustWindowRectExForDpi(prc, dwStyle, fMenu, dwExStyle, ServiceLocator::LocateGlobals().dpi);
 }
 
 // Routine Description:

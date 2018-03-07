@@ -29,7 +29,7 @@ PEXE_ALIAS_LIST AddExeAliasList(_In_ LPVOID ExeName,
                                 _In_ USHORT ExeLength, // in bytes
                                 _In_ BOOLEAN UnicodeExe)
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     PEXE_ALIAS_LIST AliasList = new EXE_ALIAS_LIST();
     if (AliasList == nullptr)
     {
@@ -56,11 +56,11 @@ PEXE_ALIAS_LIST AddExeAliasList(_In_ LPVOID ExeName,
             delete AliasList;
             return nullptr;
         }
-        AliasList->ExeLength = (USHORT)ConvertInputToUnicode(gci->CP, (LPSTR)ExeName, ExeLength, AliasList->ExeName, ExeLength);
+        AliasList->ExeLength = (USHORT)ConvertInputToUnicode(gci.CP, (LPSTR)ExeName, ExeLength, AliasList->ExeName, ExeLength);
         AliasList->ExeLength *= 2;
     }
     InitializeListHead(&AliasList->AliasList);
-    InsertHeadList(&gci->ExeAliasList, &AliasList->ListLink);
+    InsertHeadList(&gci.ExeAliasList, &AliasList->ListLink);
     return AliasList;
 }
 
@@ -70,7 +70,7 @@ PEXE_ALIAS_LIST FindExe(_In_ LPVOID ExeName,
                         _In_ USHORT ExeLength, // in bytes
                         _In_ BOOLEAN UnicodeExe)
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     LPWSTR UnicodeExeName;
     if (UnicodeExe)
     {
@@ -81,10 +81,10 @@ PEXE_ALIAS_LIST FindExe(_In_ LPVOID ExeName,
         UnicodeExeName = new WCHAR[ExeLength];
         if (UnicodeExeName == nullptr)
             return nullptr;
-        ExeLength = (USHORT)ConvertInputToUnicode(gci->CP, (LPSTR)ExeName, ExeLength, UnicodeExeName, ExeLength);
+        ExeLength = (USHORT)ConvertInputToUnicode(gci.CP, (LPSTR)ExeName, ExeLength, UnicodeExeName, ExeLength);
         ExeLength *= 2;
     }
-    PLIST_ENTRY const ListHead = &gci->ExeAliasList;
+    PLIST_ENTRY const ListHead = &gci.ExeAliasList;
     PLIST_ENTRY ListNext = ListHead->Flink;
     while (ListNext != ListHead)
     {
@@ -220,8 +220,8 @@ void FreeAliasList(_In_ PEXE_ALIAS_LIST ExeAliasList)
 
 void FreeAliasBuffers()
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    PLIST_ENTRY const ListHead = &gci->ExeAliasList;
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    PLIST_ENTRY const ListHead = &gci.ExeAliasList;
     PLIST_ENTRY ListNext = ListHead->Flink;
     while (ListNext != ListHead)
     {
@@ -250,8 +250,8 @@ HRESULT ApiRoutines::AddConsoleAliasAImpl(_In_reads_or_z_(cchSourceBufferLength)
                                           _In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
                                           _In_ size_t const cchExeNameBufferLength)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    UINT const uiCodePage = gci->CP;
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    UINT const uiCodePage = gci.CP;
 
     wistd::unique_ptr<wchar_t[]> pwsSource;
     size_t cchSource;
@@ -429,8 +429,8 @@ HRESULT ApiRoutines::GetConsoleAliasAImpl(_In_reads_or_z_(cchSourceBufferLength)
                                           _In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
                                           _In_ size_t const cchExeNameBufferLength)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    UINT const uiCodePage = gci->CP;
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    UINT const uiCodePage = gci.CP;
 
     // Ensure output variables are initialized
     *pcchTargetBufferWritten = 0;
@@ -614,8 +614,8 @@ HRESULT ApiRoutines::GetConsoleAliasesLengthAImpl(_In_reads_or_z_(cchExeNameBuff
                                                   _In_ size_t const cchExeNameBufferLength,
                                                   _Out_ size_t* const pcchAliasesBufferRequired)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    UINT const uiCodePage = gci->CP;
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    UINT const uiCodePage = gci.CP;
 
     // Ensure output variables are initialized
     *pcchAliasesBufferRequired = 0;
@@ -787,8 +787,8 @@ HRESULT ApiRoutines::GetConsoleAliasesAImpl(_In_reads_or_z_(cchExeNameBufferLeng
                                             _In_ size_t const cchAliasBufferLength,
                                             _Out_ size_t* const pcchAliasBufferWritten)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    UINT const uiCodePage = gci->CP;
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    UINT const uiCodePage = gci.CP;
 
     // Ensure output variables are initialized
     *pcchAliasBufferWritten = 0;
@@ -869,7 +869,7 @@ HRESULT ApiRoutines::GetConsoleAliasesWImpl(_In_reads_or_z_(cchExeNameBufferLeng
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT GetConsoleAliasExesLengthImplHelper(_In_ bool const fCountInUnicode, _In_ UINT const uiCodePage, _Out_ size_t* const pcchAliasExesBufferRequired)
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // Ensure output variables are initialized
     *pcchAliasExesBufferRequired = 0;
 
@@ -878,7 +878,7 @@ HRESULT GetConsoleAliasExesLengthImplHelper(_In_ bool const fCountInUnicode, _In
     // Each alias exe will be made up of the string payload and a null terminator.
     size_t const cchNull = 1;
 
-    PLIST_ENTRY const ListHead = &gci->ExeAliasList;
+    PLIST_ENTRY const ListHead = &gci.ExeAliasList;
     PLIST_ENTRY ListNext = ListHead->Flink;
     while (ListNext != ListHead)
     {
@@ -914,10 +914,10 @@ HRESULT GetConsoleAliasExesLengthImplHelper(_In_ bool const fCountInUnicode, _In
 HRESULT ApiRoutines::GetConsoleAliasExesLengthAImpl(_Out_ size_t* const pcchAliasExesBufferRequired)
 {
     LockConsole();
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    return GetConsoleAliasExesLengthImplHelper(false, gci->CP, pcchAliasExesBufferRequired);
+    return GetConsoleAliasExesLengthImplHelper(false, gci.CP, pcchAliasExesBufferRequired);
 }
 
 // Routine Description:
@@ -952,7 +952,7 @@ HRESULT GetConsoleAliasExesWImplHelper(_Out_writes_to_opt_(cchAliasExesBufferLen
                                        _In_ size_t const cchAliasExesBufferLength,
                                        _Out_ size_t* const pcchAliasExesBufferWrittenOrNeeded)
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // Ensure output variables are initialized.
     *pcchAliasExesBufferWrittenOrNeeded = 0;
     if (nullptr != pwsAliasExesBuffer)
@@ -965,7 +965,7 @@ HRESULT GetConsoleAliasExesWImplHelper(_Out_writes_to_opt_(cchAliasExesBufferLen
 
     size_t const cchNull = 1;
 
-    PLIST_ENTRY const ListHead = &gci->ExeAliasList;
+    PLIST_ENTRY const ListHead = &gci.ExeAliasList;
     PLIST_ENTRY ListNext = ListHead->Flink;
     while (ListNext != ListHead)
     {
@@ -1018,8 +1018,8 @@ HRESULT ApiRoutines::GetConsoleAliasExesAImpl(_Out_writes_to_(cchAliasExesBuffer
                                               _In_ size_t const cchAliasExesBufferLength,
                                               _Out_ size_t* const pcchAliasExesBufferWritten)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    UINT const uiCodePage = gci->CP;
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    UINT const uiCodePage = gci.CP;
 
     // Ensure output variables are initialized
     *pcchAliasExesBufferWritten = 0;

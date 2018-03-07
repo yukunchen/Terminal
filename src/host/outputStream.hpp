@@ -15,6 +15,7 @@ Author:
 
 #include "..\terminal\adapter\adaptDefaults.hpp"
 #include "..\types\inc\IInputEvent.hpp"
+#include "..\inc\conattrs.hpp"
 #include "IIoProvider.hpp"
 
 class SCREEN_INFORMATION;
@@ -125,17 +126,20 @@ public:
     virtual BOOL PrivatePrependConsoleInput(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
                                             _Out_ size_t& eventsWritten) override;
 
+    virtual BOOL SetCursorStyle(_In_ CursorType const cursorType) override;
+    virtual BOOL SetCursorColor(_In_ COLORREF const cursorColor) override;
+
     virtual BOOL PrivateRefreshWindow() override;
-    
+
     virtual BOOL PrivateSuppressResizeRepaint() override;
-    
+
     virtual BOOL PrivateWriteConsoleControlInput(_In_ KeyEvent key) override;
 
     virtual BOOL GetConsoleOutputCP(_Out_ unsigned int* const puiOutputCP) override;
-    
+
 private:
     const Microsoft::Console::IIoProvider* const _pIo;
-    
+
     BOOL _FillConsoleOutput(_In_ USHORT const usElement,
                             _In_ ULONG const ulElementType,
                             _In_ DWORD const nLength,
