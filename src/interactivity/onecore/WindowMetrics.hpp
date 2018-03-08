@@ -17,21 +17,12 @@ Author(s):
 
 #pragma hdrstop
 
-namespace Microsoft
+namespace Microsoft::Console::Interactivity::OneCore
 {
-    namespace Console
+    class WindowMetrics sealed : public IWindowMetrics
     {
-        namespace Interactivity
-        {
-            namespace OneCore
-            {
-                class WindowMetrics sealed : public IWindowMetrics
-                {
-                public:
-                    RECT GetMinClientRectInPixels();
-                    RECT GetMaxClientRectInPixels();
-                };
-            };
-        };
+    public:
+        RECT GetMinClientRectInPixels();
+        RECT GetMaxClientRectInPixels();
     };
-};
+}

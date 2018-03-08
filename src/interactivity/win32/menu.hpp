@@ -19,40 +19,31 @@ Revision History:
 
 #include "resource.h"
 
-namespace Microsoft
+namespace Microsoft::Console::Interactivity::Win32
 {
-    namespace Console
+    class Menu sealed
     {
-        namespace Interactivity
-        {
-            namespace Win32
-            {
-                class Menu sealed
-                {
-                public:
-                    Menu(_In_ HMENU hMenu,
-                        _In_ HMENU hHeirMenu);
-                    static NTSTATUS CreateInstance(_In_ HWND hWnd);
-                    static Menu* Instance();
-                    ~Menu();
+    public:
+        Menu(_In_ HMENU hMenu,
+            _In_ HMENU hHeirMenu);
+        static NTSTATUS CreateInstance(_In_ HWND hWnd);
+        static Menu* Instance();
+        ~Menu();
 
-                    void Initialize();
+        void Initialize();
 
-                    static void s_ShowPropertiesDialog(_In_ HWND const hwnd, _In_ BOOL const Defaults);
-                    static void s_GetConsoleState(_Out_ CONSOLE_STATE_INFO * const pStateInfo);
+        static void s_ShowPropertiesDialog(_In_ HWND const hwnd, _In_ BOOL const Defaults);
+        static void s_GetConsoleState(_Out_ CONSOLE_STATE_INFO * const pStateInfo);
 
-                    static HMENU s_GetMenuHandle();
-                    static HMENU s_GetHeirMenuHandle();
+        static HMENU s_GetMenuHandle();
+        static HMENU s_GetHeirMenuHandle();
 
-                private:
-                    static void s_PropertiesUpdate(_In_ PCONSOLE_STATE_INFO pStateInfo);
+    private:
+        static void s_PropertiesUpdate(_In_ PCONSOLE_STATE_INFO pStateInfo);
 
-                    static Menu* s_Instance;
+        static Menu* s_Instance;
 
-                    HMENU _hMenu;       // handle to system menu
-                    HMENU _hHeirMenu;   // handle to menu we append to system menu
-                };
-            };
-        };
+        HMENU _hMenu;       // handle to system menu
+        HMENU _hHeirMenu;   // handle to menu we append to system menu
     };
-};
+}

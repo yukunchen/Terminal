@@ -16,38 +16,32 @@ Abstract:
 
 #include "telemetry.hpp"
 
-namespace Microsoft
+namespace Microsoft::Console::VirtualTerminal
 {
-    namespace Console
+    class ParserTracing sealed
     {
-        namespace VirtualTerminal
-        {
-            class ParserTracing sealed
-            {
-            public:
+    public:
 
-                ParserTracing();
-                ~ParserTracing();
+        ParserTracing();
+        ~ParserTracing();
 
-                void TraceStateChange(_In_ PCWSTR const pwszName) const;
-                void TraceOnAction(_In_ PCWSTR const pwszName) const;
-                void TraceOnExecute(_In_ wchar_t const wch) const;
-                void TraceOnEvent(_In_ PCWSTR const pwszName) const;
-                void TraceCharInput(_In_ wchar_t const wch);
+        void TraceStateChange(_In_ PCWSTR const pwszName) const;
+        void TraceOnAction(_In_ PCWSTR const pwszName) const;
+        void TraceOnExecute(_In_ wchar_t const wch) const;
+        void TraceOnEvent(_In_ PCWSTR const pwszName) const;
+        void TraceCharInput(_In_ wchar_t const wch);
 
-                void AddSequenceTrace(_In_ wchar_t const wch);
-                void DispatchSequenceTrace(_In_ bool const fSuccess);
-                void ClearSequenceTrace();
-                void DispatchPrintRunTrace(_In_reads_(cchString) wchar_t* pwsString, _In_ size_t const cchString) const;
+        void AddSequenceTrace(_In_ wchar_t const wch);
+        void DispatchSequenceTrace(_In_ bool const fSuccess);
+        void ClearSequenceTrace();
+        void DispatchPrintRunTrace(_In_reads_(cchString) wchar_t* pwsString, _In_ size_t const cchString) const;
 
-            private:
-                static const size_t s_cMaxSequenceTrace = 32;
+    private:
+        static const size_t s_cMaxSequenceTrace = 32;
 
-                wchar_t _rgwchSequenceTrace[s_cMaxSequenceTrace];
-                size_t _cchSequenceTrace;
+        wchar_t _rgwchSequenceTrace[s_cMaxSequenceTrace];
+        size_t _cchSequenceTrace;
 
 
-            };
-        }
-    }
-};
+    };
+}
