@@ -17,56 +17,47 @@ Author(s):
 
 #pragma hdrstop
 
-namespace Microsoft
+namespace Microsoft::Console::Interactivity::OneCore
 {
-    namespace Console
+    class ConsoleWindow sealed : public IConsoleWindow
     {
-        namespace Interactivity
-        {
-            namespace OneCore
-            {
-                class ConsoleWindow sealed : public IConsoleWindow
-                {
-                public:
+    public:
 
-                    // Inherited via IConsoleWindow
-                    BOOL EnableBothScrollBars();
-                    int UpdateScrollBar(bool isVertical, bool isAltBuffer, UINT pageSize, int maxSize, int viewportPosition);
+        // Inherited via IConsoleWindow
+        BOOL EnableBothScrollBars();
+        int UpdateScrollBar(bool isVertical, bool isAltBuffer, UINT pageSize, int maxSize, int viewportPosition);
 
-                    bool IsInFullscreen() const;
-                    void SetIsFullscreen(bool const fFullscreenEnabled);
-                    NTSTATUS SetViewportOrigin(SMALL_RECT NewWindow);
-                    void SetWindowHasMoved(BOOL const fHasMoved);
+        bool IsInFullscreen() const;
+        void SetIsFullscreen(bool const fFullscreenEnabled);
+        NTSTATUS SetViewportOrigin(SMALL_RECT NewWindow);
+        void SetWindowHasMoved(BOOL const fHasMoved);
 
-                    void CaptureMouse();
-                    BOOL ReleaseMouse();
+        void CaptureMouse();
+        BOOL ReleaseMouse();
 
-                    HWND GetWindowHandle() const;
+        HWND GetWindowHandle() const;
 
-                    void SetOwner();
+        void SetOwner();
 
-                    BOOL GetCursorPosition(LPPOINT lpPoint);
-                    BOOL GetClientRectangle(LPRECT lpRect);
-                    int MapPoints(LPPOINT lpPoints, UINT cPoints);
-                    BOOL ConvertScreenToClient(LPPOINT lpPoint);
+        BOOL GetCursorPosition(LPPOINT lpPoint);
+        BOOL GetClientRectangle(LPRECT lpRect);
+        int MapPoints(LPPOINT lpPoints, UINT cPoints);
+        BOOL ConvertScreenToClient(LPPOINT lpPoint);
 
-                    BOOL SendNotifyBeep() const;
+        BOOL SendNotifyBeep() const;
 
-                    BOOL PostUpdateScrollBars() const;
-                    BOOL PostUpdateTitleWithCopy(const PCWSTR pwszNewTitle) const;
-                    BOOL PostUpdateWindowSize() const;
+        BOOL PostUpdateScrollBars() const;
+        BOOL PostUpdateTitleWithCopy(const PCWSTR pwszNewTitle) const;
+        BOOL PostUpdateWindowSize() const;
 
-                    void UpdateWindowSize(COORD const coordSizeInChars) const;
-                    void UpdateWindowText();
+        void UpdateWindowSize(COORD const coordSizeInChars) const;
+        void UpdateWindowText();
 
-                    void HorizontalScroll(const WORD wScrollCommand, const WORD wAbsoluteChange) const;
-                    void VerticalScroll(const WORD wScrollCommand, const WORD wAbsoluteChange) const;
+        void HorizontalScroll(const WORD wScrollCommand, const WORD wAbsoluteChange) const;
+        void VerticalScroll(const WORD wScrollCommand, const WORD wAbsoluteChange) const;
 
-                    HRESULT SignalUia(_In_ EVENTID id);
-                    HRESULT UiaSetTextAreaFocus();
-                    RECT GetWindowRect() const;
-                };
-            };
-        };
+        HRESULT SignalUia(_In_ EVENTID id);
+        HRESULT UiaSetTextAreaFocus();
+        RECT GetWindowRect() const;
     };
-};
+}

@@ -15,21 +15,12 @@ Author(s):
 
 #include "..\inc\IConsoleInputThread.hpp"
 
-namespace Microsoft
+namespace Microsoft::Console::Interactivity::Win32
 {
-    namespace Console
+    class ConsoleInputThread final : public IConsoleInputThread
     {
-        namespace Interactivity
-        {
-            namespace Win32
-            {
-                class ConsoleInputThread final : public IConsoleInputThread
-                {
-                public:
-                    ~ConsoleInputThread() = default;
-                    HANDLE Start();
-                };
-            }
-        }
-    }
+    public:
+        ~ConsoleInputThread() = default;
+        HANDLE Start();
+    };
 }
