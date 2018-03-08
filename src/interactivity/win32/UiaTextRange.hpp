@@ -111,19 +111,22 @@ namespace Microsoft::Console::Interactivity::Win32
             Column LastColumnInRow;
             // increment amount
             MovementIncrement Increment;
+            // direction moving
+            MovementDirection Direction;
 
             MoveState(const UiaTextRange& range,
                         const MovementDirection direction);
 
         private:
             MoveState(const ScreenInfoRow startScreenInfoRow,
-                        const Column startColumn,
-                        const ScreenInfoRow endScreenInfoRow,
-                        const Column endColumn,
-                        const ScreenInfoRow limitingRow,
-                        const Column firstColumnInRow,
-                        const Column lastColumnInRow,
-                        const MovementIncrement increment);
+                      const Column startColumn,
+                      const ScreenInfoRow endScreenInfoRow,
+                      const Column endColumn,
+                      const ScreenInfoRow limitingRow,
+                      const Column firstColumnInRow,
+                      const Column lastColumnInRow,
+                      const MovementIncrement increment,
+                      const MovementDirection direction);
 #ifdef UNIT_TESTING
         friend class ::UiaTextRangeTests;
 #endif
@@ -314,12 +317,32 @@ namespace Microsoft::Console::Interactivity::Win32
                                                                 _In_ const MoveState moveState,
                                                                 _Out_ int* const pAmountMoved);
 
+        static std::pair<Endpoint, Endpoint> _moveByCharacterForward(_In_ const int moveCount,
+                                                                        _In_ const MoveState moveState,
+                                                                        _Out_ int* const pAmountMoved);
+
+        static std::pair<Endpoint, Endpoint> _moveByCharacterBackward(_In_ const int moveCount,
+                                                                        _In_ const MoveState moveState,
+                                                                        _Out_ int* const pAmountMoved);
+
         static std::pair<Endpoint, Endpoint> _moveByLine(_In_ const int moveCount,
                                                             _In_ const MoveState moveState,
                                                             _Out_ int* const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
         _moveEndpointByUnitCharacter(_In_ const int moveCount,
+                                        _In_ const TextPatternRangeEndpoint endpoint,
+                                        _In_ const MoveState moveState,
+                                        _Out_ int* const pAmountMoved);
+
+        static std::tuple<Endpoint, Endpoint, bool>
+        _moveEndpointByUnitCharacterForward(_In_ const int moveCount,
+                                        _In_ const TextPatternRangeEndpoint endpoint,
+                                        _In_ const MoveState moveState,
+                                        _Out_ int* const pAmountMoved);
+
+        static std::tuple<Endpoint, Endpoint, bool>
+        _moveEndpointByUnitCharacterBackward(_In_ const int moveCount,
                                         _In_ const TextPatternRangeEndpoint endpoint,
                                         _In_ const MoveState moveState,
                                         _Out_ int* const pAmountMoved);
@@ -443,5 +466,4 @@ namespace Microsoft::Console::Interactivity::Win32
             bool AlignToTop;
         };
     }
-
 }
