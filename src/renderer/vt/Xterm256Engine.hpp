@@ -13,38 +13,32 @@ Author(s):
 - Mike Griese (migrie) 01-Sept-2017
 --*/
 
-#include "XtermEngine.hpp"
 #pragma once
-namespace Microsoft
+
+#include "XtermEngine.hpp"
+
+namespace Microsoft::Console::Render
 {
-    namespace Console
+    class Xterm256Engine : public XtermEngine
     {
-        namespace Render
-        {
-            class Xterm256Engine;
-        }
-    }
-};
+    public:
+        Xterm256Engine(_In_ wil::unique_hfile hPipe,
+                    _In_ const Microsoft::Console::IDefaultColorProvider& colorProvider,
+                    _In_ const Microsoft::Console::Types::Viewport initialViewport,
+                    _In_reads_(cColorTable) const COLORREF* const ColorTable,
+                    _In_ const WORD cColorTable);
 
-class Microsoft::Console::Render::Xterm256Engine : public XtermEngine
-{
-public:
-    Xterm256Engine(_In_ wil::unique_hfile hPipe,
-                   _In_ const Microsoft::Console::IDefaultColorProvider& colorProvider,
-                   _In_ const Microsoft::Console::Types::Viewport initialViewport,
-                   _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                   _In_ const WORD cColorTable);
+        virtual ~Xterm256Engine() override = default;
 
-    virtual ~Xterm256Engine() override = default;
+        HRESULT UpdateDrawingBrushes(_In_ COLORREF const colorForeground,
+                                    _In_ COLORREF const colorBackground,
+                                    _In_ WORD const legacyColorAttribute,
+                                    _In_ bool const fIncludeBackgrounds) override;
 
-    HRESULT UpdateDrawingBrushes(_In_ COLORREF const colorForeground,
-                                 _In_ COLORREF const colorBackground,
-                                 _In_ WORD const legacyColorAttribute,
-                                 _In_ bool const fIncludeBackgrounds) override;
+    private:
 
-private:
-    
-#ifdef UNIT_TESTING
-    friend class VtRendererTest;
-#endif
-};
+    #ifdef UNIT_TESTING
+        friend class VtRendererTest;
+    #endif
+    };
+}

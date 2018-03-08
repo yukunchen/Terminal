@@ -17,33 +17,25 @@ Author(s):
 #include "DispatchCommon.hpp"
 #include "../../types/inc/IInputEvent.hpp"
 
-namespace Microsoft
+namespace Microsoft::Console::VirtualTerminal
 {
-    namespace Console
+    class IInteractDispatch
     {
-        namespace VirtualTerminal
-        {
-            class IInteractDispatch;
-        }
-    }
+    public:
+        virtual ~IInteractDispatch() = default;
+
+        virtual bool WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& inputEvents) = 0;
+
+        virtual bool WriteCtrlC() = 0;
+
+        virtual bool WriteString(_In_reads_(cch) const wchar_t* const pws, _In_ const size_t cch) = 0;
+
+        virtual bool WindowManipulation(_In_ const DispatchCommon::WindowManipulationType uiFunction,
+                                        _In_reads_(cParams) const unsigned short* const rgusParams,
+                                        _In_ size_t const cParams) = 0;
+
+        virtual bool MoveCursor(_In_ const unsigned int row,
+                                _In_ const unsigned int col) = 0;
+
+    };
 }
-
-class Microsoft::Console::VirtualTerminal::IInteractDispatch
-{
-public:
-    virtual ~IInteractDispatch() = default;
-
-    virtual bool WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& inputEvents) = 0;
-
-    virtual bool WriteCtrlC() = 0;
-
-    virtual bool WriteString(_In_reads_(cch) const wchar_t* const pws, _In_ const size_t cch) = 0;
-
-    virtual bool WindowManipulation(_In_ const DispatchCommon::WindowManipulationType uiFunction,
-                                    _In_reads_(cParams) const unsigned short* const rgusParams,
-                                    _In_ size_t const cParams) = 0;
-
-    virtual bool MoveCursor(_In_ const unsigned int row,
-                            _In_ const unsigned int col) = 0;
-
-};

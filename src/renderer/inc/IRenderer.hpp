@@ -16,48 +16,42 @@ Author(s):
 #include "FontInfoDesired.hpp"
 #include "IRenderEngine.hpp"
 
-namespace Microsoft
+namespace Microsoft::Console::Render
 {
-    namespace Console
+    class IRenderer
     {
-        namespace Render
-        {
-            class IRenderer
-            {
-            public:
-                virtual ~IRenderer() {};
+    public:
+        virtual ~IRenderer() {};
 
-                virtual HRESULT PaintFrame() = 0;
+        virtual HRESULT PaintFrame() = 0;
 
-                virtual void TriggerSystemRedraw(_In_ const RECT* const prcDirtyClient) = 0;
+        virtual void TriggerSystemRedraw(_In_ const RECT* const prcDirtyClient) = 0;
 
-                virtual void TriggerRedraw(_In_ const SMALL_RECT* const psrRegion) = 0;
-                virtual void TriggerRedraw(_In_ const COORD* const pcoord) = 0;
-                virtual void TriggerRedrawCursor(_In_ const COORD* const pcoord) = 0;
+        virtual void TriggerRedraw(_In_ const SMALL_RECT* const psrRegion) = 0;
+        virtual void TriggerRedraw(_In_ const COORD* const pcoord) = 0;
+        virtual void TriggerRedrawCursor(_In_ const COORD* const pcoord) = 0;
 
-                virtual void TriggerRedrawAll() = 0;
-                virtual void TriggerTeardown() = 0;
+        virtual void TriggerRedrawAll() = 0;
+        virtual void TriggerTeardown() = 0;
 
-                virtual void TriggerSelection() = 0;
-                virtual void TriggerScroll() = 0;
-                virtual void TriggerScroll(_In_ const COORD* const pcoordDelta) = 0;
-                virtual void TriggerCircling() = 0;
-                virtual void TriggerFontChange(_In_ int const iDpi,
-                                               _In_ FontInfoDesired const * const pFontInfoDesired,
-                                               _Out_ FontInfo* const pFontInfo) = 0;
+        virtual void TriggerSelection() = 0;
+        virtual void TriggerScroll() = 0;
+        virtual void TriggerScroll(_In_ const COORD* const pcoordDelta) = 0;
+        virtual void TriggerCircling() = 0;
+        virtual void TriggerFontChange(_In_ int const iDpi,
+                                        _In_ FontInfoDesired const * const pFontInfoDesired,
+                                        _Out_ FontInfo* const pFontInfo) = 0;
 
-                virtual HRESULT GetProposedFont(_In_ int const iDpi,
-                                                _In_ FontInfoDesired const * const pFontInfoDesired,
-                                                _Out_ FontInfo* const pFontInfo) = 0;
+        virtual HRESULT GetProposedFont(_In_ int const iDpi,
+                                        _In_ FontInfoDesired const * const pFontInfoDesired,
+                                        _Out_ FontInfo* const pFontInfo) = 0;
 
-                virtual COORD GetFontSize() = 0;
-                virtual bool IsCharFullWidthByFont(_In_ WCHAR const wch) = 0;
+        virtual COORD GetFontSize() = 0;
+        virtual bool IsCharFullWidthByFont(_In_ WCHAR const wch) = 0;
 
-                virtual void EnablePainting() = 0;
-                virtual void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs) = 0;
+        virtual void EnablePainting() = 0;
+        virtual void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs) = 0;
 
-                virtual void AddRenderEngine(_In_ IRenderEngine* const pEngine) = 0;
-            };
-        };
+        virtual void AddRenderEngine(_In_ IRenderEngine* const pEngine) = 0;
     };
-};
+}
