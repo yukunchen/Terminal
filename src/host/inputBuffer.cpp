@@ -514,7 +514,7 @@ size_t InputBuffer::Write(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEv
         // Write to buffer.
         size_t EventsWritten;
         bool SetWaitEvent;
-        THROW_IF_FAILED(_WriteBuffer(inEvents, EventsWritten, SetWaitEvent));
+        _WriteBuffer(inEvents, EventsWritten, SetWaitEvent);
 
         if (SetWaitEvent)
         {
@@ -540,88 +540,85 @@ size_t InputBuffer::Write(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEv
 // was called.
 // - setWaitEvent - on exit, true if buffer became non-empty.
 // Return Value:
-// - S_OK on success.
+// - None
 // Note:
 // - The console lock must be held when calling this routine.
-HRESULT InputBuffer::_WriteBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
-                                  _Out_ size_t& eventsWritten,
-                                  _Out_ bool& setWaitEvent)
+// - will throw on failure
+void InputBuffer::_WriteBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
+                               _Out_ size_t& eventsWritten,
+                               _Out_ bool& setWaitEvent)
 {
     eventsWritten = 0;
     setWaitEvent = false;
     const bool initiallyEmptyQueue = _storage.empty();
     const size_t initialInEventsSize = inEvents.size();
     const bool vtInputMode = IsInVirtualTerminalInputMode();
-    try
+
+    while(!inEvents.empty())
     {
-        while(!inEvents.empty())
+        // Pop the next event.
+        // If we're in vt mode, try and handle it with the vt input module.
+        // If it was handled, do nothing else for it.
+        // If there was one event passed in, try coalescing it with the previous event currently in the buffer.
+        // If it's not coalesced, append it to the buffer.
+        std::unique_ptr<IInputEvent> inEvent = std::move(inEvents.front());
+        inEvents.pop_front();
+        if (vtInputMode)
         {
-            // Pop the next event.
-            // If we're in vt mode, try and handle it with the vt input module.
-            // If it was handled, do nothing else for it.
-            // If there was one event passed in, try coalescing it with the previous event currently in the buffer.
-            // If it's not coalesced, append it to the buffer.
-            std::unique_ptr<IInputEvent> inEvent = std::move(inEvents.front());
-            inEvents.pop_front();
-            if (vtInputMode)
+            const bool handled = _termInput.HandleKey(inEvent.get());
+            if (handled)
             {
-                const bool handled = _termInput.HandleKey(inEvent.get());
-                if (handled)
-                {
-                    eventsWritten++;
-                    continue;
-                }
+                eventsWritten++;
+                continue;
             }
-
-            // we only check for possible coalescing when storing one
-            // record at a time because this is the original behavior of
-            // the input buffer. Changing this behavior may break stuff
-            // that was depending on it.
-            if (initialInEventsSize == 1 && !_storage.empty())
-            {
-                // coalescing requires a deque of events, so push it back onto the front.
-                inEvents.push_front(std::move(inEvent));
-
-                bool coalesced = false;
-                // this looks kinda weird but we don't want to coalesce a
-                // mouse event and then try to coalesce a key event right after.
-                //
-                // we also pass the whole deque to the coalescing methods
-                // even though they only want one event because it should
-                // be their responsibility to maintain the correct state
-                // of the deque if they process any records in it.
-                if (_CoalesceMouseMovedEvents(inEvents))
-                {
-                    coalesced = true;
-                }
-                else if (_CoalesceRepeatedKeyPressEvents(inEvents))
-                {
-                    coalesced = true;
-                }
-                if (coalesced)
-                {
-                    eventsWritten = 1;
-                    return S_OK;
-                }
-                else
-                {
-                    // We didn't coalesce the event. pull it from the queue again,
-                    //  to keep the state consistent with the start of this block.
-                    inEvent = std::move(inEvents.front());
-                    inEvents.pop_front();
-                }
-            }
-            // At this point, the event was neither coalesced, nor processed by VT.
-            _storage.push_back(std::move(inEvent));
-            ++eventsWritten;
         }
-        if (initiallyEmptyQueue && !_storage.empty())
+
+        // we only check for possible coalescing when storing one
+        // record at a time because this is the original behavior of
+        // the input buffer. Changing this behavior may break stuff
+        // that was depending on it.
+        if (initialInEventsSize == 1 && !_storage.empty())
         {
-            setWaitEvent = true;
+            // coalescing requires a deque of events, so push it back onto the front.
+            inEvents.push_front(std::move(inEvent));
+
+            bool coalesced = false;
+            // this looks kinda weird but we don't want to coalesce a
+            // mouse event and then try to coalesce a key event right after.
+            //
+            // we also pass the whole deque to the coalescing methods
+            // even though they only want one event because it should
+            // be their responsibility to maintain the correct state
+            // of the deque if they process any records in it.
+            if (_CoalesceMouseMovedEvents(inEvents))
+            {
+                coalesced = true;
+            }
+            else if (_CoalesceRepeatedKeyPressEvents(inEvents))
+            {
+                coalesced = true;
+            }
+            if (coalesced)
+            {
+                eventsWritten = 1;
+                return;
+            }
+            else
+            {
+                // We didn't coalesce the event. pull it from the queue again,
+                //  to keep the state consistent with the start of this block.
+                inEvent = std::move(inEvents.front());
+                inEvents.pop_front();
+            }
         }
-        return S_OK;
+        // At this point, the event was neither coalesced, nor processed by VT.
+        _storage.push_back(std::move(inEvent));
+        ++eventsWritten;
     }
-    CATCH_RETURN();
+    if (initiallyEmptyQueue && !_storage.empty())
+    {
+        setWaitEvent = true;
+    }
 }
 
 // Routine Description:
