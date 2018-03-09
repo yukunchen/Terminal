@@ -115,6 +115,7 @@ bool ATTR_ROW::Reset(_In_ const TextAttribute attr)
 // - sNewWidth - The new width of the row.
 // Return Value:
 // - S_OK on success, otherwise relevant error HRESULT
+[[nodiscard]]
 HRESULT ATTR_ROW::Resize(_In_ const short sOldWidth, _In_ const short sNewWidth)
 {
     // Easy case. If the new row is longer, increase the length of the last run by how much new space there is.
@@ -240,6 +241,7 @@ void ATTR_ROW::FindAttrIndex(_In_ size_t const index,
 // - cRowLength - Length of this array
 //  Return Value:
 // - Success if unpacked. Buffer too small if row length is incorrect
+[[nodiscard]]
 NTSTATUS ATTR_ROW::UnpackAttrs(_Out_writes_(cRowLength) TextAttribute* const rgAttrs, _In_ const size_t cRowLength) const
 {
     NTSTATUS status = STATUS_SUCCESS;
@@ -383,6 +385,7 @@ size_t _DebugGetTotalLength(_In_reads_(cRun) const TextAttributeRun* const rgRun
 // Return Value:
 // - STATUS_NO_MEMORY if there wasn't enough memory to insert the runs
 //   otherwise STATUS_SUCCESS if we were successful.
+[[nodiscard]]
 HRESULT ATTR_ROW::InsertAttrRuns(_In_reads_(cAttrs) const TextAttributeRun* const rgInsertAttrs,
                                   _In_ const size_t cInsertAttrs,
                                   _In_ const size_t iStart,

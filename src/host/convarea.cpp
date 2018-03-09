@@ -797,22 +797,22 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
 
                 // Each time around the loop, take our new 1-length attribute with the appropriate line attributes (underlines, etc.)
                 // and insert it into the existing Run-Length-Encoded attribute list.
-                Row.GetAttrRow().InsertAttrRuns(&InsertedRun,
-                                           1,
-                                           TargetPoint.X + i,
-                                           (SHORT)(TargetPoint.X + i),
-                                           coordScreenBufferSize.X);
+                LOG_IF_FAILED(Row.GetAttrRow().InsertAttrRuns(&InsertedRun,
+                                                              1,
+                                                              TargetPoint.X + i,
+                                                              (SHORT)(TargetPoint.X + i),
+                                                              coordScreenBufferSize.X));
             }
         }
         else
         {
             InsertedRun.SetLength(StringLength);
             InsertedRun.SetAttributesFromLegacy(wScreenAttributes);
-            Row.GetAttrRow().InsertAttrRuns(&InsertedRun,
-                                            1,
-                                            TargetPoint.X,
-                                            (SHORT)(TargetPoint.X + StringLength - 1),
-                                            coordScreenBufferSize.X);
+            LOG_IF_FAILED(Row.GetAttrRow().InsertAttrRuns(&InsertedRun,
+                                                          1,
+                                                          TargetPoint.X,
+                                                          (SHORT)(TargetPoint.X + StringLength - 1),
+                                                          coordScreenBufferSize.X));
         }
     }
 

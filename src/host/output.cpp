@@ -133,7 +133,7 @@ NTSTATUS ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenI
             }
 
             // Unpack the attributes into an array so we can iterate over them.
-            pRow->GetAttrRow().UnpackAttrs(rgUnpackedRowAttributes, ScreenBufferWidth);
+            LOG_IF_FAILED(pRow->GetAttrRow().UnpackAttrs(rgUnpackedRowAttributes, ScreenBufferWidth));
 
             for (short iCol = 0; iCol < sXSize && it != itEnd; ++pciTargetPtr, ++it)
             {

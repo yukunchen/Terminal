@@ -38,14 +38,17 @@ public:
                        _Out_opt_ size_t* const pcAttrApplies) const;
     bool SetAttrToEnd(_In_ UINT const iStart, _In_ const TextAttribute attr);
     void ReplaceLegacyAttrs(_In_ const WORD wToBeReplacedAttr, _In_ const WORD wReplaceWith);
+    [[nodiscard]]
     HRESULT Resize(_In_ const short sOldWidth, _In_ const short sNewWidth);
 
+    [[nodiscard]]
     HRESULT InsertAttrRuns(_In_reads_(cAttrs) const TextAttributeRun* const prgAttrs,
                            _In_ const size_t cAttrs,
                            _In_ const size_t iStart,
                            _In_ const size_t iEnd,
                            _In_ const size_t cBufferWidth);
 
+    [[nodiscard]]
     NTSTATUS UnpackAttrs(_Out_writes_(cRowLength) TextAttribute* const rgAttrs, _In_ const size_t cRowLength) const;
 
     friend constexpr bool operator==(const ATTR_ROW& a, const ATTR_ROW& b) noexcept;
