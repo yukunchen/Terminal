@@ -21,6 +21,7 @@ namespace Microsoft::Console
     public:
         PtySignalInputThread(_In_ wil::unique_hfile hPipe);
 
+        [[nodiscard]]
         HRESULT Start();
         static DWORD StaticThreadProc(_In_ LPVOID lpParameter);
 
@@ -29,6 +30,7 @@ namespace Microsoft::Console
         PtySignalInputThread& operator=(const PtySignalInputThread&) = delete;
 
     private:
+        [[nodiscard]]
         HRESULT _InputThread();
         bool _GetData(_Out_writes_bytes_(cbBuffer) void* const pBuffer, _In_ const DWORD cbBuffer);
 

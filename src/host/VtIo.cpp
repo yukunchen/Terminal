@@ -317,7 +317,7 @@ HRESULT VtIo::StartIfNeeded()
 
     if (_hasSignalThread)
     {
-        _pPtySignalInputThread->Start();
+        LOG_IF_FAILED(_pPtySignalInputThread->Start());
     }
 
     return S_OK;
