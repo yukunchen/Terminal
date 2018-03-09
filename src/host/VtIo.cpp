@@ -34,6 +34,7 @@ VtIo::VtIo() :
 //      IO mode string
 // Return Value:
 //  S_OK if we parsed the string successfully, otherwise E_INVALIDARG indicating failure.
+[[nodiscard]]
 HRESULT VtIo::ParseIoMode(_In_ const std::wstring& VtMode, _Out_ VtIoMode& ioMode)
 {
     ioMode = VtIoMode::INVALID;
@@ -65,6 +66,7 @@ HRESULT VtIo::ParseIoMode(_In_ const std::wstring& VtMode, _Out_ VtIoMode& ioMod
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT VtIo::Initialize(const ConsoleArguments * const pArgs)
 {
     _lookingForCursorPosition = pArgs->GetInheritCursor();
@@ -102,6 +104,7 @@ HRESULT VtIo::Initialize(const ConsoleArguments * const pArgs)
 // Return Value:
 //  S_OK if we initialized successfully, otherwise an appropriate HRESULT
 //      indicating failure.
+[[nodiscard]]
 HRESULT VtIo::_Initialize(_In_ const HANDLE InHandle, _In_ const HANDLE OutHandle, _In_ const std::wstring& VtMode)
 {
     return _Initialize(InHandle, OutHandle, VtMode, INVALID_HANDLE_VALUE);
@@ -125,6 +128,7 @@ HRESULT VtIo::_Initialize(_In_ const HANDLE InHandle, _In_ const HANDLE OutHandl
 // Return Value:
 //  S_OK if we initialized successfully, otherwise an appropriate HRESULT
 //      indicating failure.
+[[nodiscard]]
 HRESULT VtIo::_Initialize(_In_ const HANDLE InHandle, _In_ const HANDLE OutHandle, _In_ const std::wstring& VtMode, _In_opt_ HANDLE SignalHandle)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -215,6 +219,7 @@ HRESULT VtIo::_Initialize(_In_ const HANDLE InHandle, _In_ const HANDLE OutHandl
 // Return Value:
 //  S_OK if we initialized successfully, otherwise an appropriate HRESULT
 //      indicating failure.
+[[nodiscard]]
 HRESULT VtIo::_Initialize(_In_ const std::wstring& InPipeName, _In_ const std::wstring& OutPipeName, _In_ const std::wstring& VtMode)
 {
     return _Initialize(InPipeName, OutPipeName, VtMode, INVALID_HANDLE_VALUE);
@@ -236,6 +241,7 @@ HRESULT VtIo::_Initialize(_In_ const std::wstring& InPipeName, _In_ const std::w
 // Return Value:
 //  S_OK if we initialized successfully, otherwise an appropriate HRESULT
 //      indicating failure.
+[[nodiscard]]
 HRESULT VtIo::_Initialize(_In_ const std::wstring& InPipeName, _In_ const std::wstring& OutPipeName, _In_ const std::wstring& VtMode, _In_opt_ HANDLE SignalHandle)
 {
     wil::unique_hfile hInputFile;
@@ -280,6 +286,7 @@ bool VtIo::IsUsingVt() const
 // Return Value:
 //  S_OK if we started successfully or had nothing to start, otherwise an
 //      appropriate HRESULT indicating failure.
+[[nodiscard]]
 HRESULT VtIo::StartIfNeeded()
 {
     // If we haven't been set up, do nothing (because there's nothing to start)
@@ -331,6 +338,7 @@ HRESULT VtIo::StartIfNeeded()
 // Return Value:
 // - S_OK if the renderer successfully suppressed the next repaint, otherwise an
 //      appropriate HRESULT indicating failure.
+[[nodiscard]]
 HRESULT VtIo::SuppressResizeRepaint()
 {
     HRESULT hr = S_OK;
@@ -349,6 +357,7 @@ HRESULT VtIo::SuppressResizeRepaint()
 // Return Value:
 // - S_OK if we successfully inherited the cursor or did nothing, else an
 //      appropriate HRESULT
+[[nodiscard]]
 HRESULT VtIo::SetCursorPosition(_In_ const COORD coordCursor)
 {
     HRESULT hr = S_OK;
