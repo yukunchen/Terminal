@@ -89,13 +89,13 @@ public:
 
         UINT uiCursorSize = 12;
 
-        SCREEN_INFORMATION::CreateInstance(coordWindowSize,
-                                           m_pFontInfo,
-                                           coordScreenBufferSize,
-                                           ciFill,
-                                           ciPopupFill,
-                                           uiCursorSize,
-                                           &gci.CurrentScreenBuffer);
+        THROW_IF_FAILED(SCREEN_INFORMATION::CreateInstance(coordWindowSize,
+                                                           m_pFontInfo,
+                                                           coordScreenBufferSize,
+                                                           ciFill,
+                                                           ciPopupFill,
+                                                           uiCursorSize,
+                                                           &gci.CurrentScreenBuffer));
     }
 
     void CleanupGlobalScreenBuffer()

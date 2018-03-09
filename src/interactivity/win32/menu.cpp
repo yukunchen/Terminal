@@ -467,7 +467,7 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
 
             pCommandLine->Hide(FALSE);
 
-            ScreenInfo->ResizeScreenBuffer(coordBuffer, TRUE);
+            LOG_IF_FAILED(ScreenInfo->ResizeScreenBuffer(coordBuffer, TRUE));
 
             pCommandLine->Show();
         }

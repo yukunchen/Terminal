@@ -517,7 +517,7 @@ void DeleteCommandLine(_Inout_ COOKED_READ_DATA* const pCookedReadData, _In_ con
         pCookedReadData->_NumberOfVisibleChars = 0;
     }
 
-    pCookedReadData->_pScreenInfo->SetCursorPosition(pCookedReadData->_OriginalCursorPosition, TRUE);
+    LOG_IF_FAILED(pCookedReadData->_pScreenInfo->SetCursorPosition(pCookedReadData->_OriginalCursorPosition, TRUE));
 }
 
 void RedrawCommandLine(_Inout_ COOKED_READ_DATA* const pCookedReadData)
@@ -1069,7 +1069,7 @@ NTSTATUS ProcessCommandNumberInput(_In_ COOKED_READ_DATA* const pCookedReadData)
             // Note that CookedReadData's OriginalCursorPosition is the position before ANY text was entered on the edit line.
             // We want to use the position before the cursor was moved for this popup handler specifically, which may be *anywhere* in the edit line
             // and will be synchronized with the pointers in the CookedReadData structure (BufPtr, etc.)
-            pCookedReadData->_pScreenInfo->SetCursorPosition(pCookedReadData->BeforeDialogCursorPosition, TRUE);
+            LOG_IF_FAILED(pCookedReadData->_pScreenInfo->SetCursorPosition(pCookedReadData->BeforeDialogCursorPosition, TRUE));
         }
         else if (Char == UNICODE_CARRIAGERETURN)
         {
@@ -1256,7 +1256,7 @@ NTSTATUS CommandNumberPopup(_In_ COOKED_READ_DATA* const CookedReadData)
     COORD CursorPosition;
     CursorPosition.X = (SHORT)(Popup->Region.Right - MINIMUM_COMMAND_PROMPT_SIZE);
     CursorPosition.Y = (SHORT)(Popup->Region.Top + 1);
-    CookedReadData->_pScreenInfo->SetCursorPosition(CursorPosition, TRUE);
+    LOG_IF_FAILED(CookedReadData->_pScreenInfo->SetCursorPosition(CursorPosition, TRUE));
 
     // Prepare the popup
     Popup->NumberRead = 0;

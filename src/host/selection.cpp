@@ -612,7 +612,7 @@ void Selection::InitializeMarkSelection()
     pScreenInfo->SetCursorInformation(100, TRUE, pCursor->GetColor(), pCursor->GetType());
 
     const COORD coordPosition = pCursor->GetPosition();
-    pScreenInfo->SetCursorPosition(coordPosition, TRUE);
+    LOG_IF_FAILED(pScreenInfo->SetCursorPosition(coordPosition, TRUE));
 
     // set the cursor position as the anchor position
     // it will get updated as the cursor moves for mark mode,
@@ -758,5 +758,5 @@ void Selection::SelectAll()
     SelectNewRegion(coordNewSelStart, coordNewSelEnd);
 
     // restore the old window position
-    pScreenInfo->SetViewportOrigin(TRUE, coordWindowOrigin);
+    LOG_IF_FAILED(pScreenInfo->SetViewportOrigin(TRUE, coordWindowOrigin));
 }

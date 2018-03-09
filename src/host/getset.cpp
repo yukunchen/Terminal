@@ -85,18 +85,18 @@ HRESULT ApiRoutines::GetConsoleScreenBufferInfoExImpl(_In_ SCREEN_INFORMATION* c
 HRESULT DoSrvGetConsoleScreenBufferInfo(_In_ SCREEN_INFORMATION* pScreenInfo, _Out_ CONSOLE_SCREEN_BUFFER_INFOEX* pInfo)
 {
     pInfo->bFullscreenSupported = FALSE; // traditional full screen with the driver support is no longer supported.
-    NTSTATUS Status = pScreenInfo->GetScreenBufferInformation(&pInfo->dwSize,
-                                                              &pInfo->dwCursorPosition,
-                                                              &pInfo->srWindow,
-                                                              &pInfo->wAttributes,
-                                                              &pInfo->dwMaximumWindowSize,
-                                                              &pInfo->wPopupAttributes,
-                                                              pInfo->ColorTable);
+    pScreenInfo->GetScreenBufferInformation(&pInfo->dwSize,
+                                            &pInfo->dwCursorPosition,
+                                            &pInfo->srWindow,
+                                            &pInfo->wAttributes,
+                                            &pInfo->dwMaximumWindowSize,
+                                            &pInfo->wPopupAttributes,
+                                            pInfo->ColorTable);
     // Callers of this function expect to recieve an exclusive rect, not an inclusive one.
     pInfo->srWindow.Right += 1;
     pInfo->srWindow.Bottom += 1;
 
-    RETURN_NTSTATUS(Status);
+    return S_OK;
 }
 
 HRESULT ApiRoutines::GetConsoleCursorInfoImpl(_In_ SCREEN_INFORMATION* const pContext,
@@ -403,7 +403,7 @@ HRESULT DoSrvSetScreenBufferInfo(_In_ SCREEN_INFORMATION* const pScreenInfo,
 
         pCommandLine->Hide(FALSE);
 
-        pScreenInfo->ResizeScreenBuffer(pInfo->dwSize, TRUE);
+        LOG_IF_FAILED(pScreenInfo->ResizeScreenBuffer(pInfo->dwSize, TRUE));
 
         pCommandLine->Show();
     }
@@ -516,12 +516,10 @@ HRESULT DoSrvSetConsoleCursorInfo(_In_ SCREEN_INFORMATION* pScreenInfo,
     // If more than 100% or less than 0% cursor height, reject it.
     RETURN_HR_IF(E_INVALIDARG, (CursorSize > 100 || CursorSize == 0));
 
-    RETURN_IF_NTSTATUS_FAILED(pScreenInfo->SetCursorInformation(
-        CursorSize,
-        IsVisible,
-        pScreenInfo->TextInfo->GetCursor()->GetColor(),
-        pScreenInfo->TextInfo->GetCursor()->GetType()
-    ));
+    pScreenInfo->SetCursorInformation(CursorSize,
+                                      IsVisible,
+                                      pScreenInfo->TextInfo->GetCursor()->GetColor(),
+                                      pScreenInfo->TextInfo->GetCursor()->GetType());
 
     return S_OK;
 }
@@ -562,15 +560,14 @@ HRESULT DoSrvSetConsoleWindowInfo(_In_ SCREEN_INFORMATION* pScreenInfo,
     RETURN_HR_IF(E_INVALIDARG, (NewWindowSize.X > coordMax.X || NewWindowSize.Y > coordMax.Y));
 
     // Even if it's the same size, we need to post an update in case the scroll bars need to go away.
-    NTSTATUS Status = pScreenInfo->SetViewportRect(&Window);
+    pScreenInfo->SetViewportRect(&Window);
     if (pScreenInfo->IsActiveScreenBuffer())
     {
         // TODO: MSFT: 9574827 - shouldn't we be looking at or at least logging the failure codes here? (Or making them non-void?)
         pScreenInfo->PostUpdateWindowSize();
         WriteToScreen(pScreenInfo, pScreenInfo->GetBufferViewport());
     }
-
-    RETURN_NTSTATUS(Status);
+    return S_OK;
 }
 
 HRESULT ApiRoutines::ScrollConsoleScreenBufferAImpl(_In_ SCREEN_INFORMATION* const pContext,
