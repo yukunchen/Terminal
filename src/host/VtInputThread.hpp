@@ -23,11 +23,13 @@ namespace Microsoft::Console
     public:
         VtInputThread(_In_ wil::unique_hfile hPipe, _In_ const bool inheritCursor);
 
+        [[nodiscard]]
         HRESULT Start();
         static DWORD StaticVtInputThreadProc(_In_ LPVOID lpParameter);
         void DoReadInput(_In_ const bool throwOnFail);
 
     private:
+        [[nodiscard]]
         HRESULT _HandleRunInput(_In_reads_(cch) const byte* const charBuffer, _In_ const int cch);
         DWORD _InputThread();
 
