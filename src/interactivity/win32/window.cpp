@@ -765,7 +765,7 @@ void Window::VerticalScroll(_In_ const WORD wScrollCommand, _In_ const WORD wAbs
 
     NewOrigin.Y = (WORD)(max(0, min((SHORT)NewOrigin.Y, sScreenBufferSizeY - (SHORT)ScreenInfo->GetScreenWindowSizeY())));
 
-    ScreenInfo->SetViewportOrigin(TRUE, NewOrigin);
+    LOG_IF_FAILED(ScreenInfo->SetViewportOrigin(TRUE, NewOrigin));
 }
 
 // Routine Description:
@@ -840,7 +840,7 @@ void Window::HorizontalScroll(_In_ const WORD wScrollCommand, _In_ const WORD wA
     }
 
     NewOrigin.X = (WORD)(max(0, min((SHORT)NewOrigin.X, sScreenBufferSizeX - (SHORT)ScreenInfo->GetScreenWindowSizeX())));
-    ScreenInfo->SetViewportOrigin(TRUE, NewOrigin);
+    LOG_IF_FAILED(ScreenInfo->SetViewportOrigin(TRUE, NewOrigin));
 }
 
 BOOL Window::EnableBothScrollBars()

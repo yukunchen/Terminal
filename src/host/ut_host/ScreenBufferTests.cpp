@@ -57,7 +57,7 @@ class ScreenBufferTests
     {
         const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         m_state->PrepareNewTextBufferInfo();
-        gci.CurrentScreenBuffer->SetViewportOrigin(true, {0,0});
+        VERIFY_SUCCEEDED(gci.CurrentScreenBuffer->SetViewportOrigin(true, {0, 0}));
 
         return true;
     }
@@ -318,7 +318,7 @@ void ScreenBufferTests::TestReverseLineFeed()
     Log::Comment(L"Case 3: RI from top of viewport, when viewport is below top of buffer");
 
     cursor->SetPosition({0, 5});
-    psi->SetViewportOrigin(TRUE, {0, 5});
+    VERIFY_SUCCEEDED(psi->SetViewportOrigin(TRUE, {0, 5}));
     bufferWriter->PrintString(L"ABCDEFGH", 9);
     VERIFY_ARE_EQUAL(cursor->GetPosition().X, 9);
     VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 5);
@@ -729,7 +729,7 @@ void ScreenBufferTests::EraseAllTests()
     VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 0);
     VERIFY_ARE_EQUAL(psi->GetBufferViewport().Top, 0);
 
-    psi->VtEraseAll();
+    VERIFY_SUCCEEDED(psi->VtEraseAll());
 
     VERIFY_ARE_EQUAL(cursor->GetPosition().X, 0);
     VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 1);
@@ -753,7 +753,7 @@ void ScreenBufferTests::EraseAllTests()
         viewport.Left, viewport.Top, viewport.Right, viewport.Bottom
     ));
 
-    psi->VtEraseAll();
+    VERIFY_SUCCEEDED(psi->VtEraseAll());
     VERIFY_ARE_EQUAL(cursor->GetPosition().X, 0);
     VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 4);
     viewport = psi->GetBufferViewport();
@@ -776,7 +776,7 @@ void ScreenBufferTests::EraseAllTests()
         L"viewport={L:%d,T:%d,R:%d,B:%d}",
         viewport.Left, viewport.Top, viewport.Right, viewport.Bottom
     ));
-    psi->VtEraseAll();
+    VERIFY_SUCCEEDED(psi->VtEraseAll());
 
     viewport = psi->GetBufferViewport();
     auto heightFromBottom = psi->GetScreenBufferSize().Y - (viewport.Bottom - viewport.Top + 1);
@@ -937,7 +937,7 @@ void ScreenBufferTests::VtSoftResetCursorPosition()
     Log::Comment(NoThrowString().Format(
         L"Make sure the viewport is at 0,0"
     ));
-    psi->SetViewportOrigin(true, COORD({0, 0}));
+    VERIFY_SUCCEEDED(psi->SetViewportOrigin(true, COORD({0, 0})));
 
     Log::Comment(NoThrowString().Format(
         L"Move the cursor to 2,2, then execute a soft reset.\n"

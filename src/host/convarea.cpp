@@ -114,7 +114,7 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
         {
             WindowOrigin.X = 0;
             WindowOrigin.Y = (SHORT)(Position.Y - currentViewport.Bottom);
-            ScreenInfo->SetViewportOrigin(FALSE, WindowOrigin);
+            LOG_IF_FAILED(ScreenInfo->SetViewportOrigin(FALSE, WindowOrigin));
         }
     }
 
