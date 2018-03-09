@@ -128,6 +128,7 @@ public:
     CHAR_INFO GetFill() const;
     void SetFill(_In_ const CHAR_INFO ciFill);
 
+    [[nodiscard]]
     NTSTATUS ResizeTraditional(_In_ COORD const currentScreenBufferSize,
                                _In_ COORD const newScreenBufferSize,
                                _In_ TextAttribute const attributes);
