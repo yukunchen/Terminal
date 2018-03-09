@@ -170,7 +170,7 @@ class ClipboardTests
         // verify trailing bytes were trimmed
         // there are 2 double-byte characters in our sample string (see CommonState.hpp for sample)
         // the width is right - left
-        VERIFY_ARE_EQUAL((short)wcslen(rgTempRows[0]), rgsrSelection[0].Right - rgsrSelection[0].Left);
+        VERIFY_ARE_EQUAL((short)wcslen(rgTempRows[0]), rgsrSelection[0].Right - rgsrSelection[0].Left + 1);
 
         // since we're not in line selection, the line should be \r\n terminated
         PWCHAR tempPtr = rgTempRows[0];
