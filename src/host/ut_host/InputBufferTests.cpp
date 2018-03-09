@@ -362,23 +362,23 @@ class InputBufferTests
         std::deque<std::unique_ptr<IInputEvent>> outEvents;
         size_t eventsRead = 0;
         bool resetWaitEvent = false;
-        VERIFY_SUCCESS_NTSTATUS(inputBuffer._ReadBuffer(outEvents,
-                                                        1,
-                                                        eventsRead,
-                                                        false,
-                                                        resetWaitEvent,
-                                                        true));
+        inputBuffer._ReadBuffer(outEvents,
+                                1,
+                                eventsRead,
+                                false,
+                                resetWaitEvent,
+                                true);
         VERIFY_ARE_EQUAL(eventsRead, 1u);
         VERIFY_IS_FALSE(!!resetWaitEvent);
 
         // read the rest, resetWaitEvent should be set to true
         outEvents.clear();
-        VERIFY_SUCCESS_NTSTATUS(inputBuffer._ReadBuffer(outEvents,
-                                                        RECORD_INSERT_COUNT - 1,
-                                                        eventsRead,
-                                                        false,
-                                                        resetWaitEvent,
-                                                        true));
+        inputBuffer._ReadBuffer(outEvents,
+                                RECORD_INSERT_COUNT - 1,
+                                eventsRead,
+                                false,
+                                resetWaitEvent,
+                                true);
         VERIFY_ARE_EQUAL(eventsRead, RECORD_INSERT_COUNT - 1);
         VERIFY_IS_TRUE(!!resetWaitEvent);
     }
@@ -409,12 +409,12 @@ class InputBufferTests
         std::deque<std::unique_ptr<IInputEvent>> outEvents;
         size_t eventsRead = 0;
         bool resetWaitEvent = false;
-        VERIFY_SUCCESS_NTSTATUS(inputBuffer._ReadBuffer(outEvents,
-                                                        recordInsertCount,
-                                                        eventsRead,
-                                                        false,
-                                                        resetWaitEvent,
-                                                        false));
+        inputBuffer._ReadBuffer(outEvents,
+                                recordInsertCount,
+                                eventsRead,
+                                false,
+                                resetWaitEvent,
+                                false);
         // the dbcs record should have counted for two elements in
         // the array, making it so that we get less events read
         VERIFY_ARE_EQUAL(eventsRead, recordInsertCount - 1);
