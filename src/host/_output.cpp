@@ -77,11 +77,11 @@ void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
     TextAttributeRun CurrentBufferAttrs;
     CurrentBufferAttrs.SetLength(cchBuffer);
     CurrentBufferAttrs.SetAttributes(pScreenInfo->GetAttributes());
-    Row.GetAttrRow().InsertAttrRuns(&CurrentBufferAttrs,
-                                    1,
-                                    TargetPoint.X,
-                                    (SHORT)(TargetPoint.X + cchBuffer - 1),
-                                    coordScreenBufferSize.X);
+    LOG_IF_FAILED(Row.GetAttrRow().InsertAttrRuns(&CurrentBufferAttrs,
+                                                  1,
+                                                  TargetPoint.X,
+                                                  (SHORT)(TargetPoint.X + cchBuffer - 1),
+                                                  coordScreenBufferSize.X));
 
     pScreenInfo->ResetTextFlags(TargetPoint.X, TargetPoint.Y, TargetPoint.X + cchBuffer - 1, TargetPoint.Y);
 }
@@ -245,11 +245,11 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
                 }
             }
 
-            pRow->GetAttrRow().InsertAttrRuns(rAttrRunsBuff,
-                                              NumAttrRuns,
-                                              coordDest.X,
-                                              (SHORT)(coordDest.X + XSize - 1),
-                                              coordScreenBufferSize.X);
+            LOG_IF_FAILED(pRow->GetAttrRow().InsertAttrRuns(rAttrRunsBuff,
+                                                            NumAttrRuns,
+                                                            coordDest.X,
+                                                            (SHORT)(coordDest.X + XSize - 1),
+                                                            coordScreenBufferSize.X));
 
             try
             {
@@ -293,7 +293,7 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
                     {
                         insert.SetAttributes(lastAttr);
                         insert.SetLength(currentLength);
-                        Row.GetAttrRow().InsertAttrRuns(&insert, 1, destX, (destX + currentLength) - 1, rowWidth);
+                        LOG_IF_FAILED(Row.GetAttrRow().InsertAttrRuns(&insert, 1, destX, (destX + currentLength) - 1, rowWidth));
 
                         destX = coordDest.X + x;
                         lastAttr = *pSrcAttr;
@@ -307,7 +307,7 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
                 // Make sure to also insert the last run we started.
                 insert.SetAttributes(lastAttr);
                 insert.SetLength(currentLength);
-                pRow->GetAttrRow().InsertAttrRuns(&insert, 1, destX, (destX + currentLength) - 1, rowWidth);
+                LOG_IF_FAILED(pRow->GetAttrRow().InsertAttrRuns(&insert, 1, destX, (destX + currentLength) - 1, rowWidth));
 
                 pSrcAttr++; // advance to next row.
             }
@@ -740,11 +740,11 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
 
             // recalculate last non-space char
 
-            pRow->GetAttrRow().InsertAttrRuns(rAttrRunsBuff,
-                                              NumAttrRuns,
-                                              (SHORT)((Y == coordWrite.Y) ? coordWrite.X : 0),
-                                              X,
-                                              coordScreenBufferSize.X);
+            LOG_IF_FAILED(pRow->GetAttrRow().InsertAttrRuns(rAttrRunsBuff,
+                                                            NumAttrRuns,
+                                                            (SHORT)((Y == coordWrite.Y) ? coordWrite.X : 0),
+                                                            X,
+                                                            coordScreenBufferSize.X));
 
             try
             {
@@ -1076,7 +1076,11 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
                 AttrRun.SetAttributesFromLegacy(wActual);
             }
 
-            pRow->GetAttrRow().InsertAttrRuns(&AttrRun, 1, (SHORT)(X - AttrRun.GetLength() + 1), X, coordScreenBufferSize.X);
+            LOG_IF_FAILED(pRow->GetAttrRow().InsertAttrRuns(&AttrRun,
+                                                            1,
+                                                            (SHORT)(X - AttrRun.GetLength() + 1),
+                                                            X,
+                                                            coordScreenBufferSize.X));
 
             // leave row wrap status alone for any attribute fills
             if (NumWritten < *pcElements)
@@ -1249,7 +1253,11 @@ void FillRectangle(_In_ const CHAR_INFO * const pciFill,
         AttrRun.SetLength(XSize);
         AttrRun.SetAttributesFromLegacy(pciFill->Attributes);
 
-        pRow->GetAttrRow().InsertAttrRuns(&AttrRun, 1, psrTarget->Left, psrTarget->Right, coordScreenBufferSize.X);
+        LOG_IF_FAILED(pRow->GetAttrRow().InsertAttrRuns(&AttrRun,
+                                                        1,
+                                                        psrTarget->Left,
+                                                        psrTarget->Right,
+                                                        coordScreenBufferSize.X));
 
         // invalidate row wrapping for rectangular drawing
         pRow->GetCharRow().SetWrapForced(false);
