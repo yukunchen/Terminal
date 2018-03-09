@@ -88,9 +88,9 @@ private:
                         _Out_ bool& resetWaitEvent,
                         _In_ const bool unicode);
 
-    HRESULT _WriteBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inRecords,
-                         _Out_ size_t& eventsWritten,
-                         _Out_ bool& setWaitEvent);
+    void _WriteBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inRecords,
+                      _Out_ size_t& eventsWritten,
+                      _Out_ bool& setWaitEvent);
 
     bool _CoalesceMouseMovedEvents(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
     bool _CoalesceRepeatedKeyPressEvents(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
