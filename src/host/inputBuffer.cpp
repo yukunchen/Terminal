@@ -242,7 +242,6 @@ NTSTATUS InputBuffer::Read(_Out_ std::deque<std::unique_ptr<IInputEvent>>& OutEv
 {
     try
     {
-        NTSTATUS Status;
         if (_storage.empty())
         {
             if (!WaitForData)
@@ -256,12 +255,12 @@ NTSTATUS InputBuffer::Read(_Out_ std::deque<std::unique_ptr<IInputEvent>>& OutEv
         std::deque<std::unique_ptr<IInputEvent>> events;
         size_t eventsRead;
         bool resetWaitEvent;
-        Status = _ReadBuffer(events,
-                             AmountToRead,
-                             eventsRead,
-                             Peek,
-                             resetWaitEvent,
-                             Unicode);
+        _ReadBuffer(events,
+                    AmountToRead,
+                    eventsRead,
+                    Peek,
+                    resetWaitEvent,
+                    Unicode);
 
         // copy events to outEvents
         while (!events.empty())
@@ -274,7 +273,7 @@ NTSTATUS InputBuffer::Read(_Out_ std::deque<std::unique_ptr<IInputEvent>>& OutEv
         {
             ServiceLocator::LocateGlobals().hInputEvent.ResetEvent();
         }
-        return Status;
+        return STATUS_SUCCESS;
     }
     catch (...)
     {
@@ -337,69 +336,63 @@ NTSTATUS InputBuffer::Read(_Out_ std::unique_ptr<IInputEvent>& outEvent,
 // - S_OK on success.
 // Note:
 // - The console lock must be held when calling this routine.
-HRESULT InputBuffer::_ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                 _In_ const size_t readCount,
-                                 _Out_ size_t& eventsRead,
-                                 _In_ const bool peek,
-                                 _Out_ bool& resetWaitEvent,
-                                 _In_ const bool unicode)
+void InputBuffer::_ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
+                              _In_ const size_t readCount,
+                              _Out_ size_t& eventsRead,
+                              _In_ const bool peek,
+                              _Out_ bool& resetWaitEvent,
+                              _In_ const bool unicode)
 {
-    try
-    {
-        resetWaitEvent = false;
+    resetWaitEvent = false;
 
-        std::deque<std::unique_ptr<IInputEvent>> readEvents;
-        // we need another var to keep track of how many we've read
-        // because dbcs records count for two when we aren't doing a
-        // unicode read but the eventsRead count should return the number
-        // of events actually put into outRecords.
-        size_t virtualReadCount = 0;
-        while (!_storage.empty() && virtualReadCount < readCount)
+    std::deque<std::unique_ptr<IInputEvent>> readEvents;
+    // we need another var to keep track of how many we've read
+    // because dbcs records count for two when we aren't doing a
+    // unicode read but the eventsRead count should return the number
+    // of events actually put into outRecords.
+    size_t virtualReadCount = 0;
+    while (!_storage.empty() && virtualReadCount < readCount)
+    {
+        readEvents.push_back(std::move(_storage.front()));
+        _storage.pop_front();
+        ++virtualReadCount;
+        if (!unicode)
         {
-            readEvents.push_back(std::move(_storage.front()));
-            _storage.pop_front();
-            ++virtualReadCount;
-            if (!unicode)
+            if (readEvents.back()->EventType() == InputEventType::KeyEvent)
             {
-                if (readEvents.back()->EventType() == InputEventType::KeyEvent)
+                const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(readEvents.back().get());
+                if (IsCharFullWidth(pKeyEvent->GetCharData()))
                 {
-                    const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(readEvents.back().get());
-                    if (IsCharFullWidth(pKeyEvent->GetCharData()))
-                    {
-                        ++virtualReadCount;
-                    }
+                    ++virtualReadCount;
                 }
             }
         }
-
-        // the amount of events that were actually read
-        eventsRead = readEvents.size();
-
-        // copy the events back if we were supposed to peek
-        if (peek)
-        {
-            for (auto it = readEvents.crbegin(); it != readEvents.crend(); ++it)
-            {
-                _storage.push_front(IInputEvent::Create((*it)->ToInputRecord()));
-            }
-        }
-
-        // move events read to proper deque
-        while (!readEvents.empty())
-        {
-            outEvents.push_back(std::move(readEvents.front()));
-            readEvents.pop_front();
-        }
-
-        // signal if we emptied the buffer
-        if (_storage.empty())
-        {
-            resetWaitEvent = true;
-        }
-
-        return S_OK;
     }
-    CATCH_RETURN();
+
+    // the amount of events that were actually read
+    eventsRead = readEvents.size();
+
+    // copy the events back if we were supposed to peek
+    if (peek)
+    {
+        for (auto it = readEvents.crbegin(); it != readEvents.crend(); ++it)
+        {
+            _storage.push_front(IInputEvent::Create((*it)->ToInputRecord()));
+        }
+    }
+
+    // move events read to proper deque
+    while (!readEvents.empty())
+    {
+        outEvents.push_back(std::move(readEvents.front()));
+        readEvents.pop_front();
+    }
+
+    // signal if we emptied the buffer
+    if (_storage.empty())
+    {
+        resetWaitEvent = true;
+    }
 }
 
 // Routine Description:

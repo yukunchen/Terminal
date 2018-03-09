@@ -81,12 +81,12 @@ private:
     std::unique_ptr<IInputEvent> _writePartialByteSequence;
     Microsoft::Console::VirtualTerminal::TerminalInput _termInput;
 
-    HRESULT _ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                        _In_ const size_t readCount,
-                        _Out_ size_t& eventsRead,
-                        _In_ const bool peek,
-                        _Out_ bool& resetWaitEvent,
-                        _In_ const bool unicode);
+    void _ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
+                     _In_ const size_t readCount,
+                     _Out_ size_t& eventsRead,
+                     _In_ const bool peek,
+                     _Out_ bool& resetWaitEvent,
+                     _In_ const bool unicode);
 
     void _WriteBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inRecords,
                       _Out_ size_t& eventsWritten,
