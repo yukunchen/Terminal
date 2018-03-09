@@ -1,5 +1,5 @@
 # -------------------------------------
-# Windows Console 
+# Windows Console
 # - Console Property Sheet
 # -------------------------------------
 
@@ -37,8 +37,8 @@ C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE -DISOLATION_AWARE_EN
 # Compiler Settings
 # -------------------------------------
 
-MSC_WARNING_LEVEL       = /W3 /WX 
-
+MSC_WARNING_LEVEL       = /W3 /WX
+USER_C_FLAGS = $(USER_C_FLAGS) /std:c++17
 
 # -------------------------------------
 # Build System Settings
