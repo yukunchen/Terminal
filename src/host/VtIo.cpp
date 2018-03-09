@@ -313,7 +313,7 @@ HRESULT VtIo::StartIfNeeded()
         }
     }
 
-    _pVtInputThread->Start();
+    LOG_IF_FAILED(_pVtInputThread->Start());
 
     if (_hasSignalThread)
     {
