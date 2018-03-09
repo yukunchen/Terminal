@@ -1,5 +1,5 @@
 # -------------------------------------
-# Windows Console 
+# Windows Console
 # - Console Text Services Framework
 # -------------------------------------
 
@@ -27,7 +27,8 @@ C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE -DWIN32 -DNT
 # Compiler Settings
 # -------------------------------------
 
-MSC_WARNING_LEVEL       = /W4 /WX 
+MSC_WARNING_LEVEL       = /W4 /WX
+USER_C_FLAGS = $(USER_C_FLAGS) /std:c++17
 
 # -------------------------------------
 # Build System Settings
@@ -55,7 +56,7 @@ SOURCES = \
     TfDispAttr.cpp \
     TfEditses.cpp \
     TfTxtevCb.cpp \
-    
+
 INCLUDES = \
     ..\inc; \
     $(ONECORE_SDK_INC_PATH); \
