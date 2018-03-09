@@ -140,6 +140,7 @@ bool ROW::Reset(_In_ const TextAttribute Attr)
 // - width - the new width, in cells
 // Return Value:
 // - S_OK if successful, otherwise relevant error
+[[nodiscard]]
 HRESULT ROW::Resize(_In_ size_t const width)
 {
     size_t oldWidth = _charRow->size();
