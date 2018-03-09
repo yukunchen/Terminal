@@ -234,6 +234,7 @@ void InputBuffer::FlushAllButKeys()
 // - STATUS_SUCCESS if records were read into the client buffer and everything is OK.
 // - CONSOLE_STATUS_WAIT if there weren't enough records to satisfy the request (and waits are allowed)
 // - otherwise a suitable memory/math/string error in NTSTATUS form.
+[[nodiscard]]
 NTSTATUS InputBuffer::Read(_Out_ std::deque<std::unique_ptr<IInputEvent>>& OutEvents,
                            _In_ const size_t AmountToRead,
                            _In_ const bool Peek,
@@ -296,6 +297,7 @@ NTSTATUS InputBuffer::Read(_Out_ std::deque<std::unique_ptr<IInputEvent>>& OutEv
 // - STATUS_SUCCESS if records were read into the client buffer and everything is OK.
 // - CONSOLE_STATUS_WAIT if there weren't enough records to satisfy the request (and waits are allowed)
 // - otherwise a suitable memory/math/string error in NTSTATUS form.
+[[nodiscard]]
 NTSTATUS InputBuffer::Read(_Out_ std::unique_ptr<IInputEvent>& outEvent,
                            _In_ const bool Peek,
                            _In_ const bool WaitForData,
