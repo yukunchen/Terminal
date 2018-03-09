@@ -262,7 +262,7 @@ class InputBufferTests
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), RECORD_INSERT_COUNT);
 
         // remove them
-        VERIFY_SUCCEEDED(inputBuffer.FlushAllButKeys());
+        inputBuffer.FlushAllButKeys();
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), RECORD_INSERT_COUNT / 2);
 
         // make sure that the non key events were the ones removed
