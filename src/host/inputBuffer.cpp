@@ -408,7 +408,7 @@ size_t InputBuffer::Prepend(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& in
 {
     try
     {
-        THROW_IF_FAILED(_HandleConsoleSuspensionEvents(inEvents));
+        _HandleConsoleSuspensionEvents(inEvents);
         if (inEvents.empty())
         {
             return STATUS_SUCCESS;
@@ -498,7 +498,7 @@ size_t InputBuffer::Write(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEv
 {
     try
     {
-        THROW_IF_FAILED(_HandleConsoleSuspensionEvents(inEvents));
+        _HandleConsoleSuspensionEvents(inEvents);
         if (inEvents.empty())
         {
             return 0;
@@ -723,44 +723,41 @@ bool InputBuffer::_CoalesceRepeatedKeyPressEvents(_Inout_ std::deque<std::unique
 // Arguments:
 // - records - records to check for pause/unpause events
 // Return Value:
-// - S_OK on success.
+// - None
 // Note:
 // - The console lock must be held when calling this routine.
-HRESULT InputBuffer::_HandleConsoleSuspensionEvents(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
+// - will throw exception on error
+void InputBuffer::_HandleConsoleSuspensionEvents(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    try
+
+    std::deque<std::unique_ptr<IInputEvent>> outEvents;
+    while (!inEvents.empty())
     {
-        std::deque<std::unique_ptr<IInputEvent>> outEvents;
-        while (!inEvents.empty())
+        std::unique_ptr<IInputEvent> currEvent = std::move(inEvents.front());
+        inEvents.pop_front();
+        if (currEvent->EventType() == InputEventType::KeyEvent)
         {
-            std::unique_ptr<IInputEvent> currEvent = std::move(inEvents.front());
-            inEvents.pop_front();
-            if (currEvent->EventType() == InputEventType::KeyEvent)
+            const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(currEvent.get());
+            if (pKeyEvent->IsKeyDown())
             {
-                const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(currEvent.get());
-                if (pKeyEvent->IsKeyDown())
+                if (IsFlagSet(gci.Flags, CONSOLE_SUSPENDED) &&
+                    !IsSystemKey(pKeyEvent->GetVirtualKeyCode()))
                 {
-                    if (IsFlagSet(gci.Flags, CONSOLE_SUSPENDED) &&
-                        !IsSystemKey(pKeyEvent->GetVirtualKeyCode()))
-                    {
-                        UnblockWriteConsole(CONSOLE_OUTPUT_SUSPENDED);
-                        continue;
-                    }
-                    else if (IsFlagSet(InputMode, ENABLE_LINE_INPUT) &&
-                             (pKeyEvent->GetVirtualKeyCode() == VK_PAUSE || ::IsPauseKey(*pKeyEvent)))
-                    {
-                        SetFlag(gci.Flags, CONSOLE_SUSPENDED);
-                        continue;
-                    }
+                    UnblockWriteConsole(CONSOLE_OUTPUT_SUSPENDED);
+                    continue;
+                }
+                else if (IsFlagSet(InputMode, ENABLE_LINE_INPUT) &&
+                            (pKeyEvent->GetVirtualKeyCode() == VK_PAUSE || ::IsPauseKey(*pKeyEvent)))
+                {
+                    SetFlag(gci.Flags, CONSOLE_SUSPENDED);
+                    continue;
                 }
             }
-            outEvents.push_back(std::move(currEvent));
         }
-        inEvents.swap(outEvents);
-        return S_OK;
+        outEvents.push_back(std::move(currEvent));
     }
-    CATCH_RETURN();
+    inEvents.swap(outEvents);
 }
 
 // Routine Description:
