@@ -1,5 +1,5 @@
 # -------------------------------------
-# Windows Console 
+# Windows Console
 # - Console Virtual Terminal Parser Fuzzer
 # -------------------------------------
 
@@ -15,7 +15,7 @@ TARGETTYPE              = PROGRAM
 UMTYPE                  = console
 UMENTRY                 = wmain
 TARGET_DESTINATION      = UnitTests
-DLLDEF                  = 
+DLLDEF                  =
 
 TEST_CODE               = 1
 
@@ -45,7 +45,8 @@ C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE
 # Compiler Settings
 # -------------------------------------
 
-MSC_WARNING_LEVEL       = /W4 /WX 
+MSC_WARNING_LEVEL       = /W4 /WX
+USER_C_FLAGS = $(USER_C_FLAGS) /std:c++17
 
 # -------------------------------------
 # Build System Settings
@@ -65,7 +66,7 @@ SOURCES = \
 INCLUDES = \
     $(INCLUDES); \
     $(ONECORE_SDK_INC_PATH); \
-                                    
+
 TARGETLIBS = \
     $(TARGETLIBS) \
     $(ONECORE_SDK_LIB_VPATH)\onecore.lib \
