@@ -53,7 +53,7 @@ public:
     void TerminateRead(_In_ WaitTerminationReason Flag);
     size_t GetNumberOfReadyEvents();
     void Flush();
-    HRESULT FlushAllButKeys();
+    void FlushAllButKeys();
 
     NTSTATUS Read(_Out_ std::deque<std::unique_ptr<IInputEvent>>& OutEvents,
                   _In_ const size_t AmountToRead,

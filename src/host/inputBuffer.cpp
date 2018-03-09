@@ -206,26 +206,16 @@ void InputBuffer::Flush()
 // Arguments:
 // - None
 // Return Value:
-// - S_OK on success, other HRESULTS otherwise.
+// - None
 // Note:
 // - The console lock must be held when calling this routine.
-HRESULT InputBuffer::FlushAllButKeys()
+void InputBuffer::FlushAllButKeys()
 {
-    try
+    auto newEnd = std::remove_if(_storage.begin(), _storage.end(), [](const std::unique_ptr<IInputEvent>& event)
     {
-        std::deque<std::unique_ptr<IInputEvent>> keyEvents;
-        for (auto it = _storage.begin(); it != _storage.end(); ++it)
-        {
-            if ((*it)->EventType() == InputEventType::KeyEvent)
-            {
-                std::unique_ptr<IInputEvent> tempPtr((*it).release());
-                keyEvents.push_back(std::move(tempPtr));
-            }
-        }
-        _storage.swap(keyEvents);
-        return S_OK;
-    }
-    CATCH_RETURN();
+        return event->EventType() != InputEventType::KeyEvent;
+    });
+    _storage.erase(newEnd, _storage.end());
 }
 
 // Routine Description:
