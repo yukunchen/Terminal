@@ -5,7 +5,7 @@ Module Name:
 - alias.h
 
 Abstract:
-- Encapsulates the cmdline functions and structures specifically related to 
+- Encapsulates the cmdline functions and structures specifically related to
         command alias functionality.
 --*/
 #pragma once
@@ -31,6 +31,7 @@ typedef struct _EXE_ALIAS_LIST
     LIST_ENTRY AliasList;
 } EXE_ALIAS_LIST, *PEXE_ALIAS_LIST;
 
+[[nodiscard]]
 NTSTATUS MatchAndCopyAlias(_In_reads_bytes_(cbSource) PWCHAR pwchSource,
                            _In_ USHORT cbSource,
                            _Out_writes_bytes_(*pcbTarget) PWCHAR pwchTarget,
