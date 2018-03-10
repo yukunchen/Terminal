@@ -47,6 +47,7 @@ Menu::Menu(HMENU hMenu, HMENU hHeirMenu) :
 // - hWnd - The handle to the console's window
 // Return Value:
 // - STATUS_SUCCESS or suitable NT error code
+[[nodiscard]]
 NTSTATUS Menu::CreateInstance(HWND hWnd)
 {
     NTSTATUS status = STATUS_SUCCESS;
@@ -308,7 +309,7 @@ void Menu::s_GetConsoleState(CONSOLE_STATE_INFO * const pStateInfo)
     pStateInfo->CursorType = static_cast<unsigned int>(pCursor->GetType());
 
     // Retrieve small icon for use in displaying the dialog
-    Icon::Instance().GetIcons(nullptr, &pStateInfo->hIcon);
+    LOG_IF_FAILED(Icon::Instance().GetIcons(nullptr, &pStateInfo->hIcon));
 
     pStateInfo->QuickEdit = !!(gci.Flags & CONSOLE_QUICK_EDIT_MODE);
     pStateInfo->AutoPosition = !!(gci.Flags & CONSOLE_AUTO_POSITION);

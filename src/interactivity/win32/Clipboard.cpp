@@ -232,6 +232,7 @@ void Clipboard::StoreSelectionToClipboard()
     }
 }
 
+[[nodiscard]]
 _Check_return_
 NTSTATUS Clipboard::RetrieveTextFromBuffer(_In_ const SCREEN_INFORMATION* const pScreenInfo,
                                            _In_ bool const fLineSelection,
@@ -427,6 +428,7 @@ NTSTATUS Clipboard::RetrieveTextFromBuffer(_In_ const SCREEN_INFORMATION* const 
 // - cTotalRows
 // Return Value:
 //  <none>
+[[nodiscard]]
 NTSTATUS Clipboard::CopyTextToSystemClipboard(_In_ const UINT cTotalRows,
                                               _In_reads_(cTotalRows) const PWCHAR* const rgTempRows,
                                               _In_reads_(cTotalRows) const size_t* const rgTempRowLengths)

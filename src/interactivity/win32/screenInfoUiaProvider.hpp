@@ -37,6 +37,7 @@ namespace Microsoft::Console::Interactivity::Win32
         ScreenInfoUiaProvider(_In_ WindowUiaProvider* const pUiaParent);
         virtual ~ScreenInfoUiaProvider();
 
+        [[nodiscard]]
         HRESULT Signal(_In_ EVENTID id);
 
         // IUnknown methods
