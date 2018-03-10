@@ -26,6 +26,7 @@ namespace Microsoft::Console::Interactivity::Win32
     public:
         Menu(_In_ HMENU hMenu,
             _In_ HMENU hHeirMenu);
+        [[nodiscard]]
         static NTSTATUS CreateInstance(_In_ HWND hWnd);
         static Menu* Instance();
         ~Menu();

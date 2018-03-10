@@ -38,6 +38,7 @@ namespace Microsoft::Console::Interactivity::Win32
 
         void StoreSelectionToClipboard();
 
+        [[nodiscard]]
         _Check_return_
             NTSTATUS RetrieveTextFromBuffer(_In_ const SCREEN_INFORMATION* const pScreenInfo,
                 _In_ bool const fLineSelection,
@@ -46,6 +47,7 @@ namespace Microsoft::Console::Interactivity::Win32
                 _Out_writes_(cRectsSelected) PWCHAR* const rgpwszTempText,
                 _Out_writes_(cRectsSelected) size_t* const rgTempTextLengths);
 
+        [[nodiscard]]
         NTSTATUS CopyTextToSystemClipboard(_In_ const UINT cTotalRows,
             _In_reads_(cTotalRows) const PWCHAR* const rgTempRows,
             _In_reads_(cTotalRows) const size_t* const rgTempRowLengths);
