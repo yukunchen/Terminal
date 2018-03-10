@@ -68,5 +68,6 @@ public:
 
     void RefreshAreaAttributes();
 
+    [[nodiscard]]
     NTSTATUS AddConversionArea();
 };

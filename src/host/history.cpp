@@ -136,6 +136,7 @@ void ResetCommandHistory(_In_opt_ PCOMMAND_HISTORY CommandHistory)
     CommandHistory->Flags |= CLE_RESET;
 }
 
+[[nodiscard]]
 NTSTATUS AddCommand(_In_ PCOMMAND_HISTORY pCmdHistory,
                     _In_reads_bytes_(cbCommand) PCWCHAR pwchCommand,
                     _In_ const USHORT cbCommand,
@@ -218,6 +219,7 @@ NTSTATUS AddCommand(_In_ PCOMMAND_HISTORY pCmdHistory,
     return STATUS_SUCCESS;
 }
 
+[[nodiscard]]
 NTSTATUS RetrieveNthCommand(_In_ PCOMMAND_HISTORY CommandHistory,
                             _In_ SHORT Index, // index, not command number
                             _In_reads_bytes_(BufferSize) PWCHAR Buffer,
@@ -240,6 +242,7 @@ NTSTATUS RetrieveNthCommand(_In_ PCOMMAND_HISTORY CommandHistory,
     return STATUS_SUCCESS;
 }
 
+[[nodiscard]]
 NTSTATUS RetrieveCommand(_In_ PCOMMAND_HISTORY CommandHistory,
                          _In_ WORD VirtualKeyCode,
                          _In_reads_bytes_(BufferSize) PWCHAR Buffer,
