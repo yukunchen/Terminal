@@ -99,6 +99,7 @@ void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
 //              0xFFFFFFF if Source is CHAR_INFO[] (not requiring translation)
 // Return Value:
 // - <none>
+[[nodiscard]]
 NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimensions.Y * sizeof(CHAR_INFO)) PBYTE const prgbSrc,
                                  _In_ const COORD coordSrcDimensions,
                                  _In_ const SMALL_RECT * const psrSrc,
@@ -384,6 +385,7 @@ void WriteToScreen(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ const SMALL_RECT s
 // - pcRecords - On input, the number of elements to write.  On output, the number of elements written.
 // - pcColumns - receives the number of columns output, which could be more than NumRecords (FE fullwidth chars)
 // Return Value:
+[[nodiscard]]
 NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
                            _In_reads_(*pcRecords) const VOID * pvBuffer,
                            _In_ const COORD coordWrite,
@@ -837,6 +839,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
 //      CONSOLE_ATTRIBUTE     - element is an attribute.
 // - pcElements - On input, the number of elements to write.  On output, the number of elements written.
 // Return Value:
+[[nodiscard]]
 NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
                     _In_ WORD wElement,
                     _In_ const COORD coordWrite,

@@ -44,6 +44,7 @@ Selection& Selection::Instance()
 // - Writes pointer to count of rectangles in array
 // Return Value:
 // - Success if success. Invalid parameter if global state is incorrect. No memory if out of memory.
+[[nodiscard]]
 _Check_return_
 NTSTATUS Selection::GetSelectionRects(_Outptr_result_buffer_all_(*pcRectangles) SMALL_RECT** const prgsrSelection,
                                       _Out_ UINT* const pcRectangles) const
@@ -583,7 +584,7 @@ void Selection::ColorSelection(_In_ SMALL_RECT* const psrRect, _In_ ULONG const 
     {
         DWORD cchWrite = coordTargetSize.X;
 
-        FillOutput(pScreenInfo, (USHORT)ulAttr, coordTarget, CONSOLE_ATTRIBUTE, &cchWrite);
+        LOG_IF_FAILED(FillOutput(pScreenInfo, (USHORT)ulAttr, coordTarget, CONSOLE_ATTRIBUTE, &cchWrite));
     }
 }
 

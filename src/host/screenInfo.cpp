@@ -2071,7 +2071,7 @@ NTSTATUS SCREEN_INFORMATION::UseAlternateScreenBuffer()
             s_RemoveScreenBuffer(psiOldAltBuffer); // this will also delete the old alt buffer
         }
 
-        Status = ::SetActiveScreenBuffer(psiNewAltBuffer);
+        ::SetActiveScreenBuffer(psiNewAltBuffer);
 
         // Kind of a hack until we have proper signal channels: If the client app wants window size events, send one for
         // the new alt buffer's size (this is so WSL can update the TTY size when the MainSB.viewportWidth <
@@ -2091,11 +2091,9 @@ NTSTATUS SCREEN_INFORMATION::UseAlternateScreenBuffer()
 // - None
 // Return value:
 // - STATUS_SUCCESS if handled successfully. Otherwise, an approriate status code indicating the error.
-[[nodiscard]]
-NTSTATUS SCREEN_INFORMATION::UseMainScreenBuffer()
+void SCREEN_INFORMATION::UseMainScreenBuffer()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    NTSTATUS Status = STATUS_SUCCESS;
     SCREEN_INFORMATION* psiMain = this->_psiMainBuffer;
     if (psiMain != nullptr)
     {
@@ -2104,24 +2102,20 @@ NTSTATUS SCREEN_INFORMATION::UseMainScreenBuffer()
             psiMain->ProcessResizeWindow(&(psiMain->_rcAltSavedClientNew), &(psiMain->_rcAltSavedClientOld));
             psiMain->_fAltWindowChanged = false;
         }
-        Status = ::SetActiveScreenBuffer(psiMain);
-        if (NT_SUCCESS(Status))
-        {
-            psiMain->UpdateScrollBars(); // The alt had disabled scrollbars, re-enable them
+        ::SetActiveScreenBuffer(psiMain);
+        psiMain->UpdateScrollBars(); // The alt had disabled scrollbars, re-enable them
 
-            // send a _coordScreenBufferSizeChangeEvent for the new Sb viewport
-            ScreenBufferSizeChange(psiMain->GetScreenBufferSize());
+        // send a _coordScreenBufferSizeChangeEvent for the new Sb viewport
+        ScreenBufferSizeChange(psiMain->GetScreenBufferSize());
 
-            SCREEN_INFORMATION* psiAlt = psiMain->_psiAlternateBuffer;
-            psiMain->_psiAlternateBuffer = nullptr;
-            s_RemoveScreenBuffer(psiAlt); // this will also delete the alt buffer
-            // deleting the alt buffer will give the GetSet back to it's main
+        SCREEN_INFORMATION* psiAlt = psiMain->_psiAlternateBuffer;
+        psiMain->_psiAlternateBuffer = nullptr;
+        s_RemoveScreenBuffer(psiAlt); // this will also delete the alt buffer
+        // deleting the alt buffer will give the GetSet back to it's main
 
-            // Tell the VT MouseInput handler that we're in the main buffer now
-            gci.terminalMouseInput.UseMainScreenBuffer();
-        }
+        // Tell the VT MouseInput handler that we're in the main buffer now
+        gci.terminalMouseInput.UseMainScreenBuffer();
     }
-    return Status;
 }
 
 // Routine Description:

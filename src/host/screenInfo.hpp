@@ -162,8 +162,7 @@ public:
 
     [[nodiscard]]
     NTSTATUS UseAlternateScreenBuffer();
-    [[nodiscard]]
-    NTSTATUS UseMainScreenBuffer();
+    void UseMainScreenBuffer();
     SCREEN_INFORMATION* const GetActiveBuffer();
     SCREEN_INFORMATION* const GetMainBuffer();
 

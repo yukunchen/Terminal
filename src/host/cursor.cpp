@@ -62,6 +62,7 @@ Cursor::~Cursor()
 // - ppCursor - Pointer to accept the instance of the newly created Cursor
 // Return Value:
 // - Success or a relevant error status (usually out of memory).
+[[nodiscard]]
 NTSTATUS Cursor::CreateInstance(_In_ ULONG const ulSize, _Outptr_ Cursor ** const ppCursor)
 {
     *ppCursor = nullptr;

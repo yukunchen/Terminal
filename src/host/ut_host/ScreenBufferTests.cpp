@@ -163,16 +163,13 @@ void ScreenBufferTests::SingleAlternateBufferCreationTest()
         VERIFY_IS_NULL(psiOriginal->_psiMainBuffer);
         VERIFY_IS_NULL(psiFirstAlternate->_psiAlternateBuffer);
 
-        Status = psiFirstAlternate->UseMainScreenBuffer();
-        if(VERIFY_IS_TRUE(NT_SUCCESS(Status)))
-        {
-            Log::Comment(L"successfully swapped to the main buffer");
-            SCREEN_INFORMATION* psiFinal = gci.CurrentScreenBuffer;
-            VERIFY_ARE_NOT_EQUAL(psiFinal, psiFirstAlternate);
-            VERIFY_ARE_EQUAL(psiFinal, psiOriginal);
-            VERIFY_IS_NULL(psiFinal->_psiMainBuffer);
-            VERIFY_IS_NULL(psiFinal->_psiAlternateBuffer);
-        }
+        psiFirstAlternate->UseMainScreenBuffer();
+        Log::Comment(L"successfully swapped to the main buffer");
+        SCREEN_INFORMATION* psiFinal = gci.CurrentScreenBuffer;
+        VERIFY_ARE_NOT_EQUAL(psiFinal, psiFirstAlternate);
+        VERIFY_ARE_EQUAL(psiFinal, psiOriginal);
+        VERIFY_IS_NULL(psiFinal->_psiMainBuffer);
+        VERIFY_IS_NULL(psiFinal->_psiAlternateBuffer);
     }
 }
 
@@ -204,17 +201,14 @@ void ScreenBufferTests::MultipleAlternateBufferCreationTest()
             VERIFY_IS_NULL(psiOriginal->_psiMainBuffer);
             VERIFY_IS_NULL(psiSecondAlternate->_psiAlternateBuffer);
 
-            Status = psiSecondAlternate->UseMainScreenBuffer();
-            if(VERIFY_IS_TRUE(NT_SUCCESS(Status)))
-            {
-                Log::Comment(L"successfully swapped to the main buffer");
-                SCREEN_INFORMATION* psiFinal = gci.CurrentScreenBuffer;
-                VERIFY_ARE_NOT_EQUAL(psiFinal, psiFirstAlternate);
-                VERIFY_ARE_NOT_EQUAL(psiFinal, psiSecondAlternate);
-                VERIFY_ARE_EQUAL(psiFinal, psiOriginal);
-                VERIFY_IS_NULL(psiFinal->_psiMainBuffer);
-                VERIFY_IS_NULL(psiFinal->_psiAlternateBuffer);
-            }
+            psiSecondAlternate->UseMainScreenBuffer();
+            Log::Comment(L"successfully swapped to the main buffer");
+            SCREEN_INFORMATION* psiFinal = gci.CurrentScreenBuffer;
+            VERIFY_ARE_NOT_EQUAL(psiFinal, psiFirstAlternate);
+            VERIFY_ARE_NOT_EQUAL(psiFinal, psiSecondAlternate);
+            VERIFY_ARE_EQUAL(psiFinal, psiOriginal);
+            VERIFY_IS_NULL(psiFinal->_psiMainBuffer);
+            VERIFY_IS_NULL(psiFinal->_psiAlternateBuffer);
         }
     }
 }
@@ -247,17 +241,14 @@ void ScreenBufferTests::MultipleAlternateBuffersFromMainCreationTest()
             VERIFY_IS_NULL(psiOriginal->_psiMainBuffer);
             VERIFY_IS_NULL(psiSecondAlternate->_psiAlternateBuffer);
 
-            Status = psiSecondAlternate->UseMainScreenBuffer();
-            if(VERIFY_IS_TRUE(NT_SUCCESS(Status)))
-            {
-                Log::Comment(L"successfully swapped to the main buffer");
-                SCREEN_INFORMATION* psiFinal = gci.CurrentScreenBuffer;
-                VERIFY_ARE_NOT_EQUAL(psiFinal, psiFirstAlternate);
-                VERIFY_ARE_NOT_EQUAL(psiFinal, psiSecondAlternate);
-                VERIFY_ARE_EQUAL(psiFinal, psiOriginal);
-                VERIFY_IS_NULL(psiFinal->_psiMainBuffer);
-                VERIFY_IS_NULL(psiFinal->_psiAlternateBuffer);
-            }
+            psiSecondAlternate->UseMainScreenBuffer();
+            Log::Comment(L"successfully swapped to the main buffer");
+            SCREEN_INFORMATION* psiFinal = gci.CurrentScreenBuffer;
+            VERIFY_ARE_NOT_EQUAL(psiFinal, psiFirstAlternate);
+            VERIFY_ARE_NOT_EQUAL(psiFinal, psiSecondAlternate);
+            VERIFY_ARE_EQUAL(psiFinal, psiOriginal);
+            VERIFY_IS_NULL(psiFinal->_psiMainBuffer);
+            VERIFY_IS_NULL(psiFinal->_psiAlternateBuffer);
         }
     }
 }
@@ -282,7 +273,7 @@ void ScreenBufferTests::TestReverseLineFeed()
     VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 1);
     VERIFY_ARE_EQUAL(psi->GetBufferViewport().Top, 0);
 
-    DoSrvPrivateReverseLineFeed(psi);
+    VERIFY_SUCCEEDED(DoSrvPrivateReverseLineFeed(psi));
 
     VERIFY_ARE_EQUAL(cursor->GetPosition().X, 3);
     VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 0);
@@ -301,7 +292,7 @@ void ScreenBufferTests::TestReverseLineFeed()
     VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 0);
     VERIFY_ARE_EQUAL(psi->GetBufferViewport().Top, 0);
 
-    DoSrvPrivateReverseLineFeed(psi);
+    VERIFY_SUCCEEDED(DoSrvPrivateReverseLineFeed(psi));
 
     VERIFY_ARE_EQUAL(cursor->GetPosition().X, 9);
     VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 0);
@@ -324,7 +315,7 @@ void ScreenBufferTests::TestReverseLineFeed()
     VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 5);
     VERIFY_ARE_EQUAL(psi->GetBufferViewport().Top, 5);
 
-    DoSrvPrivateReverseLineFeed(psi);
+    LOG_IF_FAILED(DoSrvPrivateReverseLineFeed(psi));
 
     VERIFY_ARE_EQUAL(cursor->GetPosition().X, 9);
     VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 5);
