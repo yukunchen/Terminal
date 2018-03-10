@@ -67,7 +67,7 @@ void AccessibilityNotifier::NotifyConsoleCaretEvent(_In_ ConsoleCaretEventFlags 
                     COORD currentCursorPosition = pCursor->GetPosition();
                     if (currentCursorPosition != previousCursorLocation)
                     {
-                        pWindow->SignalUia(UIA_Text_TextSelectionChangedEventId);
+                        LOG_IF_FAILED(pWindow->SignalUia(UIA_Text_TextSelectionChangedEventId));
                     }
                     previousCursorLocation = currentCursorPosition;
                 }
