@@ -92,7 +92,7 @@ NTSTATUS Window::CreateInstance(_In_ Settings* const pSettings,
         if (NT_SUCCESS(status))
         {
             Window::s_Instance = pNewWindow;
-            ServiceLocator::SetConsoleWindowInstance(pNewWindow);
+            LOG_IF_FAILED(ServiceLocator::SetConsoleWindowInstance(pNewWindow));
         }
     }
 

@@ -661,7 +661,7 @@ void SCREEN_INFORMATION::ResetTextFlags(_In_ short const sStartX,
         IConsoleWindow* pConsoleWindow = ServiceLocator::LocateConsoleWindow();
         if (pConsoleWindow)
         {
-            pConsoleWindow->SignalUia(UIA_Text_TextChangedEventId);
+            LOG_IF_FAILED(pConsoleWindow->SignalUia(UIA_Text_TextChangedEventId));
             // TODO MSFT 7960168 do we really need this event to not signal?
             //pConsoleWindow->SignalUia(UIA_LayoutInvalidatedEventId);
         }
@@ -808,7 +808,7 @@ NTSTATUS SCREEN_INFORMATION::SetViewportOrigin(_In_ const BOOL fAbsolute, _In_ c
     if (IsActiveScreenBuffer() && ServiceLocator::LocateConsoleWindow() != nullptr)
     {
         // Tell the window that it needs to set itself to the new origin if we're the active buffer.
-        ServiceLocator::LocateConsoleWindow()->SetViewportOrigin(NewWindow);
+        LOG_IF_FAILED(ServiceLocator::LocateConsoleWindow()->SetViewportOrigin(NewWindow));
     }
     else
     {

@@ -27,6 +27,7 @@ using namespace Microsoft::Console::Interactivity;
 
 #pragma region Public Methods
 
+[[nodiscard]]
 NTSTATUS InteractivityFactory::CreateConsoleControl(_Inout_ std::unique_ptr<IConsoleControl>& control)
 {
     NTSTATUS status = STATUS_SUCCESS;
@@ -69,6 +70,7 @@ NTSTATUS InteractivityFactory::CreateConsoleControl(_Inout_ std::unique_ptr<ICon
     return status;
 }
 
+[[nodiscard]]
 NTSTATUS InteractivityFactory::CreateConsoleInputThread(_Inout_ std::unique_ptr<IConsoleInputThread>& thread)
 {
     NTSTATUS status = STATUS_SUCCESS;
@@ -111,6 +113,7 @@ NTSTATUS InteractivityFactory::CreateConsoleInputThread(_Inout_ std::unique_ptr<
     return status;
 }
 
+[[nodiscard]]
 NTSTATUS InteractivityFactory::CreateHighDpiApi(_Inout_ std::unique_ptr<IHighDpiApi>& api)
 {
     NTSTATUS status = STATUS_SUCCESS;
@@ -153,6 +156,7 @@ NTSTATUS InteractivityFactory::CreateHighDpiApi(_Inout_ std::unique_ptr<IHighDpi
     return status;
 }
 
+[[nodiscard]]
 NTSTATUS InteractivityFactory::CreateWindowMetrics(_Inout_ std::unique_ptr<IWindowMetrics>& metrics)
 {
     NTSTATUS status = STATUS_SUCCESS;
@@ -195,6 +199,7 @@ NTSTATUS InteractivityFactory::CreateWindowMetrics(_Inout_ std::unique_ptr<IWind
     return status;
 }
 
+[[nodiscard]]
 NTSTATUS InteractivityFactory::CreateAccessibilityNotifier(_Inout_ std::unique_ptr<IAccessibilityNotifier>& notifier)
 {
     NTSTATUS status = STATUS_SUCCESS;
@@ -237,6 +242,7 @@ NTSTATUS InteractivityFactory::CreateAccessibilityNotifier(_Inout_ std::unique_p
     return status;
 }
 
+[[nodiscard]]
 NTSTATUS InteractivityFactory::CreateSystemConfigurationProvider(_Inout_ std::unique_ptr<ISystemConfigurationProvider>& provider)
 {
     NTSTATUS status = STATUS_SUCCESS;
@@ -279,6 +285,7 @@ NTSTATUS InteractivityFactory::CreateSystemConfigurationProvider(_Inout_ std::un
     return status;
 }
 
+[[nodiscard]]
 NTSTATUS InteractivityFactory::CreateInputServices(_Inout_ std::unique_ptr<IInputServices>& services)
 {
     NTSTATUS status = STATUS_SUCCESS;
