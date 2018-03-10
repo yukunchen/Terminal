@@ -5,7 +5,7 @@ Module Name:
 - history.h
 
 Abstract:
-- Encapsulates the cmdline functions and structures specifically related to 
+- Encapsulates the cmdline functions and structures specifically related to
         command history functionality.
 --*/
 
@@ -39,6 +39,7 @@ typedef struct _COMMAND_HISTORY
     PCOMMAND Commands[0]; // TODO: refactor
 } COMMAND_HISTORY, *PCOMMAND_HISTORY;
 
+[[nodiscard]]
 NTSTATUS AddCommand(_In_ PCOMMAND_HISTORY pCmdHistory,
                     _In_reads_bytes_(cbCommand) PCWCHAR pwchCommand,
                     _In_ const USHORT cbCommand,
@@ -57,9 +58,10 @@ PCOMMAND GetLastCommand(_In_ PCOMMAND_HISTORY CommandHistory);
 PCOMMAND RemoveCommand(_In_ PCOMMAND_HISTORY CommandHistory, _In_ SHORT iDel);
 SHORT FindMatchingCommand(_In_ PCOMMAND_HISTORY CommandHistory,
                           _In_reads_bytes_(cbIn) PCWCHAR pwchIn,
-                          _In_ ULONG cbIn, 
+                          _In_ ULONG cbIn,
                           _In_ SHORT CommandIndex,
                           _In_ DWORD Flags);
+[[nodiscard]]
 NTSTATUS RetrieveNthCommand(_In_ PCOMMAND_HISTORY CommandHistory,
                             _In_ SHORT Index,
                             _In_reads_bytes_(BufferSize)

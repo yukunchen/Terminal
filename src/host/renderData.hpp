@@ -34,6 +34,7 @@ public:
 
     const bool IsGridLineDrawingAllowed();
 
+    [[nodiscard]]
     _Check_return_
         NTSTATUS GetSelectionRects(
             _Outptr_result_buffer_all_(*pcRectangles) SMALL_RECT** const prgsrSelection,

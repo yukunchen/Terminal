@@ -373,10 +373,10 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
             if (FoundCR)
             {
                 // add to command line recall list
-                AddCommand(pCookedReadData->_CommandHistory,
-                           pCookedReadData->_BackupLimit,
-                           (USHORT)StringLength,
-                           IsFlagSet(gci.Flags, CONSOLE_HISTORY_NODUP));
+                LOG_IF_FAILED(AddCommand(pCookedReadData->_CommandHistory,
+                                         pCookedReadData->_BackupLimit,
+                                         (USHORT)StringLength,
+                                         IsFlagSet(gci.Flags, CONSOLE_HISTORY_NODUP)));
 
                 // check for alias
                 i = pCookedReadData->_BufferSize;

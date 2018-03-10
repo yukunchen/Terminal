@@ -425,7 +425,7 @@ NTSTATUS Window::SetViewportOrigin(_In_ SMALL_RECT NewWindow)
         Tracing::s_TraceWindowViewport(ScreenInfo->GetBufferViewport());
     }
 
-    ConsoleImeResizeCompStrView();
+    LOG_IF_FAILED(ConsoleImeResizeCompStrView());
 
     ScreenInfo->UpdateScrollBars();
     return STATUS_SUCCESS;
@@ -679,7 +679,7 @@ NTSTATUS Window::_InternalSetWindowSize() const
         psiAttached->ResizingWindow--;
     }
 
-    ConsoleImeResizeCompStrView();
+    LOG_IF_FAILED(ConsoleImeResizeCompStrView());
 
     return STATUS_SUCCESS;
 }
