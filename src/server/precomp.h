@@ -16,9 +16,9 @@ Abstract:
 
 #pragma once
 
-#ifndef WIN32_LEAN_AND_MEAN             
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
-#endif 
+#endif
 
 // Windows Header Files:
 #include <windows.h>
@@ -99,6 +99,7 @@ __inline NTSTATUS_FROM_WIN32(long x) { return x <= 0 ? (NTSTATUS)x : (NTSTATUS)(
 #include <wil\resource.h>
 
 // TODO: MSFT 9355094 Find a better way of doing this. http://osgvsowi/9355094
+[[nodiscard]]
 inline NTSTATUS NTSTATUS_FROM_HRESULT(HRESULT hr)
 {
     return NTSTATUS_FROM_WIN32(HRESULT_CODE(hr));

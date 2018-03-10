@@ -72,6 +72,7 @@ ConsoleWaitBlock::~ConsoleWaitBlock()
 // - pWaiter - The context/callback information to restore and dispatch the call later.
 // Return Value:
 // - S_OK if queued and ready to go. Appropriate HRESULT value if it failed.
+[[nodiscard]]
 HRESULT ConsoleWaitBlock::s_CreateWait(_Inout_ CONSOLE_API_MSG* const pWaitReplyMessage,
                                        _In_ IWaitRoutine* const pWaiter)
 {
@@ -86,7 +87,7 @@ HRESULT ConsoleWaitBlock::s_CreateWait(_Inout_ CONSOLE_API_MSG* const pWaitReply
     assert(pHandleData != nullptr);
 
     ConsoleWaitQueue* pObjectQueue = nullptr;
-    pHandleData->GetWaitQueue(&pObjectQueue);
+    LOG_IF_FAILED(pHandleData->GetWaitQueue(&pObjectQueue));
     assert(pObjectQueue != nullptr);
 
     ConsoleWaitBlock* pWaitBlock;
@@ -152,7 +153,7 @@ bool ConsoleWaitBlock::Notify(_In_ WaitTerminationReason const TerminationReason
     case API_NUMBER_WRITECONSOLE:
     {
         CONSOLE_WRITECONSOLE_MSG* a = &(_WaitReplyMessage.u.consoleMsgL1.WriteConsole);
-        fIsUnicode = a->Unicode; 
+        fIsUnicode = a->Unicode;
         break;
     }
     default:
@@ -220,7 +221,7 @@ bool ConsoleWaitBlock::Notify(_In_ WaitTerminationReason const TerminationReason
         }
         // There is nothing to tell WriteConsole on the way out, that's why it doesn't have an else if case here.
 
-        _WaitReplyMessage.ReleaseMessageBuffers();
+        LOG_IF_FAILED(_WaitReplyMessage.ReleaseMessageBuffers());
 
         LOG_IF_FAILED(ServiceLocator::LocateGlobals().pDeviceComm->CompleteIo(&_WaitReplyMessage.Complete));
 

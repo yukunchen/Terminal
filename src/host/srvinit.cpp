@@ -613,7 +613,7 @@ DWORD ConsoleIoThread()
     {
         if (ReplyMsg != nullptr)
         {
-            ReplyMsg->ReleaseMessageBuffers();
+            LOG_IF_FAILED(ReplyMsg->ReleaseMessageBuffers());
         }
 
         // TODO: 9115192 correct mixed NTSTATUS/HRESULT

@@ -9,6 +9,7 @@
 #include "IApiRoutines.h"
 
 // This exists as a base class until we're all migrated over.
+[[nodiscard]]
 HRESULT IApiRoutines::FillConsoleOutputAttributeImpl(_In_ IConsoleOutputObject* const /*pOutContext*/,
                                                      _In_ WORD const /*Attribute*/,
                                                      _In_ DWORD const LengthToWrite,
@@ -20,6 +21,7 @@ HRESULT IApiRoutines::FillConsoleOutputAttributeImpl(_In_ IConsoleOutputObject* 
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT IApiRoutines::FillConsoleOutputCharacterAImpl(_In_ IConsoleOutputObject* const /*pOutContext*/,
                                                       _In_ char const /*Character*/,
                                                       _In_ DWORD const LengthToWrite,
@@ -31,6 +33,7 @@ HRESULT IApiRoutines::FillConsoleOutputCharacterAImpl(_In_ IConsoleOutputObject*
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT IApiRoutines::FillConsoleOutputCharacterWImpl(_In_ IConsoleOutputObject* const /*pOutContext*/,
                                                       _In_ wchar_t const /*Character*/,
                                                       _In_ DWORD const LengthToWrite,
@@ -42,6 +45,7 @@ HRESULT IApiRoutines::FillConsoleOutputCharacterWImpl(_In_ IConsoleOutputObject*
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT IApiRoutines::ReadConsoleOutputAttributeImpl(_In_ IConsoleOutputObject* const /*pOutContext*/,
                                                      _In_ const COORD* const /*pSourceOrigin*/,
                                                      _Out_writes_to_(_Param_(4), *_Param_(5)) WORD* const /*pAttributeBuffer*/,
@@ -53,6 +57,7 @@ HRESULT IApiRoutines::ReadConsoleOutputAttributeImpl(_In_ IConsoleOutputObject* 
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT IApiRoutines::ReadConsoleOutputCharacterAImpl(_In_ IConsoleOutputObject* const /*pOutContext*/,
                                                       _In_ const COORD* const /*pSourceOrigin*/,
                                                       _Out_writes_to_(_Param_(4), *_Param_(5)) char* const /*pTextBuffer*/,
@@ -64,6 +69,7 @@ HRESULT IApiRoutines::ReadConsoleOutputCharacterAImpl(_In_ IConsoleOutputObject*
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT IApiRoutines::ReadConsoleOutputCharacterWImpl(_In_ IConsoleOutputObject* const /*pOutContext*/,
                                                       _In_ const COORD* const /*pSourceOrigin*/,
                                                       _Out_writes_to_(_Param_(4), *_Param_(5)) wchar_t* const /*pTextBuffer*/,
@@ -75,6 +81,7 @@ HRESULT IApiRoutines::ReadConsoleOutputCharacterWImpl(_In_ IConsoleOutputObject*
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT IApiRoutines::WriteConsoleInputAImpl(_In_ IConsoleInputObject* const /*pInContext*/,
                                              _In_reads_(InputBufferLength) const INPUT_RECORD* const /*pInputBuffer*/,
                                              _In_ ULONG const InputBufferLength,
@@ -85,6 +92,7 @@ HRESULT IApiRoutines::WriteConsoleInputAImpl(_In_ IConsoleInputObject* const /*p
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT IApiRoutines::WriteConsoleInputWImpl(_In_ IConsoleInputObject* const /*pInContext*/,
                                              _In_reads_(InputBufferLength) const INPUT_RECORD* const /*pInputBuffer*/,
                                              _In_ ULONG const InputBufferLength,
@@ -95,6 +103,7 @@ HRESULT IApiRoutines::WriteConsoleInputWImpl(_In_ IConsoleInputObject* const /*p
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT IApiRoutines::WriteConsoleOutputAImpl(_In_ IConsoleOutputObject* const /*pOutContext*/,
                                               _In_reads_(_Param_(3)->X * _Param_(3)->Y) const CHAR_INFO* const /*pTextBuffer*/,
                                               _In_ const COORD* const /*pTextBufferSize*/,
@@ -107,6 +116,7 @@ HRESULT IApiRoutines::WriteConsoleOutputAImpl(_In_ IConsoleOutputObject* const /
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT IApiRoutines::WriteConsoleOutputWImpl(_In_ IConsoleOutputObject* const /*pOutContext*/,
                                               _In_reads_(_Param_(3)->X * _Param_(3)->Y) const CHAR_INFO* const /*pTextBuffer*/,
                                               _In_ const COORD* const /*pTextBufferSize*/,
@@ -119,6 +129,7 @@ HRESULT IApiRoutines::WriteConsoleOutputWImpl(_In_ IConsoleOutputObject* const /
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT IApiRoutines::WriteConsoleOutputAttributeImpl(_In_ IConsoleOutputObject* const /*pOutContext*/,
                                                       _In_reads_(AttributeBufferLength) const WORD* const /*pAttributeBuffer*/,
                                                       _In_ ULONG const AttributeBufferLength,
@@ -130,6 +141,7 @@ HRESULT IApiRoutines::WriteConsoleOutputAttributeImpl(_In_ IConsoleOutputObject*
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT IApiRoutines::WriteConsoleOutputCharacterAImpl(_In_ IConsoleOutputObject* const /*pOutContext*/,
                                                        _In_reads_(TextBufferLength) const char* const /*pTextBuffer*/,
                                                        _In_ ULONG const TextBufferLength,
@@ -141,6 +153,7 @@ HRESULT IApiRoutines::WriteConsoleOutputCharacterAImpl(_In_ IConsoleOutputObject
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT IApiRoutines::WriteConsoleOutputCharacterWImpl(_In_ IConsoleOutputObject* const /*pOutContext*/,
                                                        _In_reads_(TextBufferLength) const wchar_t* const /*pTextBuffer*/,
                                                        _In_ ULONG const TextBufferLength,
@@ -152,6 +165,7 @@ HRESULT IApiRoutines::WriteConsoleOutputCharacterWImpl(_In_ IConsoleOutputObject
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT IApiRoutines::ReadConsoleOutputA(_In_ IConsoleOutputObject* const /*pOutContext*/,
                                          _Out_writes_(_Param_(3)->X * _Param_(3)->Y) CHAR_INFO* const /*pTextBuffer*/,
                                          _In_ const COORD* const /*pTextBufferSize*/,
@@ -164,6 +178,7 @@ HRESULT IApiRoutines::ReadConsoleOutputA(_In_ IConsoleOutputObject* const /*pOut
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT IApiRoutines::ReadConsoleOutputW(_In_ IConsoleOutputObject* const /*pOutContext*/,
                                          _Out_writes_(_Param_(3)->X * _Param_(3)->Y) CHAR_INFO* const /*pTextBuffer*/,
                                          _In_ const COORD* const /*pTextBufferSize*/,
