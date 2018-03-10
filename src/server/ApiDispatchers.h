@@ -11,7 +11,7 @@ Author:
 - Michael Niksa (miniksa) 12-Oct-2016
 
 Revision History:
-- Adapted from original items in srvinit.cpp 
+- Adapted from original items in srvinit.cpp
 --*/
 
 #pragma once
@@ -22,70 +22,69 @@ Revision History:
 
 namespace ApiDispatchers
 {
-    HRESULT ServerDeprecatedApi(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerDeprecatedApi(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
 
 #pragma region L1
-    HRESULT ServerGetConsoleCP(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerGetConsoleMode(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerSetConsoleMode(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerGetNumberOfInputEvents(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerGetConsoleInput(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerReadConsole(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerWriteConsole(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerGetConsoleLangId(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerGetConsoleCP(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerGetConsoleMode(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerSetConsoleMode(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerGetNumberOfInputEvents(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerGetConsoleInput(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerReadConsole(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerWriteConsole(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerGetConsoleLangId(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
 #pragma endregion
 
 #pragma region L2
-    HRESULT ServerFillConsoleOutput(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerGenerateConsoleCtrlEvent(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerSetConsoleActiveScreenBuffer(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerFlushConsoleInputBuffer(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerSetConsoleCP(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerGetConsoleCursorInfo(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerSetConsoleCursorInfo(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerGetConsoleScreenBufferInfo(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerSetConsoleScreenBufferInfo(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerSetConsoleScreenBufferSize(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerSetConsoleCursorPosition(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerGetLargestConsoleWindowSize(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerScrollConsoleScreenBuffer(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerSetConsoleTextAttribute(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerSetConsoleWindowInfo(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerReadConsoleOutputString(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerWriteConsoleInput(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerWriteConsoleOutput(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerWriteConsoleOutputString(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerReadConsoleOutput(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerGetConsoleTitle(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerSetConsoleTitle(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerFillConsoleOutput(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerGenerateConsoleCtrlEvent(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerSetConsoleActiveScreenBuffer(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerFlushConsoleInputBuffer(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerSetConsoleCP(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerGetConsoleCursorInfo(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerSetConsoleCursorInfo(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerGetConsoleScreenBufferInfo(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerSetConsoleScreenBufferInfo(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerSetConsoleScreenBufferSize(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerSetConsoleCursorPosition(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerGetLargestConsoleWindowSize(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerScrollConsoleScreenBuffer(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerSetConsoleTextAttribute(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerSetConsoleWindowInfo(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerReadConsoleOutputString(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerWriteConsoleInput(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerWriteConsoleOutput(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerWriteConsoleOutputString(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerReadConsoleOutput(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerGetConsoleTitle(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerSetConsoleTitle(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
 #pragma endregion
 
 #pragma region L3
-    HRESULT ServerGetConsoleMouseInfo(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerGetConsoleFontSize(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerGetConsoleCurrentFont(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerSetConsoleDisplayMode(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerGetConsoleDisplayMode(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerAddConsoleAlias(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerGetConsoleAlias(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerGetConsoleAliasesLength(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerGetConsoleAliasExesLength(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerGetConsoleAliases(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerGetConsoleAliasExes(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerGetConsoleMouseInfo(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerGetConsoleFontSize(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerGetConsoleCurrentFont(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerSetConsoleDisplayMode(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerGetConsoleDisplayMode(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerAddConsoleAlias(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerGetConsoleAlias(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerGetConsoleAliasesLength(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerGetConsoleAliasExesLength(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerGetConsoleAliases(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerGetConsoleAliasExes(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
 
     // CMDEXT functions
-    HRESULT ServerExpungeConsoleCommandHistory(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerSetConsoleNumberOfCommands(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerGetConsoleCommandHistoryLength(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerGetConsoleCommandHistory(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerExpungeConsoleCommandHistory(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerSetConsoleNumberOfCommands(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerGetConsoleCommandHistoryLength(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerGetConsoleCommandHistory(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
     // end CMDEXT functions
-    
-    HRESULT ServerGetConsoleWindow(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerGetConsoleSelectionInfo(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerGetConsoleProcessList(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerGetConsoleHistory(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerSetConsoleHistory(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
-    HRESULT ServerSetConsoleCurrentFont(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+
+    [[nodiscard]] HRESULT ServerGetConsoleWindow(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerGetConsoleSelectionInfo(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerGetConsoleProcessList(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerGetConsoleHistory(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerSetConsoleHistory(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerSetConsoleCurrentFont(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
 #pragma endregion
 };
-

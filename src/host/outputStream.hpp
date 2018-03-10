@@ -31,6 +31,7 @@ public:
     void PrintString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch);
     void Execute(_In_ wchar_t const wch);
 
+    [[nodiscard]]
     NTSTATUS GetResult() { return _ntstatus; };
 
 private:

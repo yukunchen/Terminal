@@ -102,6 +102,7 @@ protected:
     CommandLine& operator=(CommandLine const&) = delete;
 };
 
+[[nodiscard]]
 NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                             _In_ WCHAR wch,
                             _In_ const DWORD dwKeyState);
@@ -136,6 +137,7 @@ void InitExtendedEditKeys(_In_opt_ ExtKeyDefBuf const * const pKeyDefBuf);
 #define IS_WORD_DELIM(wch)  ((wch) == L' ' || (ServiceLocator::LocateGlobals().aWordDelimChars[0] && IsWordDelim(wch)))
 bool IsWordDelim(_In_ WCHAR const wch);
 
+[[nodiscard]]
 HRESULT DoSrvSetConsoleTitleW(_In_reads_or_z_(cchBuffer) const wchar_t* const pwsBuffer,
                               _In_ size_t const cchBuffer);
 

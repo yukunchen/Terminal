@@ -21,17 +21,26 @@ Revision History:
 
 void ScreenBufferSizeChange(_In_ COORD const coordNewSize);
 
-NTSTATUS ReadScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenInfo, _Inout_ PCHAR_INFO pciBuffer, _Inout_ PSMALL_RECT psrReadRegion);
-NTSTATUS WriteScreenBuffer(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ PCHAR_INFO pciBuffer, _Inout_ PSMALL_RECT psrWriteRegion);
+[[nodiscard]]
+NTSTATUS ReadScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenInfo,
+                          _Inout_ PCHAR_INFO pciBuffer,
+                          _Inout_ PSMALL_RECT psrReadRegion);
+[[nodiscard]]
+NTSTATUS WriteScreenBuffer(_In_ PSCREEN_INFORMATION pScreenInfo,
+                           _In_ PCHAR_INFO pciBuffer,
+                           _Inout_ PSMALL_RECT psrWriteRegion);
 
+[[nodiscard]]
 NTSTATUS DoCreateScreenBuffer();
 
+[[nodiscard]]
 NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                           _Inout_ PVOID pvBuffer,
                           _In_ const COORD coordRead,
                           _In_ const ULONG ulStringType,
                           _Inout_ PULONG pcRecords);
 
+[[nodiscard]]
 NTSTATUS ScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo,
                       _Inout_ PSMALL_RECT psrScroll,
                       _In_opt_ PSMALL_RECT psrClip,
@@ -42,6 +51,7 @@ VOID SetConsoleWindowOwner(_In_ const HWND hwnd, _Inout_opt_ ConsoleProcessHandl
 
 bool StreamScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo);
 
+[[nodiscard]]
 NTSTATUS ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                                   _In_ COORD const coordSourcePoint,
                                   _Inout_ PCHAR_INFO pciTarget,

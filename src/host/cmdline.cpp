@@ -48,6 +48,7 @@ SHORT FindMatchingCommand(_In_ PCOMMAND_HISTORY CommandHistory,
                           _In_ ULONG CurrentCommandLength,
                           _In_ SHORT CurrentIndex,
                           _In_ DWORD Flags);
+[[nodiscard]]
 NTSTATUS CommandNumberPopup(_In_ COOKED_READ_DATA* const CookedReadData);
 void DrawCommandListPopup(_In_ PCLE_POPUP const Popup,
                           _In_ SHORT const CurrentCommand,
@@ -59,6 +60,7 @@ void UpdateCommandListPopup(_In_ SHORT Delta,
                             _In_ PCLE_POPUP Popup,
                             _In_ PSCREEN_INFORMATION const ScreenInfo,
                             _In_ DWORD const Flags);
+[[nodiscard]]
 NTSTATUS RetrieveCommand(_In_ PCOMMAND_HISTORY CommandHistory,
                          _In_ WORD VirtualKeyCode,
                          _In_reads_bytes_(BufferSize) PWCHAR Buffer,
@@ -295,6 +297,7 @@ bool IsWordDelim(_In_ WCHAR const wch)
     return false;
 }
 
+[[nodiscard]]
 NTSTATUS BeginPopup(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ PCOMMAND_HISTORY CommandHistory, _In_ COORD PopupSize)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -354,7 +357,7 @@ NTSTATUS BeginPopup(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ PCOMMAND_HISTORY C
     TargetRect.Top = Popup->Region.Top;
     TargetRect.Right = Popup->OldScreenSize.X - 1;
     TargetRect.Bottom = Popup->Region.Bottom;
-    ReadScreenBuffer(ScreenInfo, Popup->OldContents, &TargetRect);
+    LOG_IF_FAILED(ReadScreenBuffer(ScreenInfo, Popup->OldContents, &TargetRect));
 
     gci.PopupCount++;
     if (1 == gci.PopupCount)
@@ -367,6 +370,7 @@ NTSTATUS BeginPopup(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ PCOMMAND_HISTORY C
     return STATUS_SUCCESS;
 }
 
+[[nodiscard]]
 NTSTATUS EndPopup(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ PCOMMAND_HISTORY CommandHistory)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -389,7 +393,7 @@ NTSTATUS EndPopup(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ PCOMMAND_HISTORY Com
     SourceRect.Right = Popup->OldScreenSize.X - 1;
     SourceRect.Bottom = Popup->Region.Bottom;
 
-    WriteScreenBuffer(ScreenInfo, Popup->OldContents, &SourceRect);
+    LOG_IF_FAILED(WriteScreenBuffer(ScreenInfo, Popup->OldContents, &SourceRect));
     WriteToScreen(ScreenInfo, SourceRect);
 
     // Free popup structure.
@@ -417,7 +421,7 @@ void CleanUpPopups(_In_ COOKED_READ_DATA* const CookedReadData)
 
     while (!CLE_NO_POPUPS(CommandHistory))
     {
-        EndPopup(CookedReadData->_pScreenInfo, CommandHistory);
+        LOG_IF_FAILED(EndPopup(CookedReadData->_pScreenInfo, CommandHistory));
     }
 }
 
@@ -503,11 +507,11 @@ void DeleteCommandLine(_Inout_ COOKED_READ_DATA* const pCookedReadData, _In_ con
         CharsToWrite++;
     }
 
-    FillOutput(pCookedReadData->_pScreenInfo,
-               L' ',
-               coordOriginalCursor,
-               CONSOLE_FALSE_UNICODE,    // faster than real unicode
-               &CharsToWrite);
+    LOG_IF_FAILED(FillOutput(pCookedReadData->_pScreenInfo,
+                             L' ',
+                             coordOriginalCursor,
+                             CONSOLE_FALSE_UNICODE,    // faster than real unicode
+                             &CharsToWrite));
 
     if (fUpdateFields)
     {
@@ -593,6 +597,7 @@ void SetCurrentCommandLine(_In_ COOKED_READ_DATA* const CookedReadData, _In_ SHO
 // Return Value:
 // - CONSOLE_STATUS_WAIT - we ran out of input, so a wait block was created
 // - CONSOLE_STATUS_READ_COMPLETE - user hit return
+[[nodiscard]]
 NTSTATUS ProcessCommandListInput(_In_ COOKED_READ_DATA* const pCookedReadData)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -647,7 +652,7 @@ NTSTATUS ProcessCommandListInput(_In_ COOKED_READ_DATA* const pCookedReadData)
                 break;
             }
             case VK_ESCAPE:
-                EndPopup(pCookedReadData->_pScreenInfo, pCommandHistory);
+                LOG_IF_FAILED(EndPopup(pCookedReadData->_pScreenInfo, pCommandHistory));
                 return CONSOLE_STATUS_WAIT_NO_BLOCK;
             case VK_UP:
                 UpdateCommandListPopup(-1, &Popup->CurrentCommand, pCommandHistory, Popup, pCookedReadData->_pScreenInfo, 0);
@@ -691,7 +696,7 @@ NTSTATUS ProcessCommandListInput(_In_ COOKED_READ_DATA* const pCookedReadData)
             case VK_LEFT:
             case VK_RIGHT:
                 Index = Popup->CurrentCommand;
-                EndPopup(pCookedReadData->_pScreenInfo, pCommandHistory);
+                LOG_IF_FAILED(EndPopup(pCookedReadData->_pScreenInfo, pCommandHistory));
                 SetCurrentCommandLine(pCookedReadData, Index);
                 return CONSOLE_STATUS_WAIT_NO_BLOCK;
             default:
@@ -703,7 +708,7 @@ NTSTATUS ProcessCommandListInput(_In_ COOKED_READ_DATA* const pCookedReadData)
             ULONG i, lStringLength;
             DWORD LineCount = 1;
             Index = Popup->CurrentCommand;
-            EndPopup(pCookedReadData->_pScreenInfo, pCommandHistory);
+            LOG_IF_FAILED(EndPopup(pCookedReadData->_pScreenInfo, pCommandHistory));
             SetCurrentCommandLine(pCookedReadData, Index);
             lStringLength = pCookedReadData->_BytesRead;
             ProcessCookedReadInput(pCookedReadData, UNICODE_CARRIAGERETURN, 0, &Status);
@@ -799,6 +804,7 @@ NTSTATUS ProcessCommandListInput(_In_ COOKED_READ_DATA* const pCookedReadData)
 // Return Value:
 // - CONSOLE_STATUS_WAIT - we ran out of input, so a wait block was created
 // - CONSOLE_STATUS_READ_COMPLETE - user hit return
+[[nodiscard]]
 NTSTATUS ProcessCopyFromCharInput(_In_ COOKED_READ_DATA* const pCookedReadData)
 {
     NTSTATUS Status = STATUS_SUCCESS;
@@ -828,12 +834,12 @@ NTSTATUS ProcessCopyFromCharInput(_In_ COOKED_READ_DATA* const pCookedReadData)
             switch (Char)
             {
             case VK_ESCAPE:
-                EndPopup(pCookedReadData->_pScreenInfo, pCookedReadData->_CommandHistory);
+                LOG_IF_FAILED(EndPopup(pCookedReadData->_pScreenInfo, pCookedReadData->_CommandHistory));
                 return CONSOLE_STATUS_WAIT_NO_BLOCK;
             }
         }
 
-        EndPopup(pCookedReadData->_pScreenInfo, pCookedReadData->_CommandHistory);
+        LOG_IF_FAILED(EndPopup(pCookedReadData->_pScreenInfo, pCookedReadData->_CommandHistory));
 
         int i;  // char index (not byte)
         // delete from cursor up to specified char
@@ -890,6 +896,7 @@ NTSTATUS ProcessCopyFromCharInput(_In_ COOKED_READ_DATA* const pCookedReadData)
 // Return Value:
 // - CONSOLE_STATUS_WAIT - we ran out of input, so a wait block was created
 // - CONSOLE_STATUS_READ_COMPLETE - user hit return
+[[nodiscard]]
 NTSTATUS ProcessCopyToCharInput(_In_ COOKED_READ_DATA* const pCookedReadData)
 {
     NTSTATUS Status = STATUS_SUCCESS;
@@ -918,12 +925,12 @@ NTSTATUS ProcessCopyToCharInput(_In_ COOKED_READ_DATA* const pCookedReadData)
             switch (Char)
             {
             case VK_ESCAPE:
-                EndPopup(pCookedReadData->_pScreenInfo, pCookedReadData->_CommandHistory);
+                LOG_IF_FAILED(EndPopup(pCookedReadData->_pScreenInfo, pCookedReadData->_CommandHistory));
                 return CONSOLE_STATUS_WAIT_NO_BLOCK;
             }
         }
 
-        EndPopup(pCookedReadData->_pScreenInfo, pCookedReadData->_CommandHistory);
+        LOG_IF_FAILED(EndPopup(pCookedReadData->_pScreenInfo, pCookedReadData->_CommandHistory));
 
         // copy up to specified char
         PCOMMAND const LastCommand = GetLastCommand(pCookedReadData->_CommandHistory);
@@ -985,6 +992,7 @@ NTSTATUS ProcessCopyToCharInput(_In_ COOKED_READ_DATA* const pCookedReadData)
 // Return Value:
 // - CONSOLE_STATUS_WAIT - we ran out of input, so a wait block was created
 // - CONSOLE_STATUS_READ_COMPLETE - user hit return
+[[nodiscard]]
 NTSTATUS ProcessCommandNumberInput(_In_ COOKED_READ_DATA* const pCookedReadData)
 {
     PCOMMAND_HISTORY const CommandHistory = pCookedReadData->_CommandHistory;
@@ -1060,10 +1068,10 @@ NTSTATUS ProcessCommandNumberInput(_In_ COOKED_READ_DATA* const pCookedReadData)
         }
         else if (Char == (WCHAR)VK_ESCAPE)
         {
-            EndPopup(pCookedReadData->_pScreenInfo, pCookedReadData->_CommandHistory);
+            LOG_IF_FAILED(EndPopup(pCookedReadData->_pScreenInfo, pCookedReadData->_CommandHistory));
             if (!CLE_NO_POPUPS(CommandHistory))
             {
-                EndPopup(pCookedReadData->_pScreenInfo, pCookedReadData->_CommandHistory);
+                LOG_IF_FAILED(EndPopup(pCookedReadData->_pScreenInfo, pCookedReadData->_CommandHistory));
             }
 
             // Note that CookedReadData's OriginalCursorPosition is the position before ANY text was entered on the edit line.
@@ -1091,10 +1099,10 @@ NTSTATUS ProcessCommandNumberInput(_In_ COOKED_READ_DATA* const pCookedReadData)
                 CommandNumber = (SHORT)(pCookedReadData->_CommandHistory->NumberOfCommands - 1);
             }
 
-            EndPopup(pCookedReadData->_pScreenInfo, pCookedReadData->_CommandHistory);
+            LOG_IF_FAILED(EndPopup(pCookedReadData->_pScreenInfo, pCookedReadData->_CommandHistory));
             if (!CLE_NO_POPUPS(CommandHistory))
             {
-                EndPopup(pCookedReadData->_pScreenInfo, pCookedReadData->_CommandHistory);
+                LOG_IF_FAILED(EndPopup(pCookedReadData->_pScreenInfo, pCookedReadData->_CommandHistory));
             }
             SetCurrentCommandLine(pCookedReadData, COMMAND_NUM_TO_INDEX(CommandNumber, pCookedReadData->_CommandHistory));
         }
@@ -1107,6 +1115,7 @@ NTSTATUS ProcessCommandNumberInput(_In_ COOKED_READ_DATA* const pCookedReadData)
 // Return Value:
 // - CONSOLE_STATUS_WAIT - we ran out of input, so a wait block was created
 // - STATUS_SUCCESS - read was fully completed (user hit return)
+[[nodiscard]]
 NTSTATUS CommandListPopup(_In_ COOKED_READ_DATA* const CookedReadData)
 {
     PCOMMAND_HISTORY const CommandHistory = CookedReadData->_CommandHistory;
@@ -1137,9 +1146,16 @@ VOID DrawPromptPopup(_In_ PCLE_POPUP Popup, _In_ PSCREEN_INFORMATION ScreenInfo,
     ULONG lStringLength = POPUP_SIZE_X(Popup);
     for (SHORT i = 0; i < POPUP_SIZE_Y(Popup); i++)
     {
-        FillOutput(ScreenInfo, Popup->Attributes.GetLegacyAttributes(), WriteCoord, CONSOLE_ATTRIBUTE, &lStringLength);
-        FillOutput(ScreenInfo, (WCHAR)' ', WriteCoord, CONSOLE_FALSE_UNICODE,   // faster that real unicode
-                   &lStringLength);
+        LOG_IF_FAILED(FillOutput(ScreenInfo,
+                                 Popup->Attributes.GetLegacyAttributes(),
+                                 WriteCoord,
+                                 CONSOLE_ATTRIBUTE,
+                                 &lStringLength));
+        LOG_IF_FAILED(FillOutput(ScreenInfo,
+                                 (WCHAR)' ',
+                                 WriteCoord,
+                                 CONSOLE_FALSE_UNICODE,   // faster that real unicode
+                                 &lStringLength));
 
         WriteCoord.Y += 1;
     }
@@ -1154,7 +1170,7 @@ VOID DrawPromptPopup(_In_ PCLE_POPUP Popup, _In_ PSCREEN_INFORMATION ScreenInfo,
         lStringLength = (ULONG)(POPUP_SIZE_X(Popup));
     }
 
-    WriteOutputString(ScreenInfo, Prompt, WriteCoord, CONSOLE_REAL_UNICODE, &lStringLength, nullptr);
+    LOG_IF_FAILED(WriteOutputString(ScreenInfo, Prompt, WriteCoord, CONSOLE_REAL_UNICODE, &lStringLength, nullptr));
 }
 
 // Routine Description:
@@ -1162,6 +1178,7 @@ VOID DrawPromptPopup(_In_ PCLE_POPUP Popup, _In_ PSCREEN_INFORMATION ScreenInfo,
 // Return Value:
 // - CONSOLE_STATUS_WAIT - we ran out of input, so a wait block was created
 // - STATUS_SUCCESS - read was fully completed (user hit return)
+[[nodiscard]]
 NTSTATUS CopyFromCharPopup(_In_ COOKED_READ_DATA* CookedReadData)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -1193,6 +1210,7 @@ NTSTATUS CopyFromCharPopup(_In_ COOKED_READ_DATA* CookedReadData)
 // Return Value:
 // - CONSOLE_STATUS_WAIT - we ran out of input, so a wait block was created
 // - STATUS_SUCCESS - read was fully completed (user hit return)
+[[nodiscard]]
 NTSTATUS CopyToCharPopup(_In_ COOKED_READ_DATA* CookedReadData)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -1223,6 +1241,7 @@ NTSTATUS CopyToCharPopup(_In_ COOKED_READ_DATA* CookedReadData)
 // Return Value:
 // - CONSOLE_STATUS_WAIT - we ran out of input, so a wait block was created
 // - STATUS_SUCCESS - read was fully completed (user hit return)
+[[nodiscard]]
 NTSTATUS CommandNumberPopup(_In_ COOKED_READ_DATA* const CookedReadData)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -1274,6 +1293,7 @@ NTSTATUS CommandNumberPopup(_In_ COOKED_READ_DATA* const CookedReadData)
 // - CONSOLE_STATUS_WAIT - CommandListPopup ran out of input
 // - CONSOLE_STATUS_READ_COMPLETE - user hit <enter> in CommandListPopup
 // - STATUS_SUCCESS - everything's cool
+[[nodiscard]]
 NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                             _In_ WCHAR wch,
                             _In_ const DWORD dwKeyState)
@@ -2028,21 +2048,21 @@ void DrawCommandListBorder(_In_ PCLE_POPUP const Popup, _In_ PSCREEN_INFORMATION
     WriteCoord.X = Popup->Region.Left;
     WriteCoord.Y = Popup->Region.Top;
     ULONG Length = POPUP_SIZE_X(Popup) + 2;
-    FillOutput(ScreenInfo, Popup->Attributes.GetLegacyAttributes(), WriteCoord, CONSOLE_ATTRIBUTE, &Length);
+    LOG_IF_FAILED(FillOutput(ScreenInfo, Popup->Attributes.GetLegacyAttributes(), WriteCoord, CONSOLE_ATTRIBUTE, &Length));
 
     // draw upper left corner
     Length = 1;
-    FillOutput(ScreenInfo, ScreenInfo->LineChar[UPPER_LEFT_CORNER], WriteCoord, CONSOLE_REAL_UNICODE, &Length);
+    LOG_IF_FAILED(FillOutput(ScreenInfo, ScreenInfo->LineChar[UPPER_LEFT_CORNER], WriteCoord, CONSOLE_REAL_UNICODE, &Length));
 
     // draw upper bar
     WriteCoord.X += 1;
     Length = POPUP_SIZE_X(Popup);
-    FillOutput(ScreenInfo, ScreenInfo->LineChar[HORIZONTAL_LINE], WriteCoord, CONSOLE_REAL_UNICODE, &Length);
+    LOG_IF_FAILED(FillOutput(ScreenInfo, ScreenInfo->LineChar[HORIZONTAL_LINE], WriteCoord, CONSOLE_REAL_UNICODE, &Length));
 
     // draw upper right corner
     WriteCoord.X = Popup->Region.Right;
     Length = 1;
-    FillOutput(ScreenInfo, ScreenInfo->LineChar[UPPER_RIGHT_CORNER], WriteCoord, CONSOLE_REAL_UNICODE, &Length);
+    LOG_IF_FAILED(FillOutput(ScreenInfo, ScreenInfo->LineChar[UPPER_RIGHT_CORNER], WriteCoord, CONSOLE_REAL_UNICODE, &Length));
 
     for (SHORT i = 0; i < POPUP_SIZE_Y(Popup); i++)
     {
@@ -2051,12 +2071,12 @@ void DrawCommandListBorder(_In_ PCLE_POPUP const Popup, _In_ PSCREEN_INFORMATION
 
         // fill attributes
         Length = POPUP_SIZE_X(Popup) + 2;
-        FillOutput(ScreenInfo, Popup->Attributes.GetLegacyAttributes(), WriteCoord, CONSOLE_ATTRIBUTE, &Length);
+        LOG_IF_FAILED(FillOutput(ScreenInfo, Popup->Attributes.GetLegacyAttributes(), WriteCoord, CONSOLE_ATTRIBUTE, &Length));
         Length = 1;
-        FillOutput(ScreenInfo, ScreenInfo->LineChar[VERTICAL_LINE], WriteCoord, CONSOLE_REAL_UNICODE, &Length);
+        LOG_IF_FAILED(FillOutput(ScreenInfo, ScreenInfo->LineChar[VERTICAL_LINE], WriteCoord, CONSOLE_REAL_UNICODE, &Length));
         WriteCoord.X = Popup->Region.Right;
         Length = 1;
-        FillOutput(ScreenInfo, ScreenInfo->LineChar[VERTICAL_LINE], WriteCoord, CONSOLE_REAL_UNICODE, &Length);
+        LOG_IF_FAILED(FillOutput(ScreenInfo, ScreenInfo->LineChar[VERTICAL_LINE], WriteCoord, CONSOLE_REAL_UNICODE, &Length));
     }
 
     // Draw bottom line.
@@ -2064,22 +2084,22 @@ void DrawCommandListBorder(_In_ PCLE_POPUP const Popup, _In_ PSCREEN_INFORMATION
     WriteCoord.X = Popup->Region.Left;
     WriteCoord.Y = Popup->Region.Bottom;
     Length = POPUP_SIZE_X(Popup) + 2;
-    FillOutput(ScreenInfo, Popup->Attributes.GetLegacyAttributes(), WriteCoord, CONSOLE_ATTRIBUTE, &Length);
+    LOG_IF_FAILED(FillOutput(ScreenInfo, Popup->Attributes.GetLegacyAttributes(), WriteCoord, CONSOLE_ATTRIBUTE, &Length));
 
     // Draw bottom left corner.
     Length = 1;
     WriteCoord.X = Popup->Region.Left;
-    FillOutput(ScreenInfo, ScreenInfo->LineChar[BOTTOM_LEFT_CORNER], WriteCoord, CONSOLE_REAL_UNICODE, &Length);
+    LOG_IF_FAILED(FillOutput(ScreenInfo, ScreenInfo->LineChar[BOTTOM_LEFT_CORNER], WriteCoord, CONSOLE_REAL_UNICODE, &Length));
 
     // Draw lower bar.
     WriteCoord.X += 1;
     Length = POPUP_SIZE_X(Popup);
-    FillOutput(ScreenInfo, ScreenInfo->LineChar[HORIZONTAL_LINE], WriteCoord, CONSOLE_REAL_UNICODE, &Length);
+    LOG_IF_FAILED(FillOutput(ScreenInfo, ScreenInfo->LineChar[HORIZONTAL_LINE], WriteCoord, CONSOLE_REAL_UNICODE, &Length));
 
     // draw lower right corner
     WriteCoord.X = Popup->Region.Right;
     Length = 1;
-    FillOutput(ScreenInfo, ScreenInfo->LineChar[BOTTOM_RIGHT_CORNER], WriteCoord, CONSOLE_REAL_UNICODE, &Length);
+    LOG_IF_FAILED(FillOutput(ScreenInfo, ScreenInfo->LineChar[BOTTOM_RIGHT_CORNER], WriteCoord, CONSOLE_REAL_UNICODE, &Length));
 }
 
 void UpdateHighlight(_In_ PCLE_POPUP Popup,
@@ -2102,14 +2122,14 @@ void UpdateHighlight(_In_ PCLE_POPUP Popup,
     ULONG lStringLength = POPUP_SIZE_X(Popup);
 
     WriteCoord.Y = (SHORT)(Popup->Region.Top + 1 + OldCurrentCommand - TopIndex);
-    FillOutput(ScreenInfo, PopupLegacyAttributes, WriteCoord, CONSOLE_ATTRIBUTE, &lStringLength);
+    LOG_IF_FAILED(FillOutput(ScreenInfo, PopupLegacyAttributes, WriteCoord, CONSOLE_ATTRIBUTE, &lStringLength));
 
     // highlight new command
     WriteCoord.Y = (SHORT)(Popup->Region.Top + 1 + NewCurrentCommand - TopIndex);
 
     // inverted attributes
     WORD const Attributes = (WORD)(((PopupLegacyAttributes << 4) & 0xf0) | ((PopupLegacyAttributes >> 4) & 0x0f));
-    FillOutput(ScreenInfo, Attributes, WriteCoord, CONSOLE_ATTRIBUTE, &lStringLength);
+    LOG_IF_FAILED(FillOutput(ScreenInfo, Attributes, WriteCoord, CONSOLE_ATTRIBUTE, &lStringLength));
 }
 
 void DrawCommandListPopup(_In_ PCLE_POPUP const Popup,
@@ -2124,9 +2144,16 @@ void DrawCommandListPopup(_In_ PCLE_POPUP const Popup,
     ULONG lStringLength = POPUP_SIZE_X(Popup);
     for (SHORT i = 0; i < POPUP_SIZE_Y(Popup); ++i)
     {
-        FillOutput(ScreenInfo, Popup->Attributes.GetLegacyAttributes(), WriteCoord, CONSOLE_ATTRIBUTE, &lStringLength);
-        FillOutput(ScreenInfo, (WCHAR)' ', WriteCoord, CONSOLE_FALSE_UNICODE,   // faster than real unicode
-                   &lStringLength);
+        LOG_IF_FAILED(FillOutput(ScreenInfo,
+                                 Popup->Attributes.GetLegacyAttributes(),
+                                 WriteCoord,
+                                 CONSOLE_ATTRIBUTE,
+                                 &lStringLength));
+        LOG_IF_FAILED(FillOutput(ScreenInfo,
+                                 (WCHAR)' ',
+                                 WriteCoord,
+                                 CONSOLE_FALSE_UNICODE,   // faster than real unicode
+                                 &lStringLength));
         WriteCoord.Y += 1;
     }
 
@@ -2164,7 +2191,12 @@ void DrawCommandListPopup(_In_ PCLE_POPUP const Popup,
         }
 
         WriteCoord.X = (SHORT)(Popup->Region.Left + 1);
-        WriteOutputString(ScreenInfo, CommandNumberPtr, WriteCoord, CONSOLE_ASCII, (PULONG)& CommandNumberLength, nullptr);
+        LOG_IF_FAILED(WriteOutputString(ScreenInfo,
+                                        CommandNumberPtr,
+                                        WriteCoord,
+                                        CONSOLE_ASCII,
+                                        (PULONG)& CommandNumberLength,
+                                        nullptr));
 
         // write command to screen
         lStringLength = CommandHistory->Commands[COMMAND_NUM_TO_INDEX(i, CommandHistory)]->CommandLength / sizeof(WCHAR);
@@ -2207,7 +2239,7 @@ void DrawCommandListPopup(_In_ PCLE_POPUP const Popup,
             }
 
             memmove(TransBuffer, CommandHistory->Commands[COMMAND_NUM_TO_INDEX(i, CommandHistory)]->Command, lStringLength * sizeof(WCHAR));
-            WriteOutputString(ScreenInfo, TransBuffer, WriteCoord, CONSOLE_REAL_UNICODE, &lStringLength, nullptr);
+            LOG_IF_FAILED(WriteOutputString(ScreenInfo, TransBuffer, WriteCoord, CONSOLE_REAL_UNICODE, &lStringLength, nullptr));
             delete[] TransBuffer;
         }
 
@@ -2219,7 +2251,7 @@ void DrawCommandListPopup(_In_ PCLE_POPUP const Popup,
             // inverted attributes
             WORD const Attributes = (WORD)(((PopupLegacyAttributes << 4) & 0xf0) | ((PopupLegacyAttributes >> 4) & 0x0f));
             lStringLength = POPUP_SIZE_X(Popup);
-            FillOutput(ScreenInfo, Attributes, WriteCoord, CONSOLE_ATTRIBUTE, &lStringLength);
+            LOG_IF_FAILED(FillOutput(ScreenInfo, Attributes, WriteCoord, CONSOLE_ATTRIBUTE, &lStringLength));
         }
 
         WriteCoord.Y += 1;
