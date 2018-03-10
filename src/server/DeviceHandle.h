@@ -16,12 +16,14 @@ Revision History:
 #pragma once
 namespace DeviceHandle
 {
+    [[nodiscard]]
     NTSTATUS
         CreateServerHandle(
             _Out_ PHANDLE Handle,
             _In_ BOOLEAN Inheritable
         );
 
+    [[nodiscard]]
     NTSTATUS
         CreateClientHandle(
             _Out_ PHANDLE Handle,
@@ -30,6 +32,7 @@ namespace DeviceHandle
             _In_ BOOLEAN Inheritable
         );
 
+    [[nodiscard]]
     NTSTATUS
         _CreateHandle(
             _Out_ PHANDLE Handle,

@@ -27,6 +27,7 @@ Arguments:
 Return Value:
 - NTSTATUS indicating if the client was successfully created.
 --*/
+[[nodiscard]]
 NTSTATUS
 DeviceHandle::CreateClientHandle(
     _Out_ PHANDLE Handle,
@@ -53,6 +54,7 @@ Arguments:
 Return Value:
 - NTSTATUS indicating if the console was successfully created.
 --*/
+[[nodiscard]]
 NTSTATUS
 DeviceHandle::CreateServerHandle(
     _Out_ PHANDLE Handle,
@@ -83,6 +85,7 @@ Arguments:
 Return Value:
 - NTSTATUS indicating if the handle was successfully created.
 --*/
+[[nodiscard]]
 NTSTATUS
 DeviceHandle::_CreateHandle(
     _Out_ PHANDLE Handle,
@@ -95,7 +98,7 @@ DeviceHandle::_CreateHandle(
 {
     ULONG Flags = OBJ_CASE_INSENSITIVE;
 
-    if (Inheritable) 
+    if (Inheritable)
     {
         SetFlag(Flags, OBJ_INHERIT);
     }

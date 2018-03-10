@@ -535,7 +535,7 @@ NTSTATUS ReadLineInput(_Inout_ InputBuffer* const pInputBuffer,
     {
         if (Echo)
         {
-            pTempHandleData->CloseHandle();
+            LOG_IF_FAILED(pTempHandleData->CloseHandle());
         }
 
         return STATUS_NO_MEMORY;

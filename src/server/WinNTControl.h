@@ -18,6 +18,7 @@ Revision History:
 class WinNTControl
 {
 public:
+    [[nodiscard]]
     static NTSTATUS NtOpenFile(_Out_ PHANDLE FileHandle,
                                _In_ ACCESS_MASK DesiredAccess,
                                _In_ POBJECT_ATTRIBUTES ObjectAttributes,

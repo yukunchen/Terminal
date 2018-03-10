@@ -26,6 +26,7 @@ DeviceComm::~DeviceComm()
 // - pServerInfo - Structure containing information required to initialize driver state for this console connection.
 // Return Value:
 // - HRESULT S_OK or suitable error.
+[[nodiscard]]
 HRESULT DeviceComm::SetServerInformation(_In_ CD_IO_SERVER_INFORMATION* const pServerInfo) const
 {
     return _CallIoctl(IOCTL_CONDRV_SET_SERVER_INFORMATION,
@@ -42,6 +43,7 @@ HRESULT DeviceComm::SetServerInformation(_In_ CD_IO_SERVER_INFORMATION* const pS
 // - pMessage - A structure to hold the message data retrieved from the driver.
 // Return Value:
 // - HRESULT S_OK or suitable error.
+[[nodiscard]]
 HRESULT DeviceComm::ReadIo(_In_opt_ CD_IO_COMPLETE* const pCompletion,
                            _Out_ CONSOLE_API_MSG* const pMessage) const
 {
@@ -66,6 +68,7 @@ HRESULT DeviceComm::ReadIo(_In_opt_ CD_IO_COMPLETE* const pCompletion,
 // - pCompletion - Completion structure from the previous activity (can be used in lieu of calling CompleteIo seperately.)
 // Return Value:
 // - HRESULT S_OK or suitable error.
+[[nodiscard]]
 HRESULT DeviceComm::CompleteIo(_In_ CD_IO_COMPLETE* const pCompletion) const
 {
     return _CallIoctl(IOCTL_CONDRV_COMPLETE_IO,
@@ -82,6 +85,7 @@ HRESULT DeviceComm::CompleteIo(_In_ CD_IO_COMPLETE* const pCompletion) const
 //                  to hold retrieved buffered input data from the client application.
 // Return Value:
 // - HRESULT S_OK or suitable error.
+[[nodiscard]]
 HRESULT DeviceComm::ReadInput(_In_ CD_IO_OPERATION* const pIoOperation) const
 {
     return _CallIoctl(IOCTL_CONDRV_READ_INPUT,
@@ -98,6 +102,7 @@ HRESULT DeviceComm::ReadInput(_In_ CD_IO_OPERATION* const pIoOperation) const
 //                  to hold buffered output data to be sent to the client application.
 // Return Value:
 // - HRESULT S_OK or suitable error.
+[[nodiscard]]
 HRESULT DeviceComm::WriteOutput(_In_ CD_IO_OPERATION* const pIoOperation) const
 {
     return _CallIoctl(IOCTL_CONDRV_WRITE_OUTPUT,
@@ -114,6 +119,7 @@ HRESULT DeviceComm::WriteOutput(_In_ CD_IO_OPERATION* const pIoOperation) const
 // - <none>
 // Return Value:
 // - HRESULT S_OK or suitable error.
+[[nodiscard]]
 HRESULT DeviceComm::AllowUIAccess() const
 {
     return _CallIoctl(IOCTL_CONDRV_ALLOW_VIA_UIACCESS,
@@ -128,12 +134,13 @@ HRESULT DeviceComm::AllowUIAccess() const
 // - Usage of the optional buffers depends on which verb is sent and is specific to the particular driver and its protocol.
 // Arguments:
 // - dwIoControlCode - The action code to send to the driver
-// - pInBuffer - An optional buffer to send as input with the verb. Usage depends on the control code. 
+// - pInBuffer - An optional buffer to send as input with the verb. Usage depends on the control code.
 // - cbInBufferSize - The length in bytes of the optional input buffer.
-// - pOutBuffer - An optional buffer to send as output with the verb. Usage depends on the control code. 
+// - pOutBuffer - An optional buffer to send as output with the verb. Usage depends on the control code.
 // - cbOutBufferSize - The length in bytes of the optional output buffer.
 // Return Value:
 // - HRESULT S_OK or suitable error.
+[[nodiscard]]
 HRESULT DeviceComm::_CallIoctl(_In_ DWORD dwIoControlCode,
                                _In_reads_bytes_opt_(cbInBufferSize) PVOID pInBuffer,
                                _In_ DWORD cbInBufferSize,

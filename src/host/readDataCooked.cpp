@@ -137,7 +137,7 @@ BOOL COOKED_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason
         delete[] _BackupLimit;
         delete[] ExeName;
         gci.lpCookedReadData = nullptr;
-        _pTempHandle->CloseHandle();
+        LOG_IF_FAILED(_pTempHandle->CloseHandle());
         return TRUE;
     }
 
@@ -151,7 +151,7 @@ BOOL COOKED_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason
         delete[] _BackupLimit;
         delete[] ExeName;
         gci.lpCookedReadData = nullptr;
-        _pTempHandle->CloseHandle();
+        LOG_IF_FAILED(_pTempHandle->CloseHandle());
         return TRUE;
     }
 
@@ -168,7 +168,7 @@ BOOL COOKED_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason
         delete[] _BackupLimit;
         delete[] ExeName;
         gci.lpCookedReadData = nullptr;
-        _pTempHandle->CloseHandle();
+        LOG_IF_FAILED(_pTempHandle->CloseHandle());
         return TRUE;
     }
 
@@ -229,7 +229,7 @@ BOOL COOKED_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason
                 }
                 delete[] ExeName;
                 gci.lpCookedReadData = nullptr;
-                _pTempHandle->CloseHandle();
+                LOG_IF_FAILED(_pTempHandle->CloseHandle());
 
                 return TRUE;
             }
@@ -241,7 +241,7 @@ BOOL COOKED_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason
     if (*pReplyStatus != CONSOLE_STATUS_WAIT)
     {
         gci.lpCookedReadData = nullptr;
-        _pTempHandle->CloseHandle();
+        LOG_IF_FAILED(_pTempHandle->CloseHandle());
         return TRUE;
     }
     else
