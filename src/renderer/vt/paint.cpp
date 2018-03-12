@@ -21,6 +21,7 @@ using namespace Microsoft::Console::Types;
 // Return Value:
 // - S_OK if we started to paint. S_FALSE if we didn't need to paint.
 //      HRESULT error code if painting didn't start successfully.
+[[nodiscard]]
 HRESULT VtEngine::StartPaint()
 {
     // If there's nothing to do, quick return
@@ -42,6 +43,7 @@ HRESULT VtEngine::StartPaint()
 // - <none>
 // Return Value:
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]]
 HRESULT VtEngine::EndPaint()
 {
     _invalidRect = Viewport({ 0 });
@@ -71,6 +73,7 @@ HRESULT VtEngine::EndPaint()
 // - <none>
 // Return Value:
 // - S_OK
+[[nodiscard]]
 HRESULT VtEngine::PaintBackground()
 {
     return S_OK;
@@ -91,6 +94,7 @@ HRESULT VtEngine::PaintBackground()
 //      double-wide character.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
+[[nodiscard]]
 HRESULT VtEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
                                   _In_reads_(cchLine) const unsigned char* const rgWidths,
                                   _In_ size_t const cchLine,
@@ -109,6 +113,7 @@ HRESULT VtEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
 // - coordTarget - The starting X/Y position of the first character to draw on.
 // Return Value:
 // - S_OK
+[[nodiscard]]
 HRESULT VtEngine::PaintBufferGridLines(_In_ GridLines const /*lines*/,
                                        _In_ COLORREF const /*color*/,
                                        _In_ size_t const /*cchLine*/,
@@ -125,6 +130,7 @@ HRESULT VtEngine::PaintBufferGridLines(_In_ GridLines const /*lines*/,
 // - fIsDoubleWidth - The cursor should be drawn twice as wide as usual.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
+[[nodiscard]]
 HRESULT VtEngine::PaintCursor(_In_ COORD const coordCursor,
                               _In_ ULONG const /*ulCursorHeightPercent*/,
                               _In_ bool const /*fIsDoubleWidth*/,
@@ -133,7 +139,7 @@ HRESULT VtEngine::PaintCursor(_In_ COORD const coordCursor,
                               _In_ COLORREF const /*cursorColor*/)
 {
     // MSFT:15933349 - Send the terminal the updated cursor information, if it's changed.
-    _MoveCursor(coordCursor);
+    LOG_IF_FAILED(_MoveCursor(coordCursor));
 
     return S_OK;
 }
@@ -145,6 +151,7 @@ HRESULT VtEngine::PaintCursor(_In_ COORD const coordCursor,
 // - <none>
 // Return Value:
 // - S_OK
+[[nodiscard]]
 HRESULT VtEngine::ClearCursor()
 {
     return S_OK;
@@ -161,6 +168,7 @@ HRESULT VtEngine::ClearCursor()
 //  - cRectangles - Count of rectangle array length
 // Return Value:
 // - S_OK
+[[nodiscard]]
 HRESULT VtEngine::PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* const /*rgsrSelection*/,
                                  _In_ UINT const /*cRectangles*/)
 {
@@ -175,6 +183,7 @@ HRESULT VtEngine::PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* const
 // - colorBackground: The RGB Color to use to paint the background of the text.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]]
 HRESULT VtEngine::_RgbUpdateDrawingBrushes(_In_ COLORREF const colorForeground,
                                            _In_ COLORREF const colorBackground,
                                            _In_reads_(cColorTable) const COLORREF* const ColorTable,
@@ -230,6 +239,7 @@ HRESULT VtEngine::_RgbUpdateDrawingBrushes(_In_ COLORREF const colorForeground,
 // - cColorTable: size of the color table.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]]
 HRESULT VtEngine::_16ColorUpdateDrawingBrushes(_In_ COLORREF const colorForeground,
                                                _In_ COLORREF const colorBackground,
                                                _In_reads_(cColorTable) const COLORREF* const ColorTable,
@@ -271,6 +281,7 @@ HRESULT VtEngine::_16ColorUpdateDrawingBrushes(_In_ COLORREF const colorForegrou
 // - coord - character coordinate target to render within viewport
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
+[[nodiscard]]
 HRESULT VtEngine::_PaintAsciiBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
                                         _In_reads_(cchLine) const unsigned char* const rgWidths,
                                         _In_ size_t const cchLine,
@@ -325,6 +336,7 @@ HRESULT VtEngine::_PaintAsciiBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLin
 // - coord - character coordinate target to render within viewport
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
+[[nodiscard]]
 HRESULT VtEngine::_PaintUtf8BufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
                                        _In_reads_(cchLine) const unsigned char* const rgWidths,
                                        _In_ size_t const cchLine,

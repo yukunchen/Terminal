@@ -313,7 +313,7 @@ HRESULT VtIo::StartIfNeeded()
     //      which will call to our VtIo::SetCursorPosition method.
     if (_lookingForCursorPosition)
     {
-        _pVtRenderEngine->RequestCursor();
+        LOG_IF_FAILED(_pVtRenderEngine->RequestCursor());
         while(_lookingForCursorPosition)
         {
             _pVtInputThread->DoReadInput(false);

@@ -17,6 +17,7 @@ using namespace Microsoft::Console::Render;
 // - <none>
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]]
 HRESULT VtEngine::_StopCursorBlinking()
 {
     return _Write("\x1b[?12l");
@@ -29,6 +30,7 @@ HRESULT VtEngine::_StopCursorBlinking()
 // - <none>
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]]
 HRESULT VtEngine::_StartCursorBlinking()
 {
     return _Write("\x1b[?12h");
@@ -40,6 +42,7 @@ HRESULT VtEngine::_StartCursorBlinking()
 // - <none>
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]]
 HRESULT VtEngine::_HideCursor()
 {
     return _Write("\x1b[?25l");
@@ -51,6 +54,7 @@ HRESULT VtEngine::_HideCursor()
 // - <none>
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]]
 HRESULT VtEngine::_ShowCursor()
 {
     return _Write("\x1b[?25h");
@@ -63,6 +67,7 @@ HRESULT VtEngine::_ShowCursor()
 // - <none>
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]]
 HRESULT VtEngine::_EraseLine()
 {
     // The default no-param action of erase line is erase to the right.
@@ -82,6 +87,7 @@ HRESULT VtEngine::_EraseLine()
 // - chars: a number of characters to erase (by overwriting with space)
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]]
 HRESULT VtEngine::_EraseCharacter(_In_ const short chars)
 {
     static const std::string format = "\x1b[%dX";
@@ -95,6 +101,7 @@ HRESULT VtEngine::_EraseCharacter(_In_ const short chars)
 // - chars: a number of characters to move cursor right by.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]]
 HRESULT VtEngine::_CursorForward(_In_ const short chars)
 {
 
@@ -110,6 +117,7 @@ HRESULT VtEngine::_CursorForward(_In_ const short chars)
 // - <none>
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]]
 HRESULT VtEngine::_ClearScreen()
 {
     return _Write("\x1b[2J");
@@ -123,6 +131,7 @@ HRESULT VtEngine::_ClearScreen()
 // - fInsertLine: true iff we should insert the lines, false to delete them.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]]
 HRESULT VtEngine::_InsertDeleteLine(_In_ const short sLines, _In_ const bool fInsertLine)
 {
     if (sLines <= 0)
@@ -145,6 +154,7 @@ HRESULT VtEngine::_InsertDeleteLine(_In_ const short sLines, _In_ const bool fIn
 // - sLines: a number of lines to insert
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]]
 HRESULT VtEngine::_DeleteLine(_In_ const short sLines)
 {
     return _InsertDeleteLine(sLines, false);
@@ -157,6 +167,7 @@ HRESULT VtEngine::_DeleteLine(_In_ const short sLines)
 // - sLines: a number of lines to insert
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]]
 HRESULT VtEngine::_InsertLine(_In_ const short sLines)
 {
     return _InsertDeleteLine(sLines, true);
@@ -170,6 +181,7 @@ HRESULT VtEngine::_InsertLine(_In_ const short sLines)
 // - coord: Console coordinates to move the cursor to.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]]
 HRESULT VtEngine::_CursorPosition(_In_ const COORD coord)
 {
     static const std::string cursorFormat = "\x1b[%d;%dH";
@@ -188,6 +200,7 @@ HRESULT VtEngine::_CursorPosition(_In_ const COORD coord)
 // - <none>
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]]
 HRESULT VtEngine::_CursorHome()
 {
     return _Write("\x1b[H");
@@ -201,6 +214,7 @@ HRESULT VtEngine::_CursorHome()
 // - fIsForeground: true if we should emit the foreground sequence, false for background
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]]
 HRESULT VtEngine::_SetGraphicsRendition16Color(_In_ const WORD wAttr,
                                                _In_ const bool fIsForeground)
 {
@@ -233,6 +247,7 @@ HRESULT VtEngine::_SetGraphicsRendition16Color(_In_ const WORD wAttr,
 // - fIsForeground: true if we should emit the foreground sequence, false for background
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]]
 HRESULT VtEngine::_SetGraphicsRenditionRGBColor(_In_ const COLORREF color,
                                                 _In_ const bool fIsForeground)
 {
@@ -253,6 +268,7 @@ HRESULT VtEngine::_SetGraphicsRenditionRGBColor(_In_ const COLORREF color,
 // - fIsForeground: true if we should emit the foreground sequence, false for background
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]]
 HRESULT VtEngine::_SetGraphicsRenditionDefaultColor(_In_ const bool fIsForeground)
 {
     const std::string fmt = fIsForeground ? ("\x1b[39m") : ("\x1b[49m");
@@ -267,6 +283,7 @@ HRESULT VtEngine::_SetGraphicsRenditionDefaultColor(_In_ const bool fIsForegroun
 // - sHeight: number of rows the terminal should display
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]]
 HRESULT VtEngine::_ResizeWindow(_In_ const short sWidth, _In_ const short sHeight)
 {
     static const std::string resizeFormat = "\x1b[8;%d;%dt";
@@ -285,6 +302,7 @@ HRESULT VtEngine::_ResizeWindow(_In_ const short sWidth, _In_ const short sHeigh
 // - <none>
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]]
 HRESULT VtEngine::RequestCursor()
 {
     return _Write("\x1b[6n");

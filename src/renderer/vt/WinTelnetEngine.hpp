@@ -29,13 +29,17 @@ namespace Microsoft::Console::Render
                         _In_ const WORD cColorTable);
         virtual ~WinTelnetEngine() override = default;
 
+        [[nodiscard]]
         HRESULT UpdateDrawingBrushes(_In_ COLORREF const colorForeground,
                                     _In_ COLORREF const colorBackground,
                                     _In_ WORD const legacyColorAttribute,
                                     _In_ bool const fIncludeBackgrounds) override;
+        [[nodiscard]]
         HRESULT ScrollFrame() override;
+        [[nodiscard]]
         HRESULT InvalidateScroll(_In_ const COORD* const pcoordDelta) override;
     protected:
+        [[nodiscard]]
         HRESULT _MoveCursor(_In_ const COORD coord);
     private:
         const COLORREF* const _ColorTable;
