@@ -42,6 +42,12 @@ extern "C"
 #include <msctf.h>          // Cicero header
 #include <tsattrs.h>        // ITextStore standard attributes
 
+// WIL
+#include <wil/Common.h>
+#include <wil/Result.h>
+#include <wil/resource.h>
+#include <wil/wistd_memory.h>
+
 extern "C"
 {
     #include "debug.h"

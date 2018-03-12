@@ -27,7 +27,9 @@ public:
     virtual ~CicCategoryMgr();
 
 public:
+    [[nodiscard]]
     HRESULT GetGUIDFromGUIDATOM(TfGuidAtom guidatom, GUID *pguid);
+    [[nodiscard]]
     HRESULT InitCategoryInstance();
 
     inline ITfCategoryMgr* GetCategoryMgr() { return m_pcat; }
