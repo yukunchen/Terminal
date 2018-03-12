@@ -1275,7 +1275,9 @@ void Window::s_PersistWindowPosition(_In_ PCWSTR pwszLinkTitle,
     {
         CONSOLE_STATE_INFO StateInfo = {0};
         Menu::s_GetConsoleState(&StateInfo);
-        ShortcutSerialization::s_SetLinkValues(&StateInfo, IsEastAsianCP(ServiceLocator::LocateGlobals().uiOEMCP), true);
+        LOG_IF_FAILED(ShortcutSerialization::s_SetLinkValues(&StateInfo,
+                                                             IsEastAsianCP(ServiceLocator::LocateGlobals().uiOEMCP),
+                                                             true));
     }
 }
 
@@ -1294,7 +1296,9 @@ void Window::s_PersistWindowOpacity(_In_ PCWSTR pwszLinkTitle, _In_ PCWSTR pwszO
     {
         CONSOLE_STATE_INFO StateInfo = {0};
         Menu::s_GetConsoleState(&StateInfo);
-        ShortcutSerialization::s_SetLinkValues(&StateInfo, IsEastAsianCP(ServiceLocator::LocateGlobals().uiOEMCP), true);
+        LOG_IF_FAILED(ShortcutSerialization::s_SetLinkValues(&StateInfo,
+                                                             IsEastAsianCP(ServiceLocator::LocateGlobals().uiOEMCP),
+                                                             true));
     }
 }
 

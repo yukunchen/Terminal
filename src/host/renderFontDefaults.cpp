@@ -17,7 +17,7 @@ RenderFontDefaults::RenderFontDefaults()
 
 RenderFontDefaults::~RenderFontDefaults()
 {
-    TrueTypeFontList::s_Destroy();
+    LOG_IF_FAILED(TrueTypeFontList::s_Destroy());
 }
 
 [[nodiscard]]
