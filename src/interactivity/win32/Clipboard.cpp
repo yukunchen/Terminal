@@ -233,7 +233,6 @@ void Clipboard::StoreSelectionToClipboard()
 }
 
 [[nodiscard]]
-_Check_return_
 NTSTATUS Clipboard::RetrieveTextFromBuffer(_In_ const SCREEN_INFORMATION* const pScreenInfo,
                                            _In_ bool const fLineSelection,
                                            _In_ UINT const cRectsSelected,

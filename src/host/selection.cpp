@@ -45,7 +45,6 @@ Selection& Selection::Instance()
 // Return Value:
 // - Success if success. Invalid parameter if global state is incorrect. No memory if out of memory.
 [[nodiscard]]
-_Check_return_
 NTSTATUS Selection::GetSelectionRects(_Outptr_result_buffer_all_(*pcRectangles) SMALL_RECT** const prgsrSelection,
                                       _Out_ UINT* const pcRectangles) const
 {
