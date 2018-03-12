@@ -47,6 +47,7 @@
 #include "..\propslib\conpropsp.hpp"
 
 // WIL
+#include <new>
 #include <wil/Common.h>
 #include <wil/Result.h>
 #include <wil/resource.h>

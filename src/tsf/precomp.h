@@ -43,6 +43,7 @@ extern "C"
 #include <tsattrs.h>        // ITextStore standard attributes
 
 // WIL
+#include <new>
 #include <wil/Common.h>
 #include <wil/Result.h>
 #include <wil/resource.h>

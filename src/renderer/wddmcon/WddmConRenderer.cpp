@@ -330,7 +330,7 @@ HRESULT WddmConEngine::UpdateDrawingBrushes(COLORREF const /*colorForeground*/,
 HRESULT WddmConEngine::UpdateFont(FontInfoDesired const* const /*pfiFontInfoDesired*/, FontInfo* const pfiFontInfo)
 {
     COORD coordSize = {0};
-    GetFontSize(&coordSize);
+    LOG_IF_FAILED(GetFontSize(&coordSize));
 
     pfiFontInfo->SetFromEngine(pfiFontInfo->GetFaceName(),
                                pfiFontInfo->GetFamily(),
