@@ -908,6 +908,7 @@ bool InputStateMachineEngine::_GetXYPosition(_In_reads_(cParams) const unsigned 
     if (*puiColumn == 0)
     {
         *puiColumn = s_uiDefaultColumn;
+
     }
 
     return fSuccess;

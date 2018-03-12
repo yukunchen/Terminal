@@ -1,5 +1,5 @@
 # -------------------------------------
-# Windows Console 
+# Windows Console
 # - Console Virtual Terminal Parser Fuzz Wrapper
 # -------------------------------------
 
@@ -7,7 +7,7 @@
 # console application that can be used for fuzz testing purposes.
 # It will simply read in text in a variety of formats and inject the text
 # into the parsing engine.
-# It is expected that this binary is monitored during its runtime for 
+# It is expected that this binary is monitored during its runtime for
 # various security concerns (overruns, heap issues, etc.)
 
 # -------------------------------------
@@ -19,7 +19,7 @@ TARGETTYPE              = PROGRAM
 UMTYPE                  = console
 UMENTRY                 = wmain
 TARGET_DESTINATION      = UnitTests
-DLLDEF                  = 
+DLLDEF                  =
 
 TEST_CODE               = 1
 
@@ -45,7 +45,8 @@ C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE -DINLINE_TEST_METHOD
 # Compiler Settings
 # -------------------------------------
 
-MSC_WARNING_LEVEL       = /W4 /WX 
+MSC_WARNING_LEVEL       = /W4 /WX
+USER_C_FLAGS = $(USER_C_FLAGS) /std:c++17
 
 # -------------------------------------
 # Build System Settings
@@ -68,7 +69,7 @@ INCLUDES = \
     $(INCLUDES); \
     $(ONECORE_SDK_INC_PATH); \
     $(MINWIN_PRIV_SDK_INC_PATH); \
-                                    
+
 TARGETLIBS = \
     $(TARGETLIBS) \
     $(ONECORE_SDK_LIB_VPATH)\onecore.lib \

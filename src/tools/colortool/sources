@@ -12,6 +12,8 @@ USE_MSVCRT=1
 
 C_DEFINES=-DUNICODE
 
+USER_C_FLAGS = $(USER_C_FLAGS) /std:c++17
+
 TARGETLIBS=\
         $(MINWIN_SDK_LIB_PATH)\ntdll.lib \
         $(MINCORE_SDK_LIB_PATH)\mincore.lib \

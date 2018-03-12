@@ -127,6 +127,7 @@ namespace Microsoft::Console::Interactivity::Win32
                       const Column lastColumnInRow,
                       const MovementIncrement increment,
                       const MovementDirection direction);
+
 #ifdef UNIT_TESTING
         friend class ::UiaTextRangeTests;
 #endif
