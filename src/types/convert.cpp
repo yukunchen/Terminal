@@ -29,6 +29,7 @@ static const WORD leftShiftScanCode = 0x2A;
 // - cchTarget - Length of converted unicode text
 // Return Value:
 // - S_OK if succeeded or suitable HRESULT errors from memory allocation, safe math, or MultiByteToWideChar failures.
+[[nodiscard]]
 HRESULT ConvertToW(_In_ const UINT uiCodePage,
                    _In_reads_or_z_(cchSource) const char* const rgchSource,
                    _In_ size_t const cchSource,
@@ -77,6 +78,7 @@ HRESULT ConvertToW(_In_ const UINT uiCodePage,
 // - cchTarget - Length of converted text
 // Return Value:
 // - S_OK if succeeded or suitable HRESULT errors from memory allocation, safe math, or WideCharToMultiByte failures.
+[[nodiscard]]
 HRESULT ConvertToA(_In_ const UINT uiCodePage,
                    _In_reads_or_z_(cchSource) const wchar_t* const rgwchSource,
                    _In_ size_t cchSource,
@@ -124,6 +126,7 @@ HRESULT ConvertToA(_In_ const UINT uiCodePage,
 // - pcchTarget - Length in characters of multibyte buffer that would be required to hold this text after conversion
 // Return Value:
 // - S_OK if succeeded or suitable HRESULT errors from memory allocation, safe math, or WideCharToMultiByte failures.
+[[nodiscard]]
 HRESULT GetALengthFromW(_In_ const UINT uiCodePage,
                         _In_reads_or_z_(cchSource) const wchar_t* const rgwchSource,
                         _In_ size_t const cchSource,
@@ -156,6 +159,7 @@ HRESULT GetALengthFromW(_In_ const UINT uiCodePage,
 // - pcb - Pointer to result USHORT that will hold the equivalent byte count, if it fit.
 // Return Value:
 // - S_OK if succeeded or appropriate safe math failure code from multiplication and type conversion.
+[[nodiscard]]
 HRESULT GetUShortByteCount(_In_ size_t cchUnicode,
                            _Out_ USHORT* const pcb)
 {
@@ -173,6 +177,7 @@ HRESULT GetUShortByteCount(_In_ size_t cchUnicode,
 // - pcb - Pointer to result DWORD that will hold the equivalent byte count, if it fit.
 // Return Value:
 // - S_OK if succeeded or appropriate safe math failure code from multiplication and type conversion.
+[[nodiscard]]
 HRESULT GetDwordByteCount(_In_ size_t cchUnicode,
                           _Out_ DWORD* const pcb)
 {
@@ -248,7 +253,7 @@ std::deque<std::unique_ptr<KeyEvent>> CharToKeyEvents(_In_ const wchar_t wch,
         WORD CharType;
         bool isFullWidth = false;
         GetStringTypeW(CT_CTYPE3, &wch, 1, &CharType);
-        IsCharFullWidth(wch, &isFullWidth);
+        LOG_IF_FAILED(IsCharFullWidth(wch, &isFullWidth));
 
         if (IsFlagSet(CharType, C3_ALPHA) || isFullWidth)
         {
@@ -443,6 +448,7 @@ std::deque<std::unique_ptr<KeyEvent>> SynthesizeNumpadEvents(_In_ const wchar_t 
 //                      display font data (cached) instead.
 // May-23-2017 migrie   Forced Box-Drawing Characters (x2500-x257F) to narrow.
 // Jan-16-2018 migrie   Seperated core lookup from asking the renderer the width
+[[nodiscard]]
 HRESULT IsCharFullWidth(_In_ wchar_t wch, _Out_ bool* const isFullWidth)
 {
     // See http://www.unicode.org/Public/UCD/latest/ucd/EastAsianWidth.txt
