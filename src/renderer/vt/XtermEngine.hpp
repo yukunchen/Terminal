@@ -35,20 +35,27 @@ namespace Microsoft::Console::Render
 
         virtual ~XtermEngine() override = default;
 
+        [[nodiscard]]
         HRESULT StartPaint() override;
+        [[nodiscard]]
         HRESULT EndPaint() override;
+        [[nodiscard]]
         virtual HRESULT UpdateDrawingBrushes(_In_ COLORREF const colorForeground,
                                             _In_ COLORREF const colorBackground,
                                             _In_ WORD const legacyColorAttribute,
                                             _In_ bool const fIncludeBackgrounds) override;
+        [[nodiscard]]
         HRESULT PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
                                 _In_reads_(cchLine) const unsigned char* const rgWidths,
                                 _In_ size_t const cchLine,
                                 _In_ COORD const coordTarget,
                                 _In_ bool const fTrimLeft) override;
+        [[nodiscard]]
         HRESULT ScrollFrame() override;
+        [[nodiscard]]
         HRESULT InvalidateScroll(_In_ const COORD* const pcoordDelta) override;
     protected:
+        [[nodiscard]]
         HRESULT _MoveCursor(_In_ const COORD coord);
         const COLORREF* const _ColorTable;
         const WORD _cColorTable;

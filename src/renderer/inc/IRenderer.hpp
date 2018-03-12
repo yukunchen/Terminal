@@ -23,6 +23,7 @@ namespace Microsoft::Console::Render
     public:
         virtual ~IRenderer() {};
 
+        [[nodiscard]]
         virtual HRESULT PaintFrame() = 0;
 
         virtual void TriggerSystemRedraw(_In_ const RECT* const prcDirtyClient) = 0;
@@ -42,6 +43,7 @@ namespace Microsoft::Console::Render
                                         _In_ FontInfoDesired const * const pFontInfoDesired,
                                         _Out_ FontInfo* const pFontInfo) = 0;
 
+        [[nodiscard]]
         virtual HRESULT GetProposedFont(_In_ int const iDpi,
                                         _In_ FontInfoDesired const * const pFontInfoDesired,
                                         _Out_ FontInfo* const pFontInfo) = 0;

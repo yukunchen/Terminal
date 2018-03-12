@@ -66,6 +66,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
 // - cch: size of psz
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
+[[nodiscard]]
 HRESULT VtEngine::_Write(_In_reads_(cch) const char* const psz, _In_ size_t const cch)
 {
 #ifdef UNIT_TESTING
@@ -88,6 +89,7 @@ HRESULT VtEngine::_Write(_In_reads_(cch) const char* const psz, _In_ size_t cons
 // - str: the string of characters to write to the pipe.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
+[[nodiscard]]
 HRESULT VtEngine::_Write(_In_ const std::string& str)
 {
     return _Write(str.c_str(), str.length());
@@ -102,6 +104,7 @@ HRESULT VtEngine::_Write(_In_ const std::string& str)
 // Return Value:
 // - S_OK, E_INVALIDARG for a invalid format string, or suitable HRESULT error
 //      from writing pipe.
+[[nodiscard]]
 HRESULT VtEngine::_WriteFormattedString(_In_ const std::string* const pFormat, ...)
 {
 
@@ -136,6 +139,7 @@ HRESULT VtEngine::_WriteFormattedString(_In_ const std::string* const pFormat, .
 // - pfiFont - Pointer to font information where the chosen font information will be populated.
 // Return Value:
 // - HRESULT S_OK
+[[nodiscard]]
 HRESULT VtEngine::UpdateFont(_In_ FontInfoDesired const * const /*pfiFontDesired*/,
                              _Out_ FontInfo* const /*pfiFont*/)
 {
@@ -150,6 +154,7 @@ HRESULT VtEngine::UpdateFont(_In_ FontInfoDesired const * const /*pfiFontDesired
 //      the system default DPI defined in Windows headers as a constant.
 // Return Value:
 // - HRESULT S_OK
+[[nodiscard]]
 HRESULT VtEngine::UpdateDpi(_In_ int const /*iDpi*/)
 {
     return S_OK;
@@ -163,6 +168,7 @@ HRESULT VtEngine::UpdateDpi(_In_ int const /*iDpi*/)
 // - srNewViewport - The bounds of the new viewport.
 // Return Value:
 // - HRESULT S_OK
+[[nodiscard]]
 HRESULT VtEngine::UpdateViewport(_In_ SMALL_RECT const srNewViewport)
 {
     HRESULT hr = S_OK;
@@ -199,6 +205,7 @@ HRESULT VtEngine::UpdateViewport(_In_ SMALL_RECT const srNewViewport)
 // - iDpi - The DPI we will have when rendering
 // Return Value:
 // - S_FALSE: This is unsupported by the VT Renderer and should use another engine's value.
+[[nodiscard]]
 HRESULT VtEngine::GetProposedFont(_In_ FontInfoDesired const * const /*pfiFontDesired*/,
                                   _Out_ FontInfo* const /*pfiFont*/,
                                   _In_ int const /*iDpi*/)
@@ -212,6 +219,7 @@ HRESULT VtEngine::GetProposedFont(_In_ FontInfoDesired const * const /*pfiFontDe
 // - pFontSize - recieves the current X by Y size of the font.
 // Return Value:
 // - S_FALSE: This is unsupported by the VT Renderer and should use another engine's value.
+[[nodiscard]]
 HRESULT VtEngine::GetFontSize(_Out_ COORD* const pFontSize)
 {
     *pFontSize = COORD({1, 1});
@@ -258,6 +266,7 @@ bool VtEngine::_AllIsInvalid() const
 // - <none>
 // Return Value:
 // - S_OK
+[[nodiscard]]
 HRESULT VtEngine::SuppressResizeRepaint()
 {
     _suppressResizeRepaint = true;
@@ -274,6 +283,7 @@ HRESULT VtEngine::SuppressResizeRepaint()
 // - coordCursor: The cursor position to inherit from.
 // Return Value:
 // - S_OK
+[[nodiscard]]
 HRESULT VtEngine::InheritCursor(_In_ const COORD coordCursor)
 {
     _virtualTop = coordCursor.Y;
