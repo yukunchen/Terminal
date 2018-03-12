@@ -118,7 +118,7 @@ VOID InitRegistryValues(
         pStateInfo->ColorTable[14] = RGB(0xFF,0xFF,0   );
         pStateInfo->ColorTable[15] = RGB(0xFF,0xFF,0xFF);
     }
-    
+
     pStateInfo->CodePage = OEMCP;
     pStateInfo->hWnd = NULL;
     pStateInfo->OriginalTitle = NULL;
@@ -565,11 +565,11 @@ VOID SetRegistryValues(
     //
     // Save the current page.
     //
-    RegistrySerialization::s_SetValue(hConsoleKey,
-                  CONSOLE_REGISTRY_CURRENTPAGE,
-                  REG_DWORD,
-                  (BYTE*)&dwPage,
-                  sizeof(dwPage));
+    LOG_IF_FAILED(RegistrySerialization::s_SetValue(hConsoleKey,
+                                                    CONSOLE_REGISTRY_CURRENTPAGE,
+                                                    REG_DWORD,
+                                                    (BYTE*)&dwPage,
+                                                    sizeof(dwPage)));
 
     //
     // Open the console title subkey unless we're changing the defaults.
@@ -592,17 +592,29 @@ VOID SetRegistryValues(
     //
 
     dwValue = pStateInfo->ScreenAttributes;
-    RegistrySerialization::s_UpdateValue(hConsoleKey, hTitleKey, CONSOLE_REGISTRY_FILLATTR,
-                     REG_DWORD, (BYTE*)&dwValue, sizeof(dwValue));
+    LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                       hTitleKey,
+                                                       CONSOLE_REGISTRY_FILLATTR,
+                                                       REG_DWORD,
+                                                       (BYTE*)&dwValue,
+                                                       sizeof(dwValue)));
     dwValue = pStateInfo->PopupAttributes;
-    RegistrySerialization::s_UpdateValue(hConsoleKey, hTitleKey, CONSOLE_REGISTRY_POPUPATTR,
-                     REG_DWORD, (BYTE*)&dwValue, sizeof(dwValue));
+    LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                       hTitleKey,
+                                                       CONSOLE_REGISTRY_POPUPATTR,
+                                                       REG_DWORD,
+                                                       (BYTE*)&dwValue,
+                                                       sizeof(dwValue)));
     for (i = 0; i < 16; i++) {
         dwValue = pStateInfo->ColorTable[i];
         if (SUCCEEDED(StringCchPrintf(awchBuffer, ARRAYSIZE(awchBuffer), CONSOLE_REGISTRY_COLORTABLE, i)))
         {
-            RegistrySerialization::s_UpdateValue(hConsoleKey, hTitleKey, awchBuffer,
-                            REG_DWORD, (BYTE*)&dwValue, sizeof(dwValue));
+            LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                               hTitleKey,
+                                                               awchBuffer,
+                                                               REG_DWORD,
+                                                               (BYTE*)&dwValue,
+                                                               sizeof(dwValue)));
         }
     }
 
@@ -611,29 +623,29 @@ VOID SetRegistryValues(
     //
 
     dwValue = pStateInfo->InsertMode;
-    RegistrySerialization::s_UpdateValue(hConsoleKey,
-                     hTitleKey,
-                     CONSOLE_REGISTRY_INSERTMODE,
-                     REG_DWORD,
-                     (BYTE*)&dwValue,
-                     sizeof(dwValue));
+    LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                       hTitleKey,
+                                                       CONSOLE_REGISTRY_INSERTMODE,
+                                                       REG_DWORD,
+                                                       (BYTE*)&dwValue,
+                                                       sizeof(dwValue)));
     dwValue = pStateInfo->QuickEdit;
-    RegistrySerialization::s_UpdateValue(hConsoleKey,
-                     hTitleKey,
-                     CONSOLE_REGISTRY_QUICKEDIT,
-                     REG_DWORD,
-                     (BYTE*)&dwValue,
-                     sizeof(dwValue));
+    LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                       hTitleKey,
+                                                       CONSOLE_REGISTRY_QUICKEDIT,
+                                                       REG_DWORD,
+                                                       (BYTE*)&dwValue,
+                                                       sizeof(dwValue)));
 
     assert(OEMCP != 0);
     if (g_fEastAsianSystem) {
         dwValue = (DWORD) pStateInfo->CodePage;
-        RegistrySerialization::s_UpdateValue(hConsoleKey,
-                         hTitleKey,
-                         CONSOLE_REGISTRY_CODEPAGE,
-                         REG_DWORD,
-                         (BYTE*)&dwValue,
-                         sizeof(dwValue));
+        LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                           hTitleKey,
+                                                           CONSOLE_REGISTRY_CODEPAGE,
+                                                           REG_DWORD,
+                                                           (BYTE*)&dwValue,
+                                                           sizeof(dwValue)));
     }
 
     //
@@ -642,12 +654,12 @@ VOID SetRegistryValues(
 
     dwValue = MAKELONG(pStateInfo->ScreenBufferSize.X,
                        pStateInfo->ScreenBufferSize.Y);
-    RegistrySerialization::s_UpdateValue(hConsoleKey,
-                     hTitleKey,
-                     CONSOLE_REGISTRY_BUFFERSIZE,
-                     REG_DWORD,
-                     (BYTE*)&dwValue,
-                     sizeof(dwValue));
+    LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                       hTitleKey,
+                                                       CONSOLE_REGISTRY_BUFFERSIZE,
+                                                       REG_DWORD,
+                                                       (BYTE*)&dwValue,
+                                                       sizeof(dwValue)));
 
     //
     // Save window size
@@ -655,28 +667,30 @@ VOID SetRegistryValues(
 
     dwValue = MAKELONG(pStateInfo->WindowSize.X,
                        pStateInfo->WindowSize.Y);
-    RegistrySerialization::s_UpdateValue(hConsoleKey,
-                     hTitleKey,
-                     CONSOLE_REGISTRY_WINDOWSIZE,
-                     REG_DWORD,
-                     (BYTE*)&dwValue,
-                     sizeof(dwValue));
+    LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                       hTitleKey,
+                                                       CONSOLE_REGISTRY_WINDOWSIZE,
+                                                       REG_DWORD,
+                                                       (BYTE*)&dwValue,
+                                                       sizeof(dwValue)));
 
     //
     // Save window position
     //
 
     if (pStateInfo->AutoPosition) {
-        RegistrySerialization::s_DeleteValue(hTitleKey, CONSOLE_REGISTRY_WINDOWPOS);
-    } else {
+        LOG_IF_FAILED(RegistrySerialization::s_DeleteValue(hTitleKey, CONSOLE_REGISTRY_WINDOWPOS));
+    }
+    else
+    {
         dwValue = MAKELONG(pStateInfo->WindowPosX,
                            pStateInfo->WindowPosY);
-        RegistrySerialization::s_UpdateValue(hConsoleKey,
-                         hTitleKey,
-                         CONSOLE_REGISTRY_WINDOWPOS,
-                         REG_DWORD,
-                         (BYTE*)&dwValue,
-                         sizeof(dwValue));
+        LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                           hTitleKey,
+                                                           CONSOLE_REGISTRY_WINDOWPOS,
+                                                           REG_DWORD,
+                                                           (BYTE*)&dwValue,
+                                                           sizeof(dwValue)));
     }
 
     //
@@ -685,107 +699,107 @@ VOID SetRegistryValues(
 
     dwValue = MAKELONG(pStateInfo->FontSize.X,
                        pStateInfo->FontSize.Y);
-    RegistrySerialization::s_UpdateValue(hConsoleKey,
-                     hTitleKey,
-                     CONSOLE_REGISTRY_FONTSIZE,
-                     REG_DWORD,
-                     (BYTE*)&dwValue,
-                     sizeof(dwValue));
+    LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                       hTitleKey,
+                                                       CONSOLE_REGISTRY_FONTSIZE,
+                                                       REG_DWORD,
+                                                       (BYTE*)&dwValue,
+                                                       sizeof(dwValue)));
     dwValue = pStateInfo->FontFamily;
-    RegistrySerialization::s_UpdateValue(hConsoleKey,
-                     hTitleKey,
-                     CONSOLE_REGISTRY_FONTFAMILY,
-                     REG_DWORD,
-                     (BYTE*)&dwValue,
-                     sizeof(dwValue));
+    LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                       hTitleKey,
+                                                       CONSOLE_REGISTRY_FONTFAMILY,
+                                                       REG_DWORD,
+                                                       (BYTE*)&dwValue,
+                                                       sizeof(dwValue)));
     dwValue = pStateInfo->FontWeight;
-    RegistrySerialization::s_UpdateValue(hConsoleKey,
-                     hTitleKey,
-                     CONSOLE_REGISTRY_FONTWEIGHT,
-                     REG_DWORD,
-                     (BYTE*)&dwValue,
-                     sizeof(dwValue));
-    RegistrySerialization::s_UpdateValue(hConsoleKey,
-                     hTitleKey,
-                     CONSOLE_REGISTRY_FACENAME,
-                     REG_SZ,
-                     (BYTE*)(pStateInfo->FaceName),
-                     (DWORD)(wcslen(pStateInfo->FaceName) + 1) * sizeof(TCHAR));
+    LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                       hTitleKey,
+                                                       CONSOLE_REGISTRY_FONTWEIGHT,
+                                                       REG_DWORD,
+                                                       (BYTE*)&dwValue,
+                                                       sizeof(dwValue)));
+    LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                       hTitleKey,
+                                                       CONSOLE_REGISTRY_FACENAME,
+                                                       REG_SZ,
+                                                       (BYTE*)(pStateInfo->FaceName),
+                                                       (DWORD)(wcslen(pStateInfo->FaceName) + 1) * sizeof(TCHAR)));
 
     //
     // Save cursor size
     //
 
     dwValue = pStateInfo->CursorSize;
-    RegistrySerialization::s_UpdateValue(hConsoleKey,
-                     hTitleKey,
-                     CONSOLE_REGISTRY_CURSORSIZE,
-                     REG_DWORD,
-                     (BYTE*)&dwValue,
-                     sizeof(dwValue));
+    LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                       hTitleKey,
+                                                       CONSOLE_REGISTRY_CURSORSIZE,
+                                                       REG_DWORD,
+                                                       (BYTE*)&dwValue,
+                                                       sizeof(dwValue)));
 
     //
     // Save history buffer size and number
     //
 
     dwValue = pStateInfo->HistoryBufferSize;
-    RegistrySerialization::s_UpdateValue(hConsoleKey,
-                     hTitleKey,
-                     CONSOLE_REGISTRY_HISTORYSIZE,
-                     REG_DWORD,
-                     (BYTE*)&dwValue,
-                     sizeof(dwValue));
+    LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                       hTitleKey,
+                                                       CONSOLE_REGISTRY_HISTORYSIZE,
+                                                       REG_DWORD,
+                                                       (BYTE*)&dwValue,
+                                                       sizeof(dwValue)));
     dwValue = pStateInfo->NumberOfHistoryBuffers;
-    RegistrySerialization::s_UpdateValue(hConsoleKey,
-                     hTitleKey,
-                     CONSOLE_REGISTRY_HISTORYBUFS,
-                     REG_DWORD,
-                     (BYTE*)&dwValue,
-                     sizeof(dwValue));
+    LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                       hTitleKey,
+                                                       CONSOLE_REGISTRY_HISTORYBUFS,
+                                                       REG_DWORD,
+                                                       (BYTE*)&dwValue,
+                                                       sizeof(dwValue)));
     dwValue = pStateInfo->HistoryNoDup;
-    RegistrySerialization::s_UpdateValue(hConsoleKey,
-                     hTitleKey,
-                     CONSOLE_REGISTRY_HISTORYNODUP,
-                     REG_DWORD,
-                     (BYTE*)&dwValue,
-                     sizeof(dwValue));
+    LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                       hTitleKey,
+                                                       CONSOLE_REGISTRY_HISTORYNODUP,
+                                                       REG_DWORD,
+                                                       (BYTE*)&dwValue,
+                                                       sizeof(dwValue)));
 
     // Save per-title V2 console state
     dwValue = pStateInfo->fWrapText;
-    RegistrySerialization::s_UpdateValue(hConsoleKey,
-                     hTitleKey,
-                     CONSOLE_REGISTRY_LINEWRAP,
-                     REG_DWORD,
-                     (BYTE*)&dwValue,
-                     sizeof(dwValue));
+    LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                       hTitleKey,
+                                                       CONSOLE_REGISTRY_LINEWRAP,
+                                                       REG_DWORD,
+                                                       (BYTE*)&dwValue,
+                                                       sizeof(dwValue)));
     dwValue = pStateInfo->fFilterOnPaste;
-    RegistrySerialization::s_UpdateValue(hConsoleKey,
-                     hTitleKey,
-                     CONSOLE_REGISTRY_FILTERONPASTE,
-                     REG_DWORD,
-                     (BYTE*)&dwValue,
-                     sizeof(dwValue));
+    LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                       hTitleKey,
+                                                       CONSOLE_REGISTRY_FILTERONPASTE,
+                                                       REG_DWORD,
+                                                       (BYTE*)&dwValue,
+                                                       sizeof(dwValue)));
     dwValue = pStateInfo->fCtrlKeyShortcutsDisabled;
-    RegistrySerialization::s_UpdateValue(hConsoleKey,
-                     hTitleKey,
-                     CONSOLE_REGISTRY_CTRLKEYSHORTCUTS_DISABLED,
-                     REG_DWORD,
-                     (BYTE*)&dwValue,
-                     sizeof(dwValue));
+    LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                       hTitleKey,
+                                                       CONSOLE_REGISTRY_CTRLKEYSHORTCUTS_DISABLED,
+                                                       REG_DWORD,
+                                                       (BYTE*)&dwValue,
+                                                       sizeof(dwValue)));
     dwValue = pStateInfo->fLineSelection;
-    RegistrySerialization::s_UpdateValue(hConsoleKey,
-                     hTitleKey,
-                     CONSOLE_REGISTRY_LINESELECTION,
-                     REG_DWORD,
-                     (BYTE*)&dwValue,
-                     sizeof(dwValue));
+    LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                       hTitleKey,
+                                                       CONSOLE_REGISTRY_LINESELECTION,
+                                                       REG_DWORD,
+                                                       (BYTE*)&dwValue,
+                                                       sizeof(dwValue)));
     dwValue = pStateInfo->bWindowTransparency;
-    RegistrySerialization::s_UpdateValue(hConsoleKey,
-                     hTitleKey,
-                     CONSOLE_REGISTRY_WINDOWALPHA,
-                     REG_DWORD,
-                     (BYTE*)&dwValue,
-                     sizeof(dwValue));
+    LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                       hTitleKey,
+                                                       CONSOLE_REGISTRY_WINDOWALPHA,
+                                                       REG_DWORD,
+                                                       (BYTE*)&dwValue,
+                                                       sizeof(dwValue)));
 
     SetGlobalRegistryValues();
 
@@ -795,20 +809,20 @@ VOID SetRegistryValues(
     //
 
     dwValue = pStateInfo->CursorType;
-    RegistrySerialization::s_UpdateValue(hConsoleKey,
-                     hTitleKey,
-                     CONSOLE_REGISTRY_CURSORTYPE,
-                     REG_DWORD,
-                     (BYTE*)&dwValue,
-                     sizeof(dwValue));
-    
+    LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                       hTitleKey,
+                                                       CONSOLE_REGISTRY_CURSORTYPE,
+                                                       REG_DWORD,
+                                                       (BYTE*)&dwValue,
+                                                       sizeof(dwValue)));
+
     dwValue = pStateInfo->CursorColor;
-    RegistrySerialization::s_UpdateValue(hConsoleKey,
-                     hTitleKey,
-                     CONSOLE_REGISTRY_CURSORCOLOR,
-                     REG_DWORD,
-                     (BYTE*)&dwValue,
-                     sizeof(dwValue));
+    LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                       hTitleKey,
+                                                       CONSOLE_REGISTRY_CURSORCOLOR,
+                                                       REG_DWORD,
+                                                       (BYTE*)&dwValue,
+                                                       sizeof(dwValue)));
 
     //
     // Close the registry keys

@@ -42,6 +42,7 @@ void ShortcutSerialization::s_SetLinkPropertyByteValue(_In_ IPropertyStore *pps,
     PropVariantClear(&propvarByte);
 }
 
+[[nodiscard]]
 HRESULT ShortcutSerialization::s_GetPropertyBoolValue(_In_ IPropertyStore * const pPropStore, _In_ REFPROPERTYKEY refPropKey, _Out_ BOOL * const pfValue)
 {
     PROPVARIANT propvar;
@@ -64,6 +65,7 @@ void ShortcutSerialization::s_SetLinkPropertyDwordValue(_Inout_ IPropertyStore *
     PropVariantClear(&propvarDword);
 }
 
+[[nodiscard]]
 HRESULT ShortcutSerialization::s_GetPropertyByteValue(_In_ IPropertyStore * const pPropStore, _In_ REFPROPERTYKEY refPropKey, _Out_ BYTE * const pbValue)
 {
     PROPVARIANT propvar;
@@ -85,6 +87,7 @@ HRESULT ShortcutSerialization::s_GetPropertyByteValue(_In_ IPropertyStore * cons
     return hr;
 }
 
+[[nodiscard]]
 HRESULT ShortcutSerialization::s_GetPropertyDwordValue(_Inout_ IPropertyStore * const pPropStore, _In_ REFPROPERTYKEY refPropKey, _Out_ DWORD * const pdwValue)
 {
     PROPVARIANT propvar;
@@ -102,6 +105,7 @@ HRESULT ShortcutSerialization::s_GetPropertyDwordValue(_Inout_ IPropertyStore * 
     return hr;
 }
 
+[[nodiscard]]
 HRESULT ShortcutSerialization::s_PopulateV1Properties(_In_ IShellLink * const pslConsole, _In_ PCONSOLE_STATE_INFO pStateInfo)
 {
     IShellLinkDataList *pConsoleLnkDataList;
@@ -153,6 +157,7 @@ HRESULT ShortcutSerialization::s_PopulateV1Properties(_In_ IShellLink * const ps
     return hr;
 }
 
+[[nodiscard]]
 HRESULT ShortcutSerialization::s_PopulateV2Properties(_In_ IShellLink * const pslConsole, _In_ PCONSOLE_STATE_INFO pStateInfo)
 {
     IPropertyStore *pPropStoreLnk;
@@ -240,6 +245,7 @@ void ShortcutSerialization::s_GetLinkTitle(_In_ PCWSTR pwszShortcutFilename, _Ou
 }
 
 // Given a shortcut filename, retrieve IShellLink and IPersistFile itf ptrs, and ensure that the link is loaded.
+[[nodiscard]]
 HRESULT ShortcutSerialization::s_GetLoadedShellLinkForShortcut(_In_ PCWSTR pwszShortcutFileName, _In_ const DWORD dwMode, _COM_Outptr_ IShellLink **ppsl, _COM_Outptr_ IPersistFile **ppPf)
 {
     *ppsl = nullptr;
@@ -275,6 +281,7 @@ HRESULT ShortcutSerialization::s_GetLoadedShellLinkForShortcut(_In_ PCWSTR pwszS
 }
 
 // Retrieves console-only properties from the shortcut file specified in pStateInfo. Used by the console properties sheet.
+[[nodiscard]]
 NTSTATUS ShortcutSerialization::s_GetLinkConsoleProperties(_Inout_ PCONSOLE_STATE_INFO pStateInfo)
 {
     IShellLink * psl;
@@ -295,6 +302,7 @@ NTSTATUS ShortcutSerialization::s_GetLinkConsoleProperties(_Inout_ PCONSOLE_STAT
 }
 
 // Retrieves all shortcut properties from the file specified in pStateInfo. Used by conhostv2.dll
+[[nodiscard]]
 NTSTATUS ShortcutSerialization::s_GetLinkValues(_Inout_ PCONSOLE_STATE_INFO pStateInfo,
                                               _Out_ BOOL * const pfReadConsoleProperties,
                                               _Out_writes_opt_(cchShortcutTitle) PWSTR pwszShortcutTitle,
@@ -354,7 +362,7 @@ NTSTATUS ShortcutSerialization::s_GetLinkValues(_Inout_ PCONSOLE_STATE_INFO pSta
             if (SUCCEEDED(hrProps))
             {
                 *pfReadConsoleProperties = true;
-                s_PopulateV2Properties(psl, pStateInfo);
+                LOG_IF_FAILED(s_PopulateV2Properties(psl, pStateInfo));
             }
         }
         ppf->Release();
@@ -372,6 +380,7 @@ Arguments:
 Return Value:
     A status code if something failed or S_OK
 */
+[[nodiscard]]
 NTSTATUS ShortcutSerialization::s_SetLinkValues(_In_ PCONSOLE_STATE_INFO pStateInfo, _In_ const BOOL fEastAsianSystem, _In_ const BOOL fForceV2)
 {
     IShellLinkW * psl;
