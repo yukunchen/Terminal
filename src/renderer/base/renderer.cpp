@@ -1184,10 +1184,8 @@ HRESULT Renderer::_PerformScrolling(_In_ IRenderEngine* const pEngine)
 // Return Value:
 // - Success status if we managed to retrieve rectangles. Check with NT_SUCCESS.
 [[nodiscard]]
-_Check_return_
-NTSTATUS Renderer::_GetSelectionRects(
-    _Outptr_result_buffer_all_(*pcRectangles) SMALL_RECT** const prgsrSelection,
-    _Out_ UINT* const pcRectangles) const
+NTSTATUS Renderer::_GetSelectionRects(_Outptr_result_buffer_all_(*pcRectangles) SMALL_RECT** const prgsrSelection,
+                                      _Out_ UINT* const pcRectangles) const
 {
     NTSTATUS status = _pData->GetSelectionRects(prgsrSelection, pcRectangles);
 
