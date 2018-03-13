@@ -19,7 +19,6 @@
 #include "resource.h"
 
 #include "ApiRoutines.h"
-#include "KeyEventHelpers.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 

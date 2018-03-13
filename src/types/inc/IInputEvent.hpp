@@ -194,6 +194,11 @@ public:
         return _keyDown;
     }
 
+    constexpr bool IsPauseKey() const noexcept
+    {
+        return (_virtualKeyCode == VK_PAUSE);
+    }
+
     constexpr WORD GetRepeatCount() const noexcept
     {
         return _repeatCount;
@@ -229,6 +234,8 @@ public:
     void DeactivateModifierKey(_In_ const ModifierKeyState modifierKey) noexcept;
     void ActivateModifierKey(_In_ const ModifierKeyState modifierKey) noexcept;
     bool DoActiveModifierKeysMatch(_In_ const std::unordered_set<ModifierKeyState>& consoleModifiers) const noexcept;
+    bool IsCommandLineEditingKey() const noexcept;
+    bool IsCommandLinePopupKey() const noexcept;
 
 private:
     bool _keyDown;
