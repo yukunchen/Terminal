@@ -71,25 +71,9 @@ void Registry::GetEditKeys(_In_opt_ HKEY hConsoleKey) const
                                                  REG_DWORD,
                                                  (PBYTE)& dwValue,
                                                  nullptr);
-    if (NT_SUCCESS(Status) && dwValue <= 1)
+    if (NT_SUCCESS(Status) && dwValue == 1)
     {
-        ExtKeyDefBuf buf = { 0 };
-
-        gci->SetExtendedEditKey(!!dwValue);
-
-        // Initialize Extended Edit keys.
-        InitExtendedEditKeys(nullptr);
-
-        Status = RegistrySerialization::s_QueryValue(hConsoleKey,
-                                                     CONSOLE_REGISTRY_EXTENDEDEDITKEY_CUSTOM,
-                                                     sizeof(buf),
-                                                     REG_BINARY,
-                                                     (PBYTE)& buf,
-                                                     nullptr);
-        if (NT_SUCCESS(Status))
-        {
-            InitExtendedEditKeys(&buf);
-        }
+        gci->SetExtendedEditKey(true);
     }
     else
     {

@@ -94,13 +94,6 @@ NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
                 commandLineEditKey = ::IsCommandLinePopupKey(*keyEvent);
             }
 
-            if ((pCommandLineEditingKeys || pCommandLinePopupKeys) &&
-                ServiceLocator::LocateGlobals()->getConsoleInformation()->GetExtendedEditKey() &&
-                ::GetKeySubst(*keyEvent))
-            {
-                ::ParseEditKeyInfo(*keyEvent);
-            }
-
             if (pdwKeyState)
             {
                 *pdwKeyState = keyEvent->GetActiveModifierKeys();

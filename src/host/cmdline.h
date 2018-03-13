@@ -128,10 +128,6 @@ void CleanUpPopups(_In_ COOKED_READ_DATA* const CookedReadData);
 //#define WC_NEWLINE_SAVE_X        0x40  -  This has been replaced with an output mode flag instead as it's line discipline behavior that may not necessarily be coupled with VT.
 #define WC_DELAY_EOL_WRAP        0x80
 
-// InitExtendedEditKey
-// If lpwstr is nullptr, the default value will be used.
-void InitExtendedEditKeys(_In_opt_ ExtKeyDefBuf const * const pKeyDefBuf);
-
 // Word delimiters
 #define IS_WORD_DELIM(wch)  ((wch) == L' ' || (ServiceLocator::LocateGlobals()->aWordDelimChars[0] && IsWordDelim(wch)))
 bool IsWordDelim(_In_ WCHAR const wch);
@@ -144,5 +140,3 @@ HRESULT DoSrvSetConsoleTitleW(_In_reads_or_z_(cchBuffer) const wchar_t* const pw
 
 #define FMCFL_EXACT_MATCH   1
 #define FMCFL_JUST_LOOKING  2
-
-const ExtKeyDef* const GetKeyDef(WORD virtualKeyCode);
