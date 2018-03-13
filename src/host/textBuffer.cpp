@@ -792,6 +792,7 @@ void TEXT_BUFFER_INFO::SetFill(_In_ const CHAR_INFO ciFill)
 // - attributes - attributes to set for resized rows
 // Return Value:
 // - Success if successful. Invalid parameter if screen buffer size is unexpected. No memory if allocation failed.
+[[nodiscard]]
 NTSTATUS TEXT_BUFFER_INFO::ResizeTraditional(_In_ COORD const currentScreenBufferSize,
                                              _In_ COORD const newScreenBufferSize,
                                              _In_ TextAttribute const attributes)

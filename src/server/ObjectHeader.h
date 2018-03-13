@@ -23,11 +23,13 @@ class ConsoleObjectHeader
 public:
     ConsoleObjectHeader();
 
+    [[nodiscard]]
     HRESULT AllocateIoHandle(_In_ const ConsoleHandleData::HandleType ulHandleType,
                              _In_ const ACCESS_MASK amDesired,
                              _In_ const ULONG ulShareMode,
                              _Out_ ConsoleHandleData** const ppOut);
 
+    [[nodiscard]]
     HRESULT FreeIoHandle(_In_ ConsoleHandleData* const pFree);
 
     bool HasAnyOpenHandles() const;

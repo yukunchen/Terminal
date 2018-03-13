@@ -29,6 +29,7 @@
 const UINT CONSOLE_EVENT_FAILURE_ID = 21790;
 const UINT CONSOLE_LPC_PORT_FAILURE_ID = 21791;
 
+[[nodiscard]]
 HRESULT ConsoleServerInitialization(_In_ HANDLE Server, _In_ const ConsoleArguments* const args)
 {
     Globals& Globals = ServiceLocator::LocateGlobals();
@@ -84,6 +85,7 @@ static bool s_IsOnDesktop()
     return fIsDesktop;
 }
 
+[[nodiscard]]
 NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
                       _In_ DWORD TitleLength,
                       _In_reads_bytes_(TitleLength) LPWSTR Title,
@@ -156,7 +158,7 @@ NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
         if (!pHighDpiApi->SetProcessDpiAwarenessContext())
         {
             // Fallback to per-monitor aware V1 if the API isn't available.
-            pHighDpiApi->SetProcessPerMonitorDpiAwareness();
+            LOG_IF_FAILED(pHighDpiApi->SetProcessPerMonitorDpiAwareness());
 
             // Allow child dialogs (i.e. Properties and Find) to scale automatically based on DPI if we're currently DPI aware.
             // Note that we don't need to do this if we're PMv2.
@@ -183,6 +185,7 @@ NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
     return STATUS_SUCCESS;
 }
 
+[[nodiscard]]
 NTSTATUS RemoveConsole(_In_ ConsoleProcessHandle* ProcessData)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -233,6 +236,7 @@ void ConsoleCheckDebug()
 #endif
 }
 
+[[nodiscard]]
 HRESULT ConsoleCreateIoThreadLegacy(_In_ HANDLE Server, _In_ const ConsoleArguments* const args)
 {
     RETURN_IF_FAILED(ConsoleServerInitialization(Server, args));
@@ -339,6 +343,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, _In_ const BOOL fUnexp
     return Tmp;
 }
 
+[[nodiscard]]
 NTSTATUS GetConsoleLangId(_In_ const UINT uiOutputCP, _Out_ LANGID * const pLangId)
 {
     NTSTATUS Status = STATUS_NOT_SUPPORTED;
@@ -396,6 +401,7 @@ NTSTATUS GetConsoleLangId(_In_ const UINT uiOutputCP, _Out_ LANGID * const pLang
     return Status;
 }
 
+[[nodiscard]]
 HRESULT ApiRoutines::GetConsoleLangIdImpl(_Out_ LANGID* const pLangId)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -414,6 +420,7 @@ HRESULT ApiRoutines::GetConsoleLangIdImpl(_Out_ LANGID* const pLangId)
 // - Cac - Receives the connection information.
 // Return Value:
 // - NTSTATUS indicating if the connection information was successfully initialized.
+[[nodiscard]]
 NTSTATUS ConsoleInitializeConnectInfo(_In_ PCONSOLE_API_MSG Message, _Out_ PCONSOLE_API_CONNECTINFO Cac)
 {
     CONSOLE_SERVER_MSG Data = { 0 };
@@ -461,6 +468,7 @@ NTSTATUS ConsoleInitializeConnectInfo(_In_ PCONSOLE_API_MSG Message, _Out_ PCONS
     return STATUS_SUCCESS;
 }
 
+[[nodiscard]]
 NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
 {
     // AllocConsole is outside our codebase, but we should be able to mostly track the call here.
@@ -506,7 +514,7 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
         HANDLE Thread = nullptr;
 
         IConsoleInputThread *pNewThread = nullptr;
-        ServiceLocator::CreateConsoleInputThread(&pNewThread);
+        LOG_IF_FAILED(ServiceLocator::CreateConsoleInputThread(&pNewThread));
 
         ASSERT(pNewThread);
 
@@ -605,7 +613,7 @@ DWORD ConsoleIoThread()
     {
         if (ReplyMsg != nullptr)
         {
-            ReplyMsg->ReleaseMessageBuffers();
+            LOG_IF_FAILED(ReplyMsg->ReleaseMessageBuffers());
         }
 
         // TODO: 9115192 correct mixed NTSTATUS/HRESULT

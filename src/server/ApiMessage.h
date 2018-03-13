@@ -58,13 +58,18 @@ public:
     ConsoleProcessHandle* GetProcessHandle() const;
     ConsoleHandleData* GetObjectHandle() const;
 
+    [[nodiscard]]
     HRESULT ReadMessageInput(_In_ const ULONG cbOffset, _Out_writes_bytes_(cbSize) PVOID pvBuffer, _In_ const ULONG cbSize);
+    [[nodiscard]]
     HRESULT GetAugmentedOutputBuffer(_In_ const ULONG cbFactor,
                                       _Outptr_result_bytebuffer_(*pcbSize) PVOID * ppvBuffer,
                                       _Out_ PULONG pcbSize);
+    [[nodiscard]]
     HRESULT GetOutputBuffer(_Outptr_result_bytebuffer_(*pcbSize) void** const ppvBuffer, _Out_ ULONG* const pcbSize);
+    [[nodiscard]]
     HRESULT GetInputBuffer(_Outptr_result_bytebuffer_(*pcbSize) void** const ppvBuffer, _Out_ ULONG* const pcbSize);
 
+    [[nodiscard]]
     HRESULT ReleaseMessageBuffers();
 
     void SetReplyStatus(_In_ const NTSTATUS Status);

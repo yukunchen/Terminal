@@ -116,6 +116,7 @@ void ConsoleImeInfo::RefreshAreaAttributes()
 // - <none>
 // Return Value:
 // - Status successful or appropriate NTSTATUS response.
+[[nodiscard]]
 NTSTATUS ConsoleImeInfo::AddConversionArea()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();

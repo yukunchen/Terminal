@@ -29,6 +29,7 @@ ConsoleHandleData* _CONSOLE_API_MSG::GetObjectHandle() const
 // - cbSize - Supplies the number of bytes to be read into the buffer.
 // Return Value:
 // - HRESULT indicating if the payload was successfully read.
+[[nodiscard]]
 HRESULT _CONSOLE_API_MSG::ReadMessageInput(_In_ const ULONG cbOffset,
                                            _Out_writes_bytes_(cbSize) PVOID pvBuffer,
                                            _In_ const ULONG cbSize)
@@ -51,6 +52,7 @@ HRESULT _CONSOLE_API_MSG::ReadMessageInput(_In_ const ULONG cbOffset,
 // - Size - Receives the size, in bytes, of the input buffer.
 // Return Value:
 // -  HRESULT indicating if the input buffer was successfully retrieved.
+[[nodiscard]]
 HRESULT _CONSOLE_API_MSG::GetInputBuffer(_Outptr_result_bytebuffer_(*pcbSize) void** const ppvBuffer,
                                          _Out_ ULONG* const pcbSize)
 {
@@ -87,6 +89,7 @@ HRESULT _CONSOLE_API_MSG::GetInputBuffer(_Outptr_result_bytebuffer_(*pcbSize) vo
 // - Size - Receives the size, in bytes, of the output buffer.
 //  Return Value:
 // - HRESULT indicating if the output buffer was successfully retrieved.
+[[nodiscard]]
 HRESULT _CONSOLE_API_MSG::GetAugmentedOutputBuffer(_In_ const ULONG cbFactor,
                                                    _Outptr_result_bytebuffer_(*pcbSize) PVOID * const ppvBuffer,
                                                    _Out_ PULONG pcbSize)
@@ -122,6 +125,7 @@ HRESULT _CONSOLE_API_MSG::GetAugmentedOutputBuffer(_In_ const ULONG cbFactor,
 // - Size - Receives the size, in bytes, of the output buffer.
 // Return Value:
 // - HRESULT indicating if the output buffer was successfully retrieved.
+[[nodiscard]]
 HRESULT _CONSOLE_API_MSG::GetOutputBuffer(_Outptr_result_bytebuffer_(*pcbSize) void** const ppvBuffer,
                                           _Out_ ULONG * const pcbSize)
 {
@@ -137,6 +141,7 @@ HRESULT _CONSOLE_API_MSG::GetOutputBuffer(_Outptr_result_bytebuffer_(*pcbSize) v
 // - <none>
 // Return Value:
 // - HRESULT indicating if the payload was successfully written if applicable.
+[[nodiscard]]
 HRESULT _CONSOLE_API_MSG::ReleaseMessageBuffers()
 {
     HRESULT hr = S_OK;

@@ -35,6 +35,7 @@ ConsoleObjectHeader::ConsoleObjectHeader() :
 // TODO: MSFT 614400 - Add concurrency SAL to enforce the lock http://osgvsowi/614400
 // - The console lock must be held when calling this routine.  The handle is allocated from the per-process handle table.  Holding the console
 //   lock serializes both threads within the calling process and any other process that shares the console.
+[[nodiscard]]
 HRESULT ConsoleObjectHeader::AllocateIoHandle(_In_ const ConsoleHandleData::HandleType ulHandleType,
                                               _In_ const ACCESS_MASK amDesired,
                                               _In_ const ULONG ulShareMode,
@@ -97,6 +98,7 @@ HRESULT ConsoleObjectHeader::AllocateIoHandle(_In_ const ConsoleHandleData::Hand
 // - pFree - Pointer to the handle data to be freed
 // Return Value:
 // - HRESULT S_OK or appropriate error.
+[[nodiscard]]
 HRESULT ConsoleObjectHeader::FreeIoHandle(_In_ ConsoleHandleData* const pFree)
 {
     // This absolutely should not happen and our state is corrupt/bad if we try to release past 0.

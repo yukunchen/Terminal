@@ -48,6 +48,7 @@ namespace Microsoft::Console::Interactivity::Win32
     public:
         // IHighDpi Interface
         BOOL SetProcessDpiAwarenessContext();
+        [[nodiscard]]
         HRESULT SetProcessPerMonitorDpiAwareness();
         BOOL EnablePerMonitorDialogScaling();
 

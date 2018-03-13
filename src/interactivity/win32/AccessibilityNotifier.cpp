@@ -22,10 +22,9 @@ void AccessibilityNotifier::NotifyConsoleCaretEvent(_In_ RECT rectangle)
         caretInfo.hwnd = pWindow->GetWindowHandle();
         caretInfo.rc = rectangle;
 
-        ServiceLocator::LocateConsoleControl<ConsoleControl>()
-            ->Control(ConsoleControl::ControlType::ConsoleSetCaretInfo,
-                      &caretInfo,
-                      sizeof(caretInfo));
+        LOG_IF_FAILED(ServiceLocator::LocateConsoleControl<ConsoleControl>()->Control(ConsoleControl::ControlType::ConsoleSetCaretInfo,
+                                                                                      &caretInfo,
+                                                                                      sizeof(caretInfo)));
     }
 
 }
@@ -67,7 +66,7 @@ void AccessibilityNotifier::NotifyConsoleCaretEvent(_In_ ConsoleCaretEventFlags 
                     COORD currentCursorPosition = pCursor->GetPosition();
                     if (currentCursorPosition != previousCursorLocation)
                     {
-                        pWindow->SignalUia(UIA_Text_TextSelectionChangedEventId);
+                        LOG_IF_FAILED(pWindow->SignalUia(UIA_Text_TextSelectionChangedEventId));
                     }
                     previousCursorLocation = currentCursorPosition;
                 }

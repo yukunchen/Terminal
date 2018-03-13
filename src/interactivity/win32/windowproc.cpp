@@ -298,7 +298,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         // set the text area to have focus for accessibility consumers
         if (_pUiaProvider)
         {
-            _pUiaProvider->SetTextAreaFocus();
+            LOG_IF_FAILED(_pUiaProvider->SetTextAreaFocus());
         }
 
         break;
@@ -855,6 +855,7 @@ void Window::_HandleWindowPosChanged(_In_ const LPARAM lParam)
 // - <none>
 // Return Value:
 // - S_OK if we succeeded. ERROR_INVALID_HANDLE if there is no HWND. E_FAIL if GDI failed for some reason.
+[[nodiscard]]
 HRESULT Window::_HandlePaint() const
 {
     HWND const hwnd = GetWindowHandle();

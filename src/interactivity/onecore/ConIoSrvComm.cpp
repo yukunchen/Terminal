@@ -62,6 +62,7 @@ ConIoSrvComm::~ConIoSrvComm()
 
 #pragma region Communication
 
+[[nodiscard]]
 NTSTATUS ConIoSrvComm::Connect()
 {
     BOOL Ret = TRUE;
@@ -211,6 +212,7 @@ NTSTATUS ConIoSrvComm::Connect()
     return Status;
 }
 
+[[nodiscard]]
 NTSTATUS ConIoSrvComm::EnsureConnection()
 {
     NTSTATUS Status;
@@ -273,6 +275,7 @@ VOID ConIoSrvComm::ServiceInputPipe()
     }
 }
 
+[[nodiscard]]
 NTSTATUS ConIoSrvComm::SendRequestReceiveReply(PCIS_MSG Message) const
 {
     NTSTATUS Status;
@@ -359,7 +362,7 @@ VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
 
                             // Get font to adjust char to pixels.
                             COORD coordFont = {0};
-                            pWddmConEngine->GetFontSize(&coordFont);
+                            LOG_IF_FAILED(pWddmConEngine->GetFontSize(&coordFont));
 
                             rcDisplay.right *= coordFont.X;
                             rcDisplay.bottom *= coordFont.Y;
@@ -454,6 +457,7 @@ VOID ConIoSrvComm::CleanupForHeadless(_In_ NTSTATUS const status)
 
 #pragma region Request Methods
 
+[[nodiscard]]
 NTSTATUS ConIoSrvComm::RequestGetDisplaySize(_Inout_ PCD_IO_DISPLAY_SIZE pCdDisplaySize) const
 {
     NTSTATUS Status;
@@ -471,6 +475,7 @@ NTSTATUS ConIoSrvComm::RequestGetDisplaySize(_Inout_ PCD_IO_DISPLAY_SIZE pCdDisp
     return Status;
 }
 
+[[nodiscard]]
 NTSTATUS ConIoSrvComm::RequestGetFontSize(_Inout_ PCD_IO_FONT_SIZE pCdFontSize) const
 {
     NTSTATUS Status;
@@ -488,6 +493,7 @@ NTSTATUS ConIoSrvComm::RequestGetFontSize(_Inout_ PCD_IO_FONT_SIZE pCdFontSize) 
     return Status;
 }
 
+[[nodiscard]]
 NTSTATUS ConIoSrvComm::RequestSetCursor(_In_ CD_IO_CURSOR_INFORMATION* const pCdCursorInformation) const
 {
     NTSTATUS Status;
@@ -505,6 +511,7 @@ NTSTATUS ConIoSrvComm::RequestSetCursor(_In_ CD_IO_CURSOR_INFORMATION* const pCd
     return Status;
 }
 
+[[nodiscard]]
 NTSTATUS ConIoSrvComm::RequestUpdateDisplay(_In_ SHORT RowIndex) const
 {
     NTSTATUS Status;
@@ -522,6 +529,7 @@ NTSTATUS ConIoSrvComm::RequestUpdateDisplay(_In_ SHORT RowIndex) const
     return Status;
 }
 
+[[nodiscard]]
 NTSTATUS ConIoSrvComm::RequestMapVirtualKey(_In_ UINT uCode, _In_ UINT uMapType, _Out_ UINT* puReturnValue)
 {
     NTSTATUS Status;
@@ -544,6 +552,7 @@ NTSTATUS ConIoSrvComm::RequestMapVirtualKey(_In_ UINT uCode, _In_ UINT uMapType,
     return Status;
 }
 
+[[nodiscard]]
 NTSTATUS ConIoSrvComm::RequestVkKeyScan(_In_ WCHAR wCharacter, _Out_ SHORT* psReturnValue)
 {
     NTSTATUS Status;
@@ -565,6 +574,7 @@ NTSTATUS ConIoSrvComm::RequestVkKeyScan(_In_ WCHAR wCharacter, _Out_ SHORT* psRe
     return Status;
 }
 
+[[nodiscard]]
 NTSTATUS ConIoSrvComm::RequestGetKeyState(_In_ int iVirtualKey, _Out_ SHORT *psReturnValue)
 {
     NTSTATUS Status;
@@ -586,6 +596,7 @@ NTSTATUS ConIoSrvComm::RequestGetKeyState(_In_ int iVirtualKey, _Out_ SHORT *psR
     return Status;
 }
 
+[[nodiscard]]
 NTSTATUS ConIoSrvComm::RequestGetDisplayMode(_Out_ USHORT *psDisplayMode)
 {
     NTSTATUS Status;
@@ -702,6 +713,7 @@ BOOL ConIoSrvComm::TranslateCharsetInfo(DWORD * lpSrc, LPCHARSETINFO lpCs, DWORD
 #pragma endregion
 
 
+[[nodiscard]]
 NTSTATUS ConIoSrvComm::InitializeBgfx()
 {
     NTSTATUS Status;
@@ -747,6 +759,7 @@ NTSTATUS ConIoSrvComm::InitializeBgfx()
     return Status;
 }
 
+[[nodiscard]]
 NTSTATUS ConIoSrvComm::InitializeWddmCon()
 {
     NTSTATUS Status;

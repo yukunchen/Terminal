@@ -12,6 +12,7 @@
 
 #include "winbasep.h"
 
+[[nodiscard]]
 HRESULT Entrypoints::StartConsoleForServerHandle(_In_ HANDLE const ServerHandle, _In_ const ConsoleArguments* const args)
 {
     return ConsoleCreateIoThreadLegacy(ServerHandle, args);
@@ -22,12 +23,13 @@ HRESULT Entrypoints::StartConsoleForServerHandle(_In_ HANDLE const ServerHandle,
 #pragma warning(push)
 #pragma warning(disable:4702)
 
+[[nodiscard]]
 HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine, _In_ const ConsoleArguments* const args)
 {
     // Create a scope because we're going to exit thread if everything goes well.
     // This scope will ensure all C++ objects and smart pointers get a chance to destruct before ExitThread is called.
     {
-        // TODO:MSFT:13271366 use the arguments from the commandline to determine if we need 
+        // TODO:MSFT:13271366 use the arguments from the commandline to determine if we need
         //  to create the server handle or not.
 
         // Create the server and reference handles and create the console object.

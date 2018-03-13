@@ -63,6 +63,7 @@ WindowUiaProvider* WindowUiaProvider::Create()
     return pWindowProvider;
 }
 
+[[nodiscard]]
 HRESULT WindowUiaProvider::Signal(_In_ EVENTID id)
 {
     HRESULT hr = S_OK;
@@ -107,6 +108,7 @@ HRESULT WindowUiaProvider::Signal(_In_ EVENTID id)
     return hr;
 }
 
+[[nodiscard]]
 HRESULT WindowUiaProvider::SetTextAreaFocus()
 {
     try
@@ -284,7 +286,7 @@ IFACEMETHODIMP WindowUiaProvider::Navigate(_In_ NavigateDirection direction, _CO
         (*ppProvider)->AddRef();
 
         // signal that the focus changed
-        _pScreenInfoProvider->Signal(UIA_AutomationFocusChangedEventId);
+        LOG_IF_FAILED(_pScreenInfoProvider->Signal(UIA_AutomationFocusChangedEventId));
     }
 
     // For the other directions (parent, next, previous) the default of nullptr is correct
@@ -379,6 +381,7 @@ HWND WindowUiaProvider::_GetWindowHandle() const
     return pIConsoleWindow->GetWindowHandle();
 }
 
+[[nodiscard]]
 HRESULT WindowUiaProvider::_EnsureValidHwnd() const
 {
     try

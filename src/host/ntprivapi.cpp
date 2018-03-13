@@ -8,6 +8,7 @@
 
 #include "NtPrivApi.hpp"
 
+[[nodiscard]]
 NTSTATUS NtPrivApi::s_GetProcessParentId(_Inout_ PULONG ProcessId)
 {
     // TODO: Get Parent current not really available without winternl + NtQueryInformationProcess. http://osgvsowi/8394495
@@ -25,7 +26,7 @@ NTSTATUS NtPrivApi::s_GetProcessParentId(_Inout_ PULONG ProcessId)
     if (NT_SUCCESS(Status))
     {
         Status = s_NtQueryInformationProcess(ProcessHandle, ProcessBasicInformation, &BasicInfo, sizeof(BasicInfo), nullptr);
-        s_NtClose(ProcessHandle);
+        LOG_IF_FAILED(s_NtClose(ProcessHandle));
     }
 
     if (!NT_SUCCESS(Status))
@@ -40,6 +41,7 @@ NTSTATUS NtPrivApi::s_GetProcessParentId(_Inout_ PULONG ProcessId)
     return STATUS_SUCCESS;
 }
 
+[[nodiscard]]
 NTSTATUS NtPrivApi::s_NtOpenProcess(_Out_ PHANDLE ProcessHandle,
                                     _In_ ACCESS_MASK DesiredAccess,
                                     _In_ POBJECT_ATTRIBUTES ObjectAttributes,
@@ -62,6 +64,7 @@ NTSTATUS NtPrivApi::s_NtOpenProcess(_Out_ PHANDLE ProcessHandle,
     return STATUS_UNSUCCESSFUL;
 }
 
+[[nodiscard]]
 NTSTATUS NtPrivApi::s_NtQueryInformationProcess(_In_ HANDLE ProcessHandle,
                                                 _In_ PROCESSINFOCLASS ProcessInformationClass,
                                                 _Out_ PVOID ProcessInformation,
@@ -85,6 +88,7 @@ NTSTATUS NtPrivApi::s_NtQueryInformationProcess(_In_ HANDLE ProcessHandle,
     return STATUS_UNSUCCESSFUL;
 }
 
+[[nodiscard]]
 NTSTATUS NtPrivApi::s_NtClose(_In_ HANDLE Handle)
 {
     HMODULE hNtDll = _Instance()._hNtDll;
