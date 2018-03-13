@@ -36,7 +36,7 @@ Settings::Settings() :
     _uNumberOfHistoryBuffers(DEFAULT_NUMBER_OF_BUFFERS),
     _bHistoryNoDup(false),
     // ColorTable initialized below
-    _uCodePage(ServiceLocator::LocateGlobals()->uiOEMCP),
+    _uCodePage(ServiceLocator::LocateGlobals().uiOEMCP),
     _uScrollScale(1),
     _bLineSelection(true),
     _bWrapText(true),
@@ -70,6 +70,9 @@ Settings::Settings() :
     wcscpy_s(_FaceName, DEFAULT_TT_FONT_FACENAME);
 
     ZeroMemory((void*)&_LaunchFaceName, sizeof(_LaunchFaceName));
+
+    _CursorColor = Cursor::s_InvertCursorColor;
+    _CursorType = CursorType::Legacy;
 
     _InitColorTable();
 
@@ -594,9 +597,9 @@ void Settings::SetGridRenderingAllowedWorldwide(_In_ bool const fGridRenderingAl
     {
         this->_fRenderGridWorldwide = fGridRenderingAllowed;
 
-        if (ServiceLocator::LocateGlobals()->pRender != nullptr)
+        if (ServiceLocator::LocateGlobals().pRender != nullptr)
         {
-            ServiceLocator::LocateGlobals()->pRender->TriggerRedrawAll();
+            ServiceLocator::LocateGlobals().pRender->TriggerRedrawAll();
         }
     }
 }
@@ -1004,4 +1007,24 @@ WORD Settings::GenerateLegacyAttributes(_In_ const TextAttribute attributes) con
 WORD Settings::FindNearestTableIndex(_In_ COLORREF const Color) const
 {
     return ::FindNearestTableIndex(Color, _ColorTable, ARRAYSIZE(_ColorTable));
+}
+
+COLORREF Settings::GetCursorColor() const noexcept
+{
+    return _CursorColor;
+}
+
+CursorType Settings::GetCursorType() const noexcept
+{
+    return _CursorType;
+}
+
+void Settings::SetCursorColor(_In_ const COLORREF CursorColor) noexcept
+{
+    _CursorColor = CursorColor;
+}
+
+void Settings::SetCursorType(_In_ const CursorType cursorType) noexcept
+{
+    _CursorType = cursorType;
 }

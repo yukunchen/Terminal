@@ -14,34 +14,31 @@ Author(s):
 
 #pragma once
 
-namespace Microsoft
+namespace Microsoft::Console::Interactivity
 {
-    namespace Console
+    class IConsoleInputThread
     {
-        namespace Interactivity
-        {
-            class IConsoleInputThread
-            {
-            public:
-                virtual HANDLE Start() = 0;
+    public:
+        virtual ~IConsoleInputThread() = 0;
+        virtual HANDLE Start() = 0;
 
-                HANDLE GetHandle()   { return _hThread; }
-                DWORD  GetThreadId() { return _dwThreadId; }
+        HANDLE GetHandle()   { return _hThread; }
+        DWORD  GetThreadId() { return _dwThreadId; }
 
-            protected:
-                // Prevent accidental copies.
-                IConsoleInputThread(IConsoleInputThread const&) = delete;
-                IConsoleInputThread& operator=(IConsoleInputThread const&) = delete;
+    protected:
+        // Prevent accidental copies.
+        IConsoleInputThread(IConsoleInputThread const&) = delete;
+        IConsoleInputThread& operator=(IConsoleInputThread const&) = delete;
 
-                // .ctor
-                IConsoleInputThread() :
-                    _hThread(nullptr),
-                    _dwThreadId((DWORD)(-1)) { }
+        // .ctor
+        IConsoleInputThread() :
+            _hThread(nullptr),
+            _dwThreadId((DWORD)(-1)) { }
 
-                // Protected Variables
-                HANDLE _hThread;
-                DWORD  _dwThreadId;
-            };
-        };
+        // Protected Variables
+        HANDLE _hThread;
+        DWORD  _dwThreadId;
     };
-};
+
+    inline IConsoleInputThread::~IConsoleInputThread() {}
+}

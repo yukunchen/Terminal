@@ -76,7 +76,7 @@ class UiaTextRangeTests
 
     TEST_METHOD_SETUP(MethodSetup)
     {
-        const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // set up common state
         _state = new CommonState();
         _state->PrepareGlobalFont();
@@ -84,8 +84,24 @@ class UiaTextRangeTests
         _state->PrepareNewTextBufferInfo();
 
         // set up pointers
-        _pScreenInfo = gci->CurrentScreenBuffer;
+        _pScreenInfo = gci.CurrentScreenBuffer;
         _pTextBuffer = _pScreenInfo->TextInfo;
+
+        // fill text buffer with text
+        for (UINT i = 0; i < _pTextBuffer->TotalRowCount(); ++i)
+        {
+            ROW& row = _pTextBuffer->GetRowByOffset(i);
+            auto& iCharRow = row.GetCharRow();
+            // we only support ucs2 encoded char rows
+            FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                            "only support UCS2 char rows currently");
+
+            Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
+            for (auto& cell : charRow)
+            {
+                cell.first = L'a';
+            }
+        }
 
         // set up default range
         _range = new UiaTextRange
@@ -112,10 +128,10 @@ class UiaTextRangeTests
         return true;
     }
 
-    const unsigned int _getRowWidth() const
+    const size_t _getRowWidth() const
     {
-        const CHAR_ROW charRow = _pTextBuffer->GetFirstRow()->CharRow;
-        return charRow.Left - charRow.Right;
+        const ICharRow& charRow = _pTextBuffer->GetFirstRow().GetCharRow();
+        return charRow.MeasureRight()- charRow.MeasureLeft() ;
     }
 
     TEST_METHOD(DegenerateRangesDetected)
@@ -345,7 +361,8 @@ class UiaTextRangeTests
                     topRow,
                     lastColumnIndex,
                     firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward
+                    UiaTextRange::MovementIncrement::Backward,
+                    UiaTextRange::MovementDirection::Backward
                 },
                 -1,
                 0,
@@ -361,7 +378,8 @@ class UiaTextRangeTests
                     topRow,
                     lastColumnIndex,
                     firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward
+                    UiaTextRange::MovementIncrement::Backward,
+                    UiaTextRange::MovementDirection::Backward
                 },
                 -1,
                 -1,
@@ -377,7 +395,8 @@ class UiaTextRangeTests
                     bottomRow,
                     firstColumnIndex,
                     lastColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward
+                    UiaTextRange::MovementIncrement::Forward,
+                    UiaTextRange::MovementDirection::Forward
                 },
                 5,
                 5,
@@ -393,7 +412,8 @@ class UiaTextRangeTests
                     bottomRow,
                     firstColumnIndex,
                     lastColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward
+                    UiaTextRange::MovementIncrement::Forward,
+                    UiaTextRange::MovementDirection::Forward
                 },
                 5,
                 0,
@@ -409,7 +429,8 @@ class UiaTextRangeTests
                     bottomRow,
                     firstColumnIndex,
                     lastColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward
+                    UiaTextRange::MovementIncrement::Forward,
+                    UiaTextRange::MovementDirection::Forward
                 },
                 5,
                 5,
@@ -425,7 +446,8 @@ class UiaTextRangeTests
                     topRow,
                     lastColumnIndex,
                     firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward
+                    UiaTextRange::MovementIncrement::Backward,
+                    UiaTextRange::MovementDirection::Backward
                 },
                 -5,
                 -5,
@@ -472,7 +494,8 @@ class UiaTextRangeTests
                     topRow,
                     lastColumnIndex,
                     firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward
+                    UiaTextRange::MovementIncrement::Backward,
+                    UiaTextRange::MovementDirection::Backward
                 },
                 -4,
                 0,
@@ -488,7 +511,8 @@ class UiaTextRangeTests
                     bottomRow,
                     firstColumnIndex,
                     lastColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward
+                    UiaTextRange::MovementIncrement::Forward,
+                    UiaTextRange::MovementDirection::Forward
                 },
                 4,
                 4,
@@ -504,7 +528,8 @@ class UiaTextRangeTests
                     bottomRow,
                     firstColumnIndex,
                     lastColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward
+                    UiaTextRange::MovementIncrement::Forward,
+                    UiaTextRange::MovementDirection::Forward
                 },
                 3,
                 0,
@@ -520,7 +545,8 @@ class UiaTextRangeTests
                     topRow,
                     lastColumnIndex,
                     firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward
+                    UiaTextRange::MovementIncrement::Backward,
+                    UiaTextRange::MovementDirection::Backward
                 },
                 -3,
                 -3,
@@ -536,7 +562,8 @@ class UiaTextRangeTests
                     topRow,
                     lastColumnIndex,
                     firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward
+                    UiaTextRange::MovementIncrement::Backward,
+                    UiaTextRange::MovementDirection::Backward
                 },
                 -1,
                 0,
@@ -552,7 +579,8 @@ class UiaTextRangeTests
                     bottomRow,
                     firstColumnIndex,
                     lastColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward
+                    UiaTextRange::MovementIncrement::Forward,
+                    UiaTextRange::MovementDirection::Forward
                 },
                 1,
                 0,
@@ -600,7 +628,8 @@ class UiaTextRangeTests
                     topRow,
                     lastColumnIndex,
                     firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward
+                    UiaTextRange::MovementIncrement::Backward,
+                    UiaTextRange::MovementDirection::Backward
                 },
                 -1,
                 0,
@@ -618,7 +647,8 @@ class UiaTextRangeTests
                     topRow,
                     lastColumnIndex,
                     firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward
+                    UiaTextRange::MovementIncrement::Backward,
+                    UiaTextRange::MovementDirection::Backward
                 },
                 -5,
                 -3,
@@ -636,7 +666,8 @@ class UiaTextRangeTests
                     topRow,
                     lastColumnIndex,
                     firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward
+                    UiaTextRange::MovementIncrement::Backward,
+                    UiaTextRange::MovementDirection::Backward
                 },
                 -5,
                 -4,
@@ -654,7 +685,8 @@ class UiaTextRangeTests
                     topRow,
                     lastColumnIndex,
                     firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward
+                    UiaTextRange::MovementIncrement::Backward,
+                    UiaTextRange::MovementDirection::Backward
                 },
                 -7,
                 -7,
@@ -672,7 +704,8 @@ class UiaTextRangeTests
                     bottomRow,
                     firstColumnIndex,
                     lastColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward
+                    UiaTextRange::MovementIncrement::Forward,
+                    UiaTextRange::MovementDirection::Forward
                 },
                 1,
                 0,
@@ -690,7 +723,8 @@ class UiaTextRangeTests
                     bottomRow,
                     firstColumnIndex,
                     lastColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward
+                    UiaTextRange::MovementIncrement::Forward,
+                    UiaTextRange::MovementDirection::Forward
                 },
                 5,
                 3,
@@ -708,7 +742,8 @@ class UiaTextRangeTests
                     bottomRow,
                     firstColumnIndex,
                     lastColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward
+                    UiaTextRange::MovementIncrement::Forward,
+                    UiaTextRange::MovementDirection::Forward
                 },
                 5,
                 4,
@@ -726,7 +761,8 @@ class UiaTextRangeTests
                     topRow,
                     lastColumnIndex,
                     firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward
+                    UiaTextRange::MovementIncrement::Forward,
+                    UiaTextRange::MovementDirection::Forward
                 },
                 7,
                 7,
@@ -779,7 +815,8 @@ class UiaTextRangeTests
                     bottomRow,
                     firstColumnIndex,
                     lastColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward
+                    UiaTextRange::MovementIncrement::Forward,
+                    UiaTextRange::MovementDirection::Forward
                 },
                 1,
                 1,
@@ -797,7 +834,8 @@ class UiaTextRangeTests
                     topRow,
                     lastColumnIndex,
                     firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward
+                    UiaTextRange::MovementIncrement::Backward,
+                    UiaTextRange::MovementDirection::Backward
                 },
                 -2,
                 -2,
@@ -815,7 +853,8 @@ class UiaTextRangeTests
                     bottomRow,
                     firstColumnIndex,
                     lastColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward
+                    UiaTextRange::MovementIncrement::Forward,
+                    UiaTextRange::MovementDirection::Forward
                 },
                 2,
                 2,
@@ -833,7 +872,8 @@ class UiaTextRangeTests
                     topRow,
                     lastColumnIndex,
                     firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward
+                    UiaTextRange::MovementIncrement::Backward,
+                    UiaTextRange::MovementDirection::Backward
                 },
                 -1,
                 -1,
@@ -851,7 +891,8 @@ class UiaTextRangeTests
                     topRow,
                     lastColumnIndex,
                     firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward
+                    UiaTextRange::MovementIncrement::Backward,
+                    UiaTextRange::MovementDirection::Backward
                 },
                 -1,
                 -1,
@@ -869,7 +910,8 @@ class UiaTextRangeTests
                     topRow,
                     lastColumnIndex,
                     firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward
+                    UiaTextRange::MovementIncrement::Backward,
+                    UiaTextRange::MovementDirection::Backward
                 },
                 -1,
                 0,
@@ -887,7 +929,8 @@ class UiaTextRangeTests
                     bottomRow,
                     lastColumnIndex,
                     firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward
+                    UiaTextRange::MovementIncrement::Forward,
+                    UiaTextRange::MovementDirection::Forward
                 },
                 1,
                 1,
@@ -905,7 +948,8 @@ class UiaTextRangeTests
                     bottomRow,
                     lastColumnIndex,
                     firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward
+                    UiaTextRange::MovementIncrement::Forward,
+                    UiaTextRange::MovementDirection::Forward
                 },
                 1,
                 0,
@@ -923,7 +967,8 @@ class UiaTextRangeTests
                     bottomRow,
                     firstColumnIndex,
                     lastColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward
+                    UiaTextRange::MovementIncrement::Forward,
+                    UiaTextRange::MovementDirection::Forward
                 },
                 1,
                 1,
@@ -941,7 +986,8 @@ class UiaTextRangeTests
                     topRow,
                     lastColumnIndex,
                     firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward
+                    UiaTextRange::MovementIncrement::Backward,
+                    UiaTextRange::MovementDirection::Backward
                 },
                 -1,
                 -1,
@@ -997,7 +1043,8 @@ class UiaTextRangeTests
                     bottomRow,
                     firstColumnIndex,
                     lastColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward
+                    UiaTextRange::MovementIncrement::Forward,
+                    UiaTextRange::MovementDirection::Forward
                 },
                 1,
                 1,
@@ -1015,7 +1062,8 @@ class UiaTextRangeTests
                     topRow,
                     lastColumnIndex,
                     firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward
+                    UiaTextRange::MovementIncrement::Backward,
+                    UiaTextRange::MovementDirection::Backward
                 },
                 -1,
                 -1,
@@ -1033,7 +1081,8 @@ class UiaTextRangeTests
                     bottomRow,
                     firstColumnIndex,
                     lastColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward
+                    UiaTextRange::MovementIncrement::Forward,
+                    UiaTextRange::MovementDirection::Forward
                 },
                 1,
                 0,
@@ -1051,7 +1100,8 @@ class UiaTextRangeTests
                     topRow,
                     lastColumnIndex,
                     firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward
+                    UiaTextRange::MovementIncrement::Backward,
+                    UiaTextRange::MovementDirection::Backward
                 },
                 -1,
                 0,
@@ -1069,7 +1119,8 @@ class UiaTextRangeTests
                     topRow,
                     lastColumnIndex,
                     firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward
+                    UiaTextRange::MovementIncrement::Backward,
+                    UiaTextRange::MovementDirection::Backward
                 },
                 -1,
                 -1,
@@ -1087,7 +1138,8 @@ class UiaTextRangeTests
                     bottomRow,
                     firstColumnIndex,
                     lastColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward
+                    UiaTextRange::MovementIncrement::Forward,
+                    UiaTextRange::MovementDirection::Forward
                 },
                 1,
                 1,

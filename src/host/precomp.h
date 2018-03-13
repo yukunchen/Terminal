@@ -52,13 +52,17 @@ Abstract:
 #include <memory>
 #include <utility>
 #include <vector>
-#include <memory>
+#include <deque>
+#include <iterator>
 #include <algorithm>
+#include <memory>
 #include <iterator>
 
 // WIL
-#include <wil\Common.h>
-#include <wil\Result.h>
+#include <wil/Common.h>
+#include <wil/Result.h>
+#include <wil/resource.h>
+#include <wil/wistd_memory.h>
 
 #pragma prefast(push)
 #pragma prefast(disable:26071, "Range violation in Intsafe. Not ours.")

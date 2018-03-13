@@ -23,39 +23,30 @@ Author(s):
 
 class InputTests;
 
-namespace Microsoft
+namespace Microsoft::Console::Interactivity::OneCore
 {
-    namespace Console
+    class SystemConfigurationProvider sealed : public ISystemConfigurationProvider
     {
-        namespace Interactivity
-        {
-            namespace OneCore
-            {
-                class SystemConfigurationProvider sealed : public ISystemConfigurationProvider
-                {
-                public:
-                    bool IsCaretBlinkingEnabled();
+    public:
+        bool IsCaretBlinkingEnabled();
 
-                    UINT GetCaretBlinkTime();
-                    int GetNumberOfMouseButtons();
-                    ULONG GetNumberOfWheelScrollLines();
-                    ULONG GetNumberOfWheelScrollCharacters();
+        UINT GetCaretBlinkTime();
+        int GetNumberOfMouseButtons();
+        ULONG GetNumberOfWheelScrollLines();
+        ULONG GetNumberOfWheelScrollCharacters();
 
-                    void GetSettingsFromLink(_Inout_ Settings* pLinkSettings,
-                                            _Inout_updates_bytes_(*pdwTitleLength) LPWSTR pwszTitle,
-                                            _Inout_ PDWORD pdwTitleLength,
-                                            _In_ PCWSTR pwszCurrDir,
-                                            _In_ PCWSTR pwszAppName);
-                private:
-                    static const UINT s_DefaultCaretBlinkTime = 530; // milliseconds
-                    static const bool s_DefaultIsCaretBlinkingEnabled = true;
-                    static const int s_DefaultNumberOfMouseButtons = 3;
-                    static const ULONG s_DefaultNumberOfWheelScrollLines = 3;
-                    static const ULONG s_DefaultNumberOfWheelScrollCharacters = 3;
+        void GetSettingsFromLink(_Inout_ Settings* pLinkSettings,
+                                _Inout_updates_bytes_(*pdwTitleLength) LPWSTR pwszTitle,
+                                _Inout_ PDWORD pdwTitleLength,
+                                _In_ PCWSTR pwszCurrDir,
+                                _In_ PCWSTR pwszAppName);
+    private:
+        static const UINT s_DefaultCaretBlinkTime = 530; // milliseconds
+        static const bool s_DefaultIsCaretBlinkingEnabled = true;
+        static const int s_DefaultNumberOfMouseButtons = 3;
+        static const ULONG s_DefaultNumberOfWheelScrollLines = 3;
+        static const ULONG s_DefaultNumberOfWheelScrollCharacters = 3;
 
-                    friend class ::InputTests;
-                };
-            };
-        };
+        friend class ::InputTests;
     };
-};
+}

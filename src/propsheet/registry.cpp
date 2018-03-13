@@ -813,6 +813,25 @@ VOID SetRegistryValues(
     SetGlobalRegistryValues();
 
 
+    //
+    // Save cursor type and color
+    //
+
+    dwValue = pStateInfo->CursorType;
+    RegistrySerialization::s_UpdateValue(hConsoleKey,
+                     hTitleKey,
+                     CONSOLE_REGISTRY_CURSORTYPE,
+                     REG_DWORD,
+                     (BYTE*)&dwValue,
+                     sizeof(dwValue));
+    
+    dwValue = pStateInfo->CursorColor;
+    RegistrySerialization::s_UpdateValue(hConsoleKey,
+                     hTitleKey,
+                     CONSOLE_REGISTRY_CURSORCOLOR,
+                     REG_DWORD,
+                     (BYTE*)&dwValue,
+                     sizeof(dwValue));
 
     //
     // Close the registry keys

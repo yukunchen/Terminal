@@ -11,6 +11,7 @@
 #include "dbcs.h"
 #include "handle.h"
 #include "scrolling.hpp"
+#include "Ucs2CharRow.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
@@ -40,6 +41,10 @@ Cursor::Cursor(IAccessibilityNotifier *pNotifier, _In_ ULONG const ulSize) :
     _coordDelayedAt = {0};
 
     _hCaretBlinkTimerQueue = CreateTimerQueue();
+
+    _fUseColor = false;
+    _color = s_InvertCursorColor;
+    _cursorType = CursorType::Legacy;
 }
 
 Cursor::~Cursor()
@@ -117,13 +122,14 @@ const BOOLEAN Cursor::IsDouble() const
 const BOOLEAN Cursor::IsDoubleWidth() const
 {
     // Check with the current screen buffer to see if the character under the cursor is double-width.
-    auto c = ServiceLocator::LocateGlobals()
-        ->getConsoleInformation()
-        ->CurrentScreenBuffer
-        ->TextInfo
-        ->GetRowByOffset(_cPosition.Y)
-        ->CharRow.Chars[_cPosition.X];
-    return !!IsCharFullWidth(c);
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const ICharRow& iCharRow = gci.CurrentScreenBuffer->TextInfo->GetRowByOffset(_cPosition.Y).GetCharRow();
+    // we only support ucs2 encoded char rows
+    FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                     "only support UCS2 char rows currently");
+
+    const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
+    return !!IsCharFullWidth(charRow.GetGlyphAt(_cPosition.X));
 }
 
 const BOOLEAN Cursor::IsConversionArea() const
@@ -178,7 +184,7 @@ void Cursor::SetIsDouble(_In_ BOOLEAN const fIsDouble)
 void Cursor::SetIsConversionArea(_In_ BOOLEAN const fIsConversionArea)
 {
     // Functionally the same as "Hide cursor"
-    // Never called with TRUE, it's only used in the creation of a 
+    // Never called with TRUE, it's only used in the creation of a
     //      ConversionAreaInfo, and never changed after that.
     _fIsConversionArea = fIsConversionArea;
     _RedrawCursorAlways();
@@ -238,17 +244,17 @@ void Cursor::_RedrawCursor()
 // - <none>
 void Cursor::_RedrawCursorAlways()
 {
-    if (ServiceLocator::LocateGlobals()->pRender != nullptr)
+    if (ServiceLocator::LocateGlobals().pRender != nullptr)
     {
         // Always trigger update of the cursor as one character width
-        ServiceLocator::LocateGlobals()->pRender->TriggerRedrawCursor(&_cPosition);
+        ServiceLocator::LocateGlobals().pRender->TriggerRedrawCursor(&_cPosition);
 
         // In case of a double width character, we need to invalidate the spot one to the right of the cursor as well.
         if (IsDoubleWidth())
         {
             COORD cExtra = _cPosition;
             cExtra.X++;
-            ServiceLocator::LocateGlobals()->pRender->TriggerRedrawCursor(&cExtra);
+            ServiceLocator::LocateGlobals().pRender->TriggerRedrawCursor(&cExtra);
         }
     }
 }
@@ -358,14 +364,14 @@ void Cursor::CopyProperties(_In_ const Cursor* const pOtherCursor)
 // - <none>
 void Cursor::TimerRoutine(_In_ PSCREEN_INFORMATION const ScreenInfo)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
     if (pWindow != nullptr)
     {
         pWindow->SetWindowHasMoved(false);
-    } 
+    }
 
-    if (!IsFlagSet(gci->Flags, CONSOLE_HAS_FOCUS))
+    if (!IsFlagSet(gci.Flags, CONSOLE_HAS_FOCUS))
     {
         goto DoScroll;
     }
@@ -388,7 +394,7 @@ void Cursor::TimerRoutine(_In_ PSCREEN_INFORMATION const ScreenInfo)
             IAccessibilityNotifier::ConsoleCaretEventFlags flags = IAccessibilityNotifier::ConsoleCaretEventFlags::CaretInvisible;
 
             // Flags is expected to be 2, 1, or 0. 2 in selecting (whether or not visible), 1 if just visible, 0 if invisible/noselect.
-            if (IsFlagSet(gci->Flags, CONSOLE_SELECTING))
+            if (IsFlagSet(gci.Flags, CONSOLE_SELECTING))
             {
                 flags = IAccessibilityNotifier::ConsoleCaretEventFlags::CaretSelection;
             }
@@ -526,12 +532,12 @@ void CALLBACK CursorTimerRoutineWrapper(_In_ PVOID /* lpParam */, _In_ BOOL /* T
     // object unless there readily is contention on it. As a result, if we
     // wanted to wait until the lock became available under the condition of
     // not being destroyed, things get too complicated.
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-    if (gci->TryLockConsole() != FALSE)
+    if (gci.TryLockConsole() != FALSE)
     {
-        Cursor *cursor = gci->CurrentScreenBuffer->TextInfo->GetCursor();
-        cursor->TimerRoutine(gci->CurrentScreenBuffer);
+        Cursor *cursor = gci.CurrentScreenBuffer->TextInfo->GetCursor();
+        cursor->TimerRoutine(gci.CurrentScreenBuffer);
 
         UnlockConsole();
     }
@@ -588,4 +594,33 @@ void Cursor::KillCaretTimer()
             _hCaretBlinkTimer = INVALID_HANDLE_VALUE;
         }
     }
+}
+
+const CursorType Cursor::GetType() const
+{
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.GetCursorType();
+}
+
+const bool Cursor::IsUsingColor() const
+{
+    return GetColor() != INVALID_COLOR;
+}
+
+const COLORREF Cursor::GetColor() const
+{
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.GetCursorColor();
+}
+
+void Cursor::SetColor(_In_ const unsigned int color)
+{
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.SetCursorColor(color);
+}
+
+void Cursor::SetType(_In_ const CursorType type)
+{
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.SetCursorType(type);
 }

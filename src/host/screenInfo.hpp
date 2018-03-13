@@ -21,6 +21,7 @@ Revision History:
 #include "conapi.h"
 #include "textBuffer.hpp"
 #include "settings.hpp"
+#include "TextAttribute.hpp"
 
 #include "outputStream.hpp"
 #include "..\terminal\adapter\adaptDispatch.hpp"
@@ -127,7 +128,10 @@ public:
 #define VERTICAL_LINE       3
 #define BOTTOM_LEFT_CORNER  4
 #define BOTTOM_RIGHT_CORNER 5
+
+    // non ownership pointer
     ConversionAreaInfo* ConvScreenInfo;
+
     UINT ScrollScale;
 
     BOOL IsActiveScreenBuffer() const;
@@ -139,7 +143,11 @@ public:
     AdaptDispatch* GetAdapterDispatch() const;
     StateMachine* GetStateMachine() const;
 
-    NTSTATUS SetCursorInformation(_In_ ULONG const Size, _In_ BOOLEAN const Visible);
+    NTSTATUS SetCursorInformation(_In_ ULONG const Size,
+                                  _In_ BOOLEAN const Visible,
+                                  _In_ unsigned int const Color,
+                                  _In_ CursorType const Type);
+    
     NTSTATUS SetCursorDBMode(_In_ const BOOLEAN DoubleCursor);
     NTSTATUS SetCursorPosition(_In_ COORD const Position, _In_ BOOL const TurnOn);
 

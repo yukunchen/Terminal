@@ -24,24 +24,23 @@ Author(s):
 #include "ISystemConfigurationProvider.hpp"
 #include "IInputServices.hpp"
 
-namespace Microsoft
-{
-    namespace Console
-    {
-        namespace Interactivity
-        {
-            class IInteractivityFactory
-            {
-            public:
-                virtual NTSTATUS CreateConsoleControl(IConsoleControl** control) = 0;
-                virtual NTSTATUS CreateConsoleInputThread(IConsoleInputThread** thread) = 0;
+#include <memory>
 
-                virtual NTSTATUS CreateHighDpiApi(IHighDpiApi** api) = 0;
-                virtual NTSTATUS CreateWindowMetrics(IWindowMetrics** metrics) = 0;
-                virtual NTSTATUS CreateAccessibilityNotifier(IAccessibilityNotifier** notifier) = 0;
-                virtual NTSTATUS CreateSystemConfigurationProvider(ISystemConfigurationProvider** provider) = 0;
-                virtual NTSTATUS CreateInputServices(IInputServices** services) = 0;
-            };
-        };
+namespace Microsoft::Console::Interactivity
+{
+    class IInteractivityFactory
+    {
+    public:
+        virtual ~IInteractivityFactory() = 0;
+        virtual NTSTATUS CreateConsoleControl(_Inout_ std::unique_ptr<IConsoleControl>& control) = 0;
+        virtual NTSTATUS CreateConsoleInputThread(_Inout_ std::unique_ptr<IConsoleInputThread>& thread) = 0;
+
+        virtual NTSTATUS CreateHighDpiApi(_Inout_ std::unique_ptr<IHighDpiApi>& api) = 0;
+        virtual NTSTATUS CreateWindowMetrics(_Inout_ std::unique_ptr<IWindowMetrics>& metrics) = 0;
+        virtual NTSTATUS CreateAccessibilityNotifier(_Inout_ std::unique_ptr<IAccessibilityNotifier>& notifier) = 0;
+        virtual NTSTATUS CreateSystemConfigurationProvider(_Inout_ std::unique_ptr<ISystemConfigurationProvider>& provider) = 0;
+        virtual NTSTATUS CreateInputServices(_Inout_ std::unique_ptr<IInputServices>& services) = 0;
     };
-};
+
+    inline IInteractivityFactory::~IInteractivityFactory() {}
+}

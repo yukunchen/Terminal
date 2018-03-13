@@ -16,8 +16,8 @@
 // - True if the console is in a selecting state. False otherwise.
 bool Selection::IsInSelectingState() const
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    return (gci->Flags & CONSOLE_SELECTING) != 0;
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return (gci.Flags & CONSOLE_SELECTING) != 0;
 }
 
 // Routine Description:
@@ -28,14 +28,14 @@ bool Selection::IsInSelectingState() const
 // - <none>
 void Selection::_SetSelectingState(_In_ const bool fSelectingOn)
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (fSelectingOn)
     {
-        gci->Flags |= CONSOLE_SELECTING;
+        gci.Flags |= CONSOLE_SELECTING;
     }
     else
     {
-        gci->Flags &= ~CONSOLE_SELECTING;
+        gci.Flags &= ~CONSOLE_SELECTING;
     }
 }
 
@@ -48,8 +48,8 @@ void Selection::_SetSelectingState(_In_ const bool fSelectingOn)
 // - True if quick edit mode is enabled. False otherwise.
 bool Selection::IsInQuickEditMode() const
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    return (gci->Flags & CONSOLE_QUICK_EDIT_MODE) != 0;
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return (gci.Flags & CONSOLE_QUICK_EDIT_MODE) != 0;
 }
 
 // Routine Description:
@@ -190,7 +190,8 @@ void Selection::_SaveCursorData(_In_ const TEXT_BUFFER_INFO* const pTextInfo)
 // - <none>
 void Selection::_RestoreCursorData(_In_ SCREEN_INFORMATION* const pScreenInfo)
 {
-    pScreenInfo->SetCursorInformation(_ulSavedCursorSize, _fSavedCursorVisible);
+    Cursor* pCursor = ServiceLocator::LocateGlobals().getConsoleInformation().CurrentScreenBuffer->TextInfo->GetCursor();
+    pScreenInfo->SetCursorInformation(_ulSavedCursorSize, _fSavedCursorVisible, pCursor->GetColor(), pCursor->GetType());
     pScreenInfo->SetCursorPosition(_coordSavedCursorPosition, TRUE /* TurnOn */);
 }
 

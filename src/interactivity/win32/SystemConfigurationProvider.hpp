@@ -17,31 +17,24 @@ Author(s):
 
 #include "..\inc\ISystemConfigurationProvider.hpp"
 
-namespace Microsoft
+namespace Microsoft::Console::Interactivity::Win32
 {
-    namespace Console
+    class SystemConfigurationProvider final : public ISystemConfigurationProvider
     {
-        namespace Interactivity
-        {
-            namespace Win32
-            {
-                class SystemConfigurationProvider sealed : public ISystemConfigurationProvider
-                {
-                public:
-                    bool IsCaretBlinkingEnabled();
+    public:
+        ~SystemConfigurationProvider() = default;
 
-                    UINT GetCaretBlinkTime();
-                    int GetNumberOfMouseButtons();
-                    ULONG GetNumberOfWheelScrollLines();
-                    ULONG GetNumberOfWheelScrollCharacters();
+        bool IsCaretBlinkingEnabled();
 
-                    void GetSettingsFromLink(_Inout_ Settings* pLinkSettings,
-                        _Inout_updates_bytes_(*pdwTitleLength) LPWSTR pwszTitle,
-                        _Inout_ PDWORD pdwTitleLength,
-                        _In_ PCWSTR pwszCurrDir,
-                        _In_ PCWSTR pwszAppName);
-                };
-            };
-        };
+        UINT GetCaretBlinkTime();
+        int GetNumberOfMouseButtons();
+        ULONG GetNumberOfWheelScrollLines();
+        ULONG GetNumberOfWheelScrollCharacters();
+
+        void GetSettingsFromLink(_Inout_ Settings* pLinkSettings,
+            _Inout_updates_bytes_(*pdwTitleLength) LPWSTR pwszTitle,
+            _Inout_ PDWORD pdwTitleLength,
+            _In_ PCWSTR pwszCurrDir,
+            _In_ PCWSTR pwszAppName);
     };
-};
+}

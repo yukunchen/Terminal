@@ -392,8 +392,7 @@ static void genBatch(bool forward, bool useJob, bool useGapProcess, int allocChu
     handles.push_back(pipe.wh);
     handles.push_back(job);
 
-    auto genVictim = [&](int n, int n2) {
-        UNREFERENCED_PARAMETER(n2);
+    auto genVictim = [&](int n, int /*n2*/) {
         genChild(n, L"", allocChunk, out);
         if (useJob) {
             out.push_back(kChildCommand_Job);
@@ -512,7 +511,7 @@ static int doChild(std::deque<std::wstring> argv) {
         const auto childKeyword = shift(argv);
         assert(childKeyword == kChildDivider);
     }
-    
+
     g_childNum = shiftInt(argv);
     const auto desc = shift(argv);
     const size_t allocChunk = shiftInt(argv) * 1024;

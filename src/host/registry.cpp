@@ -39,7 +39,7 @@ Registry::~Registry()
 // - <none>
 void Registry::GetEditKeys(_In_opt_ HKEY hConsoleKey) const
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     NTSTATUS Status;
     HKEY hCurrentUserKey = nullptr;
     if (hConsoleKey == nullptr)
@@ -61,13 +61,13 @@ void Registry::GetEditKeys(_In_opt_ HKEY hConsoleKey) const
                                                  nullptr);
     if (NT_SUCCESS(Status) && dwValue <= 1)
     {
-        gci->SetAltF4CloseAllowed(!!dwValue);
+        gci.SetAltF4CloseAllowed(!!dwValue);
     }
 
     // provide extended word delimiters by default.
     std::copy(std::begin(aWordDelimCharsDefault),
               std::end(aWordDelimCharsDefault),
-              ServiceLocator::LocateGlobals()->aWordDelimChars);
+              ServiceLocator::LocateGlobals().aWordDelimChars);
 
     // Read word delimiters from registry
     WCHAR awchBuffer[64];
@@ -81,8 +81,8 @@ void Registry::GetEditKeys(_In_opt_ HKEY hConsoleKey) const
     {
         // OK, copy it to the word delimiter array.
         #pragma prefast(suppress:26035, "RegistrySerialization::s_QueryValue will properly terminate strings.")
-        StringCchCopyW(ServiceLocator::LocateGlobals()->aWordDelimChars, WORD_DELIM_MAX, awchBuffer);
-        ServiceLocator::LocateGlobals()->aWordDelimChars[WORD_DELIM_MAX - 1] = 0;
+        StringCchCopyW(ServiceLocator::LocateGlobals().aWordDelimChars, WORD_DELIM_MAX, awchBuffer);
+        ServiceLocator::LocateGlobals().aWordDelimChars[WORD_DELIM_MAX - 1] = 0;
     }
 
     if (hCurrentUserKey)
@@ -252,9 +252,9 @@ void Registry::LoadFromRegistry(_In_ PCWSTR const pwszConsoleTitle)
         // Content of user defined property has responsibility to themselves.
         if (wcscmp(pwszConsoleTitle, L"") == 0 &&
             IsAvailableEastAsianCodePage(_pSettings->GetCodePage()) &&
-            ServiceLocator::LocateGlobals()->uiOEMCP != _pSettings->GetCodePage())
+            ServiceLocator::LocateGlobals().uiOEMCP != _pSettings->GetCodePage())
         {
-            _pSettings->SetCodePage(ServiceLocator::LocateGlobals()->uiOEMCP);
+            _pSettings->SetCodePage(ServiceLocator::LocateGlobals().uiOEMCP);
         }
     }
 

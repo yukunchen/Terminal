@@ -16,34 +16,32 @@ Author(s):
 
 class Settings;
 
-namespace Microsoft
+namespace Microsoft::Console::Interactivity
 {
-    namespace Console
+    class ISystemConfigurationProvider
     {
-        namespace Interactivity
-        {
-            class ISystemConfigurationProvider
-            {
-            public:
-                virtual bool IsCaretBlinkingEnabled() = 0;
+    public:
+        virtual ~ISystemConfigurationProvider() = 0;
 
-                virtual UINT GetCaretBlinkTime() = 0;
-                virtual int GetNumberOfMouseButtons() = 0;
-                virtual ULONG GetNumberOfWheelScrollLines() = 0;
-                virtual ULONG GetNumberOfWheelScrollCharacters() = 0;
+        virtual bool IsCaretBlinkingEnabled() = 0;
 
-                virtual void GetSettingsFromLink(_Inout_ Settings* pLinkSettings,
-                                                 _Inout_updates_bytes_(*pdwTitleLength) LPWSTR pwszTitle,
-                                                 _Inout_ PDWORD pdwTitleLength,
-                                                 _In_ PCWSTR pwszCurrDir,
-                                                 _In_ PCWSTR pwszAppName) = 0;
+        virtual UINT GetCaretBlinkTime() = 0;
+        virtual int GetNumberOfMouseButtons() = 0;
+        virtual ULONG GetNumberOfWheelScrollLines() = 0;
+        virtual ULONG GetNumberOfWheelScrollCharacters() = 0;
 
-            protected:
-                ISystemConfigurationProvider() { };
+        virtual void GetSettingsFromLink(_Inout_ Settings* pLinkSettings,
+                                            _Inout_updates_bytes_(*pdwTitleLength) LPWSTR pwszTitle,
+                                            _Inout_ PDWORD pdwTitleLength,
+                                            _In_ PCWSTR pwszCurrDir,
+                                            _In_ PCWSTR pwszAppName) = 0;
 
-                ISystemConfigurationProvider(ISystemConfigurationProvider const&) = delete;
-                ISystemConfigurationProvider& operator=(ISystemConfigurationProvider const&) = delete;
-            };
-        };
+    protected:
+        ISystemConfigurationProvider() { };
+
+        ISystemConfigurationProvider(ISystemConfigurationProvider const&) = delete;
+        ISystemConfigurationProvider& operator=(ISystemConfigurationProvider const&) = delete;
     };
-};
+
+    inline ISystemConfigurationProvider::~ISystemConfigurationProvider() {}
+}

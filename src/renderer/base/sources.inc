@@ -1,3 +1,5 @@
+!include ..\..\..\project.inc
+
 # -------------------------------------
 # Windows Console
 # - Console Renderer Base
@@ -7,31 +9,6 @@
 # It will fetch data from the main console host server and prepare it
 # in a rendering-engine-agnostic fashion so the console code
 # can interface with displays on varying platforms.
-
-# -------------------------------------
-# CRT Configuration
-# -------------------------------------
-
-USE_UNICRT              = 1
-USE_MSVCRT              = 1
-
-USE_STL                 = 1
-STL_VER                 = STL_VER_CURRENT
-USE_NATIVE_EH           = 1
-
-# -------------------------------------
-# Preprocessor Settings
-# -------------------------------------
-
-UNICODE                 = 1
-C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE
-
-# -------------------------------------
-# Compiler Settings
-# -------------------------------------
-
-MSC_WARNING_LEVEL       = /W4 /WX
-
 
 # -------------------------------------
 # Build System Settings

@@ -67,14 +67,16 @@ Revision History:
 
 class COOKED_READ_DATA;
 
-class CONSOLE_INFORMATION : 
-    public Settings, 
-    public Microsoft::Console::IIoProvider, 
+class CONSOLE_INFORMATION :
+    public Settings,
+    public Microsoft::Console::IIoProvider,
     public Microsoft::Console::IDefaultColorProvider
 {
 public:
     CONSOLE_INFORMATION();
-    virtual ~CONSOLE_INFORMATION();
+    ~CONSOLE_INFORMATION();
+    CONSOLE_INFORMATION(const CONSOLE_INFORMATION& c) = delete;
+    CONSOLE_INFORMATION& operator=(const CONSOLE_INFORMATION& c) = delete;
 
     ConsoleProcessList ProcessHandleList;
     InputBuffer* pInputBuffer;
@@ -117,7 +119,7 @@ public:
     ULONG GetCSRecursionCount();
 
     Microsoft::Console::VirtualTerminal::VtIo* GetVtIo();
-    
+
     static void HandleTerminalKeyEventCallback(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events);
 
     SCREEN_INFORMATION* const GetActiveOutputBuffer() const;
@@ -127,10 +129,10 @@ public:
 
     COLORREF GetDefaultForeground() const;
     COLORREF GetDefaultBackground() const;
-    
+
 private:
     CRITICAL_SECTION _csConsoleLock;   // serialize input and output using this
-    
+
     Microsoft::Console::VirtualTerminal::VtIo _vtIo;
 };
 

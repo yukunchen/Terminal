@@ -14,24 +14,21 @@ Author(s):
 
 #pragma once
 
-namespace Microsoft
+namespace Microsoft::Console::Interactivity
 {
-    namespace Console
+    class IWindowMetrics
     {
-        namespace Interactivity
-        {
-            class IWindowMetrics
-            {
-            public:
-                virtual RECT GetMinClientRectInPixels() = 0;
-                virtual RECT GetMaxClientRectInPixels() = 0;
+    public:
+        virtual ~IWindowMetrics() = 0;
+        virtual RECT GetMinClientRectInPixels() = 0;
+        virtual RECT GetMaxClientRectInPixels() = 0;
 
-            protected:
-                IWindowMetrics() { }
+    protected:
+        IWindowMetrics() { }
 
-                IWindowMetrics(IWindowMetrics const&) = delete;
-                IWindowMetrics& operator=(IWindowMetrics const&) = delete;
-            };
-        };
+        IWindowMetrics(IWindowMetrics const&) = delete;
+        IWindowMetrics& operator=(IWindowMetrics const&) = delete;
     };
-};
+
+    inline IWindowMetrics::~IWindowMetrics() {}
+}

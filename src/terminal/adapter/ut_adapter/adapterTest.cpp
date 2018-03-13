@@ -343,7 +343,7 @@ public:
 
         return _fWriteConsoleInputWResult;
     }
-    
+
     virtual BOOL PrivatePrependConsoleInput(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
                                             _Out_ size_t& eventsWritten)
     {
@@ -620,6 +620,26 @@ public:
         return TRUE;
     }
 
+    virtual BOOL SetCursorStyle(_In_ CursorType const cursorType)
+    {
+        Log::Comment(L"SetCursorStyle MOCK called...");
+        if (_fSetCursorStyleResult)
+        {
+            VERIFY_ARE_EQUAL(_ExpectedCursorStyle, cursorType);
+        }
+        return _fSetCursorStyleResult;
+    }
+
+    virtual BOOL SetCursorColor(_In_ COLORREF const cursorColor)
+    {
+        Log::Comment(L"SetCursorColor MOCK called...");
+        if (_fSetCursorColorResult)
+        {
+            VERIFY_ARE_EQUAL(_ExpectedCursorColor, cursorColor);
+        }
+        return _fSetCursorColorResult;
+    }
+
     virtual BOOL PrivateGetConsoleScreenBufferAttributes(_Out_ WORD* const pwAttributes)
     {
         Log::Comment(L"PrivateGetConsoleScreenBufferAttributes MOCK returning data...");
@@ -631,7 +651,7 @@ public:
 
         return _fPrivateGetConsoleScreenBufferAttributesResult;
     }
-    
+
     virtual BOOL PrivateRefreshWindow()
     {
         Log::Comment(L"PrivateRefreshWindow MOCK called...");
@@ -1231,6 +1251,10 @@ public:
     BOOL _fSetConsoleRGBTextAttributeResult;
     BOOL _fPrivateSetLegacyAttributesResult;
     BOOL _fPrivateGetConsoleScreenBufferAttributesResult;
+    BOOL _fSetCursorStyleResult;
+    CursorType _ExpectedCursorStyle;
+    BOOL _fSetCursorColorResult;
+    COLORREF _ExpectedCursorColor;
     BOOL _fGetConsoleOutputCPResult;
 
 private:
@@ -1272,20 +1296,16 @@ public:
         return true;
     }
 
-    void Print(_In_ wchar_t const wch)
+    void Print(_In_ wchar_t const /*wch*/)
     {
-        UNREFERENCED_PARAMETER(wch);
     }
 
-    void PrintString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch)
+    void PrintString(_In_reads_(_Param_(2)) wchar_t* const /*rgwch*/, _In_ size_t const /*cch*/)
     {
-        UNREFERENCED_PARAMETER(rgwch);
-        UNREFERENCED_PARAMETER(cch);
     }
 
-    void Execute(_In_ wchar_t const wch)
+    void Execute(_In_ wchar_t const /*wch*/)
     {
-        UNREFERENCED_PARAMETER(wch);
     }
 
     TEST_METHOD(CursorMovementTest)

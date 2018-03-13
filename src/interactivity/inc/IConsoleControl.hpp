@@ -14,25 +14,22 @@ Author(s):
 
 #pragma once
 
-namespace Microsoft
+namespace Microsoft::Console::Interactivity
 {
-    namespace Console
+    class IConsoleControl
     {
-        namespace Interactivity
-        {
-            class IConsoleControl
-            {
-            public:
-                virtual NTSTATUS NotifyConsoleApplication(DWORD dwProcessId) = 0;
-                virtual NTSTATUS SetForeground(HANDLE hProcess, BOOL fForeground) = 0;
-                virtual NTSTATUS EndTask(HANDLE hProcessId, DWORD dwEventType, ULONG ulCtrlFlags) = 0;
+    public:
+        virtual ~IConsoleControl() = 0;
+        virtual NTSTATUS NotifyConsoleApplication(DWORD dwProcessId) = 0;
+        virtual NTSTATUS SetForeground(HANDLE hProcess, BOOL fForeground) = 0;
+        virtual NTSTATUS EndTask(HANDLE hProcessId, DWORD dwEventType, ULONG ulCtrlFlags) = 0;
 
-            protected:
-                IConsoleControl() { }
+    protected:
+        IConsoleControl() { }
 
-                IConsoleControl(IConsoleControl const&) = delete;
-                IConsoleControl& operator=(IConsoleControl const &) = delete;
-            };
-        };
+        IConsoleControl(IConsoleControl const&) = delete;
+        IConsoleControl& operator=(IConsoleControl const &) = delete;
     };
-};
+
+    inline IConsoleControl::~IConsoleControl() {}
+}

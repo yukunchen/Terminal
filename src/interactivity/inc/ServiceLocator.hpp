@@ -18,90 +18,89 @@ Author(s):
 #include "IConsoleWindow.hpp"
 #include "../../host/globals.h"
 
+#include <memory>
+
 #pragma hdrstop
 
-namespace Microsoft
+namespace Microsoft::Console::Interactivity
 {
-    namespace Console
+    class ServiceLocator final
     {
-        namespace Interactivity
+    public:
+
+        static void RundownAndExit(_In_ HRESULT const hr);
+
+        // N.B.: Location methods without corresponding creation methods
+        //       automatically create the singleton object on demand.
+        //       In case the on-demand creation fails, the return value
+        //       is nullptr and a message is logged.
+
+
+        static IAccessibilityNotifier *LocateAccessibilityNotifier();
+
+        static IConsoleControl *LocateConsoleControl();
+        template <typename T> static T *LocateConsoleControl()
         {
-            class ServiceLocator
-            {
-            public:
+            return static_cast<T*>(LocateConsoleControl());
+        }
 
-                static void RundownAndExit(_In_ HRESULT const hr);
+        static NTSTATUS CreateConsoleInputThread(_Outptr_result_nullonfailure_ IConsoleInputThread** thread);
+        static IConsoleInputThread *LocateConsoleInputThread();
+        template <typename T> static T *LocateConsoleInputThread()
+        {
+            return static_cast<T*>(LocateConsoleInputThread());
+        }
 
-                // N.B.: Location methods without corresponding creation methods
-                //       automatically create the singleton object on demand.
-                //       In case the on-demand creation fails, the return value
-                //       is nullptr and a message is logged.
+        static NTSTATUS SetConsoleWindowInstance(_In_ IConsoleWindow *window);
+        static IConsoleWindow *LocateConsoleWindow();
+        template <typename T> static T *LocateConsoleWindow()
+        {
+            return static_cast<T*>(s_consoleWindow);
+        }
 
+        static IWindowMetrics *LocateWindowMetrics();
+        template <typename T> static T *LocateWindowMetrics()
+        {
+            return static_cast<T*>(LocateWindowMetrics());
+        }
 
-                static IAccessibilityNotifier *LocateAccessibilityNotifier();
+        static IHighDpiApi *LocateHighDpiApi();
+        template <typename T> static T *LocateHighDpiApi()
+        {
+            return static_cast<T*>(LocateHighDpiApi());
+        }
 
-                static IConsoleControl *LocateConsoleControl();
-                template <typename T> static T *LocateConsoleControl()
-                {
-                    return static_cast<T*>(LocateConsoleControl());
-                }
+        static IInputServices *LocateInputServices();
+        template <typename T> static T *LocateInputServices()
+        {
+            return static_cast<T*>(LocateInputServices());
+        }
 
-                static NTSTATUS CreateConsoleInputThread(_Outptr_result_nullonfailure_ IConsoleInputThread** thread);
-                static IConsoleInputThread *LocateConsoleInputThread();
-                template <typename T> static T *LocateConsoleInputThread()
-                {
-                    return static_cast<T*>(LocateConsoleInputThread());
-                }
+        static ISystemConfigurationProvider *LocateSystemConfigurationProvider();
 
-                static NTSTATUS SetConsoleWindowInstance(_In_ IConsoleWindow *window);
-                static IConsoleWindow *LocateConsoleWindow();
-                template <typename T> static T *LocateConsoleWindow()
-                {
-                    return static_cast<T*>(s_consoleWindow);
-                }
+        static Globals& LocateGlobals();
 
-                static IWindowMetrics *LocateWindowMetrics();
-                template <typename T> static T *LocateWindowMetrics()
-                {
-                    return static_cast<T*>(LocateWindowMetrics());
-                }
+    protected:
+        ServiceLocator(ServiceLocator const&) = delete;
+        ServiceLocator& operator=(ServiceLocator const&) = delete;
 
-                static IHighDpiApi *LocateHighDpiApi();
-                template <typename T> static T *LocateHighDpiApi()
-                {
-                    return static_cast<T*>(LocateHighDpiApi());
-                }
+    private:
+        static NTSTATUS LoadInteractivityFactory();
 
-                static IInputServices *LocateInputServices();
-                template <typename T> static T *LocateInputServices()
-                {
-                    return static_cast<T*>(LocateInputServices());
-                }
+        static std::unique_ptr<IInteractivityFactory> s_interactivityFactory;
 
-                static ISystemConfigurationProvider *LocateSystemConfigurationProvider();
+        static std::unique_ptr<IAccessibilityNotifier> s_accessibilityNotifier;
+        static std::unique_ptr<IConsoleControl> s_consoleControl;
+        static std::unique_ptr<IConsoleInputThread> s_consoleInputThread;
+        // TODO: MSFT 15344939 - some implementations of IConsoleWindow are currently singleton
+        // classes so we can't own a pointer to them here. fix this so s_consoleWindow can follow the
+        // pattern of the rest of the service interface pointers.
+        static IConsoleWindow* s_consoleWindow;
+        static std::unique_ptr<IWindowMetrics> s_windowMetrics;
+        static std::unique_ptr<IHighDpiApi> s_highDpiApi;
+        static std::unique_ptr<ISystemConfigurationProvider> s_systemConfigurationProvider;
+        static std::unique_ptr<IInputServices> s_inputServices;
 
-                static Globals *LocateGlobals();
-
-            protected:
-                ServiceLocator(ServiceLocator const&) = delete;
-                ServiceLocator& operator=(ServiceLocator const&) = delete;
-
-            private:
-                static NTSTATUS LocateInteractivityFactory(_Outptr_result_nullonfailure_ IInteractivityFactory** factory);
-
-                static IInteractivityFactory *s_interactivityFactory;
-
-                static IAccessibilityNotifier *s_accessibilityNotifier;
-                static IConsoleControl *s_consoleControl;
-                static IConsoleInputThread *s_consoleInputThread;
-                static IConsoleWindow *s_consoleWindow;
-                static IWindowMetrics *s_windowMetrics;
-                static IHighDpiApi *s_highDpiApi;
-                static IInputServices *s_inputServices;
-                static ISystemConfigurationProvider *s_systemConfigurationProvider;
-
-                static Globals *s_globals;
-            };
-        };
+        static Globals s_globals;
     };
-};
+}

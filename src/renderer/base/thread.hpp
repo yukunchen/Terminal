@@ -15,42 +15,36 @@ Author(s):
 
 #include "..\inc\IRenderer.hpp"
 
-namespace Microsoft
+namespace Microsoft::Console::Render
 {
-    namespace Console
+    class RenderThread sealed
     {
-        namespace Render
-        {
-            class RenderThread sealed 
-            {
-            public:
-                static HRESULT s_CreateInstance(_In_ IRenderer* const pRendererParent, _Outptr_ RenderThread** const ppRenderThread);
+    public:
+        static HRESULT s_CreateInstance(_In_ IRenderer* const pRendererParent, _Outptr_ RenderThread** const ppRenderThread);
 
-                void NotifyPaint() const;
+        void NotifyPaint() const;
 
-                void EnablePainting();
-                void WaitForPaintCompletionAndDisable(DWORD dwTimeoutMs);
+        void EnablePainting();
+        void WaitForPaintCompletionAndDisable(DWORD dwTimeoutMs);
 
-                ~RenderThread();
+        ~RenderThread();
 
-            private:
-                static DWORD WINAPI s_ThreadProc(_In_ LPVOID lpParameter);
-                DWORD WINAPI _ThreadProc();
+    private:
+        static DWORD WINAPI s_ThreadProc(_In_ LPVOID lpParameter);
+        DWORD WINAPI _ThreadProc();
 
-                static DWORD const s_FrameLimitMilliseconds = 8;
+        static DWORD const s_FrameLimitMilliseconds = 8;
 
-                RenderThread(_In_ IRenderer* const pRenderer);
+        RenderThread(_In_ IRenderer* const pRenderer);
 
-                HANDLE _hThread;
-                HANDLE _hEvent;
+        HANDLE _hThread;
+        HANDLE _hEvent;
 
-                HANDLE _hPaintEnabledEvent;
-                HANDLE _hPaintCompletedEvent;
+        HANDLE _hPaintEnabledEvent;
+        HANDLE _hPaintCompletedEvent;
 
-                IRenderer* const _pRenderer;
+        IRenderer* const _pRenderer;
 
-                bool _fKeepRunning;
-            };
-        };
+        bool _fKeepRunning;
     };
-};
+}

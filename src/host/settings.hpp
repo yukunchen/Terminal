@@ -17,13 +17,16 @@ Revision History:
 --*/
 #pragma once
 
+#include "TextAttribute.hpp"
+
 // To prevent invisible windows, set a lower threshold on window alpha channel.
 #define MIN_WINDOW_OPACITY 0x4D // 0x4D is approximately 30% visible/opaque (70% transparent). Valid range is 0x00-0xff.
 #define COLOR_TABLE_SIZE (16)
 #define XTERM_COLOR_TABLE_SIZE (256)
-#include "ConsoleArguments.hpp"
 
-class TextAttribute;
+#include "ConsoleArguments.hpp"
+#include "TextAttribute.hpp"
+#include "../inc/conattrs.hpp"
 
 class Settings
 {
@@ -159,6 +162,11 @@ public:
     void SetColorTableEntry(_In_ size_t const index, _In_ COLORREF const ColorValue);
     COLORREF GetColorTableEntry(_In_ size_t const index) const;
 
+    COLORREF GetCursorColor() const noexcept;
+    CursorType GetCursorType() const noexcept;
+
+    void SetCursorColor(_In_ const COLORREF CursorColor) noexcept;
+    void SetCursorType(_In_ const CursorType cursorType) noexcept;
 
 private:
     DWORD _dwHotKey;
@@ -211,9 +219,11 @@ private:
     bool _fUseWindowSizePixels;
     COORD _dwWindowSizePixels;
 
+    // Technically a COLORREF, but using INVALID_COLOR as "Invert Colors"
+    unsigned int _CursorColor;
+    CursorType _CursorType;
+
     friend class RegistrySerialization;
-
-
 
 public:
 

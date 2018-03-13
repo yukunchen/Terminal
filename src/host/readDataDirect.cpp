@@ -81,8 +81,8 @@ BOOL DirectReadData::Notify(_In_ WaitTerminationReason const TerminationReason,
     ASSERT(_pInputReadHandleData->GetReadCount() > 0);
     _pInputReadHandleData->UnlockReadCount();
 
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    assert(gci->IsConsoleLocked());
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    assert(gci.IsConsoleLocked());
 #endif
 
     *pReplyStatus = STATUS_SUCCESS;

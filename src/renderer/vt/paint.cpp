@@ -126,9 +126,13 @@ HRESULT VtEngine::PaintBufferGridLines(_In_ GridLines const /*lines*/,
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
 HRESULT VtEngine::PaintCursor(_In_ COORD const coordCursor,
-                              _In_ ULONG const /*ulHeightPercent*/,
-                              _In_ bool const /*fIsDoubleWidth*/)
+                              _In_ ULONG const /*ulCursorHeightPercent*/,
+                              _In_ bool const /*fIsDoubleWidth*/,
+                              _In_ CursorType const /*cursorType*/,
+                              _In_ bool const /*fUseColor*/,
+                              _In_ COLORREF const /*cursorColor*/)
 {
+    // MSFT:15933349 - Send the terminal the updated cursor information, if it's changed.
     _MoveCursor(coordCursor);
 
     return S_OK;

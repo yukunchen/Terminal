@@ -1,35 +1,19 @@
+!include ..\..\..\project.inc
+
 # -------------------------------------
-# Windows Console 
+# Windows Console
 # - Console Interactivity for OneCore
 # -------------------------------------
 
-# This module defines interaction with the user on 
+# This module defines interaction with the user on
 # system configurations with minimal input/output support
-
-# -------------------------------------
-# CRT Configuration
-# -------------------------------------
-
-USE_UNICRT              = 1
-USE_MSVCRT              = 1
-
-USE_STL                 = 1
-STL_VER                 = STL_VER_CURRENT
-USE_NATIVE_EH           = 1
-
-# -------------------------------------
-# Preprocessor Settings
-# -------------------------------------
-
-UNICODE                 = 1
-C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE
 
 # -------------------------------------
 # Compiler Settings
 # -------------------------------------
 
 # Warning 4201: nonstandard extension used: nameless struct/union
-MSC_WARNING_LEVEL       = /W4 /WX /wd4201
+MSC_WARNING_LEVEL       = $(MSC_WARNING_LEVEL) /wd4201
 
 # -------------------------------------
 # Build System Settings

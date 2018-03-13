@@ -130,7 +130,7 @@ bool VtRendererTest::WriteCallback(const char* const pch, size_t const cch)
     std::string first = qExpectedInput.front();
     qExpectedInput.pop_front();
 
-    std::string actualString = std::string(pch);
+    std::string actualString = std::string(pch, cch);
 
     Log::Comment(NoThrowString().Format(L"Expected =\t\"%hs\"", first.c_str()));
     Log::Comment(NoThrowString().Format(L"Actual =\t\"%hs\"", actualString.c_str()));

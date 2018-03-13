@@ -13,23 +13,16 @@ Author(s):
 
 #include "..\inc\IInputServices.hpp"
 
-namespace Microsoft
+namespace Microsoft::Console::Interactivity::Win32
 {
-    namespace Console
+    class InputServices final : public IInputServices
     {
-        namespace Interactivity
-        {
-            namespace Win32
-            {
-                class InputServices : public IInputServices
-                {
-                    // Inherited via IInputServices
-                    UINT MapVirtualKeyW(UINT uCode, UINT uMapType);
-                    SHORT VkKeyScanW(WCHAR ch);
-                    SHORT GetKeyState(int nVirtKey);
-                    BOOL TranslateCharsetInfo(DWORD * lpSrc, LPCHARSETINFO lpCs, DWORD dwFlags);
-                };
-            };
-        };
+    public:
+        // Inherited via IInputServices
+        ~InputServices() = default;
+        UINT MapVirtualKeyW(UINT uCode, UINT uMapType);
+        SHORT VkKeyScanW(WCHAR ch);
+        SHORT GetKeyState(int nVirtKey);
+        BOOL TranslateCharsetInfo(DWORD * lpSrc, LPCHARSETINFO lpCs, DWORD dwFlags);
     };
-};
+}

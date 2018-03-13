@@ -155,7 +155,7 @@ int CALLBACK wWinMain(
     _In_ int /*nCmdShow*/)
 {
     EnsureHeap();
-    ServiceLocator::LocateGlobals()->hInstance = hInstance;
+    ServiceLocator::LocateGlobals().hInstance = hInstance;
 
     ConsoleCheckDebug();
 

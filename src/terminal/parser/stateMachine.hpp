@@ -21,133 +21,125 @@ Author(s):
 #include "tracing.hpp"
 #include <memory>
 
-namespace Microsoft
+namespace Microsoft::Console::VirtualTerminal
 {
-    namespace Console
+    class StateMachine sealed
     {
-        namespace VirtualTerminal
-        {
-            class StateMachine sealed
-            {
 #ifdef UNIT_TESTING
-                friend class OutputEngineTest;
-                friend class InputEngineTest;
+        friend class OutputEngineTest;
+        friend class InputEngineTest;
 #endif
 
-            public:
-                StateMachine(_In_ std::unique_ptr<IStateMachineEngine> pEngine);
+    public:
+        StateMachine(_In_ std::unique_ptr<IStateMachineEngine> pEngine);
 
-                void ProcessCharacter(_In_ wchar_t const wch);
-                void ProcessString(_Inout_updates_(cch) wchar_t* const rgwch, _In_ size_t const cch);
-                // Note: There is intentionally not a ProcessString that operates 
-                //      on a wstring. This is because the in buffer needs to be mutable
-                //      and c_str() only gives you const data.
+        void ProcessCharacter(_In_ wchar_t const wch);
+        void ProcessString(_Inout_updates_(cch) wchar_t* const rgwch, _In_ size_t const cch);
+        // Note: There is intentionally not a ProcessString that operates
+        //      on a wstring. This is because the in buffer needs to be mutable
+        //      and c_str() only gives you const data.
 
-                void ResetState();
+        void ResetState();
 
-                static const short s_cIntermediateMax = 1;
-                static const short s_cParamsMax = 16;
-                static const short s_cOscStringMaxLength = 256;
-                
-            private:
-                static bool s_IsActionableFromGround(_In_ wchar_t const wch);
-                static bool s_IsC0Code(_In_ wchar_t const wch);
-                static bool s_IsC1Csi(_In_ wchar_t const wch);
-                static bool s_IsIntermediate(_In_ wchar_t const wch);
-                static bool s_IsDelete(_In_ wchar_t const wch);
-                static bool s_IsEscape(_In_ wchar_t const wch);
-                static bool s_IsCsiIndicator(_In_ wchar_t const wch);
-                static bool s_IsCsiDelimiter(_In_ wchar_t const wch);
-                static bool s_IsCsiParamValue(_In_ wchar_t const wch);
-                static bool s_IsCsiPrivateMarker(_In_ wchar_t const wch);
-                static bool s_IsCsiInvalid(_In_ wchar_t const wch);
-                static bool s_IsOscIndicator(_In_ wchar_t const wch);
-                static bool s_IsOscDelimiter(_In_ wchar_t const wch);
-                static bool s_IsOscParamValue(_In_ wchar_t const wch);
-                static bool s_IsOscInvalid(_In_ wchar_t const wch);
-                static bool s_IsOscTerminator(_In_ wchar_t const wch);
-                static bool s_IsOscTerminationInitiator(_In_ wchar_t const wch);
-                static bool s_IsDesignateCharsetIndicator(_In_ wchar_t const wch);
-                static bool s_IsCharsetCode(_In_ wchar_t const wch);
-                static bool s_IsNumber(_In_ wchar_t const wch);
-                static bool s_IsSs3Indicator(_In_ wchar_t const wch);
+        static const short s_cIntermediateMax = 1;
+        static const short s_cParamsMax = 16;
+        static const short s_cOscStringMaxLength = 256;
 
-                void _ActionExecute(_In_ wchar_t const wch);
-                void _ActionPrint(_In_ wchar_t const wch);
-                void _ActionEscDispatch(_In_ wchar_t const wch);
-                void _ActionCollect(_In_ wchar_t const wch);
-                void _ActionParam(_In_ wchar_t const wch);
-                void _ActionCsiDispatch(_In_ wchar_t const wch);
-                void _ActionOscParam(_In_ wchar_t const wch);
-                void _ActionOscPut(_In_ wchar_t const wch);
-                void _ActionOscDispatch(_In_ wchar_t const wch);
-                bool _IntermediateQuestionMarkDispatch(_In_ wchar_t const wchAction);
-                bool _IntermediateExclamationDispatch(_In_ wchar_t const wchAction);
-                void _ActionSs3Dispatch(_In_ wchar_t const wch);
+    private:
+        static bool s_IsActionableFromGround(_In_ wchar_t const wch);
+        static bool s_IsC0Code(_In_ wchar_t const wch);
+        static bool s_IsC1Csi(_In_ wchar_t const wch);
+        static bool s_IsIntermediate(_In_ wchar_t const wch);
+        static bool s_IsDelete(_In_ wchar_t const wch);
+        static bool s_IsEscape(_In_ wchar_t const wch);
+        static bool s_IsCsiIndicator(_In_ wchar_t const wch);
+        static bool s_IsCsiDelimiter(_In_ wchar_t const wch);
+        static bool s_IsCsiParamValue(_In_ wchar_t const wch);
+        static bool s_IsCsiPrivateMarker(_In_ wchar_t const wch);
+        static bool s_IsCsiInvalid(_In_ wchar_t const wch);
+        static bool s_IsOscIndicator(_In_ wchar_t const wch);
+        static bool s_IsOscDelimiter(_In_ wchar_t const wch);
+        static bool s_IsOscParamValue(_In_ wchar_t const wch);
+        static bool s_IsOscInvalid(_In_ wchar_t const wch);
+        static bool s_IsOscTerminator(_In_ wchar_t const wch);
+        static bool s_IsOscTerminationInitiator(_In_ wchar_t const wch);
+        static bool s_IsDesignateCharsetIndicator(_In_ wchar_t const wch);
+        static bool s_IsCharsetCode(_In_ wchar_t const wch);
+        static bool s_IsNumber(_In_ wchar_t const wch);
+        static bool s_IsSs3Indicator(_In_ wchar_t const wch);
 
-                void _ActionClear();
-                void _ActionIgnore();
+        void _ActionExecute(_In_ wchar_t const wch);
+        void _ActionPrint(_In_ wchar_t const wch);
+        void _ActionEscDispatch(_In_ wchar_t const wch);
+        void _ActionCollect(_In_ wchar_t const wch);
+        void _ActionParam(_In_ wchar_t const wch);
+        void _ActionCsiDispatch(_In_ wchar_t const wch);
+        void _ActionOscParam(_In_ wchar_t const wch);
+        void _ActionOscPut(_In_ wchar_t const wch);
+        void _ActionOscDispatch(_In_ wchar_t const wch);
+        void _ActionSs3Dispatch(_In_ wchar_t const wch);
 
-                void _EnterGround();
-                void _EnterEscape();
-                void _EnterEscapeIntermediate();
-                void _EnterCsiEntry();
-                void _EnterCsiParam();
-                void _EnterCsiIgnore();
-                void _EnterCsiIntermediate();
-                void _EnterOscParam();
-                void _EnterOscString();
-                void _EnterOscTermination();
-                void _EnterSs3Entry();
-                void _EnterSs3Param();
+        void _ActionClear();
+        void _ActionIgnore();
 
-                void _EventGround(_In_ wchar_t const wch);
-                void _EventEscape(_In_ wchar_t const wch);
-                void _EventEscapeIntermediate(_In_ wchar_t const wch);
-                void _EventCsiEntry(_In_ wchar_t const wch);
-                void _EventCsiIntermediate(_In_ wchar_t const wch);
-                void _EventCsiIgnore(_In_ wchar_t const wch);
-                void _EventCsiParam(_In_ wchar_t const wch);
-                void _EventOscParam(_In_ wchar_t const wch);
-                void _EventOscString(_In_ wchar_t const wch);
-                void _EventOscTermination(_In_ wchar_t const wch);
-                void _EventSs3Entry(_In_ wchar_t const wch);
-                void _EventSs3Param(_In_ wchar_t const wch);
+        void _EnterGround();
+        void _EnterEscape();
+        void _EnterEscapeIntermediate();
+        void _EnterCsiEntry();
+        void _EnterCsiParam();
+        void _EnterCsiIgnore();
+        void _EnterCsiIntermediate();
+        void _EnterOscParam();
+        void _EnterOscString();
+        void _EnterOscTermination();
+        void _EnterSs3Entry();
+        void _EnterSs3Param();
 
-                enum class VTStates
-                {
-                    Ground,
-                    Escape,
-                    EscapeIntermediate,
-                    CsiEntry,
-                    CsiIntermediate,
-                    CsiIgnore,
-                    CsiParam,
-                    OscParam,
-                    OscString,
-                    OscTermination,
-                    Ss3Entry,
-                    Ss3Param
-                };
+        void _EventGround(_In_ wchar_t const wch);
+        void _EventEscape(_In_ wchar_t const wch);
+        void _EventEscapeIntermediate(_In_ wchar_t const wch);
+        void _EventCsiEntry(_In_ wchar_t const wch);
+        void _EventCsiIntermediate(_In_ wchar_t const wch);
+        void _EventCsiIgnore(_In_ wchar_t const wch);
+        void _EventCsiParam(_In_ wchar_t const wch);
+        void _EventOscParam(_In_ wchar_t const wch);
+        void _EventOscString(_In_ wchar_t const wch);
+        void _EventOscTermination(_In_ wchar_t const wch);
+        void _EventSs3Entry(_In_ wchar_t const wch);
+        void _EventSs3Param(_In_ wchar_t const wch);
 
-                Microsoft::Console::VirtualTerminal::ParserTracing _trace;
-                std::unique_ptr<IStateMachineEngine> const _pEngine;
-
-                VTStates _state;
-
-                wchar_t _wchIntermediate;
-                unsigned short _cIntermediate;
-
-                unsigned short _rgusParams[s_cParamsMax];
-                unsigned short _cParams;
-                unsigned short* _pusActiveParam;
-                unsigned short _iParamAccumulatePos;
-
-                unsigned short _sOscParam;
-                unsigned short _sOscNextChar;
-                wchar_t _pwchOscStringBuffer[s_cOscStringMaxLength];
-
-            };
+        enum class VTStates
+        {
+            Ground,
+            Escape,
+            EscapeIntermediate,
+            CsiEntry,
+            CsiIntermediate,
+            CsiIgnore,
+            CsiParam,
+            OscParam,
+            OscString,
+            OscTermination,
+            Ss3Entry,
+            Ss3Param
         };
+
+        Microsoft::Console::VirtualTerminal::ParserTracing _trace;
+        std::unique_ptr<IStateMachineEngine> const _pEngine;
+
+        VTStates _state;
+
+        wchar_t _wchIntermediate;
+        unsigned short _cIntermediate;
+
+        unsigned short _rgusParams[s_cParamsMax];
+        unsigned short _cParams;
+        unsigned short* _pusActiveParam;
+        unsigned short _iParamAccumulatePos;
+
+        unsigned short _sOscParam;
+        unsigned short _sOscNextChar;
+        wchar_t _pwchOscStringBuffer[s_cOscStringMaxLength];
+
     };
-};
+}

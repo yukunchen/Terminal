@@ -17,11 +17,11 @@ Author(s):
 
 using namespace Microsoft::Console::Render;
 
-class RenderData sealed : public IRenderData
+class RenderData final : public IRenderData
 {
 public:
     RenderData();
-    ~RenderData();
+    virtual ~RenderData();
 
     const SMALL_RECT GetViewport();
     const TEXT_BUFFER_INFO* GetTextBuffer();

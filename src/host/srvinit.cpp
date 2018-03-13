@@ -31,23 +31,23 @@ const UINT CONSOLE_LPC_PORT_FAILURE_ID = 21791;
 
 HRESULT ConsoleServerInitialization(_In_ HANDLE Server, _In_ const ConsoleArguments* const args)
 {
-    Globals* const pGlobals = ServiceLocator::LocateGlobals();
+    Globals& Globals = ServiceLocator::LocateGlobals();
 
     try
     {
-        pGlobals->pDeviceComm = new DeviceComm(Server);
+        Globals.pDeviceComm = new DeviceComm(Server);
     }
     CATCH_RETURN();
 
-    pGlobals->launchArgs = *args;
+    Globals.launchArgs = *args;
 
-    pGlobals->uiOEMCP = GetOEMCP();
-    pGlobals->uiWindowsCP = GetACP();
+    Globals.uiOEMCP = GetOEMCP();
+    Globals.uiWindowsCP = GetACP();
 
-    pGlobals->pFontDefaultList = new RenderFontDefaults();
-    RETURN_IF_NULL_ALLOC(pGlobals->pFontDefaultList);
+    Globals.pFontDefaultList = new RenderFontDefaults();
+    RETURN_IF_NULL_ALLOC(Globals.pFontDefaultList);
 
-    FontInfo::s_SetFontDefaultList(pGlobals->pFontDefaultList);
+    FontInfo::s_SetFontDefaultList(Globals.pFontDefaultList);
 
     // Removed allocation of scroll buffer here.
     return S_OK;
@@ -102,44 +102,44 @@ NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
 
     // 4. Initializing Settings will establish hardcoded defaults.
     // Set to reference of global console information since that's the only place we need to hold the settings.
-    CONSOLE_INFORMATION* const settings = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    CONSOLE_INFORMATION& settings = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     // 4b. On Desktop editions, we need to apply a series of Desktop-specific defaults that are better than the
     // ones from the constructor (which are great for OneCore systems.)
     if (s_IsOnDesktop())
     {
-        settings->ApplyDesktopSpecificDefaults();
+        settings.ApplyDesktopSpecificDefaults();
     }
 
     // 3. Read the default registry values.
-    Registry reg(settings);
+    Registry reg(&settings);
     reg.LoadGlobalsFromRegistry();
     reg.LoadDefaultFromRegistry();
 
     // 2. Read specific settings
 
     // Link is expecting the flags from the process to be in already, so apply that first
-    settings->SetStartupFlags(pStartupSettings->GetStartupFlags());
+    settings.SetStartupFlags(pStartupSettings->GetStartupFlags());
 
     // We need to see if we were spawned from a link. If we were, we need to
     // call back into the shell to try to get all the console information from the link.
-    ServiceLocator::LocateSystemConfigurationProvider()->GetSettingsFromLink(settings, Title, &TitleLength, CurDir, AppName);
+    ServiceLocator::LocateSystemConfigurationProvider()->GetSettingsFromLink(&settings, Title, &TitleLength, CurDir, AppName);
 
     // If we weren't started from a link, this will already be set.
     // If LoadLinkInfo couldn't find anything, it will remove the flag so we can dig in the registry.
-    if (!(settings->IsStartupTitleIsLinkNameSet()))
+    if (!(settings.IsStartupTitleIsLinkNameSet()))
     {
         reg.LoadFromRegistry(Title);
     }
 
     // 1. The settings we were passed contains STARTUPINFO structure settings to be applied last.
-    settings->ApplyStartupInfo(pStartupSettings);
+    settings.ApplyStartupInfo(pStartupSettings);
 
     // 0. The settings passed in via commandline arguments. These should override anything else.
-    settings->ApplyCommandlineArguments(ServiceLocator::LocateGlobals()->launchArgs);
+    settings.ApplyCommandlineArguments(ServiceLocator::LocateGlobals().launchArgs);
 
     // Validate all applied settings for correctness against final rules.
-    settings->Validate();
+    settings.Validate();
 
     // As of the graphics refactoring to library based, all fonts are now DPI aware. Scaling is performed at the Blt time for raster fonts.
     // Note that we can only declare our DPI awareness once per process launch.
@@ -165,15 +165,15 @@ NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
     }
 
     //Save initial font name for comparison on exit. We want telemetry when the font has changed
-    if (settings->IsFaceNameSet())
+    if (settings.IsFaceNameSet())
     {
-        settings->SetLaunchFaceName(settings->GetFaceName(), LF_FACESIZE);
+        settings.SetLaunchFaceName(settings.GetFaceName(), LF_FACESIZE);
     }
 
     // Now we need to actually create the console using the settings given.
 #pragma prefast(suppress:26018, "PREfast can't detect null termination status of Title.")
 
-// Allocate console will read the global ServiceLocator::LocateGlobals()->getConsoleInformation for the settings we just set.
+// Allocate console will read the global ServiceLocator::LocateGlobals().getConsoleInformation for the settings we just set.
     NTSTATUS Status = AllocateConsole(Title, TitleLength);
     if (!NT_SUCCESS(Status))
     {
@@ -185,15 +185,14 @@ NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
 
 NTSTATUS RemoveConsole(_In_ ConsoleProcessHandle* ProcessData)
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    ASSERT(NT_SUCCESS(Status));
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    LockConsole();
+    NTSTATUS Status = STATUS_SUCCESS;
 
     FreeCommandHistory((HANDLE)ProcessData);
 
     bool const fRecomputeOwner = ProcessData->fRootProcess;
-    gci->ProcessHandleList.FreeProcessData(ProcessData);
+    gci.ProcessHandleList.FreeProcessData(ProcessData);
 
     if (fRecomputeOwner)
     {
@@ -242,14 +241,14 @@ void ConsoleCheckDebug()
 HRESULT ConsoleCreateIoThreadLegacy(_In_ HANDLE Server, _In_ const ConsoleArguments* const args)
 {
     RETURN_IF_FAILED(ConsoleServerInitialization(Server, args));
-    RETURN_IF_FAILED(ServiceLocator::LocateGlobals()->hConsoleInputInitEvent.create(wil::EventOptions::None));
+    RETURN_IF_FAILED(ServiceLocator::LocateGlobals().hConsoleInputInitEvent.create(wil::EventOptions::None));
 
     // Set up and tell the driver about the input available event.
-    RETURN_IF_FAILED(ServiceLocator::LocateGlobals()->hInputEvent.create(wil::EventOptions::ManualReset));
+    RETURN_IF_FAILED(ServiceLocator::LocateGlobals().hInputEvent.create(wil::EventOptions::ManualReset));
 
     CD_IO_SERVER_INFORMATION ServerInformation;
-    ServerInformation.InputAvailableEvent = ServiceLocator::LocateGlobals()->hInputEvent.get();
-    RETURN_IF_FAILED(ServiceLocator::LocateGlobals()->pDeviceComm->SetServerInformation(&ServerInformation));
+    ServerInformation.InputAvailableEvent = ServiceLocator::LocateGlobals().hInputEvent.get();
+    RETURN_IF_FAILED(ServiceLocator::LocateGlobals().pDeviceComm->SetServerInformation(&ServerInformation));
 
     HANDLE const hThread = CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)ConsoleIoThread, 0, 0, nullptr);
     RETURN_IF_HANDLE_NULL(hThread);
@@ -373,7 +372,7 @@ NTSTATUS GetConsoleLangId(_In_ const UINT uiOutputCP, _Out_ LANGID * const pLang
     // I would also highly advise against expanding the LANGIDs returned here or modifying them in any way until the cascading impacts
     // discovered in MSFT: 9808579 are vetted against any changes.
     // -- END WARNING --
-    if (IsAvailableEastAsianCodePage(ServiceLocator::LocateGlobals()->uiWindowsCP))
+    if (IsAvailableEastAsianCodePage(ServiceLocator::LocateGlobals().uiWindowsCP))
     {
         if (pLangId != nullptr)
         {
@@ -404,11 +403,11 @@ NTSTATUS GetConsoleLangId(_In_ const UINT uiOutputCP, _Out_ LANGID * const pLang
 
 HRESULT ApiRoutines::GetConsoleLangIdImpl(_Out_ LANGID* const pLangId)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    RETURN_NTSTATUS(GetConsoleLangId(gci->OutputCP, pLangId));
+    RETURN_NTSTATUS(GetConsoleLangId(gci.OutputCP, pLangId));
 }
 
 // Routine Description:
@@ -472,9 +471,9 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
     // AllocConsole is outside our codebase, but we should be able to mostly track the call here.
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::AllocConsole);
 
-    Globals* const g = ServiceLocator::LocateGlobals();
+    Globals& g = ServiceLocator::LocateGlobals();
 
-    CONSOLE_INFORMATION* const gci = g->getConsoleInformation();
+    CONSOLE_INFORMATION& gci = g.getConsoleInformation();
 
     NTSTATUS Status = SetUpConsole(&p->ConsoleInfo, p->TitleLength, p->Title, p->CurDir, p->AppName);
     if (!NT_SUCCESS(Status))
@@ -490,14 +489,14 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
         if (NT_SUCCESS(Status))
         {
             Renderer* pRender = nullptr;
-            g->pRender = nullptr;
+            g.pRender = nullptr;
             Status = NTSTATUS_FROM_HRESULT(Renderer::s_CreateInstance(std::move(renderData), &(pRender)));
 
             if (NT_SUCCESS(Status))
             {
-                g->pRender = pRender;
+                g.pRender = pRender;
                 // Allow the renderer to paint.
-                g->pRender->EnablePainting();
+                g.pRender->EnablePainting();
             }
         }
     }
@@ -507,7 +506,7 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
     }
 
 
-    if (NT_SUCCESS(Status) && p->WindowVisible && !g->launchArgs.IsHeadless())
+    if (NT_SUCCESS(Status) && p->WindowVisible && !g.launchArgs.IsHeadless())
     {
         HANDLE Thread = nullptr;
 
@@ -523,19 +522,19 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
         }
         else
         {
-            ServiceLocator::LocateGlobals()->dwInputThreadId = pNewThread->GetThreadId();
+            ServiceLocator::LocateGlobals().dwInputThreadId = pNewThread->GetThreadId();
 
             // The ConsoleInputThread needs to lock the console so we must first unlock it ourselves.
             UnlockConsole();
-            g->hConsoleInputInitEvent.wait();
+            g.hConsoleInputInitEvent.wait();
             LockConsole();
 
             CloseHandle(Thread);
-            g->hConsoleInputInitEvent.release();
+            g.hConsoleInputInitEvent.release();
 
-            if (!NT_SUCCESS(g->ntstatusConsoleInputInitStatus))
+            if (!NT_SUCCESS(g.ntstatusConsoleInputInitStatus))
             {
-                Status = g->ntstatusConsoleInputInitStatus;
+                Status = g.ntstatusConsoleInputInitStatus;
             }
             else
             {
@@ -553,7 +552,7 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
              *      is only called when a window is created.
              */
 
-            LOG_IF_FAILED(g->pDeviceComm->AllowUIAccess());
+            LOG_IF_FAILED(g.pDeviceComm->AllowUIAccess());
         }
     }
 
@@ -562,7 +561,7 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
     // We'll need the size of the screen buffer in the vt i/o initialization
     if (NT_SUCCESS(Status))
     {
-        HRESULT hr = gci->GetVtIo()->Initialize(&g->launchArgs);
+        HRESULT hr = gci.GetVtIo()->Initialize(&g.launchArgs);
         if (hr == S_FALSE)
         {
             // We're not in VT I/O mode, this is fine.
@@ -570,7 +569,7 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
         else if (SUCCEEDED(hr))
         {
             // Actually start the VT I/O threads
-            hr = gci->GetVtIo()->StartIfNeeded();
+            hr = gci.GetVtIo()->StartIfNeeded();
             // Don't convert S_FALSE to an NTSTATUS - the equivalent NTSTATUS
             //      is treated as an error
             if (hr != S_FALSE)
@@ -603,7 +602,7 @@ DWORD ConsoleIoThread()
     ApiRoutines Routines;
     CONSOLE_API_MSG ReceiveMsg;
     ReceiveMsg._pApiRoutines = &Routines;
-    ReceiveMsg._pDeviceComm = ServiceLocator::LocateGlobals()->pDeviceComm;
+    ReceiveMsg._pDeviceComm = ServiceLocator::LocateGlobals().pDeviceComm;
     PCONSOLE_API_MSG ReplyMsg = nullptr;
 
     bool fShouldExit = false;
@@ -615,7 +614,7 @@ DWORD ConsoleIoThread()
         }
 
         // TODO: 9115192 correct mixed NTSTATUS/HRESULT
-        HRESULT hr = ServiceLocator::LocateGlobals()->pDeviceComm->ReadIo(&ReplyMsg->Complete, &ReceiveMsg);
+        HRESULT hr = ServiceLocator::LocateGlobals().pDeviceComm->ReadIo(&ReplyMsg->Complete, &ReceiveMsg);
         if (FAILED(hr))
         {
             if (hr == HRESULT_FROM_WIN32(ERROR_PIPE_NOT_CONNECTED))
