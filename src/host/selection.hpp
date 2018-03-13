@@ -106,7 +106,7 @@ public:
     void CheckAndSetAlternateSelection();
 
     // calculation functions
-    [[nodiscard]] _Success_(return)
+    [[nodiscard]]
     static bool s_GetInputLineBoundaries(_Out_opt_ COORD* const pcoordInputStart, _Out_opt_ COORD* const pcoordInputEnd);
     void GetValidAreaBoundaries(_Out_opt_ COORD* const pcoordValidStart, _Out_opt_ COORD* const pcoordValidEnd) const;
     static bool s_IsWithinBoundaries(_In_ const COORD coordPosition, _In_ const COORD coordStart, _In_ const COORD coordEnd);
