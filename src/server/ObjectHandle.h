@@ -33,11 +33,14 @@ public:
                       _In_ ULONG const ulShareAccess,
                       _In_ PVOID const pvClientPointer);
 
+    [[nodiscard]]
     HRESULT GetInputBuffer(_In_ const ACCESS_MASK amRequested,
                            _Outptr_ InputBuffer** const ppInputBuffer) const;
+    [[nodiscard]]
     HRESULT GetScreenBuffer(_In_ const ACCESS_MASK amRequested,
                             _Outptr_ SCREEN_INFORMATION** const ppScreenInfo) const;
 
+    [[nodiscard]]
     HRESULT GetWaitQueue(_Outptr_ ConsoleWaitQueue** const ppWaitQueue) const;
 
     INPUT_READ_HANDLE_DATA* GetClientInput() const;
@@ -53,6 +56,7 @@ public:
         return _IsInput();
     }
 
+    [[nodiscard]]
     HRESULT CloseHandle();
 
     enum HandleType
@@ -65,7 +69,9 @@ private:
     bool _IsInput() const;
     bool _IsOutput() const;
 
+    [[nodiscard]]
     HRESULT _CloseInputHandle();
+    [[nodiscard]]
     HRESULT _CloseOutputHandle();
 
     ULONG const _ulHandleType;

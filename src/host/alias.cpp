@@ -1093,6 +1093,7 @@ HRESULT ApiRoutines::GetConsoleAliasExesWImpl(_Out_writes_to_(cchAliasExesBuffer
 // - LineCount - aliases can contain multiple commands.  $T is the command separator
 // Return Value:
 // - SUCCESS - match was found and alias was copied to buffer.
+[[nodiscard]]
 NTSTATUS MatchAndCopyAlias(_In_reads_bytes_(cbSource) PWCHAR pwchSource,
                            _In_ USHORT cbSource,
                            _Out_writes_bytes_(*pcbTarget) PWCHAR pwchTarget,

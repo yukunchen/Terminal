@@ -61,6 +61,7 @@ WddmConEngine::~WddmConEngine()
     FreeResources(_displayHeight);
 }
 
+[[nodiscard]]
 HRESULT WddmConEngine::Initialize()
 {
     HRESULT hr;
@@ -144,77 +145,91 @@ bool WddmConEngine::IsInitialized()
     return _hWddmConCtx != INVALID_HANDLE_VALUE;
 }
 
+[[nodiscard]]
 HRESULT WddmConEngine::Enable()
 {
     RETURN_IF_HANDLE_INVALID(_hWddmConCtx);
     return WDDMConEnableDisplayAccess((PHANDLE)_hWddmConCtx, TRUE);
 }
 
+[[nodiscard]]
 HRESULT WddmConEngine::Disable()
 {
     RETURN_IF_HANDLE_INVALID(_hWddmConCtx);
     return WDDMConEnableDisplayAccess((PHANDLE)_hWddmConCtx, FALSE);
 }
 
+[[nodiscard]]
 HRESULT WddmConEngine::Invalidate(const SMALL_RECT* const /*psrRegion*/)
 {
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT WddmConEngine::InvalidateCursor(const COORD* const /*pcoordCursor*/)
 {
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT WddmConEngine::InvalidateSystem(const RECT* const /*prcDirtyClient*/)
 {
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT WddmConEngine::InvalidateSelection(const SMALL_RECT* const /*rgsrSelection*/, UINT const /*cRectangles*/)
 {
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT WddmConEngine::InvalidateScroll(const COORD* const /*pcoordDelta*/)
 {
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT WddmConEngine::InvalidateAll()
 {
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT WddmConEngine::InvalidateCircling(_Out_ bool* const pForcePaint)
 {
     *pForcePaint = false;
     return S_FALSE;
 }
 
+[[nodiscard]]
 HRESULT WddmConEngine::PrepareForTeardown(_Out_ bool* const pForcePaint)
 {
     *pForcePaint = false;
     return S_FALSE;
 }
 
+[[nodiscard]]
 HRESULT WddmConEngine::StartPaint()
 {
     RETURN_IF_HANDLE_INVALID(_hWddmConCtx);
     return WDDMConBeginUpdateDisplayBatch(_hWddmConCtx);
 }
 
+[[nodiscard]]
 HRESULT WddmConEngine::EndPaint()
 {
     RETURN_IF_HANDLE_INVALID(_hWddmConCtx);
     return WDDMConEndUpdateDisplayBatch(_hWddmConCtx);
 }
 
+[[nodiscard]]
 HRESULT WddmConEngine::ScrollFrame()
 {
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT WddmConEngine::PaintBackground()
 {
     RETURN_IF_HANDLE_INVALID(_hWddmConCtx);
@@ -241,6 +256,7 @@ HRESULT WddmConEngine::PaintBackground()
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT WddmConEngine::PaintBufferLine(PCWCHAR const pwsLine,
                                        const unsigned char* const /*rgWidths*/,
                                        size_t const cchLine,
@@ -267,6 +283,7 @@ HRESULT WddmConEngine::PaintBufferLine(PCWCHAR const pwsLine,
     return WDDMConUpdateDisplay(_hWddmConCtx, _displayState[coord.Y], FALSE);
 }
 
+[[nodiscard]]
 HRESULT WddmConEngine::PaintBufferGridLines(GridLines const /*lines*/,
                                             COLORREF const /*color*/,
                                             size_t const /*cchLine*/,
@@ -275,11 +292,13 @@ HRESULT WddmConEngine::PaintBufferGridLines(GridLines const /*lines*/,
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT WddmConEngine::PaintSelection(const SMALL_RECT* const /*rgsrSelection*/, UINT const /*cRectangles*/)
 {
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT WddmConEngine::PaintCursor(_In_ COORD const /*coordCursor*/,
                                    _In_ ULONG const /*ulCursorHeightPercent*/,
                                    _In_ bool const /*fIsDoubleWidth*/,
@@ -290,11 +309,13 @@ HRESULT WddmConEngine::PaintCursor(_In_ COORD const /*coordCursor*/,
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT WddmConEngine::ClearCursor()
 {
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT WddmConEngine::UpdateDrawingBrushes(COLORREF const /*colorForeground*/,
                                             COLORREF const /*colorBackground*/,
                                             _In_ WORD const legacyColorAttribute,
@@ -305,10 +326,11 @@ HRESULT WddmConEngine::UpdateDrawingBrushes(COLORREF const /*colorForeground*/,
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT WddmConEngine::UpdateFont(FontInfoDesired const* const /*pfiFontInfoDesired*/, FontInfo* const pfiFontInfo)
 {
     COORD coordSize = {0};
-    GetFontSize(&coordSize);
+    LOG_IF_FAILED(GetFontSize(&coordSize));
 
     pfiFontInfo->SetFromEngine(pfiFontInfo->GetFaceName(),
                                pfiFontInfo->GetFamily(),
@@ -320,6 +342,7 @@ HRESULT WddmConEngine::UpdateFont(FontInfoDesired const* const /*pfiFontInfoDesi
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT WddmConEngine::UpdateDpi(int const /*iDpi*/)
 {
     return S_OK;
@@ -332,11 +355,13 @@ HRESULT WddmConEngine::UpdateDpi(int const /*iDpi*/)
 // - srNewViewport - The bounds of the new viewport.
 // Return Value:
 // - HRESULT S_OK
+[[nodiscard]]
 HRESULT WddmConEngine::UpdateViewport(_In_ SMALL_RECT const /*srNewViewport*/)
 {
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT WddmConEngine::GetProposedFont(FontInfoDesired const* const /*pfiFontInfoDesired*/,
                                        FontInfo* const /*pfiFontInfo*/,
                                        int const /*iDpi*/)
@@ -366,6 +391,7 @@ RECT WddmConEngine::GetDisplaySize()
     return r;
 }
 
+[[nodiscard]]
 HRESULT WddmConEngine::GetFontSize(_Out_ COORD* const pFontSize)
 {
     // In order to retrieve the font size being used by DirectX, it is necessary
@@ -387,6 +413,7 @@ HRESULT WddmConEngine::GetFontSize(_Out_ COORD* const pFontSize)
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT WddmConEngine::IsCharFullWidthByFont(WCHAR const /*wch*/, _Out_ bool* const pResult)
 {
     *pResult = false;

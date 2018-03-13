@@ -560,7 +560,9 @@ void Telemetry::LogRipMessage(_In_z_ const char* pszMessage, ...) const
     int cCharsWritten = vsprintf_s(szMessageEvaluated, ARRAYSIZE(szMessageEvaluated), pszMessage, args);
     va_end(args);
 
+#if DBG
     OutputDebugStringA(szMessageEvaluated);
+#endif
 
     if (cCharsWritten > 0)
     {

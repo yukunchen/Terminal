@@ -36,6 +36,7 @@ public:
     bool NotifyWaiters(_In_ bool const fNotifyAll,
                        _In_ WaitTerminationReason const TerminationReason);
 
+    [[nodiscard]]
     static HRESULT s_CreateWait(_Inout_ CONSOLE_API_MSG* const pWaitReplyMessage,
                                 _In_ IWaitRoutine* const pWaiter);
 

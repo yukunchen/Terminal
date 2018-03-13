@@ -247,7 +247,7 @@ class ApiRoutinesTests
         wchar_t pwszTitle[MAX_PATH]; // most applications use MAX_PATH
         size_t cchWritten = 0;
         size_t cchNeeded = 0;
-        VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleTitleWImpl(pwszTitle, ARRAYSIZE(pwszTitle), &cchWritten, &cchNeeded));
+        _pApiRoutines->GetConsoleTitleWImpl(pwszTitle, ARRAYSIZE(pwszTitle), &cchWritten, &cchNeeded);
 
         VERIFY_ARE_NOT_EQUAL(0u, cchWritten);
         // NOTE: W version of API returns string length. A version of API returns buffer length (string + null).
@@ -302,7 +302,7 @@ class ApiRoutinesTests
         wchar_t pwszTitle[MAX_PATH]; // most applications use MAX_PATH
         size_t cchWritten = 0;
         size_t cchNeeded = 0;
-        VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleOriginalTitleWImpl(pwszTitle, ARRAYSIZE(pwszTitle), &cchWritten, &cchNeeded));
+        _pApiRoutines->GetConsoleOriginalTitleWImpl(pwszTitle, ARRAYSIZE(pwszTitle), &cchWritten, &cchNeeded);
 
         VERIFY_ARE_NOT_EQUAL(0u, cchWritten);
         // NOTE: W version of API returns string length. A version of API returns buffer length (string + null).

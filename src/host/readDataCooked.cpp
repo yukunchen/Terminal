@@ -137,7 +137,7 @@ BOOL COOKED_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason
         delete[] _BackupLimit;
         delete[] ExeName;
         gci.lpCookedReadData = nullptr;
-        _pTempHandle->CloseHandle();
+        LOG_IF_FAILED(_pTempHandle->CloseHandle());
         return TRUE;
     }
 
@@ -151,7 +151,7 @@ BOOL COOKED_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason
         delete[] _BackupLimit;
         delete[] ExeName;
         gci.lpCookedReadData = nullptr;
-        _pTempHandle->CloseHandle();
+        LOG_IF_FAILED(_pTempHandle->CloseHandle());
         return TRUE;
     }
 
@@ -168,7 +168,7 @@ BOOL COOKED_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason
         delete[] _BackupLimit;
         delete[] ExeName;
         gci.lpCookedReadData = nullptr;
-        _pTempHandle->CloseHandle();
+        LOG_IF_FAILED(_pTempHandle->CloseHandle());
         return TRUE;
     }
 
@@ -229,7 +229,7 @@ BOOL COOKED_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason
                 }
                 delete[] ExeName;
                 gci.lpCookedReadData = nullptr;
-                _pTempHandle->CloseHandle();
+                LOG_IF_FAILED(_pTempHandle->CloseHandle());
 
                 return TRUE;
             }
@@ -241,7 +241,7 @@ BOOL COOKED_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason
     if (*pReplyStatus != CONSOLE_STATUS_WAIT)
     {
         gci.lpCookedReadData = nullptr;
-        _pTempHandle->CloseHandle();
+        LOG_IF_FAILED(_pTempHandle->CloseHandle());
         return TRUE;
     }
     else
@@ -261,6 +261,7 @@ BOOL COOKED_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason
 // - cbNumBytes - On in, the number of bytes available in the client
 // buffer. On out, the number of bytes consumed in the client buffer.
 // - ulControlKeyState - For some types of reads, this is the modifier key state with the last button press.
+[[nodiscard]]
 NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
                     _In_ bool const fIsUnicode,
                     _Inout_ ULONG* const cbNumBytes,
@@ -372,10 +373,10 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
             if (FoundCR)
             {
                 // add to command line recall list
-                AddCommand(pCookedReadData->_CommandHistory,
-                           pCookedReadData->_BackupLimit,
-                           (USHORT)StringLength,
-                           IsFlagSet(gci.Flags, CONSOLE_HISTORY_NODUP));
+                LOG_IF_FAILED(AddCommand(pCookedReadData->_CommandHistory,
+                                         pCookedReadData->_BackupLimit,
+                                         (USHORT)StringLength,
+                                         IsFlagSet(gci.Flags, CONSOLE_HISTORY_NODUP)));
 
                 // check for alias
                 i = pCookedReadData->_BufferSize;
@@ -879,7 +880,7 @@ BOOL ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
             if (pCookedReadData->_InsertMode != gci.GetInsertMode())
             {
                 // Make cursor small.
-                ProcessCommandLine(pCookedReadData, VK_INSERT, 0);
+                LOG_IF_FAILED(ProcessCommandLine(pCookedReadData, VK_INSERT, 0));
             }
 
             *pStatus = STATUS_SUCCESS;

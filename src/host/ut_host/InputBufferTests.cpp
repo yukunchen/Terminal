@@ -262,7 +262,7 @@ class InputBufferTests
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), RECORD_INSERT_COUNT);
 
         // remove them
-        VERIFY_SUCCEEDED(inputBuffer.FlushAllButKeys());
+        inputBuffer.FlushAllButKeys();
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), RECORD_INSERT_COUNT / 2);
 
         // make sure that the non key events were the ones removed
@@ -362,23 +362,23 @@ class InputBufferTests
         std::deque<std::unique_ptr<IInputEvent>> outEvents;
         size_t eventsRead = 0;
         bool resetWaitEvent = false;
-        VERIFY_SUCCESS_NTSTATUS(inputBuffer._ReadBuffer(outEvents,
-                                                        1,
-                                                        eventsRead,
-                                                        false,
-                                                        resetWaitEvent,
-                                                        true));
+        inputBuffer._ReadBuffer(outEvents,
+                                1,
+                                eventsRead,
+                                false,
+                                resetWaitEvent,
+                                true);
         VERIFY_ARE_EQUAL(eventsRead, 1u);
         VERIFY_IS_FALSE(!!resetWaitEvent);
 
         // read the rest, resetWaitEvent should be set to true
         outEvents.clear();
-        VERIFY_SUCCESS_NTSTATUS(inputBuffer._ReadBuffer(outEvents,
-                                                        RECORD_INSERT_COUNT - 1,
-                                                        eventsRead,
-                                                        false,
-                                                        resetWaitEvent,
-                                                        true));
+        inputBuffer._ReadBuffer(outEvents,
+                                RECORD_INSERT_COUNT - 1,
+                                eventsRead,
+                                false,
+                                resetWaitEvent,
+                                true);
         VERIFY_ARE_EQUAL(eventsRead, RECORD_INSERT_COUNT - 1);
         VERIFY_IS_TRUE(!!resetWaitEvent);
     }
@@ -409,12 +409,12 @@ class InputBufferTests
         std::deque<std::unique_ptr<IInputEvent>> outEvents;
         size_t eventsRead = 0;
         bool resetWaitEvent = false;
-        VERIFY_SUCCESS_NTSTATUS(inputBuffer._ReadBuffer(outEvents,
-                                                        recordInsertCount,
-                                                        eventsRead,
-                                                        false,
-                                                        resetWaitEvent,
-                                                        false));
+        inputBuffer._ReadBuffer(outEvents,
+                                recordInsertCount,
+                                eventsRead,
+                                false,
+                                resetWaitEvent,
+                                false);
         // the dbcs record should have counted for two elements in
         // the array, making it so that we get less events read
         VERIFY_ARE_EQUAL(eventsRead, recordInsertCount - 1);
@@ -567,7 +567,7 @@ class InputBufferTests
         // write one event to an empty buffer
         std::deque<std::unique_ptr<IInputEvent>> storage;
         storage.push_back(std::move(inputEvent));
-        VERIFY_SUCCEEDED(inputBuffer._WriteBuffer(storage, eventsWritten, waitEvent));
+        inputBuffer._WriteBuffer(storage, eventsWritten, waitEvent);
         VERIFY_IS_TRUE(waitEvent);
         // write another, it shouldn't signal this time
         INPUT_RECORD record2 = MakeKeyEvent(true, 1, L'b', 0, L'b', 0);
@@ -575,7 +575,7 @@ class InputBufferTests
         // write another event to a non-empty buffer
         waitEvent = false;
         storage.push_back(std::move(inputEvent2));
-        VERIFY_SUCCEEDED(inputBuffer._WriteBuffer(storage, eventsWritten, waitEvent));
+        inputBuffer._WriteBuffer(storage, eventsWritten, waitEvent);
 
         VERIFY_IS_FALSE(waitEvent);
     }

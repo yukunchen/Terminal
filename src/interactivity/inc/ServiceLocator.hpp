@@ -44,6 +44,7 @@ namespace Microsoft::Console::Interactivity
             return static_cast<T*>(LocateConsoleControl());
         }
 
+        [[nodiscard]]
         static NTSTATUS CreateConsoleInputThread(_Outptr_result_nullonfailure_ IConsoleInputThread** thread);
         static IConsoleInputThread *LocateConsoleInputThread();
         template <typename T> static T *LocateConsoleInputThread()
@@ -51,6 +52,7 @@ namespace Microsoft::Console::Interactivity
             return static_cast<T*>(LocateConsoleInputThread());
         }
 
+        [[nodiscard]]
         static NTSTATUS SetConsoleWindowInstance(_In_ IConsoleWindow *window);
         static IConsoleWindow *LocateConsoleWindow();
         template <typename T> static T *LocateConsoleWindow()
@@ -85,6 +87,7 @@ namespace Microsoft::Console::Interactivity
         ServiceLocator& operator=(ServiceLocator const&) = delete;
 
     private:
+        [[nodiscard]]
         static NTSTATUS LoadInteractivityFactory();
 
         static std::unique_ptr<IInteractivityFactory> s_interactivityFactory;

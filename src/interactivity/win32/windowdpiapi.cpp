@@ -14,6 +14,7 @@ using namespace Microsoft::Console::Interactivity::Win32;
 
 #pragma region IHighDpiApi Members
 
+[[nodiscard]]
 HRESULT WindowDpiApi::SetProcessPerMonitorDpiAwareness()
 {
     return SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);

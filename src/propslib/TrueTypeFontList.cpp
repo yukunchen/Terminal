@@ -36,6 +36,7 @@ ConvertStringToDec(
     return val;
 }
 
+[[nodiscard]]
 NTSTATUS TrueTypeFontList::s_Initialize()
 {
     HKEY hkRegistry;
@@ -45,7 +46,7 @@ NTSTATUS TrueTypeFontList::s_Initialize()
     LPWSTR pwsz;
 
     // Prevent memory leak. Delete if it's already allocated before refilling it.
-    s_Destroy();
+    LOG_IF_FAILED(s_Destroy());
 
     NTSTATUS Status = RegistrySerialization::s_OpenKey(HKEY_LOCAL_MACHINE,
                                                        MACHINE_REGISTRY_CONSOLE_TTFONT_WIN32_PATH,
@@ -117,6 +118,7 @@ NTSTATUS TrueTypeFontList::s_Initialize()
     return STATUS_SUCCESS;
 }
 
+[[nodiscard]]
 NTSTATUS TrueTypeFontList::s_Destroy()
 {
     while (s_ttFontList.Next != nullptr) {
@@ -160,6 +162,7 @@ LPTTFONTLIST TrueTypeFontList::s_SearchByName(_In_opt_ LPCWSTR pwszFace,
     return nullptr;
 }
 
+[[nodiscard]]
 NTSTATUS TrueTypeFontList::s_SearchByCodePage(_In_ const UINT uiCodePage,
                                               _Out_writes_(cchFaceName) PWSTR pwszFaceName,
                                               _In_ const size_t cchFaceName)

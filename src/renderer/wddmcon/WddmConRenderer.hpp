@@ -10,37 +10,56 @@ namespace Microsoft::Console::Render
         WddmConEngine();
         ~WddmConEngine() override;
 
+        [[nodiscard]]
         HRESULT Initialize();
         bool IsInitialized();
 
         // Used to release device resources so that another instance of
         // conhost can render to the screen (i.e. only one DirectX
         // application may control the screen at a time.)
+        [[nodiscard]]
         HRESULT Enable();
+        [[nodiscard]]
         HRESULT Disable();
 
         RECT GetDisplaySize();
 
         // IRenderEngine Members
+        [[nodiscard]]
         HRESULT Invalidate(const SMALL_RECT* const psrRegion);
+        [[nodiscard]]
         HRESULT InvalidateCursor(_In_ const COORD* const pcoordCursor) override;
+        [[nodiscard]]
         HRESULT InvalidateSystem(const RECT* const prcDirtyClient);
+        [[nodiscard]]
         HRESULT InvalidateSelection(const SMALL_RECT* const rgsrSelection, UINT const cRectangles);
+        [[nodiscard]]
         HRESULT InvalidateScroll(const COORD* const pcoordDelta);
+        [[nodiscard]]
         HRESULT InvalidateAll();
+        [[nodiscard]]
         HRESULT InvalidateCircling(_Out_ bool* const pForcePaint) override;
+        [[nodiscard]]
         HRESULT PrepareForTeardown(_Out_ bool* const pForcePaint) override;
 
+        [[nodiscard]]
         HRESULT StartPaint();
+        [[nodiscard]]
         HRESULT EndPaint();
 
+        [[nodiscard]]
         HRESULT ScrollFrame();
 
+        [[nodiscard]]
         HRESULT PaintBackground();
+        [[nodiscard]]
         HRESULT PaintBufferLine(PCWCHAR const pwsLine, const unsigned char* const rgWidths, size_t const cchLine, COORD const coord, bool const fTrimLeft);
+        [[nodiscard]]
         HRESULT PaintBufferGridLines(GridLines const lines, COLORREF const color, size_t const cchLine, COORD const coordTarget);
+        [[nodiscard]]
         HRESULT PaintSelection(const SMALL_RECT* const rgsrSelection, UINT const cRectangles);
 
+        [[nodiscard]]
         HRESULT PaintCursor(_In_ COORD const coordCursor,
                             _In_ ULONG const ulCursorHeightPercent,
                             _In_ bool const fIsDoubleWidth,
@@ -48,17 +67,25 @@ namespace Microsoft::Console::Render
                             _In_ bool const fUseColor,
                             _In_ COLORREF const cursorColor) override;
 
+        [[nodiscard]]
         HRESULT ClearCursor();
 
+        [[nodiscard]]
         HRESULT UpdateDrawingBrushes(COLORREF const colorForeground, COLORREF const colorBackground, _In_ WORD const legacyColorAttribute, bool const fIncludeBackgrounds);
+        [[nodiscard]]
         HRESULT UpdateFont(FontInfoDesired const* const pfiFontInfoDesired, FontInfo* const pfiFontInfo);
+        [[nodiscard]]
         HRESULT UpdateDpi(int const iDpi);
+        [[nodiscard]]
         HRESULT UpdateViewport(_In_ SMALL_RECT const srNewViewport);
 
+        [[nodiscard]]
         HRESULT GetProposedFont(FontInfoDesired const* const pfiFontInfoDesired, FontInfo* const pfiFontInfo, int const iDpi);
 
         SMALL_RECT GetDirtyRectInChars();
+        [[nodiscard]]
         HRESULT GetFontSize(_Out_ COORD* const pFontSize) override;
+        [[nodiscard]]
         HRESULT IsCharFullWidthByFont(_In_ WCHAR const wch, _Out_ bool* const pResult) override;
 
     private:

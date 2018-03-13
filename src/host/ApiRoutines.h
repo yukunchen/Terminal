@@ -28,49 +28,57 @@ class ApiRoutines : public IApiRoutines
 #pragma endregion
 
 #pragma region L1
-    HRESULT GetConsoleInputCodePageImpl(_Out_ ULONG* const pCodePage);
+    void GetConsoleInputCodePageImpl(_Out_ ULONG* const pCodePage);
 
-    HRESULT GetConsoleOutputCodePageImpl(_Out_ ULONG* const pCodePage);
+    void GetConsoleOutputCodePageImpl(_Out_ ULONG* const pCodePage);
 
-    HRESULT GetConsoleInputModeImpl(_In_ InputBuffer* const pContext,
-                                    _Out_ ULONG* const pMode);
+    void GetConsoleInputModeImpl(_In_ InputBuffer* const pContext,
+                                 _Out_ ULONG* const pMode);
 
-    HRESULT GetConsoleOutputModeImpl(_In_ SCREEN_INFORMATION* const pContext,
-                                     _Out_ ULONG* const pMode);
+    void GetConsoleOutputModeImpl(_In_ SCREEN_INFORMATION* const pContext,
+                                  _Out_ ULONG* const pMode);
 
+    [[nodiscard]]
     HRESULT SetConsoleInputModeImpl(_In_ InputBuffer* const pContext,
                                     _In_ ULONG const Mode);
 
+    [[nodiscard]]
     HRESULT SetConsoleOutputModeImpl(_In_ SCREEN_INFORMATION* const pContext,
                                      _In_ ULONG const Mode);
 
+    [[nodiscard]]
     HRESULT GetNumberOfConsoleInputEventsImpl(_In_ InputBuffer* const pContext,
                                               _Out_ ULONG* const pEvents);
 
+    [[nodiscard]]
     HRESULT PeekConsoleInputAImpl(_In_ IConsoleInputObject* const pInContext,
                                   _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
                                   _In_ size_t const eventsToRead,
                                   _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                                   _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter);
 
+    [[nodiscard]]
     HRESULT PeekConsoleInputWImpl(_In_ IConsoleInputObject* const pInContext,
                                   _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
                                   _In_ size_t const eventsToRead,
                                   _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                                   _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter);
 
+    [[nodiscard]]
     HRESULT ReadConsoleInputAImpl(_In_ IConsoleInputObject* const pInContext,
                                   _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
                                   _In_ size_t const eventsToRead,
                                   _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                                   _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter);
 
+    [[nodiscard]]
     HRESULT ReadConsoleInputWImpl(_In_ IConsoleInputObject* const pInContext,
                                   _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
                                   _In_ size_t const eventsToRead,
                                   _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                                   _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter);
 
+    [[nodiscard]]
     HRESULT ReadConsoleAImpl(_Inout_ IConsoleInputObject* const pInContext,
                              _Out_writes_to_(cchTextBuffer, *pcchTextBufferWritten) char* const psTextBuffer,
                              _In_ size_t const cchTextBuffer,
@@ -85,6 +93,7 @@ class ApiRoutines : public IApiRoutines
                              _In_ DWORD const dwControlWakeupMask,
                              _Out_ DWORD* const pdwControlKeyState);
 
+    [[nodiscard]]
     HRESULT ReadConsoleWImpl(_Inout_ IConsoleInputObject* const pInContext,
                              _Out_writes_to_(cchTextBuffer, *pcchTextBufferWritten) wchar_t* const pwsTextBuffer,
                              _In_ size_t const cchTextBuffer,
@@ -99,12 +108,14 @@ class ApiRoutines : public IApiRoutines
                              _In_ DWORD const dwControlWakeupMask,
                              _Out_ DWORD* const pdwControlKeyState);
 
+    [[nodiscard]]
     HRESULT WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutContext,
                               _In_reads_(cchTextBufferLength) const char* const psTextBuffer,
                               _In_ size_t const cchTextBufferLength,
                               _Out_ size_t* const pcchTextBufferRead,
                               _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter);
 
+    [[nodiscard]]
     HRESULT WriteConsoleWImpl(_In_ IConsoleOutputObject* const pOutContext,
                               _In_reads_(cchTextBufferLength) const wchar_t* const pwsTextBuffer,
                               _In_ size_t const cchTextBufferLength,
@@ -112,6 +123,7 @@ class ApiRoutines : public IApiRoutines
                               _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter);
 
 #pragma region ThreadCreationInfo
+    [[nodiscard]]
     HRESULT GetConsoleLangIdImpl(_Out_ LANGID* const pLangId);
 #pragma endregion
 
@@ -141,38 +153,45 @@ class ApiRoutines : public IApiRoutines
     //HRESULT GenerateConsoleCtrlEventImpl(_In_ ULONG const ProcessGroupFilter,
     //                                             _In_ ULONG const ControlEvent);
 
-    HRESULT SetConsoleActiveScreenBufferImpl(_In_ SCREEN_INFORMATION* const pNewContext);
+    void SetConsoleActiveScreenBufferImpl(_In_ SCREEN_INFORMATION* const pNewContext);
 
-    HRESULT FlushConsoleInputBuffer(_In_ InputBuffer* const pContext);
+    void FlushConsoleInputBuffer(_In_ InputBuffer* const pContext);
 
+    [[nodiscard]]
     HRESULT SetConsoleInputCodePageImpl(_In_ ULONG const CodePage);
 
+    [[nodiscard]]
     HRESULT SetConsoleOutputCodePageImpl(_In_ ULONG const CodePage);
 
-    HRESULT GetConsoleCursorInfoImpl(_In_ SCREEN_INFORMATION* const pContext,
-                                     _Out_ ULONG* const pCursorSize,
-                                     _Out_ BOOLEAN* const pIsVisible);
+    void GetConsoleCursorInfoImpl(_In_ SCREEN_INFORMATION* const pContext,
+                                  _Out_ ULONG* const pCursorSize,
+                                  _Out_ BOOLEAN* const pIsVisible);
 
+    [[nodiscard]]
     HRESULT SetConsoleCursorInfoImpl(_In_ SCREEN_INFORMATION* const pContext,
                                      _In_ ULONG const CursorSize,
                                      _In_ BOOLEAN const IsVisible);
 
     //// driver will pare down for non-Ex method
-    HRESULT GetConsoleScreenBufferInfoExImpl(_In_ SCREEN_INFORMATION* const pContext,
-                                             _Out_ CONSOLE_SCREEN_BUFFER_INFOEX* const pScreenBufferInfoEx);
+    void GetConsoleScreenBufferInfoExImpl(_In_ SCREEN_INFORMATION* const pContext,
+                                          _Out_ CONSOLE_SCREEN_BUFFER_INFOEX* const pScreenBufferInfoEx);
 
+    [[nodiscard]]
     HRESULT SetConsoleScreenBufferInfoExImpl(_In_ SCREEN_INFORMATION* const pContext,
                                              _In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pScreenBufferInfoEx);
 
+    [[nodiscard]]
     HRESULT SetConsoleScreenBufferSizeImpl(_In_ SCREEN_INFORMATION* const pContext,
                                            _In_ const COORD* const pSize);
 
+    [[nodiscard]]
     HRESULT SetConsoleCursorPositionImpl(_In_ SCREEN_INFORMATION* const pContext,
                                          _In_ const COORD* const pCursorPosition);
 
-    HRESULT GetLargestConsoleWindowSizeImpl(_In_ SCREEN_INFORMATION* const pContext,
-                                            _Out_ COORD* const pSize);
+    void GetLargestConsoleWindowSizeImpl(_In_ SCREEN_INFORMATION* const pContext,
+                                         _Out_ COORD* const pSize);
 
+    [[nodiscard]]
     HRESULT ScrollConsoleScreenBufferAImpl(_In_ SCREEN_INFORMATION* const pContext,
                                            _In_ const SMALL_RECT* const pSourceRectangle,
                                            _In_ const COORD* const pTargetOrigin,
@@ -180,6 +199,7 @@ class ApiRoutines : public IApiRoutines
                                            _In_ char const chFill,
                                            _In_ WORD const attrFill);
 
+    [[nodiscard]]
     HRESULT ScrollConsoleScreenBufferWImpl(_In_ SCREEN_INFORMATION* const pContext,
                                            _In_ const SMALL_RECT* const pSourceRectangle,
                                            _In_ const COORD* const pTargetOrigin,
@@ -187,9 +207,11 @@ class ApiRoutines : public IApiRoutines
                                            _In_ wchar_t const wchFill,
                                            _In_ WORD const attrFill);
 
+    [[nodiscard]]
     HRESULT SetConsoleTextAttributeImpl(_In_ SCREEN_INFORMATION* const pContext,
                                         _In_ WORD const Attribute);
 
+    [[nodiscard]]
     HRESULT SetConsoleWindowInfoImpl(_In_ SCREEN_INFORMATION* const pContext,
                                      _In_ BOOLEAN const IsAbsoluteRectangle,
                                      _In_ const SMALL_RECT* const pWindowRectangle);
@@ -268,52 +290,60 @@ class ApiRoutines : public IApiRoutines
     //                                   _In_ const SMALL_RECT* const pSourceRectangle,
     //                                   _Out_ SMALL_RECT* const pReadRectangle);
 
+    [[nodiscard]]
     HRESULT GetConsoleTitleAImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) char* const psTitleBuffer,
                                  _In_ size_t const cchTitleBufferSize,
                                  _Out_ size_t* const pcchTitleBufferWritten,
                                  _Out_ size_t* const pcchTitleBufferNeeded);
 
-    HRESULT GetConsoleTitleWImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) wchar_t* const pwsTitleBuffer,
+    void GetConsoleTitleWImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) wchar_t* const pwsTitleBuffer,
                                  _In_ size_t const cchTitleBufferSize,
                                  _Out_ size_t* const pcchTitleBufferWritten,
                                  _Out_ size_t* const pcchTitleBufferNeeded);
 
+    [[nodiscard]]
     HRESULT GetConsoleOriginalTitleAImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) char* const psTitleBuffer,
                                          _In_ size_t const cchTitleBufferSize,
                                          _Out_ size_t* const pcchTitleBufferWritten,
                                          _Out_ size_t* const pcchTitleBufferNeeded);
 
-    HRESULT GetConsoleOriginalTitleWImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) wchar_t* const pwsTitleBuffer,
+    void GetConsoleOriginalTitleWImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) wchar_t* const pwsTitleBuffer,
                                          _In_ size_t const cchTitleBufferSize,
                                          _Out_ size_t* const pcchTitleBufferWritten,
                                          _Out_ size_t* const pcchTitleBufferNeeded);
 
+    [[nodiscard]]
     HRESULT SetConsoleTitleAImpl(_In_reads_or_z_(cchTitleBufferSize) const char* const psTitleBuffer,
                                  _In_ size_t const cchTitleBufferSize);
 
+    [[nodiscard]]
     HRESULT SetConsoleTitleWImpl(_In_reads_or_z_(cchTitleBufferSize) const wchar_t* const pwsTitleBuffer,
                                  _In_ size_t const cchTitleBufferSize);
 
 #pragma endregion
 
 #pragma region L3
-    HRESULT GetNumberOfConsoleMouseButtonsImpl(_Out_ ULONG* const pButtons);
+    void GetNumberOfConsoleMouseButtonsImpl(_Out_ ULONG* const pButtons);
 
+    [[nodiscard]]
     HRESULT GetConsoleFontSizeImpl(_In_ SCREEN_INFORMATION* const pContext,
                                    _In_ DWORD const FontIndex,
                                    _Out_ COORD* const pFontSize);
 
     //// driver will pare down for non-Ex method
+    [[nodiscard]]
     HRESULT GetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const pContext,
                                         _In_ BOOLEAN const IsForMaximumWindowSize,
                                         _Out_ CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx);
 
+    [[nodiscard]]
     HRESULT SetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const pContext,
                                       _In_ ULONG const Flags,
                                       _Out_ COORD* const pNewScreenBufferSize);
 
-    HRESULT GetConsoleDisplayModeImpl(_Out_ ULONG* const pFlags);
+    void GetConsoleDisplayModeImpl(_Out_ ULONG* const pFlags);
 
+    [[nodiscard]]
     HRESULT AddConsoleAliasAImpl(_In_reads_or_z_(cchSourceBufferLength) const char* const psSourceBuffer,
                                  _In_ size_t const cchSourceBufferLength,
                                  _In_reads_or_z_(cchTargetBufferLength) const char* const psTargetBuffer,
@@ -321,6 +351,7 @@ class ApiRoutines : public IApiRoutines
                                  _In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
                                  _In_ size_t const cchExeNameBufferLength);
 
+    [[nodiscard]]
     HRESULT AddConsoleAliasWImpl(_In_reads_or_z_(cchSourceBufferLength) const wchar_t* const pwsSourceBuffer,
                                  _In_ size_t const cchSourceBufferLength,
                                  _In_reads_or_z_(cchTargetBufferLength) const wchar_t* const pwsTargetBuffer,
@@ -328,6 +359,7 @@ class ApiRoutines : public IApiRoutines
                                  _In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
                                  _In_ size_t const cchExeNameBufferLength);
 
+    [[nodiscard]]
     HRESULT GetConsoleAliasAImpl(_In_reads_or_z_(cchSourceBufferLength) const char* const psSourceBuffer,
                                  _In_ size_t const cchSourceBufferLength,
                                  _Out_writes_to_(cchTargetBufferLength, *pcchTargetBufferWritten) _Always_(_Post_z_) char* const psTargetBuffer,
@@ -336,6 +368,7 @@ class ApiRoutines : public IApiRoutines
                                  _In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
                                  _In_ size_t const cchExeNameBufferLength);
 
+    [[nodiscard]]
     HRESULT GetConsoleAliasWImpl(_In_reads_or_z_(cchSourceBufferLength) const wchar_t* const pwsSourceBuffer,
                                  _In_ size_t const cchSourceBufferLength,
                                  _Out_writes_to_(cchTargetBufferLength, *pcchTargetBufferWritten) _Always_(_Post_z_) wchar_t* const pwsTargetBuffer,
@@ -344,68 +377,84 @@ class ApiRoutines : public IApiRoutines
                                  _In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
                                  _In_ size_t const cchExeNameBufferLength);
 
+    [[nodiscard]]
     HRESULT GetConsoleAliasesLengthAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
                                          _In_ size_t const cchExeNameBufferLength,
                                          _Out_ size_t* const pcchAliasesBufferRequired);
 
+    [[nodiscard]]
     HRESULT GetConsoleAliasesLengthWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
                                          _In_ size_t const cchExeNameBufferLength,
                                          _Out_ size_t* const pcchAliasesBufferRequired);
 
+    [[nodiscard]]
     HRESULT GetConsoleAliasExesLengthAImpl(_Out_ size_t* const pcchAliasExesBufferRequired);
 
+    [[nodiscard]]
     HRESULT GetConsoleAliasExesLengthWImpl(_Out_ size_t* const pcchAliasExesBufferRequired);
 
+    [[nodiscard]]
     HRESULT GetConsoleAliasesAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
                                    _In_ size_t const cchExeNameBufferLength,
                                    _Out_writes_to_(cchAliasBufferLength, *pcchAliasBufferWritten) _Always_(_Post_z_) char* const psAliasBuffer,
                                    _In_ size_t const cchAliasBufferLength,
                                    _Out_ size_t* const pcchAliasBufferWritten);
 
+    [[nodiscard]]
     HRESULT GetConsoleAliasesWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
                                    _In_ size_t const cchExeNameBufferLength,
                                    _Out_writes_to_(cchAliasBufferLength, *pcchAliasBufferWritten) _Always_(_Post_z_) wchar_t* const pwsAliasBuffer,
                                    _In_ size_t const cchAliasBufferLength,
                                    _Out_ size_t* const pcchAliasBufferWritten);
 
+    [[nodiscard]]
     HRESULT GetConsoleAliasExesAImpl(_Out_writes_to_(cchAliasExesBufferLength, *pcchAliasExesBufferWritten) _Always_(_Post_z_) char* const psAliasExesBuffer,
                                      _In_ size_t const cchAliasExesBufferLength,
                                      _Out_ size_t* const pcchAliasExesBufferWritten);
 
+    [[nodiscard]]
     HRESULT GetConsoleAliasExesWImpl(_Out_writes_to_(cchAliasExesBufferLength, *pcchAliasExesBufferWritten) _Always_(_Post_z_) wchar_t* const pwsAliasExesBuffer,
                                      _In_ size_t const cchAliasExesBufferLength,
                                      _Out_ size_t* const pcchAliasExesBufferWritten);
 
 #pragma region CMDext Private API
 
+    [[nodiscard]]
     HRESULT ExpungeConsoleCommandHistoryAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
                                               _In_ size_t const cchExeNameBufferLength);
 
+    [[nodiscard]]
     HRESULT ExpungeConsoleCommandHistoryWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
                                               _In_ size_t const cchExeNameBufferLength);
 
+    [[nodiscard]]
     HRESULT SetConsoleNumberOfCommandsAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
                                             _In_ size_t const cchExeNameBufferLength,
                                             _In_ size_t const NumberOfCommands);
 
+    [[nodiscard]]
     HRESULT SetConsoleNumberOfCommandsWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
                                             _In_ size_t const cchExeNameBufferLength,
                                             _In_ size_t const NumberOfCommands);
 
+    [[nodiscard]]
     HRESULT GetConsoleCommandHistoryLengthAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
                                                 _In_ size_t const cchExeNameBufferLength,
                                                 _Out_ size_t* const pcchCommandHistoryLength);
 
+    [[nodiscard]]
     HRESULT GetConsoleCommandHistoryLengthWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
                                                 _In_ size_t const cchExeNameBufferLength,
                                                 _Out_ size_t* const pcchCommandHistoryLength);
 
+    [[nodiscard]]
     HRESULT GetConsoleCommandHistoryAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
                                           _In_ size_t const cchExeNameBufferLength,
                                           _Out_writes_to_(cchCommandHistoryBufferLength, *pcchCommandHistoryBufferWritten) _Always_(_Post_z_) char* const psCommandHistoryBuffer,
                                           _In_ size_t const cchCommandHistoryBufferLength,
                                           _Out_ size_t* const pcchCommandHistoryBufferWritten);
 
+    [[nodiscard]]
     HRESULT GetConsoleCommandHistoryWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
                                           _In_ size_t const cchExeNameBufferLength,
                                           _Out_writes_to_(cchCommandHistoryBufferLength, *pcchCommandHistoryBufferWritten) _Always_(_Post_z_) wchar_t* const pwsCommandHistoryBuffer,
@@ -414,14 +463,16 @@ class ApiRoutines : public IApiRoutines
 
 #pragma endregion
 
-    HRESULT GetConsoleWindowImpl(_Out_ HWND* const pHwnd);
+    void GetConsoleWindowImpl(_Out_ HWND* const pHwnd);
 
-    HRESULT GetConsoleSelectionInfoImpl(_Out_ CONSOLE_SELECTION_INFO* const pConsoleSelectionInfo);
+    void GetConsoleSelectionInfoImpl(_Out_ CONSOLE_SELECTION_INFO* const pConsoleSelectionInfo);
 
-    HRESULT GetConsoleHistoryInfoImpl(_Out_ CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo);
+    void GetConsoleHistoryInfoImpl(_Out_ CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo);
 
+    [[nodiscard]]
     HRESULT SetConsoleHistoryInfoImpl(_In_ const CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo);
 
+    [[nodiscard]]
     HRESULT SetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const pContext,
                                         _In_ BOOLEAN const IsForMaximumWindowSize,
                                         _In_ const CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx);

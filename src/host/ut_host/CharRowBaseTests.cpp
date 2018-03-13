@@ -100,8 +100,8 @@ class CharRowBaseTests
         ucs2CharRow.Reset();
         utf8CharRow.Reset();
         // resize
-        ucs2CharRow.Resize(rowWidth);
-        utf8CharRow.Resize(rowWidth);
+        VERIFY_SUCCEEDED(ucs2CharRow.Resize(rowWidth));
+        VERIFY_SUCCEEDED(utf8CharRow.Resize(rowWidth));
 
         return true;
     }
@@ -280,11 +280,11 @@ class CharRowBaseTests
             SetCellData(pCharRow, attrs);
 
             // resize smaller
-            pCharRow->Resize(smallSize);
+            VERIFY_SUCCEEDED(pCharRow->Resize(smallSize));
             VERIFY_ARE_EQUAL(pCharRow->size(), smallSize);
 
             // resize bigger
-            pCharRow->Resize(bigSize);
+            VERIFY_SUCCEEDED(pCharRow->Resize(bigSize));
             VERIFY_ARE_EQUAL(pCharRow->size(), bigSize);
 
             switch (pCharRow->GetSupportedEncoding())

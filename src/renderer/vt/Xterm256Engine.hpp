@@ -30,6 +30,7 @@ namespace Microsoft::Console::Render
 
         virtual ~Xterm256Engine() override = default;
 
+        [[nodiscard]]
         HRESULT UpdateDrawingBrushes(_In_ COLORREF const colorForeground,
                                     _In_ COLORREF const colorBackground,
                                     _In_ WORD const legacyColorAttribute,

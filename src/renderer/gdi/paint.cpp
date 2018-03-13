@@ -18,6 +18,7 @@ using namespace Microsoft::Console::Render;
 // - <none>
 // Return Value:
 // - S_OK if we started to paint. S_FALSE if we didn't need to paint. HRESULT error code if painting didn't start successfully.
+[[nodiscard]]
 HRESULT GdiEngine::StartPaint()
 {
     // If we have no handle, we don't need to paint. Return quickly.
@@ -57,6 +58,7 @@ HRESULT GdiEngine::StartPaint()
 // - <none>
 // Return Value:
 // - S_OK, suitable GDI HRESULT error, error from Win32 windowing, or safemath error.
+[[nodiscard]]
 HRESULT GdiEngine::ScrollFrame()
 {
     // If we don't have any scrolling to do, return early.
@@ -88,7 +90,7 @@ HRESULT GdiEngine::ScrollFrame()
     RECT rcUpdate = { 0 };
     LOG_LAST_ERROR_IF_FALSE(ScrollDC(_hdcMemoryContext, _szInvalidScroll.cx, _szInvalidScroll.cy, &rcScrollLimit, &rcScrollLimit, nullptr, &rcUpdate));
 
-    _InvalidCombine(&rcUpdate);
+    LOG_IF_FAILED(_InvalidCombine(&rcUpdate));
 
     // update invalid rect for the remainder of paint functions
     _psInvalidData.rcPaint = _rcInvalid;
@@ -102,6 +104,7 @@ HRESULT GdiEngine::ScrollFrame()
 // - hwnd - Window handle to use for the DC properties when creating a memory DC and for checking the client area size.
 // Return Value:
 // - S_OK or suitable GDI HRESULT error.
+[[nodiscard]]
 HRESULT GdiEngine::_PrepareMemoryBitmap(_In_ HWND const hwnd)
 {
     RECT rcClient;
@@ -168,6 +171,7 @@ HRESULT GdiEngine::_PrepareMemoryBitmap(_In_ HWND const hwnd)
 // - <none>
 // Return Value:
 // - S_OK or suitable GDI HRESULT error.
+[[nodiscard]]
 HRESULT GdiEngine::EndPaint()
 {
     // If we try to end a paint that wasn't started, it's invalid. Return.
@@ -199,6 +203,7 @@ HRESULT GdiEngine::EndPaint()
 // - prc - Rectangle to fill with color
 // Return Value:
 // - S_OK or suitable GDI HRESULT error.
+[[nodiscard]]
 HRESULT GdiEngine::_PaintBackgroundColor(_In_ const RECT* const prc)
 {
     wil::unique_hbrush hbr(GetStockBrush(DC_BRUSH));
@@ -219,6 +224,7 @@ HRESULT GdiEngine::_PaintBackgroundColor(_In_ const RECT* const prc)
 // - <none>
 // Return Value:
 // - S_OK or suitable GDI HRESULT error.
+[[nodiscard]]
 HRESULT GdiEngine::PaintBackground()
 {
     if (_psInvalidData.fErase)
@@ -249,6 +255,7 @@ HRESULT GdiEngine::PaintBackground()
 // See: Win7: 390673, 447839 and then superseded by http://osgvsowi/638274 when FE/non-FE rendering condensed.
 //#define CONSOLE_EXTTEXTOUT_FLAGS ETO_OPAQUE | ETO_CLIPPED
 //#define MAX_POLY_LINES 80
+[[nodiscard]]
 HRESULT GdiEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
                                    _In_reads_(cchLine) const unsigned char* const rgWidths,
                                    _In_ size_t const cchLine,
@@ -315,6 +322,7 @@ HRESULT GdiEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
 // - <none>
 // Return Value:
 // - S_OK or E_FAIL if GDI failed.
+[[nodiscard]]
 HRESULT GdiEngine::_FlushBufferLines()
 {
     HRESULT hr = S_OK;
@@ -356,6 +364,7 @@ HRESULT GdiEngine::_FlushBufferLines()
 // - coordTarget - The starting X/Y position of the first character to draw on.
 // Return Value:
 // - S_OK or suitable GDI HRESULT error or E_FAIL for GDI errors in functions that don't reliably return a specific error code.
+[[nodiscard]]
 HRESULT GdiEngine::PaintBufferGridLines(_In_ GridLines const lines, _In_ COLORREF const color, _In_ size_t const cchLine, _In_ COORD const coordTarget)
 {
     // Return early if there are no lines to paint.
@@ -424,6 +433,7 @@ HRESULT GdiEngine::PaintBufferGridLines(_In_ GridLines const lines, _In_ COLORRE
 // - fIsDoubleWidth - The cursor should be drawn twice as wide as usual.
 // Return Value:
 // - S_OK, suitable GDI HRESULT error, or safemath error, or E_FAIL in a GDI error where a specific error isn't set.
+[[nodiscard]]
 HRESULT GdiEngine::PaintCursor(_In_ COORD const coordCursor,
                                _In_ ULONG const ulCursorHeightPercent,
                                _In_ bool const fIsDoubleWidth,
@@ -540,6 +550,7 @@ HRESULT GdiEngine::PaintCursor(_In_ COORD const coordCursor,
 // - <none>
 // Return Value:
 // - S_OK, suitable GDI HRESULT error, or E_FAIL in a GDI error where a specific error isn't set.
+[[nodiscard]]
 HRESULT GdiEngine::ClearCursor()
 {
     if (!IsRectEmpty(&_rcCursorInvert))
@@ -562,6 +573,7 @@ HRESULT GdiEngine::ClearCursor()
 // - cRectangles - Count of rectangle array length
 // Return Value:
 // - S_OK or suitable GDI HRESULT error.
+[[nodiscard]]
 HRESULT GdiEngine::PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles)
 {
     LOG_IF_FAILED(_FlushBufferLines());
@@ -595,6 +607,7 @@ HRESULT GdiEngine::PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* cons
 //  - hrgnSelection - Handle to empty GDI region. Will be filled with selection region information.
 // Return Value:
 //  - HRESULT S_OK or Expect GDI-based errors or memory errors.
+[[nodiscard]]
 HRESULT GdiEngine::_PaintSelectionCalculateRegion(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection,
                                                   _In_ UINT const cRectangles,
                                                   _Inout_ HRGN const hrgnSelection) const

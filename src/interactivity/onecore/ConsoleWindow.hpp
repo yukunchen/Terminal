@@ -29,6 +29,7 @@ namespace Microsoft::Console::Interactivity::OneCore
 
         bool IsInFullscreen() const;
         void SetIsFullscreen(bool const fFullscreenEnabled);
+        [[nodiscard]]
         NTSTATUS SetViewportOrigin(SMALL_RECT NewWindow);
         void SetWindowHasMoved(BOOL const fHasMoved);
 
@@ -56,7 +57,9 @@ namespace Microsoft::Console::Interactivity::OneCore
         void HorizontalScroll(const WORD wScrollCommand, const WORD wAbsoluteChange) const;
         void VerticalScroll(const WORD wScrollCommand, const WORD wAbsoluteChange) const;
 
+        [[nodiscard]]
         HRESULT SignalUia(_In_ EVENTID id);
+        [[nodiscard]]
         HRESULT UiaSetTextAreaFocus();
         RECT GetWindowRect() const;
     };

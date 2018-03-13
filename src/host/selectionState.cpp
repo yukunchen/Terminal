@@ -192,7 +192,7 @@ void Selection::_RestoreCursorData(_In_ SCREEN_INFORMATION* const pScreenInfo)
 {
     Cursor* pCursor = ServiceLocator::LocateGlobals().getConsoleInformation().CurrentScreenBuffer->TextInfo->GetCursor();
     pScreenInfo->SetCursorInformation(_ulSavedCursorSize, _fSavedCursorVisible, pCursor->GetColor(), pCursor->GetType());
-    pScreenInfo->SetCursorPosition(_coordSavedCursorPosition, TRUE /* TurnOn */);
+    LOG_IF_FAILED(pScreenInfo->SetCursorPosition(_coordSavedCursorPosition, TRUE /* TurnOn */));
 }
 
 // Routine Description:

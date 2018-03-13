@@ -105,6 +105,7 @@ bool ConsoleHandleData::IsWriteShared() const
 // - ppInputBuffer - On success, filled with the referenced Input Buffer object
 // Return Value:
 // - HRESULT S_OK or suitable error.
+[[nodiscard]]
 HRESULT ConsoleHandleData::GetInputBuffer(_In_ const ACCESS_MASK amRequested,
                                           _Outptr_ InputBuffer** const ppInputBuffer) const
 {
@@ -125,6 +126,7 @@ HRESULT ConsoleHandleData::GetInputBuffer(_In_ const ACCESS_MASK amRequested,
 // - ppInputBuffer - On success, filled with the referenced Screen Buffer object
 // Return Value:
 // - HRESULT S_OK or suitable error.
+[[nodiscard]]
 HRESULT ConsoleHandleData::GetScreenBuffer(_In_ const ACCESS_MASK amRequested,
                                            _Outptr_ SCREEN_INFORMATION** const ppScreenInfo) const
 {
@@ -144,6 +146,7 @@ HRESULT ConsoleHandleData::GetScreenBuffer(_In_ const ACCESS_MASK amRequested,
 // - ppWaitQueue - On success, filled with a pointer to the desired queue
 // Return Value:
 // - HRESULT S_OK or E_UNEXPECTED if the handle data structure is in an invalid state.
+[[nodiscard]]
 HRESULT ConsoleHandleData::GetWaitQueue(_Outptr_ ConsoleWaitQueue** const ppWaitQueue) const
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -185,6 +188,7 @@ INPUT_READ_HANDLE_DATA* ConsoleHandleData::GetClientInput() const
 // Return Value:
 // - HRESULT S_OK or suitable error code.
 // TODO: MSFT: 9358923 Consider making this a part of the destructor. http://osgvsowi/9358923
+[[nodiscard]]
 HRESULT ConsoleHandleData::CloseHandle()
 {
     if (_IsInput())
@@ -211,6 +215,7 @@ HRESULT ConsoleHandleData::CloseHandle()
 // - HRESULT S_OK or suitable error code.
 // Note:
 // - The console lock must be held when calling this routine.
+[[nodiscard]]
 HRESULT ConsoleHandleData::_CloseInputHandle()
 {
     assert(_IsInput());
@@ -266,6 +271,7 @@ HRESULT ConsoleHandleData::_CloseInputHandle()
 // - HRESULT S_OK or suitable error code.
 // Note:
 // - The console lock must be held when calling this routine.
+[[nodiscard]]
 HRESULT ConsoleHandleData::_CloseOutputHandle()
 {
     assert(_IsOutput());

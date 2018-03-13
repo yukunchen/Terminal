@@ -109,12 +109,12 @@ void Registry::_LoadMappedProperties(_In_reads_(cPropertyMappings) const Registr
         case RegistrySerialization::_RegPropertyType::Byte:
         case RegistrySerialization::_RegPropertyType::Coordinate:
         {
-            RegistrySerialization::s_LoadRegDword(hKey, pPropMap, _pSettings);
+            LOG_IF_FAILED(RegistrySerialization::s_LoadRegDword(hKey, pPropMap, _pSettings));
             break;
         }
         case RegistrySerialization::_RegPropertyType::String:
         {
-            RegistrySerialization::s_LoadRegString(hKey, pPropMap, _pSettings);
+            LOG_IF_FAILED(RegistrySerialization::s_LoadRegString(hKey, pPropMap, _pSettings));
             break;
         }
         }

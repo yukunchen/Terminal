@@ -68,6 +68,7 @@ static bool ShouldUseConhostV2()
     return fShouldUseConhostV2;
 }
 
+[[nodiscard]]
 static HRESULT ValidateServerHandle(_In_ const HANDLE handle)
 {
     // Make sure this is a console file.
@@ -93,6 +94,7 @@ static bool ShouldUseLegacyConhost(_In_ const bool fForceV1)
     return fForceV1 || !ShouldUseConhostV2();
 }
 
+[[nodiscard]]
 static HRESULT ActivateLegacyConhost(_In_ const HANDLE handle)
 {
     HRESULT hr = S_OK;

@@ -37,6 +37,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 // - S_OK if we started to paint. S_FALSE if we didn't need to paint. HRESULT
 //      error code if painting didn't start successfully, or we failed to write
 //      the pipe.
+[[nodiscard]]
 HRESULT XtermEngine::StartPaint()
 {
     HRESULT hr = VtEngine::StartPaint();
@@ -72,6 +73,7 @@ HRESULT XtermEngine::StartPaint()
 // - <none>
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]]
 HRESULT XtermEngine::EndPaint()
 {
     HRESULT hr = VtEngine::EndPaint();
@@ -100,6 +102,7 @@ HRESULT XtermEngine::EndPaint()
 //      the window. Unused for VT
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]]
 HRESULT XtermEngine::UpdateDrawingBrushes(_In_ COLORREF const colorForeground,
                                           _In_ COLORREF const colorBackground,
                                           _In_ WORD const /*legacyColorAttribute*/,
@@ -121,6 +124,7 @@ HRESULT XtermEngine::UpdateDrawingBrushes(_In_ COLORREF const colorForeground,
 // - coord: location to move the cursor to.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]]
 HRESULT XtermEngine::_MoveCursor(COORD const coord)
 {
     HRESULT hr = S_OK;
@@ -178,6 +182,7 @@ HRESULT XtermEngine::_MoveCursor(COORD const coord)
 // - <none>
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]]
 HRESULT XtermEngine::ScrollFrame()
 {
     if (_scrollDelta.X != 0)
@@ -234,6 +239,7 @@ HRESULT XtermEngine::ScrollFrame()
 //      console would like us to move while scrolling.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for safemath failure
+[[nodiscard]]
 HRESULT XtermEngine::InvalidateScroll(_In_ const COORD* const pcoordDelta)
 {
     const short dx = pcoordDelta->X;
@@ -255,7 +261,7 @@ HRESULT XtermEngine::InvalidateScroll(_In_ const COORD* const pcoordDelta)
         {
             invalid.Top = invalid.Bottom + dy;
         }
-        _InvalidCombine(Viewport::FromExclusive(invalid));
+        LOG_IF_FAILED(_InvalidCombine(Viewport::FromExclusive(invalid)));
 
         COORD invalidScrollNew;
         RETURN_IF_FAILED(ShortAdd(_scrollDelta.X, dx, &invalidScrollNew.X));
@@ -284,6 +290,7 @@ HRESULT XtermEngine::InvalidateScroll(_In_ const COORD* const pcoordDelta)
 //      double-wide character.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
+[[nodiscard]]
 HRESULT XtermEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
                                      _In_reads_(cchLine) const unsigned char* const rgWidths,
                                      _In_ size_t const cchLine,
@@ -294,4 +301,3 @@ HRESULT XtermEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
         VtEngine::_PaintAsciiBufferLine(pwsLine, rgWidths, cchLine, coord) :
         VtEngine::_PaintUtf8BufferLine(pwsLine, rgWidths, cchLine, coord);
 }
-

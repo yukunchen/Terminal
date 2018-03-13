@@ -38,10 +38,9 @@ namespace Microsoft::Console::Render
 
         virtual const bool IsGridLineDrawingAllowed() = 0;
 
-        virtual _Check_return_
-            NTSTATUS GetSelectionRects(
-                _Outptr_result_buffer_all_(*pcRectangles) SMALL_RECT** const prgsrSelection,
-                _Out_ UINT* const pcRectangles) = 0;
+        [[nodiscard]]
+        virtual NTSTATUS GetSelectionRects(_Outptr_result_buffer_all_(*pcRectangles) SMALL_RECT** const prgsrSelection,
+                                           _Out_ UINT* const pcRectangles) = 0;
     };
 
     inline IRenderData::~IRenderData() {}

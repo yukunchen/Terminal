@@ -51,6 +51,7 @@ ScreenInfoUiaProvider::~ScreenInfoUiaProvider()
 {
 }
 
+[[nodiscard]]
 HRESULT ScreenInfoUiaProvider::Signal(_In_ EVENTID id)
 {
     HRESULT hr = S_OK;

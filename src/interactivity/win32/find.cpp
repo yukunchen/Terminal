@@ -102,7 +102,7 @@ INT_PTR FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
                         {
                             Position.Y = ScreenInfo->GetBufferViewport().Top;
                         }
-                        ScreenInfo->SetViewportOrigin(TRUE, Position);
+                        LOG_IF_FAILED(ScreenInfo->SetViewportOrigin(TRUE, Position));
 
                         UnlockConsole();
 

@@ -41,6 +41,7 @@ public:
     bool WasDoubleBytePadded() const noexcept;
     size_t size() const noexcept override;
     void Reset();
+    [[nodiscard]]
     HRESULT Resize(_In_ const size_t newSize) noexcept;
     size_t MeasureLeft() const override;
     size_t MeasureRight() const override;

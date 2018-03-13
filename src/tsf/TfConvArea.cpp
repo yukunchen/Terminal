@@ -37,10 +37,11 @@ Notes:
 //
 //----------------------------------------------------------------------------
 
-HRESULT CConversionArea::DrawConversionAreaInfo(CComBSTR CompStr, 
-                                                TF_DISPLAYATTRIBUTE* DisplayAttribute, 
-                                                ULONG cchDisplayAttribute, 
-                                                CComBSTR ResultStr, 
+[[nodiscard]]
+HRESULT CConversionArea::DrawConversionAreaInfo(CComBSTR CompStr,
+                                                TF_DISPLAYATTRIBUTE* DisplayAttribute,
+                                                ULONG cchDisplayAttribute,
+                                                CComBSTR ResultStr,
                                                 DWORD CompCursorPos)
 {
     LPCONIME_UICOMPMESSAGE lpCompStrMem;

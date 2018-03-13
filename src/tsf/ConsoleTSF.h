@@ -42,6 +42,7 @@ public:
     virtual ~CConsoleTSF()
     {
     }
+    [[nodiscard]]
     HRESULT Initialize();
     void    Uninitialize();
 
@@ -165,7 +166,9 @@ public:
     void SetCompletedRangeLength(long cch) { _cchCompleted = cch; }
 
 private:
+    [[nodiscard]]
     HRESULT _OnUpdateComposition();
+    [[nodiscard]]
     HRESULT _OnCompleteComposition();
     BOOL _HasCompositionChanged(ITfContext *pInputContext, TfEditCookie ecReadOnly, ITfEditRecord *pEditRecord);
 

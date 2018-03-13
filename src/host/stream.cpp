@@ -38,6 +38,7 @@
 // arrow key.
 // Return Value:
 // - STATUS_SUCCESS on success or a relevant error code on failure.
+[[nodiscard]]
 NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
                  _Out_ wchar_t* const pwchOut,
                  _In_ bool const Wait,
@@ -286,6 +287,7 @@ ULONG RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
 // Return Value:
 // - STATUS_NO_MEMORY in low memory situation
 // - other relevant NTSTATUS codes
+[[nodiscard]]
 NTSTATUS ReadPendingInput(_Inout_ InputBuffer* const pInputBuffer,
                           _Out_writes_bytes_to_(OutputBufferSize, *pReadByteCount) wchar_t* const pwchBuffer,
                           _Out_ ULONG* const pReadByteCount,
@@ -475,6 +477,7 @@ NTSTATUS ReadPendingInput(_Inout_ InputBuffer* const pInputBuffer,
 // - STATUS_UNSUCCESSFUL if not able to access current screen buffer
 // - STATUS_NO_MEMORY in low memory situation
 // - other relevant NTSTATUS codes
+[[nodiscard]]
 NTSTATUS ReadLineInput(_Inout_ InputBuffer* const pInputBuffer,
                        _In_ HANDLE ProcessData,
                        _Out_writes_bytes_to_(OutputBufferSize, *pReadByteCount) wchar_t* const pwchBuffer,
@@ -524,7 +527,7 @@ NTSTATUS ReadLineInput(_Inout_ InputBuffer* const pInputBuffer,
     {
         if (Echo)
         {
-            pTempHandleData->CloseHandle();
+            LOG_IF_FAILED(pTempHandleData->CloseHandle());
         }
 
         return STATUS_NO_MEMORY;
@@ -642,6 +645,7 @@ NTSTATUS ReadLineInput(_Inout_ InputBuffer* const pInputBuffer,
 // populated.
 // - STATUS_SUCCESS on success
 // - Other NSTATUS codes as necessary
+[[nodiscard]]
 NTSTATUS ReadCharacterInput(_Inout_ InputBuffer* const pInputBuffer,
                             _Out_writes_bytes_to_(OutputBufferSize, *pReadByteCount) wchar_t* const pwchBuffer,
                             _Out_ ULONG* const pReadByteCount,
@@ -831,6 +835,7 @@ NTSTATUS ReadCharacterInput(_Inout_ InputBuffer* const pInputBuffer,
 // populated.
 // - STATUS_SUCCESS on success
 // - Other NSTATUS codes as necessary
+[[nodiscard]]
 NTSTATUS DoReadConsole(_Inout_ InputBuffer* const pInputBuffer,
                        _In_ HANDLE ProcessData,
                        _Out_writes_bytes_(*pcbBuffer) wchar_t* const pwchBuffer,
@@ -948,6 +953,7 @@ HRESULT ApiRoutines::ReadConsoleAImpl(_Inout_ IConsoleInputObject* const pInCont
     return HRESULT_FROM_NT(Status);
 }
 
+[[nodiscard]]
 HRESULT ApiRoutines::ReadConsoleWImpl(_Inout_ IConsoleInputObject* const pInContext,
                                       _Out_writes_to_(cchTextBuffer, *pcchTextBufferWritten) wchar_t* const pwsTextBuffer,
                                       _In_ size_t const cchTextBuffer,

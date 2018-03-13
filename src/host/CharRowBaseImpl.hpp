@@ -138,6 +138,7 @@ void CharRowBase<GlyphType, StringType>::Reset()
 // Return Value:
 // - S_OK on success, otherwise relevant error code
 template<typename GlyphType, typename StringType>
+[[nodiscard]]
 HRESULT CharRowBase<GlyphType, StringType>::Resize(_In_ const size_t newSize) noexcept
 {
     try
