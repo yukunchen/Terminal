@@ -49,9 +49,6 @@ public:
     bool IsGridRenderingAllowedWorldwide() const;
     void SetGridRenderingAllowedWorldwide(_In_ bool const fGridRenderingAllowed);
 
-    bool GetExtendedEditKey() const;
-    void SetExtendedEditKey(_In_ bool const fExtendedEditKey);
-
     BOOL GetFilterOnPaste() const;
     void SetFilterOnPaste(_In_ BOOL const fFilterOnPaste);
 
@@ -199,7 +196,6 @@ private:
     BYTE _bWindowAlpha; // describes the opacity of the window
 
     BOOL _fFilterOnPaste; // should we filter text when the user pastes? (e.g. remove <tab>)
-    bool _fExtendedEditKey;
     WCHAR _LaunchFaceName[LF_FACESIZE];
     bool _fAllowAltF4Close;
     DWORD _dwVirtTermLevel;

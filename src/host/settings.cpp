@@ -45,7 +45,6 @@ Settings::Settings() :
     _fFilterOnPaste(false),
     _fTrimLeadingZeros(FALSE),
     _fEnableColorSelection(FALSE),
-    _fExtendedEditKey(true),
     _fAllowAltF4Close(true),
     _dwVirtTermLevel(0),
     _fUseWindowSizePixels(false),
@@ -403,7 +402,6 @@ void Settings::ApplyDesktopSpecificDefaults()
 
     _InitColorTable();
 
-    _fExtendedEditKey = true;
     _fTrimLeadingZeros = false;
     _fEnableColorSelection = false;
     _uScrollScale = 1;
@@ -415,8 +413,8 @@ void Settings::ApplyStartupInfo(_In_ const Settings* const pStartupSettings)
 
     // See: http://msdn.microsoft.com/en-us/library/windows/desktop/ms686331(v=vs.85).aspx
 
-    // Note: These attributes do not get sent to us if we started conhost 
-    //      directly.  See minkernel/console/client/dllinit for the 
+    // Note: These attributes do not get sent to us if we started conhost
+    //      directly.  See minkernel/console/client/dllinit for the
     //      initialization of these values for cmdline applications.
 
     if (IsFlagSet(dwFlags, STARTF_USECOUNTCHARS))
@@ -452,7 +450,7 @@ void Settings::ApplyStartupInfo(_In_ const Settings* const pStartupSettings)
 
 // Method Description:
 // - Applies settings passed on the commandline to this settings structure.
-//      Currently, the only settings that can be passed on the commandline are 
+//      Currently, the only settings that can be passed on the commandline are
 //      the initial width and height of the screenbuffer/viewport.
 // Arguments:
 // - consoleArgs: A reference to a parsed command-line args object.
@@ -462,7 +460,7 @@ void Settings::ApplyCommandlineArguments(_In_ const ConsoleArguments& consoleArg
 {
     const short width = consoleArgs.GetWidth();
     const short height = consoleArgs.GetHeight();
-    
+
     if (width > 0)
     {
         _dwScreenBufferSize.X = width;
@@ -601,15 +599,6 @@ void Settings::SetGridRenderingAllowedWorldwide(_In_ bool const fGridRenderingAl
             ServiceLocator::LocateGlobals()->pRender->TriggerRedrawAll();
         }
     }
-}
-
-bool Settings::GetExtendedEditKey() const
-{
-    return this->_fExtendedEditKey;
-}
-void Settings::SetExtendedEditKey(_In_ bool const fExtendedEditKey)
-{
-    this->_fExtendedEditKey = fExtendedEditKey;
 }
 
 BOOL Settings::GetFilterOnPaste() const

@@ -372,7 +372,7 @@ void HandleKeyEvent(_In_ const HWND hWnd,
             return;
         }
     }
-    if (pSelection->s_IsValidKeyboardLineSelection(&inputKeyInfo) && IsInProcessedInputMode() && gci->GetExtendedEditKey())
+    if (pSelection->s_IsValidKeyboardLineSelection(&inputKeyInfo) && IsInProcessedInputMode())
     {
         if (!bKeyDown || pSelection->HandleKeyboardLineSelectionEvent(&inputKeyInfo))
         {

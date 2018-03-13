@@ -64,35 +64,10 @@ void Registry::GetEditKeys(_In_opt_ HKEY hConsoleKey) const
         gci->SetAltF4CloseAllowed(!!dwValue);
     }
 
-    // get extended edit mode and keys from registry.
-    Status = RegistrySerialization::s_QueryValue(hConsoleKey,
-                                                 CONSOLE_REGISTRY_EXTENDEDEDITKEY,
-                                                 sizeof(dwValue),
-                                                 REG_DWORD,
-                                                 (PBYTE)& dwValue,
-                                                 nullptr);
-    if (NT_SUCCESS(Status) && dwValue == 1)
-    {
-        gci->SetExtendedEditKey(true);
-    }
-    else
-    {
-        gci->SetExtendedEditKey(false);
-    }
-
-    // Word delimiters
-    if (gci->GetExtendedEditKey())
-    {
-        // If extended edit key is given, provide extended word delimiters by default.
-        memmove(ServiceLocator::LocateGlobals()->aWordDelimChars,
-                aWordDelimCharsDefault,
-                sizeof(ServiceLocator::LocateGlobals()->aWordDelimChars[0]) * WORD_DELIM_MAX);
-    }
-    else
-    {
-        // Otherwise, stick to the original word delimiter.
-        ServiceLocator::LocateGlobals()->aWordDelimChars[0] = L'\0';
-    }
+    // provide extended word delimiters by default.
+    std::copy(std::begin(aWordDelimCharsDefault),
+              std::end(aWordDelimCharsDefault),
+              ServiceLocator::LocateGlobals()->aWordDelimChars);
 
     // Read word delimiters from registry
     WCHAR awchBuffer[64];
