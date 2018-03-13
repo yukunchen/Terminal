@@ -31,16 +31,19 @@ namespace Microsoft::Console::Render
     class Renderer sealed : public IRenderer
     {
     public:
+        [[nodiscard]]
         static HRESULT s_CreateInstance(_In_ std::unique_ptr<IRenderData> pData,
                                         _In_reads_(cEngines) IRenderEngine** const rgpEngines,
                                         _In_ size_t const cEngines,
                                         _Outptr_result_nullonfailure_ Renderer** const ppRenderer);
 
+        [[nodiscard]]
         static HRESULT s_CreateInstance(_In_ std::unique_ptr<IRenderData> pData,
                                         _Outptr_result_nullonfailure_ Renderer** const ppRenderer);
 
         ~Renderer();
 
+        [[nodiscard]]
         HRESULT PaintFrame();
 
         void TriggerSystemRedraw(_In_ const RECT* const prcDirtyClient);
@@ -58,6 +61,7 @@ namespace Microsoft::Console::Render
 
         void TriggerFontChange(_In_ int const iDpi, _In_ FontInfoDesired const * const pFontInfoDesired, _Out_ FontInfo* const pFontInfo);
 
+        [[nodiscard]]
         HRESULT GetProposedFont(_In_ int const iDpi, _In_ FontInfoDesired const * const pFontInfoDesired, _Out_ FontInfo* const pFontInfo);
 
         COORD GetFontSize();
@@ -78,10 +82,12 @@ namespace Microsoft::Console::Render
         RenderThread* _pThread;
         void _NotifyPaintFrame();
 
+        [[nodiscard]]
         HRESULT _PaintFrameForEngine(_In_ IRenderEngine* const pEngine);
 
         bool _CheckViewportAndScroll();
 
+        [[nodiscard]]
         HRESULT _PaintBackground(_In_ IRenderEngine* const pEngine);
 
         void _PaintBufferOutput(_In_ IRenderEngine* const pEngine);
@@ -101,6 +107,7 @@ namespace Microsoft::Console::Render
                                             _In_ size_t cchLine,
                                             _In_ size_t iFirst,
                                             _In_ COORD const coordTarget);
+        [[nodiscard]]
         HRESULT _PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const pEngine,
                                                     _In_reads_(cchLine) PCWCHAR const pwsLine,
                                                     _In_ const Ucs2CharRow::const_iterator it,
@@ -117,17 +124,19 @@ namespace Microsoft::Console::Render
                         _In_ const TEXT_BUFFER_INFO* const pTextInfo);
         void _PaintImeCompositionString(_In_ IRenderEngine* const pEngine);
 
+        [[nodiscard]]
         HRESULT _UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, _In_ const TextAttribute attr, _In_ bool const fIncludeBackground);
 
+        [[nodiscard]]
         HRESULT _ClearOverlays(_In_ IRenderEngine* const pEngine);
+        [[nodiscard]]
         HRESULT _PerformScrolling(_In_ IRenderEngine* const pEngine);
 
         SMALL_RECT _srViewportPrevious;
 
-        _Check_return_
-            NTSTATUS _GetSelectionRects(
-                _Outptr_result_buffer_all_(*pcRectangles) SMALL_RECT** const prgsrSelection,
-                _Out_ UINT* const pcRectangles) const;
+        [[nodiscard]]
+        NTSTATUS _GetSelectionRects(_Outptr_result_buffer_all_(*pcRectangles) SMALL_RECT** const prgsrSelection,
+                                    _Out_ UINT* const pcRectangles) const;
 
         SMALL_RECT _RegionFromCoord(_In_ const COORD* const pcoord) const;
         COLORREF _ConvertAttrToRGB(_In_ const BYTE bAttr);

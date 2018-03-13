@@ -22,6 +22,7 @@ using namespace Microsoft::Console::Render;
 //      believes is dirty
 // Return Value:
 // - S_OK
+[[nodiscard]]
 HRESULT VtEngine::InvalidateSystem(_In_ const RECT* const /*prcDirtyClient*/)
 {
     return S_OK;
@@ -36,6 +37,7 @@ HRESULT VtEngine::InvalidateSystem(_In_ const RECT* const /*prcDirtyClient*/)
 // - cRectangles - Length of the array above.
 // Return Value:
 // - S_OK
+[[nodiscard]]
 HRESULT VtEngine::InvalidateSelection(_In_reads_(cRectangles) const SMALL_RECT* const /*rgsrSelection*/,
                                       _In_ UINT const /*cRectangles*/)
 {
@@ -52,6 +54,7 @@ HRESULT VtEngine::InvalidateSelection(_In_reads_(cRectangles) const SMALL_RECT* 
 // - psrRegion - Character region (SMALL_RECT) that has been changed
 // Return Value:
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]]
 HRESULT VtEngine::Invalidate(const SMALL_RECT* const psrRegion)
 {
     Viewport newInvalid = Viewport::FromExclusive(*psrRegion);
@@ -64,6 +67,7 @@ HRESULT VtEngine::Invalidate(const SMALL_RECT* const psrRegion)
 // - pcoordCursor - the new position of the cursor
 // Return Value:
 // - S_OK
+[[nodiscard]]
 HRESULT VtEngine::InvalidateCursor(const COORD* const pcoordCursor)
 {
     // If we just inherited the cursor, we're going to get an InvalidateCursor
@@ -90,6 +94,7 @@ HRESULT VtEngine::InvalidateCursor(const COORD* const pcoordCursor)
 // - <none>
 // Return Value:
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]]
 HRESULT VtEngine::InvalidateAll()
 {
     return this->_InvalidCombine(_lastViewport.ToOrigin());
@@ -103,6 +108,7 @@ HRESULT VtEngine::InvalidateAll()
 // - Recieves a bool indicating if we should force the repaint.
 // Return Value:
 // - S_OK
+[[nodiscard]]
 HRESULT VtEngine::InvalidateCircling(_Out_ bool* const pForcePaint)
 {
     *pForcePaint = true;
@@ -122,6 +128,7 @@ HRESULT VtEngine::InvalidateCircling(_Out_ bool* const pForcePaint)
 // - Recieves a bool indicating if we should force the repaint.
 // Return Value:
 // - S_OK
+[[nodiscard]]
 HRESULT VtEngine::PrepareForTeardown(_Out_ bool* const pForcePaint)
 {
     *pForcePaint = true;
@@ -137,6 +144,7 @@ HRESULT VtEngine::PrepareForTeardown(_Out_ bool* const pForcePaint)
 //      repainted on the next frame
 // Return Value:
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]]
 HRESULT VtEngine::_InvalidCombine(_In_ const Viewport invalid)
 {
     if (!_fInvalidRectUsed)
@@ -162,6 +170,7 @@ HRESULT VtEngine::_InvalidCombine(_In_ const Viewport invalid)
 // - ppt - Distances by which we should move the invalid region in response to a scroll
 // Return Value:
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]]
 HRESULT VtEngine::_InvalidOffset(_In_ const COORD* const pCoord)
 {
     if (_fInvalidRectUsed)
@@ -186,6 +195,7 @@ HRESULT VtEngine::_InvalidOffset(_In_ const COORD* const pCoord)
 // - <none>
 // Return Value:
 // - S_OK, else an appropriate HRESULT for failing to allocate or safemath failure.
+[[nodiscard]]
 HRESULT VtEngine::_InvalidRestrict()
 {
     SMALL_RECT oldInvalid = _invalidRect.ToExclusive();

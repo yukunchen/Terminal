@@ -61,6 +61,7 @@ namespace Microsoft::Console::Types
 
         Viewport ToOrigin() const;
 
+        [[nodiscard]]
         static HRESULT AddCoord(_In_ const Viewport& original,
                                 _In_ const COORD delta,
                                 _Out_ Viewport& modified);

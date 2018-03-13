@@ -100,6 +100,7 @@ public:
 #endif
 };
 
+[[nodiscard]]
 NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
                     _In_ bool const fIsUnicode,
                     _Inout_ ULONG* const cbNumBytes,

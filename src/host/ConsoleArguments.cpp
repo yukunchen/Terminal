@@ -101,6 +101,7 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
 // Return Value:
 //  S_OK if we parsed the string successfully, otherwise E_INVALIDARG indicating
 //      failure.
+[[nodiscard]]
 HRESULT ConsoleArguments::s_GetArgumentValue(_Inout_ std::vector<std::wstring>& args, _Inout_ size_t& index, _Out_opt_ std::wstring* const pSetting)
 {
     bool hasNext = (index + 1) < args.size();
@@ -129,6 +130,7 @@ HRESULT ConsoleArguments::s_GetArgumentValue(_Inout_ std::vector<std::wstring>& 
 // Return Value:
 //  S_OK if we parsed the short successfully, otherwise E_INVALIDARG indicating
 //      failure. This could be the case for non-numeric arguments, or for >SHORT_MAX args.
+[[nodiscard]]
 HRESULT ConsoleArguments::s_GetArgumentValue(_Inout_ std::vector<std::wstring>& args,
                                              _Inout_ size_t& index,
                                              _Out_opt_ short* const pSetting)
@@ -176,6 +178,7 @@ HRESULT ConsoleArguments::s_GetArgumentValue(_Inout_ std::vector<std::wstring>& 
 // - S_OK if we could successfully parse the given text and store it in the handle value location.
 // - E_INVALIDARG if we couldn't parse the text as a valid hex-encoded handle number OR
 //                if the handle value was already filled.
+[[nodiscard]]
 HRESULT ConsoleArguments::s_ParseHandleArg(_In_ const std::wstring& handleAsText, _Inout_ DWORD& handleAsVal)
 {
     HRESULT hr = S_OK;
@@ -219,6 +222,7 @@ HRESULT ConsoleArguments::s_ParseHandleArg(_In_ const std::wstring& handleAsText
 // Return Value:
 //  S_OK if we parsed the string successfully, otherwise E_INVALIDARG indicating
 //       failure.
+[[nodiscard]]
 HRESULT ConsoleArguments::_GetClientCommandline(_In_ std::vector<std::wstring>& args, _In_ const size_t index, _In_ const bool skipFirst)
 {
     auto start = args.begin()+index;
@@ -256,6 +260,7 @@ HRESULT ConsoleArguments::_GetClientCommandline(_In_ std::vector<std::wstring>& 
 // Return Value:
 //  S_OK if we parsed our _commandline successfully, otherwise E_INVALIDARG
 //      indicating failure.
+[[nodiscard]]
 HRESULT ConsoleArguments::ParseCommandline()
 {
     // If the commandline was empty, quick return.

@@ -21,6 +21,7 @@ Revision History:
 
 #define IS_CONTROL_CHAR(wch)  ((wch) < L' ')
 
+[[nodiscard]]
 NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
                  _Out_ wchar_t* const pwchOut,
                  _In_ const bool Wait,

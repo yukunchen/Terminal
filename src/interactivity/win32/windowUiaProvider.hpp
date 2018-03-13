@@ -34,7 +34,9 @@ namespace Microsoft::Console::Interactivity::Win32
         static WindowUiaProvider* Create();
         virtual ~WindowUiaProvider();
 
+        [[nodiscard]]
         HRESULT Signal(_In_ EVENTID id);
+        [[nodiscard]]
         HRESULT SetTextAreaFocus();
 
         // IUnknown methods
@@ -70,6 +72,7 @@ namespace Microsoft::Console::Interactivity::Win32
         WindowUiaProvider();
 
         HWND _GetWindowHandle() const;
+        [[nodiscard]]
         HRESULT _EnsureValidHwnd() const;
         static IConsoleWindow* const _getIConsoleWindow();
 

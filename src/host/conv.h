@@ -22,8 +22,11 @@ Revision History:
 void WriteConvRegionToScreen(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                              _In_ const SMALL_RECT srConvRegion);
 
+[[nodiscard]]
 NTSTATUS ConsoleImeResizeCompStrView();
+[[nodiscard]]
 NTSTATUS ConsoleImeResizeCompStrScreenBuffer(_In_ COORD const coordNewScreenSize);
 
 void ConsoleImePaint(_In_ const ConversionAreaInfo* const ConvAreaInfo);
+[[nodiscard]]
 NTSTATUS ImeControl(_In_ PCOPYDATASTRUCT pCopyDataStruct);

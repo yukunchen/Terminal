@@ -146,6 +146,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 // - CONSOLE_STATUS_WAIT - If we didn't have enough data or needed to
 // block, this will be returned along with context in *ppWaiter.
 // - Or an out of memory/math/string error message in NTSTATUS format.
+[[nodiscard]]
 NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
                            _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
                            _In_ const size_t eventReadCount,
@@ -256,6 +257,7 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
 // - ppWaiter - If we have to wait (not enough data to fill client
 // buffer), this contains context that will allow the server to
 // restore this call later.
+[[nodiscard]]
 HRESULT ApiRoutines::PeekConsoleInputAImpl(_In_ IConsoleInputObject* const pInContext,
                                            _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
                                            _In_ size_t const eventsToRead,
@@ -287,6 +289,7 @@ HRESULT ApiRoutines::PeekConsoleInputAImpl(_In_ IConsoleInputObject* const pInCo
 // - ppWaiter - If we have to wait (not enough data to fill client
 // buffer), this contains context that will allow the server to
 // restore this call later.
+[[nodiscard]]
 HRESULT ApiRoutines::PeekConsoleInputWImpl(_In_ IConsoleInputObject* const pInContext,
                                            _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
                                            _In_ size_t const eventsToRead,
@@ -318,6 +321,7 @@ HRESULT ApiRoutines::PeekConsoleInputWImpl(_In_ IConsoleInputObject* const pInCo
 // - ppWaiter - If we have to wait (not enough data to fill client
 // buffer), this contains context that will allow the server to
 // restore this call later.
+[[nodiscard]]
 HRESULT ApiRoutines::ReadConsoleInputAImpl(_In_ IConsoleInputObject* const pInContext,
                                            _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
                                            _In_ size_t const eventsToRead,
@@ -349,6 +353,7 @@ HRESULT ApiRoutines::ReadConsoleInputAImpl(_In_ IConsoleInputObject* const pInCo
 // - ppWaiter - If we have to wait (not enough data to fill client
 // buffer), this contains context that will allow the server to
 // restore this call later.
+[[nodiscard]]
 HRESULT ApiRoutines::ReadConsoleInputWImpl(_In_ IConsoleInputObject* const pInContext,
                                            _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
                                            _In_ size_t const eventsToRead,
@@ -375,6 +380,7 @@ HRESULT ApiRoutines::ReadConsoleInputWImpl(_In_ IConsoleInputObject* const pInCo
 // buffer, false if they should be written to the front
 // Return Value:
 // - HRESULT indicating success or failure
+[[nodiscard]]
 HRESULT DoSrvWriteConsoleInput(_Inout_ InputBuffer* const pInputBuffer,
                                _Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
                                _Out_ size_t& eventsWritten,
@@ -431,6 +437,7 @@ HRESULT DoSrvWriteConsoleInput(_Inout_ InputBuffer* const pInputBuffer,
 // - eventsWritten - on output, the number of events written
 // Return Value:
 // - HRESULT indicating success or failure
+[[nodiscard]]
 HRESULT DoSrvPrivatePrependConsoleInput(_Inout_ InputBuffer* const pInputBuffer,
                                         _Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
                                         _Out_ size_t& eventsWritten)
@@ -457,20 +464,21 @@ HRESULT DoSrvPrivatePrependConsoleInput(_Inout_ InputBuffer* const pInputBuffer,
 }
 
 // Function Description:
-// - Writes the input KeyEvent to the console as a console control event. This 
-//      can be used for potentially generating Ctrl-C events, as 
-//      HandleGenericKeyEvent will correctly generate the Ctrl-C response in 
+// - Writes the input KeyEvent to the console as a console control event. This
+//      can be used for potentially generating Ctrl-C events, as
+//      HandleGenericKeyEvent will correctly generate the Ctrl-C response in
 //      the same way that it'd be handled from the window proc, with the proper
 //      processed vs raw input handling.
-//  If the input key is *not* a Ctrl-C key, then it will get written to the 
+//  If the input key is *not* a Ctrl-C key, then it will get written to the
 //      buffer just the same as any other KeyEvent.
 // Arguments:
-// - pInputBuffer - the input buffer to write to. Currently unused, as 
-//      HandleGenericKeyEvent just gets the global input buffer, but all 
+// - pInputBuffer - the input buffer to write to. Currently unused, as
+//      HandleGenericKeyEvent just gets the global input buffer, but all
 //      ConGetSet API's require a input or output object.
-// - key - The keyevent to send to the console. 
+// - key - The keyevent to send to the console.
 // Return Value:
 // - HRESULT indicating success or failure
+[[nodiscard]]
 HRESULT DoSrvPrivateWriteConsoleControlInput(_Inout_ InputBuffer* const /*pInputBuffer*/,
                                              _In_ KeyEvent key)
 {
@@ -485,6 +493,7 @@ HRESULT DoSrvPrivateWriteConsoleControlInput(_Inout_ InputBuffer* const /*pInput
 // Routine Description:
 // - This is used when the app reads oem from the output buffer the app wants
 //   real OEM characters. We have real Unicode or UnicodeOem.
+[[nodiscard]]
 NTSTATUS TranslateOutputToOem(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Size)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -558,6 +567,7 @@ NTSTATUS TranslateOutputToOem(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Size)
 // Routine Description:
 // - This is used when the app writes oem to the output buffer we want
 //   UnicodeOem or Unicode in the buffer, depending on font
+[[nodiscard]]
 NTSTATUS TranslateOutputToUnicode(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Size)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -607,6 +617,7 @@ NTSTATUS TranslateOutputToUnicode(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Si
     return STATUS_SUCCESS;
 }
 
+[[nodiscard]]
 NTSTATUS TranslateOutputToPaddingUnicode(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Size, _Inout_ PCHAR_INFO OutputBufferR)
 {
     DBGCHARS(("TranslateOutputToPaddingUnicode\n"));
@@ -658,6 +669,7 @@ NTSTATUS TranslateOutputToPaddingUnicode(_Inout_ PCHAR_INFO OutputBuffer, _In_ C
     return STATUS_SUCCESS;
 }
 
+[[nodiscard]]
 NTSTATUS SrvReadConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
 {
     PCONSOLE_READCONSOLEOUTPUT_MSG const a = &m->u.consoleMsgL2.ReadConsoleOutput;
@@ -710,7 +722,7 @@ NTSTATUS SrvReadConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
         Status = ReadScreenBuffer(psi, Buffer, &a->CharRegion);
         if (!a->Unicode)
         {
-            TranslateOutputToOem(Buffer, BufferSize);
+            LOG_IF_FAILED(TranslateOutputToOem(Buffer, BufferSize));
         }
         else if (!psi->TextInfo->GetCurrentFont()->IsTrueTypeFont())
         {
@@ -729,6 +741,7 @@ NTSTATUS SrvReadConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
     return Status;
 }
 
+[[nodiscard]]
 NTSTATUS SrvWriteConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
 {
     PCONSOLE_WRITECONSOLEOUTPUT_MSG const a = &m->u.consoleMsgL2.WriteConsoleOutput;
@@ -782,7 +795,7 @@ NTSTATUS SrvWriteConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*Reply
 
         if (!a->Unicode)
         {
-            TranslateOutputToUnicode(Buffer, BufferSize);
+            LOG_IF_FAILED(TranslateOutputToUnicode(Buffer, BufferSize));
             Status = WriteScreenBuffer(ScreenBufferInformation, Buffer, &a->CharRegion);
         }
         else if (!ScreenBufferInformation->TextInfo->GetCurrentFont()->IsTrueTypeFont())
@@ -806,7 +819,7 @@ NTSTATUS SrvWriteConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*Reply
                 return STATUS_NO_MEMORY;
             }
 
-            TranslateOutputToPaddingUnicode(Buffer, BufferSize, &TransBuffer[0]);
+            LOG_IF_FAILED(TranslateOutputToPaddingUnicode(Buffer, BufferSize, &TransBuffer[0]));
             Status = WriteScreenBuffer(ScreenBufferInformation, &TransBuffer[0], &a->CharRegion);
             delete[] TransBuffer;
         }
@@ -827,6 +840,7 @@ NTSTATUS SrvWriteConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*Reply
 }
 
 
+[[nodiscard]]
 NTSTATUS SrvReadConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
 {
     PCONSOLE_READCONSOLEOUTPUTSTRING_MSG const a = &m->u.consoleMsgL2.ReadConsoleOutputString;
@@ -897,6 +911,7 @@ NTSTATUS SrvReadConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*
     return Status;
 }
 
+[[nodiscard]]
 NTSTATUS SrvWriteConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
 {
     PCONSOLE_WRITECONSOLEOUTPUTSTRING_MSG const a = &m->u.consoleMsgL2.WriteConsoleOutputString;
@@ -970,6 +985,7 @@ NTSTATUS SrvWriteConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /
     return Status;
 }
 
+[[nodiscard]]
 NTSTATUS SrvFillConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
 {
     PCONSOLE_FILLCONSOLEOUTPUT_MSG const a = &m->u.consoleMsgL2.FillConsoleOutput;
@@ -1015,6 +1031,7 @@ NTSTATUS SrvFillConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
     return Status;
 }
 
+[[nodiscard]]
 NTSTATUS DoSrvFillConsoleOutput(_In_ SCREEN_INFORMATION* pScreenInfo, _Inout_ CONSOLE_FILLCONSOLEOUTPUT_MSG* pMsg)
 {
     return FillOutput(pScreenInfo, pMsg->Element, pMsg->WriteCoord, pMsg->ElementType, &pMsg->Length);
@@ -1031,6 +1048,7 @@ NTSTATUS DoSrvFillConsoleOutput(_In_ SCREEN_INFORMATION* pScreenInfo, _Inout_ CO
 //#define CONSOLE_GRAPHICS_BUFFER 2
 //#define CONSOLE_OEMFONT_DISPLAY 4
 
+[[nodiscard]]
 NTSTATUS ConsoleCreateScreenBuffer(_Out_ ConsoleHandleData** ppHandle,
                                    _In_ PCONSOLE_API_MSG /*Message*/,
                                    _In_ PCD_CREATE_OBJECT_INFORMATION Information,

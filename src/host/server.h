@@ -145,4 +145,4 @@ private:
 #include "..\server\ObjectHandle.h"
 
 
-NTSTATUS SetActiveScreenBuffer(_Inout_ PSCREEN_INFORMATION pScreenInfo);
+void SetActiveScreenBuffer(_Inout_ PSCREEN_INFORMATION pScreenInfo);

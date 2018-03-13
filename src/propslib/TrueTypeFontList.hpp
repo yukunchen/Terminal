@@ -19,13 +19,16 @@ class TrueTypeFontList
 public:
     static SINGLE_LIST_ENTRY s_ttFontList;
 
+    [[nodiscard]]
     static NTSTATUS s_Initialize();
+    [[nodiscard]]
     static NTSTATUS s_Destroy();
 
     static LPTTFONTLIST s_SearchByName(_In_opt_ LPCWSTR pwszFace,
                                        _In_ BOOL fCodePage,
                                        _In_ UINT CodePage);
 
+    [[nodiscard]]
     static NTSTATUS s_SearchByCodePage(_In_ const UINT uiCodePage,
                                        _Out_writes_(cchFaceName) PWSTR pwszFaceName,
                                        _In_ const size_t cchFaceName);

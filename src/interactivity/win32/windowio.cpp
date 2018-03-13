@@ -85,10 +85,10 @@ VOID SetConsoleWindowOwner(_In_ const HWND hwnd, _Inout_opt_ ConsoleProcessHandl
     ConsoleOwner.ThreadId = dwThreadId;
 
     // Comment out this line to enable UIA tree to be visible until UIAutomationCore.dll can support our scenario.
-    ServiceLocator::LocateConsoleControl < Microsoft::Console::Interactivity::Win32::ConsoleControl > ()
+    LOG_IF_FAILED(ServiceLocator::LocateConsoleControl<Microsoft::Console::Interactivity::Win32::ConsoleControl>()
         ->Control(ConsoleControl::ControlType::ConsoleSetWindowOwner,
                   &ConsoleOwner,
-                  sizeof(ConsoleOwner));
+                  sizeof(ConsoleOwner)));
 }
 
 // ----------------------------
@@ -966,7 +966,7 @@ NTSTATUS InitWindowsSubsystem(_Out_ HHOOK * phhook)
 
     SetConsoleWindowOwner(ServiceLocator::LocateConsoleWindow()->GetWindowHandle(), ProcessData);
 
-    ServiceLocator::LocateConsoleWindow<Window>()->ActivateAndShow(gci.GetShowWindow());
+    LOG_IF_FAILED(ServiceLocator::LocateConsoleWindow<Window>()->ActivateAndShow(gci.GetShowWindow()));
 
     NotifyWinEvent(EVENT_CONSOLE_START_APPLICATION, ServiceLocator::LocateConsoleWindow()->GetWindowHandle(), ProcessData->dwProcessId, 0);
 

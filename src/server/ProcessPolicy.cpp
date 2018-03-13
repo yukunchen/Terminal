@@ -94,6 +94,7 @@ ConsoleProcessPolicy ConsoleProcessPolicy::s_CreateInstance(_In_ const HANDLE hP
     return ConsoleProcessPolicy(fCanReadOutputBuffer, fCanWriteInputBuffer);
 }
 
+[[nodiscard]]
 HRESULT ConsoleProcessPolicy::s_CheckAppModelPolicy(_In_ const HANDLE hToken,
                                                     _Inout_ bool& fIsWrongWayBlocked)
 {
@@ -117,6 +118,7 @@ HRESULT ConsoleProcessPolicy::s_CheckAppModelPolicy(_In_ const HANDLE hToken,
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT ConsoleProcessPolicy::s_CheckIntegrityLevelPolicy(_In_ const HANDLE hOtherToken,
                                                           _Inout_ bool& fIsWrongWayBlocked)
 {
@@ -141,6 +143,7 @@ HRESULT ConsoleProcessPolicy::s_CheckIntegrityLevelPolicy(_In_ const HANDLE hOth
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT ConsoleProcessPolicy::s_GetIntegrityLevel(_In_ const HANDLE hToken,
                                                   _Out_ DWORD& dwIntegrityLevel)
 {

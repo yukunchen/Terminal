@@ -34,6 +34,7 @@ namespace Microsoft::Console::Interactivity
         virtual bool IsInFullscreen() const = 0;
 
         virtual void SetIsFullscreen(_In_ bool const fFullscreenEnabled) = 0;
+        [[nodiscard]]
         virtual NTSTATUS SetViewportOrigin(_In_ SMALL_RECT NewWindow) = 0;
         virtual void SetWindowHasMoved(_In_ BOOL const fHasMoved) = 0;
 
@@ -63,7 +64,9 @@ namespace Microsoft::Console::Interactivity
                                         _In_ const WORD wAbsoluteChange) const = 0;
         virtual void VerticalScroll(_In_ const WORD wScrollCommand,
                                     _In_ const WORD wAbsoluteChange) const = 0;
+        [[nodiscard]]
         virtual HRESULT SignalUia(_In_ EVENTID id) = 0;
+        [[nodiscard]]
         virtual HRESULT UiaSetTextAreaFocus() = 0;
         virtual RECT GetWindowRect() const = 0;
     };

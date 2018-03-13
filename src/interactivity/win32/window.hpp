@@ -23,9 +23,11 @@ namespace Microsoft::Console::Interactivity::Win32
     class Window final : public IConsoleWindow
     {
     public:
+        [[nodiscard]]
         static NTSTATUS CreateInstance(_In_ Settings* const pSettings,
                                         _In_ SCREEN_INFORMATION* const pScreen);
 
+        [[nodiscard]]
         NTSTATUS ActivateAndShow(_In_ WORD const wShowWindow);
 
         ~Window();
@@ -43,6 +45,7 @@ namespace Microsoft::Console::Interactivity::Win32
         void SetIsFullscreen(_In_ bool const fFullscreenEnabled);
         void ToggleFullscreen();
 
+        [[nodiscard]]
         NTSTATUS SetViewportOrigin(_In_ SMALL_RECT NewWindow);
 
         void VerticalScroll(_In_ const WORD wScrollCommand,
@@ -88,6 +91,7 @@ namespace Microsoft::Console::Interactivity::Win32
 
         void SetWindowHasMoved(_In_ BOOL const fHasMoved);
 
+        [[nodiscard]]
         HRESULT SignalUia(_In_ EVENTID id);
 
         void SetOwner();
@@ -97,6 +101,7 @@ namespace Microsoft::Console::Interactivity::Win32
                         _In_ UINT cPoints);
         BOOL ConvertScreenToClient(_Inout_ LPPOINT lpPoint);
 
+        [[nodiscard]]
         HRESULT UiaSetTextAreaFocus();
 
     protected:
@@ -108,7 +113,9 @@ namespace Microsoft::Console::Interactivity::Win32
         Window();
 
         // Registration/init
+        [[nodiscard]]
         static NTSTATUS s_RegisterWindowClass();
+        [[nodiscard]]
         NTSTATUS _MakeWindow(_In_ Settings* const pSettings,
                                 _In_ SCREEN_INFORMATION* const pScreen);
         void _CloseWindow() const;
@@ -119,6 +126,7 @@ namespace Microsoft::Console::Interactivity::Win32
         HWND _hWnd;
         static Window* s_Instance;
 
+        [[nodiscard]]
         NTSTATUS _InternalSetWindowSize() const;
         void _UpdateWindowSize(_In_ SIZE const sizeNew) const;
 
@@ -136,6 +144,7 @@ namespace Microsoft::Console::Interactivity::Win32
 
         // Wndproc helpers
         void _HandleDrop(_In_ const WPARAM wParam) const;
+        [[nodiscard]]
         HRESULT _HandlePaint() const;
         void _HandleWindowPosChanged(_In_ const LPARAM lParam);
 

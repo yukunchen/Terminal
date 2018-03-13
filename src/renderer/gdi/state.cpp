@@ -104,6 +104,7 @@ GdiEngine::~GdiEngine()
 // - hwnd - Handle to the window on which we will be drawing.
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
+[[nodiscard]]
 HRESULT GdiEngine::SetHwnd(_In_ HWND const hwnd)
 {
     // First attempt to get the DC and create an appropriate DC
@@ -146,6 +147,7 @@ HRESULT GdiEngine::SetHwnd(_In_ HWND const hwnd)
 // - dwNewLong - Value to update in window structure
 // Return Value:
 // - S_OK or converted HRESULT from last Win32 error from SetWindowLongW
+[[nodiscard]]
 HRESULT GdiEngine::s_SetWindowLongWHelper(_In_ HWND const hWnd, _In_ int const nIndex, _In_ LONG const dwNewLong)
 {
     // SetWindowLong has strange error handling. On success, it returns the previous Window Long value and doesn't modify the Last Error state.
@@ -168,6 +170,7 @@ HRESULT GdiEngine::s_SetWindowLongWHelper(_In_ HWND const hWnd, _In_ int const n
 // - wTextAttributes - A console attributes bit field specifying the brush colors we should use.
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
+[[nodiscard]]
 HRESULT GdiEngine::UpdateDrawingBrushes(_In_ COLORREF const colorForeground,
                                         _In_ COLORREF const colorBackground,
                                         _In_ WORD const /*legacyColorAttribute*/,
@@ -209,6 +212,7 @@ HRESULT GdiEngine::UpdateDrawingBrushes(_In_ COLORREF const colorForeground,
 // - pfiFont - Pointer to font information where the chosen font information will be populated.
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
+[[nodiscard]]
 HRESULT GdiEngine::UpdateFont(_In_ FontInfoDesired const * const pfiFontDesired, _Out_ FontInfo* const pfiFont)
 {
     wil::unique_hfont hFont;
@@ -233,7 +237,7 @@ HRESULT GdiEngine::UpdateFont(_In_ FontInfoDesired const * const pfiFontDesired,
     // Save the font.
     _hfont = hFont.release();
 
-    InvalidateAll();
+    LOG_IF_FAILED(InvalidateAll());
 
     return S_OK;
 }
@@ -244,6 +248,7 @@ HRESULT GdiEngine::UpdateFont(_In_ FontInfoDesired const * const pfiFontDesired,
 // - iDpi - The Dots Per Inch to use for scaling. We will use this relative to the system default DPI defined in Windows headers as a constant.
 // Return Value:
 // - HRESULT S_OK, GDI-based error code, or safemath error
+[[nodiscard]]
 HRESULT GdiEngine::UpdateDpi(_In_ int const iDpi)
 {
     _iCurrentDpi = iDpi;
@@ -257,6 +262,7 @@ HRESULT GdiEngine::UpdateDpi(_In_ int const iDpi)
 // - srNewViewport - The bounds of the new viewport.
 // Return Value:
 // - HRESULT S_OK
+[[nodiscard]]
 HRESULT GdiEngine::UpdateViewport(_In_ SMALL_RECT const /*srNewViewport*/)
 {
     return S_OK;
@@ -273,6 +279,7 @@ HRESULT GdiEngine::UpdateViewport(_In_ SMALL_RECT const /*srNewViewport*/)
 // - iDpi - The DPI we will have when rendering
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
+[[nodiscard]]
 HRESULT GdiEngine::GetProposedFont(_In_ FontInfoDesired const * const pfiFontDesired, _Out_ FontInfo* const pfiFont, _In_ int const iDpi)
 {
     wil::unique_hfont hFont;
@@ -290,6 +297,7 @@ HRESULT GdiEngine::GetProposedFont(_In_ FontInfoDesired const * const pfiFontDes
 // - hFont - A smart pointer to receive a handle to a ready-to-use GDI font.
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
+[[nodiscard]]
 HRESULT GdiEngine::_GetProposedFont(_In_ FontInfoDesired const * const pfiFontDesired,
                                     _Out_ FontInfo* const pfiFont,
                                     _In_ int const iDpi,
@@ -433,6 +441,7 @@ HRESULT GdiEngine::_GetProposedFont(_In_ FontInfoDesired const * const pfiFontDe
 // - pFontSize - recieves the current X by Y size of the font.
 // Return Value:
 // - S_OK
+[[nodiscard]]
 HRESULT GdiEngine::GetFontSize(_Out_ COORD* const pFontSize)
 {
     *pFontSize = _GetFontSize();
