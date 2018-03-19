@@ -8,6 +8,7 @@
 
 #include "newdelete.hpp"
 #include "ConsoleArguments.hpp"
+#include "srvinit.h"
 #include "..\server\Entrypoints.h"
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
@@ -137,9 +138,6 @@ static HRESULT ActivateLegacyConhost(_In_ const HANDLE handle)
 
     return hr;
 }
-
-// from srvinit.cpp, fwd declare.
-void ConsoleCheckDebug();
 
 // Routine Description:
 // - Main entry point for EXE version of console launching.
