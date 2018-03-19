@@ -245,9 +245,9 @@ void HandleKeyEvent(_In_ const HWND hWnd,
 
     Selection* pSelection = &Selection::Instance();
 
-    if (gci.GetInterceptCopyPaste() && inputKeyInfo.IsShiftAndCtrlOnly() && bKeyDown)
+    if (bKeyDown && gci.GetInterceptCopyPaste() && inputKeyInfo.IsShiftAndCtrlOnly())
     {
-        // Intercep C-S-v to paste
+        // Intercept C-S-v to paste
         switch (VirtualKeyCode)
         {
         case 'V':

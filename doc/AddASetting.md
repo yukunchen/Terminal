@@ -1,12 +1,16 @@
 # Adding a Settings Property
 
-1. Add to winconp.h
+1. Add to wincon.w
+    * THIS IS NOT IN OPENCONSOLE. Make sure you update
+      `.../console/published/wincon.w` in the OS repo when you submit the PR.
+      The branch won't build without it.
+    * For now, you can update winconp.h with your consumable changes.
     * define registry name (ex `CONSOLE_REGISTRY_CURSORCOLOR`)
     * add the setting to `CONSOLE_STATE_INFO`
     * define the property key ID and the property key itself
         - Yes, the large majority of the `DEFINE_PROPERTYKEY` defs are the same, it's only the last byte of the guid that changes
 2. Add matching fields to Settings.hpp
-    - add getters, setters, the whole dirll.
+    - add getters, setters, the whole drill.
 3. Add to the propsheet.
     - We need to add it to *writing* the rigistry from the propsheet, and *reading* the link from the propsheet. Yes, that's weird, but the propsheet is smart enough to re-use ShortcutSerialization::s_SetLinkValues, but not smart enough to do the same with RegistrySerialization.
     - `src/propsheet/registry.cpp`

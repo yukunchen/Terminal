@@ -22,6 +22,7 @@
 Selection::KeySelectionEventResult Selection::HandleKeySelectionEvent(_In_ const INPUT_KEY_INFO* const pInputKeyInfo)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto inputServices = ServiceLocator::LocateInputServices();
     ASSERT(IsInSelectingState());
 
     const WORD wVirtualKeyCode = pInputKeyInfo->GetVirtualKey();
@@ -39,9 +40,9 @@ Selection::KeySelectionEventResult Selection::HandleKeySelectionEvent(_In_ const
                   (wVirtualKeyCode == 'C' || // Ctrl-c
                    wVirtualKeyCode == VK_INSERT)) ||
                  (gci.GetInterceptCopyPaste() &&
-                  (ServiceLocator::LocateInputServices()->GetKeyState(VK_CONTROL) & KEY_PRESSED) &&
-                  (ServiceLocator::LocateInputServices()->GetKeyState(VK_SHIFT) & KEY_PRESSED) &&
-                  (wVirtualKeyCode == 'C'))) // C-S-c
+                  (wVirtualKeyCode == 'C') &&
+                  (IsFlagSet(inputServices->GetKeyState(VK_CONTROL), KEY_PRESSED)) &&
+                  (IsFlagSet(inputServices->GetKeyState(VK_SHIFT), KEY_PRESSED)))) // C-S-c
         {
             Telemetry::Instance().SetKeyboardTextEditingUsed();
 
