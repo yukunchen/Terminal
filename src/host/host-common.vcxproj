@@ -24,7 +24,6 @@
     <ClCompile Include="..\inputBuffer.cpp" />
     <ClCompile Include="..\inputKeyInfo.cpp" />
     <ClCompile Include="..\inputReadHandleData.cpp" />
-    <ClCompile Include="..\KeyEventHelpers.cpp" />
     <ClCompile Include="..\misc.cpp" />
     <ClCompile Include="..\newdelete.cpp" />
     <ClCompile Include="..\ntprivapi.cpp" />
@@ -91,7 +90,6 @@
     <ClInclude Include="..\init.hpp" />
     <ClInclude Include="..\input.h" />
     <ClInclude Include="..\inputBuffer.hpp" />
-    <ClInclude Include="..\KeyEventHelpers.hpp" />
     <ClInclude Include="..\misc.h" />
     <ClInclude Include="..\newdelete.hpp" />
     <ClInclude Include="..\ntprivapi.hpp" />

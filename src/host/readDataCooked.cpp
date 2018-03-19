@@ -604,7 +604,7 @@ BOOL ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
 
         if (wch != UNICODE_BACKSPACE || pCookedReadData->_BufPtr != pCookedReadData->_BackupLimit)
         {
-            fStartFromDelim = gci.GetExtendedEditKey() && IS_WORD_DELIM(pCookedReadData->_BufPtr[-1]);
+            fStartFromDelim = IS_WORD_DELIM(pCookedReadData->_BufPtr[-1]);
 
         eol_repeat:
             if (pCookedReadData->_Echo)
@@ -639,8 +639,7 @@ BOOL ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
                 pCookedReadData->_CurrentPosition -= 1;
 
                 // Repeat until it hits the word boundary
-                if (gci.GetExtendedEditKey() &&
-                    wchOrig == EXTKEY_ERASE_PREV_WORD &&
+                if (wchOrig == EXTKEY_ERASE_PREV_WORD &&
                     pCookedReadData->_BufPtr != pCookedReadData->_BackupLimit &&
                     fStartFromDelim ^ !IS_WORD_DELIM(pCookedReadData->_BufPtr[-1]))
                 {
@@ -678,7 +677,7 @@ BOOL ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
             if (pCookedReadData->_BufPtr != pCookedReadData->_BackupLimit)
             {
 
-                fStartFromDelim = gci.GetExtendedEditKey() && IS_WORD_DELIM(pCookedReadData->_BufPtr[-1]);
+                fStartFromDelim = IS_WORD_DELIM(pCookedReadData->_BufPtr[-1]);
 
             bs_repeat:
                 // we call writechar here so that cursor position gets updated
@@ -715,8 +714,7 @@ BOOL ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
                 NumSpaces = 0;
 
                 // Repeat until it hits the word boundary
-                if (gci.GetExtendedEditKey() &&
-                    wchOrig == EXTKEY_ERASE_PREV_WORD &&
+                if (wchOrig == EXTKEY_ERASE_PREV_WORD &&
                     pCookedReadData->_BufPtr != pCookedReadData->_BackupLimit &&
                     fStartFromDelim ^ !IS_WORD_DELIM(pCookedReadData->_BufPtr[-1]))
                 {

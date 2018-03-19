@@ -420,7 +420,6 @@ void Telemetry::WriteFinalTraceLog()
                 TraceLoggingBool(gci.IsAltF4CloseAllowed(), "AllowAltF4Close"),
                 TraceLoggingBool(gci.GetCtrlKeyShortcutsDisabled(), "ControlKeyShortcutsDisabled"),
                 TraceLoggingBool(gci.GetEnableColorSelection(), "EnabledColorSelection"),
-                TraceLoggingBool(gci.GetExtendedEditKey(), "ExtendedEditKey"),
                 TraceLoggingBool(gci.GetFilterOnPaste(), "FilterOnPaste"),
                 TraceLoggingBool(gci.GetTrimLeadingZeros(), "TrimLeadingZeros"),
                 TraceLoggingValue(gci.GetLaunchFaceName(), "LaunchFontName"),

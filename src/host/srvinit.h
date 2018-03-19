@@ -28,3 +28,5 @@ NTSTATUS ConsoleInitializeConnectInfo(_In_ PCONSOLE_API_MSG Message, _Out_ PCONS
 NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p);
 [[nodiscard]]
 NTSTATUS RemoveConsole(_In_ ConsoleProcessHandle* ProcessData);
+
+void ConsoleCheckDebug();

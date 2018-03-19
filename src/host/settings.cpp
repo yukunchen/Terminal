@@ -45,7 +45,6 @@ Settings::Settings() :
     _fFilterOnPaste(false),
     _fTrimLeadingZeros(FALSE),
     _fEnableColorSelection(FALSE),
-    _fExtendedEditKey(true),
     _fAllowAltF4Close(true),
     _dwVirtTermLevel(0),
     _fUseWindowSizePixels(false),
@@ -406,7 +405,6 @@ void Settings::ApplyDesktopSpecificDefaults()
 
     _InitColorTable();
 
-    _fExtendedEditKey = true;
     _fTrimLeadingZeros = false;
     _fEnableColorSelection = false;
     _uScrollScale = 1;
@@ -604,15 +602,6 @@ void Settings::SetGridRenderingAllowedWorldwide(_In_ bool const fGridRenderingAl
             ServiceLocator::LocateGlobals().pRender->TriggerRedrawAll();
         }
     }
-}
-
-bool Settings::GetExtendedEditKey() const
-{
-    return this->_fExtendedEditKey;
-}
-void Settings::SetExtendedEditKey(_In_ bool const fExtendedEditKey)
-{
-    this->_fExtendedEditKey = fExtendedEditKey;
 }
 
 BOOL Settings::GetFilterOnPaste() const

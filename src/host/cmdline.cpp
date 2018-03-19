@@ -19,7 +19,6 @@
 #include "resource.h"
 
 #include "ApiRoutines.h"
-#include "KeyEventHelpers.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
@@ -68,124 +67,6 @@ NTSTATUS RetrieveCommand(_In_ PCOMMAND_HISTORY CommandHistory,
                          _Out_ PULONG CommandSize);
 UINT LoadStringEx(_In_ HINSTANCE hModule, _In_ UINT wID, _Out_writes_(cchBufferMax) LPWSTR lpBuffer, _In_ UINT cchBufferMax, _In_ WORD wLangId);
 
-// Extended Edit Key
-ExtKeyDefTable gaKeyDef;
-CONST ExtKeyDefTable gaDefaultKeyDef = {
-    {   // A
-        0, VK_HOME, 0, // Ctrl
-        LEFT_CTRL_PRESSED, VK_HOME, 0, // Alt
-        0, 0, 0,   // Ctrl+Alt
-    }
-    ,
-    {   // B
-        0, VK_LEFT, 0, // Ctrl
-        LEFT_CTRL_PRESSED, VK_LEFT, 0, // Alt
-    }
-    ,
-    {   // C
-        0,
-    }
-    ,
-    {   // D
-        0, VK_DELETE, 0,   // Ctrl
-        LEFT_CTRL_PRESSED, VK_DELETE, 0,   // Alt
-        0, 0, 0,   // Ctrl+Alt
-    }
-    ,
-    {   // E
-        0, VK_END, 0,  // Ctrl
-        LEFT_CTRL_PRESSED, VK_END, 0,  // Alt
-        0, 0, 0,   // Ctrl+Alt
-    }
-    ,
-    {   // F
-        0, VK_RIGHT, 0,    // Ctrl
-        LEFT_CTRL_PRESSED, VK_RIGHT, 0,    // Alt
-        0, 0, 0,   // Ctrl+Alt
-    }
-    ,
-    {   // G
-        0,
-    }
-    ,
-    {   // H
-        0,
-    }
-    ,
-    {   // I
-        0,
-    }
-    ,
-    {   // J
-        0,
-    }
-    ,
-    {   // K
-        LEFT_CTRL_PRESSED, VK_END, 0,  // Ctrl
-    }
-    ,
-    {   // L
-        0,
-    }
-    ,
-    {   // M
-        0,
-    }
-    ,
-    {   // N
-        0, VK_DOWN, 0, // Ctrl
-    }
-    ,
-    {   // O
-        0,
-    }
-    ,
-    {   // P
-        0, VK_UP, 0,   // Ctrl
-    }
-    ,
-    {   // Q
-        0,
-    }
-    ,
-    {   // R
-        0, VK_F8, 0,   // Ctrl
-    }
-    ,
-    {   // S
-        0, VK_PAUSE, 0,    // Ctrl
-    }
-    ,
-    {   // T
-        LEFT_CTRL_PRESSED, VK_DELETE, 0,   // Ctrl
-    }
-    ,
-    {   // U
-        0, VK_ESCAPE, 0,   // Ctrl
-    }
-    ,
-    {   // V
-        0,
-    }
-    ,
-    {   // W
-        LEFT_CTRL_PRESSED, VK_BACK, EXTKEY_ERASE_PREV_WORD,    // Ctrl
-    }
-    ,
-    {   // X
-        0,
-    }
-    ,
-    {   // Y
-        0,
-    }
-    ,
-    {   // Z
-        0,
-    }
-    ,
-};
-
 // Routine Description:
 // - This routine validates a string buffer and returns the pointers of where the strings start within the buffer.
 // Arguments:
@@ -229,54 +110,6 @@ BOOLEAN IsValidStringBuffer(_In_ BOOLEAN Unicode, _In_reads_bytes_(Size) PVOID B
     va_end(Marker);
 
     return Count == 0;
-}
-
-// Routine Description:
-// - Initialize the extended edit key table.
-// - If pKeyDefbuf is nullptr, the internal default table is used.
-// - Otherwise, lpbyte should point to a valid ExtKeyDefBuf.
-void InitExtendedEditKeys(_In_opt_ ExtKeyDefBuf const * const pKeyDefBuf)
-{
-    // Sanity check:
-    // If pKeyDefBuf is nullptr, give it the default value.
-    // If the version is not supported, just use the default and bail.
-    if (pKeyDefBuf == nullptr || pKeyDefBuf->dwVersion != 0)
-    {
-        if (pKeyDefBuf != nullptr)
-        {
-            RIPMSG1(RIP_WARNING, "InitExtendedEditKeys: Unsupported version number(%d)", pKeyDefBuf->dwVersion);
-        }
-
-    retry_clean:
-        memmove(gaKeyDef, gaDefaultKeyDef, sizeof gaKeyDef);
-        return;
-    }
-
-    // Calculate check sum
-    DWORD dwCheckSum = 0;
-    BYTE* const lpbyte = (BYTE*)pKeyDefBuf;
-    for (int i = FIELD_OFFSET(ExtKeyDefBuf, table); i < sizeof *pKeyDefBuf; ++i)
-    {
-        dwCheckSum += lpbyte[i];
-    }
-
-    if (dwCheckSum != pKeyDefBuf->dwCheckSum)
-    {
-        goto retry_clean;
-    }
-
-    // Copy the entity
-    memmove(gaKeyDef, pKeyDefBuf->table, sizeof gaKeyDef);
-}
-
-const ExtKeyDef* const GetKeyDef(WORD virtualKeyCode)
-{
-    size_t index = virtualKeyCode - 'A';
-    if (index >= ARRAYSIZE(gaKeyDef))
-    {
-        return nullptr;
-    }
-    return &gaKeyDef[index];
 }
 
 // Routine Description:
@@ -1476,78 +1309,47 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
             if (dwKeyState & (RIGHT_CTRL_PRESSED | LEFT_CTRL_PRESSED))
             {
                 PWCHAR LastWord;
-                BOOL NonSpaceCharSeen = FALSE;
                 if (pCookedReadData->_BufPtr != pCookedReadData->_BackupLimit)
                 {
-                    if (!gci.GetExtendedEditKey())
+                    // A bit better word skipping.
+                    LastWord = pCookedReadData->_BufPtr - 1;
+                    if (LastWord != pCookedReadData->_BackupLimit)
                     {
-                        LastWord = pCookedReadData->_BufPtr - 1;
-                        while (LastWord != pCookedReadData->_BackupLimit)
+                        if (*LastWord == L' ')
                         {
-                            if (!IS_WORD_DELIM(*LastWord))
+                            // Skip spaces, until the non-space character is found.
+                            while (--LastWord != pCookedReadData->_BackupLimit)
                             {
-                                NonSpaceCharSeen = TRUE;
-                            }
-                            else
-                            {
-                                if (NonSpaceCharSeen)
+                                ASSERT(LastWord > pCookedReadData->_BackupLimit);
+                                if (*LastWord != L' ')
                                 {
                                     break;
                                 }
                             }
-                            LastWord--;
                         }
                         if (LastWord != pCookedReadData->_BackupLimit)
                         {
-                            pCookedReadData->_BufPtr = LastWord + 1;
-                        }
-                        else
-                        {
-                            pCookedReadData->_BufPtr = LastWord;
-                        }
-                    }
-                    else
-                    {
-                        // A bit better word skipping.
-                        LastWord = pCookedReadData->_BufPtr - 1;
-                        if (LastWord != pCookedReadData->_BackupLimit)
-                        {
-                            if (*LastWord == L' ')
+                            if (IS_WORD_DELIM(*LastWord))
                             {
-                                // Skip spaces, until the non-space character is found.
+                                // Skip WORD_DELIMs until space or non WORD_DELIM is found.
                                 while (--LastWord != pCookedReadData->_BackupLimit)
                                 {
                                     ASSERT(LastWord > pCookedReadData->_BackupLimit);
-                                    if (*LastWord != L' ')
+                                    if (*LastWord == L' ' || !IS_WORD_DELIM(*LastWord))
                                     {
                                         break;
                                     }
                                 }
                             }
-                            if (LastWord != pCookedReadData->_BackupLimit)
+                            else
                             {
-                                if (IS_WORD_DELIM(*LastWord))
+                                // Skip the regular words
+                                while (--LastWord != pCookedReadData->_BackupLimit)
                                 {
-                                    // Skip WORD_DELIMs until space or non WORD_DELIM is found.
-                                    while (--LastWord != pCookedReadData->_BackupLimit)
+                                    ASSERT(LastWord > pCookedReadData->_BackupLimit);
+                                    if (IS_WORD_DELIM(*LastWord))
                                     {
-                                        ASSERT(LastWord > pCookedReadData->_BackupLimit);
-                                        if (*LastWord == L' ' || !IS_WORD_DELIM(*LastWord))
-                                        {
-                                            break;
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    // Skip the regular words
-                                    while (--LastWord != pCookedReadData->_BackupLimit)
-                                    {
-                                        ASSERT(LastWord > pCookedReadData->_BackupLimit);
-                                        if (IS_WORD_DELIM(*LastWord))
-                                        {
-                                            break;
-                                        }
+                                        break;
                                     }
                                 }
                             }
@@ -1622,68 +1424,43 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                     {
                         PWCHAR NextWord = pCookedReadData->_BufPtr;
 
-                        if (!gci.GetExtendedEditKey())
+                        // A bit better word skipping.
+                        PWCHAR BufLast = pCookedReadData->_BackupLimit + pCookedReadData->_BytesRead / sizeof(WCHAR);
+
+                        ASSERT(NextWord < BufLast);
+                        if (*NextWord == L' ')
                         {
-                            SHORT i;
-
-                            for (i = (SHORT)(pCookedReadData->_CurrentPosition); i < (SHORT)((pCookedReadData->_BytesRead - 1) / sizeof(WCHAR)); i++)
+                            // If the current character is space, skip to the next non-space character.
+                            while (NextWord < BufLast)
                             {
-                                if (IS_WORD_DELIM(*NextWord))
+                                if (*NextWord != L' ')
                                 {
-                                    i++;
-                                    NextWord++;
-                                    while ((i < (SHORT)((pCookedReadData->_BytesRead - 1) / sizeof(WCHAR))) && IS_WORD_DELIM(*NextWord))
-                                    {
-                                        i++;
-                                        NextWord++;
-                                    }
-
                                     break;
                                 }
-
-                                NextWord++;
+                                ++NextWord;
                             }
                         }
                         else
                         {
-                            // A bit better word skipping.
-                            PWCHAR BufLast = pCookedReadData->_BackupLimit + pCookedReadData->_BytesRead / sizeof(WCHAR);
+                            // Skip the body part.
+                            BOOL fStartFromDelim = IS_WORD_DELIM(*NextWord);
 
-                            ASSERT(NextWord < BufLast);
-                            if (*NextWord == L' ')
+                            while (++NextWord < BufLast)
                             {
-                                // If the current character is space, skip to the next non-space character.
-                                while (NextWord < BufLast)
+                                if (fStartFromDelim != IS_WORD_DELIM(*NextWord))
+                                {
+                                    break;
+                                }
+                            }
+
+                            // Skip the space block.
+                            if (NextWord < BufLast && *NextWord == L' ')
+                            {
+                                while (++NextWord < BufLast)
                                 {
                                     if (*NextWord != L' ')
                                     {
                                         break;
-                                    }
-                                    ++NextWord;
-                                }
-                            }
-                            else
-                            {
-                                // Skip the body part.
-                                BOOL fStartFromDelim = IS_WORD_DELIM(*NextWord);
-
-                                while (++NextWord < BufLast)
-                                {
-                                    if (fStartFromDelim != IS_WORD_DELIM(*NextWord))
-                                    {
-                                        break;
-                                    }
-                                }
-
-                                // Skip the space block.
-                                if (NextWord < BufLast && *NextWord == L' ')
-                                {
-                                    while (++NextWord < BufLast)
-                                    {
-                                        if (*NextWord != L' ')
-                                        {
-                                            break;
-                                        }
                                     }
                                 }
                             }
