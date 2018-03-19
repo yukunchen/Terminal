@@ -21,3 +21,7 @@
     - Write the value in `ShortcutSerialization::s_SetLinkValues`
 6. Add the setting to `Menu::s_GetConsoleState`, and `Menu::s_PropertiesUpdate`
 Now, your new setting should be stored just like all the other properties.
+7. Update the feature test properties to get add the setting as well.
+    - `ft_uia/Common/NativeMethods.cs@WinConP`:
+        - `Wtypes.PROPERTYKEY PKEY_Console_`
+        - `NT_CONSOLE_PROPS`

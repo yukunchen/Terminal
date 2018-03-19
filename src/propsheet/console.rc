@@ -74,8 +74,11 @@ BEGIN
     CONTROL         "E&xtended text selection keys", IDD_EDIT_KEYS, "Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP, 14, 156, 200, 10
 
-    GROUPBOX        "Current code page", IDD_LANGUAGE_GROUPBOX, 10, 170, 225, 24, WS_GROUP
-    LTEXT           "",IDD_LANGUAGE, 16, 181, 184, 10, WS_GROUP
+    GROUPBOX        "Default code page", IDD_LANGUAGE_GROUPBOX,   10, 160, 225, 29, WS_GROUP
+    COMBOBOX        IDD_LANGUAGELIST, 16, 171, 213, 78,
+                    CBS_SORT |
+                    CBS_DISABLENOSCROLL |
+                    CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP | WS_GROUP
 
     CONTROL         "&Use legacy console (requires relaunch)", IDD_FORCEV2, "Button",
                     BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP, 10, 199, 200, 10

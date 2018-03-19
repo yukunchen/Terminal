@@ -149,7 +149,7 @@ namespace Conhost.UIA.Tests.Common.NativeMethods
             {
                 get
                 {
-                    // The API returns bottom/right as the inclusive lower-right 
+                    // The API returns bottom/right as the inclusive lower-right
                     // corner, so we need +1 for the true width
                     return (short)(this.Right - this.Left + 1);
                 }
@@ -159,7 +159,7 @@ namespace Conhost.UIA.Tests.Common.NativeMethods
             {
                 get
                 {
-                    // The API returns bottom/right as the inclusive lower-right 
+                    // The API returns bottom/right as the inclusive lower-right
                     // corner, so we need +1 for the true height
                     return (short)(this.Bottom - this.Top + 1);
                 }
@@ -240,27 +240,27 @@ namespace Conhost.UIA.Tests.Common.NativeMethods
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        internal struct COLORREF
+        public struct COLORREF
         {
             internal uint ColorDWORD;
 
-            internal COLORREF(Color color)
+            public COLORREF(Color color)
             {
                 ColorDWORD = (uint)color.R + (((uint)color.G) << 8) + (((uint)color.B) << 16);
             }
 
-            internal COLORREF(uint r, uint g, uint b)
+            public COLORREF(uint r, uint g, uint b)
             {
                 ColorDWORD = r + (g << 8) + (b << 16);
             }
 
-            internal Color GetColor()
+            public Color GetColor()
             {
                 return Color.FromArgb((int)(0x000000FFU & ColorDWORD),
                    (int)(0x0000FF00U & ColorDWORD) >> 8, (int)(0x00FF0000U & ColorDWORD) >> 16);
             }
 
-            internal void SetColor(Color color)
+            public void SetColor(Color color)
             {
                 ColorDWORD = (uint)color.R + (((uint)color.G) << 8) + (((uint)color.B) << 16);
             }
@@ -343,6 +343,9 @@ namespace Conhost.UIA.Tests.Common.NativeMethods
         public static readonly Wtypes.PROPERTYKEY PKEY_Console_LineSelection = new Wtypes.PROPERTYKEY() { fmtid = PKEY_Console_FormatId, pid = 5 };
         public static readonly Wtypes.PROPERTYKEY PKEY_Console_WindowTransparency = new Wtypes.PROPERTYKEY() { fmtid = PKEY_Console_FormatId, pid = 6 };
         public static readonly Wtypes.PROPERTYKEY PKEY_Console_TrimZeros = new Wtypes.PROPERTYKEY() { fmtid = PKEY_Console_FormatId, pid = 7 };
+        public static readonly Wtypes.PROPERTYKEY PKEY_Console_CursorType = new Wtypes.PROPERTYKEY() { fmtid = PKEY_Console_FormatId, pid = 8 };
+        public static readonly Wtypes.PROPERTYKEY PKEY_Console_CursorColor = new Wtypes.PROPERTYKEY() { fmtid = PKEY_Console_FormatId, pid = 9 };
+        public static readonly Wtypes.PROPERTYKEY PKEY_Console_InterceptCopyPaste = new Wtypes.PROPERTYKEY() { fmtid = PKEY_Console_FormatId, pid = 10 };
 
         public static readonly uint NT_CONSOLE_PROPS_SIG = 0xA0000002;
         public static readonly uint NT_FE_CONSOLE_PROPS_SIG = 0xA0000004;
@@ -373,6 +376,9 @@ namespace Conhost.UIA.Tests.Common.NativeMethods
             public int bHistoryNoDup;
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
             public int[] ColorTable;
+            public uint CursorType;
+            public WinCon.COLORREF CursorColor;
+            public bool InterceptCopyPaste;
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -385,7 +391,7 @@ namespace Conhost.UIA.Tests.Common.NativeMethods
 
     public static class User32
     {
-        // http://msdn.microsoft.com/en-us/library/windows/desktop/dd162897(v=vs.85).aspx        
+        // http://msdn.microsoft.com/en-us/library/windows/desktop/dd162897(v=vs.85).aspx
         [StructLayout(LayoutKind.Sequential)]
         public struct RECT
         {
@@ -537,7 +543,7 @@ namespace Conhost.UIA.Tests.Common.NativeMethods
         {
             /// <summary>
             /// Do not display a dialog box if the link cannot be resolved. When SLR_NO_UI is set,
-            /// the high-order word of fFlags can be set to a time-out value that specifies the 
+            /// the high-order word of fFlags can be set to a time-out value that specifies the
             /// maximum amount of time to be spent resolving the link. The function returns if the
             /// link cannot be resolved within the time-out duration. If the high-order word is set
             /// to zero, the time-out duration will be set to the default value of 3,000 milliseconds
@@ -547,8 +553,8 @@ namespace Conhost.UIA.Tests.Common.NativeMethods
             SLR_NO_UI = 0x1,
             /// <summary>Obsolete and no longer used</summary>
             SLR_ANY_MATCH = 0x2,
-            /// <summary>If the link object has changed, update its path and list of identifiers. 
-            /// If SLR_UPDATE is set, you do not need to call IPersistFile::IsDirty to determine 
+            /// <summary>If the link object has changed, update its path and list of identifiers.
+            /// If SLR_UPDATE is set, you do not need to call IPersistFile::IsDirty to determine
             /// whether or not the link object has changed.</summary>
             SLR_UPDATE = 0x4,
             /// <summary>Do not update the link information</summary>
