@@ -80,6 +80,7 @@ const TEXT_BUFFER_INFO* RenderData::GetImeCompositionStringBuffer(_In_ size_t iI
     }
 }
 
+[[nodiscard]]
 NTSTATUS RenderData::GetSelectionRects(_Outptr_result_buffer_all_(*pcRectangles) SMALL_RECT** const prgsrSelection,
                                        _Out_ UINT* const pcRectangles)
 {

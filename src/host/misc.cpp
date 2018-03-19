@@ -217,6 +217,7 @@ BOOL CheckBisectProcessW(_In_ const SCREEN_INFORMATION * const pScreenInfo,
 // converted input events
 // ReturnValue:
 // - HRESULT indicating success or error.
+[[nodiscard]]
 HRESULT SplitToOem(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events)
 {
     const UINT codepage = ServiceLocator::LocateGlobals().getConsoleInformation().CP;

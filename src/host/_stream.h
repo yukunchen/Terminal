@@ -34,6 +34,7 @@ Arguments:
 
 Return Value:
 --*/
+[[nodiscard]]
 NTSTATUS AdjustCursorPosition(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ COORD coordCursor, _In_ const BOOL fKeepCursorVisible, _Inout_opt_ PSHORT psScrollY);
 
 #define LOCAL_BUFFER_SIZE 100
@@ -66,6 +67,7 @@ Note:
     This routine does not process tabs and backspace properly.  That code
     will be implemented as part of the line editing services.
 --*/
+[[nodiscard]]
 NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                           _In_range_(<= , pwchBuffer) PWCHAR const pwchBufferBackupLimit,
                           _In_ PWCHAR pwchBuffer,
@@ -77,6 +79,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                           _Inout_opt_ PSHORT const psScrollY);
 
 // The new entry point for WriteChars to act as an intercept in case we place a Virtual Terminal processor in the way.
+[[nodiscard]]
 NTSTATUS WriteChars(_In_ PSCREEN_INFORMATION pScreenInfo,
                     _In_range_(<= , pwchBuffer) PWCHAR const pwchBufferBackupLimit,
                     _In_ PWCHAR pwchBuffer,
@@ -89,6 +92,7 @@ NTSTATUS WriteChars(_In_ PSCREEN_INFORMATION pScreenInfo,
 
 // NOTE: console lock must be held when calling this routine
 // String has been translated to unicode at this point.
+[[nodiscard]]
 NTSTATUS DoWriteConsole(_In_reads_bytes_(*pcbBuffer) PWCHAR pwchBuffer,
                         _In_ ULONG* const pcbBuffer,
                         _In_ PSCREEN_INFORMATION pScreenInfo,

@@ -22,6 +22,7 @@ class Utf8ToWideCharParser final
 public:
     Utf8ToWideCharParser(_In_ const unsigned int codePage);
     void SetCodePage(_In_ const unsigned int codePage);
+    [[nodiscard]]
     HRESULT Parse(_In_reads_(cchBuffer) const byte* const pBytes,
                   _In_ unsigned int const cchBuffer,
                   _Out_ unsigned int& cchConsumed,

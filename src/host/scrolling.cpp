@@ -153,7 +153,7 @@ void Scrolling::s_HandleMouseWheel(_In_ bool isMouseWheel, _In_ bool isMouseHWhe
             {
                 NewOrigin.Y = coordBufferSize.Y - pScreenInfo->GetScreenWindowSizeY();
             }
-            pScreenInfo->SetViewportOrigin(TRUE, NewOrigin);
+            LOG_IF_FAILED(pScreenInfo->SetViewportOrigin(TRUE, NewOrigin));
         }
     }
     else if (isMouseHWheel && s_ucWheelScrollChars > 0)
@@ -192,7 +192,7 @@ void Scrolling::s_HandleMouseWheel(_In_ bool isMouseWheel, _In_ bool isMouseHWhe
                 NewOrigin.X = coordBufferSize.X - pScreenInfo->GetScreenWindowSizeX();
             }
 
-            pScreenInfo->SetViewportOrigin(TRUE, NewOrigin);
+            LOG_IF_FAILED(pScreenInfo->SetViewportOrigin(TRUE, NewOrigin));
         }
     }
 }

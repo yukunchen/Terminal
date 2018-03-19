@@ -16,39 +16,30 @@ Author(s):
 
 #pragma once
 
-namespace Microsoft
+namespace Microsoft::Console::Interactivity::Win32
 {
-    namespace Console
+    class UiaTextRange;
+
+    namespace UiaTextRangeTracing
     {
-        namespace Interactivity
-        {
-            namespace Win32
-            {
-                class UiaTextRange;
+        enum class ApiCall;
+        struct IApiMsg;
+    }
 
-                namespace UiaTextRangeTracing
-                {
-                    enum class ApiCall;
-                    struct IApiMsg;
-                }
+    class ScreenInfoUiaProvider;
 
-                class ScreenInfoUiaProvider;
+    namespace ScreenInfoUiaProviderTracing
+    {
+        enum class ApiCall;
+        struct IApiMsg;
+    }
 
-                namespace ScreenInfoUiaProviderTracing
-                {
-                    enum class ApiCall;
-                    struct IApiMsg;
-                }
+    class WindowUiaProvider;
 
-                class WindowUiaProvider;
-
-                namespace WindowUiaProviderTracing
-                {
-                    enum class ApiCall;
-                    struct IApiMsg;
-                }
-            }
-        }
+    namespace WindowUiaProviderTracing
+    {
+        enum class ApiCall;
+        struct IApiMsg;
     }
 }
 

@@ -41,45 +41,37 @@ typedef enum DPI_AWARENESS {
 #define DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 ((DPI_AWARENESS_CONTEXT)-4)
 #endif
 
-namespace Microsoft
+namespace Microsoft::Console::Interactivity::Win32
 {
-    namespace Console
+    class WindowDpiApi final : public IHighDpiApi
     {
-        namespace Interactivity
-        {
-            namespace Win32
-            {
-                class WindowDpiApi final : public IHighDpiApi
-                {
-                public:
-                    // IHighDpi Interface
-                    BOOL SetProcessDpiAwarenessContext();
-                    HRESULT SetProcessPerMonitorDpiAwareness();
-                    BOOL EnablePerMonitorDialogScaling();
+    public:
+        // IHighDpi Interface
+        BOOL SetProcessDpiAwarenessContext();
+        [[nodiscard]]
+        HRESULT SetProcessPerMonitorDpiAwareness();
+        BOOL EnablePerMonitorDialogScaling();
 
-                    // Module-internal Functions
-                    BOOL SetProcessDpiAwarenessContext(_In_ DPI_AWARENESS_CONTEXT dpiContext);
-                    BOOL EnableChildWindowDpiMessage(_In_ HWND const hwnd,
-                                                     _In_ BOOL const fEnable);
-                    BOOL AdjustWindowRectExForDpi(_Inout_ LPRECT const lpRect,
-                                                  _In_ DWORD const dwStyle,
-                                                  _In_ BOOL const bMenu,
-                                                  _In_ DWORD const dwExStyle,
-                                                  _In_ UINT const dpi);
+        // Module-internal Functions
+        BOOL SetProcessDpiAwarenessContext(_In_ DPI_AWARENESS_CONTEXT dpiContext);
+        BOOL EnableChildWindowDpiMessage(_In_ HWND const hwnd,
+                                            _In_ BOOL const fEnable);
+        BOOL AdjustWindowRectExForDpi(_Inout_ LPRECT const lpRect,
+                                        _In_ DWORD const dwStyle,
+                                        _In_ BOOL const bMenu,
+                                        _In_ DWORD const dwExStyle,
+                                        _In_ UINT const dpi);
 
-                    int GetWindowDPI(_In_ HWND const hwnd);
-                    int GetSystemMetricsForDpi(_In_ int const nIndex,
-                                               _In_ UINT const dpi);
+        int GetWindowDPI(_In_ HWND const hwnd);
+        int GetSystemMetricsForDpi(_In_ int const nIndex,
+                                    _In_ UINT const dpi);
 
 #ifdef CON_DPIAPI_INDIRECT
-                    WindowDpiApi();
+        WindowDpiApi();
 #endif
-                    ~WindowDpiApi();
+        ~WindowDpiApi();
 
-                private:
-                    HMODULE _hUser32;
-                };
-            }
-        }
-    }
+    private:
+        HMODULE _hUser32;
+    };
 }

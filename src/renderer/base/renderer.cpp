@@ -63,12 +63,14 @@ Renderer::~Renderer()
     });
 }
 
+[[nodiscard]]
 HRESULT Renderer::s_CreateInstance(_In_ std::unique_ptr<IRenderData> pData,
                                    _Outptr_result_nullonfailure_ Renderer** const ppRenderer)
 {
     return Renderer::s_CreateInstance(std::move(pData), nullptr, 0,  ppRenderer);
 }
 
+[[nodiscard]]
 HRESULT Renderer::s_CreateInstance(_In_ std::unique_ptr<IRenderData> pData,
                                    _In_reads_(cEngines) IRenderEngine** const rgpEngines,
                                    _In_ size_t const cEngines,
@@ -119,6 +121,7 @@ HRESULT Renderer::s_CreateInstance(_In_ std::unique_ptr<IRenderData> pData,
 // - <none>
 // Return Value:
 // - HRESULT S_OK, GDI error, Safe Math error, or state/argument errors.
+[[nodiscard]]
 HRESULT Renderer::PaintFrame()
 {
     for (IRenderEngine* const pEngine : _rgpEngines)
@@ -129,6 +132,7 @@ HRESULT Renderer::PaintFrame()
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT Renderer::_PaintFrameForEngine(_In_ IRenderEngine* const pEngine)
 {
     THROW_HR_IF_NULL(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), pEngine);
@@ -291,7 +295,7 @@ void Renderer::TriggerTeardown()
 
         if (SUCCEEDED(hr) && fEngineRequestsRepaint)
         {
-            _PaintFrameForEngine(pEngine);
+            LOG_IF_FAILED(_PaintFrameForEngine(pEngine));
         }
     }
 }
@@ -394,7 +398,7 @@ void Renderer::TriggerCircling()
 
         if (SUCCEEDED(hr) && fEngineRequestsRepaint)
         {
-            _PaintFrameForEngine(pEngine);
+            LOG_IF_FAILED(_PaintFrameForEngine(pEngine));
         }
     }
 }
@@ -426,6 +430,7 @@ void Renderer::TriggerFontChange(_In_ int const iDpi, _In_ FontInfoDesired const
 // - pFontInfo - Data that will be fixed up/filled on return with the chosen font data.
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
+[[nodiscard]]
 HRESULT Renderer::GetProposedFont(_In_ int const iDpi, _In_ FontInfoDesired const * const pFontInfoDesired, _Out_ FontInfo* const pFontInfo)
 {
     // If there's no head, return E_FAIL. The caller should decide how to
@@ -544,6 +549,7 @@ void Renderer::WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs)
 // - <none>
 // Return Value:
 // - <none>
+[[nodiscard]]
 HRESULT Renderer::_PaintBackground(_In_ IRenderEngine* const pEngine)
 {
     return pEngine->PaintBackground();
@@ -638,7 +644,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
                     COORD coordDebugTarget;
                     coordDebugTarget.Y = iRow - view.Top();
                     coordDebugTarget.X = (SHORT)iRight - view.Left() - 1;
-                    pEngine->PaintBufferGridLines(lines, RGB(0x99, 0x77, 0x31), 1, coordDebugTarget);
+                    LOG_IF_FAILED(pEngine->PaintBufferGridLines(lines, RGB(0x99, 0x77, 0x31), 1, coordDebugTarget));
                 }
             }
 #endif
@@ -825,6 +831,7 @@ void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
 // - coordTarget - The X/Y coordinate position in the buffer which we're attempting to start rendering from. pwsLine[0] will be the character at position coordTarget within the original console buffer before it was prepared for this function.
 // Return Value:
 // - S_OK or memory allocation error
+[[nodiscard]]
 HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const pEngine,
                                                      _In_reads_(cchLine) PCWCHAR const pwsLine,
                                                      _In_ const Ucs2CharRow::const_iterator it,
@@ -1127,6 +1134,7 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 // - fIncludeBackground - Whether or not to include the hung window/erase window brushes in this operation. (Usually only happens when the default is changed, not when each individual color is swapped in a multi-color run.)
 // Return Value:
 // - <none>
+[[nodiscard]]
 HRESULT Renderer::_UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, _In_ const TextAttribute textAttributes, _In_ bool const fIncludeBackground)
 {
     COLORREF rgbForeground = textAttributes.CalculateRgbForeground();
@@ -1147,6 +1155,7 @@ HRESULT Renderer::_UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, _In_ 
 // - <none>
 // Return Value:
 // - <none>
+[[nodiscard]]
 HRESULT Renderer::_ClearOverlays(_In_ IRenderEngine* const pEngine)
 {
     return pEngine->ClearCursor();
@@ -1160,6 +1169,7 @@ HRESULT Renderer::_ClearOverlays(_In_ IRenderEngine* const pEngine)
 // - <none>
 // Return Value:
 // - <none>
+[[nodiscard]]
 HRESULT Renderer::_PerformScrolling(_In_ IRenderEngine* const pEngine)
 {
     return pEngine->ScrollFrame();
@@ -1173,10 +1183,9 @@ HRESULT Renderer::_PerformScrolling(_In_ IRenderEngine* const pEngine)
 // - pcRectangles - Count of how many rectangles are in the above array.
 // Return Value:
 // - Success status if we managed to retrieve rectangles. Check with NT_SUCCESS.
-_Check_return_
-NTSTATUS Renderer::_GetSelectionRects(
-    _Outptr_result_buffer_all_(*pcRectangles) SMALL_RECT** const prgsrSelection,
-    _Out_ UINT* const pcRectangles) const
+[[nodiscard]]
+NTSTATUS Renderer::_GetSelectionRects(_Outptr_result_buffer_all_(*pcRectangles) SMALL_RECT** const prgsrSelection,
+                                      _Out_ UINT* const pcRectangles) const
 {
     NTSTATUS status = _pData->GetSelectionRects(prgsrSelection, pcRectangles);
 

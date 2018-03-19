@@ -52,6 +52,7 @@ DWORD PtySignalInputThread::StaticThreadProc(_In_ LPVOID lpParameter)
 // Return Value:
 // - S_OK if the thread runs to completion.
 // - Otherwise it may cause an application termination another route and never return.
+[[nodiscard]]
 HRESULT PtySignalInputThread::_InputThread()
 {
     unsigned short signalId;
@@ -125,6 +126,7 @@ bool PtySignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pBu
 
 // Method Description:
 // - Starts the PTY Signal input thread.
+[[nodiscard]]
 HRESULT PtySignalInputThread::Start()
 {
     RETURN_IF_HANDLE_INVALID(_hFile.get());

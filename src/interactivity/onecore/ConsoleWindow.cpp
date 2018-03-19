@@ -37,6 +37,7 @@ void ConsoleWindow::SetIsFullscreen(bool const /*fFullscreenEnabled*/)
 {
 }
 
+[[nodiscard]]
 NTSTATUS ConsoleWindow::SetViewportOrigin(SMALL_RECT NewWindow)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -138,11 +139,13 @@ void ConsoleWindow::VerticalScroll(const WORD /*wScrollCommand*/, const WORD /*w
 {
 }
 
+[[nodiscard]]
 HRESULT ConsoleWindow::SignalUia(_In_ EVENTID /*id*/)
 {
     return E_NOTIMPL;
 }
 
+[[nodiscard]]
 HRESULT ConsoleWindow::UiaSetTextAreaFocus()
 {
     return E_NOTIMPL;

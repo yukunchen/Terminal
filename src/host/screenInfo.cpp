@@ -75,6 +75,7 @@ SCREEN_INFORMATION::~SCREEN_INFORMATION()
 // - nFont - the initial font to generate text with.
 // - dwScreenBufferSize - the initial size of the screen buffer (in rows/columns).
 // Return Value:
+[[nodiscard]]
 NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
                                             _In_ const FontInfo* const pfiFont,
                                             _In_ COORD coordScreenBufferSize,
@@ -251,6 +252,7 @@ void SCREEN_INFORMATION::s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pSc
 
 #pragma region Output State Machine
 
+[[nodiscard]]
 NTSTATUS SCREEN_INFORMATION::_InitializeOutputStateMachine()
 {
     ASSERT(_pConApi == nullptr);
@@ -362,14 +364,14 @@ BOOL SCREEN_INFORMATION::IsActiveScreenBuffer() const
 // - CurrentWindowSize - Pointer to location in which to store current window size.
 // - MaximumWindowSize - Pointer to location in which to store maximum window size.
 // Return Value:
-NTSTATUS
-SCREEN_INFORMATION::GetScreenBufferInformation(_Out_ PCOORD pcoordSize,
-                                               _Out_ PCOORD pcoordCursorPosition,
-                                               _Out_ PSMALL_RECT psrWindow,
-                                               _Out_ PWORD pwAttributes,
-                                               _Out_ PCOORD pcoordMaximumWindowSize,
-                                               _Out_ PWORD pwPopupAttributes,
-                                               _Out_writes_(COLOR_TABLE_SIZE) LPCOLORREF lpColorTable) const
+// - None
+void SCREEN_INFORMATION::GetScreenBufferInformation(_Out_ PCOORD pcoordSize,
+                                                    _Out_ PCOORD pcoordCursorPosition,
+                                                    _Out_ PSMALL_RECT psrWindow,
+                                                    _Out_ PWORD pwAttributes,
+                                                    _Out_ PCOORD pcoordMaximumWindowSize,
+                                                    _Out_ PWORD pwPopupAttributes,
+                                                    _Out_writes_(COLOR_TABLE_SIZE) LPCOLORREF lpColorTable) const
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     *pcoordSize = GetScreenBufferSize();
@@ -385,8 +387,6 @@ SCREEN_INFORMATION::GetScreenBufferInformation(_Out_ PCOORD pcoordSize,
     memmove(lpColorTable, gci.GetColorTable(), COLOR_TABLE_SIZE * sizeof(COLORREF));
 
     *pcoordMaximumWindowSize = this->GetMaxWindowSizeInCharacters();
-
-    return STATUS_SUCCESS;
 }
 
 // Routine Description:
@@ -662,7 +662,7 @@ void SCREEN_INFORMATION::ResetTextFlags(_In_ short const sStartX,
         IConsoleWindow* pConsoleWindow = ServiceLocator::LocateConsoleWindow();
         if (pConsoleWindow)
         {
-            pConsoleWindow->SignalUia(UIA_Text_TextChangedEventId);
+            LOG_IF_FAILED(pConsoleWindow->SignalUia(UIA_Text_TextChangedEventId));
             // TODO MSFT 7960168 do we really need this event to not signal?
             //pConsoleWindow->SignalUia(UIA_LayoutInvalidatedEventId);
         }
@@ -753,7 +753,7 @@ void SCREEN_INFORMATION::SetViewportSize(_In_ const COORD* const pcoordSize)
     //      (if necessary)
     if (_IsInPtyMode())
     {
-        ResizeScreenBuffer(*pcoordSize, TRUE);
+        LOG_IF_FAILED(ResizeScreenBuffer(*pcoordSize, TRUE));
 
         if (_psiMainBuffer)
         {
@@ -763,6 +763,7 @@ void SCREEN_INFORMATION::SetViewportSize(_In_ const COORD* const pcoordSize)
     _InternalSetViewportSize(pcoordSize, false, false);
 }
 
+[[nodiscard]]
 NTSTATUS SCREEN_INFORMATION::SetViewportOrigin(_In_ const BOOL fAbsolute,
                                                _In_ const COORD coordWindowOrigin)
 {
@@ -807,7 +808,7 @@ NTSTATUS SCREEN_INFORMATION::SetViewportOrigin(_In_ const BOOL fAbsolute,
     if (IsActiveScreenBuffer() && ServiceLocator::LocateConsoleWindow() != nullptr)
     {
         // Tell the window that it needs to set itself to the new origin if we're the active buffer.
-        ServiceLocator::LocateConsoleWindow()->SetViewportOrigin(NewWindow);
+        LOG_IF_FAILED(ServiceLocator::LocateConsoleWindow()->SetViewportOrigin(NewWindow));
     }
     else
     {
@@ -828,13 +829,13 @@ NTSTATUS SCREEN_INFORMATION::SetViewportOrigin(_In_ const BOOL fAbsolute,
 //      direction it will be shifted to positive coordinates. If it's bigger
 //      that the screen buffer, it will be clamped to the size of the buffer.
 // Return Value:
-// STATUS_SUCCESS always.
-NTSTATUS SCREEN_INFORMATION::SetViewportRect(_In_ const Viewport newViewport)
+// - None
+void SCREEN_INFORMATION::SetViewportRect(_In_ const Viewport newViewport)
 {
     // make sure there's something to do
     if (newViewport == _viewport)
     {
-        return STATUS_SUCCESS;
+        return;
     }
 
     // do adjustments on a copy that's easily manipulated.
@@ -863,8 +864,6 @@ NTSTATUS SCREEN_INFORMATION::SetViewportRect(_In_ const Viewport newViewport)
 
     _viewport = Viewport::FromInclusive(srCorrected);
     Tracing::s_TraceWindowViewport(srCorrected);
-
-    return STATUS_SUCCESS;
 }
 
 BOOL SCREEN_INFORMATION::SendNotifyBeep() const
@@ -912,7 +911,7 @@ void SCREEN_INFORMATION::ProcessResizeWindow(_In_ const RECT* const prcClientNew
     }
 
     // 1. In some modes, the screen buffer size needs to change on window size, so do that first.
-    _AdjustScreenBuffer(prcClientNew);
+    LOG_IF_FAILED(_AdjustScreenBuffer(prcClientNew));
 
     // 2. Now calculate how large the new viewport should be
     COORD coordViewportSize;
@@ -941,6 +940,7 @@ void SCREEN_INFORMATION::ProcessResizeWindow(_In_ const RECT* const prcClientNew
 // - pcoordClientNewCharacters - The maximum number of characters X by Y that can be displayed in the window with the given backing buffer.
 // Return Value:
 // - S_OK if math was successful. Check with SUCCEEDED/FAILED macro.
+[[nodiscard]]
 HRESULT SCREEN_INFORMATION::_AdjustScreenBufferHelper(_In_ const RECT* const prcClientNew,
                                                       _In_ COORD const coordBufferOld,
                                                       _Out_ COORD* const pcoordClientNewCharacters)
@@ -984,7 +984,8 @@ HRESULT SCREEN_INFORMATION::_AdjustScreenBufferHelper(_In_ const RECT* const prc
 // Arguments:
 // - prcClientNew - Client rectangle in pixels after this update
 // Return Value:
-// - <none>
+// - appropriate HRESULT
+[[nodiscard]]
 HRESULT SCREEN_INFORMATION::_AdjustScreenBuffer(_In_ const RECT* const prcClientNew)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -1042,7 +1043,7 @@ HRESULT SCREEN_INFORMATION::_AdjustScreenBuffer(_In_ const RECT* const prcClient
         TextInfo->GetCursor()->SetIsVisible(false);
 
         // 2. Call the resize screen buffer method (expensive) to redimension the backing buffer (and reflow)
-        ResizeScreenBuffer(coordBufferSizeNew, FALSE);
+        LOG_IF_FAILED(ResizeScreenBuffer(coordBufferSizeNew, FALSE));
 
         // 3.  Reprint console input string
         pCommandLine->Show();
@@ -1406,6 +1407,7 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
 // - <in> Coordinates of the new screen size
 // Return Value:
 // - Success if successful. Invalid parameter if screen buffer size is unexpected. No memory if allocation failed.
+[[nodiscard]]
 NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSize)
 {
     if ((USHORT)coordNewScreenSize.X >= SHORT_MAX || (USHORT)coordNewScreenSize.Y >= SHORT_MAX)
@@ -1648,7 +1650,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
         SHORT const sCursorHeightInViewportAfter = pNewCursor->GetPosition().Y - _viewport.Top();
         COORD coordCursorHeightDiff = { 0 };
         coordCursorHeightDiff.Y = sCursorHeightInViewportAfter - sCursorHeightInViewportBefore;
-        SetViewportOrigin(FALSE, coordCursorHeightDiff);
+        LOG_IF_FAILED(SetViewportOrigin(FALSE, coordCursorHeightDiff));
 
         // Save old cursor size before we delete it
         ULONG const ulSize = pOldCursor->GetSize();
@@ -1674,6 +1676,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
 // - NewScreenSize - new size of screen.
 // Return Value:
 // - Success if successful. Invalid parameter if screen buffer size is unexpected. No memory if allocation failed.
+[[nodiscard]]
 NTSTATUS SCREEN_INFORMATION::ResizeTraditional(_In_ COORD const coordNewScreenSize)
 {
     return TextInfo->ResizeTraditional(GetScreenBufferSize(), coordNewScreenSize, _Attributes);
@@ -1687,6 +1690,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeTraditional(_In_ COORD const coordNewScreenSi
 // - DoScrollBarUpdate - indicates whether to update scroll bars at the end
 // Return Value:
 // - Success if successful. Invalid parameter if screen buffer size is unexpected. No memory if allocation failed.
+[[nodiscard]]
 NTSTATUS SCREEN_INFORMATION::ResizeScreenBuffer(_In_ const COORD coordNewScreenSize,
                                                 _In_ const bool fDoScrollBarUpdate)
 {
@@ -1817,11 +1821,11 @@ void SCREEN_INFORMATION::MakeCurrentCursorVisible()
 // - Size - cursor size
 // - Visible - cursor visibility
 // Return Value:
-// - Status
-NTSTATUS SCREEN_INFORMATION::SetCursorInformation(_In_ ULONG const Size,
-                                                  _In_ BOOLEAN const Visible,
-                                                  _In_ unsigned int const Color,
-                                                  _In_ CursorType const Type)
+// - None
+void SCREEN_INFORMATION::SetCursorInformation(_In_ ULONG const Size,
+                                              _In_ BOOLEAN const Visible,
+                                              _In_ unsigned int const Color,
+                                              _In_ CursorType const Type)
 {
     PTEXT_BUFFER_INFO const pTextInfo = this->TextInfo;
     Cursor* const pCursor = pTextInfo->GetCursor();
@@ -1837,8 +1841,6 @@ NTSTATUS SCREEN_INFORMATION::SetCursorInformation(_In_ ULONG const Size,
     {
         _psiMainBuffer->SetCursorInformation(Size, Visible, Color, Type);
     }
-
-    return STATUS_SUCCESS;
 }
 
 // Routine Description:
@@ -1849,8 +1851,8 @@ NTSTATUS SCREEN_INFORMATION::SetCursorInformation(_In_ ULONG const Size,
 // - ScreenInfo - pointer to screen info structure.
 // - DoubleCursor - should we indicated non-normal mode
 // Return Value:
-// - Status
-NTSTATUS SCREEN_INFORMATION::SetCursorDBMode(_In_ BOOLEAN const DoubleCursor)
+// - None
+void  SCREEN_INFORMATION::SetCursorDBMode(_In_ BOOLEAN const DoubleCursor)
 {
     PTEXT_BUFFER_INFO const pTextInfo = this->TextInfo;
     Cursor* const pCursor = pTextInfo->GetCursor();
@@ -1865,8 +1867,6 @@ NTSTATUS SCREEN_INFORMATION::SetCursorDBMode(_In_ BOOLEAN const DoubleCursor)
     {
         _psiMainBuffer->SetCursorDBMode(DoubleCursor);
     }
-
-    return STATUS_SUCCESS;
 }
 
 // Routine Description:
@@ -1877,6 +1877,7 @@ NTSTATUS SCREEN_INFORMATION::SetCursorDBMode(_In_ BOOLEAN const DoubleCursor)
 // - TurnOn - true if cursor should be left on, false if should be left off
 // Return Value:
 // - Status
+[[nodiscard]]
 NTSTATUS SCREEN_INFORMATION::SetCursorPosition(_In_ COORD const Position, _In_ BOOL const TurnOn)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -1945,7 +1946,7 @@ void SCREEN_INFORMATION::MakeCursorVisible(_In_ const COORD CursorPosition)
 
     if (WindowOrigin.X != 0 || WindowOrigin.Y != 0)
     {
-        this->SetViewportOrigin(FALSE, WindowOrigin);
+        LOG_IF_FAILED(this->SetViewportOrigin(FALSE, WindowOrigin));
     }
 }
 
@@ -2000,6 +2001,7 @@ SCREEN_INFORMATION* const SCREEN_INFORMATION::GetMainBuffer()
 // - ppsiNewScreenBuffer - a pointer to recieve the newly created buffer.
 // Return value:
 // - STATUS_SUCCESS if handled successfully. Otherwise, an approriate status code indicating the error.
+[[nodiscard]]
 NTSTATUS SCREEN_INFORMATION::_CreateAltBuffer(_Out_ SCREEN_INFORMATION** const ppsiNewScreenBuffer)
 {
     // Create new screen buffer.
@@ -2043,6 +2045,7 @@ NTSTATUS SCREEN_INFORMATION::_CreateAltBuffer(_Out_ SCREEN_INFORMATION** const p
 // - None
 // Return value:
 // - STATUS_SUCCESS if handled successfully. Otherwise, an approriate status code indicating the error.
+[[nodiscard]]
 NTSTATUS SCREEN_INFORMATION::UseAlternateScreenBuffer()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -2071,7 +2074,7 @@ NTSTATUS SCREEN_INFORMATION::UseAlternateScreenBuffer()
             s_RemoveScreenBuffer(psiOldAltBuffer); // this will also delete the old alt buffer
         }
 
-        Status = ::SetActiveScreenBuffer(psiNewAltBuffer);
+        ::SetActiveScreenBuffer(psiNewAltBuffer);
 
         // Kind of a hack until we have proper signal channels: If the client app wants window size events, send one for
         // the new alt buffer's size (this is so WSL can update the TTY size when the MainSB.viewportWidth <
@@ -2091,10 +2094,9 @@ NTSTATUS SCREEN_INFORMATION::UseAlternateScreenBuffer()
 // - None
 // Return value:
 // - STATUS_SUCCESS if handled successfully. Otherwise, an approriate status code indicating the error.
-NTSTATUS SCREEN_INFORMATION::UseMainScreenBuffer()
+void SCREEN_INFORMATION::UseMainScreenBuffer()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    NTSTATUS Status = STATUS_SUCCESS;
     SCREEN_INFORMATION* psiMain = this->_psiMainBuffer;
     if (psiMain != nullptr)
     {
@@ -2103,24 +2105,20 @@ NTSTATUS SCREEN_INFORMATION::UseMainScreenBuffer()
             psiMain->ProcessResizeWindow(&(psiMain->_rcAltSavedClientNew), &(psiMain->_rcAltSavedClientOld));
             psiMain->_fAltWindowChanged = false;
         }
-        Status = ::SetActiveScreenBuffer(psiMain);
-        if (NT_SUCCESS(Status))
-        {
-            psiMain->UpdateScrollBars(); // The alt had disabled scrollbars, re-enable them
+        ::SetActiveScreenBuffer(psiMain);
+        psiMain->UpdateScrollBars(); // The alt had disabled scrollbars, re-enable them
 
-            // send a _coordScreenBufferSizeChangeEvent for the new Sb viewport
-            ScreenBufferSizeChange(psiMain->GetScreenBufferSize());
+        // send a _coordScreenBufferSizeChangeEvent for the new Sb viewport
+        ScreenBufferSizeChange(psiMain->GetScreenBufferSize());
 
-            SCREEN_INFORMATION* psiAlt = psiMain->_psiAlternateBuffer;
-            psiMain->_psiAlternateBuffer = nullptr;
-            s_RemoveScreenBuffer(psiAlt); // this will also delete the alt buffer
-            // deleting the alt buffer will give the GetSet back to it's main
+        SCREEN_INFORMATION* psiAlt = psiMain->_psiAlternateBuffer;
+        psiMain->_psiAlternateBuffer = nullptr;
+        s_RemoveScreenBuffer(psiAlt); // this will also delete the alt buffer
+        // deleting the alt buffer will give the GetSet back to it's main
 
-            // Tell the VT MouseInput handler that we're in the main buffer now
-            gci.terminalMouseInput.UseMainScreenBuffer();
-        }
+        // Tell the VT MouseInput handler that we're in the main buffer now
+        gci.terminalMouseInput.UseMainScreenBuffer();
     }
-    return Status;
 }
 
 // Routine Description:
@@ -2157,6 +2155,7 @@ bool SCREEN_INFORMATION::_IsInPtyMode() const
 //      (This is most likely an allocation failure on the instantiation of the new tab stop.)
 // Note:
 //  This screen buffer is responsible for the lifetime of any tab stops added to it. They can all be freed with ClearTabStops()
+[[nodiscard]]
 NTSTATUS SCREEN_INFORMATION::AddTabStop(_In_ const SHORT sColumn)
 {
     NTSTATUS Status = STATUS_NO_MEMORY;
@@ -2513,6 +2512,7 @@ void SCREEN_INFORMATION::SetBufferViewport(_In_ const Viewport newViewport)
 //  <none>
 // Return value:
 // - S_OK if we succeeded, or another status if there was a failure.
+[[nodiscard]]
 HRESULT SCREEN_INFORMATION::VtEraseAll()
 {
     const COORD coordLastChar = TextInfo->GetLastNonSpaceCharacter();

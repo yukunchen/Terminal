@@ -42,6 +42,7 @@ class ConversionAreaInfo; // forward decl window. circular reference
 class SCREEN_INFORMATION
 {
 public:
+    [[nodiscard]]
     static NTSTATUS CreateInstance(_In_ COORD coordWindowSize,
                                    _In_ const FontInfo* const pfiFont,
                                    _In_ COORD coordScreenBufferSize,
@@ -52,13 +53,13 @@ public:
 
     ~SCREEN_INFORMATION();
 
-    NTSTATUS GetScreenBufferInformation(_Out_ PCOORD pcoordSize,
-                                        _Out_ PCOORD pcoordCursorPosition,
-                                        _Out_ PSMALL_RECT psrWindow,
-                                        _Out_ PWORD pwAttributes,
-                                        _Out_ PCOORD pcoordMaximumWindowSize,
-                                        _Out_ PWORD pwPopupAttributes,
-                                        _Out_writes_(COLOR_TABLE_SIZE) LPCOLORREF lpColorTable) const;
+    void GetScreenBufferInformation(_Out_ PCOORD pcoordSize,
+                                    _Out_ PCOORD pcoordCursorPosition,
+                                    _Out_ PSMALL_RECT psrWindow,
+                                    _Out_ PWORD pwAttributes,
+                                    _Out_ PCOORD pcoordMaximumWindowSize,
+                                    _Out_ PWORD pwPopupAttributes,
+                                    _Out_writes_(COLOR_TABLE_SIZE) LPCOLORREF lpColorTable) const;
 
     void GetRequiredConsoleSizeInPixels(_Out_ PSIZE const pRequiredSize) const;
 
@@ -84,6 +85,7 @@ public:
     void UpdateFont(_In_ const FontInfo* const pfiNewFont);
     void RefreshFontWithRenderer();
 
+    [[nodiscard]]
     NTSTATUS ResizeScreenBuffer(_In_ const COORD coordNewScreenSize, _In_ const bool fDoScrollBarUpdate);
 
     void ResetTextFlags(_In_ short const sStartX, _In_ short const sStartY, _In_ short const sEndX, _In_ short const sEndY);
@@ -98,8 +100,9 @@ public:
     SMALL_RECT GetBufferViewport() const;
     void SetBufferViewport(_In_ const Microsoft::Console::Types::Viewport newViewport);
     // Forwarders to Window if we're the active buffer.
+    [[nodiscard]]
     NTSTATUS SetViewportOrigin(_In_ const BOOL fAbsolute, _In_ const COORD coordWindowOrigin);
-    NTSTATUS SetViewportRect(_In_ const Microsoft::Console::Types::Viewport newViewport);
+    void SetViewportRect(_In_ const Microsoft::Console::Types::Viewport newViewport);
     BOOL SendNotifyBeep() const;
     BOOL PostUpdateWindowSize() const;
 
@@ -145,12 +148,14 @@ public:
     AdaptDispatch* GetAdapterDispatch() const;
     StateMachine* GetStateMachine() const;
 
-    NTSTATUS SetCursorInformation(_In_ ULONG const Size,
-                                  _In_ BOOLEAN const Visible,
-                                  _In_ unsigned int const Color,
-                                  _In_ CursorType const Type);
 
-    NTSTATUS SetCursorDBMode(_In_ const BOOLEAN DoubleCursor);
+    void SetCursorInformation(_In_ ULONG const Size,
+                              _In_ BOOLEAN const Visible,
+                              _In_ unsigned int const Color,
+                              _In_ CursorType const Type);
+
+    void SetCursorDBMode(_In_ const BOOLEAN DoubleCursor);
+    [[nodiscard]]
     NTSTATUS SetCursorPosition(_In_ COORD const Position, _In_ BOOL const TurnOn);
 
     void MakeCursorVisible(_In_ const COORD CursorPosition);
@@ -158,8 +163,9 @@ public:
     SMALL_RECT GetScrollMargins() const;
     void SetScrollMargins(_In_ const SMALL_RECT* const psrMargins);
 
+    [[nodiscard]]
     NTSTATUS UseAlternateScreenBuffer();
-    NTSTATUS UseMainScreenBuffer();
+    void UseMainScreenBuffer();
     SCREEN_INFORMATION* const GetActiveBuffer();
     SCREEN_INFORMATION* const GetMainBuffer();
 
@@ -169,6 +175,7 @@ public:
         struct _TabStop* ptsNext = nullptr;
     } TabStop;
 
+    [[nodiscard]]
     NTSTATUS AddTabStop(_In_ const SHORT sColumn);
     void ClearTabStops();
     void ClearTabStop(_In_ const SHORT sColumn);
@@ -188,6 +195,7 @@ public:
                                   _In_ const TextAttribute& newAttributes,
                                   _In_ const TextAttribute& newPopupAttributes);
 
+    [[nodiscard]]
     HRESULT VtEraseAll();
 
 private:
@@ -199,9 +207,11 @@ private:
     IWindowMetrics *_pConsoleWindowMetrics;
     IAccessibilityNotifier *_pAccessibilityNotifier;
 
+    [[nodiscard]]
     HRESULT _AdjustScreenBufferHelper(_In_ const RECT* const prcClientNew,
                                       _In_ COORD const coordBufferOld,
                                       _Out_ COORD* const pcoordClientNewCharacters);
+    [[nodiscard]]
     HRESULT _AdjustScreenBuffer(_In_ const RECT* const prcClientNew);
     void _CalculateViewportSize(_In_ const RECT* const prcClientArea, _Out_ COORD* const pcoordSize);
     void _AdjustViewportSize(_In_ const RECT* const prcClientNew, _In_ const RECT* const prcClientOld, _In_ const COORD* const pcoordSize);
@@ -213,12 +223,16 @@ private:
                                                _Out_ bool* const pfIsHorizontalVisible,
                                                _Out_ bool* const pfIsVerticalVisible);
 
+    [[nodiscard]]
     NTSTATUS ResizeWithReflow(_In_ COORD const coordnewScreenSize);
+    [[nodiscard]]
     NTSTATUS ResizeTraditional(_In_ COORD const coordNewScreenSize);
 
+    [[nodiscard]]
     NTSTATUS _InitializeOutputStateMachine();
     void _FreeOutputStateMachine();
 
+    [[nodiscard]]
     NTSTATUS _CreateAltBuffer(_Out_ SCREEN_INFORMATION** const ppsiNewScreenBuffer);
 
     bool _IsAltBuffer() const;
@@ -236,9 +250,8 @@ private:
 
     SMALL_RECT _srScrollMargins; //The margins of the VT specified scroll region. Left and Right are currently unused, but could be in the future.
 
-    // specifies which coordinates of the screen buffer are visible in the
+    // Specifies which coordinates of the screen buffer are visible in the
     //      window client (the "viewport" into the buffer)
-    // This is an Inclusive rectangle
     Microsoft::Console::Types::Viewport _viewport;
 
     SCREEN_INFORMATION* _psiAlternateBuffer = nullptr; // The VT "Alternate" screen buffer.

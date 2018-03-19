@@ -297,6 +297,7 @@ Viewport Viewport::ConvertToOrigin(_In_ const Viewport& other) const
 // - modified: is set to the result of the addition. Any initial value is discarded.
 // Return Value:
 // - S_OK if safemath succeeded, otherwise an HR representing the safemath error
+[[nodiscard]]
 HRESULT Viewport::AddCoord(_In_ const Viewport& original,
                            _In_ const COORD delta,
                            _Out_ Viewport& modified)

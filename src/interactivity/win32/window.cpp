@@ -80,6 +80,7 @@ Window::~Window()
 // - pScreen - The initial screen rendering data to attach to (renders in the client area of this window)
 // Return Value:
 // - STATUS_SUCCESS or suitable NT error code
+[[nodiscard]]
 NTSTATUS Window::CreateInstance(_In_ Settings* const pSettings,
                                 _In_ SCREEN_INFORMATION* const pScreen)
 {
@@ -94,7 +95,7 @@ NTSTATUS Window::CreateInstance(_In_ Settings* const pSettings,
         if (NT_SUCCESS(status))
         {
             Window::s_Instance = pNewWindow;
-            ServiceLocator::SetConsoleWindowInstance(pNewWindow);
+            LOG_IF_FAILED(ServiceLocator::SetConsoleWindowInstance(pNewWindow));
         }
     }
 
@@ -108,6 +109,7 @@ NTSTATUS Window::CreateInstance(_In_ Settings* const pSettings,
 // - <none>
 // Return Value:
 // - STATUS_SUCCESS or failure from loading icons/registering class with the system
+[[nodiscard]]
 NTSTATUS Window::s_RegisterWindowClass()
 {
     NTSTATUS status = STATUS_SUCCESS;
@@ -180,6 +182,7 @@ void Window::_UpdateSystemMetrics() const
 // - pScreen - Attach to this screen for rendering the client area of the window
 // Return Value:
 // - STATUS_SUCCESS, invalid parameters, or various potential errors from calling CreateWindow
+[[nodiscard]]
 NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
                              _In_ SCREEN_INFORMATION* const pScreen)
 {
@@ -308,7 +311,7 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
                         gci.ConsoleIme.RefreshAreaAttributes();
 
                         // Do WM_GETICON workaround. Must call WM_SETICON once or apps calling WM_GETICON will get null.
-                        Icon::Instance().ApplyWindowMessageWorkaround(hWnd);
+                        LOG_IF_FAILED(Icon::Instance().ApplyWindowMessageWorkaround(hWnd));
 
                         // Set up the hot key for this window.
                         if (gci.GetHotKey() != 0)
@@ -351,6 +354,7 @@ void Window::_CloseWindow() const
 // - wShowWindow - See STARTUPINFO wShowWindow member: http://msdn.microsoft.com/en-us/library/windows/desktop/ms686331(v=vs.85).aspx
 // Return Value:
 // - STATUS_SUCCESS or system errors from activating the window and setting its show states
+[[nodiscard]]
 NTSTATUS Window::ActivateAndShow(_In_ WORD const wShowWindow)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -389,6 +393,7 @@ NTSTATUS Window::ActivateAndShow(_In_ WORD const wShowWindow)
 //              if FALSE, WindowOrigin is specified in coordinates relative to the current window origin.
 // - WindowOrigin - New window origin.
 // Return Value:
+[[nodiscard]]
 NTSTATUS Window::SetViewportOrigin(_In_ SMALL_RECT NewWindow)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -427,7 +432,7 @@ NTSTATUS Window::SetViewportOrigin(_In_ SMALL_RECT NewWindow)
         Tracing::s_TraceWindowViewport(ScreenInfo->GetBufferViewport());
     }
 
-    ConsoleImeResizeCompStrView();
+    LOG_IF_FAILED(ConsoleImeResizeCompStrView());
 
     ScreenInfo->UpdateScrollBars();
     return STATUS_SUCCESS;
@@ -573,6 +578,7 @@ void Window::_UpdateWindowSize(_In_ SIZE const sizeNew) const
 // - <none> - All state is read from the attached screen buffer
 // Return Value:
 // - STATUS_SUCCESS or suitable error code
+[[nodiscard]]
 NTSTATUS Window::_InternalSetWindowSize() const
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -681,7 +687,7 @@ NTSTATUS Window::_InternalSetWindowSize() const
         psiAttached->ResizingWindow--;
     }
 
-    ConsoleImeResizeCompStrView();
+    LOG_IF_FAILED(ConsoleImeResizeCompStrView());
 
     return STATUS_SUCCESS;
 }
@@ -767,7 +773,7 @@ void Window::VerticalScroll(_In_ const WORD wScrollCommand, _In_ const WORD wAbs
 
     NewOrigin.Y = (WORD)(max(0, min((SHORT)NewOrigin.Y, sScreenBufferSizeY - (SHORT)ScreenInfo->GetScreenWindowSizeY())));
 
-    ScreenInfo->SetViewportOrigin(TRUE, NewOrigin);
+    LOG_IF_FAILED(ScreenInfo->SetViewportOrigin(TRUE, NewOrigin));
 }
 
 // Routine Description:
@@ -842,7 +848,7 @@ void Window::HorizontalScroll(_In_ const WORD wScrollCommand, _In_ const WORD wA
     }
 
     NewOrigin.X = (WORD)(max(0, min((SHORT)NewOrigin.X, sScreenBufferSizeX - (SHORT)ScreenInfo->GetScreenWindowSizeX())));
-    ScreenInfo->SetViewportOrigin(TRUE, NewOrigin);
+    LOG_IF_FAILED(ScreenInfo->SetViewportOrigin(TRUE, NewOrigin));
 }
 
 BOOL Window::EnableBothScrollBars()
@@ -1271,7 +1277,9 @@ void Window::s_PersistWindowPosition(_In_ PCWSTR pwszLinkTitle,
     {
         CONSOLE_STATE_INFO StateInfo = {0};
         Menu::s_GetConsoleState(&StateInfo);
-        ShortcutSerialization::s_SetLinkValues(&StateInfo, IsEastAsianCP(ServiceLocator::LocateGlobals().uiOEMCP), true);
+        LOG_IF_FAILED(ShortcutSerialization::s_SetLinkValues(&StateInfo,
+                                                             IsEastAsianCP(ServiceLocator::LocateGlobals().uiOEMCP),
+                                                             true));
     }
 }
 
@@ -1290,7 +1298,9 @@ void Window::s_PersistWindowOpacity(_In_ PCWSTR pwszLinkTitle, _In_ PCWSTR pwszO
     {
         CONSOLE_STATE_INFO StateInfo = {0};
         Menu::s_GetConsoleState(&StateInfo);
-        ShortcutSerialization::s_SetLinkValues(&StateInfo, IsEastAsianCP(ServiceLocator::LocateGlobals().uiOEMCP), true);
+        LOG_IF_FAILED(ShortcutSerialization::s_SetLinkValues(&StateInfo,
+                                                             IsEastAsianCP(ServiceLocator::LocateGlobals().uiOEMCP),
+                                                             true));
     }
 }
 
@@ -1322,6 +1332,7 @@ IRawElementProviderSimple* Window::_GetUiaProvider()
     return _pUiaProvider;
 }
 
+[[nodiscard]]
 HRESULT Window::SignalUia(_In_ EVENTID id)
 {
     if (_pUiaProvider != nullptr)
@@ -1331,11 +1342,12 @@ HRESULT Window::SignalUia(_In_ EVENTID id)
     return E_POINTER;
 }
 
+[[nodiscard]]
 HRESULT Window::UiaSetTextAreaFocus()
 {
     if (_pUiaProvider != nullptr)
     {
-        _pUiaProvider->SetTextAreaFocus();
+        LOG_IF_FAILED(_pUiaProvider->SetTextAreaFocus());
         return S_OK;
     }
     return E_POINTER;

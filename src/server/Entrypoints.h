@@ -19,7 +19,8 @@ class ConsoleArguments;
 
 namespace Entrypoints
 {
+    [[nodiscard]]
     HRESULT StartConsoleForServerHandle(_In_ HANDLE const ServerHandle, _In_ const ConsoleArguments* const args);
+    [[nodiscard]]
     HRESULT StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine, _In_ const ConsoleArguments* const args);
 };
-

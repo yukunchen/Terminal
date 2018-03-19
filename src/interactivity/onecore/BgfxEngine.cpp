@@ -34,53 +34,63 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
     _fontSize.Y = FontHeight > SHORT_MAX ? SHORT_MAX : (SHORT)FontHeight;
 }
 
+[[nodiscard]]
 HRESULT BgfxEngine::Invalidate(const SMALL_RECT* const /*psrRegion*/)
 {
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT BgfxEngine::InvalidateCursor(const COORD* const /*pcoordCursor*/)
 {
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT BgfxEngine::InvalidateSystem(const RECT* const /*prcDirtyClient*/)
 {
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT BgfxEngine::InvalidateSelection(const SMALL_RECT* const /*rgsrSelection*/, UINT const /*cRectangles*/)
 {
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT BgfxEngine::InvalidateScroll(const COORD* const /*pcoordDelta*/)
 {
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT BgfxEngine::InvalidateAll()
 {
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT BgfxEngine::InvalidateCircling(_Out_ bool* const pForcePaint)
 {
     *pForcePaint = false;
     return S_FALSE;
 }
 
+[[nodiscard]]
 HRESULT BgfxEngine::PrepareForTeardown(_Out_ bool* const pForcePaint)
 {
     *pForcePaint = false;
     return S_FALSE;
 }
 
+[[nodiscard]]
 HRESULT BgfxEngine::StartPaint()
 {
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT BgfxEngine::EndPaint()
 {
     NTSTATUS Status;
@@ -103,11 +113,13 @@ HRESULT BgfxEngine::EndPaint()
     return HRESULT_FROM_NT(Status);
 }
 
+[[nodiscard]]
 HRESULT BgfxEngine::ScrollFrame()
 {
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT BgfxEngine::PaintBackground()
 {
     PVOID OldRunBase;
@@ -134,6 +146,7 @@ HRESULT BgfxEngine::PaintBackground()
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT BgfxEngine::PaintBufferLine(PCWCHAR const pwsLine,
                                     const unsigned char* const /*rgWidths*/,
                                     size_t const cchLine,
@@ -152,6 +165,7 @@ HRESULT BgfxEngine::PaintBufferLine(PCWCHAR const pwsLine,
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT BgfxEngine::PaintBufferGridLines(GridLines const /*lines*/,
                                          COLORREF const /*color*/,
                                          size_t const /*cchLine*/,
@@ -160,11 +174,13 @@ HRESULT BgfxEngine::PaintBufferGridLines(GridLines const /*lines*/,
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT BgfxEngine::PaintSelection(const SMALL_RECT* const /*rgsrSelection*/, UINT const /*cRectangles*/)
 {
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT BgfxEngine::PaintCursor(_In_ COORD const coordCursor,
                                 _In_ ULONG const ulCursorHeightPercent,
                                 _In_ bool const /*fIsDoubleWidth*/,
@@ -186,6 +202,7 @@ HRESULT BgfxEngine::PaintCursor(_In_ COORD const coordCursor,
 
 }
 
+[[nodiscard]]
 HRESULT BgfxEngine::ClearCursor()
 {
     NTSTATUS Status;
@@ -198,6 +215,7 @@ HRESULT BgfxEngine::ClearCursor()
     return HRESULT_FROM_NT(Status);
 }
 
+[[nodiscard]]
 HRESULT BgfxEngine::UpdateDrawingBrushes(COLORREF const /*colorForeground*/,
                                          COLORREF const /*colorBackground*/,
                                          _In_ WORD const legacyColorAttribute,
@@ -208,11 +226,13 @@ HRESULT BgfxEngine::UpdateDrawingBrushes(COLORREF const /*colorForeground*/,
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT BgfxEngine::UpdateFont(FontInfoDesired const* const /*pfiFontInfoDesired*/, FontInfo* const /*pfiFontInfo*/)
 {
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT BgfxEngine::UpdateDpi(int const /*iDpi*/)
 {
     return S_OK;
@@ -225,11 +245,13 @@ HRESULT BgfxEngine::UpdateDpi(int const /*iDpi*/)
 // - srNewViewport - The bounds of the new viewport.
 // Return Value:
 // - HRESULT S_OK
+[[nodiscard]]
 HRESULT BgfxEngine::UpdateViewport(_In_ SMALL_RECT const /*srNewViewport*/)
 {
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT BgfxEngine::GetProposedFont(FontInfoDesired const* const /*pfiFontInfoDesired*/, FontInfo* const /*pfiFontInfo*/, int const /*iDpi*/)
 {
     return S_OK;
@@ -246,12 +268,14 @@ SMALL_RECT BgfxEngine::GetDirtyRectInChars()
     return r;
 }
 
+[[nodiscard]]
 HRESULT BgfxEngine::GetFontSize(_Out_ COORD* const pFontSize)
 {
     *pFontSize =_fontSize;
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT BgfxEngine::IsCharFullWidthByFont(WCHAR const /*wch*/, _Out_ bool* const pResult)
 {
 

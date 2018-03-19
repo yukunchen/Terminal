@@ -18,25 +18,16 @@ Author(s):
 
 #pragma hdrstop
 
-namespace Microsoft
+namespace Microsoft::Console::Interactivity::OneCore
 {
-    namespace Console
+    class ConsoleInputThread sealed : public IConsoleInputThread
     {
-        namespace Interactivity
-        {
-            namespace OneCore
-            {
-                class ConsoleInputThread sealed : public IConsoleInputThread
-                {
-                public:
-                    HANDLE Start();
+    public:
+        HANDLE Start();
 
-                    ConIoSrvComm *GetConIoSrvComm();
-                
-                private:
-                    ConIoSrvComm *_pConIoSrvComm;
-                };
-            };
-        };
+        ConIoSrvComm *GetConIoSrvComm();
+
+    private:
+        ConIoSrvComm *_pConIoSrvComm;
     };
-};
+}

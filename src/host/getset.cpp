@@ -32,7 +32,7 @@
 
 using namespace Microsoft::Console::Types;
 
-HRESULT ApiRoutines::GetConsoleInputModeImpl(_In_ InputBuffer* const pContext, _Out_ ULONG* const pMode)
+void ApiRoutines::GetConsoleInputModeImpl(_In_ InputBuffer* const pContext, _Out_ ULONG* const pMode)
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleMode);
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -48,20 +48,17 @@ HRESULT ApiRoutines::GetConsoleInputModeImpl(_In_ InputBuffer* const pContext, _
         SetFlagIf(*pMode, ENABLE_QUICK_EDIT_MODE, IsFlagSet(gci.Flags, CONSOLE_QUICK_EDIT_MODE));
         SetFlagIf(*pMode, ENABLE_AUTO_POSITION, IsFlagSet(gci.Flags, CONSOLE_AUTO_POSITION));
     }
-
-    return S_OK;
 }
 
-HRESULT ApiRoutines::GetConsoleOutputModeImpl(_In_ SCREEN_INFORMATION* const pContext, _Out_ ULONG* const pMode)
+void ApiRoutines::GetConsoleOutputModeImpl(_In_ SCREEN_INFORMATION* const pContext, _Out_ ULONG* const pMode)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
     *pMode = pContext->GetActiveBuffer()->OutputMode;
-
-    return S_OK;
 }
 
+[[nodiscard]]
 HRESULT ApiRoutines::GetNumberOfConsoleInputEventsImpl(_In_ InputBuffer* const pContext, _Out_ ULONG* const pEvents)
 {
     LockConsole();
@@ -73,50 +70,49 @@ HRESULT ApiRoutines::GetNumberOfConsoleInputEventsImpl(_In_ InputBuffer* const p
     return S_OK;
 }
 
-HRESULT ApiRoutines::GetConsoleScreenBufferInfoExImpl(_In_ SCREEN_INFORMATION* const pContext,
-                                                      _Out_ CONSOLE_SCREEN_BUFFER_INFOEX* const pScreenBufferInfoEx)
+void ApiRoutines::GetConsoleScreenBufferInfoExImpl(_In_ SCREEN_INFORMATION* const pContext,
+                                                   _Out_ CONSOLE_SCREEN_BUFFER_INFOEX* const pScreenBufferInfoEx)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    return DoSrvGetConsoleScreenBufferInfo(pContext->GetActiveBuffer(), pScreenBufferInfoEx);
+    DoSrvGetConsoleScreenBufferInfo(pContext->GetActiveBuffer(), pScreenBufferInfoEx);
 }
 
-HRESULT DoSrvGetConsoleScreenBufferInfo(_In_ SCREEN_INFORMATION* pScreenInfo, _Out_ CONSOLE_SCREEN_BUFFER_INFOEX* pInfo)
+void DoSrvGetConsoleScreenBufferInfo(_In_ SCREEN_INFORMATION* pScreenInfo, _Out_ CONSOLE_SCREEN_BUFFER_INFOEX* pInfo)
 {
     pInfo->bFullscreenSupported = FALSE; // traditional full screen with the driver support is no longer supported.
-    NTSTATUS Status = pScreenInfo->GetScreenBufferInformation(&pInfo->dwSize,
-                                                              &pInfo->dwCursorPosition,
-                                                              &pInfo->srWindow,
-                                                              &pInfo->wAttributes,
-                                                              &pInfo->dwMaximumWindowSize,
-                                                              &pInfo->wPopupAttributes,
-                                                              pInfo->ColorTable);
+    pScreenInfo->GetScreenBufferInformation(&pInfo->dwSize,
+                                            &pInfo->dwCursorPosition,
+                                            &pInfo->srWindow,
+                                            &pInfo->wAttributes,
+                                            &pInfo->dwMaximumWindowSize,
+                                            &pInfo->wPopupAttributes,
+                                            pInfo->ColorTable);
     // Callers of this function expect to recieve an exclusive rect, not an inclusive one.
     pInfo->srWindow.Right += 1;
     pInfo->srWindow.Bottom += 1;
-
-    RETURN_NTSTATUS(Status);
 }
 
-HRESULT ApiRoutines::GetConsoleCursorInfoImpl(_In_ SCREEN_INFORMATION* const pContext,
-                                              _Out_ ULONG* const pCursorSize,
-                                              _Out_ BOOLEAN* const pIsVisible)
+void ApiRoutines::GetConsoleCursorInfoImpl(_In_ SCREEN_INFORMATION* const pContext,
+                                           _Out_ ULONG* const pCursorSize,
+                                           _Out_ BOOLEAN* const pIsVisible)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    return DoSrvGetConsoleCursorInfo(pContext->GetActiveBuffer(), pCursorSize, pIsVisible);
+    DoSrvGetConsoleCursorInfo(pContext->GetActiveBuffer(), pCursorSize, pIsVisible);
 }
 
-HRESULT DoSrvGetConsoleCursorInfo(_In_ SCREEN_INFORMATION* pScreenInfo, _Out_ ULONG* const pCursorSize, _Out_ BOOLEAN* const pIsVisible)
+void DoSrvGetConsoleCursorInfo(_In_ SCREEN_INFORMATION* pScreenInfo,
+                               _Out_ ULONG* const pCursorSize,
+                               _Out_ BOOLEAN* const pIsVisible)
 {
     *pCursorSize = pScreenInfo->TextInfo->GetCursor()->GetSize();
     *pIsVisible = (BOOLEAN)pScreenInfo->TextInfo->GetCursor()->IsVisible();
-    return S_OK;
 }
 
-HRESULT ApiRoutines::GetConsoleSelectionInfoImpl(_Out_ CONSOLE_SELECTION_INFO* const pConsoleSelectionInfo)
+void ApiRoutines::GetConsoleSelectionInfoImpl(_Out_ CONSOLE_SELECTION_INFO* const pConsoleSelectionInfo)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
@@ -135,20 +131,17 @@ HRESULT ApiRoutines::GetConsoleSelectionInfoImpl(_Out_ CONSOLE_SELECTION_INFO* c
     {
         ZeroMemory(pConsoleSelectionInfo, sizeof(pConsoleSelectionInfo));
     }
-
-    return S_OK;
 }
 
-HRESULT ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(_Out_ ULONG* const pButtons)
+void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(_Out_ ULONG* const pButtons)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
     *pButtons = ServiceLocator::LocateSystemConfigurationProvider()->GetNumberOfMouseButtons();
-
-    return S_OK;
 }
 
+[[nodiscard]]
 HRESULT ApiRoutines::GetConsoleFontSizeImpl(_In_ SCREEN_INFORMATION* const pContext,
                                             _In_ DWORD const FontIndex,
                                             _Out_ COORD* const pFontSize)
@@ -170,6 +163,7 @@ HRESULT ApiRoutines::GetConsoleFontSizeImpl(_In_ SCREEN_INFORMATION* const pCont
     }
 }
 
+[[nodiscard]]
 HRESULT ApiRoutines::GetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const pContext,
                                                  _In_ BOOLEAN const IsForMaximumWindowSize,
                                                  _Out_ CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx)
@@ -201,6 +195,7 @@ HRESULT ApiRoutines::GetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const 
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT ApiRoutines::SetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const pContext,
                                                  _In_ BOOLEAN const /*IsForMaximumWindowSize*/,
                                                  _In_ const CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx)
@@ -236,6 +231,7 @@ HRESULT ApiRoutines::SetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const 
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT ApiRoutines::SetConsoleInputModeImpl(_In_ InputBuffer* const pContext, _In_ ULONG const Mode)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -286,6 +282,7 @@ HRESULT ApiRoutines::SetConsoleInputModeImpl(_In_ InputBuffer* const pContext, _
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT ApiRoutines::SetConsoleOutputModeImpl(_In_ SCREEN_INFORMATION* const pContext, _In_ ULONG const Mode)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -314,26 +311,23 @@ HRESULT ApiRoutines::SetConsoleOutputModeImpl(_In_ SCREEN_INFORMATION* const pCo
     return S_OK;
 }
 
-HRESULT ApiRoutines::SetConsoleActiveScreenBufferImpl(_In_ SCREEN_INFORMATION* const pNewContext)
+void ApiRoutines::SetConsoleActiveScreenBufferImpl(_In_ SCREEN_INFORMATION* const pNewContext)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    RETURN_NTSTATUS(SetActiveScreenBuffer(pNewContext->GetActiveBuffer()));
+    SetActiveScreenBuffer(pNewContext->GetActiveBuffer());
 }
 
-HRESULT ApiRoutines::FlushConsoleInputBuffer(_In_ InputBuffer* const pContext)
+void ApiRoutines::FlushConsoleInputBuffer(_In_ InputBuffer* const pContext)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    // TODO: MSFT: 9574827 - shouldn't this have a status code?
     pContext->Flush();
-
-    return S_OK;
 }
 
-HRESULT ApiRoutines::GetLargestConsoleWindowSizeImpl(_In_ SCREEN_INFORMATION* const pContext,
+void ApiRoutines::GetLargestConsoleWindowSizeImpl(_In_ SCREEN_INFORMATION* const pContext,
                                                      _Out_ COORD* const pSize)
 {
     LockConsole();
@@ -342,10 +336,9 @@ HRESULT ApiRoutines::GetLargestConsoleWindowSizeImpl(_In_ SCREEN_INFORMATION* co
     SCREEN_INFORMATION* const pScreenInfo = pContext->GetActiveBuffer();
 
     *pSize = pScreenInfo->GetLargestWindowSizeInCharacters();
-
-    return S_OK;
 }
 
+[[nodiscard]]
 HRESULT ApiRoutines::SetConsoleScreenBufferSizeImpl(_In_ SCREEN_INFORMATION* const pContext,
                                                     _In_ const COORD* const pSize)
 {
@@ -375,6 +368,7 @@ HRESULT ApiRoutines::SetConsoleScreenBufferSizeImpl(_In_ SCREEN_INFORMATION* con
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT ApiRoutines::SetConsoleScreenBufferInfoExImpl(_In_ SCREEN_INFORMATION* const pContext,
                                                       _In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pScreenBufferInfoEx)
 {
@@ -386,11 +380,12 @@ HRESULT ApiRoutines::SetConsoleScreenBufferInfoExImpl(_In_ SCREEN_INFORMATION* c
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    return DoSrvSetScreenBufferInfo(pContext->GetActiveBuffer(), pScreenBufferInfoEx);
+    DoSrvSetScreenBufferInfo(pContext->GetActiveBuffer(), pScreenBufferInfoEx);
+    return S_OK;
 }
 
-HRESULT DoSrvSetScreenBufferInfo(_In_ SCREEN_INFORMATION* const pScreenInfo,
-                                 _In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pInfo)
+void DoSrvSetScreenBufferInfo(_In_ SCREEN_INFORMATION* const pScreenInfo,
+                              _In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pInfo)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
@@ -403,7 +398,7 @@ HRESULT DoSrvSetScreenBufferInfo(_In_ SCREEN_INFORMATION* const pScreenInfo,
 
         pCommandLine->Hide(FALSE);
 
-        pScreenInfo->ResizeScreenBuffer(pInfo->dwSize, TRUE);
+        LOG_IF_FAILED(pScreenInfo->ResizeScreenBuffer(pInfo->dwSize, TRUE));
 
         pCommandLine->Show();
     }
@@ -439,10 +434,9 @@ HRESULT DoSrvSetScreenBufferInfo(_In_ SCREEN_INFORMATION* const pScreenInfo,
     //  anything using that member - for moving the viewport, you need SetConsoleWindowInfo
     //  (see https://msdn.microsoft.com/en-us/library/windows/desktop/ms686125(v=vs.85).aspx and DoSrvSetConsoleWindowInfo)
     // Note that it also doesn't set cursor position.
-
-    return S_OK;
 }
 
+[[nodiscard]]
 HRESULT ApiRoutines::SetConsoleCursorPositionImpl(_In_ SCREEN_INFORMATION* const pContext,
                                                   _In_ const COORD* const pCursorPosition)
 {
@@ -452,6 +446,7 @@ HRESULT ApiRoutines::SetConsoleCursorPositionImpl(_In_ SCREEN_INFORMATION* const
     return DoSrvSetConsoleCursorPosition(pContext->GetActiveBuffer(), pCursorPosition);
 }
 
+[[nodiscard]]
 HRESULT DoSrvSetConsoleCursorPosition(_In_ SCREEN_INFORMATION* pScreenInfo,
                                       _In_ const COORD* const pCursorPosition)
 {
@@ -499,6 +494,7 @@ HRESULT DoSrvSetConsoleCursorPosition(_In_ SCREEN_INFORMATION* pScreenInfo,
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT ApiRoutines::SetConsoleCursorInfoImpl(_In_ SCREEN_INFORMATION* const pContext,
                                               _In_ ULONG const CursorSize,
                                               _In_ BOOLEAN const IsVisible)
@@ -509,6 +505,7 @@ HRESULT ApiRoutines::SetConsoleCursorInfoImpl(_In_ SCREEN_INFORMATION* const pCo
     return DoSrvSetConsoleCursorInfo(pContext->GetActiveBuffer(), CursorSize, IsVisible);
 }
 
+[[nodiscard]]
 HRESULT DoSrvSetConsoleCursorInfo(_In_ SCREEN_INFORMATION* pScreenInfo,
                                   _In_ ULONG const CursorSize,
                                   _In_ BOOLEAN const IsVisible)
@@ -516,16 +513,15 @@ HRESULT DoSrvSetConsoleCursorInfo(_In_ SCREEN_INFORMATION* pScreenInfo,
     // If more than 100% or less than 0% cursor height, reject it.
     RETURN_HR_IF(E_INVALIDARG, (CursorSize > 100 || CursorSize == 0));
 
-    RETURN_IF_NTSTATUS_FAILED(pScreenInfo->SetCursorInformation(
-        CursorSize,
-        IsVisible,
-        pScreenInfo->TextInfo->GetCursor()->GetColor(),
-        pScreenInfo->TextInfo->GetCursor()->GetType()
-    ));
+    pScreenInfo->SetCursorInformation(CursorSize,
+                                      IsVisible,
+                                      pScreenInfo->TextInfo->GetCursor()->GetColor(),
+                                      pScreenInfo->TextInfo->GetCursor()->GetType());
 
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT ApiRoutines::SetConsoleWindowInfoImpl(_In_ SCREEN_INFORMATION* const pContext,
                                               _In_ BOOLEAN const IsAbsoluteRectangle,
                                               _In_ const SMALL_RECT* const pWindowRectangle)
@@ -536,6 +532,7 @@ HRESULT ApiRoutines::SetConsoleWindowInfoImpl(_In_ SCREEN_INFORMATION* const pCo
     return DoSrvSetConsoleWindowInfo(pContext->GetActiveBuffer(), IsAbsoluteRectangle, pWindowRectangle);
 }
 
+[[nodiscard]]
 HRESULT DoSrvSetConsoleWindowInfo(_In_ SCREEN_INFORMATION* pScreenInfo,
                                   _In_ BOOLEAN const IsAbsoluteRectangle,
                                   _In_ const SMALL_RECT* const pWindowRectangle)
@@ -562,17 +559,17 @@ HRESULT DoSrvSetConsoleWindowInfo(_In_ SCREEN_INFORMATION* pScreenInfo,
     RETURN_HR_IF(E_INVALIDARG, (NewWindowSize.X > coordMax.X || NewWindowSize.Y > coordMax.Y));
 
     // Even if it's the same size, we need to post an update in case the scroll bars need to go away.
-    NTSTATUS Status = pScreenInfo->SetViewportRect(Viewport::FromInclusive(Window));
+    pScreenInfo->SetViewportRect(Viewport::FromInclusive(Window));
     if (pScreenInfo->IsActiveScreenBuffer())
     {
         // TODO: MSFT: 9574827 - shouldn't we be looking at or at least logging the failure codes here? (Or making them non-void?)
         pScreenInfo->PostUpdateWindowSize();
         WriteToScreen(pScreenInfo, pScreenInfo->GetBufferViewport());
     }
-
-    RETURN_NTSTATUS(Status);
+    return S_OK;
 }
 
+[[nodiscard]]
 HRESULT ApiRoutines::ScrollConsoleScreenBufferAImpl(_In_ SCREEN_INFORMATION* const pContext,
                                                     _In_ const SMALL_RECT* const pSourceRectangle,
                                                     _In_ const COORD* const pTargetOrigin,
@@ -591,6 +588,7 @@ HRESULT ApiRoutines::ScrollConsoleScreenBufferAImpl(_In_ SCREEN_INFORMATION* con
 }
 
 
+[[nodiscard]]
 HRESULT ApiRoutines::ScrollConsoleScreenBufferWImpl(_In_ SCREEN_INFORMATION* const pContext,
                                                     _In_ const SMALL_RECT* const pSourceRectangle,
                                                     _In_ const COORD* const pTargetOrigin,
@@ -609,6 +607,7 @@ HRESULT ApiRoutines::ScrollConsoleScreenBufferWImpl(_In_ SCREEN_INFORMATION* con
                                            attrFill);
 }
 
+[[nodiscard]]
 HRESULT DoSrvScrollConsoleScreenBufferW(_In_ SCREEN_INFORMATION* const pScreenInfo,
                                         _In_ const SMALL_RECT* const pSourceRectangle,
                                         _In_ const COORD* const pTargetOrigin,
@@ -687,10 +686,10 @@ VOID UpdatePopups(IN WORD NewAttributes, IN WORD NewPopupAttributes, IN WORD Old
     }
 }
 
-NTSTATUS SetScreenColors(_In_ SCREEN_INFORMATION* ScreenInfo,
-                         _In_ WORD Attributes,
-                         _In_ WORD PopupAttributes,
-                         _In_ BOOL UpdateWholeScreen)
+void SetScreenColors(_In_ SCREEN_INFORMATION* ScreenInfo,
+                     _In_ WORD Attributes,
+                     _In_ WORD PopupAttributes,
+                     _In_ BOOL UpdateWholeScreen)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
@@ -720,10 +719,9 @@ NTSTATUS SetScreenColors(_In_ SCREEN_INFORMATION* ScreenInfo,
         // force repaint of entire line
         WriteToScreen(ScreenInfo, ScreenInfo->GetBufferViewport());
     }
-
-    return STATUS_SUCCESS;
 }
 
+[[nodiscard]]
 HRESULT ApiRoutines::SetConsoleTextAttributeImpl(_In_ SCREEN_INFORMATION* const pContext,
                                                  _In_ WORD const Attribute)
 {
@@ -733,18 +731,20 @@ HRESULT ApiRoutines::SetConsoleTextAttributeImpl(_In_ SCREEN_INFORMATION* const 
     return DoSrvSetConsoleTextAttribute(pContext, Attribute);
 }
 
+[[nodiscard]]
 HRESULT DoSrvSetConsoleTextAttribute(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ WORD const Attribute)
 {
     RETURN_HR_IF(E_INVALIDARG, IsAnyFlagSet(Attribute, ~VALID_TEXT_ATTRIBUTES));
 
-    RETURN_NTSTATUS(SetScreenColors(pScreenInfo, Attribute, pScreenInfo->GetPopupAttributes()->GetLegacyAttributes(), FALSE));
+    SetScreenColors(pScreenInfo, Attribute, pScreenInfo->GetPopupAttributes()->GetLegacyAttributes(), FALSE);
+    return S_OK;
 }
 
-HRESULT DoSrvPrivateSetLegacyAttributes(_In_ SCREEN_INFORMATION* pScreenInfo,
-                                        _In_ WORD const Attribute,
-                                        _In_ const bool fForeground,
-                                        _In_ const bool fBackground,
-                                        _In_ const bool fMeta)
+void DoSrvPrivateSetLegacyAttributes(_In_ SCREEN_INFORMATION* pScreenInfo,
+                                     _In_ WORD const Attribute,
+                                     _In_ const bool fForeground,
+                                     _In_ const bool fBackground,
+                                     _In_ const bool fMeta)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const TextAttribute OldAttributes = pScreenInfo->GetAttributes();
@@ -806,11 +806,11 @@ HRESULT DoSrvPrivateSetLegacyAttributes(_In_ SCREEN_INFORMATION* pScreenInfo,
     }
 
     pScreenInfo->SetAttributes(NewAttributes);
-
-    return STATUS_SUCCESS;
 }
 
-NTSTATUS DoSrvPrivateSetConsoleXtermTextAttribute(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ int const iXtermTableEntry, _In_ bool fIsForeground)
+void DoSrvPrivateSetConsoleXtermTextAttribute(_In_ SCREEN_INFORMATION* const pScreenInfo,
+                                              _In_ const int iXtermTableEntry,
+                                              _In_ const bool fIsForeground)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     TextAttribute NewAttributes;
@@ -832,20 +832,19 @@ NTSTATUS DoSrvPrivateSetConsoleXtermTextAttribute(_In_ SCREEN_INFORMATION* pScre
     NewAttributes.SetColor(rgbColor, fIsForeground);
 
     pScreenInfo->SetAttributes(NewAttributes);
-
-    return STATUS_SUCCESS;
 }
 
-NTSTATUS DoSrvPrivateSetConsoleRGBTextAttribute(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ COLORREF const rgbColor, _In_ bool fIsForeground)
+void DoSrvPrivateSetConsoleRGBTextAttribute(_In_ SCREEN_INFORMATION* const pScreenInfo,
+                                            _In_ const COLORREF rgbColor,
+                                            _In_ const bool fIsForeground)
 {
     TextAttribute NewAttributes;
     NewAttributes.SetFrom(pScreenInfo->GetAttributes());
     NewAttributes.SetColor(rgbColor, fIsForeground);
     pScreenInfo->SetAttributes(NewAttributes);
-
-    return STATUS_SUCCESS;
 }
 
+[[nodiscard]]
 HRESULT ApiRoutines::SetConsoleOutputCodePageImpl(_In_ ULONG const CodePage)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -867,6 +866,7 @@ HRESULT ApiRoutines::SetConsoleOutputCodePageImpl(_In_ ULONG const CodePage)
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT ApiRoutines::SetConsoleInputCodePageImpl(_In_ ULONG const CodePage)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -888,38 +888,31 @@ HRESULT ApiRoutines::SetConsoleInputCodePageImpl(_In_ ULONG const CodePage)
     return S_OK;
 }
 
-HRESULT ApiRoutines::GetConsoleInputCodePageImpl(_Out_ ULONG* const pCodePage)
+void ApiRoutines::GetConsoleInputCodePageImpl(_Out_ ULONG* const pCodePage)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
     *pCodePage = gci.CP;
-
-    return S_OK;
 }
 
-HRESULT DoSrvGetConsoleOutputCodePage(_Out_ unsigned int* const pCodePage)
+void DoSrvGetConsoleOutputCodePage(_Out_ unsigned int* const pCodePage)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     *pCodePage = gci.OutputCP;
-    return S_OK;
 }
 
-HRESULT ApiRoutines::GetConsoleOutputCodePageImpl(_Out_ ULONG* const pCodePage)
+void ApiRoutines::GetConsoleOutputCodePageImpl(_Out_ ULONG* const pCodePage)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
     unsigned int uiCodepage;
-    HRESULT hr = DoSrvGetConsoleOutputCodePage(&uiCodepage);
-    if (SUCCEEDED(hr))
-    {
-        *pCodePage = uiCodepage;
-    }
-    return hr;
+    DoSrvGetConsoleOutputCodePage(&uiCodepage);
+    *pCodePage = uiCodepage;
 }
 
-HRESULT ApiRoutines::GetConsoleWindowImpl(_Out_ HWND* const pHwnd)
+void ApiRoutines::GetConsoleWindowImpl(_Out_ HWND* const pHwnd)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
@@ -932,11 +925,9 @@ HRESULT ApiRoutines::GetConsoleWindowImpl(_Out_ HWND* const pHwnd)
     {
         *pHwnd = NULL;
     }
-
-    return S_OK;
 }
 
-HRESULT ApiRoutines::GetConsoleHistoryInfoImpl(_Out_ CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo)
+void ApiRoutines::GetConsoleHistoryInfoImpl(_Out_ CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     LockConsole();
@@ -945,8 +936,6 @@ HRESULT ApiRoutines::GetConsoleHistoryInfoImpl(_Out_ CONSOLE_HISTORY_INFO* const
     pConsoleHistoryInfo->HistoryBufferSize = gci.GetHistoryBufferSize();
     pConsoleHistoryInfo->NumberOfHistoryBuffers = gci.GetNumberOfHistoryBuffers();
     SetFlagIf(pConsoleHistoryInfo->dwFlags, HISTORY_NO_DUP_FLAG, IsFlagSet(gci.Flags, CONSOLE_HISTORY_NODUP));
-
-    return S_OK;
 }
 
 HRESULT ApiRoutines::SetConsoleHistoryInfoImpl(_In_ const CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo)
@@ -968,7 +957,7 @@ HRESULT ApiRoutines::SetConsoleHistoryInfoImpl(_In_ const CONSOLE_HISTORY_INFO* 
 }
 
 // NOTE: This was in private.c, but turns out to be a public API: http://msdn.microsoft.com/en-us/library/windows/desktop/ms683164(v=vs.85).aspx
-HRESULT ApiRoutines::GetConsoleDisplayModeImpl(_Out_ ULONG* const pFlags)
+void ApiRoutines::GetConsoleDisplayModeImpl(_Out_ ULONG* const pFlags)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
@@ -981,8 +970,6 @@ HRESULT ApiRoutines::GetConsoleDisplayModeImpl(_Out_ ULONG* const pFlags)
     {
         SetFlag(*pFlags, CONSOLE_FULLSCREEN_MODE);
     }
-
-    return S_OK;
 }
 
 // Routine Description:
@@ -1000,6 +987,7 @@ HRESULT ApiRoutines::GetConsoleDisplayModeImpl(_Out_ ULONG* const pFlags)
 // NOTE:
 // - This was in private.c, but turns out to be a public API:
 // - See: http://msdn.microsoft.com/en-us/library/windows/desktop/ms686028(v=vs.85).aspx
+[[nodiscard]]
 HRESULT ApiRoutines::SetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const pContext,
                                                _In_ ULONG const Flags,
                                                _Out_ COORD* const pNewScreenBufferSize)
@@ -1047,6 +1035,7 @@ HRESULT ApiRoutines::SetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const pC
 // - fApplicationMode - set to true to enable Application Mode Input, false for Numeric Mode Input.
 // Return value:
 // - True if handled successfully. False otherwise.
+[[nodiscard]]
 NTSTATUS DoSrvPrivateSetCursorKeysMode(_In_ bool fApplicationMode)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -1065,6 +1054,7 @@ NTSTATUS DoSrvPrivateSetCursorKeysMode(_In_ bool fApplicationMode)
 // - fApplicationMode - set to true to enable Application Mode Input, false for Numeric Mode Input.
 // Return value:
 // - True if handled successfully. False otherwise.
+[[nodiscard]]
 NTSTATUS DoSrvPrivateSetKeypadMode(_In_ bool fApplicationMode)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -1082,12 +1072,10 @@ NTSTATUS DoSrvPrivateSetKeypadMode(_In_ bool fApplicationMode)
 // - fEnable - set to true to enable blinking, false to disable
 // Return value:
 // - True if handled successfully. False otherwise.
-NTSTATUS DoSrvPrivateAllowCursorBlinking(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ bool fEnable)
+void DoSrvPrivateAllowCursorBlinking(_In_ SCREEN_INFORMATION* const pScreenInfo, _In_ bool const fEnable)
 {
     pScreenInfo->TextInfo->GetCursor()->SetBlinkingAllowed(fEnable);
     pScreenInfo->TextInfo->GetCursor()->SetIsOn(!fEnable);
-
-    return STATUS_SUCCESS;
 }
 
 // Routine Description:
@@ -1103,6 +1091,7 @@ NTSTATUS DoSrvPrivateAllowCursorBlinking(_In_ SCREEN_INFORMATION* pScreenInfo, _
 //     left and right margins in the future.
 // Return value:
 // - True if handled successfully. False otherwise.
+[[nodiscard]]
 NTSTATUS DoSrvPrivateSetScrollingRegion(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ const SMALL_RECT* const psrScrollMargins)
 {
     NTSTATUS Status = STATUS_SUCCESS;
@@ -1131,6 +1120,7 @@ NTSTATUS DoSrvPrivateSetScrollingRegion(_In_ SCREEN_INFORMATION* pScreenInfo, _I
 // - pScreenInfo - a pointer to the screen buffer that should perform the reverse line feed
 // Return value:
 // - True if handled successfully. False otherwise.
+[[nodiscard]]
 NTSTATUS DoSrvPrivateReverseLineFeed(_In_ SCREEN_INFORMATION* pScreenInfo)
 {
     NTSTATUS Status = STATUS_SUCCESS;
@@ -1178,6 +1168,7 @@ NTSTATUS DoSrvPrivateReverseLineFeed(_In_ SCREEN_INFORMATION* pScreenInfo)
 // - psiCurr - a pointer to the screen buffer that should use an alternate buffer
 // Return value:
 // - True if handled successfully. False otherwise.
+[[nodiscard]]
 NTSTATUS DoSrvPrivateUseAlternateScreenBuffer(_In_ SCREEN_INFORMATION* const psiCurr)
 {
     return psiCurr->UseAlternateScreenBuffer();
@@ -1191,9 +1182,9 @@ NTSTATUS DoSrvPrivateUseAlternateScreenBuffer(_In_ SCREEN_INFORMATION* const psi
 // - psiCurr - a pointer to the screen buffer that should use the main buffer
 // Return value:
 // - True if handled successfully. False otherwise.
-NTSTATUS DoSrvPrivateUseMainScreenBuffer(_In_ SCREEN_INFORMATION* const psiCurr)
+void DoSrvPrivateUseMainScreenBuffer(_In_ SCREEN_INFORMATION* const psiCurr)
 {
-    return psiCurr->UseMainScreenBuffer();
+    psiCurr->UseMainScreenBuffer();
 }
 
 // Routine Description:
@@ -1202,6 +1193,7 @@ NTSTATUS DoSrvPrivateUseMainScreenBuffer(_In_ SCREEN_INFORMATION* const psiCurr)
 // <none>
 // Return value:
 // - STATUS_SUCCESS if handled successfully. Otherwise, an approriate status code indicating the error.
+[[nodiscard]]
 NTSTATUS DoSrvPrivateHorizontalTabSet()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -1218,6 +1210,7 @@ NTSTATUS DoSrvPrivateHorizontalTabSet()
 // fForward - whether to tab forward or backwards
 // Return value:
 // - STATUS_SUCCESS if handled successfully. Otherwise, an approriate status code indicating the error.
+[[nodiscard]]
 NTSTATUS DoPrivateTabHelper(_In_ SHORT const sNumTabs, _In_ bool fForward)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -1246,6 +1239,7 @@ NTSTATUS DoPrivateTabHelper(_In_ SHORT const sNumTabs, _In_ bool fForward)
 // - sNumTabs - The number of tabs to perform.
 // Return value:
 // - STATUS_SUCCESS if handled successfully. Otherwise, an approriate status code indicating the error.
+[[nodiscard]]
 NTSTATUS DoSrvPrivateForwardTab(_In_ SHORT const sNumTabs)
 {
     return DoPrivateTabHelper(sNumTabs, true);
@@ -1258,6 +1252,7 @@ NTSTATUS DoSrvPrivateForwardTab(_In_ SHORT const sNumTabs)
 // - sNumTabs - The number of tabs to perform.
 // Return value:
 // - STATUS_SUCCESS if handled successfully. Otherwise, an approriate status code indicating the error.
+[[nodiscard]]
 NTSTATUS DoSrvPrivateBackwardsTab(_In_ SHORT const sNumTabs)
 {
     return DoPrivateTabHelper(sNumTabs, false);
@@ -1269,8 +1264,8 @@ NTSTATUS DoSrvPrivateBackwardsTab(_In_ SHORT const sNumTabs)
 // - fClearAll - If false, only clears the tab in the current column (if it exists)
 //      otherwise clears all set tabs. (and reverts to lecacy 8-char tabs behavior.)
 // Return value:
-// - STATUS_SUCCESS if handled successfully. Otherwise, an approriate status code indicating the error.
-NTSTATUS DoSrvPrivateTabClear(_In_ bool const fClearAll)
+// - None
+void DoSrvPrivateTabClear(_In_ bool const fClearAll)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION* const pScreenBuffer = gci.CurrentScreenBuffer;
@@ -1283,7 +1278,6 @@ NTSTATUS DoSrvPrivateTabClear(_In_ bool const fClearAll)
         const COORD cursorPos = pScreenBuffer->TextInfo->GetCursor()->GetPosition();
         pScreenBuffer->ClearTabStop(cursorPos.X);
     }
-    return STATUS_SUCCESS;
 }
 
 // Routine Description:
@@ -1291,13 +1285,11 @@ NTSTATUS DoSrvPrivateTabClear(_In_ bool const fClearAll)
 // Parameters:
 // - fEnable - true to enable default tracking mode, false to disable mouse mode.
 // Return value:
-// - STATUS_SUCCESS always.
-NTSTATUS DoSrvPrivateEnableVT200MouseMode(_In_ bool const fEnable)
+// - None
+void DoSrvPrivateEnableVT200MouseMode(_In_ bool const fEnable)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.terminalMouseInput.EnableDefaultTracking(fEnable);
-
-    return STATUS_SUCCESS;
 }
 
 // Routine Description:
@@ -1305,13 +1297,11 @@ NTSTATUS DoSrvPrivateEnableVT200MouseMode(_In_ bool const fEnable)
 // Parameters:
 // - fEnable - true to enable, false to disable.
 // Return value:
-// - STATUS_SUCCESS always.
-NTSTATUS DoSrvPrivateEnableUTF8ExtendedMouseMode(_In_ bool const fEnable)
+// - None
+void DoSrvPrivateEnableUTF8ExtendedMouseMode(_In_ bool const fEnable)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.terminalMouseInput.SetUtf8ExtendedMode(fEnable);
-
-    return STATUS_SUCCESS;
 }
 
 // Routine Description:
@@ -1319,13 +1309,11 @@ NTSTATUS DoSrvPrivateEnableUTF8ExtendedMouseMode(_In_ bool const fEnable)
 // Parameters:
 // - fEnable - true to enable, false to disable.
 // Return value:
-// - STATUS_SUCCESS always.
-NTSTATUS DoSrvPrivateEnableSGRExtendedMouseMode(_In_ bool const fEnable)
+// - None
+void DoSrvPrivateEnableSGRExtendedMouseMode(_In_ bool const fEnable)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.terminalMouseInput.SetSGRExtendedMode(fEnable);
-
-    return STATUS_SUCCESS;
 }
 
 // Routine Description:
@@ -1333,13 +1321,11 @@ NTSTATUS DoSrvPrivateEnableSGRExtendedMouseMode(_In_ bool const fEnable)
 // Parameters:
 // - fEnable - true to enable button-event mode, false to disable mouse mode.
 // Return value:
-// - STATUS_SUCCESS always.
-NTSTATUS DoSrvPrivateEnableButtonEventMouseMode(_In_ bool const fEnable)
+// - None
+void DoSrvPrivateEnableButtonEventMouseMode(_In_ bool const fEnable)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.terminalMouseInput.EnableButtonEventTracking(fEnable);
-
-    return STATUS_SUCCESS;
 }
 
 // Routine Description:
@@ -1347,13 +1333,11 @@ NTSTATUS DoSrvPrivateEnableButtonEventMouseMode(_In_ bool const fEnable)
 // Parameters:
 // - fEnable - true to enable any-event mode, false to disable mouse mode.
 // Return value:
-// - STATUS_SUCCESS always.
-NTSTATUS DoSrvPrivateEnableAnyEventMouseMode(_In_ bool const fEnable)
+// - None
+void DoSrvPrivateEnableAnyEventMouseMode(_In_ bool const fEnable)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.terminalMouseInput.EnableAnyEventTracking(fEnable);
-
-    return STATUS_SUCCESS;
 }
 
 // Routine Description:
@@ -1361,13 +1345,11 @@ NTSTATUS DoSrvPrivateEnableAnyEventMouseMode(_In_ bool const fEnable)
 // Parameters:
 // - fEnable - true to enable alternate scroll mode, false to disable.
 // Return value:
-// - STATUS_SUCCESS always.
-NTSTATUS DoSrvPrivateEnableAlternateScroll(_In_ bool const fEnable)
+// None
+void DoSrvPrivateEnableAlternateScroll(_In_ bool const fEnable)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.terminalMouseInput.EnableAlternateScroll(fEnable);
-
-    return STATUS_SUCCESS;
 }
 
 // Routine Description:
@@ -1377,23 +1359,22 @@ NTSTATUS DoSrvPrivateEnableAlternateScroll(_In_ bool const fEnable)
 //  The ScreenBuffer to perform the erase on.
 // Return value:
 // - STATUS_SUCCESS if we succeeded, otherwise the NTSTATUS version of the failure.
+[[nodiscard]]
 NTSTATUS DoSrvPrivateEraseAll(_In_ SCREEN_INFORMATION* const pScreenInfo)
 {
     return NTSTATUS_FROM_HRESULT(pScreenInfo->GetActiveBuffer()->VtEraseAll());
 }
 
-NTSTATUS DoSrvSetCursorStyle(_In_ const SCREEN_INFORMATION* const pScreenInfo,
-                             _In_ CursorType const cursorType)
+void DoSrvSetCursorStyle(_In_ const SCREEN_INFORMATION* const pScreenInfo,
+                         _In_ CursorType const cursorType)
 {
     pScreenInfo->TextInfo->GetCursor()->SetType(cursorType);
-    return STATUS_SUCCESS;
 }
 
-NTSTATUS DoSrvSetCursorColor(_In_ const SCREEN_INFORMATION* const pScreenInfo,
-                             _In_ COLORREF const cursorColor)
+void DoSrvSetCursorColor(_In_ const SCREEN_INFORMATION* const pScreenInfo,
+                         _In_ COLORREF const cursorColor)
 {
     pScreenInfo->TextInfo->GetCursor()->SetColor(cursorColor);
-    return STATUS_SUCCESS;
 }
 
 // Routine Description:
@@ -1406,6 +1387,7 @@ NTSTATUS DoSrvSetCursorColor(_In_ const SCREEN_INFORMATION* const pScreenInfo,
 // - pwAttributes - Pointer to space that will receive color attributes data
 // Return Value:
 // - STATUS_SUCCESS if we succeeded or STATUS_INVALID_PARAMETER for bad params (nullptr).
+[[nodiscard]]
 NTSTATUS DoSrvPrivateGetConsoleScreenBufferAttributes(_In_ SCREEN_INFORMATION* const pScreenInfo, _Out_ WORD* const pwAttributes)
 {
     NTSTATUS Status = STATUS_SUCCESS;
@@ -1431,19 +1413,17 @@ NTSTATUS DoSrvPrivateGetConsoleScreenBufferAttributes(_In_ SCREEN_INFORMATION* c
 // Parameters:
 //  The ScreenBuffer to perform the repaint for.
 // Return value:
-// - STATUS_SUCCESS if we succeeded, otherwise the NTSTATUS version of the failure.
-NTSTATUS DoSrvPrivateRefreshWindow(_In_ SCREEN_INFORMATION* const pScreenInfo)
+// - None
+void DoSrvPrivateRefreshWindow(_In_ SCREEN_INFORMATION* const pScreenInfo)
 {
     Globals& g = ServiceLocator::LocateGlobals();
     if (pScreenInfo == g.getConsoleInformation().CurrentScreenBuffer)
     {
         g.pRender->TriggerRedrawAll();
     }
-
-    return STATUS_SUCCESS;
 }
 
-HRESULT GetConsoleTitleWImplHelper(_Out_writes_to_opt_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) wchar_t* const pwsTitleBuffer,
+void GetConsoleTitleWImplHelper(_Out_writes_to_opt_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) wchar_t* const pwsTitleBuffer,
                                    _In_ size_t const cchTitleBufferSize,
                                    _Out_ size_t* const pcchTitleBufferWritten,
                                    _Out_ size_t* const pcchTitleBufferNeeded,
@@ -1489,10 +1469,9 @@ HRESULT GetConsoleTitleWImplHelper(_Out_writes_to_opt_(cchTitleBufferSize, *pcch
             *pcchTitleBufferWritten = min(cchTitleBufferSize, cchTitleLength);
         }
     }
-
-    return S_OK;
 }
 
+[[nodiscard]]
 HRESULT GetConsoleTitleAImplHelper(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) char* const psTitleBuffer,
                                    _In_ size_t const cchTitleBufferSize,
                                    _Out_ size_t* const pcchTitleBufferWritten,
@@ -1512,7 +1491,7 @@ HRESULT GetConsoleTitleAImplHelper(_Out_writes_to_(cchTitleBufferSize, *pcchTitl
     // Figure out how big our temporary Unicode buffer must be to get the title.
     size_t cchUnicodeTitleBufferNeeded;
     size_t cchUnicodeTitleBufferWritten;
-    RETURN_IF_FAILED(GetConsoleTitleWImplHelper(nullptr, 0, &cchUnicodeTitleBufferWritten, &cchUnicodeTitleBufferNeeded, fIsOriginal));
+    GetConsoleTitleWImplHelper(nullptr, 0, &cchUnicodeTitleBufferWritten, &cchUnicodeTitleBufferNeeded, fIsOriginal);
 
     // If there's nothing to get, then simply return.
     RETURN_HR_IF(S_OK, 0 == cchUnicodeTitleBufferNeeded);
@@ -1523,7 +1502,11 @@ HRESULT GetConsoleTitleAImplHelper(_Out_writes_to_(cchTitleBufferSize, *pcchTitl
     RETURN_IF_NULL_ALLOC(pwsUnicodeTitleBuffer);
 
     // Retrieve the title in Unicode.
-    RETURN_IF_FAILED(GetConsoleTitleWImplHelper(pwsUnicodeTitleBuffer.get(), cchUnicodeTitleBufferSize, &cchUnicodeTitleBufferWritten, &cchUnicodeTitleBufferNeeded, fIsOriginal));
+    GetConsoleTitleWImplHelper(pwsUnicodeTitleBuffer.get(),
+                               cchUnicodeTitleBufferSize,
+                               &cchUnicodeTitleBufferWritten,
+                               &cchUnicodeTitleBufferNeeded,
+                               fIsOriginal);
 
     // Convert result to A
     wistd::unique_ptr<char[]> psConverted;
@@ -1577,6 +1560,7 @@ HRESULT GetConsoleTitleAImplHelper(_Out_writes_to_(cchTitleBufferSize, *pcchTitl
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT ApiRoutines::GetConsoleTitleAImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) char* const psTitleBuffer,
                                           _In_ size_t const cchTitleBufferSize,
                                           _Out_ size_t* const pcchTitleBufferWritten,
@@ -1592,7 +1576,7 @@ HRESULT ApiRoutines::GetConsoleTitleAImpl(_Out_writes_to_(cchTitleBufferSize, *p
                                       false);
 }
 
-HRESULT ApiRoutines::GetConsoleTitleWImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) wchar_t* const pwsTitleBuffer,
+void ApiRoutines::GetConsoleTitleWImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) wchar_t* const pwsTitleBuffer,
                                           _In_ size_t const cchTitleBufferSize,
                                           _Out_ size_t* const pcchTitleBufferWritten,
                                           _Out_ size_t* const pcchTitleBufferNeeded)
@@ -1600,13 +1584,14 @@ HRESULT ApiRoutines::GetConsoleTitleWImpl(_Out_writes_to_(cchTitleBufferSize, *p
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    return GetConsoleTitleWImplHelper(pwsTitleBuffer,
-                                      cchTitleBufferSize,
-                                      pcchTitleBufferWritten,
-                                      pcchTitleBufferNeeded,
-                                      false);
+    GetConsoleTitleWImplHelper(pwsTitleBuffer,
+                               cchTitleBufferSize,
+                               pcchTitleBufferWritten,
+                               pcchTitleBufferNeeded,
+                               false);
 }
 
+[[nodiscard]]
 HRESULT ApiRoutines::GetConsoleOriginalTitleAImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) char* const psTitleBuffer,
                                                   _In_ size_t const cchTitleBufferSize,
                                                   _Out_ size_t* const pcchTitleBufferWritten,
@@ -1622,7 +1607,7 @@ HRESULT ApiRoutines::GetConsoleOriginalTitleAImpl(_Out_writes_to_(cchTitleBuffer
                                       true);
 }
 
-HRESULT ApiRoutines::GetConsoleOriginalTitleWImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) wchar_t* const pwsTitleBuffer,
+void ApiRoutines::GetConsoleOriginalTitleWImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) wchar_t* const pwsTitleBuffer,
                                                   _In_ size_t const cchTitleBufferSize,
                                                   _Out_ size_t* const pcchTitleBufferWritten,
                                                   _Out_ size_t* const pcchTitleBufferNeeded)
@@ -1630,13 +1615,14 @@ HRESULT ApiRoutines::GetConsoleOriginalTitleWImpl(_Out_writes_to_(cchTitleBuffer
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    return GetConsoleTitleWImplHelper(pwsTitleBuffer,
-                                      cchTitleBufferSize,
-                                      pcchTitleBufferWritten,
-                                      pcchTitleBufferNeeded,
-                                      true);
+    GetConsoleTitleWImplHelper(pwsTitleBuffer,
+                               cchTitleBufferSize,
+                               pcchTitleBufferWritten,
+                               pcchTitleBufferNeeded,
+                               true);
 }
 
+[[nodiscard]]
 HRESULT ApiRoutines::SetConsoleTitleAImpl(_In_reads_or_z_(cchTitleBufferSize) const char* const psTitleBuffer,
                                           _In_ size_t const cchTitleBufferSize)
 {
@@ -1652,6 +1638,7 @@ HRESULT ApiRoutines::SetConsoleTitleAImpl(_In_reads_or_z_(cchTitleBufferSize) co
     return SetConsoleTitleWImpl(pwsUnicodeTitleBuffer.get(), cchUnicodeTitleBuffer);
 }
 
+[[nodiscard]]
 HRESULT ApiRoutines::SetConsoleTitleWImpl(_In_reads_or_z_(cchTitleBufferSize) const wchar_t* const pwsTitleBuffer,
                                           _In_ size_t const cchTitleBufferSize)
 {
@@ -1662,6 +1649,7 @@ HRESULT ApiRoutines::SetConsoleTitleWImpl(_In_reads_or_z_(cchTitleBufferSize) co
                                  cchTitleBufferSize);
 }
 
+[[nodiscard]]
 HRESULT DoSrvSetConsoleTitleW(_In_reads_or_z_(cchBuffer) const wchar_t* const pwsBuffer,
                               _In_ size_t const cchBuffer)
 {
@@ -1701,6 +1689,7 @@ HRESULT DoSrvSetConsoleTitleW(_In_reads_or_z_(cchBuffer) const wchar_t* const pw
 //  The ScreenBuffer to perform the repaint for.
 // Return value:
 // - STATUS_SUCCESS if we succeeded, otherwise the NTSTATUS version of the failure.
+[[nodiscard]]
 NTSTATUS DoSrvPrivateSuppressResizeRepaint()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
