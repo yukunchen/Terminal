@@ -53,51 +53,30 @@ void Registry::GetEditKeys(_In_opt_ HKEY hConsoleKey) const
 
     // determine whether the user wants to allow alt-f4 to close the console (global setting)
     DWORD dwValue;
-    Status = RegistrySerialization::s_QueryValue(hConsoleKey, CONSOLE_REGISTRY_ALLOW_ALTF4_CLOSE, sizeof(dwValue), (PBYTE)& dwValue, nullptr);
+    Status = RegistrySerialization::s_QueryValue(hConsoleKey,
+                                                 CONSOLE_REGISTRY_ALLOW_ALTF4_CLOSE,
+                                                 sizeof(dwValue),
+                                                 REG_DWORD,
+                                                 (PBYTE)& dwValue,
+                                                 nullptr);
     if (NT_SUCCESS(Status) && dwValue <= 1)
     {
         gci.SetAltF4CloseAllowed(!!dwValue);
     }
 
-    // get extended edit mode and keys from registry.
-    Status = RegistrySerialization::s_QueryValue(hConsoleKey, CONSOLE_REGISTRY_EXTENDEDEDITKEY, sizeof(dwValue), (PBYTE)& dwValue, nullptr);
-    if (NT_SUCCESS(Status) && dwValue <= 1)
-    {
-        ExtKeyDefBuf buf = { 0 };
-
-        gci.SetExtendedEditKey(!!dwValue);
-
-        // Initialize Extended Edit keys.
-        InitExtendedEditKeys(nullptr);
-
-        Status = RegistrySerialization::s_QueryValue(hConsoleKey, CONSOLE_REGISTRY_EXTENDEDEDITKEY_CUSTOM, sizeof(buf), (PBYTE)& buf, nullptr);
-        if (NT_SUCCESS(Status))
-        {
-            InitExtendedEditKeys(&buf);
-        }
-    }
-    else
-    {
-        gci.SetExtendedEditKey(false);
-    }
-
-    // Word delimiters
-    if (gci.GetExtendedEditKey())
-    {
-        // If extended edit key is given, provide extended word delimiters by default.
-        memmove(ServiceLocator::LocateGlobals().aWordDelimChars,
-                aWordDelimCharsDefault,
-                sizeof(ServiceLocator::LocateGlobals().aWordDelimChars[0]) * WORD_DELIM_MAX);
-    }
-    else
-    {
-        // Otherwise, stick to the original word delimiter.
-        ServiceLocator::LocateGlobals().aWordDelimChars[0] = L'\0';
-    }
+    // provide extended word delimiters by default.
+    std::copy(std::begin(aWordDelimCharsDefault),
+              std::end(aWordDelimCharsDefault),
+              ServiceLocator::LocateGlobals().aWordDelimChars);
 
     // Read word delimiters from registry
     WCHAR awchBuffer[64];
-    Status = RegistrySerialization::s_QueryValue(hConsoleKey, CONSOLE_REGISTRY_WORD_DELIM, sizeof(awchBuffer), (PBYTE)awchBuffer, nullptr);
+    Status = RegistrySerialization::s_QueryValue(hConsoleKey,
+                                                 CONSOLE_REGISTRY_WORD_DELIM,
+                                                 sizeof(awchBuffer),
+                                                 REG_SZ,
+                                                 (PBYTE)awchBuffer,
+                                                 nullptr);
     if (NT_SUCCESS(Status))
     {
         // OK, copy it to the word delimiter array.
@@ -235,7 +214,12 @@ void Registry::LoadFromRegistry(_In_ PCWSTR const pwszConsoleTitle)
     DWORD dwValue;
 
     // Window Origin Autopositioning Setting
-    Status = RegistrySerialization::s_QueryValue(hTitleKey, CONSOLE_REGISTRY_WINDOWPOS, sizeof(dwValue), (PBYTE)&dwValue, nullptr);
+    Status = RegistrySerialization::s_QueryValue(hTitleKey,
+                                                 CONSOLE_REGISTRY_WINDOWPOS,
+                                                 sizeof(dwValue),
+                                                 REG_DWORD,
+                                                 (PBYTE)&dwValue,
+                                                 nullptr);
 
     if (NT_SUCCESS(Status))
     {
@@ -246,7 +230,12 @@ void Registry::LoadFromRegistry(_In_ PCWSTR const pwszConsoleTitle)
     //      HOWEVER, the defaults might not have been auto-pos, so don't assume that they are.
 
     // Code Page
-    Status = RegistrySerialization::s_QueryValue(hTitleKey, CONSOLE_REGISTRY_CODEPAGE, sizeof(dwValue), (PBYTE)& dwValue, nullptr);
+    Status = RegistrySerialization::s_QueryValue(hTitleKey,
+                                                 CONSOLE_REGISTRY_CODEPAGE,
+                                                 sizeof(dwValue),
+                                                 REG_DWORD,
+                                                 (PBYTE)& dwValue,
+                                                 nullptr);
     if (NT_SUCCESS(Status))
     {
         _pSettings->SetCodePage(dwValue);
@@ -274,7 +263,12 @@ void Registry::LoadFromRegistry(_In_ PCWSTR const pwszConsoleTitle)
     {
         WCHAR awchBuffer[64];
         StringCchPrintfW(awchBuffer, ARRAYSIZE(awchBuffer), CONSOLE_REGISTRY_COLORTABLE, i);
-        Status = RegistrySerialization::s_QueryValue(hTitleKey, awchBuffer, sizeof(dwValue), (PBYTE)& dwValue, nullptr);
+        Status = RegistrySerialization::s_QueryValue(hTitleKey,
+                                                     awchBuffer,
+                                                     sizeof(dwValue),
+                                                     REG_DWORD,
+                                                     (PBYTE)& dwValue,
+                                                     nullptr);
         if (NT_SUCCESS(Status))
         {
             _pSettings->SetColorTableEntry(i, dwValue);

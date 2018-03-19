@@ -97,7 +97,6 @@ SOURCES = \
     ..\utf8ToWideCharParser.cpp \
     ..\conimeinfo.cpp \
     ..\conattrs.cpp \
-    ..\KeyEventHelpers.cpp \
     ..\ConsoleArguments.cpp \
     ..\AttrRow.cpp \
     ..\Ucs2CharRow.cpp \

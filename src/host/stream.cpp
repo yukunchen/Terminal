@@ -15,7 +15,6 @@
 #include "readDataRaw.hpp"
 
 #include "ApiRoutines.h"
-#include "KeyEventHelpers.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
@@ -88,18 +87,11 @@ NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
             bool commandLineEditKey = false;
             if (pCommandLineEditingKeys)
             {
-                commandLineEditKey = ::IsCommandLineEditingKey(*keyEvent);
+                commandLineEditKey = keyEvent->IsCommandLineEditingKey();
             }
             else if (pCommandLinePopupKeys)
             {
-                commandLineEditKey = ::IsCommandLinePopupKey(*keyEvent);
-            }
-
-            if ((pCommandLineEditingKeys || pCommandLinePopupKeys) &&
-                ServiceLocator::LocateGlobals().getConsoleInformation().GetExtendedEditKey() &&
-                ::GetKeySubst(*keyEvent))
-            {
-                ::ParseEditKeyInfo(*keyEvent);
+                commandLineEditKey = keyEvent->IsCommandLinePopupKey();
             }
 
             if (pdwKeyState)
