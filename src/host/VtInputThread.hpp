@@ -14,29 +14,30 @@ Author(s):
 #pragma once
 
 #include "..\terminal\parser\StateMachine.hpp"
+#include "utf8ToWideCharParser.hpp"
 
-namespace Microsoft
+namespace Microsoft::Console
 {
-    namespace Console
+    class VtInputThread
     {
-        class VtInputThread
-        {
-        public:
-            VtInputThread(_In_ wil::unique_hfile hPipe, _In_ const bool inheritCursor);
+    public:
+        VtInputThread(_In_ wil::unique_hfile hPipe, _In_ const bool inheritCursor);
 
-            HRESULT Start();
-            static DWORD StaticVtInputThreadProc(_In_ LPVOID lpParameter);
-            void DoReadInput(_In_ const bool throwOnFail);
+        [[nodiscard]]
+        HRESULT Start();
+        static DWORD StaticVtInputThreadProc(_In_ LPVOID lpParameter);
+        void DoReadInput(_In_ const bool throwOnFail);
 
-        private:
-            HRESULT _HandleRunInput(_In_reads_(cch) const char* const charBuffer, _In_ const int cch);
-            DWORD _InputThread();
+    private:
+        [[nodiscard]]
+        HRESULT _HandleRunInput(_In_reads_(cch) const byte* const charBuffer, _In_ const int cch);
+        DWORD _InputThread();
 
-            wil::unique_hfile _hFile;
-            wil::unique_handle _hThread;
-            DWORD _dwThreadId;
+        wil::unique_hfile _hFile;
+        wil::unique_handle _hThread;
+        DWORD _dwThreadId;
 
-            std::unique_ptr<StateMachine> _pInputStateMachine;
-        };
-    }
-};
+        std::unique_ptr<StateMachine> _pInputStateMachine;
+        Utf8ToWideCharParser _utf8Parser;
+    };
+}

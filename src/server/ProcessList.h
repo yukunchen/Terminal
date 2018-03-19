@@ -33,6 +33,7 @@ public:
 
     static const DWORD ROOT_PROCESS_ID = 0;
 
+    [[nodiscard]]
     HRESULT AllocProcessData(_In_ DWORD const dwProcessId,
                              _In_ DWORD const dwThreadId,
                              _In_ ULONG const ulProcessGroupId,
@@ -45,6 +46,7 @@ public:
     ConsoleProcessHandle* FindProcessInList(_In_ const DWORD dwProcessId) const;
     ConsoleProcessHandle* FindProcessByGroupId(_In_ ULONG ulProcessGroupId) const;
 
+    [[nodiscard]]
     HRESULT GetTerminationRecordsByGroupId(_In_ DWORD const dwLimitingProcessId,
                                            _In_ bool const fCtrlClose,
                                            _Outptr_result_buffer_all_(*pcRecords) ConsoleProcessTerminationRecord** prgRecords,
@@ -52,6 +54,7 @@ public:
 
     ConsoleProcessHandle* GetFirstProcess() const;
 
+    [[nodiscard]]
     HRESULT GetProcessList(_Inout_updates_(*pcProcessList) DWORD* const pProcessList,
                            _Inout_ size_t* const pcProcessList) const;
 

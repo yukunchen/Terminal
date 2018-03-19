@@ -9,6 +9,7 @@
 #include "_output.h"
 #include "stream.h"
 #include "scrolling.hpp"
+#include "Ucs2CharRow.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
@@ -43,7 +44,7 @@ Selection& Selection::Instance()
 // - Writes pointer to count of rectangles in array
 // Return Value:
 // - Success if success. Invalid parameter if global state is incorrect. No memory if out of memory.
-_Check_return_
+[[nodiscard]]
 NTSTATUS Selection::GetSelectionRects(_Outptr_result_buffer_all_(*pcRectangles) SMALL_RECT** const prgsrSelection,
                                       _Out_ UINT* const pcRectangles) const
 {
@@ -210,10 +211,15 @@ void Selection::s_BisectSelection(_In_ short const sStringLength,
 {
     const TEXT_BUFFER_INFO* const pTextInfo = pScreenInfo->TextInfo;
     const ROW& Row = pTextInfo->GetRowByOffset(coordTargetPoint.Y);
-    const CHAR_ROW charRow = Row.GetCharRow();
 
     try
     {
+        const ICharRow& iCharRow = Row.GetCharRow();
+        // we only support ucs2 encoded char rows
+        FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                        "only support UCS2 char rows currently");
+
+        const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
         // Check start position of strings
         if (charRow.GetAttribute(coordTargetPoint.X).IsTrailing())
         {
@@ -238,7 +244,13 @@ void Selection::s_BisectSelection(_In_ short const sStringLength,
         else
         {
             const ROW& RowNext = pTextInfo->GetNextRowNoWrap(Row);
-            if (RowNext.GetCharRow().GetAttribute(0).IsTrailing())
+            const ICharRow& iCharRowNext = RowNext.GetCharRow();
+            // we only support ucs2 encoded char rows
+            FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                            "only support UCS2 char rows currently");
+
+            const Ucs2CharRow& charRowNext = static_cast<const Ucs2CharRow&>(iCharRowNext);
+            if (charRowNext.GetAttribute(0).IsTrailing())
             {
                 pSmallRect->Right--;
             }
@@ -571,7 +583,7 @@ void Selection::ColorSelection(_In_ SMALL_RECT* const psrRect, _In_ ULONG const 
     {
         DWORD cchWrite = coordTargetSize.X;
 
-        FillOutput(pScreenInfo, (USHORT)ulAttr, coordTarget, CONSOLE_ATTRIBUTE, &cchWrite);
+        LOG_IF_FAILED(FillOutput(pScreenInfo, (USHORT)ulAttr, coordTarget, CONSOLE_ATTRIBUTE, &cchWrite));
     }
 }
 
@@ -597,10 +609,10 @@ void Selection::InitializeMarkSelection()
     SCREEN_INFORMATION* pScreenInfo = gci.CurrentScreenBuffer;
     _SaveCursorData(pScreenInfo->TextInfo);
     Cursor* const pCursor = pScreenInfo->TextInfo->GetCursor();
-    pScreenInfo->SetCursorInformation(100, TRUE, pCursor->GetColor(), pCursor->GetCursorType());
+    pScreenInfo->SetCursorInformation(100, TRUE, pCursor->GetColor(), pCursor->GetType());
 
     const COORD coordPosition = pCursor->GetPosition();
-    pScreenInfo->SetCursorPosition(coordPosition, TRUE);
+    LOG_IF_FAILED(pScreenInfo->SetCursorPosition(coordPosition, TRUE));
 
     // set the cursor position as the anchor position
     // it will get updated as the cursor moves for mark mode,
@@ -746,5 +758,5 @@ void Selection::SelectAll()
     SelectNewRegion(coordNewSelStart, coordNewSelEnd);
 
     // restore the old window position
-    pScreenInfo->SetViewportOrigin(TRUE, coordWindowOrigin);
+    LOG_IF_FAILED(pScreenInfo->SetViewportOrigin(TRUE, coordWindowOrigin));
 }

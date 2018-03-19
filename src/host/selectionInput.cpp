@@ -7,6 +7,7 @@
 #include "precomp.h"
 
 #include "search.h"
+#include "Ucs2CharRow.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
@@ -163,7 +164,16 @@ void Selection::WordByWordSelection(_In_ const bool fReverse,
     }
 
     // get the character at the new position
-    WCHAR wchTest = pTextInfo->GetRowByOffset(pcoordSelPoint->Y).GetCharRow().GetGlyphAt(pcoordSelPoint->X);
+    WCHAR wchTest = L'\0';
+    {
+        ICharRow& iCharRow = pTextInfo->GetRowByOffset(pcoordSelPoint->Y).GetCharRow();
+        // we only support ucs2 encoded char rows
+        FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                        "only support UCS2 char rows currently");
+
+        Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
+        wchTest = charRow.GetGlyphAt(pcoordSelPoint->X);
+    }
 
     // we want to go until the state change from delim to non-delim
     bool fCurrIsDelim = IS_WORD_DELIM(wchTest);
@@ -241,7 +251,15 @@ void Selection::WordByWordSelection(_In_ const bool fReverse,
         }
 
         // get the character associated with the new position
-        wchTest = gci.CurrentScreenBuffer->TextInfo->GetRowByOffset(pcoordSelPoint->Y).GetCharRow().GetGlyphAt(pcoordSelPoint->X);
+        {
+            ICharRow& iCharRow = gci.CurrentScreenBuffer->TextInfo->GetRowByOffset(pcoordSelPoint->Y).GetCharRow();
+            // we only support ucs2 encoded char rows
+            FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                            "only support UCS2 char rows currently");
+
+            Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
+            wchTest = charRow.GetGlyphAt(pcoordSelPoint->X);
+        }
         fCurrIsDelim = IS_WORD_DELIM(wchTest);
 
         // This is a bit confusing.
@@ -365,7 +383,13 @@ bool Selection::HandleKeyboardLineSelectionEvent(_In_ const INPUT_KEY_INFO* cons
             // if we're about to split a character in half, keep moving right
             try
             {
-                if (pTextInfo->GetRowByOffset(coordSelPoint.Y).GetCharRow().GetAttribute(coordSelPoint.X).IsTrailing())
+                const ICharRow& iCharRow = pTextInfo->GetRowByOffset(coordSelPoint.Y).GetCharRow();
+                // we only support ucs2 encoded char rows
+                FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                                "only support UCS2 char rows currently");
+
+                const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
+                if (charRow.GetAttribute(coordSelPoint.X).IsTrailing())
                 {
                     Utils::s_DoIncrementScreenCoordinate(srectEdges, &coordSelPoint);
                 }
@@ -589,7 +613,13 @@ bool Selection::HandleKeyboardLineSelectionEvent(_In_ const INPUT_KEY_INFO* cons
 
     try
     {
-        if (pTextInfo->GetRowByOffset(coordSelPoint.Y).GetCharRow().GetAttribute(coordSelPoint.X).IsTrailing())
+        const ICharRow& iCharRow = pTextInfo->GetRowByOffset(coordSelPoint.Y).GetCharRow();
+        // we only support ucs2 encoded char rows
+        FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                        "only support UCS2 char rows currently");
+
+        const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
+        if (charRow.GetAttribute(coordSelPoint.X).IsTrailing())
         {
             // try to move off by highlighting the lead half too.
             bool fSuccess = Utils::s_DoDecrementScreenCoordinate(srectEdges, &coordSelPoint);
@@ -695,9 +725,15 @@ bool Selection::_HandleColorSelection(_In_ const INPUT_KEY_INFO* const pInputKey
             WCHAR pwszSearchString[SEARCH_STRING_LENGTH + 1];
             try
             {
-                const CHAR_ROW::const_iterator startIt = std::next(Row.GetCharRow().cbegin(), psrSelection->Left);
-                const CHAR_ROW::const_iterator stopIt = std::next(startIt, cLength);
-                std::transform(startIt, stopIt, pwszSearchString, [](const CHAR_ROW::value_type& vals)
+                const ICharRow& iCharRow = Row.GetCharRow();
+                // we only support ucs2 encoded char rows
+                FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                                "only support UCS2 char rows currently");
+
+                const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
+                const Ucs2CharRow::const_iterator startIt = std::next(charRow.cbegin(), psrSelection->Left);
+                const Ucs2CharRow::const_iterator stopIt = std::next(startIt, cLength);
+                std::transform(startIt, stopIt, pwszSearchString, [](const Ucs2CharRow::value_type& vals)
                 {
                     return vals.first;
                 });
@@ -751,7 +787,12 @@ bool Selection::_HandleMarkModeSelectionNav(_In_ const INPUT_KEY_INFO* const pIn
 
         const COORD cursorPos = pTextInfo->GetCursor()->GetPosition();
         const ROW& Row = pTextInfo->GetRowByOffset(cursorPos.Y);
-        const CHAR_ROW& charRow = Row.GetCharRow();
+        const ICharRow& iCharRow = Row.GetCharRow();
+        // we only support ucs2 encoded char rows
+        FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                        "only support UCS2 char rows currently");
+
+        const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
 
         try
         {
@@ -932,7 +973,7 @@ bool Selection::_HandleMarkModeSelectionNav(_In_ const INPUT_KEY_INFO* const pIn
 // - pcoordInputEnd - Position of the last character in the input line
 // Return Value:
 // - If true, the boundaries returned are valid. If false, they should be discarded.
-_Check_return_ _Success_(return)
+[[nodiscard]]
 bool Selection::s_GetInputLineBoundaries(_Out_opt_ COORD* const pcoordInputStart, _Out_opt_ COORD* const pcoordInputEnd)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();

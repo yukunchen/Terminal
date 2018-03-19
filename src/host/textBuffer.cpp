@@ -7,6 +7,7 @@
 #include "precomp.h"
 
 #include "textBuffer.hpp"
+#include "Ucs2CharRow.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
@@ -337,10 +338,16 @@ bool TEXT_BUFFER_INFO::AssertValidDoubleByteSequence(_In_ const DbcsAttribute db
     // To figure out if the sequence is valid, we have to look at the character that comes before the current one
     const COORD coordPrevPosition = GetPreviousFromCursor();
     ROW& prevRow = GetRowByOffset(coordPrevPosition.Y);
+    ICharRow& iCharRow = prevRow.GetCharRow();
+    // we only support ucs2 encoded char rows
+    FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                     "only support UCS2 char rows currently");
+
+    Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
     DbcsAttribute prevDbcsAttr;
     try
     {
-        prevDbcsAttr = prevRow.GetCharRow().GetAttribute(coordPrevPosition.X);
+        prevDbcsAttr = charRow.GetAttribute(coordPrevPosition.X);
     }
     catch (...)
     {
@@ -393,8 +400,7 @@ bool TEXT_BUFFER_INFO::AssertValidDoubleByteSequence(_In_ const DbcsAttribute db
         // Erase previous character into an N type.
         try
         {
-            prevRow.GetCharRow().ClearGlyph(coordPrevPosition.X);
-            prevRow.GetCharRow().GetAttribute(coordPrevPosition.X).SetSingle();
+            prevRow.GetCharRow().ClearCell(coordPrevPosition.X);
         }
         catch (...)
         {
@@ -438,7 +444,12 @@ bool TEXT_BUFFER_INFO::_PrepareForDoubleByteSequence(_In_ const DbcsAttribute db
         if (this->GetCursor()->GetPosition().X == sBufferWidth - 1)
         {
             // set that we're wrapping for double byte reasons
-            GetRowByOffset(this->GetCursor()->GetPosition().Y).GetCharRow().SetDoubleBytePadded(true);
+            ICharRow& iCharRow = GetRowByOffset(this->GetCursor()->GetPosition().Y).GetCharRow();
+            // we only support ucs2 encoded char rows
+            FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                            "only support UCS2 char rows currently");
+
+            static_cast<Ucs2CharRow&>(iCharRow).SetDoubleBytePadded(true);
 
             // then move the cursor forward and onto the next row
             fSuccess = IncrementCursor();
@@ -473,7 +484,12 @@ bool TEXT_BUFFER_INFO::InsertCharacter(_In_ const wchar_t wch,
         ROW& Row = GetRowByOffset(iRow);
 
         // Store character and double byte data
-        CHAR_ROW& charRow = Row.GetCharRow();
+        ICharRow& iCharRow = Row.GetCharRow();
+        // we only support ucs2 encoded char rows
+        FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                        "only support UCS2 char rows currently");
+
+        Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);;
         short const cBufferWidth = this->_coordBufferSize.X;
 
         try
@@ -523,7 +539,7 @@ void TEXT_BUFFER_INFO::AdjustWrapOnCurrentRow(_In_ bool const fSet)
     const UINT uiCurrentRowOffset = this->GetCursor()->GetPosition().Y;
 
     // Set the wrap status as appropriate
-    GetRowByOffset(uiCurrentRowOffset).GetCharRow().SetWrapStatus(fSet);
+    GetRowByOffset(uiCurrentRowOffset).GetCharRow().SetWrapForced(fSet);
 }
 
 //Routine Description:
@@ -652,7 +668,7 @@ bool TEXT_BUFFER_INFO::IncrementCircularBuffer()
     // First, clean out the old "first row" as it will become the "last row" of the buffer after the circle is performed.
     TextAttribute FillAttributes;
     FillAttributes.SetFromLegacy(_ciFill.Attributes);
-    bool fSuccess = _storage[_FirstRow].Reset(_coordBufferSize.X, FillAttributes);
+    bool fSuccess = _storage[_FirstRow].Reset(FillAttributes);
     if (fSuccess)
     {
         // Now proceed to increment.
@@ -776,6 +792,7 @@ void TEXT_BUFFER_INFO::SetFill(_In_ const CHAR_INFO ciFill)
 // - attributes - attributes to set for resized rows
 // Return Value:
 // - Success if successful. Invalid parameter if screen buffer size is unexpected. No memory if allocation failed.
+[[nodiscard]]
 NTSTATUS TEXT_BUFFER_INFO::ResizeTraditional(_In_ COORD const currentScreenBufferSize,
                                              _In_ COORD const newScreenBufferSize,
                                              _In_ TextAttribute const attributes)

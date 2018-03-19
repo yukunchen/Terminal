@@ -17,11 +17,6 @@
 
 #pragma hdrstop
 
-// TODO: MSFT 14150722 - can these const values be generated at
-// runtime without breaking compatibility?
-static const WORD altScanCode = 0x38;
-static const WORD leftShiftScanCode = 0x2A;
-
 using namespace Microsoft::Console::Interactivity::Win32;
 
 #pragma region Public Methods
@@ -142,214 +137,29 @@ std::deque<std::unique_ptr<IInputEvent>> Clipboard::TextToKeyEvents(_In_reads_(c
             break;
         }
 
-        const short invalidKey = -1;
-        short keyState = ServiceLocator::LocateInputServices()->VkKeyScanW(currentChar);
-
-        if (keyState == invalidKey)
+        // MSFT:12123975 / WSL GH#2006
+        // If you paste text with ONLY linefeed line endings (unix style) in wsl,
+        //      then we faithfully pass those along, which the underlying terminal
+        //      interprets as C-j. In nano, C-j is mapped to "Justify text", which
+        //      causes the pasted text to get broken at the width of the terminal.
+        // This behavior doesn't occur in gnome-terminal, and nothing like it occurs
+        //      in vi or emacs.
+        // This change doesn't break pasting text into any of those applications
+        //      with CR/LF (Windows) line endings either. That apparently always
+        //      worked right.
+        if (IsInVirtualTerminalInputMode() && currentChar == UNICODE_LINEFEED)
         {
-            WORD CharType;
-
-            // Determine DBCS character because these character does not know by VkKeyScan.
-            // GetStringTypeW(CT_CTYPE3) & C3_ALPHA can determine all linguistic characters. However, this is
-            // not include symbolic character for DBCS.
-            //
-            // IsCharFullWidth can help for DBCS symbolic character.
-            GetStringTypeW(CT_CTYPE3, &currentChar, 1, &CharType);
-
-            if (IsFlagSet(CharType, C3_ALPHA) || IsCharFullWidth(currentChar))
-            {
-                keyState = 0;
-            }
+            currentChar = UNICODE_CARRIAGERETURN;
         }
 
-        std::deque<std::unique_ptr<KeyEvent>> convertedEvents;
-        if (keyState == invalidKey)
-        {
-            // if VkKeyScanW fails (char is not in kbd layout), we must
-            // emulate the key being input through the numpad
-            convertedEvents = CharToNumpad(currentChar);
-        }
-        else
-        {
-            convertedEvents = CharToKeyboardEvents(currentChar, keyState);
-        }
-
+        const UINT codepage = ServiceLocator::LocateGlobals().getConsoleInformation().OutputCP;
+        std::deque<std::unique_ptr<KeyEvent>> convertedEvents = CharToKeyEvents(currentChar, codepage);
         while (!convertedEvents.empty())
         {
             keyEvents.push_back(std::move(convertedEvents.front()));
             convertedEvents.pop_front();
         }
     }
-    return keyEvents;
-}
-
-// Routine Description:
-// - converts a wchar_t into a series of KeyEvents as if it was typed
-// using the keyboard
-// Arguments:
-// - wch - the wchar_t to convert
-// Return Value:
-// - deque of KeyEvents that represent the wchar_t being typed
-// Note:
-// - will throw exception on error
-std::deque<std::unique_ptr<KeyEvent>> Clipboard::CharToKeyboardEvents(_In_ const wchar_t wch, _In_ const short keyState)
-{
-    const byte modifierState = HIBYTE(keyState);
-
-    bool altGrSet = false;
-    bool shiftSet = false;
-    std::deque<std::unique_ptr<KeyEvent>> keyEvents;
-
-    // add modifier key event if necessary
-    if (AreAllFlagsSet(modifierState, VkKeyScanModState::CtrlAndAltPressed))
-    {
-        altGrSet = true;
-        keyEvents.push_back(std::make_unique<KeyEvent>(true,
-                                                       1ui16,
-                                                       static_cast<WORD>(VK_MENU),
-                                                       altScanCode,
-                                                       UNICODE_NULL,
-                                                       (ENHANCED_KEY | LEFT_CTRL_PRESSED | RIGHT_ALT_PRESSED)));
-    }
-    else if (IsFlagSet(modifierState, VkKeyScanModState::ShiftPressed))
-    {
-        shiftSet = true;
-        keyEvents.push_back(std::make_unique<KeyEvent>(true,
-                                                       1ui16,
-                                                       static_cast<WORD>(VK_SHIFT),
-                                                       leftShiftScanCode,
-                                                       UNICODE_NULL,
-                                                       SHIFT_PRESSED));
-    }
-
-    // MSFT:12123975 / WSL GH#2006
-    // If you paste text with ONLY linefeed line endings (unix style) in wsl,
-    //      then we faithfully pass those along, which the underlying terminal
-    //      interprets as C-j. In nano, C-j is mapped to "Justify text", which
-    //      causes the pasted text to get broken at the width of the terminal.
-    // This behavior doesn't occur in gnome-terminal, and nothing like it occurs
-    //      in vi or emacs.
-    // This change doesn't break pasting text into any of those applications
-    //      with CR/LF (Windows) line endings either. That apparently always
-    //      worked right.
-    wchar_t wchActual = wch;
-    if (IsInVirtualTerminalInputMode() && wch == UNICODE_LINEFEED)
-    {
-        wchActual = UNICODE_CARRIAGERETURN;
-    }
-
-    const WORD virtualScanCode = static_cast<WORD>(ServiceLocator::LocateInputServices()->MapVirtualKeyW(wchActual, MAPVK_VK_TO_VSC));
-    KeyEvent keyEvent{ true, 1, LOBYTE(keyState), virtualScanCode, wchActual, 0 };
-
-    // add modifier flags if necessary
-    if (IsFlagSet(modifierState, VkKeyScanModState::ShiftPressed))
-    {
-        keyEvent.ActivateModifierKey(ModifierKeyState::Shift);
-    }
-    if (IsFlagSet(modifierState, VkKeyScanModState::CtrlPressed))
-    {
-        keyEvent.ActivateModifierKey(ModifierKeyState::LeftCtrl);
-    }
-    if (AreAllFlagsSet(modifierState, VkKeyScanModState::CtrlAndAltPressed))
-    {
-        keyEvent.ActivateModifierKey(ModifierKeyState::RightAlt);
-    }
-
-    // add key event down and up
-    keyEvents.push_back(std::make_unique<KeyEvent>(keyEvent));
-    keyEvent.SetKeyDown(false);
-    keyEvents.push_back(std::make_unique<KeyEvent>(keyEvent));
-
-    // add modifier key up event
-    if (altGrSet)
-    {
-        keyEvents.push_back(std::make_unique<KeyEvent>(false,
-                                                       1ui16,
-                                                       static_cast<WORD>(VK_MENU),
-                                                       altScanCode,
-                                                       UNICODE_NULL,
-                                                       ENHANCED_KEY));
-    }
-    else if (shiftSet)
-    {
-        keyEvents.push_back(std::make_unique<KeyEvent>(false,
-                                                       1ui16,
-                                                       static_cast<WORD>(VK_SHIFT),
-                                                       leftShiftScanCode,
-                                                       UNICODE_NULL,
-                                                       0));
-    }
-
-    return keyEvents;
-}
-
-// Routine Description:
-// - converts a wchar_t into a series of KeyEvents as if it was typed
-// using Alt + numpad
-// Arguments:
-// - wch - the wchar_t to convert
-// Return Value:
-// - deque of KeyEvents that represent the wchar_t being typed using
-// alt + numpad
-// Note:
-// - will throw exception on error
-std::deque<std::unique_ptr<KeyEvent>> Clipboard::CharToNumpad(_In_ const wchar_t wch)
-{
-    std::deque<std::unique_ptr<KeyEvent>> keyEvents;
-
-    //alt keydown
-    keyEvents.push_back(std::make_unique<KeyEvent>(true,
-                                                   1ui16,
-                                                   static_cast<WORD>(VK_MENU),
-                                                   altScanCode,
-                                                   UNICODE_NULL,
-                                                   LEFT_ALT_PRESSED));
-
-    const UINT codepage = ServiceLocator::LocateGlobals().getConsoleInformation().OutputCP;
-    const int radix = 10;
-    std::wstring wstr{ wch };
-    std::deque<char> convertedChars;
-
-    convertedChars = ConvertToOem(codepage, wstr);
-    if (convertedChars.size() == 1)
-    {
-        unsigned char uch = static_cast<unsigned char>(convertedChars[0]);
-        // unsigned char values are in the range [0, 255] so we need to be
-        // able to store up to 4 chars from the conversion (including the end of string char)
-        char charString[4] = { 0 };
-        THROW_HR_IF(E_INVALIDARG, 0 != _itoa_s(uch, charString, ARRAYSIZE(charString), radix));
-
-        for (size_t i = 0; i < ARRAYSIZE(charString); ++i)
-        {
-            if (charString[i] == 0)
-            {
-                break;
-            }
-            const WORD virtualKey = charString[i] - '0' + VK_NUMPAD0;
-            const WORD virtualScanCode = static_cast<WORD>(ServiceLocator::LocateInputServices()->MapVirtualKeyW(virtualKey, MAPVK_VK_TO_VSC));
-
-            keyEvents.push_back(std::make_unique<KeyEvent>(true,
-                                                           1ui16,
-                                                           virtualKey,
-                                                           virtualScanCode,
-                                                           UNICODE_NULL,
-                                                           LEFT_ALT_PRESSED));
-            keyEvents.push_back(std::make_unique<KeyEvent>(false,
-                                                           1ui16,
-                                                           virtualKey,
-                                                           virtualScanCode,
-                                                           UNICODE_NULL,
-                                                           LEFT_ALT_PRESSED));
-        }
-    }
-
-    // alt keyup
-    keyEvents.push_back(std::make_unique<KeyEvent>(false,
-                                                   1ui16,
-                                                   static_cast<WORD>(VK_MENU),
-                                                   altScanCode,
-                                                   wch,
-                                                   0));
     return keyEvents;
 }
 
@@ -422,8 +232,8 @@ void Clipboard::StoreSelectionToClipboard()
     }
 }
 
-_Check_return_
-NTSTATUS Clipboard::RetrieveTextFromBuffer(_In_ SCREEN_INFORMATION* const pScreenInfo,
+[[nodiscard]]
+NTSTATUS Clipboard::RetrieveTextFromBuffer(_In_ const SCREEN_INFORMATION* const pScreenInfo,
                                            _In_ bool const fLineSelection,
                                            _In_ UINT const cRectsSelected,
                                            _In_reads_(cRectsSelected) const SMALL_RECT* const rgsrSelection,
@@ -617,6 +427,7 @@ NTSTATUS Clipboard::RetrieveTextFromBuffer(_In_ SCREEN_INFORMATION* const pScree
 // - cTotalRows
 // Return Value:
 //  <none>
+[[nodiscard]]
 NTSTATUS Clipboard::CopyTextToSystemClipboard(_In_ const UINT cTotalRows,
                                               _In_reads_(cTotalRows) const PWCHAR* const rgTempRows,
                                               _In_reads_(cTotalRows) const size_t* const rgTempRowLengths)

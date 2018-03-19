@@ -26,6 +26,7 @@ void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
                                _Inout_updates_(cchBuffer) DbcsAttribute* const pDbcsAttributes,
                                _In_ const bool fWasLineWrapped);
 
+[[nodiscard]]
 NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimensions.Y * sizeof(CHAR_INFO)) PBYTE const prgbSrc,
                              _In_ const COORD coordSrcDimensions,
                              _In_ const SMALL_RECT * const psrSrc,
@@ -37,6 +38,7 @@ void WriteRegionToScreen(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ PSMALL_RECT 
 
 void WriteToScreen(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ const SMALL_RECT srRegion);
 
+[[nodiscard]]
 NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
                            _In_reads_(*pcRecords) const VOID * pvBuffer,
                            _In_ const COORD coordWrite,
@@ -44,6 +46,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
                            _Inout_ PULONG pcRecords,    // this value is valid even for error cases
                            _Out_opt_ PULONG pcColumns);
 
+[[nodiscard]]
 NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
                     _In_ WORD wElement,
                     _In_ const COORD coordWrite,

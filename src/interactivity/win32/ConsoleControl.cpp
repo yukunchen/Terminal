@@ -18,28 +18,31 @@ using namespace Microsoft::Console::Interactivity::Win32;
 
 #pragma region IConsoleControl Members
 
+[[nodiscard]]
 NTSTATUS ConsoleControl::NotifyConsoleApplication(_In_ DWORD dwProcessId)
 {
     CONSOLE_PROCESS_INFO cpi;
     cpi.dwProcessID = dwProcessId;
     cpi.dwFlags = CPI_NEWPROCESSWINDOW;
-    
+
     return Control(ControlType::ConsoleNotifyConsoleApplication,
                    &cpi,
                    sizeof(CONSOLE_PROCESS_INFO));
 }
 
+[[nodiscard]]
 NTSTATUS ConsoleControl::SetForeground(_In_ HANDLE hProcess, _In_ BOOL fForeground)
 {
     CONSOLESETFOREGROUND Flags;
     Flags.hProcess = hProcess;
     Flags.bForeground = fForeground;
-    
+
     return Control(ControlType::ConsoleSetForeground,
                    &Flags,
                    sizeof(Flags));
 }
 
+[[nodiscard]]
 NTSTATUS ConsoleControl::EndTask(_In_ HANDLE hProcessId, _In_ DWORD dwEventType, _In_ ULONG ulCtrlFlags)
 {
     auto pConsoleWindow = ServiceLocator::LocateConsoleWindow();
@@ -51,7 +54,7 @@ NTSTATUS ConsoleControl::EndTask(_In_ HANDLE hProcessId, _In_ DWORD dwEventType,
     ConsoleEndTaskParams.hwnd = pConsoleWindow == nullptr
         ? nullptr
         : pConsoleWindow->GetWindowHandle();
-    
+
     return Control(ControlType::ConsoleEndTask,
                    &ConsoleEndTaskParams,
                    sizeof(ConsoleEndTaskParams));
@@ -61,6 +64,7 @@ NTSTATUS ConsoleControl::EndTask(_In_ HANDLE hProcessId, _In_ DWORD dwEventType,
 
 #pragma region Public Methods
 
+[[nodiscard]]
 NTSTATUS ConsoleControl::Control(_In_ ControlType ConsoleCommand,
                                  _In_reads_bytes_(ConsoleInformationLength) PVOID ConsoleInformation,
                                  _In_ DWORD ConsoleInformationLength)

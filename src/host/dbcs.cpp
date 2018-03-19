@@ -9,6 +9,7 @@
 #include "dbcs.h"
 
 #include "misc.h"
+#include "Ucs2CharRow.hpp"
 #include "../types/inc/convert.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
@@ -86,8 +87,14 @@ void CleanupDbcsEdgesForWrite(_In_ const size_t stringLen,
     {
         ROW& row = pTextInfo->GetRowAtIndex(rowIndex);
 
+        ICharRow& iCharRow = row.GetCharRow();
+        // we only support ucs2 encoded char rows
+        FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                        "only support UCS2 char rows currently");
+
+        Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
         // Check start position of strings
-        if (row.GetCharRow().GetAttribute(coordTarget.X).IsTrailing())
+        if (charRow.GetAttribute(coordTarget.X).IsTrailing())
         {
             if (coordTarget.X == 0)
             {
@@ -103,7 +110,7 @@ void CleanupDbcsEdgesForWrite(_In_ const size_t stringLen,
         if (coordTarget.X + static_cast<short>(stringLen) < coordScreenBufferSize.X)
         {
             size_t column = coordTarget.X + stringLen;
-            if (row.GetCharRow().GetAttribute(column).IsTrailing())
+            if (charRow.GetAttribute(column).IsTrailing())
             {
                 row.ClearColumn(column);
             }
@@ -111,7 +118,13 @@ void CleanupDbcsEdgesForWrite(_In_ const size_t stringLen,
         else if (coordTarget.Y + 1 < coordScreenBufferSize.Y)
         {
             ROW& rowNext = pTextInfo->GetNextRow(row);
-            if (rowNext.GetCharRow().GetAttribute(0).IsTrailing())
+            ICharRow& iCharRowNext = rowNext.GetCharRow();
+            // we only support ucs2 encoded char rows
+            FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                            "only support UCS2 char rows currently");
+
+            Ucs2CharRow& charRowNext = static_cast<Ucs2CharRow&>(iCharRowNext);
+            if (charRowNext.GetAttribute(0).IsTrailing())
             {
                 rowNext.ClearColumn(0);
             }
@@ -121,190 +134,27 @@ void CleanupDbcsEdgesForWrite(_In_ const size_t stringLen,
 }
 
 // Routine Description:
-// - Determine if the given Unicode char is fullwidth or not.
+// - Determine if the given Unicode char is fullwidth or not. If we fail the
+//      simple lookup, we'll fall back to asking the current renderer whether or
+//      not the character is full width.
 // Return:
 // - FALSE : half width. Uses 1 column per one character
 // - TRUE  : full width. Uses 2 columns per one character
-// Notes:
-// 04-08-92 ShunK       Created.
-// Jul-27-1992 KazuM    Added Screen Information and Code Page Information.
-// Jan-29-1992 V-Hirots Substruct Screen Information.
-// Oct-06-1996 KazuM    Not use RtlUnicodeToMultiByteSize and WideCharToMultiByte
-//                      Because 950 (Chinese Traditional) only defined 13500 chars,
-//                     and unicode defined almost 18000 chars.
-//                      So there are almost 4000 chars can not be mapped to big5 code.
-// Apr-30-2015 MiNiksa  Corrected unknown character code assumption. Max Width in Text Metric
-//                      is not reliable for calculating half/full width. Must use current
-//                      display font data (cached) instead.
-// May-23-2017 migrie   Forced Box-Drawing Characters (x2500-x257F) to narrow.
 BOOL IsCharFullWidth(_In_ WCHAR wch)
 {
-    // See http://www.unicode.org/Public/UCD/latest/ucd/EastAsianWidth.txt
-
-    // 0x00-0x1F is ambiguous by font
-    if (0x20 <= wch && wch <= 0x7e)
+    bool isFullWidth = false;
+    HRESULT hr = IsCharFullWidth(wch, &isFullWidth);
+    if (hr == S_OK)
     {
-        /* ASCII */
-        return FALSE;
+        return isFullWidth;
     }
-    // 0x80 - 0x0451 varies from narrow to ambiguous by character and font (Unicode 9.0)
-    else if (0x0452 <= wch && wch <= 0x10FF)
-    {
-        // From Unicode 9.0, this range is narrow (assorted languages)
-        return FALSE;
-    }
-    else if (0x1100 <= wch && wch <= 0x115F)
-    {
-        // From Unicode 9.0, Hangul Choseong is wide
-        return TRUE;
-    }
-    else if (0x1160 <= wch && wch <= 0x200F)
-    {
-        // From Unicode 9.0, this range is narrow (assorted languages)
-        return FALSE;
-    }
-    // 0x2500 - 0x257F is the box drawing character range -
-    // Technically, these are ambiguous width characters, but applications that
-    // use them generally assume that they're narrow to ensure proper alignment.
-    else if (0x2500 <= wch && wch <= 0x257F)
-    {
-        return FALSE;
-    }
-    // 0x2010 - 0x2B59 varies between narrow, ambiguous, and wide by character and font (Unicode 9.0)
-    else if (0x2B5A <= wch && wch <= 0x2E44)
-    {
-        // From Unicode 9.0, this range is narrow (assorted languages)
-        return FALSE;
-    }
-    else if (0x2E80 <= wch && wch <= 0x303e)
-    {
-        // From Unicode 9.0, this range is wide (assorted languages)
-        return TRUE;
-    }
-    else if (0x3041 <= wch && wch <= 0x3094)
-    {
-        /* Hiragana */
-        return TRUE;
-    }
-    else if (0x30a1 <= wch && wch <= 0x30f6)
-    {
-        /* Katakana */
-        return TRUE;
-    }
-    else if (0x3105 <= wch && wch <= 0x312c)
-    {
-        /* Bopomofo */
-        return TRUE;
-    }
-    else if (0x3131 <= wch && wch <= 0x318e)
-    {
-        /* Hangul Elements */
-        return TRUE;
-    }
-    else if (0x3190 <= wch && wch <= 0x3247)
-    {
-        // From Unicode 9.0, this range is wide
-        return TRUE;
-    }
-    else if (0x3251 <= wch && wch <= 0xA4C6)
-    {
-        // This exception range is narrow width hexagrams.
-        if (0x4DC0 <= wch && wch <= 0x4DFF)
-        {
-            return FALSE;
-        }
-
-        // From Unicode 9.0, this range is wide
-        // CJK Unified Ideograph and Yi and Reserved.
-        // Includes Han Ideographic range.
-        return TRUE;
-    }
-    else if (0xA4D0 <= wch && wch <= 0xABF9)
-    {
-        // This exception range is wide Hangul Choseong
-        if (0xA960 <= wch && wch <= 0xA97C)
-        {
-            return TRUE;
-        }
-
-        // From Unicode 9.0, this range is narrow (assorted languages)
-        return FALSE;
-    }
-    else if (0xac00 <= wch && wch <= 0xd7a3)
-    {
-        /* Korean Hangul Syllables */
-        return TRUE;
-    }
-    else if (0xD7B0 <= wch && wch <= 0xD7FB)
-    {
-        // From Unicode 9.0, this range is narrow
-        // Hangul Jungseong and Hangul Jongseong
-        return FALSE;
-    }
-    // 0xD800-0xDFFF is reserved for UTF-16 surrogate pairs.
-    // 0xE000-0xF8FF is reserved for private use characters and is therefore always ambiguous.
-    else if (0xF900 <= wch && wch <= 0xFAFF)
-    {
-        // From Unicode 9.0, this range is wide
-        // CJK Compatibility Ideographs
-        // Includes Han Compatibility Ideographs
-        return TRUE;
-    }
-    else if (0xFB00 <= wch && wch <= 0xFDFD)
-    {
-        // From Unicode 9.0, this range is narrow (assorted languages)
-        return FALSE;
-    }
-    else if (0xFE10 <= wch && wch <= 0xFE6B)
-    {
-        // This exception range has narrow combining ligatures
-        if (0xFE20 <= wch && wch <= 0xFE2F)
-        {
-            return FALSE;
-        }
-
-        // From Unicode 9.0, this range is wide
-        // Presentation forms
-        return TRUE;
-    }
-    else if (0xFE70 <= wch && wch <= 0xFEFF)
-    {
-        // From Unicode 9.0, this range is narrow
-        return FALSE;
-    }
-    else if (0xff01 <= wch && wch <= 0xff5e)
-    {
-        /* Fullwidth ASCII variants */
-        return TRUE;
-    }
-    else if (0xff61 <= wch && wch <= 0xff9f)
-    {
-        /* Halfwidth Katakana variants */
-        return FALSE;
-    }
-    else if ((0xffa0 <= wch && wch <= 0xffbe) ||
-             (0xffc2 <= wch && wch <= 0xffc7) ||
-             (0xffca <= wch && wch <= 0xffcf) ||
-             (0xffd2 <= wch && wch <= 0xffd7) ||
-             (0xffda <= wch && wch <= 0xffdc))
-    {
-        /* Halfwidth Hangule variants */
-        return FALSE;
-    }
-    else if (0xffe0 <= wch && wch <= 0xffe6)
-    {
-        /* Fullwidth symbol variants */
-        return TRUE;
-    }
-    // Currently we do not support codepoints above 0xffff
-    else
+    else if (hr == S_FALSE)
     {
         if (ServiceLocator::LocateGlobals().pRender != nullptr)
         {
             return ServiceLocator::LocateGlobals().pRender->IsCharFullWidthByFont(wch);
         }
     }
-
     ASSERT(FALSE);
     return FALSE;
 }

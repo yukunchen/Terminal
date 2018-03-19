@@ -9,6 +9,7 @@
 #include "_output.h"
 
 #include "dbcs.h"
+#include "Ucs2CharRow.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
@@ -21,6 +22,7 @@ SHORT CalcWideCharToColumn(_In_ PCHAR_INFO Buffer, _In_ size_t NumberOfChars);
 
 void ConsoleImeViewInfo(_In_ ConversionAreaInfo* ConvAreaInfo, _In_ COORD coordConView);
 void ConsoleImeWindowInfo(_In_ ConversionAreaInfo* ConvAreaInfo, _In_ SMALL_RECT rcViewCaWindow);
+[[nodiscard]]
 NTSTATUS ConsoleImeResizeScreenBuffer(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ COORD NewScreenSize, _In_ ConversionAreaInfo* ConvAreaInfo);
 bool InsertConvertedString(_In_ LPCWSTR lpStr);
 void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
@@ -92,6 +94,7 @@ void WriteConvRegionToScreen(_In_ const SCREEN_INFORMATION * const pScreenInfo,
 }
 
 #define LOCAL_BUFFER_SIZE 100
+[[nodiscard]]
 NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE lpAtr, _In_reads_(CONIME_ATTRCOLOR_SIZE) PWORD lpAtrIdx, _In_ DWORD NumChars)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -113,7 +116,7 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
         {
             WindowOrigin.X = 0;
             WindowOrigin.Y = (SHORT)(Position.Y - currentViewport.Bottom);
-            ScreenInfo->SetViewportOrigin(FALSE, WindowOrigin);
+            LOG_IF_FAILED(ScreenInfo->SetViewportOrigin(FALSE, WindowOrigin));
         }
     }
 
@@ -312,6 +315,7 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
     return STATUS_SUCCESS;
 }
 
+[[nodiscard]]
 NTSTATUS FillUndetermineChars(_In_ ConversionAreaInfo* const ConvAreaInfo)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -320,20 +324,24 @@ NTSTATUS FillUndetermineChars(_In_ ConversionAreaInfo* const ConvAreaInfo)
     COORD Coord = { 0 };
     DWORD CharsToWrite = ConvAreaInfo->ScreenBuffer->GetScreenBufferSize().X;
 
-    FillOutput(ConvAreaInfo->ScreenBuffer, (WCHAR)' ', Coord, CONSOLE_FALSE_UNICODE,    // faster than real unicode
-               &CharsToWrite);
+    LOG_IF_FAILED(FillOutput(ConvAreaInfo->ScreenBuffer,
+                             (WCHAR)' ',
+                             Coord,
+                             CONSOLE_FALSE_UNICODE,    // faster than real unicode
+                             &CharsToWrite));
 
     CharsToWrite = ConvAreaInfo->ScreenBuffer->GetScreenBufferSize().X;
-    FillOutput(ConvAreaInfo->ScreenBuffer,
-               gci.CurrentScreenBuffer->GetAttributes().GetLegacyAttributes(),
-               Coord,
-               CONSOLE_ATTRIBUTE,
-               &CharsToWrite);
+    LOG_IF_FAILED(FillOutput(ConvAreaInfo->ScreenBuffer,
+                             gci.CurrentScreenBuffer->GetAttributes().GetLegacyAttributes(),
+                             Coord,
+                             CONSOLE_ATTRIBUTE,
+                             &CharsToWrite));
     ConsoleImePaint(ConvAreaInfo);
     return STATUS_SUCCESS;
 }
 
 
+[[nodiscard]]
 NTSTATUS ConsoleImeCompStr(_In_ LPCONIME_UICOMPMESSAGE CompStr)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -351,7 +359,7 @@ NTSTATUS ConsoleImeCompStr(_In_ LPCONIME_UICOMPMESSAGE CompStr)
                 pCursor->GetSize(),
                 TRUE,
                 pCursor->GetColor(),
-                pCursor->GetCursorType()
+                pCursor->GetType()
             );
 
         }
@@ -362,7 +370,7 @@ NTSTATUS ConsoleImeCompStr(_In_ LPCONIME_UICOMPMESSAGE CompStr)
             const std::unique_ptr<ConversionAreaInfo>& ConvAreaInfo = pIme->ConvAreaCompStr[i];
             if (ConvAreaInfo.get() && !ConvAreaInfo->IsHidden())
             {
-                FillUndetermineChars(ConvAreaInfo.get());
+                LOG_IF_FAILED(FillUndetermineChars(ConvAreaInfo.get()));
             }
         }
 
@@ -396,7 +404,7 @@ NTSTATUS ConsoleImeCompStr(_In_ LPCONIME_UICOMPMESSAGE CompStr)
                 pCursor->GetSize(),
                 FALSE,
                 pCursor->GetColor(),
-                pCursor->GetCursorType()
+                pCursor->GetType()
             );
 
         }
@@ -407,7 +415,7 @@ NTSTATUS ConsoleImeCompStr(_In_ LPCONIME_UICOMPMESSAGE CompStr)
             const std::unique_ptr<ConversionAreaInfo>& ConvAreaInfo = pIme->ConvAreaCompStr[i];
             if (ConvAreaInfo.get() && !ConvAreaInfo->IsHidden())
             {
-                FillUndetermineChars(ConvAreaInfo.get());
+                LOG_IF_FAILED(FillUndetermineChars(ConvAreaInfo.get()));
             }
         }
 
@@ -415,12 +423,13 @@ NTSTATUS ConsoleImeCompStr(_In_ LPCONIME_UICOMPMESSAGE CompStr)
         lpAtr = (PBYTE) CompStr + CompStr->dwCompAttrOffset;
         lpAtrIdx = (PWORD) CompStr->CompAttrColor;
         #pragma prefast(suppress:26035, "CONIME_UICOMPMESSAGE structure impossible for PREfast to trace due to its structure.")
-        WriteUndetermineChars(lpStr, lpAtr, lpAtrIdx, CompStr->dwCompStrLen / sizeof(WCHAR));
+        LOG_IF_FAILED(WriteUndetermineChars(lpStr, lpAtr, lpAtrIdx, CompStr->dwCompStrLen / sizeof(WCHAR)));
     }
 
     return STATUS_SUCCESS;
 }
 
+[[nodiscard]]
 NTSTATUS ConsoleImeResizeCompStrView()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -435,7 +444,7 @@ NTSTATUS ConsoleImeResizeCompStrView()
             const std::unique_ptr<ConversionAreaInfo>& ConvAreaInfo = pIme->ConvAreaCompStr[i];
             if (ConvAreaInfo.get() && !ConvAreaInfo->IsHidden())
             {
-                FillUndetermineChars(ConvAreaInfo.get());
+                LOG_IF_FAILED(FillUndetermineChars(ConvAreaInfo.get()));
             }
         }
 
@@ -443,12 +452,13 @@ NTSTATUS ConsoleImeResizeCompStrView()
         PBYTE lpAtr = (PBYTE) CompStr + CompStr->dwCompAttrOffset;
         PWORD lpAtrIdx = (PWORD) CompStr->CompAttrColor;
 
-        WriteUndetermineChars(lpStr, lpAtr, lpAtrIdx, CompStr->dwCompStrLen / sizeof(WCHAR));
+        LOG_IF_FAILED(WriteUndetermineChars(lpStr, lpAtr, lpAtrIdx, CompStr->dwCompStrLen / sizeof(WCHAR)));
     }
 
     return STATUS_SUCCESS;
 }
 
+[[nodiscard]]
 NTSTATUS ConsoleImeResizeCompStrScreenBuffer(_In_ COORD const coordNewScreenSize)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -589,6 +599,7 @@ void ConsoleImeWindowInfo(_Inout_ ConversionAreaInfo* const ConvAreaInfo, _In_ S
     }
 }
 
+[[nodiscard]]
 NTSTATUS ConsoleImeResizeScreenBuffer(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ COORD NewScreenSize, _In_ ConversionAreaInfo* ConvAreaInfo)
 {
     NTSTATUS Status = ScreenInfo->ResizeScreenBuffer(NewScreenSize, FALSE);
@@ -626,6 +637,7 @@ NTSTATUS ConsoleImeResizeScreenBuffer(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ 
 // - wParam -
 // - lParam -
 // Return Value:
+[[nodiscard]]
 NTSTATUS ImeControl(_In_ PCOPYDATASTRUCT pCopyDataStruct)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -657,7 +669,7 @@ NTSTATUS ImeControl(_In_ PCOPYDATASTRUCT pCopyDataStruct)
                     }
 
                     memmove(gci.ConsoleIme.CompStrData, CompStr, CompStr->dwSize);
-                    ConsoleImeCompStr(gci.ConsoleIme.CompStrData);
+                    LOG_IF_FAILED(ConsoleImeCompStr(gci.ConsoleIme.CompStrData));
                 }
             }
             break;
@@ -753,10 +765,16 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
 
     try
     {
+        ICharRow& iCharRow = Row.GetCharRow();
+        // we only support ucs2 encoded char rows
+        FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                        "only support UCS2 char rows currently");
+
+        Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
         OverwriteColumns(String,
-                         String + StringLength,
-                         pDbcsAttributes,
-                         std::next(Row.GetCharRow().begin(), TargetPoint.X));
+                        String + StringLength,
+                        pDbcsAttributes,
+                        std::next(charRow.begin(), TargetPoint.X));
     }
     CATCH_LOG();
 
@@ -790,22 +808,22 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
 
                 // Each time around the loop, take our new 1-length attribute with the appropriate line attributes (underlines, etc.)
                 // and insert it into the existing Run-Length-Encoded attribute list.
-                Row.GetAttrRow().InsertAttrRuns(&InsertedRun,
-                                           1,
-                                           TargetPoint.X + i,
-                                           (SHORT)(TargetPoint.X + i),
-                                           coordScreenBufferSize.X);
+                LOG_IF_FAILED(Row.GetAttrRow().InsertAttrRuns(&InsertedRun,
+                                                              1,
+                                                              TargetPoint.X + i,
+                                                              (SHORT)(TargetPoint.X + i),
+                                                              coordScreenBufferSize.X));
             }
         }
         else
         {
             InsertedRun.SetLength(StringLength);
             InsertedRun.SetAttributesFromLegacy(wScreenAttributes);
-            Row.GetAttrRow().InsertAttrRuns(&InsertedRun,
-                                            1,
-                                            TargetPoint.X,
-                                            (SHORT)(TargetPoint.X + StringLength - 1),
-                                            coordScreenBufferSize.X);
+            LOG_IF_FAILED(Row.GetAttrRow().InsertAttrRuns(&InsertedRun,
+                                                          1,
+                                                          TargetPoint.X,
+                                                          (SHORT)(TargetPoint.X + StringLength - 1),
+                                                          coordScreenBufferSize.X));
         }
     }
 

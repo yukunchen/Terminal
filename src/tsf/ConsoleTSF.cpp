@@ -16,6 +16,7 @@ const GUID GUID_APPLICATION = { 0x626761ad, 0x78d2, 0x44d2, {0xbe, 0x8b, 0x75, 0
 
 #define Init_CheckResult()    if (FAILED(hr)) { Uninitialize(); return hr; }
 
+[[nodiscard]]
 HRESULT CConsoleTSF::Initialize()
 {
     HRESULT hr;
@@ -346,7 +347,7 @@ STDMETHODIMP CConsoleTSF::OnEndComposition(ITfCompositionView* pCompView)
         _cCompositions--;
         if (!_cCompositions)
         {
-            _OnCompleteComposition();
+            LOG_IF_FAILED(_OnCompleteComposition());
             ConsoleImeSendMessage2(CI_ONENDCOMPOSITION, 0, NULL);
         }
     }
@@ -363,7 +364,7 @@ STDMETHODIMP CConsoleTSF::OnEndEdit(ITfContext *pInputContext, TfEditCookie ecRe
 {
     if (_cCompositions && _pConversionArea && _HasCompositionChanged(pInputContext, ecReadOnly, pEditRecord))
     {
-        _OnUpdateComposition();
+        LOG_IF_FAILED(_OnUpdateComposition());
     }
     return S_OK;
 }
@@ -457,6 +458,7 @@ STDMETHODIMP CConsoleTSF::EndUIElement(DWORD /*dwUIElementId*/)
 //
 //----------------------------------------------------------------------------
 
+[[nodiscard]]
 HRESULT CConsoleTSF::_OnUpdateComposition()
 {
     if (_fEditSessionRequested)
@@ -486,6 +488,7 @@ HRESULT CConsoleTSF::_OnUpdateComposition()
 //
 //----------------------------------------------------------------------------
 
+[[nodiscard]]
 HRESULT CConsoleTSF::_OnCompleteComposition()
 {
     // Update the composition area.

@@ -50,7 +50,7 @@ RECT WindowMetrics::GetMinClientRectInPixels()
 
     // Fetch a reference to the Console IO Server.
     Server = ServiceLocator::LocateInputServices<ConIoSrvComm>();
-    
+
     // Figure out what kind of display we are using.
     Status = Server->RequestGetDisplayMode(&DisplayMode);
 
@@ -102,7 +102,7 @@ RECT WindowMetrics::GetMinClientRectInPixels()
 
             case CIS_DISPLAY_MODE_DIRECTX:
             {
-                Server->pWddmConEngine->GetFontSize(&FontSize);
+                LOG_IF_FAILED(Server->pWddmConEngine->GetFontSize(&FontSize));
                 DisplaySize = Server->pWddmConEngine->GetDisplaySize();
             }
             break;

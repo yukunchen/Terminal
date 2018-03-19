@@ -37,6 +37,7 @@ SMALL_RECT GdiEngine::GetDirtyRectInChars()
 // - pResult - recieves return value, True if it is full-width (2 wide). False if it is half-width (1 wide).
 // Return Value:
 // - S_OK
+[[nodiscard]]
 HRESULT GdiEngine::IsCharFullWidthByFont(_In_ WCHAR const wch, _Out_ bool* const pResult)
 {
     bool isFullWidth = false;
@@ -71,6 +72,7 @@ HRESULT GdiEngine::IsCharFullWidthByFont(_In_ WCHAR const wch, _Out_ bool* const
 // - prc - Pixel region (RECT) for drawing to the client surface.
 // Return Value:
 // - S_OK or safe math failure value.
+[[nodiscard]]
 HRESULT GdiEngine::_ScaleByFont(_In_ const SMALL_RECT* const psr, _Out_ RECT* const prc) const
 {
     COORD const coordFontSize = _GetFontSize();
@@ -94,6 +96,7 @@ HRESULT GdiEngine::_ScaleByFont(_In_ const SMALL_RECT* const psr, _Out_ RECT* co
 // - ppt - Pixel coordinate (POINT) for drawing to the client surface.
 // Return Value:
 // - S_OK or safe math failure value.
+[[nodiscard]]
 HRESULT GdiEngine::_ScaleByFont(_In_ const COORD* const pcoord, _Out_ POINT* const pPoint) const
 {
     COORD const coordFontSize = _GetFontSize();
@@ -115,6 +118,7 @@ HRESULT GdiEngine::_ScaleByFont(_In_ const COORD* const pcoord, _Out_ POINT* con
 // - psr - Character region (SMALL_RECT) from the console text buffer.
 // Return Value:
 // - S_OK or safe math failure value.
+[[nodiscard]]
 HRESULT GdiEngine::_ScaleByFont(_In_ const RECT* const prc, _Out_ SMALL_RECT* const psr) const
 {
     COORD const coordFontSize = _GetFontSize();
@@ -130,7 +134,7 @@ HRESULT GdiEngine::_ScaleByFont(_In_ const RECT* const prc, _Out_ SMALL_RECT* co
     // For example:
     // L = 1px, R = 2px. Font Width = 8. What we want to see is a character rect that will only draw the 0th character (0 to 1).
     // A. Simple divide
-    // 1px / 8px = 0ch for the Left measurement. 
+    // 1px / 8px = 0ch for the Left measurement.
     // 2px / 8px = 0ch for the Right which would be inclusive not exclusive.
     // A Conclusion = doesn't work.
     // B. Add a character
@@ -141,7 +145,7 @@ HRESULT GdiEngine::_ScaleByFont(_In_ const RECT* const prc, _Out_ SMALL_RECT* co
     // 1px / 8px = 0ch for the Left measurement.
     // (8px + 8px) / 8px = 2ch for the Right measurement. Now we're redrawing 2 chars when we only needed to do one because this caused us to effectively round up.
     // C Conclusion = this works because our addition can never completely push us over to adding an additional ch to the rectangle.
-    // So the algorithm below is using the C conclusion's math. 
+    // So the algorithm below is using the C conclusion's math.
 
 
     // Do math as long and fit to short at the end.
@@ -254,4 +258,3 @@ void GdiEngine::_OrRect(_In_ RECT* const pRectExisting, _In_ const RECT* const p
     pRectExisting->right = max(pRectExisting->right, pRectToOr->right);
     pRectExisting->bottom = max(pRectExisting->bottom, pRectToOr->bottom);
 }
-

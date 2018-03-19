@@ -167,7 +167,7 @@ void SystemConfigurationProvider::GetSettingsFromLink(
 
     if (wszIconLocation[0] != L'\0')
     {
-        Icon::Instance().LoadIconsFromPath(wszIconLocation, iIconIndex);
+        LOG_IF_FAILED(Icon::Instance().LoadIconsFromPath(wszIconLocation, iIconIndex));
     }
 
     if (!IsValidCodePage(pLinkSettings->GetCodePage()))

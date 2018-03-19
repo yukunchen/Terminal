@@ -65,6 +65,7 @@ const size_t RegistrySerialization::s_GlobalPropMappingsSize = ARRAYSIZE(s_Globa
 // - pPropMap - Contains property information to use in looking up/storing value data
 // Return Value:
 // - STATUS_SUCCESSFUL or appropriate NTSTATUS reply for registry operations.
+[[nodiscard]]
 NTSTATUS RegistrySerialization::s_LoadRegDword(_In_ HKEY const hKey, _In_ const _RegPropertyMap* const pPropMap, _In_ Settings* const pSettings)
 {
     // find offset into destination structure for this numerical value
@@ -120,6 +121,7 @@ NTSTATUS RegistrySerialization::s_LoadRegDword(_In_ HKEY const hKey, _In_ const 
 // - pPropMap - Contains property information to use in looking up/storing value data
 // Return Value:
 // - STATUS_SUCCESSFUL or appropriate NTSTATUS reply for registry operations.
+[[nodiscard]]
 NTSTATUS RegistrySerialization::s_LoadRegString(_In_ HKEY const hKey, _In_ const _RegPropertyMap* const pPropMap, _In_ Settings* const pSettings)
 {
     // find offset into destination structure for this numerical value
@@ -156,7 +158,7 @@ NTSTATUS RegistrySerialization::s_LoadRegString(_In_ HKEY const hKey, _In_ const
 // - phConsoleKey - Returns a handle to the Console subkey
 // Return Value:
 // - STATUS_SUCCESSFUL or appropriate NTSTATUS reply for registry operations.
-_Check_return_
+[[nodiscard]]
 NTSTATUS RegistrySerialization::s_OpenConsoleKey(_Out_ HKEY* phCurrentUserKey, _Out_ HKEY* phConsoleKey)
 {
     // Always set an output value. It will be made valid before the end if everything succeeds.
@@ -199,7 +201,7 @@ NTSTATUS RegistrySerialization::s_OpenConsoleKey(_Out_ HKEY* phCurrentUserKey, _
 // - phResult - Filled with handle to the sub key if available. Check return status.
 // Return Value:
 // - STATUS_SUCCESSFUL or appropriate NTSTATUS reply for registry operations.
-_Check_return_
+[[nodiscard]]
 NTSTATUS RegistrySerialization::s_OpenKey(_In_opt_ HKEY const hKey, _In_ PCWSTR const pwszSubKey, _Out_ HKEY* const phResult)
 {
     return NTSTATUS_FROM_WIN32(RegOpenKeyW(hKey, pwszSubKey, phResult));
@@ -212,7 +214,7 @@ NTSTATUS RegistrySerialization::s_OpenKey(_In_opt_ HKEY const hKey, _In_ PCWSTR 
 // - pwszValueName - String name of value to delete under that key
 // Return Value:
 // - STATUS_SUCCESSFUL or appropriate NTSTATUS reply for registry operations.
-_Check_return_
+[[nodiscard]]
 NTSTATUS RegistrySerialization::s_DeleteValue(_In_ HKEY const hKey, _In_ PCWSTR const pwszValueName)
 {
     return NTSTATUS_FROM_WIN32(RegDeleteKeyValueW(hKey, nullptr, pwszValueName));
@@ -227,7 +229,7 @@ NTSTATUS RegistrySerialization::s_DeleteValue(_In_ HKEY const hKey, _In_ PCWSTR 
 // - phResult - Filled with handle to the sub key if created/opened successfully. Check return status.
 // Return Value:
 // - STATUS_SUCCESSFUL or appropriate NTSTATUS reply for registry operations.
-_Check_return_
+[[nodiscard]]
 NTSTATUS RegistrySerialization::s_CreateKey(_In_ HKEY const hKey, _In_ PCWSTR const pwszSubKey, _Out_ HKEY* const phResult)
 {
     return NTSTATUS_FROM_WIN32(RegCreateKeyW(hKey, pwszSubKey, phResult));
@@ -243,7 +245,7 @@ NTSTATUS RegistrySerialization::s_CreateKey(_In_ HKEY const hKey, _In_ PCWSTR co
 // - cbDataLength - The length in bytes of the data provided
 // Return Value:
 // - STATUS_SUCCESSFUL or appropriate NTSTATUS reply for registry operations.
-_Check_return_
+[[nodiscard]]
 NTSTATUS RegistrySerialization::s_SetValue(_In_ HKEY const hKey,
                                            _In_ PCWSTR const pValueName,
                                            _In_ DWORD const dwType,
@@ -268,7 +270,7 @@ NTSTATUS RegistrySerialization::s_SetValue(_In_ HKEY const hKey,
 // - pcbDataLength - Number of bytes filled in the given data buffer
 // Return Value:
 // - STATUS_SUCCESSFUL or appropriate NTSTATUS reply for registry operations.
-_Check_return_
+[[nodiscard]]
 NTSTATUS RegistrySerialization::s_QueryValue(_In_ HKEY const hKey,
                                              _In_ PCWSTR const pwszValueName,
                                              _In_ DWORD const cbValueLength,
@@ -303,7 +305,7 @@ NTSTATUS RegistrySerialization::s_QueryValue(_In_ HKEY const hKey,
 // - pbData - Value data buffer to be filled based on data type. Will be null terminated for string types. (REG_SZ, REG_MULTI_SZ, REG_EXPAND_SZ)
 // Return Value:
 // - STATUS_SUCCESSFUL or appropriate NTSTATUS reply for registry operations.
-_Check_return_
+[[nodiscard]]
 NTSTATUS RegistrySerialization::s_EnumValue(_In_ HKEY const hKey,
                                             _In_ DWORD const dwIndex,
                                             _In_ DWORD const cbValueLength,
@@ -338,7 +340,7 @@ NTSTATUS RegistrySerialization::s_EnumValue(_In_ HKEY const hKey,
 // - cbDataLength - Length of the provided value data buffer.
 // Return Value:
 // - STATUS_SUCCESSFUL or appropriate NTSTATUS reply for registry operations.
-_Check_return_
+[[nodiscard]]
 NTSTATUS RegistrySerialization::s_UpdateValue(_In_ HKEY const hConsoleKey,
                                               _In_ HKEY const hKey,
                                               _In_ PCWSTR const pwszValueName,
@@ -376,7 +378,7 @@ NTSTATUS RegistrySerialization::s_UpdateValue(_In_ HKEY const hConsoleKey,
     return Status;
 }
 
-_Check_return_
+[[nodiscard]]
 NTSTATUS RegistrySerialization::s_OpenCurrentUserConsoleTitleKey(_In_ PCWSTR const title,
                                                                  _Out_ HKEY* phCurrentUserKey,
                                                                  _Out_ HKEY* phConsoleKey,
@@ -411,80 +413,3 @@ NTSTATUS RegistrySerialization::s_OpenCurrentUserConsoleTitleKey(_In_ PCWSTR con
 
 
 #pragma endregion
-
-extern "C"
-{
-
-    NTSTATUS RegistrySerializationOpenKey(_In_opt_ HKEY const hKey, _In_ PCWSTR const pwszSubKey, _Out_ HKEY* const phResult)
-    {
-        return RegistrySerialization::s_OpenKey(hKey, pwszSubKey, phResult);
-    }
-
-
-    NTSTATUS RegistrySerializationQueryValue(_In_ HKEY const hKey,
-                                             _In_ PCWSTR const pwszValueName,
-                                             _In_ DWORD const cbValueLength,
-                                             _Out_writes_bytes_(cbValueLength) BYTE* const pbData,
-                                             _Out_opt_ _Out_range_(0, cbValueLength) DWORD* const pcbDataLength)
-    {
-        return RegistrySerialization::s_QueryValue(hKey, pwszValueName, cbValueLength, pbData, pcbDataLength);
-    }
-
-
-    NTSTATUS RegistrySerializationEnumValue(_In_ HKEY const hKey,
-                                            _In_ DWORD const dwIndex,
-                                            _In_ DWORD const cbValueLength,
-                                            _Out_writes_bytes_(cbValueLength) PWSTR const pwszValueName,
-                                            _In_ DWORD const cbDataLength,
-                                            _Out_writes_bytes_(cbDataLength) BYTE* const pbData)
-    {
-        return RegistrySerialization::s_EnumValue(hKey, dwIndex, cbValueLength, pwszValueName, cbDataLength, pbData);
-    }
-
-
-    NTSTATUS RegistrySerializationOpenConsoleKey(_Out_ HKEY* phCurrentUserKey, _Out_ HKEY* phConsoleKey)
-    {
-        return RegistrySerialization::s_OpenConsoleKey(phCurrentUserKey, phConsoleKey);
-    }
-
-
-    NTSTATUS RegistrySerializationCreateKey(_In_ HKEY const hKey, _In_ PCWSTR const pwszSubKey, _Out_ HKEY* const phResult)
-    {
-        return RegistrySerialization::s_CreateKey(hKey, pwszSubKey, phResult);
-    }
-
-
-    NTSTATUS RegistrySerializationDeleteValue(_In_ HKEY const hKey, _In_ PCWSTR const pwszValueName)
-    {
-        return RegistrySerialization::s_DeleteValue(hKey, pwszValueName);
-    }
-
-
-    NTSTATUS RegistrySerializationSetValue(_In_ HKEY const hKey,
-                                           _In_ PCWSTR const pwszValueName,
-                                           _In_ DWORD const dwType,
-                                           _In_reads_bytes_(cbDataLength) BYTE* const pbData,
-                                           _In_ DWORD const cbDataLength)
-    {
-        return RegistrySerialization::s_SetValue(hKey, pwszValueName, dwType, pbData, cbDataLength);
-    }
-
-
-    NTSTATUS RegistrySerializationUpdateValue(_In_ HKEY const hConsoleKey,
-                                              _In_ HKEY const hKey,
-                                              _In_ PCWSTR const pwszValueName,
-                                              _In_ DWORD const dwType,
-                                              _In_reads_bytes_(dwDataLength) BYTE* pbData,
-                                              _In_ DWORD const dwDataLength)
-    {
-        return RegistrySerialization::s_UpdateValue(hConsoleKey, hKey, pwszValueName, dwType, pbData, dwDataLength);
-    }
-
-    NTSTATUS RegistrySerializationOpenCurrentUserConsoleTitleKey(_In_ PCWSTR const title,
-                                                                 _Out_ HKEY* phCurrentUserKey,
-                                                                 _Out_ HKEY* phConsoleKey,
-                                                                 _Out_ HKEY* phTitleKey)
-    {
-        return RegistrySerialization::s_OpenCurrentUserConsoleTitleKey(title, phCurrentUserKey, phConsoleKey, phTitleKey);
-    }
-}

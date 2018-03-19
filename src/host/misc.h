@@ -11,8 +11,8 @@ Author:
 - Therese Stowell (ThereseS) 22-Jan-1991
 
 Revision History:
- - Mike Griese, 30-oct-2017: Moved all functions that didn't require the host 
-    to the contypes lib. The ones that are still here in one way or another 
+ - Mike Griese, 30-oct-2017: Moved all functions that didn't require the host
+    to the contypes lib. The ones that are still here in one way or another
     require code from the host to build.
 --*/
 
@@ -43,6 +43,7 @@ int ConvertToOem(_In_ const UINT uiCodePage,
                  _Out_writes_(cchTarget) CHAR * const pchTarget,
                  _In_ const UINT cchTarget);
 
+[[nodiscard]]
 HRESULT SplitToOem(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events);
 
 int ConvertInputToUnicode(_In_ const UINT uiCodePage,

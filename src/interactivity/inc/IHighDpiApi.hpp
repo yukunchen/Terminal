@@ -13,29 +13,24 @@ Author(s):
 
 #pragma once
 
-namespace Microsoft
+namespace Microsoft::Console::Interactivity
 {
-    namespace Console
+    class IHighDpiApi
     {
-        namespace Interactivity
-        {
-            class IHighDpiApi
-            {
-            public:
-                virtual BOOL SetProcessDpiAwarenessContext() = 0;
-                virtual HRESULT SetProcessPerMonitorDpiAwareness() = 0;
-                virtual BOOL EnablePerMonitorDialogScaling() = 0;
+    public:
+        virtual BOOL SetProcessDpiAwarenessContext() = 0;
+        [[nodiscard]]
+        virtual HRESULT SetProcessPerMonitorDpiAwareness() = 0;
+        virtual BOOL EnablePerMonitorDialogScaling() = 0;
 
-                virtual ~IHighDpiApi() = 0;
+        virtual ~IHighDpiApi() = 0;
 
-            protected:
-                IHighDpiApi() { }
+    protected:
+        IHighDpiApi() { }
 
-                IHighDpiApi(IHighDpiApi const&) = delete;
-                IHighDpiApi& operator=(IHighDpiApi const&) = delete;
-            };
+        IHighDpiApi(IHighDpiApi const&) = delete;
+        IHighDpiApi& operator=(IHighDpiApi const&) = delete;
+    };
 
-            inline IHighDpiApi::~IHighDpiApi() {}
-        }
-    }
+    inline IHighDpiApi::~IHighDpiApi() {}
 }

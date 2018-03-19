@@ -9,6 +9,7 @@
 #include "InteractDispatch.hpp"
 #include "conGetSet.hpp"
 #include "../../types/inc/Viewport.hpp"
+#include "../../types/inc/convert.hpp"
 #include "../../inc/unicode.hpp"
 
 using namespace Microsoft::Console::Types;
@@ -48,6 +49,42 @@ bool InteractDispatch::WriteCtrlC()
 {
     KeyEvent key = KeyEvent(true, 1, 'C', 0, UNICODE_ETX, LEFT_CTRL_PRESSED);
     return !!_pConApi->PrivateWriteConsoleControlInput(key);
+}
+
+// Method Description:
+// - Writes a string of input to the host. The string is converted to keystrokes
+//      that will faithfully represent the input by CharToKeyEvents.
+// Arguments:
+// - pws: a string to write to the console.
+// - cch: the number of chars in pws.
+// Return Value:
+// True if handled successfully. False otherwise.
+bool InteractDispatch::WriteString(_In_reads_(cch) const wchar_t* const pws,
+                                   _In_ const size_t cch)
+{
+    if (cch == 0)
+    {
+        return true;
+    }
+
+    unsigned int codepage = 0;
+    bool fSuccess = !!_pConApi->GetConsoleOutputCP(&codepage);
+    if (fSuccess)
+    {
+        std::deque<std::unique_ptr<IInputEvent>> keyEvents;
+
+        for (size_t i = 0; i < cch; ++i)
+        {
+            std::deque<std::unique_ptr<KeyEvent>> convertedEvents = CharToKeyEvents(pws[i], codepage);
+
+            std::move(convertedEvents.begin(),
+                      convertedEvents.end(),
+                      std::back_inserter(keyEvents));
+        }
+
+        fSuccess = WriteInput(keyEvents);
+    }
+    return fSuccess;
 }
 
 //Method Description:

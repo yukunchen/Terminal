@@ -1,36 +1,20 @@
+!include ..\..\..\project.inc
+
 # -------------------------------------
-# Windows Console 
+# Windows Console
 # - Console Virtual Terminal Parser
 # -------------------------------------
 
 # This module provides the ability to parse an incoming stream
-# of text for Virtual Terminal Sequences. 
+# of text for Virtual Terminal Sequences.
 # These sequences are in-band signaling embedded within the stream
 # that signals the console to do something special (beyond just displaying as text).
-
-# -------------------------------------
-# CRT Configuration
-# -------------------------------------
-
-USE_UNICRT              = 1
-USE_MSVCRT              = 1
-
-USE_STL                 = 1
-STL_VER                 = STL_VER_CURRENT
-USE_NATIVE_EH           = 1
 
 # -------------------------------------
 # Preprocessor Settings
 # -------------------------------------
 
-UNICODE                 = 1
-C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE -DBUILD_ONECORE_INTERACTIVITY
-
-# -------------------------------------
-# Compiler Settings
-# -------------------------------------
-
-MSC_WARNING_LEVEL       = /W4 /WX 
+C_DEFINES               = $(C_DEFINES) -DBUILD_ONECORE_INTERACTIVITY
 
 # -------------------------------------
 # Build System Settings
@@ -65,4 +49,3 @@ DLOAD_ERROR_HANDLER     = kernelbase
 
 DELAYLOAD = \
     ext-ms-win-ntuser-keyboard-l1.dll; \
-

@@ -107,7 +107,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleCreateObject(_In_ PCONSOLE_API_MSG pMessa
 
     if (FAILED(ServiceLocator::LocateGlobals().pDeviceComm->CompleteIo(&pMessage->Complete)))
     {
-        Handle->CloseHandle();
+        LOG_IF_FAILED(Handle->CloseHandle());
     }
 
     UnlockConsole();
@@ -280,7 +280,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleClientDisconnectRoutine(_In_ PCONSOLE_API
 
     ServiceLocator::LocateAccessibilityNotifier()->NotifyConsoleEndApplicationEvent(pProcessData->dwProcessId);
 
-    RemoveConsole(pProcessData);
+    LOG_IF_FAILED(RemoveConsole(pProcessData));
 
     pMessage->SetReplyStatus(STATUS_SUCCESS);
 

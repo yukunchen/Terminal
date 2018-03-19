@@ -25,18 +25,25 @@ public:
     DeviceComm(_In_ HANDLE Server);
     ~DeviceComm();
 
+    [[nodiscard]]
     HRESULT SetServerInformation(_In_ CD_IO_SERVER_INFORMATION* const pServerInfo) const;
+    [[nodiscard]]
     HRESULT ReadIo(_In_opt_ CD_IO_COMPLETE* const pCompletion,
                    _Out_ CONSOLE_API_MSG* const pMessage) const;
+    [[nodiscard]]
     HRESULT CompleteIo(_In_ CD_IO_COMPLETE* const pCompletion) const;
 
+    [[nodiscard]]
     HRESULT ReadInput(_In_ CD_IO_OPERATION* const pIoOperation) const;
+    [[nodiscard]]
     HRESULT WriteOutput(_In_ CD_IO_OPERATION* const pIoOperation) const;
 
+    [[nodiscard]]
     HRESULT AllowUIAccess() const;
 
 private:
 
+    [[nodiscard]]
     HRESULT _CallIoctl(_In_ DWORD dwIoControlCode,
                        _In_reads_bytes_opt_(cbInBufferSize) PVOID pInBuffer,
                        _In_ DWORD cbInBufferSize,

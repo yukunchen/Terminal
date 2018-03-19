@@ -16,34 +16,27 @@ Author(s):
 #include "IInteractDispatch.hpp"
 #include "conGetSet.hpp"
 
-namespace Microsoft
+namespace Microsoft::Console::VirtualTerminal
 {
-    namespace Console
+    class InteractDispatch : public IInteractDispatch
     {
-        namespace VirtualTerminal
-        {
-            class InteractDispatch;
-        }
-    }
+    public:
+
+        InteractDispatch(_In_ std::unique_ptr<ConGetSet> const pConApi);
+
+        virtual ~InteractDispatch() override = default;
+
+        virtual bool WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& inputEvents) override;
+        virtual bool WriteCtrlC() override;
+        virtual bool WriteString(_In_reads_(cch) const wchar_t* const pws, _In_ const size_t cch) override;
+        virtual bool WindowManipulation(_In_ const DispatchCommon::WindowManipulationType uiFunction,
+                                        _In_reads_(cParams) const unsigned short* const rgusParams,
+                                        _In_ size_t const cParams) override; // DTTERM_WindowManipulation
+        virtual bool MoveCursor(_In_ const unsigned int row,
+                                _In_ const unsigned int col) override;
+    private:
+
+        std::unique_ptr<ConGetSet> _pConApi;
+
+    };
 }
-
-class Microsoft::Console::VirtualTerminal::InteractDispatch : public IInteractDispatch
-{
-public:
-
-    InteractDispatch(_In_ std::unique_ptr<ConGetSet> const pConApi);
-
-    virtual ~InteractDispatch() override = default;
-
-    virtual bool WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& inputEvents) override;
-    virtual bool WriteCtrlC() override;
-    virtual bool WindowManipulation(_In_ const DispatchCommon::WindowManipulationType uiFunction,
-                                    _In_reads_(cParams) const unsigned short* const rgusParams,
-                                    _In_ size_t const cParams) override; // DTTERM_WindowManipulation
-    virtual bool MoveCursor(_In_ const unsigned int row,
-                            _In_ const unsigned int col) override;
-private:
-
-    std::unique_ptr<ConGetSet> _pConApi;
-
-};

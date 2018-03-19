@@ -44,6 +44,7 @@ WinNTControl& WinNTControl::GetInstance()
 // - See definitions at MSDN
 // Return Value:
 // - See definitions at MSDN
+[[nodiscard]]
 NTSTATUS WinNTControl::NtOpenFile(_Out_ PHANDLE FileHandle,
                                   _In_ ACCESS_MASK DesiredAccess,
                                   _In_ POBJECT_ATTRIBUTES ObjectAttributes,

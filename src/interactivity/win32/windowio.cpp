@@ -13,6 +13,7 @@
 #include "..\..\host\handle.h"
 #include "..\..\host\scrolling.hpp"
 #include "..\..\host\output.h"
+#include "..\..\host\Ucs2CharRow.hpp"
 
 #include "..\inc\ServiceLocator.hpp"
 
@@ -84,10 +85,10 @@ VOID SetConsoleWindowOwner(_In_ const HWND hwnd, _Inout_opt_ ConsoleProcessHandl
     ConsoleOwner.ThreadId = dwThreadId;
 
     // Comment out this line to enable UIA tree to be visible until UIAutomationCore.dll can support our scenario.
-    ServiceLocator::LocateConsoleControl < Microsoft::Console::Interactivity::Win32::ConsoleControl > ()
+    LOG_IF_FAILED(ServiceLocator::LocateConsoleControl<Microsoft::Console::Interactivity::Win32::ConsoleControl>()
         ->Control(ConsoleControl::ControlType::ConsoleSetWindowOwner,
                   &ConsoleOwner,
-                  sizeof(ConsoleOwner));
+                  sizeof(ConsoleOwner)));
 }
 
 // ----------------------------
@@ -737,10 +738,17 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION* const pScreenInfo,
             if ((MousePosition.X == coordSelectionAnchor.X) && (MousePosition.Y == coordSelectionAnchor.Y))
             {
                 const ROW& Row = pScreenInfo->TextInfo->GetRowByOffset(MousePosition.Y);
+                const ICharRow& iCharRow = Row.GetCharRow();
+                // we only support ucs2 encoded char rows
+                FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                                "only support UCS2 char rows currently");
+
+                const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
+
 
                 while (coordSelectionAnchor.X > 0)
                 {
-                    if (IS_WORD_DELIM(Row.GetCharRow().GetGlyphAt(coordSelectionAnchor.X - 1)))
+                    if (IS_WORD_DELIM(charRow.GetGlyphAt(coordSelectionAnchor.X - 1)))
                     {
                         break;
                     }
@@ -748,7 +756,7 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION* const pScreenInfo,
                 }
                 while (MousePosition.X < coordScreenBufferSize.X)
                 {
-                    if (IS_WORD_DELIM(Row.GetCharRow().GetGlyphAt(MousePosition.X)))
+                    if (IS_WORD_DELIM(charRow.GetGlyphAt(MousePosition.X)))
                     {
                         break;
                     }
@@ -759,12 +767,12 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION* const pScreenInfo,
                     // Trim the leading zeros: 000fe12 -> fe12, except 0x and 0n.
                     // Useful for debugging
                     if (MousePosition.X > coordSelectionAnchor.X + 2 &&
-                        Row.GetCharRow().GetGlyphAt(coordSelectionAnchor.X + 1) != L'x' &&
-                        Row.GetCharRow().GetGlyphAt(coordSelectionAnchor.X + 1) != L'X' &&
-                        Row.GetCharRow().GetGlyphAt(coordSelectionAnchor.X + 1) != L'n')
+                        charRow.GetGlyphAt(coordSelectionAnchor.X + 1) != L'x' &&
+                        charRow.GetGlyphAt(coordSelectionAnchor.X + 1) != L'X' &&
+                        charRow.GetGlyphAt(coordSelectionAnchor.X + 1) != L'n')
                     {
                         // Don't touch the selection begins with 0x
-                        while (Row.GetCharRow().GetGlyphAt(coordSelectionAnchor.X) == L'0' &&
+                        while (charRow.GetGlyphAt(coordSelectionAnchor.X) == L'0' &&
                                coordSelectionAnchor.X < MousePosition.X - 1)
                         {
                             coordSelectionAnchor.X++;
@@ -970,7 +978,7 @@ NTSTATUS InitWindowsSubsystem(_Out_ HHOOK * phhook)
 
     SetConsoleWindowOwner(ServiceLocator::LocateConsoleWindow()->GetWindowHandle(), ProcessData);
 
-    ServiceLocator::LocateConsoleWindow<Window>()->ActivateAndShow(gci.GetShowWindow());
+    LOG_IF_FAILED(ServiceLocator::LocateConsoleWindow<Window>()->ActivateAndShow(gci.GetShowWindow()));
 
     NotifyWinEvent(EVENT_CONSOLE_START_APPLICATION, ServiceLocator::LocateConsoleWindow()->GetWindowHandle(), ProcessData->dwProcessId, 0);
 

@@ -66,6 +66,7 @@ void Utf8ToWideCharParser::SetCodePage(_In_ const unsigned int codePage)
 // in. On error this will contain nullptr instead of an array.
 // Return Value:
 // - <none>
+[[nodiscard]]
 HRESULT Utf8ToWideCharParser::Parse(_In_reads_(cchBuffer) const byte* const pBytes,
                                     _In_ unsigned int const cchBuffer,
                                     _Out_ unsigned int& cchConsumed,

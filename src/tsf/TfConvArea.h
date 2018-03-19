@@ -32,5 +32,10 @@ public:
     CConversionArea() { }
     virtual ~CConversionArea() { }
 
-    virtual HRESULT DrawConversionAreaInfo(CComBSTR CompStr, TF_DISPLAYATTRIBUTE* DisplayAttribute, ULONG cchDisplayAttribute, CComBSTR ResultStr, DWORD CompCursorPos = -1);
+    [[nodiscard]]
+    virtual HRESULT DrawConversionAreaInfo(CComBSTR CompStr,
+                                           TF_DISPLAYATTRIBUTE* DisplayAttribute,
+                                           ULONG cchDisplayAttribute,
+                                           CComBSTR ResultStr,
+                                           DWORD CompCursorPos = -1);
 };

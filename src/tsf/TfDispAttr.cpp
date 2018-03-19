@@ -46,6 +46,7 @@ CicDisplayAttributeMgr::~CicDisplayAttributeMgr()
 //
 //----------------------------------------------------------------------------
 
+[[nodiscard]]
 HRESULT CicDisplayAttributeMgr::GetDisplayAttributeTrackPropertyRange(TfEditCookie ec, ITfContext *pic, ITfRange *pRange,
                                                                       ITfReadOnlyProperty **ppProp, IEnumTfRanges **ppEnum, ULONG *pulNumProp)
 {
@@ -94,6 +95,7 @@ HRESULT CicDisplayAttributeMgr::GetDisplayAttributeTrackPropertyRange(TfEditCook
 //
 //----------------------------------------------------------------------------
 
+[[nodiscard]]
 HRESULT CicDisplayAttributeMgr::GetDisplayAttributeData(ITfCategoryMgr *pcat, TfEditCookie ec, ITfReadOnlyProperty *pProp, ITfRange *pRange, TF_DISPLAYATTRIBUTE *pda, TfGuidAtom *pguid, ULONG /*ulNumProp*/)
 {
     VARIANT var;
@@ -122,9 +124,9 @@ HRESULT CicDisplayAttributeMgr::GetDisplayAttributeData(ITfCategoryMgr *pcat, Tf
                 if (SUCCEEDED(m_pDAM->GetDisplayAttributeInfo(guid, &pDAI, NULL))) {
                     //
                     // Issue: for simple apps.
-                    // 
+                    //
                     // Small apps can not show multi underline. So
-                    // this helper function returns only one 
+                    // this helper function returns only one
                     // DISPLAYATTRIBUTE structure.
                     //
                     if (pda) {
@@ -152,6 +154,7 @@ HRESULT CicDisplayAttributeMgr::GetDisplayAttributeData(ITfCategoryMgr *pcat, Tf
 //
 //----------------------------------------------------------------------------
 
+[[nodiscard]]
 HRESULT CicDisplayAttributeMgr::InitDisplayAttributeInstance(ITfCategoryMgr* pcat)
 {
     HRESULT hr;

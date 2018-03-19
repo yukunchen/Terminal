@@ -24,6 +24,7 @@ unit testing projects in the codebase without a bunch of overhead.
 #include "precomp.h"
 #include "../host/globals.h"
 #include "../host/newdelete.hpp"
+#include "../host/Ucs2CharRow.hpp"
 #include "../interactivity/inc/ServiceLocator.hpp"
 
 #include <algorithm>
@@ -88,13 +89,13 @@ public:
 
         UINT uiCursorSize = 12;
 
-        SCREEN_INFORMATION::CreateInstance(coordWindowSize,
-                                           m_pFontInfo,
-                                           coordScreenBufferSize,
-                                           ciFill,
-                                           ciPopupFill,
-                                           uiCursorSize,
-                                           &gci.CurrentScreenBuffer);
+        THROW_IF_FAILED(SCREEN_INFORMATION::CreateInstance(coordWindowSize,
+                                                           m_pFontInfo,
+                                                           coordScreenBufferSize,
+                                                           ciFill,
+                                                           ciPopupFill,
+                                                           uiCursorSize,
+                                                           &gci.CurrentScreenBuffer));
     }
 
     void CleanupGlobalScreenBuffer()
@@ -234,11 +235,18 @@ private:
         attrs[5].SetLeading();
         attrs[6].SetTrailing();
 
-        OverwriteColumns(pwszText, pwszText + length, attrs.cbegin(), pRow->GetCharRow().begin());
+        ICharRow& iCharRow = pRow->GetCharRow();
+        if (iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2)
+        {
+            LOG_HR_MSG(E_FAIL, "we don't support non UCS2 encoded char rows");
+            return;
+        }
+        Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
+        OverwriteColumns(pwszText, pwszText + length, attrs.cbegin(), charRow.begin());
 
         // set some colors
         TextAttribute Attr = TextAttribute(0);
-        pRow->GetAttrRow().Reset(15, Attr);
+        pRow->GetAttrRow().Reset(Attr);
         // A = bright red on dark gray
         // This string starts at index 0
         Attr = TextAttribute(FOREGROUND_RED | FOREGROUND_INTENSITY | BACKGROUND_INTENSITY);
@@ -262,11 +270,11 @@ private:
         // odd rows forced a wrap
         if (pRow->GetId() % 2 != 0)
         {
-            pRow->GetCharRow().SetWrapStatus(true);
+            pRow->GetCharRow().SetWrapForced(true);
         }
         else
         {
-            pRow->GetCharRow().SetWrapStatus(false);
+            pRow->GetCharRow().SetWrapForced(false);
         }
     }
 
@@ -298,11 +306,18 @@ private:
         attrs[68].SetTrailing();
         attrs[79].SetLeading();
 
-        OverwriteColumns(pwszText, pwszText + length, attrs.cbegin(), pRow->GetCharRow().begin());
+        ICharRow& iCharRow = pRow->GetCharRow();
+        if (iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2)
+        {
+            LOG_HR_MSG(E_FAIL, "we don't support non UCS2 encoded char rows");
+            return;
+        }
+        Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
+        OverwriteColumns(pwszText, pwszText + length, attrs.cbegin(), charRow.begin());
 
         // everything gets default attributes
-        pRow->GetAttrRow().Reset(80, gci.CurrentScreenBuffer->GetAttributes());
+        pRow->GetAttrRow().Reset(gci.CurrentScreenBuffer->GetAttributes());
 
-        pRow->GetCharRow().SetWrapStatus(true);
+        pRow->GetCharRow().SetWrapForced(true);
     }
 };

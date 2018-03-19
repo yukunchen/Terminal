@@ -145,7 +145,6 @@ class AttrRowTests
     TEST_METHOD(TestInitialize)
     {
         // Properties needed for test
-        const short sRowWidth = 37;
         const WORD wAttr = FOREGROUND_RED | BACKGROUND_BLUE;
         TextAttribute attr = TextAttribute(wAttr);
         // Cases to test
@@ -156,11 +155,11 @@ class AttrRowTests
         {
             ATTR_ROW* pUnderTest = pTestItems[iIndex];
 
-            pUnderTest->Reset(sRowWidth, attr);
+            pUnderTest->Reset(attr);
 
             VERIFY_ARE_EQUAL(pUnderTest->_cList, 1u);
             VERIFY_IS_TRUE(pUnderTest->_rgList.get()->GetAttributes().IsEqual(attr));
-            VERIFY_ARE_EQUAL(pUnderTest->_rgList[0].GetLength(), (unsigned int)sRowWidth);
+            VERIFY_ARE_EQUAL(pUnderTest->_rgList[0].GetLength(), (unsigned int)_sDefaultLength);
         }
     }
 

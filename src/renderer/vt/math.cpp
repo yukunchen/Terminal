@@ -38,6 +38,7 @@ SMALL_RECT VtEngine::GetDirtyRectInChars()
 // - pResult - recieves return value, True if it is full-width (2 wide). False if it is half-width (1 wide).
 // Return Value:
 // - S_FALSE: This is unsupported by the VT Renderer and should use another engine's value.
+[[nodiscard]]
 HRESULT VtEngine::IsCharFullWidthByFont(_In_ WCHAR const /*wch*/, _Out_ bool* const pResult)
 {
     *pResult = false;

@@ -191,8 +191,8 @@ void Selection::_SaveCursorData(_In_ const TEXT_BUFFER_INFO* const pTextInfo)
 void Selection::_RestoreCursorData(_In_ SCREEN_INFORMATION* const pScreenInfo)
 {
     Cursor* pCursor = ServiceLocator::LocateGlobals().getConsoleInformation().CurrentScreenBuffer->TextInfo->GetCursor();
-    pScreenInfo->SetCursorInformation(_ulSavedCursorSize, _fSavedCursorVisible, pCursor->GetColor(), pCursor->GetCursorType());
-    pScreenInfo->SetCursorPosition(_coordSavedCursorPosition, TRUE /* TurnOn */);
+    pScreenInfo->SetCursorInformation(_ulSavedCursorSize, _fSavedCursorVisible, pCursor->GetColor(), pCursor->GetType());
+    LOG_IF_FAILED(pScreenInfo->SetCursorPosition(_coordSavedCursorPosition, TRUE /* TurnOn */));
 }
 
 // Routine Description:

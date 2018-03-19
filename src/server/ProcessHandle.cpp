@@ -41,12 +41,12 @@ ConsoleProcessHandle::~ConsoleProcessHandle()
     // TODO: MSFT: 9358923 Convert to deleters and put CloseHandle in respective destructors? Then use smart pointers? http://osgvsowi/9358923
     if (pInputHandle != nullptr)
     {
-        pInputHandle->CloseHandle();
+        LOG_IF_FAILED(pInputHandle->CloseHandle());
     }
 
     if (pOutputHandle != nullptr)
     {
-        pOutputHandle->CloseHandle();
+        LOG_IF_FAILED(pOutputHandle->CloseHandle());
     }
 }
 

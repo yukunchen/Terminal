@@ -39,7 +39,7 @@ DWORD ConsoleInputThreadProcOneCore(LPVOID /*lpParam*/)
 
             if (NT_SUCCESS(Status))
             {
-                ServiceLocator::SetConsoleWindowInstance(wnd);
+                LOG_IF_FAILED(ServiceLocator::SetConsoleWindowInstance(wnd));
 
                 // The console's renderer should be created before we get here.
                 ASSERT(globals.pRender != nullptr);

@@ -65,6 +65,7 @@ void ServiceLocator::RundownAndExit(_In_ HRESULT const hr)
 
 #pragma region Creation Methods
 
+[[nodiscard]]
 NTSTATUS ServiceLocator::CreateConsoleInputThread(_Outptr_result_nullonfailure_ IConsoleInputThread** thread)
 {
     NTSTATUS status = STATUS_SUCCESS;
@@ -97,6 +98,7 @@ NTSTATUS ServiceLocator::CreateConsoleInputThread(_Outptr_result_nullonfailure_ 
 
 #pragma region Set Methods
 
+[[nodiscard]]
 NTSTATUS ServiceLocator::SetConsoleWindowInstance(_In_ IConsoleWindow* window)
 {
     NTSTATUS status = STATUS_SUCCESS;
@@ -274,6 +276,7 @@ Globals& ServiceLocator::LocateGlobals()
 
 #pragma region Private Methods
 
+[[nodiscard]]
 NTSTATUS ServiceLocator::LoadInteractivityFactory()
 {
     NTSTATUS status = STATUS_SUCCESS;

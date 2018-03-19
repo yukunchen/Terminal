@@ -14,30 +14,29 @@ Author(s):
 --*/
 #pragma once
 
-namespace Microsoft
+namespace Microsoft::Console
 {
-    namespace Console
+    class PtySignalInputThread final
     {
-        class PtySignalInputThread final
-        {
-        public:
-            PtySignalInputThread(_In_ wil::unique_hfile hPipe);
+    public:
+        PtySignalInputThread(_In_ wil::unique_hfile hPipe);
 
-            HRESULT Start();
-            static DWORD StaticThreadProc(_In_ LPVOID lpParameter);
+        [[nodiscard]]
+        HRESULT Start();
+        static DWORD StaticThreadProc(_In_ LPVOID lpParameter);
 
-            // Prevent copying and assignment.
-            PtySignalInputThread(const PtySignalInputThread&) = delete;
-            PtySignalInputThread& operator=(const PtySignalInputThread&) = delete;
+        // Prevent copying and assignment.
+        PtySignalInputThread(const PtySignalInputThread&) = delete;
+        PtySignalInputThread& operator=(const PtySignalInputThread&) = delete;
 
-        private:
-            HRESULT _InputThread();
-            bool _GetData(_Out_writes_bytes_(cbBuffer) void* const pBuffer, _In_ const DWORD cbBuffer);
+    private:
+        [[nodiscard]]
+        HRESULT _InputThread();
+        bool _GetData(_Out_writes_bytes_(cbBuffer) void* const pBuffer, _In_ const DWORD cbBuffer);
 
-            wil::unique_hfile _hFile;
-            wil::unique_handle _hThread;
-            DWORD _dwThreadId;
-            std::unique_ptr<Microsoft::Console::VirtualTerminal::ConGetSet> _pConApi;
-        };
-    }
-};
+        wil::unique_hfile _hFile;
+        wil::unique_handle _hThread;
+        DWORD _dwThreadId;
+        std::unique_ptr<Microsoft::Console::VirtualTerminal::ConGetSet> _pConApi;
+    };
+}

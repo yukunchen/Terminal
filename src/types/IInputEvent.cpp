@@ -61,6 +61,7 @@ std::deque<std::unique_ptr<IInputEvent>> IInputEvent::Create(_In_ const std::deq
     return outEvents;
 }
 
+[[nodiscard]]
 HRESULT IInputEvent::ToInputRecords(_In_ const std::deque<std::unique_ptr<IInputEvent>>& events,
                                     _Out_writes_(cRecords) INPUT_RECORD* const Buffer,
                                     _In_ const size_t cRecords)

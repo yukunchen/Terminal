@@ -11,6 +11,7 @@
 
 #include "getset.h"
 #include "misc.h"
+#include "Ucs2CharRow.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 #include "..\types\inc\Viewport.hpp"
@@ -20,6 +21,7 @@ using namespace Microsoft::Console::Types;
 
 // This routine figures out what parameters to pass to CreateScreenBuffer based on the data from STARTUPINFO and the
 // registry defaults, and then calls CreateScreenBuffer.
+[[nodiscard]]
 NTSTATUS DoCreateScreenBuffer()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -73,6 +75,7 @@ NTSTATUS DoCreateScreenBuffer()
 // - TargetRect - rectangle in source buffer to copy
 // Return Value:
 // - <none>
+[[nodiscard]]
 NTSTATUS ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                                   _In_ COORD const coordSourcePoint,
                                   _Inout_ PCHAR_INFO pciTarget,
@@ -113,20 +116,26 @@ NTSTATUS ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenI
             }
 
             // copy the chars and attrs from their respective arrays
-            CHAR_ROW::const_iterator it;
+            Ucs2CharRow::const_iterator it;
+            Ucs2CharRow::const_iterator itEnd;
             try
             {
-                it = std::next(pRow->GetCharRow().cbegin(), coordSourcePoint.X);
+                const ICharRow& iCharRow = pRow->GetCharRow();
+                // we only support ucs2 encoded char rows
+                FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                                "only support UCS2 char rows currently");
+
+                const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
+                it = std::next(charRow.cbegin(), coordSourcePoint.X);
+                itEnd = charRow.cend();
             }
             catch (...)
             {
                 return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
             }
-            const CHAR_ROW::const_iterator itEnd = pRow->GetCharRow().cend();
-
 
             // Unpack the attributes into an array so we can iterate over them.
-            pRow->GetAttrRow().UnpackAttrs(rgUnpackedRowAttributes, ScreenBufferWidth);
+            LOG_IF_FAILED(pRow->GetAttrRow().UnpackAttrs(rgUnpackedRowAttributes, ScreenBufferWidth));
 
             for (short iCol = 0; iCol < sXSize && it != itEnd; ++pciTargetPtr, ++it)
             {
@@ -184,6 +193,7 @@ NTSTATUS ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenI
 // - TargetPoint - upper left coordinates of new location rectangle
 // Return Value:
 // - <none>
+[[nodiscard]]
 NTSTATUS _CopyRectangle(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ const SMALL_RECT * const psrSource, _In_ const COORD coordTarget)
 {
     DBGOUTPUT(("_CopyRectangle\n"));
@@ -231,6 +241,7 @@ NTSTATUS _CopyRectangle(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ const SMALL_R
 // - Buffer - Buffer to read into.
 // - ReadRegion - Region to read.
 // Return Value:
+[[nodiscard]]
 NTSTATUS ReadScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenInfo, _Inout_ PCHAR_INFO pciBuffer, _Inout_ PSMALL_RECT psrReadRegion)
 {
     DBGOUTPUT(("ReadScreenBuffer\n"));
@@ -300,6 +311,7 @@ NTSTATUS ReadScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenInfo, _In
 // - Buffer - Buffer to write from.
 // - ReadRegion - Region to write.
 // Return Value:
+[[nodiscard]]
 NTSTATUS WriteScreenBuffer(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ PCHAR_INFO pciBuffer, _Inout_ PSMALL_RECT psrWriteRegion)
 {
     DBGOUTPUT(("WriteScreenBuffer\n"));
@@ -380,6 +392,7 @@ NTSTATUS WriteScreenBuffer(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ PCHAR_INFO
 //      CONSOLE_ATTRIBUTE     - read a string of attributes.
 // - NumRecords - On input, the size of the buffer in elements.  On output, the number of elements read.
 // Return Value:
+[[nodiscard]]
 NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                           _Inout_ PVOID pvBuffer,
                           _In_ const COORD coordRead,
@@ -451,7 +464,13 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                 // copy the chars from its array
                 try
                 {
-                    CHAR_ROW::const_iterator startIt = std::next(pRow->GetCharRow().cbegin(), X);
+                    const ICharRow& iCharRow = pRow->GetCharRow();
+                    // we only support ucs2 encoded char rows
+                    FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                                    "only support UCS2 char rows currently");
+
+                    const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
+                    const Ucs2CharRow::const_iterator startIt = std::next(charRow.cbegin(), X);
                     size_t copyAmount = *pcRecords - NumRead;
                     wchar_t* pChars = BufPtr;
                     DbcsAttribute* pAttrs = BufPtrA;
@@ -554,16 +573,23 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
             while (NumRead < *pcRecords)
             {
                 // Copy the attrs from its array.
-                CHAR_ROW::const_iterator it;
+                Ucs2CharRow::const_iterator it;
+                Ucs2CharRow::const_iterator itEnd;
                 try
                 {
-                    it = std::next(pRow->GetCharRow().cbegin(), X);
+                    const ICharRow& iCharRow = pRow->GetCharRow();
+                    // we only support ucs2 encoded char rows
+                    FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                                    "only support UCS2 char rows currently");
+
+                    const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
+                    it = std::next(charRow.cbegin(), X);
+                    itEnd = charRow.cend();
                 }
                 catch (...)
                 {
                     return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
                 }
-                const CHAR_ROW::const_iterator itEnd = pRow->GetCharRow().cend();
 
                 pRow->GetAttrRow().FindAttrIndex(X, &pAttrRun, &CountOfAttr);
 
@@ -761,6 +787,7 @@ bool StreamScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo)
 // - DestinationOrigin - Upper left corner of target region.
 // - Fill - Character and attribute to fill source region with.
 // Return Value:
+[[nodiscard]]
 NTSTATUS ScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo,
                       _Inout_ PSMALL_RECT psrScroll,
                       _In_opt_ PSMALL_RECT psrClip,
@@ -1067,7 +1094,7 @@ NTSTATUS ScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo,
     return Status;
 }
 
-NTSTATUS SetActiveScreenBuffer(_Inout_ PSCREEN_INFORMATION pScreenInfo)
+void SetActiveScreenBuffer(_Inout_ PSCREEN_INFORMATION pScreenInfo)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.CurrentScreenBuffer = pScreenInfo;
@@ -1089,8 +1116,6 @@ NTSTATUS SetActiveScreenBuffer(_Inout_ PSCREEN_INFORMATION pScreenInfo)
 
     // Write data to screen.
     WriteToScreen(pScreenInfo, pScreenInfo->GetBufferViewport());
-
-    return STATUS_SUCCESS;
 }
 
 // TODO: MSFT 9450717 This should join the ProcessList class when CtrlEvents become moved into the server. https://osgvsowi/9450717

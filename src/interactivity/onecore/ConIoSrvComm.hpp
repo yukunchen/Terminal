@@ -23,67 +23,71 @@ Author(s):
 
 #pragma hdrstop
 
-namespace Microsoft
+namespace Microsoft::Console::Interactivity::OneCore
 {
-    namespace Console
+    class ConIoSrvComm final : public IInputServices
     {
-        namespace Interactivity
-        {
-            namespace OneCore
-            {
-                class ConIoSrvComm final : public IInputServices
-                {
-                public:
-                    ConIoSrvComm();
-                    ~ConIoSrvComm() override;
+    public:
+        ConIoSrvComm();
+        ~ConIoSrvComm() override;
 
-                    NTSTATUS Connect();
-                    VOID ServiceInputPipe();
+        [[nodiscard]]
+        NTSTATUS Connect();
+        VOID ServiceInputPipe();
 
-                    NTSTATUS RequestGetDisplaySize(_Inout_ PCD_IO_DISPLAY_SIZE pCdDisplaySize) const;
-                    NTSTATUS RequestGetFontSize(_Inout_ PCD_IO_FONT_SIZE pCdFontSize) const;
-                    NTSTATUS RequestSetCursor(_In_ CD_IO_CURSOR_INFORMATION* const pCdCursorInformation) const;
-                    NTSTATUS RequestUpdateDisplay(_In_ SHORT RowIndex) const;
+        [[nodiscard]]
+        NTSTATUS RequestGetDisplaySize(_Inout_ PCD_IO_DISPLAY_SIZE pCdDisplaySize) const;
+        [[nodiscard]]
+        NTSTATUS RequestGetFontSize(_Inout_ PCD_IO_FONT_SIZE pCdFontSize) const;
+        [[nodiscard]]
+        NTSTATUS RequestSetCursor(_In_ CD_IO_CURSOR_INFORMATION* const pCdCursorInformation) const;
+        [[nodiscard]]
+        NTSTATUS RequestUpdateDisplay(_In_ SHORT RowIndex) const;
 
-                    NTSTATUS RequestMapVirtualKey(_In_ UINT uCode, _In_ UINT uMapType, _Out_ UINT* puReturnValue);
-                    NTSTATUS RequestVkKeyScan(_In_ WCHAR wCharacter, _Out_ SHORT* psReturnValue);
-                    NTSTATUS RequestGetKeyState(_In_ int iVirtualKey, _Out_ SHORT *psReturnValue);
-                    
-                    NTSTATUS RequestGetDisplayMode(_Out_ USHORT *psDisplayMode);
+        [[nodiscard]]
+        NTSTATUS RequestMapVirtualKey(_In_ UINT uCode, _In_ UINT uMapType, _Out_ UINT* puReturnValue);
+        [[nodiscard]]
+        NTSTATUS RequestVkKeyScan(_In_ WCHAR wCharacter, _Out_ SHORT* psReturnValue);
+        [[nodiscard]]
+        NTSTATUS RequestGetKeyState(_In_ int iVirtualKey, _Out_ SHORT *psReturnValue);
 
-                    PVOID GetSharedViewBase() const;
-                    
-                    VOID CleanupForHeadless(_In_ NTSTATUS const status);
+        [[nodiscard]]
+        NTSTATUS RequestGetDisplayMode(_Out_ USHORT *psDisplayMode);
 
-                    // IInputServices Members
-                    UINT MapVirtualKeyW(UINT uCode, UINT uMapType);
-                    SHORT VkKeyScanW(WCHAR ch);
-                    SHORT GetKeyState(int nVirtKey);
-                    BOOL TranslateCharsetInfo(DWORD * lpSrc, LPCHARSETINFO lpCs, DWORD dwFlags);
-                    
-                    NTSTATUS InitializeBgfx();
-                    NTSTATUS InitializeWddmCon();
+        PVOID GetSharedViewBase() const;
 
-                    Microsoft::Console::Render::WddmConEngine* pWddmConEngine;
-                private:
-                    NTSTATUS EnsureConnection();
-                    NTSTATUS SendRequestReceiveReply(PCIS_MSG Message) const;
+        VOID CleanupForHeadless(_In_ NTSTATUS const status);
 
-                    VOID HandleFocusEvent(PCIS_EVENT const FocusEvent);
+        // IInputServices Members
+        UINT MapVirtualKeyW(UINT uCode, UINT uMapType);
+        SHORT VkKeyScanW(WCHAR ch);
+        SHORT GetKeyState(int nVirtKey);
+        BOOL TranslateCharsetInfo(DWORD * lpSrc, LPCHARSETINFO lpCs, DWORD dwFlags);
 
-                    HANDLE _pipeReadHandle;
-                    HANDLE _pipeWriteHandle;
+        [[nodiscard]]
+        NTSTATUS InitializeBgfx();
+        [[nodiscard]]
+        NTSTATUS InitializeWddmCon();
 
-                    HANDLE _alpcClientCommunicationPort;
-                    SIZE_T _alpcSharedViewSize;
-                    PVOID _alpcSharedViewBase;
-                    
-                    USHORT _displayMode;
+        Microsoft::Console::Render::WddmConEngine* pWddmConEngine;
+    private:
+        [[nodiscard]]
+        NTSTATUS EnsureConnection();
+        [[nodiscard]]
+        NTSTATUS SendRequestReceiveReply(PCIS_MSG Message) const;
 
-                    bool _fIsInputInitialized;
+        VOID HandleFocusEvent(PCIS_EVENT const FocusEvent);
 
-                };
-            };
-        };
+        HANDLE _pipeReadHandle;
+        HANDLE _pipeWriteHandle;
+
+        HANDLE _alpcClientCommunicationPort;
+        SIZE_T _alpcSharedViewSize;
+        PVOID _alpcSharedViewBase;
+
+        USHORT _displayMode;
+
+        bool _fIsInputInitialized;
+
     };
-};
+}

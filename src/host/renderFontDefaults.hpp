@@ -22,7 +22,8 @@ class RenderFontDefaults sealed : public IFontDefaultList
 public:
     RenderFontDefaults();
     ~RenderFontDefaults();
-    
+
+    [[nodiscard]]
     HRESULT RetrieveDefaultFontNameForCodepage(_In_ UINT const uiCodePage,
                                                _Out_writes_(cchFaceName) PWSTR pwszFaceName,
                                                _In_ size_t const cchFaceName);

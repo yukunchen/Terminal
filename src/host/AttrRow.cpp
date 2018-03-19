@@ -7,6 +7,9 @@
 #include "precomp.h"
 #include "AttrRow.hpp"
 
+#include "../interactivity/inc/ServiceLocator.hpp"
+#include "handle.h"
+
 // Routine Description:
 // - swaps two ATTR_ROWs
 // Arguments:
@@ -44,7 +47,7 @@ ATTR_ROW::ATTR_ROW(_In_ const UINT cchRowWidth, _In_ const TextAttribute attr)
 // - object to copy
 // Return Value:
 // - copied object
-// Note: will throw exception if unable to allocated memory
+// Note: will throw exception if unable to allocate memory
 ATTR_ROW::ATTR_ROW(const ATTR_ROW& a) :
     _cList{ a._cList },
     _cchRowWidth{ a._cchRowWidth }
@@ -87,8 +90,8 @@ void ATTR_ROW::swap(ATTR_ROW& other) noexcept
 // - cchRowWidth - The width of the row.
 // - pAttr - The default text attributes to use on text in this row.
 // Return Value:
-// - <none>
-bool ATTR_ROW::Reset(_In_ UINT const cchRowWidth, _In_ const TextAttribute attr)
+// - bool indicating success or failure
+bool ATTR_ROW::Reset(_In_ const TextAttribute attr)
 {
     wistd::unique_ptr<TextAttributeRun[]> pNewRun = wil::make_unique_nothrow<TextAttributeRun[]>(1);
     bool fSuccess = pNewRun != nullptr;
@@ -96,9 +99,8 @@ bool ATTR_ROW::Reset(_In_ UINT const cchRowWidth, _In_ const TextAttribute attr)
     {
         _rgList.swap(pNewRun);
         _rgList.get()->SetAttributes(attr);
-        _rgList.get()->SetLength(cchRowWidth);
+        _rgList.get()->SetLength(_cchRowWidth);
         _cList = 1;
-        _cchRowWidth = cchRowWidth;
     }
 
     return fSuccess;
@@ -113,19 +115,44 @@ bool ATTR_ROW::Reset(_In_ UINT const cchRowWidth, _In_ const TextAttribute attr)
 // - sNewWidth - The new width of the row.
 // Return Value:
 // - S_OK on success, otherwise relevant error HRESULT
+[[nodiscard]]
 HRESULT ATTR_ROW::Resize(_In_ const short sOldWidth, _In_ const short sNewWidth)
 {
     // Easy case. If the new row is longer, increase the length of the last run by how much new space there is.
     if (sNewWidth > sOldWidth)
     {
+        LockConsole();
+        auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+        // get the default attributes
+        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        TextAttribute defaultAttrs = gci.CurrentScreenBuffer->GetAttributes();
+
         // Get the attribute that covers the final column of old width.
         TextAttributeRun* pIndexedRun;
         FindAttrIndex((SHORT)(sOldWidth - 1), &pIndexedRun, nullptr);
         ASSERT(pIndexedRun <= &_rgList[_cList - 1]);
 
-        // Extend its length by the additional columns we're adding.
-        pIndexedRun->SetLength(pIndexedRun->GetLength() + sNewWidth - sOldWidth);
+        // if the last attribute is the same as the current default then extend it
+        if (pIndexedRun->GetAttributes().IsEqual(defaultAttrs))
+        {
+            // Extend its length by the additional columns we're adding.
+            pIndexedRun->SetLength(pIndexedRun->GetLength() + sNewWidth - sOldWidth);
+        }
+        else
+        {
+            // add a new attribute on the end with the defaults
+            TextAttributeRun endRun;
+            endRun.SetAttributes(defaultAttrs);
+            endRun.SetLength(sNewWidth - sOldWidth);
 
+            wistd::unique_ptr<TextAttributeRun[]> pNewRun = wil::make_unique_nothrow<TextAttributeRun[]>(_cList + 1);
+            RETURN_IF_NULL_ALLOC(pNewRun);
+            std::copy(_rgList.get(), _rgList.get() + _cList, pNewRun.get());
+            pNewRun[_cList] = endRun;
+
+            _rgList.swap(pNewRun);
+            ++_cList;
+        }
         // Store that the new total width we represent is the new width.
         _cchRowWidth = sNewWidth;
     }
@@ -214,6 +241,7 @@ void ATTR_ROW::FindAttrIndex(_In_ size_t const index,
 // - cRowLength - Length of this array
 //  Return Value:
 // - Success if unpacked. Buffer too small if row length is incorrect
+[[nodiscard]]
 NTSTATUS ATTR_ROW::UnpackAttrs(_Out_writes_(cRowLength) TextAttribute* const rgAttrs, _In_ const size_t cRowLength) const
 {
     NTSTATUS status = STATUS_SUCCESS;
@@ -357,6 +385,7 @@ size_t _DebugGetTotalLength(_In_reads_(cRun) const TextAttributeRun* const rgRun
 // Return Value:
 // - STATUS_NO_MEMORY if there wasn't enough memory to insert the runs
 //   otherwise STATUS_SUCCESS if we were successful.
+[[nodiscard]]
 HRESULT ATTR_ROW::InsertAttrRuns(_In_reads_(cAttrs) const TextAttributeRun* const rgInsertAttrs,
                                   _In_ const size_t cInsertAttrs,
                                   _In_ const size_t iStart,

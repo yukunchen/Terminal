@@ -16,39 +16,30 @@ Author(s):
 
 #pragma once
 
-namespace Microsoft
+namespace Microsoft::Console::Interactivity::Win32
 {
-    namespace Console
+    class UiaTextRange;
+
+    namespace UiaTextRangeTracing
     {
-        namespace Interactivity
-        {
-            namespace Win32
-            {
-                class UiaTextRange;
+        enum class ApiCall;
+        struct IApiMsg;
+    }
 
-                namespace UiaTextRangeTracing
-                {
-                    enum class ApiCall;
-                    struct IApiMsg;
-                }
+    class ScreenInfoUiaProvider;
 
-                class ScreenInfoUiaProvider;
+    namespace ScreenInfoUiaProviderTracing
+    {
+        enum class ApiCall;
+        struct IApiMsg;
+    }
 
-                namespace ScreenInfoUiaProviderTracing
-                {
-                    enum class ApiCall;
-                    struct IApiMsg;
-                }
+    class WindowUiaProvider;
 
-                class WindowUiaProvider;
-
-                namespace WindowUiaProviderTracing
-                {
-                    enum class ApiCall;
-                    struct IApiMsg;
-                }
-            }
-        }
+    namespace WindowUiaProviderTracing
+    {
+        enum class ApiCall;
+        struct IApiMsg;
     }
 }
 
@@ -83,7 +74,7 @@ public:
     static void s_TraceWindowMessage(_In_ const MSG& msg);
     static void s_TraceInputRecord(_In_ const INPUT_RECORD& inputRecord);
 
-    static void __stdcall TraceFailure(const wil::FailureInfo& failure);
+    static void __stdcall TraceFailure(const wil::FailureInfo& failure) noexcept;
 
     static void s_TraceUia(_In_ const Microsoft::Console::Interactivity::Win32::UiaTextRange* const range,
                            _In_ const Microsoft::Console::Interactivity::Win32::UiaTextRangeTracing::ApiCall apiCall,

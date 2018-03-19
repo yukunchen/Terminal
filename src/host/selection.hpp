@@ -29,7 +29,7 @@ class Selection
 public:
     ~Selection();
 
-    _Check_return_
+    [[nodiscard]]
     NTSTATUS GetSelectionRects(_Outptr_result_buffer_all_(*pcRectangles) SMALL_RECT** const prgsrSelection,
                                _Out_ UINT* const pcRectangles) const;
 
@@ -106,7 +106,7 @@ public:
     void CheckAndSetAlternateSelection();
 
     // calculation functions
-    _Check_return_ _Success_(return)
+    [[nodiscard]]
     static bool s_GetInputLineBoundaries(_Out_opt_ COORD* const pcoordInputStart, _Out_opt_ COORD* const pcoordInputEnd);
     void GetValidAreaBoundaries(_Out_opt_ COORD* const pcoordValidStart, _Out_opt_ COORD* const pcoordValidEnd) const;
     static bool s_IsWithinBoundaries(_In_ const COORD coordPosition, _In_ const COORD coordStart, _In_ const COORD coordEnd);

@@ -11,6 +11,7 @@
 #include "dbcs.h"
 #include "handle.h"
 #include "scrolling.hpp"
+#include "Ucs2CharRow.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
@@ -61,6 +62,7 @@ Cursor::~Cursor()
 // - ppCursor - Pointer to accept the instance of the newly created Cursor
 // Return Value:
 // - Success or a relevant error status (usually out of memory).
+[[nodiscard]]
 NTSTATUS Cursor::CreateInstance(_In_ ULONG const ulSize, _Outptr_ Cursor ** const ppCursor)
 {
     *ppCursor = nullptr;
@@ -122,8 +124,13 @@ const BOOLEAN Cursor::IsDoubleWidth() const
 {
     // Check with the current screen buffer to see if the character under the cursor is double-width.
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const ROW& row = gci.CurrentScreenBuffer->TextInfo->GetRowByOffset(_cPosition.Y);
-    return !!IsCharFullWidth(row.GetCharRow().GetGlyphAt(_cPosition.X));
+    const ICharRow& iCharRow = gci.CurrentScreenBuffer->TextInfo->GetRowByOffset(_cPosition.Y).GetCharRow();
+    // we only support ucs2 encoded char rows
+    FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                     "only support UCS2 char rows currently");
+
+    const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
+    return !!IsCharFullWidth(charRow.GetGlyphAt(_cPosition.X));
 }
 
 const BOOLEAN Cursor::IsConversionArea() const
@@ -590,7 +597,7 @@ void Cursor::KillCaretTimer()
     }
 }
 
-const CursorType Cursor::GetCursorType() const
+const CursorType Cursor::GetType() const
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetCursorType();

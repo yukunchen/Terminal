@@ -43,7 +43,8 @@ void UnlockConsole()
 // - Title - Window Title to display
 // - TitleLength - Length of Window Title string
 // Return Value:
-// - <none> - Updates global gci.
+// - STATUS_SUCCESS if successful.
+[[nodiscard]]
 NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle, _In_ const DWORD cbTitle)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();

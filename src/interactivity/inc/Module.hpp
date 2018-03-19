@@ -14,22 +14,16 @@ Author(s):
 
 #pragma once
 
-namespace Microsoft
+namespace Microsoft::Console::Interactivity
 {
-    namespace Console
+    enum class Module
     {
-        namespace Interactivity
-        {
-            enum class Module
-            {
-                AccessibilityNotifier,
-                ConsoleControl,
-                ConsoleInputThread,
-                ConsoleWindowMetrics,
-                HighDpiApi,
-                InputServices,
-                SystemConfigurationProvider
-            };
-        }
-    }
+        AccessibilityNotifier,
+        ConsoleControl,
+        ConsoleInputThread,
+        ConsoleWindowMetrics,
+        HighDpiApi,
+        InputServices,
+        SystemConfigurationProvider
+    };
 }
