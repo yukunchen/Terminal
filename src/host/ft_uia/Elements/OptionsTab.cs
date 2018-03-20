@@ -33,6 +33,7 @@ namespace Conhost.UIA.Tests.Elements
             this.Checkboxes.Add(new CheckBoxMeta(propWindow, "Filter clipboard contents on paste", "FilterOnPaste", false, false, true, NativeMethods.WinConP.PKEY_Console_FilterOnPaste));
             this.Checkboxes.Add(new CheckBoxMeta(propWindow, "Enable Ctrl key shortcuts", "CtrlKeyShortcutsDisabled", true, false, true, NativeMethods.WinConP.PKEY_Console_CtrlKeysDisabled));
             this.Checkboxes.Add(new CheckBoxMeta(propWindow, "Extended text selection keys", "ExtendedEditKey", false, true, false, null));
+            this.Checkboxes.Add(new CheckBoxMeta(propWindow, "Use Ctrl+Shift+C/V as Copy/Paste", "InterceptCopyPaste", false, false, true, NativeMethods.WinConP.PKEY_Console_InterceptCopyPaste));
 
             this.MoreInfoLink = propWindow.FindElementByName("new console features");
         }

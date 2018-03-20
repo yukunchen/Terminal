@@ -165,8 +165,11 @@ public:
     COLORREF GetCursorColor() const noexcept;
     CursorType GetCursorType() const noexcept;
 
-    void SetCursorColor(_In_ const COLORREF CursorColor) noexcept;
-    void SetCursorType(_In_ const CursorType cursorType) noexcept;
+    void SetCursorColor(const COLORREF CursorColor) noexcept;
+    void SetCursorType(const CursorType cursorType) noexcept;
+
+    bool GetInterceptCopyPaste() const noexcept;
+    void SetInterceptCopyPaste(const bool interceptCopyPaste) noexcept;
 
 private:
     DWORD _dwHotKey;
@@ -222,6 +225,8 @@ private:
     // Technically a COLORREF, but using INVALID_COLOR as "Invert Colors"
     unsigned int _CursorColor;
     CursorType _CursorType;
+
+    bool _fInterceptCopyPaste;
 
     friend class RegistrySerialization;
 

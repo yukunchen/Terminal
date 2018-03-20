@@ -826,7 +826,6 @@ VOID SetRegistryValues(
 
     SetGlobalRegistryValues();
 
-
     //
     // Save cursor type and color
     //
@@ -843,6 +842,14 @@ VOID SetRegistryValues(
     LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
                                                        hTitleKey,
                                                        CONSOLE_REGISTRY_CURSORCOLOR,
+                                                       REG_DWORD,
+                                                       (BYTE*)&dwValue,
+                                                       sizeof(dwValue)));
+
+    dwValue = pStateInfo->InterceptCopyPaste;
+    LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                       hTitleKey,
+                                                       CONSOLE_REGISTRY_INTERCEPTCOPYPASTE,
                                                        REG_DWORD,
                                                        (BYTE*)&dwValue,
                                                        sizeof(dwValue)));
