@@ -335,3 +335,14 @@ Viewport Viewport::OrViewports(_In_ const Viewport& lhs, _In_ const Viewport& rh
 
     return Viewport({ Left, Top, Right, Bottom });
 }
+
+// Method Description:
+// - Returns true if the rectangle described by this Viewport has positive dimensions.
+// Arguments:
+// - <none>
+// Return Value:
+// - true iff top < bottom && left < right
+bool Viewport::IsValid() const
+{
+    return _sr.Top < _sr.Bottom && _sr.Left < _sr.Right;
+}

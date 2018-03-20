@@ -34,6 +34,7 @@
 #include "..\..\renderer\gdi\gdirenderer.hpp"
 
 #include "..\inc\ServiceLocator.hpp"
+#include "..\..\types\inc\Viewport.hpp"
 
 // The following default masks are used in creating windows
 // Make sure that these flags match when switching to fullscreen and back
@@ -44,6 +45,7 @@
 #define CONSOLE_WINDOW_CLASS (L"ConsoleWindowClass")
 
 using namespace Microsoft::Console::Interactivity::Win32;
+using namespace Microsoft::Console::Types;
 
 ATOM Window::s_atomWindowClass = 0;
 Window* Window::s_Instance = nullptr;
@@ -413,7 +415,7 @@ NTSTATUS Window::SetViewportOrigin(_In_ SMALL_RECT NewWindow)
         }
 
         // The new window is OK. Store it in screeninfo and refresh screen.
-        ScreenInfo->SetBufferViewport(NewWindow);
+        ScreenInfo->SetBufferViewport(Viewport::FromInclusive(NewWindow));
         Tracing::s_TraceWindowViewport(ScreenInfo->GetBufferViewport());
 
         if (ServiceLocator::LocateGlobals().pRender != nullptr)
@@ -426,7 +428,7 @@ NTSTATUS Window::SetViewportOrigin(_In_ SMALL_RECT NewWindow)
     else
     {
         // we're iconic
-        ScreenInfo->SetBufferViewport(NewWindow);
+        ScreenInfo->SetBufferViewport(Viewport::FromInclusive(NewWindow));
         Tracing::s_TraceWindowViewport(ScreenInfo->GetBufferViewport());
     }
 

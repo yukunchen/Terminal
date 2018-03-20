@@ -9,8 +9,10 @@
 #include "ConsoleWindow.hpp"
 
 #include "..\inc\ServiceLocator.hpp"
+#include "..\..\types\inc\Viewport.hpp"
 
 using namespace Microsoft::Console::Interactivity::OneCore;
+using namespace Microsoft::Console::Types;
 
 BOOL ConsoleWindow::EnableBothScrollBars()
 {
@@ -46,7 +48,7 @@ NTSTATUS ConsoleWindow::SetViewportOrigin(SMALL_RECT NewWindow)
     Selection* pSelection = &Selection::Instance();
     pSelection->HideSelection();
 
-    ScreenInfo->SetBufferViewport(NewWindow);
+    ScreenInfo->SetBufferViewport(Viewport::FromInclusive(NewWindow));
 
     if (ServiceLocator::LocateGlobals().pRender != nullptr)
     {

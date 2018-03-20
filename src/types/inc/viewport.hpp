@@ -61,13 +61,14 @@ namespace Microsoft::Console::Types
 
         Viewport ToOrigin() const;
 
+        bool IsValid() const;
+
         [[nodiscard]]
         static HRESULT AddCoord(_In_ const Viewport& original,
                                 _In_ const COORD delta,
                                 _Out_ Viewport& modified);
         static Viewport OrViewports(_In_ const Viewport& lhs,
                                     _In_ const Viewport& rhs);
-
 
     private:
         // This is always stored as a Inclusive rect.

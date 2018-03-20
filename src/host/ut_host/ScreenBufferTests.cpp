@@ -1108,7 +1108,7 @@ void ScreenBufferTests::ResizeAltBuffer()
     ));
 
     VERIFY_IS_FALSE(psi->_IsAltBuffer());
-    const Viewport originalMainSize = Viewport::FromInclusive(psi->_srBufferViewport);
+    const Viewport originalMainSize = Viewport(psi->_viewport);
 
     Log::Comment(NoThrowString().Format(
         L"Switch to alt buffer"
