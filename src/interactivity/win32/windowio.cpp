@@ -246,7 +246,19 @@ void HandleKeyEvent(_In_ const HWND hWnd,
 
     Selection* pSelection = &Selection::Instance();
 
-    if (!IsInVirtualTerminalInputMode())
+    if (bKeyDown && gci.GetInterceptCopyPaste() && inputKeyInfo.IsShiftAndCtrlOnly())
+    {
+        // Intercept C-S-v to paste
+        switch (VirtualKeyCode)
+        {
+        case 'V':
+            // the user is attempting to paste from the clipboard
+            Telemetry::Instance().SetKeyboardTextEditingUsed();
+            Clipboard::Instance().Paste();
+            return;
+        }
+    }
+    else if (!IsInVirtualTerminalInputMode())
     {
         // First attempt to process simple key chords (Ctrl+Key)
         if (inputKeyInfo.IsCtrlOnly() && ShouldTakeOverKeyboardShortcuts() && bKeyDown)

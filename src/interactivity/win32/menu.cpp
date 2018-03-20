@@ -342,6 +342,8 @@ void Menu::s_GetConsoleState(CONSOLE_STATE_INFO * const pStateInfo)
 
     pStateInfo->CursorType = static_cast<unsigned int>(gci.GetCursorType());
     pStateInfo->CursorColor = gci.GetCursorColor();
+
+    pStateInfo->InterceptCopyPaste = gci.GetInterceptCopyPaste();
     // end console v2 properties
 }
 
@@ -542,6 +544,8 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
     ServiceLocator::LocateConsoleWindow<Window>()->PostUpdateExtendedEditKeys();
 
     gci.ConsoleIme.RefreshAreaAttributes();
+
+    gci.SetInterceptCopyPaste(!!pStateInfo->InterceptCopyPaste);
 }
 
 #pragma endregion
