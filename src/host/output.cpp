@@ -68,133 +68,82 @@ NTSTATUS DoCreateScreenBuffer()
 // Routine Description:
 // - This routine copies a rectangular region from the screen buffer. no clipping is done.
 // Arguments:
-// - ScreenInfo - pointer to screen info
-// - SourcePoint - upper left coordinates of source rectangle
-// - Target - pointer to target buffer
-// - TargetSize - dimensions of target buffer
+// - screenInfo - reference to screen info
+// - coordSourcePoint - upper left coordinates of source rectangle
 // - TargetRect - rectangle in source buffer to copy
 // Return Value:
-// - <none>
-[[nodiscard]]
-NTSTATUS ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenInfo,
-                                  _In_ COORD const coordSourcePoint,
-                                  _Inout_ PCHAR_INFO pciTarget,
-                                  _In_ COORD const coordTargetSize,
-                                  _In_ PSMALL_RECT const psrTargetRect,
-                                  _Inout_opt_ TextAttribute* const pTextAttributes)
+// - vector of vector of output cell data for read rect
+// Note:
+// - will throw exception on error.
+std::vector<std::vector<OutputCell>> ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION& screenInfo,
+                                                              _In_ const COORD coordSourcePoint,
+                                                              _In_ const SMALL_RECT targetRect)
 {
+
     DBGOUTPUT(("ReadRectFromScreenBuffer\n"));
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const short xSize = (short)(targetRect.Right - targetRect.Left + 1);
+    const short ySize = (short)(targetRect.Bottom - targetRect.Top + 1);
+    ASSERT(ySize > 0);
+    const int ScreenBufferWidth = screenInfo.GetScreenBufferSize().X;
+    std::vector<std::vector<OutputCell>> result;
 
-    const bool fOutputTextAttributes = pTextAttributes != nullptr;
-    short const sXSize = (short)(psrTargetRect->Right - psrTargetRect->Left + 1);
-    short const sYSize = (short)(psrTargetRect->Bottom - psrTargetRect->Top + 1);
-    ASSERT(sYSize > 0);
-    const int ScreenBufferWidth = pScreenInfo->GetScreenBufferSize().X;
+    std::unique_ptr<TextAttribute[]> unpackedAttrs = std::make_unique<TextAttribute[]>(ScreenBufferWidth);
+    THROW_IF_NULL_ALLOC(unpackedAttrs.get());
 
-    const ROW* pRow = &pScreenInfo->TextInfo->GetRowByOffset(coordSourcePoint.Y);
-
-    // Allocate the TextAttributes once for every row to unpack them
-    TextAttribute* rgUnpackedRowAttributes = new TextAttribute[ScreenBufferWidth];
-    NTSTATUS Status = NT_TESTNULL(rgUnpackedRowAttributes);
-    if (NT_SUCCESS(Status))
+    for (short iRow = 0; iRow < ySize; ++iRow)
     {
-        for (short iRow = 0; iRow < sYSize; iRow++)
+        const ROW& row = screenInfo.TextInfo->GetRowByOffset(coordSourcePoint.Y + iRow);
+        std::vector<OutputCell> rowCells;
+
+        // copy the chars and attrs from their respective arrays
+        const ICharRow& iCharRow = row.GetCharRow();
+        // we only support ucs2 encoded char rows
+        FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                        "only support UCS2 char rows currently");
+
+        const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
+        Ucs2CharRow::const_iterator it = std::next(charRow.cbegin(), coordSourcePoint.X);
+        Ucs2CharRow::const_iterator itEnd = charRow.cend();
+
+        // Unpack the attributes into an array so we can iterate over them.
+        THROW_IF_FAILED(row.GetAttrRow().UnpackAttrs(unpackedAttrs.get(), ScreenBufferWidth));
+
+        for (short iCol = 0; iCol < xSize && it != itEnd; ++it, ++iCol)
         {
-            PCHAR_INFO pciTargetPtr = (PCHAR_INFO)((PBYTE)pciTarget + SCREEN_BUFFER_POINTER(psrTargetRect->Left,
-                                                                                            psrTargetRect->Top + iRow,
-                                                                                            coordTargetSize.X,
-                                                                                            sizeof(CHAR_INFO)));
+            TextAttribute textAttr = unpackedAttrs[coordSourcePoint.X + iCol];
+            DbcsAttribute dbcsAttribute = row.GetCharRow().GetAttribute(coordSourcePoint.X + iCol);
 
-            TextAttribute* pTargetAttributes = nullptr;
-            if (fOutputTextAttributes)
+            if (iCol == 0 && dbcsAttribute.IsTrailing())
             {
-                pTargetAttributes = (TextAttribute*)(pTextAttributes + SCREEN_BUFFER_POINTER(psrTargetRect->Left,
-                                                                                             psrTargetRect->Top + iRow,
-                                                                                             coordTargetSize.X,
-                                                                                             1));
+                rowCells.emplace_back(UNICODE_SPACE, DbcsAttribute{}, textAttr);
+            }
+            else if (iCol + 1 >= xSize && dbcsAttribute.IsLeading())
+            {
+                rowCells.emplace_back(UNICODE_SPACE, DbcsAttribute{}, textAttr);
+            }
+            else
+            {
+                rowCells.emplace_back(it->first, dbcsAttribute, textAttr);
             }
 
-            // copy the chars and attrs from their respective arrays
-            Ucs2CharRow::const_iterator it;
-            Ucs2CharRow::const_iterator itEnd;
-            try
-            {
-                const ICharRow& iCharRow = pRow->GetCharRow();
-                // we only support ucs2 encoded char rows
-                FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                                "only support UCS2 char rows currently");
-
-                const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
-                it = std::next(charRow.cbegin(), coordSourcePoint.X);
-                itEnd = charRow.cend();
-            }
-            catch (...)
-            {
-                return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-            }
-
-            // Unpack the attributes into an array so we can iterate over them.
-            LOG_IF_FAILED(pRow->GetAttrRow().UnpackAttrs(rgUnpackedRowAttributes, ScreenBufferWidth));
-
-            for (short iCol = 0; iCol < sXSize && it != itEnd; ++pciTargetPtr, ++it)
-            {
-                TextAttribute textAttr = rgUnpackedRowAttributes[coordSourcePoint.X + iCol];
-                DbcsAttribute dbcsAttribute = pRow->GetCharRow().GetAttribute(coordSourcePoint.X + iCol);
-
-                if (iCol == 0 && dbcsAttribute.IsTrailing())
-                {
-                    pciTargetPtr->Char.UnicodeChar = UNICODE_SPACE;
-                    dbcsAttribute.SetSingle();
-                }
-                else if (iCol + 1 >= sXSize && dbcsAttribute.IsLeading())
-                {
-                    pciTargetPtr->Char.UnicodeChar = UNICODE_SPACE;
-                    dbcsAttribute.SetSingle();
-                }
-                else
-                {
-                    pciTargetPtr->Char.UnicodeChar = it->first;
-                }
-
-                pciTargetPtr->Attributes = dbcsAttribute.GeneratePublicApiAttributeFormat();
-
-                // Always copy the legacy attributes to the CHAR_INFO.
-                pciTargetPtr->Attributes |= gci.GenerateLegacyAttributes(textAttr);
-
-                if (fOutputTextAttributes)
-                {
-                    pTargetAttributes->SetFrom(textAttr);
-                    pTargetAttributes++;
-                }
-
-                iCol += 1;
-            }
-
-            try
-            {
-                pRow = &pScreenInfo->TextInfo->GetNextRowNoWrap(*pRow);
-            }
-            catch (...)
-            {
-                LOG_HR(wil::ResultFromCaughtException());
-            }
         }
-        delete[] rgUnpackedRowAttributes;
+        result.push_back(rowCells);
     }
-    return Status;
+    return result;
 }
 
 // Routine Description:
 // - This routine copies a rectangular region from the screen buffer to the screen buffer.  no clipping is done.
 // Arguments:
-// - ScreenInfo - pointer to screen info
-// - SourceRect - rectangle in source buffer to copy
-// - TargetPoint - upper left coordinates of new location rectangle
+// - pScreenInfo - pointer to screen info
+// - psrSource - rectangle in source buffer to copy
+// - coordTarget - upper left coordinates of new location rectangle
 // Return Value:
-// - <none>
+// - status of copy
 [[nodiscard]]
-NTSTATUS _CopyRectangle(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ const SMALL_RECT * const psrSource, _In_ const COORD coordTarget)
+NTSTATUS _CopyRectangle(_In_ PSCREEN_INFORMATION pScreenInfo,
+                        _In_ const SMALL_RECT * const psrSource,
+                        _In_ const COORD coordTarget)
 {
     DBGOUTPUT(("_CopyRectangle\n"));
 
@@ -214,24 +163,16 @@ NTSTATUS _CopyRectangle(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ const SMALL_R
     Size.X++;
     Size.Y++;
 
-    CHAR_INFO* rgciScrollBuffer = new CHAR_INFO[Size.X * Size.Y];
-    NTSTATUS Status = NT_TESTNULL(rgciScrollBuffer);
-    if (NT_SUCCESS(Status))
+    try
     {
-        TextAttribute* rTextAttrs = new TextAttribute[Size.X * Size.Y];
-        Status = NT_TESTNULL(rTextAttrs);
-        if (NT_SUCCESS(Status))
-        {
-            Status = ReadRectFromScreenBuffer(pScreenInfo, SourcePoint, rgciScrollBuffer, Size, &Target, rTextAttrs);
-            if (NT_SUCCESS(Status))
-            {
-                Status = WriteRectToScreenBuffer((PBYTE)rgciScrollBuffer, Size, &Target, pScreenInfo, coordTarget, rTextAttrs);  // ScrollBuffer won't need conversion
-            }
-            delete[] rTextAttrs;
-        }
-        delete[] rgciScrollBuffer;
+        std::vector<std::vector<OutputCell>> cells = ReadRectFromScreenBuffer(*pScreenInfo, SourcePoint, Target);
+        WriteRectToScreenBuffer(*pScreenInfo, cells, coordTarget);
     }
-    return Status;
+    catch (...)
+    {
+        return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+    }
+    return STATUS_SUCCESS;
 }
 
 // Routine Description:
@@ -242,7 +183,9 @@ NTSTATUS _CopyRectangle(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ const SMALL_R
 // - ReadRegion - Region to read.
 // Return Value:
 [[nodiscard]]
-NTSTATUS ReadScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenInfo, _Inout_ PCHAR_INFO pciBuffer, _Inout_ PSMALL_RECT psrReadRegion)
+NTSTATUS ReadScreenBuffer(_In_ const SCREEN_INFORMATION* const pScreenInfo,
+                          _Inout_ PCHAR_INFO pciBuffer,
+                          _Inout_ PSMALL_RECT psrReadRegion)
 {
     DBGOUTPUT(("ReadScreenBuffer\n"));
 
@@ -300,7 +243,26 @@ NTSTATUS ReadScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenInfo, _In
     Target.Right = TargetPoint.X + (psrReadRegion->Right - psrReadRegion->Left);
     Target.Bottom = TargetPoint.Y + (psrReadRegion->Bottom - psrReadRegion->Top);
 
-    return ReadRectFromScreenBuffer(pScreenInfo, SourcePoint, pciBuffer, TargetSize, &Target, nullptr);
+    try
+    {
+        auto outputCells = ReadRectFromScreenBuffer(*pScreenInfo, SourcePoint, Target);
+        CHAR_INFO* pCurrCharInfo = pciBuffer;
+        // copy the data into the char info buffer
+        for (auto& row : outputCells)
+        {
+            for (auto& cell : row)
+            {
+                *pCurrCharInfo = cell.ToCharInfo();
+                ++pCurrCharInfo;
+            }
+        }
+    }
+    catch (...)
+    {
+        return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+    }
+
+    return STATUS_SUCCESS;
 }
 
 // Routine Description:
@@ -1037,52 +999,48 @@ NTSTATUS ScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo,
             Size.X = (SHORT)(ScrollRectangle2.Right - ScrollRectangle2.Left + 1);
             Size.Y = (SHORT)(ScrollRectangle2.Bottom - ScrollRectangle2.Top + 1);
 
-            CHAR_INFO* const rgciScrollBuffer = new CHAR_INFO[Size.X * Size.Y];
-            Status = NT_TESTNULL(rgciScrollBuffer);
-            if (SUCCEEDED(Status))
+            SMALL_RECT TargetRect;
+            TargetRect.Left = 0;
+            TargetRect.Top = 0;
+            TargetRect.Right = ScrollRectangle2.Right - ScrollRectangle2.Left;
+            TargetRect.Bottom = ScrollRectangle2.Bottom - ScrollRectangle2.Top;
+
+            COORD SourcePoint;
+            SourcePoint.X = ScrollRectangle2.Left;
+            SourcePoint.Y = ScrollRectangle2.Top;
+
+            std::vector<std::vector<OutputCell>> outputCells;
+            try
             {
-                TextAttribute* rTextAttrs = new TextAttribute[Size.X * Size.Y];
-                Status = NT_TESTNULL(rTextAttrs);
-                if (SUCCEEDED(Status))
-                {
-                    SMALL_RECT TargetRect;
-                    TargetRect.Left = 0;
-                    TargetRect.Top = 0;
-                    TargetRect.Right = ScrollRectangle2.Right - ScrollRectangle2.Left;
-                    TargetRect.Bottom = ScrollRectangle2.Bottom - ScrollRectangle2.Top;
-
-                    COORD SourcePoint;
-                    SourcePoint.X = ScrollRectangle2.Left;
-                    SourcePoint.Y = ScrollRectangle2.Top;
-
-                    Status = ReadRectFromScreenBuffer(pScreenInfo, SourcePoint, rgciScrollBuffer, Size, &TargetRect, rTextAttrs);
-                    if (NT_SUCCESS(Status))
-                    {
-                        FillRectangle(&ciFill, pScreenInfo, &ScrollRectangle3);
-
-                        SMALL_RECT SourceRectangle;
-                        SourceRectangle.Top = 0;
-                        SourceRectangle.Left = 0;
-                        SourceRectangle.Right = (SHORT)(Size.X - 1);
-                        SourceRectangle.Bottom = (SHORT)(Size.Y - 1);
-
-                        COORD TargetPoint;
-                        TargetPoint.X = TargetRectangle.Left;
-                        TargetPoint.Y = TargetRectangle.Top;
-
-                        Status = WriteRectToScreenBuffer((PBYTE)rgciScrollBuffer, Size, &SourceRectangle, pScreenInfo, TargetPoint, rTextAttrs);
-                        if (NT_SUCCESS(Status))
-                        {
-                            // update regions on screen.
-                            ScrollScreen(pScreenInfo, &ScrollRectangle2, &ScrollRectangle3, TargetPoint);
-                        }
-                    }
-
-                    delete[] rTextAttrs;
-                }
-
-                delete[] rgciScrollBuffer;
+                outputCells = ReadRectFromScreenBuffer(*pScreenInfo, SourcePoint, TargetRect);
             }
+            catch (...)
+            {
+                return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+            }
+
+            FillRectangle(&ciFill, pScreenInfo, &ScrollRectangle3);
+
+            SMALL_RECT SourceRectangle;
+            SourceRectangle.Top = 0;
+            SourceRectangle.Left = 0;
+            SourceRectangle.Right = (SHORT)(Size.X - 1);
+            SourceRectangle.Bottom = (SHORT)(Size.Y - 1);
+
+            COORD TargetPoint;
+            TargetPoint.X = TargetRectangle.Left;
+            TargetPoint.Y = TargetRectangle.Top;
+
+            try
+            {
+                WriteRectToScreenBuffer(*pScreenInfo, outputCells, TargetPoint);
+            }
+            catch (...)
+            {
+                return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+            }
+            // update regions on screen.
+            ScrollScreen(pScreenInfo, &ScrollRectangle2, &ScrollRectangle3, TargetPoint);
         }
     }
     else

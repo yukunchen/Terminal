@@ -278,125 +278,112 @@ NTSTATUS Clipboard::RetrieveTextFromBuffer(_In_ const SCREEN_INFORMATION* const 
             coordSelectionSize.X = sStringLength;
             coordSelectionSize.Y = 1;
 
-            // allocate our output buffer to copy into for further manipulation
-            CHAR_INFO* rgSelection = new CHAR_INFO[sStringLength];
-            status = NT_TESTNULL(rgSelection);
+
+            // our output buffer is 1 dimensional and is just as long as the string, so the "rectangle" should specify just a line.
+            SMALL_RECT srTargetRect;
+            srTargetRect.Left = 0;
+            srTargetRect.Right = sStringLength - 1; // length of 80 runs from left 0 to right 79. therefore -1.
+            srTargetRect.Top = 0;
+            srTargetRect.Bottom = 0;
+
+            // retrieve the data from the screen buffer
+            std::vector<OutputCell> outputCells;
+            try
+            {
+                std::vector<std::vector<OutputCell>> cells = ReadRectFromScreenBuffer(*pScreenInfo,
+                                                                                      coordSourcePoint,
+                                                                                      srTargetRect);
+                // we only care about one row so reduce it here
+                outputCells = cells.at(0);
+            }
+            catch (...)
+            {
+                return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+            }
+
+            // allocate a string buffer
+            size_t cSelectionLength = sStringLength + 1; // add one for null trailing character
+            PWCHAR pwszSelection = new WCHAR[cSelectionLength + 2]; // add 2 to leave space for \r\n if we munged it.
+
+            // position in the selection length string as we right.
+            // this may not align with the source if we skip characters (trailing bytes)
+            UINT cSelPos = 0;
+
+            // copy character into the string buffer
+            for (short iCol = 0; iCol < sStringLength; iCol++)
+            {
+                // strip any characters marked "trailing byte" as they're a duplicate
+                // e.g. only copy characters that are NOT trailing bytes
+                if (!outputCells[iCol].GetDbcsAttribute().IsTrailing())
+                {
+                    pwszSelection[cSelPos] = outputCells[iCol].GetCharData();
+                    ++cSelPos;
+                }
+            }
+
+            sStringLength = (short)cSelPos;
+
+            // trim trailing spaces
+            BOOL bMungeData = (GetKeyState(VK_SHIFT) & KEY_PRESSED) == 0;
+            if (bMungeData)
+            {
+                const ROW& Row = pScreenInfo->TextInfo->GetRowByOffset(iRow);
+
+                // FOR LINE SELECTION ONLY: if the row was wrapped, don't remove the spaces at the end.
+                if (!fLineSelection
+                    || !Row.GetCharRow().WasWrapForced())
+                {
+                    for (int iCol = (int)(sStringLength - 1); iCol >= 0; iCol--)
+                    {
+                        if (pwszSelection[iCol] == UNICODE_SPACE)
+                        {
+                            pwszSelection[iCol] = UNICODE_NULL;
+                        }
+                        else
+                        {
+                            break;
+                        }
+
+                    }
+                }
+            }
+
+            // ensure the last character is a null
+            pwszSelection[cSelectionLength - 1] = UNICODE_NULL;
+
+            // remeasure string
+            if (FAILED(StringCchLengthW(pwszSelection, cSelectionLength, &cSelectionLength)))
+            {
+                status = STATUS_UNSUCCESSFUL;
+            }
 
             if (NT_SUCCESS(status))
             {
-                // our output buffer is 1 dimensional and is just as long as the string, so the "rectangle" should specify just a line.
-                SMALL_RECT srTargetRect;
-                srTargetRect.Left = 0;
-                srTargetRect.Right = sStringLength - 1; // length of 80 runs from left 0 to right 79. therefore -1.
-                srTargetRect.Top = 0;
-                srTargetRect.Bottom = 0;
-
-                // retrieve the data from the screen buffer
-                #pragma prefast(suppress: 6001, "rgSelection's initial state doesn't matter and will be filled appropriately by the called function.")
-                status = ReadRectFromScreenBuffer(pScreenInfo, coordSourcePoint, rgSelection, coordSelectionSize, &srTargetRect, nullptr);
-                if (NT_SUCCESS(status))
+                // if we munged (trimmed spaces), apply CR/LF to the end of the final string
+                if (bMungeData)
                 {
-                    // allocate a string buffer
-                    size_t cSelectionLength = sStringLength + 1; // add one for null trailing character
-                    PWCHAR pwszSelection = new WCHAR[cSelectionLength + 2]; // add 2 to leave space for \r\n if we munged it.
-                    status = NT_TESTNULL(rgSelection);
-
-                    if (NT_SUCCESS(status))
+                    // if we're the final line, do not apply CR/LF.
+                    // a.k.a if we're earlier than the bottom, then apply CR/LF.
+                    if (iRect < cRectsSelected - 1)
                     {
-                        // position in the selection length string as we right.
-                        // this may not align with the source if we skip characters (trailing bytes)
-                        UINT cSelPos = 0;
-
-                        // copy character into the string buffer
-                        for (short iCol = 0; iCol < sStringLength; iCol++)
+                        // FOR LINE SELECTION ONLY: if the row was wrapped, do not apply CR/LF.
+                        // a.k.a. if the row was NOT wrapped, then we can assume a CR/LF is proper
+                        // always apply \r\n for box selection
+                        if (!fLineSelection
+                            || !pScreenInfo->TextInfo->GetRowByOffset(iRow).GetCharRow().WasWrapForced())
                         {
-                            // strip any characters marked "trailing byte" as they're a duplicate
-                            // e.g. only copy characters that are NOT trailing bytes
-                            if ((rgSelection[iCol].Attributes & COMMON_LVB_TRAILING_BYTE) == 0)
-                            {
-                                pwszSelection[cSelPos] = rgSelection[iCol].Char.UnicodeChar;
-                                cSelPos++;
-                            }
+                            pwszSelection[cSelectionLength++] = UNICODE_CARRIAGERETURN;
+                            pwszSelection[cSelectionLength++] = UNICODE_LINEFEED;
                         }
 
-                        // replace any null characters with spaces
-                        //for (int iCol = 0; iCol < sStringLength; iCol++)
-                        //{
-                        //    if (pwszSelection[iCol] == UNICODE_NULL)
-                        //    {
-                        //        pwszSelection[iCol] = UNICODE_SPACE;
-                        //    }
-                        //}
-
-                        sStringLength = (short)cSelPos;
-
-                        // trim trailing spaces
-                        BOOL bMungeData = (GetKeyState(VK_SHIFT) & KEY_PRESSED) == 0;
-                        if (bMungeData)
-                        {
-                            const ROW& Row = pScreenInfo->TextInfo->GetRowByOffset(iRow);
-
-                            // FOR LINE SELECTION ONLY: if the row was wrapped, don't remove the spaces at the end.
-                            if (!fLineSelection
-                                || !Row.GetCharRow().WasWrapForced())
-                            {
-                                for (int iCol = (int)(sStringLength - 1); iCol >= 0; iCol--)
-                                {
-                                    if (pwszSelection[iCol] == UNICODE_SPACE)
-                                    {
-                                        pwszSelection[iCol] = UNICODE_NULL;
-                                    }
-                                    else
-                                    {
-                                        break;
-                                    }
-
-                                }
-                            }
-                        }
-
-                        // ensure the last character is a null
-                        pwszSelection[cSelectionLength - 1] = UNICODE_NULL;
-
-                        // remeasure string
-                        if (FAILED(StringCchLengthW(pwszSelection, cSelectionLength, &cSelectionLength)))
-                        {
-                            status = STATUS_UNSUCCESSFUL;
-                        }
-
-                        if (NT_SUCCESS(status))
-                        {
-                            // if we munged (trimmed spaces), apply CR/LF to the end of the final string
-                            if (bMungeData)
-                            {
-                                // if we're the final line, do not apply CR/LF.
-                                // a.k.a if we're earlier than the bottom, then apply CR/LF.
-                                if (iRect < cRectsSelected - 1)
-                                {
-                                    // FOR LINE SELECTION ONLY: if the row was wrapped, do not apply CR/LF.
-                                    // a.k.a. if the row was NOT wrapped, then we can assume a CR/LF is proper
-                                    // always apply \r\n for box selection
-                                    if (!fLineSelection
-                                        || !pScreenInfo->TextInfo->GetRowByOffset(iRow).GetCharRow().WasWrapForced())
-                                    {
-                                        pwszSelection[cSelectionLength++] = UNICODE_CARRIAGERETURN;
-                                        pwszSelection[cSelectionLength++] = UNICODE_LINEFEED;
-                                    }
-
-                                    // and ensure the string is null terminated.
-                                    pwszSelection[cSelectionLength] = UNICODE_NULL;
-                                }
-                            }
-
-                            // save the formatted string and its length for later
-                            rgpwszTempText[iRect] = pwszSelection;
-                            rgTempTextLengths[iRect] = cSelectionLength;
-                        }
+                        // and ensure the string is null terminated.
+                        pwszSelection[cSelectionLength] = UNICODE_NULL;
                     }
-
                 }
 
-                delete[] rgSelection;
+                // save the formatted string and its length for later
+                rgpwszTempText[iRect] = pwszSelection;
+                rgTempTextLengths[iRect] = cSelectionLength;
             }
 
             if (!NT_SUCCESS(status))
