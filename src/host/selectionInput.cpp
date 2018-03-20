@@ -27,6 +27,7 @@ Selection::KeySelectionEventResult Selection::HandleKeySelectionEvent(_In_ const
     ASSERT(IsInSelectingState());
 
     const WORD wVirtualKeyCode = pInputKeyInfo->GetVirtualKey();
+    const bool ctrlPressed = IsFlagSet(inputServices->GetKeyState(VK_CONTROL), KEY_PRESSED);
 
     // if escape or ctrl-c, cancel selection
     if (!IsMouseButtonDown())
@@ -37,13 +38,8 @@ Selection::KeySelectionEventResult Selection::HandleKeySelectionEvent(_In_ const
             return Selection::KeySelectionEventResult::EventHandled;
         }
         else if (wVirtualKeyCode == VK_RETURN ||
-                 ((ServiceLocator::LocateInputServices()->GetKeyState(VK_CONTROL) & KEY_PRESSED) &&
-                  (wVirtualKeyCode == 'C' || // Ctrl-c
-                   wVirtualKeyCode == VK_INSERT)) ||
-                 (gci.GetInterceptCopyPaste() &&
-                  (wVirtualKeyCode == 'C') &&
-                  (IsFlagSet(inputServices->GetKeyState(VK_CONTROL), KEY_PRESSED)) &&
-                  (IsFlagSet(inputServices->GetKeyState(VK_SHIFT), KEY_PRESSED)))) // C-S-c
+                 // C-c, C-Ins. C-S-c Is also handled by this case.
+                 ((ctrlPressed) && (wVirtualKeyCode == 'C' || wVirtualKeyCode == VK_INSERT)))
         {
             Telemetry::Instance().SetKeyboardTextEditingUsed();
 

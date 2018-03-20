@@ -1030,12 +1030,12 @@ CursorType Settings::GetCursorType() const noexcept
     return _CursorType;
 }
 
-void Settings::SetCursorColor(_In_ const COLORREF CursorColor) noexcept
+void Settings::SetCursorColor(const COLORREF CursorColor) noexcept
 {
     _CursorColor = CursorColor;
 }
 
-void Settings::SetCursorType(_In_ const CursorType cursorType) noexcept
+void Settings::SetCursorType(const CursorType cursorType) noexcept
 {
     _CursorType = cursorType;
 }
@@ -1045,7 +1045,7 @@ bool Settings::GetInterceptCopyPaste() const noexcept
     return _fInterceptCopyPaste;
 }
 
-void Settings::SetInterceptCopyPaste(_In_ const bool interceptCopyPaste) noexcept
+void Settings::SetInterceptCopyPaste(const bool interceptCopyPaste) noexcept
 {
     _fInterceptCopyPaste = interceptCopyPaste;
 }
