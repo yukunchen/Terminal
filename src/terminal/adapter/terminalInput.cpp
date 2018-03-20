@@ -142,7 +142,7 @@ const TerminalInput::_TermKeyMap TerminalInput::s_rgKeypadApplicationMapping[]
 };
 
 // Sequences to send when a modifier is pressed with any of these keys
-// Basically, the 'm' will be replaced with a character indicating which 
+// Basically, the 'm' will be replaced with a character indicating which
 //      modifier keys are pressed.
 const TerminalInput::_TermKeyMap TerminalInput::s_rgModifierKeyMapping[]
 {
@@ -175,8 +175,8 @@ const TerminalInput::_TermKeyMap TerminalInput::s_rgModifierKeyMapping[]
 };
 
 // Sequences to send when a modifier is pressed with any of these keys
-// These sequences are not later updated to encode the modifier state in the 
-//      sequence itself, they are just weird exceptional cases to the general 
+// These sequences are not later updated to encode the modifier state in the
+//      sequence itself, they are just weird exceptional cases to the general
 //      rules above.
 const TerminalInput::_TermKeyMap TerminalInput::s_rgSimpleModifedKeyMapping[]
 {
@@ -283,7 +283,7 @@ bool TerminalInput::_SearchWithModifier(_In_ const KeyEvent& keyEvent) const
     else
     {
         // We didn't find the key in the map of modified keys that need editing,
-        //      maybe it's in the other map of modified keys with sequences that 
+        //      maybe it's in the other map of modified keys with sequences that
         //      don't need editing before sending.
         fSuccess = _SearchKeyMapping(keyEvent,
                                      s_rgSimpleModifedKeyMapping,
@@ -298,7 +298,7 @@ bool TerminalInput::_SearchWithModifier(_In_ const KeyEvent& keyEvent) const
         else
         {
             // One last check: C-/ is supposed to be C-_
-            // But '/' is not the same VKEY on all keyboards. So we have to 
+            // But '/' is not the same VKEY on all keyboards. So we have to
             //      figure out the vkey at runtime.
             const BYTE slashVkey = LOBYTE(VkKeyScan(L'/'));
             if (keyEvent.GetVirtualKeyCode() == slashVkey && keyEvent.IsCtrlPressed())
@@ -338,15 +338,15 @@ bool TerminalInput::_SearchKeyMapping(_In_ const KeyEvent& keyEvent,
             // If the mapping has no modifiers set, then it doesn't really care
             //      what the modifiers are on the key. The caller will likely do
             //      something with them.
-            // However, if there are modifiers set, then we only want to match 
+            // However, if there are modifiers set, then we only want to match
             //      if the key's modifiers are the same as the modifiers in the
             //      mapping.
             bool modifiersMatch = AreAllFlagsClear(pMap->dwModifiers, MOD_PRESSED);
             if (!modifiersMatch)
             {
-                // The modifier mapping expects certain modifier keys to be 
+                // The modifier mapping expects certain modifier keys to be
                 //      pressed. Check those as well.
-                modifiersMatch = 
+                modifiersMatch =
                     (IsFlagSet(pMap->dwModifiers, SHIFT_PRESSED) == keyEvent.IsShiftPressed()) &&
                     (IsAnyFlagSet(pMap->dwModifiers, ALT_PRESSED) == keyEvent.IsAltPressed()) &&
                     (IsAnyFlagSet(pMap->dwModifiers, CTRL_PRESSED) == keyEvent.IsCtrlPressed());
@@ -439,13 +439,20 @@ bool TerminalInput::HandleKey(_In_ const IInputEvent* const pInEvent) const
                     fKeyHandled = true;
                 }
             }
+
+            // If a modifier key was pressed, then we need to try and send the modified sequence.
+            if (!fKeyHandled && keyEvent.IsModifierPressed())
+            {
+                // Translate the key using the modifier table
+                fKeyHandled = _SearchWithModifier(keyEvent);
+            }
             // ALT is a sequence of ESC + KEY.
-            else if (keyEvent.GetCharData() != 0 && keyEvent.IsAltPressed())
+            if (!fKeyHandled && keyEvent.GetCharData() != 0 && keyEvent.IsAltPressed())
             {
                 _SendEscapedInputSequence(keyEvent.GetCharData());
                 fKeyHandled = true;
             }
-            else if (keyEvent.IsCtrlPressed())
+            if (!fKeyHandled && keyEvent.IsCtrlPressed())
             {
                 if ((keyEvent.GetCharData() == UNICODE_SPACE ) || // Ctrl+Space
                     // when Ctrl+@ comes through, the unicodechar
@@ -456,13 +463,6 @@ bool TerminalInput::HandleKey(_In_ const IInputEvent* const pInEvent) const
                     _SendNullInputSequence(keyEvent.GetActiveModifierKeys());
                     fKeyHandled = true;
                 }
-            }
-
-            // If a modifier key was pressed, then we need to try and send the modified sequence.
-            if (!fKeyHandled && keyEvent.IsModifierPressed())
-            {
-                // Translate the key using the modifier table
-                fKeyHandled = _SearchWithModifier(keyEvent);
             }
 
             if (!fKeyHandled)

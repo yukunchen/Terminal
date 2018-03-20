@@ -642,16 +642,16 @@ void InputTest::DifferentModifiersTest()
     uiKeystate = LEFT_CTRL_PRESSED;
     vkey = VK_BACK;
     s_pwszInputExpected = L"\x8";
-    TestKey(pInput, uiKeystate, vkey);
+    TestKey(pInput, uiKeystate, vkey, L'\x8');
     uiKeystate = RIGHT_CTRL_PRESSED;
-    TestKey(pInput, uiKeystate, vkey);
+    TestKey(pInput, uiKeystate, vkey, L'\x8');
 
     uiKeystate = LEFT_ALT_PRESSED;
     vkey = VK_BACK;
     s_pwszInputExpected = L"\x1b\x7f";
-    TestKey(pInput, uiKeystate, vkey);
+    TestKey(pInput, uiKeystate, vkey, L'\x8');
     uiKeystate = RIGHT_ALT_PRESSED;
-    TestKey(pInput, uiKeystate, vkey);
+    TestKey(pInput, uiKeystate, vkey, L'\x8');
 
     uiKeystate = LEFT_CTRL_PRESSED;
     vkey = VK_DELETE;
