@@ -652,6 +652,12 @@ HRESULT ATTR_ROW::InsertAttrRuns(_In_reads_(cAttrs) const TextAttributeRun* cons
     return S_OK;
 }
 
+// Routine Description:
+// - packs a vector of TextAttribute into a vector of TextAttrbuteRun
+// Arguments:
+// - attrs - text attributes to pack
+// Return Value:
+// - packed text attribute run
 std::vector<TextAttributeRun> ATTR_ROW::PackAttrs(const std::vector<TextAttribute>& attrs)
 {
     std::vector<TextAttributeRun> runs;
