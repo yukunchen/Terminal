@@ -651,3 +651,27 @@ HRESULT ATTR_ROW::InsertAttrRuns(_In_reads_(cAttrs) const TextAttributeRun* cons
 
     return S_OK;
 }
+
+std::vector<TextAttributeRun> ATTR_ROW::PackAttrs(const std::vector<TextAttribute>& attrs)
+{
+    std::vector<TextAttributeRun> runs;
+    if (attrs.empty())
+    {
+        return runs;
+    }
+    for (auto attr : attrs)
+    {
+        if (runs.empty() || !runs.back().GetAttributes().IsEqual(attr))
+        {
+            TextAttributeRun run;
+            run.SetLength(1);
+            run.SetAttributes(attr);
+            runs.push_back(run);
+        }
+        else
+        {
+            runs.back().SetLength(runs.back().GetLength() + 1);
+        }
+    }
+    return runs;
+}

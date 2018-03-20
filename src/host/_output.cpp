@@ -321,6 +321,76 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
 
 }
 
+// Routine Description:
+// - This routine copies a rectangular region to the screen buffer. no clipping is done.
+// Arguments:
+// - screenInfo - reference to screen buffer
+// - cells - cells to copy from
+// - coordDest - the coordinate position to overwrite data at
+// Return Value:
+// - <none>
+// Note:
+// - will throw exception on failure
+void WriteRectToScreenBuffer(_Inout_ SCREEN_INFORMATION& screenInfo,
+                             const std::vector<std::vector<OutputCell>>& cells,
+                             const COORD coordDest)
+{
+    DBGOUTPUT(("WriteRectToScreenBuffer\n"));
+    // don't do anything if we're not actually writing anything
+    if (cells.empty())
+    {
+        return;
+    }
+    const size_t xSize = cells.at(0).size();
+    const size_t ySize = cells.size();
+    const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
+
+    // copy data to output buffer
+    for (size_t iRow = 0; iRow < ySize; ++iRow)
+    {
+        ROW& row = screenInfo.TextInfo->GetRowByOffset(coordDest.Y + static_cast<UINT>(iRow));
+        // clear wrap status for rectangle drawing
+        row.GetCharRow().SetWrapForced(false);
+
+        std::vector<TextAttribute> textAttrs;
+
+        // fix up any leading trailing bytes at edges
+        COORD point;
+        point.X = coordDest.X;
+        point.Y = coordDest.Y + static_cast<short>(iRow);
+        CleanupDbcsEdgesForWrite(xSize, point, &screenInfo);
+
+        ICharRow& iCharRow = row.GetCharRow();
+        // we only support ucs2 encoded char rows
+        FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                        "only support UCS2 char rows currently");
+
+        Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
+        Ucs2CharRow::iterator it = std::next(charRow.begin(), coordDest.X);
+        Ucs2CharRow::const_iterator itEnd = charRow.cend();
+
+        for (size_t iCol = 0; iCol < xSize && it != itEnd; ++iCol, ++it)
+        {
+            const OutputCell& cell = cells[iRow][iCol];
+            it->first = cell.GetCharData();
+            it->second = cell.GetDbcsAttribute();
+            textAttrs.push_back(cell.GetTextAttribute());
+        }
+
+        // pack text attributes into runs and insert into attr row
+        std::vector<TextAttributeRun> packedAttrs = ATTR_ROW::PackAttrs(textAttrs);
+        std::unique_ptr<TextAttributeRun[]> textAttrRun = std::make_unique<TextAttributeRun[]>(packedAttrs.size());
+        THROW_IF_NULL_ALLOC(textAttrRun.get());
+        std::copy(packedAttrs.begin(), packedAttrs.end(), textAttrRun.get());
+        THROW_IF_FAILED(row.GetAttrRow().InsertAttrRuns(textAttrRun.get(),
+                                                        packedAttrs.size(),
+                                                        coordDest.X,
+                                                        coordDest.X + textAttrs.size() - 1,
+                                                        row.GetCharRow().size()));
+
+    }
+}
+
 void WriteRegionToScreen(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ PSMALL_RECT psrRegion)
 {
     if (pScreenInfo->IsActiveScreenBuffer())
