@@ -49,7 +49,8 @@ RECT WindowMetrics::GetMinClientRectInPixels()
     USHORT DisplayMode;
 
     // Fetch a reference to the Console IO Server.
-    Server = ServiceLocator::LocateInputServices<ConIoSrvComm>();
+    auto serverInterface = ServiceLocator::LocateInputServices();
+    Server = static_cast<ConIoSrvComm*>(serverInterface.get());
 
     // Figure out what kind of display we are using.
     Status = Server->RequestGetDisplayMode(&DisplayMode);

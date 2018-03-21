@@ -720,7 +720,7 @@ NTSTATUS ConIoSrvComm::InitializeBgfx()
 
     Globals& globals = ServiceLocator::LocateGlobals();
     assert(globals.pRender != nullptr);
-    IWindowMetrics * const Metrics = ServiceLocator::LocateWindowMetrics();
+    auto Metrics = ServiceLocator::LocateWindowMetrics();
 
     // Fetch the display size from the console driver.
     const RECT DisplaySize = Metrics->GetMaxClientRectInPixels();
