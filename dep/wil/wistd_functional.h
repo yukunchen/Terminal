@@ -8,6 +8,8 @@
 // http://idwebelements/GroupManagement.aspx?Group=wildisc&Operation=join  (one-click join)
 
 #pragma once
+#ifndef _WISTD_FUNCTIONAL_H_
+#define _WISTD_FUNCTIONAL_H_
 
 // STL common functionality
 //
@@ -2443,7 +2445,34 @@ template<class _Fty>
     return (!operator==(_Other, _Npc));
     }
 
+template<class _Ty = void>
+    struct less
+    {   // functor for operator<
+
+    constexpr bool operator()(const _Ty& _Left, const _Ty& _Right) const
+        {   // apply operator< to operands
+        return (_Left < _Right);
+        }
+    };
+
+template<>
+    struct less<void>
+    {   // transparent functor for operator<
+    typedef int is_transparent;
+
+    template<class _Ty1,
+        class _Ty2>
+        constexpr auto operator()(_Ty1&& _Left, _Ty2&& _Right) const
+        -> decltype(static_cast<_Ty1&&>(_Left)
+            < static_cast<_Ty2&&>(_Right))
+        {   // transparently apply operator< to operands
+        return (static_cast<_Ty1&&>(_Left)
+            < static_cast<_Ty2&&>(_Right));
+        }
+    };
+
 } // wistd
 /// @endcond
 
 #pragma warning(pop)
+#endif // _WISTD_FUNCTIONAL_H_

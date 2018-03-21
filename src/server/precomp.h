@@ -59,17 +59,8 @@ __inline NTSTATUS_FROM_WIN32(long x) { return x <= 0 ? (NTSTATUS)x : (NTSTATUS)(
 #include <assert.h>
 #include <intsafe.h>
 
-// C++ header files
-#include <stdexcept>
-#include <thread>
-#include <vector>
-#include <list>
-#include <queue>
-#include <new>
-#include <memory>
-#include <mutex>
-#include <unordered_map>
-#include <algorithm>
+// This includes support libraries from the CRT, STL, WIL, and GSL
+#include "LibraryIncludes.h"
 
 // private dependencies
 #include "..\host\conddkrefs.h"
@@ -79,24 +70,6 @@ __inline NTSTATUS_FROM_WIN32(long x) { return x <= 0 ? (NTSTATUS)x : (NTSTATUS)(
 #include <conmsgl3.h>
 #include <condrv.h>
 #include <ntcon.h>
-
-// in ProcessHandle class only
-//extern "C"
-//{
-//#include <DDK\wdm.h>
-//}
-
-// in Win32Control.cpp only
-//extern "C"
-//{
-//#include <Win32K\winuserk.h>
-//}
-
-
-// wil - Windows Internal Library - Header based library to make working with Win32/WinNT easier.
-#define WIL_SUPPORT_BITOPERATION_PASCAL_NAMES
-#include <wil\common.h>
-#include <wil\resource.h>
 
 // TODO: MSFT 9355094 Find a better way of doing this. http://osgvsowi/9355094
 [[nodiscard]]

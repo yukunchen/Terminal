@@ -38,16 +38,18 @@ class IInputEvent
 {
 public:
     static std::unique_ptr<IInputEvent> Create(_In_ const INPUT_RECORD& record);
-    static std::deque<std::unique_ptr<IInputEvent>> Create(_In_reads_(cRecords) const INPUT_RECORD* const pRecords,
-                                                           _In_ const size_t cRecords);
+    static std::deque<std::unique_ptr<IInputEvent>> Create(gsl::span<const INPUT_RECORD> records);
     static std::deque<std::unique_ptr<IInputEvent>> Create(_In_ const std::deque<INPUT_RECORD>& records);
 
-    [[nodiscard]]
-    static HRESULT ToInputRecords(_Inout_ const std::deque<std::unique_ptr<IInputEvent>>& events,
-                                  _Out_writes_(cRecords) INPUT_RECORD* const Buffer,
-                                  _In_ const size_t cRecords);
+    static std::vector<INPUT_RECORD> ToInputRecords(_In_ const std::deque<std::unique_ptr<IInputEvent>>& events);
 
     virtual ~IInputEvent() = 0;
+    IInputEvent() = default;
+    IInputEvent(const IInputEvent&) = default;
+    IInputEvent(IInputEvent&&) = default;
+    IInputEvent& operator=(const IInputEvent&)& = default;
+    IInputEvent& operator=(IInputEvent&&)& = default;
+
     virtual INPUT_RECORD ToInputRecord() const noexcept = 0;
 
     virtual InputEventType EventType() const noexcept = 0;
@@ -136,7 +138,7 @@ public:
     {
     }
 
-    constexpr KeyEvent() :
+    constexpr KeyEvent() noexcept :
         _keyDown{ 0 },
         _repeatCount{ 0 },
         _virtualKeyCode{ 0 },
@@ -146,9 +148,11 @@ public:
     {
     }
 
-    KeyEvent(const KeyEvent& keyEvent) = default;
-    KeyEvent(KeyEvent&& keyEvent) = default;
     ~KeyEvent();
+    KeyEvent(const KeyEvent&) = default;
+    KeyEvent(KeyEvent&&) = default;
+    KeyEvent& operator=(const KeyEvent&)& = default;
+    KeyEvent& operator=(KeyEvent&&)& = default;
 
     INPUT_RECORD ToInputRecord() const noexcept override;
     InputEventType EventType() const noexcept override;
@@ -288,10 +292,12 @@ public:
     {
     }
 
-    MouseEvent(const MouseEvent& mouseEvent) = default;
-    MouseEvent(MouseEvent&& mouseEvent) = default;
     ~MouseEvent();
-
+    MouseEvent(const MouseEvent&) = default;
+    MouseEvent(MouseEvent&&) = default;
+    MouseEvent& operator=(const MouseEvent&)& = default;
+    MouseEvent& operator=(MouseEvent&&)& = default;
+    
     INPUT_RECORD ToInputRecord() const noexcept override;
     InputEventType EventType() const noexcept override;
 
@@ -353,9 +359,11 @@ public:
     {
     }
 
-    WindowBufferSizeEvent(const WindowBufferSizeEvent& event) = default;
-    WindowBufferSizeEvent(WindowBufferSizeEvent&& event) = default;
     ~WindowBufferSizeEvent();
+    WindowBufferSizeEvent(const WindowBufferSizeEvent&) = default;
+    WindowBufferSizeEvent(WindowBufferSizeEvent&&) = default;
+    WindowBufferSizeEvent& operator=(const WindowBufferSizeEvent&)& = default;
+    WindowBufferSizeEvent& operator=(WindowBufferSizeEvent&&)& = default;
 
     INPUT_RECORD ToInputRecord() const noexcept override;
     InputEventType EventType() const noexcept override;
@@ -392,10 +400,12 @@ public:
     {
     }
 
-    MenuEvent(const MenuEvent& menuEvent) = default;
-    MenuEvent(MenuEvent&& menuEvent) = default;
     ~MenuEvent();
-
+    MenuEvent(const MenuEvent&) = default;
+    MenuEvent(MenuEvent&&) = default;
+    MenuEvent& operator=(const MenuEvent&)& = default;
+    MenuEvent& operator=(MenuEvent&&)& = default;
+    
     INPUT_RECORD ToInputRecord() const noexcept override;
     InputEventType EventType() const noexcept override;
 
@@ -431,9 +441,11 @@ public:
     {
     }
 
-    FocusEvent(const FocusEvent& focusEvent) = default;
-    FocusEvent(FocusEvent&& focusEvent) = default;
     ~FocusEvent();
+    FocusEvent(const FocusEvent&) = default;
+    FocusEvent(FocusEvent&&) = default;
+    FocusEvent& operator=(const FocusEvent&)& = default;
+    FocusEvent& operator=(FocusEvent&&)& = default;
 
     INPUT_RECORD ToInputRecord() const noexcept override;
     InputEventType EventType() const noexcept override;

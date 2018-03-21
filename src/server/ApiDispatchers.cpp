@@ -788,7 +788,7 @@ HRESULT ApiDispatchers::ServerWriteConsoleInput(_Inout_ CONSOLE_API_MSG * const 
     std::deque<std::unique_ptr<IInputEvent>> events;
     try
     {
-        events = IInputEvent::Create(Buffer, inputRecordCount);
+        events = IInputEvent::Create(gsl::make_span(Buffer, inputRecordCount));
     }
     CATCH_RETURN();
 

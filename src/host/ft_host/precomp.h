@@ -14,10 +14,8 @@ using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 
-#define WIL_SUPPORT_BITOPERATION_PASCAL_NAMES
-#include <wil\Common.h>
-#include <wil\Result.h>
-#include <wil\Resource.h>
+// This includes support libraries from the CRT, STL, WIL, and GSL
+#include "LibraryIncludes.h"
 
 #include <conio.h>
 

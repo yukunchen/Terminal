@@ -30,17 +30,8 @@ typedef NTSTATUS *PNTSTATUS;
 #include <strsafe.h>
 #include <sal.h>
 
-// STL
-#include <string>
-#include <list>
-#include <memory>
-#include <utility>
-#include <vector>
-#include <memory>
-
-// WIL
-#include <wil\Common.h>
-#include <wil\Result.h>
+// This includes support libraries from the CRT, STL, WIL, and GSL
+#include "LibraryIncludes.h"
 
 #include <winconp.h>
 #include "..\host\settings.hpp"
