@@ -34,6 +34,8 @@ typedef NTSTATUS *PNTSTATUS;
 
 #include <winuser.h>
 
+#include <cwchar>
+
 // Only remaining item from w32gdip.h. There's probably a better way to do this as well.
 #define IS_ANY_DBCS_CHARSET( CharSet )                              \
                    ( ((CharSet) == SHIFTJIS_CHARSET)    ? TRUE :    \
@@ -43,5 +45,5 @@ typedef NTSTATUS *PNTSTATUS;
 
 #include <assert.h>
 
-#include "host\conddkrefs.h"
-#include "host\conwinuserrefs.h"
+#include "conddkrefs.h"
+#include "conwinuserrefs.h"

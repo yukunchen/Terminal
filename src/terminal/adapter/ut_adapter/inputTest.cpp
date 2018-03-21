@@ -84,16 +84,12 @@ public:
 
 void InputTest::s_TerminalInputTestCallback(_In_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
 {
-    size_t cInput = inEvents.size();
-    INPUT_RECORD* rgInput = new INPUT_RECORD[cInput];
-    VERIFY_SUCCEEDED(IInputEvent::ToInputRecords(inEvents, rgInput, cInput));
-    VERIFY_IS_NOT_NULL(rgInput);
-    auto cleanup = wil::ScopeExit([&]{delete[] rgInput;});
+    auto records = IInputEvent::ToInputRecords(inEvents);
 
     size_t cInputExpected = 0;
     VERIFY_SUCCEEDED(StringCchLengthW(s_pwszInputExpected, STRSAFE_MAX_CCH, &cInputExpected));
 
-    if (VERIFY_ARE_EQUAL(cInputExpected, cInput, L"Verify expected and actual input array lengths matched."))
+    if (VERIFY_ARE_EQUAL(cInputExpected, records.size(), L"Verify expected and actual input array lengths matched."))
     {
         Log::Comment(L"We are expecting always key events and always key down. All other properties should not be written by simulated keys.");
 
@@ -103,23 +99,19 @@ void InputTest::s_TerminalInputTestCallback(_In_ std::deque<std::unique_ptr<IInp
         irExpected.Event.KeyEvent.wRepeatCount = 1;
 
         Log::Comment(L"Verifying individual array members...");
-        for (size_t i = 0; i < cInput; i++)
+        for (size_t i = 0; i < records.size(); i++)
         {
             irExpected.Event.KeyEvent.uChar.UnicodeChar = s_pwszInputExpected[i];
-            VERIFY_ARE_EQUAL(irExpected, rgInput[i], NoThrowString().Format(L"%c, %c", s_pwszInputExpected[i], rgInput[i].Event.KeyEvent.uChar.UnicodeChar));
+            VERIFY_ARE_EQUAL(irExpected, records[i], NoThrowString().Format(L"%c, %c", s_pwszInputExpected[i], records[i].Event.KeyEvent.uChar.UnicodeChar));
         }
     }
 }
 
 void InputTest::s_TerminalInputTestNullCallback(_In_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
 {
-    size_t cInput = inEvents.size();
-    INPUT_RECORD* rgInput = new INPUT_RECORD[cInput];
-    VERIFY_SUCCEEDED(IInputEvent::ToInputRecords(inEvents, rgInput, cInput));
-    VERIFY_IS_NOT_NULL(rgInput);
-    auto cleanup = wil::ScopeExit([&]{delete[] rgInput;});
+    auto records = IInputEvent::ToInputRecords(inEvents);
 
-    if (cInput == 1)
+    if (records.size() == 1)
     {
         Log::Comment(L"We are expecting a null input event.");
 
@@ -132,9 +124,9 @@ void InputTest::s_TerminalInputTestNullCallback(_In_ std::deque<std::unique_ptr<
         irExpected.Event.KeyEvent.wVirtualScanCode = 0;
         irExpected.Event.KeyEvent.uChar.UnicodeChar = L'\x0';
 
-        VERIFY_ARE_EQUAL(irExpected, rgInput[0]);
+        VERIFY_ARE_EQUAL(irExpected, records[0]);
     }
-    else if (cInput == 2)
+    else if (records.size() == 2)
     {
         Log::Comment(L"We are expecting a null input event, preceded by an escape");
 
@@ -157,12 +149,12 @@ void InputTest::s_TerminalInputTestNullCallback(_In_ std::deque<std::unique_ptr<
         irExpected.Event.KeyEvent.wVirtualScanCode = 0;
         irExpected.Event.KeyEvent.uChar.UnicodeChar = L'\x0';
 
-        VERIFY_ARE_EQUAL(irExpectedEscape, rgInput[0]);
-        VERIFY_ARE_EQUAL(irExpected, rgInput[1]);
+        VERIFY_ARE_EQUAL(irExpectedEscape, records[0]);
+        VERIFY_ARE_EQUAL(irExpected, records[1]);
     }
     else
     {
-        VERIFY_FAIL(NoThrowString().Format(L"Expected either one or two inputs, got %zu", cInput));
+        VERIFY_FAIL(NoThrowString().Format(L"Expected either one or two inputs, got %zu", records.size()));
     }
 
 }

@@ -1,17 +1,30 @@
 // Windows Internal Libraries (wil)
 // Resource.h: RAII wrappers (smart pointers) and other thin usability pattern wrappers over common Windows patterns.
+//
+// wil Usage Guidelines:
+// https://microsoft.sharepoint.com/teams/osg_development/Shared%20Documents/Windows%20Internal%20Libraries%20for%20C++%20Usage%20Guide.docx?web=1
+//
+// wil Discussion Alias (wildisc):
+// http://idwebelements/GroupManagement.aspx?Group=wildisc&Operation=join  (one-click join)
 
 #pragma once
 #include <winreg.h>
 #include <new.h> // new(std::nothrow)
-#include "resource.h" // unique_hkey
+#include "Resource.h" // unique_hkey
 #include "Functional.h"
 
-namespace wil 
+namespace wil
 {
+    //! The key name includes the absolute path of the key in the registry, always starting at a
+    //! base key, for example, HKEY_LOCAL_MACHINE.
+    size_t const maxRegistryKeyNameLength = 255;
+
+    //! The maximum number of characters allowed in a registry value's name.
+    size_t const maxRegistryValueNameLength = 16383;
+
     // unique_registry_watcher/unique_registry_watcher_nothrow/unique_registry_watcher_failfast
     // These classes make it easy to execute a provided function when a
-    // registry key changes (optionally recursively). Specify the key 
+    // registry key changes (optionally recursively). Specify the key
     // either as a root key + path, or an open registry handle as wil::unique_hkey
     // or a raw HKEY value (that will be duplicated).
     //
@@ -153,10 +166,10 @@ namespace wil
         {
             wistd::unique_ptr<details::registry_watcher_state> watcherState(new(std::nothrow) details::registry_watcher_state(
                 wistd::move(keyToWatch), isRecursive, wistd::move(callback)));
-            RETURN_HR_IF_FALSE(E_OUTOFMEMORY, watcherState);
+            RETURN_IF_NULL_ALLOC(watcherState);
             RETURN_IF_FAILED(watcherState->m_eventHandle.create());
-            RETURN_IF_WIN32_ERROR(RegNotifyChangeKeyValue(watcherState->m_keyToWatch.get(), 
-                watcherState->m_isRecursive, REG_NOTIFY_CHANGE_LAST_SET | REG_NOTIFY_CHANGE_NAME | REG_NOTIFY_THREAD_AGNOSTIC, 
+            RETURN_IF_WIN32_ERROR(RegNotifyChangeKeyValue(watcherState->m_keyToWatch.get(),
+                watcherState->m_isRecursive, REG_NOTIFY_CHANGE_LAST_SET | REG_NOTIFY_CHANGE_NAME | REG_NOTIFY_THREAD_AGNOSTIC,
                 watcherState->m_eventHandle.get(), TRUE));
 
             watcherState->m_threadPoolWait.reset(CreateThreadpoolWait([](PTP_CALLBACK_INSTANCE, void *context, TP_WAIT *, TP_WAIT_RESULT)
@@ -174,8 +187,8 @@ namespace wil
                         const LSTATUS error = RegNotifyChangeKeyValue(watcherState->m_keyToWatch.get(), watcherState->m_isRecursive,
                             REG_NOTIFY_CHANGE_LAST_SET | REG_NOTIFY_CHANGE_NAME | REG_NOTIFY_THREAD_AGNOSTIC,
                             watcherState->m_eventHandle.get(), TRUE);
-                        FAIL_FAST_HR_IF_FALSE(HRESULT_FROM_WIN32(error),
-                            (error == ERROR_SUCCESS) || (error == ERROR_KEY_DELETED) || (error == ERROR_ACCESS_DENIED));
+                        FAIL_FAST_HR_IF(HRESULT_FROM_WIN32(error),
+                            !((error == ERROR_SUCCESS) || (error == ERROR_KEY_DELETED) || (error == ERROR_ACCESS_DENIED)));
 
                         auto const changeKind = (error == ERROR_KEY_DELETED) ? RegistryChangeKind::Delete : RegistryChangeKind::Modify;
                         // Call the client before re-arming to ensure that multiple callbacks don't
@@ -184,9 +197,9 @@ namespace wil
                         watcherState->ReleaseFromCallback(changeKind);
                     }
                 }, watcherState.get(), nullptr));
-            RETURN_LAST_ERROR_IF_FALSE(watcherState->m_threadPoolWait);
-            reset(watcherState.release()); // no more failures after this, pass ownership
-            SetThreadpoolWait(get()->m_threadPoolWait.get(), get()->m_eventHandle.get(), nullptr);
+            RETURN_LAST_ERROR_IF(!watcherState->m_threadPoolWait);
+            storage_t::reset(watcherState.release()); // no more failures after this, pass ownership
+            SetThreadpoolWait(storage_t::get()->m_threadPoolWait.get(), storage_t::get()->m_eventHandle.get(), nullptr);
             return S_OK;
         }
     };

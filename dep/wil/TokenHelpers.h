@@ -73,10 +73,10 @@ namespace wil
     RETURN_IF_FAILED(wil::OpenCurrentAccessTokenNoThrow(&theToken, TOKEN_QUERY | TOKEN_IMPERSONATE, true));
     ~~~~
     @param tokenHandle Receives the token opened during the operation. Must be CloseHandle'd by the caller, or
-    (preferably) stored in a wil::unique_handle
+                (preferably) stored in a wil::unique_handle
     @param access Bits from the TOKEN_* access mask which are passed to OpenThreadToken/OpenProcessToken
     @param asSelf When true, and if the thread is impersonating, the thread token is opened using the
-    process token's rights.
+                process token's rights.
     */
     inline HRESULT OpenCurrentAccessTokenNoThrow(_Out_ HANDLE* tokenHandle, _In_ unsigned long access = TOKEN_QUERY, _In_ OpenThreadTokenAs openAs = OpenThreadTokenAs::Current)
     {
@@ -96,7 +96,7 @@ namespace wil
         return wil::unique_handle(rawTokenHandle);
     }
 
-    // Exception based function to open current thread/process access token and acquire pointer to it
+// Exception based function to open current thread/process access token and acquire pointer to it
 #ifdef WIL_ENABLE_EXCEPTIONS
     //! Current thread or process token, consider using GetCurrentThreadEffectiveToken() instead.
     inline wil::unique_handle OpenCurrentAccessToken(_In_ unsigned long access = TOKEN_QUERY, _In_ OpenThreadTokenAs openAs = OpenThreadTokenAs::Current)
@@ -125,11 +125,11 @@ namespace wil
     RETURN_IF_FAILED(wil::GetTokenInformationNoThrow(privileges, nullptr));
     for (DWORD i = 0; i < privileges->PrivilegeCount; ++i)
     {
-    RETURN_IF_FAILED(ConsumePrivilege(privileges->Privileges[i]));
+        RETURN_IF_FAILED(ConsumePrivilege(privileges->Privileges[i]));
     }
     ~~~~
     @param tokenInfo Receives a pointer to a structure containing the results of GetTokenInformation for the requested
-    type. The type of <T> selects which TOKEN_INFORMATION_CLASS will be used.
+            type. The type of <T> selects which TOKEN_INFORMATION_CLASS will be used.
     @param tokenHandle Specifies which token will be queried. When nullptr, the thread's effective current token is used.
     @return S_OK on success, a FAILED hresult containing the win32 error from querying the token otherwise.
     */
@@ -214,14 +214,14 @@ namespace wil
     auto privs = wil::GetTokenInformation<TOKEN_PRIVILEGES>(privileges);
     for (auto& priv : wil::make_range(privs->Privileges, privs->Privilieges + privs->PrivilegeCount))
     {
-    if (priv.Attributes & SE_PRIVILEGE_ENABLED)
-    {
-    // ...
-    }
+        if (priv.Attributes & SE_PRIVILEGE_ENABLED)
+        {
+            // ...
+        }
     }
     ~~~~
     @return A pointer to a structure containing the results of GetTokenInformation for the requested  type. The type of
-    <T> selects which TOKEN_INFORMATION_CLASS will be used.
+                <T> selects which TOKEN_INFORMATION_CLASS will be used.
     @param token Specifies which token will be queried. When nullptr or not set, the thread's effective current token is used.
     */
     template <typename T>
@@ -261,7 +261,7 @@ namespace wil
         DWORD defaultAccountNameByteSize = sizeof(defaultAccountName);
         wchar_t currentUserName[DNLEN + UNLEN + 2];     // +2 for "\" delimeter and terminating NULL
 
-                                                        // Get SAM name for current user if no user name specified.
+        // Get SAM name for current user if no user name specified.
         if (userName == nullptr)
         {
             DWORD currentUserNameSize = ARRAYSIZE(currentUserName);
@@ -306,17 +306,17 @@ namespace wil
     ~~~~
     HRESULT OpenFileAsSessionuser(_In_z_ const wchar_t* filePath, DWORD session, _Out_ HANDLE* opened)
     {
-    wil::unique_handle userToken;
-    RETURN_IF_WIN32_BOOL_FALSE(QueryUserToken(session, &userToken));
+        wil::unique_handle userToken;
+        RETURN_IF_WIN32_BOOL_FALSE(QueryUserToken(session, &userToken));
 
-    wil::unique_token_reverter reverter;
-    RETURN_IF_FAILED(wil::impersonate_token_nothrow(userToken.get(), reverter));
+        wil::unique_token_reverter reverter;
+        RETURN_IF_FAILED(wil::impersonate_token_nothrow(userToken.get(), reverter));
 
-    wil::unique_hfile userFile(::CreateFile(filePath, ...));
-    RETURN_LAST_ERROR_IF(!userFile && (::GetLastError() != ERROR_FILE_NOT_FOUND));
+        wil::unique_hfile userFile(::CreateFile(filePath, ...));
+        RETURN_LAST_ERROR_IF(!userFile && (::GetLastError() != ERROR_FILE_NOT_FOUND));
 
-    *opened = userFile.release();
-    return S_OK;
+        *opened = userFile.release();
+        return S_OK;
     }
     ~~~~
     @param token A token to impersonate, or 'nullptr' to run as the process identity.
@@ -345,16 +345,16 @@ namespace wil
     ~~~~
     HRESULT DeleteFileRetryAsSelf(_In_z_ const wchar_t* filePath)
     {
-    if (!::DeleteFile(filePath))
-    {
-    RETURN_LAST_ERROR_IF(::GetLastError() != ERROR_ACCESS_DENIED);
-    wil::unique_token_reverter reverter;
-    RETURN_IF_FAILED(wil::run_as_self_nothrow(reverter));
-    RETURN_IF_FAILED(TakeOwnershipOfFile(filePath));
-    RETURN_IF_FAILED(GrantDeleteAccess(filePath));
-    RETURN_IF_WIN32_BOOL_FALSE(::DeleteFile(filePath));
-    }
-    return S_OK;
+        if (!::DeleteFile(filePath))
+        {
+            RETURN_LAST_ERROR_IF(::GetLastError() != ERROR_ACCESS_DENIED);
+            wil::unique_token_reverter reverter;
+            RETURN_IF_FAILED(wil::run_as_self_nothrow(reverter));
+            RETURN_IF_FAILED(TakeOwnershipOfFile(filePath));
+            RETURN_IF_FAILED(GrantDeleteAccess(filePath));
+            RETURN_IF_WIN32_BOOL_FALSE(::DeleteFile(filePath));
+        }
+        return S_OK;
     }
     ~~~~
     */
@@ -382,15 +382,15 @@ namespace wil
     ~~~~
     wil::unique_hfile OpenFileAsSessionuser(_In_z_ const wchar_t* filePath, DWORD session)
     {
-    wil::unique_handle userToken;
-    THROW_IF_WIN32_BOOL_FALSE(QueryUserToken(session, &userToken));
+        wil::unique_handle userToken;
+        THROW_IF_WIN32_BOOL_FALSE(QueryUserToken(session, &userToken));
 
-    auto priorToken = wil::impersonate_token(userToken.get());
+        auto priorToken = wil::impersonate_token(userToken.get());
 
-    wil::unique_hfile userFile(::CreateFile(filePath, ...));
-    THROW_LAST_ERROR_IF(::GetLastError() != ERROR_FILE_NOT_FOUND);
+        wil::unique_hfile userFile(::CreateFile(filePath, ...));
+        THROW_LAST_ERROR_IF(::GetLastError() != ERROR_FILE_NOT_FOUND);
 
-    return userFile;
+        return userFile;
     }
     ~~~~
     @param token A token to impersonate, or 'nullptr' to run as the process identity.
@@ -409,13 +409,13 @@ namespace wil
     ~~~~
     void DeleteFileRetryAsSelf(_In_z_ const wchar_t* filePath)
     {
-    if (!::DeleteFile(filePath) && (::GetLastError() == ERROR_ACCESS_DENIED))
-    {
-    auto priorToken = wil::run_as_self();
-    TakeOwnershipOfFile(filePath);
-    GrantDeleteAccess(filePath);
-    ::DeleteFile(filePath);
-    }
+        if (!::DeleteFile(filePath) && (::GetLastError() == ERROR_ACCESS_DENIED))
+        {
+            auto priorToken = wil::run_as_self();
+            TakeOwnershipOfFile(filePath);
+            GrantDeleteAccess(filePath);
+            ::DeleteFile(filePath);
+        }
     }
     ~~~~
     */
@@ -431,12 +431,12 @@ namespace wil
     ~~~~
     bool IsGuest()
     {
-    return wil::test_token_membership(nullptr, SECURITY_NT_AUTHORITY, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_GUESTS));
+        return wil::test_token_membership(nullptr, SECURITY_NT_AUTHORITY, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_GUESTS));
     }
     ~~~~
     @param result This will be set to true if and only if a security identifier described by the given set of subauthorities is enabled in the given access token.
     @param token A handle to an access token. The handle must have TOKEN_QUERY access to the token, and must be an impersonation token. If token is nullptr, test_token_membership
-    uses the impersonation token of the calling thread. If the thread is not impersonating, the function duplicates the thread's primary token to create an impersonation token.
+           uses the impersonation token of the calling thread. If the thread is not impersonating, the function duplicates the thread's primary token to create an impersonation token.
     @param sidAuthority A reference to a SID_IDENTIFIER_AUTHORITY structure. This structure provides the top-level identifier authority value to set in the SID.
     @param subAuthorities Up to eight subauthority values to place in the SID (this is a limit of AllocateAndInitializeSid).
     @return S_OK on success, a FAILED hresult containing the win32 error from creating the SID or querying the token otherwise.

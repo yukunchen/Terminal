@@ -21,19 +21,5 @@ Abstract:
 #include "telemetry.hpp"
 #include "tracing.hpp"
 
-// WIL
-#define WIL_SUPPORT_BITOPERATION_PASCAL_NAMES
-#include <wil\Common.h>
-#include <wil\Result.h>
-
-// STL
-#include <string>
-#include <list>
-#include <memory>
-#include <utility>
-#include <vector>
-#include <memory>
-#include <deque>
-#include <assert.h>
-#include <algorithm>
-#include <iterator>
+// This includes support libraries from the CRT, STL, WIL, and GSL
+#include "LibraryIncludes.h"

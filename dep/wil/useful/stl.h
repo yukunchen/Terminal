@@ -1,11 +1,19 @@
 // Windows Internal Libraries (wil)
 //
+// wil Usage Guidelines:
+// https://microsoft.sharepoint.com/teams/osg_development/Shared%20Documents/Windows%20Internal%20Libraries%20for%20C++%20Usage%20Guide.docx?web=1
+//
+// wil Discussion Alias (wildisc):
+// http://idwebelements/GroupManagement.aspx?Group=wildisc&Operation=join  (one-click join)
+//
 //! @file
 //! Windows STL helpers: custom allocators for STL containers
 
 #pragma once
-
 #include "Common.h"
+#include "Resource.h"
+#include <string>
+
 #if defined(WIL_ENABLE_EXCEPTIONS)
 namespace std
 {
@@ -21,12 +29,9 @@ namespace std
     template<class _Elem, class _Traits, class _Alloc>
     class basic_string;
 } // namespace std
-#endif // WIL_ENABLE_EXCEPTIONS
 
 namespace wil
 {
-
-#if defined(WIL_ENABLE_EXCEPTIONS)
     /** Secure allocator for STL containers.
     The `wil::secure_allocator` allocator calls `SecureZeroMemory` before deallocating
     memory. This provides a mechanism for secure STL containers such as `wil::secure_vector`,
@@ -68,7 +73,7 @@ namespace wil
         }
 
         void deallocate(pointer p, size_type n)
-        {	
+        {
             SecureZeroMemory(p, sizeof(T) * n);
             std::allocator<T>::deallocate(p, n);
         }
@@ -81,5 +86,34 @@ namespace wil
     using secure_wstring = std::basic_string<wchar_t, std::char_traits<wchar_t>, wil::secure_allocator<wchar_t>>;
     //! `wil::secure_string` will be securely zeroed before deallocation.
     using secure_string = std::basic_string<char, std::char_traits<char>, wil::secure_allocator<char>>;
-#endif // WIL_ENABLE_EXCEPTIONS
+
+    /// @cond
+    namespace details
+    {
+        template<> struct string_maker<std::wstring>
+        {
+            HRESULT make(_In_reads_opt_(length) PCWSTR source, size_t length) WI_NOEXCEPT try
+            {
+                m_value = source ? std::wstring(source, length) : std::wstring(length, L'\0');
+                return S_OK;
+            }
+            catch (...)
+            {
+                return E_OUTOFMEMORY;
+            }
+
+            wchar_t* buffer() { return &m_value[0]; }
+
+            std::wstring release() { return std::wstring(std::move(m_value)); }
+
+            static PCWSTR get(const std::wstring& value) { return value.c_str(); }
+
+        private:
+            std::wstring m_value;
+        };
+    }
+    /// @endcond
+
 } // namespace wil
+
+#endif // WIL_ENABLE_EXCEPTIONS

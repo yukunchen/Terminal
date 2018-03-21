@@ -11,9 +11,6 @@ Abstract:
 
 #pragma once
 
-// We want WIL to use the bit operation flags, but I can't tell where WIL is being included so put this at the top to ensure they're forced on.
-#define WIL_SUPPORT_BITOPERATION_PASCAL_NAMES
-
 #define DEFINE_CONSOLEV2_PROPERTIES
 
 // Ignore checked iterators warning from VC compiler.
@@ -21,7 +18,10 @@ Abstract:
 
 // This includes a lot of common headers needed by both the host and the propsheet
 // including: windows.h, winuser, ntstatus, assert, and the DDK
-#include "../CommonIncludes.h"
+#include "HostAndPropsheetIncludes.h"
+
+// This includes support libraries from the CRT, STL, WIL, and GSL
+#include "LibraryIncludes.h"
 
 #define SCREEN_BUFFER_POINTER(X,Y,XSIZE,CELLSIZE) (((XSIZE * (Y)) + (X)) * (ULONG)CELLSIZE)
 #include <shellapi.h>
@@ -45,24 +45,6 @@ Abstract:
 #include "consrv.h"
 
 #include "conv.h"
-
-// STL
-#include <string>
-#include <list>
-#include <memory>
-#include <utility>
-#include <vector>
-#include <deque>
-#include <iterator>
-#include <algorithm>
-#include <memory>
-#include <iterator>
-
-// WIL
-#include <wil/Common.h>
-#include <wil/Result.h>
-#include <wil/resource.h>
-#include <wil/wistd_memory.h>
 
 #pragma prefast(push)
 #pragma prefast(disable:26071, "Range violation in Intsafe. Not ours.")

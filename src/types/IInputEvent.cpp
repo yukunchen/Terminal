@@ -32,14 +32,15 @@ std::unique_ptr<IInputEvent> IInputEvent::Create(_In_ const INPUT_RECORD& record
     }
 }
 
-std::deque<std::unique_ptr<IInputEvent>> IInputEvent::Create(_In_reads_(cRecords) const INPUT_RECORD* const pRecords,
-                                                             _In_ const size_t cRecords)
+std::deque<std::unique_ptr<IInputEvent>> IInputEvent::Create(gsl::span<const INPUT_RECORD> records)
 {
     std::deque<std::unique_ptr<IInputEvent>> outEvents;
-    for (size_t i = 0; i < cRecords; ++i)
+
+    for (auto& record : records)
     {
-        outEvents.push_back(Create(pRecords[i]));
+        outEvents.push_back(Create(record));
     }
+
     return outEvents;
 }
 
@@ -61,21 +62,15 @@ std::deque<std::unique_ptr<IInputEvent>> IInputEvent::Create(_In_ const std::deq
     return outEvents;
 }
 
-[[nodiscard]]
-HRESULT IInputEvent::ToInputRecords(_In_ const std::deque<std::unique_ptr<IInputEvent>>& events,
-                                    _Out_writes_(cRecords) INPUT_RECORD* const Buffer,
-                                    _In_ const size_t cRecords)
+std::vector<INPUT_RECORD> IInputEvent::ToInputRecords(const std::deque<std::unique_ptr<IInputEvent>>& events)
 {
-    assert(events.size() <= cRecords);
+    std::vector<INPUT_RECORD> records;
+    records.reserve(events.size());
 
-    if (events.size() > cRecords)
+    for (auto& evt : events)
     {
-        return E_INVALIDARG;
+        records.push_back(evt->ToInputRecord());
     }
 
-    for (size_t i = 0; i < cRecords; ++i)
-    {
-        Buffer[i] = events[i]->ToInputRecord();
-    }
-    return S_OK;
+    return records;
 }

@@ -44,11 +44,8 @@ __inline int NTSTATUS_FROM_WIN32(long x) { return x <= 0 ? (NTSTATUS)x : (NTSTAT
 #include <intsafe.h>
 #pragma prefast(pop)
 
-// WIL
-// We want WIL to use the bit operation flags, but I can't tell where WIL is being included so put this at the top to ensure they're forced on.
-#define WIL_SUPPORT_BITOPERATION_PASCAL_NAMES
-#include <wil\Common.h>
-#include <wil\Result.h>
+// This includes support libraries from the CRT, STL, WIL, and GSL
+#include "LibraryIncludes.h"
 
 // CPP 2017 utilities.
 #include "..\..\inc\cpp2017.hpp"
