@@ -162,14 +162,18 @@ NTSTATUS Window::s_RegisterWindowClass()
 // - <none>
 void Window::_UpdateSystemMetrics() const
 {
-    WindowDpiApi* const dpiApi = ServiceLocator::LocateHighDpiApi<WindowDpiApi>();
+    
     Globals& g = ServiceLocator::LocateGlobals();
     const CONSOLE_INFORMATION& gci = g.getConsoleInformation();
 
     Scrolling::s_UpdateSystemMetrics();
 
-    g.sVerticalScrollSize = (SHORT)dpiApi->GetSystemMetricsForDpi(SM_CXVSCROLL, g.dpi);
-    g.sHorizontalScrollSize = (SHORT)dpiApi->GetSystemMetricsForDpi(SM_CYHSCROLL, g.dpi);
+    { // Scope to lock/unlock Service Locator usage
+        auto dpiInterface = ServiceLocator::LocateHighDpiApi();
+        auto const dpiApi = static_cast<WindowDpiApi*>(dpiInterface.get());
+        g.sVerticalScrollSize = (SHORT)dpiApi->GetSystemMetricsForDpi(SM_CXVSCROLL, g.dpi);
+        g.sHorizontalScrollSize = (SHORT)dpiApi->GetSystemMetricsForDpi(SM_CYHSCROLL, g.dpi);
+    }
 
     gci.CurrentScreenBuffer->TextInfo->GetCursor()->UpdateSystemMetrics();
 }
@@ -319,7 +323,7 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
                             SendMessageW(hWnd, WM_SETHOTKEY, gci.GetHotKey(), 0);
                         }
 
-                        ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->EnableChildWindowDpiMessage(_hWnd, TRUE /*fEnable*/);
+                        static_cast<WindowDpiApi*>(ServiceLocator::LocateHighDpiApi().get())->EnableChildWindowDpiMessage(_hWnd, TRUE /*fEnable*/);
 
                         // Post a window size update so that the new console window will size itself correctly once it's up and
                         // running. This works around chicken & egg cases involving window size calculations having to do with font
@@ -407,11 +411,13 @@ NTSTATUS Window::SetViewportOrigin(_In_ SMALL_RECT NewWindow)
         pSelection->HideSelection();
 
         // Fire off an event to let accessibility apps know we've scrolled.
-        IAccessibilityNotifier *pNotifier = ServiceLocator::LocateAccessibilityNotifier();
-        if (pNotifier != nullptr)
-        {
-            pNotifier->NotifyConsoleUpdateScrollEvent(ScreenInfo->GetBufferViewport().Left - NewWindow.Left,
-                                                      ScreenInfo->GetBufferViewport().Top - NewWindow.Top);
+        { // Scope to control service locator lock/unlock lifetime
+            auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
+            if (pNotifier.get() != nullptr)
+            {
+                pNotifier->NotifyConsoleUpdateScrollEvent(ScreenInfo->GetBufferViewport().Left - NewWindow.Left,
+                                                          ScreenInfo->GetBufferViewport().Top - NewWindow.Top);
+            }
         }
 
         // The new window is OK. Store it in screeninfo and refresh screen.
@@ -496,6 +502,8 @@ void Window::UpdateWindowText()
         dwMsgId = ID_CONSOLE_MSGSCROLLMODE;
     }
 
+    auto windowInterface = ServiceLocator::LocateConsoleWindow();
+
     // if we have a message, use it
     if (dwMsgId != 0)
     {
@@ -517,7 +525,7 @@ void Window::UpdateWindowText()
                         szMsg,
                         gci.Title)))
                     {
-                        ServiceLocator::LocateConsoleWindow<Window>()->PostUpdateTitle(pwszTitle);
+                        static_cast<Window*>(windowInterface.get())->PostUpdateTitle(pwszTitle);
                     }
                     else
                     {
@@ -531,7 +539,7 @@ void Window::UpdateWindowText()
     {
         // no mode-based message. set title back to original state.
         //Copy the title into a new buffer, because consuming the update_title HeapFree's the pwsz.
-        ServiceLocator::LocateConsoleWindow()->PostUpdateTitleWithCopy(gci.Title);
+        windowInterface->PostUpdateTitleWithCopy(gci.Title);
     }
 }
 
@@ -608,7 +616,12 @@ NTSTATUS Window::_InternalSetWindowSize() const
         rectSizeTemp.right = WindowSize.cx;
         rectSizeTemp.bottom = WindowSize.cy;
         ASSERT(rectSizeTemp.top == 0 && rectSizeTemp.left == 0);
-        ServiceLocator::LocateWindowMetrics<WindowMetrics>()->ConvertClientRectToWindowRect(&rectSizeTemp);
+
+        { // Scope to lock/unlock service locator usage.
+            auto windowMetricsInterface = ServiceLocator::LocateWindowMetrics();
+            auto const win32WindowMetrics = static_cast<WindowMetrics*>(windowMetricsInterface.get());
+            win32WindowMetrics->ConvertClientRectToWindowRect(&rectSizeTemp);
+        }
 
         // Measure the adjusted rectangle dimensions and fill up the size variable
         WindowSize.cx = RECT_WIDTH(&rectSizeTemp);
@@ -944,20 +957,28 @@ void Window::s_CalculateWindowRect(_In_ COORD const coordWindowInChars,
 
     // 3. Perform adjustment
     // NOTE: This may adjust the position of the window as well as the size. This is why we use rectProposed in the interim.
-    ServiceLocator::LocateWindowMetrics<WindowMetrics>()->AdjustWindowRectEx(&rectProposed, dwStyle, fMenu, dwExStyle, iDpi);
-
-    // Finally compensate for scroll bars
-
-    // If the window is smaller than the buffer in width, add space at the bottom for a horizontal scroll bar
-    if (coordWindowInChars.X < coordBufferSize.X)
-    {
-        rectProposed.bottom += (SHORT)ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->GetSystemMetricsForDpi(SM_CYHSCROLL, iDpi);
+    { // Scope to lock/unlock service locator usage.
+        auto windowMetricsInterface = ServiceLocator::LocateWindowMetrics();
+        auto const win32WindowMetrics = static_cast<WindowMetrics*>(windowMetricsInterface.get());
+        win32WindowMetrics->AdjustWindowRectEx(&rectProposed, dwStyle, fMenu, dwExStyle, iDpi);
     }
 
-    // If the window is smaller than the buffer in height, add space at the right for a vertical scroll bar
-    if (coordWindowInChars.Y < coordBufferSize.Y)
-    {
-        rectProposed.right += (SHORT)ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->GetSystemMetricsForDpi(SM_CXVSCROLL, iDpi);
+    // Finally compensate for scroll bars
+    { // Scope to lock/unlock service locator usage.
+        auto dpiInterface = ServiceLocator::LocateHighDpiApi();
+        auto const dpiApi = static_cast<WindowDpiApi*>(dpiInterface.get());
+
+        // If the window is smaller than the buffer in width, add space at the bottom for a horizontal scroll bar
+        if (coordWindowInChars.X < coordBufferSize.X)
+        {
+            rectProposed.bottom += (SHORT)dpiApi->GetSystemMetricsForDpi(SM_CYHSCROLL, iDpi);
+        }
+
+        // If the window is smaller than the buffer in height, add space at the right for a vertical scroll bar
+        if (coordWindowInChars.Y < coordBufferSize.Y)
+        {
+            rectProposed.right += (SHORT)dpiApi->GetSystemMetricsForDpi(SM_CXVSCROLL, iDpi);
+        }
     }
 
     // Apply the calculated sizes to the existing window pointer

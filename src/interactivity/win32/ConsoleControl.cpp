@@ -51,7 +51,7 @@ NTSTATUS ConsoleControl::EndTask(_In_ HANDLE hProcessId, _In_ DWORD dwEventType,
     ConsoleEndTaskParams.ProcessId = hProcessId;
     ConsoleEndTaskParams.ConsoleEventCode = dwEventType;
     ConsoleEndTaskParams.ConsoleFlags = ulCtrlFlags;
-    ConsoleEndTaskParams.hwnd = pConsoleWindow == nullptr
+    ConsoleEndTaskParams.hwnd = pConsoleWindow.get() == nullptr
         ? nullptr
         : pConsoleWindow->GetWindowHandle();
 

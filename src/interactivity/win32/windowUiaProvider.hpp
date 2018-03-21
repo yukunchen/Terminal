@@ -20,6 +20,8 @@ Author(s):
 
 #include "precomp.h"
 
+#include "../../types/inc/Locked.hpp"
+
 namespace Microsoft::Console::Interactivity::Win32
 {
     // Forward declare, prevent circular ref.
@@ -74,7 +76,7 @@ namespace Microsoft::Console::Interactivity::Win32
         HWND _GetWindowHandle() const;
         [[nodiscard]]
         HRESULT _EnsureValidHwnd() const;
-        static IConsoleWindow* const _getIConsoleWindow();
+        static Locked<IConsoleWindow> _getIConsoleWindow();
 
 
         // this is used to prevent the object from

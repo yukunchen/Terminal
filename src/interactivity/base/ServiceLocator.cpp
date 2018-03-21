@@ -10,15 +10,24 @@ using namespace Microsoft::Console::Interactivity;
 
 #pragma region Private Static Member Initialization
 
+std::recursive_mutex ServiceLocator::s_interactivityFactoryMutex;
 std::unique_ptr<IInteractivityFactory> ServiceLocator::s_interactivityFactory;
+std::recursive_mutex ServiceLocator::s_consoleControlMutex;
 std::unique_ptr<IConsoleControl> ServiceLocator::s_consoleControl;
+std::recursive_mutex ServiceLocator::s_consoleInputThreadMutex;
 std::unique_ptr<IConsoleInputThread> ServiceLocator::s_consoleInputThread;
+std::recursive_mutex ServiceLocator::s_windowMetricsMutex;
 std::unique_ptr<IWindowMetrics> ServiceLocator::s_windowMetrics;
+std::recursive_mutex ServiceLocator::s_accessibilityNotifierMutex;
 std::unique_ptr<IAccessibilityNotifier> ServiceLocator::s_accessibilityNotifier;
+std::recursive_mutex ServiceLocator::s_highDpiApiMutex;
 std::unique_ptr<IHighDpiApi> ServiceLocator::s_highDpiApi;
+std::recursive_mutex ServiceLocator::s_systemConfigurationProviderMutex;
 std::unique_ptr<ISystemConfigurationProvider> ServiceLocator::s_systemConfigurationProvider;
+std::recursive_mutex ServiceLocator::s_inputServicesMutex;
 std::unique_ptr<IInputServices> ServiceLocator::s_inputServices;
 
+std::recursive_mutex ServiceLocator::s_consoleWindowMutex;
 IConsoleWindow* ServiceLocator::s_consoleWindow = nullptr;
 
 Globals                      ServiceLocator::s_globals;
@@ -53,22 +62,59 @@ void ServiceLocator::RundownAndExit(_In_ HRESULT const hr)
     // place to clean up and notify any objects or threads in the system that have to cleanup safely before
     // we head into TerminateProcess and tear everything else down less gracefully.
 
-    // TODO: MSFT: 14397093 - Expand graceful rundown beyond just the Hot Bug input services case.
-
+    std::lock_guard<std::recursive_mutex> inputLock(s_inputServicesMutex);
     if (s_inputServices.get() != nullptr)
     {
         s_inputServices.reset(nullptr);
     }
 
+    std::lock_guard<std::recursive_mutex> sysConfigLock(s_systemConfigurationProviderMutex);
+    if (s_systemConfigurationProvider.get() != nullptr)
+    {
+        s_systemConfigurationProvider.reset(nullptr);
+    }
+
+    std::lock_guard<std::recursive_mutex> highDpiLock(s_highDpiApiMutex);
+    if (s_highDpiApi.get() != nullptr)
+    {
+        s_highDpiApi.reset(nullptr);
+    }
+
+    std::lock_guard<std::recursive_mutex> windowMetricsLock(s_windowMetricsMutex);
+    if (s_windowMetrics.get() != nullptr)
+    {
+        s_windowMetrics.reset(nullptr);
+    }
+
+    std::lock_guard<std::recursive_mutex> accessibilityNotifierLock(s_accessibilityNotifierMutex);
+    if (s_accessibilityNotifier.get() != nullptr)
+    {
+        s_accessibilityNotifier.reset(nullptr);
+    }
+
+    std::lock_guard<std::recursive_mutex> consoleControlLock(s_consoleControlMutex);
+    if (s_consoleControl.get() != nullptr)
+    {
+        s_consoleControl.reset(nullptr);
+    }
+
+    std::lock_guard<std::recursive_mutex> consoleInputLock(s_consoleInputThreadMutex);
+    // Let thread be torn down by terminate process
+
+    std::lock_guard<std::recursive_mutex> consoleWindowLock(s_consoleWindowMutex);
+    // Ownership is still inverted here. The individual Win32/OneCore Window classes will own this.
+    // We just store a pointer to share the interface with other consumers.
+
     TerminateProcess(GetCurrentProcess(), hr);
 }
 
 #pragma region Creation Methods
-
 [[nodiscard]]
 NTSTATUS ServiceLocator::CreateConsoleInputThread(_Outptr_result_nullonfailure_ IConsoleInputThread** thread)
 {
     NTSTATUS status = STATUS_SUCCESS;
+
+    std::lock_guard<std::recursive_mutex> lock(s_consoleInputThreadMutex);
 
     if (s_consoleInputThread)
     {
@@ -76,10 +122,7 @@ NTSTATUS ServiceLocator::CreateConsoleInputThread(_Outptr_result_nullonfailure_ 
     }
     else
     {
-        if (s_interactivityFactory.get() == nullptr)
-        {
-            status = ServiceLocator::LoadInteractivityFactory();
-        }
+        status = ServiceLocator::_LoadInteractivityFactory();
         if (NT_SUCCESS(status))
         {
             status = s_interactivityFactory->CreateConsoleInputThread(s_consoleInputThread);
@@ -101,6 +144,8 @@ NTSTATUS ServiceLocator::CreateConsoleInputThread(_Outptr_result_nullonfailure_ 
 [[nodiscard]]
 NTSTATUS ServiceLocator::SetConsoleWindowInstance(_In_ IConsoleWindow* window)
 {
+    std::lock_guard<std::recursive_mutex> lock(s_consoleWindowMutex);
+
     NTSTATUS status = STATUS_SUCCESS;
 
     if (s_consoleWindow)
@@ -123,22 +168,20 @@ NTSTATUS ServiceLocator::SetConsoleWindowInstance(_In_ IConsoleWindow* window)
 
 #pragma region Location Methods
 
-IConsoleWindow *ServiceLocator::LocateConsoleWindow()
+Locked<IConsoleWindow> ServiceLocator::LocateConsoleWindow()
 {
-    return s_consoleWindow;
+    return Locked<IConsoleWindow>(s_consoleWindow, s_consoleWindowMutex);
 }
 
-IConsoleControl *ServiceLocator::LocateConsoleControl()
+Locked<IConsoleControl> ServiceLocator::LocateConsoleControl()
 {
     NTSTATUS status = STATUS_SUCCESS;
 
+    std::unique_lock<std::recursive_mutex> lock(s_consoleControlMutex);
+
     if (!s_consoleControl)
     {
-        if (s_interactivityFactory.get() == nullptr)
-        {
-            status = ServiceLocator::LoadInteractivityFactory();
-        }
-
+        status = ServiceLocator::_LoadInteractivityFactory();
         if (NT_SUCCESS(status))
         {
             status = s_interactivityFactory->CreateConsoleControl(s_consoleControl);
@@ -147,25 +190,18 @@ IConsoleControl *ServiceLocator::LocateConsoleControl()
 
     LOG_IF_NTSTATUS_FAILED(status);
 
-    return s_consoleControl.get();
+    return Locked<IConsoleControl>(s_consoleControl.get(), std::move(lock));
 }
 
-IConsoleInputThread* ServiceLocator::LocateConsoleInputThread()
-{
-    return s_consoleInputThread.get();
-}
-
-IHighDpiApi* ServiceLocator::LocateHighDpiApi()
+Locked<IHighDpiApi> ServiceLocator::LocateHighDpiApi()
 {
     NTSTATUS status = STATUS_SUCCESS;
 
+    std::unique_lock<std::recursive_mutex> lock(s_highDpiApiMutex);
+
     if (!s_highDpiApi)
     {
-        if (s_interactivityFactory.get() == nullptr)
-        {
-            status = ServiceLocator::LoadInteractivityFactory();
-        }
-
+        status = ServiceLocator::_LoadInteractivityFactory();
         if (NT_SUCCESS(status))
         {
             status = s_interactivityFactory->CreateHighDpiApi(s_highDpiApi);
@@ -174,20 +210,18 @@ IHighDpiApi* ServiceLocator::LocateHighDpiApi()
 
     LOG_IF_NTSTATUS_FAILED(status);
 
-    return s_highDpiApi.get();
+    return Locked<IHighDpiApi>(s_highDpiApi.get(), std::move(lock));
 }
 
-IWindowMetrics* ServiceLocator::LocateWindowMetrics()
+Locked<IWindowMetrics> ServiceLocator::LocateWindowMetrics()
 {
     NTSTATUS status = STATUS_SUCCESS;
 
+    std::unique_lock<std::recursive_mutex> lock(s_windowMetricsMutex);
+
     if (!s_windowMetrics)
     {
-        if (s_interactivityFactory.get() == nullptr)
-        {
-            status = ServiceLocator::LoadInteractivityFactory();
-        }
-
+        status = ServiceLocator::_LoadInteractivityFactory();
         if (NT_SUCCESS(status))
         {
             status = s_interactivityFactory->CreateWindowMetrics(s_windowMetrics);
@@ -196,20 +230,18 @@ IWindowMetrics* ServiceLocator::LocateWindowMetrics()
 
     LOG_IF_NTSTATUS_FAILED(status);
 
-    return s_windowMetrics.get();
+    return Locked<IWindowMetrics>(s_windowMetrics.get(), std::move(lock));
 }
 
-IAccessibilityNotifier* ServiceLocator::LocateAccessibilityNotifier()
+Locked<IAccessibilityNotifier> ServiceLocator::LocateAccessibilityNotifier()
 {
     NTSTATUS status = STATUS_SUCCESS;
 
+    std::unique_lock<std::recursive_mutex> lock(s_accessibilityNotifierMutex);
+
     if (!s_accessibilityNotifier)
     {
-        if (s_interactivityFactory.get() == nullptr)
-        {
-            status = ServiceLocator::LoadInteractivityFactory();
-        }
-
+        status = ServiceLocator::_LoadInteractivityFactory();
         if (NT_SUCCESS(status))
         {
             status = s_interactivityFactory->CreateAccessibilityNotifier(s_accessibilityNotifier);
@@ -218,20 +250,18 @@ IAccessibilityNotifier* ServiceLocator::LocateAccessibilityNotifier()
 
     LOG_IF_NTSTATUS_FAILED(status);
 
-    return s_accessibilityNotifier.get();
+    return Locked<IAccessibilityNotifier>(s_accessibilityNotifier.get(), std::move(lock));
 }
 
-ISystemConfigurationProvider* ServiceLocator::LocateSystemConfigurationProvider()
+Locked<ISystemConfigurationProvider> ServiceLocator::LocateSystemConfigurationProvider()
 {
     NTSTATUS status = STATUS_SUCCESS;
 
+    std::unique_lock<std::recursive_mutex> lock(s_systemConfigurationProviderMutex);
+
     if (!s_systemConfigurationProvider)
     {
-        if (s_interactivityFactory.get() == nullptr)
-        {
-            status = ServiceLocator::LoadInteractivityFactory();
-        }
-
+        status = ServiceLocator::_LoadInteractivityFactory();
         if (NT_SUCCESS(status))
         {
             status = s_interactivityFactory->CreateSystemConfigurationProvider(s_systemConfigurationProvider);
@@ -240,20 +270,18 @@ ISystemConfigurationProvider* ServiceLocator::LocateSystemConfigurationProvider(
 
     LOG_IF_NTSTATUS_FAILED(status);
 
-    return s_systemConfigurationProvider.get();
+    return Locked<ISystemConfigurationProvider>(s_systemConfigurationProvider.get(), std::move(lock));
 }
 
-IInputServices* ServiceLocator::LocateInputServices()
+Locked<IInputServices> ServiceLocator::LocateInputServices()
 {
     NTSTATUS status = STATUS_SUCCESS;
 
+    std::unique_lock<std::recursive_mutex> lock(s_inputServicesMutex);
+
     if (!s_inputServices)
     {
-        if (s_interactivityFactory.get() == nullptr)
-        {
-            status = ServiceLocator::LoadInteractivityFactory();
-        }
-
+        status = ServiceLocator::_LoadInteractivityFactory();
         if (NT_SUCCESS(status))
         {
             status = s_interactivityFactory->CreateInputServices(s_inputServices);
@@ -262,7 +290,7 @@ IInputServices* ServiceLocator::LocateInputServices()
 
     LOG_IF_NTSTATUS_FAILED(status);
 
-    return s_inputServices.get();
+    return Locked<IInputServices>(s_inputServices.get(), std::move(lock));
 }
 
 Globals& ServiceLocator::LocateGlobals()
@@ -277,14 +305,19 @@ Globals& ServiceLocator::LocateGlobals()
 #pragma region Private Methods
 
 [[nodiscard]]
-NTSTATUS ServiceLocator::LoadInteractivityFactory()
+NTSTATUS ServiceLocator::_LoadInteractivityFactory()
 {
     NTSTATUS status = STATUS_SUCCESS;
 
     if (s_interactivityFactory.get() == nullptr)
     {
-        s_interactivityFactory = std::make_unique<InteractivityFactory>();
-        status = NT_TESTNULL(s_interactivityFactory.get());
+        std::lock_guard<std::recursive_mutex> lock(s_interactivityFactoryMutex);
+
+        if (s_interactivityFactory.get() == nullptr)
+        {
+            s_interactivityFactory = std::make_unique<InteractivityFactory>();
+            status = NT_TESTNULL(s_interactivityFactory.get());
+        }
     }
     return status;
 }
