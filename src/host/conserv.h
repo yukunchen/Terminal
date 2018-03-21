@@ -2,7 +2,7 @@
 Copyright (c) Microsoft Corporation
 
 Module Name:
-- consrv.h
+- conserv.h
 
 Abstract:
 - This module contains the include files and definitions for the console server DLL.
@@ -12,6 +12,7 @@ Author:
 
 Revision History:
 - Many items removed into individual classes relevant to individual components (MiNiksa, PaulCam - 2014)
+- Renamed from consrv.h due to naming conflict with the one published from minkernel.
 --*/
 
 #pragma once

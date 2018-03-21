@@ -6,11 +6,3 @@
 
 TARGETNAME              = ConServer
 TARGETTYPE              = LIBRARY
-
-# api-ms-win-downlevel-shell32-l1 is needed for CommandLineToArgvW
-
-TARGETLIBS = \
-    $(TARGETLIBS) \
-    $(ONECORESHELL_LIB_VPATH)\api-ms-win-downlevel-shell32-l1.lib \
-
-

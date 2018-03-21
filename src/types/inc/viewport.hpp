@@ -67,8 +67,6 @@ namespace Microsoft::Console::Types
 
         bool IsValid() const;
 
-        bool IsValid() const;
-
         [[nodiscard]]
         static HRESULT AddCoord(_In_ const Viewport& original,
                                 _In_ const COORD delta,

@@ -59,10 +59,8 @@ SOURCES = \
     ..\windowUiaProvider.cpp \
 
 INCLUDES = \
+    $(INCLUDES); \
     ..; \
-    ..\..\..\inc; \
-    $(ONECORE_SDK_INC_PATH); \
-    $(MINWIN_PRIV_SDK_INC_PATH); \
-
+    
 TARGETLIBS = \
-    $(ONECORE_SDK_LIB_VPATH)\onecore.lib \
+    $(ONECORE_SDK_LIB_VPATH)\onecore.lib  \

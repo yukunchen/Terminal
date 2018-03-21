@@ -33,5 +33,6 @@ SOURCES = \
 
 INCLUDES = \
     ..; \
+    ..\..\..\inc; \
     $(ONECORE_SDK_INC_PATH); \
     $(MINWIN_PRIV_SDK_INC_PATH); \

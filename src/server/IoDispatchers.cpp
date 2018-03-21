@@ -10,7 +10,7 @@
 
 #include "ApiSorter.h"
 
-#include "..\host\consrv.h"
+#include "..\host\conserv.h"
 #include "..\host\conwinuserrefs.h"
 #include "..\host\directio.h"
 #include "..\host\handle.h"

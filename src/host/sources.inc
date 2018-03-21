@@ -116,8 +116,9 @@ PRECOMPILED_PCH         = precomp.pch
 PRECOMPILED_OBJ         = precomp.obj
 
 INCLUDES = \
+    $(INCLUDES); \
     ..; \
-    ..\..\inc; \
+    ..\inc; \
     ..\..\propsheet; \
     ..\..\propslib; \
     ..\..\terminal\parser; \
@@ -130,8 +131,6 @@ INCLUDES = \
     $(ONECOREUAPWINDOWS_PRIVATE_INC_PATH)\core\w32inc; \
     $(SHELL_INC_PATH); \
     $(INTERNAL_SDK_INC_PATH); \
-    $(MINCORE_PRIV_SDK_INC_PATH); \
-    $(MINWIN_PRIV_SDK_INC_PATH)
 
 # Because we redefine new/delete in our library, we need to use CRTLIBS
 # to arrange the linking order such that our new/delete is used before the one

@@ -257,7 +257,7 @@
     <ClInclude Include="..\conimeinfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\consrv.h">
+    <ClInclude Include="..\conserv.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\conv.h">

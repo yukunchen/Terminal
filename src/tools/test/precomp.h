@@ -15,6 +15,3 @@
 #include <intsafe.h>
 #include <winconp.h>
 #include <ntcon.h>
-
-// This includes support libraries from the CRT, STL, WIL, and GSL
-#include "LibraryIncludes.h"

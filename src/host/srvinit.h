@@ -15,7 +15,7 @@ Revision History:
 
 #pragma once
 
-#include "consrv.h"
+#include "conserv.h"
 
 [[nodiscard]]
 NTSTATUS GetConsoleLangId(_In_ const UINT uiOutputCP, _Out_ LANGID * const pLangId);

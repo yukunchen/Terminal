@@ -1,3 +1,5 @@
+!include ..\project.inc
+
 # -------------------------------------
 # Windows Console
 # - Console Text Services Framework
@@ -20,15 +22,7 @@ TARGETTYPE              = LIBRARY
 # Preprocessor Settings
 # -------------------------------------
 
-UNICODE                 = 1
-C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE -DWIN32 -DNT
-
-# -------------------------------------
-# Compiler Settings
-# -------------------------------------
-
-MSC_WARNING_LEVEL       = /W4 /WX
-USER_C_FLAGS = $(USER_C_FLAGS) /std:c++17
+C_DEFINES               = $(C_DEFINES) -DWIN32 -DNT
 
 # -------------------------------------
 # Build System Settings

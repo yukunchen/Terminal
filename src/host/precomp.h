@@ -42,7 +42,7 @@ Abstract:
 #include <ntcon.h>
 #include <windowsx.h>
 #include <dde.h>
-#include "consrv.h"
+#include "conserv.h"
 
 #include "conv.h"
 

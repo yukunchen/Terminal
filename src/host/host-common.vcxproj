@@ -75,7 +75,7 @@
     <ClInclude Include="..\conddkrefs.h" />
     <ClInclude Include="..\conimeinfo.h" />
     <ClInclude Include="..\ConsoleArguments.hpp" />
-    <ClInclude Include="..\consrv.h" />
+    <ClInclude Include="..\conserv.h" />
     <ClInclude Include="..\conv.h" />
     <ClInclude Include="..\conwinuserrefs.h" />
     <ClInclude Include="..\cursor.h" />
