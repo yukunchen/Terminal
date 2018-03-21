@@ -190,6 +190,40 @@ HRESULT VtEngine::UpdateViewport(_In_ SMALL_RECT const srNewViewport)
         }
     }
 
+    if (SUCCEEDED(hr))
+    {
+        // Viewport is smaller now - just update it all.
+        if ( oldView.Height() > newView.Height() || oldView.Width() > newView.Width() )
+        {
+            hr = InvalidateAll();
+        }
+        else
+        {
+            // At least one of the directions grew.
+            // First try and add everything to the right of the old viewport,
+            //      then everything below where the old viewport ended.
+            if (oldView.Width() < newView.Width())
+            {
+                short left = oldView.RightExclusive();
+                short top = 0;
+                short right = newView.RightInclusive();
+                short bottom = oldView.BottomInclusive();
+                Viewport rightOfOldViewport = Viewport::FromInclusive({left, top, right, bottom});
+                hr = _InvalidCombine(rightOfOldViewport);
+            }
+            if (SUCCEEDED(hr) && oldView.Height() < newView.Width())
+            {
+                short left = 0;
+                short top = oldView.BottomExclusive();
+                short right = newView.RightInclusive();
+                short bottom = newView.BottomInclusive();
+                Viewport belowOldViewport = Viewport::FromInclusive({left, top, right, bottom});
+                hr = _InvalidCombine(belowOldViewport);
+
+            }
+        }
+    }
+
     return hr;
 }
 
