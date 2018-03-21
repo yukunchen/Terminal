@@ -53,35 +53,37 @@ ULONG GetControlKeyState(_In_ const LPARAM lParam)
 {
     ULONG ControlKeyState = 0;
 
-    if (ServiceLocator::LocateInputServices()->GetKeyState(VK_LMENU) & KEY_PRESSED)
+    auto inputServices = ServiceLocator::LocateInputServices();
+
+    if (inputServices->GetKeyState(VK_LMENU) & KEY_PRESSED)
     {
         ControlKeyState |= LEFT_ALT_PRESSED;
     }
-    if (ServiceLocator::LocateInputServices()->GetKeyState(VK_RMENU) & KEY_PRESSED)
+    if (inputServices->GetKeyState(VK_RMENU) & KEY_PRESSED)
     {
         ControlKeyState |= RIGHT_ALT_PRESSED;
     }
-    if (ServiceLocator::LocateInputServices()->GetKeyState(VK_LCONTROL) & KEY_PRESSED)
+    if (inputServices->GetKeyState(VK_LCONTROL) & KEY_PRESSED)
     {
         ControlKeyState |= LEFT_CTRL_PRESSED;
     }
-    if (ServiceLocator::LocateInputServices()->GetKeyState(VK_RCONTROL) & KEY_PRESSED)
+    if (inputServices->GetKeyState(VK_RCONTROL) & KEY_PRESSED)
     {
         ControlKeyState |= RIGHT_CTRL_PRESSED;
     }
-    if (ServiceLocator::LocateInputServices()->GetKeyState(VK_SHIFT) & KEY_PRESSED)
+    if (inputServices->GetKeyState(VK_SHIFT) & KEY_PRESSED)
     {
         ControlKeyState |= SHIFT_PRESSED;
     }
-    if (ServiceLocator::LocateInputServices()->GetKeyState(VK_NUMLOCK) & KEY_TOGGLED)
+    if (inputServices->GetKeyState(VK_NUMLOCK) & KEY_TOGGLED)
     {
         ControlKeyState |= NUMLOCK_ON;
     }
-    if (ServiceLocator::LocateInputServices()->GetKeyState(VK_SCROLL) & KEY_TOGGLED)
+    if (inputServices->GetKeyState(VK_SCROLL) & KEY_TOGGLED)
     {
         ControlKeyState |= SCROLLLOCK_ON;
     }
-    if (ServiceLocator::LocateInputServices()->GetKeyState(VK_CAPITAL) & KEY_TOGGLED)
+    if (inputServices->GetKeyState(VK_CAPITAL) & KEY_TOGGLED)
     {
         ControlKeyState |= CAPSLOCK_ON;
     }

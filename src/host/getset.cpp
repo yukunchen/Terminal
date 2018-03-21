@@ -221,8 +221,8 @@ HRESULT ApiRoutines::SetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const 
     // If this is the active screen buffer, also cause the window to refresh its viewport size.
     if (psi->IsActiveScreenBuffer())
     {
-        IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
-        if (nullptr != pWindow)
+        auto pWindow = ServiceLocator::LocateConsoleWindow();
+        if (nullptr != pWindow.get())
         {
             pWindow->PostUpdateWindowSize();
         }
@@ -423,8 +423,8 @@ void DoSrvSetScreenBufferInfo(_In_ SCREEN_INFORMATION* const pScreenInfo,
     {
         gci.CurrentScreenBuffer->SetViewportSize(&NewSize);
 
-        IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
-        if (pWindow != nullptr)
+        auto pWindow = ServiceLocator::LocateConsoleWindow();
+        if (pWindow.get() != nullptr)
         {
             pWindow->UpdateWindowSize(NewSize);
         }
@@ -916,8 +916,8 @@ void ApiRoutines::GetConsoleWindowImpl(_Out_ HWND* const pHwnd)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
-    IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
-    if (pWindow != nullptr)
+    auto pWindow = ServiceLocator::LocateConsoleWindow();
+    if (pWindow.get() != nullptr)
     {
         *pHwnd = pWindow->GetWindowHandle();
     }
@@ -965,8 +965,8 @@ void ApiRoutines::GetConsoleDisplayModeImpl(_Out_ ULONG* const pFlags)
     // Initialize flags portion of structure
     *pFlags = 0;
 
-    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
-    if (pWindow != nullptr && pWindow->IsInFullscreen())
+    auto pWindow = ServiceLocator::LocateConsoleWindow();
+    if (pWindow.get() != nullptr && pWindow->IsInFullscreen())
     {
         SetFlag(*pFlags, CONSOLE_FULLSCREEN_MODE);
     }
@@ -1005,17 +1005,17 @@ HRESULT ApiRoutines::SetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const pC
         RETURN_HR_IF_FALSE(E_INVALIDARG, pScreenInfo->IsActiveScreenBuffer());
     }
 
-    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+    auto pWindow = ServiceLocator::LocateConsoleWindow();
     if (IsFlagSet(Flags, CONSOLE_FULLSCREEN_MODE))
     {
-        if (pWindow != nullptr)
+        if (pWindow.get() != nullptr)
         {
             pWindow->SetIsFullscreen(true);
         }
     }
     else if (IsFlagSet(Flags, CONSOLE_WINDOWED_MODE))
     {
-        if (pWindow != nullptr)
+        if (pWindow.get() != nullptr)
         {
             pWindow->SetIsFullscreen(false);
         }
@@ -1672,8 +1672,8 @@ HRESULT DoSrvSetConsoleTitleW(_In_reads_or_z_(cchBuffer) const wchar_t* const pw
     delete[] gci.Title;
     gci.Title = pwszNewTitle.release();
 
-    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
-    if (pWindow != nullptr)
+    auto pWindow = ServiceLocator::LocateConsoleWindow();
+    if (pWindow.get() != nullptr)
     {
         RETURN_HR_IF_FALSE(E_FAIL, pWindow->PostUpdateTitleWithCopy(gci.Title));
     }

@@ -17,6 +17,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\inc\IInputEvent.hpp" />
+    <ClInclude Include="..\inc\Locked.hpp" />
+    <ClInclude Include="..\inc\LockedImpl.hpp" />
     <ClInclude Include="..\inc\Viewport.hpp" />
     <ClInclude Include="..\inc\convert.hpp" />
     <ClInclude Include="..\precomp.h" />

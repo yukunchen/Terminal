@@ -99,8 +99,8 @@ RECT WindowMetrics::GetMaxWindowRectInPixels(_In_ const RECT * const prcSuggeste
 
     // NOTE: We must use the nearest monitor because sometimes the system moves the window around into strange spots while performing snap and Win+D operations.
     // Those operations won't work correctly if we use MONITOR_DEFAULTTOPRIMARY.
-    IConsoleWindow *pWindow = ServiceLocator::LocateConsoleWindow();
-    if (pWindow == nullptr || (TRUE != EqualRect(&rc, &rcZero)))
+    auto pWindow = ServiceLocator::LocateConsoleWindow();
+    if (pWindow.get() == nullptr || (TRUE != EqualRect(&rc, &rcZero)))
     {
         // For invalid window handles or when we were passed a non-zero suggestion rectangle, get the monitor from the rect.
         hMonitor = MonitorFromRect(&rc, MONITOR_DEFAULTTONEAREST);
@@ -124,9 +124,9 @@ RECT WindowMetrics::GetMaxWindowRectInPixels(_In_ const RECT * const prcSuggeste
     // We need to pad the work rectangle with the border dimensions to represent the actual max outer edges of the window rect.
     WINDOWINFO wi = { 0 };
     wi.cbSize = sizeof(WINDOWINFO);
-    GetWindowInfo(pWindow ? pWindow->GetWindowHandle() : nullptr, &wi);
+    GetWindowInfo(pWindow.get() != nullptr ? pWindow->GetWindowHandle() : nullptr, &wi);
 
-    if (pWindow != nullptr && pWindow->IsInFullscreen())
+    if (pWindow.get() != nullptr && pWindow->IsInFullscreen())
     {
         // In full screen mode, we will consume the whole monitor with no chrome.
         rc = MonitorInfo.rcMonitor;
@@ -170,7 +170,7 @@ RECT WindowMetrics::GetMaxWindowRectInPixels(_In_ const RECT * const prcSuggeste
 // - BOOL if adjustment was successful. (See AdjustWindowRectEx definition for details).
 BOOL WindowMetrics::AdjustWindowRectEx(_Inout_ LPRECT prc, _In_ const DWORD dwStyle, _In_ const BOOL fMenu, _In_ const DWORD dwExStyle)
 {
-    return ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->AdjustWindowRectExForDpi(prc, dwStyle, fMenu, dwExStyle, ServiceLocator::LocateGlobals().dpi);
+    return static_cast<WindowDpiApi*>(ServiceLocator::LocateHighDpiApi().get())->AdjustWindowRectExForDpi(prc, dwStyle, fMenu, dwExStyle, ServiceLocator::LocateGlobals().dpi);
 }
 
 // Routine Description:
@@ -185,7 +185,7 @@ BOOL WindowMetrics::AdjustWindowRectEx(_Inout_ LPRECT prc, _In_ const DWORD dwSt
 // - BOOL if adjustment was successful. (See AdjustWindowRectEx definition for details).
 BOOL WindowMetrics::AdjustWindowRectEx(_Inout_ LPRECT prc, _In_ const DWORD dwStyle, _In_ const BOOL fMenu, _In_ const DWORD dwExStyle, _In_ const int iDpi)
 {
-    return ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->AdjustWindowRectExForDpi(prc, dwStyle, fMenu, dwExStyle, iDpi);
+    return static_cast<WindowDpiApi*>(ServiceLocator::LocateHighDpiApi().get())->AdjustWindowRectExForDpi(prc, dwStyle, fMenu, dwExStyle, iDpi);
 }
 
 // Routine Description:
@@ -256,8 +256,8 @@ void WindowMetrics::ConvertRect(_Inout_ RECT* const prc, _In_ ConvertRectangle c
     DWORD dwStyle = 0;
     DWORD dwExStyle = 0;
 
-    IConsoleWindow *pWindow = ServiceLocator::LocateConsoleWindow();
-    if (pWindow != nullptr)
+    auto pWindow = ServiceLocator::LocateConsoleWindow();
+    if (pWindow.get() != nullptr)
     {
         dwStyle = GetWindowStyle(pWindow->GetWindowHandle());
         dwExStyle = GetWindowExStyle(pWindow->GetWindowHandle());

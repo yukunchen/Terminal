@@ -297,8 +297,8 @@ UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
     clientPoint.x = static_cast<LONG>(point.x);
     clientPoint.y = static_cast<LONG>(point.y);
     // get row that point resides in
-    const IConsoleWindow* const pIConsoleWindow = _getIConsoleWindow();
-    const Window* const pWindow = static_cast<const Window* const>(pIConsoleWindow);
+    auto pIConsoleWindow = _getIConsoleWindow();
+    Window* pWindow = static_cast<Window*>(pIConsoleWindow.get());
     const RECT windowRect = pWindow->GetWindowRect();
     const Viewport viewport = _getViewport();
     ScreenInfoRow row;
@@ -1119,8 +1119,7 @@ IFACEMETHODIMP UiaTextRange::ScrollIntoView(_In_ BOOL alignToTop)
 
     try
     {
-        IConsoleWindow* pIConsoleWindow = _getIConsoleWindow();
-        LOG_IF_FAILED(pIConsoleWindow->SetViewportOrigin(newViewport));
+        LOG_IF_FAILED(_getIConsoleWindow()->SetViewportOrigin(newViewport));
     }
     CATCH_RETURN();
 
@@ -1165,10 +1164,10 @@ const Viewport UiaTextRange::_getViewport()
 // Return Value:
 // - The current window. May return nullptr if there is no current
 // window.
-IConsoleWindow* const UiaTextRange::_getIConsoleWindow()
+Locked<IConsoleWindow> UiaTextRange::_getIConsoleWindow()
 {
-    IConsoleWindow* const pIConsoleWindow = ServiceLocator::LocateConsoleWindow();
-    THROW_HR_IF_NULL(E_POINTER, pIConsoleWindow);
+    auto pIConsoleWindow = ServiceLocator::LocateConsoleWindow();
+    THROW_HR_IF_NULL(E_POINTER, pIConsoleWindow.get());
     return pIConsoleWindow;
 }
 
