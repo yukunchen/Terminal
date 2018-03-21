@@ -86,6 +86,7 @@ std::vector<std::vector<OutputCell>> ReadRectFromScreenBuffer(_In_ const SCREEN_
     ASSERT(ySize > 0);
     const int ScreenBufferWidth = screenInfo.GetScreenBufferSize().X;
     std::vector<std::vector<OutputCell>> result;
+    result.reserve(ySize);
 
     std::unique_ptr<TextAttribute[]> unpackedAttrs = std::make_unique<TextAttribute[]>(ScreenBufferWidth);
     THROW_IF_NULL_ALLOC(unpackedAttrs.get());
@@ -94,6 +95,7 @@ std::vector<std::vector<OutputCell>> ReadRectFromScreenBuffer(_In_ const SCREEN_
     {
         const ROW& row = screenInfo.TextInfo->GetRowByOffset(coordSourcePoint.Y + iRow);
         std::vector<OutputCell> rowCells;
+        rowCells.reserve(xSize);
 
         // copy the chars and attrs from their respective arrays
         const ICharRow& iCharRow = row.GetCharRow();
