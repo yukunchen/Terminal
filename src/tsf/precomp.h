@@ -58,3 +58,6 @@ extern "C"
 
 #include "TfCtxtComp.h"
 #include "ConsoleTSF.h"
+
+// This includes support libraries from the CRT, STL, WIL, and GSL
+#include "LibraryIncludes.h"

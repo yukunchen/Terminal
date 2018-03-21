@@ -308,7 +308,7 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
                 // Make sure to also insert the last run we started.
                 insert.SetAttributes(lastAttr);
                 insert.SetLength(currentLength);
-                LOG_IF_FAILED(pRow->GetAttrRow().InsertAttrRuns(&insert, 1, destX, (destX + currentLength) - 1, rowWidth));
+                LOG_IF_FAILED(Row.GetAttrRow().InsertAttrRuns(&insert, 1, destX, (destX + currentLength) - 1, rowWidth));
 
                 pSrcAttr++; // advance to next row.
             }

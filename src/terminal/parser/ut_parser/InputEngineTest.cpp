@@ -203,23 +203,17 @@ bool ModifiersEquivalent(DWORD a, DWORD b)
     return fShift && fCtrl && fAlt;
 }
 
+
 void InputEngineTest::RoundtripTerminalInputCallback(_In_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
 {
     // Take all the characters out of the input records here, and put them into
     //  the input state machine.
-    size_t cInput = inEvents.size();
-    INPUT_RECORD* rgInput = new INPUT_RECORD[cInput];
-    auto cleanup = wil::ScopeExit([&]{delete[] rgInput;});
-    VERIFY_SUCCEEDED(IInputEvent::ToInputRecords(inEvents, rgInput, cInput));
-    VERIFY_IS_NOT_NULL(rgInput);
-
+    auto inputRecords = IInputEvent::ToInputRecords(inEvents);
     std::wstring vtseq = L"";
-
-    for (size_t i = 0; i < cInput; i++)
+    for (auto& inRec : inputRecords)
     {
-        INPUT_RECORD inRec = rgInput[i];
         VERIFY_ARE_EQUAL(KEY_EVENT, inRec.EventType);
-        if(inRec.Event.KeyEvent.bKeyDown)
+        if (inRec.Event.KeyEvent.bKeyDown)
         {
             vtseq += &inRec.Event.KeyEvent.uChar.UnicodeChar;
         }
@@ -234,11 +228,7 @@ void InputEngineTest::RoundtripTerminalInputCallback(_In_ std::deque<std::unique
 
 void InputEngineTest::TestInputCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents)
 {
-    size_t cInput = inEvents.size();
-    INPUT_RECORD* rgInput = new INPUT_RECORD[cInput];
-    VERIFY_IS_NOT_NULL(rgInput);
-    auto cleanup = wil::ScopeExit([&]{delete[] rgInput;});
-    VERIFY_SUCCEEDED(IInputEvent::ToInputRecords(inEvents, rgInput, cInput));
+    auto records = IInputEvent::ToInputRecords(inEvents);
     VERIFY_ARE_EQUAL((size_t)1, vExpectedInput.size());
 
     bool foundEqual = false;
@@ -252,9 +242,8 @@ void InputEngineTest::TestInputCallback(std::deque<std::unique_ptr<IInputEvent>>
     // Look for an equivalent input record.
     // Differences between left and right modifiers are ignored, as long as one is pressed.
     // There may be other keypresses, eg. modifier keypresses, those are ignored.
-    for (size_t i = 0; i < cInput; i++)
+    for (auto& inRec : records)
     {
-        INPUT_RECORD inRec = rgInput[i];
         Log::Comment(
             NoThrowString().Format(L"\tActual  :\t") +
             VerifyOutputTraits<INPUT_RECORD>::ToString(inRec)
@@ -280,11 +269,7 @@ void InputEngineTest::TestInputCallback(std::deque<std::unique_ptr<IInputEvent>>
 
 void InputEngineTest::TestInputStringCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents)
 {
-    size_t cInput = inEvents.size();
-    INPUT_RECORD* rgInput = new INPUT_RECORD[cInput];
-    auto cleanup = wil::ScopeExit([&]{delete[] rgInput;});
-    VERIFY_SUCCEEDED(IInputEvent::ToInputRecords(inEvents, rgInput, cInput));
-    VERIFY_IS_NOT_NULL(rgInput);
+    auto records = IInputEvent::ToInputRecords(inEvents);
 
     for (auto expected : vExpectedInput)
     {
@@ -305,9 +290,8 @@ void InputEngineTest::TestInputStringCallback(std::deque<std::unique_ptr<IInputE
     // Look for an equivalent input record.
     // Differences between left and right modifiers are ignored, as long as one is pressed.
     // There may be other keypresses, eg. modifier keypresses, those are ignored.
-    for (size_t i = 0; i < cInput; i++)
+    for (auto& inRec : records)
     {
-        INPUT_RECORD inRec = rgInput[i];
         Log::Comment(
             NoThrowString().Format(L"\tActual  :\t") +
             VerifyOutputTraits<INPUT_RECORD>::ToString(inRec)

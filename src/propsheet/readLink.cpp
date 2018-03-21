@@ -111,6 +111,13 @@ HRESULT LoadConsoleV2LinkProperties(_In_ IShellLink *pslConsole, _Inout_ CONSOLE
         {
             pSettings->bWindowTransparency = bWindowTransparency;
         }
+
+        BOOL InterceptCopyPaste;
+        hr = GetPropertyBoolValue(propStoreLnk.Get(), PKEY_Console_InterceptCopyPaste, &InterceptCopyPaste);
+        if (SUCCEEDED(hr))
+        {
+            pSettings->InterceptCopyPaste = InterceptCopyPaste;
+        }
     }
     return hr;
 }

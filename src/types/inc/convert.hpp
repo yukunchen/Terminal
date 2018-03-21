@@ -57,4 +57,4 @@ std::deque<std::unique_ptr<KeyEvent>> SynthesizeKeyboardEvents(_In_ const wchar_
 std::deque<std::unique_ptr<KeyEvent>> SynthesizeNumpadEvents(_In_ const wchar_t wch, _In_ const unsigned int codepage);
 
 [[nodiscard]]
-HRESULT IsCharFullWidth(_In_ wchar_t wch, _Out_ bool* const isFullWidth);
+HRESULT IsCharFullWidth(_In_ wchar_t wch, _Out_ bool* const isFullWidth) noexcept;

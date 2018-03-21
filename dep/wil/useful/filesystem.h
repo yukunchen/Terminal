@@ -7,6 +7,7 @@
 #include <combaseapi.h> // Needed for CoTaskMemFree() used in output of some helpers.
 #include "Result.h"
 #include "Resource.h"
+#include "Win32Helpers.h"
 
 namespace wil
 {
@@ -144,7 +145,7 @@ namespace wil
 
     enum class RemoveDirectoryOptions
     {
-        None = 0, 
+        None = 0,
         KeepRootDirectory = 0x1
     };
     DEFINE_ENUM_FLAG_OPERATORS(RemoveDirectoryOptions);
@@ -156,24 +157,24 @@ namespace wil
 
         WIN32_FIND_DATAW fd;
         wil::unique_hfind findHandle(::FindFirstFileW(searchPath.get(), &fd));
-        RETURN_LAST_ERROR_IF_FALSE(findHandle);
+        RETURN_LAST_ERROR_IF(!findHandle);
 
         for (;;)
         {
             // skip "." and ".."
-            if (!(WI_IS_FLAG_SET(fd.dwFileAttributes, FILE_ATTRIBUTE_DIRECTORY) && PathIsDotOrDotDot(fd.cFileName)))
+            if (!(WI_IsFlagSet(fd.dwFileAttributes, FILE_ATTRIBUTE_DIRECTORY) && PathIsDotOrDotDot(fd.cFileName)))
             {
                 wil::unique_hlocal_string pathToDelete;
                 RETURN_IF_FAILED(::PathAllocCombine(path, fd.cFileName, PATHCCH_ALLOW_LONG_PATHS, &pathToDelete));
                 // note: if pszDelete is read-only, we just fail
-                if (WI_IS_FLAG_SET(fd.dwFileAttributes, FILE_ATTRIBUTE_DIRECTORY))
+                if (WI_IsFlagSet(fd.dwFileAttributes, FILE_ATTRIBUTE_DIRECTORY))
                 {
                     RemoveDirectoryOptions localOptions = options;
-                    RETURN_IF_FAILED(RemoveDirectoryRecursiveNoThrow(pathToDelete.get(), WI_CLEAR_FLAG(localOptions, RemoveDirectoryOptions::KeepRootDirectory)));
+                    RETURN_IF_FAILED(RemoveDirectoryRecursiveNoThrow(pathToDelete.get(), WI_ClearFlag(localOptions, RemoveDirectoryOptions::KeepRootDirectory)));
                 }
                 else
                 {
-                    RETURN_LAST_ERROR_IF_FALSE(::DeleteFileW(pathToDelete.get()));
+                    RETURN_IF_WIN32_BOOL_FALSE(::DeleteFileW(pathToDelete.get()));
                 }
             }
 
@@ -188,7 +189,7 @@ namespace wil
             }
         }
 
-        if (WI_IS_FLAG_CLEAR(options, RemoveDirectoryOptions::KeepRootDirectory))
+        if (WI_IsFlagClear(options, RemoveDirectoryOptions::KeepRootDirectory))
         {
             RETURN_IF_WIN32_BOOL_FALSE(::RemoveDirectoryW(path));
         }
@@ -291,11 +292,12 @@ namespace wil
             {
             }
             wistd::function<void()> m_callback;
-            unique_hfind_change m_findChangeHandle; // order important, need to close the change before the threadpool
+            // Order is important, need to close the thread pool wait before the change handle.
+            unique_hfind_change m_findChangeHandle;
             unique_threadpool_wait m_threadPoolWait;
         };
 
-        inline void delete_folder_watcher_state(_In_opt_ folder_watcher_state *watcherStorage) { delete watcherStorage; }
+        inline void delete_folder_watcher_state(_In_opt_ folder_watcher_state *storage) { delete storage; }
 
         typedef resource_policy<folder_watcher_state *, decltype(&details::delete_folder_watcher_state),
             details::delete_folder_watcher_state, details::pointer_access_none> folder_watcher_state_resource_policy;
@@ -332,21 +334,21 @@ namespace wil
             RETURN_IF_NULL_ALLOC(watcherState);
 
             watcherState->m_findChangeHandle.reset(FindFirstChangeNotificationW(folderToWatch, isRecursive, static_cast<DWORD>(filter)));
-            RETURN_LAST_ERROR_IF_FALSE(watcherState->m_findChangeHandle);
+            RETURN_LAST_ERROR_IF(!watcherState->m_findChangeHandle);
 
             watcherState->m_threadPoolWait.reset(CreateThreadpoolWait(
                 [](PTP_CALLBACK_INSTANCE /*Instance*/, void *context, TP_WAIT *pThreadPoolWait, TP_WAIT_RESULT /*result*/)
             {
-                auto pThis = static_cast<details::folder_watcher_state *>(context);
-                pThis->m_callback();
+                auto watcherState = static_cast<details::folder_watcher_state *>(context);
+                watcherState->m_callback();
 
                 // Rearm the wait. Should not fail with valid parameters.
-                FindNextChangeNotification(pThis->m_findChangeHandle.get());
-                SetThreadpoolWait(pThreadPoolWait, pThis->m_findChangeHandle.get(), __nullptr);
+                FindNextChangeNotification(watcherState->m_findChangeHandle.get());
+                SetThreadpoolWait(pThreadPoolWait, watcherState->m_findChangeHandle.get(), __nullptr);
             }, watcherState.get(), __nullptr));
-            RETURN_LAST_ERROR_IF_FALSE(watcherState->m_threadPoolWait);
-            reset(watcherState.release()); // no more failures after this, pass ownership
-            SetThreadpoolWait(get()->m_threadPoolWait.get(), get()->m_findChangeHandle.get(), __nullptr);
+            RETURN_LAST_ERROR_IF(!watcherState->m_threadPoolWait);
+            this->reset(watcherState.release()); // no more failures after this, pass ownership
+            SetThreadpoolWait(this->get()->m_threadPoolWait.get(), this->get()->m_findChangeHandle.get(), __nullptr);
             return S_OK;
         }
     };
@@ -374,7 +376,7 @@ namespace wil
 #pragma region Folder Reader
 
     // Example use for throwing:
-    // auto reader = wil::make_folder_change_reader(folder.Path().c_str(), true, wil::FolderChangeEvents::All, 
+    // auto reader = wil::make_folder_change_reader(folder.Path().c_str(), true, wil::FolderChangeEvents::All,
     //     [](wil::FolderChangeEvent event, PCWSTR fileName)
     //     {
     //          switch (event)
@@ -391,7 +393,7 @@ namespace wil
     // wil::unique_folder_change_reader_nothrow reader;
     // THROW_IF_FAILED(reader.create(folder, true, wil::FolderChangeEvents::All,
     //     [](wil::FolderChangeEvent event, PCWSTR fileName)
-    //     { 
+    //     {
     //         // handle changes
     //     }));
     //
@@ -404,7 +406,6 @@ namespace wil
             folder_change_reader_state(bool isRecursive, FolderChangeEvents filter, wistd::function<void(FolderChangeEvent, PCWSTR)> &&callback)
                 : m_isRecursive(isRecursive), m_filter(filter), m_callback(wistd::move(callback))
             {
-                ZeroMemory(&m_overlapped, sizeof(m_overlapped));
             }
 
             ~folder_change_reader_state()
@@ -466,13 +467,13 @@ namespace wil
             unique_handle m_folderHandle;
             BOOL m_isRecursive = FALSE;
             FolderChangeEvents m_filter = FolderChangeEvents::None;
-            OVERLAPPED m_overlapped;
+            OVERLAPPED m_overlapped{};
             TP_IO *m_tpIo = __nullptr;
             srwlock m_cancelLock;
             char m_readBuffer[4096]; // Consider alternative buffer sizes. With 512 byte buffer i was not able to observe overflow.
         };
 
-        inline void delete_folder_change_reader_state(_In_opt_ folder_change_reader_state *watcherStorage) { delete watcherStorage; }
+        inline void delete_folder_change_reader_state(_In_opt_ folder_change_reader_state *storage) { delete storage; }
 
         typedef resource_policy<folder_change_reader_state *, decltype(&details::delete_folder_change_reader_state),
             details::delete_folder_change_reader_state, details::pointer_access_none> folder_change_reader_state_resource_policy;
@@ -502,41 +503,42 @@ namespace wil
             return err_policy::HResult(create_common(folderToWatch, isRecursive, filter, wistd::move(callback)));
         }
 
+        wil::unique_hfile& FolderHandle() { return get()->m_folderHandle; }
+
     private:
         // This function exists to avoid template expansion of this code based on err_policy.
         HRESULT create_common(PCWSTR folderToWatch, bool isRecursive, FolderChangeEvents filter, wistd::function<void(FolderChangeEvent, PCWSTR)> &&callback)
         {
-            wistd::unique_ptr<details::folder_change_reader_state> watcherState(new(std::nothrow) details::folder_change_reader_state(
+            wistd::unique_ptr<details::folder_change_reader_state> readerState(new(std::nothrow) details::folder_change_reader_state(
                 isRecursive, filter, wistd::move(callback)));
-            RETURN_IF_NULL_ALLOC(watcherState);
+            RETURN_IF_NULL_ALLOC(readerState);
 
-            watcherState->m_folderHandle.reset(CreateFileW(folderToWatch,
+            readerState->m_folderHandle.reset(CreateFileW(folderToWatch,
                 FILE_LIST_DIRECTORY, FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE,
                 __nullptr, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED, __nullptr));
-            RETURN_LAST_ERROR_IF_FALSE(watcherState->m_folderHandle);
+            RETURN_LAST_ERROR_IF(!readerState->m_folderHandle);
 
-            watcherState->m_tpIo = CreateThreadpoolIo(watcherState->m_folderHandle.get(),
+            readerState->m_tpIo = CreateThreadpoolIo(readerState->m_folderHandle.get(),
                 [](PTP_CALLBACK_INSTANCE /* Instance */, void *context,
                 void * /*overlapped*/, ULONG result, ULONG_PTR /* BytesTransferred */, TP_IO * /* Io */)
             {
-                auto pThis = static_cast<details::folder_change_reader_state *>(context);
-
-                // NT_ASSERT(overlapped == &pThis->m_overlapped);
+                auto readerState = static_cast<details::folder_change_reader_state *>(context);
+                // NT_ASSERT(overlapped == &readerState->m_overlapped);
 
                 bool requeue = true;
                 if (result == ERROR_SUCCESS)
                 {
-                    for (auto const& info : CreateNextEntryOffsetIterator(reinterpret_cast<FILE_NOTIFY_INFORMATION *>(pThis->m_readBuffer)))
+                    for (auto const& info : CreateNextEntryOffsetIterator(reinterpret_cast<FILE_NOTIFY_INFORMATION *>(readerState->m_readBuffer)))
                     {
                         wchar_t realtiveFileName[MAX_PATH];
                         StringCchCopyNW(realtiveFileName, ARRAYSIZE(realtiveFileName), info.FileName, info.FileNameLength / sizeof(info.FileName[0]));
 
-                        pThis->m_callback(static_cast<FolderChangeEvent>(info.Action), realtiveFileName);
+                        readerState->m_callback(static_cast<FolderChangeEvent>(info.Action), realtiveFileName);
                     }
                 }
                 else if (result == ERROR_NOTIFY_ENUM_DIR)
                 {
-                    pThis->m_callback(FolderChangeEvent::ChangesLost, __nullptr);
+                    readerState->m_callback(FolderChangeEvent::ChangesLost, __nullptr);
                 }
                 else
                 {
@@ -548,16 +550,16 @@ namespace wil
                     // If the lock is held non-shared or the TP IO is nullptr, this
                     // structure is being torn down. Otherwise, monitor for further
                     // changes.
-                    auto autoLock = pThis->m_cancelLock.try_lock_shared();
-                    if (autoLock && pThis->m_tpIo)
+                    auto autoLock = readerState->m_cancelLock.try_lock_shared();
+                    if (autoLock && readerState->m_tpIo)
                     {
-                        pThis->StartIo(); // ignoring failure here
+                        readerState->StartIo(); // ignoring failure here
                     }
                 }
-            }, watcherState.get(), __nullptr);
-            RETURN_LAST_ERROR_IF_FALSE(watcherState->m_tpIo != __nullptr);
-            RETURN_IF_FAILED(watcherState->StartIo());
-            reset(watcherState.release());
+            }, readerState.get(), __nullptr);
+            RETURN_LAST_ERROR_IF_NULL(readerState->m_tpIo);
+            RETURN_IF_FAILED(readerState->StartIo());
+            this->reset(readerState.release());
             return S_OK;
         }
     };
@@ -583,49 +585,14 @@ namespace wil
 #endif // WIL_ENABLE_EXCEPTIONS
 #pragma endregion
 
-    /** Helper to convert APIs that return strings in a caller specified buffer
-    into an allocated buffer of the size needed for the value.
-
-    This is useful for converting code to support extended length paths
-    where the buffer sizes can be too big to fit on the stack.
-
-    This works for APIs that return the needed buffer size not including the null
-    and those that include the null.
-    */
-    template <typename TLambda>
-    inline HRESULT AdaptFixedSizeToAllocatedResult(PWSTR* result, TLambda&& callback)
-    {
-        *result = nullptr;
-        unique_cotaskmem_string tempResult;
-        wchar_t path[MAX_PATH]; // make smaller for testing
-        DWORD const pathLength = callback(path, ARRAYSIZE(path));
-        RETURN_LAST_ERROR_IF(pathLength == 0);
-        if (pathLength < ARRAYSIZE(path)) // ResultFromWin32Length, but works for ResultFromWin32Count case too
-        {
-            tempResult = make_cotaskmem_string_nothrow(path, pathLength);
-            RETURN_IF_NULL_ALLOC(tempResult);
-        }
-        else
-        {
-            tempResult = make_cotaskmem_string_nothrow(nullptr, pathLength);
-            RETURN_IF_NULL_ALLOC(tempResult);
-
-            DWORD const secondPathLength = callback(tempResult.get(), pathLength);
-            RETURN_LAST_ERROR_IF(secondPathLength == 0);
-            // WI_ASSERT((pathLength - secondPathLength) == 1);
-        }
-        *result = tempResult.release();
-        return S_OK;
-    }
-
-    //! These are always extended length paths with the \\?\ prefix.
+    //! Dos and VolumeGuid paths are always extended length paths with the \\?\ prefix.
     enum class VolumePrefix
     {
-        Dos = VOLUME_NAME_DOS,          // \\?\C:\Users\Chris\AppData\Local\Temp\wil8C31.tmp
+        Dos = VOLUME_NAME_DOS,          // Extended Dos Device path form, e.g. \\?\C:\Users\Chris\AppData\Local\Temp\wil8C31.tmp
         VolumeGuid = VOLUME_NAME_GUID,  // \\?\Volume{588fb606-b95b-4eae-b3cb-1e49861aaf18}\Users\Chris\AppData\Local\Temp\wil8C31.tmp
-                                        // These are supported by the API but are not really paths, they can't be used with Win32 APIs.
-                                        // None = VOLUME_NAME_NONE,        // \Users\Chris\AppData\Local\Temp\wil8C31.tmp
-                                        // VolumeDevice = VOLUME_NAME_NT,  // \Device\HarddiskVolume4\Users\Chris\AppData\Local\Temp\wil8C31.tmp
+        // The following are special paths which can't be used with Win32 APIs, but are useful in other scenarios.
+        None = VOLUME_NAME_NONE,        // Path without the volume root, e.g. \Users\Chris\AppData\Local\Temp\wil8C31.tmp
+        NtObjectName = VOLUME_NAME_NT,  // Unique name used by Object Manager, e.g. \Device\HarddiskVolume4\Users\Chris\AppData\Local\Temp\wil8C31.tmp
     };
     enum class PathOptions
     {
@@ -634,36 +601,114 @@ namespace wil
     };
     DEFINE_ENUM_FLAG_OPERATORS(PathOptions);
 
-    /** Get the full path name in different forms
+    /**  A strongly typed version of the Win32 API GetFinalPathNameByHandleW.
+    Get the full path name in different forms
     Use this instead + VolumePrefix::None instead of GetFileInformationByHandleEx(FileNameInfo) to
-    get that path form.
-    */
-    inline HRESULT GetFinalPathNameByHandleW(HANDLE fileHandle, _Outptr_opt_result_nullonfailure_ PWSTR* path,
+    get that path form. */
+    template <typename string_type, size_t stackBufferLength = 256>
+    HRESULT GetFinalPathNameByHandleW(HANDLE fileHandle, string_type& path,
         wil::VolumePrefix volumePrefix = wil::VolumePrefix::Dos, wil::PathOptions options = wil::PathOptions::Normalized)
     {
-        return AdaptFixedSizeToAllocatedResult(path, [&](_Out_writes_(pathLength) PWSTR path, DWORD pathLength)
+        return AdaptFixedSizeToAllocatedResult<string_type, stackBufferLength>(path,
+            [&](_Out_writes_(valueLength) PWSTR value, size_t valueLength, _Out_ size_t* valueLengthNeededWithNull) -> HRESULT
         {
-            return ::GetFinalPathNameByHandleW(fileHandle, path, pathLength,
+            *valueLengthNeededWithNull = ::GetFinalPathNameByHandleW(fileHandle, value, static_cast<DWORD>(valueLength),
                 static_cast<DWORD>(volumePrefix) | static_cast<DWORD>(options));
+            RETURN_LAST_ERROR_IF(*valueLengthNeededWithNull == 0);
+            WI_ASSERT((*value != L'\0') == (*valueLengthNeededWithNull < valueLength));
+            if (*valueLengthNeededWithNull < valueLength)
+            {
+                (*valueLengthNeededWithNull)++; // it fit, account for the null
+            }
+            return S_OK;
         });
     }
 
-    //! Return an path in an allocated buffer for handling long paths.
-    //! Optionally return the pointer to the file name part.
-    inline HRESULT GetFullPathNameW(PCWSTR file, _Outptr_opt_result_nullonfailure_ PWSTR* path, _Outptr_opt_ PCWSTR* filePart)
+#ifdef WIL_ENABLE_EXCEPTIONS
+    /** A strongly typed version of the Win32 API GetFinalPathNameByHandleW.
+    Get the full path name in different forms. Use this + VolumePrefix::None
+    instead of GetFileInformationByHandleEx(FileNameInfo) to get that path form. */
+    template <typename string_type = wil::unique_cotaskmem_string, size_t stackBufferLength = 256>
+    string_type GetFinalPathNameByHandleW(HANDLE fileHandle,
+        wil::VolumePrefix volumePrefix = wil::VolumePrefix::Dos, wil::PathOptions options = wil::PathOptions::Normalized)
     {
-        const auto hr = wil::AdaptFixedSizeToAllocatedResult(path, [&](_Out_writes_(pathLength) PWSTR path, DWORD pathLength)
+        string_type result;
+        THROW_IF_FAILED((GetFinalPathNameByHandleW<string_type, stackBufferLength>(fileHandle, result, volumePrefix, options)));
+        return result;
+    }
+#endif
+
+    //! A strongly typed version of the Win32 API GetFullPathNameW.
+    //! Return a path in an allocated buffer for handling long paths.
+    //! Optionally return the pointer to the file name part.
+    template <typename string_type, size_t stackBufferLength = 256>
+    HRESULT GetFullPathNameW(PCWSTR file, string_type& path, _Outptr_opt_ PCWSTR* filePart = nullptr)
+    {
+        wil::assign_null_to_opt_param(filePart);
+        const auto hr = AdaptFixedSizeToAllocatedResult<string_type, stackBufferLength>(path,
+            [&](_Out_writes_(valueLength) PWSTR value, size_t valueLength, _Out_ size_t* valueLengthNeededWithNull) -> HRESULT
         {
-            // Note that GetFullPathNameW() is not limmited to MAX_PATH
+            // Note that GetFullPathNameW() is not limited to MAX_PATH
             // but it does take a fixed size buffer.
-            return ::GetFullPathNameW(file, pathLength, path, nullptr);
+            *valueLengthNeededWithNull = ::GetFullPathNameW(file, static_cast<DWORD>(valueLength), value, nullptr);
+            RETURN_LAST_ERROR_IF(*valueLengthNeededWithNull == 0);
+            WI_ASSERT((*value != L'\0') == (*valueLengthNeededWithNull < valueLength));
+            if (*valueLengthNeededWithNull < valueLength)
+            {
+                (*valueLengthNeededWithNull)++; // it fit, account for the null
+            }
+            return S_OK;
         });
         if (SUCCEEDED(hr) && filePart)
         {
-            *filePart = wil::FindLastPathSegment(*path);
+            *filePart = wil::FindLastPathSegment(details::string_maker<string_type>::get(path));
         }
         return hr;
     }
+
+#ifdef WIL_ENABLE_EXCEPTIONS
+    //! A strongly typed version of the Win32 API of GetFullPathNameW.
+    //! Return a path in an allocated buffer for handling long paths.
+    //! Optionally return the pointer to the file name part.
+    template <typename string_type = wil::unique_cotaskmem_string, size_t stackBufferLength = 256>
+    string_type GetFullPathNameW(PCWSTR file, _Outptr_opt_ PCWSTR* filePart = nullptr)
+    {
+        string_type result;
+        THROW_IF_FAILED((GetFullPathNameW<string_type, stackBufferLength>(file, result, filePart)));
+        return result;
+    }
+#endif
+
+    //! A strongly typed version of the Win32 API of GetCurrentDirectoryW.
+    //! Return a path in an allocated buffer for handling long paths.
+    template <typename string_type, size_t stackBufferLength = 256>
+    HRESULT GetCurrentDirectoryW(string_type& path)
+    {
+        return AdaptFixedSizeToAllocatedResult<string_type, stackBufferLength>(path,
+            [&](_Out_writes_(valueLength) PWSTR value, size_t valueLength, _Out_ size_t* valueLengthNeededWithNull) -> HRESULT
+        {
+            *valueLengthNeededWithNull = ::GetCurrentDirectoryW(static_cast<DWORD>(valueLength), value);
+            RETURN_LAST_ERROR_IF(*valueLengthNeededWithNull == 0);
+            WI_ASSERT((*value != L'\0') == (*valueLengthNeededWithNull < valueLength));
+            if (*valueLengthNeededWithNull < valueLength)
+            {
+                (*valueLengthNeededWithNull)++; // it fit, account for the null
+            }
+            return S_OK;
+        });
+    }
+
+#ifdef WIL_ENABLE_EXCEPTIONS
+    //! A strongly typed version of the Win32 API of GetCurrentDirectoryW.
+    //! Return a path in an allocated buffer for handling long paths.
+    template <typename string_type = wil::unique_cotaskmem_string, size_t stackBufferLength = 256>
+    string_type GetCurrentDirectoryW()
+    {
+        string_type result;
+        THROW_IF_FAILED((GetCurrentDirectoryW<string_type, stackBufferLength>(result)));
+        return result;
+    }
+#endif
 
     // TODO: add support for these and other similar APIs.
     // GetShortPathNameW()
@@ -759,7 +804,7 @@ namespace wil
         HRESULT hr = details::GetFileInfo(fileHandle, infoClass,
             sizeof(details::MapInfoClassToInfoStruct<infoClass>::type) + details::MapInfoClassToInfoStruct<infoClass>::extraSize,
             &rawResult);
-        result.reset(static_cast<details::MapInfoClassToInfoStruct<infoClass>::type*>(rawResult));
+        result.reset(static_cast<typename details::MapInfoClassToInfoStruct<infoClass>::type*>(rawResult));
         RETURN_HR(hr);
     }
 

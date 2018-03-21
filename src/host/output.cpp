@@ -659,17 +659,16 @@ void ScrollScreen(_Inout_ PSCREEN_INFORMATION pScreenInfo,
                   _In_opt_ const SMALL_RECT * const psrMerge,
                   _In_ const COORD coordTarget)
 {
-    NTSTATUS status = STATUS_SUCCESS;
-
     if (pScreenInfo->IsActiveScreenBuffer())
     {
-        IAccessibilityNotifier *pNotifier = ServiceLocator::LocateAccessibilityNotifier();
-        status = NT_TESTNULL(pNotifier);
-
-        if (NT_SUCCESS(status))
-        {
-            pNotifier->NotifyConsoleUpdateScrollEvent(coordTarget.X - psrScroll->Left, coordTarget.Y - psrScroll->Right);
+        { // Scope to control service locator lock/unlock lifetime
+            auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
+            if (pNotifier.get() != nullptr)
+            {
+                pNotifier->NotifyConsoleUpdateScrollEvent(coordTarget.X - psrScroll->Left, coordTarget.Y - psrScroll->Right);
+            }
         }
+    
         IRenderer* const pRender = ServiceLocator::LocateGlobals().pRender;
         if (pRender != nullptr)
         {
@@ -725,11 +724,13 @@ bool StreamScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo)
             COORD coordDelta = { 0 };
             coordDelta.Y = -1;
 
-            IAccessibilityNotifier *pNotifier = ServiceLocator::LocateAccessibilityNotifier();
-            if (pNotifier)
-            {
-                // Notify accessibility that a scroll has occurred.
-                pNotifier->NotifyConsoleUpdateScrollEvent(coordDelta.X, coordDelta.Y);
+            { // Scope to control service locator lock/unlock lifetime
+                auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
+                if (pNotifier.get() != nullptr)
+                {
+                    // Notify accessibility that a scroll has occurred.
+                    pNotifier->NotifyConsoleUpdateScrollEvent(coordDelta.X, coordDelta.Y);
+                }
             }
 
             if (ServiceLocator::LocateGlobals().pRender != nullptr)

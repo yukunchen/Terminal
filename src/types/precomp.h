@@ -52,8 +52,6 @@ __inline NTSTATUS_FROM_WIN32(long x) { return x <= 0 ? (NTSTATUS)x : (NTSTATUS)(
 #define NTSTATUS_FROM_WIN32(x) __NTSTATUS_FROM_WIN32(x)
 #endif
 
-//#include <ntstatus.h>
-
 #include <winioctl.h>
 #include <assert.h>
 #pragma prefast(push)
@@ -62,21 +60,15 @@ __inline NTSTATUS_FROM_WIN32(long x) { return x <= 0 ? (NTSTATUS)x : (NTSTATUS)(
 #include <intsafe.h>
 #pragma prefast(pop)
 
-
-// C++ header files
-#include <stdexcept>
-#include <thread>
-#include <vector>
-#include <list>
-#include <queue>
-#include <new>
-#include <memory>
-#include <mutex>
-#include <unordered_map>
-#include <algorithm>
+// This includes support libraries from the CRT, STL, WIL, and GSL
+#include "LibraryIncludes.h"
 
 // private dependencies
+#pragma warning(push)
+#pragma warning(disable: ALL_CPPCORECHECK_WARNINGS)
 #include "..\host\conddkrefs.h"
+#pragma warning(pop)
+
 #include <winconp.h>
 
 #include <conmsgl1.h>
@@ -85,14 +77,9 @@ __inline NTSTATUS_FROM_WIN32(long x) { return x <= 0 ? (NTSTATUS)x : (NTSTATUS)(
 #include <condrv.h>
 #include <ntcon.h>
 
-// wil - Windows Internal Library - Header based library to make working with Win32/WinNT easier.
-#define WIL_SUPPORT_BITOPERATION_PASCAL_NAMES
-#include <wil\common.h>
-#include <wil\resource.h>
-
 // TODO: MSFT 9355094 Find a better way of doing this. http://osgvsowi/9355094
 [[nodiscard]]
-inline NTSTATUS NTSTATUS_FROM_HRESULT(HRESULT hr)
+constexpr NTSTATUS NTSTATUS_FROM_HRESULT(HRESULT hr) noexcept
 {
     return NTSTATUS_FROM_WIN32(HRESULT_CODE(hr));
 }

@@ -26,14 +26,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-// Standard library C++ style
-#include <string>
-#include <iostream>
-
-// Windows Internal Library
-#include <wil\filesystem.h>
-#include <wil\resource.h>
-#include <wil\result.h>
+// This includes support libraries from the CRT, STL, WIL, and GSL
+#include "LibraryIncludes.h"
 
 // Safe path handling
 #include <pathcch.h>

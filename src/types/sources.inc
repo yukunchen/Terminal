@@ -2,21 +2,11 @@
 
 # -------------------------------------
 # Windows Console
-# - Console Server Communications Layer
+# - Console Types Library
 # -------------------------------------
 
-# This module encapsulates the communication layer between the console driver
-# and the console server application.
-# All IOCTL driver communications are handled in this layer as well as management
-# activities like process and handle tracking.
-
-# -------------------------------------
-# Compiler Settings
-# -------------------------------------
-
-# Warning 4201: nonstandard extension used: nameless struct/union
-# Warning 4702: unreachable code
-MSC_WARNING_LEVEL       = $(MSC_WARNING_LEVEL) /wd4201 /wd4702
+# This module encapsulates types and helpers that are common
+# across the entire console project
 
 # -------------------------------------
 # Build System Settings
@@ -43,6 +33,6 @@ SOURCES= \
     ..\convert.cpp \
 
 INCLUDES= \
+    $(INCLUDES); \
     ..; \
-    $(ONECORE_SDK_INC_PATH); \
-    $(MINWIN_PRIV_SDK_INC_PATH); \
+    

@@ -1,3 +1,5 @@
+!include ..\project.inc
+
 # -------------------------------------
 # Windows Console
 # - Console Property Sheet
@@ -18,27 +20,16 @@ TARGET_DESTINATION      = retail
 DLLENTRY                = _DllMainCRTStartup
 
 # -------------------------------------
-# CRT Configuration
-# -------------------------------------
-
-USE_UNICRT              = 1
-USE_MSVCRT              = 1
-USE_NOTHROW_NEW         = 1 # use the CRT's non-throwing stock new/delete impl
-
-# -------------------------------------
 # Preprocessor Settings
 # -------------------------------------
 
-UNICODE                 = 1
-C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE -DISOLATION_AWARE_ENABLED -DWIN32 -D_WIN32 -DSTRICT_CONST -DNT
-
+C_DEFINES               = $(C_DEFINES) -DISOLATION_AWARE_ENABLED -DWIN32 -D_WIN32 -DSTRICT_CONST -DNT
 
 # -------------------------------------
 # Compiler Settings
 # -------------------------------------
 
 MSC_WARNING_LEVEL       = /W3 /WX
-USER_C_FLAGS = $(USER_C_FLAGS) /std:c++17
 
 # -------------------------------------
 # Build System Settings
@@ -78,9 +69,10 @@ SOURCES = \
     console.rc
 
 INCLUDES = \
+    $(INCLUDES); \
     ..\inc; \
-    $(ONECORE_SDK_INC_PATH); \
-
+    ..\host; \
+    
 TARGETLIBS = \
     $(ONECORE_SDK_LIB_VPATH)\onecore.lib \
     $(ONECORE_SDK_LIB_VPATH)\onecoreuap.lib \

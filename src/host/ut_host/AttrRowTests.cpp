@@ -11,8 +11,6 @@
 #include "globals.h"
 #include "textBuffer.hpp"
 
-#include "consrv.h"
-
 #include "input.h"
 
 using namespace WEX::Common;

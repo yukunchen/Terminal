@@ -13,13 +13,13 @@ Author(s):
 
 #pragma once
 
-inline bool operator==(const COORD& a, const COORD& b)
+constexpr bool operator==(const COORD& a, const COORD& b) noexcept
 {
     return (a.X == b.X &&
-            a.X == b.Y);
+            a.Y == b.Y);
 }
 
-inline bool operator!=(const COORD& a, const COORD& b)
+constexpr bool operator!=(const COORD& a, const COORD& b) noexcept
 {
     return !(a == b);
 }

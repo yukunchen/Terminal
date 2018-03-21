@@ -21,8 +21,7 @@
 // - Constructor to set default properties for Cursor
 // Arguments:
 // - ulSize - The height of the cursor within this buffer
-Cursor::Cursor(IAccessibilityNotifier *pNotifier, _In_ ULONG const ulSize) :
-    _pAccessibilityNotifier(pNotifier),
+Cursor::Cursor(_In_ ULONG const ulSize) :
     _ulSize(ulSize),
     _fHasMoved(FALSE),
     _fIsVisible(TRUE),
@@ -67,24 +66,16 @@ NTSTATUS Cursor::CreateInstance(_In_ ULONG const ulSize, _Outptr_ Cursor ** cons
 {
     *ppCursor = nullptr;
 
-    NTSTATUS status = STATUS_SUCCESS;
-
-    IAccessibilityNotifier *pNotifier = ServiceLocator::LocateAccessibilityNotifier();
-    status = NT_TESTNULL(pNotifier);
+    Cursor* pCursor = new Cursor(ulSize);
+    NTSTATUS status = NT_TESTNULL(pCursor);
 
     if (NT_SUCCESS(status))
     {
-        Cursor* pCursor = new Cursor(pNotifier, ulSize);
-        status = NT_TESTNULL(pCursor);
-
-        if (NT_SUCCESS(status))
-        {
-            *ppCursor = pCursor;
-        }
-        else
-        {
-            delete pCursor;
-        }
+        *ppCursor = pCursor;
+    }
+    else
+    {
+        delete pCursor;
     }
 
     return status;
@@ -366,10 +357,13 @@ void Cursor::CopyProperties(_In_ const Cursor* const pOtherCursor)
 void Cursor::TimerRoutine(_In_ PSCREEN_INFORMATION const ScreenInfo)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
-    if (pWindow != nullptr)
-    {
-        pWindow->SetWindowHasMoved(false);
+
+    { // Scope to control service locator lock/unlock lifetime
+        auto pWindow = ServiceLocator::LocateConsoleWindow();
+        if (pWindow.get() != nullptr)
+        {
+            pWindow->SetWindowHasMoved(false);
+        }
     }
 
     if (!IsFlagSet(gci.Flags, CONSOLE_HAS_FOCUS))
@@ -388,7 +382,9 @@ void Cursor::TimerRoutine(_In_ PSCREEN_INFORMATION const ScreenInfo)
         rc.right = rc.left + ScreenInfo->GetScreenFontSize().X;
         rc.bottom = rc.top + ScreenInfo->GetScreenFontSize().Y;
 
-        _pAccessibilityNotifier->NotifyConsoleCaretEvent(rc);
+        auto accessibilityNotifier = ServiceLocator::LocateAccessibilityNotifier();
+
+        accessibilityNotifier->NotifyConsoleCaretEvent(rc);
 
         // Send accessibility information
         {
@@ -404,7 +400,7 @@ void Cursor::TimerRoutine(_In_ PSCREEN_INFORMATION const ScreenInfo)
                 flags = IAccessibilityNotifier::ConsoleCaretEventFlags::CaretVisible;
             }
 
-            _pAccessibilityNotifier->NotifyConsoleCaretEvent(flags, PACKCOORD(this->GetPosition()));
+            accessibilityNotifier->NotifyConsoleCaretEvent(flags, PACKCOORD(this->GetPosition()));
         }
     }
 

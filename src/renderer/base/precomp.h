@@ -30,7 +30,5 @@ typedef _Return_type_success_(return >= 0) long NTSTATUS;
 
 #define NT_SUCCESS(Status)  (((NTSTATUS)(Status)) >= 0)
 
-// WIL
-#define WIL_SUPPORT_BITOPERATION_PASCAL_NAMES
-#include <wil\Common.h>
-#include <wil\Result.h>
+// This includes support libraries from the CRT, STL, WIL, and GSL
+#include "LibraryIncludes.h"

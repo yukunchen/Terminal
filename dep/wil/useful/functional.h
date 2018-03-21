@@ -1,5 +1,11 @@
 // Windows Internal Libraries (wil)
 // Functional.h:  Helpers and classes for dealing with lambdas and callbacks
+//
+// wil Usage Guidelines:
+// https://microsoft.sharepoint.com/teams/osg_development/Shared%20Documents/Windows%20Internal%20Libraries%20for%20C++%20Usage%20Guide.docx?web=1
+//
+// wil Discussion Alias (wildisc):
+// http://idwebelements/GroupManagement.aspx?Group=wildisc&Operation=join  (one-click join)
 
 #pragma once
 
@@ -13,21 +19,18 @@ namespace wil
     //! that into move construction of the desired derived class. This allows for a single copy to be made which moves
     //! the contents of the class, rather than actually copying.
     //!
-    //! This is a simple stopgap measure that will be obsoleted once C++14's generalized lambda capture expressions
+    //! This was a simple stopgap measure that is obsoleted now that C++14's generalized lambda capture expressions
     //! are available to the Windows build.
     //!
-    //! Note that some class operators may be hidden as a result of wrapping this class. To wrap a class only immediately
-    //! prior to needing move_on_copy you can use make_move_on_copy.
+    //! Instead of using this class, move the variable into the lambda.
     //! ~~~~
-    //! wil::move_on_copy<wil::unique_event> cancel(wil::EventOptions::ManualReset);
-    //! AsyncCall([cancel]
+    //! wil::unique_event cancel(wil::EventOptions::ManualReset);
+    //! AsyncCall([cancel{ std::move(cancel) }]
     //! {
     //!     // The event's ownership is now safely with the lambda. It cannot be used
-    //!     // after the lambda declaration as it was 'moved' into the lambda capture.
+    //!     // after the lambda declaration as it was moved into the lambda capture.
     //! });
     //! ~~~~
-    //! Note that this mechanism (copy performs a move) isn't intuitive outside of explicit use for this purpose and this mechanism
-    //! should otherwise be avoided.
     template <typename T>
     class move_on_copy : public T
     {
@@ -59,7 +62,7 @@ namespace wil
 
         //! Standard move constructor
         move_on_copy(move_on_copy<T>&& other) :
-            T(wistd::move(other)),
+            T(static_cast<T&&>(other)),
             m_copied(other.m_copied)
         {
             // not technically copied, but you shouldn't copy after moving away

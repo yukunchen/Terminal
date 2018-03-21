@@ -75,7 +75,7 @@ typedef _Return_type_success_(return >= 0) LONG NTSTATUS;
 
 #ifndef WIL_AllocateMemory
 #ifdef _KERNEL_MODE
-#define WIL_AllocateMemory(SIZE)    ExAllocatePoolWithTag(NonPagedPool, SIZE, 'LIW')
+#define WIL_AllocateMemory(SIZE)    ExAllocatePoolWithTag(NonPagedPoolNx, SIZE, 'LIW')
 WI_ODR_PRAGMA("WIL_AllocateMemory", "2")
 #else
 #define WIL_AllocateMemory(SIZE)    HeapAlloc(GetProcessHeap(), 0, SIZE)
@@ -568,26 +568,23 @@ inline HMODULE wil_details_GetNtDllModuleHandle() WI_NOEXCEPT
 #endif
 // end-of-repeated fail-fast handling macros
 // Helpers for return macros
-#define __RETURN_HR_MSG(hr, str, fmt, ...)                   do { HRESULT __hr = (hr); if (FAILED(__hr)) { __R_FN(Return_HrMsg)(__R_INFO(str) __hr, fmt, __VA_ARGS__); } return __hr; } while (0, 0)
-#define __RETURN_HR_MSG_FAIL(hr, str, fmt, ...)              do { HRESULT __hr = (hr); __R_FN(Return_HrMsg)(__R_INFO(str) __hr, fmt, __VA_ARGS__); return __hr; } while (0, 0)
-#define __RETURN_HR_MSG_FAIL_NO_ORIGINATE(hr, str, fmt, ...) do { HRESULT __hr = (hr); __R_FN(Return_HrMsg_NoOriginate)(__R_INFO(str) __hr, fmt, __VA_ARGS__); return __hr; } while (0, 0)
-#define __RETURN_WIN32_MSG(err, str, fmt, ...)               do { DWORD __err = (err); if (FAILED_WIN32(__err)) { return __R_FN(Return_Win32Msg)(__R_INFO(str) __err, fmt, __VA_ARGS__); } return S_OK; } while (0, 0)
-#define __RETURN_WIN32_MSG_FAIL(err, str, fmt, ...)          do { DWORD __err = (err); return __R_FN(Return_Win32Msg)(__R_INFO(str) __err, fmt, __VA_ARGS__); } while (0, 0)
+#define __RETURN_HR_MSG(hr, str, fmt, ...)                   do { HRESULT const __hr = (hr); if (FAILED(__hr)) { __R_FN(Return_HrMsg)(__R_INFO(str) __hr, fmt, __VA_ARGS__); } return __hr; } while (0, 0)
+#define __RETURN_HR_MSG_FAIL(hr, str, fmt, ...)              do { HRESULT const __hr = (hr); __R_FN(Return_HrMsg)(__R_INFO(str) __hr, fmt, __VA_ARGS__); return __hr; } while (0, 0)
+#define __RETURN_WIN32_MSG(err, str, fmt, ...)               do { DWORD const __err = (err); if (FAILED_WIN32(__err)) { return __R_FN(Return_Win32Msg)(__R_INFO(str) __err, fmt, __VA_ARGS__); } return S_OK; } while (0, 0)
+#define __RETURN_WIN32_MSG_FAIL(err, str, fmt, ...)          do { DWORD const __err = (err); return __R_FN(Return_Win32Msg)(__R_INFO(str) __err, fmt, __VA_ARGS__); } while (0, 0)
 #define __RETURN_GLE_MSG_FAIL(str, fmt, ...)                 return __R_FN(Return_GetLastErrorMsg)(__R_INFO(str) fmt, __VA_ARGS__)
-#define __RETURN_NTSTATUS_MSG(status, str, fmt, ...)         do { NTSTATUS __status = (status); if(FAILED_NTSTATUS(__status)) { return __R_FN(Return_NtStatusMsg)(__R_INFO(str) __status, fmt, __VA_ARGS__); } return S_OK; } while (0, 0)
-#define __RETURN_NTSTATUS_MSG_FAIL(status, str, fmt, ...)    do { NTSTATUS __status = (status); return __R_FN(Return_NtStatusMsg)(__R_INFO(str) __status, fmt, __VA_ARGS__); } while (0, 0)
-#define __RETURN_HR(hr, str)                                 do { HRESULT __hr = (hr); if (FAILED(__hr)) { __R_FN(Return_Hr)(__R_INFO(str) __hr); } return __hr; } while (0, 0)
-#define __RETURN_HR_NOFILE(hr, str)                          do { HRESULT __hr = (hr); if (FAILED(__hr)) { __R_FN(Return_Hr)(__R_INFO_NOFILE(str) __hr); } return __hr; } while (0, 0)
-#define __RETURN_HR_FAIL(hr, str)                            do { HRESULT __hr = (hr); __R_FN(Return_Hr)(__R_INFO(str) __hr); return __hr; } while (0, 0)
-#define __RETURN_HR_FAIL_NOFILE(hr, str)                     do { HRESULT __hr = (hr); __R_FN(Return_Hr)(__R_INFO_NOFILE(str) __hr); return __hr; } while (0, 0)
-#define __RETURN_HR_FAIL_NO_ORIGINATE(hr, str)               do { HRESULT __hr = (hr); __R_FN(Return_Hr_NoOriginate)(__R_INFO(str) __hr); return __hr; } while (0, 0)
-#define __RETURN_HR_FAIL_NO_ORIGINATE_NOFILE(hr, str)        do { HRESULT __hr = (hr); __R_FN(Return_Hr_NoOriginate)(__R_INFO_NOFILE(str) __hr); return __hr; } while (0, 0)
+#define __RETURN_NTSTATUS_MSG(status, str, fmt, ...)         do { NTSTATUS const __status = (status); if(FAILED_NTSTATUS(__status)) { return __R_FN(Return_NtStatusMsg)(__R_INFO(str) __status, fmt, __VA_ARGS__); } return S_OK; } while (0, 0)
+#define __RETURN_NTSTATUS_MSG_FAIL(status, str, fmt, ...)    do { NTSTATUS const __status = (status); return __R_FN(Return_NtStatusMsg)(__R_INFO(str) __status, fmt, __VA_ARGS__); } while (0, 0)
+#define __RETURN_HR(hr, str)                                 do { HRESULT const __hr = (hr); if (FAILED(__hr)) { __R_FN(Return_Hr)(__R_INFO(str) __hr); } return __hr; } while (0, 0)
+#define __RETURN_HR_NOFILE(hr, str)                          do { HRESULT const __hr = (hr); if (FAILED(__hr)) { __R_FN(Return_Hr)(__R_INFO_NOFILE(str) __hr); } return __hr; } while (0, 0)
+#define __RETURN_HR_FAIL(hr, str)                            do { HRESULT const __hr = (hr); __R_FN(Return_Hr)(__R_INFO(str) __hr); return __hr; } while (0, 0)
+#define __RETURN_HR_FAIL_NOFILE(hr, str)                     do { HRESULT const __hr = (hr); __R_FN(Return_Hr)(__R_INFO_NOFILE(str) __hr); return __hr; } while (0, 0)
 #define __RETURN_WIN32(err, str)                             do { DWORD __err = (err); if (FAILED_WIN32(__err)) { return __R_FN(Return_Win32)(__R_INFO(str) __err); } return S_OK; } while (0, 0)
 #define __RETURN_WIN32_FAIL(err, str)                        do { DWORD __err = (err); return __R_FN(Return_Win32)(__R_INFO(str) __err); } while (0, 0)
 #define __RETURN_GLE_FAIL(str)                               return __R_FN(Return_GetLastError)(__R_INFO_ONLY(str))
 #define __RETURN_GLE_FAIL_NOFILE(str)                        return __R_FN(Return_GetLastError)(__R_INFO_NOFILE_ONLY(str))
-#define __RETURN_NTSTATUS(status, str)                       do { NTSTATUS __status = (status); if(FAILED_NTSTATUS(__status)) { return __R_FN(Return_NtStatus)(__R_INFO(str) __status); } return S_OK; } while (0, 0)
-#define __RETURN_NTSTATUS_FAIL(status, str)                  do { NTSTATUS __status = (status); return __R_FN(Return_NtStatus)(__R_INFO(str) __status); } while (0, 0)
+#define __RETURN_NTSTATUS(status, str)                       do { NTSTATUS const __status = (status); if(FAILED_NTSTATUS(__status)) { return __R_FN(Return_NtStatus)(__R_INFO(str) __status); } return S_OK; } while (0, 0)
+#define __RETURN_NTSTATUS_FAIL(status, str)                  do { NTSTATUS const __status = (status); return __R_FN(Return_NtStatus)(__R_INFO(str) __status); } while (0, 0)
 /// @endcond
 
 
@@ -606,9 +603,6 @@ inline HMODULE wil_details_GetNtDllModuleHandle() WI_NOEXCEPT
 // Macros for returning failures as HRESULTs
 //*****************************************************************************
 
-// Currently when origination is enabled, the following macros (i.e. RETURN_HR, RETURN_HR_IF_FALSE, ...)  with the exception of RETURN_IF_FAILED* originate errors through RoOriginateError.
-// RETURN_IF_FAILED and RETURN_IF_FAILED_MSG which is considered to be used to propagate errors does not originate errors.
-
 // Always returns a known result (HRESULT) - always logs failures
 #define RETURN_HR(hr)                                           __RETURN_HR(wil::verify_hresult(hr), #hr)
 #define RETURN_LAST_ERROR()                                     __RETURN_GLE_FAIL(nullptr)
@@ -616,15 +610,15 @@ inline HMODULE wil_details_GetNtDllModuleHandle() WI_NOEXCEPT
 #define RETURN_NTSTATUS(status)                                 __RETURN_NTSTATUS(status, #status)
 
 // Conditionally returns failures (HRESULT) - always logs failures
-#define RETURN_IF_FAILED(hr)                                    do { HRESULT __hrRet = wil::verify_hresult(hr); if (FAILED(__hrRet)) { __RETURN_HR_FAIL_NO_ORIGINATE(__hrRet, #hr); }} while (0, 0)
-#define RETURN_IF_WIN32_BOOL_FALSE(win32BOOL)                   do { BOOL __boolRet = wil::verify_BOOL(win32BOOL); if (!__boolRet) { __RETURN_GLE_FAIL(#win32BOOL); }} while (0, 0)
-#define RETURN_IF_WIN32_ERROR(win32err)                         do { DWORD __errRet = (win32err); if (FAILED_WIN32(__errRet)) { __RETURN_WIN32_FAIL(__errRet, #win32err); }} while (0, 0)
+#define RETURN_IF_FAILED(hr)                                    do { HRESULT const __hrRet = wil::verify_hresult(hr); if (FAILED(__hrRet)) { __RETURN_HR_FAIL(__hrRet, #hr); }} while (0, 0)
+#define RETURN_IF_WIN32_BOOL_FALSE(win32BOOL)                   do { BOOL const __boolRet = wil::verify_BOOL(win32BOOL); if (!__boolRet) { __RETURN_GLE_FAIL(#win32BOOL); }} while (0, 0)
+#define RETURN_IF_WIN32_ERROR(win32err)                         do { DWORD const __errRet = (win32err); if (FAILED_WIN32(__errRet)) { __RETURN_WIN32_FAIL(__errRet, #win32err); }} while (0, 0)
 #define RETURN_IF_NULL_ALLOC(ptr)                               do { if ((ptr) == nullptr) { __RETURN_HR_FAIL(E_OUTOFMEMORY, #ptr); }} while (0, 0)
 #define RETURN_HR_IF(hr, condition)                             do { if (wil::verify_bool(condition)) { __RETURN_HR(wil::verify_hresult(hr), #condition); }} while (0, 0)
 #define RETURN_HR_IF_NULL(hr, ptr)                              do { if ((ptr) == nullptr) { __RETURN_HR(wil::verify_hresult(hr), #ptr); }} while (0, 0)
 #define RETURN_LAST_ERROR_IF(condition)                         do { if (wil::verify_bool(condition)) { __RETURN_GLE_FAIL(#condition); }} while (0, 0)
 #define RETURN_LAST_ERROR_IF_NULL(ptr)                          do { if ((ptr) == nullptr) { __RETURN_GLE_FAIL(#ptr); }} while (0, 0)
-#define RETURN_IF_NTSTATUS_FAILED(status)                       do { NTSTATUS __statusRet = (status); if (FAILED_NTSTATUS(__statusRet)) { __RETURN_NTSTATUS_FAIL(__statusRet, #status); }} while (0, 0)
+#define RETURN_IF_NTSTATUS_FAILED(status)                       do { NTSTATUS const __statusRet = (status); if (FAILED_NTSTATUS(__statusRet)) { __RETURN_NTSTATUS_FAIL(__statusRet, #status); }} while (0, 0)
 
 // Always returns a known failure (HRESULT) - always logs a var-arg message on failure
 #define RETURN_HR_MSG(hr, fmt, ...)                             __RETURN_HR_MSG(wil::verify_hresult(hr), #hr, fmt, __VA_ARGS__)
@@ -633,26 +627,26 @@ inline HMODULE wil_details_GetNtDllModuleHandle() WI_NOEXCEPT
 #define RETURN_NTSTATUS_MSG(status, fmt, ...)                   __RETURN_NTSTATUS_MSG(status, #status, fmt, __VA_ARGS__)
 
 // Conditionally returns failures (HRESULT) - always logs a var-arg message on failure
-#define RETURN_IF_FAILED_MSG(hr, fmt, ...)                      do { auto __hrRet = wil::verify_hresult(hr); if (FAILED(__hrRet)) { __RETURN_HR_MSG_FAIL_NO_ORIGINATE(__hrRet, #hr, fmt, __VA_ARGS__); }} while (0, 0)
+#define RETURN_IF_FAILED_MSG(hr, fmt, ...)                      do { auto const __hrRet = wil::verify_hresult(hr); if (FAILED(__hrRet)) { __RETURN_HR_MSG_FAIL(__hrRet, #hr, fmt, __VA_ARGS__); }} while (0, 0)
 #define RETURN_IF_WIN32_BOOL_FALSE_MSG(win32BOOL, fmt, ...)     do { if (!wil::verify_BOOL(win32BOOL)) { __RETURN_GLE_MSG_FAIL(#win32BOOL, fmt, __VA_ARGS__); }} while (0, 0)
-#define RETURN_IF_WIN32_ERROR_MSG(win32err, fmt, ...)           do { auto __errRet = (win32err); if (FAILED_WIN32(__errRet)) { __RETURN_WIN32_MSG_FAIL(__errRet, #win32err, fmt, __VA_ARGS__); }} while (0, 0)
+#define RETURN_IF_WIN32_ERROR_MSG(win32err, fmt, ...)           do { auto const __errRet = (win32err); if (FAILED_WIN32(__errRet)) { __RETURN_WIN32_MSG_FAIL(__errRet, #win32err, fmt, __VA_ARGS__); }} while (0, 0)
 #define RETURN_IF_NULL_ALLOC_MSG(ptr, fmt, ...)                 do { if ((ptr) == nullptr) { __RETURN_HR_MSG_FAIL(E_OUTOFMEMORY, #ptr, fmt, __VA_ARGS__); }} while (0, 0)
 #define RETURN_HR_IF_MSG(hr, condition, fmt, ...)               do { if (wil::verify_bool(condition)) { __RETURN_HR_MSG(wil::verify_hresult(hr), #condition, fmt, __VA_ARGS__); }} while (0, 0)
 #define RETURN_HR_IF_NULL_MSG(hr, ptr, fmt, ...)                do { if ((ptr) == nullptr) { __RETURN_HR_MSG(wil::verify_hresult(hr), #ptr, fmt, __VA_ARGS__); }} while (0, 0)
 #define RETURN_LAST_ERROR_IF_MSG(condition, fmt, ...)           do { if (wil::verify_bool(condition)) { __RETURN_GLE_MSG_FAIL(#condition, fmt, __VA_ARGS__); }} while (0, 0)
 #define RETURN_LAST_ERROR_IF_NULL_MSG(ptr, fmt, ...)            do { if ((ptr) == nullptr) { __RETURN_GLE_MSG_FAIL(#ptr, fmt, __VA_ARGS__); }} while (0, 0)
-#define RETURN_IF_NTSTATUS_FAILED_MSG(status, fmt, ...)         do { NTSTATUS __statusRet = (status); if (FAILED_NTSTATUS(__statusRet)) { __RETURN_NTSTATUS_MSG_FAIL(__statusRet, #status, fmt, __VA_ARGS__); }} while (0, 0)
+#define RETURN_IF_NTSTATUS_FAILED_MSG(status, fmt, ...)         do { NTSTATUS const __statusRet = (status); if (FAILED_NTSTATUS(__statusRet)) { __RETURN_NTSTATUS_MSG_FAIL(__statusRet, #status, fmt, __VA_ARGS__); }} while (0, 0)
 
 // Conditionally returns failures (HRESULT) - use for failures that are expected in common use - failures are not logged - macros are only for control flow pattern
-#define RETURN_IF_FAILED_EXPECTED(hr)                           do { auto __hrRet = wil::verify_hresult(hr); if (FAILED(__hrRet)) { return __hrRet; }} while (0, 0)
+#define RETURN_IF_FAILED_EXPECTED(hr)                           do { auto const __hrRet = wil::verify_hresult(hr); if (FAILED(__hrRet)) { return __hrRet; }} while (0, 0)
 #define RETURN_IF_WIN32_BOOL_FALSE_EXPECTED(win32BOOL)          do { if (!wil::verify_BOOL(win32BOOL)) { return wil::details::GetLastErrorFailHr(); }} while (0, 0)
-#define RETURN_IF_WIN32_ERROR_EXPECTED(win32err)                do { auto __errRet = (win32err); if (FAILED_WIN32(__errRet)) { return HRESULT_FROM_WIN32(__errRet); }} while (0, 0)
+#define RETURN_IF_WIN32_ERROR_EXPECTED(win32err)                do { auto const __errRet = (win32err); if (FAILED_WIN32(__errRet)) { return HRESULT_FROM_WIN32(__errRet); }} while (0, 0)
 #define RETURN_IF_NULL_ALLOC_EXPECTED(ptr)                      do { if ((ptr) == nullptr) { return E_OUTOFMEMORY; }} while (0, 0)
 #define RETURN_HR_IF_EXPECTED(hr, condition)                    do { if (wil::verify_bool(condition)) { return wil::verify_hresult(hr); }} while (0, 0)
 #define RETURN_HR_IF_NULL_EXPECTED(hr, ptr)                     do { if ((ptr) == nullptr) { return wil::verify_hresult(hr); }} while (0, 0)
 #define RETURN_LAST_ERROR_IF_EXPECTED(condition)                do { if (wil::verify_bool(condition)) { return wil::details::GetLastErrorFailHr(); }} while (0, 0)
 #define RETURN_LAST_ERROR_IF_NULL_EXPECTED(ptr)                 do { if ((ptr) == nullptr) { return wil::details::GetLastErrorFailHr(); }} while (0, 0)
-#define RETURN_IF_NTSTATUS_FAILED_EXPECTED(status)              do { auto __statusRet = (status); if (FAILED_NTSTATUS(__statusRet)) { return wil::details::NtStatusToHr(__statusRet); }} while (0, 0)
+#define RETURN_IF_NTSTATUS_FAILED_EXPECTED(status)              do { auto const __statusRet = (status); if (FAILED_NTSTATUS(__statusRet)) { return wil::details::NtStatusToHr(__statusRet); }} while (0, 0)
 
 
 //*****************************************************************************
@@ -778,9 +772,6 @@ inline HMODULE wil_details_GetNtDllModuleHandle() WI_NOEXCEPT
 
 #ifdef WIL_ENABLE_EXCEPTIONS
 
-// Currently when origination is enabled, the following macros (i.e. THROW_HR, THROW_HR_IF_FALSE, ..)  with the exception of THROW_IF_FAILED* originate errors through RoOriginateError.
-// THROW_IF_FAILED and THROW_IF_FAILED_MSG which is considered to be used to propagate errors does not originate errors.
-
 // Always throw a known failure
 #define THROW_HR(hr)                                            __R_FN(Throw_Hr)(__R_INFO(#hr) wil::verify_hresult(hr))
 #define THROW_LAST_ERROR()                                      __R_FN(Throw_GetLastError)(__R_INFO_ONLY(nullptr))
@@ -840,7 +831,7 @@ inline HMODULE wil_details_GetNtDllModuleHandle() WI_NOEXCEPT
 #define CATCH_LOG()                                             catch (...) { LOG_CAUGHT_EXCEPTION(); }
 // Use CATCH_LOG_RETURN instead of CATCH_LOG in a function-try block around a destructor.  CATCH_LOG in this specific case has an implicit throw at the end of scope.
 // Due to a bug (DevDiv 441931), Warning 4297 (function marked noexcept throws exception) is detected even when the throwing code is unreachable, such as the end of scope after a return, in function-level catch.
-#define CATCH_LOG_RETURN()                                      catch (...) { __pragma(warning(suppress : 4297)); LOG_CAUGHT_EXCEPTION(); return; } 
+#define CATCH_LOG_RETURN()                                      catch (...) { __pragma(warning(suppress : 4297)); LOG_CAUGHT_EXCEPTION(); return; }
 #define CATCH_LOG_MSG(fmt, ...)                                 catch (...) { LOG_CAUGHT_EXCEPTION_MSG(fmt, __VA_ARGS__); }
 // Likewise use CATCH_LOG_RETURN_MSG instead of CATCH_LOG_MSG in function-try blocks around destructors.
 #define CATCH_LOG_RETURN_MSG(fmt, ...)                          catch (...) { __pragma(warning(suppress : 4297)); LOG_CAUGHT_EXCEPTION_MSG(fmt, __VA_ARGS__); return; }
@@ -894,7 +885,7 @@ inline HMODULE wil_details_GetNtDllModuleHandle() WI_NOEXCEPT
 #define __WIL_PRIVATE_FAIL_FAST_HR(hr)                       FAIL_FAST_HR(hr)
 #define __WIL_PRIVATE_LOG_HR(hr)                             LOG_HR(hr)
 #else
-#define __WIL_PRIVATE_RETURN_IF_FAILED(hr)                   do { HRESULT __hrRet = wil::verify_hresult(hr); if (FAILED(__hrRet)) { __RETURN_HR_FAIL_NO_ORIGINATE_NOFILE(__hrRet, #hr); }} while (0, 0)
+#define __WIL_PRIVATE_RETURN_IF_FAILED(hr)                   do { HRESULT __hrRet = wil::verify_hresult(hr); if (FAILED(__hrRet)) { __RETURN_HR_FAIL_NOFILE(__hrRet, #hr); }} while (0, 0)
 #define __WIL_PRIVATE_RETURN_HR_IF(hr, cond)                 do { if (wil::verify_bool(cond)) { __RETURN_HR_NOFILE(wil::verify_hresult(hr), #cond); }} while (0, 0)
 #define __WIL_PRIVATE_RETURN_LAST_ERROR_IF(cond)             do { if (wil::verify_bool(cond)) { __RETURN_GLE_FAIL_NOFILE(#cond); }} while (0, 0)
 #define __WIL_PRIVATE_RETURN_IF_WIN32_BOOL_FALSE(win32BOOL)  do { BOOL __boolRet = wil::verify_BOOL(win32BOOL); if (!__boolRet) { __RETURN_GLE_FAIL_NOFILE(#win32BOOL); }} while (0, 0)
@@ -1065,8 +1056,14 @@ WIL_WARN_DEPRECATED_1611_PRAGMA("THROW_HR_IF_TRUE_MSG", "THROW_LAST_ERROR_IF_TRU
 #endif // WIL_HIDE_DEPRECATED_1611
 
 #ifndef WIL_SUPPRESS_PRIVATE_API_USE
-// Forward declaration
-extern "C" DECLSPEC_IMPORT VOID NTAPI LdrFastFailInLoaderCallout(VOID);
+
+#if !defined(_NTSYSTEM_)
+#define NTSYSAPI     DECLSPEC_IMPORT
+#else
+#define NTSYSAPI
+#endif
+
+extern "C" NTSYSAPI VOID NTAPI LdrFastFailInLoaderCallout(VOID);
 #endif
 
 namespace wil
@@ -1366,7 +1363,7 @@ namespace wil
         __declspec(selectany) _Always_(_Post_satisfies_(return < 0)) HRESULT(__stdcall *g_pfnResultFromKnownExceptions_WinRt)(const DiagnosticsInfo& diagnostics, void* returnAddress, SupportedExceptions supported, IFunctor& functor) WI_NOEXCEPT = nullptr;
 
         // Plugin to call RoOriginateError (WIL use only)
-        __declspec(selectany) void(__stdcall *g_pfnOriginateCallback)(FailureType type, HRESULT hr) WI_NOEXCEPT = nullptr;
+        __declspec(selectany) void(__stdcall *g_pfnOriginateCallback)(wil::FailureInfo const& failure) WI_NOEXCEPT = nullptr;
 
         enum class ReportFailureOptions
         {
@@ -1385,11 +1382,14 @@ namespace wil
         {
             TFunctor&& functor;
             functor_wrapper_void(TFunctor&& functor_) : functor(wistd::forward<TFunctor>(functor_)) { }
+            #pragma warning(push)
+            #pragma warning(disable:4702) /* https://microsoft.visualstudio.com/OS/_workitems?id=15917057&fullScreen=false&_a=edit */
             HRESULT Run() override
             {
                 functor();
                 return S_OK;
             }
+            #pragma warning(pop)
         };
 
         template <typename TFunctor>
@@ -1409,11 +1409,14 @@ namespace wil
             TFunctor&& functor;
             TReturn& retVal;
             functor_wrapper_other(TFunctor& functor_, TReturn& retval_) : functor(wistd::forward<TFunctor>(functor_)), retVal(retval_) { }
+            #pragma warning(push)
+            #pragma warning(disable:4702) /* https://microsoft.visualstudio.com/OS/_workitems?id=15917057&fullScreen=false&_a=edit */
             HRESULT Run() override
             {
                 retVal = functor();
                 return S_OK;
             }
+            #pragma warning(pop)
         };
 
         struct tag_return_void : public wistd::integral_constant<size_t, 0>
@@ -1972,7 +1975,7 @@ namespace wil
         // NOTE: The following two functions are unfortunate copies of strsafe.h functions that have been copied to reduce the friction associated with using
         // Result.h and ResultException.h in a build that does not have WINAPI_PARTITION_DESKTOP defined (where these are conditionally enabled).
 
-        STRSAFEWORKERAPI WilStringLengthWorkerA(_In_reads_or_z_(cchMax) STRSAFE_PCNZCH psz, _In_ _In_range_(<= , STRSAFE_MAX_CCH) size_t cchMax, _Out_opt_ _Deref_out_range_(< , cchMax) _Deref_out_range_(<= , _String_length_(psz)) size_t* pcchLength)
+        static STRSAFEAPI WilStringLengthWorkerA(_In_reads_or_z_(cchMax) STRSAFE_PCNZCH psz, _In_ _In_range_(<= , STRSAFE_MAX_CCH) size_t cchMax, _Out_opt_ _Deref_out_range_(< , cchMax) _Deref_out_range_(<= , _String_length_(psz)) size_t* pcchLength)
         {
             HRESULT hr = S_OK;
             size_t cchOriginalMax = cchMax;
@@ -2021,7 +2024,7 @@ namespace wil
 
         #pragma warning(push)
         #pragma warning(disable : 4100) // Unused parameter (pszDest)
-        _Post_satisfies_(cchDest > 0 && cchDest <= cchMax) STRSAFEWORKERAPI WilStringValidateDestA(_In_reads_opt_(cchDest) STRSAFE_PCNZCH pszDest, _In_ size_t cchDest, _In_ const size_t cchMax)
+        _Post_satisfies_(cchDest > 0 && cchDest <= cchMax) static STRSAFEAPI WilStringValidateDestA(_In_reads_opt_(cchDest) STRSAFE_PCNZCH pszDest, _In_ size_t cchDest, _In_ const size_t cchMax)
         {
             HRESULT hr = S_OK;
             if ((cchDest == 0) || (cchDest > cchMax))
@@ -2032,7 +2035,7 @@ namespace wil
         }
         #pragma warning(pop)
 
-        STRSAFEWORKERAPI WilStringVPrintfWorkerA(_Out_writes_(cchDest) _Always_(_Post_z_) STRSAFE_LPSTR pszDest, _In_ _In_range_(1, STRSAFE_MAX_CCH) size_t cchDest, _Always_(_Out_opt_ _Deref_out_range_(<=, cchDest - 1)) size_t* pcchNewDestLength, _In_ _Printf_format_string_ STRSAFE_LPCSTR pszFormat, _In_ va_list argList)
+        static STRSAFEAPI WilStringVPrintfWorkerA(_Out_writes_(cchDest) _Always_(_Post_z_) STRSAFE_LPSTR pszDest, _In_ _In_range_(1, STRSAFE_MAX_CCH) size_t cchDest, _Always_(_Out_opt_ _Deref_out_range_(<=, cchDest - 1)) size_t* pcchNewDestLength, _In_ _Printf_format_string_ STRSAFE_LPCSTR pszFormat, _In_ va_list argList)
         {
             HRESULT hr = S_OK;
             int iRet;
@@ -2348,20 +2351,22 @@ namespace wil
         return (details::g_processShutdownInProgress || (details::g_pfnRtlDllShutdownInProgress ? details::g_pfnRtlDllShutdownInProgress() : false));
     }
 
-    /** Use this object to wrap an object that wants to prevent its destructor from being run when the process is shutting down.
+    /** Use this object to wrap an object that wants to prevent its destructor from being run when the process is shutting down,
+    but the hosting DLL doesn't support CRT initializers (such as kernelbase.dll).  The hosting DLL is responsible for calling
+    Construct() and Destroy() to manually run the constructor and destructor during DLL load & unload.
     Upon process shutdown a method (ProcessShutdown()) is called that must be implemented on the object, otherwise the destructor is
     called as is typical. */
     template<class T>
-    class shutdown_aware_object
+    class manually_managed_shutdown_aware_object
     {
     public:
-        shutdown_aware_object()
+        void Construct()
         {
             void* var = &m_raw;
             ::new(var) T();
         }
 
-        ~shutdown_aware_object()
+        void Destroy()
         {
             if (ProcessShutdownInProgress())
             {
@@ -2381,6 +2386,33 @@ namespace wil
 
     private:
         unsigned char m_raw[sizeof(T)];
+    };
+
+    /** Use this object to wrap an object that wants to prevent its destructor from being run when the process is shutting down.
+    Upon process shutdown a method (ProcessShutdown()) is called that must be implemented on the object, otherwise the destructor is
+    called as is typical. */
+    template<class T>
+    class shutdown_aware_object
+    {
+    public:
+        shutdown_aware_object()
+        {
+            m_object.Construct();
+        }
+
+        ~shutdown_aware_object()
+        {
+            m_object.Destroy();
+        }
+
+        //! Retrieves a reference to the contained object
+        T& get() WI_NOEXCEPT
+        {
+            return m_object.get();
+        }
+
+    private:
+        manually_managed_shutdown_aware_object<T> m_object;
     };
 
     /** Use this object to wrap an object that wants to prevent its destructor from being run when the process is shutting down. */
@@ -2707,7 +2739,7 @@ namespace wil
     __forceinline HRESULT ResultFromException(const DiagnosticsInfo& diagnostics, SupportedExceptions supported, Functor&& functor) WI_NOEXCEPT
     {
         static_assert(details::functor_tag<ErrorReturn::None, Functor>::value != details::tag_return_other::value, "Functor must return void or HRESULT");
-        details::functor_tag<ErrorReturn::None, Functor>::functor_wrapper<Functor> functorObject(wistd::forward<Functor>(functor));
+        typename details::functor_tag<ErrorReturn::None, Functor>::functor_wrapper<Functor> functorObject(wistd::forward<Functor>(functor));
 
         return wil::details::ResultFromException(diagnostics, supported, functorObject);
     }
@@ -2748,7 +2780,7 @@ namespace wil
     inline HRESULT ResultFromException(Functor&& functor) WI_NOEXCEPT try
     {
         static_assert(details::functor_tag<ErrorReturn::None, Functor>::value == details::tag_return_void::value, "Functor must return void");
-        details::functor_tag<ErrorReturn::None, Functor>::functor_wrapper<Functor> functorObject(wistd::forward<Functor>(functor));
+        typename details::functor_tag<ErrorReturn::None, Functor>::functor_wrapper<Functor> functorObject(wistd::forward<Functor>(functor));
 
         functorObject.Run();
         return S_OK;
@@ -2798,7 +2830,7 @@ namespace wil
     __forceinline HRESULT ResultFromExceptionDebug(const DiagnosticsInfo& diagnostics, SupportedExceptions supported, Functor&& functor) WI_NOEXCEPT
     {
         static_assert(details::functor_tag<ErrorReturn::None, Functor>::value == details::tag_return_void::value, "Functor must return void");
-        details::functor_tag<ErrorReturn::None, Functor>::functor_wrapper<Functor> functorObject(wistd::forward<Functor>(functor));
+        typename details::functor_tag<ErrorReturn::None, Functor>::functor_wrapper<Functor> functorObject(wistd::forward<Functor>(functor));
 
         return wil::details::ResultFromExceptionDebug(diagnostics, supported, functorObject);
     }
@@ -2809,7 +2841,7 @@ namespace wil
     __forceinline HRESULT ResultFromExceptionDebug(const DiagnosticsInfo& diagnostics, Functor&& functor) WI_NOEXCEPT
     {
         static_assert(details::functor_tag<ErrorReturn::None, Functor>::value == details::tag_return_void::value, "Functor must return void");
-        details::functor_tag<ErrorReturn::None, Functor>::functor_wrapper<Functor> functorObject(wistd::forward<Functor>(functor));
+        typename details::functor_tag<ErrorReturn::None, Functor>::functor_wrapper<Functor> functorObject(wistd::forward<Functor>(functor));
 
         return wil::details::ResultFromExceptionDebug(diagnostics, SupportedExceptions::Known, functorObject);
     }
@@ -2821,7 +2853,7 @@ namespace wil
     __forceinline void FailFastException(const DiagnosticsInfo& diagnostics, Functor&& functor) WI_NOEXCEPT
     {
         static_assert(details::functor_tag<ErrorReturn::None, Functor>::value == details::tag_return_void::value, "Functor must return void");
-        details::functor_tag<ErrorReturn::None, Functor>::functor_wrapper<Functor> functorObject(wistd::forward<Functor>(functor));
+        typename details::functor_tag<ErrorReturn::None, Functor>::functor_wrapper<Functor> functorObject(wistd::forward<Functor>(functor));
 
         wil::details::ResultFromExceptionDebug(diagnostics, SupportedExceptions::None, functorObject);
     }
@@ -3019,7 +3051,16 @@ namespace wil
                 }
                 catch (...)
                 {
-                    auto hr = RecognizeCaughtExceptionFromCallback(debugString, debugStringChars);
+                    HRESULT hr;
+#ifdef __WIL_CPPWINRT_INCLUDED
+                    hr = ResultFromCppWinRTException(debugString, debugStringChars);
+                    if (FAILED(hr))
+                    {
+                        return hr;
+                    }
+#endif
+
+                    hr = RecognizeCaughtExceptionFromCallback(debugString, debugStringChars);
                     if (FAILED(hr))
                     {
                         return hr;
@@ -3055,6 +3096,13 @@ namespace wil
                 }
                 catch (...)
                 {
+#ifdef __WIL_CPPWINRT_INCLUDED
+                    auto hr = ResultFromCppWinRTException(debugString, debugStringChars);
+                    if (FAILED(hr))
+                    {
+                        return hr;
+                    }
+#endif
                 }
             }
 
@@ -3089,6 +3137,25 @@ namespace wil
                 catch (std::exception& exception)
                 {
                     return ResultFromKnownException(exception, diagnostics, returnAddress);
+                }
+                catch (...)
+                {
+                    HRESULT hr;
+                    wchar_t message[2048] = L"";
+
+#ifdef __WIL_CPPWINRT_INCLUDED
+                    hr = ResultFromCppWinRTException(message, ARRAYSIZE(message));
+                    if (FAILED(hr))
+                    {
+                        ReportFailure(__R_DIAGNOSTICS_RA(diagnostics, returnAddress), FailureType::Log, hr, message);
+                        return hr;
+                    }
+#endif
+
+                    // Unknown exception
+                    UNREFERENCED_PARAMETER(hr);
+                    UNREFERENCED_PARAMETER(message);
+                    throw;
                 }
                 break;
 
@@ -3189,7 +3256,16 @@ namespace wil
                 }
                 catch (...)
                 {
-                    auto hr = RecognizeCaughtExceptionFromCallback(debugString, debugStringChars);
+                    HRESULT hr;
+#ifdef __WIL_CPPWINRT_INCLUDED
+                    hr = ResultFromCppWinRTException(debugString, debugStringChars);
+                    if (FAILED(hr))
+                    {
+                        return hr;
+                    }
+#endif
+
+                    hr = RecognizeCaughtExceptionFromCallback(debugString, debugStringChars);
                     if (FAILED(hr))
                     {
                         return hr;
@@ -3220,6 +3296,13 @@ namespace wil
                 }
                 catch (...)
                 {
+#ifdef __WIL_CPPWINRT_INCLUDED
+                    auto hr = ResultFromCppWinRTException(debugString, debugStringChars);
+                    if (FAILED(hr))
+                    {
+                        return hr;
+                    }
+#endif
                 }
             }
 
@@ -3261,6 +3344,25 @@ namespace wil
                 catch (std::exception& exception)
                 {
                     return ResultFromKnownException(exception, diagnostics, returnAddress);
+                }
+                catch (...)
+                {
+                    HRESULT hr;
+                    wchar_t message[2048] = L"";
+
+#ifdef __WIL_CPPWINRT_INCLUDED
+                    hr = ResultFromCppWinRTException(message, ARRAYSIZE(message));
+                    if (FAILED(hr))
+                    {
+                        ReportFailure(__R_DIAGNOSTICS_RA(diagnostics, returnAddress), FailureType::Log, hr, message);
+                        return hr;
+                    }
+#endif
+
+                    // Unknown exception
+                    UNREFERENCED_PARAMETER(hr);
+                    UNREFERENCED_PARAMETER(message);
+                    throw;
                 }
 
             case SupportedExceptions::ThrownOrAlloc:
@@ -3394,14 +3496,6 @@ namespace wil
         // Shared Reporting -- all reporting macros bubble up through this codepath
         //*****************************************************************************
 
-        inline void OriginateError(FailureType type, HRESULT hr)
-        {
-            if (details::g_pfnOriginateCallback)
-            {
-                details::g_pfnOriginateCallback(type, hr);
-            }
-        }
-
         inline void LogFailure(__R_FN_PARAMS_FULL, FailureType type, HRESULT hr, _In_opt_ PCWSTR message,
             bool fWantDebugString, _Out_writes_(debugStringSizeChars) _Post_z_ PWSTR debugString, _Pre_satisfies_(debugStringSizeChars > 0) size_t debugStringSizeChars,
             _Out_writes_(callContextStringSizeChars) _Post_z_ PSTR callContextString, _Pre_satisfies_(callContextStringSizeChars > 0) size_t callContextStringSizeChars,
@@ -3467,6 +3561,13 @@ namespace wil
             if (details::g_pfnLoggingCallback)
             {
                 details::g_pfnLoggingCallback(*failure);
+            }
+
+            // If the hook is enabled then it will be given the opportunity to call RoOriginateError to greatly improve the diagnostic experience
+            // for uncaught exceptions.
+            if (details::g_pfnOriginateCallback)
+            {
+                details::g_pfnOriginateCallback(*failure);
             }
 
             if (SUCCEEDED(failure->hr))
@@ -3610,7 +3711,7 @@ namespace wil
             va_start(argList, formatString);
             ReportFailure_Msg(__R_FN_CALL_FULL, type, hr, formatString, argList);
         }
-        
+
         __declspec(noinline) inline void ReportFailure_Hr(__R_FN_PARAMS_FULL, FailureType type, HRESULT hr)
         {
             ReportFailure(__R_FN_CALL_FULL, type, hr);
@@ -3621,7 +3722,6 @@ namespace wil
         __declspec(noinline) inline HRESULT ReportFailure_Win32(__R_FN_PARAMS_FULL, FailureType type, DWORD err)
         {
             auto hr = HRESULT_FROM_WIN32(err);
-            OriginateError(type, hr);
             ReportFailure(__R_FN_CALL_FULL, type, hr);
             return hr;
         }
@@ -3630,7 +3730,6 @@ namespace wil
         {
             auto err = GetLastErrorFail(__R_FN_CALL_FULL);
             auto hr = HRESULT_FROM_WIN32(err);
-            OriginateError(type, hr);
             ReportFailure(__R_FN_CALL_FULL, type, hr);
             return err;
         }
@@ -3640,7 +3739,6 @@ namespace wil
         __declspec(noinline) inline HRESULT ReportFailure_GetLastErrorHr(__R_FN_PARAMS_FULL, FailureType type)
         {
             auto hr = GetLastErrorFailHr(__R_FN_CALL_FULL);
-            OriginateError(type, hr);
             ReportFailure(__R_FN_CALL_FULL, type, hr);
             return hr;
         }
@@ -3650,7 +3748,6 @@ namespace wil
         __declspec(noinline) inline HRESULT ReportFailure_NtStatus(__R_FN_PARAMS_FULL, FailureType type, NTSTATUS status)
         {
             auto hr = wil::details::NtStatusToHr(status);
-            OriginateError(type, hr);
             ReportFailure(__R_FN_CALL_FULL, type, hr);
             return hr;
         }
@@ -3672,7 +3769,6 @@ namespace wil
         __declspec(noinline) inline HRESULT ReportFailure_Win32Msg(__R_FN_PARAMS_FULL, FailureType type, DWORD err, _Printf_format_string_ PCSTR formatString, va_list argList)
         {
             auto hr = HRESULT_FROM_WIN32(err);
-            OriginateError(type, hr);
             ReportFailure_Msg(__R_FN_CALL_FULL, type, hr, formatString, argList);
             return hr;
         }
@@ -3681,7 +3777,6 @@ namespace wil
         {
             auto err = GetLastErrorFail(__R_FN_CALL_FULL);
             auto hr = HRESULT_FROM_WIN32(err);
-            OriginateError(type, hr);
             ReportFailure_Msg(__R_FN_CALL_FULL, type, hr, formatString, argList);
             return err;
         }
@@ -3691,7 +3786,6 @@ namespace wil
         __declspec(noinline) inline HRESULT ReportFailure_GetLastErrorHrMsg(__R_FN_PARAMS_FULL, FailureType type, _Printf_format_string_ PCSTR formatString, va_list argList)
         {
             auto hr = GetLastErrorFailHr(__R_FN_CALL_FULL);
-            OriginateError(type, hr);
             ReportFailure_Msg(__R_FN_CALL_FULL, type, hr, formatString, argList);
             return hr;
         }
@@ -3701,7 +3795,6 @@ namespace wil
         __declspec(noinline) inline HRESULT ReportFailure_NtStatusMsg(__R_FN_PARAMS_FULL, FailureType type, NTSTATUS status, _Printf_format_string_ PCSTR formatString, va_list argList)
         {
             auto hr = wil::details::NtStatusToHr(status);
-            OriginateError(type, hr);
             ReportFailure_Msg(__R_FN_CALL_FULL, type, hr, formatString, argList);
             return hr;
         }
@@ -3752,8 +3845,6 @@ namespace wil
             // This compilation error indicates an attempt to throw an incompatible exception type.
             const HRESULT hr = GetErrorCode(exception);
 
-            OriginateError(FailureType::Exception, hr);
-
             FailureInfo failure;
             wchar_t debugString[2048];
             char callContextString[1024];
@@ -3796,13 +3887,6 @@ namespace wil
             __R_DIRECT_METHOD(void, Return_Hr)(__R_DIRECT_FN_PARAMS HRESULT hr) WI_NOEXCEPT
             {
                 __R_FN_LOCALS;
-                OriginateError(FailureType::Return, hr);
-                wil::details::ReportFailure_Hr(__R_DIRECT_FN_CALL FailureType::Return, hr);
-            }
-
-            __R_DIRECT_METHOD(void, Return_Hr_NoOriginate)(__R_DIRECT_FN_PARAMS HRESULT hr) WI_NOEXCEPT
-            {
-                __R_FN_LOCALS;
                 wil::details::ReportFailure_Hr(__R_DIRECT_FN_CALL FailureType::Return, hr);
             }
 
@@ -3839,15 +3923,6 @@ namespace wil
 #endif
 
             __R_DIRECT_METHOD(void, Return_HrMsg)(__R_DIRECT_FN_PARAMS HRESULT hr, _Printf_format_string_ PCSTR formatString, ...) WI_NOEXCEPT
-            {
-                va_list argList;
-                va_start(argList, formatString);
-                __R_FN_LOCALS;
-                OriginateError(FailureType::Return, hr);
-                wil::details::ReportFailure_HrMsg(__R_DIRECT_FN_CALL FailureType::Return, hr, formatString, argList);
-            }
-
-            __R_DIRECT_METHOD(void, Return_HrMsg_NoOriginate)(__R_DIRECT_FN_PARAMS HRESULT hr, _Printf_format_string_ PCSTR formatString, ...) WI_NOEXCEPT
             {
                 va_list argList;
                 va_start(argList, formatString);
@@ -5089,7 +5164,6 @@ namespace wil
             __R_DIRECT_NORET_METHOD(void, Throw_Hr)(__R_DIRECT_FN_PARAMS HRESULT hr)
             {
                 __R_FN_LOCALS;
-                OriginateError(FailureType::Exception, hr);
                 wil::details::ReportFailure_Hr(__R_DIRECT_FN_CALL FailureType::Exception, hr);
             }
 
@@ -5138,7 +5212,6 @@ namespace wil
             __R_INTERNAL_NORET_METHOD(_Throw_NullAlloc)(__R_INTERNAL_FN_PARAMS_ONLY)
             {
                 __R_FN_LOCALS;
-                OriginateError(FailureType::Exception, E_OUTOFMEMORY);
                 wil::details::ReportFailure_Hr(__R_INTERNAL_FN_CALL FailureType::Exception, E_OUTOFMEMORY);
             }
 
@@ -5224,7 +5297,6 @@ namespace wil
             {
                 if (condition)
                 {
-                    OriginateError(FailureType::Exception, hr);
                     __R_CALL_INTERNAL_METHOD(_Throw_Hr)(__R_CONDITIONAL_FN_CALL hr);
                 }
                 return condition;
@@ -5236,7 +5308,6 @@ namespace wil
             {
                 if (!condition)
                 {
-                    OriginateError(FailureType::Exception, hr);
                     __R_CALL_INTERNAL_METHOD(_Throw_Hr)(__R_CONDITIONAL_FN_CALL hr);
                 }
                 return condition;
@@ -5248,7 +5319,6 @@ namespace wil
             {
                 if (pointer == nullptr)
                 {
-                    OriginateError(FailureType::Exception, hr);
                     __R_CALL_INTERNAL_METHOD(_Throw_Hr)(__R_CONDITIONAL_FN_CALL hr);
                 }
                 return pointer;
@@ -5259,7 +5329,6 @@ namespace wil
             {
                 if (pointer == nullptr)
                 {
-                    OriginateError(FailureType::Exception, hr);
                     __R_CALL_INTERNAL_METHOD(_Throw_Hr)(__R_CONDITIONAL_FN_CALL hr);
                 }
             }
@@ -5320,7 +5389,6 @@ namespace wil
                 va_list argList;
                 va_start(argList, formatString);
                 __R_FN_LOCALS;
-                OriginateError(FailureType::Exception, hr);
                 wil::details::ReportFailure_HrMsg(__R_DIRECT_FN_CALL FailureType::Exception, hr, formatString, argList);
             }
 
@@ -5377,7 +5445,6 @@ namespace wil
             __R_INTERNAL_NOINLINE_METHOD(_Throw_NullAllocMsg)(__R_INTERNAL_NOINLINE_FN_PARAMS _Printf_format_string_ PCSTR formatString, va_list argList)
             {
                 __R_FN_LOCALS;
-                OriginateError(FailureType::Exception, E_OUTOFMEMORY);
                 wil::details::ReportFailure_HrMsg(__R_INTERNAL_NOINLINE_FN_CALL FailureType::Exception, E_OUTOFMEMORY, formatString, argList);
             }
 
@@ -5478,7 +5545,6 @@ namespace wil
                 {
                     va_list argList;
                     va_start(argList, formatString);
-                    OriginateError(FailureType::Exception, hr);
                     __R_CALL_INTERNAL_NOINLINE_METHOD(_Throw_HrMsg)(__R_CONDITIONAL_NOINLINE_FN_CALL hr, formatString, argList);
                 }
                 return condition;
@@ -5491,7 +5557,6 @@ namespace wil
                 {
                     va_list argList;
                     va_start(argList, formatString);
-                    OriginateError(FailureType::Exception, hr);
                     __R_CALL_INTERNAL_NOINLINE_METHOD(_Throw_HrMsg)(__R_CONDITIONAL_NOINLINE_FN_CALL hr, formatString, argList);
                 }
                 return condition;
@@ -5505,7 +5570,6 @@ namespace wil
                 {
                     va_list argList;
                     va_start(argList, formatString);
-                    OriginateError(FailureType::Exception, hr);
                     __R_CALL_INTERNAL_NOINLINE_METHOD(_Throw_HrMsg)(__R_CONDITIONAL_NOINLINE_FN_CALL hr, formatString, argList);
                 }
                 return pointer;
@@ -5518,7 +5582,6 @@ namespace wil
                 {
                     va_list argList;
                     va_start(argList, formatString);
-                    OriginateError(FailureType::Exception, hr);
                     __R_CALL_INTERNAL_NOINLINE_METHOD(_Throw_HrMsg)(__R_CONDITIONAL_NOINLINE_FN_CALL hr, formatString, argList);
                 }
             }

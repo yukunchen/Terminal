@@ -12,8 +12,8 @@
 //! consistently use RAII in all code.
 
 #include "ResultMacros.h"
-#include "wistd_memory.h"
 #include "wistd_functional.h"
+#include "wistd_memory.h"
 
 #pragma warning(push)
 #pragma warning(disable:26135 26110)    // Missing locking annotation, Caller failing to hold lock
@@ -270,7 +270,7 @@ namespace wil
             if (this != wistd::addressof(other))
             {
                 // cast to base_storage to 'skip' calling the (optional) specialization class that provides handle-specific functionality
-                storage_t::replace(wistd::move(static_cast<storage_t::base_storage &>(other)));
+                storage_t::replace(wistd::move(static_cast<typename storage_t::base_storage &>(other)));
             }
             return (*this);
         }
@@ -1844,7 +1844,7 @@ namespace wil {
         {
             if (this != wistd::addressof(other))
             {
-                replace(wistd::move(static_cast<base_storage &>(other)));
+                replace(wistd::move(static_cast<typename storage_t::base_storage &>(other)));
             }
             return (*this);
         }
@@ -2233,31 +2233,68 @@ namespace wil
             }
         };
 
+#if defined(_NTURTL_) && !defined(__WIL_NTURTL_THREADPOOL_)
+#define __WIL_NTURTL_THREADPOOL_
+        // RTL implementation for threadpool_t parameter of DestroyThreadPoolTimer<>
+        struct RtlThreadPoolMethods
+        {
+            static void WINAPI SetThreadpoolTimer(_Inout_ PTP_TIMER Timer, _In_opt_ PFILETIME DueTime, _In_ DWORD Period, _In_opt_ DWORD WindowLength) WI_NOEXCEPT
+            {
+                ::TpSetTimer(Timer, reinterpret_cast<TP_TIMESTAMP*>(DueTime), Period, WindowLength);
+            }
+            static void WaitForThreadpoolTimerCallbacks(_Inout_ PTP_TIMER Timer, _In_ BOOL CancelPendingCallbacks) WI_NOEXCEPT
+            {
+                ::TpWaitForTimer(Timer, CancelPendingCallbacks);
+            }
+            static void CloseThreadpoolTimer(_Inout_ PTP_TIMER Timer) WI_NOEXCEPT
+            {
+                ::TpReleaseTimer(Timer);
+            }
+        };
+#endif //__WIL_NTURTL_THREADPOOL_
+
+        // Non-RTL implementation for threadpool_t parameter of DestroyThreadPoolTimer<>
+        struct SystemThreadPoolMethods
+        {
+            static void WINAPI SetThreadpoolTimer(_Inout_ PTP_TIMER Timer, _In_opt_ PFILETIME DueTime, _In_ DWORD Period, _In_opt_ DWORD WindowLength) WI_NOEXCEPT
+            {
+                ::SetThreadpoolTimer(Timer, DueTime, Period, WindowLength);
+            }
+            static void WaitForThreadpoolTimerCallbacks(_Inout_ PTP_TIMER Timer, _In_ BOOL CancelPendingCallbacks) WI_NOEXCEPT
+            {
+                ::WaitForThreadpoolTimerCallbacks(Timer, CancelPendingCallbacks);
+            }
+            static void CloseThreadpoolTimer(_Inout_ PTP_TIMER Timer) WI_NOEXCEPT
+            {
+                ::CloseThreadpoolTimer(Timer);
+            }
+        };
+
         // SetThreadpoolTimer(timer, nullptr, 0, 0) will cancel any pending callbacks,
         // then CloseThreadpoolTimer will asynchronusly close the timer if a callback is running.
-        template <PendingCallbackCancellationBehavior cancellationBehavior>
+        template <typename threadpool_t, PendingCallbackCancellationBehavior cancellationBehavior>
         struct DestroyThreadPoolTimer
         {
             static void Destroy(_In_ PTP_TIMER threadpoolTimer) WI_NOEXCEPT
             {
-                ::SetThreadpoolTimer(threadpoolTimer, nullptr, 0, 0);
+                threadpool_t::SetThreadpoolTimer(threadpoolTimer, nullptr, 0, 0);
 #pragma warning(suppress:4127) // conditional expression is constant
                 if (cancellationBehavior != PendingCallbackCancellationBehavior::NoWait)
                 {
-                    ::WaitForThreadpoolTimerCallbacks(threadpoolTimer, (cancellationBehavior == PendingCallbackCancellationBehavior::Cancel));
+                    threadpool_t::WaitForThreadpoolTimerCallbacks(threadpoolTimer, (cancellationBehavior == PendingCallbackCancellationBehavior::Cancel));
                 }
-                ::CloseThreadpoolTimer(threadpoolTimer);
+                threadpool_t::CloseThreadpoolTimer(threadpoolTimer);
             }
         };
 
         // PendingCallbackCancellationBehavior::NoWait explicitly does not block waiting for
         // callbacks when destructing.
-        template <>
-        struct DestroyThreadPoolTimer<PendingCallbackCancellationBehavior::NoWait>
+        template <typename threadpool_t>
+        struct DestroyThreadPoolTimer<threadpool_t, PendingCallbackCancellationBehavior::NoWait>
         {
             static void Destroy(_In_ PTP_TIMER threadpoolTimer) WI_NOEXCEPT
             {
-                ::CloseThreadpoolTimer(threadpoolTimer);
+                threadpool_t::CloseThreadpoolTimer(threadpoolTimer);
             }
         };
 
@@ -2317,9 +2354,14 @@ namespace wil
     typedef unique_any<PTP_WORK, void(*)(PTP_WORK), details::DestroyThreadPoolWork<details::PendingCallbackCancellationBehavior::Cancel>::Destroy> unique_threadpool_work;
     typedef unique_any<PTP_WORK, void(*)(PTP_WORK), details::DestroyThreadPoolWork<details::PendingCallbackCancellationBehavior::Wait>::Destroy> unique_threadpool_work_nocancel;
     typedef unique_any<PTP_WORK, void(*)(PTP_WORK), details::DestroyThreadPoolWork<details::PendingCallbackCancellationBehavior::NoWait>::Destroy> unique_threadpool_work_nowait;
-    typedef unique_any<PTP_TIMER, void(*)(PTP_TIMER), details::DestroyThreadPoolTimer<details::PendingCallbackCancellationBehavior::Cancel>::Destroy> unique_threadpool_timer;
-    typedef unique_any<PTP_TIMER, void(*)(PTP_TIMER), details::DestroyThreadPoolTimer<details::PendingCallbackCancellationBehavior::Wait>::Destroy> unique_threadpool_timer_nocancel;
-    typedef unique_any<PTP_TIMER, void(*)(PTP_TIMER), details::DestroyThreadPoolTimer<details::PendingCallbackCancellationBehavior::NoWait>::Destroy> unique_threadpool_timer_nowait;
+    typedef unique_any<PTP_TIMER, void(*)(PTP_TIMER), details::DestroyThreadPoolTimer<details::SystemThreadPoolMethods, details::PendingCallbackCancellationBehavior::Cancel>::Destroy> unique_threadpool_timer;
+    typedef unique_any<PTP_TIMER, void(*)(PTP_TIMER), details::DestroyThreadPoolTimer<details::SystemThreadPoolMethods, details::PendingCallbackCancellationBehavior::Wait>::Destroy> unique_threadpool_timer_nocancel;
+    typedef unique_any<PTP_TIMER, void(*)(PTP_TIMER), details::DestroyThreadPoolTimer<details::SystemThreadPoolMethods, details::PendingCallbackCancellationBehavior::NoWait>::Destroy> unique_threadpool_timer_nowait;
+#if defined(__WIL_NTURTL_THREADPOOL_)
+    typedef unique_any<PTP_TIMER, void(*)(PTP_TIMER), details::DestroyThreadPoolTimer<details::RtlThreadPoolMethods, details::PendingCallbackCancellationBehavior::Cancel>::Destroy> unique_rtlthreadpool_timer;
+    typedef unique_any<PTP_TIMER, void(*)(PTP_TIMER), details::DestroyThreadPoolTimer<details::RtlThreadPoolMethods, details::PendingCallbackCancellationBehavior::Wait>::Destroy> unique_rtlthreadpool_timer_nocancel;
+    typedef unique_any<PTP_TIMER, void(*)(PTP_TIMER), details::DestroyThreadPoolTimer<details::RtlThreadPoolMethods, details::PendingCallbackCancellationBehavior::NoWait>::Destroy> unique_rtlthreadpool_timer_nowait;
+#endif
     typedef unique_any<PTP_IO, void(*)(PTP_IO), details::DestroyThreadPoolIo<details::PendingCallbackCancellationBehavior::Cancel>::Destroy> unique_threadpool_io;
     typedef unique_any<PTP_IO, void(*)(PTP_IO), details::DestroyThreadPoolIo<details::PendingCallbackCancellationBehavior::Wait>::Destroy> unique_threadpool_io_nocancel;
     typedef unique_any<PTP_IO, void(*)(PTP_IO), details::DestroyThreadPoolIo<details::PendingCallbackCancellationBehavior::NoWait>::Destroy> unique_threadpool_io_nowait;
@@ -2826,8 +2868,8 @@ namespace wil
     typedef unique_any_t<semaphore_t<details::unique_storage<details::handle_resource_policy>, err_exception_policy>>   unique_semaphore;
 #endif
 
-    typedef unique_any<SRWLOCK *, decltype(&::ReleaseSRWLockExclusive), ::ReleaseSRWLockExclusive, details::pointer_access_none> rwlock_release_exclusive_scope_exit;
-    typedef unique_any<SRWLOCK *, decltype(&::ReleaseSRWLockShared), ::ReleaseSRWLockShared, details::pointer_access_none> rwlock_release_shared_scope_exit;
+    typedef unique_any<SRWLOCK *, decltype(&::ReleaseSRWLockExclusive), ::ReleaseSRWLockExclusive, details::pointer_access_noaddress> rwlock_release_exclusive_scope_exit;
+    typedef unique_any<SRWLOCK *, decltype(&::ReleaseSRWLockShared), ::ReleaseSRWLockShared, details::pointer_access_noaddress> rwlock_release_shared_scope_exit;
 
     inline _Check_return_ rwlock_release_exclusive_scope_exit AcquireSRWLockExclusive(_Inout_ SRWLOCK *plock) WI_NOEXCEPT
     {
@@ -2855,12 +2897,11 @@ namespace wil
     {
     public:
         srwlock(const srwlock&) = delete;
+        srwlock(srwlock&&) = delete;
         srwlock& operator=(const srwlock&) = delete;
+        srwlock& operator=(srwlock&&) = delete;
 
-        srwlock() WI_NOEXCEPT :
-        m_lock(SRWLOCK_INIT)
-        {
-        }
+        srwlock() = default;
 
         _Check_return_ rwlock_release_exclusive_scope_exit lock_exclusive() WI_NOEXCEPT
         {
@@ -2883,11 +2924,74 @@ namespace wil
         }
 
     private:
-        SRWLOCK m_lock;
+        SRWLOCK m_lock = SRWLOCK_INIT;
     };
 
+// nturtl_wrap.h changes the definition of RTL_SRWLOCK such that calls to Rtl*SRWLock*(RTL_SRWLOCK*) will fail to compile
+// Therefore, exclude these wrappers if _NTURTL_WRAP_H_ is defined
+#if defined(_NTURTL_) && !defined(__WIL_NTURTL_SRWLOCK_) && !defined(_NTURTL_WRAP_H_)
+#define __WIL_NTURTL_SRWLOCK_
+    typedef unique_any<RTL_SRWLOCK*, decltype(&::RtlReleaseSRWLockExclusive), ::RtlReleaseSRWLockExclusive, details::pointer_access_none> rtlrwlock_release_exclusive_scope_exit;
+    typedef unique_any<RTL_SRWLOCK*, decltype(&::RtlReleaseSRWLockShared), ::RtlReleaseSRWLockShared, details::pointer_access_none> rtlrwlock_release_shared_scope_exit;
 
-    typedef unique_any<CRITICAL_SECTION *, decltype(&::LeaveCriticalSection), ::LeaveCriticalSection, details::pointer_access_none> cs_leave_scope_exit;
+    inline _Check_return_ rtlrwlock_release_exclusive_scope_exit RtlAcquireSRWLockExclusive(_Inout_ RTL_SRWLOCK* lock) WI_NOEXCEPT
+    {
+        ::RtlAcquireSRWLockExclusive(lock);
+        return rtlrwlock_release_exclusive_scope_exit(lock);
+    }
+
+    inline _Check_return_ rtlrwlock_release_shared_scope_exit RtlAcquireSRWLockShared(_Inout_ RTL_SRWLOCK* lock) WI_NOEXCEPT
+    {
+        ::RtlAcquireSRWLockShared(lock);
+        return rtlrwlock_release_shared_scope_exit(lock);
+    }
+
+    inline _Check_return_ rtlrwlock_release_exclusive_scope_exit RtlTryAcquireSRWLockExclusive(_Inout_ RTL_SRWLOCK* lock) WI_NOEXCEPT
+    {
+        return rtlrwlock_release_exclusive_scope_exit(::RtlTryAcquireSRWLockExclusive(lock) ? lock : nullptr);
+    }
+
+    inline _Check_return_ rtlrwlock_release_shared_scope_exit RtlTryAcquireSRWLockShared(_Inout_ RTL_SRWLOCK* lock) WI_NOEXCEPT
+    {
+        return rtlrwlock_release_shared_scope_exit(::RtlTryAcquireSRWLockShared(lock) ? lock : nullptr);
+    }
+
+    class rtlsrwlock
+    {
+    public:
+        rtlsrwlock(const rtlsrwlock&) = delete;
+        rtlsrwlock(rtlsrwlock&&) = delete;
+        rtlsrwlock& operator=(const rtlsrwlock&) = delete;
+        rtlsrwlock& operator=(rtlsrwlock&&) = delete;
+
+        rtlsrwlock() = default;
+
+        _Check_return_ rtlrwlock_release_exclusive_scope_exit lock_exclusive() WI_NOEXCEPT
+        {
+            return wil::RtlAcquireSRWLockExclusive(&m_lock);
+        }
+
+        _Check_return_ rtlrwlock_release_exclusive_scope_exit try_lock_exclusive() WI_NOEXCEPT
+        {
+            return wil::RtlTryAcquireSRWLockExclusive(&m_lock);
+        }
+
+        _Check_return_ rtlrwlock_release_shared_scope_exit lock_shared() WI_NOEXCEPT
+        {
+            return wil::RtlAcquireSRWLockShared(&m_lock);
+        }
+
+        _Check_return_ rtlrwlock_release_shared_scope_exit try_lock_shared() WI_NOEXCEPT
+        {
+            return wil::RtlTryAcquireSRWLockShared(&m_lock);
+        }
+
+    private:
+        RTL_SRWLOCK m_lock = SRWLOCK_INIT;
+    };
+#endif //__WIL_NTURTL_SRWLOCK_
+
+    typedef unique_any<CRITICAL_SECTION *, decltype(&::LeaveCriticalSection), ::LeaveCriticalSection, details::pointer_access_noaddress> cs_leave_scope_exit;
 
     inline _Check_return_ cs_leave_scope_exit EnterCriticalSection(_Inout_ CRITICAL_SECTION *pcs) WI_NOEXCEPT
     {
@@ -2900,31 +3004,15 @@ namespace wil
         return cs_leave_scope_exit(::TryEnterCriticalSection(pcs) ? pcs : nullptr);
     }
 
-#if defined(_NTURTL_) && !defined(__WIL_NTURTL_CRITSEC_)
-#define __WIL_NTURTL_CRITSEC_
-
-    typedef unique_any<RTL_CRITICAL_SECTION*, decltype(&::RtlLeaveCriticalSection), RtlLeaveCriticalSection, details::pointer_access_none> rtlcs_leave_scope_exit;
-
-    inline _Check_return_ cs_leave_scope_exit RtlEnterCriticalSection(_Inout_ RTL_CRITICAL_SECTION *pcs) WI_NOEXCEPT
-    {
-        ::RtlEnterCriticalSection(pcs);
-        return cs_leave_scope_exit(pcs);
-    }
-
-    inline _Check_return_ cs_leave_scope_exit RtlTryEnterCriticalSection(_Inout_ RTL_CRITICAL_SECTION *pcs) WI_NOEXCEPT
-    {
-        return cs_leave_scope_exit(::RtlTryEnterCriticalSection(pcs) ? pcs : nullptr);
-    }
-
-#endif
-
     // Critical sections are worse than srwlocks in performance and memory usage (their only unique attribute
     // being recursive acquisition). Prefer srwlocks over critical sections when you don't need recursive acquisition.
     class critical_section
     {
     public:
         critical_section(const critical_section&) = delete;
+        critical_section(critical_section&&) = delete;
         critical_section& operator=(const critical_section&) = delete;
+        critical_section& operator=(critical_section&&) = delete;
 
         critical_section(ULONG spincount = 0) WI_NOEXCEPT
         {
@@ -2949,6 +3037,117 @@ namespace wil
 
     private:
         CRITICAL_SECTION m_cs;
+    };
+
+#if defined(_NTURTL_) && !defined(__WIL_NTURTL_CRITSEC_)
+#define __WIL_NTURTL_CRITSEC_
+    typedef unique_any<RTL_CRITICAL_SECTION*, decltype(&::RtlLeaveCriticalSection), RtlLeaveCriticalSection, details::pointer_access_none> rtlcs_leave_scope_exit;
+
+    inline _Check_return_ rtlcs_leave_scope_exit RtlEnterCriticalSection(_Inout_ RTL_CRITICAL_SECTION* cs) WI_NOEXCEPT
+    {
+        ::RtlEnterCriticalSection(cs);
+        return rtlcs_leave_scope_exit(cs);
+    }
+
+    inline _Check_return_ rtlcs_leave_scope_exit RtlTryEnterCriticalSection(_Inout_ RTL_CRITICAL_SECTION* cs) WI_NOEXCEPT
+    {
+        return rtlcs_leave_scope_exit(::RtlTryEnterCriticalSection(cs) ? cs : nullptr);
+    }
+
+    // Critical sections are worse than srwlocks in performance and memory usage (their only unique attribute
+    // being recursive acquisition). Prefer srwlocks over critical sections when you don't need recursive acquisition.
+    class rtlcritical_section
+    {
+    public:
+        rtlcritical_section(const rtlcritical_section&) = delete;
+        rtlcritical_section(rtlcritical_section&&) = delete;
+        rtlcritical_section& operator=(const rtlcritical_section&) = delete;
+        rtlcritical_section& operator=(rtlcritical_section&&) = delete;
+
+        rtlcritical_section(ULONG spincount = 0) WI_NOEXCEPT
+        {
+            // Initialization will not fail without invalid params...
+            ::RtlInitializeCriticalSectionEx(&m_cs, spincount, 0);
+        }
+
+        ~rtlcritical_section() WI_NOEXCEPT
+        {
+            ::RtlDeleteCriticalSection(&m_cs);
+        }
+
+        _Check_return_ rtlcs_leave_scope_exit lock() WI_NOEXCEPT
+        {
+            return wil::RtlEnterCriticalSection(&m_cs);
+        }
+
+        _Check_return_ rtlcs_leave_scope_exit try_lock() WI_NOEXCEPT
+        {
+            return wil::RtlTryEnterCriticalSection(&m_cs);
+        }
+
+    private:
+        RTL_CRITICAL_SECTION m_cs;
+    };
+#endif //__WIL_NTURTL_CRITSEC_
+
+    class condition_variable
+    {
+    public:
+        condition_variable(const condition_variable&) = delete;
+        condition_variable(condition_variable&&) = delete;
+        condition_variable& operator=(const condition_variable&) = delete;
+        condition_variable& operator=(condition_variable&&) = delete;
+
+        condition_variable() = default;
+
+        void notify_one() WI_NOEXCEPT
+        {
+            ::WakeConditionVariable(&m_cv);
+        }
+
+        void notify_all() WI_NOEXCEPT
+        {
+            ::WakeAllConditionVariable(&m_cv);
+        }
+
+        void wait(const cs_leave_scope_exit& lock) WI_NOEXCEPT
+        {
+            wait_for(lock, INFINITE);
+        }
+
+        void wait(const rwlock_release_exclusive_scope_exit& lock) WI_NOEXCEPT
+        {
+            wait_for(lock, INFINITE);
+        }
+
+        void wait(const rwlock_release_shared_scope_exit& lock) WI_NOEXCEPT
+        {
+            wait_for(lock, INFINITE);
+        }
+
+        bool wait_for(const cs_leave_scope_exit& lock, DWORD timeoutMs) WI_NOEXCEPT
+        {
+            bool result = !!::SleepConditionVariableCS(&m_cv, lock.get(), timeoutMs);
+            __FAIL_FAST_ASSERT__(result || ::GetLastError() == ERROR_TIMEOUT);
+            return result;
+        }
+
+        bool wait_for(const rwlock_release_exclusive_scope_exit& lock, DWORD timeoutMs) WI_NOEXCEPT
+        {
+            bool result = !!::SleepConditionVariableSRW(&m_cv, lock.get(), timeoutMs, 0);
+            __FAIL_FAST_ASSERT__(result || ::GetLastError() == ERROR_TIMEOUT);
+            return result;
+        }
+
+        bool wait_for(const rwlock_release_shared_scope_exit& lock, DWORD timeoutMs) WI_NOEXCEPT
+        {
+            bool result = !!::SleepConditionVariableSRW(&m_cv, lock.get(), timeoutMs, CONDITION_VARIABLE_LOCKMODE_SHARED);
+            __FAIL_FAST_ASSERT__(result || ::GetLastError() == ERROR_TIMEOUT);
+            return result;
+        }
+
+    private:
+        CONDITION_VARIABLE m_cv = CONDITION_VARIABLE_INIT;
     };
 
     /// @cond
@@ -2997,10 +3196,10 @@ namespace wil
         _When_(length == static_cast<size_t>(-1), _In_)
         PCWSTR source, size_t length = static_cast<size_t>(-1)) WI_NOEXCEPT
     {
-        // When the source string exists, calculate the number of characters to copy up to either 
+        // When the source string exists, calculate the number of characters to copy up to either
         // 1) the length that is given
         // 2) the length of the source string. When the source does not exist, use the given length
-        //    for calculating both the size of allocated buffer and the number of characters to copy. 
+        //    for calculating both the size of allocated buffer and the number of characters to copy.
         size_t lengthToCopy = length;
         if (source)
         {
@@ -3453,6 +3652,19 @@ namespace wil
         void SetEvent() const WI_NOEXCEPT { get()->m_event.SetEvent(); }
 
     private:
+
+        // Had to move this from a Lambda so it would compile in C++/CLI (which thought the Lambda should be a managed function for some reason).
+        static void CALLBACK wait_callback(PTP_CALLBACK_INSTANCE, void *context, TP_WAIT *pThreadPoolWait, TP_WAIT_RESULT)
+        {
+            auto pThis = static_cast<details::event_watcher_state *>(context);
+            // Manual events must be re-set to avoid missing the last notification.
+            pThis->m_event.ResetEvent();
+            // Call the client before re-arming to ensure that multiple callbacks don't
+            // run concurrently.
+            pThis->m_callback();
+            SetThreadpoolWait(pThreadPoolWait, pThis->m_event.get(), nullptr); // valid params ensure success
+        }
+
         // To avoid template expansion (if unique_event/unique_event_nothrow forms were used) this base
         // create function takes a raw handle and assumes its ownership, even on failure.
         HRESULT create_take_hevent_ownership(_In_ HANDLE rawHandleOwnershipTaken, wistd::function<void()> &&callback)
@@ -3462,16 +3674,7 @@ namespace wil
             wistd::unique_ptr<details::event_watcher_state> watcherState(new(std::nothrow) details::event_watcher_state(wistd::move(eventHandle), wistd::move(callback)));
             RETURN_IF_NULL_ALLOC(watcherState);
 
-            watcherState->m_threadPoolWait.reset(CreateThreadpoolWait([](PTP_CALLBACK_INSTANCE, void *context, TP_WAIT *pThreadPoolWait, TP_WAIT_RESULT)
-            {
-                auto pThis = static_cast<details::event_watcher_state *>(context);
-                // Manual events must be re-set to avoid missing the last notification.
-                pThis->m_event.ResetEvent();
-                // Call the client before re-arming to ensure that multiple callbacks don't
-                // run concurrently.
-                pThis->m_callback();
-                SetThreadpoolWait(pThreadPoolWait, pThis->m_event.get(), nullptr); // valid params ensure success
-            }, watcherState.get(), nullptr));
+            watcherState->m_threadPoolWait.reset(CreateThreadpoolWait(wait_callback, watcherState.get(), nullptr));
             RETURN_LAST_ERROR_IF(!watcherState->m_threadPoolWait);
             storage_t::reset(watcherState.release()); // no more failures after this, pass ownership
             SetThreadpoolWait(storage_t::get()->m_threadPoolWait.get(), storage_t::get()->m_event.get(), nullptr);
@@ -4040,13 +4243,18 @@ namespace wil
     typedef unique_any<DWORD, decltype(&::TlsFree), ::TlsFree> unique_tls;
     typedef unique_any<PSECURITY_DESCRIPTOR, decltype(&::LocalFree), ::LocalFree> unique_hlocal_security_descriptor;
     typedef unique_any<PSECURITY_DESCRIPTOR, decltype(&details::DestroyPrivateObjectSecurity), details::DestroyPrivateObjectSecurity> unique_private_security_descriptor;
+
+#if defined(_WINUSER_) && !defined(__WIL__WINUSER_)
+#define __WIL__WINUSER_
     typedef unique_any<HACCEL, decltype(&::DestroyAcceleratorTable), ::DestroyAcceleratorTable> unique_haccel;
     typedef unique_any<HCURSOR, decltype(&::DestroyCursor), ::DestroyCursor> unique_hcursor;
+    typedef unique_any<HWND, decltype(&::DestroyWindow), ::DestroyWindow> unique_hwnd;
+#endif // __WIL__WINUSER_
+
 #if !defined(NOGDI)
     typedef unique_any<HDESK, decltype(&::CloseDesktop), ::CloseDesktop> unique_hdesk;
     typedef unique_any<HWINSTA, decltype(&::CloseWindowStation), ::CloseWindowStation> unique_hwinsta;
 #endif // !defined(NOGDI)
-    typedef unique_any<HWND, decltype(&::DestroyWindow), ::DestroyWindow> unique_hwnd;
 
 #ifndef WIL_HIDE_DEPRECATED_1611
     WIL_WARN_DEPRECATED_1611_PRAGMA(unique_security_descriptor)
@@ -4093,6 +4301,8 @@ namespace wil
 #if defined(_COMBASEAPI_H_) && !defined(__WIL__COMBASEAPI_H_) && WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP | WINAPI_PARTITION_SYSTEM) && (NTDDI_VERSION >= NTDDI_WIN8)
 #define __WIL__COMBASEAPI_H_
     typedef unique_any<CO_MTA_USAGE_COOKIE, decltype(&::CoDecrementMTAUsage), ::CoDecrementMTAUsage> unique_mta_usage_cookie;
+
+    typedef unique_any<DWORD, decltype(&::CoRevokeClassObject), ::CoRevokeClassObject> unique_com_class_object_cookie;
 
     /// @cond
     namespace details
@@ -4337,9 +4547,14 @@ namespace wil
     typedef weak_any<shared_msg_queue> weak_msg_queue;
 #endif // __WIL__MSGQUEUE_H__STL
 
+#if defined(__propidl_h__) && !defined(_WIL__propidl_h__)
+#define _WIL__propidl_h__
+    using unique_prop_variant = wil::unique_struct<PROPVARIANT, decltype(&::PropVariantClear), ::PropVariantClear, decltype(&::PropVariantInit), ::PropVariantInit>;
+#endif // _WIL__propidl_h__
 
 #if defined(_OLEAUTO_H_) && !defined(__WIL_OLEAUTO_H_)
 #define __WIL_OLEAUTO_H_
+    using unique_variant = wil::unique_struct<VARIANT, decltype(&::VariantClear), ::VariantClear, decltype(&::VariantInit), ::VariantInit>;
     typedef unique_any<BSTR, decltype(&::SysFreeString), ::SysFreeString> unique_bstr;
 
     inline wil::unique_bstr make_bstr_nothrow(PCWSTR source) WI_NOEXCEPT
@@ -5078,7 +5293,6 @@ namespace wil
     typedef weak_any<shared_himagelist> weak_himagelist;
 #endif // __WIL_INC_COMMCTRL_STL
 
-
 #if defined(_WINSVC_) && !defined(__WIL_WINSVC) && WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
 #define __WIL_HANDLE_H_WINSVC
     typedef unique_any<SC_HANDLE, decltype(&::CloseServiceHandle), ::CloseServiceHandle> unique_schandle;
@@ -5192,7 +5406,21 @@ namespace wil
         return S_OK;
     }
 
-    //! Query the published state and optioanlly change stamp for zero sized state blocks. This will fail fast for not-zero sized state blocks.
+    //! Checks the published state and optionally the change stamp for state blocks of any size, with an explicit scope.
+    inline HRESULT wnf_scoped_is_published_nothrow(WNF_STATE_NAME const& stateName, _Out_ bool* isPublished, _In_ void* explicitScope, _Out_opt_ WNF_CHANGE_STAMP_STRUCT* changeStamp = nullptr) WI_NOEXCEPT
+    {
+        *isPublished = false;
+        WNF_CHANGE_STAMP_STRUCT::AssignToOptParam(changeStamp, static_cast<WNF_CHANGE_STAMP>(0));
+        ULONG stateDataSize = 0;
+        WNF_CHANGE_STAMP tempChangeStamp;
+        HRESULT queryResult = HRESULT_FROM_NT(NtQueryWnfStateData(&stateName, nullptr, explicitScope, &tempChangeStamp, nullptr, &stateDataSize));
+        RETURN_HR_IF(queryResult, FAILED(queryResult) && (queryResult != HRESULT_FROM_NT(STATUS_BUFFER_TOO_SMALL)));
+        *isPublished = (tempChangeStamp != 0);
+        WNF_CHANGE_STAMP_STRUCT::AssignToOptParam(changeStamp, tempChangeStamp);
+        return S_OK;
+    }
+
+    //! Query the published state and optionally change stamp for zero sized state blocks. This will fail fast for not-zero sized state blocks.
     inline HRESULT wnf_query_nothrow(WNF_STATE_NAME const& stateName, _Out_ bool* isPublished, _Out_opt_ WNF_CHANGE_STAMP_STRUCT* changeStamp = nullptr) WI_NOEXCEPT
     {
         *isPublished = false;
@@ -5200,6 +5428,22 @@ namespace wil
         ULONG stateDataSize = 0;
         WNF_CHANGE_STAMP tempChangeStamp;
         HRESULT queryResult = HRESULT_FROM_NT(NtQueryWnfStateData(&stateName, nullptr, nullptr, &tempChangeStamp, nullptr, &stateDataSize));
+        RETURN_HR_IF(queryResult, FAILED(queryResult) && (queryResult != HRESULT_FROM_NT(STATUS_BUFFER_TOO_SMALL)));
+        __FAIL_FAST_ASSERT__((tempChangeStamp == 0) || (stateDataSize == 0));
+        LOG_HR_IF_MSG(E_UNEXPECTED, (tempChangeStamp != 0) && (stateDataSize != 0), "Inconsistent state data size in wnf_query");
+        *isPublished = (tempChangeStamp != 0) && (stateDataSize == 0);  // if the size is non zero, consider it unpublished
+        WNF_CHANGE_STAMP_STRUCT::AssignToOptParam(changeStamp, tempChangeStamp);
+        return S_OK;
+    }
+
+    //! Query the published state and optionally change stamp for zero sized state blocks, with an explicit scope. This will fail fast for not-zero sized state blocks.
+    inline HRESULT wnf_scoped_query_nothrow(WNF_STATE_NAME const& stateName, _Out_ bool* isPublished, _In_ void* explicitScope, _Out_opt_ WNF_CHANGE_STAMP_STRUCT* changeStamp = nullptr) WI_NOEXCEPT
+    {
+        *isPublished = false;
+        WNF_CHANGE_STAMP_STRUCT::AssignToOptParam(changeStamp, static_cast<WNF_CHANGE_STAMP>(0));
+        ULONG stateDataSize = 0;
+        WNF_CHANGE_STAMP tempChangeStamp;
+        HRESULT queryResult = HRESULT_FROM_NT(NtQueryWnfStateData(&stateName, nullptr, explicitScope, &tempChangeStamp, nullptr, &stateDataSize));
         RETURN_HR_IF(queryResult, FAILED(queryResult) && (queryResult != HRESULT_FROM_NT(STATUS_BUFFER_TOO_SMALL)));
         __FAIL_FAST_ASSERT__((tempChangeStamp == 0) || (stateDataSize == 0));
         LOG_HR_IF_MSG(E_UNEXPECTED, (tempChangeStamp != 0) && (stateDataSize != 0), "Inconsistent state data size in wnf_query");
@@ -5226,6 +5470,24 @@ namespace wil
         return S_OK;
     }
 
+    //! Query the published state, state data and optionally the change stamp for fixed size state blocks, with an explicit scope.
+    template <typename state_data_t>
+    HRESULT wnf_scoped_query_nothrow(WNF_STATE_NAME const& stateName, _Out_ bool* isPublished, _In_ void* explicitScope,
+        _Pre_ _Notnull_ _Pre_ _Writable_elements_(1) _Post_ _When_((*isPublished == true), _Valid_) state_data_t* stateData, _Out_opt_ WNF_CHANGE_STAMP_STRUCT* changeStamp = nullptr) WI_NOEXCEPT
+    {
+        *isPublished = false;
+        WNF_CHANGE_STAMP_STRUCT::AssignToOptParam(changeStamp, static_cast<WNF_CHANGE_STAMP>(0));
+        ULONG stateDataSize = sizeof(*stateData);
+        WNF_CHANGE_STAMP tempChangeStamp;
+        HRESULT queryResult = HRESULT_FROM_NT(NtQueryWnfStateData(&stateName, nullptr, explicitScope, &tempChangeStamp, stateData, &stateDataSize));
+        RETURN_HR_IF(queryResult, FAILED(queryResult) && (queryResult != HRESULT_FROM_NT(STATUS_BUFFER_TOO_SMALL)));
+        __FAIL_FAST_ASSERT__((tempChangeStamp == 0) || (stateDataSize == sizeof(*stateData)));
+        LOG_HR_IF_MSG(E_UNEXPECTED, (tempChangeStamp != 0) && (stateDataSize != sizeof(*stateData)), "Inconsistent state data size in wnf_query");
+        *isPublished = (tempChangeStamp != 0) && (stateDataSize == sizeof(*stateData));  // if the size is mismatched, consider it unpublished
+        WNF_CHANGE_STAMP_STRUCT::AssignToOptParam(changeStamp, tempChangeStamp);
+        return S_OK;
+    }
+
     //! Query the published state, state data and optionally the change stamp for variable size state blocks.
     inline HRESULT wnf_query_nothrow(WNF_STATE_NAME const& stateName, _Out_ bool* isPublished,
         _Out_writes_bytes_(stateDataByteCount) void* stateData, size_t stateDataByteCount,
@@ -5238,6 +5500,23 @@ namespace wil
         WNF_CHANGE_STAMP tempChangeStamp;
         ULONG size = static_cast<ULONG>(stateDataByteCount);
         RETURN_IF_NTSTATUS_FAILED(NtQueryWnfStateData(&stateName, nullptr, nullptr, &tempChangeStamp, stateData, &size));
+        *isPublished = (tempChangeStamp != 0);
+        *stateDataWrittenByteCount = static_cast<size_t>(size);
+        WNF_CHANGE_STAMP_STRUCT::AssignToOptParam(changeStamp, tempChangeStamp);
+        return S_OK;
+    }
+
+    //! Query the published state, state data and optionally the change stamp for variable size state blocks, with an explicit scope.
+    inline HRESULT wnf_scoped_query_nothrow(WNF_STATE_NAME const& stateName, _Out_ bool* isPublished, _In_ void* explicitScope,
+        _Out_writes_bytes_(stateDataByteCount) void* stateData, size_t stateDataByteCount,
+        _Out_ size_t* stateDataWrittenByteCount, _Out_opt_ WNF_CHANGE_STAMP_STRUCT* changeStamp = nullptr) WI_NOEXCEPT
+    {
+        *isPublished = false;
+        *stateDataWrittenByteCount = 0;
+        WNF_CHANGE_STAMP_STRUCT::AssignToOptParam(changeStamp, static_cast<WNF_CHANGE_STAMP>(0));
+        WNF_CHANGE_STAMP tempChangeStamp;
+        ULONG size = static_cast<ULONG>(stateDataByteCount);
+        RETURN_IF_NTSTATUS_FAILED(NtQueryWnfStateData(&stateName, nullptr, explicitScope, &tempChangeStamp, stateData, &size));
         *isPublished = (tempChangeStamp != 0);
         *stateDataWrittenByteCount = static_cast<size_t>(size);
         WNF_CHANGE_STAMP_STRUCT::AssignToOptParam(changeStamp, tempChangeStamp);
@@ -5266,10 +5545,22 @@ namespace wil
         return HRESULT_FROM_NT(RtlPublishWnfStateData(stateName, nullptr, nullptr, 0, nullptr));
     }
 
+    //! Publish a zero sized state block, with an explicit scope.
+    inline HRESULT wnf_scoped_publish_nothrow(WNF_STATE_NAME const& stateName, _In_ void* explicitScope) WI_NOEXCEPT
+    {
+        return HRESULT_FROM_NT(RtlPublishWnfStateData(stateName, nullptr, nullptr, 0, explicitScope));
+    }
+
     //! Publish a variable sized state block.
     inline HRESULT wnf_publish_nothrow(WNF_STATE_NAME const& stateName, _In_reads_bytes_(size) const void* stateData, const size_t size) WI_NOEXCEPT
     {
         return HRESULT_FROM_NT(RtlPublishWnfStateData(stateName, nullptr, stateData, static_cast<const ULONG>(size), nullptr));
+    }
+
+    //! Publish a variable sized state block, with an explicit scope.
+    inline HRESULT wnf_scoped_publish_nothrow(WNF_STATE_NAME const& stateName, _In_reads_bytes_(size) const void* stateData, const size_t size, _In_ void* explicitScope) WI_NOEXCEPT
+    {
+        return HRESULT_FROM_NT(RtlPublishWnfStateData(stateName, nullptr, stateData, static_cast<const ULONG>(size), explicitScope));
     }
 
     //! Publish a fixed sized state block.
@@ -5277,6 +5568,13 @@ namespace wil
     HRESULT wnf_publish_nothrow(WNF_STATE_NAME const& stateName, state_data_t const& stateData) WI_NOEXCEPT
     {
         return HRESULT_FROM_NT(RtlPublishWnfStateData(stateName, nullptr, &stateData, sizeof(stateData), nullptr));
+    }
+
+    //! Publish a fixed sized state block, with an explicit scope.
+    template <typename state_data_t>
+    HRESULT wnf_scoped_publish_nothrow(WNF_STATE_NAME const& stateName, state_data_t const& stateData, _In_ void* explicitScope) WI_NOEXCEPT
+    {
+        return HRESULT_FROM_NT(RtlPublishWnfStateData(stateName, nullptr, &stateData, sizeof(stateData), explicitScope));
     }
 
 #ifdef WIL_ENABLE_EXCEPTIONS
@@ -5662,15 +5960,22 @@ namespace wil
         {
             ::WwanCloseHandle(hClientHandle, nullptr);
         }
+        inline void __stdcall CloseWwan2Handle(_Frees_ptr_ HANDLE hClientHandle)
+        {
+            ::Wwan2CloseHandle(hClientHandle);
+        }
     }
     /// @endcond
 
     typedef unique_any<HANDLE, decltype(&details::CloseWwanHandle), details::CloseWwanHandle, details::pointer_access_all, HANDLE, INVALID_HANDLE_VALUE> unique_wwan_handle;
+    typedef unique_any<HANDLE, decltype(&details::CloseWwan2Handle), details::CloseWwan2Handle, details::pointer_access_all, HANDLE, INVALID_HANDLE_VALUE> unique_wwan2_handle;
 #endif
 #if defined(__WIL_WWAN_API_DECL__) && !defined(__WIL_WWAN_API_DECL_STL) && defined(WIL_RESOURCE_STL)
 #define __WIL_WWAN_API_DECL_STL
     typedef shared_any<unique_wwan_handle> shared_wwan_handle;
     typedef weak_any<shared_wwan_handle> weak_wwan_handle;
+    typedef shared_any<unique_wwan2_handle> shared_wwan2_handle;
+    typedef weak_any<shared_wwan2_handle> weak_wwan2_handle;
 #endif
 
 #if defined(_WLAN_WLANAPI_H) && !defined(__WIL_WLAN_WLANAPI_H) && WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
@@ -5876,6 +6181,14 @@ namespace wil
         return wdf_spin_lock_release_scope_exit(lock);
     }
 
+#endif
+
+#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP | WINAPI_PARTITION_SYSTEM) && \
+    defined(_CFGMGR32_H_) && \
+    (WINVER >= _WIN32_WINNT_WIN8) && \
+    !defined(__WIL_CFGMGR32_H_)
+#define __WIL_CFGMGR32_H_
+    typedef unique_any<HCMNOTIFICATION, decltype(&::CM_Unregister_Notification), ::CM_Unregister_Notification> unique_hcmnotification;
 #endif
 
 } // namespace wil

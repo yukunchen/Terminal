@@ -13,3 +13,6 @@
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
+
+// This includes support libraries from the CRT, STL, WIL, and GSL
+#include "LibraryIncludes.h"

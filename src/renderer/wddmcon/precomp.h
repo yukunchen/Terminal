@@ -16,6 +16,7 @@
 
 #include <ntuserconsoleext.h>
 
-#include <wil\result.h>
+// This includes support libraries from the CRT, STL, WIL, and GSL
+#include "LibraryIncludes.h"
 
 #pragma hdrstop

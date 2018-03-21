@@ -8,6 +8,8 @@
 // http://idwebelements/GroupManagement.aspx?Group=wildisc&Operation=join  (one-click join)
 
 #pragma once
+#ifndef _WISTD_MEMORY_H_
+#define _WISTD_MEMORY_H_
 
 // STL common functionality
 //
@@ -684,3 +686,5 @@ template<class _Ty,
 
 } // wistd
 /// @endcond
+
+#endif // _WISTD_MEMORY_H_

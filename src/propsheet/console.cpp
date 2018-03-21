@@ -344,7 +344,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle)
     size_t cbConsoleTitle;
     size_t cbSystemRoot;
 
-    LPWSTR pwszSysRoot = new wchar_t[MAX_PATH];
+    LPWSTR pwszSysRoot = new(std::nothrow) wchar_t[MAX_PATH];
     if (nullptr != pwszSysRoot)
     {
         if (0 != GetWindowsDirectoryW(pwszSysRoot, MAX_PATH))

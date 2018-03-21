@@ -132,6 +132,8 @@ HRESULT GetALengthFromW(_In_ const UINT uiCodePage,
                         _In_ size_t const cchSource,
                         _Out_ size_t* const pcchTarget)
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, pcchTarget);
+
     *pcchTarget = 0;
 
     // If there's no bytes, bail early.
@@ -209,21 +211,19 @@ std::deque<char> ConvertToOem(_In_ const UINT codepage,
     int bufferSize = WideCharToMultiByte(codepage,
                                          0,
                                          source.c_str(),
-                                         static_cast<int>(source.size()),
+                                         gsl::narrow<int>(source.size()),
                                          nullptr,
                                          0,
                                          nullptr,
                                          nullptr);
     THROW_LAST_ERROR_IF(bufferSize == 0);
 
-    std::unique_ptr<char[]> convertedChars = std::make_unique<char[]>(bufferSize);
-    THROW_IF_NULL_ALLOC(convertedChars);
-
+    auto convertedChars = std::vector<char>(bufferSize);
     bufferSize = WideCharToMultiByte(codepage,
                                      0,
                                      source.c_str(),
-                                     static_cast<int>(source.size()),
-                                     convertedChars.get(),
+                                     gsl::narrow<int>(source.size()),
+                                     convertedChars.data(),
                                      bufferSize,
                                      nullptr,
                                      nullptr);
@@ -250,7 +250,7 @@ std::deque<std::unique_ptr<KeyEvent>> CharToKeyEvents(_In_ const wchar_t wch,
         // not include symbolic character for DBCS.
         //
         // IsCharFullWidth can help for DBCS symbolic character.
-        WORD CharType;
+        WORD CharType = 0;
         bool isFullWidth = false;
         GetStringTypeW(CT_CTYPE3, &wch, 1, &CharType);
         LOG_IF_FAILED(IsCharFullWidth(wch, &isFullWidth));
@@ -316,7 +316,7 @@ std::deque<std::unique_ptr<KeyEvent>> SynthesizeKeyboardEvents(_In_ const wchar_
                                                        SHIFT_PRESSED));
     }
 
-    const WORD virtualScanCode = static_cast<WORD>(MapVirtualKeyW(wch, MAPVK_VK_TO_VSC));
+    const WORD virtualScanCode = gsl::narrow<WORD>(MapVirtualKeyW(wch, MAPVK_VK_TO_VSC));
     KeyEvent keyEvent{ true, 1, LOBYTE(keyState), virtualScanCode, wch, 0 };
 
     // add modifier flags if necessary
@@ -390,20 +390,19 @@ std::deque<std::unique_ptr<KeyEvent>> SynthesizeNumpadEvents(_In_ const wchar_t 
     convertedChars = ConvertToOem(codepage, wstr);
     if (convertedChars.size() == 1)
     {
-        unsigned char uch = static_cast<unsigned char>(convertedChars[0]);
+        unsigned char const uch = gsl::narrow<unsigned char>(convertedChars[0]);
         // unsigned char values are in the range [0, 255] so we need to be
         // able to store up to 4 chars from the conversion (including the end of string char)
-        char charString[4] = { 0 };
-        THROW_HR_IF(E_INVALIDARG, 0 != _itoa_s(uch, charString, ARRAYSIZE(charString), radix));
+        auto charString = std::to_string(uch);
 
-        for (size_t i = 0; i < ARRAYSIZE(charString); ++i)
+        for (auto& ch : std::string_view(charString))
         {
-            if (charString[i] == 0)
+            if (ch == 0)
             {
                 break;
             }
-            const WORD virtualKey = charString[i] - '0' + VK_NUMPAD0;
-            const WORD virtualScanCode = static_cast<WORD>(MapVirtualKeyW(virtualKey, MAPVK_VK_TO_VSC));
+            const WORD virtualKey = ch - '0' + VK_NUMPAD0;
+            const WORD virtualScanCode = gsl::narrow<WORD>(MapVirtualKeyW(virtualKey, MAPVK_VK_TO_VSC));
 
             keyEvents.push_back(std::make_unique<KeyEvent>(true,
                                                            1ui16,
@@ -449,8 +448,10 @@ std::deque<std::unique_ptr<KeyEvent>> SynthesizeNumpadEvents(_In_ const wchar_t 
 // May-23-2017 migrie   Forced Box-Drawing Characters (x2500-x257F) to narrow.
 // Jan-16-2018 migrie   Seperated core lookup from asking the renderer the width
 [[nodiscard]]
-HRESULT IsCharFullWidth(_In_ wchar_t wch, _Out_ bool* const isFullWidth)
+HRESULT IsCharFullWidth(_In_ wchar_t wch, _Out_ bool* const isFullWidth) noexcept
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, isFullWidth);
+
     // See http://www.unicode.org/Public/UCD/latest/ucd/EastAsianWidth.txt
 
     // 0x00-0x1F is ambiguous by font

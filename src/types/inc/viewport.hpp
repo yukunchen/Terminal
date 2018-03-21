@@ -20,54 +20,59 @@ namespace Microsoft::Console::Types
     {
     public:
 
-        Viewport(_In_ const SMALL_RECT sr);
-        Viewport(_In_ const Viewport& other);
-        ~Viewport();
+        Viewport(_In_ const SMALL_RECT sr) noexcept;
+        
+        ~Viewport() {}
+        Viewport(_In_ const Viewport& other) noexcept;
+        Viewport(Viewport&&) = default;
+        Viewport& operator=(const Viewport&)& = default;
+        Viewport& operator=(Viewport&&)& = default;
+                
+        static Viewport FromInclusive(_In_ const SMALL_RECT sr) noexcept;
 
-        static Viewport FromInclusive(_In_ const SMALL_RECT sr);
-
-        static Viewport FromExclusive(_In_ const SMALL_RECT sr);
+        static Viewport FromExclusive(_In_ const SMALL_RECT sr) noexcept;
 
         static Viewport FromDimensions(_In_ const COORD origin,
                                     _In_ const short width,
-                                    _In_ const short height);
+                                    _In_ const short height) noexcept;
 
         static Viewport FromDimensions(_In_ const COORD origin,
-                                    _In_ const COORD dimensions);
+                                       _In_ const COORD dimensions) noexcept;
+        
+        static Viewport FromCoord(_In_ const COORD origin) noexcept;
 
-        static Viewport FromCoord(_In_ const COORD origin);
+        SHORT Left() const noexcept;
+        SHORT RightInclusive() const noexcept;
+        SHORT RightExclusive() const noexcept;
+        SHORT Top() const noexcept;
+        SHORT BottomInclusive() const noexcept;
+        SHORT BottomExclusive() const noexcept;
+        SHORT Height() const noexcept;
+        SHORT Width() const noexcept;
+        COORD Origin() const noexcept;
+        COORD Dimensions() const noexcept;
 
-        SHORT Left() const;
-        SHORT RightInclusive() const;
-        SHORT RightExclusive() const;
-        SHORT Top() const;
-        SHORT BottomInclusive() const;
-        SHORT BottomExclusive() const;
-        SHORT Height() const;
-        SHORT Width() const;
-        COORD Origin() const;
-        COORD Dimensions() const;
+        bool IsWithinViewport(_In_ const COORD* const pcoord) const noexcept;
+        bool TrimToViewport(_Inout_ SMALL_RECT* const psr) const noexcept;
+        void ConvertToOrigin(_Inout_ SMALL_RECT* const psr) const noexcept;
+        void ConvertToOrigin(_Inout_ COORD* const pcoord) const noexcept;
+        Viewport ConvertToOrigin(_In_ const Viewport& other) const noexcept;
+        void ConvertFromOrigin(_Inout_ SMALL_RECT* const psr) const noexcept;
+        void ConvertFromOrigin(_Inout_ COORD* const pcoord) const noexcept;
 
-        bool IsWithinViewport(_In_ const COORD* const pcoord) const;
-        bool TrimToViewport(_Inout_ SMALL_RECT* const psr) const;
-        void ConvertToOrigin(_Inout_ SMALL_RECT* const psr) const;
-        void ConvertToOrigin(_Inout_ COORD* const pcoord) const;
-        Viewport ConvertToOrigin(_In_ const Viewport& other) const;
-        void ConvertFromOrigin(_Inout_ SMALL_RECT* const psr) const;
-        void ConvertFromOrigin(_Inout_ COORD* const pcoord) const;
+        SMALL_RECT ToExclusive() const noexcept;
+        SMALL_RECT ToInclusive() const noexcept;
 
-        SMALL_RECT ToExclusive() const;
-        SMALL_RECT ToInclusive() const;
+        Viewport ToOrigin() const noexcept;
 
-        Viewport ToOrigin() const;
+        bool IsValid() const;
 
         [[nodiscard]]
         static HRESULT AddCoord(_In_ const Viewport& original,
                                 _In_ const COORD delta,
                                 _Out_ Viewport& modified);
         static Viewport OrViewports(_In_ const Viewport& lhs,
-                                    _In_ const Viewport& rhs);
-
+                                    _In_ const Viewport& rhs) noexcept;
 
     private:
         // This is always stored as a Inclusive rect.

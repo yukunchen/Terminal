@@ -46,7 +46,7 @@ Settings are persisted to a variety of locations depending on how they are modif
 * User's configured defaults (stored as values in `HKCU\Console`)
 * Per-console-application storage (stored as subkeys of `HKCU\Console`). Subkey names:
   * Console application path (with `\` replaced with `_`)
-  * Console title 
+  * Console title
 * Windows shortcut (.lnk) files
 
 To modify the defaults, invoke the `Defaults` titlebar menu option on a Windows Console Host window. Any changes made in the resulting dialog will be persisted to the registry location mentioned above.
@@ -59,8 +59,12 @@ When console applications are launched, the Windows Console Host determines whic
 2. Overlay settings specified by the user's configured defaults
 3. Overlay application-specific settings from either the registry or the shortcut file, depending on how the application was launched
 
-Note that the registry settings are "sparse" settings repositories, meaning that if a setting isn't present, then whatever value that is already in use remains unchanged. This allows users to have some settings shared amongst all console applications and other settings be specific. Shortcut files, however, store each setting regardless of whether it was a default setting or not. 
+Note that the registry settings are "sparse" settings repositories, meaning that if a setting isn't present, then whatever value that is already in use remains unchanged. This allows users to have some settings shared amongst all console applications and other settings be specific. Shortcut files, however, store each setting regardless of whether it was a default setting or not.
 
-## Known Issues 
+## Known Issues
 
-* Modifications to system-created Start Menu and Win-X menu console applications are not kept during upgrade. 
+* Modifications to system-created Start Menu and Win-X menu console applications are not kept during upgrade.
+
+## Adding settings
+
+Adding a setting involves a bunch of steps - see [AddASetting.md](AddASetting.md).

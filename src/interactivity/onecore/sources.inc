@@ -39,8 +39,6 @@ SOURCES = \
     ..\WindowMetrics.cpp \
 
 INCLUDES = \
+    $(INCLUDES); \
     ..; \
     ..\..\..\..\..\ConIoSrv; \
-    $(ONECORE_SDK_INC_PATH); \
-    $(MINWIN_PRIV_SDK_INC_PATH); \
-    $(MINCORE_PRIV_SDK_INC_PATH); \

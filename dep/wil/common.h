@@ -32,7 +32,7 @@
 #define WIL_HIDE_DEPRECATED_1611
 #endif
 
-// Implementation side note: ideally the deprecation would be done with the function-level declspec 
+// Implementation side note: ideally the deprecation would be done with the function-level declspec
 // as it allows you to utter the error text when used.  The declspec works, but doing it selectively with
 // a macro makes intellisense deprecation comments not work.  So we just use the #pragma deprecation.
 #ifdef WIL_WARN_DEPRECATED
@@ -301,13 +301,13 @@ Three exception modes are available:
 //! 2. To reduce the error rate associated with bitwise operations.
 //!
 //!    The readability improvements naturally lend themselves to this by cutting down the number of concepts.
-//!    Using `WI_IsFlagSet(var, MyEnum::Flag)` rather than `((var & MyEnum::Flag) == MyEnum::Flag)` removes the comparison 
+//!    Using `WI_IsFlagSet(var, MyEnum::Flag)` rather than `((var & MyEnum::Flag) == MyEnum::Flag)` removes the comparison
 //!    operator and repetition in the flag value.
 //!
-//!    Additionally, these macros separate single flag operations (which tend to be the most common) from multi-flag 
+//!    Additionally, these macros separate single flag operations (which tend to be the most common) from multi-flag
 //!    operations so that compile-time errors are generated for bitwise operations which are likely incorrect,
 //!    such as:  `WI_IsFlagSet(var, MyEnum::None)` or `WI_IsFlagSet(var, MyEnum::ValidMask)`.
-//! 
+//!
 //! Note that the single flag helpers should be used when a compile-time constant single flag is being manipulated.  These
 //! helpers provide compile-time errors on misuse and should be preferred over the multi-flag helpers.  The multi-flag helpers
 //! should be used when multiple flags are being used simultaneously or when the flag values are not compile-time constants.
@@ -718,7 +718,7 @@ namespace wil
     //!
     Note that occasionally you might run into an HRESULT which is directly defined with a #define, such as:
     ~~~~
-    #define UIA_E_NOTSUPPORTED   0x80040204  
+    #define UIA_E_NOTSUPPORTED   0x80040204
     ~~~~
     Though this looks like an `HRESULT`, this is actually an `unsigned long` (the hex specification forces this).  When
     these are encountered and they are NOT in the public SDK (have not yet shipped to the public), then you should change
@@ -757,51 +757,51 @@ namespace wil
         #define __WI_IS_SINGLE_FLAG_SET(val) __WI_IS_UNSIGNED_SINGLE_FLAG_SET(__WI_MAKE_UNSIGNED(val))
 
         template <typename TVal, typename TFlags>
-        __forceinline bool AreAllFlagsSetHelper(TVal val, TFlags flags)
+        __forceinline constexpr bool AreAllFlagsSetHelper(TVal val, TFlags flags)
         {
             return ((val & flags) == static_cast<decltype(val & flags)>(flags));
         }
 
         template <typename TVal>
-        __forceinline bool IsSingleFlagSetHelper(TVal val)
+        __forceinline constexpr bool IsSingleFlagSetHelper(TVal val)
         {
             return __WI_IS_SINGLE_FLAG_SET(val);
         }
 
         template <typename TVal>
-        __forceinline bool IsClearOrSingleFlagSetHelper(TVal val)
+        __forceinline constexpr bool IsClearOrSingleFlagSetHelper(TVal val)
         {
-            return ((val == static_cast<wistd::remove_reference<TVal>::type>(0)) || IsSingleFlagSetHelper(val));
+            return ((val == static_cast<wistd::remove_reference_t<TVal>>(0)) || IsSingleFlagSetHelper(val));
         }
 
         template <typename TVal, typename TMask, typename TFlags>
-        __forceinline void UpdateFlagsInMaskHelper(_Inout_ TVal& val, TMask mask, TFlags flags)
+        __forceinline constexpr void UpdateFlagsInMaskHelper(_Inout_ TVal& val, TMask mask, TFlags flags)
         {
-            val = static_cast<wistd::remove_reference<TVal>::type>((val & ~mask) | (flags & mask));
+            val = static_cast<wistd::remove_reference_t<TVal>>((val & ~mask) | (flags & mask));
         }
 
         template <long>
         struct variable_size;
 
-        template <> 
+        template <>
         struct variable_size<1>
         {
             typedef unsigned char type;
         };
 
-        template <> 
+        template <>
         struct variable_size<2>
         {
             typedef unsigned short type;
         };
 
-        template <> 
+        template <>
         struct variable_size<4>
         {
             typedef unsigned long type;
         };
 
-        template <> 
+        template <>
         struct variable_size<8>
         {
             typedef unsigned long long type;

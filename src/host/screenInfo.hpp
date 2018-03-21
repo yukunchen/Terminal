@@ -32,6 +32,8 @@ Revision History:
 #include "..\interactivity\inc\IConsoleWindow.hpp"
 #include "..\interactivity\inc\IWindowMetrics.hpp"
 
+#include "..\types\inc\Viewport.hpp"
+
 using namespace Microsoft::Console::Interactivity;
 using namespace Microsoft::Console::VirtualTerminal;
 
@@ -96,11 +98,11 @@ public:
     bool IsMaximizedY() const;
 
     SMALL_RECT GetBufferViewport() const;
-    void SetBufferViewport(SMALL_RECT srBufferViewport);
+    void SetBufferViewport(_In_ const Microsoft::Console::Types::Viewport newViewport);
     // Forwarders to Window if we're the active buffer.
     [[nodiscard]]
     NTSTATUS SetViewportOrigin(_In_ const BOOL fAbsolute, _In_ const COORD coordWindowOrigin);
-    void SetViewportRect(_In_ SMALL_RECT* const prcNewViewport);
+    void SetViewportRect(_In_ const Microsoft::Console::Types::Viewport newViewport);
     BOOL SendNotifyBeep() const;
     BOOL PostUpdateWindowSize() const;
 
@@ -145,6 +147,7 @@ public:
     WriteBuffer* GetBufferWriter() const;
     AdaptDispatch* GetAdapterDispatch() const;
     StateMachine* GetStateMachine() const;
+
 
     void SetCursorInformation(_In_ ULONG const Size,
                               _In_ BOOLEAN const Visible,
@@ -196,13 +199,8 @@ public:
     HRESULT VtEraseAll();
 
 private:
-    SCREEN_INFORMATION(_In_ IWindowMetrics *pMetrics,
-                       _In_ IAccessibilityNotifier *pNotifier,
-                       _In_ const CHAR_INFO ciFill,
+    SCREEN_INFORMATION(_In_ const CHAR_INFO ciFill,
                        _In_ const CHAR_INFO ciPopupFill);
-
-    IWindowMetrics *_pConsoleWindowMetrics;
-    IAccessibilityNotifier *_pAccessibilityNotifier;
 
     [[nodiscard]]
     HRESULT _AdjustScreenBufferHelper(_In_ const RECT* const prcClientNew,
@@ -247,10 +245,9 @@ private:
 
     SMALL_RECT _srScrollMargins; //The margins of the VT specified scroll region. Left and Right are currently unused, but could be in the future.
 
-    // specifies which coordinates of the screen buffer are visible in the
+    // Specifies which coordinates of the screen buffer are visible in the
     //      window client (the "viewport" into the buffer)
-    // This is an Inclusive rectangle
-    SMALL_RECT _srBufferViewport;
+    Microsoft::Console::Types::Viewport _viewport;
 
     SCREEN_INFORMATION* _psiAlternateBuffer = nullptr; // The VT "Alternate" screen buffer.
     SCREEN_INFORMATION* _psiMainBuffer = nullptr; // A pointer to the main buffer, if this is the alternate buffer.

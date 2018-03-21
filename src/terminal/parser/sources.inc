@@ -37,12 +37,13 @@ SOURCES = \
     ..\tracing.cpp \
 
 INCLUDES = \
+    $(INCLUDES); \
     ..; \
     $(ONECORE_SDK_INC_PATH); \
     $(MINWIN_PRIV_SDK_INC_PATH); \
 
 TARGETLIBS = \
-    $(ONECORE_SDK_LIB_VPATH)\onecore.lib \
+    $(TARGETLIBS) \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-keyboard-l1.lib \
 
 DLOAD_ERROR_HANDLER     = kernelbase

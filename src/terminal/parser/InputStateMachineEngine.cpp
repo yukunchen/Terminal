@@ -611,7 +611,7 @@ bool InputStateMachineEngine::_WriteSingleKey(_In_ const wchar_t wch, _In_ const
     INPUT_RECORD rgInput[WRAPPED_SEQUENCE_MAX_LENGTH];
     size_t cInput = _GenerateWrappedSequence(wch, vkey, dwModifierState, rgInput, WRAPPED_SEQUENCE_MAX_LENGTH);
 
-    std::deque<std::unique_ptr<IInputEvent>> inputEvents = IInputEvent::Create(rgInput, cInput);
+    std::deque<std::unique_ptr<IInputEvent>> inputEvents = IInputEvent::Create(gsl::make_span(rgInput, cInput));
 
     return _pDispatch->WriteInput(inputEvents);
 }

@@ -7,7 +7,6 @@
 #include "precomp.h"
 #include "inc/IInputEvent.hpp"
 
-
 MouseEvent::~MouseEvent()
 {
 }

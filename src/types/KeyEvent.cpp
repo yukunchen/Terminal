@@ -62,13 +62,13 @@ void KeyEvent::SetActiveModifierKeys(_In_ const DWORD activeModifierKeys) noexce
 
 void KeyEvent::DeactivateModifierKey(_In_ const ModifierKeyState modifierKey) noexcept
 {
-    DWORD bitFlag = ToConsoleControlKeyFlag(modifierKey);
+    DWORD const bitFlag = ToConsoleControlKeyFlag(modifierKey);
     ClearAllFlags(_activeModifierKeys, bitFlag);
 }
 
 void KeyEvent::ActivateModifierKey(_In_ const ModifierKeyState modifierKey) noexcept
 {
-    DWORD bitFlag = ToConsoleControlKeyFlag(modifierKey);
+    DWORD const bitFlag = ToConsoleControlKeyFlag(modifierKey);
     SetAllFlags(_activeModifierKeys, bitFlag);
 }
 

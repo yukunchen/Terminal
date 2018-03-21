@@ -45,4 +45,5 @@ SOURCES = \
     TrueTypeFontList.cpp \
 
 INCLUDES = \
+    ..\inc; \
     $(ONECORE_SDK_INC_PATH); \

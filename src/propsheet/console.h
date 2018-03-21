@@ -52,6 +52,7 @@ Revision History:
 #define IDS_TOOLTIP_EDIT_KEYS        15
 // unused 16
 #define IDS_TOOLTIP_OPACITY          17
+#define IDS_TOOLTIP_INTERCEPT_COPY_PASTE    18
 
 NTSTATUS
 MakeAltRasterFont(
@@ -223,10 +224,10 @@ void Undo(HWND hControlWindow);
   #define _DBGALL    0xFFFFFFFF
   extern ULONG gDebugFlag;
 
-  #define DBGFONTS(_params_)  
-  #define DBGFONTS2(_params_) 
-  #define DBGCHARS(_params_)  
-  #define DBGOUTPUT(_params_) 
+  #define DBGFONTS(_params_)
+  #define DBGFONTS2(_params_)
+  #define DBGCHARS(_params_)
+  #define DBGOUTPUT(_params_)
 #else
   #define DBGFONTS(_params_)
   #define DBGFONTS2(_params_)
