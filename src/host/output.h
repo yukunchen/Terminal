@@ -54,7 +54,7 @@ bool StreamScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo);
 
 std::vector<std::vector<OutputCell>> ReadRectFromScreenBuffer(const SCREEN_INFORMATION& screenInfo,
                                                               const COORD coordSourcePoint,
-                                                              const SMALL_RECT targetRect);
+                                                              const Microsoft::Console::Types::Viewport viewport);
 
 SHORT ScrollEntireScreen(_Inout_ PSCREEN_INFORMATION pScreenInfo, _In_ const SHORT sScrollValue);
 
