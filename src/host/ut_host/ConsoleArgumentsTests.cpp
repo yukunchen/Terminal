@@ -32,6 +32,7 @@ public:
 
     TEST_METHOD(HeadlessArgTests);
     TEST_METHOD(SignalHandleTests);
+    TEST_METHOD(FeatureArgTests);
 
 };
 
@@ -1387,6 +1388,146 @@ void ConsoleArgumentsTests::SignalHandleTests()
                                     true, // createServerHandle
                                     0ul, // serverHandle
                                     0ul, // signalHandle
+                                    false), // inheritCursor
+                   false); // successful parse?
+}
+
+void ConsoleArgumentsTests::FeatureArgTests()
+{
+    // Just some assorted positive values that could be valid handles. No specific correlation to anything.
+    HANDLE hInSample = UlongToHandle(0x10);
+    HANDLE hOutSample = UlongToHandle(0x24);
+
+    std::wstring commandline;
+
+    commandline = L"conhost.exe --feature pty";
+    ArgTestsRunner(L"#1 Normal case, pass a supported feature",
+                   commandline,
+                   hInSample,
+                   hOutSample,
+                   ConsoleArguments(commandline,
+                                    L"",
+                                    hInSample,
+                                    hOutSample,
+                                    L"", // vtInPipe
+                                    L"", // vtOutPipe
+                                    L"", // vtMode
+                                    0, // width
+                                    0, // height
+                                    false, // forceV1
+                                    false, // headless
+                                    true, // createServerHandle
+                                    0, // serverHandle
+                                    0, // signalHandle
+                                    false), // inheritCursor
+                   true); // successful parse?
+    commandline = L"conhost.exe --feature tty";
+    ArgTestsRunner(L"#2 Error case, pass an unsupported feature",
+                   commandline,
+                   hInSample,
+                   hOutSample,
+                   ConsoleArguments(commandline,
+                                    L"",
+                                    hInSample,
+                                    hOutSample,
+                                    L"", // vtInPipe
+                                    L"", // vtOutPipe
+                                    L"", // vtMode
+                                    0, // width
+                                    0, // height
+                                    false, // forceV1
+                                    false, // headless
+                                    true, // createServerHandle
+                                    0, // serverHandle
+                                    0, // signalHandle
+                                    false), // inheritCursor
+                   false); // successful parse?
+
+    commandline = L"conhost.exe --feature pty --feature pty";
+    ArgTestsRunner(L"#3 Many supported features",
+                   commandline,
+                   hInSample,
+                   hOutSample,
+                   ConsoleArguments(commandline,
+                                    L"",
+                                    hInSample,
+                                    hOutSample,
+                                    L"", // vtInPipe
+                                    L"", // vtOutPipe
+                                    L"", // vtMode
+                                    0, // width
+                                    0, // height
+                                    false, // forceV1
+                                    false, // headless
+                                    true, // createServerHandle
+                                    0, // serverHandle
+                                    0, // signalHandle
+                                    false), // inheritCursor
+                   true); // successful parse?
+
+    commandline = L"conhost.exe --feature pty --feature tty";
+    ArgTestsRunner(L"#4 At least one unsupported feature",
+                   commandline,
+                   hInSample,
+                   hOutSample,
+                   ConsoleArguments(commandline,
+                                    L"",
+                                    hInSample,
+                                    hOutSample,
+                                    L"", // vtInPipe
+                                    L"", // vtOutPipe
+                                    L"", // vtMode
+                                    0, // width
+                                    0, // height
+                                    false, // forceV1
+                                    false, // headless
+                                    true, // createServerHandle
+                                    0, // serverHandle
+                                    0, // signalHandle
+                                    false), // inheritCursor
+                   false); // successful parse?
+
+    commandline = L"conhost.exe --feature pty --feature";
+    ArgTestsRunner(L"#5 no value to the feature flag",
+                   commandline,
+                   hInSample,
+                   hOutSample,
+                   ConsoleArguments(commandline,
+                                    L"",
+                                    hInSample,
+                                    hOutSample,
+                                    L"", // vtInPipe
+                                    L"", // vtOutPipe
+                                    L"", // vtMode
+                                    0, // width
+                                    0, // height
+                                    false, // forceV1
+                                    false, // headless
+                                    true, // createServerHandle
+                                    0, // serverHandle
+                                    0, // signalHandle
+                                    false), // inheritCursor
+                   false); // successful parse?
+
+    commandline = L"conhost.exe --feature pty --feature --signal foo";
+    ArgTestsRunner(L"#6 a invalid feature value that is otherwise a valid arg",
+                   commandline,
+                   hInSample,
+                   hOutSample,
+                   ConsoleArguments(commandline,
+                                    L"",
+                                    hInSample,
+                                    hOutSample,
+                                    L"", // vtInPipe
+                                    L"", // vtOutPipe
+                                    L"", // vtMode
+                                    0, // width
+                                    0, // height
+                                    false, // forceV1
+                                    false, // headless
+                                    true, // createServerHandle
+                                    0, // serverHandle
+                                    0, // signalHandle
                                     false), // inheritCursor
                    false); // successful parse?
 }
