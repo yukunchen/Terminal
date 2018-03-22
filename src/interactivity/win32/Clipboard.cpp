@@ -10,14 +10,17 @@
 
 #include "..\..\host\dbcs.h"
 #include "..\..\host\scrolling.hpp"
-#include "..\..\types\inc\convert.hpp"
 #include "..\..\host\output.h"
+
+#include "..\..\types\inc\convert.hpp"
+#include "..\..\types\inc\viewport.hpp"
 
 #include "..\inc\ServiceLocator.hpp"
 
 #pragma hdrstop
 
 using namespace Microsoft::Console::Interactivity::Win32;
+using namespace Microsoft::Console::Types;
 
 #pragma region Public Methods
 
@@ -290,7 +293,7 @@ NTSTATUS Clipboard::RetrieveTextFromBuffer(_In_ const SCREEN_INFORMATION* const 
             {
                 std::vector<std::vector<OutputCell>> cells = ReadRectFromScreenBuffer(*pScreenInfo,
                                                                                       coordSourcePoint,
-                                                                                      srTargetRect);
+                                                                                      Viewport::FromInclusive(srTargetRect));
                 // we only care about one row so reduce it here
                 outputCells = cells.at(0);
                 // allocate a string buffer

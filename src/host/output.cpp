@@ -77,25 +77,22 @@ NTSTATUS DoCreateScreenBuffer()
 // - will throw exception on error.
 std::vector<std::vector<OutputCell>> ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION& screenInfo,
                                                               _In_ const COORD coordSourcePoint,
-                                                              _In_ const SMALL_RECT targetRect)
+                                                              _In_ const Viewport viewport)
 {
 
     DBGOUTPUT(("ReadRectFromScreenBuffer\n"));
-    const short xSize = (short)(targetRect.Right - targetRect.Left + 1);
-    const short ySize = (short)(targetRect.Bottom - targetRect.Top + 1);
-    ASSERT(ySize > 0);
     const int ScreenBufferWidth = screenInfo.GetScreenBufferSize().X;
     std::vector<std::vector<OutputCell>> result;
-    result.reserve(ySize);
+    result.reserve(viewport.Height());
 
     std::unique_ptr<TextAttribute[]> unpackedAttrs = std::make_unique<TextAttribute[]>(ScreenBufferWidth);
     THROW_IF_NULL_ALLOC(unpackedAttrs.get());
 
-    for (short iRow = 0; iRow < ySize; ++iRow)
+    for (short iRow = 0; iRow < viewport.Height(); ++iRow)
     {
         const ROW& row = screenInfo.TextInfo->GetRowByOffset(coordSourcePoint.Y + iRow);
         std::vector<OutputCell> rowCells;
-        rowCells.reserve(xSize);
+        rowCells.reserve(viewport.Width());
 
         // copy the chars and attrs from their respective arrays
         const ICharRow& iCharRow = row.GetCharRow();
@@ -110,7 +107,7 @@ std::vector<std::vector<OutputCell>> ReadRectFromScreenBuffer(_In_ const SCREEN_
         // Unpack the attributes into an array so we can iterate over them.
         THROW_IF_FAILED(row.GetAttrRow().UnpackAttrs(unpackedAttrs.get(), ScreenBufferWidth));
 
-        for (short iCol = 0; iCol < xSize && it != itEnd; ++it, ++iCol)
+        for (short iCol = 0; iCol < viewport.Width() && it != itEnd; ++it, ++iCol)
         {
             TextAttribute textAttr = unpackedAttrs[coordSourcePoint.X + iCol];
             DbcsAttribute dbcsAttribute = row.GetCharRow().GetAttribute(coordSourcePoint.X + iCol);
@@ -119,7 +116,7 @@ std::vector<std::vector<OutputCell>> ReadRectFromScreenBuffer(_In_ const SCREEN_
             {
                 rowCells.emplace_back(UNICODE_SPACE, DbcsAttribute{}, textAttr);
             }
-            else if (iCol + 1 >= xSize && dbcsAttribute.IsLeading())
+            else if (iCol + 1 >= viewport.Width() && dbcsAttribute.IsLeading())
             {
                 rowCells.emplace_back(UNICODE_SPACE, DbcsAttribute{}, textAttr);
             }
@@ -167,7 +164,9 @@ NTSTATUS _CopyRectangle(_In_ PSCREEN_INFORMATION pScreenInfo,
 
     try
     {
-        std::vector<std::vector<OutputCell>> cells = ReadRectFromScreenBuffer(*pScreenInfo, SourcePoint, Target);
+        std::vector<std::vector<OutputCell>> cells = ReadRectFromScreenBuffer(*pScreenInfo,
+                                                                              SourcePoint,
+                                                                              Viewport::FromInclusive(Target));
         WriteRectToScreenBuffer(*pScreenInfo, cells, coordTarget);
     }
     catch (...)
@@ -247,7 +246,7 @@ NTSTATUS ReadScreenBuffer(_In_ const SCREEN_INFORMATION* const pScreenInfo,
 
     try
     {
-        auto outputCells = ReadRectFromScreenBuffer(*pScreenInfo, SourcePoint, Target);
+        auto outputCells = ReadRectFromScreenBuffer(*pScreenInfo, SourcePoint, Viewport::FromInclusive(Target));
         CHAR_INFO* pCurrCharInfo = pciBuffer;
         // copy the data into the char info buffer
         for (auto& row : outputCells)
@@ -668,7 +667,7 @@ void ScrollScreen(_Inout_ PSCREEN_INFORMATION pScreenInfo,
                 pNotifier->NotifyConsoleUpdateScrollEvent(coordTarget.X - psrScroll->Left, coordTarget.Y - psrScroll->Right);
             }
         }
-    
+
         IRenderer* const pRender = ServiceLocator::LocateGlobals().pRender;
         if (pRender != nullptr)
         {
@@ -1014,7 +1013,7 @@ NTSTATUS ScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo,
             std::vector<std::vector<OutputCell>> outputCells;
             try
             {
-                outputCells = ReadRectFromScreenBuffer(*pScreenInfo, SourcePoint, TargetRect);
+                outputCells = ReadRectFromScreenBuffer(*pScreenInfo, SourcePoint, Viewport::FromInclusive(TargetRect));
             }
             catch (...)
             {
