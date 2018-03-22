@@ -18,6 +18,7 @@ Revision History:
 
 #include "screenInfo.hpp"
 #include "server.h"
+#include "OutputCell.hpp"
 
 void ScreenBufferSizeChange(_In_ COORD const coordNewSize);
 
@@ -51,13 +52,9 @@ VOID SetConsoleWindowOwner(_In_ const HWND hwnd, _Inout_opt_ ConsoleProcessHandl
 
 bool StreamScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo);
 
-[[nodiscard]]
-NTSTATUS ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenInfo,
-                                  _In_ COORD const coordSourcePoint,
-                                  _Inout_ PCHAR_INFO pciTarget,
-                                  _In_ COORD const coordTargetSize,
-                                  _In_ PSMALL_RECT const psrTargetRect,
-                                  _Inout_opt_ TextAttribute* pTextAttributes);
+std::vector<std::vector<OutputCell>> ReadRectFromScreenBuffer(const SCREEN_INFORMATION& screenInfo,
+                                                              const COORD coordSourcePoint,
+                                                              const Microsoft::Console::Types::Viewport viewport);
 
 SHORT ScrollEntireScreen(_Inout_ PSCREEN_INFORMATION pScreenInfo, _In_ const SHORT sScrollValue);
 

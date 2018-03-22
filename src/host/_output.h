@@ -19,6 +19,7 @@ Revision History:
 #pragma once
 
 #include "screenInfo.hpp"
+#include "OutputCell.hpp"
 
 void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
                                _In_ SHORT cchBuffer,
@@ -33,6 +34,10 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
                              _In_ PSCREEN_INFORMATION pScreenInfo,
                              _In_ const COORD coordDest,
                              _In_reads_opt_(coordSrcDimensions.X * coordSrcDimensions.Y) TextAttribute* const pTextAttributes);
+
+void WriteRectToScreenBuffer(_Inout_ SCREEN_INFORMATION& screenInfo,
+                             const std::vector<std::vector<OutputCell>>& cells,
+                             const COORD coordDest);
 
 void WriteRegionToScreen(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ PSMALL_RECT psrRegion);
 

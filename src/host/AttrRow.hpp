@@ -20,6 +20,7 @@ Revision History:
 #pragma once
 
 #include "TextAttributeRun.hpp"
+#include <vector>
 
 class ATTR_ROW final
 {
@@ -50,6 +51,8 @@ public:
 
     [[nodiscard]]
     NTSTATUS UnpackAttrs(_Out_writes_(cRowLength) TextAttribute* const rgAttrs, _In_ const size_t cRowLength) const;
+
+    static std::vector<TextAttributeRun> PackAttrs(const std::vector<TextAttribute>& attrs);
 
     friend constexpr bool operator==(const ATTR_ROW& a, const ATTR_ROW& b) noexcept;
 
