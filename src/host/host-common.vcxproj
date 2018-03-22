@@ -28,6 +28,7 @@
     <ClCompile Include="..\newdelete.cpp" />
     <ClCompile Include="..\ntprivapi.cpp" />
     <ClCompile Include="..\output.cpp" />
+    <ClCompile Include="..\OutputCell.cpp" />
     <ClCompile Include="..\outputStream.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
@@ -94,6 +95,7 @@
     <ClInclude Include="..\newdelete.hpp" />
     <ClInclude Include="..\ntprivapi.hpp" />
     <ClInclude Include="..\output.h" />
+    <ClInclude Include="..\OutputCell.hpp" />
     <ClInclude Include="..\outputStream.hpp" />
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\readData.hpp" />

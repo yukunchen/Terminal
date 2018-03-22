@@ -71,6 +71,7 @@ SOURCES = \
     ..\inputReadHandleData.cpp \
     ..\misc.cpp      \
     ..\output.cpp    \
+    ..\OutputCell.cpp \
     ..\srvinit.cpp   \
     ..\outputStream.cpp \
     ..\stream.cpp    \
