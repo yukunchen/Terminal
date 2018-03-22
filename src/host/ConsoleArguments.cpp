@@ -21,6 +21,8 @@ const std::wstring ConsoleArguments::FILEPATH_LEADER_PREFIX = L"\\??\\";
 const std::wstring ConsoleArguments::WIDTH_ARG = L"--width";
 const std::wstring ConsoleArguments::HEIGHT_ARG = L"--height";
 const std::wstring ConsoleArguments::INHERIT_CURSOR_ARG = L"--inheritcursor";
+const std::wstring ConsoleArguments::FEATURE_ARG = L"--feature";
+const std::wstring ConsoleArguments::FEATURE_PTY_ARG = L"pty";
 
 ConsoleArguments::ConsoleArguments(_In_ const std::wstring& commandline,
                                    _In_ const HANDLE hStdIn,
@@ -115,6 +117,38 @@ HRESULT ConsoleArguments::s_GetArgumentValue(_Inout_ std::vector<std::wstring>& 
         s_ConsumeArg(args, index);
     }
     return (hasNext) ? S_OK : E_INVALIDARG;
+}
+
+// Routine Description:
+// Similar to s_GetArgumentValue.
+// Attempts to get the next arg as a "feature" arg - this can be used for
+//      feature detection.
+// If the next arg is not recognized, then we don't support that feature.
+// Currently, the only supported feature arg is `pty`, to identify pty support.
+// Arguments:
+//  args: A collection of wstrings representing command-line arguments
+//  index: the index of the argument of which to get the value for. The value
+//      should be at (index+1). index will be decremented by one on success.
+//  pSetting: recieves the string at index+1
+// Return Value:
+//  S_OK if we parsed the string successfully, otherwise E_INVALIDARG indicating
+//      failure.
+[[nodiscard]]
+HRESULT ConsoleArguments::s_HandleFeatureValue(_Inout_ std::vector<std::wstring>& args, _Inout_ size_t& index)
+{
+    HRESULT hr = E_INVALIDARG;
+    bool hasNext = (index + 1) < args.size();
+    if (hasNext)
+    {
+        s_ConsumeArg(args, index);
+        std::wstring value = args[index];
+        if (value == FEATURE_PTY_ARG)
+        {
+            hr = S_OK;
+        }
+        s_ConsumeArg(args, index);
+    }
+    return (hasNext) ? hr : E_INVALIDARG;
 }
 
 // Method Description:
@@ -382,6 +416,10 @@ HRESULT ConsoleArguments::ParseCommandline()
         else if (arg == HEIGHT_ARG)
         {
             hr = s_GetArgumentValue(args, i, &_height);
+        }
+        else if (arg == FEATURE_ARG)
+        {
+            hr = s_HandleFeatureValue(args, i);
         }
         else if (arg == HEADLESS_ARG)
         {

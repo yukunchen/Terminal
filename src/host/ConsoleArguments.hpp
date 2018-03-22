@@ -66,6 +66,8 @@ public:
     static const std::wstring WIDTH_ARG;
     static const std::wstring HEIGHT_ARG;
     static const std::wstring INHERIT_CURSOR_ARG;
+    static const std::wstring FEATURE_ARG;
+    static const std::wstring FEATURE_PTY_ARG;
 
 private:
 #ifdef UNIT_TESTING
@@ -143,6 +145,9 @@ private:
     static HRESULT s_GetArgumentValue(_Inout_ std::vector<std::wstring>& args,
                                       _Inout_ size_t& index,
                                       _Out_opt_ short* const pSetting);
+    [[nodiscard]]
+    static HRESULT s_HandleFeatureValue(_Inout_ std::vector<std::wstring>& args,
+                                        _Inout_ size_t& index);
 
     [[nodiscard]]
     static HRESULT s_ParseHandleArg(_In_ const std::wstring& handleAsText,
