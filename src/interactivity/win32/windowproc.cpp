@@ -157,11 +157,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         SetWindowPos(hWnd, NULL, rectProposed.left, rectProposed.top, RECT_WIDTH(&rectProposed), RECT_HEIGHT(&rectProposed), SWP_NOACTIVATE | SWP_NOZORDER);
 
         // Save the proposed window rect dimensions here so we can adjust if the system comes back and changes them on what we asked for.
-        { // Scope to lock/unlock service locator usage.
-            auto windowMetricsInterface = ServiceLocator::LocateWindowMetrics();
-            auto const win32WindowMetrics = static_cast<WindowMetrics*>(windowMetricsInterface.get());
-            win32WindowMetrics->ConvertWindowRectToClientRect(&rectProposed);
-        }
+        ServiceLocator::LocateWindowMetrics<WindowMetrics>()->ConvertWindowRectToClientRect(&rectProposed);
 
         break;
     }
@@ -442,21 +438,16 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
                 UINT suggestedDpi;
                 RECT rcMaximum;
 
-                { // Scope to lock/unlock service locator usage.
-                    auto windowMetricsInterface = ServiceLocator::LocateWindowMetrics();
-                    auto const win32WindowMetrics = static_cast<WindowMetrics*>(windowMetricsInterface.get());
-
-                    if (fIsEdgeResize)
-                    {
-                        // If someone's dragging from the edge to resize in one direction, we want to make sure we never grow past the current monitor.
-                        rcMaximum = win32WindowMetrics->GetMaxWindowRectInPixels(&rcCurrent, &suggestedDpi);
-                    }
-                    else
-                    {
-                        // In other circumstances, assume we're snapping around or some other jump (TS).
-                        // Just do whatever we're told using the new suggestion as the restriction monitor.
-                        rcMaximum = win32WindowMetrics->GetMaxWindowRectInPixels(&rcSuggested, &suggestedDpi);
-                    }
+                if (fIsEdgeResize)
+                {
+                    // If someone's dragging from the edge to resize in one direction, we want to make sure we never grow past the current monitor.
+                    rcMaximum = ServiceLocator::LocateWindowMetrics<WindowMetrics>()->GetMaxWindowRectInPixels(&rcCurrent, &suggestedDpi);
+                }
+                else
+                {
+                    // In other circumstances, assume we're snapping around or some other jump (TS).
+                    // Just do whatever we're told using the new suggestion as the restriction monitor.
+                    rcMaximum = ServiceLocator::LocateWindowMetrics<WindowMetrics>()->GetMaxWindowRectInPixels(&rcSuggested, &suggestedDpi);
                 }
 
                 // Update the current maximum IF the dpi of the suggested monitor matches the current dpi,
@@ -506,7 +497,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         // which will have a better suggested rectangle than this one.
         // NOTE: This stopped being possible in RS4 as the DPI now changes when and only when
         // we receive WM_DPICHANGED. We keep this check around so that we perform better downlevel.
-        int const dpi = static_cast<WindowDpiApi*>(ServiceLocator::LocateHighDpiApi().get())->GetWindowDPI(hWnd);
+        int const dpi = ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->GetWindowDPI(hWnd);
         if (dpi == ServiceLocator::LocateGlobals().dpi)
         {
             _HandleWindowPosChanged(lParam);
@@ -841,12 +832,7 @@ void Window::_HandleWindowPosChanged(_In_ const LPARAM lParam)
         // calculate the dimensions for the newly proposed window rectangle
         RECT rcNew;
         s_ConvertWindowPosToWindowRect(lpWindowPos, &rcNew);
-
-        { // Scope to lock/unlock service locator usage.
-            auto windowMetricsInterface = ServiceLocator::LocateWindowMetrics();
-            auto const win32WindowMetrics = static_cast<WindowMetrics*>(windowMetricsInterface.get());
-            win32WindowMetrics->ConvertWindowRectToClientRect(&rcNew);
-        }
+        ServiceLocator::LocateWindowMetrics<WindowMetrics>()->ConvertWindowRectToClientRect(&rcNew);
 
         // If the window is not being resized, including a DPI change, then
         // don't do anything except update our windowrect

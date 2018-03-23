@@ -290,8 +290,8 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetRuntimeId(_Outptr_result_maybenull_ SAF
 IFACEMETHODIMP ScreenInfoUiaProvider::get_BoundingRectangle(_Out_ UiaRect* pRect)
 {
     Tracing::s_TraceUia(this, ApiCall::GetBoundingRectangle, nullptr);
-    auto pIConsoleWindow = _getIConsoleWindow();
-    RETURN_HR_IF_NULL((HRESULT)UIA_E_ELEMENTNOTAVAILABLE, pIConsoleWindow.get());
+    const IConsoleWindow* const pIConsoleWindow = _getIConsoleWindow();
+    RETURN_HR_IF_NULL((HRESULT)UIA_E_ELEMENTNOTAVAILABLE, pIConsoleWindow);
 
     RECT rc = pIConsoleWindow->GetWindowRect();
 
@@ -624,7 +624,7 @@ SCREEN_INFORMATION* const ScreenInfoUiaProvider::_getScreenInfo()
     return gci.CurrentScreenBuffer;
 }
 
-Locked<IConsoleWindow> ScreenInfoUiaProvider::_getIConsoleWindow()
+IConsoleWindow* const ScreenInfoUiaProvider::_getIConsoleWindow()
 {
     return ServiceLocator::LocateConsoleWindow();
 }

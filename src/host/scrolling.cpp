@@ -17,9 +17,8 @@ ULONG Scrolling::s_ucWheelScrollChars = 0;
 
 void Scrolling::s_UpdateSystemMetrics()
 {
-    auto systemConfig = ServiceLocator::LocateSystemConfigurationProvider();
-    s_ucWheelScrollLines = systemConfig->GetNumberOfWheelScrollLines();
-    s_ucWheelScrollChars = systemConfig->GetNumberOfWheelScrollCharacters();
+    s_ucWheelScrollLines = ServiceLocator::LocateSystemConfigurationProvider()->GetNumberOfWheelScrollLines();
+    s_ucWheelScrollChars = ServiceLocator::LocateSystemConfigurationProvider()->GetNumberOfWheelScrollCharacters();
 }
 
 bool Scrolling::s_IsInScrollMode()
@@ -31,7 +30,7 @@ bool Scrolling::s_IsInScrollMode()
 void Scrolling::s_DoScroll()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    auto pWindow = ServiceLocator::LocateConsoleWindow();
+    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
     if (!s_IsInScrollMode())
     {
         // clear any selection we may have -- can't scroll and select at the same time
@@ -39,7 +38,7 @@ void Scrolling::s_DoScroll()
 
         SetFlag(gci.Flags, CONSOLE_SCROLLING);
 
-        if (pWindow.get() != nullptr)
+        if (pWindow != nullptr)
         {
             pWindow->UpdateWindowText();
         }
@@ -49,9 +48,9 @@ void Scrolling::s_DoScroll()
 void Scrolling::s_ClearScroll()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    auto pWindow = ServiceLocator::LocateConsoleWindow();
+    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
     ClearFlag(gci.Flags, CONSOLE_SCROLLING);
-    if (pWindow.get() != nullptr)
+    if (pWindow != nullptr)
     {
         pWindow->UpdateWindowText();
     }
@@ -59,8 +58,8 @@ void Scrolling::s_ClearScroll()
 
 void Scrolling::s_ScrollIfNecessary(_In_ const SCREEN_INFORMATION * const pScreenInfo)
 {
-    auto pWindow = ServiceLocator::LocateConsoleWindow();
-    ASSERT(pWindow.get() != nullptr);
+    IConsoleWindow *pWindow = ServiceLocator::LocateConsoleWindow();
+    ASSERT(pWindow);
 
     Selection* const pSelection = &Selection::Instance();
 
@@ -201,8 +200,8 @@ void Scrolling::s_HandleMouseWheel(_In_ bool isMouseWheel, _In_ bool isMouseHWhe
 bool Scrolling::s_HandleKeyScrollingEvent(_In_ const INPUT_KEY_INFO* const pKeyInfo)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    auto pWindow = ServiceLocator::LocateConsoleWindow();
-    ASSERT(pWindow.get() != nullptr);
+    IConsoleWindow *pWindow = ServiceLocator::LocateConsoleWindow();
+    ASSERT(pWindow);
 
     const WORD VirtualKeyCode = pKeyInfo->GetVirtualKey();
     const bool fIsCtrlPressed = pKeyInfo->IsCtrlPressed();

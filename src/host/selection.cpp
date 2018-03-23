@@ -351,12 +351,10 @@ void Selection::InitializeMouseSelection(_In_ const COORD coordBufferPos)
     CheckAndSetAlternateSelection();
 
     // set window title to mouse selection mode
-    { // Scope to control service locator lock/unlock lifetime
-        auto pWindow = ServiceLocator::LocateConsoleWindow();
-        if (pWindow.get() != nullptr)
-        {
-            pWindow->UpdateWindowText();
-        }
+    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+    if (pWindow != nullptr)
+    {
+        pWindow->UpdateWindowText();
     }
 
     // Fire off an event to let accessibility apps know the selection has changed.
@@ -469,12 +467,10 @@ void Selection::_CancelMouseSelection()
     // turn off selection flag
     _SetSelectingState(false);
 
-    { // Scope to control service locator lock/unlock lifetime
-        auto pWindow = ServiceLocator::LocateConsoleWindow();
-        if (pWindow.get() != nullptr)
-        {
-            pWindow->UpdateWindowText();
-        }
+    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+    if (pWindow != nullptr)
+    {
+        pWindow->UpdateWindowText();
     }
 
     // Mark the cursor position as changed so we'll fire off a win event.
@@ -501,12 +497,10 @@ void Selection::_CancelMarkSelection()
     // Turn off selection flag.
     _SetSelectingState(false);
 
-    { // Scope to control service locator lock/unlock lifetime
-        auto pWindow = ServiceLocator::LocateConsoleWindow();
-        if (pWindow.get() != nullptr)
-        {
-            pWindow->UpdateWindowText();
-        }
+    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+    if (pWindow != nullptr)
+    {
+        pWindow->UpdateWindowText();
     }
 
     // restore text cursor
@@ -626,8 +620,8 @@ void Selection::InitializeMarkSelection()
     _coordSelectionAnchor = coordPosition;
 
     // set frame title text
-    auto pWindow = ServiceLocator::LocateConsoleWindow();
-    if (pWindow.get() != nullptr)
+    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+    if (pWindow != nullptr)
     {
         pWindow->UpdateWindowText();
     }
