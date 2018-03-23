@@ -15,19 +15,16 @@ using namespace Microsoft::Console::Interactivity::Win32;
 
 void AccessibilityNotifier::NotifyConsoleCaretEvent(_In_ RECT rectangle)
 {
-    auto pWindow = ServiceLocator::LocateConsoleWindow();
-    if (pWindow.get() != nullptr)
+    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+    if (pWindow != nullptr)
     {
         CONSOLE_CARET_INFO caretInfo;
         caretInfo.hwnd = pWindow->GetWindowHandle();
         caretInfo.rc = rectangle;
 
-        auto controlInterface = ServiceLocator::LocateConsoleControl();
-        auto const consoleControl = static_cast<ConsoleControl*>(controlInterface.get());
-
-        LOG_IF_FAILED(consoleControl->Control(ConsoleControl::ControlType::ConsoleSetCaretInfo,
-                                              &caretInfo,
-                                              sizeof(caretInfo)));
+        LOG_IF_FAILED(ServiceLocator::LocateConsoleControl<ConsoleControl>()->Control(ConsoleControl::ControlType::ConsoleSetCaretInfo,
+                                                                                      &caretInfo,
+                                                                                      sizeof(caretInfo)));
     }
 
 }
@@ -48,8 +45,9 @@ void AccessibilityNotifier::NotifyConsoleCaretEvent(_In_ ConsoleCaretEventFlags 
 
     // UIA event notification
     static COORD previousCursorLocation = { 0, 0 };
-    auto pWindow = ServiceLocator::LocateConsoleWindow();
-    if (pWindow.get() != nullptr)
+    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+
+    if (pWindow != nullptr)
     {
         NotifyWinEvent(EVENT_CONSOLE_CARET,
                        pWindow->GetWindowHandle(),
@@ -80,8 +78,8 @@ void AccessibilityNotifier::NotifyConsoleCaretEvent(_In_ ConsoleCaretEventFlags 
 
 void AccessibilityNotifier::NotifyConsoleUpdateScrollEvent(_In_ LONG x, _In_ LONG y)
 {
-    auto pWindow = ServiceLocator::LocateConsoleWindow();
-    if (pWindow.get() != nullptr)
+    IConsoleWindow *pWindow = ServiceLocator::LocateConsoleWindow();
+    if (pWindow)
     {
         NotifyWinEvent(EVENT_CONSOLE_UPDATE_SCROLL,
                        pWindow->GetWindowHandle(),
@@ -92,8 +90,8 @@ void AccessibilityNotifier::NotifyConsoleUpdateScrollEvent(_In_ LONG x, _In_ LON
 
 void AccessibilityNotifier::NotifyConsoleUpdateSimpleEvent(_In_ LONG start, _In_ LONG charAndAttribute)
 {
-    auto pWindow = ServiceLocator::LocateConsoleWindow();
-    if (pWindow.get() != nullptr)
+    IConsoleWindow *pWindow = ServiceLocator::LocateConsoleWindow();
+    if (pWindow)
     {
         NotifyWinEvent(EVENT_CONSOLE_UPDATE_SIMPLE,
                        pWindow->GetWindowHandle(),
@@ -104,8 +102,8 @@ void AccessibilityNotifier::NotifyConsoleUpdateSimpleEvent(_In_ LONG start, _In_
 
 void AccessibilityNotifier::NotifyConsoleUpdateRegionEvent(_In_ LONG startXY, _In_ LONG endXY)
 {
-    auto pWindow = ServiceLocator::LocateConsoleWindow();
-    if (pWindow.get() != nullptr) 
+    IConsoleWindow *pWindow = ServiceLocator::LocateConsoleWindow();
+    if (pWindow)
     {
         NotifyWinEvent(EVENT_CONSOLE_UPDATE_REGION,
                        pWindow->GetWindowHandle(),
@@ -116,8 +114,8 @@ void AccessibilityNotifier::NotifyConsoleUpdateRegionEvent(_In_ LONG startXY, _I
 
 void AccessibilityNotifier::NotifyConsoleLayoutEvent()
 {
-    auto pWindow = ServiceLocator::LocateConsoleWindow();
-    if (pWindow.get() != nullptr)
+    IConsoleWindow *pWindow = ServiceLocator::LocateConsoleWindow();
+    if (pWindow)
     {
         NotifyWinEvent(EVENT_CONSOLE_LAYOUT,
                        pWindow->GetWindowHandle(),
@@ -128,20 +126,20 @@ void AccessibilityNotifier::NotifyConsoleLayoutEvent()
 
 void AccessibilityNotifier::NotifyConsoleStartApplicationEvent(_In_ DWORD processId)
 {
-    auto pWindow = ServiceLocator::LocateConsoleWindow();
-    if (pWindow.get() != nullptr)
+    IConsoleWindow *pWindow = ServiceLocator::LocateConsoleWindow();
+    if (pWindow)
     {
         NotifyWinEvent(EVENT_CONSOLE_START_APPLICATION,
-                       pWindow->GetWindowHandle(),
-                       processId,
-                       0);
+                        pWindow->GetWindowHandle(),
+                        processId,
+                        0);
     }
 }
 
 void AccessibilityNotifier::NotifyConsoleEndApplicationEvent(_In_ DWORD processId)
 {
-    auto pWindow = ServiceLocator::LocateConsoleWindow();
-    if (pWindow.get() != nullptr)
+    IConsoleWindow *pWindow = ServiceLocator::LocateConsoleWindow();
+    if (pWindow)
     {
         NotifyWinEvent(EVENT_CONSOLE_END_APPLICATION,
                        pWindow->GetWindowHandle(),

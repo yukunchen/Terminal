@@ -293,10 +293,7 @@ void Menu::s_GetConsoleState(CONSOLE_STATE_INFO * const pStateInfo)
     pStateInfo->WindowSize.X = ScreenInfo->GetScreenWindowSizeX();
     pStateInfo->WindowSize.Y = ScreenInfo->GetScreenWindowSizeY();
 
-    auto windowInterface = ServiceLocator::LocateConsoleWindow();
-    auto window = static_cast<Window*>(windowInterface.get());
-
-    RECT const rcWindow = window->GetWindowRect();
+    RECT const rcWindow = ServiceLocator::LocateConsoleWindow<Window>()->GetWindowRect();
     pStateInfo->WindowPosX = rcWindow.left;
     pStateInfo->WindowPosY = rcWindow.top;
 
@@ -341,7 +338,7 @@ void Menu::s_GetConsoleState(CONSOLE_STATE_INFO * const pStateInfo)
     pStateInfo->fFilterOnPaste = gci.GetFilterOnPaste();
     pStateInfo->fCtrlKeyShortcutsDisabled = gci.GetCtrlKeyShortcutsDisabled();
     pStateInfo->fLineSelection = gci.GetLineSelection();
-    pStateInfo->bWindowTransparency = window->GetWindowOpacity();
+    pStateInfo->bWindowTransparency = ServiceLocator::LocateConsoleWindow<Window>()->GetWindowOpacity();
 
     pStateInfo->CursorType = static_cast<unsigned int>(gci.GetCursorType());
     pStateInfo->CursorColor = gci.GetCursorColor();
@@ -408,10 +405,8 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
     gci.SetLineSelection(!!pStateInfo->fLineSelection);
     Selection::Instance().SetLineSelection(!!gci.GetLineSelection());
 
-    auto windowInterface = ServiceLocator::LocateConsoleWindow();
-    auto window = static_cast<Window*>(windowInterface.get());
-    window->SetWindowOpacity(pStateInfo->bWindowTransparency);
-    window->ApplyWindowOpacity();
+    ServiceLocator::LocateConsoleWindow<Window>()->SetWindowOpacity(pStateInfo->bWindowTransparency);
+    ServiceLocator::LocateConsoleWindow<Window>()->ApplyWindowOpacity();
     // end V2 console properties
 
     // Apply font information (must come before all character calculations for window/buffer size).
@@ -488,7 +483,7 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
 
         // Then finish by updating the window. This will update the window size,
         //      as well as the screen buffer's viewport.
-        window->UpdateWindowSize(coordWindow);
+        ServiceLocator::LocateConsoleWindow<Window>()->UpdateWindowSize(coordWindow);
     }
 
     if (pStateInfo->QuickEdit)
@@ -512,7 +507,7 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
         pt.x = pStateInfo->WindowPosX;
         pt.y = pStateInfo->WindowPosY;
 
-        window->UpdateWindowPosition(pt);
+        ServiceLocator::LocateConsoleWindow<Window>()->UpdateWindowPosition(pt);
     }
 
     if (gci.GetInsertMode() != !!pStateInfo->InsertMode)
@@ -546,7 +541,7 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
 
     // Since edit keys are global state only stored once in the registry, post the message to the queue to reload
     // those properties specifically from the registry in case they were changed.
-    window->PostUpdateExtendedEditKeys();
+    ServiceLocator::LocateConsoleWindow<Window>()->PostUpdateExtendedEditKeys();
 
     gci.ConsoleIme.RefreshAreaAttributes();
 

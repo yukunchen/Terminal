@@ -22,8 +22,7 @@ using namespace Microsoft::Console::Interactivity::OneCore;
 DWORD ConsoleInputThreadProcOneCore(LPVOID /*lpParam*/)
 {
     Globals& globals = ServiceLocator::LocateGlobals();
-    auto serverInterface = ServiceLocator::LocateInputServices();
-    ConIoSrvComm * const Server = static_cast<ConIoSrvComm*>(serverInterface.get());
+    ConIoSrvComm * const Server = ServiceLocator::LocateInputServices<ConIoSrvComm>();
 
     NTSTATUS Status = Server->Connect();
 

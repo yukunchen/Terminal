@@ -308,8 +308,8 @@ IFACEMETHODIMP WindowUiaProvider::get_BoundingRectangle(_Out_ UiaRect* pRect)
     Tracing::s_TraceUia(this, ApiCall::GetBoundingRectangle, nullptr);
     RETURN_IF_FAILED(_EnsureValidHwnd());
 
-    auto pIConsoleWindow = _getIConsoleWindow();
-    RETURN_HR_IF_NULL((HRESULT)UIA_E_ELEMENTNOTAVAILABLE, pIConsoleWindow.get());
+    const IConsoleWindow* const pIConsoleWindow = _getIConsoleWindow();
+    RETURN_HR_IF_NULL((HRESULT)UIA_E_ELEMENTNOTAVAILABLE, pIConsoleWindow);
 
     RECT const rc = pIConsoleWindow->GetWindowRect();
 
@@ -375,8 +375,8 @@ IFACEMETHODIMP WindowUiaProvider::GetFocus(_COM_Outptr_result_maybenull_ IRawEle
 
 HWND WindowUiaProvider::_GetWindowHandle() const
 {
-    auto pIConsoleWindow = _getIConsoleWindow();
-    THROW_HR_IF_NULL(E_POINTER, pIConsoleWindow.get());
+    IConsoleWindow* const pIConsoleWindow = _getIConsoleWindow();
+    THROW_HR_IF_NULL(E_POINTER, pIConsoleWindow);
 
     return pIConsoleWindow->GetWindowHandle();
 }
@@ -393,7 +393,7 @@ HRESULT WindowUiaProvider::_EnsureValidHwnd() const
     return S_OK;
 }
 
-Locked<IConsoleWindow> WindowUiaProvider::_getIConsoleWindow()
+IConsoleWindow* const WindowUiaProvider::_getIConsoleWindow()
 {
     return ServiceLocator::LocateConsoleWindow();
 }

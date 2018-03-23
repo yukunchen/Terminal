@@ -237,7 +237,7 @@ class ClipboardTests
         std::deque<std::unique_ptr<IInputEvent>> events = Clipboard::Instance().TextToKeyEvents(wstr.c_str(),
                                                                                                 wstr.size());
         VERIFY_ARE_EQUAL(wstr.size() * 2, events.size());
-        auto pInputServices = ServiceLocator::LocateInputServices();
+        IInputServices* pInputServices = ServiceLocator::LocateInputServices();
         for (wchar_t wch : wstr)
         {
             std::deque<bool> keydownPattern{ true, false };
@@ -275,8 +275,8 @@ class ClipboardTests
 
 
         VERIFY_ARE_EQUAL((wstr.size() + uppercaseCount) * 2, events.size());
-        auto pInputServices = ServiceLocator::LocateInputServices();
-        VERIFY_IS_NOT_NULL(pInputServices.get());
+        IInputServices* pInputServices = ServiceLocator::LocateInputServices();
+        VERIFY_IS_NOT_NULL(pInputServices);
         for (wchar_t wch : wstr)
         {
             std::deque<bool> keydownPattern{ true, false };

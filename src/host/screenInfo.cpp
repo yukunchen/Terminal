@@ -21,6 +21,8 @@ using namespace Microsoft::Console::Types;
 #pragma region Construct/Destruct
 
 SCREEN_INFORMATION::SCREEN_INFORMATION(
+    _In_ IWindowMetrics *pMetrics,
+    _In_ IAccessibilityNotifier *pNotifier,
     _In_ const CHAR_INFO ciFill,
     _In_ const CHAR_INFO ciPopupFill) :
     OutputMode(ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT),
@@ -31,6 +33,8 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     FillOutDbcsLeadChar(0),
     ConvScreenInfo(nullptr),
     ScrollScale(1ul),
+    _pConsoleWindowMetrics(pMetrics),
+    _pAccessibilityNotifier(pNotifier),
     _pConApi(nullptr),
     _pAdapter(nullptr),
     _pStateMachine(nullptr),
@@ -84,7 +88,17 @@ NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
 
     NTSTATUS status = STATUS_SUCCESS;
 
-    PSCREEN_INFORMATION const pScreen = new SCREEN_INFORMATION(ciFill, ciPopupFill);
+    IWindowMetrics *pMetrics = ServiceLocator::LocateWindowMetrics();
+    status = NT_TESTNULL(pMetrics);
+
+    ASSERT(NT_SUCCESS(status));
+
+    IAccessibilityNotifier *pNotifier = ServiceLocator::LocateAccessibilityNotifier();
+    status = NT_TESTNULL(pNotifier);
+
+    ASSERT(NT_SUCCESS(status));
+
+    PSCREEN_INFORMATION const pScreen = new SCREEN_INFORMATION(pMetrics, pNotifier, ciFill, ciPopupFill);
 
     status = NT_TESTNULL(pScreen);
     if (NT_SUCCESS(status))
@@ -387,7 +401,7 @@ COORD SCREEN_INFORMATION::GetMinWindowSizeInCharacters(_In_ COORD const coordFon
     assert(coordFontSize.Y != 0);
 
     // prepare rectangle
-    RECT const rcWindowInPixels = ServiceLocator::LocateWindowMetrics()->GetMinClientRectInPixels();
+    RECT const rcWindowInPixels = _pConsoleWindowMetrics->GetMinClientRectInPixels();
 
     // assign the pixel widths and heights to the final output
     COORD coordClientAreaSize;
@@ -455,7 +469,7 @@ COORD SCREEN_INFORMATION::GetLargestWindowSizeInCharacters(_In_ COORD const coor
     assert(coordFontSize.X != 0);
     assert(coordFontSize.Y != 0);
 
-    RECT const rcClientInPixels = ServiceLocator::LocateWindowMetrics()->GetMaxClientRectInPixels();
+    RECT const rcClientInPixels = _pConsoleWindowMetrics->GetMaxClientRectInPixels();
 
     // first assign the pixel widths and heights to the final output
     COORD coordClientAreaSize;
@@ -574,8 +588,8 @@ void SCREEN_INFORMATION::UpdateFont(_In_ const FontInfo* const pfiNewFont)
     if (IsActiveScreenBuffer())
     {
         // If there is a window attached, let it know that it should try to update so the rows/columns are now accounting for the new font.
-        auto pWindow = ServiceLocator::LocateConsoleWindow();
-        if (nullptr != pWindow.get())
+        IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+        if (nullptr != pWindow)
         {
             COORD coordViewport;
             coordViewport.X = GetScreenWindowSizeX();
@@ -611,47 +625,42 @@ void SCREEN_INFORMATION::ResetTextFlags(_In_ short const sStartX,
         const COORD coordScreenBufferSize = GetScreenBufferSize();
         ASSERT(sEndX < coordScreenBufferSize.X);
 
-        { // Scope to control service locator lock/unlock lifetime
-            auto accessibilityNotifier = ServiceLocator::LocateAccessibilityNotifier();
+        if (sStartX == sEndX && sStartY == sEndY)
+        {
+            RowIndex = (pTextInfo->GetFirstRowIndex() + sStartY) % coordScreenBufferSize.Y;
+            TextAttributeRun* pAttrRun;
 
-            if (sStartX == sEndX && sStartY == sEndY)
+            try
             {
-                RowIndex = (pTextInfo->GetFirstRowIndex() + sStartY) % coordScreenBufferSize.Y;
-                TextAttributeRun* pAttrRun;
+                const ROW& Row = pTextInfo->GetRowAtIndex(RowIndex);
+                const ICharRow& iCharRow = Row.GetCharRow();
+                // we only support ucs2 encoded char rows
+                FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+                                "only support UCS2 char rows currently");
 
-                try
-                {
-                    const ROW& Row = pTextInfo->GetRowAtIndex(RowIndex);
-                    const ICharRow& iCharRow = Row.GetCharRow();
-                    // we only support ucs2 encoded char rows
-                    FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                                     "only support UCS2 char rows currently");
-
-                    const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
-                    Char = charRow.GetGlyphAt(sStartX);
-                    Row.GetAttrRow().FindAttrIndex(sStartX, &pAttrRun, nullptr);
-                }
-                catch (...)
-                {
-                    LOG_HR(wil::ResultFromCaughtException());
-                    return;
-                }
-
-                LONG charAndAttr = MAKELONG(Char,
-                                            gci.GenerateLegacyAttributes(pAttrRun->GetAttributes()));
-
-                accessibilityNotifier->NotifyConsoleUpdateSimpleEvent(MAKELONG(sStartX, sStartY),
-                                                                      charAndAttr);
+                const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
+                Char = charRow.GetGlyphAt(sStartX);
+                Row.GetAttrRow().FindAttrIndex(sStartX, &pAttrRun, nullptr);
             }
-            else
+            catch (...)
             {
-                accessibilityNotifier->NotifyConsoleUpdateRegionEvent(MAKELONG(sStartX, sStartY),
-                                                                      MAKELONG(sEndX, sEndY));
+                LOG_HR(wil::ResultFromCaughtException());
+                return;
             }
+
+            LONG charAndAttr = MAKELONG(Char,
+                                        gci.GenerateLegacyAttributes(pAttrRun->GetAttributes()));
+
+            _pAccessibilityNotifier->NotifyConsoleUpdateSimpleEvent(MAKELONG(sStartX, sStartY),
+                                                                    charAndAttr);
         }
-
-        auto pConsoleWindow = ServiceLocator::LocateConsoleWindow();
-        if (pConsoleWindow.get() != nullptr)
+        else
+        {
+            _pAccessibilityNotifier->NotifyConsoleUpdateRegionEvent(MAKELONG(sStartX, sStartY),
+                                                                    MAKELONG(sEndX, sEndY));
+        }
+        IConsoleWindow* pConsoleWindow = ServiceLocator::LocateConsoleWindow();
+        if (pConsoleWindow)
         {
             LOG_IF_FAILED(pConsoleWindow->SignalUia(UIA_Text_TextChangedEventId));
             // TODO MSFT 7960168 do we really need this event to not signal?
@@ -679,16 +688,16 @@ VOID SCREEN_INFORMATION::UpdateScrollBars()
 
     gci.Flags |= CONSOLE_UPDATING_SCROLL_BARS;
 
-    auto windowInterface = ServiceLocator::LocateConsoleWindow();
-    if (windowInterface.get() != nullptr)
+    if (ServiceLocator::LocateConsoleWindow() != nullptr)
     {
-        windowInterface->PostUpdateScrollBars();
+        ServiceLocator::LocateConsoleWindow()->PostUpdateScrollBars();
     }
 }
 
 VOID SCREEN_INFORMATION::InternalUpdateScrollBars()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
 
     ClearFlag(gci.Flags, CONSOLE_UPDATING_SCROLL_BARS);
 
@@ -699,41 +708,32 @@ VOID SCREEN_INFORMATION::InternalUpdateScrollBars()
 
     this->ResizingWindow++;
 
-    { // Scope to control service locator lock/unlock lifetime
-        auto pWindow = ServiceLocator::LocateConsoleWindow();
-        if (pWindow.get() != nullptr)
+    if (pWindow != nullptr)
+    {
+        const COORD coordScreenBufferSize = GetScreenBufferSize();
+
+        // If this is the main buffer, make sure we enable both of the scroll bars.
+        //      The alt buffer likely disabled the scroll bars, this is the only
+        //      way to re-enable it.
+        if(!_IsAltBuffer())
         {
-            const COORD coordScreenBufferSize = GetScreenBufferSize();
-
-            // If this is the main buffer, make sure we enable both of the scroll bars.
-            //      The alt buffer likely disabled the scroll bars, this is the only
-            //      way to re-enable it.
-            if (!_IsAltBuffer())
-            {
-                pWindow->EnableBothScrollBars();
-            }
-
-            pWindow->UpdateScrollBar(true,
-                                     this->_IsAltBuffer(),
-                                     this->GetScreenWindowSizeY(),
-                                     coordScreenBufferSize.Y - 1,
-                                     _viewport.Top());
-            pWindow->UpdateScrollBar(false,
-                                     this->_IsAltBuffer(),
-                                     this->GetScreenWindowSizeX(),
-                                     coordScreenBufferSize.X - 1,
-                                     _viewport.Left());
+            pWindow->EnableBothScrollBars();
         }
+
+        pWindow->UpdateScrollBar(true,
+                                 this->_IsAltBuffer(),
+                                 this->GetScreenWindowSizeY(),
+                                 coordScreenBufferSize.Y - 1,
+                                 _viewport.Top());
+        pWindow->UpdateScrollBar(false,
+                                 this->_IsAltBuffer(),
+                                 this->GetScreenWindowSizeX(),
+                                 coordScreenBufferSize.X - 1,
+                                 _viewport.Left());
     }
 
     // Fire off an event to let accessibility apps know the layout has changed.
-    { // Scope to control service locator lock/unlock lifetime
-        auto accessibilityNotifier = ServiceLocator::LocateAccessibilityNotifier();
-        if (accessibilityNotifier.get() != nullptr)
-        {
-            accessibilityNotifier->NotifyConsoleLayoutEvent();
-        }
-    }
+    _pAccessibilityNotifier->NotifyConsoleLayoutEvent();
 
     this->ResizingWindow--;
 }
@@ -805,11 +805,10 @@ NTSTATUS SCREEN_INFORMATION::SetViewportOrigin(_In_ const BOOL fAbsolute,
         return STATUS_INVALID_PARAMETER;
     }
 
-    auto windowInterface = ServiceLocator::LocateConsoleWindow();
-    if (IsActiveScreenBuffer() && windowInterface.get() != nullptr)
+    if (IsActiveScreenBuffer() && ServiceLocator::LocateConsoleWindow() != nullptr)
     {
         // Tell the window that it needs to set itself to the new origin if we're the active buffer.
-        LOG_IF_FAILED(windowInterface->SetViewportOrigin(NewWindow));
+        LOG_IF_FAILED(ServiceLocator::LocateConsoleWindow()->SetViewportOrigin(NewWindow));
     }
     else
     {
@@ -871,10 +870,9 @@ BOOL SCREEN_INFORMATION::SendNotifyBeep() const
 {
     if (IsActiveScreenBuffer())
     {
-        auto windowInterface = ServiceLocator::LocateConsoleWindow();
-        if (windowInterface.get() != nullptr)
+        if (ServiceLocator::LocateConsoleWindow() != nullptr)
         {
-            return windowInterface->SendNotifyBeep();
+            return ServiceLocator::LocateConsoleWindow()->SendNotifyBeep();
         }
     }
 
@@ -885,10 +883,9 @@ BOOL SCREEN_INFORMATION::PostUpdateWindowSize() const
 {
     if (IsActiveScreenBuffer())
     {
-        auto windowInterface = ServiceLocator::LocateConsoleWindow();
-        if (windowInterface.get() != nullptr)
+        if (ServiceLocator::LocateConsoleWindow() != nullptr)
         {
-            return windowInterface->PostUpdateWindowSize();
+            return ServiceLocator::LocateConsoleWindow()->PostUpdateWindowSize();
         }
     }
 
@@ -1740,11 +1737,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeScreenBuffer(_In_ const COORD coordNewScreenS
         // Fire off an event to let accessibility apps know the layout has changed.
         if (this->IsActiveScreenBuffer())
         {
-            auto accessibilityNotifier = ServiceLocator::LocateAccessibilityNotifier();
-            if (accessibilityNotifier.get() != nullptr)
-            {
-                accessibilityNotifier->NotifyConsoleLayoutEvent();
-            }
+            _pAccessibilityNotifier->NotifyConsoleLayoutEvent();
         }
 
         if (fDoScrollBarUpdate)
