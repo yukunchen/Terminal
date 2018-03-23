@@ -19,7 +19,6 @@ Author(s):
 
 #include "../inc/IConsoleWindow.hpp"
 #include "../../host/cursor.h"
-#include "../../types/inc/Locked.hpp"
 
 #include <deque>
 #include <tuple>
@@ -267,7 +266,7 @@ namespace Microsoft::Console::Interactivity::Win32
 
         static const Viewport _getViewport();
         static HWND _getWindowHandle();
-        static Locked<IConsoleWindow> _getIConsoleWindow();
+        static IConsoleWindow* const _getIConsoleWindow();
         static SCREEN_INFORMATION* const _getScreenInfo();
         static TEXT_BUFFER_INFO* const _getTextBuffer();
         static const COORD _getScreenBufferCoords();

@@ -131,10 +131,10 @@ INT_PTR FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 void DoFind()
 {
     Globals& g = ServiceLocator::LocateGlobals();
-    auto pWindow = ServiceLocator::LocateConsoleWindow();
+    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
 
     UnlockConsole();
-    if (pWindow.get() != nullptr)
+    if (pWindow != nullptr)
     {
         HWND const hwnd = pWindow->GetWindowHandle();
 
