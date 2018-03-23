@@ -607,14 +607,13 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
 
             const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
 
-            // Get the pointer to the beginning of the text and the maximum length of the line we'll be writing.
-            const std::wstring rowText = charRow.GetText();
-            const wchar_t* const pwsLine = rowText.c_str() + iLeft;
 
+            std::wstring rowText;
             Ucs2CharRow::const_iterator it;
             try
             {
                 it = std::next(charRow.cbegin(), iLeft);
+                rowText = charRow.GetTextRaw();
             }
             catch (...)
             {
@@ -622,6 +621,9 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
                 return;
             }
             const Ucs2CharRow::const_iterator itEnd = charRow.cend();
+
+            // Get the pointer to the beginning of the text
+            const wchar_t* const pwsLine = rowText.c_str() + iLeft;
 
             size_t const cchLine = iRight - iLeft;
 
@@ -863,7 +865,7 @@ HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const p
             rgSegmentWidth[cchSegment] = 1;
 
             // If this is a leading byte, add 1 more to width as it is double wide
-            if (it->second.IsLeading())
+            if (itCurrent->second.IsLeading())
             {
                 rgSegmentWidth[cchSegment] = 2;
             }
@@ -1051,14 +1053,13 @@ void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
                                 "only support UCS2 char rows currently");
 
                 const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
-                // Get the pointer to the beginning of the text and the maximum length of the line we'll be writing.
-                const std::wstring rowText = charRow.GetText();
-                const wchar_t* const pwsLine = rowText.c_str() + viewDirty.Left() - AreaInfo->CaInfo.coordConView.X;
 
+                std::wstring rowText;
                 Ucs2CharRow::const_iterator it;
                 try
                 {
                     it = std::next(charRow.cbegin(), viewDirty.Left() - AreaInfo->CaInfo.coordConView.X);
+                    rowText = charRow.GetTextRaw();
                 }
                 catch (...)
                 {
@@ -1066,6 +1067,9 @@ void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
                     return;
                 }
                 const Ucs2CharRow::const_iterator itEnd = charRow.cend();
+
+                // Get the pointer to the beginning of the text
+                const wchar_t* const pwsLine = rowText.c_str() + viewDirty.Left() - AreaInfo->CaInfo.coordConView.X;
 
                 size_t const cchLine = viewDirty.Width() - 1;
 
