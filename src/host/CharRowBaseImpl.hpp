@@ -299,4 +299,24 @@ GlyphType& CharRowBase<GlyphType, StringType>::GetGlyphAt(const size_t column)
     return const_cast<GlyphType&>(static_cast<const CharRowBase<GlyphType, StringType>* const>(this)->GetGlyphAt(column));
 }
 
+// Routine Description:
+// - returns string containing text data exactly how it's stored internally, including doubling of
+// leading/trailing cells.
+// Arguments:
+// - none
+// Return Value:
+// - text stored in char row
+// - Note: will throw exception if out of memory
+template<typename GlyphType, typename StringType>
+StringType CharRowBase<GlyphType, StringType>::GetTextRaw() const
+{
+    StringType str;
+    str.reserve(_data.size());
+    for (auto& cell : _data)
+    {
+        str.push_back(cell.first);
+    }
+    return str;
+}
+
 #pragma warning(pop)
