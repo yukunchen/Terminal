@@ -18,6 +18,7 @@ Revision History:
 
 #include "../inc/conattrs.hpp"
 #include "../interactivity/inc/IConsoleWindow.hpp"
+#include "../interactivity/inc/IAccessibilityNotifier.hpp"
 
 // the following values are used to create the textmode cursor.
 #define CURSOR_SMALL_SIZE 25    // large enough to be one pixel on a six pixel font
@@ -30,7 +31,7 @@ public:
 
     static const unsigned int s_InvertCursorColor = INVALID_COLOR;
 
-    Cursor(_In_ ULONG const ulSize);
+    Cursor(_In_ Microsoft::Console::Interactivity::IAccessibilityNotifier *pNotifier, _In_ ULONG const ulSize);
     [[nodiscard]]
     static NTSTATUS CreateInstance(_In_ ULONG const ulSize, _Outptr_ Cursor ** const ppCursor);
     ~Cursor();
@@ -89,6 +90,8 @@ public:
     void SetType(_In_ const CursorType type);
 
 private:
+    Microsoft::Console::Interactivity::IAccessibilityNotifier *_pAccessibilityNotifier;
+
     //TODO: seperate the rendering and text placement
 
     // NOTE: If you are adding a property here, go add it to CopyProperties.

@@ -199,8 +199,13 @@ public:
     HRESULT VtEraseAll();
 
 private:
-    SCREEN_INFORMATION(_In_ const CHAR_INFO ciFill,
+    SCREEN_INFORMATION(_In_ IWindowMetrics *pMetrics,
+                       _In_ IAccessibilityNotifier *pNotifier,
+                       _In_ const CHAR_INFO ciFill,
                        _In_ const CHAR_INFO ciPopupFill);
+
+    IWindowMetrics *_pConsoleWindowMetrics;
+    IAccessibilityNotifier *_pAccessibilityNotifier;
 
     [[nodiscard]]
     HRESULT _AdjustScreenBufferHelper(_In_ const RECT* const prcClientNew,

@@ -20,8 +20,6 @@ Author(s):
 
 #include "precomp.h"
 
-#include "../../types/inc/Locked.hpp"
-
 // Forward declare, prevent circular ref.
 class SCREEN_INFORMATION;
 
@@ -98,7 +96,7 @@ namespace Microsoft::Console::Interactivity::Win32
 
         const COORD _getScreenBufferCoords() const;
         static SCREEN_INFORMATION* const _getScreenInfo();
-        static Locked<IConsoleWindow> _getIConsoleWindow();
+        static IConsoleWindow* const _getIConsoleWindow();
     };
 
     namespace ScreenInfoUiaProviderTracing

@@ -85,9 +85,8 @@ VOID SetConsoleWindowOwner(_In_ const HWND hwnd, _Inout_opt_ ConsoleProcessHandl
     ConsoleOwner.ThreadId = dwThreadId;
 
     // Comment out this line to enable UIA tree to be visible until UIAutomationCore.dll can support our scenario.
-    auto controlInterface = ServiceLocator::LocateConsoleControl();
-    auto const consoleControl = static_cast<Microsoft::Console::Interactivity::Win32::ConsoleControl*>(controlInterface.get());
-    LOG_IF_FAILED(consoleControl->Control(ConsoleControl::ControlType::ConsoleSetWindowOwner,
+    LOG_IF_FAILED(ServiceLocator::LocateConsoleControl<Microsoft::Console::Interactivity::Win32::ConsoleControl>()
+        ->Control(ConsoleControl::ControlType::ConsoleSetWindowOwner,
                   &ConsoleOwner,
                   sizeof(ConsoleOwner)));
 }
@@ -309,7 +308,7 @@ void HandleKeyEvent(_In_ const HWND hWnd,
             inputKeyInfo.HasNoModifiers() &&
             ShouldTakeOverKeyboardShortcuts())
         {
-            static_cast<Window*>(ServiceLocator::LocateConsoleWindow().get())->ToggleFullscreen();
+            ServiceLocator::LocateConsoleWindow<Window>()->ToggleFullscreen();
             return;
         }
 
@@ -348,10 +347,8 @@ void HandleKeyEvent(_In_ const HWND hWnd,
                 }
                 if (opacityDelta != 0)
                 {
-                    auto windowInterface = ServiceLocator::LocateConsoleWindow();
-                    auto window = static_cast<Window*>(windowInterface.get());
-                    window->ChangeWindowOpacity(opacityDelta);
-                    windowInterface->SetWindowHasMoved(true);
+                    ServiceLocator::LocateConsoleWindow<Window>()->ChangeWindowOpacity(opacityDelta);
+                    ServiceLocator::LocateConsoleWindow()->SetWindowHasMoved(true);
 
                     return;
                 }
@@ -498,7 +495,7 @@ BOOL HandleSysKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const
         // only toggle on keydown
         if (!(lParam & KEY_TRANSITION_UP))
         {
-            static_cast<Window*>(ServiceLocator::LocateConsoleWindow().get())->ToggleFullscreen();
+            ServiceLocator::LocateConsoleWindow<Window>()->ToggleFullscreen();
         }
 
         return FALSE;
@@ -662,10 +659,8 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION* const pScreenInfo,
         if ((sKeyState & MK_SHIFT) && (sKeyState & MK_CONTROL))
         {
             const short sDelta = GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
-            auto windowInterface = ServiceLocator::LocateConsoleWindow();
-            auto window = static_cast<Window*>(windowInterface.get());
-            window->ChangeWindowOpacity(OPACITY_DELTA_INTERVAL * sDelta);
-            windowInterface->SetWindowHasMoved(true);
+            ServiceLocator::LocateConsoleWindow<Window>()->ChangeWindowOpacity(OPACITY_DELTA_INTERVAL * sDelta);
+            ServiceLocator::LocateConsoleWindow()->SetWindowHasMoved(true);
         }
     }
 
@@ -826,9 +821,8 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION* const pScreenInfo,
         }
         else if (Message == WM_MBUTTONDOWN)
         {
-            auto controlInterface = ServiceLocator::LocateConsoleControl();
-            auto const consoleControl = static_cast<Microsoft::Console::Interactivity::Win32::ConsoleControl*>(controlInterface.get());
-            consoleControl->EnterReaderModeHelper(ServiceLocator::LocateConsoleWindow()->GetWindowHandle());
+            ServiceLocator::LocateConsoleControl<Microsoft::Console::Interactivity::Win32::ConsoleControl>()
+                ->EnterReaderModeHelper(ServiceLocator::LocateConsoleWindow()->GetWindowHandle());
         }
         else if (Message == WM_MOUSEMOVE)
         {
@@ -982,14 +976,11 @@ NTSTATUS InitWindowsSubsystem(_Out_ HHOOK * phhook)
     // was special cased (for CSRSS) to always succeed. Thus, we ignore failure for app compat (as not having the hook isn't fatal).
     *phhook = SetWindowsHookExW(WH_MSGFILTER, (HOOKPROC)DialogHookProc, nullptr, GetCurrentThreadId());
 
-    auto windowInterface = ServiceLocator::LocateConsoleWindow();
-    auto window = static_cast<Window*>(windowInterface.get());
+    SetConsoleWindowOwner(ServiceLocator::LocateConsoleWindow()->GetWindowHandle(), ProcessData);
 
-    SetConsoleWindowOwner(windowInterface->GetWindowHandle(), ProcessData);
+    LOG_IF_FAILED(ServiceLocator::LocateConsoleWindow<Window>()->ActivateAndShow(gci.GetShowWindow()));
 
-    LOG_IF_FAILED(window->ActivateAndShow(gci.GetShowWindow()));
-
-    NotifyWinEvent(EVENT_CONSOLE_START_APPLICATION, windowInterface->GetWindowHandle(), ProcessData->dwProcessId, 0);
+    NotifyWinEvent(EVENT_CONSOLE_START_APPLICATION, ServiceLocator::LocateConsoleWindow()->GetWindowHandle(), ProcessData->dwProcessId, 0);
 
     return STATUS_SUCCESS;
 }
@@ -1045,10 +1036,7 @@ DWORD ConsoleInputThreadProcWin32(LPVOID /*lpParameter*/)
         //      so they can be faithfully represented as a user "typing" into the client application. The vision would be we leverage the knowledge from
         //      clipboard to build a transcoder capable of doing the reverse at this point so TranslateMessage would be completely unnecessary for us.
         // Until that future point in time.... this is LOAD BEARING CODE and should not be hastily modified or removed!
-        auto controlInterface = ServiceLocator::LocateConsoleControl();
-        auto const consoleControl = static_cast<Microsoft::Console::Interactivity::Win32::ConsoleControl*>(controlInterface.get());
-
-        if (!consoleControl->TranslateMessageEx(&msg, TM_POSTCHARBREAKS))
+        if (!ServiceLocator::LocateConsoleControl<Microsoft::Console::Interactivity::Win32::ConsoleControl>()->TranslateMessageEx(&msg, TM_POSTCHARBREAKS))
         {
             DispatchMessageW(&msg);
         }

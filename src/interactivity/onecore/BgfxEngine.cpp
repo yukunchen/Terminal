@@ -98,7 +98,7 @@ HRESULT BgfxEngine::EndPaint()
     PVOID OldRunBase;
     PVOID NewRunBase;
 
-    Status = static_cast<ConIoSrvComm*>(ServiceLocator::LocateInputServices().get())->RequestUpdateDisplay(0);
+    Status = ServiceLocator::LocateInputServices<ConIoSrvComm>()->RequestUpdateDisplay(0);
 
     if (NT_SUCCESS(Status))
     {
@@ -196,7 +196,7 @@ HRESULT BgfxEngine::PaintCursor(_In_ COORD const coordCursor,
     CursorInfo.Height = ulCursorHeightPercent;
     CursorInfo.IsVisible = TRUE;
 
-    NTSTATUS Status = static_cast<ConIoSrvComm*>(ServiceLocator::LocateInputServices().get())->RequestSetCursor(&CursorInfo);
+    NTSTATUS Status = ServiceLocator::LocateInputServices<ConIoSrvComm>()->RequestSetCursor(&CursorInfo);
 
     return HRESULT_FROM_NT(Status);
 
@@ -210,7 +210,7 @@ HRESULT BgfxEngine::ClearCursor()
     CD_IO_CURSOR_INFORMATION CursorInfo = { 0 };
     CursorInfo.IsVisible = FALSE;
 
-    Status = static_cast<ConIoSrvComm*>(ServiceLocator::LocateInputServices().get())->RequestSetCursor(&CursorInfo);
+    Status = ServiceLocator::LocateInputServices<ConIoSrvComm>()->RequestSetCursor(&CursorInfo);
 
     return HRESULT_FROM_NT(Status);
 }

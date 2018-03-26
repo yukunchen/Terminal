@@ -148,8 +148,8 @@ NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
     // Set the process's default dpi awareness context to PMv2 so that new top level windows
     // inherit their WM_DPICHANGED* broadcast mode (and more, like dialog scaling) from the thread.
 
-    auto pHighDpiApi = ServiceLocator::LocateHighDpiApi();
-    if (nullptr != pHighDpiApi.get())
+    IHighDpiApi *pHighDpiApi = ServiceLocator::LocateHighDpiApi();
+    if (pHighDpiApi)
     {
         // N.B.: There is no high DPI support on OneCore (non-UAP) systems.
         //       Instead of implementing a no-op interface, just skip all high
@@ -199,8 +199,8 @@ NTSTATUS RemoveConsole(_In_ ConsoleProcessHandle* ProcessData)
 
     if (fRecomputeOwner)
     {
-        auto pWindow = ServiceLocator::LocateConsoleWindow();
-        if (pWindow.get() != nullptr)
+        IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
+        if (pWindow != nullptr)
         {
             pWindow->SetOwner();
         }
