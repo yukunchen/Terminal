@@ -1026,11 +1026,19 @@ NTSTATUS ScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo,
             SourceRectangle.Left = 0;
             SourceRectangle.Right = (SHORT)(Size.X - 1);
             SourceRectangle.Bottom = (SHORT)(Size.Y - 1);
+<<<<<<< HEAD
 
             COORD TargetPoint;
             TargetPoint.X = TargetRectangle.Left;
             TargetPoint.Y = TargetRectangle.Top;
 
+=======
+
+            COORD TargetPoint;
+            TargetPoint.X = TargetRectangle.Left;
+            TargetPoint.Y = TargetRectangle.Top;
+
+>>>>>>> inbox
             try
             {
                 WriteRectToScreenBuffer(*pScreenInfo, outputCells, TargetPoint);
