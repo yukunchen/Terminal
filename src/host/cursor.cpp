@@ -355,6 +355,13 @@ void Cursor::CopyProperties(_In_ const Cursor* const pOtherCursor)
     // cursor is replaced during reflow. This wasn't necessary when this
     // property and the cursor timer were static.
     this->_uCaretBlinkTime              = pOtherCursor->_uCaretBlinkTime;
+
+    // If there's a timer on the other one, then it was active for blinking.
+    // Make sure we have a timer on our side too.
+    if (pOtherCursor->_hCaretBlinkTimer != INVALID_HANDLE_VALUE)
+    {
+        this->SetCaretTimer();
+    }
 }
 
 // Routine Description:
