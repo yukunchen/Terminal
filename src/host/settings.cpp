@@ -464,15 +464,18 @@ void Settings::ApplyCommandlineArguments(_In_ const ConsoleArguments& consoleArg
     const short width = consoleArgs.GetWidth();
     const short height = consoleArgs.GetHeight();
 
-    if (width > 0)
+    if (width > 0 && height > 0)
     {
         _dwScreenBufferSize.X = width;
         _dwWindowSize.X = width;
-    }
-    if (height > 0)
-    {
+        
         _dwScreenBufferSize.Y = height;
         _dwWindowSize.Y = height;
+    }
+    else if (ServiceLocator::LocateGlobals().getConsoleInformation().IsInVtIoMode())
+    {
+        // If we're a PTY but we weren't explicitly told a size, use the window size as the buffer size.
+        _dwScreenBufferSize = _dwWindowSize;
     }
 }
 
