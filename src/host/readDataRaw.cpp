@@ -23,16 +23,18 @@
 // - BufPtr - Pointer to the client space available for returning
 // information (BufferSize is *2 of this count because it's wchar_t)
 // Return Value:
-// - THROW: Throws E_INVALIDARG for invalid pointers.
+// - THROW: Throws E_INVALIDARG for invalid pointers, if BufferSize is zero or if
+// it's not divisible by the size of a wchar
 RAW_READ_DATA::RAW_READ_DATA(_In_ InputBuffer* const pInputBuffer,
                              _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
-                             _In_ ULONG BufferSize,
-                             _Inout_updates_bytes_(BufferSize) WCHAR* BufPtr) :
+                             _In_ const ULONG BufferSize,
+                             _In_ WCHAR* const BufPtr) :
     ReadData(pInputBuffer, pInputReadHandleData),
     _BufferSize{ BufferSize },
     _BufPtr{ THROW_HR_IF_NULL(E_INVALIDARG, BufPtr) }
 {
-
+    THROW_HR_IF(E_INVALIDARG, _BufferSize % sizeof(wchar_t) != 0);
+    THROW_HR_IF(E_INVALIDARG, _BufferSize == 0);
 }
 
 // Routine Description:
