@@ -784,7 +784,7 @@ bool InputStateMachineEngine::_GenerateKeyFromChar(_In_ const wchar_t wch,
                                                    _Out_ DWORD* const pdwModifierState)
 {
     // Low order byte is key, high order is modifiers
-    short keyscan = VkKeyScan(wch);
+    short keyscan = VkKeyScanW(wch);
 
     short vkey = LOBYTE(keyscan);
 

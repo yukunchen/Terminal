@@ -11,6 +11,7 @@
 #include "ApiRoutines.h"
 #include "getset.h"
 #include "dbcs.h"
+#include "misc.h"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
@@ -340,6 +341,10 @@ class ApiRoutinesTests
 
         gci.LockConsole();
         auto Unlock = wil::ScopeExit([&] { gci.UnlockConsole(); });
+
+        // Ensure global state is updated for our codepage.
+        gci.OutputCP = dwCodePage;
+        SetConsoleCPInfo(TRUE);
 
         PCSTR pszTestText;
         switch (dwCodePage)

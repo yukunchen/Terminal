@@ -9,6 +9,12 @@
 # across the entire console project
 
 # -------------------------------------
+# Preprocessor Settings
+# -------------------------------------
+
+C_DEFINES               = $(C_DEFINES) -DBUILD_ONECORE_INTERACTIVITY
+
+# -------------------------------------
 # Build System Settings
 # -------------------------------------
 

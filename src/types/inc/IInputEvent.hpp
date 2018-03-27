@@ -59,6 +59,11 @@ public:
 #endif
 };
 
+inline IInputEvent::~IInputEvent()
+{
+
+}
+
 #ifdef UNIT_TESTING
 std::wostream& operator<<(std::wostream& stream, const IInputEvent* pEvent);
 #endif

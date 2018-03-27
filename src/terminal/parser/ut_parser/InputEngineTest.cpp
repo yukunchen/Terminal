@@ -357,10 +357,10 @@ void InputEngineTest::C0Test()
                 break;
         }
 
-        short keyscan = VkKeyScan(expectedWch);
+        short keyscan = VkKeyScanW(expectedWch);
         short vkey =  keyscan & 0xff;
         short keyscanModifiers = (keyscan >> 8) & 0xff;
-        WORD scanCode = (WORD)MapVirtualKey(vkey, MAPVK_VK_TO_VSC);
+        WORD scanCode = (WORD)MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
 
         DWORD dwModifierState = 0;
         if (writeCtrl)
@@ -432,9 +432,9 @@ void InputEngineTest::AlphanumericTest()
     {
         std::wstring inputSeq = std::wstring(&wch, 1);
 
-        short keyscan = VkKeyScan(wch);
+        short keyscan = VkKeyScanW(wch);
         short vkey =  keyscan & 0xff;
-        WORD scanCode = (wchar_t)MapVirtualKey(vkey, MAPVK_VK_TO_VSC);
+        WORD scanCode = (wchar_t)MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
 
         short keyscanModifiers = (keyscan >> 8) & 0xff;
         // Because of course, these are not the same flags.
@@ -481,8 +481,8 @@ void InputEngineTest::RoundTripTest()
 
     for (BYTE vkey = 0; vkey < BYTE_MAX; vkey++)
     {
-        wchar_t wch = (wchar_t)MapVirtualKey(vkey, MAPVK_VK_TO_CHAR);
-        WORD scanCode = (wchar_t)MapVirtualKey(vkey, MAPVK_VK_TO_VSC);
+        wchar_t wch = (wchar_t)MapVirtualKeyW(vkey, MAPVK_VK_TO_CHAR);
+        WORD scanCode = (wchar_t)MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
 
         unsigned int uiActualKeystate = 0;
 

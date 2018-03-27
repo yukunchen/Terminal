@@ -1055,7 +1055,6 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutCont
                                       charsConsumed,
                                       wideCharBuffer,
                                       charsGenerated));
-        RETURN_IF_NULL_ALLOC(wideCharBuffer.get());
 
         pwchBuffer = reinterpret_cast<wchar_t*>(wideCharBuffer.get());
         cchBuffer = charsGenerated;

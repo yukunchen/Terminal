@@ -9,10 +9,6 @@
 
 #include <unordered_map>
 
-IInputEvent::~IInputEvent()
-{
-}
-
 std::unique_ptr<IInputEvent> IInputEvent::Create(_In_ const INPUT_RECORD& record)
 {
     switch (record.EventType)
