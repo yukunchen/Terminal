@@ -54,6 +54,9 @@ public:
     // new pure virtual methods
     virtual StringType GetText() const = 0;
 
+    // other functions implemented at the template class level
+    StringType GetTextRaw() const;
+
     // working with glyphs
     const GlyphType& GetGlyphAt(const size_t column) const;
     GlyphType& GetGlyphAt(const size_t column);
