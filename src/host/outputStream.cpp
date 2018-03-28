@@ -678,3 +678,9 @@ BOOL ConhostInternalGetSet::SetCursorColor(_In_ COLORREF const cursorColor)
     DoSrvSetCursorColor(_pIo->GetActiveOutputBuffer(), cursorColor);
     return TRUE;
 }
+
+BOOL ConhostInternalGetSet::IsConsolePty(_Out_ bool* const isPty)
+{
+    DoSrvIsConsolePty(isPty);
+    return TRUE;
+}

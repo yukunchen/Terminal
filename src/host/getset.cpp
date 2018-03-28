@@ -1696,3 +1696,9 @@ NTSTATUS DoSrvPrivateSuppressResizeRepaint()
     assert(gci.IsInVtIoMode());
     return NTSTATUS_FROM_HRESULT(gci.GetVtIo()->SuppressResizeRepaint());
 }
+
+void DoSrvIsConsolePty(_Out_ bool* const isPty)
+{
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    *isPty = gci.IsInVtIoMode();
+}

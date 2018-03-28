@@ -675,6 +675,13 @@ public:
         return _fGetConsoleOutputCPResult;
     }
 
+    virtual BOOL IsConsolePty(_Out_ bool* const /*isPty*/)
+    {
+        Log::Comment(L"IsConsolePty MOCK called...");
+        // TODO
+        return FALSE;
+    }
+
     void _IncrementCoordPos(_Inout_ COORD* pcoord)
     {
         pcoord->X++;

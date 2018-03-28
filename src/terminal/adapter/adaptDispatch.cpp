@@ -9,6 +9,7 @@
 #include "adaptDispatch.hpp"
 #include "conGetSet.hpp"
 #include "../../types/inc/Viewport.hpp"
+#include "../../types/inc/TerminalSequenceException.hpp"
 
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
@@ -1705,6 +1706,13 @@ bool AdaptDispatch::EnableAlternateScroll(_In_ bool const fEnabled)
 // True if handled successfully. False othewise.
 bool AdaptDispatch::SetCursorStyle(_In_ const DispatchCommon::CursorStyle cursorStyle)
 {
+    bool isPty = false;
+    _pConApi->IsConsolePty(&isPty);
+    if (isPty)
+    {
+        throw TerminalSequenceException();
+    }
+
     CursorType actualType = CursorType::Legacy;
     bool fEnableBlinking = false;
 
@@ -1757,6 +1765,13 @@ bool AdaptDispatch::SetCursorStyle(_In_ const DispatchCommon::CursorStyle cursor
 // True if handled successfully. False othewise.
 bool AdaptDispatch::SetCursorColor(_In_ const COLORREF cursorColor)
 {
+    bool isPty = false;
+    _pConApi->IsConsolePty(&isPty);
+    if (isPty)
+    {
+        throw TerminalSequenceException();
+    }
+
     return !!_pConApi->SetCursorColor(cursorColor);
 }
 
@@ -1770,6 +1785,12 @@ bool AdaptDispatch::SetCursorColor(_In_ const COLORREF cursorColor)
 bool AdaptDispatch::SetColorTableEntry(_In_ const size_t tableIndex,
                                        _In_ const DWORD dwColor)
 {
+    bool isPty = false;
+    _pConApi->IsConsolePty(&isPty);
+    if (isPty)
+    {
+        throw TerminalSequenceException();
+    }
     bool fSuccess = tableIndex < 16;
     if (fSuccess)
     {
