@@ -15,6 +15,7 @@ Author(s):
 #include "../adapter/termDispatch.hpp"
 #include "telemetry.hpp"
 #include "IStateMachineEngine.hpp"
+#include "../../inc/ITerminalOutputConnection.hpp"
 
 namespace Microsoft::Console::VirtualTerminal
 {

@@ -96,6 +96,14 @@ HRESULT VtEngine::_Write(_In_ const std::string& str)
 }
 
 // Method Description:
+// - Wrapper for ITerminalOutputConnection. See _Write.
+[[nodiscard]]
+HRESULT VtEngine::WriteTerminal(_In_ const std::string& str)
+{
+    return _Write(str);
+}
+
+// Method Description:
 // - Helper for calling _Write with a string for formatting a sequence. Used
 //      extensively by VtSequences.cpp
 // Arguments:

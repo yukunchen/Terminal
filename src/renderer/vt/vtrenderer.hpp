@@ -16,13 +16,14 @@ Author(s):
 
 #include "../inc/IRenderEngine.hpp"
 #include "../../inc/IDefaultColorProvider.hpp"
+#include "../../inc/ITerminalOutputConnection.hpp"
 #include "../../types/inc/Viewport.hpp"
 #include <string>
 #include <functional>
 
 namespace Microsoft::Console::Render
 {
-    class VtEngine : public IRenderEngine
+    class VtEngine : public IRenderEngine, public Microsoft::Console::ITerminalOutputConnection
     {
     public:
         // See _PaintUtf8BufferLine for explanation of this value.
@@ -119,6 +120,9 @@ namespace Microsoft::Console::Render
         HRESULT RequestCursor();
         [[nodiscard]]
         HRESULT InheritCursor(_In_ const COORD coordCursor);
+
+        [[nodiscard]]
+        HRESULT WriteTerminal(_In_ const std::string& str);
 
     protected:
         wil::unique_hfile _hFile;
