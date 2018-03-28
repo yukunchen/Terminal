@@ -80,6 +80,8 @@ namespace Microsoft::Console::Render
         const std::unique_ptr<IRenderData> _pData;
 
         RenderThread* _pThread;
+        bool _tearingDown;
+
         void _NotifyPaintFrame();
 
         [[nodiscard]]
