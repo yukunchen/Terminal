@@ -339,7 +339,6 @@ void StateMachine::_ActionCsiDispatch(_In_ wchar_t const wch)
     {
         // Suppress it and log telemetry on failed cases
         TermTelemetry::Instance().LogFailed(wch);
-        // TODO If the console is in pty mode, throw and pass hte string along to the tty
     }
 }
 
@@ -1284,12 +1283,9 @@ void StateMachine::ProcessString(_Inout_updates_(cch) wchar_t * const rgwch, _In
                 // If we're processing characters individually, send it to the state machine.
                 ProcessCharacter(*pwchCurr);
             }
-            catch (const TerminalSequenceException& e)
+            catch (const TerminalSequenceException& /*e*/)
             {
-                e;
-                // DebugBreak();
                 _pEngine->ActionPassThroughString(pwchSequenceStart, pwchCurr-pwchSequenceStart);
-                // TODO: write pwchSequenceStart,currRunLength to the renderer
                 _EnterGround();
             }
             pwchCurr++;

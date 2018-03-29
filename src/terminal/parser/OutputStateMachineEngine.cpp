@@ -8,9 +8,11 @@
 
 #include "stateMachine.hpp"
 #include "OutputStateMachineEngine.hpp"
+#include "../../types/inc/TerminalSequenceException.hpp"
 
 #include "ascii.hpp"
 using namespace Microsoft::Console;
+using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 
 
@@ -456,6 +458,13 @@ bool OutputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
             break;
         }
     }
+    // If we were unable to process the string, and there's a TTY attached to us,
+    //      throw an exception, to pass the sequence to the TTY.
+    if (_pTtyConnection != nullptr && !fSuccess)
+    {
+        throw TerminalSequenceException();
+    }
+
     return fSuccess;
 }
 
@@ -674,6 +683,12 @@ bool OutputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const /*wch*/,
         }
     }
 
+    // If we were unable to process the string, and there's a TTY attached to us,
+    //      throw an exception, to pass the sequence to the TTY.
+    if (_pTtyConnection != nullptr && !fSuccess)
+    {
+        throw TerminalSequenceException();
+    }
     return fSuccess;
 }
 
@@ -740,6 +755,13 @@ bool OutputStateMachineEngine::_GetGraphicsOptions(_In_reads_(cParams) const uns
         {
             fSuccess = false; // not enough space in buffer to hold response.
         }
+    }
+
+    // If we were unable to process the string, and there's a TTY attached to us,
+    //      throw an exception, to pass the sequence to the TTY.
+    if (_pTtyConnection != nullptr && !fSuccess)
+    {
+        throw TerminalSequenceException();
     }
 
     return fSuccess;
