@@ -16,6 +16,7 @@
 #include "..\terminal\parser\OutputStateMachineEngine.hpp"
 
 #pragma hdrstop
+using namespace Microsoft::Console;
 using namespace Microsoft::Console::Types;
 
 #pragma region Construct/Destruct
@@ -288,7 +289,20 @@ NTSTATUS SCREEN_INFORMATION::_InitializeOutputStateMachine()
     if (NT_SUCCESS(status))
     {
         ASSERT(_pStateMachine == nullptr);
+
+        // Note that at this point in the setup, we haven't determined if we're
+        //      in VtIo mode or not yet. We'll set the OutputStateMachine's
+        //      TerminalConnection later, in VtIo::StartIfNeeded
         OutputStateMachineEngine* pEngine = new OutputStateMachineEngine(_pAdapter);
+        if (gci.IsInVtIoMode())
+        {
+            pEngine = new OutputStateMachineEngine(_pAdapter, gci.GetVtIo()->GetTerminalOutputConnection());
+        }
+        else
+        {
+            pEngine = new OutputStateMachineEngine(_pAdapter);
+        }
+
         status = NT_TESTNULL(pEngine);
         if (NT_SUCCESS(status))
         {
@@ -2556,3 +2570,10 @@ void SCREEN_INFORMATION::_InitializeBufferDimensions(_In_ const COORD coordScree
 
     SetScreenBufferSize(coordScreenBufferSize);
 }
+
+void SCREEN_INFORMATION::SetTerminalConnection(ITerminalOutputConnection* const /*pTtyConnection*/)
+{
+    _FreeOutputStateMachine();
+    THROW_IF_WIN32_ERROR(_InitializeOutputStateMachine());
+}
+

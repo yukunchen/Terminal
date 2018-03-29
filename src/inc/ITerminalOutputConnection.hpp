@@ -21,7 +21,9 @@ namespace Microsoft::Console
         virtual ~ITerminalOutputConnection() = 0;
 
         [[nodiscard]]
-        virtual HRESULT WriteTerminal(_In_ const std::string& str) = 0;
+        virtual HRESULT WriteTerminalA(_In_ const std::string& str) = 0;
+        [[nodiscard]]
+        virtual HRESULT WriteTerminalW(_In_ const std::wstring& wstr) = 0;
     };
 
     inline Microsoft::Console::ITerminalOutputConnection::~ITerminalOutputConnection() { }

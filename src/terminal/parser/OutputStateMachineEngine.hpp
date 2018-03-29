@@ -23,11 +23,14 @@ namespace Microsoft::Console::VirtualTerminal
     {
     public:
         OutputStateMachineEngine(_In_ TermDispatch* const pDispatch);
+        OutputStateMachineEngine(_In_ TermDispatch* const pDispatch, ITerminalOutputConnection* const pTtyConnection);
         ~OutputStateMachineEngine();
 
         bool ActionExecute(_In_ wchar_t const wch) override;
         bool ActionPrint(_In_ wchar_t const wch) override;
         bool ActionPrintString(_Inout_updates_(cch) wchar_t* const rgwch, _In_ size_t const cch) override;
+        bool ActionPassThroughString(_Inout_updates_(cch) wchar_t* const rgwch,
+                                     _In_ size_t const cch) override;
         bool ActionEscDispatch(_In_ wchar_t const wch,
                                 _In_ const unsigned short cIntermediate,
                                 _In_ const wchar_t wchIntermediate) override;
@@ -50,6 +53,7 @@ namespace Microsoft::Console::VirtualTerminal
 
     private:
         TermDispatch* _pDispatch;
+        Microsoft::Console::ITerminalOutputConnection* _pTtyConnection;
 
         bool _IntermediateQuestionMarkDispatch(_In_ wchar_t const wchAction,
                                                 _In_reads_(cParams) const unsigned short* const rgusParams,

@@ -104,3 +104,11 @@ HRESULT WinTelnetEngine::InvalidateScroll(_In_ const COORD* const /*pcoordDelta*
     //  have to move.
     return InvalidateAll();
 }
+
+// Method Description:
+// - Wrapper for ITerminalOutputConnection. See _Write.
+[[nodiscard]]
+HRESULT WinTelnetEngine::WriteTerminalW(_In_ const std::wstring& wstr)
+{
+    return VtEngine::_WriteTerminalAscii(wstr);
+}

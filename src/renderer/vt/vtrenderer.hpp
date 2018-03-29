@@ -122,7 +122,9 @@ namespace Microsoft::Console::Render
         HRESULT InheritCursor(_In_ const COORD coordCursor);
 
         [[nodiscard]]
-        HRESULT WriteTerminal(_In_ const std::string& str);
+        HRESULT WriteTerminalA(_In_ const std::string& str);
+        [[nodiscard]]
+        virtual HRESULT WriteTerminalW(_In_ const std::wstring& str) = 0;
 
     protected:
         wil::unique_hfile _hFile;
@@ -231,6 +233,10 @@ namespace Microsoft::Console::Render
                                     _In_ size_t const cchLine,
                                     _In_ COORD const coordTarget);
 
+        [[nodiscard]]
+        HRESULT _WriteTerminalUtf8(_In_ const std::wstring& str);
+        [[nodiscard]]
+        HRESULT _WriteTerminalAscii(_In_ const std::wstring& str);
         /////////////////////////// Unit Testing Helpers ///////////////////////////
     #ifdef UNIT_TESTING
         std::function<bool(const char* const, size_t const)> _pfnTestCallback;

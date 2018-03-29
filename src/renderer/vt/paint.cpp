@@ -294,30 +294,34 @@ HRESULT VtEngine::_PaintAsciiBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLin
     {
         RETURN_IF_FAILED(ShortAdd(totalWidth, static_cast<short>(rgWidths[i]), &totalWidth));
     }
-    const size_t cchActual = cchLine;
 
-    wistd::unique_ptr<char[]> rgchNeeded = wil::make_unique_nothrow<char[]>(cchActual + 1);
-    RETURN_IF_NULL_ALLOC(rgchNeeded);
+    std::wstring wstr = std::wstring(pwsLine);
+    RETURN_IF_FAILED(VtEngine::_WriteTerminalAscii(wstr));
 
-    char* nextChar = &rgchNeeded[0];
-    for (size_t i = 0; i < cchLine; i++)
-    {
-        if (pwsLine[i] > L'\x7f')
-        {
-            *nextChar = '?';
-            nextChar++;
-        }
-        else
-        {
-            // Mask off the non-ascii bits
-            *nextChar = static_cast<char>(pwsLine[i] & 0x7f);
-            nextChar++;
-        }
-    }
+    // const size_t cchActual = cchLine;
 
-    rgchNeeded[cchActual] = '\0';
+    // wistd::unique_ptr<char[]> rgchNeeded = wil::make_unique_nothrow<char[]>(cchActual + 1);
+    // RETURN_IF_NULL_ALLOC(rgchNeeded);
 
-    RETURN_IF_FAILED(_Write(rgchNeeded.get(), cchActual));
+    // char* nextChar = &rgchNeeded[0];
+    // for (size_t i = 0; i < cchLine; i++)
+    // {
+    //     if (pwsLine[i] > L'\x7f')
+    //     {
+    //         *nextChar = '?';
+    //         nextChar++;
+    //     }
+    //     else
+    //     {
+    //         // Mask off the non-ascii bits
+    //         *nextChar = static_cast<char>(pwsLine[i] & 0x7f);
+    //         nextChar++;
+    //     }
+    // }
+
+    // rgchNeeded[cchActual] = '\0';
+
+    // RETURN_IF_FAILED(_Write(rgchNeeded.get(), cchActual));
 
     // Update our internal tracker of the cursor's position
     _lastText.X += totalWidth;
@@ -407,11 +411,14 @@ HRESULT VtEngine::_PaintUtf8BufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine
 
     // Write the actual text string
     {
-        wistd::unique_ptr<char[]> rgchNeeded;
-        size_t needed = 0;
-        RETURN_IF_FAILED(ConvertToA(CP_UTF8, pwsLine, cchActual, rgchNeeded, needed));
+        // wistd::unique_ptr<char[]> rgchNeeded;
+        // size_t needed = 0;
+        // RETURN_IF_FAILED(ConvertToA(CP_UTF8, pwsLine, cchActual, rgchNeeded, needed));
 
-        RETURN_IF_FAILED(_Write(rgchNeeded.get(), needed));
+        // RETURN_IF_FAILED(_Write(rgchNeeded.get(), needed));
+
+        std::wstring wstr = std::wstring(pwsLine, cchActual);
+        RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8(wstr));
     }
 
     if (useEraseChar)

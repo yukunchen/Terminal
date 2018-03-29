@@ -210,6 +210,20 @@ bool InputStateMachineEngine::ActionPrintString(_Inout_updates_(cch) wchar_t* co
 }
 
 // Method Description:
+// - Triggers the Print action to indicate that the listener should render the
+//      string of characters given.
+// Arguments:
+// - rgwch - string to dispatch.
+// - cch - length of rgwch
+// Return Value:
+// - true iff we successfully dispatched the sequence.
+bool InputStateMachineEngine::ActionPassThroughString(_Inout_updates_(cch) wchar_t* const rgwch,
+                                                _In_ size_t const cch)
+{
+    return ActionPrintString(rgwch, cch);
+}
+
+// Method Description:
 // - Triggers the EscDispatch action to indicate that the listener should handle
 //      a simple escape sequence. These sequences traditionally start with ESC
 //      and a simple letter. No complicated parameters.

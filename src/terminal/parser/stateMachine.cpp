@@ -1287,7 +1287,8 @@ void StateMachine::ProcessString(_Inout_updates_(cch) wchar_t * const rgwch, _In
             catch (const TerminalSequenceException& e)
             {
                 e;
-                DebugBreak();
+                // DebugBreak();
+                _pEngine->ActionPassThroughString(pwchSequenceStart, pwchCurr-pwchSequenceStart);
                 // TODO: write pwchSequenceStart,currRunLength to the renderer
                 _EnterGround();
             }

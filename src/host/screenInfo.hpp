@@ -24,15 +24,17 @@ Revision History:
 #include "TextAttribute.hpp"
 
 #include "outputStream.hpp"
-#include "..\terminal\adapter\adaptDispatch.hpp"
-#include "..\terminal\parser\stateMachine.hpp"
-#include "..\server\ObjectHeader.h"
+#include "../terminal/adapter/adaptDispatch.hpp"
+#include "../terminal/parser/stateMachine.hpp"
+#include "../server/ObjectHeader.h"
 
-#include "..\interactivity\inc\IAccessibilityNotifier.hpp"
-#include "..\interactivity\inc\IConsoleWindow.hpp"
-#include "..\interactivity\inc\IWindowMetrics.hpp"
+#include "../interactivity/inc/IAccessibilityNotifier.hpp"
+#include "../interactivity/inc/IConsoleWindow.hpp"
+#include "../interactivity/inc/IWindowMetrics.hpp"
 
-#include "..\types\inc\Viewport.hpp"
+#include "../inc/ITerminalOutputConnection.hpp"
+
+#include "../types/inc/Viewport.hpp"
 
 using namespace Microsoft::Console::Interactivity;
 using namespace Microsoft::Console::VirtualTerminal;
@@ -197,6 +199,8 @@ public:
 
     [[nodiscard]]
     HRESULT VtEraseAll();
+
+    void SetTerminalConnection(Microsoft::Console::ITerminalOutputConnection* const pTtyConnection);
 
 private:
     SCREEN_INFORMATION(_In_ IWindowMetrics *pMetrics,

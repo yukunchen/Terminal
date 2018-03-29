@@ -38,6 +38,10 @@ namespace Microsoft::Console::Render
         HRESULT ScrollFrame() override;
         [[nodiscard]]
         HRESULT InvalidateScroll(_In_ const COORD* const pcoordDelta) override;
+
+        [[nodiscard]]
+        HRESULT WriteTerminalW(_In_ const std::wstring& wstr) override;
+
     protected:
         [[nodiscard]]
         HRESULT _MoveCursor(_In_ const COORD coord);

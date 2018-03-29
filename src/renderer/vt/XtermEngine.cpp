@@ -301,3 +301,13 @@ HRESULT XtermEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
         VtEngine::_PaintAsciiBufferLine(pwsLine, rgWidths, cchLine, coord) :
         VtEngine::_PaintUtf8BufferLine(pwsLine, rgWidths, cchLine, coord);
 }
+
+// Method Description:
+// - Wrapper for ITerminalOutputConnection. See _Write.
+[[nodiscard]]
+HRESULT XtermEngine::WriteTerminalW(_In_ const std::wstring& wstr)
+{
+    return _fUseAsciiOnly ?
+        VtEngine::_WriteTerminalAscii(wstr) :
+        VtEngine::_WriteTerminalUtf8(wstr);
+}

@@ -10,11 +10,19 @@
 #include "OutputStateMachineEngine.hpp"
 
 #include "ascii.hpp"
+using namespace Microsoft::Console;
 using namespace Microsoft::Console::VirtualTerminal;
 
 
 OutputStateMachineEngine::OutputStateMachineEngine(_In_ TermDispatch* const pDispatch) :
-    _pDispatch(pDispatch)
+    _pDispatch(pDispatch),
+    _pTtyConnection(nullptr)
+{
+}
+OutputStateMachineEngine::OutputStateMachineEngine(_In_ TermDispatch* const pDispatch,
+                                                   ITerminalOutputConnection* const pTtyConnection) :
+    _pDispatch(pDispatch),
+    _pTtyConnection(pTtyConnection)
 {
 }
 
@@ -61,6 +69,38 @@ bool OutputStateMachineEngine::ActionPrintString(_Inout_updates_(cch) wchar_t* c
 {
     _pDispatch->PrintString(rgwch, cch); // call print
     return true;
+}
+
+// Routine Description:
+// This is called when we have determined that we don't understand a particular
+//      sequence, or the adapter has determined that the string is intended for
+//      the actual terminal (when we're acting as a pty).
+// - Pass the string through to the target terminal application. If we're a pty,
+//      then we'll have a TerminalConnection that we'll write the string to.
+//      Otherwise, we're the terminal device, and we'll eat the string (because
+//      we don't know what to do with it)
+// Arguments:
+// - rgwch - string to dispatch.
+// - cch - length of rgwch
+// Return Value:
+// - true iff we successfully dispatched the sequence.
+bool OutputStateMachineEngine::ActionPassThroughString(_Inout_updates_(cch) wchar_t* const rgwch,
+                                                       _In_ size_t const cch)
+{
+    bool fSuccess = true;
+    if (_pTtyConnection != nullptr)
+    {
+        std::wstring wstr = std::wstring(rgwch, cch);
+        auto hr = _pTtyConnection->WriteTerminalW(wstr);
+        LOG_IF_FAILED(hr);
+        fSuccess = SUCCEEDED(hr);
+    }
+    else
+    {
+        // eat the string
+    }
+
+    return fSuccess;
 }
 
 // Routine Description:

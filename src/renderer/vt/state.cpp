@@ -7,6 +7,7 @@
 #include "precomp.h"
 #include "vtrenderer.hpp"
 #include "../../inc/conattrs.hpp"
+#include "../../types/inc/convert.hpp"
 
 // For _vcprintf
 #include <conio.h>
@@ -98,9 +99,51 @@ HRESULT VtEngine::_Write(_In_ const std::string& str)
 // Method Description:
 // - Wrapper for ITerminalOutputConnection. See _Write.
 [[nodiscard]]
-HRESULT VtEngine::WriteTerminal(_In_ const std::string& str)
+HRESULT VtEngine::WriteTerminalA(_In_ const std::string& str)
 {
     return _Write(str);
+}
+
+// Method Description:
+// - Writes a wstring to the tty.
+[[nodiscard]]
+HRESULT VtEngine::_WriteTerminalUtf8(_In_ const std::wstring& wstr)
+{
+    wistd::unique_ptr<char[]> rgchNeeded;
+    size_t needed = 0;
+    RETURN_IF_FAILED(ConvertToA(CP_UTF8, wstr.c_str(), wstr.length(), rgchNeeded, needed));
+    return _Write(rgchNeeded.get(), needed);
+}
+// Method Description:
+// - Writes a wstring to the tty.
+[[nodiscard]]
+HRESULT VtEngine::_WriteTerminalAscii(_In_ const std::wstring& wstr)
+{
+    const size_t cchActual = wstr.length();
+
+    wistd::unique_ptr<char[]> rgchNeeded = wil::make_unique_nothrow<char[]>(cchActual + 1);
+    RETURN_IF_NULL_ALLOC(rgchNeeded);
+
+    char* nextChar = &rgchNeeded[0];
+    for (size_t i = 0; i < cchActual; i++)
+    {
+        if (wstr[i] > L'\x7f')
+        {
+            *nextChar = '?';
+            nextChar++;
+        }
+        else
+        {
+            // Mask off the non-ascii bits
+            *nextChar = static_cast<char>(wstr[i] & 0x7f);
+            nextChar++;
+        }
+    }
+
+    rgchNeeded[cchActual] = '\0';
+
+    return _Write(rgchNeeded.get(), cchActual);
+
 }
 
 // Method Description:

@@ -6,6 +6,7 @@
 #pragma once
 
 #include "..\inc\VtIoModes.hpp"
+#include "..\inc\ITerminalOutputConnection.hpp"
 #include "..\renderer\vt\vtrenderer.hpp"
 #include "VtInputThread.hpp"
 #include "PtySignalInputThread.hpp"
@@ -34,6 +35,8 @@ namespace Microsoft::Console::VirtualTerminal
         HRESULT SuppressResizeRepaint();
         [[nodiscard]]
         HRESULT SetCursorPosition(_In_ const COORD coordCursor);
+
+        Microsoft::Console::ITerminalOutputConnection* GetTerminalOutputConnection() const;
 
     private:
         bool _usingVt;

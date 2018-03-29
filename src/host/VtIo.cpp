@@ -14,6 +14,7 @@
 
 #include "../renderer/base/renderer.hpp"
 
+using namespace Microsoft::Console;
 using namespace Microsoft::Console::VirtualTerminal;
 using namespace Microsoft::Console::Types;
 
@@ -294,13 +295,16 @@ HRESULT VtIo::StartIfNeeded()
     {
         return S_FALSE;
     }
+    Globals& g = ServiceLocator::LocateGlobals();
+
     // Hmm. We only have one Renderer implementation,
     //  but its stored as a IRenderer.
     //  IRenderer doesn't know about IRenderEngine.
     // todo: msft:13631640
     try
     {
-        ServiceLocator::LocateGlobals().pRender->AddRenderEngine(_pVtRenderEngine.get());
+        g.pRender->AddRenderEngine(_pVtRenderEngine.get());
+        g.getConsoleInformation().GetActiveOutputBuffer()->SetTerminalConnection(_pVtRenderEngine.get());
     }
     CATCH_RETURN();
 
@@ -371,4 +375,9 @@ HRESULT VtIo::SetCursorPosition(_In_ const COORD coordCursor)
         _lookingForCursorPosition = false;
     }
     return hr;
+}
+
+ITerminalOutputConnection* VtIo::GetTerminalOutputConnection() const
+{
+    return _pVtRenderEngine.get();
 }
