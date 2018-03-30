@@ -1257,7 +1257,7 @@ void StateMachine::ProcessCharacter(_In_ wchar_t const wch)
 
 bool StateMachine::FlushToTerminal()
 {
-    return _pEngine->ActionPassThroughString(_pwchSequenceStart, _pwchCurr-_pwchSequenceStart);
+    return _pEngine->ActionPassThroughString(_pwchSequenceStart, _pwchCurr-_pwchSequenceStart+1);
 }
 
 // Routine Description:
