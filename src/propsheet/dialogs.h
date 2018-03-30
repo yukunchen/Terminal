@@ -119,6 +119,7 @@ Revision History:
 #define IDD_HELP_SYSLINK            513
 #define IDD_OPACITY_VALUE           514
 #define IDD_INTERCEPT_COPY_PASTE    515
+#define IDD_HELP_LEGACY_LINK        516
 
 #define BM_TRUETYPE_ICON            1000
 
