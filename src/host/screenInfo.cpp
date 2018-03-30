@@ -293,18 +293,7 @@ NTSTATUS SCREEN_INFORMATION::_InitializeOutputStateMachine()
         // Note that at this point in the setup, we haven't determined if we're
         //      in VtIo mode or not yet. We'll set the OutputStateMachine's
         //      TerminalConnection later, in VtIo::StartIfNeeded
-        // OutputStateMachineEngine* pEngine;// = new OutputStateMachineEngine(_pAdapter);
-        // if (gci.IsInVtIoMode())
-        // {
-        //     _pEngine = std::make_shared<OutputStateMachineEngine>(_pAdapter, gci.GetVtIo()->GetTerminalOutputConnection());
-        //     // pEngine = new OutputStateMachineEngine(_pAdapter, gci.GetVtIo()->GetTerminalOutputConnection());
-        // }
-        // else
-        // {
-
-        //     // pEngine = new OutputStateMachineEngine(_pAdapter);
-        // }
-            _pEngine = std::make_shared<OutputStateMachineEngine>(_pAdapter);
+        _pEngine = std::make_shared<OutputStateMachineEngine>(_pAdapter);
 
         status = NT_TESTNULL(_pEngine);
         if (NT_SUCCESS(status))
@@ -313,8 +302,8 @@ NTSTATUS SCREEN_INFORMATION::_InitializeOutputStateMachine()
             status = NT_TESTNULL(_pStateMachine);
             if (!NT_SUCCESS(status))
             {
-                // If we failed to instantiate the StateMachine, but succeeded in creating an engine, delete the engine.
-                // delete _pEngine;
+                // If we failed to instantiate the StateMachine, but succeeded
+                //      in creating an engine, delete the engine.
                 _pEngine.reset();
             }
         }
@@ -2575,12 +2564,17 @@ void SCREEN_INFORMATION::_InitializeBufferDimensions(_In_ const COORD coordScree
     SetScreenBufferSize(coordScreenBufferSize);
 }
 
+// Method Description:
+// - Sets up the Output state machine to be in pty mode. Sequences it doesn't
+//      understand will be written to tthe pTtyConnection passed in here.
+// Arguments:
+// - pTtyConnection: This is a TerminaOutputConnection that we can write the
+//      sequence we didn't understand to.
+// Return Value:
+// - <none>
 void SCREEN_INFORMATION::SetTerminalConnection(ITerminalOutputConnection* const pTtyConnection)
 {
-    // _FreeOutputStateMachine();
-    // THROW_IF_WIN32_ERROR(_InitializeOutputStateMachine());
-    _pEngine->SetTerminalConnection(pTtyConnection);
-
-    _pEngine->SetFlushToTerminalCallback(std::bind(&StateMachine::FlushToTerminal, _pStateMachine));
+    _pEngine->SetTerminalConnection(pTtyConnection,
+                                    std::bind(&StateMachine::FlushToTerminal, _pStateMachine));
 }
 

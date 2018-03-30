@@ -9,7 +9,6 @@
 #include "adaptDispatch.hpp"
 #include "conGetSet.hpp"
 #include "../../types/inc/Viewport.hpp"
-#include "../../types/inc/TerminalSequenceException.hpp"
 
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
@@ -1711,7 +1710,6 @@ bool AdaptDispatch::SetCursorStyle(_In_ const DispatchCommon::CursorStyle cursor
     if (isPty)
     {
         return false;
-        // throw TerminalSequenceException();
     }
 
     CursorType actualType = CursorType::Legacy;
@@ -1771,7 +1769,6 @@ bool AdaptDispatch::SetCursorColor(_In_ const COLORREF cursorColor)
     if (isPty)
     {
         return false;
-        // throw TerminalSequenceException();
     }
 
     return !!_pConApi->SetCursorColor(cursorColor);
@@ -1792,8 +1789,8 @@ bool AdaptDispatch::SetColorTableEntry(_In_ const size_t tableIndex,
     if (isPty)
     {
         return false;
-        // throw TerminalSequenceException();
     }
+
     bool fSuccess = tableIndex < 16;
     if (fSuccess)
     {

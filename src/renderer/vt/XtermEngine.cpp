@@ -303,7 +303,12 @@ HRESULT XtermEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
 }
 
 // Method Description:
-// - Wrapper for ITerminalOutputConnection. See _Write.
+// - Wrapper for ITerminalOutputConnection. Write either an ascii-only, or a
+//      proper utf-8 string, depending on our mode.
+// Arguments:
+// - wstr - wstring of text to be written
+// Return Value:
+// - S_OK or suitable HRESULT error from either conversion or writing pipe.
 [[nodiscard]]
 HRESULT XtermEngine::WriteTerminalW(_In_ const std::wstring& wstr)
 {

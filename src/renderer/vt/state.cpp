@@ -105,7 +105,12 @@ HRESULT VtEngine::WriteTerminalA(_In_ const std::string& str)
 }
 
 // Method Description:
-// - Writes a wstring to the tty.
+// - Writes a wstring to the tty, encoded as full utf-8. This is one
+//      implementation of the WriteTerminalW method.
+// Arguments:
+// - wstr - wstring of text to be written
+// Return Value:
+// - S_OK or suitable HRESULT error from either conversion or writing pipe.
 [[nodiscard]]
 HRESULT VtEngine::_WriteTerminalUtf8(_In_ const std::wstring& wstr)
 {
@@ -114,8 +119,16 @@ HRESULT VtEngine::_WriteTerminalUtf8(_In_ const std::wstring& wstr)
     RETURN_IF_FAILED(ConvertToA(CP_UTF8, wstr.c_str(), wstr.length(), rgchNeeded, needed));
     return _Write(rgchNeeded.get(), needed);
 }
+
 // Method Description:
-// - Writes a wstring to the tty.
+// - Writes a wstring to the tty, encoded as "utf-8" where characters that are
+//      outside the ASCII range are encoded as '?'
+//   This mainly exists to maintain compatability with the inbox telnet client.
+//   This is one implementation of the WriteTerminalW method.
+// Arguments:
+// - wstr - wstring of text to be written
+// Return Value:
+// - S_OK or suitable HRESULT error from writing pipe.
 [[nodiscard]]
 HRESULT VtEngine::_WriteTerminalAscii(_In_ const std::wstring& wstr)
 {
@@ -143,7 +156,6 @@ HRESULT VtEngine::_WriteTerminalAscii(_In_ const std::wstring& wstr)
     rgchNeeded[cchActual] = '\0';
 
     return _Write(rgchNeeded.get(), cchActual);
-
 }
 
 // Method Description:

@@ -50,8 +50,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool FlushAtEndOfString() const override;
 
-        void SetTerminalConnection(Microsoft::Console::ITerminalOutputConnection* const pTtyConnection);
-        void SetFlushToTerminalCallback(std::function<bool()> pfnFlushToTerminal);
+        void SetTerminalConnection(Microsoft::Console::ITerminalOutputConnection* const pTtyConnection,
+                                   std::function<bool()> pfnFlushToTerminal);
 
 
     private:

@@ -675,11 +675,14 @@ public:
         return _fGetConsoleOutputCPResult;
     }
 
-    virtual BOOL IsConsolePty(_Out_ bool* const /*isPty*/)
+    virtual BOOL IsConsolePty(_Out_ bool* const isPty)
     {
         Log::Comment(L"IsConsolePty MOCK called...");
-        // TODO
-        return FALSE;
+        if (_fIsConsolePtyResult)
+        {
+            *isPty = _fIsPty;
+        }
+        return _fIsConsolePtyResult;
     }
 
     void _IncrementCoordPos(_Inout_ COORD* pcoord)
@@ -1208,6 +1211,7 @@ public:
     bool _fExpectedBackground = false;
     bool _fExpectedMeta = false;
     unsigned int _uiExpectedOutputCP;
+    bool _fIsPty = false;
 
     BOOL _fGetConsoleScreenBufferInfoExResult;
     BOOL _fSetConsoleCursorPositionResult;
@@ -1263,6 +1267,7 @@ public:
     BOOL _fSetCursorColorResult;
     COLORREF _ExpectedCursorColor;
     BOOL _fGetConsoleOutputCPResult;
+    BOOL _fIsConsolePtyResult;
 
 private:
     HANDLE _hCon;

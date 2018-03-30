@@ -9,10 +9,8 @@
 #include "stateMachine.hpp"
 
 #include "ascii.hpp"
-#include "../../types/inc/TerminalSequenceException.hpp"
 
 using namespace Microsoft::Console::VirtualTerminal;
-using namespace Microsoft::Console::Types;
 
 //Takes ownership of the pEngine.
 StateMachine::StateMachine(_In_ std::shared_ptr<IStateMachineEngine> pEngine) :
@@ -1254,10 +1252,27 @@ void StateMachine::ProcessCharacter(_In_ wchar_t const wch)
         }
     }
 }
-
+// Method Description:
+// - Pass the current string we're processing through to the engine. It may eat
+//      the string, it may write it straight to the input unmodified, it might
+//      write the string to the tty application. A pointer to this function will
+//      get handed to the OutputStateMachineEngine, so that it can write strings
+//      it doesn't understand to the tty.
+//  This does not modify the state of the state machine. Callers should be in
+//      the Action*Dispatch state, and upon completion, the state's handler (eg
+//      _EventCsiParam) should move us into the ground state.
+// Arguments:
+// - <none>
+// Return Value:
+// - true if the engine successfully handled the string.
 bool StateMachine::FlushToTerminal()
 {
-    return _pEngine->ActionPassThroughString(_pwchSequenceStart, _pwchCurr-_pwchSequenceStart+1);
+    // _pwchCurr is incremented after a call to ProcessCharacter to indicate
+    //      that pwchCurr was processed.
+    // However, if we're here, then the processing of pwchChar triggered the
+    //      engine to request the entire sequence get passed through, including pwchCurr.
+    return _pEngine->ActionPassThroughString(_pwchSequenceStart,
+                                             _pwchCurr-_pwchSequenceStart+1);
 }
 
 // Routine Description:
@@ -1284,15 +1299,8 @@ void StateMachine::ProcessString(_Inout_updates_(cch) wchar_t * const rgwch, _In
     {
         if (s_fProcessIndividually)
         {
-                // If we're processing characters individually, send it to the state machine.
-                ProcessCharacter(*_pwchCurr);
-            // try {
-            // }
-            // catch (const TerminalSequenceException& /*e*/)
-            // {
-            //     _pEngine->ActionPassThroughString(pwchSequenceStart, pwchCurr-pwchSequenceStart);
-            //     _EnterGround();
-            // }
+            // If we're processing characters individually, send it to the state machine.
+            ProcessCharacter(*_pwchCurr);
             _pwchCurr++;
             if (_state == VTStates::Ground)  // Then check if we're back at ground. If we are, the next character (pwchCurr)
             {                                //   is the start of the next run of characters that might be printable.

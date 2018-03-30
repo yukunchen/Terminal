@@ -8,11 +8,9 @@
 
 #include "stateMachine.hpp"
 #include "OutputStateMachineEngine.hpp"
-#include "../../types/inc/TerminalSequenceException.hpp"
 
 #include "ascii.hpp"
 using namespace Microsoft::Console;
-using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 
 
@@ -1567,13 +1565,23 @@ bool OutputStateMachineEngine::_GetCursorStyle(_In_reads_(cParams) const unsigne
     return fSuccess;
 }
 
-void OutputStateMachineEngine::SetTerminalConnection(ITerminalOutputConnection* const pTtyConnection)
+// Method Description:
+// - Sets us up to have another terminal acting as the tty instead of conhost.
+//      We'll set a couple members, and if they aren't null, when we get a
+//      sequence we don't understand, we'll pass it along to the terminal
+//      instead of eating it ourselves.
+// Arguments:
+// - pTtyConnection: This is a TerminaOutputConnection that we can write the
+//      sequence we didn't understand to.
+// - pfnFlushToTerminal: This is a callback to the underlying state machine to
+//      trigger it to call ActionPassThroughString with whatever sequence it's
+//      currently processing.
+// Return Value:
+// - <none>
+void OutputStateMachineEngine::SetTerminalConnection(ITerminalOutputConnection* const pTtyConnection,
+                                                     std::function<bool()> pfnFlushToTerminal)
 {
     this->_pTtyConnection = pTtyConnection;
-}
-
-
-void OutputStateMachineEngine::SetFlushToTerminalCallback(std::function<bool()> pfnFlushToTerminal)
-{
     this->_pfnFlushToTerminal = pfnFlushToTerminal;
 }
+

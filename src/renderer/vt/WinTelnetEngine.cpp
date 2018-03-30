@@ -106,7 +106,11 @@ HRESULT WinTelnetEngine::InvalidateScroll(_In_ const COORD* const /*pcoordDelta*
 }
 
 // Method Description:
-// - Wrapper for ITerminalOutputConnection. See _Write.
+// - Wrapper for ITerminalOutputConnection. Write an ascii-only string to the pipe.
+// Arguments:
+// - wstr - wstring of text to be written
+// Return Value:
+// - S_OK or suitable HRESULT error from either conversion or writing pipe.
 [[nodiscard]]
 HRESULT WinTelnetEngine::WriteTerminalW(_In_ const std::wstring& wstr)
 {

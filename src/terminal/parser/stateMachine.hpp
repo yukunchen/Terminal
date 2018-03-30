@@ -143,6 +143,9 @@ namespace Microsoft::Console::VirtualTerminal
         unsigned short _sOscNextChar;
         wchar_t _pwchOscStringBuffer[s_cOscStringMaxLength];
 
+        // These members track out state in the parsing of a single string.
+        // FlushToTerminal uses these, so that an engine can force a string
+        // we're parsing to go straight through to the engine's ActionPassThroughString
         wchar_t* _pwchCurr;
         wchar_t* _pwchSequenceStart;
         size_t _currRunLength;
