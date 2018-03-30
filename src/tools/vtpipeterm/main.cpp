@@ -549,9 +549,10 @@ int __cdecl wmain(int argc, WCHAR* argv[])
     if (fUseDebug)
     {
         // Create a debug console for writting debugging output to.
-        debug = new VtConsole(DebugReadCallback, false, {0});
+        debug = new VtConsole(DebugReadCallback, false, {80,32});
         // Echo stdin to stdout, but ignore newlines (so cat doesn't echo the input)
-        debug->spawn(L"ubuntu run tr -d '\n' | cat -sA");
+        // debug->spawn(L"ubuntu run tr -d '\n' | cat -sA");
+        debug->spawn(L"wsl tr -d '\n' | cat -sA");
         debug->activate();
     }
 

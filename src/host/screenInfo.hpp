@@ -26,6 +26,7 @@ Revision History:
 #include "outputStream.hpp"
 #include "../terminal/adapter/adaptDispatch.hpp"
 #include "../terminal/parser/stateMachine.hpp"
+#include "../terminal/parser/OutputStateMachineEngine.hpp"
 #include "../server/ObjectHeader.h"
 
 #include "../interactivity/inc/IAccessibilityNotifier.hpp"
@@ -249,6 +250,7 @@ private:
     WriteBuffer* _pBufferWriter;
     AdaptDispatch* _pAdapter;
     StateMachine* _pStateMachine;
+    std::shared_ptr<OutputStateMachineEngine> _pEngine;
 
     COORD _coordScreenBufferSize; // dimensions of buffer
 

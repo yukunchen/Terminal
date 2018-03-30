@@ -31,7 +31,7 @@ namespace Microsoft::Console::VirtualTerminal
 #endif
 
     public:
-        StateMachine(_In_ std::unique_ptr<IStateMachineEngine> pEngine);
+        StateMachine(_In_ std::shared_ptr<IStateMachineEngine> pEngine);
 
         void ProcessCharacter(_In_ wchar_t const wch);
         void ProcessString(_Inout_updates_(cch) wchar_t* const rgwch, _In_ size_t const cch);
@@ -125,7 +125,7 @@ namespace Microsoft::Console::VirtualTerminal
         };
 
         Microsoft::Console::VirtualTerminal::ParserTracing _trace;
-        std::unique_ptr<IStateMachineEngine> const _pEngine;
+        std::shared_ptr<IStateMachineEngine> const _pEngine;
 
         VTStates _state;
 

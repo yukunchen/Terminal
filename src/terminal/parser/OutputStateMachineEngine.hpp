@@ -51,6 +51,9 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool FlushAtEndOfString() const override;
 
+        void SetTerminalConnection(Microsoft::Console::ITerminalOutputConnection* const pTtyConnection);
+
+
     private:
         TermDispatch* _pDispatch;
         Microsoft::Console::ITerminalOutputConnection* _pTtyConnection;

@@ -687,6 +687,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const /*wch*/,
     //      throw an exception, to pass the sequence to the TTY.
     if (_pTtyConnection != nullptr && !fSuccess)
     {
+        DebugBreak();
         throw TerminalSequenceException();
     }
     return fSuccess;
@@ -1570,4 +1571,9 @@ bool OutputStateMachineEngine::_GetCursorStyle(_In_reads_(cParams) const unsigne
     }
 
     return fSuccess;
+}
+
+void OutputStateMachineEngine::SetTerminalConnection(ITerminalOutputConnection* const pTtyConnection)
+{
+    this->_pTtyConnection = pTtyConnection;
 }

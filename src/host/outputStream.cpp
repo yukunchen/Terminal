@@ -679,6 +679,12 @@ BOOL ConhostInternalGetSet::SetCursorColor(_In_ COLORREF const cursorColor)
     return TRUE;
 }
 
+// Routine Description:
+// - Connects the IsConsolePty call directly into our Driver Message servicing call inside Conhost.exe
+// Arguments:
+// - isPty: recieves the bool indicating whether or not we're in pty mode.
+// Return Value:
+// - TRUE if successful (see DoSrvIsConsolePty). FALSE otherwise.
 BOOL ConhostInternalGetSet::IsConsolePty(_Out_ bool* const isPty)
 {
     DoSrvIsConsolePty(isPty);

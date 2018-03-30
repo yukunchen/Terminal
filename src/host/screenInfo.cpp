@@ -293,25 +293,29 @@ NTSTATUS SCREEN_INFORMATION::_InitializeOutputStateMachine()
         // Note that at this point in the setup, we haven't determined if we're
         //      in VtIo mode or not yet. We'll set the OutputStateMachine's
         //      TerminalConnection later, in VtIo::StartIfNeeded
-        OutputStateMachineEngine* pEngine = new OutputStateMachineEngine(_pAdapter);
+        // OutputStateMachineEngine* pEngine;// = new OutputStateMachineEngine(_pAdapter);
         if (gci.IsInVtIoMode())
         {
-            pEngine = new OutputStateMachineEngine(_pAdapter, gci.GetVtIo()->GetTerminalOutputConnection());
+            _pEngine = std::make_shared<OutputStateMachineEngine>(_pAdapter, gci.GetVtIo()->GetTerminalOutputConnection());
+            // pEngine = new OutputStateMachineEngine(_pAdapter, gci.GetVtIo()->GetTerminalOutputConnection());
         }
         else
         {
-            pEngine = new OutputStateMachineEngine(_pAdapter);
+            _pEngine = std::make_shared<OutputStateMachineEngine>(_pAdapter);
+
+            // pEngine = new OutputStateMachineEngine(_pAdapter);
         }
 
-        status = NT_TESTNULL(pEngine);
+        status = NT_TESTNULL(_pEngine);
         if (NT_SUCCESS(status))
         {
-            _pStateMachine = new StateMachine(std::move(std::unique_ptr<IStateMachineEngine>(pEngine)));
+            _pStateMachine = new StateMachine(_pEngine);
             status = NT_TESTNULL(_pStateMachine);
             if (!NT_SUCCESS(status))
             {
                 // If we failed to instantiate the StateMachine, but succeeded in creating an engine, delete the engine.
-                delete pEngine;
+                // delete _pEngine;
+                _pEngine.reset();
             }
         }
     }
@@ -2571,9 +2575,10 @@ void SCREEN_INFORMATION::_InitializeBufferDimensions(_In_ const COORD coordScree
     SetScreenBufferSize(coordScreenBufferSize);
 }
 
-void SCREEN_INFORMATION::SetTerminalConnection(ITerminalOutputConnection* const /*pTtyConnection*/)
+void SCREEN_INFORMATION::SetTerminalConnection(ITerminalOutputConnection* const pTtyConnection)
 {
-    _FreeOutputStateMachine();
-    THROW_IF_WIN32_ERROR(_InitializeOutputStateMachine());
+    // _FreeOutputStateMachine();
+    // THROW_IF_WIN32_ERROR(_InitializeOutputStateMachine());
+    _pEngine->SetTerminalConnection(pTtyConnection);
 }
 

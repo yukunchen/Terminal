@@ -40,11 +40,11 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
     std::unique_ptr<InteractDispatch> pDispatch = std::make_unique<InteractDispatch>(std::move(pGetSet));
     THROW_IF_NULL_ALLOC(pDispatch);
 
-    std::unique_ptr<InputStateMachineEngine> pEngine =
-        std::make_unique<InputStateMachineEngine>(std::move(pDispatch), inheritCursor);
+    std::shared_ptr<InputStateMachineEngine> pEngine =
+        std::make_shared<InputStateMachineEngine>(std::move(pDispatch), inheritCursor);
     THROW_IF_NULL_ALLOC(pEngine);
 
-    _pInputStateMachine = std::make_unique<StateMachine>(std::move(pEngine));
+    _pInputStateMachine = std::make_unique<StateMachine>(pEngine);
     THROW_IF_NULL_ALLOC(_pInputStateMachine);
 }
 

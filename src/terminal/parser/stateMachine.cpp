@@ -15,8 +15,8 @@ using namespace Microsoft::Console::VirtualTerminal;
 using namespace Microsoft::Console::Types;
 
 //Takes ownership of the pEngine.
-StateMachine::StateMachine(_In_ std::unique_ptr<IStateMachineEngine> pEngine) :
-    _pEngine(std::move(pEngine)),
+StateMachine::StateMachine(_In_ std::shared_ptr<IStateMachineEngine> pEngine) :
+    _pEngine(pEngine),
     _state(VTStates::Ground),
     _trace(Microsoft::Console::VirtualTerminal::ParserTracing())
 {
