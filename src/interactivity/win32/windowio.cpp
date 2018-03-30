@@ -737,51 +737,51 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION* const pScreenInfo,
 
             if ((MousePosition.X == coordSelectionAnchor.X) && (MousePosition.Y == coordSelectionAnchor.Y))
             {
-                const ROW& Row = pScreenInfo->TextInfo->GetRowByOffset(MousePosition.Y);
-                const ICharRow& iCharRow = Row.GetCharRow();
-                // we only support ucs2 encoded char rows
-                FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                                "only support UCS2 char rows currently");
-
-                const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
-
-
-                while (coordSelectionAnchor.X > 0)
+                try
                 {
-                    if (IS_WORD_DELIM(charRow.GetGlyphAt(coordSelectionAnchor.X - 1)))
+                    std::vector<OutputCell> cells = pScreenInfo->ReadLine(MousePosition.Y);
+
+                    while (coordSelectionAnchor.X > 0)
                     {
-                        break;
-                    }
-                    coordSelectionAnchor.X--;
-                }
-                while (MousePosition.X < coordScreenBufferSize.X)
-                {
-                    if (IS_WORD_DELIM(charRow.GetGlyphAt(MousePosition.X)))
-                    {
-                        break;
-                    }
-                    MousePosition.X++;
-                }
-                if (gci.GetTrimLeadingZeros())
-                {
-                    // Trim the leading zeros: 000fe12 -> fe12, except 0x and 0n.
-                    // Useful for debugging
-                    if (MousePosition.X > coordSelectionAnchor.X + 2 &&
-                        charRow.GetGlyphAt(coordSelectionAnchor.X + 1) != L'x' &&
-                        charRow.GetGlyphAt(coordSelectionAnchor.X + 1) != L'X' &&
-                        charRow.GetGlyphAt(coordSelectionAnchor.X + 1) != L'n')
-                    {
-                        // Don't touch the selection begins with 0x
-                        while (charRow.GetGlyphAt(coordSelectionAnchor.X) == L'0' &&
-                               coordSelectionAnchor.X < MousePosition.X - 1)
+                        if (IS_WORD_DELIM(cells[coordSelectionAnchor.X - 1].GetCharData()))
                         {
-                            coordSelectionAnchor.X++;
+                            break;
+                        }
+                        coordSelectionAnchor.X--;
+                    }
+                    while (MousePosition.X < coordScreenBufferSize.X)
+                    {
+                        if (IS_WORD_DELIM(cells[MousePosition.X].GetCharData()))
+                        {
+                            break;
+                        }
+                        MousePosition.X++;
+                    }
+                    if (gci.GetTrimLeadingZeros())
+                    {
+                        // Trim the leading zeros: 000fe12 -> fe12, except 0x and 0n.
+                        // Useful for debugging
+                        const wchar_t glyph = cells[coordSelectionAnchor.X + 1].GetCharData();
+                        if (MousePosition.X > coordSelectionAnchor.X + 2 &&
+                            glyph != L'x' &&
+                            glyph != L'X' &&
+                            glyph != L'n')
+                        {
+                            // Don't touch the selection begins with 0x
+                            while (cells[coordSelectionAnchor.X].GetCharData() == L'0' &&
+                                   coordSelectionAnchor.X < MousePosition.X - 1)
+                            {
+                                coordSelectionAnchor.X++;
+                            }
                         }
                     }
+                    // update both ends of the selection since we may have adjusted the anchor in some circumstances.
+                    pSelection->AdjustSelection(coordSelectionAnchor, MousePosition);
                 }
-
-                // update both ends of the selection since we may have adjusted the anchor in some circumstances.
-                pSelection->AdjustSelection(coordSelectionAnchor, MousePosition);
+                catch (...)
+                {
+                    LOG_HR(wil::ResultFromCaughtException());
+                }
             }
         }
         else if ((Message == WM_RBUTTONDOWN) || (Message == WM_RBUTTONDBLCLK))
