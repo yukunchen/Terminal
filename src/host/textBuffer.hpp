@@ -78,8 +78,8 @@ public:
     const ROW& GetFirstRow() const;
     ROW& GetFirstRow();
 
-    const ROW& GetRowByOffset(_In_ const UINT index) const;
-    ROW& GetRowByOffset(_In_ const UINT index);
+    const ROW& GetRowByOffset(_In_ const size_t index) const;
+    ROW& GetRowByOffset(_In_ const size_t index);
 
     const ROW& GetPrevRowNoWrap(_In_ const ROW& row) const;
     ROW& GetPrevRowNoWrap(_In_ const ROW& row);

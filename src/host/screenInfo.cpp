@@ -2556,3 +2556,24 @@ void SCREEN_INFORMATION::_InitializeBufferDimensions(_In_ const COORD coordScree
 
     SetScreenBufferSize(coordScreenBufferSize);
 }
+
+
+std::vector<OutputCell> SCREEN_INFORMATION::ReadLine(_In_ const size_t rowIndex) const
+{
+    const ROW& row = TextInfo->GetRowByOffset(rowIndex);
+    return row.AsCells();
+}
+std::vector<OutputCell> SCREEN_INFORMATION::ReadLine(_In_ const size_t rowIndex,
+                                                     _In_ const size_t startIndex) const
+{
+    const ROW& row = TextInfo->GetRowByOffset(rowIndex);
+    return row.AsCells(startIndex);
+}
+
+std::vector<OutputCell> SCREEN_INFORMATION::ReadLine(_In_ const size_t rowIndex,
+                                                     _In_ const size_t startIndex,
+                                                     _In_ const size_t count) const
+{
+    const ROW& row = TextInfo->GetRowByOffset(rowIndex);
+    return row.AsCells(startIndex, count);
+}

@@ -117,6 +117,17 @@ public:
     static void s_InsertScreenBuffer(_In_ SCREEN_INFORMATION* const pScreenInfo);
     static void s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pScreenInfo);
 
+
+    std::vector<OutputCell> ReadLine(_In_ const size_t rowIndex) const;
+    std::vector<OutputCell> ReadLine(_In_ const size_t rowIndex,
+                                     _In_ const size_t startIndex) const;
+    std::vector<OutputCell> ReadLine(_In_ const size_t rowIndex,
+                                     _In_ const size_t startIndex,
+                                     _In_ const size_t count) const;
+
+
+
+
     DWORD OutputMode;
     WORD ResizingWindow;    // > 0 if we should ignore WM_SIZE messages
 

@@ -132,7 +132,6 @@ ROW& TEXT_BUFFER_INFO::GetFirstRow()
     return const_cast<ROW&>(static_cast<const TEXT_BUFFER_INFO*>(this)->GetFirstRow());
 }
 
-
 // Routine Description:
 // - Retrieves a row from the buffer by its offset from the first row of the text buffer (what corresponds to
 // the top row of the screen buffer)
@@ -140,13 +139,13 @@ ROW& TEXT_BUFFER_INFO::GetFirstRow()
 // - Number of rows down from the first row of the buffer.
 // Return Value:
 // - const reference to the requested row. Asserts if out of bounds.
-const ROW& TEXT_BUFFER_INFO::GetRowByOffset(_In_ const UINT index) const
+const ROW& TEXT_BUFFER_INFO::GetRowByOffset(_In_ const size_t index) const
 {
-    UINT const totalRows = this->TotalRowCount();
+    const size_t totalRows = this->TotalRowCount();
     ASSERT(index < totalRows);
 
     // Rows are stored circularly, so the index you ask for is offset by the start position and mod the total of rows.
-    UINT const offsetIndex = (this->_FirstRow + index) % totalRows;
+    const size_t offsetIndex = (this->_FirstRow + index) % totalRows;
     return _storage[offsetIndex];
 }
 
@@ -157,7 +156,7 @@ const ROW& TEXT_BUFFER_INFO::GetRowByOffset(_In_ const UINT index) const
 // - Number of rows down from the first row of the buffer.
 // Return Value:
 // - reference to the requested row. Asserts if out of bounds.
-ROW& TEXT_BUFFER_INFO::GetRowByOffset(_In_ const UINT index)
+ROW& TEXT_BUFFER_INFO::GetRowByOffset(_In_ const size_t index)
 {
     return const_cast<ROW&>(static_cast<const TEXT_BUFFER_INFO*>(this)->GetRowByOffset(index));
 }

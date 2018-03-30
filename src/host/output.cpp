@@ -75,58 +75,31 @@ NTSTATUS DoCreateScreenBuffer()
 // - vector of vector of output cell data for read rect
 // Note:
 // - will throw exception on error.
+
 std::vector<std::vector<OutputCell>> ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION& screenInfo,
                                                               _In_ const COORD coordSourcePoint,
                                                               _In_ const Viewport viewport)
 {
-
-    DBGOUTPUT(("ReadRectFromScreenBuffer\n"));
-    const int ScreenBufferWidth = screenInfo.GetScreenBufferSize().X;
     std::vector<std::vector<OutputCell>> result;
     result.reserve(viewport.Height());
 
+    const int ScreenBufferWidth = screenInfo.GetScreenBufferSize().X;
     std::unique_ptr<TextAttribute[]> unpackedAttrs = std::make_unique<TextAttribute[]>(ScreenBufferWidth);
     THROW_IF_NULL_ALLOC(unpackedAttrs.get());
 
-    for (short iRow = 0; iRow < viewport.Height(); ++iRow)
+    for (size_t i = 0; i < viewport.Height(); ++i)
     {
-        const ROW& row = screenInfo.TextInfo->GetRowByOffset(coordSourcePoint.Y + iRow);
-        std::vector<OutputCell> rowCells;
-        rowCells.reserve(viewport.Width());
-
-        // copy the chars and attrs from their respective arrays
-        const ICharRow& iCharRow = row.GetCharRow();
-        // we only support ucs2 encoded char rows
-        FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                        "only support UCS2 char rows currently");
-
-        const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
-        Ucs2CharRow::const_iterator it = std::next(charRow.cbegin(), coordSourcePoint.X);
-        Ucs2CharRow::const_iterator itEnd = charRow.cend();
-
-        // Unpack the attributes into an array so we can iterate over them.
-        THROW_IF_FAILED(row.GetAttrRow().UnpackAttrs(unpackedAttrs.get(), ScreenBufferWidth));
-
-        for (short iCol = 0; iCol < viewport.Width() && it != itEnd; ++it, ++iCol)
+        auto cells = screenInfo.ReadLine(coordSourcePoint.Y + i, coordSourcePoint.X);
+        for (size_t j = 0; j < cells.size(); ++j)
         {
-            TextAttribute textAttr = unpackedAttrs[coordSourcePoint.X + iCol];
-            DbcsAttribute dbcsAttribute = row.GetCharRow().GetAttribute(coordSourcePoint.X + iCol);
-
-            if (iCol == 0 && dbcsAttribute.IsTrailing())
+            if ((j == 0 && cells[j].GetDbcsAttribute().IsTrailing()) ||
+                (j + 1 >= viewport.Width() && cells[j].GetDbcsAttribute().IsLeading()))
             {
-                rowCells.emplace_back(UNICODE_SPACE, DbcsAttribute{}, textAttr);
+                cells[j].GetDbcsAttribute().SetSingle();
+                cells[j].GetCharData() = UNICODE_SPACE;
             }
-            else if (iCol + 1 >= viewport.Width() && dbcsAttribute.IsLeading())
-            {
-                rowCells.emplace_back(UNICODE_SPACE, DbcsAttribute{}, textAttr);
-            }
-            else
-            {
-                rowCells.emplace_back(it->first, dbcsAttribute, textAttr);
-            }
-
         }
-        result.push_back(rowCells);
+        result.push_back(cells);
     }
     return result;
 }
