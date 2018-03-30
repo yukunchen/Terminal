@@ -294,17 +294,17 @@ NTSTATUS SCREEN_INFORMATION::_InitializeOutputStateMachine()
         //      in VtIo mode or not yet. We'll set the OutputStateMachine's
         //      TerminalConnection later, in VtIo::StartIfNeeded
         // OutputStateMachineEngine* pEngine;// = new OutputStateMachineEngine(_pAdapter);
-        if (gci.IsInVtIoMode())
-        {
-            _pEngine = std::make_shared<OutputStateMachineEngine>(_pAdapter, gci.GetVtIo()->GetTerminalOutputConnection());
-            // pEngine = new OutputStateMachineEngine(_pAdapter, gci.GetVtIo()->GetTerminalOutputConnection());
-        }
-        else
-        {
-            _pEngine = std::make_shared<OutputStateMachineEngine>(_pAdapter);
+        // if (gci.IsInVtIoMode())
+        // {
+        //     _pEngine = std::make_shared<OutputStateMachineEngine>(_pAdapter, gci.GetVtIo()->GetTerminalOutputConnection());
+        //     // pEngine = new OutputStateMachineEngine(_pAdapter, gci.GetVtIo()->GetTerminalOutputConnection());
+        // }
+        // else
+        // {
 
-            // pEngine = new OutputStateMachineEngine(_pAdapter);
-        }
+        //     // pEngine = new OutputStateMachineEngine(_pAdapter);
+        // }
+            _pEngine = std::make_shared<OutputStateMachineEngine>(_pAdapter);
 
         status = NT_TESTNULL(_pEngine);
         if (NT_SUCCESS(status))
@@ -2580,5 +2580,7 @@ void SCREEN_INFORMATION::SetTerminalConnection(ITerminalOutputConnection* const 
     // _FreeOutputStateMachine();
     // THROW_IF_WIN32_ERROR(_InitializeOutputStateMachine());
     _pEngine->SetTerminalConnection(pTtyConnection);
+
+    _pEngine->SetFlushToTerminalCallback(std::bind(&StateMachine::FlushToTerminal, _pStateMachine));
 }
 

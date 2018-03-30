@@ -41,6 +41,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         void ResetState();
 
+        bool FlushToTerminal();
+
         static const short s_cIntermediateMax = 1;
         static const short s_cParamsMax = 16;
         static const short s_cOscStringMaxLength = 256;
@@ -140,6 +142,10 @@ namespace Microsoft::Console::VirtualTerminal
         unsigned short _sOscParam;
         unsigned short _sOscNextChar;
         wchar_t _pwchOscStringBuffer[s_cOscStringMaxLength];
+
+        wchar_t* _pwchCurr;
+        wchar_t* _pwchSequenceStart;
+        size_t _currRunLength;
 
     };
 }

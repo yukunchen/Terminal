@@ -18,13 +18,7 @@ using namespace Microsoft::Console::VirtualTerminal;
 
 OutputStateMachineEngine::OutputStateMachineEngine(_In_ TermDispatch* const pDispatch) :
     _pDispatch(pDispatch),
-    _pTtyConnection(nullptr)
-{
-}
-OutputStateMachineEngine::OutputStateMachineEngine(_In_ TermDispatch* const pDispatch,
-                                                   ITerminalOutputConnection* const pTtyConnection) :
-    _pDispatch(pDispatch),
-    _pTtyConnection(pTtyConnection)
+    _pfnFlushToTerminal(nullptr)
 {
 }
 
@@ -460,9 +454,9 @@ bool OutputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
     }
     // If we were unable to process the string, and there's a TTY attached to us,
     //      throw an exception, to pass the sequence to the TTY.
-    if (_pTtyConnection != nullptr && !fSuccess)
+    if (_pfnFlushToTerminal != nullptr && !fSuccess)
     {
-        throw TerminalSequenceException();
+        fSuccess = _pfnFlushToTerminal();
     }
 
     return fSuccess;
@@ -685,11 +679,11 @@ bool OutputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const /*wch*/,
 
     // If we were unable to process the string, and there's a TTY attached to us,
     //      throw an exception, to pass the sequence to the TTY.
-    if (_pTtyConnection != nullptr && !fSuccess)
+    if (_pfnFlushToTerminal != nullptr && !fSuccess)
     {
-        DebugBreak();
-        throw TerminalSequenceException();
+        fSuccess = _pfnFlushToTerminal();
     }
+
     return fSuccess;
 }
 
@@ -760,9 +754,9 @@ bool OutputStateMachineEngine::_GetGraphicsOptions(_In_reads_(cParams) const uns
 
     // If we were unable to process the string, and there's a TTY attached to us,
     //      throw an exception, to pass the sequence to the TTY.
-    if (_pTtyConnection != nullptr && !fSuccess)
+    if (_pfnFlushToTerminal != nullptr && !fSuccess)
     {
-        throw TerminalSequenceException();
+        fSuccess = _pfnFlushToTerminal();
     }
 
     return fSuccess;
@@ -1576,4 +1570,10 @@ bool OutputStateMachineEngine::_GetCursorStyle(_In_reads_(cParams) const unsigne
 void OutputStateMachineEngine::SetTerminalConnection(ITerminalOutputConnection* const pTtyConnection)
 {
     this->_pTtyConnection = pTtyConnection;
+}
+
+
+void OutputStateMachineEngine::SetFlushToTerminalCallback(std::function<bool()> pfnFlushToTerminal)
+{
+    this->_pfnFlushToTerminal = pfnFlushToTerminal;
 }

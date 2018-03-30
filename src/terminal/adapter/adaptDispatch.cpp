@@ -1710,7 +1710,8 @@ bool AdaptDispatch::SetCursorStyle(_In_ const DispatchCommon::CursorStyle cursor
     _pConApi->IsConsolePty(&isPty);
     if (isPty)
     {
-        throw TerminalSequenceException();
+        return false;
+        // throw TerminalSequenceException();
     }
 
     CursorType actualType = CursorType::Legacy;
@@ -1769,7 +1770,8 @@ bool AdaptDispatch::SetCursorColor(_In_ const COLORREF cursorColor)
     _pConApi->IsConsolePty(&isPty);
     if (isPty)
     {
-        throw TerminalSequenceException();
+        return false;
+        // throw TerminalSequenceException();
     }
 
     return !!_pConApi->SetCursorColor(cursorColor);
@@ -1789,7 +1791,8 @@ bool AdaptDispatch::SetColorTableEntry(_In_ const size_t tableIndex,
     _pConApi->IsConsolePty(&isPty);
     if (isPty)
     {
-        throw TerminalSequenceException();
+        return false;
+        // throw TerminalSequenceException();
     }
     bool fSuccess = tableIndex < 16;
     if (fSuccess)

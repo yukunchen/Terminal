@@ -23,7 +23,6 @@ namespace Microsoft::Console::VirtualTerminal
     {
     public:
         OutputStateMachineEngine(_In_ TermDispatch* const pDispatch);
-        OutputStateMachineEngine(_In_ TermDispatch* const pDispatch, ITerminalOutputConnection* const pTtyConnection);
         ~OutputStateMachineEngine();
 
         bool ActionExecute(_In_ wchar_t const wch) override;
@@ -52,11 +51,13 @@ namespace Microsoft::Console::VirtualTerminal
         bool FlushAtEndOfString() const override;
 
         void SetTerminalConnection(Microsoft::Console::ITerminalOutputConnection* const pTtyConnection);
+        void SetFlushToTerminalCallback(std::function<bool()> pfnFlushToTerminal);
 
 
     private:
         TermDispatch* _pDispatch;
         Microsoft::Console::ITerminalOutputConnection* _pTtyConnection;
+        std::function<bool()> _pfnFlushToTerminal;
 
         bool _IntermediateQuestionMarkDispatch(_In_ wchar_t const wchAction,
                                                 _In_reads_(cParams) const unsigned short* const rgusParams,
