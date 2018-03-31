@@ -739,44 +739,11 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION* const pScreenInfo,
             {
                 try
                 {
-                    std::vector<OutputCell> cells = pScreenInfo->ReadLine(MousePosition.Y);
-
-                    while (coordSelectionAnchor.X > 0)
-                    {
-                        if (IS_WORD_DELIM(cells[coordSelectionAnchor.X - 1].GetCharData()))
-                        {
-                            break;
-                        }
-                        coordSelectionAnchor.X--;
-                    }
-                    while (MousePosition.X < coordScreenBufferSize.X)
-                    {
-                        if (IS_WORD_DELIM(cells[MousePosition.X].GetCharData()))
-                        {
-                            break;
-                        }
-                        MousePosition.X++;
-                    }
-                    if (gci.GetTrimLeadingZeros())
-                    {
-                        // Trim the leading zeros: 000fe12 -> fe12, except 0x and 0n.
-                        // Useful for debugging
-                        const wchar_t glyph = cells[coordSelectionAnchor.X + 1].GetCharData();
-                        if (MousePosition.X > coordSelectionAnchor.X + 2 &&
-                            glyph != L'x' &&
-                            glyph != L'X' &&
-                            glyph != L'n')
-                        {
-                            // Don't touch the selection begins with 0x
-                            while (cells[coordSelectionAnchor.X].GetCharData() == L'0' &&
-                                   coordSelectionAnchor.X < MousePosition.X - 1)
-                            {
-                                coordSelectionAnchor.X++;
-                            }
-                        }
-                    }
+                    std::pair<COORD, COORD> wordBounds = pScreenInfo->GetWordBoundary(MousePosition);
+                    MousePosition = wordBounds.second;
                     // update both ends of the selection since we may have adjusted the anchor in some circumstances.
-                    pSelection->AdjustSelection(coordSelectionAnchor, MousePosition);
+                    pSelection->AdjustSelection(wordBounds.first, wordBounds.second);
+
                 }
                 catch (...)
                 {

@@ -37,6 +37,7 @@ public:
 
     void swap(ROW& other) noexcept;
     size_t size() const;
+    const OutputCell at(const size_t column) const;
 
     const ICharRow& GetCharRow() const;
     ICharRow& GetCharRow();

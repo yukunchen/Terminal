@@ -198,3 +198,9 @@ std::vector<OutputCell> ROW::AsCells(_In_ const size_t startIndex, _In_ const si
     }
     return cells;
 }
+
+const OutputCell ROW::at(const size_t column) const
+{
+    const Ucs2CharRow* const charRow = static_cast<const Ucs2CharRow* const>(_charRow.get());
+    return { charRow->GetGlyphAt(column), charRow->GetAttribute(column), _attrRow.at(column) };
+}

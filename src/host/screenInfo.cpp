@@ -2577,3 +2577,58 @@ std::vector<OutputCell> SCREEN_INFORMATION::ReadLine(_In_ const size_t rowIndex,
     const ROW& row = TextInfo->GetRowByOffset(rowIndex);
     return row.AsCells(startIndex, count);
 }
+
+void SCREEN_INFORMATION::WriteLine(_In_ const std::wstring_view& wstrView, _In_ const COORD startPosition)
+{
+    wstrView; startPosition;
+    // TODO
+}
+
+// Routine Description:
+// - finds the boundaries of the word at the given position on the screen
+// Arguments:
+// - position - location on the screen to get the word boundary for
+// Return Value:
+// - word boundary positions
+std::pair<COORD, COORD> SCREEN_INFORMATION::GetWordBoundary(_In_ const COORD position) const
+{
+    const ROW& row = TextInfo->GetRowByOffset(position.Y);
+    const COORD screenBufferSize = GetScreenBufferSize();
+    COORD start{ position };
+    COORD end{ position };
+    while (start.X > 0)
+    {
+        if (IS_WORD_DELIM(row.at(start.X - 1).GetCharData()))
+        {
+            break;
+        }
+        start.X--;
+    }
+    while (end.X < screenBufferSize.X)
+    {
+        if (IS_WORD_DELIM(row.at(end.X).GetCharData()))
+        {
+            break;
+        }
+        end.X++;
+    }
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    if (gci.GetTrimLeadingZeros())
+    {
+        // Trim the leading zeros: 000fe12 -> fe12, except 0x and 0n.
+        // Useful for debugging
+        const wchar_t glyph = row.at(start.X + 1).GetCharData();
+        if (end.X > start.X + 2 &&
+            glyph != L'x' &&
+            glyph != L'X' &&
+            glyph != L'n')
+        {
+            // Don't touch the selection begins with 0x
+            while (row.at(start.X).GetCharData() == L'0' && start.X < end.X - 1)
+            {
+                start.X++;
+            }
+        }
+    }
+    return { start, end };
+}

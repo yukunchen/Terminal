@@ -125,6 +125,10 @@ public:
                                      _In_ const size_t startIndex,
                                      _In_ const size_t count) const;
 
+    void WriteLine(_In_ const std::wstring_view& wstrView, _In_ const COORD startPosition);
+
+    std::pair<COORD, COORD> GetWordBoundary(_In_ const COORD position) const;
+
 
 
 
