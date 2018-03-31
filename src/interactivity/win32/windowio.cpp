@@ -13,7 +13,6 @@
 #include "..\..\host\handle.h"
 #include "..\..\host\scrolling.hpp"
 #include "..\..\host\output.h"
-#include "..\..\host\Ucs2CharRow.hpp"
 
 #include "..\inc\ServiceLocator.hpp"
 
