@@ -169,7 +169,7 @@ public:
                               _In_ unsigned int const Color,
                               _In_ CursorType const Type);
 
-    void SetCursorDBMode(_In_ const BOOLEAN DoubleCursor);
+    void SetCursorDBMode(_In_ const bool DoubleCursor);
     [[nodiscard]]
     NTSTATUS SetCursorPosition(_In_ COORD const Position, _In_ BOOL const TurnOn);
 

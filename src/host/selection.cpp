@@ -474,7 +474,7 @@ void Selection::_CancelMouseSelection()
     }
 
     // Mark the cursor position as changed so we'll fire off a win event.
-    pScreenInfo->TextInfo->GetCursor()->SetHasMoved(TRUE);
+    pScreenInfo->TextInfo->GetCursor()->SetHasMoved(true);
 }
 
 // Routine Description:

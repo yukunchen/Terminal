@@ -1852,7 +1852,7 @@ void SCREEN_INFORMATION::SetCursorInformation(_In_ ULONG const Size,
 // - DoubleCursor - should we indicated non-normal mode
 // Return Value:
 // - None
-void  SCREEN_INFORMATION::SetCursorDBMode(_In_ BOOLEAN const DoubleCursor)
+void  SCREEN_INFORMATION::SetCursorDBMode(_In_ const bool DoubleCursor)
 {
     PTEXT_BUFFER_INFO const pTextInfo = this->TextInfo;
     Cursor* const pCursor = pTextInfo->GetCursor();
@@ -1901,14 +1901,14 @@ NTSTATUS SCREEN_INFORMATION::SetCursorPosition(_In_ COORD const Position, _In_ B
     {
         if (TurnOn)
         {
-            pCursor->SetDelay(FALSE);
-            pCursor->SetIsOn(TRUE);
+            pCursor->SetDelay(false);
+            pCursor->SetIsOn(true);
         }
         else
         {
-            pCursor->SetDelay(TRUE);
+            pCursor->SetDelay(true);
         }
-        pCursor->SetHasMoved(TRUE);
+        pCursor->SetHasMoved(true);
     }
 
     return STATUS_SUCCESS;

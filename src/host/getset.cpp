@@ -249,7 +249,7 @@ HRESULT ApiRoutines::SetConsoleInputModeImpl(_In_ InputBuffer* const pContext, _
         gci.SetInsertMode(IsFlagSet(Mode, ENABLE_INSERT_MODE));
         if (gci.GetInsertMode() != PreviousInsertMode)
         {
-            gci.CurrentScreenBuffer->SetCursorDBMode(FALSE);
+            gci.CurrentScreenBuffer->SetCursorDBMode(false);
             if (gci.lpCookedReadData != nullptr)
             {
                 gci.lpCookedReadData->_InsertMode = !!gci.GetInsertMode();

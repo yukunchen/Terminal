@@ -179,7 +179,7 @@ void Selection::_SaveCursorData(_In_ const TEXT_BUFFER_INFO* const pTextInfo)
     Cursor* const pCursor = pTextInfo->GetCursor();
     _coordSavedCursorPosition = pCursor->GetPosition();
     _ulSavedCursorSize = pCursor->GetSize();
-    _fSavedCursorVisible = !!pCursor->IsVisible();
+    _fSavedCursorVisible = pCursor->IsVisible();
 }
 
 // Routine Description:

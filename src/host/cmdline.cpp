@@ -196,7 +196,7 @@ NTSTATUS BeginPopup(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ PCOMMAND_HISTORY C
     if (1 == gci.PopupCount)
     {
         // If this is the first popup to be shown, stop the cursor from appearing/blinking
-        ScreenInfo->TextInfo->GetCursor()->SetIsPopupShown(TRUE);
+        ScreenInfo->TextInfo->GetCursor()->SetIsPopupShown(true);
     }
 
     DrawCommandListBorder(Popup, ScreenInfo);
@@ -238,7 +238,7 @@ NTSTATUS EndPopup(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ PCOMMAND_HISTORY Com
     if (gci.PopupCount == 0)
     {
         // Notify we're done showing popups.
-        ScreenInfo->TextInfo->GetCursor()->SetIsPopupShown(FALSE);
+        ScreenInfo->TextInfo->GetCursor()->SetIsPopupShown(false);
     }
 
     return STATUS_SUCCESS;
@@ -1735,7 +1735,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
             break;
         case VK_INSERT:
             pCookedReadData->_InsertMode = !pCookedReadData->_InsertMode;
-            pCookedReadData->_pScreenInfo->SetCursorDBMode((BOOLEAN)(pCookedReadData->_InsertMode != gci.GetInsertMode()));
+            pCookedReadData->_pScreenInfo->SetCursorDBMode(!!(pCookedReadData->_InsertMode != gci.GetInsertMode()));
             break;
         case VK_DELETE:
             if (!AT_EOL(pCookedReadData))

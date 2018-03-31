@@ -62,7 +62,7 @@ class ApiRoutinesTests
         UpdateFlag(gci.Flags, CONSOLE_AUTO_POSITION, IsFlagSet(ulOriginalInputMode, ENABLE_AUTO_POSITION));
 
         // Set cursor DB to on so we can verify that it turned off when the Insert Mode changes.
-        gci.CurrentScreenBuffer->SetCursorDBMode(TRUE);
+        gci.CurrentScreenBuffer->SetCursorDBMode(false);
 
         // Record the insert mode at this time to see if it changed.
         _fPrevInsertMode = gci.GetInsertMode();
@@ -93,7 +93,7 @@ class ApiRoutinesTests
         VERIFY_ARE_EQUAL(fQuickEditExpected, IsFlagSet(gci.Flags, CONSOLE_QUICK_EDIT_MODE));
         VERIFY_ARE_EQUAL(fAutoPositionExpected, IsFlagSet(gci.Flags, CONSOLE_AUTO_POSITION));
         VERIFY_ARE_EQUAL(!!fInsertModeExpected, !!gci.GetInsertMode());
-        VERIFY_ARE_EQUAL(!!fCursorDBModeExpected, !!gci.CurrentScreenBuffer->TextInfo->GetCursor()->IsDouble());
+        VERIFY_ARE_EQUAL(!!fCursorDBModeExpected, gci.CurrentScreenBuffer->TextInfo->GetCursor()->IsDouble());
     }
 
     TEST_METHOD(ApiSetConsoleInputModeImplValidNonExtended)

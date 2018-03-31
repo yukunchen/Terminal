@@ -1013,7 +1013,7 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
         }
 
         // Determine cursor width
-        bool const fIsDoubleWidth = !!pCursor->IsDoubleWidth();
+        bool const fIsDoubleWidth = pCursor->IsDoubleWidth();
 
         // Adjust cursor to viewport
         view.ConvertToOrigin(&coordCursor);
