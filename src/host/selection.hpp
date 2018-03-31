@@ -132,9 +132,9 @@ public:
     bool IsAreaSelected() const;
     bool IsMouseButtonDown() const;
 
-    void GetPublicSelectionFlags(_Out_ DWORD* const pdwFlags) const;
+    DWORD GetPublicSelectionFlags() const noexcept;
     COORD GetSelectionAnchor() const noexcept;
-    void GetSelectionRectangle(_Out_ SMALL_RECT* const psrSelectionRect) const;
+    SMALL_RECT GetSelectionRectangle() const noexcept;
 
     void SetLineSelection(_In_ const bool fLineSelectionOn);
 

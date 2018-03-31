@@ -209,26 +209,25 @@ COORD Selection::GetSelectionAnchor() const noexcept
 // Routine Description:
 // - Gets the current selection rectangle
 // Arguments:
-// - psrSelectionRect - The rectangle to fill with selection data.
+// - none
 // Return Value:
-// - <none>
-void Selection::GetSelectionRectangle(_Out_ SMALL_RECT* const psrSelectionRect) const
+// - The rectangle to fill with selection data.
+SMALL_RECT Selection::GetSelectionRectangle() const noexcept
 {
-    (*psrSelectionRect) = _srSelectionRect;
+    return _srSelectionRect;
 }
 
 // Routine Description:
 // - Gets the publically facing set of selection flags.
 //   Strips out any internal flags in use.
 // Arguments:
-// - pdwFlags - DWORD to fill with flags data.
+// - none
 // Return Value:
-// - <none>
-void Selection::GetPublicSelectionFlags(_Out_ DWORD* const pdwFlags) const
+// - The public selection flags
+DWORD Selection::GetPublicSelectionFlags() const noexcept
 {
     // CONSOLE_SELECTION_VALID is the union (binary OR) of all externally valid flags in wincon.h
-
-    *pdwFlags = _dwSelectionFlags & CONSOLE_SELECTION_VALID;
+    return (_dwSelectionFlags & CONSOLE_SELECTION_VALID);
 }
 
 // Routine Description:

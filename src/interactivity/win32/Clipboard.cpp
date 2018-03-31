@@ -263,8 +263,7 @@ NTSTATUS Clipboard::RetrieveTextFromBuffer(_In_ const SCREEN_INFORMATION* const 
         {
             SMALL_RECT srHighlightRow = rgsrSelection[iRect];
 
-            SMALL_RECT srSelection;
-            Selection::Instance().GetSelectionRectangle(&srSelection);
+            SMALL_RECT srSelection = Selection::Instance().GetSelectionRectangle();
 
             const UINT iRow = srSelection.Top + iRect;
 

@@ -120,12 +120,12 @@ void ApiRoutines::GetConsoleSelectionInfoImpl(_Out_ CONSOLE_SELECTION_INFO* cons
     const Selection* const pSelection = &Selection::Instance();
     if (pSelection->IsInSelectingState())
     {
-        pSelection->GetPublicSelectionFlags(&pConsoleSelectionInfo->dwFlags);
+        pConsoleSelectionInfo->dwFlags = pSelection->GetPublicSelectionFlags();
 
         SetFlag(pConsoleSelectionInfo->dwFlags, CONSOLE_SELECTION_IN_PROGRESS);
 
         pConsoleSelectionInfo->dwSelectionAnchor = pSelection->GetSelectionAnchor();
-        pSelection->GetSelectionRectangle(&pConsoleSelectionInfo->srSelection);
+        pConsoleSelectionInfo->srSelection = pSelection->GetSelectionRectangle();
     }
     else
     {

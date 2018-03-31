@@ -74,8 +74,7 @@ INT_PTR FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 
                         // Make sure the highlighted text will be visible
                         // TODO: can this just be merged with the select region code?
-                        SMALL_RECT srSelection;
-                        pSelection->GetSelectionRectangle(&srSelection);
+                        SMALL_RECT srSelection = pSelection->GetSelectionRectangle();
 
                         if (srSelection.Left < ScreenInfo->GetBufferViewport().Left)
                         {
