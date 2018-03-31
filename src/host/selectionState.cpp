@@ -198,12 +198,12 @@ void Selection::_RestoreCursorData(_In_ SCREEN_INFORMATION* const pScreenInfo)
 // Routine Description:
 // - Gets the current selection anchor position
 // Arguments:
-// - pcoordSelectionAnchor - The coordinate to fill with the current selection anchor values
+// - none
 // Return Value:
-// - <none>
-void Selection::GetSelectionAnchor(_Out_ COORD* const pcoordSelectionAnchor) const
+// - current selection anchor
+COORD Selection::GetSelectionAnchor() const noexcept
 {
-    (*pcoordSelectionAnchor) = _coordSelectionAnchor;
+    return _coordSelectionAnchor;
 }
 
 // Routine Description:

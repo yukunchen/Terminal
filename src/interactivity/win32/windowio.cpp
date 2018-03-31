@@ -732,14 +732,13 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION* const pScreenInfo,
         else if (Message == WM_LBUTTONDBLCLK)
         {
             // on double-click, attempt to select a "word" beneath the cursor
-            COORD coordSelectionAnchor;
-            pSelection->GetSelectionAnchor(&coordSelectionAnchor);
+            const COORD selectionAnchor = pSelection->GetSelectionAnchor();
 
-            if ((MousePosition.X == coordSelectionAnchor.X) && (MousePosition.Y == coordSelectionAnchor.Y))
+            if ((MousePosition.X == selectionAnchor.X) && (MousePosition.Y == selectionAnchor.Y))
             {
                 try
                 {
-                    std::pair<COORD, COORD> wordBounds = pScreenInfo->GetWordBoundary(MousePosition);
+                    const std::pair<COORD, COORD> wordBounds = pScreenInfo->GetWordBoundary(MousePosition);
                     MousePosition = wordBounds.second;
                     // update both ends of the selection since we may have adjusted the anchor in some circumstances.
                     pSelection->AdjustSelection(wordBounds.first, wordBounds.second);

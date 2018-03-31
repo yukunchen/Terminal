@@ -124,7 +124,7 @@ void ApiRoutines::GetConsoleSelectionInfoImpl(_Out_ CONSOLE_SELECTION_INFO* cons
 
         SetFlag(pConsoleSelectionInfo->dwFlags, CONSOLE_SELECTION_IN_PROGRESS);
 
-        pSelection->GetSelectionAnchor(&pConsoleSelectionInfo->dwSelectionAnchor);
+        pConsoleSelectionInfo->dwSelectionAnchor = pSelection->GetSelectionAnchor();
         pSelection->GetSelectionRectangle(&pConsoleSelectionInfo->srSelection);
     }
     else
