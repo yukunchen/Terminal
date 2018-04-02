@@ -17,9 +17,6 @@
 
 #define SET_FIELD_AND_SIZE(x) FIELD_OFFSET(Settings, (x)), RTL_FIELD_SIZE(Settings, (x))
 
-// Default word delimiters if no others are specified.
-const WCHAR aWordDelimCharsDefault[WORD_DELIM_MAX] = L"\\" L"+!:=/.<>;|&";
-
 Registry::Registry(_In_ Settings* const pSettings) :
     _pSettings(pSettings)
 {
@@ -64,25 +61,29 @@ void Registry::GetEditKeys(_In_opt_ HKEY hConsoleKey) const
         gci.SetAltF4CloseAllowed(!!dwValue);
     }
 
-    // provide extended word delimiters by default.
-    std::copy(std::begin(aWordDelimCharsDefault),
-              std::end(aWordDelimCharsDefault),
-              ServiceLocator::LocateGlobals().aWordDelimChars);
-
     // Read word delimiters from registry
-    WCHAR awchBuffer[64];
+    const size_t bufferSize = 64;
+    WCHAR awchBuffer[bufferSize];
     Status = RegistrySerialization::s_QueryValue(hConsoleKey,
                                                  CONSOLE_REGISTRY_WORD_DELIM,
-                                                 sizeof(awchBuffer),
+                                                 bufferSize,
                                                  REG_SZ,
                                                  (PBYTE)awchBuffer,
                                                  nullptr);
     if (NT_SUCCESS(Status))
     {
-        // OK, copy it to the word delimiter array.
-        #pragma prefast(suppress:26035, "RegistrySerialization::s_QueryValue will properly terminate strings.")
-        StringCchCopyW(ServiceLocator::LocateGlobals().aWordDelimChars, WORD_DELIM_MAX, awchBuffer);
-        ServiceLocator::LocateGlobals().aWordDelimChars[WORD_DELIM_MAX - 1] = 0;
+        // OK, copy it to the global word delimiter lis.
+        std::wstring regWordDelimiters{ awchBuffer, awchBuffer + bufferSize };
+        auto& delimiters = ServiceLocator::LocateGlobals().WordDelimiters;
+        delimiters.clear();
+        for (wchar_t wch : regWordDelimiters)
+        {
+            if (wch == '\0')
+            {
+                break;
+            }
+            delimiters.push_back(wch);
+        }
     }
 
     if (hCurrentUserKey)

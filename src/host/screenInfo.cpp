@@ -2597,7 +2597,7 @@ std::pair<COORD, COORD> SCREEN_INFORMATION::GetWordBoundary(_In_ const COORD pos
     COORD end{ position };
     while (start.X > 0)
     {
-        if (IS_WORD_DELIM(row.at(start.X - 1).GetCharData()))
+        if (IsWordDelim(row.at(start.X - 1).GetCharData()))
         {
             break;
         }
@@ -2605,7 +2605,7 @@ std::pair<COORD, COORD> SCREEN_INFORMATION::GetWordBoundary(_In_ const COORD pos
     }
     while (end.X < screenBufferSize.X)
     {
-        if (IS_WORD_DELIM(row.at(end.X).GetCharData()))
+        if (IsWordDelim(row.at(end.X).GetCharData()))
         {
             break;
         }
