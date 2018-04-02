@@ -118,14 +118,13 @@ public:
     static void s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pScreenInfo);
 
 
+    std::wstring ReadText(_In_ const size_t rowIndex) const;
     std::vector<OutputCell> ReadLine(_In_ const size_t rowIndex) const;
     std::vector<OutputCell> ReadLine(_In_ const size_t rowIndex,
                                      _In_ const size_t startIndex) const;
     std::vector<OutputCell> ReadLine(_In_ const size_t rowIndex,
                                      _In_ const size_t startIndex,
                                      _In_ const size_t count) const;
-
-    void WriteLine(_In_ const std::wstring_view& wstrView, _In_ const COORD startPosition);
 
     std::pair<COORD, COORD> GetWordBoundary(_In_ const COORD position) const;
 

@@ -42,9 +42,6 @@ public:
     // ICharRow methods
     ICharRow::SupportedEncoding GetSupportedEncoding() const noexcept override;
 
-    // CharRowBase methods
-    string_type GetText() const;
-
     friend constexpr bool operator==(const Ucs2CharRow& a, const Ucs2CharRow& b) noexcept;
 };
 

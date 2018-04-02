@@ -169,6 +169,11 @@ void ROW::ClearColumn(_In_ const size_t column)
     _charRow->ClearCell(column);
 }
 
+std::wstring ROW::GetText() const
+{
+    return _charRow->GetText();
+}
+
 std::vector<OutputCell> ROW::AsCells() const
 {
     return AsCells(0, size());

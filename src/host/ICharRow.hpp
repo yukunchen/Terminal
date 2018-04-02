@@ -60,10 +60,7 @@ public:
     // glyphs
     virtual void ClearGlyph(const size_t column) = 0;
     virtual bool ContainsText() const = 0;
-    /*
-    virtual std::wstring GetText();
-    virtual std::wstring
-    */
+    virtual std::wstring GetText() const = 0;
 };
 
 inline ICharRow::~ICharRow() {}

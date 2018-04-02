@@ -53,6 +53,7 @@ public:
     HRESULT Resize(_In_ size_t const width);
 
     void ClearColumn(_In_ const size_t column);
+    std::wstring GetText() const;
     std::vector<OutputCell> AsCells() const;
     std::vector<OutputCell> AsCells(_In_ const size_t startIndex) const;
     std::vector<OutputCell> AsCells(_In_ const size_t startIndex, _In_ const size_t count) const;
