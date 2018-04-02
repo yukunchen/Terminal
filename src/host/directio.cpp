@@ -677,8 +677,8 @@ NTSTATUS SrvReadConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::ReadConsoleOutput, a->Unicode);
 
     PCHAR_INFO Buffer;
-    ULONG Size;
-    NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetOutputBuffer((PVOID*)&Buffer, &Size));
+    ULONG cbBuffer;
+    NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetOutputBuffer((PVOID*)&Buffer, &cbBuffer));
     if (!NT_SUCCESS(Status))
     {
         return Status;
@@ -711,7 +711,7 @@ NTSTATUS SrvReadConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
         BufferSize.Y = (SHORT)(a->CharRegion.Bottom - a->CharRegion.Top + 1);
 
         if (((BufferSize.X > 0) && (BufferSize.Y > 0)) &&
-            ((BufferSize.X * BufferSize.Y > ULONG_MAX / sizeof(CHAR_INFO)) || (Size < BufferSize.X * BufferSize.Y * sizeof(CHAR_INFO))))
+            ((BufferSize.X * BufferSize.Y > ULONG_MAX / sizeof(CHAR_INFO)) || (cbBuffer < BufferSize.X * BufferSize.Y * sizeof(CHAR_INFO))))
         {
             UnlockConsole();
             return STATUS_INVALID_PARAMETER;
@@ -719,7 +719,22 @@ NTSTATUS SrvReadConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
 
         SCREEN_INFORMATION* const psi = pScreenInfo->GetActiveBuffer();
 
-        Status = ReadScreenBuffer(psi, Buffer, &a->CharRegion);
+        std::vector<std::vector<OutputCell>> outputCells;
+        Status = ReadScreenBuffer(psi, outputCells, &a->CharRegion);
+        assert(cbBuffer >= outputCells.size() * outputCells[0].size() * sizeof(CHAR_INFO));
+        // convert to CharInfo
+        CHAR_INFO* pCurrCharInfo = Buffer;
+        // copy the data into the char info buffer
+        for (auto& row : outputCells)
+        {
+            for (auto& cell : row)
+            {
+                *pCurrCharInfo = cell.ToCharInfo();
+                ++pCurrCharInfo;
+            }
+        }
+
+
         if (!a->Unicode)
         {
             LOG_IF_FAILED(TranslateOutputToOem(Buffer, BufferSize));

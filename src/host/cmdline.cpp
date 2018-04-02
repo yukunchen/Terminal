@@ -180,7 +180,19 @@ NTSTATUS BeginPopup(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ PCOMMAND_HISTORY C
     TargetRect.Top = Popup->Region.Top;
     TargetRect.Right = Popup->OldScreenSize.X - 1;
     TargetRect.Bottom = Popup->Region.Bottom;
-    LOG_IF_FAILED(ReadScreenBuffer(ScreenInfo, Popup->OldContents, &TargetRect));
+    std::vector<std::vector<OutputCell>> outputCells;
+    LOG_IF_FAILED(ReadScreenBuffer(ScreenInfo, outputCells, &TargetRect));
+    // copy the data into the char info buffer
+    CHAR_INFO* pCurrCharInfo = Popup->OldContents;
+    for (auto& row : outputCells)
+    {
+        for (auto& cell : row)
+        {
+            *pCurrCharInfo = cell.ToCharInfo();
+            ++pCurrCharInfo;
+        }
+    }
+
 
     gci.PopupCount++;
     if (1 == gci.PopupCount)
