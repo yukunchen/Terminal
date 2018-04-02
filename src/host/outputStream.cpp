@@ -685,8 +685,8 @@ BOOL ConhostInternalGetSet::SetCursorColor(_In_ COLORREF const cursorColor)
 // - isPty: recieves the bool indicating whether or not we're in pty mode.
 // Return Value:
 // - TRUE if successful (see DoSrvIsConsolePty). FALSE otherwise.
-BOOL ConhostInternalGetSet::IsConsolePty(_Out_ bool* const isPty)
+BOOL ConhostInternalGetSet::IsConsolePty(_Out_ bool* const pIsPty) const
 {
-    DoSrvIsConsolePty(isPty);
+    DoSrvIsConsolePty(pIsPty);
     return TRUE;
 }

@@ -675,7 +675,7 @@ public:
         return _fGetConsoleOutputCPResult;
     }
 
-    virtual BOOL IsConsolePty(_Out_ bool* const isPty)
+    virtual BOOL IsConsolePty(_Out_ bool* const isPty) const
     {
         Log::Comment(L"IsConsolePty MOCK called...");
         if (_fIsConsolePtyResult)

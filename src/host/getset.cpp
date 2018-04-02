@@ -1703,8 +1703,8 @@ NTSTATUS DoSrvPrivateSuppressResizeRepaint()
 // - isPty: recieves the bool indicating whether or not we're in pty mode.
 // Return value:
 //  <none>
-void DoSrvIsConsolePty(_Out_ bool* const isPty)
+void DoSrvIsConsolePty(_Out_ bool* const pIsPty)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    *isPty = gci.IsInVtIoMode();
+    *pIsPty = gci.IsInVtIoMode();
 }

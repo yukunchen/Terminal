@@ -295,7 +295,7 @@ NTSTATUS SCREEN_INFORMATION::_InitializeOutputStateMachine()
         //      TerminalConnection later, in VtIo::StartIfNeeded
         _pEngine = std::make_shared<OutputStateMachineEngine>(_pAdapter);
 
-        status = NT_TESTNULL(_pEngine);
+        status = NT_TESTNULL(_pEngine.get());
         if (NT_SUCCESS(status))
         {
             _pStateMachine = new StateMachine(_pEngine);

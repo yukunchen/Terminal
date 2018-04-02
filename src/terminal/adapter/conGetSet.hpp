@@ -86,6 +86,6 @@ namespace Microsoft::Console::VirtualTerminal
         virtual BOOL GetConsoleOutputCP(_Out_ unsigned int* const puiOutputCP) = 0;
 
         virtual BOOL PrivateSuppressResizeRepaint() = 0;
-        virtual BOOL IsConsolePty(_Out_ bool* const isPty) = 0;
+        virtual BOOL IsConsolePty(_Out_ bool* const pIsPty) const = 0;
     };
 }

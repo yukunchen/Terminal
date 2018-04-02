@@ -218,7 +218,7 @@ bool InputStateMachineEngine::ActionPrintString(_Inout_updates_(cch) wchar_t* co
 // Return Value:
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionPassThroughString(_Inout_updates_(cch) wchar_t* const rgwch,
-                                                _In_ size_t const cch)
+                                                      _In_ size_t const cch)
 {
     return ActionPrintString(rgwch, cch);
 }

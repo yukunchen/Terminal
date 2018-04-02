@@ -106,4 +106,4 @@ void DoSrvGetConsoleOutputCodePage(_Out_ unsigned int* const pCodePage);
 [[nodiscard]]
 NTSTATUS DoSrvPrivateSuppressResizeRepaint();
 
-void DoSrvIsConsolePty(_Out_ bool* const isPty);
+void DoSrvIsConsolePty(_Out_ bool* const pIsPty);

@@ -89,10 +89,7 @@ bool OutputStateMachineEngine::ActionPassThroughString(_Inout_updates_(cch) wcha
         LOG_IF_FAILED(hr);
         fSuccess = SUCCEEDED(hr);
     }
-    else
-    {
-        // eat the string
-    }
+    // If there's not a TTY connection, our previous behavior was to eat the string.
 
     return fSuccess;
 }

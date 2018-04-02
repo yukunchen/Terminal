@@ -138,7 +138,7 @@ public:
 
     virtual BOOL GetConsoleOutputCP(_Out_ unsigned int* const puiOutputCP) override;
 
-    virtual BOOL IsConsolePty(_Out_ bool* const isPty) override;
+    virtual BOOL IsConsolePty(_Out_ bool* const pIsPty) const override;
 
 private:
     const Microsoft::Console::IIoProvider* const _pIo;
