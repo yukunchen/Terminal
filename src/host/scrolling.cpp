@@ -109,7 +109,7 @@ void Scrolling::s_HandleMouseWheel(_In_ bool isMouseWheel, _In_ bool isMouseHWhe
     if (isMouseWheel && s_ucWheelScrollLines > 0)
     {
         // Rounding could cause this to be zero if gucWSL is bigger than 240 or so.
-        ULONG const ulActualDelta = max(WHEEL_DELTA / s_ucWheelScrollLines, 1);
+        ULONG const ulActualDelta = std::max(WHEEL_DELTA / s_ucWheelScrollLines, 1ul);
 
         // If we change direction we need to throw away any remainder we may have in the other direction.
         if ((pScreenInfo->WheelDelta > 0) == (wheelDelta > 0))
@@ -131,7 +131,7 @@ void Scrolling::s_HandleMouseWheel(_In_ bool isMouseWheel, _In_ bool isMouseHWhe
             SHORT delta = 1;
             if (hasShift)
             {
-                delta = (SHORT)max((pScreenInfo->GetScreenWindowSizeY() * pScreenInfo->ScrollScale) / 2, 1);
+                delta = gsl::narrow<SHORT>(std::max((pScreenInfo->GetScreenWindowSizeY() * pScreenInfo->ScrollScale) / 2, 1u));
 
                 // Account for scroll direction changes by adjusting delta if there was a direction change.
                 delta *= (pScreenInfo->WheelDelta < 0 ? -1 : 1);
@@ -158,7 +158,7 @@ void Scrolling::s_HandleMouseWheel(_In_ bool isMouseWheel, _In_ bool isMouseHWhe
     }
     else if (isMouseHWheel && s_ucWheelScrollChars > 0)
     {
-        ULONG const ulActualDelta = max(WHEEL_DELTA / s_ucWheelScrollChars, 1);
+        ULONG const ulActualDelta = std::max(WHEEL_DELTA / s_ucWheelScrollChars, 1ul);
 
         if ((pScreenInfo->HWheelDelta > 0) == (wheelDelta > 0))
         {
@@ -175,7 +175,7 @@ void Scrolling::s_HandleMouseWheel(_In_ bool isMouseWheel, _In_ bool isMouseHWhe
 
             if (hasShift)
             {
-                delta = max(pScreenInfo->GetScreenWindowSizeX() - 1, 1);
+                delta = gsl::narrow<SHORT>(std::max(pScreenInfo->GetScreenWindowSizeX() - 1, 1));
             }
 
             delta *= (pScreenInfo->HWheelDelta / (short)ulActualDelta);

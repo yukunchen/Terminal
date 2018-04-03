@@ -383,7 +383,7 @@ class ApiRoutinesTests
             IWaitRoutine* pWaiter = nullptr;
 
             // The increment is either the specified length or the remaining text in the string (if that is smaller).
-            const size_t cchWriteLength = min(cchIncrement, cchTestText - i);
+            const size_t cchWriteLength = std::min(cchIncrement, cchTestText - i);
 
             // Run the test method
             const HRESULT hr = _pApiRoutines->WriteConsoleAImpl(si, pszTestText + i, cchWriteLength, &cchRead, &pWaiter);

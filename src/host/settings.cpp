@@ -525,16 +525,16 @@ void Settings::Validate()
     }
 
     // minimum screen buffer size 1x1
-    _dwScreenBufferSize.X = max(_dwScreenBufferSize.X, 1);
-    _dwScreenBufferSize.Y = max(_dwScreenBufferSize.Y, 1);
+    _dwScreenBufferSize.X = std::max(_dwScreenBufferSize.X, 1i16);
+    _dwScreenBufferSize.Y = std::max(_dwScreenBufferSize.Y, 1i16);
 
     // minimum window size size 1x1
-    _dwWindowSize.X = max(_dwWindowSize.X, 1);
-    _dwWindowSize.Y = max(_dwWindowSize.Y, 1);
+    _dwWindowSize.X = std::max(_dwWindowSize.X, 1i16);
+    _dwWindowSize.Y = std::max(_dwWindowSize.Y, 1i16);
 
     // if buffer size is less than window size, increase buffer size to meet window size
-    _dwScreenBufferSize.X = max(_dwWindowSize.X, _dwScreenBufferSize.X);
-    _dwScreenBufferSize.Y = max(_dwWindowSize.Y, _dwScreenBufferSize.Y);
+    _dwScreenBufferSize.X = std::max(_dwWindowSize.X, _dwScreenBufferSize.X);
+    _dwScreenBufferSize.Y = std::max(_dwWindowSize.Y, _dwScreenBufferSize.Y);
 
     // ensure that the window alpha value is not below the minimum. (no invisible windows)
     // if it's below minimum, just set it to the opaque value
@@ -922,7 +922,7 @@ const COLORREF* const Settings::GetColorTable() const
 }
 void Settings::SetColorTable(_In_reads_(cSize) const COLORREF* const pColorTable, _In_ size_t const cSize)
 {
-    size_t cSizeWritten = min(cSize, COLOR_TABLE_SIZE);
+    size_t cSizeWritten = std::min(cSize, static_cast<size_t>(COLOR_TABLE_SIZE));
 
     memmove(this->_ColorTable, pColorTable, cSizeWritten * sizeof(COLORREF));
 }

@@ -33,7 +33,7 @@ USHORT SearchForString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
         COORD coordSelAnchor;
         pSelection->GetSelectionAnchor(&coordSelAnchor);
 
-        Position.X = min(coordSelAnchor.X, MaxPosition.X);
+        Position.X = std::min(coordSelAnchor.X, MaxPosition.X);
         Position.Y = coordSelAnchor.Y;
     }
     else if (Reverse)

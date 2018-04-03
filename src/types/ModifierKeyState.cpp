@@ -6,7 +6,6 @@
 
 #include "precomp.h"
 #include "inc/IInputEvent.hpp"
-#include "../inc/cpp2017.hpp"
 
 #include <unordered_map>
 

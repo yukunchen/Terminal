@@ -26,13 +26,11 @@ struct _HSL
         const double r = (double) GetRValue(rgb);
         const double g = (double) GetGValue(rgb);
         const double b = (double) GetBValue(rgb);
-        double min, max, diff, sum;
 
-        max = max(max(r, g), b);
-        min = min(min(r, g), b);
+        const auto[min, max] = std::minmax({ r, g, b });
 
-        diff = max - min;
-        sum = max + min;
+        const auto diff = max - min;
+        const auto sum = max + min;
         // Luminence
         l = max / 255.0;
 
