@@ -245,12 +245,16 @@ void Cursor::_RedrawCursorAlways()
         ServiceLocator::LocateGlobals().pRender->TriggerRedrawCursor(&_cPosition);
 
         // In case of a double width character, we need to invalidate the spot one to the right of the cursor as well.
-        if (IsDoubleWidth())
+        try
         {
-            COORD cExtra = _cPosition;
-            cExtra.X++;
-            ServiceLocator::LocateGlobals().pRender->TriggerRedrawCursor(&cExtra);
+            if (IsDoubleWidth())
+            {
+                COORD cExtra = _cPosition;
+                cExtra.X++;
+                ServiceLocator::LocateGlobals().pRender->TriggerRedrawCursor(&cExtra);
+            }
         }
+        CATCH_LOG();
     }
 }
 

@@ -78,23 +78,23 @@ public:
     const ROW& GetFirstRow() const;
     ROW& GetFirstRow();
 
-    const ROW& GetRowByOffset(_In_ const size_t index) const;
-    ROW& GetRowByOffset(_In_ const size_t index);
+    const ROW& GetRowByOffset(const size_t index) const;
+    ROW& GetRowByOffset(const size_t index);
 
-    const ROW& GetPrevRowNoWrap(_In_ const ROW& row) const;
-    ROW& GetPrevRowNoWrap(_In_ const ROW& row);
+    const ROW& GetPrevRowNoWrap(const ROW& row) const;
+    ROW& GetPrevRowNoWrap(const ROW& row);
 
-    const ROW& GetNextRowNoWrap(_In_ const ROW& row) const;
-    ROW& GetNextRowNoWrap(_In_ const ROW& row);
+    const ROW& GetNextRowNoWrap(const ROW& row) const;
+    ROW& GetNextRowNoWrap(const ROW& row);
 
-    const ROW& GetRowAtIndex(_In_ const UINT index) const;
-    ROW& GetRowAtIndex(_In_ const UINT index);
+    const ROW& GetRowAtIndex(const UINT index) const;
+    ROW& GetRowAtIndex(const UINT index);
 
-    const ROW& GetPrevRow(_In_ const ROW& row) const noexcept;
-    ROW& GetPrevRow(_In_ const ROW& row) noexcept;
+    const ROW& GetPrevRow(const ROW& row) const noexcept;
+    ROW& GetPrevRow(const ROW& row) noexcept;
 
-    const ROW& GetNextRow(_In_ const ROW& row) const noexcept;
-    ROW& GetNextRow(_In_ const ROW& row) noexcept;
+    const ROW& GetNextRow(const ROW& row) const noexcept;
+    ROW& GetNextRow(const ROW& row) noexcept;
 
     // Text insertion functions
     bool InsertCharacter(_In_ const wchar_t wch, _In_ const DbcsAttribute dbcsAttribute, _In_ const TextAttribute attr);

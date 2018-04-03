@@ -2595,6 +2595,8 @@ std::pair<COORD, COORD> SCREEN_INFORMATION::GetWordBoundary(_In_ const COORD pos
     const COORD screenBufferSize = GetScreenBufferSize();
     COORD start{ position };
     COORD end{ position };
+
+    // find the start of the word
     while (start.X > 0)
     {
         if (IsWordDelim(row.at(start.X - 1).GetCharData()))
@@ -2603,6 +2605,8 @@ std::pair<COORD, COORD> SCREEN_INFORMATION::GetWordBoundary(_In_ const COORD pos
         }
         start.X--;
     }
+
+    // find the end of the word
     while (end.X < screenBufferSize.X)
     {
         if (IsWordDelim(row.at(end.X).GetCharData()))
@@ -2611,6 +2615,8 @@ std::pair<COORD, COORD> SCREEN_INFORMATION::GetWordBoundary(_In_ const COORD pos
         }
         end.X++;
     }
+
+    // trim leading zeros if we need to
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (gci.GetTrimLeadingZeros())
     {

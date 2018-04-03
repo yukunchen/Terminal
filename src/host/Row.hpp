@@ -23,9 +23,6 @@ Revision History:
 #include "AttrRow.hpp"
 #include "OutputCell.hpp"
 
-#include <memory>
-#include <vector>
-
 class ROW final
 {
 public:

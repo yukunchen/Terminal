@@ -58,9 +58,9 @@ TEXT_BUFFER_INFO::TEXT_BUFFER_INFO(_In_ const FontInfo* const pFontInfo,
 #pragma prefast(disable:6001, "Prefast fires that *this is not initialized, which is absurd since this is a destructor.")
 TEXT_BUFFER_INFO::~TEXT_BUFFER_INFO()
 {
-    if (this->_pCursor != nullptr)
+    if (_pCursor != nullptr)
     {
-        delete this->_pCursor;
+        delete _pCursor;
     }
 }
 #pragma prefast(pop)
@@ -76,7 +76,7 @@ void TEXT_BUFFER_INFO::CopyProperties(_In_ TEXT_BUFFER_INFO* const pOtherBuffer)
 {
     SetCurrentFont(pOtherBuffer->GetCurrentFont());
 
-    this->GetCursor()->CopyProperties(pOtherBuffer->GetCursor());
+    GetCursor()->CopyProperties(pOtherBuffer->GetCursor());
 }
 
 void TEXT_BUFFER_INFO::SetCurrentFont(_In_ const FontInfo* const pfiNewFont)
@@ -139,13 +139,12 @@ ROW& TEXT_BUFFER_INFO::GetFirstRow()
 // - Number of rows down from the first row of the buffer.
 // Return Value:
 // - const reference to the requested row. Asserts if out of bounds.
-const ROW& TEXT_BUFFER_INFO::GetRowByOffset(_In_ const size_t index) const
+const ROW& TEXT_BUFFER_INFO::GetRowByOffset(const size_t index) const
 {
-    const size_t totalRows = this->TotalRowCount();
-    ASSERT(index < totalRows);
+    const size_t totalRows = TotalRowCount();
 
     // Rows are stored circularly, so the index you ask for is offset by the start position and mod the total of rows.
-    const size_t offsetIndex = (this->_FirstRow + index) % totalRows;
+    const size_t offsetIndex = (_FirstRow + index) % totalRows;
     return _storage[offsetIndex];
 }
 
@@ -156,7 +155,7 @@ const ROW& TEXT_BUFFER_INFO::GetRowByOffset(_In_ const size_t index) const
 // - Number of rows down from the first row of the buffer.
 // Return Value:
 // - reference to the requested row. Asserts if out of bounds.
-ROW& TEXT_BUFFER_INFO::GetRowByOffset(_In_ const size_t index)
+ROW& TEXT_BUFFER_INFO::GetRowByOffset(const size_t index)
 {
     return const_cast<ROW&>(static_cast<const TEXT_BUFFER_INFO*>(this)->GetRowByOffset(index));
 }
@@ -170,7 +169,7 @@ ROW& TEXT_BUFFER_INFO::GetRowByOffset(_In_ const size_t index)
 // - const reference to the previous row
 // Note:
 // - will throw exception if called with the first row of the text buffer
-const ROW& TEXT_BUFFER_INFO::GetPrevRowNoWrap(_In_ const ROW& Row) const
+const ROW& TEXT_BUFFER_INFO::GetPrevRowNoWrap(const ROW& Row) const
 {
     int prevRowIndex = Row.GetId() - 1;
     if (prevRowIndex < 0)
@@ -191,7 +190,7 @@ const ROW& TEXT_BUFFER_INFO::GetPrevRowNoWrap(_In_ const ROW& Row) const
 // - reference to the previous row
 // Note:
 // - will throw exception if called with the first row of the text buffer
-ROW& TEXT_BUFFER_INFO::GetPrevRowNoWrap(_In_ const ROW& Row)
+ROW& TEXT_BUFFER_INFO::GetPrevRowNoWrap(const ROW& Row)
 {
     return const_cast<ROW&>(static_cast<const TEXT_BUFFER_INFO*>(this)->GetPrevRowNoWrap(Row));
 }
@@ -205,10 +204,10 @@ ROW& TEXT_BUFFER_INFO::GetPrevRowNoWrap(_In_ const ROW& Row)
 // - const reference to the next row
 // Note:
 // - will throw exception if the row passed in is the last row of the screen buffer.
-const ROW& TEXT_BUFFER_INFO::GetNextRowNoWrap(_In_ const ROW& row) const
+const ROW& TEXT_BUFFER_INFO::GetNextRowNoWrap(const ROW& row) const
 {
     UINT nextRowIndex = row.GetId() + 1;
-    UINT totalRows = this->TotalRowCount();
+    UINT totalRows = TotalRowCount();
 
     if (nextRowIndex >= totalRows)
     {
@@ -228,7 +227,7 @@ const ROW& TEXT_BUFFER_INFO::GetNextRowNoWrap(_In_ const ROW& row) const
 // - const reference to the next row
 // Note:
 // - will throw exception if the row passed in is the last row of the screen buffer.
-ROW& TEXT_BUFFER_INFO::GetNextRowNoWrap(_In_ const ROW& row)
+ROW& TEXT_BUFFER_INFO::GetNextRowNoWrap(const ROW& row)
 {
     return const_cast<ROW&>(static_cast<const TEXT_BUFFER_INFO*>(this)->GetNextRowNoWrap(row));
 }
@@ -242,7 +241,7 @@ ROW& TEXT_BUFFER_INFO::GetNextRowNoWrap(_In_ const ROW& row)
 // - const reference to the row
 // Note:
 // - will throw exception if the index passed would overflow the row storage
-const ROW& TEXT_BUFFER_INFO::GetRowAtIndex(_In_ const UINT index) const
+const ROW& TEXT_BUFFER_INFO::GetRowAtIndex(const UINT index) const
 {
     if (index >= TotalRowCount())
     {
@@ -260,7 +259,7 @@ const ROW& TEXT_BUFFER_INFO::GetRowAtIndex(_In_ const UINT index) const
 // - reference to the row
 // Note:
 // - will throw exception if the index passed would overflow the row storage
-ROW& TEXT_BUFFER_INFO::GetRowAtIndex(_In_ const UINT index)
+ROW& TEXT_BUFFER_INFO::GetRowAtIndex(const UINT index)
 {
     return const_cast<ROW&>(static_cast<const TEXT_BUFFER_INFO*>(this)->GetRowAtIndex(index));
 }
@@ -272,7 +271,7 @@ ROW& TEXT_BUFFER_INFO::GetRowAtIndex(_In_ const UINT index)
 // - the row to fetch the previous row for.
 // Return Value:
 // - const reference to the previous row.
-const ROW& TEXT_BUFFER_INFO::GetPrevRow(_In_ const ROW& row) const noexcept
+const ROW& TEXT_BUFFER_INFO::GetPrevRow(const ROW& row) const noexcept
 {
     const SHORT rowIndex = row.GetId();
     if (rowIndex == 0)
@@ -289,7 +288,7 @@ const ROW& TEXT_BUFFER_INFO::GetPrevRow(_In_ const ROW& row) const noexcept
 // - the row to fetch the previous row for.
 // Return Value:
 // - reference to the previous row.
-ROW& TEXT_BUFFER_INFO::GetPrevRow(_In_ const ROW& row) noexcept
+ROW& TEXT_BUFFER_INFO::GetPrevRow(const ROW& row) noexcept
 {
     return const_cast<ROW&>(static_cast<const TEXT_BUFFER_INFO*>(this)->GetPrevRow(row));
 }
@@ -301,7 +300,7 @@ ROW& TEXT_BUFFER_INFO::GetPrevRow(_In_ const ROW& row) noexcept
 // - the row to fetch the next row for.
 // Return Value:
 // - const reference to the next row.
-const ROW& TEXT_BUFFER_INFO::GetNextRow(_In_ const ROW& row) const noexcept
+const ROW& TEXT_BUFFER_INFO::GetNextRow(const ROW& row) const noexcept
 {
     const UINT rowIndex = static_cast<UINT>(row.GetId());
     if (rowIndex == TotalRowCount() - 1)
@@ -318,7 +317,7 @@ const ROW& TEXT_BUFFER_INFO::GetNextRow(_In_ const ROW& row) const noexcept
 // - the row to fetch the next row for.
 // Return Value:
 // - reference to the next row.
-ROW& TEXT_BUFFER_INFO::GetNextRow(_In_ const ROW& row) noexcept
+ROW& TEXT_BUFFER_INFO::GetNextRow(const ROW& row) noexcept
 {
     return const_cast<ROW&>(static_cast<const TEXT_BUFFER_INFO*>(this)->GetNextRow(row));
 }
@@ -437,13 +436,13 @@ bool TEXT_BUFFER_INFO::_PrepareForDoubleByteSequence(_In_ const DbcsAttribute db
     // We only need to compensate for leading bytes
     if (dbcsAttribute.IsLeading())
     {
-        short const sBufferWidth = this->_coordBufferSize.X;
+        short const sBufferWidth = _coordBufferSize.X;
 
         // If we're about to lead on the last column in the row, we need to add a padding space
-        if (this->GetCursor()->GetPosition().X == sBufferWidth - 1)
+        if (GetCursor()->GetPosition().X == sBufferWidth - 1)
         {
             // set that we're wrapping for double byte reasons
-            ICharRow& iCharRow = GetRowByOffset(this->GetCursor()->GetPosition().Y).GetCharRow();
+            ICharRow& iCharRow = GetRowByOffset(GetCursor()->GetPosition().Y).GetCharRow();
             // we only support ucs2 encoded char rows
             FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
                             "only support UCS2 char rows currently");
@@ -476,8 +475,8 @@ bool TEXT_BUFFER_INFO::InsertCharacter(_In_ const wchar_t wch,
     if (fSuccess)
     {
         // Get the current cursor position
-        short const iRow = this->GetCursor()->GetPosition().Y; // row stored as logical position, not array position
-        short const iCol = this->GetCursor()->GetPosition().X; // column logical and array positions are equal.
+        short const iRow = GetCursor()->GetPosition().Y; // row stored as logical position, not array position
+        short const iCol = GetCursor()->GetPosition().X; // column logical and array positions are equal.
 
         // Get the row associated with the given logical position
         ROW& Row = GetRowByOffset(iRow);
@@ -489,7 +488,7 @@ bool TEXT_BUFFER_INFO::InsertCharacter(_In_ const wchar_t wch,
                         "only support UCS2 char rows currently");
 
         Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);;
-        short const cBufferWidth = this->_coordBufferSize.X;
+        short const cBufferWidth = _coordBufferSize.X;
 
         try
         {
@@ -507,7 +506,7 @@ bool TEXT_BUFFER_INFO::InsertCharacter(_In_ const wchar_t wch,
         if (fSuccess)
         {
             // Advance the cursor
-            fSuccess = this->IncrementCursor();
+            fSuccess = IncrementCursor();
         }
     }
     return fSuccess;
@@ -535,7 +534,7 @@ void TEXT_BUFFER_INFO::SetWrapOnCurrentRow()
 void TEXT_BUFFER_INFO::AdjustWrapOnCurrentRow(_In_ bool const fSet)
 {
     // The vertical position of the cursor represents the current row we're manipulating.
-    const UINT uiCurrentRowOffset = this->GetCursor()->GetPosition().Y;
+    const UINT uiCurrentRowOffset = GetCursor()->GetPosition().Y;
 
     // Set the wrap status as appropriate
     GetRowByOffset(uiCurrentRowOffset).GetCharRow().SetWrapForced(fSet);
@@ -555,21 +554,21 @@ bool TEXT_BUFFER_INFO::IncrementCursor()
     // Buffer Size is specified as the "length" of the array. It would say 80 for valid values of 0-79.
     // So subtract 1 from buffer size in each direction to find the index of the final column in the buffer
 
-    ASSERT(this->_coordBufferSize.X > 0);
-    const short iFinalColumnIndex = this->_coordBufferSize.X - 1;
+    ASSERT(_coordBufferSize.X > 0);
+    const short iFinalColumnIndex = _coordBufferSize.X - 1;
 
     // Move the cursor one position to the right
-    this->GetCursor()->IncrementXPosition(1);
+    GetCursor()->IncrementXPosition(1);
 
     bool fSuccess = true;
     // If we've passed the final valid column...
-    if (this->GetCursor()->GetPosition().X > iFinalColumnIndex)
+    if (GetCursor()->GetPosition().X > iFinalColumnIndex)
     {
         // Then mark that we've been forced to wrap
-        this->SetWrapOnCurrentRow();
+        SetWrapOnCurrentRow();
 
         // Then move the cursor to a new line
-        fSuccess = this->NewlineCursor();
+        fSuccess = NewlineCursor();
     }
     return fSuccess;
 }
@@ -587,31 +586,31 @@ void TEXT_BUFFER_INFO::DecrementCursor()
     // Buffer Size is specified as the "length" of the array. It would say 80 for valid values of 0-79.
     // So subtract 1 from buffer size in each direction to find the index of the final column in the buffer
 
-    ASSERT(this->_coordBufferSize.X > 0);
-    const short iFinalColumnIndex = this->_coordBufferSize.X - 1;
+    ASSERT(_coordBufferSize.X > 0);
+    const short iFinalColumnIndex = _coordBufferSize.X - 1;
 
     // Move the cursor one position to the left
-    this->GetCursor()->DecrementXPosition(1);
+    GetCursor()->DecrementXPosition(1);
 
     // If we've passed the beginning of the line...
-    if (this->GetCursor()->GetPosition().X < 0)
+    if (GetCursor()->GetPosition().X < 0)
     {
         // Move us up a line
-        this->GetCursor()->DecrementYPosition(1);
+        GetCursor()->DecrementYPosition(1);
 
         // If we've moved past the top, move back down one and set X to 0.
-        if (this->GetCursor()->GetPosition().Y < 0)
+        if (GetCursor()->GetPosition().Y < 0)
         {
-            this->GetCursor()->IncrementYPosition(1);
-            this->GetCursor()->SetXPosition(0);
+            GetCursor()->IncrementYPosition(1);
+            GetCursor()->SetXPosition(0);
         }
         else
         {
             // Set the X position to the end of the line.
-            this->GetCursor()->SetXPosition(iFinalColumnIndex);
+            GetCursor()->SetXPosition(iFinalColumnIndex);
 
             // Then mark that we've backed around the wrap onto this new line and it's no longer a wrap.
-            this->AdjustWrapOnCurrentRow(false);
+            AdjustWrapOnCurrentRow(false);
         }
     }
 }
@@ -625,21 +624,21 @@ void TEXT_BUFFER_INFO::DecrementCursor()
 bool TEXT_BUFFER_INFO::NewlineCursor()
 {
     bool fSuccess = false;
-    ASSERT(this->_coordBufferSize.Y > 0);
-    short const iFinalRowIndex = this->_coordBufferSize.Y - 1;
+    ASSERT(_coordBufferSize.Y > 0);
+    short const iFinalRowIndex = _coordBufferSize.Y - 1;
 
     // Reset the cursor position to 0 and move down one line
-    this->GetCursor()->SetXPosition(0);
-    this->GetCursor()->IncrementYPosition(1);
+    GetCursor()->SetXPosition(0);
+    GetCursor()->IncrementYPosition(1);
 
     // If we've passed the final valid row...
-    if (this->GetCursor()->GetPosition().Y > iFinalRowIndex)
+    if (GetCursor()->GetPosition().Y > iFinalRowIndex)
     {
         // Stay on the final logical/offset row of the buffer.
-        this->GetCursor()->SetYPosition(iFinalRowIndex);
+        GetCursor()->SetYPosition(iFinalRowIndex);
 
         // Instead increment the circular buffer to move us into the "oldest" row of the backing buffer
-        fSuccess = this->IncrementCircularBuffer();
+        fSuccess = IncrementCircularBuffer();
     }
     else
     {
@@ -672,12 +671,12 @@ bool TEXT_BUFFER_INFO::IncrementCircularBuffer()
     {
         // Now proceed to increment.
         // Incrementing it will cause the next line down to become the new "top" of the window (the new "0" in logical coordinates)
-        this->_FirstRow++;
+        _FirstRow++;
 
         // If we pass up the height of the buffer, loop back to 0.
-        if (this->_FirstRow >= this->_coordBufferSize.Y)
+        if (_FirstRow >= _coordBufferSize.Y)
         {
-            this->_FirstRow = 0;
+            _FirstRow = 0;
         }
     }
     return fSuccess;
@@ -727,7 +726,7 @@ COORD TEXT_BUFFER_INFO::GetLastNonSpaceCharacter() const
 // - NOTE: Will return 0,0 if already in the top left corner
 COORD TEXT_BUFFER_INFO::GetPreviousFromCursor() const
 {
-    COORD coordPosition = this->GetCursor()->GetPosition();
+    COORD coordPosition = GetCursor()->GetPosition();
 
     // If we're not at the left edge, simply move the cursor to the left by one
     if (coordPosition.X > 0)
@@ -740,7 +739,7 @@ COORD TEXT_BUFFER_INFO::GetPreviousFromCursor() const
         if (coordPosition.Y > 0)
         {
             // move the cursor to the right edge
-            coordPosition.X = this->_coordBufferSize.X - 1;
+            coordPosition.X = _coordBufferSize.X - 1;
 
             // and up one line
             coordPosition.Y--;
@@ -752,25 +751,25 @@ COORD TEXT_BUFFER_INFO::GetPreviousFromCursor() const
 
 const SHORT TEXT_BUFFER_INFO::GetFirstRowIndex() const
 {
-    return this->_FirstRow;
+    return _FirstRow;
 }
 const COORD TEXT_BUFFER_INFO::GetCoordBufferSize() const
 {
-    return this->_coordBufferSize;
+    return _coordBufferSize;
 }
 
 void TEXT_BUFFER_INFO::SetFirstRowIndex(_In_ SHORT const FirstRowIndex)
 {
-    this->_FirstRow = FirstRowIndex;
+    _FirstRow = FirstRowIndex;
 }
 void TEXT_BUFFER_INFO::SetCoordBufferSize(_In_ COORD const coordBufferSize)
 {
-    this->_coordBufferSize = coordBufferSize;
+    _coordBufferSize = coordBufferSize;
 }
 
 Cursor* const TEXT_BUFFER_INFO::GetCursor() const
 {
-    return this->_pCursor;
+    return _pCursor;
 }
 
 CHAR_INFO TEXT_BUFFER_INFO::GetFill() const

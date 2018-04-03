@@ -158,7 +158,8 @@ NTSTATUS BeginPopup(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ PCOMMAND_HISTORY C
 
     // allocate a buffer
     Popup->OldScreenSize = ScreenInfo->GetScreenBufferSize();
-    Popup->OldContents = new CHAR_INFO[Popup->OldScreenSize.X * Size.Y];
+    const size_t cOldContents = Popup->OldScreenSize.X * Size.Y;
+    Popup->OldContents = new CHAR_INFO[cOldContents];
     if (Popup->OldContents == nullptr)
     {
         delete Popup;
@@ -182,6 +183,8 @@ NTSTATUS BeginPopup(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ PCOMMAND_HISTORY C
     TargetRect.Bottom = Popup->Region.Bottom;
     std::vector<std::vector<OutputCell>> outputCells;
     LOG_IF_FAILED(ReadScreenBuffer(ScreenInfo, outputCells, &TargetRect));
+    assert(!outputCells.empty());
+    assert(cOldContents == outputCells.size() * outputCells[0].size());
     // copy the data into the char info buffer
     CHAR_INFO* pCurrCharInfo = Popup->OldContents;
     for (auto& row : outputCells)

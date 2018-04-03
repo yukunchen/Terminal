@@ -75,7 +75,6 @@ NTSTATUS DoCreateScreenBuffer()
 // - vector of vector of output cell data for read rect
 // Note:
 // - will throw exception on error.
-
 std::vector<std::vector<OutputCell>> ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION& screenInfo,
                                                               _In_ const COORD coordSourcePoint,
                                                               _In_ const Viewport viewport)

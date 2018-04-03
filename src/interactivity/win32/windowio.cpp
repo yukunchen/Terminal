@@ -738,7 +738,7 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION* const pScreenInfo,
             // on double-click, attempt to select a "word" beneath the cursor
             const COORD selectionAnchor = pSelection->GetSelectionAnchor();
 
-            if ((MousePosition.X == selectionAnchor.X) && (MousePosition.Y == selectionAnchor.Y))
+            if (MousePosition == selectionAnchor)
             {
                 try
                 {
