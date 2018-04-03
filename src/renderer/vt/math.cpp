@@ -55,10 +55,10 @@ HRESULT VtEngine::IsCharFullWidthByFont(_In_ WCHAR const /*wch*/, _Out_ bool* co
 // - <none>
 void VtEngine::_OrRect(_Inout_ SMALL_RECT* const pRectExisting, _In_ const SMALL_RECT* const pRectToOr) const
 {
-    pRectExisting->Left = min(pRectExisting->Left, pRectToOr->Left);
-    pRectExisting->Top = min(pRectExisting->Top, pRectToOr->Top);
-    pRectExisting->Right = max(pRectExisting->Right, pRectToOr->Right);
-    pRectExisting->Bottom = max(pRectExisting->Bottom, pRectToOr->Bottom);
+    pRectExisting->Left = std::min(pRectExisting->Left, pRectToOr->Left);
+    pRectExisting->Top = std::min(pRectExisting->Top, pRectToOr->Top);
+    pRectExisting->Right = std::max(pRectExisting->Right, pRectToOr->Right);
+    pRectExisting->Bottom = std::max(pRectExisting->Bottom, pRectToOr->Bottom);
 }
 
 // Method Description:

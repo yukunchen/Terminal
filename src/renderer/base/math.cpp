@@ -43,7 +43,7 @@ COLORREF Renderer::_ConvertAttrToRGB(_In_ const BYTE bAttr)
     size_t iColor = bAttr & 0x0F;
 
     // Ensure color requested is within the table (count - 1 is the final index of the table)
-    iColor = min(iColor, cColors - 1);
+    iColor = std::min(iColor, cColors - 1);
 
     return rgColorTable[iColor];
 }

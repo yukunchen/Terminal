@@ -31,7 +31,7 @@ USHORT SearchForString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
     if (pSelection->IsInSelectingState())
     {
         Position = pSelection->GetSelectionAnchor();
-        Position.X = min(Position.X, MaxPosition.X);
+        Position.X = std::min(Position.X, MaxPosition.X);
     }
     else if (Reverse)
     {

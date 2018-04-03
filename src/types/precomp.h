@@ -16,6 +16,9 @@ Abstract:
 
 #pragma once
 
+// This includes support libraries from the CRT, STL, WIL, and GSL
+#include "LibraryIncludes.h"
+
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
 #endif
@@ -25,8 +28,6 @@ Abstract:
 
 typedef long NTSTATUS;
 #define NT_SUCCESS(Status)  (((NTSTATUS)(Status)) >= 0)
-#define STATUS_SUCCESS ((DWORD)0x0)
-#define STATUS_UNSUCCESSFUL ((DWORD)0xC0000001L)
 #define STATUS_SHARING_VIOLATION         ((NTSTATUS)0xC0000043L)
 #define STATUS_INSUFFICIENT_RESOURCES ((DWORD)0xC000009AL)
 #define STATUS_ILLEGAL_FUNCTION ((DWORD)0xC00000AFL)
@@ -59,9 +60,6 @@ __inline NTSTATUS_FROM_WIN32(long x) { return x <= 0 ? (NTSTATUS)x : (NTSTATUS)(
 #define ENABLE_INTSAFE_SIGNED_FUNCTIONS // Only unsigned intsafe math/casts available without this def
 #include <intsafe.h>
 #pragma prefast(pop)
-
-// This includes support libraries from the CRT, STL, WIL, and GSL
-#include "LibraryIncludes.h"
 
 // private dependencies
 #pragma warning(push)

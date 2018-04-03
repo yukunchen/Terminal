@@ -160,10 +160,10 @@ bool Viewport::IsWithinViewport(_In_ const COORD* const pcoord) const noexcept
 // - true iff the clipped rectangle is valid (with a width and height both >0)
 bool Viewport::TrimToViewport(_Inout_ SMALL_RECT* const psr) const noexcept
 {
-    psr->Left = max(psr->Left, Left());
-    psr->Right = min(psr->Right, RightExclusive());
-    psr->Top = max(psr->Top, Top());
-    psr->Bottom = min(psr->Bottom, BottomExclusive());
+    psr->Left = std::max(psr->Left, Left());
+    psr->Right = std::min(psr->Right, RightExclusive());
+    psr->Top = std::max(psr->Top, Top());
+    psr->Bottom = std::min(psr->Bottom, BottomExclusive());
 
     return psr->Left < psr->Right && psr->Top < psr->Bottom;
 }
@@ -323,10 +323,10 @@ HRESULT Viewport::AddCoord(_In_ const Viewport& original,
 // - a Veiwport representing the union of the other two viewports.
 Viewport Viewport::OrViewports(_In_ const Viewport& lhs, _In_ const Viewport& rhs) noexcept
 {
-    const short Left = min(lhs._sr.Left, rhs._sr.Left);
-    const short Top = min(lhs._sr.Top, rhs._sr.Top);
-    const short Right = max(lhs._sr.Right, rhs._sr.Right);
-    const short Bottom = max(lhs._sr.Bottom, rhs._sr.Bottom);
+    const short Left = std::min(lhs._sr.Left, rhs._sr.Left);
+    const short Top = std::min(lhs._sr.Top, rhs._sr.Top);
+    const short Right = std::max(lhs._sr.Right, rhs._sr.Right);
+    const short Bottom = std::max(lhs._sr.Bottom, rhs._sr.Bottom);
 
     return Viewport({ Left, Top, Right, Bottom });
 }

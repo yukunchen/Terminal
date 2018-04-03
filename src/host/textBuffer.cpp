@@ -712,8 +712,8 @@ COORD TEXT_BUFFER_INFO::GetLastNonSpaceCharacter() const
     }
 
     // don't allow negative results
-    coordEndOfText.Y = max(coordEndOfText.Y, 0);
-    coordEndOfText.X = max(coordEndOfText.X, 0);
+    coordEndOfText.Y = std::max(coordEndOfText.Y, 0i16);
+    coordEndOfText.X = std::max(coordEndOfText.X, 0i16);
 
     return coordEndOfText;
 }

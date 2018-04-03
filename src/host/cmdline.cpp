@@ -793,8 +793,8 @@ NTSTATUS ProcessCopyToCharInput(_In_ COOKED_READ_DATA* const pCookedReadData)
                         j * sizeof(WCHAR));
                 pCookedReadData->_CurrentPosition += j;
                 j *= sizeof(WCHAR);
-                pCookedReadData->_BytesRead = max(pCookedReadData->_BytesRead,
-                                                  pCookedReadData->_CurrentPosition * sizeof(WCHAR));
+                pCookedReadData->_BytesRead = std::max(pCookedReadData->_BytesRead,
+                                                       gsl::narrow<ULONG>(pCookedReadData->_CurrentPosition * sizeof(WCHAR)));
                 if (pCookedReadData->_Echo)
                 {
                     DWORD NumSpaces;
@@ -960,7 +960,7 @@ NTSTATUS CommandListPopup(_In_ COOKED_READ_DATA* const CookedReadData)
 
     if (CurrentCommand < (SHORT)(CommandHistory->NumberOfCommands - POPUP_SIZE_Y(Popup)))
     {
-        Popup->BottomIndex = (SHORT)(max(CurrentCommand, POPUP_SIZE_Y(Popup) - 1));
+        Popup->BottomIndex = std::max(CurrentCommand, gsl::narrow<SHORT>(POPUP_SIZE_Y(Popup) - 1));
     }
     else
     {
@@ -1579,7 +1579,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                     memmove(pCookedReadData->_BufPtr, &LastCommand->Command[pCookedReadData->_CurrentPosition], cchCount * sizeof(WCHAR));
                     pCookedReadData->_CurrentPosition += cchCount;
                     cchCount *= sizeof(WCHAR);
-                    pCookedReadData->_BytesRead = max(LastCommand->CommandLength, pCookedReadData->_BytesRead);
+                    pCookedReadData->_BytesRead = std::max(static_cast<ULONG>(LastCommand->CommandLength), pCookedReadData->_BytesRead);
                     if (pCookedReadData->_Echo)
                     {
                         Status = WriteCharsLegacy(pCookedReadData->_pScreenInfo,
@@ -1939,7 +1939,7 @@ void DrawCommandListPopup(_In_ PCLE_POPUP const Popup,
     }
 
     WriteCoord.Y = (SHORT)(Popup->Region.Top + 1);
-    SHORT i = max((SHORT)(Popup->BottomIndex - POPUP_SIZE_Y(Popup) + 1), 0);
+    SHORT i = std::max(gsl::narrow<SHORT>(Popup->BottomIndex - POPUP_SIZE_Y(Popup) + 1), 0i16);
     for (; i <= Popup->BottomIndex; i++)
     {
         CHAR CommandNumber[COMMAND_NUMBER_SIZE];

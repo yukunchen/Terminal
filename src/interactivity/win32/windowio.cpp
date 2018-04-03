@@ -20,6 +20,11 @@
 
 using namespace Microsoft::Console::Interactivity::Win32;
 
+// For usage with WM_SYSKEYDOWN message processing.
+// See https://msdn.microsoft.com/en-us/library/windows/desktop/ms646286(v=vs.85).aspx
+// Bit 29 is whether ALT was held when the message was posted.
+#define WM_SYSKEYDOWN_ALT_PRESSED (0x20000000)
+
 // ----------------------------
 // Helpers
 // ----------------------------
@@ -474,7 +479,7 @@ BOOL HandleSysKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const
         return TRUE; // let DefWindowProc generate WM_CLOSE
     }
 
-    if ((lParam & 0x20000000) == 0)
+    if (IsFlagClear(lParam, WM_SYSKEYDOWN_ALT_PRESSED))
     {   // we're iconic
         // Check for ENTER while iconic (restore accelerator).
         if (VirtualKeyCode == VK_RETURN)
@@ -1006,7 +1011,7 @@ DWORD ConsoleInputThreadProcWin32(LPVOID /*lpParameter*/)
             DispatchMessageW(&msg);
         }
         // do this so that alt-tab works while journalling
-        else if (msg.message == WM_SYSKEYDOWN && msg.wParam == VK_TAB && (msg.lParam & 0x20000000))
+        else if (msg.message == WM_SYSKEYDOWN && msg.wParam == VK_TAB && IsFlagSet(msg.lParam, WM_SYSKEYDOWN_ALT_PRESSED))
         {
             // alt is really down
             DispatchMessageW(&msg);

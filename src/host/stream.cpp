@@ -521,7 +521,7 @@ NTSTATUS ReadLineInput(_Inout_ InputBuffer* const pInputBuffer,
     // (256 bytes) until the user types enter.  then return as many
     // chars as will fit in the user's buffer.
 
-    ULONG const TempBufferSize = static_cast<ULONG>(max(OutputBufferSize, LINE_INPUT_BUFFER_SIZE));
+    ULONG const TempBufferSize = gsl::narrow<ULONG>(std::max(OutputBufferSize, LINE_INPUT_BUFFER_SIZE));
     wchar_t* const TempBuffer = (wchar_t*) new BYTE[TempBufferSize];
     if (TempBuffer == nullptr)
     {
