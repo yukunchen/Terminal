@@ -519,7 +519,7 @@ IFACEMETHODIMP UiaTextRange::CompareEndpoints(_In_ TextPatternRangeEndpoint endp
     }
 
     // compare them
-    *pRetVal = clamp(static_cast<int>(ourValue) - static_cast<int>(theirValue), -1, 1);
+    *pRetVal = std::clamp(static_cast<int>(ourValue) - static_cast<int>(theirValue), -1, 1);
 
     // tracing
     ApiMsgCompareEndpoints apiMsg;
@@ -737,7 +737,7 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
                     if (currentScreenInfoRow == endScreenInfoRow)
                     {
                         // prevent the end from going past the last non-whitespace char in the row
-                        endIndex = min(endColumn + 1, rowRight);
+                        endIndex = std::min(static_cast<size_t>(endColumn + 1), rowRight);
                     }
 
                     // if startIndex >= endIndex then _start is
@@ -1246,7 +1246,7 @@ const COORD UiaTextRange::_getScreenBufferCoords()
 const unsigned int UiaTextRange::_getRowWidth()
 {
     // make sure that we can't leak a 0
-    return max(_getScreenBufferCoords().X, 1);
+    return std::max(static_cast<unsigned int>(_getScreenBufferCoords().X), 1u);
 }
 
 // Routine Description:

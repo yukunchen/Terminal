@@ -761,7 +761,7 @@ void Window::VerticalScroll(_In_ const WORD wScrollCommand, _In_ const WORD wAbs
 
     case SB_BOTTOM:
     {
-        NewOrigin.Y = (WORD)(sScreenBufferSizeY - ScreenInfo->GetScreenWindowSizeY());
+        NewOrigin.Y = sScreenBufferSizeY - ScreenInfo->GetScreenWindowSizeY();
         break;
     }
 
@@ -770,9 +770,8 @@ void Window::VerticalScroll(_In_ const WORD wScrollCommand, _In_ const WORD wAbs
         return;
     }
     }
-
-    NewOrigin.Y = (WORD)(max(0, min((SHORT)NewOrigin.Y, sScreenBufferSizeY - (SHORT)ScreenInfo->GetScreenWindowSizeY())));
-
+    
+    NewOrigin.Y = std::clamp(NewOrigin.Y, 0i16, gsl::narrow<SHORT>(sScreenBufferSizeY - ScreenInfo->GetScreenWindowSizeY()));
     LOG_IF_FAILED(ScreenInfo->SetViewportOrigin(TRUE, NewOrigin));
 }
 
@@ -846,8 +845,7 @@ void Window::HorizontalScroll(_In_ const WORD wScrollCommand, _In_ const WORD wA
         return;
     }
     }
-
-    NewOrigin.X = (WORD)(max(0, min((SHORT)NewOrigin.X, sScreenBufferSizeX - (SHORT)ScreenInfo->GetScreenWindowSizeX())));
+    NewOrigin.X = std::clamp(NewOrigin.X, 0i16, gsl::narrow<SHORT>(sScreenBufferSizeX - ScreenInfo->GetScreenWindowSizeX()));
     LOG_IF_FAILED(ScreenInfo->SetViewportOrigin(TRUE, NewOrigin));
 }
 

@@ -426,10 +426,10 @@ void WriteToScreen(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ const SMALL_RECT s
     SMALL_RECT ClippedRegion;
     {
         const SMALL_RECT currentViewport = pScreenInfo->GetBufferViewport();
-        ClippedRegion.Left = max(srRegion.Left, currentViewport.Left);
-        ClippedRegion.Top = max(srRegion.Top, currentViewport.Top);
-        ClippedRegion.Right = min(srRegion.Right, currentViewport.Right);
-        ClippedRegion.Bottom = min(srRegion.Bottom, currentViewport.Bottom);
+        ClippedRegion.Left = std::max(srRegion.Left, currentViewport.Left);
+        ClippedRegion.Top = std::max(srRegion.Top, currentViewport.Top);
+        ClippedRegion.Right = std::min(srRegion.Right, currentViewport.Right);
+        ClippedRegion.Bottom = std::min(srRegion.Bottom, currentViewport.Bottom);
         if (ClippedRegion.Right < ClippedRegion.Left || ClippedRegion.Bottom < ClippedRegion.Top)
         {
             return;

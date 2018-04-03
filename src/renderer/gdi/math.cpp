@@ -253,8 +253,8 @@ SIZE GdiEngine::_GetRectSize(_In_ const RECT* const pRect) const
 // - <none>
 void GdiEngine::_OrRect(_In_ RECT* const pRectExisting, _In_ const RECT* const pRectToOr) const
 {
-    pRectExisting->left = min(pRectExisting->left, pRectToOr->left);
-    pRectExisting->top = min(pRectExisting->top, pRectToOr->top);
-    pRectExisting->right = max(pRectExisting->right, pRectToOr->right);
-    pRectExisting->bottom = max(pRectExisting->bottom, pRectToOr->bottom);
+    pRectExisting->left = std::min(pRectExisting->left, pRectToOr->left);
+    pRectExisting->top = std::min(pRectExisting->top, pRectToOr->top);
+    pRectExisting->right = std::max(pRectExisting->right, pRectToOr->right);
+    pRectExisting->bottom = std::max(pRectExisting->bottom, pRectToOr->bottom);
 }

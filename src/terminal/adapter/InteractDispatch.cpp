@@ -194,8 +194,8 @@ bool InteractDispatch::MoveCursor(_In_ const unsigned int row, _In_ const unsign
                 if (fSuccess)
                 {
                     // Apply boundary tests to ensure the cursor isn't outside the viewport rectangle.
-                    coordCursor.Y = max(min(coordCursor.Y, csbiex.srWindow.Bottom - 1), csbiex.srWindow.Top);
-                    coordCursor.X = max(min(coordCursor.X, csbiex.srWindow.Right - 1), csbiex.srWindow.Left);
+                    coordCursor.Y = std::clamp(coordCursor.Y, csbiex.srWindow.Top, gsl::narrow<SHORT>(csbiex.srWindow.Bottom - 1));
+                    coordCursor.X = std::clamp(coordCursor.X, csbiex.srWindow.Left, gsl::narrow<SHORT>(csbiex.srWindow.Right - 1));
 
                     // Finally, attempt to set the adjusted cursor position back into the console.
                     fSuccess = !!_pConApi->SetConsoleCursorPosition(coordCursor);

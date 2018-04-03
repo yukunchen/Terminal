@@ -9,8 +9,10 @@ Abstract:
 - Avoid including internal project headers. Instead include them only in the classes that need them (helps with test project building).
 --*/
 
-#include <wchar.h>
 #include <assert.h>
+
+// This includes support libraries from the CRT, STL, WIL, and GSL
+#include "LibraryIncludes.h"
 
 #include <math.h>
 #define ENABLE_INTSAFE_SIGNED_FUNCTIONS
@@ -20,12 +22,6 @@ Abstract:
 
 #include "telemetry.hpp"
 #include "tracing.hpp"
-
-#define ENABLE_INTSAFE_SIGNED_FUNCTIONS
-#include <intsafe.h>
-
-// This includes support libraries from the CRT, STL, WIL, and GSL
-#include "LibraryIncludes.h"
 
 #include "..\..\inc\conattrs.hpp"
 #include "..\..\host\cursor.h"

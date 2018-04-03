@@ -163,13 +163,13 @@ bool AdaptDispatch::_CursorMovement(_In_ CursorDirection const dir, _In_ unsigne
                     case CursorDirection::Up:
                     case CursorDirection::Left:
                     case CursorDirection::PrevLine:
-                        *pcoordVal = max(*pcoordVal, sBoundaryVal);
+                        *pcoordVal = std::max(*pcoordVal, sBoundaryVal);
                         break;
                     case CursorDirection::Down:
                     case CursorDirection::Right:
                     case CursorDirection::NextLine:
                         // For the bottom and right edges, the viewport value is stated to be one outside the rectangle.
-                        *pcoordVal = min(*pcoordVal, sBoundaryVal - 1);
+                        *pcoordVal = std::min(*pcoordVal, gsl::narrow<SHORT>(sBoundaryVal - 1));
                         break;
                     default:
                         fSuccess = false;
@@ -328,8 +328,8 @@ bool AdaptDispatch::_CursorMovePosition(_In_opt_ const unsigned int* const puiRo
                 if (fSuccess)
                 {
                     // Apply boundary tests to ensure the cursor isn't outside the viewport rectangle.
-                    coordCursor.Y = max(min(coordCursor.Y, csbiex.srWindow.Bottom - 1), csbiex.srWindow.Top);
-                    coordCursor.X = max(min(coordCursor.X, csbiex.srWindow.Right - 1), csbiex.srWindow.Left);
+                    coordCursor.Y = std::clamp(coordCursor.Y, csbiex.srWindow.Top, gsl::narrow<SHORT>(csbiex.srWindow.Bottom - 1));
+                    coordCursor.X = std::clamp(coordCursor.X, csbiex.srWindow.Left, gsl::narrow<SHORT>(csbiex.srWindow.Right - 1));
 
                     // Finally, attempt to set the adjusted cursor position back into the console.
                     fSuccess = !!_pConApi->SetConsoleCursorPosition(coordCursor);

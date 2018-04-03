@@ -730,7 +730,7 @@ class StateMachineExternalTest : public TermDispatch
 
     virtual bool SetGraphicsRendition(_In_reads_(cOptions) const GraphicsOptions* const rgOptions, _In_ size_t const cOptions)
     {
-        size_t cCopyLength = min(cOptions, s_cMaxOptions); // whichever is smaller, our buffer size or the number given
+        size_t cCopyLength = std::min(cOptions, s_cMaxOptions); // whichever is smaller, our buffer size or the number given
         _cOptions = cCopyLength;
         memcpy(_rgOptions, rgOptions, _cOptions * sizeof(GraphicsOptions));
 
