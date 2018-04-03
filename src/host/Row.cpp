@@ -196,7 +196,7 @@ std::vector<OutputCell> ROW::AsCells(_In_ const size_t startIndex, _In_ const si
     THROW_IF_FAILED(_attrRow.UnpackAttrs(unpackedAttrs.get(), size()));
 
     const Ucs2CharRow* const charRow = static_cast<const Ucs2CharRow* const>(_charRow.get());
-    for (int i = 0; i < count; ++i)
+    for (size_t i = 0; i < count; ++i)
     {
         auto index = startIndex + i;
         cells.emplace_back(charRow->GetGlyphAt(index), charRow->GetAttribute(index), unpackedAttrs[index]);

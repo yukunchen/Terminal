@@ -86,14 +86,14 @@ std::vector<std::vector<OutputCell>> ReadRectFromScreenBuffer(_In_ const SCREEN_
     std::unique_ptr<TextAttribute[]> unpackedAttrs = std::make_unique<TextAttribute[]>(ScreenBufferWidth);
     THROW_IF_NULL_ALLOC(unpackedAttrs.get());
 
-    for (size_t rowIndex = 0; rowIndex < viewport.Height(); ++rowIndex)
+    for (size_t rowIndex = 0; rowIndex < static_cast<size_t>(viewport.Height()); ++rowIndex)
     {
         auto cells = screenInfo.ReadLine(coordSourcePoint.Y + rowIndex, coordSourcePoint.X);
         assert(cells.size() >= viewport.Width());
-        for (size_t colIndex = 0; colIndex < viewport.Width(); ++colIndex)
+        for (size_t colIndex = 0; colIndex < static_cast<size_t>(viewport.Width()); ++colIndex)
         {
             if ((colIndex == 0 && cells[colIndex].GetDbcsAttribute().IsTrailing()) ||
-                (colIndex + 1 >= viewport.Width() && cells[colIndex].GetDbcsAttribute().IsLeading()))
+                (colIndex + 1 >= static_cast<size_t>(viewport.Width()) && cells[colIndex].GetDbcsAttribute().IsLeading()))
             {
                 cells[colIndex].GetDbcsAttribute().SetSingle();
                 cells[colIndex].GetCharData() = UNICODE_SPACE;
