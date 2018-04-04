@@ -50,9 +50,7 @@ public:
     const DbcsAttribute& GetAttribute(_In_ const size_t column) const override;
     DbcsAttribute& GetAttribute(_In_ const size_t column) override;
     void ClearGlyph(const size_t column);
-
-    // new pure virtual methods
-    virtual StringType GetText() const = 0;
+    std::wstring GetText() const override;
 
     // other functions implemented at the template class level
     StringType GetTextRaw() const;

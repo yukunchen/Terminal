@@ -1852,7 +1852,7 @@ void SCREEN_INFORMATION::SetCursorInformation(_In_ ULONG const Size,
 // - DoubleCursor - should we indicated non-normal mode
 // Return Value:
 // - None
-void  SCREEN_INFORMATION::SetCursorDBMode(_In_ BOOLEAN const DoubleCursor)
+void  SCREEN_INFORMATION::SetCursorDBMode(_In_ const bool DoubleCursor)
 {
     PTEXT_BUFFER_INFO const pTextInfo = this->TextInfo;
     Cursor* const pCursor = pTextInfo->GetCursor();
@@ -1901,14 +1901,14 @@ NTSTATUS SCREEN_INFORMATION::SetCursorPosition(_In_ COORD const Position, _In_ B
     {
         if (TurnOn)
         {
-            pCursor->SetDelay(FALSE);
-            pCursor->SetIsOn(TRUE);
+            pCursor->SetDelay(false);
+            pCursor->SetIsOn(true);
         }
         else
         {
-            pCursor->SetDelay(TRUE);
+            pCursor->SetDelay(true);
         }
-        pCursor->SetHasMoved(TRUE);
+        pCursor->SetHasMoved(true);
     }
 
     return STATUS_SUCCESS;
@@ -2555,4 +2555,85 @@ void SCREEN_INFORMATION::_InitializeBufferDimensions(_In_ const COORD coordScree
                                          _IsInPtyMode() ? coordScreenBufferSize : coordViewportSize);
 
     SetScreenBufferSize(coordScreenBufferSize);
+}
+
+std::wstring SCREEN_INFORMATION::ReadText(_In_ const size_t rowIndex) const
+{
+    const ROW& row = TextInfo->GetRowByOffset(rowIndex);
+    return row.GetText();
+}
+
+std::vector<OutputCell> SCREEN_INFORMATION::ReadLine(_In_ const size_t rowIndex) const
+{
+    const ROW& row = TextInfo->GetRowByOffset(rowIndex);
+    return row.AsCells();
+}
+std::vector<OutputCell> SCREEN_INFORMATION::ReadLine(_In_ const size_t rowIndex,
+                                                     _In_ const size_t startIndex) const
+{
+    const ROW& row = TextInfo->GetRowByOffset(rowIndex);
+    return row.AsCells(startIndex);
+}
+
+std::vector<OutputCell> SCREEN_INFORMATION::ReadLine(_In_ const size_t rowIndex,
+                                                     _In_ const size_t startIndex,
+                                                     _In_ const size_t count) const
+{
+    const ROW& row = TextInfo->GetRowByOffset(rowIndex);
+    return row.AsCells(startIndex, count);
+}
+
+// Routine Description:
+// - finds the boundaries of the word at the given position on the screen
+// Arguments:
+// - position - location on the screen to get the word boundary for
+// Return Value:
+// - word boundary positions
+std::pair<COORD, COORD> SCREEN_INFORMATION::GetWordBoundary(_In_ const COORD position) const
+{
+    const ROW& row = TextInfo->GetRowByOffset(position.Y);
+    const COORD screenBufferSize = GetScreenBufferSize();
+    COORD start{ position };
+    COORD end{ position };
+
+    // find the start of the word
+    while (start.X > 0)
+    {
+        if (IsWordDelim(row.at(start.X - 1).GetCharData()))
+        {
+            break;
+        }
+        start.X--;
+    }
+
+    // find the end of the word
+    while (end.X < screenBufferSize.X)
+    {
+        if (IsWordDelim(row.at(end.X).GetCharData()))
+        {
+            break;
+        }
+        end.X++;
+    }
+
+    // trim leading zeros if we need to
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    if (gci.GetTrimLeadingZeros())
+    {
+        // Trim the leading zeros: 000fe12 -> fe12, except 0x and 0n.
+        // Useful for debugging
+        const wchar_t glyph = row.at(start.X + 1).GetCharData();
+        if (end.X > start.X + 2 &&
+            glyph != L'x' &&
+            glyph != L'X' &&
+            glyph != L'n')
+        {
+            // Don't touch the selection begins with 0x
+            while (row.at(start.X).GetCharData() == L'0' && start.X < end.X - 1)
+            {
+                start.X++;
+            }
+        }
+    }
+    return { start, end };
 }

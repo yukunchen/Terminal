@@ -120,12 +120,12 @@ void ApiRoutines::GetConsoleSelectionInfoImpl(_Out_ CONSOLE_SELECTION_INFO* cons
     const Selection* const pSelection = &Selection::Instance();
     if (pSelection->IsInSelectingState())
     {
-        pSelection->GetPublicSelectionFlags(&pConsoleSelectionInfo->dwFlags);
+        pConsoleSelectionInfo->dwFlags = pSelection->GetPublicSelectionFlags();
 
         SetFlag(pConsoleSelectionInfo->dwFlags, CONSOLE_SELECTION_IN_PROGRESS);
 
-        pSelection->GetSelectionAnchor(&pConsoleSelectionInfo->dwSelectionAnchor);
-        pSelection->GetSelectionRectangle(&pConsoleSelectionInfo->srSelection);
+        pConsoleSelectionInfo->dwSelectionAnchor = pSelection->GetSelectionAnchor();
+        pConsoleSelectionInfo->srSelection = pSelection->GetSelectionRectangle();
     }
     else
     {
@@ -249,7 +249,7 @@ HRESULT ApiRoutines::SetConsoleInputModeImpl(_In_ InputBuffer* const pContext, _
         gci.SetInsertMode(IsFlagSet(Mode, ENABLE_INSERT_MODE));
         if (gci.GetInsertMode() != PreviousInsertMode)
         {
-            gci.CurrentScreenBuffer->SetCursorDBMode(FALSE);
+            gci.CurrentScreenBuffer->SetCursorDBMode(false);
             if (gci.lpCookedReadData != nullptr)
             {
                 gci.lpCookedReadData->_InsertMode = !!gci.GetInsertMode();

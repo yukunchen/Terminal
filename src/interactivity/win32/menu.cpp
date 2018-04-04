@@ -512,7 +512,7 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
 
     if (gci.GetInsertMode() != !!pStateInfo->InsertMode)
     {
-        ScreenInfo->SetCursorDBMode(FALSE);
+        ScreenInfo->SetCursorDBMode(false);
         gci.SetInsertMode(pStateInfo->InsertMode != FALSE);
         if (gci.lpCookedReadData)
         {

@@ -46,4 +46,3 @@ __inline int NTSTATUS_FROM_WIN32(long x) { return x <= 0 ? (NTSTATUS)x : (NTSTAT
 #define ENABLE_INTSAFE_SIGNED_FUNCTIONS // Only unsigned intsafe math/casts available without this def
 #include <intsafe.h>
 #pragma prefast(pop)
-

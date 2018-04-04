@@ -17,7 +17,6 @@ SOURCES = \
     ApiRoutinesTests.cpp \
     UtilsTests.cpp \
     AttrRowTests.cpp \
-    CharRowBaseTests.cpp \
     ConsoleArgumentsTests.cpp \
     DbcsTests.cpp \
     ScreenBufferTests.cpp \

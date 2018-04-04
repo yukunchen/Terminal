@@ -76,7 +76,7 @@ void WriteBuffer::_DefaultStringCase(_In_reads_(cch) wchar_t* const rgwch, _In_ 
 
     DWORD dwNumBytes = (DWORD)(cch * sizeof(wchar_t));
 
-    _pIo->GetActiveOutputBuffer()->TextInfo->GetCursor()->SetIsOn(TRUE);
+    _pIo->GetActiveOutputBuffer()->TextInfo->GetCursor()->SetIsOn(true);
 
     _ntstatus = WriteCharsLegacy(_pIo->GetActiveOutputBuffer(),
                                  buffer,

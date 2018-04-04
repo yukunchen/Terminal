@@ -311,7 +311,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         gci.Flags &= ~CONSOLE_HAS_FOCUS;
 
         // turn it off when we lose focus.
-        gci.CurrentScreenBuffer->TextInfo->GetCursor()->SetIsOn(FALSE);
+        gci.CurrentScreenBuffer->TextInfo->GetCursor()->SetIsOn(false);
         gci.CurrentScreenBuffer->TextInfo->GetCursor()->FocusEnd();
 
         HandleFocusEvent(FALSE);
