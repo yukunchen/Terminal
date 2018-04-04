@@ -106,8 +106,8 @@ COOKED_READ_DATA::~COOKED_READ_DATA()
 // Return Value:
 // - TRUE if the wait is done and result buffer/status code can be sent back to the client.
 // - FALSE if we need to continue to wait until more data is available.
-BOOL COOKED_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason,
-                              _In_ BOOLEAN const fIsUnicode,
+bool COOKED_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason,
+                              _In_ bool const fIsUnicode,
                               _Out_ NTSTATUS* const pReplyStatus,
                               _Out_ DWORD* const pNumBytes,
                               _Out_ DWORD* const pControlKeyState,
@@ -138,7 +138,7 @@ BOOL COOKED_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason
         delete[] ExeName;
         gci.lpCookedReadData = nullptr;
         LOG_IF_FAILED(_pTempHandle->CloseHandle());
-        return TRUE;
+        return true;
     }
 
     // See if we were called because the thread that owns this wait block is exiting.
@@ -152,7 +152,7 @@ BOOL COOKED_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason
         delete[] ExeName;
         gci.lpCookedReadData = nullptr;
         LOG_IF_FAILED(_pTempHandle->CloseHandle());
-        return TRUE;
+        return true;
     }
 
     // We must see if we were woken up because the handle is being closed. If
@@ -169,7 +169,7 @@ BOOL COOKED_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason
         delete[] ExeName;
         gci.lpCookedReadData = nullptr;
         LOG_IF_FAILED(_pTempHandle->CloseHandle());
-        return TRUE;
+        return true;
     }
 
     // If we get to here, this routine was called either by the input thread
@@ -231,22 +231,22 @@ BOOL COOKED_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason
                 gci.lpCookedReadData = nullptr;
                 LOG_IF_FAILED(_pTempHandle->CloseHandle());
 
-                return TRUE;
+                return true;
             }
-            return FALSE;
+            return false;
         }
     }
 
-    *pReplyStatus = CookedRead(this, !!fIsUnicode, pNumBytes, pControlKeyState);
+    *pReplyStatus = CookedRead(this, fIsUnicode, pNumBytes, pControlKeyState);
     if (*pReplyStatus != CONSOLE_STATUS_WAIT)
     {
         gci.lpCookedReadData = nullptr;
         LOG_IF_FAILED(_pTempHandle->CloseHandle());
-        return TRUE;
+        return true;
     }
     else
     {
-        return FALSE;
+        return false;
     }
 }
 
