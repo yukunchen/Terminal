@@ -604,11 +604,11 @@ void Settings::SetGridRenderingAllowedWorldwide(_In_ bool const fGridRenderingAl
     }
 }
 
-BOOL Settings::GetFilterOnPaste() const
+bool Settings::GetFilterOnPaste() const
 {
     return this->_fFilterOnPaste;
 }
-void Settings::SetFilterOnPaste(_In_ BOOL const fFilterOnPaste)
+void Settings::SetFilterOnPaste(_In_ bool const fFilterOnPaste)
 {
     this->_fFilterOnPaste = fFilterOnPaste;
 }
