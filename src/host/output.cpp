@@ -92,6 +92,7 @@ std::vector<std::vector<OutputCell>> ReadRectFromScreenBuffer(_In_ const SCREEN_
         assert(cells.size() >= viewport.Width());
         for (size_t colIndex = 0; colIndex < static_cast<size_t>(viewport.Width()); ++colIndex)
         {
+            // if we're clipping a dbcs char then don't include it, add a space instead
             if ((colIndex == 0 && cells[colIndex].GetDbcsAttribute().IsTrailing()) ||
                 (colIndex + 1 >= static_cast<size_t>(viewport.Width()) && cells[colIndex].GetDbcsAttribute().IsLeading()))
             {
