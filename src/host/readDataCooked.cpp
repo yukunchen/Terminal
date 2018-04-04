@@ -276,7 +276,7 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
     DWORD KeyState;
     DWORD NumBytes = 0;
     ULONG NumToWrite;
-    BOOL fAddDbcsLead = FALSE;
+    bool fAddDbcsLead = false;
 
     INPUT_READ_HANDLE_DATA* const pInputReadHandleData = pCookedReadData->GetInputReadHandleData();
     InputBuffer* const pInputBuffer = pCookedReadData->GetInputBuffer();
@@ -352,20 +352,20 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
 
         if (pCookedReadData->_Echo)
         {
-            BOOLEAN FoundCR;
+            bool FoundCR;
             ULONG i, StringLength;
             PWCHAR StringPtr;
 
             // Figure out where real string ends (at carriage return or end of buffer).
             StringPtr = pCookedReadData->_BackupLimit;
             StringLength = pCookedReadData->_BytesRead;
-            FoundCR = FALSE;
+            FoundCR = false;
             for (i = 0; i < (pCookedReadData->_BytesRead / sizeof(WCHAR)); i++)
             {
                 if (*StringPtr++ == UNICODE_CARRIAGERETURN)
                 {
                     StringLength = i * sizeof(WCHAR);
-                    FoundCR = TRUE;
+                    FoundCR = true;
                     break;
                 }
             }
@@ -407,7 +407,7 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
                 {
                     if (pInputBuffer->IsReadPartialByteSequenceAvailable())
                     {
-                        fAddDbcsLead = TRUE;
+                        fAddDbcsLead = true;
                         std::unique_ptr<IInputEvent> event = pCookedReadData->GetInputBuffer()->FetchReadPartialByteSequence(false);
                         const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(event.get());
                         *pCookedReadData->_UserBuffer = static_cast<char>(pKeyEvent->GetCharData());
@@ -437,7 +437,7 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
 
                     if (pInputBuffer->IsReadPartialByteSequenceAvailable())
                     {
-                        fAddDbcsLead = TRUE;
+                        fAddDbcsLead = true;
                         std::unique_ptr<IInputEvent> event = pCookedReadData->GetInputBuffer()->FetchReadPartialByteSequence(false);
                         const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(event.get());
                         *pCookedReadData->_UserBuffer = static_cast<char>(pKeyEvent->GetCharData());
@@ -469,7 +469,7 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
 
                 if (pInputBuffer->IsReadPartialByteSequenceAvailable())
                 {
-                    fAddDbcsLead = TRUE;
+                    fAddDbcsLead = true;
                     std::unique_ptr<IInputEvent> event = pCookedReadData->GetInputBuffer()->FetchReadPartialByteSequence(false);
                     const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(event.get());
                     *pCookedReadData->_UserBuffer = static_cast<char>(pKeyEvent->GetCharData());
