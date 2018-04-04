@@ -21,8 +21,7 @@ Revision History:
 
 #include "ICharRow.hpp"
 #include "AttrRow.hpp"
-
-#include <memory>
+#include "OutputCell.hpp"
 
 class ROW final
 {
@@ -34,6 +33,8 @@ public:
     ~ROW() = default;
 
     void swap(ROW& other) noexcept;
+    size_t size() const;
+    const OutputCell at(const size_t column) const;
 
     const ICharRow& GetCharRow() const;
     ICharRow& GetCharRow();
@@ -49,6 +50,10 @@ public:
     HRESULT Resize(_In_ size_t const width);
 
     void ClearColumn(_In_ const size_t column);
+    std::wstring GetText() const;
+    std::vector<OutputCell> AsCells() const;
+    std::vector<OutputCell> AsCells(_In_ const size_t startIndex) const;
+    std::vector<OutputCell> AsCells(_In_ const size_t startIndex, _In_ const size_t count) const;
 
     friend bool operator==(const ROW& a, const ROW& b) noexcept;
 
@@ -60,6 +65,7 @@ private:
     std::unique_ptr<ICharRow> _charRow;
     ATTR_ROW _attrRow;
     SHORT _id;
+    size_t _rowWidth;
 
 };
 

@@ -261,30 +261,22 @@ NTSTATUS Clipboard::RetrieveTextFromBuffer(_In_ const SCREEN_INFORMATION* const 
         // for each row in the selection
         for (iRect = 0; iRect < cRectsSelected; iRect++)
         {
-            SMALL_RECT srHighlightRow = rgsrSelection[iRect];
+            const SMALL_RECT srHighlightRow = rgsrSelection[iRect];
 
-            SMALL_RECT srSelection;
-            Selection::Instance().GetSelectionRectangle(&srSelection);
+            const SMALL_RECT srSelection = Selection::Instance().GetSelectionRectangle();
 
             const UINT iRow = srSelection.Top + iRect;
 
             // recalculate string length again as the width of the highlight row might have been reduced in the bisect call
-            short sStringLength = srHighlightRow.Right - srHighlightRow.Left + 1;
+            const short sStringLength = srHighlightRow.Right - srHighlightRow.Left + 1;
 
             // this is the source location X/Y coordinates within the active screen buffer to start copying from
-            COORD coordSourcePoint;
-            coordSourcePoint.X = srHighlightRow.Left;
-            coordSourcePoint.Y = srHighlightRow.Top;
+            const COORD coordSourcePoint{ srHighlightRow.Left, srHighlightRow.Top };
 
-            // this is how much to select from the source location. we want one row at a time and the width highlighted.
-            COORD coordSelectionSize;
-            coordSelectionSize.X = sStringLength;
-            coordSelectionSize.Y = 1;
-
-
-            // our output buffer is 1 dimensional and is just as long as the string, so the "rectangle" should specify just a line.
+            // our output buffer is 1 dimensional and is just as long as the string, so the "rectangle" should
+            // specify just a line.
             // length of 80 runs from left 0 to right 79. therefore -1.
-            SMALL_RECT srTargetRect{ 0, 0, sStringLength - 1, 0 };
+            const SMALL_RECT srTargetRect{ 0, 0, sStringLength - 1, 0 };
 
             // retrieve the data from the screen buffer
             std::vector<OutputCell> outputCells;

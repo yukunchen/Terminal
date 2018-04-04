@@ -101,7 +101,6 @@ SOURCES = \
     ..\ConsoleArguments.cpp \
     ..\AttrRow.cpp \
     ..\Ucs2CharRow.cpp \
-    ..\Utf8CharRow.cpp \
     ..\Row.cpp \
     ..\TextAttribute.cpp \
     ..\TextAttributeRun.cpp \

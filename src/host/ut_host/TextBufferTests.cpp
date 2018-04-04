@@ -326,30 +326,30 @@ void TextBufferTests::TestCopyProperties()
     VERIFY_IS_NOT_NULL(testTextBuffer.get());
 
     // set initial mapping values
-    testTextBuffer->GetCursor()->SetHasMoved(FALSE);
-    pOtherTbi->GetCursor()->SetHasMoved(TRUE);
+    testTextBuffer->GetCursor()->SetHasMoved(false);
+    pOtherTbi->GetCursor()->SetHasMoved(true);
 
-    testTextBuffer->GetCursor()->SetIsVisible(FALSE);
-    pOtherTbi->GetCursor()->SetIsVisible(TRUE);
+    testTextBuffer->GetCursor()->SetIsVisible(false);
+    pOtherTbi->GetCursor()->SetIsVisible(true);
 
-    testTextBuffer->GetCursor()->SetIsOn(FALSE);
-    pOtherTbi->GetCursor()->SetIsOn(TRUE);
+    testTextBuffer->GetCursor()->SetIsOn(false);
+    pOtherTbi->GetCursor()->SetIsOn(true);
 
-    testTextBuffer->GetCursor()->SetIsDouble(FALSE);
-    pOtherTbi->GetCursor()->SetIsDouble(TRUE);
+    testTextBuffer->GetCursor()->SetIsDouble(false);
+    pOtherTbi->GetCursor()->SetIsDouble(true);
 
-    testTextBuffer->GetCursor()->SetDelay(FALSE);
-    pOtherTbi->GetCursor()->SetDelay(TRUE);
+    testTextBuffer->GetCursor()->SetDelay(false);
+    pOtherTbi->GetCursor()->SetDelay(true);
 
     // run copy
     testTextBuffer->CopyProperties(pOtherTbi);
 
     // test that new now contains values from other
-    VERIFY_ARE_EQUAL(testTextBuffer->GetCursor()->HasMoved(), TRUE);
-    VERIFY_ARE_EQUAL(testTextBuffer->GetCursor()->IsVisible(), TRUE);
-    VERIFY_ARE_EQUAL(testTextBuffer->GetCursor()->IsOn(), TRUE);
-    VERIFY_ARE_EQUAL(testTextBuffer->GetCursor()->IsDouble(), TRUE);
-    VERIFY_ARE_EQUAL(testTextBuffer->GetCursor()->GetDelay(), TRUE);
+    VERIFY_IS_TRUE(testTextBuffer->GetCursor()->HasMoved());
+    VERIFY_IS_TRUE(testTextBuffer->GetCursor()->IsVisible());
+    VERIFY_IS_TRUE(testTextBuffer->GetCursor()->IsOn());
+    VERIFY_IS_TRUE(testTextBuffer->GetCursor()->IsDouble());
+    VERIFY_IS_TRUE(testTextBuffer->GetCursor()->GetDelay());
 }
 
 void TextBufferTests::TestInsertCharacter()

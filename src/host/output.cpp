@@ -79,55 +79,32 @@ std::vector<std::vector<OutputCell>> ReadRectFromScreenBuffer(_In_ const SCREEN_
                                                               _In_ const COORD coordSourcePoint,
                                                               _In_ const Viewport viewport)
 {
-
-    DBGOUTPUT(("ReadRectFromScreenBuffer\n"));
-    const int ScreenBufferWidth = screenInfo.GetScreenBufferSize().X;
     std::vector<std::vector<OutputCell>> result;
     result.reserve(viewport.Height());
 
+    const int ScreenBufferWidth = screenInfo.GetScreenBufferSize().X;
     std::unique_ptr<TextAttribute[]> unpackedAttrs = std::make_unique<TextAttribute[]>(ScreenBufferWidth);
     THROW_IF_NULL_ALLOC(unpackedAttrs.get());
 
-    for (short iRow = 0; iRow < viewport.Height(); ++iRow)
+    for (size_t rowIndex = 0; rowIndex < static_cast<size_t>(viewport.Height()); ++rowIndex)
     {
-        const ROW& row = screenInfo.TextInfo->GetRowByOffset(coordSourcePoint.Y + iRow);
-        std::vector<OutputCell> rowCells;
-        rowCells.reserve(viewport.Width());
-
-        // copy the chars and attrs from their respective arrays
-        const ICharRow& iCharRow = row.GetCharRow();
-        // we only support ucs2 encoded char rows
-        FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                        "only support UCS2 char rows currently");
-
-        const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
-        Ucs2CharRow::const_iterator it = std::next(charRow.cbegin(), coordSourcePoint.X);
-        Ucs2CharRow::const_iterator itEnd = charRow.cend();
-
-        // Unpack the attributes into an array so we can iterate over them.
-        THROW_IF_FAILED(row.GetAttrRow().UnpackAttrs(unpackedAttrs.get(), ScreenBufferWidth));
-
-        for (short iCol = 0; iCol < viewport.Width() && it != itEnd; ++it, ++iCol)
+        auto cells = screenInfo.ReadLine(coordSourcePoint.Y + rowIndex, coordSourcePoint.X);
+        assert(cells.size() >= viewport.Width());
+        for (size_t colIndex = 0; colIndex < static_cast<size_t>(viewport.Width()); ++colIndex)
         {
-            TextAttribute textAttr = unpackedAttrs[coordSourcePoint.X + iCol];
-            DbcsAttribute dbcsAttribute = row.GetCharRow().GetAttribute(coordSourcePoint.X + iCol);
-
-            if (iCol == 0 && dbcsAttribute.IsTrailing())
+            // if we're clipping a dbcs char then don't include it, add a space instead
+            if ((colIndex == 0 && cells[colIndex].GetDbcsAttribute().IsTrailing()) ||
+                (colIndex + 1 >= static_cast<size_t>(viewport.Width()) && cells[colIndex].GetDbcsAttribute().IsLeading()))
             {
-                rowCells.emplace_back(UNICODE_SPACE, DbcsAttribute{}, textAttr);
+                cells[colIndex].GetDbcsAttribute().SetSingle();
+                cells[colIndex].GetCharData() = UNICODE_SPACE;
             }
-            else if (iCol + 1 >= viewport.Width() && dbcsAttribute.IsLeading())
-            {
-                rowCells.emplace_back(UNICODE_SPACE, DbcsAttribute{}, textAttr);
-            }
-            else
-            {
-                rowCells.emplace_back(it->first, dbcsAttribute, textAttr);
-            }
-
         }
-        result.push_back(rowCells);
+        cells.resize(viewport.Width(), cells.front());
+        result.push_back(cells);
     }
+    assert(result.size() == viewport.Height());
+    assert(result.at(0).size() == viewport.Width());
     return result;
 }
 
@@ -180,15 +157,16 @@ NTSTATUS _CopyRectangle(_In_ PSCREEN_INFORMATION pScreenInfo,
 // - This routine reads a rectangular region from the screen buffer. The region is first clipped.
 // Arguments:
 // - ScreenInformation - Screen buffer to read from.
-// - Buffer - Buffer to read into.
+// - outputCells - an empty container to store cell data on output
 // - ReadRegion - Region to read.
 // Return Value:
 [[nodiscard]]
 NTSTATUS ReadScreenBuffer(_In_ const SCREEN_INFORMATION* const pScreenInfo,
-                          _Inout_ PCHAR_INFO pciBuffer,
+                          _Inout_ std::vector<std::vector<OutputCell>>& outputCells,
                           _Inout_ PSMALL_RECT psrReadRegion)
 {
     DBGOUTPUT(("ReadScreenBuffer\n"));
+    assert(outputCells.empty());
 
     // calculate dimensions of caller's buffer.  have to do this calculation before clipping.
     COORD TargetSize;
@@ -246,23 +224,12 @@ NTSTATUS ReadScreenBuffer(_In_ const SCREEN_INFORMATION* const pScreenInfo,
 
     try
     {
-        auto outputCells = ReadRectFromScreenBuffer(*pScreenInfo, SourcePoint, Viewport::FromInclusive(Target));
-        CHAR_INFO* pCurrCharInfo = pciBuffer;
-        // copy the data into the char info buffer
-        for (auto& row : outputCells)
-        {
-            for (auto& cell : row)
-            {
-                *pCurrCharInfo = cell.ToCharInfo();
-                ++pCurrCharInfo;
-            }
-        }
+        outputCells = ReadRectFromScreenBuffer(*pScreenInfo, SourcePoint, Viewport::FromInclusive(Target));
     }
     catch (...)
     {
         return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
     }
-
     return STATUS_SUCCESS;
 }
 
@@ -1059,7 +1026,7 @@ void SetActiveScreenBuffer(_Inout_ PSCREEN_INFORMATION pScreenInfo)
     gci.CurrentScreenBuffer = pScreenInfo;
 
     // initialize cursor
-    pScreenInfo->TextInfo->GetCursor()->SetIsOn(FALSE);
+    pScreenInfo->TextInfo->GetCursor()->SetIsOn(false);
 
     // set font
     pScreenInfo->RefreshFontWithRenderer();

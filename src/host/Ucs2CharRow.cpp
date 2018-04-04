@@ -58,28 +58,6 @@ void Ucs2CharRow::swap(Ucs2CharRow& other) noexcept
     swap(static_cast<CharRowBase&>(*this), static_cast<CharRowBase&>(other));
 }
 
-// Routine Description:
-// - returns the all of the text in a row, including leading and trailing whitespace.
-// Arguments:
-// - <none>
-// Return Value:
-// - all text data in the row. May be shorter than width of cell if double-width glyphs are present.
-Ucs2CharRow::string_type Ucs2CharRow::GetText() const
-{
-    string_type str(_data.size(), UNICODE_SPACE);
-    size_t currentIndex = 0;
-    for (size_t i = 0; i < _data.size(); ++i)
-    {
-        if (!_data[i].second.IsTrailing())
-        {
-            str[currentIndex] = _data[i].first;
-            ++currentIndex;
-        }
-    }
-    str.resize(currentIndex);
-    return str;
-}
-
 ICharRow::SupportedEncoding Ucs2CharRow::GetSupportedEncoding() const noexcept
 {
     return ICharRow::SupportedEncoding::Ucs2;
