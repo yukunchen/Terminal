@@ -9,6 +9,9 @@ Abstract:
 - Avoid including internal project headers. Instead include them only in the classes that need them (helps with test project building).
 --*/
 
+// This includes support libraries from the CRT, STL, WIL, and GSL
+#include "LibraryIncludes.h"
+
 #include <windows.h>
 
 #include <sal.h>
@@ -20,6 +23,3 @@ Abstract:
 
 #include "telemetry.hpp"
 #include "tracing.hpp"
-
-// This includes support libraries from the CRT, STL, WIL, and GSL
-#include "LibraryIncludes.h"

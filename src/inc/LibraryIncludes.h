@@ -13,6 +13,10 @@
 #include <cwchar>
 
 // STL
+
+// Block minwindef.h min/max macros to prevent <algorithm> conflict
+#define NOMINMAX
+
 #include <algorithm>
 #include <deque>
 #include <list>
@@ -45,3 +49,4 @@
 #include <gsl/gsl>
 
 #pragma warning(pop)
+

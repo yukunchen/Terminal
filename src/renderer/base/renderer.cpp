@@ -636,16 +636,16 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
     // requested that we render under the scroll bars). To prevent issues, trim down to the max buffer size
     // (a.k.a. ensure the viewport is between 0 and the max size of the buffer.)
     COORD const coordBufferSize = ptbi->GetCoordBufferSize();
-    srDirty.Top = max(srDirty.Top, 0);
-    srDirty.Left = max(srDirty.Left, 0);
-    srDirty.Right = min(srDirty.Right, coordBufferSize.X - 1);
-    srDirty.Bottom = min(srDirty.Bottom, coordBufferSize.Y - 1);
+    srDirty.Top = std::max(srDirty.Top, 0i16);
+    srDirty.Left = std::max(srDirty.Left, 0i16);
+    srDirty.Right = std::min(srDirty.Right, gsl::narrow<SHORT>(coordBufferSize.X - 1));
+    srDirty.Bottom = std::min(srDirty.Bottom, gsl::narrow<SHORT>(coordBufferSize.Y - 1));
 
     // Also ensure that the dirty rect still fits inside the screen viewport.
-    srDirty.Top = max(srDirty.Top, view.Top());
-    srDirty.Left = max(srDirty.Left, view.Left());
-    srDirty.Right = min(srDirty.Right, view.RightInclusive());
-    srDirty.Bottom = min(srDirty.Bottom, view.BottomInclusive());
+    srDirty.Top = std::max(srDirty.Top, view.Top());
+    srDirty.Left = std::max(srDirty.Left, view.Left());
+    srDirty.Right = std::min(srDirty.Right, view.RightInclusive());
+    srDirty.Bottom = std::min(srDirty.Bottom, view.BottomInclusive());
 
     Viewport viewDirty(srDirty);
     for (SHORT iRow = viewDirty.Top(); iRow <= viewDirty.BottomInclusive(); iRow++)
@@ -852,7 +852,7 @@ void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
         LOG_IF_FAILED(_UpdateDrawingBrushes(pEngine, pRun->GetAttributes(), false));
 
         // The segment we'll write is the shorter of the entire segment we want to draw or the amount of applicable color (Attr applies)
-        size_t cchSegment = min(cchLine - cchWritten, cAttrApplies);
+        size_t cchSegment = std::min(cchLine - cchWritten, cAttrApplies);
 
         if (cchSegment <= 0)
         {
@@ -958,7 +958,7 @@ HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const p
     }
 
     // Draw the line
-    RETURN_IF_FAILED(pEngine->PaintBufferLine(pwsSegment.get(), rgSegmentWidth.get(), min(cchSegment, cchLine), coordTargetAdjustable, fTrimLeft));
+    RETURN_IF_FAILED(pEngine->PaintBufferLine(pwsSegment.get(), rgSegmentWidth.get(), std::min(cchSegment, cchLine), coordTargetAdjustable, fTrimLeft));
 
     return S_OK;
 }
@@ -1046,7 +1046,7 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
         }
 
         // Determine cursor width
-        bool const fIsDoubleWidth = !!pCursor->IsDoubleWidth();
+        bool const fIsDoubleWidth = pCursor->IsDoubleWidth();
 
         // Adjust cursor to viewport
         view.ConvertToOrigin(&coordCursor);

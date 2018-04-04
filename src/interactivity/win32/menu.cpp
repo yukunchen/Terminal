@@ -439,8 +439,8 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
         // Maximum number of characters we could fit on the given monitor.
         COORD const coordLargest = ScreenInfo->GetLargestWindowSizeInCharacters();
 
-        coordWindow.X = min(coordLargest.X, coordWindow.X);
-        coordWindow.Y = min(coordLargest.Y, coordWindow.Y);
+        coordWindow.X = std::min(coordLargest.X, coordWindow.X);
+        coordWindow.Y = std::min(coordLargest.Y, coordWindow.Y);
 
         if (gci.GetWrapText())
         {
@@ -457,7 +457,7 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
                 COORD const coordScrollBars = ScreenInfo->GetScrollBarSizesInCharacters();
                 SHORT const sMaxBufferWidthWithScroll = coordLargest.X - coordScrollBars.X;
 
-                coordBuffer.X = min(coordBuffer.X, sMaxBufferWidthWithScroll);
+                coordBuffer.X = std::min(coordBuffer.X, sMaxBufferWidthWithScroll);
             }
         }
 
@@ -478,8 +478,8 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
         // Finally, restrict window size to the maximum possible size for the given buffer now that it's processed.
         COORD const coordMaxForBuffer = ScreenInfo->GetMaxWindowSizeInCharacters();
 
-        coordWindow.X = min(coordWindow.X, coordMaxForBuffer.X);
-        coordWindow.Y = min(coordWindow.Y, coordMaxForBuffer.Y);
+        coordWindow.X = std::min(coordWindow.X, coordMaxForBuffer.X);
+        coordWindow.Y = std::min(coordWindow.Y, coordMaxForBuffer.Y);
 
         // Then finish by updating the window. This will update the window size,
         //      as well as the screen buffer's viewport.
@@ -512,7 +512,7 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
 
     if (gci.GetInsertMode() != !!pStateInfo->InsertMode)
     {
-        ScreenInfo->SetCursorDBMode(FALSE);
+        ScreenInfo->SetCursorDBMode(false);
         gci.SetInsertMode(pStateInfo->InsertMode != FALSE);
         if (gci.lpCookedReadData)
         {

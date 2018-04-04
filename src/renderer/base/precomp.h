@@ -11,14 +11,14 @@ Abstract:
 
 #pragma once
 
-#include <wchar.h>
 #include <assert.h>
 #include <sal.h>
 
+// This includes support libraries from the CRT, STL, WIL, and GSL
+#include "LibraryIncludes.h"
+
 #include <windows.h>
 #include <wincon.h>
-
-#include <cwchar>
 
 #include "..\..\types\inc\viewport.hpp"
 #include "..\..\inc\operators.hpp"
@@ -30,5 +30,3 @@ typedef _Return_type_success_(return >= 0) long NTSTATUS;
 
 #define NT_SUCCESS(Status)  (((NTSTATUS)(Status)) >= 0)
 
-// This includes support libraries from the CRT, STL, WIL, and GSL
-#include "LibraryIncludes.h"

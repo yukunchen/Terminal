@@ -11,7 +11,6 @@
 #include "dbcs.h"
 #include "handle.h"
 #include "scrolling.hpp"
-#include "Ucs2CharRow.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
@@ -24,16 +23,16 @@
 Cursor::Cursor(IAccessibilityNotifier *pNotifier, _In_ ULONG const ulSize) :
     _pAccessibilityNotifier(pNotifier),
     _ulSize(ulSize),
-    _fHasMoved(FALSE),
-    _fIsVisible(TRUE),
-    _fIsOn(TRUE),
-    _fBlinkingAllowed(TRUE),
-    _fIsDouble(FALSE),
-    _fIsConversionArea(FALSE),
-    _fDelay(FALSE),
-    _fDelayedEolWrap(FALSE),
-    _fDeferCursorRedraw(FALSE),
-    _fHaveDeferredCursorRedraw(FALSE),
+    _fHasMoved(false),
+    _fIsVisible(true),
+    _fIsOn(true),
+    _fBlinkingAllowed(true),
+    _fIsDouble(false),
+    _fIsConversionArea(false),
+    _fDelay(false),
+    _fDelayedEolWrap(false),
+    _fDeferCursorRedraw(false),
+    _fHaveDeferredCursorRedraw(false),
     _hCaretBlinkTimer(INVALID_HANDLE_VALUE),
     _uCaretBlinkTime(INFINITE) // default to no blink
 {
@@ -90,99 +89,94 @@ NTSTATUS Cursor::CreateInstance(_In_ ULONG const ulSize, _Outptr_ Cursor ** cons
     return status;
 }
 
-const COORD Cursor::GetPosition() const
+COORD Cursor::GetPosition() const noexcept
 {
     return _cPosition;
 }
 
-const BOOLEAN Cursor::HasMoved() const
+bool Cursor::HasMoved() const noexcept
 {
     return _fHasMoved;
 }
 
-const BOOLEAN Cursor::IsVisible() const
+bool Cursor::IsVisible() const noexcept
 {
     return _fIsVisible;
 }
 
-const BOOLEAN Cursor::IsOn() const
+bool Cursor::IsOn() const noexcept
 {
     return _fIsOn;
 }
 
-const BOOLEAN Cursor::IsBlinkingAllowed() const
+bool Cursor::IsBlinkingAllowed() const noexcept
 {
     return _fBlinkingAllowed;
 }
 
-const BOOLEAN Cursor::IsDouble() const
+bool Cursor::IsDouble() const noexcept
 {
     return _fIsDouble;
 }
 
-const BOOLEAN Cursor::IsDoubleWidth() const
+bool Cursor::IsDoubleWidth() const
 {
     // Check with the current screen buffer to see if the character under the cursor is double-width.
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const ICharRow& iCharRow = gci.CurrentScreenBuffer->TextInfo->GetRowByOffset(_cPosition.Y).GetCharRow();
-    // we only support ucs2 encoded char rows
-    FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                     "only support UCS2 char rows currently");
-
-    const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
-    return !!IsCharFullWidth(charRow.GetGlyphAt(_cPosition.X));
+    std::vector<OutputCell> cells = gci.CurrentScreenBuffer->ReadLine(_cPosition.Y, _cPosition.X, 1);
+    return !!IsCharFullWidth(cells[0].GetCharData());
 }
 
-const BOOLEAN Cursor::IsConversionArea() const
+bool Cursor::IsConversionArea() const noexcept
 {
     return _fIsConversionArea;
 }
 
-const BOOLEAN Cursor::IsPopupShown() const
+bool Cursor::IsPopupShown() const noexcept
 {
     return _fIsPopupShown;
 }
 
-const BOOLEAN Cursor::GetDelay() const
+bool Cursor::GetDelay() const noexcept
 {
     return _fDelay;
 }
 
-const ULONG Cursor::GetSize() const
+ULONG Cursor::GetSize() const noexcept
 {
     return _ulSize;
 }
 
-void Cursor::SetHasMoved(_In_ BOOLEAN const fHasMoved)
+void Cursor::SetHasMoved(_In_ const bool fHasMoved)
 {
     _fHasMoved = fHasMoved;
 }
 
-void Cursor::SetIsVisible(_In_ BOOLEAN const fIsVisible)
+void Cursor::SetIsVisible(_In_ bool const fIsVisible)
 {
     _fIsVisible = fIsVisible;
     _RedrawCursor();
 }
 
-void Cursor::SetIsOn(_In_ BOOLEAN const fIsOn)
+void Cursor::SetIsOn(_In_ bool const fIsOn)
 {
     _fIsOn = fIsOn;
     _RedrawCursorAlways();
 }
 
-void Cursor::SetBlinkingAllowed(_In_ BOOLEAN const fBlinkingAllowed)
+void Cursor::SetBlinkingAllowed(_In_ bool const fBlinkingAllowed)
 {
     _fBlinkingAllowed = fBlinkingAllowed;
     _RedrawCursorAlways();
 }
 
-void Cursor::SetIsDouble(_In_ BOOLEAN const fIsDouble)
+void Cursor::SetIsDouble(_In_ bool const fIsDouble)
 {
     _fIsDouble = fIsDouble;
     _RedrawCursor();
 }
 
-void Cursor::SetIsConversionArea(_In_ BOOLEAN const fIsConversionArea)
+void Cursor::SetIsConversionArea(_In_ bool const fIsConversionArea)
 {
     // Functionally the same as "Hide cursor"
     // Never called with TRUE, it's only used in the creation of a
@@ -191,14 +185,14 @@ void Cursor::SetIsConversionArea(_In_ BOOLEAN const fIsConversionArea)
     _RedrawCursorAlways();
 }
 
-void Cursor::SetIsPopupShown(_In_ BOOLEAN const fIsPopupShown)
+void Cursor::SetIsPopupShown(_In_ bool const fIsPopupShown)
 {
     // Functionally the same as "Hide cursor"
     _fIsPopupShown = fIsPopupShown;
     _RedrawCursorAlways();
 }
 
-void Cursor::SetDelay(_In_ BOOLEAN const fDelay)
+void Cursor::SetDelay(_In_ bool const fDelay)
 {
     _fDelay = fDelay;
 }
@@ -251,12 +245,16 @@ void Cursor::_RedrawCursorAlways()
         ServiceLocator::LocateGlobals().pRender->TriggerRedrawCursor(&_cPosition);
 
         // In case of a double width character, we need to invalidate the spot one to the right of the cursor as well.
-        if (IsDoubleWidth())
+        try
         {
-            COORD cExtra = _cPosition;
-            cExtra.X++;
-            ServiceLocator::LocateGlobals().pRender->TriggerRedrawCursor(&cExtra);
+            if (IsDoubleWidth())
+            {
+                COORD cExtra = _cPosition;
+                cExtra.X++;
+                ServiceLocator::LocateGlobals().pRender->TriggerRedrawCursor(&cExtra);
+            }
         }
+        CATCH_LOG();
     }
 }
 
@@ -387,7 +385,7 @@ void Cursor::TimerRoutine(_In_ PSCREEN_INFORMATION const ScreenInfo)
     // Update the cursor pos in USER so accessibility will work.
     if (this->HasMoved())
     {
-        this->SetHasMoved(FALSE);
+        this->SetHasMoved(false);
 
         RECT rc;
         rc.left = (this->GetPosition().X - ScreenInfo->GetBufferViewport().Left) * ScreenInfo->GetScreenFontSize().X;
@@ -420,7 +418,7 @@ void Cursor::TimerRoutine(_In_ PSCREEN_INFORMATION const ScreenInfo)
     // after a move and off for a finite period of time after a WriteString.
     if (this->GetDelay())
     {
-        this->SetDelay(FALSE);
+        this->SetDelay(false);
         goto DoScroll;
     }
 

@@ -311,7 +311,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         gci.Flags &= ~CONSOLE_HAS_FOCUS;
 
         // turn it off when we lose focus.
-        gci.CurrentScreenBuffer->TextInfo->GetCursor()->SetIsOn(FALSE);
+        gci.CurrentScreenBuffer->TextInfo->GetCursor()->SetIsOn(false);
         gci.CurrentScreenBuffer->TextInfo->GetCursor()->FocusEnd();
 
         HandleFocusEvent(FALSE);
@@ -467,8 +467,8 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
                 // then prevent a move and restrict size to the appropriate monitor dimensions.
                 if ((szSuggested.cx > _sizeMaximum.cx) || (szSuggested.cy > _sizeMaximum.cy))
                 {
-                    lpwpos->cx = min(_sizeMaximum.cx, szSuggested.cx);
-                    lpwpos->cy = min(_sizeMaximum.cy, szSuggested.cy);
+                    lpwpos->cx = std::min(_sizeMaximum.cx, szSuggested.cx);
+                    lpwpos->cy = std::min(_sizeMaximum.cy, szSuggested.cy);
 
                     // We usually add SWP_NOMOVE so that if the user is dragging the left or top edge
                     // and hits the restriction, then the window just stops growing, it doesn't

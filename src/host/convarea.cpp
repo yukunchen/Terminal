@@ -61,18 +61,18 @@ void WriteConvRegionToScreen(_In_ const SCREEN_INFORMATION * const pScreenInfo,
             Region.Bottom = Region.Top + (ConvAreaInfo->CaInfo.rcViewCaWindow.Bottom - ConvAreaInfo->CaInfo.rcViewCaWindow.Top);
 
             SMALL_RECT ClippedRegion;
-            ClippedRegion.Left = max(Region.Left, currentViewport.Left);
-            ClippedRegion.Top = max(Region.Top, currentViewport.Top);
-            ClippedRegion.Right = min(Region.Right, currentViewport.Right);
-            ClippedRegion.Bottom = min(Region.Bottom, currentViewport.Bottom);
+            ClippedRegion.Left = std::max(Region.Left, currentViewport.Left);
+            ClippedRegion.Top = std::max(Region.Top, currentViewport.Top);
+            ClippedRegion.Right = std::min(Region.Right, currentViewport.Right);
+            ClippedRegion.Bottom = std::min(Region.Bottom, currentViewport.Bottom);
 
             if (IsValidSmallRect(&ClippedRegion))
             {
                 Region = ClippedRegion;
-                ClippedRegion.Left = max(Region.Left, srConvRegion.Left);
-                ClippedRegion.Top = max(Region.Top, srConvRegion.Top);
-                ClippedRegion.Right = min(Region.Right, srConvRegion.Right);
-                ClippedRegion.Bottom = min(Region.Bottom, srConvRegion.Bottom);
+                ClippedRegion.Left = std::max(Region.Left, srConvRegion.Left);
+                ClippedRegion.Top = std::max(Region.Top, srConvRegion.Top);
+                ClippedRegion.Right = std::min(Region.Right, srConvRegion.Right);
+                ClippedRegion.Bottom = std::min(Region.Bottom, srConvRegion.Bottom);
                 if (IsValidSmallRect(&ClippedRegion))
                 {
                     // if we have a renderer, we need to update.

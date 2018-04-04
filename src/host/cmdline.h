@@ -130,7 +130,6 @@ void CleanUpPopups(_In_ COOKED_READ_DATA* const CookedReadData);
 #define WC_DELAY_EOL_WRAP        0x80
 
 // Word delimiters
-#define IS_WORD_DELIM(wch)  ((wch) == L' ' || (ServiceLocator::LocateGlobals().aWordDelimChars[0] && IsWordDelim(wch)))
 bool IsWordDelim(_In_ WCHAR const wch);
 
 [[nodiscard]]

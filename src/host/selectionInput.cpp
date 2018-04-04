@@ -172,7 +172,7 @@ void Selection::WordByWordSelection(_In_ const bool fReverse,
     }
 
     // we want to go until the state change from delim to non-delim
-    bool fCurrIsDelim = IS_WORD_DELIM(wchTest);
+    bool fCurrIsDelim = IsWordDelim(wchTest);
     bool fPrevIsDelim;
 
     // find the edit-line boundaries that we can highlight
@@ -256,7 +256,7 @@ void Selection::WordByWordSelection(_In_ const bool fReverse,
             Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
             wchTest = charRow.GetGlyphAt(pcoordSelPoint->X);
         }
-        fCurrIsDelim = IS_WORD_DELIM(wchTest);
+        fCurrIsDelim = IsWordDelim(wchTest);
 
         // This is a bit confusing.
         // If we're going Left to Right (!fReverse)...

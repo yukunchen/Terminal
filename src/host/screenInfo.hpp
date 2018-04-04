@@ -117,6 +117,20 @@ public:
     static void s_InsertScreenBuffer(_In_ SCREEN_INFORMATION* const pScreenInfo);
     static void s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pScreenInfo);
 
+
+    std::wstring ReadText(_In_ const size_t rowIndex) const;
+    std::vector<OutputCell> ReadLine(_In_ const size_t rowIndex) const;
+    std::vector<OutputCell> ReadLine(_In_ const size_t rowIndex,
+                                     _In_ const size_t startIndex) const;
+    std::vector<OutputCell> ReadLine(_In_ const size_t rowIndex,
+                                     _In_ const size_t startIndex,
+                                     _In_ const size_t count) const;
+
+    std::pair<COORD, COORD> GetWordBoundary(_In_ const COORD position) const;
+
+
+
+
     DWORD OutputMode;
     WORD ResizingWindow;    // > 0 if we should ignore WM_SIZE messages
 
@@ -154,7 +168,7 @@ public:
                               _In_ unsigned int const Color,
                               _In_ CursorType const Type);
 
-    void SetCursorDBMode(_In_ const BOOLEAN DoubleCursor);
+    void SetCursorDBMode(_In_ const bool DoubleCursor);
     [[nodiscard]]
     NTSTATUS SetCursorPosition(_In_ COORD const Position, _In_ BOOL const TurnOn);
 

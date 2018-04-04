@@ -187,6 +187,23 @@ HRESULT ATTR_ROW::Resize(_In_ const short sOldWidth, _In_ const short sNewWidth)
 }
 
 // Routine Description:
+// - returns a copy of the TextAttribute at the specified column
+// Arguments:
+// - column - the column to get the attribute for
+// Return Value:
+// - the text attribute at column
+// Note:
+// - will through on error
+TextAttribute ATTR_ROW::at(const size_t column) const
+{
+    THROW_HR_IF(E_INVALIDARG, column >= _cchRowWidth);
+    TextAttributeRun* pRun;
+    FindAttrIndex(column, &pRun, nullptr);
+    THROW_IF_NULL_ALLOC(pRun);
+    return pRun->GetAttributes();
+}
+
+// Routine Description:
 // - This routine finds the nth attribute in this ATTR_ROW.
 // Arguments:
 // - index - which attribute to find
