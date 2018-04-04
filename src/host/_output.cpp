@@ -488,7 +488,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
     DbcsAttribute* BufferA = nullptr;
     PWCHAR TransBuffer = nullptr;
     DbcsAttribute* TransBufferA = nullptr;
-    BOOL fLocalHeap = FALSE;
+    bool fLocalHeap = false;
     if (ulStringType == CONSOLE_ASCII)
     {
         UINT const Codepage = gci.OutputCP;
@@ -509,7 +509,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
                 return STATUS_NO_MEMORY;
             }
 
-            fLocalHeap = TRUE;
+            fLocalHeap = true;
         }
         else
         {
@@ -596,7 +596,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
                 return STATUS_NO_MEMORY;
             }
 
-            fLocalHeap = TRUE;
+            fLocalHeap = true;
         }
         else
         {
