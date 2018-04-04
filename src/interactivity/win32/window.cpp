@@ -295,7 +295,7 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
 
             if (NT_SUCCESS(status))
             {
-                this->_hWnd = hWnd;
+                _hWnd = hWnd;
 
                 status = NTSTATUS_FROM_HRESULT(pGdiEngine->SetHwnd(hWnd));
 
@@ -770,7 +770,7 @@ void Window::VerticalScroll(_In_ const WORD wScrollCommand, _In_ const WORD wAbs
         return;
     }
     }
-    
+
     NewOrigin.Y = std::clamp(NewOrigin.Y, 0i16, gsl::narrow<SHORT>(sScreenBufferSizeY - ScreenInfo->GetScreenWindowSizeY()));
     LOG_IF_FAILED(ScreenInfo->SetViewportOrigin(TRUE, NewOrigin));
 }
@@ -973,7 +973,7 @@ RECT Window::GetWindowRect() const
 
 HWND Window::GetWindowHandle() const
 {
-    return this->_hWnd;
+    return _hWnd;
 }
 
 SCREEN_INFORMATION* Window::GetScreenInfo() const
@@ -1304,7 +1304,7 @@ void Window::s_PersistWindowOpacity(_In_ PCWSTR pwszLinkTitle, _In_ PCWSTR pwszO
 
 void Window::SetWindowHasMoved(_In_ BOOL const fHasMoved)
 {
-    this->_fHasMoved = fHasMoved;
+    _fHasMoved = fHasMoved;
 }
 
 // Routine Description:

@@ -328,37 +328,37 @@ void Cursor::DecrementYPosition(_In_ int const DeltaY)
 void Cursor::CopyProperties(_In_ const Cursor* const pOtherCursor)
 {
     // We shouldn't copy the position as it will be already rearranged by the resize operation.
-    //this->_cPosition                    = pOtherCursor->_cPosition;
+    //_cPosition                    = pOtherCursor->_cPosition;
 
-    this->_fHasMoved                    = pOtherCursor->_fHasMoved;
-    this->_fIsVisible                   = pOtherCursor->_fIsVisible;
-    this->_fIsOn                        = pOtherCursor->_fIsOn;
-    this->_fIsDouble                    = pOtherCursor->_fIsDouble;
-    this->_fBlinkingAllowed             = pOtherCursor->_fBlinkingAllowed;
-    this->_fDelay                       = pOtherCursor->_fDelay;
-    this->_fIsConversionArea            = pOtherCursor->_fIsConversionArea;
+    _fHasMoved                    = pOtherCursor->_fHasMoved;
+    _fIsVisible                   = pOtherCursor->_fIsVisible;
+    _fIsOn                        = pOtherCursor->_fIsOn;
+    _fIsDouble                    = pOtherCursor->_fIsDouble;
+    _fBlinkingAllowed             = pOtherCursor->_fBlinkingAllowed;
+    _fDelay                       = pOtherCursor->_fDelay;
+    _fIsConversionArea            = pOtherCursor->_fIsConversionArea;
 
     // A resize operation should invalidate the delayed end of line status, so do not copy.
-    //this->_fDelayedEolWrap              = pOtherCursor->_fDelayedEolWrap;
-    //this->_coordDelayedAt               = pOtherCursor->_coordDelayedAt;
+    //_fDelayedEolWrap              = pOtherCursor->_fDelayedEolWrap;
+    //_coordDelayedAt               = pOtherCursor->_coordDelayedAt;
 
-    this->_fDeferCursorRedraw           = pOtherCursor->_fDeferCursorRedraw;
-    this->_fHaveDeferredCursorRedraw    = pOtherCursor->_fHaveDeferredCursorRedraw;
+    _fDeferCursorRedraw           = pOtherCursor->_fDeferCursorRedraw;
+    _fHaveDeferredCursorRedraw    = pOtherCursor->_fHaveDeferredCursorRedraw;
 
     // Size will be handled seperately in the resize operation.
-    //this->_ulSize                       = pOtherCursor->_ulSize;
+    //_ulSize                       = pOtherCursor->_ulSize;
 
     // This property is set only once on console startup, and might change
     // during the lifetime of the console, but is not set again anywhere when a
     // cursor is replaced during reflow. This wasn't necessary when this
     // property and the cursor timer were static.
-    this->_uCaretBlinkTime              = pOtherCursor->_uCaretBlinkTime;
+    _uCaretBlinkTime              = pOtherCursor->_uCaretBlinkTime;
 
     // If there's a timer on the other one, then it was active for blinking.
     // Make sure we have a timer on our side too.
     if (pOtherCursor->_hCaretBlinkTimer != INVALID_HANDLE_VALUE)
     {
-        this->SetCaretTimer();
+        SetCaretTimer();
     }
 }
 
@@ -383,13 +383,13 @@ void Cursor::TimerRoutine(_In_ PSCREEN_INFORMATION const ScreenInfo)
     }
 
     // Update the cursor pos in USER so accessibility will work.
-    if (this->HasMoved())
+    if (HasMoved())
     {
-        this->SetHasMoved(false);
+        SetHasMoved(false);
 
         RECT rc;
-        rc.left = (this->GetPosition().X - ScreenInfo->GetBufferViewport().Left) * ScreenInfo->GetScreenFontSize().X;
-        rc.top = (this->GetPosition().Y - ScreenInfo->GetBufferViewport().Top) * ScreenInfo->GetScreenFontSize().Y;
+        rc.left = (GetPosition().X - ScreenInfo->GetBufferViewport().Left) * ScreenInfo->GetScreenFontSize().X;
+        rc.top = (GetPosition().Y - ScreenInfo->GetBufferViewport().Top) * ScreenInfo->GetScreenFontSize().Y;
         rc.right = rc.left + ScreenInfo->GetScreenFontSize().X;
         rc.bottom = rc.top + ScreenInfo->GetScreenFontSize().Y;
 
@@ -404,37 +404,37 @@ void Cursor::TimerRoutine(_In_ PSCREEN_INFORMATION const ScreenInfo)
             {
                 flags = IAccessibilityNotifier::ConsoleCaretEventFlags::CaretSelection;
             }
-            else if (this->IsVisible())
+            else if (IsVisible())
             {
                 flags = IAccessibilityNotifier::ConsoleCaretEventFlags::CaretVisible;
             }
 
-            _pAccessibilityNotifier->NotifyConsoleCaretEvent(flags, PACKCOORD(this->GetPosition()));
+            _pAccessibilityNotifier->NotifyConsoleCaretEvent(flags, PACKCOORD(GetPosition()));
         }
     }
 
     // If the DelayCursor flag has been set, wait one more tick before toggle.
     // This is used to guarantee the cursor is on for a finite period of time
     // after a move and off for a finite period of time after a WriteString.
-    if (this->GetDelay())
+    if (GetDelay())
     {
-        this->SetDelay(false);
+        SetDelay(false);
         goto DoScroll;
     }
 
     // Don't blink the cursor for remote sessions.
     if ((!ServiceLocator::LocateSystemConfigurationProvider()->IsCaretBlinkingEnabled() ||
          _uCaretBlinkTime == -1 ||
-        (!this->IsBlinkingAllowed())) &&
-       this->IsOn())
+        (!IsBlinkingAllowed())) &&
+       IsOn())
     {
         goto DoScroll;
     }
 
     // Blink only if the cursor isn't turned off via the API
-    if (this->IsVisible())
+    if (IsVisible())
     {
-        this->SetIsOn(!this->IsOn());
+        SetIsOn(!IsOn());
     }
 
 DoScroll:
