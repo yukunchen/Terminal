@@ -96,7 +96,7 @@ void DoSrvGetConsoleScreenBufferInfo(_In_ SCREEN_INFORMATION* pScreenInfo, _Out_
 
 void ApiRoutines::GetConsoleCursorInfoImpl(_In_ SCREEN_INFORMATION* const pContext,
                                            _Out_ ULONG* const pCursorSize,
-                                           _Out_ BOOLEAN* const pIsVisible)
+                                           _Out_ bool* const pIsVisible)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
@@ -106,10 +106,10 @@ void ApiRoutines::GetConsoleCursorInfoImpl(_In_ SCREEN_INFORMATION* const pConte
 
 void DoSrvGetConsoleCursorInfo(_In_ SCREEN_INFORMATION* pScreenInfo,
                                _Out_ ULONG* const pCursorSize,
-                               _Out_ BOOLEAN* const pIsVisible)
+                               _Out_ bool* const pIsVisible)
 {
     *pCursorSize = pScreenInfo->TextInfo->GetCursor()->GetSize();
-    *pIsVisible = (BOOLEAN)pScreenInfo->TextInfo->GetCursor()->IsVisible();
+    *pIsVisible = pScreenInfo->TextInfo->GetCursor()->IsVisible();
 }
 
 void ApiRoutines::GetConsoleSelectionInfoImpl(_Out_ CONSOLE_SELECTION_INFO* const pConsoleSelectionInfo)
@@ -461,7 +461,7 @@ HRESULT DoSrvSetConsoleCursorPosition(_In_ SCREEN_INFORMATION* pScreenInfo,
     // MSFT: 15813316 - Try to use this SetCursorPosition call to inherit the cursor position.
     RETURN_IF_FAILED(gci.GetVtIo()->SetCursorPosition(*pCursorPosition));
 
-    RETURN_IF_NTSTATUS_FAILED(pScreenInfo->SetCursorPosition(*pCursorPosition, TRUE));
+    RETURN_IF_NTSTATUS_FAILED(pScreenInfo->SetCursorPosition(*pCursorPosition, true));
 
     LOG_IF_NTSTATUS_FAILED(ConsoleImeResizeCompStrView());
 
@@ -497,7 +497,7 @@ HRESULT DoSrvSetConsoleCursorPosition(_In_ SCREEN_INFORMATION* pScreenInfo,
 [[nodiscard]]
 HRESULT ApiRoutines::SetConsoleCursorInfoImpl(_In_ SCREEN_INFORMATION* const pContext,
                                               _In_ ULONG const CursorSize,
-                                              _In_ BOOLEAN const IsVisible)
+                                              _In_ bool const IsVisible)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
@@ -508,7 +508,7 @@ HRESULT ApiRoutines::SetConsoleCursorInfoImpl(_In_ SCREEN_INFORMATION* const pCo
 [[nodiscard]]
 HRESULT DoSrvSetConsoleCursorInfo(_In_ SCREEN_INFORMATION* pScreenInfo,
                                   _In_ ULONG const CursorSize,
-                                  _In_ BOOLEAN const IsVisible)
+                                  _In_ bool const IsVisible)
 {
     // If more than 100% or less than 0% cursor height, reject it.
     RETURN_HR_IF(E_INVALIDARG, (CursorSize > 100 || CursorSize == 0));

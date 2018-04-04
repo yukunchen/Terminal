@@ -345,7 +345,7 @@ void SCREEN_INFORMATION::_FreeOutputStateMachine()
 
 #pragma region Get Data
 
-BOOL SCREEN_INFORMATION::IsActiveScreenBuffer() const
+bool SCREEN_INFORMATION::IsActiveScreenBuffer() const
 {
     // the following macro returns TRUE if the given screen buffer is the active screen buffer.
 
@@ -764,7 +764,7 @@ void SCREEN_INFORMATION::SetViewportSize(_In_ const COORD* const pcoordSize)
 }
 
 [[nodiscard]]
-NTSTATUS SCREEN_INFORMATION::SetViewportOrigin(_In_ const BOOL fAbsolute,
+NTSTATUS SCREEN_INFORMATION::SetViewportOrigin(_In_ const bool fAbsolute,
                                                _In_ const COORD coordWindowOrigin)
 {
     // calculate window size
@@ -866,7 +866,7 @@ void SCREEN_INFORMATION::SetViewportRect(_In_ const Viewport newViewport)
     Tracing::s_TraceWindowViewport(srCorrected);
 }
 
-BOOL SCREEN_INFORMATION::SendNotifyBeep() const
+bool SCREEN_INFORMATION::SendNotifyBeep() const
 {
     if (IsActiveScreenBuffer())
     {
@@ -876,10 +876,10 @@ BOOL SCREEN_INFORMATION::SendNotifyBeep() const
         }
     }
 
-    return FALSE;
+    return false;
 }
 
-BOOL SCREEN_INFORMATION::PostUpdateWindowSize() const
+bool SCREEN_INFORMATION::PostUpdateWindowSize() const
 {
     if (IsActiveScreenBuffer())
     {
@@ -1823,7 +1823,7 @@ void SCREEN_INFORMATION::MakeCurrentCursorVisible()
 // Return Value:
 // - None
 void SCREEN_INFORMATION::SetCursorInformation(_In_ ULONG const Size,
-                                              _In_ BOOLEAN const Visible,
+                                              _In_ bool const Visible,
                                               _In_ unsigned int const Color,
                                               _In_ CursorType const Type)
 {
@@ -1878,7 +1878,7 @@ void  SCREEN_INFORMATION::SetCursorDBMode(_In_ const bool DoubleCursor)
 // Return Value:
 // - Status
 [[nodiscard]]
-NTSTATUS SCREEN_INFORMATION::SetCursorPosition(_In_ COORD const Position, _In_ BOOL const TurnOn)
+NTSTATUS SCREEN_INFORMATION::SetCursorPosition(_In_ COORD const Position, _In_ bool const TurnOn)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     PTEXT_BUFFER_INFO const pTextInfo = this->TextInfo;
@@ -2529,7 +2529,7 @@ HRESULT SCREEN_INFORMATION::VtEraseAll()
 
     const COORD coordNewCursor = {0, sNewTop};
     RETURN_IF_FAILED(SetViewportOrigin(TRUE, coordNewCursor));
-    RETURN_IF_FAILED(SetCursorPosition(coordNewCursor, FALSE));
+    RETURN_IF_FAILED(SetCursorPosition(coordNewCursor, false));
 
     // When the viewport was already at the bottom, the renderer needs to repaint all the new lines.
     if (fRedrawAll && ServiceLocator::LocateGlobals().pRender != nullptr)

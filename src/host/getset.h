@@ -23,12 +23,12 @@ void DoSrvGetConsoleScreenBufferInfo(_In_ SCREEN_INFORMATION* const pScreenInfo,
 void DoSrvSetScreenBufferInfo(_In_ SCREEN_INFORMATION* const ScreenInfo, _In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pInfo);
 void DoSrvGetConsoleCursorInfo(_In_ SCREEN_INFORMATION* pScreenInfo,
                                _Out_ ULONG* const pCursorSize,
-                               _Out_ BOOLEAN* const pIsVisible);
+                               _Out_ bool* const pIsVisible);
 
 [[nodiscard]]
 HRESULT DoSrvSetConsoleCursorPosition(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ const COORD* const pCursorPosition);
 [[nodiscard]]
-HRESULT DoSrvSetConsoleCursorInfo(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ ULONG const CursorSize, _In_ BOOLEAN const IsVisible);
+HRESULT DoSrvSetConsoleCursorInfo(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ ULONG const CursorSize, _In_ bool const IsVisible);
 [[nodiscard]]
 HRESULT DoSrvSetConsoleWindowInfo(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ BOOLEAN const IsAbsoluteRectangle, _In_ const SMALL_RECT* const pWindowRectangle);
 
