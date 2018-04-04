@@ -72,7 +72,7 @@ void Registry::GetEditKeys(_In_opt_ HKEY hConsoleKey) const
                                                  nullptr);
     if (NT_SUCCESS(Status))
     {
-        // OK, copy it to the global word delimiter lis.
+        // OK, copy it to the global word delimiter list.
         std::wstring regWordDelimiters{ awchBuffer, awchBuffer + bufferSize };
         auto& delimiters = ServiceLocator::LocateGlobals().WordDelimiters;
         delimiters.clear();
