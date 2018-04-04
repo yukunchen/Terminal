@@ -35,8 +35,8 @@ public:
 
     void ApplyDesktopSpecificDefaults();
 
-    void ApplyStartupInfo(_In_ const Settings* const pStartupSettings);
-    void ApplyCommandlineArguments(_In_ const ConsoleArguments& consoleArgs);
+    void ApplyStartupInfo(const Settings* const pStartupSettings);
+    void ApplyCommandlineArguments(const ConsoleArguments& consoleArgs);
     void InitFromStateInfo(_In_ PCONSOLE_STATE_INFO pStateInfo);
     void Validate();
 
@@ -59,102 +59,102 @@ public:
     void SetLaunchFaceName(_In_ PCWSTR const LaunchFaceName, _In_ size_t const cchLength);
 
     UINT GetCodePage() const;
-    void SetCodePage(_In_ const UINT uCodePage);
+    void SetCodePage(const UINT uCodePage);
 
     UINT GetScrollScale() const;
-    void SetScrollScale(_In_ const UINT uScrollScale);
+    void SetScrollScale(const UINT uScrollScale);
 
     BOOL GetTrimLeadingZeros() const;
-    void SetTrimLeadingZeros(_In_ const BOOL fTrimLeadingZeros);
+    void SetTrimLeadingZeros(const BOOL fTrimLeadingZeros);
 
     BOOL GetEnableColorSelection() const;
-    void SetEnableColorSelection(_In_ const BOOL fEnableColorSelection);
+    void SetEnableColorSelection(const BOOL fEnableColorSelection);
 
     BOOL GetLineSelection() const;
-    void SetLineSelection(_In_ const BOOL bLineSelection);
+    void SetLineSelection(const BOOL bLineSelection);
 
     bool GetWrapText () const;
-    void SetWrapText (_In_ const bool bWrapText );
+    void SetWrapText (const bool bWrapText );
 
     BOOL GetCtrlKeyShortcutsDisabled () const;
-    void SetCtrlKeyShortcutsDisabled (_In_ const BOOL fCtrlKeyShortcutsDisabled );
+    void SetCtrlKeyShortcutsDisabled (const BOOL fCtrlKeyShortcutsDisabled );
 
     BYTE GetWindowAlpha() const;
-    void SetWindowAlpha(_In_ const BYTE bWindowAlpha);
+    void SetWindowAlpha(const BYTE bWindowAlpha);
 
     DWORD GetHotKey() const;
-    void SetHotKey(_In_ const DWORD dwHotKey);
+    void SetHotKey(const DWORD dwHotKey);
 
     bool IsStartupTitleIsLinkNameSet() const;
 
     DWORD GetStartupFlags() const;
-    void SetStartupFlags(_In_ const DWORD dwStartupFlags);
+    void SetStartupFlags(const DWORD dwStartupFlags);
     void UnsetStartupFlag(_In_ DWORD const dwFlagToUnset);
 
     WORD GetFillAttribute() const;
-    void SetFillAttribute(_In_ const WORD wFillAttribute);
+    void SetFillAttribute(const WORD wFillAttribute);
 
     WORD GetPopupFillAttribute() const;
-    void SetPopupFillAttribute(_In_ const WORD wPopupFillAttribute);
+    void SetPopupFillAttribute(const WORD wPopupFillAttribute);
 
     WORD GetShowWindow() const;
-    void SetShowWindow(_In_ const WORD wShowWindow);
+    void SetShowWindow(const WORD wShowWindow);
 
     WORD GetReserved() const;
-    void SetReserved(_In_ const WORD wReserved);
+    void SetReserved(const WORD wReserved);
 
     COORD GetScreenBufferSize() const;
-    void SetScreenBufferSize(_In_ const COORD dwScreenBufferSize);
+    void SetScreenBufferSize(const COORD dwScreenBufferSize);
 
     COORD GetWindowSize() const;
-    void SetWindowSize(_In_ const COORD dwWindowSize);
+    void SetWindowSize(const COORD dwWindowSize);
 
     bool IsWindowSizePixelsValid() const;
     COORD GetWindowSizePixels() const;
-    void SetWindowSizePixels(_In_ const COORD dwWindowSizePixels);
+    void SetWindowSizePixels(const COORD dwWindowSizePixels);
 
     COORD GetWindowOrigin() const;
-    void SetWindowOrigin(_In_ const COORD dwWindowOrigin);
+    void SetWindowOrigin(const COORD dwWindowOrigin);
 
     DWORD GetFont() const;
-    void SetFont(_In_ const DWORD dwFont);
+    void SetFont(const DWORD dwFont);
 
     COORD GetFontSize() const;
-    void SetFontSize(_In_ const COORD dwFontSize);
+    void SetFontSize(const COORD dwFontSize);
 
     UINT GetFontFamily() const;
-    void SetFontFamily(_In_ const UINT uFontFamily);
+    void SetFontFamily(const UINT uFontFamily);
 
     UINT GetFontWeight() const;
-    void SetFontWeight(_In_ const UINT uFontWeight);
+    void SetFontWeight(const UINT uFontWeight);
 
     const WCHAR* const GetFaceName() const;
     BOOL IsFaceNameSet() const;
     void SetFaceName(_In_ PCWSTR const pcszFaceName, _In_ size_t const cchLength);
 
     UINT GetCursorSize() const;
-    void SetCursorSize(_In_ const UINT uCursorSize);
+    void SetCursorSize(const UINT uCursorSize);
 
     BOOL GetFullScreen() const;
-    void SetFullScreen(_In_ const BOOL fFullScreen);
+    void SetFullScreen(const BOOL fFullScreen);
 
     BOOL GetQuickEdit() const;
-    void SetQuickEdit(_In_ const BOOL fQuickEdit);
+    void SetQuickEdit(const BOOL fQuickEdit);
 
     BOOL GetInsertMode() const;
-    void SetInsertMode(_In_ const BOOL fInsertMode);
+    void SetInsertMode(const BOOL fInsertMode);
 
     BOOL GetAutoPosition() const;
-    void SetAutoPosition(_In_ const BOOL fAutoPosition);
+    void SetAutoPosition(const BOOL fAutoPosition);
 
     UINT GetHistoryBufferSize() const;
-    void SetHistoryBufferSize(_In_ const UINT uHistoryBufferSize);
+    void SetHistoryBufferSize(const UINT uHistoryBufferSize);
 
     UINT GetNumberOfHistoryBuffers() const;
-    void SetNumberOfHistoryBuffers(_In_ const UINT uNumberOfHistoryBuffers);
+    void SetNumberOfHistoryBuffers(const UINT uNumberOfHistoryBuffers);
 
     BOOL GetHistoryNoDup() const;
-    void SetHistoryNoDup(_In_ const BOOL fHistoryNoDup);
+    void SetHistoryNoDup(const BOOL fHistoryNoDup);
 
     const COLORREF* const GetColorTable() const;
     const size_t GetColorTableSize() const;
@@ -216,7 +216,7 @@ private:
     void _InitColorTable();
 
     COLORREF _XtermColorTable[XTERM_COLOR_TABLE_SIZE];
-    void _InitXtermTableValue(_In_ const size_t iIndex, _In_ const BYTE bRed, _In_ const BYTE bGreen, _In_ const BYTE bBlue);
+    void _InitXtermTableValue(const size_t iIndex, const BYTE bRed, const BYTE bGreen, const BYTE bBlue);
 
     // this is used for the special STARTF_USESIZE mode.
     bool _fUseWindowSizePixels;
@@ -232,7 +232,7 @@ private:
 
 public:
 
-    WORD GenerateLegacyAttributes(_In_ const TextAttribute attributes) const;
+    WORD GenerateLegacyAttributes(const TextAttribute attributes) const;
     WORD FindNearestTableIndex(_In_ COLORREF const Color) const;
 
 };

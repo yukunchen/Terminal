@@ -9,22 +9,22 @@ Copyright (c) Microsoft Corporation
 
 WORD FindNearestTableIndex(_In_ COLORREF const Color,
                            _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                           _In_ const WORD cColorTable);
+                           const WORD cColorTable);
 
 bool FindTableIndex(_In_ COLORREF const Color,
                     _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                    _In_ const WORD cColorTable,
+                    const WORD cColorTable,
                     _Out_ WORD* const pFoundIndex);
 
-WORD XtermToWindowsIndex(_In_ const size_t index);
+WORD XtermToWindowsIndex(const size_t index);
 
-COLORREF ForegroundColor(_In_ const WORD wLegacyAttrs,
+COLORREF ForegroundColor(const WORD wLegacyAttrs,
                          _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                         _In_ const size_t cColorTable);
+                         const size_t cColorTable);
 
-COLORREF BackgroundColor(_In_ const WORD wLegacyAttrs,
+COLORREF BackgroundColor(const WORD wLegacyAttrs,
                          _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                         _In_ const size_t cColorTable);
+                         const size_t cColorTable);
 
 const WORD WINDOWS_RED_ATTR     = FOREGROUND_RED;
 const WORD WINDOWS_GREEN_ATTR   = FOREGROUND_GREEN;

@@ -27,7 +27,7 @@
 // - pWaiter - The context to return to later when the wait is satisfied.
 ConsoleWaitBlock::ConsoleWaitBlock(_In_ ConsoleWaitQueue* const pProcessQueue,
                                    _In_ ConsoleWaitQueue* const pObjectQueue,
-                                   _In_ const CONSOLE_API_MSG* const pWaitReplyMessage,
+                                   const CONSOLE_API_MSG* const pWaitReplyMessage,
                                    _In_ IWaitRoutine* const pWaiter) :
     _pProcessQueue(THROW_HR_IF_NULL(E_INVALIDARG, pProcessQueue)),
     _pObjectQueue(THROW_HR_IF_NULL(E_INVALIDARG, pObjectQueue)),

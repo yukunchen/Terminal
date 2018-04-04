@@ -29,7 +29,7 @@ public:
     using glyph_type = typename GlyphType;
     using string_type = typename StringType;
 
-    CharRowBase(_In_ const size_t rowWidth, _In_ const GlyphType defaultValue);
+    CharRowBase(const size_t rowWidth, const GlyphType defaultValue);
     virtual ~CharRowBase() = default;
 
     void swap(CharRowBase& other) noexcept;
@@ -42,13 +42,13 @@ public:
     size_t size() const noexcept override;
     void Reset();
     [[nodiscard]]
-    HRESULT Resize(_In_ const size_t newSize) noexcept;
+    HRESULT Resize(const size_t newSize) noexcept;
     size_t MeasureLeft() const override;
     size_t MeasureRight() const override;
-    void ClearCell(_In_ const size_t column) override;
+    void ClearCell(const size_t column) override;
     bool ContainsText() const override;
-    const DbcsAttribute& GetAttribute(_In_ const size_t column) const override;
-    DbcsAttribute& GetAttribute(_In_ const size_t column) override;
+    const DbcsAttribute& GetAttribute(const size_t column) const override;
+    DbcsAttribute& GetAttribute(const size_t column) override;
     void ClearGlyph(const size_t column);
     std::wstring GetText() const override;
 

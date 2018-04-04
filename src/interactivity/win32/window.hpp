@@ -48,10 +48,10 @@ namespace Microsoft::Console::Interactivity::Win32
         [[nodiscard]]
         NTSTATUS SetViewportOrigin(_In_ SMALL_RECT NewWindow);
 
-        void VerticalScroll(_In_ const WORD wScrollCommand,
-                            _In_ const WORD wAbsoluteChange) const;
-        void HorizontalScroll(_In_ const WORD wScrollCommand,
-                                _In_ const WORD wAbsoluteChange) const;
+        void VerticalScroll(const WORD wScrollCommand,
+                            const WORD wAbsoluteChange) const;
+        void HorizontalScroll(const WORD wScrollCommand,
+                                const WORD wAbsoluteChange) const;
 
         BOOL EnableBothScrollBars();
         int UpdateScrollBar(bool isVertical,
@@ -71,11 +71,11 @@ namespace Microsoft::Console::Interactivity::Win32
         // console get dispatched onto the window message
         // queue/thread)
         BOOL SendNotifyBeep() const;
-        BOOL PostUpdateTitle(_In_ const PCWSTR pwszNewTitle) const;
+        BOOL PostUpdateTitle(const PCWSTR pwszNewTitle) const;
         // makes a copy of the original string before
         // sending the message. The windowproc is
         // responsible for the copy's lifetime.
-        BOOL PostUpdateTitleWithCopy(_In_ const PCWSTR pwszNewTitle) const;
+        BOOL PostUpdateTitleWithCopy(const PCWSTR pwszNewTitle) const;
         BOOL PostUpdateScrollBars() const;
         BOOL PostUpdateWindowSize() const;
         BOOL PostUpdateExtendedEditKeys() const;
@@ -83,11 +83,11 @@ namespace Microsoft::Console::Interactivity::Win32
         // Dynamic Settings helpers
         static void s_PersistWindowPosition(_In_ PCWSTR pwszLinkTitle,
                                             _In_ PCWSTR pwszOriginalTitle,
-                                            _In_ const DWORD dwFlags,
-                                            _In_ const Window* const pWindow);
+                                            const DWORD dwFlags,
+                                            const Window* const pWindow);
         static void s_PersistWindowOpacity(_In_ PCWSTR pwszLinkTitle,
                                             _In_ PCWSTR pwszOriginalTitle,
-                                            _In_ const Window* const pWindow);
+                                            const Window* const pWindow);
 
         void SetWindowHasMoved(_In_ BOOL const fHasMoved);
 
@@ -143,10 +143,10 @@ namespace Microsoft::Console::Interactivity::Win32
                                             _In_ LPARAM lParam);
 
         // Wndproc helpers
-        void _HandleDrop(_In_ const WPARAM wParam) const;
+        void _HandleDrop(const WPARAM wParam) const;
         [[nodiscard]]
         HRESULT _HandlePaint() const;
-        void _HandleWindowPosChanged(_In_ const LPARAM lParam);
+        void _HandleWindowPosChanged(const LPARAM lParam);
 
         // Accessibility/UI Automation
         LRESULT _HandleGetObject(_In_ HWND const hwnd,
@@ -157,10 +157,10 @@ namespace Microsoft::Console::Interactivity::Win32
 
         // Dynamic Settings helpers
         static LRESULT s_RegPersistWindowPos(_In_ PCWSTR const pwszTitle,
-                                                _In_ const BOOL fAutoPos,
-                                                _In_ const Window* const pWindow);
+                                                const BOOL fAutoPos,
+                                                const Window* const pWindow);
         static LRESULT s_RegPersistWindowOpacity(_In_ PCWSTR const pwszTitle,
-                                                    _In_ const Window* const pWindow);
+                                                    const Window* const pWindow);
 
         // The size/position of the window on the most recent update.
         // This is remembered so we can figure out which

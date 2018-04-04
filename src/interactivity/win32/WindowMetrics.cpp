@@ -85,7 +85,7 @@ RECT WindowMetrics::GetMaxWindowRectInPixels()
 //                 - the original value passed in will be left untouched.
 // Return Value:
 // - RECT containing the left, right, top, and bottom positions from the desktop origin in pixels. Measures the outer edges of the potential window.
-RECT WindowMetrics::GetMaxWindowRectInPixels(_In_ const RECT * const prcSuggested, _Out_opt_ UINT * pDpiSuggested)
+RECT WindowMetrics::GetMaxWindowRectInPixels(const RECT * const prcSuggested, _Out_opt_ UINT * pDpiSuggested)
 {
     // prepare rectangle
     RECT rc = *prcSuggested;
@@ -168,7 +168,7 @@ RECT WindowMetrics::GetMaxWindowRectInPixels(_In_ const RECT * const prcSuggeste
 // - dwExStyle - Extended Style flags
 // Return Value:
 // - BOOL if adjustment was successful. (See AdjustWindowRectEx definition for details).
-BOOL WindowMetrics::AdjustWindowRectEx(_Inout_ LPRECT prc, _In_ const DWORD dwStyle, _In_ const BOOL fMenu, _In_ const DWORD dwExStyle)
+BOOL WindowMetrics::AdjustWindowRectEx(_Inout_ LPRECT prc, const DWORD dwStyle, const BOOL fMenu, const DWORD dwExStyle)
 {
     return ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->AdjustWindowRectExForDpi(prc, dwStyle, fMenu, dwExStyle, ServiceLocator::LocateGlobals().dpi);
 }
@@ -183,7 +183,7 @@ BOOL WindowMetrics::AdjustWindowRectEx(_Inout_ LPRECT prc, _In_ const DWORD dwSt
 // - iDpi - The DPI to use for scaling.
 // Return Value:
 // - BOOL if adjustment was successful. (See AdjustWindowRectEx definition for details).
-BOOL WindowMetrics::AdjustWindowRectEx(_Inout_ LPRECT prc, _In_ const DWORD dwStyle, _In_ const BOOL fMenu, _In_ const DWORD dwExStyle, _In_ const int iDpi)
+BOOL WindowMetrics::AdjustWindowRectEx(_Inout_ LPRECT prc, const DWORD dwStyle, const BOOL fMenu, const DWORD dwExStyle, const int iDpi)
 {
     return ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->AdjustWindowRectExForDpi(prc, dwStyle, fMenu, dwExStyle, iDpi);
 }
@@ -227,7 +227,7 @@ void WindowMetrics::ConvertWindowRectToClientRect(_Inout_ RECT* const prc)
 // - dwExStyle - Extended Style flags
 // Return Value:
 // - BOOL if adjustment was successful. (See AdjustWindowRectEx definition for details).
-BOOL WindowMetrics::UnadjustWindowRectEx(_Inout_ LPRECT prc, _In_ const DWORD dwStyle, _In_ const BOOL fMenu, _In_ const DWORD dwExStyle)
+BOOL WindowMetrics::UnadjustWindowRectEx(_Inout_ LPRECT prc, const DWORD dwStyle, const BOOL fMenu, const DWORD dwExStyle)
 {
     RECT rc;
     SetRectEmpty(&rc);

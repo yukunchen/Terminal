@@ -54,16 +54,16 @@ namespace Microsoft::Console::Interactivity
         virtual BOOL SendNotifyBeep() const = 0;
 
         virtual BOOL PostUpdateScrollBars() const = 0;
-        virtual BOOL PostUpdateTitleWithCopy(_In_ const PCWSTR pwszNewTitle) const = 0;
+        virtual BOOL PostUpdateTitleWithCopy(const PCWSTR pwszNewTitle) const = 0;
         virtual BOOL PostUpdateWindowSize() const = 0;
 
         virtual void UpdateWindowSize(_In_ COORD const coordSizeInChars) const = 0;
         virtual void UpdateWindowText() = 0;
 
-        virtual void HorizontalScroll(_In_ const WORD wScrollCommand,
-                                        _In_ const WORD wAbsoluteChange) const = 0;
-        virtual void VerticalScroll(_In_ const WORD wScrollCommand,
-                                    _In_ const WORD wAbsoluteChange) const = 0;
+        virtual void HorizontalScroll(const WORD wScrollCommand,
+                                        const WORD wAbsoluteChange) const = 0;
+        virtual void VerticalScroll(const WORD wScrollCommand,
+                                    const WORD wAbsoluteChange) const = 0;
         [[nodiscard]]
         virtual HRESULT SignalUia(_In_ EVENTID id) = 0;
         [[nodiscard]]

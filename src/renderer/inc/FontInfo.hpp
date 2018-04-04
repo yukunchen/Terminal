@@ -34,7 +34,7 @@ public:
              _In_ UINT const uiCodePage,
              _In_ bool const fSetDefaultRasterFont = false);
 
-    FontInfo(_In_ const FontInfo &fiFont);
+    FontInfo(const FontInfo &fiFont);
 
     COORD GetSize() const;
     COORD GetUnscaledSize() const;

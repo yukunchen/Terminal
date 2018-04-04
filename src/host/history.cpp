@@ -32,7 +32,7 @@
 // - ProcessHandle - handle to client process.
 // Return Value:
 // - <none>
-PCOMMAND_HISTORY FindCommandHistory(_In_ const HANDLE hProcess)
+PCOMMAND_HISTORY FindCommandHistory(const HANDLE hProcess)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     PLIST_ENTRY const ListHead = &gci.CommandHistoryList;
@@ -138,8 +138,8 @@ void ResetCommandHistory(_In_opt_ PCOMMAND_HISTORY CommandHistory)
 [[nodiscard]]
 NTSTATUS AddCommand(_In_ PCOMMAND_HISTORY pCmdHistory,
                     _In_reads_bytes_(cbCommand) PCWCHAR pwchCommand,
-                    _In_ const USHORT cbCommand,
-                    _In_ const BOOL fHistoryNoDup)
+                    const USHORT cbCommand,
+                    const BOOL fHistoryNoDup)
 {
     if (pCmdHistory == nullptr || pCmdHistory->MaximumNumberOfCommands == 0)
     {
@@ -440,7 +440,7 @@ PCOMMAND_HISTORY FindExeCommandHistory(_In_reads_(AppNameLength) PVOID AppName, 
 // - Console - pointer to console.
 // Return Value:
 // - Pointer to command history buffer.  if none are available, returns nullptr.
-PCOMMAND_HISTORY AllocateCommandHistory(_In_reads_bytes_(cbAppName) PCWSTR pwszAppName, _In_ const DWORD cbAppName, _In_ HANDLE hProcess)
+PCOMMAND_HISTORY AllocateCommandHistory(_In_reads_bytes_(cbAppName) PCWSTR pwszAppName, const DWORD cbAppName, _In_ HANDLE hProcess)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // Reuse a history buffer.  The buffer must be !CLE_ALLOCATED.

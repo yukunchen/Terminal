@@ -20,9 +20,9 @@ Author(s):
 class ConsoleArguments
 {
 public:
-    ConsoleArguments(_In_ const std::wstring& commandline,
-                     _In_ const HANDLE hStdIn,
-                     _In_ const HANDLE hStdOut);
+    ConsoleArguments(const std::wstring& commandline,
+                     const HANDLE hStdIn,
+                     const HANDLE hStdOut);
 
     ConsoleArguments() { }
 
@@ -72,21 +72,21 @@ public:
 private:
 #ifdef UNIT_TESTING
     // This accessor used to create a copy of this class for unit testing comparison ease.
-    ConsoleArguments(_In_ const std::wstring commandline,
-                     _In_ const std::wstring clientCommandline,
-                     _In_ const HANDLE vtInHandle,
-                     _In_ const HANDLE vtOutHandle,
-                     _In_ const std::wstring vtInPipe,
-                     _In_ const std::wstring vtOutPipe,
-                     _In_ const std::wstring vtMode,
-                     _In_ const short width,
-                     _In_ const short height,
-                     _In_ const bool forceV1,
-                     _In_ const bool headless,
-                     _In_ const bool createServerHandle,
-                     _In_ const DWORD serverHandle,
-                     _In_ const DWORD signalHandle,
-                     _In_ const bool inheritCursor) :
+    ConsoleArguments(const std::wstring commandline,
+                     const std::wstring clientCommandline,
+                     const HANDLE vtInHandle,
+                     const HANDLE vtOutHandle,
+                     const std::wstring vtInPipe,
+                     const std::wstring vtOutPipe,
+                     const std::wstring vtMode,
+                     const short width,
+                     const short height,
+                     const bool forceV1,
+                     const bool headless,
+                     const bool createServerHandle,
+                     const DWORD serverHandle,
+                     const DWORD signalHandle,
+                     const bool inheritCursor) :
         _commandline(commandline),
         _clientCommandline(clientCommandline),
         _vtInHandle(vtInHandle),
@@ -132,8 +132,8 @@ private:
 
     [[nodiscard]]
     HRESULT _GetClientCommandline(_In_ std::vector<std::wstring>& args,
-                                  _In_ const size_t index,
-                                  _In_ const bool skipFirst);
+                                  const size_t index,
+                                  const bool skipFirst);
 
     static void s_ConsumeArg(_Inout_ std::vector<std::wstring>& args,
                              _In_ size_t& index);
@@ -150,10 +150,10 @@ private:
                                         _Inout_ size_t& index);
 
     [[nodiscard]]
-    static HRESULT s_ParseHandleArg(_In_ const std::wstring& handleAsText,
+    static HRESULT s_ParseHandleArg(const std::wstring& handleAsText,
                                     _Inout_ DWORD& handleAsVal);
 
-    static bool s_IsValidHandle(_In_ const HANDLE handle);
+    static bool s_IsValidHandle(const HANDLE handle);
 
 #ifdef UNIT_TESTING
     friend class ConsoleArgumentsTests;
@@ -205,7 +205,7 @@ namespace WEX {
             }
 
         private:
-            static PCWSTR s_ToBoolString(_In_ const bool val)
+            static PCWSTR s_ToBoolString(const bool val)
             {
                 return val ? L"true" : L"false";
             }

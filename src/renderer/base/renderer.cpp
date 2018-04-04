@@ -219,7 +219,7 @@ void Renderer::_NotifyPaintFrame()
 // - <none>
 // Return Value:
 // - <none>
-void Renderer::TriggerSystemRedraw(_In_ const RECT* const prcDirtyClient)
+void Renderer::TriggerSystemRedraw(const RECT* const prcDirtyClient)
 {
     std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
         LOG_IF_FAILED(pEngine->InvalidateSystem(prcDirtyClient));
@@ -234,7 +234,7 @@ void Renderer::TriggerSystemRedraw(_In_ const RECT* const prcDirtyClient)
 // - <none>
 // Return Value:
 // - <none>
-void Renderer::TriggerRedraw(_In_ const SMALL_RECT* const psrRegion)
+void Renderer::TriggerRedraw(const SMALL_RECT* const psrRegion)
 {
     Viewport view(_pData->GetViewport());
     SMALL_RECT srUpdateRegion = *psrRegion;
@@ -256,7 +256,7 @@ void Renderer::TriggerRedraw(_In_ const SMALL_RECT* const psrRegion)
 // - pcoord: The buffer-space coordinate that has changed.
 // Return Value:
 // - <none>
-void Renderer::TriggerRedraw(_In_ const COORD* const pcoord)
+void Renderer::TriggerRedraw(const COORD* const pcoord)
 {
     SMALL_RECT srRegion = _RegionFromCoord(pcoord);
     TriggerRedraw(&srRegion); // this will notify to paint if we need it.
@@ -271,7 +271,7 @@ void Renderer::TriggerRedraw(_In_ const COORD* const pcoord)
 // - pcoord: The buffer-space position of the cursor.
 // Return Value:
 // - <none>
-void Renderer::TriggerRedrawCursor(_In_ const COORD* const pcoord)
+void Renderer::TriggerRedrawCursor(const COORD* const pcoord)
 {
     Viewport view(_pData->GetViewport());
     COORD updateCoord = *pcoord;
@@ -399,7 +399,7 @@ void Renderer::TriggerScroll()
 // - <none>
 // Return Value:
 // - <none>
-void Renderer::TriggerScroll(_In_ const COORD* const pcoordDelta)
+void Renderer::TriggerScroll(const COORD* const pcoordDelta)
 {
     std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine){
         LOG_IF_FAILED(pEngine->InvalidateScroll(pcoordDelta));
@@ -697,10 +697,10 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
 // Return Value:
 // - <none>
 void Renderer::_PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEngine,
-                                                  _In_ const ROW& Row,
+                                                  const ROW& Row,
                                                   _In_reads_(cchLine) PCWCHAR const pwsLine,
-                                                  _In_ const Ucs2CharRow::const_iterator it,
-                                                  _In_ const Ucs2CharRow::const_iterator itEnd,
+                                                  const Ucs2CharRow::const_iterator it,
+                                                  const Ucs2CharRow::const_iterator itEnd,
                                                   _In_ size_t cchLine,
                                                   _In_ size_t iFirstAttr,
                                                   _In_ COORD const coordTarget)
@@ -786,10 +786,10 @@ void Renderer::_PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEng
 // Return Value:
 // - <none>
 void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
-                                             _In_ const ROW& Row,
+                                             const ROW& Row,
                                              _In_reads_(cchLine) PCWCHAR const pwsLine,
-                                             _In_ const Ucs2CharRow::const_iterator it,
-                                             _In_ const Ucs2CharRow::const_iterator itEnd,
+                                             const Ucs2CharRow::const_iterator it,
+                                             const Ucs2CharRow::const_iterator itEnd,
                                              _In_ size_t cchLine,
                                              _In_ size_t iFirstAttr,
                                              _In_ COORD const coordTarget)
@@ -863,8 +863,8 @@ void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
 [[nodiscard]]
 HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const pEngine,
                                                      _In_reads_(cchLine) PCWCHAR const pwsLine,
-                                                     _In_ const Ucs2CharRow::const_iterator it,
-                                                     _In_ const Ucs2CharRow::const_iterator itEnd,
+                                                     const Ucs2CharRow::const_iterator it,
+                                                     const Ucs2CharRow::const_iterator itEnd,
                                                      _In_ size_t const cchLine,
                                                      _In_ COORD const coordTarget)
 {
@@ -941,7 +941,7 @@ HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const p
 // Return Value:
 // - <none>
 void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine,
-                                                _In_ const TextAttribute textAttribute,
+                                                const TextAttribute textAttribute,
                                                 _In_ size_t const cchLine,
                                                 _In_ COORD const coordTarget)
 {
@@ -1037,8 +1037,8 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
 // Return Value:
 // - <none>
 void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
-                         _In_ const std::unique_ptr<ConversionAreaInfo>& AreaInfo,
-                         _In_ const TEXT_BUFFER_INFO* const pTextInfo)
+                         const std::unique_ptr<ConversionAreaInfo>& AreaInfo,
+                         const TEXT_BUFFER_INFO* const pTextInfo)
 {
     // If this conversion area isn't hidden (because it is off) or hidden for a scroll operation, then draw it.
     if (!AreaInfo->IsHidden())
@@ -1166,7 +1166,7 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 // Return Value:
 // - <none>
 [[nodiscard]]
-HRESULT Renderer::_UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, _In_ const TextAttribute textAttributes, _In_ bool const fIncludeBackground)
+HRESULT Renderer::_UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, const TextAttribute textAttributes, _In_ bool const fIncludeBackground)
 {
     COLORREF rgbForeground = textAttributes.CalculateRgbForeground();
     COLORREF rgbBackground = textAttributes.CalculateRgbBackground();

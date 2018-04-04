@@ -1,4 +1,4 @@
-﻿/********************************************************
+/********************************************************
 *                                                       *
 *   Copyright (C) Microsoft. All rights reserved.       *
 *                                                       *
@@ -28,7 +28,7 @@ FontInfo::FontInfo(_In_ PCWSTR const pwszFaceName,
     ValidateFont();
 }
 
-FontInfo::FontInfo(_In_ const FontInfo& fiFont) :
+FontInfo::FontInfo(const FontInfo& fiFont) :
                    FontInfoBase(fiFont),
                    _coordSize(fiFont.GetSize()),
                    _coordSizeUnscaled(fiFont.GetUnscaledSize())

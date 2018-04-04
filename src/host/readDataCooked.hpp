@@ -108,5 +108,5 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
 
 BOOL ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
                             _In_ WCHAR wch,
-                            _In_ const DWORD dwKeyState,
+                            const DWORD dwKeyState,
                             _Out_ NTSTATUS* pStatus);

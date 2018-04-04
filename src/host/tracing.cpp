@@ -28,7 +28,7 @@ DEFINE_ENUM_FLAG_OPERATORS(TraceKeywords);
 
 ULONG Tracing::s_ulDebugFlag = 0x0;
 
-void Tracing::s_TraceApi(_In_ const NTSTATUS status, _In_ const CONSOLE_GETLARGESTWINDOWSIZE_MSG* const a)
+void Tracing::s_TraceApi(const NTSTATUS status, const CONSOLE_GETLARGESTWINDOWSIZE_MSG* const a)
 {
     TraceLoggingWrite(g_hConhostV2EventTraceProvider, "API_GetLargestWindowSize",
         TraceLoggingHexInt32(status, "ResultCode"),
@@ -39,7 +39,7 @@ void Tracing::s_TraceApi(_In_ const NTSTATUS status, _In_ const CONSOLE_GETLARGE
         );
 }
 
-void Tracing::s_TraceApi(_In_ const NTSTATUS status, _In_ const CONSOLE_SCREENBUFFERINFO_MSG* const a, _In_ bool const fSet)
+void Tracing::s_TraceApi(const NTSTATUS status, const CONSOLE_SCREENBUFFERINFO_MSG* const a, _In_ bool const fSet)
 {
     // Duplicate copies required by TraceLogging documentation ("don't get cute" examples)
     // Using logic inside these macros can make problems. Do all logic outside macros.
@@ -74,7 +74,7 @@ void Tracing::s_TraceApi(_In_ const NTSTATUS status, _In_ const CONSOLE_SCREENBU
     }
 }
 
-void Tracing::s_TraceApi(_In_ const NTSTATUS status, _In_ const CONSOLE_SETSCREENBUFFERSIZE_MSG* const a)
+void Tracing::s_TraceApi(const NTSTATUS status, const CONSOLE_SETSCREENBUFFERSIZE_MSG* const a)
 {
     TraceLoggingWrite(g_hConhostV2EventTraceProvider, "API_SetConsoleScreenBufferSize",
         TraceLoggingHexInt32(status, "ResultCode"),
@@ -85,7 +85,7 @@ void Tracing::s_TraceApi(_In_ const NTSTATUS status, _In_ const CONSOLE_SETSCREE
         );
 }
 
-void Tracing::s_TraceApi(_In_ const NTSTATUS status, _In_ const CONSOLE_SETWINDOWINFO_MSG* const a)
+void Tracing::s_TraceApi(const NTSTATUS status, const CONSOLE_SETWINDOWINFO_MSG* const a)
 {
     TraceLoggingWrite(g_hConhostV2EventTraceProvider, "API_SetConsoleWindowInfo",
         TraceLoggingHexInt32(status, "ResultCode"),
@@ -99,7 +99,7 @@ void Tracing::s_TraceApi(_In_ const NTSTATUS status, _In_ const CONSOLE_SETWINDO
         );
 }
 
-void Tracing::s_TraceApi(_In_ void* buffer, _In_ const CONSOLE_WRITECONSOLE_MSG* const a)
+void Tracing::s_TraceApi(_In_ void* buffer, const CONSOLE_WRITECONSOLE_MSG* const a)
 {
     if (a->Unicode)
     {
@@ -125,7 +125,7 @@ void Tracing::s_TraceApi(_In_ void* buffer, _In_ const CONSOLE_WRITECONSOLE_MSG*
     }
 }
 
-void Tracing::s_TraceApi(_In_ const CONSOLE_SCREENBUFFERINFO_MSG* const a)
+void Tracing::s_TraceApi(const CONSOLE_SCREENBUFFERINFO_MSG* const a)
 {
     TraceLoggingWrite(g_hConhostV2EventTraceProvider, "API_GetConsoleScreenBufferInfo",
         TraceLoggingInt16(a->Size.X, "Size.X"),
@@ -147,7 +147,7 @@ void Tracing::s_TraceApi(_In_ const CONSOLE_SCREENBUFFERINFO_MSG* const a)
         );
 }
 
-void Tracing::s_TraceApi(_In_ const CONSOLE_MODE_MSG* const a, const std::wstring& handleType)
+void Tracing::s_TraceApi(const CONSOLE_MODE_MSG* const a, const std::wstring& handleType)
 {
     TraceLoggingWrite(g_hConhostV2EventTraceProvider, "API_GetConsoleMode",
         TraceLoggingHexUInt32(a->Mode, "Mode"),
@@ -157,7 +157,7 @@ void Tracing::s_TraceApi(_In_ const CONSOLE_MODE_MSG* const a, const std::wstrin
         );
 }
 
-void Tracing::s_TraceApi(_In_ const CONSOLE_SETTEXTATTRIBUTE_MSG* const a)
+void Tracing::s_TraceApi(const CONSOLE_SETTEXTATTRIBUTE_MSG* const a)
 {
     TraceLoggingWrite(g_hConhostV2EventTraceProvider, "API_SetConsoleTextAttribute",
         TraceLoggingHexUInt16(a->Attributes, "Attributes"),
@@ -166,7 +166,7 @@ void Tracing::s_TraceApi(_In_ const CONSOLE_SETTEXTATTRIBUTE_MSG* const a)
         );
 }
 
-void Tracing::s_TraceApi(_In_ const CONSOLE_WRITECONSOLEOUTPUTSTRING_MSG* const a)
+void Tracing::s_TraceApi(const CONSOLE_WRITECONSOLEOUTPUTSTRING_MSG* const a)
 {
     TraceLoggingWrite(g_hConhostV2EventTraceProvider, "API_WriteConsoleOutput",
         TraceLoggingInt16(a->WriteCoord.X, "WriteCoord.X"),
@@ -178,7 +178,7 @@ void Tracing::s_TraceApi(_In_ const CONSOLE_WRITECONSOLEOUTPUTSTRING_MSG* const 
         );
 }
 
-void Tracing::s_TraceWindowViewport(_In_ const SMALL_RECT viewport)
+void Tracing::s_TraceWindowViewport(const SMALL_RECT viewport)
 {
     TraceLoggingWrite(g_hConhostV2EventTraceProvider, "WindowViewport",
         TraceLoggingInt32(viewport.Bottom - viewport.Top, "ViewHeight"),
@@ -230,7 +230,7 @@ void Tracing::s_TraceOutput(_In_z_ const char* pszMessage, ...)
     }
 }
 
-void Tracing::s_TraceWindowMessage(_In_ const MSG& msg)
+void Tracing::s_TraceWindowMessage(const MSG& msg)
 {
     TraceLoggingWrite(
         g_hConhostV2EventTraceProvider,
@@ -242,7 +242,7 @@ void Tracing::s_TraceWindowMessage(_In_ const MSG& msg)
         TraceLoggingKeyword(TraceKeywords::Input));
 }
 
-void Tracing::s_TraceInputRecord(_In_ const INPUT_RECORD& inputRecord)
+void Tracing::s_TraceInputRecord(const INPUT_RECORD& inputRecord)
 {
     switch (inputRecord.EventType)
     {
@@ -327,9 +327,9 @@ void __stdcall Tracing::TraceFailure(const wil::FailureInfo& failure) noexcept
         TraceLoggingLevel(WINEVENT_LEVEL_ERROR));
 }
 
-void Tracing::s_TraceUia(_In_ const UiaTextRange* const range,
-                         _In_ const UiaTextRangeTracing::ApiCall apiCall,
-                         _In_ const UiaTextRangeTracing::IApiMsg* const apiMsg)
+void Tracing::s_TraceUia(const UiaTextRange* const range,
+                         const UiaTextRangeTracing::ApiCall apiCall,
+                         const UiaTextRangeTracing::IApiMsg* const apiMsg)
 {
     unsigned long long id = 0u;
     bool degenerate = true;
@@ -681,9 +681,9 @@ void Tracing::s_TraceUia(_In_ const UiaTextRange* const range,
     }
 }
 
-void Tracing::s_TraceUia(_In_ const ScreenInfoUiaProvider* const /*pProvider*/,
-                         _In_ const ScreenInfoUiaProviderTracing::ApiCall apiCall,
-                         _In_ const ScreenInfoUiaProviderTracing::IApiMsg* const apiMsg)
+void Tracing::s_TraceUia(const ScreenInfoUiaProvider* const /*pProvider*/,
+                         const ScreenInfoUiaProviderTracing::ApiCall apiCall,
+                         const ScreenInfoUiaProviderTracing::IApiMsg* const apiMsg)
 {
     switch (apiCall)
     {
@@ -871,9 +871,9 @@ void Tracing::s_TraceUia(_In_ const ScreenInfoUiaProvider* const /*pProvider*/,
     }
 }
 
-void Tracing::s_TraceUia(_In_ const WindowUiaProvider* const /*pProvider*/,
-                         _In_ const WindowUiaProviderTracing::ApiCall apiCall,
-                         _In_ const WindowUiaProviderTracing::IApiMsg* const apiMsg)
+void Tracing::s_TraceUia(const WindowUiaProvider* const /*pProvider*/,
+                         const WindowUiaProviderTracing::ApiCall apiCall,
+                         const WindowUiaProviderTracing::IApiMsg* const apiMsg)
 {
     switch (apiCall)
     {

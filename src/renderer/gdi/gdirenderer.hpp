@@ -30,13 +30,13 @@ namespace Microsoft::Console::Render
         HRESULT InvalidateSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection,
                                     _In_ UINT const cRectangles) override;
         [[nodiscard]]
-        HRESULT InvalidateScroll(_In_ const COORD* const pcoordDelta) override;
+        HRESULT InvalidateScroll(const COORD* const pcoordDelta) override;
         [[nodiscard]]
-        HRESULT InvalidateSystem(_In_ const RECT* const prcDirtyClient) override;
+        HRESULT InvalidateSystem(const RECT* const prcDirtyClient) override;
         [[nodiscard]]
-        HRESULT Invalidate(_In_ const SMALL_RECT* const psrRegion) override;
+        HRESULT Invalidate(const SMALL_RECT* const psrRegion) override;
         [[nodiscard]]
-        HRESULT InvalidateCursor(_In_ const COORD* const pcoordCursor) override;
+        HRESULT InvalidateCursor(const COORD* const pcoordCursor) override;
         [[nodiscard]]
         HRESULT InvalidateAll() override;
         [[nodiscard]]
@@ -145,19 +145,19 @@ namespace Microsoft::Console::Render
         COLORREF _lastBg;
 
         [[nodiscard]]
-        HRESULT _InvalidCombine(_In_ const RECT* const prc);
+        HRESULT _InvalidCombine(const RECT* const prc);
         [[nodiscard]]
-        HRESULT _InvalidOffset(_In_ const POINT* const ppt);
+        HRESULT _InvalidOffset(const POINT* const ppt);
         [[nodiscard]]
         HRESULT _InvalidRestrict();
 
         [[nodiscard]]
-        HRESULT _InvalidateRect(_In_ const RECT* const prc);
+        HRESULT _InvalidateRect(const RECT* const prc);
         [[nodiscard]]
         HRESULT _InvalidateRgn(_In_ HRGN hrgn);
 
         [[nodiscard]]
-        HRESULT _PaintBackgroundColor(_In_ const RECT* const prc);
+        HRESULT _PaintBackgroundColor(const RECT* const prc);
 
         HRGN _hrgnGdiPaintedSelection;
         [[nodiscard]]
@@ -169,20 +169,20 @@ namespace Microsoft::Console::Render
         static const ULONG s_ulMaxCursorHeightPercent = 100;
 
         [[nodiscard]]
-        HRESULT _ScaleByFont(_In_ const COORD* const pcoord, _Out_ POINT* const pPoint) const;
+        HRESULT _ScaleByFont(const COORD* const pcoord, _Out_ POINT* const pPoint) const;
         [[nodiscard]]
-        HRESULT _ScaleByFont(_In_ const SMALL_RECT* const psr, _Out_ RECT* const prc) const;
+        HRESULT _ScaleByFont(const SMALL_RECT* const psr, _Out_ RECT* const prc) const;
         [[nodiscard]]
-        HRESULT _ScaleByFont(_In_ const RECT* const prc, _Out_ SMALL_RECT* const psr) const;
+        HRESULT _ScaleByFont(const RECT* const prc, _Out_ SMALL_RECT* const psr) const;
 
-        static int s_ScaleByDpi(_In_ const int iPx, _In_ const int iDpi);
-        static int s_ShrinkByDpi(_In_ const int iPx, _In_ const int iDpi);
+        static int s_ScaleByDpi(const int iPx, const int iDpi);
+        static int s_ShrinkByDpi(const int iPx, const int iDpi);
 
         POINT _GetInvalidRectPoint() const;
         SIZE _GetInvalidRectSize() const;
-        SIZE _GetRectSize(_In_ const RECT* const pRect) const;
+        SIZE _GetRectSize(const RECT* const pRect) const;
 
-        void _OrRect(_In_ RECT* const pRectExisting, _In_ const RECT* const pRectToOr) const;
+        void _OrRect(_In_ RECT* const pRectExisting, const RECT* const pRectToOr) const;
 
         bool _IsFontTrueType() const;
 
@@ -196,8 +196,8 @@ namespace Microsoft::Console::Render
         // Helper functions to diagnose issues with painting from the in-memory buffer.
         // These are only actually effective/on in Debug builds when the flag is set using an attached debugger.
         bool _fDebug = false;
-        void _PaintDebugRect(_In_ const RECT* const prc) const;
-        void _DoDebugBlt(_In_ const RECT* const prc) const;
+        void _PaintDebugRect(const RECT* const prc) const;
+        void _DoDebugBlt(const RECT* const prc) const;
 #endif
     };
 }

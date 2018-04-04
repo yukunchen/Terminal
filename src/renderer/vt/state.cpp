@@ -28,8 +28,8 @@ const COORD VtEngine::INVALID_COORDS = {-1, -1};
 // Return Value:
 // - An instance of a Renderer.
 VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
-                   _In_ const IDefaultColorProvider& colorProvider,
-                   _In_ const Viewport initialViewport) :
+                   const IDefaultColorProvider& colorProvider,
+                   const Viewport initialViewport) :
     _hFile(std::move(pipe)),
     _colorProvider(colorProvider),
     _LastFG(INVALID_COLOR),
@@ -90,7 +90,7 @@ HRESULT VtEngine::_Write(_In_reads_(cch) const char* const psz, _In_ size_t cons
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
 [[nodiscard]]
-HRESULT VtEngine::_Write(_In_ const std::string& str)
+HRESULT VtEngine::_Write(const std::string& str)
 {
     return _Write(str.c_str(), str.length());
 }
@@ -105,7 +105,7 @@ HRESULT VtEngine::_Write(_In_ const std::string& str)
 // - S_OK, E_INVALIDARG for a invalid format string, or suitable HRESULT error
 //      from writing pipe.
 [[nodiscard]]
-HRESULT VtEngine::_WriteFormattedString(_In_ const std::string* const pFormat, ...)
+HRESULT VtEngine::_WriteFormattedString(const std::string* const pFormat, ...)
 {
 
     HRESULT hr = E_FAIL;
@@ -318,7 +318,7 @@ HRESULT VtEngine::SuppressResizeRepaint()
 // Return Value:
 // - S_OK
 [[nodiscard]]
-HRESULT VtEngine::InheritCursor(_In_ const COORD coordCursor)
+HRESULT VtEngine::InheritCursor(const COORD coordCursor)
 {
     _virtualTop = coordCursor.Y;
     _lastText = coordCursor;

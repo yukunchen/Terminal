@@ -23,7 +23,7 @@ Revision History:
 void ScreenBufferSizeChange(_In_ COORD const coordNewSize);
 
 [[nodiscard]]
-NTSTATUS ReadScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenInfo,
+NTSTATUS ReadScreenBuffer(const SCREEN_INFORMATION * const pScreenInfo,
                           _Inout_ std::vector<std::vector<OutputCell>>& outputCells,
                           _Inout_ PSMALL_RECT psrReadRegion);
 [[nodiscard]]
@@ -35,10 +35,10 @@ NTSTATUS WriteScreenBuffer(_In_ PSCREEN_INFORMATION pScreenInfo,
 NTSTATUS DoCreateScreenBuffer();
 
 [[nodiscard]]
-NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
+NTSTATUS ReadOutputString(const SCREEN_INFORMATION * const pScreenInfo,
                           _Inout_ PVOID pvBuffer,
-                          _In_ const COORD coordRead,
-                          _In_ const ULONG ulStringType,
+                          const COORD coordRead,
+                          const ULONG ulStringType,
                           _Inout_ PULONG pcRecords);
 
 [[nodiscard]]
@@ -48,7 +48,7 @@ NTSTATUS ScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo,
                       _In_ COORD coordDestinationOrigin,
                       _In_ CHAR_INFO ciFill);
 
-VOID SetConsoleWindowOwner(_In_ const HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pProcessData);
+VOID SetConsoleWindowOwner(const HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pProcessData);
 
 bool StreamScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo);
 
@@ -56,7 +56,7 @@ std::vector<std::vector<OutputCell>> ReadRectFromScreenBuffer(const SCREEN_INFOR
                                                               const COORD coordSourcePoint,
                                                               const Microsoft::Console::Types::Viewport viewport);
 
-SHORT ScrollEntireScreen(_Inout_ PSCREEN_INFORMATION pScreenInfo, _In_ const SHORT sScrollValue);
+SHORT ScrollEntireScreen(_Inout_ PSCREEN_INFORMATION pScreenInfo, const SHORT sScrollValue);
 
 // For handling process handle state, not the window state itself.
 void CloseConsoleProcessState();

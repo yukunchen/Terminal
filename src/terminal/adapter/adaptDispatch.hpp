@@ -29,7 +29,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         AdaptDispatch(_Inout_ ConGetSet* const pConApi,
                         _Inout_ AdaptDefaults* const pDefaults,
-                        _In_ const WORD wDefaultTextAttributes);
+                        const WORD wDefaultTextAttributes);
 
         void UpdateDefaults(_Inout_ AdaptDefaults* const pDefaults)
         {
@@ -84,7 +84,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool EnableCursorBlinking(_In_ bool const bEnable); // ATT610
         virtual bool SetTopBottomScrollingMargins(_In_ SHORT const sTopMargin,
                                                     _In_ SHORT const sBottomMargin,
-                                                    _In_ const bool fResetCursor); // DECSTBM
+                                                    const bool fResetCursor); // DECSTBM
         virtual bool ReverseLineFeed(); // RI
         virtual bool SetWindowTitle(_In_reads_(cchTitleLength) const wchar_t* const pwchWindowTitle,
                                     _In_ unsigned short cchTitleLength); // OscWindowTitle
@@ -103,12 +103,12 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool EnableButtonEventMouseMode(_In_ bool const fEnabled); // ?1002
         virtual bool EnableAnyEventMouseMode(_In_ bool const fEnabled); // ?1003
         virtual bool EnableAlternateScroll(_In_ bool const fEnabled); // ?1007
-        virtual bool SetCursorStyle(_In_ const DispatchCommon::CursorStyle cursorStyle); // DECSCUSR
-        virtual bool SetCursorColor(_In_ const COLORREF cursorColor);
+        virtual bool SetCursorStyle(const DispatchCommon::CursorStyle cursorStyle); // DECSCUSR
+        virtual bool SetCursorColor(const COLORREF cursorColor);
 
-        virtual bool SetColorTableEntry(_In_ const size_t tableIndex,
-                                        _In_ const DWORD dwColor); // OscColorTable
-        virtual bool WindowManipulation(_In_ const DispatchCommon::WindowManipulationType uiFunction,
+        virtual bool SetColorTableEntry(const size_t tableIndex,
+                                        const DWORD dwColor); // OscColorTable
+        virtual bool WindowManipulation(const DispatchCommon::WindowManipulationType uiFunction,
                                         _In_reads_(cParams) const unsigned short* const rgusParams,
                                         _In_ size_t const cParams); // DTTERM_WindowManipulation
 
@@ -131,7 +131,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool _CursorMovement(_In_ CursorDirection const dir, _In_ unsigned int const uiDistance) const;
         bool _CursorMovePosition(_In_opt_ const unsigned int* const puiRow, _In_opt_ const unsigned int* const puiCol) const;
-        bool _EraseSingleLineHelper(_In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pcsbiex, _In_ EraseType const eraseType, _In_ SHORT const sLineId, _In_ WORD const wFillColor) const;
+        bool _EraseSingleLineHelper(const CONSOLE_SCREEN_BUFFER_INFOEX* const pcsbiex, _In_ EraseType const eraseType, _In_ SHORT const sLineId, _In_ WORD const wFillColor) const;
         void _SetGraphicsOptionHelper(_In_ GraphicsOptions const opt, _Inout_ WORD* const pAttr);
         bool _EraseAreaHelper(_In_ COORD const coordStartPosition, _In_ COORD const coordLastPosition, _In_ WORD const wFillColor);
         bool _EraseSingleLineDistanceHelper(_In_ COORD const coordStartPosition, _In_ DWORD const dwLength, _In_ WORD const wFillColor) const;

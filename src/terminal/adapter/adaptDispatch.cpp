@@ -23,7 +23,7 @@ bool NoOp() { return false; }
 
 AdaptDispatch::AdaptDispatch(_Inout_ ConGetSet* const pConApi,
                              _Inout_ AdaptDefaults* const pDefaults,
-                             _In_ const WORD wDefaultTextAttributes)
+                             const WORD wDefaultTextAttributes)
     : _pConApi(pConApi),
       _pDefaults(pDefaults),
       _wDefaultTextAttributes(wDefaultTextAttributes),
@@ -605,7 +605,7 @@ bool AdaptDispatch::_EraseAreaHelper(_In_ COORD const coordStartPosition, _In_ C
 //           - This is not aware of circular buffer. Line 0 is always the top visible line if you scrolled the whole way up the window.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::_EraseSingleLineHelper(_In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pcsbiex, _In_ EraseType const eraseType, _In_ SHORT const sLineId, _In_ WORD const wFillColor) const
+bool AdaptDispatch::_EraseSingleLineHelper(const CONSOLE_SCREEN_BUFFER_INFOEX* const pcsbiex, _In_ EraseType const eraseType, _In_ SHORT const sLineId, _In_ WORD const wFillColor) const
 {
     COORD coordStartPosition = { 0 };
     coordStartPosition.Y = sLineId ;
@@ -1227,7 +1227,7 @@ bool AdaptDispatch::DeleteLine(_In_ unsigned int const uiDistance)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::SetTopBottomScrollingMargins(_In_ SHORT const sTopMargin,
                                                  _In_ SHORT const sBottomMargin,
-                                                 _In_ const bool fResetCursor)
+                                                 const bool fResetCursor)
 {
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
@@ -1703,7 +1703,7 @@ bool AdaptDispatch::EnableAlternateScroll(_In_ bool const fEnabled)
 // - cursorStyle - The unix-like cursor style to apply to the cursor
 // Return value:
 // True if handled successfully. False othewise.
-bool AdaptDispatch::SetCursorStyle(_In_ const DispatchCommon::CursorStyle cursorStyle)
+bool AdaptDispatch::SetCursorStyle(const DispatchCommon::CursorStyle cursorStyle)
 {
     CursorType actualType = CursorType::Legacy;
     bool fEnableBlinking = false;
@@ -1755,7 +1755,7 @@ bool AdaptDispatch::SetCursorStyle(_In_ const DispatchCommon::CursorStyle cursor
 // - dwColor: The new RGB color value to use.
 // Return Value:
 // True if handled successfully. False othewise.
-bool AdaptDispatch::SetCursorColor(_In_ const COLORREF cursorColor)
+bool AdaptDispatch::SetCursorColor(const COLORREF cursorColor)
 {
     return !!_pConApi->SetCursorColor(cursorColor);
 }
@@ -1767,8 +1767,8 @@ bool AdaptDispatch::SetCursorColor(_In_ const COLORREF cursorColor)
 // - dwColor: The new RGB color value to use.
 // Return Value:
 // True if handled successfully. False othewise.
-bool AdaptDispatch::SetColorTableEntry(_In_ const size_t tableIndex,
-                                       _In_ const DWORD dwColor)
+bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex,
+                                       const DWORD dwColor)
 {
     bool fSuccess = tableIndex < 16;
     if (fSuccess)
@@ -1799,7 +1799,7 @@ bool AdaptDispatch::SetColorTableEntry(_In_ const size_t tableIndex,
 // - cParams - size of rgusParams
 // Return value:
 // True if handled successfully. False othewise.
-bool AdaptDispatch::WindowManipulation(_In_ const DispatchCommon::WindowManipulationType uiFunction,
+bool AdaptDispatch::WindowManipulation(const DispatchCommon::WindowManipulationType uiFunction,
                                        _In_reads_(cParams) const unsigned short* const rgusParams,
                                        _In_ size_t const cParams)
 {

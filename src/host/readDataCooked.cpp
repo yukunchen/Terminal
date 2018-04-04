@@ -563,7 +563,7 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
 // - TRUE if read is completed. FALSE if we need to keep waiting and be called again with the user's next keystroke.
 BOOL ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
                             _In_ WCHAR wch,
-                            _In_ const DWORD dwKeyState,
+                            const DWORD dwKeyState,
                             _Out_ NTSTATUS* pStatus)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();

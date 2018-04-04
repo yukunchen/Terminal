@@ -67,7 +67,7 @@ void TermTelemetry::Log(_In_ Codes const code)
 // - code - VT100 code.
 // Return Value:
 // - <none>
-void TermTelemetry::LogFailed(_In_ const wchar_t wch)
+void TermTelemetry::LogFailed(const wchar_t wch)
 {
     if (wch > CHAR_MAX)
     {

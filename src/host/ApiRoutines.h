@@ -178,31 +178,31 @@ class ApiRoutines : public IApiRoutines
 
     [[nodiscard]]
     HRESULT SetConsoleScreenBufferInfoExImpl(_In_ SCREEN_INFORMATION* const pContext,
-                                             _In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pScreenBufferInfoEx);
+                                             const CONSOLE_SCREEN_BUFFER_INFOEX* const pScreenBufferInfoEx);
 
     [[nodiscard]]
     HRESULT SetConsoleScreenBufferSizeImpl(_In_ SCREEN_INFORMATION* const pContext,
-                                           _In_ const COORD* const pSize);
+                                           const COORD* const pSize);
 
     [[nodiscard]]
     HRESULT SetConsoleCursorPositionImpl(_In_ SCREEN_INFORMATION* const pContext,
-                                         _In_ const COORD* const pCursorPosition);
+                                         const COORD* const pCursorPosition);
 
     void GetLargestConsoleWindowSizeImpl(_In_ SCREEN_INFORMATION* const pContext,
                                          _Out_ COORD* const pSize);
 
     [[nodiscard]]
     HRESULT ScrollConsoleScreenBufferAImpl(_In_ SCREEN_INFORMATION* const pContext,
-                                           _In_ const SMALL_RECT* const pSourceRectangle,
-                                           _In_ const COORD* const pTargetOrigin,
+                                           const SMALL_RECT* const pSourceRectangle,
+                                           const COORD* const pTargetOrigin,
                                            _In_opt_ const SMALL_RECT* const pTargetClipRectangle,
                                            _In_ char const chFill,
                                            _In_ WORD const attrFill);
 
     [[nodiscard]]
     HRESULT ScrollConsoleScreenBufferWImpl(_In_ SCREEN_INFORMATION* const pContext,
-                                           _In_ const SMALL_RECT* const pSourceRectangle,
-                                           _In_ const COORD* const pTargetOrigin,
+                                           const SMALL_RECT* const pSourceRectangle,
+                                           const COORD* const pTargetOrigin,
                                            _In_opt_ const SMALL_RECT* const pTargetClipRectangle,
                                            _In_ wchar_t const wchFill,
                                            _In_ WORD const attrFill);
@@ -214,22 +214,22 @@ class ApiRoutines : public IApiRoutines
     [[nodiscard]]
     HRESULT SetConsoleWindowInfoImpl(_In_ SCREEN_INFORMATION* const pContext,
                                      _In_ BOOLEAN const IsAbsoluteRectangle,
-                                     _In_ const SMALL_RECT* const pWindowRectangle);
+                                     const SMALL_RECT* const pWindowRectangle);
 
     //HRESULT ReadConsoleOutputAttributeImpl(_In_ SCREEN_INFORMATION* const pContext,
-    //                                               _In_ const COORD* const pSourceOrigin,
+    //                                               const COORD* const pSourceOrigin,
     //                                               _Out_writes_to_(AttributeBufferLength, *pAttributeBufferWritten) WORD* const pAttributeBuffer,
     //                                               _In_ ULONG const AttributeBufferLength,
     //                                               _Out_ ULONG* const pAttributeBufferWritten);
 
     //HRESULT ReadConsoleOutputCharacterAImpl(_In_ SCREEN_INFORMATION* const pContext,
-    //                                                _In_ const COORD* const pSourceOrigin,
+    //                                                const COORD* const pSourceOrigin,
     //                                                _Out_writes_to_(TextBufferLength, *pTextBufferWritten) char* const pTextBuffer,
     //                                                _In_ ULONG const pTextBufferLength,
     //                                                _Out_ ULONG* const pTextBufferWritten);
 
     //HRESULT ReadConsoleOutputCharacterWImpl(_In_ SCREEN_INFORMATION* const pContext,
-    //                                                _In_ const COORD* const pSourceOrigin,
+    //                                                const COORD* const pSourceOrigin,
     //                                                _Out_writes_to_(TextBufferLength, *pTextBufferWritten) wchar_t* const pTextBuffer,
     //                                                _In_ ULONG const TextBufferLength,
     //                                                _Out_ ULONG* const pTextBufferWritten);
@@ -246,48 +246,48 @@ class ApiRoutines : public IApiRoutines
 
     //HRESULT WriteConsoleOutputAImpl(_In_ SCREEN_INFORMATION* const pContext,
     //                                        _In_reads_(pTextBufferSize->X * pTextBufferSize->Y) const CHAR_INFO* const pTextBuffer,
-    //                                        _In_ const COORD* const pTextBufferSize,
-    //                                        _In_ const COORD* const pTextBufferSourceOrigin,
-    //                                        _In_ const SMALL_RECT* const pTargetRectangle,
+    //                                        const COORD* const pTextBufferSize,
+    //                                        const COORD* const pTextBufferSourceOrigin,
+    //                                        const SMALL_RECT* const pTargetRectangle,
     //                                        _Out_ SMALL_RECT* const pAffectedRectangle);
 
     //HRESULT WriteConsoleOutputWImpl(_In_ SCREEN_INFORMATION* const pContext,
     //                                        _In_reads_(pTextBufferSize->X * pTextBufferSize->Y) const CHAR_INFO* const pTextBuffer,
-    //                                        _In_ const COORD* const pTextBufferSize,
-    //                                        _In_ const COORD* const pTextBufferSourceOrigin,
-    //                                        _In_ const SMALL_RECT* const pTargetRectangle,
+    //                                        const COORD* const pTextBufferSize,
+    //                                        const COORD* const pTextBufferSourceOrigin,
+    //                                        const SMALL_RECT* const pTargetRectangle,
     //                                        _Out_ SMALL_RECT* const pAffectedRectangle);
 
     //HRESULT WriteConsoleOutputAttributeImpl(_In_ SCREEN_INFORMATION* const pContext,
     //                                                _In_reads_(AttributeBufferLength) const WORD* const pAttributeBuffer,
     //                                                _In_ ULONG const AttributeBufferLength,
-    //                                                _In_ const COORD* const pTargetOrigin,
+    //                                                const COORD* const pTargetOrigin,
     //                                                _Out_ ULONG* const pAttributeBufferRead);
 
     //HRESULT WriteConsoleOutputCharacterAImpl(_In_ SCREEN_INFORMATION* const pContext,
     //                                                 _In_reads_(TextBufferLength) const char* const pTextBuffer,
     //                                                 _In_ ULONG const TextBufferLength,
-    //                                                 _In_ const COORD* const pTargetOrigin,
+    //                                                 const COORD* const pTargetOrigin,
     //                                                 _Out_ ULONG* const pTextBufferRead);
 
     //HRESULT WriteConsoleOutputCharacterWImpl(_In_ SCREEN_INFORMATION* const pContext,
     //                                                 _In_reads_(TextBufferLength) const wchar_t* const pTextBuffer,
     //                                                 _In_ ULONG const TextBufferLength,
-    //                                                 _In_ const COORD* const pTargetOrigin,
+    //                                                 const COORD* const pTargetOrigin,
     //                                                 _Out_ ULONG* const pTextBufferRead);
 
     //HRESULT ReadConsoleOutputA(_In_ SCREEN_INFORMATION* const pContext,
     //                                   _Out_writes_(pTextBufferSize->X * pTextBufferSize->Y) CHAR_INFO* const pTextBuffer,
-    //                                   _In_ const COORD* const pTextBufferSize,
-    //                                   _In_ const COORD* const pTextBufferTargetOrigin,
-    //                                   _In_ const SMALL_RECT* const pSourceRectangle,
+    //                                   const COORD* const pTextBufferSize,
+    //                                   const COORD* const pTextBufferTargetOrigin,
+    //                                   const SMALL_RECT* const pSourceRectangle,
     //                                   _Out_ SMALL_RECT* const pReadRectangle);
 
     //HRESULT ReadConsoleOutputW(_In_ SCREEN_INFORMATION* const pContext,
     //                                   _Out_writes_(pTextBufferSize->X * pTextBufferSize->Y) CHAR_INFO* const pTextBuffer,
-    //                                   _In_ const COORD* const pTextBufferSize,
-    //                                   _In_ const COORD* const pTextBufferTargetOrigin,
-    //                                   _In_ const SMALL_RECT* const pSourceRectangle,
+    //                                   const COORD* const pTextBufferSize,
+    //                                   const COORD* const pTextBufferTargetOrigin,
+    //                                   const SMALL_RECT* const pSourceRectangle,
     //                                   _Out_ SMALL_RECT* const pReadRectangle);
 
     [[nodiscard]]
@@ -470,12 +470,12 @@ class ApiRoutines : public IApiRoutines
     void GetConsoleHistoryInfoImpl(_Out_ CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo);
 
     [[nodiscard]]
-    HRESULT SetConsoleHistoryInfoImpl(_In_ const CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo);
+    HRESULT SetConsoleHistoryInfoImpl(const CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo);
 
     [[nodiscard]]
     HRESULT SetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const pContext,
                                         _In_ BOOLEAN const IsForMaximumWindowSize,
-                                        _In_ const CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx);
+                                        const CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx);
 
 #pragma endregion
 };

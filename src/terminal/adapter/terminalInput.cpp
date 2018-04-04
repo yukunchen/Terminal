@@ -214,7 +214,7 @@ void TerminalInput::ChangeCursorKeysMode(_In_ bool const fApplicationMode)
     _fCursorApplicationMode = fApplicationMode;
 }
 
-const size_t TerminalInput::GetKeyMappingLength(_In_ const KeyEvent& keyEvent) const
+const size_t TerminalInput::GetKeyMappingLength(const KeyEvent& keyEvent) const
 {
     size_t length = 0;
     if (keyEvent.IsCursorKey())
@@ -228,7 +228,7 @@ const size_t TerminalInput::GetKeyMappingLength(_In_ const KeyEvent& keyEvent) c
     return length;
 }
 
-const TerminalInput::_TermKeyMap* TerminalInput::GetKeyMapping(_In_ const KeyEvent& keyEvent) const
+const TerminalInput::_TermKeyMap* TerminalInput::GetKeyMapping(const KeyEvent& keyEvent) const
 {
     const TerminalInput::_TermKeyMap* mapping = nullptr;
 
@@ -251,7 +251,7 @@ const TerminalInput::_TermKeyMap* TerminalInput::GetKeyMapping(_In_ const KeyEve
 // - keyEvent - Key event to translate
 // Return Value:
 // - True if there was a match to a key translation, and we successfully modified and sent it to the input
-bool TerminalInput::_SearchWithModifier(_In_ const KeyEvent& keyEvent) const
+bool TerminalInput::_SearchWithModifier(const KeyEvent& keyEvent) const
 {
 
     const TerminalInput::_TermKeyMap* pMatchingMapping;
@@ -323,7 +323,7 @@ bool TerminalInput::_SearchWithModifier(_In_ const KeyEvent& keyEvent) const
 // - pMatchingMapping - Where to put the pointer to the found match
 // Return Value:
 // - True if there was a match to a key translation
-bool TerminalInput::_SearchKeyMapping(_In_ const KeyEvent& keyEvent,
+bool TerminalInput::_SearchKeyMapping(const KeyEvent& keyEvent,
                                       _In_reads_(cKeyMapping) const TerminalInput::_TermKeyMap* keyMapping,
                                       _In_ size_t const cKeyMapping,
                                       _Out_ const TerminalInput::_TermKeyMap** pMatchingMapping) const
@@ -371,7 +371,7 @@ bool TerminalInput::_SearchKeyMapping(_In_ const KeyEvent& keyEvent,
 // - cKeyMapping - number of entries in keyMapping
 // Return Value:
 // - True if there was a match to a key translation, and we successfully sent it to the input
-bool TerminalInput::_TranslateDefaultMapping(_In_ const KeyEvent& keyEvent,
+bool TerminalInput::_TranslateDefaultMapping(const KeyEvent& keyEvent,
                                              _In_reads_(cKeyMapping) const TerminalInput::_TermKeyMap* keyMapping,
                                              _In_ size_t const cKeyMapping) const
 {
@@ -385,7 +385,7 @@ bool TerminalInput::_TranslateDefaultMapping(_In_ const KeyEvent& keyEvent,
     return fSuccess;
 }
 
-bool TerminalInput::HandleKey(_In_ const IInputEvent* const pInEvent) const
+bool TerminalInput::HandleKey(const IInputEvent* const pInEvent) const
 {
     // By default, we fail to handle the key
     bool fKeyHandled = false;
@@ -497,7 +497,7 @@ bool TerminalInput::HandleKey(_In_ const IInputEvent* const pInEvent) const
 // - wch - character to send to input paired with Esc
 // Return Value:
 // - None
-void TerminalInput::_SendEscapedInputSequence(_In_ const wchar_t wch) const
+void TerminalInput::_SendEscapedInputSequence(const wchar_t wch) const
 {
     try
     {

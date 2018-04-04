@@ -30,7 +30,7 @@ void swap(ATTR_ROW& a, ATTR_ROW& b) noexcept
 // Return Value:
 // - constructed object
 // Note: will throw exception if unable to allocate memory for text attribute storage
-ATTR_ROW::ATTR_ROW(_In_ const UINT cchRowWidth, _In_ const TextAttribute attr)
+ATTR_ROW::ATTR_ROW(const UINT cchRowWidth, const TextAttribute attr)
 {
     _rgList = wil::make_unique_nothrow<TextAttributeRun[]>(1);
     THROW_IF_NULL_ALLOC(_rgList.get());
@@ -91,7 +91,7 @@ void ATTR_ROW::swap(ATTR_ROW& other) noexcept
 // - pAttr - The default text attributes to use on text in this row.
 // Return Value:
 // - bool indicating success or failure
-bool ATTR_ROW::Reset(_In_ const TextAttribute attr)
+bool ATTR_ROW::Reset(const TextAttribute attr)
 {
     wistd::unique_ptr<TextAttributeRun[]> pNewRun = wil::make_unique_nothrow<TextAttributeRun[]>(1);
     bool fSuccess = pNewRun != nullptr;
@@ -116,7 +116,7 @@ bool ATTR_ROW::Reset(_In_ const TextAttribute attr)
 // Return Value:
 // - S_OK on success, otherwise relevant error HRESULT
 [[nodiscard]]
-HRESULT ATTR_ROW::Resize(_In_ const short sOldWidth, _In_ const short sNewWidth)
+HRESULT ATTR_ROW::Resize(const short sOldWidth, const short sNewWidth)
 {
     // Easy case. If the new row is longer, increase the length of the last run by how much new space there is.
     if (sNewWidth > sOldWidth)
@@ -259,7 +259,7 @@ void ATTR_ROW::FindAttrIndex(_In_ size_t const index,
 //  Return Value:
 // - Success if unpacked. Buffer too small if row length is incorrect
 [[nodiscard]]
-NTSTATUS ATTR_ROW::UnpackAttrs(_Out_writes_(cRowLength) TextAttribute* const rgAttrs, _In_ const size_t cRowLength) const
+NTSTATUS ATTR_ROW::UnpackAttrs(_Out_writes_(cRowLength) TextAttribute* const rgAttrs, const size_t cRowLength) const
 {
     NTSTATUS status = STATUS_SUCCESS;
 
@@ -318,7 +318,7 @@ NTSTATUS ATTR_ROW::UnpackAttrs(_Out_writes_(cRowLength) TextAttribute* const rgA
 // - attr - Attribute (color) to fill remaining characters with
 // Return Value:
 // - <none>
-bool ATTR_ROW::SetAttrToEnd(_In_ UINT const iStart, _In_ const TextAttribute attr)
+bool ATTR_ROW::SetAttrToEnd(_In_ UINT const iStart, const TextAttribute attr)
 {
     size_t const length = _cchRowWidth - iStart;
 
@@ -360,7 +360,7 @@ void ATTR_ROW::ReplaceLegacyAttrs(_In_ WORD wToBeReplacedAttr, _In_ WORD wReplac
 // - wNew - the new value for this run's attributes
 // Return Value:
 // <none>
-void TextAttributeRun::SetAttributesFromLegacy(_In_ const WORD wNew)
+void TextAttributeRun::SetAttributesFromLegacy(const WORD wNew)
 {
     _attributes.SetFromLegacy(wNew);
 }
@@ -404,10 +404,10 @@ size_t _DebugGetTotalLength(_In_reads_(cRun) const TextAttributeRun* const rgRun
 //   otherwise STATUS_SUCCESS if we were successful.
 [[nodiscard]]
 HRESULT ATTR_ROW::InsertAttrRuns(_In_reads_(cAttrs) const TextAttributeRun* const rgInsertAttrs,
-                                  _In_ const size_t cInsertAttrs,
-                                  _In_ const size_t iStart,
-                                  _In_ const size_t iEnd,
-                                  _In_ const size_t cBufferWidth)
+                                  const size_t cInsertAttrs,
+                                  const size_t iStart,
+                                  const size_t iEnd,
+                                  const size_t cBufferWidth)
 {
     assert((iEnd - iStart + 1) == _DebugGetTotalLength(rgInsertAttrs, cInsertAttrs));
 

@@ -30,8 +30,8 @@ namespace Microsoft::Console::Render
         static const COORD INVALID_COORDS;
 
         VtEngine(_In_ wil::unique_hfile hPipe,
-                _In_ const Microsoft::Console::IDefaultColorProvider& colorProvider,
-                _In_ const Microsoft::Console::Types::Viewport initialViewport);
+                const Microsoft::Console::IDefaultColorProvider& colorProvider,
+                const Microsoft::Console::Types::Viewport initialViewport);
 
         virtual ~VtEngine() override = default;
 
@@ -39,13 +39,13 @@ namespace Microsoft::Console::Render
         HRESULT InvalidateSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection,
                                     _In_ UINT const cRectangles) override;
         [[nodiscard]]
-        virtual HRESULT InvalidateScroll(_In_ const COORD* const pcoordDelta) = 0;
+        virtual HRESULT InvalidateScroll(const COORD* const pcoordDelta) = 0;
         [[nodiscard]]
-        HRESULT InvalidateSystem(_In_ const RECT* const prcDirtyClient) override;
+        HRESULT InvalidateSystem(const RECT* const prcDirtyClient) override;
         [[nodiscard]]
-        HRESULT Invalidate(_In_ const SMALL_RECT* const psrRegion) override;
+        HRESULT Invalidate(const SMALL_RECT* const psrRegion) override;
         [[nodiscard]]
-        HRESULT InvalidateCursor(_In_ const COORD* const pcoordCursor) override;
+        HRESULT InvalidateCursor(const COORD* const pcoordCursor) override;
         [[nodiscard]]
         HRESULT InvalidateAll() override;
         [[nodiscard]]
@@ -118,7 +118,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         HRESULT RequestCursor();
         [[nodiscard]]
-        HRESULT InheritCursor(_In_ const COORD coordCursor);
+        HRESULT InheritCursor(const COORD coordCursor);
 
     protected:
         wil::unique_hfile _hFile;
@@ -150,15 +150,15 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         HRESULT _Write(_In_reads_(cch) const char* const psz, _In_ size_t const cch);
         [[nodiscard]]
-        HRESULT _Write(_In_ const std::string& str);
+        HRESULT _Write(const std::string& str);
         [[nodiscard]]
-        HRESULT _WriteFormattedString(_In_ const std::string* const pFormat, ...);
+        HRESULT _WriteFormattedString(const std::string* const pFormat, ...);
 
-        void _OrRect(_Inout_ SMALL_RECT* const pRectExisting, _In_ const SMALL_RECT* const pRectToOr) const;
+        void _OrRect(_Inout_ SMALL_RECT* const pRectExisting, const SMALL_RECT* const pRectToOr) const;
         [[nodiscard]]
-        HRESULT _InvalidCombine(_In_ const Microsoft::Console::Types::Viewport invalid);
+        HRESULT _InvalidCombine(const Microsoft::Console::Types::Viewport invalid);
         [[nodiscard]]
-        HRESULT _InvalidOffset(_In_ const COORD* const ppt);
+        HRESULT _InvalidOffset(const COORD* const ppt);
         [[nodiscard]]
         HRESULT _InvalidRestrict();
         bool _AllIsInvalid() const;
@@ -174,44 +174,44 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         HRESULT _EraseLine();
         [[nodiscard]]
-        HRESULT _InsertDeleteLine(_In_ const short sLines, _In_ const bool fInsertLine);
+        HRESULT _InsertDeleteLine(const short sLines, const bool fInsertLine);
         [[nodiscard]]
-        HRESULT _DeleteLine(_In_ const short sLines);
+        HRESULT _DeleteLine(const short sLines);
         [[nodiscard]]
-        HRESULT _InsertLine(_In_ const short sLines);
+        HRESULT _InsertLine(const short sLines);
         [[nodiscard]]
-        HRESULT _CursorForward(_In_ const short chars);
+        HRESULT _CursorForward(const short chars);
         [[nodiscard]]
-        HRESULT _EraseCharacter(_In_ const short chars);
+        HRESULT _EraseCharacter(const short chars);
         [[nodiscard]]
-        HRESULT _CursorPosition(_In_ const COORD coord);
+        HRESULT _CursorPosition(const COORD coord);
         [[nodiscard]]
         HRESULT _CursorHome();
         [[nodiscard]]
         HRESULT _ClearScreen();
         [[nodiscard]]
-        HRESULT _SetGraphicsRendition16Color(_In_ const WORD wAttr,
-                                            _In_ const bool fIsForeground);
+        HRESULT _SetGraphicsRendition16Color(const WORD wAttr,
+                                            const bool fIsForeground);
         [[nodiscard]]
-        HRESULT _SetGraphicsRenditionRGBColor(_In_ const COLORREF color,
-                                            _In_ const bool fIsForeground);
+        HRESULT _SetGraphicsRenditionRGBColor(const COLORREF color,
+                                            const bool fIsForeground);
         [[nodiscard]]
-        HRESULT _SetGraphicsRenditionDefaultColor(_In_ const bool fIsForeground);
+        HRESULT _SetGraphicsRenditionDefaultColor(const bool fIsForeground);
         [[nodiscard]]
-        HRESULT _ResizeWindow(_In_ const short sWidth, _In_ const short sHeight);
+        HRESULT _ResizeWindow(const short sWidth, const short sHeight);
 
         [[nodiscard]]
-        virtual HRESULT _MoveCursor(_In_ const COORD coord) = 0;
+        virtual HRESULT _MoveCursor(const COORD coord) = 0;
         [[nodiscard]]
         HRESULT _RgbUpdateDrawingBrushes(_In_ COLORREF const colorForeground,
                                         _In_ COLORREF const colorBackground,
                                         _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                                        _In_ const WORD cColorTable);
+                                        const WORD cColorTable);
         [[nodiscard]]
         HRESULT _16ColorUpdateDrawingBrushes(_In_ COLORREF const colorForeground,
                                             _In_ COLORREF const colorBackground,
                                             _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                                            _In_ const WORD cColorTable);
+                                            const WORD cColorTable);
 
         bool _WillWriteSingleChar() const;
 

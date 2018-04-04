@@ -187,7 +187,7 @@ HRESULT VtEngine::PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* const
 HRESULT VtEngine::_RgbUpdateDrawingBrushes(_In_ COLORREF const colorForeground,
                                            _In_ COLORREF const colorBackground,
                                            _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                                           _In_ const WORD cColorTable)
+                                           const WORD cColorTable)
 {
     WORD wFoundColor = 0;
     if (colorForeground != _LastFG)
@@ -243,7 +243,7 @@ HRESULT VtEngine::_RgbUpdateDrawingBrushes(_In_ COLORREF const colorForeground,
 HRESULT VtEngine::_16ColorUpdateDrawingBrushes(_In_ COLORREF const colorForeground,
                                                _In_ COLORREF const colorBackground,
                                                _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                                               _In_ const WORD cColorTable)
+                                               const WORD cColorTable)
 {
     if (colorForeground != _LastFG)
     {

@@ -24,10 +24,10 @@
 // Return Value:
 // - constructed object
 // Note: may throw exception
-TEXT_BUFFER_INFO::TEXT_BUFFER_INFO(_In_ const FontInfo* const pFontInfo,
-                                   _In_ const COORD screenBufferSize,
-                                   _In_ const CHAR_INFO fill,
-                                   _In_ const UINT cursorSize) :
+TEXT_BUFFER_INFO::TEXT_BUFFER_INFO(const FontInfo* const pFontInfo,
+                                   const COORD screenBufferSize,
+                                   const CHAR_INFO fill,
+                                   const UINT cursorSize) :
     _fiCurrentFont{ *pFontInfo },
     _fiDesiredFont{ *pFontInfo },
     _FirstRow{ 0 },
@@ -79,7 +79,7 @@ void TEXT_BUFFER_INFO::CopyProperties(_In_ TEXT_BUFFER_INFO* const pOtherBuffer)
     GetCursor()->CopyProperties(pOtherBuffer->GetCursor());
 }
 
-void TEXT_BUFFER_INFO::SetCurrentFont(_In_ const FontInfo* const pfiNewFont)
+void TEXT_BUFFER_INFO::SetCurrentFont(const FontInfo* const pfiNewFont)
 {
     _fiCurrentFont = *pfiNewFont;
 }
@@ -89,7 +89,7 @@ FontInfo* TEXT_BUFFER_INFO::GetCurrentFont()
     return &_fiCurrentFont;
 }
 
-void TEXT_BUFFER_INFO::SetDesiredFont(_In_ const FontInfoDesired* const pfiNewFont)
+void TEXT_BUFFER_INFO::SetDesiredFont(const FontInfoDesired* const pfiNewFont)
 {
     _fiDesiredFont = *pfiNewFont;
 }
@@ -331,7 +331,7 @@ ROW& TEXT_BUFFER_INFO::GetNextRow(const ROW& row) noexcept
 // - dbcsAttribute - Double byte information associated with the character about to be inserted into the buffer
 //Return Value:
 // - True if it is valid to insert a character with the given double byte attributes. False otherwise.
-bool TEXT_BUFFER_INFO::AssertValidDoubleByteSequence(_In_ const DbcsAttribute dbcsAttribute)
+bool TEXT_BUFFER_INFO::AssertValidDoubleByteSequence(const DbcsAttribute dbcsAttribute)
 {
     // To figure out if the sequence is valid, we have to look at the character that comes before the current one
     const COORD coordPrevPosition = GetPreviousFromCursor();
@@ -423,7 +423,7 @@ bool TEXT_BUFFER_INFO::AssertValidDoubleByteSequence(_In_ const DbcsAttribute db
 //Return Value:
 // - true if we successfully prepared the buffer and moved the cursor
 // - false otherwise (out of memory)
-bool TEXT_BUFFER_INFO::_PrepareForDoubleByteSequence(_In_ const DbcsAttribute dbcsAttribute)
+bool TEXT_BUFFER_INFO::_PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute)
 {
     // Assert the buffer state is ready for this character
     // This function corrects most errors. If this is false, we had an uncorrectable one.
@@ -465,9 +465,9 @@ bool TEXT_BUFFER_INFO::_PrepareForDoubleByteSequence(_In_ const DbcsAttribute db
 //Return Value:
 // - true if we successfully inserted the character
 // - false otherwise (out of memory)
-bool TEXT_BUFFER_INFO::InsertCharacter(_In_ const wchar_t wch,
-                                       _In_ const DbcsAttribute dbcsAttribute,
-                                       _In_ const TextAttribute attr)
+bool TEXT_BUFFER_INFO::InsertCharacter(const wchar_t wch,
+                                       const DbcsAttribute dbcsAttribute,
+                                       const TextAttribute attr)
 {
     // Ensure consistent buffer state for double byte characters based on the character type we're about to insert
     bool fSuccess = _PrepareForDoubleByteSequence(dbcsAttribute);
@@ -777,7 +777,7 @@ CHAR_INFO TEXT_BUFFER_INFO::GetFill() const
     return _ciFill;
 }
 
-void TEXT_BUFFER_INFO::SetFill(_In_ const CHAR_INFO ciFill)
+void TEXT_BUFFER_INFO::SetFill(const CHAR_INFO ciFill)
 {
     _ciFill = ciFill;
 }

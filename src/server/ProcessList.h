@@ -43,7 +43,7 @@ public:
     void FreeProcessData(_In_ ConsoleProcessHandle* const ProcessData);
 
 
-    ConsoleProcessHandle* FindProcessInList(_In_ const DWORD dwProcessId) const;
+    ConsoleProcessHandle* FindProcessInList(const DWORD dwProcessId) const;
     ConsoleProcessHandle* FindProcessByGroupId(_In_ ULONG ulProcessGroupId) const;
 
     [[nodiscard]]
@@ -58,7 +58,7 @@ public:
     HRESULT GetProcessList(_Inout_updates_(*pcProcessList) DWORD* const pProcessList,
                            _Inout_ size_t* const pcProcessList) const;
 
-    void ModifyConsoleProcessFocus(_In_ const bool fForeground);
+    void ModifyConsoleProcessFocus(const bool fForeground);
 
     bool IsEmpty() const;
 

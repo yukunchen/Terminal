@@ -26,7 +26,7 @@ bool Selection::IsInSelectingState() const
 // - fSelectingOn - Set true to set the global flag on. False to turn the global flag off.
 // Return Value:
 // - <none>
-void Selection::_SetSelectingState(_In_ const bool fSelectingOn)
+void Selection::_SetSelectingState(const bool fSelectingOn)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (fSelectingOn)
@@ -73,7 +73,7 @@ bool Selection::IsLineSelection() const
 // - fAlignToLineSelect - whether or not to use line selection
 // Return Value:
 // - <none>
-void Selection::_AlignAlternateSelection(_In_ const bool fAlignToLineSelect)
+void Selection::_AlignAlternateSelection(const bool fAlignToLineSelect)
 {
     if (fAlignToLineSelect)
     {
@@ -174,7 +174,7 @@ void Selection::MouseUp()
 // - <none> (Captures global state)
 // Return Value:
 // - <none>
-void Selection::_SaveCursorData(_In_ const TEXT_BUFFER_INFO* const pTextInfo)
+void Selection::_SaveCursorData(const TEXT_BUFFER_INFO* const pTextInfo)
 {
     Cursor* const pCursor = pTextInfo->GetCursor();
     _coordSavedCursorPosition = pCursor->GetPosition();
@@ -237,7 +237,7 @@ DWORD Selection::GetPublicSelectionFlags() const noexcept
 // - fLineSelectionOn - whether or not to use line selection
 // Return Value:
 // - <none>
-void Selection::SetLineSelection(_In_ const bool fLineSelectionOn)
+void Selection::SetLineSelection(const bool fLineSelectionOn)
 {
     if (_fLineSelection != fLineSelectionOn)
     {

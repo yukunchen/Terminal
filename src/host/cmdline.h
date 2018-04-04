@@ -105,13 +105,13 @@ protected:
 [[nodiscard]]
 NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                             _In_ WCHAR wch,
-                            _In_ const DWORD dwKeyState);
+                            const DWORD dwKeyState);
 
-void DeleteCommandLine(_Inout_ COOKED_READ_DATA* pCookedReadData, _In_ const BOOL fUpdateFields);
+void DeleteCommandLine(_Inout_ COOKED_READ_DATA* pCookedReadData, const BOOL fUpdateFields);
 
 void RedrawCommandLine(_Inout_ COOKED_READ_DATA* CookedReadData);
 
-PCOMMAND_HISTORY FindCommandHistory(_In_ const HANDLE hProcess);
+PCOMMAND_HISTORY FindCommandHistory(const HANDLE hProcess);
 
 void CleanUpPopups(_In_ COOKED_READ_DATA* const CookedReadData);
 

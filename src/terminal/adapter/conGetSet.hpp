@@ -28,8 +28,8 @@ namespace Microsoft::Console::VirtualTerminal
     public:
         virtual BOOL GetConsoleCursorInfo(_In_ CONSOLE_CURSOR_INFO* const pConsoleCursorInfo) const = 0;
         virtual BOOL GetConsoleScreenBufferInfoEx(_Out_ CONSOLE_SCREEN_BUFFER_INFOEX* const pConsoleScreenBufferInfoEx) const = 0;
-        virtual BOOL SetConsoleScreenBufferInfoEx(_In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pConsoleScreenBufferInfoEx) const = 0;
-        virtual BOOL SetConsoleCursorInfo(_In_ const CONSOLE_CURSOR_INFO* const pConsoleCursorInfo) = 0;
+        virtual BOOL SetConsoleScreenBufferInfoEx(const CONSOLE_SCREEN_BUFFER_INFOEX* const pConsoleScreenBufferInfoEx) const = 0;
+        virtual BOOL SetConsoleCursorInfo(const CONSOLE_CURSOR_INFO* const pConsoleCursorInfo) = 0;
         virtual BOOL SetConsoleCursorPosition(_In_ COORD const coordCursorPosition) = 0;
         virtual BOOL FillConsoleOutputCharacterW(_In_ WCHAR const wch,
                                                     _In_ DWORD const nLength,
@@ -41,26 +41,26 @@ namespace Microsoft::Console::VirtualTerminal
                                                 _Out_ DWORD* const pNumberOfAttrsWritten) = 0;
         virtual BOOL SetConsoleTextAttribute(_In_ WORD const wAttr) = 0;
         virtual BOOL PrivateSetLegacyAttributes(_In_ WORD const wAttr,
-                                                _In_ const bool fForeground,
-                                                _In_ const bool fBackground,
-                                                _In_ const bool fMeta) = 0;
+                                                const bool fForeground,
+                                                const bool fBackground,
+                                                const bool fMeta) = 0;
         virtual BOOL SetConsoleXtermTextAttribute(_In_ int const iXtermTableEntry,
-                                                    _In_ const bool fIsForeground) = 0;
-        virtual BOOL SetConsoleRGBTextAttribute(_In_ COLORREF const rgbColor, _In_ const bool fIsForeground) = 0;
+                                                    const bool fIsForeground) = 0;
+        virtual BOOL SetConsoleRGBTextAttribute(_In_ COLORREF const rgbColor, const bool fIsForeground) = 0;
         virtual BOOL WriteConsoleInputW(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
                                         _Out_ size_t& eventsWritten) = 0;
-        virtual BOOL ScrollConsoleScreenBufferW(_In_ const SMALL_RECT* pScrollRectangle,
+        virtual BOOL ScrollConsoleScreenBufferW(const SMALL_RECT* pScrollRectangle,
                                                 _In_opt_ const SMALL_RECT* pClipRectangle,
                                                 _In_ COORD dwDestinationOrigin,
-                                                _In_ const CHAR_INFO* pFill) = 0;
+                                                const CHAR_INFO* pFill) = 0;
         virtual BOOL SetConsoleWindowInfo(_In_ BOOL const bAbsolute,
-                                            _In_ const SMALL_RECT* const lpConsoleWindow) = 0;
+                                            const SMALL_RECT* const lpConsoleWindow) = 0;
         virtual BOOL PrivateSetCursorKeysMode(_In_ bool const fApplicationMode) = 0;
         virtual BOOL PrivateSetKeypadMode(_In_ bool const fApplicationMode) = 0;
         virtual BOOL PrivateAllowCursorBlinking(_In_ bool const fEnable) = 0;
-        virtual BOOL PrivateSetScrollingRegion(_In_ const SMALL_RECT* const psrScrollMargins) = 0;
+        virtual BOOL PrivateSetScrollingRegion(const SMALL_RECT* const psrScrollMargins) = 0;
         virtual BOOL PrivateReverseLineFeed() = 0;
-        virtual BOOL SetConsoleTitleW(_In_ const wchar_t* const pwchWindowTitle,
+        virtual BOOL SetConsoleTitleW(const wchar_t* const pwchWindowTitle,
                                         _In_ unsigned short sCchTitleLength) = 0;
         virtual BOOL PrivateUseAlternateScreenBuffer() = 0;
         virtual BOOL PrivateUseMainScreenBuffer() = 0;

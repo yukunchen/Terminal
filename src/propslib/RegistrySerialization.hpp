@@ -85,7 +85,7 @@ public:
         String,
     };
 
-    static DWORD ToWin32RegistryType(_In_ const _RegPropertyType type);
+    static DWORD ToWin32RegistryType(const _RegPropertyType type);
 
     typedef struct _RegPropertyMap
     {
@@ -114,8 +114,8 @@ public:
     static const size_t RegistrySerialization::s_GlobalPropMappingsSize;
 
     [[nodiscard]]
-    static NTSTATUS s_LoadRegDword(_In_ HKEY const hKey, _In_ const _RegPropertyMap* const pPropMap, _In_ Settings* const pSettings);
+    static NTSTATUS s_LoadRegDword(_In_ HKEY const hKey, const _RegPropertyMap* const pPropMap, _In_ Settings* const pSettings);
     [[nodiscard]]
-    static NTSTATUS s_LoadRegString(_In_ HKEY const hKey, _In_ const _RegPropertyMap* const pPropMap, _In_ Settings* const pSettings);
+    static NTSTATUS s_LoadRegString(_In_ HKEY const hKey, const _RegPropertyMap* const pPropMap, _In_ Settings* const pSettings);
 
 };

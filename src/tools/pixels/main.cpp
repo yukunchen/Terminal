@@ -83,12 +83,12 @@ BOOL CALLBACK MonitorEnumProc(
     return TRUE;
 }
 
-BOOL s_AdjustWindowRectEx(_Inout_ LPRECT prc, _In_ const DWORD dwStyle, _In_ const BOOL fMenu, _In_ const DWORD dwExStyle)
+BOOL s_AdjustWindowRectEx(_Inout_ LPRECT prc, const DWORD dwStyle, const BOOL fMenu, const DWORD dwExStyle)
 {
     return AdjustWindowRectEx(prc, dwStyle, fMenu, dwExStyle);
 }
 
-BOOL s_UnadjustWindowRectEx(_Inout_ LPRECT prc, _In_ const DWORD dwStyle, _In_ const BOOL fMenu, _In_ const DWORD dwExStyle)
+BOOL s_UnadjustWindowRectEx(_Inout_ LPRECT prc, const DWORD dwStyle, const BOOL fMenu, const DWORD dwExStyle)
 {
     RECT rc;
     SetRectEmpty(&rc);
@@ -103,12 +103,12 @@ BOOL s_UnadjustWindowRectEx(_Inout_ LPRECT prc, _In_ const DWORD dwStyle, _In_ c
     return fRc;
 }
 
-BOOL s_AdjustWindowRectExForDpi(_Inout_ LPRECT prc, _In_ const DWORD dwStyle, _In_ const BOOL fMenu, _In_ const DWORD dwExStyle, _In_ UINT dpi)
+BOOL s_AdjustWindowRectExForDpi(_Inout_ LPRECT prc, const DWORD dwStyle, const BOOL fMenu, const DWORD dwExStyle, _In_ UINT dpi)
 {
     return AdjustWindowRectExForDpi(prc, dwStyle, fMenu, dwExStyle, dpi);
 }
 
-BOOL s_UnadjustWindowRectExForDpi(_Inout_ LPRECT prc, _In_ const DWORD dwStyle, _In_ const BOOL fMenu, _In_ const DWORD dwExStyle, _In_ UINT dpi)
+BOOL s_UnadjustWindowRectExForDpi(_Inout_ LPRECT prc, const DWORD dwStyle, const BOOL fMenu, const DWORD dwExStyle, _In_ UINT dpi)
 {
     RECT rc;
     SetRectEmpty(&rc);

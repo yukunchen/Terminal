@@ -27,22 +27,22 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool ActionPrintString(_Inout_updates_(cch) wchar_t* const rgwch,
                                         _In_ size_t const cch) = 0;
         virtual bool ActionEscDispatch(_In_ wchar_t const wch,
-                                        _In_ const unsigned short cIntermediate,
-                                        _In_ const wchar_t wchIntermediate) = 0;
+                                        const unsigned short cIntermediate,
+                                        const wchar_t wchIntermediate) = 0;
         virtual bool ActionCsiDispatch(_In_ wchar_t const wch,
-                                        _In_ const unsigned short cIntermediate,
-                                        _In_ const wchar_t wchIntermediate,
+                                        const unsigned short cIntermediate,
+                                        const wchar_t wchIntermediate,
                                         _In_reads_(cParams) const unsigned short* const rgusParams,
-                                        _In_ const unsigned short cParams) = 0;
+                                        const unsigned short cParams) = 0;
         virtual bool ActionClear() = 0;
         virtual bool ActionIgnore() = 0;
         virtual bool ActionOscDispatch(_In_ wchar_t const wch,
-                                        _In_ const unsigned short sOscParam,
+                                        const unsigned short sOscParam,
                                         _Inout_updates_(cchOscString) wchar_t* const pwchOscStringBuffer,
-                                        _In_ const unsigned short cchOscString) = 0;
+                                        const unsigned short cchOscString) = 0;
         virtual bool ActionSs3Dispatch(_In_ wchar_t const wch,
                                         _In_reads_(cParams) const unsigned short* const rgusParams,
-                                        _In_ const unsigned short cParams) = 0;
+                                        const unsigned short cParams) = 0;
         virtual bool FlushAtEndOfString() const = 0;
 
     };

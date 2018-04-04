@@ -193,31 +193,31 @@ public:
 
     [[nodiscard]]
     virtual HRESULT SetConsoleScreenBufferInfoExImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                     _In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pScreenBufferInfoEx) = 0;
+                                                     const CONSOLE_SCREEN_BUFFER_INFOEX* const pScreenBufferInfoEx) = 0;
 
     [[nodiscard]]
     virtual HRESULT SetConsoleScreenBufferSizeImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                   _In_ const COORD* const pSize) = 0;
+                                                   const COORD* const pSize) = 0;
 
     [[nodiscard]]
     virtual HRESULT SetConsoleCursorPositionImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                 _In_ const COORD* const pCursorPosition) = 0;
+                                                 const COORD* const pCursorPosition) = 0;
 
     virtual void GetLargestConsoleWindowSizeImpl(_In_ IConsoleOutputObject* const pOutContext,
                                                  _Out_ COORD* const pSize) = 0;
 
     [[nodiscard]]
     virtual HRESULT ScrollConsoleScreenBufferAImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                   _In_ const SMALL_RECT* const pSourceRectangle,
-                                                   _In_ const COORD* const pTargetOrigin,
+                                                   const SMALL_RECT* const pSourceRectangle,
+                                                   const COORD* const pTargetOrigin,
                                                    _In_opt_ const SMALL_RECT* const pTargetClipRectangle,
                                                    _In_ char const chFill,
                                                    _In_ WORD const attrFill) = 0;
 
     [[nodiscard]]
     virtual HRESULT ScrollConsoleScreenBufferWImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                   _In_ const SMALL_RECT* const pSourceRectangle,
-                                                   _In_ const COORD* const pTargetOrigin,
+                                                   const SMALL_RECT* const pSourceRectangle,
+                                                   const COORD* const pTargetOrigin,
                                                    _In_opt_ const SMALL_RECT* const pTargetClipRectangle,
                                                    _In_ wchar_t const wchFill,
                                                    _In_ WORD const attrFill) = 0;
@@ -229,25 +229,25 @@ public:
     [[nodiscard]]
     virtual HRESULT SetConsoleWindowInfoImpl(_In_ IConsoleOutputObject* const pOutContext,
                                              _In_ BOOLEAN const IsAbsoluteRectangle,
-                                             _In_ const SMALL_RECT* const pWindowRectangle) = 0;
+                                             const SMALL_RECT* const pWindowRectangle) = 0;
 
     [[nodiscard]]
     virtual HRESULT ReadConsoleOutputAttributeImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                   _In_ const COORD* const pSourceOrigin,
+                                                   const COORD* const pSourceOrigin,
                                                    _Out_writes_to_(AttributeBufferLength, *pAttributeBufferWritten) WORD* const pAttributeBuffer,
                                                    _In_ ULONG const AttributeBufferLength,
                                                    _Out_ ULONG* const pAttributeBufferWritten);
 
     [[nodiscard]]
     virtual HRESULT ReadConsoleOutputCharacterAImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                    _In_ const COORD* const pSourceOrigin,
+                                                    const COORD* const pSourceOrigin,
                                                     _Out_writes_to_(TextBufferLength, *pTextBufferWritten) char* const pTextBuffer,
                                                     _In_ ULONG const TextBufferLength,
                                                     _Out_ ULONG* const pTextBufferWritten);
 
     [[nodiscard]]
     virtual HRESULT ReadConsoleOutputCharacterWImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                    _In_ const COORD* const pSourceOrigin,
+                                                    const COORD* const pSourceOrigin,
                                                     _Out_writes_to_(TextBufferLength, *pTextBufferWritten) wchar_t* const pTextBuffer,
                                                     _In_ ULONG const TextBufferLength,
                                                     _Out_ ULONG* const pTextBufferWritten);
@@ -267,54 +267,54 @@ public:
     [[nodiscard]]
     virtual HRESULT WriteConsoleOutputAImpl(_In_ IConsoleOutputObject* const pOutContext,
                                             _In_reads_(pTextBufferSize->X * pTextBufferSize->Y) const CHAR_INFO* const pTextBuffer,
-                                            _In_ const COORD* const pTextBufferSize,
-                                            _In_ const COORD* const pTextBufferSourceOrigin,
-                                            _In_ const SMALL_RECT* const pTargetRectangle,
+                                            const COORD* const pTextBufferSize,
+                                            const COORD* const pTextBufferSourceOrigin,
+                                            const SMALL_RECT* const pTargetRectangle,
                                             _Out_ SMALL_RECT* const pAffectedRectangle);
 
     [[nodiscard]]
     virtual HRESULT WriteConsoleOutputWImpl(_In_ IConsoleOutputObject* const pOutContext,
                                             _In_reads_(pTextBufferSize->X * pTextBufferSize->Y) const CHAR_INFO* const pTextBuffer,
-                                            _In_ const COORD* const pTextBufferSize,
-                                            _In_ const COORD* const pTextBufferSourceOrigin,
-                                            _In_ const SMALL_RECT* const pTargetRectangle,
+                                            const COORD* const pTextBufferSize,
+                                            const COORD* const pTextBufferSourceOrigin,
+                                            const SMALL_RECT* const pTargetRectangle,
                                             _Out_ SMALL_RECT* const pAffectedRectangle);
 
     [[nodiscard]]
     virtual HRESULT WriteConsoleOutputAttributeImpl(_In_ IConsoleOutputObject* const pOutContext,
                                                     _In_reads_(AttributeBufferLength) const WORD* const pAttributeBuffer,
                                                     _In_ ULONG const AttributeBufferLength,
-                                                    _In_ const COORD* const pTargetOrigin,
+                                                    const COORD* const pTargetOrigin,
                                                     _Out_ ULONG* const pAttributeBufferRead);
 
     [[nodiscard]]
     virtual HRESULT WriteConsoleOutputCharacterAImpl(_In_ IConsoleOutputObject* const pOutContext,
                                                      _In_reads_(TextBufferLength) const char* const pTextBuffer,
                                                      _In_ ULONG const TextBufferLength,
-                                                     _In_ const COORD* const pTargetOrigin,
+                                                     const COORD* const pTargetOrigin,
                                                      _Out_ ULONG* const pTextBufferRead);
 
     [[nodiscard]]
     virtual HRESULT WriteConsoleOutputCharacterWImpl(_In_ IConsoleOutputObject* const pOutContext,
                                                      _In_reads_(TextBufferLength) const wchar_t* const pTextBuffer,
                                                      _In_ ULONG const TextBufferLength,
-                                                     _In_ const COORD* const pTargetOrigin,
+                                                     const COORD* const pTargetOrigin,
                                                      _Out_ ULONG* const pTextBufferRead);
 
     [[nodiscard]]
     virtual HRESULT ReadConsoleOutputA(_In_ IConsoleOutputObject* const pOutContext,
                                        _Out_writes_(pTextBufferSize->X * pTextBufferSize->Y) CHAR_INFO* const pTextBuffer,
-                                       _In_ const COORD* const pTextBufferSize,
-                                       _In_ const COORD* const pTextBufferTargetOrigin,
-                                       _In_ const SMALL_RECT* const pSourceRectangle,
+                                       const COORD* const pTextBufferSize,
+                                       const COORD* const pTextBufferTargetOrigin,
+                                       const SMALL_RECT* const pSourceRectangle,
                                        _Out_ SMALL_RECT* const pReadRectangle);
 
     [[nodiscard]]
     virtual HRESULT ReadConsoleOutputW(_In_ IConsoleOutputObject* const pOutContext,
                                        _Out_writes_(pTextBufferSize->X * pTextBufferSize->Y) CHAR_INFO* const pTextBuffer,
-                                       _In_ const COORD* const pTextBufferSize,
-                                       _In_ const COORD* const pTextBufferTargetOrigin,
-                                       _In_ const SMALL_RECT* const pSourceRectangle,
+                                       const COORD* const pTextBufferSize,
+                                       const COORD* const pTextBufferTargetOrigin,
+                                       const SMALL_RECT* const pSourceRectangle,
                                        _Out_ SMALL_RECT* const pReadRectangle);
 
     [[nodiscard]]
@@ -497,12 +497,12 @@ public:
     virtual void GetConsoleHistoryInfoImpl(_Out_ CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo) = 0;
 
     [[nodiscard]]
-    virtual HRESULT SetConsoleHistoryInfoImpl(_In_ const CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo) = 0;
+    virtual HRESULT SetConsoleHistoryInfoImpl(const CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo) = 0;
 
     [[nodiscard]]
     virtual HRESULT SetCurrentConsoleFontExImpl(_In_ IConsoleOutputObject* const pOutContext,
                                                 _In_ BOOLEAN const IsForMaximumWindowSize,
-                                                _In_ const CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx) = 0;
+                                                const CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx) = 0;
 
 #pragma endregion
 };

@@ -23,7 +23,7 @@ using namespace Microsoft::Console::Render;
 // Return Value:
 // - S_OK
 [[nodiscard]]
-HRESULT VtEngine::InvalidateSystem(_In_ const RECT* const /*prcDirtyClient*/)
+HRESULT VtEngine::InvalidateSystem(const RECT* const /*prcDirtyClient*/)
 {
     return S_OK;
 }
@@ -145,7 +145,7 @@ HRESULT VtEngine::PrepareForTeardown(_Out_ bool* const pForcePaint)
 // Return Value:
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT VtEngine::_InvalidCombine(_In_ const Viewport invalid)
+HRESULT VtEngine::_InvalidCombine(const Viewport invalid)
 {
     if (!_fInvalidRectUsed)
     {
@@ -171,7 +171,7 @@ HRESULT VtEngine::_InvalidCombine(_In_ const Viewport invalid)
 // Return Value:
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT VtEngine::_InvalidOffset(_In_ const COORD* const pCoord)
+HRESULT VtEngine::_InvalidOffset(const COORD* const pCoord)
 {
     if (_fInvalidRectUsed)
     {

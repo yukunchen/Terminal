@@ -44,7 +44,7 @@ class SCREEN_INFORMATION
 public:
     [[nodiscard]]
     static NTSTATUS CreateInstance(_In_ COORD coordWindowSize,
-                                   _In_ const FontInfo* const pfiFont,
+                                   const FontInfo* const pfiFont,
                                    _In_ COORD coordScreenBufferSize,
                                    _In_ CHAR_INFO const ciFill,
                                    _In_ CHAR_INFO const ciPopupFill,
@@ -75,18 +75,18 @@ public:
     COORD GetLargestWindowSizeInCharacters(_In_ COORD const coordFontSize = { 1, 1 }) const;
     COORD GetScrollBarSizesInCharacters() const;
 
-    void ProcessResizeWindow(_In_ const RECT* const prcClientNew, _In_ const RECT* const prcClientOld);
-    void SetViewportSize(_In_ const COORD* const pcoordSize);
+    void ProcessResizeWindow(const RECT* const prcClientNew, const RECT* const prcClientOld);
+    void SetViewportSize(const COORD* const pcoordSize);
 
     COORD GetScreenBufferSize() const;
-    void SetScreenBufferSize(_In_ const COORD coordNewBufferSize);
+    void SetScreenBufferSize(const COORD coordNewBufferSize);
 
     COORD GetScreenFontSize() const;
-    void UpdateFont(_In_ const FontInfo* const pfiNewFont);
+    void UpdateFont(const FontInfo* const pfiNewFont);
     void RefreshFontWithRenderer();
 
     [[nodiscard]]
-    NTSTATUS ResizeScreenBuffer(_In_ const COORD coordNewScreenSize, _In_ const bool fDoScrollBarUpdate);
+    NTSTATUS ResizeScreenBuffer(const COORD coordNewScreenSize, const bool fDoScrollBarUpdate);
 
     void ResetTextFlags(_In_ short const sStartX, _In_ short const sStartY, _In_ short const sEndX, _In_ short const sEndY);
 
@@ -98,11 +98,11 @@ public:
     bool IsMaximizedY() const;
 
     SMALL_RECT GetBufferViewport() const;
-    void SetBufferViewport(_In_ const Microsoft::Console::Types::Viewport newViewport);
+    void SetBufferViewport(const Microsoft::Console::Types::Viewport newViewport);
     // Forwarders to Window if we're the active buffer.
     [[nodiscard]]
-    NTSTATUS SetViewportOrigin(_In_ const BOOL fAbsolute, _In_ const COORD coordWindowOrigin);
-    void SetViewportRect(_In_ const Microsoft::Console::Types::Viewport newViewport);
+    NTSTATUS SetViewportOrigin(const BOOL fAbsolute, const COORD coordWindowOrigin);
+    void SetViewportRect(const Microsoft::Console::Types::Viewport newViewport);
     BOOL SendNotifyBeep() const;
     BOOL PostUpdateWindowSize() const;
 
@@ -118,15 +118,15 @@ public:
     static void s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pScreenInfo);
 
 
-    std::wstring ReadText(_In_ const size_t rowIndex) const;
-    std::vector<OutputCell> ReadLine(_In_ const size_t rowIndex) const;
-    std::vector<OutputCell> ReadLine(_In_ const size_t rowIndex,
-                                     _In_ const size_t startIndex) const;
-    std::vector<OutputCell> ReadLine(_In_ const size_t rowIndex,
-                                     _In_ const size_t startIndex,
-                                     _In_ const size_t count) const;
+    std::wstring ReadText(const size_t rowIndex) const;
+    std::vector<OutputCell> ReadLine(const size_t rowIndex) const;
+    std::vector<OutputCell> ReadLine(const size_t rowIndex,
+                                     const size_t startIndex) const;
+    std::vector<OutputCell> ReadLine(const size_t rowIndex,
+                                     const size_t startIndex,
+                                     const size_t count) const;
 
-    std::pair<COORD, COORD> GetWordBoundary(_In_ const COORD position) const;
+    std::pair<COORD, COORD> GetWordBoundary(const COORD position) const;
 
 
 
@@ -168,14 +168,14 @@ public:
                               _In_ unsigned int const Color,
                               _In_ CursorType const Type);
 
-    void SetCursorDBMode(_In_ const bool DoubleCursor);
+    void SetCursorDBMode(const bool DoubleCursor);
     [[nodiscard]]
     NTSTATUS SetCursorPosition(_In_ COORD const Position, _In_ BOOL const TurnOn);
 
-    void MakeCursorVisible(_In_ const COORD CursorPosition);
+    void MakeCursorVisible(const COORD CursorPosition);
 
     SMALL_RECT GetScrollMargins() const;
-    void SetScrollMargins(_In_ const SMALL_RECT* const psrMargins);
+    void SetScrollMargins(const SMALL_RECT* const psrMargins);
 
     [[nodiscard]]
     NTSTATUS UseAlternateScreenBuffer();
@@ -190,24 +190,24 @@ public:
     } TabStop;
 
     [[nodiscard]]
-    NTSTATUS AddTabStop(_In_ const SHORT sColumn);
+    NTSTATUS AddTabStop(const SHORT sColumn);
     void ClearTabStops();
-    void ClearTabStop(_In_ const SHORT sColumn);
-    COORD GetForwardTab(_In_ const COORD cCurrCursorPos);
-    COORD GetReverseTab(_In_ const COORD cCurrCursorPos);
+    void ClearTabStop(const SHORT sColumn);
+    COORD GetForwardTab(const COORD cCurrCursorPos);
+    COORD GetReverseTab(const COORD cCurrCursorPos);
     bool AreTabsSet();
 
     TextAttribute GetAttributes() const;
     const TextAttribute* const GetPopupAttributes() const;
 
-    void SetAttributes(_In_ const TextAttribute& attributes);
-    void SetPopupAttributes(_In_ const TextAttribute& popupAttributes);
-    void SetDefaultAttributes(_In_ const TextAttribute& attributes,
-                              _In_ const TextAttribute& popupAttributes);
-    void ReplaceDefaultAttributes(_In_ const TextAttribute& oldAttributes,
-                                  _In_ const TextAttribute& oldPopupAttributes,
-                                  _In_ const TextAttribute& newAttributes,
-                                  _In_ const TextAttribute& newPopupAttributes);
+    void SetAttributes(const TextAttribute& attributes);
+    void SetPopupAttributes(const TextAttribute& popupAttributes);
+    void SetDefaultAttributes(const TextAttribute& attributes,
+                              const TextAttribute& popupAttributes);
+    void ReplaceDefaultAttributes(const TextAttribute& oldAttributes,
+                                  const TextAttribute& oldPopupAttributes,
+                                  const TextAttribute& newAttributes,
+                                  const TextAttribute& newPopupAttributes);
 
     [[nodiscard]]
     HRESULT VtEraseAll();
@@ -215,25 +215,25 @@ public:
 private:
     SCREEN_INFORMATION(_In_ IWindowMetrics *pMetrics,
                        _In_ IAccessibilityNotifier *pNotifier,
-                       _In_ const CHAR_INFO ciFill,
-                       _In_ const CHAR_INFO ciPopupFill);
+                       const CHAR_INFO ciFill,
+                       const CHAR_INFO ciPopupFill);
 
     IWindowMetrics *_pConsoleWindowMetrics;
     IAccessibilityNotifier *_pAccessibilityNotifier;
 
     [[nodiscard]]
-    HRESULT _AdjustScreenBufferHelper(_In_ const RECT* const prcClientNew,
+    HRESULT _AdjustScreenBufferHelper(const RECT* const prcClientNew,
                                       _In_ COORD const coordBufferOld,
                                       _Out_ COORD* const pcoordClientNewCharacters);
     [[nodiscard]]
-    HRESULT _AdjustScreenBuffer(_In_ const RECT* const prcClientNew);
-    void _CalculateViewportSize(_In_ const RECT* const prcClientArea, _Out_ COORD* const pcoordSize);
-    void _AdjustViewportSize(_In_ const RECT* const prcClientNew, _In_ const RECT* const prcClientOld, _In_ const COORD* const pcoordSize);
-    void _InternalSetViewportSize(_In_ const COORD* const pcoordSize, _In_ bool const fResizeFromTop, _In_ bool const fResizeFromLeft);
+    HRESULT _AdjustScreenBuffer(const RECT* const prcClientNew);
+    void _CalculateViewportSize(const RECT* const prcClientArea, _Out_ COORD* const pcoordSize);
+    void _AdjustViewportSize(const RECT* const prcClientNew, const RECT* const prcClientOld, const COORD* const pcoordSize);
+    void _InternalSetViewportSize(const COORD* const pcoordSize, _In_ bool const fResizeFromTop, _In_ bool const fResizeFromLeft);
 
-    static void s_CalculateScrollbarVisibility(_In_ const RECT* const prcClientArea,
-                                               _In_ const COORD* const pcoordBufferSize,
-                                               _In_ const COORD* const pcoordFontSize,
+    static void s_CalculateScrollbarVisibility(const RECT* const prcClientArea,
+                                               const COORD* const pcoordBufferSize,
+                                               const COORD* const pcoordFontSize,
                                                _Out_ bool* const pfIsHorizontalVisible,
                                                _Out_ bool* const pfIsVerticalVisible);
 
@@ -252,8 +252,8 @@ private:
     bool _IsAltBuffer() const;
     bool _IsInPtyMode() const;
 
-    void _InitializeBufferDimensions(_In_ const COORD coordScreenBufferSize,
-                                     _In_ const COORD coordViewportSize);
+    void _InitializeBufferDimensions(const COORD coordScreenBufferSize,
+                                     const COORD coordViewportSize);
 
     ConhostInternalGetSet* _pConApi;
     WriteBuffer* _pBufferWriter;

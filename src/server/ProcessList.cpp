@@ -106,7 +106,7 @@ void ConsoleProcessList::FreeProcessData(_In_ ConsoleProcessHandle* const pProce
 // - dwProcessId - ID of the process to search for or ROOT_PROCESS_ID to find the root process.
 // Return Value:
 // - Pointer to the process handle information or nullptr if no match was found.
-ConsoleProcessHandle* ConsoleProcessList::FindProcessInList(_In_ const DWORD dwProcessId) const
+ConsoleProcessHandle* ConsoleProcessList::FindProcessInList(const DWORD dwProcessId) const
 {
     auto it = _processes.cbegin();
 
@@ -305,7 +305,7 @@ ConsoleProcessHandle* ConsoleProcessList::GetFirstProcess() const
 // Return Value:
 // - <none>
 // - NOTE: Will attempt to request a change, but it's non fatal if it doesn't work. Failures will be logged to debug channel.
-void ConsoleProcessList::ModifyConsoleProcessFocus(_In_ const bool fForeground)
+void ConsoleProcessList::ModifyConsoleProcessFocus(const bool fForeground)
 {
     auto it = _processes.cbegin();
     while (it != _processes.cend())

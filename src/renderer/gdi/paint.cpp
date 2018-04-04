@@ -204,7 +204,7 @@ HRESULT GdiEngine::EndPaint()
 // Return Value:
 // - S_OK or suitable GDI HRESULT error.
 [[nodiscard]]
-HRESULT GdiEngine::_PaintBackgroundColor(_In_ const RECT* const prc)
+HRESULT GdiEngine::_PaintBackgroundColor(const RECT* const prc)
 {
     wil::unique_hbrush hbr(GetStockBrush(DC_BRUSH));
     RETURN_LAST_ERROR_IF_NULL(hbr.get());
@@ -640,7 +640,7 @@ HRESULT GdiEngine::_PaintSelectionCalculateRegion(_In_reads_(cRectangles) const 
 // - prc - Pointer to rectangle to fill
 // Return Value:
 // - <none>
-void GdiEngine::_PaintDebugRect(_In_ const RECT* const prc) const
+void GdiEngine::_PaintDebugRect(const RECT* const prc) const
 {
     if (_fDebug)
     {
@@ -667,7 +667,7 @@ void GdiEngine::_PaintDebugRect(_In_ const RECT* const prc) const
 // - prc - Pointer to region to immediately Blt to the real screen DC.
 // Return Value:
 // - <none>
-void GdiEngine::_DoDebugBlt(_In_ const RECT* const prc) const
+void GdiEngine::_DoDebugBlt(const RECT* const prc) const
 {
     if (_fDebug)
     {

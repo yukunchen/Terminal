@@ -47,7 +47,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool SetCursorKeysMode(_In_ bool const /*fApplicationMode*/) { return false; }  // DECCKM
         virtual bool SetKeypadMode(_In_ bool const /*fApplicationMode*/) { return false; }  // DECKPAM, DECKPNM
         virtual bool EnableCursorBlinking(_In_ bool const /*fEnable*/) { return false; }  // ATT610
-        virtual bool SetTopBottomScrollingMargins(_In_ SHORT const /*sTopMargin*/, _In_ SHORT const /*sBottomMargin*/, _In_ const bool /*fResetCursor*/) { return false; } // DECSTBM
+        virtual bool SetTopBottomScrollingMargins(_In_ SHORT const /*sTopMargin*/, _In_ SHORT const /*sBottomMargin*/, const bool /*fResetCursor*/) { return false; } // DECSTBM
         virtual bool ReverseLineFeed() { return false; } // RI
         virtual bool SetWindowTitle(_In_reads_(_Param_(2)) const wchar_t* const /*pwchWindowTitle*/, _In_ unsigned short /*sCchTitleLength*/) { return false; } // OscWindowTitle
         virtual bool UseAlternateScreenBuffer() { return false; } // ASBSET
@@ -62,7 +62,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool EnableButtonEventMouseMode(_In_ bool const /*fEnabled*/) { return false; } // ?1002
         virtual bool EnableAnyEventMouseMode(_In_ bool const /*fEnabled*/) { return false; } // ?1003
         virtual bool EnableAlternateScroll(_In_ bool const /*fEnabled*/) { return false; } // ?1007
-        virtual bool SetColorTableEntry(_In_ const size_t /*tableIndex*/, _In_ const DWORD /*dwColor*/) { return false; } // OSCColorTable
+        virtual bool SetColorTableEntry(const size_t /*tableIndex*/, const DWORD /*dwColor*/) { return false; } // OSCColorTable
 
         enum class EraseType : unsigned int
         {
@@ -181,11 +181,11 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool SoftReset(){ return false; } // DECSTR
         virtual bool HardReset(){ return false; } // RIS
 
-        virtual bool SetCursorStyle(_In_ const DispatchCommon::CursorStyle /*cursorStyle*/){ return false; } // DECSCUSR
-        virtual bool SetCursorColor(_In_ const COLORREF /*Color*/) { return false; } // OSCSetCursorColor, OSCResetCursorColor
+        virtual bool SetCursorStyle(const DispatchCommon::CursorStyle /*cursorStyle*/){ return false; } // DECSCUSR
+        virtual bool SetCursorColor(const COLORREF /*Color*/) { return false; } // OSCSetCursorColor, OSCResetCursorColor
 
         // DTTERM_WindowManipulation
-        virtual bool WindowManipulation(_In_ const DispatchCommon::WindowManipulationType /*uiFunction*/,
+        virtual bool WindowManipulation(const DispatchCommon::WindowManipulationType /*uiFunction*/,
                                         _In_reads_(_Param_(3)) const unsigned short* const /*rgusParams*/,
                                         _In_ size_t const /*cParams*/) { return false; }
 

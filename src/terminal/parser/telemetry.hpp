@@ -87,7 +87,7 @@ namespace Microsoft::Console::VirtualTerminal
             NUMBER_OF_CODES
         };
         void Log(_In_ Codes const code);
-        void LogFailed(_In_ const wchar_t wch);
+        void LogFailed(const wchar_t wch);
         void SetShouldWriteFinalLog(_In_ bool const writeLog);
         void SetActivityId(_In_ GUID const *activityId);
         unsigned int GetAndResetTimesUsedCurrent();

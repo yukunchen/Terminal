@@ -52,7 +52,7 @@ class InputTests
     END_TEST_METHOD();
 };
 
-void VerifyNumberOfInputRecords(_In_ const HANDLE hConsoleInput, _In_ DWORD nInputs)
+void VerifyNumberOfInputRecords(const HANDLE hConsoleInput, _In_ DWORD nInputs)
 {
     SetVerifyOutput verifySettings(VerifyOutputSettings::LogOnlyFailures);
     DWORD nInputEvents = (DWORD)-1;
@@ -96,10 +96,10 @@ void InputTests::TestGetMouseButtonsValid()
     VERIFY_ARE_EQUAL(dwButtonsExpected, nMouseButtons);
 }
 
-void GenerateAndWriteInputRecords(_In_ const HANDLE hConsoleInput,
-                                  _In_ const UINT cRecordsToGenerate,
+void GenerateAndWriteInputRecords(const HANDLE hConsoleInput,
+                                  const UINT cRecordsToGenerate,
                                   _Out_writes_(cRecs) INPUT_RECORD *prgRecs,
-                                  _In_ const DWORD cRecs,
+                                  const DWORD cRecs,
                                   _Out_ PDWORD pdwWritten)
 {
     Log::Comment(String().Format(L"Generating %d input events", cRecordsToGenerate));

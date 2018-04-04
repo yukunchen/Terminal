@@ -25,33 +25,33 @@ Revision History:
 class ATTR_ROW final
 {
 public:
-    ATTR_ROW(_In_ const UINT cchRowWidth, _In_ const TextAttribute attr);
+    ATTR_ROW(const UINT cchRowWidth, const TextAttribute attr);
     ATTR_ROW(const ATTR_ROW& a);
     ATTR_ROW& operator=(const ATTR_ROW& a);
     ATTR_ROW(ATTR_ROW&& a) noexcept = default;
 
     void swap(ATTR_ROW& other) noexcept;
 
-    bool Reset(_In_ const TextAttribute attr);
+    bool Reset(const TextAttribute attr);
 
     TextAttribute at(const size_t column) const;
     void FindAttrIndex(_In_ size_t const index,
                        _Outptr_ TextAttributeRun** const ppIndexedAttr,
                        _Out_opt_ size_t* const pcAttrApplies) const;
-    bool SetAttrToEnd(_In_ UINT const iStart, _In_ const TextAttribute attr);
-    void ReplaceLegacyAttrs(_In_ const WORD wToBeReplacedAttr, _In_ const WORD wReplaceWith);
+    bool SetAttrToEnd(_In_ UINT const iStart, const TextAttribute attr);
+    void ReplaceLegacyAttrs(const WORD wToBeReplacedAttr, const WORD wReplaceWith);
     [[nodiscard]]
-    HRESULT Resize(_In_ const short sOldWidth, _In_ const short sNewWidth);
+    HRESULT Resize(const short sOldWidth, const short sNewWidth);
 
     [[nodiscard]]
     HRESULT InsertAttrRuns(_In_reads_(cAttrs) const TextAttributeRun* const prgAttrs,
-                           _In_ const size_t cAttrs,
-                           _In_ const size_t iStart,
-                           _In_ const size_t iEnd,
-                           _In_ const size_t cBufferWidth);
+                           const size_t cAttrs,
+                           const size_t iStart,
+                           const size_t iEnd,
+                           const size_t cBufferWidth);
 
     [[nodiscard]]
-    NTSTATUS UnpackAttrs(_Out_writes_(cRowLength) TextAttribute* const rgAttrs, _In_ const size_t cRowLength) const;
+    NTSTATUS UnpackAttrs(_Out_writes_(cRowLength) TextAttribute* const rgAttrs, const size_t cRowLength) const;
 
     static std::vector<TextAttributeRun> PackAttrs(const std::vector<TextAttribute>& attrs);
 

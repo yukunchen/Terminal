@@ -113,7 +113,7 @@ BOOL ConhostInternalGetSet::GetConsoleScreenBufferInfoEx(_Out_ CONSOLE_SCREEN_BU
 // - pConsoleScreenBufferInfoEx - Pointer to structure containing screen buffer information like the public API call.
 // Return Value:
 // - TRUE if successful (see DoSrvSetConsoleScreenBufferInfo). FALSE otherwise.
-BOOL ConhostInternalGetSet::SetConsoleScreenBufferInfoEx(_In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pConsoleScreenBufferInfoEx) const
+BOOL ConhostInternalGetSet::SetConsoleScreenBufferInfoEx(const CONSOLE_SCREEN_BUFFER_INFOEX* const pConsoleScreenBufferInfoEx) const
 {
     DoSrvSetScreenBufferInfo(_pIo->GetActiveOutputBuffer(), pConsoleScreenBufferInfoEx);
     return TRUE;
@@ -153,7 +153,7 @@ BOOL ConhostInternalGetSet::GetConsoleCursorInfo(_In_ CONSOLE_CURSOR_INFO* const
 // - pConsoleCursorInfo - Updated size/visibility information to modify the cursor rendering behavior.
 // Return Value:
 // - TRUE if successful (see DoSrvSetConsoleCursorInfo). FALSE otherwise.
-BOOL ConhostInternalGetSet::SetConsoleCursorInfo(_In_ const CONSOLE_CURSOR_INFO* const pConsoleCursorInfo)
+BOOL ConhostInternalGetSet::SetConsoleCursorInfo(const CONSOLE_CURSOR_INFO* const pConsoleCursorInfo)
 {
     return SUCCEEDED(DoSrvSetConsoleCursorInfo(_pIo->GetActiveOutputBuffer(), pConsoleCursorInfo->dwSize, !!pConsoleCursorInfo->bVisible));
 }
@@ -237,9 +237,9 @@ BOOL ConhostInternalGetSet::SetConsoleTextAttribute(_In_ WORD const wAttr)
 // Return Value:
 // - TRUE if successful (see DoSrvVtSetLegacyAttributes). FALSE otherwise.
 BOOL ConhostInternalGetSet::PrivateSetLegacyAttributes(_In_ WORD const wAttr,
-                                                       _In_ const bool fForeground,
-                                                       _In_ const bool fBackground,
-                                                       _In_ const bool fMeta)
+                                                       const bool fForeground,
+                                                       const bool fBackground,
+                                                       const bool fMeta)
 {
     DoSrvPrivateSetLegacyAttributes(_pIo->GetActiveOutputBuffer(), wAttr, fForeground, fBackground, fMeta);
     return TRUE;
@@ -253,7 +253,7 @@ BOOL ConhostInternalGetSet::PrivateSetLegacyAttributes(_In_ WORD const wAttr,
 // - fIsForeground - Whether or not the color applies to the foreground.
 // Return Value:
 // - TRUE if successful (see DoSrvPrivateSetConsoleXtermTextAttribute). FALSE otherwise.
-BOOL ConhostInternalGetSet::SetConsoleXtermTextAttribute(_In_ int const iXtermTableEntry, _In_ const bool fIsForeground)
+BOOL ConhostInternalGetSet::SetConsoleXtermTextAttribute(_In_ int const iXtermTableEntry, const bool fIsForeground)
 {
     DoSrvPrivateSetConsoleXtermTextAttribute(_pIo->GetActiveOutputBuffer(), iXtermTableEntry, fIsForeground);
     return TRUE;
@@ -267,7 +267,7 @@ BOOL ConhostInternalGetSet::SetConsoleXtermTextAttribute(_In_ int const iXtermTa
 // - fIsForeground - Whether or not the color applies to the foreground.
 // Return Value:
 // - TRUE if successful (see DoSrvPrivateSetConsoleRGBTextAttribute). FALSE otherwise.
-BOOL ConhostInternalGetSet::SetConsoleRGBTextAttribute(_In_ COLORREF const rgbColor, _In_ const bool fIsForeground)
+BOOL ConhostInternalGetSet::SetConsoleRGBTextAttribute(_In_ COLORREF const rgbColor, const bool fIsForeground)
 {
     DoSrvPrivateSetConsoleRGBTextAttribute(_pIo->GetActiveOutputBuffer(), rgbColor, fIsForeground);
     return TRUE;
@@ -301,10 +301,10 @@ BOOL ConhostInternalGetSet::WriteConsoleInputW(_Inout_ std::deque<std::unique_pt
 // - pFill - The text/attribute pair to fill all remaining space behind after the "cut" operation (bounded by clip, of course.)
 // Return Value:
 // - TRUE if successful (see DoSrvScrollConsoleScreenBuffer). FALSE otherwise.
-BOOL ConhostInternalGetSet::ScrollConsoleScreenBufferW(_In_ const SMALL_RECT* pScrollRectangle,
+BOOL ConhostInternalGetSet::ScrollConsoleScreenBufferW(const SMALL_RECT* pScrollRectangle,
                                                        _In_opt_ const SMALL_RECT* pClipRectangle,
                                                        _In_ COORD coordDestinationOrigin,
-                                                       _In_ const CHAR_INFO* pFill)
+                                                       const CHAR_INFO* pFill)
 {
     return SUCCEEDED(DoSrvScrollConsoleScreenBufferW(_pIo->GetActiveOutputBuffer(),
                                                      pScrollRectangle,
@@ -321,7 +321,7 @@ BOOL ConhostInternalGetSet::ScrollConsoleScreenBufferW(_In_ const SMALL_RECT* pS
 // - lpConsoleWindow - Info about how to move the viewport
 // Return Value:
 // - TRUE if successful (see DoSrvSetConsoleWindowInfo). FALSE otherwise.
-BOOL ConhostInternalGetSet::SetConsoleWindowInfo(_In_ BOOL const bAbsolute, _In_ const SMALL_RECT* const lpConsoleWindow)
+BOOL ConhostInternalGetSet::SetConsoleWindowInfo(_In_ BOOL const bAbsolute, const SMALL_RECT* const lpConsoleWindow)
 {
     return SUCCEEDED(DoSrvSetConsoleWindowInfo(_pIo->GetActiveOutputBuffer(), !!bAbsolute, lpConsoleWindow));
 }
@@ -374,7 +374,7 @@ BOOL ConhostInternalGetSet::PrivateAllowCursorBlinking(_In_ bool const fEnable)
 // - psrScrollMargins - The bounds of the region to be the scrolling region of the viewport.
 // Return Value:
 // - TRUE if successful (see DoSrvPrivateSetScrollingRegion). FALSE otherwise.
-BOOL ConhostInternalGetSet::PrivateSetScrollingRegion(_In_ const SMALL_RECT* const psrScrollMargins)
+BOOL ConhostInternalGetSet::PrivateSetScrollingRegion(const SMALL_RECT* const psrScrollMargins)
 {
     return NT_SUCCESS(DoSrvPrivateSetScrollingRegion(_pIo->GetActiveOutputBuffer(), psrScrollMargins));
 }

@@ -82,7 +82,7 @@ public:
 
         return _fGetConsoleScreenBufferInfoExResult;
     }
-    virtual BOOL SetConsoleScreenBufferInfoEx(_In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const psbiex) const
+    virtual BOOL SetConsoleScreenBufferInfoEx(const CONSOLE_SCREEN_BUFFER_INFOEX* const psbiex) const
     {
         Log::Comment(L"SetConsoleScreenBufferInfoEx MOCK returning data...");
 
@@ -121,7 +121,7 @@ public:
         return _fGetConsoleCursorInfoResult;
     }
 
-    virtual BOOL SetConsoleCursorInfo(_In_ const CONSOLE_CURSOR_INFO* const pConsoleCursorInfo)
+    virtual BOOL SetConsoleCursorInfo(const CONSOLE_CURSOR_INFO* const pConsoleCursorInfo)
     {
         Log::Comment(L"SetConsoleCursorInfo MOCK called...");
 
@@ -134,7 +134,7 @@ public:
         return _fSetConsoleCursorInfoResult;
     }
 
-    virtual BOOL SetConsoleWindowInfo(_In_ BOOL const bAbsolute, _In_ const SMALL_RECT* const lpConsoleWindow)
+    virtual BOOL SetConsoleWindowInfo(_In_ BOOL const bAbsolute, const SMALL_RECT* const lpConsoleWindow)
     {
         Log::Comment(L"SetConsoleWindowInfo MOCK called...");
 
@@ -254,7 +254,7 @@ public:
         return _fSetConsoleTextAttributeResult;
     }
 
-    virtual BOOL PrivateSetLegacyAttributes(_In_ WORD const wAttr, _In_ const bool fForeground, _In_ const bool fBackground, _In_ const bool fMeta)
+    virtual BOOL PrivateSetLegacyAttributes(_In_ WORD const wAttr, const bool fForeground, const bool fBackground, const bool fMeta)
     {
         Log::Comment(L"PrivateSetLegacyAttributes MOCK called...");
         if (_fPrivateSetLegacyAttributesResult)
@@ -283,7 +283,7 @@ public:
         return _fPrivateSetLegacyAttributesResult;
     }
 
-    virtual BOOL SetConsoleXtermTextAttribute(_In_ int const iXtermTableEntry, _In_ const bool fIsForeground)
+    virtual BOOL SetConsoleXtermTextAttribute(_In_ int const iXtermTableEntry, const bool fIsForeground)
     {
         Log::Comment(L"SetConsoleXtermTextAttribute MOCK called...");
 
@@ -311,7 +311,7 @@ public:
         return _fSetConsoleXtermTextAttributeResult;
     }
 
-    virtual BOOL SetConsoleRGBTextAttribute(_In_ COLORREF const rgbColor, _In_ const bool fIsForeground)
+    virtual BOOL SetConsoleRGBTextAttribute(_In_ COLORREF const rgbColor, const bool fIsForeground)
     {
         Log::Comment(L"SetConsoleRGBTextAttribute MOCK called...");
         if (_fSetConsoleRGBTextAttributeResult)
@@ -376,7 +376,7 @@ public:
         return _fPrivateWriteConsoleControlInputResult;
     }
 
-    bool _IsInsideClip(_In_ const SMALL_RECT* const pClipRectangle, _In_ SHORT const iRow, _In_ SHORT const iCol)
+    bool _IsInsideClip(const SMALL_RECT* const pClipRectangle, _In_ SHORT const iRow, _In_ SHORT const iCol)
     {
         if (pClipRectangle == nullptr)
         {
@@ -388,7 +388,7 @@ public:
         }
     }
 
-    virtual BOOL ScrollConsoleScreenBufferW(_In_ const SMALL_RECT* pScrollRectangle, _In_opt_ const SMALL_RECT* pClipRectangle, _In_ COORD dwDestinationOrigin, _In_ const CHAR_INFO* pFill)
+    virtual BOOL ScrollConsoleScreenBufferW(const SMALL_RECT* pScrollRectangle, _In_opt_ const SMALL_RECT* pClipRectangle, _In_ COORD dwDestinationOrigin, const CHAR_INFO* pFill)
     {
         Log::Comment(L"ScrollConsoleScreenBufferW MOCK called...");
 
@@ -474,7 +474,7 @@ public:
         return _fScrollConsoleScreenBufferWResult;
     }
 
-    virtual BOOL PrivateSetScrollingRegion(_In_ const SMALL_RECT* const psrScrollMargins)
+    virtual BOOL PrivateSetScrollingRegion(const SMALL_RECT* const psrScrollMargins)
     {
         Log::Comment(L"PrivateSetScrollingRegion MOCK called...");
 
@@ -493,7 +493,7 @@ public:
         return TRUE;
     }
 
-    virtual BOOL SetConsoleTitleW(_In_ const wchar_t* const pwchWindowTitle, _In_ unsigned short sCchTitleLength)
+    virtual BOOL SetConsoleTitleW(const wchar_t* const pwchWindowTitle, _In_ unsigned short sCchTitleLength)
     {
         Log::Comment(L"SetConsoleTitleW MOCK called...");
 

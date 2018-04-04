@@ -60,7 +60,7 @@ public:
     void StartDeferDrawing();
     void EndDeferDrawing();
 
-    void SetHasMoved(_In_ const bool fHasMoved);
+    void SetHasMoved(const bool fHasMoved);
     void SetIsVisible(_In_ bool const fIsVisible);
     void SetIsOn(_In_ bool const fIsOn);
     void SetBlinkingAllowed(_In_ bool const fIsOn);
@@ -79,15 +79,15 @@ public:
     void DecrementYPosition(_In_ int const DeltaY);
 
     void TimerRoutine(_In_ PSCREEN_INFORMATION const ScreenInfo);
-    void CopyProperties(_In_ const Cursor* const pOtherCursor);
+    void CopyProperties(const Cursor* const pOtherCursor);
 
-    void DelayEOLWrap(_In_ const COORD coordDelayedAt);
+    void DelayEOLWrap(const COORD coordDelayedAt);
     void ResetDelayEOLWrap();
     COORD GetDelayedAtPosition() const;
     BOOL IsDelayedEOLWrap() const;
 
-    void SetColor(_In_ const unsigned int color);
-    void SetType(_In_ const CursorType type);
+    void SetColor(const unsigned int color);
+    void SetType(const CursorType type);
 
 private:
     Microsoft::Console::Interactivity::IAccessibilityNotifier *_pAccessibilityNotifier;

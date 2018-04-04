@@ -26,7 +26,7 @@ void ConsoleImeWindowInfo(_In_ ConversionAreaInfo* ConvAreaInfo, _In_ SMALL_RECT
 NTSTATUS ConsoleImeResizeScreenBuffer(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ COORD NewScreenSize, _In_ ConversionAreaInfo* ConvAreaInfo);
 bool InsertConvertedString(_In_ LPCWSTR lpStr);
 void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
-                                  _In_ const size_t StringLength,
+                                  const size_t StringLength,
                                   _In_ PSCREEN_INFORMATION ScreenInfo,
                                   _In_reads_(StringLength) DbcsAttribute* const pDbcsAttributes);
 
@@ -35,8 +35,8 @@ bool IsValidSmallRect(_In_ PSMALL_RECT const Rect)
     return (Rect->Right >= Rect->Left && Rect->Bottom >= Rect->Top);
 }
 
-void WriteConvRegionToScreen(_In_ const SCREEN_INFORMATION * const pScreenInfo,
-                             _In_ const SMALL_RECT srConvRegion)
+void WriteConvRegionToScreen(const SCREEN_INFORMATION * const pScreenInfo,
+                             const SMALL_RECT srConvRegion)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (!pScreenInfo->IsActiveScreenBuffer())
@@ -511,7 +511,7 @@ SHORT CalcWideCharToColumn(_In_reads_(NumberOfChars) PCHAR_INFO Buffer, _In_ siz
 }
 
 
-void ConsoleImePaint(_In_ const ConversionAreaInfo* const pConvAreaInfo)
+void ConsoleImePaint(const ConversionAreaInfo* const pConvAreaInfo)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (pConvAreaInfo == nullptr)
@@ -727,7 +727,7 @@ bool InsertConvertedString(_In_ LPCWSTR lpStr)
 }
 
 void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
-                                  _In_ const size_t StringLength,
+                                  const size_t StringLength,
                                   _In_ PSCREEN_INFORMATION ScreenInfo,
                                   _In_reads_(StringLength) DbcsAttribute* const pDbcsAttributes)
 {

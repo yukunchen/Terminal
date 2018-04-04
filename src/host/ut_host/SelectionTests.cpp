@@ -1,4 +1,4 @@
-﻿/********************************************************
+/********************************************************
 *                                                       *
 *   Copyright (C) Microsoft. All rights reserved.       *
 *                                                       *
@@ -358,11 +358,11 @@ class SelectionTests
         m_state->FillTextBufferBisect();
 
         // From CommonState, this is what rows look like:
-        // positions of き are at 0, 27-28, 39-40, 67-68, 79
-        // きABCDEFGHIJKLMNOPQRSTUVWXYZきき0123456789ききABCDEFGHIJKLMNOPQRSTUVWXYZきき0123456789き
-        // きABCDEFGHIJKLMNOPQRSTUVWXYZきき0123456789ききABCDEFGHIJKLMNOPQRSTUVWXYZきき0123456789き
-        // きABCDEFGHIJKLMNOPQRSTUVWXYZきき0123456789ききABCDEFGHIJKLMNOPQRSTUVWXYZきき0123456789き
-        // きABCDEFGHIJKLMNOPQRSTUVWXYZきき0123456789ききABCDEFGHIJKLMNOPQRSTUVWXYZきき0123456789き
+        // positions of ? are at 0, 27-28, 39-40, 67-68, 79
+        // ?ABCDEFGHIJKLMNOPQRSTUVWXYZ??0123456789??ABCDEFGHIJKLMNOPQRSTUVWXYZ??0123456789?
+        // ?ABCDEFGHIJKLMNOPQRSTUVWXYZ??0123456789??ABCDEFGHIJKLMNOPQRSTUVWXYZ??0123456789?
+        // ?ABCDEFGHIJKLMNOPQRSTUVWXYZ??0123456789??ABCDEFGHIJKLMNOPQRSTUVWXYZ??0123456789?
+        // ?ABCDEFGHIJKLMNOPQRSTUVWXYZ??0123456789??ABCDEFGHIJKLMNOPQRSTUVWXYZ??0123456789?
 
         // 1a. Start position is trailing half and is at beginning of row
 
@@ -374,7 +374,7 @@ class SelectionTests
 
         // 1b. Start position is trailing half and is elsewhere in the row
 
-        // start from position Column 28, Row 2, which is the position of a trailing き in the mid row
+        // start from position Column 28, Row 2, which is the position of a trailing ? in the mid row
         // selection is 5 characters long
         // the left edge should move one to the left (-1) to select the leading byte also
         // right edge shouldn't move
@@ -399,7 +399,7 @@ class SelectionTests
 
         // 2b. End position is leading half and is elsewhere in the row
 
-        // start from 10 before trailing き in the mid row (pos 68 - 10 = 58)
+        // start from 10 before trailing ? in the mid row (pos 68 - 10 = 58)
         // row is 2
         // selection is 10 characters long
         // the left edge shouldn't move

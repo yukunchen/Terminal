@@ -26,18 +26,18 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         virtual HRESULT PaintFrame() = 0;
 
-        virtual void TriggerSystemRedraw(_In_ const RECT* const prcDirtyClient) = 0;
+        virtual void TriggerSystemRedraw(const RECT* const prcDirtyClient) = 0;
 
-        virtual void TriggerRedraw(_In_ const SMALL_RECT* const psrRegion) = 0;
-        virtual void TriggerRedraw(_In_ const COORD* const pcoord) = 0;
-        virtual void TriggerRedrawCursor(_In_ const COORD* const pcoord) = 0;
+        virtual void TriggerRedraw(const SMALL_RECT* const psrRegion) = 0;
+        virtual void TriggerRedraw(const COORD* const pcoord) = 0;
+        virtual void TriggerRedrawCursor(const COORD* const pcoord) = 0;
 
         virtual void TriggerRedrawAll() = 0;
         virtual void TriggerTeardown() = 0;
 
         virtual void TriggerSelection() = 0;
         virtual void TriggerScroll() = 0;
-        virtual void TriggerScroll(_In_ const COORD* const pcoordDelta) = 0;
+        virtual void TriggerScroll(const COORD* const pcoordDelta) = 0;
         virtual void TriggerCircling() = 0;
         virtual void TriggerFontChange(_In_ int const iDpi,
                                         _In_ FontInfoDesired const * const pFontInfoDesired,

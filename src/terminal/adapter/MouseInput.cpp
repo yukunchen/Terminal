@@ -48,7 +48,7 @@ MouseInput::~MouseInput()
 // - uiButton - the message to decode.
 // Return value:
 // - true iff uiButton is a button message to translate
-bool MouseInput::s_IsButtonMsg(_In_ const unsigned int uiButton)
+bool MouseInput::s_IsButtonMsg(const unsigned int uiButton)
 {
     bool fIsButton = false;
     switch (uiButton)
@@ -76,7 +76,7 @@ bool MouseInput::s_IsButtonMsg(_In_ const unsigned int uiButton)
 // - uiButtonCode - the message to decode.
 // Return value:
 // - true iff uiButtonCode is a hover enent to translate
-bool MouseInput::s_IsHoverMsg(_In_ const unsigned int uiButtonCode)
+bool MouseInput::s_IsHoverMsg(const unsigned int uiButtonCode)
 {
     return uiButtonCode == WM_MOUSEMOVE;
 }
@@ -88,7 +88,7 @@ bool MouseInput::s_IsHoverMsg(_In_ const unsigned int uiButtonCode)
 // - uiButton - the message to decode.
 // Return value:
 // - true iff uiButton is a button down event
-bool MouseInput::s_IsButtonDown(_In_ const unsigned int uiButton)
+bool MouseInput::s_IsButtonDown(const unsigned int uiButton)
 {
     bool fIsButtonDown = false;
     switch (uiButton)
@@ -133,10 +133,10 @@ bool MouseInput::s_IsButtonDown(_In_ const unsigned int uiButton)
 // - uiButton - the message to decode.
 // Return value:
 // - the int representing the equivalent X button encoding.
-int MouseInput::s_WindowsButtonToXEncoding(_In_ const unsigned int uiButton,
-                                           _In_ const bool fIsHover,
-                                           _In_ const short sModifierKeystate,
-                                           _In_ const short sWheelDelta)
+int MouseInput::s_WindowsButtonToXEncoding(const unsigned int uiButton,
+                                           const bool fIsHover,
+                                           const short sModifierKeystate,
+                                           const short sWheelDelta)
 {
     int iXValue = 0;
     switch (uiButton)
@@ -188,10 +188,10 @@ int MouseInput::s_WindowsButtonToXEncoding(_In_ const unsigned int uiButton,
 // - sWheelDelta - the amount that the scroll wheel changed (should be 0 unless uiButton is a WM_MOUSE*WHEEL)
 // Return value:
 // - true if the event was handled and we should stop event propagation to the default window handler.
-bool MouseInput::HandleMouse(_In_ const COORD coordMousePosition,
-                             _In_ const unsigned int uiButton,
-                             _In_ const short sModifierKeystate,
-                             _In_ const short sWheelDelta)
+bool MouseInput::HandleMouse(const COORD coordMousePosition,
+                             const unsigned int uiButton,
+                             const short sModifierKeystate,
+                             const short sWheelDelta)
 {
     bool fSuccess = false;
     if (_ShouldSendAlternateScroll(uiButton, sWheelDelta))
@@ -283,11 +283,11 @@ bool MouseInput::HandleMouse(_In_ const COORD coordMousePosition,
 // Return value:
 // - true if we were able to successfully generate a sequence.
 // On success, caller is responsible for delete[]ing *ppwchSequence.
-bool MouseInput::_GenerateDefaultSequence(_In_ const COORD coordMousePosition,
-                                          _In_ const unsigned int uiButton,
-                                          _In_ const bool fIsHover,
-                                          _In_ const short sModifierKeystate,
-                                          _In_ const short sWheelDelta,
+bool MouseInput::_GenerateDefaultSequence(const COORD coordMousePosition,
+                                          const unsigned int uiButton,
+                                          const bool fIsHover,
+                                          const short sModifierKeystate,
+                                          const short sWheelDelta,
                                           _Outptr_result_buffer_(*pcchLength) wchar_t** const ppwchSequence,
                                           _Out_ size_t* const pcchLength) const
 {
@@ -332,11 +332,11 @@ bool MouseInput::_GenerateDefaultSequence(_In_ const COORD coordMousePosition,
 // Return value:
 // - true if we were able to successfully generate a sequence.
 // On success, caller is responsible for delete[]ing *ppwchSequence.
-bool MouseInput::_GenerateUtf8Sequence(_In_ const COORD coordMousePosition,
-                                       _In_ const unsigned int uiButton,
-                                       _In_ const bool fIsHover,
-                                       _In_ const short sModifierKeystate,
-                                       _In_ const short sWheelDelta,
+bool MouseInput::_GenerateUtf8Sequence(const COORD coordMousePosition,
+                                       const unsigned int uiButton,
+                                       const bool fIsHover,
+                                       const short sModifierKeystate,
+                                       const short sWheelDelta,
                                        _Outptr_result_buffer_(*pcchLength) wchar_t** const ppwchSequence,
                                        _Out_ size_t* const pcchLength) const
 {
@@ -392,11 +392,11 @@ bool MouseInput::_GenerateUtf8Sequence(_In_ const COORD coordMousePosition,
 // Return value:
 // - true if we were able to successfully generate a sequence.
 // On success, caller is responsible for delete[]ing *ppwchSequence.
-bool MouseInput::_GenerateSGRSequence(_In_ const COORD coordMousePosition,
-                                      _In_ const unsigned int uiButton,
-                                      _In_ const bool fIsHover,
-                                      _In_ const short sModifierKeystate,
-                                      _In_ const short sWheelDelta,
+bool MouseInput::_GenerateSGRSequence(const COORD coordMousePosition,
+                                      const unsigned int uiButton,
+                                      const bool fIsHover,
+                                      const short sModifierKeystate,
+                                      const short sWheelDelta,
                                       _Outptr_result_buffer_(*pcchLength) wchar_t** const ppwchSequence,
                                       _Out_ size_t* const pcchLength) const
 {
@@ -444,7 +444,7 @@ bool MouseInput::_GenerateSGRSequence(_In_ const COORD coordMousePosition,
 // - fEnable - either enable or disable.
 // Return value:
 // <none>
-void MouseInput::SetUtf8ExtendedMode(_In_ const bool fEnable)
+void MouseInput::SetUtf8ExtendedMode(const bool fEnable)
 {
     _ExtendedMode = fEnable ? ExtendedMode::Utf8 : ExtendedMode::None;
 }
@@ -458,7 +458,7 @@ void MouseInput::SetUtf8ExtendedMode(_In_ const bool fEnable)
 // - fEnable - either enable or disable.
 // Return value:
 // <none>
-void MouseInput::SetSGRExtendedMode(_In_ const bool fEnable)
+void MouseInput::SetSGRExtendedMode(const bool fEnable)
 {
     _ExtendedMode = fEnable ? ExtendedMode::Sgr : ExtendedMode::None;
 }
@@ -470,7 +470,7 @@ void MouseInput::SetSGRExtendedMode(_In_ const bool fEnable)
 // - fEnable - either enable or disable.
 // Return value:
 // <none>
-void MouseInput::EnableDefaultTracking(_In_ const bool fEnable)
+void MouseInput::EnableDefaultTracking(const bool fEnable)
 {
     _TrackingMode = fEnable ? TrackingMode::Default : TrackingMode::None;
     _coordLastPos = {-1,-1}; // Clear out the last save mouse position.
@@ -485,7 +485,7 @@ void MouseInput::EnableDefaultTracking(_In_ const bool fEnable)
 // - fEnable - either enable or disable.
 // Return value:
 // <none>
-void MouseInput::EnableButtonEventTracking(_In_ const bool fEnable)
+void MouseInput::EnableButtonEventTracking(const bool fEnable)
 {
     _TrackingMode = fEnable ? TrackingMode::ButtonEvent : TrackingMode::None;
     _coordLastPos = {-1,-1}; // Clear out the last save mouse position.
@@ -500,7 +500,7 @@ void MouseInput::EnableButtonEventTracking(_In_ const bool fEnable)
 // - fEnable - either enable or disable.
 // Return value:
 // <none>
-void MouseInput::EnableAnyEventTracking(_In_ const bool fEnable)
+void MouseInput::EnableAnyEventTracking(const bool fEnable)
 {
     _TrackingMode = fEnable ? TrackingMode::AnyEvent : TrackingMode::None;
     _coordLastPos = {-1,-1}; // Clear out the last save mouse position.
@@ -515,7 +515,7 @@ void MouseInput::EnableAnyEventTracking(_In_ const bool fEnable)
 // Return value:
 // <none>
 void MouseInput::_SendInputSequence(_In_reads_(cchLength) const wchar_t* const pwszSequence,
-                                    _In_ const size_t cchLength) const
+                                    const size_t cchLength) const
 {
     size_t cch = 0;
     // + 1 to max sequence length for null terminator count which is required by StringCchLengthW
@@ -544,7 +544,7 @@ void MouseInput::_SendInputSequence(_In_reads_(cchLength) const wchar_t* const p
 // - coordWinCoordinate - the coordinate to translate
 // Return value:
 // - the translated coordinate.
-COORD MouseInput::s_WinToVTCoord(_In_ const COORD coordWinCoordinate)
+COORD MouseInput::s_WinToVTCoord(const COORD coordWinCoordinate)
 {
     return {coordWinCoordinate.X + 1, coordWinCoordinate.Y + 1};
 }
@@ -556,7 +556,7 @@ COORD MouseInput::s_WinToVTCoord(_In_ const COORD coordWinCoordinate)
 // - sCoordinateValue - the value to encode.
 // Return value:
 // - the encoded value.
-short MouseInput::s_EncodeDefaultCoordinate(_In_ const short sCoordinateValue)
+short MouseInput::s_EncodeDefaultCoordinate(const short sCoordinateValue)
 {
     return sCoordinateValue + 32;
 }
@@ -593,7 +593,7 @@ unsigned int MouseInput::s_GetPressedButton()
 // - fEnable - either enable or disable.
 // Return value:
 // <none>
-void MouseInput::EnableAlternateScroll(_In_ const bool fEnable)
+void MouseInput::EnableAlternateScroll(const bool fEnable)
 {
     _fAlternateScroll = fEnable;
 }

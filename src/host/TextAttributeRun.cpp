@@ -22,7 +22,7 @@ const TextAttribute TextAttributeRun::GetAttributes() const
     return _attributes;
 }
 
-void TextAttributeRun::SetAttributes(_In_ const TextAttribute textAttribute)
+void TextAttributeRun::SetAttributes(const TextAttribute textAttribute)
 {
     _attributes.SetFrom(textAttribute);
 }

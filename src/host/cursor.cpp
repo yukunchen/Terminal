@@ -147,7 +147,7 @@ ULONG Cursor::GetSize() const noexcept
     return _ulSize;
 }
 
-void Cursor::SetHasMoved(_In_ const bool fHasMoved)
+void Cursor::SetHasMoved(const bool fHasMoved)
 {
     _fHasMoved = fHasMoved;
 }
@@ -325,7 +325,7 @@ void Cursor::DecrementYPosition(_In_ int const DeltaY)
 // - pOtherCursor - The cursor to copy properties from
 // Return Value:
 // - <none>
-void Cursor::CopyProperties(_In_ const Cursor* const pOtherCursor)
+void Cursor::CopyProperties(const Cursor* const pOtherCursor)
 {
     // We shouldn't copy the position as it will be already rearranged by the resize operation.
     //this->_cPosition                    = pOtherCursor->_cPosition;
@@ -441,7 +441,7 @@ DoScroll:
     Scrolling::s_ScrollIfNecessary(ScreenInfo);
 }
 
-void Cursor::DelayEOLWrap(_In_ const COORD coordDelayedAt)
+void Cursor::DelayEOLWrap(const COORD coordDelayedAt)
 {
     _coordDelayedAt = coordDelayedAt;
     _fDelayedEolWrap = TRUE;
@@ -619,13 +619,13 @@ const COLORREF Cursor::GetColor() const
     return gci.GetCursorColor();
 }
 
-void Cursor::SetColor(_In_ const unsigned int color)
+void Cursor::SetColor(const unsigned int color)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.SetCursorColor(color);
 }
 
-void Cursor::SetType(_In_ const CursorType type)
+void Cursor::SetType(const CursorType type)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.SetCursorType(type);

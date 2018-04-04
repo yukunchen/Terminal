@@ -26,7 +26,7 @@ Revision History:
 class ROW final
 {
 public:
-    ROW(_In_ const SHORT rowId, _In_ const short rowWidth, _In_ const TextAttribute fillAttribute);
+    ROW(const SHORT rowId, const short rowWidth, const TextAttribute fillAttribute);
     ROW(const ROW& a);
     ROW& operator=(const ROW& a);
     ROW(ROW&& a) noexcept;
@@ -43,17 +43,17 @@ public:
     ATTR_ROW& GetAttrRow();
 
     SHORT GetId() const noexcept;
-    void SetId(_In_ const SHORT id);
+    void SetId(const SHORT id);
 
-    bool Reset(_In_ const TextAttribute Attr);
+    bool Reset(const TextAttribute Attr);
     [[nodiscard]]
     HRESULT Resize(_In_ size_t const width);
 
-    void ClearColumn(_In_ const size_t column);
+    void ClearColumn(const size_t column);
     std::wstring GetText() const;
     std::vector<OutputCell> AsCells() const;
-    std::vector<OutputCell> AsCells(_In_ const size_t startIndex) const;
-    std::vector<OutputCell> AsCells(_In_ const size_t startIndex, _In_ const size_t count) const;
+    std::vector<OutputCell> AsCells(const size_t startIndex) const;
+    std::vector<OutputCell> AsCells(const size_t startIndex, const size_t count) const;
 
     friend bool operator==(const ROW& a, const ROW& b) noexcept;
 

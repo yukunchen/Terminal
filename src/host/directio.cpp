@@ -149,7 +149,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 [[nodiscard]]
 NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
                            _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                           _In_ const size_t eventReadCount,
+                           const size_t eventReadCount,
                            _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                            _In_ bool const IsUnicode,
                            _In_ bool const IsPeek,
@@ -384,8 +384,8 @@ HRESULT ApiRoutines::ReadConsoleInputWImpl(_In_ IConsoleInputObject* const pInCo
 HRESULT DoSrvWriteConsoleInput(_Inout_ InputBuffer* const pInputBuffer,
                                _Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
                                _Out_ size_t& eventsWritten,
-                               _In_ const bool unicode,
-                               _In_ const bool append)
+                               const bool unicode,
+                               const bool append)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });

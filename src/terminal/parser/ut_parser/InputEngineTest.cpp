@@ -101,14 +101,14 @@ public:
                          _In_ InputEngineTest* testInstance);
     virtual bool WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& inputEvents) override;
     virtual bool WriteCtrlC() override;
-    virtual bool WindowManipulation(_In_ const DispatchCommon::WindowManipulationType uiFunction,
+    virtual bool WindowManipulation(const DispatchCommon::WindowManipulationType uiFunction,
                                     _In_reads_(cParams) const unsigned short* const rgusParams,
                                     _In_ size_t const cParams) override; // DTTERM_WindowManipulation
     virtual bool WriteString(_In_reads_(cch) const wchar_t* const pws,
-                             _In_ const size_t cch) override;
+                             const size_t cch) override;
 
-    virtual bool MoveCursor(_In_ const unsigned int row,
-                            _In_ const unsigned int col) override;
+    virtual bool MoveCursor(const unsigned int row,
+                            const unsigned int col) override;
 
 private:
     std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> _pfnWriteInputCallback;
@@ -138,7 +138,7 @@ bool TestInteractDispatch::WriteCtrlC()
     return WriteInput(inputEvents);
 }
 
-bool TestInteractDispatch::WindowManipulation(_In_ const DispatchCommon::WindowManipulationType uiFunction,
+bool TestInteractDispatch::WindowManipulation(const DispatchCommon::WindowManipulationType uiFunction,
                                               _In_reads_(cParams) const unsigned short* const rgusParams,
                                               _In_ size_t const cParams)
 {
@@ -153,7 +153,7 @@ bool TestInteractDispatch::WindowManipulation(_In_ const DispatchCommon::WindowM
 }
 
 bool TestInteractDispatch::WriteString(_In_reads_(cch) const wchar_t* const pws,
-                                       _In_ const size_t cch)
+                                       const size_t cch)
 {
     std::deque<std::unique_ptr<IInputEvent>> keyEvents;
 
@@ -171,8 +171,8 @@ bool TestInteractDispatch::WriteString(_In_reads_(cch) const wchar_t* const pws,
     return WriteInput(keyEvents);
 }
 
-bool TestInteractDispatch::MoveCursor(_In_ const unsigned int row,
-                                      _In_ const unsigned int col)
+bool TestInteractDispatch::MoveCursor(const unsigned int row,
+                                      const unsigned int col)
 {
     VERIFY_IS_TRUE(_testInstance->_expectCursorPosition);
     COORD received = { static_cast<short>(col), static_cast<short>(row) };

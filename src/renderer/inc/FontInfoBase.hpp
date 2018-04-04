@@ -31,7 +31,7 @@ public:
                  _In_ bool const fSetDefaultRasterFont,
                  _In_ UINT const uiCodePage);
 
-    FontInfoBase(_In_ const FontInfoBase &fibFont);
+    FontInfoBase(const FontInfoBase &fibFont);
 
     ~FontInfoBase();
 

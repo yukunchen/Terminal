@@ -18,9 +18,9 @@ Revision History:
 #include "conserv.h"
 
 [[nodiscard]]
-NTSTATUS GetConsoleLangId(_In_ const UINT uiOutputCP, _Out_ LANGID * const pLangId);
+NTSTATUS GetConsoleLangId(const UINT uiOutputCP, _Out_ LANGID * const pLangId);
 
-PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, _In_ const BOOL fUnexpand, _In_ const BOOL fSubstitute);
+PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, const BOOL fSubstitute);
 
 [[nodiscard]]
 NTSTATUS ConsoleInitializeConnectInfo(_In_ PCONSOLE_API_MSG Message, _Out_ PCONSOLE_API_CONNECTINFO Cac);

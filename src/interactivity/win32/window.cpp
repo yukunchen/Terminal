@@ -699,7 +699,7 @@ NTSTATUS Window::_InternalSetWindowSize() const
 // - AbsoluteChange - The magnitude of the change (for tracking commands)
 // Return Value:
 // - <none>
-void Window::VerticalScroll(_In_ const WORD wScrollCommand, _In_ const WORD wAbsoluteChange) const
+void Window::VerticalScroll(const WORD wScrollCommand, const WORD wAbsoluteChange) const
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     COORD NewOrigin;
@@ -782,7 +782,7 @@ void Window::VerticalScroll(_In_ const WORD wScrollCommand, _In_ const WORD wAbs
 // - AbsoluteChange - The magnitude of the change (for tracking commands)
 // Return Value:
 // - <none>
-void Window::HorizontalScroll(_In_ const WORD wScrollCommand, _In_ const WORD wAbsoluteChange) const
+void Window::HorizontalScroll(const WORD wScrollCommand, const WORD wAbsoluteChange) const
 {
     COORD NewOrigin;
 
@@ -1162,8 +1162,8 @@ void Window::s_ReinitializeFontsForDPIChange()
 }
 
 LRESULT Window::s_RegPersistWindowPos(_In_ PCWSTR const pwszTitle,
-                                      _In_ const BOOL fAutoPos,
-                                      _In_ const Window* const pWindow)
+                                      const BOOL fAutoPos,
+                                      const Window* const pWindow)
 {
 
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -1228,7 +1228,7 @@ LRESULT Window::s_RegPersistWindowPos(_In_ PCWSTR const pwszTitle,
     return Status;
 }
 
-LRESULT Window::s_RegPersistWindowOpacity(_In_ PCWSTR const pwszTitle, _In_ const Window* const pWindow)
+LRESULT Window::s_RegPersistWindowOpacity(_In_ PCWSTR const pwszTitle, const Window* const pWindow)
 {
     HKEY hCurrentUserKey, hConsoleKey, hTitleKey;
 
@@ -1258,8 +1258,8 @@ LRESULT Window::s_RegPersistWindowOpacity(_In_ PCWSTR const pwszTitle, _In_ cons
 
 void Window::s_PersistWindowPosition(_In_ PCWSTR pwszLinkTitle,
                                      _In_ PCWSTR pwszOriginalTitle,
-                                     _In_ const DWORD dwFlags,
-                                     _In_ const Window* const pWindow)
+                                     const DWORD dwFlags,
+                                     const Window* const pWindow)
 {
     if (pwszLinkTitle == nullptr)
     {
@@ -1281,7 +1281,7 @@ void Window::s_PersistWindowPosition(_In_ PCWSTR pwszLinkTitle,
     }
 }
 
-void Window::s_PersistWindowOpacity(_In_ PCWSTR pwszLinkTitle, _In_ PCWSTR pwszOriginalTitle, _In_ const Window* const pWindow)
+void Window::s_PersistWindowOpacity(_In_ PCWSTR pwszLinkTitle, _In_ PCWSTR pwszOriginalTitle, const Window* const pWindow)
 {
     if (pwszLinkTitle == nullptr)
     {

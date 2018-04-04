@@ -28,22 +28,22 @@ namespace Microsoft::Console::VirtualTerminal
         bool ActionPrint(_In_ wchar_t const wch) override;
         bool ActionPrintString(_Inout_updates_(cch) wchar_t* const rgwch, _In_ size_t const cch) override;
         bool ActionEscDispatch(_In_ wchar_t const wch,
-                                _In_ const unsigned short cIntermediate,
-                                _In_ const wchar_t wchIntermediate) override;
+                                const unsigned short cIntermediate,
+                                const wchar_t wchIntermediate) override;
         bool ActionCsiDispatch(_In_ wchar_t const wch,
-                                _In_ const unsigned short cIntermediate,
-                                _In_ const wchar_t wchIntermediate,
+                                const unsigned short cIntermediate,
+                                const wchar_t wchIntermediate,
                                 _In_reads_(cParams) const unsigned short* const rgusParams,
-                                _In_ const unsigned short cParams);
+                                const unsigned short cParams);
         bool ActionClear() override;
         bool ActionIgnore() override;
         bool ActionOscDispatch(_In_ wchar_t const wch,
-                                _In_ const unsigned short sOscParam,
+                                const unsigned short sOscParam,
                                 _Inout_updates_(cchOscString) wchar_t* const pwchOscStringBuffer,
-                                _In_ const unsigned short cchOscString) override;
+                                const unsigned short cchOscString) override;
         bool ActionSs3Dispatch(_In_ wchar_t const wch,
                                 _In_reads_(cParams) const unsigned short* const rgusParams,
-                                _In_ const unsigned short cParams) override;
+                                const unsigned short cParams) override;
 
         bool FlushAtEndOfString() const override;
 
@@ -52,11 +52,11 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool _IntermediateQuestionMarkDispatch(_In_ wchar_t const wchAction,
                                                 _In_reads_(cParams) const unsigned short* const rgusParams,
-                                                _In_ const unsigned short cParams);
+                                                const unsigned short cParams);
         bool _IntermediateExclamationDispatch(_In_ wchar_t const wch);
         bool _IntermediateSpaceDispatch(_In_ wchar_t const wchAction,
                                         _In_reads_(cParams) const unsigned short* const rgusParams,
-                                        _In_ const unsigned short cParams);
+                                        const unsigned short cParams);
 
         enum VTActionCodes : wchar_t
         {
@@ -125,57 +125,57 @@ namespace Microsoft::Console::VirtualTerminal
         static const TermDispatch::GraphicsOptions s_defaultGraphicsOption = TermDispatch::GraphicsOptions::Off;
         _Success_(return)
         bool _GetGraphicsOptions(_In_reads_(cParams) const unsigned short* const rgusParams,
-                                    _In_ const unsigned short cParams,
+                                    const unsigned short cParams,
                                     _Out_writes_(*pcOptions) TermDispatch::GraphicsOptions* const rgGraphicsOptions,
                                     _Inout_ size_t* const pcOptions) const;
 
         static const TermDispatch::EraseType s_defaultEraseType = TermDispatch::EraseType::ToEnd;
         _Success_(return)
         bool _GetEraseOperation(_In_reads_(cParams) const unsigned short* const rgusParams,
-                                _In_ const unsigned short cParams,
+                                const unsigned short cParams,
                                 _Out_ TermDispatch::EraseType* const pEraseType) const;
 
         static const unsigned int s_uiDefaultCursorDistance = 1;
         _Success_(return)
         bool _GetCursorDistance(_In_reads_(cParams) const unsigned short* const rgusParams,
-                                _In_ const unsigned short cParams,
+                                const unsigned short cParams,
                                 _Out_ unsigned int* const puiDistance) const;
 
         static const unsigned int s_uiDefaultScrollDistance = 1;
         _Success_(return)
         bool _GetScrollDistance(_In_reads_(cParams) const unsigned short* const rgusParams,
-                                _In_ const unsigned short cParams,
+                                const unsigned short cParams,
                                 _Out_ unsigned int* const puiDistance) const;
 
         static const unsigned int s_uiDefaultConsoleWidth = 80;
         _Success_(return)
         bool _GetConsoleWidth(_In_reads_(cParams) const unsigned short* const rgusParams,
-                                _In_ const unsigned short cParams,
+                                const unsigned short cParams,
                                 _Out_ unsigned int* const puiConsoleWidth) const;
 
         static const unsigned int s_uiDefaultLine = 1;
         static const unsigned int s_uiDefaultColumn = 1;
         _Success_(return)
         bool _GetXYPosition(_In_reads_(cParams) const unsigned short* const rgusParams,
-                            _In_ const unsigned short cParams,
+                            const unsigned short cParams,
                             _Out_ unsigned int* const puiLine,
                             _Out_ unsigned int* const puiColumn) const;
 
         _Success_(return)
         bool _GetDeviceStatusOperation(_In_reads_(cParams) const unsigned short* const rgusParams,
-                                        _In_ const unsigned short cParams,
+                                        const unsigned short cParams,
                                         _Out_ TermDispatch::AnsiStatusType* const pStatusType) const;
 
         _Success_(return)
-        bool _VerifyHasNoParameters(_In_ const unsigned short cParams) const;
+        bool _VerifyHasNoParameters(const unsigned short cParams) const;
 
         _Success_(return)
         bool _VerifyDeviceAttributesParams(_In_reads_(cParams) const unsigned short* const rgusParams,
-                                            _In_ const unsigned short cParams) const;
+                                            const unsigned short cParams) const;
 
         _Success_(return)
         bool _GetPrivateModeParams(_In_reads_(cParams) const unsigned short* const rgusParams,
-                                    _In_ const unsigned short cParams,
+                                    const unsigned short cParams,
                                     _Out_writes_(*pcParams) TermDispatch::PrivateModeParams* const rgPrivateModeParams,
                                     _Inout_ size_t* const pcParams) const;
 
@@ -183,37 +183,37 @@ namespace Microsoft::Console::VirtualTerminal
         static const SHORT s_sDefaultBottomMargin = 0;
         _Success_(return)
         bool _GetTopBottomMargins(_In_reads_(cParams) const unsigned short* const rgusParams,
-                                    _In_ const unsigned short cParams,
+                                    const unsigned short cParams,
                                     _Out_ SHORT* const psTopMargin,
                                     _Out_ SHORT* const psBottomMargin) const;
 
         _Success_(return)
         bool _GetOscTitle(_Inout_updates_(cchOscString) wchar_t* const pwchOscStringBuffer,
-                            _In_ const unsigned short cchOscString,
+                            const unsigned short cchOscString,
                             _Outptr_result_buffer_(*pcchTitle) wchar_t** const ppwchTitle,
                             _Out_ unsigned short * pcchTitle) const;
 
         static const SHORT s_sDefaultTabDistance = 1;
         _Success_(return)
         bool _GetTabDistance(_In_reads_(cParams) const unsigned short* const rgusParams,
-                                _In_ const unsigned short cParams,
+                                const unsigned short cParams,
                                 _Out_ SHORT* const psDistance) const;
 
         static const SHORT s_sDefaultTabClearType = 0;
         _Success_(return)
         bool _GetTabClearType(_In_reads_(cParams) const unsigned short* const rgusParams,
-                                _In_ const unsigned short cParams,
+                                const unsigned short cParams,
                                 _Out_ SHORT* const psClearType) const;
 
         static const DesignateCharsetTypes s_DefaultDesignateCharsetType = DesignateCharsetTypes::G0;
         _Success_(return)
-        bool _GetDesignateType(_In_ const wchar_t wchIntermediate,
+        bool _GetDesignateType(const wchar_t wchIntermediate,
                                 _Out_ DesignateCharsetTypes* const pDesignateType) const;
 
         static const DispatchCommon::WindowManipulationType s_DefaultWindowManipulationType = DispatchCommon::WindowManipulationType::Invalid;
         _Success_(return)
         bool _GetWindowManipulationType(_In_reads_(cParams) const unsigned short* const rgusParams,
-                                        _In_ const unsigned short cParams,
+                                        const unsigned short cParams,
                                         _Out_ unsigned int* const puiFunction) const;
 
         static bool s_HexToUint(_In_ wchar_t const wch,
@@ -221,22 +221,22 @@ namespace Microsoft::Console::VirtualTerminal
         static bool s_IsNumber(_In_ wchar_t const wch);
         static bool s_IsHexNumber(_In_ wchar_t const wch);
         bool _GetOscSetColorTable(_In_reads_(cchOscString) const wchar_t* const pwchOscStringBuffer,
-                                    _In_ const size_t cchOscString,
+                                    const size_t cchOscString,
                                     _Out_ size_t* const pTableIndex,
                                     _Out_ DWORD* const pRgb) const;
 
         static bool s_ParseColorSpec(_In_reads_(cchBuffer) const wchar_t* const pwchBuffer,
-                                        _In_ const size_t cchBuffer,
+                                        const size_t cchBuffer,
                                         _Out_ DWORD* const pRgb);
 
         bool _GetOscSetCursorColor(_In_reads_(cchOscString) const wchar_t* const pwchOscStringBuffer,
-                                    _In_ const size_t cchOscString,
+                                    const size_t cchOscString,
                                     _Out_ DWORD* const pRgb) const;
 
         static const DispatchCommon::CursorStyle s_defaultCursorStyle = DispatchCommon::CursorStyle::BlinkingBlockDefault;
         _Success_(return)
         bool _GetCursorStyle(_In_reads_(cParams) const unsigned short* const rgusParams,
-                                _In_ const unsigned short cParams,
+                                const unsigned short cParams,
                                 _Out_ DispatchCommon::CursorStyle* const pCursorStyle) const;
 
     };

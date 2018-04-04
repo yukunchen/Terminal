@@ -37,11 +37,11 @@ enum class InputEventType
 class IInputEvent
 {
 public:
-    static std::unique_ptr<IInputEvent> Create(_In_ const INPUT_RECORD& record);
+    static std::unique_ptr<IInputEvent> Create(const INPUT_RECORD& record);
     static std::deque<std::unique_ptr<IInputEvent>> Create(gsl::span<const INPUT_RECORD> records);
-    static std::deque<std::unique_ptr<IInputEvent>> Create(_In_ const std::deque<INPUT_RECORD>& records);
+    static std::deque<std::unique_ptr<IInputEvent>> Create(const std::deque<INPUT_RECORD>& records);
 
-    static std::vector<INPUT_RECORD> ToInputRecords(_In_ const std::deque<std::unique_ptr<IInputEvent>>& events);
+    static std::vector<INPUT_RECORD> ToInputRecords(const std::deque<std::unique_ptr<IInputEvent>>& events);
 
     virtual ~IInputEvent() = 0;
     IInputEvent() = default;
@@ -111,14 +111,14 @@ enum class ModifierKeyState
     ENUM_COUNT // must be the last element in the enum class
 };
 
-std::unordered_set<ModifierKeyState> FromVkKeyScan(_In_ const short vkKeyScanFlags);
-std::unordered_set<ModifierKeyState> FromConsoleControlKeyFlags(_In_ const DWORD flags);
-DWORD ToConsoleControlKeyFlag(_In_ const ModifierKeyState modifierKey) noexcept;
+std::unordered_set<ModifierKeyState> FromVkKeyScan(const short vkKeyScanFlags);
+std::unordered_set<ModifierKeyState> FromConsoleControlKeyFlags(const DWORD flags);
+DWORD ToConsoleControlKeyFlag(const ModifierKeyState modifierKey) noexcept;
 
 class KeyEvent : public IInputEvent
 {
 public:
-    constexpr KeyEvent(_In_ const KEY_EVENT_RECORD& record) :
+    constexpr KeyEvent(const KEY_EVENT_RECORD& record) :
         _keyDown{ !!record.bKeyDown },
         _repeatCount{ record.wRepeatCount },
         _virtualKeyCode{ record.wVirtualKeyCode },
@@ -128,12 +128,12 @@ public:
     {
     }
 
-    constexpr KeyEvent(_In_ const bool keyDown,
-                       _In_ const WORD repeatCount,
-                       _In_ const WORD virtualKeyCode,
-                       _In_ const WORD virtualScanCode,
-                       _In_ const wchar_t charData,
-                       _In_ const DWORD activeModifierKeys) :
+    constexpr KeyEvent(const bool keyDown,
+                       const WORD repeatCount,
+                       const WORD virtualKeyCode,
+                       const WORD virtualScanCode,
+                       const wchar_t charData,
+                       const DWORD activeModifierKeys) :
         _keyDown{ keyDown },
         _repeatCount{ repeatCount },
         _virtualKeyCode{ virtualKeyCode },
@@ -234,16 +234,16 @@ public:
         return _activeModifierKeys;
     }
 
-    void SetKeyDown(_In_ const bool keyDown) noexcept;
-    void SetRepeatCount(_In_ const WORD repeatCount) noexcept;
-    void SetVirtualKeyCode(_In_ const WORD virtualKeyCode) noexcept;
-    void SetVirtualScanCode(_In_ const WORD virtualScanCode) noexcept;
-    void SetCharData(_In_ const wchar_t character) noexcept;
+    void SetKeyDown(const bool keyDown) noexcept;
+    void SetRepeatCount(const WORD repeatCount) noexcept;
+    void SetVirtualKeyCode(const WORD virtualKeyCode) noexcept;
+    void SetVirtualScanCode(const WORD virtualScanCode) noexcept;
+    void SetCharData(const wchar_t character) noexcept;
 
-    void SetActiveModifierKeys(_In_ const DWORD activeModifierKeys) noexcept;
-    void DeactivateModifierKey(_In_ const ModifierKeyState modifierKey) noexcept;
-    void ActivateModifierKey(_In_ const ModifierKeyState modifierKey) noexcept;
-    bool DoActiveModifierKeysMatch(_In_ const std::unordered_set<ModifierKeyState>& consoleModifiers) const noexcept;
+    void SetActiveModifierKeys(const DWORD activeModifierKeys) noexcept;
+    void DeactivateModifierKey(const ModifierKeyState modifierKey) noexcept;
+    void ActivateModifierKey(const ModifierKeyState modifierKey) noexcept;
+    bool DoActiveModifierKeysMatch(const std::unordered_set<ModifierKeyState>& consoleModifiers) const noexcept;
     bool IsCommandLineEditingKey() const noexcept;
     bool IsCommandLinePopupKey() const noexcept;
 
@@ -278,7 +278,7 @@ std::wostream& operator<<(std::wostream& stream, const KeyEvent* const pKeyEvent
 class MouseEvent : public IInputEvent
 {
 public:
-    constexpr MouseEvent(_In_ const MOUSE_EVENT_RECORD& record) :
+    constexpr MouseEvent(const MOUSE_EVENT_RECORD& record) :
         _position{ record.dwMousePosition },
         _buttonState{ record.dwButtonState },
         _activeModifierKeys{ record.dwControlKeyState },
@@ -286,10 +286,10 @@ public:
     {
     }
 
-    constexpr MouseEvent(_In_ const COORD position,
-                         _In_ const DWORD buttonState,
-                         _In_ const DWORD activeModifierKeys,
-                         _In_ const DWORD eventFlags) :
+    constexpr MouseEvent(const COORD position,
+                         const DWORD buttonState,
+                         const DWORD activeModifierKeys,
+                         const DWORD eventFlags) :
         _position{ position },
         _buttonState{ buttonState },
         _activeModifierKeys{ activeModifierKeys },
@@ -331,10 +331,10 @@ public:
         return _eventFlags;
     }
 
-    void SetPosition(_In_ const COORD position) noexcept;
-    void SetButtonState(_In_ const DWORD buttonState) noexcept;
-    void SetActiveModifierKeys(_In_ const DWORD activeModifierKeys) noexcept;
-    void SetEventFlags(_In_ const DWORD eventFlags) noexcept;
+    void SetPosition(const COORD position) noexcept;
+    void SetButtonState(const DWORD buttonState) noexcept;
+    void SetActiveModifierKeys(const DWORD activeModifierKeys) noexcept;
+    void SetEventFlags(const DWORD eventFlags) noexcept;
 
 private:
     COORD _position;
@@ -354,12 +354,12 @@ std::wostream& operator<<(std::wostream& stream, const MouseEvent* const pMouseE
 class WindowBufferSizeEvent : public IInputEvent
 {
 public:
-    constexpr WindowBufferSizeEvent(_In_ const WINDOW_BUFFER_SIZE_RECORD& record) :
+    constexpr WindowBufferSizeEvent(const WINDOW_BUFFER_SIZE_RECORD& record) :
         _size{ record.dwSize }
     {
     }
 
-    constexpr WindowBufferSizeEvent(_In_ const COORD size) :
+    constexpr WindowBufferSizeEvent(const COORD size) :
         _size{ size }
     {
     }
@@ -378,7 +378,7 @@ public:
         return _size;
     }
 
-    void SetSize(_In_ const COORD size) noexcept;
+    void SetSize(const COORD size) noexcept;
 
 private:
     COORD _size;
@@ -395,12 +395,12 @@ std::wostream& operator<<(std::wostream& stream, const WindowBufferSizeEvent* co
 class MenuEvent : public IInputEvent
 {
 public:
-    constexpr MenuEvent(_In_ const MENU_EVENT_RECORD& record) :
+    constexpr MenuEvent(const MENU_EVENT_RECORD& record) :
         _commandId{ record.dwCommandId }
     {
     }
 
-    constexpr MenuEvent(_In_ const UINT commandId) :
+    constexpr MenuEvent(const UINT commandId) :
         _commandId{ commandId }
     {
     }
@@ -419,7 +419,7 @@ public:
         return _commandId;
     }
 
-    void SetCommandId(_In_ const UINT commandId) noexcept;
+    void SetCommandId(const UINT commandId) noexcept;
 
 private:
     UINT _commandId;
@@ -436,12 +436,12 @@ std::wostream& operator<<(std::wostream& stream, const MenuEvent* const pMenuEve
 class FocusEvent : public IInputEvent
 {
 public:
-    constexpr FocusEvent(_In_ const FOCUS_EVENT_RECORD& record) :
+    constexpr FocusEvent(const FOCUS_EVENT_RECORD& record) :
         _focus{ !!record.bSetFocus }
     {
     }
 
-    constexpr FocusEvent(_In_ const bool focus) :
+    constexpr FocusEvent(const bool focus) :
         _focus{ focus }
     {
     }
@@ -460,7 +460,7 @@ public:
         return _focus;
     }
 
-    void SetFocus(_In_ const bool focus) noexcept;
+    void SetFocus(const bool focus) noexcept;
 
 private:
     bool _focus;

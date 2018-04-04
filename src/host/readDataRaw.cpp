@@ -27,7 +27,7 @@
 // it's not divisible by the size of a wchar
 RAW_READ_DATA::RAW_READ_DATA(_In_ InputBuffer* const pInputBuffer,
                              _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
-                             _In_ const ULONG BufferSize,
+                             const ULONG BufferSize,
                              _In_ WCHAR* const BufPtr) :
     ReadData(pInputBuffer, pInputReadHandleData),
     _BufferSize{ BufferSize },

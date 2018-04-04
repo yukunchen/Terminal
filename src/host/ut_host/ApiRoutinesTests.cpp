@@ -312,7 +312,7 @@ class ApiRoutinesTests
         VERIFY_IS_TRUE(0 == wcscmp(gci.OriginalTitle, pwszTitle));
     }
 
-    static void s_AdjustOutputWait(_In_ const bool fShouldBlock)
+    static void s_AdjustOutputWait(const bool fShouldBlock)
     {
         SetFlagIf(ServiceLocator::LocateGlobals().getConsoleInformation().Flags, CONSOLE_SELECTING, fShouldBlock);
         ClearFlagIf(ServiceLocator::LocateGlobals().getConsoleInformation().Flags, CONSOLE_SELECTING, !fShouldBlock);

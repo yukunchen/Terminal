@@ -30,7 +30,7 @@ public:
                     _In_ COORD const coordSizeDesired,
                     _In_ UINT const uiCodePage);
 
-    FontInfoDesired(_In_ const FontInfo &fiFont);
+    FontInfoDesired(const FontInfo &fiFont);
 
     COORD FontInfoDesired::GetEngineSize() const;
     bool IsDefaultRasterFont() const;

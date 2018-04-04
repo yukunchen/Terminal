@@ -321,7 +321,7 @@ void CommandLine::Show()
     }
 }
 
-void DeleteCommandLine(_Inout_ COOKED_READ_DATA* const pCookedReadData, _In_ const BOOL fUpdateFields)
+void DeleteCommandLine(_Inout_ COOKED_READ_DATA* const pCookedReadData, const BOOL fUpdateFields)
 {
     DWORD CharsToWrite = pCookedReadData->_NumberOfVisibleChars;
     COORD coordOriginalCursor = pCookedReadData->_OriginalCursorPosition;
@@ -1134,7 +1134,7 @@ NTSTATUS CommandNumberPopup(_In_ COOKED_READ_DATA* const CookedReadData)
 [[nodiscard]]
 NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                             _In_ WCHAR wch,
-                            _In_ const DWORD dwKeyState)
+                            const DWORD dwKeyState)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     COORD CurrentPosition = { 0 };

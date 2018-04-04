@@ -53,7 +53,7 @@ HRESULT VtEngine::IsCharFullWidthByFont(_In_ WCHAR const /*wch*/, _Out_ bool* co
 // - pRectToOr - Add this rectangle to the existing one.
 // Return Value:
 // - <none>
-void VtEngine::_OrRect(_Inout_ SMALL_RECT* const pRectExisting, _In_ const SMALL_RECT* const pRectToOr) const
+void VtEngine::_OrRect(_Inout_ SMALL_RECT* const pRectExisting, const SMALL_RECT* const pRectToOr) const
 {
     pRectExisting->Left = std::min(pRectExisting->Left, pRectToOr->Left);
     pRectExisting->Top = std::min(pRectExisting->Top, pRectToOr->Top);

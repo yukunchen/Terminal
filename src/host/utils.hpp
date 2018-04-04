@@ -21,19 +21,19 @@ Author(s):
 #define RECT_WIDTH(x) ((x)->right - (x)->left)
 #define RECT_HEIGHT(x) ((x)->bottom - (x)->top)
 
-short CalcWindowSizeX(_In_ const SMALL_RECT * const pRect);
-short CalcWindowSizeY(_In_ const SMALL_RECT * const pRect);
+short CalcWindowSizeX(const SMALL_RECT * const pRect);
+short CalcWindowSizeY(const SMALL_RECT * const pRect);
 short CalcCursorYOffsetInPixels(_In_ short const sFontSizeY, _In_ ULONG const ulSize);
 WORD ConvertStringToDec(_In_ PCWSTR pwchToConvert, _Out_opt_ PCWSTR * const ppwchEnd);
 
 class Utils
 {
 public:
-    static bool s_DoDecrementScreenCoordinate(_In_ const SMALL_RECT srectEdges, _Inout_ COORD* const pcoordScreen);
-    static bool s_DoIncrementScreenCoordinate(_In_ const SMALL_RECT srectEdges, _Inout_ COORD* const pcoordScreen);
-    static bool s_AddToPosition(_In_ const SMALL_RECT srectEdges, _In_ const int iAdd, _Inout_ COORD* const pcoordPosition);
-    static int s_CompareCoords(_In_ const COORD coordFirst, _In_ const COORD coordSecond);
-    static void s_GetOppositeCorner(_In_ const SMALL_RECT srRectangle, _In_ const COORD coordCorner, _Out_ COORD* const pcoordOpposite);
+    static bool s_DoDecrementScreenCoordinate(const SMALL_RECT srectEdges, _Inout_ COORD* const pcoordScreen);
+    static bool s_DoIncrementScreenCoordinate(const SMALL_RECT srectEdges, _Inout_ COORD* const pcoordScreen);
+    static bool s_AddToPosition(const SMALL_RECT srectEdges, const int iAdd, _Inout_ COORD* const pcoordPosition);
+    static int s_CompareCoords(const COORD coordFirst, const COORD coordSecond);
+    static void s_GetOppositeCorner(const SMALL_RECT srRectangle, const COORD coordCorner, _Out_ COORD* const pcoordOpposite);
 
     static void s_GetCurrentBufferEdges(_Out_ SMALL_RECT* const psrectEdges);
 };

@@ -56,7 +56,7 @@ void Scrolling::s_ClearScroll()
     }
 }
 
-void Scrolling::s_ScrollIfNecessary(_In_ const SCREEN_INFORMATION * const pScreenInfo)
+void Scrolling::s_ScrollIfNecessary(const SCREEN_INFORMATION * const pScreenInfo)
 {
     IConsoleWindow *pWindow = ServiceLocator::LocateConsoleWindow();
     ASSERT(pWindow);
@@ -197,7 +197,7 @@ void Scrolling::s_HandleMouseWheel(_In_ bool isMouseWheel, _In_ bool isMouseHWhe
     }
 }
 
-bool Scrolling::s_HandleKeyScrollingEvent(_In_ const INPUT_KEY_INFO* const pKeyInfo)
+bool Scrolling::s_HandleKeyScrollingEvent(const INPUT_KEY_INFO* const pKeyInfo)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     IConsoleWindow *pWindow = ServiceLocator::LocateConsoleWindow();
@@ -323,7 +323,7 @@ bool Scrolling::s_HandleKeyScrollingEvent(_In_ const INPUT_KEY_INFO* const pKeyI
     return true;
 }
 
-BOOL Scrolling::s_IsPointInRectangle(_In_ CONST RECT * prc, _In_ POINT pt)
+BOOL Scrolling::s_IsPointInRectangle(const RECT * prc, _In_ POINT pt)
 {
     return ((pt.x >= prc->left) && (pt.x < prc->right) &&
             (pt.y >= prc->top) && (pt.y < prc->bottom));

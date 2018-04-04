@@ -54,7 +54,7 @@ ULONG ConvertMouseButtonState(_In_ ULONG Flag, _In_ ULONG State)
 * has no processes attached to it -- it's only being kept alive by references
 * via IO handles -- then we'll just set the owner to conhost.exe itself.
 */
-VOID SetConsoleWindowOwner(_In_ const HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pProcessData)
+VOID SetConsoleWindowOwner(const HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pProcessData)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     ASSERT(gci.IsConsoleLocked());
@@ -107,10 +107,10 @@ VOID SetConsoleWindowOwner(_In_ const HWND hwnd, _Inout_opt_ ConsoleProcessHandl
 // - pInputRecord - Input record event from the general input event handler
 // Return Value:
 // - True if the modes were appropriate for converting to a terminal sequence AND there was a matching terminal sequence for this key. False otherwise.
-bool HandleTerminalMouseEvent(_In_ const COORD cMousePosition,
-                              _In_ const unsigned int uiButton,
-                              _In_ const short sModifierKeystate,
-                              _In_ const short sWheelDelta)
+bool HandleTerminalMouseEvent(const COORD cMousePosition,
+                              const unsigned int uiButton,
+                              const short sModifierKeystate,
+                              const short sWheelDelta)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // If the modes don't align, this is unhandled by default.
@@ -125,10 +125,10 @@ bool HandleTerminalMouseEvent(_In_ const COORD cMousePosition,
     return fWasHandled;
 }
 
-void HandleKeyEvent(_In_ const HWND hWnd,
-                    _In_ const UINT Message,
-                    _In_ const WPARAM wParam,
-                    _In_ const LPARAM lParam,
+void HandleKeyEvent(const HWND hWnd,
+                    const UINT Message,
+                    const WPARAM wParam,
+                    const LPARAM lParam,
                     _Inout_opt_ PBOOL pfUnlockConsole)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -447,7 +447,7 @@ void HandleKeyEvent(_In_ const HWND hWnd,
 
 // Routine Description:
 // - Returns TRUE if DefWindowProc should be called.
-BOOL HandleSysKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const WPARAM wParam, _In_ const LPARAM lParam, _Inout_opt_ PBOOL pfUnlockConsole)
+BOOL HandleSysKeyEvent(const HWND hWnd, const UINT Message, const WPARAM wParam, const LPARAM lParam, _Inout_opt_ PBOOL pfUnlockConsole)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     WORD VirtualKeyCode;
@@ -536,10 +536,10 @@ BOOL HandleSysKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const
 
 // Routine Description:
 // - Returns TRUE if DefWindowProc should be called.
-BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION* const pScreenInfo,
-                      _In_ const UINT Message,
-                      _In_ const WPARAM wParam,
-                      _In_ const LPARAM lParam)
+BOOL HandleMouseEvent(const SCREEN_INFORMATION* const pScreenInfo,
+                      const UINT Message,
+                      const WPARAM wParam,
+                      const LPARAM lParam)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (Message != WM_MOUSEMOVE)

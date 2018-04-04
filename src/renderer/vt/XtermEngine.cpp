@@ -12,11 +12,11 @@ using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 
 XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
-                         _In_ const IDefaultColorProvider& colorProvider,
-                         _In_ const Viewport initialViewport,
+                         const IDefaultColorProvider& colorProvider,
+                         const Viewport initialViewport,
                          _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                         _In_ const WORD cColorTable,
-                         _In_ const bool fUseAsciiOnly) :
+                         const WORD cColorTable,
+                         const bool fUseAsciiOnly) :
     VtEngine(std::move(hPipe), colorProvider, initialViewport),
     _ColorTable(ColorTable),
     _cColorTable(cColorTable),
@@ -240,7 +240,7 @@ HRESULT XtermEngine::ScrollFrame()
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for safemath failure
 [[nodiscard]]
-HRESULT XtermEngine::InvalidateScroll(_In_ const COORD* const pcoordDelta)
+HRESULT XtermEngine::InvalidateScroll(const COORD* const pcoordDelta)
 {
     const short dx = pcoordDelta->X;
     const short dy = pcoordDelta->Y;

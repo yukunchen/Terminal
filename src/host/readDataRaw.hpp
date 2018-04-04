@@ -29,7 +29,7 @@ class RAW_READ_DATA final : public ReadData
 public:
     RAW_READ_DATA(_In_ InputBuffer* const pInputBuffer,
                   _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
-                  _In_ const ULONG BufferSize,
+                  const ULONG BufferSize,
                   _In_ WCHAR* const BufPtr);
 
     ~RAW_READ_DATA() override;

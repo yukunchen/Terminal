@@ -35,7 +35,7 @@ FontInfoDesired::FontInfoDesired(_In_ PCWSTR const pwszFaceName,
 {
 }
 
-FontInfoDesired::FontInfoDesired(_In_ const FontInfo& fiFont) :
+FontInfoDesired::FontInfoDesired(const FontInfo& fiFont) :
                                  FontInfoBase(fiFont),
                                  _coordSizeDesired(fiFont.GetUnscaledSize())
 {

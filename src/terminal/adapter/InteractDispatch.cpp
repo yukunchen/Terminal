@@ -60,7 +60,7 @@ bool InteractDispatch::WriteCtrlC()
 // Return Value:
 // True if handled successfully. False otherwise.
 bool InteractDispatch::WriteString(_In_reads_(cch) const wchar_t* const pws,
-                                   _In_ const size_t cch)
+                                   const size_t cch)
 {
     if (cch == 0)
     {
@@ -99,7 +99,7 @@ bool InteractDispatch::WriteString(_In_reads_(cch) const wchar_t* const pws,
 // - cParams - size of rgusParams
 // Return value:
 // True if handled successfully. False otherwise.
-bool InteractDispatch::WindowManipulation(_In_ const DispatchCommon::WindowManipulationType uiFunction,
+bool InteractDispatch::WindowManipulation(const DispatchCommon::WindowManipulationType uiFunction,
                                           _In_reads_(cParams) const unsigned short* const rgusParams,
                                           _In_ size_t const cParams)
 {
@@ -143,7 +143,7 @@ bool InteractDispatch::WindowManipulation(_In_ const DispatchCommon::WindowManip
 // True if we successfully moved the cursor to the given location.
 // False otherwise, including if given invalid coordinates (either component being 0)
 //  or if any API calls failed.
-bool InteractDispatch::MoveCursor(_In_ const unsigned int row, _In_ const unsigned int col)
+bool InteractDispatch::MoveCursor(const unsigned int row, const unsigned int col)
 {
     unsigned int uiRow = row;
     unsigned int uiCol = col;

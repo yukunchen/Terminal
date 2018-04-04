@@ -9,12 +9,12 @@
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
-short CalcWindowSizeX(_In_ const SMALL_RECT * const pRect)
+short CalcWindowSizeX(const SMALL_RECT * const pRect)
 {
     return pRect->Right - pRect->Left + 1;
 }
 
-short CalcWindowSizeY(_In_ const SMALL_RECT * const pRect)
+short CalcWindowSizeY(const SMALL_RECT * const pRect)
 {
     return pRect->Bottom - pRect->Top + 1;
 }
@@ -61,7 +61,7 @@ WORD ConvertStringToDec(_In_ PCWSTR pwchToConvert, _Out_opt_ PCWSTR * const ppwc
 // - pcoordScreen - Screen coordinate to decrement
 // Return Value:
 // - True if we could successfully decrement. False if we couldn't (stuck in top left corner).
-bool Utils::s_DoDecrementScreenCoordinate(_In_ const SMALL_RECT srectEdges, _Inout_ COORD* const pcoordScreen)
+bool Utils::s_DoDecrementScreenCoordinate(const SMALL_RECT srectEdges, _Inout_ COORD* const pcoordScreen)
 {
     // assert that the coord is inside the screen
     ASSERT(pcoordScreen->X >= srectEdges.Left);
@@ -97,7 +97,7 @@ bool Utils::s_DoDecrementScreenCoordinate(_In_ const SMALL_RECT srectEdges, _Ino
 // - pcoordScreen - Screen coordinate to increment
 // Return Value:
 // - True if we could successfully increment. False if we couldn't (stuck in bottom right corner).
-bool Utils::s_DoIncrementScreenCoordinate(_In_ const SMALL_RECT srectEdges, _Inout_ COORD* const pcoordScreen)
+bool Utils::s_DoIncrementScreenCoordinate(const SMALL_RECT srectEdges, _Inout_ COORD* const pcoordScreen)
 {
     // assert that the coord is inside the screen
     ASSERT(pcoordScreen->X >= srectEdges.Left);
@@ -137,7 +137,7 @@ bool Utils::s_DoIncrementScreenCoordinate(_In_ const SMALL_RECT srectEdges, _Ino
 // -  This is so you can do s_CompareCoords(first, second) <= 0 for "first is left or the same as second".
 //    (the < looks like a left arrow :D)
 // -  The magnitude of the result is the distance between the two coordinates when typing characters into the buffer (left to right, top to bottom)
-int Utils::s_CompareCoords(_In_ const COORD coordFirst, _In_ const COORD coordSecond)
+int Utils::s_CompareCoords(const COORD coordFirst, const COORD coordSecond)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // find the width of one row
@@ -181,7 +181,7 @@ int Utils::s_CompareCoords(_In_ const COORD coordFirst, _In_ const COORD coordSe
 // - pcoordOpposite - The opposite corner of the one given.
 // Return Value:
 // - <none>
-void Utils::s_GetOppositeCorner(_In_ const SMALL_RECT srRectangle, _In_ const COORD coordCorner, _Out_ COORD* const pcoordOpposite)
+void Utils::s_GetOppositeCorner(const SMALL_RECT srRectangle, const COORD coordCorner, _Out_ COORD* const pcoordOpposite)
 {
     // Assert we were given coordinates that are indeed one of the corners of the rectangle.
     ASSERT(coordCorner.X == srRectangle.Left || coordCorner.X == srRectangle.Right);
@@ -202,7 +202,7 @@ void Utils::s_GetOppositeCorner(_In_ const SMALL_RECT srRectangle, _In_ const CO
 // Return Value:
 // - True if we successfully moved the requested distance. False if we had to stop early.
 // - If False, we will restore the original position to the given coordinate.
-bool Utils::s_AddToPosition(_In_ const SMALL_RECT srectEdges, _In_ const int iAdd, _Inout_ COORD* const pcoordPosition)
+bool Utils::s_AddToPosition(const SMALL_RECT srectEdges, const int iAdd, _Inout_ COORD* const pcoordPosition)
 {
     const COORD coordBackup = *pcoordPosition;
     bool fSuccess = true; // If nothing happens, we're still successful (e.g. iAdd = 0)

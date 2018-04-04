@@ -38,7 +38,7 @@ FontInfoBase::FontInfoBase(_In_ PCWSTR const pwszFaceName,
     ValidateFont();
 }
 
-FontInfoBase::FontInfoBase(_In_ const FontInfoBase &fibFont) :
+FontInfoBase::FontInfoBase(const FontInfoBase &fibFont) :
     FontInfoBase(fibFont.GetFaceName(),
                  fibFont.GetFamily(),
                  fibFont.GetWeight(),

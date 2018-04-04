@@ -40,7 +40,7 @@ void SetLineChar(_In_ SCREEN_INFORMATION * const pScreenInfo)
 // Return Value:
 // - TRUE - Bisected character.
 // - FALSE - Correctly.
-bool CheckBisectStringA(_In_reads_bytes_(cbBuf) PCHAR pchBuf, _In_ DWORD cbBuf, _In_ const CPINFO * const pCPInfo)
+bool CheckBisectStringA(_In_reads_bytes_(cbBuf) PCHAR pchBuf, _In_ DWORD cbBuf, const CPINFO * const pCPInfo)
 {
     while (cbBuf)
     {
@@ -75,8 +75,8 @@ bool CheckBisectStringA(_In_reads_bytes_(cbBuf) PCHAR pchBuf, _In_ DWORD cbBuf, 
 // - pScreenInfo - the screen buffer to update
 // Return Value:
 // - <none>
-void CleanupDbcsEdgesForWrite(_In_ const size_t stringLen,
-                              _In_ const COORD coordTarget,
+void CleanupDbcsEdgesForWrite(const size_t stringLen,
+                              const COORD coordTarget,
                               _Inout_ SCREEN_INFORMATION* const pScreenInfo)
 {
     PTEXT_BUFFER_INFO const pTextInfo = pScreenInfo->TextInfo;
@@ -214,7 +214,7 @@ DWORD RemoveDbcsMarkCell(_Out_writes_(cch) PCHAR_INFO pciDst, _In_reads_(cch) co
 // - pCPInfo - the code page to check the char in.
 // Return Value:
 // true if ch is a lead byte, false otherwise.
-bool IsDBCSLeadByteConsole(_In_ const CHAR ch, _In_ const CPINFO * const pCPInfo)
+bool IsDBCSLeadByteConsole(const CHAR ch, const CPINFO * const pCPInfo)
 {
     ASSERT(pCPInfo != nullptr);
     // NOTE: This must be unsigned for the comparison. If we compare signed, this will never hit
@@ -265,9 +265,9 @@ BOOL IsAvailableEastAsianCodePage(_In_ UINT const uiCodePage)
 
 _Ret_range_(0, cbAnsi)
 ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
-                            _In_ const ULONG cchUnicode,
+                            const ULONG cchUnicode,
                             _Out_writes_bytes_(cbAnsi) PCHAR pchAnsi,
-                            _In_ const ULONG cbAnsi,
+                            const ULONG cbAnsi,
                             _Out_ std::unique_ptr<IInputEvent>& partialEvent)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();

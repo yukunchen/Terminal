@@ -42,9 +42,9 @@ typedef struct _COMMAND_HISTORY
 [[nodiscard]]
 NTSTATUS AddCommand(_In_ PCOMMAND_HISTORY pCmdHistory,
                     _In_reads_bytes_(cbCommand) PCWCHAR pwchCommand,
-                    _In_ const USHORT cbCommand,
-                    _In_ const BOOL fHistoryNoDup);
-PCOMMAND_HISTORY AllocateCommandHistory(_In_reads_bytes_(cbAppName) PCWSTR pwszAppName, _In_ const DWORD cbAppName, _In_ HANDLE hProcess);
+                    const USHORT cbCommand,
+                    const BOOL fHistoryNoDup);
+PCOMMAND_HISTORY AllocateCommandHistory(_In_reads_bytes_(cbAppName) PCWSTR pwszAppName, const DWORD cbAppName, _In_ HANDLE hProcess);
 void FreeCommandHistory(_In_ HANDLE const hProcess);
 void FreeCommandHistoryBuffers();
 void ResizeCommandHistoryBuffers(_In_ UINT const cCommands);

@@ -63,11 +63,11 @@ filling in the last row, and updating the screen.
 class TEXT_BUFFER_INFO final
 {
 public:
-    TEXT_BUFFER_INFO(_In_ const FontInfo* const pFontInfo,
-                     _In_ const COORD screenBufferSize,
-                     _In_ const CHAR_INFO fill,
-                     _In_ const UINT cursorSize);
-    TEXT_BUFFER_INFO(_In_ const TEXT_BUFFER_INFO& a) = delete;
+    TEXT_BUFFER_INFO(const FontInfo* const pFontInfo,
+                     const COORD screenBufferSize,
+                     const CHAR_INFO fill,
+                     const UINT cursorSize);
+    TEXT_BUFFER_INFO(const TEXT_BUFFER_INFO& a) = delete;
 
     ~TEXT_BUFFER_INFO();
 
@@ -97,7 +97,7 @@ public:
     ROW& GetNextRow(const ROW& row) noexcept;
 
     // Text insertion functions
-    bool InsertCharacter(_In_ const wchar_t wch, _In_ const DbcsAttribute dbcsAttribute, _In_ const TextAttribute attr);
+    bool InsertCharacter(const wchar_t wch, const DbcsAttribute dbcsAttribute, const TextAttribute attr);
     bool IncrementCursor();
     bool NewlineCursor();
 
@@ -109,10 +109,10 @@ public:
 
     COORD GetLastNonSpaceCharacter() const;
 
-    void SetCurrentFont(_In_ const FontInfo* const pfiNewFont);
+    void SetCurrentFont(const FontInfo* const pfiNewFont);
     FontInfo* GetCurrentFont();
 
-    void SetDesiredFont(_In_ const FontInfoDesired* const pfiNewFont);
+    void SetDesiredFont(const FontInfoDesired* const pfiNewFont);
     FontInfoDesired* GetDesiredFont();
 
     Cursor* const GetCursor() const;
@@ -126,7 +126,7 @@ public:
     UINT TotalRowCount() const;
 
     CHAR_INFO GetFill() const;
-    void SetFill(_In_ const CHAR_INFO ciFill);
+    void SetFill(const CHAR_INFO ciFill);
 
     [[nodiscard]]
     NTSTATUS ResizeTraditional(_In_ COORD const currentScreenBufferSize,
@@ -151,8 +151,8 @@ private:
     void AdjustWrapOnCurrentRow(_In_ bool const fSet);
 
     // Assist with maintaining proper buffer state for Double Byte character sequences
-    bool _PrepareForDoubleByteSequence(_In_ const DbcsAttribute dbcsAttribute);
-    bool AssertValidDoubleByteSequence(_In_ const DbcsAttribute dbcsAttribute);
+    bool _PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute);
+    bool AssertValidDoubleByteSequence(const DbcsAttribute dbcsAttribute);
 
     CHAR_INFO _ciFill;
 

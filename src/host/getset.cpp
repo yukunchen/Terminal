@@ -198,7 +198,7 @@ HRESULT ApiRoutines::GetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const 
 [[nodiscard]]
 HRESULT ApiRoutines::SetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const pContext,
                                                  _In_ BOOLEAN const /*IsForMaximumWindowSize*/,
-                                                 _In_ const CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx)
+                                                 const CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     LockConsole();
@@ -340,7 +340,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(_In_ SCREEN_INFORMATION* const
 
 [[nodiscard]]
 HRESULT ApiRoutines::SetConsoleScreenBufferSizeImpl(_In_ SCREEN_INFORMATION* const pContext,
-                                                    _In_ const COORD* const pSize)
+                                                    const COORD* const pSize)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
@@ -370,7 +370,7 @@ HRESULT ApiRoutines::SetConsoleScreenBufferSizeImpl(_In_ SCREEN_INFORMATION* con
 
 [[nodiscard]]
 HRESULT ApiRoutines::SetConsoleScreenBufferInfoExImpl(_In_ SCREEN_INFORMATION* const pContext,
-                                                      _In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pScreenBufferInfoEx)
+                                                      const CONSOLE_SCREEN_BUFFER_INFOEX* const pScreenBufferInfoEx)
 {
     RETURN_HR_IF(E_INVALIDARG, (pScreenBufferInfoEx->dwSize.X == 0 ||
                                 pScreenBufferInfoEx->dwSize.Y == 0 ||
@@ -385,7 +385,7 @@ HRESULT ApiRoutines::SetConsoleScreenBufferInfoExImpl(_In_ SCREEN_INFORMATION* c
 }
 
 void DoSrvSetScreenBufferInfo(_In_ SCREEN_INFORMATION* const pScreenInfo,
-                              _In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pInfo)
+                              const CONSOLE_SCREEN_BUFFER_INFOEX* const pInfo)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
@@ -438,7 +438,7 @@ void DoSrvSetScreenBufferInfo(_In_ SCREEN_INFORMATION* const pScreenInfo,
 
 [[nodiscard]]
 HRESULT ApiRoutines::SetConsoleCursorPositionImpl(_In_ SCREEN_INFORMATION* const pContext,
-                                                  _In_ const COORD* const pCursorPosition)
+                                                  const COORD* const pCursorPosition)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
@@ -448,7 +448,7 @@ HRESULT ApiRoutines::SetConsoleCursorPositionImpl(_In_ SCREEN_INFORMATION* const
 
 [[nodiscard]]
 HRESULT DoSrvSetConsoleCursorPosition(_In_ SCREEN_INFORMATION* pScreenInfo,
-                                      _In_ const COORD* const pCursorPosition)
+                                      const COORD* const pCursorPosition)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
@@ -524,7 +524,7 @@ HRESULT DoSrvSetConsoleCursorInfo(_In_ SCREEN_INFORMATION* pScreenInfo,
 [[nodiscard]]
 HRESULT ApiRoutines::SetConsoleWindowInfoImpl(_In_ SCREEN_INFORMATION* const pContext,
                                               _In_ BOOLEAN const IsAbsoluteRectangle,
-                                              _In_ const SMALL_RECT* const pWindowRectangle)
+                                              const SMALL_RECT* const pWindowRectangle)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
@@ -535,7 +535,7 @@ HRESULT ApiRoutines::SetConsoleWindowInfoImpl(_In_ SCREEN_INFORMATION* const pCo
 [[nodiscard]]
 HRESULT DoSrvSetConsoleWindowInfo(_In_ SCREEN_INFORMATION* pScreenInfo,
                                   _In_ BOOLEAN const IsAbsoluteRectangle,
-                                  _In_ const SMALL_RECT* const pWindowRectangle)
+                                  const SMALL_RECT* const pWindowRectangle)
 {
     SMALL_RECT Window = *pWindowRectangle;
 
@@ -571,8 +571,8 @@ HRESULT DoSrvSetConsoleWindowInfo(_In_ SCREEN_INFORMATION* pScreenInfo,
 
 [[nodiscard]]
 HRESULT ApiRoutines::ScrollConsoleScreenBufferAImpl(_In_ SCREEN_INFORMATION* const pContext,
-                                                    _In_ const SMALL_RECT* const pSourceRectangle,
-                                                    _In_ const COORD* const pTargetOrigin,
+                                                    const SMALL_RECT* const pSourceRectangle,
+                                                    const COORD* const pTargetOrigin,
                                                     _In_opt_ const SMALL_RECT* const pTargetClipRectangle,
                                                     _In_ char const chFill,
                                                     _In_ WORD const attrFill)
@@ -590,8 +590,8 @@ HRESULT ApiRoutines::ScrollConsoleScreenBufferAImpl(_In_ SCREEN_INFORMATION* con
 
 [[nodiscard]]
 HRESULT ApiRoutines::ScrollConsoleScreenBufferWImpl(_In_ SCREEN_INFORMATION* const pContext,
-                                                    _In_ const SMALL_RECT* const pSourceRectangle,
-                                                    _In_ const COORD* const pTargetOrigin,
+                                                    const SMALL_RECT* const pSourceRectangle,
+                                                    const COORD* const pTargetOrigin,
                                                     _In_opt_ const SMALL_RECT* const pTargetClipRectangle,
                                                     _In_ wchar_t const wchFill,
                                                     _In_ WORD const attrFill)
@@ -609,8 +609,8 @@ HRESULT ApiRoutines::ScrollConsoleScreenBufferWImpl(_In_ SCREEN_INFORMATION* con
 
 [[nodiscard]]
 HRESULT DoSrvScrollConsoleScreenBufferW(_In_ SCREEN_INFORMATION* const pScreenInfo,
-                                        _In_ const SMALL_RECT* const pSourceRectangle,
-                                        _In_ const COORD* const pTargetOrigin,
+                                        const SMALL_RECT* const pSourceRectangle,
+                                        const COORD* const pTargetOrigin,
                                         _In_opt_ const SMALL_RECT* const pTargetClipRectangle,
                                         _In_ wchar_t const wchFill,
                                         _In_ WORD const attrFill)
@@ -742,9 +742,9 @@ HRESULT DoSrvSetConsoleTextAttribute(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ 
 
 void DoSrvPrivateSetLegacyAttributes(_In_ SCREEN_INFORMATION* pScreenInfo,
                                      _In_ WORD const Attribute,
-                                     _In_ const bool fForeground,
-                                     _In_ const bool fBackground,
-                                     _In_ const bool fMeta)
+                                     const bool fForeground,
+                                     const bool fBackground,
+                                     const bool fMeta)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const TextAttribute OldAttributes = pScreenInfo->GetAttributes();
@@ -809,8 +809,8 @@ void DoSrvPrivateSetLegacyAttributes(_In_ SCREEN_INFORMATION* pScreenInfo,
 }
 
 void DoSrvPrivateSetConsoleXtermTextAttribute(_In_ SCREEN_INFORMATION* const pScreenInfo,
-                                              _In_ const int iXtermTableEntry,
-                                              _In_ const bool fIsForeground)
+                                              const int iXtermTableEntry,
+                                              const bool fIsForeground)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     TextAttribute NewAttributes;
@@ -835,8 +835,8 @@ void DoSrvPrivateSetConsoleXtermTextAttribute(_In_ SCREEN_INFORMATION* const pSc
 }
 
 void DoSrvPrivateSetConsoleRGBTextAttribute(_In_ SCREEN_INFORMATION* const pScreenInfo,
-                                            _In_ const COLORREF rgbColor,
-                                            _In_ const bool fIsForeground)
+                                            const COLORREF rgbColor,
+                                            const bool fIsForeground)
 {
     TextAttribute NewAttributes;
     NewAttributes.SetFrom(pScreenInfo->GetAttributes());
@@ -938,7 +938,7 @@ void ApiRoutines::GetConsoleHistoryInfoImpl(_Out_ CONSOLE_HISTORY_INFO* const pC
     SetFlagIf(pConsoleHistoryInfo->dwFlags, HISTORY_NO_DUP_FLAG, IsFlagSet(gci.Flags, CONSOLE_HISTORY_NODUP));
 }
 
-HRESULT ApiRoutines::SetConsoleHistoryInfoImpl(_In_ const CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo)
+HRESULT ApiRoutines::SetConsoleHistoryInfoImpl(const CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     RETURN_HR_IF(E_INVALIDARG, pConsoleHistoryInfo->HistoryBufferSize > SHORT_MAX);
@@ -1092,7 +1092,7 @@ void DoSrvPrivateAllowCursorBlinking(_In_ SCREEN_INFORMATION* const pScreenInfo,
 // Return value:
 // - True if handled successfully. False otherwise.
 [[nodiscard]]
-NTSTATUS DoSrvPrivateSetScrollingRegion(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ const SMALL_RECT* const psrScrollMargins)
+NTSTATUS DoSrvPrivateSetScrollingRegion(_In_ SCREEN_INFORMATION* pScreenInfo, const SMALL_RECT* const psrScrollMargins)
 {
     NTSTATUS Status = STATUS_SUCCESS;
 
@@ -1365,13 +1365,13 @@ NTSTATUS DoSrvPrivateEraseAll(_In_ SCREEN_INFORMATION* const pScreenInfo)
     return NTSTATUS_FROM_HRESULT(pScreenInfo->GetActiveBuffer()->VtEraseAll());
 }
 
-void DoSrvSetCursorStyle(_In_ const SCREEN_INFORMATION* const pScreenInfo,
+void DoSrvSetCursorStyle(const SCREEN_INFORMATION* const pScreenInfo,
                          _In_ CursorType const cursorType)
 {
     pScreenInfo->TextInfo->GetCursor()->SetType(cursorType);
 }
 
-void DoSrvSetCursorColor(_In_ const SCREEN_INFORMATION* const pScreenInfo,
+void DoSrvSetCursorColor(const SCREEN_INFORMATION* const pScreenInfo,
                          _In_ COLORREF const cursorColor)
 {
     pScreenInfo->TextInfo->GetCursor()->SetColor(cursorColor);

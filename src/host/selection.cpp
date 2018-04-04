@@ -206,7 +206,7 @@ NTSTATUS Selection::GetSelectionRects(_Outptr_result_buffer_all_(*pcRectangles) 
 //  <none>
 void Selection::s_BisectSelection(_In_ short const sStringLength,
                                   _In_ COORD const coordTargetPoint,
-                                  _In_ const SCREEN_INFORMATION* const pScreenInfo,
+                                  const SCREEN_INFORMATION* const pScreenInfo,
                                   _Inout_ SMALL_RECT* const pSmallRect)
 {
     const TEXT_BUFFER_INFO* const pTextInfo = pScreenInfo->TextInfo;
@@ -330,7 +330,7 @@ void Selection::_PaintSelection() const
 // - coordBufferPos - Position in which user started a selection
 // Return Value:
 // - <none>
-void Selection::InitializeMouseSelection(_In_ const COORD coordBufferPos)
+void Selection::InitializeMouseSelection(const COORD coordBufferPos)
 {
     Scrolling::s_ClearScroll();
 
@@ -370,7 +370,7 @@ void Selection::InitializeMouseSelection(_In_ const COORD coordBufferPos)
 // - coordSelectionEnd - The linear final position or opposite corner of the anchor to represent the complete selection area.
 // Return Value:
 // - <none>
-void Selection::AdjustSelection(_In_ const COORD coordSelectionStart, _In_ const COORD coordSelectionEnd)
+void Selection::AdjustSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd)
 {
     // modify the anchor and then just use extend to adjust the other portion of the selection rectangle
     _coordSelectionAnchor = coordSelectionStart;

@@ -40,7 +40,7 @@ public:
 private:
     ConsoleWaitBlock(_In_ ConsoleWaitQueue* const pProcessQueue,
                      _In_ ConsoleWaitQueue* const pObjectQueue,
-                     _In_ const CONSOLE_API_MSG* const pWaitReplyMessage,
+                     const CONSOLE_API_MSG* const pWaitReplyMessage,
                      _In_ IWaitRoutine* const pWaiter);
 
     ConsoleWaitQueue* const _pProcessQueue;

@@ -50,7 +50,7 @@ public:
     // navigation.
 
     void InitializeMarkSelection();
-    void InitializeMouseSelection(_In_ const COORD coordBufferPos);
+    void InitializeMouseSelection(const COORD coordBufferPos);
 
     void SelectNewRegion(_In_ COORD const coordStart, _In_ COORD const coordEnd);
     void SelectAll();
@@ -76,7 +76,7 @@ private:
 
     static void s_BisectSelection(_In_ short const sStringLength,
                                   _In_ COORD const coordTargetPoint,
-                                  _In_ const SCREEN_INFORMATION* const pScreenInfo,
+                                  const SCREEN_INFORMATION* const pScreenInfo,
                                   _Inout_ SMALL_RECT* const pSmallRect);
 
     void _CancelMarkSelection();
@@ -99,9 +99,9 @@ public:
         CopyToClipboard
     };
 
-    KeySelectionEventResult HandleKeySelectionEvent(_In_ const INPUT_KEY_INFO* const pInputKeyInfo);
-    static bool s_IsValidKeyboardLineSelection(_In_ const INPUT_KEY_INFO* const pInputKeyInfo);
-    bool HandleKeyboardLineSelectionEvent(_In_ const INPUT_KEY_INFO* const pInputKeyInfo);
+    KeySelectionEventResult HandleKeySelectionEvent(const INPUT_KEY_INFO* const pInputKeyInfo);
+    static bool s_IsValidKeyboardLineSelection(const INPUT_KEY_INFO* const pInputKeyInfo);
+    bool HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pInputKeyInfo);
 
     void CheckAndSetAlternateSelection();
 
@@ -109,13 +109,13 @@ public:
     [[nodiscard]]
     static bool s_GetInputLineBoundaries(_Out_opt_ COORD* const pcoordInputStart, _Out_opt_ COORD* const pcoordInputEnd);
     void GetValidAreaBoundaries(_Out_opt_ COORD* const pcoordValidStart, _Out_opt_ COORD* const pcoordValidEnd) const;
-    static bool s_IsWithinBoundaries(_In_ const COORD coordPosition, _In_ const COORD coordStart, _In_ const COORD coordEnd);
+    static bool s_IsWithinBoundaries(const COORD coordPosition, const COORD coordStart, const COORD coordEnd);
 
 private:
     // key handling
-    bool _HandleColorSelection(_In_ const INPUT_KEY_INFO* const pInputKeyInfo);
-    bool _HandleMarkModeSelectionNav(_In_ const INPUT_KEY_INFO* const pInputKeyInfo);
-    void WordByWordSelection(_In_ const bool fPrevious, _In_ const SMALL_RECT srectEdges, _In_ const COORD coordAnchor, _Inout_ COORD *pcoordSelPoint) const;
+    bool _HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo);
+    bool _HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKeyInfo);
+    void WordByWordSelection(const bool fPrevious, const SMALL_RECT srectEdges, const COORD coordAnchor, _Inout_ COORD *pcoordSelPoint) const;
 
 
 // -------------------------------------------------------------------------------------------------------
@@ -136,17 +136,17 @@ public:
     COORD GetSelectionAnchor() const noexcept;
     SMALL_RECT GetSelectionRectangle() const noexcept;
 
-    void SetLineSelection(_In_ const bool fLineSelectionOn);
+    void SetLineSelection(const bool fLineSelectionOn);
 
     // TODO: these states likely belong somewhere else
     void MouseDown();
     void MouseUp();
 
 private:
-    void _SaveCursorData(_In_ const TEXT_BUFFER_INFO* const pTextInfo);
+    void _SaveCursorData(const TEXT_BUFFER_INFO* const pTextInfo);
     void _RestoreCursorData(_In_ SCREEN_INFORMATION* const pScreenInfo);
 
-    void _AlignAlternateSelection(_In_ const bool fAlignToLineSelect);
+    void _AlignAlternateSelection(const bool fAlignToLineSelect);
 
     void _SetSelectingState(_In_ bool const fSelectingOn);
 

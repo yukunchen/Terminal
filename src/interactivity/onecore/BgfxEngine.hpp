@@ -35,7 +35,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         HRESULT Invalidate(const SMALL_RECT* const psrRegion);
         [[nodiscard]]
-        HRESULT InvalidateCursor(_In_ const COORD* const pcoordCursor) override;
+        HRESULT InvalidateCursor(const COORD* const pcoordCursor) override;
         [[nodiscard]]
         HRESULT InvalidateSystem(const RECT* const prcDirtyClient);
         [[nodiscard]]

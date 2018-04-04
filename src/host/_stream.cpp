@@ -40,7 +40,7 @@
 // - fKeepCursorVisible - TRUE if changing window origin desirable when hit right edge
 // Return Value:
 [[nodiscard]]
-NTSTATUS AdjustCursorPosition(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ COORD coordCursor, _In_ const BOOL fKeepCursorVisible, _Inout_opt_ PSHORT psScrollY)
+NTSTATUS AdjustCursorPosition(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ COORD coordCursor, const BOOL fKeepCursorVisible, _Inout_opt_ PSHORT psScrollY)
 {
     const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
     if (coordCursor.X < 0)
@@ -186,8 +186,8 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                           _In_reads_bytes_(*pcb) PWCHAR pwchRealUnicode,
                           _Inout_ PDWORD const pcb,
                           _Out_opt_ PULONG const pcSpaces,
-                          _In_ const SHORT sOriginalXPosition,
-                          _In_ const DWORD dwFlags,
+                          const SHORT sOriginalXPosition,
+                          const DWORD dwFlags,
                           _Inout_opt_ PSHORT const psScrollY)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -842,8 +842,8 @@ NTSTATUS WriteChars(_In_ PSCREEN_INFORMATION pScreenInfo,
                     _In_reads_bytes_(*pcb) PWCHAR pwchRealUnicode,
                     _Inout_ PDWORD const pcb,
                     _Out_opt_ PULONG const pcSpaces,
-                    _In_ const SHORT sOriginalXPosition,
-                    _In_ const DWORD dwFlags,
+                    const SHORT sOriginalXPosition,
+                    const DWORD dwFlags,
                     _Inout_opt_ PSHORT const psScrollY)
 {
     if (!IsFlagSet(pScreenInfo->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) || !IsFlagSet(pScreenInfo->OutputMode, ENABLE_PROCESSED_OUTPUT))

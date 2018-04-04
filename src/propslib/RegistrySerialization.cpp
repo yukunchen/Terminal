@@ -14,7 +14,7 @@
 
 #define NT_TESTNULL(var) (((var) == nullptr) ? STATUS_NO_MEMORY : STATUS_SUCCESS)
 
-DWORD RegistrySerialization::ToWin32RegistryType(_In_ const _RegPropertyType type)
+DWORD RegistrySerialization::ToWin32RegistryType(const _RegPropertyType type)
 {
     switch (type)
     {
@@ -83,7 +83,7 @@ const size_t RegistrySerialization::s_GlobalPropMappingsSize = ARRAYSIZE(s_Globa
 // Return Value:
 // - STATUS_SUCCESSFUL or appropriate NTSTATUS reply for registry operations.
 [[nodiscard]]
-NTSTATUS RegistrySerialization::s_LoadRegDword(_In_ HKEY const hKey, _In_ const _RegPropertyMap* const pPropMap, _In_ Settings* const pSettings)
+NTSTATUS RegistrySerialization::s_LoadRegDword(_In_ HKEY const hKey, const _RegPropertyMap* const pPropMap, _In_ Settings* const pSettings)
 {
     // find offset into destination structure for this numerical value
     PBYTE const pbField = (PBYTE)pSettings + pPropMap->dwFieldOffset;
@@ -144,7 +144,7 @@ NTSTATUS RegistrySerialization::s_LoadRegDword(_In_ HKEY const hKey, _In_ const 
 // Return Value:
 // - STATUS_SUCCESSFUL or appropriate NTSTATUS reply for registry operations.
 [[nodiscard]]
-NTSTATUS RegistrySerialization::s_LoadRegString(_In_ HKEY const hKey, _In_ const _RegPropertyMap* const pPropMap, _In_ Settings* const pSettings)
+NTSTATUS RegistrySerialization::s_LoadRegString(_In_ HKEY const hKey, const _RegPropertyMap* const pPropMap, _In_ Settings* const pSettings)
 {
     // find offset into destination structure for this numerical value
     PBYTE const pbField = (PBYTE)pSettings + pPropMap->dwFieldOffset;
@@ -302,7 +302,7 @@ NTSTATUS RegistrySerialization::s_SetValue(_In_ HKEY const hKey,
 NTSTATUS RegistrySerialization::s_QueryValue(_In_ HKEY const hKey,
                                              _In_ PCWSTR const pwszValueName,
                                              _In_ DWORD const cbValueLength,
-                                             _In_ const DWORD regType,
+                                             const DWORD regType,
                                              _Out_writes_bytes_(cbValueLength) BYTE* const pbData,
                                              _Out_opt_ _Out_range_(0, cbValueLength) DWORD* const pcbDataLength)
 {
