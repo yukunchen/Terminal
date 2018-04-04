@@ -120,12 +120,12 @@ void ApiRoutines::GetConsoleSelectionInfoImpl(_Out_ CONSOLE_SELECTION_INFO* cons
     const Selection* const pSelection = &Selection::Instance();
     if (pSelection->IsInSelectingState())
     {
-        pSelection->GetPublicSelectionFlags(&pConsoleSelectionInfo->dwFlags);
+        pConsoleSelectionInfo->dwFlags = pSelection->GetPublicSelectionFlags();
 
         SetFlag(pConsoleSelectionInfo->dwFlags, CONSOLE_SELECTION_IN_PROGRESS);
 
-        pSelection->GetSelectionAnchor(&pConsoleSelectionInfo->dwSelectionAnchor);
-        pSelection->GetSelectionRectangle(&pConsoleSelectionInfo->srSelection);
+        pConsoleSelectionInfo->dwSelectionAnchor = pSelection->GetSelectionAnchor();
+        pConsoleSelectionInfo->srSelection = pSelection->GetSelectionRectangle();
     }
     else
     {
@@ -249,7 +249,7 @@ HRESULT ApiRoutines::SetConsoleInputModeImpl(_In_ InputBuffer* const pContext, _
         gci.SetInsertMode(IsFlagSet(Mode, ENABLE_INSERT_MODE));
         if (gci.GetInsertMode() != PreviousInsertMode)
         {
-            gci.CurrentScreenBuffer->SetCursorDBMode(FALSE);
+            gci.CurrentScreenBuffer->SetCursorDBMode(false);
             if (gci.lpCookedReadData != nullptr)
             {
                 gci.lpCookedReadData->_InsertMode = !!gci.GetInsertMode();
@@ -409,8 +409,8 @@ void DoSrvSetScreenBufferInfo(_In_ SCREEN_INFORMATION* const pScreenInfo,
     const Viewport requestedViewport = Viewport::FromExclusive(pInfo->srWindow);
 
     COORD NewSize;
-    NewSize.X = min(requestedViewport.Width(), pInfo->dwMaximumWindowSize.X);
-    NewSize.Y = min(requestedViewport.Height(), pInfo->dwMaximumWindowSize.Y);
+    NewSize.X = std::min(requestedViewport.Width(), pInfo->dwMaximumWindowSize.X);
+    NewSize.Y = std::min(requestedViewport.Height(), pInfo->dwMaximumWindowSize.Y);
 
     // If wrap text is on, then the window width must be the same size as the buffer width
     if (gci.GetWrapText())
@@ -1466,7 +1466,7 @@ void GetConsoleTitleWImplHelper(_Out_writes_to_opt_(cchTitleBufferSize, *pcchTit
         // Just say how much we managed to return.
         if (SUCCEEDED(hr) || STRSAFE_E_INSUFFICIENT_BUFFER == hr)
         {
-            *pcchTitleBufferWritten = min(cchTitleBufferSize, cchTitleLength);
+            *pcchTitleBufferWritten = std::min(cchTitleBufferSize, cchTitleLength);
         }
     }
 }
@@ -1537,7 +1537,7 @@ HRESULT GetConsoleTitleAImplHelper(_Out_writes_to_(cchTitleBufferSize, *pcchTitl
         if (SUCCEEDED(hr) || STRSAFE_E_INSUFFICIENT_BUFFER == hr)
         {
             // And return the size copied (either the size of the buffer or the null terminated length of the string we filled it with.)
-            *pcchTitleBufferWritten = min(cchTitleBufferSize, cchConverted + 1);
+            *pcchTitleBufferWritten = std::min(cchTitleBufferSize, cchConverted + 1);
 
             // Another compatibility fix... If we had exactly the number of bytes needed for an unterminated string,
             // then replace the terminator left behind by StringCchCopyNA with the final character of the title string.

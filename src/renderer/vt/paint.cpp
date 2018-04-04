@@ -381,7 +381,7 @@ HRESULT VtEngine::_PaintUtf8BufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine
     // If we're not using erase char, but we did erase all at the start of the
     //      frame, don't add spaces at the end.
     const size_t cchActual = (useEraseChar || _clearedAllThisFrame) ?
-                                min(cchLine - numSpaces, cchLine) :
+                                (cchLine - numSpaces) :
                                 cchLine;
 
     // Write the actual text string

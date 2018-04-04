@@ -204,7 +204,7 @@ class UtilsTests
     void SubtractRandom(short &psValue)
     {
         SHORT const sRand = RandomShort();
-        psValue -= max(sRand % psValue, 1);
+        psValue -= gsl::narrow<SHORT>(std::max(sRand % psValue, 1));
     }
 
     TEST_METHOD(TestCompareCoords)

@@ -368,7 +368,7 @@ PCOMMAND_HISTORY ReallocCommandHistory(_In_opt_ PCOMMAND_HISTORY CurrentCommandH
 
     *History = *CurrentCommandHistory;
     History->Flags |= CLE_RESET;
-    History->NumberOfCommands = min(History->NumberOfCommands, (SHORT)NumCommands);
+    History->NumberOfCommands = std::min(History->NumberOfCommands, gsl::narrow<SHORT>(NumCommands));
     History->LastAdded = History->NumberOfCommands - 1;
     History->LastDisplayed = History->NumberOfCommands - 1;
     History->FirstCommand = 0;

@@ -147,8 +147,8 @@ NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
 void SCREEN_INFORMATION::SetScreenBufferSize(_In_ const COORD coordNewBufferSize)
 {
     COORD coordCandidate;
-    coordCandidate.X = max(1, coordNewBufferSize.X);
-    coordCandidate.Y = max(1, coordNewBufferSize.Y);
+    coordCandidate.X = std::max(1i16, coordNewBufferSize.X);
+    coordCandidate.Y = std::max(1i16, coordNewBufferSize.Y);
     _coordScreenBufferSize = coordCandidate;
 }
 
@@ -457,8 +457,8 @@ COORD SCREEN_INFORMATION::GetMaxWindowSizeInCharacters(_In_ COORD const coordFon
         const COORD coordWindowRestrictedSize = GetLargestWindowSizeInCharacters(coordFontSize);
         // If the buffer is smaller than what the max window would allow, then the max client area can only be as big as the
         // buffer we have.
-        coordClientAreaSize.X = min(coordScreenBufferSize.X, coordWindowRestrictedSize.X);
-        coordClientAreaSize.Y = min(coordScreenBufferSize.Y, coordWindowRestrictedSize.Y);
+        coordClientAreaSize.X = std::min(coordScreenBufferSize.X, coordWindowRestrictedSize.X);
+        coordClientAreaSize.Y = std::min(coordScreenBufferSize.Y, coordWindowRestrictedSize.Y);
     }
 
     return coordClientAreaSize;
@@ -558,8 +558,8 @@ COORD SCREEN_INFORMATION::GetScreenFontSize() const
     }
 
     // For sanity's sake, make sure not to leak 0 out as a possible value. These values are used in division operations.
-    coordRet.X = max(coordRet.X, 1);
-    coordRet.Y = max(coordRet.Y, 1);
+    coordRet.X = std::max(coordRet.X, 1i16);
+    coordRet.Y = std::max(coordRet.Y, 1i16);
 
     return coordRet;
 }
@@ -1023,8 +1023,8 @@ HRESULT SCREEN_INFORMATION::_AdjustScreenBuffer(_In_ const RECT* const prcClient
         // The alt buffer always wants to be exactly the size of the screen, never more or less.
         // This prevents scrollbars when you increase the alt buffer size, then decrease it.
         // Can't have a buffer dimension of 0 - that'll cause divide by zeros in the future.
-        coordBufferSizeNew.X = max(coordClientNewCharacters.X, 1);
-        coordBufferSizeNew.Y = max(coordClientNewCharacters.Y, 1);
+        coordBufferSizeNew.X = std::max(coordClientNewCharacters.X, 1i16);
+        coordBufferSizeNew.Y = std::max(coordClientNewCharacters.Y, 1i16);
     }
     else
     {
@@ -1253,8 +1253,8 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(_In_ const COORD* const pcoord
     }
 
     // Bottom and right cannot pass the final characters in the array.
-    srNewViewport.Right = min(srNewViewport.Right, coordScreenBufferSize.X - 1);
-    srNewViewport.Bottom = min(srNewViewport.Bottom, coordScreenBufferSize.Y - 1);
+    srNewViewport.Right = std::min(srNewViewport.Right, gsl::narrow<SHORT>(coordScreenBufferSize.X - 1));
+    srNewViewport.Bottom = std::min(srNewViewport.Bottom, gsl::narrow<SHORT>(coordScreenBufferSize.Y - 1));
 
     _viewport = Viewport::FromInclusive(srNewViewport);
     Tracing::s_TraceWindowViewport(srNewViewport);
@@ -1617,7 +1617,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
             //   because the cursor is already on the next line
             if (newTextBuffer->GetRowByOffset(cNewLastChar.Y).GetCharRow().WasWrapForced())
             {
-                iNewlines = max(iNewlines - 1, 0);
+                iNewlines = std::max(iNewlines - 1, 0);
             }
             else
             {
@@ -1625,7 +1625,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
                 //   old buffer will be one more than in this buffer, so new need one LESS.
                 if (TextInfo->GetRowByOffset(cOldLastChar.Y).GetCharRow().WasWrapForced())
                 {
-                    iNewlines = max(iNewlines - 1, 0);
+                    iNewlines = std::max(iNewlines - 1, 0);
                 }
             }
 
@@ -1771,10 +1771,10 @@ void SCREEN_INFORMATION::ClipToScreenBuffer(_Inout_ SMALL_RECT* const psrClip) c
     SMALL_RECT srEdges;
     GetScreenEdges(&srEdges);
 
-    psrClip->Left = max(psrClip->Left, srEdges.Left);
-    psrClip->Top = max(psrClip->Top, srEdges.Top);
-    psrClip->Right = min(psrClip->Right, srEdges.Right);
-    psrClip->Bottom = min(psrClip->Bottom, srEdges.Bottom);
+    psrClip->Left = std::max(psrClip->Left, srEdges.Left);
+    psrClip->Top = std::max(psrClip->Top, srEdges.Top);
+    psrClip->Right = std::min(psrClip->Right, srEdges.Right);
+    psrClip->Bottom = std::min(psrClip->Bottom, srEdges.Bottom);
 }
 
 // Routine Description:
@@ -1789,10 +1789,10 @@ void SCREEN_INFORMATION::ClipToScreenBuffer(_Inout_ COORD* const pcoordClip) con
     SMALL_RECT srEdges;
     GetScreenEdges(&srEdges);
 
-    pcoordClip->X = max(pcoordClip->X, srEdges.Left);
-    pcoordClip->Y = max(pcoordClip->Y, srEdges.Top);
-    pcoordClip->X = min(pcoordClip->X, srEdges.Right);
-    pcoordClip->Y = min(pcoordClip->Y, srEdges.Bottom);
+    pcoordClip->X = std::max(pcoordClip->X, srEdges.Left);
+    pcoordClip->Y = std::max(pcoordClip->Y, srEdges.Top);
+    pcoordClip->X = std::min(pcoordClip->X, srEdges.Right);
+    pcoordClip->Y = std::min(pcoordClip->Y, srEdges.Bottom);
 }
 
 // Routine Description:
@@ -1859,7 +1859,7 @@ void SCREEN_INFORMATION::SetCursorInformation(_In_ ULONG const Size,
 // - DoubleCursor - should we indicated non-normal mode
 // Return Value:
 // - None
-void  SCREEN_INFORMATION::SetCursorDBMode(_In_ BOOLEAN const DoubleCursor)
+void  SCREEN_INFORMATION::SetCursorDBMode(_In_ const bool DoubleCursor)
 {
     PTEXT_BUFFER_INFO const pTextInfo = this->TextInfo;
     Cursor* const pCursor = pTextInfo->GetCursor();
@@ -1908,14 +1908,14 @@ NTSTATUS SCREEN_INFORMATION::SetCursorPosition(_In_ COORD const Position, _In_ B
     {
         if (TurnOn)
         {
-            pCursor->SetDelay(FALSE);
-            pCursor->SetIsOn(TRUE);
+            pCursor->SetDelay(false);
+            pCursor->SetIsOn(true);
         }
         else
         {
-            pCursor->SetDelay(TRUE);
+            pCursor->SetDelay(true);
         }
-        pCursor->SetHasMoved(TRUE);
+        pCursor->SetHasMoved(true);
     }
 
     return STATUS_SUCCESS;
@@ -2564,6 +2564,7 @@ void SCREEN_INFORMATION::_InitializeBufferDimensions(_In_ const COORD coordScree
     SetScreenBufferSize(coordScreenBufferSize);
 }
 
+<<<<<<< HEAD
 // Method Description:
 // - Sets up the Output state machine to be in pty mode. Sequences it doesn't
 //      understand will be written to tthe pTtyConnection passed in here.
@@ -2578,3 +2579,83 @@ void SCREEN_INFORMATION::SetTerminalConnection(_In_ ITerminalOutputConnection* c
                                     std::bind(&StateMachine::FlushToTerminal, _pStateMachine));
 }
 
+std::wstring SCREEN_INFORMATION::ReadText(_In_ const size_t rowIndex) const
+{
+    const ROW& row = TextInfo->GetRowByOffset(rowIndex);
+    return row.GetText();
+}
+
+std::vector<OutputCell> SCREEN_INFORMATION::ReadLine(_In_ const size_t rowIndex) const
+{
+    const ROW& row = TextInfo->GetRowByOffset(rowIndex);
+    return row.AsCells();
+}
+std::vector<OutputCell> SCREEN_INFORMATION::ReadLine(_In_ const size_t rowIndex,
+                                                     _In_ const size_t startIndex) const
+{
+    const ROW& row = TextInfo->GetRowByOffset(rowIndex);
+    return row.AsCells(startIndex);
+}
+
+std::vector<OutputCell> SCREEN_INFORMATION::ReadLine(_In_ const size_t rowIndex,
+                                                     _In_ const size_t startIndex,
+                                                     _In_ const size_t count) const
+{
+    const ROW& row = TextInfo->GetRowByOffset(rowIndex);
+    return row.AsCells(startIndex, count);
+}
+
+// Routine Description:
+// - finds the boundaries of the word at the given position on the screen
+// Arguments:
+// - position - location on the screen to get the word boundary for
+// Return Value:
+// - word boundary positions
+std::pair<COORD, COORD> SCREEN_INFORMATION::GetWordBoundary(_In_ const COORD position) const
+{
+    const ROW& row = TextInfo->GetRowByOffset(position.Y);
+    const COORD screenBufferSize = GetScreenBufferSize();
+    COORD start{ position };
+    COORD end{ position };
+
+    // find the start of the word
+    while (start.X > 0)
+    {
+        if (IsWordDelim(row.at(start.X - 1).GetCharData()))
+        {
+            break;
+        }
+        start.X--;
+    }
+
+    // find the end of the word
+    while (end.X < screenBufferSize.X)
+    {
+        if (IsWordDelim(row.at(end.X).GetCharData()))
+        {
+            break;
+        }
+        end.X++;
+    }
+
+    // trim leading zeros if we need to
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    if (gci.GetTrimLeadingZeros())
+    {
+        // Trim the leading zeros: 000fe12 -> fe12, except 0x and 0n.
+        // Useful for debugging
+        const wchar_t glyph = row.at(start.X + 1).GetCharData();
+        if (end.X > start.X + 2 &&
+            glyph != L'x' &&
+            glyph != L'X' &&
+            glyph != L'n')
+        {
+            // Don't touch the selection begins with 0x
+            while (row.at(start.X).GetCharData() == L'0' && start.X < end.X - 1)
+            {
+                start.X++;
+            }
+        }
+    }
+    return { start, end };
+}

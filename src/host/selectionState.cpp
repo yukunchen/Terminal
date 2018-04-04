@@ -179,7 +179,7 @@ void Selection::_SaveCursorData(_In_ const TEXT_BUFFER_INFO* const pTextInfo)
     Cursor* const pCursor = pTextInfo->GetCursor();
     _coordSavedCursorPosition = pCursor->GetPosition();
     _ulSavedCursorSize = pCursor->GetSize();
-    _fSavedCursorVisible = !!pCursor->IsVisible();
+    _fSavedCursorVisible = pCursor->IsVisible();
 }
 
 // Routine Description:
@@ -198,37 +198,36 @@ void Selection::_RestoreCursorData(_In_ SCREEN_INFORMATION* const pScreenInfo)
 // Routine Description:
 // - Gets the current selection anchor position
 // Arguments:
-// - pcoordSelectionAnchor - The coordinate to fill with the current selection anchor values
+// - none
 // Return Value:
-// - <none>
-void Selection::GetSelectionAnchor(_Out_ COORD* const pcoordSelectionAnchor) const
+// - current selection anchor
+COORD Selection::GetSelectionAnchor() const noexcept
 {
-    (*pcoordSelectionAnchor) = _coordSelectionAnchor;
+    return _coordSelectionAnchor;
 }
 
 // Routine Description:
 // - Gets the current selection rectangle
 // Arguments:
-// - psrSelectionRect - The rectangle to fill with selection data.
+// - none
 // Return Value:
-// - <none>
-void Selection::GetSelectionRectangle(_Out_ SMALL_RECT* const psrSelectionRect) const
+// - The rectangle to fill with selection data.
+SMALL_RECT Selection::GetSelectionRectangle() const noexcept
 {
-    (*psrSelectionRect) = _srSelectionRect;
+    return _srSelectionRect;
 }
 
 // Routine Description:
 // - Gets the publically facing set of selection flags.
 //   Strips out any internal flags in use.
 // Arguments:
-// - pdwFlags - DWORD to fill with flags data.
+// - none
 // Return Value:
-// - <none>
-void Selection::GetPublicSelectionFlags(_Out_ DWORD* const pdwFlags) const
+// - The public selection flags
+DWORD Selection::GetPublicSelectionFlags() const noexcept
 {
     // CONSOLE_SELECTION_VALID is the union (binary OR) of all externally valid flags in wincon.h
-
-    *pdwFlags = _dwSelectionFlags & CONSOLE_SELECTION_VALID;
+    return (_dwSelectionFlags & CONSOLE_SELECTION_VALID);
 }
 
 // Routine Description:

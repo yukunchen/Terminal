@@ -13,13 +13,17 @@
 #include "..\..\host\handle.h"
 #include "..\..\host\scrolling.hpp"
 #include "..\..\host\output.h"
-#include "..\..\host\Ucs2CharRow.hpp"
 
 #include "..\inc\ServiceLocator.hpp"
 
 #pragma hdrstop
 
 using namespace Microsoft::Console::Interactivity::Win32;
+
+// For usage with WM_SYSKEYDOWN message processing.
+// See https://msdn.microsoft.com/en-us/library/windows/desktop/ms646286(v=vs.85).aspx
+// Bit 29 is whether ALT was held when the message was posted.
+#define WM_SYSKEYDOWN_ALT_PRESSED (0x20000000)
 
 // ----------------------------
 // Helpers
@@ -475,7 +479,7 @@ BOOL HandleSysKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const
         return TRUE; // let DefWindowProc generate WM_CLOSE
     }
 
-    if ((lParam & 0x20000000) == 0)
+    if (IsFlagClear(lParam, WM_SYSKEYDOWN_ALT_PRESSED))
     {   // we're iconic
         // Check for ENTER while iconic (restore accelerator).
         if (VirtualKeyCode == VK_RETURN)
@@ -732,56 +736,22 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION* const pScreenInfo,
         else if (Message == WM_LBUTTONDBLCLK)
         {
             // on double-click, attempt to select a "word" beneath the cursor
-            COORD coordSelectionAnchor;
-            pSelection->GetSelectionAnchor(&coordSelectionAnchor);
+            const COORD selectionAnchor = pSelection->GetSelectionAnchor();
 
-            if ((MousePosition.X == coordSelectionAnchor.X) && (MousePosition.Y == coordSelectionAnchor.Y))
+            if (MousePosition == selectionAnchor)
             {
-                const ROW& Row = pScreenInfo->TextInfo->GetRowByOffset(MousePosition.Y);
-                const ICharRow& iCharRow = Row.GetCharRow();
-                // we only support ucs2 encoded char rows
-                FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                                "only support UCS2 char rows currently");
-
-                const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
-
-
-                while (coordSelectionAnchor.X > 0)
+                try
                 {
-                    if (IS_WORD_DELIM(charRow.GetGlyphAt(coordSelectionAnchor.X - 1)))
-                    {
-                        break;
-                    }
-                    coordSelectionAnchor.X--;
-                }
-                while (MousePosition.X < coordScreenBufferSize.X)
-                {
-                    if (IS_WORD_DELIM(charRow.GetGlyphAt(MousePosition.X)))
-                    {
-                        break;
-                    }
-                    MousePosition.X++;
-                }
-                if (gci.GetTrimLeadingZeros())
-                {
-                    // Trim the leading zeros: 000fe12 -> fe12, except 0x and 0n.
-                    // Useful for debugging
-                    if (MousePosition.X > coordSelectionAnchor.X + 2 &&
-                        charRow.GetGlyphAt(coordSelectionAnchor.X + 1) != L'x' &&
-                        charRow.GetGlyphAt(coordSelectionAnchor.X + 1) != L'X' &&
-                        charRow.GetGlyphAt(coordSelectionAnchor.X + 1) != L'n')
-                    {
-                        // Don't touch the selection begins with 0x
-                        while (charRow.GetGlyphAt(coordSelectionAnchor.X) == L'0' &&
-                               coordSelectionAnchor.X < MousePosition.X - 1)
-                        {
-                            coordSelectionAnchor.X++;
-                        }
-                    }
-                }
+                    const std::pair<COORD, COORD> wordBounds = pScreenInfo->GetWordBoundary(MousePosition);
+                    MousePosition = wordBounds.second;
+                    // update both ends of the selection since we may have adjusted the anchor in some circumstances.
+                    pSelection->AdjustSelection(wordBounds.first, wordBounds.second);
 
-                // update both ends of the selection since we may have adjusted the anchor in some circumstances.
-                pSelection->AdjustSelection(coordSelectionAnchor, MousePosition);
+                }
+                catch (...)
+                {
+                    LOG_HR(wil::ResultFromCaughtException());
+                }
             }
         }
         else if ((Message == WM_RBUTTONDOWN) || (Message == WM_RBUTTONDBLCLK))
@@ -1041,7 +1011,7 @@ DWORD ConsoleInputThreadProcWin32(LPVOID /*lpParameter*/)
             DispatchMessageW(&msg);
         }
         // do this so that alt-tab works while journalling
-        else if (msg.message == WM_SYSKEYDOWN && msg.wParam == VK_TAB && (msg.lParam & 0x20000000))
+        else if (msg.message == WM_SYSKEYDOWN && msg.wParam == VK_TAB && IsFlagSet(msg.lParam, WM_SYSKEYDOWN_ALT_PRESSED))
         {
             // alt is really down
             DispatchMessageW(&msg);

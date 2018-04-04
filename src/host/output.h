@@ -24,7 +24,7 @@ void ScreenBufferSizeChange(_In_ COORD const coordNewSize);
 
 [[nodiscard]]
 NTSTATUS ReadScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenInfo,
-                          _Inout_ PCHAR_INFO pciBuffer,
+                          _Inout_ std::vector<std::vector<OutputCell>>& outputCells,
                           _Inout_ PSMALL_RECT psrReadRegion);
 [[nodiscard]]
 NTSTATUS WriteScreenBuffer(_In_ PSCREEN_INFORMATION pScreenInfo,

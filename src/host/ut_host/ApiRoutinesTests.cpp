@@ -62,7 +62,7 @@ class ApiRoutinesTests
         UpdateFlag(gci.Flags, CONSOLE_AUTO_POSITION, IsFlagSet(ulOriginalInputMode, ENABLE_AUTO_POSITION));
 
         // Set cursor DB to on so we can verify that it turned off when the Insert Mode changes.
-        gci.CurrentScreenBuffer->SetCursorDBMode(TRUE);
+        gci.CurrentScreenBuffer->SetCursorDBMode(true);
 
         // Record the insert mode at this time to see if it changed.
         _fPrevInsertMode = gci.GetInsertMode();
@@ -82,7 +82,7 @@ class ApiRoutinesTests
         bool const fInsertModeExpected = IsFlagSet(ulNewMode, ENABLE_INSERT_MODE);
 
         // If the insert mode changed, we expect the cursor to have turned off.
-        BOOL const fCursorDBModeExpected = (!!_fPrevInsertMode != fInsertModeExpected) ? FALSE : TRUE;
+        bool const fCursorDBModeExpected = ((!!_fPrevInsertMode) == fInsertModeExpected);
 
         // Call the API
         HRESULT const hrActual = _pApiRoutines->SetConsoleInputModeImpl(pii, ulNewMode);
@@ -93,7 +93,7 @@ class ApiRoutinesTests
         VERIFY_ARE_EQUAL(fQuickEditExpected, IsFlagSet(gci.Flags, CONSOLE_QUICK_EDIT_MODE));
         VERIFY_ARE_EQUAL(fAutoPositionExpected, IsFlagSet(gci.Flags, CONSOLE_AUTO_POSITION));
         VERIFY_ARE_EQUAL(!!fInsertModeExpected, !!gci.GetInsertMode());
-        VERIFY_ARE_EQUAL(!!fCursorDBModeExpected, !!gci.CurrentScreenBuffer->TextInfo->GetCursor()->IsDouble());
+        VERIFY_ARE_EQUAL(fCursorDBModeExpected, gci.CurrentScreenBuffer->TextInfo->GetCursor()->IsDouble());
     }
 
     TEST_METHOD(ApiSetConsoleInputModeImplValidNonExtended)
@@ -383,7 +383,7 @@ class ApiRoutinesTests
             IWaitRoutine* pWaiter = nullptr;
 
             // The increment is either the specified length or the remaining text in the string (if that is smaller).
-            const size_t cchWriteLength = min(cchIncrement, cchTestText - i);
+            const size_t cchWriteLength = std::min(cchIncrement, cchTestText - i);
 
             // Run the test method
             const HRESULT hr = _pApiRoutines->WriteConsoleAImpl(si, pszTestText + i, cchWriteLength, &cchRead, &pWaiter);

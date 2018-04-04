@@ -471,8 +471,8 @@ HRESULT GdiEngine::PaintCursor(_In_ COORD const coordCursor,
             // Now adjust the cursor height
             // enforce min/max cursor height
             ULONG ulHeight = ulCursorHeightPercent;
-            ulHeight = max(ulHeight, s_ulMinCursorHeightPercent); // No smaller than 25%
-            ulHeight = min(ulHeight, s_ulMaxCursorHeightPercent); // No larger than 100%
+            ulHeight = std::max(ulHeight, s_ulMinCursorHeightPercent); // No smaller than 25%
+            ulHeight = std::min(ulHeight, s_ulMaxCursorHeightPercent); // No larger than 100%
 
             ulHeight = MulDiv(coordFontSize.Y, ulHeight, 100); // divide by 100 because percent.
 

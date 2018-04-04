@@ -16,6 +16,9 @@ Abstract:
 // Ignore checked iterators warning from VC compiler.
 #define _SCL_SECURE_NO_WARNINGS
 
+// Block minwindef.h min/max macros to prevent <algorithm> conflict
+#define NOMINMAX
+
 // This includes a lot of common headers needed by both the host and the propsheet
 // including: windows.h, winuser, ntstatus, assert, and the DDK
 #include "HostAndPropsheetIncludes.h"
@@ -72,8 +75,6 @@ TRACELOGGING_DECLARE_PROVIDER(g_hConhostV2EventTraceProvider);
 #include <ShellScalingApi.h>
 #include "..\propslib\conpropsp.hpp"
 
-BOOL IsConsoleFullWidth(_In_ HDC hDC, _In_ DWORD CodePage, _In_ WCHAR wch);
-
 // Comment to build against the private SDK.
 #define CON_BUILD_PUBLIC
 
@@ -84,7 +85,6 @@ BOOL IsConsoleFullWidth(_In_ HDC hDC, _In_ DWORD CodePage, _In_ WCHAR wch);
 
 #include "..\inc\contsf.h"
 #include "..\inc\operators.hpp"
-#include "..\inc\cpp2017.hpp"
 #include "..\inc\conattrs.hpp"
 
 // TODO: MSFT 9355094 Find a better way of doing this. http://osgvsowi/9355094

@@ -438,7 +438,7 @@ std::pair<std::unique_ptr<byte[]>, unsigned int> Utf8ToWideCharParser::_RemoveIn
             {
                 const unsigned int sequenceSize = _Utf8SequenceSize(pInputChars[currentByteInput]);
                 // min is to guard against static analyis possible buffer overflow
-                const unsigned int limit = min(sequenceSize, cb - currentByteInput);
+                const unsigned int limit = std::min(sequenceSize, cb - currentByteInput);
                 for (unsigned int i = 0; i < limit; ++i)
                 {
                     validSequence[validSequenceLocation] = pInputChars[currentByteInput];
@@ -480,7 +480,7 @@ std::pair<std::unique_ptr<byte[]>, unsigned int> Utf8ToWideCharParser::_RemoveIn
 // - <none>
 void Utf8ToWideCharParser::_StorePartialSequence(_In_reads_(cb) const byte* const pLeadByte, _In_ const unsigned int cb)
 {
-    const unsigned int maxLength = min(cb, _UTF8_BYTE_SEQUENCE_MAX);
+    const unsigned int maxLength = std::min(cb, _UTF8_BYTE_SEQUENCE_MAX);
     std::copy(pLeadByte, pLeadByte + maxLength, _utf8CodePointPieces);
     _bytesStored = maxLength;
 }
