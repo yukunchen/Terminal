@@ -52,8 +52,8 @@ public:
     bool IsGridRenderingAllowedWorldwide() const;
     void SetGridRenderingAllowedWorldwide(_In_ bool const fGridRenderingAllowed);
 
-    BOOL GetFilterOnPaste() const;
-    void SetFilterOnPaste(_In_ BOOL const fFilterOnPaste);
+    bool GetFilterOnPaste() const;
+    void SetFilterOnPaste(_In_ bool const fFilterOnPaste);
 
     const WCHAR* const GetLaunchFaceName() const;
     void SetLaunchFaceName(_In_ PCWSTR const LaunchFaceName, _In_ size_t const cchLength);
@@ -206,7 +206,7 @@ private:
     BOOL _fCtrlKeyShortcutsDisabled; // disables Ctrl+<something> key intercepts
     BYTE _bWindowAlpha; // describes the opacity of the window
 
-    BOOL _fFilterOnPaste; // should we filter text when the user pastes? (e.g. remove <tab>)
+    bool _fFilterOnPaste; // should we filter text when the user pastes? (e.g. remove <tab>)
     WCHAR _LaunchFaceName[LF_FACESIZE];
     bool _fAllowAltF4Close;
     DWORD _dwVirtTermLevel;
