@@ -50,7 +50,7 @@ private:
 // the kernelbase/32 exposed public APIs and routed by the console driver (condrv) to this console host.
 // But since we're trying to call them from *inside* the console host itself, we need to get in the way and route them straight to the
 // v-table inside this process instance.
-class ConhostInternalGetSet : public Microsoft::Console::VirtualTerminal::ConGetSet
+class ConhostInternalGetSet final : public Microsoft::Console::VirtualTerminal::ConGetSet
 {
 public:
     ConhostInternalGetSet(_In_ Microsoft::Console::IIoProvider* const pIo);

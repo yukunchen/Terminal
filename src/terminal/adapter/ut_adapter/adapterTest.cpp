@@ -65,7 +65,7 @@ enum class AbsolutePosition : unsigned int
 
 using namespace Microsoft::Console::VirtualTerminal;
 
-class TestGetSet : public ConGetSet
+class TestGetSet final : public ConGetSet
 {
 public:
     BOOL GetConsoleScreenBufferInfoEx(_Out_ CONSOLE_SCREEN_BUFFER_INFOEX* const psbiex) const

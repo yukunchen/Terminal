@@ -140,6 +140,8 @@ HRESULT VtEngine::_WriteTerminalAscii(_In_ const std::wstring& wstr)
     char* nextChar = &rgchNeeded[0];
     for (size_t i = 0; i < cchActual; i++)
     {
+        // We're explicitly replacing characters outside ASCII with a ? because
+        //      that's what telnet wants.
         *nextChar = (wstr[i] > L'\x7f')? '?' : static_cast<char>(wstr[i]);
         nextChar++;
     }
