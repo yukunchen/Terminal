@@ -1705,6 +1705,6 @@ NTSTATUS DoSrvPrivateSuppressResizeRepaint()
 //  <none>
 void DoSrvIsConsolePty(_Out_ bool* const pIsPty)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     *pIsPty = gci.IsInVtIoMode();
 }

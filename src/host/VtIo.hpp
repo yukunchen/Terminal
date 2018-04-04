@@ -36,8 +36,6 @@ namespace Microsoft::Console::VirtualTerminal
         [[nodiscard]]
         HRESULT SetCursorPosition(_In_ const COORD coordCursor);
 
-        Microsoft::Console::ITerminalOutputConnection* GetTerminalOutputConnection() const;
-
     private:
         bool _usingVt;
         bool _hasSignalThread;
