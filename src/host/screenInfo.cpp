@@ -2564,7 +2564,6 @@ void SCREEN_INFORMATION::_InitializeBufferDimensions(_In_ const COORD coordScree
     SetScreenBufferSize(coordScreenBufferSize);
 }
 
-<<<<<<< HEAD
 // Method Description:
 // - Sets up the Output state machine to be in pty mode. Sequences it doesn't
 //      understand will be written to tthe pTtyConnection passed in here.
