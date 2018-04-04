@@ -48,10 +48,10 @@ public:
                      _In_ DWORD NumberOfVisibleChars,
                      _In_ ULONG CtrlWakeupMask,
                      _In_ COMMAND_HISTORY* CommandHistory,
-                     _In_ BOOLEAN Echo,
-                     _In_ BOOLEAN InsertMode,
-                     _In_ BOOLEAN Processed,
-                     _In_ BOOLEAN Line,
+                     _In_ bool Echo,
+                     _In_ bool InsertMode,
+                     _In_ bool Processed,
+                     _In_ bool Line,
                      _In_ ConsoleHandleData* pTempHandle
         );
     ~COOKED_READ_DATA() override;
@@ -78,10 +78,10 @@ public:
     DWORD _NumberOfVisibleChars;
     ULONG _CtrlWakeupMask;
     PCOMMAND_HISTORY _CommandHistory;
-    BOOLEAN _Echo;
-    BOOLEAN _InsertMode;
-    BOOLEAN _Processed;
-    BOOLEAN _Line;
+    bool _Echo;
+    bool _InsertMode;
+    bool _Processed;
+    bool _Line;
     ConsoleHandleData* _pTempHandle;
 
 // TODO MSFT:11285829 these variables need to be added to the
@@ -90,7 +90,7 @@ public:
     USHORT ExeNameLength;
     ULONG ControlKeyState;
     COORD BeforeDialogCursorPosition; // Currently only used for F9 (ProcessCommandNumberInput) since it's the only pop-up to move the cursor when it starts.
-    BOOLEAN _fIsUnicode;
+    bool _fIsUnicode;
     DWORD* pdwNumBytes;
 
 // TODO MSFT:11285829 this is a temporary kludge until the constructors are ironed
@@ -106,7 +106,7 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
                     _Inout_ ULONG* const cbNumBytes,
                     _Out_ ULONG* const ulControlKeyState);
 
-BOOL ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
+bool ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
                             _In_ WCHAR wch,
                             _In_ const DWORD dwKeyState,
                             _Out_ NTSTATUS* pStatus);

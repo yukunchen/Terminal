@@ -52,10 +52,10 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
                                    _In_ DWORD NumberOfVisibleChars,
                                    _In_ ULONG CtrlWakeupMask,
                                    _In_ COMMAND_HISTORY* CommandHistory,
-                                   _In_ BOOLEAN Echo,
-                                   _In_ BOOLEAN InsertMode,
-                                   _In_ BOOLEAN Processed,
-                                   _In_ BOOLEAN Line,
+                                   _In_ bool Echo,
+                                   _In_ bool InsertMode,
+                                   _In_ bool Processed,
+                                   _In_ bool Line,
                                    _In_ ConsoleHandleData* pTempHandle
     ) :
     ReadData(pInputBuffer, pInputReadHandleData),
@@ -311,7 +311,7 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
         if (commandLineEditingKeys)
         {
             // TODO: this is super weird for command line popups only
-            pCookedReadData->_fIsUnicode = !!fIsUnicode;
+            pCookedReadData->_fIsUnicode = fIsUnicode;
             pCookedReadData->pdwNumBytes = cbNumBytes;
 
             Status = ProcessCommandLine(pCookedReadData, Char, KeyState);
@@ -560,8 +560,8 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
 // - dwKeyState - Modifier keys/state information with the pressed key/character
 // - pStatus - The return code to pass to the client
 // Return Value:
-// - TRUE if read is completed. FALSE if we need to keep waiting and be called again with the user's next keystroke.
-BOOL ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
+// - true if read is completed. false if we need to keep waiting and be called again with the user's next keystroke.
+bool ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
                             _In_ WCHAR wch,
                             _In_ const DWORD dwKeyState,
                             _Out_ NTSTATUS* pStatus)
@@ -571,12 +571,12 @@ BOOL ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
     SHORT ScrollY = 0;
     ULONG NumToWrite;
     WCHAR wchOrig = wch;
-    BOOL fStartFromDelim;
+    bool fStartFromDelim;
 
     *pStatus = STATUS_SUCCESS;
     if (pCookedReadData->_BytesRead >= (pCookedReadData->_BufferSize - (2 * sizeof(WCHAR))) && wch != UNICODE_CARRIAGERETURN && wch != UNICODE_BACKSPACE)
     {
-        return FALSE;
+        return false;
     }
 
     if (pCookedReadData->_CtrlWakeupMask != 0 && wch < L' ' && (pCookedReadData->_CtrlWakeupMask & (1 << wch)))
@@ -586,7 +586,7 @@ BOOL ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
         pCookedReadData->_BufPtr += 1;
         pCookedReadData->_CurrentPosition += 1;
         pCookedReadData->ControlKeyState = dwKeyState;
-        return TRUE;
+        return true;
     }
 
     if (wch == EXTKEY_ERASE_PREV_WORD)
@@ -657,7 +657,7 @@ BOOL ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
     }
     else
     {
-        BOOL CallWrite = TRUE;
+        bool CallWrite = true;
         const SHORT sScreenBufferSizeX = pCookedReadData->_pScreenInfo->GetScreenBufferSize().X;
 
         // processing in the middle of the line is more complex:
@@ -723,7 +723,7 @@ BOOL ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
             }
             else
             {
-                CallWrite = FALSE;
+                CallWrite = false;
             }
         }
         else
@@ -739,7 +739,7 @@ BOOL ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
             }
             else
             {
-                BOOL fBisect = FALSE;
+                bool fBisect = false;
 
                 if (pCookedReadData->_Echo)
                 {
@@ -750,7 +750,7 @@ BOOL ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
                                             pCookedReadData->_OriginalCursorPosition.X,
                                             TRUE))
                     {
-                        fBisect = TRUE;
+                        fBisect = true;
                     }
                 }
 
@@ -810,7 +810,7 @@ BOOL ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
             {
                 RIPMSG1(RIP_WARNING, "WriteCharsLegacy failed 0x%x", *pStatus);
                 pCookedReadData->_BytesRead = 0;
-                return TRUE;
+                return true;
             }
 
             // update cursor position
@@ -836,7 +836,7 @@ BOOL ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
                 if (!NT_SUCCESS(*pStatus))
                 {
                     pCookedReadData->_BytesRead = 0;
-                    return TRUE;
+                    return true;
                 }
             }
         }
@@ -877,16 +877,16 @@ BOOL ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
         // reset the cursor back to 25% if necessary
         if (pCookedReadData->_Line)
         {
-            if (pCookedReadData->_InsertMode != gci.GetInsertMode())
+            if (!!pCookedReadData->_InsertMode != gci.GetInsertMode())
             {
                 // Make cursor small.
                 LOG_IF_FAILED(ProcessCommandLine(pCookedReadData, VK_INSERT, 0));
             }
 
             *pStatus = STATUS_SUCCESS;
-            return TRUE;
+            return true;
         }
     }
 
-    return FALSE;
+    return false;
 }

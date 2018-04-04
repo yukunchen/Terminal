@@ -1740,7 +1740,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
             break;
         case VK_INSERT:
             pCookedReadData->_InsertMode = !pCookedReadData->_InsertMode;
-            pCookedReadData->_pScreenInfo->SetCursorDBMode(!!(pCookedReadData->_InsertMode != gci.GetInsertMode()));
+            pCookedReadData->_pScreenInfo->SetCursorDBMode((!!pCookedReadData->_InsertMode != gci.GetInsertMode()));
             break;
         case VK_DELETE:
             if (!AT_EOL(pCookedReadData))
