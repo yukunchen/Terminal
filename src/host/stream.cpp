@@ -557,7 +557,7 @@ NTSTATUS ReadLineInput(_Inout_ InputBuffer* const pInputBuffer,
                                     0, // NumberOfVisibleChars
                                     dwCtrlWakeupMask, // CtrlWakeupMask
                                     pCommandHistory, // CommandHistory
-                                    !!Echo, // Echo
+                                    Echo, // Echo
                                     !!gci.GetInsertMode(), // InsertMode
                                     IsFlagSet(pInputBuffer->InputMode, ENABLE_PROCESSED_INPUT), // Processed
                                     IsFlagSet(pInputBuffer->InputMode, ENABLE_LINE_INPUT), // Line
