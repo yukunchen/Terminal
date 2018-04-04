@@ -154,7 +154,7 @@ NTSTATUS AdjustCursorPosition(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ COORD c
         {
             pScreenInfo->MakeCursorVisible(coordCursor);
         }
-        Status = pScreenInfo->SetCursorPosition(coordCursor, fKeepCursorVisible);
+        Status = pScreenInfo->SetCursorPosition(coordCursor, !!fKeepCursorVisible);
     }
 
     return Status;

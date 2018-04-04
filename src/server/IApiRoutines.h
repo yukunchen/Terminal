@@ -180,12 +180,12 @@ public:
 
     virtual void GetConsoleCursorInfoImpl(_In_ IConsoleOutputObject* const pOutContext,
                                           _Out_ ULONG* const pCursorSize,
-                                          _Out_ BOOLEAN* const pIsVisible) = 0;
+                                          _Out_ bool* const pIsVisible) = 0;
 
     [[nodiscard]]
     virtual HRESULT SetConsoleCursorInfoImpl(_In_ IConsoleOutputObject* const pOutContext,
                                              _In_ ULONG const CursorSize,
-                                             _In_ BOOLEAN const IsVisible) = 0;
+                                             _In_ bool const IsVisible) = 0;
 
     // driver will pare down for non-Ex method
     virtual void GetConsoleScreenBufferInfoExImpl(_In_ IConsoleOutputObject* const pOutContext,

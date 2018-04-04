@@ -101,10 +101,10 @@ public:
     void SetBufferViewport(_In_ const Microsoft::Console::Types::Viewport newViewport);
     // Forwarders to Window if we're the active buffer.
     [[nodiscard]]
-    NTSTATUS SetViewportOrigin(_In_ const BOOL fAbsolute, _In_ const COORD coordWindowOrigin);
+    NTSTATUS SetViewportOrigin(_In_ const bool fAbsolute, _In_ const COORD coordWindowOrigin);
     void SetViewportRect(_In_ const Microsoft::Console::Types::Viewport newViewport);
-    BOOL SendNotifyBeep() const;
-    BOOL PostUpdateWindowSize() const;
+    bool SendNotifyBeep() const;
+    bool PostUpdateWindowSize() const;
 
     bool InVTMode() const;
 
@@ -153,7 +153,7 @@ public:
 
     UINT ScrollScale;
 
-    BOOL IsActiveScreenBuffer() const;
+    bool IsActiveScreenBuffer() const;
 
     SHORT GetScreenWindowSizeX() const;
     SHORT GetScreenWindowSizeY() const;
@@ -164,13 +164,13 @@ public:
 
 
     void SetCursorInformation(_In_ ULONG const Size,
-                              _In_ BOOLEAN const Visible,
+                              _In_ bool const Visible,
                               _In_ unsigned int const Color,
                               _In_ CursorType const Type);
 
     void SetCursorDBMode(_In_ const bool DoubleCursor);
     [[nodiscard]]
-    NTSTATUS SetCursorPosition(_In_ COORD const Position, _In_ BOOL const TurnOn);
+    NTSTATUS SetCursorPosition(_In_ COORD const Position, _In_ bool const TurnOn);
 
     void MakeCursorVisible(_In_ const COORD CursorPosition);
 

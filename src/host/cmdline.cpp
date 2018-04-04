@@ -359,7 +359,7 @@ void DeleteCommandLine(_Inout_ COOKED_READ_DATA* const pCookedReadData, _In_ con
         pCookedReadData->_NumberOfVisibleChars = 0;
     }
 
-    LOG_IF_FAILED(pCookedReadData->_pScreenInfo->SetCursorPosition(pCookedReadData->_OriginalCursorPosition, TRUE));
+    LOG_IF_FAILED(pCookedReadData->_pScreenInfo->SetCursorPosition(pCookedReadData->_OriginalCursorPosition, true));
 }
 
 void RedrawCommandLine(_Inout_ COOKED_READ_DATA* const pCookedReadData)

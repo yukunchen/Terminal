@@ -554,7 +554,9 @@ HRESULT ApiDispatchers::ServerGetConsoleCursorInfo(_Inout_ CONSOLE_API_MSG * con
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
 
-    m->_pApiRoutines->GetConsoleCursorInfoImpl(pObj, &a->CursorSize, &a->Visible);
+    bool visible = false;
+    m->_pApiRoutines->GetConsoleCursorInfoImpl(pObj, &a->CursorSize, &visible);
+    a->Visible = !!visible;
     return S_OK;
 }
 
