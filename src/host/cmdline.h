@@ -64,7 +64,7 @@ Notes:
 
 typedef NTSTATUS(*PCLE_POPUP_INPUT_ROUTINE) (_In_ COOKED_READ_DATA* CookedReadData,
                                              _Inout_opt_ IWaitRoutine** ppWaiter,
-                                             _In_ BOOLEAN WaitRoutine);
+                                             _In_ bool WaitRoutine);
 
 typedef struct _CLE_POPUP
 {
@@ -107,7 +107,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                             _In_ WCHAR wch,
                             _In_ const DWORD dwKeyState);
 
-void DeleteCommandLine(_Inout_ COOKED_READ_DATA* pCookedReadData, _In_ const BOOL fUpdateFields);
+void DeleteCommandLine(_Inout_ COOKED_READ_DATA* pCookedReadData, _In_ const bool fUpdateFields);
 
 void RedrawCommandLine(_Inout_ COOKED_READ_DATA* CookedReadData);
 

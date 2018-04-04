@@ -444,13 +444,13 @@ DoScroll:
 void Cursor::DelayEOLWrap(_In_ const COORD coordDelayedAt)
 {
     _coordDelayedAt = coordDelayedAt;
-    _fDelayedEolWrap = TRUE;
+    _fDelayedEolWrap = true;
 }
 
 void Cursor::ResetDelayEOLWrap()
 {
     _coordDelayedAt = {0};
-    _fDelayedEolWrap = FALSE;
+    _fDelayedEolWrap = false;
 }
 
 COORD Cursor::GetDelayedAtPosition() const
@@ -458,14 +458,14 @@ COORD Cursor::GetDelayedAtPosition() const
     return _coordDelayedAt;
 }
 
-BOOL Cursor::IsDelayedEOLWrap() const
+bool Cursor::IsDelayedEOLWrap() const
 {
     return _fDelayedEolWrap;
 }
 
 void Cursor::StartDeferDrawing()
 {
-    _fDeferCursorRedraw = TRUE;
+    _fDeferCursorRedraw = true;
 }
 
 void Cursor::EndDeferDrawing()
@@ -540,7 +540,7 @@ void CALLBACK CursorTimerRoutineWrapper(_In_ PVOID /* lpParam */, _In_ BOOL /* T
     // not being destroyed, things get too complicated.
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-    if (gci.TryLockConsole() != FALSE)
+    if (gci.TryLockConsole() != false)
     {
         Cursor *cursor = gci.CurrentScreenBuffer->TextInfo->GetCursor();
         cursor->TimerRoutine(gci.CurrentScreenBuffer);
@@ -562,7 +562,7 @@ void Cursor::SetCaretTimer()
 
     if (_hCaretBlinkTimer == INVALID_HANDLE_VALUE)
     {
-        BOOL  bRet = TRUE;
+        bool bRet = true;
         DWORD dwEffectivePeriod = _uCaretBlinkTime == -1 ? dwDefTimeout : _uCaretBlinkTime;
 
         bRet = CreateTimerQueueTimer(&_hCaretBlinkTimer,
@@ -581,7 +581,7 @@ void Cursor::KillCaretTimer()
 {
     if (_hCaretBlinkTimer != INVALID_HANDLE_VALUE)
     {
-        BOOL bRet = TRUE;
+        bool bRet = true;
 
         bRet = DeleteTimerQueueTimer(_hCaretBlinkTimerQueue,
                                      _hCaretBlinkTimer,
@@ -591,7 +591,7 @@ void Cursor::KillCaretTimer()
         // A failure to delete the timer with the LastError being ERROR_IO_PENDING means that the timer is
         // currently in use and will get cleaned up when released. Delete should not be called again.
         // We treat that case as a success.
-        if (bRet == FALSE && GetLastError() != ERROR_IO_PENDING)
+        if (bRet == false && GetLastError() != ERROR_IO_PENDING)
         {
             LOG_LAST_ERROR();
         }
