@@ -141,3 +141,5 @@ HRESULT DoSrvSetConsoleTitleW(_In_reads_or_z_(cchBuffer) const wchar_t* const pw
 
 #define FMCFL_EXACT_MATCH   1
 #define FMCFL_JUST_LOOKING  2
+
+bool IsValidStringBuffer(_In_ bool Unicode, _In_reads_bytes_(Size) PVOID Buffer, _In_ ULONG Size, _In_ ULONG Count, ...);

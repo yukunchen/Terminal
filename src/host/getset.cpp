@@ -165,7 +165,7 @@ HRESULT ApiRoutines::GetConsoleFontSizeImpl(_In_ SCREEN_INFORMATION* const pCont
 
 [[nodiscard]]
 HRESULT ApiRoutines::GetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const pContext,
-                                                 _In_ BOOLEAN const IsForMaximumWindowSize,
+                                                 _In_ bool const IsForMaximumWindowSize,
                                                  _Out_ CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx)
 {
     LockConsole();
@@ -197,7 +197,7 @@ HRESULT ApiRoutines::GetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const 
 
 [[nodiscard]]
 HRESULT ApiRoutines::SetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const pContext,
-                                                 _In_ BOOLEAN const /*IsForMaximumWindowSize*/,
+                                                 _In_ bool const /*IsForMaximumWindowSize*/,
                                                  _In_ const CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -245,7 +245,7 @@ HRESULT ApiRoutines::SetConsoleInputModeImpl(_In_ InputBuffer* const pContext, _
         UpdateFlag(gci.Flags, CONSOLE_QUICK_EDIT_MODE, IsFlagSet(Mode, ENABLE_QUICK_EDIT_MODE));
         UpdateFlag(gci.Flags, CONSOLE_AUTO_POSITION, IsFlagSet(Mode, ENABLE_AUTO_POSITION));
 
-        BOOL const PreviousInsertMode = gci.GetInsertMode();
+        const bool PreviousInsertMode = gci.GetInsertMode();
         gci.SetInsertMode(IsFlagSet(Mode, ENABLE_INSERT_MODE));
         if (gci.GetInsertMode() != PreviousInsertMode)
         {
@@ -523,7 +523,7 @@ HRESULT DoSrvSetConsoleCursorInfo(_In_ SCREEN_INFORMATION* pScreenInfo,
 
 [[nodiscard]]
 HRESULT ApiRoutines::SetConsoleWindowInfoImpl(_In_ SCREEN_INFORMATION* const pContext,
-                                              _In_ BOOLEAN const IsAbsoluteRectangle,
+                                              _In_ bool const IsAbsoluteRectangle,
                                               _In_ const SMALL_RECT* const pWindowRectangle)
 {
     LockConsole();
@@ -534,7 +534,7 @@ HRESULT ApiRoutines::SetConsoleWindowInfoImpl(_In_ SCREEN_INFORMATION* const pCo
 
 [[nodiscard]]
 HRESULT DoSrvSetConsoleWindowInfo(_In_ SCREEN_INFORMATION* pScreenInfo,
-                                  _In_ BOOLEAN const IsAbsoluteRectangle,
+                                  _In_ bool const IsAbsoluteRectangle,
                                   _In_ const SMALL_RECT* const pWindowRectangle)
 {
     SMALL_RECT Window = *pWindowRectangle;

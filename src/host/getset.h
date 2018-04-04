@@ -30,7 +30,7 @@ HRESULT DoSrvSetConsoleCursorPosition(_In_ SCREEN_INFORMATION* pScreenInfo, _In_
 [[nodiscard]]
 HRESULT DoSrvSetConsoleCursorInfo(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ ULONG const CursorSize, _In_ bool const IsVisible);
 [[nodiscard]]
-HRESULT DoSrvSetConsoleWindowInfo(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ BOOLEAN const IsAbsoluteRectangle, _In_ const SMALL_RECT* const pWindowRectangle);
+HRESULT DoSrvSetConsoleWindowInfo(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ bool const IsAbsoluteRectangle, _In_ const SMALL_RECT* const pWindowRectangle);
 
 [[nodiscard]]
 HRESULT DoSrvScrollConsoleScreenBufferW(_In_ SCREEN_INFORMATION* pScreenInfo,

@@ -640,29 +640,29 @@ void Settings::SetScrollScale(_In_ const UINT uScrollScale)
     _uScrollScale = uScrollScale;
 }
 
-BOOL Settings::GetTrimLeadingZeros() const
+bool Settings::GetTrimLeadingZeros() const
 {
     return _fTrimLeadingZeros;
 }
-void Settings::SetTrimLeadingZeros(_In_ const BOOL fTrimLeadingZeros)
+void Settings::SetTrimLeadingZeros(_In_ const bool fTrimLeadingZeros)
 {
     _fTrimLeadingZeros = fTrimLeadingZeros;
 }
 
-BOOL Settings::GetEnableColorSelection() const
+bool Settings::GetEnableColorSelection() const
 {
     return _fEnableColorSelection;
 }
-void Settings::SetEnableColorSelection(_In_ const BOOL fEnableColorSelection)
+void Settings::SetEnableColorSelection(_In_ const bool fEnableColorSelection)
 {
     _fEnableColorSelection = fEnableColorSelection;
 }
 
-BOOL Settings::GetLineSelection() const
+bool Settings::GetLineSelection() const
 {
     return _bLineSelection;
 }
-void Settings::SetLineSelection(_In_ const BOOL bLineSelection)
+void Settings::SetLineSelection(_In_ const bool bLineSelection)
 {
     _bLineSelection = bLineSelection;
 }
@@ -676,11 +676,11 @@ void Settings::SetWrapText (_In_ const bool bWrapText )
     _bWrapText = bWrapText;
 }
 
-BOOL Settings::GetCtrlKeyShortcutsDisabled () const
+bool Settings::GetCtrlKeyShortcutsDisabled () const
 {
     return _fCtrlKeyShortcutsDisabled;
 }
-void Settings::SetCtrlKeyShortcutsDisabled (_In_ const BOOL fCtrlKeyShortcutsDisabled )
+void Settings::SetCtrlKeyShortcutsDisabled (_In_ const bool fCtrlKeyShortcutsDisabled )
 {
     _fCtrlKeyShortcutsDisabled = fCtrlKeyShortcutsDisabled;
 }
@@ -853,38 +853,38 @@ void Settings::SetCursorSize(_In_ const UINT uCursorSize)
     _uCursorSize = uCursorSize;
 }
 
-BOOL Settings::GetFullScreen() const
+bool Settings::GetFullScreen() const
 {
     return _bFullScreen;
 }
-void Settings::SetFullScreen(_In_ const BOOL bFullScreen)
+void Settings::SetFullScreen(_In_ const bool bFullScreen)
 {
     _bFullScreen = bFullScreen;
 }
 
-BOOL Settings::GetQuickEdit() const
+bool Settings::GetQuickEdit() const
 {
     return _bQuickEdit;
 }
-void Settings::SetQuickEdit(_In_ const BOOL bQuickEdit)
+void Settings::SetQuickEdit(_In_ const bool bQuickEdit)
 {
     _bQuickEdit = bQuickEdit;
 }
 
-BOOL Settings::GetInsertMode() const
+bool Settings::GetInsertMode() const
 {
     return _bInsertMode;
 }
-void Settings::SetInsertMode(_In_ const BOOL bInsertMode)
+void Settings::SetInsertMode(_In_ const bool bInsertMode)
 {
     _bInsertMode = bInsertMode;
 }
 
-BOOL Settings::GetAutoPosition() const
+bool Settings::GetAutoPosition() const
 {
     return _bAutoPosition;
 }
-void Settings::SetAutoPosition(_In_ const BOOL bAutoPosition)
+void Settings::SetAutoPosition(_In_ const bool bAutoPosition)
 {
     _bAutoPosition = bAutoPosition;
 }
@@ -907,11 +907,11 @@ void Settings::SetNumberOfHistoryBuffers(_In_ const UINT uNumberOfHistoryBuffers
     _uNumberOfHistoryBuffers = uNumberOfHistoryBuffers;
 }
 
-BOOL Settings::GetHistoryNoDup() const
+bool Settings::GetHistoryNoDup() const
 {
     return _bHistoryNoDup;
 }
-void Settings::SetHistoryNoDup(_In_ const BOOL bHistoryNoDup)
+void Settings::SetHistoryNoDup(_In_ const bool bHistoryNoDup)
 {
     _bHistoryNoDup = bHistoryNoDup;
 }
@@ -943,7 +943,7 @@ bool Settings::IsStartupTitleIsLinkNameSet() const
     return IsFlagSet(_dwStartupFlags, STARTF_TITLEISLINKNAME);
 }
 
-BOOL Settings::IsFaceNameSet() const
+bool Settings::IsFaceNameSet() const
 {
     return GetFaceName()[0] != '\0';
 }

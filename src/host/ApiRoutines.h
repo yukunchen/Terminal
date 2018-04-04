@@ -213,7 +213,7 @@ class ApiRoutines : public IApiRoutines
 
     [[nodiscard]]
     HRESULT SetConsoleWindowInfoImpl(_In_ SCREEN_INFORMATION* const pContext,
-                                     _In_ BOOLEAN const IsAbsoluteRectangle,
+                                     _In_ bool const IsAbsoluteRectangle,
                                      _In_ const SMALL_RECT* const pWindowRectangle) override;
 
     //HRESULT ReadConsoleOutputAttributeImpl(_In_ SCREEN_INFORMATION* const pContext,
@@ -333,7 +333,7 @@ class ApiRoutines : public IApiRoutines
     //// driver will pare down for non-Ex method
     [[nodiscard]]
     HRESULT GetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const pContext,
-                                        _In_ BOOLEAN const IsForMaximumWindowSize,
+                                        _In_ bool const IsForMaximumWindowSize,
                                         _Out_ CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx) override;
 
     [[nodiscard]]
@@ -474,7 +474,7 @@ class ApiRoutines : public IApiRoutines
 
     [[nodiscard]]
     HRESULT SetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const pContext,
-                                        _In_ BOOLEAN const IsForMaximumWindowSize,
+                                        _In_ bool const IsForMaximumWindowSize,
                                         _In_ const CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx) override;
 
 #pragma endregion
