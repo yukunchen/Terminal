@@ -8,11 +8,12 @@
 
 #include "ApiDispatchers.h"
 
-#include "..\host\directio.h"
-#include "..\host\getset.h"
-#include "..\host\stream.h"
-#include "..\host\srvinit.h"
-#include "..\host\telemetry.hpp"
+#include "../host/directio.h"
+#include "../host/getset.h"
+#include "../host/stream.h"
+#include "../host/srvinit.h"
+#include "../host/telemetry.hpp"
+#include "../host/cmdline.h"
 
 [[nodiscard]]
 HRESULT ApiDispatchers::ServerGetConsoleCP(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const /*pbReplyPending*/)
@@ -994,9 +995,6 @@ HRESULT ApiDispatchers::ServerGetConsoleDisplayMode(_Inout_ CONSOLE_API_MSG * co
     m->_pApiRoutines->GetConsoleDisplayModeImpl(&a->ModeFlags);
     return S_OK;
 }
-
-// TODO: MSFT: 9115192 - remove extern and fetch from cmdline.cpp
-BOOLEAN IsValidStringBuffer(_In_ BOOLEAN Unicode, _In_reads_bytes_(Size) PVOID Buffer, _In_ ULONG Size, _In_ ULONG Count, ...);
 
 [[nodiscard]]
 HRESULT ApiDispatchers::ServerAddConsoleAlias(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const /*pbReplyPending*/)

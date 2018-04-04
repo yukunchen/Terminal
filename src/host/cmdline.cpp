@@ -78,7 +78,7 @@ UINT LoadStringEx(_In_ HINSTANCE hModule, _In_ UINT wID, _Out_writes_(cchBufferM
 //       and the second one receives a pointer to where the string starts.
 // Return Value:
 // - TRUE if the buffer is valid, FALSE otherwise.
-BOOLEAN IsValidStringBuffer(_In_ BOOLEAN Unicode, _In_reads_bytes_(Size) PVOID Buffer, _In_ ULONG Size, _In_ ULONG Count, ...)
+bool IsValidStringBuffer(_In_ bool Unicode, _In_reads_bytes_(Size) PVOID Buffer, _In_ ULONG Size, _In_ ULONG Count, ...)
 {
     va_list Marker;
     va_start(Marker, Count);
@@ -94,7 +94,7 @@ BOOLEAN IsValidStringBuffer(_In_ BOOLEAN Unicode, _In_reads_bytes_(Size) PVOID B
             break;
         }
 
-        if ((Unicode != FALSE) && ((StringSize % sizeof(WCHAR)) != 0))
+        if ((Unicode != false) && ((StringSize % sizeof(WCHAR)) != 0))
         {
             break;
         }
