@@ -62,21 +62,22 @@ void SystemConfigurationProvider::GetSettingsFromLink(
     {
         if (SUCCEEDED(CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED)))
         {
-            const size_t cbTitle = (*pdwTitleLength + 1) * sizeof(WCHAR);
-            gci.LinkTitle = (PWSTR) new BYTE[cbTitle];
+            gci._LinkTitle = std::wstring(pwszTitle, *pdwTitleLength);
+            // const size_t cbTitle = (*pdwTitleLength + 1) * sizeof(WCHAR);
+            // gci.LinkTitle = (PWSTR) new BYTE[cbTitle];
 
-            NTSTATUS Status = NT_TESTNULL(gci.LinkTitle);
-            if (NT_SUCCESS(Status))
-            {
-                if (FAILED(StringCbCopyNW(gci.LinkTitle, cbTitle, pwszTitle, *pdwTitleLength)))
-                {
-                    Status = STATUS_UNSUCCESSFUL;
-                }
+            // NTSTATUS Status = NT_TESTNULL(gci.LinkTitle);
+            // if (NT_SUCCESS(Status))
+            // {
+            //     if (FAILED(StringCbCopyNW(gci.LinkTitle, cbTitle, pwszTitle, *pdwTitleLength)))
+            //     {
+            //         Status = STATUS_UNSUCCESSFUL;
+            //     }
 
-                if (NT_SUCCESS(Status))
-                {
+            //     if (NT_SUCCESS(Status))
+            //     {
                     CONSOLE_STATE_INFO csi = { 0 };
-                    csi.LinkTitle = gci.LinkTitle;
+                    csi.LinkTitle = &gci._LinkTitle[0];
                     WCHAR wszShortcutTitle[MAX_PATH];
                     BOOL fReadConsoleProperties;
                     WORD wShowWindow = pLinkSettings->GetShowWindow();
@@ -84,7 +85,7 @@ void SystemConfigurationProvider::GetSettingsFromLink(
 
                     int iShowWindow;
                     WORD wHotKey;
-                    Status = ShortcutSerialization::s_GetLinkValues(&csi,
+                    NTSTATUS Status = ShortcutSerialization::s_GetLinkValues(&csi,
                         &fReadConsoleProperties,
                         wszShortcutTitle,
                         ARRAYSIZE(wszShortcutTitle),
@@ -137,8 +138,8 @@ void SystemConfigurationProvider::GetSettingsFromLink(
                         // settings based on title.
                         pLinkSettings->UnsetStartupFlag(STARTF_TITLEISLINKNAME);
                     }
-                }
-            }
+            //     }
+            // }
             CoUninitialize();
         }
     }

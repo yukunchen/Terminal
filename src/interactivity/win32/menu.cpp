@@ -327,8 +327,8 @@ void Menu::s_GetConsoleState(CONSOLE_STATE_INFO * const pStateInfo)
 
     memmove(pStateInfo->ColorTable, gci.GetColorTable(), gci.GetColorTableSize() * sizeof(COLORREF));
 
-    pStateInfo->OriginalTitle = gci.OriginalTitle;
-    pStateInfo->LinkTitle = gci.LinkTitle;
+    pStateInfo->OriginalTitle = const_cast<wchar_t*>(gci._OriginalTitle.c_str());
+    pStateInfo->LinkTitle = const_cast<wchar_t*>(gci._LinkTitle.c_str());
 
     pStateInfo->CodePage = gci.OutputCP;
 

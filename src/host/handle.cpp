@@ -45,7 +45,8 @@ void UnlockConsole()
 // Return Value:
 // - STATUS_SUCCESS if successful.
 [[nodiscard]]
-NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle, _In_ const DWORD cbTitle)
+NTSTATUS AllocateConsole(_In_reads_bytes_(_Param_(2)) const WCHAR * const pwchTitle,
+                         _In_ const DWORD /*cbTitle*/)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // Synchronize flags
@@ -74,29 +75,38 @@ NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle
     }
 
     NTSTATUS Status;
-    // Byte count + 1 so dividing by 2 always rounds up. +1 more for trailing null guard.
-    gci.Title = new WCHAR[((cbTitle + 1) / sizeof(WCHAR)) + 1];
-    if (gci.Title == nullptr)
+    try {
+        gci._Title = std::wstring(pwchTitle);
+        gci._OriginalTitle = std::wstring(TranslateConsoleTitle(gci._Title.c_str(), TRUE, FALSE));
+    }
+    catch(...)
     {
-        Status = STATUS_NO_MEMORY;
-        goto ErrorExit2;
+        return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
     }
 
-    #pragma prefast(suppress:26035, "If this fails, we just display an empty title, which is ok.")
-    StringCbCopyW(gci.Title, cbTitle + sizeof(WCHAR), pwchTitle);
+    // // Byte count + 1 so dividing by 2 always rounds up. +1 more for trailing null guard.
+    // gci.Title = new WCHAR[((cbTitle + 1) / sizeof(WCHAR)) + 1];
+    // if (gci.Title == nullptr)
+    // {
+    //     Status = STATUS_NO_MEMORY;
+    //     goto ErrorExit2;
+    // }
 
-    gci.OriginalTitle =
-        TranslateConsoleTitle(gci.Title, TRUE, FALSE);
-    if (gci.OriginalTitle == nullptr)
-    {
-        Status = STATUS_NO_MEMORY;
-        goto ErrorExit1;
-    }
+    // #pragma prefast(suppress:26035, "If this fails, we just display an empty title, which is ok.")
+    // StringCbCopyW(gci.Title, cbTitle + sizeof(WCHAR), pwchTitle);
+
+    // gci.OriginalTitle =
+    //     TranslateConsoleTitle(gci.Title, TRUE, FALSE);
+    // if (gci.OriginalTitle == nullptr)
+    // {
+    //     Status = STATUS_NO_MEMORY;
+    //     goto ErrorExit1;
+    // }
 
     Status = DoCreateScreenBuffer();
     if (!NT_SUCCESS(Status))
     {
-        goto ErrorExit1b;
+        goto ErrorExit2;
     }
 
     gci.CurrentScreenBuffer =
@@ -117,13 +127,13 @@ NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle
     delete gci.ScreenBuffers;
     gci.ScreenBuffers = nullptr;
 
-ErrorExit1b:
-    delete[] gci.Title;
-    gci.Title = nullptr;
+// ErrorExit1b:
+//     delete[] gci.Title;
+//     gci.Title = nullptr;
 
-ErrorExit1:
-    delete[] gci.OriginalTitle;
-    gci.OriginalTitle = nullptr;
+// ErrorExit1:
+//     delete[] gci.OriginalTitle;
+//     gci.OriginalTitle = nullptr;
 
 ErrorExit2:
     delete gci.pInputBuffer;

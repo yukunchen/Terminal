@@ -88,10 +88,6 @@ public:
     LIST_ENTRY ExeAliasList;
     UINT NumCommandHistories;
 
-    LPWSTR OriginalTitle;
-    LPWSTR Title;
-    LPWSTR LinkTitle;   // Path to .lnk file, can be nullptr
-
     DWORD Flags;
 
     WORD PopupCount;
@@ -130,10 +126,14 @@ public:
     COLORREF GetDefaultForeground() const;
     COLORREF GetDefaultBackground() const;
 
+    std::wstring _OriginalTitle;
+    std::wstring _Title;
+    std::wstring _LinkTitle;   // Path to .lnk file, can be nullptr
 private:
     CRITICAL_SECTION _csConsoleLock;   // serialize input and output using this
 
     Microsoft::Console::VirtualTerminal::VtIo _vtIo;
+
 };
 
 #define ConsoleLocked() (ServiceLocator::LocateGlobals()->getConsoleInformation()->ConsoleLock.OwningThread == NtCurrentTeb()->ClientId.UniqueThread)

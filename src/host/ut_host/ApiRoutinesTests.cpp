@@ -205,11 +205,11 @@ class ApiRoutinesTests
     TEST_METHOD(ApiGetConsoleTitleA)
     {
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        gci.Title = L"Test window title.";
+        gci._Title = L"Test window title.";
 
         int const iBytesNeeded = WideCharToMultiByte(gci.OutputCP,
                                                      0,
-                                                     gci.Title,
+                                                     gci._Title.c_str(),
                                                      -1,
                                                      nullptr,
                                                      0,
@@ -221,7 +221,7 @@ class ApiRoutinesTests
 
         VERIFY_WIN32_BOOL_SUCCEEDED(WideCharToMultiByte(gci.OutputCP,
                                                         0,
-                                                        gci.Title,
+                                                        gci._Title.c_str(),
                                                         -1,
                                                         pszExpected.get(),
                                                         iBytesNeeded,
@@ -235,15 +235,15 @@ class ApiRoutinesTests
 
         VERIFY_ARE_NOT_EQUAL(0u, cchWritten);
         // NOTE: W version of API returns string length. A version of API returns buffer length (string + null).
-        VERIFY_ARE_EQUAL(wcslen(gci.Title) + 1, cchWritten);
-        VERIFY_ARE_EQUAL(wcslen(gci.Title), cchNeeded);
+        VERIFY_ARE_EQUAL(gci._Title.length() + 1, cchWritten);
+        VERIFY_ARE_EQUAL(gci._Title.length(), cchNeeded);
         VERIFY_IS_TRUE(0 == strcmp(pszExpected.get(), pszTitle));
     }
 
     TEST_METHOD(ApiGetConsoleTitleW)
     {
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        gci.Title = L"Test window title.";
+        gci._Title = L"Test window title.";
 
         wchar_t pwszTitle[MAX_PATH]; // most applications use MAX_PATH
         size_t cchWritten = 0;
@@ -252,19 +252,19 @@ class ApiRoutinesTests
 
         VERIFY_ARE_NOT_EQUAL(0u, cchWritten);
         // NOTE: W version of API returns string length. A version of API returns buffer length (string + null).
-        VERIFY_ARE_EQUAL(wcslen(gci.Title), cchWritten);
-        VERIFY_ARE_EQUAL(wcslen(gci.Title), cchNeeded);
-        VERIFY_IS_TRUE(0 == wcscmp(gci.Title, pwszTitle));
+        VERIFY_ARE_EQUAL(gci._Title.length(), cchWritten);
+        VERIFY_ARE_EQUAL(gci._Title.length(), cchNeeded);
+        VERIFY_IS_TRUE(0 == wcscmp(gci._Title.c_str(), pwszTitle));
     }
 
     TEST_METHOD(ApiGetConsoleOriginalTitleA)
     {
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        gci.OriginalTitle = L"Test original window title.";
+        gci._OriginalTitle = L"Test original window title.";
 
         int const iBytesNeeded = WideCharToMultiByte(gci.OutputCP,
                                                      0,
-                                                     gci.OriginalTitle,
+                                                     gci._OriginalTitle.c_str(),
                                                      -1,
                                                      nullptr,
                                                      0,
@@ -276,7 +276,7 @@ class ApiRoutinesTests
 
         VERIFY_WIN32_BOOL_SUCCEEDED(WideCharToMultiByte(gci.OutputCP,
                                                         0,
-                                                        gci.OriginalTitle,
+                                                        gci._OriginalTitle.c_str(),
                                                         -1,
                                                         pszExpected.get(),
                                                         iBytesNeeded,
@@ -290,15 +290,15 @@ class ApiRoutinesTests
 
         VERIFY_ARE_NOT_EQUAL(0u, cchWritten);
         // NOTE: W version of API returns string length. A version of API returns buffer length (string + null).
-        VERIFY_ARE_EQUAL(wcslen(gci.OriginalTitle) + 1, cchWritten);
-        VERIFY_ARE_EQUAL(wcslen(gci.OriginalTitle), cchNeeded);
+        VERIFY_ARE_EQUAL(gci._OriginalTitle.length() + 1, cchWritten);
+        VERIFY_ARE_EQUAL(gci._OriginalTitle.length(), cchNeeded);
         VERIFY_IS_TRUE(0 == strcmp(pszExpected.get(), pszTitle));
     }
 
     TEST_METHOD(ApiGetConsoleOriginalTitleW)
     {
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        gci.OriginalTitle = L"Test original window title.";
+        gci._OriginalTitle = L"Test original window title.";
 
         wchar_t pwszTitle[MAX_PATH]; // most applications use MAX_PATH
         size_t cchWritten = 0;
@@ -307,9 +307,9 @@ class ApiRoutinesTests
 
         VERIFY_ARE_NOT_EQUAL(0u, cchWritten);
         // NOTE: W version of API returns string length. A version of API returns buffer length (string + null).
-        VERIFY_ARE_EQUAL(wcslen(gci.OriginalTitle), cchWritten);
-        VERIFY_ARE_EQUAL(wcslen(gci.OriginalTitle), cchNeeded);
-        VERIFY_IS_TRUE(0 == wcscmp(gci.OriginalTitle, pwszTitle));
+        VERIFY_ARE_EQUAL(gci._OriginalTitle.length(), cchWritten);
+        VERIFY_ARE_EQUAL(gci._OriginalTitle.length(), cchNeeded);
+        VERIFY_IS_TRUE(0 == wcscmp(gci._OriginalTitle.c_str(), pwszTitle));
     }
 
     static void s_AdjustOutputWait(_In_ const bool fShouldBlock)

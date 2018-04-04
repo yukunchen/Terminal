@@ -273,7 +273,7 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
             HWND hWnd = CreateWindowExW(
                 CONSOLE_WINDOW_EX_FLAGS,
                 CONSOLE_WINDOW_CLASS,
-                gci.Title,
+                gci._Title.c_str(),
                 CONSOLE_WINDOW_FLAGS,
                 IsFlagSet(gci.Flags,
                           CONSOLE_AUTO_POSITION) ? CW_USEDEFAULT : rectProposed.left,
@@ -515,7 +515,7 @@ void Window::UpdateWindowText()
                         MAX_PATH,
                         szFmt,
                         szMsg,
-                        gci.Title)))
+                        gci._Title.c_str())))
                     {
                         ServiceLocator::LocateConsoleWindow<Window>()->PostUpdateTitle(pwszTitle);
                     }
@@ -531,7 +531,7 @@ void Window::UpdateWindowText()
     {
         // no mode-based message. set title back to original state.
         //Copy the title into a new buffer, because consuming the update_title HeapFree's the pwsz.
-        ServiceLocator::LocateConsoleWindow()->PostUpdateTitleWithCopy(gci.Title);
+        ServiceLocator::LocateConsoleWindow()->PostUpdateTitleWithCopy(gci._Title.c_str());
     }
 }
 
@@ -770,7 +770,7 @@ void Window::VerticalScroll(_In_ const WORD wScrollCommand, _In_ const WORD wAbs
         return;
     }
     }
-    
+
     NewOrigin.Y = std::clamp(NewOrigin.Y, 0i16, gsl::narrow<SHORT>(sScreenBufferSizeY - ScreenInfo->GetScreenWindowSizeY()));
     LOG_IF_FAILED(ScreenInfo->SetViewportOrigin(TRUE, NewOrigin));
 }
