@@ -319,4 +319,19 @@ StringType CharRowBase<GlyphType, StringType>::GetTextRaw() const
     return str;
 }
 
+template<typename GlyphType, typename StringType>
+std::wstring CharRowBase<GlyphType, StringType>::GetText() const
+{
+    std::wstring wstr;
+    wstr.reserve(_data.size());
+    for (auto& cell : _data)
+    {
+        if (!cell.second.IsTrailing())
+        {
+            wstr.push_back(cell.first);
+        }
+    }
+    return wstr;
+}
+
 #pragma warning(pop)

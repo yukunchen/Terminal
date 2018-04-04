@@ -114,20 +114,10 @@ BOOLEAN IsValidStringBuffer(_In_ BOOLEAN Unicode, _In_reads_bytes_(Size) PVOID B
 
 // Routine Description:
 // - Detects Word delimiters
-bool IsWordDelim(_In_ WCHAR const wch)
+bool IsWordDelim(const wchar_t wch)
 {
-    // Before it reaches here, L' ' case should have beeen already detected, and ServiceLocator::LocateGlobals()->aWordDelimChars is specified.
-    ASSERT(wch != L' ' && ServiceLocator::LocateGlobals().aWordDelimChars[0]);
-
-    for (int i = 0; i < WORD_DELIM_MAX && ServiceLocator::LocateGlobals().aWordDelimChars[i]; ++i)
-    {
-        if (wch == ServiceLocator::LocateGlobals().aWordDelimChars[i])
-        {
-            return true;
-        }
-    }
-
-    return false;
+    const auto& delimiters = ServiceLocator::LocateGlobals().WordDelimiters;
+    return std::find(delimiters.begin(), delimiters.end(), wch) != delimiters.end();
 }
 
 [[nodiscard]]
@@ -168,7 +158,8 @@ NTSTATUS BeginPopup(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ PCOMMAND_HISTORY C
 
     // allocate a buffer
     Popup->OldScreenSize = ScreenInfo->GetScreenBufferSize();
-    Popup->OldContents = new CHAR_INFO[Popup->OldScreenSize.X * Size.Y];
+    const size_t cOldContents = Popup->OldScreenSize.X * Size.Y;
+    Popup->OldContents = new CHAR_INFO[cOldContents];
     if (Popup->OldContents == nullptr)
     {
         delete Popup;
@@ -190,13 +181,27 @@ NTSTATUS BeginPopup(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ PCOMMAND_HISTORY C
     TargetRect.Top = Popup->Region.Top;
     TargetRect.Right = Popup->OldScreenSize.X - 1;
     TargetRect.Bottom = Popup->Region.Bottom;
-    LOG_IF_FAILED(ReadScreenBuffer(ScreenInfo, Popup->OldContents, &TargetRect));
+    std::vector<std::vector<OutputCell>> outputCells;
+    LOG_IF_FAILED(ReadScreenBuffer(ScreenInfo, outputCells, &TargetRect));
+    assert(!outputCells.empty());
+    assert(cOldContents == outputCells.size() * outputCells[0].size());
+    // copy the data into the char info buffer
+    CHAR_INFO* pCurrCharInfo = Popup->OldContents;
+    for (auto& row : outputCells)
+    {
+        for (auto& cell : row)
+        {
+            *pCurrCharInfo = cell.ToCharInfo();
+            ++pCurrCharInfo;
+        }
+    }
+
 
     gci.PopupCount++;
     if (1 == gci.PopupCount)
     {
         // If this is the first popup to be shown, stop the cursor from appearing/blinking
-        ScreenInfo->TextInfo->GetCursor()->SetIsPopupShown(TRUE);
+        ScreenInfo->TextInfo->GetCursor()->SetIsPopupShown(true);
     }
 
     DrawCommandListBorder(Popup, ScreenInfo);
@@ -238,7 +243,7 @@ NTSTATUS EndPopup(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ PCOMMAND_HISTORY Com
     if (gci.PopupCount == 0)
     {
         // Notify we're done showing popups.
-        ScreenInfo->TextInfo->GetCursor()->SetIsPopupShown(FALSE);
+        ScreenInfo->TextInfo->GetCursor()->SetIsPopupShown(false);
     }
 
     return STATUS_SUCCESS;
@@ -1329,13 +1334,13 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                         }
                         if (LastWord != pCookedReadData->_BackupLimit)
                         {
-                            if (IS_WORD_DELIM(*LastWord))
+                            if (IsWordDelim(*LastWord))
                             {
                                 // Skip WORD_DELIMs until space or non WORD_DELIM is found.
                                 while (--LastWord != pCookedReadData->_BackupLimit)
                                 {
                                     ASSERT(LastWord > pCookedReadData->_BackupLimit);
-                                    if (*LastWord == L' ' || !IS_WORD_DELIM(*LastWord))
+                                    if (*LastWord == L' ' || !IsWordDelim(*LastWord))
                                     {
                                         break;
                                     }
@@ -1347,7 +1352,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                                 while (--LastWord != pCookedReadData->_BackupLimit)
                                 {
                                     ASSERT(LastWord > pCookedReadData->_BackupLimit);
-                                    if (IS_WORD_DELIM(*LastWord))
+                                    if (IsWordDelim(*LastWord))
                                     {
                                         break;
                                     }
@@ -1443,11 +1448,11 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                         else
                         {
                             // Skip the body part.
-                            BOOL fStartFromDelim = IS_WORD_DELIM(*NextWord);
+                            bool fStartFromDelim = IsWordDelim(*NextWord);
 
                             while (++NextWord < BufLast)
                             {
-                                if (fStartFromDelim != IS_WORD_DELIM(*NextWord))
+                                if (fStartFromDelim != IsWordDelim(*NextWord))
                                 {
                                     break;
                                 }
@@ -1735,14 +1740,14 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
             break;
         case VK_INSERT:
             pCookedReadData->_InsertMode = !pCookedReadData->_InsertMode;
-            pCookedReadData->_pScreenInfo->SetCursorDBMode((BOOLEAN)(pCookedReadData->_InsertMode != gci.GetInsertMode()));
+            pCookedReadData->_pScreenInfo->SetCursorDBMode(!!(pCookedReadData->_InsertMode != gci.GetInsertMode()));
             break;
         case VK_DELETE:
             if (!AT_EOL(pCookedReadData))
             {
                 COORD CursorPosition;
 
-                BOOL fStartFromDelim = IS_WORD_DELIM(*pCookedReadData->_BufPtr);
+                BOOL fStartFromDelim = IsWordDelim(*pCookedReadData->_BufPtr);
 
             del_repeat:
                 // save cursor position
@@ -1797,7 +1802,9 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
 
                 // If Ctrl key is pressed, delete a word.
                 // If the start point was word delimiter, just remove delimiters portion only.
-                if ((dwKeyState & CTRL_PRESSED) && !AT_EOL(pCookedReadData) && fStartFromDelim ^ !IS_WORD_DELIM(*pCookedReadData->_BufPtr))
+                if ((dwKeyState & CTRL_PRESSED) &&
+                    !AT_EOL(pCookedReadData) &&
+                    fStartFromDelim ^ !IsWordDelim(*pCookedReadData->_BufPtr))
                 {
                     goto del_repeat;
                 }

@@ -34,6 +34,7 @@ public:
 
     bool Reset(_In_ const TextAttribute attr);
 
+    TextAttribute at(const size_t column) const;
     void FindAttrIndex(_In_ size_t const index,
                        _Outptr_ TextAttributeRun** const ppIndexedAttr,
                        _Out_opt_ size_t* const pcAttrApplies) const;
