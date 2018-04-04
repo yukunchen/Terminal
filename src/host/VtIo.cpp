@@ -378,7 +378,7 @@ HRESULT VtIo::SetCursorPosition(_In_ const COORD coordCursor)
 }
 
 // Method Description:
-// - Aquire a pointer to the renderer as a ITerminalOutputConnection. This is
+// - Acquire a pointer to the renderer as a ITerminalOutputConnection. This is
 //      used to let the state machine write sequences it doesn't understand
 //      directly to the terminal application.
 // Arguments:

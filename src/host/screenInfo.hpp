@@ -201,7 +201,7 @@ public:
     [[nodiscard]]
     HRESULT VtEraseAll();
 
-    void SetTerminalConnection(Microsoft::Console::ITerminalOutputConnection* const pTtyConnection);
+    void SetTerminalConnection(_In_ Microsoft::Console::ITerminalOutputConnection* const pTtyConnection);
 
 private:
     SCREEN_INFORMATION(_In_ IWindowMetrics *pMetrics,

@@ -6,7 +6,7 @@ Module Name:
 
 Abstract:
 - Provides an abstraction for writing to the output pipe connected to the TTY.
-    In VtIo/pty mode, this is implemented by the VtRenderer, uch that other
+    In VtIo/pty mode, this is implemented by the VtRenderer, such that other
     parts of the codebase (the state machine) can write VT sequences directly
     to the terminal controlling us.
 
@@ -24,7 +24,7 @@ namespace Microsoft::Console
         virtual ~ITerminalOutputConnection() = 0;
 
         [[nodiscard]]
-        virtual HRESULT WriteTerminalA(_In_ const std::string& str) = 0;
+        virtual HRESULT WriteTerminalUtf8(_In_ const std::string& str) = 0;
         [[nodiscard]]
         virtual HRESULT WriteTerminalW(_In_ const std::wstring& wstr) = 0;
     };

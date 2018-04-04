@@ -122,7 +122,7 @@ namespace Microsoft::Console::Render
         HRESULT InheritCursor(_In_ const COORD coordCursor);
 
         [[nodiscard]]
-        HRESULT WriteTerminalA(_In_ const std::string& str);
+        HRESULT WriteTerminalUtf8(_In_ const std::string& str);
         [[nodiscard]]
         virtual HRESULT WriteTerminalW(_In_ const std::wstring& str) = 0;
 

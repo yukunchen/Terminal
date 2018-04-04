@@ -99,7 +99,7 @@ HRESULT VtEngine::_Write(_In_ const std::string& str)
 // Method Description:
 // - Wrapper for ITerminalOutputConnection. See _Write.
 [[nodiscard]]
-HRESULT VtEngine::WriteTerminalA(_In_ const std::string& str)
+HRESULT VtEngine::WriteTerminalUtf8(_In_ const std::string& str)
 {
     return _Write(str);
 }
@@ -140,17 +140,8 @@ HRESULT VtEngine::_WriteTerminalAscii(_In_ const std::wstring& wstr)
     char* nextChar = &rgchNeeded[0];
     for (size_t i = 0; i < cchActual; i++)
     {
-        if (wstr[i] > L'\x7f')
-        {
-            *nextChar = '?';
-            nextChar++;
-        }
-        else
-        {
-            // Mask off the non-ascii bits
-            *nextChar = static_cast<char>(wstr[i] & 0x7f);
-            nextChar++;
-        }
+        *nextChar = (wstr[i] > L'\x7f')? '?' : static_cast<char>(wstr[i]);
+        nextChar++;
     }
 
     rgchNeeded[cchActual] = '\0';

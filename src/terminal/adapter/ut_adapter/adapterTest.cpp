@@ -68,7 +68,7 @@ using namespace Microsoft::Console::VirtualTerminal;
 class TestGetSet : public ConGetSet
 {
 public:
-    virtual BOOL GetConsoleScreenBufferInfoEx(_Out_ CONSOLE_SCREEN_BUFFER_INFOEX* const psbiex) const
+    BOOL GetConsoleScreenBufferInfoEx(_Out_ CONSOLE_SCREEN_BUFFER_INFOEX* const psbiex) const
     {
         Log::Comment(L"GetConsoleScreenBufferInfoEx MOCK returning data...");
 
@@ -82,7 +82,7 @@ public:
 
         return _fGetConsoleScreenBufferInfoExResult;
     }
-    virtual BOOL SetConsoleScreenBufferInfoEx(_In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const psbiex) const
+    BOOL SetConsoleScreenBufferInfoEx(_In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const psbiex) const
     {
         Log::Comment(L"SetConsoleScreenBufferInfoEx MOCK returning data...");
 
@@ -95,7 +95,7 @@ public:
         }
         return _fSetConsoleScreenBufferInfoExResult;
     }
-    virtual BOOL SetConsoleCursorPosition(_In_ COORD const dwCursorPosition)
+    BOOL SetConsoleCursorPosition(_In_ COORD const dwCursorPosition)
     {
         Log::Comment(L"SetConsoleCursorPosition MOCK called...");
 
@@ -108,7 +108,7 @@ public:
         return _fSetConsoleCursorPositionResult;
     }
 
-    virtual BOOL GetConsoleCursorInfo(_In_ CONSOLE_CURSOR_INFO* const pConsoleCursorInfo) const
+    BOOL GetConsoleCursorInfo(_In_ CONSOLE_CURSOR_INFO* const pConsoleCursorInfo) const
     {
         Log::Comment(L"GetConsoleCursorInfo MOCK called...");
 
@@ -121,7 +121,7 @@ public:
         return _fGetConsoleCursorInfoResult;
     }
 
-    virtual BOOL SetConsoleCursorInfo(_In_ const CONSOLE_CURSOR_INFO* const pConsoleCursorInfo)
+    BOOL SetConsoleCursorInfo(_In_ const CONSOLE_CURSOR_INFO* const pConsoleCursorInfo)
     {
         Log::Comment(L"SetConsoleCursorInfo MOCK called...");
 
@@ -134,7 +134,7 @@ public:
         return _fSetConsoleCursorInfoResult;
     }
 
-    virtual BOOL SetConsoleWindowInfo(_In_ BOOL const bAbsolute, _In_ const SMALL_RECT* const lpConsoleWindow)
+    BOOL SetConsoleWindowInfo(_In_ BOOL const bAbsolute, _In_ const SMALL_RECT* const lpConsoleWindow)
     {
         Log::Comment(L"SetConsoleWindowInfo MOCK called...");
 
@@ -148,7 +148,7 @@ public:
         return _fSetConsoleWindowInfoResult;
     }
 
-    virtual BOOL PrivateSetCursorKeysMode(_In_ bool const fCursorKeysApplicationMode)
+    BOOL PrivateSetCursorKeysMode(_In_ bool const fCursorKeysApplicationMode)
     {
         Log::Comment(L"PrivateSetCursorKeysMode MOCK called...");
 
@@ -160,7 +160,7 @@ public:
         return _fPrivateSetCursorKeysModeResult;
     }
 
-    virtual BOOL PrivateSetKeypadMode(_In_ bool const fKeypadApplicationMode)
+    BOOL PrivateSetKeypadMode(_In_ bool const fKeypadApplicationMode)
     {
         Log::Comment(L"PrivateSetKeypadMode MOCK called...");
 
@@ -172,7 +172,7 @@ public:
         return _fPrivateSetKeypadModeResult;
     }
 
-    virtual BOOL PrivateAllowCursorBlinking(_In_ bool const fEnable)
+    BOOL PrivateAllowCursorBlinking(_In_ bool const fEnable)
     {
         Log::Comment(L"PrivateAllowCursorBlinking MOCK called...");
 
@@ -184,7 +184,7 @@ public:
         return _fPrivateAllowCursorBlinkingResult;
     }
 
-    virtual BOOL FillConsoleOutputCharacterW(_In_ WCHAR const wch, _In_ DWORD const nLength, _In_ COORD const dwWriteCoord, _Out_ DWORD* const pNumberOfCharsWritten)
+    BOOL FillConsoleOutputCharacterW(_In_ WCHAR const wch, _In_ DWORD const nLength, _In_ COORD const dwWriteCoord, _Out_ DWORD* const pNumberOfCharsWritten)
     {
         Log::Comment(L"FillConsoleOutputCharacterW MOCK called...");
 
@@ -212,7 +212,7 @@ public:
         return _fFillConsoleOutputCharacterWResult;
     }
 
-    virtual BOOL FillConsoleOutputAttribute(_In_ WORD const wAttribute, _In_ DWORD const nLength, _In_ COORD const dwWriteCoord, _Out_ DWORD* const pNumberOfAttrsWritten)
+    BOOL FillConsoleOutputAttribute(_In_ WORD const wAttribute, _In_ DWORD const nLength, _In_ COORD const dwWriteCoord, _Out_ DWORD* const pNumberOfAttrsWritten)
     {
         Log::Comment(L"FillConsoleOutputAttribute MOCK called...");
 
@@ -240,7 +240,7 @@ public:
         return _fFillConsoleOutputAttributeResult;
     }
 
-    virtual BOOL SetConsoleTextAttribute(_In_ WORD const wAttr)
+    BOOL SetConsoleTextAttribute(_In_ WORD const wAttr)
     {
         Log::Comment(L"SetConsoleTextAttribute MOCK called...");
 
@@ -254,7 +254,7 @@ public:
         return _fSetConsoleTextAttributeResult;
     }
 
-    virtual BOOL PrivateSetLegacyAttributes(_In_ WORD const wAttr, _In_ const bool fForeground, _In_ const bool fBackground, _In_ const bool fMeta)
+    BOOL PrivateSetLegacyAttributes(_In_ WORD const wAttr, _In_ const bool fForeground, _In_ const bool fBackground, _In_ const bool fMeta)
     {
         Log::Comment(L"PrivateSetLegacyAttributes MOCK called...");
         if (_fPrivateSetLegacyAttributesResult)
@@ -283,7 +283,7 @@ public:
         return _fPrivateSetLegacyAttributesResult;
     }
 
-    virtual BOOL SetConsoleXtermTextAttribute(_In_ int const iXtermTableEntry, _In_ const bool fIsForeground)
+    BOOL SetConsoleXtermTextAttribute(_In_ int const iXtermTableEntry, _In_ const bool fIsForeground)
     {
         Log::Comment(L"SetConsoleXtermTextAttribute MOCK called...");
 
@@ -311,7 +311,7 @@ public:
         return _fSetConsoleXtermTextAttributeResult;
     }
 
-    virtual BOOL SetConsoleRGBTextAttribute(_In_ COLORREF const rgbColor, _In_ const bool fIsForeground)
+    BOOL SetConsoleRGBTextAttribute(_In_ COLORREF const rgbColor, _In_ const bool fIsForeground)
     {
         Log::Comment(L"SetConsoleRGBTextAttribute MOCK called...");
         if (_fSetConsoleRGBTextAttributeResult)
@@ -326,7 +326,7 @@ public:
         return _fSetConsoleRGBTextAttributeResult;
     }
 
-    virtual BOOL WriteConsoleInputW(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
+    BOOL WriteConsoleInputW(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
                                     _Out_ size_t& eventsWritten)
     {
         Log::Comment(L"WriteConsoleInputW MOCK called...");
@@ -344,7 +344,7 @@ public:
         return _fWriteConsoleInputWResult;
     }
 
-    virtual BOOL PrivatePrependConsoleInput(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
+    BOOL PrivatePrependConsoleInput(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
                                             _Out_ size_t& eventsWritten)
     {
         Log::Comment(L"PrivatePrependConsoleInput MOCK called...");
@@ -362,7 +362,7 @@ public:
         return _fPrivatePrependConsoleInputResult;
     }
 
-    virtual BOOL PrivateWriteConsoleControlInput(_In_ KeyEvent key)
+    BOOL PrivateWriteConsoleControlInput(_In_ KeyEvent key)
     {
         Log::Comment(L"PrivateWriteConsoleControlInput MOCK called...");
 
@@ -388,7 +388,7 @@ public:
         }
     }
 
-    virtual BOOL ScrollConsoleScreenBufferW(_In_ const SMALL_RECT* pScrollRectangle, _In_opt_ const SMALL_RECT* pClipRectangle, _In_ COORD dwDestinationOrigin, _In_ const CHAR_INFO* pFill)
+    BOOL ScrollConsoleScreenBufferW(_In_ const SMALL_RECT* pScrollRectangle, _In_opt_ const SMALL_RECT* pClipRectangle, _In_ COORD dwDestinationOrigin, _In_ const CHAR_INFO* pFill)
     {
         Log::Comment(L"ScrollConsoleScreenBufferW MOCK called...");
 
@@ -474,7 +474,7 @@ public:
         return _fScrollConsoleScreenBufferWResult;
     }
 
-    virtual BOOL PrivateSetScrollingRegion(_In_ const SMALL_RECT* const psrScrollMargins)
+    BOOL PrivateSetScrollingRegion(_In_ const SMALL_RECT* const psrScrollMargins)
     {
         Log::Comment(L"PrivateSetScrollingRegion MOCK called...");
 
@@ -486,14 +486,14 @@ public:
         return _fPrivateSetScrollingRegionResult;
     }
 
-    virtual BOOL PrivateReverseLineFeed()
+    BOOL PrivateReverseLineFeed()
     {
         Log::Comment(L"PrivateReverseLineFeed MOCK called...");
         // We made it through the adapter, woo! Return true.
         return TRUE;
     }
 
-    virtual BOOL SetConsoleTitleW(_In_ const wchar_t* const pwchWindowTitle, _In_ unsigned short sCchTitleLength)
+    BOOL SetConsoleTitleW(_In_ const wchar_t* const pwchWindowTitle, _In_ unsigned short sCchTitleLength)
     {
         Log::Comment(L"SetConsoleTitleW MOCK called...");
 
@@ -505,26 +505,26 @@ public:
         return TRUE;
     }
 
-    virtual BOOL PrivateUseAlternateScreenBuffer()
+    BOOL PrivateUseAlternateScreenBuffer()
     {
         Log::Comment(L"PrivateUseAlternateScreenBuffer MOCK called...");
         return true;
     }
 
-    virtual BOOL PrivateUseMainScreenBuffer()
+    BOOL PrivateUseMainScreenBuffer()
     {
         Log::Comment(L"PrivateUseMainScreenBuffer MOCK called...");
         return true;
     }
 
-    virtual BOOL PrivateHorizontalTabSet()
+    BOOL PrivateHorizontalTabSet()
     {
         Log::Comment(L"PrivateHorizontalTabSet MOCK called...");
         // We made it through the adapter, woo! Return true.
         return TRUE;
     }
 
-    virtual BOOL PrivateForwardTab(_In_ SHORT const sNumTabs)
+    BOOL PrivateForwardTab(_In_ SHORT const sNumTabs)
     {
         Log::Comment(L"PrivateForwardTab MOCK called...");
         if (_fPrivateForwardTabResult)
@@ -534,7 +534,7 @@ public:
         return TRUE;
     }
 
-    virtual BOOL PrivateBackwardsTab(_In_ SHORT const sNumTabs)
+    BOOL PrivateBackwardsTab(_In_ SHORT const sNumTabs)
     {
         Log::Comment(L"PrivateBackwardsTab MOCK called...");
         if (_fPrivateBackwardsTabResult)
@@ -544,7 +544,7 @@ public:
         return TRUE;
     }
 
-    virtual BOOL PrivateTabClear(_In_ bool const fClearAll)
+    BOOL PrivateTabClear(_In_ bool const fClearAll)
     {
         Log::Comment(L"PrivateTabClear MOCK called...");
         if (_fPrivateTabClearResult)
@@ -554,7 +554,7 @@ public:
         return TRUE;
     }
 
-    virtual BOOL PrivateEnableVT200MouseMode(_In_ bool const fEnabled)
+    BOOL PrivateEnableVT200MouseMode(_In_ bool const fEnabled)
     {
         Log::Comment(L"PrivateEnableVT200MouseMode MOCK called...");
         if (_fPrivateEnableVT200MouseModeResult)
@@ -564,7 +564,7 @@ public:
         return _fPrivateEnableVT200MouseModeResult;
     }
 
-    virtual BOOL PrivateEnableUTF8ExtendedMouseMode(_In_ bool const fEnabled)
+    BOOL PrivateEnableUTF8ExtendedMouseMode(_In_ bool const fEnabled)
     {
         Log::Comment(L"PrivateEnableUTF8ExtendedMouseMode MOCK called...");
         if (_fPrivateEnableUTF8ExtendedMouseModeResult)
@@ -574,7 +574,7 @@ public:
         return _fPrivateEnableUTF8ExtendedMouseModeResult;
     }
 
-    virtual BOOL PrivateEnableSGRExtendedMouseMode(_In_ bool const fEnabled)
+    BOOL PrivateEnableSGRExtendedMouseMode(_In_ bool const fEnabled)
     {
         Log::Comment(L"PrivateEnableSGRExtendedMouseMode MOCK called...");
         if (_fPrivateEnableSGRExtendedMouseModeResult)
@@ -584,7 +584,7 @@ public:
         return _fPrivateEnableSGRExtendedMouseModeResult;
     }
 
-    virtual BOOL PrivateEnableButtonEventMouseMode(_In_ bool const fEnabled)
+    BOOL PrivateEnableButtonEventMouseMode(_In_ bool const fEnabled)
     {
         Log::Comment(L"PrivateEnableButtonEventMouseMode MOCK called...");
         if (_fPrivateEnableButtonEventMouseModeResult)
@@ -594,7 +594,7 @@ public:
         return _fPrivateEnableButtonEventMouseModeResult;
     }
 
-    virtual BOOL PrivateEnableAnyEventMouseMode(_In_ bool const fEnabled)
+    BOOL PrivateEnableAnyEventMouseMode(_In_ bool const fEnabled)
     {
         Log::Comment(L"PrivateEnableAnyEventMouseMode MOCK called...");
         if (_fPrivateEnableAnyEventMouseModeResult)
@@ -604,7 +604,7 @@ public:
         return _fPrivateEnableAnyEventMouseModeResult;
     }
 
-    virtual BOOL PrivateEnableAlternateScroll(_In_ bool const fEnabled)
+    BOOL PrivateEnableAlternateScroll(_In_ bool const fEnabled)
     {
         Log::Comment(L"PrivateEnableAlternateScroll MOCK called...");
         if (_fPrivateEnableAlternateScrollResult)
@@ -614,13 +614,13 @@ public:
         return _fPrivateEnableAlternateScrollResult;
     }
 
-    virtual BOOL PrivateEraseAll()
+    BOOL PrivateEraseAll()
     {
         Log::Comment(L"PrivateEraseAll MOCK called...");
         return TRUE;
     }
 
-    virtual BOOL SetCursorStyle(_In_ CursorType const cursorType)
+    BOOL SetCursorStyle(_In_ CursorType const cursorType)
     {
         Log::Comment(L"SetCursorStyle MOCK called...");
         if (_fSetCursorStyleResult)
@@ -630,7 +630,7 @@ public:
         return _fSetCursorStyleResult;
     }
 
-    virtual BOOL SetCursorColor(_In_ COLORREF const cursorColor)
+    BOOL SetCursorColor(_In_ COLORREF const cursorColor)
     {
         Log::Comment(L"SetCursorColor MOCK called...");
         if (_fSetCursorColorResult)
@@ -640,7 +640,7 @@ public:
         return _fSetCursorColorResult;
     }
 
-    virtual BOOL PrivateGetConsoleScreenBufferAttributes(_Out_ WORD* const pwAttributes)
+    BOOL PrivateGetConsoleScreenBufferAttributes(_Out_ WORD* const pwAttributes)
     {
         Log::Comment(L"PrivateGetConsoleScreenBufferAttributes MOCK returning data...");
 
@@ -652,20 +652,20 @@ public:
         return _fPrivateGetConsoleScreenBufferAttributesResult;
     }
 
-    virtual BOOL PrivateRefreshWindow()
+    BOOL PrivateRefreshWindow()
     {
         Log::Comment(L"PrivateRefreshWindow MOCK called...");
         // We made it through the adapter, woo! Return true.
         return TRUE;
     }
-    virtual BOOL PrivateSuppressResizeRepaint()
+    BOOL PrivateSuppressResizeRepaint()
     {
         Log::Comment(L"PrivateSuppressResizeRepaint MOCK called...");
         VERIFY_IS_TRUE(false, L"AdaptDispatch should never be calling this function.");
         return FALSE;
     }
 
-    virtual BOOL GetConsoleOutputCP(_Out_ unsigned int* const puiOutputCP)
+    BOOL GetConsoleOutputCP(_Out_ unsigned int* const puiOutputCP)
     {
         Log::Comment(L"GetConsoleOutputCP MOCK called...");
         if (_fGetConsoleOutputCPResult)
@@ -675,7 +675,7 @@ public:
         return _fGetConsoleOutputCPResult;
     }
 
-    virtual BOOL IsConsolePty(_Out_ bool* const isPty) const
+    BOOL IsConsolePty(_Out_ bool* const isPty) const
     {
         Log::Comment(L"IsConsolePty MOCK called...");
         if (_fIsConsolePtyResult)

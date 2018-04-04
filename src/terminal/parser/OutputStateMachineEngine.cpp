@@ -448,7 +448,7 @@ bool OutputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
         }
     }
     // If we were unable to process the string, and there's a TTY attached to us,
-    //      throw an exception, to pass the sequence to the TTY.
+    //      trigger the state machine to flush the string to the terminal.
     if (_pfnFlushToTerminal != nullptr && !fSuccess)
     {
         fSuccess = _pfnFlushToTerminal();
@@ -673,7 +673,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const /*wch*/,
     }
 
     // If we were unable to process the string, and there's a TTY attached to us,
-    //      throw an exception, to pass the sequence to the TTY.
+    //      trigger the state machine to flush the string to the terminal.
     if (_pfnFlushToTerminal != nullptr && !fSuccess)
     {
         fSuccess = _pfnFlushToTerminal();
@@ -748,7 +748,7 @@ bool OutputStateMachineEngine::_GetGraphicsOptions(_In_reads_(cParams) const uns
     }
 
     // If we were unable to process the string, and there's a TTY attached to us,
-    //      throw an exception, to pass the sequence to the TTY.
+    //      trigger the state machine to flush the string to the terminal.
     if (_pfnFlushToTerminal != nullptr && !fSuccess)
     {
         fSuccess = _pfnFlushToTerminal();
