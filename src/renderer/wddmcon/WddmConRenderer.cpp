@@ -428,7 +428,7 @@ HRESULT WddmConEngine::IsCharFullWidthByFont(WCHAR const /*wch*/, _Out_ bool* co
 // Return Value:
 // - S_OK
 [[nodiscard]]
-HRESULT WddmConEngine::UpdateTitle(_In_ const std::wstring& newTitle)
+HRESULT WddmConEngine::UpdateTitle(_In_ const std::wstring& /*newTitle*/)
 {
     return S_OK;
 }

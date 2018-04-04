@@ -291,7 +291,7 @@ HRESULT BgfxEngine::IsCharFullWidthByFont(WCHAR const /*wch*/, _Out_ bool* const
 // Return Value:
 // - S_OK
 [[nodiscard]]
-HRESULT BgfxEngine::UpdateTitle(_In_ const std::wstring& newTitle)
+HRESULT BgfxEngine::UpdateTitle(_In_ const std::wstring& /*newTitle*/)
 {
     return S_OK;
 }

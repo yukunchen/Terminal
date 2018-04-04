@@ -42,7 +42,7 @@ namespace Microsoft::Console::Render
         virtual NTSTATUS GetSelectionRects(_Outptr_result_buffer_all_(*pcRectangles) SMALL_RECT** const prgsrSelection,
                                            _Out_ UINT* const pcRectangles) = 0;
 
-        virtual const wchar_t* const GetConsoleTitle() = 0;
+        virtual const wchar_t* const GetConsoleTitle() const = 0;
     };
 
     inline IRenderData::~IRenderData() {}

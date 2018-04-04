@@ -716,9 +716,9 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
     case CM_UPDATE_TITLE:
     {
-        PCWSTR pwszNewTitle = (PCWSTR)(lParam);
-        SetWindowTextW(hWnd, pwszNewTitle);
-        delete[](pwszNewTitle);
+
+        SetWindowTextW(hWnd, (PCWSTR)(lParam));
+        delete[](PCWSTR)(lParam);
         break;
     }
 

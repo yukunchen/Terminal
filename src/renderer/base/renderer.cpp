@@ -436,8 +436,8 @@ void Renderer::TriggerCircling()
 }
 
 // Routine Description:
-// - Called when the text buffer is about to circle it's backing buffer.
-//      A renderer might want to get painted before that happens.
+// - Called when the title of the console window has changed. Indicates that we
+//      should update the title on the next frame.
 // Arguments:
 // - <none>
 // Return Value:
@@ -448,19 +448,15 @@ void Renderer::TriggerTitleChange()
 }
 
 // Routine Description:
-// - Called when the text buffer is about to circle it's backing buffer.
-//      A renderer might want to get painted before that happens.
+// - Update the title for a particular engine.
 // Arguments:
-// - <none>
+// - pEngine: the engine to update the title for.
 // Return Value:
-// - <none>
+// - the HRESULT of the underlying engine's UpdateTitle call.
 HRESULT Renderer::_PaintTitle(IRenderEngine* const pEngine)
 {
     std::wstring newTitle = std::wstring(_pData->GetConsoleTitle());
-
-    HRESULT hr = pEngine->UpdateTitle(newTitle);
-    LOG_IF_FAILED(hr);
-    return hr;
+    return pEngine->UpdateTitle(newTitle);
 }
 
 // Routine Description:

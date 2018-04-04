@@ -317,6 +317,6 @@ HRESULT VtEngine::RequestCursor()
 [[nodiscard]]
 HRESULT VtEngine::_ChangeTitle(_In_ const std::string& title)
 {
-    std::string titleFormat = "\x1b]0;" + title + "\x7";
+    const std::string titleFormat = "\x1b]0;" + title + "\x7";
     return _Write(titleFormat);
 }
