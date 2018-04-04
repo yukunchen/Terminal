@@ -286,6 +286,21 @@ HRESULT GdiEngine::GetProposedFont(_In_ FontInfoDesired const * const pfiFontDes
     return _GetProposedFont(pfiFontDesired, pfiFont, iDpi, hFont);
 }
 
+// Method Description:
+// - Updates the window's title string. For GDI, this does nothing, because the
+//      title must be updated on the main window's windowproc thread.
+// Arguments:
+// - newTitle: the new string to use for the title of the window
+// Return Value:
+// - S_OK
+[[nodiscard]]
+HRESULT GdiEngine::UpdateTitle(_In_ const std::wstring& /*newTitle*/)
+{
+    // Do nothing - we need to call SetWindowTextW on the windowproc thread.
+    // Whoever triggered this should have also called IWindow::PostUpdateTitle*
+    return S_OK;
+}
+
 // Routine Description:
 // - This method will figure out what the new font should be given the starting font information and a DPI.
 // - When the final font is determined, the FontInfo structure given will be updated with the actual resulting font chosen as the nearest match.

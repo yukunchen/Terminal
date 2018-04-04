@@ -1673,9 +1673,18 @@ HRESULT DoSrvSetConsoleTitleW(_In_reads_or_z_(cchBuffer) const wchar_t* const pw
     gci.Title = pwszNewTitle.release();
 
     IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+    // If we have a window, PostUpdateTitleWithCopy, so that the title change
+    //  happens on the windowproc thread.
     if (pWindow != nullptr)
     {
         RETURN_HR_IF_FALSE(E_FAIL, pWindow->PostUpdateTitleWithCopy(gci.Title));
+    }
+    // Also tell the renderer to update the title. For windowed renderers, this
+    //      will likely cause them to do nothing.
+    auto* const pRender = ServiceLocator::LocateGlobals().pRender;
+    if (pRender)
+    {
+        pRender->TriggerTitleChange();
     }
 
     return S_OK;

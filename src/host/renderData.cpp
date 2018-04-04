@@ -112,3 +112,9 @@ const bool RenderData::IsGridLineDrawingAllowed()
         }
     }
 }
+
+const wchar_t* const RenderData::GetConsoleTitle()
+{
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.Title;
+}

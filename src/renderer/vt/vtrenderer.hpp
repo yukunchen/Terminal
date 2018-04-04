@@ -120,6 +120,9 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         HRESULT InheritCursor(_In_ const COORD coordCursor);
 
+        [[nodiscard]]
+        HRESULT UpdateTitle(_In_ const std::wstring& newTitle) override;
+
     protected:
         wil::unique_hfile _hFile;
 
@@ -189,6 +192,8 @@ namespace Microsoft::Console::Render
         HRESULT _CursorHome();
         [[nodiscard]]
         HRESULT _ClearScreen();
+        [[nodiscard]]
+        HRESULT _ChangeTitle(_In_ const std::string& title);
         [[nodiscard]]
         HRESULT _SetGraphicsRendition16Color(_In_ const WORD wAttr,
                                             _In_ const bool fIsForeground);

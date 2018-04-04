@@ -282,3 +282,16 @@ HRESULT BgfxEngine::IsCharFullWidthByFont(WCHAR const /*wch*/, _Out_ bool* const
     *pResult = false;
     return S_OK;
 }
+
+// Method Description:
+// - Updates the window's title string.
+//      Does nothing for BGFX.
+// Arguments:
+// - newTitle: the new string to use for the title of the window
+// Return Value:
+// - S_OK
+[[nodiscard]]
+HRESULT BgfxEngine::UpdateTitle(_In_ const std::wstring& newTitle)
+{
+    return S_OK;
+}

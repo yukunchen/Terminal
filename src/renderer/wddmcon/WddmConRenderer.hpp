@@ -88,6 +88,9 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         HRESULT IsCharFullWidthByFont(_In_ WCHAR const wch, _Out_ bool* const pResult) override;
 
+        [[nodiscard]]
+        HRESULT UpdateTitle(_In_ const std::wstring& newTitle) override;
+
     private:
         HANDLE _hWddmConCtx;
 

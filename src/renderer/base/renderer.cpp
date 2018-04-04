@@ -130,6 +130,8 @@ HRESULT Renderer::PaintFrame()
         LOG_IF_FAILED(_PaintFrameForEngine(pEngine));
     }
 
+    _titleChanged = false;
+
     return S_OK;
 }
 
@@ -202,6 +204,9 @@ HRESULT Renderer::_PaintFrameForEngine(_In_ IRenderEngine* const pEngine)
 
     // 6. Paint Cursor
     _PaintCursor(pEngine);
+
+    // 7. Paint window title
+    RETURN_IF_FAILED(_PaintTitle(pEngine));
 
     // As we leave the scope, EndPaint will be called (declared above)
     return S_OK;
@@ -428,6 +433,34 @@ void Renderer::TriggerCircling()
             LOG_IF_FAILED(_PaintFrameForEngine(pEngine));
         }
     }
+}
+
+// Routine Description:
+// - Called when the text buffer is about to circle it's backing buffer.
+//      A renderer might want to get painted before that happens.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Renderer::TriggerTitleChange()
+{
+    _titleChanged = true;
+}
+
+// Routine Description:
+// - Called when the text buffer is about to circle it's backing buffer.
+//      A renderer might want to get painted before that happens.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+HRESULT Renderer::_PaintTitle(IRenderEngine* const pEngine)
+{
+    std::wstring newTitle = std::wstring(_pData->GetConsoleTitle());
+
+    HRESULT hr = pEngine->UpdateTitle(newTitle);
+    LOG_IF_FAILED(hr);
+    return hr;
 }
 
 // Routine Description:
