@@ -85,7 +85,6 @@ public:
     PSCREEN_INFORMATION ScreenBuffers;  // singly linked list
     ConsoleWaitQueue OutputQueue;
     LIST_ENTRY CommandHistoryList;
-    LIST_ENTRY ExeAliasList;
     UINT NumCommandHistories;
 
     LPWSTR OriginalTitle;

@@ -352,15 +352,11 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
 
         if (pCookedReadData->_Echo)
         {
-            bool FoundCR;
-            ULONG i, StringLength;
-            PWCHAR StringPtr;
-
             // Figure out where real string ends (at carriage return or end of buffer).
-            StringPtr = pCookedReadData->_BackupLimit;
-            StringLength = pCookedReadData->_BytesRead;
-            FoundCR = false;
-            for (i = 0; i < (pCookedReadData->_BytesRead / sizeof(WCHAR)); i++)
+            PWCHAR StringPtr = pCookedReadData->_BackupLimit;
+            ULONG StringLength = pCookedReadData->_BytesRead;
+            bool FoundCR = false;
+            for (ULONG i = 0; i < (pCookedReadData->_BytesRead / sizeof(WCHAR)); i++)
             {
                 if (*StringPtr++ == UNICODE_CARRIAGERETURN)
                 {
@@ -377,19 +373,17 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
                                          pCookedReadData->_BackupLimit,
                                          (USHORT)StringLength,
                                          IsFlagSet(gci.Flags, CONSOLE_HISTORY_NODUP)));
-
+                
                 // check for alias
-                i = pCookedReadData->_BufferSize;
-                if (NT_SUCCESS(MatchAndCopyAlias(pCookedReadData->_BackupLimit,
-                                                 (USHORT)StringLength,
+                Alias::s_MatchAndCopyAliasLegacy(pCookedReadData->_BackupLimit,
+                                                 pCookedReadData->_BytesRead,
                                                  pCookedReadData->_BackupLimit,
-                                                 (PUSHORT)& i,
+                                                 pCookedReadData->_BufferSize,
+                                                 &pCookedReadData->_BytesRead,
                                                  pCookedReadData->ExeName,
                                                  pCookedReadData->ExeNameLength,
-                                                 &LineCount)))
-                {
-                    pCookedReadData->_BytesRead = i;
-                }
+                                                 &LineCount);
+
             }
         }
 
