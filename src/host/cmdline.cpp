@@ -116,6 +116,12 @@ BOOLEAN IsValidStringBuffer(_In_ BOOLEAN Unicode, _In_reads_bytes_(Size) PVOID B
 // - Detects Word delimiters
 bool IsWordDelim(const wchar_t wch)
 {
+    // the space character is always a word delimiter. Do not add it to the WordDelimiters global because
+    // that contains the user configurable word delimiters only.
+    if (wch == UNICODE_SPACE)
+    {
+        return true;
+    }
     const auto& delimiters = ServiceLocator::LocateGlobals().WordDelimiters;
     return std::find(delimiters.begin(), delimiters.end(), wch) != delimiters.end();
 }
