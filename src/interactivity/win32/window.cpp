@@ -1234,52 +1234,6 @@ LRESULT Window::s_RegPersistWindowOpacity(_In_ PCWSTR const pwszTitle, _In_ cons
     return Status;
 }
 
-void Window::s_PersistWindowPosition(_In_ PCWSTR pwszLinkTitle,
-                                     _In_ PCWSTR pwszOriginalTitle,
-                                     _In_ const DWORD dwFlags,
-                                     _In_ const Window* const pWindow)
-{
-    if (pwszLinkTitle == nullptr)
-    {
-        PWSTR pwszTranslatedTitle = TranslateConsoleTitle(pwszOriginalTitle, FALSE, TRUE);
-
-        if (pwszTranslatedTitle != nullptr)
-        {
-            Window::s_RegPersistWindowPos(pwszTranslatedTitle, IsFlagSet(dwFlags, CONSOLE_AUTO_POSITION), pWindow);
-            delete[] pwszTranslatedTitle;
-        }
-    }
-    else
-    {
-        CONSOLE_STATE_INFO StateInfo = {0};
-        Menu::s_GetConsoleState(&StateInfo);
-        LOG_IF_FAILED(ShortcutSerialization::s_SetLinkValues(&StateInfo,
-                                                             IsEastAsianCP(ServiceLocator::LocateGlobals().uiOEMCP),
-                                                             true));
-    }
-}
-
-void Window::s_PersistWindowOpacity(_In_ PCWSTR pwszLinkTitle, _In_ PCWSTR pwszOriginalTitle, _In_ const Window* const pWindow)
-{
-    if (pwszLinkTitle == nullptr)
-    {
-        PWSTR pwszTranslatedTitle = TranslateConsoleTitle(pwszOriginalTitle, FALSE, TRUE);
-        if (pwszTranslatedTitle != nullptr)
-        {
-            Window::s_RegPersistWindowOpacity(pwszTranslatedTitle, pWindow);
-            delete[] pwszTranslatedTitle;
-        }
-    }
-    else
-    {
-        CONSOLE_STATE_INFO StateInfo = {0};
-        Menu::s_GetConsoleState(&StateInfo);
-        LOG_IF_FAILED(ShortcutSerialization::s_SetLinkValues(&StateInfo,
-                                                             IsEastAsianCP(ServiceLocator::LocateGlobals().uiOEMCP),
-                                                             true));
-    }
-}
-
 void Window::SetWindowHasMoved(_In_ BOOL const fHasMoved)
 {
     this->_fHasMoved = fHasMoved;

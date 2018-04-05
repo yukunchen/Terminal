@@ -46,7 +46,7 @@ void UnlockConsole()
 // - STATUS_SUCCESS if successful.
 [[nodiscard]]
 NTSTATUS AllocateConsole(_In_reads_bytes_(_Param_(2)) const WCHAR * const pwchTitle,
-                         _In_ const DWORD /*cbTitle*/)
+                         _In_ const DWORD cbTitle)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // Synchronize flags
@@ -74,8 +74,10 @@ NTSTATUS AllocateConsole(_In_reads_bytes_(_Param_(2)) const WCHAR * const pwchTi
         return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
     }
 
+    // Byte count + 1 so dividing by 2 always rounds up. +1 more for trailing null guard.
+    auto titleLength = ((cbTitle + 1) / sizeof(WCHAR)) + 1;
     try {
-        gci.SetTitle(std::wstring(pwchTitle));
+        gci.SetTitle(std::wstring(pwchTitle, titleLength));
         gci.SetOriginalTitle(std::wstring(TranslateConsoleTitle(gci.GetTitle().c_str(), TRUE, FALSE)));
     }
     catch(...)

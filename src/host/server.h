@@ -141,9 +141,7 @@ private:
     std::wstring _TitlePrefix; // Eg Select, Mark - things that we manually prepend to the title.
     std::wstring _OriginalTitle;
     std::wstring _LinkTitle;   // Path to .lnk file, can be nullptr
-
     Microsoft::Console::VirtualTerminal::VtIo _vtIo;
-
 };
 
 #define ConsoleLocked() (ServiceLocator::LocateGlobals()->getConsoleInformation()->ConsoleLock.OwningThread == NtCurrentTeb()->ClientId.UniqueThread)

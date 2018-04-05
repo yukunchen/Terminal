@@ -237,7 +237,7 @@ class ApiRoutinesTests
         // NOTE: W version of API returns string length. A version of API returns buffer length (string + null).
         VERIFY_ARE_EQUAL(gci.GetTitle().length() + 1, cchWritten);
         VERIFY_ARE_EQUAL(gci.GetTitle().length(), cchNeeded);
-        VERIFY_IS_TRUE(0 == strcmp(pszExpected.get(), pszTitle));
+        VERIFY_ARE_EQUAL(WEX::Common::String(pszExpected.get()), WEX::Common::String(pszTitle));
     }
 
     TEST_METHOD(ApiGetConsoleTitleW)
@@ -254,7 +254,7 @@ class ApiRoutinesTests
         // NOTE: W version of API returns string length. A version of API returns buffer length (string + null).
         VERIFY_ARE_EQUAL(gci.GetTitle().length(), cchWritten);
         VERIFY_ARE_EQUAL(gci.GetTitle().length(), cchNeeded);
-        VERIFY_IS_TRUE(0 == wcscmp(gci.GetTitle().c_str(), pwszTitle));
+        VERIFY_ARE_EQUAL(WEX::Common::String(gci.GetTitle().c_str()), WEX::Common::String(pwszTitle));
     }
 
     TEST_METHOD(ApiGetConsoleOriginalTitleA)
@@ -292,7 +292,7 @@ class ApiRoutinesTests
         // NOTE: W version of API returns string length. A version of API returns buffer length (string + null).
         VERIFY_ARE_EQUAL(gci.GetOriginalTitle().length() + 1, cchWritten);
         VERIFY_ARE_EQUAL(gci.GetOriginalTitle().length(), cchNeeded);
-        VERIFY_IS_TRUE(0 == strcmp(pszExpected.get(), pszTitle));
+        VERIFY_ARE_EQUAL(WEX::Common::String(pszExpected.get()), WEX::Common::String(pszTitle));
     }
 
     TEST_METHOD(ApiGetConsoleOriginalTitleW)
@@ -309,7 +309,7 @@ class ApiRoutinesTests
         // NOTE: W version of API returns string length. A version of API returns buffer length (string + null).
         VERIFY_ARE_EQUAL(gci.GetOriginalTitle().length(), cchWritten);
         VERIFY_ARE_EQUAL(gci.GetOriginalTitle().length(), cchNeeded);
-        VERIFY_IS_TRUE(0 == wcscmp(gci.GetOriginalTitle().c_str(), pwszTitle));
+        VERIFY_ARE_EQUAL(WEX::Common::String(gci.GetOriginalTitle().c_str()), WEX::Common::String(pwszTitle));
     }
 
     static void s_AdjustOutputWait(_In_ const bool fShouldBlock)

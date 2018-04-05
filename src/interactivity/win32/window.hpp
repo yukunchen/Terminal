@@ -75,15 +75,6 @@ namespace Microsoft::Console::Interactivity::Win32
         BOOL PostUpdateWindowSize() const;
         BOOL PostUpdateExtendedEditKeys() const;
 
-        // Dynamic Settings helpers
-        static void s_PersistWindowPosition(_In_ PCWSTR pwszLinkTitle,
-                                            _In_ PCWSTR pwszOriginalTitle,
-                                            _In_ const DWORD dwFlags,
-                                            _In_ const Window* const pWindow);
-        static void s_PersistWindowOpacity(_In_ PCWSTR pwszLinkTitle,
-                                            _In_ PCWSTR pwszOriginalTitle,
-                                            _In_ const Window* const pWindow);
-
         void SetWindowHasMoved(_In_ BOOL const fHasMoved);
 
         [[nodiscard]]

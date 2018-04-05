@@ -68,7 +68,6 @@ void SystemConfigurationProvider::GetSettingsFromLink(
             if (linkNameForCsi)
             {
                 gci.GetLinkTitle().copy(linkNameForCsi, gci.GetLinkTitle().length());
-                // StringCbCopyW(gci.GetLinkTitle().c_str(), *pdwTitleLength, linkNameForCsi);
             }
 
             CONSOLE_STATE_INFO csi = { 0 };

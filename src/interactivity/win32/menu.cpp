@@ -283,6 +283,10 @@ void Menu::s_ShowPropertiesDialog(HWND const hwnd, BOOL const Defaults)
     {
         Menu::s_PropertiesUpdate(&StateInfo);
     }
+    // s_GetConsoleState created new wchar_t[]s for the title and link title.
+    //  delete them before they're leaked.
+    delete[] StateInfo.OriginalTitle;
+    delete[] StateInfo.LinkTitle;
 }
 
 void Menu::s_GetConsoleState(CONSOLE_STATE_INFO * const pStateInfo)
@@ -327,8 +331,12 @@ void Menu::s_GetConsoleState(CONSOLE_STATE_INFO * const pStateInfo)
 
     memmove(pStateInfo->ColorTable, gci.GetColorTable(), gci.GetColorTableSize() * sizeof(COLORREF));
 
-    pStateInfo->OriginalTitle = const_cast<wchar_t*>(gci.GetOriginalTitle().c_str());
-    pStateInfo->LinkTitle = const_cast<wchar_t*>(gci.GetLinkTitle().c_str());
+    // Create mutable copies of the titles so the propsheet can do something with them.
+    pStateInfo->OriginalTitle = new wchar_t[gci.GetOriginalTitle().length()+1]{0};
+    gci.GetOriginalTitle().copy(pStateInfo->OriginalTitle, gci.GetOriginalTitle().length());
+
+    pStateInfo->LinkTitle = new wchar_t[gci.GetLinkTitle().length()+1]{0};
+    gci.GetLinkTitle().copy(pStateInfo->LinkTitle, gci.GetLinkTitle().length());
 
     pStateInfo->CodePage = gci.OutputCP;
 

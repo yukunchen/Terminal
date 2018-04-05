@@ -21,9 +21,9 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     // CommandHistoryList initialized below
     // ExeAliasList initialized below
     NumCommandHistories(0),
-    _OriginalTitle(L""),
-    _Title(L""),
-    _LinkTitle(L""),
+    _OriginalTitle(),
+    _Title(),
+    _LinkTitle(),
     Flags(0),
     PopupCount(0),
     CP(0),
