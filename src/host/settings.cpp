@@ -561,41 +561,41 @@ void Settings::Validate()
 
 DWORD Settings::GetVirtTermLevel() const
 {
-    return this->_dwVirtTermLevel;
+    return _dwVirtTermLevel;
 }
 void Settings::SetVirtTermLevel(_In_ DWORD const dwVirtTermLevel)
 {
-    this->_dwVirtTermLevel = dwVirtTermLevel;
+    _dwVirtTermLevel = dwVirtTermLevel;
 }
 
 bool Settings::IsAltF4CloseAllowed() const
 {
-    return this->_fAllowAltF4Close;
+    return _fAllowAltF4Close;
 }
 void Settings::SetAltF4CloseAllowed(_In_ bool const fAllowAltF4Close)
 {
-    this->_fAllowAltF4Close = fAllowAltF4Close;
+    _fAllowAltF4Close = fAllowAltF4Close;
 }
 
 bool Settings::IsReturnOnNewlineAutomatic() const
 {
-    return this->_fAutoReturnOnNewline;
+    return _fAutoReturnOnNewline;
 }
 void Settings::SetAutomaticReturnOnNewline(_In_ bool const fAutoReturnOnNewline)
 {
-    this->_fAutoReturnOnNewline = fAutoReturnOnNewline;
+    _fAutoReturnOnNewline = fAutoReturnOnNewline;
 }
 
 bool Settings::IsGridRenderingAllowedWorldwide() const
 {
-    return this->_fRenderGridWorldwide;
+    return _fRenderGridWorldwide;
 }
 void Settings::SetGridRenderingAllowedWorldwide(_In_ bool const fGridRenderingAllowed)
 {
     // Only trigger a notification and update the status if something has changed.
-    if (this->_fRenderGridWorldwide != fGridRenderingAllowed)
+    if (_fRenderGridWorldwide != fGridRenderingAllowed)
     {
-        this->_fRenderGridWorldwide = fGridRenderingAllowed;
+        _fRenderGridWorldwide = fGridRenderingAllowed;
 
         if (ServiceLocator::LocateGlobals().pRender != nullptr)
         {
@@ -604,118 +604,118 @@ void Settings::SetGridRenderingAllowedWorldwide(_In_ bool const fGridRenderingAl
     }
 }
 
-BOOL Settings::GetFilterOnPaste() const
+bool Settings::GetFilterOnPaste() const
 {
-    return this->_fFilterOnPaste;
+    return _fFilterOnPaste;
 }
-void Settings::SetFilterOnPaste(_In_ BOOL const fFilterOnPaste)
+void Settings::SetFilterOnPaste(_In_ bool const fFilterOnPaste)
 {
-    this->_fFilterOnPaste = fFilterOnPaste;
+    _fFilterOnPaste = fFilterOnPaste;
 }
 
 const WCHAR* const Settings::GetLaunchFaceName() const
 {
-    return this->_LaunchFaceName;
+    return _LaunchFaceName;
 }
 void Settings::SetLaunchFaceName(_In_ PCWSTR const LaunchFaceName, _In_ size_t const cchLength)
 {
-    StringCchCopyW(this->_LaunchFaceName, cchLength, LaunchFaceName);
+    StringCchCopyW(_LaunchFaceName, cchLength, LaunchFaceName);
 }
 
 UINT Settings::GetCodePage() const
 {
-    return this->_uCodePage;
+    return _uCodePage;
 }
 void Settings::SetCodePage(_In_ const UINT uCodePage)
 {
-    this->_uCodePage = uCodePage;
+    _uCodePage = uCodePage;
 }
 
 UINT Settings::GetScrollScale() const
 {
-    return this->_uScrollScale;
+    return _uScrollScale;
 }
 void Settings::SetScrollScale(_In_ const UINT uScrollScale)
 {
-    this->_uScrollScale = uScrollScale;
+    _uScrollScale = uScrollScale;
 }
 
-BOOL Settings::GetTrimLeadingZeros() const
+bool Settings::GetTrimLeadingZeros() const
 {
-    return this->_fTrimLeadingZeros;
+    return _fTrimLeadingZeros;
 }
-void Settings::SetTrimLeadingZeros(_In_ const BOOL fTrimLeadingZeros)
+void Settings::SetTrimLeadingZeros(_In_ const bool fTrimLeadingZeros)
 {
-    this->_fTrimLeadingZeros = fTrimLeadingZeros;
-}
-
-BOOL Settings::GetEnableColorSelection() const
-{
-    return this->_fEnableColorSelection;
-}
-void Settings::SetEnableColorSelection(_In_ const BOOL fEnableColorSelection)
-{
-    this->_fEnableColorSelection = fEnableColorSelection;
+    _fTrimLeadingZeros = fTrimLeadingZeros;
 }
 
-BOOL Settings::GetLineSelection() const
+bool Settings::GetEnableColorSelection() const
 {
-    return this->_bLineSelection;
+    return _fEnableColorSelection;
 }
-void Settings::SetLineSelection(_In_ const BOOL bLineSelection)
+void Settings::SetEnableColorSelection(_In_ const bool fEnableColorSelection)
 {
-    this->_bLineSelection = bLineSelection;
+    _fEnableColorSelection = fEnableColorSelection;
+}
+
+bool Settings::GetLineSelection() const
+{
+    return _bLineSelection;
+}
+void Settings::SetLineSelection(_In_ const bool bLineSelection)
+{
+    _bLineSelection = bLineSelection;
 }
 
 bool Settings::GetWrapText () const
 {
-    return this->_bWrapText;
+    return _bWrapText;
 }
 void Settings::SetWrapText (_In_ const bool bWrapText )
 {
-    this->_bWrapText = bWrapText;
+    _bWrapText = bWrapText;
 }
 
-BOOL Settings::GetCtrlKeyShortcutsDisabled () const
+bool Settings::GetCtrlKeyShortcutsDisabled () const
 {
-    return this->_fCtrlKeyShortcutsDisabled;
+    return _fCtrlKeyShortcutsDisabled;
 }
-void Settings::SetCtrlKeyShortcutsDisabled (_In_ const BOOL fCtrlKeyShortcutsDisabled )
+void Settings::SetCtrlKeyShortcutsDisabled (_In_ const bool fCtrlKeyShortcutsDisabled )
 {
-    this->_fCtrlKeyShortcutsDisabled = fCtrlKeyShortcutsDisabled;
+    _fCtrlKeyShortcutsDisabled = fCtrlKeyShortcutsDisabled;
 }
 
 BYTE Settings::GetWindowAlpha() const
 {
-    return this->_bWindowAlpha;
+    return _bWindowAlpha;
 }
 void Settings::SetWindowAlpha(_In_ const BYTE bWindowAlpha)
 {
     // if we're out of bounds, set it to 100% opacity so it appears as if nothing happened.
-    this->_bWindowAlpha = (bWindowAlpha < MIN_WINDOW_OPACITY)? BYTE_MAX : bWindowAlpha;
+    _bWindowAlpha = (bWindowAlpha < MIN_WINDOW_OPACITY)? BYTE_MAX : bWindowAlpha;
 }
 
 DWORD Settings::GetHotKey() const
 {
-    return this->_dwHotKey;
+    return _dwHotKey;
 }
 void Settings::SetHotKey(_In_ const DWORD dwHotKey)
 {
-    this->_dwHotKey = dwHotKey;
+    _dwHotKey = dwHotKey;
 }
 
 DWORD Settings::GetStartupFlags() const
 {
-    return this->_dwStartupFlags;
+    return _dwStartupFlags;
 }
 void Settings::SetStartupFlags(_In_ const DWORD dwStartupFlags)
 {
-    this->_dwStartupFlags = dwStartupFlags;
+    _dwStartupFlags = dwStartupFlags;
 }
 
 WORD Settings::GetFillAttribute() const
 {
-    return this->_wFillAttribute;
+    return _wFillAttribute;
 }
 void Settings::SetFillAttribute(_In_ const WORD wFillAttribute)
 {
@@ -729,7 +729,7 @@ void Settings::SetFillAttribute(_In_ const WORD wFillAttribute)
 
 WORD Settings::GetPopupFillAttribute() const
 {
-    return this->_wPopupFillAttribute;
+    return _wPopupFillAttribute;
 }
 void Settings::SetPopupFillAttribute(_In_ const WORD wPopupFillAttribute)
 {
@@ -743,38 +743,38 @@ void Settings::SetPopupFillAttribute(_In_ const WORD wPopupFillAttribute)
 
 WORD Settings::GetShowWindow() const
 {
-    return this->_wShowWindow;
+    return _wShowWindow;
 }
 void Settings::SetShowWindow(_In_ const WORD wShowWindow)
 {
-    this->_wShowWindow = wShowWindow;
+    _wShowWindow = wShowWindow;
 }
 
 WORD Settings::GetReserved() const
 {
-    return this->_wReserved;
+    return _wReserved;
 }
 void Settings::SetReserved(_In_ const WORD wReserved)
 {
-    this->_wReserved = wReserved;
+    _wReserved = wReserved;
 }
 
 COORD Settings::GetScreenBufferSize() const
 {
-    return this->_dwScreenBufferSize;
+    return _dwScreenBufferSize;
 }
 void Settings::SetScreenBufferSize(_In_ const COORD dwScreenBufferSize)
 {
-    this->_dwScreenBufferSize = dwScreenBufferSize;
+    _dwScreenBufferSize = dwScreenBufferSize;
 }
 
 COORD Settings::GetWindowSize() const
 {
-    return this->_dwWindowSize;
+    return _dwWindowSize;
 }
 void Settings::SetWindowSize(_In_ const COORD dwWindowSize)
 {
-    this->_dwWindowSize = dwWindowSize;
+    _dwWindowSize = dwWindowSize;
 }
 
 bool Settings::IsWindowSizePixelsValid() const
@@ -792,149 +792,149 @@ void Settings::SetWindowSizePixels(_In_ const COORD dwWindowSizePixels)
 
 COORD Settings::GetWindowOrigin() const
 {
-    return this->_dwWindowOrigin;
+    return _dwWindowOrigin;
 }
 void Settings::SetWindowOrigin(_In_ const COORD dwWindowOrigin)
 {
-    this->_dwWindowOrigin = dwWindowOrigin;
+    _dwWindowOrigin = dwWindowOrigin;
 }
 
 DWORD Settings::GetFont() const
 {
-    return this->_nFont;
+    return _nFont;
 }
 void Settings::SetFont(_In_ const DWORD nFont)
 {
-    this->_nFont = nFont;
+    _nFont = nFont;
 }
 
 COORD Settings::GetFontSize() const
 {
-    return this->_dwFontSize;
+    return _dwFontSize;
 }
 void Settings::SetFontSize(_In_ const COORD dwFontSize)
 {
-    this->_dwFontSize = dwFontSize;
+    _dwFontSize = dwFontSize;
 }
 
 UINT Settings::GetFontFamily() const
 {
-    return this->_uFontFamily;
+    return _uFontFamily;
 }
 void Settings::SetFontFamily(_In_ const UINT uFontFamily)
 {
-    this->_uFontFamily = uFontFamily;
+    _uFontFamily = uFontFamily;
 }
 
 UINT Settings::GetFontWeight() const
 {
-    return this->_uFontWeight;
+    return _uFontWeight;
 }
 void Settings::SetFontWeight(_In_ const UINT uFontWeight)
 {
-    this->_uFontWeight = uFontWeight;
+    _uFontWeight = uFontWeight;
 }
 
 const WCHAR* const Settings::GetFaceName() const
 {
-    return this->_FaceName;
+    return _FaceName;
 }
 void Settings::SetFaceName(_In_ PCWSTR const pcszFaceName, _In_ size_t const cchLength)
 {
-    StringCchCopyW(this->_FaceName, cchLength, pcszFaceName);
+    StringCchCopyW(_FaceName, cchLength, pcszFaceName);
 }
 
 UINT Settings::GetCursorSize() const
 {
-    return this->_uCursorSize;
+    return _uCursorSize;
 }
 void Settings::SetCursorSize(_In_ const UINT uCursorSize)
 {
-    this->_uCursorSize = uCursorSize;
+    _uCursorSize = uCursorSize;
 }
 
-BOOL Settings::GetFullScreen() const
+bool Settings::GetFullScreen() const
 {
-    return this->_bFullScreen;
+    return _bFullScreen;
 }
-void Settings::SetFullScreen(_In_ const BOOL bFullScreen)
+void Settings::SetFullScreen(_In_ const bool bFullScreen)
 {
-    this->_bFullScreen = bFullScreen;
-}
-
-BOOL Settings::GetQuickEdit() const
-{
-    return this->_bQuickEdit;
-}
-void Settings::SetQuickEdit(_In_ const BOOL bQuickEdit)
-{
-    this->_bQuickEdit = bQuickEdit;
+    _bFullScreen = bFullScreen;
 }
 
-BOOL Settings::GetInsertMode() const
+bool Settings::GetQuickEdit() const
 {
-    return this->_bInsertMode;
+    return _bQuickEdit;
 }
-void Settings::SetInsertMode(_In_ const BOOL bInsertMode)
+void Settings::SetQuickEdit(_In_ const bool bQuickEdit)
 {
-    this->_bInsertMode = bInsertMode;
+    _bQuickEdit = bQuickEdit;
 }
 
-BOOL Settings::GetAutoPosition() const
+bool Settings::GetInsertMode() const
 {
-    return this->_bAutoPosition;
+    return _bInsertMode;
 }
-void Settings::SetAutoPosition(_In_ const BOOL bAutoPosition)
+void Settings::SetInsertMode(_In_ const bool bInsertMode)
 {
-    this->_bAutoPosition = bAutoPosition;
+    _bInsertMode = bInsertMode;
+}
+
+bool Settings::GetAutoPosition() const
+{
+    return _bAutoPosition;
+}
+void Settings::SetAutoPosition(_In_ const bool bAutoPosition)
+{
+    _bAutoPosition = bAutoPosition;
 }
 
 UINT Settings::GetHistoryBufferSize() const
 {
-    return this->_uHistoryBufferSize;
+    return _uHistoryBufferSize;
 }
 void Settings::SetHistoryBufferSize(_In_ const UINT uHistoryBufferSize)
 {
-    this->_uHistoryBufferSize = uHistoryBufferSize;
+    _uHistoryBufferSize = uHistoryBufferSize;
 }
 
 UINT Settings::GetNumberOfHistoryBuffers() const
 {
-    return this->_uNumberOfHistoryBuffers;
+    return _uNumberOfHistoryBuffers;
 }
 void Settings::SetNumberOfHistoryBuffers(_In_ const UINT uNumberOfHistoryBuffers)
 {
-    this->_uNumberOfHistoryBuffers = uNumberOfHistoryBuffers;
+    _uNumberOfHistoryBuffers = uNumberOfHistoryBuffers;
 }
 
-BOOL Settings::GetHistoryNoDup() const
+bool Settings::GetHistoryNoDup() const
 {
-    return this->_bHistoryNoDup;
+    return _bHistoryNoDup;
 }
-void Settings::SetHistoryNoDup(_In_ const BOOL bHistoryNoDup)
+void Settings::SetHistoryNoDup(_In_ const bool bHistoryNoDup)
 {
-    this->_bHistoryNoDup = bHistoryNoDup;
+    _bHistoryNoDup = bHistoryNoDup;
 }
 
 const COLORREF* const Settings::GetColorTable() const
 {
-    return this->_ColorTable;
+    return _ColorTable;
 }
 void Settings::SetColorTable(_In_reads_(cSize) const COLORREF* const pColorTable, _In_ size_t const cSize)
 {
     size_t cSizeWritten = std::min(cSize, static_cast<size_t>(COLOR_TABLE_SIZE));
 
-    memmove(this->_ColorTable, pColorTable, cSizeWritten * sizeof(COLORREF));
+    memmove(_ColorTable, pColorTable, cSizeWritten * sizeof(COLORREF));
 }
 void Settings::SetColorTableEntry(_In_ size_t const index, _In_ COLORREF const ColorValue)
 {
     if (index < ARRAYSIZE(_ColorTable))
     {
-        this->_ColorTable[index] = ColorValue;
+        _ColorTable[index] = ColorValue;
     }
     else
     {
-        this->_XtermColorTable[index] = ColorValue;
+        _XtermColorTable[index] = ColorValue;
     }
 }
 
@@ -943,30 +943,30 @@ bool Settings::IsStartupTitleIsLinkNameSet() const
     return IsFlagSet(_dwStartupFlags, STARTF_TITLEISLINKNAME);
 }
 
-BOOL Settings::IsFaceNameSet() const
+bool Settings::IsFaceNameSet() const
 {
-    return this->GetFaceName()[0] != '\0';
+    return GetFaceName()[0] != '\0';
 }
 
 void Settings::UnsetStartupFlag(_In_ DWORD const dwFlagToUnset)
 {
-    this->_dwStartupFlags &= ~dwFlagToUnset;
+    _dwStartupFlags &= ~dwFlagToUnset;
 }
 
 const size_t Settings::GetColorTableSize() const
 {
-    return ARRAYSIZE(this->_ColorTable);
+    return ARRAYSIZE(_ColorTable);
 }
 
 COLORREF Settings::GetColorTableEntry(_In_ size_t const index) const
 {
     if (index < ARRAYSIZE(_ColorTable))
     {
-        return this->_ColorTable[index];
+        return _ColorTable[index];
     }
     else
     {
-        return this->_XtermColorTable[index];
+        return _XtermColorTable[index];
     }
 }
 

@@ -70,8 +70,8 @@ RAW_READ_DATA::~RAW_READ_DATA()
 // sent back to the client.
 // - FALSE if we need to continue to wait until more data is
 // available.
-BOOL RAW_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason,
-                           _In_ BOOLEAN const fIsUnicode,
+bool RAW_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason,
+                           _In_ bool const fIsUnicode,
                            _Out_ NTSTATUS* const pReplyStatus,
                            _Out_ DWORD* const pNumBytes,
                            _Out_ DWORD* const pControlKeyState,
@@ -95,14 +95,14 @@ BOOL RAW_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason,
     DWORD NumBytes = 0;
 
     PWCHAR lpBuffer;
-    BOOLEAN RetVal = TRUE;
-    BOOL fAddDbcsLead = FALSE;
+    bool RetVal = true;
+    bool fAddDbcsLead = false;
     bool fSkipFinally = false;
 
     // If a ctrl-c is seen, don't terminate read. If ctrl-break is seen, terminate read.
     if (IsFlagSet(TerminationReason, WaitTerminationReason::CtrlC))
     {
-        return FALSE;
+        return false;
     }
     else if (IsFlagSet(TerminationReason, WaitTerminationReason::CtrlBreak))
     {
@@ -141,7 +141,7 @@ BOOL RAW_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason,
             if (_BufferSize == 0)
             {
                 *pNumBytes = 1;
-                RetVal = FALSE;
+                RetVal = false;
                 fSkipFinally = true;
             }
         }
@@ -160,7 +160,7 @@ BOOL RAW_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason,
         {
             if (*pReplyStatus == CONSOLE_STATUS_WAIT)
             {
-                RetVal = FALSE;
+                RetVal = false;
             }
         }
         else

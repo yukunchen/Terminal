@@ -34,8 +34,8 @@ public:
 
     void SetUtf8ConsumedCharacters(_In_ size_t const cchUtf8Consumed);
 
-    BOOL Notify(_In_ WaitTerminationReason const TerminationReason,
-                _In_ BOOLEAN const fIsUnicode,
+    bool Notify(_In_ WaitTerminationReason const TerminationReason,
+                _In_ bool const fIsUnicode,
                 _Out_ NTSTATUS* const pReplyStatus,
                 _Out_ DWORD* const pNumBytes,
                 _Out_ DWORD* const pControlKeyState,

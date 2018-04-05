@@ -180,12 +180,12 @@ public:
 
     virtual void GetConsoleCursorInfoImpl(_In_ IConsoleOutputObject* const pOutContext,
                                           _Out_ ULONG* const pCursorSize,
-                                          _Out_ BOOLEAN* const pIsVisible) = 0;
+                                          _Out_ bool* const pIsVisible) = 0;
 
     [[nodiscard]]
     virtual HRESULT SetConsoleCursorInfoImpl(_In_ IConsoleOutputObject* const pOutContext,
                                              _In_ ULONG const CursorSize,
-                                             _In_ BOOLEAN const IsVisible) = 0;
+                                             _In_ bool const IsVisible) = 0;
 
     // driver will pare down for non-Ex method
     virtual void GetConsoleScreenBufferInfoExImpl(_In_ IConsoleOutputObject* const pOutContext,
@@ -228,7 +228,7 @@ public:
 
     [[nodiscard]]
     virtual HRESULT SetConsoleWindowInfoImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                             _In_ BOOLEAN const IsAbsoluteRectangle,
+                                             _In_ bool const IsAbsoluteRectangle,
                                              _In_ const SMALL_RECT* const pWindowRectangle) = 0;
 
     [[nodiscard]]
@@ -360,7 +360,7 @@ public:
     // driver will pare down for non-Ex method
     [[nodiscard]]
     virtual HRESULT GetCurrentConsoleFontExImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                _In_ BOOLEAN const IsForMaximumWindowSize,
+                                                _In_ bool const IsForMaximumWindowSize,
                                                 _Out_ CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx) = 0;
 
     [[nodiscard]]
@@ -501,7 +501,7 @@ public:
 
     [[nodiscard]]
     virtual HRESULT SetCurrentConsoleFontExImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                _In_ BOOLEAN const IsForMaximumWindowSize,
+                                                _In_ bool const IsForMaximumWindowSize,
                                                 _In_ const CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx) = 0;
 
 #pragma endregion
