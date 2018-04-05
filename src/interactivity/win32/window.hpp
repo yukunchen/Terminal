@@ -71,11 +71,6 @@ namespace Microsoft::Console::Interactivity::Win32
         // console get dispatched onto the window message
         // queue/thread)
         BOOL SendNotifyBeep() const;
-        BOOL PostUpdateTitle(_In_ const PCWSTR pwszNewTitle) const;
-        // makes a copy of the original string before
-        // sending the message. The windowproc is
-        // responsible for the copy's lifetime.
-        BOOL PostUpdateTitleWithCopy(_In_ const PCWSTR pwszNewTitle) const;
         BOOL PostUpdateScrollBars() const;
         BOOL PostUpdateWindowSize() const;
         BOOL PostUpdateExtendedEditKeys() const;
