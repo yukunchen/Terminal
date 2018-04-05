@@ -468,7 +468,7 @@ void Window::UpdateWindowPosition(_In_ POINT const ptNewPos) const
 // This routine adds or removes the name to or from the beginning of the window title. The possible names are "Scroll", "Mark", and "Select"
 void Window::UpdateWindowText()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const bool fInScrollMode = Scrolling::s_IsInScrollMode();
 
     Selection *pSelection = &Selection::Instance();
@@ -508,21 +508,19 @@ void Window::UpdateWindowText()
             if (LoadStringW(ServiceLocator::LocateGlobals().hInstance, dwMsgId, szMsg, ARRAYSIZE(szMsg)) > 0)
             {
                 // construct new title string
-                PWSTR pwszTitle = new WCHAR[MAX_PATH];
+                wchar_t* pwszTitle = new wchar_t[MAX_PATH];
                 if (pwszTitle != nullptr)
                 {
                     if (SUCCEEDED(StringCchPrintfW(pwszTitle,
-                        MAX_PATH,
-                        szFmt,
-                        szMsg,
-                        gci._Title.c_str())))
+                                                   MAX_PATH,
+                                                   szFmt,
+                                                   szMsg,
+                                                   gci._Title.c_str())))
                     {
-                        ServiceLocator::LocateConsoleWindow<Window>()->PostUpdateTitle(pwszTitle);
+                        gci._Title = std::wstring(pwszTitle);
+                        ServiceLocator::LocateConsoleWindow<Window>()->PostUpdateTitle(nullptr);
                     }
-                    else
-                    {
-                        delete[] pwszTitle;
-                    }
+                    delete[] pwszTitle;
                 }
             }
         }

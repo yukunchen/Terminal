@@ -9,7 +9,8 @@
 #include "gdirenderer.hpp"
 #include "../../inc/conattrs.hpp"
 #include <winuserp.h> // for GWL_CONSOLE_BKCOLOR
-
+// Temporary - will move
+#define CM_UPDATE_TITLE          (WM_USER + 5)
 #pragma hdrstop
 
 using namespace Microsoft::Console::Render;
@@ -298,7 +299,8 @@ HRESULT GdiEngine::UpdateTitle(_In_ const std::wstring& /*newTitle*/)
 {
     // Do nothing - we need to call SetWindowTextW on the windowproc thread.
     // Whoever triggered this should have also called IWindow::PostUpdateTitle*
-    return S_OK;
+    // return S_OK;
+    return PostMessageW(_hwndTargetWindow, CM_UPDATE_TITLE, 0, (LPARAM)nullptr)? S_OK : E_FAIL;
 }
 
 // Routine Description:
