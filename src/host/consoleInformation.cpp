@@ -39,7 +39,6 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     _vtIo()
 {
     InitializeListHead(&CommandHistoryList);
-    InitializeListHead(&ExeAliasList);
 
     ZeroMemory((void*)&CPInfo, sizeof(CPInfo));
     ZeroMemory((void*)&OutputCPInfo, sizeof(OutputCPInfo));

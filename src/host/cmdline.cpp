@@ -549,28 +549,24 @@ NTSTATUS ProcessCommandListInput(_In_ COOKED_READ_DATA* const pCookedReadData)
         }
         else if (Char == UNICODE_CARRIAGERETURN)
         {
-            ULONG i, lStringLength;
             DWORD LineCount = 1;
             Index = Popup->CurrentCommand;
             LOG_IF_FAILED(EndPopup(pCookedReadData->_pScreenInfo, pCommandHistory));
             SetCurrentCommandLine(pCookedReadData, Index);
-            lStringLength = pCookedReadData->_BytesRead;
             ProcessCookedReadInput(pCookedReadData, UNICODE_CARRIAGERETURN, 0, &Status);
             // complete read
             if (pCookedReadData->_Echo)
             {
                 // check for alias
-                i = pCookedReadData->_BufferSize;
-                if (NT_SUCCESS(MatchAndCopyAlias(pCookedReadData->_BackupLimit,
-                                                 (USHORT)lStringLength,
+                Alias::s_MatchAndCopyAliasLegacy(pCookedReadData->_BackupLimit,
+                                                 pCookedReadData->_BytesRead,
                                                  pCookedReadData->_BackupLimit,
-                                                 (PUSHORT)& i,
+                                                 pCookedReadData->_BufferSize,
+                                                 &pCookedReadData->_BytesRead,
                                                  pCookedReadData->ExeName,
                                                  pCookedReadData->ExeNameLength,
-                                                 &LineCount)))
-                {
-                    pCookedReadData->_BytesRead = i;
-                }
+                                                 &LineCount);
+
             }
 
             Status = STATUS_SUCCESS;
@@ -1741,7 +1737,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
             // Alt+F10 clears the aliases for specifically cmd.exe.
             if (dwKeyState & (RIGHT_ALT_PRESSED | LEFT_ALT_PRESSED))
             {
-                ClearCmdExeAliases();
+                Alias::s_ClearCmdExeAliases();
             }
             break;
         case VK_INSERT:
