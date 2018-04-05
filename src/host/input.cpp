@@ -108,7 +108,7 @@ bool ShouldTakeOverKeyboardShortcuts()
 void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, _In_ const bool generateBreak)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    BOOLEAN ContinueProcessing = TRUE;
+    bool ContinueProcessing = true;
 
     if (keyEvent.IsCtrlPressed() &&
         !keyEvent.IsAltPressed() &&
@@ -125,7 +125,7 @@ void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, _In_ const bool generateBreak
 
             if (!(IsFlagSet(gci.Flags, CONSOLE_SUSPENDED)))
             {
-                ContinueProcessing = FALSE;
+                ContinueProcessing = false;
             }
         }
 
@@ -142,21 +142,21 @@ void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, _In_ const bool generateBreak
 
             if (!(IsFlagSet(gci.Flags, CONSOLE_SUSPENDED)))
             {
-                ContinueProcessing = FALSE;
+                ContinueProcessing = false;
             }
         }
 
         // don't write ctrl-esc to the input buffer
         else if (keyEvent.GetVirtualKeyCode() == VK_ESCAPE)
         {
-            ContinueProcessing = FALSE;
+            ContinueProcessing = false;
         }
     }
     else if (keyEvent.IsAltPressed() &&
              keyEvent.IsKeyDown() &&
              keyEvent.GetVirtualKeyCode() == VK_ESCAPE)
     {
-        ContinueProcessing = FALSE;
+        ContinueProcessing = false;
     }
 
     if (ContinueProcessing)

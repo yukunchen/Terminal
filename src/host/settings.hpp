@@ -52,8 +52,8 @@ public:
     bool IsGridRenderingAllowedWorldwide() const;
     void SetGridRenderingAllowedWorldwide(_In_ bool const fGridRenderingAllowed);
 
-    BOOL GetFilterOnPaste() const;
-    void SetFilterOnPaste(_In_ BOOL const fFilterOnPaste);
+    bool GetFilterOnPaste() const;
+    void SetFilterOnPaste(_In_ bool const fFilterOnPaste);
 
     const WCHAR* const GetLaunchFaceName() const;
     void SetLaunchFaceName(_In_ PCWSTR const LaunchFaceName, _In_ size_t const cchLength);
@@ -64,20 +64,20 @@ public:
     UINT GetScrollScale() const;
     void SetScrollScale(_In_ const UINT uScrollScale);
 
-    BOOL GetTrimLeadingZeros() const;
-    void SetTrimLeadingZeros(_In_ const BOOL fTrimLeadingZeros);
+    bool GetTrimLeadingZeros() const;
+    void SetTrimLeadingZeros(_In_ const bool fTrimLeadingZeros);
 
-    BOOL GetEnableColorSelection() const;
-    void SetEnableColorSelection(_In_ const BOOL fEnableColorSelection);
+    bool GetEnableColorSelection() const;
+    void SetEnableColorSelection(_In_ const bool fEnableColorSelection);
 
-    BOOL GetLineSelection() const;
-    void SetLineSelection(_In_ const BOOL bLineSelection);
+    bool GetLineSelection() const;
+    void SetLineSelection(_In_ const bool bLineSelection);
 
     bool GetWrapText () const;
     void SetWrapText (_In_ const bool bWrapText );
 
-    BOOL GetCtrlKeyShortcutsDisabled () const;
-    void SetCtrlKeyShortcutsDisabled (_In_ const BOOL fCtrlKeyShortcutsDisabled );
+    bool GetCtrlKeyShortcutsDisabled () const;
+    void SetCtrlKeyShortcutsDisabled (_In_ const bool fCtrlKeyShortcutsDisabled );
 
     BYTE GetWindowAlpha() const;
     void SetWindowAlpha(_In_ const BYTE bWindowAlpha);
@@ -129,23 +129,23 @@ public:
     void SetFontWeight(_In_ const UINT uFontWeight);
 
     const WCHAR* const GetFaceName() const;
-    BOOL IsFaceNameSet() const;
+    bool IsFaceNameSet() const;
     void SetFaceName(_In_ PCWSTR const pcszFaceName, _In_ size_t const cchLength);
 
     UINT GetCursorSize() const;
     void SetCursorSize(_In_ const UINT uCursorSize);
 
-    BOOL GetFullScreen() const;
-    void SetFullScreen(_In_ const BOOL fFullScreen);
+    bool GetFullScreen() const;
+    void SetFullScreen(_In_ const bool fFullScreen);
 
-    BOOL GetQuickEdit() const;
-    void SetQuickEdit(_In_ const BOOL fQuickEdit);
+    bool GetQuickEdit() const;
+    void SetQuickEdit(_In_ const bool fQuickEdit);
 
-    BOOL GetInsertMode() const;
-    void SetInsertMode(_In_ const BOOL fInsertMode);
+    bool GetInsertMode() const;
+    void SetInsertMode(_In_ const bool fInsertMode);
 
-    BOOL GetAutoPosition() const;
-    void SetAutoPosition(_In_ const BOOL fAutoPosition);
+    bool GetAutoPosition() const;
+    void SetAutoPosition(_In_ const bool fAutoPosition);
 
     UINT GetHistoryBufferSize() const;
     void SetHistoryBufferSize(_In_ const UINT uHistoryBufferSize);
@@ -153,8 +153,8 @@ public:
     UINT GetNumberOfHistoryBuffers() const;
     void SetNumberOfHistoryBuffers(_In_ const UINT uNumberOfHistoryBuffers);
 
-    BOOL GetHistoryNoDup() const;
-    void SetHistoryNoDup(_In_ const BOOL fHistoryNoDup);
+    bool GetHistoryNoDup() const;
+    void SetHistoryNoDup(_In_ const bool fHistoryNoDup);
 
     const COLORREF* const GetColorTable() const;
     const size_t GetColorTableSize() const;
@@ -199,14 +199,14 @@ private:
     // END - memcpy
     UINT _uCodePage;
     UINT _uScrollScale;
-    BOOL _fTrimLeadingZeros;
-    BOOL _fEnableColorSelection;
-    BOOL _bLineSelection;
+    bool _fTrimLeadingZeros;
+    bool _fEnableColorSelection;
+    bool _bLineSelection;
     bool _bWrapText; // whether to use text wrapping when resizing the window
-    BOOL _fCtrlKeyShortcutsDisabled; // disables Ctrl+<something> key intercepts
+    bool _fCtrlKeyShortcutsDisabled; // disables Ctrl+<something> key intercepts
     BYTE _bWindowAlpha; // describes the opacity of the window
 
-    BOOL _fFilterOnPaste; // should we filter text when the user pastes? (e.g. remove <tab>)
+    bool _fFilterOnPaste; // should we filter text when the user pastes? (e.g. remove <tab>)
     WCHAR _LaunchFaceName[LF_FACESIZE];
     bool _fAllowAltF4Close;
     DWORD _dwVirtTermLevel;

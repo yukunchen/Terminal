@@ -43,12 +43,12 @@ INT_PTR FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
                     {
                         break;
                     }
-                    BOOLEAN const IgnoreCase = IsDlgButtonChecked(hWnd, ID_CONSOLE_FINDCASE) == 0;
-                    BOOLEAN const Reverse = IsDlgButtonChecked(hWnd, ID_CONSOLE_FINDDOWN) == 0;
+                    bool const IgnoreCase = IsDlgButtonChecked(hWnd, ID_CONSOLE_FINDCASE) == 0;
+                    bool const Reverse = IsDlgButtonChecked(hWnd, ID_CONSOLE_FINDDOWN) == 0;
                     fFindSearchUp = !!Reverse;
                     PSCREEN_INFORMATION const ScreenInfo = gci.CurrentScreenBuffer;
                     COORD Position;
-                    USHORT const ColumnWidth = SearchForString(ScreenInfo, szBuf, StringLength, IgnoreCase, Reverse, FALSE, 0, &Position);
+                    USHORT const ColumnWidth = SearchForString(ScreenInfo, szBuf, StringLength, IgnoreCase, Reverse, false, 0, &Position);
                     if (ColumnWidth != 0)
                     {
                         Telemetry::Instance().LogFindDialogNextClicked(StringLength, (Reverse != 0), (IgnoreCase == 0));
@@ -101,7 +101,7 @@ INT_PTR FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
                         {
                             Position.Y = ScreenInfo->GetBufferViewport().Top;
                         }
-                        LOG_IF_FAILED(ScreenInfo->SetViewportOrigin(TRUE, Position));
+                        LOG_IF_FAILED(ScreenInfo->SetViewportOrigin(true, Position));
 
                         UnlockConsole();
 
