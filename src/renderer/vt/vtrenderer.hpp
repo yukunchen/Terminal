@@ -121,7 +121,7 @@ namespace Microsoft::Console::Render
         HRESULT InheritCursor(_In_ const COORD coordCursor);
 
         [[nodiscard]]
-        HRESULT UpdateTitle(_In_ const std::wstring& newTitle) override;
+        virtual HRESULT UpdateTitle(_In_ const std::wstring& newTitle) override;
 
     protected:
         wil::unique_hfile _hFile;

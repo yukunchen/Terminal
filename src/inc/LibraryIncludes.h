@@ -8,7 +8,7 @@
 #pragma warning(push)
 #pragma warning(disable: ALL_CPPCORECHECK_WARNINGS)
 
-// C 
+// C
 #include <cassert>
 #include <cwchar>
 
@@ -27,6 +27,7 @@
 #include <queue>
 #include <stdexcept>
 #include <string>
+#include <sstream>
 #include <thread>
 #include <utility>
 #include <vector>

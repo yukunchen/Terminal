@@ -428,17 +428,15 @@ HRESULT VtEngine::_PaintUtf8BufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine
 
 // Method Description:
 // - Updates the window's title string. Emits the VT sequence to SetWindowTitle.
+//      Because wintelnet does not understand these sequences by default, we
+//      don't do anything by default. Other modes can implement if they support
+//      the sequence.
 // Arguments:
 // - newTitle: the new string to use for the title of the window
 // Return Value:
 // - S_OK
 [[nodiscard]]
-HRESULT VtEngine::UpdateTitle(_In_ const std::wstring& newTitle)
+HRESULT VtEngine::UpdateTitle(_In_ const std::wstring& /*newTitle*/)
 {
-    wistd::unique_ptr<char[]> rgchNeeded;
-    size_t needed = 0;
-    RETURN_IF_FAILED(ConvertToA(CP_UTF8, newTitle.c_str(), newTitle.length()+1, rgchNeeded, needed));
-    std::string s = std::string(rgchNeeded.get());
-    RETURN_IF_FAILED(_ChangeTitle(s));
     return S_OK;
 }

@@ -6,6 +6,7 @@
 
 #include "precomp.h"
 #include "XtermEngine.hpp"
+#include "../../types/inc/convert.hpp"
 #pragma hdrstop
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;
@@ -300,4 +301,28 @@ HRESULT XtermEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
     return _fUseAsciiOnly ?
         VtEngine::_PaintAsciiBufferLine(pwsLine, rgWidths, cchLine, coord) :
         VtEngine::_PaintUtf8BufferLine(pwsLine, rgWidths, cchLine, coord);
+}
+
+// Method Description:
+// - Updates the window's title string. Emits the VT sequence to SetWindowTitle.
+// Arguments:
+// - newTitle: the new string to use for the title of the window
+// Return Value:
+// - S_OK
+[[nodiscard]]
+HRESULT XtermEngine::UpdateTitle(_In_ const std::wstring& newTitle)
+{
+    // inbox telnet uses xterm-ascii as it's mode. If we're in ascii mode, don't
+    //      do anything, to maintain compatibility.
+    if (_fUseAsciiOnly)
+    {
+        return S_OK;
+    }
+
+    wistd::unique_ptr<char[]> rgchNeeded;
+    size_t needed = 0;
+    RETURN_IF_FAILED(ConvertToA(CP_UTF8, newTitle.c_str(), newTitle.length()+1, rgchNeeded, needed));
+    std::string s = std::string(rgchNeeded.get());
+
+    return VtEngine::_ChangeTitle(s);
 }

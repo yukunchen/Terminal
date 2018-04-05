@@ -1655,13 +1655,28 @@ HRESULT DoSrvSetConsoleTitleW(_In_reads_or_z_(cchBuffer) const wchar_t* const pw
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-    // TODO sanitize the input if we're in pty mode. No control chars.
-    // TODO Make sure that passing a non-null terminated string still works.
+    // Sanitize the input if we're in pty mode. No control chars - this string
+    //      will get emitted back to the TTY in a VT sequence, and we don't want
+    //      to embed control characters in that string.
+    if (gci.IsInVtIoMode())
+    {
+        std::wstringstream ss;
+        for(size_t i = 0; i < cchBuffer; i++)
+        {
+            if (pwsBuffer[i] >= L'\x20')
+            {
+                ss << pwsBuffer[i];
+            }
+        }
 
-    // Ensure that we add 1 to the length to leave room for a null if it's not
-    //      already null terminated.
-    // SetTitle will trigger the renderer to update the titlebar for us.
-    gci.SetTitle(std::wstring(pwsBuffer, cchBuffer));
+        gci.SetTitle(std::wstring(ss.str()));
+    }
+    else
+    {
+        // SetTitle will trigger the renderer to update the titlebar for us.
+        gci.SetTitle(std::wstring(pwsBuffer, cchBuffer));
+
+    }
 
     return S_OK;
 }

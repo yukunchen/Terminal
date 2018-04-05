@@ -9,8 +9,7 @@
 #include "gdirenderer.hpp"
 #include "../../inc/conattrs.hpp"
 #include <winuserp.h> // for GWL_CONSOLE_BKCOLOR
-// Temporary - will move
-#define CM_UPDATE_TITLE          (WM_USER + 5)
+#include "../../interactivity/win32/CustomWindowMessages.h"
 #pragma hdrstop
 
 using namespace Microsoft::Console::Render;
