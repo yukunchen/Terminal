@@ -114,9 +114,15 @@ HRESULT GdiEngine::InvalidateCursor(const COORD* const pcoordCursor)
 // Arguments:
 // - <none>
 // Return Value:
-// - S_OK, GDI related failure, or safemath failure.
+// - S_OK, S_FALSE (if no window yet), GDI related failure, or safemath failure.
 HRESULT GdiEngine::InvalidateAll()
 {
+    // If we don't have a window, don't bother.
+    if (!_IsWindowValid())
+    {
+        return S_FALSE;
+    }
+
     RECT rc;
     RETURN_LAST_ERROR_IF_FALSE(GetClientRect(_hwndTargetWindow, &rc));
     RETURN_HR(InvalidateSystem(&rc));

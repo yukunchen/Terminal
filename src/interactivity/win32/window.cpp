@@ -1323,6 +1323,7 @@ IRawElementProviderSimple* Window::_GetUiaProvider()
         }
         catch (...)
         {
+            LOG_HR(wil::ResultFromCaughtException());
             _pUiaProvider = nullptr;
         }
     }
@@ -1337,7 +1338,7 @@ HRESULT Window::SignalUia(_In_ EVENTID id)
     {
         return _pUiaProvider->Signal(id);
     }
-    return E_POINTER;
+    return S_FALSE;
 }
 
 [[nodiscard]]
@@ -1348,7 +1349,7 @@ HRESULT Window::UiaSetTextAreaFocus()
         LOG_IF_FAILED(_pUiaProvider->SetTextAreaFocus());
         return S_OK;
     }
-    return E_POINTER;
+    return S_FALSE;
 }
 
 void Window::SetOwner()
