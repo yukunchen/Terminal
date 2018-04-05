@@ -30,7 +30,7 @@ public:
 
     ~ConsoleWaitBlock();
 
-    bool Notify(_In_ WaitTerminationReason const TerminationReason);
+    bool Notify(const WaitTerminationReason TerminationReason);
 
     [[nodiscard]]
     static HRESULT s_CreateWait(_Inout_ CONSOLE_API_MSG* const pWaitReplymessage,

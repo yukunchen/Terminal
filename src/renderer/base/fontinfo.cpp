@@ -16,11 +16,11 @@ bool operator==(const FontInfo& a, const FontInfo& b)
 }
 
 FontInfo::FontInfo(_In_ PCWSTR const pwszFaceName,
-                   _In_ BYTE const bFamily,
-                   _In_ LONG const lWeight,
-                   _In_ COORD const coordSize,
-                   _In_ UINT const uiCodePage,
-                   _In_ bool const fSetDefaultRasterFont /*= false*/) :
+                   const BYTE bFamily,
+                   const LONG lWeight,
+                   const COORD coordSize,
+                   const UINT uiCodePage,
+                   const bool fSetDefaultRasterFont /*= false*/) :
                    FontInfoBase(pwszFaceName, bFamily, lWeight, fSetDefaultRasterFont, uiCodePage),
                    _coordSize(coordSize),
                    _coordSizeUnscaled(coordSize)
@@ -48,11 +48,11 @@ COORD FontInfo::GetSize() const
 
 
 void FontInfo::SetFromEngine(_In_ PCWSTR const pwszFaceName,
-                             _In_ BYTE const bFamily,
-                             _In_ LONG const lWeight,
-                             _In_ bool const fSetDefaultRasterFont,
-                             _In_ COORD const coordSize,
-                             _In_ COORD const coordSizeUnscaled)
+                             const BYTE bFamily,
+                             const LONG lWeight,
+                             const bool fSetDefaultRasterFont,
+                             const COORD coordSize,
+                             const COORD coordSizeUnscaled)
 {
     FontInfoBase::SetFromEngine(pwszFaceName,
                                 bFamily,

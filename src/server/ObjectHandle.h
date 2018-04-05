@@ -28,9 +28,9 @@ class SCREEN_INFORMATION;
 class ConsoleHandleData
 {
 public:
-    ConsoleHandleData(_In_ ULONG const ulHandleType,
-                      _In_ ACCESS_MASK const amAccess,
-                      _In_ ULONG const ulShareAccess,
+    ConsoleHandleData(const ULONG ulHandleType,
+                      const ACCESS_MASK amAccess,
+                      const ULONG ulShareAccess,
                       _In_ PVOID const pvClientPointer);
 
     [[nodiscard]]

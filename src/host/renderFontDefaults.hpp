@@ -24,7 +24,7 @@ public:
     ~RenderFontDefaults();
 
     [[nodiscard]]
-    HRESULT RetrieveDefaultFontNameForCodepage(_In_ UINT const uiCodePage,
+    HRESULT RetrieveDefaultFontNameForCodepage(const UINT uiCodePage,
                                                _Out_writes_(cchFaceName) PWSTR pwszFaceName,
-                                               _In_ size_t const cchFaceName);
+                                               const size_t cchFaceName);
 };

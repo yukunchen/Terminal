@@ -10,7 +10,7 @@
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
-ConversionAreaBufferInfo::ConversionAreaBufferInfo(_In_ COORD const coordBufferSize) :
+ConversionAreaBufferInfo::ConversionAreaBufferInfo(const COORD coordBufferSize) :
     coordCaBuffer(coordBufferSize),
     rcViewCaWindow({ 0 }),
     coordConView({ 0 })
@@ -65,7 +65,7 @@ bool ConversionAreaInfo::IsHidden() const
 // - fIsHidden - True if it should not be drawn. False if it should be drawn.
 // Return Value:
 // - <none>
-void ConversionAreaInfo::SetHidden(_In_ bool const fIsHidden)
+void ConversionAreaInfo::SetHidden(const bool fIsHidden)
 {
     _fIsHidden = fIsHidden;
 }

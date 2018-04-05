@@ -79,9 +79,9 @@ SCREEN_INFORMATION::~SCREEN_INFORMATION()
 NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
                                             const FontInfo* const pfiFont,
                                             _In_ COORD coordScreenBufferSize,
-                                            _In_ CHAR_INFO const ciFill,
-                                            _In_ CHAR_INFO const ciPopupFill,
-                                            _In_ UINT const uiCursorSize,
+                                            const CHAR_INFO ciFill,
+                                            const CHAR_INFO ciPopupFill,
+                                            const UINT uiCursorSize,
                                             _Outptr_ PPSCREEN_INFORMATION const ppScreen)
 {
     *ppScreen = nullptr;
@@ -395,7 +395,7 @@ void SCREEN_INFORMATION::GetScreenBufferInformation(_Out_ PCOORD pcoordSize,
 // - coordFontSize - The font size to use for calculation if a screen buffer is not yet attached.
 // Return Value:
 // - COORD containing the width and height representing the minimum character grid that can be rendered in the window.
-COORD SCREEN_INFORMATION::GetMinWindowSizeInCharacters(_In_ COORD const coordFontSize /*= { 1, 1 }*/) const
+COORD SCREEN_INFORMATION::GetMinWindowSizeInCharacters(const COORD coordFontSize /*= { 1, 1 }*/) const
 {
     assert(coordFontSize.X != 0);
     assert(coordFontSize.Y != 0);
@@ -433,7 +433,7 @@ COORD SCREEN_INFORMATION::GetMinWindowSizeInCharacters(_In_ COORD const coordFon
 // - coordFontSize - The font size to use for calculation if a screen buffer is not yet attached.
 // Return Value:
 // - COORD containing the width and height representing the largest character grid that can be rendered on the current monitor and/or from the current buffer size.
-COORD SCREEN_INFORMATION::GetMaxWindowSizeInCharacters(_In_ COORD const coordFontSize /*= { 1, 1 }*/) const
+COORD SCREEN_INFORMATION::GetMaxWindowSizeInCharacters(const COORD coordFontSize /*= { 1, 1 }*/) const
 {
     assert(coordFontSize.X != 0);
     assert(coordFontSize.Y != 0);
@@ -464,7 +464,7 @@ COORD SCREEN_INFORMATION::GetMaxWindowSizeInCharacters(_In_ COORD const coordFon
 // - coordFontSize - The font size to use for calculation if a screen buffer is not yet attached.
 // Return Value:
 // - COORD containing the width and height representing the largest character grid that can be rendered on the current monitor with the maximum size window.
-COORD SCREEN_INFORMATION::GetLargestWindowSizeInCharacters(_In_ COORD const coordFontSize /*= { 1, 1 }*/) const
+COORD SCREEN_INFORMATION::GetLargestWindowSizeInCharacters(const COORD coordFontSize /*= { 1, 1 }*/) const
 {
     assert(coordFontSize.X != 0);
     assert(coordFontSize.Y != 0);
@@ -609,10 +609,10 @@ void SCREEN_INFORMATION::UpdateFont(const FontInfo* const pfiNewFont)
 // to aggregate drawing metadata to determine whether or not to use PolyTextOut.
 // After the Nov 2015 graphics refactor, the metadata drawing flag calculation is no longer necessary.
 // This now only notifies accessibility apps of a change.
-void SCREEN_INFORMATION::ResetTextFlags(_In_ short const sStartX,
-                                        _In_ short const sStartY,
-                                        _In_ short const sEndX,
-                                        _In_ short const sEndY)
+void SCREEN_INFORMATION::ResetTextFlags(const short sStartX,
+                                        const short sStartY,
+                                        const short sEndX,
+                                        const short sEndY)
 {
     SHORT RowIndex;
     WCHAR Char;
@@ -942,7 +942,7 @@ void SCREEN_INFORMATION::ProcessResizeWindow(const RECT* const prcClientNew, con
 // - S_OK if math was successful. Check with SUCCEEDED/FAILED macro.
 [[nodiscard]]
 HRESULT SCREEN_INFORMATION::_AdjustScreenBufferHelper(const RECT* const prcClientNew,
-                                                      _In_ COORD const coordBufferOld,
+                                                      const COORD coordBufferOld,
                                                       _Out_ COORD* const pcoordClientNewCharacters)
 {
     // Get the font size ready.
@@ -1101,8 +1101,8 @@ void SCREEN_INFORMATION::_CalculateViewportSize(const RECT* const prcClientArea,
 // Return Value:
 // - <none>
 void SCREEN_INFORMATION::_InternalSetViewportSize(const COORD* const pcoordSize,
-                                                  _In_ bool const fResizeFromTop,
-                                                  _In_ bool const fResizeFromLeft)
+                                                  const bool fResizeFromTop,
+                                                  const bool fResizeFromLeft)
 {
     const short DeltaX = pcoordSize->X - GetScreenWindowSizeX();
     const short DeltaY = pcoordSize->Y - GetScreenWindowSizeY();
@@ -1408,7 +1408,7 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
 // Return Value:
 // - Success if successful. Invalid parameter if screen buffer size is unexpected. No memory if allocation failed.
 [[nodiscard]]
-NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSize)
+NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
 {
     if ((USHORT)coordNewScreenSize.X >= SHORT_MAX || (USHORT)coordNewScreenSize.Y >= SHORT_MAX)
     {
@@ -1677,7 +1677,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
 // Return Value:
 // - Success if successful. Invalid parameter if screen buffer size is unexpected. No memory if allocation failed.
 [[nodiscard]]
-NTSTATUS SCREEN_INFORMATION::ResizeTraditional(_In_ COORD const coordNewScreenSize)
+NTSTATUS SCREEN_INFORMATION::ResizeTraditional(const COORD coordNewScreenSize)
 {
     return TextInfo->ResizeTraditional(GetScreenBufferSize(), coordNewScreenSize, _Attributes);
 }
@@ -1822,10 +1822,10 @@ void SCREEN_INFORMATION::MakeCurrentCursorVisible()
 // - Visible - cursor visibility
 // Return Value:
 // - None
-void SCREEN_INFORMATION::SetCursorInformation(_In_ ULONG const Size,
-                                              _In_ BOOLEAN const Visible,
+void SCREEN_INFORMATION::SetCursorInformation(const ULONG Size,
+                                              const BOOLEAN Visible,
                                               _In_ unsigned int const Color,
-                                              _In_ CursorType const Type)
+                                              const CursorType Type)
 {
     PTEXT_BUFFER_INFO const pTextInfo = this->TextInfo;
     Cursor* const pCursor = pTextInfo->GetCursor();
@@ -1878,7 +1878,7 @@ void  SCREEN_INFORMATION::SetCursorDBMode(const bool DoubleCursor)
 // Return Value:
 // - Status
 [[nodiscard]]
-NTSTATUS SCREEN_INFORMATION::SetCursorPosition(_In_ COORD const Position, _In_ BOOL const TurnOn)
+NTSTATUS SCREEN_INFORMATION::SetCursorPosition(const COORD Position, const BOOL TurnOn)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     PTEXT_BUFFER_INFO const pTextInfo = this->TextInfo;

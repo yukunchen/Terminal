@@ -40,9 +40,9 @@ bool IsDBCSLeadByteConsole(const CHAR ch, const CPINFO * const pCPInfo);
 
 BOOL IsCharFullWidth(_In_ WCHAR wch);
 
-BYTE CodePageToCharSet(_In_ UINT const uiCodePage);
+BYTE CodePageToCharSet(const UINT uiCodePage);
 
-BOOL IsAvailableEastAsianCodePage(_In_ UINT const uiCodePage);
+BOOL IsAvailableEastAsianCodePage(const UINT uiCodePage);
 
 _Ret_range_(0, cbAnsi)
 ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,

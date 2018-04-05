@@ -563,7 +563,7 @@ DWORD Settings::GetVirtTermLevel() const
 {
     return this->_dwVirtTermLevel;
 }
-void Settings::SetVirtTermLevel(_In_ DWORD const dwVirtTermLevel)
+void Settings::SetVirtTermLevel(const DWORD dwVirtTermLevel)
 {
     this->_dwVirtTermLevel = dwVirtTermLevel;
 }
@@ -572,7 +572,7 @@ bool Settings::IsAltF4CloseAllowed() const
 {
     return this->_fAllowAltF4Close;
 }
-void Settings::SetAltF4CloseAllowed(_In_ bool const fAllowAltF4Close)
+void Settings::SetAltF4CloseAllowed(const bool fAllowAltF4Close)
 {
     this->_fAllowAltF4Close = fAllowAltF4Close;
 }
@@ -581,7 +581,7 @@ bool Settings::IsReturnOnNewlineAutomatic() const
 {
     return this->_fAutoReturnOnNewline;
 }
-void Settings::SetAutomaticReturnOnNewline(_In_ bool const fAutoReturnOnNewline)
+void Settings::SetAutomaticReturnOnNewline(const bool fAutoReturnOnNewline)
 {
     this->_fAutoReturnOnNewline = fAutoReturnOnNewline;
 }
@@ -590,7 +590,7 @@ bool Settings::IsGridRenderingAllowedWorldwide() const
 {
     return this->_fRenderGridWorldwide;
 }
-void Settings::SetGridRenderingAllowedWorldwide(_In_ bool const fGridRenderingAllowed)
+void Settings::SetGridRenderingAllowedWorldwide(const bool fGridRenderingAllowed)
 {
     // Only trigger a notification and update the status if something has changed.
     if (this->_fRenderGridWorldwide != fGridRenderingAllowed)
@@ -608,7 +608,7 @@ BOOL Settings::GetFilterOnPaste() const
 {
     return this->_fFilterOnPaste;
 }
-void Settings::SetFilterOnPaste(_In_ BOOL const fFilterOnPaste)
+void Settings::SetFilterOnPaste(const BOOL fFilterOnPaste)
 {
     this->_fFilterOnPaste = fFilterOnPaste;
 }
@@ -617,7 +617,7 @@ const WCHAR* const Settings::GetLaunchFaceName() const
 {
     return this->_LaunchFaceName;
 }
-void Settings::SetLaunchFaceName(_In_ PCWSTR const LaunchFaceName, _In_ size_t const cchLength)
+void Settings::SetLaunchFaceName(_In_ PCWSTR const LaunchFaceName, const size_t cchLength)
 {
     StringCchCopyW(this->_LaunchFaceName, cchLength, LaunchFaceName);
 }
@@ -839,7 +839,7 @@ const WCHAR* const Settings::GetFaceName() const
 {
     return this->_FaceName;
 }
-void Settings::SetFaceName(_In_ PCWSTR const pcszFaceName, _In_ size_t const cchLength)
+void Settings::SetFaceName(_In_ PCWSTR const pcszFaceName, const size_t cchLength)
 {
     StringCchCopyW(this->_FaceName, cchLength, pcszFaceName);
 }
@@ -920,13 +920,13 @@ const COLORREF* const Settings::GetColorTable() const
 {
     return this->_ColorTable;
 }
-void Settings::SetColorTable(_In_reads_(cSize) const COLORREF* const pColorTable, _In_ size_t const cSize)
+void Settings::SetColorTable(_In_reads_(cSize) const COLORREF* const pColorTable, const size_t cSize)
 {
     size_t cSizeWritten = std::min(cSize, static_cast<size_t>(COLOR_TABLE_SIZE));
 
     memmove(this->_ColorTable, pColorTable, cSizeWritten * sizeof(COLORREF));
 }
-void Settings::SetColorTableEntry(_In_ size_t const index, _In_ COLORREF const ColorValue)
+void Settings::SetColorTableEntry(const size_t index, const COLORREF ColorValue)
 {
     if (index < ARRAYSIZE(_ColorTable))
     {
@@ -948,7 +948,7 @@ BOOL Settings::IsFaceNameSet() const
     return this->GetFaceName()[0] != '\0';
 }
 
-void Settings::UnsetStartupFlag(_In_ DWORD const dwFlagToUnset)
+void Settings::UnsetStartupFlag(const DWORD dwFlagToUnset)
 {
     this->_dwStartupFlags &= ~dwFlagToUnset;
 }
@@ -958,7 +958,7 @@ const size_t Settings::GetColorTableSize() const
     return ARRAYSIZE(this->_ColorTable);
 }
 
-COLORREF Settings::GetColorTableEntry(_In_ size_t const index) const
+COLORREF Settings::GetColorTableEntry(const size_t index) const
 {
     if (index < ARRAYSIZE(_ColorTable))
     {
@@ -1004,7 +1004,7 @@ WORD Settings::GenerateLegacyAttributes(const TextAttribute attributes) const
 // - cColorTable - The number of elements in ColorTable
 // Return value:
 // The index in ColorTable of the nearest match to Color.
-WORD Settings::FindNearestTableIndex(_In_ COLORREF const Color) const
+WORD Settings::FindNearestTableIndex(const COLORREF Color) const
 {
     return ::FindNearestTableIndex(Color, _ColorTable, ARRAYSIZE(_ColorTable));
 }

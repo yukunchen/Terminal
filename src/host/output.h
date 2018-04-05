@@ -20,7 +20,7 @@ Revision History:
 #include "server.h"
 #include "OutputCell.hpp"
 
-void ScreenBufferSizeChange(_In_ COORD const coordNewSize);
+void ScreenBufferSizeChange(const COORD coordNewSize);
 
 [[nodiscard]]
 NTSTATUS ReadScreenBuffer(const SCREEN_INFORMATION * const pScreenInfo,

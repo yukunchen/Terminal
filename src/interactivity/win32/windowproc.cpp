@@ -922,7 +922,7 @@ void Window::_HandleDrop(const WPARAM wParam) const
     }
 }
 
-LRESULT Window::_HandleGetObject(_In_ HWND const hwnd, _In_ WPARAM const wParam, _In_ LPARAM const lParam)
+LRESULT Window::_HandleGetObject(const HWND hwnd, const WPARAM wParam, const LPARAM lParam)
 {
     LRESULT retVal = 0;
 

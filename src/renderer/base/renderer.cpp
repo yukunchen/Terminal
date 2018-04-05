@@ -29,7 +29,7 @@ using namespace Microsoft::Console::Types;
 // NOTE: CAN THROW IF MEMORY ALLOCATION FAILS.
 Renderer::Renderer(_In_ std::unique_ptr<IRenderData> pData,
                    _In_reads_(cEngines) IRenderEngine** const rgpEngines,
-                   _In_ size_t const cEngines) :
+                   const size_t cEngines) :
     _pData(std::move(pData)),
     _pThread(nullptr),
     _tearingDown(false)
@@ -74,7 +74,7 @@ HRESULT Renderer::s_CreateInstance(_In_ std::unique_ptr<IRenderData> pData,
 [[nodiscard]]
 HRESULT Renderer::s_CreateInstance(_In_ std::unique_ptr<IRenderData> pData,
                                    _In_reads_(cEngines) IRenderEngine** const rgpEngines,
-                                   _In_ size_t const cEngines,
+                                   const size_t cEngines,
                                    _Outptr_result_nullonfailure_ Renderer** const ppRenderer)
 {
     HRESULT hr = S_OK;
@@ -438,7 +438,7 @@ void Renderer::TriggerCircling()
 // - pFontInfo - Data that will be fixed up/filled on return with the chosen font data.
 // Return Value:
 // - <none>
-void Renderer::TriggerFontChange(_In_ int const iDpi, _In_ FontInfoDesired const * const pFontInfoDesired, _Out_ FontInfo* const pFontInfo)
+void Renderer::TriggerFontChange(const int iDpi, const FontInfoDesired * const pFontInfoDesired, _Out_ FontInfo* const pFontInfo)
 {
     std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine){
         LOG_IF_FAILED(pEngine->UpdateDpi(iDpi));
@@ -458,7 +458,7 @@ void Renderer::TriggerFontChange(_In_ int const iDpi, _In_ FontInfoDesired const
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 [[nodiscard]]
-HRESULT Renderer::GetProposedFont(_In_ int const iDpi, _In_ FontInfoDesired const * const pFontInfoDesired, _Out_ FontInfo* const pFontInfo)
+HRESULT Renderer::GetProposedFont(const int iDpi, const FontInfoDesired * const pFontInfoDesired, _Out_ FontInfo* const pFontInfo)
 {
     // If there's no head, return E_FAIL. The caller should decide how to
     //      handle this.
@@ -524,7 +524,7 @@ COORD Renderer::GetFontSize()
 // - wch - Character to test
 // Return Value:
 // - True if the character is full-width (two wide), false if it is half-width (one wide).
-bool Renderer::IsCharFullWidthByFont(_In_ WCHAR const wch)
+bool Renderer::IsCharFullWidthByFont(const WCHAR wch)
 {
     bool fIsFullWidth = false;
 
@@ -703,7 +703,7 @@ void Renderer::_PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEng
                                                   const Ucs2CharRow::const_iterator itEnd,
                                                   _In_ size_t cchLine,
                                                   _In_ size_t iFirstAttr,
-                                                  _In_ COORD const coordTarget)
+                                                  const COORD coordTarget)
 {
     const FontInfo* const pFontInfo = _pData->GetFontInfo();
 
@@ -792,7 +792,7 @@ void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
                                              const Ucs2CharRow::const_iterator itEnd,
                                              _In_ size_t cchLine,
                                              _In_ size_t iFirstAttr,
-                                             _In_ COORD const coordTarget)
+                                             const COORD coordTarget)
 {
     // We may have to write this string in several pieces based on the colors.
 
@@ -865,8 +865,8 @@ HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const p
                                                      _In_reads_(cchLine) PCWCHAR const pwsLine,
                                                      const Ucs2CharRow::const_iterator it,
                                                      const Ucs2CharRow::const_iterator itEnd,
-                                                     _In_ size_t const cchLine,
-                                                     _In_ COORD const coordTarget)
+                                                     const size_t cchLine,
+                                                     const COORD coordTarget)
 {
     // We need the ability to move the target back to the left slightly in case we start with a trailing byte character.
     COORD coordTargetAdjustable = coordTarget;
@@ -942,8 +942,8 @@ HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const p
 // - <none>
 void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine,
                                                 const TextAttribute textAttribute,
-                                                _In_ size_t const cchLine,
-                                                _In_ COORD const coordTarget)
+                                                const size_t cchLine,
+                                                const COORD coordTarget)
 {
     COLORREF rgb = textAttribute.CalculateRgbForeground();
 
@@ -1166,7 +1166,7 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 // Return Value:
 // - <none>
 [[nodiscard]]
-HRESULT Renderer::_UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, const TextAttribute textAttributes, _In_ bool const fIncludeBackground)
+HRESULT Renderer::_UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, const TextAttribute textAttributes, const bool fIncludeBackground)
 {
     COLORREF rgbForeground = textAttributes.CalculateRgbForeground();
     COLORREF rgbBackground = textAttributes.CalculateRgbBackground();

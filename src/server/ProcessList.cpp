@@ -29,9 +29,9 @@
 // - E_FAIL if we're running into an LPC port conflict by nature of the process chain.
 // - E_OUTOFMEMORY if there wasn't space to allocate a handle or push it into the list.
 [[nodiscard]]
-HRESULT ConsoleProcessList::AllocProcessData(_In_ DWORD const dwProcessId,
-                                             _In_ DWORD const dwThreadId,
-                                             _In_ ULONG const ulProcessGroupId,
+HRESULT ConsoleProcessList::AllocProcessData(const DWORD dwProcessId,
+                                             const DWORD dwThreadId,
+                                             const ULONG ulProcessGroupId,
                                              _In_opt_ ConsoleProcessHandle* const pParentProcessData,
                                              _Outptr_opt_ ConsoleProcessHandle** const ppProcessData)
 {
@@ -214,8 +214,8 @@ HRESULT ConsoleProcessList::GetProcessList(_Inout_updates_(*pcProcessList) DWORD
 // - S_OK if prgRecords was filled successfully or if no records were found that matched.
 // - E_OUTOFMEMORY in a low memory situation.
 [[nodiscard]]
-HRESULT ConsoleProcessList::GetTerminationRecordsByGroupId(_In_ DWORD const dwLimitingProcessId,
-                                                           _In_ bool const fCtrlClose,
+HRESULT ConsoleProcessList::GetTerminationRecordsByGroupId(const DWORD dwLimitingProcessId,
+                                                           const bool fCtrlClose,
                                                            _Outptr_result_buffer_all_(*pcRecords) ConsoleProcessTerminationRecord** prgRecords,
                                                            _Out_ size_t* const pcRecords) const
 {
@@ -343,7 +343,7 @@ bool ConsoleProcessList::IsEmpty() const
 // - fForeground - True if we're allowed to set it as the foreground window. False otherwise.
 // Return Value:
 // - <none>
-void ConsoleProcessList::_ModifyProcessForegroundRights(_In_ HANDLE const hProcess, _In_ bool const fForeground) const
+void ConsoleProcessList::_ModifyProcessForegroundRights(const HANDLE hProcess, const bool fForeground) const
 {
     LOG_IF_NTSTATUS_FAILED(ServiceLocator::LocateConsoleControl()->SetForeground(hProcess, fForeground));
 }

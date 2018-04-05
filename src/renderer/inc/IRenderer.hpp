@@ -39,17 +39,17 @@ namespace Microsoft::Console::Render
         virtual void TriggerScroll() = 0;
         virtual void TriggerScroll(const COORD* const pcoordDelta) = 0;
         virtual void TriggerCircling() = 0;
-        virtual void TriggerFontChange(_In_ int const iDpi,
-                                        _In_ FontInfoDesired const * const pFontInfoDesired,
+        virtual void TriggerFontChange(const int iDpi,
+                                        const FontInfoDesired * const pFontInfoDesired,
                                         _Out_ FontInfo* const pFontInfo) = 0;
 
         [[nodiscard]]
-        virtual HRESULT GetProposedFont(_In_ int const iDpi,
-                                        _In_ FontInfoDesired const * const pFontInfoDesired,
+        virtual HRESULT GetProposedFont(const int iDpi,
+                                        const FontInfoDesired * const pFontInfoDesired,
                                         _Out_ FontInfo* const pFontInfo) = 0;
 
         virtual COORD GetFontSize() = 0;
-        virtual bool IsCharFullWidthByFont(_In_ WCHAR const wch) = 0;
+        virtual bool IsCharFullWidthByFont(const WCHAR wch) = 0;
 
         virtual void EnablePainting() = 0;
         virtual void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs) = 0;

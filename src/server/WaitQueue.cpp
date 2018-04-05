@@ -63,7 +63,7 @@ HRESULT ConsoleWaitQueue::s_CreateWait(_Inout_ CONSOLE_API_MSG* const pWaitReply
 // - fNotifyAll - If true, we will notify all items in the queue. If false, we will only notify the first item.
 // Return Value:
 // - True if any block was successfully notified. False if no blocks were successful.
-bool ConsoleWaitQueue::NotifyWaiters(_In_ bool const fNotifyAll)
+bool ConsoleWaitQueue::NotifyWaiters(const bool fNotifyAll)
 {
     return NotifyWaiters(fNotifyAll, WaitTerminationReason::NoReason);
 }
@@ -75,8 +75,8 @@ bool ConsoleWaitQueue::NotifyWaiters(_In_ bool const fNotifyAll)
 // - TerminationReason - A reason/message to pass to each waiter signaling it should terminate appropriately.
 // Return Value:
 // - True if any block was successfully notified. False if no blocks were successful.
-bool ConsoleWaitQueue::NotifyWaiters(_In_ bool const fNotifyAll,
-                                     _In_ WaitTerminationReason const TerminationReason)
+bool ConsoleWaitQueue::NotifyWaiters(const bool fNotifyAll,
+                                     const WaitTerminationReason TerminationReason)
 {
     bool fResult = false;
 

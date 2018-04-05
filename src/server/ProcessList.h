@@ -34,9 +34,9 @@ public:
     static const DWORD ROOT_PROCESS_ID = 0;
 
     [[nodiscard]]
-    HRESULT AllocProcessData(_In_ DWORD const dwProcessId,
-                             _In_ DWORD const dwThreadId,
-                             _In_ ULONG const ulProcessGroupId,
+    HRESULT AllocProcessData(const DWORD dwProcessId,
+                             const DWORD dwThreadId,
+                             const ULONG ulProcessGroupId,
                              _In_opt_ ConsoleProcessHandle* const pParentProcessData,
                              _Outptr_opt_ ConsoleProcessHandle** const ppProcessData);
 
@@ -47,8 +47,8 @@ public:
     ConsoleProcessHandle* FindProcessByGroupId(_In_ ULONG ulProcessGroupId) const;
 
     [[nodiscard]]
-    HRESULT GetTerminationRecordsByGroupId(_In_ DWORD const dwLimitingProcessId,
-                                           _In_ bool const fCtrlClose,
+    HRESULT GetTerminationRecordsByGroupId(const DWORD dwLimitingProcessId,
+                                           const bool fCtrlClose,
                                            _Outptr_result_buffer_all_(*pcRecords) ConsoleProcessTerminationRecord** prgRecords,
                                            _Out_ size_t* const pcRecords) const;
 
@@ -65,5 +65,5 @@ public:
 private:
     std::list<ConsoleProcessHandle*> _processes;
 
-    void _ModifyProcessForegroundRights(_In_ HANDLE const hProcess, _In_ bool const fForeground) const;
+    void _ModifyProcessForegroundRights(const HANDLE hProcess, const bool fForeground) const;
 };

@@ -52,7 +52,7 @@ class ApiRoutinesTests
     }
 
     BOOL _fPrevInsertMode;
-    void PrepVerifySetConsoleInputModeImpl(_In_ ULONG const ulOriginalInputMode)
+    void PrepVerifySetConsoleInputModeImpl(const ULONG ulOriginalInputMode)
     {
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         gci.Flags = 0;
@@ -68,8 +68,8 @@ class ApiRoutinesTests
         _fPrevInsertMode = gci.GetInsertMode();
     }
 
-    void VerifySetConsoleInputModeImpl(_In_ HRESULT const hrExpected,
-                                       _In_ ULONG const ulNewMode)
+    void VerifySetConsoleInputModeImpl(const HRESULT hrExpected,
+                                       const ULONG ulNewMode)
     {
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         InputBuffer* const pii = gci.pInputBuffer;

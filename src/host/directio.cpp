@@ -151,8 +151,8 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
                            _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
                            const size_t eventReadCount,
                            _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
-                           _In_ bool const IsUnicode,
-                           _In_ bool const IsPeek,
+                           const bool IsUnicode,
+                           const bool IsPeek,
                            _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
 {
     *ppWaiter = nullptr;
@@ -260,7 +260,7 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
 [[nodiscard]]
 HRESULT ApiRoutines::PeekConsoleInputAImpl(_In_ IConsoleInputObject* const pInContext,
                                            _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                           _In_ size_t const eventsToRead,
+                                           const size_t eventsToRead,
                                            _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                                            _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
 {
@@ -292,7 +292,7 @@ HRESULT ApiRoutines::PeekConsoleInputAImpl(_In_ IConsoleInputObject* const pInCo
 [[nodiscard]]
 HRESULT ApiRoutines::PeekConsoleInputWImpl(_In_ IConsoleInputObject* const pInContext,
                                            _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                           _In_ size_t const eventsToRead,
+                                           const size_t eventsToRead,
                                            _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                                            _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
 {
@@ -324,7 +324,7 @@ HRESULT ApiRoutines::PeekConsoleInputWImpl(_In_ IConsoleInputObject* const pInCo
 [[nodiscard]]
 HRESULT ApiRoutines::ReadConsoleInputAImpl(_In_ IConsoleInputObject* const pInContext,
                                            _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                           _In_ size_t const eventsToRead,
+                                           const size_t eventsToRead,
                                            _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                                            _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
 {
@@ -356,7 +356,7 @@ HRESULT ApiRoutines::ReadConsoleInputAImpl(_In_ IConsoleInputObject* const pInCo
 [[nodiscard]]
 HRESULT ApiRoutines::ReadConsoleInputWImpl(_In_ IConsoleInputObject* const pInContext,
                                            _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                           _In_ size_t const eventsToRead,
+                                           const size_t eventsToRead,
                                            _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                                            _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
 {

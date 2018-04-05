@@ -29,24 +29,24 @@ namespace Microsoft::Console::VirtualTerminal
         InputStateMachineEngine(_In_ std::unique_ptr<IInteractDispatch> pDispatch,
                                 const bool lookingForDSR);
 
-        bool ActionExecute(_In_ wchar_t const wch) override;
-        bool ActionPrint(_In_ wchar_t const wch) override;
-        bool ActionPrintString(_Inout_updates_(cch) wchar_t* const rgwch, _In_ size_t const cch) override;
-        bool ActionEscDispatch(_In_ wchar_t const wch,
+        bool ActionExecute(const wchar_t wch) override;
+        bool ActionPrint(const wchar_t wch) override;
+        bool ActionPrintString(_Inout_updates_(cch) wchar_t* const rgwch, const size_t cch) override;
+        bool ActionEscDispatch(const wchar_t wch,
                             const unsigned short cIntermediate,
                             const wchar_t wchIntermediate) override;
-        bool ActionCsiDispatch(_In_ wchar_t const wch,
+        bool ActionCsiDispatch(const wchar_t wch,
                             const unsigned short cIntermediate,
                             const wchar_t wchIntermediate,
                             _In_reads_(cParams) const unsigned short* const rgusParams,
                             const unsigned short cParams);
         bool ActionClear() override;
         bool ActionIgnore() override;
-        bool ActionOscDispatch(_In_ wchar_t const wch,
+        bool ActionOscDispatch(const wchar_t wch,
                             const unsigned short sOscParam,
                             _Inout_updates_(cchOscString) wchar_t* const pwchOscStringBuffer,
                             const unsigned short cchOscString) override;
-        bool ActionSs3Dispatch(_In_ wchar_t const wch,
+        bool ActionSs3Dispatch(const wchar_t wch,
                             _In_reads_(cParams) const unsigned short* const rgusParams,
                             const unsigned short cParams) override;
 

@@ -37,10 +37,10 @@ WinTelnetEngine::WinTelnetEngine(_In_ wil::unique_hfile hPipe,
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT WinTelnetEngine::UpdateDrawingBrushes(_In_ COLORREF const colorForeground,
-                                              _In_ COLORREF const colorBackground,
-                                              _In_ WORD const /*legacyColorAttribute*/,
-                                              _In_ bool const /*fIncludeBackgrounds*/)
+HRESULT WinTelnetEngine::UpdateDrawingBrushes(const COLORREF colorForeground,
+                                              const COLORREF colorBackground,
+                                              const WORD /*legacyColorAttribute*/,
+                                              const bool /*fIncludeBackgrounds*/)
 {
     return VtEngine::_16ColorUpdateDrawingBrushes(colorForeground, colorBackground, _ColorTable, _cColorTable);
 }

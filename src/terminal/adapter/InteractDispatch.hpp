@@ -22,7 +22,7 @@ namespace Microsoft::Console::VirtualTerminal
     {
     public:
 
-        InteractDispatch(_In_ std::unique_ptr<ConGetSet> const pConApi);
+        InteractDispatch(const std::unique_ptr<ConGetSet> pConApi);
 
         virtual ~InteractDispatch() override = default;
 
@@ -31,7 +31,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool WriteString(_In_reads_(cch) const wchar_t* const pws, const size_t cch) override;
         virtual bool WindowManipulation(const DispatchCommon::WindowManipulationType uiFunction,
                                         _In_reads_(cParams) const unsigned short* const rgusParams,
-                                        _In_ size_t const cParams) override; // DTTERM_WindowManipulation
+                                        const size_t cParams) override; // DTTERM_WindowManipulation
         virtual bool MoveCursor(const unsigned int row,
                                 const unsigned int col) override;
     private:

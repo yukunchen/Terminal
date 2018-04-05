@@ -35,10 +35,10 @@ public:
     bool Reset(const TextAttribute attr);
 
     TextAttribute at(const size_t column) const;
-    void FindAttrIndex(_In_ size_t const index,
+    void FindAttrIndex(const size_t index,
                        _Outptr_ TextAttributeRun** const ppIndexedAttr,
                        _Out_opt_ size_t* const pcAttrApplies) const;
-    bool SetAttrToEnd(_In_ UINT const iStart, const TextAttribute attr);
+    bool SetAttrToEnd(const UINT iStart, const TextAttribute attr);
     void ReplaceLegacyAttrs(const WORD wToBeReplacedAttr, const WORD wReplaceWith);
     [[nodiscard]]
     HRESULT Resize(const short sOldWidth, const short sNewWidth);

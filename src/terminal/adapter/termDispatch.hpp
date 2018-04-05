@@ -21,9 +21,9 @@ namespace Microsoft::Console::VirtualTerminal
     class TermDispatch
     {
     public:
-        virtual void Execute(_In_ wchar_t const wchControl) = 0;
-        virtual void Print(_In_ wchar_t const wchPrintable) = 0;
-        virtual void PrintString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch) = 0;
+        virtual void Execute(const wchar_t wchControl) = 0;
+        virtual void Print(const wchar_t wchPrintable) = 0;
+        virtual void PrintString(_In_reads_(cch) wchar_t* const rgwch, const size_t cch) = 0;
 
         virtual bool CursorUp(_In_ unsigned int const /*uiDistance*/) { return false; }; // CUU
         virtual bool CursorDown(_In_ unsigned int const /*uiDistance*/) { return false; } // CUD
@@ -36,7 +36,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool CursorPosition(_In_ unsigned int const /*uiLine*/, _In_ unsigned int const /*uiColumn*/) { return false; } // CUP
         virtual bool CursorSavePosition() { return false; } // DECSC
         virtual bool CursorRestorePosition() { return false; } // DECRC
-        virtual bool CursorVisibility(_In_ bool const /*fIsVisible*/) { return false; } // DECTCEM
+        virtual bool CursorVisibility(const bool /*fIsVisible*/) { return false; } // DECTCEM
         virtual bool InsertCharacter(_In_ unsigned int const /*uiCount*/) { return false; } // ICH
         virtual bool DeleteCharacter(_In_ unsigned int const /*uiCount*/) { return false; } // DCH
         virtual bool ScrollUp(_In_ unsigned int const /*uiDistance*/) { return false; } // SU
@@ -44,24 +44,24 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool InsertLine(_In_ unsigned int const /*uiDistance*/) { return false; } // IL
         virtual bool DeleteLine(_In_ unsigned int const /*uiDistance*/) { return false; } // DL
         virtual bool SetColumns(_In_ unsigned int const /*uiColumns*/) { return false; } // DECSCPP, DECCOLM
-        virtual bool SetCursorKeysMode(_In_ bool const /*fApplicationMode*/) { return false; }  // DECCKM
-        virtual bool SetKeypadMode(_In_ bool const /*fApplicationMode*/) { return false; }  // DECKPAM, DECKPNM
-        virtual bool EnableCursorBlinking(_In_ bool const /*fEnable*/) { return false; }  // ATT610
-        virtual bool SetTopBottomScrollingMargins(_In_ SHORT const /*sTopMargin*/, _In_ SHORT const /*sBottomMargin*/, const bool /*fResetCursor*/) { return false; } // DECSTBM
+        virtual bool SetCursorKeysMode(const bool /*fApplicationMode*/) { return false; }  // DECCKM
+        virtual bool SetKeypadMode(const bool /*fApplicationMode*/) { return false; }  // DECKPAM, DECKPNM
+        virtual bool EnableCursorBlinking(const bool /*fEnable*/) { return false; }  // ATT610
+        virtual bool SetTopBottomScrollingMargins(const SHORT /*sTopMargin*/, const SHORT /*sBottomMargin*/, const bool /*fResetCursor*/) { return false; } // DECSTBM
         virtual bool ReverseLineFeed() { return false; } // RI
         virtual bool SetWindowTitle(_In_reads_(_Param_(2)) const wchar_t* const /*pwchWindowTitle*/, _In_ unsigned short /*sCchTitleLength*/) { return false; } // OscWindowTitle
         virtual bool UseAlternateScreenBuffer() { return false; } // ASBSET
         virtual bool UseMainScreenBuffer() { return false; } // ASBRST
         virtual bool HorizontalTabSet() { return false; } // HTS
-        virtual bool ForwardTab(_In_ SHORT const /*sNumTabs*/) { return false; } // CHT
-        virtual bool BackwardsTab(_In_ SHORT const /*sNumTabs*/) { return false; } // CBT
-        virtual bool TabClear(_In_ SHORT const /*sClearType*/) { return false; } // TBC
-        virtual bool EnableVT200MouseMode(_In_ bool const /*fEnabled*/) { return false; } // ?1000
-        virtual bool EnableUTF8ExtendedMouseMode(_In_ bool const /*fEnabled*/) { return false; } // ?1005
-        virtual bool EnableSGRExtendedMouseMode(_In_ bool const /*fEnabled*/) { return false; } // ?1006
-        virtual bool EnableButtonEventMouseMode(_In_ bool const /*fEnabled*/) { return false; } // ?1002
-        virtual bool EnableAnyEventMouseMode(_In_ bool const /*fEnabled*/) { return false; } // ?1003
-        virtual bool EnableAlternateScroll(_In_ bool const /*fEnabled*/) { return false; } // ?1007
+        virtual bool ForwardTab(const SHORT /*sNumTabs*/) { return false; } // CHT
+        virtual bool BackwardsTab(const SHORT /*sNumTabs*/) { return false; } // CBT
+        virtual bool TabClear(const SHORT /*sClearType*/) { return false; } // TBC
+        virtual bool EnableVT200MouseMode(const bool /*fEnabled*/) { return false; } // ?1000
+        virtual bool EnableUTF8ExtendedMouseMode(const bool /*fEnabled*/) { return false; } // ?1005
+        virtual bool EnableSGRExtendedMouseMode(const bool /*fEnabled*/) { return false; } // ?1006
+        virtual bool EnableButtonEventMouseMode(const bool /*fEnabled*/) { return false; } // ?1002
+        virtual bool EnableAnyEventMouseMode(const bool /*fEnabled*/) { return false; } // ?1003
+        virtual bool EnableAlternateScroll(const bool /*fEnabled*/) { return false; } // ?1007
         virtual bool SetColorTableEntry(const size_t /*tableIndex*/, const DWORD /*dwColor*/) { return false; } // OSCColorTable
 
         enum class EraseType : unsigned int
@@ -72,8 +72,8 @@ namespace Microsoft::Console::VirtualTerminal
             Scrollback = 3
         };
 
-        virtual bool EraseInDisplay(_In_ EraseType const /* eraseType*/) { return false; } // ED
-        virtual bool EraseInLine(_In_ EraseType const /* eraseType*/) { return false; } // EL
+        virtual bool EraseInDisplay(const EraseType /* eraseType*/) { return false; } // ED
+        virtual bool EraseInLine(const EraseType /* eraseType*/) { return false; } // EL
         virtual bool EraseCharacters(_In_ unsigned int const /*uiNumChars*/){ return false; } // ECH
 
         enum GraphicsOptions : unsigned int
@@ -154,23 +154,23 @@ namespace Microsoft::Console::VirtualTerminal
         };
 
         virtual bool SetGraphicsRendition(_In_reads_(_Param_(2)) const GraphicsOptions* const /*rgOptions*/,
-                                            _In_ size_t const /*cOptions*/) { return false; } // SGR
+                                            const size_t /*cOptions*/) { return false; } // SGR
 
         virtual bool SetPrivateModes(_In_reads_(_Param_(2)) const PrivateModeParams* const /*rgParams*/,
-                                        _In_ size_t const /*cParams*/) { return false; } // DECSET
+                                        const size_t /*cParams*/) { return false; } // DECSET
 
         virtual bool ResetPrivateModes(_In_reads_(_Param_(2)) const PrivateModeParams* const /*rgParams*/,
-                                        _In_ size_t const /*cParams*/) { return false; } // DECRST
+                                        const size_t /*cParams*/) { return false; } // DECRST
 
         enum class AnsiStatusType : unsigned int
         {
             CPR_CursorPositionReport = 6,
         };
 
-        virtual bool DeviceStatusReport(_In_ AnsiStatusType const /*statusType*/) { return false; } // DSR
+        virtual bool DeviceStatusReport(const AnsiStatusType /*statusType*/) { return false; } // DSR
         virtual bool DeviceAttributes() { return false; } // DA
 
-        virtual bool DesignateCharset(_In_ wchar_t const /*wchCharset*/){ return false; } // DesignateCharset
+        virtual bool DesignateCharset(const wchar_t /*wchCharset*/){ return false; } // DesignateCharset
 
         enum TabClearType : unsigned short
         {
@@ -187,7 +187,7 @@ namespace Microsoft::Console::VirtualTerminal
         // DTTERM_WindowManipulation
         virtual bool WindowManipulation(const DispatchCommon::WindowManipulationType /*uiFunction*/,
                                         _In_reads_(_Param_(3)) const unsigned short* const /*rgusParams*/,
-                                        _In_ size_t const /*cParams*/) { return false; }
+                                        const size_t /*cParams*/) { return false; }
 
     };
 }

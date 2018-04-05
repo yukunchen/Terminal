@@ -26,10 +26,10 @@ class FontInfoBase
 {
 public:
     FontInfoBase(_In_ PCWSTR const pwszFaceName,
-                 _In_ BYTE const bFamily,
-                 _In_ LONG const lWeight,
-                 _In_ bool const fSetDefaultRasterFont,
-                 _In_ UINT const uiCodePage);
+                 const BYTE bFamily,
+                 const LONG lWeight,
+                 const bool fSetDefaultRasterFont,
+                 const UINT uiCodePage);
 
     FontInfoBase(const FontInfoBase &fibFont);
 
@@ -43,9 +43,9 @@ public:
     bool IsTrueTypeFont() const;
 
     void SetFromEngine(_In_ PCWSTR const pwszFaceName,
-                       _In_ BYTE const bFamily,
-                       _In_ LONG const lWeight,
-                       _In_ bool const fSetDefaultRasterFont);
+                       const BYTE bFamily,
+                       const LONG lWeight,
+                       const bool fSetDefaultRasterFont);
 
     bool WasDefaultRasterSetFromEngine() const;
     void ValidateFont();

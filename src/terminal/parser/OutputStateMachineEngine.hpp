@@ -24,24 +24,24 @@ namespace Microsoft::Console::VirtualTerminal
         OutputStateMachineEngine(_In_ TermDispatch* const pDispatch);
         ~OutputStateMachineEngine();
 
-        bool ActionExecute(_In_ wchar_t const wch) override;
-        bool ActionPrint(_In_ wchar_t const wch) override;
-        bool ActionPrintString(_Inout_updates_(cch) wchar_t* const rgwch, _In_ size_t const cch) override;
-        bool ActionEscDispatch(_In_ wchar_t const wch,
+        bool ActionExecute(const wchar_t wch) override;
+        bool ActionPrint(const wchar_t wch) override;
+        bool ActionPrintString(_Inout_updates_(cch) wchar_t* const rgwch, const size_t cch) override;
+        bool ActionEscDispatch(const wchar_t wch,
                                 const unsigned short cIntermediate,
                                 const wchar_t wchIntermediate) override;
-        bool ActionCsiDispatch(_In_ wchar_t const wch,
+        bool ActionCsiDispatch(const wchar_t wch,
                                 const unsigned short cIntermediate,
                                 const wchar_t wchIntermediate,
                                 _In_reads_(cParams) const unsigned short* const rgusParams,
                                 const unsigned short cParams);
         bool ActionClear() override;
         bool ActionIgnore() override;
-        bool ActionOscDispatch(_In_ wchar_t const wch,
+        bool ActionOscDispatch(const wchar_t wch,
                                 const unsigned short sOscParam,
                                 _Inout_updates_(cchOscString) wchar_t* const pwchOscStringBuffer,
                                 const unsigned short cchOscString) override;
-        bool ActionSs3Dispatch(_In_ wchar_t const wch,
+        bool ActionSs3Dispatch(const wchar_t wch,
                                 _In_reads_(cParams) const unsigned short* const rgusParams,
                                 const unsigned short cParams) override;
 
@@ -50,11 +50,11 @@ namespace Microsoft::Console::VirtualTerminal
     private:
         TermDispatch* _pDispatch;
 
-        bool _IntermediateQuestionMarkDispatch(_In_ wchar_t const wchAction,
+        bool _IntermediateQuestionMarkDispatch(const wchar_t wchAction,
                                                 _In_reads_(cParams) const unsigned short* const rgusParams,
                                                 const unsigned short cParams);
-        bool _IntermediateExclamationDispatch(_In_ wchar_t const wch);
-        bool _IntermediateSpaceDispatch(_In_ wchar_t const wchAction,
+        bool _IntermediateExclamationDispatch(const wchar_t wch);
+        bool _IntermediateSpaceDispatch(const wchar_t wchAction,
                                         _In_reads_(cParams) const unsigned short* const rgusParams,
                                         const unsigned short cParams);
 
@@ -216,10 +216,10 @@ namespace Microsoft::Console::VirtualTerminal
                                         const unsigned short cParams,
                                         _Out_ unsigned int* const puiFunction) const;
 
-        static bool s_HexToUint(_In_ wchar_t const wch,
+        static bool s_HexToUint(const wchar_t wch,
                                 _Out_ unsigned int * const puiValue);
-        static bool s_IsNumber(_In_ wchar_t const wch);
-        static bool s_IsHexNumber(_In_ wchar_t const wch);
+        static bool s_IsNumber(const wchar_t wch);
+        static bool s_IsHexNumber(const wchar_t wch);
         bool _GetOscSetColorTable(_In_reads_(cchOscString) const wchar_t* const pwchOscStringBuffer,
                                     const size_t cchOscString,
                                     _Out_ size_t* const pTableIndex,

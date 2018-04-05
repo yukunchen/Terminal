@@ -41,22 +41,22 @@ public:
     void Validate();
 
     DWORD GetVirtTermLevel() const;
-    void SetVirtTermLevel(_In_ DWORD const dwVirtTermLevel);
+    void SetVirtTermLevel(const DWORD dwVirtTermLevel);
 
     bool IsAltF4CloseAllowed() const;
-    void SetAltF4CloseAllowed(_In_ bool const fAllowAltF4Close);
+    void SetAltF4CloseAllowed(const bool fAllowAltF4Close);
 
     bool IsReturnOnNewlineAutomatic() const;
-    void SetAutomaticReturnOnNewline(_In_ bool const fAutoReturnOnNewline);
+    void SetAutomaticReturnOnNewline(const bool fAutoReturnOnNewline);
 
     bool IsGridRenderingAllowedWorldwide() const;
-    void SetGridRenderingAllowedWorldwide(_In_ bool const fGridRenderingAllowed);
+    void SetGridRenderingAllowedWorldwide(const bool fGridRenderingAllowed);
 
     BOOL GetFilterOnPaste() const;
-    void SetFilterOnPaste(_In_ BOOL const fFilterOnPaste);
+    void SetFilterOnPaste(const BOOL fFilterOnPaste);
 
     const WCHAR* const GetLaunchFaceName() const;
-    void SetLaunchFaceName(_In_ PCWSTR const LaunchFaceName, _In_ size_t const cchLength);
+    void SetLaunchFaceName(_In_ PCWSTR const LaunchFaceName, const size_t cchLength);
 
     UINT GetCodePage() const;
     void SetCodePage(const UINT uCodePage);
@@ -89,7 +89,7 @@ public:
 
     DWORD GetStartupFlags() const;
     void SetStartupFlags(const DWORD dwStartupFlags);
-    void UnsetStartupFlag(_In_ DWORD const dwFlagToUnset);
+    void UnsetStartupFlag(const DWORD dwFlagToUnset);
 
     WORD GetFillAttribute() const;
     void SetFillAttribute(const WORD wFillAttribute);
@@ -130,7 +130,7 @@ public:
 
     const WCHAR* const GetFaceName() const;
     BOOL IsFaceNameSet() const;
-    void SetFaceName(_In_ PCWSTR const pcszFaceName, _In_ size_t const cchLength);
+    void SetFaceName(_In_ PCWSTR const pcszFaceName, const size_t cchLength);
 
     UINT GetCursorSize() const;
     void SetCursorSize(const UINT uCursorSize);
@@ -158,9 +158,9 @@ public:
 
     const COLORREF* const GetColorTable() const;
     const size_t GetColorTableSize() const;
-    void SetColorTable(_In_reads_(cSize) const COLORREF* const pColorTable, _In_ size_t const cSize);
-    void SetColorTableEntry(_In_ size_t const index, _In_ COLORREF const ColorValue);
-    COLORREF GetColorTableEntry(_In_ size_t const index) const;
+    void SetColorTable(_In_reads_(cSize) const COLORREF* const pColorTable, const size_t cSize);
+    void SetColorTableEntry(const size_t index, const COLORREF ColorValue);
+    COLORREF GetColorTableEntry(const size_t index) const;
 
     COLORREF GetCursorColor() const noexcept;
     CursorType GetCursorType() const noexcept;
@@ -233,6 +233,6 @@ private:
 public:
 
     WORD GenerateLegacyAttributes(const TextAttribute attributes) const;
-    WORD FindNearestTableIndex(_In_ COLORREF const Color) const;
+    WORD FindNearestTableIndex(const COLORREF Color) const;
 
 };

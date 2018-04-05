@@ -46,9 +46,9 @@ public:
     static NTSTATUS CreateInstance(_In_ COORD coordWindowSize,
                                    const FontInfo* const pfiFont,
                                    _In_ COORD coordScreenBufferSize,
-                                   _In_ CHAR_INFO const ciFill,
-                                   _In_ CHAR_INFO const ciPopupFill,
-                                   _In_ UINT const uiCursorSize,
+                                   const CHAR_INFO ciFill,
+                                   const CHAR_INFO ciPopupFill,
+                                   const UINT uiCursorSize,
                                    _Outptr_ SCREEN_INFORMATION ** const ppScreen);
 
     ~SCREEN_INFORMATION();
@@ -70,9 +70,9 @@ public:
 
     void GetScreenEdges(_Out_ SMALL_RECT* const psrEdges) const;
 
-    COORD GetMinWindowSizeInCharacters(_In_ COORD const coordFontSize = { 1, 1 }) const;
-    COORD GetMaxWindowSizeInCharacters(_In_ COORD const coordFontSize = { 1, 1 }) const;
-    COORD GetLargestWindowSizeInCharacters(_In_ COORD const coordFontSize = { 1, 1 }) const;
+    COORD GetMinWindowSizeInCharacters(const COORD coordFontSize = { 1, 1 }) const;
+    COORD GetMaxWindowSizeInCharacters(const COORD coordFontSize = { 1, 1 }) const;
+    COORD GetLargestWindowSizeInCharacters(const COORD coordFontSize = { 1, 1 }) const;
     COORD GetScrollBarSizesInCharacters() const;
 
     void ProcessResizeWindow(const RECT* const prcClientNew, const RECT* const prcClientOld);
@@ -88,7 +88,7 @@ public:
     [[nodiscard]]
     NTSTATUS ResizeScreenBuffer(const COORD coordNewScreenSize, const bool fDoScrollBarUpdate);
 
-    void ResetTextFlags(_In_ short const sStartX, _In_ short const sStartY, _In_ short const sEndX, _In_ short const sEndY);
+    void ResetTextFlags(const short sStartX, const short sStartY, const short sEndX, const short sEndY);
 
     void UpdateScrollBars();
     void InternalUpdateScrollBars();
@@ -163,14 +163,14 @@ public:
     StateMachine* GetStateMachine() const;
 
 
-    void SetCursorInformation(_In_ ULONG const Size,
-                              _In_ BOOLEAN const Visible,
+    void SetCursorInformation(const ULONG Size,
+                              const BOOLEAN Visible,
                               _In_ unsigned int const Color,
-                              _In_ CursorType const Type);
+                              const CursorType Type);
 
     void SetCursorDBMode(const bool DoubleCursor);
     [[nodiscard]]
-    NTSTATUS SetCursorPosition(_In_ COORD const Position, _In_ BOOL const TurnOn);
+    NTSTATUS SetCursorPosition(const COORD Position, const BOOL TurnOn);
 
     void MakeCursorVisible(const COORD CursorPosition);
 
@@ -223,13 +223,13 @@ private:
 
     [[nodiscard]]
     HRESULT _AdjustScreenBufferHelper(const RECT* const prcClientNew,
-                                      _In_ COORD const coordBufferOld,
+                                      const COORD coordBufferOld,
                                       _Out_ COORD* const pcoordClientNewCharacters);
     [[nodiscard]]
     HRESULT _AdjustScreenBuffer(const RECT* const prcClientNew);
     void _CalculateViewportSize(const RECT* const prcClientArea, _Out_ COORD* const pcoordSize);
     void _AdjustViewportSize(const RECT* const prcClientNew, const RECT* const prcClientOld, const COORD* const pcoordSize);
-    void _InternalSetViewportSize(const COORD* const pcoordSize, _In_ bool const fResizeFromTop, _In_ bool const fResizeFromLeft);
+    void _InternalSetViewportSize(const COORD* const pcoordSize, const bool fResizeFromTop, const bool fResizeFromLeft);
 
     static void s_CalculateScrollbarVisibility(const RECT* const prcClientArea,
                                                const COORD* const pcoordBufferSize,
@@ -238,9 +238,9 @@ private:
                                                _Out_ bool* const pfIsVerticalVisible);
 
     [[nodiscard]]
-    NTSTATUS ResizeWithReflow(_In_ COORD const coordnewScreenSize);
+    NTSTATUS ResizeWithReflow(const COORD coordnewScreenSize);
     [[nodiscard]]
-    NTSTATUS ResizeTraditional(_In_ COORD const coordNewScreenSize);
+    NTSTATUS ResizeTraditional(const COORD coordNewScreenSize);
 
     [[nodiscard]]
     NTSTATUS _InitializeOutputStateMachine();

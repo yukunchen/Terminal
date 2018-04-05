@@ -213,7 +213,7 @@ TextAttribute ATTR_ROW::at(const size_t column) const
 //                  index was 3, CountOfAttr would be 2.
 // Return Value:
 // <none>
-void ATTR_ROW::FindAttrIndex(_In_ size_t const index,
+void ATTR_ROW::FindAttrIndex(const size_t index,
                              _Outptr_ TextAttributeRun** const ppIndexedAttr,
                              _Out_opt_ size_t* const pcAttrApplies) const
 {
@@ -318,7 +318,7 @@ NTSTATUS ATTR_ROW::UnpackAttrs(_Out_writes_(cRowLength) TextAttribute* const rgA
 // - attr - Attribute (color) to fill remaining characters with
 // Return Value:
 // - <none>
-bool ATTR_ROW::SetAttrToEnd(_In_ UINT const iStart, const TextAttribute attr)
+bool ATTR_ROW::SetAttrToEnd(const UINT iStart, const TextAttribute attr)
 {
     size_t const length = _cchRowWidth - iStart;
 

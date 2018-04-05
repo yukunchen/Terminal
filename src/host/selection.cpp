@@ -204,8 +204,8 @@ NTSTATUS Selection::GetSelectionRects(_Outptr_result_buffer_all_(*pcRectangles) 
 // - pSmallRect - The region of the text that we want to clip, and then adjusted to the region that should be clipped without splicing double-width characters.
 // Return Value:
 //  <none>
-void Selection::s_BisectSelection(_In_ short const sStringLength,
-                                  _In_ COORD const coordTargetPoint,
+void Selection::s_BisectSelection(const short sStringLength,
+                                  const COORD coordTargetPoint,
                                   const SCREEN_INFORMATION* const pScreenInfo,
                                   _Inout_ SMALL_RECT* const pSmallRect)
 {
@@ -293,7 +293,7 @@ void Selection::HideSelection()
 //                - If FALSE, we're turning the selection OFF.
 // Return Value:
 //   <none>
-void Selection::_SetSelectionVisibility(_In_ bool const fMakeVisible)
+void Selection::_SetSelectionVisibility(const bool fMakeVisible)
 {
     if (IsInSelectingState() && IsAreaSelected())
     {
@@ -526,7 +526,7 @@ void Selection::ClearSelection()
 // - fStartingNewSelection - If we're going to start another selection right away, we'll keep the write blocked.
 // Return Value:
 // - <none>
-void Selection::ClearSelection(_In_ bool const fStartingNewSelection)
+void Selection::ClearSelection(const bool fStartingNewSelection)
 {
     if (IsInSelectingState())
     {
@@ -561,7 +561,7 @@ void Selection::ClearSelection(_In_ bool const fStartingNewSelection)
 // - ulAttr - The color attributes to apply
 // Return Value:
 // - <none>
-void Selection::ColorSelection(_In_ SMALL_RECT* const psrRect, _In_ ULONG const ulAttr)
+void Selection::ColorSelection(_In_ SMALL_RECT* const psrRect, const ULONG ulAttr)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // TODO: psrRect should likely one day be replaced with an array of rectangles (in case we have a line selection we want colored)
@@ -634,7 +634,7 @@ void Selection::InitializeMarkSelection()
 // - coordEnd - Position to select up to
 // Return Value:
 // - <none>
-void Selection::SelectNewRegion(_In_ COORD const coordStart, _In_ COORD const coordEnd)
+void Selection::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
 {
     // clear existing selection if applicable
     ClearSelection();

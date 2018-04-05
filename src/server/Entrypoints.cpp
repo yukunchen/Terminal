@@ -13,7 +13,7 @@
 #include "winbasep.h"
 
 [[nodiscard]]
-HRESULT Entrypoints::StartConsoleForServerHandle(_In_ HANDLE const ServerHandle, const ConsoleArguments* const args)
+HRESULT Entrypoints::StartConsoleForServerHandle(const HANDLE ServerHandle, const ConsoleArguments* const args)
 {
     return ConsoleCreateIoThreadLegacy(ServerHandle, args);
 }

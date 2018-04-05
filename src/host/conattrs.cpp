@@ -83,7 +83,7 @@ static double _FindDifference(const _HSL* const phslColorA, const COLORREF rgbCo
 // - cColorTable - The number of elements in ColorTable
 // Return value:
 // The index in ColorTable of the nearest match to Color.
-WORD FindNearestTableIndex(_In_ COLORREF const Color, _In_reads_(cColorTable) const COLORREF* const ColorTable, const WORD cColorTable)
+WORD FindNearestTableIndex(const COLORREF Color, _In_reads_(cColorTable) const COLORREF* const ColorTable, const WORD cColorTable)
 {
     // Quick check for an exact match in the color table:
     for (WORD i = 0; i < cColorTable; i++)
@@ -138,7 +138,7 @@ WORD XtermToWindowsIndex(const size_t xtermTableEntry)
 // - cColorTable - The number of elements in ColorTable
 // Return value:
 // The index in ColorTable of the nearest match to Color.
-bool FindTableIndex(_In_ COLORREF const Color,
+bool FindTableIndex(const COLORREF Color,
                     _In_reads_(cColorTable) const COLORREF* const ColorTable,
                     const WORD cColorTable,
                     _Out_ WORD* const pFoundIndex)

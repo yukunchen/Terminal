@@ -39,7 +39,7 @@ void Tracing::s_TraceApi(const NTSTATUS status, const CONSOLE_GETLARGESTWINDOWSI
         );
 }
 
-void Tracing::s_TraceApi(const NTSTATUS status, const CONSOLE_SCREENBUFFERINFO_MSG* const a, _In_ bool const fSet)
+void Tracing::s_TraceApi(const NTSTATUS status, const CONSOLE_SCREENBUFFERINFO_MSG* const a, const bool fSet)
 {
     // Duplicate copies required by TraceLogging documentation ("don't get cute" examples)
     // Using logic inside these macros can make problems. Do all logic outside macros.

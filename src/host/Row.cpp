@@ -149,7 +149,7 @@ bool ROW::Reset(const TextAttribute Attr)
 // Return Value:
 // - S_OK if successful, otherwise relevant error
 [[nodiscard]]
-HRESULT ROW::Resize(_In_ size_t const width)
+HRESULT ROW::Resize(const size_t width)
 {
     size_t oldWidth = _charRow->size();
     RETURN_IF_FAILED(_charRow->Resize(width));

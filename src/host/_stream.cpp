@@ -962,7 +962,7 @@ NTSTATUS DoWriteConsole(_In_reads_bytes_(*pcbBuffer) PWCHAR pwchBuffer,
 [[nodiscard]]
 HRESULT WriteConsoleWImplHelper(_In_ IConsoleOutputObject* const pOutContext,
                                 _In_reads_(cchTextBufferLength) const wchar_t* const pwsTextBuffer,
-                                _In_ size_t const cchTextBufferLength,
+                                const size_t cchTextBufferLength,
                                 _Out_ size_t* const pcchTextBufferRead,
                                 _Outptr_result_maybenull_ WriteData** const ppWaiter)
 {
@@ -1009,7 +1009,7 @@ HRESULT WriteConsoleWImplHelper(_In_ IConsoleOutputObject* const pOutContext,
 [[nodiscard]]
 HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutContext,
                                        _In_reads_(cchTextBufferLength) const char* const psTextBuffer,
-                                       _In_ size_t const cchTextBufferLength,
+                                       const size_t cchTextBufferLength,
                                        _Out_ size_t* const pcchTextBufferRead,
                                        _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
 {
@@ -1249,7 +1249,7 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutCont
 [[nodiscard]]
 HRESULT ApiRoutines::WriteConsoleWImpl(_In_ IConsoleOutputObject* const pOutContext,
                                        _In_reads_(cchTextBufferLength) const wchar_t* const pwsTextBuffer,
-                                       _In_ size_t const cchTextBufferLength,
+                                       const size_t cchTextBufferLength,
                                        _Out_ size_t* const pcchTextBufferRead,
                                        _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
 {

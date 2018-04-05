@@ -29,7 +29,7 @@ using namespace Microsoft::Console::VirtualTerminal;
 #define CURSOR_DOWN_SEQUENCE (L"\x1b[B")
 #define CCH_CURSOR_SEQUENCES (3)
 
-MouseInput::MouseInput(_In_ WriteInputEvents const pfnWriteEvents) :
+MouseInput::MouseInput(const WriteInputEvents pfnWriteEvents) :
     _pfnWriteEvents(pfnWriteEvents)
 {
 

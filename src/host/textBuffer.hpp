@@ -120,8 +120,8 @@ public:
     const SHORT GetFirstRowIndex() const;
     const COORD GetCoordBufferSize() const;
 
-    void SetFirstRowIndex(_In_ SHORT const FirstRowIndex);
-    void SetCoordBufferSize(_In_ COORD const coordBufferSize);
+    void SetFirstRowIndex(const SHORT FirstRowIndex);
+    void SetCoordBufferSize(const COORD coordBufferSize);
 
     UINT TotalRowCount() const;
 
@@ -129,9 +129,9 @@ public:
     void SetFill(const CHAR_INFO ciFill);
 
     [[nodiscard]]
-    NTSTATUS ResizeTraditional(_In_ COORD const currentScreenBufferSize,
-                               _In_ COORD const newScreenBufferSize,
-                               _In_ TextAttribute const attributes);
+    NTSTATUS ResizeTraditional(const COORD currentScreenBufferSize,
+                               const COORD newScreenBufferSize,
+                               const TextAttribute attributes);
 private:
 
     std::deque<ROW> _storage;
@@ -148,7 +148,7 @@ private:
     COORD GetPreviousFromCursor() const;
 
     void SetWrapOnCurrentRow();
-    void AdjustWrapOnCurrentRow(_In_ bool const fSet);
+    void AdjustWrapOnCurrentRow(const bool fSet);
 
     // Assist with maintaining proper buffer state for Double Byte character sequences
     bool _PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute);

@@ -119,8 +119,8 @@ public:
         // Only use this last enum as a count of the number of api enums.
         NUMBER_OF_APIS
     };
-    void LogApiCall(_In_ ApiCall const api);
-    void LogApiCall(_In_ ApiCall const api, _In_ BOOLEAN const fUnicode);
+    void LogApiCall(const ApiCall api);
+    void LogApiCall(const ApiCall api, const BOOLEAN fUnicode);
 
 private:
     // Used to prevent multiple instances

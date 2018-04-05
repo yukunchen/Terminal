@@ -397,7 +397,7 @@ void InputTests::TestReadConsolePasswordScenario()
     VERIFY_ARE_EQUAL(wcslen(pwszExpected), len);
 }
 
-void TestMouseWheelReadConsoleInputHelper(_In_ UINT const msg, _In_ DWORD const dwEventFlagsExpected, _In_ DWORD const dwConsoleMode)
+void TestMouseWheelReadConsoleInputHelper(const UINT msg, const DWORD dwEventFlagsExpected, const DWORD dwConsoleMode)
 {
     if (!OneCoreDelay::IsIsWindowPresent())
     {

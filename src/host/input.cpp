@@ -31,7 +31,7 @@ bool IsInVirtualTerminalInputMode()
     return IsFlagSet(gci.pInputBuffer->InputMode, ENABLE_VIRTUAL_TERMINAL_INPUT);
 }
 
-BOOL IsSystemKey(_In_ WORD const wVirtualKeyCode)
+BOOL IsSystemKey(const WORD wVirtualKeyCode)
 {
     switch (wVirtualKeyCode)
     {

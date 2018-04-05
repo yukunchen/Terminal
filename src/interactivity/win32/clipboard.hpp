@@ -40,8 +40,8 @@ namespace Microsoft::Console::Interactivity::Win32
 
         [[nodiscard]]
         NTSTATUS RetrieveTextFromBuffer(const SCREEN_INFORMATION* const pScreenInfo,
-                                        _In_ bool const fLineSelection,
-                                        _In_ UINT const cRectsSelected,
+                                        const bool fLineSelection,
+                                        const UINT cRectsSelected,
                                         _In_reads_(cRectsSelected) const SMALL_RECT* const rgsrSelection,
                                         _Out_writes_(cRectsSelected) PWCHAR* const rgpwszTempText,
                                         _Out_writes_(cRectsSelected) size_t* const rgTempTextLengths);

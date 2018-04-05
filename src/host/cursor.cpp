@@ -20,7 +20,7 @@
 // - Constructor to set default properties for Cursor
 // Arguments:
 // - ulSize - The height of the cursor within this buffer
-Cursor::Cursor(IAccessibilityNotifier *pNotifier, _In_ ULONG const ulSize) :
+Cursor::Cursor(IAccessibilityNotifier *pNotifier, const ULONG ulSize) :
     _pAccessibilityNotifier(pNotifier),
     _ulSize(ulSize),
     _fHasMoved(false),
@@ -62,7 +62,7 @@ Cursor::~Cursor()
 // Return Value:
 // - Success or a relevant error status (usually out of memory).
 [[nodiscard]]
-NTSTATUS Cursor::CreateInstance(_In_ ULONG const ulSize, _Outptr_ Cursor ** const ppCursor)
+NTSTATUS Cursor::CreateInstance(const ULONG ulSize, _Outptr_ Cursor ** const ppCursor)
 {
     *ppCursor = nullptr;
 
@@ -152,31 +152,31 @@ void Cursor::SetHasMoved(const bool fHasMoved)
     _fHasMoved = fHasMoved;
 }
 
-void Cursor::SetIsVisible(_In_ bool const fIsVisible)
+void Cursor::SetIsVisible(const bool fIsVisible)
 {
     _fIsVisible = fIsVisible;
     _RedrawCursor();
 }
 
-void Cursor::SetIsOn(_In_ bool const fIsOn)
+void Cursor::SetIsOn(const bool fIsOn)
 {
     _fIsOn = fIsOn;
     _RedrawCursorAlways();
 }
 
-void Cursor::SetBlinkingAllowed(_In_ bool const fBlinkingAllowed)
+void Cursor::SetBlinkingAllowed(const bool fBlinkingAllowed)
 {
     _fBlinkingAllowed = fBlinkingAllowed;
     _RedrawCursorAlways();
 }
 
-void Cursor::SetIsDouble(_In_ bool const fIsDouble)
+void Cursor::SetIsDouble(const bool fIsDouble)
 {
     _fIsDouble = fIsDouble;
     _RedrawCursor();
 }
 
-void Cursor::SetIsConversionArea(_In_ bool const fIsConversionArea)
+void Cursor::SetIsConversionArea(const bool fIsConversionArea)
 {
     // Functionally the same as "Hide cursor"
     // Never called with TRUE, it's only used in the creation of a
@@ -185,19 +185,19 @@ void Cursor::SetIsConversionArea(_In_ bool const fIsConversionArea)
     _RedrawCursorAlways();
 }
 
-void Cursor::SetIsPopupShown(_In_ bool const fIsPopupShown)
+void Cursor::SetIsPopupShown(const bool fIsPopupShown)
 {
     // Functionally the same as "Hide cursor"
     _fIsPopupShown = fIsPopupShown;
     _RedrawCursorAlways();
 }
 
-void Cursor::SetDelay(_In_ bool const fDelay)
+void Cursor::SetDelay(const bool fDelay)
 {
     _fDelay = fDelay;
 }
 
-void Cursor::SetSize(_In_ ULONG const ulSize)
+void Cursor::SetSize(const ULONG ulSize)
 {
     _ulSize = ulSize;
     _RedrawCursor();
@@ -258,7 +258,7 @@ void Cursor::_RedrawCursorAlways()
     }
 }
 
-void Cursor::SetPosition(_In_ COORD const cPosition)
+void Cursor::SetPosition(const COORD cPosition)
 {
     _RedrawCursor();
     _cPosition.X = cPosition.X;
@@ -267,7 +267,7 @@ void Cursor::SetPosition(_In_ COORD const cPosition)
     ResetDelayEOLWrap();
 }
 
-void Cursor::SetXPosition(_In_ int const NewX)
+void Cursor::SetXPosition(const int NewX)
 {
     _RedrawCursor();
     _cPosition.X = (SHORT)NewX;
@@ -275,7 +275,7 @@ void Cursor::SetXPosition(_In_ int const NewX)
     ResetDelayEOLWrap();
 }
 
-void Cursor::SetYPosition(_In_ int const NewY)
+void Cursor::SetYPosition(const int NewY)
 {
     _RedrawCursor();
     _cPosition.Y = (SHORT)NewY;
@@ -283,7 +283,7 @@ void Cursor::SetYPosition(_In_ int const NewY)
     ResetDelayEOLWrap();
 }
 
-void Cursor::IncrementXPosition(_In_ int const DeltaX)
+void Cursor::IncrementXPosition(const int DeltaX)
 {
     _RedrawCursor();
     _cPosition.X += (SHORT)DeltaX;
@@ -291,7 +291,7 @@ void Cursor::IncrementXPosition(_In_ int const DeltaX)
     ResetDelayEOLWrap();
 }
 
-void Cursor::IncrementYPosition(_In_ int const DeltaY)
+void Cursor::IncrementYPosition(const int DeltaY)
 {
     _RedrawCursor();
     _cPosition.Y += (SHORT)DeltaY;
@@ -299,7 +299,7 @@ void Cursor::IncrementYPosition(_In_ int const DeltaY)
     ResetDelayEOLWrap();
 }
 
-void Cursor::DecrementXPosition(_In_ int const DeltaX)
+void Cursor::DecrementXPosition(const int DeltaX)
 {
     _RedrawCursor();
     _cPosition.X -= (SHORT)DeltaX;
@@ -307,7 +307,7 @@ void Cursor::DecrementXPosition(_In_ int const DeltaX)
     ResetDelayEOLWrap();
 }
 
-void Cursor::DecrementYPosition(_In_ int const DeltaY)
+void Cursor::DecrementYPosition(const int DeltaY)
 {
     _RedrawCursor();
     _cPosition.Y -= (SHORT)DeltaY;

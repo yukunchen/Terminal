@@ -23,7 +23,7 @@ Author(s):
 
 short CalcWindowSizeX(const SMALL_RECT * const pRect);
 short CalcWindowSizeY(const SMALL_RECT * const pRect);
-short CalcCursorYOffsetInPixels(_In_ short const sFontSizeY, _In_ ULONG const ulSize);
+short CalcCursorYOffsetInPixels(const short sFontSizeY, const ULONG ulSize);
 WORD ConvertStringToDec(_In_ PCWSTR pwchToConvert, _Out_opt_ PCWSTR * const ppwchEnd);
 
 class Utils

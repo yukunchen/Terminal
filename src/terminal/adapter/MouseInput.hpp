@@ -25,7 +25,7 @@ namespace Microsoft::Console::VirtualTerminal
     class MouseInput sealed
     {
     public:
-        MouseInput(_In_ WriteInputEvents const pfnWriteEvents);
+        MouseInput(const WriteInputEvents pfnWriteEvents);
         ~MouseInput();
 
         bool HandleMouse(const COORD coordMousePosition,

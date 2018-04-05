@@ -459,7 +459,7 @@ NTSTATUS ConsoleImeResizeCompStrView()
 }
 
 [[nodiscard]]
-NTSTATUS ConsoleImeResizeCompStrScreenBuffer(_In_ COORD const coordNewScreenSize)
+NTSTATUS ConsoleImeResizeCompStrScreenBuffer(const COORD coordNewScreenSize)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     ConsoleImeInfo* const pIme = &gci.ConsoleIme;

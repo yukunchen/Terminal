@@ -45,9 +45,9 @@ public:
     virtual HRESULT Resize(const size_t newSize) noexcept = 0;
     virtual size_t MeasureRight() const = 0;
     virtual size_t MeasureLeft() const = 0;
-    virtual void SetWrapForced(_In_ bool const fWrapWasForced) noexcept = 0;
+    virtual void SetWrapForced(const bool fWrapWasForced) noexcept = 0;
     virtual bool WasWrapForced() const noexcept = 0;
-    virtual void SetDoubleBytePadded(_In_ bool const fDoubleBytePadded) noexcept = 0;
+    virtual void SetDoubleBytePadded(const bool fDoubleBytePadded) noexcept = 0;
     virtual bool WasDoubleBytePadded() const noexcept = 0;
 
     // cell

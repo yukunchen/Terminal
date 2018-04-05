@@ -15,9 +15,9 @@
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
-ConsoleHandleData::ConsoleHandleData(_In_ ULONG const ulHandleType,
-                                     _In_ ACCESS_MASK const amAccess,
-                                     _In_ ULONG const ulShareAccess,
+ConsoleHandleData::ConsoleHandleData(const ULONG ulHandleType,
+                                     const ACCESS_MASK amAccess,
+                                     const ULONG ulShareAccess,
                                      _In_ PVOID const pvClientPointer) :
     _ulHandleType(ulHandleType),
     _amAccess(amAccess),

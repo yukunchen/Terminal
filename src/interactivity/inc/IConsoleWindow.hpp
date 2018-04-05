@@ -33,10 +33,10 @@ namespace Microsoft::Console::Interactivity
 
         virtual bool IsInFullscreen() const = 0;
 
-        virtual void SetIsFullscreen(_In_ bool const fFullscreenEnabled) = 0;
+        virtual void SetIsFullscreen(const bool fFullscreenEnabled) = 0;
         [[nodiscard]]
         virtual NTSTATUS SetViewportOrigin(_In_ SMALL_RECT NewWindow) = 0;
-        virtual void SetWindowHasMoved(_In_ BOOL const fHasMoved) = 0;
+        virtual void SetWindowHasMoved(const BOOL fHasMoved) = 0;
 
         virtual void CaptureMouse() = 0;
         virtual BOOL ReleaseMouse() = 0;
@@ -57,7 +57,7 @@ namespace Microsoft::Console::Interactivity
         virtual BOOL PostUpdateTitleWithCopy(const PCWSTR pwszNewTitle) const = 0;
         virtual BOOL PostUpdateWindowSize() const = 0;
 
-        virtual void UpdateWindowSize(_In_ COORD const coordSizeInChars) const = 0;
+        virtual void UpdateWindowSize(const COORD coordSizeInChars) const = 0;
         virtual void UpdateWindowText() = 0;
 
         virtual void HorizontalScroll(const WORD wScrollCommand,

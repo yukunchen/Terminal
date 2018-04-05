@@ -95,7 +95,7 @@ public:
         }
         return _fSetConsoleScreenBufferInfoExResult;
     }
-    virtual BOOL SetConsoleCursorPosition(_In_ COORD const dwCursorPosition)
+    virtual BOOL SetConsoleCursorPosition(const COORD dwCursorPosition)
     {
         Log::Comment(L"SetConsoleCursorPosition MOCK called...");
 
@@ -134,7 +134,7 @@ public:
         return _fSetConsoleCursorInfoResult;
     }
 
-    virtual BOOL SetConsoleWindowInfo(_In_ BOOL const bAbsolute, const SMALL_RECT* const lpConsoleWindow)
+    virtual BOOL SetConsoleWindowInfo(const BOOL bAbsolute, const SMALL_RECT* const lpConsoleWindow)
     {
         Log::Comment(L"SetConsoleWindowInfo MOCK called...");
 
@@ -148,7 +148,7 @@ public:
         return _fSetConsoleWindowInfoResult;
     }
 
-    virtual BOOL PrivateSetCursorKeysMode(_In_ bool const fCursorKeysApplicationMode)
+    virtual BOOL PrivateSetCursorKeysMode(const bool fCursorKeysApplicationMode)
     {
         Log::Comment(L"PrivateSetCursorKeysMode MOCK called...");
 
@@ -160,7 +160,7 @@ public:
         return _fPrivateSetCursorKeysModeResult;
     }
 
-    virtual BOOL PrivateSetKeypadMode(_In_ bool const fKeypadApplicationMode)
+    virtual BOOL PrivateSetKeypadMode(const bool fKeypadApplicationMode)
     {
         Log::Comment(L"PrivateSetKeypadMode MOCK called...");
 
@@ -172,7 +172,7 @@ public:
         return _fPrivateSetKeypadModeResult;
     }
 
-    virtual BOOL PrivateAllowCursorBlinking(_In_ bool const fEnable)
+    virtual BOOL PrivateAllowCursorBlinking(const bool fEnable)
     {
         Log::Comment(L"PrivateAllowCursorBlinking MOCK called...");
 
@@ -184,7 +184,7 @@ public:
         return _fPrivateAllowCursorBlinkingResult;
     }
 
-    virtual BOOL FillConsoleOutputCharacterW(_In_ WCHAR const wch, _In_ DWORD const nLength, _In_ COORD const dwWriteCoord, _Out_ DWORD* const pNumberOfCharsWritten)
+    virtual BOOL FillConsoleOutputCharacterW(const WCHAR wch, const DWORD nLength, const COORD dwWriteCoord, _Out_ DWORD* const pNumberOfCharsWritten)
     {
         Log::Comment(L"FillConsoleOutputCharacterW MOCK called...");
 
@@ -212,7 +212,7 @@ public:
         return _fFillConsoleOutputCharacterWResult;
     }
 
-    virtual BOOL FillConsoleOutputAttribute(_In_ WORD const wAttribute, _In_ DWORD const nLength, _In_ COORD const dwWriteCoord, _Out_ DWORD* const pNumberOfAttrsWritten)
+    virtual BOOL FillConsoleOutputAttribute(const WORD wAttribute, const DWORD nLength, const COORD dwWriteCoord, _Out_ DWORD* const pNumberOfAttrsWritten)
     {
         Log::Comment(L"FillConsoleOutputAttribute MOCK called...");
 
@@ -240,7 +240,7 @@ public:
         return _fFillConsoleOutputAttributeResult;
     }
 
-    virtual BOOL SetConsoleTextAttribute(_In_ WORD const wAttr)
+    virtual BOOL SetConsoleTextAttribute(const WORD wAttr)
     {
         Log::Comment(L"SetConsoleTextAttribute MOCK called...");
 
@@ -254,7 +254,7 @@ public:
         return _fSetConsoleTextAttributeResult;
     }
 
-    virtual BOOL PrivateSetLegacyAttributes(_In_ WORD const wAttr, const bool fForeground, const bool fBackground, const bool fMeta)
+    virtual BOOL PrivateSetLegacyAttributes(const WORD wAttr, const bool fForeground, const bool fBackground, const bool fMeta)
     {
         Log::Comment(L"PrivateSetLegacyAttributes MOCK called...");
         if (_fPrivateSetLegacyAttributesResult)
@@ -283,7 +283,7 @@ public:
         return _fPrivateSetLegacyAttributesResult;
     }
 
-    virtual BOOL SetConsoleXtermTextAttribute(_In_ int const iXtermTableEntry, const bool fIsForeground)
+    virtual BOOL SetConsoleXtermTextAttribute(const int iXtermTableEntry, const bool fIsForeground)
     {
         Log::Comment(L"SetConsoleXtermTextAttribute MOCK called...");
 
@@ -311,7 +311,7 @@ public:
         return _fSetConsoleXtermTextAttributeResult;
     }
 
-    virtual BOOL SetConsoleRGBTextAttribute(_In_ COLORREF const rgbColor, const bool fIsForeground)
+    virtual BOOL SetConsoleRGBTextAttribute(const COLORREF rgbColor, const bool fIsForeground)
     {
         Log::Comment(L"SetConsoleRGBTextAttribute MOCK called...");
         if (_fSetConsoleRGBTextAttributeResult)
@@ -376,7 +376,7 @@ public:
         return _fPrivateWriteConsoleControlInputResult;
     }
 
-    bool _IsInsideClip(const SMALL_RECT* const pClipRectangle, _In_ SHORT const iRow, _In_ SHORT const iCol)
+    bool _IsInsideClip(const SMALL_RECT* const pClipRectangle, const SHORT iRow, const SHORT iCol)
     {
         if (pClipRectangle == nullptr)
         {
@@ -524,7 +524,7 @@ public:
         return TRUE;
     }
 
-    virtual BOOL PrivateForwardTab(_In_ SHORT const sNumTabs)
+    virtual BOOL PrivateForwardTab(const SHORT sNumTabs)
     {
         Log::Comment(L"PrivateForwardTab MOCK called...");
         if (_fPrivateForwardTabResult)
@@ -534,7 +534,7 @@ public:
         return TRUE;
     }
 
-    virtual BOOL PrivateBackwardsTab(_In_ SHORT const sNumTabs)
+    virtual BOOL PrivateBackwardsTab(const SHORT sNumTabs)
     {
         Log::Comment(L"PrivateBackwardsTab MOCK called...");
         if (_fPrivateBackwardsTabResult)
@@ -544,7 +544,7 @@ public:
         return TRUE;
     }
 
-    virtual BOOL PrivateTabClear(_In_ bool const fClearAll)
+    virtual BOOL PrivateTabClear(const bool fClearAll)
     {
         Log::Comment(L"PrivateTabClear MOCK called...");
         if (_fPrivateTabClearResult)
@@ -554,7 +554,7 @@ public:
         return TRUE;
     }
 
-    virtual BOOL PrivateEnableVT200MouseMode(_In_ bool const fEnabled)
+    virtual BOOL PrivateEnableVT200MouseMode(const bool fEnabled)
     {
         Log::Comment(L"PrivateEnableVT200MouseMode MOCK called...");
         if (_fPrivateEnableVT200MouseModeResult)
@@ -564,7 +564,7 @@ public:
         return _fPrivateEnableVT200MouseModeResult;
     }
 
-    virtual BOOL PrivateEnableUTF8ExtendedMouseMode(_In_ bool const fEnabled)
+    virtual BOOL PrivateEnableUTF8ExtendedMouseMode(const bool fEnabled)
     {
         Log::Comment(L"PrivateEnableUTF8ExtendedMouseMode MOCK called...");
         if (_fPrivateEnableUTF8ExtendedMouseModeResult)
@@ -574,7 +574,7 @@ public:
         return _fPrivateEnableUTF8ExtendedMouseModeResult;
     }
 
-    virtual BOOL PrivateEnableSGRExtendedMouseMode(_In_ bool const fEnabled)
+    virtual BOOL PrivateEnableSGRExtendedMouseMode(const bool fEnabled)
     {
         Log::Comment(L"PrivateEnableSGRExtendedMouseMode MOCK called...");
         if (_fPrivateEnableSGRExtendedMouseModeResult)
@@ -584,7 +584,7 @@ public:
         return _fPrivateEnableSGRExtendedMouseModeResult;
     }
 
-    virtual BOOL PrivateEnableButtonEventMouseMode(_In_ bool const fEnabled)
+    virtual BOOL PrivateEnableButtonEventMouseMode(const bool fEnabled)
     {
         Log::Comment(L"PrivateEnableButtonEventMouseMode MOCK called...");
         if (_fPrivateEnableButtonEventMouseModeResult)
@@ -594,7 +594,7 @@ public:
         return _fPrivateEnableButtonEventMouseModeResult;
     }
 
-    virtual BOOL PrivateEnableAnyEventMouseMode(_In_ bool const fEnabled)
+    virtual BOOL PrivateEnableAnyEventMouseMode(const bool fEnabled)
     {
         Log::Comment(L"PrivateEnableAnyEventMouseMode MOCK called...");
         if (_fPrivateEnableAnyEventMouseModeResult)
@@ -604,7 +604,7 @@ public:
         return _fPrivateEnableAnyEventMouseModeResult;
     }
 
-    virtual BOOL PrivateEnableAlternateScroll(_In_ bool const fEnabled)
+    virtual BOOL PrivateEnableAlternateScroll(const bool fEnabled)
     {
         Log::Comment(L"PrivateEnableAlternateScroll MOCK called...");
         if (_fPrivateEnableAlternateScrollResult)
@@ -620,7 +620,7 @@ public:
         return TRUE;
     }
 
-    virtual BOOL SetCursorStyle(_In_ CursorType const cursorType)
+    virtual BOOL SetCursorStyle(const CursorType cursorType)
     {
         Log::Comment(L"SetCursorStyle MOCK called...");
         if (_fSetCursorStyleResult)
@@ -630,7 +630,7 @@ public:
         return _fSetCursorStyleResult;
     }
 
-    virtual BOOL SetCursorColor(_In_ COLORREF const cursorColor)
+    virtual BOOL SetCursorColor(const COLORREF cursorColor)
     {
         Log::Comment(L"SetCursorColor MOCK called...");
         if (_fSetCursorColorResult)
@@ -1296,15 +1296,15 @@ public:
         return true;
     }
 
-    void Print(_In_ wchar_t const /*wch*/)
+    void Print(const wchar_t /*wch*/)
     {
     }
 
-    void PrintString(_In_reads_(_Param_(2)) wchar_t* const /*rgwch*/, _In_ size_t const /*cch*/)
+    void PrintString(_In_reads_(_Param_(2)) wchar_t* const /*rgwch*/, const size_t /*cch*/)
     {
     }
 
-    void Execute(_In_ wchar_t const /*wch*/)
+    void Execute(const wchar_t /*wch*/)
     {
     }
 

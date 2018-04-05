@@ -119,7 +119,7 @@ HRESULT ConsoleWaitBlock::s_CreateWait(_Inout_ CONSOLE_API_MSG* const pWaitReply
 // - TerminationReason - A reason to tell the callback to terminate early or 0 if it should operate normally.
 // Return Value:
 // - True if the routine was able to successfully return data (or terminate). False otherwise.
-bool ConsoleWaitBlock::Notify(_In_ WaitTerminationReason const TerminationReason)
+bool ConsoleWaitBlock::Notify(const WaitTerminationReason TerminationReason)
 {
     bool fRetVal;
 

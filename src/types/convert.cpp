@@ -32,7 +32,7 @@ static const WORD leftShiftScanCode = 0x2A;
 [[nodiscard]]
 HRESULT ConvertToW(const UINT uiCodePage,
                    _In_reads_or_z_(cchSource) const char* const rgchSource,
-                   _In_ size_t const cchSource,
+                   const size_t cchSource,
                    _Inout_ wistd::unique_ptr<wchar_t[]>& pwsTarget,
                    _Out_ size_t& cchTarget)
 {
@@ -129,7 +129,7 @@ HRESULT ConvertToA(const UINT uiCodePage,
 [[nodiscard]]
 HRESULT GetALengthFromW(const UINT uiCodePage,
                         _In_reads_or_z_(cchSource) const wchar_t* const rgwchSource,
-                        _In_ size_t const cchSource,
+                        const size_t cchSource,
                         _Out_ size_t* const pcchTarget)
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, pcchTarget);

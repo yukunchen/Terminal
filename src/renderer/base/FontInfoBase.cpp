@@ -21,10 +21,10 @@ bool operator==(const FontInfoBase& a, const FontInfoBase& b)
 }
 
 FontInfoBase::FontInfoBase(_In_ PCWSTR const pwszFaceName,
-                           _In_ BYTE const bFamily,
-                           _In_ LONG const lWeight,
-                           _In_ bool const fSetDefaultRasterFont,
-                           _In_ UINT const uiCodePage) :
+                           const BYTE bFamily,
+                           const LONG lWeight,
+                           const bool fSetDefaultRasterFont,
+                           const UINT uiCodePage) :
                            _bFamily(bFamily),
                            _lWeight(lWeight),
                            _fDefaultRasterSetFromEngine(fSetDefaultRasterFont),
@@ -95,9 +95,9 @@ BYTE FontInfoBase::GetCharSet() const
 
 // NOTE: this method is intended to only be used from the engine itself to respond what font it has chosen.
 void FontInfoBase::SetFromEngine(_In_ PCWSTR const pwszFaceName,
-                                 _In_ BYTE const bFamily,
-                                 _In_ LONG const lWeight,
-                                 _In_ bool const fSetDefaultRasterFont)
+                                 const BYTE bFamily,
+                                 const LONG lWeight,
+                                 const bool fSetDefaultRasterFont)
 {
     wcscpy_s(_wszFaceName, ARRAYSIZE(_wszFaceName), pwszFaceName);
     _bFamily = bFamily;

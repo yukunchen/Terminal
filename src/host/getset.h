@@ -28,23 +28,23 @@ void DoSrvGetConsoleCursorInfo(_In_ SCREEN_INFORMATION* pScreenInfo,
 [[nodiscard]]
 HRESULT DoSrvSetConsoleCursorPosition(_In_ SCREEN_INFORMATION* pScreenInfo, const COORD* const pCursorPosition);
 [[nodiscard]]
-HRESULT DoSrvSetConsoleCursorInfo(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ ULONG const CursorSize, _In_ BOOLEAN const IsVisible);
+HRESULT DoSrvSetConsoleCursorInfo(_In_ SCREEN_INFORMATION* pScreenInfo, const ULONG CursorSize, const BOOLEAN IsVisible);
 [[nodiscard]]
-HRESULT DoSrvSetConsoleWindowInfo(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ BOOLEAN const IsAbsoluteRectangle, const SMALL_RECT* const pWindowRectangle);
+HRESULT DoSrvSetConsoleWindowInfo(_In_ SCREEN_INFORMATION* pScreenInfo, const BOOLEAN IsAbsoluteRectangle, const SMALL_RECT* const pWindowRectangle);
 
 [[nodiscard]]
 HRESULT DoSrvScrollConsoleScreenBufferW(_In_ SCREEN_INFORMATION* pScreenInfo,
                                         const SMALL_RECT* const pSourceRectangle,
                                         const COORD* const pTargetOrigin,
                                         _In_opt_ const SMALL_RECT* const pTargetClipRectangle,
-                                        _In_ wchar_t const wchFill,
-                                        _In_ WORD const attrFill);
+                                        const wchar_t wchFill,
+                                        const WORD attrFill);
 
 [[nodiscard]]
-HRESULT DoSrvSetConsoleTextAttribute(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ WORD const Attribute);
+HRESULT DoSrvSetConsoleTextAttribute(_In_ SCREEN_INFORMATION* pScreenInfo, const WORD Attribute);
 void DoSrvPrivateSetLegacyAttributes(_In_ SCREEN_INFORMATION* pScreenInfo,
-                                     _In_ WORD const Attribute,
-                                     _In_ bool const fForeground,
+                                     const WORD Attribute,
+                                     const bool fForeground,
                                      const bool fBackground,
                                      const bool fMeta);
 void SetScreenColors(_In_ SCREEN_INFORMATION* ScreenInfo,
@@ -69,17 +69,17 @@ void DoSrvPrivateUseMainScreenBuffer(_In_ SCREEN_INFORMATION* const psiCurr);
 [[nodiscard]]
 NTSTATUS DoSrvPrivateHorizontalTabSet();
 [[nodiscard]]
-NTSTATUS DoSrvPrivateForwardTab(_In_ SHORT const sNumTabs);
+NTSTATUS DoSrvPrivateForwardTab(const SHORT sNumTabs);
 [[nodiscard]]
-NTSTATUS DoSrvPrivateBackwardsTab(_In_ SHORT const sNumTabs);
-void DoSrvPrivateTabClear(_In_ bool const fClearAll);
+NTSTATUS DoSrvPrivateBackwardsTab(const SHORT sNumTabs);
+void DoSrvPrivateTabClear(const bool fClearAll);
 
-void DoSrvPrivateEnableVT200MouseMode(_In_ bool const fEnable);
-void DoSrvPrivateEnableUTF8ExtendedMouseMode(_In_ bool const fEnable);
-void DoSrvPrivateEnableSGRExtendedMouseMode(_In_ bool const fEnable);
-void DoSrvPrivateEnableButtonEventMouseMode(_In_ bool const fEnable);
-void DoSrvPrivateEnableAnyEventMouseMode(_In_ bool const fEnable);
-void DoSrvPrivateEnableAlternateScroll(_In_ bool const fEnable);
+void DoSrvPrivateEnableVT200MouseMode(const bool fEnable);
+void DoSrvPrivateEnableUTF8ExtendedMouseMode(const bool fEnable);
+void DoSrvPrivateEnableSGRExtendedMouseMode(const bool fEnable);
+void DoSrvPrivateEnableButtonEventMouseMode(const bool fEnable);
+void DoSrvPrivateEnableAnyEventMouseMode(const bool fEnable);
+void DoSrvPrivateEnableAlternateScroll(const bool fEnable);
 
 void DoSrvPrivateSetConsoleXtermTextAttribute(_In_ SCREEN_INFORMATION* const pScreenInfo,
                                               const int iXtermTableEntry,
@@ -92,9 +92,9 @@ void DoSrvPrivateSetConsoleRGBTextAttribute(_In_ SCREEN_INFORMATION* const pScre
 NTSTATUS DoSrvPrivateEraseAll(_In_ SCREEN_INFORMATION* const pScreenInfo);
 
 void DoSrvSetCursorStyle(const SCREEN_INFORMATION* const pScreenInfo,
-                         _In_ CursorType const cursorType);
+                         const CursorType cursorType);
 void DoSrvSetCursorColor(const SCREEN_INFORMATION* const pScreenInfo,
-                         _In_ COLORREF const cursorColor);
+                         const COLORREF cursorColor);
 
 [[nodiscard]]
 NTSTATUS DoSrvPrivateGetConsoleScreenBufferAttributes(_In_ SCREEN_INFORMATION* const pScreenInfo, _Out_ WORD* const pwAttributes);

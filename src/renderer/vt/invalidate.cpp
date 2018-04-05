@@ -39,7 +39,7 @@ HRESULT VtEngine::InvalidateSystem(const RECT* const /*prcDirtyClient*/)
 // - S_OK
 [[nodiscard]]
 HRESULT VtEngine::InvalidateSelection(_In_reads_(cRectangles) const SMALL_RECT* const /*rgsrSelection*/,
-                                      _In_ UINT const /*cRectangles*/)
+                                      const UINT /*cRectangles*/)
 {
     // Selection shouldn't be handled bt the VT Renderer Host, it should be
     //      handled by the client.

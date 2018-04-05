@@ -101,7 +101,7 @@ bool InteractDispatch::WriteString(_In_reads_(cch) const wchar_t* const pws,
 // True if handled successfully. False otherwise.
 bool InteractDispatch::WindowManipulation(const DispatchCommon::WindowManipulationType uiFunction,
                                           _In_reads_(cParams) const unsigned short* const rgusParams,
-                                          _In_ size_t const cParams)
+                                          const size_t cParams)
 {
     bool fSuccess = false;
     // Other Window Manipulation functions:

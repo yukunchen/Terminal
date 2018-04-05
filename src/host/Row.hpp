@@ -47,7 +47,7 @@ public:
 
     bool Reset(const TextAttribute Attr);
     [[nodiscard]]
-    HRESULT Resize(_In_ size_t const width);
+    HRESULT Resize(const size_t width);
 
     void ClearColumn(const size_t column);
     std::wstring GetText() const;

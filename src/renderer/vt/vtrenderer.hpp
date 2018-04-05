@@ -37,7 +37,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]]
         HRESULT InvalidateSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection,
-                                    _In_ UINT const cRectangles) override;
+                                    const UINT cRectangles) override;
         [[nodiscard]]
         virtual HRESULT InvalidateScroll(const COORD* const pcoordDelta) = 0;
         [[nodiscard]]
@@ -66,51 +66,51 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         virtual HRESULT PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
                                         _In_reads_(cchLine) const unsigned char* const rgWidths,
-                                        _In_ size_t const cchLine,
-                                        _In_ COORD const coordTarget,
-                                        _In_ bool const fTrimLeft) override;
+                                        const size_t cchLine,
+                                        const COORD coordTarget,
+                                        const bool fTrimLeft) override;
         [[nodiscard]]
-        HRESULT PaintBufferGridLines(_In_ GridLines const lines,
-                                    _In_ COLORREF const color,
-                                    _In_ size_t const cchLine,
-                                    _In_ COORD const coordTarget) override;
+        HRESULT PaintBufferGridLines(const GridLines lines,
+                                    const COLORREF color,
+                                    const size_t cchLine,
+                                    const COORD coordTarget) override;
         [[nodiscard]]
         HRESULT PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection,
-                            _In_ UINT const cRectangles) override;
+                            const UINT cRectangles) override;
 
         [[nodiscard]]
-        HRESULT PaintCursor(_In_ COORD const coordCursor,
-                            _In_ ULONG const ulCursorHeightPercent,
-                            _In_ bool const fIsDoubleWidth,
-                            _In_ CursorType const cursorType,
-                            _In_ bool const fUseColor,
-                            _In_ COLORREF const cursorColor) override;
+        HRESULT PaintCursor(const COORD coordCursor,
+                            const ULONG ulCursorHeightPercent,
+                            const bool fIsDoubleWidth,
+                            const CursorType cursorType,
+                            const bool fUseColor,
+                            const COLORREF cursorColor) override;
 
         [[nodiscard]]
         HRESULT ClearCursor() override;
 
         [[nodiscard]]
-        virtual HRESULT UpdateDrawingBrushes(_In_ COLORREF const colorForeground,
-                                            _In_ COLORREF const colorBackground,
-                                            _In_ WORD const legacyColorAttribute,
-                                            _In_ bool const fIncludeBackgrounds) = 0;
+        virtual HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
+                                            const COLORREF colorBackground,
+                                            const WORD legacyColorAttribute,
+                                            const bool fIncludeBackgrounds) = 0;
         [[nodiscard]]
-        HRESULT UpdateFont(_In_ FontInfoDesired const * const pfiFontInfoDesired,
+        HRESULT UpdateFont(const FontInfoDesired * const pfiFontInfoDesired,
                         _Out_ FontInfo* const pfiFontInfo) override;
         [[nodiscard]]
-        HRESULT UpdateDpi(_In_ int const iDpi) override;
+        HRESULT UpdateDpi(const int iDpi) override;
         [[nodiscard]]
-        HRESULT UpdateViewport(_In_ SMALL_RECT const srNewViewport) override;
+        HRESULT UpdateViewport(const SMALL_RECT srNewViewport) override;
 
         [[nodiscard]]
-        HRESULT GetProposedFont(_In_ FontInfoDesired const * const pfiFontDesired,
-                                _Out_ FontInfo* const pfiFont, _In_ int const iDpi) override;
+        HRESULT GetProposedFont(const FontInfoDesired * const pfiFontDesired,
+                                _Out_ FontInfo* const pfiFont, const int iDpi) override;
 
         SMALL_RECT GetDirtyRectInChars() override;
         [[nodiscard]]
         HRESULT GetFontSize(_Out_ COORD* const pFontSize) override;
         [[nodiscard]]
-        HRESULT IsCharFullWidthByFont(_In_ WCHAR const wch, _Out_ bool* const pResult) override;
+        HRESULT IsCharFullWidthByFont(const WCHAR wch, _Out_ bool* const pResult) override;
 
         [[nodiscard]]
         HRESULT SuppressResizeRepaint();
@@ -148,7 +148,7 @@ namespace Microsoft::Console::Render
         bool _skipCursor;
 
         [[nodiscard]]
-        HRESULT _Write(_In_reads_(cch) const char* const psz, _In_ size_t const cch);
+        HRESULT _Write(_In_reads_(cch) const char* const psz, const size_t cch);
         [[nodiscard]]
         HRESULT _Write(const std::string& str);
         [[nodiscard]]
@@ -203,13 +203,13 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         virtual HRESULT _MoveCursor(const COORD coord) = 0;
         [[nodiscard]]
-        HRESULT _RgbUpdateDrawingBrushes(_In_ COLORREF const colorForeground,
-                                        _In_ COLORREF const colorBackground,
+        HRESULT _RgbUpdateDrawingBrushes(const COLORREF colorForeground,
+                                        const COLORREF colorBackground,
                                         _In_reads_(cColorTable) const COLORREF* const ColorTable,
                                         const WORD cColorTable);
         [[nodiscard]]
-        HRESULT _16ColorUpdateDrawingBrushes(_In_ COLORREF const colorForeground,
-                                            _In_ COLORREF const colorBackground,
+        HRESULT _16ColorUpdateDrawingBrushes(const COLORREF colorForeground,
+                                            const COLORREF colorBackground,
                                             _In_reads_(cColorTable) const COLORREF* const ColorTable,
                                             const WORD cColorTable);
 
@@ -218,14 +218,14 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         HRESULT _PaintUtf8BufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
                                     _In_reads_(cchLine) const unsigned char* const rgWidths,
-                                    _In_ size_t const cchLine,
-                                    _In_ COORD const coordTarget);
+                                    const size_t cchLine,
+                                    const COORD coordTarget);
 
         [[nodiscard]]
         HRESULT _PaintAsciiBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
                                     _In_reads_(cchLine) const unsigned char* const rgWidths,
-                                    _In_ size_t const cchLine,
-                                    _In_ COORD const coordTarget);
+                                    const size_t cchLine,
+                                    const COORD coordTarget);
 
         /////////////////////////// Unit Testing Helpers ///////////////////////////
     #ifdef UNIT_TESTING

@@ -94,8 +94,8 @@ void Registry::GetEditKeys(_In_opt_ HKEY hConsoleKey) const
 }
 
 void Registry::_LoadMappedProperties(_In_reads_(cPropertyMappings) const RegistrySerialization::RegPropertyMap* const rgPropertyMappings,
-                                     _In_ size_t const cPropertyMappings,
-                                     _In_ HKEY const hKey)
+                                     const size_t cPropertyMappings,
+                                     const HKEY hKey)
 {
     // Iterate through properties table and load each setting for common property types
     for (UINT iMapping = 0; iMapping < cPropertyMappings; iMapping++)

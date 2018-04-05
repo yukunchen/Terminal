@@ -177,7 +177,7 @@ void _CONSOLE_API_MSG::SetReplyStatus(const NTSTATUS Status)
     Complete.IoStatus.Status = Status;
 }
 
-void _CONSOLE_API_MSG::SetReplyInformation(_In_ ULONG_PTR const pInformation)
+void _CONSOLE_API_MSG::SetReplyInformation(const ULONG_PTR pInformation)
 {
     Complete.IoStatus.Information = pInformation;
 }

@@ -52,15 +52,15 @@ public:
     void InitializeMarkSelection();
     void InitializeMouseSelection(const COORD coordBufferPos);
 
-    void SelectNewRegion(_In_ COORD const coordStart, _In_ COORD const coordEnd);
+    void SelectNewRegion(const COORD coordStart, const COORD coordEnd);
     void SelectAll();
 
     void ExtendSelection(_In_ COORD coordBufferPos);
-    void AdjustSelection(_In_ COORD const coordSelectionStart, _In_ COORD const coordSelectionEnd);
+    void AdjustSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd);
 
     void ClearSelection();
-    void ClearSelection(_In_ bool const fStartingNewSelection);
-    void ColorSelection(_In_ SMALL_RECT* const psrRect, _In_ ULONG const ulAttr);
+    void ClearSelection(const bool fStartingNewSelection);
+    void ColorSelection(_In_ SMALL_RECT* const psrRect, const ULONG ulAttr);
 
     // delete these or we can accidentally get copies of the singleton
     Selection(Selection const&) = delete;
@@ -70,12 +70,12 @@ protected:
     Selection();
 
 private:
-    void _SetSelectionVisibility(_In_ bool const fMakeVisible);
+    void _SetSelectionVisibility(const bool fMakeVisible);
 
     void _PaintSelection() const;
 
-    static void s_BisectSelection(_In_ short const sStringLength,
-                                  _In_ COORD const coordTargetPoint,
+    static void s_BisectSelection(const short sStringLength,
+                                  const COORD coordTargetPoint,
                                   const SCREEN_INFORMATION* const pScreenInfo,
                                   _Inout_ SMALL_RECT* const pSmallRect);
 
@@ -148,7 +148,7 @@ private:
 
     void _AlignAlternateSelection(const bool fAlignToLineSelect);
 
-    void _SetSelectingState(_In_ bool const fSelectingOn);
+    void _SetSelectingState(const bool fSelectingOn);
 
     // TODO: extended edit key should probably be in here (remaining code is in cmdline.cpp)
     // TODO: trim leading zeros should probably be in here (pending move of reactive code from input.cpp to selectionInput.cpp)

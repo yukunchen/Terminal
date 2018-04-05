@@ -99,7 +99,7 @@ InputStateMachineEngine::InputStateMachineEngine(_In_ std::unique_ptr<IInteractD
 // - wch - Character to dispatch.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool InputStateMachineEngine::ActionExecute(_In_ wchar_t const wch)
+bool InputStateMachineEngine::ActionExecute(const wchar_t wch)
 {
     bool fSuccess = false;
     if (wch == UNICODE_ETX)
@@ -178,7 +178,7 @@ bool InputStateMachineEngine::ActionExecute(_In_ wchar_t const wch)
 // - wch - Character to dispatch.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool InputStateMachineEngine::ActionPrint(_In_ wchar_t const wch)
+bool InputStateMachineEngine::ActionPrint(const wchar_t wch)
 {
     short vkey = 0;
     DWORD dwModifierState = 0;
@@ -199,7 +199,7 @@ bool InputStateMachineEngine::ActionPrint(_In_ wchar_t const wch)
 // Return Value:
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionPrintString(_Inout_updates_(cch) wchar_t* const rgwch,
-                                                _In_ size_t const cch)
+                                                const size_t cch)
 {
     if (cch == 0)
     {
@@ -219,7 +219,7 @@ bool InputStateMachineEngine::ActionPrintString(_Inout_updates_(cch) wchar_t* co
 // - wchIntermediate - Intermediate character in the sequence, if there was one.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool InputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch,
+bool InputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
                                                 const unsigned short /*cIntermediate*/,
                                                 const wchar_t /*wchIntermediate*/)
 {
@@ -249,7 +249,7 @@ bool InputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch,
 // - cParams - number of parameters found.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
+bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
                                                 const unsigned short /*cIntermediate*/,
                                                 const wchar_t /*wchIntermediate*/,
                                                 _In_reads_(cParams) const unsigned short* const rgusParams,
@@ -362,7 +362,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
 // - cParams - number of parameters found.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool InputStateMachineEngine::ActionSs3Dispatch(_In_ wchar_t const wch,
+bool InputStateMachineEngine::ActionSs3Dispatch(const wchar_t wch,
                                                 _In_reads_(_Param_(3)) const unsigned short* const /*rgusParams*/,
                                                 const unsigned short /*cParams*/)
 {
@@ -415,7 +415,7 @@ bool InputStateMachineEngine::ActionIgnore()
 // - cchOscString - length of pwchOscStringBuffer
 // Return Value:
 // - true if we handled the dsipatch.
-bool InputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const /*wch*/,
+bool InputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
                                                 const unsigned short /*sOscParam*/,
                                                 _Inout_updates_(_Param_(4)) wchar_t* const /*pwchOscStringBuffer*/,
                                                 const unsigned short /*cchOscString*/)

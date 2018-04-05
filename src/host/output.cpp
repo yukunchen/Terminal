@@ -606,7 +606,7 @@ NTSTATUS ReadOutputString(const SCREEN_INFORMATION * const pScreenInfo,
     return STATUS_SUCCESS;
 }
 
-void ScreenBufferSizeChange(_In_ COORD const coordNewSize)
+void ScreenBufferSizeChange(const COORD coordNewSize)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 

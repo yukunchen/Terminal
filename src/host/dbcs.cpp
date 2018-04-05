@@ -235,7 +235,7 @@ bool IsDBCSLeadByteConsole(const CHAR ch, const CPINFO * const pCPInfo)
     return false;
 }
 
-BYTE CodePageToCharSet(_In_ UINT const uiCodePage)
+BYTE CodePageToCharSet(const UINT uiCodePage)
 {
     CHARSETINFO csi;
 
@@ -247,7 +247,7 @@ BYTE CodePageToCharSet(_In_ UINT const uiCodePage)
     return (BYTE) csi.ciCharset;
 }
 
-BOOL IsAvailableEastAsianCodePage(_In_ UINT const uiCodePage)
+BOOL IsAvailableEastAsianCodePage(const UINT uiCodePage)
 {
     BYTE const CharSet = CodePageToCharSet(uiCodePage);
 

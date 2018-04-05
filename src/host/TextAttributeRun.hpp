@@ -25,7 +25,7 @@ class TextAttributeRun final
 {
 public:
     size_t GetLength() const;
-    void SetLength(_In_ size_t const cchLength);
+    void SetLength(const size_t cchLength);
 
     const TextAttribute GetAttributes() const;
     void SetAttributes(const TextAttribute textAttribute);

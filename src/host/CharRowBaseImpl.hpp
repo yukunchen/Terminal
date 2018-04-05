@@ -62,7 +62,7 @@ void CharRowBase<GlyphType, StringType>::swap(_In_ CharRowBase<GlyphType, String
 // Return Value:
 // - <none>
 template<typename GlyphType, typename StringType>
-void CharRowBase<GlyphType, StringType>::SetWrapForced(_In_ bool const wrapForced) noexcept
+void CharRowBase<GlyphType, StringType>::SetWrapForced(const bool wrapForced) noexcept
 {
     _wrapForced = wrapForced;
 }
@@ -86,7 +86,7 @@ bool CharRowBase<GlyphType, StringType>::WasWrapForced() const noexcept
 // Return Value:
 // - <none>
 template<typename GlyphType, typename StringType>
-void CharRowBase<GlyphType, StringType>::SetDoubleBytePadded(_In_ bool const doubleBytePadded) noexcept
+void CharRowBase<GlyphType, StringType>::SetDoubleBytePadded(const bool doubleBytePadded) noexcept
 {
     _doubleBytePadded = doubleBytePadded;
 }

@@ -81,4 +81,4 @@ void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, const bool generateBreak);
 
 void ProcessCtrlEvents();
 
-BOOL IsSystemKey(_In_ WORD const wVirtualKeyCode);
+BOOL IsSystemKey(const WORD wVirtualKeyCode);

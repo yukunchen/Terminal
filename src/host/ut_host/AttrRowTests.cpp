@@ -241,7 +241,7 @@ class AttrRowTests
 
     void LogChain(_In_ PCWSTR pwszPrefix,
                   _In_reads_(cRun) TextAttributeRun* const rgRun,
-                  _In_ size_t const cRun)
+                  const size_t cRun)
     {
         NoThrowString str(pwszPrefix);
 

@@ -49,7 +49,7 @@ TermTelemetry::~TermTelemetry()
 // - code - VT100 code.
 // Return Value:
 // - <none>
-void TermTelemetry::Log(_In_ Codes const code)
+void TermTelemetry::Log(const Codes code)
 {
     // Initially we wanted to pass over a string (ex. "CUU") and use a dictionary data type to hold the counts.
     // However we would have to search through the dictionary every time we called this method, so we decided
@@ -132,7 +132,7 @@ unsigned int TermTelemetry::GetAndResetTimesFailedOutsideRangeCurrent()
 // - writeLog - true if we should write the log.
 // Return Value:
 // - <none>
-void TermTelemetry::SetShouldWriteFinalLog(_In_ bool const writeLog)
+void TermTelemetry::SetShouldWriteFinalLog(const bool writeLog)
 {
     _fShouldWriteFinalLog = writeLog;
 }
@@ -144,7 +144,7 @@ void TermTelemetry::SetShouldWriteFinalLog(_In_ bool const writeLog)
 // - activityId - Pointer to Guid to set our activity Id to.
 // Return Value:
 // - <none>
-void TermTelemetry::SetActivityId(_In_ GUID const *activityId)
+void TermTelemetry::SetActivityId(const GUID *activityId)
 {
     _activityId = *activityId;
 }

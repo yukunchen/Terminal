@@ -30,7 +30,7 @@ OutputStateMachineEngine::~OutputStateMachineEngine()
 // - wch - Character to dispatch.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool OutputStateMachineEngine::ActionExecute(_In_ wchar_t const wch)
+bool OutputStateMachineEngine::ActionExecute(const wchar_t wch)
 {
     _pDispatch->Execute(wch);
     return true;
@@ -43,7 +43,7 @@ bool OutputStateMachineEngine::ActionExecute(_In_ wchar_t const wch)
 // - wch - Character to dispatch.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool OutputStateMachineEngine::ActionPrint(_In_ wchar_t const wch)
+bool OutputStateMachineEngine::ActionPrint(const wchar_t wch)
 {
     _pDispatch->Print(wch); // call print
     return true;
@@ -57,7 +57,7 @@ bool OutputStateMachineEngine::ActionPrint(_In_ wchar_t const wch)
 // - cch - length of rgwch
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool OutputStateMachineEngine::ActionPrintString(_Inout_updates_(cch) wchar_t* const rgwch, _In_ size_t const cch)
+bool OutputStateMachineEngine::ActionPrintString(_Inout_updates_(cch) wchar_t* const rgwch, const size_t cch)
 {
     _pDispatch->PrintString(rgwch, cch); // call print
     return true;
@@ -73,7 +73,7 @@ bool OutputStateMachineEngine::ActionPrintString(_Inout_updates_(cch) wchar_t* c
 // - wchIntermediate - Intermediate character in the sequence, if there was one.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool OutputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch,
+bool OutputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
                                                  const unsigned short cIntermediate,
                                                  const wchar_t wchIntermediate)
 {
@@ -180,7 +180,7 @@ bool OutputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch,
 // - cParams - number of parameters found.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool OutputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
+bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
                                                  const unsigned short cIntermediate,
                                                  const wchar_t wchIntermediate,
                                                  _In_reads_(cParams) const unsigned short* const rgusParams,
@@ -426,7 +426,7 @@ bool OutputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
 // - wch - Character to dispatch.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool OutputStateMachineEngine::_IntermediateQuestionMarkDispatch(_In_ wchar_t const wchAction, _In_reads_(cParams) const unsigned short* const rgusParams, const unsigned short cParams)
+bool OutputStateMachineEngine::_IntermediateQuestionMarkDispatch(const wchar_t wchAction, _In_reads_(cParams) const unsigned short* const rgusParams, const unsigned short cParams)
 {
     bool fSuccess = false;
 
@@ -474,7 +474,7 @@ bool OutputStateMachineEngine::_IntermediateQuestionMarkDispatch(_In_ wchar_t co
 // - wch - Character to dispatch.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool OutputStateMachineEngine::_IntermediateExclamationDispatch(_In_ wchar_t const wchAction)
+bool OutputStateMachineEngine::_IntermediateExclamationDispatch(const wchar_t wchAction)
 {
     bool fSuccess = false;
 
@@ -498,7 +498,7 @@ bool OutputStateMachineEngine::_IntermediateExclamationDispatch(_In_ wchar_t con
 // - wch - Character to dispatch.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool OutputStateMachineEngine::_IntermediateSpaceDispatch(_In_ wchar_t const wchAction,
+bool OutputStateMachineEngine::_IntermediateSpaceDispatch(const wchar_t wchAction,
                                                           _In_reads_(cParams) const unsigned short* const rgusParams,
                                                           const unsigned short cParams)
 {
@@ -572,7 +572,7 @@ bool OutputStateMachineEngine::ActionIgnore()
 // - cchOscString - length of pwchOscStringBuffer
 // Return Value:
 // - true if we handled the dsipatch.
-bool OutputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const /*wch*/,
+bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
                                                  const unsigned short sOscParam,
                                                  _Inout_updates_(cchOscString) wchar_t* const pwchOscStringBuffer,
                                                  const unsigned short cchOscString)
@@ -647,7 +647,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const /*wch*/,
 // - cParams - number of parameters found.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool OutputStateMachineEngine::ActionSs3Dispatch(_In_ wchar_t const /*wch*/,
+bool OutputStateMachineEngine::ActionSs3Dispatch(const wchar_t /*wch*/,
                                                  _In_reads_(_Param_(3)) const unsigned short* const /*rgusParams*/,
                                                  const unsigned short /*cParams*/)
 {
@@ -1171,7 +1171,7 @@ bool OutputStateMachineEngine::FlushAtEndOfString() const
 // - puiValue - recieves the int value of the char
 // Return Value:
 // - true iff the character is a hex character.
-bool OutputStateMachineEngine::s_HexToUint(_In_ wchar_t const wch,
+bool OutputStateMachineEngine::s_HexToUint(const wchar_t wch,
                                            _Out_ unsigned int * const puiValue)
 {
     *puiValue = 0;
@@ -1200,7 +1200,7 @@ bool OutputStateMachineEngine::s_HexToUint(_In_ wchar_t const wch,
 // - wch - Character to check.
 // Return Value:
 // - True if it is. False if it isn't.
-bool OutputStateMachineEngine::s_IsNumber(_In_ wchar_t const wch)
+bool OutputStateMachineEngine::s_IsNumber(const wchar_t wch)
 {
     return wch >= L'0' && wch <= L'9'; // 0x30 - 0x39
 }
@@ -1211,7 +1211,7 @@ bool OutputStateMachineEngine::s_IsNumber(_In_ wchar_t const wch)
 // - wch - Character to check.
 // Return Value:
 // - True if it is. False if it isn't.
-bool OutputStateMachineEngine::s_IsHexNumber(_In_ wchar_t const wch)
+bool OutputStateMachineEngine::s_IsHexNumber(const wchar_t wch)
 {
     return (wch >= L'0' && wch <= L'9') || // 0x30 - 0x39
            (wch >= L'A' && wch <= L'F') ||

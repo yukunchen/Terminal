@@ -33,10 +33,10 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT Xterm256Engine::UpdateDrawingBrushes(_In_ COLORREF const colorForeground,
-                                             _In_ COLORREF const colorBackground,
-                                             _In_ WORD const /*legacyColorAttribute*/,
-                                             _In_ bool const /*fIncludeBackgrounds*/)
+HRESULT Xterm256Engine::UpdateDrawingBrushes(const COLORREF colorForeground,
+                                             const COLORREF colorBackground,
+                                             const WORD /*legacyColorAttribute*/,
+                                             const bool /*fIncludeBackgrounds*/)
 {
     return VtEngine::_RgbUpdateDrawingBrushes(colorForeground,
                                               colorBackground,

@@ -40,16 +40,16 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         HRESULT EndPaint() override;
         [[nodiscard]]
-        virtual HRESULT UpdateDrawingBrushes(_In_ COLORREF const colorForeground,
-                                            _In_ COLORREF const colorBackground,
-                                            _In_ WORD const legacyColorAttribute,
-                                            _In_ bool const fIncludeBackgrounds) override;
+        virtual HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
+                                            const COLORREF colorBackground,
+                                            const WORD legacyColorAttribute,
+                                            const bool fIncludeBackgrounds) override;
         [[nodiscard]]
         HRESULT PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
                                 _In_reads_(cchLine) const unsigned char* const rgWidths,
-                                _In_ size_t const cchLine,
-                                _In_ COORD const coordTarget,
-                                _In_ bool const fTrimLeft) override;
+                                const size_t cchLine,
+                                const COORD coordTarget,
+                                const bool fTrimLeft) override;
         [[nodiscard]]
         HRESULT ScrollFrame() override;
         [[nodiscard]]

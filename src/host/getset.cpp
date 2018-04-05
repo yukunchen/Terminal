@@ -143,7 +143,7 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(_Out_ ULONG* const pButtons
 
 [[nodiscard]]
 HRESULT ApiRoutines::GetConsoleFontSizeImpl(_In_ SCREEN_INFORMATION* const pContext,
-                                            _In_ DWORD const FontIndex,
+                                            const DWORD FontIndex,
                                             _Out_ COORD* const pFontSize)
 {
     LockConsole();
@@ -165,7 +165,7 @@ HRESULT ApiRoutines::GetConsoleFontSizeImpl(_In_ SCREEN_INFORMATION* const pCont
 
 [[nodiscard]]
 HRESULT ApiRoutines::GetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const pContext,
-                                                 _In_ BOOLEAN const IsForMaximumWindowSize,
+                                                 const BOOLEAN IsForMaximumWindowSize,
                                                  _Out_ CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx)
 {
     LockConsole();
@@ -197,7 +197,7 @@ HRESULT ApiRoutines::GetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const 
 
 [[nodiscard]]
 HRESULT ApiRoutines::SetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const pContext,
-                                                 _In_ BOOLEAN const /*IsForMaximumWindowSize*/,
+                                                 const BOOLEAN /*IsForMaximumWindowSize*/,
                                                  const CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -232,7 +232,7 @@ HRESULT ApiRoutines::SetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const 
 }
 
 [[nodiscard]]
-HRESULT ApiRoutines::SetConsoleInputModeImpl(_In_ InputBuffer* const pContext, _In_ ULONG const Mode)
+HRESULT ApiRoutines::SetConsoleInputModeImpl(_In_ InputBuffer* const pContext, const ULONG Mode)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     LockConsole();
@@ -283,7 +283,7 @@ HRESULT ApiRoutines::SetConsoleInputModeImpl(_In_ InputBuffer* const pContext, _
 }
 
 [[nodiscard]]
-HRESULT ApiRoutines::SetConsoleOutputModeImpl(_In_ SCREEN_INFORMATION* const pContext, _In_ ULONG const Mode)
+HRESULT ApiRoutines::SetConsoleOutputModeImpl(_In_ SCREEN_INFORMATION* const pContext, const ULONG Mode)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     LockConsole();
@@ -496,8 +496,8 @@ HRESULT DoSrvSetConsoleCursorPosition(_In_ SCREEN_INFORMATION* pScreenInfo,
 
 [[nodiscard]]
 HRESULT ApiRoutines::SetConsoleCursorInfoImpl(_In_ SCREEN_INFORMATION* const pContext,
-                                              _In_ ULONG const CursorSize,
-                                              _In_ BOOLEAN const IsVisible)
+                                              const ULONG CursorSize,
+                                              const BOOLEAN IsVisible)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
@@ -507,8 +507,8 @@ HRESULT ApiRoutines::SetConsoleCursorInfoImpl(_In_ SCREEN_INFORMATION* const pCo
 
 [[nodiscard]]
 HRESULT DoSrvSetConsoleCursorInfo(_In_ SCREEN_INFORMATION* pScreenInfo,
-                                  _In_ ULONG const CursorSize,
-                                  _In_ BOOLEAN const IsVisible)
+                                  const ULONG CursorSize,
+                                  const BOOLEAN IsVisible)
 {
     // If more than 100% or less than 0% cursor height, reject it.
     RETURN_HR_IF(E_INVALIDARG, (CursorSize > 100 || CursorSize == 0));
@@ -523,7 +523,7 @@ HRESULT DoSrvSetConsoleCursorInfo(_In_ SCREEN_INFORMATION* pScreenInfo,
 
 [[nodiscard]]
 HRESULT ApiRoutines::SetConsoleWindowInfoImpl(_In_ SCREEN_INFORMATION* const pContext,
-                                              _In_ BOOLEAN const IsAbsoluteRectangle,
+                                              const BOOLEAN IsAbsoluteRectangle,
                                               const SMALL_RECT* const pWindowRectangle)
 {
     LockConsole();
@@ -534,7 +534,7 @@ HRESULT ApiRoutines::SetConsoleWindowInfoImpl(_In_ SCREEN_INFORMATION* const pCo
 
 [[nodiscard]]
 HRESULT DoSrvSetConsoleWindowInfo(_In_ SCREEN_INFORMATION* pScreenInfo,
-                                  _In_ BOOLEAN const IsAbsoluteRectangle,
+                                  const BOOLEAN IsAbsoluteRectangle,
                                   const SMALL_RECT* const pWindowRectangle)
 {
     SMALL_RECT Window = *pWindowRectangle;
@@ -574,8 +574,8 @@ HRESULT ApiRoutines::ScrollConsoleScreenBufferAImpl(_In_ SCREEN_INFORMATION* con
                                                     const SMALL_RECT* const pSourceRectangle,
                                                     const COORD* const pTargetOrigin,
                                                     _In_opt_ const SMALL_RECT* const pTargetClipRectangle,
-                                                    _In_ char const chFill,
-                                                    _In_ WORD const attrFill)
+                                                    const char chFill,
+                                                    const WORD attrFill)
 {
     wchar_t const wchFill = CharToWchar(&chFill, 1);
 
@@ -593,8 +593,8 @@ HRESULT ApiRoutines::ScrollConsoleScreenBufferWImpl(_In_ SCREEN_INFORMATION* con
                                                     const SMALL_RECT* const pSourceRectangle,
                                                     const COORD* const pTargetOrigin,
                                                     _In_opt_ const SMALL_RECT* const pTargetClipRectangle,
-                                                    _In_ wchar_t const wchFill,
-                                                    _In_ WORD const attrFill)
+                                                    const wchar_t wchFill,
+                                                    const WORD attrFill)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
@@ -612,8 +612,8 @@ HRESULT DoSrvScrollConsoleScreenBufferW(_In_ SCREEN_INFORMATION* const pScreenIn
                                         const SMALL_RECT* const pSourceRectangle,
                                         const COORD* const pTargetOrigin,
                                         _In_opt_ const SMALL_RECT* const pTargetClipRectangle,
-                                        _In_ wchar_t const wchFill,
-                                        _In_ WORD const attrFill)
+                                        const wchar_t wchFill,
+                                        const WORD attrFill)
 {
     // TODO: MSFT 9574849 - can we make scroll region use these as const so we don't have to screw with them?
     // Scroll region takes non-const parameters but our API has been updated to use maximal consts.
@@ -723,7 +723,7 @@ void SetScreenColors(_In_ SCREEN_INFORMATION* ScreenInfo,
 
 [[nodiscard]]
 HRESULT ApiRoutines::SetConsoleTextAttributeImpl(_In_ SCREEN_INFORMATION* const pContext,
-                                                 _In_ WORD const Attribute)
+                                                 const WORD Attribute)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
@@ -732,7 +732,7 @@ HRESULT ApiRoutines::SetConsoleTextAttributeImpl(_In_ SCREEN_INFORMATION* const 
 }
 
 [[nodiscard]]
-HRESULT DoSrvSetConsoleTextAttribute(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ WORD const Attribute)
+HRESULT DoSrvSetConsoleTextAttribute(_In_ SCREEN_INFORMATION* pScreenInfo, const WORD Attribute)
 {
     RETURN_HR_IF(E_INVALIDARG, IsAnyFlagSet(Attribute, ~VALID_TEXT_ATTRIBUTES));
 
@@ -741,7 +741,7 @@ HRESULT DoSrvSetConsoleTextAttribute(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ 
 }
 
 void DoSrvPrivateSetLegacyAttributes(_In_ SCREEN_INFORMATION* pScreenInfo,
-                                     _In_ WORD const Attribute,
+                                     const WORD Attribute,
                                      const bool fForeground,
                                      const bool fBackground,
                                      const bool fMeta)
@@ -845,7 +845,7 @@ void DoSrvPrivateSetConsoleRGBTextAttribute(_In_ SCREEN_INFORMATION* const pScre
 }
 
 [[nodiscard]]
-HRESULT ApiRoutines::SetConsoleOutputCodePageImpl(_In_ ULONG const CodePage)
+HRESULT ApiRoutines::SetConsoleOutputCodePageImpl(const ULONG CodePage)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     LockConsole();
@@ -867,7 +867,7 @@ HRESULT ApiRoutines::SetConsoleOutputCodePageImpl(_In_ ULONG const CodePage)
 }
 
 [[nodiscard]]
-HRESULT ApiRoutines::SetConsoleInputCodePageImpl(_In_ ULONG const CodePage)
+HRESULT ApiRoutines::SetConsoleInputCodePageImpl(const ULONG CodePage)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     LockConsole();
@@ -989,7 +989,7 @@ void ApiRoutines::GetConsoleDisplayModeImpl(_Out_ ULONG* const pFlags)
 // - See: http://msdn.microsoft.com/en-us/library/windows/desktop/ms686028(v=vs.85).aspx
 [[nodiscard]]
 HRESULT ApiRoutines::SetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const pContext,
-                                               _In_ ULONG const Flags,
+                                               const ULONG Flags,
                                                _Out_ COORD* const pNewScreenBufferSize)
 {
     // SetIsFullscreen() below ultimately calls SetwindowLong, which ultimately calls SendMessage(). If we retain
@@ -1072,7 +1072,7 @@ NTSTATUS DoSrvPrivateSetKeypadMode(_In_ bool fApplicationMode)
 // - fEnable - set to true to enable blinking, false to disable
 // Return value:
 // - True if handled successfully. False otherwise.
-void DoSrvPrivateAllowCursorBlinking(_In_ SCREEN_INFORMATION* const pScreenInfo, _In_ bool const fEnable)
+void DoSrvPrivateAllowCursorBlinking(_In_ SCREEN_INFORMATION* const pScreenInfo, const bool fEnable)
 {
     pScreenInfo->TextInfo->GetCursor()->SetBlinkingAllowed(fEnable);
     pScreenInfo->TextInfo->GetCursor()->SetIsOn(!fEnable);
@@ -1211,7 +1211,7 @@ NTSTATUS DoSrvPrivateHorizontalTabSet()
 // Return value:
 // - STATUS_SUCCESS if handled successfully. Otherwise, an approriate status code indicating the error.
 [[nodiscard]]
-NTSTATUS DoPrivateTabHelper(_In_ SHORT const sNumTabs, _In_ bool fForward)
+NTSTATUS DoPrivateTabHelper(const SHORT sNumTabs, _In_ bool fForward)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION* const pScreenBuffer = gci.CurrentScreenBuffer;
@@ -1240,7 +1240,7 @@ NTSTATUS DoPrivateTabHelper(_In_ SHORT const sNumTabs, _In_ bool fForward)
 // Return value:
 // - STATUS_SUCCESS if handled successfully. Otherwise, an approriate status code indicating the error.
 [[nodiscard]]
-NTSTATUS DoSrvPrivateForwardTab(_In_ SHORT const sNumTabs)
+NTSTATUS DoSrvPrivateForwardTab(const SHORT sNumTabs)
 {
     return DoPrivateTabHelper(sNumTabs, true);
 }
@@ -1253,7 +1253,7 @@ NTSTATUS DoSrvPrivateForwardTab(_In_ SHORT const sNumTabs)
 // Return value:
 // - STATUS_SUCCESS if handled successfully. Otherwise, an approriate status code indicating the error.
 [[nodiscard]]
-NTSTATUS DoSrvPrivateBackwardsTab(_In_ SHORT const sNumTabs)
+NTSTATUS DoSrvPrivateBackwardsTab(const SHORT sNumTabs)
 {
     return DoPrivateTabHelper(sNumTabs, false);
 }
@@ -1265,7 +1265,7 @@ NTSTATUS DoSrvPrivateBackwardsTab(_In_ SHORT const sNumTabs)
 //      otherwise clears all set tabs. (and reverts to lecacy 8-char tabs behavior.)
 // Return value:
 // - None
-void DoSrvPrivateTabClear(_In_ bool const fClearAll)
+void DoSrvPrivateTabClear(const bool fClearAll)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION* const pScreenBuffer = gci.CurrentScreenBuffer;
@@ -1286,7 +1286,7 @@ void DoSrvPrivateTabClear(_In_ bool const fClearAll)
 // - fEnable - true to enable default tracking mode, false to disable mouse mode.
 // Return value:
 // - None
-void DoSrvPrivateEnableVT200MouseMode(_In_ bool const fEnable)
+void DoSrvPrivateEnableVT200MouseMode(const bool fEnable)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.terminalMouseInput.EnableDefaultTracking(fEnable);
@@ -1298,7 +1298,7 @@ void DoSrvPrivateEnableVT200MouseMode(_In_ bool const fEnable)
 // - fEnable - true to enable, false to disable.
 // Return value:
 // - None
-void DoSrvPrivateEnableUTF8ExtendedMouseMode(_In_ bool const fEnable)
+void DoSrvPrivateEnableUTF8ExtendedMouseMode(const bool fEnable)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.terminalMouseInput.SetUtf8ExtendedMode(fEnable);
@@ -1310,7 +1310,7 @@ void DoSrvPrivateEnableUTF8ExtendedMouseMode(_In_ bool const fEnable)
 // - fEnable - true to enable, false to disable.
 // Return value:
 // - None
-void DoSrvPrivateEnableSGRExtendedMouseMode(_In_ bool const fEnable)
+void DoSrvPrivateEnableSGRExtendedMouseMode(const bool fEnable)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.terminalMouseInput.SetSGRExtendedMode(fEnable);
@@ -1322,7 +1322,7 @@ void DoSrvPrivateEnableSGRExtendedMouseMode(_In_ bool const fEnable)
 // - fEnable - true to enable button-event mode, false to disable mouse mode.
 // Return value:
 // - None
-void DoSrvPrivateEnableButtonEventMouseMode(_In_ bool const fEnable)
+void DoSrvPrivateEnableButtonEventMouseMode(const bool fEnable)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.terminalMouseInput.EnableButtonEventTracking(fEnable);
@@ -1334,7 +1334,7 @@ void DoSrvPrivateEnableButtonEventMouseMode(_In_ bool const fEnable)
 // - fEnable - true to enable any-event mode, false to disable mouse mode.
 // Return value:
 // - None
-void DoSrvPrivateEnableAnyEventMouseMode(_In_ bool const fEnable)
+void DoSrvPrivateEnableAnyEventMouseMode(const bool fEnable)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.terminalMouseInput.EnableAnyEventTracking(fEnable);
@@ -1346,7 +1346,7 @@ void DoSrvPrivateEnableAnyEventMouseMode(_In_ bool const fEnable)
 // - fEnable - true to enable alternate scroll mode, false to disable.
 // Return value:
 // None
-void DoSrvPrivateEnableAlternateScroll(_In_ bool const fEnable)
+void DoSrvPrivateEnableAlternateScroll(const bool fEnable)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.terminalMouseInput.EnableAlternateScroll(fEnable);
@@ -1366,13 +1366,13 @@ NTSTATUS DoSrvPrivateEraseAll(_In_ SCREEN_INFORMATION* const pScreenInfo)
 }
 
 void DoSrvSetCursorStyle(const SCREEN_INFORMATION* const pScreenInfo,
-                         _In_ CursorType const cursorType)
+                         const CursorType cursorType)
 {
     pScreenInfo->TextInfo->GetCursor()->SetType(cursorType);
 }
 
 void DoSrvSetCursorColor(const SCREEN_INFORMATION* const pScreenInfo,
-                         _In_ COLORREF const cursorColor)
+                         const COLORREF cursorColor)
 {
     pScreenInfo->TextInfo->GetCursor()->SetColor(cursorColor);
 }
@@ -1424,10 +1424,10 @@ void DoSrvPrivateRefreshWindow(_In_ SCREEN_INFORMATION* const pScreenInfo)
 }
 
 void GetConsoleTitleWImplHelper(_Out_writes_to_opt_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) wchar_t* const pwsTitleBuffer,
-                                   _In_ size_t const cchTitleBufferSize,
+                                   const size_t cchTitleBufferSize,
                                    _Out_ size_t* const pcchTitleBufferWritten,
                                    _Out_ size_t* const pcchTitleBufferNeeded,
-                                   _In_ bool const fIsOriginal)
+                                   const bool fIsOriginal)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // Ensure output variables are initialized.
@@ -1473,10 +1473,10 @@ void GetConsoleTitleWImplHelper(_Out_writes_to_opt_(cchTitleBufferSize, *pcchTit
 
 [[nodiscard]]
 HRESULT GetConsoleTitleAImplHelper(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) char* const psTitleBuffer,
-                                   _In_ size_t const cchTitleBufferSize,
+                                   const size_t cchTitleBufferSize,
                                    _Out_ size_t* const pcchTitleBufferWritten,
                                    _Out_ size_t* const pcchTitleBufferNeeded,
-                                   _In_ bool const fIsOriginal)
+                                   const bool fIsOriginal)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // Ensure output variables are initialized.
@@ -1562,7 +1562,7 @@ HRESULT GetConsoleTitleAImplHelper(_Out_writes_to_(cchTitleBufferSize, *pcchTitl
 
 [[nodiscard]]
 HRESULT ApiRoutines::GetConsoleTitleAImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) char* const psTitleBuffer,
-                                          _In_ size_t const cchTitleBufferSize,
+                                          const size_t cchTitleBufferSize,
                                           _Out_ size_t* const pcchTitleBufferWritten,
                                           _Out_ size_t* const pcchTitleBufferNeeded)
 {
@@ -1577,7 +1577,7 @@ HRESULT ApiRoutines::GetConsoleTitleAImpl(_Out_writes_to_(cchTitleBufferSize, *p
 }
 
 void ApiRoutines::GetConsoleTitleWImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) wchar_t* const pwsTitleBuffer,
-                                          _In_ size_t const cchTitleBufferSize,
+                                          const size_t cchTitleBufferSize,
                                           _Out_ size_t* const pcchTitleBufferWritten,
                                           _Out_ size_t* const pcchTitleBufferNeeded)
 {
@@ -1593,7 +1593,7 @@ void ApiRoutines::GetConsoleTitleWImpl(_Out_writes_to_(cchTitleBufferSize, *pcch
 
 [[nodiscard]]
 HRESULT ApiRoutines::GetConsoleOriginalTitleAImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) char* const psTitleBuffer,
-                                                  _In_ size_t const cchTitleBufferSize,
+                                                  const size_t cchTitleBufferSize,
                                                   _Out_ size_t* const pcchTitleBufferWritten,
                                                   _Out_ size_t* const pcchTitleBufferNeeded)
 {
@@ -1608,7 +1608,7 @@ HRESULT ApiRoutines::GetConsoleOriginalTitleAImpl(_Out_writes_to_(cchTitleBuffer
 }
 
 void ApiRoutines::GetConsoleOriginalTitleWImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) wchar_t* const pwsTitleBuffer,
-                                                  _In_ size_t const cchTitleBufferSize,
+                                                  const size_t cchTitleBufferSize,
                                                   _Out_ size_t* const pcchTitleBufferWritten,
                                                   _Out_ size_t* const pcchTitleBufferNeeded)
 {
@@ -1624,7 +1624,7 @@ void ApiRoutines::GetConsoleOriginalTitleWImpl(_Out_writes_to_(cchTitleBufferSiz
 
 [[nodiscard]]
 HRESULT ApiRoutines::SetConsoleTitleAImpl(_In_reads_or_z_(cchTitleBufferSize) const char* const psTitleBuffer,
-                                          _In_ size_t const cchTitleBufferSize)
+                                          const size_t cchTitleBufferSize)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     wistd::unique_ptr<wchar_t[]> pwsUnicodeTitleBuffer;
@@ -1640,7 +1640,7 @@ HRESULT ApiRoutines::SetConsoleTitleAImpl(_In_reads_or_z_(cchTitleBufferSize) co
 
 [[nodiscard]]
 HRESULT ApiRoutines::SetConsoleTitleWImpl(_In_reads_or_z_(cchTitleBufferSize) const wchar_t* const pwsTitleBuffer,
-                                          _In_ size_t const cchTitleBufferSize)
+                                          const size_t cchTitleBufferSize)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
@@ -1651,7 +1651,7 @@ HRESULT ApiRoutines::SetConsoleTitleWImpl(_In_reads_or_z_(cchTitleBufferSize) co
 
 [[nodiscard]]
 HRESULT DoSrvSetConsoleTitleW(_In_reads_or_z_(cchBuffer) const wchar_t* const pwsBuffer,
-                              _In_ size_t const cchBuffer)
+                              const size_t cchBuffer)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // Ensure that we add 1 to the length to leave room for a null if it's not already null terminated.

@@ -204,12 +204,12 @@ const size_t TerminalInput::s_cKeypadApplicationMapping     = ARRAYSIZE(s_rgKeyp
 const size_t TerminalInput::s_cModifierKeyMapping           = ARRAYSIZE(s_rgModifierKeyMapping);
 const size_t TerminalInput::s_cSimpleModifedKeyMapping      = ARRAYSIZE(s_rgSimpleModifedKeyMapping);
 
-void TerminalInput::ChangeKeypadMode(_In_ bool const fApplicationMode)
+void TerminalInput::ChangeKeypadMode(const bool fApplicationMode)
 {
     _fKeypadApplicationMode = fApplicationMode;
 }
 
-void TerminalInput::ChangeCursorKeysMode(_In_ bool const fApplicationMode)
+void TerminalInput::ChangeCursorKeysMode(const bool fApplicationMode)
 {
     _fCursorApplicationMode = fApplicationMode;
 }
@@ -325,7 +325,7 @@ bool TerminalInput::_SearchWithModifier(const KeyEvent& keyEvent) const
 // - True if there was a match to a key translation
 bool TerminalInput::_SearchKeyMapping(const KeyEvent& keyEvent,
                                       _In_reads_(cKeyMapping) const TerminalInput::_TermKeyMap* keyMapping,
-                                      _In_ size_t const cKeyMapping,
+                                      const size_t cKeyMapping,
                                       _Out_ const TerminalInput::_TermKeyMap** pMatchingMapping) const
 {
     bool fKeyTranslated = false;
@@ -373,7 +373,7 @@ bool TerminalInput::_SearchKeyMapping(const KeyEvent& keyEvent,
 // - True if there was a match to a key translation, and we successfully sent it to the input
 bool TerminalInput::_TranslateDefaultMapping(const KeyEvent& keyEvent,
                                              _In_reads_(cKeyMapping) const TerminalInput::_TermKeyMap* keyMapping,
-                                             _In_ size_t const cKeyMapping) const
+                                             const size_t cKeyMapping) const
 {
     const TerminalInput::_TermKeyMap* pMatchingMapping;
     bool fSuccess = _SearchKeyMapping(keyEvent, keyMapping, cKeyMapping, &pMatchingMapping);
@@ -512,7 +512,7 @@ void TerminalInput::_SendEscapedInputSequence(const wchar_t wch) const
     }
 }
 
-void TerminalInput::_SendNullInputSequence(_In_ DWORD const dwControlKeyState) const
+void TerminalInput::_SendNullInputSequence(const DWORD dwControlKeyState) const
 {
     try
     {

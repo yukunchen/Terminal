@@ -52,6 +52,6 @@ namespace Microsoft::Console::Interactivity::Win32
                                     const BOOL fMenu,
                                     const DWORD dwExStyle);
 
-        void ConvertRect(_Inout_ RECT* const prc, _In_ ConvertRectangle const crDirection);
+        void ConvertRect(_Inout_ RECT* const prc, const ConvertRectangle crDirection);
     };
 }

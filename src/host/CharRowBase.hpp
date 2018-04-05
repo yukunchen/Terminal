@@ -35,9 +35,9 @@ public:
     void swap(CharRowBase& other) noexcept;
 
     // ICharRow methods
-    void SetWrapForced(_In_ bool const wrap) noexcept;
+    void SetWrapForced(const bool wrap) noexcept;
     bool WasWrapForced() const noexcept;
-    void SetDoubleBytePadded(_In_ bool const doubleBytePadded) noexcept;
+    void SetDoubleBytePadded(const bool doubleBytePadded) noexcept;
     bool WasDoubleBytePadded() const noexcept;
     size_t size() const noexcept override;
     void Reset();

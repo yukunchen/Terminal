@@ -250,7 +250,7 @@ BOOL WindowMetrics::UnadjustWindowRectEx(_Inout_ LPRECT prc, const DWORD dwStyle
 // - crDirection - specifies which conversion to perform
 // Return Value:
 // - <none>
-void WindowMetrics::ConvertRect(_Inout_ RECT* const prc, _In_ ConvertRectangle const crDirection)
+void WindowMetrics::ConvertRect(_Inout_ RECT* const prc, const ConvertRectangle crDirection)
 {
     // collect up current window style (if available) for adjustment
     DWORD dwStyle = 0;

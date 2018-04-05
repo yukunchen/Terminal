@@ -150,7 +150,7 @@ void Telemetry::SetKeyboardTextEditingUsed()
 }
 
 // Log an API call was used.
-void Telemetry::LogApiCall(_In_ ApiCall const api, _In_ BOOLEAN const fUnicode)
+void Telemetry::LogApiCall(const ApiCall api, const BOOLEAN fUnicode)
 {
     // Initially we thought about passing over a string (ex. "XYZ") and use a dictionary data type to hold the counts.
     // However we would have to search through the dictionary every time we called this method, so we decided
@@ -168,7 +168,7 @@ void Telemetry::LogApiCall(_In_ ApiCall const api, _In_ BOOLEAN const fUnicode)
 }
 
 // Log an API call was used.
-void Telemetry::LogApiCall(_In_ ApiCall const api)
+void Telemetry::LogApiCall(const ApiCall api)
 {
     _rguiTimesApiUsed[api]++;
 }

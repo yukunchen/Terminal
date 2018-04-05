@@ -60,24 +60,24 @@ namespace Microsoft::Console::Render
         HRESULT PaintSelection(const SMALL_RECT* const rgsrSelection, UINT const cRectangles);
 
         [[nodiscard]]
-        HRESULT PaintCursor(_In_ COORD const coordCursor,
-                            _In_ ULONG const ulCursorHeightPercent,
-                            _In_ bool const fIsDoubleWidth,
-                            _In_ CursorType const cursorType,
-                            _In_ bool const fUseColor,
-                            _In_ COLORREF const cursorColor) override;
+        HRESULT PaintCursor(const COORD coordCursor,
+                            const ULONG ulCursorHeightPercent,
+                            const bool fIsDoubleWidth,
+                            const CursorType cursorType,
+                            const bool fUseColor,
+                            const COLORREF cursorColor) override;
 
         [[nodiscard]]
         HRESULT ClearCursor();
 
         [[nodiscard]]
-        HRESULT UpdateDrawingBrushes(COLORREF const colorForeground, COLORREF const colorBackground, _In_ WORD const legacyColorAttribute, bool const fIncludeBackgrounds);
+        HRESULT UpdateDrawingBrushes(COLORREF const colorForeground, COLORREF const colorBackground, const WORD legacyColorAttribute, bool const fIncludeBackgrounds);
         [[nodiscard]]
         HRESULT UpdateFont(FontInfoDesired const* const pfiFontInfoDesired, FontInfo* const pfiFontInfo);
         [[nodiscard]]
         HRESULT UpdateDpi(int const iDpi);
         [[nodiscard]]
-        HRESULT UpdateViewport(_In_ SMALL_RECT const srNewViewport);
+        HRESULT UpdateViewport(const SMALL_RECT srNewViewport);
 
         [[nodiscard]]
         HRESULT GetProposedFont(FontInfoDesired const* const pfiFontInfoDesired, FontInfo* const pfiFontInfo, int const iDpi);
@@ -86,7 +86,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         HRESULT GetFontSize(_Out_ COORD* const pFontSize) override;
         [[nodiscard]]
-        HRESULT IsCharFullWidthByFont(_In_ WCHAR const wch, _Out_ bool* const pResult) override;
+        HRESULT IsCharFullWidthByFont(const WCHAR wch, _Out_ bool* const pResult) override;
 
     private:
         HANDLE _hWddmConCtx;

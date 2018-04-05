@@ -106,8 +106,8 @@ COOKED_READ_DATA::~COOKED_READ_DATA()
 // Return Value:
 // - TRUE if the wait is done and result buffer/status code can be sent back to the client.
 // - FALSE if we need to continue to wait until more data is available.
-BOOL COOKED_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason,
-                              _In_ BOOLEAN const fIsUnicode,
+BOOL COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
+                              const BOOLEAN fIsUnicode,
                               _Out_ NTSTATUS* const pReplyStatus,
                               _Out_ DWORD* const pNumBytes,
                               _Out_ DWORD* const pControlKeyState,
@@ -263,7 +263,7 @@ BOOL COOKED_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason
 // - ulControlKeyState - For some types of reads, this is the modifier key state with the last button press.
 [[nodiscard]]
 NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
-                    _In_ bool const fIsUnicode,
+                    const bool fIsUnicode,
                     _Inout_ ULONG* const cbNumBytes,
                     _Out_ ULONG* const ulControlKeyState)
 {

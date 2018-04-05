@@ -41,7 +41,7 @@
 [[nodiscard]]
 NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
                  _Out_ wchar_t* const pwchOut,
-                 _In_ bool const Wait,
+                 const bool Wait,
                  _Out_opt_ bool* const pCommandLineEditingKeys,
                  _Out_opt_ bool* const pCommandLinePopupKeys,
                  _Out_opt_ DWORD* const pdwKeyState)
@@ -903,16 +903,16 @@ NTSTATUS DoReadConsole(_Inout_ InputBuffer* const pInputBuffer,
 
 HRESULT ApiRoutines::ReadConsoleAImpl(_Inout_ IConsoleInputObject* const pInContext,
                                       _Out_writes_to_(cchTextBuffer, *pcchTextBufferWritten) char* const psTextBuffer,
-                                      _In_ size_t const cchTextBuffer,
+                                      const size_t cchTextBuffer,
                                       _Out_ size_t* const pcchTextBufferWritten,
                                       _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter,
                                       _In_reads_opt_(cchInitialData) const char* const psInitialData,
-                                      _In_ size_t const cchInitialData,
+                                      const size_t cchInitialData,
                                       _In_reads_opt_(cchExeName) const wchar_t* const pwsExeName,
-                                      _In_ size_t const cchExeName,
+                                      const size_t cchExeName,
                                       _In_ INPUT_READ_HANDLE_DATA* const pHandleData,
-                                      _In_ HANDLE const hConsoleClient,
-                                      _In_ DWORD const dwControlWakeupMask,
+                                      const HANDLE hConsoleClient,
+                                      const DWORD dwControlWakeupMask,
                                       _Out_ DWORD* const pdwControlKeyState)
 {
     ULONG ulTextBuffer;
@@ -956,16 +956,16 @@ HRESULT ApiRoutines::ReadConsoleAImpl(_Inout_ IConsoleInputObject* const pInCont
 [[nodiscard]]
 HRESULT ApiRoutines::ReadConsoleWImpl(_Inout_ IConsoleInputObject* const pInContext,
                                       _Out_writes_to_(cchTextBuffer, *pcchTextBufferWritten) wchar_t* const pwsTextBuffer,
-                                      _In_ size_t const cchTextBuffer,
+                                      const size_t cchTextBuffer,
                                       _Out_ size_t* const pcchTextBufferWritten,
                                       _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter,
                                       _In_reads_opt_(cchInitialData) const wchar_t* const pwsInitialData,
-                                      _In_ size_t const cchInitialData,
+                                      const size_t cchInitialData,
                                       _In_reads_opt_(cchExeName) const wchar_t* const pwsExeName,
-                                      _In_ size_t const cchExeName,
+                                      const size_t cchExeName,
                                       _In_ INPUT_READ_HANDLE_DATA* const pHandleData,
-                                      _In_ HANDLE const hConsoleClient,
-                                      _In_ DWORD const dwControlWakeupMask,
+                                      const HANDLE hConsoleClient,
+                                      const DWORD dwControlWakeupMask,
                                       _Out_ DWORD* const pdwControlKeyState)
 {
     size_t cbTextBuffer;

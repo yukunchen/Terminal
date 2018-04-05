@@ -7,11 +7,11 @@ Copyright (c) Microsoft Corporation
 #define BG_ATTRS (BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY)
 #define META_ATTRS (COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE | COMMON_LVB_GRID_HORIZONTAL | COMMON_LVB_GRID_LVERTICAL | COMMON_LVB_GRID_RVERTICAL | COMMON_LVB_REVERSE_VIDEO | COMMON_LVB_UNDERSCORE )
 
-WORD FindNearestTableIndex(_In_ COLORREF const Color,
+WORD FindNearestTableIndex(const COLORREF Color,
                            _In_reads_(cColorTable) const COLORREF* const ColorTable,
                            const WORD cColorTable);
 
-bool FindTableIndex(_In_ COLORREF const Color,
+bool FindTableIndex(const COLORREF Color,
                     _In_reads_(cColorTable) const COLORREF* const ColorTable,
                     const WORD cColorTable,
                     _Out_ WORD* const pFoundIndex);

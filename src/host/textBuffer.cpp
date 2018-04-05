@@ -531,7 +531,7 @@ void TEXT_BUFFER_INFO::SetWrapOnCurrentRow()
 // - fSet - True if this row has a wrap. False otherwise.
 //Return Value:
 // - <none>
-void TEXT_BUFFER_INFO::AdjustWrapOnCurrentRow(_In_ bool const fSet)
+void TEXT_BUFFER_INFO::AdjustWrapOnCurrentRow(const bool fSet)
 {
     // The vertical position of the cursor represents the current row we're manipulating.
     const UINT uiCurrentRowOffset = GetCursor()->GetPosition().Y;
@@ -758,11 +758,11 @@ const COORD TEXT_BUFFER_INFO::GetCoordBufferSize() const
     return _coordBufferSize;
 }
 
-void TEXT_BUFFER_INFO::SetFirstRowIndex(_In_ SHORT const FirstRowIndex)
+void TEXT_BUFFER_INFO::SetFirstRowIndex(const SHORT FirstRowIndex)
 {
     _FirstRow = FirstRowIndex;
 }
-void TEXT_BUFFER_INFO::SetCoordBufferSize(_In_ COORD const coordBufferSize)
+void TEXT_BUFFER_INFO::SetCoordBufferSize(const COORD coordBufferSize)
 {
     _coordBufferSize = coordBufferSize;
 }
@@ -791,9 +791,9 @@ void TEXT_BUFFER_INFO::SetFill(const CHAR_INFO ciFill)
 // Return Value:
 // - Success if successful. Invalid parameter if screen buffer size is unexpected. No memory if allocation failed.
 [[nodiscard]]
-NTSTATUS TEXT_BUFFER_INFO::ResizeTraditional(_In_ COORD const currentScreenBufferSize,
-                                             _In_ COORD const newScreenBufferSize,
-                                             _In_ TextAttribute const attributes)
+NTSTATUS TEXT_BUFFER_INFO::ResizeTraditional(const COORD currentScreenBufferSize,
+                                             const COORD newScreenBufferSize,
+                                             const TextAttribute attributes)
 {
     if (newScreenBufferSize.X < 0 || newScreenBufferSize.Y < 0)
     {

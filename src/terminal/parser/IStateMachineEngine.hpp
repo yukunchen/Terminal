@@ -22,25 +22,25 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual ~IStateMachineEngine() = 0;
 
-        virtual bool ActionExecute(_In_ wchar_t const wch) = 0;
-        virtual bool ActionPrint(_In_ wchar_t const wch) = 0;
+        virtual bool ActionExecute(const wchar_t wch) = 0;
+        virtual bool ActionPrint(const wchar_t wch) = 0;
         virtual bool ActionPrintString(_Inout_updates_(cch) wchar_t* const rgwch,
-                                        _In_ size_t const cch) = 0;
-        virtual bool ActionEscDispatch(_In_ wchar_t const wch,
+                                        const size_t cch) = 0;
+        virtual bool ActionEscDispatch(const wchar_t wch,
                                         const unsigned short cIntermediate,
                                         const wchar_t wchIntermediate) = 0;
-        virtual bool ActionCsiDispatch(_In_ wchar_t const wch,
+        virtual bool ActionCsiDispatch(const wchar_t wch,
                                         const unsigned short cIntermediate,
                                         const wchar_t wchIntermediate,
                                         _In_reads_(cParams) const unsigned short* const rgusParams,
                                         const unsigned short cParams) = 0;
         virtual bool ActionClear() = 0;
         virtual bool ActionIgnore() = 0;
-        virtual bool ActionOscDispatch(_In_ wchar_t const wch,
+        virtual bool ActionOscDispatch(const wchar_t wch,
                                         const unsigned short sOscParam,
                                         _Inout_updates_(cchOscString) wchar_t* const pwchOscStringBuffer,
                                         const unsigned short cchOscString) = 0;
-        virtual bool ActionSs3Dispatch(_In_ wchar_t const wch,
+        virtual bool ActionSs3Dispatch(const wchar_t wch,
                                         _In_reads_(cParams) const unsigned short* const rgusParams,
                                         const unsigned short cParams) = 0;
         virtual bool FlushAtEndOfString() const = 0;

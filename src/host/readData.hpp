@@ -32,8 +32,8 @@ public:
 
     ReadData(ReadData&&);
 
-    virtual BOOL Notify(_In_ WaitTerminationReason const TerminationReason,
-                        _In_ BOOLEAN const fIsUnicode,
+    virtual BOOL Notify(const WaitTerminationReason TerminationReason,
+                        const BOOLEAN fIsUnicode,
                         _Out_ NTSTATUS* const pReplyStatus,
                         _Out_ DWORD* const pNumBytes,
                         _Out_ DWORD* const pControlKeyState,

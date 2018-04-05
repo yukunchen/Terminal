@@ -38,7 +38,7 @@ SMALL_RECT GdiEngine::GetDirtyRectInChars()
 // Return Value:
 // - S_OK
 [[nodiscard]]
-HRESULT GdiEngine::IsCharFullWidthByFont(_In_ WCHAR const wch, _Out_ bool* const pResult)
+HRESULT GdiEngine::IsCharFullWidthByFont(const WCHAR wch, _Out_ bool* const pResult)
 {
     bool isFullWidth = false;
 
