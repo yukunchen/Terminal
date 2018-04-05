@@ -62,84 +62,77 @@ void SystemConfigurationProvider::GetSettingsFromLink(
     {
         if (SUCCEEDED(CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED)))
         {
-            gci._LinkTitle = std::wstring(pwszTitle, *pdwTitleLength);
-            // const size_t cbTitle = (*pdwTitleLength + 1) * sizeof(WCHAR);
-            // gci.LinkTitle = (PWSTR) new BYTE[cbTitle];
+            gci.SetLinkTitle(std::wstring(pwszTitle));
 
-            // NTSTATUS Status = NT_TESTNULL(gci.LinkTitle);
-            // if (NT_SUCCESS(Status))
-            // {
-            //     if (FAILED(StringCbCopyNW(gci.LinkTitle, cbTitle, pwszTitle, *pdwTitleLength)))
-            //     {
-            //         Status = STATUS_UNSUCCESSFUL;
-            //     }
+            wchar_t* const linkNameForCsi = new wchar_t[gci.GetLinkTitle().length()+1]{0};
+            if (linkNameForCsi)
+            {
+                gci.GetLinkTitle().copy(linkNameForCsi, gci.GetLinkTitle().length());
+                // StringCbCopyW(gci.GetLinkTitle().c_str(), *pdwTitleLength, linkNameForCsi);
+            }
 
-            //     if (NT_SUCCESS(Status))
-            //     {
-                    CONSOLE_STATE_INFO csi = { 0 };
-                    csi.LinkTitle = &gci._LinkTitle[0];
-                    WCHAR wszShortcutTitle[MAX_PATH];
-                    BOOL fReadConsoleProperties;
-                    WORD wShowWindow = pLinkSettings->GetShowWindow();
-                    DWORD dwHotKey = pLinkSettings->GetHotKey();
+            CONSOLE_STATE_INFO csi = { 0 };
+            csi.LinkTitle = linkNameForCsi;
+            WCHAR wszShortcutTitle[MAX_PATH];
+            BOOL fReadConsoleProperties;
+            WORD wShowWindow = pLinkSettings->GetShowWindow();
+            DWORD dwHotKey = pLinkSettings->GetHotKey();
 
-                    int iShowWindow;
-                    WORD wHotKey;
-                    NTSTATUS Status = ShortcutSerialization::s_GetLinkValues(&csi,
-                        &fReadConsoleProperties,
-                        wszShortcutTitle,
-                        ARRAYSIZE(wszShortcutTitle),
-                        wszIconLocation,
-                        ARRAYSIZE(wszIconLocation),
-                        &iIconIndex,
-                        &iShowWindow,
-                        &wHotKey);
+            int iShowWindow;
+            WORD wHotKey;
+            NTSTATUS Status = ShortcutSerialization::s_GetLinkValues(&csi,
+                &fReadConsoleProperties,
+                wszShortcutTitle,
+                ARRAYSIZE(wszShortcutTitle),
+                wszIconLocation,
+                ARRAYSIZE(wszIconLocation),
+                &iIconIndex,
+                &iShowWindow,
+                &wHotKey);
 
-                    // Convert results back to appropriate types and set.
-                    if (SUCCEEDED(IntToWord(iShowWindow, &wShowWindow)))
-                    {
-                        pLinkSettings->SetShowWindow(wShowWindow);
-                    }
+            // Convert results back to appropriate types and set.
+            if (SUCCEEDED(IntToWord(iShowWindow, &wShowWindow)))
+            {
+                pLinkSettings->SetShowWindow(wShowWindow);
+            }
 
-                    dwHotKey = wHotKey;
-                    pLinkSettings->SetHotKey(dwHotKey);
+            dwHotKey = wHotKey;
+            pLinkSettings->SetHotKey(dwHotKey);
 
-                    // if we got a title, use it. even on overall link value load failure, the title will be correct if
-                    // filled out.
-                    if (wszShortcutTitle[0] != L'\0')
-                    {
-                        // guarantee null termination to make OACR happy.
-                        wszShortcutTitle[ARRAYSIZE(wszShortcutTitle) - 1] = L'\0';
-                        StringCbCopyW(pwszTitle, *pdwTitleLength, wszShortcutTitle);
+            // if we got a title, use it. even on overall link value load failure, the title will be correct if
+            // filled out.
+            if (wszShortcutTitle[0] != L'\0')
+            {
+                // guarantee null termination to make OACR happy.
+                wszShortcutTitle[ARRAYSIZE(wszShortcutTitle) - 1] = L'\0';
+                StringCbCopyW(pwszTitle, *pdwTitleLength, wszShortcutTitle);
 
-                        // OACR complains about the use of a DWORD here, so roundtrip through a size_t
-                        size_t cbTitleLength;
-                        if (SUCCEEDED(StringCbLengthW(pwszTitle, *pdwTitleLength, &cbTitleLength)))
-                        {
-                            // don't care about return result -- the buffer is guaranteed null terminated to at least
-                            // the length of Title
-                            (void)SizeTToDWord(cbTitleLength, pdwTitleLength);
-                        }
-                    }
+                // OACR complains about the use of a DWORD here, so roundtrip through a size_t
+                size_t cbTitleLength;
+                if (SUCCEEDED(StringCbLengthW(pwszTitle, *pdwTitleLength, &cbTitleLength)))
+                {
+                    // don't care about return result -- the buffer is guaranteed null terminated to at least
+                    // the length of Title
+                    (void)SizeTToDWord(cbTitleLength, pdwTitleLength);
+                }
+            }
 
-                    if (NT_SUCCESS(Status) && fReadConsoleProperties)
-                    {
-                        // copy settings
-                        pLinkSettings->InitFromStateInfo(&csi);
+            if (NT_SUCCESS(Status) && fReadConsoleProperties)
+            {
+                // copy settings
+                pLinkSettings->InitFromStateInfo(&csi);
 
-                        // since we were launched via shortcut, make sure we don't let the invoker's STARTUPINFO pollute the
-                        // shortcut's settings
-                        pLinkSettings->UnsetStartupFlag(STARTF_USESIZE | STARTF_USECOUNTCHARS);
-                    }
-                    else
-                    {
-                        // if we didn't find any console properties, or otherwise failed to load link properties, pretend
-                        // like we weren't launched from a shortcut -- this allows us to at least try to find registry
-                        // settings based on title.
-                        pLinkSettings->UnsetStartupFlag(STARTF_TITLEISLINKNAME);
-                    }
-            //     }
-            // }
+                // since we were launched via shortcut, make sure we don't let the invoker's STARTUPINFO pollute the
+                // shortcut's settings
+                pLinkSettings->UnsetStartupFlag(STARTF_USESIZE | STARTF_USECOUNTCHARS);
+            }
+            else
+            {
+                // if we didn't find any console properties, or otherwise failed to load link properties, pretend
+                // like we weren't launched from a shortcut -- this allows us to at least try to find registry
+                // settings based on title.
+                pLinkSettings->UnsetStartupFlag(STARTF_TITLEISLINKNAME);
+            }
             CoUninitialize();
         }
     }

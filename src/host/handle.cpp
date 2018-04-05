@@ -74,47 +74,24 @@ NTSTATUS AllocateConsole(_In_reads_bytes_(_Param_(2)) const WCHAR * const pwchTi
         return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
     }
 
-    NTSTATUS Status;
     try {
         gci.SetTitle(std::wstring(pwchTitle));
-        // gci._Title = std::wstring(pwchTitle);
-        gci._OriginalTitle = std::wstring(TranslateConsoleTitle(gci.GetTitle().c_str(), TRUE, FALSE));
+        gci.SetOriginalTitle(std::wstring(TranslateConsoleTitle(gci.GetTitle().c_str(), TRUE, FALSE)));
     }
     catch(...)
     {
         return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
     }
 
-    // // Byte count + 1 so dividing by 2 always rounds up. +1 more for trailing null guard.
-    // gci.Title = new WCHAR[((cbTitle + 1) / sizeof(WCHAR)) + 1];
-    // if (gci.Title == nullptr)
-    // {
-    //     Status = STATUS_NO_MEMORY;
-    //     goto ErrorExit2;
-    // }
-
-    // #pragma prefast(suppress:26035, "If this fails, we just display an empty title, which is ok.")
-    // StringCbCopyW(gci.Title, cbTitle + sizeof(WCHAR), pwchTitle);
-
-    // gci.OriginalTitle =
-    //     TranslateConsoleTitle(gci.Title, TRUE, FALSE);
-    // if (gci.OriginalTitle == nullptr)
-    // {
-    //     Status = STATUS_NO_MEMORY;
-    //     goto ErrorExit1;
-    // }
-
-    Status = DoCreateScreenBuffer();
+    NTSTATUS Status = DoCreateScreenBuffer();
     if (!NT_SUCCESS(Status))
     {
         goto ErrorExit2;
     }
 
-    gci.CurrentScreenBuffer =
-        gci.ScreenBuffers;
+    gci.CurrentScreenBuffer = gci.ScreenBuffers;
 
-    gci.CurrentScreenBuffer->ScrollScale =
-        gci.GetScrollScale();
+    gci.CurrentScreenBuffer->ScrollScale = gci.GetScrollScale();
 
     gci.ConsoleIme.RefreshAreaAttributes();
 
@@ -127,14 +104,6 @@ NTSTATUS AllocateConsole(_In_reads_bytes_(_Param_(2)) const WCHAR * const pwchTi
 
     delete gci.ScreenBuffers;
     gci.ScreenBuffers = nullptr;
-
-// ErrorExit1b:
-//     delete[] gci.Title;
-//     gci.Title = nullptr;
-
-// ErrorExit1:
-//     delete[] gci.OriginalTitle;
-//     gci.OriginalTitle = nullptr;
 
 ErrorExit2:
     delete gci.pInputBuffer;

@@ -147,6 +147,13 @@ COLORREF CONSOLE_INFORMATION::GetDefaultBackground() const
     return BackgroundColor(GetFillAttribute(), GetColorTable(), GetColorTableSize());
 }
 
+// Method Description:
+// - Set the console's title, and trigger a renderer update of the title.
+//      This does not include the title prefix, such as "Mark", "Select", or "Scroll"
+// Arguments:
+// - newTitle: The new value to use for the title
+// Return Value:
+// - <none>
 void CONSOLE_INFORMATION::SetTitle(const std::wstring& newTitle)
 {
     _Title = newTitle;
@@ -158,6 +165,13 @@ void CONSOLE_INFORMATION::SetTitle(const std::wstring& newTitle)
     }
 }
 
+// Method Description:
+// - Set the console title's prefix, and trigger a renderer update of the title.
+//      This is the part of the title shuch as "Mark", "Select", or "Scroll"
+// Arguments:
+// - newTitlePrefix: The new value to use for the title prefix
+// Return Value:
+// - <none>
 void CONSOLE_INFORMATION::SetTitlePrefix(const std::wstring& newTitlePrefix)
 {
     _TitlePrefix = newTitlePrefix;
@@ -169,12 +183,71 @@ void CONSOLE_INFORMATION::SetTitlePrefix(const std::wstring& newTitlePrefix)
     }
 }
 
+// Method Description:
+// - Set the value of the console's original title. This is the title the
+//      console launched with.
+// Arguments:
+// - originalTitle: The new value to use for the console's original title
+// Return Value:
+// - <none>
+void CONSOLE_INFORMATION::SetOriginalTitle(const std::wstring& originalTitle)
+{
+    _OriginalTitle = originalTitle;
+}
+
+// Method Description:
+// - Set the value of the console's link title. If the console was launched
+///     from a shortcut, this value will not be the empty string.
+// Arguments:
+// - linkTitle: The new value to use for the console's link title
+// Return Value:
+// - <none>
+void CONSOLE_INFORMATION::SetLinkTitle(const std::wstring& linkTitle)
+{
+    _LinkTitle = linkTitle;
+}
+
+// Method Description:
+// - return a reference to the console's title.
+// Arguments:
+// - <none>
+// Return Value:
+// - a reference to the console's title.
 const std::wstring& CONSOLE_INFORMATION::GetTitle() const
 {
     return _Title;
 }
 
+// Method Description:
+// - Return a new wstring representing the actual display value of the title.
+//      This is the Prefix+Title.
+// Arguments:
+// - <none>
+// Return Value:
+// - a new wstring containing the combined prefix and title.
 const std::wstring CONSOLE_INFORMATION::GetTitleAndPrefix() const
 {
     return _TitlePrefix + _Title;
+}
+
+// Method Description:
+// - return a reference to the console's original title.
+// Arguments:
+// - <none>
+// Return Value:
+// - a reference to the console's original title.
+const std::wstring& CONSOLE_INFORMATION::GetOriginalTitle() const
+{
+    return _OriginalTitle;
+}
+
+// Method Description:
+// - return a reference to the console's link title.
+// Arguments:
+// - <none>
+// Return Value:
+// - a reference to the console's link title.
+const std::wstring& CONSOLE_INFORMATION::GetLinkTitle() const
+{
+    return _LinkTitle;
 }

@@ -1445,16 +1445,13 @@ void GetConsoleTitleWImplHelper(_Out_writes_to_opt_(cchTitleBufferSize, *pcchTit
 
     if (fIsOriginal)
     {
-        pwszTitle = gci._OriginalTitle.c_str();
-        cchTitleLength = gci._OriginalTitle.length();
+        pwszTitle = gci.GetOriginalTitle().c_str();
+        cchTitleLength = gci.GetOriginalTitle().length();
     }
     else
     {
-        // const std::wstring titleAndPrefix = gci.GetTitleAndPrefix();
         pwszTitle = gci.GetTitle().c_str();
         cchTitleLength = gci.GetTitle().length();
-        // DebugBreak();
-        // if (titleAndPrefix == L"foo") DebugBreak();
     }
 
     // Always report how much space we would need.
