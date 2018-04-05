@@ -38,6 +38,6 @@ public:
     NTSTATUS GetSelectionRects(_Outptr_result_buffer_all_(*pcRectangles) SMALL_RECT** const prgsrSelection,
                                _Out_ UINT* const pcRectangles);
 
-    const wchar_t* const GetConsoleTitle() const override;
+    const std::wstring GetConsoleTitle() const override;
 
 };

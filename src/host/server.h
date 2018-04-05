@@ -127,10 +127,17 @@ public:
     COLORREF GetDefaultBackground() const;
 
     std::wstring _OriginalTitle;
-    std::wstring _Title;
     std::wstring _LinkTitle;   // Path to .lnk file, can be nullptr
+
+    void SetTitle(const std::wstring& newTitle);
+    void SetTitlePrefix(const std::wstring& newTitlePrefix);
+    const std::wstring& GetTitle() const;
+    const std::wstring GetTitleAndPrefix() const;
+
 private:
     CRITICAL_SECTION _csConsoleLock;   // serialize input and output using this
+    std::wstring _Title;
+    std::wstring _TitlePrefix; // Eg Select, Mark - things that we manually prepend to the title.
 
     Microsoft::Console::VirtualTerminal::VtIo _vtIo;
 

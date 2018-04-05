@@ -716,7 +716,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
     case CM_UPDATE_TITLE:
     {
-        SetWindowTextW(hWnd, gci._Title.c_str());
+        SetWindowTextW(hWnd, gci.GetTitleAndPrefix().c_str());
         break;
     }
 
@@ -980,28 +980,6 @@ BOOL Window::PostUpdateTitle(_In_ const PCWSTR /*pwszNewTitle*/) const
 BOOL Window::PostUpdateTitleWithCopy(_In_ const PCWSTR /*pwszNewTitle*/) const
 {
     return PostUpdateTitle(nullptr);
-    // size_t cchTitleCharLength;
-    // if (SUCCEEDED(StringCchLengthW(pwszNewTitle, STRSAFE_MAX_CCH, &cchTitleCharLength))) {
-    //     cchTitleCharLength += 1; //"The length does not include the string's terminating null character."
-    //     // - https://msdn.microsoft.com/en-us/library/windows/hardware/ff562856(v=vs.85).aspx
-    //     // this is technically safe because size_t is a ULONG_PTR and STRSAFE_MAX_CCH is INT_MAX.
-
-    //     PWSTR pwszNewTitleCopy = new WCHAR[cchTitleCharLength];
-    //     if (pwszNewTitleCopy != nullptr)
-    //     {
-    //         if (SUCCEEDED(StringCchCopyW(pwszNewTitleCopy, cchTitleCharLength, pwszNewTitle)))
-    //         {
-    //             return PostMessageW(GetWindowHandle(), CM_UPDATE_TITLE, 0, (LPARAM)(pwszNewTitleCopy));
-    //         }
-    //         else
-    //         {
-    //             delete[] pwszNewTitleCopy;
-    //         }
-
-    //     }
-    // }
-
-    // return FALSE;
 }
 
 BOOL Window::PostUpdateScrollBars() const

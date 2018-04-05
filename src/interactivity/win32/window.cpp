@@ -273,7 +273,7 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
             HWND hWnd = CreateWindowExW(
                 CONSOLE_WINDOW_EX_FLAGS,
                 CONSOLE_WINDOW_CLASS,
-                gci._Title.c_str(),
+                gci.GetTitle().c_str(),
                 CONSOLE_WINDOW_FLAGS,
                 IsFlagSet(gci.Flags,
                           CONSOLE_AUTO_POSITION) ? CW_USEDEFAULT : rectProposed.left,
@@ -499,37 +499,17 @@ void Window::UpdateWindowText()
     // if we have a message, use it
     if (dwMsgId != 0)
     {
-        // load format string
-        WCHAR szFmt[64];
-        if (LoadStringW(ServiceLocator::LocateGlobals().hInstance, ID_CONSOLE_FMT_WINDOWTITLE, szFmt, ARRAYSIZE(szFmt)) > 0)
+        // load mode string
+        WCHAR szMsg[64];
+        if (LoadStringW(ServiceLocator::LocateGlobals().hInstance, dwMsgId, szMsg, ARRAYSIZE(szMsg)) > 0)
         {
-            // load mode string
-            WCHAR szMsg[64];
-            if (LoadStringW(ServiceLocator::LocateGlobals().hInstance, dwMsgId, szMsg, ARRAYSIZE(szMsg)) > 0)
-            {
-                // construct new title string
-                wchar_t* pwszTitle = new wchar_t[MAX_PATH];
-                if (pwszTitle != nullptr)
-                {
-                    if (SUCCEEDED(StringCchPrintfW(pwszTitle,
-                                                   MAX_PATH,
-                                                   szFmt,
-                                                   szMsg,
-                                                   gci._Title.c_str())))
-                    {
-                        gci._Title = std::wstring(pwszTitle);
-                        ServiceLocator::LocateConsoleWindow<Window>()->PostUpdateTitle(nullptr);
-                    }
-                    delete[] pwszTitle;
-                }
-            }
+            gci.SetTitlePrefix(szMsg);
         }
     }
     else
     {
         // no mode-based message. set title back to original state.
-        //Copy the title into a new buffer, because consuming the update_title HeapFree's the pwsz.
-        ServiceLocator::LocateConsoleWindow()->PostUpdateTitleWithCopy(gci._Title.c_str());
+        gci.SetTitlePrefix(L"");
     }
 }
 

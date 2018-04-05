@@ -76,8 +76,9 @@ NTSTATUS AllocateConsole(_In_reads_bytes_(_Param_(2)) const WCHAR * const pwchTi
 
     NTSTATUS Status;
     try {
-        gci._Title = std::wstring(pwchTitle);
-        gci._OriginalTitle = std::wstring(TranslateConsoleTitle(gci._Title.c_str(), TRUE, FALSE));
+        gci.SetTitle(std::wstring(pwchTitle));
+        // gci._Title = std::wstring(pwchTitle);
+        gci._OriginalTitle = std::wstring(TranslateConsoleTitle(gci.GetTitle().c_str(), TRUE, FALSE));
     }
     catch(...)
     {

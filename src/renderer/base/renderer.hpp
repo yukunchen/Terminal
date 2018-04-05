@@ -79,7 +79,10 @@ namespace Microsoft::Console::Render
                     _In_ size_t const cEngines);
         std::deque<IRenderEngine*> _rgpEngines;
         const std::unique_ptr<IRenderData> _pData;
-        bool _titleChanged = true;
+
+        std::wstring _lastTitle;
+        bool _titleChanged;
+
         RenderThread* _pThread;
         bool _tearingDown;
 

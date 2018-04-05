@@ -1446,14 +1446,15 @@ void GetConsoleTitleWImplHelper(_Out_writes_to_opt_(cchTitleBufferSize, *pcchTit
     if (fIsOriginal)
     {
         pwszTitle = gci._OriginalTitle.c_str();
-        // cchTitleLength = wcslen(gci.OriginalTitle);
         cchTitleLength = gci._OriginalTitle.length();
     }
     else
     {
-        pwszTitle = gci._Title.c_str();
-        // cchTitleLength = wcslen(gci.Title);
-        cchTitleLength = gci._Title.length();
+        // const std::wstring titleAndPrefix = gci.GetTitleAndPrefix();
+        pwszTitle = gci.GetTitle().c_str();
+        cchTitleLength = gci.GetTitle().length();
+        // DebugBreak();
+        // if (titleAndPrefix == L"foo") DebugBreak();
     }
 
     // Always report how much space we would need.
@@ -1656,40 +1657,14 @@ HRESULT DoSrvSetConsoleTitleW(_In_reads_or_z_(cchBuffer) const wchar_t* const pw
                               _In_ size_t const cchBuffer)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    // // Ensure that we add 1 to the length to leave room for a null if it's not already null terminated.
-    // size_t cchDest;
-    // RETURN_IF_FAILED(SizeTAdd(cchBuffer, 1, &cchDest));
 
-    // wistd::unique_ptr<wchar_t[]> pwszNewTitle = wil::make_unique_nothrow<wchar_t[]>(cchDest);
-    // RETURN_IF_NULL_ALLOC(pwszNewTitle);
-    // if (cchBuffer == 0)
-    // {
-    //     pwszNewTitle[0] = L'\0';
-    // }
-    // else
-    // {
-    //     // Safe string copy will ensure null termination.
-    //     RETURN_IF_FAILED(StringCchCopyNW(pwszNewTitle.get(), cchDest, pwsBuffer, cchBuffer));
-    // }
+    // TODO sanitize the input if we're in pty mode. No control chars.
+    // TODO Make sure that passing a non-null terminated string still works.
 
-    // Ensure that we add 1 to the length to leave room for a null if it's not already null terminated.
-    gci._Title = std::wstring(pwsBuffer, cchBuffer+1);
-    // gci._Title = pwszNewTitle.release();
-
-    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
-    // If we have a window, PostUpdateTitleWithCopy, so that the title change
-    //  happens on the windowproc thread.
-    if (pWindow != nullptr)
-    {
-        RETURN_HR_IF_FALSE(E_FAIL, pWindow->PostUpdateTitleWithCopy(gci._Title.c_str()));
-    }
-    // Also tell the renderer to update the title. For windowed renderers, this
-    //      will likely cause them to do nothing.
-    auto* const pRender = ServiceLocator::LocateGlobals().pRender;
-    if (pRender)
-    {
-        pRender->TriggerTitleChange();
-    }
+    // Ensure that we add 1 to the length to leave room for a null if it's not
+    //      already null terminated.
+    // SetTitle will trigger the renderer to update the titlebar for us.
+    gci.SetTitle(std::wstring(pwsBuffer, cchBuffer));
 
     return S_OK;
 }

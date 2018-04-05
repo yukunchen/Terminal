@@ -146,3 +146,35 @@ COLORREF CONSOLE_INFORMATION::GetDefaultBackground() const
 {
     return BackgroundColor(GetFillAttribute(), GetColorTable(), GetColorTableSize());
 }
+
+void CONSOLE_INFORMATION::SetTitle(const std::wstring& newTitle)
+{
+    _Title = newTitle;
+
+    auto* const pRender = ServiceLocator::LocateGlobals().pRender;
+    if (pRender)
+    {
+        pRender->TriggerTitleChange();
+    }
+}
+
+void CONSOLE_INFORMATION::SetTitlePrefix(const std::wstring& newTitlePrefix)
+{
+    _TitlePrefix = newTitlePrefix;
+
+    auto* const pRender = ServiceLocator::LocateGlobals().pRender;
+    if (pRender)
+    {
+        pRender->TriggerTitleChange();
+    }
+}
+
+const std::wstring& CONSOLE_INFORMATION::GetTitle() const
+{
+    return _Title;
+}
+
+const std::wstring CONSOLE_INFORMATION::GetTitleAndPrefix() const
+{
+    return _TitlePrefix + _Title;
+}
