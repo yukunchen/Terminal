@@ -257,7 +257,7 @@ HRESULT ConsoleArguments::s_ParseHandleArg(const std::wstring& handleAsText, _In
 //  S_OK if we parsed the string successfully, otherwise E_INVALIDARG indicating
 //       failure.
 [[nodiscard]]
-HRESULT ConsoleArguments::_GetClientCommandline(_In_ std::vector<std::wstring>& args, const size_t index, const bool skipFirst)
+HRESULT ConsoleArguments::_GetClientCommandline(_Inout_ std::vector<std::wstring>& args, const size_t index, const bool skipFirst)
 {
     auto start = args.begin()+index;
 

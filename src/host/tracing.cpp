@@ -1,4 +1,4 @@
-/********************************************************
+_T********************************************************
 *                                                       *
 *   Copyright (C) Microsoft. All rights reserved.       *
 *                                                       *
@@ -99,11 +99,11 @@ void Tracing::s_TraceApi(const NTSTATUS status, const CONSOLE_SETWINDOWINFO_MSG*
         );
 }
 
-void Tracing::s_TraceApi(_In_ void* buffer, const CONSOLE_WRITECONSOLE_MSG* const a)
+void Tracing::s_TraceApi(_In_ const void* const buffer, const CONSOLE_WRITECONSOLE_MSG* const a)
 {
     if (a->Unicode)
     {
-        wchar_t* buf = static_cast<wchar_t*>(buffer);
+        const wchar_t* const buf = static_cast<const wchar_t* const>(buffer);
         TraceLoggingWrite(g_hConhostV2EventTraceProvider, "API_WriteConsole",
             TraceLoggingBoolean(a->Unicode, "Unicode"),
             TraceLoggingUInt32(a->NumBytes, "NumBytes"),
@@ -114,7 +114,7 @@ void Tracing::s_TraceApi(_In_ void* buffer, const CONSOLE_WRITECONSOLE_MSG* cons
     }
     else
     {
-        char* buf = static_cast<char*>(buffer);
+        const char* const buf = static_cast<const char* const>(buffer);
         TraceLoggingWrite(g_hConhostV2EventTraceProvider, "API_WriteConsole",
             TraceLoggingBoolean(a->Unicode, "Unicode"),
             TraceLoggingUInt32(a->NumBytes, "NumBytes"),

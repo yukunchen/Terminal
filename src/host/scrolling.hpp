@@ -34,7 +34,7 @@ public:
     static bool s_HandleKeyScrollingEvent(const INPUT_KEY_INFO* const pKeyInfo);
 
 private:
-    static BOOL s_IsPointInRectangle(const RECT *prc, _In_ POINT pt);
+    static BOOL s_IsPointInRectangle(const RECT* const prc, const POINT pt);
 
     static ULONG s_ucWheelScrollLines;
     static ULONG s_ucWheelScrollChars;

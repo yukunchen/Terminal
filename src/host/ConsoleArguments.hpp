@@ -131,7 +131,7 @@ private:
     bool _inheritCursor;
 
     [[nodiscard]]
-    HRESULT _GetClientCommandline(_In_ std::vector<std::wstring>& args,
+    HRESULT _GetClientCommandline(_Inout_ std::vector<std::wstring>& args,
                                   const size_t index,
                                   const bool skipFirst);
 

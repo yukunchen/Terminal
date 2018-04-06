@@ -323,7 +323,7 @@ bool Scrolling::s_HandleKeyScrollingEvent(const INPUT_KEY_INFO* const pKeyInfo)
     return true;
 }
 
-BOOL Scrolling::s_IsPointInRectangle(const RECT * prc, _In_ POINT pt)
+BOOL Scrolling::s_IsPointInRectangle(const RECT* const prc, const POINT pt)
 {
     return ((pt.x >= prc->left) && (pt.x < prc->right) &&
             (pt.y >= prc->top) && (pt.y < prc->bottom));

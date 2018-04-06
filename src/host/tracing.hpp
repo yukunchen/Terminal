@@ -59,7 +59,7 @@ public:
     static void s_TraceApi(const NTSTATUS status, const CONSOLE_SETSCREENBUFFERSIZE_MSG* const a);
     static void s_TraceApi(const NTSTATUS status, const CONSOLE_SETWINDOWINFO_MSG* const a);
 
-    static void s_TraceApi(_In_ void* buffer, const CONSOLE_WRITECONSOLE_MSG* const a);
+    static void s_TraceApi(_In_ const void* const buffer, const CONSOLE_WRITECONSOLE_MSG* const a);
 
     static void s_TraceApi(const CONSOLE_SCREENBUFFERINFO_MSG* const a);
     static void s_TraceApi(const CONSOLE_MODE_MSG* const a, const std::wstring& handleType);
