@@ -52,8 +52,8 @@ public:
     bool IsGridRenderingAllowedWorldwide() const;
     void SetGridRenderingAllowedWorldwide(const bool fGridRenderingAllowed);
 
-    BOOL GetFilterOnPaste() const;
-    void SetFilterOnPaste(const BOOL fFilterOnPaste);
+    bool GetFilterOnPaste() const;
+    void SetFilterOnPaste(const bool fFilterOnPaste);
 
     const WCHAR* const GetLaunchFaceName() const;
     void SetLaunchFaceName(_In_ PCWSTR const LaunchFaceName, const size_t cchLength);
@@ -64,20 +64,20 @@ public:
     UINT GetScrollScale() const;
     void SetScrollScale(const UINT uScrollScale);
 
-    BOOL GetTrimLeadingZeros() const;
-    void SetTrimLeadingZeros(const BOOL fTrimLeadingZeros);
+    bool GetTrimLeadingZeros() const;
+    void SetTrimLeadingZeros(const bool fTrimLeadingZeros);
 
-    BOOL GetEnableColorSelection() const;
-    void SetEnableColorSelection(const BOOL fEnableColorSelection);
+    bool GetEnableColorSelection() const;
+    void SetEnableColorSelection(const bool fEnableColorSelection);
 
-    BOOL GetLineSelection() const;
-    void SetLineSelection(const BOOL bLineSelection);
+    bool GetLineSelection() const;
+    void SetLineSelection(const bool bLineSelection);
 
     bool GetWrapText () const;
     void SetWrapText (const bool bWrapText );
 
-    BOOL GetCtrlKeyShortcutsDisabled () const;
-    void SetCtrlKeyShortcutsDisabled (const BOOL fCtrlKeyShortcutsDisabled );
+    bool GetCtrlKeyShortcutsDisabled () const;
+    void SetCtrlKeyShortcutsDisabled (const bool fCtrlKeyShortcutsDisabled );
 
     BYTE GetWindowAlpha() const;
     void SetWindowAlpha(const BYTE bWindowAlpha);
@@ -129,23 +129,23 @@ public:
     void SetFontWeight(const UINT uFontWeight);
 
     const WCHAR* const GetFaceName() const;
-    BOOL IsFaceNameSet() const;
+    bool IsFaceNameSet() const;
     void SetFaceName(_In_ PCWSTR const pcszFaceName, const size_t cchLength);
 
     UINT GetCursorSize() const;
     void SetCursorSize(const UINT uCursorSize);
 
-    BOOL GetFullScreen() const;
-    void SetFullScreen(const BOOL fFullScreen);
+    bool GetFullScreen() const;
+    void SetFullScreen(const bool fFullScreen);
 
-    BOOL GetQuickEdit() const;
-    void SetQuickEdit(const BOOL fQuickEdit);
+    bool GetQuickEdit() const;
+    void SetQuickEdit(const bool fQuickEdit);
 
-    BOOL GetInsertMode() const;
-    void SetInsertMode(const BOOL fInsertMode);
+    bool GetInsertMode() const;
+    void SetInsertMode(const bool fInsertMode);
 
-    BOOL GetAutoPosition() const;
-    void SetAutoPosition(const BOOL fAutoPosition);
+    bool GetAutoPosition() const;
+    void SetAutoPosition(const bool fAutoPosition);
 
     UINT GetHistoryBufferSize() const;
     void SetHistoryBufferSize(const UINT uHistoryBufferSize);
@@ -153,8 +153,8 @@ public:
     UINT GetNumberOfHistoryBuffers() const;
     void SetNumberOfHistoryBuffers(const UINT uNumberOfHistoryBuffers);
 
-    BOOL GetHistoryNoDup() const;
-    void SetHistoryNoDup(const BOOL fHistoryNoDup);
+    bool GetHistoryNoDup() const;
+    void SetHistoryNoDup(const bool fHistoryNoDup);
 
     const COLORREF* const GetColorTable() const;
     const size_t GetColorTableSize() const;
@@ -199,14 +199,14 @@ private:
     // END - memcpy
     UINT _uCodePage;
     UINT _uScrollScale;
-    BOOL _fTrimLeadingZeros;
-    BOOL _fEnableColorSelection;
-    BOOL _bLineSelection;
+    bool _fTrimLeadingZeros;
+    bool _fEnableColorSelection;
+    bool _bLineSelection;
     bool _bWrapText; // whether to use text wrapping when resizing the window
-    BOOL _fCtrlKeyShortcutsDisabled; // disables Ctrl+<something> key intercepts
+    bool _fCtrlKeyShortcutsDisabled; // disables Ctrl+<something> key intercepts
     BYTE _bWindowAlpha; // describes the opacity of the window
 
-    BOOL _fFilterOnPaste; // should we filter text when the user pastes? (e.g. remove <tab>)
+    bool _fFilterOnPaste; // should we filter text when the user pastes? (e.g. remove <tab>)
     WCHAR _LaunchFaceName[LF_FACESIZE];
     bool _fAllowAltF4Close;
     DWORD _dwVirtTermLevel;

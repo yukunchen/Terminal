@@ -36,8 +36,8 @@ public:
 
     RAW_READ_DATA(RAW_READ_DATA&&) = default;
 
-    BOOL Notify(const WaitTerminationReason TerminationReason,
-                const BOOLEAN fIsUnicode,
+    bool Notify(const WaitTerminationReason TerminationReason,
+                const bool fIsUnicode,
                 _Out_ NTSTATUS* const pReplyStatus,
                 _Out_ DWORD* const pNumBytes,
                 _Out_ DWORD* const pControlKeyState,

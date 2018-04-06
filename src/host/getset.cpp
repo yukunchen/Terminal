@@ -96,7 +96,7 @@ void DoSrvGetConsoleScreenBufferInfo(_In_ SCREEN_INFORMATION* pScreenInfo, _Out_
 
 void ApiRoutines::GetConsoleCursorInfoImpl(_In_ SCREEN_INFORMATION* const pContext,
                                            _Out_ ULONG* const pCursorSize,
-                                           _Out_ BOOLEAN* const pIsVisible)
+                                           _Out_ bool* const pIsVisible)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
@@ -106,10 +106,10 @@ void ApiRoutines::GetConsoleCursorInfoImpl(_In_ SCREEN_INFORMATION* const pConte
 
 void DoSrvGetConsoleCursorInfo(_In_ SCREEN_INFORMATION* pScreenInfo,
                                _Out_ ULONG* const pCursorSize,
-                               _Out_ BOOLEAN* const pIsVisible)
+                               _Out_ bool* const pIsVisible)
 {
     *pCursorSize = pScreenInfo->TextInfo->GetCursor()->GetSize();
-    *pIsVisible = (BOOLEAN)pScreenInfo->TextInfo->GetCursor()->IsVisible();
+    *pIsVisible = pScreenInfo->TextInfo->GetCursor()->IsVisible();
 }
 
 void ApiRoutines::GetConsoleSelectionInfoImpl(_Out_ CONSOLE_SELECTION_INFO* const pConsoleSelectionInfo)
@@ -165,7 +165,7 @@ HRESULT ApiRoutines::GetConsoleFontSizeImpl(_In_ SCREEN_INFORMATION* const pCont
 
 [[nodiscard]]
 HRESULT ApiRoutines::GetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const pContext,
-                                                 const BOOLEAN IsForMaximumWindowSize,
+                                                 const bool IsForMaximumWindowSize,
                                                  _Out_ CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx)
 {
     LockConsole();
@@ -197,7 +197,7 @@ HRESULT ApiRoutines::GetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const 
 
 [[nodiscard]]
 HRESULT ApiRoutines::SetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const pContext,
-                                                 const BOOLEAN /*IsForMaximumWindowSize*/,
+                                                 const bool /*IsForMaximumWindowSize*/,
                                                  const CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -245,7 +245,7 @@ HRESULT ApiRoutines::SetConsoleInputModeImpl(_In_ InputBuffer* const pContext, c
         UpdateFlag(gci.Flags, CONSOLE_QUICK_EDIT_MODE, IsFlagSet(Mode, ENABLE_QUICK_EDIT_MODE));
         UpdateFlag(gci.Flags, CONSOLE_AUTO_POSITION, IsFlagSet(Mode, ENABLE_AUTO_POSITION));
 
-        BOOL const PreviousInsertMode = gci.GetInsertMode();
+        const bool PreviousInsertMode = gci.GetInsertMode();
         gci.SetInsertMode(IsFlagSet(Mode, ENABLE_INSERT_MODE));
         if (gci.GetInsertMode() != PreviousInsertMode)
         {
@@ -461,7 +461,7 @@ HRESULT DoSrvSetConsoleCursorPosition(_In_ SCREEN_INFORMATION* pScreenInfo,
     // MSFT: 15813316 - Try to use this SetCursorPosition call to inherit the cursor position.
     RETURN_IF_FAILED(gci.GetVtIo()->SetCursorPosition(*pCursorPosition));
 
-    RETURN_IF_NTSTATUS_FAILED(pScreenInfo->SetCursorPosition(*pCursorPosition, TRUE));
+    RETURN_IF_NTSTATUS_FAILED(pScreenInfo->SetCursorPosition(*pCursorPosition, true));
 
     LOG_IF_NTSTATUS_FAILED(ConsoleImeResizeCompStrView());
 
@@ -497,7 +497,7 @@ HRESULT DoSrvSetConsoleCursorPosition(_In_ SCREEN_INFORMATION* pScreenInfo,
 [[nodiscard]]
 HRESULT ApiRoutines::SetConsoleCursorInfoImpl(_In_ SCREEN_INFORMATION* const pContext,
                                               const ULONG CursorSize,
-                                              const BOOLEAN IsVisible)
+                                              const bool IsVisible)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
@@ -508,7 +508,7 @@ HRESULT ApiRoutines::SetConsoleCursorInfoImpl(_In_ SCREEN_INFORMATION* const pCo
 [[nodiscard]]
 HRESULT DoSrvSetConsoleCursorInfo(_In_ SCREEN_INFORMATION* pScreenInfo,
                                   const ULONG CursorSize,
-                                  const BOOLEAN IsVisible)
+                                  const bool IsVisible)
 {
     // If more than 100% or less than 0% cursor height, reject it.
     RETURN_HR_IF(E_INVALIDARG, (CursorSize > 100 || CursorSize == 0));
@@ -523,7 +523,7 @@ HRESULT DoSrvSetConsoleCursorInfo(_In_ SCREEN_INFORMATION* pScreenInfo,
 
 [[nodiscard]]
 HRESULT ApiRoutines::SetConsoleWindowInfoImpl(_In_ SCREEN_INFORMATION* const pContext,
-                                              const BOOLEAN IsAbsoluteRectangle,
+                                              const bool IsAbsoluteRectangle,
                                               const SMALL_RECT* const pWindowRectangle)
 {
     LockConsole();
@@ -534,7 +534,7 @@ HRESULT ApiRoutines::SetConsoleWindowInfoImpl(_In_ SCREEN_INFORMATION* const pCo
 
 [[nodiscard]]
 HRESULT DoSrvSetConsoleWindowInfo(_In_ SCREEN_INFORMATION* pScreenInfo,
-                                  const BOOLEAN IsAbsoluteRectangle,
+                                  const bool IsAbsoluteRectangle,
                                   const SMALL_RECT* const pWindowRectangle)
 {
     SMALL_RECT Window = *pWindowRectangle;

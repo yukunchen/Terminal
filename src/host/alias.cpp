@@ -24,211 +24,32 @@
 
 #pragma hdrstop
 
-PEXE_ALIAS_LIST AddExeAliasList(_In_ LPVOID ExeName,
-                                _In_ USHORT ExeLength, // in bytes
-                                _In_ BOOLEAN UnicodeExe)
+struct case_insensitive_hash
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    PEXE_ALIAS_LIST AliasList = new EXE_ALIAS_LIST();
-    if (AliasList == nullptr)
+    std::size_t operator()(const std::wstring& key) const
     {
-        return nullptr;
+        std::wstring lower(key);
+        std::transform(lower.begin(), lower.end(), lower.begin(), ::towlower);
+        std::hash<std::wstring> hash;
+        return hash(lower);
     }
+};
 
-    if (UnicodeExe)
-    {
-        // Length is in bytes. Add 1 so dividing by WCHAR (2) is always rounding up.
-        AliasList->ExeName = new WCHAR[(ExeLength + 1) / sizeof(WCHAR)];
-        if (AliasList->ExeName == nullptr)
-        {
-            delete AliasList;
-            return nullptr;
-        }
-        memmove(AliasList->ExeName, ExeName, ExeLength);
-        AliasList->ExeLength = ExeLength;
-    }
-    else
-    {
-        AliasList->ExeName = new WCHAR[ExeLength];
-        if (AliasList->ExeName == nullptr)
-        {
-            delete AliasList;
-            return nullptr;
-        }
-        AliasList->ExeLength = (USHORT)ConvertInputToUnicode(gci.CP, (LPSTR)ExeName, ExeLength, AliasList->ExeName, ExeLength);
-        AliasList->ExeLength *= 2;
-    }
-    InitializeListHead(&AliasList->AliasList);
-    InsertHeadList(&gci.ExeAliasList, &AliasList->ListLink);
-    return AliasList;
-}
-
-// Routine Description:
-// - This routine searches for the specified exe alias list.  It returns a pointer to the exe list if found, nullptr if not found.
-PEXE_ALIAS_LIST FindExe(_In_ LPVOID ExeName,
-                        _In_ USHORT ExeLength, // in bytes
-                        _In_ BOOLEAN UnicodeExe)
+struct case_insensitive_equality
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    LPWSTR UnicodeExeName;
-    if (UnicodeExe)
+    bool operator()(const std::wstring& lhs, const std::wstring& rhs) const
     {
-        UnicodeExeName = (PWSTR)ExeName;
+        return 0 == _wcsicmp(lhs.data(), rhs.data());
     }
-    else
-    {
-        UnicodeExeName = new WCHAR[ExeLength];
-        if (UnicodeExeName == nullptr)
-            return nullptr;
-        ExeLength = (USHORT)ConvertInputToUnicode(gci.CP, (LPSTR)ExeName, ExeLength, UnicodeExeName, ExeLength);
-        ExeLength *= 2;
-    }
-    PLIST_ENTRY const ListHead = &gci.ExeAliasList;
-    PLIST_ENTRY ListNext = ListHead->Flink;
-    while (ListNext != ListHead)
-    {
-        PEXE_ALIAS_LIST const AliasList = CONTAINING_RECORD(ListNext, EXE_ALIAS_LIST, ListLink);
-        // Length is in bytes. Add 1 so dividing by WCHAR (2) is always rounding up.
-        if (AliasList->ExeLength == ExeLength && !_wcsnicmp(AliasList->ExeName, UnicodeExeName, (ExeLength + 1) / sizeof(WCHAR)))
-        {
-            if (!UnicodeExe)
-            {
-                delete[] UnicodeExeName;
-            }
-            return AliasList;
-        }
-        ListNext = ListNext->Flink;
-    }
-    if (!UnicodeExe)
-    {
-        delete[] UnicodeExeName;
-    }
-    return nullptr;
-}
+};
 
-// Routine Description:
-// - This routine searches for the specified alias.  If it finds one,
-// - it moves it to the head of the list and returns a pointer to the
-// - alias. Otherwise it returns nullptr.
-PALIAS FindAlias(_In_ PEXE_ALIAS_LIST AliasList, _In_reads_bytes_(AliasLength) const WCHAR *AliasName, _In_ USHORT AliasLength)
-{
-    PLIST_ENTRY const ListHead = &AliasList->AliasList;
-    PLIST_ENTRY ListNext = ListHead->Flink;
-    while (ListNext != ListHead)
-    {
-        PALIAS const Alias = CONTAINING_RECORD(ListNext, ALIAS, ListLink);
-        // Length is in bytes. Add 1 so dividing by WCHAR (2) is always rounding up.
-        if (Alias->SourceLength == AliasLength && !_wcsnicmp(Alias->Source, AliasName, (AliasLength + 1) / sizeof(WCHAR)))
-        {
-            if (ListNext != ListHead->Flink)
-            {
-                RemoveEntryList(ListNext);
-                InsertHeadList(ListHead, ListNext);
-            }
-            return Alias;
-        }
-        ListNext = ListNext->Flink;
-    }
-
-    return nullptr;
-}
-
-// Routine Description:
-// - This routine creates an alias and inserts it into the exe alias list.
-NTSTATUS AddAlias(_In_ PEXE_ALIAS_LIST ExeAliasList,
-                  _In_reads_bytes_(SourceLength) const WCHAR *Source,
-                  _In_ USHORT SourceLength,
-                  _In_reads_bytes_(TargetLength) const WCHAR *Target,
-                  _In_ USHORT TargetLength)
-{
-    PALIAS const Alias = new ALIAS();
-    if (Alias == nullptr)
-    {
-        return STATUS_NO_MEMORY;
-    }
-
-    // Length is in bytes. Add 1 so dividing by WCHAR (2) is always rounding up.
-    Alias->Source = new WCHAR[(SourceLength + 1) / sizeof(WCHAR)];
-    if (Alias->Source == nullptr)
-    {
-        delete Alias;
-        return STATUS_NO_MEMORY;
-    }
-
-    // Length is in bytes. Add 1 so dividing by WCHAR (2) is always rounding up.
-    Alias->Target = new WCHAR[(TargetLength + 1) / sizeof(WCHAR)];
-    if (Alias->Target == nullptr)
-    {
-        delete[] Alias->Source;
-        delete Alias;
-        return STATUS_NO_MEMORY;
-    }
-
-    Alias->SourceLength = SourceLength;
-    Alias->TargetLength = TargetLength;
-    memmove(Alias->Source, Source, SourceLength);
-    memmove(Alias->Target, Target, TargetLength);
-    InsertHeadList(&ExeAliasList->AliasList, &Alias->ListLink);
-    return STATUS_SUCCESS;
-}
-
-// Routine Description:
-// - This routine replaces an existing target with a new target.
-NTSTATUS ReplaceAlias(_In_ PALIAS Alias, _In_reads_bytes_(TargetLength) const WCHAR *Target, _In_ USHORT TargetLength)
-{
-    // Length is in bytes. Add 1 so dividing by WCHAR (2) is always rounding up.
-    WCHAR* const NewTarget = new WCHAR[(TargetLength + 1) / sizeof(WCHAR)];
-    if (NewTarget == nullptr)
-    {
-        return STATUS_NO_MEMORY;
-    }
-
-    delete[] Alias->Target;
-    Alias->Target = NewTarget;
-    Alias->TargetLength = TargetLength;
-    memmove(Alias->Target, Target, TargetLength);
-
-    return STATUS_SUCCESS;
-}
-
-// Routine Description:
-// - This routine removes an alias.
-NTSTATUS RemoveAlias(_In_ PALIAS Alias)
-{
-    RemoveEntryList(&Alias->ListLink);
-    delete[] Alias->Source;
-    delete[] Alias->Target;
-    delete Alias;
-    return STATUS_SUCCESS;
-}
-
-void FreeAliasList(_In_ PEXE_ALIAS_LIST ExeAliasList)
-{
-    PLIST_ENTRY const ListHead = &ExeAliasList->AliasList;
-    PLIST_ENTRY ListNext = ListHead->Flink;
-    while (ListNext != ListHead)
-    {
-        PALIAS const Alias = CONTAINING_RECORD(ListNext, ALIAS, ListLink);
-        ListNext = ListNext->Flink;
-        RemoveAlias(Alias);
-    }
-    RemoveEntryList(&ExeAliasList->ListLink);
-    delete[] ExeAliasList->ExeName;
-    delete ExeAliasList;
-}
-
-void FreeAliasBuffers()
-{
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    PLIST_ENTRY const ListHead = &gci.ExeAliasList;
-    PLIST_ENTRY ListNext = ListHead->Flink;
-    while (ListNext != ListHead)
-    {
-        PEXE_ALIAS_LIST const AliasList = CONTAINING_RECORD(ListNext, EXE_ALIAS_LIST, ListLink);
-        ListNext = ListNext->Flink;
-        FreeAliasList(AliasList);
-    }
-}
+std::unordered_map<std::wstring,
+                   std::unordered_map<std::wstring,
+                       std::wstring,
+                       case_insensitive_hash,
+                       case_insensitive_equality>,
+                   case_insensitive_hash,
+                   case_insensitive_equality> g_aliasData;
 
 // Routine Description:
 // - Adds a command line alias to the global set.
@@ -290,53 +111,31 @@ HRESULT ApiRoutines::AddConsoleAliasWImpl(_In_reads_or_z_(cchSourceBufferLength)
 
     RETURN_HR_IF(E_INVALIDARG, cchSourceBufferLength == 0);
 
-    // Convert size_ts into SHORTs for existing alias functions to use.
-    USHORT cbExeNameBufferLength;
-    RETURN_IF_FAILED(GetUShortByteCount(cchExeNameBufferLength, &cbExeNameBufferLength));
-    USHORT cbSourceBufferLength;
-    RETURN_IF_FAILED(GetUShortByteCount(cchSourceBufferLength, &cbSourceBufferLength));
-    USHORT cbTargetBufferLength;
-    RETURN_IF_FAILED(GetUShortByteCount(cchTargetBufferLength, &cbTargetBufferLength));
-
-    // find specified exe.  if it's not there, add it if we're not removing an alias.
-    PEXE_ALIAS_LIST ExeAliasList = FindExe((LPVOID)pwsExeNameBuffer, cbExeNameBufferLength, TRUE);
-    if (ExeAliasList != nullptr)
+    try
     {
-        PALIAS Alias = FindAlias(ExeAliasList, pwsSourceBuffer, cbSourceBufferLength);
-        if (cbTargetBufferLength > 0)
+        std::wstring exeName(pwsExeNameBuffer, cchExeNameBufferLength);
+        std::wstring source(pwsSourceBuffer, cchSourceBufferLength);
+        std::wstring target(pwsTargetBuffer, cchTargetBufferLength);
+
+        std::transform(exeName.begin(), exeName.end(), exeName.begin(), towlower);
+        std::transform(source.begin(), source.end(), source.begin(), towlower);
+
+        if (target.size() == 0)
         {
-            if (Alias != nullptr)
+            // Only try to dig in and erase if the exeName exists.
+            auto exeData = g_aliasData.find(exeName);
+            if (exeData != g_aliasData.end())
             {
-                RETURN_NTSTATUS(ReplaceAlias(Alias, pwsTargetBuffer, cbTargetBufferLength));
-            }
-            else
-            {
-                RETURN_NTSTATUS(AddAlias(ExeAliasList, pwsSourceBuffer, cbSourceBufferLength, pwsTargetBuffer, cbTargetBufferLength));
+                g_aliasData[exeName].erase(source);
             }
         }
         else
         {
-            if (Alias != nullptr)
-            {
-                RETURN_NTSTATUS(RemoveAlias(Alias));
-            }
+            // Map will auto-create each level as necessary
+            g_aliasData[exeName][source] = target;
         }
     }
-    else
-    {
-        if (cbTargetBufferLength > 0)
-        {
-            ExeAliasList = AddExeAliasList((LPVOID)pwsExeNameBuffer, cbExeNameBufferLength, TRUE);
-            if (ExeAliasList != nullptr)
-            {
-                RETURN_NTSTATUS(AddAlias(ExeAliasList, pwsSourceBuffer, cbSourceBufferLength, pwsTargetBuffer, cbTargetBufferLength));
-            }
-            else
-            {
-                RETURN_HR(E_OUTOFMEMORY);
-            }
-        }
-    }
+    CATCH_RETURN();
 
     return S_OK;
 }
@@ -373,35 +172,40 @@ HRESULT GetConsoleAliasWImplHelper(_In_reads_or_z_(cchSourceBufferLength) const 
         *pwsTargetBuffer = L'\0';
     }
 
-    // Convert size_ts into SHORTs for existing alias functions to use.
-    USHORT cbExeNameBufferLength;
-    RETURN_IF_FAILED(GetUShortByteCount(cchExeNameBufferLength, &cbExeNameBufferLength));
-    USHORT cbSourceBufferLength;
-    RETURN_IF_FAILED(GetUShortByteCount(cchSourceBufferLength, &cbSourceBufferLength));
-
-    PEXE_ALIAS_LIST const pExeAliasList = FindExe((LPVOID)pwsExeNameBuffer, cbExeNameBufferLength, TRUE);
-    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_GEN_FAILURE), nullptr == pExeAliasList);
-
-    PALIAS const pAlias = FindAlias(pExeAliasList, pwsSourceBuffer, cbSourceBufferLength);
-    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_GEN_FAILURE), nullptr == pAlias);
-
-    // TargetLength is a byte count, convert to characters.
-    size_t cchTarget = pAlias->TargetLength / sizeof(wchar_t);
-    size_t const cchNull = 1;
-
-    // The total space we need is the length of the string + the null terminator.
-    size_t cchNeeded;
-    RETURN_IF_FAILED(SizeTAdd(cchTarget, cchNull, &cchNeeded));
-
-    *pcchTargetBufferWrittenOrNeeded = cchNeeded;
-
-    if (nullptr != pwsTargetBuffer)
+    try
     {
-        // if the user didn't give us enough space, return with insufficient buffer code early.
-        RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER), cchTargetBufferLength < cchNeeded);
+        std::wstring exeName(pwsExeNameBuffer, cchExeNameBufferLength);
+        std::wstring source(pwsSourceBuffer, cchSourceBufferLength);
 
-        RETURN_IF_FAILED(StringCchCopyNW(pwsTargetBuffer, cchTargetBufferLength, pAlias->Target, cchTarget));
+        // For compatibility, return ERROR_GEN_FAILURE for any result where the alias can't be found.
+        // We use .find for the iterators then dereference to search without creating entries.
+        const auto exeIter = g_aliasData.find(exeName);
+        RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_GEN_FAILURE), exeIter == g_aliasData.end());
+        const auto exeData = exeIter->second;
+        const auto sourceIter = exeData.find(source);
+        RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_GEN_FAILURE), sourceIter == exeData.end());
+        const auto target = sourceIter->second;
+        RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_GEN_FAILURE), target.size() == 0);
+
+        // TargetLength is a byte count, convert to characters.
+        size_t cchTarget = target.size();
+        size_t const cchNull = 1;
+
+        // The total space we need is the length of the string + the null terminator.
+        size_t cchNeeded;
+        RETURN_IF_FAILED(SizeTAdd(cchTarget, cchNull, &cchNeeded));
+
+        *pcchTargetBufferWrittenOrNeeded = cchNeeded;
+
+        if (nullptr != pwsTargetBuffer)
+        {
+            // if the user didn't give us enough space, return with insufficient buffer code early.
+            RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER), cchTargetBufferLength < cchNeeded);
+
+            RETURN_IF_FAILED(StringCchCopyNW(pwsTargetBuffer, cchTargetBufferLength, target.data(), cchTarget));
+        }
     }
+    CATCH_RETURN();
 
     return S_OK;
 }
@@ -551,51 +355,51 @@ HRESULT GetConsoleAliasesLengthWImplHelper(_In_reads_or_z_(cchExeNameBufferLengt
     USHORT cbExeNameBufferLength;
     RETURN_IF_FAILED(GetUShortByteCount(cchExeNameBufferLength, &cbExeNameBufferLength));
 
-    PEXE_ALIAS_LIST const pExeAliasList = FindExe((PVOID)pwsExeNameBuffer, cbExeNameBufferLength, TRUE);
-    if (nullptr != pExeAliasList)
+    try
     {
+        std::wstring exeName(pwsExeNameBuffer, cchExeNameBufferLength);
+
         size_t cchNeeded = 0;
 
         // Each of the aliases will be made up of the source, a seperator, the target, then a null character.
         // They are of the form "Source=Target" when returned.
-
         size_t const cchNull = 1;
         size_t cchSeperator = cchAliasesSeperator;
-
         // If we're counting how much multibyte space will be needed, trial convert the seperator before we add.
         if (!fCountInUnicode)
         {
             RETURN_IF_FAILED(GetALengthFromW(uiCodePage, pwszAliasesSeperator, cchSeperator, &cchSeperator));
         }
 
-        PLIST_ENTRY const ListHead = &pExeAliasList->AliasList;
-        PLIST_ENTRY ListNext = ListHead->Flink;
-        while (ListNext != ListHead)
+        // Find without creating.
+        auto exeIter = g_aliasData.find(exeName);
+        if (exeIter != g_aliasData.end())
         {
-            PALIAS Alias = CONTAINING_RECORD(ListNext, ALIAS, ListLink);
-
-            // Alias stores lengths in bytes.
-            size_t cchSource = Alias->SourceLength / sizeof(wchar_t);
-            size_t cchTarget = Alias->TargetLength / sizeof(wchar_t);
-
-            // If we're counting how much multibyte space will be needed, trial convert the source and target strings before we add.
-            if (!fCountInUnicode)
+            auto list = exeIter->second;
+            for (auto& pair : list)
             {
-                RETURN_IF_FAILED(GetALengthFromW(uiCodePage, Alias->Source, cchSource, &cchSource));
-                RETURN_IF_FAILED(GetALengthFromW(uiCodePage, Alias->Target, cchTarget, &cchTarget));
+                // Alias stores lengths in bytes.
+                size_t cchSource = pair.first.size();
+                size_t cchTarget = pair.second.size();
+
+                // If we're counting how much multibyte space will be needed, trial convert the source and target strings before we add.
+                if (!fCountInUnicode)
+                {
+                    RETURN_IF_FAILED(GetALengthFromW(uiCodePage, pair.first.data(), cchSource, &cchSource));
+                    RETURN_IF_FAILED(GetALengthFromW(uiCodePage, pair.second.data(), cchTarget, &cchTarget));
+                }
+
+                // Accumulate all sizes to the final string count.
+                RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchSource, &cchNeeded));
+                RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchSeperator, &cchNeeded));
+                RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchTarget, &cchNeeded));
+                RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchNull, &cchNeeded));
             }
-
-            // Accumulate all sizes to the final string count.
-            RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchSource, &cchNeeded));
-            RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchSeperator, &cchNeeded));
-            RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchTarget, &cchNeeded));
-            RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchNull, &cchNeeded));
-
-            ListNext = ListNext->Flink;
         }
 
         *pcchAliasesBufferRequired = cchNeeded;
     }
+    CATCH_RETURN();
 
     return S_OK;
 }
@@ -649,21 +453,15 @@ HRESULT ApiRoutines::GetConsoleAliasesLengthWImpl(_In_reads_or_z_(cchExeNameBuff
     return GetConsoleAliasesLengthWImplHelper(pwsExeNameBuffer, cchExeNameBufferLength, true, 0, pcchAliasesBufferRequired);
 }
 
-VOID ClearCmdExeAliases()
+// Routine Description:
+// - Clears all aliases on CMD.exe.
+void Alias::s_ClearCmdExeAliases()
 {
-    PEXE_ALIAS_LIST const ExeAliasList = FindExe(L"cmd.exe", 14, TRUE);
-    if (ExeAliasList == nullptr)
+    // find without creating.
+    auto exeIter = g_aliasData.find(L"cmd.exe");
+    if (exeIter != g_aliasData.end())
     {
-        return;
-    }
-
-    PLIST_ENTRY const ListHead = &ExeAliasList->AliasList;
-    PLIST_ENTRY ListNext = ListHead->Flink;
-    while (ListNext != ListHead)
-    {
-        PALIAS const Alias = CONTAINING_RECORD(ListNext, ALIAS, ListLink);
-        ListNext = ListNext->Flink;
-        RemoveAlias(Alias);
+        exeIter->second.clear();
     }
 }
 
@@ -696,75 +494,73 @@ HRESULT GetConsoleAliasesWImplHelper(_In_reads_or_z_(cchExeNameBufferLength) con
         *pwsAliasBuffer = L'\0';
     }
 
-    // Convert size_ts into SHORTs for existing alias functions to use.
-    USHORT cbExeNameBufferLength;
-    RETURN_IF_FAILED(GetUShortByteCount(cchExeNameBufferLength, &cbExeNameBufferLength));
-
-    PEXE_ALIAS_LIST const pExeAliasList = FindExe((LPVOID)pwsExeNameBuffer, cbExeNameBufferLength, TRUE);
-    if (nullptr != pExeAliasList)
+    try
     {
+        std::wstring exeName(pwsExeNameBuffer, cchExeNameBufferLength);
+
         LPWSTR AliasesBufferPtrW = pwsAliasBuffer;
         size_t cchTotalLength = 0; // accumulate the characters we need/have copied as we walk the list
 
         // Each of the alises will be made up of the source, a seperator, the target, then a null character.
         // They are of the form "Source=Target" when returned.
-
         size_t const cchNull = 1;
 
-        PLIST_ENTRY const ListHead = &pExeAliasList->AliasList;
-        PLIST_ENTRY ListNext = ListHead->Flink;
-        while (ListNext != ListHead)
+        // Find without creating.
+        auto exeIter = g_aliasData.find(exeName);
+        if (exeIter != g_aliasData.end())
         {
-            PALIAS const Alias = CONTAINING_RECORD(ListNext, ALIAS, ListLink);
-
-            // Alias stores lengths in bytes.
-            size_t const cchSource = Alias->SourceLength / sizeof(wchar_t);
-            size_t const cchTarget = Alias->TargetLength / sizeof(wchar_t);
-
-            // Add up how many characters we will need for the full alias data.
-            size_t cchNeeded = 0;
-            RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchSource, &cchNeeded));
-            RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchAliasesSeperator, &cchNeeded));
-            RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchTarget, &cchNeeded));
-            RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchNull, &cchNeeded));
-
-            // If we can return the data, attempt to do so until we're done or it overflows.
-            // If we cannot return data, we're just going to loop anyway and count how much space we'd need.
-            if (nullptr != pwsAliasBuffer)
+            auto list = exeIter->second;
+            for (auto& pair : list)
             {
-                // Calculate the new final total after we add what we need to see if it will exceed the limit
-                size_t cchNewTotal;
-                RETURN_IF_FAILED(SizeTAdd(cchTotalLength, cchNeeded, &cchNewTotal));
+                // Alias stores lengths in bytes.
+                size_t const cchSource = pair.first.size();
+                size_t const cchTarget = pair.second.size();
 
-                RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), cchNewTotal > cchAliasBufferLength);
+                // Add up how many characters we will need for the full alias data.
+                size_t cchNeeded = 0;
+                RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchSource, &cchNeeded));
+                RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchAliasesSeperator, &cchNeeded));
+                RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchTarget, &cchNeeded));
+                RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchNull, &cchNeeded));
 
-                size_t cchAliasBufferRemaining;
-                RETURN_IF_FAILED(SizeTSub(cchAliasBufferLength, cchTotalLength, &cchAliasBufferRemaining));
+                // If we can return the data, attempt to do so until we're done or it overflows.
+                // If we cannot return data, we're just going to loop anyway and count how much space we'd need.
+                if (nullptr != pwsAliasBuffer)
+                {
+                    // Calculate the new final total after we add what we need to see if it will exceed the limit
+                    size_t cchNewTotal;
+                    RETURN_IF_FAILED(SizeTAdd(cchTotalLength, cchNeeded, &cchNewTotal));
 
-                RETURN_IF_FAILED(StringCchCopyNW(AliasesBufferPtrW, cchAliasBufferRemaining, Alias->Source, cchSource));
-                RETURN_IF_FAILED(SizeTSub(cchAliasBufferRemaining, cchSource, &cchAliasBufferRemaining));
-                AliasesBufferPtrW += cchSource;
+                    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), cchNewTotal > cchAliasBufferLength);
 
-                RETURN_IF_FAILED(StringCchCopyNW(AliasesBufferPtrW, cchAliasBufferRemaining, pwszAliasesSeperator, cchAliasesSeperator));
-                RETURN_IF_FAILED(SizeTSub(cchAliasBufferRemaining, cchAliasesSeperator, &cchAliasBufferRemaining));
-                AliasesBufferPtrW += cchAliasesSeperator;
+                    size_t cchAliasBufferRemaining;
+                    RETURN_IF_FAILED(SizeTSub(cchAliasBufferLength, cchTotalLength, &cchAliasBufferRemaining));
 
-                RETURN_IF_FAILED(StringCchCopyNW(AliasesBufferPtrW, cchAliasBufferRemaining, Alias->Target, cchTarget));
-                RETURN_IF_FAILED(SizeTSub(cchAliasBufferRemaining, cchTarget, &cchAliasBufferRemaining));
-                AliasesBufferPtrW += cchTarget;
+                    RETURN_IF_FAILED(StringCchCopyNW(AliasesBufferPtrW, cchAliasBufferRemaining, pair.first.data(), cchSource));
+                    RETURN_IF_FAILED(SizeTSub(cchAliasBufferRemaining, cchSource, &cchAliasBufferRemaining));
+                    AliasesBufferPtrW += cchSource;
 
-                // StringCchCopyNW ensures that the destination string is null terminated, so simply advance the pointer.
-                RETURN_IF_FAILED(SizeTSub(cchAliasBufferRemaining, 1, &cchAliasBufferRemaining));
-                AliasesBufferPtrW += cchNull;
+                    RETURN_IF_FAILED(StringCchCopyNW(AliasesBufferPtrW, cchAliasBufferRemaining, pwszAliasesSeperator, cchAliasesSeperator));
+                    RETURN_IF_FAILED(SizeTSub(cchAliasBufferRemaining, cchAliasesSeperator, &cchAliasBufferRemaining));
+                    AliasesBufferPtrW += cchAliasesSeperator;
+
+                    RETURN_IF_FAILED(StringCchCopyNW(AliasesBufferPtrW, cchAliasBufferRemaining, pair.second.data(), cchTarget));
+                    RETURN_IF_FAILED(SizeTSub(cchAliasBufferRemaining, cchTarget, &cchAliasBufferRemaining));
+                    AliasesBufferPtrW += cchTarget;
+
+                    // StringCchCopyNW ensures that the destination string is null terminated, so simply advance the pointer.
+                    RETURN_IF_FAILED(SizeTSub(cchAliasBufferRemaining, 1, &cchAliasBufferRemaining));
+                    AliasesBufferPtrW += cchNull;
+                }
+
+                RETURN_IF_FAILED(SizeTAdd(cchTotalLength, cchNeeded, &cchTotalLength));
             }
-
-            RETURN_IF_FAILED(SizeTAdd(cchTotalLength, cchNeeded, &cchTotalLength));
-
-            ListNext = ListNext->Flink;
         }
 
         *pcchAliasBufferWrittenOrNeeded = cchTotalLength;
+
     }
+    CATCH_RETURN();
 
     return S_OK;
 }
@@ -868,38 +664,34 @@ HRESULT ApiRoutines::GetConsoleAliasesWImpl(_In_reads_or_z_(cchExeNameBufferLeng
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT GetConsoleAliasExesLengthImplHelper(const bool fCountInUnicode, const UINT uiCodePage, _Out_ size_t* const pcchAliasExesBufferRequired)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // Ensure output variables are initialized
     *pcchAliasExesBufferRequired = 0;
 
-    size_t cchNeeded = 0;
-
-    // Each alias exe will be made up of the string payload and a null terminator.
-    size_t const cchNull = 1;
-
-    PLIST_ENTRY const ListHead = &gci.ExeAliasList;
-    PLIST_ENTRY ListNext = ListHead->Flink;
-    while (ListNext != ListHead)
+    try
     {
-        PEXE_ALIAS_LIST const AliasList = CONTAINING_RECORD(ListNext, EXE_ALIAS_LIST, ListLink);
+        size_t cchNeeded = 0;
 
-        // AliasList stores lengths in bytes.
-        size_t cchExe = AliasList->ExeLength / sizeof(wchar_t);
+        // Each alias exe will be made up of the string payload and a null terminator.
+        size_t const cchNull = 1;
 
-        // If we're counting how much multibyte space will be needed, trial convert the exe string before we add.
-        if (!fCountInUnicode)
+        for (auto& pair : g_aliasData)
         {
-            RETURN_IF_FAILED(GetALengthFromW(uiCodePage, AliasList->ExeName, cchExe, &cchExe));
+            size_t cchExe = pair.first.size();
+
+            // If we're counting how much multibyte space will be needed, trial convert the exe string before we add.
+            if (!fCountInUnicode)
+            {
+                RETURN_IF_FAILED(GetALengthFromW(uiCodePage, pair.first.data(), cchExe, &cchExe));
+            }
+
+            // Accumulate to total
+            RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchExe, &cchNeeded));
+            RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchNull, &cchNeeded));
         }
 
-        // Accumulate to total
-        RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchExe, &cchNeeded));
-        RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchNull, &cchNeeded));
-
-        ListNext = ListNext->Flink;
+        *pcchAliasExesBufferRequired = cchNeeded;
     }
-
-    *pcchAliasExesBufferRequired = cchNeeded;
+    CATCH_RETURN();
 
     return S_OK;
 }
@@ -951,7 +743,6 @@ HRESULT GetConsoleAliasExesWImplHelper(_Out_writes_to_opt_(cchAliasExesBufferLen
                                        const size_t cchAliasExesBufferLength,
                                        _Out_ size_t* const pcchAliasExesBufferWrittenOrNeeded)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // Ensure output variables are initialized.
     *pcchAliasExesBufferWrittenOrNeeded = 0;
     if (nullptr != pwsAliasExesBuffer)
@@ -959,47 +750,46 @@ HRESULT GetConsoleAliasExesWImplHelper(_Out_writes_to_opt_(cchAliasExesBufferLen
         *pwsAliasExesBuffer = L'\0';
     }
 
-    LPWSTR AliasExesBufferPtrW = pwsAliasExesBuffer;
-    size_t cchTotalLength = 0; // accumulate the characters we need/have copied as we walk the list
-
-    size_t const cchNull = 1;
-
-    PLIST_ENTRY const ListHead = &gci.ExeAliasList;
-    PLIST_ENTRY ListNext = ListHead->Flink;
-    while (ListNext != ListHead)
+    try
     {
-        PEXE_ALIAS_LIST const AliasList = CONTAINING_RECORD(ListNext, EXE_ALIAS_LIST, ListLink);
+        LPWSTR AliasExesBufferPtrW = pwsAliasExesBuffer;
+        size_t cchTotalLength = 0; // accumulate the characters we need/have copied as we walk the list
 
-        // AliasList stores length in bytes. Add 1 for null terminator.
-        size_t const cchExe = (AliasList->ExeLength) / sizeof(wchar_t);
+        size_t const cchNull = 1;
 
-        size_t cchNeeded;
-        RETURN_IF_FAILED(SizeTAdd(cchExe, cchNull, &cchNeeded));
-
-        // If we can return the data, attempt to do so until we're done or it overflows.
-        // If we cannot return data, we're just going to loop anyway and count how much space we'd need.
-        if (nullptr != pwsAliasExesBuffer)
+        for (auto& pair : g_aliasData)
         {
-            // Calculate the new total length after we add to the buffer
-            // Error out early if there is a problem.
-            size_t cchNewTotal;
-            RETURN_IF_FAILED(SizeTAdd(cchTotalLength, cchNeeded, &cchNewTotal));
-            RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), cchNewTotal > cchAliasExesBufferLength);
+            // AliasList stores length in bytes. Add 1 for null terminator.
+            size_t const cchExe = pair.first.size();
 
-            size_t cchRemaining;
-            RETURN_IF_FAILED(SizeTSub(cchAliasExesBufferLength, cchTotalLength, &cchRemaining));
+            size_t cchNeeded;
+            RETURN_IF_FAILED(SizeTAdd(cchExe, cchNull, &cchNeeded));
 
-            RETURN_IF_FAILED(StringCchCopyNW(AliasExesBufferPtrW, cchRemaining, AliasList->ExeName, cchExe));
-            AliasExesBufferPtrW += cchNeeded;
+            // If we can return the data, attempt to do so until we're done or it overflows.
+            // If we cannot return data, we're just going to loop anyway and count how much space we'd need.
+            if (nullptr != pwsAliasExesBuffer)
+            {
+                // Calculate the new total length after we add to the buffer
+                // Error out early if there is a problem.
+                size_t cchNewTotal;
+                RETURN_IF_FAILED(SizeTAdd(cchTotalLength, cchNeeded, &cchNewTotal));
+                RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), cchNewTotal > cchAliasExesBufferLength);
+
+                size_t cchRemaining;
+                RETURN_IF_FAILED(SizeTSub(cchAliasExesBufferLength, cchTotalLength, &cchRemaining));
+
+                RETURN_IF_FAILED(StringCchCopyNW(AliasExesBufferPtrW, cchRemaining, pair.first.data(), cchExe));
+                AliasExesBufferPtrW += cchNeeded;
+            }
+
+            // Accumulate the total written amount.
+            RETURN_IF_FAILED(SizeTAdd(cchTotalLength, cchNeeded, &cchTotalLength));
+
         }
 
-        // Accumulate the total written amount.
-        RETURN_IF_FAILED(SizeTAdd(cchTotalLength, cchNeeded, &cchTotalLength));
-
-        ListNext = ListNext->Flink;
+        *pcchAliasExesBufferWrittenOrNeeded = cchTotalLength;
     }
-
-    *pcchAliasExesBufferWrittenOrNeeded = cchTotalLength;
+    CATCH_RETURN();
 
     return S_OK;
 }
@@ -1077,7 +867,373 @@ HRESULT ApiRoutines::GetConsoleAliasExesWImpl(_Out_writes_to_(cchAliasExesBuffer
     return GetConsoleAliasExesWImplHelper(pwsAliasExesBuffer, cchAliasExesBufferLength, pcchAliasExesBufferWritten);
 }
 
-#define MAX_ARGS 9
+// Routine Description:
+// - Trims trailing \r\n off of a string
+// Arguments:
+// - str - String to trim
+void Alias::s_TrimTrailingCrLf(std::wstring& str)
+{
+    const auto trailingCrLfPos = str.find_last_of(UNICODE_CARRIAGERETURN);
+    if (std::wstring::npos != trailingCrLfPos)
+    {
+        str.erase(trailingCrLfPos);
+    }
+}
+
+// Routine Description:
+// - Tokenizes a string into a collection using space as a separator
+// Arguments:
+// - str - String to tokenize
+// Return Value:
+// - Collection of tokenized strings
+std::deque<std::wstring> Alias::s_Tokenize(const std::wstring& str)
+{
+    std::deque<std::wstring> result;
+
+    size_t prevIndex = 0;
+    auto spaceIndex = str.find(L' ');
+    while (std::wstring::npos != spaceIndex)
+    {
+        const auto length = spaceIndex - prevIndex;
+
+        result.emplace_back(str.substr(prevIndex, length));
+
+        spaceIndex++;
+        prevIndex = spaceIndex;
+
+        spaceIndex = str.find(L' ', spaceIndex);
+    }
+
+    // Place the final one into the set.
+    result.emplace_back(str.substr(prevIndex));
+
+    return result;
+}
+
+// Routine Description:
+// - Gets just the arguments portion of the command string
+//   Specifically, all text after the first space character.
+// Arguments:
+// - str - String to split into just args
+// Return Value:
+// - Only the arguments part of the string or empty if there are no arguments.
+std::wstring Alias::s_GetArgString(const std::wstring& str)
+{
+    std::wstring result;
+    auto firstSpace = str.find_first_of(L' ');
+    if (std::wstring::npos != firstSpace)
+    {
+        firstSpace++;
+        if (firstSpace < str.size())
+        {
+            result = str.substr(firstSpace);
+        }
+    }
+
+    return result;
+}
+
+// Routine Description:
+// - Checks the given character to see if it is a numbered arg replacement macro
+//   and replaces it with the counted argument if there is a match
+// Arguments:
+// - ch - Character to test as a macro
+// - appendToStr - Append the macro result here if it matched
+// - tokens - Tokens of the original command string. 0 is alias. 1-N are arguments.
+// Return Value:
+// - True if we found the macro and appended to the string.
+// - False if the given character doesn't match this macro.
+bool Alias::s_TryReplaceNumberedArgMacro(const wchar_t ch,
+                                         std::wstring& appendToStr,
+                                         const std::deque<std::wstring>& tokens)
+{
+    if (ch >= L'1' && ch <= L'9')
+    {
+        // Numerical macros substitute that numbered argument
+        const size_t index = ch - L'0';
+
+        if (index < tokens.size() && index > 0)
+        {
+            appendToStr.append(tokens[index]);
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
+// Routine Description:
+// - Checks the given character to see if it is a wildcard arg replacement macro
+//   and replaces it with the entire argument string if there is a match
+// Arguments:
+// - ch - Character to test as a macro
+// - appendToStr - Append the macro result here if it matched
+// - fullArgString - All of the arguments as one big string.
+// Return Value:
+// - True if we found the macro and appended to the string.
+// - False if the given character doesn't match this macro.
+bool Alias::s_TryReplaceWildcardArgMacro(const wchar_t ch,
+                                         std::wstring& appendToStr,
+                                         const std::wstring fullArgString)
+{
+    if (L'*' == ch)
+    {
+        // Wildcard substitutes all arguments
+        appendToStr.append(fullArgString);
+        return true;
+    }
+
+    return false;
+}
+
+// Routine Description:
+// - Checks the given character to see if it is an input redirection macro
+//   and replaces it with the < redirector if there is a match
+// Arguments:
+// - ch - Character to test as a macro
+// - appendToStr - Append the macro result here if it matched
+// Return Value:
+// - True if we found the macro and appended to the string.
+// - False if the given character doesn't match this macro.
+bool Alias::s_TryReplaceInputRedirMacro(const wchar_t ch,
+                                        std::wstring& appendToStr)
+{
+    if (L'L' == towupper(ch))
+    {
+        // L (either case) replaces with input redirector <
+        appendToStr.push_back(L'<');
+        return true;
+    }
+    return false;
+}
+
+// Routine Description:
+// - Checks the given character to see if it is an output redirection macro
+//   and replaces it with the > redirector if there is a match
+// Arguments:
+// - ch - Character to test as a macro
+// - appendToStr - Append the macro result here if it matched
+// Return Value:
+// - True if we found the macro and appended to the string.
+// - False if the given character doesn't match this macro.
+bool Alias::s_TryReplaceOutputRedirMacro(const wchar_t ch,
+                                         std::wstring& appendToStr)
+{
+    if (L'G' == towupper(ch))
+    {
+        // G (either case) replaces with output redirector >
+        appendToStr.push_back(L'>');
+        return true;
+    }
+    return false;
+}
+
+// Routine Description:
+// - Checks the given character to see if it is a pipe redirection macro
+//   and replaces it with the | redirector if there is a match
+// Arguments:
+// - ch - Character to test as a macro
+// - appendToStr - Append the macro result here if it matched
+// Return Value:
+// - True if we found the macro and appended to the string.
+// - False if the given character doesn't match this macro.
+bool Alias::s_TryReplacePipeRedirMacro(const wchar_t ch,
+                                       std::wstring& appendToStr)
+{
+    if (L'B' == towupper(ch))
+    {
+        // B (either case) replaces with pipe operator |
+        appendToStr.push_back(L'|');
+        return true;
+    }
+    return false;
+}
+
+// Routine Description:
+// - Checks the given character to see if it is a next command macro
+//   and replaces it with CRLF if there is a match
+// Arguments:
+// - ch - Character to test as a macro
+// - appendToStr - Append the macro result here if it matched
+// - lineCount - Updates the rolling count of lines if we add a CRLF.
+// Return Value:
+// - True if we found the macro and appended to the string.
+// - False if the given character doesn't match this macro.
+bool Alias::s_TryReplaceNextCommandMacro(const wchar_t ch,
+                                         std::wstring& appendToStr,
+                                         size_t& lineCount)
+{
+    if (L'T' == towupper(ch))
+    {
+        // T (either case) inserts a CRLF to chain commands
+        s_AppendCrLf(appendToStr, lineCount);
+        return true;
+    }
+    return false;
+}
+
+// Routine Description:
+// - Appends the system line feed (CRLF) to the given string
+// Arguments:
+// - appendToStr - Append the system line feed here 
+// - lineCount - Updates the rolling count of lines if we add a CRLF.
+void Alias::s_AppendCrLf(std::wstring& appendToStr,
+                         size_t& lineCount)
+{
+    appendToStr.push_back(L'\r');
+    appendToStr.push_back(L'\n');
+    lineCount++;
+}
+
+// Routine Description:
+// - Searches through the given string for macros and replaces them
+//   with the matching action
+// Arguments:
+// - str - On input, the string to search. On output, the string is replaced.
+// - tokens - The tokenized command line input. 0 is the alias, 1-N are arguments.
+// - fullArgString - Shorthand to 1-N argument string in case of wildcard match.
+// Return Value:
+// - The number of commands in the final string (line feeds, CRLFs)
+size_t Alias::s_ReplaceMacros(std::wstring& str,
+                              const std::deque<std::wstring>& tokens,
+                              const std::wstring& fullArgString)
+{
+    size_t lineCount = 0;
+    std::wstring finalText;
+
+    // The target text may contain substitution macros indicated by $. 
+    // Walk through and substitute them as appropriate.
+    for (auto ch = str.cbegin(); ch < str.cend(); ch++)
+    {
+        if (L'$' == *ch)
+        {
+            // Attempt to read ahead by one character.
+            const auto chNext = ch + 1;
+
+            if (chNext < str.cend())
+            {
+                auto isProcessed = s_TryReplaceNumberedArgMacro(*chNext, finalText, tokens);
+                if (!isProcessed)
+                {
+                    isProcessed = s_TryReplaceWildcardArgMacro(*chNext, finalText, fullArgString);
+                }
+                if (!isProcessed)
+                {
+                    isProcessed = s_TryReplaceInputRedirMacro(*chNext, finalText);
+                }
+                if (!isProcessed)
+                {
+                    isProcessed = s_TryReplaceOutputRedirMacro(*chNext, finalText);
+                }
+                if (!isProcessed)
+                {
+                    isProcessed = s_TryReplacePipeRedirMacro(*chNext, finalText);
+                }
+                if (!isProcessed)
+                {
+                    isProcessed = s_TryReplaceNextCommandMacro(*chNext, finalText, lineCount);
+                }
+                if (!isProcessed)
+                {
+                    // If nothing matches, just push these two characters in.
+                    finalText.push_back(*ch);
+                    finalText.push_back(*chNext);
+                }
+
+                // Since we read ahead and used that character, 
+                // advance the iterator one extra to compensate.
+                ch++;
+            }
+            else
+            {
+                // If no read-ahead, just push this character and be done.
+                finalText.push_back(*ch);
+            }
+        }
+        else
+        {
+            // If it didn't match the macro specifier $, push the character.
+            finalText.push_back(*ch);
+        }
+    }
+
+    // We always terminate with a CRLF to symbolize end of command.
+    s_AppendCrLf(finalText, lineCount);
+
+    // Give back the final text and count.
+    str.swap(finalText);
+    return lineCount;
+}
+
+// Routine Description:
+// - Takes the source text and searches it for an alias belonging to exe name's list.
+// Arguments:
+// - sourceText - The string to search for an alias
+// - exeName - The name of the EXE that has aliases associated
+// - lineCount - Number of lines worth of text processed.
+// Return Value:
+// - If we found a matching alias, this will be the processed data
+//   and lineCount is updated to the new number of lines.
+// - If we didn't match and process an alias, return an empty string.
+std::wstring Alias::s_MatchAndCopyAlias(const std::wstring& sourceText,
+                                        const std::wstring& exeName,
+                                        size_t& lineCount)
+{
+    // Copy source text into a local for manipulation.
+    std::wstring sourceCopy(sourceText);
+
+    // Trim trailing \r\n off of sourceCopy if it has one.
+    s_TrimTrailingCrLf(sourceCopy);
+
+    // Check if we have an EXE in the list that matches the request first.
+    auto exeIter = g_aliasData.find(exeName);
+    if (exeIter == g_aliasData.end())
+    {
+        // We found no data for this exe. Give back an empty string.
+        return std::wstring();
+    }
+
+    auto exeList = exeIter->second;
+    if (exeList.size() == 0)
+    {
+        // If there's no match, give back an empty string.
+        return std::wstring();
+    }
+
+    // Tokenize the text by spaces
+    const auto tokens = s_Tokenize(sourceCopy);
+
+    // If there are no tokens, return an empty string
+    if (tokens.size() == 0)
+    {
+        return std::wstring();
+    }
+
+    // Find alias. If there isn't one, return an empty string
+    const auto alias = tokens.front();
+    const auto aliasIter = exeList.find(alias);
+    if (aliasIter == exeList.end())
+    {
+        // We found no alias pair with this name. Give back an empty string.
+        return std::wstring();
+    }
+
+    const auto target = aliasIter->second;
+    if (target.size() == 0)
+    {
+        return std::wstring();
+    }
+
+    // Get the string of all parameters as a shorthand for $* later.
+    const auto allParams = s_GetArgString(sourceCopy);
+
+    // The final text will be the target but with macros replaced.
+    std::wstring finalText(target);
+    lineCount = s_ReplaceMacros(finalText, tokens, allParams); 
+
+    return finalText;
+}
 
 // Routine Description:
 // - This routine matches the input string with an alias and copies the alias to the input buffer.
@@ -1085,252 +1241,72 @@ HRESULT ApiRoutines::GetConsoleAliasExesWImpl(_Out_writes_to_(cchAliasExesBuffer
 // - pwchSource - string to match
 // - cbSource - length of pwchSource in bytes
 // - pwchTarget - where to store matched string
-// - pcbTarget - on input, contains size of pwchTarget.  On output, contains length of alias stored in pwchTarget.
-// - SourceIsCommandLine - if true, source buffer is a command line, where
-//                         the first blank separate token is to be check for an alias, and if
-//                         it matches, replaced with the value of the alias.  if false, then
-//                         the source string is a null terminated alias name.
+// - cbTargetSize - on input, contains size of pwchTarget.  
+// - pcbTargetWritten - On output, contains length of alias stored in pwchTarget.
+// - pwchExe - Name of exe that command is associated with to find related aliases
+// - cbExe - Length in bytes of exe name
 // - LineCount - aliases can contain multiple commands.  $T is the command separator
 // Return Value:
-// - SUCCESS - match was found and alias was copied to buffer.
-[[nodiscard]]
-NTSTATUS MatchAndCopyAlias(_In_reads_bytes_(cbSource) PWCHAR pwchSource,
-                           _In_ USHORT cbSource,
-                           _Out_writes_bytes_(*pcbTarget) PWCHAR pwchTarget,
-                           _Inout_ PUSHORT pcbTarget,
-                           _In_reads_bytes_(cbExe) PWCHAR pwchExe,
-                           _In_ USHORT cbExe,
-                           _Out_ PDWORD pcLines)
+// - None. It will just maintain the source as the target if we can't match an alias.
+void Alias::s_MatchAndCopyAliasLegacy(_In_reads_bytes_(cbSource) PWCHAR pwchSource,
+                                      _In_ ULONG cbSource,
+                                      _Out_writes_bytes_(*pcbTarget) PWCHAR pwchTarget,
+                                      _In_ ULONG cbTargetSize,
+                                      _Out_ PULONG pcbTargetWritten,
+                                      _In_reads_bytes_(cbExe) PWCHAR pwchExe,
+                                      _In_ USHORT cbExe,
+                                      _Out_ PDWORD pcLines)
 {
-    NTSTATUS Status = STATUS_SUCCESS;
-
-    // Alloc of exename may have failed.
-    if (pwchExe == nullptr)
+    try
     {
-        return STATUS_UNSUCCESSFUL;
-    }
+        THROW_HR_IF(E_POINTER, pwchExe == nullptr);
+        std::wstring exeName(pwchExe, cbExe / sizeof(WCHAR));
+        std::wstring sourceText(pwchSource, cbSource / sizeof(WCHAR));
+        size_t lineCount = *pcLines;
 
-    // Find exe.
-    PEXE_ALIAS_LIST const ExeAliasList = FindExe(pwchExe, cbExe, TRUE);
-    if (ExeAliasList == nullptr)
-    {
-        return STATUS_UNSUCCESSFUL;
-    }
+        const auto targetText = s_MatchAndCopyAlias(sourceText, exeName, lineCount);
 
-    // Find first blank.
-    PWCHAR Tmp = pwchSource;
-    USHORT SourceUpToFirstBlank = 0; // in chars
-#pragma prefast(suppress:26019, "Legacy. This is bounded appropriately by cbSource.")
-    for (; *Tmp != (WCHAR)' ' && SourceUpToFirstBlank < (USHORT)(cbSource / sizeof(WCHAR)); Tmp++, SourceUpToFirstBlank++)
-    {
-        /* Do nothing */
-    }
-
-    // find char past first blank
-    USHORT j = SourceUpToFirstBlank;
-    while (j < (USHORT)(cbSource / sizeof(WCHAR)) && *Tmp == (WCHAR)' ')
-    {
-        Tmp++;
-        j++;
-    }
-
-    LPWSTR SourcePtr = Tmp;
-    USHORT const SourceRemainderLength = (USHORT)((cbSource / sizeof(WCHAR)) - j); // in chars
-
-    // find alias
-    PALIAS const Alias = FindAlias(ExeAliasList, pwchSource, (USHORT)(SourceUpToFirstBlank * sizeof(WCHAR)));
-    if (Alias == nullptr)
-    {
-        return STATUS_UNSUCCESSFUL;
-    }
-
-    // Length is in bytes. Add 1 so dividing by WCHAR (2) is always rounding up.
-    PWCHAR const TmpBuffer = new WCHAR[(*pcbTarget + 1) / sizeof(WCHAR)];
-    if (!TmpBuffer)
-    {
-        return STATUS_NO_MEMORY;
-    }
-
-    // count args in target
-    USHORT ArgCount = 0;
-    *pcLines = 1;
-    Tmp = Alias->Target;
-    for (USHORT i = 0; (USHORT)(i + 1) < (USHORT)(Alias->TargetLength / sizeof(WCHAR)); i++)
-    {
-        if (*Tmp == (WCHAR)'$' && *(Tmp + 1) >= (WCHAR)'1' && *(Tmp + 1) <= (WCHAR)'9')
+        // Only return data if the reply was non-empty (we had a match).
+        if (!targetText.empty())
         {
-            USHORT ArgNum = *(Tmp + 1) - (WCHAR)'0';
+            const auto cchTargetSize = cbTargetSize / sizeof(wchar_t);
 
-            if (ArgNum > ArgCount)
+            // If the target text will fit in the result buffer, fill out the results.
+            if (targetText.size() <= cchTargetSize)
             {
-                ArgCount = ArgNum;
+                // Non-null terminated copy into memory space
+                std::copy_n(targetText.data(), targetText.size(), pwchTarget);
+
+                // Return bytes copied.
+                *pcbTargetWritten = gsl::narrow<ULONG>(targetText.size() * sizeof(wchar_t));
+
+                // Return lines info.
+                *pcLines = gsl::narrow<DWORD>(lineCount);
             }
-
-            Tmp++;
-            i++;
-        }
-        else if (*Tmp == (WCHAR)'$' && *(Tmp + 1) == (WCHAR)'*')
-        {
-            if (ArgCount == 0)
-            {
-                ArgCount = 1;
-            }
-
-            Tmp++;
-            i++;
-        }
-
-        Tmp++;
-    }
-
-    // Package up space separated strings in source into array of args.
-    USHORT NumSourceArgs = 0;
-    Tmp = SourcePtr;
-    LPWSTR Args[MAX_ARGS];
-    USHORT ArgsLength[MAX_ARGS];    // in bytes
-    for (USHORT i = 0, k = 0; i < ArgCount; i++)
-    {
-        if (k < SourceRemainderLength)
-        {
-            Args[NumSourceArgs] = Tmp;
-            ArgsLength[NumSourceArgs] = 0;
-            while (k++ < SourceRemainderLength && *Tmp++ != (WCHAR)' ')
-            {
-                ArgsLength[NumSourceArgs] += sizeof(WCHAR);
-            }
-
-            while (k < SourceRemainderLength && *Tmp == (WCHAR)' ')
-            {
-                k++;
-                Tmp++;
-            }
-
-            NumSourceArgs++;
-        }
-        else
-        {
-            break;
         }
     }
-
-    // Put together the target string.
-    PWCHAR Buffer = TmpBuffer;
-    USHORT NewTargetLength = 2 * sizeof(WCHAR);    // for CRLF
-    PWCHAR TargetAlias = Alias->Target;
-    for (USHORT i = 0; i < (USHORT)(Alias->TargetLength / sizeof(WCHAR)); i++)
+    catch (...)
     {
-        if (NewTargetLength >= *pcbTarget)
-        {
-            Status = STATUS_BUFFER_TOO_SMALL;
-            break;
-        }
-
-        if (*TargetAlias == (WCHAR)'$' && (USHORT)(i + 1) < (USHORT)(Alias->TargetLength / sizeof(WCHAR)))
-        {
-            TargetAlias++;
-            i++;
-            if (*TargetAlias >= (WCHAR)'1' && *TargetAlias <= (WCHAR)'9')
-            {
-                // do numbered parameter substitution
-                USHORT ArgNumber;
-
-                ArgNumber = (USHORT)(*TargetAlias - (WCHAR)'1');
-                if (ArgNumber < NumSourceArgs)
-                {
-                    if ((NewTargetLength + ArgsLength[ArgNumber]) <= *pcbTarget)
-                    {
-                        memmove(Buffer, Args[ArgNumber], ArgsLength[ArgNumber]);
-                        Buffer += ArgsLength[ArgNumber] / sizeof(WCHAR);
-                        NewTargetLength += ArgsLength[ArgNumber];
-                    }
-                    else
-                    {
-                        Status = STATUS_BUFFER_TOO_SMALL;
-                        break;
-                    }
-                }
-            }
-            else if (*TargetAlias == (WCHAR)'*')
-            {
-                // Do * parameter substitution.
-                if (NumSourceArgs)
-                {
-                    if ((USHORT)(NewTargetLength + (SourceRemainderLength * sizeof(WCHAR))) <= *pcbTarget)
-                    {
-                        memmove(Buffer, Args[0], SourceRemainderLength * sizeof(WCHAR));
-                        Buffer += SourceRemainderLength;
-                        NewTargetLength += SourceRemainderLength * sizeof(WCHAR);
-                    }
-                    else
-                    {
-                        Status = STATUS_BUFFER_TOO_SMALL;
-                        break;
-                    }
-                }
-            }
-            else if (*TargetAlias == (WCHAR)'l' || *TargetAlias == (WCHAR)'L')
-            {
-                // Do < substitution.
-                *Buffer++ = (WCHAR)'<';
-                NewTargetLength += sizeof(WCHAR);
-            }
-            else if (*TargetAlias == (WCHAR)'g' || *TargetAlias == (WCHAR)'G')
-            {
-                // Do > substitution.
-                *Buffer++ = (WCHAR)'>';
-                NewTargetLength += sizeof(WCHAR);
-            }
-            else if (*TargetAlias == (WCHAR)'b' || *TargetAlias == (WCHAR)'B')
-            {
-                // Do | substitution.
-                *Buffer++ = (WCHAR)'|';
-                NewTargetLength += sizeof(WCHAR);
-            }
-            else if (*TargetAlias == (WCHAR)'t' || *TargetAlias == (WCHAR)'T')
-            {
-                // do newline substitution
-                if ((USHORT)(NewTargetLength + (sizeof(WCHAR) * 2)) > *pcbTarget)
-                {
-                    Status = STATUS_BUFFER_TOO_SMALL;
-                    break;
-                }
-
-                *pcLines += 1;
-                *Buffer++ = UNICODE_CARRIAGERETURN;
-                *Buffer++ = UNICODE_LINEFEED;
-                NewTargetLength += sizeof(WCHAR) * 2;
-            }
-            else
-            {
-                // copy $X
-                *Buffer++ = (WCHAR)'$';
-                NewTargetLength += sizeof(WCHAR);
-                *Buffer++ = *TargetAlias;
-                NewTargetLength += sizeof(WCHAR);
-            }
-            TargetAlias++;
-        }
-        else
-        {
-            // copy char
-            *Buffer++ = *TargetAlias++;
-            NewTargetLength += sizeof(WCHAR);
-        }
+        LOG_HR(wil::ResultFromCaughtException());
     }
-
-    __analysis_assume(!NT_SUCCESS(Status) || NewTargetLength <= *pcbTarget);
-    if (NT_SUCCESS(Status))
-    {
-        // We pre-reserve space for these two characters so we know there's enough room here.
-        ASSERT(NewTargetLength <= *pcbTarget);
-        *Buffer++ = UNICODE_CARRIAGERETURN;
-        *Buffer++ = UNICODE_LINEFEED;
-
-        memmove(pwchTarget, TmpBuffer, NewTargetLength);
-    }
-
-    delete[] TmpBuffer;
-    *pcbTarget = NewTargetLength;
-
-    return Status;
 }
+
+#ifdef UNIT_TESTING
+bool Alias::s_TestAddAlias(std::wstring& exe,
+                           std::wstring& alias,
+                           std::wstring& target)
+{
+    try
+    {
+        g_aliasData[exe][alias] = target;
+    }
+    catch (...)
+    {
+        LOG_HR(wil::ResultFromCaughtException());
+        return false;
+    }
+
+    return true;
+}
+
+#endif

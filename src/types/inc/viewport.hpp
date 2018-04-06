@@ -21,13 +21,13 @@ namespace Microsoft::Console::Types
     public:
 
         Viewport(const SMALL_RECT sr) noexcept;
-        
+
         ~Viewport() {}
         Viewport(const Viewport& other) noexcept;
         Viewport(Viewport&&) = default;
         Viewport& operator=(const Viewport&)& = default;
         Viewport& operator=(Viewport&&)& = default;
-                
+
         static Viewport FromInclusive(const SMALL_RECT sr) noexcept;
 
         static Viewport FromExclusive(const SMALL_RECT sr) noexcept;
@@ -38,7 +38,7 @@ namespace Microsoft::Console::Types
 
         static Viewport FromDimensions(const COORD origin,
                                        const COORD dimensions) noexcept;
-        
+
         static Viewport FromCoord(const COORD origin) noexcept;
 
         SHORT Left() const noexcept;
@@ -65,7 +65,7 @@ namespace Microsoft::Console::Types
 
         Viewport ToOrigin() const noexcept;
 
-        bool IsValid() const;
+        bool IsValid() const noexcept;
 
         [[nodiscard]]
         static HRESULT AddCoord(const Viewport& original,

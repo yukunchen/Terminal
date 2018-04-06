@@ -481,3 +481,15 @@ bool GdiEngine::_IsFontTrueType() const
 {
     return !!(_tmFontMetrics.tmPitchAndFamily & TMPF_TRUETYPE);
 }
+
+// Routine Description:
+// - Helper to determine whether our window handle is valid.
+//   Allows us to skip operations if we don't have a window.
+// Return Value:
+// - True if it is valid.
+// - False if it is known invalid.
+bool GdiEngine::_IsWindowValid() const
+{
+    return _hwndTargetWindow != INVALID_HANDLE_VALUE &&
+        _hwndTargetWindow != nullptr;
+}

@@ -102,6 +102,8 @@ void Registry::_LoadMappedProperties(_In_reads_(cPropertyMappings) const Registr
     {
         const RegistrySerialization::RegPropertyMap* const pPropMap = &(rgPropertyMappings[iMapping]);
 
+        NTSTATUS Status = STATUS_SUCCESS;
+
         switch (pPropMap->propertyType)
         {
         case RegistrySerialization::_RegPropertyType::Boolean:
@@ -110,14 +112,21 @@ void Registry::_LoadMappedProperties(_In_reads_(cPropertyMappings) const Registr
         case RegistrySerialization::_RegPropertyType::Byte:
         case RegistrySerialization::_RegPropertyType::Coordinate:
         {
-            LOG_IF_FAILED(RegistrySerialization::s_LoadRegDword(hKey, pPropMap, _pSettings));
+
+            Status = RegistrySerialization::s_LoadRegDword(hKey, pPropMap, _pSettings);
             break;
         }
         case RegistrySerialization::_RegPropertyType::String:
         {
-            LOG_IF_FAILED(RegistrySerialization::s_LoadRegString(hKey, pPropMap, _pSettings));
+            Status = RegistrySerialization::s_LoadRegString(hKey, pPropMap, _pSettings);
             break;
         }
+        }
+
+        // Don't log "file not found" messages. It's fine to not find a registry key. Log other types.
+        if (!NT_SUCCESS(Status) && NTSTATUS_FROM_WIN32(ERROR_FILE_NOT_FOUND) != Status)
+        {
+            LOG_NTSTATUS(Status);
         }
     }
 }

@@ -84,7 +84,7 @@ public:
     void DelayEOLWrap(const COORD coordDelayedAt);
     void ResetDelayEOLWrap();
     COORD GetDelayedAtPosition() const;
-    BOOL IsDelayedEOLWrap() const;
+    bool IsDelayedEOLWrap() const;
 
     void SetColor(const unsigned int color);
     void SetType(const CursorType type);

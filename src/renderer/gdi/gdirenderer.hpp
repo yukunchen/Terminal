@@ -191,6 +191,7 @@ namespace Microsoft::Console::Render
 
         COORD _GetFontSize() const;
         bool _IsMinimized() const;
+        bool _IsWindowValid() const;
 
 #ifdef DBG
         // Helper functions to diagnose issues with painting from the in-memory buffer.

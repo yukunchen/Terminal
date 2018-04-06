@@ -337,7 +337,7 @@ Viewport Viewport::OrViewports(const Viewport& lhs, const Viewport& rhs) noexcep
 // - <none>
 // Return Value:
 // - true iff top < bottom && left < right
-bool Viewport::IsValid() const
+bool Viewport::IsValid() const noexcept
 {
     return _sr.Top < _sr.Bottom && _sr.Left < _sr.Right;
 }

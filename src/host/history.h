@@ -43,16 +43,16 @@ typedef struct _COMMAND_HISTORY
 NTSTATUS AddCommand(_In_ PCOMMAND_HISTORY pCmdHistory,
                     _In_reads_bytes_(cbCommand) PCWCHAR pwchCommand,
                     const USHORT cbCommand,
-                    const BOOL fHistoryNoDup);
+                    const bool fHistoryNoDup);
 PCOMMAND_HISTORY AllocateCommandHistory(_In_reads_bytes_(cbAppName) PCWSTR pwszAppName, const DWORD cbAppName, _In_ HANDLE hProcess);
 void FreeCommandHistory(const HANDLE hProcess);
 void FreeCommandHistoryBuffers();
 void ResizeCommandHistoryBuffers(const UINT cCommands);
 void EmptyCommandHistory(_In_opt_ PCOMMAND_HISTORY CommandHistory);
 PCOMMAND_HISTORY ReallocCommandHistory(_In_opt_ PCOMMAND_HISTORY CurrentCommandHistory, const DWORD NumCommands);
-PCOMMAND_HISTORY FindExeCommandHistory(_In_reads_(AppNameLength) PVOID AppName, _In_ DWORD AppNameLength, const BOOLEAN UnicodeExe);
-BOOL AtFirstCommand(_In_ PCOMMAND_HISTORY CommandHistory);
-BOOL AtLastCommand(_In_ PCOMMAND_HISTORY CommandHistory);
+PCOMMAND_HISTORY FindExeCommandHistory(_In_reads_(AppNameLength) PVOID AppName, _In_ DWORD AppNameLength, const bool UnicodeExe);
+bool AtFirstCommand(_In_ PCOMMAND_HISTORY CommandHistory);
+bool AtLastCommand(_In_ PCOMMAND_HISTORY CommandHistory);
 void EmptyCommandHistory(_In_opt_ PCOMMAND_HISTORY CommandHistory);
 PCOMMAND GetLastCommand(_In_ PCOMMAND_HISTORY CommandHistory);
 PCOMMAND RemoveCommand(_In_ PCOMMAND_HISTORY CommandHistory, _In_ SHORT iDel);

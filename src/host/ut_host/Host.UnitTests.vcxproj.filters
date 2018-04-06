@@ -18,9 +18,6 @@
     <ClCompile Include="AttrRowTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="CharRowTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ClipboardTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -70,6 +67,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="VtRendererTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CharRowBaseTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <Clcompile Include="..\..\types\IInputEventStreams.cpp">
+      <Filter>Source Files</Filter>
+    </Clcompile>
+    <ClCompile Include="AliasTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

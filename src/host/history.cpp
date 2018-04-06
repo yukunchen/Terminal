@@ -139,7 +139,7 @@ void ResetCommandHistory(_In_opt_ PCOMMAND_HISTORY CommandHistory)
 NTSTATUS AddCommand(_In_ PCOMMAND_HISTORY pCmdHistory,
                     _In_reads_bytes_(cbCommand) PCWCHAR pwchCommand,
                     const USHORT cbCommand,
-                    const BOOL fHistoryNoDup)
+                    const bool fHistoryNoDup)
 {
     if (pCmdHistory == nullptr || pCmdHistory->MaximumNumberOfCommands == 0)
     {
@@ -318,7 +318,7 @@ void EmptyCommandHistory(_In_opt_ PCOMMAND_HISTORY CommandHistory)
     CommandHistory->Flags = CLE_RESET;
 }
 
-BOOL AtFirstCommand(_In_ PCOMMAND_HISTORY CommandHistory)
+bool AtFirstCommand(_In_ PCOMMAND_HISTORY CommandHistory)
 {
     if (CommandHistory == nullptr)
     {
@@ -339,11 +339,11 @@ BOOL AtFirstCommand(_In_ PCOMMAND_HISTORY CommandHistory)
     return (i == CommandHistory->LastAdded);
 }
 
-BOOL AtLastCommand(_In_ PCOMMAND_HISTORY CommandHistory)
+bool AtLastCommand(_In_ PCOMMAND_HISTORY CommandHistory)
 {
     if (CommandHistory == nullptr)
     {
-        return FALSE;
+        return false;
     }
     else
     {
@@ -392,7 +392,7 @@ PCOMMAND_HISTORY ReallocCommandHistory(_In_opt_ PCOMMAND_HISTORY CurrentCommandH
     return History;
 }
 
-PCOMMAND_HISTORY FindExeCommandHistory(_In_reads_(AppNameLength) PVOID AppName, _In_ DWORD AppNameLength, const BOOLEAN Unicode)
+PCOMMAND_HISTORY FindExeCommandHistory(_In_reads_(AppNameLength) PVOID AppName, _In_ DWORD AppNameLength, const bool Unicode)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     PWCHAR AppNamePtr = nullptr;
@@ -449,7 +449,7 @@ PCOMMAND_HISTORY AllocateCommandHistory(_In_reads_bytes_(cbAppName) PCWSTR pwszA
     PLIST_ENTRY ListNext = ListHead->Blink;
     PCOMMAND_HISTORY BestCandidate = nullptr;
     PCOMMAND_HISTORY History = nullptr;
-    BOOL SameApp = FALSE;
+    bool SameApp = false;
     while (ListNext != ListHead)
     {
         History = CONTAINING_RECORD(ListNext, COMMAND_HISTORY, ListLink);
@@ -461,7 +461,7 @@ PCOMMAND_HISTORY AllocateCommandHistory(_In_reads_bytes_(cbAppName) PCWSTR pwszA
             if (History->AppName && !_wcsnicmp(History->AppName, pwszAppName, (USHORT)cbAppName / sizeof(WCHAR)))
             {
                 BestCandidate = History;
-                SameApp = TRUE;
+                SameApp = true;
                 break;
             }
 

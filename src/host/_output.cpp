@@ -121,7 +121,7 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
         PBYTE SourcePtr = prgbSrc;
         BYTE* pbSourceEnd = prgbSrc + ((coordSrcDimensions.X * coordSrcDimensions.Y) * sizeof(CHAR_INFO));
 
-        BOOLEAN WholeSource = FALSE;
+        bool WholeSource = false;
         if (XSize == coordSrcDimensions.X)
         {
             ASSERT(psrSrc->Left == 0);
@@ -129,7 +129,7 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
             {
                 SourcePtr += SCREEN_BUFFER_POINTER(psrSrc->Left, psrSrc->Top, coordSrcDimensions.X, SIZEOF_CI_CELL);
             }
-            WholeSource = TRUE;
+            WholeSource = true;
         }
 
         const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
@@ -488,7 +488,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
     DbcsAttribute* BufferA = nullptr;
     PWCHAR TransBuffer = nullptr;
     DbcsAttribute* TransBufferA = nullptr;
-    BOOL fLocalHeap = FALSE;
+    bool fLocalHeap = false;
     if (ulStringType == CONSOLE_ASCII)
     {
         UINT const Codepage = gci.OutputCP;
@@ -509,7 +509,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
                 return STATUS_NO_MEMORY;
             }
 
-            fLocalHeap = TRUE;
+            fLocalHeap = true;
         }
         else
         {
@@ -596,7 +596,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
                 return STATUS_NO_MEMORY;
             }
 
-            fLocalHeap = TRUE;
+            fLocalHeap = true;
         }
         else
         {

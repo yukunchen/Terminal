@@ -132,7 +132,7 @@ NTSTATUS RegistrySerialization::s_LoadRegDword(const HKEY hKey, const _RegProper
         }
         }
     }
-
+    
     return Status;
 }
 
@@ -315,7 +315,8 @@ NTSTATUS RegistrySerialization::s_QueryValue(const HKEY hKey,
                                          &actualRegType,
                                          pbData,
                                          &cbData);
-    if (actualRegType != regType)
+    if (ERROR_FILE_NOT_FOUND != Result &&
+        actualRegType != regType)
     {
         return STATUS_OBJECT_TYPE_MISMATCH;
     }

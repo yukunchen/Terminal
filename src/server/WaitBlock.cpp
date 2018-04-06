@@ -126,7 +126,7 @@ bool ConsoleWaitBlock::Notify(const WaitTerminationReason TerminationReason)
     NTSTATUS status;
     DWORD dwNumBytes = 0;
     DWORD dwControlKeyState;
-    BOOLEAN fIsUnicode = TRUE;
+    bool fIsUnicode = true;
 
     std::deque<std::unique_ptr<IInputEvent>> outEvents;
     // TODO: MSFT 14104228 - get rid of this void* and get the data
@@ -140,20 +140,20 @@ bool ConsoleWaitBlock::Notify(const WaitTerminationReason TerminationReason)
     case API_NUMBER_GETCONSOLEINPUT:
     {
         CONSOLE_GETCONSOLEINPUT_MSG* a = &(_WaitReplyMessage.u.consoleMsgL1.GetConsoleInput);
-        fIsUnicode = a->Unicode;
+        fIsUnicode = !!a->Unicode;
         pOutputData = &outEvents;
         break;
     }
     case API_NUMBER_READCONSOLE:
     {
         CONSOLE_READCONSOLE_MSG* a = &(_WaitReplyMessage.u.consoleMsgL1.ReadConsole);
-        fIsUnicode = a->Unicode;
+        fIsUnicode = !!a->Unicode;
         break;
     }
     case API_NUMBER_WRITECONSOLE:
     {
         CONSOLE_WRITECONSOLE_MSG* a = &(_WaitReplyMessage.u.consoleMsgL1.WriteConsole);
-        fIsUnicode = a->Unicode;
+        fIsUnicode = !!a->Unicode;
         break;
     }
     default:

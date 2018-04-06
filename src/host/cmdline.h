@@ -64,7 +64,7 @@ Notes:
 
 typedef NTSTATUS(*PCLE_POPUP_INPUT_ROUTINE) (_In_ COOKED_READ_DATA* CookedReadData,
                                              _Inout_opt_ IWaitRoutine** ppWaiter,
-                                             _In_ BOOLEAN WaitRoutine);
+                                             _In_ bool WaitRoutine);
 
 typedef struct _CLE_POPUP
 {
@@ -107,7 +107,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                             _In_ WCHAR wch,
                             const DWORD dwKeyState);
 
-void DeleteCommandLine(_Inout_ COOKED_READ_DATA* pCookedReadData, const BOOL fUpdateFields);
+void DeleteCommandLine(_Inout_ COOKED_READ_DATA* pCookedReadData, const bool fUpdateFields);
 
 void RedrawCommandLine(_Inout_ COOKED_READ_DATA* CookedReadData);
 
@@ -141,3 +141,5 @@ HRESULT DoSrvSetConsoleTitleW(_In_reads_or_z_(cchBuffer) const wchar_t* const pw
 
 #define FMCFL_EXACT_MATCH   1
 #define FMCFL_JUST_LOOKING  2
+
+bool IsValidStringBuffer(_In_ bool Unicode, _In_reads_bytes_(Size) PVOID Buffer, _In_ ULONG Size, _In_ ULONG Count, ...);

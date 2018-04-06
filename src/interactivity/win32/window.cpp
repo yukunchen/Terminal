@@ -295,7 +295,7 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
 
             if (NT_SUCCESS(status))
             {
-                this->_hWnd = hWnd;
+                _hWnd = hWnd;
 
                 status = NTSTATUS_FROM_HRESULT(pGdiEngine->SetHwnd(hWnd));
 
@@ -770,7 +770,7 @@ void Window::VerticalScroll(const WORD wScrollCommand, const WORD wAbsoluteChang
         return;
     }
     }
-    
+
     NewOrigin.Y = std::clamp(NewOrigin.Y, 0i16, gsl::narrow<SHORT>(sScreenBufferSizeY - ScreenInfo->GetScreenWindowSizeY()));
     LOG_IF_FAILED(ScreenInfo->SetViewportOrigin(TRUE, NewOrigin));
 }
@@ -973,7 +973,7 @@ RECT Window::GetWindowRect() const
 
 HWND Window::GetWindowHandle() const
 {
-    return this->_hWnd;
+    return _hWnd;
 }
 
 SCREEN_INFORMATION* Window::GetScreenInfo() const
@@ -1304,7 +1304,7 @@ void Window::s_PersistWindowOpacity(_In_ PCWSTR pwszLinkTitle, _In_ PCWSTR pwszO
 
 void Window::SetWindowHasMoved(const BOOL fHasMoved)
 {
-    this->_fHasMoved = fHasMoved;
+    _fHasMoved = fHasMoved;
 }
 
 // Routine Description:
@@ -1323,6 +1323,7 @@ IRawElementProviderSimple* Window::_GetUiaProvider()
         }
         catch (...)
         {
+            LOG_HR(wil::ResultFromCaughtException());
             _pUiaProvider = nullptr;
         }
     }
@@ -1337,7 +1338,7 @@ HRESULT Window::SignalUia(_In_ EVENTID id)
     {
         return _pUiaProvider->Signal(id);
     }
-    return E_POINTER;
+    return S_FALSE;
 }
 
 [[nodiscard]]
@@ -1348,7 +1349,7 @@ HRESULT Window::UiaSetTextAreaFocus()
         LOG_IF_FAILED(_pUiaProvider->SetTextAreaFocus());
         return S_OK;
     }
-    return E_POINTER;
+    return S_FALSE;
 }
 
 void Window::SetOwner()

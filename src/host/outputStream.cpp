@@ -138,7 +138,7 @@ BOOL ConhostInternalGetSet::SetConsoleCursorPosition(const COORD coordCursorPosi
 // - TRUE if successful (see DoSrvGetConsoleCursorInfo). FALSE otherwise.
 BOOL ConhostInternalGetSet::GetConsoleCursorInfo(_In_ CONSOLE_CURSOR_INFO* const pConsoleCursorInfo) const
 {
-    BOOLEAN bVisible;
+    bool bVisible;
     DWORD dwSize;
 
     DoSrvGetConsoleCursorInfo(_pIo->GetActiveOutputBuffer(), &dwSize, &bVisible);
@@ -155,7 +155,8 @@ BOOL ConhostInternalGetSet::GetConsoleCursorInfo(_In_ CONSOLE_CURSOR_INFO* const
 // - TRUE if successful (see DoSrvSetConsoleCursorInfo). FALSE otherwise.
 BOOL ConhostInternalGetSet::SetConsoleCursorInfo(const CONSOLE_CURSOR_INFO* const pConsoleCursorInfo)
 {
-    return SUCCEEDED(DoSrvSetConsoleCursorInfo(_pIo->GetActiveOutputBuffer(), pConsoleCursorInfo->dwSize, !!pConsoleCursorInfo->bVisible));
+    const bool visible = !!pConsoleCursorInfo->bVisible;
+    return SUCCEEDED(DoSrvSetConsoleCursorInfo(_pIo->GetActiveOutputBuffer(), pConsoleCursorInfo->dwSize, visible));
 }
 
 // Routine Description:
