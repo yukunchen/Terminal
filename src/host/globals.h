@@ -58,7 +58,7 @@ public:
     wil::unique_event_nothrow hConsoleInputInitEvent;
     DWORD dwInputThreadId;
 
-    std::vector<wchar_t> WordDelimiters{'\\', '+', '!', ':', '=', '/', '.', '<', '>', ';', '|', '&' };
+    std::vector<wchar_t> WordDelimiters;
 
     IRenderer* pRender;
 

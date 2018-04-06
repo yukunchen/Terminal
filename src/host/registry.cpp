@@ -61,30 +61,62 @@ void Registry::GetEditKeys(_In_opt_ HKEY hConsoleKey) const
         gci.SetAltF4CloseAllowed(!!dwValue);
     }
 
+    // --- START LOAD BEARING CODE ---
+    // NOTE: Because of some accident of history (win2k time or before) the key type of
+    // CONSOLE_REGISTRY_WORD_DELIM was set to REG_DWORD when it should have been REG_SZ. Registry key reads
+    // didn't use to be type checked so the key was "read" and the buffer it was read into was used instead of
+    // the default word delimiters. Meaning that it really just turned off the word delimiter feature entirely
+    // because the buffer was still zero'd out (except for the space character which is handled differently
+    // and not modifiable by this registry setting).
+    //
+    // In order to maintain compatibility with this long-standing behavior we need set the word delimiters
+    // based on three scenarios:
+    // 1. key type is REG_DWORD: have no word delimiters
+    // 2. key type is REG_SZ: someone has specified custom word delimiters, use them
+    // 3. key doesn't exist: use the original default word delimiters
+    //
+    // The space character is always considered a word delimiter, no matter the scenario.
+    //
     // Read word delimiters from registry
-    const size_t bufferSize = 64;
-    WCHAR awchBuffer[bufferSize];
+    auto& delimiters = ServiceLocator::LocateGlobals().WordDelimiters;
+    delimiters.clear();
     Status = RegistrySerialization::s_QueryValue(hConsoleKey,
                                                  CONSOLE_REGISTRY_WORD_DELIM,
-                                                 bufferSize,
-                                                 REG_SZ,
-                                                 (PBYTE)awchBuffer,
+                                                 sizeof(dwValue),
+                                                 REG_DWORD,
+                                                 reinterpret_cast<BYTE*>(&dwValue),
                                                  nullptr);
-    if (NT_SUCCESS(Status))
+    if (!NT_SUCCESS(Status))
     {
-        // OK, copy it to the global word delimiter list.
-        std::wstring regWordDelimiters{ awchBuffer, awchBuffer + bufferSize };
-        auto& delimiters = ServiceLocator::LocateGlobals().WordDelimiters;
-        delimiters.clear();
-        for (wchar_t wch : regWordDelimiters)
+        // the key isn't a REG_DWORD, try to read it as a REG_SZ
+        const size_t bufferSize = 64;
+        WCHAR awchBuffer[bufferSize];
+        Status = RegistrySerialization::s_QueryValue(hConsoleKey,
+                                                     CONSOLE_REGISTRY_WORD_DELIM,
+                                                     bufferSize,
+                                                     REG_SZ,
+                                                     reinterpret_cast<BYTE*>(awchBuffer),
+                                                     nullptr);
+        if (NT_SUCCESS(Status))
         {
-            if (wch == '\0')
+            // we read something, set it as the word delimiters
+            const std::wstring regWordDelimiters{ awchBuffer, awchBuffer + bufferSize };
+            for (const wchar_t wch : regWordDelimiters)
             {
-                break;
+                if (wch == '\0')
+                {
+                    break;
+                }
+                delimiters.push_back(wch);
             }
-            delimiters.push_back(wch);
+        }
+        else
+        {
+            // the key isn't a REG_DWORD or a REG_SZ, fall back to our default word delimiters
+            delimiters = { '\\', '+', '!', ':', '=', '/', '.', '<', '>', ';', '|', '&' };
         }
     }
+    // --- END LOAD BEARING CODE ---
 
     if (hCurrentUserKey)
     {
