@@ -296,9 +296,7 @@ HRESULT GdiEngine::GetProposedFont(_In_ FontInfoDesired const * const pfiFontDes
 [[nodiscard]]
 HRESULT GdiEngine::UpdateTitle(_In_ const std::wstring& /*newTitle*/)
 {
-    // Do nothing - we need to call SetWindowTextW on the windowproc thread.
-    // Whoever triggered this should have also called IWindow::PostUpdateTitle*
-    // return S_OK;
+    // the CM_UPDATE_TITLE handler in windowproc will query the updated title.
     return PostMessageW(_hwndTargetWindow, CM_UPDATE_TITLE, 0, (LPARAM)nullptr)? S_OK : E_FAIL;
 }
 
