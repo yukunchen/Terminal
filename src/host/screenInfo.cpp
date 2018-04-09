@@ -580,7 +580,7 @@ void SCREEN_INFORMATION::UpdateFont(const FontInfo* const pfiNewFont)
 {
     FontInfoDesired fiDesiredFont(*pfiNewFont);
 
-    TextInfo->SetDesiredFont(&fiDesiredFont);
+    TextInfo->GetDesiredFont() = fiDesiredFont;
 
     RefreshFontWithRenderer();
 

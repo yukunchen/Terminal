@@ -74,19 +74,9 @@ TEXT_BUFFER_INFO::~TEXT_BUFFER_INFO()
 // - <none>
 void TEXT_BUFFER_INFO::CopyProperties(_In_ TEXT_BUFFER_INFO* const pOtherBuffer)
 {
-    SetCurrentFont(pOtherBuffer->GetCurrentFont());
+    _fiCurrentFont = pOtherBuffer->GetCurrentFont();
 
     GetCursor()->CopyProperties(pOtherBuffer->GetCursor());
-}
-
-void TEXT_BUFFER_INFO::SetCurrentFont(const FontInfo* const pfiNewFont)
-{
-    _fiCurrentFont = *pfiNewFont;
-}
-
-void TEXT_BUFFER_INFO::SetCurrentFont(const FontInfo& font)
-{
-    _fiCurrentFont = font;
 }
 
 FontInfo& TEXT_BUFFER_INFO::GetCurrentFont()
@@ -97,11 +87,6 @@ FontInfo& TEXT_BUFFER_INFO::GetCurrentFont()
 const FontInfo& TEXT_BUFFER_INFO::GetCurrentFont() const
 {
     return _fiCurrentFont;
-}
-
-void TEXT_BUFFER_INFO::SetDesiredFont(const FontInfoDesired* const pfiNewFont)
-{
-    _fiDesiredFont = *pfiNewFont;
 }
 
 FontInfoDesired& TEXT_BUFFER_INFO::GetDesiredFont()

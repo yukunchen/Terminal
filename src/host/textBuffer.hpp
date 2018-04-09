@@ -109,12 +109,9 @@ public:
 
     COORD GetLastNonSpaceCharacter() const;
 
-    void SetCurrentFont(const FontInfo& font);
-    void SetCurrentFont(const FontInfo* const pfiNewFont);
     FontInfo& GetCurrentFont();
     const FontInfo& GetCurrentFont() const;
 
-    void SetDesiredFont(const FontInfoDesired* const pfiNewFont);
     FontInfoDesired& GetDesiredFont();
     const FontInfoDesired& GetDesiredFont() const;
 
