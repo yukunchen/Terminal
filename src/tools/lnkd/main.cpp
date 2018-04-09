@@ -119,7 +119,7 @@ void DumpV2Properties(_In_ IShellLink *pslConsole)
     }
 }
 
-void DumpCoord(_In_ PCWSTR pszAttrName, _In_ const COORD coord)
+void DumpCoord(_In_ PCWSTR pszAttrName, const COORD coord)
 {
     wprintf(L"\t%s: (%d, %d) (0x%x)\n",
             pszAttrName,
@@ -128,7 +128,7 @@ void DumpCoord(_In_ PCWSTR pszAttrName, _In_ const COORD coord)
             coord);
 }
 
-void DumpBool(_In_ PCWSTR pszAttrName, _In_ const BOOL fEnabled)
+void DumpBool(_In_ PCWSTR pszAttrName, const BOOL fEnabled)
 {
     wprintf(L"\t%s: %s\n", pszAttrName, fEnabled ? L"true" : L"false");
 }

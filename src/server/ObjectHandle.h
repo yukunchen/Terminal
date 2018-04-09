@@ -28,16 +28,16 @@ class SCREEN_INFORMATION;
 class ConsoleHandleData
 {
 public:
-    ConsoleHandleData(_In_ ULONG const ulHandleType,
-                      _In_ ACCESS_MASK const amAccess,
-                      _In_ ULONG const ulShareAccess,
+    ConsoleHandleData(const ULONG ulHandleType,
+                      const ACCESS_MASK amAccess,
+                      const ULONG ulShareAccess,
                       _In_ PVOID const pvClientPointer);
 
     [[nodiscard]]
-    HRESULT GetInputBuffer(_In_ const ACCESS_MASK amRequested,
+    HRESULT GetInputBuffer(const ACCESS_MASK amRequested,
                            _Outptr_ InputBuffer** const ppInputBuffer) const;
     [[nodiscard]]
-    HRESULT GetScreenBuffer(_In_ const ACCESS_MASK amRequested,
+    HRESULT GetScreenBuffer(const ACCESS_MASK amRequested,
                             _Outptr_ SCREEN_INFORMATION** const ppScreenInfo) const;
 
     [[nodiscard]]

@@ -18,8 +18,8 @@ namespace Microsoft::Console::Render
     {
     public:
         [[nodiscard]]
-        virtual HRESULT RetrieveDefaultFontNameForCodepage(_In_ UINT const uiCodePage,
+        virtual HRESULT RetrieveDefaultFontNameForCodepage(const UINT uiCodePage,
                                                            _Out_writes_(cchFaceName) PWSTR pwszFaceName,
-                                                           _In_ size_t const cchFaceName) = 0;
+                                                           const size_t cchFaceName) = 0;
     };
 }

@@ -9,7 +9,7 @@
 
 #include <unordered_map>
 
-std::unique_ptr<IInputEvent> IInputEvent::Create(_In_ const INPUT_RECORD& record)
+std::unique_ptr<IInputEvent> IInputEvent::Create(const INPUT_RECORD& record)
 {
     switch (record.EventType)
     {
@@ -47,7 +47,7 @@ std::deque<std::unique_ptr<IInputEvent>> IInputEvent::Create(gsl::span<const INP
 // - inRecords - records to convert
 // Return Value:
 // - std::deque of IInputEvents on success. Will throw exception on failure.
-std::deque<std::unique_ptr<IInputEvent>> IInputEvent::Create(_In_ const std::deque<INPUT_RECORD>& records)
+std::deque<std::unique_ptr<IInputEvent>> IInputEvent::Create(const std::deque<INPUT_RECORD>& records)
 {
     std::deque<std::unique_ptr<IInputEvent>> outEvents;
     for (size_t i = 0; i < records.size(); ++i)

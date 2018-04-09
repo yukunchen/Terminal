@@ -27,7 +27,7 @@
 // - THROW: Throws E_INVALIDARG for invalid pointers.
 DirectReadData::DirectReadData(_In_ InputBuffer* const pInputBuffer,
                                _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
-                               _In_ const size_t eventReadCount,
+                               const size_t eventReadCount,
                                _In_ std::deque<std::unique_ptr<IInputEvent>> partialEvents) :
     ReadData(pInputBuffer, pInputReadHandleData),
     _eventReadCount{ eventReadCount },
@@ -65,10 +65,10 @@ DirectReadData::~DirectReadData()
 // std::deque<std::unique_ptr<IInputEvent>> that is used to the read
 // input events back to the server
 // Return Value:
-// - TRUE if the wait is done and result buffer/status code can be sent back to the client.
-// - FALSE if we need to continue to wait until more data is available.
-bool DirectReadData::Notify(_In_ WaitTerminationReason const TerminationReason,
-                            _In_ bool const fIsUnicode,
+// - true if the wait is done and result buffer/status code can be sent back to the client.
+// - false if we need to continue to wait until more data is available.
+bool DirectReadData::Notify(const WaitTerminationReason TerminationReason,
+                            const bool fIsUnicode,
                             _Out_ NTSTATUS* const pReplyStatus,
                             _Out_ DWORD* const pNumBytes,
                             _Out_ DWORD* const pControlKeyState,

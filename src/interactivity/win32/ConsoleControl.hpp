@@ -58,7 +58,7 @@ namespace Microsoft::Console::Interactivity::Win32
 
         BOOL EnterReaderModeHelper(_In_ HWND hwnd);
 
-        BOOL TranslateMessageEx(_In_ const MSG *pmsg,
+        BOOL TranslateMessageEx(const MSG *pmsg,
             _In_ UINT flags);
 
 #ifdef CON_USERPRIVAPI_INDIRECT

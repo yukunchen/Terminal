@@ -54,39 +54,39 @@ namespace Microsoft::Console::Interactivity::Win32
 class Tracing
 {
 public:
-    static void s_TraceApi(_In_ const NTSTATUS status, _In_ const CONSOLE_GETLARGESTWINDOWSIZE_MSG* const a);
-    static void s_TraceApi(_In_ const NTSTATUS status, _In_ const CONSOLE_SCREENBUFFERINFO_MSG* const a, _In_ bool const fSet);
-    static void s_TraceApi(_In_ const NTSTATUS status, _In_ const CONSOLE_SETSCREENBUFFERSIZE_MSG* const a);
-    static void s_TraceApi(_In_ const NTSTATUS status, _In_ const CONSOLE_SETWINDOWINFO_MSG* const a);
+    static void s_TraceApi(const NTSTATUS status, const CONSOLE_GETLARGESTWINDOWSIZE_MSG* const a);
+    static void s_TraceApi(const NTSTATUS status, const CONSOLE_SCREENBUFFERINFO_MSG* const a, const bool fSet);
+    static void s_TraceApi(const NTSTATUS status, const CONSOLE_SETSCREENBUFFERSIZE_MSG* const a);
+    static void s_TraceApi(const NTSTATUS status, const CONSOLE_SETWINDOWINFO_MSG* const a);
 
-    static void s_TraceApi(_In_ void* buffer, _In_ const CONSOLE_WRITECONSOLE_MSG* const a);
+    static void s_TraceApi(_In_ const void* const buffer, const CONSOLE_WRITECONSOLE_MSG* const a);
 
-    static void s_TraceApi(_In_ const CONSOLE_SCREENBUFFERINFO_MSG* const a);
-    static void s_TraceApi(_In_ const CONSOLE_MODE_MSG* const a, const std::wstring& handleType);
-    static void s_TraceApi(_In_ const CONSOLE_SETTEXTATTRIBUTE_MSG* const a);
-    static void s_TraceApi(_In_ const CONSOLE_WRITECONSOLEOUTPUTSTRING_MSG* const a);
+    static void s_TraceApi(const CONSOLE_SCREENBUFFERINFO_MSG* const a);
+    static void s_TraceApi(const CONSOLE_MODE_MSG* const a, const std::wstring& handleType);
+    static void s_TraceApi(const CONSOLE_SETTEXTATTRIBUTE_MSG* const a);
+    static void s_TraceApi(const CONSOLE_WRITECONSOLEOUTPUTSTRING_MSG* const a);
 
-    static void s_TraceWindowViewport(_In_ const SMALL_RECT viewport);
+    static void s_TraceWindowViewport(const SMALL_RECT viewport);
 
     static void s_TraceChars(_In_z_ const char* pszMessage, ...);
     static void s_TraceOutput(_In_z_ const char* pszMessage, ...);
 
-    static void s_TraceWindowMessage(_In_ const MSG& msg);
-    static void s_TraceInputRecord(_In_ const INPUT_RECORD& inputRecord);
+    static void s_TraceWindowMessage(const MSG& msg);
+    static void s_TraceInputRecord(const INPUT_RECORD& inputRecord);
 
     static void __stdcall TraceFailure(const wil::FailureInfo& failure) noexcept;
 
-    static void s_TraceUia(_In_ const Microsoft::Console::Interactivity::Win32::UiaTextRange* const range,
-                           _In_ const Microsoft::Console::Interactivity::Win32::UiaTextRangeTracing::ApiCall apiCall,
-                           _In_ const Microsoft::Console::Interactivity::Win32::UiaTextRangeTracing::IApiMsg* const apiMsg);
+    static void s_TraceUia(const Microsoft::Console::Interactivity::Win32::UiaTextRange* const range,
+                           const Microsoft::Console::Interactivity::Win32::UiaTextRangeTracing::ApiCall apiCall,
+                           const Microsoft::Console::Interactivity::Win32::UiaTextRangeTracing::IApiMsg* const apiMsg);
 
-    static void s_TraceUia(_In_ const Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider* const pProvider,
-                           _In_ const Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProviderTracing::ApiCall apiCall,
-                           _In_ const Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProviderTracing::IApiMsg* const apiMsg);
+    static void s_TraceUia(const Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider* const pProvider,
+                           const Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProviderTracing::ApiCall apiCall,
+                           const Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProviderTracing::IApiMsg* const apiMsg);
 
-    static void s_TraceUia(_In_ const Microsoft::Console::Interactivity::Win32::WindowUiaProvider* const pProvider,
-                           _In_ const Microsoft::Console::Interactivity::Win32::WindowUiaProviderTracing::ApiCall apiCall,
-                           _In_ const Microsoft::Console::Interactivity::Win32::WindowUiaProviderTracing::IApiMsg* const apiMsg);
+    static void s_TraceUia(const Microsoft::Console::Interactivity::Win32::WindowUiaProvider* const pProvider,
+                           const Microsoft::Console::Interactivity::Win32::WindowUiaProviderTracing::ApiCall apiCall,
+                           const Microsoft::Console::Interactivity::Win32::WindowUiaProviderTracing::IApiMsg* const apiMsg);
 
 private:
     static ULONG s_ulDebugFlag;

@@ -20,8 +20,8 @@ Author(s):
 class Utf8ToWideCharParser final
 {
 public:
-    Utf8ToWideCharParser(_In_ const unsigned int codePage);
-    void SetCodePage(_In_ const unsigned int codePage);
+    Utf8ToWideCharParser(const unsigned int codePage);
+    void SetCodePage(const unsigned int codePage);
     [[nodiscard]]
     HRESULT Parse(_In_reads_(cchBuffer) const byte* const pBytes,
                   _In_ unsigned int const cchBuffer,
@@ -42,14 +42,14 @@ private:
     bool _IsLeadByte(_In_ byte ch);
     bool _IsContinuationByte(_In_ byte ch);
     bool _IsAsciiByte(_In_ byte ch);
-    bool _IsValidMultiByteSequence(_In_reads_(cb) const byte* const pLeadByte, _In_ const unsigned int cb);
-    bool _IsPartialMultiByteSequence(_In_reads_(cb) const byte* const pLeadByte, _In_ const unsigned int cb);
+    bool _IsValidMultiByteSequence(_In_reads_(cb) const byte* const pLeadByte, const unsigned int cb);
+    bool _IsPartialMultiByteSequence(_In_reads_(cb) const byte* const pLeadByte, const unsigned int cb);
     unsigned int _Utf8SequenceSize(_In_ byte ch);
-    unsigned int _ParseFullRange(_In_reads_(cb) const byte* const _InputChars, _In_ const unsigned int cb);
-    unsigned int _InvolvedParse(_In_reads_(cb) const byte* const pInputChars, _In_ const unsigned int cb);
+    unsigned int _ParseFullRange(_In_reads_(cb) const byte* const _InputChars, const unsigned int cb);
+    unsigned int _InvolvedParse(_In_reads_(cb) const byte* const pInputChars, const unsigned int cb);
     std::pair<std::unique_ptr<byte[]>, unsigned int> _RemoveInvalidSequences(_In_reads_(cb) const byte* const pInputChars,
-                                                                             _In_ const unsigned int cb);
-    void _StorePartialSequence(_In_reads_(cb) const byte* const pLeadByte, _In_ const unsigned int cb);
+                                                                             const unsigned int cb);
+    void _StorePartialSequence(_In_reads_(cb) const byte* const pLeadByte, const unsigned int cb);
     void _Reset();
 
     static const unsigned int _UTF8_BYTE_SEQUENCE_MAX = 4;

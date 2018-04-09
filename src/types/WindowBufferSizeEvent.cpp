@@ -24,7 +24,7 @@ InputEventType WindowBufferSizeEvent::EventType() const noexcept
     return InputEventType::WindowBufferSizeEvent;
 }
 
-void WindowBufferSizeEvent::SetSize(_In_ const COORD size) noexcept
+void WindowBufferSizeEvent::SetSize(const COORD size) noexcept
 {
     _size = size;
 }

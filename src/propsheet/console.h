@@ -182,8 +182,8 @@ LRESULT PreviewWndProc(
     LPARAM lParam);
 
 VOID EndDlgPage(
-    _In_ const HWND hDlg,
-    _In_ const BOOL fSaveNow);
+    const HWND hDlg,
+    const BOOL fSaveNow);
 
 BOOL UpdateStateInfo(
     HWND hDlg,
@@ -192,12 +192,12 @@ BOOL UpdateStateInfo(
 
 BOOL InitializeConsoleState();
 void UninitializeConsoleState();
-void UpdateApplyButton(_In_ const HWND hDlg);
+void UpdateApplyButton(const HWND hDlg);
 HRESULT FindFontAndUpdateState();
 
-BOOL PopulatePropSheetPageArray(_Out_writes_(cPsps) PROPSHEETPAGE *pPsp, _In_ const size_t cPsps, _In_ const BOOL fRegisterCallbacks);
+BOOL PopulatePropSheetPageArray(_Out_writes_(cPsps) PROPSHEETPAGE *pPsp, const size_t cPsps, const BOOL fRegisterCallbacks);
 
-void CreateAndAssociateToolTipToControl(_In_ const UINT dlgItem, _In_ const HWND hDlg, _In_ const UINT idsToolTip);
+void CreateAndAssociateToolTipToControl(const UINT dlgItem, const HWND hDlg, const UINT idsToolTip);
 
 BOOL CheckNum(HWND hDlg, UINT Item);
 void UpdateItem(HWND hDlg, UINT item, UINT nNum);

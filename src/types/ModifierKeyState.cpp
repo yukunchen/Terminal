@@ -20,12 +20,12 @@
 // - The wil version of IsFlagSet is only to operate on values that
 // are compile time constants. This will work with runtime calculated
 // values.
-constexpr bool RuntimeIsFlagSet(_In_ const DWORD flags, _In_ const DWORD flag) noexcept
+constexpr bool RuntimeIsFlagSet(const DWORD flags, const DWORD flag) noexcept
 {
     return !!(flags & flag);
 }
 
-std::unordered_set<ModifierKeyState> FromVkKeyScan(_In_ const short vkKeyScanFlags)
+std::unordered_set<ModifierKeyState> FromVkKeyScan(const short vkKeyScanFlags)
 {
     std::unordered_set<ModifierKeyState> keyState;
 
@@ -107,7 +107,7 @@ static_assert(size(ModifierKeyStateTranslationTable) == static_cast<int>(Modifie
 // - flags - legacy bitset to expand
 // Return Value:
 // - set of ModifierKeyState values that represent flags
-std::unordered_set<ModifierKeyState> FromConsoleControlKeyFlags(_In_ const DWORD flags)
+std::unordered_set<ModifierKeyState> FromConsoleControlKeyFlags(const DWORD flags)
 {
     std::unordered_set<ModifierKeyState> keyStates;
 
@@ -128,7 +128,7 @@ std::unordered_set<ModifierKeyState> FromConsoleControlKeyFlags(_In_ const DWORD
 // - modifierKey - modifier to convert
 // Return Value:
 // - console bitflag associated with modifierKey
-DWORD ToConsoleControlKeyFlag(_In_ const ModifierKeyState modifierKey) noexcept
+DWORD ToConsoleControlKeyFlag(const ModifierKeyState modifierKey) noexcept
 {
     for (const ModifierKeyStateMapping& mapping : ModifierKeyStateTranslationTable)
     {

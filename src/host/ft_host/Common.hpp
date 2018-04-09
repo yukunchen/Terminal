@@ -35,7 +35,7 @@ public:
         V2 = 1
     };
 
-    CommonV1V2Helper(_In_ const ForceV2States ForceV2StateDesired);
+    CommonV1V2Helper(const ForceV2States ForceV2StateDesired);
     ~CommonV1V2Helper();
 
 private:

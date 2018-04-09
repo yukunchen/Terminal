@@ -15,9 +15,9 @@
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
-ConsoleHandleData::ConsoleHandleData(_In_ ULONG const ulHandleType,
-                                     _In_ ACCESS_MASK const amAccess,
-                                     _In_ ULONG const ulShareAccess,
+ConsoleHandleData::ConsoleHandleData(const ULONG ulHandleType,
+                                     const ACCESS_MASK amAccess,
+                                     const ULONG ulShareAccess,
                                      _In_ PVOID const pvClientPointer) :
     _ulHandleType(ulHandleType),
     _amAccess(amAccess),
@@ -106,7 +106,7 @@ bool ConsoleHandleData::IsWriteShared() const
 // Return Value:
 // - HRESULT S_OK or suitable error.
 [[nodiscard]]
-HRESULT ConsoleHandleData::GetInputBuffer(_In_ const ACCESS_MASK amRequested,
+HRESULT ConsoleHandleData::GetInputBuffer(const ACCESS_MASK amRequested,
                                           _Outptr_ InputBuffer** const ppInputBuffer) const
 {
     *ppInputBuffer = nullptr;
@@ -127,7 +127,7 @@ HRESULT ConsoleHandleData::GetInputBuffer(_In_ const ACCESS_MASK amRequested,
 // Return Value:
 // - HRESULT S_OK or suitable error.
 [[nodiscard]]
-HRESULT ConsoleHandleData::GetScreenBuffer(_In_ const ACCESS_MASK amRequested,
+HRESULT ConsoleHandleData::GetScreenBuffer(const ACCESS_MASK amRequested,
                                            _Outptr_ SCREEN_INFORMATION** const ppScreenInfo) const
 {
     *ppScreenInfo = nullptr;

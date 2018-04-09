@@ -33,15 +33,15 @@ class DirectReadData final : public ReadData
 public:
     DirectReadData(_In_ InputBuffer* const pInputBuffer,
                    _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
-                   _In_ const size_t eventReadCount,
+                   const size_t eventReadCount,
                    _In_ std::deque<std::unique_ptr<IInputEvent>> partialEvents);
 
     DirectReadData(DirectReadData&&) = default;
 
     ~DirectReadData() override;
 
-    bool Notify(_In_ WaitTerminationReason const TerminationReason,
-                _In_ bool const fIsUnicode,
+    bool Notify(const WaitTerminationReason TerminationReason,
+                const bool fIsUnicode,
                 _Out_ NTSTATUS* const pReplyStatus,
                 _Out_ DWORD* const pNumBytes,
                 _Out_ DWORD* const pControlKeyState,

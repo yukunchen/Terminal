@@ -42,12 +42,12 @@ public:
     void LogQuickEditPasteProcUsed();
     void LogQuickEditPasteRawUsed();
 
-    void LogFindDialogNextClicked(_In_ const unsigned int iStringLength, _In_ const bool fDirectionDown, _In_ const bool fMatchCase);
-    void LogProcessConnected(_In_ const HANDLE hProcess);
+    void LogFindDialogNextClicked(const unsigned int iStringLength, const bool fDirectionDown, const bool fMatchCase);
+    void LogProcessConnected(const HANDLE hProcess);
     void FindDialogClosed();
     void WriteFinalTraceLog();
 
-    void LogAssert(_In_z_ const char* pszSourceText, _In_z_ const char* pszFileName, _In_ const int iLineNumber) const;
+    void LogAssert(_In_z_ const char* pszSourceText, _In_z_ const char* pszFileName, const int iLineNumber) const;
     void LogRipMessage(_In_z_ const char* pszMessage, ...) const;
 
     // Names are from the external API call names.  Note that some names can be different
@@ -119,8 +119,8 @@ public:
         // Only use this last enum as a count of the number of api enums.
         NUMBER_OF_APIS
     };
-    void LogApiCall(_In_ ApiCall const api);
-    void LogApiCall(_In_ ApiCall const api, _In_ BOOLEAN const fUnicode);
+    void LogApiCall(const ApiCall api);
+    void LogApiCall(const ApiCall api, const BOOLEAN fUnicode);
 
 private:
     // Used to prevent multiple instances
@@ -129,7 +129,7 @@ private:
     Telemetry(Telemetry const&);
     void operator=(Telemetry const&);
 
-    bool FindProcessName(_In_ const WCHAR* pszProcessName, _Out_ size_t *iPosition) const;
+    bool FindProcessName(const WCHAR* pszProcessName, _Out_ size_t *iPosition) const;
     void TotalCodesForPreviousProcess();
 
     static const int c_iMaxProcessesConnected = 100;

@@ -33,8 +33,8 @@ public:
     void GetEditKeys(_In_opt_ HKEY hConsoleKey) const;
 private:
     void _LoadMappedProperties(_In_reads_(cPropertyMappings) const RegistrySerialization::RegPropertyMap* const rgPropertyMappings,
-                               _In_ size_t const cPropertyMappings,
-                               _In_ HKEY const hKey);
+                               const size_t cPropertyMappings,
+                               const HKEY hKey);
 
 
     Settings* const _pSettings;

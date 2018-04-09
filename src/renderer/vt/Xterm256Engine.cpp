@@ -12,10 +12,10 @@ using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 
 Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
-                               _In_ const IDefaultColorProvider& colorProvider,
-                               _In_ const Viewport initialViewport,
+                               const IDefaultColorProvider& colorProvider,
+                               const Viewport initialViewport,
                                _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                               _In_ const WORD cColorTable) :
+                               const WORD cColorTable) :
     XtermEngine(std::move(hPipe), colorProvider, initialViewport, ColorTable, cColorTable, false)
 {
 }
@@ -33,10 +33,10 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT Xterm256Engine::UpdateDrawingBrushes(_In_ COLORREF const colorForeground,
-                                             _In_ COLORREF const colorBackground,
-                                             _In_ WORD const /*legacyColorAttribute*/,
-                                             _In_ bool const /*fIncludeBackgrounds*/)
+HRESULT Xterm256Engine::UpdateDrawingBrushes(const COLORREF colorForeground,
+                                             const COLORREF colorBackground,
+                                             const WORD /*legacyColorAttribute*/,
+                                             const bool /*fIncludeBackgrounds*/)
 {
     return VtEngine::_RgbUpdateDrawingBrushes(colorForeground,
                                               colorBackground,

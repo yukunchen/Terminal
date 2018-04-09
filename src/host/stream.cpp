@@ -41,7 +41,7 @@
 [[nodiscard]]
 NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
                  _Out_ wchar_t* const pwchOut,
-                 _In_ bool const Wait,
+                 const bool Wait,
                  _Out_opt_ bool* const pCommandLineEditingKeys,
                  _Out_opt_ bool* const pCommandLinePopupKeys,
                  _Out_opt_ DWORD* const pdwKeyState)
@@ -185,7 +185,7 @@ NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
 
 // Routine Description:
 // - This routine returns the total number of screen spaces the characters up to the specified character take up.
-ULONG RetrieveTotalNumberOfSpaces(_In_ const SHORT sOriginalCursorPositionX,
+ULONG RetrieveTotalNumberOfSpaces(const SHORT sOriginalCursorPositionX,
                                   _In_reads_(ulCurrentPosition) const WCHAR * const pwchBuffer,
                                   _In_ ULONG ulCurrentPosition)
 {
@@ -292,8 +292,8 @@ NTSTATUS ReadPendingInput(_Inout_ InputBuffer* const pInputBuffer,
                           _Out_writes_bytes_to_(OutputBufferSize, *pReadByteCount) wchar_t* const pwchBuffer,
                           _Out_ ULONG* const pReadByteCount,
                           _In_ INPUT_READ_HANDLE_DATA* const pHandleData,
-                          _In_ const bool Unicode,
-                          _In_ const size_t OutputBufferSize)
+                          const bool Unicode,
+                          const size_t OutputBufferSize)
 {
 
     BOOL fAddDbcsLead = FALSE;
@@ -484,14 +484,14 @@ NTSTATUS ReadLineInput(_Inout_ InputBuffer* const pInputBuffer,
                        _Out_ ULONG* const pReadByteCount,
                        _Inout_ ULONG* const pControlKeyState,
                        _In_reads_bytes_opt_(cbInitialData) const wchar_t* const pwsInitialData,
-                       _In_ const ULONG cbInitialData,
-                       _In_ const DWORD dwCtrlWakeupMask,
+                       const ULONG cbInitialData,
+                       const DWORD dwCtrlWakeupMask,
                        _In_ INPUT_READ_HANDLE_DATA* const pHandleData,
                        _In_reads_bytes_opt_(cbExeName) const wchar_t* const pwsExeName,
-                       _In_ const ULONG cbExeName,
-                       _In_ const bool Unicode,
+                       const ULONG cbExeName,
+                       const bool Unicode,
                        _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter,
-                       _In_ const size_t OutputBufferSize)
+                       const size_t OutputBufferSize)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION* const pScreenInfo = gci.CurrentScreenBuffer;
@@ -650,9 +650,9 @@ NTSTATUS ReadCharacterInput(_Inout_ InputBuffer* const pInputBuffer,
                             _Out_writes_bytes_to_(OutputBufferSize, *pReadByteCount) wchar_t* const pwchBuffer,
                             _Out_ ULONG* const pReadByteCount,
                             _In_ INPUT_READ_HANDLE_DATA* const pHandleData,
-                            _In_ const bool Unicode,
+                            const bool Unicode,
                             _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter,
-                            _In_ const size_t OutputBufferSize)
+                            const size_t OutputBufferSize)
 {
 
     ULONG NumToWrite = 0;
@@ -842,12 +842,12 @@ NTSTATUS DoReadConsole(_Inout_ InputBuffer* const pInputBuffer,
                        _Inout_ ULONG* const pcbBuffer,
                        _Inout_ ULONG* const pControlKeyState,
                        _In_reads_bytes_opt_(cbInitialData) const wchar_t* const pwsInitialData,
-                       _In_ const ULONG cbInitialData,
-                       _In_ const DWORD dwCtrlWakeupMask,
+                       const ULONG cbInitialData,
+                       const DWORD dwCtrlWakeupMask,
                        _In_ INPUT_READ_HANDLE_DATA* const pHandleData,
                        _In_reads_bytes_opt_(cbExeName) const wchar_t* const pwsExeName,
-                       _In_ const ULONG cbExeName,
-                       _In_ const bool Unicode,
+                       const ULONG cbExeName,
+                       const bool Unicode,
                        _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
 {
     LockConsole();
@@ -903,16 +903,16 @@ NTSTATUS DoReadConsole(_Inout_ InputBuffer* const pInputBuffer,
 
 HRESULT ApiRoutines::ReadConsoleAImpl(_Inout_ IConsoleInputObject* const pInContext,
                                       _Out_writes_to_(cchTextBuffer, *pcchTextBufferWritten) char* const psTextBuffer,
-                                      _In_ size_t const cchTextBuffer,
+                                      const size_t cchTextBuffer,
                                       _Out_ size_t* const pcchTextBufferWritten,
                                       _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter,
                                       _In_reads_opt_(cchInitialData) const char* const psInitialData,
-                                      _In_ size_t const cchInitialData,
+                                      const size_t cchInitialData,
                                       _In_reads_opt_(cchExeName) const wchar_t* const pwsExeName,
-                                      _In_ size_t const cchExeName,
+                                      const size_t cchExeName,
                                       _In_ INPUT_READ_HANDLE_DATA* const pHandleData,
-                                      _In_ HANDLE const hConsoleClient,
-                                      _In_ DWORD const dwControlWakeupMask,
+                                      const HANDLE hConsoleClient,
+                                      const DWORD dwControlWakeupMask,
                                       _Out_ DWORD* const pdwControlKeyState)
 {
     ULONG ulTextBuffer;
@@ -956,16 +956,16 @@ HRESULT ApiRoutines::ReadConsoleAImpl(_Inout_ IConsoleInputObject* const pInCont
 [[nodiscard]]
 HRESULT ApiRoutines::ReadConsoleWImpl(_Inout_ IConsoleInputObject* const pInContext,
                                       _Out_writes_to_(cchTextBuffer, *pcchTextBufferWritten) wchar_t* const pwsTextBuffer,
-                                      _In_ size_t const cchTextBuffer,
+                                      const size_t cchTextBuffer,
                                       _Out_ size_t* const pcchTextBufferWritten,
                                       _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter,
                                       _In_reads_opt_(cchInitialData) const wchar_t* const pwsInitialData,
-                                      _In_ size_t const cchInitialData,
+                                      const size_t cchInitialData,
                                       _In_reads_opt_(cchExeName) const wchar_t* const pwsExeName,
-                                      _In_ size_t const cchExeName,
+                                      const size_t cchExeName,
                                       _In_ INPUT_READ_HANDLE_DATA* const pHandleData,
-                                      _In_ HANDLE const hConsoleClient,
-                                      _In_ DWORD const dwControlWakeupMask,
+                                      const HANDLE hConsoleClient,
+                                      const DWORD dwControlWakeupMask,
                                       _Out_ DWORD* const pdwControlKeyState)
 {
     size_t cbTextBuffer;
@@ -1006,7 +1006,7 @@ HRESULT ApiRoutines::ReadConsoleWImpl(_Inout_ IConsoleInputObject* const pInCont
     return HRESULT_FROM_NT(Status);
 }
 
-VOID UnblockWriteConsole(_In_ const DWORD dwReason)
+VOID UnblockWriteConsole(const DWORD dwReason)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.Flags &= ~dwReason;

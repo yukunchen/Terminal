@@ -75,9 +75,9 @@ NTSTATUS DoCreateScreenBuffer()
 // - vector of vector of output cell data for read rect
 // Note:
 // - will throw exception on error.
-std::vector<std::vector<OutputCell>> ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION& screenInfo,
-                                                              _In_ const COORD coordSourcePoint,
-                                                              _In_ const Viewport viewport)
+std::vector<std::vector<OutputCell>> ReadRectFromScreenBuffer(const SCREEN_INFORMATION& screenInfo,
+                                                              const COORD coordSourcePoint,
+                                                              const Viewport viewport)
 {
     std::vector<std::vector<OutputCell>> result;
     result.reserve(viewport.Height());
@@ -118,8 +118,8 @@ std::vector<std::vector<OutputCell>> ReadRectFromScreenBuffer(_In_ const SCREEN_
 // - status of copy
 [[nodiscard]]
 NTSTATUS _CopyRectangle(_In_ PSCREEN_INFORMATION pScreenInfo,
-                        _In_ const SMALL_RECT * const psrSource,
-                        _In_ const COORD coordTarget)
+                        const SMALL_RECT * const psrSource,
+                        const COORD coordTarget)
 {
     DBGOUTPUT(("_CopyRectangle\n"));
 
@@ -161,7 +161,7 @@ NTSTATUS _CopyRectangle(_In_ PSCREEN_INFORMATION pScreenInfo,
 // - ReadRegion - Region to read.
 // Return Value:
 [[nodiscard]]
-NTSTATUS ReadScreenBuffer(_In_ const SCREEN_INFORMATION* const pScreenInfo,
+NTSTATUS ReadScreenBuffer(const SCREEN_INFORMATION* const pScreenInfo,
                           _Inout_ std::vector<std::vector<OutputCell>>& outputCells,
                           _Inout_ PSMALL_RECT psrReadRegion)
 {
@@ -323,10 +323,10 @@ NTSTATUS WriteScreenBuffer(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ PCHAR_INFO
 // - NumRecords - On input, the size of the buffer in elements.  On output, the number of elements read.
 // Return Value:
 [[nodiscard]]
-NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
+NTSTATUS ReadOutputString(const SCREEN_INFORMATION * const pScreenInfo,
                           _Inout_ PVOID pvBuffer,
-                          _In_ const COORD coordRead,
-                          _In_ const ULONG ulStringType,
+                          const COORD coordRead,
+                          const ULONG ulStringType,
                           _Inout_ PULONG pcRecords)
 {
     DBGOUTPUT(("ReadOutputString\n"));
@@ -606,7 +606,7 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
     return STATUS_SUCCESS;
 }
 
-void ScreenBufferSizeChange(_In_ COORD const coordNewSize)
+void ScreenBufferSizeChange(const COORD coordNewSize)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
@@ -621,9 +621,9 @@ void ScreenBufferSizeChange(_In_ COORD const coordNewSize)
 }
 
 void ScrollScreen(_Inout_ PSCREEN_INFORMATION pScreenInfo,
-                  _In_ const SMALL_RECT * const psrScroll,
+                  const SMALL_RECT * const psrScroll,
                   _In_opt_ const SMALL_RECT * const psrMerge,
-                  _In_ const COORD coordTarget)
+                  const COORD coordTarget)
 {
     NTSTATUS status = STATUS_SUCCESS;
 
@@ -662,7 +662,7 @@ void ScrollScreen(_Inout_ PSCREEN_INFORMATION pScreenInfo,
 
 // Routine Description:
 // - This routine rotates the circular buffer as a shorthand for scrolling the entire screen
-SHORT ScrollEntireScreen(_Inout_ PSCREEN_INFORMATION pScreenInfo, _In_ const SHORT sScrollValue)
+SHORT ScrollEntireScreen(_Inout_ PSCREEN_INFORMATION pScreenInfo, const SHORT sScrollValue)
 {
     // store index of first row
     SHORT const RowIndex = pScreenInfo->TextInfo->GetFirstRowIndex();

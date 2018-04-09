@@ -26,8 +26,8 @@
 // - THROW: Throws if space cannot be allocated to copy the given string
 WriteData::WriteData(_In_ SCREEN_INFORMATION* const psiContext,
                      _In_reads_bytes_(cbContext) wchar_t* const pwchContext,
-                     _In_ ULONG const cbContext,
-                     _In_ UINT const uiOutputCodepage) :
+                     const ULONG cbContext,
+                     const UINT uiOutputCodepage) :
     IWaitRoutine(ReplyDataType::Write),
     _psiContext(psiContext),
     _pwchContext(THROW_IF_NULL_ALLOC(reinterpret_cast<wchar_t*>(new byte[cbContext]))),
@@ -66,8 +66,8 @@ WriteData::~WriteData()
 //                       in the calculation as it wasn't a part of what was given in this exact call.
 // Return Value:
 // - <none>
-void WriteData::SetLeadByteAdjustmentStatus(_In_ bool const fLeadByteCaptured,
-                                            _In_ bool const fLeadByteConsumed)
+void WriteData::SetLeadByteAdjustmentStatus(const bool fLeadByteCaptured,
+                                            const bool fLeadByteConsumed)
 {
     _fLeadByteCaptured = fLeadByteCaptured;
     _fLeadByteConsumed = fLeadByteConsumed;
@@ -81,7 +81,7 @@ void WriteData::SetLeadByteAdjustmentStatus(_In_ bool const fLeadByteCaptured,
 //                     wide character string that is stowed in this object for consumption in the notify routine later.
 // Return Value:
 // - <none>
-void WriteData::SetUtf8ConsumedCharacters(_In_ size_t const cchUtf8Consumed)
+void WriteData::SetUtf8ConsumedCharacters(const size_t cchUtf8Consumed)
 {
     _cchUtf8Consumed = cchUtf8Consumed;
 }
@@ -96,10 +96,10 @@ void WriteData::SetUtf8ConsumedCharacters(_In_ size_t const cchUtf8Consumed)
 // - pNumBytes - The number of bytes of data that the server/driver will need to transmit back to the client process
 // - pControlKeyState - Unused for write operations. Set to 0.
 // - pOutputData - not used.
-// - TRUE if the wait is done and result buffer/status code can be sent back to the client.
-// - FALSE if we need to continue to wait because the output object blocked again
-bool WriteData::Notify(_In_ WaitTerminationReason const TerminationReason,
-                       _In_ bool const fIsUnicode,
+// - true if the wait is done and result buffer/status code can be sent back to the client.
+// - false if we need to continue to wait because the output object blocked again
+bool WriteData::Notify(const WaitTerminationReason TerminationReason,
+                       const bool fIsUnicode,
                        _Out_ NTSTATUS* const pReplyStatus,
                        _Out_ DWORD* const pNumBytes,
                        _Out_ DWORD* const pControlKeyState,
