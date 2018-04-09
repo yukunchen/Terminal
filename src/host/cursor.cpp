@@ -20,8 +20,8 @@
 // - Constructor to set default properties for Cursor
 // Arguments:
 // - ulSize - The height of the cursor within this buffer
-Cursor::Cursor(IAccessibilityNotifier *pNotifier, const ULONG ulSize) :
-    _pAccessibilityNotifier(pNotifier),
+Cursor::Cursor(const ULONG ulSize) :
+    _pAccessibilityNotifier(ServiceLocator::LocateAccessibilityNotifier()),
     _ulSize(ulSize),
     _fHasMoved(false),
     _fIsVisible(true),
@@ -36,6 +36,8 @@ Cursor::Cursor(IAccessibilityNotifier *pNotifier, const ULONG ulSize) :
     _hCaretBlinkTimer(INVALID_HANDLE_VALUE),
     _uCaretBlinkTime(INFINITE) // default to no blink
 {
+    THROW_IF_NULL_ALLOC(_pAccessibilityNotifier);
+
     _cPosition = {0};
     _coordDelayedAt = {0};
 
@@ -52,41 +54,6 @@ Cursor::~Cursor()
     {
         DeleteTimerQueueEx(_hCaretBlinkTimerQueue, INVALID_HANDLE_VALUE);
     }
-}
-
-// Routine Description:
-// - Creates a new instance of Cursor
-// Arguments:
-// - ulSize - The height of the cursor within this buffer
-// - ppCursor - Pointer to accept the instance of the newly created Cursor
-// Return Value:
-// - Success or a relevant error status (usually out of memory).
-[[nodiscard]]
-NTSTATUS Cursor::CreateInstance(const ULONG ulSize, _Outptr_ Cursor ** const ppCursor)
-{
-    *ppCursor = nullptr;
-
-    NTSTATUS status = STATUS_SUCCESS;
-
-    IAccessibilityNotifier *pNotifier = ServiceLocator::LocateAccessibilityNotifier();
-    status = NT_TESTNULL(pNotifier);
-
-    if (NT_SUCCESS(status))
-    {
-        Cursor* pCursor = new Cursor(pNotifier, ulSize);
-        status = NT_TESTNULL(pCursor);
-
-        if (NT_SUCCESS(status))
-        {
-            *ppCursor = pCursor;
-        }
-        else
-        {
-            delete pCursor;
-        }
-    }
-
-    return status;
 }
 
 COORD Cursor::GetPosition() const noexcept

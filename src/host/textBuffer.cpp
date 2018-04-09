@@ -36,7 +36,8 @@ TEXT_BUFFER_INFO::TEXT_BUFFER_INFO(const FontInfo fontInfo,
     _pCursor{ nullptr },
     _storage{}
 {
-    THROW_IF_FAILED(HRESULT_FROM_NT(Cursor::CreateInstance(static_cast<ULONG>(cursorSize), &_pCursor)));
+    _pCursor = new Cursor(cursorSize);
+    THROW_IF_NULL_ALLOC(_pCursor);
 
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     _pCursor->SetColor(gci.GetCursorColor());
