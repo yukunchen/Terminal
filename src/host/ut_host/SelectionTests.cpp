@@ -463,7 +463,7 @@ class SelectionInputTests
         COOKED_READ_DATA* pCooked = gci.lpCookedReadData;
 
         // backup text info position over remainder of text execution duration
-        TEXT_BUFFER_INFO& textBuffer = gci.CurrentScreenBuffer->GetTextBuffer();
+        TextBuffer& textBuffer = gci.CurrentScreenBuffer->GetTextBuffer();
         COORD coordOldTextInfoPos;
         coordOldTextInfoPos.X = textBuffer.GetCursor().GetPosition().X;
         coordOldTextInfoPos.Y = textBuffer.GetCursor().GetPosition().Y;

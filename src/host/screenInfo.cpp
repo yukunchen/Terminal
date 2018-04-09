@@ -107,7 +107,7 @@ NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
 
         try
         {
-            std::unique_ptr<TEXT_BUFFER_INFO> textBuffer = std::make_unique<TEXT_BUFFER_INFO>(fontInfo,
+            std::unique_ptr<TextBuffer> textBuffer = std::make_unique<TextBuffer>(fontInfo,
                                                                                               pScreen->GetScreenBufferSize(),
                                                                                               ciFill,
                                                                                               uiCursorSize);
@@ -616,7 +616,7 @@ void SCREEN_INFORMATION::ResetTextFlags(const short sStartX,
 {
     SHORT RowIndex;
     WCHAR Char;
-    PTEXT_BUFFER_INFO pTextInfo = TextInfo;
+    TextBuffer* pTextInfo = TextInfo;
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     // Fire off a winevent to let accessibility apps know what changed.
@@ -1420,10 +1420,10 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
     CHAR_INFO ciFill;
     ciFill.Attributes = _Attributes.GetLegacyAttributes();
 
-    std::unique_ptr<TEXT_BUFFER_INFO> newTextBuffer;
+    std::unique_ptr<TextBuffer> newTextBuffer;
     try
     {
-        newTextBuffer = std::make_unique<TEXT_BUFFER_INFO>(TextInfo->GetCurrentFont(),
+        newTextBuffer = std::make_unique<TextBuffer>(TextInfo->GetCurrentFont(),
                                                            coordNewScreenSize,
                                                            ciFill,
                                                            0); // temporarily set size to 0 so it won't render.
@@ -2635,12 +2635,12 @@ std::pair<COORD, COORD> SCREEN_INFORMATION::GetWordBoundary(const COORD position
     return { start, end };
 }
 
-TEXT_BUFFER_INFO& SCREEN_INFORMATION::GetTextBuffer()
+TextBuffer& SCREEN_INFORMATION::GetTextBuffer()
 {
     return *TextInfo;
 }
 
-const TEXT_BUFFER_INFO& SCREEN_INFORMATION::GetTextBuffer() const
+const TextBuffer& SCREEN_INFORMATION::GetTextBuffer() const
 {
     return *TextInfo;
 }

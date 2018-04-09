@@ -20,7 +20,7 @@ Author:
 
 class SCREEN_INFORMATION;
 
-// The WriteBuffer class provides helpers for writing text into the TEXT_BUFFER_INFO that is backing a particular console screen buffer.
+// The WriteBuffer class provides helpers for writing text into the TextBuffer that is backing a particular console screen buffer.
 class WriteBuffer : public Microsoft::Console::VirtualTerminal::AdaptDefaults
 {
 public:

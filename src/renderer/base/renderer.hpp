@@ -127,7 +127,7 @@ namespace Microsoft::Console::Render
 
         void _PaintIme(_In_ IRenderEngine* const pEngine,
                         const std::unique_ptr<ConversionAreaInfo>& AreaInfo,
-                        const TEXT_BUFFER_INFO* const pTextInfo);
+                        const TextBuffer* const pTextInfo);
         void _PaintImeCompositionString(_In_ IRenderEngine* const pEngine);
 
         [[nodiscard]]

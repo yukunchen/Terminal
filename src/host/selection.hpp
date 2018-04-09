@@ -143,7 +143,7 @@ public:
     void MouseUp();
 
 private:
-    void _SaveCursorData(TEXT_BUFFER_INFO& textBuffer);
+    void _SaveCursorData(TextBuffer& textBuffer);
     void _RestoreCursorData(_In_ SCREEN_INFORMATION* const pScreenInfo);
 
     void _AlignAlternateSelection(const bool fAlignToLineSelect);

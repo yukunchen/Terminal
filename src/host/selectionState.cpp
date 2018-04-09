@@ -174,7 +174,7 @@ void Selection::MouseUp()
 // - textBuffer - text buffer to set cursor data
 // Return Value:
 // - <none>
-void Selection::_SaveCursorData(TEXT_BUFFER_INFO& textBuffer)
+void Selection::_SaveCursorData(TextBuffer& textBuffer)
 {
     Cursor& cursor = textBuffer.GetCursor();
     _coordSavedCursorPosition = cursor.GetPosition();

@@ -30,7 +30,7 @@ const SMALL_RECT RenderData::GetViewport()
     return gci.CurrentScreenBuffer->GetBufferViewport();
 }
 
-const TEXT_BUFFER_INFO* RenderData::GetTextBuffer()
+const TextBuffer* RenderData::GetTextBuffer()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return &gci.CurrentScreenBuffer->GetTextBuffer();
@@ -67,7 +67,7 @@ const ConsoleImeInfo* RenderData::GetImeData()
     return &gci.ConsoleIme;
 }
 
-const TEXT_BUFFER_INFO* RenderData::GetImeCompositionStringBuffer(_In_ size_t iIndex)
+const TextBuffer* RenderData::GetImeCompositionStringBuffer(_In_ size_t iIndex)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (iIndex < gci.ConsoleIme.ConvAreaCompStr.size())

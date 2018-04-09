@@ -60,19 +60,19 @@ filling in the last row, and updating the screen.
 #include <wil/resource.h>
 #include <wil/wistd_memory.h>
 
-class TEXT_BUFFER_INFO final
+class TextBuffer final
 {
 public:
-    TEXT_BUFFER_INFO(const FontInfo fontInfo,
-                     const COORD screenBufferSize,
-                     const CHAR_INFO fill,
-                     const UINT cursorSize);
-    TEXT_BUFFER_INFO(const TEXT_BUFFER_INFO& a) = delete;
+    TextBuffer(const FontInfo fontInfo,
+               const COORD screenBufferSize,
+               const CHAR_INFO fill,
+               const UINT cursorSize);
+    TextBuffer(const TextBuffer& a) = delete;
 
-    ~TEXT_BUFFER_INFO() = default;
+    ~TextBuffer() = default;
 
     // Used for duplicating properties to another text buffer
-    void CopyProperties(_In_ TEXT_BUFFER_INFO* const pOtherBuffer);
+    void CopyProperties(_In_ TextBuffer* const pOtherBuffer);
 
     // row manipulation
     const ROW& GetFirstRow() const;
@@ -161,5 +161,3 @@ private:
     friend class TextBufferTests;
 #endif
 };
-typedef TEXT_BUFFER_INFO *PTEXT_BUFFER_INFO;
-typedef PTEXT_BUFFER_INFO *PPTEXT_BUFFER_INFO;
