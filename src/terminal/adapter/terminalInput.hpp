@@ -24,9 +24,9 @@ namespace Microsoft::Console::VirtualTerminal
         TerminalInput(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn);
         ~TerminalInput();
 
-        bool HandleKey(_In_ const IInputEvent* const pInEvent) const;
-        void ChangeKeypadMode(_In_ bool const fApplicationMode);
-        void ChangeCursorKeysMode(_In_ bool const fApplicationMode);
+        bool HandleKey(const IInputEvent* const pInEvent) const;
+        void ChangeKeypadMode(const bool fApplicationMode);
+        void ChangeCursorKeysMode(const bool fApplicationMode);
 
     private:
 
@@ -34,9 +34,9 @@ namespace Microsoft::Console::VirtualTerminal
         bool _fKeypadApplicationMode = false;
         bool _fCursorApplicationMode = false;
 
-        void _SendNullInputSequence(_In_ DWORD const dwControlKeyState) const;
+        void _SendNullInputSequence(const DWORD dwControlKeyState) const;
         void _SendInputSequence(_In_ PCWSTR const pwszSequence) const;
-        void _SendEscapedInputSequence(_In_ const wchar_t wch) const;
+        void _SendEscapedInputSequence(const wchar_t wch) const;
 
         struct _TermKeyMap
         {
@@ -46,12 +46,12 @@ namespace Microsoft::Console::VirtualTerminal
 
             static const size_t s_cchMaxSequenceLength;
 
-            _TermKeyMap(_In_ WORD const wVirtualKey, _In_ PCWSTR const pwszSequence) :
+            _TermKeyMap(const WORD wVirtualKey, _In_ PCWSTR const pwszSequence) :
                 wVirtualKey(wVirtualKey),
                 pwszSequence(pwszSequence),
                 dwModifiers(0) {};
 
-            _TermKeyMap(_In_ WORD const wVirtualKey, _In_ const DWORD dwModifiers, _In_ PCWSTR const pwszSequence) :
+            _TermKeyMap(const WORD wVirtualKey, const DWORD dwModifiers, _In_ PCWSTR const pwszSequence) :
                 wVirtualKey(wVirtualKey),
                 pwszSequence(pwszSequence),
                 dwModifiers(dwModifiers) {};
@@ -76,19 +76,19 @@ namespace Microsoft::Console::VirtualTerminal
         static const size_t s_cModifierKeyMapping;
         static const size_t s_cSimpleModifedKeyMapping;
 
-        bool _SearchKeyMapping(_In_ const KeyEvent& keyEvent,
+        bool _SearchKeyMapping(const KeyEvent& keyEvent,
                                 _In_reads_(cKeyMapping) const TerminalInput::_TermKeyMap* keyMapping,
-                                _In_ size_t const cKeyMapping,
+                                const size_t cKeyMapping,
                                 _Out_ const TerminalInput::_TermKeyMap** pMatchingMapping) const;
-        bool _TranslateDefaultMapping(_In_ const KeyEvent& keyEvent,
+        bool _TranslateDefaultMapping(const KeyEvent& keyEvent,
                                         _In_reads_(cKeyMapping) const TerminalInput::_TermKeyMap* keyMapping,
-                                        _In_ size_t const cKeyMapping) const;
-        bool _SearchWithModifier(_In_ const KeyEvent& keyEvent) const;
+                                        const size_t cKeyMapping) const;
+        bool _SearchWithModifier(const KeyEvent& keyEvent) const;
 
 
     public:
-        const size_t GetKeyMappingLength(_In_ const KeyEvent& keyEvent) const;
-        const _TermKeyMap* GetKeyMapping(_In_ const KeyEvent& keyEvent) const;
+        const size_t GetKeyMappingLength(const KeyEvent& keyEvent) const;
+        const _TermKeyMap* GetKeyMapping(const KeyEvent& keyEvent) const;
 
     };
 }

@@ -29,7 +29,7 @@ public:
                                        _In_ UINT CodePage);
 
     [[nodiscard]]
-    static NTSTATUS s_SearchByCodePage(_In_ const UINT uiCodePage,
+    static NTSTATUS s_SearchByCodePage(const UINT uiCodePage,
                                        _Out_writes_(cchFaceName) PWSTR pwszFaceName,
-                                       _In_ const size_t cchFaceName);
+                                       const size_t cchFaceName);
 };

@@ -26,8 +26,8 @@ namespace Microsoft::Console::VirtualTerminal
         TerminalOutput();
         ~TerminalOutput();
 
-        wchar_t TranslateKey(_In_ const wchar_t wch) const;
-        bool DesignateCharset(_In_ const wchar_t wchNewCharset);
+        wchar_t TranslateKey(const wchar_t wch) const;
+        bool DesignateCharset(const wchar_t wchNewCharset);
         bool NeedToTranslate() const;
 
     private:

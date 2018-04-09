@@ -242,9 +242,9 @@ int LanguageDisplay(HWND hDlg, UINT CodePage)
 }
 
 // For a given codepage, determine what the default truetype font should be
-NTSTATUS GetTTFontFaceForCodePage(_In_ const UINT uiCodePage,                  // the codepage to examine (note: not charset)
+NTSTATUS GetTTFontFaceForCodePage(const UINT uiCodePage,                  // the codepage to examine (note: not charset)
                                   _Out_writes_(cchFaceName) PWSTR pszFaceName, // where to write the facename we find
-                                  _In_ const size_t cchFaceName)               // space available in pszFaceName
+                                  const size_t cchFaceName)               // space available in pszFaceName
 {
     return TrueTypeFontList::s_SearchByCodePage(uiCodePage, pszFaceName, cchFaceName);
 }

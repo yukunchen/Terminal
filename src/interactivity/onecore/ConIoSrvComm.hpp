@@ -56,7 +56,7 @@ namespace Microsoft::Console::Interactivity::OneCore
 
         PVOID GetSharedViewBase() const;
 
-        VOID CleanupForHeadless(_In_ NTSTATUS const status);
+        VOID CleanupForHeadless(const NTSTATUS status);
 
         // IInputServices Members
         UINT MapVirtualKeyW(UINT uCode, UINT uMapType);

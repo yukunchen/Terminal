@@ -50,7 +50,7 @@ SHORT FindMatchingCommand(_In_ PCOMMAND_HISTORY CommandHistory,
 [[nodiscard]]
 NTSTATUS CommandNumberPopup(_In_ COOKED_READ_DATA* const CookedReadData);
 void DrawCommandListPopup(_In_ PCLE_POPUP const Popup,
-                          _In_ SHORT const CurrentCommand,
+                          const SHORT CurrentCommand,
                           _In_ PCOMMAND_HISTORY const CommandHistory,
                           _In_ PSCREEN_INFORMATION const ScreenInfo);
 void UpdateCommandListPopup(_In_ SHORT Delta,
@@ -58,7 +58,7 @@ void UpdateCommandListPopup(_In_ SHORT Delta,
                             _In_ PCOMMAND_HISTORY const CommandHistory,
                             _In_ PCLE_POPUP Popup,
                             _In_ PSCREEN_INFORMATION const ScreenInfo,
-                            _In_ DWORD const Flags);
+                            const DWORD Flags);
 [[nodiscard]]
 NTSTATUS RetrieveCommand(_In_ PCOMMAND_HISTORY CommandHistory,
                          _In_ WORD VirtualKeyCode,
@@ -78,7 +78,7 @@ UINT LoadStringEx(_In_ HINSTANCE hModule, _In_ UINT wID, _Out_writes_(cchBufferM
 //       and the second one receives a pointer to where the string starts.
 // Return Value:
 // - TRUE if the buffer is valid, FALSE otherwise.
-BOOLEAN IsValidStringBuffer(_In_ BOOLEAN Unicode, _In_reads_bytes_(Size) PVOID Buffer, _In_ ULONG Size, _In_ ULONG Count, ...)
+bool IsValidStringBuffer(_In_ bool Unicode, _In_reads_bytes_(Size) PVOID Buffer, _In_ ULONG Size, _In_ ULONG Count, ...)
 {
     va_list Marker;
     va_start(Marker, Count);
@@ -94,7 +94,7 @@ BOOLEAN IsValidStringBuffer(_In_ BOOLEAN Unicode, _In_reads_bytes_(Size) PVOID B
             break;
         }
 
-        if ((Unicode != FALSE) && ((StringSize % sizeof(WCHAR)) != 0))
+        if ((Unicode != false) && ((StringSize % sizeof(WCHAR)) != 0))
         {
             break;
         }
@@ -116,6 +116,12 @@ BOOLEAN IsValidStringBuffer(_In_ BOOLEAN Unicode, _In_reads_bytes_(Size) PVOID B
 // - Detects Word delimiters
 bool IsWordDelim(const wchar_t wch)
 {
+    // the space character is always a word delimiter. Do not add it to the WordDelimiters global because
+    // that contains the user configurable word delimiters only.
+    if (wch == UNICODE_SPACE)
+    {
+        return true;
+    }
     const auto& delimiters = ServiceLocator::LocateGlobals().WordDelimiters;
     return std::find(delimiters.begin(), delimiters.end(), wch) != delimiters.end();
 }
@@ -301,7 +307,7 @@ bool CommandLine::IsEditLineEmpty() const
     }
 }
 
-void CommandLine::Hide(_In_ bool const fUpdateFields)
+void CommandLine::Hide(const bool fUpdateFields)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (!IsEditLineEmpty())
@@ -321,7 +327,7 @@ void CommandLine::Show()
     }
 }
 
-void DeleteCommandLine(_Inout_ COOKED_READ_DATA* const pCookedReadData, _In_ const BOOL fUpdateFields)
+void DeleteCommandLine(_Inout_ COOKED_READ_DATA* const pCookedReadData, const bool fUpdateFields)
 {
     DWORD CharsToWrite = pCookedReadData->_NumberOfVisibleChars;
     COORD coordOriginalCursor = pCookedReadData->_OriginalCursorPosition;
@@ -359,7 +365,7 @@ void DeleteCommandLine(_Inout_ COOKED_READ_DATA* const pCookedReadData, _In_ con
         pCookedReadData->_NumberOfVisibleChars = 0;
     }
 
-    LOG_IF_FAILED(pCookedReadData->_pScreenInfo->SetCursorPosition(pCookedReadData->_OriginalCursorPosition, TRUE));
+    LOG_IF_FAILED(pCookedReadData->_pScreenInfo->SetCursorPosition(pCookedReadData->_OriginalCursorPosition, true));
 }
 
 void RedrawCommandLine(_Inout_ COOKED_READ_DATA* const pCookedReadData)
@@ -543,28 +549,24 @@ NTSTATUS ProcessCommandListInput(_In_ COOKED_READ_DATA* const pCookedReadData)
         }
         else if (Char == UNICODE_CARRIAGERETURN)
         {
-            ULONG i, lStringLength;
             DWORD LineCount = 1;
             Index = Popup->CurrentCommand;
             LOG_IF_FAILED(EndPopup(pCookedReadData->_pScreenInfo, pCommandHistory));
             SetCurrentCommandLine(pCookedReadData, Index);
-            lStringLength = pCookedReadData->_BytesRead;
             ProcessCookedReadInput(pCookedReadData, UNICODE_CARRIAGERETURN, 0, &Status);
             // complete read
             if (pCookedReadData->_Echo)
             {
                 // check for alias
-                i = pCookedReadData->_BufferSize;
-                if (NT_SUCCESS(MatchAndCopyAlias(pCookedReadData->_BackupLimit,
-                                                 (USHORT)lStringLength,
+                Alias::s_MatchAndCopyAliasLegacy(pCookedReadData->_BackupLimit,
+                                                 pCookedReadData->_BytesRead,
                                                  pCookedReadData->_BackupLimit,
-                                                 (PUSHORT)& i,
+                                                 pCookedReadData->_BufferSize,
+                                                 &pCookedReadData->_BytesRead,
                                                  pCookedReadData->ExeName,
                                                  pCookedReadData->ExeNameLength,
-                                                 &LineCount)))
-                {
-                    pCookedReadData->_BytesRead = i;
-                }
+                                                 &LineCount);
+
             }
 
             Status = STATUS_SUCCESS;
@@ -1134,7 +1136,7 @@ NTSTATUS CommandNumberPopup(_In_ COOKED_READ_DATA* const CookedReadData)
 [[nodiscard]]
 NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                             _In_ WCHAR wch,
-                            _In_ const DWORD dwKeyState)
+                            const DWORD dwKeyState)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     COORD CurrentPosition = { 0 };
@@ -1143,7 +1145,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
     SHORT ScrollY = 0;
     const SHORT sScreenBufferSizeX = pCookedReadData->_pScreenInfo->GetScreenBufferSize().X;
 
-    BOOL UpdateCursorPosition = FALSE;
+    bool UpdateCursorPosition = false;
     if (wch == VK_F7 && (dwKeyState & (RIGHT_CTRL_PRESSED | LEFT_CTRL_PRESSED | RIGHT_ALT_PRESSED | LEFT_ALT_PRESSED)) == 0)
     {
         COORD PopupSize;
@@ -1165,7 +1167,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
         switch (wch)
         {
         case VK_ESCAPE:
-            DeleteCommandLine(pCookedReadData, TRUE);
+            DeleteCommandLine(pCookedReadData, true);
             break;
         case VK_UP:
         case VK_DOWN:
@@ -1175,7 +1177,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
             // for doskey compatibility, buffer isn't circular
             if (wch == VK_UP && !AtFirstCommand(pCookedReadData->_CommandHistory) || wch == VK_DOWN && !AtLastCommand(pCookedReadData->_CommandHistory))
             {
-                DeleteCommandLine(pCookedReadData, TRUE);
+                DeleteCommandLine(pCookedReadData, true);
                 Status = RetrieveCommand(pCookedReadData->_CommandHistory,
                                          wch,
                                          pCookedReadData->_BackupLimit,
@@ -1215,7 +1217,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                 {
                     CommandNumber = (SHORT)(pCookedReadData->_CommandHistory->NumberOfCommands - 1);
                 }
-                DeleteCommandLine(pCookedReadData, TRUE);
+                DeleteCommandLine(pCookedReadData, true);
                 Status = RetrieveNthCommand(pCookedReadData->_CommandHistory,
                                             COMMAND_NUM_TO_INDEX(CommandNumber, pCookedReadData->_CommandHistory),
                                             pCookedReadData->_BackupLimit,
@@ -1244,7 +1246,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
         case VK_END:
             if (dwKeyState & (RIGHT_CTRL_PRESSED | LEFT_CTRL_PRESSED))
             {
-                DeleteCommandLine(pCookedReadData, FALSE);
+                DeleteCommandLine(pCookedReadData, false);
                 pCookedReadData->_BytesRead = pCookedReadData->_CurrentPosition * sizeof(WCHAR);
                 if (pCookedReadData->_Echo)
                 {
@@ -1271,17 +1273,17 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                                         pCookedReadData->_CurrentPosition,
                                         sScreenBufferSizeX - pCookedReadData->_OriginalCursorPosition.X,
                                         pCookedReadData->_OriginalCursorPosition.X,
-                                        TRUE))
+                                        true))
                 {
                     CurrentPosition.X++;
                 }
-                UpdateCursorPosition = TRUE;
+                UpdateCursorPosition = true;
             }
             break;
         case VK_HOME:
             if (dwKeyState & (RIGHT_CTRL_PRESSED | LEFT_CTRL_PRESSED))
             {
-                DeleteCommandLine(pCookedReadData, FALSE);
+                DeleteCommandLine(pCookedReadData, false);
                 pCookedReadData->_BytesRead -= pCookedReadData->_CurrentPosition * sizeof(WCHAR);
                 pCookedReadData->_CurrentPosition = 0;
                 memmove(pCookedReadData->_BackupLimit, pCookedReadData->_BufPtr, pCookedReadData->_BytesRead);
@@ -1300,14 +1302,14 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                     ASSERT(NT_SUCCESS(Status));
                 }
                 CurrentPosition = pCookedReadData->_OriginalCursorPosition;
-                UpdateCursorPosition = TRUE;
+                UpdateCursorPosition = true;
             }
             else
             {
                 pCookedReadData->_CurrentPosition = 0;
                 pCookedReadData->_BufPtr = pCookedReadData->_BackupLimit;
                 CurrentPosition = pCookedReadData->_OriginalCursorPosition;
-                UpdateCursorPosition = TRUE;
+                UpdateCursorPosition = true;
             }
             break;
         case VK_LEFT:
@@ -1385,7 +1387,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                         CurrentPosition.X++;
                     }
 
-                    UpdateCursorPosition = TRUE;
+                    UpdateCursorPosition = true;
                 }
             }
             else
@@ -1405,7 +1407,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                                             pCookedReadData->_CurrentPosition + 2,
                                             sScreenBufferSizeX - pCookedReadData->_OriginalCursorPosition.X,
                                             pCookedReadData->_OriginalCursorPosition.X,
-                                            TRUE))
+                                            true))
                     {
                         if ((CurrentPosition.X == -2) || (CurrentPosition.X == -1))
                         {
@@ -1413,7 +1415,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                         }
                     }
 
-                    UpdateCursorPosition = TRUE;
+                    UpdateCursorPosition = true;
                 }
             }
             break;
@@ -1484,7 +1486,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                         {
                             CurrentPosition.X++;
                         }
-                        UpdateCursorPosition = TRUE;
+                        UpdateCursorPosition = true;
                     }
                 }
             }
@@ -1503,7 +1505,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                                             pCookedReadData->_CurrentPosition + 2,
                                             sScreenBufferSizeX - pCookedReadData->_OriginalCursorPosition.X,
                                             pCookedReadData->_OriginalCursorPosition.X,
-                                            TRUE))
+                                            true))
                     {
                         if (CurrentPosition.X == (sScreenBufferSizeX - 1))
                             CurrentPosition.X++;
@@ -1511,7 +1513,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
 
                     pCookedReadData->_BufPtr++;
                     pCookedReadData->_CurrentPosition++;
-                    UpdateCursorPosition = TRUE;
+                    UpdateCursorPosition = true;
 
                     // if at the end of the line, copy a character from the same position in the last command
                 }
@@ -1680,7 +1682,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                     CurrentPos = (SHORT)pCookedReadData->_CurrentPosition;
                     CursorPosition = pCookedReadData->_pScreenInfo->TextInfo->GetCursor()->GetPosition();
 
-                    DeleteCommandLine(pCookedReadData, TRUE);
+                    DeleteCommandLine(pCookedReadData, true);
                     Status = RetrieveNthCommand(pCookedReadData->_CommandHistory,
                                                 i,
                                                 pCookedReadData->_BackupLimit,
@@ -1706,7 +1708,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                     // restore cursor position
                     pCookedReadData->_BufPtr = pCookedReadData->_BackupLimit + CurrentPos;
                     pCookedReadData->_CurrentPosition = CurrentPos;
-                    Status = pCookedReadData->_pScreenInfo->SetCursorPosition(CursorPosition, TRUE);
+                    Status = pCookedReadData->_pScreenInfo->SetCursorPosition(CursorPosition, true);
                     ASSERT(NT_SUCCESS(Status));
                 }
             }
@@ -1735,19 +1737,19 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
             // Alt+F10 clears the aliases for specifically cmd.exe.
             if (dwKeyState & (RIGHT_ALT_PRESSED | LEFT_ALT_PRESSED))
             {
-                ClearCmdExeAliases();
+                Alias::s_ClearCmdExeAliases();
             }
             break;
         case VK_INSERT:
             pCookedReadData->_InsertMode = !pCookedReadData->_InsertMode;
-            pCookedReadData->_pScreenInfo->SetCursorDBMode(!!(pCookedReadData->_InsertMode != gci.GetInsertMode()));
+            pCookedReadData->_pScreenInfo->SetCursorDBMode((!!pCookedReadData->_InsertMode != gci.GetInsertMode()));
             break;
         case VK_DELETE:
             if (!AT_EOL(pCookedReadData))
             {
                 COORD CursorPosition;
 
-                BOOL fStartFromDelim = IsWordDelim(*pCookedReadData->_BufPtr);
+                bool fStartFromDelim = IsWordDelim(*pCookedReadData->_BufPtr);
 
             del_repeat:
                 // save cursor position
@@ -1755,7 +1757,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
 
                 // Delete commandline.
 #pragma prefast(suppress:__WARNING_BUFFER_OVERFLOW, "Not sure why prefast is getting confused here")
-                DeleteCommandLine(pCookedReadData, FALSE);
+                DeleteCommandLine(pCookedReadData, false);
 
                 // Delete char.
                 pCookedReadData->_BytesRead -= sizeof(WCHAR);
@@ -1789,14 +1791,14 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                                         pCookedReadData->_CurrentPosition + 1,
                                         sScreenBufferSizeX - pCookedReadData->_OriginalCursorPosition.X,
                                         pCookedReadData->_OriginalCursorPosition.X,
-                                        TRUE))
+                                        true))
                 {
                     CursorPosition.X++;
                 }
                 CurrentPosition = CursorPosition;
                 if (pCookedReadData->_Echo)
                 {
-                    Status = AdjustCursorPosition(pCookedReadData->_pScreenInfo, CurrentPosition, TRUE, nullptr);
+                    Status = AdjustCursorPosition(pCookedReadData->_pScreenInfo, CurrentPosition, true, nullptr);
                     ASSERT(NT_SUCCESS(Status));
                 }
 
@@ -1818,7 +1820,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
 
     if (UpdateCursorPosition && pCookedReadData->_Echo)
     {
-        Status = AdjustCursorPosition(pCookedReadData->_pScreenInfo, CurrentPosition, TRUE, nullptr);
+        Status = AdjustCursorPosition(pCookedReadData->_pScreenInfo, CurrentPosition, true, nullptr);
         ASSERT(NT_SUCCESS(Status));
     }
 
@@ -1917,7 +1919,7 @@ void UpdateHighlight(_In_ PCLE_POPUP Popup,
 }
 
 void DrawCommandListPopup(_In_ PCLE_POPUP const Popup,
-                          _In_ SHORT const CurrentCommand,
+                          const SHORT CurrentCommand,
                           _In_ PCOMMAND_HISTORY const CommandHistory,
                           _In_ PSCREEN_INFORMATION const ScreenInfo)
 {
@@ -2047,7 +2049,7 @@ void UpdateCommandListPopup(_In_ SHORT Delta,
                             _In_ PCOMMAND_HISTORY const CommandHistory,
                             _In_ PCLE_POPUP Popup,
                             _In_ PSCREEN_INFORMATION const ScreenInfo,
-                            _In_ DWORD const Flags)
+                            const DWORD Flags)
 {
     if (Delta == 0)
     {
@@ -2080,7 +2082,7 @@ void UpdateCommandListPopup(_In_ SHORT Delta,
     }
     Delta = NewCmdNum - CurCmdNum;
 
-    BOOL Scroll = FALSE;
+    bool Scroll = false;
     // determine amount to scroll, if any
     if (NewCmdNum <= Popup->BottomIndex - Size)
     {
@@ -2089,7 +2091,7 @@ void UpdateCommandListPopup(_In_ SHORT Delta,
         {
             Popup->BottomIndex = (SHORT)(Size - 1);
         }
-        Scroll = TRUE;
+        Scroll = true;
     }
     else if (NewCmdNum > Popup->BottomIndex)
     {
@@ -2098,7 +2100,7 @@ void UpdateCommandListPopup(_In_ SHORT Delta,
         {
             Popup->BottomIndex = (SHORT)(CommandHistory->NumberOfCommands - 1);
         }
-        Scroll = TRUE;
+        Scroll = true;
     }
 
     // write commands to popup

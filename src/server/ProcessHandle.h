@@ -38,9 +38,9 @@ public:
      const ConsoleProcessPolicy GetPolicy() const;
 
 private:
-    ConsoleProcessHandle(_In_ DWORD const dwProcessId,
-                         _In_ DWORD const dwThreadId,
-                         _In_ ULONG const ulProcessGroupId);
+    ConsoleProcessHandle(const DWORD dwProcessId,
+                         const DWORD dwThreadId,
+                         const ULONG ulProcessGroupId);
     ~ConsoleProcessHandle();
 
     ULONG _ulTerminateCount;

@@ -21,9 +21,9 @@ RenderFontDefaults::~RenderFontDefaults()
 }
 
 [[nodiscard]]
-HRESULT RenderFontDefaults::RetrieveDefaultFontNameForCodepage(_In_ UINT const uiCodePage,
+HRESULT RenderFontDefaults::RetrieveDefaultFontNameForCodepage(const UINT uiCodePage,
                                                                _Out_writes_(cchFaceName) PWSTR pwszFaceName,
-                                                               _In_ size_t const cchFaceName)
+                                                               const size_t cchFaceName)
 {
     NTSTATUS status = TrueTypeFontList::s_SearchByCodePage(uiCodePage, pwszFaceName, cchFaceName);
     return HRESULT_FROM_NT(status);

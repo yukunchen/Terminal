@@ -30,9 +30,9 @@ static const WORD leftShiftScanCode = 0x2A;
 // Return Value:
 // - S_OK if succeeded or suitable HRESULT errors from memory allocation, safe math, or MultiByteToWideChar failures.
 [[nodiscard]]
-HRESULT ConvertToW(_In_ const UINT uiCodePage,
+HRESULT ConvertToW(const UINT uiCodePage,
                    _In_reads_or_z_(cchSource) const char* const rgchSource,
-                   _In_ size_t const cchSource,
+                   const size_t cchSource,
                    _Inout_ wistd::unique_ptr<wchar_t[]>& pwsTarget,
                    _Out_ size_t& cchTarget)
 {
@@ -79,7 +79,7 @@ HRESULT ConvertToW(_In_ const UINT uiCodePage,
 // Return Value:
 // - S_OK if succeeded or suitable HRESULT errors from memory allocation, safe math, or WideCharToMultiByte failures.
 [[nodiscard]]
-HRESULT ConvertToA(_In_ const UINT uiCodePage,
+HRESULT ConvertToA(const UINT uiCodePage,
                    _In_reads_or_z_(cchSource) const wchar_t* const rgwchSource,
                    _In_ size_t cchSource,
                    _Inout_ wistd::unique_ptr<char[]>& psTarget,
@@ -127,9 +127,9 @@ HRESULT ConvertToA(_In_ const UINT uiCodePage,
 // Return Value:
 // - S_OK if succeeded or suitable HRESULT errors from memory allocation, safe math, or WideCharToMultiByte failures.
 [[nodiscard]]
-HRESULT GetALengthFromW(_In_ const UINT uiCodePage,
+HRESULT GetALengthFromW(const UINT uiCodePage,
                         _In_reads_or_z_(cchSource) const wchar_t* const rgwchSource,
-                        _In_ size_t const cchSource,
+                        const size_t cchSource,
                         _Out_ size_t* const pcchTarget)
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, pcchTarget);
@@ -198,8 +198,8 @@ HRESULT GetDwordByteCount(_In_ size_t cchUnicode,
 // - returns a deque of converted chars
 // Note:
 // - will throw on error
-std::deque<char> ConvertToOem(_In_ const UINT codepage,
-                              _In_ const std::wstring& source)
+std::deque<char> ConvertToOem(const UINT codepage,
+                              const std::wstring& source)
 {
     std::deque<char> outChars;
     // no point in trying to convert an empty string
@@ -237,8 +237,8 @@ std::deque<char> ConvertToOem(_In_ const UINT codepage,
     return outChars;
 }
 
-std::deque<std::unique_ptr<KeyEvent>> CharToKeyEvents(_In_ const wchar_t wch,
-                                                      _In_ const unsigned int codepage)
+std::deque<std::unique_ptr<KeyEvent>> CharToKeyEvents(const wchar_t wch,
+                                                      const unsigned int codepage)
 {
     const short invalidKey = -1;
     short keyState = VkKeyScanW(wch);
@@ -286,7 +286,7 @@ std::deque<std::unique_ptr<KeyEvent>> CharToKeyEvents(_In_ const wchar_t wch,
 // - deque of KeyEvents that represent the wchar_t being typed
 // Note:
 // - will throw exception on error
-std::deque<std::unique_ptr<KeyEvent>> SynthesizeKeyboardEvents(_In_ const wchar_t wch, _In_ const short keyState)
+std::deque<std::unique_ptr<KeyEvent>> SynthesizeKeyboardEvents(const wchar_t wch, const short keyState)
 {
     const byte modifierState = HIBYTE(keyState);
 
@@ -371,7 +371,7 @@ std::deque<std::unique_ptr<KeyEvent>> SynthesizeKeyboardEvents(_In_ const wchar_
 // alt + numpad
 // Note:
 // - will throw exception on error
-std::deque<std::unique_ptr<KeyEvent>> SynthesizeNumpadEvents(_In_ const wchar_t wch, _In_ const unsigned int codepage)
+std::deque<std::unique_ptr<KeyEvent>> SynthesizeNumpadEvents(const wchar_t wch, const unsigned int codepage)
 {
     std::deque<std::unique_ptr<KeyEvent>> keyEvents;
 

@@ -27,7 +27,7 @@ const byte MostSignificantBitMask = 0x80;
 // - codePage - Starting code page to interpret input with.
 // Return Value:
 // - A new instance of the parser.
-Utf8ToWideCharParser::Utf8ToWideCharParser(_In_ const unsigned int codePage) :
+Utf8ToWideCharParser::Utf8ToWideCharParser(const unsigned int codePage) :
     _currentCodePage { codePage },
     _bytesStored { 0 },
     _currentState { _State::Ready },
@@ -43,7 +43,7 @@ Utf8ToWideCharParser::Utf8ToWideCharParser(_In_ const unsigned int codePage) :
 // - codePage - the code page to set to.
 // Return Value:
 // - <none>
-void Utf8ToWideCharParser::SetCodePage(_In_ const unsigned int codePage)
+void Utf8ToWideCharParser::SetCodePage(const unsigned int codePage)
 {
     if (_currentCodePage != codePage)
     {
@@ -186,7 +186,7 @@ bool Utf8ToWideCharParser::_IsAsciiByte(_In_ byte ch)
 // Return Value:
 // - true if the sequence starting at pLeadByte is a multi-byte
 // sequence and uses all of the remaining chars, false otherwise.
-bool Utf8ToWideCharParser::_IsValidMultiByteSequence(_In_reads_(cb) const byte* const pLeadByte, _In_ const unsigned int cb)
+bool Utf8ToWideCharParser::_IsValidMultiByteSequence(_In_reads_(cb) const byte* const pLeadByte, const unsigned int cb)
 {
     if (!_IsLeadByte(*pLeadByte))
     {
@@ -221,7 +221,7 @@ bool Utf8ToWideCharParser::_IsValidMultiByteSequence(_In_reads_(cb) const byte* 
 // Return Value:
 // - true if the sequence is a single partial multi-byte sequence,
 // false otherwise.
-bool Utf8ToWideCharParser::_IsPartialMultiByteSequence(_In_reads_(cb) const byte* const pLeadByte, _In_ const unsigned int cb)
+bool Utf8ToWideCharParser::_IsPartialMultiByteSequence(_In_reads_(cb) const byte* const pLeadByte, const unsigned int cb)
 {
     if (!_IsLeadByte(*pLeadByte))
     {
@@ -292,7 +292,7 @@ unsigned int Utf8ToWideCharParser::_Utf8SequenceSize(_In_ byte ch)
 // Return Value:
 // - The amount of wide chars that are stored in _convertedWideChars,
 // or 0 if pInputChars cannot be successfully converted.
-unsigned int Utf8ToWideCharParser::_ParseFullRange(_In_reads_(cb) const byte* const pInputChars, _In_ const unsigned int cb)
+unsigned int Utf8ToWideCharParser::_ParseFullRange(_In_reads_(cb) const byte* const pInputChars, const unsigned int cb)
 {
     int bufferSize = MultiByteToWideChar(_currentCodePage,
                                          MB_ERR_INVALID_CHARS,
@@ -350,7 +350,7 @@ unsigned int Utf8ToWideCharParser::_ParseFullRange(_In_reads_(cb) const byte* co
 // or 0 if pInputChars cannot be successfully converted or if the
 // parser requires additional bytes before returning a valid wide
 // char.
-unsigned int Utf8ToWideCharParser::_InvolvedParse(_In_reads_(cb) const byte* const pInputChars, _In_ const unsigned int cb)
+unsigned int Utf8ToWideCharParser::_InvolvedParse(_In_reads_(cb) const byte* const pInputChars, const unsigned int cb)
 {
     std::unique_ptr<byte[]> combinedInputBytes = std::make_unique<byte[]>(cb + _bytesStored);
     std::copy(_utf8CodePointPieces, _utf8CodePointPieces + _bytesStored, combinedInputBytes.get());
@@ -412,7 +412,7 @@ unsigned int Utf8ToWideCharParser::_InvolvedParse(_In_reads_(cb) const byte* con
 // Return Value:
 // - A std::pair containing the corrected byte sequence and the number
 // of bytes in the sequence.
-std::pair<std::unique_ptr<byte[]>, unsigned int> Utf8ToWideCharParser::_RemoveInvalidSequences(_In_reads_(cb) const byte* const pInputChars, _In_ const unsigned int cb)
+std::pair<std::unique_ptr<byte[]>, unsigned int> Utf8ToWideCharParser::_RemoveInvalidSequences(_In_reads_(cb) const byte* const pInputChars, const unsigned int cb)
 {
     std::unique_ptr<byte[]> validSequence = std::make_unique<byte[]>(cb);
     unsigned int validSequenceLocation = 0; // index into validSequence
@@ -478,7 +478,7 @@ std::pair<std::unique_ptr<byte[]>, unsigned int> Utf8ToWideCharParser::_RemoveIn
 // - cb - The amount of bytes to save.
 // Return Value:
 // - <none>
-void Utf8ToWideCharParser::_StorePartialSequence(_In_reads_(cb) const byte* const pLeadByte, _In_ const unsigned int cb)
+void Utf8ToWideCharParser::_StorePartialSequence(_In_reads_(cb) const byte* const pLeadByte, const unsigned int cb)
 {
     const unsigned int maxLength = std::min(cb, _UTF8_BYTE_SEQUENCE_MAX);
     std::copy(pLeadByte, pLeadByte + maxLength, _utf8CodePointPieces);

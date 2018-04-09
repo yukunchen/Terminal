@@ -92,7 +92,7 @@ HRESULT Icon::GetIcons(_Out_opt_ HICON* const phIcon, _Out_opt_ HICON* const phS
 // Return Value:
 // - S_OK or HRESULT failure code.
 [[nodiscard]]
-HRESULT Icon::SetIcons(_In_ HICON const hIcon, _In_ HICON const hSmIcon)
+HRESULT Icon::SetIcons(const HICON hIcon, const HICON hSmIcon)
 {
     HRESULT hr = _SetIconFromReference(_hIcon, hIcon);
 
@@ -134,7 +134,7 @@ HRESULT Icon::SetIcons(_In_ HICON const hIcon, _In_ HICON const hSmIcon)
 // Return Value:
 // - S_OK or HRESULT failure code.
 [[nodiscard]]
-HRESULT Icon::LoadIconsFromPath(_In_ PCWSTR pwszIconLocation, _In_  int const nIconIndex)
+HRESULT Icon::LoadIconsFromPath(_In_ PCWSTR pwszIconLocation, const  int nIconIndex)
 {
     HRESULT hr = S_OK;
 
@@ -162,7 +162,7 @@ HRESULT Icon::LoadIconsFromPath(_In_ PCWSTR pwszIconLocation, _In_  int const nI
 // Return Value:
 // - S_OK or HRESULT failure code.
 [[nodiscard]]
-HRESULT Icon::ApplyWindowMessageWorkaround(_In_ HWND const hwnd)
+HRESULT Icon::ApplyWindowMessageWorkaround(const HWND hwnd)
 {
     HICON hIcon;
     HICON hSmIcon;
@@ -305,7 +305,7 @@ HRESULT Icon::_GetDefaultIconFromReference(_In_ HICON& hIconRef, _Out_ HICON* co
 // Return Value:
 // - S_OK or HRESULT failure code.
 [[nodiscard]]
-HRESULT Icon::_SetIconFromReference(_In_ HICON& hIconRef, _In_ HICON const hNewIcon)
+HRESULT Icon::_SetIconFromReference(_In_ HICON& hIconRef, const HICON hNewIcon)
 {
     // expecting hIconRef to be pointing to either the regular or small custom handles
     ASSERT(&hIconRef == &_hIcon || &hIconRef == &_hSmIcon);

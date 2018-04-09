@@ -76,7 +76,7 @@ void RetrieveKeyInfo(_In_ HWND hWnd, _Out_ PWORD pwVirtualKeyCode, _Inout_ PWORD
     }
 }
 
-void ClearKeyInfo(_In_ const HWND hWnd)
+void ClearKeyInfo(const HWND hWnd)
 {
     for (UINT i = 0; i < CONSOLE_MAX_KEY_INFO; i++)
     {

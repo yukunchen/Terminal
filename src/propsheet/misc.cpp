@@ -112,7 +112,7 @@ DestroyFaceNodes(
 
 // TODO: Refactor into lib for use by both conhost and console.dll
 //       see http://osgvsowi/677457
-UINT GetCurrentDPI(_In_ const HWND hWnd, _In_ const BOOL fReturnYDPI)
+UINT GetCurrentDPI(const HWND hWnd, const BOOL fReturnYDPI)
 {
     UINT dpiX = 0;
     UINT dpiY = 0;
@@ -124,17 +124,17 @@ UINT GetCurrentDPI(_In_ const HWND hWnd, _In_ const BOOL fReturnYDPI)
     return (fReturnYDPI) ? dpiY : dpiX;
 }
 
-int GetDPIScaledPixelSize(_In_ const int px, _In_ const int iCurrentDPI)
+int GetDPIScaledPixelSize(const int px, const int iCurrentDPI)
 {
     return MulDiv(px, iCurrentDPI, 96);
 }
 
-int GetDPIYScaledPixelSize(_In_ const HWND hWnd, _In_ const int px)
+int GetDPIYScaledPixelSize(const HWND hWnd, const int px)
 {
     return GetDPIScaledPixelSize(px, GetCurrentDPI(hWnd, TRUE));
 }
 
-int GetDPIXScaledPixelSize(_In_ const HWND hWnd, _In_ const int px)
+int GetDPIXScaledPixelSize(const HWND hWnd, const int px)
 {
     return GetDPIScaledPixelSize(px, GetCurrentDPI(hWnd, FALSE));
 }
@@ -142,7 +142,7 @@ int GetDPIXScaledPixelSize(_In_ const HWND hWnd, _In_ const int px)
 // If we're running the V2 console, enumerate all of our TrueType fonts and rescale them as appropriate to match the
 // current monitor's DPI. This function gets triggered when either the DPI of a single monitor changes, or when the
 // properties dialog is moved between monitors of differing DPIs.
-void RecreateFontHandles(_In_ const HWND hWnd)
+void RecreateFontHandles(const HWND hWnd)
 {
     if (gpStateInfo->fIsV2Console)
     {

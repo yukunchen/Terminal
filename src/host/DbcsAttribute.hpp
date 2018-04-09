@@ -30,7 +30,7 @@ public:
     {
     }
 
-    DbcsAttribute(_In_ const Attribute attribute) :
+    DbcsAttribute(const Attribute attribute) :
         _attribute{ attribute }
     {
     }

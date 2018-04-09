@@ -38,7 +38,7 @@ SMALL_RECT GdiEngine::GetDirtyRectInChars()
 // Return Value:
 // - S_OK
 [[nodiscard]]
-HRESULT GdiEngine::IsCharFullWidthByFont(_In_ WCHAR const wch, _Out_ bool* const pResult)
+HRESULT GdiEngine::IsCharFullWidthByFont(const WCHAR wch, _Out_ bool* const pResult)
 {
     bool isFullWidth = false;
 
@@ -73,7 +73,7 @@ HRESULT GdiEngine::IsCharFullWidthByFont(_In_ WCHAR const wch, _Out_ bool* const
 // Return Value:
 // - S_OK or safe math failure value.
 [[nodiscard]]
-HRESULT GdiEngine::_ScaleByFont(_In_ const SMALL_RECT* const psr, _Out_ RECT* const prc) const
+HRESULT GdiEngine::_ScaleByFont(const SMALL_RECT* const psr, _Out_ RECT* const prc) const
 {
     COORD const coordFontSize = _GetFontSize();
     RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.X == 0 || coordFontSize.Y == 0);
@@ -97,7 +97,7 @@ HRESULT GdiEngine::_ScaleByFont(_In_ const SMALL_RECT* const psr, _Out_ RECT* co
 // Return Value:
 // - S_OK or safe math failure value.
 [[nodiscard]]
-HRESULT GdiEngine::_ScaleByFont(_In_ const COORD* const pcoord, _Out_ POINT* const pPoint) const
+HRESULT GdiEngine::_ScaleByFont(const COORD* const pcoord, _Out_ POINT* const pPoint) const
 {
     COORD const coordFontSize = _GetFontSize();
     RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.X == 0 || coordFontSize.Y == 0);
@@ -119,7 +119,7 @@ HRESULT GdiEngine::_ScaleByFont(_In_ const COORD* const pcoord, _Out_ POINT* con
 // Return Value:
 // - S_OK or safe math failure value.
 [[nodiscard]]
-HRESULT GdiEngine::_ScaleByFont(_In_ const RECT* const prc, _Out_ SMALL_RECT* const psr) const
+HRESULT GdiEngine::_ScaleByFont(const RECT* const prc, _Out_ SMALL_RECT* const psr) const
 {
     COORD const coordFontSize = _GetFontSize();
     RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.X == 0 || coordFontSize.Y == 0);
@@ -185,7 +185,7 @@ HRESULT GdiEngine::_ScaleByFont(_In_ const RECT* const prc, _Out_ SMALL_RECT* co
 // - iDpi - Given DPI scalar value
 // Return Value:
 // - Pixel measurement scaled against the given DPI scalar.
-int GdiEngine::s_ScaleByDpi(_In_ const int iPx, _In_ const int iDpi)
+int GdiEngine::s_ScaleByDpi(const int iPx, const int iDpi)
 {
     return MulDiv(iPx, iDpi, s_iBaseDpi);
 }
@@ -197,7 +197,7 @@ int GdiEngine::s_ScaleByDpi(_In_ const int iPx, _In_ const int iDpi)
 // - iDpi - Given DPI for pixel scaling
 // Return Value:
 // - Pixel length measurement.
-int GdiEngine::s_ShrinkByDpi(_In_ const int iPx, _In_ const int iDpi)
+int GdiEngine::s_ShrinkByDpi(const int iPx, const int iDpi)
 {
     return MulDiv(iPx, s_iBaseDpi, iDpi);
 }
@@ -234,7 +234,7 @@ SIZE GdiEngine::_GetInvalidRectSize() const
 // - Pixel region (RECT)
 // Return Value:
 // - Pixel dimensions (SIZE)
-SIZE GdiEngine::_GetRectSize(_In_ const RECT* const pRect) const
+SIZE GdiEngine::_GetRectSize(const RECT* const pRect) const
 {
     SIZE sz;
     sz.cx = pRect->right - pRect->left;
@@ -251,7 +251,7 @@ SIZE GdiEngine::_GetRectSize(_In_ const RECT* const pRect) const
 // - pRectToOr - Add this rectangle to the existing one.
 // Return Value:
 // - <none>
-void GdiEngine::_OrRect(_In_ RECT* const pRectExisting, _In_ const RECT* const pRectToOr) const
+void GdiEngine::_OrRect(_In_ RECT* const pRectExisting, const RECT* const pRectToOr) const
 {
     pRectExisting->left = std::min(pRectExisting->left, pRectToOr->left);
     pRectExisting->top = std::min(pRectExisting->top, pRectToOr->top);

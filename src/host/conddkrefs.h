@@ -161,7 +161,7 @@ extern "C"
         BOOLEAN
         CFORCEINLINE
         IsListEmpty(
-            _In_ const LIST_ENTRY * ListHead
+            const LIST_ENTRY * ListHead
         )
 
     {

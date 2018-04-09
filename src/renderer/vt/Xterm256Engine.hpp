@@ -23,18 +23,18 @@ namespace Microsoft::Console::Render
     {
     public:
         Xterm256Engine(_In_ wil::unique_hfile hPipe,
-                    _In_ const Microsoft::Console::IDefaultColorProvider& colorProvider,
-                    _In_ const Microsoft::Console::Types::Viewport initialViewport,
+                    const Microsoft::Console::IDefaultColorProvider& colorProvider,
+                    const Microsoft::Console::Types::Viewport initialViewport,
                     _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                    _In_ const WORD cColorTable);
+                    const WORD cColorTable);
 
         virtual ~Xterm256Engine() override = default;
 
         [[nodiscard]]
-        HRESULT UpdateDrawingBrushes(_In_ COLORREF const colorForeground,
-                                    _In_ COLORREF const colorBackground,
-                                    _In_ WORD const legacyColorAttribute,
-                                    _In_ bool const fIncludeBackgrounds) override;
+        HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
+                                    const COLORREF colorBackground,
+                                    const WORD legacyColorAttribute,
+                                    const bool fIncludeBackgrounds) override;
 
     private:
 

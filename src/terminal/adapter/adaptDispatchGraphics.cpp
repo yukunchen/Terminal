@@ -21,7 +21,7 @@ using namespace Microsoft::Console::VirtualTerminal;
 // - fIsForeground - True if we're modifying the FOREGROUND colors. False if we're doing BACKGROUND.
 // Return Value:
 // - <none>
-void AdaptDispatch::s_DisableAllColors(_Inout_ WORD* const pAttr, _In_ bool const fIsForeground)
+void AdaptDispatch::s_DisableAllColors(_Inout_ WORD* const pAttr, const bool fIsForeground)
 {
     if (fIsForeground)
     {
@@ -41,7 +41,7 @@ void AdaptDispatch::s_DisableAllColors(_Inout_ WORD* const pAttr, _In_ bool cons
 // - fIsForeground - TRUE = foreground color. FALSE = background color. Specifies which half of the bit field to reset and then apply wApplyThis upon.
 // Return Value:
 // - <none>
-void AdaptDispatch::s_ApplyColors(_Inout_ WORD* const pAttr, _In_ WORD const wApplyThis, _In_ bool const fIsForeground)
+void AdaptDispatch::s_ApplyColors(_Inout_ WORD* const pAttr, const WORD wApplyThis, const bool fIsForeground)
 {
     // Copy the new attribute to apply
     WORD wNewColors = wApplyThis;
@@ -70,7 +70,7 @@ void AdaptDispatch::s_ApplyColors(_Inout_ WORD* const pAttr, _In_ WORD const wAp
 // - pAttr - Pointer to the font attribute field to adjust
 // Return Value: 
 // - <none>
-void AdaptDispatch::_SetGraphicsOptionHelper(_In_ GraphicsOptions const opt, _Inout_ WORD* const pAttr)
+void AdaptDispatch::_SetGraphicsOptionHelper(const GraphicsOptions opt, _Inout_ WORD* const pAttr)
 {
     switch (opt)
     {
@@ -290,7 +290,7 @@ void AdaptDispatch::_SetGraphicsOptionHelper(_In_ GraphicsOptions const opt, _In
 //   These are followed by up to 4 more values which compose the entire option.
 // Return Value: 
 // - true if the opt is the indicator for an extended color sequence, false otherwise.
-bool AdaptDispatch::s_IsRgbColorOption(_In_ GraphicsOptions const opt)
+bool AdaptDispatch::s_IsRgbColorOption(const GraphicsOptions opt)
 {
     return opt == GraphicsOptions::ForegroundExtended || opt == GraphicsOptions::BackgroundExtended;
 }
@@ -316,7 +316,7 @@ bool AdaptDispatch::s_IsRgbColorOption(_In_ GraphicsOptions const opt)
 //     3 - true, parsed an xterm index to a color
 //     5 - true, parsed an RGB color.
 bool AdaptDispatch::_SetRgbColorsHelper(_In_reads_(cOptions) const GraphicsOptions* const rgOptions, 
-                          _In_ size_t const cOptions, 
+                          const size_t cOptions, 
                           _Out_ COLORREF* const prgbColor, 
                           _Out_ bool* const pfIsForeground, 
                           _Out_ size_t* const pcOptionsConsumed)
@@ -372,7 +372,7 @@ bool AdaptDispatch::_SetRgbColorsHelper(_In_reads_(cOptions) const GraphicsOptio
 // - cOptions - The count of options (a.k.a. the N in the above line of comments)
 // Return Value: 
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::SetGraphicsRendition(_In_reads_(cOptions) const GraphicsOptions* const rgOptions, _In_ size_t const cOptions)
+bool AdaptDispatch::SetGraphicsRendition(_In_reads_(cOptions) const GraphicsOptions* const rgOptions, const size_t cOptions)
 {
     // We use the private function here to get just the default color attributes as a performance optimization.
     // Calling the public GetConsoleScreenBufferInfoEx costs a lot of performance time/power in a tight loop

@@ -31,10 +31,10 @@ public:
 
     ~ConsoleWaitQueue();
 
-    bool NotifyWaiters(_In_ bool const fNotifyAll);
+    bool NotifyWaiters(const bool fNotifyAll);
 
-    bool NotifyWaiters(_In_ bool const fNotifyAll,
-                       _In_ WaitTerminationReason const TerminationReason);
+    bool NotifyWaiters(const bool fNotifyAll,
+                       const WaitTerminationReason TerminationReason);
 
     [[nodiscard]]
     static HRESULT s_CreateWait(_Inout_ CONSOLE_API_MSG* const pWaitReplyMessage,
@@ -42,7 +42,7 @@ public:
 
 private:
     bool _NotifyBlock(_In_ ConsoleWaitBlock* pWaitBlock,
-                      _In_ WaitTerminationReason const TerminationReason);
+                      const WaitTerminationReason TerminationReason);
 
     std::list<ConsoleWaitBlock*> _blocks;
 

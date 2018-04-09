@@ -10,9 +10,9 @@
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
 
-OutputCell::OutputCell(_In_ const wchar_t charData,
-                       _In_ const DbcsAttribute dbcsAttribute,
-                       _In_ const TextAttribute textAttribute) noexcept :
+OutputCell::OutputCell(const wchar_t charData,
+                       const DbcsAttribute dbcsAttribute,
+                       const TextAttribute textAttribute) noexcept :
     _charData{ charData },
     _dbcsAttribute{ dbcsAttribute },
     _textAttribute{ textAttribute }

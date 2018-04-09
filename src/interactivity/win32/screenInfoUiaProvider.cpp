@@ -20,7 +20,7 @@ using namespace Microsoft::Console::Interactivity::Win32;
 using namespace Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProviderTracing;
 
 // A helper function to create a SafeArray Version of an int array of a specified length
-SAFEARRAY* BuildIntSafeArray(_In_reads_(length) const int* const data, _In_ int const length)
+SAFEARRAY* BuildIntSafeArray(_In_reads_(length) const int* const data, const int length)
 {
     SAFEARRAY *psa = SafeArrayCreateVector(VT_I4, 0, length);
     if (psa != nullptr)

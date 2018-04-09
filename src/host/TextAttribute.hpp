@@ -23,8 +23,8 @@ class TextAttribute final
 {
 public:
     TextAttribute();
-    TextAttribute(_In_ const WORD wLegacyAttr);
-    TextAttribute(_In_ const COLORREF rgbForeground, _In_ const COLORREF rgbBackground);
+    TextAttribute(const WORD wLegacyAttr);
+    TextAttribute(const COLORREF rgbForeground, const COLORREF rgbBackground);
 
     WORD GetLegacyAttributes() const;
 
@@ -42,18 +42,18 @@ public:
     bool IsLeftVerticalDisplayed() const;
     bool IsRightVerticalDisplayed() const;
 
-    void SetFromLegacy(_In_ const WORD wLegacy);
-    void SetMetaAttributes(_In_ const WORD wMeta);
+    void SetFromLegacy(const WORD wLegacy);
+    void SetMetaAttributes(const WORD wMeta);
 
-    void SetFrom(_In_ const TextAttribute& otherAttr);
-    bool IsEqual(_In_ const TextAttribute& otherAttr) const;
-    bool IsEqualToLegacy(_In_ const WORD wLegacy) const;
+    void SetFrom(const TextAttribute& otherAttr);
+    bool IsEqual(const TextAttribute& otherAttr) const;
+    bool IsEqualToLegacy(const WORD wLegacy) const;
 
     bool IsLegacy() const;
 
-    void SetForeground(_In_ const COLORREF rgbForeground);
-    void SetBackground(_In_ const COLORREF rgbBackground);
-    void SetColor(_In_ const COLORREF rgbColor, _In_ const bool fIsForeground);
+    void SetForeground(const COLORREF rgbForeground);
+    void SetBackground(const COLORREF rgbBackground);
+    void SetColor(const COLORREF rgbColor, const bool fIsForeground);
 
 private:
     COLORREF _GetRgbForeground() const;

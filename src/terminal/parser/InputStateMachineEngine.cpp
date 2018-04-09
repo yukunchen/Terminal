@@ -86,7 +86,7 @@ InputStateMachineEngine::InputStateMachineEngine(_In_ std::unique_ptr<IInteractD
     InputStateMachineEngine(std::move(pDispatch), false)
 {}
 
-InputStateMachineEngine::InputStateMachineEngine(_In_ std::unique_ptr<IInteractDispatch> pDispatch, _In_ const bool lookingForDSR) :
+InputStateMachineEngine::InputStateMachineEngine(_In_ std::unique_ptr<IInteractDispatch> pDispatch, const bool lookingForDSR) :
     _pDispatch(std::move(pDispatch)),
     _lookingForDSR(lookingForDSR)
 {
@@ -99,7 +99,7 @@ InputStateMachineEngine::InputStateMachineEngine(_In_ std::unique_ptr<IInteractD
 // - wch - Character to dispatch.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool InputStateMachineEngine::ActionExecute(_In_ wchar_t const wch)
+bool InputStateMachineEngine::ActionExecute(const wchar_t wch)
 {
     bool fSuccess = false;
     if (wch == UNICODE_ETX)
@@ -178,7 +178,7 @@ bool InputStateMachineEngine::ActionExecute(_In_ wchar_t const wch)
 // - wch - Character to dispatch.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool InputStateMachineEngine::ActionPrint(_In_ wchar_t const wch)
+bool InputStateMachineEngine::ActionPrint(const wchar_t wch)
 {
     short vkey = 0;
     DWORD dwModifierState = 0;
@@ -199,7 +199,7 @@ bool InputStateMachineEngine::ActionPrint(_In_ wchar_t const wch)
 // Return Value:
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionPrintString(_Inout_updates_(cch) wchar_t* const rgwch,
-                                                _In_ size_t const cch)
+                                                const size_t cch)
 {
     if (cch == 0)
     {
@@ -219,9 +219,9 @@ bool InputStateMachineEngine::ActionPrintString(_Inout_updates_(cch) wchar_t* co
 // - wchIntermediate - Intermediate character in the sequence, if there was one.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool InputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch,
-                                                _In_ const unsigned short /*cIntermediate*/,
-                                                _In_ const wchar_t /*wchIntermediate*/)
+bool InputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
+                                                const unsigned short /*cIntermediate*/,
+                                                const wchar_t /*wchIntermediate*/)
 {
     DWORD dwModifierState = 0;
     short vk = 0;
@@ -249,11 +249,11 @@ bool InputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch,
 // - cParams - number of parameters found.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
-                                                _In_ const unsigned short /*cIntermediate*/,
-                                                _In_ const wchar_t /*wchIntermediate*/,
+bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
+                                                const unsigned short /*cIntermediate*/,
+                                                const wchar_t /*wchIntermediate*/,
                                                 _In_reads_(cParams) const unsigned short* const rgusParams,
-                                                _In_ const unsigned short cParams)
+                                                const unsigned short cParams)
 {
     DWORD dwModifierState = 0;
     short vkey = 0;
@@ -362,9 +362,9 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
 // - cParams - number of parameters found.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool InputStateMachineEngine::ActionSs3Dispatch(_In_ wchar_t const wch,
+bool InputStateMachineEngine::ActionSs3Dispatch(const wchar_t wch,
                                                 _In_reads_(_Param_(3)) const unsigned short* const /*rgusParams*/,
-                                                _In_ const unsigned short /*cParams*/)
+                                                const unsigned short /*cParams*/)
 {
     // Ss3 sequence keys aren't modified.
     // When F1-F4 *are* modified, they're sent as CSI sequences, not SS3's.
@@ -415,10 +415,10 @@ bool InputStateMachineEngine::ActionIgnore()
 // - cchOscString - length of pwchOscStringBuffer
 // Return Value:
 // - true if we handled the dsipatch.
-bool InputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const /*wch*/,
-                                                _In_ const unsigned short /*sOscParam*/,
+bool InputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
+                                                const unsigned short /*sOscParam*/,
                                                 _Inout_updates_(_Param_(4)) wchar_t* const /*pwchOscStringBuffer*/,
-                                                _In_ const unsigned short /*cchOscString*/)
+                                                const unsigned short /*cchOscString*/)
 {
     return false;
 }
@@ -438,11 +438,11 @@ bool InputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const /*wch*/,
 // - cInput - the size of rgInput. This should be at least WRAPPED_SEQUENCE_MAX_LENGTH
 // Return Value:
 // - the number of records written, or 0 if the buffer wasn't big enough.
-size_t InputStateMachineEngine::_GenerateWrappedSequence(_In_ const wchar_t wch,
-                                                         _In_ const short vkey,
-                                                         _In_ const DWORD dwModifierState,
+size_t InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch,
+                                                         const short vkey,
+                                                         const DWORD dwModifierState,
                                                          _Inout_updates_(cInput) INPUT_RECORD* rgInput,
-                                                         _In_ const size_t cInput)
+                                                         const size_t cInput)
 {
     // TODO: Reuse the clipboard functions for generating input for characters
     //       that aren't on the current keyboard.
@@ -568,11 +568,11 @@ size_t InputStateMachineEngine::_GenerateWrappedSequence(_In_ const wchar_t wch,
 // - cRecords - the size of rgInput
 // Return Value:
 // - the number of input records written.
-size_t InputStateMachineEngine::_GetSingleKeypress(_In_ const wchar_t wch,
-                                                   _In_ const short vkey,
-                                                   _In_ const DWORD dwModifierState,
+size_t InputStateMachineEngine::_GetSingleKeypress(const wchar_t wch,
+                                                   const short vkey,
+                                                   const DWORD dwModifierState,
                                                    _Inout_updates_(cRecords) INPUT_RECORD* const rgInput,
-                                                   _In_ const size_t cRecords)
+                                                   const size_t cRecords)
 {
     assert(cRecords >= 2);
     if (cRecords < 2)
@@ -605,7 +605,7 @@ size_t InputStateMachineEngine::_GetSingleKeypress(_In_ const wchar_t wch,
 // - dwModifierState - the modifier state to write with the key.
 // Return Value:
 // - true iff we successfully wrote the keypress to the input callback.
-bool InputStateMachineEngine::_WriteSingleKey(_In_ const wchar_t wch, _In_ const short vkey, _In_ const DWORD dwModifierState)
+bool InputStateMachineEngine::_WriteSingleKey(const wchar_t wch, const short vkey, const DWORD dwModifierState)
 {
     // At most 8 records - 2 for each of shift,ctrl,alt up and down, and 2 for the actual key up and down.
     INPUT_RECORD rgInput[WRAPPED_SEQUENCE_MAX_LENGTH];
@@ -624,7 +624,7 @@ bool InputStateMachineEngine::_WriteSingleKey(_In_ const wchar_t wch, _In_ const
 // - dwModifierState - the modifier state to write with the key.
 // Return Value:
 // - true iff we successfully wrote the keypress to the input callback.
-bool InputStateMachineEngine::_WriteSingleKey(_In_ const short vkey, _In_ const DWORD dwModifierState)
+bool InputStateMachineEngine::_WriteSingleKey(const short vkey, const DWORD dwModifierState)
 {
     wchar_t wch = (wchar_t)MapVirtualKey(vkey, MAPVK_VK_TO_CHAR);
     return _WriteSingleKey(wch, vkey, dwModifierState);
@@ -638,7 +638,7 @@ bool InputStateMachineEngine::_WriteSingleKey(_In_ const short vkey, _In_ const 
 // - cParams - the number of elements in rgusParams
 // Return Value:
 // - the INPUT_RECORD comaptible modifier state.
-DWORD InputStateMachineEngine::_GetCursorKeysModifierState(_In_reads_(cParams) const unsigned short* const rgusParams, _In_ const unsigned short cParams)
+DWORD InputStateMachineEngine::_GetCursorKeysModifierState(_In_reads_(cParams) const unsigned short* const rgusParams, const unsigned short cParams)
 {
     // Both Cursor keys and generic keys keep their modifiers in the same index.
     return _GetGenericKeysModifierState(rgusParams, cParams);
@@ -652,7 +652,7 @@ DWORD InputStateMachineEngine::_GetCursorKeysModifierState(_In_reads_(cParams) c
 // - cParams - the number of elements in rgusParams
 // Return Value:
 // - the INPUT_RECORD compatible modifier state.
-DWORD InputStateMachineEngine::_GetGenericKeysModifierState(_In_reads_(cParams) const unsigned short* const rgusParams, _In_ const unsigned short cParams)
+DWORD InputStateMachineEngine::_GetGenericKeysModifierState(_In_reads_(cParams) const unsigned short* const rgusParams, const unsigned short cParams)
 {
     DWORD dwModifiers = 0;
     if (_IsModified(cParams) && cParams >=2)
@@ -668,7 +668,7 @@ DWORD InputStateMachineEngine::_GetGenericKeysModifierState(_In_reads_(cParams) 
 // - cParams - the nummber of parameters we've collected in this sequence
 // Return Value:
 // - true iff the sequence is a modified sequence.
-bool InputStateMachineEngine::_IsModified(_In_ const unsigned short cParams)
+bool InputStateMachineEngine::_IsModified(const unsigned short cParams)
 {
     // modified input either looks like
     // \x1b[1;mA or \x1b[17;m~
@@ -682,7 +682,7 @@ bool InputStateMachineEngine::_IsModified(_In_ const unsigned short cParams)
 // - modifierParam - the VT modifier value to convert
 // Return Value:
 // - The equivalent INPUT_RECORD modifier value.
-DWORD InputStateMachineEngine::_GetModifier(_In_ const unsigned short modifierParam)
+DWORD InputStateMachineEngine::_GetModifier(const unsigned short modifierParam)
 {
     // VT Modifiers are 1+(modifier flags)
     unsigned short vtParam = modifierParam-1;
@@ -704,7 +704,7 @@ DWORD InputStateMachineEngine::_GetModifier(_In_ const unsigned short modifierPa
 // - pVkey: Recieves the vkey
 // Return Value:
 // true iff we found the key
-bool InputStateMachineEngine::_GetGenericVkey(_In_reads_(cParams) const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_ short* const pVkey) const
+bool InputStateMachineEngine::_GetGenericVkey(_In_reads_(cParams) const unsigned short* const rgusParams, const unsigned short cParams, _Out_ short* const pVkey) const
 {
     *pVkey = 0;
     if (cParams < 1)
@@ -732,7 +732,7 @@ bool InputStateMachineEngine::_GetGenericVkey(_In_reads_(cParams) const unsigned
 // - pVkey: Recieves the vkey
 // Return Value:
 // true iff we found the key
-bool InputStateMachineEngine::_GetCursorKeysVkey(_In_ const wchar_t wch, _Out_ short* const pVkey) const
+bool InputStateMachineEngine::_GetCursorKeysVkey(const wchar_t wch, _Out_ short* const pVkey) const
 {
     *pVkey = 0;
     for(int i = 0; i < ARRAYSIZE(s_rgCsiMap); i++)
@@ -755,7 +755,7 @@ bool InputStateMachineEngine::_GetCursorKeysVkey(_In_ const wchar_t wch, _Out_ s
 // - pVkey: Recieves the vkey
 // Return Value:
 // true iff we found the key
-bool InputStateMachineEngine::_GetSs3KeysVkey(_In_ const wchar_t wch, _Out_ short* const pVkey) const
+bool InputStateMachineEngine::_GetSs3KeysVkey(const wchar_t wch, _Out_ short* const pVkey) const
 {
     *pVkey = 0;
     for(int i = 0; i < ARRAYSIZE(s_rgSs3Map); i++)
@@ -779,7 +779,7 @@ bool InputStateMachineEngine::_GetSs3KeysVkey(_In_ const wchar_t wch, _Out_ shor
 // - pdwModifierState: Recieves the modifier state
 // Return Value:
 // <none>
-bool InputStateMachineEngine::_GenerateKeyFromChar(_In_ const wchar_t wch,
+bool InputStateMachineEngine::_GenerateKeyFromChar(const wchar_t wch,
                                                    _Out_ short* const pVkey,
                                                    _Out_ DWORD* const pdwModifierState)
 {
@@ -836,7 +836,7 @@ bool InputStateMachineEngine::FlushAtEndOfString() const
 // Return Value:
 // - True iff we successfully pulled the function type from the parameters
 bool InputStateMachineEngine::_GetWindowManipulationType(_In_reads_(cParams) const unsigned short* const rgusParams,
-                                                         _In_ const unsigned short cParams,
+                                                         const unsigned short cParams,
                                                          _Out_ unsigned int* const puiFunction) const
 {
     bool fSuccess = false;
@@ -871,7 +871,7 @@ bool InputStateMachineEngine::_GetWindowManipulationType(_In_reads_(cParams) con
 // - True if we successfully pulled the cursor coordinates from the parameters we've stored. False otherwise.
 _Success_(return)
 bool InputStateMachineEngine::_GetXYPosition(_In_reads_(cParams) const unsigned short* const rgusParams,
-                                             _In_ const unsigned short cParams,
+                                             const unsigned short cParams,
                                              _Out_ unsigned int* const puiLine,
                                              _Out_ unsigned int* const puiColumn) const
 {
