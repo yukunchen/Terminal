@@ -58,7 +58,7 @@ const void RenderData::GetColorTable(_Outptr_result_buffer_all_(*pcColors) COLOR
 const Cursor* RenderData::GetCursor()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.CurrentScreenBuffer->GetTextBuffer().GetCursor();
+    return &gci.CurrentScreenBuffer->GetTextBuffer().GetCursor();
 }
 
 const ConsoleImeInfo* RenderData::GetImeData()

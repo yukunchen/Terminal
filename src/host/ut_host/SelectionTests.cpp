@@ -465,8 +465,8 @@ class SelectionInputTests
         // backup text info position over remainder of text execution duration
         TEXT_BUFFER_INFO& textBuffer = gci.CurrentScreenBuffer->GetTextBuffer();
         COORD coordOldTextInfoPos;
-        coordOldTextInfoPos.X = textBuffer.GetCursor()->GetPosition().X;
-        coordOldTextInfoPos.Y = textBuffer.GetCursor()->GetPosition().Y;
+        coordOldTextInfoPos.X = textBuffer.GetCursor().GetPosition().X;
+        coordOldTextInfoPos.Y = textBuffer.GetCursor().GetPosition().Y;
 
         // set various cursor positions
         pCooked->_OriginalCursorPosition.X = 15;
@@ -474,8 +474,8 @@ class SelectionInputTests
 
         pCooked->_NumberOfVisibleChars = 200;
 
-        textBuffer.GetCursor()->SetXPosition(35);
-        textBuffer.GetCursor()->SetYPosition(35);
+        textBuffer.GetCursor().SetXPosition(35);
+        textBuffer.GetCursor().SetYPosition(35);
 
         // try getting boundaries with no pointers. parameters should be fully optional.
         fResult = Selection::s_GetInputLineBoundaries(nullptr, nullptr);
@@ -511,12 +511,12 @@ class SelectionInputTests
         fResult = Selection::s_GetInputLineBoundaries(nullptr, &coordEnd);
         VERIFY_IS_TRUE(fResult);
 
-        VERIFY_ARE_EQUAL(coordEnd.X, textBuffer.GetCursor()->GetPosition().X - 1); // -1 to be on the last piece of text, not past it
-        VERIFY_ARE_EQUAL(coordEnd.Y, textBuffer.GetCursor()->GetPosition().Y);
+        VERIFY_ARE_EQUAL(coordEnd.X, textBuffer.GetCursor().GetPosition().X - 1); // -1 to be on the last piece of text, not past it
+        VERIFY_ARE_EQUAL(coordEnd.Y, textBuffer.GetCursor().GetPosition().Y);
 
         // restore text buffer info position
-        textBuffer.GetCursor()->SetXPosition(coordOldTextInfoPos.X);
-        textBuffer.GetCursor()->SetYPosition(coordOldTextInfoPos.Y);
+        textBuffer.GetCursor().SetXPosition(coordOldTextInfoPos.X);
+        textBuffer.GetCursor().SetYPosition(coordOldTextInfoPos.Y);
         // clean up read data
         m_state->CleanupCookedReadData();
     }

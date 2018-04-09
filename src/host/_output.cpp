@@ -34,7 +34,7 @@ void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
                                const bool fWasLineWrapped)
 {
     DBGOUTPUT(("StreamWriteToScreenBuffer\n"));
-    COORD const TargetPoint = pScreenInfo->GetTextBuffer().GetCursor()->GetPosition();
+    COORD const TargetPoint = pScreenInfo->GetTextBuffer().GetCursor().GetPosition();
     ROW& Row = pScreenInfo->GetTextBuffer().GetRowByOffset(TargetPoint.Y);
     DBGOUTPUT(("&Row = 0x%p, TargetPoint = (0x%x,0x%x)\n", &Row, TargetPoint.X, TargetPoint.Y));
 

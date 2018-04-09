@@ -101,7 +101,7 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
     ConsoleImeInfo* const ConsoleIme = &gci.ConsoleIme;
     PSCREEN_INFORMATION const ScreenInfo = gci.CurrentScreenBuffer;
 
-    COORD Position = ScreenInfo->GetTextBuffer().GetCursor()->GetPosition();
+    COORD Position = ScreenInfo->GetTextBuffer().GetCursor().GetPosition();
     COORD WindowOrigin;
     {
         const SMALL_RECT currentViewport = ScreenInfo->GetBufferViewport();
@@ -109,8 +109,8 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
         if ((currentViewport.Left <= Position.X && Position.X <= currentViewport.Right) &&
             (currentViewport.Top <= Position.Y && Position.Y <= currentViewport.Bottom))
         {
-            Position.X = ScreenInfo->GetTextBuffer().GetCursor()->GetPosition().X - currentViewport.Left;
-            Position.Y = ScreenInfo->GetTextBuffer().GetCursor()->GetPosition().Y - currentViewport.Top;
+            Position.X = ScreenInfo->GetTextBuffer().GetCursor().GetPosition().X - currentViewport.Left;
+            Position.Y = ScreenInfo->GetTextBuffer().GetCursor().GetPosition().Y - currentViewport.Top;
         }
         else
         {
@@ -171,7 +171,7 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
         }
         ConvAreaInfo = ConsoleIme->ConvAreaCompStr[ConvAreaIndex].get();
         PSCREEN_INFORMATION const ConvScreenInfo = ConvAreaInfo->ScreenBuffer;
-        ConvScreenInfo->GetTextBuffer().GetCursor()->SetXPosition(Position.X);
+        ConvScreenInfo->GetTextBuffer().GetCursor().SetXPosition(Position.X);
 
         if (ConvAreaInfo->IsHidden() || (UndetAreaUp))
         {
@@ -183,7 +183,7 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
         }
 
         SMALL_RECT Region;
-        Region.Left = ConvScreenInfo->GetTextBuffer().GetCursor()->GetPosition().X;
+        Region.Left = ConvScreenInfo->GetTextBuffer().GetCursor().GetPosition().X;
         Region.Top = 0;
         Region.Bottom = 0;
 
@@ -261,7 +261,7 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
 
                 StreamWriteToScreenBufferIME(LocalBuffer, currentBufferIndex, ConvScreenInfo, dbcsAttributes);
 
-                ConvScreenInfo->GetTextBuffer().GetCursor()->IncrementXPosition(static_cast<int>(currentBufferIndex));
+                ConvScreenInfo->GetTextBuffer().GetCursor().IncrementXPosition(static_cast<int>(currentBufferIndex));
 
                 if (NumChars == BufferSize ||
                     Position.X >= ScreenInfo->GetScreenWindowSizeX() ||
@@ -270,7 +270,7 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
                       Position.X >= ScreenInfo->GetScreenWindowSizeX() - 1)))
                 {
 
-                    Region.Right = (SHORT)(ConvScreenInfo->GetTextBuffer().GetCursor()->GetPosition().X - 1);
+                    Region.Right = (SHORT)(ConvScreenInfo->GetTextBuffer().GetCursor().GetPosition().X - 1);
                     ConsoleImeWindowInfo(ConvAreaInfo, Region);
 
                     ConvAreaInfo->SetHidden(false);
@@ -345,7 +345,7 @@ NTSTATUS FillUndetermineChars(_In_ ConversionAreaInfo* const ConvAreaInfo)
 NTSTATUS ConsoleImeCompStr(_In_ LPCONIME_UICOMPMESSAGE CompStr)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    Cursor* pCursor = gci.CurrentScreenBuffer->GetTextBuffer().GetCursor();
+    const Cursor& cursor = gci.CurrentScreenBuffer->GetTextBuffer().GetCursor();
     ConsoleImeInfo* const pIme = &gci.ConsoleIme;
 
     if (CompStr->dwCompStrLen == 0 || CompStr->dwResultStrLen != 0)
@@ -356,10 +356,10 @@ NTSTATUS ConsoleImeCompStr(_In_ LPCONIME_UICOMPMESSAGE CompStr)
             pIme->SavedCursorVisible = FALSE;
 
             gci.CurrentScreenBuffer->SetCursorInformation(
-                pCursor->GetSize(),
+                cursor.GetSize(),
                 TRUE,
-                pCursor->GetColor(),
-                pCursor->GetType()
+                cursor.GetColor(),
+                cursor.GetType()
             );
 
         }
@@ -396,15 +396,15 @@ NTSTATUS ConsoleImeCompStr(_In_ LPCONIME_UICOMPMESSAGE CompStr)
         PWORD lpAtrIdx;
 
         // Cursor turn OFF.
-        if (pCursor->IsVisible())
+        if (cursor.IsVisible())
         {
             pIme->SavedCursorVisible = TRUE;
 
             gci.CurrentScreenBuffer->SetCursorInformation(
-                pCursor->GetSize(),
+                cursor.GetSize(),
                 FALSE,
-                pCursor->GetColor(),
-                pCursor->GetType()
+                cursor.GetColor(),
+                cursor.GetType()
             );
 
         }
@@ -689,10 +689,9 @@ bool InsertConvertedString(_In_ LPCWSTR lpStr)
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     bool fResult = false;
 
-    if (gci.CurrentScreenBuffer->GetTextBuffer().GetCursor()->IsOn())
+    if (gci.CurrentScreenBuffer->GetTextBuffer().GetCursor().IsOn())
     {
-        gci.CurrentScreenBuffer->GetTextBuffer().GetCursor()
-            ->TimerRoutine(gci.CurrentScreenBuffer);
+        gci.CurrentScreenBuffer->GetTextBuffer().GetCursor().TimerRoutine(gci.CurrentScreenBuffer);
     }
 
     const DWORD dwControlKeyState = GetControlKeyState(0);
@@ -733,7 +732,7 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
 {
     DBGOUTPUT(("StreamWriteToScreenBuffer\n"));
 
-    COORD TargetPoint = ScreenInfo->GetTextBuffer().GetCursor()->GetPosition();
+    COORD TargetPoint = ScreenInfo->GetTextBuffer().GetCursor().GetPosition();
 
     ROW& Row = ScreenInfo->GetTextBuffer().GetRowByOffset(TargetPoint.Y);
     DBGOUTPUT(("&Row = 0x%p, TargetPoint = (0x%x,0x%x)\n", &Row, TargetPoint.X, TargetPoint.Y));

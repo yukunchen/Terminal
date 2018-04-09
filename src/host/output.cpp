@@ -1026,7 +1026,7 @@ void SetActiveScreenBuffer(_Inout_ PSCREEN_INFORMATION pScreenInfo)
     gci.CurrentScreenBuffer = pScreenInfo;
 
     // initialize cursor
-    pScreenInfo->GetTextBuffer().GetCursor()->SetIsOn(false);
+    pScreenInfo->GetTextBuffer().GetCursor().SetIsOn(false);
 
     // set font
     pScreenInfo->RefreshFontWithRenderer();

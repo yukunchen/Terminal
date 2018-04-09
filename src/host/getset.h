@@ -91,9 +91,9 @@ void DoSrvPrivateSetConsoleRGBTextAttribute(_In_ SCREEN_INFORMATION* const pScre
 [[nodiscard]]
 NTSTATUS DoSrvPrivateEraseAll(_In_ SCREEN_INFORMATION* const pScreenInfo);
 
-void DoSrvSetCursorStyle(const SCREEN_INFORMATION* const pScreenInfo,
+void DoSrvSetCursorStyle(SCREEN_INFORMATION* const pScreenInfo,
                          const CursorType cursorType);
-void DoSrvSetCursorColor(const SCREEN_INFORMATION* const pScreenInfo,
+void DoSrvSetCursorColor(SCREEN_INFORMATION* const pScreenInfo,
                          const COLORREF cursorColor);
 
 [[nodiscard]]

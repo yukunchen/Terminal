@@ -172,12 +172,12 @@ UiaTextRange* UiaTextRange::Create(_In_ IRawElementProviderSimple* const pProvid
 }
 
 UiaTextRange* UiaTextRange::Create(_In_ IRawElementProviderSimple* const pProvider,
-                                   const Cursor* const pCursor)
+                                   const Cursor cursor)
 {
     UiaTextRange* range = nullptr;
     try
     {
-        range = new UiaTextRange(pProvider, pCursor);
+        range = new UiaTextRange(pProvider, cursor);
     }
     catch (...)
     {
@@ -255,13 +255,11 @@ UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider) :
 }
 
 UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                           const Cursor* const pCursor) :
+                           const Cursor cursor) :
     UiaTextRange(pProvider)
 {
-    THROW_HR_IF_NULL(E_POINTER, pCursor);
-
     _degenerate = true;
-    _start = _screenInfoRowToEndpoint(pCursor->GetPosition().Y) + pCursor->GetPosition().X;
+    _start = _screenInfoRowToEndpoint(cursor.GetPosition().Y) + cursor.GetPosition().X;
     _end = _start;
 
 #if defined(_DEBUG) && defined(UIATEXTRANGE_DEBUG_MSGS)

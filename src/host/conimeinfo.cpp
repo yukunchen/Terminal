@@ -38,7 +38,7 @@ ConversionAreaInfo::ConversionAreaInfo(const COORD bufferSize,
     if (NT_SUCCESS(status))
     {
         // Suppress painting notifications for modifying a conversion area cursor as they're not actually rendered.
-        pNewScreen->GetTextBuffer().GetCursor()->SetIsConversionArea(true);
+        pNewScreen->GetTextBuffer().GetCursor().SetIsConversionArea(true);
         pNewScreen->ConvScreenInfo = this;
         ScreenBuffer = pNewScreen;
     }

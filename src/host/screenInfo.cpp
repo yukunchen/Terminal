@@ -376,7 +376,7 @@ void SCREEN_INFORMATION::GetScreenBufferInformation(_Out_ PCOORD pcoordSize,
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     *pcoordSize = GetScreenBufferSize();
 
-    *pcoordCursorPosition = TextInfo->GetCursor()->GetPosition();
+    *pcoordCursorPosition = TextInfo->GetCursor().GetPosition();
 
     *psrWindow = _viewport.ToInclusive();
 
@@ -1040,14 +1040,14 @@ HRESULT SCREEN_INFORMATION::_AdjustScreenBuffer(const RECT* const prcClientNew)
         // TODO: Deleting and redrawing the command line during resizing can cause flickering. See: http://osgvsowi/658439
         // 1. Delete input string if necessary (see menu.c)
         pCommandLine->Hide(FALSE);
-        TextInfo->GetCursor()->SetIsVisible(false);
+        TextInfo->GetCursor().SetIsVisible(false);
 
         // 2. Call the resize screen buffer method (expensive) to redimension the backing buffer (and reflow)
         LOG_IF_FAILED(ResizeScreenBuffer(coordBufferSizeNew, FALSE));
 
         // 3.  Reprint console input string
         pCommandLine->Show();
-        TextInfo->GetCursor()->SetIsVisible(true);
+        TextInfo->GetCursor().SetIsVisible(true);
     }
 
     return S_OK;
@@ -1434,17 +1434,17 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
     }
 
     // Save cursor's relative height versus the viewport
-    SHORT const sCursorHeightInViewportBefore = TextInfo->GetCursor()->GetPosition().Y - _viewport.Top();
+    SHORT const sCursorHeightInViewportBefore = TextInfo->GetCursor().GetPosition().Y - _viewport.Top();
 
-    Cursor* const pOldCursor = TextInfo->GetCursor();
-    Cursor* const pNewCursor = newTextBuffer->GetCursor();
+    Cursor& oldCursor = TextInfo->GetCursor();
+    Cursor& newCursor = newTextBuffer->GetCursor();
     // skip any drawing updates that might occur as we manipulate the new buffer
-    pNewCursor->StartDeferDrawing();
+    newCursor.StartDeferDrawing();
 
     // We need to save the old cursor position so that we can
     // place the new cursor back on the equivalent character in
     // the new buffer.
-    COORD cOldCursorPos = pOldCursor->GetPosition();
+    COORD cOldCursorPos = oldCursor.GetPosition();
     COORD cOldLastChar = TextInfo->GetLastNonSpaceCharacter();
 
     short const cOldRowsTotal = cOldLastChar.Y + 1;
@@ -1515,7 +1515,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
 
             if (iOldCol == cOldCursorPos.X && iOldRow == cOldCursorPos.Y)
             {
-                cNewCursorPos = pNewCursor->GetPosition();
+                cNewCursorPos = newCursor.GetPosition();
                 fFoundCursorPos = true;
             }
 
@@ -1537,7 +1537,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
             {
                 if (iRight == cOldCursorPos.X && iOldRow == cOldCursorPos.Y)
                 {
-                    cNewCursorPos = pNewCursor->GetPosition();
+                    cNewCursorPos = newCursor.GetPosition();
                     fFoundCursorPos = true;
                 }
                 // Only do this if it's not the final line in the buffer.
@@ -1574,7 +1574,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
                     // |aaaaaaaaaaaaaaaaaaa| no wrap at the end (preserved hard newline)
                     // |                   |
                     //  ^ and the cursor is now here.
-                    const COORD coordNewCursor = pNewCursor->GetPosition();
+                    const COORD coordNewCursor = newCursor.GetPosition();
                     if (coordNewCursor.X == 0 && coordNewCursor.Y > 0)
                     {
                         if (newTextBuffer->GetRowByOffset(coordNewCursor.Y - 1).GetCharRow().WasWrapForced())
@@ -1595,7 +1595,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
         //   just put the cursor there. Otherwise we have to advance manually.
         if (fFoundCursorPos)
         {
-            pNewCursor->SetPosition(cNewCursorPos);
+            newCursor.SetPosition(cNewCursorPos);
         }
         else
         {
@@ -1647,13 +1647,13 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
     if (NT_SUCCESS(status))
     {
         // Adjust the viewport so the cursor doesn't wildly fly off up or down.
-        SHORT const sCursorHeightInViewportAfter = pNewCursor->GetPosition().Y - _viewport.Top();
+        SHORT const sCursorHeightInViewportAfter = newCursor.GetPosition().Y - _viewport.Top();
         COORD coordCursorHeightDiff = { 0 };
         coordCursorHeightDiff.Y = sCursorHeightInViewportAfter - sCursorHeightInViewportBefore;
         LOG_IF_FAILED(SetViewportOrigin(FALSE, coordCursorHeightDiff));
 
         // Save old cursor size before we delete it
-        ULONG const ulSize = pOldCursor->GetSize();
+        ULONG const ulSize = oldCursor.GetSize();
 
         // Free old text buffer
         delete TextInfo;
@@ -1662,8 +1662,8 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
         TextInfo = newTextBuffer.release();
 
         // Set size back to real size as it will be taking over the rendering duties.
-        pNewCursor->SetSize(ulSize);
-        pNewCursor->EndDeferDrawing();
+        newCursor.SetSize(ulSize);
+        newCursor.EndDeferDrawing();
     }
 
     return status;
@@ -1808,7 +1808,7 @@ void SCREEN_INFORMATION::GetScreenEdges(_Out_ SMALL_RECT* const psrEdges) const
 
 void SCREEN_INFORMATION::MakeCurrentCursorVisible()
 {
-    MakeCursorVisible(TextInfo->GetCursor()->GetPosition());
+    MakeCursorVisible(TextInfo->GetCursor().GetPosition());
 }
 
 // Routine Description:
@@ -1827,14 +1827,13 @@ void SCREEN_INFORMATION::SetCursorInformation(const ULONG Size,
                                               _In_ unsigned int const Color,
                                               const CursorType Type)
 {
-    PTEXT_BUFFER_INFO const pTextInfo = TextInfo;
-    Cursor* const pCursor = pTextInfo->GetCursor();
+    Cursor& cursor = TextInfo->GetCursor();
 
-    pCursor->SetSize(Size);
-    pCursor->SetIsVisible(Visible);
+    cursor.SetSize(Size);
+    cursor.SetIsVisible(Visible);
 
-    pCursor->SetColor(Color);
-    pCursor->SetType(Type);
+    cursor.SetColor(Color);
+    cursor.SetType(Type);
 
     // If we're an alt buffer, also update our main buffer.
     if (_psiMainBuffer)
@@ -1854,12 +1853,11 @@ void SCREEN_INFORMATION::SetCursorInformation(const ULONG Size,
 // - None
 void  SCREEN_INFORMATION::SetCursorDBMode(const bool DoubleCursor)
 {
-    PTEXT_BUFFER_INFO const pTextInfo = TextInfo;
-    Cursor* const pCursor = pTextInfo->GetCursor();
+    Cursor& cursor = TextInfo->GetCursor();
 
-    if ((pCursor->IsDouble() != DoubleCursor))
+    if ((cursor.IsDouble() != DoubleCursor))
     {
-        pCursor->SetIsDouble(DoubleCursor);
+        cursor.SetIsDouble(DoubleCursor);
     }
 
     // If we're an alt buffer, also update our main buffer.
@@ -1881,8 +1879,7 @@ void  SCREEN_INFORMATION::SetCursorDBMode(const bool DoubleCursor)
 NTSTATUS SCREEN_INFORMATION::SetCursorPosition(const COORD Position, const bool TurnOn)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    PTEXT_BUFFER_INFO const pTextInfo = TextInfo;
-    Cursor* const pCursor = pTextInfo->GetCursor();
+    Cursor& cursor = TextInfo->GetCursor();
 
     //
     // Ensure that the cursor position is within the constraints of the screen
@@ -1894,21 +1891,21 @@ NTSTATUS SCREEN_INFORMATION::SetCursorPosition(const COORD Position, const bool 
         return STATUS_INVALID_PARAMETER;
     }
 
-    pCursor->SetPosition(Position);
+    cursor.SetPosition(Position);
 
     // if we have the focus, adjust the cursor state
     if (gci.Flags & CONSOLE_HAS_FOCUS)
     {
         if (TurnOn)
         {
-            pCursor->SetDelay(false);
-            pCursor->SetIsOn(true);
+            cursor.SetDelay(false);
+            cursor.SetIsOn(true);
         }
         else
         {
-            pCursor->SetDelay(true);
+            cursor.SetDelay(true);
         }
-        pCursor->SetHasMoved(true);
+        cursor.SetHasMoved(true);
     }
 
     return STATUS_SUCCESS;
