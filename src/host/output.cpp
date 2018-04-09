@@ -47,7 +47,7 @@ NTSTATUS DoCreateScreenBuffer()
     gci.Flags |= CONSOLE_USE_PRIVATE_FLAGS;
 
     NTSTATUS Status = SCREEN_INFORMATION::CreateInstance(gci.GetWindowSize(),
-                                                         &fiFont,
+                                                         fiFont,
                                                          gci.GetScreenBufferSize(),
                                                          Fill,
                                                          PopupFill,
@@ -382,7 +382,7 @@ NTSTATUS ReadOutputString(const SCREEN_INFORMATION * const pScreenInfo,
     }
 
     {
-        const ROW* pRow = &pScreenInfo->TextInfo->GetRowByOffset(coordRead.Y);
+        const ROW* pRow = &pScreenInfo->GetTextBuffer().GetRowByOffset(coordRead.Y);
         SHORT j, k;
 
         if (ulStringType == CONSOLE_ASCII ||
@@ -433,7 +433,7 @@ NTSTATUS ReadOutputString(const SCREEN_INFORMATION * const pScreenInfo,
                         BufPtrA += copyAmount;
 
                         NumRead += static_cast<ULONG>(copyAmount);
-                        pRow = &pScreenInfo->TextInfo->GetNextRowNoWrap(*pRow);
+                        pRow = &pScreenInfo->GetTextBuffer().GetNextRowNoWrap(*pRow);
                     }
                 }
                 catch (...)
@@ -567,7 +567,7 @@ NTSTATUS ReadOutputString(const SCREEN_INFORMATION * const pScreenInfo,
 
                 try
                 {
-                    pRow = &pScreenInfo->TextInfo->GetNextRowNoWrap(*pRow);
+                    pRow = &pScreenInfo->GetTextBuffer().GetNextRowNoWrap(*pRow);
                 }
                 catch (...)
                 {
@@ -665,10 +665,10 @@ void ScrollScreen(_Inout_ PSCREEN_INFORMATION pScreenInfo,
 SHORT ScrollEntireScreen(_Inout_ PSCREEN_INFORMATION pScreenInfo, const SHORT sScrollValue)
 {
     // store index of first row
-    SHORT const RowIndex = pScreenInfo->TextInfo->GetFirstRowIndex();
+    SHORT const RowIndex = pScreenInfo->GetTextBuffer().GetFirstRowIndex();
 
     // update screen buffer
-    pScreenInfo->TextInfo->SetFirstRowIndex((SHORT)((RowIndex + sScrollValue) % pScreenInfo->GetScreenBufferSize().Y));
+    pScreenInfo->GetTextBuffer().SetFirstRowIndex((SHORT)((RowIndex + sScrollValue) % pScreenInfo->GetScreenBufferSize().Y));
 
     return RowIndex;
 }
@@ -682,7 +682,7 @@ SHORT ScrollEntireScreen(_Inout_ PSCREEN_INFORMATION pScreenInfo, const SHORT sS
 bool StreamScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo)
 {
     // Rotate the circular buffer around and wipe out the previous final line.
-    bool fSuccess = pScreenInfo->TextInfo->IncrementCircularBuffer();
+    bool fSuccess = pScreenInfo->GetTextBuffer().IncrementCircularBuffer();
     if (fSuccess)
     {
         // Trigger a graphical update if we're active.
@@ -1026,7 +1026,7 @@ void SetActiveScreenBuffer(_Inout_ PSCREEN_INFORMATION pScreenInfo)
     gci.CurrentScreenBuffer = pScreenInfo;
 
     // initialize cursor
-    pScreenInfo->TextInfo->GetCursor()->SetIsOn(false);
+    pScreenInfo->GetTextBuffer().GetCursor()->SetIsOn(false);
 
     // set font
     pScreenInfo->RefreshFontWithRenderer();

@@ -542,7 +542,7 @@ void CALLBACK CursorTimerRoutineWrapper(_In_ PVOID /* lpParam */, _In_ BOOL /* T
 
     if (gci.TryLockConsole() != false)
     {
-        Cursor *cursor = gci.CurrentScreenBuffer->TextInfo->GetCursor();
+        Cursor *cursor = gci.CurrentScreenBuffer->GetTextBuffer().GetCursor();
         cursor->TimerRoutine(gci.CurrentScreenBuffer);
 
         UnlockConsole();

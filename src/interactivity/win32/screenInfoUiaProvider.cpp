@@ -356,9 +356,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(_Outptr_result_maybenull_ SAF
         // return a degenerate range at the cursor position
         SCREEN_INFORMATION* const pScreenInfo = _getScreenInfo();
         RETURN_HR_IF_NULL(E_POINTER, pScreenInfo);
-        TEXT_BUFFER_INFO* const pTextBuffer = pScreenInfo->TextInfo;
-        RETURN_HR_IF_NULL(E_POINTER, pTextBuffer);
-        const Cursor* const pCursor = pTextBuffer->GetCursor();
+        const Cursor* const pCursor = pScreenInfo->GetTextBuffer().GetCursor();
         RETURN_HR_IF_NULL(E_POINTER, pCursor);
 
         // make a safe array

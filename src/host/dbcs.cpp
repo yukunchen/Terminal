@@ -77,19 +77,19 @@ void CleanupDbcsEdgesForWrite(const size_t stringLen,
                               const COORD coordTarget,
                               _Inout_ SCREEN_INFORMATION* const pScreenInfo)
 {
-    TEXT_BUFFER_INFO* const pTextInfo = pScreenInfo->TextInfo;
+    TEXT_BUFFER_INFO& textBuffer = pScreenInfo->GetTextBuffer();
     const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
-    const SHORT rowIndex = (pTextInfo->GetFirstRowIndex() + coordTarget.Y) % coordScreenBufferSize.Y;
+    const SHORT rowIndex = (textBuffer.GetFirstRowIndex() + coordTarget.Y) % coordScreenBufferSize.Y;
 
     try
     {
-        ROW& row = pTextInfo->GetRowAtIndex(rowIndex);
+        ROW& row = textBuffer.GetRowAtIndex(rowIndex);
         // Check start position of strings
         if (row.GetCharRow().GetAttribute(coordTarget.X).IsTrailing())
         {
             if (coordTarget.X == 0)
             {
-                pTextInfo->GetPrevRow(row).ClearColumn(coordScreenBufferSize.X - 1);
+                textBuffer.GetPrevRow(row).ClearColumn(coordScreenBufferSize.X - 1);
             }
             else
             {
@@ -108,7 +108,7 @@ void CleanupDbcsEdgesForWrite(const size_t stringLen,
         }
         else if (coordTarget.Y + 1 < coordScreenBufferSize.Y)
         {
-            ROW& rowNext = pTextInfo->GetNextRow(row);
+            ROW& rowNext = textBuffer.GetNextRow(row);
             if (row.GetCharRow().GetAttribute(0).IsTrailing())
             {
                 rowNext.ClearColumn(0);

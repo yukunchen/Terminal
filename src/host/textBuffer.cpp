@@ -17,19 +17,19 @@
 // Routine Description:
 // - Creates a new instance of TEXT_BUFFER_INFO
 // Arguments:
-// - pFontInfo - The font to use for this text buffer as specified in the global font cache
+// - fontInfo - The font to use for this text buffer as specified in the global font cache
 // - screenBufferSize - The X by Y dimensions of the new screen buffer
 // - fill - Uses the .Attributes property to decide which default color to apply to all text in this buffer
 // - cursorSize - The height of the cursor within this buffer
 // Return Value:
 // - constructed object
 // Note: may throw exception
-TEXT_BUFFER_INFO::TEXT_BUFFER_INFO(const FontInfo* const pFontInfo,
+TEXT_BUFFER_INFO::TEXT_BUFFER_INFO(const FontInfo fontInfo,
                                    const COORD screenBufferSize,
                                    const CHAR_INFO fill,
                                    const UINT cursorSize) :
-    _fiCurrentFont{ *pFontInfo },
-    _fiDesiredFont{ *pFontInfo },
+    _fiCurrentFont{ fontInfo },
+    _fiDesiredFont{ fontInfo },
     _FirstRow{ 0 },
     _ciFill{ fill },
     _coordBufferSize{ screenBufferSize },
@@ -84,9 +84,19 @@ void TEXT_BUFFER_INFO::SetCurrentFont(const FontInfo* const pfiNewFont)
     _fiCurrentFont = *pfiNewFont;
 }
 
-FontInfo* TEXT_BUFFER_INFO::GetCurrentFont()
+void TEXT_BUFFER_INFO::SetCurrentFont(const FontInfo& font)
 {
-    return &_fiCurrentFont;
+    _fiCurrentFont = font;
+}
+
+FontInfo& TEXT_BUFFER_INFO::GetCurrentFont()
+{
+    return _fiCurrentFont;
+}
+
+const FontInfo& TEXT_BUFFER_INFO::GetCurrentFont() const
+{
+    return _fiCurrentFont;
 }
 
 void TEXT_BUFFER_INFO::SetDesiredFont(const FontInfoDesired* const pfiNewFont)
@@ -94,9 +104,14 @@ void TEXT_BUFFER_INFO::SetDesiredFont(const FontInfoDesired* const pfiNewFont)
     _fiDesiredFont = *pfiNewFont;
 }
 
-FontInfoDesired* TEXT_BUFFER_INFO::GetDesiredFont()
+FontInfoDesired& TEXT_BUFFER_INFO::GetDesiredFont()
 {
-    return &_fiDesiredFont;
+    return _fiDesiredFont;
+}
+
+const FontInfoDesired& TEXT_BUFFER_INFO::GetDesiredFont() const
+{
+    return _fiDesiredFont;
 }
 
 // Routine Description:

@@ -63,7 +63,7 @@ filling in the last row, and updating the screen.
 class TEXT_BUFFER_INFO final
 {
 public:
-    TEXT_BUFFER_INFO(const FontInfo* const pFontInfo,
+    TEXT_BUFFER_INFO(const FontInfo fontInfo,
                      const COORD screenBufferSize,
                      const CHAR_INFO fill,
                      const UINT cursorSize);
@@ -109,11 +109,14 @@ public:
 
     COORD GetLastNonSpaceCharacter() const;
 
+    void SetCurrentFont(const FontInfo& font);
     void SetCurrentFont(const FontInfo* const pfiNewFont);
-    FontInfo* GetCurrentFont();
+    FontInfo& GetCurrentFont();
+    const FontInfo& GetCurrentFont() const;
 
     void SetDesiredFont(const FontInfoDesired* const pfiNewFont);
-    FontInfoDesired* GetDesiredFont();
+    FontInfoDesired& GetDesiredFont();
+    const FontInfoDesired& GetDesiredFont() const;
 
     Cursor* const GetCursor() const;
 

@@ -434,15 +434,15 @@ void Renderer::TriggerCircling()
 // - Called when a change in font or DPI has been detected.
 // Arguments:
 // - iDpi - New DPI value
-// - pFontInfoDesired - A description of the font we would like to have.
-// - pFontInfo - Data that will be fixed up/filled on return with the chosen font data.
+// - FontInfoDesired - A description of the font we would like to have.
+// - FontInfo - Data that will be fixed up/filled on return with the chosen font data.
 // Return Value:
 // - <none>
-void Renderer::TriggerFontChange(const int iDpi, const FontInfoDesired * const pFontInfoDesired, _Out_ FontInfo* const pFontInfo)
+void Renderer::TriggerFontChange(const int iDpi, const FontInfoDesired& FontInfoDesired, _Out_ FontInfo& FontInfo)
 {
     std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine){
         LOG_IF_FAILED(pEngine->UpdateDpi(iDpi));
-        LOG_IF_FAILED(pEngine->UpdateFont(pFontInfoDesired, pFontInfo));
+        LOG_IF_FAILED(pEngine->UpdateFont(FontInfoDesired, FontInfo));
     });
 
     _NotifyPaintFrame();
@@ -458,7 +458,7 @@ void Renderer::TriggerFontChange(const int iDpi, const FontInfoDesired * const p
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 [[nodiscard]]
-HRESULT Renderer::GetProposedFont(const int iDpi, const FontInfoDesired * const pFontInfoDesired, _Out_ FontInfo* const pFontInfo)
+HRESULT Renderer::GetProposedFont(const int iDpi, const FontInfoDesired& FontInfoDesired, _Out_ FontInfo& FontInfo)
 {
     // If there's no head, return E_FAIL. The caller should decide how to
     //      handle this.
@@ -476,7 +476,7 @@ HRESULT Renderer::GetProposedFont(const int iDpi, const FontInfoDesired * const 
     assert(_rgpEngines.size() <= 2);
     for (IRenderEngine* const pEngine : _rgpEngines)
     {
-        const HRESULT hr = LOG_IF_FAILED(pEngine->GetProposedFont(pFontInfoDesired, pFontInfo, iDpi));
+        const HRESULT hr = LOG_IF_FAILED(pEngine->GetProposedFont(FontInfoDesired, FontInfo, iDpi));
         // We're looking for specifically S_OK, S_FALSE is not good enough.
         if (hr == S_OK)
         {

@@ -85,7 +85,7 @@ class UiaTextRangeTests
 
         // set up pointers
         _pScreenInfo = gci.CurrentScreenBuffer;
-        _pTextBuffer = _pScreenInfo->TextInfo;
+        _pTextBuffer = &_pScreenInfo->GetTextBuffer();
 
         // fill text buffer with text
         for (UINT i = 0; i < _pTextBuffer->TotalRowCount(); ++i)

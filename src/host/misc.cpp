@@ -42,22 +42,19 @@ void SetConsoleCPInfo(const BOOL fOutput)
         SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer;
         if (psi != nullptr)
         {
-            TEXT_BUFFER_INFO* const pti = psi->TextInfo;
-            if (pti != nullptr)
-            {
-                const FontInfo* const pfiOld = pti->GetCurrentFont();
+            const auto& textBuffer = psi->GetTextBuffer();
+            const FontInfo& fiOld = textBuffer.GetCurrentFont();
 
-                // Use the desired face name when updating the font.
-                // This ensures that if we had a fall back operation last time (the desired
-                // face name didn't support the code page and we have a different less-desirable font currently)
-                // that we'll now give it another shot to use the desired face name in the new code page.
-                FontInfo fiNew(pti->GetDesiredFont()->GetFaceName(),
-                               pfiOld->GetFamily(),
-                               pfiOld->GetWeight(),
-                               pfiOld->GetUnscaledSize(),
-                               gci.OutputCP);
-                psi->UpdateFont(&fiNew);
-            }
+            // Use the desired face name when updating the font.
+            // This ensures that if we had a fall back operation last time (the desired
+            // face name didn't support the code page and we have a different less-desirable font currently)
+            // that we'll now give it another shot to use the desired face name in the new code page.
+            FontInfo fiNew(textBuffer.GetDesiredFont().GetFaceName(),
+                            fiOld.GetFamily(),
+                            fiOld.GetWeight(),
+                            fiOld.GetUnscaledSize(),
+                            gci.OutputCP);
+            psi->UpdateFont(&fiNew);
         }
 
         if (!GetCPInfo(gci.OutputCP, &gci.OutputCPInfo))

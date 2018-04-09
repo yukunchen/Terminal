@@ -33,13 +33,13 @@ const SMALL_RECT RenderData::GetViewport()
 const TEXT_BUFFER_INFO* RenderData::GetTextBuffer()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.CurrentScreenBuffer->TextInfo;
+    return &gci.CurrentScreenBuffer->GetTextBuffer();
 }
 
 const FontInfo* RenderData::GetFontInfo()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.CurrentScreenBuffer->TextInfo->GetCurrentFont();
+    return &gci.CurrentScreenBuffer->GetTextBuffer().GetCurrentFont();
 }
 
 const TextAttribute RenderData::GetDefaultBrushColors()
@@ -58,7 +58,7 @@ const void RenderData::GetColorTable(_Outptr_result_buffer_all_(*pcColors) COLOR
 const Cursor* RenderData::GetCursor()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.CurrentScreenBuffer->TextInfo->GetCursor();
+    return gci.CurrentScreenBuffer->GetTextBuffer().GetCursor();
 }
 
 const ConsoleImeInfo* RenderData::GetImeData()
@@ -72,7 +72,7 @@ const TEXT_BUFFER_INFO* RenderData::GetImeCompositionStringBuffer(_In_ size_t iI
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (iIndex < gci.ConsoleIme.ConvAreaCompStr.size())
     {
-        return gci.ConsoleIme.ConvAreaCompStr[iIndex]->ScreenBuffer->TextInfo;
+        return &gci.ConsoleIme.ConvAreaCompStr[iIndex]->ScreenBuffer->GetTextBuffer();
     }
     else
     {
