@@ -782,7 +782,7 @@ void ScreenBufferTests::VtResize()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    TEXT_BUFFER_INFO* const tbi = psi->TextInfo;
+    TextBuffer* const tbi = psi->TextInfo;
     StateMachine* const stateMachine = psi->GetStateMachine();
     Cursor& cursor = tbi->GetCursor();
     SetFlag(psi->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
@@ -918,7 +918,7 @@ void ScreenBufferTests::VtSoftResetCursorPosition()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    const TEXT_BUFFER_INFO* const tbi = psi->TextInfo;
+    const TextBuffer* const tbi = psi->TextInfo;
     StateMachine* const stateMachine = psi->GetStateMachine();
     const Cursor& cursor = tbi->GetCursor();
 

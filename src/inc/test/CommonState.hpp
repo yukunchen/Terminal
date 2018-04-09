@@ -143,10 +143,10 @@ public:
         m_backupTextBufferInfo = &gci.CurrentScreenBuffer->GetTextBuffer();
         try
         {
-            std::unique_ptr<TEXT_BUFFER_INFO> textBuffer = std::make_unique<TEXT_BUFFER_INFO>(*m_pFontInfo,
-                                                                                              coordScreenBufferSize,
-                                                                                              ciFill,
-                                                                                              uiCursorSize);
+            std::unique_ptr<TextBuffer> textBuffer = std::make_unique<TextBuffer>(*m_pFontInfo,
+                                                                                  coordScreenBufferSize,
+                                                                                  ciFill,
+                                                                                  uiCursorSize);
             if (textBuffer.get() == nullptr)
             {
                 m_ntstatusTextBufferInfo = STATUS_NO_MEMORY;
@@ -175,7 +175,7 @@ public:
 
         ASSERT(gci.CurrentScreenBuffer != nullptr);
 
-        TEXT_BUFFER_INFO& textBuffer = gci.CurrentScreenBuffer->GetTextBuffer();
+        TextBuffer& textBuffer = gci.CurrentScreenBuffer->GetTextBuffer();
 
         for (SHORT iRow = 0; iRow < cRowsToFill; iRow++)
         {
@@ -194,7 +194,7 @@ public:
 
         ASSERT(gci.CurrentScreenBuffer != nullptr);
 
-        TEXT_BUFFER_INFO& textBuffer = gci.CurrentScreenBuffer->GetTextBuffer();
+        TextBuffer& textBuffer = gci.CurrentScreenBuffer->GetTextBuffer();
 
         for (SHORT iRow = 0; iRow < cRowsToFill; iRow++)
         {
@@ -214,7 +214,7 @@ private:
     HANDLE m_heap;
     NTSTATUS m_ntstatusTextBufferInfo;
     FontInfo* m_pFontInfo;
-    TEXT_BUFFER_INFO* m_backupTextBufferInfo;
+    TextBuffer* m_backupTextBufferInfo;
 
     void FillRow(ROW* pRow)
     {

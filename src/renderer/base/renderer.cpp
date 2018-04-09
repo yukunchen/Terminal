@@ -597,7 +597,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
     SMALL_RECT srDirty = pEngine->GetDirtyRectInChars();
     view.ConvertFromOrigin(&srDirty);
 
-    const TEXT_BUFFER_INFO* const ptbi = _pData->GetTextBuffer();
+    const TextBuffer* const ptbi = _pData->GetTextBuffer();
 
     // The dirty rectangle may be larger than the backing buffer (anything, including the system, may have
     // requested that we render under the scroll bars). To prevent issues, trim down to the max buffer size
@@ -1038,7 +1038,7 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
 // - <none>
 void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
                          const std::unique_ptr<ConversionAreaInfo>& AreaInfo,
-                         const TEXT_BUFFER_INFO* const pTextInfo)
+                         const TextBuffer* const pTextInfo)
 {
     // If this conversion area isn't hidden (because it is off) or hidden for a scroll operation, then draw it.
     if (!AreaInfo->IsHidden())
@@ -1129,7 +1129,7 @@ void Renderer::_PaintImeCompositionString(_In_ IRenderEngine* const pEngine)
 
         if (AreaInfo.get() != nullptr)
         {
-            const TEXT_BUFFER_INFO* const ptbi = _pData->GetImeCompositionStringBuffer(i);
+            const TextBuffer* const ptbi = _pData->GetImeCompositionStringBuffer(i);
             _PaintIme(pEngine, AreaInfo, ptbi);
         }
     }

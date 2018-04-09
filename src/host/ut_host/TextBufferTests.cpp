@@ -62,9 +62,9 @@ class TextBufferTests
 
     TEST_METHOD(TestBufferCreate);
 
-    void DoBufferRowIterationTest(TEXT_BUFFER_INFO& textBuffer);
+    void DoBufferRowIterationTest(TextBuffer& textBuffer);
 
-    TEXT_BUFFER_INFO& GetTbi();
+    TextBuffer& GetTbi();
 
     SHORT GetBufferWidth();
 
@@ -134,7 +134,7 @@ void TextBufferTests::TestBufferCreate()
     VERIFY_IS_TRUE(NT_SUCCESS(m_state->GetTextBufferInfoInitResult()));
 }
 
-void TextBufferTests::DoBufferRowIterationTest(TEXT_BUFFER_INFO& textBuffer)
+void TextBufferTests::DoBufferRowIterationTest(TextBuffer& textBuffer)
 {
     const ROW* pFirstRow = &textBuffer.GetFirstRow();
     const ROW* pPrior = nullptr;
@@ -178,7 +178,7 @@ void TextBufferTests::DoBufferRowIterationTest(TEXT_BUFFER_INFO& textBuffer)
     VERIFY_ARE_EQUAL(textBuffer.TotalRowCount(), cRows);
 }
 
-TEXT_BUFFER_INFO& TextBufferTests::GetTbi()
+TextBuffer& TextBufferTests::GetTbi()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.CurrentScreenBuffer->GetTextBuffer();
@@ -206,7 +206,7 @@ void TextBufferTests::TestBufferRowIterationWhenCircular()
 
     ASSERT(csBufferHeight > 4);
 
-    TEXT_BUFFER_INFO& textBuffer = GetTbi();
+    TextBuffer& textBuffer = GetTbi();
 
     textBuffer._FirstRow = csBufferHeight / 2 + 2; // sets to a bit over half way around.
 
@@ -215,7 +215,7 @@ void TextBufferTests::TestBufferRowIterationWhenCircular()
 
 void TextBufferTests::TestBufferRowByOffset()
 {
-    TEXT_BUFFER_INFO& textBuffer = GetTbi();
+    TextBuffer& textBuffer = GetTbi();
     SHORT csBufferHeight = GetBufferHeight();
 
     ASSERT(csBufferHeight > 20);
@@ -228,7 +228,7 @@ void TextBufferTests::TestBufferRowByOffset()
 
 void TextBufferTests::TestWrapFlag()
 {
-    TEXT_BUFFER_INFO& textBuffer = GetTbi();
+    TextBuffer& textBuffer = GetTbi();
 
     ROW& Row = textBuffer.GetFirstRow();
 
@@ -246,7 +246,7 @@ void TextBufferTests::TestWrapFlag()
 
 void TextBufferTests::TestDoubleBytePadFlag()
 {
-    TEXT_BUFFER_INFO& textBuffer = GetTbi();
+    TextBuffer& textBuffer = GetTbi();
 
     ROW& Row = textBuffer.GetFirstRow();
 
@@ -269,7 +269,7 @@ void TextBufferTests::DoBoundaryTest(PWCHAR const pwszInputString,
                                      short const cLeft,
                                      short const cRight)
 {
-    TEXT_BUFFER_INFO& textBuffer = GetTbi();
+    TextBuffer& textBuffer = GetTbi();
 
     ICharRow& iCharRow = textBuffer.GetFirstRow().GetCharRow();
     // for the time being, we only support UCS2 char rows
@@ -317,9 +317,9 @@ void TextBufferTests::TestBoundaryMeasuresFloatingString()
 
 void TextBufferTests::TestCopyProperties()
 {
-    TEXT_BUFFER_INFO& otherTbi = GetTbi();
+    TextBuffer& otherTbi = GetTbi();
 
-    std::unique_ptr<TEXT_BUFFER_INFO> testTextBuffer = std::make_unique<TEXT_BUFFER_INFO>(otherTbi._fiCurrentFont,
+    std::unique_ptr<TextBuffer> testTextBuffer = std::make_unique<TextBuffer>(otherTbi._fiCurrentFont,
                                                                                           otherTbi._coordBufferSize,
                                                                                           otherTbi._ciFill,
                                                                                           12);
@@ -354,7 +354,7 @@ void TextBufferTests::TestCopyProperties()
 
 void TextBufferTests::TestInsertCharacter()
 {
-    TEXT_BUFFER_INFO& textBuffer = GetTbi();
+    TextBuffer& textBuffer = GetTbi();
 
     // get starting cursor position
     COORD const coordCursorBefore = textBuffer.GetCursor().GetPosition();
@@ -402,7 +402,7 @@ void TextBufferTests::TestInsertCharacter()
 
 void TextBufferTests::TestIncrementCursor()
 {
-    TEXT_BUFFER_INFO& textBuffer = GetTbi();
+    TextBuffer& textBuffer = GetTbi();
 
     // only checking X increments here
     // Y increments are covered in the NewlineCursor test
@@ -439,7 +439,7 @@ void TextBufferTests::TestIncrementCursor()
 
 void TextBufferTests::TestNewlineCursor()
 {
-    TEXT_BUFFER_INFO& textBuffer = GetTbi();
+    TextBuffer& textBuffer = GetTbi();
 
 
     const short sBufferHeight = textBuffer._coordBufferSize.Y;
@@ -489,7 +489,7 @@ void TextBufferTests::TestNewlineCursor()
 
 void TextBufferTests::TestLastNonSpace(short const cursorPosY)
 {
-    TEXT_BUFFER_INFO& textBuffer = GetTbi();
+    TextBuffer& textBuffer = GetTbi();
     textBuffer.GetCursor().SetYPosition(cursorPosY);
 
     COORD coordLastNonSpace = textBuffer.GetLastNonSpaceCharacter();
@@ -534,7 +534,7 @@ void TextBufferTests::TestGetLastNonSpaceCharacter()
 
 void TextBufferTests::TestSetWrapOnCurrentRow()
 {
-    TEXT_BUFFER_INFO& textBuffer = GetTbi();
+    TextBuffer& textBuffer = GetTbi();
 
     short sCurrentRow = textBuffer.GetCursor().GetPosition().Y;
 
@@ -565,7 +565,7 @@ void TextBufferTests::TestSetWrapOnCurrentRow()
 
 void TextBufferTests::TestIncrementCircularBuffer()
 {
-    TEXT_BUFFER_INFO& textBuffer = GetTbi();
+    TextBuffer& textBuffer = GetTbi();
 
     short const sBufferHeight = textBuffer._coordBufferSize.Y;
 
@@ -615,7 +615,7 @@ void TextBufferTests::TestMixedRgbAndLegacyForeground()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    const TEXT_BUFFER_INFO& tbi = psi->GetTextBuffer();
+    const TextBuffer& tbi = psi->GetTextBuffer();
     StateMachine* const stateMachine = psi->GetStateMachine();
     const Cursor& cursor = tbi.GetCursor();
     VERIFY_IS_NOT_NULL(stateMachine);
@@ -677,7 +677,7 @@ void TextBufferTests::TestMixedRgbAndLegacyBackground()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    const TEXT_BUFFER_INFO& tbi = psi->GetTextBuffer();
+    const TextBuffer& tbi = psi->GetTextBuffer();
     StateMachine* const stateMachine = psi->GetStateMachine();
     const Cursor& cursor = tbi.GetCursor();
     VERIFY_IS_NOT_NULL(stateMachine);
@@ -737,7 +737,7 @@ void TextBufferTests::TestMixedRgbAndLegacyUnderline()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    const TEXT_BUFFER_INFO& tbi = psi->GetTextBuffer();
+    const TextBuffer& tbi = psi->GetTextBuffer();
     StateMachine* const stateMachine = psi->GetStateMachine();
     const Cursor& cursor = tbi.GetCursor();
     VERIFY_IS_NOT_NULL(stateMachine);
@@ -799,7 +799,7 @@ void TextBufferTests::TestMixedRgbAndLegacyBrightness()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    const TEXT_BUFFER_INFO& tbi = psi->GetTextBuffer();
+    const TextBuffer& tbi = psi->GetTextBuffer();
     StateMachine* const stateMachine = psi->GetStateMachine();
     const Cursor& cursor = tbi.GetCursor();
     VERIFY_IS_NOT_NULL(stateMachine);
@@ -857,7 +857,7 @@ void TextBufferTests::TestRgbEraseLine()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    TEXT_BUFFER_INFO& tbi = psi->GetTextBuffer();
+    TextBuffer& tbi = psi->GetTextBuffer();
     StateMachine* const stateMachine = psi->GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
     SetFlag(psi->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
@@ -917,7 +917,7 @@ void TextBufferTests::TestUnBold()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    TEXT_BUFFER_INFO& tbi = psi->GetTextBuffer();
+    TextBuffer& tbi = psi->GetTextBuffer();
     StateMachine* const stateMachine = psi->GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
     SetFlag(psi->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
@@ -984,7 +984,7 @@ void TextBufferTests::TestUnBoldRgb()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    TEXT_BUFFER_INFO& tbi = psi->GetTextBuffer();
+    TextBuffer& tbi = psi->GetTextBuffer();
     StateMachine* const stateMachine = psi->GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
     SetFlag(psi->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
@@ -1055,7 +1055,7 @@ void TextBufferTests::TestComplexUnBold()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    TEXT_BUFFER_INFO& tbi = psi->GetTextBuffer();
+    TextBuffer& tbi = psi->GetTextBuffer();
     StateMachine* const stateMachine = psi->GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
     SetFlag(psi->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
@@ -1174,7 +1174,7 @@ void TextBufferTests::CopyAttrs()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    TEXT_BUFFER_INFO& tbi = psi->GetTextBuffer();
+    TextBuffer& tbi = psi->GetTextBuffer();
     StateMachine* const stateMachine = psi->GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
     SetFlag(psi->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
@@ -1237,7 +1237,7 @@ void TextBufferTests::EmptySgrTest()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    TEXT_BUFFER_INFO& tbi = psi->GetTextBuffer();
+    TextBuffer& tbi = psi->GetTextBuffer();
     StateMachine* const stateMachine = psi->GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
 
@@ -1310,7 +1310,7 @@ void TextBufferTests::TestReverseReset()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    TEXT_BUFFER_INFO& tbi = psi->GetTextBuffer();
+    TextBuffer& tbi = psi->GetTextBuffer();
     StateMachine* const stateMachine = psi->GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
 
@@ -1398,7 +1398,7 @@ void TextBufferTests::CopyLastAttr()
 
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    TEXT_BUFFER_INFO& tbi = psi->GetTextBuffer();
+    TextBuffer& tbi = psi->GetTextBuffer();
     StateMachine* const stateMachine = psi->GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
 

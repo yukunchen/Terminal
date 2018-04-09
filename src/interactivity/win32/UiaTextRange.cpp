@@ -710,7 +710,7 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
             const ScreenInfoRow endScreenInfoRow = _endpointToScreenInfoRow(_end);
             const Column endColumn = _endpointToColumn(_end);
             const unsigned int totalRowsInRange = _rowCountInRange();
-            const TEXT_BUFFER_INFO& textBuffer = _getTextBuffer();
+            const TextBuffer& textBuffer = _getTextBuffer();
 
             ScreenInfoRow currentScreenInfoRow;
             for (unsigned int i = 0; i < totalRowsInRange; ++i)
@@ -1201,7 +1201,7 @@ SCREEN_INFORMATION* const UiaTextRange::_getScreenInfo()
 // - <none>
 // Return Value
 // - the current output text buffer. May return nullptr.
-TEXT_BUFFER_INFO& UiaTextRange::_getTextBuffer()
+TextBuffer& UiaTextRange::_getTextBuffer()
 {
     SCREEN_INFORMATION* const pScreenInfo = _getScreenInfo();
     return pScreenInfo->GetTextBuffer();

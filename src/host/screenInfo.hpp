@@ -128,8 +128,8 @@ public:
 
     std::pair<COORD, COORD> GetWordBoundary(const COORD position) const;
 
-    TEXT_BUFFER_INFO& GetTextBuffer();
-    const TEXT_BUFFER_INFO& GetTextBuffer() const;
+    TextBuffer& GetTextBuffer();
+    const TextBuffer& GetTextBuffer() const;
 
 
 
@@ -140,7 +140,7 @@ public:
     short WheelDelta;
     short HWheelDelta;
 private:
-    TEXT_BUFFER_INFO *TextInfo;
+    TextBuffer *TextInfo;
 public:
     SCREEN_INFORMATION *Next;
     BYTE WriteConsoleDbcsLeadByte[2];

@@ -71,7 +71,7 @@ class UiaTextRangeTests
     CommonState* _state;
     DummyElementProvider _dummyProvider;
     SCREEN_INFORMATION* _pScreenInfo;
-    TEXT_BUFFER_INFO* _pTextBuffer;
+    TextBuffer* _pTextBuffer;
     UiaTextRange* _range;
 
     TEST_METHOD_SETUP(MethodSetup)

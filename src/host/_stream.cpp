@@ -191,7 +191,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                           _Inout_opt_ PSHORT const psScrollY)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    TEXT_BUFFER_INFO& textBuffer = pScreenInfo->GetTextBuffer();
+    TextBuffer& textBuffer = pScreenInfo->GetTextBuffer();
     Cursor& cursor = textBuffer.GetCursor();
     COORD CursorPosition = cursor.GetPosition();
     NTSTATUS Status = STATUS_SUCCESS;

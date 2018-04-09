@@ -161,7 +161,7 @@ void Selection::WordByWordSelection(const bool fReverse,
     // get the character at the new position
     WCHAR wchTest = L'\0';
     {
-        const TEXT_BUFFER_INFO& textBuffer = gci.CurrentScreenBuffer->GetTextBuffer();
+        const TextBuffer& textBuffer = gci.CurrentScreenBuffer->GetTextBuffer();
         const ICharRow& iCharRow = textBuffer.GetRowByOffset(pcoordSelPoint->Y).GetCharRow();
         // we only support ucs2 encoded char rows
         FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
@@ -773,7 +773,7 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
         wVirtualKeyCode == VK_HOME)
     {
         SCREEN_INFORMATION* const pScreenInfo = gci.CurrentScreenBuffer;
-        TEXT_BUFFER_INFO& textBuffer = pScreenInfo->GetTextBuffer();
+        TextBuffer& textBuffer = pScreenInfo->GetTextBuffer();
         SHORT iNextRightX = 0;
         SHORT iNextLeftX = 0;
 

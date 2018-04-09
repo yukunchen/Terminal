@@ -16,7 +16,7 @@
 RECT GetImeSuggestionWindowPos()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const TEXT_BUFFER_INFO& textBuffer = gci.CurrentScreenBuffer->GetTextBuffer();
+    const TextBuffer& textBuffer = gci.CurrentScreenBuffer->GetTextBuffer();
 
     const COORD coordFont = textBuffer.GetCurrentFont().GetSize();
     COORD coordCursor = textBuffer.GetCursor().GetPosition();

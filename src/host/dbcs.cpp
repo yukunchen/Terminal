@@ -77,7 +77,7 @@ void CleanupDbcsEdgesForWrite(const size_t stringLen,
                               const COORD coordTarget,
                               _Inout_ SCREEN_INFORMATION* const pScreenInfo)
 {
-    TEXT_BUFFER_INFO& textBuffer = pScreenInfo->GetTextBuffer();
+    TextBuffer& textBuffer = pScreenInfo->GetTextBuffer();
     const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
     const SHORT rowIndex = (textBuffer.GetFirstRowIndex() + coordTarget.Y) % coordScreenBufferSize.Y;
 
