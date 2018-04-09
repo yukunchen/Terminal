@@ -140,7 +140,7 @@ public:
     short WheelDelta;
     short HWheelDelta;
 private:
-    TextBuffer* _textBuffer;
+    std::unique_ptr<TextBuffer> _textBuffer;
 public:
     SCREEN_INFORMATION *Next;
     BYTE WriteConsoleDbcsLeadByte[2];
