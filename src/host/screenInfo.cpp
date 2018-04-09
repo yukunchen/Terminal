@@ -39,10 +39,10 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     _pAdapter(nullptr),
     _pStateMachine(nullptr),
     _viewport({0}),
-    _ptsTabs(nullptr)
+    _ptsTabs(nullptr),
+    _textBuffer{ nullptr }
 {
     WriteConsoleDbcsLeadByte[0] = 0;
-    _textBuffer = nullptr;
     _srScrollMargins = {0};
     _Attributes = TextAttribute(ciFill.Attributes);
     _PopupAttributes = TextAttribute(ciPopupFill.Attributes);
@@ -62,7 +62,6 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
 // - console handle table lock must be held when calling this routine
 SCREEN_INFORMATION::~SCREEN_INFORMATION()
 {
-    delete _textBuffer;
     _FreeOutputStateMachine();
     ClearTabStops();
 }
@@ -107,17 +106,16 @@ NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
 
         try
         {
-            std::unique_ptr<TextBuffer> _textBuffer = std::make_unique<TextBuffer>(fontInfo,
-                                                                                  pScreen->GetScreenBufferSize(),
-                                                                                  ciFill,
-                                                                                  uiCursorSize);
-            if (_textBuffer.get() == nullptr)
+            pScreen->_textBuffer = std::make_unique<TextBuffer>(fontInfo,
+                                                                pScreen->GetScreenBufferSize(),
+                                                                ciFill,
+                                                                uiCursorSize);
+            if (pScreen->_textBuffer.get() == nullptr)
             {
                 status = STATUS_NO_MEMORY;
             }
             else
             {
-                pScreen->_textBuffer = _textBuffer.release();
                 status = STATUS_SUCCESS;
             }
         }
@@ -1654,11 +1652,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
         // Save old cursor size before we delete it
         ULONG const ulSize = oldCursor.GetSize();
 
-        // Free old text buffer
-        delete _textBuffer;
-
-        // Place new text buffer into position
-        _textBuffer = newTextBuffer.release();
+        _textBuffer.swap(newTextBuffer);
 
         // Set size back to real size as it will be taking over the rendering duties.
         newCursor.SetSize(ulSize);

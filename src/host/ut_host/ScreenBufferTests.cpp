@@ -782,9 +782,9 @@ void ScreenBufferTests::VtResize()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    TextBuffer* const tbi = psi->_textBuffer;
+    TextBuffer& tbi = psi->GetTextBuffer();
     StateMachine* const stateMachine = psi->GetStateMachine();
-    Cursor& cursor = tbi->GetCursor();
+    Cursor& cursor = tbi.GetCursor();
     SetFlag(psi->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     VERIFY_IS_NOT_NULL(stateMachine);
 
@@ -918,9 +918,9 @@ void ScreenBufferTests::VtSoftResetCursorPosition()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    const TextBuffer* const tbi = psi->_textBuffer;
+    const TextBuffer& tbi = psi->GetTextBuffer();
     StateMachine* const stateMachine = psi->GetStateMachine();
-    const Cursor& cursor = tbi->GetCursor();
+    const Cursor& cursor = tbi.GetCursor();
 
     Log::Comment(NoThrowString().Format(
         L"Make sure the viewport is at 0,0"
