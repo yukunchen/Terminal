@@ -207,7 +207,7 @@ NTSTATUS BeginPopup(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ PCOMMAND_HISTORY C
     if (1 == gci.PopupCount)
     {
         // If this is the first popup to be shown, stop the cursor from appearing/blinking
-        ScreenInfo->TextInfo->GetCursor()->SetIsPopupShown(true);
+        ScreenInfo->GetTextBuffer().GetCursor()->SetIsPopupShown(true);
     }
 
     DrawCommandListBorder(Popup, ScreenInfo);
@@ -249,7 +249,7 @@ NTSTATUS EndPopup(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ PCOMMAND_HISTORY Com
     if (gci.PopupCount == 0)
     {
         // Notify we're done showing popups.
-        ScreenInfo->TextInfo->GetCursor()->SetIsPopupShown(false);
+        ScreenInfo->GetTextBuffer().GetCursor()->SetIsPopupShown(false);
     }
 
     return STATUS_SUCCESS;
@@ -373,7 +373,7 @@ void RedrawCommandLine(_Inout_ COOKED_READ_DATA* const pCookedReadData)
     if (pCookedReadData->_Echo)
     {
         // Draw the command line
-        pCookedReadData->_OriginalCursorPosition = pCookedReadData->_pScreenInfo->TextInfo->GetCursor()->GetPosition();
+        pCookedReadData->_OriginalCursorPosition = pCookedReadData->_pScreenInfo->GetTextBuffer().GetCursor()->GetPosition();
 
         SHORT ScrollY = 0;
 #pragma prefast(suppress:28931, "Status is not unused. It's used in debug assertions.")
@@ -696,7 +696,7 @@ NTSTATUS ProcessCopyFromCharInput(_In_ COOKED_READ_DATA* const pCookedReadData)
             COORD CursorPosition;
 
             // save cursor position
-            CursorPosition = pCookedReadData->_pScreenInfo->TextInfo->GetCursor()->GetPosition();
+            CursorPosition = pCookedReadData->_pScreenInfo->GetTextBuffer().GetCursor()->GetPosition();
 
             // Delete commandline.
             DeleteCommandLine(pCookedReadData, FALSE);
@@ -1109,7 +1109,7 @@ NTSTATUS CommandNumberPopup(_In_ COOKED_READ_DATA* const CookedReadData)
     DrawPromptPopup(Popup, CookedReadData->_pScreenInfo, ItemString, ItemLength);
 
     // Save the original cursor position in case the user cancels out of the dialog
-    CookedReadData->BeforeDialogCursorPosition = CookedReadData->_pScreenInfo->TextInfo->GetCursor()->GetPosition();
+    CookedReadData->BeforeDialogCursorPosition = CookedReadData->_pScreenInfo->GetTextBuffer().GetCursor()->GetPosition();
 
     // Move the cursor into the dialog so the user can type multiple characters for the command number
     COORD CursorPosition;
@@ -1396,8 +1396,8 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                 {
                     pCookedReadData->_BufPtr--;
                     pCookedReadData->_CurrentPosition--;
-                    CurrentPosition.X = pCookedReadData->_pScreenInfo->TextInfo->GetCursor()->GetPosition().X;
-                    CurrentPosition.Y = pCookedReadData->_pScreenInfo->TextInfo->GetCursor()->GetPosition().Y;
+                    CurrentPosition.X = pCookedReadData->_pScreenInfo->GetTextBuffer().GetCursor()->GetPosition().X;
+                    CurrentPosition.Y = pCookedReadData->_pScreenInfo->GetTextBuffer().GetCursor()->GetPosition().Y;
                     CurrentPosition.X = (SHORT)(CurrentPosition.X -
                                                 RetrieveNumberOfSpaces(pCookedReadData->_OriginalCursorPosition.X,
                                                                        pCookedReadData->_BackupLimit,
@@ -1495,7 +1495,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                 // If not at the end of the line, move cursor position right.
                 if (pCookedReadData->_CurrentPosition < (pCookedReadData->_BytesRead / sizeof(WCHAR)))
                 {
-                    CurrentPosition = pCookedReadData->_pScreenInfo->TextInfo->GetCursor()->GetPosition();
+                    CurrentPosition = pCookedReadData->_pScreenInfo->GetTextBuffer().GetCursor()->GetPosition();
                     CurrentPosition.X = (SHORT)(CurrentPosition.X +
                                                 RetrieveNumberOfSpaces(pCookedReadData->_OriginalCursorPosition.X,
                                                                        pCookedReadData->_BackupLimit,
@@ -1680,7 +1680,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
 
                     // save cursor position
                     CurrentPos = (SHORT)pCookedReadData->_CurrentPosition;
-                    CursorPosition = pCookedReadData->_pScreenInfo->TextInfo->GetCursor()->GetPosition();
+                    CursorPosition = pCookedReadData->_pScreenInfo->GetTextBuffer().GetCursor()->GetPosition();
 
                     DeleteCommandLine(pCookedReadData, true);
                     Status = RetrieveNthCommand(pCookedReadData->_CommandHistory,
@@ -1753,7 +1753,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
 
             del_repeat:
                 // save cursor position
-                CursorPosition = pCookedReadData->_pScreenInfo->TextInfo->GetCursor()->GetPosition();
+                CursorPosition = pCookedReadData->_pScreenInfo->GetTextBuffer().GetCursor()->GetPosition();
 
                 // Delete commandline.
 #pragma prefast(suppress:__WARNING_BUFFER_OVERFLOW, "Not sure why prefast is getting confused here")

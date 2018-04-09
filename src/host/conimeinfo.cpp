@@ -21,7 +21,7 @@ ConversionAreaInfo::ConversionAreaInfo(const COORD bufferSize,
                                        const COORD windowSize,
                                        const CHAR_INFO fill,
                                        const CHAR_INFO popupFill,
-                                       const FontInfo* const pFontInfo) :
+                                       const FontInfo fontInfo) :
     CaInfo{ bufferSize },
     _fIsHidden{ true },
     ScreenBuffer{ nullptr }
@@ -29,7 +29,7 @@ ConversionAreaInfo::ConversionAreaInfo(const COORD bufferSize,
     SCREEN_INFORMATION* pNewScreen = nullptr;
     // cursor has no height because it won't be rendered for conversion area
     NTSTATUS status = SCREEN_INFORMATION::CreateInstance(windowSize,
-                                                         pFontInfo,
+                                                         fontInfo,
                                                          bufferSize,
                                                          fill,
                                                          popupFill,
@@ -38,7 +38,7 @@ ConversionAreaInfo::ConversionAreaInfo(const COORD bufferSize,
     if (NT_SUCCESS(status))
     {
         // Suppress painting notifications for modifying a conversion area cursor as they're not actually rendered.
-        pNewScreen->TextInfo->GetCursor()->SetIsConversionArea(true);
+        pNewScreen->GetTextBuffer().GetCursor()->SetIsConversionArea(true);
         pNewScreen->ConvScreenInfo = this;
         ScreenBuffer = pNewScreen;
     }
@@ -138,7 +138,7 @@ NTSTATUS ConsoleImeInfo::AddConversionArea()
     CHAR_INFO popupFill;
     popupFill.Attributes = gci.CurrentScreenBuffer->GetPopupAttributes()->GetLegacyAttributes();
 
-    const FontInfo* const pFontInfo = gci.CurrentScreenBuffer->TextInfo->GetCurrentFont();
+    const FontInfo& fontInfo = gci.CurrentScreenBuffer->GetTextBuffer().GetCurrentFont();
 
     try
     {
@@ -146,7 +146,7 @@ NTSTATUS ConsoleImeInfo::AddConversionArea()
                                                                                                 windowSize,
                                                                                                 fill,
                                                                                                 popupFill,
-                                                                                                pFontInfo);
+                                                                                                fontInfo);
         THROW_HR_IF(E_OUTOFMEMORY, convAreaInfo == nullptr);
 
         ConvAreaCompStr.push_back(std::move(convAreaInfo));

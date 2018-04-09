@@ -44,7 +44,7 @@ class SCREEN_INFORMATION
 public:
     [[nodiscard]]
     static NTSTATUS CreateInstance(_In_ COORD coordWindowSize,
-                                   const FontInfo* const pfiFont,
+                                   const FontInfo fontInfo,
                                    _In_ COORD coordScreenBufferSize,
                                    const CHAR_INFO ciFill,
                                    const CHAR_INFO ciPopupFill,
@@ -128,6 +128,9 @@ public:
 
     std::pair<COORD, COORD> GetWordBoundary(const COORD position) const;
 
+    TEXT_BUFFER_INFO& GetTextBuffer();
+    const TEXT_BUFFER_INFO& GetTextBuffer() const;
+
 
 
 
@@ -136,7 +139,9 @@ public:
 
     short WheelDelta;
     short HWheelDelta;
+private:
     TEXT_BUFFER_INFO *TextInfo;
+public:
     SCREEN_INFORMATION *Next;
     BYTE WriteConsoleDbcsLeadByte[2];
     BYTE FillOutDbcsLeadChar;

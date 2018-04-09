@@ -177,13 +177,13 @@ namespace Microsoft::Console::Interactivity::Win32
 
         // math helpers
         void _CalculateWindowRect(const COORD coordWindowInChars,
-                                    _Inout_ RECT* const prectWindow) const;
+                                  _Inout_ RECT* const prectWindow) const;
         static void s_CalculateWindowRect(const COORD coordWindowInChars,
-                                            const int iDpi,
-                                            const COORD coordFontSize,
-                                            const COORD coordBufferSize,
-                                            _In_opt_ HWND const hWnd,
-                                            _Inout_ RECT* const prectWindow);
+                                          const int iDpi,
+                                          const COORD coordFontSize,
+                                          const COORD coordBufferSize,
+                                          _In_opt_ HWND const hWnd,
+                                          _Inout_ RECT* const prectWindow);
 
         static void s_ReinitializeFontsForDPIChange();
 

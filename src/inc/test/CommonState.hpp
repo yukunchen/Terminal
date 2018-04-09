@@ -90,7 +90,7 @@ public:
         UINT uiCursorSize = 12;
 
         THROW_IF_FAILED(SCREEN_INFORMATION::CreateInstance(coordWindowSize,
-                                                           m_pFontInfo,
+                                                           *m_pFontInfo,
                                                            coordScreenBufferSize,
                                                            ciFill,
                                                            ciPopupFill,
@@ -140,10 +140,10 @@ public:
 
         UINT uiCursorSize = 12;
 
-        m_backupTextBufferInfo = gci.CurrentScreenBuffer->TextInfo;
+        m_backupTextBufferInfo = &gci.CurrentScreenBuffer->GetTextBuffer();
         try
         {
-            std::unique_ptr<TEXT_BUFFER_INFO> textBuffer = std::make_unique<TEXT_BUFFER_INFO>(m_pFontInfo,
+            std::unique_ptr<TEXT_BUFFER_INFO> textBuffer = std::make_unique<TEXT_BUFFER_INFO>(*m_pFontInfo,
                                                                                               coordScreenBufferSize,
                                                                                               ciFill,
                                                                                               uiCursorSize);
@@ -151,7 +151,7 @@ public:
             {
                 m_ntstatusTextBufferInfo = STATUS_NO_MEMORY;
             }
-            gci.CurrentScreenBuffer->TextInfo = textBuffer.release();
+            gci.CurrentScreenBuffer->GetTextBuffer() = *textBuffer.release();
         }
         catch (...)
         {
@@ -163,9 +163,8 @@ public:
     {
         const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         ASSERT(gci.CurrentScreenBuffer != nullptr);
-        delete gci.CurrentScreenBuffer->TextInfo;
 
-        gci.CurrentScreenBuffer->TextInfo = m_backupTextBufferInfo;
+        gci.CurrentScreenBuffer->GetTextBuffer() = *m_backupTextBufferInfo;
     }
 
     void FillTextBuffer()
@@ -175,17 +174,16 @@ public:
         const SHORT cRowsToFill = 4;
 
         ASSERT(gci.CurrentScreenBuffer != nullptr);
-        ASSERT(gci.CurrentScreenBuffer->TextInfo != nullptr);
 
-        TEXT_BUFFER_INFO* pTextInfo = gci.CurrentScreenBuffer->TextInfo;
+        TEXT_BUFFER_INFO& textBuffer = gci.CurrentScreenBuffer->GetTextBuffer();
 
         for (SHORT iRow = 0; iRow < cRowsToFill; iRow++)
         {
-            ROW& row = pTextInfo->GetRowAtIndex(iRow);
+            ROW& row = textBuffer.GetRowAtIndex(iRow);
             FillRow(&row);
         }
 
-        pTextInfo->GetCursor()->SetYPosition(cRowsToFill);
+        textBuffer.GetCursor()->SetYPosition(cRowsToFill);
     }
 
     void FillTextBufferBisect()
@@ -195,17 +193,16 @@ public:
         const SHORT cRowsToFill = s_csBufferHeight;
 
         ASSERT(gci.CurrentScreenBuffer != nullptr);
-        ASSERT(gci.CurrentScreenBuffer->TextInfo != nullptr);
 
-        TEXT_BUFFER_INFO* pTextInfo = gci.CurrentScreenBuffer->TextInfo;
+        TEXT_BUFFER_INFO& textBuffer = gci.CurrentScreenBuffer->GetTextBuffer();
 
         for (SHORT iRow = 0; iRow < cRowsToFill; iRow++)
         {
-            ROW& row = pTextInfo->GetRowAtIndex(iRow);
+            ROW& row = textBuffer.GetRowAtIndex(iRow);
             FillBisect(&row);
         }
 
-        pTextInfo->GetCursor()->SetYPosition(cRowsToFill);
+        textBuffer.GetCursor()->SetYPosition(cRowsToFill);
     }
 
     NTSTATUS GetTextBufferInfoInitResult()

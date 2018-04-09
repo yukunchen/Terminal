@@ -65,12 +65,12 @@ NTSTATUS AdjustCursorPosition(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ COORD c
         }
         else
         {
-            coordCursor.X = pScreenInfo->TextInfo->GetCursor()->GetPosition().X;
+            coordCursor.X = pScreenInfo->GetTextBuffer().GetCursor()->GetPosition().X;
         }
     }
     SMALL_RECT srMargins = pScreenInfo->GetScrollMargins();
     const bool fMarginsSet = srMargins.Bottom > srMargins.Top;
-    const int iCurrentCursorY = pScreenInfo->TextInfo->GetCursor()->GetPosition().Y;
+    const int iCurrentCursorY = pScreenInfo->GetTextBuffer().GetCursor()->GetPosition().Y;
 
     SMALL_RECT srBufferViewport = pScreenInfo->GetBufferViewport();
     // The margins are in viewport relative coordinates. Adjust for that.
@@ -191,8 +191,8 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                           _Inout_opt_ PSHORT const psScrollY)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    PTEXT_BUFFER_INFO pTextBuffer = pScreenInfo->TextInfo;
-    Cursor* const pCursor = pTextBuffer->GetCursor();
+    TEXT_BUFFER_INFO& textBuffer = pScreenInfo->GetTextBuffer();
+    Cursor* const pCursor = textBuffer.GetCursor();
     COORD CursorPosition = pCursor->GetPosition();
     NTSTATUS Status = STATUS_SUCCESS;
     ULONG NumChars;
@@ -580,7 +580,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
 
                         // since you just backspaced yourself back up into the previous row, unset the wrap
                         // flag on the prev row if it was set
-                        pTextBuffer->GetRowByOffset(CursorPosition.Y).GetCharRow().SetWrapForced(false);
+                        textBuffer.GetRowByOffset(CursorPosition.Y).GetCharRow().SetWrapForced(false);
                     }
                 }
                 else if (IS_CONTROL_CHAR(LastChar))
@@ -654,7 +654,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
 
                     // since you just backspaced yourself back up into the previous row, unset the wrap flag
                     // on the prev row if it was set
-                    pTextBuffer->GetRowByOffset(CursorPosition.Y).GetCharRow().SetWrapForced(false);
+                    textBuffer.GetRowByOffset(CursorPosition.Y).GetCharRow().SetWrapForced(false);
 
                     Status = AdjustCursorPosition(pScreenInfo, CursorPosition, dwFlags & WC_KEEP_CURSOR_VISIBLE, psScrollY);
                 }
@@ -690,7 +690,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                     CursorPosition.Y = pCursor->GetPosition().Y + 1;
 
                     // since you just tabbed yourself past the end of the row, set the wrap
-                    pTextBuffer->GetRowByOffset(pCursor->GetPosition().Y).GetCharRow().SetWrapForced(true);
+                    textBuffer.GetRowByOffset(pCursor->GetPosition().Y).GetCharRow().SetWrapForced(true);
                 }
                 else
                 {
@@ -741,7 +741,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
 
             {
                 // since we explicitly just moved down a row, clear the wrap status on the row we just came from
-                pTextBuffer->GetRowByOffset(pCursor->GetPosition().Y).GetCharRow().SetWrapForced(false);
+                textBuffer.GetRowByOffset(pCursor->GetPosition().Y).GetCharRow().SetWrapForced(false);
             }
 
             Status = AdjustCursorPosition(pScreenInfo, CursorPosition, (dwFlags & WC_KEEP_CURSOR_VISIBLE) != 0, psScrollY);
@@ -756,7 +756,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                 (pScreenInfo->OutputMode & ENABLE_WRAP_AT_EOL_OUTPUT))
             {
                 COORD const TargetPoint = pCursor->GetPosition();
-                ROW& Row = pTextBuffer->GetRowByOffset(TargetPoint.Y);
+                ROW& Row = textBuffer.GetRowByOffset(TargetPoint.Y);
                 ICharRow& iCharRow = Row.GetCharRow();
 
                 try
@@ -933,14 +933,14 @@ NTSTATUS DoWriteConsole(_In_reads_bytes_(*pcbBuffer) PWCHAR pwchBuffer,
         return CONSOLE_STATUS_WAIT;
     }
 
-    PTEXT_BUFFER_INFO const pTextBuffer = pScreenInfo->TextInfo;
+    const auto& textBuffer = pScreenInfo->GetTextBuffer();
     return WriteChars(pScreenInfo,
                       pwchBuffer,
                       pwchBuffer,
                       pwchBuffer,
                       pcbBuffer,
                       nullptr,
-                      pTextBuffer->GetCursor()->GetPosition().X,
+                      textBuffer.GetCursor()->GetPosition().X,
                       WC_LIMIT_BACKSPACE,
                       nullptr);
 }

@@ -305,7 +305,7 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
 
         if (pCookedReadData->_OriginalCursorPosition.X == -1)
         {
-            pCookedReadData->_OriginalCursorPosition = pCookedReadData->_pScreenInfo->TextInfo->GetCursor()->GetPosition();
+            pCookedReadData->_OriginalCursorPosition = pCookedReadData->_pScreenInfo->GetTextBuffer().GetCursor()->GetPosition();
         }
 
         if (commandLineEditingKeys)
@@ -776,7 +776,7 @@ bool ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
             COORD CursorPosition;
 
             // save cursor position
-            CursorPosition = pCookedReadData->_pScreenInfo->TextInfo->GetCursor()->GetPosition();
+            CursorPosition = pCookedReadData->_pScreenInfo->GetTextBuffer().GetCursor()->GetPosition();
             CursorPosition.X = (SHORT)(CursorPosition.X + NumSpaces);
 
             // clear the current command line from the screen

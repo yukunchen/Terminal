@@ -77,7 +77,7 @@ SCREEN_INFORMATION::~SCREEN_INFORMATION()
 // Return Value:
 [[nodiscard]]
 NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
-                                            const FontInfo* const pfiFont,
+                                            const FontInfo fontInfo,
                                             _In_ COORD coordScreenBufferSize,
                                             const CHAR_INFO ciFill,
                                             const CHAR_INFO ciPopupFill,
@@ -107,7 +107,7 @@ NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
 
         try
         {
-            std::unique_ptr<TEXT_BUFFER_INFO> textBuffer = std::make_unique<TEXT_BUFFER_INFO>(pfiFont,
+            std::unique_ptr<TEXT_BUFFER_INFO> textBuffer = std::make_unique<TEXT_BUFFER_INFO>(fontInfo,
                                                                                               pScreen->GetScreenBufferSize(),
                                                                                               ciFill,
                                                                                               uiCursorSize);
@@ -510,7 +510,7 @@ COORD SCREEN_INFORMATION::GetScrollBarSizesInCharacters() const
 
 void SCREEN_INFORMATION::GetRequiredConsoleSizeInPixels(_Out_ PSIZE const pRequiredSize) const
 {
-    COORD const coordFontSize = TextInfo->GetCurrentFont()->GetSize();
+    COORD const coordFontSize = TextInfo->GetCurrentFont().GetSize();
 
     // TODO: Assert valid size boundaries
     pRequiredSize->cx = GetScreenWindowSizeX() * coordFontSize.X;
@@ -2011,10 +2011,10 @@ NTSTATUS SCREEN_INFORMATION::_CreateAltBuffer(_Out_ SCREEN_INFORMATION** const p
 
     COORD WindowSize = _viewport.Dimensions();
 
-    const FontInfo* const pfiExistingFont = TextInfo->GetCurrentFont();
+    const FontInfo& existingFont = TextInfo->GetCurrentFont();
 
     NTSTATUS Status = SCREEN_INFORMATION::CreateInstance(WindowSize,
-                                                         pfiExistingFont,
+                                                         existingFont,
                                                          WindowSize,
                                                          Fill,
                                                          Fill,
@@ -2636,4 +2636,14 @@ std::pair<COORD, COORD> SCREEN_INFORMATION::GetWordBoundary(const COORD position
         }
     }
     return { start, end };
+}
+
+TEXT_BUFFER_INFO& SCREEN_INFORMATION::GetTextBuffer()
+{
+    return *TextInfo;
+}
+
+const TEXT_BUFFER_INFO& SCREEN_INFORMATION::GetTextBuffer() const
+{
+    return *TextInfo;
 }

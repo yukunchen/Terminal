@@ -574,7 +574,7 @@ NTSTATUS ReadLineInput(_Inout_ InputBuffer* const pInputBuffer,
         CookedReadData._BufPtr += cchInitialData;
         CookedReadData._CurrentPosition = cchInitialData;
 
-        CookedReadData._OriginalCursorPosition = pScreenInfo->TextInfo->GetCursor()->GetPosition();
+        CookedReadData._OriginalCursorPosition = pScreenInfo->GetTextBuffer().GetCursor()->GetPosition();
         CookedReadData._OriginalCursorPosition.X -= (SHORT)CookedReadData._CurrentPosition;
 
         const SHORT sScreenBufferSizeX = pScreenInfo->GetScreenBufferSize().X;

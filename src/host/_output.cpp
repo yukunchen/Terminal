@@ -34,8 +34,8 @@ void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
                                const bool fWasLineWrapped)
 {
     DBGOUTPUT(("StreamWriteToScreenBuffer\n"));
-    COORD const TargetPoint = pScreenInfo->TextInfo->GetCursor()->GetPosition();
-    ROW& Row = pScreenInfo->TextInfo->GetRowByOffset(TargetPoint.Y);
+    COORD const TargetPoint = pScreenInfo->GetTextBuffer().GetCursor()->GetPosition();
+    ROW& Row = pScreenInfo->GetTextBuffer().GetRowByOffset(TargetPoint.Y);
     DBGOUTPUT(("&Row = 0x%p, TargetPoint = (0x%x,0x%x)\n", &Row, TargetPoint.X, TargetPoint.Y));
 
     // TODO: from CleanupDbcsEdgesForWrite to the end of the if statement seems to never execute
@@ -133,7 +133,7 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
         }
 
         const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
-        ROW* pRow = &pScreenInfo->TextInfo->GetRowByOffset(coordDest.Y);
+        ROW* pRow = &pScreenInfo->GetTextBuffer().GetRowByOffset(coordDest.Y);
         for (SHORT i = 0; i < YSize; i++)
         {
             // ensure we have a valid row pointer, if not, skip.
@@ -254,7 +254,7 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
 
             try
             {
-                pRow = &pScreenInfo->TextInfo->GetNextRowNoWrap(*pRow);
+                pRow = &pScreenInfo->GetTextBuffer().GetNextRowNoWrap(*pRow);
             }
             catch (...)
             {
@@ -279,7 +279,7 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
             //  If the current attr is different then the last one, then insert the last one, and start a new run.
             for (int y = coordDest.Y; y < coordSrcDimensions.Y + coordDest.Y; y++)
             {
-                ROW& Row = pScreenInfo->TextInfo->GetRowByOffset(y);
+                ROW& Row = pScreenInfo->GetTextBuffer().GetRowByOffset(y);
 
                 TextAttributeRun insert;
                 int currentLength = 1;  // This is the length of the current run.
@@ -348,7 +348,7 @@ void WriteRectToScreenBuffer(_Inout_ SCREEN_INFORMATION& screenInfo,
     // copy data to output buffer
     for (size_t iRow = 0; iRow < ySize; ++iRow)
     {
-        ROW& row = screenInfo.TextInfo->GetRowByOffset(coordDest.Y + static_cast<UINT>(iRow));
+        ROW& row = screenInfo.GetTextBuffer().GetRowByOffset(coordDest.Y + static_cast<UINT>(iRow));
         // clear wrap status for rectangle drawing
         row.GetCharRow().SetWrapForced(false);
 
@@ -629,7 +629,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
         BufferA = TransBufferA;
     }
 
-    ROW* pRow = &pScreenInfo->TextInfo->GetRowByOffset(coordWrite.Y);
+    ROW* pRow = &pScreenInfo->GetTextBuffer().GetRowByOffset(coordWrite.Y);
     if ((ulStringType == CONSOLE_REAL_UNICODE) || (ulStringType == CONSOLE_FALSE_UNICODE) || (ulStringType == CONSOLE_ASCII))
     {
         for (;;)
@@ -757,7 +757,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
 
             try
             {
-                pRow = &pScreenInfo->TextInfo->GetNextRowNoWrap(*pRow);
+                pRow = &pScreenInfo->GetTextBuffer().GetNextRowNoWrap(*pRow);
             }
             catch (...)
             {
@@ -820,7 +820,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
 
             try
             {
-                pRow = &pScreenInfo->TextInfo->GetNextRowNoWrap(*pRow);
+                pRow = &pScreenInfo->GetTextBuffer().GetNextRowNoWrap(*pRow);
             }
             catch (...)
             {
@@ -962,7 +962,7 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
         }
     }
 
-    ROW* pRow = &pScreenInfo->TextInfo->GetRowByOffset(coordWrite.Y);
+    ROW* pRow = &pScreenInfo->GetTextBuffer().GetRowByOffset(coordWrite.Y);
     if (ulElementType == CONSOLE_ASCII ||
         ulElementType == CONSOLE_REAL_UNICODE ||
         ulElementType == CONSOLE_FALSE_UNICODE)
@@ -1092,7 +1092,7 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
 
             try
             {
-                pRow = &pScreenInfo->TextInfo->GetNextRowNoWrap(*pRow);
+                pRow = &pScreenInfo->GetTextBuffer().GetNextRowNoWrap(*pRow);
             }
             catch (...)
             {
@@ -1172,7 +1172,7 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
 
             try
             {
-                pRow = &pScreenInfo->TextInfo->GetNextRowNoWrap(*pRow);
+                pRow = &pScreenInfo->GetTextBuffer().GetNextRowNoWrap(*pRow);
             }
             catch (...)
             {
@@ -1248,7 +1248,7 @@ void FillRectangle(const CHAR_INFO * const pciFill,
 
     SHORT XSize = (SHORT)(psrTarget->Right - psrTarget->Left + 1);
 
-    ROW* pRow = &pScreenInfo->TextInfo->GetRowByOffset(psrTarget->Top);
+    ROW* pRow = &pScreenInfo->GetTextBuffer().GetRowByOffset(psrTarget->Top);
     for (SHORT i = psrTarget->Top; i <= psrTarget->Bottom; i++)
     {
         if (pRow == nullptr)
@@ -1337,7 +1337,7 @@ void FillRectangle(const CHAR_INFO * const pciFill,
 
         try
         {
-            pRow = &pScreenInfo->TextInfo->GetNextRowNoWrap(*pRow);
+            pRow = &pScreenInfo->GetTextBuffer().GetNextRowNoWrap(*pRow);
         }
         catch (...)
         {

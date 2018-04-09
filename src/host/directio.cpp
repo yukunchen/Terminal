@@ -739,7 +739,7 @@ NTSTATUS SrvReadConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
         {
             LOG_IF_FAILED(TranslateOutputToOem(Buffer, BufferSize));
         }
-        else if (!psi->TextInfo->GetCurrentFont()->IsTrueTypeFont())
+        else if (!psi->GetTextBuffer().GetCurrentFont().IsTrueTypeFont())
         {
             // For compatibility reasons, we must maintain the behavior that munges the data if we are writing while a raster font is enabled.
             // This can be removed when raster font support is removed.
@@ -813,7 +813,7 @@ NTSTATUS SrvWriteConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*Reply
             LOG_IF_FAILED(TranslateOutputToUnicode(Buffer, BufferSize));
             Status = WriteScreenBuffer(ScreenBufferInformation, Buffer, &a->CharRegion);
         }
-        else if (!ScreenBufferInformation->TextInfo->GetCurrentFont()->IsTrueTypeFont())
+        else if (!ScreenBufferInformation->GetTextBuffer().GetCurrentFont().IsTrueTypeFont())
         {
             // For compatibility reasons, we must maintain the behavior that munges the data if we are writing while a raster font is enabled.
             // This can be removed when raster font support is removed.
@@ -1092,11 +1092,11 @@ NTSTATUS ConsoleCreateScreenBuffer(_Out_ ConsoleHandleData** ppHandle,
     WindowSize.X = (SHORT)psiExisting->GetScreenWindowSizeX();
     WindowSize.Y = (SHORT)psiExisting->GetScreenWindowSizeY();
 
-    const FontInfo* const pfiExistingFont = psiExisting->TextInfo->GetCurrentFont();
+    const FontInfo& existingFont = psiExisting->GetTextBuffer().GetCurrentFont();
 
     PSCREEN_INFORMATION ScreenInfo = nullptr;
     NTSTATUS Status = SCREEN_INFORMATION::CreateInstance(WindowSize,
-                                                         pfiExistingFont,
+                                                         existingFont,
                                                          WindowSize,
                                                          Fill,
                                                          Fill,

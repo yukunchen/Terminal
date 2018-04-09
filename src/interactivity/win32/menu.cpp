@@ -293,17 +293,17 @@ void Menu::s_GetConsoleState(CONSOLE_STATE_INFO * const pStateInfo)
     pStateInfo->WindowSize.X = ScreenInfo->GetScreenWindowSizeX();
     pStateInfo->WindowSize.Y = ScreenInfo->GetScreenWindowSizeY();
 
-    RECT const rcWindow = ServiceLocator::LocateConsoleWindow<Window>()->GetWindowRect();
+    const RECT rcWindow = ServiceLocator::LocateConsoleWindow<Window>()->GetWindowRect();
     pStateInfo->WindowPosX = rcWindow.left;
     pStateInfo->WindowPosY = rcWindow.top;
 
-    const FontInfo* const pfiCurrentFont = ScreenInfo->TextInfo->GetCurrentFont();
-    pStateInfo->FontFamily = pfiCurrentFont->GetFamily();
-    pStateInfo->FontSize = pfiCurrentFont->GetUnscaledSize();
-    pStateInfo->FontWeight = pfiCurrentFont->GetWeight();
-    StringCchCopyW(pStateInfo->FaceName, ARRAYSIZE(pStateInfo->FaceName), pfiCurrentFont->GetFaceName());
+    const FontInfo& currentFont = ScreenInfo->GetTextBuffer().GetCurrentFont();
+    pStateInfo->FontFamily = currentFont.GetFamily();
+    pStateInfo->FontSize = currentFont.GetUnscaledSize();
+    pStateInfo->FontWeight = currentFont.GetWeight();
+    StringCchCopyW(pStateInfo->FaceName, ARRAYSIZE(pStateInfo->FaceName), currentFont.GetFaceName());
 
-    Cursor* pCursor = ScreenInfo->TextInfo->GetCursor();
+    Cursor* pCursor = ScreenInfo->GetTextBuffer().GetCursor();
     pStateInfo->CursorSize = pCursor->GetSize();
     pStateInfo->CursorColor = pCursor->GetColor();
     pStateInfo->CursorType = static_cast<unsigned int>(pCursor->GetType());
@@ -414,19 +414,18 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
 
     ScreenInfo->UpdateFont(&fiNewFont);
 
-    const FontInfo* const pfiFontApplied = ScreenInfo->TextInfo->GetCurrentFont();
+    const FontInfo& fontApplied = ScreenInfo->GetTextBuffer().GetCurrentFont();
 
     // Now make sure internal font state reflects the font chosen
-    gci.SetFontFamily(pfiFontApplied->GetFamily());
-    gci.SetFontSize(pfiFontApplied->GetUnscaledSize());
-    gci.SetFontWeight(pfiFontApplied->GetWeight());
-    gci.SetFaceName(pfiFontApplied->GetFaceName(), LF_FACESIZE);
+    gci.SetFontFamily(fontApplied.GetFamily());
+    gci.SetFontSize(fontApplied.GetUnscaledSize());
+    gci.SetFontWeight(fontApplied.GetWeight());
+    gci.SetFaceName(fontApplied.GetFaceName(), LF_FACESIZE);
 
     ScreenInfo->SetCursorInformation(pStateInfo->CursorSize,
-        ScreenInfo->TextInfo->GetCursor()->IsVisible(),
-        pStateInfo->CursorColor,
-        static_cast<CursorType>(pStateInfo->CursorType)
-    );
+                                     ScreenInfo->GetTextBuffer().GetCursor()->IsVisible(),
+                                     pStateInfo->CursorColor,
+                                     static_cast<CursorType>(pStateInfo->CursorType));
 
     {
         // Requested window in characters

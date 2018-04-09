@@ -16,10 +16,10 @@
 RECT GetImeSuggestionWindowPos()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    TEXT_BUFFER_INFO* const ptbi = gci.CurrentScreenBuffer->TextInfo;
+    const TEXT_BUFFER_INFO& textBuffer = gci.CurrentScreenBuffer->GetTextBuffer();
 
-    COORD const coordFont = ptbi->GetCurrentFont()->GetSize();
-    COORD coordCursor = ptbi->GetCursor()->GetPosition();
+    const COORD coordFont = textBuffer.GetCurrentFont().GetSize();
+    COORD coordCursor = textBuffer.GetCursor()->GetPosition();
 
     // Adjust the cursor position to be relative to the viewport.
     // This means that if the cursor is at row 30 in the buffer but the viewport is showing rows 20-40 right now on screen

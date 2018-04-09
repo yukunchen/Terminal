@@ -137,11 +137,12 @@ USHORT SearchForString(const SCREEN_INFORMATION * const pScreenInfo,
             const ROW* pRow;
             try
             {
-                pRow = &pScreenInfo->TextInfo->GetRowAtIndex(RowIndex);
+                const auto& textBuffer = pScreenInfo->GetTextBuffer();
+                pRow = &textBuffer.GetRowAtIndex(RowIndex);
                 if (RecomputeRow)
                 {
-                    RowIndex = (pScreenInfo->TextInfo->GetFirstRowIndex() + Position.Y) % pScreenInfo->GetScreenBufferSize().Y;
-                    pRow = &pScreenInfo->TextInfo->GetRowAtIndex(RowIndex);
+                    RowIndex = (textBuffer.GetFirstRowIndex() + Position.Y) % pScreenInfo->GetScreenBufferSize().Y;
+                    pRow = &textBuffer.GetRowAtIndex(RowIndex);
                     RecomputeRow = FALSE;
                 }
             }

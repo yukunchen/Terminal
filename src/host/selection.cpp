@@ -135,7 +135,7 @@ NTSTATUS Selection::GetSelectionRects(_Outptr_result_buffer_all_(*pcRectangles) 
                         // if not the last row, pad the right selection to the buffer edge
                         if (iRow != pSelectionRect->Bottom)
                         {
-                            srHighlightRow.Right = pScreenInfo->TextInfo->GetCoordBufferSize().X - 1;
+                            srHighlightRow.Right = pScreenInfo->GetTextBuffer().GetCoordBufferSize().X - 1;
                         }
 
                         // if we've determined we're in a scenario where we must remove the inner rectangle from the lines...
@@ -209,8 +209,7 @@ void Selection::s_BisectSelection(const short sStringLength,
                                   const SCREEN_INFORMATION* const pScreenInfo,
                                   _Inout_ SMALL_RECT* const pSmallRect)
 {
-    const TEXT_BUFFER_INFO* const pTextInfo = pScreenInfo->TextInfo;
-    const ROW& Row = pTextInfo->GetRowByOffset(coordTargetPoint.Y);
+    const ROW& Row = pScreenInfo->GetTextBuffer().GetRowByOffset(coordTargetPoint.Y);
 
     try
     {
@@ -243,7 +242,7 @@ void Selection::s_BisectSelection(const short sStringLength,
         }
         else
         {
-            const ROW& RowNext = pTextInfo->GetNextRowNoWrap(Row);
+            const ROW& RowNext = pScreenInfo->GetTextBuffer().GetNextRowNoWrap(Row);
             const ICharRow& iCharRowNext = RowNext.GetCharRow();
             // we only support ucs2 encoded char rows
             FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
@@ -474,7 +473,7 @@ void Selection::_CancelMouseSelection()
     }
 
     // Mark the cursor position as changed so we'll fire off a win event.
-    pScreenInfo->TextInfo->GetCursor()->SetHasMoved(true);
+    pScreenInfo->GetTextBuffer().GetCursor()->SetHasMoved(true);
 }
 
 // Routine Description:
@@ -607,8 +606,8 @@ void Selection::InitializeMarkSelection()
 
     // save old cursor position and make console cursor into selection cursor.
     SCREEN_INFORMATION* pScreenInfo = gci.CurrentScreenBuffer;
-    _SaveCursorData(pScreenInfo->TextInfo);
-    Cursor* const pCursor = pScreenInfo->TextInfo->GetCursor();
+    _SaveCursorData(pScreenInfo->GetTextBuffer());
+    Cursor* const pCursor = pScreenInfo->GetTextBuffer().GetCursor();
     pScreenInfo->SetCursorInformation(100, TRUE, pCursor->GetColor(), pCursor->GetType());
 
     const COORD coordPosition = pCursor->GetPosition();
@@ -696,13 +695,13 @@ void Selection::SelectAll()
             COORD coordOneAfterEnd = coordInputEnd;
             Utils::s_DoIncrementScreenCoordinate(srEdges, &coordOneAfterEnd);
 
-            if (s_IsWithinBoundaries(pScreenInfo->TextInfo->GetCursor()->GetPosition(), coordInputStart, coordInputEnd))
+            if (s_IsWithinBoundaries(pScreenInfo->GetTextBuffer().GetCursor()->GetPosition(), coordInputStart, coordInputEnd))
             {
                 // If there was no previous selection and the cursor is within the input line, select the input line only
                 coordNewSelStart = coordInputStart;
                 coordNewSelEnd = coordInputEnd;
             }
-            else if (s_IsWithinBoundaries(pScreenInfo->TextInfo->GetCursor()->GetPosition(), coordOneAfterEnd, coordOneAfterEnd))
+            else if (s_IsWithinBoundaries(pScreenInfo->GetTextBuffer().GetCursor()->GetPosition(), coordOneAfterEnd, coordOneAfterEnd))
             {
                 // Temporary workaround until MSFT: 614579 is completed.
                 // Select only the input line if the cursor is one after the final position of the input line.
