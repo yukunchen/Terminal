@@ -31,9 +31,7 @@ public:
 
     static const unsigned int s_InvertCursorColor = INVALID_COLOR;
 
-    Cursor(_In_ Microsoft::Console::Interactivity::IAccessibilityNotifier *pNotifier, const ULONG ulSize);
-    [[nodiscard]]
-    static NTSTATUS CreateInstance(const ULONG ulSize, _Outptr_ Cursor ** const ppCursor);
+    Cursor(const ULONG ulSize);
     ~Cursor();
 
     void UpdateSystemMetrics();
