@@ -258,7 +258,7 @@ void ScreenBufferTests::TestReverseLineFeed()
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer;
     auto bufferWriter = psi->GetBufferWriter();
-    auto& cursor = psi->TextInfo->GetCursor();
+    auto& cursor = psi->_textBuffer->GetCursor();
     auto viewport = psi->GetBufferViewport();
     VERIFY_IS_NOT_NULL(bufferWriter);
 
@@ -301,7 +301,7 @@ void ScreenBufferTests::TestReverseLineFeed()
         L"viewport={L:%d,T:%d,R:%d,B:%d}",
         viewport.Left, viewport.Top, viewport.Right, viewport.Bottom
     ));
-    auto c = psi->TextInfo->GetLastNonSpaceCharacter();
+    auto c = psi->_textBuffer->GetLastNonSpaceCharacter();
     VERIFY_ARE_EQUAL(c.Y, 2); // This is the coordinates of the second "foo" from before.
 
     ////////////////////////////////////////////////////////////////////////
@@ -324,7 +324,7 @@ void ScreenBufferTests::TestReverseLineFeed()
         L"viewport={L:%d,T:%d,R:%d,B:%d}",
         viewport.Left, viewport.Top, viewport.Right, viewport.Bottom
     ));
-    c = psi->TextInfo->GetLastNonSpaceCharacter();
+    c = psi->_textBuffer->GetLastNonSpaceCharacter();
     VERIFY_ARE_EQUAL(c.Y, 6);
 }
 
@@ -705,7 +705,7 @@ void ScreenBufferTests::EraseAllTests()
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer;
     auto bufferWriter = psi->GetBufferWriter();
-    auto& cursor = psi->TextInfo->GetCursor();
+    auto& cursor = psi->_textBuffer->GetCursor();
     VERIFY_IS_NOT_NULL(bufferWriter);
 
     VERIFY_ARE_EQUAL(psi->GetBufferViewport().Top, 0);
@@ -782,7 +782,7 @@ void ScreenBufferTests::VtResize()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    TextBuffer* const tbi = psi->TextInfo;
+    TextBuffer* const tbi = psi->_textBuffer;
     StateMachine* const stateMachine = psi->GetStateMachine();
     Cursor& cursor = tbi->GetCursor();
     SetFlag(psi->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
@@ -918,7 +918,7 @@ void ScreenBufferTests::VtSoftResetCursorPosition()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    const TextBuffer* const tbi = psi->TextInfo;
+    const TextBuffer* const tbi = psi->_textBuffer;
     StateMachine* const stateMachine = psi->GetStateMachine();
     const Cursor& cursor = tbi->GetCursor();
 
