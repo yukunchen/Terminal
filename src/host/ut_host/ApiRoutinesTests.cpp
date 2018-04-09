@@ -93,7 +93,7 @@ class ApiRoutinesTests
         VERIFY_ARE_EQUAL(fQuickEditExpected, IsFlagSet(gci.Flags, CONSOLE_QUICK_EDIT_MODE));
         VERIFY_ARE_EQUAL(fAutoPositionExpected, IsFlagSet(gci.Flags, CONSOLE_AUTO_POSITION));
         VERIFY_ARE_EQUAL(!!fInsertModeExpected, !!gci.GetInsertMode());
-        VERIFY_ARE_EQUAL(fCursorDBModeExpected, gci.CurrentScreenBuffer->GetTextBuffer().GetCursor()->IsDouble());
+        VERIFY_ARE_EQUAL(fCursorDBModeExpected, gci.CurrentScreenBuffer->GetTextBuffer().GetCursor().IsDouble());
     }
 
     TEST_METHOD(ApiSetConsoleInputModeImplValidNonExtended)

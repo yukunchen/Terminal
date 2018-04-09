@@ -473,7 +473,7 @@ void Selection::_CancelMouseSelection()
     }
 
     // Mark the cursor position as changed so we'll fire off a win event.
-    pScreenInfo->GetTextBuffer().GetCursor()->SetHasMoved(true);
+    pScreenInfo->GetTextBuffer().GetCursor().SetHasMoved(true);
 }
 
 // Routine Description:
@@ -607,10 +607,10 @@ void Selection::InitializeMarkSelection()
     // save old cursor position and make console cursor into selection cursor.
     SCREEN_INFORMATION* pScreenInfo = gci.CurrentScreenBuffer;
     _SaveCursorData(pScreenInfo->GetTextBuffer());
-    Cursor* const pCursor = pScreenInfo->GetTextBuffer().GetCursor();
-    pScreenInfo->SetCursorInformation(100, TRUE, pCursor->GetColor(), pCursor->GetType());
+    const Cursor& cursor = pScreenInfo->GetTextBuffer().GetCursor();
+    pScreenInfo->SetCursorInformation(100, TRUE, cursor.GetColor(), cursor.GetType());
 
-    const COORD coordPosition = pCursor->GetPosition();
+    const COORD coordPosition = cursor.GetPosition();
     LOG_IF_FAILED(pScreenInfo->SetCursorPosition(coordPosition, true));
 
     // set the cursor position as the anchor position
@@ -695,13 +695,13 @@ void Selection::SelectAll()
             COORD coordOneAfterEnd = coordInputEnd;
             Utils::s_DoIncrementScreenCoordinate(srEdges, &coordOneAfterEnd);
 
-            if (s_IsWithinBoundaries(pScreenInfo->GetTextBuffer().GetCursor()->GetPosition(), coordInputStart, coordInputEnd))
+            if (s_IsWithinBoundaries(pScreenInfo->GetTextBuffer().GetCursor().GetPosition(), coordInputStart, coordInputEnd))
             {
                 // If there was no previous selection and the cursor is within the input line, select the input line only
                 coordNewSelStart = coordInputStart;
                 coordNewSelEnd = coordInputEnd;
             }
-            else if (s_IsWithinBoundaries(pScreenInfo->GetTextBuffer().GetCursor()->GetPosition(), coordOneAfterEnd, coordOneAfterEnd))
+            else if (s_IsWithinBoundaries(pScreenInfo->GetTextBuffer().GetCursor().GetPosition(), coordOneAfterEnd, coordOneAfterEnd))
             {
                 // Temporary workaround until MSFT: 614579 is completed.
                 // Select only the input line if the cursor is one after the final position of the input line.

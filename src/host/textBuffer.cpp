@@ -33,15 +33,12 @@ TEXT_BUFFER_INFO::TEXT_BUFFER_INFO(const FontInfo fontInfo,
     _FirstRow{ 0 },
     _ciFill{ fill },
     _coordBufferSize{ screenBufferSize },
-    _pCursor{ nullptr },
+    _cursor{ cursorSize },
     _storage{}
 {
-    _pCursor = new Cursor(cursorSize);
-    THROW_IF_NULL_ALLOC(_pCursor);
-
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    _pCursor->SetColor(gci.GetCursorColor());
-    _pCursor->SetType(gci.GetCursorType());
+    _cursor.SetColor(gci.GetCursorColor());
+    _cursor.SetType(gci.GetCursorType());
 
     // initialize ROWs
     for (size_t i = 0; i < static_cast<size_t>(screenBufferSize.Y); ++i)
@@ -51,20 +48,6 @@ TEXT_BUFFER_INFO::TEXT_BUFFER_INFO(const FontInfo fontInfo,
         _storage.emplace_back(static_cast<SHORT>(i), screenBufferSize.X, FillAttributes);
     }
 }
-
-// Routine Description:
-// - Destructor to free memory associated with TEXT_BUFFER_INFO
-// - NOTE: This will release font structures which may not have been allocated at CreateInstance time.
-#pragma prefast(push)
-#pragma prefast(disable:6001, "Prefast fires that *this is not initialized, which is absurd since this is a destructor.")
-TEXT_BUFFER_INFO::~TEXT_BUFFER_INFO()
-{
-    if (_pCursor != nullptr)
-    {
-        delete _pCursor;
-    }
-}
-#pragma prefast(pop)
 
 // Routine Description:
 // - Copies properties from another text buffer into this one.
@@ -77,7 +60,7 @@ void TEXT_BUFFER_INFO::CopyProperties(_In_ TEXT_BUFFER_INFO* const pOtherBuffer)
 {
     _fiCurrentFont = pOtherBuffer->GetCurrentFont();
 
-    GetCursor()->CopyProperties(pOtherBuffer->GetCursor());
+    GetCursor().CopyProperties(pOtherBuffer->GetCursor());
 }
 
 FontInfo& TEXT_BUFFER_INFO::GetCurrentFont()
@@ -440,10 +423,10 @@ bool TEXT_BUFFER_INFO::_PrepareForDoubleByteSequence(const DbcsAttribute dbcsAtt
         short const sBufferWidth = _coordBufferSize.X;
 
         // If we're about to lead on the last column in the row, we need to add a padding space
-        if (GetCursor()->GetPosition().X == sBufferWidth - 1)
+        if (GetCursor().GetPosition().X == sBufferWidth - 1)
         {
             // set that we're wrapping for double byte reasons
-            ICharRow& iCharRow = GetRowByOffset(GetCursor()->GetPosition().Y).GetCharRow();
+            ICharRow& iCharRow = GetRowByOffset(GetCursor().GetPosition().Y).GetCharRow();
             // we only support ucs2 encoded char rows
             FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
                             "only support UCS2 char rows currently");
@@ -476,8 +459,8 @@ bool TEXT_BUFFER_INFO::InsertCharacter(const wchar_t wch,
     if (fSuccess)
     {
         // Get the current cursor position
-        short const iRow = GetCursor()->GetPosition().Y; // row stored as logical position, not array position
-        short const iCol = GetCursor()->GetPosition().X; // column logical and array positions are equal.
+        short const iRow = GetCursor().GetPosition().Y; // row stored as logical position, not array position
+        short const iCol = GetCursor().GetPosition().X; // column logical and array positions are equal.
 
         // Get the row associated with the given logical position
         ROW& Row = GetRowByOffset(iRow);
@@ -535,7 +518,7 @@ void TEXT_BUFFER_INFO::SetWrapOnCurrentRow()
 void TEXT_BUFFER_INFO::AdjustWrapOnCurrentRow(const bool fSet)
 {
     // The vertical position of the cursor represents the current row we're manipulating.
-    const UINT uiCurrentRowOffset = GetCursor()->GetPosition().Y;
+    const UINT uiCurrentRowOffset = GetCursor().GetPosition().Y;
 
     // Set the wrap status as appropriate
     GetRowByOffset(uiCurrentRowOffset).GetCharRow().SetWrapForced(fSet);
@@ -559,11 +542,11 @@ bool TEXT_BUFFER_INFO::IncrementCursor()
     const short iFinalColumnIndex = _coordBufferSize.X - 1;
 
     // Move the cursor one position to the right
-    GetCursor()->IncrementXPosition(1);
+    GetCursor().IncrementXPosition(1);
 
     bool fSuccess = true;
     // If we've passed the final valid column...
-    if (GetCursor()->GetPosition().X > iFinalColumnIndex)
+    if (GetCursor().GetPosition().X > iFinalColumnIndex)
     {
         // Then mark that we've been forced to wrap
         SetWrapOnCurrentRow();
@@ -591,24 +574,24 @@ void TEXT_BUFFER_INFO::DecrementCursor()
     const short iFinalColumnIndex = _coordBufferSize.X - 1;
 
     // Move the cursor one position to the left
-    GetCursor()->DecrementXPosition(1);
+    GetCursor().DecrementXPosition(1);
 
     // If we've passed the beginning of the line...
-    if (GetCursor()->GetPosition().X < 0)
+    if (GetCursor().GetPosition().X < 0)
     {
         // Move us up a line
-        GetCursor()->DecrementYPosition(1);
+        GetCursor().DecrementYPosition(1);
 
         // If we've moved past the top, move back down one and set X to 0.
-        if (GetCursor()->GetPosition().Y < 0)
+        if (GetCursor().GetPosition().Y < 0)
         {
-            GetCursor()->IncrementYPosition(1);
-            GetCursor()->SetXPosition(0);
+            GetCursor().IncrementYPosition(1);
+            GetCursor().SetXPosition(0);
         }
         else
         {
             // Set the X position to the end of the line.
-            GetCursor()->SetXPosition(iFinalColumnIndex);
+            GetCursor().SetXPosition(iFinalColumnIndex);
 
             // Then mark that we've backed around the wrap onto this new line and it's no longer a wrap.
             AdjustWrapOnCurrentRow(false);
@@ -629,14 +612,14 @@ bool TEXT_BUFFER_INFO::NewlineCursor()
     short const iFinalRowIndex = _coordBufferSize.Y - 1;
 
     // Reset the cursor position to 0 and move down one line
-    GetCursor()->SetXPosition(0);
-    GetCursor()->IncrementYPosition(1);
+    GetCursor().SetXPosition(0);
+    GetCursor().IncrementYPosition(1);
 
     // If we've passed the final valid row...
-    if (GetCursor()->GetPosition().Y > iFinalRowIndex)
+    if (GetCursor().GetPosition().Y > iFinalRowIndex)
     {
         // Stay on the final logical/offset row of the buffer.
-        GetCursor()->SetYPosition(iFinalRowIndex);
+        GetCursor().SetYPosition(iFinalRowIndex);
 
         // Instead increment the circular buffer to move us into the "oldest" row of the backing buffer
         fSuccess = IncrementCircularBuffer();
@@ -727,7 +710,7 @@ COORD TEXT_BUFFER_INFO::GetLastNonSpaceCharacter() const
 // - NOTE: Will return 0,0 if already in the top left corner
 COORD TEXT_BUFFER_INFO::GetPreviousFromCursor() const
 {
-    COORD coordPosition = GetCursor()->GetPosition();
+    COORD coordPosition = GetCursor().GetPosition();
 
     // If we're not at the left edge, simply move the cursor to the left by one
     if (coordPosition.X > 0)
@@ -768,9 +751,14 @@ void TEXT_BUFFER_INFO::SetCoordBufferSize(const COORD coordBufferSize)
     _coordBufferSize = coordBufferSize;
 }
 
-Cursor* const TEXT_BUFFER_INFO::GetCursor() const
+Cursor& TEXT_BUFFER_INFO::GetCursor()
 {
-    return _pCursor;
+    return _cursor;
+}
+
+const Cursor& TEXT_BUFFER_INFO::GetCursor() const
+{
+    return _cursor;
 }
 
 CHAR_INFO TEXT_BUFFER_INFO::GetFill() const
@@ -803,9 +791,9 @@ NTSTATUS TEXT_BUFFER_INFO::ResizeTraditional(const COORD currentScreenBufferSize
     }
 
     SHORT TopRow = 0; // new top row of the screen buffer
-    if (newScreenBufferSize.Y <= GetCursor()->GetPosition().Y)
+    if (newScreenBufferSize.Y <= GetCursor().GetPosition().Y)
     {
-        TopRow = GetCursor()->GetPosition().Y - newScreenBufferSize.Y + 1;
+        TopRow = GetCursor().GetPosition().Y - newScreenBufferSize.Y + 1;
     }
     const SHORT TopRowIndex = (GetFirstRowIndex() + TopRow) % currentScreenBufferSize.Y;
 

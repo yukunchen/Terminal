@@ -77,7 +77,7 @@ public:
     void DecrementYPosition(const int DeltaY);
 
     void TimerRoutine(_In_ PSCREEN_INFORMATION const ScreenInfo);
-    void CopyProperties(const Cursor* const pOtherCursor);
+    void CopyProperties(const Cursor& OtherCursor);
 
     void DelayEOLWrap(const COORD coordDelayedAt);
     void ResetDelayEOLWrap();

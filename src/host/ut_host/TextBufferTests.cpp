@@ -326,30 +326,30 @@ void TextBufferTests::TestCopyProperties()
     VERIFY_IS_NOT_NULL(testTextBuffer.get());
 
     // set initial mapping values
-    testTextBuffer->GetCursor()->SetHasMoved(false);
-    otherTbi.GetCursor()->SetHasMoved(true);
+    testTextBuffer->GetCursor().SetHasMoved(false);
+    otherTbi.GetCursor().SetHasMoved(true);
 
-    testTextBuffer->GetCursor()->SetIsVisible(false);
-    otherTbi.GetCursor()->SetIsVisible(true);
+    testTextBuffer->GetCursor().SetIsVisible(false);
+    otherTbi.GetCursor().SetIsVisible(true);
 
-    testTextBuffer->GetCursor()->SetIsOn(false);
-    otherTbi.GetCursor()->SetIsOn(true);
+    testTextBuffer->GetCursor().SetIsOn(false);
+    otherTbi.GetCursor().SetIsOn(true);
 
-    testTextBuffer->GetCursor()->SetIsDouble(false);
-    otherTbi.GetCursor()->SetIsDouble(true);
+    testTextBuffer->GetCursor().SetIsDouble(false);
+    otherTbi.GetCursor().SetIsDouble(true);
 
-    testTextBuffer->GetCursor()->SetDelay(false);
-    otherTbi.GetCursor()->SetDelay(true);
+    testTextBuffer->GetCursor().SetDelay(false);
+    otherTbi.GetCursor().SetDelay(true);
 
     // run copy
     testTextBuffer->CopyProperties(&otherTbi);
 
     // test that new now contains values from other
-    VERIFY_IS_TRUE(testTextBuffer->GetCursor()->HasMoved());
-    VERIFY_IS_TRUE(testTextBuffer->GetCursor()->IsVisible());
-    VERIFY_IS_TRUE(testTextBuffer->GetCursor()->IsOn());
-    VERIFY_IS_TRUE(testTextBuffer->GetCursor()->IsDouble());
-    VERIFY_IS_TRUE(testTextBuffer->GetCursor()->GetDelay());
+    VERIFY_IS_TRUE(testTextBuffer->GetCursor().HasMoved());
+    VERIFY_IS_TRUE(testTextBuffer->GetCursor().IsVisible());
+    VERIFY_IS_TRUE(testTextBuffer->GetCursor().IsOn());
+    VERIFY_IS_TRUE(testTextBuffer->GetCursor().IsDouble());
+    VERIFY_IS_TRUE(testTextBuffer->GetCursor().GetDelay());
 }
 
 void TextBufferTests::TestInsertCharacter()
@@ -357,7 +357,7 @@ void TextBufferTests::TestInsertCharacter()
     TEXT_BUFFER_INFO& textBuffer = GetTbi();
 
     // get starting cursor position
-    COORD const coordCursorBefore = textBuffer.GetCursor()->GetPosition();
+    COORD const coordCursorBefore = textBuffer.GetCursor().GetPosition();
 
     // Get current row from the buffer
     const ROW& Row = textBuffer.GetRowByOffset(coordCursorBefore.Y);
@@ -395,8 +395,8 @@ void TextBufferTests::TestInsertCharacter()
     VERIFY_IS_TRUE(pAttrRun->GetAttributes().IsEqual(TestAttributes));
 
     // ensure that the cursor moved to a new position (X or Y or both have changed)
-    VERIFY_IS_TRUE((coordCursorBefore.X != textBuffer.GetCursor()->GetPosition().X) ||
-                   (coordCursorBefore.Y != textBuffer.GetCursor()->GetPosition().Y));
+    VERIFY_IS_TRUE((coordCursorBefore.X != textBuffer.GetCursor().GetPosition().X) ||
+                   (coordCursorBefore.Y != textBuffer.GetCursor().GetPosition().Y));
     // the proper advancement of the cursor (e.g. which position it goes to) is validated in other tests
 }
 
@@ -415,26 +415,26 @@ void TextBufferTests::TestIncrementCursor()
     #endif
 
     Log::Comment(L"Test normal case of moving once to the right within a single line");
-    textBuffer.GetCursor()->SetXPosition(0);
-    textBuffer.GetCursor()->SetYPosition(0);
+    textBuffer.GetCursor().SetXPosition(0);
+    textBuffer.GetCursor().SetYPosition(0);
 
-    COORD coordCursorBefore = textBuffer.GetCursor()->GetPosition();
+    COORD coordCursorBefore = textBuffer.GetCursor().GetPosition();
 
     textBuffer.IncrementCursor();
 
-    VERIFY_ARE_EQUAL(textBuffer.GetCursor()->GetPosition().X, 1); // X should advance by 1
-    VERIFY_ARE_EQUAL(textBuffer.GetCursor()->GetPosition().Y, coordCursorBefore.Y); // Y shouldn't have moved
+    VERIFY_ARE_EQUAL(textBuffer.GetCursor().GetPosition().X, 1); // X should advance by 1
+    VERIFY_ARE_EQUAL(textBuffer.GetCursor().GetPosition().Y, coordCursorBefore.Y); // Y shouldn't have moved
 
     Log::Comment(L"Test line wrap case where cursor is on the right edge of the line");
-    textBuffer.GetCursor()->SetXPosition(sBufferWidth - 1);
-    textBuffer.GetCursor()->SetYPosition(0);
+    textBuffer.GetCursor().SetXPosition(sBufferWidth - 1);
+    textBuffer.GetCursor().SetYPosition(0);
 
-    coordCursorBefore = textBuffer.GetCursor()->GetPosition();
+    coordCursorBefore = textBuffer.GetCursor().GetPosition();
 
     textBuffer.IncrementCursor();
 
-    VERIFY_ARE_EQUAL(textBuffer.GetCursor()->GetPosition().X, 0); // position should be reset to the left edge when passing right edge
-    VERIFY_ARE_EQUAL(textBuffer.GetCursor()->GetPosition().Y - 1, coordCursorBefore.Y); // the cursor should be moved one row down from where it used to be
+    VERIFY_ARE_EQUAL(textBuffer.GetCursor().GetPosition().X, 0); // position should be reset to the left edge when passing right edge
+    VERIFY_ARE_EQUAL(textBuffer.GetCursor().GetPosition().Y - 1, coordCursorBefore.Y); // the cursor should be moved one row down from where it used to be
 }
 
 void TextBufferTests::TestNewlineCursor()
@@ -453,36 +453,36 @@ void TextBufferTests::TestNewlineCursor()
     Log::Comment(L"Verify standard row increment from somewhere in the buffer");
 
     // set cursor X position to non zero, any position in buffer
-    textBuffer.GetCursor()->SetXPosition(3);
+    textBuffer.GetCursor().SetXPosition(3);
 
     // set cursor Y position to not-the-final row in the buffer
-    textBuffer.GetCursor()->SetYPosition(3);
+    textBuffer.GetCursor().SetYPosition(3);
 
-    COORD coordCursorBefore = textBuffer.GetCursor()->GetPosition();
+    COORD coordCursorBefore = textBuffer.GetCursor().GetPosition();
 
     // perform operation
     textBuffer.NewlineCursor();
 
     // verify
-    VERIFY_ARE_EQUAL(textBuffer.GetCursor()->GetPosition().X, 0); // move to left edge of buffer
-    VERIFY_ARE_EQUAL(textBuffer.GetCursor()->GetPosition().Y, coordCursorBefore.Y + 1); // move down one row
+    VERIFY_ARE_EQUAL(textBuffer.GetCursor().GetPosition().X, 0); // move to left edge of buffer
+    VERIFY_ARE_EQUAL(textBuffer.GetCursor().GetPosition().Y, coordCursorBefore.Y + 1); // move down one row
 
     Log::Comment(L"Verify increment when already on last row of buffer");
 
     // X position still doesn't matter
-    textBuffer.GetCursor()->SetXPosition(3);
+    textBuffer.GetCursor().SetXPosition(3);
 
     // Y position needs to be on the last row of the buffer
-    textBuffer.GetCursor()->SetYPosition(sBufferHeight - 1);
+    textBuffer.GetCursor().SetYPosition(sBufferHeight - 1);
 
-    coordCursorBefore = textBuffer.GetCursor()->GetPosition();
+    coordCursorBefore = textBuffer.GetCursor().GetPosition();
 
     // perform operation
     textBuffer.NewlineCursor();
 
     // verify
-    VERIFY_ARE_EQUAL(textBuffer.GetCursor()->GetPosition().X, 0); // move to left edge
-    VERIFY_ARE_EQUAL(textBuffer.GetCursor()->GetPosition().Y, coordCursorBefore.Y); // cursor Y position should not have moved. stays on same logical final line of buffer
+    VERIFY_ARE_EQUAL(textBuffer.GetCursor().GetPosition().X, 0); // move to left edge
+    VERIFY_ARE_EQUAL(textBuffer.GetCursor().GetPosition().Y, coordCursorBefore.Y); // cursor Y position should not have moved. stays on same logical final line of buffer
 
     // This is okay because the backing circular buffer changes, not the logical screen position (final visible line of the buffer)
 }
@@ -490,7 +490,7 @@ void TextBufferTests::TestNewlineCursor()
 void TextBufferTests::TestLastNonSpace(short const cursorPosY)
 {
     TEXT_BUFFER_INFO& textBuffer = GetTbi();
-    textBuffer.GetCursor()->SetYPosition(cursorPosY);
+    textBuffer.GetCursor().SetYPosition(cursorPosY);
 
     COORD coordLastNonSpace = textBuffer.GetLastNonSpaceCharacter();
 
@@ -500,7 +500,7 @@ void TextBufferTests::TestLastNonSpace(short const cursorPosY)
     // If there are no characters in the row, the last character would be -1 and we need to seek backwards to find the previous row with a character.
 
     // start expected position from cursor
-    COORD coordExpected = textBuffer.GetCursor()->GetPosition();
+    COORD coordExpected = textBuffer.GetCursor().GetPosition();
 
     // Try to get the X position from the current cursor position.
     coordExpected.X = static_cast<short>(textBuffer.GetRowByOffset(coordExpected.Y).GetCharRow().MeasureRight()) - 1;
@@ -536,7 +536,7 @@ void TextBufferTests::TestSetWrapOnCurrentRow()
 {
     TEXT_BUFFER_INFO& textBuffer = GetTbi();
 
-    short sCurrentRow = textBuffer.GetCursor()->GetPosition().Y;
+    short sCurrentRow = textBuffer.GetCursor().GetPosition().Y;
 
     ROW& Row = textBuffer.GetRowByOffset(sCurrentRow);
 
@@ -617,9 +617,8 @@ void TextBufferTests::TestMixedRgbAndLegacyForeground()
     const SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
     const TEXT_BUFFER_INFO& tbi = psi->GetTextBuffer();
     StateMachine* const stateMachine = psi->GetStateMachine();
-    const Cursor* const cursor = tbi.GetCursor();
+    const Cursor& cursor = tbi.GetCursor();
     VERIFY_IS_NOT_NULL(stateMachine);
-    VERIFY_IS_NOT_NULL(cursor);
 
     // Case 1 -
     //      Write '\E[38;2;64;128;255mX\E[49mX\E[m'
@@ -630,8 +629,8 @@ void TextBufferTests::TestMixedRgbAndLegacyForeground()
     wchar_t* sequence = L"\x1b[38;2;64;128;255mX\x1b[49mX\x1b[m";
 
     stateMachine->ProcessString(sequence, std::wcslen(sequence));
-    const short x = cursor->GetPosition().X;
-    const short y = cursor->GetPosition().Y;
+    const short x = cursor.GetPosition().X;
+    const short y = cursor.GetPosition().Y;
     const ROW& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
     std::unique_ptr<TextAttribute[]> attrs = std::make_unique<TextAttribute[]>(tbi._coordBufferSize.X);
@@ -680,9 +679,8 @@ void TextBufferTests::TestMixedRgbAndLegacyBackground()
     const SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
     const TEXT_BUFFER_INFO& tbi = psi->GetTextBuffer();
     StateMachine* const stateMachine = psi->GetStateMachine();
-    const Cursor* const cursor = tbi.GetCursor();
+    const Cursor& cursor = tbi.GetCursor();
     VERIFY_IS_NOT_NULL(stateMachine);
-    VERIFY_IS_NOT_NULL(cursor);
 
     // Case 2 -
     //      \E[48;2;64;128;255mX\E[39mX\E[m
@@ -692,8 +690,8 @@ void TextBufferTests::TestMixedRgbAndLegacyBackground()
 
     wchar_t* sequence = L"\x1b[48;2;64;128;255mX\x1b[39mX\x1b[m";
     stateMachine->ProcessString(sequence, std::wcslen(sequence));
-    const auto x = cursor->GetPosition().X;
-    const auto y = cursor->GetPosition().Y;
+    const auto x = cursor.GetPosition().X;
+    const auto y = cursor.GetPosition().Y;
     const auto& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
     const auto attrs = std::make_unique<TextAttribute[]>(tbi._coordBufferSize.X);
@@ -741,9 +739,8 @@ void TextBufferTests::TestMixedRgbAndLegacyUnderline()
     const SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
     const TEXT_BUFFER_INFO& tbi = psi->GetTextBuffer();
     StateMachine* const stateMachine = psi->GetStateMachine();
-    const Cursor* const cursor = tbi.GetCursor();
+    const Cursor& cursor = tbi.GetCursor();
     VERIFY_IS_NOT_NULL(stateMachine);
-    VERIFY_IS_NOT_NULL(cursor);
 
     // Case 3 -
     //      '\E[48;2;64;128;255mX\E[4mX\E[m'
@@ -751,8 +748,8 @@ void TextBufferTests::TestMixedRgbAndLegacyUnderline()
     Log::Comment(L"Case 3 \"\\E[48;2;64;128;255mX\\E[4mX\\E[m\"");
     wchar_t* sequence = L"\x1b[48;2;64;128;255mX\x1b[4mX\x1b[m";
     stateMachine->ProcessString(sequence, std::wcslen(sequence));
-    const auto x = cursor->GetPosition().X;
-    const auto y = cursor->GetPosition().Y;
+    const auto x = cursor.GetPosition().X;
+    const auto y = cursor.GetPosition().Y;
     const auto& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
     std::unique_ptr<TextAttribute[]> attrs = std::make_unique<TextAttribute[]>(tbi._coordBufferSize.X);
@@ -804,9 +801,8 @@ void TextBufferTests::TestMixedRgbAndLegacyBrightness()
     const SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
     const TEXT_BUFFER_INFO& tbi = psi->GetTextBuffer();
     StateMachine* const stateMachine = psi->GetStateMachine();
-    const Cursor* const cursor = tbi.GetCursor();
+    const Cursor& cursor = tbi.GetCursor();
     VERIFY_IS_NOT_NULL(stateMachine);
-    VERIFY_IS_NOT_NULL(cursor);
     // Case 4 -
     //      '\E[32mX\E[1mX'
     //      Make sure that the second X is a BRIGHT green, not white.
@@ -817,8 +813,8 @@ void TextBufferTests::TestMixedRgbAndLegacyBrightness()
 
     wchar_t* sequence = L"\x1b[32mX\x1b[1mX";
     stateMachine->ProcessString(sequence, std::wcslen(sequence));
-    const auto x = cursor->GetPosition().X;
-    const auto y = cursor->GetPosition().Y;
+    const auto x = cursor.GetPosition().X;
+    const auto y = cursor.GetPosition().Y;
     const auto& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
     std::unique_ptr<TextAttribute[]> attrs = std::make_unique<TextAttribute[]>(tbi._coordBufferSize.X);
@@ -861,14 +857,13 @@ void TextBufferTests::TestRgbEraseLine()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    const TEXT_BUFFER_INFO& tbi = psi->GetTextBuffer();
+    TEXT_BUFFER_INFO& tbi = psi->GetTextBuffer();
     StateMachine* const stateMachine = psi->GetStateMachine();
-    Cursor* const cursor = tbi.GetCursor();
+    Cursor& cursor = tbi.GetCursor();
     SetFlag(psi->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     VERIFY_IS_NOT_NULL(stateMachine);
-    VERIFY_IS_NOT_NULL(cursor);
 
-    cursor->SetXPosition(0);
+    cursor.SetXPosition(0);
     // Case 1 -
     //      Write '\E[48;2;64;128;255X\E[48;2;128;128;255\E[KX'
     //      Make sure that all the characters after the first have the rgb attrs
@@ -877,8 +872,8 @@ void TextBufferTests::TestRgbEraseLine()
         std::wstring sequence = L"\x1b[48;2;64;128;255mX\x1b[48;2;128;128;255m\x1b[KX";
         stateMachine->ProcessString(&sequence[0], sequence.length());
 
-        const auto x = cursor->GetPosition().X;
-        const auto y = cursor->GetPosition().Y;
+        const auto x = cursor.GetPosition().X;
+        const auto y = cursor.GetPosition().Y;
 
         Log::Comment(NoThrowString().Format(
             L"cursor={X:%d,Y:%d}",
@@ -922,14 +917,13 @@ void TextBufferTests::TestUnBold()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    const TEXT_BUFFER_INFO& tbi = psi->GetTextBuffer();
+    TEXT_BUFFER_INFO& tbi = psi->GetTextBuffer();
     StateMachine* const stateMachine = psi->GetStateMachine();
-    Cursor* const cursor = tbi.GetCursor();
+    Cursor& cursor = tbi.GetCursor();
     SetFlag(psi->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     VERIFY_IS_NOT_NULL(stateMachine);
-    VERIFY_IS_NOT_NULL(cursor);
 
-    cursor->SetXPosition(0);
+    cursor.SetXPosition(0);
     // Case 1 -
     //      Write '\E[1;32mX\E[22mX'
     //      The first X should be bright green.
@@ -937,8 +931,8 @@ void TextBufferTests::TestUnBold()
     std::wstring sequence = L"\x1b[1;32mX\x1b[22mX";
     stateMachine->ProcessString(&sequence[0], sequence.length());
 
-    const auto x = cursor->GetPosition().X;
-    const auto y = cursor->GetPosition().Y;
+    const auto x = cursor.GetPosition().X;
+    const auto y = cursor.GetPosition().Y;
     const auto dark_green = gci.GetColorTableEntry(2);
     const auto bright_green = gci.GetColorTableEntry(10);
 
@@ -990,14 +984,13 @@ void TextBufferTests::TestUnBoldRgb()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    const TEXT_BUFFER_INFO& tbi = psi->GetTextBuffer();
+    TEXT_BUFFER_INFO& tbi = psi->GetTextBuffer();
     StateMachine* const stateMachine = psi->GetStateMachine();
-    Cursor* const cursor = tbi.GetCursor();
+    Cursor& cursor = tbi.GetCursor();
     SetFlag(psi->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     VERIFY_IS_NOT_NULL(stateMachine);
-    VERIFY_IS_NOT_NULL(cursor);
 
-    cursor->SetXPosition(0);
+    cursor.SetXPosition(0);
     // Case 2 -
     //      Write '\E[1;32m\E[48;2;1;2;3mX\E[22mX'
     //      The first X should be bright green, and not legacy.
@@ -1006,8 +999,8 @@ void TextBufferTests::TestUnBoldRgb()
     std::wstring sequence = L"\x1b[1;32m\x1b[48;2;1;2;3mX\x1b[22mX";
     stateMachine->ProcessString(&sequence[0], sequence.length());
 
-    const auto x = cursor->GetPosition().X;
-    const auto y = cursor->GetPosition().Y;
+    const auto x = cursor.GetPosition().X;
+    const auto y = cursor.GetPosition().Y;
     const auto dark_green = gci.GetColorTableEntry(2);
     const auto bright_green = gci.GetColorTableEntry(10);
 
@@ -1062,14 +1055,13 @@ void TextBufferTests::TestComplexUnBold()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    const TEXT_BUFFER_INFO& tbi = psi->GetTextBuffer();
+    TEXT_BUFFER_INFO& tbi = psi->GetTextBuffer();
     StateMachine* const stateMachine = psi->GetStateMachine();
-    Cursor* const cursor = tbi.GetCursor();
+    Cursor& cursor = tbi.GetCursor();
     SetFlag(psi->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     VERIFY_IS_NOT_NULL(stateMachine);
-    VERIFY_IS_NOT_NULL(cursor);
 
-    cursor->SetXPosition(0);
+    cursor.SetXPosition(0);
     // Case 3 -
     //      Write '\E[1;32m\E[48;2;1;2;3mX\E[22mX\E[38;2;32;32;32mX\E[1mX\E[38;2;64;64;64mX\E[22mX'
     //      The first X should be bright green, and not legacy.
@@ -1082,8 +1074,8 @@ void TextBufferTests::TestComplexUnBold()
     std::wstring sequence = L"\x1b[1;32m\x1b[48;2;1;2;3mX\x1b[22mX\x1b[38;2;32;32;32mX\x1b[1mX\x1b[38;2;64;64;64mX\x1b[22mX";
     stateMachine->ProcessString(&sequence[0], sequence.length());
 
-    const auto x = cursor->GetPosition().X;
-    const auto y = cursor->GetPosition().Y;
+    const auto x = cursor.GetPosition().X;
+    const auto y = cursor.GetPosition().Y;
     const auto dark_green = gci.GetColorTableEntry(2);
     const auto bright_green = gci.GetColorTableEntry(10);
 
@@ -1182,15 +1174,14 @@ void TextBufferTests::CopyAttrs()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    const TEXT_BUFFER_INFO& tbi = psi->GetTextBuffer();
+    TEXT_BUFFER_INFO& tbi = psi->GetTextBuffer();
     StateMachine* const stateMachine = psi->GetStateMachine();
-    Cursor* const cursor = tbi.GetCursor();
+    Cursor& cursor = tbi.GetCursor();
     SetFlag(psi->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     VERIFY_IS_NOT_NULL(stateMachine);
-    VERIFY_IS_NOT_NULL(cursor);
 
-    cursor->SetXPosition(0);
-    cursor->SetYPosition(0);
+    cursor.SetXPosition(0);
+    cursor.SetYPosition(0);
     // Write '\E[32mX\E[33mX\n\E[34mX\E[35mX\E[H\E[M'
     // The first two X's should get deleted.
     // The third X should be blue
@@ -1198,8 +1189,8 @@ void TextBufferTests::CopyAttrs()
     std::wstring sequence = L"\x1b[32mX\x1b[33mX\n\x1b[34mX\x1b[35mX\x1b[H\x1b[M";
     stateMachine->ProcessString(&sequence[0], sequence.length());
 
-    const auto x = cursor->GetPosition().X;
-    const auto y = cursor->GetPosition().Y;
+    const auto x = cursor.GetPosition().X;
+    const auto y = cursor.GetPosition().Y;
     const auto dark_blue = gci.GetColorTableEntry(1);
     const auto dark_magenta = gci.GetColorTableEntry(5);
 
@@ -1246,15 +1237,14 @@ void TextBufferTests::EmptySgrTest()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    const TEXT_BUFFER_INFO& tbi = psi->GetTextBuffer();
+    TEXT_BUFFER_INFO& tbi = psi->GetTextBuffer();
     StateMachine* const stateMachine = psi->GetStateMachine();
-    Cursor* const cursor = tbi.GetCursor();
+    Cursor& cursor = tbi.GetCursor();
 
     SetFlag(psi->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     VERIFY_IS_NOT_NULL(stateMachine);
-    VERIFY_IS_NOT_NULL(cursor);
-    cursor->SetXPosition(0);
-    cursor->SetYPosition(0);
+    cursor.SetXPosition(0);
+    cursor.SetYPosition(0);
 
     std::wstring reset = L"\x1b[0m";
     stateMachine->ProcessString(&reset[0], reset.length());
@@ -1269,8 +1259,8 @@ void TextBufferTests::EmptySgrTest()
     std::wstring sequence = L"\x1b[0mX\x1b[31mX\x1b[31;mX";
     stateMachine->ProcessString(&sequence[0], sequence.length());
 
-    const auto x = cursor->GetPosition().X;
-    const auto y = cursor->GetPosition().Y;
+    const auto x = cursor.GetPosition().X;
+    const auto y = cursor.GetPosition().Y;
     const COLORREF darkRed = gci.GetColorTableEntry(4);
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
@@ -1320,16 +1310,15 @@ void TextBufferTests::TestReverseReset()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    const TEXT_BUFFER_INFO& tbi = psi->GetTextBuffer();
+    TEXT_BUFFER_INFO& tbi = psi->GetTextBuffer();
     StateMachine* const stateMachine = psi->GetStateMachine();
-    Cursor* const cursor = tbi.GetCursor();
+    Cursor& cursor = tbi.GetCursor();
 
     SetFlag(psi->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     VERIFY_IS_NOT_NULL(stateMachine);
-    VERIFY_IS_NOT_NULL(cursor);
 
-    cursor->SetXPosition(0);
-    cursor->SetYPosition(0);
+    cursor.SetXPosition(0);
+    cursor.SetYPosition(0);
 
     std::wstring reset = L"\x1b[0m";
     stateMachine->ProcessString(&reset[0], reset.length());
@@ -1344,8 +1333,8 @@ void TextBufferTests::TestReverseReset()
     std::wstring sequence = L"\x1b[42m\x1b[38;2;128;5;255mX\x1b[7mX\x1b[27mX";
     stateMachine->ProcessString(&sequence[0], sequence.length());
 
-    const auto x = cursor->GetPosition().X;
-    const auto y = cursor->GetPosition().Y;
+    const auto x = cursor.GetPosition().X;
+    const auto y = cursor.GetPosition().Y;
     const auto dark_green = gci.GetColorTableEntry(2);
     const COLORREF rgbColor = RGB(128, 5, 255);
 
@@ -1409,16 +1398,15 @@ void TextBufferTests::CopyLastAttr()
 
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    const TEXT_BUFFER_INFO& tbi = psi->GetTextBuffer();
+    TEXT_BUFFER_INFO& tbi = psi->GetTextBuffer();
     StateMachine* const stateMachine = psi->GetStateMachine();
-    Cursor* const cursor = tbi.GetCursor();
+    Cursor& cursor = tbi.GetCursor();
 
     SetFlag(psi->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     VERIFY_IS_NOT_NULL(stateMachine);
-    VERIFY_IS_NOT_NULL(cursor);
 
-    cursor->SetXPosition(0);
-    cursor->SetYPosition(0);
+    cursor.SetXPosition(0);
+    cursor.SetYPosition(0);
 
     std::wstring reset = L"\x1b[0m";
     stateMachine->ProcessString(&reset[0], reset.length());
@@ -1473,8 +1461,8 @@ void TextBufferTests::CopyLastAttr()
     std::wstring insertLineAtHome = L"\x1b[H\x1b[L";
     stateMachine->ProcessString(&insertLineAtHome[0], insertLineAtHome.length());
 
-    const auto x = cursor->GetPosition().X;
-    const auto y = cursor->GetPosition().Y;
+    const auto x = cursor.GetPosition().X;
+    const auto y = cursor.GetPosition().Y;
 
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",

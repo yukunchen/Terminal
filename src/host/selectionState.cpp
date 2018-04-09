@@ -176,10 +176,10 @@ void Selection::MouseUp()
 // - <none>
 void Selection::_SaveCursorData(TEXT_BUFFER_INFO& textBuffer)
 {
-    Cursor* const pCursor = textBuffer.GetCursor();
-    _coordSavedCursorPosition = pCursor->GetPosition();
-    _ulSavedCursorSize = pCursor->GetSize();
-    _fSavedCursorVisible = pCursor->IsVisible();
+    Cursor& cursor = textBuffer.GetCursor();
+    _coordSavedCursorPosition = cursor.GetPosition();
+    _ulSavedCursorSize = cursor.GetSize();
+    _fSavedCursorVisible = cursor.IsVisible();
 }
 
 // Routine Description:
@@ -190,8 +190,8 @@ void Selection::_SaveCursorData(TEXT_BUFFER_INFO& textBuffer)
 // - <none>
 void Selection::_RestoreCursorData(_In_ SCREEN_INFORMATION* const pScreenInfo)
 {
-    Cursor* pCursor = ServiceLocator::LocateGlobals().getConsoleInformation().CurrentScreenBuffer->GetTextBuffer().GetCursor();
-    pScreenInfo->SetCursorInformation(_ulSavedCursorSize, _fSavedCursorVisible, pCursor->GetColor(), pCursor->GetType());
+    const Cursor& cursor = ServiceLocator::LocateGlobals().getConsoleInformation().CurrentScreenBuffer->GetTextBuffer().GetCursor();
+    pScreenInfo->SetCursorInformation(_ulSavedCursorSize, _fSavedCursorVisible, cursor.GetColor(), cursor.GetType());
     LOG_IF_FAILED(pScreenInfo->SetCursorPosition(_coordSavedCursorPosition, true /* TurnOn */));
 }
 

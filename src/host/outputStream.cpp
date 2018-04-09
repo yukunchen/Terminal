@@ -76,7 +76,7 @@ void WriteBuffer::_DefaultStringCase(_In_reads_(cch) wchar_t* const rgwch, const
 
     DWORD dwNumBytes = (DWORD)(cch * sizeof(wchar_t));
 
-    _pIo->GetActiveOutputBuffer()->GetTextBuffer().GetCursor()->SetIsOn(true);
+    _pIo->GetActiveOutputBuffer()->GetTextBuffer().GetCursor().SetIsOn(true);
 
     _ntstatus = WriteCharsLegacy(_pIo->GetActiveOutputBuffer(),
                                  buffer,
@@ -84,7 +84,7 @@ void WriteBuffer::_DefaultStringCase(_In_reads_(cch) wchar_t* const rgwch, const
                                  buffer,
                                  &dwNumBytes,
                                  nullptr,
-                                 _pIo->GetActiveOutputBuffer()->GetTextBuffer().GetCursor()->GetPosition().X,
+                                 _pIo->GetActiveOutputBuffer()->GetTextBuffer().GetCursor().GetPosition().X,
                                  WC_NONDESTRUCTIVE_TAB | WC_DELAY_EOL_WRAP,
                                  nullptr);
 }

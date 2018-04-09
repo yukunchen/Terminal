@@ -258,10 +258,9 @@ void ScreenBufferTests::TestReverseLineFeed()
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer;
     auto bufferWriter = psi->GetBufferWriter();
-    auto cursor = psi->TextInfo->GetCursor();
+    auto& cursor = psi->TextInfo->GetCursor();
     auto viewport = psi->GetBufferViewport();
     VERIFY_IS_NOT_NULL(bufferWriter);
-    VERIFY_IS_NOT_NULL(cursor);
 
     VERIFY_ARE_EQUAL(psi->GetBufferViewport().Top, 0);
 
@@ -269,14 +268,14 @@ void ScreenBufferTests::TestReverseLineFeed()
     Log::Comment(L"Case 1: RI from below top of viewport");
 
     bufferWriter->PrintString(L"foo\nfoo", 7);
-    VERIFY_ARE_EQUAL(cursor->GetPosition().X, 3);
-    VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 1);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 3);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 1);
     VERIFY_ARE_EQUAL(psi->GetBufferViewport().Top, 0);
 
     VERIFY_SUCCEEDED(DoSrvPrivateReverseLineFeed(psi));
 
-    VERIFY_ARE_EQUAL(cursor->GetPosition().X, 3);
-    VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 0);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 3);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 0);
     viewport = psi->GetBufferViewport();
     VERIFY_ARE_EQUAL(viewport.Top, 0);
     Log::Comment(NoThrowString().Format(
@@ -286,16 +285,16 @@ void ScreenBufferTests::TestReverseLineFeed()
 
     ////////////////////////////////////////////////////////////////////////
     Log::Comment(L"Case 2: RI from top of viewport");
-    cursor->SetPosition({0, 0});
+    cursor.SetPosition({0, 0});
     bufferWriter->PrintString(L"123456789", 9);
-    VERIFY_ARE_EQUAL(cursor->GetPosition().X, 9);
-    VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 0);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 9);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 0);
     VERIFY_ARE_EQUAL(psi->GetBufferViewport().Top, 0);
 
     VERIFY_SUCCEEDED(DoSrvPrivateReverseLineFeed(psi));
 
-    VERIFY_ARE_EQUAL(cursor->GetPosition().X, 9);
-    VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 0);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 9);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 0);
     viewport = psi->GetBufferViewport();
     VERIFY_ARE_EQUAL(viewport.Top, 0);
     Log::Comment(NoThrowString().Format(
@@ -308,17 +307,17 @@ void ScreenBufferTests::TestReverseLineFeed()
     ////////////////////////////////////////////////////////////////////////
     Log::Comment(L"Case 3: RI from top of viewport, when viewport is below top of buffer");
 
-    cursor->SetPosition({0, 5});
+    cursor.SetPosition({0, 5});
     VERIFY_SUCCEEDED(psi->SetViewportOrigin(TRUE, {0, 5}));
     bufferWriter->PrintString(L"ABCDEFGH", 9);
-    VERIFY_ARE_EQUAL(cursor->GetPosition().X, 9);
-    VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 5);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 9);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 5);
     VERIFY_ARE_EQUAL(psi->GetBufferViewport().Top, 5);
 
     LOG_IF_FAILED(DoSrvPrivateReverseLineFeed(psi));
 
-    VERIFY_ARE_EQUAL(cursor->GetPosition().X, 9);
-    VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 5);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 9);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 5);
     viewport = psi->GetBufferViewport();
     VERIFY_ARE_EQUAL(viewport.Top, 5);
     Log::Comment(NoThrowString().Format(
@@ -706,9 +705,8 @@ void ScreenBufferTests::EraseAllTests()
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer;
     auto bufferWriter = psi->GetBufferWriter();
-    auto cursor = psi->TextInfo->GetCursor();
+    auto& cursor = psi->TextInfo->GetCursor();
     VERIFY_IS_NOT_NULL(bufferWriter);
-    VERIFY_IS_NOT_NULL(cursor);
 
     VERIFY_ARE_EQUAL(psi->GetBufferViewport().Top, 0);
 
@@ -716,14 +714,14 @@ void ScreenBufferTests::EraseAllTests()
     Log::Comment(L"Case 1: Erase a single line of text in the buffer\n");
 
     bufferWriter->PrintString(L"foo", 3);
-    VERIFY_ARE_EQUAL(cursor->GetPosition().X, 3);
-    VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 0);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 3);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 0);
     VERIFY_ARE_EQUAL(psi->GetBufferViewport().Top, 0);
 
     VERIFY_SUCCEEDED(psi->VtEraseAll());
 
-    VERIFY_ARE_EQUAL(cursor->GetPosition().X, 0);
-    VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 1);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 0);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 1);
     auto viewport = psi->GetBufferViewport();
     VERIFY_ARE_EQUAL(viewport.Top, 1);
     Log::Comment(NoThrowString().Format(
@@ -735,8 +733,8 @@ void ScreenBufferTests::EraseAllTests()
     Log::Comment(L"Case 2: Erase multiple lines, below the top of the buffer\n");
 
     bufferWriter->PrintString(L"bar\nbar\nbar", 11);
-    VERIFY_ARE_EQUAL(cursor->GetPosition().X, 3);
-    VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 3);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 3);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 3);
     viewport = psi->GetBufferViewport();
     VERIFY_ARE_EQUAL(viewport.Top, 1);
     Log::Comment(NoThrowString().Format(
@@ -745,8 +743,8 @@ void ScreenBufferTests::EraseAllTests()
     ));
 
     VERIFY_SUCCEEDED(psi->VtEraseAll());
-    VERIFY_ARE_EQUAL(cursor->GetPosition().X, 0);
-    VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 4);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 0);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 4);
     viewport = psi->GetBufferViewport();
     VERIFY_ARE_EQUAL(viewport.Top, 4);
     Log::Comment(NoThrowString().Format(
@@ -758,10 +756,10 @@ void ScreenBufferTests::EraseAllTests()
     ////////////////////////////////////////////////////////////////////////
     Log::Comment(L"Case 3: multiple lines at the bottom of the buffer\n");
 
-    cursor->SetPosition({0, 275});
+    cursor.SetPosition({0, 275});
     bufferWriter->PrintString(L"bar\nbar\nbar", 11);
-    VERIFY_ARE_EQUAL(cursor->GetPosition().X, 3);
-    VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 277);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 3);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 277);
     viewport = psi->GetBufferViewport();
     Log::Comment(NoThrowString().Format(
         L"viewport={L:%d,T:%d,R:%d,B:%d}",
@@ -771,8 +769,8 @@ void ScreenBufferTests::EraseAllTests()
 
     viewport = psi->GetBufferViewport();
     auto heightFromBottom = psi->GetScreenBufferSize().Y - (viewport.Bottom - viewport.Top + 1);
-    VERIFY_ARE_EQUAL(cursor->GetPosition().X, 0);
-    VERIFY_ARE_EQUAL(cursor->GetPosition().Y, heightFromBottom);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 0);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, heightFromBottom);
     VERIFY_ARE_EQUAL(viewport.Top, heightFromBottom);
     Log::Comment(NoThrowString().Format(
         L"viewport={L:%d,T:%d,R:%d,B:%d}",
@@ -784,15 +782,14 @@ void ScreenBufferTests::VtResize()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    const TEXT_BUFFER_INFO* const tbi = psi->TextInfo;
+    TEXT_BUFFER_INFO* const tbi = psi->TextInfo;
     StateMachine* const stateMachine = psi->GetStateMachine();
-    Cursor* const cursor = tbi->GetCursor();
+    Cursor& cursor = tbi->GetCursor();
     SetFlag(psi->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     VERIFY_IS_NOT_NULL(stateMachine);
-    VERIFY_IS_NOT_NULL(cursor);
 
-    cursor->SetXPosition(0);
-    cursor->SetYPosition(0);
+    cursor.SetXPosition(0);
+    cursor.SetYPosition(0);
 
     auto initialSbHeight = psi->GetScreenBufferSize().Y;
     auto initialSbWidth = psi->GetScreenBufferSize().X;
@@ -923,7 +920,7 @@ void ScreenBufferTests::VtSoftResetCursorPosition()
     SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
     const TEXT_BUFFER_INFO* const tbi = psi->TextInfo;
     StateMachine* const stateMachine = psi->GetStateMachine();
-    Cursor* const cursor = tbi->GetCursor();
+    const Cursor& cursor = tbi->GetCursor();
 
     Log::Comment(NoThrowString().Format(
         L"Make sure the viewport is at 0,0"
@@ -937,11 +934,11 @@ void ScreenBufferTests::VtSoftResetCursorPosition()
 
     std::wstring seq = L"\x1b[2;2H";
     stateMachine->ProcessString(&seq[0], seq.length());
-    VERIFY_ARE_EQUAL( COORD({1, 1}), cursor->GetPosition());
+    VERIFY_ARE_EQUAL( COORD({1, 1}), cursor.GetPosition());
 
     seq = L"\x1b[!p";
     stateMachine->ProcessString(&seq[0], seq.length());
-    VERIFY_ARE_EQUAL( COORD({1, 1}), cursor->GetPosition());
+    VERIFY_ARE_EQUAL( COORD({1, 1}), cursor.GetPosition());
 
     Log::Comment(NoThrowString().Format(
         L"Set some margins. The cursor should move home."
@@ -949,7 +946,7 @@ void ScreenBufferTests::VtSoftResetCursorPosition()
 
     seq = L"\x1b[2;10r";
     stateMachine->ProcessString(&seq[0], seq.length());
-    VERIFY_ARE_EQUAL( COORD({0, 0}), cursor->GetPosition());
+    VERIFY_ARE_EQUAL( COORD({0, 0}), cursor.GetPosition());
 
     Log::Comment(NoThrowString().Format(
         L"Move the cursor to 2,2, then execute a soft reset.\n"
@@ -957,10 +954,10 @@ void ScreenBufferTests::VtSoftResetCursorPosition()
     ));
     seq = L"\x1b[2;2H";
     stateMachine->ProcessString(&seq[0], seq.length());
-    VERIFY_ARE_EQUAL( COORD({1, 1}), cursor->GetPosition());
+    VERIFY_ARE_EQUAL( COORD({1, 1}), cursor.GetPosition());
     seq = L"\x1b[!p";
     stateMachine->ProcessString(&seq[0], seq.length());
-    VERIFY_ARE_EQUAL( COORD({1, 1}), cursor->GetPosition());
+    VERIFY_ARE_EQUAL( COORD({1, 1}), cursor.GetPosition());
 }
 
 

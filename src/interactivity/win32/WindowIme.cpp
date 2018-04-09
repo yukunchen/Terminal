@@ -19,7 +19,7 @@ RECT GetImeSuggestionWindowPos()
     const TEXT_BUFFER_INFO& textBuffer = gci.CurrentScreenBuffer->GetTextBuffer();
 
     const COORD coordFont = textBuffer.GetCurrentFont().GetSize();
-    COORD coordCursor = textBuffer.GetCursor()->GetPosition();
+    COORD coordCursor = textBuffer.GetCursor().GetPosition();
 
     // Adjust the cursor position to be relative to the viewport.
     // This means that if the cursor is at row 30 in the buffer but the viewport is showing rows 20-40 right now on screen

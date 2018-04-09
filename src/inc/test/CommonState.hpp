@@ -183,7 +183,7 @@ public:
             FillRow(&row);
         }
 
-        textBuffer.GetCursor()->SetYPosition(cRowsToFill);
+        textBuffer.GetCursor().SetYPosition(cRowsToFill);
     }
 
     void FillTextBufferBisect()
@@ -202,7 +202,7 @@ public:
             FillBisect(&row);
         }
 
-        textBuffer.GetCursor()->SetYPosition(cRowsToFill);
+        textBuffer.GetCursor().SetYPosition(cRowsToFill);
     }
 
     NTSTATUS GetTextBufferInfoInitResult()

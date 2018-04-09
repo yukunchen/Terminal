@@ -303,10 +303,10 @@ void Menu::s_GetConsoleState(CONSOLE_STATE_INFO * const pStateInfo)
     pStateInfo->FontWeight = currentFont.GetWeight();
     StringCchCopyW(pStateInfo->FaceName, ARRAYSIZE(pStateInfo->FaceName), currentFont.GetFaceName());
 
-    Cursor* pCursor = ScreenInfo->GetTextBuffer().GetCursor();
-    pStateInfo->CursorSize = pCursor->GetSize();
-    pStateInfo->CursorColor = pCursor->GetColor();
-    pStateInfo->CursorType = static_cast<unsigned int>(pCursor->GetType());
+    const Cursor& cursor = ScreenInfo->GetTextBuffer().GetCursor();
+    pStateInfo->CursorSize = cursor.GetSize();
+    pStateInfo->CursorColor = cursor.GetColor();
+    pStateInfo->CursorType = static_cast<unsigned int>(cursor.GetType());
 
     // Retrieve small icon for use in displaying the dialog
     LOG_IF_FAILED(Icon::Instance().GetIcons(nullptr, &pStateInfo->hIcon));
@@ -423,7 +423,7 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
     gci.SetFaceName(fontApplied.GetFaceName(), LF_FACESIZE);
 
     ScreenInfo->SetCursorInformation(pStateInfo->CursorSize,
-                                     ScreenInfo->GetTextBuffer().GetCursor()->IsVisible(),
+                                     ScreenInfo->GetTextBuffer().GetCursor().IsVisible(),
                                      pStateInfo->CursorColor,
                                      static_cast<CursorType>(pStateInfo->CursorType));
 

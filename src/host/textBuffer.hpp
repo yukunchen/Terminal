@@ -69,7 +69,7 @@ public:
                      const UINT cursorSize);
     TEXT_BUFFER_INFO(const TEXT_BUFFER_INFO& a) = delete;
 
-    ~TEXT_BUFFER_INFO();
+    ~TEXT_BUFFER_INFO() = default;
 
     // Used for duplicating properties to another text buffer
     void CopyProperties(_In_ TEXT_BUFFER_INFO* const pOtherBuffer);
@@ -115,7 +115,8 @@ public:
     FontInfoDesired& GetDesiredFont();
     const FontInfoDesired& GetDesiredFont() const;
 
-    Cursor* const GetCursor() const;
+    Cursor& GetCursor();
+    const Cursor& GetCursor() const;
 
     const SHORT GetFirstRowIndex() const;
     const COORD GetCoordBufferSize() const;
@@ -135,7 +136,7 @@ public:
 private:
 
     std::deque<ROW> _storage;
-    Cursor* _pCursor;
+    Cursor _cursor;
 
     SHORT _FirstRow; // indexes top row (not necessarily 0)
 

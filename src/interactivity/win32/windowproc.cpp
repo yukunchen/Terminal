@@ -288,7 +288,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
         gci.Flags |= CONSOLE_HAS_FOCUS;
 
-        gci.CurrentScreenBuffer->GetTextBuffer().GetCursor()->FocusStart();
+        gci.CurrentScreenBuffer->GetTextBuffer().GetCursor().FocusStart();
 
         HandleFocusEvent(TRUE);
 
@@ -311,8 +311,8 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         gci.Flags &= ~CONSOLE_HAS_FOCUS;
 
         // turn it off when we lose focus.
-        gci.CurrentScreenBuffer->GetTextBuffer().GetCursor()->SetIsOn(false);
-        gci.CurrentScreenBuffer->GetTextBuffer().GetCursor()->FocusEnd();
+        gci.CurrentScreenBuffer->GetTextBuffer().GetCursor().SetIsOn(false);
+        gci.CurrentScreenBuffer->GetTextBuffer().GetCursor().FocusEnd();
 
         HandleFocusEvent(FALSE);
 
@@ -363,7 +363,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
     case WM_SETTINGCHANGE:
     {
-        gci.CurrentScreenBuffer->GetTextBuffer().GetCursor()->SettingsChanged();
+        gci.CurrentScreenBuffer->GetTextBuffer().GetCursor().SettingsChanged();
     }
     __fallthrough;
 

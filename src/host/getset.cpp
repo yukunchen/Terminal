@@ -108,8 +108,8 @@ void DoSrvGetConsoleCursorInfo(_In_ SCREEN_INFORMATION* pScreenInfo,
                                _Out_ ULONG* const pCursorSize,
                                _Out_ bool* const pIsVisible)
 {
-    *pCursorSize = pScreenInfo->GetTextBuffer().GetCursor()->GetSize();
-    *pIsVisible = pScreenInfo->GetTextBuffer().GetCursor()->IsVisible();
+    *pCursorSize = pScreenInfo->GetTextBuffer().GetCursor().GetSize();
+    *pIsVisible = pScreenInfo->GetTextBuffer().GetCursor().IsVisible();
 }
 
 void ApiRoutines::GetConsoleSelectionInfoImpl(_Out_ CONSOLE_SELECTION_INFO* const pConsoleSelectionInfo)
@@ -515,8 +515,8 @@ HRESULT DoSrvSetConsoleCursorInfo(_In_ SCREEN_INFORMATION* pScreenInfo,
 
     pScreenInfo->SetCursorInformation(CursorSize,
                                       IsVisible,
-                                      pScreenInfo->GetTextBuffer().GetCursor()->GetColor(),
-                                      pScreenInfo->GetTextBuffer().GetCursor()->GetType());
+                                      pScreenInfo->GetTextBuffer().GetCursor().GetColor(),
+                                      pScreenInfo->GetTextBuffer().GetCursor().GetType());
 
     return S_OK;
 }
@@ -1074,8 +1074,8 @@ NTSTATUS DoSrvPrivateSetKeypadMode(_In_ bool fApplicationMode)
 // - True if handled successfully. False otherwise.
 void DoSrvPrivateAllowCursorBlinking(_In_ SCREEN_INFORMATION* const pScreenInfo, const bool fEnable)
 {
-    pScreenInfo->GetTextBuffer().GetCursor()->SetBlinkingAllowed(fEnable);
-    pScreenInfo->GetTextBuffer().GetCursor()->SetIsOn(!fEnable);
+    pScreenInfo->GetTextBuffer().GetCursor().SetBlinkingAllowed(fEnable);
+    pScreenInfo->GetTextBuffer().GetCursor().SetIsOn(!fEnable);
 }
 
 // Routine Description:
@@ -1126,7 +1126,7 @@ NTSTATUS DoSrvPrivateReverseLineFeed(_In_ SCREEN_INFORMATION* pScreenInfo)
     NTSTATUS Status = STATUS_SUCCESS;
 
     const SMALL_RECT viewport = pScreenInfo->GetBufferViewport();
-    COORD newCursorPosition = pScreenInfo->GetTextBuffer().GetCursor()->GetPosition();
+    COORD newCursorPosition = pScreenInfo->GetTextBuffer().GetCursor().GetPosition();
 
     // If the cursor is at the top of the viewport, we don't want to shift the viewport up.
     // We want it to stay exactly where it is.
@@ -1199,7 +1199,7 @@ NTSTATUS DoSrvPrivateHorizontalTabSet()
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION* const pScreenBuffer = gci.CurrentScreenBuffer;
 
-    const COORD cursorPos = pScreenBuffer->GetTextBuffer().GetCursor()->GetPosition();
+    const COORD cursorPos = pScreenBuffer->GetTextBuffer().GetCursor().GetPosition();
     return pScreenBuffer->AddTabStop(cursorPos.X);
 }
 
@@ -1220,7 +1220,7 @@ NTSTATUS DoPrivateTabHelper(const SHORT sNumTabs, _In_ bool fForward)
     ASSERT(sNumTabs >= 0);
     for (SHORT sTabsExecuted = 0; sTabsExecuted < sNumTabs && NT_SUCCESS(Status); sTabsExecuted++)
     {
-        const COORD cursorPos = pScreenBuffer->GetTextBuffer().GetCursor()->GetPosition();
+        const COORD cursorPos = pScreenBuffer->GetTextBuffer().GetCursor().GetPosition();
         COORD cNewPos = (fForward) ? pScreenBuffer->GetForwardTab(cursorPos) : pScreenBuffer->GetReverseTab(cursorPos);
         // GetForwardTab is smart enough to move the cursor to the next line if
         // it's at the end of the current one already. AdjustCursorPos shouldn't
@@ -1275,7 +1275,7 @@ void DoSrvPrivateTabClear(const bool fClearAll)
     }
     else
     {
-        const COORD cursorPos = pScreenBuffer->GetTextBuffer().GetCursor()->GetPosition();
+        const COORD cursorPos = pScreenBuffer->GetTextBuffer().GetCursor().GetPosition();
         pScreenBuffer->ClearTabStop(cursorPos.X);
     }
 }
@@ -1365,16 +1365,16 @@ NTSTATUS DoSrvPrivateEraseAll(_In_ SCREEN_INFORMATION* const pScreenInfo)
     return NTSTATUS_FROM_HRESULT(pScreenInfo->GetActiveBuffer()->VtEraseAll());
 }
 
-void DoSrvSetCursorStyle(const SCREEN_INFORMATION* const pScreenInfo,
+void DoSrvSetCursorStyle(SCREEN_INFORMATION* const pScreenInfo,
                          const CursorType cursorType)
 {
-    pScreenInfo->GetTextBuffer().GetCursor()->SetType(cursorType);
+    pScreenInfo->GetTextBuffer().GetCursor().SetType(cursorType);
 }
 
-void DoSrvSetCursorColor(const SCREEN_INFORMATION* const pScreenInfo,
+void DoSrvSetCursorColor(SCREEN_INFORMATION* const pScreenInfo,
                          const COLORREF cursorColor)
 {
-    pScreenInfo->GetTextBuffer().GetCursor()->SetColor(cursorColor);
+    pScreenInfo->GetTextBuffer().GetCursor().SetColor(cursorColor);
 }
 
 // Routine Description:

@@ -314,7 +314,7 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
     // if we're not currently selecting anything, start a new mouse selection
     if (!IsInSelectingState())
     {
-        InitializeMouseSelection(gci.CurrentScreenBuffer->GetTextBuffer().GetCursor()->GetPosition());
+        InitializeMouseSelection(gci.CurrentScreenBuffer->GetTextBuffer().GetCursor().GetPosition());
 
         // force that this is a line selection
         _AlignAlternateSelection(true);
@@ -773,11 +773,11 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
         wVirtualKeyCode == VK_HOME)
     {
         SCREEN_INFORMATION* const pScreenInfo = gci.CurrentScreenBuffer;
-        const TEXT_BUFFER_INFO& textBuffer = pScreenInfo->GetTextBuffer();
+        TEXT_BUFFER_INFO& textBuffer = pScreenInfo->GetTextBuffer();
         SHORT iNextRightX = 0;
         SHORT iNextLeftX = 0;
 
-        const COORD cursorPos = textBuffer.GetCursor()->GetPosition();
+        const COORD cursorPos = textBuffer.GetCursor().GetPosition();
         const ROW& Row = textBuffer.GetRowByOffset(cursorPos.Y);
         const ICharRow& iCharRow = Row.GetCharRow();
         // we only support ucs2 encoded char rows
@@ -829,14 +829,14 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
         }
         CATCH_LOG();
 
-        Cursor* pCursor = textBuffer.GetCursor();
+        Cursor& cursor = textBuffer.GetCursor();
         switch (wVirtualKeyCode)
         {
         case VK_RIGHT:
         {
             if (cursorPos.X + iNextRightX < pScreenInfo->GetScreenBufferSize().X)
             {
-                pCursor->IncrementXPosition(iNextRightX);
+                cursor.IncrementXPosition(iNextRightX);
             }
             break;
         }
@@ -845,7 +845,7 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
         {
             if (cursorPos.X > 0)
             {
-                pCursor->DecrementXPosition(iNextLeftX);
+                cursor.DecrementXPosition(iNextLeftX);
             }
             break;
         }
@@ -854,7 +854,7 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
         {
             if (cursorPos.Y > 0)
             {
-                pCursor->DecrementYPosition(1);
+                cursor.DecrementYPosition(1);
             }
             break;
         }
@@ -863,28 +863,28 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
         {
             if (cursorPos.Y + 1 < pScreenInfo->GetScreenBufferSize().Y)
             {
-                pCursor->IncrementYPosition(1);
+                cursor.IncrementYPosition(1);
             }
             break;
         }
 
         case VK_NEXT:
         {
-            pCursor->IncrementYPosition(pScreenInfo->GetScreenWindowSizeY() - 1);
+            cursor.IncrementYPosition(pScreenInfo->GetScreenWindowSizeY() - 1);
             const COORD coordBufferSize = pScreenInfo->GetScreenBufferSize();
-            if (pCursor->GetPosition().Y >= coordBufferSize.Y)
+            if (cursor.GetPosition().Y >= coordBufferSize.Y)
             {
-                pCursor->SetYPosition(coordBufferSize.Y - 1);
+                cursor.SetYPosition(coordBufferSize.Y - 1);
             }
             break;
         }
 
         case VK_PRIOR:
         {
-            pCursor->DecrementYPosition(pScreenInfo->GetScreenWindowSizeY() - 1);
-            if (pCursor->GetPosition().Y < 0)
+            cursor.DecrementYPosition(pScreenInfo->GetScreenWindowSizeY() - 1);
+            if (cursor.GetPosition().Y < 0)
             {
-                pCursor->SetYPosition(0);
+                cursor.SetYPosition(0);
             }
             break;
         }
@@ -892,7 +892,7 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
         case VK_END:
         {
             // End by itself should go to end of current line. Ctrl-End should go to end of buffer.
-            pCursor->SetXPosition(pScreenInfo->GetScreenBufferSize().X - 1);
+            cursor.SetXPosition(pScreenInfo->GetScreenBufferSize().X - 1);
 
             if (pInputKeyInfo->IsCtrlPressed())
             {
@@ -900,7 +900,7 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
                 GetValidAreaBoundaries(nullptr, &coordValidEnd);
 
                 // Adjust Y position of cursor to the final line with valid text
-                pCursor->SetYPosition(coordValidEnd.Y);
+                cursor.SetYPosition(coordValidEnd.Y);
             }
             break;
         }
@@ -909,11 +909,11 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
         {
             // Home by itself should go to the beginning of the current line. Ctrl-Home should go to the beginning of
             // the buffer
-            pCursor->SetXPosition(0);
+            cursor.SetXPosition(0);
 
             if (pInputKeyInfo->IsCtrlPressed())
             {
-                pCursor->SetYPosition(0);
+                cursor.SetYPosition(0);
             }
             break;
         }
@@ -932,7 +932,7 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
                 CheckAndSetAlternateSelection();
             }
 
-            ExtendSelection(pCursor->GetPosition());
+            ExtendSelection(cursor.GetPosition());
         }
         else
         {
@@ -944,8 +944,8 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
                 _fUseAlternateSelection = false;
             }
 
-            pCursor->SetHasMoved(true);
-            _coordSelectionAnchor = textBuffer.GetCursor()->GetPosition();
+            cursor.SetHasMoved(true);
+            _coordSelectionAnchor = textBuffer.GetCursor().GetPosition();
             pScreenInfo->MakeCursorVisible(_coordSelectionAnchor);
             _srSelectionRect.Left = _srSelectionRect.Right = _coordSelectionAnchor.X;
             _srSelectionRect.Top = _srSelectionRect.Bottom = _coordSelectionAnchor.Y;
@@ -987,7 +987,7 @@ bool Selection::s_GetInputLineBoundaries(_Out_opt_ COORD* const pcoordInputStart
     if (coordEnd.X < 0 && coordEnd.Y < 0)
     {
         // if the original cursor position from the input line data is invalid, then the buffer cursor position is the final position
-        coordEnd = textBuffer.GetCursor()->GetPosition();
+        coordEnd = textBuffer.GetCursor().GetPosition();
     }
     else
     {
@@ -1038,7 +1038,7 @@ void Selection::GetValidAreaBoundaries(_Out_opt_ COORD* const pcoordValidStart, 
         }
         else
         {
-            coordEnd = gci.CurrentScreenBuffer->GetTextBuffer().GetCursor()->GetPosition();
+            coordEnd = gci.CurrentScreenBuffer->GetTextBuffer().GetCursor().GetPosition();
         }
     }
 

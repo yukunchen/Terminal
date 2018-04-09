@@ -289,41 +289,41 @@ void Cursor::DecrementYPosition(const int DeltaY)
 // - NOTE: As of now, this function is specifically used to handle the ResizeWithReflow operation.
 //         It will need modification for other future users.
 // Arguments:
-// - pOtherCursor - The cursor to copy properties from
+// - OtherCursor - The cursor to copy properties from
 // Return Value:
 // - <none>
-void Cursor::CopyProperties(const Cursor* const pOtherCursor)
+void Cursor::CopyProperties(const Cursor& OtherCursor)
 {
     // We shouldn't copy the position as it will be already rearranged by the resize operation.
     //_cPosition                    = pOtherCursor->_cPosition;
 
-    _fHasMoved                    = pOtherCursor->_fHasMoved;
-    _fIsVisible                   = pOtherCursor->_fIsVisible;
-    _fIsOn                        = pOtherCursor->_fIsOn;
-    _fIsDouble                    = pOtherCursor->_fIsDouble;
-    _fBlinkingAllowed             = pOtherCursor->_fBlinkingAllowed;
-    _fDelay                       = pOtherCursor->_fDelay;
-    _fIsConversionArea            = pOtherCursor->_fIsConversionArea;
+    _fHasMoved                    = OtherCursor._fHasMoved;
+    _fIsVisible                   = OtherCursor._fIsVisible;
+    _fIsOn                        = OtherCursor._fIsOn;
+    _fIsDouble                    = OtherCursor._fIsDouble;
+    _fBlinkingAllowed             = OtherCursor._fBlinkingAllowed;
+    _fDelay                       = OtherCursor._fDelay;
+    _fIsConversionArea            = OtherCursor._fIsConversionArea;
 
     // A resize operation should invalidate the delayed end of line status, so do not copy.
-    //_fDelayedEolWrap              = pOtherCursor->_fDelayedEolWrap;
-    //_coordDelayedAt               = pOtherCursor->_coordDelayedAt;
+    //_fDelayedEolWrap              = OtherCursor._fDelayedEolWrap;
+    //_coordDelayedAt               = OtherCursor._coordDelayedAt;
 
-    _fDeferCursorRedraw           = pOtherCursor->_fDeferCursorRedraw;
-    _fHaveDeferredCursorRedraw    = pOtherCursor->_fHaveDeferredCursorRedraw;
+    _fDeferCursorRedraw           = OtherCursor._fDeferCursorRedraw;
+    _fHaveDeferredCursorRedraw    = OtherCursor._fHaveDeferredCursorRedraw;
 
     // Size will be handled seperately in the resize operation.
-    //_ulSize                       = pOtherCursor->_ulSize;
+    //_ulSize                       = OtherCursor._ulSize;
 
     // This property is set only once on console startup, and might change
     // during the lifetime of the console, but is not set again anywhere when a
     // cursor is replaced during reflow. This wasn't necessary when this
     // property and the cursor timer were static.
-    _uCaretBlinkTime              = pOtherCursor->_uCaretBlinkTime;
+    _uCaretBlinkTime              = OtherCursor._uCaretBlinkTime;
 
     // If there's a timer on the other one, then it was active for blinking.
     // Make sure we have a timer on our side too.
-    if (pOtherCursor->_hCaretBlinkTimer != INVALID_HANDLE_VALUE)
+    if (OtherCursor._hCaretBlinkTimer != INVALID_HANDLE_VALUE)
     {
         SetCaretTimer();
     }
@@ -509,8 +509,8 @@ void CALLBACK CursorTimerRoutineWrapper(_In_ PVOID /* lpParam */, _In_ BOOL /* T
 
     if (gci.TryLockConsole() != false)
     {
-        Cursor *cursor = gci.CurrentScreenBuffer->GetTextBuffer().GetCursor();
-        cursor->TimerRoutine(gci.CurrentScreenBuffer);
+        Cursor& cursor = gci.CurrentScreenBuffer->GetTextBuffer().GetCursor();
+        cursor.TimerRoutine(gci.CurrentScreenBuffer);
 
         UnlockConsole();
     }

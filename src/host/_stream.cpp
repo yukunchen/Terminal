@@ -65,12 +65,12 @@ NTSTATUS AdjustCursorPosition(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ COORD c
         }
         else
         {
-            coordCursor.X = pScreenInfo->GetTextBuffer().GetCursor()->GetPosition().X;
+            coordCursor.X = pScreenInfo->GetTextBuffer().GetCursor().GetPosition().X;
         }
     }
     SMALL_RECT srMargins = pScreenInfo->GetScrollMargins();
     const bool fMarginsSet = srMargins.Bottom > srMargins.Top;
-    const int iCurrentCursorY = pScreenInfo->GetTextBuffer().GetCursor()->GetPosition().Y;
+    const int iCurrentCursorY = pScreenInfo->GetTextBuffer().GetCursor().GetPosition().Y;
 
     SMALL_RECT srBufferViewport = pScreenInfo->GetBufferViewport();
     // The margins are in viewport relative coordinates. Adjust for that.
@@ -192,8 +192,8 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     TEXT_BUFFER_INFO& textBuffer = pScreenInfo->GetTextBuffer();
-    Cursor* const pCursor = textBuffer.GetCursor();
-    COORD CursorPosition = pCursor->GetPosition();
+    Cursor& cursor = textBuffer.GetCursor();
+    COORD CursorPosition = cursor.GetPosition();
     NTSTATUS Status = STATUS_SUCCESS;
     ULONG NumChars;
     static WCHAR Blanks[TAB_SIZE] = { UNICODE_SPACE,
@@ -232,10 +232,10 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
     while (*pcb < BufferSize)
     {
         // correct for delayed EOL
-        if (pCursor->IsDelayedEOLWrap())
+        if (cursor.IsDelayedEOLWrap())
         {
-            COORD coordDelayedAt = pCursor->GetDelayedAtPosition();
-            pCursor->ResetDelayEOLWrap();
+            COORD coordDelayedAt = cursor.GetDelayedAtPosition();
+            cursor.ResetDelayEOLWrap();
             // Only act on a delayed EOL if we didn't move the cursor to a different position from where the EOL was marked.
             if (coordDelayedAt.X == CursorPosition.X && coordDelayedAt.Y == CursorPosition.Y)
             {
@@ -271,13 +271,13 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
 
                     Status = AdjustCursorPosition(pScreenInfo, CursorPosition, IsFlagSet(dwFlags, WC_KEEP_CURSOR_VISIBLE), psScrollY);
 
-                    CursorPosition = pCursor->GetPosition();
+                    CursorPosition = cursor.GetPosition();
                 }
             }
         }
 
         // As an optimization, collect characters in buffer and print out all at once.
-        XPosition = pCursor->GetPosition().X;
+        XPosition = cursor.GetPosition().X;
         i = 0;
         LocalBufPtr = LocalBuffer;
         currentDbcsAttribute = dbcsAttributes;
@@ -441,23 +441,23 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
         if (i != 0)
         {
             // Make sure we don't write past the end of the buffer.
-            if (i > (ULONG)coordScreenBufferSize.X - pCursor->GetPosition().X)
+            if (i > (ULONG)coordScreenBufferSize.X - cursor.GetPosition().X)
             {
-                i = (ULONG)coordScreenBufferSize.X - pCursor->GetPosition().X;
+                i = (ULONG)coordScreenBufferSize.X - cursor.GetPosition().X;
             }
 
             // line was wrapped if we're writing up to the end of the current row
             bool fWasLineWrapped = XPosition >= coordScreenBufferSize.X;
 
             StreamWriteToScreenBuffer(LocalBuffer, (SHORT)i, pScreenInfo, dbcsAttributes, fWasLineWrapped);
-            Region.Left = pCursor->GetPosition().X;
-            Region.Right = (SHORT)(pCursor->GetPosition().X + i - 1);
-            Region.Top = pCursor->GetPosition().Y;
-            Region.Bottom = pCursor->GetPosition().Y;
+            Region.Left = cursor.GetPosition().X;
+            Region.Right = (SHORT)(cursor.GetPosition().X + i - 1);
+            Region.Top = cursor.GetPosition().Y;
+            Region.Bottom = cursor.GetPosition().Y;
             WriteToScreen(pScreenInfo, Region);
             TempNumSpaces += i;
-            CursorPosition.X = (SHORT)(pCursor->GetPosition().X + i);
-            CursorPosition.Y = pCursor->GetPosition().Y;
+            CursorPosition.X = (SHORT)(cursor.GetPosition().X + i);
+            CursorPosition.Y = cursor.GetPosition().Y;
 
             // enforce a delayed newline if we're about to pass the end and the WC_DELAY_EOL_WRAP flag is set.
             if (IsFlagSet(dwFlags, WC_DELAY_EOL_WRAP) && CursorPosition.X >= coordScreenBufferSize.X)
@@ -466,10 +466,10 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                 CursorPosition.X = coordScreenBufferSize.X - 1;
 
                 // Update in the structures that we're still pointing to the last character in the row
-                pCursor->SetPosition(CursorPosition);
+                cursor.SetPosition(CursorPosition);
 
                 // Record for the delay comparison that we're delaying on the last character in the row
-                pCursor->DelayEOLWrap(CursorPosition);
+                cursor.DelayEOLWrap(CursorPosition);
             }
             else
             {
@@ -612,9 +612,9 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                     if (dwFlags & WC_DESTRUCTIVE_BACKSPACE)
                     {
                         NumChars = 1;
-                        Status = WriteOutputString(pScreenInfo, Blanks, pCursor->GetPosition(), CONSOLE_FALSE_UNICODE, // faster than real unicode
+                        Status = WriteOutputString(pScreenInfo, Blanks, cursor.GetPosition(), CONSOLE_FALSE_UNICODE, // faster than real unicode
                                                    &NumChars, nullptr);
-                        Status = FillOutput(pScreenInfo, Attributes, pCursor->GetPosition(), CONSOLE_ATTRIBUTE, &NumChars);
+                        Status = FillOutput(pScreenInfo, Attributes, cursor.GetPosition(), CONSOLE_ATTRIBUTE, &NumChars);
                     }
                     CursorPosition.X -= 1;
                 }
@@ -634,13 +634,13 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                 NumChars = 1;
                 LOG_IF_FAILED(WriteOutputString(pScreenInfo,
                                                 Blanks,
-                                                pCursor->GetPosition(),
+                                                cursor.GetPosition(),
                                                 CONSOLE_FALSE_UNICODE,  //faster than real unicode
                                                 &NumChars,
                                                 nullptr));
-                Status = FillOutput(pScreenInfo, Attributes, pCursor->GetPosition(), CONSOLE_ATTRIBUTE, &NumChars);
+                Status = FillOutput(pScreenInfo, Attributes, cursor.GetPosition(), CONSOLE_ATTRIBUTE, &NumChars);
             }
-            if (pCursor->GetPosition().X == 0 && (pScreenInfo->OutputMode & ENABLE_WRAP_AT_EOL_OUTPUT) && pwchBuffer > pwchBufferBackupLimit)
+            if (cursor.GetPosition().X == 0 && (pScreenInfo->OutputMode & ENABLE_WRAP_AT_EOL_OUTPUT) && pwchBuffer > pwchBufferBackupLimit)
             {
                 if (CheckBisectProcessW(pScreenInfo,
                                         pwchBufferBackupLimit,
@@ -650,7 +650,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                                         dwFlags & WC_ECHO))
                 {
                     CursorPosition.X = coordScreenBufferSize.X - 1;
-                    CursorPosition.Y = (SHORT)(pCursor->GetPosition().Y - 1);
+                    CursorPosition.Y = (SHORT)(cursor.GetPosition().Y - 1);
 
                     // since you just backspaced yourself back up into the previous row, unset the wrap flag
                     // on the prev row if it was set
@@ -667,14 +667,14 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
             // just move the cursor to the next tab stop.
             if (pScreenInfo->AreTabsSet())
             {
-                COORD cCursorOld = pCursor->GetPosition();
+                COORD cCursorOld = cursor.GetPosition();
                 // Get Forward tab handles tabbing past the end of the buffer
                 CursorPosition = pScreenInfo->GetForwardTab(cCursorOld);
             }
             else
             {
-                TabSize = NUMBER_OF_SPACES_IN_TAB(pCursor->GetPosition().X);
-                CursorPosition.X = (SHORT)(pCursor->GetPosition().X + TabSize);
+                TabSize = NUMBER_OF_SPACES_IN_TAB(cursor.GetPosition().X);
+                CursorPosition.X = (SHORT)(cursor.GetPosition().X + TabSize);
 
                 // move cursor forward to next tab stop.  fill space with blanks.
                 // we get here when the tab extends beyond the right edge of the
@@ -685,28 +685,28 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                 TempNumSpaces += TabSize;
                 if (CursorPosition.X >= coordScreenBufferSize.X)
                 {
-                    NumChars = coordScreenBufferSize.X - pCursor->GetPosition().X;
+                    NumChars = coordScreenBufferSize.X - cursor.GetPosition().X;
                     CursorPosition.X = 0;
-                    CursorPosition.Y = pCursor->GetPosition().Y + 1;
+                    CursorPosition.Y = cursor.GetPosition().Y + 1;
 
                     // since you just tabbed yourself past the end of the row, set the wrap
-                    textBuffer.GetRowByOffset(pCursor->GetPosition().Y).GetCharRow().SetWrapForced(true);
+                    textBuffer.GetRowByOffset(cursor.GetPosition().Y).GetCharRow().SetWrapForced(true);
                 }
                 else
                 {
-                    NumChars = CursorPosition.X - pCursor->GetPosition().X;
-                    CursorPosition.Y = pCursor->GetPosition().Y;
+                    NumChars = CursorPosition.X - cursor.GetPosition().X;
+                    CursorPosition.Y = cursor.GetPosition().Y;
                 }
 
                 if (!IsFlagSet(dwFlags, WC_NONDESTRUCTIVE_TAB))
                 {
                     LOG_IF_FAILED(WriteOutputString(pScreenInfo,
                                                     Blanks,
-                                                    pCursor->GetPosition(),
+                                                    cursor.GetPosition(),
                                                     CONSOLE_FALSE_UNICODE,  // faster than real unicode
                                                     &NumChars,
                                                     nullptr));
-                    LOG_IF_FAILED(FillOutput(pScreenInfo, Attributes, pCursor->GetPosition(), CONSOLE_ATTRIBUTE, &NumChars));
+                    LOG_IF_FAILED(FillOutput(pScreenInfo, Attributes, cursor.GetPosition(), CONSOLE_ATTRIBUTE, &NumChars));
                 }
 
             }
@@ -720,7 +720,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
             // backspace because input is sent to the user on cr or lf.
             pwchBuffer++;
             CursorPosition.X = 0;
-            CursorPosition.Y = pCursor->GetPosition().Y;
+            CursorPosition.Y = cursor.GetPosition().Y;
             Status = AdjustCursorPosition(pScreenInfo, CursorPosition, (dwFlags & WC_KEEP_CURSOR_VISIBLE) != 0, psScrollY);
             break;
         }
@@ -737,11 +737,11 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                 CursorPosition.X = 0;
             }
 
-            CursorPosition.Y = (SHORT)(pCursor->GetPosition().Y + 1);
+            CursorPosition.Y = (SHORT)(cursor.GetPosition().Y + 1);
 
             {
                 // since we explicitly just moved down a row, clear the wrap status on the row we just came from
-                textBuffer.GetRowByOffset(pCursor->GetPosition().Y).GetCharRow().SetWrapForced(false);
+                textBuffer.GetRowByOffset(cursor.GetPosition().Y).GetCharRow().SetWrapForced(false);
             }
 
             Status = AdjustCursorPosition(pScreenInfo, CursorPosition, (dwFlags & WC_KEEP_CURSOR_VISIBLE) != 0, psScrollY);
@@ -755,7 +755,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                 XPosition >= (coordScreenBufferSize.X - 1) &&
                 (pScreenInfo->OutputMode & ENABLE_WRAP_AT_EOL_OUTPUT))
             {
-                COORD const TargetPoint = pCursor->GetPosition();
+                COORD const TargetPoint = cursor.GetPosition();
                 ROW& Row = textBuffer.GetRowByOffset(TargetPoint.Y);
                 ICharRow& iCharRow = Row.GetCharRow();
 
@@ -940,7 +940,7 @@ NTSTATUS DoWriteConsole(_In_reads_bytes_(*pcbBuffer) PWCHAR pwchBuffer,
                       pwchBuffer,
                       pcbBuffer,
                       nullptr,
-                      textBuffer.GetCursor()->GetPosition().X,
+                      textBuffer.GetCursor().GetPosition().X,
                       WC_LIMIT_BACKSPACE,
                       nullptr);
 }

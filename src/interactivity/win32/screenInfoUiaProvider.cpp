@@ -356,8 +356,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(_Outptr_result_maybenull_ SAF
         // return a degenerate range at the cursor position
         SCREEN_INFORMATION* const pScreenInfo = _getScreenInfo();
         RETURN_HR_IF_NULL(E_POINTER, pScreenInfo);
-        const Cursor* const pCursor = pScreenInfo->GetTextBuffer().GetCursor();
-        RETURN_HR_IF_NULL(E_POINTER, pCursor);
+        const Cursor& cursor = pScreenInfo->GetTextBuffer().GetCursor();
 
         // make a safe array
         *ppRetVal = SafeArrayCreateVector(VT_UNKNOWN, 0, 1);
@@ -379,7 +378,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(_Outptr_result_maybenull_ SAF
         try
         {
             range = UiaTextRange::Create(pProvider,
-                                         pCursor);
+                                         cursor);
         }
         catch (...)
         {
