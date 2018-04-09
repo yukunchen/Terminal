@@ -55,6 +55,6 @@ private:
 
     void _RunUWPConIntegrityViaTile();
 
-    void _TestValidationHelper(_In_ const bool fIsBlockExpected,
+    void _TestValidationHelper(const bool fIsBlockExpected,
                                _In_ PCWSTR pwszIntegrityExpected);
 };

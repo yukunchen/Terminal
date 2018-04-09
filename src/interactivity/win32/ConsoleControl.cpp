@@ -109,7 +109,7 @@ BOOL ConsoleControl::EnterReaderModeHelper(_In_ HWND hwnd)
 #endif
 }
 
-BOOL ConsoleControl::TranslateMessageEx(_In_ const MSG *pmsg,
+BOOL ConsoleControl::TranslateMessageEx(const MSG *pmsg,
                                         _In_ UINT flags)
 {
 #ifdef CON_USERPRIVAPI_INDIRECT

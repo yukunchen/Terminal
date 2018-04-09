@@ -78,7 +78,7 @@ Clipboard& Clipboard::Instance()
 // Return Value:
 // - None
 void Clipboard::StringPaste(_In_reads_(cchData) const wchar_t* const pData,
-                            _In_ const size_t cchData)
+                            const size_t cchData)
 {
     if (pData == nullptr)
     {
@@ -113,7 +113,7 @@ void Clipboard::StringPaste(_In_reads_(cchData) const wchar_t* const pData,
 // Note:
 // - will throw exception on error
 std::deque<std::unique_ptr<IInputEvent>> Clipboard::TextToKeyEvents(_In_reads_(cchData) const wchar_t* const pData,
-                                                                    _In_ const size_t cchData)
+                                                                    const size_t cchData)
 {
     THROW_IF_NULL_ALLOC(pData);
 
@@ -236,9 +236,9 @@ void Clipboard::StoreSelectionToClipboard()
 }
 
 [[nodiscard]]
-NTSTATUS Clipboard::RetrieveTextFromBuffer(_In_ const SCREEN_INFORMATION* const pScreenInfo,
-                                           _In_ bool const fLineSelection,
-                                           _In_ UINT const cRectsSelected,
+NTSTATUS Clipboard::RetrieveTextFromBuffer(const SCREEN_INFORMATION* const pScreenInfo,
+                                           const bool fLineSelection,
+                                           const UINT cRectsSelected,
                                            _In_reads_(cRectsSelected) const SMALL_RECT* const rgsrSelection,
                                            _Out_writes_(cRectsSelected) PWCHAR* const rgpwszTempText,
                                            _Out_writes_(cRectsSelected) size_t* const rgTempTextLengths)
@@ -374,7 +374,7 @@ NTSTATUS Clipboard::RetrieveTextFromBuffer(_In_ const SCREEN_INFORMATION* const 
 // Return Value:
 //  <none>
 [[nodiscard]]
-NTSTATUS Clipboard::CopyTextToSystemClipboard(_In_ const UINT cTotalRows,
+NTSTATUS Clipboard::CopyTextToSystemClipboard(const UINT cTotalRows,
                                               _In_reads_(cTotalRows) const PWCHAR* const rgTempRows,
                                               _In_reads_(cTotalRows) const size_t* const rgTempRowLengths)
 {

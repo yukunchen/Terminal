@@ -31,9 +31,9 @@ public:
 
     static const unsigned int s_InvertCursorColor = INVALID_COLOR;
 
-    Cursor(_In_ Microsoft::Console::Interactivity::IAccessibilityNotifier *pNotifier, _In_ ULONG const ulSize);
+    Cursor(_In_ Microsoft::Console::Interactivity::IAccessibilityNotifier *pNotifier, const ULONG ulSize);
     [[nodiscard]]
-    static NTSTATUS CreateInstance(_In_ ULONG const ulSize, _Outptr_ Cursor ** const ppCursor);
+    static NTSTATUS CreateInstance(const ULONG ulSize, _Outptr_ Cursor ** const ppCursor);
     ~Cursor();
 
     void UpdateSystemMetrics();
@@ -60,34 +60,34 @@ public:
     void StartDeferDrawing();
     void EndDeferDrawing();
 
-    void SetHasMoved(_In_ const bool fHasMoved);
-    void SetIsVisible(_In_ bool const fIsVisible);
-    void SetIsOn(_In_ bool const fIsOn);
-    void SetBlinkingAllowed(_In_ bool const fIsOn);
-    void SetIsDouble(_In_ bool const fIsDouble);
-    void SetIsConversionArea(_In_ bool const fIsConversionArea);
-    void SetIsPopupShown(_In_ bool const fIsPopupShown);
-    void SetDelay(_In_ bool const fDelay);
-    void SetSize(_In_ ULONG const ulSize);
+    void SetHasMoved(const bool fHasMoved);
+    void SetIsVisible(const bool fIsVisible);
+    void SetIsOn(const bool fIsOn);
+    void SetBlinkingAllowed(const bool fIsOn);
+    void SetIsDouble(const bool fIsDouble);
+    void SetIsConversionArea(const bool fIsConversionArea);
+    void SetIsPopupShown(const bool fIsPopupShown);
+    void SetDelay(const bool fDelay);
+    void SetSize(const ULONG ulSize);
 
-    void SetPosition(_In_ COORD const cPosition);
-    void SetXPosition(_In_ int const NewX);
-    void SetYPosition(_In_ int const NewY);
-    void IncrementXPosition(_In_ int const DeltaX);
-    void IncrementYPosition(_In_ int const DeltaY);
-    void DecrementXPosition(_In_ int const DeltaX);
-    void DecrementYPosition(_In_ int const DeltaY);
+    void SetPosition(const COORD cPosition);
+    void SetXPosition(const int NewX);
+    void SetYPosition(const int NewY);
+    void IncrementXPosition(const int DeltaX);
+    void IncrementYPosition(const int DeltaY);
+    void DecrementXPosition(const int DeltaX);
+    void DecrementYPosition(const int DeltaY);
 
     void TimerRoutine(_In_ PSCREEN_INFORMATION const ScreenInfo);
-    void CopyProperties(_In_ const Cursor* const pOtherCursor);
+    void CopyProperties(const Cursor* const pOtherCursor);
 
-    void DelayEOLWrap(_In_ const COORD coordDelayedAt);
+    void DelayEOLWrap(const COORD coordDelayedAt);
     void ResetDelayEOLWrap();
     COORD GetDelayedAtPosition() const;
     bool IsDelayedEOLWrap() const;
 
-    void SetColor(_In_ const unsigned int color);
-    void SetType(_In_ const CursorType type);
+    void SetColor(const unsigned int color);
+    void SetType(const CursorType type);
 
 private:
     Microsoft::Console::Interactivity::IAccessibilityNotifier *_pAccessibilityNotifier;

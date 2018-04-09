@@ -93,7 +93,7 @@ HRESULT PtySignalInputThread::_InputThread()
 // Return Value:
 // - True if data was retrieved successfully. False otherwise.
 bool PtySignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pBuffer,
-                                    _In_ const DWORD cbBuffer)
+                                    const DWORD cbBuffer)
 {
     DWORD dwRead = 0;
     // If we failed to read because the terminal broke our pipe (usually due

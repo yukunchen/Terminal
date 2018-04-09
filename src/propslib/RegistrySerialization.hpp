@@ -30,44 +30,44 @@ public:
     static NTSTATUS s_OpenKey(_In_opt_ HKEY const hKey, _In_ PCWSTR const pwszSubKey, _Out_ HKEY* const phResult);
 
     [[nodiscard]]
-    static NTSTATUS s_QueryValue(_In_ HKEY const hKey,
+    static NTSTATUS s_QueryValue(const HKEY hKey,
                                  _In_ PCWSTR const pwszValueName,
-                                 _In_ DWORD const cbValueLength,
-                                 _In_ DWORD const regType,
+                                 const DWORD cbValueLength,
+                                 const DWORD regType,
                                  _Out_writes_bytes_(cbValueLength) BYTE* const pbData,
                                  _Out_opt_ _Out_range_(0, cbValueLength) DWORD* const pcbDataLength);
 
     [[nodiscard]]
-    static NTSTATUS s_EnumValue(_In_ HKEY const hKey,
-                                _In_ DWORD const dwIndex,
-                                _In_ DWORD const cbValueLength,
+    static NTSTATUS s_EnumValue(const HKEY hKey,
+                                const DWORD dwIndex,
+                                const DWORD cbValueLength,
                                 _Out_writes_bytes_(cbValueLength) PWSTR const pwszValueName,
-                                _In_ DWORD const cbDataLength,
+                                const DWORD cbDataLength,
                                 _Out_writes_bytes_(cbDataLength) BYTE* const pbData);
 
     [[nodiscard]]
     static NTSTATUS s_OpenConsoleKey(_Out_ HKEY* phCurrentUserKey, _Out_ HKEY* phConsoleKey);
 
     [[nodiscard]]
-    static NTSTATUS s_CreateKey(_In_ HKEY const hKey, _In_ PCWSTR const pwszSubKey, _Out_ HKEY* const phResult);
+    static NTSTATUS s_CreateKey(const HKEY hKey, _In_ PCWSTR const pwszSubKey, _Out_ HKEY* const phResult);
 
     [[nodiscard]]
-    static NTSTATUS s_DeleteValue(_In_ HKEY const hKey, _In_ PCWSTR const pwszValueName);
+    static NTSTATUS s_DeleteValue(const HKEY hKey, _In_ PCWSTR const pwszValueName);
 
     [[nodiscard]]
-    static NTSTATUS s_SetValue(_In_ HKEY const hKey,
+    static NTSTATUS s_SetValue(const HKEY hKey,
                                _In_ PCWSTR const pwszValueName,
-                               _In_ DWORD const dwType,
+                               const DWORD dwType,
                                _In_reads_bytes_(cbDataLength) BYTE* const pbData,
-                               _In_ DWORD const cbDataLength);
+                               const DWORD cbDataLength);
 
     [[nodiscard]]
-    static NTSTATUS s_UpdateValue(_In_ HKEY const hConsoleKey,
-                                  _In_ HKEY const hKey,
+    static NTSTATUS s_UpdateValue(const HKEY hConsoleKey,
+                                  const HKEY hKey,
                                   _In_ PCWSTR const pwszValueName,
-                                  _In_ DWORD const dwType,
+                                  const DWORD dwType,
                                   _In_reads_bytes_(dwDataLength) BYTE* pbData,
-                                  _In_ DWORD const dwDataLength);
+                                  const DWORD dwDataLength);
 
     [[nodiscard]]
     static NTSTATUS s_OpenCurrentUserConsoleTitleKey(_In_ PCWSTR const title,
@@ -85,7 +85,7 @@ public:
         String,
     };
 
-    static DWORD ToWin32RegistryType(_In_ const _RegPropertyType type);
+    static DWORD ToWin32RegistryType(const _RegPropertyType type);
 
     typedef struct _RegPropertyMap
     {
@@ -114,8 +114,8 @@ public:
     static const size_t RegistrySerialization::s_GlobalPropMappingsSize;
 
     [[nodiscard]]
-    static NTSTATUS s_LoadRegDword(_In_ HKEY const hKey, _In_ const _RegPropertyMap* const pPropMap, _In_ Settings* const pSettings);
+    static NTSTATUS s_LoadRegDword(const HKEY hKey, const _RegPropertyMap* const pPropMap, _In_ Settings* const pSettings);
     [[nodiscard]]
-    static NTSTATUS s_LoadRegString(_In_ HKEY const hKey, _In_ const _RegPropertyMap* const pPropMap, _In_ Settings* const pSettings);
+    static NTSTATUS s_LoadRegString(const HKEY hKey, const _RegPropertyMap* const pPropMap, _In_ Settings* const pSettings);
 
 };

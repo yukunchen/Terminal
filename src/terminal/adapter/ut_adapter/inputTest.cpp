@@ -50,7 +50,7 @@ public:
     TEST_METHOD(TerminalInputNullKeyTests);
     TEST_METHOD(DifferentModifiersTest);
 
-    wchar_t GetModifierChar(_In_ const bool fShift, _In_ const bool fAlt, _In_ const bool fCtrl)
+    wchar_t GetModifierChar(const bool fShift, const bool fAlt, const bool fCtrl)
     {
         return L'1' + (fShift? 1 : 0) + (fAlt? 2 : 0) + (fCtrl? 4 : 0);
     }
@@ -595,7 +595,7 @@ void InputTest::TerminalInputNullKeyTests()
 
 }
 
-void TestKey(const TerminalInput* const pInput, _In_ const unsigned int uiKeystate, _In_ const BYTE vkey, _In_ const wchar_t wch)
+void TestKey(const TerminalInput* const pInput, const unsigned int uiKeystate, const BYTE vkey, const wchar_t wch)
 {
     Log::Comment(NoThrowString().Format(L"Testing key, state =0x%x, 0x%x", vkey, uiKeystate));
 
@@ -611,7 +611,7 @@ void TestKey(const TerminalInput* const pInput, _In_ const unsigned int uiKeysta
     auto inputEvent = IInputEvent::Create(irTest);
     VERIFY_ARE_EQUAL(true, pInput->HandleKey(inputEvent.get()), L"Verify key was handled if it should have been.");
 }
-void TestKey(const TerminalInput* const pInput, _In_ const unsigned int uiKeystate, _In_ const BYTE vkey)
+void TestKey(const TerminalInput* const pInput, const unsigned int uiKeystate, const BYTE vkey)
 {
     // Callers of this version don't expect the wchar to matter.
     TestKey(pInput, uiKeystate, vkey, 0);

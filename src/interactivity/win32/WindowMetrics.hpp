@@ -25,17 +25,17 @@ namespace Microsoft::Console::Interactivity::Win32
 
         // Public Members
         RECT GetMaxWindowRectInPixels();
-        RECT GetMaxWindowRectInPixels(_In_ const RECT * const prcSuggested, _Out_opt_ UINT * pDpiSuggested);
+        RECT GetMaxWindowRectInPixels(const RECT * const prcSuggested, _Out_opt_ UINT * pDpiSuggested);
 
         BOOL AdjustWindowRectEx(_Inout_ LPRECT prc,
-                                _In_ const DWORD dwStyle,
-                                _In_ const BOOL fMenu,
-                                _In_ const DWORD dwExStyle);
+                                const DWORD dwStyle,
+                                const BOOL fMenu,
+                                const DWORD dwExStyle);
         BOOL AdjustWindowRectEx(_Inout_ LPRECT prc,
-                                _In_ const DWORD dwStyle,
-                                _In_ const BOOL fMenu,
-                                _In_ const DWORD dwExStyle,
-                                _In_ const int iDpi);
+                                const DWORD dwStyle,
+                                const BOOL fMenu,
+                                const DWORD dwExStyle,
+                                const int iDpi);
 
         void ConvertClientRectToWindowRect(_Inout_ RECT * const prc);
         void ConvertWindowRectToClientRect(_Inout_ RECT * const prc);
@@ -48,10 +48,10 @@ namespace Microsoft::Console::Interactivity::Win32
         };
 
         BOOL UnadjustWindowRectEx(_Inout_ LPRECT prc,
-                                    _In_ const DWORD dwStyle,
-                                    _In_ const BOOL fMenu,
-                                    _In_ const DWORD dwExStyle);
+                                    const DWORD dwStyle,
+                                    const BOOL fMenu,
+                                    const DWORD dwExStyle);
 
-        void ConvertRect(_Inout_ RECT* const prc, _In_ ConvertRectangle const crDirection);
+        void ConvertRect(_Inout_ RECT* const prc, const ConvertRectangle crDirection);
     };
 }

@@ -91,7 +91,7 @@ public:
     static CommandLine& Instance();
 
     bool IsEditLineEmpty() const;
-    void Hide(_In_ bool const fUpdateFields);
+    void Hide(const bool fUpdateFields);
     void Show();
 
 protected:
@@ -105,13 +105,13 @@ protected:
 [[nodiscard]]
 NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                             _In_ WCHAR wch,
-                            _In_ const DWORD dwKeyState);
+                            const DWORD dwKeyState);
 
-void DeleteCommandLine(_Inout_ COOKED_READ_DATA* pCookedReadData, _In_ const bool fUpdateFields);
+void DeleteCommandLine(_Inout_ COOKED_READ_DATA* pCookedReadData, const bool fUpdateFields);
 
 void RedrawCommandLine(_Inout_ COOKED_READ_DATA* CookedReadData);
 
-PCOMMAND_HISTORY FindCommandHistory(_In_ const HANDLE hProcess);
+PCOMMAND_HISTORY FindCommandHistory(const HANDLE hProcess);
 
 void CleanUpPopups(_In_ COOKED_READ_DATA* const CookedReadData);
 
@@ -130,11 +130,11 @@ void CleanUpPopups(_In_ COOKED_READ_DATA* const CookedReadData);
 #define WC_DELAY_EOL_WRAP        0x80
 
 // Word delimiters
-bool IsWordDelim(_In_ WCHAR const wch);
+bool IsWordDelim(const WCHAR wch);
 
 [[nodiscard]]
 HRESULT DoSrvSetConsoleTitleW(_In_reads_or_z_(cchBuffer) const wchar_t* const pwsBuffer,
-                              _In_ size_t const cchBuffer);
+                              const size_t cchBuffer);
 
 #define COMMAND_NUM_TO_INDEX(NUM, CMDHIST) (SHORT)(((NUM+(CMDHIST)->FirstCommand)%((CMDHIST)->MaximumNumberOfCommands)))
 #define COMMAND_INDEX_TO_NUM(INDEX, CMDHIST) (SHORT)(((INDEX+((CMDHIST)->MaximumNumberOfCommands)-(CMDHIST)->FirstCommand)%((CMDHIST)->MaximumNumberOfCommands)))

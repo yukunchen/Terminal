@@ -10,17 +10,17 @@
 
 using namespace Microsoft::Console::VirtualTerminal;
 
-void EchoDispatch::Print(_In_ wchar_t const wchPrintable)
+void EchoDispatch::Print(const wchar_t wchPrintable)
 {
     wprintf(L"Print: %c (0x%x)\r\n", wchPrintable, wchPrintable);
 }
 
-void EchoDispatch::PrintString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch)
+void EchoDispatch::PrintString(_In_reads_(cch) wchar_t* const rgwch, const size_t cch)
 {
     wprintf(L"PrintString: \"%s\" (%zd chars)\r\n", rgwch, cch);
 }
 
-void EchoDispatch::Execute(_In_ wchar_t const wchControl)
+void EchoDispatch::Execute(const wchar_t wchControl)
 {
     wprintf(L"Execute: 0x%x\r\n", wchControl);
 }

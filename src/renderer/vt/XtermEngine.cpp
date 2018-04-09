@@ -12,11 +12,11 @@ using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 
 XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
-                         _In_ const IDefaultColorProvider& colorProvider,
-                         _In_ const Viewport initialViewport,
+                         const IDefaultColorProvider& colorProvider,
+                         const Viewport initialViewport,
                          _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                         _In_ const WORD cColorTable,
-                         _In_ const bool fUseAsciiOnly) :
+                         const WORD cColorTable,
+                         const bool fUseAsciiOnly) :
     VtEngine(std::move(hPipe), colorProvider, initialViewport),
     _ColorTable(ColorTable),
     _cColorTable(cColorTable),
@@ -103,10 +103,10 @@ HRESULT XtermEngine::EndPaint()
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT XtermEngine::UpdateDrawingBrushes(_In_ COLORREF const colorForeground,
-                                          _In_ COLORREF const colorBackground,
-                                          _In_ WORD const /*legacyColorAttribute*/,
-                                          _In_ bool const /*fIncludeBackgrounds*/)
+HRESULT XtermEngine::UpdateDrawingBrushes(const COLORREF colorForeground,
+                                          const COLORREF colorBackground,
+                                          const WORD /*legacyColorAttribute*/,
+                                          const bool /*fIncludeBackgrounds*/)
 {
     // The base xterm mode only knows about 16 colors
     return VtEngine::_16ColorUpdateDrawingBrushes(colorForeground, colorBackground, _ColorTable, _cColorTable);
@@ -240,7 +240,7 @@ HRESULT XtermEngine::ScrollFrame()
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for safemath failure
 [[nodiscard]]
-HRESULT XtermEngine::InvalidateScroll(_In_ const COORD* const pcoordDelta)
+HRESULT XtermEngine::InvalidateScroll(const COORD* const pcoordDelta)
 {
     const short dx = pcoordDelta->X;
     const short dy = pcoordDelta->Y;
@@ -293,9 +293,9 @@ HRESULT XtermEngine::InvalidateScroll(_In_ const COORD* const pcoordDelta)
 [[nodiscard]]
 HRESULT XtermEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
                                      _In_reads_(cchLine) const unsigned char* const rgWidths,
-                                     _In_ size_t const cchLine,
-                                     _In_ COORD const coord,
-                                     _In_ bool const /*fTrimLeft*/)
+                                     const size_t cchLine,
+                                     const COORD coord,
+                                     const bool /*fTrimLeft*/)
 {
     return _fUseAsciiOnly ?
         VtEngine::_PaintAsciiBufferLine(pwsLine, rgWidths, cchLine, coord) :

@@ -21,8 +21,8 @@ using namespace Microsoft::Console::VirtualTerminal;
 // Return Value:
 // True if handled successfully. False othewise.
 bool DispatchCommon::s_ResizeWindow(_Inout_ ConGetSet* const pConApi,
-                                    _In_ const unsigned short usWidth,
-                                    _In_ const unsigned short usHeight)
+                                    const unsigned short usWidth,
+                                    const unsigned short usHeight)
 {
     SHORT sColumns = 0;
     SHORT sRows = 0;

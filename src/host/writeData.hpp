@@ -25,17 +25,17 @@ class WriteData : public IWaitRoutine
 public:
     WriteData(_In_ SCREEN_INFORMATION* const psiContext,
               _In_reads_bytes_(cbContext) wchar_t* const pwchContext,
-              _In_ ULONG const cbContext,
-              _In_ UINT const uiOutputCodepage);
+              const ULONG cbContext,
+              const UINT uiOutputCodepage);
     ~WriteData();
 
-    void SetLeadByteAdjustmentStatus(_In_ bool const fLeadByteCaptured,
-                                     _In_ bool const fLeadByteConsumed);
+    void SetLeadByteAdjustmentStatus(const bool fLeadByteCaptured,
+                                     const bool fLeadByteConsumed);
 
-    void SetUtf8ConsumedCharacters(_In_ size_t const cchUtf8Consumed);
+    void SetUtf8ConsumedCharacters(const size_t cchUtf8Consumed);
 
-    bool Notify(_In_ WaitTerminationReason const TerminationReason,
-                _In_ bool const fIsUnicode,
+    bool Notify(const WaitTerminationReason TerminationReason,
+                const bool fIsUnicode,
                 _Out_ NTSTATUS* const pReplyStatus,
                 _Out_ DWORD* const pNumBytes,
                 _Out_ DWORD* const pControlKeyState,

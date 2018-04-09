@@ -42,8 +42,8 @@ extern "C" NTSYSAPI LONG NTAPI RtlQueryPackageClaims(
 // - Constructs a new instance of the process policy class.
 // Arguments:
 // - All arguments specify a true/false status to a policy that could be applied to a console client app.
-ConsoleProcessPolicy::ConsoleProcessPolicy(_In_ const bool fCanReadOutputBuffer,
-                                           _In_ const bool fCanWriteInputBuffer) :
+ConsoleProcessPolicy::ConsoleProcessPolicy(const bool fCanReadOutputBuffer,
+                                           const bool fCanWriteInputBuffer) :
     _fCanReadOutputBuffer(fCanReadOutputBuffer),
     _fCanWriteInputBuffer(fCanWriteInputBuffer)
 {
@@ -63,7 +63,7 @@ ConsoleProcessPolicy::~ConsoleProcessPolicy()
 // - hProcess - Handle to a connected process
 // Return Value:
 // - ConsoleProcessPolicy object containing resolved policy data.
-ConsoleProcessPolicy ConsoleProcessPolicy::s_CreateInstance(_In_ const HANDLE hProcess)
+ConsoleProcessPolicy ConsoleProcessPolicy::s_CreateInstance(const HANDLE hProcess)
 {
     // If we cannot determine the policy status, then we block access by default.
     bool fCanReadOutputBuffer = false;
@@ -95,7 +95,7 @@ ConsoleProcessPolicy ConsoleProcessPolicy::s_CreateInstance(_In_ const HANDLE hP
 }
 
 [[nodiscard]]
-HRESULT ConsoleProcessPolicy::s_CheckAppModelPolicy(_In_ const HANDLE hToken,
+HRESULT ConsoleProcessPolicy::s_CheckAppModelPolicy(const HANDLE hToken,
                                                     _Inout_ bool& fIsWrongWayBlocked)
 {
     // If we cannot determine the policy status, then we block access by default.
@@ -119,7 +119,7 @@ HRESULT ConsoleProcessPolicy::s_CheckAppModelPolicy(_In_ const HANDLE hToken,
 }
 
 [[nodiscard]]
-HRESULT ConsoleProcessPolicy::s_CheckIntegrityLevelPolicy(_In_ const HANDLE hOtherToken,
+HRESULT ConsoleProcessPolicy::s_CheckIntegrityLevelPolicy(const HANDLE hOtherToken,
                                                           _Inout_ bool& fIsWrongWayBlocked)
 {
     // If we cannot determine the policy status, then we block access by default.
@@ -144,7 +144,7 @@ HRESULT ConsoleProcessPolicy::s_CheckIntegrityLevelPolicy(_In_ const HANDLE hOth
 }
 
 [[nodiscard]]
-HRESULT ConsoleProcessPolicy::s_GetIntegrityLevel(_In_ const HANDLE hToken,
+HRESULT ConsoleProcessPolicy::s_GetIntegrityLevel(const HANDLE hToken,
                                                   _Out_ DWORD& dwIntegrityLevel)
 {
     dwIntegrityLevel = 0;

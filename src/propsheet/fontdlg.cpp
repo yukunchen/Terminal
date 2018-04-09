@@ -45,7 +45,7 @@ BOOL PreviewInit(
 
 VOID DrawItemFontList(const HWND hDlg, const LPDRAWITEMSTRUCT lpdis);
 
-void RecreateFontHandles(_In_ const HWND hWnd);
+void RecreateFontHandles(const HWND hWnd);
 
 /* ----- Globals ----- */
 
@@ -66,7 +66,7 @@ SelectCurrentFont(
 WCHAR wszSelectedFont[CCH_SELECTEDFONT + 1];
 WCHAR wszRasterFonts[CCH_RASTERFONTS + 1];
 
-UINT GetItemHeight(_In_ const HWND hDlg)
+UINT GetItemHeight(const HWND hDlg)
 {
     // Load the TrueType logo bitmap
     if (hbmTT != NULL)

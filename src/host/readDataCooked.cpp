@@ -104,10 +104,10 @@ COOKED_READ_DATA::~COOKED_READ_DATA()
 // - pControlKeyState - For certain types of reads, this specifies which modifier keys were held.
 // - pOutputData - not used
 // Return Value:
-// - TRUE if the wait is done and result buffer/status code can be sent back to the client.
-// - FALSE if we need to continue to wait until more data is available.
-bool COOKED_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason,
-                              _In_ bool const fIsUnicode,
+// - true if the wait is done and result buffer/status code can be sent back to the client.
+// - false if we need to continue to wait until more data is available.
+bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
+                              const bool fIsUnicode,
                               _Out_ NTSTATUS* const pReplyStatus,
                               _Out_ DWORD* const pNumBytes,
                               _Out_ DWORD* const pControlKeyState,
@@ -263,7 +263,7 @@ bool COOKED_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason
 // - ulControlKeyState - For some types of reads, this is the modifier key state with the last button press.
 [[nodiscard]]
 NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
-                    _In_ bool const fIsUnicode,
+                    const bool fIsUnicode,
                     _Inout_ ULONG* const cbNumBytes,
                     _Out_ ULONG* const ulControlKeyState)
 {
@@ -373,7 +373,7 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
                                          pCookedReadData->_BackupLimit,
                                          (USHORT)StringLength,
                                          IsFlagSet(gci.Flags, CONSOLE_HISTORY_NODUP)));
-                
+
                 // check for alias
                 Alias::s_MatchAndCopyAliasLegacy(pCookedReadData->_BackupLimit,
                                                  pCookedReadData->_BytesRead,
@@ -557,7 +557,7 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
 // - true if read is completed. false if we need to keep waiting and be called again with the user's next keystroke.
 bool ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
                             _In_ WCHAR wch,
-                            _In_ const DWORD dwKeyState,
+                            const DWORD dwKeyState,
                             _Out_ NTSTATUS* pStatus)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
