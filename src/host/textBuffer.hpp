@@ -72,7 +72,7 @@ public:
     ~TextBuffer() = default;
 
     // Used for duplicating properties to another text buffer
-    void CopyProperties(_In_ TextBuffer* const pOtherBuffer);
+    void CopyProperties(_In_ const TextBuffer& OtherBuffer);
 
     // row manipulation
     const ROW& GetFirstRow() const;

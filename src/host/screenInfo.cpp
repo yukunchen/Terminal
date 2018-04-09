@@ -1588,7 +1588,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
     if (NT_SUCCESS(status))
     {
         // Finish copying remaining parameters from the old text buffer to the new one
-        newTextBuffer->CopyProperties(_textBuffer);
+        newTextBuffer->CopyProperties(*_textBuffer);
 
         // If we found where to put the cursor while placing characters into the buffer,
         //   just put the cursor there. Otherwise we have to advance manually.

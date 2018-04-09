@@ -30,10 +30,10 @@ const SMALL_RECT RenderData::GetViewport()
     return gci.CurrentScreenBuffer->GetBufferViewport();
 }
 
-const TextBuffer* RenderData::GetTextBuffer()
+const TextBuffer& RenderData::GetTextBuffer()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return &gci.CurrentScreenBuffer->GetTextBuffer();
+    return gci.CurrentScreenBuffer->GetTextBuffer();
 }
 
 const FontInfo* RenderData::GetFontInfo()
@@ -55,10 +55,10 @@ const void RenderData::GetColorTable(_Outptr_result_buffer_all_(*pcColors) COLOR
     *pcColors = gci.GetColorTableSize();
 }
 
-const Cursor* RenderData::GetCursor()
+const Cursor& RenderData::GetCursor()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return &gci.CurrentScreenBuffer->GetTextBuffer().GetCursor();
+    return gci.CurrentScreenBuffer->GetTextBuffer().GetCursor();
 }
 
 const ConsoleImeInfo* RenderData::GetImeData()
@@ -67,17 +67,11 @@ const ConsoleImeInfo* RenderData::GetImeData()
     return &gci.ConsoleIme;
 }
 
-const TextBuffer* RenderData::GetImeCompositionStringBuffer(_In_ size_t iIndex)
+const TextBuffer& RenderData::GetImeCompositionStringBuffer(_In_ size_t iIndex)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    if (iIndex < gci.ConsoleIme.ConvAreaCompStr.size())
-    {
-        return &gci.ConsoleIme.ConvAreaCompStr[iIndex]->ScreenBuffer->GetTextBuffer();
-    }
-    else
-    {
-        return nullptr;
-    }
+    THROW_HR_IF(E_INVALIDARG, iIndex >= gci.ConsoleIme.ConvAreaCompStr.size());
+    return gci.ConsoleIme.ConvAreaCompStr[iIndex]->ScreenBuffer->GetTextBuffer();
 }
 
 [[nodiscard]]

@@ -53,14 +53,14 @@ TextBuffer::TextBuffer(const FontInfo fontInfo,
 // - Copies properties from another text buffer into this one.
 // - This is primarily to copy properties that would otherwise not be specified during CreateInstance
 // Arguments:
-// - pOtherBuffer - The text buffer to copy properties from
+// - OtherBuffer - The text buffer to copy properties from
 // Return Value:
 // - <none>
-void TextBuffer::CopyProperties(_In_ TextBuffer* const pOtherBuffer)
+void TextBuffer::CopyProperties(_In_ const TextBuffer& OtherBuffer)
 {
-    _fiCurrentFont = pOtherBuffer->GetCurrentFont();
+    _fiCurrentFont = OtherBuffer.GetCurrentFont();
 
-    GetCursor().CopyProperties(pOtherBuffer->GetCursor());
+    GetCursor().CopyProperties(OtherBuffer.GetCursor());
 }
 
 FontInfo& TextBuffer::GetCurrentFont()

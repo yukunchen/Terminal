@@ -27,14 +27,14 @@ namespace Microsoft::Console::Render
     public:
         virtual ~IRenderData() = 0;
         virtual const SMALL_RECT GetViewport() = 0;
-        virtual const TextBuffer* GetTextBuffer() = 0;
+        virtual const TextBuffer& GetTextBuffer() = 0;
         virtual const FontInfo* GetFontInfo() = 0;
         virtual const TextAttribute GetDefaultBrushColors() = 0;
         virtual const void GetColorTable(_Outptr_result_buffer_all_(*pcColors) COLORREF** const ppColorTable,
                                             _Out_ size_t* const pcColors) = 0;
-        virtual const Cursor* GetCursor() = 0;
+        virtual const Cursor& GetCursor() = 0;
         virtual const ConsoleImeInfo* GetImeData() = 0;
-        virtual const TextBuffer* GetImeCompositionStringBuffer(_In_ size_t iIndex) = 0;
+        virtual const TextBuffer& GetImeCompositionStringBuffer(_In_ size_t iIndex) = 0;
 
         virtual const bool IsGridLineDrawingAllowed() = 0;
 
