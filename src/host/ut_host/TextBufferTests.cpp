@@ -342,7 +342,7 @@ void TextBufferTests::TestCopyProperties()
     otherTbi.GetCursor().SetDelay(true);
 
     // run copy
-    testTextBuffer->CopyProperties(&otherTbi);
+    testTextBuffer->CopyProperties(otherTbi);
 
     // test that new now contains values from other
     VERIFY_IS_TRUE(testTextBuffer->GetCursor().HasMoved());

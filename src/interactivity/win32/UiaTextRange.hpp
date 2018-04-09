@@ -115,7 +115,7 @@ namespace Microsoft::Console::Interactivity::Win32
             MovementDirection Direction;
 
             MoveState(const UiaTextRange& range,
-                        const MovementDirection direction);
+                      const MovementDirection direction);
 
         private:
             MoveState(const ScreenInfoRow startScreenInfoRow,
@@ -166,7 +166,7 @@ namespace Microsoft::Console::Interactivity::Win32
         IFACEMETHODIMP_(ULONG) AddRef();
         IFACEMETHODIMP_(ULONG) Release();
         IFACEMETHODIMP QueryInterface(_In_ REFIID riid,
-                                        _COM_Outptr_result_maybenull_ void** ppInterface);
+                                      _COM_Outptr_result_maybenull_ void** ppInterface);
 
         // ITextRangeProvider methods
         IFACEMETHODIMP Clone(_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal);
@@ -177,29 +177,29 @@ namespace Microsoft::Console::Interactivity::Win32
                                         _Out_ int* pRetVal);
         IFACEMETHODIMP ExpandToEnclosingUnit(_In_ TextUnit unit);
         IFACEMETHODIMP FindAttribute(_In_ TEXTATTRIBUTEID textAttributeId,
-                                        _In_ VARIANT val,
-                                        _In_ BOOL searchBackward,
-                                        _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal);
+                                     _In_ VARIANT val,
+                                     _In_ BOOL searchBackward,
+                                     _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal);
         IFACEMETHODIMP FindText(_In_ BSTR text,
                                 _In_ BOOL searchBackward,
                                 _In_ BOOL ignoreCase,
                                 _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal);
         IFACEMETHODIMP GetAttributeValue(_In_ TEXTATTRIBUTEID textAttributeId,
-                                            _Out_ VARIANT* pRetVal);
+                                         _Out_ VARIANT* pRetVal);
         IFACEMETHODIMP GetBoundingRectangles(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal);
         IFACEMETHODIMP GetEnclosingElement(_Outptr_result_maybenull_ IRawElementProviderSimple** ppRetVal);
         IFACEMETHODIMP GetText(_In_ int maxLength,
-                                _Out_ BSTR* pRetVal);
+                               _Out_ BSTR* pRetVal);
         IFACEMETHODIMP Move(_In_ TextUnit unit,
                             _In_ int count,
                             _Out_ int* pRetVal);
         IFACEMETHODIMP MoveEndpointByUnit(_In_ TextPatternRangeEndpoint endpoint,
-                                            _In_ TextUnit unit,
-                                            _In_ int count,
-                                            _Out_ int* pRetVal);
+                                          _In_ TextUnit unit,
+                                          _In_ int count,
+                                          _Out_ int* pRetVal);
         IFACEMETHODIMP MoveEndpointByRange(_In_ TextPatternRangeEndpoint endpoint,
-                                            _In_ ITextRangeProvider* pTargetRange,
-                                            _In_ TextPatternRangeEndpoint targetEndpoint);
+                                           _In_ ITextRangeProvider* pTargetRange,
+                                           _In_ TextPatternRangeEndpoint targetEndpoint);
         IFACEMETHODIMP Select();
         IFACEMETHODIMP AddToSelection();
         IFACEMETHODIMP RemoveFromSelection();
@@ -220,17 +220,17 @@ namespace Microsoft::Console::Interactivity::Win32
 
         // degenerate range at cursor position
         UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                        const Cursor cursor);
+                     const Cursor cursor);
 
         // specific endpoint range
         UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                        const Endpoint start,
-                        const Endpoint end,
-                        const bool degenerate);
+                     const Endpoint start,
+                     const Endpoint end,
+                     const bool degenerate);
 
         // range from a UiaPoint
         UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                        const UiaPoint point);
+                     const UiaPoint point);
 
         UiaTextRange(const UiaTextRange& a);
 

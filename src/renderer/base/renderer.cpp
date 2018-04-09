@@ -597,12 +597,12 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
     SMALL_RECT srDirty = pEngine->GetDirtyRectInChars();
     view.ConvertFromOrigin(&srDirty);
 
-    const TextBuffer* const ptbi = _pData->GetTextBuffer();
+    const TextBuffer& textBuffer = _pData->GetTextBuffer();
 
     // The dirty rectangle may be larger than the backing buffer (anything, including the system, may have
     // requested that we render under the scroll bars). To prevent issues, trim down to the max buffer size
     // (a.k.a. ensure the viewport is between 0 and the max size of the buffer.)
-    COORD const coordBufferSize = ptbi->GetCoordBufferSize();
+    COORD const coordBufferSize = textBuffer.GetCoordBufferSize();
     srDirty.Top = std::max(srDirty.Top, 0i16);
     srDirty.Left = std::max(srDirty.Left, 0i16);
     srDirty.Right = std::min(srDirty.Right, gsl::narrow<SHORT>(coordBufferSize.X - 1));
@@ -618,7 +618,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
     for (SHORT iRow = viewDirty.Top(); iRow <= viewDirty.BottomInclusive(); iRow++)
     {
         // Get row of text data
-        const ROW& Row = ptbi->GetRowByOffset(iRow);
+        const ROW& Row = textBuffer.GetRowByOffset(iRow);
 
         // Get the requested left and right positions from the dirty rectangle.
         size_t iLeft = viewDirty.Left();
@@ -982,12 +982,12 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
 // - <none>
 void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
 {
-    const Cursor* const pCursor = _pData->GetCursor();
+    const Cursor& cursor = _pData->GetCursor();
 
-    if (pCursor->IsVisible() && pCursor->IsOn() && !pCursor->IsPopupShown())
+    if (cursor.IsVisible() && cursor.IsOn() && !cursor.IsPopupShown())
     {
         // Get cursor position in buffer
-        COORD coordCursor = pCursor->GetPosition();
+        COORD coordCursor = cursor.GetPosition();
 
         Viewport view(_pData->GetViewport());
 
@@ -995,12 +995,12 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
         //      "dirty" part of the viewport.
 
         // Determine cursor height
-        ULONG ulHeight = pCursor->GetSize();
+        ULONG ulHeight = cursor.GetSize();
 
         // Now adjust the height for the overwrite/insert mode. If we're in overwrite mode, IsDouble will be set.
         // When IsDouble is set, we either need to double the height of the cursor, or if it's already too big,
         // then we need to shrink it by half.
-        if (pCursor->IsDouble())
+        if (cursor.IsDouble())
         {
             if (ulHeight > 50) // 50 because 50 percent is half of 100 percent which is the max size.
             {
@@ -1013,7 +1013,7 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
         }
 
         // Determine cursor width
-        bool const fIsDoubleWidth = pCursor->IsDoubleWidth();
+        bool const fIsDoubleWidth = cursor.IsDoubleWidth();
 
         // Adjust cursor to viewport
         view.ConvertToOrigin(&coordCursor);
@@ -1022,9 +1022,9 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
         LOG_IF_FAILED(pEngine->PaintCursor(coordCursor,
                                            ulHeight,
                                            fIsDoubleWidth,
-                                           pCursor->GetType(),
-                                           pCursor->IsUsingColor(),
-                                           pCursor->GetColor()));
+                                           cursor.GetType(),
+                                           cursor.IsUsingColor(),
+                                           cursor.GetColor()));
     }
 }
 
@@ -1033,12 +1033,12 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
 // - This supports composition drawing area.
 // Arguments:
 // - AreaInfo - Special IME area screen buffer metadata
-// - pTextInfo - Text backing buffer for the special IME area.
+// - textBuffer - Text backing buffer for the special IME area.
 // Return Value:
 // - <none>
 void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
                          const std::unique_ptr<ConversionAreaInfo>& AreaInfo,
-                         const TextBuffer* const pTextInfo)
+                         const TextBuffer& textBuffer)
 {
     // If this conversion area isn't hidden (because it is off) or hidden for a scroll operation, then draw it.
     if (!AreaInfo->IsHidden())
@@ -1072,7 +1072,7 @@ void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
             for (SHORT iRow = viewDirty.Top(); iRow < viewDirty.BottomInclusive(); iRow++)
             {
                 // Get row of text data
-                const ROW& Row = pTextInfo->GetRowByOffset(iRow - AreaInfo->CaInfo.coordConView.Y);
+                const ROW& Row = textBuffer.GetRowByOffset(iRow - AreaInfo->CaInfo.coordConView.Y);
 
                 const ICharRow& iCharRow = Row.GetCharRow();
                 // we only support ucs2 encoded char rows
@@ -1129,8 +1129,12 @@ void Renderer::_PaintImeCompositionString(_In_ IRenderEngine* const pEngine)
 
         if (AreaInfo.get() != nullptr)
         {
-            const TextBuffer* const ptbi = _pData->GetImeCompositionStringBuffer(i);
-            _PaintIme(pEngine, AreaInfo, ptbi);
+            try
+            {
+                const TextBuffer& textBuffer = _pData->GetImeCompositionStringBuffer(i);
+                _PaintIme(pEngine, AreaInfo, textBuffer);
+            }
+            CATCH_LOG();
         }
     }
 }
