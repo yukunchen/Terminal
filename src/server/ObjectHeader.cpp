@@ -36,9 +36,9 @@ ConsoleObjectHeader::ConsoleObjectHeader() :
 // - The console lock must be held when calling this routine.  The handle is allocated from the per-process handle table.  Holding the console
 //   lock serializes both threads within the calling process and any other process that shares the console.
 [[nodiscard]]
-HRESULT ConsoleObjectHeader::AllocateIoHandle(_In_ const ConsoleHandleData::HandleType ulHandleType,
-                                              _In_ const ACCESS_MASK amDesired,
-                                              _In_ const ULONG ulShareMode,
+HRESULT ConsoleObjectHeader::AllocateIoHandle(const ConsoleHandleData::HandleType ulHandleType,
+                                              const ACCESS_MASK amDesired,
+                                              const ULONG ulShareMode,
                                               _Out_ ConsoleHandleData** const ppOut)
 {
     try

@@ -31,61 +31,61 @@ namespace DbcsWriteRead
     void TestRunner(_In_ unsigned int const uiCodePage,
                     _In_ PCSTR pszTestData,
                     _In_opt_ WORD* const pwAttrOverride,
-                    _In_ bool const fUseTrueType,
-                    _In_ DbcsWriteRead::WriteMode const WriteMode,
-                    _In_ bool const fWriteInUnicode,
-                    _In_ DbcsWriteRead::ReadMode const ReadMode,
-                    _In_ bool const fReadWithUnicode);
+                    const bool fUseTrueType,
+                    const DbcsWriteRead::WriteMode WriteMode,
+                    const bool fWriteInUnicode,
+                    const DbcsWriteRead::ReadMode ReadMode,
+                    const bool fReadWithUnicode);
 
     bool Setup(_In_ unsigned int uiCodePage,
                _In_ bool fIsTrueType,
                _Out_ HANDLE* const phOut,
                _Out_ WORD* const pwAttributes);
 
-    void SendOutput(_In_ HANDLE const hOut, _In_ unsigned int const uiCodePage,
-                    _In_ WriteMode const WriteMode, _In_ bool const fIsUnicode,
-                    _In_ PCSTR pszTestString, _In_ WORD const wAttr);
+    void SendOutput(const HANDLE hOut, _In_ unsigned int const uiCodePage,
+                    const WriteMode WriteMode, const bool fIsUnicode,
+                    _In_ PCSTR pszTestString, const WORD wAttr);
 
-    void RetrieveOutput(_In_ HANDLE const hOut,
-                        _In_ DbcsWriteRead::ReadMode const ReadMode, _In_ bool const fReadUnicode,
-                        _Out_writes_(cChars) CHAR_INFO* const rgChars, _In_ SHORT const cChars);
+    void RetrieveOutput(const HANDLE hOut,
+                        const DbcsWriteRead::ReadMode ReadMode, const bool fReadUnicode,
+                        _Out_writes_(cChars) CHAR_INFO* const rgChars, const SHORT cChars);
 
-    void Verify(_In_reads_(cExpected) CHAR_INFO* const rgExpected, _In_ size_t const cExpected,
+    void Verify(_In_reads_(cExpected) CHAR_INFO* const rgExpected, const size_t cExpected,
                 _In_reads_(cExpected) CHAR_INFO* const rgActual);
 
     void PrepExpected(_In_ unsigned int const uiCodePage,
                       _In_ PCSTR pszTestData,
-                      _In_ WORD const wAttrOriginal,
-                      _In_ WORD const wAttrWritten,
-                      _In_ DbcsWriteRead::WriteMode const WriteMode,
-                      _In_ bool const fWriteWithUnicode,
-                      _In_ bool const fIsTrueTypeFont,
-                      _In_ DbcsWriteRead::ReadMode const ReadMode,
-                      _In_ bool const fReadWithUnicode,
+                      const WORD wAttrOriginal,
+                      const WORD wAttrWritten,
+                      const DbcsWriteRead::WriteMode WriteMode,
+                      const bool fWriteWithUnicode,
+                      const bool fIsTrueTypeFont,
+                      const DbcsWriteRead::ReadMode ReadMode,
+                      const bool fReadWithUnicode,
                       _Outptr_result_buffer_(*pcExpected) CHAR_INFO** const ppciExpected,
                       _Out_ size_t* const pcExpected);
 
     void PrepReadConsoleOutput(_In_ unsigned int const uiCodePage,
                                _In_ PCSTR pszTestData,
-                               _In_ WORD const wAttrOriginal,
-                               _In_ WORD const wAttrWritten,
-                               _In_ DbcsWriteRead::WriteMode const WriteMode,
-                               _In_ bool const fWriteWithUnicode,
-                               _In_ bool const fIsTrueTypeFont,
-                               _In_ bool const fReadWithUnicode,
+                               const WORD wAttrOriginal,
+                               const WORD wAttrWritten,
+                               const DbcsWriteRead::WriteMode WriteMode,
+                               const bool fWriteWithUnicode,
+                               const bool fIsTrueTypeFont,
+                               const bool fReadWithUnicode,
                                _Inout_updates_all_(cExpectedNeeded) CHAR_INFO* const rgciExpected,
-                               _In_ size_t const cExpectedNeeded);
+                               const size_t cExpectedNeeded);
 
     void PrepReadConsoleOutputCharacter(_In_ unsigned int const uiCodePage,
                                         _In_ PCSTR pszTestData,
-                                        _In_ WORD const wAttrOriginal,
-                                        _In_ WORD const wAttrWritten,
-                                        _In_ DbcsWriteRead::WriteMode const WriteMode,
-                                        _In_ bool const fWriteWithUnicode,
-                                        _In_ bool const fIsTrueTypeFont,
-                                        _In_ bool const fReadWithUnicode,
+                                        const WORD wAttrOriginal,
+                                        const WORD wAttrWritten,
+                                        const DbcsWriteRead::WriteMode WriteMode,
+                                        const bool fWriteWithUnicode,
+                                        const bool fIsTrueTypeFont,
+                                        const bool fReadWithUnicode,
                                         _Inout_updates_all_(cExpectedNeeded) CHAR_INFO* const rgciExpected,
-                                        _In_ size_t const cExpectedNeeded);
+                                        const size_t cExpectedNeeded);
 
 
     namespace PrepPattern
@@ -106,114 +106,114 @@ namespace DbcsWriteRead
         // 1
         void SpacePaddedDedupeW(_In_ unsigned int const uiCodePage,
                                 _In_ PCSTR pszTestData,
-                                _In_ WORD const wAttrOriginal,
-                                _In_ WORD const wAttrWritten,
+                                const WORD wAttrOriginal,
+                                const WORD wAttrWritten,
                                 _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                _In_ size_t const cExpected);
+                                const size_t cExpected);
 
         // 2
         void SpacePaddedDedupeTruncatedW(_In_ unsigned int const uiCodePage,
                                          _In_ PCSTR pszTestData,
-                                         _In_ WORD const wAttrOriginal,
-                                         _In_ WORD const wAttrWritten,
+                                         const WORD wAttrOriginal,
+                                         const WORD wAttrWritten,
                                          _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                         _In_ size_t const cExpected);
+                                         const size_t cExpected);
 
         // 3
         void NullPaddedDedupeW(_In_ unsigned int const uiCodePage,
                                _In_ PCSTR pszTestData,
-                               _In_ WORD const wAttrOriginal,
-                               _In_ WORD const wAttrWritten,
+                               const WORD wAttrOriginal,
+                               const WORD wAttrWritten,
                                _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                               _In_ size_t const cExpected);
+                               const size_t cExpected);
 
         // 4
         void DoubledWNegativeOneTrailing(_In_ unsigned int const uiCodePage,
                                          _In_ PCSTR pszTestData,
-                                         _In_ WORD const wAttrOriginal,
-                                         _In_ WORD const wAttrWritten,
+                                         const WORD wAttrOriginal,
+                                         const WORD wAttrWritten,
                                          _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                         _In_ size_t const cExpected);
+                                         const size_t cExpected);
 
         // 5
         void DoubledW(_In_ unsigned int const uiCodePage,
                       _In_ PCSTR pszTestData,
-                      _In_ WORD const wAttrOriginal,
-                      _In_ WORD const wAttrWritten,
+                      const WORD wAttrOriginal,
+                      const WORD wAttrWritten,
                       _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                      _In_ size_t const cExpected);
+                      const size_t cExpected);
 
         // 6
         void A(_In_ unsigned int const uiCodePage,
                _In_ PCSTR pszTestData,
-               _In_ WORD const wAttrOriginal,
-               _In_ WORD const wAttrWritten,
+               const WORD wAttrOriginal,
+               const WORD wAttrWritten,
                _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-               _In_ size_t const cExpected);
+               const size_t cExpected);
 
         // 7
         void AStompsWNegativeOnePatternTruncateSpacePadded(_In_ unsigned int const uiCodePage,
                                                            _In_ PCSTR pszTestData,
-                                                           _In_ WORD const wAttrOriginal,
-                                                           _In_ WORD const wAttrWritten,
+                                                           const WORD wAttrOriginal,
+                                                           const WORD wAttrWritten,
                                                            _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                                           _In_ size_t const cExpected);
+                                                           const size_t cExpected);
 
         // 8
         void AOnDoubledWNegativeOneTrailing(_In_ unsigned int const uiCodePage,
                                             _In_ PCSTR pszTestData,
-                                            _In_ WORD const wAttrOriginal,
-                                            _In_ WORD const wAttrWritten,
+                                            const WORD wAttrOriginal,
+                                            const WORD wAttrWritten,
                                             _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                            _In_ size_t const cExpected);
+                                            const size_t cExpected);
 
         // 9
         void AOnDoubledW(_In_ unsigned int const uiCodePage,
                          _In_ PCSTR pszTestData,
-                         _In_ WORD const wAttrOriginal,
-                         _In_ WORD const wAttrWritten,
+                         const WORD wAttrOriginal,
+                         const WORD wAttrWritten,
                          _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                         _In_ size_t const cExpected);
+                         const size_t cExpected);
 
         // 10
         void WNullCoverAChar(_In_ unsigned int const uiCodePage,
                              _In_ PCSTR pszTestData,
-                             _In_ WORD const wAttrOriginal,
-                             _In_ WORD const wAttrWritten,
+                             const WORD wAttrOriginal,
+                             const WORD wAttrWritten,
                              _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                             _In_ size_t const cExpected);
+                             const size_t cExpected);
 
         // 11
         void WSpaceFill(_In_ unsigned int const uiCodePage,
                         _In_ PCSTR pszTestData,
-                        _In_ WORD const wAttrOriginal,
-                        _In_ WORD const wAttrWritten,
+                        const WORD wAttrOriginal,
+                        const WORD wAttrWritten,
                         _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                        _In_ size_t const cExpected);
+                        const size_t cExpected);
 
         // 12
         void ACoverAttrSpacePaddedDedupeTruncatedW(_In_ unsigned int const uiCodePage,
                                                    _In_ PCSTR pszTestData,
-                                                   _In_ WORD const wAttrOriginal,
-                                                   _In_ WORD const wAttrWritten,
+                                                   const WORD wAttrOriginal,
+                                                   const WORD wAttrWritten,
                                                    _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                                   _In_ size_t const cExpected);
+                                                   const size_t cExpected);
 
         // 13
         void SpacePaddedDedupeA(_In_ unsigned int const uiCodePage,
                                 _In_ PCSTR pszTestData,
-                                _In_ WORD const wAttrOriginal,
-                                _In_ WORD const wAttrWritten,
+                                const WORD wAttrOriginal,
+                                const WORD wAttrWritten,
                                 _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                _In_ size_t const cExpected);
+                                const size_t cExpected);
 
         // 14
         void TrueTypeCharANullWithAttrs(_In_ unsigned int const uiCodePage,
                                         _In_ PCSTR pszTestData,
-                                        _In_ WORD const wAttrOriginal,
-                                        _In_ WORD const wAttrWritten,
+                                        const WORD wAttrOriginal,
+                                        const WORD wAttrWritten,
                                         _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                        _In_ size_t const cExpected);
+                                        const size_t cExpected);
     };
 };
 
@@ -337,9 +337,9 @@ bool DbcsWriteRead::Setup(_In_ unsigned int uiCodePage,
     return true;
 }
 
-void DbcsWriteRead::SendOutput(_In_ HANDLE const hOut, _In_ unsigned int const uiCodePage,
-                               _In_ DbcsWriteRead::WriteMode const WriteMode, _In_ bool const fIsUnicode,
-                               _In_ PCSTR pszTestString, _In_ WORD const wAttr)
+void DbcsWriteRead::SendOutput(const HANDLE hOut, _In_ unsigned int const uiCodePage,
+                               const DbcsWriteRead::WriteMode WriteMode, const bool fIsUnicode,
+                               _In_ PCSTR pszTestString, const WORD wAttr)
 {
 
     // DBCS is very dependent on knowing the byte length in the original codepage of the input text.
@@ -562,10 +562,10 @@ void DbcsWriteRead::SendOutput(_In_ HANDLE const hOut, _In_ unsigned int const u
 // "W" means that we intend Unicode data to be browsed in the resulting struct (even though wchar and char are unioned.)
 void DbcsWriteRead::PrepPattern::NullPaddedDedupeW(_In_ unsigned int const uiCodePage,
                                                    _In_ PCSTR pszTestData,
-                                                   _In_ WORD const /*wAttrOriginal*/,
-                                                   _In_ WORD const wAttrWritten,
+                                                   const WORD /*wAttrOriginal*/,
+                                                   const WORD wAttrWritten,
                                                    _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                                   _In_ size_t const cExpected)
+                                                   const size_t cExpected)
 {
     Log::Comment(L"Pattern 3");
     int const iwchNeeded = MultiByteToWideChar(uiCodePage, 0, pszTestData, -1, nullptr, 0);
@@ -619,10 +619,10 @@ void DbcsWriteRead::PrepPattern::NullPaddedDedupeW(_In_ unsigned int const uiCod
 // "W" means that we intend Unicode data to be browsed in the resulting struct (even though wchar and char are unioned.)
 void DbcsWriteRead::PrepPattern::SpacePaddedDedupeW(_In_ unsigned int const uiCodePage,
                                                     _In_ PCSTR pszTestData,
-                                                    _In_ WORD const wAttrOriginal,
-                                                    _In_ WORD const wAttrWritten,
+                                                    const WORD wAttrOriginal,
+                                                    const WORD wAttrWritten,
                                                     _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                                    _In_ size_t const cExpected)
+                                                    const size_t cExpected)
 {
     Log::Comment(L"Pattern 1");
     DbcsWriteRead::PrepPattern::NullPaddedDedupeW(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, pciExpected, cExpected);
@@ -670,10 +670,10 @@ void DbcsWriteRead::PrepPattern::SpacePaddedDedupeW(_In_ unsigned int const uiCo
 // "Truncated" means that this pattern trims off some of the end of the buffer with NULLs.
 void DbcsWriteRead::PrepPattern::SpacePaddedDedupeTruncatedW(_In_ unsigned int const uiCodePage,
                                                              _In_ PCSTR pszTestData,
-                                                             _In_ WORD const wAttrOriginal,
-                                                             _In_ WORD const wAttrWritten,
+                                                             const WORD wAttrOriginal,
+                                                             const WORD wAttrWritten,
                                                              _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                                             _In_ size_t const cExpected)
+                                                             const size_t cExpected)
 {
     Log::Comment(L"Pattern 2");
 
@@ -768,10 +768,10 @@ void DbcsWriteRead::PrepPattern::SpacePaddedDedupeTruncatedW(_In_ unsigned int c
 // "A" means that we intend in-codepage (char) data to be browsed in the resulting struct (even though wchar and char are unioned.)
 void DbcsWriteRead::PrepPattern::SpacePaddedDedupeA(_In_ unsigned int const uiCodePage,
                                                     _In_ PCSTR pszTestData,
-                                                    _In_ WORD const wAttrOriginal,
-                                                    _In_ WORD const wAttrWritten,
+                                                    const WORD wAttrOriginal,
+                                                    const WORD wAttrWritten,
                                                     _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                                    _In_ size_t const cExpected)
+                                                    const size_t cExpected)
 {
     Log::Comment(L"Pattern 13");
 
@@ -854,10 +854,10 @@ void DbcsWriteRead::PrepPattern::SpacePaddedDedupeA(_In_ unsigned int const uiCo
 // "W" means that we intend Unicode data to be browsed in the resulting struct (even though wchar and char are unioned.)
 void DbcsWriteRead::PrepPattern::DoubledW(_In_ unsigned int const uiCodePage,
                                           _In_ PCSTR pszTestData,
-                                          _In_ WORD const /*wAttrOriginal*/,
-                                          _In_ WORD const wAttrWritten,
+                                          const WORD /*wAttrOriginal*/,
+                                          const WORD wAttrWritten,
                                           _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                          _In_ size_t const cExpected)
+                                          const size_t cExpected)
 {
     Log::Comment(L"Pattern 5");
     size_t const cTestData = strlen(pszTestData);
@@ -937,10 +937,10 @@ void DbcsWriteRead::PrepPattern::DoubledW(_In_ unsigned int const uiCodePage,
 // "NegativeOneTrailing" means that all trailing bytes have their character replaced with the value -1 or 0xFFFF
 void DbcsWriteRead::PrepPattern::DoubledWNegativeOneTrailing(_In_ unsigned int const uiCodePage,
                                                              _In_ PCSTR pszTestData,
-                                                             _In_ WORD const wAttrOriginal,
-                                                             _In_ WORD const wAttrWritten,
+                                                             const WORD wAttrOriginal,
+                                                             const WORD wAttrWritten,
                                                              _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                                             _In_ size_t const cExpected)
+                                                             const size_t cExpected)
 {
     Log::Comment(L"Pattern 4");
     DbcsWriteRead::PrepPattern::DoubledW(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, pciExpected, cExpected);
@@ -988,10 +988,10 @@ void DbcsWriteRead::PrepPattern::DoubledWNegativeOneTrailing(_In_ unsigned int c
 //     of the string and then filled the rest of the buffer after that with spaces.
 void DbcsWriteRead::PrepPattern::AStompsWNegativeOnePatternTruncateSpacePadded(_In_ unsigned int const uiCodePage,
                                                                                _In_ PCSTR pszTestData,
-                                                                               _In_ WORD const wAttrOriginal,
-                                                                               _In_ WORD const wAttrWritten,
+                                                                               const WORD wAttrOriginal,
+                                                                               const WORD wAttrWritten,
                                                                                _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                                                               _In_ size_t const cExpected)
+                                                                               const size_t cExpected)
 {
     Log::Comment(L"Pattern 7");
     DbcsWriteRead::PrepPattern::DoubledWNegativeOneTrailing(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, pciExpected, cExpected);
@@ -1059,10 +1059,10 @@ void DbcsWriteRead::PrepPattern::AStompsWNegativeOnePatternTruncateSpacePadded(_
 // This one returns pretty much exactly as expected.
 void DbcsWriteRead::PrepPattern::A(_In_ unsigned int const uiCodePage,
                                    _In_ PCSTR pszTestData,
-                                   _In_ WORD const /*wAttrOriginal*/,
-                                   _In_ WORD const wAttrWritten,
+                                   const WORD /*wAttrOriginal*/,
+                                   const WORD wAttrWritten,
                                    _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                   _In_ size_t const cExpected)
+                                   const size_t cExpected)
 {
     Log::Comment(L"Pattern 6");
     size_t const cTestData = strlen(pszTestData);
@@ -1119,10 +1119,10 @@ void DbcsWriteRead::PrepPattern::A(_In_ unsigned int const uiCodePage,
 // "W" means that we intend Unicode data to be browsed in the resulting struct (even though wchar and char are unioned.)
 void DbcsWriteRead::PrepPattern::WNullCoverAChar(_In_ unsigned int const uiCodePage,
                                                  _In_ PCSTR pszTestData,
-                                                 _In_ WORD const wAttrOriginal,
-                                                 _In_ WORD const wAttrWritten,
+                                                 const WORD wAttrOriginal,
+                                                 const WORD wAttrWritten,
                                                  _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                                 _In_ size_t const cExpected)
+                                                 const size_t cExpected)
 {
     Log::Comment(L"Pattern 10");
     DbcsWriteRead::PrepPattern::A(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, pciExpected, cExpected);
@@ -1176,10 +1176,10 @@ void DbcsWriteRead::PrepPattern::WNullCoverAChar(_In_ unsigned int const uiCodeP
 // "W" means that we intend Unicode data to be browsed in the resulting struct (even though wchar and char are unioned.)
 void DbcsWriteRead::PrepPattern::WSpaceFill(_In_ unsigned int const uiCodePage,
                                             _In_ PCSTR pszTestData,
-                                            _In_ WORD const wAttrOriginal,
-                                            _In_ WORD const wAttrWritten,
+                                            const WORD wAttrOriginal,
+                                            const WORD wAttrWritten,
                                             _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                            _In_ size_t const cExpected)
+                                            const size_t cExpected)
 {
     Log::Comment(L"Pattern 11");
     DbcsWriteRead::PrepPattern::WNullCoverAChar(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, pciExpected, cExpected);
@@ -1237,10 +1237,10 @@ void DbcsWriteRead::PrepPattern::WSpaceFill(_In_ unsigned int const uiCodePage,
 // "NegativeOneTrailing" means that every trailing byte started as -1 or 0xFFFF
 void DbcsWriteRead::PrepPattern::AOnDoubledWNegativeOneTrailing(_In_ unsigned int const uiCodePage,
                                                                 _In_ PCSTR pszTestData,
-                                                                _In_ WORD const wAttrOriginal,
-                                                                _In_ WORD const wAttrWritten,
+                                                                const WORD wAttrOriginal,
+                                                                const WORD wAttrWritten,
                                                                 _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                                                _In_ size_t const cExpected)
+                                                                const size_t cExpected)
 {
     Log::Comment(L"Pattern 8");
 
@@ -1287,10 +1287,10 @@ void DbcsWriteRead::PrepPattern::AOnDoubledWNegativeOneTrailing(_In_ unsigned in
 // "NegativeOneTrailing" means that every trailing byte started as -1 or 0xFFFF
 void DbcsWriteRead::PrepPattern::AOnDoubledW(_In_ unsigned int const uiCodePage,
                                              _In_ PCSTR pszTestData,
-                                             _In_ WORD const wAttrOriginal,
-                                             _In_ WORD const wAttrWritten,
+                                             const WORD wAttrOriginal,
+                                             const WORD wAttrWritten,
                                              _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                             _In_ size_t const cExpected)
+                                             const size_t cExpected)
 {
     Log::Comment(L"Pattern 9");
 
@@ -1339,10 +1339,10 @@ void DbcsWriteRead::PrepPattern::AOnDoubledW(_In_ unsigned int const uiCodePage,
 //     again with what they would have been for multi-byte data (leading and trailing flags)
 void DbcsWriteRead::PrepPattern::ACoverAttrSpacePaddedDedupeTruncatedW(_In_ unsigned int const uiCodePage,
                                                                        _In_ PCSTR pszTestData,
-                                                                       _In_ WORD const wAttrOriginal,
-                                                                       _In_ WORD const wAttrWritten,
+                                                                       const WORD wAttrOriginal,
+                                                                       const WORD wAttrWritten,
                                                                        _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                                                       _In_ size_t const cExpected)
+                                                                       const size_t cExpected)
 {
     Log::Comment(L"Pattern 12");
     DbcsWriteRead::PrepPattern::SpacePaddedDedupeTruncatedW(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, pciExpected, cExpected);
@@ -1414,10 +1414,10 @@ void DbcsWriteRead::PrepPattern::ACoverAttrSpacePaddedDedupeTruncatedW(_In_ unsi
 //     again with what they would have been for multi-byte data (leading and trailing flags)
 void DbcsWriteRead::PrepPattern::TrueTypeCharANullWithAttrs(_In_ unsigned int const uiCodePage,
                                                             _In_ PCSTR pszTestData,
-                                                            _In_ WORD const wAttrOriginal,
-                                                            _In_ WORD const wAttrWritten,
+                                                            const WORD wAttrOriginal,
+                                                            const WORD wAttrWritten,
                                                             _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                                            _In_ size_t const cExpected)
+                                                            const size_t cExpected)
 {
     Log::Comment(L"Pattern 14");
     int const iwchNeeded = MultiByteToWideChar(uiCodePage, 0, pszTestData, -1, nullptr, 0);
@@ -1455,14 +1455,14 @@ void DbcsWriteRead::PrepPattern::TrueTypeCharANullWithAttrs(_In_ unsigned int co
 
 void DbcsWriteRead::PrepReadConsoleOutput(_In_ unsigned int const uiCodePage,
                                           _In_ PCSTR pszTestData,
-                                          _In_ WORD const wAttrOriginal,
-                                          _In_ WORD const wAttrWritten,
-                                          _In_ DbcsWriteRead::WriteMode const WriteMode,
-                                          _In_ bool const fWriteWithUnicode,
-                                          _In_ bool const fIsTrueTypeFont,
-                                          _In_ bool const fReadWithUnicode,
+                                          const WORD wAttrOriginal,
+                                          const WORD wAttrWritten,
+                                          const DbcsWriteRead::WriteMode WriteMode,
+                                          const bool fWriteWithUnicode,
+                                          const bool fIsTrueTypeFont,
+                                          const bool fReadWithUnicode,
                                           _Inout_updates_all_(cExpectedNeeded) CHAR_INFO* const rgciExpected,
-                                          _In_ size_t const cExpectedNeeded)
+                                          const size_t cExpectedNeeded)
 {
     switch (WriteMode)
     {
@@ -1570,14 +1570,14 @@ void DbcsWriteRead::PrepReadConsoleOutput(_In_ unsigned int const uiCodePage,
 
 void DbcsWriteRead::PrepReadConsoleOutputCharacter(_In_ unsigned int const uiCodePage,
                                                    _In_ PCSTR pszTestData,
-                                                   _In_ WORD const wAttrOriginal,
-                                                   _In_ WORD const wAttrWritten,
-                                                   _In_ DbcsWriteRead::WriteMode const WriteMode,
-                                                   _In_ bool const fWriteWithUnicode,
-                                                   _In_ bool const fIsTrueTypeFont,
-                                                   _In_ bool const fReadWithUnicode,
+                                                   const WORD wAttrOriginal,
+                                                   const WORD wAttrWritten,
+                                                   const DbcsWriteRead::WriteMode WriteMode,
+                                                   const bool fWriteWithUnicode,
+                                                   const bool fIsTrueTypeFont,
+                                                   const bool fReadWithUnicode,
                                                    _Inout_updates_all_(cExpectedNeeded) CHAR_INFO* const rgciExpected,
-                                                   _In_ size_t const cExpectedNeeded)
+                                                   const size_t cExpectedNeeded)
 {
     if (DbcsWriteRead::WriteMode::WriteConsoleOutputFunc == WriteMode && fWriteWithUnicode)
     {
@@ -1619,13 +1619,13 @@ void DbcsWriteRead::PrepReadConsoleOutputCharacter(_In_ unsigned int const uiCod
 
 void DbcsWriteRead::PrepExpected(_In_ unsigned int const uiCodePage,
                                  _In_ PCSTR pszTestData,
-                                 _In_ WORD const wAttrOriginal,
-                                 _In_ WORD const wAttrWritten,
-                                 _In_ DbcsWriteRead::WriteMode const WriteMode,
-                                 _In_ bool const fWriteWithUnicode,
-                                 _In_ bool const fIsTrueTypeFont,
-                                 _In_ DbcsWriteRead::ReadMode const ReadMode,
-                                 _In_ bool const fReadWithUnicode,
+                                 const WORD wAttrOriginal,
+                                 const WORD wAttrWritten,
+                                 const DbcsWriteRead::WriteMode WriteMode,
+                                 const bool fWriteWithUnicode,
+                                 const bool fIsTrueTypeFont,
+                                 const DbcsWriteRead::ReadMode ReadMode,
+                                 const bool fReadWithUnicode,
                                  _Outptr_result_buffer_(*pcExpected) CHAR_INFO** const ppciExpected,
                                  _Out_ size_t* const pcExpected)
 {
@@ -1680,9 +1680,9 @@ void DbcsWriteRead::PrepExpected(_In_ unsigned int const uiCodePage,
     *pcExpected = cExpectedNeeded;
 }
 
-void DbcsWriteRead::RetrieveOutput(_In_ HANDLE const hOut,
-                                   _In_ DbcsWriteRead::ReadMode const ReadMode, _In_ bool const fReadUnicode,
-                                   _Out_writes_(cChars) CHAR_INFO* const rgChars, _In_ SHORT const cChars)
+void DbcsWriteRead::RetrieveOutput(const HANDLE hOut,
+                                   const DbcsWriteRead::ReadMode ReadMode, const bool fReadUnicode,
+                                   _Out_writes_(cChars) CHAR_INFO* const rgChars, const SHORT cChars)
 {
     COORD coordBufferTarget = { 0 };
 
@@ -1762,7 +1762,7 @@ void DbcsWriteRead::RetrieveOutput(_In_ HANDLE const hOut,
     }
 }
 
-void DbcsWriteRead::Verify(_In_reads_(cExpected) CHAR_INFO* const rgExpected, _In_ size_t const cExpected,
+void DbcsWriteRead::Verify(_In_reads_(cExpected) CHAR_INFO* const rgExpected, const size_t cExpected,
                            _In_reads_(cExpected) CHAR_INFO* const rgActual)
 {
     // We will walk through for the number of CHAR_INFOs expected.
@@ -1779,11 +1779,11 @@ void DbcsWriteRead::Verify(_In_reads_(cExpected) CHAR_INFO* const rgExpected, _I
 void DbcsWriteRead::TestRunner(_In_ unsigned int const uiCodePage,
                                _In_ PCSTR pszTestData,
                                _In_opt_ WORD* const pwAttrOverride,
-                               _In_ bool const fUseTrueType,
-                               _In_ DbcsWriteRead::WriteMode const WriteMode,
-                               _In_ bool const fWriteInUnicode,
-                               _In_ DbcsWriteRead::ReadMode const ReadMode,
-                               _In_ bool const fReadWithUnicode)
+                               const bool fUseTrueType,
+                               const DbcsWriteRead::WriteMode WriteMode,
+                               const bool fWriteInUnicode,
+                               const DbcsWriteRead::ReadMode ReadMode,
+                               const bool fReadWithUnicode)
 {
     // First we need to set up the tests by clearing out the first line of the buffer,
     // retrieving the appropriate output handle, and getting the colors (attributes)

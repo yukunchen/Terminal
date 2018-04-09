@@ -10,18 +10,18 @@
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
-ConversionAreaBufferInfo::ConversionAreaBufferInfo(_In_ COORD const coordBufferSize) :
+ConversionAreaBufferInfo::ConversionAreaBufferInfo(const COORD coordBufferSize) :
     coordCaBuffer(coordBufferSize),
     rcViewCaWindow({ 0 }),
     coordConView({ 0 })
 {
 }
 
-ConversionAreaInfo::ConversionAreaInfo(_In_ const COORD bufferSize,
-                                       _In_ const COORD windowSize,
-                                       _In_ const CHAR_INFO fill,
-                                       _In_ const CHAR_INFO popupFill,
-                                       _In_ const FontInfo* const pFontInfo) :
+ConversionAreaInfo::ConversionAreaInfo(const COORD bufferSize,
+                                       const COORD windowSize,
+                                       const CHAR_INFO fill,
+                                       const CHAR_INFO popupFill,
+                                       const FontInfo* const pFontInfo) :
     CaInfo{ bufferSize },
     _fIsHidden{ true },
     ScreenBuffer{ nullptr }
@@ -65,7 +65,7 @@ bool ConversionAreaInfo::IsHidden() const
 // - fIsHidden - True if it should not be drawn. False if it should be drawn.
 // Return Value:
 // - <none>
-void ConversionAreaInfo::SetHidden(_In_ bool const fIsHidden)
+void ConversionAreaInfo::SetHidden(const bool fIsHidden)
 {
     _fIsHidden = fIsHidden;
 }

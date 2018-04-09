@@ -163,9 +163,9 @@ LPTTFONTLIST TrueTypeFontList::s_SearchByName(_In_opt_ LPCWSTR pwszFace,
 }
 
 [[nodiscard]]
-NTSTATUS TrueTypeFontList::s_SearchByCodePage(_In_ const UINT uiCodePage,
+NTSTATUS TrueTypeFontList::s_SearchByCodePage(const UINT uiCodePage,
                                               _Out_writes_(cchFaceName) PWSTR pwszFaceName,
-                                              _In_ const size_t cchFaceName)
+                                              const size_t cchFaceName)
 {
     NTSTATUS status = STATUS_SUCCESS;
     BOOL fFontFound = FALSE;

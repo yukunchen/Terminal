@@ -38,8 +38,8 @@ public:
     {
     }
 
-    virtual bool Notify(_In_ WaitTerminationReason const TerminationReason,
-                        _In_ bool const fIsUnicode,
+    virtual bool Notify(const WaitTerminationReason TerminationReason,
+                        const bool fIsUnicode,
                         _Out_ NTSTATUS* const pReplyStatus,
                         _Out_ DWORD* const pNumBytes,
                         _Out_ DWORD* const pControlKeyState,

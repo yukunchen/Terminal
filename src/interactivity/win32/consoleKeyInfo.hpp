@@ -27,4 +27,4 @@ Revision History:
 
 void StoreKeyInfo(_In_ PMSG msg);
 void RetrieveKeyInfo(_In_ HWND hWnd, _Out_ PWORD pwVirtualKeyCode, _Inout_ PWORD pwVirtualScanCode, _In_ BOOL FreeKeyInfo);
-void ClearKeyInfo(_In_ const HWND hWnd);
+void ClearKeyInfo(const HWND hWnd);

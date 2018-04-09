@@ -420,7 +420,7 @@ VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
     }
 }
 
-VOID ConIoSrvComm::CleanupForHeadless(_In_ NTSTATUS const status)
+VOID ConIoSrvComm::CleanupForHeadless(const NTSTATUS status)
 {
     if (!_fIsInputInitialized)
     {

@@ -27,7 +27,7 @@
 // it's not divisible by the size of a wchar
 RAW_READ_DATA::RAW_READ_DATA(_In_ InputBuffer* const pInputBuffer,
                              _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
-                             _In_ const ULONG BufferSize,
+                             const ULONG BufferSize,
                              _In_ WCHAR* const BufPtr) :
     ReadData(pInputBuffer, pInputReadHandleData),
     _BufferSize{ BufferSize },
@@ -66,12 +66,12 @@ RAW_READ_DATA::~RAW_READ_DATA()
 // which modifier keys were held.
 // - pOutputData - not used
 // Return Value:
-// - TRUE if the wait is done and result buffer/status code can be
+// - true if the wait is done and result buffer/status code can be
 // sent back to the client.
-// - FALSE if we need to continue to wait until more data is
+// - false if we need to continue to wait until more data is
 // available.
-bool RAW_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason,
-                           _In_ bool const fIsUnicode,
+bool RAW_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
+                           const bool fIsUnicode,
                            _Out_ NTSTATUS* const pReplyStatus,
                            _Out_ DWORD* const pNumBytes,
                            _Out_ DWORD* const pControlKeyState,

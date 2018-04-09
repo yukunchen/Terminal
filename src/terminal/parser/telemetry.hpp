@@ -86,10 +86,10 @@ namespace Microsoft::Console::VirtualTerminal
             // Only use this last enum as a count of the number of codes.
             NUMBER_OF_CODES
         };
-        void Log(_In_ Codes const code);
-        void LogFailed(_In_ const wchar_t wch);
-        void SetShouldWriteFinalLog(_In_ bool const writeLog);
-        void SetActivityId(_In_ GUID const *activityId);
+        void Log(const Codes code);
+        void LogFailed(const wchar_t wch);
+        void SetShouldWriteFinalLog(const bool writeLog);
+        void SetActivityId(const GUID *activityId);
         unsigned int GetAndResetTimesUsedCurrent();
         unsigned int GetAndResetTimesFailedCurrent();
         unsigned int GetAndResetTimesFailedOutsideRangeCurrent();

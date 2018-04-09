@@ -64,7 +64,7 @@ const wchar_t TerminalOutput::s_rgDECSpecialGraphicsTranslations[s_uiNumDisplayC
      L'\x7f'    // L'\x7f',   -> DEL
 };
 
-bool TerminalOutput::DesignateCharset(_In_ const wchar_t wchNewCharset)
+bool TerminalOutput::DesignateCharset(const wchar_t wchNewCharset)
 {
     bool result = false;
     if (wchNewCharset == TermDispatch::VTCharacterSets::DEC_LineDrawing ||
@@ -99,7 +99,7 @@ const wchar_t* TerminalOutput::_GetTranslationTable() const
     return pwchTranslation;
 }
 
-wchar_t TerminalOutput::TranslateKey(_In_ const wchar_t wch) const
+wchar_t TerminalOutput::TranslateKey(const wchar_t wch) const
 {
     wchar_t wchFound = wch;
     if (_wchCurrentCharset == TermDispatch::VTCharacterSets::USASCII ||

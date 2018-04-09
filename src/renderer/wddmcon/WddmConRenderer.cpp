@@ -299,12 +299,12 @@ HRESULT WddmConEngine::PaintSelection(const SMALL_RECT* const /*rgsrSelection*/,
 }
 
 [[nodiscard]]
-HRESULT WddmConEngine::PaintCursor(_In_ COORD const /*coordCursor*/,
-                                   _In_ ULONG const /*ulCursorHeightPercent*/,
-                                   _In_ bool const /*fIsDoubleWidth*/,
-                                   _In_ CursorType const /*cursorType*/,
-                                   _In_ bool const /*fUseColor*/,
-                                   _In_ COLORREF const /*cursorColor*/)
+HRESULT WddmConEngine::PaintCursor(const COORD /*coordCursor*/,
+                                   const ULONG /*ulCursorHeightPercent*/,
+                                   const bool /*fIsDoubleWidth*/,
+                                   const CursorType /*cursorType*/,
+                                   const bool /*fUseColor*/,
+                                   const COLORREF /*cursorColor*/)
 {
     return S_OK;
 }
@@ -318,7 +318,7 @@ HRESULT WddmConEngine::ClearCursor()
 [[nodiscard]]
 HRESULT WddmConEngine::UpdateDrawingBrushes(COLORREF const /*colorForeground*/,
                                             COLORREF const /*colorBackground*/,
-                                            _In_ WORD const legacyColorAttribute,
+                                            const WORD legacyColorAttribute,
                                             bool const /*fIncludeBackgrounds*/)
 {
     _currentLegacyColorAttribute = legacyColorAttribute;
@@ -356,7 +356,7 @@ HRESULT WddmConEngine::UpdateDpi(int const /*iDpi*/)
 // Return Value:
 // - HRESULT S_OK
 [[nodiscard]]
-HRESULT WddmConEngine::UpdateViewport(_In_ SMALL_RECT const /*srNewViewport*/)
+HRESULT WddmConEngine::UpdateViewport(const SMALL_RECT /*srNewViewport*/)
 {
     return S_OK;
 }

@@ -57,8 +57,8 @@ public:
     ~COOKED_READ_DATA() override;
     COOKED_READ_DATA(COOKED_READ_DATA&&) = default;
 
-    bool Notify(_In_ WaitTerminationReason const TerminationReason,
-                _In_ bool const fIsUnicode,
+    bool Notify(const WaitTerminationReason TerminationReason,
+                const bool fIsUnicode,
                 _Out_ NTSTATUS* const pReplyStatus,
                 _Out_ DWORD* const pNumBytes,
                 _Out_ DWORD* const pControlKeyState,
@@ -102,11 +102,11 @@ public:
 
 [[nodiscard]]
 NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
-                    _In_ bool const fIsUnicode,
+                    const bool fIsUnicode,
                     _Inout_ ULONG* const cbNumBytes,
                     _Out_ ULONG* const ulControlKeyState);
 
 bool ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
                             _In_ WCHAR wch,
-                            _In_ const DWORD dwKeyState,
+                            const DWORD dwKeyState,
                             _Out_ NTSTATUS* pStatus);

@@ -5,13 +5,13 @@
 #include "dbcs.h"
 #include "Ucs2CharRow.hpp"
 
-USHORT SearchForString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
+USHORT SearchForString(const SCREEN_INFORMATION * const pScreenInfo,
                        _In_reads_(cchSearch) PCWSTR pwszSearch,
                        _In_range_(1, SEARCH_STRING_LENGTH) USHORT cchSearch,
-                       _In_ const bool IgnoreCase,
-                       _In_ const bool Reverse,
-                       _In_ const bool SearchAndSetAttr,
-                       _In_ const ULONG ulAttr,
+                       const bool IgnoreCase,
+                       const bool Reverse,
+                       const bool SearchAndSetAttr,
+                       const ULONG ulAttr,
                        _Out_opt_ PCOORD coordStringPosition)  // not touched for SearchAndSetAttr case.
 {
     if (coordStringPosition != nullptr)

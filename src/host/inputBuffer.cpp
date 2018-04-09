@@ -235,10 +235,10 @@ void InputBuffer::FlushAllButKeys()
 // - otherwise a suitable memory/math/string error in NTSTATUS form.
 [[nodiscard]]
 NTSTATUS InputBuffer::Read(_Out_ std::deque<std::unique_ptr<IInputEvent>>& OutEvents,
-                           _In_ const size_t AmountToRead,
-                           _In_ const bool Peek,
-                           _In_ const bool WaitForData,
-                           _In_ const bool Unicode)
+                           const size_t AmountToRead,
+                           const bool Peek,
+                           const bool WaitForData,
+                           const bool Unicode)
 {
     try
     {
@@ -298,9 +298,9 @@ NTSTATUS InputBuffer::Read(_Out_ std::deque<std::unique_ptr<IInputEvent>>& OutEv
 // - otherwise a suitable memory/math/string error in NTSTATUS form.
 [[nodiscard]]
 NTSTATUS InputBuffer::Read(_Out_ std::unique_ptr<IInputEvent>& outEvent,
-                           _In_ const bool Peek,
-                           _In_ const bool WaitForData,
-                           _In_ const bool Unicode)
+                           const bool Peek,
+                           const bool WaitForData,
+                           const bool Unicode)
 {
     NTSTATUS Status;
     try
@@ -338,11 +338,11 @@ NTSTATUS InputBuffer::Read(_Out_ std::unique_ptr<IInputEvent>& outEvent,
 // Note:
 // - The console lock must be held when calling this routine.
 void InputBuffer::_ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                              _In_ const size_t readCount,
+                              const size_t readCount,
                               _Out_ size_t& eventsRead,
-                              _In_ const bool peek,
+                              const bool peek,
                               _Out_ bool& resetWaitEvent,
-                              _In_ const bool unicode)
+                              const bool unicode)
 {
     resetWaitEvent = false;
 

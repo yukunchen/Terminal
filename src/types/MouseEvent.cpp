@@ -27,21 +27,21 @@ InputEventType MouseEvent::EventType() const noexcept
     return InputEventType::MouseEvent;
 }
 
-void MouseEvent::SetPosition(_In_ const COORD position) noexcept
+void MouseEvent::SetPosition(const COORD position) noexcept
 {
     _position = position;
 }
 
-void MouseEvent::SetButtonState(_In_ const DWORD buttonState) noexcept
+void MouseEvent::SetButtonState(const DWORD buttonState) noexcept
 {
     _buttonState = buttonState;
 }
 
-void MouseEvent::SetActiveModifierKeys(_In_ const DWORD activeModifierKeys) noexcept
+void MouseEvent::SetActiveModifierKeys(const DWORD activeModifierKeys) noexcept
 {
     _activeModifierKeys = activeModifierKeys;
 }
-void MouseEvent::SetEventFlags(_In_ const DWORD eventFlags) noexcept
+void MouseEvent::SetEventFlags(const DWORD eventFlags) noexcept
 {
     _eventFlags = eventFlags;
 }

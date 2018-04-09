@@ -64,11 +64,11 @@ std::unordered_map<std::wstring,
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::AddConsoleAliasAImpl(_In_reads_or_z_(cchSourceBufferLength) const char* const psSourceBuffer,
-                                          _In_ size_t const cchSourceBufferLength,
+                                          const size_t cchSourceBufferLength,
                                           _In_reads_or_z_(cchTargetBufferLength) const char* const psTargetBuffer,
-                                          _In_ size_t const cchTargetBufferLength,
+                                          const size_t cchTargetBufferLength,
                                           _In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
-                                          _In_ size_t const cchExeNameBufferLength)
+                                          const size_t cchExeNameBufferLength)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     UINT const uiCodePage = gci.CP;
@@ -100,11 +100,11 @@ HRESULT ApiRoutines::AddConsoleAliasAImpl(_In_reads_or_z_(cchSourceBufferLength)
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::AddConsoleAliasWImpl(_In_reads_or_z_(cchSourceBufferLength) const wchar_t* const pwsSourceBuffer,
-                                          _In_ size_t const cchSourceBufferLength,
+                                          const size_t cchSourceBufferLength,
                                           _In_reads_or_z_(cchTargetBufferLength) const wchar_t* const pwsTargetBuffer,
-                                          _In_ size_t const cchTargetBufferLength,
+                                          const size_t cchTargetBufferLength,
                                           _In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                          _In_ size_t const cchExeNameBufferLength)
+                                          const size_t cchExeNameBufferLength)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
@@ -158,12 +158,12 @@ HRESULT ApiRoutines::AddConsoleAliasWImpl(_In_reads_or_z_(cchSourceBufferLength)
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT GetConsoleAliasWImplHelper(_In_reads_or_z_(cchSourceBufferLength) const wchar_t* const pwsSourceBuffer,
-                                   _In_ size_t const cchSourceBufferLength,
+                                   const size_t cchSourceBufferLength,
                                    _Out_writes_to_opt_(cchTargetBufferLength, *pcchTargetBufferWrittenOrNeeded) _Always_(_Post_z_) wchar_t* const pwsTargetBuffer,
-                                   _In_ size_t const cchTargetBufferLength,
+                                   const size_t cchTargetBufferLength,
                                    _Out_ size_t* const pcchTargetBufferWrittenOrNeeded,
                                    _In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                   _In_ size_t const cchExeNameBufferLength)
+                                   const size_t cchExeNameBufferLength)
 {
     // Ensure output variables are initialized
     *pcchTargetBufferWrittenOrNeeded = 0;
@@ -225,12 +225,12 @@ HRESULT GetConsoleAliasWImplHelper(_In_reads_or_z_(cchSourceBufferLength) const 
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::GetConsoleAliasAImpl(_In_reads_or_z_(cchSourceBufferLength) const char* const psSourceBuffer,
-                                          _In_ size_t const cchSourceBufferLength,
+                                          const size_t cchSourceBufferLength,
                                           _Out_writes_to_(cchTargetBufferLength, *pcchTargetBufferWritten) _Always_(_Post_z_) char* const psTargetBuffer,
-                                          _In_ size_t const cchTargetBufferLength,
+                                          const size_t cchTargetBufferLength,
                                           _Out_ size_t* const pcchTargetBufferWritten,
                                           _In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
-                                          _In_ size_t const cchExeNameBufferLength)
+                                          const size_t cchExeNameBufferLength)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     UINT const uiCodePage = gci.CP;
@@ -304,12 +304,12 @@ HRESULT ApiRoutines::GetConsoleAliasAImpl(_In_reads_or_z_(cchSourceBufferLength)
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::GetConsoleAliasWImpl(_In_reads_or_z_(cchSourceBufferLength) const wchar_t* const pwsSourceBuffer,
-                                          _In_ size_t const cchSourceBufferLength,
+                                          const size_t cchSourceBufferLength,
                                           _Out_writes_to_(cchTargetBufferLength, *pcchTargetBufferWritten) _Always_(_Post_z_) wchar_t* const pwsTargetBuffer,
-                                          _In_ size_t const cchTargetBufferLength,
+                                          const size_t cchTargetBufferLength,
                                           _Out_ size_t* const pcchTargetBufferWritten,
                                           _In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                          _In_ size_t const cchExeNameBufferLength)
+                                          const size_t cchExeNameBufferLength)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
@@ -343,9 +343,9 @@ static size_t const cchAliasesSeperator = wcslen(pwszAliasesSeperator);
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT GetConsoleAliasesLengthWImplHelper(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                           _In_ size_t const cchExeNameBufferLength,
-                                           _In_ bool const fCountInUnicode,
-                                           _In_ UINT const uiCodePage,
+                                           const size_t cchExeNameBufferLength,
+                                           const bool fCountInUnicode,
+                                           const UINT uiCodePage,
                                            _Out_ size_t* const pcchAliasesBufferRequired)
 {
     // Ensure output variables are initialized
@@ -414,7 +414,7 @@ HRESULT GetConsoleAliasesLengthWImplHelper(_In_reads_or_z_(cchExeNameBufferLengt
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::GetConsoleAliasesLengthAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
-                                                  _In_ size_t const cchExeNameBufferLength,
+                                                  const size_t cchExeNameBufferLength,
                                                   _Out_ size_t* const pcchAliasesBufferRequired)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -444,7 +444,7 @@ HRESULT ApiRoutines::GetConsoleAliasesLengthAImpl(_In_reads_or_z_(cchExeNameBuff
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::GetConsoleAliasesLengthWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                                  _In_ size_t const cchExeNameBufferLength,
+                                                  const size_t cchExeNameBufferLength,
                                                   _Out_ size_t* const pcchAliasesBufferRequired)
 {
     LockConsole();
@@ -482,9 +482,9 @@ void Alias::s_ClearCmdExeAliases()
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT GetConsoleAliasesWImplHelper(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                     _In_ size_t const cchExeNameBufferLength,
+                                     const size_t cchExeNameBufferLength,
                                      _Out_writes_to_opt_(cchAliasBufferLength, *pcchAliasBufferWrittenOrNeeded) _Always_(_Post_z_) wchar_t* const pwsAliasBuffer,
-                                     _In_ size_t const cchAliasBufferLength,
+                                     const size_t cchAliasBufferLength,
                                      _Out_ size_t* const pcchAliasBufferWrittenOrNeeded)
 {
     // Ensure output variables are initialized.
@@ -577,9 +577,9 @@ HRESULT GetConsoleAliasesWImplHelper(_In_reads_or_z_(cchExeNameBufferLength) con
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::GetConsoleAliasesAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
-                                            _In_ size_t const cchExeNameBufferLength,
+                                            const size_t cchExeNameBufferLength,
                                             _Out_writes_to_(cchAliasBufferLength, *pcchAliasBufferWritten) _Always_(_Post_z_) char* const psAliasBuffer,
-                                            _In_ size_t const cchAliasBufferLength,
+                                            const size_t cchAliasBufferLength,
                                             _Out_ size_t* const pcchAliasBufferWritten)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -640,9 +640,9 @@ HRESULT ApiRoutines::GetConsoleAliasesAImpl(_In_reads_or_z_(cchExeNameBufferLeng
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::GetConsoleAliasesWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                            _In_ size_t const cchExeNameBufferLength,
+                                            const size_t cchExeNameBufferLength,
                                             _Out_writes_to_(cchAliasBufferLength, *pcchAliasBufferWritten) _Always_(_Post_z_) wchar_t* const pwsAliasBuffer,
-                                            _In_ size_t const cchAliasBufferLength,
+                                            const size_t cchAliasBufferLength,
                                             _Out_ size_t* const pcchAliasBufferWritten)
 {
     LockConsole();
@@ -662,7 +662,7 @@ HRESULT ApiRoutines::GetConsoleAliasesWImpl(_In_reads_or_z_(cchExeNameBufferLeng
 // - pcchAliasExesBufferRequired - Pointer to receive the length of buffer that would be required to retrieve all relevant EXE names.
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-HRESULT GetConsoleAliasExesLengthImplHelper(_In_ bool const fCountInUnicode, _In_ UINT const uiCodePage, _Out_ size_t* const pcchAliasExesBufferRequired)
+HRESULT GetConsoleAliasExesLengthImplHelper(const bool fCountInUnicode, const UINT uiCodePage, _Out_ size_t* const pcchAliasExesBufferRequired)
 {
     // Ensure output variables are initialized
     *pcchAliasExesBufferRequired = 0;
@@ -740,7 +740,7 @@ HRESULT ApiRoutines::GetConsoleAliasExesLengthWImpl(_Out_ size_t* const pcchAlia
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT GetConsoleAliasExesWImplHelper(_Out_writes_to_opt_(cchAliasExesBufferLength, *pcchAliasExesBufferWrittenOrNeeded) _Always_(_Post_z_) wchar_t* const pwsAliasExesBuffer,
-                                       _In_ size_t const cchAliasExesBufferLength,
+                                       const size_t cchAliasExesBufferLength,
                                        _Out_ size_t* const pcchAliasExesBufferWrittenOrNeeded)
 {
     // Ensure output variables are initialized.
@@ -804,7 +804,7 @@ HRESULT GetConsoleAliasExesWImplHelper(_Out_writes_to_opt_(cchAliasExesBufferLen
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::GetConsoleAliasExesAImpl(_Out_writes_to_(cchAliasExesBufferLength, *pcchAliasExesBufferWritten) _Always_(_Post_z_) char* const psAliasExesBuffer,
-                                              _In_ size_t const cchAliasExesBufferLength,
+                                              const size_t cchAliasExesBufferLength,
                                               _Out_ size_t* const pcchAliasExesBufferWritten)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -858,7 +858,7 @@ HRESULT ApiRoutines::GetConsoleAliasExesAImpl(_Out_writes_to_(cchAliasExesBuffer
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::GetConsoleAliasExesWImpl(_Out_writes_to_(cchAliasExesBufferLength, *pcchAliasExesBufferWritten) _Always_(_Post_z_)  wchar_t* const pwsAliasExesBuffer,
-                                              _In_ size_t const cchAliasExesBufferLength,
+                                              const size_t cchAliasExesBufferLength,
                                               _Out_ size_t* const pcchAliasExesBufferWritten)
 {
     LockConsole();

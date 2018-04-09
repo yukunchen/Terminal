@@ -334,7 +334,7 @@ Settings::Settings() :
     _InitXtermTableValue(255, 0xee, 0xee, 0xee);
 }
 
-void Settings::_InitXtermTableValue(_In_ const size_t iIndex, _In_ const byte bRed, _In_ const byte bGreen, _In_ const byte bBlue)
+void Settings::_InitXtermTableValue(const size_t iIndex, const byte bRed, const byte bGreen, const byte bBlue)
 {
     _XtermColorTable[iIndex] = RGB(bRed, bGreen, bBlue);
 }
@@ -410,7 +410,7 @@ void Settings::ApplyDesktopSpecificDefaults()
     _uScrollScale = 1;
 }
 
-void Settings::ApplyStartupInfo(_In_ const Settings* const pStartupSettings)
+void Settings::ApplyStartupInfo(const Settings* const pStartupSettings)
 {
     const DWORD dwFlags = pStartupSettings->_dwStartupFlags;
 
@@ -459,7 +459,7 @@ void Settings::ApplyStartupInfo(_In_ const Settings* const pStartupSettings)
 // - consoleArgs: A reference to a parsed command-line args object.
 // Return Value:
 // - <none>
-void Settings::ApplyCommandlineArguments(_In_ const ConsoleArguments& consoleArgs)
+void Settings::ApplyCommandlineArguments(const ConsoleArguments& consoleArgs)
 {
     const short width = consoleArgs.GetWidth();
     const short height = consoleArgs.GetHeight();
@@ -563,7 +563,7 @@ DWORD Settings::GetVirtTermLevel() const
 {
     return _dwVirtTermLevel;
 }
-void Settings::SetVirtTermLevel(_In_ DWORD const dwVirtTermLevel)
+void Settings::SetVirtTermLevel(const DWORD dwVirtTermLevel)
 {
     _dwVirtTermLevel = dwVirtTermLevel;
 }
@@ -572,7 +572,7 @@ bool Settings::IsAltF4CloseAllowed() const
 {
     return _fAllowAltF4Close;
 }
-void Settings::SetAltF4CloseAllowed(_In_ bool const fAllowAltF4Close)
+void Settings::SetAltF4CloseAllowed(const bool fAllowAltF4Close)
 {
     _fAllowAltF4Close = fAllowAltF4Close;
 }
@@ -581,7 +581,7 @@ bool Settings::IsReturnOnNewlineAutomatic() const
 {
     return _fAutoReturnOnNewline;
 }
-void Settings::SetAutomaticReturnOnNewline(_In_ bool const fAutoReturnOnNewline)
+void Settings::SetAutomaticReturnOnNewline(const bool fAutoReturnOnNewline)
 {
     _fAutoReturnOnNewline = fAutoReturnOnNewline;
 }
@@ -590,7 +590,7 @@ bool Settings::IsGridRenderingAllowedWorldwide() const
 {
     return _fRenderGridWorldwide;
 }
-void Settings::SetGridRenderingAllowedWorldwide(_In_ bool const fGridRenderingAllowed)
+void Settings::SetGridRenderingAllowedWorldwide(const bool fGridRenderingAllowed)
 {
     // Only trigger a notification and update the status if something has changed.
     if (_fRenderGridWorldwide != fGridRenderingAllowed)
@@ -608,7 +608,7 @@ bool Settings::GetFilterOnPaste() const
 {
     return _fFilterOnPaste;
 }
-void Settings::SetFilterOnPaste(_In_ bool const fFilterOnPaste)
+void Settings::SetFilterOnPaste(const bool fFilterOnPaste)
 {
     _fFilterOnPaste = fFilterOnPaste;
 }
@@ -617,7 +617,7 @@ const WCHAR* const Settings::GetLaunchFaceName() const
 {
     return _LaunchFaceName;
 }
-void Settings::SetLaunchFaceName(_In_ PCWSTR const LaunchFaceName, _In_ size_t const cchLength)
+void Settings::SetLaunchFaceName(_In_ PCWSTR const LaunchFaceName, const size_t cchLength)
 {
     StringCchCopyW(_LaunchFaceName, cchLength, LaunchFaceName);
 }
@@ -626,7 +626,7 @@ UINT Settings::GetCodePage() const
 {
     return _uCodePage;
 }
-void Settings::SetCodePage(_In_ const UINT uCodePage)
+void Settings::SetCodePage(const UINT uCodePage)
 {
     _uCodePage = uCodePage;
 }
@@ -635,7 +635,7 @@ UINT Settings::GetScrollScale() const
 {
     return _uScrollScale;
 }
-void Settings::SetScrollScale(_In_ const UINT uScrollScale)
+void Settings::SetScrollScale(const UINT uScrollScale)
 {
     _uScrollScale = uScrollScale;
 }
@@ -644,7 +644,7 @@ bool Settings::GetTrimLeadingZeros() const
 {
     return _fTrimLeadingZeros;
 }
-void Settings::SetTrimLeadingZeros(_In_ const bool fTrimLeadingZeros)
+void Settings::SetTrimLeadingZeros(const bool fTrimLeadingZeros)
 {
     _fTrimLeadingZeros = fTrimLeadingZeros;
 }
@@ -653,7 +653,7 @@ bool Settings::GetEnableColorSelection() const
 {
     return _fEnableColorSelection;
 }
-void Settings::SetEnableColorSelection(_In_ const bool fEnableColorSelection)
+void Settings::SetEnableColorSelection(const bool fEnableColorSelection)
 {
     _fEnableColorSelection = fEnableColorSelection;
 }
@@ -662,7 +662,7 @@ bool Settings::GetLineSelection() const
 {
     return _bLineSelection;
 }
-void Settings::SetLineSelection(_In_ const bool bLineSelection)
+void Settings::SetLineSelection(const bool bLineSelection)
 {
     _bLineSelection = bLineSelection;
 }
@@ -671,7 +671,7 @@ bool Settings::GetWrapText () const
 {
     return _bWrapText;
 }
-void Settings::SetWrapText (_In_ const bool bWrapText )
+void Settings::SetWrapText (const bool bWrapText )
 {
     _bWrapText = bWrapText;
 }
@@ -680,7 +680,7 @@ bool Settings::GetCtrlKeyShortcutsDisabled () const
 {
     return _fCtrlKeyShortcutsDisabled;
 }
-void Settings::SetCtrlKeyShortcutsDisabled (_In_ const bool fCtrlKeyShortcutsDisabled )
+void Settings::SetCtrlKeyShortcutsDisabled (const bool fCtrlKeyShortcutsDisabled )
 {
     _fCtrlKeyShortcutsDisabled = fCtrlKeyShortcutsDisabled;
 }
@@ -689,7 +689,7 @@ BYTE Settings::GetWindowAlpha() const
 {
     return _bWindowAlpha;
 }
-void Settings::SetWindowAlpha(_In_ const BYTE bWindowAlpha)
+void Settings::SetWindowAlpha(const BYTE bWindowAlpha)
 {
     // if we're out of bounds, set it to 100% opacity so it appears as if nothing happened.
     _bWindowAlpha = (bWindowAlpha < MIN_WINDOW_OPACITY)? BYTE_MAX : bWindowAlpha;
@@ -699,7 +699,7 @@ DWORD Settings::GetHotKey() const
 {
     return _dwHotKey;
 }
-void Settings::SetHotKey(_In_ const DWORD dwHotKey)
+void Settings::SetHotKey(const DWORD dwHotKey)
 {
     _dwHotKey = dwHotKey;
 }
@@ -708,7 +708,7 @@ DWORD Settings::GetStartupFlags() const
 {
     return _dwStartupFlags;
 }
-void Settings::SetStartupFlags(_In_ const DWORD dwStartupFlags)
+void Settings::SetStartupFlags(const DWORD dwStartupFlags)
 {
     _dwStartupFlags = dwStartupFlags;
 }
@@ -717,7 +717,7 @@ WORD Settings::GetFillAttribute() const
 {
     return _wFillAttribute;
 }
-void Settings::SetFillAttribute(_In_ const WORD wFillAttribute)
+void Settings::SetFillAttribute(const WORD wFillAttribute)
 {
     _wFillAttribute = wFillAttribute;
 
@@ -731,7 +731,7 @@ WORD Settings::GetPopupFillAttribute() const
 {
     return _wPopupFillAttribute;
 }
-void Settings::SetPopupFillAttribute(_In_ const WORD wPopupFillAttribute)
+void Settings::SetPopupFillAttribute(const WORD wPopupFillAttribute)
 {
     _wPopupFillAttribute = wPopupFillAttribute;
 
@@ -745,7 +745,7 @@ WORD Settings::GetShowWindow() const
 {
     return _wShowWindow;
 }
-void Settings::SetShowWindow(_In_ const WORD wShowWindow)
+void Settings::SetShowWindow(const WORD wShowWindow)
 {
     _wShowWindow = wShowWindow;
 }
@@ -754,7 +754,7 @@ WORD Settings::GetReserved() const
 {
     return _wReserved;
 }
-void Settings::SetReserved(_In_ const WORD wReserved)
+void Settings::SetReserved(const WORD wReserved)
 {
     _wReserved = wReserved;
 }
@@ -763,7 +763,7 @@ COORD Settings::GetScreenBufferSize() const
 {
     return _dwScreenBufferSize;
 }
-void Settings::SetScreenBufferSize(_In_ const COORD dwScreenBufferSize)
+void Settings::SetScreenBufferSize(const COORD dwScreenBufferSize)
 {
     _dwScreenBufferSize = dwScreenBufferSize;
 }
@@ -772,7 +772,7 @@ COORD Settings::GetWindowSize() const
 {
     return _dwWindowSize;
 }
-void Settings::SetWindowSize(_In_ const COORD dwWindowSize)
+void Settings::SetWindowSize(const COORD dwWindowSize)
 {
     _dwWindowSize = dwWindowSize;
 }
@@ -785,7 +785,7 @@ COORD Settings::GetWindowSizePixels() const
 {
     return _dwWindowSizePixels;
 }
-void Settings::SetWindowSizePixels(_In_ const COORD dwWindowSizePixels)
+void Settings::SetWindowSizePixels(const COORD dwWindowSizePixels)
 {
     _dwWindowSizePixels = dwWindowSizePixels;
 }
@@ -794,7 +794,7 @@ COORD Settings::GetWindowOrigin() const
 {
     return _dwWindowOrigin;
 }
-void Settings::SetWindowOrigin(_In_ const COORD dwWindowOrigin)
+void Settings::SetWindowOrigin(const COORD dwWindowOrigin)
 {
     _dwWindowOrigin = dwWindowOrigin;
 }
@@ -803,7 +803,7 @@ DWORD Settings::GetFont() const
 {
     return _nFont;
 }
-void Settings::SetFont(_In_ const DWORD nFont)
+void Settings::SetFont(const DWORD nFont)
 {
     _nFont = nFont;
 }
@@ -812,7 +812,7 @@ COORD Settings::GetFontSize() const
 {
     return _dwFontSize;
 }
-void Settings::SetFontSize(_In_ const COORD dwFontSize)
+void Settings::SetFontSize(const COORD dwFontSize)
 {
     _dwFontSize = dwFontSize;
 }
@@ -821,7 +821,7 @@ UINT Settings::GetFontFamily() const
 {
     return _uFontFamily;
 }
-void Settings::SetFontFamily(_In_ const UINT uFontFamily)
+void Settings::SetFontFamily(const UINT uFontFamily)
 {
     _uFontFamily = uFontFamily;
 }
@@ -830,7 +830,7 @@ UINT Settings::GetFontWeight() const
 {
     return _uFontWeight;
 }
-void Settings::SetFontWeight(_In_ const UINT uFontWeight)
+void Settings::SetFontWeight(const UINT uFontWeight)
 {
     _uFontWeight = uFontWeight;
 }
@@ -839,7 +839,7 @@ const WCHAR* const Settings::GetFaceName() const
 {
     return _FaceName;
 }
-void Settings::SetFaceName(_In_ PCWSTR const pcszFaceName, _In_ size_t const cchLength)
+void Settings::SetFaceName(_In_ PCWSTR const pcszFaceName, const size_t cchLength)
 {
     StringCchCopyW(_FaceName, cchLength, pcszFaceName);
 }
@@ -848,7 +848,7 @@ UINT Settings::GetCursorSize() const
 {
     return _uCursorSize;
 }
-void Settings::SetCursorSize(_In_ const UINT uCursorSize)
+void Settings::SetCursorSize(const UINT uCursorSize)
 {
     _uCursorSize = uCursorSize;
 }
@@ -857,7 +857,7 @@ bool Settings::GetFullScreen() const
 {
     return _bFullScreen;
 }
-void Settings::SetFullScreen(_In_ const bool bFullScreen)
+void Settings::SetFullScreen(const bool bFullScreen)
 {
     _bFullScreen = bFullScreen;
 }
@@ -866,7 +866,7 @@ bool Settings::GetQuickEdit() const
 {
     return _bQuickEdit;
 }
-void Settings::SetQuickEdit(_In_ const bool bQuickEdit)
+void Settings::SetQuickEdit(const bool bQuickEdit)
 {
     _bQuickEdit = bQuickEdit;
 }
@@ -875,7 +875,7 @@ bool Settings::GetInsertMode() const
 {
     return _bInsertMode;
 }
-void Settings::SetInsertMode(_In_ const bool bInsertMode)
+void Settings::SetInsertMode(const bool bInsertMode)
 {
     _bInsertMode = bInsertMode;
 }
@@ -884,7 +884,7 @@ bool Settings::GetAutoPosition() const
 {
     return _bAutoPosition;
 }
-void Settings::SetAutoPosition(_In_ const bool bAutoPosition)
+void Settings::SetAutoPosition(const bool bAutoPosition)
 {
     _bAutoPosition = bAutoPosition;
 }
@@ -893,7 +893,7 @@ UINT Settings::GetHistoryBufferSize() const
 {
     return _uHistoryBufferSize;
 }
-void Settings::SetHistoryBufferSize(_In_ const UINT uHistoryBufferSize)
+void Settings::SetHistoryBufferSize(const UINT uHistoryBufferSize)
 {
     _uHistoryBufferSize = uHistoryBufferSize;
 }
@@ -902,7 +902,7 @@ UINT Settings::GetNumberOfHistoryBuffers() const
 {
     return _uNumberOfHistoryBuffers;
 }
-void Settings::SetNumberOfHistoryBuffers(_In_ const UINT uNumberOfHistoryBuffers)
+void Settings::SetNumberOfHistoryBuffers(const UINT uNumberOfHistoryBuffers)
 {
     _uNumberOfHistoryBuffers = uNumberOfHistoryBuffers;
 }
@@ -911,7 +911,7 @@ bool Settings::GetHistoryNoDup() const
 {
     return _bHistoryNoDup;
 }
-void Settings::SetHistoryNoDup(_In_ const bool bHistoryNoDup)
+void Settings::SetHistoryNoDup(const bool bHistoryNoDup)
 {
     _bHistoryNoDup = bHistoryNoDup;
 }
@@ -920,13 +920,13 @@ const COLORREF* const Settings::GetColorTable() const
 {
     return _ColorTable;
 }
-void Settings::SetColorTable(_In_reads_(cSize) const COLORREF* const pColorTable, _In_ size_t const cSize)
+void Settings::SetColorTable(_In_reads_(cSize) const COLORREF* const pColorTable, const size_t cSize)
 {
     size_t cSizeWritten = std::min(cSize, static_cast<size_t>(COLOR_TABLE_SIZE));
 
     memmove(_ColorTable, pColorTable, cSizeWritten * sizeof(COLORREF));
 }
-void Settings::SetColorTableEntry(_In_ size_t const index, _In_ COLORREF const ColorValue)
+void Settings::SetColorTableEntry(const size_t index, const COLORREF ColorValue)
 {
     if (index < ARRAYSIZE(_ColorTable))
     {
@@ -948,7 +948,7 @@ bool Settings::IsFaceNameSet() const
     return GetFaceName()[0] != '\0';
 }
 
-void Settings::UnsetStartupFlag(_In_ DWORD const dwFlagToUnset)
+void Settings::UnsetStartupFlag(const DWORD dwFlagToUnset)
 {
     _dwStartupFlags &= ~dwFlagToUnset;
 }
@@ -958,7 +958,7 @@ const size_t Settings::GetColorTableSize() const
     return ARRAYSIZE(_ColorTable);
 }
 
-COLORREF Settings::GetColorTableEntry(_In_ size_t const index) const
+COLORREF Settings::GetColorTableEntry(const size_t index) const
 {
     if (index < ARRAYSIZE(_ColorTable))
     {
@@ -979,7 +979,7 @@ COLORREF Settings::GetColorTableEntry(_In_ size_t const index) const
 // - attributes - The TextAttributes to generate a legacy attribute for.
 // Return value:
 // - A WORD representing the entry in the color table that most closely represents the given fullcolor attributes.
-WORD Settings::GenerateLegacyAttributes(_In_ const TextAttribute attributes) const
+WORD Settings::GenerateLegacyAttributes(const TextAttribute attributes) const
 {
     const WORD wLegacyOriginal = attributes.GetLegacyAttributes();
     if (attributes.IsLegacy())
@@ -1004,7 +1004,7 @@ WORD Settings::GenerateLegacyAttributes(_In_ const TextAttribute attributes) con
 // - cColorTable - The number of elements in ColorTable
 // Return value:
 // The index in ColorTable of the nearest match to Color.
-WORD Settings::FindNearestTableIndex(_In_ COLORREF const Color) const
+WORD Settings::FindNearestTableIndex(const COLORREF Color) const
 {
     return ::FindNearestTableIndex(Color, _ColorTable, ARRAYSIZE(_ColorTable));
 }

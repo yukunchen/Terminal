@@ -105,7 +105,7 @@ GdiEngine::~GdiEngine()
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 [[nodiscard]]
-HRESULT GdiEngine::SetHwnd(_In_ HWND const hwnd)
+HRESULT GdiEngine::SetHwnd(const HWND hwnd)
 {
     // First attempt to get the DC and create an appropriate DC
     HDC const hdcRealWindow = GetDC(hwnd);
@@ -148,7 +148,7 @@ HRESULT GdiEngine::SetHwnd(_In_ HWND const hwnd)
 // Return Value:
 // - S_OK or converted HRESULT from last Win32 error from SetWindowLongW
 [[nodiscard]]
-HRESULT GdiEngine::s_SetWindowLongWHelper(_In_ HWND const hWnd, _In_ int const nIndex, _In_ LONG const dwNewLong)
+HRESULT GdiEngine::s_SetWindowLongWHelper(const HWND hWnd, const int nIndex, const LONG dwNewLong)
 {
     // SetWindowLong has strange error handling. On success, it returns the previous Window Long value and doesn't modify the Last Error state.
     // To deal with this, we set the last error to 0/S_OK first, call it, and if the previous long was 0, we check if the error was non-zero before reporting.
@@ -171,10 +171,10 @@ HRESULT GdiEngine::s_SetWindowLongWHelper(_In_ HWND const hWnd, _In_ int const n
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 [[nodiscard]]
-HRESULT GdiEngine::UpdateDrawingBrushes(_In_ COLORREF const colorForeground,
-                                        _In_ COLORREF const colorBackground,
-                                        _In_ WORD const /*legacyColorAttribute*/,
-                                        _In_ bool const fIncludeBackgrounds)
+HRESULT GdiEngine::UpdateDrawingBrushes(const COLORREF colorForeground,
+                                        const COLORREF colorBackground,
+                                        const WORD /*legacyColorAttribute*/,
+                                        const bool fIncludeBackgrounds)
 {
     RETURN_IF_FAILED(_FlushBufferLines());
 
@@ -213,7 +213,7 @@ HRESULT GdiEngine::UpdateDrawingBrushes(_In_ COLORREF const colorForeground,
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 [[nodiscard]]
-HRESULT GdiEngine::UpdateFont(_In_ FontInfoDesired const * const pfiFontDesired, _Out_ FontInfo* const pfiFont)
+HRESULT GdiEngine::UpdateFont(const FontInfoDesired * const pfiFontDesired, _Out_ FontInfo* const pfiFont)
 {
     wil::unique_hfont hFont;
     RETURN_IF_FAILED(_GetProposedFont(pfiFontDesired, pfiFont, _iCurrentDpi, hFont));
@@ -249,7 +249,7 @@ HRESULT GdiEngine::UpdateFont(_In_ FontInfoDesired const * const pfiFontDesired,
 // Return Value:
 // - HRESULT S_OK, GDI-based error code, or safemath error
 [[nodiscard]]
-HRESULT GdiEngine::UpdateDpi(_In_ int const iDpi)
+HRESULT GdiEngine::UpdateDpi(const int iDpi)
 {
     _iCurrentDpi = iDpi;
     return S_OK;
@@ -263,7 +263,7 @@ HRESULT GdiEngine::UpdateDpi(_In_ int const iDpi)
 // Return Value:
 // - HRESULT S_OK
 [[nodiscard]]
-HRESULT GdiEngine::UpdateViewport(_In_ SMALL_RECT const /*srNewViewport*/)
+HRESULT GdiEngine::UpdateViewport(const SMALL_RECT /*srNewViewport*/)
 {
     return S_OK;
 }
@@ -280,7 +280,7 @@ HRESULT GdiEngine::UpdateViewport(_In_ SMALL_RECT const /*srNewViewport*/)
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 [[nodiscard]]
-HRESULT GdiEngine::GetProposedFont(_In_ FontInfoDesired const * const pfiFontDesired, _Out_ FontInfo* const pfiFont, _In_ int const iDpi)
+HRESULT GdiEngine::GetProposedFont(const FontInfoDesired * const pfiFontDesired, _Out_ FontInfo* const pfiFont, const int iDpi)
 {
     wil::unique_hfont hFont;
     return _GetProposedFont(pfiFontDesired, pfiFont, iDpi, hFont);
@@ -298,9 +298,9 @@ HRESULT GdiEngine::GetProposedFont(_In_ FontInfoDesired const * const pfiFontDes
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 [[nodiscard]]
-HRESULT GdiEngine::_GetProposedFont(_In_ FontInfoDesired const * const pfiFontDesired,
+HRESULT GdiEngine::_GetProposedFont(const FontInfoDesired * const pfiFontDesired,
                                     _Out_ FontInfo* const pfiFont,
-                                    _In_ int const iDpi,
+                                    const int iDpi,
                                     _Inout_ wil::unique_hfont& hFont)
 {
     wil::unique_hdc hdcTemp(CreateCompatibleDC(_hdcMemoryContext));

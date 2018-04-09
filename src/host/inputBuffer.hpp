@@ -57,16 +57,16 @@ public:
 
     [[nodiscard]]
     NTSTATUS Read(_Out_ std::deque<std::unique_ptr<IInputEvent>>& OutEvents,
-                  _In_ const size_t AmountToRead,
-                  _In_ const bool Peek,
-                  _In_ const bool WaitForData,
-                  _In_ const bool Unicode);
+                  const size_t AmountToRead,
+                  const bool Peek,
+                  const bool WaitForData,
+                  const bool Unicode);
 
     [[nodiscard]]
     NTSTATUS Read(_Out_ std::unique_ptr<IInputEvent>& inEvent,
-                  _In_ const bool Peek,
-                  _In_ const bool WaitForData,
-                  _In_ const bool Unicode);
+                  const bool Peek,
+                  const bool WaitForData,
+                  const bool Unicode);
 
 
     size_t Prepend(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
@@ -84,11 +84,11 @@ private:
     Microsoft::Console::VirtualTerminal::TerminalInput _termInput;
 
     void _ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                     _In_ const size_t readCount,
+                     const size_t readCount,
                      _Out_ size_t& eventsRead,
-                     _In_ const bool peek,
+                     const bool peek,
                      _Out_ bool& resetWaitEvent,
-                     _In_ const bool unicode);
+                     const bool unicode);
 
     void _WriteBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inRecords,
                       _Out_ size_t& eventsWritten,

@@ -24,7 +24,7 @@ InputEventType MenuEvent::EventType() const noexcept
     return InputEventType::MenuEvent;
 }
 
-void MenuEvent::SetCommandId(_In_ const UINT commandId) noexcept
+void MenuEvent::SetCommandId(const UINT commandId) noexcept
 {
     _commandId = commandId;
 }

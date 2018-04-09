@@ -170,7 +170,7 @@ class AttrRowTests
     // Return Value:
     // - Success if success. Buffer too small if row length is incorrect.
     HRESULT PackAttrs(_In_reads_(cRowLength) const TextAttribute* const rgAttrs,
-                      _In_ const size_t cRowLength,
+                      const size_t cRowLength,
                       _Inout_ std::unique_ptr<TextAttributeRun[]>& outAttrRun,
                       _Out_ size_t* const cOutAttrRun)
     {
@@ -241,7 +241,7 @@ class AttrRowTests
 
     void LogChain(_In_ PCWSTR pwszPrefix,
                   _In_reads_(cRun) TextAttributeRun* const rgRun,
-                  _In_ size_t const cRun)
+                  const size_t cRun)
     {
         NoThrowString str(pwszPrefix);
 

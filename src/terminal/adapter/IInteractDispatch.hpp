@@ -28,14 +28,14 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual bool WriteCtrlC() = 0;
 
-        virtual bool WriteString(_In_reads_(cch) const wchar_t* const pws, _In_ const size_t cch) = 0;
+        virtual bool WriteString(_In_reads_(cch) const wchar_t* const pws, const size_t cch) = 0;
 
-        virtual bool WindowManipulation(_In_ const DispatchCommon::WindowManipulationType uiFunction,
+        virtual bool WindowManipulation(const DispatchCommon::WindowManipulationType uiFunction,
                                         _In_reads_(cParams) const unsigned short* const rgusParams,
-                                        _In_ size_t const cParams) = 0;
+                                        const size_t cParams) = 0;
 
-        virtual bool MoveCursor(_In_ const unsigned int row,
-                                _In_ const unsigned int col) = 0;
+        virtual bool MoveCursor(const unsigned int row,
+                                const unsigned int col) = 0;
 
     };
 }

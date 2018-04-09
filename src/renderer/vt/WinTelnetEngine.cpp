@@ -13,10 +13,10 @@ using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 
 WinTelnetEngine::WinTelnetEngine(_In_ wil::unique_hfile hPipe,
-                                 _In_ const IDefaultColorProvider& colorProvider,
-                                 _In_ const Viewport initialViewport,
+                                 const IDefaultColorProvider& colorProvider,
+                                 const Viewport initialViewport,
                                  _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                                 _In_ const WORD cColorTable) :
+                                 const WORD cColorTable) :
     VtEngine(std::move(hPipe), colorProvider, initialViewport),
     _ColorTable(ColorTable),
     _cColorTable(cColorTable)
@@ -37,10 +37,10 @@ WinTelnetEngine::WinTelnetEngine(_In_ wil::unique_hfile hPipe,
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT WinTelnetEngine::UpdateDrawingBrushes(_In_ COLORREF const colorForeground,
-                                              _In_ COLORREF const colorBackground,
-                                              _In_ WORD const /*legacyColorAttribute*/,
-                                              _In_ bool const /*fIncludeBackgrounds*/)
+HRESULT WinTelnetEngine::UpdateDrawingBrushes(const COLORREF colorForeground,
+                                              const COLORREF colorBackground,
+                                              const WORD /*legacyColorAttribute*/,
+                                              const bool /*fIncludeBackgrounds*/)
 {
     return VtEngine::_16ColorUpdateDrawingBrushes(colorForeground, colorBackground, _ColorTable, _cColorTable);
 }
@@ -96,7 +96,7 @@ HRESULT WinTelnetEngine::ScrollFrame()
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT WinTelnetEngine::InvalidateScroll(_In_ const COORD* const /*pcoordDelta*/)
+HRESULT WinTelnetEngine::InvalidateScroll(const COORD* const /*pcoordDelta*/)
 {
     // win-telnet assumes the client doesn't know anything about inserting or
     //  deleting lines.

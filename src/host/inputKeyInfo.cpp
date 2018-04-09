@@ -8,7 +8,7 @@
 
 #include "input.h"
 
-INPUT_KEY_INFO::INPUT_KEY_INFO(_In_ const WORD wVirtualKeyCode, _In_ const ULONG ulControlKeyState) :
+INPUT_KEY_INFO::INPUT_KEY_INFO(const WORD wVirtualKeyCode, const ULONG ulControlKeyState) :
     _wVirtualKeyCode(wVirtualKeyCode),
     _ulControlKeyState(ulControlKeyState)
 {

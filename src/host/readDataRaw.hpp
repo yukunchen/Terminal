@@ -29,15 +29,15 @@ class RAW_READ_DATA final : public ReadData
 public:
     RAW_READ_DATA(_In_ InputBuffer* const pInputBuffer,
                   _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
-                  _In_ const ULONG BufferSize,
+                  const ULONG BufferSize,
                   _In_ WCHAR* const BufPtr);
 
     ~RAW_READ_DATA() override;
 
     RAW_READ_DATA(RAW_READ_DATA&&) = default;
 
-    bool Notify(_In_ WaitTerminationReason const TerminationReason,
-                _In_ bool const fIsUnicode,
+    bool Notify(const WaitTerminationReason TerminationReason,
+                const bool fIsUnicode,
                 _Out_ NTSTATUS* const pReplyStatus,
                 _Out_ DWORD* const pNumBytes,
                 _Out_ DWORD* const pControlKeyState,

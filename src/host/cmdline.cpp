@@ -50,7 +50,7 @@ SHORT FindMatchingCommand(_In_ PCOMMAND_HISTORY CommandHistory,
 [[nodiscard]]
 NTSTATUS CommandNumberPopup(_In_ COOKED_READ_DATA* const CookedReadData);
 void DrawCommandListPopup(_In_ PCLE_POPUP const Popup,
-                          _In_ SHORT const CurrentCommand,
+                          const SHORT CurrentCommand,
                           _In_ PCOMMAND_HISTORY const CommandHistory,
                           _In_ PSCREEN_INFORMATION const ScreenInfo);
 void UpdateCommandListPopup(_In_ SHORT Delta,
@@ -58,7 +58,7 @@ void UpdateCommandListPopup(_In_ SHORT Delta,
                             _In_ PCOMMAND_HISTORY const CommandHistory,
                             _In_ PCLE_POPUP Popup,
                             _In_ PSCREEN_INFORMATION const ScreenInfo,
-                            _In_ DWORD const Flags);
+                            const DWORD Flags);
 [[nodiscard]]
 NTSTATUS RetrieveCommand(_In_ PCOMMAND_HISTORY CommandHistory,
                          _In_ WORD VirtualKeyCode,
@@ -307,7 +307,7 @@ bool CommandLine::IsEditLineEmpty() const
     }
 }
 
-void CommandLine::Hide(_In_ bool const fUpdateFields)
+void CommandLine::Hide(const bool fUpdateFields)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (!IsEditLineEmpty())
@@ -327,7 +327,7 @@ void CommandLine::Show()
     }
 }
 
-void DeleteCommandLine(_Inout_ COOKED_READ_DATA* const pCookedReadData, _In_ const bool fUpdateFields)
+void DeleteCommandLine(_Inout_ COOKED_READ_DATA* const pCookedReadData, const bool fUpdateFields)
 {
     DWORD CharsToWrite = pCookedReadData->_NumberOfVisibleChars;
     COORD coordOriginalCursor = pCookedReadData->_OriginalCursorPosition;
@@ -1136,7 +1136,7 @@ NTSTATUS CommandNumberPopup(_In_ COOKED_READ_DATA* const CookedReadData)
 [[nodiscard]]
 NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                             _In_ WCHAR wch,
-                            _In_ const DWORD dwKeyState)
+                            const DWORD dwKeyState)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     COORD CurrentPosition = { 0 };
@@ -1919,7 +1919,7 @@ void UpdateHighlight(_In_ PCLE_POPUP Popup,
 }
 
 void DrawCommandListPopup(_In_ PCLE_POPUP const Popup,
-                          _In_ SHORT const CurrentCommand,
+                          const SHORT CurrentCommand,
                           _In_ PCOMMAND_HISTORY const CommandHistory,
                           _In_ PSCREEN_INFORMATION const ScreenInfo)
 {
@@ -2049,7 +2049,7 @@ void UpdateCommandListPopup(_In_ SHORT Delta,
                             _In_ PCOMMAND_HISTORY const CommandHistory,
                             _In_ PCLE_POPUP Popup,
                             _In_ PSCREEN_INFORMATION const ScreenInfo,
-                            _In_ DWORD const Flags)
+                            const DWORD Flags)
 {
     if (Delta == 0)
     {

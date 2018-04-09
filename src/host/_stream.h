@@ -35,7 +35,7 @@ Arguments:
 Return Value:
 --*/
 [[nodiscard]]
-NTSTATUS AdjustCursorPosition(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ COORD coordCursor, _In_ const BOOL fKeepCursorVisible, _Inout_opt_ PSHORT psScrollY);
+NTSTATUS AdjustCursorPosition(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ COORD coordCursor, const BOOL fKeepCursorVisible, _Inout_opt_ PSHORT psScrollY);
 
 #define LOCAL_BUFFER_SIZE 100
 
@@ -74,8 +74,8 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                           _In_reads_bytes_(*pcb) PWCHAR pwchRealUnicode,
                           _Inout_ PDWORD const pcb,
                           _Out_opt_ PULONG const pcSpaces,
-                          _In_ const SHORT sOriginalXPosition,
-                          _In_ const DWORD dwFlags,
+                          const SHORT sOriginalXPosition,
+                          const DWORD dwFlags,
                           _Inout_opt_ PSHORT const psScrollY);
 
 // The new entry point for WriteChars to act as an intercept in case we place a Virtual Terminal processor in the way.
@@ -86,8 +86,8 @@ NTSTATUS WriteChars(_In_ PSCREEN_INFORMATION pScreenInfo,
                     _In_reads_bytes_(*pcb) PWCHAR pwchRealUnicode,
                     _Inout_ PDWORD const pcb,
                     _Out_opt_ PULONG const pcSpaces,
-                    _In_ const SHORT sOriginalXPosition,
-                    _In_ const DWORD dwFlags,
+                    const SHORT sOriginalXPosition,
+                    const DWORD dwFlags,
                     _Inout_opt_ PSHORT const psScrollY);
 
 // NOTE: console lock must be held when calling this routine

@@ -162,7 +162,7 @@ private:
     }
     ///////////////////////////////////////////////////////////////////////////
 
-    HRESULT _GetShellItemLinkTargetExpanded(_In_ IShellItem *pShellItem, _Out_writes_(cchFilePathExtended) PWSTR pszFilePathExtended, _In_ const size_t cchFilePathExtended)
+    HRESULT _GetShellItemLinkTargetExpanded(_In_ IShellItem *pShellItem, _Out_writes_(cchFilePathExtended) PWSTR pszFilePathExtended, const size_t cchFilePathExtended)
     {
         ComPtr<IShellItem> shellItemLinkTarget;
         HRESULT hr = GetTargetItem(pShellItem, IID_PPV_ARGS(&shellItemLinkTarget));
@@ -180,7 +180,7 @@ private:
     }
 
 
-    HRESULT _ShouldAddPropertySheet(_In_ IDataObject *pdtobj, _Out_writes_(cchLinkFileName) PWSTR pszLinkFileName, _In_ const size_t cchLinkFileName)
+    HRESULT _ShouldAddPropertySheet(_In_ IDataObject *pdtobj, _Out_writes_(cchLinkFileName) PWSTR pszLinkFileName, const size_t cchLinkFileName)
     {
         ComPtr<IShellItemArray> shellItemArray;
         HRESULT hr = SHCreateShellItemArrayFromDataObject(pdtobj, IID_PPV_ARGS(&shellItemArray));
