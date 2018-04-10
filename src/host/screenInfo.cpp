@@ -126,7 +126,7 @@ NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
 
         if (NT_SUCCESS(status))
         {
-            SetLineChar(pScreen);
+            SetLineChar(*pScreen);
 
             status = pScreen->_InitializeOutputStateMachine();
 
@@ -235,7 +235,7 @@ void SCREEN_INFORMATION::s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pSc
     {
         if (gci.ScreenBuffers != nullptr)
         {
-            SetActiveScreenBuffer(gci.ScreenBuffers);
+            SetActiveScreenBuffer(*gci.ScreenBuffers);
         }
         else
         {
@@ -258,13 +258,13 @@ NTSTATUS SCREEN_INFORMATION::_InitializeOutputStateMachine()
     NTSTATUS status = STATUS_NO_MEMORY;
     try
     {
-        _pConApi = new ConhostInternalGetSet(&gci);
+        _pConApi = new ConhostInternalGetSet(gci);
         status = NT_TESTNULL(_pConApi);
 
         if (NT_SUCCESS(status))
         {
             ASSERT(_pBufferWriter == nullptr);
-            _pBufferWriter = new WriteBuffer(&gci);
+            _pBufferWriter = new WriteBuffer(gci);
             status = NT_TESTNULL(_pBufferWriter);
         }
     }
@@ -1956,14 +1956,23 @@ SMALL_RECT SCREEN_INFORMATION::GetScrollMargins() const
 // Parameters:
 // - None
 // Return value:
-// - a pointer to this buffer's active buffer.
-SCREEN_INFORMATION* const SCREEN_INFORMATION::GetActiveBuffer()
+// - a reference to this buffer's active buffer.
+SCREEN_INFORMATION& SCREEN_INFORMATION::GetActiveBuffer()
 {
     if (_psiAlternateBuffer != nullptr)
     {
-        return _psiAlternateBuffer;
+        return *_psiAlternateBuffer;
     }
-    return this;
+    return *this;
+}
+
+const SCREEN_INFORMATION& SCREEN_INFORMATION::GetActiveBuffer() const
+{
+    if (_psiAlternateBuffer != nullptr)
+    {
+        return *_psiAlternateBuffer;
+    }
+    return *this;
 }
 
 // Routine Description:
@@ -1973,14 +1982,23 @@ SCREEN_INFORMATION* const SCREEN_INFORMATION::GetActiveBuffer()
 // Parameters:
 // - None
 // Return value:
-// - a pointer to this buffer's main buffer.
-SCREEN_INFORMATION* const SCREEN_INFORMATION::GetMainBuffer()
+// - a reference to this buffer's main buffer.
+SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer()
 {
     if (_psiMainBuffer != nullptr)
     {
-        return _psiMainBuffer;
+        return *_psiMainBuffer;
     }
-    return this;
+    return *this;
+}
+
+const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
+{
+    if (_psiMainBuffer != nullptr)
+    {
+        return *_psiMainBuffer;
+    }
+    return *this;
 }
 
 // Routine Description:
@@ -2039,12 +2057,12 @@ NTSTATUS SCREEN_INFORMATION::_CreateAltBuffer(_Out_ SCREEN_INFORMATION** const p
 NTSTATUS SCREEN_INFORMATION::UseAlternateScreenBuffer()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION* const psiMain = GetMainBuffer();
+    SCREEN_INFORMATION& siMain = GetMainBuffer();
     // If we're in an alt that resized, resize the main before making the new alt
-    if (psiMain->_fAltWindowChanged)
+    if (siMain._fAltWindowChanged)
     {
-        psiMain->ProcessResizeWindow(&(psiMain->_rcAltSavedClientNew), &(psiMain->_rcAltSavedClientOld));
-        psiMain->_fAltWindowChanged = false;
+        siMain.ProcessResizeWindow(&(siMain._rcAltSavedClientNew), &(siMain._rcAltSavedClientOld));
+        siMain._fAltWindowChanged = false;
     }
 
     SCREEN_INFORMATION* psiNewAltBuffer;
@@ -2054,17 +2072,17 @@ NTSTATUS SCREEN_INFORMATION::UseAlternateScreenBuffer()
         // if this is already an alternate buffer, we want to make the new
         // buffer the alt on our main buffer, not on ourself, because there
         // can only ever be one main and one alternate.
-        SCREEN_INFORMATION* const psiOldAltBuffer = psiMain->_psiAlternateBuffer;
+        SCREEN_INFORMATION* const psiOldAltBuffer = siMain._psiAlternateBuffer;
 
-        psiNewAltBuffer->_psiMainBuffer = psiMain;
-        psiMain->_psiAlternateBuffer = psiNewAltBuffer;
+        psiNewAltBuffer->_psiMainBuffer = &siMain;
+        siMain._psiAlternateBuffer = psiNewAltBuffer;
 
         if (psiOldAltBuffer != nullptr)
         {
             s_RemoveScreenBuffer(psiOldAltBuffer); // this will also delete the old alt buffer
         }
 
-        ::SetActiveScreenBuffer(psiNewAltBuffer);
+        ::SetActiveScreenBuffer(*psiNewAltBuffer);
 
         // Kind of a hack until we have proper signal channels: If the client app wants window size events, send one for
         // the new alt buffer's size (this is so WSL can update the TTY size when the MainSB.viewportWidth <
@@ -2095,7 +2113,7 @@ void SCREEN_INFORMATION::UseMainScreenBuffer()
             psiMain->ProcessResizeWindow(&(psiMain->_rcAltSavedClientNew), &(psiMain->_rcAltSavedClientOld));
             psiMain->_fAltWindowChanged = false;
         }
-        ::SetActiveScreenBuffer(psiMain);
+        ::SetActiveScreenBuffer(*psiMain);
         psiMain->UpdateScrollBars(); // The alt had disabled scrollbars, re-enable them
 
         // send a _coordScreenBufferSizeChangeEvent for the new Sb viewport

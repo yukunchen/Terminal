@@ -29,19 +29,19 @@ using namespace Microsoft::Console::Types;
 
 void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
                                _In_ SHORT cchBuffer,
-                               _In_ PSCREEN_INFORMATION pScreenInfo,
+                               _Inout_ SCREEN_INFORMATION& screenInfo,
                                _Inout_updates_(cchBuffer) DbcsAttribute* const pDbcsAttributes,
                                const bool fWasLineWrapped)
 {
     DBGOUTPUT(("StreamWriteToScreenBuffer\n"));
-    COORD const TargetPoint = pScreenInfo->GetTextBuffer().GetCursor().GetPosition();
-    ROW& Row = pScreenInfo->GetTextBuffer().GetRowByOffset(TargetPoint.Y);
+    COORD const TargetPoint = screenInfo.GetTextBuffer().GetCursor().GetPosition();
+    ROW& Row = screenInfo.GetTextBuffer().GetRowByOffset(TargetPoint.Y);
     DBGOUTPUT(("&Row = 0x%p, TargetPoint = (0x%x,0x%x)\n", &Row, TargetPoint.X, TargetPoint.Y));
 
     // TODO: from CleanupDbcsEdgesForWrite to the end of the if statement seems to never execute
     // both callers of this function appear to already have handled the line length for double-width characters
-    CleanupDbcsEdgesForWrite(cchBuffer, TargetPoint, pScreenInfo);
-    const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
+    CleanupDbcsEdgesForWrite(cchBuffer, TargetPoint, screenInfo);
+    const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
     if (TargetPoint.Y == coordScreenBufferSize.Y - 1 &&
         TargetPoint.X + cchBuffer >= coordScreenBufferSize.X &&
         pDbcsAttributes[coordScreenBufferSize.X - TargetPoint.X - 1].IsLeading())
@@ -76,14 +76,14 @@ void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
 
     TextAttributeRun CurrentBufferAttrs;
     CurrentBufferAttrs.SetLength(cchBuffer);
-    CurrentBufferAttrs.SetAttributes(pScreenInfo->GetAttributes());
+    CurrentBufferAttrs.SetAttributes(screenInfo.GetAttributes());
     LOG_IF_FAILED(Row.GetAttrRow().InsertAttrRuns(&CurrentBufferAttrs,
                                                   1,
                                                   TargetPoint.X,
                                                   (SHORT)(TargetPoint.X + cchBuffer - 1),
                                                   coordScreenBufferSize.X));
 
-    pScreenInfo->ResetTextFlags(TargetPoint.X, TargetPoint.Y, TargetPoint.X + cchBuffer - 1, TargetPoint.Y);
+    screenInfo.ResetTextFlags(TargetPoint.X, TargetPoint.Y, TargetPoint.X + cchBuffer - 1, TargetPoint.Y);
 }
 
 // Routine Description:
@@ -93,7 +93,7 @@ void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
 // - prgbSrc - pointer to source buffer (a real VGA buffer or CHAR_INFO[])
 // - coordSrcDimensions - dimensions of source buffer
 // - psrSrc - rectangle in source buffer to copy
-// - pScreenInfo - pointer to screen info
+// - screenInfo - reference to screen info
 // - coordDest - upper left coordinates of target rectangle
 // - Codepage - codepage to translate real VGA buffer from,
 //              0xFFFFFFF if Source is CHAR_INFO[] (not requiring translation)
@@ -103,7 +103,7 @@ void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
 NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimensions.Y * sizeof(CHAR_INFO)) PBYTE const prgbSrc,
                                  const COORD coordSrcDimensions,
                                  const SMALL_RECT * const psrSrc,
-                                 _In_ PSCREEN_INFORMATION pScreenInfo,
+                                 _Inout_ SCREEN_INFORMATION& screenInfo,
                                  const COORD coordDest,
                                  _In_reads_opt_(coordSrcDimensions.X * coordSrcDimensions.Y) TextAttribute* const pTextAttributes)
 {
@@ -132,8 +132,8 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
             WholeSource = true;
         }
 
-        const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
-        ROW* pRow = &pScreenInfo->GetTextBuffer().GetRowByOffset(coordDest.Y);
+        const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
+        ROW* pRow = &screenInfo.GetTextBuffer().GetRowByOffset(coordDest.Y);
         for (SHORT i = 0; i < YSize; i++)
         {
             // ensure we have a valid row pointer, if not, skip.
@@ -153,7 +153,7 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
 
             TPoint.X = coordDest.X;
             TPoint.Y = coordDest.Y + i;
-            CleanupDbcsEdgesForWrite(XSize, TPoint, pScreenInfo);
+            CleanupDbcsEdgesForWrite(XSize, TPoint, screenInfo);
 
             if (TPoint.Y == coordScreenBufferSize.Y - 1 &&
                 TPoint.X + XSize - 1 >= coordScreenBufferSize.X)
@@ -254,14 +254,14 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
 
             try
             {
-                pRow = &pScreenInfo->GetTextBuffer().GetNextRowNoWrap(*pRow);
+                pRow = &screenInfo.GetTextBuffer().GetNextRowNoWrap(*pRow);
             }
             catch (...)
             {
                 pRow = nullptr;
             }
         }
-        pScreenInfo->ResetTextFlags(coordDest.X, coordDest.Y, (SHORT)(coordDest.X + XSize - 1), (SHORT)(coordDest.Y + YSize - 1));
+        screenInfo.ResetTextFlags(coordDest.X, coordDest.Y, (SHORT)(coordDest.X + XSize - 1), (SHORT)(coordDest.Y + YSize - 1));
 
         // The above part of the code seems ridiculous in terms of complexity. especially the dbcs stuff.
         // So we'll copy the attributes here in a not terrible way.
@@ -279,7 +279,7 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
             //  If the current attr is different then the last one, then insert the last one, and start a new run.
             for (int y = coordDest.Y; y < coordSrcDimensions.Y + coordDest.Y; y++)
             {
-                ROW& Row = pScreenInfo->GetTextBuffer().GetRowByOffset(y);
+                ROW& Row = screenInfo.GetTextBuffer().GetRowByOffset(y);
 
                 TextAttributeRun insert;
                 int currentLength = 1;  // This is the length of the current run.
@@ -358,7 +358,7 @@ void WriteRectToScreenBuffer(_Inout_ SCREEN_INFORMATION& screenInfo,
         COORD point;
         point.X = coordDest.X;
         point.Y = coordDest.Y + static_cast<short>(iRow);
-        CleanupDbcsEdgesForWrite(xSize, point, &screenInfo);
+        CleanupDbcsEdgesForWrite(xSize, point, screenInfo);
 
         ICharRow& iCharRow = row.GetCharRow();
         // we only support ucs2 encoded char rows
@@ -391,9 +391,9 @@ void WriteRectToScreenBuffer(_Inout_ SCREEN_INFORMATION& screenInfo,
     }
 }
 
-void WriteRegionToScreen(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ PSMALL_RECT psrRegion)
+void WriteRegionToScreen(_Inout_ SCREEN_INFORMATION& screenInfo, _In_ PSMALL_RECT psrRegion)
 {
-    if (pScreenInfo->IsActiveScreenBuffer())
+    if (screenInfo.IsActiveScreenBuffer())
     {
         if (ServiceLocator::LocateGlobals().pRender != nullptr)
         {
@@ -408,16 +408,16 @@ void WriteRegionToScreen(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ PSMALL_RECT 
 // Routine Description:
 // - This routine writes a screen buffer region to the screen.
 // Arguments:
-// - pScreenInfo - Pointer to screen buffer information.
+// - screenInfo - reference to screen buffer information.
 // - srRegion - Region to write in screen buffer coordinates.  Region is inclusive
 // Return Value:
 // - <none>
-void WriteToScreen(_In_ PSCREEN_INFORMATION pScreenInfo, const SMALL_RECT srRegion)
+void WriteToScreen(_Inout_ SCREEN_INFORMATION& screenInfo, const SMALL_RECT srRegion)
 {
     DBGOUTPUT(("WriteToScreen\n"));
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // update to screen, if we're not iconic.
-    if (!pScreenInfo->IsActiveScreenBuffer() || IsFlagSet(gci.Flags, CONSOLE_IS_ICONIC))
+    if (!screenInfo.IsActiveScreenBuffer() || IsFlagSet(gci.Flags, CONSOLE_IS_ICONIC))
     {
         return;
     }
@@ -425,7 +425,7 @@ void WriteToScreen(_In_ PSCREEN_INFORMATION pScreenInfo, const SMALL_RECT srRegi
     // clip region
     SMALL_RECT ClippedRegion;
     {
-        const SMALL_RECT currentViewport = pScreenInfo->GetBufferViewport();
+        const SMALL_RECT currentViewport = screenInfo.GetBufferViewport();
         ClippedRegion.Left = std::max(srRegion.Left, currentViewport.Left);
         ClippedRegion.Top = std::max(srRegion.Top, currentViewport.Top);
         ClippedRegion.Right = std::min(srRegion.Right, currentViewport.Right);
@@ -436,15 +436,15 @@ void WriteToScreen(_In_ PSCREEN_INFORMATION pScreenInfo, const SMALL_RECT srRegi
         }
     }
 
-    WriteRegionToScreen(pScreenInfo, &ClippedRegion);
+    WriteRegionToScreen(screenInfo, &ClippedRegion);
 
-    WriteConvRegionToScreen(pScreenInfo, srRegion);
+    WriteConvRegionToScreen(screenInfo, srRegion);
 }
 
 // Routine Description:
 // - This routine writes a string of characters or attributes to the screen buffer.
 // Arguments:
-// - pScreenInfo - Pointer to screen buffer information.
+// - pScreenInfo - reference to screen buffer information.
 // - pvBuffer - Buffer to write from.
 // - coordWrite - Screen buffer coordinate to begin writing to.
 // - ulStringType - One of the following:
@@ -456,7 +456,7 @@ void WriteToScreen(_In_ PSCREEN_INFORMATION pScreenInfo, const SMALL_RECT srRegi
 // - pcColumns - receives the number of columns output, which could be more than NumRecords (FE fullwidth chars)
 // Return Value:
 [[nodiscard]]
-NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
+NTSTATUS WriteOutputString(_Inout_ SCREEN_INFORMATION& screenInfo,
                            _In_reads_(*pcRecords) const VOID * pvBuffer,
                            const COORD coordWrite,
                            const ULONG ulStringType,
@@ -475,7 +475,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
     ULONG NumRecordsSavedForUnicode = 0;
     SHORT X = coordWrite.X;
     SHORT Y = coordWrite.Y;
-    const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
+    const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
     if (X >= coordScreenBufferSize.X || X < 0 || Y >= coordScreenBufferSize.Y || Y < 0)
     {
         *pcRecords = 0;
@@ -629,7 +629,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
         BufferA = TransBufferA;
     }
 
-    ROW* pRow = &pScreenInfo->GetTextBuffer().GetRowByOffset(coordWrite.Y);
+    ROW* pRow = &screenInfo.GetTextBuffer().GetRowByOffset(coordWrite.Y);
     if ((ulStringType == CONSOLE_REAL_UNICODE) || (ulStringType == CONSOLE_FALSE_UNICODE) || (ulStringType == CONSOLE_ASCII))
     {
         for (;;)
@@ -664,7 +664,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
 
                 TPoint.X = X;
                 TPoint.Y = Y;
-                CleanupDbcsEdgesForWrite((SHORT)(*pcRecords - NumWritten), TPoint, pScreenInfo);
+                CleanupDbcsEdgesForWrite((SHORT)(*pcRecords - NumWritten), TPoint, screenInfo);
 
                 if (TPoint.Y == coordScreenBufferSize.Y - 1 &&
                     (SHORT)(TPoint.X + *pcRecords - NumWritten) >= coordScreenBufferSize.X &&
@@ -703,7 +703,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
 
                 TPoint.X = X;
                 TPoint.Y = Y;
-                CleanupDbcsEdgesForWrite((SHORT)(coordScreenBufferSize.X - X), TPoint, pScreenInfo);
+                CleanupDbcsEdgesForWrite((SHORT)(coordScreenBufferSize.X - X), TPoint, screenInfo);
                 if (TPoint.Y == coordScreenBufferSize.Y - 1 &&
                     TPoint.X + coordScreenBufferSize.X - X >= coordScreenBufferSize.X &&
                     BufferA[coordScreenBufferSize.X - TPoint.X - 1].IsLeading())
@@ -757,7 +757,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
 
             try
             {
-                pRow = &pScreenInfo->GetTextBuffer().GetNextRowNoWrap(*pRow);
+                pRow = &screenInfo.GetTextBuffer().GetNextRowNoWrap(*pRow);
             }
             catch (...)
             {
@@ -820,7 +820,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
 
             try
             {
-                pRow = &pScreenInfo->GetTextBuffer().GetNextRowNoWrap(*pRow);
+                pRow = &screenInfo.GetTextBuffer().GetNextRowNoWrap(*pRow);
             }
             catch (...)
             {
@@ -841,7 +841,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
                 break;
             }
         }
-        pScreenInfo->ResetTextFlags(coordWrite.X, coordWrite.Y, X, Y);
+        screenInfo.ResetTextFlags(coordWrite.X, coordWrite.Y, X, Y);
 
         delete[] rAttrRunsBuff;
     }
@@ -887,7 +887,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
         WriteRegion.Left = coordWrite.X;
         WriteRegion.Right = X;
     }
-    WriteToScreen(pScreenInfo, WriteRegion);
+    WriteToScreen(screenInfo, WriteRegion);
     if (pcColumns)
     {
         *pcColumns = X + (coordWrite.Y - Y) * coordScreenBufferSize.X - coordWrite.X + 1;
@@ -899,7 +899,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
 // Routine Description:
 // - This routine fills the screen buffer with the specified character or attribute.
 // Arguments:
-// - pScreenInfo - Pointer to screen buffer information.
+// - screenInfo - reference to screen buffer information.
 // - wElement - Element to write.
 // - coordWrite - Screen buffer coordinate to begin writing to.
 // - ulElementType
@@ -910,7 +910,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
 // - pcElements - On input, the number of elements to write.  On output, the number of elements written.
 // Return Value:
 [[nodiscard]]
-NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
+NTSTATUS FillOutput(_Inout_ SCREEN_INFORMATION& screenInfo,
                     _In_ WORD wElement,
                     const COORD coordWrite,
                     const ULONG ulElementType,
@@ -926,7 +926,7 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
     ULONG NumWritten = 0;
     SHORT X = coordWrite.X;
     SHORT Y = coordWrite.Y;
-    const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
+    const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
     if (X >= coordScreenBufferSize.X || X < 0 || Y >= coordScreenBufferSize.Y || Y < 0)
     {
         *pcElements = 0;
@@ -936,11 +936,11 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
     if (ulElementType == CONSOLE_ASCII)
     {
         UINT const Codepage = gci.OutputCP;
-        if (pScreenInfo->FillOutDbcsLeadChar == 0)
+        if (screenInfo.FillOutDbcsLeadChar == 0)
         {
             if (IsDBCSLeadByteConsole((CHAR) wElement, &gci.OutputCPInfo))
             {
-                pScreenInfo->FillOutDbcsLeadChar = (CHAR) wElement;
+                screenInfo.FillOutDbcsLeadChar = (CHAR) wElement;
                 *pcElements = 0;
                 return STATUS_SUCCESS;
             }
@@ -954,15 +954,15 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
         {
             CHAR CharTmp[2];
 
-            CharTmp[0] = pScreenInfo->FillOutDbcsLeadChar;
+            CharTmp[0] = screenInfo.FillOutDbcsLeadChar;
             CharTmp[1] = (BYTE) wElement;
 
-            pScreenInfo->FillOutDbcsLeadChar = 0;
+            screenInfo.FillOutDbcsLeadChar = 0;
             ConvertOutputToUnicode(Codepage, CharTmp, 2, (WCHAR*)&wElement, 1);
         }
     }
 
-    ROW* pRow = &pScreenInfo->GetTextBuffer().GetRowByOffset(coordWrite.Y);
+    ROW* pRow = &screenInfo.GetTextBuffer().GetRowByOffset(coordWrite.Y);
     if (ulElementType == CONSOLE_ASCII ||
         ulElementType == CONSOLE_REAL_UNICODE ||
         ulElementType == CONSOLE_FALSE_UNICODE)
@@ -999,7 +999,7 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
 
                     TPoint.X = X;
                     TPoint.Y = Y;
-                    CleanupDbcsEdgesForWrite((SHORT)(*pcElements - NumWritten), TPoint, pScreenInfo);
+                    CleanupDbcsEdgesForWrite((SHORT)(*pcElements - NumWritten), TPoint, screenInfo);
                 }
                 if (IsCharFullWidth((WCHAR)wElement))
                 {
@@ -1042,7 +1042,7 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
 
                     TPoint.X = X;
                     TPoint.Y = Y;
-                    CleanupDbcsEdgesForWrite((SHORT)(coordScreenBufferSize.X - X), TPoint, pScreenInfo);
+                    CleanupDbcsEdgesForWrite((SHORT)(coordScreenBufferSize.X - X), TPoint, screenInfo);
                 }
                 if (IsCharFullWidth((WCHAR)wElement))
                 {
@@ -1092,7 +1092,7 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
 
             try
             {
-                pRow = &pScreenInfo->GetTextBuffer().GetNextRowNoWrap(*pRow);
+                pRow = &screenInfo.GetTextBuffer().GetNextRowNoWrap(*pRow);
             }
             catch (...)
             {
@@ -1138,9 +1138,9 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
             // This could create a scenario where someone emitted RGB with VT,
             // THEN used the API to FillConsoleOutput with the default attrs, and DIDN'T want the RGB color
             // they had set.
-            if (pScreenInfo->InVTMode() && pScreenInfo->GetAttributes().GetLegacyAttributes() == wElement)
+            if (screenInfo.InVTMode() && screenInfo.GetAttributes().GetLegacyAttributes() == wElement)
             {
-                AttrRun.SetAttributes(pScreenInfo->GetAttributes());
+                AttrRun.SetAttributes(screenInfo.GetAttributes());
             }
             else
             {
@@ -1172,7 +1172,7 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
 
             try
             {
-                pRow = &pScreenInfo->GetTextBuffer().GetNextRowNoWrap(*pRow);
+                pRow = &screenInfo.GetTextBuffer().GetNextRowNoWrap(*pRow);
             }
             catch (...)
             {
@@ -1180,7 +1180,7 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
             }
         }
 
-        pScreenInfo->ResetTextFlags(coordWrite.X, coordWrite.Y, X, Y);
+        screenInfo.ResetTextFlags(coordWrite.X, coordWrite.Y, X, Y);
     }
     else
     {
@@ -1195,10 +1195,10 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
     //
     // then update the screen.
     SMALL_RECT WriteRegion;
-    if (pScreenInfo->ConvScreenInfo)
+    if (screenInfo.ConvScreenInfo)
     {
-        WriteRegion.Top = coordWrite.Y + pScreenInfo->GetBufferViewport().Left + pScreenInfo->ConvScreenInfo->CaInfo.coordConView.Y;
-        WriteRegion.Bottom = Y + pScreenInfo->GetBufferViewport().Left + pScreenInfo->ConvScreenInfo->CaInfo.coordConView.Y;
+        WriteRegion.Top = coordWrite.Y + screenInfo.GetBufferViewport().Left + screenInfo.ConvScreenInfo->CaInfo.coordConView.Y;
+        WriteRegion.Bottom = Y + screenInfo.GetBufferViewport().Left + screenInfo.ConvScreenInfo->CaInfo.coordConView.Y;
         if (Y != coordWrite.Y)
         {
             WriteRegion.Left = 0;
@@ -1206,10 +1206,10 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
         }
         else
         {
-            WriteRegion.Left = coordWrite.X + pScreenInfo->GetBufferViewport().Top + pScreenInfo->ConvScreenInfo->CaInfo.coordConView.X;
-            WriteRegion.Right = X + pScreenInfo->GetBufferViewport().Top + pScreenInfo->ConvScreenInfo->CaInfo.coordConView.X;
+            WriteRegion.Left = coordWrite.X + screenInfo.GetBufferViewport().Top + screenInfo.ConvScreenInfo->CaInfo.coordConView.X;
+            WriteRegion.Right = X + screenInfo.GetBufferViewport().Top + screenInfo.ConvScreenInfo->CaInfo.coordConView.X;
         }
-        WriteConvRegionToScreen(gci.CurrentScreenBuffer, WriteRegion);
+        WriteConvRegionToScreen(*gci.CurrentScreenBuffer, WriteRegion);
         *pcElements = NumWritten;
         return STATUS_SUCCESS;
     }
@@ -1227,7 +1227,7 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
         WriteRegion.Right = X;
     }
 
-    WriteToScreen(pScreenInfo, WriteRegion);
+    WriteToScreen(screenInfo, WriteRegion);
     *pcElements = NumWritten;
 
     return STATUS_SUCCESS;
@@ -1237,18 +1237,18 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
 // - This routine fills a rectangular region in the screen buffer.  no clipping is done.
 // Arguments:
 // - pciFill - element to copy to each element in target rect
-// - pScreenInfo - pointer to screen info
+// - screenInfo - reference to screen info
 // - psrTarget - rectangle in screen buffer to fill
 // Return Value:
 void FillRectangle(const CHAR_INFO * const pciFill,
-                   _In_ PSCREEN_INFORMATION pScreenInfo,
+                   _Inout_ SCREEN_INFORMATION& screenInfo,
                    const SMALL_RECT * const psrTarget)
 {
     DBGOUTPUT(("FillRectangle\n"));
 
     SHORT XSize = (SHORT)(psrTarget->Right - psrTarget->Left + 1);
 
-    ROW* pRow = &pScreenInfo->GetTextBuffer().GetRowByOffset(psrTarget->Top);
+    ROW* pRow = &screenInfo.GetTextBuffer().GetRowByOffset(psrTarget->Top);
     for (SHORT i = psrTarget->Top; i <= psrTarget->Bottom; i++)
     {
         if (pRow == nullptr)
@@ -1262,7 +1262,7 @@ void FillRectangle(const CHAR_INFO * const pciFill,
 
         TPoint.X = psrTarget->Left;
         TPoint.Y = i;
-        CleanupDbcsEdgesForWrite(XSize, TPoint, pScreenInfo);
+        CleanupDbcsEdgesForWrite(XSize, TPoint, screenInfo);
         BOOL Width = IsCharFullWidth(pciFill->Char.UnicodeChar);
 
         Ucs2CharRow::iterator it;
@@ -1320,7 +1320,7 @@ void FillRectangle(const CHAR_INFO * const pciFill,
             }
         }
 
-        const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
+        const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
 
         TextAttributeRun AttrRun;
         AttrRun.SetLength(XSize);
@@ -1337,7 +1337,7 @@ void FillRectangle(const CHAR_INFO * const pciFill,
 
         try
         {
-            pRow = &pScreenInfo->GetTextBuffer().GetNextRowNoWrap(*pRow);
+            pRow = &screenInfo.GetTextBuffer().GetNextRowNoWrap(*pRow);
         }
         catch (...)
         {
@@ -1345,5 +1345,5 @@ void FillRectangle(const CHAR_INFO * const pciFill,
         }
     }
 
-    pScreenInfo->ResetTextFlags(psrTarget->Left, psrTarget->Top, psrTarget->Right, psrTarget->Bottom);
+    screenInfo.ResetTextFlags(psrTarget->Left, psrTarget->Top, psrTarget->Right, psrTarget->Bottom);
 }

@@ -56,7 +56,7 @@ void Scrolling::s_ClearScroll()
     }
 }
 
-void Scrolling::s_ScrollIfNecessary(const SCREEN_INFORMATION * const pScreenInfo)
+void Scrolling::s_ScrollIfNecessary(const SCREEN_INFORMATION& ScreenInfo)
 {
     IConsoleWindow *pWindow = ServiceLocator::LocateConsoleWindow();
     ASSERT(pWindow);
@@ -86,24 +86,28 @@ void Scrolling::s_ScrollIfNecessary(const SCREEN_INFORMATION * const pScreenInfo
             MousePosition.X = (SHORT)CursorPos.x;
             MousePosition.Y = (SHORT)CursorPos.y;
 
-            COORD coordFontSize = pScreenInfo->GetScreenFontSize();
+            COORD coordFontSize = ScreenInfo.GetScreenFontSize();
 
             MousePosition.X /= coordFontSize.X;
             MousePosition.Y /= coordFontSize.Y;
 
-            MousePosition.X += pScreenInfo->GetBufferViewport().Left;
-            MousePosition.Y += pScreenInfo->GetBufferViewport().Top;
+            MousePosition.X += ScreenInfo.GetBufferViewport().Left;
+            MousePosition.Y += ScreenInfo.GetBufferViewport().Top;
 
             pSelection->ExtendSelection(MousePosition);
         }
     }
 }
 
-void Scrolling::s_HandleMouseWheel(_In_ bool isMouseWheel, _In_ bool isMouseHWheel, _In_ short wheelDelta, _In_ bool hasShift, _In_ PSCREEN_INFORMATION pScreenInfo)
+void Scrolling::s_HandleMouseWheel(_In_ bool isMouseWheel,
+                                   _In_ bool isMouseHWheel,
+                                   _In_ short wheelDelta,
+                                   _In_ bool hasShift,
+                                   _Inout_ SCREEN_INFORMATION& ScreenInfo)
 {
     COORD NewOrigin;
-    NewOrigin.X = pScreenInfo->GetBufferViewport().Left;
-    NewOrigin.Y = pScreenInfo->GetBufferViewport().Top;
+    NewOrigin.X = ScreenInfo.GetBufferViewport().Left;
+    NewOrigin.Y = ScreenInfo.GetBufferViewport().Top;
 
     // s_ucWheelScrollLines == 0 means that it is turned off.
     if (isMouseWheel && s_ucWheelScrollLines > 0)
@@ -112,16 +116,16 @@ void Scrolling::s_HandleMouseWheel(_In_ bool isMouseWheel, _In_ bool isMouseHWhe
         ULONG const ulActualDelta = std::max(WHEEL_DELTA / s_ucWheelScrollLines, 1ul);
 
         // If we change direction we need to throw away any remainder we may have in the other direction.
-        if ((pScreenInfo->WheelDelta > 0) == (wheelDelta > 0))
+        if ((ScreenInfo.WheelDelta > 0) == (wheelDelta > 0))
         {
-            pScreenInfo->WheelDelta += wheelDelta;
+            ScreenInfo.WheelDelta += wheelDelta;
         }
         else
         {
-            pScreenInfo->WheelDelta = wheelDelta;
+            ScreenInfo.WheelDelta = wheelDelta;
         }
 
-        if ((ULONG)abs(pScreenInfo->WheelDelta) >= ulActualDelta)
+        if ((ULONG)abs(ScreenInfo.WheelDelta) >= ulActualDelta)
         {
             /*
             * By default, SHIFT + WM_MOUSEWHEEL will scroll 1/2 the
@@ -131,68 +135,68 @@ void Scrolling::s_HandleMouseWheel(_In_ bool isMouseWheel, _In_ bool isMouseHWhe
             SHORT delta = 1;
             if (hasShift)
             {
-                delta = gsl::narrow<SHORT>(std::max((pScreenInfo->GetScreenWindowSizeY() * pScreenInfo->ScrollScale) / 2, 1u));
+                delta = gsl::narrow<SHORT>(std::max((ScreenInfo.GetScreenWindowSizeY() * ScreenInfo.ScrollScale) / 2, 1u));
 
                 // Account for scroll direction changes by adjusting delta if there was a direction change.
-                delta *= (pScreenInfo->WheelDelta < 0 ? -1 : 1);
-                pScreenInfo->WheelDelta %= delta;
+                delta *= (ScreenInfo.WheelDelta < 0 ? -1 : 1);
+                ScreenInfo.WheelDelta %= delta;
             }
             else
             {
-                delta *= (pScreenInfo->WheelDelta / (short)ulActualDelta);
-                pScreenInfo->WheelDelta %= ulActualDelta;
+                delta *= (ScreenInfo.WheelDelta / (short)ulActualDelta);
+                ScreenInfo.WheelDelta %= ulActualDelta;
             }
 
             NewOrigin.Y -= delta;
-            const COORD coordBufferSize = pScreenInfo->GetScreenBufferSize();
+            const COORD coordBufferSize = ScreenInfo.GetScreenBufferSize();
             if (NewOrigin.Y < 0)
             {
                 NewOrigin.Y = 0;
             }
-            else if (NewOrigin.Y + pScreenInfo->GetScreenWindowSizeY() > coordBufferSize.Y)
+            else if (NewOrigin.Y + ScreenInfo.GetScreenWindowSizeY() > coordBufferSize.Y)
             {
-                NewOrigin.Y = coordBufferSize.Y - pScreenInfo->GetScreenWindowSizeY();
+                NewOrigin.Y = coordBufferSize.Y - ScreenInfo.GetScreenWindowSizeY();
             }
-            LOG_IF_FAILED(pScreenInfo->SetViewportOrigin(TRUE, NewOrigin));
+            LOG_IF_FAILED(ScreenInfo.SetViewportOrigin(TRUE, NewOrigin));
         }
     }
     else if (isMouseHWheel && s_ucWheelScrollChars > 0)
     {
         ULONG const ulActualDelta = std::max(WHEEL_DELTA / s_ucWheelScrollChars, 1ul);
 
-        if ((pScreenInfo->HWheelDelta > 0) == (wheelDelta > 0))
+        if ((ScreenInfo.HWheelDelta > 0) == (wheelDelta > 0))
         {
-            pScreenInfo->HWheelDelta += wheelDelta;
+            ScreenInfo.HWheelDelta += wheelDelta;
         }
         else
         {
-            pScreenInfo->HWheelDelta = wheelDelta;
+            ScreenInfo.HWheelDelta = wheelDelta;
         }
 
-        if ((ULONG)abs(pScreenInfo->HWheelDelta) >= ulActualDelta)
+        if ((ULONG)abs(ScreenInfo.HWheelDelta) >= ulActualDelta)
         {
             SHORT delta = 1;
 
             if (hasShift)
             {
-                delta = gsl::narrow<SHORT>(std::max(pScreenInfo->GetScreenWindowSizeX() - 1, 1));
+                delta = gsl::narrow<SHORT>(std::max(ScreenInfo.GetScreenWindowSizeX() - 1, 1));
             }
 
-            delta *= (pScreenInfo->HWheelDelta / (short)ulActualDelta);
-            pScreenInfo->HWheelDelta %= ulActualDelta;
+            delta *= (ScreenInfo.HWheelDelta / (short)ulActualDelta);
+            ScreenInfo.HWheelDelta %= ulActualDelta;
 
             NewOrigin.X += delta;
-            const COORD coordBufferSize = pScreenInfo->GetScreenBufferSize();
+            const COORD coordBufferSize = ScreenInfo.GetScreenBufferSize();
             if (NewOrigin.X < 0)
             {
                 NewOrigin.X = 0;
             }
-            else if (NewOrigin.X + pScreenInfo->GetScreenWindowSizeX() > coordBufferSize.X)
+            else if (NewOrigin.X + ScreenInfo.GetScreenWindowSizeX() > coordBufferSize.X)
             {
-                NewOrigin.X = coordBufferSize.X - pScreenInfo->GetScreenWindowSizeX();
+                NewOrigin.X = coordBufferSize.X - ScreenInfo.GetScreenWindowSizeX();
             }
 
-            LOG_IF_FAILED(pScreenInfo->SetViewportOrigin(TRUE, NewOrigin));
+            LOG_IF_FAILED(ScreenInfo.SetViewportOrigin(TRUE, NewOrigin));
         }
     }
 }

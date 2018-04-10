@@ -121,7 +121,8 @@ public:
 
     static void HandleTerminalKeyEventCallback(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events);
 
-    SCREEN_INFORMATION* const GetActiveOutputBuffer() const;
+    SCREEN_INFORMATION& GetActiveOutputBuffer() override;
+    const SCREEN_INFORMATION& GetActiveOutputBuffer() const override;
     InputBuffer* const GetActiveInputBuffer() const;
 
     bool IsInVtIoMode() const;
@@ -144,4 +145,4 @@ private:
 #include "..\server\ObjectHandle.h"
 
 
-void SetActiveScreenBuffer(_Inout_ PSCREEN_INFORMATION pScreenInfo);
+void SetActiveScreenBuffer(_Inout_ SCREEN_INFORMATION& screenInfo);

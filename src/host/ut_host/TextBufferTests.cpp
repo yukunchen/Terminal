@@ -614,9 +614,9 @@ void TextBufferTests::TestIncrementCircularBuffer()
 void TextBufferTests::TestMixedRgbAndLegacyForeground()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    const TextBuffer& tbi = psi->GetTextBuffer();
-    StateMachine* const stateMachine = psi->GetStateMachine();
+    SCREEN_INFORMATION& si = gci.CurrentScreenBuffer->GetActiveBuffer();
+    const TextBuffer& tbi = si.GetTextBuffer();
+    StateMachine* const stateMachine = si.GetStateMachine();
     const Cursor& cursor = tbi.GetCursor();
     VERIFY_IS_NOT_NULL(stateMachine);
 
@@ -663,10 +663,10 @@ void TextBufferTests::TestMixedRgbAndLegacyForeground()
     VERIFY_ARE_EQUAL(attrB.IsLegacy(), false);
 
     VERIFY_ARE_EQUAL(attrA.CalculateRgbForeground(), RGB(64,128,255));
-    VERIFY_ARE_EQUAL(attrA.CalculateRgbBackground(), psi->GetAttributes().CalculateRgbBackground());
+    VERIFY_ARE_EQUAL(attrA.CalculateRgbBackground(), si.GetAttributes().CalculateRgbBackground());
 
     VERIFY_ARE_EQUAL(attrB.CalculateRgbForeground(), RGB(64,128,255));
-    VERIFY_ARE_EQUAL(attrB.CalculateRgbBackground(), psi->GetAttributes().CalculateRgbBackground());
+    VERIFY_ARE_EQUAL(attrB.CalculateRgbBackground(), si.GetAttributes().CalculateRgbBackground());
 
     wchar_t* reset = L"\x1b[0m";
     stateMachine->ProcessString(reset, std::wcslen(reset));
@@ -676,9 +676,9 @@ void TextBufferTests::TestMixedRgbAndLegacyForeground()
 void TextBufferTests::TestMixedRgbAndLegacyBackground()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    const TextBuffer& tbi = psi->GetTextBuffer();
-    StateMachine* const stateMachine = psi->GetStateMachine();
+    SCREEN_INFORMATION& si = gci.CurrentScreenBuffer->GetActiveBuffer();
+    const TextBuffer& tbi = si.GetTextBuffer();
+    StateMachine* const stateMachine = si.GetStateMachine();
     const Cursor& cursor = tbi.GetCursor();
     VERIFY_IS_NOT_NULL(stateMachine);
 
@@ -724,10 +724,10 @@ void TextBufferTests::TestMixedRgbAndLegacyBackground()
     VERIFY_ARE_EQUAL(attrB.IsLegacy(), false);
 
     VERIFY_ARE_EQUAL(attrA.CalculateRgbBackground(), RGB(64,128,255));
-    VERIFY_ARE_EQUAL(attrA.CalculateRgbForeground(), psi->GetAttributes().CalculateRgbForeground());
+    VERIFY_ARE_EQUAL(attrA.CalculateRgbForeground(), si.GetAttributes().CalculateRgbForeground());
 
     VERIFY_ARE_EQUAL(attrB.CalculateRgbBackground(), RGB(64,128,255));
-    VERIFY_ARE_EQUAL(attrB.CalculateRgbForeground(), psi->GetAttributes().CalculateRgbForeground());
+    VERIFY_ARE_EQUAL(attrB.CalculateRgbForeground(), si.GetAttributes().CalculateRgbForeground());
 
     wchar_t* reset = L"\x1b[0m";
     stateMachine->ProcessString(reset, std::wcslen(reset));
@@ -736,9 +736,9 @@ void TextBufferTests::TestMixedRgbAndLegacyBackground()
 void TextBufferTests::TestMixedRgbAndLegacyUnderline()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    const TextBuffer& tbi = psi->GetTextBuffer();
-    StateMachine* const stateMachine = psi->GetStateMachine();
+    SCREEN_INFORMATION& si = gci.CurrentScreenBuffer->GetActiveBuffer();
+    const TextBuffer& tbi = si.GetTextBuffer();
+    StateMachine* const stateMachine = si.GetStateMachine();
     const Cursor& cursor = tbi.GetCursor();
     VERIFY_IS_NOT_NULL(stateMachine);
 
@@ -782,10 +782,10 @@ void TextBufferTests::TestMixedRgbAndLegacyUnderline()
     VERIFY_ARE_EQUAL(attrB.IsLegacy(), false);
 
     VERIFY_ARE_EQUAL(attrA.CalculateRgbBackground(), RGB(64,128,255));
-    VERIFY_ARE_EQUAL(attrA.CalculateRgbForeground(), psi->GetAttributes().CalculateRgbForeground());
+    VERIFY_ARE_EQUAL(attrA.CalculateRgbForeground(), si.GetAttributes().CalculateRgbForeground());
 
     VERIFY_ARE_EQUAL(attrB.CalculateRgbBackground(), RGB(64,128,255));
-    VERIFY_ARE_EQUAL(attrB.CalculateRgbForeground(), psi->GetAttributes().CalculateRgbForeground());
+    VERIFY_ARE_EQUAL(attrB.CalculateRgbForeground(), si.GetAttributes().CalculateRgbForeground());
 
     VERIFY_ARE_EQUAL(attrA.GetLegacyAttributes()&COMMON_LVB_UNDERSCORE, 0);
     VERIFY_ARE_EQUAL(attrB.GetLegacyAttributes()&COMMON_LVB_UNDERSCORE, COMMON_LVB_UNDERSCORE);
@@ -798,9 +798,9 @@ void TextBufferTests::TestMixedRgbAndLegacyUnderline()
 void TextBufferTests::TestMixedRgbAndLegacyBrightness()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    const TextBuffer& tbi = psi->GetTextBuffer();
-    StateMachine* const stateMachine = psi->GetStateMachine();
+    SCREEN_INFORMATION& si = gci.CurrentScreenBuffer->GetActiveBuffer();
+    const TextBuffer& tbi = si.GetTextBuffer();
+    StateMachine* const stateMachine = si.GetStateMachine();
     const Cursor& cursor = tbi.GetCursor();
     VERIFY_IS_NOT_NULL(stateMachine);
     // Case 4 -
@@ -856,11 +856,11 @@ void TextBufferTests::TestMixedRgbAndLegacyBrightness()
 void TextBufferTests::TestRgbEraseLine()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    TextBuffer& tbi = psi->GetTextBuffer();
-    StateMachine* const stateMachine = psi->GetStateMachine();
+    SCREEN_INFORMATION& si = gci.CurrentScreenBuffer->GetActiveBuffer();
+    TextBuffer& tbi = si.GetTextBuffer();
+    StateMachine* const stateMachine = si.GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
-    SetFlag(psi->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     VERIFY_IS_NOT_NULL(stateMachine);
 
     cursor.SetXPosition(0);
@@ -916,11 +916,11 @@ void TextBufferTests::TestRgbEraseLine()
 void TextBufferTests::TestUnBold()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    TextBuffer& tbi = psi->GetTextBuffer();
-    StateMachine* const stateMachine = psi->GetStateMachine();
+    SCREEN_INFORMATION& si = gci.CurrentScreenBuffer->GetActiveBuffer();
+    TextBuffer& tbi = si.GetTextBuffer();
+    StateMachine* const stateMachine = si.GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
-    SetFlag(psi->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     VERIFY_IS_NOT_NULL(stateMachine);
 
     cursor.SetXPosition(0);
@@ -983,11 +983,11 @@ void TextBufferTests::TestUnBold()
 void TextBufferTests::TestUnBoldRgb()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    TextBuffer& tbi = psi->GetTextBuffer();
-    StateMachine* const stateMachine = psi->GetStateMachine();
+    SCREEN_INFORMATION& si = gci.CurrentScreenBuffer->GetActiveBuffer();
+    TextBuffer& tbi = si.GetTextBuffer();
+    StateMachine* const stateMachine = si.GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
-    SetFlag(psi->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     VERIFY_IS_NOT_NULL(stateMachine);
 
     cursor.SetXPosition(0);
@@ -1054,11 +1054,11 @@ void TextBufferTests::TestUnBoldRgb()
 void TextBufferTests::TestComplexUnBold()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    TextBuffer& tbi = psi->GetTextBuffer();
-    StateMachine* const stateMachine = psi->GetStateMachine();
+    SCREEN_INFORMATION& si = gci.CurrentScreenBuffer->GetActiveBuffer();
+    TextBuffer& tbi = si.GetTextBuffer();
+    StateMachine* const stateMachine = si.GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
-    SetFlag(psi->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     VERIFY_IS_NOT_NULL(stateMachine);
 
     cursor.SetXPosition(0);
@@ -1173,11 +1173,11 @@ void TextBufferTests::TestComplexUnBold()
 void TextBufferTests::CopyAttrs()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    TextBuffer& tbi = psi->GetTextBuffer();
-    StateMachine* const stateMachine = psi->GetStateMachine();
+    SCREEN_INFORMATION& si = gci.CurrentScreenBuffer->GetActiveBuffer();
+    TextBuffer& tbi = si.GetTextBuffer();
+    StateMachine* const stateMachine = si.GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
-    SetFlag(psi->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     VERIFY_IS_NOT_NULL(stateMachine);
 
     cursor.SetXPosition(0);
@@ -1236,20 +1236,20 @@ void TextBufferTests::CopyAttrs()
 void TextBufferTests::EmptySgrTest()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    TextBuffer& tbi = psi->GetTextBuffer();
-    StateMachine* const stateMachine = psi->GetStateMachine();
+    SCREEN_INFORMATION& si = gci.CurrentScreenBuffer->GetActiveBuffer();
+    TextBuffer& tbi = si.GetTextBuffer();
+    StateMachine* const stateMachine = si.GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
 
-    SetFlag(psi->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     VERIFY_IS_NOT_NULL(stateMachine);
     cursor.SetXPosition(0);
     cursor.SetYPosition(0);
 
     std::wstring reset = L"\x1b[0m";
     stateMachine->ProcessString(&reset[0], reset.length());
-    const COLORREF defaultFg = psi->GetAttributes().CalculateRgbForeground();
-    const COLORREF defaultBg = psi->GetAttributes().CalculateRgbBackground();
+    const COLORREF defaultFg = si.GetAttributes().CalculateRgbForeground();
+    const COLORREF defaultBg = si.GetAttributes().CalculateRgbBackground();
 
     // Case 1 -
     //      Write '\x1b[0mX\x1b[31mX\x1b[31;m'
@@ -1309,12 +1309,12 @@ void TextBufferTests::EmptySgrTest()
 void TextBufferTests::TestReverseReset()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    TextBuffer& tbi = psi->GetTextBuffer();
-    StateMachine* const stateMachine = psi->GetStateMachine();
+    SCREEN_INFORMATION& si = gci.CurrentScreenBuffer->GetActiveBuffer();
+    TextBuffer& tbi = si.GetTextBuffer();
+    StateMachine* const stateMachine = si.GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
 
-    SetFlag(psi->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     VERIFY_IS_NOT_NULL(stateMachine);
 
     cursor.SetXPosition(0);
@@ -1322,8 +1322,8 @@ void TextBufferTests::TestReverseReset()
 
     std::wstring reset = L"\x1b[0m";
     stateMachine->ProcessString(&reset[0], reset.length());
-    const COLORREF defaultFg = psi->GetAttributes().CalculateRgbForeground();
-    const COLORREF defaultBg = psi->GetAttributes().CalculateRgbBackground();
+    const COLORREF defaultFg = si.GetAttributes().CalculateRgbForeground();
+    const COLORREF defaultBg = si.GetAttributes().CalculateRgbBackground();
 
     // Case 1 -
     //      Write '\E[42m\E[38;2;128;5;255mX\E[7mX\E[27mX'
@@ -1397,12 +1397,12 @@ void TextBufferTests::CopyLastAttr()
     DisableVerifyExceptions disable;
 
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    TextBuffer& tbi = psi->GetTextBuffer();
-    StateMachine* const stateMachine = psi->GetStateMachine();
+    SCREEN_INFORMATION& si = gci.CurrentScreenBuffer->GetActiveBuffer();
+    TextBuffer& tbi = si.GetTextBuffer();
+    StateMachine* const stateMachine = si.GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
 
-    SetFlag(psi->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     VERIFY_IS_NOT_NULL(stateMachine);
 
     cursor.SetXPosition(0);
@@ -1410,8 +1410,8 @@ void TextBufferTests::CopyLastAttr()
 
     std::wstring reset = L"\x1b[0m";
     stateMachine->ProcessString(&reset[0], reset.length());
-    const COLORREF defaultFg = psi->GetAttributes().CalculateRgbForeground();
-    const COLORREF defaultBg = psi->GetAttributes().CalculateRgbBackground();
+    const COLORREF defaultFg = si.GetAttributes().CalculateRgbForeground();
+    const COLORREF defaultBg = si.GetAttributes().CalculateRgbBackground();
 
     const COLORREF solFg = RGB(101, 123, 131);
     const COLORREF solBg = RGB(0, 43, 54);

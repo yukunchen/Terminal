@@ -108,9 +108,14 @@ void CONSOLE_INFORMATION::HandleTerminalKeyEventCallback(_Inout_ std::deque<std:
 // - <none>
 // Return Value:
 // - the active screen buffer of the console.
-SCREEN_INFORMATION* const CONSOLE_INFORMATION::GetActiveOutputBuffer() const
+SCREEN_INFORMATION& CONSOLE_INFORMATION::GetActiveOutputBuffer()
 {
-    return CurrentScreenBuffer;
+    return *CurrentScreenBuffer;
+}
+
+const SCREEN_INFORMATION& CONSOLE_INFORMATION::GetActiveOutputBuffer() const
+{
+    return *CurrentScreenBuffer;
 }
 
 // Method Description:

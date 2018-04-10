@@ -332,10 +332,10 @@ void Cursor::CopyProperties(const Cursor& OtherCursor)
 // Routine Description:
 // - This routine is called when the timer in the console with the focus goes off.  It blinks the cursor.
 // Arguments:
-// - ScreenInfo - pointer to screen info structure.
+// - ScreenInfo - reference to screen info structure.
 // Return Value:
 // - <none>
-void Cursor::TimerRoutine(_In_ PSCREEN_INFORMATION const ScreenInfo)
+void Cursor::TimerRoutine(_Inout_ SCREEN_INFORMATION& ScreenInfo)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
@@ -355,10 +355,10 @@ void Cursor::TimerRoutine(_In_ PSCREEN_INFORMATION const ScreenInfo)
         SetHasMoved(false);
 
         RECT rc;
-        rc.left = (GetPosition().X - ScreenInfo->GetBufferViewport().Left) * ScreenInfo->GetScreenFontSize().X;
-        rc.top = (GetPosition().Y - ScreenInfo->GetBufferViewport().Top) * ScreenInfo->GetScreenFontSize().Y;
-        rc.right = rc.left + ScreenInfo->GetScreenFontSize().X;
-        rc.bottom = rc.top + ScreenInfo->GetScreenFontSize().Y;
+        rc.left = (GetPosition().X - ScreenInfo.GetBufferViewport().Left) * ScreenInfo.GetScreenFontSize().X;
+        rc.top = (GetPosition().Y - ScreenInfo.GetBufferViewport().Top) * ScreenInfo.GetScreenFontSize().Y;
+        rc.right = rc.left + ScreenInfo.GetScreenFontSize().X;
+        rc.bottom = rc.top + ScreenInfo.GetScreenFontSize().Y;
 
         _pAccessibilityNotifier->NotifyConsoleCaretEvent(rc);
 
@@ -510,7 +510,7 @@ void CALLBACK CursorTimerRoutineWrapper(_In_ PVOID /* lpParam */, _In_ BOOL /* T
     if (gci.TryLockConsole() != false)
     {
         Cursor& cursor = gci.CurrentScreenBuffer->GetTextBuffer().GetCursor();
-        cursor.TimerRoutine(gci.CurrentScreenBuffer);
+        cursor.TimerRoutine(*gci.CurrentScreenBuffer);
 
         UnlockConsole();
     }

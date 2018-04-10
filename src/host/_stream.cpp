@@ -35,14 +35,17 @@
 //   coordinate would be -1.  This routine would set the X coordinate to
 //   the right edge of the screen and decrement the Y coordinate by one.
 // Arguments:
-// - pScreenInfo - Pointer to screen buffer information structure.
+// - screenInfo - reference to screen buffer information structure.
 // - coordCursor - New location of cursor.
 // - fKeepCursorVisible - TRUE if changing window origin desirable when hit right edge
 // Return Value:
 [[nodiscard]]
-NTSTATUS AdjustCursorPosition(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ COORD coordCursor, const BOOL fKeepCursorVisible, _Inout_opt_ PSHORT psScrollY)
+NTSTATUS AdjustCursorPosition(_Inout_ SCREEN_INFORMATION& screenInfo,
+                              _In_ COORD coordCursor,
+                              const BOOL fKeepCursorVisible,
+                              _Inout_opt_ PSHORT psScrollY)
 {
-    const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
+    const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
     if (coordCursor.X < 0)
     {
         if (coordCursor.Y > 0)
@@ -58,21 +61,21 @@ NTSTATUS AdjustCursorPosition(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ COORD c
     else if (coordCursor.X >= coordScreenBufferSize.X)
     {
         // at end of line. if wrap mode, wrap cursor.  otherwise leave it where it is.
-        if (pScreenInfo->OutputMode & ENABLE_WRAP_AT_EOL_OUTPUT)
+        if (screenInfo.OutputMode & ENABLE_WRAP_AT_EOL_OUTPUT)
         {
             coordCursor.Y += coordCursor.X / coordScreenBufferSize.X;
             coordCursor.X = coordCursor.X % coordScreenBufferSize.X;
         }
         else
         {
-            coordCursor.X = pScreenInfo->GetTextBuffer().GetCursor().GetPosition().X;
+            coordCursor.X = screenInfo.GetTextBuffer().GetCursor().GetPosition().X;
         }
     }
-    SMALL_RECT srMargins = pScreenInfo->GetScrollMargins();
+    SMALL_RECT srMargins = screenInfo.GetScrollMargins();
     const bool fMarginsSet = srMargins.Bottom > srMargins.Top;
-    const int iCurrentCursorY = pScreenInfo->GetTextBuffer().GetCursor().GetPosition().Y;
+    const int iCurrentCursorY = screenInfo.GetTextBuffer().GetCursor().GetPosition().Y;
 
-    SMALL_RECT srBufferViewport = pScreenInfo->GetBufferViewport();
+    SMALL_RECT srBufferViewport = screenInfo.GetBufferViewport();
     // The margins are in viewport relative coordinates. Adjust for that.
     srMargins.Top += srBufferViewport.Top;
     srMargins.Bottom += srBufferViewport.Top;
@@ -83,7 +86,7 @@ NTSTATUS AdjustCursorPosition(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ COORD c
     const bool fScrollDown = fMarginsSet && fCursorInMargins && (coordCursor.Y > srMargins.Bottom);
     bool fScrollUp = fMarginsSet && fCursorInMargins && (coordCursor.Y < srMargins.Top);
 
-    const bool fScrollUpWithoutMargins = (!fMarginsSet) && (IsFlagSet(pScreenInfo->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) && coordCursor.Y < 0);
+    const bool fScrollUpWithoutMargins = (!fMarginsSet) && (IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) && coordCursor.Y < 0);
     // if we're in VT mode, AND MARGINS AREN'T SET and a Reverse Line Feed took the cursor up past the top of the viewport,
     //   VT style scroll the contents of the screen.
     // This can happen in applications like `less`, that don't set margins, because they're going to
@@ -92,7 +95,7 @@ NTSTATUS AdjustCursorPosition(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ COORD c
     {
         fScrollUp = true;
         srMargins.Top = 0;
-        srMargins.Bottom = pScreenInfo->GetBufferViewport().Bottom;
+        srMargins.Bottom = screenInfo.GetBufferViewport().Bottom;
     }
 
     if (fScrollUp || fScrollDown)
@@ -102,18 +105,18 @@ NTSTATUS AdjustCursorPosition(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ COORD c
         SMALL_RECT scrollRect = { 0 };
         scrollRect.Top = srMargins.Top;
         scrollRect.Bottom = srMargins.Bottom;
-        scrollRect.Left = pScreenInfo->GetBufferViewport().Left;  // NOTE: Left/Right Scroll margins don't do anything currently.
-        scrollRect.Right = pScreenInfo->GetBufferViewport().Right - pScreenInfo->GetBufferViewport().Left; // hmm? Not sure. Might just be .Right
+        scrollRect.Left = screenInfo.GetBufferViewport().Left;  // NOTE: Left/Right Scroll margins don't do anything currently.
+        scrollRect.Right = screenInfo.GetBufferViewport().Right - screenInfo.GetBufferViewport().Left; // hmm? Not sure. Might just be .Right
 
         COORD dest;
         dest.X = scrollRect.Left;
         dest.Y = scrollRect.Top - diff;
 
         CHAR_INFO ciFill;
-        ciFill.Attributes = pScreenInfo->GetAttributes().GetLegacyAttributes();
+        ciFill.Attributes = screenInfo.GetAttributes().GetLegacyAttributes();
         ciFill.Char.UnicodeChar = L' ';
 
-        LOG_IF_FAILED(ScrollRegion(pScreenInfo, &scrollRect, &scrollRect, dest, ciFill));
+        LOG_IF_FAILED(ScrollRegion(screenInfo, &scrollRect, &scrollRect, dest, ciFill));
 
         coordCursor.Y -= diff;
     }
@@ -124,7 +127,7 @@ NTSTATUS AdjustCursorPosition(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ COORD c
     {
         // At the end of the buffer. Scroll contents of screen buffer so new position is visible.
         ASSERT(coordCursor.Y == coordScreenBufferSize.Y);
-        if (!StreamScrollRegion(pScreenInfo))
+        if (!StreamScrollRegion(screenInfo))
         {
             Status = STATUS_NO_MEMORY;
         }
@@ -140,21 +143,21 @@ NTSTATUS AdjustCursorPosition(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ COORD c
     if (NT_SUCCESS(Status))
     {
         // if at right or bottom edge of window, scroll right or down one char.
-        if (coordCursor.Y > pScreenInfo->GetBufferViewport().Bottom)
+        if (coordCursor.Y > screenInfo.GetBufferViewport().Bottom)
         {
             COORD WindowOrigin;
             WindowOrigin.X = 0;
-            WindowOrigin.Y = coordCursor.Y - pScreenInfo->GetBufferViewport().Bottom;
-            Status = pScreenInfo->SetViewportOrigin(FALSE, WindowOrigin);
+            WindowOrigin.Y = coordCursor.Y - screenInfo.GetBufferViewport().Bottom;
+            Status = screenInfo.SetViewportOrigin(FALSE, WindowOrigin);
         }
     }
     if (NT_SUCCESS(Status))
     {
         if (fKeepCursorVisible)
         {
-            pScreenInfo->MakeCursorVisible(coordCursor);
+            screenInfo.MakeCursorVisible(coordCursor);
         }
-        Status = pScreenInfo->SetCursorPosition(coordCursor, !!fKeepCursorVisible);
+        Status = screenInfo.SetCursorPosition(coordCursor, !!fKeepCursorVisible);
     }
 
     return Status;
@@ -165,7 +168,7 @@ NTSTATUS AdjustCursorPosition(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ COORD c
 //   unicode characters.  The string is also copied to the input buffer, if
 //   the output mode is line mode.
 // Arguments:
-// - pScreenInfo - Pointer to screen buffer information structure.
+// - screenInfo - reference to screen buffer information structure.
 // - pwchBufferBackupLimit - Pointer to beginning of buffer.
 // - pwchBuffer - Pointer to buffer to copy string to.  assumed to be at least as long as pwchRealUnicode.
 //                This pointer is updated to point to the next position in the buffer.
@@ -180,7 +183,7 @@ NTSTATUS AdjustCursorPosition(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ COORD c
 // Note:
 // - This routine does not process tabs and backspace properly.  That code will be implemented as part of the line editing services.
 [[nodiscard]]
-NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
+NTSTATUS WriteCharsLegacy(_Inout_ SCREEN_INFORMATION& screenInfo,
                           _In_range_(<= , pwchBuffer) PWCHAR const pwchBufferBackupLimit,
                           _In_ PWCHAR pwchBuffer,
                           _In_reads_bytes_(*pcb) PWCHAR pwchRealUnicode,
@@ -191,7 +194,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                           _Inout_opt_ PSHORT const psScrollY)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    TextBuffer& textBuffer = pScreenInfo->GetTextBuffer();
+    TextBuffer& textBuffer = screenInfo.GetTextBuffer();
     Cursor& cursor = textBuffer.GetCursor();
     COORD CursorPosition = cursor.GetPosition();
     NTSTATUS Status = STATUS_SUCCESS;
@@ -214,20 +217,20 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
     DWORD TempNumSpaces;
     WCHAR Char;
     WCHAR RealUnicodeChar;
-    BOOL fUnprocessed = ((pScreenInfo->OutputMode & ENABLE_PROCESSED_OUTPUT) == 0);
+    BOOL fUnprocessed = ((screenInfo.OutputMode & ENABLE_PROCESSED_OUTPUT) == 0);
     DbcsAttribute dbcsAttributes[LOCAL_BUFFER_SIZE];
     DbcsAttribute* currentDbcsAttribute = nullptr;
 
     // Must not adjust cursor here. It has to stay on for many write scenarios. Consumers should call for the cursor to be turned off if they want that.
 
-    WORD const Attributes = pScreenInfo->GetAttributes().GetLegacyAttributes();
+    WORD const Attributes = screenInfo.GetAttributes().GetLegacyAttributes();
     DWORD const BufferSize = *pcb;
     *pcb = 0;
     TempNumSpaces = 0;
 
     PWCHAR lpString = pwchRealUnicode;
 
-    const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
+    const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
 
     while (*pcb < BufferSize)
     {
@@ -269,7 +272,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                     CursorPosition.X = 0;
                     CursorPosition.Y++;
 
-                    Status = AdjustCursorPosition(pScreenInfo, CursorPosition, IsFlagSet(dwFlags, WC_KEEP_CURSOR_VISIBLE), psScrollY);
+                    Status = AdjustCursorPosition(screenInfo, CursorPosition, IsFlagSet(dwFlags, WC_KEEP_CURSOR_VISIBLE), psScrollY);
 
                     CursorPosition = cursor.GetPosition();
                 }
@@ -322,7 +325,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
             }
             else
             {
-                ASSERT(pScreenInfo->OutputMode & ENABLE_PROCESSED_OUTPUT);
+                ASSERT(screenInfo.OutputMode & ENABLE_PROCESSED_OUTPUT);
                 switch (RealUnicodeChar)
                 {
                 case UNICODE_BELL:
@@ -332,7 +335,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                     }
                     else
                     {
-                        pScreenInfo->SendNotifyBeep();
+                        screenInfo.SendNotifyBeep();
                     }
                     break;
                 case UNICODE_BACKSPACE:
@@ -347,7 +350,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                     goto EndWhile;
                     break;
                 case UNICODE_TAB:
-                    if (pScreenInfo->AreTabsSet())
+                    if (screenInfo.AreTabsSet())
                     {
                         goto EndWhile;
                     }
@@ -449,12 +452,12 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
             // line was wrapped if we're writing up to the end of the current row
             bool fWasLineWrapped = XPosition >= coordScreenBufferSize.X;
 
-            StreamWriteToScreenBuffer(LocalBuffer, (SHORT)i, pScreenInfo, dbcsAttributes, fWasLineWrapped);
+            StreamWriteToScreenBuffer(LocalBuffer, (SHORT)i, screenInfo, dbcsAttributes, fWasLineWrapped);
             Region.Left = cursor.GetPosition().X;
             Region.Right = (SHORT)(cursor.GetPosition().X + i - 1);
             Region.Top = cursor.GetPosition().Y;
             Region.Bottom = cursor.GetPosition().Y;
-            WriteToScreen(pScreenInfo, Region);
+            WriteToScreen(screenInfo, Region);
             TempNumSpaces += i;
             CursorPosition.X = (SHORT)(cursor.GetPosition().X + i);
             CursorPosition.Y = cursor.GetPosition().Y;
@@ -473,7 +476,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
             }
             else
             {
-                Status = AdjustCursorPosition(pScreenInfo, CursorPosition, IsFlagSet(dwFlags, WC_KEEP_CURSOR_VISIBLE), psScrollY);
+                Status = AdjustCursorPosition(screenInfo, CursorPosition, IsFlagSet(dwFlags, WC_KEEP_CURSOR_VISIBLE), psScrollY);
             }
 
             if (*pcb == BufferSize)
@@ -489,7 +492,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
         }
         else if (*pcb >= BufferSize)
         {
-            ASSERT(pScreenInfo->OutputMode & ENABLE_PROCESSED_OUTPUT);
+            ASSERT(screenInfo.OutputMode & ENABLE_PROCESSED_OUTPUT);
 
             // this catches the case where the number of backspaces == the number of characters.
             if (nullptr != pcSpaces)
@@ -500,7 +503,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
             goto ExitWriteChars;
         }
 
-        ASSERT(pScreenInfo->OutputMode & ENABLE_PROCESSED_OUTPUT);
+        ASSERT(screenInfo.OutputMode & ENABLE_PROCESSED_OUTPUT);
         switch (*lpString)
         {
         case UNICODE_BACKSPACE:
@@ -592,13 +595,13 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                     if (dwFlags & WC_DESTRUCTIVE_BACKSPACE)
                     {
                         NumChars = 1;
-                        LOG_IF_FAILED(WriteOutputString(pScreenInfo,
+                        LOG_IF_FAILED(WriteOutputString(screenInfo,
                                                         Blanks,
                                                         CursorPosition,
                                                         CONSOLE_FALSE_UNICODE,   // faster than real unicode
                                                         &NumChars,
                                                         nullptr));
-                        Status = FillOutput(pScreenInfo, Attributes, CursorPosition, CONSOLE_ATTRIBUTE, &NumChars);
+                        Status = FillOutput(screenInfo, Attributes, CursorPosition, CONSOLE_ATTRIBUTE, &NumChars);
                     }
 
                     CursorPosition.X -= 1;
@@ -608,13 +611,13 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                     CursorPosition.X -= 1;
                     TempNumSpaces -= 1;
 
-                    Status = AdjustCursorPosition(pScreenInfo, CursorPosition, dwFlags & WC_KEEP_CURSOR_VISIBLE, psScrollY);
+                    Status = AdjustCursorPosition(screenInfo, CursorPosition, dwFlags & WC_KEEP_CURSOR_VISIBLE, psScrollY);
                     if (dwFlags & WC_DESTRUCTIVE_BACKSPACE)
                     {
                         NumChars = 1;
-                        Status = WriteOutputString(pScreenInfo, Blanks, cursor.GetPosition(), CONSOLE_FALSE_UNICODE, // faster than real unicode
+                        Status = WriteOutputString(screenInfo, Blanks, cursor.GetPosition(), CONSOLE_FALSE_UNICODE, // faster than real unicode
                                                    &NumChars, nullptr);
-                        Status = FillOutput(pScreenInfo, Attributes, cursor.GetPosition(), CONSOLE_ATTRIBUTE, &NumChars);
+                        Status = FillOutput(screenInfo, Attributes, cursor.GetPosition(), CONSOLE_ATTRIBUTE, &NumChars);
                     }
                     CursorPosition.X -= 1;
                 }
@@ -628,21 +631,21 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                 CursorPosition.X = 0;
                 OutputDebugStringA(("CONSRV: Ignoring backspace to previous line\n"));
             }
-            Status = AdjustCursorPosition(pScreenInfo, CursorPosition, (dwFlags & WC_KEEP_CURSOR_VISIBLE) != 0, psScrollY);
+            Status = AdjustCursorPosition(screenInfo, CursorPosition, (dwFlags & WC_KEEP_CURSOR_VISIBLE) != 0, psScrollY);
             if (dwFlags & WC_DESTRUCTIVE_BACKSPACE)
             {
                 NumChars = 1;
-                LOG_IF_FAILED(WriteOutputString(pScreenInfo,
+                LOG_IF_FAILED(WriteOutputString(screenInfo,
                                                 Blanks,
                                                 cursor.GetPosition(),
                                                 CONSOLE_FALSE_UNICODE,  //faster than real unicode
                                                 &NumChars,
                                                 nullptr));
-                Status = FillOutput(pScreenInfo, Attributes, cursor.GetPosition(), CONSOLE_ATTRIBUTE, &NumChars);
+                Status = FillOutput(screenInfo, Attributes, cursor.GetPosition(), CONSOLE_ATTRIBUTE, &NumChars);
             }
-            if (cursor.GetPosition().X == 0 && (pScreenInfo->OutputMode & ENABLE_WRAP_AT_EOL_OUTPUT) && pwchBuffer > pwchBufferBackupLimit)
+            if (cursor.GetPosition().X == 0 && (screenInfo.OutputMode & ENABLE_WRAP_AT_EOL_OUTPUT) && pwchBuffer > pwchBufferBackupLimit)
             {
-                if (CheckBisectProcessW(pScreenInfo,
+                if (CheckBisectProcessW(screenInfo,
                                         pwchBufferBackupLimit,
                                         (ULONG)(pwchBuffer + 1 - pwchBufferBackupLimit),
                                         coordScreenBufferSize.X - sOriginalXPosition,
@@ -656,7 +659,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                     // on the prev row if it was set
                     textBuffer.GetRowByOffset(CursorPosition.Y).GetCharRow().SetWrapForced(false);
 
-                    Status = AdjustCursorPosition(pScreenInfo, CursorPosition, dwFlags & WC_KEEP_CURSOR_VISIBLE, psScrollY);
+                    Status = AdjustCursorPosition(screenInfo, CursorPosition, dwFlags & WC_KEEP_CURSOR_VISIBLE, psScrollY);
                 }
             }
             break;
@@ -665,11 +668,11 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
         {
             // if VT-style tabs are set, then handle them the VT way, including not inserting spaces.
             // just move the cursor to the next tab stop.
-            if (pScreenInfo->AreTabsSet())
+            if (screenInfo.AreTabsSet())
             {
                 COORD cCursorOld = cursor.GetPosition();
                 // Get Forward tab handles tabbing past the end of the buffer
-                CursorPosition = pScreenInfo->GetForwardTab(cCursorOld);
+                CursorPosition = screenInfo.GetForwardTab(cCursorOld);
             }
             else
             {
@@ -700,17 +703,17 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
 
                 if (!IsFlagSet(dwFlags, WC_NONDESTRUCTIVE_TAB))
                 {
-                    LOG_IF_FAILED(WriteOutputString(pScreenInfo,
+                    LOG_IF_FAILED(WriteOutputString(screenInfo,
                                                     Blanks,
                                                     cursor.GetPosition(),
                                                     CONSOLE_FALSE_UNICODE,  // faster than real unicode
                                                     &NumChars,
                                                     nullptr));
-                    LOG_IF_FAILED(FillOutput(pScreenInfo, Attributes, cursor.GetPosition(), CONSOLE_ATTRIBUTE, &NumChars));
+                    LOG_IF_FAILED(FillOutput(screenInfo, Attributes, cursor.GetPosition(), CONSOLE_ATTRIBUTE, &NumChars));
                 }
 
             }
-            Status = AdjustCursorPosition(pScreenInfo, CursorPosition, (dwFlags & WC_KEEP_CURSOR_VISIBLE) != 0, psScrollY);
+            Status = AdjustCursorPosition(screenInfo, CursorPosition, (dwFlags & WC_KEEP_CURSOR_VISIBLE) != 0, psScrollY);
             break;
         }
         case UNICODE_CARRIAGERETURN:
@@ -721,7 +724,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
             pwchBuffer++;
             CursorPosition.X = 0;
             CursorPosition.Y = cursor.GetPosition().Y;
-            Status = AdjustCursorPosition(pScreenInfo, CursorPosition, (dwFlags & WC_KEEP_CURSOR_VISIBLE) != 0, psScrollY);
+            Status = AdjustCursorPosition(screenInfo, CursorPosition, (dwFlags & WC_KEEP_CURSOR_VISIBLE) != 0, psScrollY);
             break;
         }
         case UNICODE_LINEFEED:
@@ -744,7 +747,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                 textBuffer.GetRowByOffset(cursor.GetPosition().Y).GetCharRow().SetWrapForced(false);
             }
 
-            Status = AdjustCursorPosition(pScreenInfo, CursorPosition, (dwFlags & WC_KEEP_CURSOR_VISIBLE) != 0, psScrollY);
+            Status = AdjustCursorPosition(screenInfo, CursorPosition, (dwFlags & WC_KEEP_CURSOR_VISIBLE) != 0, psScrollY);
             break;
         }
         default:
@@ -753,7 +756,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
             if (Char >= (WCHAR)' ' &&
                 IsCharFullWidth(Char) &&
                 XPosition >= (coordScreenBufferSize.X - 1) &&
-                (pScreenInfo->OutputMode & ENABLE_WRAP_AT_EOL_OUTPUT))
+                (screenInfo.OutputMode & ENABLE_WRAP_AT_EOL_OUTPUT))
             {
                 COORD const TargetPoint = cursor.GetPosition();
                 ROW& Row = textBuffer.GetRowByOffset(TargetPoint.Y);
@@ -770,7 +773,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                         Region.Right = (SHORT)(TargetPoint.X);
                         Region.Top = TargetPoint.Y;
                         Region.Bottom = TargetPoint.Y;
-                        WriteToScreen(pScreenInfo, Region);
+                        WriteToScreen(screenInfo, Region);
                     }
                 }
                 catch (...)
@@ -789,7 +792,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                 // is too wide to fit on the current line).
                 iCharRow.SetDoubleBytePadded(true);
 
-                Status = AdjustCursorPosition(pScreenInfo, CursorPosition, dwFlags & WC_KEEP_CURSOR_VISIBLE, psScrollY);
+                Status = AdjustCursorPosition(screenInfo, CursorPosition, dwFlags & WC_KEEP_CURSOR_VISIBLE, psScrollY);
                 continue;
             }
             break;
@@ -821,7 +824,7 @@ ExitWriteChars:
 //   unicode characters.  The string is also copied to the input buffer, if
 //   the output mode is line mode.
 // Arguments:
-// - pScreenInfo - Pointer to screen buffer information structure.
+// - screenInfo - reference to screen buffer information structure.
 // - pwchBufferBackupLimit - Pointer to beginning of buffer.
 // - pwchBuffer - Pointer to buffer to copy string to.  assumed to be at least as long as pwchRealUnicode.
 //              This pointer is updated to point to the next position in the buffer.
@@ -836,7 +839,7 @@ ExitWriteChars:
 // Note:
 // - This routine does not process tabs and backspace properly.  That code will be implemented as part of the line editing services.
 [[nodiscard]]
-NTSTATUS WriteChars(_In_ PSCREEN_INFORMATION pScreenInfo,
+NTSTATUS WriteChars(_Inout_ SCREEN_INFORMATION& screenInfo,
                     _In_range_(<= , pwchBuffer) PWCHAR const pwchBufferBackupLimit,
                     _In_ PWCHAR pwchBuffer,
                     _In_reads_bytes_(*pcb) PWCHAR pwchRealUnicode,
@@ -846,9 +849,10 @@ NTSTATUS WriteChars(_In_ PSCREEN_INFORMATION pScreenInfo,
                     const DWORD dwFlags,
                     _Inout_opt_ PSHORT const psScrollY)
 {
-    if (!IsFlagSet(pScreenInfo->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) || !IsFlagSet(pScreenInfo->OutputMode, ENABLE_PROCESSED_OUTPUT))
+    if (!IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) ||
+        !IsFlagSet(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT))
     {
-        return WriteCharsLegacy(pScreenInfo,
+        return WriteCharsLegacy(screenInfo,
                                 pwchBufferBackupLimit,
                                 pwchBuffer,
                                 pwchRealUnicode,
@@ -870,14 +874,14 @@ NTSTATUS WriteChars(_In_ PSCREEN_INFORMATION pScreenInfo,
         {
             if (NT_SUCCESS(Status))
             {
-                ASSERT(IsFlagSet(pScreenInfo->OutputMode, ENABLE_PROCESSED_OUTPUT));
-                ASSERT(IsFlagSet(pScreenInfo->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING));
+                ASSERT(IsFlagSet(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT));
+                ASSERT(IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING));
 
                 // defined down in the WriteBuffer default case hiding on the other end of the state machine. See outputStream.cpp
                 // This is the only mode used by DoWriteConsole.
                 ASSERT(IsFlagSet(dwFlags, WC_LIMIT_BACKSPACE));
 
-                StateMachine* const pMachine = pScreenInfo->GetStateMachine();
+                StateMachine* const pMachine = screenInfo.GetStateMachine();
                 size_t const cch = BufferSize / sizeof(WCHAR);
 
                 pMachine->ProcessString(pwchRealUnicode, cch);
@@ -902,7 +906,7 @@ NTSTATUS WriteChars(_In_ PSCREEN_INFORMATION pScreenInfo,
 // Arguments:
 // - pwchBuffer - wide character text to be inserted into buffer
 // - pcbBuffer - byte count of pwchBuffer on the way in, number of bytes consumed on the way out.
-// - pScreenInfo - Screen Information class to write the text into at the current cursor position
+// - screenInfo - Screen Information class to write the text into at the current cursor position
 // - ppWaiter - If writing to the console is blocked for whatever reason, this will be filled with a pointer to context
 //              that can be used by the server to resume the call at a later time.
 // Return Value:
@@ -912,7 +916,7 @@ NTSTATUS WriteChars(_In_ PSCREEN_INFORMATION pScreenInfo,
 [[nodiscard]]
 NTSTATUS DoWriteConsole(_In_reads_bytes_(*pcbBuffer) PWCHAR pwchBuffer,
                         _Inout_ ULONG* const pcbBuffer,
-                        _In_ PSCREEN_INFORMATION pScreenInfo,
+                        _In_ SCREEN_INFORMATION& screenInfo,
                         _Outptr_result_maybenull_ WriteData** const ppWaiter)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -920,7 +924,7 @@ NTSTATUS DoWriteConsole(_In_reads_bytes_(*pcbBuffer) PWCHAR pwchBuffer,
     {
         try
         {
-            *ppWaiter = new WriteData(pScreenInfo,
+            *ppWaiter = new WriteData(screenInfo,
                                       (wchar_t*)pwchBuffer,
                                       *pcbBuffer,
                                       gci.OutputCP);
@@ -933,8 +937,8 @@ NTSTATUS DoWriteConsole(_In_reads_bytes_(*pcbBuffer) PWCHAR pwchBuffer,
         return CONSOLE_STATUS_WAIT;
     }
 
-    const auto& textBuffer = pScreenInfo->GetTextBuffer();
-    return WriteChars(pScreenInfo,
+    const auto& textBuffer = screenInfo.GetTextBuffer();
+    return WriteChars(screenInfo,
                       pwchBuffer,
                       pwchBuffer,
                       pwchBuffer,
@@ -950,7 +954,7 @@ NTSTATUS DoWriteConsole(_In_reads_bytes_(*pcbBuffer) PWCHAR pwchBuffer,
 //   to adapt from the server types to the legacy internal host types.
 // - It operates on Unicode data only. It's assumed the text is translated by this point.
 // Arguments:
-// - pOutContext - the console output object to write the new text into
+// - OutContext - the console output object to write the new text into
 // - pwsTextBuffer - wide character text buffer provided by client application to insert
 // - cchTextBufferLength - text buffer counted in characters
 // - pcchTextBufferRead - character count of the number of characters we were able to insert before returning
@@ -960,7 +964,7 @@ NTSTATUS DoWriteConsole(_In_reads_bytes_(*pcbBuffer) PWCHAR pwchBuffer,
 // - S_OK if we need to wait (check if ppWaiter is not nullptr).
 // - Or a suitable HRESULT code for math/string/memory failures.
 [[nodiscard]]
-HRESULT WriteConsoleWImplHelper(_In_ IConsoleOutputObject* const pOutContext,
+HRESULT WriteConsoleWImplHelper(_In_ IConsoleOutputObject& OutContext,
                                 _In_reads_(cchTextBufferLength) const wchar_t* const pwsTextBuffer,
                                 const size_t cchTextBufferLength,
                                 _Out_ size_t* const pcchTextBufferRead,
@@ -977,7 +981,7 @@ HRESULT WriteConsoleWImplHelper(_In_ IConsoleOutputObject* const pOutContext,
     ULONG ulTextBufferLength;
     RETURN_IF_FAILED(SizeTToULong(cbTextBufferLength, &ulTextBufferLength));
 
-    NTSTATUS Status = DoWriteConsole(const_cast<wchar_t*>(pwsTextBuffer), &ulTextBufferLength, pOutContext, ppWaiter);
+    NTSTATUS Status = DoWriteConsole(const_cast<wchar_t*>(pwsTextBuffer), &ulTextBufferLength, OutContext, ppWaiter);
 
     // Convert back from bytes to characters for the resulting string length written.
     *pcchTextBufferRead = ulTextBufferLength / sizeof(wchar_t);
@@ -1007,7 +1011,7 @@ HRESULT WriteConsoleWImplHelper(_In_ IConsoleOutputObject* const pOutContext,
 // - S_OK if we need to wait (check if ppWaiter is not nullptr).
 // - Or a suitable HRESULT code for math/string/memory failures.
 [[nodiscard]]
-HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutContext,
+HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject& OutContext,
                                        _In_reads_(cchTextBufferLength) const char* const psTextBuffer,
                                        const size_t cchTextBufferLength,
                                        _Out_ size_t* const pcchTextBufferRead,
@@ -1040,7 +1044,7 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutCont
     // when the codepage changes.
     parser.SetCodePage(gci.OutputCP);
 
-    PSCREEN_INFORMATION const ScreenInfo = pOutContext->GetActiveBuffer();
+    SCREEN_INFORMATION& ScreenInfo = OutContext.GetActiveBuffer();
     wchar_t* pwchBuffer;
     size_t cchBuffer;
     if (uiCodePage == CP_UTF8)
@@ -1080,7 +1084,7 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutCont
         unsigned int uiTextBufferLength;
         RETURN_IF_FAILED(SizeTToUInt(cchTextBufferLength, &uiTextBufferLength));
 
-        if (!ScreenInfo->WriteConsoleDbcsLeadByte[0] || *(PUCHAR)BufPtr < (UCHAR) ' ')
+        if (!ScreenInfo.WriteConsoleDbcsLeadByte[0] || *(PUCHAR)BufPtr < (UCHAR) ' ')
         {
             dbcsNumBytes = 0;
             BufPtrNumBytes = uiTextBufferLength;
@@ -1090,13 +1094,13 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutCont
             // there was a portion of a dbcs character stored from a previous
             // call so we take the 2nd half from BufPtr[0], put them together
             // and write the wide char to TransBuffer[0]
-            ScreenInfo->WriteConsoleDbcsLeadByte[1] = *(PCHAR)BufPtr;
+            ScreenInfo.WriteConsoleDbcsLeadByte[1] = *(PCHAR)BufPtr;
 
             wistd::unique_ptr<wchar_t[]> convertedChars;
             size_t cchConverted = 0;
             if (FAILED(ConvertToW(gci.OutputCP,
-                                  reinterpret_cast<const char* const>(ScreenInfo->WriteConsoleDbcsLeadByte),
-                                  ARRAYSIZE(ScreenInfo->WriteConsoleDbcsLeadByte),
+                                  reinterpret_cast<const char* const>(ScreenInfo.WriteConsoleDbcsLeadByte),
+                                  ARRAYSIZE(ScreenInfo.WriteConsoleDbcsLeadByte),
                                   convertedChars,
                                   cchConverted)))
             {
@@ -1127,7 +1131,7 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutCont
             BufPtrNumBytes = 0;
         }
 
-        ScreenInfo->WriteConsoleDbcsLeadByte[0] = 0;
+        ScreenInfo.WriteConsoleDbcsLeadByte[0] = 0;
 
         // if the last byte in BufPtr is a lead byte for the current code page,
         // save it for the next time this function is called and we can piece it
@@ -1135,7 +1139,7 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutCont
         __analysis_assume(BufPtrNumBytes <= uiTextBufferLength);
         if (BufPtrNumBytes && CheckBisectStringA((PCHAR)BufPtr, BufPtrNumBytes, &gci.OutputCPInfo))
         {
-            ScreenInfo->WriteConsoleDbcsLeadByte[0] = *((PCHAR)BufPtr + BufPtrNumBytes - 1);
+            ScreenInfo.WriteConsoleDbcsLeadByte[0] = *((PCHAR)BufPtr + BufPtrNumBytes - 1);
             BufPtrNumBytes--;
 
             // Note that we captured a lead byte during this call, but won't actually draw it until later.
@@ -1237,7 +1241,7 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutCont
 // - Writes Unicode formatted data into the given console output object.
 // - NOTE: This may be blocked for various console states and will return a wait context pointer if necessary.
 // Arguments:
-// - pOutContext - the console output object to write the new text into
+// - OutContext - the console output object to write the new text into
 // - pwsTextBuffer - wide character text buffer provided by client application to insert
 // - cchTextBufferLength - text buffer counted in characters
 // - pcchTextBufferRead - character count of the number of characters we were able to insert before returning
@@ -1247,7 +1251,7 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutCont
 // - S_OK if we need to wait (check if ppWaiter is not nullptr).
 // - Or a suitable HRESULT code for math/string/memory failures.
 [[nodiscard]]
-HRESULT ApiRoutines::WriteConsoleWImpl(_In_ IConsoleOutputObject* const pOutContext,
+HRESULT ApiRoutines::WriteConsoleWImpl(_In_ IConsoleOutputObject& OutContext,
                                        _In_reads_(cchTextBufferLength) const wchar_t* const pwsTextBuffer,
                                        const size_t cchTextBufferLength,
                                        _Out_ size_t* const pcchTextBufferRead,
@@ -1256,5 +1260,9 @@ HRESULT ApiRoutines::WriteConsoleWImpl(_In_ IConsoleOutputObject* const pOutCont
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    return WriteConsoleWImplHelper(pOutContext->GetActiveBuffer(), pwsTextBuffer, cchTextBufferLength, pcchTextBufferRead, reinterpret_cast<WriteData**>(ppWaiter));
+    return WriteConsoleWImplHelper(OutContext.GetActiveBuffer(),
+                                   pwsTextBuffer,
+                                   cchTextBufferLength,
+                                   pcchTextBufferRead,
+                                   reinterpret_cast<WriteData**>(ppWaiter));
 }

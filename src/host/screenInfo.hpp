@@ -185,8 +185,12 @@ public:
     [[nodiscard]]
     NTSTATUS UseAlternateScreenBuffer();
     void UseMainScreenBuffer();
-    SCREEN_INFORMATION* const GetActiveBuffer();
-    SCREEN_INFORMATION* const GetMainBuffer();
+
+    SCREEN_INFORMATION& GetMainBuffer();
+    const SCREEN_INFORMATION& GetMainBuffer() const;
+
+    SCREEN_INFORMATION& GetActiveBuffer();
+    const SCREEN_INFORMATION& GetActiveBuffer() const;
 
     typedef struct _TabStop
     {
