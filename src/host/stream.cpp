@@ -544,7 +544,7 @@ NTSTATUS ReadLineInput(_Inout_ InputBuffer* const pInputBuffer,
     invalidCoord.Y = -1;
     COOKED_READ_DATA CookedReadData(pInputBuffer, // pInputBuffer
                                     pHandleData, // pInputReadHandleData
-                                    &screenInfo, // pScreenInfo
+                                    screenInfo, // pScreenInfo
                                     TempBufferSize, // BufferSize
                                     0, // BytesRead
                                     0, // CurrentPosition
