@@ -188,11 +188,11 @@ void Selection::_SaveCursorData(TextBuffer& textBuffer)
 // - <none> (Restores global state)
 // Return Value:
 // - <none>
-void Selection::_RestoreCursorData(_In_ SCREEN_INFORMATION* const pScreenInfo)
+void Selection::_RestoreCursorData(_Inout_ SCREEN_INFORMATION& screenInfo)
 {
-    const Cursor& cursor = ServiceLocator::LocateGlobals().getConsoleInformation().CurrentScreenBuffer->GetTextBuffer().GetCursor();
-    pScreenInfo->SetCursorInformation(_ulSavedCursorSize, _fSavedCursorVisible, cursor.GetColor(), cursor.GetType());
-    LOG_IF_FAILED(pScreenInfo->SetCursorPosition(_coordSavedCursorPosition, true /* TurnOn */));
+    const Cursor& cursor = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetTextBuffer().GetCursor();
+    screenInfo.SetCursorInformation(_ulSavedCursorSize, _fSavedCursorVisible, cursor.GetColor(), cursor.GetType());
+    LOG_IF_FAILED(screenInfo.SetCursorPosition(_coordSavedCursorPosition, true /* TurnOn */));
 }
 
 // Routine Description:

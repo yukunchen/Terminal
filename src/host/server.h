@@ -81,7 +81,6 @@ public:
     ConsoleProcessList ProcessHandleList;
     InputBuffer* pInputBuffer;
 
-    PSCREEN_INFORMATION CurrentScreenBuffer;
     PSCREEN_INFORMATION ScreenBuffers;  // singly linked list
     ConsoleWaitQueue OutputQueue;
     LIST_ENTRY CommandHistoryList;
@@ -123,6 +122,8 @@ public:
 
     SCREEN_INFORMATION& GetActiveOutputBuffer() override;
     const SCREEN_INFORMATION& GetActiveOutputBuffer() const override;
+    bool HasActiveOutputBuffer() const;
+
     InputBuffer* const GetActiveInputBuffer() const;
 
     bool IsInVtIoMode() const;
@@ -130,8 +131,16 @@ public:
     COLORREF GetDefaultForeground() const;
     COLORREF GetDefaultBackground() const;
 
+    [[nodiscard]]
+    static NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle, const DWORD cbTitle);
+    friend void SetActiveScreenBuffer(_Inout_ SCREEN_INFORMATION& screenInfo);
+    friend class SCREEN_INFORMATION;
+    friend class CommonState;
+
+
 private:
     CRITICAL_SECTION _csConsoleLock;   // serialize input and output using this
+    SCREEN_INFORMATION* pCurrentScreenBuffer;
 
     Microsoft::Console::VirtualTerminal::VtIo _vtIo;
 };

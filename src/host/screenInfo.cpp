@@ -230,8 +230,8 @@ void SCREEN_INFORMATION::s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pSc
         Prev->Next = Cur->Next;
     }
 
-    if (pScreenInfo == gci.CurrentScreenBuffer &&
-        gci.ScreenBuffers != gci.CurrentScreenBuffer)
+    if (pScreenInfo == gci.pCurrentScreenBuffer &&
+        gci.ScreenBuffers != gci.pCurrentScreenBuffer)
     {
         if (gci.ScreenBuffers != nullptr)
         {
@@ -239,7 +239,7 @@ void SCREEN_INFORMATION::s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pSc
         }
         else
         {
-            gci.CurrentScreenBuffer = nullptr;
+            gci.pCurrentScreenBuffer = nullptr;
         }
     }
 
@@ -349,7 +349,7 @@ bool SCREEN_INFORMATION::IsActiveScreenBuffer() const
 
     //#define ACTIVE_SCREEN_BUFFER(SCREEN_INFO) (gci.CurrentScreenBuffer == SCREEN_INFO)
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return (gci.CurrentScreenBuffer == this);
+    return (gci.pCurrentScreenBuffer == this);
 }
 
 // Routine Description:

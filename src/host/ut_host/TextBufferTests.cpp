@@ -180,8 +180,8 @@ void TextBufferTests::DoBufferRowIterationTest(TextBuffer& textBuffer)
 
 TextBuffer& TextBufferTests::GetTbi()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.CurrentScreenBuffer->GetTextBuffer();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.GetActiveOutputBuffer().GetTextBuffer();
 }
 
 SHORT TextBufferTests::GetBufferWidth()
@@ -613,8 +613,8 @@ void TextBufferTests::TestIncrementCircularBuffer()
 
 void TextBufferTests::TestMixedRgbAndLegacyForeground()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.CurrentScreenBuffer->GetActiveBuffer();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
     const TextBuffer& tbi = si.GetTextBuffer();
     StateMachine* const stateMachine = si.GetStateMachine();
     const Cursor& cursor = tbi.GetCursor();
@@ -675,8 +675,8 @@ void TextBufferTests::TestMixedRgbAndLegacyForeground()
 
 void TextBufferTests::TestMixedRgbAndLegacyBackground()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.CurrentScreenBuffer->GetActiveBuffer();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
     const TextBuffer& tbi = si.GetTextBuffer();
     StateMachine* const stateMachine = si.GetStateMachine();
     const Cursor& cursor = tbi.GetCursor();
@@ -735,8 +735,8 @@ void TextBufferTests::TestMixedRgbAndLegacyBackground()
 
 void TextBufferTests::TestMixedRgbAndLegacyUnderline()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.CurrentScreenBuffer->GetActiveBuffer();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
     const TextBuffer& tbi = si.GetTextBuffer();
     StateMachine* const stateMachine = si.GetStateMachine();
     const Cursor& cursor = tbi.GetCursor();
@@ -797,8 +797,8 @@ void TextBufferTests::TestMixedRgbAndLegacyUnderline()
 
 void TextBufferTests::TestMixedRgbAndLegacyBrightness()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.CurrentScreenBuffer->GetActiveBuffer();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
     const TextBuffer& tbi = si.GetTextBuffer();
     StateMachine* const stateMachine = si.GetStateMachine();
     const Cursor& cursor = tbi.GetCursor();
@@ -855,8 +855,8 @@ void TextBufferTests::TestMixedRgbAndLegacyBrightness()
 
 void TextBufferTests::TestRgbEraseLine()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.CurrentScreenBuffer->GetActiveBuffer();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
     TextBuffer& tbi = si.GetTextBuffer();
     StateMachine* const stateMachine = si.GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
@@ -915,8 +915,8 @@ void TextBufferTests::TestRgbEraseLine()
 
 void TextBufferTests::TestUnBold()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.CurrentScreenBuffer->GetActiveBuffer();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
     TextBuffer& tbi = si.GetTextBuffer();
     StateMachine* const stateMachine = si.GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
@@ -982,8 +982,8 @@ void TextBufferTests::TestUnBold()
 
 void TextBufferTests::TestUnBoldRgb()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.CurrentScreenBuffer->GetActiveBuffer();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
     TextBuffer& tbi = si.GetTextBuffer();
     StateMachine* const stateMachine = si.GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
@@ -1053,8 +1053,8 @@ void TextBufferTests::TestUnBoldRgb()
 
 void TextBufferTests::TestComplexUnBold()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.CurrentScreenBuffer->GetActiveBuffer();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
     TextBuffer& tbi = si.GetTextBuffer();
     StateMachine* const stateMachine = si.GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
@@ -1172,8 +1172,8 @@ void TextBufferTests::TestComplexUnBold()
 
 void TextBufferTests::CopyAttrs()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.CurrentScreenBuffer->GetActiveBuffer();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
     TextBuffer& tbi = si.GetTextBuffer();
     StateMachine* const stateMachine = si.GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
@@ -1235,8 +1235,8 @@ void TextBufferTests::CopyAttrs()
 
 void TextBufferTests::EmptySgrTest()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.CurrentScreenBuffer->GetActiveBuffer();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
     TextBuffer& tbi = si.GetTextBuffer();
     StateMachine* const stateMachine = si.GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
@@ -1308,8 +1308,8 @@ void TextBufferTests::EmptySgrTest()
 
 void TextBufferTests::TestReverseReset()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.CurrentScreenBuffer->GetActiveBuffer();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
     TextBuffer& tbi = si.GetTextBuffer();
     StateMachine* const stateMachine = si.GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
@@ -1397,7 +1397,7 @@ void TextBufferTests::CopyLastAttr()
     DisableVerifyExceptions disable;
 
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.CurrentScreenBuffer->GetActiveBuffer();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
     TextBuffer& tbi = si.GetTextBuffer();
     StateMachine* const stateMachine = si.GetStateMachine();
     Cursor& cursor = tbi.GetCursor();

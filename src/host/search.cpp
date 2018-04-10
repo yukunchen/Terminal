@@ -5,7 +5,7 @@
 #include "dbcs.h"
 #include "Ucs2CharRow.hpp"
 
-USHORT SearchForString(const SCREEN_INFORMATION * const pScreenInfo,
+USHORT SearchForString(const SCREEN_INFORMATION& ScreenInfo,
                        _In_reads_(cchSearch) PCWSTR pwszSearch,
                        _In_range_(1, SEARCH_STRING_LENGTH) USHORT cchSearch,
                        const bool IgnoreCase,
@@ -20,7 +20,7 @@ USHORT SearchForString(const SCREEN_INFORMATION * const pScreenInfo,
         coordStringPosition->Y = 0;
     }
 
-    COORD MaxPosition = pScreenInfo->GetScreenBufferSize();
+    COORD MaxPosition = ScreenInfo.GetScreenBufferSize();
     MaxPosition.X -= cchSearch;
     MaxPosition.Y -= 1;
 
@@ -137,11 +137,11 @@ USHORT SearchForString(const SCREEN_INFORMATION * const pScreenInfo,
             const ROW* pRow;
             try
             {
-                const auto& textBuffer = pScreenInfo->GetTextBuffer();
+                const auto& textBuffer = ScreenInfo.GetTextBuffer();
                 pRow = &textBuffer.GetRowAtIndex(RowIndex);
                 if (RecomputeRow)
                 {
-                    RowIndex = (textBuffer.GetFirstRowIndex() + Position.Y) % pScreenInfo->GetScreenBufferSize().Y;
+                    RowIndex = (textBuffer.GetFirstRowIndex() + Position.Y) % ScreenInfo.GetScreenBufferSize().Y;
                     pRow = &textBuffer.GetRowAtIndex(RowIndex);
                     RecomputeRow = FALSE;
                 }

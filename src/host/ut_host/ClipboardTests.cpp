@@ -79,7 +79,7 @@ class ClipboardTests
         // Please see CommonState.hpp for information on the buffer state per row, the row contents, etc.
 
         // set up and try to retrieve the first 4 rows from the buffer
-        const SCREEN_INFORMATION* const pScreenInfo = gci.CurrentScreenBuffer;
+        const SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
 
         SMALL_RECT* const rgsrSelection = new SMALL_RECT[cRectsSelected];
 
@@ -99,7 +99,7 @@ class ClipboardTests
         PWCHAR* rgTempRows = new PWCHAR[cRectsSelected];
         size_t* rgTempRowLengths = new size_t[cRectsSelected];
 
-        NTSTATUS status = Clipboard::Instance().RetrieveTextFromBuffer(pScreenInfo,
+        NTSTATUS status = Clipboard::Instance().RetrieveTextFromBuffer(screenInfo,
                                                                        fLineSelection,
                                                                        cRectsSelected,
                                                                        rgsrSelection,

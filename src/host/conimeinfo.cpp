@@ -102,7 +102,7 @@ ConsoleImeInfo::~ConsoleImeInfo()
 void ConsoleImeInfo::RefreshAreaAttributes()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    TextAttribute const Attributes = gci.CurrentScreenBuffer->GetAttributes();
+    TextAttribute const Attributes = gci.GetActiveOutputBuffer().GetAttributes();
 
     for (unsigned int i = 0; i < ConvAreaCompStr.size(); ++i)
     {
@@ -120,25 +120,21 @@ void ConsoleImeInfo::RefreshAreaAttributes()
 NTSTATUS ConsoleImeInfo::AddConversionArea()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    if (gci.CurrentScreenBuffer == nullptr)
-    {
-        return STATUS_UNSUCCESSFUL;
-    }
 
-    COORD bufferSize = gci.CurrentScreenBuffer->GetScreenBufferSize();
+    COORD bufferSize = gci.GetActiveOutputBuffer().GetScreenBufferSize();
     bufferSize.Y = 1;
 
     COORD windowSize;
-    windowSize.X = gci.CurrentScreenBuffer->GetScreenWindowSizeX();
-    windowSize.Y = gci.CurrentScreenBuffer->GetScreenWindowSizeY();
+    windowSize.X = gci.GetActiveOutputBuffer().GetScreenWindowSizeX();
+    windowSize.Y = gci.GetActiveOutputBuffer().GetScreenWindowSizeY();
 
     CHAR_INFO fill;
-    fill.Attributes = gci.CurrentScreenBuffer->GetAttributes().GetLegacyAttributes();
+    fill.Attributes = gci.GetActiveOutputBuffer().GetAttributes().GetLegacyAttributes();
 
     CHAR_INFO popupFill;
-    popupFill.Attributes = gci.CurrentScreenBuffer->GetPopupAttributes()->GetLegacyAttributes();
+    popupFill.Attributes = gci.GetActiveOutputBuffer().GetPopupAttributes()->GetLegacyAttributes();
 
-    const FontInfo& fontInfo = gci.CurrentScreenBuffer->GetTextBuffer().GetCurrentFont();
+    const FontInfo& fontInfo = gci.GetActiveOutputBuffer().GetTextBuffer().GetCurrentFont();
 
     try
     {

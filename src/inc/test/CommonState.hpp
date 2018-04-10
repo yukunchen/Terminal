@@ -95,13 +95,13 @@ public:
                                                            ciFill,
                                                            ciPopupFill,
                                                            uiCursorSize,
-                                                           &gci.CurrentScreenBuffer));
+                                                           &gci.pCurrentScreenBuffer));
     }
 
     void CleanupGlobalScreenBuffer()
     {
         const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        delete gci.CurrentScreenBuffer;
+        delete gci.pCurrentScreenBuffer;
     }
 
     void PrepareGlobalInputBuffer()
@@ -130,7 +130,7 @@ public:
 
     void PrepareNewTextBufferInfo()
     {
-        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         COORD coordScreenBufferSize;
         coordScreenBufferSize.X = s_csBufferWidth;
         coordScreenBufferSize.Y = s_csBufferHeight;
@@ -140,7 +140,7 @@ public:
 
         UINT uiCursorSize = 12;
 
-        m_backupTextBufferInfo = &gci.CurrentScreenBuffer->GetTextBuffer();
+        m_backupTextBufferInfo = &gci.pCurrentScreenBuffer->GetTextBuffer();
         try
         {
             std::unique_ptr<TextBuffer> textBuffer = std::make_unique<TextBuffer>(*m_pFontInfo,
@@ -151,7 +151,7 @@ public:
             {
                 m_ntstatusTextBufferInfo = STATUS_NO_MEMORY;
             }
-            gci.CurrentScreenBuffer->GetTextBuffer() = *textBuffer.release();
+            gci.GetActiveOutputBuffer().GetTextBuffer() = *textBuffer.release();
         }
         catch (...)
         {
@@ -161,21 +161,21 @@ public:
 
     void CleanupNewTextBufferInfo()
     {
-        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        ASSERT(gci.CurrentScreenBuffer != nullptr);
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        ASSERT(gci.HasActiveOutputBuffer());
 
-        gci.CurrentScreenBuffer->GetTextBuffer() = *m_backupTextBufferInfo;
+        gci.GetActiveOutputBuffer().GetTextBuffer() = *m_backupTextBufferInfo;
     }
 
     void FillTextBuffer()
     {
-        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // fill with some assorted text that doesn't consume the whole row
         const SHORT cRowsToFill = 4;
 
-        ASSERT(gci.CurrentScreenBuffer != nullptr);
+        ASSERT(gci.HasActiveOutputBuffer());
 
-        TextBuffer& textBuffer = gci.CurrentScreenBuffer->GetTextBuffer();
+        TextBuffer& textBuffer = gci.GetActiveOutputBuffer().GetTextBuffer();
 
         for (SHORT iRow = 0; iRow < cRowsToFill; iRow++)
         {
@@ -188,13 +188,13 @@ public:
 
     void FillTextBufferBisect()
     {
-        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // fill with some text that fills the whole row and has bisecting double byte characters
         const SHORT cRowsToFill = s_csBufferHeight;
 
-        ASSERT(gci.CurrentScreenBuffer != nullptr);
+        ASSERT(gci.HasActiveOutputBuffer());
 
-        TextBuffer& textBuffer = gci.CurrentScreenBuffer->GetTextBuffer();
+        TextBuffer& textBuffer = gci.GetActiveOutputBuffer().GetTextBuffer();
 
         for (SHORT iRow = 0; iRow < cRowsToFill; iRow++)
         {
@@ -313,7 +313,7 @@ private:
         OverwriteColumns(pwszText, pwszText + length, attrs.cbegin(), charRow.begin());
 
         // everything gets default attributes
-        pRow->GetAttrRow().Reset(gci.CurrentScreenBuffer->GetAttributes());
+        pRow->GetAttrRow().Reset(gci.GetActiveOutputBuffer().GetAttributes());
 
         pRow->GetCharRow().SetWrapForced(true);
     }

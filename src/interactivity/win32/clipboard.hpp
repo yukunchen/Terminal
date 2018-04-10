@@ -39,7 +39,7 @@ namespace Microsoft::Console::Interactivity::Win32
         void StoreSelectionToClipboard();
 
         [[nodiscard]]
-        NTSTATUS RetrieveTextFromBuffer(const SCREEN_INFORMATION* const pScreenInfo,
+        NTSTATUS RetrieveTextFromBuffer(const SCREEN_INFORMATION& screenInfo,
                                         const bool fLineSelection,
                                         const UINT cRectsSelected,
                                         _In_reads_(cRectsSelected) const SMALL_RECT* const rgsrSelection,

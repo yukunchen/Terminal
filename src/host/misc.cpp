@@ -39,23 +39,25 @@ void SetConsoleCPInfo(const BOOL fOutput)
         // to pick a more appropriate font should the current one be unable to render in the new codepage.
         // To do this, we create a copy of the existing font but we change the codepage value to be the new one that was just set in the global structures.
         // NOTE: We need to do this only if everything is set up. This can get called while we're still initializing, so carefully check things for nullptr.
-        SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer;
-        if (psi != nullptr)
+        if (!gci.HasActiveOutputBuffer())
         {
-            const auto& textBuffer = psi->GetTextBuffer();
-            const FontInfo& fiOld = textBuffer.GetCurrentFont();
-
-            // Use the desired face name when updating the font.
-            // This ensures that if we had a fall back operation last time (the desired
-            // face name didn't support the code page and we have a different less-desirable font currently)
-            // that we'll now give it another shot to use the desired face name in the new code page.
-            FontInfo fiNew(textBuffer.GetDesiredFont().GetFaceName(),
-                            fiOld.GetFamily(),
-                            fiOld.GetWeight(),
-                            fiOld.GetUnscaledSize(),
-                            gci.OutputCP);
-            psi->UpdateFont(&fiNew);
+            return;
         }
+
+        SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
+        const auto& textBuffer = screenInfo.GetTextBuffer();
+        const FontInfo& fiOld = textBuffer.GetCurrentFont();
+
+        // Use the desired face name when updating the font.
+        // This ensures that if we had a fall back operation last time (the desired
+        // face name didn't support the code page and we have a different less-desirable font currently)
+        // that we'll now give it another shot to use the desired face name in the new code page.
+        FontInfo fiNew(textBuffer.GetDesiredFont().GetFaceName(),
+                        fiOld.GetFamily(),
+                        fiOld.GetWeight(),
+                        fiOld.GetUnscaledSize(),
+                        gci.OutputCP);
+        screenInfo.UpdateFont(&fiNew);
 
         if (!GetCPInfo(gci.OutputCP, &gci.OutputCPInfo))
         {

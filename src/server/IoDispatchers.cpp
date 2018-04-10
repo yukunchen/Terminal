@@ -41,7 +41,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleCreateObject(_In_ PCONSOLE_API_MSG pMessa
 {
     NTSTATUS Status;
 
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     PCD_CREATE_OBJECT_INFORMATION const CreateInformation = &pMessage->CreateObject;
 
     LockConsole();
@@ -73,7 +73,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleCreateObject(_In_ PCONSOLE_API_MSG pMessa
 
     case CD_IO_OBJECT_TYPE_CURRENT_OUTPUT:
     {
-        SCREEN_INFORMATION& ScreenInformation = gci.CurrentScreenBuffer->GetMainBuffer();
+        SCREEN_INFORMATION& ScreenInformation = gci.GetActiveOutputBuffer().GetMainBuffer();
         Status = NTSTATUS_FROM_HRESULT(ScreenInformation.Header.AllocateIoHandle(ConsoleHandleData::HandleType::Output,
                                                                                  CreateInformation->DesiredAccess,
                                                                                  CreateInformation->ShareMode,
@@ -209,7 +209,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
     }
 
 
-    auto& screenInfo = gci.CurrentScreenBuffer->GetMainBuffer();
+    auto& screenInfo = gci.GetActiveOutputBuffer().GetMainBuffer();
     Status = NTSTATUS_FROM_HRESULT(screenInfo.Header.AllocateIoHandle(ConsoleHandleData::HandleType::Output,
                                                                       GENERIC_READ | GENERIC_WRITE,
                                                                       FILE_SHARE_READ | FILE_SHARE_WRITE,

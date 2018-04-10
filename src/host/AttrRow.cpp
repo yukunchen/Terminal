@@ -125,7 +125,7 @@ HRESULT ATTR_ROW::Resize(const short sOldWidth, const short sNewWidth)
         auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
         // get the default attributes
         const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        TextAttribute defaultAttrs = gci.CurrentScreenBuffer->GetAttributes();
+        TextAttribute defaultAttrs = gci.GetActiveOutputBuffer().GetAttributes();
 
         // Get the attribute that covers the final column of old width.
         TextAttributeRun* pIndexedRun;

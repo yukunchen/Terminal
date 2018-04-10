@@ -173,7 +173,7 @@ void Menu::Initialize()
         //   else
         //       enable mark
 
-        if (gci.CurrentScreenBuffer->IsMaximizedBoth() || gci.Flags & CONSOLE_SELECTING)
+        if (gci.GetActiveOutputBuffer().IsMaximizedBoth() || gci.Flags & CONSOLE_SELECTING)
         {
             EnableMenuItem(hHeirMenu, ID_CONSOLE_SCROLL, MF_GRAYED);
         }
@@ -288,22 +288,22 @@ void Menu::s_ShowPropertiesDialog(HWND const hwnd, BOOL const Defaults)
 void Menu::s_GetConsoleState(CONSOLE_STATE_INFO * const pStateInfo)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    PSCREEN_INFORMATION const ScreenInfo = gci.CurrentScreenBuffer;
-    pStateInfo->ScreenBufferSize = ScreenInfo->GetScreenBufferSize();
-    pStateInfo->WindowSize.X = ScreenInfo->GetScreenWindowSizeX();
-    pStateInfo->WindowSize.Y = ScreenInfo->GetScreenWindowSizeY();
+    const SCREEN_INFORMATION& ScreenInfo = gci.GetActiveOutputBuffer();
+    pStateInfo->ScreenBufferSize = ScreenInfo.GetScreenBufferSize();
+    pStateInfo->WindowSize.X = ScreenInfo.GetScreenWindowSizeX();
+    pStateInfo->WindowSize.Y = ScreenInfo.GetScreenWindowSizeY();
 
     const RECT rcWindow = ServiceLocator::LocateConsoleWindow<Window>()->GetWindowRect();
     pStateInfo->WindowPosX = rcWindow.left;
     pStateInfo->WindowPosY = rcWindow.top;
 
-    const FontInfo& currentFont = ScreenInfo->GetTextBuffer().GetCurrentFont();
+    const FontInfo& currentFont = ScreenInfo.GetTextBuffer().GetCurrentFont();
     pStateInfo->FontFamily = currentFont.GetFamily();
     pStateInfo->FontSize = currentFont.GetUnscaledSize();
     pStateInfo->FontWeight = currentFont.GetWeight();
     StringCchCopyW(pStateInfo->FaceName, ARRAYSIZE(pStateInfo->FaceName), currentFont.GetFaceName());
 
-    const Cursor& cursor = ScreenInfo->GetTextBuffer().GetCursor();
+    const Cursor& cursor = ScreenInfo.GetTextBuffer().GetCursor();
     pStateInfo->CursorSize = cursor.GetSize();
     pStateInfo->CursorColor = cursor.GetColor();
     pStateInfo->CursorType = static_cast<unsigned int>(cursor.GetType());
@@ -314,8 +314,8 @@ void Menu::s_GetConsoleState(CONSOLE_STATE_INFO * const pStateInfo)
     pStateInfo->QuickEdit = !!(gci.Flags & CONSOLE_QUICK_EDIT_MODE);
     pStateInfo->AutoPosition = !!(gci.Flags & CONSOLE_AUTO_POSITION);
     pStateInfo->InsertMode = gci.GetInsertMode();
-    pStateInfo->ScreenAttributes = ScreenInfo->GetAttributes().GetLegacyAttributes();
-    pStateInfo->PopupAttributes = ScreenInfo->GetPopupAttributes()->GetLegacyAttributes();
+    pStateInfo->ScreenAttributes = ScreenInfo.GetAttributes().GetLegacyAttributes();
+    pStateInfo->PopupAttributes = ScreenInfo.GetPopupAttributes()->GetLegacyAttributes();
 
     // Ensure that attributes are only describing colors to the properties dialog
     ClearAllFlags(pStateInfo->ScreenAttributes, ~(FG_ATTRS | BG_ATTRS));
@@ -379,7 +379,7 @@ HMENU Menu::s_GetHeirMenuHandle()
 void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& ScreenInfo = *gci.CurrentScreenBuffer;
+    SCREEN_INFORMATION& ScreenInfo = gci.GetActiveOutputBuffer();
 
     if (gci.OutputCP != pStateInfo->CodePage)
     {

@@ -267,7 +267,7 @@ namespace Microsoft::Console::Interactivity::Win32
         static const Viewport _getViewport();
         static HWND _getWindowHandle();
         static IConsoleWindow* const _getIConsoleWindow();
-        static SCREEN_INFORMATION* const _getScreenInfo();
+        static SCREEN_INFORMATION& _getScreenInfo();
         static TextBuffer& _getTextBuffer();
         static const COORD _getScreenBufferCoords();
 

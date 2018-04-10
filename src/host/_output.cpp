@@ -1202,14 +1202,14 @@ NTSTATUS FillOutput(_Inout_ SCREEN_INFORMATION& screenInfo,
         if (Y != coordWrite.Y)
         {
             WriteRegion.Left = 0;
-            WriteRegion.Right = (SHORT)(gci.CurrentScreenBuffer->GetScreenBufferSize().X - 1);
+            WriteRegion.Right = (SHORT)(gci.GetActiveOutputBuffer().GetScreenBufferSize().X - 1);
         }
         else
         {
             WriteRegion.Left = coordWrite.X + screenInfo.GetBufferViewport().Top + screenInfo.ConvScreenInfo->CaInfo.coordConView.X;
             WriteRegion.Right = X + screenInfo.GetBufferViewport().Top + screenInfo.ConvScreenInfo->CaInfo.coordConView.X;
         }
-        WriteConvRegionToScreen(*gci.CurrentScreenBuffer, WriteRegion);
+        WriteConvRegionToScreen(gci.GetActiveOutputBuffer(), WriteRegion);
         *pcElements = NumWritten;
         return STATUS_SUCCESS;
     }

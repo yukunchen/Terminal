@@ -1081,7 +1081,7 @@ NTSTATUS ConsoleCreateScreenBuffer(_Out_ ConsoleHandleData** ppHandle,
 
     ConsoleHandleData::HandleType const HandleType = ConsoleHandleData::HandleType::Output;
 
-    const SCREEN_INFORMATION& siExisting = *gci.CurrentScreenBuffer;
+    const SCREEN_INFORMATION& siExisting = gci.GetActiveOutputBuffer();
 
     // Create new screen buffer.
     CHAR_INFO Fill;

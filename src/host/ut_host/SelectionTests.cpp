@@ -196,7 +196,7 @@ class SelectionTests
                     if (!fIsLastLine)
                     {
                         // buffer size = 80, then selection goes 0 to 79. Thus X - 1.
-                        VERIFY_ARE_EQUAL(psrRect->Right, gci.CurrentScreenBuffer->GetTextBuffer().GetCoordBufferSize().X - 1);
+                        VERIFY_ARE_EQUAL(psrRect->Right, gci.GetActiveOutputBuffer().GetTextBuffer().GetCoordBufferSize().X - 1);
                     }
 
                     // for all lines except the first, the line should reach the left edge of the buffer
@@ -321,7 +321,7 @@ class SelectionTests
     void TestBisectSelectionDelta(SHORT sTargetX, SHORT sTargetY, SHORT sLength, SHORT sDeltaLeft, SHORT sDeltaRight)
     {
         const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        SCREEN_INFORMATION* pScreenInfo = gci.CurrentScreenBuffer;
+        const SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
 
         short sStringLength;
         COORD coordTargetPoint;
@@ -345,7 +345,7 @@ class SelectionTests
         srOriginal.Left = srSelection.Left;
         srOriginal.Right = srSelection.Right;
 
-        Selection::s_BisectSelection(sStringLength, coordTargetPoint, pScreenInfo, &srSelection);
+        Selection::s_BisectSelection(sStringLength, coordTargetPoint, screenInfo, &srSelection);
 
         VERIFY_ARE_EQUAL(srOriginal.Top, srSelection.Top);
         VERIFY_ARE_EQUAL(srOriginal.Bottom, srSelection.Bottom);
@@ -444,7 +444,7 @@ class SelectionInputTests
 
     TEST_METHOD(TestGetInputLineBoundaries)
     {
-        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // 80x80 box
         const SHORT sRowWidth = 80;
 
@@ -463,7 +463,7 @@ class SelectionInputTests
         COOKED_READ_DATA* pCooked = gci.lpCookedReadData;
 
         // backup text info position over remainder of text execution duration
-        TextBuffer& textBuffer = gci.CurrentScreenBuffer->GetTextBuffer();
+        TextBuffer& textBuffer = gci.GetActiveOutputBuffer().GetTextBuffer();
         COORD coordOldTextInfoPos;
         coordOldTextInfoPos.X = textBuffer.GetCursor().GetPosition().X;
         coordOldTextInfoPos.Y = textBuffer.GetCursor().GetPosition().Y;

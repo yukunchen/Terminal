@@ -27,25 +27,25 @@ RenderData::~RenderData()
 const SMALL_RECT RenderData::GetViewport()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.CurrentScreenBuffer->GetBufferViewport();
+    return gci.GetActiveOutputBuffer().GetBufferViewport();
 }
 
 const TextBuffer& RenderData::GetTextBuffer()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.CurrentScreenBuffer->GetTextBuffer();
+    return gci.GetActiveOutputBuffer().GetTextBuffer();
 }
 
 const FontInfo* RenderData::GetFontInfo()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return &gci.CurrentScreenBuffer->GetTextBuffer().GetCurrentFont();
+    return &gci.GetActiveOutputBuffer().GetTextBuffer().GetCurrentFont();
 }
 
 const TextAttribute RenderData::GetDefaultBrushColors()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.CurrentScreenBuffer->GetAttributes();
+    return gci.GetActiveOutputBuffer().GetAttributes();
 }
 
 const void RenderData::GetColorTable(_Outptr_result_buffer_all_(*pcColors) COLORREF** const ppColorTable, _Out_ size_t* const pcColors)
@@ -58,7 +58,7 @@ const void RenderData::GetColorTable(_Outptr_result_buffer_all_(*pcColors) COLOR
 const Cursor& RenderData::GetCursor()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.CurrentScreenBuffer->GetTextBuffer().GetCursor();
+    return gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
 }
 
 const ConsoleImeInfo* RenderData::GetImeData()
@@ -85,7 +85,7 @@ const bool RenderData::IsGridLineDrawingAllowed()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // If virtual terminal output is set, grid line drawing is a must. It is always allowed.
-    if (IsFlagSet(gci.CurrentScreenBuffer->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
+    if (IsFlagSet(gci.GetActiveOutputBuffer().OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
     {
         return true;
     }

@@ -90,7 +90,7 @@ bool Cursor::IsDoubleWidth() const
 {
     // Check with the current screen buffer to see if the character under the cursor is double-width.
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    std::vector<OutputCell> cells = gci.CurrentScreenBuffer->ReadLine(_cPosition.Y, _cPosition.X, 1);
+    std::vector<OutputCell> cells = gci.GetActiveOutputBuffer().ReadLine(_cPosition.Y, _cPosition.X, 1);
     return !!IsCharFullWidth(cells[0].GetCharData());
 }
 
@@ -509,8 +509,8 @@ void CALLBACK CursorTimerRoutineWrapper(_In_ PVOID /* lpParam */, _In_ BOOL /* T
 
     if (gci.TryLockConsole() != false)
     {
-        Cursor& cursor = gci.CurrentScreenBuffer->GetTextBuffer().GetCursor();
-        cursor.TimerRoutine(*gci.CurrentScreenBuffer);
+        Cursor& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
+        cursor.TimerRoutine(gci.GetActiveOutputBuffer());
 
         UnlockConsole();
     }
