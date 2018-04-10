@@ -30,7 +30,7 @@ void SetConsoleCPInfo(const BOOL fOutput);
 BOOL CheckBisectStringW(_In_reads_bytes_(cBytes) const WCHAR * pwchBuffer,
                         _In_ DWORD cWords,
                         _In_ DWORD cBytes);
-BOOL CheckBisectProcessW(const SCREEN_INFORMATION * const pScreenInfo,
+BOOL CheckBisectProcessW(const SCREEN_INFORMATION& ScreenInfo,
                          _In_reads_bytes_(cBytes) const WCHAR * pwchBuffer,
                          _In_ DWORD cWords,
                          _In_ DWORD cBytes,

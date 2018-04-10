@@ -28,7 +28,7 @@ namespace Microsoft::Console::VirtualTerminal
     public:
         virtual BOOL GetConsoleCursorInfo(_In_ CONSOLE_CURSOR_INFO* const pConsoleCursorInfo) const = 0;
         virtual BOOL GetConsoleScreenBufferInfoEx(_Out_ CONSOLE_SCREEN_BUFFER_INFOEX* const pConsoleScreenBufferInfoEx) const = 0;
-        virtual BOOL SetConsoleScreenBufferInfoEx(const CONSOLE_SCREEN_BUFFER_INFOEX* const pConsoleScreenBufferInfoEx) const = 0;
+        virtual BOOL SetConsoleScreenBufferInfoEx(const CONSOLE_SCREEN_BUFFER_INFOEX* const pConsoleScreenBufferInfoEx) = 0;
         virtual BOOL SetConsoleCursorInfo(const CONSOLE_CURSOR_INFO* const pConsoleCursorInfo) = 0;
         virtual BOOL SetConsoleCursorPosition(const COORD coordCursorPosition) = 0;
         virtual BOOL FillConsoleOutputCharacterW(const WCHAR wch,

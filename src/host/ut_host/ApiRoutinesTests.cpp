@@ -337,7 +337,7 @@ class ApiRoutinesTests
                          L"Get how many chars we should feed in at a time. This validates lead bytes and bytes held across calls.");
 
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        SCREEN_INFORMATION* const si = gci.CurrentScreenBuffer;
+        SCREEN_INFORMATION& si = *gci.CurrentScreenBuffer;
 
         gci.LockConsole();
         auto Unlock = wil::ScopeExit([&] { gci.UnlockConsole(); });
@@ -427,7 +427,7 @@ class ApiRoutinesTests
         VERIFY_SUCCEEDED(TestData::TryGetValue(L"fInduceWait", fInduceWait), L"Get whether or not we should exercise this function off a wait state.");
 
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        SCREEN_INFORMATION* const si = gci.CurrentScreenBuffer;
+        SCREEN_INFORMATION& si = *gci.CurrentScreenBuffer;
 
         gci.LockConsole();
         auto Unlock = wil::ScopeExit([&] { gci.UnlockConsole(); });

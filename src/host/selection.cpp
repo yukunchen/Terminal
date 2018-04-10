@@ -567,7 +567,7 @@ void Selection::ColorSelection(_In_ SMALL_RECT* const psrRect, const ULONG ulAtt
     ASSERT(ulAttr <= 0xff);
 
     // Read selection rectangle, assumed already clipped to buffer.
-    SCREEN_INFORMATION* pScreenInfo = gci.CurrentScreenBuffer;
+    SCREEN_INFORMATION& screenInfo = *gci.CurrentScreenBuffer;
 
     COORD coordTargetSize;
     coordTargetSize.X = CalcWindowSizeX(&_srSelectionRect);
@@ -582,7 +582,7 @@ void Selection::ColorSelection(_In_ SMALL_RECT* const psrRect, const ULONG ulAtt
     {
         DWORD cchWrite = coordTargetSize.X;
 
-        LOG_IF_FAILED(FillOutput(pScreenInfo, (USHORT)ulAttr, coordTarget, CONSOLE_ATTRIBUTE, &cchWrite));
+        LOG_IF_FAILED(FillOutput(screenInfo, (USHORT)ulAttr, coordTarget, CONSOLE_ATTRIBUTE, &cchWrite));
     }
 }
 
@@ -605,13 +605,14 @@ void Selection::InitializeMarkSelection()
     _dwSelectionFlags = 0;
 
     // save old cursor position and make console cursor into selection cursor.
-    SCREEN_INFORMATION* pScreenInfo = gci.CurrentScreenBuffer;
-    _SaveCursorData(pScreenInfo->GetTextBuffer());
-    const Cursor& cursor = pScreenInfo->GetTextBuffer().GetCursor();
-    pScreenInfo->SetCursorInformation(100, TRUE, cursor.GetColor(), cursor.GetType());
+    SCREEN_INFORMATION& screenInfo = *gci.CurrentScreenBuffer;
+    _SaveCursorData(screenInfo.GetTextBuffer());
+
+    const Cursor& cursor = screenInfo.GetTextBuffer().GetCursor();
+    screenInfo.SetCursorInformation(100, TRUE, cursor.GetColor(), cursor.GetType());
 
     const COORD coordPosition = cursor.GetPosition();
-    LOG_IF_FAILED(pScreenInfo->SetCursorPosition(coordPosition, true));
+    LOG_IF_FAILED(screenInfo.SetCursorPosition(coordPosition, true));
 
     // set the cursor position as the anchor position
     // it will get updated as the cursor moves for mark mode,

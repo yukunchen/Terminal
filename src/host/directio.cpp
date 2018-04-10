@@ -717,10 +717,10 @@ NTSTATUS SrvReadConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
             return STATUS_INVALID_PARAMETER;
         }
 
-        SCREEN_INFORMATION* const psi = pScreenInfo->GetActiveBuffer();
+        SCREEN_INFORMATION& activeScreenInfo = pScreenInfo->GetActiveBuffer();
 
         std::vector<std::vector<OutputCell>> outputCells;
-        Status = ReadScreenBuffer(psi, outputCells, &a->CharRegion);
+        Status = ReadScreenBuffer(activeScreenInfo, outputCells, &a->CharRegion);
         assert(cbBuffer >= outputCells.size() * outputCells[0].size() * sizeof(CHAR_INFO));
         // convert to CharInfo
         CHAR_INFO* pCurrCharInfo = Buffer;
@@ -739,7 +739,7 @@ NTSTATUS SrvReadConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
         {
             LOG_IF_FAILED(TranslateOutputToOem(Buffer, BufferSize));
         }
-        else if (!psi->GetTextBuffer().GetCurrentFont().IsTrueTypeFont())
+        else if (!activeScreenInfo.GetTextBuffer().GetCurrentFont().IsTrueTypeFont())
         {
             // For compatibility reasons, we must maintain the behavior that munges the data if we are writing while a raster font is enabled.
             // This can be removed when raster font support is removed.
@@ -806,14 +806,14 @@ NTSTATUS SrvWriteConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*Reply
             return STATUS_INVALID_PARAMETER;
         }
 
-        PSCREEN_INFORMATION const ScreenBufferInformation = pScreenInfo->GetActiveBuffer();
+        SCREEN_INFORMATION& ScreenBufferInformation = pScreenInfo->GetActiveBuffer();
 
         if (!a->Unicode)
         {
             LOG_IF_FAILED(TranslateOutputToUnicode(Buffer, BufferSize));
             Status = WriteScreenBuffer(ScreenBufferInformation, Buffer, &a->CharRegion);
         }
-        else if (!ScreenBufferInformation->GetTextBuffer().GetCurrentFont().IsTrueTypeFont())
+        else if (!ScreenBufferInformation.GetTextBuffer().GetCurrentFont().IsTrueTypeFont())
         {
             // For compatibility reasons, we must maintain the behavior that munges the data if we are writing while a raster font is enabled.
             // This can be removed when raster font support is removed.
@@ -1047,9 +1047,9 @@ NTSTATUS SrvFillConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
 }
 
 [[nodiscard]]
-NTSTATUS DoSrvFillConsoleOutput(_In_ SCREEN_INFORMATION* pScreenInfo, _Inout_ CONSOLE_FILLCONSOLEOUTPUT_MSG* pMsg)
+NTSTATUS DoSrvFillConsoleOutput(_Inout_ SCREEN_INFORMATION& screenInfo, _Inout_ CONSOLE_FILLCONSOLEOUTPUT_MSG* pMsg)
 {
-    return FillOutput(pScreenInfo, pMsg->Element, pMsg->WriteCoord, pMsg->ElementType, &pMsg->Length);
+    return FillOutput(screenInfo, pMsg->Element, pMsg->WriteCoord, pMsg->ElementType, &pMsg->Length);
 }
 
 // There used to be a text mode and a graphics mode flag.
@@ -1081,18 +1081,18 @@ NTSTATUS ConsoleCreateScreenBuffer(_Out_ ConsoleHandleData** ppHandle,
 
     ConsoleHandleData::HandleType const HandleType = ConsoleHandleData::HandleType::Output;
 
-    const SCREEN_INFORMATION* const psiExisting = gci.CurrentScreenBuffer;
+    const SCREEN_INFORMATION& siExisting = *gci.CurrentScreenBuffer;
 
     // Create new screen buffer.
     CHAR_INFO Fill;
     Fill.Char.UnicodeChar = UNICODE_SPACE;
-    Fill.Attributes = psiExisting->GetAttributes().GetLegacyAttributes();
+    Fill.Attributes = siExisting.GetAttributes().GetLegacyAttributes();
 
     COORD WindowSize;
-    WindowSize.X = (SHORT)psiExisting->GetScreenWindowSizeX();
-    WindowSize.Y = (SHORT)psiExisting->GetScreenWindowSizeY();
+    WindowSize.X = (SHORT)siExisting.GetScreenWindowSizeX();
+    WindowSize.Y = (SHORT)siExisting.GetScreenWindowSizeY();
 
-    const FontInfo& existingFont = psiExisting->GetTextBuffer().GetCurrentFont();
+    const FontInfo& existingFont = siExisting.GetTextBuffer().GetCurrentFont();
 
     PSCREEN_INFORMATION ScreenInfo = nullptr;
     NTSTATUS Status = SCREEN_INFORMATION::CreateInstance(WindowSize,

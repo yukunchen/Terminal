@@ -24,7 +24,7 @@ class SCREEN_INFORMATION;
 class WriteBuffer : public Microsoft::Console::VirtualTerminal::AdaptDefaults
 {
 public:
-    WriteBuffer(_In_ Microsoft::Console::IIoProvider* const pIo);
+    WriteBuffer(_In_ Microsoft::Console::IIoProvider& io);
 
     // Implement Adapter callbacks for default cases (non-escape sequences)
     void Print(const wchar_t wch);
@@ -38,7 +38,7 @@ private:
     void _DefaultCase(const wchar_t wch);
     void _DefaultStringCase(_In_reads_(cch) wchar_t* const rgwch, const size_t cch);
 
-    const Microsoft::Console::IIoProvider* const _pIo;
+    Microsoft::Console::IIoProvider& _io;
     NTSTATUS _ntstatus;
 };
 
@@ -53,10 +53,10 @@ private:
 class ConhostInternalGetSet : public Microsoft::Console::VirtualTerminal::ConGetSet
 {
 public:
-    ConhostInternalGetSet(_In_ Microsoft::Console::IIoProvider* const pIo);
+    ConhostInternalGetSet(_In_ Microsoft::Console::IIoProvider& io);
 
     virtual BOOL GetConsoleScreenBufferInfoEx(_Out_ CONSOLE_SCREEN_BUFFER_INFOEX* const pConsoleScreenBufferInfoEx) const override;
-    virtual BOOL SetConsoleScreenBufferInfoEx(const CONSOLE_SCREEN_BUFFER_INFOEX* const pConsoleScreenBufferInfoEx) const override;
+    virtual BOOL SetConsoleScreenBufferInfoEx(const CONSOLE_SCREEN_BUFFER_INFOEX* const pConsoleScreenBufferInfoEx) override;
 
     virtual BOOL SetConsoleCursorPosition(const COORD coordCursorPosition) override;
 
@@ -139,7 +139,7 @@ public:
     virtual BOOL GetConsoleOutputCP(_Out_ unsigned int* const puiOutputCP) override;
 
 private:
-    const Microsoft::Console::IIoProvider* const _pIo;
+    Microsoft::Console::IIoProvider& _io;
 
     BOOL _FillConsoleOutput(const USHORT usElement,
                             const ULONG ulElementType,

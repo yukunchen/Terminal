@@ -604,7 +604,7 @@ bool ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
             if (pCookedReadData->_Echo)
             {
                 NumToWrite = sizeof(WCHAR);
-                *pStatus = WriteCharsLegacy(pCookedReadData->_pScreenInfo,
+                *pStatus = WriteCharsLegacy(*pCookedReadData->_pScreenInfo,
                                             pCookedReadData->_BackupLimit,
                                             pCookedReadData->_BufPtr,
                                             &wch,
@@ -681,7 +681,7 @@ bool ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
                 if (pCookedReadData->_Echo)
                 {
                     NumToWrite = sizeof(WCHAR);
-                    *pStatus = WriteCharsLegacy(pCookedReadData->_pScreenInfo,
+                    *pStatus = WriteCharsLegacy(*pCookedReadData->_pScreenInfo,
                                                 pCookedReadData->_BackupLimit,
                                                 pCookedReadData->_BufPtr,
                                                 &wch,
@@ -737,7 +737,7 @@ bool ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
 
                 if (pCookedReadData->_Echo)
                 {
-                    if (CheckBisectProcessW(pCookedReadData->_pScreenInfo,
+                    if (CheckBisectProcessW(*pCookedReadData->_pScreenInfo,
                                             pCookedReadData->_BackupLimit,
                                             pCookedReadData->_CurrentPosition + 1,
                                             sScreenBufferSizeX - pCookedReadData->_OriginalCursorPosition.X,
@@ -791,7 +791,7 @@ bool ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
             {
                 dwFlags |= WC_KEEP_CURSOR_VISIBLE;
             }
-            *pStatus = WriteCharsLegacy(pCookedReadData->_pScreenInfo,
+            *pStatus = WriteCharsLegacy(*pCookedReadData->_pScreenInfo,
                                         pCookedReadData->_BackupLimit,
                                         pCookedReadData->_BackupLimit,
                                         pCookedReadData->_BackupLimit,
@@ -810,7 +810,7 @@ bool ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
             // update cursor position
             if (wch != UNICODE_CARRIAGERETURN)
             {
-                if (CheckBisectProcessW(pCookedReadData->_pScreenInfo,
+                if (CheckBisectProcessW(*pCookedReadData->_pScreenInfo,
                                         pCookedReadData->_BackupLimit,
                                         pCookedReadData->_CurrentPosition + 1,
                                         sScreenBufferSizeX - pCookedReadData->_OriginalCursorPosition.X,
@@ -825,7 +825,7 @@ bool ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
                 // adjust cursor position for WriteChars
                 pCookedReadData->_OriginalCursorPosition.Y += ScrollY;
                 CursorPosition.Y += ScrollY;
-                *pStatus = AdjustCursorPosition(pCookedReadData->_pScreenInfo, CursorPosition, TRUE, nullptr);
+                *pStatus = AdjustCursorPosition(*pCookedReadData->_pScreenInfo, CursorPosition, TRUE, nullptr);
                 ASSERT(NT_SUCCESS(*pStatus));
                 if (!NT_SUCCESS(*pStatus))
                 {
@@ -849,7 +849,7 @@ bool ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
                 if (pCookedReadData->_Echo)
                 {
                     NumToWrite = sizeof(WCHAR);
-                    *pStatus = WriteCharsLegacy(pCookedReadData->_pScreenInfo,
+                    *pStatus = WriteCharsLegacy(*pCookedReadData->_pScreenInfo,
                                                 pCookedReadData->_BackupLimit,
                                                 pCookedReadData->_BufPtr,
                                                 pCookedReadData->_BufPtr,

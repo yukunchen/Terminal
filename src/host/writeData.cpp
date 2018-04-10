@@ -15,7 +15,7 @@
 // Routine Description:
 // - Creates a new write data object for used in servicing write console requests
 // Arguments:
-// - psiContext - The output buffer to write text data to
+// - siContext - The output buffer to write text data to
 // - pwchContext - The string information that the client application sent us to be written
 // - cbContext - Byte count of the string above
 // - uiOutputCodepage - When the wait is completed, we *might* have to convert the byte count
@@ -24,12 +24,12 @@
 //                      when the write was delayed as it might change by the time it is serviced.
 // Return Value:
 // - THROW: Throws if space cannot be allocated to copy the given string
-WriteData::WriteData(_In_ SCREEN_INFORMATION* const psiContext,
+WriteData::WriteData(_In_ SCREEN_INFORMATION& siContext,
                      _In_reads_bytes_(cbContext) wchar_t* const pwchContext,
                      const ULONG cbContext,
                      const UINT uiOutputCodepage) :
     IWaitRoutine(ReplyDataType::Write),
-    _psiContext(psiContext),
+    _siContext(siContext),
     _pwchContext(THROW_IF_NULL_ALLOC(reinterpret_cast<wchar_t*>(new byte[cbContext]))),
     _cbContext(cbContext),
     _uiOutputCodepage(uiOutputCodepage),
@@ -126,7 +126,7 @@ bool WriteData::Notify(const WaitTerminationReason TerminationReason,
     ULONG cbContext = _cbContext;
     NTSTATUS Status = DoWriteConsole(_pwchContext,
                                      &cbContext,
-                                     _psiContext,
+                                     _siContext,
                                      &pWaiter);
 
     if (Status == CONSOLE_STATUS_WAIT)

@@ -16,7 +16,7 @@ BOOL HandleSysKeyEvent(const HWND hWnd,
                        const WPARAM wParam,
                        const LPARAM lParam,
                        _Inout_opt_ PBOOL pfUnlockConsole);
-BOOL HandleMouseEvent(const SCREEN_INFORMATION * const pScreenInfo,
+BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
                       const UINT Message,
                       const WPARAM wParam,
                       const LPARAM lParam);

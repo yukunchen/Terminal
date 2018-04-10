@@ -113,7 +113,7 @@ BOOL CheckBisectStringW(_In_reads_bytes_(cBytes) const WCHAR * pwchBuffer,
 // Routine Description:
 // - This routine check bisected on Unicode string end.
 // Arguments:
-// - pScreenInfo - Pointer to screen information structure.
+// - ScreenInfo - reference to screen information structure.
 // - pwchBuffer - Pointer to Unicode string buffer.
 // - cWords - Number of Unicode string.
 // - cBytes - Number of bisect position by byte counts.
@@ -121,14 +121,14 @@ BOOL CheckBisectStringW(_In_reads_bytes_(cBytes) const WCHAR * pwchBuffer,
 // Return Value:
 // - TRUE - Bisected character.
 // - FALSE - Correctly.
-BOOL CheckBisectProcessW(const SCREEN_INFORMATION * const pScreenInfo,
+BOOL CheckBisectProcessW(const SCREEN_INFORMATION& ScreenInfo,
                          _In_reads_bytes_(cBytes) const WCHAR * pwchBuffer,
                          _In_ DWORD cWords,
                          _In_ DWORD cBytes,
                          _In_ SHORT sOriginalXPosition,
                          _In_ BOOL fEcho)
 {
-    if (IsFlagSet(pScreenInfo->OutputMode, ENABLE_PROCESSED_OUTPUT))
+    if (IsFlagSet(ScreenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT))
     {
         while (cWords && cBytes)
         {

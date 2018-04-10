@@ -23,11 +23,13 @@ SHORT CalcWideCharToColumn(_In_ PCHAR_INFO Buffer, _In_ size_t NumberOfChars);
 void ConsoleImeViewInfo(_In_ ConversionAreaInfo* ConvAreaInfo, _In_ COORD coordConView);
 void ConsoleImeWindowInfo(_In_ ConversionAreaInfo* ConvAreaInfo, _In_ SMALL_RECT rcViewCaWindow);
 [[nodiscard]]
-NTSTATUS ConsoleImeResizeScreenBuffer(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ COORD NewScreenSize, _In_ ConversionAreaInfo* ConvAreaInfo);
+NTSTATUS ConsoleImeResizeScreenBuffer(_Inout_ SCREEN_INFORMATION& ScreenInfo,
+                                      _In_ COORD NewScreenSize,
+                                      _In_ ConversionAreaInfo* ConvAreaInfo);
 bool InsertConvertedString(_In_ LPCWSTR lpStr);
 void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
                                   const size_t StringLength,
-                                  _In_ PSCREEN_INFORMATION ScreenInfo,
+                                  _Inout_ SCREEN_INFORMATION& ScreenInfo,
                                   _In_reads_(StringLength) DbcsAttribute* const pDbcsAttributes);
 
 bool IsValidSmallRect(_In_ PSMALL_RECT const Rect)
@@ -35,11 +37,11 @@ bool IsValidSmallRect(_In_ PSMALL_RECT const Rect)
     return (Rect->Right >= Rect->Left && Rect->Bottom >= Rect->Top);
 }
 
-void WriteConvRegionToScreen(const SCREEN_INFORMATION * const pScreenInfo,
+void WriteConvRegionToScreen(const SCREEN_INFORMATION& ScreenInfo,
                              const SMALL_RECT srConvRegion)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    if (!pScreenInfo->IsActiveScreenBuffer())
+    if (!ScreenInfo.IsActiveScreenBuffer())
     {
         return;
     }
@@ -52,7 +54,7 @@ void WriteConvRegionToScreen(const SCREEN_INFORMATION * const pScreenInfo,
 
         if (!ConvAreaInfo->IsHidden())
         {
-            const SMALL_RECT currentViewport = pScreenInfo->GetBufferViewport();
+            const SMALL_RECT currentViewport = ScreenInfo.GetBufferViewport();
             // Do clipping region
             SMALL_RECT Region;
             Region.Left = currentViewport.Left + ConvAreaInfo->CaInfo.rcViewCaWindow.Left + ConvAreaInfo->CaInfo.coordConView.X;
@@ -95,28 +97,31 @@ void WriteConvRegionToScreen(const SCREEN_INFORMATION * const pScreenInfo,
 
 #define LOCAL_BUFFER_SIZE 100
 [[nodiscard]]
-NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE lpAtr, _In_reads_(CONIME_ATTRCOLOR_SIZE) PWORD lpAtrIdx, _In_ DWORD NumChars)
+NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString,
+                               _In_ PBYTE lpAtr,
+                               _In_reads_(CONIME_ATTRCOLOR_SIZE) PWORD lpAtrIdx,
+                               _In_ DWORD NumChars)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     ConsoleImeInfo* const ConsoleIme = &gci.ConsoleIme;
-    PSCREEN_INFORMATION const ScreenInfo = gci.CurrentScreenBuffer;
+    SCREEN_INFORMATION& ScreenInfo = *gci.CurrentScreenBuffer;
 
-    COORD Position = ScreenInfo->GetTextBuffer().GetCursor().GetPosition();
+    COORD Position = ScreenInfo.GetTextBuffer().GetCursor().GetPosition();
     COORD WindowOrigin;
     {
-        const SMALL_RECT currentViewport = ScreenInfo->GetBufferViewport();
+        const SMALL_RECT currentViewport = ScreenInfo.GetBufferViewport();
 
         if ((currentViewport.Left <= Position.X && Position.X <= currentViewport.Right) &&
             (currentViewport.Top <= Position.Y && Position.Y <= currentViewport.Bottom))
         {
-            Position.X = ScreenInfo->GetTextBuffer().GetCursor().GetPosition().X - currentViewport.Left;
-            Position.Y = ScreenInfo->GetTextBuffer().GetCursor().GetPosition().Y - currentViewport.Top;
+            Position.X = ScreenInfo.GetTextBuffer().GetCursor().GetPosition().X - currentViewport.Left;
+            Position.Y = ScreenInfo.GetTextBuffer().GetCursor().GetPosition().Y - currentViewport.Top;
         }
         else
         {
             WindowOrigin.X = 0;
             WindowOrigin.Y = (SHORT)(Position.Y - currentViewport.Bottom);
-            LOG_IF_FAILED(ScreenInfo->SetViewportOrigin(FALSE, WindowOrigin));
+            LOG_IF_FAILED(ScreenInfo.SetViewportOrigin(FALSE, WindowOrigin));
         }
     }
 
@@ -133,14 +138,14 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
                                        nullptr);
 
     int const WholeLen = (int)Position.X + (int)NumStr;
-    int const WholeRow = WholeLen / ScreenInfo->GetScreenWindowSizeX();
+    int const WholeRow = WholeLen / ScreenInfo.GetScreenWindowSizeX();
 
-    if ((PosY + WholeRow) > (ScreenInfo->GetScreenWindowSizeY() - 1))
+    if ((PosY + WholeRow) > (ScreenInfo.GetScreenWindowSizeY() - 1))
     {
-        PosY = (SHORT)(ScreenInfo->GetScreenWindowSizeY() - 1 - WholeRow);
+        PosY = (SHORT)(ScreenInfo.GetScreenWindowSizeY() - 1 - WholeRow);
         if (PosY < 0)
         {
-            PosY = ScreenInfo->GetBufferViewport().Top;
+            PosY = ScreenInfo.GetBufferViewport().Top;
         }
     }
 
@@ -170,8 +175,8 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
             }
         }
         ConvAreaInfo = ConsoleIme->ConvAreaCompStr[ConvAreaIndex].get();
-        PSCREEN_INFORMATION const ConvScreenInfo = ConvAreaInfo->ScreenBuffer;
-        ConvScreenInfo->GetTextBuffer().GetCursor().SetXPosition(Position.X);
+        SCREEN_INFORMATION& ConvScreenInfo = *ConvAreaInfo->ScreenBuffer;
+        ConvScreenInfo.GetTextBuffer().GetCursor().SetXPosition(Position.X);
 
         if (ConvAreaInfo->IsHidden() || (UndetAreaUp))
         {
@@ -183,7 +188,7 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
         }
 
         SMALL_RECT Region;
-        Region.Left = ConvScreenInfo->GetTextBuffer().GetCursor().GetPosition().X;
+        Region.Left = ConvScreenInfo.GetTextBuffer().GetCursor().GetPosition().X;
         Region.Top = 0;
         Region.Bottom = 0;
 
@@ -198,7 +203,7 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
             WORD Attr = 0;
             while (NumChars < BufferSize &&
                    currentBufferIndex < LOCAL_BUFFER_SIZE &&
-                   Position.X < ScreenInfo->GetScreenWindowSizeX())
+                   Position.X < ScreenInfo.GetScreenWindowSizeX())
             {
                 Char = *lpString;
     #pragma prefast(suppress:__WARNING_INCORRECT_ANNOTATION, "Precarious but this is internal-only code so we can live with it")
@@ -208,7 +213,7 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
                     if (IsCharFullWidth(Char))
                     {
                         if (currentBufferIndex < (LOCAL_BUFFER_SIZE - 1)
-                            && Position.X < ScreenInfo->GetScreenWindowSizeX() - 1)
+                            && Position.X < ScreenInfo.GetScreenWindowSizeX() - 1)
                         {
                             // leading byte
                             LocalBuffer[currentBufferIndex] = Char;
@@ -257,20 +262,20 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
                     wLegacyAttr |= (COMMON_LVB_GRID_SINGLEFLAG | COMMON_LVB_GRID_LVERTICAL);
                 }
                 TextAttribute taAttribute = TextAttribute(wLegacyAttr);
-                ConvScreenInfo->SetAttributes(taAttribute);
+                ConvScreenInfo.SetAttributes(taAttribute);
 
                 StreamWriteToScreenBufferIME(LocalBuffer, currentBufferIndex, ConvScreenInfo, dbcsAttributes);
 
-                ConvScreenInfo->GetTextBuffer().GetCursor().IncrementXPosition(static_cast<int>(currentBufferIndex));
+                ConvScreenInfo.GetTextBuffer().GetCursor().IncrementXPosition(static_cast<int>(currentBufferIndex));
 
                 if (NumChars == BufferSize ||
-                    Position.X >= ScreenInfo->GetScreenWindowSizeX() ||
+                    Position.X >= ScreenInfo.GetScreenWindowSizeX() ||
                     ((Char >= (WCHAR)' ' &&
                       IsCharFullWidth(Char) &&
-                      Position.X >= ScreenInfo->GetScreenWindowSizeX() - 1)))
+                      Position.X >= ScreenInfo.GetScreenWindowSizeX() - 1)))
                 {
 
-                    Region.Right = (SHORT)(ConvScreenInfo->GetTextBuffer().GetCursor().GetPosition().X - 1);
+                    Region.Right = (SHORT)(ConvScreenInfo.GetTextBuffer().GetCursor().GetPosition().X - 1);
                     ConsoleImeWindowInfo(ConvAreaInfo, Region);
 
                     ConvAreaInfo->SetHidden(false);
@@ -293,7 +298,7 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
                 return STATUS_SUCCESS;
             }
 
-            if (Position.X >= ScreenInfo->GetScreenWindowSizeX())
+            if (Position.X >= ScreenInfo.GetScreenWindowSizeX())
             {
                 Position.X = 0;
                 break;
@@ -324,14 +329,14 @@ NTSTATUS FillUndetermineChars(_In_ ConversionAreaInfo* const ConvAreaInfo)
     COORD Coord = { 0 };
     DWORD CharsToWrite = ConvAreaInfo->ScreenBuffer->GetScreenBufferSize().X;
 
-    LOG_IF_FAILED(FillOutput(ConvAreaInfo->ScreenBuffer,
+    LOG_IF_FAILED(FillOutput(*ConvAreaInfo->ScreenBuffer,
                              (WCHAR)' ',
                              Coord,
                              CONSOLE_FALSE_UNICODE,    // faster than real unicode
                              &CharsToWrite));
 
     CharsToWrite = ConvAreaInfo->ScreenBuffer->GetScreenBufferSize().X;
-    LOG_IF_FAILED(FillOutput(ConvAreaInfo->ScreenBuffer,
+    LOG_IF_FAILED(FillOutput(*ConvAreaInfo->ScreenBuffer,
                              gci.CurrentScreenBuffer->GetAttributes().GetLegacyAttributes(),
                              Coord,
                              CONSOLE_ATTRIBUTE,
@@ -477,7 +482,7 @@ NTSTATUS ConsoleImeResizeCompStrScreenBuffer(const COORD coordNewScreenSize)
                 ConsoleImePaint(ConvAreaInfo.get());
             }
 
-            NTSTATUS Status = ConsoleImeResizeScreenBuffer(ConvAreaInfo->ScreenBuffer, coordNewScreenSize, ConvAreaInfo.get());
+            NTSTATUS Status = ConsoleImeResizeScreenBuffer(*ConvAreaInfo->ScreenBuffer, coordNewScreenSize, ConvAreaInfo.get());
             if (!NT_SUCCESS(Status))
             {
                 return Status;
@@ -519,16 +524,16 @@ void ConsoleImePaint(const ConversionAreaInfo* const pConvAreaInfo)
         return;
     }
 
-    PSCREEN_INFORMATION const ScreenInfo = gci.CurrentScreenBuffer;
-    if (ScreenInfo == nullptr)
+    if (gci.CurrentScreenBuffer == nullptr)
     {
         return;
     }
+    SCREEN_INFORMATION& ScreenInfo = *gci.CurrentScreenBuffer;
 
     SMALL_RECT WriteRegion;
-    WriteRegion.Left = ScreenInfo->GetBufferViewport().Left + pConvAreaInfo->CaInfo.coordConView.X + pConvAreaInfo->CaInfo.rcViewCaWindow.Left;
+    WriteRegion.Left = ScreenInfo.GetBufferViewport().Left + pConvAreaInfo->CaInfo.coordConView.X + pConvAreaInfo->CaInfo.rcViewCaWindow.Left;
     WriteRegion.Right = WriteRegion.Left + (pConvAreaInfo->CaInfo.rcViewCaWindow.Right - pConvAreaInfo->CaInfo.rcViewCaWindow.Left);
-    WriteRegion.Top = ScreenInfo->GetBufferViewport().Top + pConvAreaInfo->CaInfo.coordConView.Y + pConvAreaInfo->CaInfo.rcViewCaWindow.Top;
+    WriteRegion.Top = ScreenInfo.GetBufferViewport().Top + pConvAreaInfo->CaInfo.coordConView.Y + pConvAreaInfo->CaInfo.rcViewCaWindow.Top;
     WriteRegion.Bottom = WriteRegion.Top + (pConvAreaInfo->CaInfo.rcViewCaWindow.Bottom - pConvAreaInfo->CaInfo.rcViewCaWindow.Top);
 
     if (!pConvAreaInfo->IsHidden())
@@ -565,14 +570,14 @@ void ConsoleImeViewInfo(_Inout_ ConversionAreaInfo* const ConvAreaInfo, _In_ COO
         OldRegion.Bottom += ConvAreaInfo->CaInfo.coordConView.Y;
         ConvAreaInfo->CaInfo.coordConView = coordConView;
 
-        WriteToScreen(gci.CurrentScreenBuffer, OldRegion);
+        WriteToScreen(*gci.CurrentScreenBuffer, OldRegion);
 
         NewRegion = ConvAreaInfo->CaInfo.rcViewCaWindow;
         NewRegion.Left += ConvAreaInfo->CaInfo.coordConView.X;
         NewRegion.Right += ConvAreaInfo->CaInfo.coordConView.X;
         NewRegion.Top += ConvAreaInfo->CaInfo.coordConView.Y;
         NewRegion.Bottom += ConvAreaInfo->CaInfo.coordConView.Y;
-        WriteToScreen(gci.CurrentScreenBuffer, NewRegion);
+        WriteToScreen(*gci.CurrentScreenBuffer, NewRegion);
     }
 }
 
@@ -600,9 +605,11 @@ void ConsoleImeWindowInfo(_Inout_ ConversionAreaInfo* const ConvAreaInfo, _In_ S
 }
 
 [[nodiscard]]
-NTSTATUS ConsoleImeResizeScreenBuffer(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ COORD NewScreenSize, _In_ ConversionAreaInfo* ConvAreaInfo)
+NTSTATUS ConsoleImeResizeScreenBuffer(_In_ SCREEN_INFORMATION& ScreenInfo,
+                                      _In_ COORD NewScreenSize,
+                                      _In_ ConversionAreaInfo* ConvAreaInfo)
 {
-    NTSTATUS Status = ScreenInfo->ResizeScreenBuffer(NewScreenSize, FALSE);
+    NTSTATUS Status = ScreenInfo.ResizeScreenBuffer(NewScreenSize, FALSE);
     if (NT_SUCCESS(Status))
     {
         ConvAreaInfo->CaInfo.coordCaBuffer = NewScreenSize;
@@ -691,7 +698,7 @@ bool InsertConvertedString(_In_ LPCWSTR lpStr)
 
     if (gci.CurrentScreenBuffer->GetTextBuffer().GetCursor().IsOn())
     {
-        gci.CurrentScreenBuffer->GetTextBuffer().GetCursor().TimerRoutine(gci.CurrentScreenBuffer);
+        gci.CurrentScreenBuffer->GetTextBuffer().GetCursor().TimerRoutine(*gci.CurrentScreenBuffer);
     }
 
     const DWORD dwControlKeyState = GetControlKeyState(0);
@@ -727,20 +734,20 @@ bool InsertConvertedString(_In_ LPCWSTR lpStr)
 
 void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
                                   const size_t StringLength,
-                                  _In_ PSCREEN_INFORMATION ScreenInfo,
+                                  _Inout_ SCREEN_INFORMATION& ScreenInfo,
                                   _In_reads_(StringLength) DbcsAttribute* const pDbcsAttributes)
 {
     DBGOUTPUT(("StreamWriteToScreenBuffer\n"));
 
-    COORD TargetPoint = ScreenInfo->GetTextBuffer().GetCursor().GetPosition();
+    COORD TargetPoint = ScreenInfo.GetTextBuffer().GetCursor().GetPosition();
 
-    ROW& Row = ScreenInfo->GetTextBuffer().GetRowByOffset(TargetPoint.Y);
+    ROW& Row = ScreenInfo.GetTextBuffer().GetRowByOffset(TargetPoint.Y);
     DBGOUTPUT(("&Row = 0x%p, TargetPoint = (0x%x,0x%x)\n", &Row, TargetPoint.X, TargetPoint.Y));
 
     // copy chars
     CleanupDbcsEdgesForWrite(StringLength, TargetPoint, ScreenInfo);
 
-    const COORD coordScreenBufferSize = ScreenInfo->GetScreenBufferSize();
+    const COORD coordScreenBufferSize = ScreenInfo.GetScreenBufferSize();
 
     USHORT ScreenEndOfString;
     if (SUCCEEDED(UShortSub(coordScreenBufferSize.X, TargetPoint.X, &ScreenEndOfString)) &&
@@ -781,11 +788,11 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
     TextAttributeRun* pExistingHead;
     Row.GetAttrRow().FindAttrIndex(0, &pExistingHead, nullptr);
 
-    if (Row.GetAttrRow()._cList != 1 || !(pExistingHead->GetAttributes().IsEqual(ScreenInfo->GetAttributes())))
+    if (Row.GetAttrRow()._cList != 1 || !(pExistingHead->GetAttributes().IsEqual(ScreenInfo.GetAttributes())))
     {
         TextAttributeRun InsertedRun;
 
-        const WORD wScreenAttributes = ScreenInfo->GetAttributes().GetLegacyAttributes();
+        const WORD wScreenAttributes = ScreenInfo.GetAttributes().GetLegacyAttributes();
         const bool fRVerticalSet = AreAllFlagsSet(wScreenAttributes, COMMON_LVB_GRID_SINGLEFLAG | COMMON_LVB_GRID_RVERTICAL);
         const bool fLVerticalSet = AreAllFlagsSet(wScreenAttributes, COMMON_LVB_GRID_SINGLEFLAG | COMMON_LVB_GRID_LVERTICAL);
 
@@ -839,5 +846,5 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
         return;
     }
 
-    ScreenInfo->ResetTextFlags(TargetPoint.X, TargetPoint.Y, tempShort, TargetPoint.Y);
+    ScreenInfo.ResetTextFlags(TargetPoint.X, TargetPoint.Y, tempShort, TargetPoint.Y);
 }
