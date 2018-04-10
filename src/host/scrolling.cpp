@@ -203,7 +203,7 @@ void Scrolling::s_HandleMouseWheel(_In_ bool isMouseWheel,
 
 bool Scrolling::s_HandleKeyScrollingEvent(const INPUT_KEY_INFO* const pKeyInfo)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     IConsoleWindow *pWindow = ServiceLocator::LocateConsoleWindow();
     ASSERT(pWindow);
 
@@ -263,7 +263,7 @@ bool Scrolling::s_HandleKeyScrollingEvent(const INPUT_KEY_INFO* const pKeyInfo)
                 if (fIsEditLineEmpty)
                 {
                     // Ctrl-End when edit line is empty will scroll to last line in the buffer.
-                    gci.CurrentScreenBuffer->MakeCurrentCursorVisible();
+                    gci.GetActiveOutputBuffer().MakeCurrentCursorVisible();
                     return true;
                 }
                 else

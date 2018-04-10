@@ -62,7 +62,7 @@ class ApiRoutinesTests
         UpdateFlag(gci.Flags, CONSOLE_AUTO_POSITION, IsFlagSet(ulOriginalInputMode, ENABLE_AUTO_POSITION));
 
         // Set cursor DB to on so we can verify that it turned off when the Insert Mode changes.
-        gci.CurrentScreenBuffer->SetCursorDBMode(true);
+        gci.GetActiveOutputBuffer().SetCursorDBMode(true);
 
         // Record the insert mode at this time to see if it changed.
         _fPrevInsertMode = gci.GetInsertMode();
@@ -93,7 +93,7 @@ class ApiRoutinesTests
         VERIFY_ARE_EQUAL(fQuickEditExpected, IsFlagSet(gci.Flags, CONSOLE_QUICK_EDIT_MODE));
         VERIFY_ARE_EQUAL(fAutoPositionExpected, IsFlagSet(gci.Flags, CONSOLE_AUTO_POSITION));
         VERIFY_ARE_EQUAL(!!fInsertModeExpected, !!gci.GetInsertMode());
-        VERIFY_ARE_EQUAL(fCursorDBModeExpected, gci.CurrentScreenBuffer->GetTextBuffer().GetCursor().IsDouble());
+        VERIFY_ARE_EQUAL(fCursorDBModeExpected, gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor().IsDouble());
     }
 
     TEST_METHOD(ApiSetConsoleInputModeImplValidNonExtended)
@@ -337,7 +337,7 @@ class ApiRoutinesTests
                          L"Get how many chars we should feed in at a time. This validates lead bytes and bytes held across calls.");
 
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        SCREEN_INFORMATION& si = *gci.CurrentScreenBuffer;
+        SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer();
 
         gci.LockConsole();
         auto Unlock = wil::ScopeExit([&] { gci.UnlockConsole(); });
@@ -427,7 +427,7 @@ class ApiRoutinesTests
         VERIFY_SUCCEEDED(TestData::TryGetValue(L"fInduceWait", fInduceWait), L"Get whether or not we should exercise this function off a wait state.");
 
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        SCREEN_INFORMATION& si = *gci.CurrentScreenBuffer;
+        SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer();
 
         gci.LockConsole();
         auto Unlock = wil::ScopeExit([&] { gci.UnlockConsole(); });

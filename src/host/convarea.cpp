@@ -104,7 +104,7 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString,
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     ConsoleImeInfo* const ConsoleIme = &gci.ConsoleIme;
-    SCREEN_INFORMATION& ScreenInfo = *gci.CurrentScreenBuffer;
+    SCREEN_INFORMATION& ScreenInfo = gci.GetActiveOutputBuffer();
 
     COORD Position = ScreenInfo.GetTextBuffer().GetCursor().GetPosition();
     COORD WindowOrigin;
@@ -337,7 +337,7 @@ NTSTATUS FillUndetermineChars(_In_ ConversionAreaInfo* const ConvAreaInfo)
 
     CharsToWrite = ConvAreaInfo->ScreenBuffer->GetScreenBufferSize().X;
     LOG_IF_FAILED(FillOutput(*ConvAreaInfo->ScreenBuffer,
-                             gci.CurrentScreenBuffer->GetAttributes().GetLegacyAttributes(),
+                             gci.GetActiveOutputBuffer().GetAttributes().GetLegacyAttributes(),
                              Coord,
                              CONSOLE_ATTRIBUTE,
                              &CharsToWrite));
@@ -350,7 +350,7 @@ NTSTATUS FillUndetermineChars(_In_ ConversionAreaInfo* const ConvAreaInfo)
 NTSTATUS ConsoleImeCompStr(_In_ LPCONIME_UICOMPMESSAGE CompStr)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const Cursor& cursor = gci.CurrentScreenBuffer->GetTextBuffer().GetCursor();
+    const Cursor& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
     ConsoleImeInfo* const pIme = &gci.ConsoleIme;
 
     if (CompStr->dwCompStrLen == 0 || CompStr->dwResultStrLen != 0)
@@ -360,7 +360,7 @@ NTSTATUS ConsoleImeCompStr(_In_ LPCONIME_UICOMPMESSAGE CompStr)
         {
             pIme->SavedCursorVisible = FALSE;
 
-            gci.CurrentScreenBuffer->SetCursorInformation(
+            gci.GetActiveOutputBuffer().SetCursorInformation(
                 cursor.GetSize(),
                 TRUE,
                 cursor.GetColor(),
@@ -405,7 +405,7 @@ NTSTATUS ConsoleImeCompStr(_In_ LPCONIME_UICOMPMESSAGE CompStr)
         {
             pIme->SavedCursorVisible = TRUE;
 
-            gci.CurrentScreenBuffer->SetCursorInformation(
+            gci.GetActiveOutputBuffer().SetCursorInformation(
                 cursor.GetSize(),
                 FALSE,
                 cursor.GetColor(),
@@ -518,17 +518,13 @@ SHORT CalcWideCharToColumn(_In_reads_(NumberOfChars) PCHAR_INFO Buffer, _In_ siz
 
 void ConsoleImePaint(const ConversionAreaInfo* const pConvAreaInfo)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (pConvAreaInfo == nullptr)
     {
         return;
     }
 
-    if (gci.CurrentScreenBuffer == nullptr)
-    {
-        return;
-    }
-    SCREEN_INFORMATION& ScreenInfo = *gci.CurrentScreenBuffer;
+    SCREEN_INFORMATION& ScreenInfo = gci.GetActiveOutputBuffer();
 
     SMALL_RECT WriteRegion;
     WriteRegion.Left = ScreenInfo.GetBufferViewport().Left + pConvAreaInfo->CaInfo.coordConView.X + pConvAreaInfo->CaInfo.rcViewCaWindow.Left;
@@ -548,7 +544,7 @@ void ConsoleImePaint(const ConversionAreaInfo* const pConvAreaInfo)
 
 void ConsoleImeViewInfo(_Inout_ ConversionAreaInfo* const ConvAreaInfo, _In_ COORD coordConView)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     if (ConvAreaInfo->IsHidden())
     {
@@ -570,14 +566,14 @@ void ConsoleImeViewInfo(_Inout_ ConversionAreaInfo* const ConvAreaInfo, _In_ COO
         OldRegion.Bottom += ConvAreaInfo->CaInfo.coordConView.Y;
         ConvAreaInfo->CaInfo.coordConView = coordConView;
 
-        WriteToScreen(*gci.CurrentScreenBuffer, OldRegion);
+        WriteToScreen(gci.GetActiveOutputBuffer(), OldRegion);
 
         NewRegion = ConvAreaInfo->CaInfo.rcViewCaWindow;
         NewRegion.Left += ConvAreaInfo->CaInfo.coordConView.X;
         NewRegion.Right += ConvAreaInfo->CaInfo.coordConView.X;
         NewRegion.Top += ConvAreaInfo->CaInfo.coordConView.Y;
         NewRegion.Bottom += ConvAreaInfo->CaInfo.coordConView.Y;
-        WriteToScreen(*gci.CurrentScreenBuffer, NewRegion);
+        WriteToScreen(gci.GetActiveOutputBuffer(), NewRegion);
     }
 }
 
@@ -693,12 +689,13 @@ NTSTATUS ImeControl(_In_ PCOPYDATASTRUCT pCopyDataStruct)
 
 bool InsertConvertedString(_In_ LPCWSTR lpStr)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     bool fResult = false;
 
-    if (gci.CurrentScreenBuffer->GetTextBuffer().GetCursor().IsOn())
+    auto& screenInfo = gci.GetActiveOutputBuffer();
+    if (screenInfo.GetTextBuffer().GetCursor().IsOn())
     {
-        gci.CurrentScreenBuffer->GetTextBuffer().GetCursor().TimerRoutine(*gci.CurrentScreenBuffer);
+        screenInfo.GetTextBuffer().GetCursor().TimerRoutine(screenInfo);
     }
 
     const DWORD dwControlKeyState = GetControlKeyState(0);

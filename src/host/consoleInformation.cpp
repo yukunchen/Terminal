@@ -15,7 +15,7 @@
 CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     // ProcessHandleList initializes itself
     pInputBuffer(nullptr),
-    CurrentScreenBuffer(nullptr),
+    pCurrentScreenBuffer(nullptr),
     ScreenBuffers(nullptr),
     OutputQueue(),
     // CommandHistoryList initialized below
@@ -110,12 +110,17 @@ void CONSOLE_INFORMATION::HandleTerminalKeyEventCallback(_Inout_ std::deque<std:
 // - the active screen buffer of the console.
 SCREEN_INFORMATION& CONSOLE_INFORMATION::GetActiveOutputBuffer()
 {
-    return *CurrentScreenBuffer;
+    return *pCurrentScreenBuffer;
 }
 
 const SCREEN_INFORMATION& CONSOLE_INFORMATION::GetActiveOutputBuffer() const
 {
-    return *CurrentScreenBuffer;
+    return *pCurrentScreenBuffer;
+}
+
+bool CONSOLE_INFORMATION::HasActiveOutputBuffer() const
+{
+    return (pCurrentScreenBuffer != nullptr);
 }
 
 // Method Description:

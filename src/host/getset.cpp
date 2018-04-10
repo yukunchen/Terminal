@@ -249,7 +249,7 @@ HRESULT ApiRoutines::SetConsoleInputModeImpl(_In_ InputBuffer* const pContext, c
         gci.SetInsertMode(IsFlagSet(Mode, ENABLE_INSERT_MODE));
         if (gci.GetInsertMode() != PreviousInsertMode)
         {
-            gci.CurrentScreenBuffer->SetCursorDBMode(false);
+            gci.GetActiveOutputBuffer().SetCursorDBMode(false);
             if (gci.lpCookedReadData != nullptr)
             {
                 gci.lpCookedReadData->_InsertMode = !!gci.GetInsertMode();
@@ -421,7 +421,7 @@ void DoSrvSetScreenBufferInfo(_Inout_ SCREEN_INFORMATION& screenInfo,
     if (NewSize.X != screenInfo.GetScreenWindowSizeX() ||
         NewSize.Y != screenInfo.GetScreenWindowSizeY())
     {
-        gci.CurrentScreenBuffer->SetViewportSize(&NewSize);
+        gci.GetActiveOutputBuffer().SetViewportSize(&NewSize);
 
         IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
         if (pWindow != nullptr)
@@ -1196,8 +1196,8 @@ void DoSrvPrivateUseMainScreenBuffer(_Inout_ SCREEN_INFORMATION& screenInfo)
 [[nodiscard]]
 NTSTATUS DoSrvPrivateHorizontalTabSet()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& ScreenBuffer = *gci.CurrentScreenBuffer;
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& ScreenBuffer = gci.GetActiveOutputBuffer();
 
     const COORD cursorPos = ScreenBuffer.GetTextBuffer().GetCursor().GetPosition();
     return ScreenBuffer.AddTabStop(cursorPos.X);
@@ -1213,8 +1213,8 @@ NTSTATUS DoSrvPrivateHorizontalTabSet()
 [[nodiscard]]
 NTSTATUS DoPrivateTabHelper(const SHORT sNumTabs, _In_ bool fForward)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& ScreenBuffer = *gci.CurrentScreenBuffer;
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& ScreenBuffer = gci.GetActiveOutputBuffer();
 
     NTSTATUS Status = STATUS_SUCCESS;
     ASSERT(sNumTabs >= 0);
@@ -1267,8 +1267,8 @@ NTSTATUS DoSrvPrivateBackwardsTab(const SHORT sNumTabs)
 // - None
 void DoSrvPrivateTabClear(const bool fClearAll)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& ScreenBuffer = *gci.CurrentScreenBuffer;
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& ScreenBuffer = gci.GetActiveOutputBuffer();
     if (fClearAll)
     {
         ScreenBuffer.ClearTabStops();
@@ -1417,7 +1417,7 @@ NTSTATUS DoSrvPrivateGetConsoleScreenBufferAttributes(_In_ const SCREEN_INFORMAT
 void DoSrvPrivateRefreshWindow(_In_ const SCREEN_INFORMATION& screenInfo)
 {
     Globals& g = ServiceLocator::LocateGlobals();
-    if (&screenInfo == g.getConsoleInformation().CurrentScreenBuffer)
+    if (&screenInfo == &g.getConsoleInformation().GetActiveOutputBuffer())
     {
         g.pRender->TriggerRedrawAll();
     }

@@ -76,7 +76,7 @@ private:
 
     static void s_BisectSelection(const short sStringLength,
                                   const COORD coordTargetPoint,
-                                  const SCREEN_INFORMATION* const pScreenInfo,
+                                  const SCREEN_INFORMATION& screenInfo,
                                   _Inout_ SMALL_RECT* const pSmallRect);
 
     void _CancelMarkSelection();
@@ -144,7 +144,7 @@ public:
 
 private:
     void _SaveCursorData(TextBuffer& textBuffer);
-    void _RestoreCursorData(_In_ SCREEN_INFORMATION* const pScreenInfo);
+    void _RestoreCursorData(_Inout_ SCREEN_INFORMATION& screenInfo);
 
     void _AlignAlternateSelection(const bool fAlignToLineSelect);
 

@@ -164,14 +164,14 @@ void Window::_UpdateSystemMetrics() const
 {
     WindowDpiApi* const dpiApi = ServiceLocator::LocateHighDpiApi<WindowDpiApi>();
     Globals& g = ServiceLocator::LocateGlobals();
-    const CONSOLE_INFORMATION& gci = g.getConsoleInformation();
+    CONSOLE_INFORMATION& gci = g.getConsoleInformation();
 
     Scrolling::s_UpdateSystemMetrics();
 
     g.sVerticalScrollSize = (SHORT)dpiApi->GetSystemMetricsForDpi(SM_CXVSCROLL, g.dpi);
     g.sHorizontalScrollSize = (SHORT)dpiApi->GetSystemMetricsForDpi(SM_CYHSCROLL, g.dpi);
 
-    gci.CurrentScreenBuffer->GetTextBuffer().GetCursor().UpdateSystemMetrics();
+    gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor().UpdateSystemMetrics();
 }
 
 // Routine Description:
@@ -978,14 +978,14 @@ HWND Window::GetWindowHandle() const
 
 SCREEN_INFORMATION& Window::GetScreenInfo()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return *gci.CurrentScreenBuffer;
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.GetActiveOutputBuffer();
 }
 
 const SCREEN_INFORMATION& Window::GetScreenInfo() const
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return *gci.CurrentScreenBuffer;
+    return gci.GetActiveOutputBuffer();
 }
 
 // Routine Description:
@@ -1163,8 +1163,8 @@ void Window::ToggleFullscreen()
 
 void Window::s_ReinitializeFontsForDPIChange()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.CurrentScreenBuffer->RefreshFontWithRenderer();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.GetActiveOutputBuffer().RefreshFontWithRenderer();
 }
 
 LRESULT Window::s_RegPersistWindowPos(_In_ PCWSTR const pwszTitle,
@@ -1180,8 +1180,8 @@ LRESULT Window::s_RegPersistWindowPos(_In_ PCWSTR const pwszTitle,
     {
         // Save window size
         auto windowRect = pWindow->GetWindowRect();
-        auto windowWidth = gci.CurrentScreenBuffer->GetScreenWindowSizeX();
-        auto windowHeight = gci.CurrentScreenBuffer->GetScreenWindowSizeY();
+        auto windowWidth = gci.GetActiveOutputBuffer().GetScreenWindowSizeX();
+        auto windowHeight = gci.GetActiveOutputBuffer().GetScreenWindowSizeY();
         DWORD dwValue = MAKELONG(windowWidth, windowHeight);
         Status = RegistrySerialization::s_UpdateValue(hConsoleKey,
                                                       hTitleKey,
@@ -1191,7 +1191,7 @@ LRESULT Window::s_RegPersistWindowPos(_In_ PCWSTR const pwszTitle,
                                                       static_cast<DWORD>(sizeof(dwValue)));
         if (NT_SUCCESS(Status))
         {
-            const COORD coordScreenBufferSize = gci.CurrentScreenBuffer->GetScreenBufferSize();
+            const COORD coordScreenBufferSize = gci.GetActiveOutputBuffer().GetScreenBufferSize();
             auto screenBufferWidth = coordScreenBufferSize.X;
             auto screenBufferHeight = coordScreenBufferSize.Y;
             dwValue =  MAKELONG(screenBufferWidth, screenBufferHeight);

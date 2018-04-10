@@ -314,9 +314,8 @@ UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
         HWND hwnd = _getWindowHandle();
         ScreenToClient(hwnd, &clientPoint);
 
-        const SCREEN_INFORMATION* const _pScreenInfo = _getScreenInfo();
-        THROW_HR_IF_NULL(E_POINTER, _pScreenInfo);
-        const COORD currentFontSize = _pScreenInfo->GetScreenFontSize();
+        const SCREEN_INFORMATION& _pScreenInfo = _getScreenInfo();
+        const COORD currentFontSize = _pScreenInfo.GetScreenFontSize();
         row = (clientPoint.y / currentFontSize.Y) + viewport.Top;
     }
     _start = _screenInfoRowToEndpoint(row);
@@ -1153,7 +1152,7 @@ IFACEMETHODIMP UiaTextRange::GetChildren(_Outptr_result_maybenull_ SAFEARRAY** p
 // - The screen info's current viewport
 const Viewport UiaTextRange::_getViewport()
 {
-    return _getScreenInfo()->GetBufferViewport();
+    return _getScreenInfo().GetBufferViewport();
 }
 
 // Routine Description:
@@ -1187,12 +1186,11 @@ HWND UiaTextRange::_getWindowHandle()
 // - <none>
 // Return Value
 // - the current screen info. May return nullptr.
-SCREEN_INFORMATION* const UiaTextRange::_getScreenInfo()
+SCREEN_INFORMATION& UiaTextRange::_getScreenInfo()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION* const pScreenInfo = gci.CurrentScreenBuffer;
-    THROW_HR_IF_NULL(E_POINTER, pScreenInfo);
-    return pScreenInfo;
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    THROW_HR_IF(E_POINTER, !gci.HasActiveOutputBuffer());
+    return gci.GetActiveOutputBuffer();
 }
 
 // Routine Description:
@@ -1203,8 +1201,7 @@ SCREEN_INFORMATION* const UiaTextRange::_getScreenInfo()
 // - the current output text buffer. May return nullptr.
 TextBuffer& UiaTextRange::_getTextBuffer()
 {
-    SCREEN_INFORMATION* const pScreenInfo = _getScreenInfo();
-    return pScreenInfo->GetTextBuffer();
+    return _getScreenInfo().GetTextBuffer();
 }
 
 // Routine Description:
@@ -1455,8 +1452,8 @@ const ScreenInfoRow UiaTextRange::_endpointToScreenInfoRow(const Endpoint endpoi
 void UiaTextRange::_addScreenInfoRowBoundaries(const ScreenInfoRow screenInfoRow,
                                                _Inout_ std::vector<double>& coords) const
 {
-    const SCREEN_INFORMATION* const pScreenInfo = _getScreenInfo();
-    const COORD currentFontSize = pScreenInfo->GetScreenFontSize();
+    const SCREEN_INFORMATION& screenInfo = _getScreenInfo();
+    const COORD currentFontSize = screenInfo.GetScreenFontSize();
 
     POINT topLeft;
     POINT bottomRight;

@@ -54,17 +54,14 @@ void AccessibilityNotifier::NotifyConsoleCaretEvent(_In_ ConsoleCaretEventFlags 
                        dwFlags,
                        position);
 
-        const SCREEN_INFORMATION* const pScreenInfo = gci.CurrentScreenBuffer;
-        if (pScreenInfo)
+        const auto& screenInfo = gci.GetActiveOutputBuffer();
+        const Cursor& cursor = screenInfo.GetTextBuffer().GetCursor();
+        const COORD currentCursorPosition = cursor.GetPosition();
+        if (currentCursorPosition != previousCursorLocation)
         {
-            const Cursor& cursor = pScreenInfo->GetTextBuffer().GetCursor();
-            const COORD currentCursorPosition = cursor.GetPosition();
-            if (currentCursorPosition != previousCursorLocation)
-            {
-                LOG_IF_FAILED(pWindow->SignalUia(UIA_Text_TextSelectionChangedEventId));
-            }
-            previousCursorLocation = currentCursorPosition;
+            LOG_IF_FAILED(pWindow->SignalUia(UIA_Text_TextSelectionChangedEventId));
         }
+        previousCursorLocation = currentCursorPosition;
     }
 
 }

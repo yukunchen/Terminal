@@ -1023,7 +1023,7 @@ NTSTATUS ScrollRegion(_Inout_ SCREEN_INFORMATION& screenInfo,
 void SetActiveScreenBuffer(_Inout_ SCREEN_INFORMATION& screenInfo)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.CurrentScreenBuffer = &screenInfo;
+    gci.pCurrentScreenBuffer = &screenInfo;
 
     // initialize cursor
     screenInfo.GetTextBuffer().GetCursor().SetIsOn(false);
