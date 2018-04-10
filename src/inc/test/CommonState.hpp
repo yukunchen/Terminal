@@ -119,7 +119,7 @@ public:
     void PrepareCookedReadData()
     {
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        gci.lpCookedReadData = new COOKED_READ_DATA();
+        gci.lpCookedReadData = new COOKED_READ_DATA(gci.GetActiveOutputBuffer());
     }
 
     void CleanupCookedReadData()

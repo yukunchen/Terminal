@@ -148,7 +148,7 @@ class ApiRoutinesTests
     {
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         Log::Comment(L"Turn on insert mode with cooked read data.");
-        gci.lpCookedReadData = new COOKED_READ_DATA();
+        gci.lpCookedReadData = new COOKED_READ_DATA(gci.GetActiveOutputBuffer());
 
         PrepVerifySetConsoleInputModeImpl(0);
         Log::Comment(L"Success code should result from setting valid flags.");
