@@ -139,7 +139,7 @@ private:
     std::wstring _Title;
     std::wstring _TitlePrefix; // Eg Select, Mark - things that we manually prepend to the title.
     std::wstring _OriginalTitle;
-    std::wstring _LinkTitle;   // Path to .lnk file, can be nullptr
+    std::wstring _LinkTitle;   // Path to .lnk file
     Microsoft::Console::VirtualTerminal::VtIo _vtIo;
 };
 

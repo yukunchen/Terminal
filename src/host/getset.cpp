@@ -1660,16 +1660,17 @@ HRESULT DoSrvSetConsoleTitleW(_In_reads_or_z_(cchBuffer) const wchar_t* const pw
     //      to embed control characters in that string.
     if (gci.IsInVtIoMode())
     {
-        std::wstringstream ss;
+        std::wstring sanitized;
+        sanitized.reserve(cchBuffer);
         for(size_t i = 0; i < cchBuffer; i++)
         {
             if (pwsBuffer[i] >= UNICODE_SPACE)
             {
-                ss << pwsBuffer[i];
+                sanitized.push_back(pwsBuffer[i]);
             }
         }
 
-        gci.SetTitle(std::wstring(ss.str()));
+        gci.SetTitle(sanitized);
     }
     else
     {

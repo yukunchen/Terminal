@@ -76,11 +76,12 @@ NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle
 
     // Byte count + 1 so dividing by 2 always rounds up. +1 more for trailing null guard.
     auto titleLength = ((cbTitle + 1) / sizeof(WCHAR)) + 1;
-    try {
+    try
+    {
         gci.SetTitle(std::wstring(pwchTitle, titleLength));
         gci.SetOriginalTitle(std::wstring(TranslateConsoleTitle(gci.GetTitle().c_str(), TRUE, FALSE)));
     }
-    catch(...)
+    catch (...)
     {
         return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
     }

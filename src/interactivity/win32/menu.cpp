@@ -333,18 +333,12 @@ HRESULT Menu::s_GetConsoleState(CONSOLE_STATE_INFO * const pStateInfo)
     memmove(pStateInfo->ColorTable, gci.GetColorTable(), gci.GetColorTableSize() * sizeof(COLORREF));
 
     // Create mutable copies of the titles so the propsheet can do something with them.
-    pStateInfo->OriginalTitle = new wchar_t[gci.GetOriginalTitle().length()+1]{0};
-    if (pStateInfo->OriginalTitle == nullptr)
-    {
-        return E_OUTOFMEMORY;
-    }
+    pStateInfo->OriginalTitle = new wchar_t[gci.GetOriginalTitle().length()+1]{UNICODE_NULL};
+    RETURN_IF_NULL_ALLOC(pStateInfo->OriginalTitle);
     gci.GetOriginalTitle().copy(pStateInfo->OriginalTitle, gci.GetOriginalTitle().length());
 
-    pStateInfo->LinkTitle = new wchar_t[gci.GetLinkTitle().length()+1]{0};
-    if (pStateInfo->LinkTitle == nullptr)
-    {
-        return E_OUTOFMEMORY;
-    }
+    pStateInfo->LinkTitle = new wchar_t[gci.GetLinkTitle().length()+1]{UNICODE_NULL};
+    RETURN_IF_NULL_ALLOC(pStateInfo->LinkTitle);
     gci.GetLinkTitle().copy(pStateInfo->LinkTitle, gci.GetLinkTitle().length());
 
     pStateInfo->CodePage = gci.OutputCP;
