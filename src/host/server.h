@@ -129,9 +129,9 @@ public:
     void SetTitlePrefix(const std::wstring& newTitlePrefix);
     void SetOriginalTitle(const std::wstring& originalTitle);
     void SetLinkTitle(const std::wstring& linkTitle);
-    const std::wstring& GetTitle() const;
-    const std::wstring& GetOriginalTitle() const;
-    const std::wstring& GetLinkTitle() const;
+    const std::wstring& GetTitle() const noexcept;
+    const std::wstring& GetOriginalTitle() const noexcept;
+    const std::wstring& GetLinkTitle() const noexcept;
     const std::wstring GetTitleAndPrefix() const;
 
 private:

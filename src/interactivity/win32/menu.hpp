@@ -34,7 +34,8 @@ namespace Microsoft::Console::Interactivity::Win32
         void Initialize();
 
         static void s_ShowPropertiesDialog(const HWND hwnd, const BOOL Defaults);
-        static void s_GetConsoleState(_Out_ CONSOLE_STATE_INFO * const pStateInfo);
+        [[nodiscard]]
+        static HRESULT s_GetConsoleState(_Out_ CONSOLE_STATE_INFO * const pStateInfo);
 
         static HMENU s_GetMenuHandle();
         static HMENU s_GetHeirMenuHandle();

@@ -292,7 +292,7 @@ HRESULT GdiEngine::GetProposedFont(const FontInfoDesired * const pfiFontDesired,
 // Arguments:
 // - newTitle: the new string to use for the title of the window
 // Return Value:
-// - S_OK
+// -  S_OK if PostMessageW succeeded, otherwise E_FAIL
 [[nodiscard]]
 HRESULT GdiEngine::UpdateTitle(_In_ const std::wstring& /*newTitle*/)
 {

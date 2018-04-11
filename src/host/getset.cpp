@@ -1663,7 +1663,7 @@ HRESULT DoSrvSetConsoleTitleW(_In_reads_or_z_(cchBuffer) const wchar_t* const pw
         std::wstringstream ss;
         for(size_t i = 0; i < cchBuffer; i++)
         {
-            if (pwsBuffer[i] >= L'\x20')
+            if (pwsBuffer[i] >= UNICODE_SPACE)
             {
                 ss << pwsBuffer[i];
             }

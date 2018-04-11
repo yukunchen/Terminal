@@ -212,7 +212,7 @@ void CONSOLE_INFORMATION::SetLinkTitle(const std::wstring& linkTitle)
 // - <none>
 // Return Value:
 // - a reference to the console's title.
-const std::wstring& CONSOLE_INFORMATION::GetTitle() const
+const std::wstring& CONSOLE_INFORMATION::GetTitle() const noexcept
 {
     return _Title;
 }
@@ -235,7 +235,7 @@ const std::wstring CONSOLE_INFORMATION::GetTitleAndPrefix() const
 // - <none>
 // Return Value:
 // - a reference to the console's original title.
-const std::wstring& CONSOLE_INFORMATION::GetOriginalTitle() const
+const std::wstring& CONSOLE_INFORMATION::GetOriginalTitle() const noexcept
 {
     return _OriginalTitle;
 }
@@ -246,7 +246,7 @@ const std::wstring& CONSOLE_INFORMATION::GetOriginalTitle() const
 // - <none>
 // Return Value:
 // - a reference to the console's link title.
-const std::wstring& CONSOLE_INFORMATION::GetLinkTitle() const
+const std::wstring& CONSOLE_INFORMATION::GetLinkTitle() const noexcept
 {
     return _LinkTitle;
 }

@@ -322,7 +322,7 @@ HRESULT XtermEngine::UpdateTitle(const std::wstring& newTitle)
     wistd::unique_ptr<char[]> rgchNeeded;
     size_t needed = 0;
     RETURN_IF_FAILED(ConvertToA(CP_UTF8, newTitle.c_str(), newTitle.length()+1, rgchNeeded, needed));
-    std::string s = std::string(rgchNeeded.get());
+    std::string s = std::string(rgchNeeded.get(), needed);
 
     return VtEngine::_ChangeTitle(s);
 }
