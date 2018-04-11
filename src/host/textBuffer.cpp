@@ -56,7 +56,7 @@ TextBuffer::TextBuffer(const FontInfo fontInfo,
 // - OtherBuffer - The text buffer to copy properties from
 // Return Value:
 // - <none>
-void TextBuffer::CopyProperties(_In_ const TextBuffer& OtherBuffer)
+void TextBuffer::CopyProperties(const TextBuffer& OtherBuffer)
 {
     _fiCurrentFont = OtherBuffer.GetCurrentFont();
 
