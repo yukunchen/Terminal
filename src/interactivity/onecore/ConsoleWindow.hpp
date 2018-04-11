@@ -51,11 +51,11 @@ namespace Microsoft::Console::Interactivity::OneCore
         BOOL PostUpdateTitleWithCopy(const PCWSTR pwszNewTitle) const;
         BOOL PostUpdateWindowSize() const;
 
-        void UpdateWindowSize(COORD const coordSizeInChars) const;
+        void UpdateWindowSize(COORD const coordSizeInChars);
         void UpdateWindowText();
 
-        void HorizontalScroll(const WORD wScrollCommand, const WORD wAbsoluteChange) const;
-        void VerticalScroll(const WORD wScrollCommand, const WORD wAbsoluteChange) const;
+        void HorizontalScroll(const WORD wScrollCommand, const WORD wAbsoluteChange);
+        void VerticalScroll(const WORD wScrollCommand, const WORD wAbsoluteChange);
 
         [[nodiscard]]
         HRESULT SignalUia(_In_ EVENTID id);

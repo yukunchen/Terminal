@@ -227,7 +227,7 @@ HRESULT BgfxEngine::UpdateDrawingBrushes(COLORREF const /*colorForeground*/,
 }
 
 [[nodiscard]]
-HRESULT BgfxEngine::UpdateFont(FontInfoDesired const* const /*pfiFontInfoDesired*/, FontInfo* const /*pfiFontInfo*/)
+HRESULT BgfxEngine::UpdateFont(const FontInfoDesired& /*pfiFontInfoDesired*/, FontInfo& /*pfiFontInfo*/)
 {
     return S_OK;
 }
@@ -252,7 +252,7 @@ HRESULT BgfxEngine::UpdateViewport(const SMALL_RECT /*srNewViewport*/)
 }
 
 [[nodiscard]]
-HRESULT BgfxEngine::GetProposedFont(FontInfoDesired const* const /*pfiFontInfoDesired*/, FontInfo* const /*pfiFontInfo*/, int const /*iDpi*/)
+HRESULT BgfxEngine::GetProposedFont(const FontInfoDesired& /*pfiFontInfoDesired*/, FontInfo& /*pfiFontInfo*/, int const /*iDpi*/)
 {
     return S_OK;
 }
