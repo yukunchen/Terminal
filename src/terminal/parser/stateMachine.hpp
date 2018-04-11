@@ -31,7 +31,7 @@ namespace Microsoft::Console::VirtualTerminal
 #endif
 
     public:
-        StateMachine(_In_ std::unique_ptr<IStateMachineEngine> pEngine);
+        StateMachine(_In_ std::shared_ptr<IStateMachineEngine> pEngine);
 
         void ProcessCharacter(const wchar_t wch);
         void ProcessString(_Inout_updates_(cch) wchar_t* const rgwch, const size_t cch);
@@ -40,6 +40,8 @@ namespace Microsoft::Console::VirtualTerminal
         //      and c_str() only gives you const data.
 
         void ResetState();
+
+        bool FlushToTerminal();
 
         static const short s_cIntermediateMax = 1;
         static const short s_cParamsMax = 16;
@@ -125,7 +127,7 @@ namespace Microsoft::Console::VirtualTerminal
         };
 
         Microsoft::Console::VirtualTerminal::ParserTracing _trace;
-        std::unique_ptr<IStateMachineEngine> const _pEngine;
+        std::shared_ptr<IStateMachineEngine> const _pEngine;
 
         VTStates _state;
 
@@ -140,6 +142,13 @@ namespace Microsoft::Console::VirtualTerminal
         unsigned short _sOscParam;
         unsigned short _sOscNextChar;
         wchar_t _pwchOscStringBuffer[s_cOscStringMaxLength];
+
+        // These members track out state in the parsing of a single string.
+        // FlushToTerminal uses these, so that an engine can force a string
+        // we're parsing to go straight through to the engine's ActionPassThroughString
+        wchar_t* _pwchCurr;
+        wchar_t* _pwchSequenceStart;
+        size_t _currRunLength;
 
     };
 }

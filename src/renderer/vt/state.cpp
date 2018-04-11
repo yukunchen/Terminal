@@ -7,6 +7,7 @@
 #include "precomp.h"
 #include "vtrenderer.hpp"
 #include "../../inc/conattrs.hpp"
+#include "../../types/inc/convert.hpp"
 
 // For _vcprintf
 #include <conio.h>
@@ -93,6 +94,61 @@ HRESULT VtEngine::_Write(_In_reads_(cch) const char* const psz, const size_t cch
 HRESULT VtEngine::_Write(const std::string& str)
 {
     return _Write(str.c_str(), str.length());
+}
+
+// Method Description:
+// - Wrapper for ITerminalOutputConnection. See _Write.
+[[nodiscard]]
+HRESULT VtEngine::WriteTerminalUtf8(const std::string& str)
+{
+    return _Write(str);
+}
+
+// Method Description:
+// - Writes a wstring to the tty, encoded as full utf-8. This is one
+//      implementation of the WriteTerminalW method.
+// Arguments:
+// - wstr - wstring of text to be written
+// Return Value:
+// - S_OK or suitable HRESULT error from either conversion or writing pipe.
+[[nodiscard]]
+HRESULT VtEngine::_WriteTerminalUtf8(const std::wstring& wstr)
+{
+    wistd::unique_ptr<char[]> rgchNeeded;
+    size_t needed = 0;
+    RETURN_IF_FAILED(ConvertToA(CP_UTF8, wstr.c_str(), wstr.length(), rgchNeeded, needed));
+    return _Write(rgchNeeded.get(), needed);
+}
+
+// Method Description:
+// - Writes a wstring to the tty, encoded as "utf-8" where characters that are
+//      outside the ASCII range are encoded as '?'
+//   This mainly exists to maintain compatability with the inbox telnet client.
+//   This is one implementation of the WriteTerminalW method.
+// Arguments:
+// - wstr - wstring of text to be written
+// Return Value:
+// - S_OK or suitable HRESULT error from writing pipe.
+[[nodiscard]]
+HRESULT VtEngine::_WriteTerminalAscii(const std::wstring& wstr)
+{
+    const size_t cchActual = wstr.length();
+
+    wistd::unique_ptr<char[]> rgchNeeded = wil::make_unique_nothrow<char[]>(cchActual + 1);
+    RETURN_IF_NULL_ALLOC(rgchNeeded);
+
+    char* nextChar = &rgchNeeded[0];
+    for (size_t i = 0; i < cchActual; i++)
+    {
+        // We're explicitly replacing characters outside ASCII with a ? because
+        //      that's what telnet wants.
+        *nextChar = (wstr[i] > L'\x7f') ? '?' : static_cast<char>(wstr[i]);
+        nextChar++;
+    }
+
+    rgchNeeded[cchActual] = '\0';
+
+    return _Write(rgchNeeded.get(), cchActual);
 }
 
 // Method Description:

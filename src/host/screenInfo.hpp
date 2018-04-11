@@ -24,15 +24,18 @@ Revision History:
 #include "TextAttribute.hpp"
 
 #include "outputStream.hpp"
-#include "..\terminal\adapter\adaptDispatch.hpp"
-#include "..\terminal\parser\stateMachine.hpp"
-#include "..\server\ObjectHeader.h"
+#include "../terminal/adapter/adaptDispatch.hpp"
+#include "../terminal/parser/stateMachine.hpp"
+#include "../terminal/parser/OutputStateMachineEngine.hpp"
+#include "../server/ObjectHeader.h"
 
-#include "..\interactivity\inc\IAccessibilityNotifier.hpp"
-#include "..\interactivity\inc\IConsoleWindow.hpp"
-#include "..\interactivity\inc\IWindowMetrics.hpp"
+#include "../interactivity/inc/IAccessibilityNotifier.hpp"
+#include "../interactivity/inc/IConsoleWindow.hpp"
+#include "../interactivity/inc/IWindowMetrics.hpp"
 
-#include "..\types\inc\Viewport.hpp"
+#include "../inc/ITerminalOutputConnection.hpp"
+
+#include "../types/inc/Viewport.hpp"
 
 using namespace Microsoft::Console::Interactivity;
 using namespace Microsoft::Console::VirtualTerminal;
@@ -221,6 +224,8 @@ public:
     [[nodiscard]]
     HRESULT VtEraseAll();
 
+    void SetTerminalConnection(_In_ Microsoft::Console::ITerminalOutputConnection* const pTtyConnection);
+
 private:
     SCREEN_INFORMATION(_In_ IWindowMetrics *pMetrics,
                        _In_ IAccessibilityNotifier *pNotifier,
@@ -268,6 +273,7 @@ private:
     WriteBuffer* _pBufferWriter;
     AdaptDispatch* _pAdapter;
     StateMachine* _pStateMachine;
+    std::shared_ptr<OutputStateMachineEngine> _pEngine;
 
     COORD _coordScreenBufferSize; // dimensions of buffer
 

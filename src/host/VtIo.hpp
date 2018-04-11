@@ -6,6 +6,7 @@
 #pragma once
 
 #include "..\inc\VtIoModes.hpp"
+#include "..\inc\ITerminalOutputConnection.hpp"
 #include "..\renderer\vt\vtrenderer.hpp"
 #include "VtInputThread.hpp"
 #include "PtySignalInputThread.hpp"

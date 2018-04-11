@@ -304,6 +304,21 @@ HRESULT XtermEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
 }
 
 // Method Description:
+// - Wrapper for ITerminalOutputConnection. Write either an ascii-only, or a
+//      proper utf-8 string, depending on our mode.
+// Arguments:
+// - wstr - wstring of text to be written
+// Return Value:
+// - S_OK or suitable HRESULT error from either conversion or writing pipe.
+[[nodiscard]]
+HRESULT XtermEngine::WriteTerminalW(const std::wstring& wstr)
+{
+    return _fUseAsciiOnly ?
+        VtEngine::_WriteTerminalAscii(wstr) :
+        VtEngine::_WriteTerminalUtf8(wstr);
+}
+
+// Method Description:
 // - Updates the window's title string. Emits the VT sequence to SetWindowTitle.
 // Arguments:
 // - newTitle: the new string to use for the title of the window

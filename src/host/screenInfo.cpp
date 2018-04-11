@@ -16,6 +16,7 @@
 #include "..\terminal\parser\OutputStateMachineEngine.hpp"
 
 #pragma hdrstop
+using namespace Microsoft::Console;
 using namespace Microsoft::Console::Types;
 
 #pragma region Construct/Destruct
@@ -286,16 +287,22 @@ NTSTATUS SCREEN_INFORMATION::_InitializeOutputStateMachine()
     if (NT_SUCCESS(status))
     {
         ASSERT(_pStateMachine == nullptr);
-        OutputStateMachineEngine* pEngine = new OutputStateMachineEngine(_pAdapter);
-        status = NT_TESTNULL(pEngine);
+
+        // Note that at this point in the setup, we haven't determined if we're
+        //      in VtIo mode or not yet. We'll set the OutputStateMachine's
+        //      TerminalConnection later, in VtIo::StartIfNeeded
+        _pEngine = std::make_shared<OutputStateMachineEngine>(_pAdapter);
+
+        status = NT_TESTNULL(_pEngine.get());
         if (NT_SUCCESS(status))
         {
-            _pStateMachine = new StateMachine(std::move(std::unique_ptr<IStateMachineEngine>(pEngine)));
+            _pStateMachine = new StateMachine(_pEngine);
             status = NT_TESTNULL(_pStateMachine);
             if (!NT_SUCCESS(status))
             {
-                // If we failed to instantiate the StateMachine, but succeeded in creating an engine, delete the engine.
-                delete pEngine;
+                // If we failed to instantiate the StateMachine, but succeeded
+                //      in creating an engine, delete the engine.
+                _pEngine.reset();
             }
         }
     }
@@ -2555,6 +2562,20 @@ void SCREEN_INFORMATION::_InitializeBufferDimensions(const COORD coordScreenBuff
                                          _IsInPtyMode() ? coordScreenBufferSize : coordViewportSize);
 
     SetScreenBufferSize(coordScreenBufferSize);
+}
+
+// Method Description:
+// - Sets up the Output state machine to be in pty mode. Sequences it doesn't
+//      understand will be written to tthe pTtyConnection passed in here.
+// Arguments:
+// - pTtyConnection: This is a TerminaOutputConnection that we can write the
+//      sequence we didn't understand to.
+// Return Value:
+// - <none>
+void SCREEN_INFORMATION::SetTerminalConnection(_In_ ITerminalOutputConnection* const pTtyConnection)
+{
+    _pEngine->SetTerminalConnection(pTtyConnection,
+                                    std::bind(&StateMachine::FlushToTerminal, _pStateMachine));
 }
 
 std::wstring SCREEN_INFORMATION::ReadText(const size_t rowIndex) const
