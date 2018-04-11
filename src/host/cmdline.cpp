@@ -40,7 +40,7 @@
 #define UCLP_WRAP   1
 
 // fwd decls
-void DrawCommandListBorder(_In_ PCLE_POPUP const Popup, _Inout_ SCREEN_INFORMATION& screenInfo);
+void DrawCommandListBorder(_In_ PCLE_POPUP const Popup, SCREEN_INFORMATION& screenInfo);
 PCOMMAND GetLastCommand(_In_ PCOMMAND_HISTORY CommandHistory);
 SHORT FindMatchingCommand(_In_ PCOMMAND_HISTORY CommandHistory,
                           _In_reads_bytes_(CurrentCommandLength) PCWCHAR CurrentCommand,
@@ -52,12 +52,12 @@ NTSTATUS CommandNumberPopup(_In_ COOKED_READ_DATA* const CookedReadData);
 void DrawCommandListPopup(_In_ PCLE_POPUP const Popup,
                           const SHORT CurrentCommand,
                           _In_ PCOMMAND_HISTORY const CommandHistory,
-                          _Inout_ SCREEN_INFORMATION& screenInfo);
+                          SCREEN_INFORMATION& screenInfo);
 void UpdateCommandListPopup(_In_ SHORT Delta,
                             _Inout_ PSHORT CurrentCommand,
                             _In_ PCOMMAND_HISTORY const CommandHistory,
                             _In_ PCLE_POPUP Popup,
-                            _Inout_ SCREEN_INFORMATION& screenInfo,
+                            SCREEN_INFORMATION& screenInfo,
                             const DWORD Flags);
 [[nodiscard]]
 NTSTATUS RetrieveCommand(_In_ PCOMMAND_HISTORY CommandHistory,
@@ -127,7 +127,7 @@ bool IsWordDelim(const wchar_t wch)
 }
 
 [[nodiscard]]
-NTSTATUS BeginPopup(_Inout_ SCREEN_INFORMATION& screenInfo, _In_ PCOMMAND_HISTORY CommandHistory, _In_ COORD PopupSize)
+NTSTATUS BeginPopup(SCREEN_INFORMATION& screenInfo, _In_ PCOMMAND_HISTORY CommandHistory, _In_ COORD PopupSize)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // determine popup dimensions
@@ -215,7 +215,7 @@ NTSTATUS BeginPopup(_Inout_ SCREEN_INFORMATION& screenInfo, _In_ PCOMMAND_HISTOR
 }
 
 [[nodiscard]]
-NTSTATUS EndPopup(_Inout_ SCREEN_INFORMATION& screenInfo, _In_ PCOMMAND_HISTORY CommandHistory)
+NTSTATUS EndPopup(SCREEN_INFORMATION& screenInfo, _In_ PCOMMAND_HISTORY CommandHistory)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     ASSERT(!CLE_NO_POPUPS(CommandHistory));
@@ -979,7 +979,7 @@ NTSTATUS CommandListPopup(_In_ COOKED_READ_DATA* const CookedReadData)
 }
 
 VOID DrawPromptPopup(_In_ PCLE_POPUP Popup,
-                     _Inout_ SCREEN_INFORMATION& screenInfo,
+                     SCREEN_INFORMATION& screenInfo,
                      _In_reads_(PromptLength) PWCHAR Prompt,
                      _In_ ULONG PromptLength)
 {
@@ -1831,7 +1831,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
     return STATUS_SUCCESS;
 }
 
-void DrawCommandListBorder(_In_ PCLE_POPUP const Popup, _Inout_ SCREEN_INFORMATION& screenInfo)
+void DrawCommandListBorder(_In_ PCLE_POPUP const Popup, SCREEN_INFORMATION& screenInfo)
 {
     // fill attributes of top line
     COORD WriteCoord;
@@ -1895,7 +1895,7 @@ void DrawCommandListBorder(_In_ PCLE_POPUP const Popup, _Inout_ SCREEN_INFORMATI
 void UpdateHighlight(_In_ PCLE_POPUP Popup,
                      _In_ SHORT OldCurrentCommand, // command number, not index
                      _In_ SHORT NewCurrentCommand,
-                     _Inout_ SCREEN_INFORMATION& screenInfo)
+                     SCREEN_INFORMATION& screenInfo)
 {
     SHORT TopIndex;
     if (Popup->BottomIndex < POPUP_SIZE_Y(Popup))
@@ -1925,7 +1925,7 @@ void UpdateHighlight(_In_ PCLE_POPUP Popup,
 void DrawCommandListPopup(_In_ PCLE_POPUP const Popup,
                           const SHORT CurrentCommand,
                           _In_ PCOMMAND_HISTORY const CommandHistory,
-                          _Inout_ SCREEN_INFORMATION& screenInfo)
+                          SCREEN_INFORMATION& screenInfo)
 {
     // draw empty popup
     COORD WriteCoord;
@@ -2052,7 +2052,7 @@ void UpdateCommandListPopup(_In_ SHORT Delta,
                             _Inout_ PSHORT CurrentCommand,   // real index, not command #
                             _In_ PCOMMAND_HISTORY const CommandHistory,
                             _In_ PCLE_POPUP Popup,
-                            _Inout_ SCREEN_INFORMATION& screenInfo,
+                            SCREEN_INFORMATION& screenInfo,
                             const DWORD Flags)
 {
     if (Delta == 0)

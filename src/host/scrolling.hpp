@@ -34,7 +34,7 @@ public:
                                    _In_ bool isMouseHWheel,
                                    _In_ short wheelDelta,
                                    _In_ bool hasShift,
-                                   _Inout_ SCREEN_INFORMATION& ScreenInfo);
+                                   SCREEN_INFORMATION& ScreenInfo);
     static bool s_HandleKeyScrollingEvent(const INPUT_KEY_INFO* const pKeyInfo);
 
 private:

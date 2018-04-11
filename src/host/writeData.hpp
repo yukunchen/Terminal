@@ -23,7 +23,7 @@ Revision History:
 class WriteData : public IWaitRoutine
 {
 public:
-    WriteData(_In_ SCREEN_INFORMATION& siContext,
+    WriteData(SCREEN_INFORMATION& siContext,
               _In_reads_bytes_(cbContext) wchar_t* const pwchContext,
               const ULONG cbContext,
               const UINT uiOutputCodepage);

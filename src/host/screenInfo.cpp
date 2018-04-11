@@ -81,7 +81,7 @@ NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
                                             const CHAR_INFO ciFill,
                                             const CHAR_INFO ciPopupFill,
                                             const UINT uiCursorSize,
-                                            _Outptr_ PPSCREEN_INFORMATION const ppScreen)
+                                            _Outptr_ SCREEN_INFORMATION** const ppScreen)
 {
     *ppScreen = nullptr;
 
@@ -1959,11 +1959,7 @@ SMALL_RECT SCREEN_INFORMATION::GetScrollMargins() const
 // - a reference to this buffer's active buffer.
 SCREEN_INFORMATION& SCREEN_INFORMATION::GetActiveBuffer()
 {
-    if (_psiAlternateBuffer != nullptr)
-    {
-        return *_psiAlternateBuffer;
-    }
-    return *this;
+    return const_cast<SCREEN_INFORMATION&>(static_cast<const SCREEN_INFORMATION* const>(this)->GetActiveBuffer());
 }
 
 const SCREEN_INFORMATION& SCREEN_INFORMATION::GetActiveBuffer() const
@@ -1985,11 +1981,7 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetActiveBuffer() const
 // - a reference to this buffer's main buffer.
 SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer()
 {
-    if (_psiMainBuffer != nullptr)
-    {
-        return *_psiMainBuffer;
-    }
-    return *this;
+    return const_cast<SCREEN_INFORMATION&>(static_cast<const SCREEN_INFORMATION* const>(this)->GetMainBuffer());
 }
 
 const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const

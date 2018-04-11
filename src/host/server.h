@@ -81,7 +81,7 @@ public:
     ConsoleProcessList ProcessHandleList;
     InputBuffer* pInputBuffer;
 
-    PSCREEN_INFORMATION ScreenBuffers;  // singly linked list
+    SCREEN_INFORMATION* ScreenBuffers;  // singly linked list
     ConsoleWaitQueue OutputQueue;
     LIST_ENTRY CommandHistoryList;
     UINT NumCommandHistories;
@@ -133,6 +133,7 @@ public:
 
     [[nodiscard]]
     static NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle, const DWORD cbTitle);
+    // MSFT:16886775 : get rid of friends
     friend void SetActiveScreenBuffer(_Inout_ SCREEN_INFORMATION& screenInfo);
     friend class SCREEN_INFORMATION;
     friend class CommonState;
@@ -154,4 +155,4 @@ private:
 #include "..\server\ObjectHandle.h"
 
 
-void SetActiveScreenBuffer(_Inout_ SCREEN_INFORMATION& screenInfo);
+void SetActiveScreenBuffer(SCREEN_INFORMATION& screenInfo);

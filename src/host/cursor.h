@@ -76,7 +76,7 @@ public:
     void DecrementXPosition(const int DeltaX);
     void DecrementYPosition(const int DeltaY);
 
-    void TimerRoutine(_Inout_ SCREEN_INFORMATION& ScreenInfo);
+    void TimerRoutine(SCREEN_INFORMATION& ScreenInfo);
     void CopyProperties(const Cursor& OtherCursor);
 
     void DelayEOLWrap(const COORD coordDelayedAt);

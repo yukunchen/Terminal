@@ -144,7 +144,7 @@ public:
 
 private:
     void _SaveCursorData(TextBuffer& textBuffer);
-    void _RestoreCursorData(_Inout_ SCREEN_INFORMATION& screenInfo);
+    void _RestoreCursorData(SCREEN_INFORMATION& screenInfo);
 
     void _AlignAlternateSelection(const bool fAlignToLineSelect);
 

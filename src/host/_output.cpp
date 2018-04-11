@@ -29,7 +29,7 @@ using namespace Microsoft::Console::Types;
 
 void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
                                _In_ SHORT cchBuffer,
-                               _Inout_ SCREEN_INFORMATION& screenInfo,
+                               SCREEN_INFORMATION& screenInfo,
                                _Inout_updates_(cchBuffer) DbcsAttribute* const pDbcsAttributes,
                                const bool fWasLineWrapped)
 {
@@ -103,7 +103,7 @@ void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
 NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimensions.Y * sizeof(CHAR_INFO)) PBYTE const prgbSrc,
                                  const COORD coordSrcDimensions,
                                  const SMALL_RECT * const psrSrc,
-                                 _Inout_ SCREEN_INFORMATION& screenInfo,
+                                 SCREEN_INFORMATION& screenInfo,
                                  const COORD coordDest,
                                  _In_reads_opt_(coordSrcDimensions.X * coordSrcDimensions.Y) TextAttribute* const pTextAttributes)
 {
@@ -331,7 +331,7 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
 // - <none>
 // Note:
 // - will throw exception on failure
-void WriteRectToScreenBuffer(_Inout_ SCREEN_INFORMATION& screenInfo,
+void WriteRectToScreenBuffer(SCREEN_INFORMATION& screenInfo,
                              const std::vector<std::vector<OutputCell>>& cells,
                              const COORD coordDest)
 {
@@ -391,7 +391,7 @@ void WriteRectToScreenBuffer(_Inout_ SCREEN_INFORMATION& screenInfo,
     }
 }
 
-void WriteRegionToScreen(_Inout_ SCREEN_INFORMATION& screenInfo, _In_ PSMALL_RECT psrRegion)
+void WriteRegionToScreen(SCREEN_INFORMATION& screenInfo, _In_ PSMALL_RECT psrRegion)
 {
     if (screenInfo.IsActiveScreenBuffer())
     {
@@ -412,7 +412,7 @@ void WriteRegionToScreen(_Inout_ SCREEN_INFORMATION& screenInfo, _In_ PSMALL_REC
 // - srRegion - Region to write in screen buffer coordinates.  Region is inclusive
 // Return Value:
 // - <none>
-void WriteToScreen(_Inout_ SCREEN_INFORMATION& screenInfo, const SMALL_RECT srRegion)
+void WriteToScreen(SCREEN_INFORMATION& screenInfo, const SMALL_RECT srRegion)
 {
     DBGOUTPUT(("WriteToScreen\n"));
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -456,7 +456,7 @@ void WriteToScreen(_Inout_ SCREEN_INFORMATION& screenInfo, const SMALL_RECT srRe
 // - pcColumns - receives the number of columns output, which could be more than NumRecords (FE fullwidth chars)
 // Return Value:
 [[nodiscard]]
-NTSTATUS WriteOutputString(_Inout_ SCREEN_INFORMATION& screenInfo,
+NTSTATUS WriteOutputString(SCREEN_INFORMATION& screenInfo,
                            _In_reads_(*pcRecords) const VOID * pvBuffer,
                            const COORD coordWrite,
                            const ULONG ulStringType,
@@ -910,7 +910,7 @@ NTSTATUS WriteOutputString(_Inout_ SCREEN_INFORMATION& screenInfo,
 // - pcElements - On input, the number of elements to write.  On output, the number of elements written.
 // Return Value:
 [[nodiscard]]
-NTSTATUS FillOutput(_Inout_ SCREEN_INFORMATION& screenInfo,
+NTSTATUS FillOutput(SCREEN_INFORMATION& screenInfo,
                     _In_ WORD wElement,
                     const COORD coordWrite,
                     const ULONG ulElementType,
@@ -1241,7 +1241,7 @@ NTSTATUS FillOutput(_Inout_ SCREEN_INFORMATION& screenInfo,
 // - psrTarget - rectangle in screen buffer to fill
 // Return Value:
 void FillRectangle(const CHAR_INFO * const pciFill,
-                   _Inout_ SCREEN_INFORMATION& screenInfo,
+                   SCREEN_INFORMATION& screenInfo,
                    const SMALL_RECT * const psrTarget)
 {
     DBGOUTPUT(("FillRectangle\n"));
