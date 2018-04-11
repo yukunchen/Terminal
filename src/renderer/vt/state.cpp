@@ -191,13 +191,13 @@ HRESULT VtEngine::_WriteFormattedString(const std::string* const pFormat, ...)
 // - This method will update the active font on the current device context
 //      Does nothing for vt, the font is handed by the terminal.
 // Arguments:
-// - pfiFontDesired - Pointer to font information we should use while instantiating a font.
-// - pfiFont - Pointer to font information where the chosen font information will be populated.
+// - FontDesired - reference to font information we should use while instantiating a font.
+// - Font - reference to font information where the chosen font information will be populated.
 // Return Value:
 // - HRESULT S_OK
 [[nodiscard]]
-HRESULT VtEngine::UpdateFont(const FontInfoDesired * const /*pfiFontDesired*/,
-                             _Out_ FontInfo* const /*pfiFont*/)
+HRESULT VtEngine::UpdateFont(const FontInfoDesired& /*pfiFontDesired*/,
+                             _Out_ FontInfo& /*pfiFont*/)
 {
     return S_OK;
 }
@@ -290,14 +290,14 @@ HRESULT VtEngine::UpdateViewport(const SMALL_RECT srNewViewport)
 // - If the intent is to immediately turn around and use this font, pass the optional handle parameter and use it immediately.
 //      Does nothing for vt, the font is handed by the terminal.
 // Arguments:
-// - pfiFontDesired - Pointer to font information we should use while instantiating a font.
-// - pfiFont - Pointer to font information where the chosen font information will be populated.
+// - FontDesired - reference to font information we should use while instantiating a font.
+// - Font - reference to font information where the chosen font information will be populated.
 // - iDpi - The DPI we will have when rendering
 // Return Value:
 // - S_FALSE: This is unsupported by the VT Renderer and should use another engine's value.
 [[nodiscard]]
-HRESULT VtEngine::GetProposedFont(const FontInfoDesired * const /*pfiFontDesired*/,
-                                  _Out_ FontInfo* const /*pfiFont*/,
+HRESULT VtEngine::GetProposedFont(const FontInfoDesired& /*pfiFontDesired*/,
+                                  _Out_ FontInfo& /*pfiFont*/,
                                   const int /*iDpi*/)
 {
     return S_FALSE;

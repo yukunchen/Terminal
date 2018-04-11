@@ -172,12 +172,12 @@ UiaTextRange* UiaTextRange::Create(_In_ IRawElementProviderSimple* const pProvid
 }
 
 UiaTextRange* UiaTextRange::Create(_In_ IRawElementProviderSimple* const pProvider,
-                                   const Cursor* const pCursor)
+                                   const Cursor cursor)
 {
     UiaTextRange* range = nullptr;
     try
     {
-        range = new UiaTextRange(pProvider, pCursor);
+        range = new UiaTextRange(pProvider, cursor);
     }
     catch (...)
     {
@@ -255,13 +255,11 @@ UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider) :
 }
 
 UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                           const Cursor* const pCursor) :
+                           const Cursor cursor) :
     UiaTextRange(pProvider)
 {
-    THROW_HR_IF_NULL(E_POINTER, pCursor);
-
     _degenerate = true;
-    _start = _screenInfoRowToEndpoint(pCursor->GetPosition().Y) + pCursor->GetPosition().X;
+    _start = _screenInfoRowToEndpoint(cursor.GetPosition().Y) + cursor.GetPosition().X;
     _end = _start;
 
 #if defined(_DEBUG) && defined(UIATEXTRANGE_DEBUG_MSGS)
@@ -316,9 +314,8 @@ UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
         HWND hwnd = _getWindowHandle();
         ScreenToClient(hwnd, &clientPoint);
 
-        const SCREEN_INFORMATION* const _pScreenInfo = _getScreenInfo();
-        THROW_HR_IF_NULL(E_POINTER, _pScreenInfo);
-        const COORD currentFontSize = _pScreenInfo->GetScreenFontSize();
+        const SCREEN_INFORMATION& _pScreenInfo = _getScreenInfo();
+        const COORD currentFontSize = _pScreenInfo.GetScreenFontSize();
         row = (clientPoint.y / currentFontSize.Y) + viewport.Top;
     }
     _start = _screenInfoRowToEndpoint(row);
@@ -712,7 +709,7 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
             const ScreenInfoRow endScreenInfoRow = _endpointToScreenInfoRow(_end);
             const Column endColumn = _endpointToColumn(_end);
             const unsigned int totalRowsInRange = _rowCountInRange();
-            const TEXT_BUFFER_INFO* const pTextBuffer = _getTextBuffer();
+            const TextBuffer& textBuffer = _getTextBuffer();
 
             ScreenInfoRow currentScreenInfoRow;
             for (unsigned int i = 0; i < totalRowsInRange; ++i)
@@ -724,7 +721,7 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
                     throw UIA_E_INVALIDOPERATION;
                 }
 
-                const ROW& row = pTextBuffer->GetRowAtIndex(rowIndex);
+                const ROW& row = textBuffer.GetRowAtIndex(rowIndex);
                 if (row.GetCharRow().ContainsText())
                 {
                     const size_t rowRight = row.GetCharRow().MeasureRight();
@@ -1155,7 +1152,7 @@ IFACEMETHODIMP UiaTextRange::GetChildren(_Outptr_result_maybenull_ SAFEARRAY** p
 // - The screen info's current viewport
 const Viewport UiaTextRange::_getViewport()
 {
-    return _getScreenInfo()->GetBufferViewport();
+    return _getScreenInfo().GetBufferViewport();
 }
 
 // Routine Description:
@@ -1189,12 +1186,11 @@ HWND UiaTextRange::_getWindowHandle()
 // - <none>
 // Return Value
 // - the current screen info. May return nullptr.
-SCREEN_INFORMATION* const UiaTextRange::_getScreenInfo()
+SCREEN_INFORMATION& UiaTextRange::_getScreenInfo()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION* const pScreenInfo = gci.CurrentScreenBuffer;
-    THROW_HR_IF_NULL(E_POINTER, pScreenInfo);
-    return pScreenInfo;
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    THROW_HR_IF(E_POINTER, !gci.HasActiveOutputBuffer());
+    return gci.GetActiveOutputBuffer();
 }
 
 // Routine Description:
@@ -1203,12 +1199,9 @@ SCREEN_INFORMATION* const UiaTextRange::_getScreenInfo()
 // - <none>
 // Return Value
 // - the current output text buffer. May return nullptr.
-TEXT_BUFFER_INFO* const UiaTextRange::_getTextBuffer()
+TextBuffer& UiaTextRange::_getTextBuffer()
 {
-    SCREEN_INFORMATION* const pScreenInfo = _getScreenInfo();
-    TEXT_BUFFER_INFO* const pTextBuffer = pScreenInfo->TextInfo;
-    THROW_HR_IF_NULL(E_POINTER, pTextBuffer);
-    return pTextBuffer;
+    return _getScreenInfo().GetTextBuffer();
 }
 
 // Routine Description:
@@ -1219,9 +1212,7 @@ TEXT_BUFFER_INFO* const UiaTextRange::_getTextBuffer()
 // - The number of rows
 const unsigned int UiaTextRange::_getTotalRows()
 {
-    const TEXT_BUFFER_INFO* const pTextBuffer = _getTextBuffer();
-    THROW_HR_IF_NULL(E_POINTER, pTextBuffer);
-    return pTextBuffer->TotalRowCount();
+    return _getTextBuffer().TotalRowCount();
 }
 
 // Routine Description:
@@ -1304,7 +1295,7 @@ const unsigned int UiaTextRange::_rowCountInRange() const
 // - the equivalent ScreenInfoRow.
 const ScreenInfoRow UiaTextRange::_textBufferRowToScreenInfoRow(const TextBufferRow row)
 {
-    const int firstRowIndex = _getTextBuffer()->GetFirstRowIndex();
+    const int firstRowIndex = _getTextBuffer().GetFirstRowIndex();
     return _normalizeRow(row - firstRowIndex);
 }
 
@@ -1412,8 +1403,7 @@ const bool UiaTextRange::_isScreenInfoRowInViewport(const ScreenInfoRow row,
 // - the equivalent TextBufferRow.
 const TextBufferRow UiaTextRange::_screenInfoRowToTextBufferRow(const ScreenInfoRow row)
 {
-    const TEXT_BUFFER_INFO* const pTextBuffer = _getTextBuffer();
-    const TextBufferRow firstRowIndex = pTextBuffer->GetFirstRowIndex();
+    const TextBufferRow firstRowIndex = _getTextBuffer().GetFirstRowIndex();
     return _normalizeRow(row + firstRowIndex);
 }
 
@@ -1462,8 +1452,8 @@ const ScreenInfoRow UiaTextRange::_endpointToScreenInfoRow(const Endpoint endpoi
 void UiaTextRange::_addScreenInfoRowBoundaries(const ScreenInfoRow screenInfoRow,
                                                _Inout_ std::vector<double>& coords) const
 {
-    const SCREEN_INFORMATION* const pScreenInfo = _getScreenInfo();
-    const COORD currentFontSize = pScreenInfo->GetScreenFontSize();
+    const SCREEN_INFORMATION& screenInfo = _getScreenInfo();
+    const COORD currentFontSize = screenInfo.GetScreenFontSize();
 
     POINT topLeft;
     POINT bottomRight;
@@ -1642,7 +1632,7 @@ std::pair<Endpoint, Endpoint> UiaTextRange::_moveByCharacterForward(const int mo
     {
         // get the current row's right
         const int rowIndex = _screenInfoRowToTextBufferRow(currentScreenInfoRow);
-        const ROW& row = _getTextBuffer()->GetRowAtIndex(rowIndex);
+        const ROW& row = _getTextBuffer().GetRowAtIndex(rowIndex);
         const size_t right = row.GetCharRow().MeasureRight();
 
         // check if we're at the edge of the screen info buffer
@@ -1700,7 +1690,7 @@ std::pair<Endpoint, Endpoint> UiaTextRange::_moveByCharacterBackward(const int m
             currentScreenInfoRow += static_cast<int>(moveState.Increment);
             // get the right cell for the next row
             const int rowIndex = _screenInfoRowToTextBufferRow(currentScreenInfoRow);
-            const ROW& row = _getTextBuffer()->GetRowAtIndex(rowIndex);
+            const ROW& row = _getTextBuffer().GetRowAtIndex(rowIndex);
             const size_t right = row.GetCharRow().MeasureRight();
             currentColumn = static_cast<Column>((right == 0) ? 0 : right - 1);
         }
@@ -1821,7 +1811,7 @@ UiaTextRange::_moveEndpointByUnitCharacterForward(const int moveCount,
     {
         // get the current row's right
         const int rowIndex = _screenInfoRowToTextBufferRow(currentScreenInfoRow);
-        const ROW& row = _getTextBuffer()->GetRowAtIndex(rowIndex);
+        const ROW& row = _getTextBuffer().GetRowAtIndex(rowIndex);
         const size_t right = row.GetCharRow().MeasureRight();
 
         // check if we're at the edge of the screen info buffer
@@ -1920,7 +1910,7 @@ UiaTextRange::_moveEndpointByUnitCharacterBackward(const int moveCount,
             currentScreenInfoRow += static_cast<int>(moveState.Increment);
             // get the right cell for the next row
             const int rowIndex = _screenInfoRowToTextBufferRow(currentScreenInfoRow);
-            const ROW& row = _getTextBuffer()->GetRowAtIndex(rowIndex);
+            const ROW& row = _getTextBuffer().GetRowAtIndex(rowIndex);
             const size_t right = row.GetCharRow().MeasureRight();
             currentColumn = static_cast<Column>((right == 0) ? 0 : right - 1);
         }

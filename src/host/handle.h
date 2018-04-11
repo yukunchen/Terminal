@@ -23,6 +23,3 @@ Revision History:
 
 void LockConsole();
 void UnlockConsole();
-
-[[nodiscard]]
-NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle, const DWORD cbTitle);

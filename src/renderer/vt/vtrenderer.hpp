@@ -96,16 +96,17 @@ namespace Microsoft::Console::Render
                                             const WORD legacyColorAttribute,
                                             const bool fIncludeBackgrounds) = 0;
         [[nodiscard]]
-        HRESULT UpdateFont(const FontInfoDesired * const pfiFontInfoDesired,
-                        _Out_ FontInfo* const pfiFontInfo) override;
+        HRESULT UpdateFont(const FontInfoDesired& pfiFontInfoDesired,
+                           _Out_ FontInfo& pfiFontInfo) override;
         [[nodiscard]]
         HRESULT UpdateDpi(const int iDpi) override;
         [[nodiscard]]
         HRESULT UpdateViewport(const SMALL_RECT srNewViewport) override;
 
         [[nodiscard]]
-        HRESULT GetProposedFont(const FontInfoDesired * const pfiFontDesired,
-                                _Out_ FontInfo* const pfiFont, const int iDpi) override;
+        HRESULT GetProposedFont(const FontInfoDesired& FontDesired,
+                                _Out_ FontInfo& Font,
+                                const int iDpi) override;
 
         SMALL_RECT GetDirtyRectInChars() override;
         [[nodiscard]]

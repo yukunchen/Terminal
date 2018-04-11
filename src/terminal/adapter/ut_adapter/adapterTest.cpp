@@ -82,7 +82,7 @@ public:
 
         return _fGetConsoleScreenBufferInfoExResult;
     }
-    BOOL SetConsoleScreenBufferInfoEx(const CONSOLE_SCREEN_BUFFER_INFOEX* const psbiex) const
+    BOOL SetConsoleScreenBufferInfoEx(const CONSOLE_SCREEN_BUFFER_INFOEX* const psbiex)
     {
         Log::Comment(L"SetConsoleScreenBufferInfoEx MOCK returning data...");
 

@@ -19,7 +19,7 @@ Revision History:
 
 #include "server.h"
 
-void WriteConvRegionToScreen(const SCREEN_INFORMATION * const pScreenInfo,
+void WriteConvRegionToScreen(const SCREEN_INFORMATION& ScreenInfo,
                              const SMALL_RECT srConvRegion);
 
 [[nodiscard]]

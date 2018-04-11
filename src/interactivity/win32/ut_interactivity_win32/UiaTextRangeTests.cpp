@@ -71,12 +71,12 @@ class UiaTextRangeTests
     CommonState* _state;
     DummyElementProvider _dummyProvider;
     SCREEN_INFORMATION* _pScreenInfo;
-    TEXT_BUFFER_INFO* _pTextBuffer;
+    TextBuffer* _pTextBuffer;
     UiaTextRange* _range;
 
     TEST_METHOD_SETUP(MethodSetup)
     {
-        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // set up common state
         _state = new CommonState();
         _state->PrepareGlobalFont();
@@ -84,8 +84,8 @@ class UiaTextRangeTests
         _state->PrepareNewTextBufferInfo();
 
         // set up pointers
-        _pScreenInfo = gci.CurrentScreenBuffer;
-        _pTextBuffer = _pScreenInfo->TextInfo;
+        _pScreenInfo = &gci.GetActiveOutputBuffer();
+        _pTextBuffer = &_pScreenInfo->GetTextBuffer();
 
         // fill text buffer with text
         for (UINT i = 0; i < _pTextBuffer->TotalRowCount(); ++i)

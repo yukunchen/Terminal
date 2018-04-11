@@ -536,7 +536,7 @@ BOOL HandleSysKeyEvent(const HWND hWnd, const UINT Message, const WPARAM wParam,
 
 // Routine Description:
 // - Returns TRUE if DefWindowProc should be called.
-BOOL HandleMouseEvent(const SCREEN_INFORMATION* const pScreenInfo,
+BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
                       const UINT Message,
                       const WPARAM wParam,
                       const LPARAM lParam)
@@ -589,7 +589,7 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION* const pScreenInfo,
     }
 
     // translate mouse position into characters, if necessary.
-    COORD ScreenFontSize = pScreenInfo->GetScreenFontSize();
+    COORD ScreenFontSize = ScreenInfo.GetScreenFontSize();
     MousePosition.X /= ScreenFontSize.X;
     MousePosition.Y /= ScreenFontSize.Y;
 
@@ -630,10 +630,10 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION* const pScreenInfo,
         }
     }
 
-    MousePosition.X += pScreenInfo->GetBufferViewport().Left;
-    MousePosition.Y += pScreenInfo->GetBufferViewport().Top;
+    MousePosition.X += ScreenInfo.GetBufferViewport().Left;
+    MousePosition.Y += ScreenInfo.GetBufferViewport().Top;
 
-    const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
+    const COORD coordScreenBufferSize = ScreenInfo.GetScreenBufferSize();
 
     // make sure mouse position is clipped to screen buffer
     if (MousePosition.X < 0)
@@ -742,7 +742,7 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION* const pScreenInfo,
             {
                 try
                 {
-                    const std::pair<COORD, COORD> wordBounds = pScreenInfo->GetWordBoundary(MousePosition);
+                    const std::pair<COORD, COORD> wordBounds = ScreenInfo.GetWordBoundary(MousePosition);
                     MousePosition = wordBounds.second;
                     // update both ends of the selection since we may have adjusted the anchor in some circumstances.
                     pSelection->AdjustSelection(wordBounds.first, wordBounds.second);

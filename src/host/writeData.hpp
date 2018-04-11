@@ -23,7 +23,7 @@ Revision History:
 class WriteData : public IWaitRoutine
 {
 public:
-    WriteData(_In_ SCREEN_INFORMATION* const psiContext,
+    WriteData(SCREEN_INFORMATION& siContext,
               _In_reads_bytes_(cbContext) wchar_t* const pwchContext,
               const ULONG cbContext,
               const UINT uiOutputCodepage);
@@ -42,7 +42,7 @@ public:
                 _Out_ void* const pOutputData);
 
 private:
-    SCREEN_INFORMATION* const _psiContext;
+    SCREEN_INFORMATION& _siContext;
     wchar_t* const _pwchContext;
     ULONG const _cbContext;
     UINT const _uiOutputCodepage;

@@ -29,8 +29,12 @@ public:
     static bool s_IsInScrollMode();
     static void s_DoScroll();
     static void s_ClearScroll();
-    static void s_ScrollIfNecessary(const SCREEN_INFORMATION * const pScreenInfo);
-    static void s_HandleMouseWheel(_In_ bool isMouseWheel, _In_ bool isMouseHWheel, _In_ short wheelDelta, _In_ bool hasShift, _In_ PSCREEN_INFORMATION pScreenInfo);
+    static void s_ScrollIfNecessary(const SCREEN_INFORMATION& ScreenInfo);
+    static void s_HandleMouseWheel(_In_ bool isMouseWheel,
+                                   _In_ bool isMouseHWheel,
+                                   _In_ short wheelDelta,
+                                   _In_ bool hasShift,
+                                   SCREEN_INFORMATION& ScreenInfo);
     static bool s_HandleKeyScrollingEvent(const INPUT_KEY_INFO* const pKeyInfo);
 
 private:

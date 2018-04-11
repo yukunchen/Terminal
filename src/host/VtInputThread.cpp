@@ -34,7 +34,7 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
 
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-    auto pGetSet = std::make_unique<ConhostInternalGetSet>(&gci);
+    auto pGetSet = std::make_unique<ConhostInternalGetSet>(gci);
     THROW_IF_NULL_ALLOC(pGetSet);
 
     auto pDispatch = std::make_unique<InteractDispatch>(std::move(pGetSet));

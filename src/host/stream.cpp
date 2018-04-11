@@ -494,20 +494,19 @@ NTSTATUS ReadLineInput(_Inout_ InputBuffer* const pInputBuffer,
                        const size_t OutputBufferSize)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION* const pScreenInfo = gci.CurrentScreenBuffer;
-    if (nullptr == pScreenInfo)
+    if (!gci.HasActiveOutputBuffer())
     {
         return STATUS_UNSUCCESSFUL;
     }
-
+    SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
     PCOMMAND_HISTORY const pCommandHistory = FindCommandHistory(ProcessData);
 
     // We need to create a temporary handle to the current screen buffer.
     ConsoleHandleData* pTempHandleData;
-    NTSTATUS Status = NTSTATUS_FROM_HRESULT(pScreenInfo->Header.AllocateIoHandle(ConsoleHandleData::HandleType::Output,
-                                                                                 GENERIC_WRITE,
-                                                                                 FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                                                                 &pTempHandleData));
+    NTSTATUS Status = NTSTATUS_FROM_HRESULT(screenInfo.Header.AllocateIoHandle(ConsoleHandleData::HandleType::Output,
+                                                                               GENERIC_WRITE,
+                                                                               FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                                                               &pTempHandleData));
 
     if (!NT_SUCCESS(Status))
     {
@@ -545,7 +544,7 @@ NTSTATUS ReadLineInput(_Inout_ InputBuffer* const pInputBuffer,
     invalidCoord.Y = -1;
     COOKED_READ_DATA CookedReadData(pInputBuffer, // pInputBuffer
                                     pHandleData, // pInputReadHandleData
-                                    pScreenInfo, // pScreenInfo
+                                    screenInfo, // pScreenInfo
                                     TempBufferSize, // BufferSize
                                     0, // BytesRead
                                     0, // CurrentPosition
@@ -574,10 +573,10 @@ NTSTATUS ReadLineInput(_Inout_ InputBuffer* const pInputBuffer,
         CookedReadData._BufPtr += cchInitialData;
         CookedReadData._CurrentPosition = cchInitialData;
 
-        CookedReadData._OriginalCursorPosition = pScreenInfo->TextInfo->GetCursor()->GetPosition();
+        CookedReadData._OriginalCursorPosition = screenInfo.GetTextBuffer().GetCursor().GetPosition();
         CookedReadData._OriginalCursorPosition.X -= (SHORT)CookedReadData._CurrentPosition;
 
-        const SHORT sScreenBufferSizeX = pScreenInfo->GetScreenBufferSize().X;
+        const SHORT sScreenBufferSizeX = screenInfo.GetScreenBufferSize().X;
         while (CookedReadData._OriginalCursorPosition.X < 0)
         {
             CookedReadData._OriginalCursorPosition.X += sScreenBufferSizeX;
