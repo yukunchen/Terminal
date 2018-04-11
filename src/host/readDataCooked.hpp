@@ -36,7 +36,7 @@ class COOKED_READ_DATA final : public ReadData
 public:
     COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
                      _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
-                     _In_ SCREEN_INFORMATION& screenInfo,
+                     SCREEN_INFORMATION& screenInfo,
                      _In_ ULONG BufferSize,
                      _In_ ULONG BytesRead,
                      _In_ ULONG CurrentPosition,
@@ -96,7 +96,7 @@ public:
 // TODO MSFT:11285829 this is a temporary kludge until the constructors are ironed
 // out, so that we can still run the tests in the meantime.
 #if UNIT_TESTING
-    COOKED_READ_DATA(_In_ SCREEN_INFORMATION& screenInfo) :
+    COOKED_READ_DATA(SCREEN_INFORMATION& screenInfo) :
         _screenInfo{ screenInfo }
     {
     }

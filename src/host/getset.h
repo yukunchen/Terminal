@@ -18,24 +18,24 @@ Revision History:
 class SCREEN_INFORMATION;
 
 
-void DoSrvGetConsoleScreenBufferInfo(_In_ const SCREEN_INFORMATION& screenInfo,
+void DoSrvGetConsoleScreenBufferInfo(const SCREEN_INFORMATION& screenInfo,
                                      _Out_ CONSOLE_SCREEN_BUFFER_INFOEX* const pInfo);
-void DoSrvSetScreenBufferInfo(_Inout_ SCREEN_INFORMATION& screenInfo, const CONSOLE_SCREEN_BUFFER_INFOEX* const pInfo);
-void DoSrvGetConsoleCursorInfo(_In_ const SCREEN_INFORMATION& screenInfo,
+void DoSrvSetScreenBufferInfo(SCREEN_INFORMATION& screenInfo, const CONSOLE_SCREEN_BUFFER_INFOEX* const pInfo);
+void DoSrvGetConsoleCursorInfo(const SCREEN_INFORMATION& screenInfo,
                                _Out_ ULONG* const pCursorSize,
                                _Out_ bool* const pIsVisible);
 
 [[nodiscard]]
-HRESULT DoSrvSetConsoleCursorPosition(_Inout_ SCREEN_INFORMATION& screenInfo, const COORD* const pCursorPosition);
+HRESULT DoSrvSetConsoleCursorPosition(SCREEN_INFORMATION& screenInfo, const COORD* const pCursorPosition);
 [[nodiscard]]
-HRESULT DoSrvSetConsoleCursorInfo(_Inout_ SCREEN_INFORMATION& screenInfo, const ULONG CursorSize, const bool IsVisible);
+HRESULT DoSrvSetConsoleCursorInfo(SCREEN_INFORMATION& screenInfo, const ULONG CursorSize, const bool IsVisible);
 [[nodiscard]]
-HRESULT DoSrvSetConsoleWindowInfo(_Inout_ SCREEN_INFORMATION& screenInfo,
+HRESULT DoSrvSetConsoleWindowInfo(SCREEN_INFORMATION& screenInfo,
                                   const bool IsAbsoluteRectangle,
                                   const SMALL_RECT* const pWindowRectangle);
 
 [[nodiscard]]
-HRESULT DoSrvScrollConsoleScreenBufferW(_Inout_ SCREEN_INFORMATION& screenInfo,
+HRESULT DoSrvScrollConsoleScreenBufferW(SCREEN_INFORMATION& screenInfo,
                                         const SMALL_RECT* const pSourceRectangle,
                                         const COORD* const pTargetOrigin,
                                         _In_opt_ const SMALL_RECT* const pTargetClipRectangle,
@@ -43,13 +43,13 @@ HRESULT DoSrvScrollConsoleScreenBufferW(_Inout_ SCREEN_INFORMATION& screenInfo,
                                         const WORD attrFill);
 
 [[nodiscard]]
-HRESULT DoSrvSetConsoleTextAttribute(_Inout_ SCREEN_INFORMATION& screenInfo, const WORD Attribute);
-void DoSrvPrivateSetLegacyAttributes(_Inout_ SCREEN_INFORMATION& screenInfo,
+HRESULT DoSrvSetConsoleTextAttribute(SCREEN_INFORMATION& screenInfo, const WORD Attribute);
+void DoSrvPrivateSetLegacyAttributes(SCREEN_INFORMATION& screenInfo,
                                      const WORD Attribute,
                                      const bool fForeground,
                                      const bool fBackground,
                                      const bool fMeta);
-void SetScreenColors(_Inout_ SCREEN_INFORMATION& screenInfo,
+void SetScreenColors(SCREEN_INFORMATION& screenInfo,
                      _In_ WORD Attributes,
                      _In_ WORD PopupAttributes,
                      _In_ BOOL UpdateWholeScreen);
@@ -58,15 +58,15 @@ void SetScreenColors(_Inout_ SCREEN_INFORMATION& screenInfo,
 NTSTATUS DoSrvPrivateSetCursorKeysMode(_In_ bool fApplicationMode);
 [[nodiscard]]
 NTSTATUS DoSrvPrivateSetKeypadMode(_In_ bool fApplicationMode);
-void DoSrvPrivateAllowCursorBlinking(_Inout_ SCREEN_INFORMATION& screenInfo, const bool fEnable);
+void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool fEnable);
 [[nodiscard]]
-NTSTATUS DoSrvPrivateSetScrollingRegion(_Inout_ SCREEN_INFORMATION& screenInfo, const SMALL_RECT* const psrScrollMargins);
+NTSTATUS DoSrvPrivateSetScrollingRegion(SCREEN_INFORMATION& screenInfo, const SMALL_RECT* const psrScrollMargins);
 [[nodiscard]]
-NTSTATUS DoSrvPrivateReverseLineFeed(_Inout_ SCREEN_INFORMATION& screenInfo);
+NTSTATUS DoSrvPrivateReverseLineFeed(SCREEN_INFORMATION& screenInfo);
 
 [[nodiscard]]
-NTSTATUS DoSrvPrivateUseAlternateScreenBuffer(_Inout_ SCREEN_INFORMATION& screenInfo);
-void DoSrvPrivateUseMainScreenBuffer(_Inout_ SCREEN_INFORMATION&  screenInfo);
+NTSTATUS DoSrvPrivateUseAlternateScreenBuffer(SCREEN_INFORMATION& screenInfo);
+void DoSrvPrivateUseMainScreenBuffer(SCREEN_INFORMATION&  screenInfo);
 
 [[nodiscard]]
 NTSTATUS DoSrvPrivateHorizontalTabSet();
@@ -83,15 +83,15 @@ void DoSrvPrivateEnableButtonEventMouseMode(const bool fEnable);
 void DoSrvPrivateEnableAnyEventMouseMode(const bool fEnable);
 void DoSrvPrivateEnableAlternateScroll(const bool fEnable);
 
-void DoSrvPrivateSetConsoleXtermTextAttribute(_Inout_ SCREEN_INFORMATION& screenInfo,
+void DoSrvPrivateSetConsoleXtermTextAttribute(SCREEN_INFORMATION& screenInfo,
                                               const int iXtermTableEntry,
                                               const bool fIsForeground);
-void DoSrvPrivateSetConsoleRGBTextAttribute(_Inout_ SCREEN_INFORMATION& screenInfo,
+void DoSrvPrivateSetConsoleRGBTextAttribute(SCREEN_INFORMATION& screenInfo,
                                             const COLORREF rgbColor,
                                             const bool fIsForeground);
 
 [[nodiscard]]
-NTSTATUS DoSrvPrivateEraseAll(_Inout_ SCREEN_INFORMATION& screenInfo);
+NTSTATUS DoSrvPrivateEraseAll(SCREEN_INFORMATION& screenInfo);
 
 void DoSrvSetCursorStyle(SCREEN_INFORMATION& screenInfo,
                          const CursorType cursorType);
@@ -99,10 +99,10 @@ void DoSrvSetCursorColor(SCREEN_INFORMATION& screenInfo,
                          const COLORREF cursorColor);
 
 [[nodiscard]]
-NTSTATUS DoSrvPrivateGetConsoleScreenBufferAttributes(_In_ const SCREEN_INFORMATION& screenInfo,
+NTSTATUS DoSrvPrivateGetConsoleScreenBufferAttributes(const SCREEN_INFORMATION& screenInfo,
                                                       _Out_ WORD* const pwAttributes);
 
-void DoSrvPrivateRefreshWindow(_In_ const SCREEN_INFORMATION& screenInfo);
+void DoSrvPrivateRefreshWindow(const SCREEN_INFORMATION& screenInfo);
 
 void DoSrvGetConsoleOutputCodePage(_Out_ unsigned int* const pCodePage);
 

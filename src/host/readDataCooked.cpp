@@ -40,7 +40,7 @@
 // - THROW: Throws E_INVALIDARG for invalid pointers.
 COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
                                    _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
-                                   _In_ SCREEN_INFORMATION& screenInfo,
+                                   SCREEN_INFORMATION& screenInfo,
                                    _In_ ULONG BufferSize,
                                    _In_ ULONG BytesRead,
                                    _In_ ULONG CurrentPosition,

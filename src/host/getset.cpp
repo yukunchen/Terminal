@@ -196,7 +196,7 @@ HRESULT ApiRoutines::GetCurrentConsoleFontExImpl(const SCREEN_INFORMATION& Conte
 }
 
 [[nodiscard]]
-HRESULT ApiRoutines::SetCurrentConsoleFontExImpl(_Inout_ SCREEN_INFORMATION& Context,
+HRESULT ApiRoutines::SetCurrentConsoleFontExImpl(SCREEN_INFORMATION& Context,
                                                  const bool /*IsForMaximumWindowSize*/,
                                                  const CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx)
 {
@@ -283,7 +283,7 @@ HRESULT ApiRoutines::SetConsoleInputModeImpl(_In_ InputBuffer* const pContext, c
 }
 
 [[nodiscard]]
-HRESULT ApiRoutines::SetConsoleOutputModeImpl(_In_ SCREEN_INFORMATION& Context, const ULONG Mode)
+HRESULT ApiRoutines::SetConsoleOutputModeImpl(SCREEN_INFORMATION& Context, const ULONG Mode)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     LockConsole();
@@ -311,7 +311,7 @@ HRESULT ApiRoutines::SetConsoleOutputModeImpl(_In_ SCREEN_INFORMATION& Context, 
     return S_OK;
 }
 
-void ApiRoutines::SetConsoleActiveScreenBufferImpl(_Inout_ SCREEN_INFORMATION& newContext)
+void ApiRoutines::SetConsoleActiveScreenBufferImpl(SCREEN_INFORMATION& newContext)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
@@ -339,7 +339,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& Cont
 }
 
 [[nodiscard]]
-HRESULT ApiRoutines::SetConsoleScreenBufferSizeImpl(_Inout_ SCREEN_INFORMATION& context,
+HRESULT ApiRoutines::SetConsoleScreenBufferSizeImpl(SCREEN_INFORMATION& context,
                                                     const COORD* const pSize)
 {
     LockConsole();
@@ -384,7 +384,7 @@ HRESULT ApiRoutines::SetConsoleScreenBufferInfoExImpl(SCREEN_INFORMATION& Contex
     return S_OK;
 }
 
-void DoSrvSetScreenBufferInfo(_Inout_ SCREEN_INFORMATION& screenInfo,
+void DoSrvSetScreenBufferInfo(SCREEN_INFORMATION& screenInfo,
                               const CONSOLE_SCREEN_BUFFER_INFOEX* const pInfo)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -447,7 +447,7 @@ HRESULT ApiRoutines::SetConsoleCursorPositionImpl(SCREEN_INFORMATION& Context,
 }
 
 [[nodiscard]]
-HRESULT DoSrvSetConsoleCursorPosition(_Inout_ SCREEN_INFORMATION& screenInfo,
+HRESULT DoSrvSetConsoleCursorPosition(SCREEN_INFORMATION& screenInfo,
                                       const COORD* const pCursorPosition)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -506,7 +506,7 @@ HRESULT ApiRoutines::SetConsoleCursorInfoImpl(SCREEN_INFORMATION& Context,
 }
 
 [[nodiscard]]
-HRESULT DoSrvSetConsoleCursorInfo(_Inout_ SCREEN_INFORMATION& screenInfo,
+HRESULT DoSrvSetConsoleCursorInfo(SCREEN_INFORMATION& screenInfo,
                                   const ULONG CursorSize,
                                   const bool IsVisible)
 {
@@ -533,7 +533,7 @@ HRESULT ApiRoutines::SetConsoleWindowInfoImpl(SCREEN_INFORMATION& Context,
 }
 
 [[nodiscard]]
-HRESULT DoSrvSetConsoleWindowInfo(_Inout_ SCREEN_INFORMATION& screenInfo,
+HRESULT DoSrvSetConsoleWindowInfo(SCREEN_INFORMATION& screenInfo,
                                   const bool IsAbsoluteRectangle,
                                   const SMALL_RECT* const pWindowRectangle)
 {
@@ -608,7 +608,7 @@ HRESULT ApiRoutines::ScrollConsoleScreenBufferWImpl(SCREEN_INFORMATION& Context,
 }
 
 [[nodiscard]]
-HRESULT DoSrvScrollConsoleScreenBufferW(_Inout_ SCREEN_INFORMATION& screenInfo,
+HRESULT DoSrvScrollConsoleScreenBufferW(SCREEN_INFORMATION& screenInfo,
                                         const SMALL_RECT* const pSourceRectangle,
                                         const COORD* const pTargetOrigin,
                                         _In_opt_ const SMALL_RECT* const pTargetClipRectangle,
@@ -686,7 +686,7 @@ VOID UpdatePopups(IN WORD NewAttributes, IN WORD NewPopupAttributes, IN WORD Old
     }
 }
 
-void SetScreenColors(_Inout_ SCREEN_INFORMATION& screenInfo,
+void SetScreenColors(SCREEN_INFORMATION& screenInfo,
                      _In_ WORD Attributes,
                      _In_ WORD PopupAttributes,
                      _In_ BOOL UpdateWholeScreen)
@@ -732,7 +732,7 @@ HRESULT ApiRoutines::SetConsoleTextAttributeImpl(SCREEN_INFORMATION& Context,
 }
 
 [[nodiscard]]
-HRESULT DoSrvSetConsoleTextAttribute(_Inout_ SCREEN_INFORMATION& screenInfo, const WORD Attribute)
+HRESULT DoSrvSetConsoleTextAttribute(SCREEN_INFORMATION& screenInfo, const WORD Attribute)
 {
     RETURN_HR_IF(E_INVALIDARG, IsAnyFlagSet(Attribute, ~VALID_TEXT_ATTRIBUTES));
 
@@ -740,7 +740,7 @@ HRESULT DoSrvSetConsoleTextAttribute(_Inout_ SCREEN_INFORMATION& screenInfo, con
     return S_OK;
 }
 
-void DoSrvPrivateSetLegacyAttributes(_Inout_ SCREEN_INFORMATION& screenInfo,
+void DoSrvPrivateSetLegacyAttributes(SCREEN_INFORMATION& screenInfo,
                                      const WORD Attribute,
                                      const bool fForeground,
                                      const bool fBackground,
@@ -808,7 +808,7 @@ void DoSrvPrivateSetLegacyAttributes(_Inout_ SCREEN_INFORMATION& screenInfo,
     screenInfo.SetAttributes(NewAttributes);
 }
 
-void DoSrvPrivateSetConsoleXtermTextAttribute(_Inout_ SCREEN_INFORMATION& screenInfo,
+void DoSrvPrivateSetConsoleXtermTextAttribute(SCREEN_INFORMATION& screenInfo,
                                               const int iXtermTableEntry,
                                               const bool fIsForeground)
 {
@@ -834,7 +834,7 @@ void DoSrvPrivateSetConsoleXtermTextAttribute(_Inout_ SCREEN_INFORMATION& screen
     screenInfo.SetAttributes(NewAttributes);
 }
 
-void DoSrvPrivateSetConsoleRGBTextAttribute(_Inout_ SCREEN_INFORMATION& screenInfo,
+void DoSrvPrivateSetConsoleRGBTextAttribute(SCREEN_INFORMATION& screenInfo,
                                             const COLORREF rgbColor,
                                             const bool fIsForeground)
 {
@@ -988,7 +988,7 @@ void ApiRoutines::GetConsoleDisplayModeImpl(_Out_ ULONG* const pFlags)
 // - This was in private.c, but turns out to be a public API:
 // - See: http://msdn.microsoft.com/en-us/library/windows/desktop/ms686028(v=vs.85).aspx
 [[nodiscard]]
-HRESULT ApiRoutines::SetConsoleDisplayModeImpl(_Inout_ SCREEN_INFORMATION& Context,
+HRESULT ApiRoutines::SetConsoleDisplayModeImpl(SCREEN_INFORMATION& Context,
                                                const ULONG Flags,
                                                _Out_ COORD* const pNewScreenBufferSize)
 {
@@ -1072,7 +1072,7 @@ NTSTATUS DoSrvPrivateSetKeypadMode(_In_ bool fApplicationMode)
 // - fEnable - set to true to enable blinking, false to disable
 // Return value:
 // - True if handled successfully. False otherwise.
-void DoSrvPrivateAllowCursorBlinking(_Inout_ SCREEN_INFORMATION& screenInfo, const bool fEnable)
+void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool fEnable)
 {
     screenInfo.GetTextBuffer().GetCursor().SetBlinkingAllowed(fEnable);
     screenInfo.GetTextBuffer().GetCursor().SetIsOn(!fEnable);
@@ -1092,7 +1092,7 @@ void DoSrvPrivateAllowCursorBlinking(_Inout_ SCREEN_INFORMATION& screenInfo, con
 // Return value:
 // - True if handled successfully. False otherwise.
 [[nodiscard]]
-NTSTATUS DoSrvPrivateSetScrollingRegion(_Inout_ SCREEN_INFORMATION& screenInfo, const SMALL_RECT* const psrScrollMargins)
+NTSTATUS DoSrvPrivateSetScrollingRegion(SCREEN_INFORMATION& screenInfo, const SMALL_RECT* const psrScrollMargins)
 {
     NTSTATUS Status = STATUS_SUCCESS;
 
@@ -1121,7 +1121,7 @@ NTSTATUS DoSrvPrivateSetScrollingRegion(_Inout_ SCREEN_INFORMATION& screenInfo, 
 // Return value:
 // - True if handled successfully. False otherwise.
 [[nodiscard]]
-NTSTATUS DoSrvPrivateReverseLineFeed(_Inout_ SCREEN_INFORMATION& screenInfo)
+NTSTATUS DoSrvPrivateReverseLineFeed(SCREEN_INFORMATION& screenInfo)
 {
     NTSTATUS Status = STATUS_SUCCESS;
 
@@ -1169,7 +1169,7 @@ NTSTATUS DoSrvPrivateReverseLineFeed(_Inout_ SCREEN_INFORMATION& screenInfo)
 // Return value:
 // - True if handled successfully. False otherwise.
 [[nodiscard]]
-NTSTATUS DoSrvPrivateUseAlternateScreenBuffer(_Inout_ SCREEN_INFORMATION& screenInfo)
+NTSTATUS DoSrvPrivateUseAlternateScreenBuffer(SCREEN_INFORMATION& screenInfo)
 {
     return screenInfo.UseAlternateScreenBuffer();
 }
@@ -1182,7 +1182,7 @@ NTSTATUS DoSrvPrivateUseAlternateScreenBuffer(_Inout_ SCREEN_INFORMATION& screen
 // - screenInfo - a reference to the screen buffer that should use the main buffer
 // Return value:
 // - True if handled successfully. False otherwise.
-void DoSrvPrivateUseMainScreenBuffer(_Inout_ SCREEN_INFORMATION& screenInfo)
+void DoSrvPrivateUseMainScreenBuffer(SCREEN_INFORMATION& screenInfo)
 {
     screenInfo.UseMainScreenBuffer();
 }
@@ -1360,7 +1360,7 @@ void DoSrvPrivateEnableAlternateScroll(const bool fEnable)
 // Return value:
 // - STATUS_SUCCESS if we succeeded, otherwise the NTSTATUS version of the failure.
 [[nodiscard]]
-NTSTATUS DoSrvPrivateEraseAll(_Inout_ SCREEN_INFORMATION&  screenInfo)
+NTSTATUS DoSrvPrivateEraseAll(SCREEN_INFORMATION&  screenInfo)
 {
     return NTSTATUS_FROM_HRESULT(screenInfo.GetActiveBuffer().VtEraseAll());
 }

@@ -335,7 +335,7 @@ void Cursor::CopyProperties(const Cursor& OtherCursor)
 // - ScreenInfo - reference to screen info structure.
 // Return Value:
 // - <none>
-void Cursor::TimerRoutine(_Inout_ SCREEN_INFORMATION& ScreenInfo)
+void Cursor::TimerRoutine(SCREEN_INFORMATION& ScreenInfo)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();

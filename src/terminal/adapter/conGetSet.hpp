@@ -32,9 +32,9 @@ namespace Microsoft::Console::VirtualTerminal
         virtual BOOL SetConsoleCursorInfo(const CONSOLE_CURSOR_INFO* const pConsoleCursorInfo) = 0;
         virtual BOOL SetConsoleCursorPosition(const COORD coordCursorPosition) = 0;
         virtual BOOL FillConsoleOutputCharacterW(const WCHAR wch,
-                                                    const DWORD nLength,
-                                                    const COORD dwWriteCoord,
-                                                    _Out_ DWORD* const pNumberOfCharsWritten) = 0;
+                                                 const DWORD nLength,
+                                                 const COORD dwWriteCoord,
+                                                 _Out_ DWORD* const pNumberOfCharsWritten) = 0;
         virtual BOOL FillConsoleOutputAttribute(const WORD wAttribute,
                                                 const DWORD nLength,
                                                 const COORD dwWriteCoord,
@@ -45,7 +45,7 @@ namespace Microsoft::Console::VirtualTerminal
                                                 const bool fBackground,
                                                 const bool fMeta) = 0;
         virtual BOOL SetConsoleXtermTextAttribute(const int iXtermTableEntry,
-                                                    const bool fIsForeground) = 0;
+                                                  const bool fIsForeground) = 0;
         virtual BOOL SetConsoleRGBTextAttribute(const COLORREF rgbColor, const bool fIsForeground) = 0;
         virtual BOOL WriteConsoleInputW(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
                                         _Out_ size_t& eventsWritten) = 0;
@@ -54,14 +54,14 @@ namespace Microsoft::Console::VirtualTerminal
                                                 _In_ COORD dwDestinationOrigin,
                                                 const CHAR_INFO* pFill) = 0;
         virtual BOOL SetConsoleWindowInfo(const BOOL bAbsolute,
-                                            const SMALL_RECT* const lpConsoleWindow) = 0;
+                                          const SMALL_RECT* const lpConsoleWindow) = 0;
         virtual BOOL PrivateSetCursorKeysMode(const bool fApplicationMode) = 0;
         virtual BOOL PrivateSetKeypadMode(const bool fApplicationMode) = 0;
         virtual BOOL PrivateAllowCursorBlinking(const bool fEnable) = 0;
         virtual BOOL PrivateSetScrollingRegion(const SMALL_RECT* const psrScrollMargins) = 0;
         virtual BOOL PrivateReverseLineFeed() = 0;
         virtual BOOL SetConsoleTitleW(const wchar_t* const pwchWindowTitle,
-                                        _In_ unsigned short sCchTitleLength) = 0;
+                                      _In_ unsigned short sCchTitleLength) = 0;
         virtual BOOL PrivateUseAlternateScreenBuffer() = 0;
         virtual BOOL PrivateUseMainScreenBuffer() = 0;
         virtual BOOL PrivateHorizontalTabSet() = 0;

@@ -24,7 +24,7 @@
 //                      when the write was delayed as it might change by the time it is serviced.
 // Return Value:
 // - THROW: Throws if space cannot be allocated to copy the given string
-WriteData::WriteData(_In_ SCREEN_INFORMATION& siContext,
+WriteData::WriteData(SCREEN_INFORMATION& siContext,
                      _In_reads_bytes_(cbContext) wchar_t* const pwchContext,
                      const ULONG cbContext,
                      const UINT uiOutputCodepage) :

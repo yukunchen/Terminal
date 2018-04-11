@@ -103,7 +103,7 @@ void Scrolling::s_HandleMouseWheel(_In_ bool isMouseWheel,
                                    _In_ bool isMouseHWheel,
                                    _In_ short wheelDelta,
                                    _In_ bool hasShift,
-                                   _Inout_ SCREEN_INFORMATION& ScreenInfo)
+                                   SCREEN_INFORMATION& ScreenInfo)
 {
     COORD NewOrigin;
     NewOrigin.X = ScreenInfo.GetBufferViewport().Left;

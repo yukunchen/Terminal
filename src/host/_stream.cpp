@@ -40,7 +40,7 @@
 // - fKeepCursorVisible - TRUE if changing window origin desirable when hit right edge
 // Return Value:
 [[nodiscard]]
-NTSTATUS AdjustCursorPosition(_Inout_ SCREEN_INFORMATION& screenInfo,
+NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
                               _In_ COORD coordCursor,
                               const BOOL fKeepCursorVisible,
                               _Inout_opt_ PSHORT psScrollY)
@@ -183,7 +183,7 @@ NTSTATUS AdjustCursorPosition(_Inout_ SCREEN_INFORMATION& screenInfo,
 // Note:
 // - This routine does not process tabs and backspace properly.  That code will be implemented as part of the line editing services.
 [[nodiscard]]
-NTSTATUS WriteCharsLegacy(_Inout_ SCREEN_INFORMATION& screenInfo,
+NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                           _In_range_(<= , pwchBuffer) PWCHAR const pwchBufferBackupLimit,
                           _In_ PWCHAR pwchBuffer,
                           _In_reads_bytes_(*pcb) PWCHAR pwchRealUnicode,
@@ -839,7 +839,7 @@ ExitWriteChars:
 // Note:
 // - This routine does not process tabs and backspace properly.  That code will be implemented as part of the line editing services.
 [[nodiscard]]
-NTSTATUS WriteChars(_Inout_ SCREEN_INFORMATION& screenInfo,
+NTSTATUS WriteChars(SCREEN_INFORMATION& screenInfo,
                     _In_range_(<= , pwchBuffer) PWCHAR const pwchBufferBackupLimit,
                     _In_ PWCHAR pwchBuffer,
                     _In_reads_bytes_(*pcb) PWCHAR pwchRealUnicode,
@@ -916,7 +916,7 @@ NTSTATUS WriteChars(_Inout_ SCREEN_INFORMATION& screenInfo,
 [[nodiscard]]
 NTSTATUS DoWriteConsole(_In_reads_bytes_(*pcbBuffer) PWCHAR pwchBuffer,
                         _Inout_ ULONG* const pcbBuffer,
-                        _In_ SCREEN_INFORMATION& screenInfo,
+                        SCREEN_INFORMATION& screenInfo,
                         _Outptr_result_maybenull_ WriteData** const ppWaiter)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();

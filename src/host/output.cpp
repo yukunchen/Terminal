@@ -117,7 +117,7 @@ std::vector<std::vector<OutputCell>> ReadRectFromScreenBuffer(const SCREEN_INFOR
 // Return Value:
 // - status of copy
 [[nodiscard]]
-NTSTATUS _CopyRectangle(_Inout_ SCREEN_INFORMATION& screenInfo,
+NTSTATUS _CopyRectangle(SCREEN_INFORMATION& screenInfo,
                         const SMALL_RECT * const psrSource,
                         const COORD coordTarget)
 {
@@ -242,7 +242,7 @@ NTSTATUS ReadScreenBuffer(const SCREEN_INFORMATION& screenInfo,
 // - ReadRegion - Region to write.
 // Return Value:
 [[nodiscard]]
-NTSTATUS WriteScreenBuffer(_Inout_ SCREEN_INFORMATION& screenInfo, _In_ PCHAR_INFO pciBuffer, _Inout_ PSMALL_RECT psrWriteRegion)
+NTSTATUS WriteScreenBuffer(SCREEN_INFORMATION& screenInfo, _In_ PCHAR_INFO pciBuffer, _Inout_ PSMALL_RECT psrWriteRegion)
 {
     DBGOUTPUT(("WriteScreenBuffer\n"));
 
@@ -620,7 +620,7 @@ void ScreenBufferSizeChange(const COORD coordNewSize)
     }
 }
 
-void ScrollScreen(_Inout_ SCREEN_INFORMATION& screenInfo,
+void ScrollScreen(SCREEN_INFORMATION& screenInfo,
                   const SMALL_RECT * const psrScroll,
                   _In_opt_ const SMALL_RECT * const psrMerge,
                   const COORD coordTarget)
@@ -662,7 +662,7 @@ void ScrollScreen(_Inout_ SCREEN_INFORMATION& screenInfo,
 
 // Routine Description:
 // - This routine rotates the circular buffer as a shorthand for scrolling the entire screen
-SHORT ScrollEntireScreen(_Inout_ SCREEN_INFORMATION& screenInfo, const SHORT sScrollValue)
+SHORT ScrollEntireScreen(SCREEN_INFORMATION& screenInfo, const SHORT sScrollValue)
 {
     // store index of first row
     SHORT const RowIndex = screenInfo.GetTextBuffer().GetFirstRowIndex();
@@ -679,7 +679,7 @@ SHORT ScrollEntireScreen(_Inout_ SCREEN_INFORMATION& screenInfo, const SHORT sSc
 // - screenInfo - reference to screen buffer info.
 // Return Value:
 // - true if we succeeded in scrolling the buffer, otherwise false (if we're out of memory)
-bool StreamScrollRegion(_Inout_ SCREEN_INFORMATION& screenInfo)
+bool StreamScrollRegion(SCREEN_INFORMATION& screenInfo)
 {
     // Rotate the circular buffer around and wipe out the previous final line.
     bool fSuccess = screenInfo.GetTextBuffer().IncrementCircularBuffer();
@@ -718,7 +718,7 @@ bool StreamScrollRegion(_Inout_ SCREEN_INFORMATION& screenInfo)
 // - Fill - Character and attribute to fill source region with.
 // Return Value:
 [[nodiscard]]
-NTSTATUS ScrollRegion(_Inout_ SCREEN_INFORMATION& screenInfo,
+NTSTATUS ScrollRegion(SCREEN_INFORMATION& screenInfo,
                       _Inout_ PSMALL_RECT psrScroll,
                       _In_opt_ PSMALL_RECT psrClip,
                       _In_ COORD coordDestinationOrigin,
@@ -1020,7 +1020,7 @@ NTSTATUS ScrollRegion(_Inout_ SCREEN_INFORMATION& screenInfo,
     return Status;
 }
 
-void SetActiveScreenBuffer(_Inout_ SCREEN_INFORMATION& screenInfo)
+void SetActiveScreenBuffer(SCREEN_INFORMATION& screenInfo)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.pCurrentScreenBuffer = &screenInfo;

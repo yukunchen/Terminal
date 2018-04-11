@@ -27,7 +27,7 @@ NTSTATUS ReadScreenBuffer(const SCREEN_INFORMATION& screenInfo,
                           _Inout_ std::vector<std::vector<OutputCell>>& outputCells,
                           _Inout_ PSMALL_RECT psrReadRegion);
 [[nodiscard]]
-NTSTATUS WriteScreenBuffer(_Inout_ SCREEN_INFORMATION& screenInfo,
+NTSTATUS WriteScreenBuffer(SCREEN_INFORMATION& screenInfo,
                            _In_ PCHAR_INFO pciBuffer,
                            _Inout_ PSMALL_RECT psrWriteRegion);
 
@@ -42,7 +42,7 @@ NTSTATUS ReadOutputString(const SCREEN_INFORMATION& screenInfo,
                           _Inout_ PULONG pcRecords);
 
 [[nodiscard]]
-NTSTATUS ScrollRegion(_Inout_ SCREEN_INFORMATION& screenInfo,
+NTSTATUS ScrollRegion(SCREEN_INFORMATION& screenInfo,
                       _Inout_ PSMALL_RECT psrScroll,
                       _In_opt_ PSMALL_RECT psrClip,
                       _In_ COORD coordDestinationOrigin,
@@ -50,13 +50,13 @@ NTSTATUS ScrollRegion(_Inout_ SCREEN_INFORMATION& screenInfo,
 
 VOID SetConsoleWindowOwner(const HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pProcessData);
 
-bool StreamScrollRegion(_Inout_ SCREEN_INFORMATION& screenInfo);
+bool StreamScrollRegion(SCREEN_INFORMATION& screenInfo);
 
 std::vector<std::vector<OutputCell>> ReadRectFromScreenBuffer(const SCREEN_INFORMATION& screenInfo,
                                                               const COORD coordSourcePoint,
                                                               const Microsoft::Console::Types::Viewport viewport);
 
-SHORT ScrollEntireScreen(_Inout_ SCREEN_INFORMATION& screenInfo, const SHORT sScrollValue);
+SHORT ScrollEntireScreen(SCREEN_INFORMATION& screenInfo, const SHORT sScrollValue);
 
 // For handling process handle state, not the window state itself.
 void CloseConsoleProcessState();

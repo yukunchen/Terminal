@@ -188,7 +188,7 @@ void Selection::_SaveCursorData(TextBuffer& textBuffer)
 // - <none> (Restores global state)
 // Return Value:
 // - <none>
-void Selection::_RestoreCursorData(_Inout_ SCREEN_INFORMATION& screenInfo)
+void Selection::_RestoreCursorData(SCREEN_INFORMATION& screenInfo)
 {
     const Cursor& cursor = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetTextBuffer().GetCursor();
     screenInfo.SetCursorInformation(_ulSavedCursorSize, _fSavedCursorVisible, cursor.GetColor(), cursor.GetType());

@@ -293,6 +293,3 @@ private:
     friend class ScreenBufferTests;
 #endif
 };
-
-typedef SCREEN_INFORMATION *PSCREEN_INFORMATION;
-typedef PSCREEN_INFORMATION *PPSCREEN_INFORMATION;

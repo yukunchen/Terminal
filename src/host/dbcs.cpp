@@ -75,7 +75,7 @@ bool CheckBisectStringA(_In_reads_bytes_(cbBuf) PCHAR pchBuf, _In_ DWORD cbBuf, 
 // - <none>
 void CleanupDbcsEdgesForWrite(const size_t stringLen,
                               const COORD coordTarget,
-                              _Inout_ SCREEN_INFORMATION& screenInfo)
+                              SCREEN_INFORMATION& screenInfo)
 {
     TextBuffer& textBuffer = screenInfo.GetTextBuffer();
     const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();

@@ -118,7 +118,7 @@ namespace Microsoft::Console::Interactivity::Win32
         static NTSTATUS s_RegisterWindowClass();
         [[nodiscard]]
         NTSTATUS _MakeWindow(_In_ Settings* const pSettings,
-                                _In_ SCREEN_INFORMATION* const pScreen);
+                             _In_ SCREEN_INFORMATION* const pScreen);
         void _CloseWindow() const;
 
         static ATOM s_atomWindowClass;
