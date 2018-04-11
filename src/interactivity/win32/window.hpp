@@ -34,7 +34,8 @@ namespace Microsoft::Console::Interactivity::Win32
 
         RECT GetWindowRect() const;
         HWND GetWindowHandle() const;
-        SCREEN_INFORMATION* GetScreenInfo() const;
+        SCREEN_INFORMATION& GetScreenInfo();
+        const SCREEN_INFORMATION& GetScreenInfo() const;
 
         BYTE GetWindowOpacity() const;
         void SetWindowOpacity(const BYTE bOpacity);
@@ -49,9 +50,9 @@ namespace Microsoft::Console::Interactivity::Win32
         NTSTATUS SetViewportOrigin(_In_ SMALL_RECT NewWindow);
 
         void VerticalScroll(const WORD wScrollCommand,
-                            const WORD wAbsoluteChange) const;
+                            const WORD wAbsoluteChange);
         void HorizontalScroll(const WORD wScrollCommand,
-                                const WORD wAbsoluteChange) const;
+                              const WORD wAbsoluteChange);
 
         BOOL EnableBothScrollBars();
         int UpdateScrollBar(bool isVertical,
@@ -60,7 +61,7 @@ namespace Microsoft::Console::Interactivity::Win32
                             int maxSize,
                             int viewportPosition);
 
-        void UpdateWindowSize(const COORD coordSizeInChars) const;
+        void UpdateWindowSize(const COORD coordSizeInChars);
         void UpdateWindowPosition(_In_ POINT const ptNewPos) const;
         void UpdateWindowText();
 
@@ -117,7 +118,7 @@ namespace Microsoft::Console::Interactivity::Win32
         static NTSTATUS s_RegisterWindowClass();
         [[nodiscard]]
         NTSTATUS _MakeWindow(_In_ Settings* const pSettings,
-                                _In_ SCREEN_INFORMATION* const pScreen);
+                             _In_ SCREEN_INFORMATION* const pScreen);
         void _CloseWindow() const;
 
         static ATOM s_atomWindowClass;
@@ -127,8 +128,8 @@ namespace Microsoft::Console::Interactivity::Win32
         static Window* s_Instance;
 
         [[nodiscard]]
-        NTSTATUS _InternalSetWindowSize() const;
-        void _UpdateWindowSize(const SIZE sizeNew) const;
+        NTSTATUS _InternalSetWindowSize();
+        void _UpdateWindowSize(const SIZE sizeNew);
 
         void _UpdateSystemMetrics() const;
 
@@ -169,7 +170,7 @@ namespace Microsoft::Console::Interactivity::Win32
 
         // Full screen
         void _BackupWindowSizes(const bool fCurrentIsInFullscreen);
-        void _ApplyWindowSize() const;
+        void _ApplyWindowSize();
 
         bool _fIsInFullscreen;
         RECT _rcFullscreenWindowSize;
@@ -177,13 +178,13 @@ namespace Microsoft::Console::Interactivity::Win32
 
         // math helpers
         void _CalculateWindowRect(const COORD coordWindowInChars,
-                                    _Inout_ RECT* const prectWindow) const;
+                                  _Inout_ RECT* const prectWindow) const;
         static void s_CalculateWindowRect(const COORD coordWindowInChars,
-                                            const int iDpi,
-                                            const COORD coordFontSize,
-                                            const COORD coordBufferSize,
-                                            _In_opt_ HWND const hWnd,
-                                            _Inout_ RECT* const prectWindow);
+                                          const int iDpi,
+                                          const COORD coordFontSize,
+                                          const COORD coordBufferSize,
+                                          _In_opt_ HWND const hWnd,
+                                          _Inout_ RECT* const prectWindow);
 
         static void s_ReinitializeFontsForDPIChange();
 

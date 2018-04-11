@@ -57,13 +57,13 @@ namespace Microsoft::Console::Interactivity
         virtual BOOL PostUpdateTitleWithCopy(const PCWSTR pwszNewTitle) const = 0;
         virtual BOOL PostUpdateWindowSize() const = 0;
 
-        virtual void UpdateWindowSize(const COORD coordSizeInChars) const = 0;
+        virtual void UpdateWindowSize(const COORD coordSizeInChars) = 0;
         virtual void UpdateWindowText() = 0;
 
         virtual void HorizontalScroll(const WORD wScrollCommand,
-                                        const WORD wAbsoluteChange) const = 0;
+                                        const WORD wAbsoluteChange) = 0;
         virtual void VerticalScroll(const WORD wScrollCommand,
-                                    const WORD wAbsoluteChange) const = 0;
+                                    const WORD wAbsoluteChange) = 0;
         [[nodiscard]]
         virtual HRESULT SignalUia(_In_ EVENTID id) = 0;
         [[nodiscard]]

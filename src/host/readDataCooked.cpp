@@ -19,7 +19,7 @@
 // Arguments:
 // - pInputBuffer - Buffer that data will be read from.
 // - pInputReadHandleData - Context stored across calls from the same input handle to return partial data appropriately.
-// - pScreenInfo - Output buffer that will be used for 'echoing' the line back to the user so they can see/manipulate it
+// - screenInfo - Output buffer that will be used for 'echoing' the line back to the user so they can see/manipulate it
 // - BufferSize -
 // - BytesRead -
 // - CurrentPosition -
@@ -40,7 +40,7 @@
 // - THROW: Throws E_INVALIDARG for invalid pointers.
 COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
                                    _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
-                                   _In_ SCREEN_INFORMATION* pScreenInfo,
+                                   SCREEN_INFORMATION& screenInfo,
                                    _In_ ULONG BufferSize,
                                    _In_ ULONG BytesRead,
                                    _In_ ULONG CurrentPosition,
@@ -59,7 +59,7 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
                                    _In_ ConsoleHandleData* pTempHandle
     ) :
     ReadData(pInputBuffer, pInputReadHandleData),
-    _pScreenInfo{ pScreenInfo },
+    _screenInfo{ screenInfo },
     _BufferSize{ BufferSize},
     _BytesRead{ BytesRead},
     _CurrentPosition{ CurrentPosition},
@@ -305,7 +305,7 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
 
         if (pCookedReadData->_OriginalCursorPosition.X == -1)
         {
-            pCookedReadData->_OriginalCursorPosition = pCookedReadData->_pScreenInfo->TextInfo->GetCursor()->GetPosition();
+            pCookedReadData->_OriginalCursorPosition = pCookedReadData->_screenInfo.GetTextBuffer().GetCursor().GetPosition();
         }
 
         if (commandLineEditingKeys)
@@ -604,7 +604,7 @@ bool ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
             if (pCookedReadData->_Echo)
             {
                 NumToWrite = sizeof(WCHAR);
-                *pStatus = WriteCharsLegacy(pCookedReadData->_pScreenInfo,
+                *pStatus = WriteCharsLegacy(pCookedReadData->_screenInfo,
                                             pCookedReadData->_BackupLimit,
                                             pCookedReadData->_BufPtr,
                                             &wch,
@@ -652,7 +652,7 @@ bool ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
     else
     {
         bool CallWrite = true;
-        const SHORT sScreenBufferSizeX = pCookedReadData->_pScreenInfo->GetScreenBufferSize().X;
+        const SHORT sScreenBufferSizeX = pCookedReadData->_screenInfo.GetScreenBufferSize().X;
 
         // processing in the middle of the line is more complex:
 
@@ -681,7 +681,7 @@ bool ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
                 if (pCookedReadData->_Echo)
                 {
                     NumToWrite = sizeof(WCHAR);
-                    *pStatus = WriteCharsLegacy(pCookedReadData->_pScreenInfo,
+                    *pStatus = WriteCharsLegacy(pCookedReadData->_screenInfo,
                                                 pCookedReadData->_BackupLimit,
                                                 pCookedReadData->_BufPtr,
                                                 &wch,
@@ -737,7 +737,7 @@ bool ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
 
                 if (pCookedReadData->_Echo)
                 {
-                    if (CheckBisectProcessW(pCookedReadData->_pScreenInfo,
+                    if (CheckBisectProcessW(pCookedReadData->_screenInfo,
                                             pCookedReadData->_BackupLimit,
                                             pCookedReadData->_CurrentPosition + 1,
                                             sScreenBufferSizeX - pCookedReadData->_OriginalCursorPosition.X,
@@ -776,7 +776,7 @@ bool ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
             COORD CursorPosition;
 
             // save cursor position
-            CursorPosition = pCookedReadData->_pScreenInfo->TextInfo->GetCursor()->GetPosition();
+            CursorPosition = pCookedReadData->_screenInfo.GetTextBuffer().GetCursor().GetPosition();
             CursorPosition.X = (SHORT)(CursorPosition.X + NumSpaces);
 
             // clear the current command line from the screen
@@ -791,7 +791,7 @@ bool ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
             {
                 dwFlags |= WC_KEEP_CURSOR_VISIBLE;
             }
-            *pStatus = WriteCharsLegacy(pCookedReadData->_pScreenInfo,
+            *pStatus = WriteCharsLegacy(pCookedReadData->_screenInfo,
                                         pCookedReadData->_BackupLimit,
                                         pCookedReadData->_BackupLimit,
                                         pCookedReadData->_BackupLimit,
@@ -810,7 +810,7 @@ bool ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
             // update cursor position
             if (wch != UNICODE_CARRIAGERETURN)
             {
-                if (CheckBisectProcessW(pCookedReadData->_pScreenInfo,
+                if (CheckBisectProcessW(pCookedReadData->_screenInfo,
                                         pCookedReadData->_BackupLimit,
                                         pCookedReadData->_CurrentPosition + 1,
                                         sScreenBufferSizeX - pCookedReadData->_OriginalCursorPosition.X,
@@ -825,7 +825,7 @@ bool ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
                 // adjust cursor position for WriteChars
                 pCookedReadData->_OriginalCursorPosition.Y += ScrollY;
                 CursorPosition.Y += ScrollY;
-                *pStatus = AdjustCursorPosition(pCookedReadData->_pScreenInfo, CursorPosition, TRUE, nullptr);
+                *pStatus = AdjustCursorPosition(pCookedReadData->_screenInfo, CursorPosition, TRUE, nullptr);
                 ASSERT(NT_SUCCESS(*pStatus));
                 if (!NT_SUCCESS(*pStatus))
                 {
@@ -849,7 +849,7 @@ bool ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
                 if (pCookedReadData->_Echo)
                 {
                     NumToWrite = sizeof(WCHAR);
-                    *pStatus = WriteCharsLegacy(pCookedReadData->_pScreenInfo,
+                    *pStatus = WriteCharsLegacy(pCookedReadData->_screenInfo,
                                                 pCookedReadData->_BackupLimit,
                                                 pCookedReadData->_BufPtr,
                                                 pCookedReadData->_BufPtr,

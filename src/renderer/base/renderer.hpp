@@ -46,29 +46,33 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         HRESULT PaintFrame();
 
-        void TriggerSystemRedraw(const RECT* const prcDirtyClient);
-        void TriggerRedraw(const SMALL_RECT* const psrRegion);
-        void TriggerRedraw(const COORD* const pcoord);
+        void TriggerSystemRedraw(const RECT* const prcDirtyClient) override;
+        void TriggerRedraw(const SMALL_RECT* const psrRegion) override;
+        void TriggerRedraw(const COORD* const pcoord) override;
         void TriggerRedrawCursor(const COORD* const pcoord) override;
-        void TriggerRedrawAll();
+        void TriggerRedrawAll() override;
         void TriggerTeardown() override;
 
-        void TriggerSelection();
-        void TriggerScroll();
-        void TriggerScroll(const COORD* const pcoordDelta);
+        void TriggerSelection() override;
+        void TriggerScroll() override;
+        void TriggerScroll(const COORD* const pcoordDelta) override;
 
         void TriggerCircling() override;
 
-        void TriggerFontChange(const int iDpi, const FontInfoDesired * const pFontInfoDesired, _Out_ FontInfo* const pFontInfo);
+        void TriggerFontChange(const int iDpi,
+                               const FontInfoDesired& FontInfoDesired,
+                               _Out_ FontInfo& FontInfo) override;
 
         [[nodiscard]]
-        HRESULT GetProposedFont(const int iDpi, const FontInfoDesired * const pFontInfoDesired, _Out_ FontInfo* const pFontInfo);
+        HRESULT GetProposedFont(const int iDpi,
+                                const FontInfoDesired& FontInfoDesired,
+                                _Out_ FontInfo& FontInfo) override;
 
-        COORD GetFontSize();
-        bool IsCharFullWidthByFont(const WCHAR wch);
+        COORD GetFontSize() override;
+        bool IsCharFullWidthByFont(const WCHAR wch) override;
 
-        void EnablePainting();
-        void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs);
+        void EnablePainting() override;
+        void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs) override;
 
         void AddRenderEngine(_In_ IRenderEngine* const pEngine) override;
 
@@ -122,8 +126,8 @@ namespace Microsoft::Console::Render
         void _PaintCursor(_In_ IRenderEngine* const pEngine);
 
         void _PaintIme(_In_ IRenderEngine* const pEngine,
-                        const std::unique_ptr<ConversionAreaInfo>& AreaInfo,
-                        const TEXT_BUFFER_INFO* const pTextInfo);
+                       const std::unique_ptr<ConversionAreaInfo>& AreaInfo,
+                       const TextBuffer& textBuffer);
         void _PaintImeCompositionString(_In_ IRenderEngine* const pEngine);
 
         [[nodiscard]]

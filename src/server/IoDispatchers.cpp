@@ -41,7 +41,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleCreateObject(_In_ PCONSOLE_API_MSG pMessa
 {
     NTSTATUS Status;
 
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     PCD_CREATE_OBJECT_INFORMATION const CreateInformation = &pMessage->CreateObject;
 
     LockConsole();
@@ -73,19 +73,11 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleCreateObject(_In_ PCONSOLE_API_MSG pMessa
 
     case CD_IO_OBJECT_TYPE_CURRENT_OUTPUT:
     {
-        PSCREEN_INFORMATION const ScreenInformation = gci.CurrentScreenBuffer->GetMainBuffer();
-        if (ScreenInformation == nullptr)
-        {
-            Status = STATUS_OBJECT_NAME_NOT_FOUND;
-
-        }
-        else
-        {
-            Status = NTSTATUS_FROM_HRESULT(ScreenInformation->Header.AllocateIoHandle(ConsoleHandleData::HandleType::Output,
-                                                                                      CreateInformation->DesiredAccess,
-                                                                                      CreateInformation->ShareMode,
-                                                                                      &Handle));
-        }
+        SCREEN_INFORMATION& ScreenInformation = gci.GetActiveOutputBuffer().GetMainBuffer();
+        Status = NTSTATUS_FROM_HRESULT(ScreenInformation.Header.AllocateIoHandle(ConsoleHandleData::HandleType::Output,
+                                                                                 CreateInformation->DesiredAccess,
+                                                                                 CreateInformation->ShareMode,
+                                                                                 &Handle));
         break;
     }
     case CD_IO_OBJECT_TYPE_NEW_OUTPUT:
@@ -217,10 +209,11 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
     }
 
 
-    Status = NTSTATUS_FROM_HRESULT(gci.CurrentScreenBuffer->GetMainBuffer()->Header.AllocateIoHandle(ConsoleHandleData::HandleType::Output,
-                                                                                                                        GENERIC_READ | GENERIC_WRITE,
-                                                                                                                        FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                                                                                                        &ProcessData->pOutputHandle));
+    auto& screenInfo = gci.GetActiveOutputBuffer().GetMainBuffer();
+    Status = NTSTATUS_FROM_HRESULT(screenInfo.Header.AllocateIoHandle(ConsoleHandleData::HandleType::Output,
+                                                                      GENERIC_READ | GENERIC_WRITE,
+                                                                      FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                                                      &ProcessData->pOutputHandle));
 
     if (!NT_SUCCESS(Status))
     {

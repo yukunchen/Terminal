@@ -47,7 +47,7 @@ NTSTATUS DoCreateScreenBuffer()
     gci.Flags |= CONSOLE_USE_PRIVATE_FLAGS;
 
     NTSTATUS Status = SCREEN_INFORMATION::CreateInstance(gci.GetWindowSize(),
-                                                         &fiFont,
+                                                         fiFont,
                                                          gci.GetScreenBufferSize(),
                                                          Fill,
                                                          PopupFill,
@@ -111,13 +111,13 @@ std::vector<std::vector<OutputCell>> ReadRectFromScreenBuffer(const SCREEN_INFOR
 // Routine Description:
 // - This routine copies a rectangular region from the screen buffer to the screen buffer.  no clipping is done.
 // Arguments:
-// - pScreenInfo - pointer to screen info
+// - screenInfo - reference to screen info
 // - psrSource - rectangle in source buffer to copy
 // - coordTarget - upper left coordinates of new location rectangle
 // Return Value:
 // - status of copy
 [[nodiscard]]
-NTSTATUS _CopyRectangle(_In_ PSCREEN_INFORMATION pScreenInfo,
+NTSTATUS _CopyRectangle(SCREEN_INFORMATION& screenInfo,
                         const SMALL_RECT * const psrSource,
                         const COORD coordTarget)
 {
@@ -141,10 +141,10 @@ NTSTATUS _CopyRectangle(_In_ PSCREEN_INFORMATION pScreenInfo,
 
     try
     {
-        std::vector<std::vector<OutputCell>> cells = ReadRectFromScreenBuffer(*pScreenInfo,
+        std::vector<std::vector<OutputCell>> cells = ReadRectFromScreenBuffer(screenInfo,
                                                                               SourcePoint,
                                                                               Viewport::FromInclusive(Target));
-        WriteRectToScreenBuffer(*pScreenInfo, cells, coordTarget);
+        WriteRectToScreenBuffer(screenInfo, cells, coordTarget);
     }
     catch (...)
     {
@@ -161,7 +161,7 @@ NTSTATUS _CopyRectangle(_In_ PSCREEN_INFORMATION pScreenInfo,
 // - ReadRegion - Region to read.
 // Return Value:
 [[nodiscard]]
-NTSTATUS ReadScreenBuffer(const SCREEN_INFORMATION* const pScreenInfo,
+NTSTATUS ReadScreenBuffer(const SCREEN_INFORMATION& screenInfo,
                           _Inout_ std::vector<std::vector<OutputCell>>& outputCells,
                           _Inout_ PSMALL_RECT psrReadRegion)
 {
@@ -181,7 +181,7 @@ NTSTATUS ReadScreenBuffer(const SCREEN_INFORMATION* const pScreenInfo,
     }
 
     // do clipping.
-    const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
+    const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
     if (psrReadRegion->Right > (SHORT)(coordScreenBufferSize.X - 1))
     {
         psrReadRegion->Right = (SHORT)(coordScreenBufferSize.X - 1);
@@ -224,7 +224,7 @@ NTSTATUS ReadScreenBuffer(const SCREEN_INFORMATION* const pScreenInfo,
 
     try
     {
-        outputCells = ReadRectFromScreenBuffer(*pScreenInfo, SourcePoint, Viewport::FromInclusive(Target));
+        outputCells = ReadRectFromScreenBuffer(screenInfo, SourcePoint, Viewport::FromInclusive(Target));
     }
     catch (...)
     {
@@ -242,7 +242,7 @@ NTSTATUS ReadScreenBuffer(const SCREEN_INFORMATION* const pScreenInfo,
 // - ReadRegion - Region to write.
 // Return Value:
 [[nodiscard]]
-NTSTATUS WriteScreenBuffer(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ PCHAR_INFO pciBuffer, _Inout_ PSMALL_RECT psrWriteRegion)
+NTSTATUS WriteScreenBuffer(SCREEN_INFORMATION& screenInfo, _In_ PCHAR_INFO pciBuffer, _Inout_ PSMALL_RECT psrWriteRegion)
 {
     DBGOUTPUT(("WriteScreenBuffer\n"));
 
@@ -257,7 +257,7 @@ NTSTATUS WriteScreenBuffer(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ PCHAR_INFO
     }
 
     // Ensure that the write region is within the constraints of the screen buffer.
-    const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
+    const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
     if (psrWriteRegion->Left >= coordScreenBufferSize.X || psrWriteRegion->Top >= coordScreenBufferSize.Y)
     {
         return STATUS_SUCCESS;
@@ -306,7 +306,7 @@ NTSTATUS WriteScreenBuffer(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ PCHAR_INFO
     TargetPoint.X = psrWriteRegion->Left;
     TargetPoint.Y = psrWriteRegion->Top;
 
-    return WriteRectToScreenBuffer((PBYTE) pciBuffer, SourceSize, &SourceRect, pScreenInfo, TargetPoint, nullptr);
+    return WriteRectToScreenBuffer((PBYTE) pciBuffer, SourceSize, &SourceRect, screenInfo, TargetPoint, nullptr);
 }
 
 // Routine Description:
@@ -323,7 +323,7 @@ NTSTATUS WriteScreenBuffer(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ PCHAR_INFO
 // - NumRecords - On input, the size of the buffer in elements.  On output, the number of elements read.
 // Return Value:
 [[nodiscard]]
-NTSTATUS ReadOutputString(const SCREEN_INFORMATION * const pScreenInfo,
+NTSTATUS ReadOutputString(const SCREEN_INFORMATION& screenInfo,
                           _Inout_ PVOID pvBuffer,
                           const COORD coordRead,
                           const ULONG ulStringType,
@@ -340,7 +340,7 @@ NTSTATUS ReadOutputString(const SCREEN_INFORMATION * const pScreenInfo,
     ULONG NumRead = 0;
     SHORT X = coordRead.X;
     SHORT Y = coordRead.Y;
-    const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
+    const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
     if (X >= coordScreenBufferSize.X || X < 0 || Y >= coordScreenBufferSize.Y || Y < 0)
     {
         *pcRecords = 0;
@@ -382,7 +382,7 @@ NTSTATUS ReadOutputString(const SCREEN_INFORMATION * const pScreenInfo,
     }
 
     {
-        const ROW* pRow = &pScreenInfo->TextInfo->GetRowByOffset(coordRead.Y);
+        const ROW* pRow = &screenInfo.GetTextBuffer().GetRowByOffset(coordRead.Y);
         SHORT j, k;
 
         if (ulStringType == CONSOLE_ASCII ||
@@ -433,7 +433,7 @@ NTSTATUS ReadOutputString(const SCREEN_INFORMATION * const pScreenInfo,
                         BufPtrA += copyAmount;
 
                         NumRead += static_cast<ULONG>(copyAmount);
-                        pRow = &pScreenInfo->TextInfo->GetNextRowNoWrap(*pRow);
+                        pRow = &screenInfo.GetTextBuffer().GetNextRowNoWrap(*pRow);
                     }
                 }
                 catch (...)
@@ -567,7 +567,7 @@ NTSTATUS ReadOutputString(const SCREEN_INFORMATION * const pScreenInfo,
 
                 try
                 {
-                    pRow = &pScreenInfo->TextInfo->GetNextRowNoWrap(*pRow);
+                    pRow = &screenInfo.GetTextBuffer().GetNextRowNoWrap(*pRow);
                 }
                 catch (...)
                 {
@@ -620,14 +620,14 @@ void ScreenBufferSizeChange(const COORD coordNewSize)
     }
 }
 
-void ScrollScreen(_Inout_ PSCREEN_INFORMATION pScreenInfo,
+void ScrollScreen(SCREEN_INFORMATION& screenInfo,
                   const SMALL_RECT * const psrScroll,
                   _In_opt_ const SMALL_RECT * const psrMerge,
                   const COORD coordTarget)
 {
     NTSTATUS status = STATUS_SUCCESS;
 
-    if (pScreenInfo->IsActiveScreenBuffer())
+    if (screenInfo.IsActiveScreenBuffer())
     {
         IAccessibilityNotifier *pNotifier = ServiceLocator::LocateAccessibilityNotifier();
         status = NT_TESTNULL(pNotifier);
@@ -662,13 +662,13 @@ void ScrollScreen(_Inout_ PSCREEN_INFORMATION pScreenInfo,
 
 // Routine Description:
 // - This routine rotates the circular buffer as a shorthand for scrolling the entire screen
-SHORT ScrollEntireScreen(_Inout_ PSCREEN_INFORMATION pScreenInfo, const SHORT sScrollValue)
+SHORT ScrollEntireScreen(SCREEN_INFORMATION& screenInfo, const SHORT sScrollValue)
 {
     // store index of first row
-    SHORT const RowIndex = pScreenInfo->TextInfo->GetFirstRowIndex();
+    SHORT const RowIndex = screenInfo.GetTextBuffer().GetFirstRowIndex();
 
     // update screen buffer
-    pScreenInfo->TextInfo->SetFirstRowIndex((SHORT)((RowIndex + sScrollValue) % pScreenInfo->GetScreenBufferSize().Y));
+    screenInfo.GetTextBuffer().SetFirstRowIndex((SHORT)((RowIndex + sScrollValue) % screenInfo.GetScreenBufferSize().Y));
 
     return RowIndex;
 }
@@ -676,17 +676,17 @@ SHORT ScrollEntireScreen(_Inout_ PSCREEN_INFORMATION pScreenInfo, const SHORT sS
 // Routine Description:
 // - This routine is a special-purpose scroll for use by AdjustCursorPosition.
 // Arguments:
-// - ScreenInfo - pointer to screen buffer info.
+// - screenInfo - reference to screen buffer info.
 // Return Value:
 // - true if we succeeded in scrolling the buffer, otherwise false (if we're out of memory)
-bool StreamScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo)
+bool StreamScrollRegion(SCREEN_INFORMATION& screenInfo)
 {
     // Rotate the circular buffer around and wipe out the previous final line.
-    bool fSuccess = pScreenInfo->TextInfo->IncrementCircularBuffer();
+    bool fSuccess = screenInfo.GetTextBuffer().IncrementCircularBuffer();
     if (fSuccess)
     {
         // Trigger a graphical update if we're active.
-        if (pScreenInfo->IsActiveScreenBuffer())
+        if (screenInfo.IsActiveScreenBuffer())
         {
             COORD coordDelta = { 0 };
             coordDelta.Y = -1;
@@ -711,14 +711,14 @@ bool StreamScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo)
 // - This routine copies ScrollRectangle to DestinationOrigin then fills in ScrollRectangle with Fill.
 // - The scroll region is copied to a third buffer, the scroll region is filled, then the original contents of the scroll region are copied to the destination.
 // Arguments:
-// - ScreenInfo - pointer to screen buffer info.
+// - screenInfo - reference to screen buffer info.
 // - ScrollRectangle - Region to copy
 // - ClipRectangle - Optional pointer to clip region.
 // - DestinationOrigin - Upper left corner of target region.
 // - Fill - Character and attribute to fill source region with.
 // Return Value:
 [[nodiscard]]
-NTSTATUS ScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo,
+NTSTATUS ScrollRegion(SCREEN_INFORMATION& screenInfo,
                       _Inout_ PSMALL_RECT psrScroll,
                       _In_opt_ PSMALL_RECT psrClip,
                       _In_ COORD coordDestinationOrigin,
@@ -738,7 +738,7 @@ NTSTATUS ScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo,
     if (ciFill.Char.UnicodeChar == '\0' && ciFill.Attributes == 0)
     {
         ciFill.Char.UnicodeChar = L' ';
-        ciFill.Attributes = pScreenInfo->GetAttributes().GetLegacyAttributes();
+        ciFill.Attributes = screenInfo.GetAttributes().GetLegacyAttributes();
     }
 
     // clip the source rectangle to the screen buffer
@@ -753,7 +753,7 @@ NTSTATUS ScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo,
         psrScroll->Top = 0;
     }
 
-    const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
+    const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
     if (psrScroll->Right >= coordScreenBufferSize.X)
     {
         psrScroll->Right = (SHORT)(coordScreenBufferSize.X - 1);
@@ -770,8 +770,8 @@ NTSTATUS ScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo,
     }
 
     // Account for the scroll margins set by DECSTBM
-    SMALL_RECT srScrollMargins = pScreenInfo->GetScrollMargins();
-    SMALL_RECT srBufferViewport = pScreenInfo->GetBufferViewport();
+    SMALL_RECT srScrollMargins = screenInfo.GetScrollMargins();
+    SMALL_RECT srBufferViewport = screenInfo.GetBufferViewport();
 
     // The margins are in viewport relative coordinates. Adjust for that.
     srScrollMargins.Top += srBufferViewport.Top;
@@ -911,11 +911,11 @@ NTSTATUS ScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo,
             if (ScrollRectangle2.Right == (SHORT)(coordScreenBufferSize.X - 1) &&
                 ScrollRectangle2.Left == 0 && ScrollRectangle2.Bottom == (SHORT)(coordScreenBufferSize.Y - 1) && ScrollRectangle2.Top == 1)
             {
-                ScrollEntireScreen(pScreenInfo, (SHORT)(ScrollRectangle2.Top - TargetRectangle.Top));
+                ScrollEntireScreen(screenInfo, (SHORT)(ScrollRectangle2.Top - TargetRectangle.Top));
             }
             else
             {
-                Status = _CopyRectangle(pScreenInfo, &ScrollRectangle2, TargetPoint);
+                Status = _CopyRectangle(screenInfo, &ScrollRectangle2, TargetPoint);
             }
             if (NT_SUCCESS(Status))
             {
@@ -934,9 +934,9 @@ NTSTATUS ScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo,
                     FillRect.Bottom = psrClip->Bottom;
                 }
 
-                FillRectangle(&ciFill, pScreenInfo, &FillRect);
+                FillRectangle(&ciFill, screenInfo, &FillRect);
 
-                ScrollScreen(pScreenInfo, &ScrollRectangle2, &FillRect, TargetPoint);
+                ScrollScreen(screenInfo, &ScrollRectangle2, &FillRect, TargetPoint);
             }
 
         }
@@ -950,12 +950,12 @@ NTSTATUS ScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo,
             COORD TargetPoint;
             TargetPoint.X = TargetRectangle.Left;
             TargetPoint.Y = TargetRectangle.Top;
-            Status = _CopyRectangle(pScreenInfo, &ScrollRectangle2, TargetPoint);
+            Status = _CopyRectangle(screenInfo, &ScrollRectangle2, TargetPoint);
             if (NT_SUCCESS(Status))
             {
-                FillRectangle(&ciFill, pScreenInfo, &ScrollRectangle3);
+                FillRectangle(&ciFill, screenInfo, &ScrollRectangle3);
 
-                ScrollScreen(pScreenInfo, &ScrollRectangle2, &ScrollRectangle3, TargetPoint);
+                ScrollScreen(screenInfo, &ScrollRectangle2, &ScrollRectangle3, TargetPoint);
             }
         }
 
@@ -979,14 +979,14 @@ NTSTATUS ScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo,
             std::vector<std::vector<OutputCell>> outputCells;
             try
             {
-                outputCells = ReadRectFromScreenBuffer(*pScreenInfo, SourcePoint, Viewport::FromInclusive(TargetRect));
+                outputCells = ReadRectFromScreenBuffer(screenInfo, SourcePoint, Viewport::FromInclusive(TargetRect));
             }
             catch (...)
             {
                 return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
             }
 
-            FillRectangle(&ciFill, pScreenInfo, &ScrollRectangle3);
+            FillRectangle(&ciFill, screenInfo, &ScrollRectangle3);
 
             SMALL_RECT SourceRectangle;
             SourceRectangle.Top = 0;
@@ -1000,48 +1000,51 @@ NTSTATUS ScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo,
 
             try
             {
-                WriteRectToScreenBuffer(*pScreenInfo, outputCells, TargetPoint);
+                WriteRectToScreenBuffer(screenInfo, outputCells, TargetPoint);
             }
             catch (...)
             {
                 return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
             }
             // update regions on screen.
-            ScrollScreen(pScreenInfo, &ScrollRectangle2, &ScrollRectangle3, TargetPoint);
+            ScrollScreen(screenInfo, &ScrollRectangle2, &ScrollRectangle3, TargetPoint);
         }
     }
     else
     {
         // Do fill.
-        FillRectangle(&ciFill, pScreenInfo, &ScrollRectangle3);
+        FillRectangle(&ciFill, screenInfo, &ScrollRectangle3);
 
-        WriteToScreen(pScreenInfo, ScrollRectangle3);
+        WriteToScreen(screenInfo, ScrollRectangle3);
     }
     return Status;
 }
 
-void SetActiveScreenBuffer(_Inout_ PSCREEN_INFORMATION pScreenInfo)
+void SetActiveScreenBuffer(SCREEN_INFORMATION& screenInfo)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.CurrentScreenBuffer = pScreenInfo;
+    gci.pCurrentScreenBuffer = &screenInfo;
 
     // initialize cursor
-    pScreenInfo->TextInfo->GetCursor()->SetIsOn(false);
+    screenInfo.GetTextBuffer().GetCursor().SetIsOn(false);
 
     // set font
-    pScreenInfo->RefreshFontWithRenderer();
+    screenInfo.RefreshFontWithRenderer();
 
     // Empty input buffer.
     gci.pInputBuffer->FlushAllButKeys();
-    SetScreenColors(pScreenInfo, pScreenInfo->GetAttributes().GetLegacyAttributes(), pScreenInfo->GetPopupAttributes()->GetLegacyAttributes(), FALSE);
+    SetScreenColors(screenInfo,
+                    screenInfo.GetAttributes().GetLegacyAttributes(),
+                    screenInfo.GetPopupAttributes()->GetLegacyAttributes(),
+                    FALSE);
 
     // Set window size.
-    pScreenInfo->PostUpdateWindowSize();
+    screenInfo.PostUpdateWindowSize();
 
     gci.ConsoleIme.RefreshAreaAttributes();
 
     // Write data to screen.
-    WriteToScreen(pScreenInfo, pScreenInfo->GetBufferViewport());
+    WriteToScreen(screenInfo, screenInfo.GetBufferViewport());
 }
 
 // TODO: MSFT 9450717 This should join the ProcessList class when CtrlEvents become moved into the server. https://osgvsowi/9450717

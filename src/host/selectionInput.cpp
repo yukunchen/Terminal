@@ -146,8 +146,7 @@ void Selection::WordByWordSelection(const bool fReverse,
                                     const COORD coordAnchor,
                                     _Inout_ COORD *pcoordSelPoint) const
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    TEXT_BUFFER_INFO* const pTextInfo = gci.CurrentScreenBuffer->TextInfo;
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     // first move one character in the requested direction
     if (!fReverse)
@@ -162,12 +161,13 @@ void Selection::WordByWordSelection(const bool fReverse,
     // get the character at the new position
     WCHAR wchTest = L'\0';
     {
-        ICharRow& iCharRow = pTextInfo->GetRowByOffset(pcoordSelPoint->Y).GetCharRow();
+        const TextBuffer& textBuffer = gci.GetActiveOutputBuffer().GetTextBuffer();
+        const ICharRow& iCharRow = textBuffer.GetRowByOffset(pcoordSelPoint->Y).GetCharRow();
         // we only support ucs2 encoded char rows
         FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
                         "only support UCS2 char rows currently");
 
-        Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
+        const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
         wchTest = charRow.GetGlyphAt(pcoordSelPoint->X);
     }
 
@@ -248,7 +248,7 @@ void Selection::WordByWordSelection(const bool fReverse,
 
         // get the character associated with the new position
         {
-            ICharRow& iCharRow = gci.CurrentScreenBuffer->TextInfo->GetRowByOffset(pcoordSelPoint->Y).GetCharRow();
+            ICharRow& iCharRow = gci.GetActiveOutputBuffer().GetTextBuffer().GetRowByOffset(pcoordSelPoint->Y).GetCharRow();
             // we only support ucs2 encoded char rows
             FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
                             "only support UCS2 char rows currently");
@@ -314,7 +314,7 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
     // if we're not currently selecting anything, start a new mouse selection
     if (!IsInSelectingState())
     {
-        InitializeMouseSelection(gci.CurrentScreenBuffer->TextInfo->GetCursor()->GetPosition());
+        InitializeMouseSelection(gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor().GetPosition());
 
         // force that this is a line selection
         _AlignAlternateSelection(true);
@@ -348,7 +348,7 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
     SMALL_RECT srectEdges;
     Utils::s_GetCurrentBufferEdges(&srectEdges);
 
-    const SHORT sWindowHeight = gci.CurrentScreenBuffer->GetScreenWindowSizeY();
+    const SHORT sWindowHeight = gci.GetActiveOutputBuffer().GetScreenWindowSizeY();
 
     ASSERT(coordSelPoint.X >= srectEdges.Left && coordSelPoint.X <= srectEdges.Right);
     ASSERT(coordSelPoint.Y >= srectEdges.Top && coordSelPoint.Y <= srectEdges.Bottom);
@@ -374,12 +374,10 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
         {
             Utils::s_DoIncrementScreenCoordinate(srectEdges, &coordSelPoint);
 
-            const TEXT_BUFFER_INFO* const pTextInfo = gci.CurrentScreenBuffer->TextInfo;
-
             // if we're about to split a character in half, keep moving right
             try
             {
-                const ICharRow& iCharRow = pTextInfo->GetRowByOffset(coordSelPoint.Y).GetCharRow();
+                const ICharRow& iCharRow = gci.GetActiveOutputBuffer().GetTextBuffer().GetRowByOffset(coordSelPoint.Y).GetCharRow();
                 // we only support ucs2 encoded char rows
                 FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
                                 "only support UCS2 char rows currently");
@@ -605,11 +603,9 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
     }
 
     // ensure we're not planting the cursor in the middle of a double-wide character.
-    const TEXT_BUFFER_INFO* const pTextInfo = gci.CurrentScreenBuffer->TextInfo;
-
     try
     {
-        const ICharRow& iCharRow = pTextInfo->GetRowByOffset(coordSelPoint.Y).GetCharRow();
+        const ICharRow& iCharRow = gci.GetActiveOutputBuffer().GetTextBuffer().GetRowByOffset(coordSelPoint.Y).GetCharRow();
         // we only support ucs2 encoded char rows
         FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
                         "only support UCS2 char rows currently");
@@ -655,7 +651,7 @@ void Selection::CheckAndSetAlternateSelection()
 // - True if the event is handled. False otherwise.
 bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SMALL_RECT* const psrSelection = &_srSelectionRect;
     const WORD wVirtualKeyCode = pInputKeyInfo->GetVirtualKey();
 
@@ -681,10 +677,10 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
         fCtrlPressed = pInputKeyInfo->IsCtrlPressed();
     }
 
-    SCREEN_INFORMATION* const pScreenInfo = gci.CurrentScreenBuffer;
+    SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
 
     //  Clip the selection to within the console buffer
-    pScreenInfo->ClipToScreenBuffer(psrSelection);
+    screenInfo.ClipToScreenBuffer(psrSelection);
 
     //  If ALT or CTRL are pressed,  then color the selected area.
     //  ALT+n => fg,  CTRL+n => bg
@@ -700,7 +696,7 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
         else
         {
             // Set foreground color. Maintain the current console bg color.
-            ulAttr |= gci.CurrentScreenBuffer->GetAttributes().GetLegacyAttributes() & 0xf0;
+            ulAttr |= gci.GetActiveOutputBuffer().GetAttributes().GetLegacyAttributes() & 0xf0;
         }
 
         // If shift was pressed as well, then this is actually a
@@ -716,7 +712,7 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
             // Pull the selection out of the buffer to pass to the
             // search function. Clamp to max search string length.
             // We just copy the bytes out of the row buffer.
-            const ROW& Row = pScreenInfo->TextInfo->GetRowByOffset(psrSelection->Top);
+            const ROW& Row = screenInfo.GetTextBuffer().GetRowByOffset(psrSelection->Top);
 
             WCHAR pwszSearchString[SEARCH_STRING_LENGTH + 1];
             try
@@ -741,7 +737,7 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
             // Clear the selection and call the search / mark function.
             ClearSelection();
 
-            SearchForString(pScreenInfo, pwszSearchString, (USHORT)cLength, TRUE, FALSE, TRUE, ulAttr, nullptr);
+            SearchForString(screenInfo, pwszSearchString, (USHORT)cLength, TRUE, FALSE, TRUE, ulAttr, nullptr);
         }
         else
         {
@@ -763,7 +759,7 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
 // - True if the event is handled. False otherwise.
 bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKeyInfo)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const WORD wVirtualKeyCode = pInputKeyInfo->GetVirtualKey();
 
     // we're selecting via keyboard -- handle keystrokes
@@ -776,13 +772,13 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
         wVirtualKeyCode == VK_END ||
         wVirtualKeyCode == VK_HOME)
     {
-        SCREEN_INFORMATION* const pScreenInfo = gci.CurrentScreenBuffer;
-        TEXT_BUFFER_INFO* const pTextInfo = pScreenInfo->TextInfo;
+        SCREEN_INFORMATION& ScreenInfo = gci.GetActiveOutputBuffer();
+        TextBuffer& textBuffer = ScreenInfo.GetTextBuffer();
         SHORT iNextRightX = 0;
         SHORT iNextLeftX = 0;
 
-        const COORD cursorPos = pTextInfo->GetCursor()->GetPosition();
-        const ROW& Row = pTextInfo->GetRowByOffset(cursorPos.Y);
+        const COORD cursorPos = textBuffer.GetCursor().GetPosition();
+        const ROW& Row = textBuffer.GetRowByOffset(cursorPos.Y);
         const ICharRow& iCharRow = Row.GetCharRow();
         // we only support ucs2 encoded char rows
         FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
@@ -833,14 +829,14 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
         }
         CATCH_LOG();
 
-        Cursor* pCursor = pTextInfo->GetCursor();
+        Cursor& cursor = textBuffer.GetCursor();
         switch (wVirtualKeyCode)
         {
         case VK_RIGHT:
         {
-            if (cursorPos.X + iNextRightX < pScreenInfo->GetScreenBufferSize().X)
+            if (cursorPos.X + iNextRightX < ScreenInfo.GetScreenBufferSize().X)
             {
-                pCursor->IncrementXPosition(iNextRightX);
+                cursor.IncrementXPosition(iNextRightX);
             }
             break;
         }
@@ -849,7 +845,7 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
         {
             if (cursorPos.X > 0)
             {
-                pCursor->DecrementXPosition(iNextLeftX);
+                cursor.DecrementXPosition(iNextLeftX);
             }
             break;
         }
@@ -858,37 +854,37 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
         {
             if (cursorPos.Y > 0)
             {
-                pCursor->DecrementYPosition(1);
+                cursor.DecrementYPosition(1);
             }
             break;
         }
 
         case VK_DOWN:
         {
-            if (cursorPos.Y + 1 < pScreenInfo->GetScreenBufferSize().Y)
+            if (cursorPos.Y + 1 < ScreenInfo.GetScreenBufferSize().Y)
             {
-                pCursor->IncrementYPosition(1);
+                cursor.IncrementYPosition(1);
             }
             break;
         }
 
         case VK_NEXT:
         {
-            pCursor->IncrementYPosition(pScreenInfo->GetScreenWindowSizeY() - 1);
-            const COORD coordBufferSize = pScreenInfo->GetScreenBufferSize();
-            if (pCursor->GetPosition().Y >= coordBufferSize.Y)
+            cursor.IncrementYPosition(ScreenInfo.GetScreenWindowSizeY() - 1);
+            const COORD coordBufferSize = ScreenInfo.GetScreenBufferSize();
+            if (cursor.GetPosition().Y >= coordBufferSize.Y)
             {
-                pCursor->SetYPosition(coordBufferSize.Y - 1);
+                cursor.SetYPosition(coordBufferSize.Y - 1);
             }
             break;
         }
 
         case VK_PRIOR:
         {
-            pCursor->DecrementYPosition(pScreenInfo->GetScreenWindowSizeY() - 1);
-            if (pCursor->GetPosition().Y < 0)
+            cursor.DecrementYPosition(ScreenInfo.GetScreenWindowSizeY() - 1);
+            if (cursor.GetPosition().Y < 0)
             {
-                pCursor->SetYPosition(0);
+                cursor.SetYPosition(0);
             }
             break;
         }
@@ -896,7 +892,7 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
         case VK_END:
         {
             // End by itself should go to end of current line. Ctrl-End should go to end of buffer.
-            pCursor->SetXPosition(pScreenInfo->GetScreenBufferSize().X - 1);
+            cursor.SetXPosition(ScreenInfo.GetScreenBufferSize().X - 1);
 
             if (pInputKeyInfo->IsCtrlPressed())
             {
@@ -904,7 +900,7 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
                 GetValidAreaBoundaries(nullptr, &coordValidEnd);
 
                 // Adjust Y position of cursor to the final line with valid text
-                pCursor->SetYPosition(coordValidEnd.Y);
+                cursor.SetYPosition(coordValidEnd.Y);
             }
             break;
         }
@@ -913,11 +909,11 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
         {
             // Home by itself should go to the beginning of the current line. Ctrl-Home should go to the beginning of
             // the buffer
-            pCursor->SetXPosition(0);
+            cursor.SetXPosition(0);
 
             if (pInputKeyInfo->IsCtrlPressed())
             {
-                pCursor->SetYPosition(0);
+                cursor.SetYPosition(0);
             }
             break;
         }
@@ -936,7 +932,7 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
                 CheckAndSetAlternateSelection();
             }
 
-            ExtendSelection(pCursor->GetPosition());
+            ExtendSelection(cursor.GetPosition());
         }
         else
         {
@@ -948,9 +944,9 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
                 _fUseAlternateSelection = false;
             }
 
-            pCursor->SetHasMoved(TRUE);
-            _coordSelectionAnchor = pTextInfo->GetCursor()->GetPosition();
-            pScreenInfo->MakeCursorVisible(_coordSelectionAnchor);
+            cursor.SetHasMoved(true);
+            _coordSelectionAnchor = textBuffer.GetCursor().GetPosition();
+            ScreenInfo.MakeCursorVisible(_coordSelectionAnchor);
             _srSelectionRect.Left = _srSelectionRect.Right = _coordSelectionAnchor.X;
             _srSelectionRect.Top = _srSelectionRect.Bottom = _coordSelectionAnchor.Y;
         }
@@ -977,7 +973,7 @@ bool Selection::s_GetInputLineBoundaries(_Out_opt_ COORD* const pcoordInputStart
     Utils::s_GetCurrentBufferEdges(&srectEdges);
 
     const COOKED_READ_DATA* const pCookedReadData = gci.lpCookedReadData;
-    const TEXT_BUFFER_INFO* const pTextInfo = gci.CurrentScreenBuffer->TextInfo;
+    auto& textBuffer = gci.GetActiveOutputBuffer().GetTextBuffer();
 
     // if we have no read data, we have no input line
     if (pCookedReadData == nullptr || pCookedReadData->_NumberOfVisibleChars <= 0)
@@ -991,7 +987,7 @@ bool Selection::s_GetInputLineBoundaries(_Out_opt_ COORD* const pcoordInputStart
     if (coordEnd.X < 0 && coordEnd.Y < 0)
     {
         // if the original cursor position from the input line data is invalid, then the buffer cursor position is the final position
-        coordEnd = pTextInfo->GetCursor()->GetPosition();
+        coordEnd = textBuffer.GetCursor().GetPosition();
     }
     else
     {
@@ -1042,7 +1038,7 @@ void Selection::GetValidAreaBoundaries(_Out_opt_ COORD* const pcoordValidStart, 
         }
         else
         {
-            coordEnd = gci.CurrentScreenBuffer->TextInfo->GetCursor()->GetPosition();
+            coordEnd = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor().GetPosition();
         }
     }
 
