@@ -13,8 +13,8 @@
 using namespace Microsoft::Console::VirtualTerminal;
 
 //Takes ownership of the pEngine.
-StateMachine::StateMachine(_In_ std::unique_ptr<IStateMachineEngine> pEngine) :
-    _pEngine(std::move(pEngine)),
+StateMachine::StateMachine(_In_ std::shared_ptr<IStateMachineEngine> pEngine) :
+    _pEngine(pEngine),
     _state(VTStates::Ground),
     _trace(Microsoft::Console::VirtualTerminal::ParserTracing())
 {
@@ -22,7 +22,7 @@ StateMachine::StateMachine(_In_ std::unique_ptr<IStateMachineEngine> pEngine) :
 }
 
 // Routine Description:
-// - Determines if a character indicates an action that should be taken in the ground state - 
+// - Determines if a character indicates an action that should be taken in the ground state -
 //     These are C0 characters and the C1 [single-character] CSI.
 // Arguments:
 // - wch - Character to check.
@@ -136,7 +136,7 @@ bool StateMachine::s_IsCsiDelimiter(const wchar_t wch)
 
 // Routine Description:
 // - Determines if a character is a valid parameter value
-//   Parameters must be numerical digits. 
+//   Parameters must be numerical digits.
 // Arguments:
 // - wch - Character to check.
 // Return Value:
@@ -172,7 +172,7 @@ bool StateMachine::s_IsCsiInvalid(const wchar_t wch)
 // Routine Description:
 // - Determines if a character is "operating system control string" beginning
 //      indicator.
-//   This immediately follows an escape and signifies a  signifies a varying 
+//   This immediately follows an escape and signifies a  signifies a varying
 //      length control sequence, quite similar to CSI.
 // Arguments:
 // - wch - Character to check.
@@ -198,7 +198,7 @@ bool StateMachine::s_IsOscIndicator(const wchar_t wch)
 // Routine Description:
 // - Determines if a character is a delimiter between two parameters in a "operating system control sequence"
 //   This occurs in the middle of a control sequence after escape and OscIndicator have been recognized,
-//   after the paramater indicating which OSC action to take. 
+//   after the paramater indicating which OSC action to take.
 // Arguments:
 // - wch - Character to check.
 // Return Value:
@@ -211,7 +211,7 @@ bool StateMachine::s_IsOscDelimiter(const wchar_t wch)
 // Routine Description:
 // - Determines if a character is a valid parameter value for an OSC String,
 //     that is, the indicator of which OSC action to take.
-//   Parameters must be numerical digits. 
+//   Parameters must be numerical digits.
 // Arguments:
 // - wch - Character to check.
 // Return Value:
@@ -229,7 +229,7 @@ bool StateMachine::s_IsOscParamValue(const wchar_t wch)
 // - True if it is. False if it isn't.
 bool StateMachine::s_IsOscTerminationInitiator(const wchar_t wch)
 {
-    return wch == AsciiChars::ESC; 
+    return wch == AsciiChars::ESC;
 }
 
 // Routine Description:
@@ -242,7 +242,7 @@ bool StateMachine::s_IsOscInvalid(const wchar_t wch)
 {
     return wch <= L'\x17' ||
            wch == L'\x19' ||
-           (wch >= L'\x1c' && wch <= L'\x1f') ; 
+           (wch >= L'\x1c' && wch <= L'\x1f') ;
 }
 
 // Routine Description:
@@ -288,7 +288,7 @@ void StateMachine::_ActionExecute(const wchar_t wch)
 // Return Value:
 // - <none>
 void StateMachine::_ActionPrint(const wchar_t wch)
-{    
+{
     _trace.TraceOnAction(L"Print");
     _pEngine->ActionPrint(wch);
 }
@@ -304,9 +304,9 @@ void StateMachine::_ActionPrint(const wchar_t wch)
 void StateMachine::_ActionEscDispatch(const wchar_t wch)
 {
     _trace.TraceOnAction(L"EscDispatch");
-    
+
     bool fSuccess = _pEngine->ActionEscDispatch(wch, _cIntermediate, _wchIntermediate);
-    
+
     // Trace the result.
     _trace.DispatchSequenceTrace(fSuccess);
 
@@ -327,7 +327,7 @@ void StateMachine::_ActionEscDispatch(const wchar_t wch)
 void StateMachine::_ActionCsiDispatch(const wchar_t wch)
 {
     _trace.TraceOnAction(L"CsiDispatch");
-    
+
     bool fSuccess = _pEngine->ActionCsiDispatch(wch, _cIntermediate, _wchIntermediate, _rgusParams, _cParams);
 
     // Trace the result.
@@ -355,7 +355,7 @@ void StateMachine::_ActionCollect(const wchar_t wch)
     {
         _wchIntermediate = wch;
     }
-    
+
     _cIntermediate++;
 }
 
@@ -370,11 +370,11 @@ void StateMachine::_ActionParam(const wchar_t wch)
 {
     _trace.TraceOnAction(L"Param");
 
-    // Verify both the count and that the pointer didn't run off the end of the 
+    // Verify both the count and that the pointer didn't run off the end of the
     //      array. If we're past the end, this param is just ignored.
     if (_cParams <= s_cParamsMax && _pusActiveParam < &_rgusParams[s_cParamsMax])
     {
-        // If we're adding a character to the first parameter, 
+        // If we're adding a character to the first parameter,
         //      then we now have one parameter.
         if (_iParamAccumulatePos == 0 && _cParams == 0)
         {
@@ -382,11 +382,11 @@ void StateMachine::_ActionParam(const wchar_t wch)
         }
 
         // On a delimiter, increase the number of params we've seen.
-        // "Empty" params should still count as a param - 
+        // "Empty" params should still count as a param -
         //      eg "\x1b[0;;m" should be three "0" params
         if (wch == L';')
         {
-            // Move to next param. 
+            // Move to next param.
             //      If we're on the last param (_cParams == s_cParamsMax),
             //      then _pusActiveParam will now be past the end of _rgusParams,
             //      and any future params will be ignored.
@@ -396,7 +396,7 @@ void StateMachine::_ActionParam(const wchar_t wch)
             _iParamAccumulatePos = 0;
 
             // Don't increment the _cParams to be greater than s_cParamsMax.
-            //      We're using _pusActiveParam to make sure we don't fill too 
+            //      We're using _pusActiveParam to make sure we don't fill too
             //      many params.
             if (_cParams < s_cParamsMax)
             {
@@ -427,7 +427,7 @@ void StateMachine::_ActionParam(const wchar_t wch)
             }
             else
             {
-                *_pusActiveParam = SHORT_MAX; 
+                *_pusActiveParam = SHORT_MAX;
             }
         }
     }
@@ -507,8 +507,8 @@ void StateMachine::_ActionOscParam(const wchar_t wch)
     }
     else
     {
-        _sOscParam = SHORT_MAX; 
-    }  
+        _sOscParam = SHORT_MAX;
+    }
 }
 
 // Routine Description:
@@ -541,7 +541,7 @@ void StateMachine::_ActionOscPut(const wchar_t wch)
 void StateMachine::_ActionOscDispatch(const wchar_t wch)
 {
     _trace.TraceOnAction(L"OscDispatch");
-    
+
     bool fSuccess = _pEngine->ActionOscDispatch(wch, _sOscParam, _pwchOscStringBuffer, _sOscNextChar);
 
     // Trace the result.
@@ -551,7 +551,7 @@ void StateMachine::_ActionOscDispatch(const wchar_t wch)
     {
         // Suppress it and log telemetry on failed cases
         TermTelemetry::Instance().LogFailed(wch);
-    }    
+    }
 }
 
 // Routine Description:
@@ -564,7 +564,7 @@ void StateMachine::_ActionOscDispatch(const wchar_t wch)
 void StateMachine::_ActionSs3Dispatch(const wchar_t wch)
 {
     _trace.TraceOnAction(L"Ss3Dispatch");
-    
+
     bool fSuccess = _pEngine->ActionSs3Dispatch(wch, _rgusParams, _cParams);
 
     // Trace the result.
@@ -712,7 +712,7 @@ void StateMachine::_EnterOscString()
 // Routine Description:
 // - Moves the state machine into the OscTermination state.
 //   This state is entered:
-//   1. When an ESC is seen in an OSC string. This escape will be followed by a 
+//   1. When an ESC is seen in an OSC string. This escape will be followed by a
 //      '\', as to encode a 0x9C as a 7-bit ASCII char stream.
 // Arguments:
 // - <none>
@@ -1065,7 +1065,7 @@ void StateMachine::_EventOscParam(const wchar_t wch)
 // - Processes a character event into a Action that occurs while in the OscParam state.
 //   Events in this state will:
 //   1. Trigger the OSC action associated with the param on an OscTerminator
-//   2. If we see a ESC, enter the OscTermination state. We'll wait for one 
+//   2. If we see a ESC, enter the OscTermination state. We'll wait for one
 //      more character before we dispatch the string.
 //   3. Ignore OscInvalid characters.
 //   4. Collect everything else into the OscString
@@ -1097,7 +1097,7 @@ void StateMachine::_EventOscString(const wchar_t wch)
 }
 
 // Routine Description:
-// - Handle the two-character termination of a OSC sequence. 
+// - Handle the two-character termination of a OSC sequence.
 //   Events in this state will:
 //   1. Trigger the OSC action associated with the param on an OscTerminator
 // Arguments:
@@ -1120,8 +1120,8 @@ void StateMachine::_EventOscTermination(const wchar_t wch)
 //   3. Begin to ignore all remaining parameters when an invalid character is detected (CsiIgnore)
 //   4. Store parameter data
 //   5. Dispatch a control sequence with parameters for action
-//  SS3 sequences are structurally the same as CSI sequences, just with a 
-//      different initiation. It's safe to reuse CSI's functions for 
+//  SS3 sequences are structurally the same as CSI sequences, just with a
+//      different initiation. It's safe to reuse CSI's functions for
 //      determining if a character is a parameter, delimiter, or invalid.
 // Arguments:
 // - wch - Character that triggered the event
@@ -1140,7 +1140,7 @@ void StateMachine::_EventSs3Entry(const wchar_t wch)
     }
     else if (s_IsCsiInvalid(wch))
     {
-        // It's safe for us to go into the CSI ignore here, because both SS3 and 
+        // It's safe for us to go into the CSI ignore here, because both SS3 and
         //      CSI sequences ignore characters the same way.
         _EnterCsiIgnore();
     }
@@ -1205,15 +1205,15 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
     _trace.TraceCharInput(wch);
 
     // Process "from anywhere" events first.
-    if (wch == AsciiChars::CAN || 
-        wch == AsciiChars::SUB) 
+    if (wch == AsciiChars::CAN ||
+        wch == AsciiChars::SUB)
     {
         _ActionExecute(wch);
         _EnterGround();
     }
     else if (s_IsEscape(wch) && _state != VTStates::OscString)
     {
-        // Don't go to escape from the OSC string state - ESC can be used to 
+        // Don't go to escape from the OSC string state - ESC can be used to
         //      terminate OSC strings.
         _EnterEscape();
     }
@@ -1252,10 +1252,32 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
         }
     }
 }
+// Method Description:
+// - Pass the current string we're processing through to the engine. It may eat
+//      the string, it may write it straight to the input unmodified, it might
+//      write the string to the tty application. A pointer to this function will
+//      get handed to the OutputStateMachineEngine, so that it can write strings
+//      it doesn't understand to the tty.
+//  This does not modify the state of the state machine. Callers should be in
+//      the Action*Dispatch state, and upon completion, the state's handler (eg
+//      _EventCsiParam) should move us into the ground state.
+// Arguments:
+// - <none>
+// Return Value:
+// - true if the engine successfully handled the string.
+bool StateMachine::FlushToTerminal()
+{
+    // _pwchCurr is incremented after a call to ProcessCharacter to indicate
+    //      that pwchCurr was processed.
+    // However, if we're here, then the processing of pwchChar triggered the
+    //      engine to request the entire sequence get passed through, including pwchCurr.
+    return _pEngine->ActionPassThroughString(_pwchSequenceStart,
+                                             _pwchCurr-_pwchSequenceStart+1);
+}
 
 // Routine Description:
-// - Helper for entry to the state machine. Will take an array of characters 
-//     and print as many as it can without encountering a character indicating 
+// - Helper for entry to the state machine. Will take an array of characters
+//     and print as many as it can without encountering a character indicating
 //     a escape sequence, then feed characters into the state machine one at a
 //     time until we return to the ground state.
 // Arguments:
@@ -1265,9 +1287,9 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
 // - <none>
 void StateMachine::ProcessString(_Inout_updates_(cch) wchar_t * const rgwch, const size_t cch)
 {
-    wchar_t* pwchCurr = rgwch;
-    wchar_t* pwchSequenceStart = rgwch;
-    size_t currRunLength = 0;
+    _pwchCurr = rgwch;
+    _pwchSequenceStart = rgwch;
+    _currRunLength = 0;
 
     // This should be static, because if one string starts a sequence, and the next finishes it,
     //   we want the partial sequence state to persist.
@@ -1277,61 +1299,62 @@ void StateMachine::ProcessString(_Inout_updates_(cch) wchar_t * const rgwch, con
     {
         if (s_fProcessIndividually)
         {
-            ProcessCharacter(*pwchCurr); // If we're processing characters individually, send it to the state machine.
-            pwchCurr++;
+            // If we're processing characters individually, send it to the state machine.
+            ProcessCharacter(*_pwchCurr);
+            _pwchCurr++;
             if (_state == VTStates::Ground)  // Then check if we're back at ground. If we are, the next character (pwchCurr)
             {                                //   is the start of the next run of characters that might be printable.
                 s_fProcessIndividually = false;
-                pwchSequenceStart = pwchCurr;
-                currRunLength = 0;
+                _pwchSequenceStart = _pwchCurr;
+                _currRunLength = 0;
             }
         }
         else
         {
-            if (s_IsActionableFromGround(*pwchCurr))  // If the current char is the start of an escape sequence, or should be executed in ground state...
+            if (s_IsActionableFromGround(*_pwchCurr))  // If the current char is the start of an escape sequence, or should be executed in ground state...
             {
-                assert(pwchSequenceStart + currRunLength <= rgwch + cch);
+                assert(_pwchSequenceStart + _currRunLength <= rgwch + cch);
                 #pragma prefast(push)
                 #pragma prefast(disable:__WARNING_BUFFER_OVERFLOW, "Not sure why prefast is getting confused here. Assert immediately above ensures this is fine.")
-                _pEngine->ActionPrintString(pwchSequenceStart, currRunLength); // ... print all the chars leading up to it as part of the run...
-                _trace.DispatchPrintRunTrace(pwchSequenceStart, currRunLength);
+                _pEngine->ActionPrintString(_pwchSequenceStart, _currRunLength); // ... print all the chars leading up to it as part of the run...
+                _trace.DispatchPrintRunTrace(_pwchSequenceStart, _currRunLength);
                 #pragma prefast(pop)
-                s_fProcessIndividually = true; // begin processing future characters individually... 
-                currRunLength = 0;
-                pwchSequenceStart = pwchCurr;
-                ProcessCharacter(*pwchCurr); // ... Then process the character individually.
+                s_fProcessIndividually = true; // begin processing future characters individually...
+                _currRunLength = 0;
+                _pwchSequenceStart = _pwchCurr;
+                ProcessCharacter(*_pwchCurr); // ... Then process the character individually.
                 if (_state == VTStates::Ground)  // If the character took us right back to ground, start another run after it.
-                {                                
+                {
                     s_fProcessIndividually = false;
-                    pwchSequenceStart = pwchCurr + 1;
-                    currRunLength = 0;
+                    _pwchSequenceStart = _pwchCurr + 1;
+                    _currRunLength = 0;
                 }
             }
             else
             {
-                currRunLength++; // Otherwise, add this char to the current run to be printed.
+                _currRunLength++; // Otherwise, add this char to the current run to be printed.
             }
-            pwchCurr++;
-        }  
+            _pwchCurr++;
+        }
     }
 
-    // If we're at the end of the string and have remaining un-printed characters, 
-    if (!s_fProcessIndividually && currRunLength > 0) 
+    // If we're at the end of the string and have remaining un-printed characters,
+    if (!s_fProcessIndividually && _currRunLength > 0)
     {
         // print the rest of the characters in the string
-        _pEngine->ActionPrintString(pwchSequenceStart, currRunLength);
-        _trace.DispatchPrintRunTrace(pwchSequenceStart, currRunLength);
+        _pEngine->ActionPrintString(_pwchSequenceStart, _currRunLength);
+        _trace.DispatchPrintRunTrace(_pwchSequenceStart, _currRunLength);
 
     }
     else if (s_fProcessIndividually)
     {
         if (_pEngine->FlushAtEndOfString())
         {
-            // Reset our state, and put all but the last char in again. 
+            // Reset our state, and put all but the last char in again.
             ResetState();
             // Chars to flush are [pwchSequenceStart, pwchCurr)
-            wchar_t* pwch = pwchSequenceStart;
-            for (pwch = pwchSequenceStart; pwch < pwchCurr-1; pwch++)
+            wchar_t* pwch = _pwchSequenceStart;
+            for (pwch = _pwchSequenceStart; pwch < _pwchCurr-1; pwch++)
             {
                 ProcessCharacter(*pwch);
             }
@@ -1365,7 +1388,7 @@ void StateMachine::ProcessString(_Inout_updates_(cch) wchar_t * const rgwch, con
 
 // Routine Description:
 // - Wherever the state machine is, whatever it's going, go back to ground.
-//     This is used by conhost to "jiggle the handle" - when VT support is 
+//     This is used by conhost to "jiggle the handle" - when VT support is
 //     turned off, we don't want any bad state left over for the next input it's turned on for
 // Arguments:
 // - <none>

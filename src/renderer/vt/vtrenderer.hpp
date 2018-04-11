@@ -16,13 +16,14 @@ Author(s):
 
 #include "../inc/IRenderEngine.hpp"
 #include "../../inc/IDefaultColorProvider.hpp"
+#include "../../inc/ITerminalOutputConnection.hpp"
 #include "../../types/inc/Viewport.hpp"
 #include <string>
 #include <functional>
 
 namespace Microsoft::Console::Render
 {
-    class VtEngine : public IRenderEngine
+    class VtEngine : public IRenderEngine, public Microsoft::Console::ITerminalOutputConnection
     {
     public:
         // See _PaintUtf8BufferLine for explanation of this value.
@@ -122,7 +123,13 @@ namespace Microsoft::Console::Render
         HRESULT InheritCursor(const COORD coordCursor);
 
         [[nodiscard]]
-        virtual HRESULT UpdateTitle(_In_ const std::wstring& newTitle) override;
+        HRESULT WriteTerminalUtf8(const std::string& str);
+
+        [[nodiscard]]
+        virtual HRESULT WriteTerminalW(const std::wstring& str) = 0;
+
+        [[nodiscard]]
+        virtual HRESULT UpdateTitle(const std::wstring& newTitle) override;
 
     protected:
         wil::unique_hfile _hFile;
@@ -233,6 +240,10 @@ namespace Microsoft::Console::Render
                                     const size_t cchLine,
                                     const COORD coordTarget);
 
+        [[nodiscard]]
+        HRESULT _WriteTerminalUtf8(const std::wstring& str);
+        [[nodiscard]]
+        HRESULT _WriteTerminalAscii(const std::wstring& str);
         /////////////////////////// Unit Testing Helpers ///////////////////////////
     #ifdef UNIT_TESTING
         std::function<bool(const char* const, size_t const)> _pfnTestCallback;

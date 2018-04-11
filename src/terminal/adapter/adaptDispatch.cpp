@@ -1705,6 +1705,13 @@ bool AdaptDispatch::EnableAlternateScroll(const bool fEnabled)
 // True if handled successfully. False othewise.
 bool AdaptDispatch::SetCursorStyle(const DispatchCommon::CursorStyle cursorStyle)
 {
+    bool isPty = false;
+    _pConApi->IsConsolePty(&isPty);
+    if (isPty)
+    {
+        return false;
+    }
+
     CursorType actualType = CursorType::Legacy;
     bool fEnableBlinking = false;
 
@@ -1757,6 +1764,13 @@ bool AdaptDispatch::SetCursorStyle(const DispatchCommon::CursorStyle cursorStyle
 // True if handled successfully. False othewise.
 bool AdaptDispatch::SetCursorColor(const COLORREF cursorColor)
 {
+    bool isPty = false;
+    _pConApi->IsConsolePty(&isPty);
+    if (isPty)
+    {
+        return false;
+    }
+
     return !!_pConApi->SetCursorColor(cursorColor);
 }
 
@@ -1770,6 +1784,13 @@ bool AdaptDispatch::SetCursorColor(const COLORREF cursorColor)
 bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex,
                                        const DWORD dwColor)
 {
+    bool isPty = false;
+    _pConApi->IsConsolePty(&isPty);
+    if (isPty)
+    {
+        return false;
+    }
+
     bool fSuccess = tableIndex < 16;
     if (fSuccess)
     {

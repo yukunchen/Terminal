@@ -1687,7 +1687,7 @@ HRESULT DoSrvSetConsoleTitleW(_In_reads_or_z_(cchBuffer) const wchar_t* const pw
 //      event. This is used by InteractDispatch, to prevent resizes from echoing
 //      between terminal and host.
 // Parameters:
-//  The ScreenBuffer to perform the repaint for.
+//  <none>
 // Return value:
 // - STATUS_SUCCESS if we succeeded, otherwise the NTSTATUS version of the failure.
 [[nodiscard]]
@@ -1696,4 +1696,16 @@ NTSTATUS DoSrvPrivateSuppressResizeRepaint()
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     assert(gci.IsInVtIoMode());
     return NTSTATUS_FROM_HRESULT(gci.GetVtIo()->SuppressResizeRepaint());
+}
+
+// Routine Description:
+// - An API call for checking if the console host is acting as a pty.
+// Parameters:
+// - isPty: recieves the bool indicating whether or not we're in pty mode.
+// Return value:
+//  <none>
+void DoSrvIsConsolePty(_Out_ bool* const pIsPty)
+{
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    *pIsPty = gci.IsInVtIoMode();
 }

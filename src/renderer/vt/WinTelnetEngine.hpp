@@ -36,9 +36,14 @@ namespace Microsoft::Console::Render
                                     const bool fIncludeBackgrounds) override;
         [[nodiscard]]
         HRESULT ScrollFrame() override;
+
         [[nodiscard]]
         HRESULT InvalidateScroll(const COORD* const pcoordDelta) override;
-    protected:
+
+        [[nodiscard]]
+        HRESULT WriteTerminalW(const std::wstring& wstr) override;
+
+protected:
         [[nodiscard]]
         HRESULT _MoveCursor(const COORD coord);
     private:

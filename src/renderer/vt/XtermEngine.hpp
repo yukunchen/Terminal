@@ -52,10 +52,15 @@ namespace Microsoft::Console::Render
                                 const bool fTrimLeft) override;
         [[nodiscard]]
         HRESULT ScrollFrame() override;
+
         [[nodiscard]]
         HRESULT UpdateTitle(const std::wstring& newTitle) override;
         [[nodiscard]]
         HRESULT InvalidateScroll(const COORD* const pcoordDelta) override;
+
+        [[nodiscard]]
+        HRESULT WriteTerminalW(_In_ const std::wstring& str) override;
+
     protected:
         [[nodiscard]]
         HRESULT _MoveCursor(const COORD coord);

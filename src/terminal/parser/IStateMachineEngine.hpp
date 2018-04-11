@@ -25,24 +25,33 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool ActionExecute(const wchar_t wch) = 0;
         virtual bool ActionPrint(const wchar_t wch) = 0;
         virtual bool ActionPrintString(_Inout_updates_(cch) wchar_t* const rgwch,
-                                        const size_t cch) = 0;
+                                       size_t const cch) = 0;
+
+        virtual bool ActionPassThroughString(_Inout_updates_(cch) wchar_t* const rgwch,
+                                             size_t const cch) = 0;
+
         virtual bool ActionEscDispatch(const wchar_t wch,
-                                        const unsigned short cIntermediate,
-                                        const wchar_t wchIntermediate) = 0;
+                                       const unsigned short cIntermediate,
+                                       const wchar_t wchIntermediate) = 0;
         virtual bool ActionCsiDispatch(const wchar_t wch,
-                                        const unsigned short cIntermediate,
-                                        const wchar_t wchIntermediate,
-                                        _In_reads_(cParams) const unsigned short* const rgusParams,
-                                        const unsigned short cParams) = 0;
+                                       const unsigned short cIntermediate,
+                                       const wchar_t wchIntermediate,
+                                       _In_reads_(cParams) const unsigned short* const rgusParams,
+                                       const unsigned short cParams) = 0;
+
         virtual bool ActionClear() = 0;
+
         virtual bool ActionIgnore() = 0;
+
         virtual bool ActionOscDispatch(const wchar_t wch,
                                         const unsigned short sOscParam,
                                         _Inout_updates_(cchOscString) wchar_t* const pwchOscStringBuffer,
                                         const unsigned short cchOscString) = 0;
+
         virtual bool ActionSs3Dispatch(const wchar_t wch,
                                         _In_reads_(cParams) const unsigned short* const rgusParams,
                                         const unsigned short cParams) = 0;
+
         virtual bool FlushAtEndOfString() const = 0;
 
     };

@@ -10,11 +10,13 @@
 #include "OutputStateMachineEngine.hpp"
 
 #include "ascii.hpp"
+using namespace Microsoft::Console;
 using namespace Microsoft::Console::VirtualTerminal;
 
 
 OutputStateMachineEngine::OutputStateMachineEngine(_In_ TermDispatch* const pDispatch) :
-    _pDispatch(pDispatch)
+    _pDispatch(pDispatch),
+    _pfnFlushToTerminal(nullptr)
 {
 }
 
@@ -61,6 +63,35 @@ bool OutputStateMachineEngine::ActionPrintString(_Inout_updates_(cch) wchar_t* c
 {
     _pDispatch->PrintString(rgwch, cch); // call print
     return true;
+}
+
+// Routine Description:
+// This is called when we have determined that we don't understand a particular
+//      sequence, or the adapter has determined that the string is intended for
+//      the actual terminal (when we're acting as a pty).
+// - Pass the string through to the target terminal application. If we're a pty,
+//      then we'll have a TerminalConnection that we'll write the string to.
+//      Otherwise, we're the terminal device, and we'll eat the string (because
+//      we don't know what to do with it)
+// Arguments:
+// - rgwch - string to dispatch.
+// - cch - length of rgwch
+// Return Value:
+// - true iff we successfully dispatched the sequence.
+bool OutputStateMachineEngine::ActionPassThroughString(_Inout_updates_(cch) wchar_t* const rgwch,
+                                                       _In_ size_t const cch)
+{
+    bool fSuccess = true;
+    if (_pTtyConnection != nullptr)
+    {
+        std::wstring wstr = std::wstring(rgwch, cch);
+        auto hr = _pTtyConnection->WriteTerminalW(wstr);
+        LOG_IF_FAILED(hr);
+        fSuccess = SUCCEEDED(hr);
+    }
+    // If there's not a TTY connection, our previous behavior was to eat the string.
+
+    return fSuccess;
 }
 
 // Routine Description:
@@ -416,6 +447,13 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
             break;
         }
     }
+    // If we were unable to process the string, and there's a TTY attached to us,
+    //      trigger the state machine to flush the string to the terminal.
+    if (_pfnFlushToTerminal != nullptr && !fSuccess)
+    {
+        fSuccess = _pfnFlushToTerminal();
+    }
+
     return fSuccess;
 }
 
@@ -634,6 +672,13 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
         }
     }
 
+    // If we were unable to process the string, and there's a TTY attached to us,
+    //      trigger the state machine to flush the string to the terminal.
+    if (_pfnFlushToTerminal != nullptr && !fSuccess)
+    {
+        fSuccess = _pfnFlushToTerminal();
+    }
+
     return fSuccess;
 }
 
@@ -700,6 +745,13 @@ bool OutputStateMachineEngine::_GetGraphicsOptions(_In_reads_(cParams) const uns
         {
             fSuccess = false; // not enough space in buffer to hold response.
         }
+    }
+
+    // If we were unable to process the string, and there's a TTY attached to us,
+    //      trigger the state machine to flush the string to the terminal.
+    if (_pfnFlushToTerminal != nullptr && !fSuccess)
+    {
+        fSuccess = _pfnFlushToTerminal();
     }
 
     return fSuccess;
@@ -1509,3 +1561,24 @@ bool OutputStateMachineEngine::_GetCursorStyle(_In_reads_(cParams) const unsigne
 
     return fSuccess;
 }
+
+// Method Description:
+// - Sets us up to have another terminal acting as the tty instead of conhost.
+//      We'll set a couple members, and if they aren't null, when we get a
+//      sequence we don't understand, we'll pass it along to the terminal
+//      instead of eating it ourselves.
+// Arguments:
+// - pTtyConnection: This is a TerminalOutputConnection that we can write the
+//      sequence we didn't understand to.
+// - pfnFlushToTerminal: This is a callback to the underlying state machine to
+//      trigger it to call ActionPassThroughString with whatever sequence it's
+//      currently processing.
+// Return Value:
+// - <none>
+void OutputStateMachineEngine::SetTerminalConnection(ITerminalOutputConnection* const pTtyConnection,
+                                                     std::function<bool()> pfnFlushToTerminal)
+{
+    this->_pTtyConnection = pTtyConnection;
+    this->_pfnFlushToTerminal = pfnFlushToTerminal;
+}
+

@@ -30,22 +30,34 @@ namespace Microsoft::Console::VirtualTerminal
                                 const bool lookingForDSR);
 
         bool ActionExecute(const wchar_t wch) override;
+
         bool ActionPrint(const wchar_t wch) override;
-        bool ActionPrintString(_Inout_updates_(cch) wchar_t* const rgwch, const size_t cch) override;
+
+        bool ActionPrintString(_Inout_updates_(cch) wchar_t* const rgwch,
+                               const size_t cch) override;
+
+        bool ActionPassThroughString(_Inout_updates_(cch) wchar_t* const rgwch,
+                                     size_t const cch) override;
+
         bool ActionEscDispatch(const wchar_t wch,
                             const unsigned short cIntermediate,
                             const wchar_t wchIntermediate) override;
+
         bool ActionCsiDispatch(const wchar_t wch,
                             const unsigned short cIntermediate,
                             const wchar_t wchIntermediate,
                             _In_reads_(cParams) const unsigned short* const rgusParams,
                             const unsigned short cParams);
+
         bool ActionClear() override;
+
         bool ActionIgnore() override;
+
         bool ActionOscDispatch(const wchar_t wch,
                             const unsigned short sOscParam,
                             _Inout_updates_(cchOscString) wchar_t* const pwchOscStringBuffer,
                             const unsigned short cchOscString) override;
+
         bool ActionSs3Dispatch(const wchar_t wch,
                             _In_reads_(cParams) const unsigned short* const rgusParams,
                             const unsigned short cParams) override;
