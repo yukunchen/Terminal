@@ -29,8 +29,8 @@ bool TitleTests::TestCleanup()
 }
 
 void TestGetConsoleTitleAFillHelper(_Out_writes_all_(cchBuffer) char* const chBuffer,
-                                    _In_ size_t const cchBuffer,
-                                    _In_ char const chFill)
+                                    const size_t cchBuffer,
+                                    const char chFill)
 {
     for (size_t i = 0; i < cchBuffer; i++)
     {
@@ -39,8 +39,8 @@ void TestGetConsoleTitleAFillHelper(_Out_writes_all_(cchBuffer) char* const chBu
 }
 
 void TestGetConsoleTitleWFillHelper(_Out_writes_all_(cchBuffer) wchar_t* const wchBuffer,
-                                    _In_ size_t const cchBuffer,
-                                    _In_ wchar_t const wchFill)
+                                    const size_t cchBuffer,
+                                    const wchar_t wchFill)
 {
     for (size_t i = 0; i < cchBuffer; i++)
     {
@@ -49,12 +49,12 @@ void TestGetConsoleTitleWFillHelper(_Out_writes_all_(cchBuffer) wchar_t* const w
 }
 
 void TestGetConsoleTitleAPrepExpectedHelper(_In_reads_(cchTitle) const char* const chTitle,
-                                            _In_ size_t const cchTitle,
+                                            const size_t cchTitle,
                                             _Inout_updates_all_(cchReadBuffer) char* const chReadBuffer,
-                                            _In_ size_t const cchReadBuffer,
+                                            const size_t cchReadBuffer,
                                             _Inout_updates_all_(cchReadExpected) char* const chReadExpected,
-                                            _In_ size_t const cchReadExpected,
-                                            _In_ size_t const cchTryToRead)
+                                            const size_t cchReadExpected,
+                                            const size_t cchTryToRead)
 {
     // Fill our read buffer and expected with all Zs to start
     TestGetConsoleTitleAFillHelper(chReadBuffer, cchReadBuffer, 'Z');
@@ -78,12 +78,12 @@ void TestGetConsoleTitleAPrepExpectedHelper(_In_reads_(cchTitle) const char* con
 }
 
 void TestGetConsoleTitleWPrepExpectedHelper(_In_reads_(cchTitle) const wchar_t* const wchTitle,
-                                            _In_ size_t const cchTitle,
+                                            const size_t cchTitle,
                                             _Inout_updates_all_(cchReadBuffer) wchar_t* const wchReadBuffer,
-                                            _In_ size_t const cchReadBuffer,
+                                            const size_t cchReadBuffer,
                                             _Inout_updates_all_(cchReadExpected) wchar_t* const wchReadExpected,
-                                            _In_ size_t const cchReadExpected,
-                                            _In_ size_t const cchTryToRead)
+                                            const size_t cchReadExpected,
+                                            const size_t cchTryToRead)
 {
     // Fill our read buffer and expected with all Zs to start
     TestGetConsoleTitleWFillHelper(wchReadBuffer, cchReadBuffer, L'Z');
@@ -95,12 +95,12 @@ void TestGetConsoleTitleWPrepExpectedHelper(_In_reads_(cchTitle) const wchar_t* 
 }
 
 void TestGetConsoleTitleAVerifyHelper(_Inout_updates_(cchReadBuffer) char* const chReadBuffer,
-                                      _In_ size_t const cchReadBuffer,
-                                      _In_ size_t const cchTryToRead,
-                                      _In_ DWORD const dwExpectedRetVal,
-                                      _In_ DWORD const dwExpectedLastError,
+                                      const size_t cchReadBuffer,
+                                      const size_t cchTryToRead,
+                                      const DWORD dwExpectedRetVal,
+                                      const DWORD dwExpectedLastError,
                                       _In_reads_(cchExpected) const char* const chReadExpected,
-                                      _In_ size_t const cchExpected)
+                                      const size_t cchExpected)
 {
     VERIFY_ARE_EQUAL(cchExpected, cchReadBuffer);
 
@@ -131,12 +131,12 @@ void TestGetConsoleTitleAVerifyHelper(_Inout_updates_(cchReadBuffer) char* const
 }
 
 void TestGetConsoleTitleWVerifyHelper(_Inout_updates_(cchReadBuffer) wchar_t* const wchReadBuffer,
-                                      _In_ size_t const cchReadBuffer,
-                                      _In_ size_t const cchTryToRead,
-                                      _In_ DWORD const dwExpectedRetVal,
-                                      _In_ DWORD const dwExpectedLastError,
+                                      const size_t cchReadBuffer,
+                                      const size_t cchTryToRead,
+                                      const DWORD dwExpectedRetVal,
+                                      const DWORD dwExpectedLastError,
                                       _In_reads_(cchExpected) const wchar_t* const  wchReadExpected,
-                                      _In_ size_t const cchExpected)
+                                      const size_t cchExpected)
 {
     VERIFY_ARE_EQUAL(cchExpected, cchReadBuffer);
 

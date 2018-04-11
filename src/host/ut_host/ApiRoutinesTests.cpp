@@ -52,7 +52,7 @@ class ApiRoutinesTests
     }
 
     BOOL _fPrevInsertMode;
-    void PrepVerifySetConsoleInputModeImpl(_In_ ULONG const ulOriginalInputMode)
+    void PrepVerifySetConsoleInputModeImpl(const ULONG ulOriginalInputMode)
     {
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         gci.Flags = 0;
@@ -68,8 +68,8 @@ class ApiRoutinesTests
         _fPrevInsertMode = gci.GetInsertMode();
     }
 
-    void VerifySetConsoleInputModeImpl(_In_ HRESULT const hrExpected,
-                                       _In_ ULONG const ulNewMode)
+    void VerifySetConsoleInputModeImpl(const HRESULT hrExpected,
+                                       const ULONG ulNewMode)
     {
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         InputBuffer* const pii = gci.pInputBuffer;
@@ -312,7 +312,7 @@ class ApiRoutinesTests
         VERIFY_ARE_EQUAL(WEX::Common::String(gci.GetOriginalTitle().c_str()), WEX::Common::String(pwszTitle));
     }
 
-    static void s_AdjustOutputWait(_In_ const bool fShouldBlock)
+    static void s_AdjustOutputWait(const bool fShouldBlock)
     {
         SetFlagIf(ServiceLocator::LocateGlobals().getConsoleInformation().Flags, CONSOLE_SELECTING, fShouldBlock);
         ClearFlagIf(ServiceLocator::LocateGlobals().getConsoleInformation().Flags, CONSOLE_SELECTING, !fShouldBlock);

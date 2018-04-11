@@ -20,7 +20,7 @@ using namespace Microsoft::Console::Render;
 // - prcDirtyClient - Pointer to pixel area (RECT) of client region the system believes is dirty
 // Return Value:
 // - HRESULT S_OK, GDI-based error code, or safemath error
-HRESULT GdiEngine::InvalidateSystem(_In_ const RECT* const prcDirtyClient)
+HRESULT GdiEngine::InvalidateSystem(const RECT* const prcDirtyClient)
 {
     RETURN_HR(_InvalidCombine(prcDirtyClient));
 }
@@ -31,7 +31,7 @@ HRESULT GdiEngine::InvalidateSystem(_In_ const RECT* const prcDirtyClient)
 // - pcoordDelta - Pointer to character dimension (COORD) of the distance the console would like us to move while scrolling.
 // Return Value:
 // - HRESULT S_OK, GDI-based error code, or safemath error
-HRESULT GdiEngine::InvalidateScroll(_In_ const COORD* const pcoordDelta)
+HRESULT GdiEngine::InvalidateScroll(const COORD* const pcoordDelta)
 {
     if (pcoordDelta->X != 0 || pcoordDelta->Y != 0)
     {
@@ -58,7 +58,7 @@ HRESULT GdiEngine::InvalidateScroll(_In_ const COORD* const pcoordDelta)
 // - cRectangles - Length of the array above.
 // Return Value:
 // - HRESULT S_OK or GDI-based error code
-HRESULT GdiEngine::InvalidateSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles)
+HRESULT GdiEngine::InvalidateSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection, const UINT cRectangles)
 {
     // Get the currently selected area as a GDI region
     wil::unique_hrgn hrgnSelection(CreateRectRgn(0, 0, 0, 0));
@@ -114,9 +114,15 @@ HRESULT GdiEngine::InvalidateCursor(const COORD* const pcoordCursor)
 // Arguments:
 // - <none>
 // Return Value:
-// - S_OK, GDI related failure, or safemath failure.
+// - S_OK, S_FALSE (if no window yet), GDI related failure, or safemath failure.
 HRESULT GdiEngine::InvalidateAll()
 {
+    // If we don't have a window, don't bother.
+    if (!_IsWindowValid())
+    {
+        return S_FALSE;
+    }
+
     RECT rc;
     RETURN_LAST_ERROR_IF_FALSE(GetClientRect(_hwndTargetWindow, &rc));
     RETURN_HR(InvalidateSystem(&rc));
@@ -158,7 +164,7 @@ HRESULT GdiEngine::PrepareForTeardown(_Out_ bool* const pForcePaint)
 // - prc - Pixel region (RECT) that should be repainted on the next frame
 // Return Value:
 // - S_OK, GDI related failure, or safemath failure.
-HRESULT GdiEngine::_InvalidCombine(_In_ const RECT* const prc)
+HRESULT GdiEngine::_InvalidCombine(const RECT* const prc)
 {
     if (!_fInvalidRectUsed)
     {
@@ -182,7 +188,7 @@ HRESULT GdiEngine::_InvalidCombine(_In_ const RECT* const prc)
 // - ppt - Distances by which we should move the invalid region in response to a scroll
 // Return Value:
 // - S_OK, GDI related failure, or safemath failure.
-HRESULT GdiEngine::_InvalidOffset(_In_ const POINT* const ppt)
+HRESULT GdiEngine::_InvalidOffset(const POINT* const ppt)
 {
     if (_fInvalidRectUsed)
     {
@@ -232,7 +238,7 @@ HRESULT GdiEngine::_InvalidRestrict()
 // - prc - Pointer to pixel rectangle representing invalid area to add to next paint frame
 // Return Value:
 // - S_OK, GDI related failure, or safemath failure.
-HRESULT GdiEngine::_InvalidateRect(_In_ const RECT* const prc)
+HRESULT GdiEngine::_InvalidateRect(const RECT* const prc)
 {
     RETURN_HR(_InvalidCombine(prc));
 }

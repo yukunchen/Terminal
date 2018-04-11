@@ -15,6 +15,7 @@ DLLDEF                  =
 SOURCES = \
     $(SOURCES) \
     ApiRoutinesTests.cpp \
+    AliasTests.cpp \
     UtilsTests.cpp \
     AttrRowTests.cpp \
     ConsoleArgumentsTests.cpp \

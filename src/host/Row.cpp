@@ -27,7 +27,7 @@ void swap(ROW& a, ROW& b) noexcept
 // - fillAttribute - the default text attribute
 // Return Value:
 // - constructed object
-ROW::ROW(_In_ const SHORT rowId, _In_ const short rowWidth, _In_ const TextAttribute fillAttribute) :
+ROW::ROW(const SHORT rowId, const short rowWidth, const TextAttribute fillAttribute) :
     _id{ rowId },
     _rowWidth{ static_cast<size_t>(rowWidth) },
     _charRow{ std::make_unique<Ucs2CharRow>(rowWidth) },
@@ -125,7 +125,7 @@ SHORT ROW::GetId() const noexcept
     return _id;
 }
 
-void ROW::SetId(_In_ const SHORT id)
+void ROW::SetId(const SHORT id)
 {
     _id = id;
 }
@@ -136,7 +136,7 @@ void ROW::SetId(_In_ const SHORT id)
 // - Attr - The default attribute (color) to fill
 // Return Value:
 // - <none>
-bool ROW::Reset(_In_ const TextAttribute Attr)
+bool ROW::Reset(const TextAttribute Attr)
 {
     _charRow->Reset();
     return _attrRow.Reset(Attr);
@@ -149,7 +149,7 @@ bool ROW::Reset(_In_ const TextAttribute Attr)
 // Return Value:
 // - S_OK if successful, otherwise relevant error
 [[nodiscard]]
-HRESULT ROW::Resize(_In_ size_t const width)
+HRESULT ROW::Resize(const size_t width)
 {
     size_t oldWidth = _charRow->size();
     RETURN_IF_FAILED(_charRow->Resize(width));
@@ -163,7 +163,7 @@ HRESULT ROW::Resize(_In_ size_t const width)
 // - column - 0-indexed column index
 // Return Value:
 // - <none>
-void ROW::ClearColumn(_In_ const size_t column)
+void ROW::ClearColumn(const size_t column)
 {
     THROW_HR_IF(E_INVALIDARG, column >= _charRow->size());
     _charRow->ClearCell(column);
@@ -179,12 +179,12 @@ std::vector<OutputCell> ROW::AsCells() const
     return AsCells(0, size());
 }
 
-std::vector<OutputCell> ROW::AsCells(_In_ const size_t startIndex) const
+std::vector<OutputCell> ROW::AsCells(const size_t startIndex) const
 {
     return AsCells(startIndex, size() - startIndex);
 }
 
-std::vector<OutputCell> ROW::AsCells(_In_ const size_t startIndex, _In_ const size_t count) const
+std::vector<OutputCell> ROW::AsCells(const size_t startIndex, const size_t count) const
 {
     std::vector<OutputCell> cells;
     cells.reserve(size());

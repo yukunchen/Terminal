@@ -150,7 +150,7 @@ void Telemetry::SetKeyboardTextEditingUsed()
 }
 
 // Log an API call was used.
-void Telemetry::LogApiCall(_In_ ApiCall const api, _In_ BOOLEAN const fUnicode)
+void Telemetry::LogApiCall(const ApiCall api, const BOOLEAN fUnicode)
 {
     // Initially we thought about passing over a string (ex. "XYZ") and use a dictionary data type to hold the counts.
     // However we would have to search through the dictionary every time we called this method, so we decided
@@ -168,13 +168,13 @@ void Telemetry::LogApiCall(_In_ ApiCall const api, _In_ BOOLEAN const fUnicode)
 }
 
 // Log an API call was used.
-void Telemetry::LogApiCall(_In_ ApiCall const api)
+void Telemetry::LogApiCall(const ApiCall api)
 {
     _rguiTimesApiUsed[api]++;
 }
 
 // Log usage of the Find Dialog.
-void Telemetry::LogFindDialogNextClicked(_In_ const unsigned int uiStringLength, _In_ const bool fDirectionDown, _In_ const bool fMatchCase)
+void Telemetry::LogFindDialogNextClicked(const unsigned int uiStringLength, const bool fDirectionDown, const bool fMatchCase)
 {
     // Don't send telemetry for every time it's used, as this will help reduce the load on our servers.
     // Instead just create a running average of the string length, the direction down radio
@@ -229,7 +229,7 @@ void Telemetry::TotalCodesForPreviousProcess()
 // The main difference between this and the standard bsearch library call, is that if this
 // can't find the string, it returns the position the new string should be inserted at.  This saves
 // us from having an additional search through the array, and improves performance.
-bool Telemetry::FindProcessName(_In_ const WCHAR* pszProcessName, _Out_ size_t *iPosition) const
+bool Telemetry::FindProcessName(const WCHAR* pszProcessName, _Out_ size_t *iPosition) const
 {
     int iMin = 0;
     int iMid = 0;
@@ -268,7 +268,7 @@ bool Telemetry::FindProcessName(_In_ const WCHAR* pszProcessName, _Out_ size_t *
 // complicated and spammy, especially since command line utilities like help.exe and where.exe are considered processes.
 // Don't send telemetry for every time a process connects, as this will help reduce the load on our servers.
 // Just save the name and count, and send the telemetry before the console exits.
-void Telemetry::LogProcessConnected(_In_ const HANDLE hProcess)
+void Telemetry::LogProcessConnected(const HANDLE hProcess)
 {
     // This is a bit of processing, so don't do it for the 95% of machines that aren't being sampled.
     if (TraceLoggingProviderEnabled(g_hConhostV2EventTraceProvider, 0, MICROSOFT_KEYWORD_MEASURES))
@@ -539,7 +539,7 @@ void Telemetry::WriteFinalTraceLog()
 }
 
 // Sends assert information through telemetry.
-void Telemetry::LogAssert(_In_z_ const char* pszSourceText, _In_z_ const char* pszFileName, _In_ const int iLineNumber) const
+void Telemetry::LogAssert(_In_z_ const char* pszSourceText, _In_z_ const char* pszFileName, const int iLineNumber) const
 {
 #pragma prefast(suppress:__WARNING_NONCONST_LOCAL, "Activity can't be const, since it's set to a random value on startup.")
     TraceLoggingWriteTagged(_activity,

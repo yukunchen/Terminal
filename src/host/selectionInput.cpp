@@ -20,7 +20,7 @@
 // - pInputKeyInfo : The key press state information from the keyboard
 // Return Value:
 // - True if the event is handled. False otherwise.
-Selection::KeySelectionEventResult Selection::HandleKeySelectionEvent(_In_ const INPUT_KEY_INFO* const pInputKeyInfo)
+Selection::KeySelectionEventResult Selection::HandleKeySelectionEvent(const INPUT_KEY_INFO* const pInputKeyInfo)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto inputServices = ServiceLocator::LocateInputServices();
@@ -93,7 +93,7 @@ Selection::KeySelectionEventResult Selection::HandleKeySelectionEvent(_In_ const
 // - True if the event can be handled. False otherwise.
 // NOTE:
 // - Keyboard handling cases in this function should be synchronized with HandleKeyboardLineSelectionEvent
-bool Selection::s_IsValidKeyboardLineSelection(_In_ const INPUT_KEY_INFO* const pInputKeyInfo)
+bool Selection::s_IsValidKeyboardLineSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
 {
     bool fIsValidCombination = false;
 
@@ -141,9 +141,9 @@ bool Selection::s_IsValidKeyboardLineSelection(_In_ const INPUT_KEY_INFO* const 
 // - coordSelPoint: Defines selection region from coordAnchor to this point. Modified to define the new selection region.
 // Return Value:
 // - <none>
-void Selection::WordByWordSelection(_In_ const bool fReverse,
-                                    _In_ const SMALL_RECT srectEdges,
-                                    _In_ const COORD coordAnchor,
+void Selection::WordByWordSelection(const bool fReverse,
+                                    const SMALL_RECT srectEdges,
+                                    const COORD coordAnchor,
                                     _Inout_ COORD *pcoordSelPoint) const
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -298,7 +298,7 @@ void Selection::WordByWordSelection(_In_ const bool fReverse,
 // - True if the event is handled. False otherwise.
 // NOTE:
 // - Keyboard handling cases in this function should be synchronized with IsValidKeyboardLineSelection
-bool Selection::HandleKeyboardLineSelectionEvent(_In_ const INPUT_KEY_INFO* const pInputKeyInfo)
+bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pInputKeyInfo)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const WORD wVirtualKeyCode = pInputKeyInfo->GetVirtualKey();
@@ -653,7 +653,7 @@ void Selection::CheckAndSetAlternateSelection()
 // - pInputKeyInfo : The key press state information from the keyboard
 // Return Value:
 // - True if the event is handled. False otherwise.
-bool Selection::_HandleColorSelection(_In_ const INPUT_KEY_INFO* const pInputKeyInfo)
+bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SMALL_RECT* const psrSelection = &_srSelectionRect;
@@ -761,7 +761,7 @@ bool Selection::_HandleColorSelection(_In_ const INPUT_KEY_INFO* const pInputKey
 // - pInputKeyInfo : The key press state information from the keyboard
 // Return Value:
 // - True if the event is handled. False otherwise.
-bool Selection::_HandleMarkModeSelectionNav(_In_ const INPUT_KEY_INFO* const pInputKeyInfo)
+bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKeyInfo)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const WORD wVirtualKeyCode = pInputKeyInfo->GetVirtualKey();
@@ -1069,7 +1069,7 @@ void Selection::GetValidAreaBoundaries(_Out_opt_ COORD* const pcoordValidStart, 
 // - coordSecond - The end or right most edge of the regional boundary.
 // Return Value:
 // - True if it's within the bounds (inclusive). False otherwise.
-bool Selection::s_IsWithinBoundaries(_In_ const COORD coordPosition, _In_ const COORD coordStart, _In_ const COORD coordEnd)
+bool Selection::s_IsWithinBoundaries(const COORD coordPosition, const COORD coordStart, const COORD coordEnd)
 {
     bool fInBoundaries = false;
 

@@ -343,7 +343,7 @@ void Menu::s_GetConsoleState(CONSOLE_STATE_INFO * const pStateInfo)
     // begin console v2 properties
     pStateInfo->fIsV2Console = TRUE;
     pStateInfo->fWrapText = gci.GetWrapText();
-    pStateInfo->fFilterOnPaste = gci.GetFilterOnPaste();
+    pStateInfo->fFilterOnPaste = !!gci.GetFilterOnPaste();
     pStateInfo->fCtrlKeyShortcutsDisabled = gci.GetCtrlKeyShortcutsDisabled();
     pStateInfo->fLineSelection = gci.GetLineSelection();
     pStateInfo->bWindowTransparency = ServiceLocator::LocateConsoleWindow<Window>()->GetWindowOpacity();

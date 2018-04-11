@@ -28,7 +28,7 @@ namespace Microsoft::Console::Interactivity
     {
     public:
 
-        static void RundownAndExit(_In_ HRESULT const hr);
+        static void RundownAndExit(const HRESULT hr);
 
         // N.B.: Location methods without corresponding creation methods
         //       automatically create the singleton object on demand.

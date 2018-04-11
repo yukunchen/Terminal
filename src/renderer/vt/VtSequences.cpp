@@ -88,7 +88,7 @@ HRESULT VtEngine::_EraseLine()
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT VtEngine::_EraseCharacter(_In_ const short chars)
+HRESULT VtEngine::_EraseCharacter(const short chars)
 {
     static const std::string format = "\x1b[%dX";
 
@@ -102,7 +102,7 @@ HRESULT VtEngine::_EraseCharacter(_In_ const short chars)
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT VtEngine::_CursorForward(_In_ const short chars)
+HRESULT VtEngine::_CursorForward(const short chars)
 {
 
     static const std::string format = "\x1b[%dC";
@@ -132,7 +132,7 @@ HRESULT VtEngine::_ClearScreen()
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT VtEngine::_InsertDeleteLine(_In_ const short sLines, _In_ const bool fInsertLine)
+HRESULT VtEngine::_InsertDeleteLine(const short sLines, const bool fInsertLine)
 {
     if (sLines <= 0)
     {
@@ -155,7 +155,7 @@ HRESULT VtEngine::_InsertDeleteLine(_In_ const short sLines, _In_ const bool fIn
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT VtEngine::_DeleteLine(_In_ const short sLines)
+HRESULT VtEngine::_DeleteLine(const short sLines)
 {
     return _InsertDeleteLine(sLines, false);
 }
@@ -168,7 +168,7 @@ HRESULT VtEngine::_DeleteLine(_In_ const short sLines)
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT VtEngine::_InsertLine(_In_ const short sLines)
+HRESULT VtEngine::_InsertLine(const short sLines)
 {
     return _InsertDeleteLine(sLines, true);
 }
@@ -182,7 +182,7 @@ HRESULT VtEngine::_InsertLine(_In_ const short sLines)
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT VtEngine::_CursorPosition(_In_ const COORD coord)
+HRESULT VtEngine::_CursorPosition(const COORD coord)
 {
     static const std::string cursorFormat = "\x1b[%d;%dH";
 
@@ -215,8 +215,8 @@ HRESULT VtEngine::_CursorHome()
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT VtEngine::_SetGraphicsRendition16Color(_In_ const WORD wAttr,
-                                               _In_ const bool fIsForeground)
+HRESULT VtEngine::_SetGraphicsRendition16Color(const WORD wAttr,
+                                               const bool fIsForeground)
 {
     // Different formats for:
     //      Foreground, Bright = "\x1b[1m\x1b[%dm"
@@ -248,8 +248,8 @@ HRESULT VtEngine::_SetGraphicsRendition16Color(_In_ const WORD wAttr,
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT VtEngine::_SetGraphicsRenditionRGBColor(_In_ const COLORREF color,
-                                                _In_ const bool fIsForeground)
+HRESULT VtEngine::_SetGraphicsRenditionRGBColor(const COLORREF color,
+                                                const bool fIsForeground)
 {
     const std::string fmt = fIsForeground ?
         "\x1b[38;2;%d;%d;%dm" :
@@ -269,7 +269,7 @@ HRESULT VtEngine::_SetGraphicsRenditionRGBColor(_In_ const COLORREF color,
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT VtEngine::_SetGraphicsRenditionDefaultColor(_In_ const bool fIsForeground)
+HRESULT VtEngine::_SetGraphicsRenditionDefaultColor(const bool fIsForeground)
 {
     const std::string fmt = fIsForeground ? ("\x1b[39m") : ("\x1b[49m");
 
@@ -284,7 +284,7 @@ HRESULT VtEngine::_SetGraphicsRenditionDefaultColor(_In_ const bool fIsForegroun
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT VtEngine::_ResizeWindow(_In_ const short sWidth, _In_ const short sHeight)
+HRESULT VtEngine::_ResizeWindow(const short sWidth, const short sHeight)
 {
     static const std::string resizeFormat = "\x1b[8;%d;%dt";
     if (sWidth < 0 || sHeight < 0)

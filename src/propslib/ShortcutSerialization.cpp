@@ -26,7 +26,7 @@ void ShortcutSerialization::s_InitPropVarFromDword(_In_ DWORD dwVal, _Out_ PROPV
     ppropvar->uintVal = dwVal;
 }
 
-void ShortcutSerialization::s_SetLinkPropertyBoolValue(_In_ IPropertyStore *pps, _In_ REFPROPERTYKEY refPropKey,_In_ const BOOL fVal)
+void ShortcutSerialization::s_SetLinkPropertyBoolValue(_In_ IPropertyStore *pps, _In_ REFPROPERTYKEY refPropKey,const BOOL fVal)
 {
     PROPVARIANT propvarBool;
     s_InitPropVarFromBool(fVal, &propvarBool);
@@ -34,7 +34,7 @@ void ShortcutSerialization::s_SetLinkPropertyBoolValue(_In_ IPropertyStore *pps,
     PropVariantClear(&propvarBool);
 }
 
-void ShortcutSerialization::s_SetLinkPropertyByteValue(_In_ IPropertyStore *pps, _In_ REFPROPERTYKEY refPropKey,_In_ const BYTE bVal)
+void ShortcutSerialization::s_SetLinkPropertyByteValue(_In_ IPropertyStore *pps, _In_ REFPROPERTYKEY refPropKey,const BYTE bVal)
 {
     PROPVARIANT propvarByte;
     s_InitPropVarFromByte(bVal, &propvarByte);
@@ -57,7 +57,7 @@ HRESULT ShortcutSerialization::s_GetPropertyBoolValue(_In_ IPropertyStore * cons
 
 void ShortcutSerialization::s_SetLinkPropertyDwordValue(_Inout_ IPropertyStore *pps,
                                                         _In_ REFPROPERTYKEY refPropKey,
-                                                        _In_ const DWORD dwVal)
+                                                        const DWORD dwVal)
 {
     PROPVARIANT propvarDword;
     s_InitPropVarFromDword(dwVal, &propvarDword);
@@ -207,7 +207,7 @@ HRESULT ShortcutSerialization::s_PopulateV2Properties(_In_ IShellLink * const ps
 
 // Given a shortcut filename, determine what title we should use. Under normal circumstances, we rely on the shell to
 // provide the correct title. However, if that fails, we'll just use the shortcut filename minus the extension.
-void ShortcutSerialization::s_GetLinkTitle(_In_ PCWSTR pwszShortcutFilename, _Out_writes_(cchShortcutTitle) PWSTR pwszShortcutTitle, _In_ const size_t cchShortcutTitle)
+void ShortcutSerialization::s_GetLinkTitle(_In_ PCWSTR pwszShortcutFilename, _Out_writes_(cchShortcutTitle) PWSTR pwszShortcutTitle, const size_t cchShortcutTitle)
 {
     NTSTATUS Status = (cchShortcutTitle > 0) ? STATUS_SUCCESS : STATUS_INVALID_PARAMETER_2;
     if (NT_SUCCESS(Status))
@@ -250,7 +250,7 @@ void ShortcutSerialization::s_GetLinkTitle(_In_ PCWSTR pwszShortcutFilename, _Ou
 
 // Given a shortcut filename, retrieve IShellLink and IPersistFile itf ptrs, and ensure that the link is loaded.
 [[nodiscard]]
-HRESULT ShortcutSerialization::s_GetLoadedShellLinkForShortcut(_In_ PCWSTR pwszShortcutFileName, _In_ const DWORD dwMode, _COM_Outptr_ IShellLink **ppsl, _COM_Outptr_ IPersistFile **ppPf)
+HRESULT ShortcutSerialization::s_GetLoadedShellLinkForShortcut(_In_ PCWSTR pwszShortcutFileName, const DWORD dwMode, _COM_Outptr_ IShellLink **ppsl, _COM_Outptr_ IPersistFile **ppPf)
 {
     *ppsl = nullptr;
     *ppPf = nullptr;
@@ -310,9 +310,9 @@ NTSTATUS ShortcutSerialization::s_GetLinkConsoleProperties(_Inout_ PCONSOLE_STAT
 NTSTATUS ShortcutSerialization::s_GetLinkValues(_Inout_ PCONSOLE_STATE_INFO pStateInfo,
                                               _Out_ BOOL * const pfReadConsoleProperties,
                                               _Out_writes_opt_(cchShortcutTitle) PWSTR pwszShortcutTitle,
-                                              _In_ const size_t cchShortcutTitle,
+                                              const size_t cchShortcutTitle,
                                               _Out_writes_opt_(cchIconLocation) PWSTR pwszIconLocation,
-                                              _In_ const size_t cchIconLocation,
+                                              const size_t cchIconLocation,
                                               _Out_opt_ int * const piIcon,
                                               _Out_opt_ int * const piShowCmd,
                                               _Out_opt_ WORD * const pwHotKey)
@@ -385,7 +385,7 @@ Return Value:
     A status code if something failed or S_OK
 */
 [[nodiscard]]
-NTSTATUS ShortcutSerialization::s_SetLinkValues(_In_ PCONSOLE_STATE_INFO pStateInfo, _In_ const BOOL fEastAsianSystem, _In_ const BOOL fForceV2)
+NTSTATUS ShortcutSerialization::s_SetLinkValues(_In_ PCONSOLE_STATE_INFO pStateInfo, const BOOL fEastAsianSystem, const BOOL fForceV2)
 {
     IShellLinkW * psl;
     IPersistFile * ppf;

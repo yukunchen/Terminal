@@ -20,7 +20,7 @@ namespace Microsoft::Console::VirtualTerminal
         VtIo();
 
         [[nodiscard]]
-        HRESULT Initialize(_In_ const ConsoleArguments* const pArgs);
+        HRESULT Initialize(const ConsoleArguments* const pArgs);
 
         bool IsUsingVt() const;
 
@@ -28,12 +28,12 @@ namespace Microsoft::Console::VirtualTerminal
         HRESULT StartIfNeeded();
 
         [[nodiscard]]
-        static HRESULT ParseIoMode(_In_ const std::wstring& VtMode, _Out_ VtIoMode& ioMode);
+        static HRESULT ParseIoMode(const std::wstring& VtMode, _Out_ VtIoMode& ioMode);
 
         [[nodiscard]]
         HRESULT SuppressResizeRepaint();
         [[nodiscard]]
-        HRESULT SetCursorPosition(_In_ const COORD coordCursor);
+        HRESULT SetCursorPosition(const COORD coordCursor);
 
     private:
         bool _usingVt;
@@ -42,13 +42,13 @@ namespace Microsoft::Console::VirtualTerminal
         bool _lookingForCursorPosition;
 
         [[nodiscard]]
-        HRESULT _Initialize(_In_ const HANDLE InHandle, _In_ const HANDLE OutHandle, _In_ const std::wstring& VtMode);
+        HRESULT _Initialize(const HANDLE InHandle, const HANDLE OutHandle, const std::wstring& VtMode);
         [[nodiscard]]
-        HRESULT _Initialize(_In_ const HANDLE InHandle, _In_ const HANDLE OutHandle, _In_ const std::wstring& VtMode, _In_opt_ HANDLE SignalHandle);
+        HRESULT _Initialize(const HANDLE InHandle, const HANDLE OutHandle, const std::wstring& VtMode, _In_opt_ HANDLE SignalHandle);
         [[nodiscard]]
-        HRESULT _Initialize(_In_ const std::wstring& InPipeName, _In_ const std::wstring& OutPipeName, _In_ const std::wstring& VtMode);
+        HRESULT _Initialize(const std::wstring& InPipeName, const std::wstring& OutPipeName, const std::wstring& VtMode);
         [[nodiscard]]
-        HRESULT _Initialize(_In_ const std::wstring& InPipeName, _In_ const std::wstring& OutPipeName, _In_ const std::wstring& VtMode, _In_opt_ HANDLE SignalHandle);
+        HRESULT _Initialize(const std::wstring& InPipeName, const std::wstring& OutPipeName, const std::wstring& VtMode, _In_opt_ HANDLE SignalHandle);
 
         std::unique_ptr<Microsoft::Console::Render::VtEngine> _pVtRenderEngine;
         std::unique_ptr<Microsoft::Console::VtInputThread> _pVtInputThread;

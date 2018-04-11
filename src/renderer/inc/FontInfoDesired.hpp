@@ -25,12 +25,12 @@ class FontInfoDesired : public FontInfoBase
 {
 public:
     FontInfoDesired(_In_ PCWSTR const pwszFaceName,
-                    _In_ BYTE const bFamily,
-                    _In_ LONG const lWeight,
-                    _In_ COORD const coordSizeDesired,
-                    _In_ UINT const uiCodePage);
+                    const BYTE bFamily,
+                    const LONG lWeight,
+                    const COORD coordSizeDesired,
+                    const UINT uiCodePage);
 
-    FontInfoDesired(_In_ const FontInfo &fiFont);
+    FontInfoDesired(const FontInfo &fiFont);
 
     COORD FontInfoDesired::GetEngineSize() const;
     bool IsDefaultRasterFont() const;

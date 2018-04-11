@@ -90,7 +90,7 @@ BOOL WindowDpiApi::SetProcessDpiAwarenessContext(_In_ DPI_AWARENESS_CONTEXT dpiC
 #endif
 }
 
-BOOL WindowDpiApi::EnableChildWindowDpiMessage(_In_ HWND const hwnd, _In_ BOOL const fEnable)
+BOOL WindowDpiApi::EnableChildWindowDpiMessage(const HWND hwnd, const BOOL fEnable)
 {
 #ifdef CON_DPIAPI_INDIRECT
     if (_hUser32 != nullptr)
@@ -126,10 +126,10 @@ BOOL WindowDpiApi::EnableChildWindowDpiMessage(_In_ HWND const hwnd, _In_ BOOL c
 }
 
 BOOL WindowDpiApi::AdjustWindowRectExForDpi(_Inout_ LPRECT const lpRect,
-                                            _In_ DWORD const dwStyle,
-                                            _In_ BOOL const bMenu,
-                                            _In_ DWORD const dwExStyle,
-                                            _In_ UINT const dpi)
+                                            const DWORD dwStyle,
+                                            const BOOL bMenu,
+                                            const DWORD dwExStyle,
+                                            const UINT dpi)
 {
 #ifdef CON_DPIAPI_INDIRECT
     if (_hUser32 != nullptr)
@@ -165,7 +165,7 @@ BOOL WindowDpiApi::AdjustWindowRectExForDpi(_Inout_ LPRECT const lpRect,
 #endif
 }
 
-int WindowDpiApi::GetWindowDPI(_In_ HWND const hwnd)
+int WindowDpiApi::GetWindowDPI(const HWND hwnd)
 {
 #ifdef CON_DPIAPI_INDIRECT
     if (_hUser32 != nullptr)
@@ -201,7 +201,7 @@ int WindowDpiApi::GetWindowDPI(_In_ HWND const hwnd)
 #endif
 }
 
-int WindowDpiApi::GetSystemMetricsForDpi(_In_ int const nIndex, _In_ UINT const dpi)
+int WindowDpiApi::GetSystemMetricsForDpi(const int nIndex, const UINT dpi)
 {
 #ifdef CON_DPIAPI_INDIRECT
     if (_hUser32 != nullptr)

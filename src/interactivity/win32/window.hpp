@@ -28,7 +28,7 @@ namespace Microsoft::Console::Interactivity::Win32
                                         _In_ SCREEN_INFORMATION* const pScreen);
 
         [[nodiscard]]
-        NTSTATUS ActivateAndShow(_In_ WORD const wShowWindow);
+        NTSTATUS ActivateAndShow(const WORD wShowWindow);
 
         ~Window();
 
@@ -37,21 +37,21 @@ namespace Microsoft::Console::Interactivity::Win32
         SCREEN_INFORMATION* GetScreenInfo() const;
 
         BYTE GetWindowOpacity() const;
-        void SetWindowOpacity(_In_ BYTE const bOpacity);
+        void SetWindowOpacity(const BYTE bOpacity);
         void ApplyWindowOpacity() const;
-        void ChangeWindowOpacity(_In_ short const sOpacityDelta);
+        void ChangeWindowOpacity(const short sOpacityDelta);
 
         bool IsInFullscreen() const;
-        void SetIsFullscreen(_In_ bool const fFullscreenEnabled);
+        void SetIsFullscreen(const bool fFullscreenEnabled);
         void ToggleFullscreen();
 
         [[nodiscard]]
         NTSTATUS SetViewportOrigin(_In_ SMALL_RECT NewWindow);
 
-        void VerticalScroll(_In_ const WORD wScrollCommand,
-                            _In_ const WORD wAbsoluteChange) const;
-        void HorizontalScroll(_In_ const WORD wScrollCommand,
-                                _In_ const WORD wAbsoluteChange) const;
+        void VerticalScroll(const WORD wScrollCommand,
+                            const WORD wAbsoluteChange) const;
+        void HorizontalScroll(const WORD wScrollCommand,
+                                const WORD wAbsoluteChange) const;
 
         BOOL EnableBothScrollBars();
         int UpdateScrollBar(bool isVertical,
@@ -60,7 +60,7 @@ namespace Microsoft::Console::Interactivity::Win32
                             int maxSize,
                             int viewportPosition);
 
-        void UpdateWindowSize(_In_ COORD const coordSizeInChars) const;
+        void UpdateWindowSize(const COORD coordSizeInChars) const;
         void UpdateWindowPosition(_In_ POINT const ptNewPos) const;
         void UpdateWindowText();
 
@@ -71,11 +71,12 @@ namespace Microsoft::Console::Interactivity::Win32
         // console get dispatched onto the window message
         // queue/thread)
         BOOL SendNotifyBeep() const;
+
         BOOL PostUpdateScrollBars() const;
         BOOL PostUpdateWindowSize() const;
         BOOL PostUpdateExtendedEditKeys() const;
 
-        void SetWindowHasMoved(_In_ BOOL const fHasMoved);
+        void SetWindowHasMoved(const BOOL fHasMoved);
 
         [[nodiscard]]
         HRESULT SignalUia(_In_ EVENTID id);
@@ -114,7 +115,7 @@ namespace Microsoft::Console::Interactivity::Win32
 
         [[nodiscard]]
         NTSTATUS _InternalSetWindowSize() const;
-        void _UpdateWindowSize(_In_ SIZE const sizeNew) const;
+        void _UpdateWindowSize(const SIZE sizeNew) const;
 
         void _UpdateSystemMetrics() const;
 
@@ -129,24 +130,24 @@ namespace Microsoft::Console::Interactivity::Win32
                                             _In_ LPARAM lParam);
 
         // Wndproc helpers
-        void _HandleDrop(_In_ const WPARAM wParam) const;
+        void _HandleDrop(const WPARAM wParam) const;
         [[nodiscard]]
         HRESULT _HandlePaint() const;
-        void _HandleWindowPosChanged(_In_ const LPARAM lParam);
+        void _HandleWindowPosChanged(const LPARAM lParam);
 
         // Accessibility/UI Automation
-        LRESULT _HandleGetObject(_In_ HWND const hwnd,
-                                    _In_ WPARAM const wParam,
-                                    _In_ LPARAM const lParam);
+        LRESULT _HandleGetObject(const HWND hwnd,
+                                    const WPARAM wParam,
+                                    const LPARAM lParam);
         IRawElementProviderSimple* _GetUiaProvider();
         WindowUiaProvider* _pUiaProvider = nullptr;
 
         // Dynamic Settings helpers
         static LRESULT s_RegPersistWindowPos(_In_ PCWSTR const pwszTitle,
-                                                _In_ const BOOL fAutoPos,
-                                                _In_ const Window* const pWindow);
+                                                const BOOL fAutoPos,
+                                                const Window* const pWindow);
         static LRESULT s_RegPersistWindowOpacity(_In_ PCWSTR const pwszTitle,
-                                                    _In_ const Window* const pWindow);
+                                                    const Window* const pWindow);
 
         // The size/position of the window on the most recent update.
         // This is remembered so we can figure out which
@@ -154,7 +155,7 @@ namespace Microsoft::Console::Interactivity::Win32
         RECT _rcClientLast;
 
         // Full screen
-        void _BackupWindowSizes(_In_ bool const fCurrentIsInFullscreen);
+        void _BackupWindowSizes(const bool fCurrentIsInFullscreen);
         void _ApplyWindowSize() const;
 
         bool _fIsInFullscreen;
@@ -162,12 +163,12 @@ namespace Microsoft::Console::Interactivity::Win32
         RECT _rcNonFullscreenWindowSize;
 
         // math helpers
-        void _CalculateWindowRect(_In_ COORD const coordWindowInChars,
+        void _CalculateWindowRect(const COORD coordWindowInChars,
                                     _Inout_ RECT* const prectWindow) const;
-        static void s_CalculateWindowRect(_In_ COORD const coordWindowInChars,
-                                            _In_ int const iDpi,
-                                            _In_ COORD const coordFontSize,
-                                            _In_ COORD const coordBufferSize,
+        static void s_CalculateWindowRect(const COORD coordWindowInChars,
+                                            const int iDpi,
+                                            const COORD coordFontSize,
+                                            const COORD coordBufferSize,
                                             _In_opt_ HWND const hWnd,
                                             _Inout_ RECT* const prectWindow);
 
@@ -177,7 +178,7 @@ namespace Microsoft::Console::Interactivity::Win32
         SIZE _sizeMaximum = { 0 };
 
 
-        static void s_ConvertWindowPosToWindowRect(_In_ LPWINDOWPOS const lpWindowPos,
+        static void s_ConvertWindowPosToWindowRect(const LPWINDOWPOS lpWindowPos,
                                                     _Out_ RECT* const prc);
 
         BOOL _fHasMoved;

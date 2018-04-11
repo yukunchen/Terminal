@@ -45,8 +45,8 @@ void UnlockConsole()
 // Return Value:
 // - STATUS_SUCCESS if successful.
 [[nodiscard]]
-NTSTATUS AllocateConsole(_In_reads_bytes_(_Param_(2)) const WCHAR * const pwchTitle,
-                         _In_ const DWORD cbTitle)
+NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle,
+                         const DWORD cbTitle)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // Synchronize flags

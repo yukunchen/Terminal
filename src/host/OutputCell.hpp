@@ -21,9 +21,9 @@ Author:
 class OutputCell final
 {
 public:
-    OutputCell(_In_ const wchar_t charData,
-               _In_ const DbcsAttribute dbcsAttribute,
-               _In_ const TextAttribute textAttribute) noexcept;
+    OutputCell(const wchar_t charData,
+               const DbcsAttribute dbcsAttribute,
+               const TextAttribute textAttribute) noexcept;
 
     void swap(_Inout_ OutputCell& other) noexcept;
 

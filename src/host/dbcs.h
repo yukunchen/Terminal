@@ -29,24 +29,24 @@ Revision History:
 #define IsEastAsianCP(cp) ((cp)==CP_JAPANESE || (cp)==CP_KOREAN || (cp)==CP_CHINESE_TRADITIONAL || (cp)==CP_CHINESE_SIMPLIFIED)
 
 void SetLineChar(_In_ SCREEN_INFORMATION * const pScreenInfo);
-bool CheckBisectStringA(_In_reads_bytes_(cbBuf) PCHAR pchBuf, _In_ DWORD cbBuf, _In_ const CPINFO * const pCPInfo);
-void CleanupDbcsEdgesForWrite(_In_ const size_t stringLen,
-                              _In_ const COORD coordTarget,
+bool CheckBisectStringA(_In_reads_bytes_(cbBuf) PCHAR pchBuf, _In_ DWORD cbBuf, const CPINFO * const pCPInfo);
+void CleanupDbcsEdgesForWrite(const size_t stringLen,
+                              const COORD coordTarget,
                               _Inout_ SCREEN_INFORMATION* const pScreenInfo);
 
 DWORD RemoveDbcsMarkCell(_Out_writes_(cch) PCHAR_INFO pciDst, _In_reads_(cch) const CHAR_INFO * pciSrc, _In_ DWORD cch);
 
-bool IsDBCSLeadByteConsole(_In_ const CHAR ch, _In_ const CPINFO * const pCPInfo);
+bool IsDBCSLeadByteConsole(const CHAR ch, const CPINFO * const pCPInfo);
 
 BOOL IsCharFullWidth(_In_ WCHAR wch);
 
-BYTE CodePageToCharSet(_In_ UINT const uiCodePage);
+BYTE CodePageToCharSet(const UINT uiCodePage);
 
-BOOL IsAvailableEastAsianCodePage(_In_ UINT const uiCodePage);
+BOOL IsAvailableEastAsianCodePage(const UINT uiCodePage);
 
 _Ret_range_(0, cbAnsi)
 ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
-                            _In_ const ULONG cchUnicode,
+                            const ULONG cchUnicode,
                             _Out_writes_bytes_(cbAnsi) PCHAR pchAnsi,
-                            _In_ const ULONG cbAnsi,
+                            const ULONG cbAnsi,
                             _Out_ std::unique_ptr<IInputEvent>& partialEvent);

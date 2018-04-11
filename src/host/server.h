@@ -85,7 +85,6 @@ public:
     PSCREEN_INFORMATION ScreenBuffers;  // singly linked list
     ConsoleWaitQueue OutputQueue;
     LIST_ENTRY CommandHistoryList;
-    LIST_ENTRY ExeAliasList;
     UINT NumCommandHistories;
 
     DWORD Flags;
@@ -109,7 +108,7 @@ public:
     Microsoft::Console::VirtualTerminal::MouseInput terminalMouseInput;
 
     void LockConsole();
-    BOOL TryLockConsole();
+    bool TryLockConsole();
     void UnlockConsole();
     bool IsConsoleLocked() const;
     ULONG GetCSRecursionCount();

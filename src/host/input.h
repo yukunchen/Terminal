@@ -36,7 +36,7 @@ Revision History:
 class INPUT_KEY_INFO
 {
 public:
-    INPUT_KEY_INFO(_In_ const WORD wVirtualKeyCode, _In_ const ULONG ulControlKeyState);
+    INPUT_KEY_INFO(const WORD wVirtualKeyCode, const ULONG ulControlKeyState);
     ~INPUT_KEY_INFO();
 
     const WORD GetVirtualKey() const;
@@ -66,19 +66,19 @@ private:
 #define KEY_PRESSED 0x8000
 #define KEY_TOGGLED 0x01
 
-void ClearKeyInfo(_In_ const HWND hWnd);
+void ClearKeyInfo(const HWND hWnd);
 
-ULONG GetControlKeyState(_In_ const LPARAM lParam);
+ULONG GetControlKeyState(const LPARAM lParam);
 
 bool IsInProcessedInputMode();
 bool IsInVirtualTerminalInputMode();
 bool ShouldTakeOverKeyboardShortcuts();
 
-void HandleMenuEvent(_In_ const DWORD wParam);
-void HandleFocusEvent(_In_ const BOOL fSetFocus);
-void HandleCtrlEvent(_In_ const DWORD EventType);
-void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, _In_ const bool generateBreak);
+void HandleMenuEvent(const DWORD wParam);
+void HandleFocusEvent(const BOOL fSetFocus);
+void HandleCtrlEvent(const DWORD EventType);
+void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, const bool generateBreak);
 
 void ProcessCtrlEvents();
 
-BOOL IsSystemKey(_In_ WORD const wVirtualKeyCode);
+BOOL IsSystemKey(const WORD wVirtualKeyCode);

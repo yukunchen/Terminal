@@ -24,7 +24,7 @@ UINT gnCurrentPage;
 #define SYSTEM_ROOT (L"%SystemRoot%")
 #define SYSTEM_ROOT_LENGTH  (sizeof(SYSTEM_ROOT) - sizeof(WCHAR))
 
-void RecreateFontHandles(_In_ const HWND hWnd);
+void RecreateFontHandles(const HWND hWnd);
 
 void UpdateItem(HWND hDlg, UINT item, UINT nNum)
 {
@@ -68,7 +68,7 @@ BOOL CheckNum(HWND hDlg, UINT Item)
     return TRUE;
 }
 
-void SaveConsoleSettingsIfNeeded(_In_ const HWND hwnd)
+void SaveConsoleSettingsIfNeeded(const HWND hwnd)
 {
     if (gpStateInfo->UpdateValues)
     {
@@ -126,7 +126,7 @@ void SaveConsoleSettingsIfNeeded(_In_ const HWND hwnd)
     }
 }
 
-void EndDlgPage(_In_ const HWND hDlg, _In_ const BOOL fSaveNow)
+void EndDlgPage(const HWND hDlg, const BOOL fSaveNow)
 {
     HWND hParent;
     HWND hTabCtrl;
@@ -159,7 +159,7 @@ void EndDlgPage(_In_ const HWND hDlg, _In_ const BOOL fSaveNow)
 }
 
 #define TOOLTIP_MAXLENGTH (256)
-void CreateAndAssociateToolTipToControl(_In_ const UINT dlgItem, _In_ const HWND hDlg, _In_ const UINT idsToolTip)
+void CreateAndAssociateToolTipToControl(const UINT dlgItem, const HWND hDlg, const UINT idsToolTip)
 {
     HWND hwndTooltip = CreateWindowEx(0 /*dwExtStyle*/,
                                       TOOLTIPS_CLASS,
@@ -443,7 +443,7 @@ UINT CALLBACK PropSheetPageProc(_In_ HWND hWnd, _In_ UINT uMsg, _Inout_ LPPROPSH
     return 1;
 }
 
-BOOL PopulatePropSheetPageArray(_Out_writes_(cPsps) PROPSHEETPAGE *pPsp, _In_ const size_t cPsps, _In_ const BOOL fRegisterCallbacks)
+BOOL PopulatePropSheetPageArray(_Out_writes_(cPsps) PROPSHEETPAGE *pPsp, const size_t cPsps, const BOOL fRegisterCallbacks)
 {
     BOOL fRet = (cPsps == NUMBER_OF_PAGES);
     if (fRet)

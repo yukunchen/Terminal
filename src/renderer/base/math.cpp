@@ -19,7 +19,7 @@ using namespace Microsoft::Console::Types;
 // - Coordinate
 // Return Value:
 // - Exclusive rectangle representing same 1x1 area as given coordinate.
-SMALL_RECT Renderer::_RegionFromCoord(_In_ const COORD* const pcoord) const
+SMALL_RECT Renderer::_RegionFromCoord(const COORD* const pcoord) const
 {
     return Viewport::FromCoord(*pcoord).ToExclusive();
 }
@@ -30,7 +30,7 @@ SMALL_RECT Renderer::_RegionFromCoord(_In_ const COORD* const pcoord) const
 // - Word attribute data from the text buffer for a particular character.
 // Return Value:
 // - RGB color mapped through the console color table.
-COLORREF Renderer::_ConvertAttrToRGB(_In_ const BYTE bAttr)
+COLORREF Renderer::_ConvertAttrToRGB(const BYTE bAttr)
 {
     #pragma prefast(suppress: __WARNING_ACCESSIBILITY_COLORAPI, "Using console window specific colors")
     COLORREF* rgColorTable;

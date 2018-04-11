@@ -30,7 +30,7 @@ const UINT CONSOLE_EVENT_FAILURE_ID = 21790;
 const UINT CONSOLE_LPC_PORT_FAILURE_ID = 21791;
 
 [[nodiscard]]
-HRESULT ConsoleServerInitialization(_In_ HANDLE Server, _In_ const ConsoleArguments* const args)
+HRESULT ConsoleServerInitialization(_In_ HANDLE Server, const ConsoleArguments* const args)
 {
     Globals& Globals = ServiceLocator::LocateGlobals();
 
@@ -242,7 +242,7 @@ void ConsoleCheckDebug()
 }
 
 [[nodiscard]]
-HRESULT ConsoleCreateIoThreadLegacy(_In_ HANDLE Server, _In_ const ConsoleArguments* const args)
+HRESULT ConsoleCreateIoThreadLegacy(_In_ HANDLE Server, const ConsoleArguments* const args)
 {
     RETURN_IF_FAILED(ConsoleServerInitialization(Server, args));
     RETURN_IF_FAILED(ServiceLocator::LocateGlobals().hConsoleInputInitEvent.create(wil::EventOptions::None));
@@ -276,7 +276,7 @@ HRESULT ConsoleCreateIoThreadLegacy(_In_ HANDLE Server, _In_ const ConsoleArgume
 // - Pointer to translated title or nullptr.
 // Note:
 // - This routine allocates a buffer that must be freed.
-PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, _In_ const BOOL fUnexpand, _In_ const BOOL fSubstitute)
+PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, const BOOL fSubstitute)
 {
     LPWSTR Tmp = nullptr;
 
@@ -349,7 +349,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, _In_ const BOOL fUnexp
 }
 
 [[nodiscard]]
-NTSTATUS GetConsoleLangId(_In_ const UINT uiOutputCP, _Out_ LANGID * const pLangId)
+NTSTATUS GetConsoleLangId(const UINT uiOutputCP, _Out_ LANGID * const pLangId)
 {
     NTSTATUS Status = STATUS_NOT_SUPPORTED;
 
@@ -413,7 +413,9 @@ HRESULT ApiRoutines::GetConsoleLangIdImpl(_Out_ LANGID* const pLangId)
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    RETURN_NTSTATUS(GetConsoleLangId(gci.OutputCP, pLangId));
+    // This fails a lot and it's totally expected. It only works for a few East Asian code pages.
+    // As such, just return it. Do NOT use a wil macro here. It is very noisy.
+    return HRESULT_FROM_NT(GetConsoleLangId(gci.OutputCP, pLangId));
 }
 
 // Routine Description:

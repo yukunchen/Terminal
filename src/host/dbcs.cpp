@@ -5,14 +5,12 @@
 ********************************************************/
 
 #include "precomp.h"
-
 #include "dbcs.h"
-
 #include "misc.h"
-#include "Ucs2CharRow.hpp"
+
 #include "../types/inc/convert.hpp"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 #pragma hdrstop
 
@@ -40,7 +38,7 @@ void SetLineChar(_In_ SCREEN_INFORMATION * const pScreenInfo)
 // Return Value:
 // - TRUE - Bisected character.
 // - FALSE - Correctly.
-bool CheckBisectStringA(_In_reads_bytes_(cbBuf) PCHAR pchBuf, _In_ DWORD cbBuf, _In_ const CPINFO * const pCPInfo)
+bool CheckBisectStringA(_In_reads_bytes_(cbBuf) PCHAR pchBuf, _In_ DWORD cbBuf, const CPINFO * const pCPInfo)
 {
     while (cbBuf)
     {
@@ -75,26 +73,19 @@ bool CheckBisectStringA(_In_reads_bytes_(cbBuf) PCHAR pchBuf, _In_ DWORD cbBuf, 
 // - pScreenInfo - the screen buffer to update
 // Return Value:
 // - <none>
-void CleanupDbcsEdgesForWrite(_In_ const size_t stringLen,
-                              _In_ const COORD coordTarget,
+void CleanupDbcsEdgesForWrite(const size_t stringLen,
+                              const COORD coordTarget,
                               _Inout_ SCREEN_INFORMATION* const pScreenInfo)
 {
-    PTEXT_BUFFER_INFO const pTextInfo = pScreenInfo->TextInfo;
+    TEXT_BUFFER_INFO* const pTextInfo = pScreenInfo->TextInfo;
     const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
     const SHORT rowIndex = (pTextInfo->GetFirstRowIndex() + coordTarget.Y) % coordScreenBufferSize.Y;
 
     try
     {
         ROW& row = pTextInfo->GetRowAtIndex(rowIndex);
-
-        ICharRow& iCharRow = row.GetCharRow();
-        // we only support ucs2 encoded char rows
-        FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                        "only support UCS2 char rows currently");
-
-        Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
         // Check start position of strings
-        if (charRow.GetAttribute(coordTarget.X).IsTrailing())
+        if (row.GetCharRow().GetAttribute(coordTarget.X).IsTrailing())
         {
             if (coordTarget.X == 0)
             {
@@ -110,7 +101,7 @@ void CleanupDbcsEdgesForWrite(_In_ const size_t stringLen,
         if (coordTarget.X + static_cast<short>(stringLen) < coordScreenBufferSize.X)
         {
             size_t column = coordTarget.X + stringLen;
-            if (charRow.GetAttribute(column).IsTrailing())
+            if (row.GetCharRow().GetAttribute(column).IsTrailing())
             {
                 row.ClearColumn(column);
             }
@@ -118,13 +109,7 @@ void CleanupDbcsEdgesForWrite(_In_ const size_t stringLen,
         else if (coordTarget.Y + 1 < coordScreenBufferSize.Y)
         {
             ROW& rowNext = pTextInfo->GetNextRow(row);
-            ICharRow& iCharRowNext = rowNext.GetCharRow();
-            // we only support ucs2 encoded char rows
-            FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                            "only support UCS2 char rows currently");
-
-            Ucs2CharRow& charRowNext = static_cast<Ucs2CharRow&>(iCharRowNext);
-            if (charRowNext.GetAttribute(0).IsTrailing())
+            if (row.GetCharRow().GetAttribute(0).IsTrailing())
             {
                 rowNext.ClearColumn(0);
             }
@@ -214,7 +199,7 @@ DWORD RemoveDbcsMarkCell(_Out_writes_(cch) PCHAR_INFO pciDst, _In_reads_(cch) co
 // - pCPInfo - the code page to check the char in.
 // Return Value:
 // true if ch is a lead byte, false otherwise.
-bool IsDBCSLeadByteConsole(_In_ const CHAR ch, _In_ const CPINFO * const pCPInfo)
+bool IsDBCSLeadByteConsole(const CHAR ch, const CPINFO * const pCPInfo)
 {
     ASSERT(pCPInfo != nullptr);
     // NOTE: This must be unsigned for the comparison. If we compare signed, this will never hit
@@ -235,7 +220,7 @@ bool IsDBCSLeadByteConsole(_In_ const CHAR ch, _In_ const CPINFO * const pCPInfo
     return false;
 }
 
-BYTE CodePageToCharSet(_In_ UINT const uiCodePage)
+BYTE CodePageToCharSet(const UINT uiCodePage)
 {
     CHARSETINFO csi;
 
@@ -247,7 +232,7 @@ BYTE CodePageToCharSet(_In_ UINT const uiCodePage)
     return (BYTE) csi.ciCharset;
 }
 
-BOOL IsAvailableEastAsianCodePage(_In_ UINT const uiCodePage)
+BOOL IsAvailableEastAsianCodePage(const UINT uiCodePage)
 {
     BYTE const CharSet = CodePageToCharSet(uiCodePage);
 
@@ -265,9 +250,9 @@ BOOL IsAvailableEastAsianCodePage(_In_ UINT const uiCodePage)
 
 _Ret_range_(0, cbAnsi)
 ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
-                            _In_ const ULONG cchUnicode,
+                            const ULONG cchUnicode,
                             _Out_writes_bytes_(cbAnsi) PCHAR pchAnsi,
-                            _In_ const ULONG cbAnsi,
+                            const ULONG cbAnsi,
                             _Out_ std::unique_ptr<IInputEvent>& partialEvent)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();

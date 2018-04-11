@@ -46,11 +46,11 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         virtual HRESULT Invalidate(const SMALL_RECT* const psrRegion) = 0;
         [[nodiscard]]
-        virtual HRESULT InvalidateCursor(_In_ const COORD* const pcoordCursor) = 0;
+        virtual HRESULT InvalidateCursor(const COORD* const pcoordCursor) = 0;
         [[nodiscard]]
         virtual HRESULT InvalidateSystem(const RECT* const prcDirtyClient) = 0;
         [[nodiscard]]
-        virtual HRESULT InvalidateSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles) = 0;
+        virtual HRESULT InvalidateSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection, const UINT cRectangles) = 0;
         [[nodiscard]]
         virtual HRESULT InvalidateScroll(const COORD* const pcoordDelta) = 0;
         [[nodiscard]]
@@ -63,55 +63,54 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         virtual HRESULT PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
                                         _In_reads_(cchLine) const unsigned char* const rgWidths,
-                                        _In_ size_t const cchLine,
-                                        _In_ COORD const coord,
-                                        _In_ bool const fTrimLeft) = 0;
+                                        const size_t cchLine,
+                                        const COORD coord,
+                                        const bool fTrimLeft) = 0;
         [[nodiscard]]
-        virtual HRESULT PaintBufferGridLines(_In_ GridLines const lines,
-                                             _In_ COLORREF const color,
-                                             _In_ size_t const cchLine,
-                                             _In_ COORD const coordTarget) = 0;
+        virtual HRESULT PaintBufferGridLines(const GridLines lines,
+                                             const COLORREF color,
+                                             const size_t cchLine,
+                                             const COORD coordTarget) = 0;
         [[nodiscard]]
         virtual HRESULT PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection,
-                                       _In_ UINT const cRectangles) = 0;
+                                       const UINT cRectangles) = 0;
 
         [[nodiscard]]
-        virtual HRESULT PaintCursor(_In_ COORD const coordCursor,
-                                    _In_ ULONG const ulCursorHeightPercent,
-                                    _In_ bool const fIsDoubleWidth,
-                                    _In_ CursorType const cursorType,
-                                    _In_ bool const fUseColor,
-                                    _In_ COLORREF const cursorColor) = 0;
+        virtual HRESULT PaintCursor(const COORD coordCursor,
+                                    const ULONG ulCursorHeightPercent,
+                                    const bool fIsDoubleWidth,
+                                    const CursorType cursorType,
+                                    const bool fUseColor,
+                                    const COLORREF cursorColor) = 0;
 
         [[nodiscard]]
         virtual HRESULT ClearCursor() = 0;
 
         [[nodiscard]]
-        virtual HRESULT UpdateDrawingBrushes(_In_ COLORREF const colorForeground,
-                                             _In_ COLORREF const colorBackground,
-                                             _In_ WORD const legacyColorAttribute,
-                                             _In_ bool const fIncludeBackgrounds) = 0;
+        virtual HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
+                                             const COLORREF colorBackground,
+                                             const WORD legacyColorAttribute,
+                                             const bool fIncludeBackgrounds) = 0;
         [[nodiscard]]
-        virtual HRESULT UpdateFont(_In_ FontInfoDesired const * const pfiFontInfoDesired,
+        virtual HRESULT UpdateFont(const FontInfoDesired * const pfiFontInfoDesired,
                                    _Out_ FontInfo* const pfiFontInfo) = 0;
         [[nodiscard]]
-        virtual HRESULT UpdateDpi(_In_ int const iDpi) = 0;
+        virtual HRESULT UpdateDpi(const int iDpi) = 0;
         [[nodiscard]]
-        virtual HRESULT UpdateViewport(_In_ SMALL_RECT const srNewViewport) = 0;
+        virtual HRESULT UpdateViewport(const SMALL_RECT srNewViewport) = 0;
 
         [[nodiscard]]
-        virtual HRESULT GetProposedFont(_In_ FontInfoDesired const * const pfiFontInfoDesired,
+        virtual HRESULT GetProposedFont(const FontInfoDesired * const pfiFontInfoDesired,
                                         _Out_ FontInfo* const pfiFontInfo,
-                                        _In_ int const iDpi) = 0;
+                                        const int iDpi) = 0;
 
         virtual SMALL_RECT GetDirtyRectInChars() = 0;
         [[nodiscard]]
         virtual HRESULT GetFontSize(_Out_ COORD* const pFontSize) = 0;
         [[nodiscard]]
-        virtual HRESULT IsCharFullWidthByFont(_In_ WCHAR const wch, _Out_ bool* const pResult) = 0;
-
+        virtual HRESULT IsCharFullWidthByFont(const WCHAR wch, _Out_ bool* const pResult) = 0;
         [[nodiscard]]
-        virtual HRESULT UpdateTitle(_In_ const std::wstring& newTitle) = 0;
+        virtual HRESULT UpdateTitle(const std::wstring& newTitle) = 0;
     };
 }
 
