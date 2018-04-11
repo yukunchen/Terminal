@@ -141,7 +141,7 @@ int Utils::s_CompareCoords(const COORD coordFirst, const COORD coordSecond)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // find the width of one row
-    const COORD coordScreenBufferSize = gci.CurrentScreenBuffer->GetScreenBufferSize();
+    const COORD coordScreenBufferSize = gci.GetActiveOutputBuffer().GetScreenBufferSize();
     const short cRowWidth = coordScreenBufferSize.X;
 
 #ifdef _DEBUG
@@ -247,5 +247,5 @@ bool Utils::s_AddToPosition(const SMALL_RECT srectEdges, const int iAdd, _Inout_
 void Utils::s_GetCurrentBufferEdges(_Out_ SMALL_RECT* const psrectEdges)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.CurrentScreenBuffer->GetScreenEdges(psrectEdges);
+    gci.GetActiveOutputBuffer().GetScreenEdges(psrectEdges);
 }

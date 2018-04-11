@@ -21,7 +21,8 @@ namespace Microsoft::Console
     class IIoProvider
     {
     public:
-        virtual SCREEN_INFORMATION* const GetActiveOutputBuffer() const = 0;
+        virtual SCREEN_INFORMATION& GetActiveOutputBuffer() = 0;
+        virtual const SCREEN_INFORMATION& GetActiveOutputBuffer() const = 0;
         virtual InputBuffer* const GetActiveInputBuffer() const = 0;
     };
 }

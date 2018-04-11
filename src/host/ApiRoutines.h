@@ -35,7 +35,7 @@ class ApiRoutines : public IApiRoutines
     void GetConsoleInputModeImpl(_In_ InputBuffer* const pContext,
                                  _Out_ ULONG* const pMode) override;
 
-    void GetConsoleOutputModeImpl(_In_ SCREEN_INFORMATION* const pContext,
+    void GetConsoleOutputModeImpl(_In_ const SCREEN_INFORMATION& Context,
                                   _Out_ ULONG* const pMode) override;
 
     [[nodiscard]]
@@ -43,7 +43,7 @@ class ApiRoutines : public IApiRoutines
                                     const ULONG Mode) override;
 
     [[nodiscard]]
-    HRESULT SetConsoleOutputModeImpl(_In_ SCREEN_INFORMATION* const pContext,
+    HRESULT SetConsoleOutputModeImpl(_Inout_ SCREEN_INFORMATION& Context,
                                      const ULONG Mode) override;
 
     [[nodiscard]]
@@ -109,14 +109,14 @@ class ApiRoutines : public IApiRoutines
                              _Out_ DWORD* const pdwControlKeyState) override;
 
     [[nodiscard]]
-    HRESULT WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutContext,
+    HRESULT WriteConsoleAImpl(IConsoleOutputObject& OutContext,
                               _In_reads_(cchTextBufferLength) const char* const psTextBuffer,
                               const size_t cchTextBufferLength,
                               _Out_ size_t* const pcchTextBufferRead,
                               _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter) override;
 
     [[nodiscard]]
-    HRESULT WriteConsoleWImpl(_In_ IConsoleOutputObject* const pOutContext,
+    HRESULT WriteConsoleWImpl(IConsoleOutputObject& OutContext,
                               _In_reads_(cchTextBufferLength) const wchar_t* const pwsTextBuffer,
                               const size_t cchTextBufferLength,
                               _Out_ size_t* const pcchTextBufferRead,
@@ -153,7 +153,7 @@ class ApiRoutines : public IApiRoutines
     //HRESULT GenerateConsoleCtrlEventImpl(const ULONG ProcessGroupFilter,
     //                                             const ULONG ControlEvent);
 
-    void SetConsoleActiveScreenBufferImpl(_In_ SCREEN_INFORMATION* const pNewContext) override;
+    void SetConsoleActiveScreenBufferImpl(SCREEN_INFORMATION& NewContext) override;
 
     void FlushConsoleInputBuffer(_In_ InputBuffer* const pContext) override;
 
@@ -163,36 +163,36 @@ class ApiRoutines : public IApiRoutines
     [[nodiscard]]
     HRESULT SetConsoleOutputCodePageImpl(const ULONG CodePage) override;
 
-    void GetConsoleCursorInfoImpl(_In_ SCREEN_INFORMATION* const pContext,
+    void GetConsoleCursorInfoImpl(_In_ const SCREEN_INFORMATION& Context,
                                   _Out_ ULONG* const pCursorSize,
                                   _Out_ bool* const pIsVisible) override;
 
     [[nodiscard]]
-    HRESULT SetConsoleCursorInfoImpl(_In_ SCREEN_INFORMATION* const pContext,
+    HRESULT SetConsoleCursorInfoImpl(SCREEN_INFORMATION& Context,
                                      const ULONG CursorSize,
                                      const bool IsVisible) override;
 
     //// driver will pare down for non-Ex method
-    void GetConsoleScreenBufferInfoExImpl(_In_ SCREEN_INFORMATION* const pContext,
+    void GetConsoleScreenBufferInfoExImpl(const SCREEN_INFORMATION& Context,
                                           _Out_ CONSOLE_SCREEN_BUFFER_INFOEX* const pScreenBufferInfoEx) override;
 
     [[nodiscard]]
-    HRESULT SetConsoleScreenBufferInfoExImpl(_In_ SCREEN_INFORMATION* const pContext,
+    HRESULT SetConsoleScreenBufferInfoExImpl(SCREEN_INFORMATION& Context,
                                              const CONSOLE_SCREEN_BUFFER_INFOEX* const pScreenBufferInfoEx) override;
 
     [[nodiscard]]
-    HRESULT SetConsoleScreenBufferSizeImpl(_In_ SCREEN_INFORMATION* const pContext,
+    HRESULT SetConsoleScreenBufferSizeImpl(SCREEN_INFORMATION& Context,
                                            const COORD* const pSize) override;
 
     [[nodiscard]]
-    HRESULT SetConsoleCursorPositionImpl(_In_ SCREEN_INFORMATION* const pContext,
+    HRESULT SetConsoleCursorPositionImpl(SCREEN_INFORMATION& Context,
                                          const COORD* const pCursorPosition) override;
 
-    void GetLargestConsoleWindowSizeImpl(_In_ SCREEN_INFORMATION* const pContext,
+    void GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& Context,
                                          _Out_ COORD* const pSize) override;
 
     [[nodiscard]]
-    HRESULT ScrollConsoleScreenBufferAImpl(_In_ SCREEN_INFORMATION* const pContext,
+    HRESULT ScrollConsoleScreenBufferAImpl(SCREEN_INFORMATION& Context,
                                            const SMALL_RECT* const pSourceRectangle,
                                            const COORD* const pTargetOrigin,
                                            _In_opt_ const SMALL_RECT* const pTargetClipRectangle,
@@ -200,7 +200,7 @@ class ApiRoutines : public IApiRoutines
                                            const WORD attrFill) override;
 
     [[nodiscard]]
-    HRESULT ScrollConsoleScreenBufferWImpl(_In_ SCREEN_INFORMATION* const pContext,
+    HRESULT ScrollConsoleScreenBufferWImpl(SCREEN_INFORMATION& Context,
                                            const SMALL_RECT* const pSourceRectangle,
                                            const COORD* const pTargetOrigin,
                                            _In_opt_ const SMALL_RECT* const pTargetClipRectangle,
@@ -208,11 +208,11 @@ class ApiRoutines : public IApiRoutines
                                            const WORD attrFill) override;
 
     [[nodiscard]]
-    HRESULT SetConsoleTextAttributeImpl(_In_ SCREEN_INFORMATION* const pContext,
+    HRESULT SetConsoleTextAttributeImpl(SCREEN_INFORMATION& Context,
                                         const WORD Attribute) override;
 
     [[nodiscard]]
-    HRESULT SetConsoleWindowInfoImpl(_In_ SCREEN_INFORMATION* const pContext,
+    HRESULT SetConsoleWindowInfoImpl(SCREEN_INFORMATION& Context,
                                      const bool IsAbsoluteRectangle,
                                      const SMALL_RECT* const pWindowRectangle) override;
 
@@ -326,18 +326,18 @@ class ApiRoutines : public IApiRoutines
     void GetNumberOfConsoleMouseButtonsImpl(_Out_ ULONG* const pButtons) override;
 
     [[nodiscard]]
-    HRESULT GetConsoleFontSizeImpl(_In_ SCREEN_INFORMATION* const pContext,
+    HRESULT GetConsoleFontSizeImpl(const SCREEN_INFORMATION& Context,
                                    const DWORD FontIndex,
                                    _Out_ COORD* const pFontSize) override;
 
     //// driver will pare down for non-Ex method
     [[nodiscard]]
-    HRESULT GetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const pContext,
+    HRESULT GetCurrentConsoleFontExImpl(const SCREEN_INFORMATION& Context,
                                         const bool IsForMaximumWindowSize,
                                         _Out_ CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx) override;
 
     [[nodiscard]]
-    HRESULT SetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const pContext,
+    HRESULT SetConsoleDisplayModeImpl(SCREEN_INFORMATION& Context,
                                       const ULONG Flags,
                                       _Out_ COORD* const pNewScreenBufferSize) override;
 
@@ -473,7 +473,7 @@ class ApiRoutines : public IApiRoutines
     HRESULT SetConsoleHistoryInfoImpl(const CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo) override;
 
     [[nodiscard]]
-    HRESULT SetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const pContext,
+    HRESULT SetCurrentConsoleFontExImpl(SCREEN_INFORMATION& Context,
                                         const bool IsForMaximumWindowSize,
                                         const CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx) override;
 

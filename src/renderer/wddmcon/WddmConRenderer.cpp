@@ -327,17 +327,17 @@ HRESULT WddmConEngine::UpdateDrawingBrushes(COLORREF const /*colorForeground*/,
 }
 
 [[nodiscard]]
-HRESULT WddmConEngine::UpdateFont(FontInfoDesired const* const /*pfiFontInfoDesired*/, FontInfo* const pfiFontInfo)
+HRESULT WddmConEngine::UpdateFont(const FontInfoDesired& /*pfiFontInfoDesired*/, FontInfo& fiFontInfo)
 {
     COORD coordSize = {0};
     LOG_IF_FAILED(GetFontSize(&coordSize));
 
-    pfiFontInfo->SetFromEngine(pfiFontInfo->GetFaceName(),
-                               pfiFontInfo->GetFamily(),
-                               pfiFontInfo->GetWeight(),
-                               pfiFontInfo->IsTrueTypeFont(),
-                               coordSize,
-                               coordSize);
+    fiFontInfo.SetFromEngine(fiFontInfo.GetFaceName(),
+                             fiFontInfo.GetFamily(),
+                             fiFontInfo.GetWeight(),
+                             fiFontInfo.IsTrueTypeFont(),
+                             coordSize,
+                             coordSize);
 
     return S_OK;
 }
@@ -362,8 +362,8 @@ HRESULT WddmConEngine::UpdateViewport(const SMALL_RECT /*srNewViewport*/)
 }
 
 [[nodiscard]]
-HRESULT WddmConEngine::GetProposedFont(FontInfoDesired const* const /*pfiFontInfoDesired*/,
-                                       FontInfo* const /*pfiFontInfo*/,
+HRESULT WddmConEngine::GetProposedFont(const FontInfoDesired& /*pfiFontInfoDesired*/,
+                                       FontInfo& /*pfiFontInfo*/,
                                        int const /*iDpi*/)
 {
     return S_OK;

@@ -20,7 +20,7 @@
 
 INT_PTR FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // This bool is used to track which option - up or down - was used to perform the last search. That way, the next time the
     //   find dialog is opened, it will default to the last used option.
     static bool fFindSearchUp = true;
@@ -46,7 +46,7 @@ INT_PTR FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
                     bool const IgnoreCase = IsDlgButtonChecked(hWnd, ID_CONSOLE_FINDCASE) == 0;
                     bool const Reverse = IsDlgButtonChecked(hWnd, ID_CONSOLE_FINDDOWN) == 0;
                     fFindSearchUp = !!Reverse;
-                    PSCREEN_INFORMATION const ScreenInfo = gci.CurrentScreenBuffer;
+                    SCREEN_INFORMATION& ScreenInfo = gci.GetActiveOutputBuffer();
                     COORD Position;
                     USHORT const ColumnWidth = SearchForString(ScreenInfo, szBuf, StringLength, IgnoreCase, Reverse, false, 0, &Position);
                     if (ColumnWidth != 0)
@@ -76,32 +76,32 @@ INT_PTR FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
                         // TODO: can this just be merged with the select region code?
                         const SMALL_RECT srSelection = pSelection->GetSelectionRectangle();
 
-                        if (srSelection.Left < ScreenInfo->GetBufferViewport().Left)
+                        if (srSelection.Left < ScreenInfo.GetBufferViewport().Left)
                         {
                             Position.X = srSelection.Left;
                         }
-                        else if (srSelection.Right > ScreenInfo->GetBufferViewport().Right)
+                        else if (srSelection.Right > ScreenInfo.GetBufferViewport().Right)
                         {
-                            Position.X = srSelection.Right - ScreenInfo->GetScreenWindowSizeX() + 1;
+                            Position.X = srSelection.Right - ScreenInfo.GetScreenWindowSizeX() + 1;
                         }
                         else
                         {
-                            Position.X = ScreenInfo->GetBufferViewport().Left;
+                            Position.X = ScreenInfo.GetBufferViewport().Left;
                         }
 
-                        if (srSelection.Top < ScreenInfo->GetBufferViewport().Top)
+                        if (srSelection.Top < ScreenInfo.GetBufferViewport().Top)
                         {
                             Position.Y = srSelection.Top;
                         }
-                        else if (srSelection.Bottom > ScreenInfo->GetBufferViewport().Bottom)
+                        else if (srSelection.Bottom > ScreenInfo.GetBufferViewport().Bottom)
                         {
-                            Position.Y = srSelection.Bottom - ScreenInfo->GetScreenWindowSizeY() + 1;
+                            Position.Y = srSelection.Bottom - ScreenInfo.GetScreenWindowSizeY() + 1;
                         }
                         else
                         {
-                            Position.Y = ScreenInfo->GetBufferViewport().Top;
+                            Position.Y = ScreenInfo.GetBufferViewport().Top;
                         }
-                        LOG_IF_FAILED(ScreenInfo->SetViewportOrigin(true, Position));
+                        LOG_IF_FAILED(ScreenInfo.SetViewportOrigin(true, Position));
 
                         UnlockConsole();
 
@@ -110,7 +110,7 @@ INT_PTR FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
                     else
                     {
                         // The string wasn't found.
-                        ScreenInfo->SendNotifyBeep();
+                        ScreenInfo.SendNotifyBeep();
                     }
                     break;
                 }

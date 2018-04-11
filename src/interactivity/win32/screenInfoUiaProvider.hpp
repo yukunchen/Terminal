@@ -95,7 +95,7 @@ namespace Microsoft::Console::Interactivity::Win32
         std::map<EVENTID, bool> _signalFiringMapping;
 
         const COORD _getScreenBufferCoords() const;
-        static SCREEN_INFORMATION* const _getScreenInfo();
+        static SCREEN_INFORMATION& _getScreenInfo();
         static IConsoleWindow* const _getIConsoleWindow();
     };
 

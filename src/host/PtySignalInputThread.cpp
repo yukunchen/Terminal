@@ -22,6 +22,7 @@ struct PTY_SIGNAL_RESIZE
 };
 
 using namespace Microsoft::Console;
+using namespace Microsoft::Console::Interactivity;
 
 // Constructor Description:
 // - Creates the PTY Signal Input Thread.
@@ -29,7 +30,7 @@ using namespace Microsoft::Console;
 // - hPipe - a handle to the file representing the read end of the VT pipe.
 PtySignalInputThread::PtySignalInputThread(_In_ wil::unique_hfile hPipe) :
     _hFile(std::move(hPipe)),
-    _pConApi(new ConhostInternalGetSet(&Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation()))
+    _pConApi{ std::make_unique<ConhostInternalGetSet>(ServiceLocator::LocateGlobals().getConsoleInformation()) }
 {
     THROW_IF_HANDLE_INVALID(_hFile.get());
     THROW_IF_NULL_ALLOC(_pConApi.get());

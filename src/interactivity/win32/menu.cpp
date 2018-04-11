@@ -173,7 +173,7 @@ void Menu::Initialize()
         //   else
         //       enable mark
 
-        if (gci.CurrentScreenBuffer->IsMaximizedBoth() || gci.Flags & CONSOLE_SELECTING)
+        if (gci.GetActiveOutputBuffer().IsMaximizedBoth() || gci.Flags & CONSOLE_SELECTING)
         {
             EnableMenuItem(hHeirMenu, ID_CONSOLE_SCROLL, MF_GRAYED);
         }
@@ -288,25 +288,25 @@ void Menu::s_ShowPropertiesDialog(HWND const hwnd, BOOL const Defaults)
 void Menu::s_GetConsoleState(CONSOLE_STATE_INFO * const pStateInfo)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    PSCREEN_INFORMATION const ScreenInfo = gci.CurrentScreenBuffer;
-    pStateInfo->ScreenBufferSize = ScreenInfo->GetScreenBufferSize();
-    pStateInfo->WindowSize.X = ScreenInfo->GetScreenWindowSizeX();
-    pStateInfo->WindowSize.Y = ScreenInfo->GetScreenWindowSizeY();
+    const SCREEN_INFORMATION& ScreenInfo = gci.GetActiveOutputBuffer();
+    pStateInfo->ScreenBufferSize = ScreenInfo.GetScreenBufferSize();
+    pStateInfo->WindowSize.X = ScreenInfo.GetScreenWindowSizeX();
+    pStateInfo->WindowSize.Y = ScreenInfo.GetScreenWindowSizeY();
 
-    RECT const rcWindow = ServiceLocator::LocateConsoleWindow<Window>()->GetWindowRect();
+    const RECT rcWindow = ServiceLocator::LocateConsoleWindow<Window>()->GetWindowRect();
     pStateInfo->WindowPosX = rcWindow.left;
     pStateInfo->WindowPosY = rcWindow.top;
 
-    const FontInfo* const pfiCurrentFont = ScreenInfo->TextInfo->GetCurrentFont();
-    pStateInfo->FontFamily = pfiCurrentFont->GetFamily();
-    pStateInfo->FontSize = pfiCurrentFont->GetUnscaledSize();
-    pStateInfo->FontWeight = pfiCurrentFont->GetWeight();
-    StringCchCopyW(pStateInfo->FaceName, ARRAYSIZE(pStateInfo->FaceName), pfiCurrentFont->GetFaceName());
+    const FontInfo& currentFont = ScreenInfo.GetTextBuffer().GetCurrentFont();
+    pStateInfo->FontFamily = currentFont.GetFamily();
+    pStateInfo->FontSize = currentFont.GetUnscaledSize();
+    pStateInfo->FontWeight = currentFont.GetWeight();
+    StringCchCopyW(pStateInfo->FaceName, ARRAYSIZE(pStateInfo->FaceName), currentFont.GetFaceName());
 
-    Cursor* pCursor = ScreenInfo->TextInfo->GetCursor();
-    pStateInfo->CursorSize = pCursor->GetSize();
-    pStateInfo->CursorColor = pCursor->GetColor();
-    pStateInfo->CursorType = static_cast<unsigned int>(pCursor->GetType());
+    const Cursor& cursor = ScreenInfo.GetTextBuffer().GetCursor();
+    pStateInfo->CursorSize = cursor.GetSize();
+    pStateInfo->CursorColor = cursor.GetColor();
+    pStateInfo->CursorType = static_cast<unsigned int>(cursor.GetType());
 
     // Retrieve small icon for use in displaying the dialog
     LOG_IF_FAILED(Icon::Instance().GetIcons(nullptr, &pStateInfo->hIcon));
@@ -314,8 +314,8 @@ void Menu::s_GetConsoleState(CONSOLE_STATE_INFO * const pStateInfo)
     pStateInfo->QuickEdit = !!(gci.Flags & CONSOLE_QUICK_EDIT_MODE);
     pStateInfo->AutoPosition = !!(gci.Flags & CONSOLE_AUTO_POSITION);
     pStateInfo->InsertMode = gci.GetInsertMode();
-    pStateInfo->ScreenAttributes = ScreenInfo->GetAttributes().GetLegacyAttributes();
-    pStateInfo->PopupAttributes = ScreenInfo->GetPopupAttributes()->GetLegacyAttributes();
+    pStateInfo->ScreenAttributes = ScreenInfo.GetAttributes().GetLegacyAttributes();
+    pStateInfo->PopupAttributes = ScreenInfo.GetPopupAttributes()->GetLegacyAttributes();
 
     // Ensure that attributes are only describing colors to the properties dialog
     ClearAllFlags(pStateInfo->ScreenAttributes, ~(FG_ATTRS | BG_ATTRS));
@@ -379,7 +379,7 @@ HMENU Menu::s_GetHeirMenuHandle()
 void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    PSCREEN_INFORMATION const ScreenInfo = gci.CurrentScreenBuffer;
+    SCREEN_INFORMATION& ScreenInfo = gci.GetActiveOutputBuffer();
 
     if (gci.OutputCP != pStateInfo->CodePage)
     {
@@ -412,21 +412,20 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
     // Apply font information (must come before all character calculations for window/buffer size).
     FontInfo fiNewFont(pStateInfo->FaceName, static_cast<BYTE>(pStateInfo->FontFamily), pStateInfo->FontWeight, pStateInfo->FontSize, pStateInfo->CodePage);
 
-    ScreenInfo->UpdateFont(&fiNewFont);
+    ScreenInfo.UpdateFont(&fiNewFont);
 
-    const FontInfo* const pfiFontApplied = ScreenInfo->TextInfo->GetCurrentFont();
+    const FontInfo& fontApplied = ScreenInfo.GetTextBuffer().GetCurrentFont();
 
     // Now make sure internal font state reflects the font chosen
-    gci.SetFontFamily(pfiFontApplied->GetFamily());
-    gci.SetFontSize(pfiFontApplied->GetUnscaledSize());
-    gci.SetFontWeight(pfiFontApplied->GetWeight());
-    gci.SetFaceName(pfiFontApplied->GetFaceName(), LF_FACESIZE);
+    gci.SetFontFamily(fontApplied.GetFamily());
+    gci.SetFontSize(fontApplied.GetUnscaledSize());
+    gci.SetFontWeight(fontApplied.GetWeight());
+    gci.SetFaceName(fontApplied.GetFaceName(), LF_FACESIZE);
 
-    ScreenInfo->SetCursorInformation(pStateInfo->CursorSize,
-        ScreenInfo->TextInfo->GetCursor()->IsVisible(),
-        pStateInfo->CursorColor,
-        static_cast<CursorType>(pStateInfo->CursorType)
-    );
+    ScreenInfo.SetCursorInformation(pStateInfo->CursorSize,
+                                     ScreenInfo.GetTextBuffer().GetCursor().IsVisible(),
+                                     pStateInfo->CursorColor,
+                                     static_cast<CursorType>(pStateInfo->CursorType));
 
     {
         // Requested window in characters
@@ -437,7 +436,7 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
 
         // First limit the window so it cannot be bigger than the monitor.
         // Maximum number of characters we could fit on the given monitor.
-        COORD const coordLargest = ScreenInfo->GetLargestWindowSizeInCharacters();
+        COORD const coordLargest = ScreenInfo.GetLargestWindowSizeInCharacters();
 
         coordWindow.X = std::min(coordLargest.X, coordWindow.X);
         coordWindow.Y = std::min(coordLargest.Y, coordWindow.Y);
@@ -454,7 +453,7 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
             {
                 // Since we need a scroll bar in the Y direction, clamp the buffer width to make sure that
                 // it is leaving appropriate space for a scroll bar.
-                COORD const coordScrollBars = ScreenInfo->GetScrollBarSizesInCharacters();
+                COORD const coordScrollBars = ScreenInfo.GetScrollBarSizesInCharacters();
                 SHORT const sMaxBufferWidthWithScroll = coordLargest.X - coordScrollBars.X;
 
                 coordBuffer.X = std::min(coordBuffer.X, sMaxBufferWidthWithScroll);
@@ -462,7 +461,7 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
         }
 
         // Now adjust the buffer size first to whatever we want it to be if it's different than before.
-        const COORD coordScreenBufferSize = ScreenInfo->GetScreenBufferSize();
+        const COORD coordScreenBufferSize = ScreenInfo.GetScreenBufferSize();
         if (coordBuffer.X != coordScreenBufferSize.X ||
             coordBuffer.Y != coordScreenBufferSize.Y)
         {
@@ -470,13 +469,13 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
 
             pCommandLine->Hide(FALSE);
 
-            LOG_IF_FAILED(ScreenInfo->ResizeScreenBuffer(coordBuffer, TRUE));
+            LOG_IF_FAILED(ScreenInfo.ResizeScreenBuffer(coordBuffer, TRUE));
 
             pCommandLine->Show();
         }
 
         // Finally, restrict window size to the maximum possible size for the given buffer now that it's processed.
-        COORD const coordMaxForBuffer = ScreenInfo->GetMaxWindowSizeInCharacters();
+        COORD const coordMaxForBuffer = ScreenInfo.GetMaxWindowSizeInCharacters();
 
         coordWindow.X = std::min(coordWindow.X, coordMaxForBuffer.X);
         coordWindow.Y = std::min(coordWindow.Y, coordMaxForBuffer.Y);
@@ -512,7 +511,7 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
 
     if (gci.GetInsertMode() != !!pStateInfo->InsertMode)
     {
-        ScreenInfo->SetCursorDBMode(false);
+        ScreenInfo.SetCursorDBMode(false);
         gci.SetInsertMode(pStateInfo->InsertMode != FALSE);
         if (gci.lpCookedReadData)
         {

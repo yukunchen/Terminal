@@ -176,7 +176,7 @@ NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
 #pragma prefast(suppress:26018, "PREfast can't detect null termination status of Title.")
 
 // Allocate console will read the global ServiceLocator::LocateGlobals().getConsoleInformation for the settings we just set.
-    NTSTATUS Status = AllocateConsole(Title, TitleLength);
+    NTSTATUS Status = CONSOLE_INFORMATION::AllocateConsole(Title, TitleLength);
     if (!NT_SUCCESS(Status))
     {
         return Status;

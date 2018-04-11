@@ -92,16 +92,16 @@ namespace Microsoft::Console::Render
                                              const WORD legacyColorAttribute,
                                              const bool fIncludeBackgrounds) = 0;
         [[nodiscard]]
-        virtual HRESULT UpdateFont(const FontInfoDesired * const pfiFontInfoDesired,
-                                   _Out_ FontInfo* const pfiFontInfo) = 0;
+        virtual HRESULT UpdateFont(const FontInfoDesired& FontInfoDesired,
+                                   _Out_ FontInfo& FontInfo) = 0;
         [[nodiscard]]
         virtual HRESULT UpdateDpi(const int iDpi) = 0;
         [[nodiscard]]
         virtual HRESULT UpdateViewport(const SMALL_RECT srNewViewport) = 0;
 
         [[nodiscard]]
-        virtual HRESULT GetProposedFont(const FontInfoDesired * const pfiFontInfoDesired,
-                                        _Out_ FontInfo* const pfiFontInfo,
+        virtual HRESULT GetProposedFont(const FontInfoDesired& FontInfoDesired,
+                                        _Out_ FontInfo& FontInfo,
                                         const int iDpi) = 0;
 
         virtual SMALL_RECT GetDirtyRectInChars() = 0;
