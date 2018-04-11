@@ -307,3 +307,16 @@ HRESULT VtEngine::RequestCursor()
 {
     return _Write("\x1b[6n");
 }
+
+// Method Description:
+// - Formats and writes a sequence to change the terminal's title string
+// Arguments:
+// - title: string to use as the new title of the window.
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]]
+HRESULT VtEngine::_ChangeTitle(_In_ const std::string& title)
+{
+    const std::string titleFormat = "\x1b]0;" + title + "\x7";
+    return _Write(titleFormat);
+}

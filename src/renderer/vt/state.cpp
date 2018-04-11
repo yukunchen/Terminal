@@ -99,7 +99,7 @@ HRESULT VtEngine::_Write(const std::string& str)
 // Method Description:
 // - Wrapper for ITerminalOutputConnection. See _Write.
 [[nodiscard]]
-HRESULT VtEngine::WriteTerminalUtf8(_In_ const std::string& str)
+HRESULT VtEngine::WriteTerminalUtf8(const std::string& str)
 {
     return _Write(str);
 }
@@ -112,7 +112,7 @@ HRESULT VtEngine::WriteTerminalUtf8(_In_ const std::string& str)
 // Return Value:
 // - S_OK or suitable HRESULT error from either conversion or writing pipe.
 [[nodiscard]]
-HRESULT VtEngine::_WriteTerminalUtf8(_In_ const std::wstring& wstr)
+HRESULT VtEngine::_WriteTerminalUtf8(const std::wstring& wstr)
 {
     wistd::unique_ptr<char[]> rgchNeeded;
     size_t needed = 0;
@@ -130,7 +130,7 @@ HRESULT VtEngine::_WriteTerminalUtf8(_In_ const std::wstring& wstr)
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
 [[nodiscard]]
-HRESULT VtEngine::_WriteTerminalAscii(_In_ const std::wstring& wstr)
+HRESULT VtEngine::_WriteTerminalAscii(const std::wstring& wstr)
 {
     const size_t cchActual = wstr.length();
 

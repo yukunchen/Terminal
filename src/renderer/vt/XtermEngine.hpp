@@ -54,6 +54,8 @@ namespace Microsoft::Console::Render
         HRESULT ScrollFrame() override;
 
         [[nodiscard]]
+        HRESULT UpdateTitle(const std::wstring& newTitle) override;
+        [[nodiscard]]
         HRESULT InvalidateScroll(const COORD* const pcoordDelta) override;
 
         [[nodiscard]]

@@ -45,7 +45,8 @@ void UnlockConsole()
 // Return Value:
 // - STATUS_SUCCESS if successful.
 [[nodiscard]]
-NTSTATUS CONSOLE_INFORMATION::AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle, const DWORD cbTitle)
+NTSTATUS CONSOLE_INFORMATION::AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle,
+                                              const DWORD cbTitle)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // Synchronize flags
@@ -73,29 +74,22 @@ NTSTATUS CONSOLE_INFORMATION::AllocateConsole(_In_reads_bytes_(cbTitle) const WC
         return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
     }
 
-    NTSTATUS Status;
     // Byte count + 1 so dividing by 2 always rounds up. +1 more for trailing null guard.
-    gci.Title = new WCHAR[((cbTitle + 1) / sizeof(WCHAR)) + 1];
-    if (gci.Title == nullptr)
+    auto titleLength = ((cbTitle + 1) / sizeof(WCHAR)) + 1;
+    try
     {
-        Status = STATUS_NO_MEMORY;
-        goto ErrorExit2;
+        gci.SetTitle(std::wstring(pwchTitle, titleLength));
+        gci.SetOriginalTitle(std::wstring(TranslateConsoleTitle(gci.GetTitle().c_str(), TRUE, FALSE)));
+    }
+    catch (...)
+    {
+        return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
     }
 
-    #pragma prefast(suppress:26035, "If this fails, we just display an empty title, which is ok.")
-    StringCbCopyW(gci.Title, cbTitle + sizeof(WCHAR), pwchTitle);
-
-    gci.OriginalTitle = TranslateConsoleTitle(gci.Title, TRUE, FALSE);
-    if (gci.OriginalTitle == nullptr)
-    {
-        Status = STATUS_NO_MEMORY;
-        goto ErrorExit1;
-    }
-
-    Status = DoCreateScreenBuffer();
+    NTSTATUS Status = DoCreateScreenBuffer();
     if (!NT_SUCCESS(Status))
     {
-        goto ErrorExit1b;
+        goto ErrorExit2;
     }
 
     gci.pCurrentScreenBuffer = gci.ScreenBuffers;
@@ -113,14 +107,6 @@ NTSTATUS CONSOLE_INFORMATION::AllocateConsole(_In_reads_bytes_(cbTitle) const WC
 
     delete gci.ScreenBuffers;
     gci.ScreenBuffers = nullptr;
-
-ErrorExit1b:
-    delete[] gci.Title;
-    gci.Title = nullptr;
-
-ErrorExit1:
-    delete[] gci.OriginalTitle;
-    gci.OriginalTitle = nullptr;
 
 ErrorExit2:
     delete gci.pInputBuffer;

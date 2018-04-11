@@ -54,7 +54,7 @@ namespace Microsoft::Console::Interactivity
         virtual BOOL SendNotifyBeep() const = 0;
 
         virtual BOOL PostUpdateScrollBars() const = 0;
-        virtual BOOL PostUpdateTitleWithCopy(const PCWSTR pwszNewTitle) const = 0;
+
         virtual BOOL PostUpdateWindowSize() const = 0;
 
         virtual void UpdateWindowSize(const COORD coordSizeInChars) = 0;

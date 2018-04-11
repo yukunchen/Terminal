@@ -2978,6 +2978,7 @@ public:
         Log::Comment(L"Starting test...");
 
         SMALL_RECT srTestMargins = {0};
+        _pTest->_srViewport.Right = 8;
         _pTest->_srViewport.Bottom = 8;
         _pTest->_fGetConsoleScreenBufferInfoExResult = TRUE;
 

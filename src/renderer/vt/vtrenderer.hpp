@@ -123,9 +123,13 @@ namespace Microsoft::Console::Render
         HRESULT InheritCursor(const COORD coordCursor);
 
         [[nodiscard]]
-        HRESULT WriteTerminalUtf8(_In_ const std::string& str);
+        HRESULT WriteTerminalUtf8(const std::string& str);
+
         [[nodiscard]]
-        virtual HRESULT WriteTerminalW(_In_ const std::wstring& str) = 0;
+        virtual HRESULT WriteTerminalW(const std::wstring& str) = 0;
+
+        [[nodiscard]]
+        virtual HRESULT UpdateTitle(const std::wstring& newTitle) override;
 
     protected:
         wil::unique_hfile _hFile;
@@ -197,6 +201,8 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         HRESULT _ClearScreen();
         [[nodiscard]]
+        HRESULT _ChangeTitle(const std::string& title);
+        [[nodiscard]]
         HRESULT _SetGraphicsRendition16Color(const WORD wAttr,
                                             const bool fIsForeground);
         [[nodiscard]]
@@ -235,9 +241,9 @@ namespace Microsoft::Console::Render
                                     const COORD coordTarget);
 
         [[nodiscard]]
-        HRESULT _WriteTerminalUtf8(_In_ const std::wstring& str);
+        HRESULT _WriteTerminalUtf8(const std::wstring& str);
         [[nodiscard]]
-        HRESULT _WriteTerminalAscii(_In_ const std::wstring& str);
+        HRESULT _WriteTerminalAscii(const std::wstring& str);
         /////////////////////////// Unit Testing Helpers ///////////////////////////
     #ifdef UNIT_TESTING
         std::function<bool(const char* const, size_t const)> _pfnTestCallback;

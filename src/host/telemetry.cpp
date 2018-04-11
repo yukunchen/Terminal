@@ -375,7 +375,7 @@ void Telemetry::WriteFinalTraceLog()
                 TraceLoggingUInt32(_uiQuickEditCopyRawUsed, "QuickEditCopyRawUsed"),
                 TraceLoggingUInt32(_uiQuickEditPasteProcUsed, "QuickEditPasteProcUsed"),
                 TraceLoggingUInt32(_uiQuickEditPasteRawUsed, "QuickEditPasteRawUsed"),
-                TraceLoggingBool(gci.LinkTitle == nullptr, "LaunchedFromShortcut"),
+                TraceLoggingBool(gci.GetLinkTitle().length() == 0, "LaunchedFromShortcut"),
                 // Normally we would send out a single array containing the name and count,
                 // but that's difficult to do with our telemetry system, so send out two separate arrays.
                 // Casting to UINT should be fine, since our array size is only 2K.
