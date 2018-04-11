@@ -40,15 +40,15 @@ void ConsoleWindow::SetIsFullscreen(bool const /*fFullscreenEnabled*/)
 [[nodiscard]]
 NTSTATUS ConsoleWindow::SetViewportOrigin(SMALL_RECT NewWindow)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-    SCREEN_INFORMATION* const ScreenInfo = gci.CurrentScreenBuffer;
-    COORD const FontSize = ScreenInfo->GetScreenFontSize();
+    SCREEN_INFORMATION& ScreenInfo = gci.GetActiveOutputBuffer();
+    COORD const FontSize = ScreenInfo.GetScreenFontSize();
 
     Selection* pSelection = &Selection::Instance();
     pSelection->HideSelection();
 
-    ScreenInfo->SetBufferViewport(Viewport::FromInclusive(NewWindow));
+    ScreenInfo.SetBufferViewport(Viewport::FromInclusive(NewWindow));
 
     if (ServiceLocator::LocateGlobals().pRender != nullptr)
     {
@@ -57,7 +57,7 @@ NTSTATUS ConsoleWindow::SetViewportOrigin(SMALL_RECT NewWindow)
 
     pSelection->ShowSelection();
 
-    ScreenInfo->UpdateScrollBars();
+    ScreenInfo.UpdateScrollBars();
     return STATUS_SUCCESS;
 }
 
@@ -118,7 +118,7 @@ BOOL ConsoleWindow::PostUpdateWindowSize() const
     return FALSE;
 }
 
-void ConsoleWindow::UpdateWindowSize(COORD const /*coordSizeInChars*/) const
+void ConsoleWindow::UpdateWindowSize(COORD const /*coordSizeInChars*/)
 {
 }
 
@@ -126,11 +126,11 @@ void ConsoleWindow::UpdateWindowText()
 {
 }
 
-void ConsoleWindow::HorizontalScroll(const WORD /*wScrollCommand*/, const WORD /*wAbsoluteChange*/) const
+void ConsoleWindow::HorizontalScroll(const WORD /*wScrollCommand*/, const WORD /*wAbsoluteChange*/)
 {
 }
 
-void ConsoleWindow::VerticalScroll(const WORD /*wScrollCommand*/, const WORD /*wAbsoluteChange*/) const
+void ConsoleWindow::VerticalScroll(const WORD /*wScrollCommand*/, const WORD /*wAbsoluteChange*/)
 {
 }
 

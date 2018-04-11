@@ -31,9 +31,7 @@ public:
 
     static const unsigned int s_InvertCursorColor = INVALID_COLOR;
 
-    Cursor(_In_ Microsoft::Console::Interactivity::IAccessibilityNotifier *pNotifier, const ULONG ulSize);
-    [[nodiscard]]
-    static NTSTATUS CreateInstance(const ULONG ulSize, _Outptr_ Cursor ** const ppCursor);
+    Cursor(const ULONG ulSize);
     ~Cursor();
 
     void UpdateSystemMetrics();
@@ -78,8 +76,8 @@ public:
     void DecrementXPosition(const int DeltaX);
     void DecrementYPosition(const int DeltaY);
 
-    void TimerRoutine(_In_ PSCREEN_INFORMATION const ScreenInfo);
-    void CopyProperties(const Cursor* const pOtherCursor);
+    void TimerRoutine(SCREEN_INFORMATION& ScreenInfo);
+    void CopyProperties(const Cursor& OtherCursor);
 
     void DelayEOLWrap(const COORD coordDelayedAt);
     void ResetDelayEOLWrap();

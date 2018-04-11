@@ -171,15 +171,15 @@ void Selection::MouseUp()
 // Routine Description:
 // - Saves the current cursor position data so it can be manipulated during selection.
 // Arguments:
-// - <none> (Captures global state)
+// - textBuffer - text buffer to set cursor data
 // Return Value:
 // - <none>
-void Selection::_SaveCursorData(const TEXT_BUFFER_INFO* const pTextInfo)
+void Selection::_SaveCursorData(TextBuffer& textBuffer)
 {
-    Cursor* const pCursor = pTextInfo->GetCursor();
-    _coordSavedCursorPosition = pCursor->GetPosition();
-    _ulSavedCursorSize = pCursor->GetSize();
-    _fSavedCursorVisible = pCursor->IsVisible();
+    Cursor& cursor = textBuffer.GetCursor();
+    _coordSavedCursorPosition = cursor.GetPosition();
+    _ulSavedCursorSize = cursor.GetSize();
+    _fSavedCursorVisible = cursor.IsVisible();
 }
 
 // Routine Description:
@@ -188,11 +188,11 @@ void Selection::_SaveCursorData(const TEXT_BUFFER_INFO* const pTextInfo)
 // - <none> (Restores global state)
 // Return Value:
 // - <none>
-void Selection::_RestoreCursorData(_In_ SCREEN_INFORMATION* const pScreenInfo)
+void Selection::_RestoreCursorData(SCREEN_INFORMATION& screenInfo)
 {
-    Cursor* pCursor = ServiceLocator::LocateGlobals().getConsoleInformation().CurrentScreenBuffer->TextInfo->GetCursor();
-    pScreenInfo->SetCursorInformation(_ulSavedCursorSize, _fSavedCursorVisible, pCursor->GetColor(), pCursor->GetType());
-    LOG_IF_FAILED(pScreenInfo->SetCursorPosition(_coordSavedCursorPosition, true /* TurnOn */));
+    const Cursor& cursor = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetTextBuffer().GetCursor();
+    screenInfo.SetCursorInformation(_ulSavedCursorSize, _fSavedCursorVisible, cursor.GetColor(), cursor.GetType());
+    LOG_IF_FAILED(screenInfo.SetCursorPosition(_coordSavedCursorPosition, true /* TurnOn */));
 }
 
 // Routine Description:

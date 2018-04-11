@@ -60,19 +60,19 @@ filling in the last row, and updating the screen.
 #include <wil/resource.h>
 #include <wil/wistd_memory.h>
 
-class TEXT_BUFFER_INFO final
+class TextBuffer final
 {
 public:
-    TEXT_BUFFER_INFO(const FontInfo* const pFontInfo,
-                     const COORD screenBufferSize,
-                     const CHAR_INFO fill,
-                     const UINT cursorSize);
-    TEXT_BUFFER_INFO(const TEXT_BUFFER_INFO& a) = delete;
+    TextBuffer(const FontInfo fontInfo,
+               const COORD screenBufferSize,
+               const CHAR_INFO fill,
+               const UINT cursorSize);
+    TextBuffer(const TextBuffer& a) = delete;
 
-    ~TEXT_BUFFER_INFO();
+    ~TextBuffer() = default;
 
     // Used for duplicating properties to another text buffer
-    void CopyProperties(_In_ TEXT_BUFFER_INFO* const pOtherBuffer);
+    void CopyProperties(const TextBuffer& OtherBuffer);
 
     // row manipulation
     const ROW& GetFirstRow() const;
@@ -109,13 +109,14 @@ public:
 
     COORD GetLastNonSpaceCharacter() const;
 
-    void SetCurrentFont(const FontInfo* const pfiNewFont);
-    FontInfo* GetCurrentFont();
+    FontInfo& GetCurrentFont();
+    const FontInfo& GetCurrentFont() const;
 
-    void SetDesiredFont(const FontInfoDesired* const pfiNewFont);
-    FontInfoDesired* GetDesiredFont();
+    FontInfoDesired& GetDesiredFont();
+    const FontInfoDesired& GetDesiredFont() const;
 
-    Cursor* const GetCursor() const;
+    Cursor& GetCursor();
+    const Cursor& GetCursor() const;
 
     const SHORT GetFirstRowIndex() const;
     const COORD GetCoordBufferSize() const;
@@ -135,7 +136,7 @@ public:
 private:
 
     std::deque<ROW> _storage;
-    Cursor* _pCursor;
+    Cursor _cursor;
 
     SHORT _FirstRow; // indexes top row (not necessarily 0)
 
@@ -160,5 +161,3 @@ private:
     friend class TextBufferTests;
 #endif
 };
-typedef TEXT_BUFFER_INFO *PTEXT_BUFFER_INFO;
-typedef PTEXT_BUFFER_INFO *PPTEXT_BUFFER_INFO;

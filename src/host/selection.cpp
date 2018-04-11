@@ -61,7 +61,7 @@ NTSTATUS Selection::GetSelectionRects(_Outptr_result_buffer_all_(*pcRectangles) 
 
     if (NT_SUCCESS(status))
     {
-        const PSCREEN_INFORMATION pScreenInfo = gci.CurrentScreenBuffer;
+        const SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
 
         const SMALL_RECT * const pSelectionRect = &_srSelectionRect;
         const UINT cRectangles = pSelectionRect->Bottom - pSelectionRect->Top + 1;
@@ -135,7 +135,7 @@ NTSTATUS Selection::GetSelectionRects(_Outptr_result_buffer_all_(*pcRectangles) 
                         // if not the last row, pad the right selection to the buffer edge
                         if (iRow != pSelectionRect->Bottom)
                         {
-                            srHighlightRow.Right = pScreenInfo->TextInfo->GetCoordBufferSize().X - 1;
+                            srHighlightRow.Right = screenInfo.GetTextBuffer().GetCoordBufferSize().X - 1;
                         }
 
                         // if we've determined we're in a scenario where we must remove the inner rectangle from the lines...
@@ -159,7 +159,7 @@ NTSTATUS Selection::GetSelectionRects(_Outptr_result_buffer_all_(*pcRectangles) 
                     coordTargetPoint.X = srHighlightRow.Left;
                     coordTargetPoint.Y = srHighlightRow.Top;
                     SHORT sStringLength = srHighlightRow.Right - srHighlightRow.Left + 1;
-                    s_BisectSelection(sStringLength, coordTargetPoint, pScreenInfo, &srHighlightRow);
+                    s_BisectSelection(sStringLength, coordTargetPoint, screenInfo, &srHighlightRow);
 
                     rgsrSelection[iFinal].Left = srHighlightRow.Left;
                     rgsrSelection[iFinal].Right = srHighlightRow.Right;
@@ -200,17 +200,16 @@ NTSTATUS Selection::GetSelectionRects(_Outptr_result_buffer_all_(*pcRectangles) 
 // Arguments:
 // - sStringLength - The length of the string we're attempting to clip.
 // - coordTargetPoint - The row/column position within the text buffer that we're about to try to clip.
-// - pScreenInfo - Screen information structure containing relevant text and dimension information.
+// - screenInfo - Screen information structure containing relevant text and dimension information.
 // - pSmallRect - The region of the text that we want to clip, and then adjusted to the region that should be clipped without splicing double-width characters.
 // Return Value:
 //  <none>
 void Selection::s_BisectSelection(const short sStringLength,
                                   const COORD coordTargetPoint,
-                                  const SCREEN_INFORMATION* const pScreenInfo,
+                                  const SCREEN_INFORMATION& screenInfo,
                                   _Inout_ SMALL_RECT* const pSmallRect)
 {
-    const TEXT_BUFFER_INFO* const pTextInfo = pScreenInfo->TextInfo;
-    const ROW& Row = pTextInfo->GetRowByOffset(coordTargetPoint.Y);
+    const ROW& Row = screenInfo.GetTextBuffer().GetRowByOffset(coordTargetPoint.Y);
 
     try
     {
@@ -234,7 +233,7 @@ void Selection::s_BisectSelection(const short sStringLength,
         }
 
         // Check end position of strings
-        if (coordTargetPoint.X + sStringLength < pScreenInfo->GetScreenBufferSize().X)
+        if (coordTargetPoint.X + sStringLength < screenInfo.GetScreenBufferSize().X)
         {
             if (charRow.GetAttribute(coordTargetPoint.X + sStringLength).IsTrailing())
             {
@@ -243,7 +242,7 @@ void Selection::s_BisectSelection(const short sStringLength,
         }
         else
         {
-            const ROW& RowNext = pTextInfo->GetNextRowNoWrap(Row);
+            const ROW& RowNext = screenInfo.GetTextBuffer().GetNextRowNoWrap(Row);
             const ICharRow& iCharRowNext = RowNext.GetCharRow();
             // we only support ucs2 encoded char rows
             FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
@@ -386,11 +385,11 @@ void Selection::AdjustSelection(const COORD coordSelectionStart, const COORD coo
 // - <none>
 void Selection::ExtendSelection(_In_ COORD coordBufferPos)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION* pScreenInfo = gci.CurrentScreenBuffer;
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
 
     // ensure position is within buffer bounds. Not less than 0 and not greater than the screen buffer size.
-    pScreenInfo->ClipToScreenBuffer(&coordBufferPos);
+    screenInfo.ClipToScreenBuffer(&coordBufferPos);
 
     if (!IsAreaSelected())
     {
@@ -398,7 +397,7 @@ void Selection::ExtendSelection(_In_ COORD coordBufferPos)
         ASSERT(!IsMouseInitiatedSelection());
 
         // scroll if necessary to make cursor visible.
-        pScreenInfo->MakeCursorVisible(coordBufferPos);
+        screenInfo.MakeCursorVisible(coordBufferPos);
 
         _dwSelectionFlags |= CONSOLE_SELECTION_NOT_EMPTY;
         _srSelectionRect.Left = _srSelectionRect.Right = _coordSelectionAnchor.X;
@@ -409,7 +408,7 @@ void Selection::ExtendSelection(_In_ COORD coordBufferPos)
     else
     {
         // scroll if necessary to make cursor visible.
-        pScreenInfo->MakeCursorVisible(coordBufferPos);
+        screenInfo.MakeCursorVisible(coordBufferPos);
     }
 
     // remember previous selection rect
@@ -457,8 +456,8 @@ void Selection::ExtendSelection(_In_ COORD coordBufferPos)
 // - <none>
 void Selection::_CancelMouseSelection()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION* pScreenInfo = gci.CurrentScreenBuffer;
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& ScreenInfo = gci.GetActiveOutputBuffer();
 
     // invert old select rect.  if we're selecting by mouse, we
     // always have a selection rect.
@@ -474,7 +473,7 @@ void Selection::_CancelMouseSelection()
     }
 
     // Mark the cursor position as changed so we'll fire off a win event.
-    pScreenInfo->TextInfo->GetCursor()->SetHasMoved(true);
+    ScreenInfo.GetTextBuffer().GetCursor().SetHasMoved(true);
 }
 
 // Routine Description:
@@ -485,8 +484,8 @@ void Selection::_CancelMouseSelection()
 // - <none>
 void Selection::_CancelMarkSelection()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION* pScreenInfo = gci.CurrentScreenBuffer;
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& ScreenInfo = gci.GetActiveOutputBuffer();
 
     // Hide existing selection, if we have one.
     if (IsAreaSelected())
@@ -504,7 +503,7 @@ void Selection::_CancelMarkSelection()
     }
 
     // restore text cursor
-    _RestoreCursorData(pScreenInfo);
+    _RestoreCursorData(ScreenInfo);
 }
 
 // Routine Description:
@@ -563,12 +562,12 @@ void Selection::ClearSelection(const bool fStartingNewSelection)
 // - <none>
 void Selection::ColorSelection(_In_ SMALL_RECT* const psrRect, const ULONG ulAttr)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // TODO: psrRect should likely one day be replaced with an array of rectangles (in case we have a line selection we want colored)
     ASSERT(ulAttr <= 0xff);
 
     // Read selection rectangle, assumed already clipped to buffer.
-    SCREEN_INFORMATION* pScreenInfo = gci.CurrentScreenBuffer;
+    SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
 
     COORD coordTargetSize;
     coordTargetSize.X = CalcWindowSizeX(&_srSelectionRect);
@@ -583,7 +582,7 @@ void Selection::ColorSelection(_In_ SMALL_RECT* const psrRect, const ULONG ulAtt
     {
         DWORD cchWrite = coordTargetSize.X;
 
-        LOG_IF_FAILED(FillOutput(pScreenInfo, (USHORT)ulAttr, coordTarget, CONSOLE_ATTRIBUTE, &cchWrite));
+        LOG_IF_FAILED(FillOutput(screenInfo, (USHORT)ulAttr, coordTarget, CONSOLE_ATTRIBUTE, &cchWrite));
     }
 }
 
@@ -595,7 +594,7 @@ void Selection::ColorSelection(_In_ SMALL_RECT* const psrRect, const ULONG ulAtt
 // - <none>
 void Selection::InitializeMarkSelection()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // clear any existing selection.
     ClearSelection(true);
 
@@ -606,13 +605,14 @@ void Selection::InitializeMarkSelection()
     _dwSelectionFlags = 0;
 
     // save old cursor position and make console cursor into selection cursor.
-    SCREEN_INFORMATION* pScreenInfo = gci.CurrentScreenBuffer;
-    _SaveCursorData(pScreenInfo->TextInfo);
-    Cursor* const pCursor = pScreenInfo->TextInfo->GetCursor();
-    pScreenInfo->SetCursorInformation(100, TRUE, pCursor->GetColor(), pCursor->GetType());
+    SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
+    _SaveCursorData(screenInfo.GetTextBuffer());
 
-    const COORD coordPosition = pCursor->GetPosition();
-    LOG_IF_FAILED(pScreenInfo->SetCursorPosition(coordPosition, true));
+    const Cursor& cursor = screenInfo.GetTextBuffer().GetCursor();
+    screenInfo.SetCursorInformation(100, TRUE, cursor.GetColor(), cursor.GetType());
+
+    const COORD coordPosition = cursor.GetPosition();
+    LOG_IF_FAILED(screenInfo.SetCursorPosition(coordPosition, true));
 
     // set the cursor position as the anchor position
     // it will get updated as the cursor moves for mark mode,
@@ -658,13 +658,13 @@ void Selection::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
 // - <none>
 void Selection::SelectAll()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // save the old window position
-    SCREEN_INFORMATION* pScreenInfo = gci.CurrentScreenBuffer;
+    SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
 
     COORD coordWindowOrigin;
-    coordWindowOrigin.X = pScreenInfo->GetBufferViewport().Left;
-    coordWindowOrigin.Y = pScreenInfo->GetBufferViewport().Top;
+    coordWindowOrigin.X = screenInfo.GetBufferViewport().Left;
+    coordWindowOrigin.Y = screenInfo.GetBufferViewport().Top;
 
     // Get existing selection rectangle parameters
     const bool fOldSelectionExisted = IsAreaSelected();
@@ -696,13 +696,13 @@ void Selection::SelectAll()
             COORD coordOneAfterEnd = coordInputEnd;
             Utils::s_DoIncrementScreenCoordinate(srEdges, &coordOneAfterEnd);
 
-            if (s_IsWithinBoundaries(pScreenInfo->TextInfo->GetCursor()->GetPosition(), coordInputStart, coordInputEnd))
+            if (s_IsWithinBoundaries(screenInfo.GetTextBuffer().GetCursor().GetPosition(), coordInputStart, coordInputEnd))
             {
                 // If there was no previous selection and the cursor is within the input line, select the input line only
                 coordNewSelStart = coordInputStart;
                 coordNewSelEnd = coordInputEnd;
             }
-            else if (s_IsWithinBoundaries(pScreenInfo->TextInfo->GetCursor()->GetPosition(), coordOneAfterEnd, coordOneAfterEnd))
+            else if (s_IsWithinBoundaries(screenInfo.GetTextBuffer().GetCursor().GetPosition(), coordOneAfterEnd, coordOneAfterEnd))
             {
                 // Temporary workaround until MSFT: 614579 is completed.
                 // Select only the input line if the cursor is one after the final position of the input line.
@@ -752,11 +752,11 @@ void Selection::SelectAll()
     if (!IsLineSelection())
     {
         coordNewSelStart.X = 0;
-        coordNewSelEnd.X = pScreenInfo->GetScreenBufferSize().X - 1;
+        coordNewSelEnd.X = screenInfo.GetScreenBufferSize().X - 1;
     }
 
     SelectNewRegion(coordNewSelStart, coordNewSelEnd);
 
     // restore the old window position
-    LOG_IF_FAILED(pScreenInfo->SetViewportOrigin(TRUE, coordWindowOrigin));
+    LOG_IF_FAILED(screenInfo.SetViewportOrigin(TRUE, coordWindowOrigin));
 }

@@ -73,14 +73,14 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         HRESULT UpdateDrawingBrushes(COLORREF const colorForeground, COLORREF const colorBackground, const WORD legacyColorAttribute, bool const fIncludeBackgrounds);
         [[nodiscard]]
-        HRESULT UpdateFont(FontInfoDesired const* const pfiFontInfoDesired, FontInfo* const pfiFontInfo);
+        HRESULT UpdateFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo);
         [[nodiscard]]
         HRESULT UpdateDpi(int const iDpi);
         [[nodiscard]]
         HRESULT UpdateViewport(const SMALL_RECT srNewViewport);
 
         [[nodiscard]]
-        HRESULT GetProposedFont(FontInfoDesired const* const pfiFontInfoDesired, FontInfo* const pfiFontInfo, int const iDpi);
+        HRESULT GetProposedFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo, int const iDpi);
 
         SMALL_RECT GetDirtyRectInChars();
         [[nodiscard]]

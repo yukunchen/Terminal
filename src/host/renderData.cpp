@@ -27,25 +27,25 @@ RenderData::~RenderData()
 const SMALL_RECT RenderData::GetViewport()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.CurrentScreenBuffer->GetBufferViewport();
+    return gci.GetActiveOutputBuffer().GetBufferViewport();
 }
 
-const TEXT_BUFFER_INFO* RenderData::GetTextBuffer()
+const TextBuffer& RenderData::GetTextBuffer()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.CurrentScreenBuffer->TextInfo;
+    return gci.GetActiveOutputBuffer().GetTextBuffer();
 }
 
 const FontInfo* RenderData::GetFontInfo()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.CurrentScreenBuffer->TextInfo->GetCurrentFont();
+    return &gci.GetActiveOutputBuffer().GetTextBuffer().GetCurrentFont();
 }
 
 const TextAttribute RenderData::GetDefaultBrushColors()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.CurrentScreenBuffer->GetAttributes();
+    return gci.GetActiveOutputBuffer().GetAttributes();
 }
 
 const void RenderData::GetColorTable(_Outptr_result_buffer_all_(*pcColors) COLORREF** const ppColorTable, _Out_ size_t* const pcColors)
@@ -55,10 +55,10 @@ const void RenderData::GetColorTable(_Outptr_result_buffer_all_(*pcColors) COLOR
     *pcColors = gci.GetColorTableSize();
 }
 
-const Cursor* RenderData::GetCursor()
+const Cursor& RenderData::GetCursor()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.CurrentScreenBuffer->TextInfo->GetCursor();
+    return gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
 }
 
 const ConsoleImeInfo* RenderData::GetImeData()
@@ -67,17 +67,11 @@ const ConsoleImeInfo* RenderData::GetImeData()
     return &gci.ConsoleIme;
 }
 
-const TEXT_BUFFER_INFO* RenderData::GetImeCompositionStringBuffer(_In_ size_t iIndex)
+const TextBuffer& RenderData::GetImeCompositionStringBuffer(_In_ size_t iIndex)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    if (iIndex < gci.ConsoleIme.ConvAreaCompStr.size())
-    {
-        return gci.ConsoleIme.ConvAreaCompStr[iIndex]->ScreenBuffer->TextInfo;
-    }
-    else
-    {
-        return nullptr;
-    }
+    THROW_HR_IF(E_INVALIDARG, iIndex >= gci.ConsoleIme.ConvAreaCompStr.size());
+    return gci.ConsoleIme.ConvAreaCompStr[iIndex]->ScreenBuffer->GetTextBuffer();
 }
 
 [[nodiscard]]
@@ -91,7 +85,7 @@ const bool RenderData::IsGridLineDrawingAllowed()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // If virtual terminal output is set, grid line drawing is a must. It is always allowed.
-    if (IsFlagSet(gci.CurrentScreenBuffer->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
+    if (IsFlagSet(gci.GetActiveOutputBuffer().OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
     {
         return true;
     }

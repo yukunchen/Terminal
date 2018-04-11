@@ -164,14 +164,14 @@ void Window::_UpdateSystemMetrics() const
 {
     WindowDpiApi* const dpiApi = ServiceLocator::LocateHighDpiApi<WindowDpiApi>();
     Globals& g = ServiceLocator::LocateGlobals();
-    const CONSOLE_INFORMATION& gci = g.getConsoleInformation();
+    CONSOLE_INFORMATION& gci = g.getConsoleInformation();
 
     Scrolling::s_UpdateSystemMetrics();
 
     g.sVerticalScrollSize = (SHORT)dpiApi->GetSystemMetricsForDpi(SM_CXVSCROLL, g.dpi);
     g.sHorizontalScrollSize = (SHORT)dpiApi->GetSystemMetricsForDpi(SM_CYHSCROLL, g.dpi);
 
-    gci.CurrentScreenBuffer->TextInfo->GetCursor()->UpdateSystemMetrics();
+    gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor().UpdateSystemMetrics();
 }
 
 // Routine Description:
@@ -221,9 +221,9 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
     {
         if (NT_SUCCESS(status))
         {
-            SCREEN_INFORMATION* const psiAttached = GetScreenInfo();
+            SCREEN_INFORMATION& siAttached = GetScreenInfo();
 
-            psiAttached->RefreshFontWithRenderer();
+            siAttached.RefreshFontWithRenderer();
 
             // Save reference to settings
             _pSettings = pSettings;
@@ -324,7 +324,7 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
                         // Post a window size update so that the new console window will size itself correctly once it's up and
                         // running. This works around chicken & egg cases involving window size calculations having to do with font
                         // sizes, DPI, and non-primary monitors (see MSFT #2367234).
-                        psiAttached->PostUpdateWindowSize();
+                        siAttached.PostUpdateWindowSize();
                     }
                 }
             }
@@ -379,8 +379,8 @@ NTSTATUS Window::ActivateAndShow(const WORD wShowWindow)
     {
         ShowWindow(hWnd, wShowWindow);
 
-        SCREEN_INFORMATION* const psiAttached = GetScreenInfo();
-        psiAttached->InternalUpdateScrollBars();
+        SCREEN_INFORMATION& siAttached = GetScreenInfo();
+        siAttached.InternalUpdateScrollBars();
     }
 
     return status;
@@ -397,9 +397,9 @@ NTSTATUS Window::ActivateAndShow(const WORD wShowWindow)
 NTSTATUS Window::SetViewportOrigin(_In_ SMALL_RECT NewWindow)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION* const ScreenInfo = GetScreenInfo();
+    SCREEN_INFORMATION& ScreenInfo = GetScreenInfo();
 
-    COORD const FontSize = ScreenInfo->GetScreenFontSize();
+    COORD const FontSize = ScreenInfo.GetScreenFontSize();
 
     if (IsFlagClear(gci.Flags, CONSOLE_IS_ICONIC))
     {
@@ -410,13 +410,13 @@ NTSTATUS Window::SetViewportOrigin(_In_ SMALL_RECT NewWindow)
         IAccessibilityNotifier *pNotifier = ServiceLocator::LocateAccessibilityNotifier();
         if (pNotifier != nullptr)
         {
-            pNotifier->NotifyConsoleUpdateScrollEvent(ScreenInfo->GetBufferViewport().Left - NewWindow.Left,
-                                                      ScreenInfo->GetBufferViewport().Top - NewWindow.Top);
+            pNotifier->NotifyConsoleUpdateScrollEvent(ScreenInfo.GetBufferViewport().Left - NewWindow.Left,
+                                                      ScreenInfo.GetBufferViewport().Top - NewWindow.Top);
         }
 
         // The new window is OK. Store it in screeninfo and refresh screen.
-        ScreenInfo->SetBufferViewport(Viewport::FromInclusive(NewWindow));
-        Tracing::s_TraceWindowViewport(ScreenInfo->GetBufferViewport());
+        ScreenInfo.SetBufferViewport(Viewport::FromInclusive(NewWindow));
+        Tracing::s_TraceWindowViewport(ScreenInfo.GetBufferViewport());
 
         if (ServiceLocator::LocateGlobals().pRender != nullptr)
         {
@@ -428,13 +428,13 @@ NTSTATUS Window::SetViewportOrigin(_In_ SMALL_RECT NewWindow)
     else
     {
         // we're iconic
-        ScreenInfo->SetBufferViewport(Viewport::FromInclusive(NewWindow));
-        Tracing::s_TraceWindowViewport(ScreenInfo->GetBufferViewport());
+        ScreenInfo.SetBufferViewport(Viewport::FromInclusive(NewWindow));
+        Tracing::s_TraceWindowViewport(ScreenInfo.GetBufferViewport());
     }
 
     LOG_IF_FAILED(ConsoleImeResizeCompStrView());
 
-    ScreenInfo->UpdateScrollBars();
+    ScreenInfo.UpdateScrollBars();
     return STATUS_SUCCESS;
 }
 
@@ -444,9 +444,9 @@ NTSTATUS Window::SetViewportOrigin(_In_ SMALL_RECT NewWindow)
 // - Size of the window in characters (relative to the current font)
 // Return Value:
 // - <none>
-void Window::UpdateWindowSize(const COORD coordSizeInChars) const
+void Window::UpdateWindowSize(const COORD coordSizeInChars)
 {
-    GetScreenInfo()->SetViewportSize(&coordSizeInChars);
+    GetScreenInfo().SetViewportSize(&coordSizeInChars);
 
     PostUpdateWindowSize();
 }
@@ -529,14 +529,14 @@ BOOL Window::ReleaseMouse()
 // - sizeNew - The X and Y dimensions
 // Return Value:
 // - <none>
-void Window::_UpdateWindowSize(const SIZE sizeNew) const
+void Window::_UpdateWindowSize(const SIZE sizeNew)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION* const ScreenInfo = GetScreenInfo();
+    SCREEN_INFORMATION& ScreenInfo = GetScreenInfo();
 
     if (IsFlagClear(gci.Flags, CONSOLE_IS_ICONIC))
     {
-        ScreenInfo->InternalUpdateScrollBars();
+        ScreenInfo.InternalUpdateScrollBars();
 
         SetWindowPos(GetWindowHandle(),
             nullptr,
@@ -557,24 +557,24 @@ void Window::_UpdateWindowSize(const SIZE sizeNew) const
 // Return Value:
 // - STATUS_SUCCESS or suitable error code
 [[nodiscard]]
-NTSTATUS Window::_InternalSetWindowSize() const
+NTSTATUS Window::_InternalSetWindowSize()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION* const psiAttached = GetScreenInfo();
+    SCREEN_INFORMATION& siAttached = GetScreenInfo();
 
     ClearFlag(gci.Flags, CONSOLE_SETTING_WINDOW_SIZE);
     if (!IsInFullscreen())
     {
         // Figure out how big to make the window, given the desired client area size.
-        psiAttached->ResizingWindow++;
+        siAttached.ResizingWindow++;
 
         // First get the buffer viewport size
         WORD WindowSizeX, WindowSizeY;
-        WindowSizeX = psiAttached->GetScreenWindowSizeX();
-        WindowSizeY = psiAttached->GetScreenWindowSizeY();
+        WindowSizeX = siAttached.GetScreenWindowSizeX();
+        WindowSizeY = siAttached.GetScreenWindowSizeY();
 
         // We'll use the font to convert characters to pixels
-        COORD ScreenFontSize = psiAttached->GetScreenFontSize();
+        COORD ScreenFontSize = siAttached.GetScreenFontSize();
 
         // Now do the multiplication of characters times pixels per char. This is the client area pixel size.
         SIZE WindowSize;
@@ -597,11 +597,11 @@ NTSTATUS Window::_InternalSetWindowSize() const
             // We want the alt to have scroll bars if the main has scroll bars.
             // The bars are disabled, but they're still there.
             // This keeps the window, viewport, and SB size from changing when swapping.
-            if (!psiAttached->GetMainBuffer()->IsMaximizedX())
+            if (!siAttached.GetMainBuffer().IsMaximizedX())
             {
                 WindowSize.cy += ServiceLocator::LocateGlobals().sHorizontalScrollSize;
             }
-            if (!psiAttached->GetMainBuffer()->IsMaximizedY())
+            if (!siAttached.GetMainBuffer().IsMaximizedY())
             {
                 WindowSize.cx += ServiceLocator::LocateGlobals().sVerticalScrollSize;
             }
@@ -637,7 +637,7 @@ NTSTATUS Window::_InternalSetWindowSize() const
             // If the change wasn't substantial, we may still need to update scrollbar positions. Note that PSReadLine
             // scrolls the window via Console.SetWindowPosition, which ultimately calls down to SetConsoleWindowInfo,
             // which ends up in this function.
-            psiAttached->InternalUpdateScrollBars();
+            siAttached.InternalUpdateScrollBars();
         }
 
         // MSFT: 12092729
@@ -660,9 +660,9 @@ NTSTATUS Window::_InternalSetWindowSize() const
         //   and can pass that information into the WSL environment.
         // - To Windows apps that weren't expecting this information, it should cause no harm because they should just receive
         //   an additional Buffer message with the same size again and do nothing special.
-        ScreenBufferSizeChange(psiAttached->GetActiveBuffer()->GetScreenBufferSize());
+        ScreenBufferSizeChange(siAttached.GetActiveBuffer().GetScreenBufferSize());
 
-        psiAttached->ResizingWindow--;
+        siAttached.ResizingWindow--;
     }
 
     LOG_IF_FAILED(ConsoleImeResizeCompStrView());
@@ -677,19 +677,19 @@ NTSTATUS Window::_InternalSetWindowSize() const
 // - AbsoluteChange - The magnitude of the change (for tracking commands)
 // Return Value:
 // - <none>
-void Window::VerticalScroll(const WORD wScrollCommand, const WORD wAbsoluteChange) const
+void Window::VerticalScroll(const WORD wScrollCommand, const WORD wAbsoluteChange)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     COORD NewOrigin;
-    SCREEN_INFORMATION* const ScreenInfo = GetScreenInfo();
+    SCREEN_INFORMATION& ScreenInfo = GetScreenInfo();
 
     // Log a telemetry event saying the user interacted with the Console
     Telemetry::Instance().SetUserInteractive();
 
-    NewOrigin.X = ScreenInfo->GetBufferViewport().Left;
-    NewOrigin.Y = ScreenInfo->GetBufferViewport().Top;
+    NewOrigin.X = ScreenInfo.GetBufferViewport().Left;
+    NewOrigin.Y = ScreenInfo.GetBufferViewport().Top;
 
-    const SHORT sScreenBufferSizeY = ScreenInfo->GetScreenBufferSize().Y;
+    const SHORT sScreenBufferSizeY = ScreenInfo.GetScreenBufferSize().Y;
 
     switch (wScrollCommand)
     {
@@ -707,13 +707,13 @@ void Window::VerticalScroll(const WORD wScrollCommand, const WORD wAbsoluteChang
 
     case SB_PAGEUP:
     {
-        NewOrigin.Y -= ScreenInfo->GetScreenWindowSizeY() - 1;
+        NewOrigin.Y -= ScreenInfo.GetScreenWindowSizeY() - 1;
         break;
     }
 
     case SB_PAGEDOWN:
     {
-        NewOrigin.Y += ScreenInfo->GetScreenWindowSizeY() - 1;
+        NewOrigin.Y += ScreenInfo.GetScreenWindowSizeY() - 1;
         break;
     }
 
@@ -739,7 +739,7 @@ void Window::VerticalScroll(const WORD wScrollCommand, const WORD wAbsoluteChang
 
     case SB_BOTTOM:
     {
-        NewOrigin.Y = sScreenBufferSizeY - ScreenInfo->GetScreenWindowSizeY();
+        NewOrigin.Y = sScreenBufferSizeY - ScreenInfo.GetScreenWindowSizeY();
         break;
     }
 
@@ -749,8 +749,8 @@ void Window::VerticalScroll(const WORD wScrollCommand, const WORD wAbsoluteChang
     }
     }
 
-    NewOrigin.Y = std::clamp(NewOrigin.Y, 0i16, gsl::narrow<SHORT>(sScreenBufferSizeY - ScreenInfo->GetScreenWindowSizeY()));
-    LOG_IF_FAILED(ScreenInfo->SetViewportOrigin(TRUE, NewOrigin));
+    NewOrigin.Y = std::clamp(NewOrigin.Y, 0i16, gsl::narrow<SHORT>(sScreenBufferSizeY - ScreenInfo.GetScreenWindowSizeY()));
+    LOG_IF_FAILED(ScreenInfo.SetViewportOrigin(TRUE, NewOrigin));
 }
 
 // Routine Description:
@@ -760,19 +760,19 @@ void Window::VerticalScroll(const WORD wScrollCommand, const WORD wAbsoluteChang
 // - AbsoluteChange - The magnitude of the change (for tracking commands)
 // Return Value:
 // - <none>
-void Window::HorizontalScroll(const WORD wScrollCommand, const WORD wAbsoluteChange) const
+void Window::HorizontalScroll(const WORD wScrollCommand, const WORD wAbsoluteChange)
 {
     COORD NewOrigin;
 
     // Log a telemetry event saying the user interacted with the Console
     Telemetry::Instance().SetUserInteractive();
 
-    SCREEN_INFORMATION* const ScreenInfo = GetScreenInfo();
+    SCREEN_INFORMATION& ScreenInfo = GetScreenInfo();
 
-    const SHORT sScreenBufferSizeX = ScreenInfo->GetScreenBufferSize().X;
+    const SHORT sScreenBufferSizeX = ScreenInfo.GetScreenBufferSize().X;
 
-    NewOrigin.X = ScreenInfo->GetBufferViewport().Left;
-    NewOrigin.Y = ScreenInfo->GetBufferViewport().Top;
+    NewOrigin.X = ScreenInfo.GetBufferViewport().Left;
+    NewOrigin.Y = ScreenInfo.GetBufferViewport().Top;
     switch (wScrollCommand)
     {
     case SB_LINEUP:
@@ -789,13 +789,13 @@ void Window::HorizontalScroll(const WORD wScrollCommand, const WORD wAbsoluteCha
 
     case SB_PAGEUP:
     {
-        NewOrigin.X -= ScreenInfo->GetScreenWindowSizeX() - 1;
+        NewOrigin.X -= ScreenInfo.GetScreenWindowSizeX() - 1;
         break;
     }
 
     case SB_PAGEDOWN:
     {
-        NewOrigin.X += ScreenInfo->GetScreenWindowSizeX() - 1;
+        NewOrigin.X += ScreenInfo.GetScreenWindowSizeX() - 1;
         break;
     }
 
@@ -814,7 +814,7 @@ void Window::HorizontalScroll(const WORD wScrollCommand, const WORD wAbsoluteCha
 
     case SB_BOTTOM:
     {
-        NewOrigin.X = (WORD)(sScreenBufferSizeX - ScreenInfo->GetScreenWindowSizeX());
+        NewOrigin.X = (WORD)(sScreenBufferSizeX - ScreenInfo.GetScreenWindowSizeX());
         break;
     }
 
@@ -823,8 +823,8 @@ void Window::HorizontalScroll(const WORD wScrollCommand, const WORD wAbsoluteCha
         return;
     }
     }
-    NewOrigin.X = std::clamp(NewOrigin.X, 0i16, gsl::narrow<SHORT>(sScreenBufferSizeX - ScreenInfo->GetScreenWindowSizeX()));
-    LOG_IF_FAILED(ScreenInfo->SetViewportOrigin(TRUE, NewOrigin));
+    NewOrigin.X = std::clamp(NewOrigin.X, 0i16, gsl::narrow<SHORT>(sScreenBufferSizeX - ScreenInfo.GetScreenWindowSizeX()));
+    LOG_IF_FAILED(ScreenInfo.SetViewportOrigin(TRUE, NewOrigin));
 }
 
 BOOL Window::EnableBothScrollBars()
@@ -869,11 +869,11 @@ void Window::s_ConvertWindowPosToWindowRect(const LPWINDOWPOS lpWindowPos, _Out_
 // - <none>
 void Window::_CalculateWindowRect(const COORD coordWindowInChars, _Inout_ RECT* const prectWindow) const
 {
-    SCREEN_INFORMATION* const psiAttached = GetScreenInfo();
-    COORD const coordFontSize = psiAttached->GetScreenFontSize();
-    HWND const hWnd = GetWindowHandle();
-    COORD const coordBufferSize = psiAttached->GetScreenBufferSize();
-    int const iDpi = ServiceLocator::LocateGlobals().dpi;
+    const SCREEN_INFORMATION& siAttached = GetScreenInfo();
+    const COORD coordFontSize = siAttached.GetScreenFontSize();
+    const HWND hWnd = GetWindowHandle();
+    const COORD coordBufferSize = siAttached.GetScreenBufferSize();
+    const int iDpi = ServiceLocator::LocateGlobals().dpi;
 
     s_CalculateWindowRect(coordWindowInChars, iDpi, coordFontSize, coordBufferSize, hWnd, prectWindow);
 }
@@ -954,10 +954,16 @@ HWND Window::GetWindowHandle() const
     return _hWnd;
 }
 
-SCREEN_INFORMATION* Window::GetScreenInfo() const
+SCREEN_INFORMATION& Window::GetScreenInfo()
+{
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.GetActiveOutputBuffer();
+}
+
+const SCREEN_INFORMATION& Window::GetScreenInfo() const
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.CurrentScreenBuffer;
+    return gci.GetActiveOutputBuffer();
 }
 
 // Routine Description:
@@ -1112,7 +1118,7 @@ void Window::_BackupWindowSizes(const bool fCurrentIsInFullscreen)
     }
 }
 
-void Window::_ApplyWindowSize() const
+void Window::_ApplyWindowSize()
 {
     const RECT rcNewSize = _fIsInFullscreen ? _rcFullscreenWindowSize : _rcNonFullscreenWindowSize;
 
@@ -1124,8 +1130,8 @@ void Window::_ApplyWindowSize() const
         RECT_HEIGHT(&rcNewSize),
         SWP_FRAMECHANGED);
 
-    SCREEN_INFORMATION* const psiAttached = GetScreenInfo();
-    psiAttached->MakeCurrentCursorVisible();
+    SCREEN_INFORMATION& siAttached = GetScreenInfo();
+    siAttached.MakeCurrentCursorVisible();
 }
 
 void Window::ToggleFullscreen()
@@ -1135,8 +1141,8 @@ void Window::ToggleFullscreen()
 
 void Window::s_ReinitializeFontsForDPIChange()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.CurrentScreenBuffer->RefreshFontWithRenderer();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.GetActiveOutputBuffer().RefreshFontWithRenderer();
 }
 
 LRESULT Window::s_RegPersistWindowPos(_In_ PCWSTR const pwszTitle,
@@ -1152,8 +1158,8 @@ LRESULT Window::s_RegPersistWindowPos(_In_ PCWSTR const pwszTitle,
     {
         // Save window size
         auto windowRect = pWindow->GetWindowRect();
-        auto windowWidth = gci.CurrentScreenBuffer->GetScreenWindowSizeX();
-        auto windowHeight = gci.CurrentScreenBuffer->GetScreenWindowSizeY();
+        auto windowWidth = gci.GetActiveOutputBuffer().GetScreenWindowSizeX();
+        auto windowHeight = gci.GetActiveOutputBuffer().GetScreenWindowSizeY();
         DWORD dwValue = MAKELONG(windowWidth, windowHeight);
         Status = RegistrySerialization::s_UpdateValue(hConsoleKey,
                                                       hTitleKey,
@@ -1163,7 +1169,7 @@ LRESULT Window::s_RegPersistWindowPos(_In_ PCWSTR const pwszTitle,
                                                       static_cast<DWORD>(sizeof(dwValue)));
         if (NT_SUCCESS(Status))
         {
-            const COORD coordScreenBufferSize = gci.CurrentScreenBuffer->GetScreenBufferSize();
+            const COORD coordScreenBufferSize = gci.GetActiveOutputBuffer().GetScreenBufferSize();
             auto screenBufferWidth = coordScreenBufferSize.X;
             auto screenBufferHeight = coordScreenBufferSize.Y;
             dwValue =  MAKELONG(screenBufferWidth, screenBufferHeight);

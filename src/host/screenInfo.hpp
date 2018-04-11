@@ -44,7 +44,7 @@ class SCREEN_INFORMATION
 public:
     [[nodiscard]]
     static NTSTATUS CreateInstance(_In_ COORD coordWindowSize,
-                                   const FontInfo* const pfiFont,
+                                   const FontInfo fontInfo,
                                    _In_ COORD coordScreenBufferSize,
                                    const CHAR_INFO ciFill,
                                    const CHAR_INFO ciPopupFill,
@@ -128,6 +128,9 @@ public:
 
     std::pair<COORD, COORD> GetWordBoundary(const COORD position) const;
 
+    TextBuffer& GetTextBuffer();
+    const TextBuffer& GetTextBuffer() const;
+
 
 
 
@@ -136,7 +139,9 @@ public:
 
     short WheelDelta;
     short HWheelDelta;
-    TEXT_BUFFER_INFO *TextInfo;
+private:
+    std::unique_ptr<TextBuffer> _textBuffer;
+public:
     SCREEN_INFORMATION *Next;
     BYTE WriteConsoleDbcsLeadByte[2];
     BYTE FillOutDbcsLeadChar;
@@ -180,8 +185,12 @@ public:
     [[nodiscard]]
     NTSTATUS UseAlternateScreenBuffer();
     void UseMainScreenBuffer();
-    SCREEN_INFORMATION* const GetActiveBuffer();
-    SCREEN_INFORMATION* const GetMainBuffer();
+
+    SCREEN_INFORMATION& GetMainBuffer();
+    const SCREEN_INFORMATION& GetMainBuffer() const;
+
+    SCREEN_INFORMATION& GetActiveBuffer();
+    const SCREEN_INFORMATION& GetActiveBuffer() const;
 
     typedef struct _TabStop
     {
@@ -284,6 +293,3 @@ private:
     friend class ScreenBufferTests;
 #endif
 };
-
-typedef SCREEN_INFORMATION *PSCREEN_INFORMATION;
-typedef PSCREEN_INFORMATION *PPSCREEN_INFORMATION;

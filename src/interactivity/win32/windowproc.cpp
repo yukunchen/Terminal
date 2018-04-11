@@ -72,8 +72,8 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
     LockConsole();
 
-    SCREEN_INFORMATION* const ScreenInfo = GetScreenInfo();
-    if (hWnd == nullptr || ScreenInfo == nullptr) // TODO: this might not be possible anymore
+    SCREEN_INFORMATION& ScreenInfo = GetScreenInfo();
+    if (hWnd == nullptr) // TODO: this might not be possible anymore
     {
         if (Message == WM_CLOSE)
         {
@@ -185,28 +185,28 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         DWORD const dpiCurrent = g.dpi;
 
         // Now we need to get what the font size *would be* if we had this new DPI. We need to ask the renderer about that.
-        FontInfo* pfiCurrent = ScreenInfo->TextInfo->GetCurrentFont();
-        FontInfoDesired fiDesired(*pfiCurrent);
+        const FontInfo& fiCurrent = ScreenInfo.GetTextBuffer().GetCurrentFont();
+        FontInfoDesired fiDesired(fiCurrent);
         FontInfo fiProposed(nullptr, 0, 0, { 0, 0 }, 0);
 
-        const HRESULT hr = g.pRender->GetProposedFont(dpiProposed, &fiDesired, &fiProposed);
+        const HRESULT hr = g.pRender->GetProposedFont(dpiProposed, fiDesired, fiProposed);
         // fiProposal will be updated by the renderer for this new font.
         // GetProposedFont can fail if there's no render engine yet.
         // This can happen if we're headless.
         // Just assume that the font is 1x1 in that case.
-        COORD coordFontProposed = SUCCEEDED(hr) ? fiProposed.GetSize() : COORD({1, 1});
+        const COORD coordFontProposed = SUCCEEDED(hr) ? fiProposed.GetSize() : COORD({1, 1});
 
         // Then from that font size, we need to calculate the client area.
         // Then from the client area we need to calculate the window area (using the proposed DPI scalar here as well.)
 
         // Retrieve the additional parameters we need for the math call based on the current window & buffer properties.
 
-        SMALL_RECT srViewport = ScreenInfo->GetBufferViewport();
+        const SMALL_RECT srViewport = ScreenInfo.GetBufferViewport();
         COORD coordWindowInChars;
         coordWindowInChars.X = srViewport.Right - srViewport.Left + 1;
         coordWindowInChars.Y = srViewport.Bottom - srViewport.Top + 1;
 
-        COORD coordBufferSize = ScreenInfo->TextInfo->GetCoordBufferSize();
+        const COORD coordBufferSize = ScreenInfo.GetTextBuffer().GetCoordBufferSize();
 
         // Now call the math calculation for our proposed size.
         RECT rectProposed = { 0 };
@@ -266,7 +266,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
         gci.Flags |= CONSOLE_HAS_FOCUS;
 
-        gci.CurrentScreenBuffer->TextInfo->GetCursor()->FocusStart();
+        gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor().FocusStart();
 
         HandleFocusEvent(TRUE);
 
@@ -289,8 +289,8 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         gci.Flags &= ~CONSOLE_HAS_FOCUS;
 
         // turn it off when we lose focus.
-        gci.CurrentScreenBuffer->TextInfo->GetCursor()->SetIsOn(false);
-        gci.CurrentScreenBuffer->TextInfo->GetCursor()->FocusEnd();
+        gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor().SetIsOn(false);
+        gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor().FocusEnd();
 
         HandleFocusEvent(FALSE);
 
@@ -341,7 +341,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
     case WM_SETTINGCHANGE:
     {
-        gci.CurrentScreenBuffer->TextInfo->GetCursor()->SettingsChanged();
+        gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor().SettingsChanged();
     }
     __fallthrough;
 
@@ -688,7 +688,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
     case CM_UPDATE_SCROLL_BARS:
     {
-        ScreenInfo->InternalUpdateScrollBars();
+        ScreenInfo.InternalUpdateScrollBars();
         break;
     }
 
@@ -788,7 +788,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 void Window::_HandleWindowPosChanged(const LPARAM lParam)
 {
     HWND hWnd = GetWindowHandle();
-    SCREEN_INFORMATION* const pScreenInfo = GetScreenInfo();
+    SCREEN_INFORMATION& ScreenInfo = GetScreenInfo();
 
     LPWINDOWPOS const lpWindowPos = (LPWINDOWPOS)lParam;
     _fHasMoved = true;
@@ -803,7 +803,7 @@ void Window::_HandleWindowPosChanged(const LPARAM lParam)
     // CONSOLE_IS_ICONIC bit appropriately. doing so in the WM_SIZE handler is incorrect because the WM_SIZE
     // comes after the WM_ERASEBKGND during SetWindowPos() processing, and the WM_ERASEBKGND needs to know if
     // the console window is iconic or not.
-    if (!pScreenInfo->ResizingWindow && (lpWindowPos->cx || lpWindowPos->cy) && !IsIconic(hWnd))
+    if (!ScreenInfo.ResizingWindow && (lpWindowPos->cx || lpWindowPos->cy) && !IsIconic(hWnd))
     {
         // calculate the dimensions for the newly proposed window rectangle
         RECT rcNew;
@@ -814,7 +814,7 @@ void Window::_HandleWindowPosChanged(const LPARAM lParam)
         // don't do anything except update our windowrect
         if (!IsFlagSet(lpWindowPos->flags, SWP_NOSIZE) || _fInDPIChange)
         {
-            pScreenInfo->ProcessResizeWindow(&rcNew, &_rcClientLast);
+            ScreenInfo.ProcessResizeWindow(&rcNew, &_rcClientLast);
         }
 
         // now that operations are complete, save the new rectangle size as the last seen value
@@ -925,9 +925,9 @@ LRESULT Window::_HandleGetObject(const HWND hwnd, const WPARAM wParam, const LPA
 BOOL Window::PostUpdateWindowSize() const
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION* const ScreenInfo = GetScreenInfo();
+    const SCREEN_INFORMATION& ScreenInfo = GetScreenInfo();
 
-    if (ScreenInfo->ConvScreenInfo != nullptr)
+    if (ScreenInfo.ConvScreenInfo != nullptr)
     {
         return FALSE;
     }
@@ -938,7 +938,7 @@ BOOL Window::PostUpdateWindowSize() const
     }
 
     gci.Flags |= CONSOLE_SETTING_WINDOW_SIZE;
-    return PostMessageW(GetWindowHandle(), CM_SET_WINDOW_SIZE, (WPARAM)ScreenInfo, 0);
+    return PostMessageW(GetWindowHandle(), CM_SET_WINDOW_SIZE, (WPARAM)&ScreenInfo, 0);
 }
 
 BOOL Window::SendNotifyBeep() const
@@ -948,7 +948,7 @@ BOOL Window::SendNotifyBeep() const
 
 BOOL Window::PostUpdateScrollBars() const
 {
-    return PostMessageW(GetWindowHandle(), CM_UPDATE_SCROLL_BARS, (WPARAM)GetScreenInfo(), 0);
+    return PostMessageW(GetWindowHandle(), CM_UPDATE_SCROLL_BARS, (WPARAM)&GetScreenInfo(), 0);
 }
 
 BOOL Window::PostUpdateExtendedEditKeys() const

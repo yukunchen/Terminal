@@ -45,8 +45,8 @@ void UnlockConsole()
 // Return Value:
 // - STATUS_SUCCESS if successful.
 [[nodiscard]]
-NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle,
-                         const DWORD cbTitle)
+NTSTATUS CONSOLE_INFORMATION::AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle,
+                                              const DWORD cbTitle)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // Synchronize flags
@@ -92,9 +92,9 @@ NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle
         goto ErrorExit2;
     }
 
-    gci.CurrentScreenBuffer = gci.ScreenBuffers;
+    gci.pCurrentScreenBuffer = gci.ScreenBuffers;
 
-    gci.CurrentScreenBuffer->ScrollScale = gci.GetScrollScale();
+    gci.GetActiveOutputBuffer().ScrollScale = gci.GetScrollScale();
 
     gci.ConsoleIme.RefreshAreaAttributes();
 

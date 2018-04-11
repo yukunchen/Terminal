@@ -39,7 +39,7 @@ public:
                        const COORD windowSize,
                        const CHAR_INFO fill,
                        const CHAR_INFO popupFill,
-                       const FontInfo* const pFontInfo);
+                       const FontInfo fontInfo);
     ~ConversionAreaInfo();
 
     bool IsHidden() const;

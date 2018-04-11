@@ -39,10 +39,10 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     _pAdapter(nullptr),
     _pStateMachine(nullptr),
     _viewport({0}),
-    _ptsTabs(nullptr)
+    _ptsTabs(nullptr),
+    _textBuffer{ nullptr }
 {
     WriteConsoleDbcsLeadByte[0] = 0;
-    TextInfo = nullptr;
     _srScrollMargins = {0};
     _Attributes = TextAttribute(ciFill.Attributes);
     _PopupAttributes = TextAttribute(ciPopupFill.Attributes);
@@ -62,7 +62,6 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
 // - console handle table lock must be held when calling this routine
 SCREEN_INFORMATION::~SCREEN_INFORMATION()
 {
-    delete TextInfo;
     _FreeOutputStateMachine();
     ClearTabStops();
 }
@@ -77,12 +76,12 @@ SCREEN_INFORMATION::~SCREEN_INFORMATION()
 // Return Value:
 [[nodiscard]]
 NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
-                                            const FontInfo* const pfiFont,
+                                            const FontInfo fontInfo,
                                             _In_ COORD coordScreenBufferSize,
                                             const CHAR_INFO ciFill,
                                             const CHAR_INFO ciPopupFill,
                                             const UINT uiCursorSize,
-                                            _Outptr_ PPSCREEN_INFORMATION const ppScreen)
+                                            _Outptr_ SCREEN_INFORMATION** const ppScreen)
 {
     *ppScreen = nullptr;
 
@@ -107,17 +106,16 @@ NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
 
         try
         {
-            std::unique_ptr<TEXT_BUFFER_INFO> textBuffer = std::make_unique<TEXT_BUFFER_INFO>(pfiFont,
-                                                                                              pScreen->GetScreenBufferSize(),
-                                                                                              ciFill,
-                                                                                              uiCursorSize);
-            if (textBuffer.get() == nullptr)
+            pScreen->_textBuffer = std::make_unique<TextBuffer>(fontInfo,
+                                                                pScreen->GetScreenBufferSize(),
+                                                                ciFill,
+                                                                uiCursorSize);
+            if (pScreen->_textBuffer.get() == nullptr)
             {
                 status = STATUS_NO_MEMORY;
             }
             else
             {
-                pScreen->TextInfo = textBuffer.release();
                 status = STATUS_SUCCESS;
             }
         }
@@ -128,7 +126,7 @@ NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
 
         if (NT_SUCCESS(status))
         {
-            SetLineChar(pScreen);
+            SetLineChar(*pScreen);
 
             status = pScreen->_InitializeOutputStateMachine();
 
@@ -232,16 +230,16 @@ void SCREEN_INFORMATION::s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pSc
         Prev->Next = Cur->Next;
     }
 
-    if (pScreenInfo == gci.CurrentScreenBuffer &&
-        gci.ScreenBuffers != gci.CurrentScreenBuffer)
+    if (pScreenInfo == gci.pCurrentScreenBuffer &&
+        gci.ScreenBuffers != gci.pCurrentScreenBuffer)
     {
         if (gci.ScreenBuffers != nullptr)
         {
-            SetActiveScreenBuffer(gci.ScreenBuffers);
+            SetActiveScreenBuffer(*gci.ScreenBuffers);
         }
         else
         {
-            gci.CurrentScreenBuffer = nullptr;
+            gci.pCurrentScreenBuffer = nullptr;
         }
     }
 
@@ -260,13 +258,13 @@ NTSTATUS SCREEN_INFORMATION::_InitializeOutputStateMachine()
     NTSTATUS status = STATUS_NO_MEMORY;
     try
     {
-        _pConApi = new ConhostInternalGetSet(&gci);
+        _pConApi = new ConhostInternalGetSet(gci);
         status = NT_TESTNULL(_pConApi);
 
         if (NT_SUCCESS(status))
         {
             ASSERT(_pBufferWriter == nullptr);
-            _pBufferWriter = new WriteBuffer(&gci);
+            _pBufferWriter = new WriteBuffer(gci);
             status = NT_TESTNULL(_pBufferWriter);
         }
     }
@@ -351,7 +349,7 @@ bool SCREEN_INFORMATION::IsActiveScreenBuffer() const
 
     //#define ACTIVE_SCREEN_BUFFER(SCREEN_INFO) (gci.CurrentScreenBuffer == SCREEN_INFO)
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return (gci.CurrentScreenBuffer == this);
+    return (gci.pCurrentScreenBuffer == this);
 }
 
 // Routine Description:
@@ -376,7 +374,7 @@ void SCREEN_INFORMATION::GetScreenBufferInformation(_Out_ PCOORD pcoordSize,
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     *pcoordSize = GetScreenBufferSize();
 
-    *pcoordCursorPosition = TextInfo->GetCursor()->GetPosition();
+    *pcoordCursorPosition = _textBuffer->GetCursor().GetPosition();
 
     *psrWindow = _viewport.ToInclusive();
 
@@ -412,7 +410,7 @@ COORD SCREEN_INFORMATION::GetMinWindowSizeInCharacters(const COORD coordFontSize
     COORD coordFont = coordFontSize; // by default, use the size we were given
 
     // If text info has been set up, instead retrieve its font size
-    if (TextInfo != nullptr)
+    if (_textBuffer != nullptr)
     {
         coordFont = GetScreenFontSize();
     }
@@ -510,7 +508,7 @@ COORD SCREEN_INFORMATION::GetScrollBarSizesInCharacters() const
 
 void SCREEN_INFORMATION::GetRequiredConsoleSizeInPixels(_Out_ PSIZE const pRequiredSize) const
 {
-    COORD const coordFontSize = TextInfo->GetCurrentFont()->GetSize();
+    COORD const coordFontSize = _textBuffer->GetCurrentFont().GetSize();
 
     // TODO: Assert valid size boundaries
     pRequiredSize->cx = GetScreenWindowSizeX() * coordFontSize.X;
@@ -570,8 +568,8 @@ void SCREEN_INFORMATION::RefreshFontWithRenderer()
         {
             ServiceLocator::LocateGlobals().pRender
                 ->TriggerFontChange(ServiceLocator::LocateGlobals().dpi,
-                                    TextInfo->GetDesiredFont(),
-                                    TextInfo->GetCurrentFont());
+                                    _textBuffer->GetDesiredFont(),
+                                    _textBuffer->GetCurrentFont());
         }
     }
 }
@@ -580,7 +578,7 @@ void SCREEN_INFORMATION::UpdateFont(const FontInfo* const pfiNewFont)
 {
     FontInfoDesired fiDesiredFont(*pfiNewFont);
 
-    TextInfo->SetDesiredFont(&fiDesiredFont);
+    _textBuffer->GetDesiredFont() = fiDesiredFont;
 
     RefreshFontWithRenderer();
 
@@ -616,7 +614,6 @@ void SCREEN_INFORMATION::ResetTextFlags(const short sStartX,
 {
     SHORT RowIndex;
     WCHAR Char;
-    PTEXT_BUFFER_INFO pTextInfo = TextInfo;
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     // Fire off a winevent to let accessibility apps know what changed.
@@ -627,12 +624,12 @@ void SCREEN_INFORMATION::ResetTextFlags(const short sStartX,
 
         if (sStartX == sEndX && sStartY == sEndY)
         {
-            RowIndex = (pTextInfo->GetFirstRowIndex() + sStartY) % coordScreenBufferSize.Y;
+            RowIndex = (_textBuffer->GetFirstRowIndex() + sStartY) % coordScreenBufferSize.Y;
             TextAttributeRun* pAttrRun;
 
             try
             {
-                const ROW& Row = pTextInfo->GetRowAtIndex(RowIndex);
+                const ROW& Row = _textBuffer->GetRowAtIndex(RowIndex);
                 const ICharRow& iCharRow = Row.GetCharRow();
                 // we only support ucs2 encoded char rows
                 FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
@@ -1040,14 +1037,14 @@ HRESULT SCREEN_INFORMATION::_AdjustScreenBuffer(const RECT* const prcClientNew)
         // TODO: Deleting and redrawing the command line during resizing can cause flickering. See: http://osgvsowi/658439
         // 1. Delete input string if necessary (see menu.c)
         pCommandLine->Hide(FALSE);
-        TextInfo->GetCursor()->SetIsVisible(false);
+        _textBuffer->GetCursor().SetIsVisible(false);
 
         // 2. Call the resize screen buffer method (expensive) to redimension the backing buffer (and reflow)
         LOG_IF_FAILED(ResizeScreenBuffer(coordBufferSizeNew, FALSE));
 
         // 3.  Reprint console input string
         pCommandLine->Show();
-        TextInfo->GetCursor()->SetIsVisible(true);
+        _textBuffer->GetCursor().SetIsVisible(true);
     }
 
     return S_OK;
@@ -1420,13 +1417,13 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
     CHAR_INFO ciFill;
     ciFill.Attributes = _Attributes.GetLegacyAttributes();
 
-    std::unique_ptr<TEXT_BUFFER_INFO> newTextBuffer;
+    std::unique_ptr<TextBuffer> newTextBuffer;
     try
     {
-        newTextBuffer = std::make_unique<TEXT_BUFFER_INFO>(TextInfo->GetCurrentFont(),
-                                                           coordNewScreenSize,
-                                                           ciFill,
-                                                           0); // temporarily set size to 0 so it won't render.
+        newTextBuffer = std::make_unique<TextBuffer>(_textBuffer->GetCurrentFont(),
+                                                     coordNewScreenSize,
+                                                     ciFill,
+                                                     0); // temporarily set size to 0 so it won't render.
     }
     catch (...)
     {
@@ -1434,18 +1431,18 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
     }
 
     // Save cursor's relative height versus the viewport
-    SHORT const sCursorHeightInViewportBefore = TextInfo->GetCursor()->GetPosition().Y - _viewport.Top();
+    SHORT const sCursorHeightInViewportBefore = _textBuffer->GetCursor().GetPosition().Y - _viewport.Top();
 
-    Cursor* const pOldCursor = TextInfo->GetCursor();
-    Cursor* const pNewCursor = newTextBuffer->GetCursor();
+    Cursor& oldCursor = _textBuffer->GetCursor();
+    Cursor& newCursor = newTextBuffer->GetCursor();
     // skip any drawing updates that might occur as we manipulate the new buffer
-    pNewCursor->StartDeferDrawing();
+    newCursor.StartDeferDrawing();
 
     // We need to save the old cursor position so that we can
     // place the new cursor back on the equivalent character in
     // the new buffer.
-    COORD cOldCursorPos = pOldCursor->GetPosition();
-    COORD cOldLastChar = TextInfo->GetLastNonSpaceCharacter();
+    COORD cOldCursorPos = oldCursor.GetPosition();
+    COORD cOldLastChar = _textBuffer->GetLastNonSpaceCharacter();
 
     short const cOldRowsTotal = cOldLastChar.Y + 1;
     short const cOldColsTotal = GetScreenBufferSize().X;
@@ -1457,7 +1454,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
     for (short iOldRow = 0; iOldRow < cOldRowsTotal; iOldRow++)
     {
         // Fetch the row and its "right" which is the last printable character.
-        const ROW& Row = TextInfo->GetRowByOffset(iOldRow);
+        const ROW& Row = _textBuffer->GetRowByOffset(iOldRow);
         const ICharRow& iCharRow = Row.GetCharRow();
         short iRight = static_cast<short>(iCharRow.MeasureRight());
 
@@ -1515,7 +1512,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
 
             if (iOldCol == cOldCursorPos.X && iOldRow == cOldCursorPos.Y)
             {
-                cNewCursorPos = pNewCursor->GetPosition();
+                cNewCursorPos = newCursor.GetPosition();
                 fFoundCursorPos = true;
             }
 
@@ -1537,7 +1534,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
             {
                 if (iRight == cOldCursorPos.X && iOldRow == cOldCursorPos.Y)
                 {
-                    cNewCursorPos = pNewCursor->GetPosition();
+                    cNewCursorPos = newCursor.GetPosition();
                     fFoundCursorPos = true;
                 }
                 // Only do this if it's not the final line in the buffer.
@@ -1574,7 +1571,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
                     // |aaaaaaaaaaaaaaaaaaa| no wrap at the end (preserved hard newline)
                     // |                   |
                     //  ^ and the cursor is now here.
-                    const COORD coordNewCursor = pNewCursor->GetPosition();
+                    const COORD coordNewCursor = newCursor.GetPosition();
                     if (coordNewCursor.X == 0 && coordNewCursor.Y > 0)
                     {
                         if (newTextBuffer->GetRowByOffset(coordNewCursor.Y - 1).GetCharRow().WasWrapForced())
@@ -1589,13 +1586,13 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
     if (NT_SUCCESS(status))
     {
         // Finish copying remaining parameters from the old text buffer to the new one
-        newTextBuffer->CopyProperties(TextInfo);
+        newTextBuffer->CopyProperties(*_textBuffer);
 
         // If we found where to put the cursor while placing characters into the buffer,
         //   just put the cursor there. Otherwise we have to advance manually.
         if (fFoundCursorPos)
         {
-            pNewCursor->SetPosition(cNewCursorPos);
+            newCursor.SetPosition(cNewCursorPos);
         }
         else
         {
@@ -1616,7 +1613,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
             {
                 // if this buffer didn't wrap, but the old one DID, then the d(columns) of the
                 //   old buffer will be one more than in this buffer, so new need one LESS.
-                if (TextInfo->GetRowByOffset(cOldLastChar.Y).GetCharRow().WasWrapForced())
+                if (_textBuffer->GetRowByOffset(cOldLastChar.Y).GetCharRow().WasWrapForced())
                 {
                     iNewlines = std::max(iNewlines - 1, 0);
                 }
@@ -1647,23 +1644,19 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
     if (NT_SUCCESS(status))
     {
         // Adjust the viewport so the cursor doesn't wildly fly off up or down.
-        SHORT const sCursorHeightInViewportAfter = pNewCursor->GetPosition().Y - _viewport.Top();
+        SHORT const sCursorHeightInViewportAfter = newCursor.GetPosition().Y - _viewport.Top();
         COORD coordCursorHeightDiff = { 0 };
         coordCursorHeightDiff.Y = sCursorHeightInViewportAfter - sCursorHeightInViewportBefore;
         LOG_IF_FAILED(SetViewportOrigin(FALSE, coordCursorHeightDiff));
 
         // Save old cursor size before we delete it
-        ULONG const ulSize = pOldCursor->GetSize();
+        ULONG const ulSize = oldCursor.GetSize();
 
-        // Free old text buffer
-        delete TextInfo;
-
-        // Place new text buffer into position
-        TextInfo = newTextBuffer.release();
+        _textBuffer.swap(newTextBuffer);
 
         // Set size back to real size as it will be taking over the rendering duties.
-        pNewCursor->SetSize(ulSize);
-        pNewCursor->EndDeferDrawing();
+        newCursor.SetSize(ulSize);
+        newCursor.EndDeferDrawing();
     }
 
     return status;
@@ -1679,7 +1672,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
 [[nodiscard]]
 NTSTATUS SCREEN_INFORMATION::ResizeTraditional(const COORD coordNewScreenSize)
 {
-    return TextInfo->ResizeTraditional(GetScreenBufferSize(), coordNewScreenSize, _Attributes);
+    return _textBuffer->ResizeTraditional(GetScreenBufferSize(), coordNewScreenSize, _Attributes);
 }
 
 //
@@ -1721,7 +1714,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeScreenBuffer(const COORD coordNewScreenSize,
         SetScreenBufferSize(coordNewScreenSize);
 
         const COORD coordSetScreenBufferSize = GetScreenBufferSize();
-        TextInfo->SetCoordBufferSize(coordSetScreenBufferSize);
+        _textBuffer->SetCoordBufferSize(coordSetScreenBufferSize);
 
         ResetTextFlags(0, 0, (SHORT)(coordSetScreenBufferSize.X - 1), (SHORT)(coordSetScreenBufferSize.Y - 1));
 
@@ -1808,7 +1801,7 @@ void SCREEN_INFORMATION::GetScreenEdges(_Out_ SMALL_RECT* const psrEdges) const
 
 void SCREEN_INFORMATION::MakeCurrentCursorVisible()
 {
-    MakeCursorVisible(TextInfo->GetCursor()->GetPosition());
+    MakeCursorVisible(_textBuffer->GetCursor().GetPosition());
 }
 
 // Routine Description:
@@ -1827,14 +1820,13 @@ void SCREEN_INFORMATION::SetCursorInformation(const ULONG Size,
                                               _In_ unsigned int const Color,
                                               const CursorType Type)
 {
-    PTEXT_BUFFER_INFO const pTextInfo = TextInfo;
-    Cursor* const pCursor = pTextInfo->GetCursor();
+    Cursor& cursor = _textBuffer->GetCursor();
 
-    pCursor->SetSize(Size);
-    pCursor->SetIsVisible(Visible);
+    cursor.SetSize(Size);
+    cursor.SetIsVisible(Visible);
 
-    pCursor->SetColor(Color);
-    pCursor->SetType(Type);
+    cursor.SetColor(Color);
+    cursor.SetType(Type);
 
     // If we're an alt buffer, also update our main buffer.
     if (_psiMainBuffer)
@@ -1854,12 +1846,11 @@ void SCREEN_INFORMATION::SetCursorInformation(const ULONG Size,
 // - None
 void  SCREEN_INFORMATION::SetCursorDBMode(const bool DoubleCursor)
 {
-    PTEXT_BUFFER_INFO const pTextInfo = TextInfo;
-    Cursor* const pCursor = pTextInfo->GetCursor();
+    Cursor& cursor = _textBuffer->GetCursor();
 
-    if ((pCursor->IsDouble() != DoubleCursor))
+    if ((cursor.IsDouble() != DoubleCursor))
     {
-        pCursor->SetIsDouble(DoubleCursor);
+        cursor.SetIsDouble(DoubleCursor);
     }
 
     // If we're an alt buffer, also update our main buffer.
@@ -1881,8 +1872,7 @@ void  SCREEN_INFORMATION::SetCursorDBMode(const bool DoubleCursor)
 NTSTATUS SCREEN_INFORMATION::SetCursorPosition(const COORD Position, const bool TurnOn)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    PTEXT_BUFFER_INFO const pTextInfo = TextInfo;
-    Cursor* const pCursor = pTextInfo->GetCursor();
+    Cursor& cursor = _textBuffer->GetCursor();
 
     //
     // Ensure that the cursor position is within the constraints of the screen
@@ -1894,21 +1884,21 @@ NTSTATUS SCREEN_INFORMATION::SetCursorPosition(const COORD Position, const bool 
         return STATUS_INVALID_PARAMETER;
     }
 
-    pCursor->SetPosition(Position);
+    cursor.SetPosition(Position);
 
     // if we have the focus, adjust the cursor state
     if (gci.Flags & CONSOLE_HAS_FOCUS)
     {
         if (TurnOn)
         {
-            pCursor->SetDelay(false);
-            pCursor->SetIsOn(true);
+            cursor.SetDelay(false);
+            cursor.SetIsOn(true);
         }
         else
         {
-            pCursor->SetDelay(true);
+            cursor.SetDelay(true);
         }
-        pCursor->SetHasMoved(true);
+        cursor.SetHasMoved(true);
     }
 
     return STATUS_SUCCESS;
@@ -1966,14 +1956,19 @@ SMALL_RECT SCREEN_INFORMATION::GetScrollMargins() const
 // Parameters:
 // - None
 // Return value:
-// - a pointer to this buffer's active buffer.
-SCREEN_INFORMATION* const SCREEN_INFORMATION::GetActiveBuffer()
+// - a reference to this buffer's active buffer.
+SCREEN_INFORMATION& SCREEN_INFORMATION::GetActiveBuffer()
+{
+    return const_cast<SCREEN_INFORMATION&>(static_cast<const SCREEN_INFORMATION* const>(this)->GetActiveBuffer());
+}
+
+const SCREEN_INFORMATION& SCREEN_INFORMATION::GetActiveBuffer() const
 {
     if (_psiAlternateBuffer != nullptr)
     {
-        return _psiAlternateBuffer;
+        return *_psiAlternateBuffer;
     }
-    return this;
+    return *this;
 }
 
 // Routine Description:
@@ -1983,14 +1978,19 @@ SCREEN_INFORMATION* const SCREEN_INFORMATION::GetActiveBuffer()
 // Parameters:
 // - None
 // Return value:
-// - a pointer to this buffer's main buffer.
-SCREEN_INFORMATION* const SCREEN_INFORMATION::GetMainBuffer()
+// - a reference to this buffer's main buffer.
+SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer()
+{
+    return const_cast<SCREEN_INFORMATION&>(static_cast<const SCREEN_INFORMATION* const>(this)->GetMainBuffer());
+}
+
+const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
 {
     if (_psiMainBuffer != nullptr)
     {
-        return _psiMainBuffer;
+        return *_psiMainBuffer;
     }
-    return this;
+    return *this;
 }
 
 // Routine Description:
@@ -2011,10 +2011,10 @@ NTSTATUS SCREEN_INFORMATION::_CreateAltBuffer(_Out_ SCREEN_INFORMATION** const p
 
     COORD WindowSize = _viewport.Dimensions();
 
-    const FontInfo* const pfiExistingFont = TextInfo->GetCurrentFont();
+    const FontInfo& existingFont = _textBuffer->GetCurrentFont();
 
     NTSTATUS Status = SCREEN_INFORMATION::CreateInstance(WindowSize,
-                                                         pfiExistingFont,
+                                                         existingFont,
                                                          WindowSize,
                                                          Fill,
                                                          Fill,
@@ -2049,12 +2049,12 @@ NTSTATUS SCREEN_INFORMATION::_CreateAltBuffer(_Out_ SCREEN_INFORMATION** const p
 NTSTATUS SCREEN_INFORMATION::UseAlternateScreenBuffer()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION* const psiMain = GetMainBuffer();
+    SCREEN_INFORMATION& siMain = GetMainBuffer();
     // If we're in an alt that resized, resize the main before making the new alt
-    if (psiMain->_fAltWindowChanged)
+    if (siMain._fAltWindowChanged)
     {
-        psiMain->ProcessResizeWindow(&(psiMain->_rcAltSavedClientNew), &(psiMain->_rcAltSavedClientOld));
-        psiMain->_fAltWindowChanged = false;
+        siMain.ProcessResizeWindow(&(siMain._rcAltSavedClientNew), &(siMain._rcAltSavedClientOld));
+        siMain._fAltWindowChanged = false;
     }
 
     SCREEN_INFORMATION* psiNewAltBuffer;
@@ -2064,17 +2064,17 @@ NTSTATUS SCREEN_INFORMATION::UseAlternateScreenBuffer()
         // if this is already an alternate buffer, we want to make the new
         // buffer the alt on our main buffer, not on ourself, because there
         // can only ever be one main and one alternate.
-        SCREEN_INFORMATION* const psiOldAltBuffer = psiMain->_psiAlternateBuffer;
+        SCREEN_INFORMATION* const psiOldAltBuffer = siMain._psiAlternateBuffer;
 
-        psiNewAltBuffer->_psiMainBuffer = psiMain;
-        psiMain->_psiAlternateBuffer = psiNewAltBuffer;
+        psiNewAltBuffer->_psiMainBuffer = &siMain;
+        siMain._psiAlternateBuffer = psiNewAltBuffer;
 
         if (psiOldAltBuffer != nullptr)
         {
             s_RemoveScreenBuffer(psiOldAltBuffer); // this will also delete the old alt buffer
         }
 
-        ::SetActiveScreenBuffer(psiNewAltBuffer);
+        ::SetActiveScreenBuffer(*psiNewAltBuffer);
 
         // Kind of a hack until we have proper signal channels: If the client app wants window size events, send one for
         // the new alt buffer's size (this is so WSL can update the TTY size when the MainSB.viewportWidth <
@@ -2105,7 +2105,7 @@ void SCREEN_INFORMATION::UseMainScreenBuffer()
             psiMain->ProcessResizeWindow(&(psiMain->_rcAltSavedClientNew), &(psiMain->_rcAltSavedClientOld));
             psiMain->_fAltWindowChanged = false;
         }
-        ::SetActiveScreenBuffer(psiMain);
+        ::SetActiveScreenBuffer(*psiMain);
         psiMain->UpdateScrollBars(); // The alt had disabled scrollbars, re-enable them
 
         // send a _coordScreenBufferSizeChangeEvent for the new Sb viewport
@@ -2396,9 +2396,9 @@ void SCREEN_INFORMATION::SetAttributes(const TextAttribute& attributes)
 {
     _Attributes.SetFrom(attributes);
 
-    CHAR_INFO ciFill = TextInfo->GetFill();
+    CHAR_INFO ciFill = _textBuffer->GetFill();
     ciFill.Attributes = _Attributes.GetLegacyAttributes();
-    TextInfo->SetFill(ciFill);
+    _textBuffer->SetFill(ciFill);
 
     // If we're an alt buffer, also update our main buffer.
     if (_psiMainBuffer)
@@ -2472,7 +2472,7 @@ void SCREEN_INFORMATION::ReplaceDefaultAttributes(const TextAttribute& oldAttrib
     const SHORT sScreenBufferSizeY = GetScreenBufferSize().Y;
     for (SHORT i = 0; i < sScreenBufferSizeY; i++)
     {
-        ROW& Row = TextInfo->GetRowByOffset(i);
+        ROW& Row = _textBuffer->GetRowByOffset(i);
         ATTR_ROW& attrRow = Row.GetAttrRow();
         attrRow.ReplaceLegacyAttrs(oldLegacyAttributes, newLegacyAttributes);
         attrRow.ReplaceLegacyAttrs(oldLegacyPopupAttributes, newLegacyPopupAttributes);
@@ -2515,7 +2515,7 @@ void SCREEN_INFORMATION::SetBufferViewport(const Viewport newViewport)
 [[nodiscard]]
 HRESULT SCREEN_INFORMATION::VtEraseAll()
 {
-    const COORD coordLastChar = TextInfo->GetLastNonSpaceCharacter();
+    const COORD coordLastChar = _textBuffer->GetLastNonSpaceCharacter();
     short sNewTop = coordLastChar.Y + 1;
     const SMALL_RECT oldViewport = GetBufferViewport();
 
@@ -2523,7 +2523,7 @@ HRESULT SCREEN_INFORMATION::VtEraseAll()
     bool fRedrawAll = delta > 0;
     for (auto i = 0; i < delta; i++)
     {
-        TextInfo->IncrementCircularBuffer();
+        _textBuffer->IncrementCircularBuffer();
         sNewTop--;
     }
 
@@ -2559,19 +2559,19 @@ void SCREEN_INFORMATION::_InitializeBufferDimensions(const COORD coordScreenBuff
 
 std::wstring SCREEN_INFORMATION::ReadText(const size_t rowIndex) const
 {
-    const ROW& row = TextInfo->GetRowByOffset(rowIndex);
+    const ROW& row = _textBuffer->GetRowByOffset(rowIndex);
     return row.GetText();
 }
 
 std::vector<OutputCell> SCREEN_INFORMATION::ReadLine(const size_t rowIndex) const
 {
-    const ROW& row = TextInfo->GetRowByOffset(rowIndex);
+    const ROW& row = _textBuffer->GetRowByOffset(rowIndex);
     return row.AsCells();
 }
 std::vector<OutputCell> SCREEN_INFORMATION::ReadLine(const size_t rowIndex,
                                                      const size_t startIndex) const
 {
-    const ROW& row = TextInfo->GetRowByOffset(rowIndex);
+    const ROW& row = _textBuffer->GetRowByOffset(rowIndex);
     return row.AsCells(startIndex);
 }
 
@@ -2579,7 +2579,7 @@ std::vector<OutputCell> SCREEN_INFORMATION::ReadLine(const size_t rowIndex,
                                                      const size_t startIndex,
                                                      const size_t count) const
 {
-    const ROW& row = TextInfo->GetRowByOffset(rowIndex);
+    const ROW& row = _textBuffer->GetRowByOffset(rowIndex);
     return row.AsCells(startIndex, count);
 }
 
@@ -2591,7 +2591,7 @@ std::vector<OutputCell> SCREEN_INFORMATION::ReadLine(const size_t rowIndex,
 // - word boundary positions
 std::pair<COORD, COORD> SCREEN_INFORMATION::GetWordBoundary(const COORD position) const
 {
-    const ROW& row = TextInfo->GetRowByOffset(position.Y);
+    const ROW& row = _textBuffer->GetRowByOffset(position.Y);
     const COORD screenBufferSize = GetScreenBufferSize();
     COORD start{ position };
     COORD end{ position };
@@ -2636,4 +2636,14 @@ std::pair<COORD, COORD> SCREEN_INFORMATION::GetWordBoundary(const COORD position
         }
     }
     return { start, end };
+}
+
+TextBuffer& SCREEN_INFORMATION::GetTextBuffer()
+{
+    return *_textBuffer;
+}
+
+const TextBuffer& SCREEN_INFORMATION::GetTextBuffer() const
+{
+    return *_textBuffer;
 }

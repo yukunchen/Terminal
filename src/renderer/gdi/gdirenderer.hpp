@@ -17,7 +17,7 @@ Author(s):
 
 namespace Microsoft::Console::Render
 {
-    class GdiEngine sealed : public IRenderEngine
+    class GdiEngine final : public IRenderEngine
     {
     public:
         GdiEngine();
@@ -62,9 +62,9 @@ namespace Microsoft::Console::Render
                                 const bool fTrimLeft) override;
         [[nodiscard]]
         HRESULT PaintBufferGridLines(const GridLines lines,
-                                        const COLORREF color,
-                                        const size_t cchLine,
-                                        const COORD coordTarget) override;
+                                     const COLORREF color,
+                                     const size_t cchLine,
+                                     const COORD coordTarget) override;
         [[nodiscard]]
         HRESULT PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection,
                                 const UINT cRectangles) override;
@@ -82,20 +82,20 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]]
         HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
-                                        const COLORREF colorBackground,
-                                        const WORD legacyColorAttribute,
-                                        const bool fIncludeBackgrounds) override;
+                                     const COLORREF colorBackground,
+                                     const WORD legacyColorAttribute,
+                                     const bool fIncludeBackgrounds) override;
         [[nodiscard]]
-        HRESULT UpdateFont(const FontInfoDesired * const pfiFontInfoDesired,
-                            _Out_ FontInfo* const pfiFontInfo) override;
+        HRESULT UpdateFont(const FontInfoDesired& FontInfoDesired,
+                           _Out_ FontInfo& FontInfo) override;
         [[nodiscard]]
         HRESULT UpdateDpi(const int iDpi) override;
         [[nodiscard]]
         HRESULT UpdateViewport(const SMALL_RECT srNewViewport) override;
 
         [[nodiscard]]
-        HRESULT GetProposedFont(const FontInfoDesired * const pfiFontDesired,
-                                _Out_ FontInfo* const pfiFont,
+        HRESULT GetProposedFont(const FontInfoDesired& FontDesired,
+                                _Out_ FontInfo& Font,
                                 const int iDpi) override;
 
         SMALL_RECT GetDirtyRectInChars() override;
@@ -190,7 +190,10 @@ namespace Microsoft::Console::Render
         bool _IsFontTrueType() const;
 
         [[nodiscard]]
-        HRESULT _GetProposedFont(const FontInfoDesired * const pfiFontDesired, _Out_ FontInfo* const pfiFont, const int iDpi, _Inout_ wil::unique_hfont& hFont);
+        HRESULT _GetProposedFont(const FontInfoDesired& FontDesired,
+                                 _Out_ FontInfo& Font,
+                                 const int iDpi,
+                                 _Inout_ wil::unique_hfont& hFont);
 
         COORD _GetFontSize() const;
         bool _IsMinimized() const;

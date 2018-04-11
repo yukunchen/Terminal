@@ -3,7 +3,7 @@
 // This used to be in find.h.
 #define SEARCH_STRING_LENGTH    (80)
 
-USHORT SearchForString(const SCREEN_INFORMATION * const pScreenInfo,
+USHORT SearchForString(const SCREEN_INFORMATION& ScreenInfo,
 	                   _In_reads_(cchSearch) PCWSTR pwszSearch,
 	                   _In_range_(1, SEARCH_STRING_LENGTH) USHORT cchSearch,
 	                   const bool IgnoreCase,
