@@ -58,6 +58,7 @@ namespace Microsoft::Console::Render
         void TriggerScroll(const COORD* const pcoordDelta) override;
 
         void TriggerCircling() override;
+        void TriggerTitleChange() override;
 
         void TriggerFontChange(const int iDpi,
                                const FontInfoDesired& FontInfoDesired,
@@ -82,6 +83,9 @@ namespace Microsoft::Console::Render
                     const size_t cEngines);
         std::deque<IRenderEngine*> _rgpEngines;
         const std::unique_ptr<IRenderData> _pData;
+
+        std::wstring _lastTitle;
+        bool _titleChanged;
 
         RenderThread* _pThread;
         bool _tearingDown;
@@ -146,6 +150,9 @@ namespace Microsoft::Console::Render
 
         SMALL_RECT _RegionFromCoord(const COORD* const pcoord) const;
         COLORREF _ConvertAttrToRGB(const BYTE bAttr);
+
+        [[nodiscard]]
+        HRESULT _PaintTitle(IRenderEngine* const pEngine);
 
 #ifdef DBG
         // Helper functions to diagnose issues with painting and layout.

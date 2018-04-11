@@ -106,3 +106,9 @@ const bool RenderData::IsGridLineDrawingAllowed()
         }
     }
 }
+
+const std::wstring RenderData::GetConsoleTitle() const
+{
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.GetTitleAndPrefix();
+}

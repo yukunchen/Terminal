@@ -86,10 +86,6 @@ public:
     LIST_ENTRY CommandHistoryList;
     UINT NumCommandHistories;
 
-    LPWSTR OriginalTitle;
-    LPWSTR Title;
-    LPWSTR LinkTitle;   // Path to .lnk file, can be nullptr
-
     DWORD Flags;
 
     WORD PopupCount;
@@ -131,6 +127,15 @@ public:
     COLORREF GetDefaultForeground() const;
     COLORREF GetDefaultBackground() const;
 
+    void SetTitle(const std::wstring& newTitle);
+    void SetTitlePrefix(const std::wstring& newTitlePrefix);
+    void SetOriginalTitle(const std::wstring& originalTitle);
+    void SetLinkTitle(const std::wstring& linkTitle);
+    const std::wstring& GetTitle() const noexcept;
+    const std::wstring& GetOriginalTitle() const noexcept;
+    const std::wstring& GetLinkTitle() const noexcept;
+    const std::wstring GetTitleAndPrefix() const;
+
     [[nodiscard]]
     static NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle, const DWORD cbTitle);
     // MSFT:16886775 : get rid of friends
@@ -138,9 +143,12 @@ public:
     friend class SCREEN_INFORMATION;
     friend class CommonState;
 
-
 private:
     CRITICAL_SECTION _csConsoleLock;   // serialize input and output using this
+    std::wstring _Title;
+    std::wstring _TitlePrefix; // Eg Select, Mark - things that we manually prepend to the title.
+    std::wstring _OriginalTitle;
+    std::wstring _LinkTitle;   // Path to .lnk file
     SCREEN_INFORMATION* pCurrentScreenBuffer;
 
     Microsoft::Console::VirtualTerminal::VtIo _vtIo;

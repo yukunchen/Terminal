@@ -9,7 +9,7 @@
 #include "gdirenderer.hpp"
 #include "../../inc/conattrs.hpp"
 #include <winuserp.h> // for GWL_CONSOLE_BKCOLOR
-
+#include "../../interactivity/win32/CustomWindowMessages.h"
 #pragma hdrstop
 
 using namespace Microsoft::Console::Render;
@@ -284,6 +284,20 @@ HRESULT GdiEngine::GetProposedFont(const FontInfoDesired& FontDesired, _Out_ Fon
 {
     wil::unique_hfont hFont;
     return _GetProposedFont(FontDesired, Font, iDpi, hFont);
+}
+
+// Method Description:
+// - Updates the window's title string. For GDI, this does nothing, because the
+//      title must be updated on the main window's windowproc thread.
+// Arguments:
+// - newTitle: the new string to use for the title of the window
+// Return Value:
+// -  S_OK if PostMessageW succeeded, otherwise E_FAIL
+[[nodiscard]]
+HRESULT GdiEngine::UpdateTitle(_In_ const std::wstring& /*newTitle*/)
+{
+    // the CM_UPDATE_TITLE handler in windowproc will query the updated title.
+    return PostMessageW(_hwndTargetWindow, CM_UPDATE_TITLE, 0, (LPARAM)nullptr)? S_OK : E_FAIL;
 }
 
 // Routine Description:

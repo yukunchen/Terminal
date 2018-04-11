@@ -8,7 +8,7 @@
 #pragma warning(push)
 #pragma warning(disable: ALL_CPPCORECHECK_WARNINGS)
 
-// C 
+// C
 #include <cassert>
 #include <cwchar>
 

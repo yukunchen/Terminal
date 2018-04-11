@@ -113,11 +113,6 @@ BOOL ConsoleWindow::PostUpdateScrollBars() const
     return FALSE;
 }
 
-BOOL ConsoleWindow::PostUpdateTitleWithCopy(const PCWSTR /*pwszNewTitle*/) const
-{
-    return TRUE;
-}
-
 BOOL ConsoleWindow::PostUpdateWindowSize() const
 {
     return FALSE;

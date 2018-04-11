@@ -101,6 +101,9 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         HRESULT IsCharFullWidthByFont(const WCHAR wch, _Out_ bool* const pResult) override;
 
+        [[nodiscard]]
+        HRESULT UpdateTitle(_In_ const std::wstring& newTitle) override;
+
     private:
         ULONG_PTR _sharedViewBase;
         SIZE_T _runLength;
