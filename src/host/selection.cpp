@@ -204,9 +204,9 @@ NTSTATUS Selection::GetSelectionRects(_Outptr_result_buffer_all_(*pcRectangles) 
 // - pSmallRect - The region of the text that we want to clip, and then adjusted to the region that should be clipped without splicing double-width characters.
 // Return Value:
 //  <none>
-void Selection::s_BisectSelection(_In_ short const sStringLength,
-                                  _In_ COORD const coordTargetPoint,
-                                  _In_ const SCREEN_INFORMATION* const pScreenInfo,
+void Selection::s_BisectSelection(const short sStringLength,
+                                  const COORD coordTargetPoint,
+                                  const SCREEN_INFORMATION* const pScreenInfo,
                                   _Inout_ SMALL_RECT* const pSmallRect)
 {
     const TEXT_BUFFER_INFO* const pTextInfo = pScreenInfo->TextInfo;
@@ -293,7 +293,7 @@ void Selection::HideSelection()
 //                - If FALSE, we're turning the selection OFF.
 // Return Value:
 //   <none>
-void Selection::_SetSelectionVisibility(_In_ bool const fMakeVisible)
+void Selection::_SetSelectionVisibility(const bool fMakeVisible)
 {
     if (IsInSelectingState() && IsAreaSelected())
     {
@@ -330,7 +330,7 @@ void Selection::_PaintSelection() const
 // - coordBufferPos - Position in which user started a selection
 // Return Value:
 // - <none>
-void Selection::InitializeMouseSelection(_In_ const COORD coordBufferPos)
+void Selection::InitializeMouseSelection(const COORD coordBufferPos)
 {
     Scrolling::s_ClearScroll();
 
@@ -370,7 +370,7 @@ void Selection::InitializeMouseSelection(_In_ const COORD coordBufferPos)
 // - coordSelectionEnd - The linear final position or opposite corner of the anchor to represent the complete selection area.
 // Return Value:
 // - <none>
-void Selection::AdjustSelection(_In_ const COORD coordSelectionStart, _In_ const COORD coordSelectionEnd)
+void Selection::AdjustSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd)
 {
     // modify the anchor and then just use extend to adjust the other portion of the selection rectangle
     _coordSelectionAnchor = coordSelectionStart;
@@ -526,7 +526,7 @@ void Selection::ClearSelection()
 // - fStartingNewSelection - If we're going to start another selection right away, we'll keep the write blocked.
 // Return Value:
 // - <none>
-void Selection::ClearSelection(_In_ bool const fStartingNewSelection)
+void Selection::ClearSelection(const bool fStartingNewSelection)
 {
     if (IsInSelectingState())
     {
@@ -561,7 +561,7 @@ void Selection::ClearSelection(_In_ bool const fStartingNewSelection)
 // - ulAttr - The color attributes to apply
 // Return Value:
 // - <none>
-void Selection::ColorSelection(_In_ SMALL_RECT* const psrRect, _In_ ULONG const ulAttr)
+void Selection::ColorSelection(_In_ SMALL_RECT* const psrRect, const ULONG ulAttr)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // TODO: psrRect should likely one day be replaced with an array of rectangles (in case we have a line selection we want colored)
@@ -612,7 +612,7 @@ void Selection::InitializeMarkSelection()
     pScreenInfo->SetCursorInformation(100, TRUE, pCursor->GetColor(), pCursor->GetType());
 
     const COORD coordPosition = pCursor->GetPosition();
-    LOG_IF_FAILED(pScreenInfo->SetCursorPosition(coordPosition, TRUE));
+    LOG_IF_FAILED(pScreenInfo->SetCursorPosition(coordPosition, true));
 
     // set the cursor position as the anchor position
     // it will get updated as the cursor moves for mark mode,
@@ -634,7 +634,7 @@ void Selection::InitializeMarkSelection()
 // - coordEnd - Position to select up to
 // Return Value:
 // - <none>
-void Selection::SelectNewRegion(_In_ COORD const coordStart, _In_ COORD const coordEnd)
+void Selection::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
 {
     // clear existing selection if applicable
     ClearSelection();

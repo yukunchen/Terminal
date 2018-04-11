@@ -97,9 +97,9 @@ HRESULT VtEngine::PaintBackground()
 [[nodiscard]]
 HRESULT VtEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
                                   _In_reads_(cchLine) const unsigned char* const rgWidths,
-                                  _In_ size_t const cchLine,
-                                  _In_ COORD const coord,
-                                  _In_ bool const /*fTrimLeft*/)
+                                  const size_t cchLine,
+                                  const COORD coord,
+                                  const bool /*fTrimLeft*/)
 {
     return VtEngine::_PaintAsciiBufferLine(pwsLine, rgWidths, cchLine, coord);
 }
@@ -114,10 +114,10 @@ HRESULT VtEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
 // Return Value:
 // - S_OK
 [[nodiscard]]
-HRESULT VtEngine::PaintBufferGridLines(_In_ GridLines const /*lines*/,
-                                       _In_ COLORREF const /*color*/,
-                                       _In_ size_t const /*cchLine*/,
-                                       _In_ COORD const /*coordTarget*/)
+HRESULT VtEngine::PaintBufferGridLines(const GridLines /*lines*/,
+                                       const COLORREF /*color*/,
+                                       const size_t /*cchLine*/,
+                                       const COORD /*coordTarget*/)
 {
     return S_OK;
 }
@@ -131,12 +131,12 @@ HRESULT VtEngine::PaintBufferGridLines(_In_ GridLines const /*lines*/,
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
 [[nodiscard]]
-HRESULT VtEngine::PaintCursor(_In_ COORD const coordCursor,
-                              _In_ ULONG const /*ulCursorHeightPercent*/,
-                              _In_ bool const /*fIsDoubleWidth*/,
-                              _In_ CursorType const /*cursorType*/,
-                              _In_ bool const /*fUseColor*/,
-                              _In_ COLORREF const /*cursorColor*/)
+HRESULT VtEngine::PaintCursor(const COORD coordCursor,
+                              const ULONG /*ulCursorHeightPercent*/,
+                              const bool /*fIsDoubleWidth*/,
+                              const CursorType /*cursorType*/,
+                              const bool /*fUseColor*/,
+                              const COLORREF /*cursorColor*/)
 {
     // MSFT:15933349 - Send the terminal the updated cursor information, if it's changed.
     LOG_IF_FAILED(_MoveCursor(coordCursor));
@@ -170,7 +170,7 @@ HRESULT VtEngine::ClearCursor()
 // - S_OK
 [[nodiscard]]
 HRESULT VtEngine::PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* const /*rgsrSelection*/,
-                                 _In_ UINT const /*cRectangles*/)
+                                 const UINT /*cRectangles*/)
 {
     return S_OK;
 }
@@ -184,10 +184,10 @@ HRESULT VtEngine::PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* const
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT VtEngine::_RgbUpdateDrawingBrushes(_In_ COLORREF const colorForeground,
-                                           _In_ COLORREF const colorBackground,
+HRESULT VtEngine::_RgbUpdateDrawingBrushes(const COLORREF colorForeground,
+                                           const COLORREF colorBackground,
                                            _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                                           _In_ const WORD cColorTable)
+                                           const WORD cColorTable)
 {
     WORD wFoundColor = 0;
     if (colorForeground != _LastFG)
@@ -240,10 +240,10 @@ HRESULT VtEngine::_RgbUpdateDrawingBrushes(_In_ COLORREF const colorForeground,
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT VtEngine::_16ColorUpdateDrawingBrushes(_In_ COLORREF const colorForeground,
-                                               _In_ COLORREF const colorBackground,
+HRESULT VtEngine::_16ColorUpdateDrawingBrushes(const COLORREF colorForeground,
+                                               const COLORREF colorBackground,
                                                _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                                               _In_ const WORD cColorTable)
+                                               const WORD cColorTable)
 {
     if (colorForeground != _LastFG)
     {
@@ -284,8 +284,8 @@ HRESULT VtEngine::_16ColorUpdateDrawingBrushes(_In_ COLORREF const colorForegrou
 [[nodiscard]]
 HRESULT VtEngine::_PaintAsciiBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
                                         _In_reads_(cchLine) const unsigned char* const rgWidths,
-                                        _In_ size_t const cchLine,
-                                        _In_ COORD const coord)
+                                        const size_t cchLine,
+                                        const COORD coord)
 {
     RETURN_IF_FAILED(_MoveCursor(coord));
 
@@ -318,8 +318,8 @@ HRESULT VtEngine::_PaintAsciiBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLin
 [[nodiscard]]
 HRESULT VtEngine::_PaintUtf8BufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
                                        _In_reads_(cchLine) const unsigned char* const rgWidths,
-                                       _In_ size_t const cchLine,
-                                       _In_ COORD const coord)
+                                       const size_t cchLine,
+                                       const COORD coord)
 {
     if (coord.Y < _virtualTop)
     {

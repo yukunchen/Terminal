@@ -20,7 +20,7 @@
 // - Constructor to set default properties for Cursor
 // Arguments:
 // - ulSize - The height of the cursor within this buffer
-Cursor::Cursor(IAccessibilityNotifier *pNotifier, _In_ ULONG const ulSize) :
+Cursor::Cursor(IAccessibilityNotifier *pNotifier, const ULONG ulSize) :
     _pAccessibilityNotifier(pNotifier),
     _ulSize(ulSize),
     _fHasMoved(false),
@@ -62,7 +62,7 @@ Cursor::~Cursor()
 // Return Value:
 // - Success or a relevant error status (usually out of memory).
 [[nodiscard]]
-NTSTATUS Cursor::CreateInstance(_In_ ULONG const ulSize, _Outptr_ Cursor ** const ppCursor)
+NTSTATUS Cursor::CreateInstance(const ULONG ulSize, _Outptr_ Cursor ** const ppCursor)
 {
     *ppCursor = nullptr;
 
@@ -147,36 +147,36 @@ ULONG Cursor::GetSize() const noexcept
     return _ulSize;
 }
 
-void Cursor::SetHasMoved(_In_ const bool fHasMoved)
+void Cursor::SetHasMoved(const bool fHasMoved)
 {
     _fHasMoved = fHasMoved;
 }
 
-void Cursor::SetIsVisible(_In_ bool const fIsVisible)
+void Cursor::SetIsVisible(const bool fIsVisible)
 {
     _fIsVisible = fIsVisible;
     _RedrawCursor();
 }
 
-void Cursor::SetIsOn(_In_ bool const fIsOn)
+void Cursor::SetIsOn(const bool fIsOn)
 {
     _fIsOn = fIsOn;
     _RedrawCursorAlways();
 }
 
-void Cursor::SetBlinkingAllowed(_In_ bool const fBlinkingAllowed)
+void Cursor::SetBlinkingAllowed(const bool fBlinkingAllowed)
 {
     _fBlinkingAllowed = fBlinkingAllowed;
     _RedrawCursorAlways();
 }
 
-void Cursor::SetIsDouble(_In_ bool const fIsDouble)
+void Cursor::SetIsDouble(const bool fIsDouble)
 {
     _fIsDouble = fIsDouble;
     _RedrawCursor();
 }
 
-void Cursor::SetIsConversionArea(_In_ bool const fIsConversionArea)
+void Cursor::SetIsConversionArea(const bool fIsConversionArea)
 {
     // Functionally the same as "Hide cursor"
     // Never called with TRUE, it's only used in the creation of a
@@ -185,19 +185,19 @@ void Cursor::SetIsConversionArea(_In_ bool const fIsConversionArea)
     _RedrawCursorAlways();
 }
 
-void Cursor::SetIsPopupShown(_In_ bool const fIsPopupShown)
+void Cursor::SetIsPopupShown(const bool fIsPopupShown)
 {
     // Functionally the same as "Hide cursor"
     _fIsPopupShown = fIsPopupShown;
     _RedrawCursorAlways();
 }
 
-void Cursor::SetDelay(_In_ bool const fDelay)
+void Cursor::SetDelay(const bool fDelay)
 {
     _fDelay = fDelay;
 }
 
-void Cursor::SetSize(_In_ ULONG const ulSize)
+void Cursor::SetSize(const ULONG ulSize)
 {
     _ulSize = ulSize;
     _RedrawCursor();
@@ -258,7 +258,7 @@ void Cursor::_RedrawCursorAlways()
     }
 }
 
-void Cursor::SetPosition(_In_ COORD const cPosition)
+void Cursor::SetPosition(const COORD cPosition)
 {
     _RedrawCursor();
     _cPosition.X = cPosition.X;
@@ -267,7 +267,7 @@ void Cursor::SetPosition(_In_ COORD const cPosition)
     ResetDelayEOLWrap();
 }
 
-void Cursor::SetXPosition(_In_ int const NewX)
+void Cursor::SetXPosition(const int NewX)
 {
     _RedrawCursor();
     _cPosition.X = (SHORT)NewX;
@@ -275,7 +275,7 @@ void Cursor::SetXPosition(_In_ int const NewX)
     ResetDelayEOLWrap();
 }
 
-void Cursor::SetYPosition(_In_ int const NewY)
+void Cursor::SetYPosition(const int NewY)
 {
     _RedrawCursor();
     _cPosition.Y = (SHORT)NewY;
@@ -283,7 +283,7 @@ void Cursor::SetYPosition(_In_ int const NewY)
     ResetDelayEOLWrap();
 }
 
-void Cursor::IncrementXPosition(_In_ int const DeltaX)
+void Cursor::IncrementXPosition(const int DeltaX)
 {
     _RedrawCursor();
     _cPosition.X += (SHORT)DeltaX;
@@ -291,7 +291,7 @@ void Cursor::IncrementXPosition(_In_ int const DeltaX)
     ResetDelayEOLWrap();
 }
 
-void Cursor::IncrementYPosition(_In_ int const DeltaY)
+void Cursor::IncrementYPosition(const int DeltaY)
 {
     _RedrawCursor();
     _cPosition.Y += (SHORT)DeltaY;
@@ -299,7 +299,7 @@ void Cursor::IncrementYPosition(_In_ int const DeltaY)
     ResetDelayEOLWrap();
 }
 
-void Cursor::DecrementXPosition(_In_ int const DeltaX)
+void Cursor::DecrementXPosition(const int DeltaX)
 {
     _RedrawCursor();
     _cPosition.X -= (SHORT)DeltaX;
@@ -307,7 +307,7 @@ void Cursor::DecrementXPosition(_In_ int const DeltaX)
     ResetDelayEOLWrap();
 }
 
-void Cursor::DecrementYPosition(_In_ int const DeltaY)
+void Cursor::DecrementYPosition(const int DeltaY)
 {
     _RedrawCursor();
     _cPosition.Y -= (SHORT)DeltaY;
@@ -325,40 +325,40 @@ void Cursor::DecrementYPosition(_In_ int const DeltaY)
 // - pOtherCursor - The cursor to copy properties from
 // Return Value:
 // - <none>
-void Cursor::CopyProperties(_In_ const Cursor* const pOtherCursor)
+void Cursor::CopyProperties(const Cursor* const pOtherCursor)
 {
     // We shouldn't copy the position as it will be already rearranged by the resize operation.
-    //this->_cPosition                    = pOtherCursor->_cPosition;
+    //_cPosition                    = pOtherCursor->_cPosition;
 
-    this->_fHasMoved                    = pOtherCursor->_fHasMoved;
-    this->_fIsVisible                   = pOtherCursor->_fIsVisible;
-    this->_fIsOn                        = pOtherCursor->_fIsOn;
-    this->_fIsDouble                    = pOtherCursor->_fIsDouble;
-    this->_fBlinkingAllowed             = pOtherCursor->_fBlinkingAllowed;
-    this->_fDelay                       = pOtherCursor->_fDelay;
-    this->_fIsConversionArea            = pOtherCursor->_fIsConversionArea;
+    _fHasMoved                    = pOtherCursor->_fHasMoved;
+    _fIsVisible                   = pOtherCursor->_fIsVisible;
+    _fIsOn                        = pOtherCursor->_fIsOn;
+    _fIsDouble                    = pOtherCursor->_fIsDouble;
+    _fBlinkingAllowed             = pOtherCursor->_fBlinkingAllowed;
+    _fDelay                       = pOtherCursor->_fDelay;
+    _fIsConversionArea            = pOtherCursor->_fIsConversionArea;
 
     // A resize operation should invalidate the delayed end of line status, so do not copy.
-    //this->_fDelayedEolWrap              = pOtherCursor->_fDelayedEolWrap;
-    //this->_coordDelayedAt               = pOtherCursor->_coordDelayedAt;
+    //_fDelayedEolWrap              = pOtherCursor->_fDelayedEolWrap;
+    //_coordDelayedAt               = pOtherCursor->_coordDelayedAt;
 
-    this->_fDeferCursorRedraw           = pOtherCursor->_fDeferCursorRedraw;
-    this->_fHaveDeferredCursorRedraw    = pOtherCursor->_fHaveDeferredCursorRedraw;
+    _fDeferCursorRedraw           = pOtherCursor->_fDeferCursorRedraw;
+    _fHaveDeferredCursorRedraw    = pOtherCursor->_fHaveDeferredCursorRedraw;
 
     // Size will be handled seperately in the resize operation.
-    //this->_ulSize                       = pOtherCursor->_ulSize;
+    //_ulSize                       = pOtherCursor->_ulSize;
 
     // This property is set only once on console startup, and might change
     // during the lifetime of the console, but is not set again anywhere when a
     // cursor is replaced during reflow. This wasn't necessary when this
     // property and the cursor timer were static.
-    this->_uCaretBlinkTime              = pOtherCursor->_uCaretBlinkTime;
+    _uCaretBlinkTime              = pOtherCursor->_uCaretBlinkTime;
 
     // If there's a timer on the other one, then it was active for blinking.
     // Make sure we have a timer on our side too.
     if (pOtherCursor->_hCaretBlinkTimer != INVALID_HANDLE_VALUE)
     {
-        this->SetCaretTimer();
+        SetCaretTimer();
     }
 }
 
@@ -383,13 +383,13 @@ void Cursor::TimerRoutine(_In_ PSCREEN_INFORMATION const ScreenInfo)
     }
 
     // Update the cursor pos in USER so accessibility will work.
-    if (this->HasMoved())
+    if (HasMoved())
     {
-        this->SetHasMoved(false);
+        SetHasMoved(false);
 
         RECT rc;
-        rc.left = (this->GetPosition().X - ScreenInfo->GetBufferViewport().Left) * ScreenInfo->GetScreenFontSize().X;
-        rc.top = (this->GetPosition().Y - ScreenInfo->GetBufferViewport().Top) * ScreenInfo->GetScreenFontSize().Y;
+        rc.left = (GetPosition().X - ScreenInfo->GetBufferViewport().Left) * ScreenInfo->GetScreenFontSize().X;
+        rc.top = (GetPosition().Y - ScreenInfo->GetBufferViewport().Top) * ScreenInfo->GetScreenFontSize().Y;
         rc.right = rc.left + ScreenInfo->GetScreenFontSize().X;
         rc.bottom = rc.top + ScreenInfo->GetScreenFontSize().Y;
 
@@ -404,53 +404,53 @@ void Cursor::TimerRoutine(_In_ PSCREEN_INFORMATION const ScreenInfo)
             {
                 flags = IAccessibilityNotifier::ConsoleCaretEventFlags::CaretSelection;
             }
-            else if (this->IsVisible())
+            else if (IsVisible())
             {
                 flags = IAccessibilityNotifier::ConsoleCaretEventFlags::CaretVisible;
             }
 
-            _pAccessibilityNotifier->NotifyConsoleCaretEvent(flags, PACKCOORD(this->GetPosition()));
+            _pAccessibilityNotifier->NotifyConsoleCaretEvent(flags, PACKCOORD(GetPosition()));
         }
     }
 
     // If the DelayCursor flag has been set, wait one more tick before toggle.
     // This is used to guarantee the cursor is on for a finite period of time
     // after a move and off for a finite period of time after a WriteString.
-    if (this->GetDelay())
+    if (GetDelay())
     {
-        this->SetDelay(false);
+        SetDelay(false);
         goto DoScroll;
     }
 
     // Don't blink the cursor for remote sessions.
     if ((!ServiceLocator::LocateSystemConfigurationProvider()->IsCaretBlinkingEnabled() ||
          _uCaretBlinkTime == -1 ||
-        (!this->IsBlinkingAllowed())) &&
-       this->IsOn())
+        (!IsBlinkingAllowed())) &&
+       IsOn())
     {
         goto DoScroll;
     }
 
     // Blink only if the cursor isn't turned off via the API
-    if (this->IsVisible())
+    if (IsVisible())
     {
-        this->SetIsOn(!this->IsOn());
+        SetIsOn(!IsOn());
     }
 
 DoScroll:
     Scrolling::s_ScrollIfNecessary(ScreenInfo);
 }
 
-void Cursor::DelayEOLWrap(_In_ const COORD coordDelayedAt)
+void Cursor::DelayEOLWrap(const COORD coordDelayedAt)
 {
     _coordDelayedAt = coordDelayedAt;
-    _fDelayedEolWrap = TRUE;
+    _fDelayedEolWrap = true;
 }
 
 void Cursor::ResetDelayEOLWrap()
 {
     _coordDelayedAt = {0};
-    _fDelayedEolWrap = FALSE;
+    _fDelayedEolWrap = false;
 }
 
 COORD Cursor::GetDelayedAtPosition() const
@@ -458,14 +458,14 @@ COORD Cursor::GetDelayedAtPosition() const
     return _coordDelayedAt;
 }
 
-BOOL Cursor::IsDelayedEOLWrap() const
+bool Cursor::IsDelayedEOLWrap() const
 {
     return _fDelayedEolWrap;
 }
 
 void Cursor::StartDeferDrawing()
 {
-    _fDeferCursorRedraw = TRUE;
+    _fDeferCursorRedraw = true;
 }
 
 void Cursor::EndDeferDrawing()
@@ -540,7 +540,7 @@ void CALLBACK CursorTimerRoutineWrapper(_In_ PVOID /* lpParam */, _In_ BOOL /* T
     // not being destroyed, things get too complicated.
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-    if (gci.TryLockConsole() != FALSE)
+    if (gci.TryLockConsole() != false)
     {
         Cursor *cursor = gci.CurrentScreenBuffer->TextInfo->GetCursor();
         cursor->TimerRoutine(gci.CurrentScreenBuffer);
@@ -562,7 +562,7 @@ void Cursor::SetCaretTimer()
 
     if (_hCaretBlinkTimer == INVALID_HANDLE_VALUE)
     {
-        BOOL  bRet = TRUE;
+        bool bRet = true;
         DWORD dwEffectivePeriod = _uCaretBlinkTime == -1 ? dwDefTimeout : _uCaretBlinkTime;
 
         bRet = CreateTimerQueueTimer(&_hCaretBlinkTimer,
@@ -581,7 +581,7 @@ void Cursor::KillCaretTimer()
 {
     if (_hCaretBlinkTimer != INVALID_HANDLE_VALUE)
     {
-        BOOL bRet = TRUE;
+        bool bRet = true;
 
         bRet = DeleteTimerQueueTimer(_hCaretBlinkTimerQueue,
                                      _hCaretBlinkTimer,
@@ -591,7 +591,7 @@ void Cursor::KillCaretTimer()
         // A failure to delete the timer with the LastError being ERROR_IO_PENDING means that the timer is
         // currently in use and will get cleaned up when released. Delete should not be called again.
         // We treat that case as a success.
-        if (bRet == FALSE && GetLastError() != ERROR_IO_PENDING)
+        if (bRet == false && GetLastError() != ERROR_IO_PENDING)
         {
             LOG_LAST_ERROR();
         }
@@ -619,13 +619,13 @@ const COLORREF Cursor::GetColor() const
     return gci.GetCursorColor();
 }
 
-void Cursor::SetColor(_In_ const unsigned int color)
+void Cursor::SetColor(const unsigned int color)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.SetCursorColor(color);
 }
 
-void Cursor::SetType(_In_ const CursorType type)
+void Cursor::SetType(const CursorType type)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.SetCursorType(type);

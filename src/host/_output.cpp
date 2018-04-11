@@ -31,7 +31,7 @@ void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
                                _In_ SHORT cchBuffer,
                                _In_ PSCREEN_INFORMATION pScreenInfo,
                                _Inout_updates_(cchBuffer) DbcsAttribute* const pDbcsAttributes,
-                               _In_ const bool fWasLineWrapped)
+                               const bool fWasLineWrapped)
 {
     DBGOUTPUT(("StreamWriteToScreenBuffer\n"));
     COORD const TargetPoint = pScreenInfo->TextInfo->GetCursor()->GetPosition();
@@ -101,10 +101,10 @@ void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
 // - <none>
 [[nodiscard]]
 NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimensions.Y * sizeof(CHAR_INFO)) PBYTE const prgbSrc,
-                                 _In_ const COORD coordSrcDimensions,
-                                 _In_ const SMALL_RECT * const psrSrc,
+                                 const COORD coordSrcDimensions,
+                                 const SMALL_RECT * const psrSrc,
                                  _In_ PSCREEN_INFORMATION pScreenInfo,
-                                 _In_ const COORD coordDest,
+                                 const COORD coordDest,
                                  _In_reads_opt_(coordSrcDimensions.X * coordSrcDimensions.Y) TextAttribute* const pTextAttributes)
 {
     DBGOUTPUT(("WriteRectToScreenBuffer\n"));
@@ -121,7 +121,7 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
         PBYTE SourcePtr = prgbSrc;
         BYTE* pbSourceEnd = prgbSrc + ((coordSrcDimensions.X * coordSrcDimensions.Y) * sizeof(CHAR_INFO));
 
-        BOOLEAN WholeSource = FALSE;
+        bool WholeSource = false;
         if (XSize == coordSrcDimensions.X)
         {
             ASSERT(psrSrc->Left == 0);
@@ -129,7 +129,7 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
             {
                 SourcePtr += SCREEN_BUFFER_POINTER(psrSrc->Left, psrSrc->Top, coordSrcDimensions.X, SIZEOF_CI_CELL);
             }
-            WholeSource = TRUE;
+            WholeSource = true;
         }
 
         const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
@@ -412,7 +412,7 @@ void WriteRegionToScreen(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ PSMALL_RECT 
 // - srRegion - Region to write in screen buffer coordinates.  Region is inclusive
 // Return Value:
 // - <none>
-void WriteToScreen(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ const SMALL_RECT srRegion)
+void WriteToScreen(_In_ PSCREEN_INFORMATION pScreenInfo, const SMALL_RECT srRegion)
 {
     DBGOUTPUT(("WriteToScreen\n"));
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -458,8 +458,8 @@ void WriteToScreen(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ const SMALL_RECT s
 [[nodiscard]]
 NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
                            _In_reads_(*pcRecords) const VOID * pvBuffer,
-                           _In_ const COORD coordWrite,
-                           _In_ const ULONG ulStringType,
+                           const COORD coordWrite,
+                           const ULONG ulStringType,
                            _Inout_ PULONG pcRecords,    // this value is valid even for error cases
                            _Out_opt_ PULONG pcColumns)
 {
@@ -488,7 +488,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
     DbcsAttribute* BufferA = nullptr;
     PWCHAR TransBuffer = nullptr;
     DbcsAttribute* TransBufferA = nullptr;
-    BOOL fLocalHeap = FALSE;
+    bool fLocalHeap = false;
     if (ulStringType == CONSOLE_ASCII)
     {
         UINT const Codepage = gci.OutputCP;
@@ -509,7 +509,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
                 return STATUS_NO_MEMORY;
             }
 
-            fLocalHeap = TRUE;
+            fLocalHeap = true;
         }
         else
         {
@@ -596,7 +596,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
                 return STATUS_NO_MEMORY;
             }
 
-            fLocalHeap = TRUE;
+            fLocalHeap = true;
         }
         else
         {
@@ -912,8 +912,8 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
 [[nodiscard]]
 NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
                     _In_ WORD wElement,
-                    _In_ const COORD coordWrite,
-                    _In_ const ULONG ulElementType,
+                    const COORD coordWrite,
+                    const ULONG ulElementType,
                     _Inout_ PULONG pcElements)  // this value is valid even for error cases
 {
     DBGOUTPUT(("FillOutput\n"));
@@ -1240,9 +1240,9 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
 // - pScreenInfo - pointer to screen info
 // - psrTarget - rectangle in screen buffer to fill
 // Return Value:
-void FillRectangle(_In_ const CHAR_INFO * const pciFill,
+void FillRectangle(const CHAR_INFO * const pciFill,
                    _In_ PSCREEN_INFORMATION pScreenInfo,
-                   _In_ const SMALL_RECT * const psrTarget)
+                   const SMALL_RECT * const psrTarget)
 {
     DBGOUTPUT(("FillRectangle\n"));
 

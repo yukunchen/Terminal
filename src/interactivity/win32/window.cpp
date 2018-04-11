@@ -295,7 +295,7 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
 
             if (NT_SUCCESS(status))
             {
-                this->_hWnd = hWnd;
+                _hWnd = hWnd;
 
                 status = NTSTATUS_FROM_HRESULT(pGdiEngine->SetHwnd(hWnd));
 
@@ -355,7 +355,7 @@ void Window::_CloseWindow() const
 // Return Value:
 // - STATUS_SUCCESS or system errors from activating the window and setting its show states
 [[nodiscard]]
-NTSTATUS Window::ActivateAndShow(_In_ WORD const wShowWindow)
+NTSTATUS Window::ActivateAndShow(const WORD wShowWindow)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     NTSTATUS status = STATUS_SUCCESS;
@@ -444,7 +444,7 @@ NTSTATUS Window::SetViewportOrigin(_In_ SMALL_RECT NewWindow)
 // - Size of the window in characters (relative to the current font)
 // Return Value:
 // - <none>
-void Window::UpdateWindowSize(_In_ COORD const coordSizeInChars) const
+void Window::UpdateWindowSize(const COORD coordSizeInChars) const
 {
     GetScreenInfo()->SetViewportSize(&coordSizeInChars);
 
@@ -551,7 +551,7 @@ BOOL Window::ReleaseMouse()
 // - sizeNew - The X and Y dimensions
 // Return Value:
 // - <none>
-void Window::_UpdateWindowSize(_In_ SIZE const sizeNew) const
+void Window::_UpdateWindowSize(const SIZE sizeNew) const
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION* const ScreenInfo = GetScreenInfo();
@@ -699,7 +699,7 @@ NTSTATUS Window::_InternalSetWindowSize() const
 // - AbsoluteChange - The magnitude of the change (for tracking commands)
 // Return Value:
 // - <none>
-void Window::VerticalScroll(_In_ const WORD wScrollCommand, _In_ const WORD wAbsoluteChange) const
+void Window::VerticalScroll(const WORD wScrollCommand, const WORD wAbsoluteChange) const
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     COORD NewOrigin;
@@ -770,7 +770,7 @@ void Window::VerticalScroll(_In_ const WORD wScrollCommand, _In_ const WORD wAbs
         return;
     }
     }
-    
+
     NewOrigin.Y = std::clamp(NewOrigin.Y, 0i16, gsl::narrow<SHORT>(sScreenBufferSizeY - ScreenInfo->GetScreenWindowSizeY()));
     LOG_IF_FAILED(ScreenInfo->SetViewportOrigin(TRUE, NewOrigin));
 }
@@ -782,7 +782,7 @@ void Window::VerticalScroll(_In_ const WORD wScrollCommand, _In_ const WORD wAbs
 // - AbsoluteChange - The magnitude of the change (for tracking commands)
 // Return Value:
 // - <none>
-void Window::HorizontalScroll(_In_ const WORD wScrollCommand, _In_ const WORD wAbsoluteChange) const
+void Window::HorizontalScroll(const WORD wScrollCommand, const WORD wAbsoluteChange) const
 {
     COORD NewOrigin;
 
@@ -874,7 +874,7 @@ int Window::UpdateScrollBar(bool isVertical, bool isAltBuffer, UINT pageSize, in
 // - prc - rectangle to fill
 // Return Value:
 // - <none>
-void Window::s_ConvertWindowPosToWindowRect(_In_ LPWINDOWPOS const lpWindowPos, _Out_ RECT* const prc)
+void Window::s_ConvertWindowPosToWindowRect(const LPWINDOWPOS lpWindowPos, _Out_ RECT* const prc)
 {
     prc->left = lpWindowPos->x;
     prc->top = lpWindowPos->y;
@@ -889,7 +889,7 @@ void Window::s_ConvertWindowPosToWindowRect(_In_ LPWINDOWPOS const lpWindowPos, 
 // - prectWindow - rectangle to fill with pixel positions of the outer edge rectangle for this window
 // Return Value:
 // - <none>
-void Window::_CalculateWindowRect(_In_ COORD const coordWindowInChars, _Inout_ RECT* const prectWindow) const
+void Window::_CalculateWindowRect(const COORD coordWindowInChars, _Inout_ RECT* const prectWindow) const
 {
     SCREEN_INFORMATION* const psiAttached = GetScreenInfo();
     COORD const coordFontSize = psiAttached->GetScreenFontSize();
@@ -911,10 +911,10 @@ void Window::_CalculateWindowRect(_In_ COORD const coordWindowInChars, _Inout_ R
 // - prectWindow - rectangle to fill with pixel positions of the outer edge rectangle for this window
 // Return Value:
 // - <none>
-void Window::s_CalculateWindowRect(_In_ COORD const coordWindowInChars,
-                                   _In_ int const iDpi,
-                                   _In_ COORD const coordFontSize,
-                                   _In_ COORD const coordBufferSize,
+void Window::s_CalculateWindowRect(const COORD coordWindowInChars,
+                                   const int iDpi,
+                                   const COORD coordFontSize,
+                                   const COORD coordBufferSize,
                                    _In_opt_ HWND const hWnd,
                                    _Inout_ RECT* const prectWindow)
 {
@@ -973,7 +973,7 @@ RECT Window::GetWindowRect() const
 
 HWND Window::GetWindowHandle() const
 {
-    return this->_hWnd;
+    return _hWnd;
 }
 
 SCREEN_INFORMATION* Window::GetScreenInfo() const
@@ -1000,7 +1000,7 @@ BYTE Window::GetWindowOpacity() const
 // - bOpacity - 0xff/100% opacity = opaque window. 0xb2/70% opacity = 30% transparent window.
 // Return Value:
 // - <none>
-void Window::SetWindowOpacity(_In_ BYTE const bOpacity)
+void Window::SetWindowOpacity(const BYTE bOpacity)
 {
     _pSettings->SetWindowAlpha(bOpacity);
 }
@@ -1039,7 +1039,7 @@ void Window::ApplyWindowOpacity() const
 // - sOpacityDelta - How much to modify the current window opacity. Positive = more opaque. Negative = more transparent.
 // Return Value:
 // - <none>
-void Window::ChangeWindowOpacity(_In_ short const sOpacityDelta)
+void Window::ChangeWindowOpacity(const short sOpacityDelta)
 {
     // Window Opacity is always a BYTE (unsigned char, 1 byte)
     // Delta is a short (signed short, 2 bytes)
@@ -1068,7 +1068,7 @@ bool Window::IsInFullscreen() const
     return _fIsInFullscreen;
 }
 
-void Window::SetIsFullscreen(_In_ bool const fFullscreenEnabled)
+void Window::SetIsFullscreen(const bool fFullscreenEnabled)
 {
     // It is possible to enter SetIsFullScreen even if we're already in full screen.
     // Use the old is in fullscreen flag to gate checks that rely on the current state.
@@ -1112,7 +1112,7 @@ void Window::SetIsFullscreen(_In_ bool const fFullscreenEnabled)
     _ApplyWindowSize();
 }
 
-void Window::_BackupWindowSizes(_In_ bool const fCurrentIsInFullscreen)
+void Window::_BackupWindowSizes(const bool fCurrentIsInFullscreen)
 {
     if (_fIsInFullscreen)
     {
@@ -1162,8 +1162,8 @@ void Window::s_ReinitializeFontsForDPIChange()
 }
 
 LRESULT Window::s_RegPersistWindowPos(_In_ PCWSTR const pwszTitle,
-                                      _In_ const BOOL fAutoPos,
-                                      _In_ const Window* const pWindow)
+                                      const BOOL fAutoPos,
+                                      const Window* const pWindow)
 {
 
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -1228,7 +1228,7 @@ LRESULT Window::s_RegPersistWindowPos(_In_ PCWSTR const pwszTitle,
     return Status;
 }
 
-LRESULT Window::s_RegPersistWindowOpacity(_In_ PCWSTR const pwszTitle, _In_ const Window* const pWindow)
+LRESULT Window::s_RegPersistWindowOpacity(_In_ PCWSTR const pwszTitle, const Window* const pWindow)
 {
     HKEY hCurrentUserKey, hConsoleKey, hTitleKey;
 
@@ -1258,8 +1258,8 @@ LRESULT Window::s_RegPersistWindowOpacity(_In_ PCWSTR const pwszTitle, _In_ cons
 
 void Window::s_PersistWindowPosition(_In_ PCWSTR pwszLinkTitle,
                                      _In_ PCWSTR pwszOriginalTitle,
-                                     _In_ const DWORD dwFlags,
-                                     _In_ const Window* const pWindow)
+                                     const DWORD dwFlags,
+                                     const Window* const pWindow)
 {
     if (pwszLinkTitle == nullptr)
     {
@@ -1281,7 +1281,7 @@ void Window::s_PersistWindowPosition(_In_ PCWSTR pwszLinkTitle,
     }
 }
 
-void Window::s_PersistWindowOpacity(_In_ PCWSTR pwszLinkTitle, _In_ PCWSTR pwszOriginalTitle, _In_ const Window* const pWindow)
+void Window::s_PersistWindowOpacity(_In_ PCWSTR pwszLinkTitle, _In_ PCWSTR pwszOriginalTitle, const Window* const pWindow)
 {
     if (pwszLinkTitle == nullptr)
     {
@@ -1302,9 +1302,9 @@ void Window::s_PersistWindowOpacity(_In_ PCWSTR pwszLinkTitle, _In_ PCWSTR pwszO
     }
 }
 
-void Window::SetWindowHasMoved(_In_ BOOL const fHasMoved)
+void Window::SetWindowHasMoved(const BOOL fHasMoved)
 {
-    this->_fHasMoved = fHasMoved;
+    _fHasMoved = fHasMoved;
 }
 
 // Routine Description:
@@ -1323,6 +1323,7 @@ IRawElementProviderSimple* Window::_GetUiaProvider()
         }
         catch (...)
         {
+            LOG_HR(wil::ResultFromCaughtException());
             _pUiaProvider = nullptr;
         }
     }
@@ -1337,7 +1338,7 @@ HRESULT Window::SignalUia(_In_ EVENTID id)
     {
         return _pUiaProvider->Signal(id);
     }
-    return E_POINTER;
+    return S_FALSE;
 }
 
 [[nodiscard]]
@@ -1348,7 +1349,7 @@ HRESULT Window::UiaSetTextAreaFocus()
         LOG_IF_FAILED(_pUiaProvider->SetTextAreaFocus());
         return S_OK;
     }
-    return E_POINTER;
+    return S_FALSE;
 }
 
 void Window::SetOwner()

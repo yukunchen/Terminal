@@ -27,7 +27,7 @@
 // - pWaiter - The context to return to later when the wait is satisfied.
 ConsoleWaitBlock::ConsoleWaitBlock(_In_ ConsoleWaitQueue* const pProcessQueue,
                                    _In_ ConsoleWaitQueue* const pObjectQueue,
-                                   _In_ const CONSOLE_API_MSG* const pWaitReplyMessage,
+                                   const CONSOLE_API_MSG* const pWaitReplyMessage,
                                    _In_ IWaitRoutine* const pWaiter) :
     _pProcessQueue(THROW_HR_IF_NULL(E_INVALIDARG, pProcessQueue)),
     _pObjectQueue(THROW_HR_IF_NULL(E_INVALIDARG, pObjectQueue)),
@@ -119,14 +119,14 @@ HRESULT ConsoleWaitBlock::s_CreateWait(_Inout_ CONSOLE_API_MSG* const pWaitReply
 // - TerminationReason - A reason to tell the callback to terminate early or 0 if it should operate normally.
 // Return Value:
 // - True if the routine was able to successfully return data (or terminate). False otherwise.
-bool ConsoleWaitBlock::Notify(_In_ WaitTerminationReason const TerminationReason)
+bool ConsoleWaitBlock::Notify(const WaitTerminationReason TerminationReason)
 {
     bool fRetVal;
 
     NTSTATUS status;
     DWORD dwNumBytes = 0;
     DWORD dwControlKeyState;
-    BOOLEAN fIsUnicode = TRUE;
+    bool fIsUnicode = true;
 
     std::deque<std::unique_ptr<IInputEvent>> outEvents;
     // TODO: MSFT 14104228 - get rid of this void* and get the data
@@ -140,20 +140,20 @@ bool ConsoleWaitBlock::Notify(_In_ WaitTerminationReason const TerminationReason
     case API_NUMBER_GETCONSOLEINPUT:
     {
         CONSOLE_GETCONSOLEINPUT_MSG* a = &(_WaitReplyMessage.u.consoleMsgL1.GetConsoleInput);
-        fIsUnicode = a->Unicode;
+        fIsUnicode = !!a->Unicode;
         pOutputData = &outEvents;
         break;
     }
     case API_NUMBER_READCONSOLE:
     {
         CONSOLE_READCONSOLE_MSG* a = &(_WaitReplyMessage.u.consoleMsgL1.ReadConsole);
-        fIsUnicode = a->Unicode;
+        fIsUnicode = !!a->Unicode;
         break;
     }
     case API_NUMBER_WRITECONSOLE:
     {
         CONSOLE_WRITECONSOLE_MSG* a = &(_WaitReplyMessage.u.consoleMsgL1.WriteConsole);
-        fIsUnicode = a->Unicode;
+        fIsUnicode = !!a->Unicode;
         break;
     }
     default:

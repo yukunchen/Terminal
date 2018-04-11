@@ -23,28 +23,29 @@ namespace Microsoft::Console::Render
     {
     public:
         WinTelnetEngine(_In_ wil::unique_hfile hPipe,
-                        _In_ const Microsoft::Console::IDefaultColorProvider& colorProvider,
-                        _In_ const Microsoft::Console::Types::Viewport initialViewport,
+                        const Microsoft::Console::IDefaultColorProvider& colorProvider,
+                        const Microsoft::Console::Types::Viewport initialViewport,
                         _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                        _In_ const WORD cColorTable);
+                        const WORD cColorTable);
         virtual ~WinTelnetEngine() override = default;
 
         [[nodiscard]]
-        HRESULT UpdateDrawingBrushes(_In_ COLORREF const colorForeground,
-                                    _In_ COLORREF const colorBackground,
-                                    _In_ WORD const legacyColorAttribute,
-                                    _In_ bool const fIncludeBackgrounds) override;
+        HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
+                                    const COLORREF colorBackground,
+                                    const WORD legacyColorAttribute,
+                                    const bool fIncludeBackgrounds) override;
         [[nodiscard]]
         HRESULT ScrollFrame() override;
-        [[nodiscard]]
-        HRESULT InvalidateScroll(_In_ const COORD* const pcoordDelta) override;
 
         [[nodiscard]]
-        HRESULT WriteTerminalW(_In_ const std::wstring& wstr) override;
+        HRESULT InvalidateScroll(const COORD* const pcoordDelta) override;
 
-    protected:
         [[nodiscard]]
-        HRESULT _MoveCursor(_In_ const COORD coord);
+        HRESULT WriteTerminalW(const std::wstring& wstr) override;
+
+protected:
+        [[nodiscard]]
+        HRESULT _MoveCursor(const COORD coord);
     private:
         const COLORREF* const _ColorTable;
         const WORD _cColorTable;

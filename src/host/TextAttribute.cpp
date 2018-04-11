@@ -17,7 +17,7 @@ TextAttribute::TextAttribute()
     _rgbBackground = RGB(0, 0, 0);
 }
 
-TextAttribute::TextAttribute(_In_ const WORD wLegacyAttr)
+TextAttribute::TextAttribute(const WORD wLegacyAttr)
 {
     _wAttrLegacy = wLegacyAttr;
     _fUseRgbColor = false;
@@ -25,7 +25,7 @@ TextAttribute::TextAttribute(_In_ const WORD wLegacyAttr)
     _rgbBackground = RGB(0, 0, 0);
 }
 
-TextAttribute::TextAttribute(_In_ const COLORREF rgbForeground, _In_ const COLORREF rgbBackground)
+TextAttribute::TextAttribute(const COLORREF rgbForeground, const COLORREF rgbBackground)
 {
     _wAttrLegacy = 0;
     _rgbForeground = rgbForeground;
@@ -117,23 +117,23 @@ COLORREF TextAttribute::GetRgbBackground() const
     return rgbColor;
 }
 
-void TextAttribute::SetFrom(_In_ const TextAttribute& otherAttr)
+void TextAttribute::SetFrom(const TextAttribute& otherAttr)
 {
     *this = otherAttr;
 }
 
-void TextAttribute::SetFromLegacy(_In_ const WORD wLegacy)
+void TextAttribute::SetFromLegacy(const WORD wLegacy)
 {
     _wAttrLegacy = wLegacy;
     _fUseRgbColor = false;
 }
 
-void TextAttribute::SetMetaAttributes(_In_ const WORD wMeta)
+void TextAttribute::SetMetaAttributes(const WORD wMeta)
 {
     UpdateFlagsInMask(_wAttrLegacy, META_ATTRS, wMeta);
 }
 
-void TextAttribute::SetForeground(_In_ const COLORREF rgbForeground)
+void TextAttribute::SetForeground(const COLORREF rgbForeground)
 {
     _rgbForeground = rgbForeground;
     if (!_fUseRgbColor)
@@ -143,7 +143,7 @@ void TextAttribute::SetForeground(_In_ const COLORREF rgbForeground)
     _fUseRgbColor = true;
 }
 
-void TextAttribute::SetBackground(_In_ const COLORREF rgbBackground)
+void TextAttribute::SetBackground(const COLORREF rgbBackground)
 {
     _rgbBackground = rgbBackground;
     if (!_fUseRgbColor)
@@ -153,7 +153,7 @@ void TextAttribute::SetBackground(_In_ const COLORREF rgbBackground)
     _fUseRgbColor = true;
 }
 
-void TextAttribute::SetColor(_In_ const COLORREF rgbColor, _In_ const bool fIsForeground)
+void TextAttribute::SetColor(const COLORREF rgbColor, const bool fIsForeground)
 {
     if (fIsForeground)
     {
@@ -165,7 +165,7 @@ void TextAttribute::SetColor(_In_ const COLORREF rgbColor, _In_ const bool fIsFo
     }
 }
 
-bool TextAttribute::IsEqual(_In_ const TextAttribute& otherAttr) const
+bool TextAttribute::IsEqual(const TextAttribute& otherAttr) const
 {
     return _wAttrLegacy == otherAttr._wAttrLegacy &&
            _fUseRgbColor == otherAttr._fUseRgbColor &&
@@ -173,7 +173,7 @@ bool TextAttribute::IsEqual(_In_ const TextAttribute& otherAttr) const
            _rgbBackground == otherAttr._rgbBackground;
 }
 
-bool TextAttribute::IsEqualToLegacy(_In_ const WORD wLegacy) const
+bool TextAttribute::IsEqualToLegacy(const WORD wLegacy) const
 {
     return _wAttrLegacy == wLegacy && !_fUseRgbColor;
 }

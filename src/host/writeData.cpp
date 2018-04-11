@@ -26,8 +26,8 @@
 // - THROW: Throws if space cannot be allocated to copy the given string
 WriteData::WriteData(_In_ SCREEN_INFORMATION* const psiContext,
                      _In_reads_bytes_(cbContext) wchar_t* const pwchContext,
-                     _In_ ULONG const cbContext,
-                     _In_ UINT const uiOutputCodepage) :
+                     const ULONG cbContext,
+                     const UINT uiOutputCodepage) :
     IWaitRoutine(ReplyDataType::Write),
     _psiContext(psiContext),
     _pwchContext(THROW_IF_NULL_ALLOC(reinterpret_cast<wchar_t*>(new byte[cbContext]))),
@@ -58,7 +58,7 @@ WriteData::~WriteData()
 // Arguments:
 // - fLeadByteCaptured - A lead byte was removed from the string before converted it and saved it.
 //                       We need to report to the original caller that we "wrote" the byte
-//                       even though it is held in escrow for the next call because it was 
+//                       even though it is held in escrow for the next call because it was
 //                       the last character in the stream.
 // - fLeadByteConsumed - We had a lead byte in escrow from the previous call that we stitched onto the
 //                       front of the input string even though the caller didn't write it in this call.
@@ -66,8 +66,8 @@ WriteData::~WriteData()
 //                       in the calculation as it wasn't a part of what was given in this exact call.
 // Return Value:
 // - <none>
-void WriteData::SetLeadByteAdjustmentStatus(_In_ bool const fLeadByteCaptured,
-                                            _In_ bool const fLeadByteConsumed)
+void WriteData::SetLeadByteAdjustmentStatus(const bool fLeadByteCaptured,
+                                            const bool fLeadByteConsumed)
 {
     _fLeadByteCaptured = fLeadByteCaptured;
     _fLeadByteConsumed = fLeadByteConsumed;
@@ -81,7 +81,7 @@ void WriteData::SetLeadByteAdjustmentStatus(_In_ bool const fLeadByteCaptured,
 //                     wide character string that is stowed in this object for consumption in the notify routine later.
 // Return Value:
 // - <none>
-void WriteData::SetUtf8ConsumedCharacters(_In_ size_t const cchUtf8Consumed)
+void WriteData::SetUtf8ConsumedCharacters(const size_t cchUtf8Consumed)
 {
     _cchUtf8Consumed = cchUtf8Consumed;
 }
@@ -96,10 +96,10 @@ void WriteData::SetUtf8ConsumedCharacters(_In_ size_t const cchUtf8Consumed)
 // - pNumBytes - The number of bytes of data that the server/driver will need to transmit back to the client process
 // - pControlKeyState - Unused for write operations. Set to 0.
 // - pOutputData - not used.
-// - TRUE if the wait is done and result buffer/status code can be sent back to the client.
-// - FALSE if we need to continue to wait because the output object blocked again
-BOOL WriteData::Notify(_In_ WaitTerminationReason const TerminationReason,
-                       _In_ BOOLEAN const fIsUnicode,
+// - true if the wait is done and result buffer/status code can be sent back to the client.
+// - false if we need to continue to wait because the output object blocked again
+bool WriteData::Notify(const WaitTerminationReason TerminationReason,
+                       const bool fIsUnicode,
                        _Out_ NTSTATUS* const pReplyStatus,
                        _Out_ DWORD* const pNumBytes,
                        _Out_ DWORD* const pControlKeyState,
@@ -111,7 +111,7 @@ BOOL WriteData::Notify(_In_ WaitTerminationReason const TerminationReason,
     if (IsFlagSet(TerminationReason, WaitTerminationReason::ThreadDying))
     {
         *pReplyStatus = STATUS_THREAD_IS_TERMINATING;
-        return TRUE;
+        return true;
     }
 
     // if we get to here, this routine was called by the input
@@ -133,7 +133,7 @@ BOOL WriteData::Notify(_In_ WaitTerminationReason const TerminationReason,
     {
         // an extra waiter will be created by DoWriteConsole, but we're already a waiter so discard it.
         delete pWaiter;
-        return FALSE;
+        return false;
     }
 
     // There's extra work to do to correct the byte counts if the original call was an A-version call.
@@ -143,7 +143,7 @@ BOOL WriteData::Notify(_In_ WaitTerminationReason const TerminationReason,
     {
         if (CP_UTF8 != _uiOutputCodepage)
         {
-            // At this level with WriteConsole, everything is byte counts, so change back to char counts for 
+            // At this level with WriteConsole, everything is byte counts, so change back to char counts for
             // GetALengthFromW to work correctly.
             const size_t cchContext = cbContext / sizeof(wchar_t);
 
@@ -183,5 +183,5 @@ BOOL WriteData::Notify(_In_ WaitTerminationReason const TerminationReason,
 
     *pNumBytes = cbContext;
     *pReplyStatus = Status;
-    return TRUE;
+    return true;
 }

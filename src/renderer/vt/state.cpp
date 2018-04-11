@@ -29,8 +29,8 @@ const COORD VtEngine::INVALID_COORDS = {-1, -1};
 // Return Value:
 // - An instance of a Renderer.
 VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
-                   _In_ const IDefaultColorProvider& colorProvider,
-                   _In_ const Viewport initialViewport) :
+                   const IDefaultColorProvider& colorProvider,
+                   const Viewport initialViewport) :
     _hFile(std::move(pipe)),
     _colorProvider(colorProvider),
     _LastFG(INVALID_COLOR),
@@ -68,7 +68,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
 [[nodiscard]]
-HRESULT VtEngine::_Write(_In_reads_(cch) const char* const psz, _In_ size_t const cch)
+HRESULT VtEngine::_Write(_In_reads_(cch) const char* const psz, const size_t cch)
 {
 #ifdef UNIT_TESTING
     if (_usingTestCallback)
@@ -91,7 +91,7 @@ HRESULT VtEngine::_Write(_In_reads_(cch) const char* const psz, _In_ size_t cons
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
 [[nodiscard]]
-HRESULT VtEngine::_Write(_In_ const std::string& str)
+HRESULT VtEngine::_Write(const std::string& str)
 {
     return _Write(str.c_str(), str.length());
 }
@@ -161,7 +161,7 @@ HRESULT VtEngine::_WriteTerminalAscii(_In_ const std::wstring& wstr)
 // - S_OK, E_INVALIDARG for a invalid format string, or suitable HRESULT error
 //      from writing pipe.
 [[nodiscard]]
-HRESULT VtEngine::_WriteFormattedString(_In_ const std::string* const pFormat, ...)
+HRESULT VtEngine::_WriteFormattedString(const std::string* const pFormat, ...)
 {
 
     HRESULT hr = E_FAIL;
@@ -196,7 +196,7 @@ HRESULT VtEngine::_WriteFormattedString(_In_ const std::string* const pFormat, .
 // Return Value:
 // - HRESULT S_OK
 [[nodiscard]]
-HRESULT VtEngine::UpdateFont(_In_ FontInfoDesired const * const /*pfiFontDesired*/,
+HRESULT VtEngine::UpdateFont(const FontInfoDesired * const /*pfiFontDesired*/,
                              _Out_ FontInfo* const /*pfiFont*/)
 {
     return S_OK;
@@ -211,7 +211,7 @@ HRESULT VtEngine::UpdateFont(_In_ FontInfoDesired const * const /*pfiFontDesired
 // Return Value:
 // - HRESULT S_OK
 [[nodiscard]]
-HRESULT VtEngine::UpdateDpi(_In_ int const /*iDpi*/)
+HRESULT VtEngine::UpdateDpi(const int /*iDpi*/)
 {
     return S_OK;
 }
@@ -225,7 +225,7 @@ HRESULT VtEngine::UpdateDpi(_In_ int const /*iDpi*/)
 // Return Value:
 // - HRESULT S_OK
 [[nodiscard]]
-HRESULT VtEngine::UpdateViewport(_In_ SMALL_RECT const srNewViewport)
+HRESULT VtEngine::UpdateViewport(const SMALL_RECT srNewViewport)
 {
     HRESULT hr = S_OK;
     const Viewport oldView = _lastViewport;
@@ -296,9 +296,9 @@ HRESULT VtEngine::UpdateViewport(_In_ SMALL_RECT const srNewViewport)
 // Return Value:
 // - S_FALSE: This is unsupported by the VT Renderer and should use another engine's value.
 [[nodiscard]]
-HRESULT VtEngine::GetProposedFont(_In_ FontInfoDesired const * const /*pfiFontDesired*/,
+HRESULT VtEngine::GetProposedFont(const FontInfoDesired * const /*pfiFontDesired*/,
                                   _Out_ FontInfo* const /*pfiFont*/,
-                                  _In_ int const /*iDpi*/)
+                                  const int /*iDpi*/)
 {
     return S_FALSE;
 }
@@ -374,7 +374,7 @@ HRESULT VtEngine::SuppressResizeRepaint()
 // Return Value:
 // - S_OK
 [[nodiscard]]
-HRESULT VtEngine::InheritCursor(_In_ const COORD coordCursor)
+HRESULT VtEngine::InheritCursor(const COORD coordCursor)
 {
     _virtualTop = coordCursor.Y;
     _lastText = coordCursor;

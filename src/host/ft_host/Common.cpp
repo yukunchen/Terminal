@@ -1,4 +1,4 @@
-﻿/********************************************************
+/********************************************************
 *                                                       *
 *   Copyright (C) Microsoft. All rights reserved.       *
 *                                                       *
@@ -130,7 +130,7 @@ BOOL UnadjustWindowRectEx(
     return fRc;
 }
 
-static HANDLE GetStdHandleVerify(_In_ const DWORD dwHandleType)
+static HANDLE GetStdHandleVerify(const DWORD dwHandleType)
 {
     const HANDLE hConsole = GetStdHandle(dwHandleType);
     VERIFY_ARE_NOT_EQUAL(hConsole, INVALID_HANDLE_VALUE, L"Ensure we got a valid console handle");
@@ -181,7 +181,7 @@ bool Common::TestBufferCleanup()
 static PCWSTR pwszConsoleKeyName = L"Console";
 static PCWSTR pwszForceV2ValueName = L"ForceV2";
 
-CommonV1V2Helper::CommonV1V2Helper(_In_ const ForceV2States ForceV2StateDesired)
+CommonV1V2Helper::CommonV1V2Helper(const ForceV2States ForceV2StateDesired)
 {
     // Open console key
     if (!OneCoreDelay::IsIsWindowPresent())

@@ -210,7 +210,7 @@ static PCWSTR _rgpwszExpectedFail[] =
     L"WCIW;0;5"
 };
 
-void IntegrityTest::_TestValidationHelper(_In_ const bool fIsBlockExpected,
+void IntegrityTest::_TestValidationHelper(const bool fIsBlockExpected,
                                           _In_ PCWSTR pwszIntegrityExpected)
 {
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };

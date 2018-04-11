@@ -31,7 +31,7 @@ bool IsInVirtualTerminalInputMode()
     return IsFlagSet(gci.pInputBuffer->InputMode, ENABLE_VIRTUAL_TERMINAL_INPUT);
 }
 
-BOOL IsSystemKey(_In_ WORD const wVirtualKeyCode)
+BOOL IsSystemKey(const WORD wVirtualKeyCode)
 {
     switch (wVirtualKeyCode)
     {
@@ -49,7 +49,7 @@ BOOL IsSystemKey(_In_ WORD const wVirtualKeyCode)
     return FALSE;
 }
 
-ULONG GetControlKeyState(_In_ const LPARAM lParam)
+ULONG GetControlKeyState(const LPARAM lParam)
 {
     ULONG ControlKeyState = 0;
 
@@ -105,10 +105,10 @@ bool ShouldTakeOverKeyboardShortcuts()
 
 // Routine Description:
 // - handles key events without reference to Win32 elements.
-void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, _In_ const bool generateBreak)
+void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, const bool generateBreak)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    BOOLEAN ContinueProcessing = TRUE;
+    bool ContinueProcessing = true;
 
     if (keyEvent.IsCtrlPressed() &&
         !keyEvent.IsAltPressed() &&
@@ -125,7 +125,7 @@ void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, _In_ const bool generateBreak
 
             if (!(IsFlagSet(gci.Flags, CONSOLE_SUSPENDED)))
             {
-                ContinueProcessing = FALSE;
+                ContinueProcessing = false;
             }
         }
 
@@ -142,21 +142,21 @@ void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, _In_ const bool generateBreak
 
             if (!(IsFlagSet(gci.Flags, CONSOLE_SUSPENDED)))
             {
-                ContinueProcessing = FALSE;
+                ContinueProcessing = false;
             }
         }
 
         // don't write ctrl-esc to the input buffer
         else if (keyEvent.GetVirtualKeyCode() == VK_ESCAPE)
         {
-            ContinueProcessing = FALSE;
+            ContinueProcessing = false;
         }
     }
     else if (keyEvent.IsAltPressed() &&
              keyEvent.IsKeyDown() &&
              keyEvent.GetVirtualKeyCode() == VK_ESCAPE)
     {
-        ContinueProcessing = FALSE;
+        ContinueProcessing = false;
     }
 
     if (ContinueProcessing)
@@ -183,7 +183,7 @@ void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, _In_ const bool generateBreak
 volatile bool DisableFocusEvents = false;
 #endif
 
-void HandleFocusEvent(_In_ const BOOL fSetFocus)
+void HandleFocusEvent(const BOOL fSetFocus)
 {
 #ifdef DBG
     if (DisableFocusEvents)
@@ -208,7 +208,7 @@ void HandleFocusEvent(_In_ const BOOL fSetFocus)
     ASSERT(EventsWritten == 1);
 }
 
-void HandleMenuEvent(_In_ const DWORD wParam)
+void HandleMenuEvent(const DWORD wParam)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
@@ -231,7 +231,7 @@ void HandleMenuEvent(_In_ const DWORD wParam)
 #endif
 }
 
-void HandleCtrlEvent(_In_ const DWORD EventType)
+void HandleCtrlEvent(const DWORD EventType)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     switch (EventType)

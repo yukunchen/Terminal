@@ -69,7 +69,7 @@ static bool ShouldUseConhostV2()
 }
 
 [[nodiscard]]
-static HRESULT ValidateServerHandle(_In_ const HANDLE handle)
+static HRESULT ValidateServerHandle(const HANDLE handle)
 {
     // Make sure this is a console file.
     FILE_FS_DEVICE_INFORMATION DeviceInformation;
@@ -89,13 +89,13 @@ static HRESULT ValidateServerHandle(_In_ const HANDLE handle)
     }
 }
 
-static bool ShouldUseLegacyConhost(_In_ const bool fForceV1)
+static bool ShouldUseLegacyConhost(const bool fForceV1)
 {
     return fForceV1 || !ShouldUseConhostV2();
 }
 
 [[nodiscard]]
-static HRESULT ActivateLegacyConhost(_In_ const HANDLE handle)
+static HRESULT ActivateLegacyConhost(const HANDLE handle)
 {
     HRESULT hr = S_OK;
 

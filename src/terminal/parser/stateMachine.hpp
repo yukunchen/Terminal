@@ -33,8 +33,8 @@ namespace Microsoft::Console::VirtualTerminal
     public:
         StateMachine(_In_ std::shared_ptr<IStateMachineEngine> pEngine);
 
-        void ProcessCharacter(_In_ wchar_t const wch);
-        void ProcessString(_Inout_updates_(cch) wchar_t* const rgwch, _In_ size_t const cch);
+        void ProcessCharacter(const wchar_t wch);
+        void ProcessString(_Inout_updates_(cch) wchar_t* const rgwch, const size_t cch);
         // Note: There is intentionally not a ProcessString that operates
         //      on a wstring. This is because the in buffer needs to be mutable
         //      and c_str() only gives you const data.
@@ -48,38 +48,38 @@ namespace Microsoft::Console::VirtualTerminal
         static const short s_cOscStringMaxLength = 256;
 
     private:
-        static bool s_IsActionableFromGround(_In_ wchar_t const wch);
-        static bool s_IsC0Code(_In_ wchar_t const wch);
-        static bool s_IsC1Csi(_In_ wchar_t const wch);
-        static bool s_IsIntermediate(_In_ wchar_t const wch);
-        static bool s_IsDelete(_In_ wchar_t const wch);
-        static bool s_IsEscape(_In_ wchar_t const wch);
-        static bool s_IsCsiIndicator(_In_ wchar_t const wch);
-        static bool s_IsCsiDelimiter(_In_ wchar_t const wch);
-        static bool s_IsCsiParamValue(_In_ wchar_t const wch);
-        static bool s_IsCsiPrivateMarker(_In_ wchar_t const wch);
-        static bool s_IsCsiInvalid(_In_ wchar_t const wch);
-        static bool s_IsOscIndicator(_In_ wchar_t const wch);
-        static bool s_IsOscDelimiter(_In_ wchar_t const wch);
-        static bool s_IsOscParamValue(_In_ wchar_t const wch);
-        static bool s_IsOscInvalid(_In_ wchar_t const wch);
-        static bool s_IsOscTerminator(_In_ wchar_t const wch);
-        static bool s_IsOscTerminationInitiator(_In_ wchar_t const wch);
-        static bool s_IsDesignateCharsetIndicator(_In_ wchar_t const wch);
-        static bool s_IsCharsetCode(_In_ wchar_t const wch);
-        static bool s_IsNumber(_In_ wchar_t const wch);
-        static bool s_IsSs3Indicator(_In_ wchar_t const wch);
+        static bool s_IsActionableFromGround(const wchar_t wch);
+        static bool s_IsC0Code(const wchar_t wch);
+        static bool s_IsC1Csi(const wchar_t wch);
+        static bool s_IsIntermediate(const wchar_t wch);
+        static bool s_IsDelete(const wchar_t wch);
+        static bool s_IsEscape(const wchar_t wch);
+        static bool s_IsCsiIndicator(const wchar_t wch);
+        static bool s_IsCsiDelimiter(const wchar_t wch);
+        static bool s_IsCsiParamValue(const wchar_t wch);
+        static bool s_IsCsiPrivateMarker(const wchar_t wch);
+        static bool s_IsCsiInvalid(const wchar_t wch);
+        static bool s_IsOscIndicator(const wchar_t wch);
+        static bool s_IsOscDelimiter(const wchar_t wch);
+        static bool s_IsOscParamValue(const wchar_t wch);
+        static bool s_IsOscInvalid(const wchar_t wch);
+        static bool s_IsOscTerminator(const wchar_t wch);
+        static bool s_IsOscTerminationInitiator(const wchar_t wch);
+        static bool s_IsDesignateCharsetIndicator(const wchar_t wch);
+        static bool s_IsCharsetCode(const wchar_t wch);
+        static bool s_IsNumber(const wchar_t wch);
+        static bool s_IsSs3Indicator(const wchar_t wch);
 
-        void _ActionExecute(_In_ wchar_t const wch);
-        void _ActionPrint(_In_ wchar_t const wch);
-        void _ActionEscDispatch(_In_ wchar_t const wch);
-        void _ActionCollect(_In_ wchar_t const wch);
-        void _ActionParam(_In_ wchar_t const wch);
-        void _ActionCsiDispatch(_In_ wchar_t const wch);
-        void _ActionOscParam(_In_ wchar_t const wch);
-        void _ActionOscPut(_In_ wchar_t const wch);
-        void _ActionOscDispatch(_In_ wchar_t const wch);
-        void _ActionSs3Dispatch(_In_ wchar_t const wch);
+        void _ActionExecute(const wchar_t wch);
+        void _ActionPrint(const wchar_t wch);
+        void _ActionEscDispatch(const wchar_t wch);
+        void _ActionCollect(const wchar_t wch);
+        void _ActionParam(const wchar_t wch);
+        void _ActionCsiDispatch(const wchar_t wch);
+        void _ActionOscParam(const wchar_t wch);
+        void _ActionOscPut(const wchar_t wch);
+        void _ActionOscDispatch(const wchar_t wch);
+        void _ActionSs3Dispatch(const wchar_t wch);
 
         void _ActionClear();
         void _ActionIgnore();
@@ -97,18 +97,18 @@ namespace Microsoft::Console::VirtualTerminal
         void _EnterSs3Entry();
         void _EnterSs3Param();
 
-        void _EventGround(_In_ wchar_t const wch);
-        void _EventEscape(_In_ wchar_t const wch);
-        void _EventEscapeIntermediate(_In_ wchar_t const wch);
-        void _EventCsiEntry(_In_ wchar_t const wch);
-        void _EventCsiIntermediate(_In_ wchar_t const wch);
-        void _EventCsiIgnore(_In_ wchar_t const wch);
-        void _EventCsiParam(_In_ wchar_t const wch);
-        void _EventOscParam(_In_ wchar_t const wch);
-        void _EventOscString(_In_ wchar_t const wch);
-        void _EventOscTermination(_In_ wchar_t const wch);
-        void _EventSs3Entry(_In_ wchar_t const wch);
-        void _EventSs3Param(_In_ wchar_t const wch);
+        void _EventGround(const wchar_t wch);
+        void _EventEscape(const wchar_t wch);
+        void _EventEscapeIntermediate(const wchar_t wch);
+        void _EventCsiEntry(const wchar_t wch);
+        void _EventCsiIntermediate(const wchar_t wch);
+        void _EventCsiIgnore(const wchar_t wch);
+        void _EventCsiParam(const wchar_t wch);
+        void _EventOscParam(const wchar_t wch);
+        void _EventOscString(const wchar_t wch);
+        void _EventOscTermination(const wchar_t wch);
+        void _EventSs3Entry(const wchar_t wch);
+        void _EventSs3Param(const wchar_t wch);
 
         enum class VTStates
         {

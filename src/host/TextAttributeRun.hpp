@@ -25,11 +25,11 @@ class TextAttributeRun final
 {
 public:
     size_t GetLength() const;
-    void SetLength(_In_ size_t const cchLength);
+    void SetLength(const size_t cchLength);
 
     const TextAttribute GetAttributes() const;
-    void SetAttributes(_In_ const TextAttribute textAttribute);
-    void SetAttributesFromLegacy(_In_ const WORD wNew);
+    void SetAttributes(const TextAttribute textAttribute);
+    void SetAttributesFromLegacy(const WORD wNew);
 
 private:
     size_t _cchLength;

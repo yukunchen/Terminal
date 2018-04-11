@@ -27,11 +27,11 @@ namespace Microsoft::Console::Render
     {
     public:
         XtermEngine(_In_ wil::unique_hfile hPipe,
-                    _In_ const Microsoft::Console::IDefaultColorProvider& colorProvider,
-                    _In_ const Microsoft::Console::Types::Viewport initialViewport,
+                    const Microsoft::Console::IDefaultColorProvider& colorProvider,
+                    const Microsoft::Console::Types::Viewport initialViewport,
                     _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                    _In_ const WORD cColorTable,
-                    _In_ const bool fUseAsciiOnly);
+                    const WORD cColorTable,
+                    const bool fUseAsciiOnly);
 
         virtual ~XtermEngine() override = default;
 
@@ -40,25 +40,28 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         HRESULT EndPaint() override;
         [[nodiscard]]
-        virtual HRESULT UpdateDrawingBrushes(_In_ COLORREF const colorForeground,
-                                            _In_ COLORREF const colorBackground,
-                                            _In_ WORD const legacyColorAttribute,
-                                            _In_ bool const fIncludeBackgrounds) override;
+        virtual HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
+                                            const COLORREF colorBackground,
+                                            const WORD legacyColorAttribute,
+                                            const bool fIncludeBackgrounds) override;
         [[nodiscard]]
         HRESULT PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
                                 _In_reads_(cchLine) const unsigned char* const rgWidths,
-                                _In_ size_t const cchLine,
-                                _In_ COORD const coordTarget,
-                                _In_ bool const fTrimLeft) override;
+                                const size_t cchLine,
+                                const COORD coordTarget,
+                                const bool fTrimLeft) override;
         [[nodiscard]]
         HRESULT ScrollFrame() override;
+
         [[nodiscard]]
-        HRESULT InvalidateScroll(_In_ const COORD* const pcoordDelta) override;
+        HRESULT InvalidateScroll(const COORD* const pcoordDelta) override;
+
         [[nodiscard]]
         HRESULT WriteTerminalW(_In_ const std::wstring& str) override;
+
     protected:
         [[nodiscard]]
-        HRESULT _MoveCursor(_In_ const COORD coord);
+        HRESULT _MoveCursor(const COORD coord);
         const COLORREF* const _ColorTable;
         const WORD _cColorTable;
         const bool _fUseAsciiOnly;

@@ -27,14 +27,14 @@ namespace Microsoft::Console::VirtualTerminal
 
         void TraceStateChange(_In_ PCWSTR const pwszName) const;
         void TraceOnAction(_In_ PCWSTR const pwszName) const;
-        void TraceOnExecute(_In_ wchar_t const wch) const;
+        void TraceOnExecute(const wchar_t wch) const;
         void TraceOnEvent(_In_ PCWSTR const pwszName) const;
-        void TraceCharInput(_In_ wchar_t const wch);
+        void TraceCharInput(const wchar_t wch);
 
-        void AddSequenceTrace(_In_ wchar_t const wch);
-        void DispatchSequenceTrace(_In_ bool const fSuccess);
+        void AddSequenceTrace(const wchar_t wch);
+        void DispatchSequenceTrace(const bool fSuccess);
         void ClearSequenceTrace();
-        void DispatchPrintRunTrace(_In_reads_(cchString) wchar_t* pwsString, _In_ size_t const cchString) const;
+        void DispatchPrintRunTrace(_In_reads_(cchString) wchar_t* pwsString, const size_t cchString) const;
 
     private:
         static const size_t s_cMaxSequenceTrace = 32;

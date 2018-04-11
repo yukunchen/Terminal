@@ -40,7 +40,7 @@
 // - fKeepCursorVisible - TRUE if changing window origin desirable when hit right edge
 // Return Value:
 [[nodiscard]]
-NTSTATUS AdjustCursorPosition(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ COORD coordCursor, _In_ const BOOL fKeepCursorVisible, _Inout_opt_ PSHORT psScrollY)
+NTSTATUS AdjustCursorPosition(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ COORD coordCursor, const BOOL fKeepCursorVisible, _Inout_opt_ PSHORT psScrollY)
 {
     const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
     if (coordCursor.X < 0)
@@ -154,7 +154,7 @@ NTSTATUS AdjustCursorPosition(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ COORD c
         {
             pScreenInfo->MakeCursorVisible(coordCursor);
         }
-        Status = pScreenInfo->SetCursorPosition(coordCursor, fKeepCursorVisible);
+        Status = pScreenInfo->SetCursorPosition(coordCursor, !!fKeepCursorVisible);
     }
 
     return Status;
@@ -186,8 +186,8 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                           _In_reads_bytes_(*pcb) PWCHAR pwchRealUnicode,
                           _Inout_ PDWORD const pcb,
                           _Out_opt_ PULONG const pcSpaces,
-                          _In_ const SHORT sOriginalXPosition,
-                          _In_ const DWORD dwFlags,
+                          const SHORT sOriginalXPosition,
+                          const DWORD dwFlags,
                           _Inout_opt_ PSHORT const psScrollY)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -842,8 +842,8 @@ NTSTATUS WriteChars(_In_ PSCREEN_INFORMATION pScreenInfo,
                     _In_reads_bytes_(*pcb) PWCHAR pwchRealUnicode,
                     _Inout_ PDWORD const pcb,
                     _Out_opt_ PULONG const pcSpaces,
-                    _In_ const SHORT sOriginalXPosition,
-                    _In_ const DWORD dwFlags,
+                    const SHORT sOriginalXPosition,
+                    const DWORD dwFlags,
                     _Inout_opt_ PSHORT const psScrollY)
 {
     if (!IsFlagSet(pScreenInfo->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) || !IsFlagSet(pScreenInfo->OutputMode, ENABLE_PROCESSED_OUTPUT))
@@ -962,7 +962,7 @@ NTSTATUS DoWriteConsole(_In_reads_bytes_(*pcbBuffer) PWCHAR pwchBuffer,
 [[nodiscard]]
 HRESULT WriteConsoleWImplHelper(_In_ IConsoleOutputObject* const pOutContext,
                                 _In_reads_(cchTextBufferLength) const wchar_t* const pwsTextBuffer,
-                                _In_ size_t const cchTextBufferLength,
+                                const size_t cchTextBufferLength,
                                 _Out_ size_t* const pcchTextBufferRead,
                                 _Outptr_result_maybenull_ WriteData** const ppWaiter)
 {
@@ -1009,7 +1009,7 @@ HRESULT WriteConsoleWImplHelper(_In_ IConsoleOutputObject* const pOutContext,
 [[nodiscard]]
 HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutContext,
                                        _In_reads_(cchTextBufferLength) const char* const psTextBuffer,
-                                       _In_ size_t const cchTextBufferLength,
+                                       const size_t cchTextBufferLength,
                                        _Out_ size_t* const pcchTextBufferRead,
                                        _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
 {
@@ -1249,7 +1249,7 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutCont
 [[nodiscard]]
 HRESULT ApiRoutines::WriteConsoleWImpl(_In_ IConsoleOutputObject* const pOutContext,
                                        _In_reads_(cchTextBufferLength) const wchar_t* const pwsTextBuffer,
-                                       _In_ size_t const cchTextBufferLength,
+                                       const size_t cchTextBufferLength,
                                        _Out_ size_t* const pcchTextBufferRead,
                                        _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
 {

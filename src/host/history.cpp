@@ -32,7 +32,7 @@
 // - ProcessHandle - handle to client process.
 // Return Value:
 // - <none>
-PCOMMAND_HISTORY FindCommandHistory(_In_ const HANDLE hProcess)
+PCOMMAND_HISTORY FindCommandHistory(const HANDLE hProcess)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     PLIST_ENTRY const ListHead = &gci.CommandHistoryList;
@@ -57,7 +57,7 @@ PCOMMAND_HISTORY FindCommandHistory(_In_ const HANDLE hProcess)
 // - hProcess - handle to client process.
 // Return Value:
 // - <none>
-void FreeCommandHistory(_In_ HANDLE const hProcess)
+void FreeCommandHistory(const HANDLE hProcess)
 {
     PCOMMAND_HISTORY const History = FindCommandHistory(hProcess);
     if (History)
@@ -99,7 +99,7 @@ void FreeCommandHistoryBuffers()
     }
 }
 
-void ResizeCommandHistoryBuffers(_In_ UINT const cCommands)
+void ResizeCommandHistoryBuffers(const UINT cCommands)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     ASSERT(cCommands <= SHORT_MAX);
@@ -138,8 +138,8 @@ void ResetCommandHistory(_In_opt_ PCOMMAND_HISTORY CommandHistory)
 [[nodiscard]]
 NTSTATUS AddCommand(_In_ PCOMMAND_HISTORY pCmdHistory,
                     _In_reads_bytes_(cbCommand) PCWCHAR pwchCommand,
-                    _In_ const USHORT cbCommand,
-                    _In_ const BOOL fHistoryNoDup)
+                    const USHORT cbCommand,
+                    const bool fHistoryNoDup)
 {
     if (pCmdHistory == nullptr || pCmdHistory->MaximumNumberOfCommands == 0)
     {
@@ -318,7 +318,7 @@ void EmptyCommandHistory(_In_opt_ PCOMMAND_HISTORY CommandHistory)
     CommandHistory->Flags = CLE_RESET;
 }
 
-BOOL AtFirstCommand(_In_ PCOMMAND_HISTORY CommandHistory)
+bool AtFirstCommand(_In_ PCOMMAND_HISTORY CommandHistory)
 {
     if (CommandHistory == nullptr)
     {
@@ -339,11 +339,11 @@ BOOL AtFirstCommand(_In_ PCOMMAND_HISTORY CommandHistory)
     return (i == CommandHistory->LastAdded);
 }
 
-BOOL AtLastCommand(_In_ PCOMMAND_HISTORY CommandHistory)
+bool AtLastCommand(_In_ PCOMMAND_HISTORY CommandHistory)
 {
     if (CommandHistory == nullptr)
     {
-        return FALSE;
+        return false;
     }
     else
     {
@@ -351,7 +351,7 @@ BOOL AtLastCommand(_In_ PCOMMAND_HISTORY CommandHistory)
     }
 }
 
-PCOMMAND_HISTORY ReallocCommandHistory(_In_opt_ PCOMMAND_HISTORY CurrentCommandHistory, _In_ DWORD const NumCommands)
+PCOMMAND_HISTORY ReallocCommandHistory(_In_opt_ PCOMMAND_HISTORY CurrentCommandHistory, const DWORD NumCommands)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // To protect ourselves from overflow and general arithmetic errors, a limit of SHORT_MAX is put on the size of the command history.
@@ -392,7 +392,7 @@ PCOMMAND_HISTORY ReallocCommandHistory(_In_opt_ PCOMMAND_HISTORY CurrentCommandH
     return History;
 }
 
-PCOMMAND_HISTORY FindExeCommandHistory(_In_reads_(AppNameLength) PVOID AppName, _In_ DWORD AppNameLength, _In_ BOOLEAN const Unicode)
+PCOMMAND_HISTORY FindExeCommandHistory(_In_reads_(AppNameLength) PVOID AppName, _In_ DWORD AppNameLength, const bool Unicode)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     PWCHAR AppNamePtr = nullptr;
@@ -440,7 +440,7 @@ PCOMMAND_HISTORY FindExeCommandHistory(_In_reads_(AppNameLength) PVOID AppName, 
 // - Console - pointer to console.
 // Return Value:
 // - Pointer to command history buffer.  if none are available, returns nullptr.
-PCOMMAND_HISTORY AllocateCommandHistory(_In_reads_bytes_(cbAppName) PCWSTR pwszAppName, _In_ const DWORD cbAppName, _In_ HANDLE hProcess)
+PCOMMAND_HISTORY AllocateCommandHistory(_In_reads_bytes_(cbAppName) PCWSTR pwszAppName, const DWORD cbAppName, _In_ HANDLE hProcess)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // Reuse a history buffer.  The buffer must be !CLE_ALLOCATED.
@@ -449,7 +449,7 @@ PCOMMAND_HISTORY AllocateCommandHistory(_In_reads_bytes_(cbAppName) PCWSTR pwszA
     PLIST_ENTRY ListNext = ListHead->Blink;
     PCOMMAND_HISTORY BestCandidate = nullptr;
     PCOMMAND_HISTORY History = nullptr;
-    BOOL SameApp = FALSE;
+    bool SameApp = false;
     while (ListNext != ListHead)
     {
         History = CONTAINING_RECORD(ListNext, COMMAND_HISTORY, ListLink);
@@ -461,7 +461,7 @@ PCOMMAND_HISTORY AllocateCommandHistory(_In_reads_bytes_(cbAppName) PCWSTR pwszA
             if (History->AppName && !_wcsnicmp(History->AppName, pwszAppName, (USHORT)cbAppName / sizeof(WCHAR)))
             {
                 BestCandidate = History;
-                SameApp = TRUE;
+                SameApp = true;
                 break;
             }
 
@@ -668,7 +668,7 @@ SHORT FindMatchingCommand(_In_ PCOMMAND_HISTORY CommandHistory,
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::ExpungeConsoleCommandHistoryAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
-                                                       _In_ size_t const cchExeNameBufferLength)
+                                                       const size_t cchExeNameBufferLength)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     wistd::unique_ptr<wchar_t[]> pwsExeName;
@@ -688,7 +688,7 @@ HRESULT ApiRoutines::ExpungeConsoleCommandHistoryAImpl(_In_reads_or_z_(cchExeNam
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::ExpungeConsoleCommandHistoryWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                                       _In_ size_t const cchExeNameBufferLength)
+                                                       const size_t cchExeNameBufferLength)
 {
     // Convert character count to DWORD byte count to interface with existing functions
     DWORD cbExeNameBufferLength;
@@ -712,8 +712,8 @@ HRESULT ApiRoutines::ExpungeConsoleCommandHistoryWImpl(_In_reads_or_z_(cchExeNam
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::SetConsoleNumberOfCommandsAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
-                                                     _In_ size_t const cchExeNameBufferLength,
-                                                     _In_ size_t const NumberOfCommands)
+                                                     const size_t cchExeNameBufferLength,
+                                                     const size_t NumberOfCommands)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     wistd::unique_ptr<wchar_t[]> pwsExeName;
@@ -734,8 +734,8 @@ HRESULT ApiRoutines::SetConsoleNumberOfCommandsAImpl(_In_reads_or_z_(cchExeNameB
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::SetConsoleNumberOfCommandsWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                                     _In_ size_t const cchExeNameBufferLength,
-                                                     _In_ size_t const NumberOfCommands)
+                                                     const size_t cchExeNameBufferLength,
+                                                     const size_t NumberOfCommands)
 {
     // Convert character count to DWORD byte count to interface with existing functions
     DWORD cbExeNameBufferLength;
@@ -767,9 +767,9 @@ HRESULT ApiRoutines::SetConsoleNumberOfCommandsWImpl(_In_reads_or_z_(cchExeNameB
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT GetConsoleCommandHistoryLengthImplHelper(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                                 _In_ size_t const cchExeNameBufferLength,
-                                                 _In_ bool const fCountInUnicode,
-                                                 _In_ UINT const uiCodePage,
+                                                 const size_t cchExeNameBufferLength,
+                                                 const bool fCountInUnicode,
+                                                 const UINT uiCodePage,
                                                  _Out_ size_t* const pcchCommandHistoryLength)
 {
     // Ensure output variables are initialized
@@ -825,7 +825,7 @@ HRESULT GetConsoleCommandHistoryLengthImplHelper(_In_reads_or_z_(cchExeNameBuffe
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::GetConsoleCommandHistoryLengthAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
-                                                         _In_ size_t const cchExeNameBufferLength,
+                                                         const size_t cchExeNameBufferLength,
                                                          _Out_ size_t* const pcchCommandHistoryLength)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -853,7 +853,7 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryLengthAImpl(_In_reads_or_z_(cchExeN
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::GetConsoleCommandHistoryLengthWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                                         _In_ size_t const cchExeNameBufferLength,
+                                                         const size_t cchExeNameBufferLength,
                                                          _Out_ size_t* const pcchCommandHistoryLength)
 {
     LockConsole();
@@ -878,9 +878,9 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryLengthWImpl(_In_reads_or_z_(cchExeN
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT GetConsoleCommandHistoryWImplHelper(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                            _In_ size_t const cchExeNameBufferLength,
+                                            const size_t cchExeNameBufferLength,
                                             _Out_writes_to_opt_(cchCommandHistoryBufferLength, *pcchCommandHistoryBufferWrittenOrNeeded) _Always_(_Post_z_) wchar_t* const pwsCommandHistoryBuffer,
-                                            _In_ size_t const cchCommandHistoryBufferLength,
+                                            const size_t cchCommandHistoryBufferLength,
                                             _Out_ size_t* const pcchCommandHistoryBufferWrittenOrNeeded)
 {
     // Ensure output variables are initialized
@@ -956,9 +956,9 @@ HRESULT GetConsoleCommandHistoryWImplHelper(_In_reads_or_z_(cchExeNameBufferLeng
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::GetConsoleCommandHistoryAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
-                                                   _In_ size_t const cchExeNameBufferLength,
+                                                   const size_t cchExeNameBufferLength,
                                                    _Out_writes_to_(cchCommandHistoryBufferLength, *pcchCommandHistoryBufferWritten) _Always_(_Post_z_) char* const psCommandHistoryBuffer,
-                                                   _In_ size_t const cchCommandHistoryBufferLength,
+                                                   const size_t cchCommandHistoryBufferLength,
                                                    _Out_ size_t* const pcchCommandHistoryBufferWritten)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -1020,9 +1020,9 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryAImpl(_In_reads_or_z_(cchExeNameBuf
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::GetConsoleCommandHistoryWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                                   _In_ size_t const cchExeNameBufferLength,
+                                                   const size_t cchExeNameBufferLength,
                                                    _Out_writes_to_(cchCommandHistoryBufferLength, *pcchCommandHistoryBufferWritten) _Always_(_Post_z_) wchar_t* const pwsCommandHistoryBuffer,
-                                                   _In_ size_t const cchCommandHistoryBufferLength,
+                                                   const size_t cchCommandHistoryBufferLength,
                                                    _Out_ size_t* const pcchCommandHistoryBufferWritten)
 {
     LockConsole();

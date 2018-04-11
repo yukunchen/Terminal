@@ -10,35 +10,61 @@ Abstract:
 --*/
 #pragma once
 
-//
-// aliases are grouped per console, per exe.
-//
 
-typedef struct _ALIAS
+
+
+class Alias
 {
-    LIST_ENTRY ListLink;
-    USHORT SourceLength;
-    USHORT TargetLength;
-    _Field_size_bytes_opt_(SourceLength) PWCHAR Source;
-    _Field_size_bytes_(TargetLength) PWCHAR Target;
-} ALIAS, *PALIAS;
+public:
+    static void s_ClearCmdExeAliases();
 
-typedef struct _EXE_ALIAS_LIST
-{
-    LIST_ENTRY ListLink;
-    USHORT ExeLength;
-    _Field_size_bytes_opt_(ExeLength) PWCHAR ExeName;
-    LIST_ENTRY AliasList;
-} EXE_ALIAS_LIST, *PEXE_ALIAS_LIST;
+    static void s_MatchAndCopyAliasLegacy(_In_reads_bytes_(cbSource) PWCHAR pwchSource,
+                                          _In_ ULONG cbSource,
+                                          _Out_writes_bytes_(*pcbTarget) PWCHAR pwchTarget,
+                                          _In_ ULONG cbTargetSize,
+                                          _Out_ PULONG pcbTargetWritten,
+                                          _In_reads_bytes_(cbExe) PWCHAR pwchExe,
+                                          _In_ USHORT cbExe,
+                                          _Out_ PDWORD pcLines);
 
-[[nodiscard]]
-NTSTATUS MatchAndCopyAlias(_In_reads_bytes_(cbSource) PWCHAR pwchSource,
-                           _In_ USHORT cbSource,
-                           _Out_writes_bytes_(*pcbTarget) PWCHAR pwchTarget,
-                           _Inout_ PUSHORT pcbTarget,
-                           _In_reads_bytes_(cbExe) PWCHAR pwchExe,
-                           _In_ USHORT cbExe,
-                           _Out_ PDWORD pcLines);
+    static std::wstring s_MatchAndCopyAlias(const std::wstring& sourceText,
+                                            const std::wstring& exeName,
+                                            size_t& lineCount);
 
-void ClearCmdExeAliases();
-void FreeAliasBuffers();
+
+private:
+    static void s_TrimTrailingCrLf(std::wstring& str);
+    static std::deque<std::wstring> s_Tokenize(const std::wstring& str);
+    static std::wstring s_GetArgString(const std::wstring& str);
+    static size_t s_ReplaceMacros(std::wstring& str,
+                                  const std::deque<std::wstring>& tokens,
+                                  const std::wstring& fullArgString);
+
+    static bool s_TryReplaceNumberedArgMacro(const wchar_t ch,
+                                             std::wstring& appendToStr,
+                                             const std::deque<std::wstring>& tokens);
+    static bool s_TryReplaceWildcardArgMacro(const wchar_t ch,
+                                             std::wstring& appendToStr,
+                                             const std::wstring fullArgString);
+
+    static bool s_TryReplaceInputRedirMacro(const wchar_t ch,
+                                            std::wstring& appendToStr);
+    static bool s_TryReplaceOutputRedirMacro(const wchar_t ch,
+                                             std::wstring& appendToStr);
+    static bool s_TryReplacePipeRedirMacro(const wchar_t ch,
+                                           std::wstring& appendToStr);
+
+    static bool s_TryReplaceNextCommandMacro(const wchar_t ch,
+                                             std::wstring& appendToStr,
+                                             size_t& lineCount);
+
+    static void s_AppendCrLf(std::wstring& appendToStr,
+                                size_t& lineCount);
+
+#ifdef UNIT_TESTING
+    static bool s_TestAddAlias(std::wstring& exe,
+                               std::wstring& alias,
+                               std::wstring& target);
+    friend class AliasTests;
+#endif
+};

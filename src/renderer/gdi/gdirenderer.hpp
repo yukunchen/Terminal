@@ -24,19 +24,19 @@ namespace Microsoft::Console::Render
         ~GdiEngine() override;
 
         [[nodiscard]]
-        HRESULT SetHwnd(_In_ HWND const hwnd);
+        HRESULT SetHwnd(const HWND hwnd);
 
         [[nodiscard]]
         HRESULT InvalidateSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection,
-                                    _In_ UINT const cRectangles) override;
+                                    const UINT cRectangles) override;
         [[nodiscard]]
-        HRESULT InvalidateScroll(_In_ const COORD* const pcoordDelta) override;
+        HRESULT InvalidateScroll(const COORD* const pcoordDelta) override;
         [[nodiscard]]
-        HRESULT InvalidateSystem(_In_ const RECT* const prcDirtyClient) override;
+        HRESULT InvalidateSystem(const RECT* const prcDirtyClient) override;
         [[nodiscard]]
-        HRESULT Invalidate(_In_ const SMALL_RECT* const psrRegion) override;
+        HRESULT Invalidate(const SMALL_RECT* const psrRegion) override;
         [[nodiscard]]
-        HRESULT InvalidateCursor(_In_ const COORD* const pcoordCursor) override;
+        HRESULT InvalidateCursor(const COORD* const pcoordCursor) override;
         [[nodiscard]]
         HRESULT InvalidateAll() override;
         [[nodiscard]]
@@ -57,60 +57,60 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         HRESULT PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
                                 _In_reads_(cchLine) const unsigned char* const rgWidths,
-                                _In_ size_t const cchLine,
-                                _In_ COORD const coordTarget,
-                                _In_ bool const fTrimLeft) override;
+                                const size_t cchLine,
+                                const COORD coordTarget,
+                                const bool fTrimLeft) override;
         [[nodiscard]]
-        HRESULT PaintBufferGridLines(_In_ GridLines const lines,
-                                        _In_ COLORREF const color,
-                                        _In_ size_t const cchLine,
-                                        _In_ COORD const coordTarget) override;
+        HRESULT PaintBufferGridLines(const GridLines lines,
+                                        const COLORREF color,
+                                        const size_t cchLine,
+                                        const COORD coordTarget) override;
         [[nodiscard]]
         HRESULT PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection,
-                                _In_ UINT const cRectangles) override;
+                                const UINT cRectangles) override;
 
         [[nodiscard]]
-        HRESULT PaintCursor(_In_ COORD const coordCursor,
-                            _In_ ULONG const ulCursorHeightPercent,
-                            _In_ bool const fIsDoubleWidth,
-                            _In_ CursorType const cursorType,
-                            _In_ bool const fUseColor,
-                            _In_ COLORREF const cursorColor) override;
+        HRESULT PaintCursor(const COORD coordCursor,
+                            const ULONG ulCursorHeightPercent,
+                            const bool fIsDoubleWidth,
+                            const CursorType cursorType,
+                            const bool fUseColor,
+                            const COLORREF cursorColor) override;
 
         [[nodiscard]]
         HRESULT ClearCursor() override;
 
         [[nodiscard]]
-        HRESULT UpdateDrawingBrushes(_In_ COLORREF const colorForeground,
-                                        _In_ COLORREF const colorBackground,
-                                        _In_ WORD const legacyColorAttribute,
-                                        _In_ bool const fIncludeBackgrounds) override;
+        HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
+                                        const COLORREF colorBackground,
+                                        const WORD legacyColorAttribute,
+                                        const bool fIncludeBackgrounds) override;
         [[nodiscard]]
-        HRESULT UpdateFont(_In_ FontInfoDesired const * const pfiFontInfoDesired,
+        HRESULT UpdateFont(const FontInfoDesired * const pfiFontInfoDesired,
                             _Out_ FontInfo* const pfiFontInfo) override;
         [[nodiscard]]
-        HRESULT UpdateDpi(_In_ int const iDpi) override;
+        HRESULT UpdateDpi(const int iDpi) override;
         [[nodiscard]]
-        HRESULT UpdateViewport(_In_ SMALL_RECT const srNewViewport) override;
+        HRESULT UpdateViewport(const SMALL_RECT srNewViewport) override;
 
         [[nodiscard]]
-        HRESULT GetProposedFont(_In_ FontInfoDesired const * const pfiFontDesired,
+        HRESULT GetProposedFont(const FontInfoDesired * const pfiFontDesired,
                                 _Out_ FontInfo* const pfiFont,
-                                _In_ int const iDpi) override;
+                                const int iDpi) override;
 
         SMALL_RECT GetDirtyRectInChars() override;
         [[nodiscard]]
         HRESULT GetFontSize(_Out_ COORD* const pFontSize) override;
         [[nodiscard]]
-        HRESULT IsCharFullWidthByFont(_In_ WCHAR const wch, _Out_ bool* const pResult) override;
+        HRESULT IsCharFullWidthByFont(const WCHAR wch, _Out_ bool* const pResult) override;
 
     private:
         HWND _hwndTargetWindow;
 
         [[nodiscard]]
-        static HRESULT s_SetWindowLongWHelper(_In_ HWND const hWnd,
-                                                _In_ int const nIndex,
-                                                _In_ LONG const dwNewLong);
+        static HRESULT s_SetWindowLongWHelper(const HWND hWnd,
+                                                const int nIndex,
+                                                const LONG dwNewLong);
 
         bool _fPaintStarted;
 
@@ -135,7 +135,7 @@ namespace Microsoft::Console::Render
         SIZE _szMemorySurface;
         HBITMAP _hbitmapMemorySurface;
         [[nodiscard]]
-        HRESULT _PrepareMemoryBitmap(_In_ HWND const hwnd);
+        HRESULT _PrepareMemoryBitmap(const HWND hwnd);
 
         SIZE _szInvalidScroll;
         RECT _rcInvalid;
@@ -145,59 +145,60 @@ namespace Microsoft::Console::Render
         COLORREF _lastBg;
 
         [[nodiscard]]
-        HRESULT _InvalidCombine(_In_ const RECT* const prc);
+        HRESULT _InvalidCombine(const RECT* const prc);
         [[nodiscard]]
-        HRESULT _InvalidOffset(_In_ const POINT* const ppt);
+        HRESULT _InvalidOffset(const POINT* const ppt);
         [[nodiscard]]
         HRESULT _InvalidRestrict();
 
         [[nodiscard]]
-        HRESULT _InvalidateRect(_In_ const RECT* const prc);
+        HRESULT _InvalidateRect(const RECT* const prc);
         [[nodiscard]]
         HRESULT _InvalidateRgn(_In_ HRGN hrgn);
 
         [[nodiscard]]
-        HRESULT _PaintBackgroundColor(_In_ const RECT* const prc);
+        HRESULT _PaintBackgroundColor(const RECT* const prc);
 
         HRGN _hrgnGdiPaintedSelection;
         [[nodiscard]]
         HRESULT _PaintSelectionCalculateRegion(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection,
-                                                _In_ UINT const cRectangles,
+                                                const UINT cRectangles,
                                                 _Inout_ HRGN const hrgnSelection) const;
 
         static const ULONG s_ulMinCursorHeightPercent = 25;
         static const ULONG s_ulMaxCursorHeightPercent = 100;
 
         [[nodiscard]]
-        HRESULT _ScaleByFont(_In_ const COORD* const pcoord, _Out_ POINT* const pPoint) const;
+        HRESULT _ScaleByFont(const COORD* const pcoord, _Out_ POINT* const pPoint) const;
         [[nodiscard]]
-        HRESULT _ScaleByFont(_In_ const SMALL_RECT* const psr, _Out_ RECT* const prc) const;
+        HRESULT _ScaleByFont(const SMALL_RECT* const psr, _Out_ RECT* const prc) const;
         [[nodiscard]]
-        HRESULT _ScaleByFont(_In_ const RECT* const prc, _Out_ SMALL_RECT* const psr) const;
+        HRESULT _ScaleByFont(const RECT* const prc, _Out_ SMALL_RECT* const psr) const;
 
-        static int s_ScaleByDpi(_In_ const int iPx, _In_ const int iDpi);
-        static int s_ShrinkByDpi(_In_ const int iPx, _In_ const int iDpi);
+        static int s_ScaleByDpi(const int iPx, const int iDpi);
+        static int s_ShrinkByDpi(const int iPx, const int iDpi);
 
         POINT _GetInvalidRectPoint() const;
         SIZE _GetInvalidRectSize() const;
-        SIZE _GetRectSize(_In_ const RECT* const pRect) const;
+        SIZE _GetRectSize(const RECT* const pRect) const;
 
-        void _OrRect(_In_ RECT* const pRectExisting, _In_ const RECT* const pRectToOr) const;
+        void _OrRect(_In_ RECT* const pRectExisting, const RECT* const pRectToOr) const;
 
         bool _IsFontTrueType() const;
 
         [[nodiscard]]
-        HRESULT _GetProposedFont(_In_ FontInfoDesired const * const pfiFontDesired, _Out_ FontInfo* const pfiFont, _In_ int const iDpi, _Inout_ wil::unique_hfont& hFont);
+        HRESULT _GetProposedFont(const FontInfoDesired * const pfiFontDesired, _Out_ FontInfo* const pfiFont, const int iDpi, _Inout_ wil::unique_hfont& hFont);
 
         COORD _GetFontSize() const;
         bool _IsMinimized() const;
+        bool _IsWindowValid() const;
 
 #ifdef DBG
         // Helper functions to diagnose issues with painting from the in-memory buffer.
         // These are only actually effective/on in Debug builds when the flag is set using an attached debugger.
         bool _fDebug = false;
-        void _PaintDebugRect(_In_ const RECT* const prc) const;
-        void _DoDebugBlt(_In_ const RECT* const prc) const;
+        void _PaintDebugRect(const RECT* const prc) const;
+        void _DoDebugBlt(const RECT* const prc) const;
 #endif
     };
 }

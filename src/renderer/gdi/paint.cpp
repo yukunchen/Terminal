@@ -105,7 +105,7 @@ HRESULT GdiEngine::ScrollFrame()
 // Return Value:
 // - S_OK or suitable GDI HRESULT error.
 [[nodiscard]]
-HRESULT GdiEngine::_PrepareMemoryBitmap(_In_ HWND const hwnd)
+HRESULT GdiEngine::_PrepareMemoryBitmap(const HWND hwnd)
 {
     RECT rcClient;
     RETURN_LAST_ERROR_IF_FALSE(GetClientRect(hwnd, &rcClient));
@@ -204,7 +204,7 @@ HRESULT GdiEngine::EndPaint()
 // Return Value:
 // - S_OK or suitable GDI HRESULT error.
 [[nodiscard]]
-HRESULT GdiEngine::_PaintBackgroundColor(_In_ const RECT* const prc)
+HRESULT GdiEngine::_PaintBackgroundColor(const RECT* const prc)
 {
     wil::unique_hbrush hbr(GetStockBrush(DC_BRUSH));
     RETURN_LAST_ERROR_IF_NULL(hbr.get());
@@ -258,9 +258,9 @@ HRESULT GdiEngine::PaintBackground()
 [[nodiscard]]
 HRESULT GdiEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
                                    _In_reads_(cchLine) const unsigned char* const rgWidths,
-                                   _In_ size_t const cchLine,
-                                   _In_ COORD const coord,
-                                   _In_ bool const fTrimLeft)
+                                   const size_t cchLine,
+                                   const COORD coord,
+                                   const bool fTrimLeft)
 {
     // Exit early if there are no lines to draw.
     RETURN_HR_IF(S_OK, 0 == cchLine);
@@ -365,7 +365,7 @@ HRESULT GdiEngine::_FlushBufferLines()
 // Return Value:
 // - S_OK or suitable GDI HRESULT error or E_FAIL for GDI errors in functions that don't reliably return a specific error code.
 [[nodiscard]]
-HRESULT GdiEngine::PaintBufferGridLines(_In_ GridLines const lines, _In_ COLORREF const color, _In_ size_t const cchLine, _In_ COORD const coordTarget)
+HRESULT GdiEngine::PaintBufferGridLines(const GridLines lines, const COLORREF color, const size_t cchLine, const COORD coordTarget)
 {
     // Return early if there are no lines to paint.
     RETURN_HR_IF(S_OK, GridLines::None == lines);
@@ -434,12 +434,12 @@ HRESULT GdiEngine::PaintBufferGridLines(_In_ GridLines const lines, _In_ COLORRE
 // Return Value:
 // - S_OK, suitable GDI HRESULT error, or safemath error, or E_FAIL in a GDI error where a specific error isn't set.
 [[nodiscard]]
-HRESULT GdiEngine::PaintCursor(_In_ COORD const coordCursor,
-                               _In_ ULONG const ulCursorHeightPercent,
-                               _In_ bool const fIsDoubleWidth,
-                               _In_ CursorType const cursorType,
-                               _In_ bool const fUseColor,
-                               _In_ COLORREF const cursorColor)
+HRESULT GdiEngine::PaintCursor(const COORD coordCursor,
+                               const ULONG ulCursorHeightPercent,
+                               const bool fIsDoubleWidth,
+                               const CursorType cursorType,
+                               const bool fUseColor,
+                               const COLORREF cursorColor)
 {
     LOG_IF_FAILED(_FlushBufferLines());
 
@@ -574,7 +574,7 @@ HRESULT GdiEngine::ClearCursor()
 // Return Value:
 // - S_OK or suitable GDI HRESULT error.
 [[nodiscard]]
-HRESULT GdiEngine::PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles)
+HRESULT GdiEngine::PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection, const UINT cRectangles)
 {
     LOG_IF_FAILED(_FlushBufferLines());
 
@@ -609,7 +609,7 @@ HRESULT GdiEngine::PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* cons
 //  - HRESULT S_OK or Expect GDI-based errors or memory errors.
 [[nodiscard]]
 HRESULT GdiEngine::_PaintSelectionCalculateRegion(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection,
-                                                  _In_ UINT const cRectangles,
+                                                  const UINT cRectangles,
                                                   _Inout_ HRGN const hrgnSelection) const
 {
     // for each row in the selection
@@ -640,7 +640,7 @@ HRESULT GdiEngine::_PaintSelectionCalculateRegion(_In_reads_(cRectangles) const 
 // - prc - Pointer to rectangle to fill
 // Return Value:
 // - <none>
-void GdiEngine::_PaintDebugRect(_In_ const RECT* const prc) const
+void GdiEngine::_PaintDebugRect(const RECT* const prc) const
 {
     if (_fDebug)
     {
@@ -667,7 +667,7 @@ void GdiEngine::_PaintDebugRect(_In_ const RECT* const prc) const
 // - prc - Pointer to region to immediately Blt to the real screen DC.
 // Return Value:
 // - <none>
-void GdiEngine::_DoDebugBlt(_In_ const RECT* const prc) const
+void GdiEngine::_DoDebugBlt(const RECT* const prc) const
 {
     if (_fDebug)
     {

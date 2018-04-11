@@ -8,4 +8,4 @@
 class ConsoleArguments;
 
 [[nodiscard]]
-HRESULT ConsoleCreateIoThreadLegacy(_In_ HANDLE Server, _In_ const ConsoleArguments* const args);
+HRESULT ConsoleCreateIoThreadLegacy(_In_ HANDLE Server, const ConsoleArguments* const args);
