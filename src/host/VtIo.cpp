@@ -297,10 +297,6 @@ HRESULT VtIo::StartIfNeeded()
     }
     Globals& g = ServiceLocator::LocateGlobals();
 
-    // Hmm. We only have one Renderer implementation,
-    //  but its stored as a IRenderer.
-    //  IRenderer doesn't know about IRenderEngine.
-    // todo: msft:13631640
     try
     {
         g.pRender->AddRenderEngine(_pVtRenderEngine.get());

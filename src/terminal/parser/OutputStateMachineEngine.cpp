@@ -1568,7 +1568,7 @@ bool OutputStateMachineEngine::_GetCursorStyle(_In_reads_(cParams) const unsigne
 //      sequence we don't understand, we'll pass it along to the terminal
 //      instead of eating it ourselves.
 // Arguments:
-// - pTtyConnection: This is a TerminaOutputConnection that we can write the
+// - pTtyConnection: This is a TerminalOutputConnection that we can write the
 //      sequence we didn't understand to.
 // - pfnFlushToTerminal: This is a callback to the underlying state machine to
 //      trigger it to call ActionPassThroughString with whatever sequence it's
