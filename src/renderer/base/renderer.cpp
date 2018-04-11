@@ -32,6 +32,8 @@ Renderer::Renderer(_In_ std::unique_ptr<IRenderData> pData,
                    const size_t cEngines) :
     _pData(std::move(pData)),
     _pThread(nullptr),
+    _lastTitle(L""),
+    _titleChanged(false),
     _tearingDown(false)
 {
     THROW_IF_NULL_ALLOC(_pData);
@@ -125,10 +127,17 @@ HRESULT Renderer::s_CreateInstance(_In_ std::unique_ptr<IRenderData> pData,
 [[nodiscard]]
 HRESULT Renderer::PaintFrame()
 {
+    // Stash the current title state - each engine will use this value, instead
+    //       of querying individually.
+    // We also need this to suppress repainting when the title hasn't actually changed.
+    _lastTitle = _pData->GetConsoleTitle();
+
     for (IRenderEngine* const pEngine : _rgpEngines)
     {
         LOG_IF_FAILED(_PaintFrameForEngine(pEngine));
     }
+
+    _titleChanged = false;
 
     return S_OK;
 }
@@ -202,6 +211,9 @@ HRESULT Renderer::_PaintFrameForEngine(_In_ IRenderEngine* const pEngine)
 
     // 6. Paint Cursor
     _PaintCursor(pEngine);
+
+    // 7. Paint window title
+    RETURN_IF_FAILED(_PaintTitle(pEngine));
 
     // As we leave the scope, EndPaint will be called (declared above)
     return S_OK;
@@ -428,6 +440,36 @@ void Renderer::TriggerCircling()
             LOG_IF_FAILED(_PaintFrameForEngine(pEngine));
         }
     }
+}
+
+// Routine Description:
+// - Called when the title of the console window has changed. Indicates that we
+//      should update the title on the next frame.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Renderer::TriggerTitleChange()
+{
+    // _titleChanged = true;
+    const std::wstring newTitle = _pData->GetConsoleTitle();
+    // Only change the title if it's actually different from the last frame.
+    _titleChanged = _lastTitle != newTitle;
+}
+
+// Routine Description:
+// - Update the title for a particular engine.
+// Arguments:
+// - pEngine: the engine to update the title for.
+// Return Value:
+// - the HRESULT of the underlying engine's UpdateTitle call.
+HRESULT Renderer::_PaintTitle(IRenderEngine* const pEngine)
+{
+    if (_titleChanged)
+    {
+        return pEngine->UpdateTitle(_lastTitle);
+    }
+    return S_OK;
 }
 
 // Routine Description:

@@ -236,7 +236,7 @@ void Menu::s_ShowPropertiesDialog(HWND const hwnd, BOOL const Defaults)
     CONSOLE_STATE_INFO StateInfo = { 0 };
     if (!Defaults)
     {
-        Menu::s_GetConsoleState(&StateInfo);
+        THROW_IF_FAILED(Menu::s_GetConsoleState(&StateInfo));
         StateInfo.UpdateValues = FALSE;
     }
     StateInfo.hWnd = hwnd;
@@ -283,9 +283,14 @@ void Menu::s_ShowPropertiesDialog(HWND const hwnd, BOOL const Defaults)
     {
         Menu::s_PropertiesUpdate(&StateInfo);
     }
+    // s_GetConsoleState created new wchar_t[]s for the title and link title.
+    //  delete them before they're leaked.
+    delete[] StateInfo.OriginalTitle;
+    delete[] StateInfo.LinkTitle;
 }
 
-void Menu::s_GetConsoleState(CONSOLE_STATE_INFO * const pStateInfo)
+[[nodiscard]]
+HRESULT Menu::s_GetConsoleState(CONSOLE_STATE_INFO * const pStateInfo)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const SCREEN_INFORMATION& ScreenInfo = gci.GetActiveOutputBuffer();
@@ -327,8 +332,14 @@ void Menu::s_GetConsoleState(CONSOLE_STATE_INFO * const pStateInfo)
 
     memmove(pStateInfo->ColorTable, gci.GetColorTable(), gci.GetColorTableSize() * sizeof(COLORREF));
 
-    pStateInfo->OriginalTitle = gci.OriginalTitle;
-    pStateInfo->LinkTitle = gci.LinkTitle;
+    // Create mutable copies of the titles so the propsheet can do something with them.
+    pStateInfo->OriginalTitle = new wchar_t[gci.GetOriginalTitle().length()+1]{UNICODE_NULL};
+    RETURN_IF_NULL_ALLOC(pStateInfo->OriginalTitle);
+    gci.GetOriginalTitle().copy(pStateInfo->OriginalTitle, gci.GetOriginalTitle().length());
+
+    pStateInfo->LinkTitle = new wchar_t[gci.GetLinkTitle().length()+1]{UNICODE_NULL};
+    RETURN_IF_NULL_ALLOC(pStateInfo->LinkTitle);
+    gci.GetLinkTitle().copy(pStateInfo->LinkTitle, gci.GetLinkTitle().length());
 
     pStateInfo->CodePage = gci.OutputCP;
 
@@ -345,6 +356,7 @@ void Menu::s_GetConsoleState(CONSOLE_STATE_INFO * const pStateInfo)
 
     pStateInfo->InterceptCopyPaste = gci.GetInterceptCopyPaste();
     // end console v2 properties
+    return S_OK;
 }
 
 HMENU Menu::s_GetMenuHandle()

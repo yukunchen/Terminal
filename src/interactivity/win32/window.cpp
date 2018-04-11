@@ -273,7 +273,7 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
             HWND hWnd = CreateWindowExW(
                 CONSOLE_WINDOW_EX_FLAGS,
                 CONSOLE_WINDOW_CLASS,
-                gci.Title,
+                gci.GetTitle().c_str(),
                 CONSOLE_WINDOW_FLAGS,
                 IsFlagSet(gci.Flags,
                           CONSOLE_AUTO_POSITION) ? CW_USEDEFAULT : rectProposed.left,
@@ -468,7 +468,7 @@ void Window::UpdateWindowPosition(_In_ POINT const ptNewPos) const
 // This routine adds or removes the name to or from the beginning of the window title. The possible names are "Scroll", "Mark", and "Select"
 void Window::UpdateWindowText()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const bool fInScrollMode = Scrolling::s_IsInScrollMode();
 
     Selection *pSelection = &Selection::Instance();
@@ -499,39 +499,17 @@ void Window::UpdateWindowText()
     // if we have a message, use it
     if (dwMsgId != 0)
     {
-        // load format string
-        WCHAR szFmt[64];
-        if (LoadStringW(ServiceLocator::LocateGlobals().hInstance, ID_CONSOLE_FMT_WINDOWTITLE, szFmt, ARRAYSIZE(szFmt)) > 0)
+        // load mode string
+        WCHAR szMsg[64];
+        if (LoadStringW(ServiceLocator::LocateGlobals().hInstance, dwMsgId, szMsg, ARRAYSIZE(szMsg)) > 0)
         {
-            // load mode string
-            WCHAR szMsg[64];
-            if (LoadStringW(ServiceLocator::LocateGlobals().hInstance, dwMsgId, szMsg, ARRAYSIZE(szMsg)) > 0)
-            {
-                // construct new title string
-                PWSTR pwszTitle = new WCHAR[MAX_PATH];
-                if (pwszTitle != nullptr)
-                {
-                    if (SUCCEEDED(StringCchPrintfW(pwszTitle,
-                        MAX_PATH,
-                        szFmt,
-                        szMsg,
-                        gci.Title)))
-                    {
-                        ServiceLocator::LocateConsoleWindow<Window>()->PostUpdateTitle(pwszTitle);
-                    }
-                    else
-                    {
-                        delete[] pwszTitle;
-                    }
-                }
-            }
+            gci.SetTitlePrefix(szMsg);
         }
     }
     else
     {
         // no mode-based message. set title back to original state.
-        //Copy the title into a new buffer, because consuming the update_title HeapFree's the pwsz.
-        ServiceLocator::LocateConsoleWindow()->PostUpdateTitleWithCopy(gci.Title);
+        gci.SetTitlePrefix(L"");
     }
 }
 
@@ -1260,52 +1238,6 @@ LRESULT Window::s_RegPersistWindowOpacity(_In_ PCWSTR const pwszTitle, const Win
         RegCloseKey(hCurrentUserKey);
     }
     return Status;
-}
-
-void Window::s_PersistWindowPosition(_In_ PCWSTR pwszLinkTitle,
-                                     _In_ PCWSTR pwszOriginalTitle,
-                                     const DWORD dwFlags,
-                                     const Window* const pWindow)
-{
-    if (pwszLinkTitle == nullptr)
-    {
-        PWSTR pwszTranslatedTitle = TranslateConsoleTitle(pwszOriginalTitle, FALSE, TRUE);
-
-        if (pwszTranslatedTitle != nullptr)
-        {
-            Window::s_RegPersistWindowPos(pwszTranslatedTitle, IsFlagSet(dwFlags, CONSOLE_AUTO_POSITION), pWindow);
-            delete[] pwszTranslatedTitle;
-        }
-    }
-    else
-    {
-        CONSOLE_STATE_INFO StateInfo = {0};
-        Menu::s_GetConsoleState(&StateInfo);
-        LOG_IF_FAILED(ShortcutSerialization::s_SetLinkValues(&StateInfo,
-                                                             IsEastAsianCP(ServiceLocator::LocateGlobals().uiOEMCP),
-                                                             true));
-    }
-}
-
-void Window::s_PersistWindowOpacity(_In_ PCWSTR pwszLinkTitle, _In_ PCWSTR pwszOriginalTitle, const Window* const pWindow)
-{
-    if (pwszLinkTitle == nullptr)
-    {
-        PWSTR pwszTranslatedTitle = TranslateConsoleTitle(pwszOriginalTitle, FALSE, TRUE);
-        if (pwszTranslatedTitle != nullptr)
-        {
-            Window::s_RegPersistWindowOpacity(pwszTranslatedTitle, pWindow);
-            delete[] pwszTranslatedTitle;
-        }
-    }
-    else
-    {
-        CONSOLE_STATE_INFO StateInfo = {0};
-        Menu::s_GetConsoleState(&StateInfo);
-        LOG_IF_FAILED(ShortcutSerialization::s_SetLinkValues(&StateInfo,
-                                                             IsEastAsianCP(ServiceLocator::LocateGlobals().uiOEMCP),
-                                                             true));
-    }
 }
 
 void Window::SetWindowHasMoved(const BOOL fHasMoved)
