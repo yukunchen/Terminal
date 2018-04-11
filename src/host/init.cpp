@@ -75,7 +75,14 @@ void InitSideBySide(_Out_writes_(ScratchBufferSize) PWSTR ScratchBuffer, __range
     ASSERT(hActCtx == nullptr || hActCtx == INVALID_HANDLE_VALUE);
     if (hActCtx == INVALID_HANDLE_VALUE)
     {
-        RIPMSG1(RIP_WARNING, "InitSideBySide failed create an activation context. Error: %d", GetLastError());
+        auto const error = GetLastError();
+
+        // Don't log if it's already set. This whole ordeal is to make sure one is set if there isn't one already.
+        // If one is already set... good!
+        if (ERROR_SXS_PROCESS_DEFAULT_ALREADY_SET != error)
+        {
+            RIPMSG1(RIP_WARNING, "InitSideBySide failed create an activation context. Error: %d\r\n", error);
+        }
         goto Exit;
     }
 

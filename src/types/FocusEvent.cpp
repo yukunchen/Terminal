@@ -24,7 +24,7 @@ InputEventType FocusEvent::EventType() const noexcept
     return InputEventType::FocusEvent;
 }
 
-void FocusEvent::SetFocus(_In_ const bool focus) noexcept
+void FocusEvent::SetFocus(const bool focus) noexcept
 {
     _focus = focus;
 }

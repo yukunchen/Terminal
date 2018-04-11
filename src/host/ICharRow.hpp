@@ -42,18 +42,25 @@ public:
     virtual size_t size() const noexcept = 0;
     virtual void Reset() = 0;
     [[nodiscard]]
-    virtual HRESULT Resize(_In_ const size_t newSize) noexcept = 0;
+    virtual HRESULT Resize(const size_t newSize) noexcept = 0;
     virtual size_t MeasureRight() const = 0;
     virtual size_t MeasureLeft() const = 0;
-    virtual void ClearCell(_In_ const size_t column) = 0;
-    virtual bool ContainsText() const = 0;
-    virtual const DbcsAttribute& GetAttribute(_In_ const size_t column) const = 0;
-    virtual DbcsAttribute& GetAttribute(_In_ const size_t column) = 0;
-    virtual void SetWrapForced(_In_ bool const fWrapWasForced) noexcept = 0;
+    virtual void SetWrapForced(const bool fWrapWasForced) noexcept = 0;
     virtual bool WasWrapForced() const noexcept = 0;
-    virtual void SetDoubleBytePadded(_In_ bool const fDoubleBytePadded) noexcept = 0;
+    virtual void SetDoubleBytePadded(const bool fDoubleBytePadded) noexcept = 0;
     virtual bool WasDoubleBytePadded() const noexcept = 0;
+
+    // cell
+    virtual void ClearCell(const size_t column) = 0;
+
+    // dbcs attribute
+    virtual const DbcsAttribute& GetAttribute(const size_t column) const = 0;
+    virtual DbcsAttribute& GetAttribute(const size_t column) = 0;
+
+    // glyphs
     virtual void ClearGlyph(const size_t column) = 0;
+    virtual bool ContainsText() const = 0;
+    virtual std::wstring GetText() const = 0;
 };
 
 inline ICharRow::~ICharRow() {}

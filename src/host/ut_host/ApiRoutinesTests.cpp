@@ -52,7 +52,7 @@ class ApiRoutinesTests
     }
 
     BOOL _fPrevInsertMode;
-    void PrepVerifySetConsoleInputModeImpl(_In_ ULONG const ulOriginalInputMode)
+    void PrepVerifySetConsoleInputModeImpl(const ULONG ulOriginalInputMode)
     {
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         gci.Flags = 0;
@@ -62,14 +62,14 @@ class ApiRoutinesTests
         UpdateFlag(gci.Flags, CONSOLE_AUTO_POSITION, IsFlagSet(ulOriginalInputMode, ENABLE_AUTO_POSITION));
 
         // Set cursor DB to on so we can verify that it turned off when the Insert Mode changes.
-        gci.CurrentScreenBuffer->SetCursorDBMode(TRUE);
+        gci.GetActiveOutputBuffer().SetCursorDBMode(true);
 
         // Record the insert mode at this time to see if it changed.
         _fPrevInsertMode = gci.GetInsertMode();
     }
 
-    void VerifySetConsoleInputModeImpl(_In_ HRESULT const hrExpected,
-                                       _In_ ULONG const ulNewMode)
+    void VerifySetConsoleInputModeImpl(const HRESULT hrExpected,
+                                       const ULONG ulNewMode)
     {
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         InputBuffer* const pii = gci.pInputBuffer;
@@ -82,7 +82,7 @@ class ApiRoutinesTests
         bool const fInsertModeExpected = IsFlagSet(ulNewMode, ENABLE_INSERT_MODE);
 
         // If the insert mode changed, we expect the cursor to have turned off.
-        BOOL const fCursorDBModeExpected = (!!_fPrevInsertMode != fInsertModeExpected) ? FALSE : TRUE;
+        bool const fCursorDBModeExpected = ((!!_fPrevInsertMode) == fInsertModeExpected);
 
         // Call the API
         HRESULT const hrActual = _pApiRoutines->SetConsoleInputModeImpl(pii, ulNewMode);
@@ -93,7 +93,7 @@ class ApiRoutinesTests
         VERIFY_ARE_EQUAL(fQuickEditExpected, IsFlagSet(gci.Flags, CONSOLE_QUICK_EDIT_MODE));
         VERIFY_ARE_EQUAL(fAutoPositionExpected, IsFlagSet(gci.Flags, CONSOLE_AUTO_POSITION));
         VERIFY_ARE_EQUAL(!!fInsertModeExpected, !!gci.GetInsertMode());
-        VERIFY_ARE_EQUAL(!!fCursorDBModeExpected, !!gci.CurrentScreenBuffer->TextInfo->GetCursor()->IsDouble());
+        VERIFY_ARE_EQUAL(fCursorDBModeExpected, gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor().IsDouble());
     }
 
     TEST_METHOD(ApiSetConsoleInputModeImplValidNonExtended)
@@ -148,7 +148,7 @@ class ApiRoutinesTests
     {
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         Log::Comment(L"Turn on insert mode with cooked read data.");
-        gci.lpCookedReadData = new COOKED_READ_DATA();
+        gci.lpCookedReadData = new COOKED_READ_DATA(gci.GetActiveOutputBuffer());
 
         PrepVerifySetConsoleInputModeImpl(0);
         Log::Comment(L"Success code should result from setting valid flags.");
@@ -312,7 +312,7 @@ class ApiRoutinesTests
         VERIFY_IS_TRUE(0 == wcscmp(gci.OriginalTitle, pwszTitle));
     }
 
-    static void s_AdjustOutputWait(_In_ const bool fShouldBlock)
+    static void s_AdjustOutputWait(const bool fShouldBlock)
     {
         SetFlagIf(ServiceLocator::LocateGlobals().getConsoleInformation().Flags, CONSOLE_SELECTING, fShouldBlock);
         ClearFlagIf(ServiceLocator::LocateGlobals().getConsoleInformation().Flags, CONSOLE_SELECTING, !fShouldBlock);
@@ -337,7 +337,7 @@ class ApiRoutinesTests
                          L"Get how many chars we should feed in at a time. This validates lead bytes and bytes held across calls.");
 
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        SCREEN_INFORMATION* const si = gci.CurrentScreenBuffer;
+        SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer();
 
         gci.LockConsole();
         auto Unlock = wil::ScopeExit([&] { gci.UnlockConsole(); });
@@ -383,7 +383,7 @@ class ApiRoutinesTests
             IWaitRoutine* pWaiter = nullptr;
 
             // The increment is either the specified length or the remaining text in the string (if that is smaller).
-            const size_t cchWriteLength = min(cchIncrement, cchTestText - i);
+            const size_t cchWriteLength = std::min(cchIncrement, cchTestText - i);
 
             // Run the test method
             const HRESULT hr = _pApiRoutines->WriteConsoleAImpl(si, pszTestText + i, cchWriteLength, &cchRead, &pWaiter);
@@ -427,7 +427,7 @@ class ApiRoutinesTests
         VERIFY_SUCCEEDED(TestData::TryGetValue(L"fInduceWait", fInduceWait), L"Get whether or not we should exercise this function off a wait state.");
 
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        SCREEN_INFORMATION* const si = gci.CurrentScreenBuffer;
+        SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer();
 
         gci.LockConsole();
         auto Unlock = wil::ScopeExit([&] { gci.UnlockConsole(); });

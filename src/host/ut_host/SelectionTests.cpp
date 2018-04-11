@@ -196,7 +196,7 @@ class SelectionTests
                     if (!fIsLastLine)
                     {
                         // buffer size = 80, then selection goes 0 to 79. Thus X - 1.
-                        VERIFY_ARE_EQUAL(psrRect->Right, gci.CurrentScreenBuffer->TextInfo->GetCoordBufferSize().X - 1);
+                        VERIFY_ARE_EQUAL(psrRect->Right, gci.GetActiveOutputBuffer().GetTextBuffer().GetCoordBufferSize().X - 1);
                     }
 
                     // for all lines except the first, the line should reach the left edge of the buffer
@@ -321,7 +321,7 @@ class SelectionTests
     void TestBisectSelectionDelta(SHORT sTargetX, SHORT sTargetY, SHORT sLength, SHORT sDeltaLeft, SHORT sDeltaRight)
     {
         const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        SCREEN_INFORMATION* pScreenInfo = gci.CurrentScreenBuffer;
+        const SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
 
         short sStringLength;
         COORD coordTargetPoint;
@@ -345,7 +345,7 @@ class SelectionTests
         srOriginal.Left = srSelection.Left;
         srOriginal.Right = srSelection.Right;
 
-        Selection::s_BisectSelection(sStringLength, coordTargetPoint, pScreenInfo, &srSelection);
+        Selection::s_BisectSelection(sStringLength, coordTargetPoint, screenInfo, &srSelection);
 
         VERIFY_ARE_EQUAL(srOriginal.Top, srSelection.Top);
         VERIFY_ARE_EQUAL(srOriginal.Bottom, srSelection.Bottom);
@@ -444,7 +444,7 @@ class SelectionInputTests
 
     TEST_METHOD(TestGetInputLineBoundaries)
     {
-        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // 80x80 box
         const SHORT sRowWidth = 80;
 
@@ -463,10 +463,10 @@ class SelectionInputTests
         COOKED_READ_DATA* pCooked = gci.lpCookedReadData;
 
         // backup text info position over remainder of text execution duration
-        TEXT_BUFFER_INFO* pTextInfo = gci.CurrentScreenBuffer->TextInfo;
+        TextBuffer& textBuffer = gci.GetActiveOutputBuffer().GetTextBuffer();
         COORD coordOldTextInfoPos;
-        coordOldTextInfoPos.X = pTextInfo->GetCursor()->GetPosition().X;
-        coordOldTextInfoPos.Y = pTextInfo->GetCursor()->GetPosition().Y;
+        coordOldTextInfoPos.X = textBuffer.GetCursor().GetPosition().X;
+        coordOldTextInfoPos.Y = textBuffer.GetCursor().GetPosition().Y;
 
         // set various cursor positions
         pCooked->_OriginalCursorPosition.X = 15;
@@ -474,8 +474,8 @@ class SelectionInputTests
 
         pCooked->_NumberOfVisibleChars = 200;
 
-        pTextInfo->GetCursor()->SetXPosition(35);
-        pTextInfo->GetCursor()->SetYPosition(35);
+        textBuffer.GetCursor().SetXPosition(35);
+        textBuffer.GetCursor().SetYPosition(35);
 
         // try getting boundaries with no pointers. parameters should be fully optional.
         fResult = Selection::s_GetInputLineBoundaries(nullptr, nullptr);
@@ -511,12 +511,12 @@ class SelectionInputTests
         fResult = Selection::s_GetInputLineBoundaries(nullptr, &coordEnd);
         VERIFY_IS_TRUE(fResult);
 
-        VERIFY_ARE_EQUAL(coordEnd.X, pTextInfo->GetCursor()->GetPosition().X - 1); // -1 to be on the last piece of text, not past it
-        VERIFY_ARE_EQUAL(coordEnd.Y, pTextInfo->GetCursor()->GetPosition().Y);
+        VERIFY_ARE_EQUAL(coordEnd.X, textBuffer.GetCursor().GetPosition().X - 1); // -1 to be on the last piece of text, not past it
+        VERIFY_ARE_EQUAL(coordEnd.Y, textBuffer.GetCursor().GetPosition().Y);
 
         // restore text buffer info position
-        pTextInfo->GetCursor()->SetXPosition(coordOldTextInfoPos.X);
-        pTextInfo->GetCursor()->SetYPosition(coordOldTextInfoPos.Y);
+        textBuffer.GetCursor().SetXPosition(coordOldTextInfoPos.X);
+        textBuffer.GetCursor().SetYPosition(coordOldTextInfoPos.Y);
         // clean up read data
         m_state->CleanupCookedReadData();
     }

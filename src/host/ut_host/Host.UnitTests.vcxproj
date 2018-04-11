@@ -2,9 +2,9 @@
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
+    <ClCompile Include="AliasTests.cpp" />
     <ClCompile Include="ApiRoutinesTests.cpp" />
     <ClCompile Include="AttrRowTests.cpp" />
-    <ClCompile Include="CharRowBaseTests.cpp" />
     <ClCompile Include="ClipboardTests.cpp" />
     <ClCompile Include="ConsoleArgumentsTests.cpp" />
     <ClCompile Include="DbcsTests.cpp" />

@@ -31,43 +31,41 @@ Revision History:
 #include <winmeta.h>
 TRACELOGGING_DECLARE_PROVIDER(g_hConhostV2EventTraceProvider);
 
-#define WORD_DELIM_MAX  32
-
 using namespace Microsoft::Console::Render;
 
 class Globals
 {
 public:
-     UINT uiOEMCP;
-     UINT uiWindowsCP;
-     HINSTANCE hInstance;
-     UINT uiDialogBoxCount;
+    UINT uiOEMCP;
+    UINT uiWindowsCP;
+    HINSTANCE hInstance;
+    UINT uiDialogBoxCount;
 
-     ConsoleArguments launchArgs;
+    ConsoleArguments launchArgs;
 
-     CONSOLE_INFORMATION& getConsoleInformation();
+    CONSOLE_INFORMATION& getConsoleInformation();
 
-     DeviceComm* pDeviceComm;
+    DeviceComm* pDeviceComm;
 
-     wil::unique_event_nothrow hInputEvent;
+    wil::unique_event_nothrow hInputEvent;
 
-     SHORT sVerticalScrollSize;
-     SHORT sHorizontalScrollSize;
+    SHORT sVerticalScrollSize;
+    SHORT sHorizontalScrollSize;
 
-     int dpi = USER_DEFAULT_SCREEN_DPI;
+    int dpi = USER_DEFAULT_SCREEN_DPI;
 
-     NTSTATUS ntstatusConsoleInputInitStatus;
-     wil::unique_event_nothrow hConsoleInputInitEvent;
-     DWORD dwInputThreadId;
+    NTSTATUS ntstatusConsoleInputInitStatus;
+    wil::unique_event_nothrow hConsoleInputInitEvent;
+    DWORD dwInputThreadId;
 
-     WCHAR aWordDelimChars[WORD_DELIM_MAX];
+    std::vector<wchar_t> WordDelimiters;
 
-     IRenderer* pRender;
+    IRenderer* pRender;
 
-     IFontDefaultList* pFontDefaultList;
+    IFontDefaultList* pFontDefaultList;
 
-     bool IsHeadless() const;
+    bool IsHeadless() const;
 
 private:
-     CONSOLE_INFORMATION ciConsoleInformation;
+    CONSOLE_INFORMATION ciConsoleInformation;
 };

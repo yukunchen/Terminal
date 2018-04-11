@@ -26,30 +26,30 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         virtual HRESULT PaintFrame() = 0;
 
-        virtual void TriggerSystemRedraw(_In_ const RECT* const prcDirtyClient) = 0;
+        virtual void TriggerSystemRedraw(const RECT* const prcDirtyClient) = 0;
 
-        virtual void TriggerRedraw(_In_ const SMALL_RECT* const psrRegion) = 0;
-        virtual void TriggerRedraw(_In_ const COORD* const pcoord) = 0;
-        virtual void TriggerRedrawCursor(_In_ const COORD* const pcoord) = 0;
+        virtual void TriggerRedraw(const SMALL_RECT* const psrRegion) = 0;
+        virtual void TriggerRedraw(const COORD* const pcoord) = 0;
+        virtual void TriggerRedrawCursor(const COORD* const pcoord) = 0;
 
         virtual void TriggerRedrawAll() = 0;
         virtual void TriggerTeardown() = 0;
 
         virtual void TriggerSelection() = 0;
         virtual void TriggerScroll() = 0;
-        virtual void TriggerScroll(_In_ const COORD* const pcoordDelta) = 0;
+        virtual void TriggerScroll(const COORD* const pcoordDelta) = 0;
         virtual void TriggerCircling() = 0;
-        virtual void TriggerFontChange(_In_ int const iDpi,
-                                        _In_ FontInfoDesired const * const pFontInfoDesired,
-                                        _Out_ FontInfo* const pFontInfo) = 0;
+        virtual void TriggerFontChange(const int iDpi,
+                                       const FontInfoDesired& FontInfoDesired,
+                                       _Out_ FontInfo& FontInfo) = 0;
 
         [[nodiscard]]
-        virtual HRESULT GetProposedFont(_In_ int const iDpi,
-                                        _In_ FontInfoDesired const * const pFontInfoDesired,
-                                        _Out_ FontInfo* const pFontInfo) = 0;
+        virtual HRESULT GetProposedFont(const int iDpi,
+                                        const FontInfoDesired& FontInfoDesired,
+                                        _Out_ FontInfo& FontInfo) = 0;
 
         virtual COORD GetFontSize() = 0;
-        virtual bool IsCharFullWidthByFont(_In_ WCHAR const wch) = 0;
+        virtual bool IsCharFullWidthByFont(const WCHAR wch) = 0;
 
         virtual void EnablePainting() = 0;
         virtual void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs) = 0;

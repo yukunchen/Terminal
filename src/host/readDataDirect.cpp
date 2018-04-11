@@ -27,7 +27,7 @@
 // - THROW: Throws E_INVALIDARG for invalid pointers.
 DirectReadData::DirectReadData(_In_ InputBuffer* const pInputBuffer,
                                _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
-                               _In_ const size_t eventReadCount,
+                               const size_t eventReadCount,
                                _In_ std::deque<std::unique_ptr<IInputEvent>> partialEvents) :
     ReadData(pInputBuffer, pInputReadHandleData),
     _eventReadCount{ eventReadCount },
@@ -65,10 +65,10 @@ DirectReadData::~DirectReadData()
 // std::deque<std::unique_ptr<IInputEvent>> that is used to the read
 // input events back to the server
 // Return Value:
-// - TRUE if the wait is done and result buffer/status code can be sent back to the client.
-// - FALSE if we need to continue to wait until more data is available.
-BOOL DirectReadData::Notify(_In_ WaitTerminationReason const TerminationReason,
-                            _In_ BOOLEAN const fIsUnicode,
+// - true if the wait is done and result buffer/status code can be sent back to the client.
+// - false if we need to continue to wait until more data is available.
+bool DirectReadData::Notify(const WaitTerminationReason TerminationReason,
+                            const bool fIsUnicode,
                             _Out_ NTSTATUS* const pReplyStatus,
                             _Out_ DWORD* const pNumBytes,
                             _Out_ DWORD* const pControlKeyState,
@@ -94,7 +94,7 @@ BOOL DirectReadData::Notify(_In_ WaitTerminationReason const TerminationReason,
     // If ctrl-c or ctrl-break was seen, ignore it.
     if (IsAnyFlagSet(TerminationReason, (WaitTerminationReason::CtrlC | WaitTerminationReason::CtrlBreak)))
     {
-        return FALSE;
+        return false;
     }
 
     // check if a partial byte is already stored that we should read
@@ -143,7 +143,7 @@ BOOL DirectReadData::Notify(_In_ WaitTerminationReason const TerminationReason,
                                             amountToRead,
                                             false,
                                             false,
-                                            !!fIsUnicode);
+                                            fIsUnicode);
 
         if (*pReplyStatus == CONSOLE_STATUS_WAIT)
         {

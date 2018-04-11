@@ -21,19 +21,20 @@ Revision History:
 
 #include "ICharRow.hpp"
 #include "AttrRow.hpp"
-
-#include <memory>
+#include "OutputCell.hpp"
 
 class ROW final
 {
 public:
-    ROW(_In_ const SHORT rowId, _In_ const short rowWidth, _In_ const TextAttribute fillAttribute);
+    ROW(const SHORT rowId, const short rowWidth, const TextAttribute fillAttribute);
     ROW(const ROW& a);
     ROW& operator=(const ROW& a);
     ROW(ROW&& a) noexcept;
     ~ROW() = default;
 
     void swap(ROW& other) noexcept;
+    size_t size() const;
+    const OutputCell at(const size_t column) const;
 
     const ICharRow& GetCharRow() const;
     ICharRow& GetCharRow();
@@ -42,13 +43,17 @@ public:
     ATTR_ROW& GetAttrRow();
 
     SHORT GetId() const noexcept;
-    void SetId(_In_ const SHORT id);
+    void SetId(const SHORT id);
 
-    bool Reset(_In_ const TextAttribute Attr);
+    bool Reset(const TextAttribute Attr);
     [[nodiscard]]
-    HRESULT Resize(_In_ size_t const width);
+    HRESULT Resize(const size_t width);
 
-    void ClearColumn(_In_ const size_t column);
+    void ClearColumn(const size_t column);
+    std::wstring GetText() const;
+    std::vector<OutputCell> AsCells() const;
+    std::vector<OutputCell> AsCells(const size_t startIndex) const;
+    std::vector<OutputCell> AsCells(const size_t startIndex, const size_t count) const;
 
     friend bool operator==(const ROW& a, const ROW& b) noexcept;
 
@@ -60,6 +65,7 @@ private:
     std::unique_ptr<ICharRow> _charRow;
     ATTR_ROW _attrRow;
     SHORT _id;
+    size_t _rowWidth;
 
 };
 

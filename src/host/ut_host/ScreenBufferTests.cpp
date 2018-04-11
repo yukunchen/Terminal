@@ -55,9 +55,9 @@ class ScreenBufferTests
 
     TEST_METHOD_SETUP(MethodSetup)
     {
-        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         m_state->PrepareNewTextBufferInfo();
-        VERIFY_SUCCEEDED(gci.CurrentScreenBuffer->SetViewportOrigin(true, {0, 0}));
+        VERIFY_SUCCEEDED(gci.GetActiveOutputBuffer().SetViewportOrigin(true, {0, 0}));
 
         return true;
     }
@@ -146,9 +146,9 @@ void ScreenBufferTests::FreeSampleList(SCREEN_INFORMATION::TabStop** rgList)
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     Log::Comment(L"Testing creating one alternate buffer, then returning to the main buffer.");
-    SCREEN_INFORMATION* const psiOriginal = gci.CurrentScreenBuffer;
+    SCREEN_INFORMATION* const psiOriginal = &gci.GetActiveOutputBuffer();
     VERIFY_IS_NULL(psiOriginal->_psiAlternateBuffer);
     VERIFY_IS_NULL(psiOriginal->_psiMainBuffer);
 
@@ -156,7 +156,7 @@ void ScreenBufferTests::SingleAlternateBufferCreationTest()
     if(VERIFY_IS_TRUE(NT_SUCCESS(Status)))
     {
         Log::Comment(L"First alternate buffer successfully created");
-        SCREEN_INFORMATION* psiFirstAlternate = gci.CurrentScreenBuffer;
+        SCREEN_INFORMATION* const psiFirstAlternate = &gci.GetActiveOutputBuffer();
         VERIFY_ARE_NOT_EQUAL(psiOriginal, psiFirstAlternate);
         VERIFY_ARE_EQUAL(psiFirstAlternate, psiOriginal->_psiAlternateBuffer);
         VERIFY_ARE_EQUAL(psiOriginal, psiFirstAlternate->_psiMainBuffer);
@@ -165,7 +165,7 @@ void ScreenBufferTests::SingleAlternateBufferCreationTest()
 
         psiFirstAlternate->UseMainScreenBuffer();
         Log::Comment(L"successfully swapped to the main buffer");
-        SCREEN_INFORMATION* psiFinal = gci.CurrentScreenBuffer;
+        SCREEN_INFORMATION* const psiFinal = &gci.GetActiveOutputBuffer();
         VERIFY_ARE_NOT_EQUAL(psiFinal, psiFirstAlternate);
         VERIFY_ARE_EQUAL(psiFinal, psiOriginal);
         VERIFY_IS_NULL(psiFinal->_psiMainBuffer);
@@ -175,14 +175,14 @@ void ScreenBufferTests::SingleAlternateBufferCreationTest()
 
 void ScreenBufferTests::MultipleAlternateBufferCreationTest()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     Log::Comment(L"Testing creating one alternate buffer, then creating another alternate from that first alternate, before returning to the main buffer.");
-    SCREEN_INFORMATION* const psiOriginal = gci.CurrentScreenBuffer;
+    SCREEN_INFORMATION* const psiOriginal = &gci.GetActiveOutputBuffer();
     NTSTATUS Status = psiOriginal->UseAlternateScreenBuffer();
     if(VERIFY_IS_TRUE(NT_SUCCESS(Status)))
     {
         Log::Comment(L"First alternate buffer successfully created");
-        SCREEN_INFORMATION* psiFirstAlternate = gci.CurrentScreenBuffer;
+        SCREEN_INFORMATION* const psiFirstAlternate = &gci.GetActiveOutputBuffer();
         VERIFY_ARE_NOT_EQUAL(psiOriginal, psiFirstAlternate);
         VERIFY_ARE_EQUAL(psiFirstAlternate, psiOriginal->_psiAlternateBuffer);
         VERIFY_ARE_EQUAL(psiOriginal, psiFirstAlternate->_psiMainBuffer);
@@ -193,7 +193,7 @@ void ScreenBufferTests::MultipleAlternateBufferCreationTest()
         if(VERIFY_IS_TRUE(NT_SUCCESS(Status)))
         {
             Log::Comment(L"Second alternate buffer successfully created");
-            SCREEN_INFORMATION* psiSecondAlternate = gci.CurrentScreenBuffer;
+            SCREEN_INFORMATION* psiSecondAlternate = &gci.GetActiveOutputBuffer();
             VERIFY_ARE_NOT_EQUAL(psiOriginal, psiSecondAlternate);
             VERIFY_ARE_NOT_EQUAL(psiSecondAlternate, psiFirstAlternate);
             VERIFY_ARE_EQUAL(psiSecondAlternate, psiOriginal->_psiAlternateBuffer);
@@ -203,7 +203,7 @@ void ScreenBufferTests::MultipleAlternateBufferCreationTest()
 
             psiSecondAlternate->UseMainScreenBuffer();
             Log::Comment(L"successfully swapped to the main buffer");
-            SCREEN_INFORMATION* psiFinal = gci.CurrentScreenBuffer;
+            SCREEN_INFORMATION* const psiFinal = &gci.GetActiveOutputBuffer();
             VERIFY_ARE_NOT_EQUAL(psiFinal, psiFirstAlternate);
             VERIFY_ARE_NOT_EQUAL(psiFinal, psiSecondAlternate);
             VERIFY_ARE_EQUAL(psiFinal, psiOriginal);
@@ -215,14 +215,14 @@ void ScreenBufferTests::MultipleAlternateBufferCreationTest()
 
 void ScreenBufferTests::MultipleAlternateBuffersFromMainCreationTest()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     Log::Comment(L"Testing creating one alternate buffer, then creating another alternate from the main, before returning to the main buffer.");
-    SCREEN_INFORMATION* const psiOriginal = gci.CurrentScreenBuffer;
+    SCREEN_INFORMATION* const psiOriginal = &gci.GetActiveOutputBuffer();
     NTSTATUS Status = psiOriginal->UseAlternateScreenBuffer();
     if(VERIFY_IS_TRUE(NT_SUCCESS(Status)))
     {
         Log::Comment(L"First alternate buffer successfully created");
-        SCREEN_INFORMATION* psiFirstAlternate = gci.CurrentScreenBuffer;
+        SCREEN_INFORMATION* const psiFirstAlternate = &gci.GetActiveOutputBuffer();
         VERIFY_ARE_NOT_EQUAL(psiOriginal, psiFirstAlternate);
         VERIFY_ARE_EQUAL(psiFirstAlternate, psiOriginal->_psiAlternateBuffer);
         VERIFY_ARE_EQUAL(psiOriginal, psiFirstAlternate->_psiMainBuffer);
@@ -233,7 +233,7 @@ void ScreenBufferTests::MultipleAlternateBuffersFromMainCreationTest()
         if(VERIFY_IS_TRUE(NT_SUCCESS(Status)))
         {
             Log::Comment(L"Second alternate buffer successfully created");
-            SCREEN_INFORMATION* psiSecondAlternate = gci.CurrentScreenBuffer;
+            SCREEN_INFORMATION* const psiSecondAlternate = &gci.GetActiveOutputBuffer();
             VERIFY_ARE_NOT_EQUAL(psiOriginal, psiSecondAlternate);
             VERIFY_ARE_NOT_EQUAL(psiSecondAlternate, psiFirstAlternate);
             VERIFY_ARE_EQUAL(psiSecondAlternate, psiOriginal->_psiAlternateBuffer);
@@ -243,7 +243,7 @@ void ScreenBufferTests::MultipleAlternateBuffersFromMainCreationTest()
 
             psiSecondAlternate->UseMainScreenBuffer();
             Log::Comment(L"successfully swapped to the main buffer");
-            SCREEN_INFORMATION* psiFinal = gci.CurrentScreenBuffer;
+            SCREEN_INFORMATION* const psiFinal = &gci.GetActiveOutputBuffer();
             VERIFY_ARE_NOT_EQUAL(psiFinal, psiFirstAlternate);
             VERIFY_ARE_NOT_EQUAL(psiFinal, psiSecondAlternate);
             VERIFY_ARE_EQUAL(psiFinal, psiOriginal);
@@ -255,29 +255,28 @@ void ScreenBufferTests::MultipleAlternateBuffersFromMainCreationTest()
 
 void ScreenBufferTests::TestReverseLineFeed()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer;
-    auto bufferWriter = psi->GetBufferWriter();
-    auto cursor = psi->TextInfo->GetCursor();
-    auto viewport = psi->GetBufferViewport();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
+    auto bufferWriter = screenInfo.GetBufferWriter();
+    auto& cursor = screenInfo._textBuffer->GetCursor();
+    auto viewport = screenInfo.GetBufferViewport();
     VERIFY_IS_NOT_NULL(bufferWriter);
-    VERIFY_IS_NOT_NULL(cursor);
 
-    VERIFY_ARE_EQUAL(psi->GetBufferViewport().Top, 0);
+    VERIFY_ARE_EQUAL(screenInfo.GetBufferViewport().Top, 0);
 
     ////////////////////////////////////////////////////////////////////////
     Log::Comment(L"Case 1: RI from below top of viewport");
 
     bufferWriter->PrintString(L"foo\nfoo", 7);
-    VERIFY_ARE_EQUAL(cursor->GetPosition().X, 3);
-    VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 1);
-    VERIFY_ARE_EQUAL(psi->GetBufferViewport().Top, 0);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 3);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 1);
+    VERIFY_ARE_EQUAL(screenInfo.GetBufferViewport().Top, 0);
 
-    VERIFY_SUCCEEDED(DoSrvPrivateReverseLineFeed(psi));
+    VERIFY_SUCCEEDED(DoSrvPrivateReverseLineFeed(screenInfo));
 
-    VERIFY_ARE_EQUAL(cursor->GetPosition().X, 3);
-    VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 0);
-    viewport = psi->GetBufferViewport();
+    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 3);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 0);
+    viewport = screenInfo.GetBufferViewport();
     VERIFY_ARE_EQUAL(viewport.Top, 0);
     Log::Comment(NoThrowString().Format(
         L"viewport={L:%d,T:%d,R:%d,B:%d}",
@@ -286,111 +285,111 @@ void ScreenBufferTests::TestReverseLineFeed()
 
     ////////////////////////////////////////////////////////////////////////
     Log::Comment(L"Case 2: RI from top of viewport");
-    cursor->SetPosition({0, 0});
+    cursor.SetPosition({0, 0});
     bufferWriter->PrintString(L"123456789", 9);
-    VERIFY_ARE_EQUAL(cursor->GetPosition().X, 9);
-    VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 0);
-    VERIFY_ARE_EQUAL(psi->GetBufferViewport().Top, 0);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 9);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 0);
+    VERIFY_ARE_EQUAL(screenInfo.GetBufferViewport().Top, 0);
 
-    VERIFY_SUCCEEDED(DoSrvPrivateReverseLineFeed(psi));
+    VERIFY_SUCCEEDED(DoSrvPrivateReverseLineFeed(screenInfo));
 
-    VERIFY_ARE_EQUAL(cursor->GetPosition().X, 9);
-    VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 0);
-    viewport = psi->GetBufferViewport();
+    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 9);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 0);
+    viewport = screenInfo.GetBufferViewport();
     VERIFY_ARE_EQUAL(viewport.Top, 0);
     Log::Comment(NoThrowString().Format(
         L"viewport={L:%d,T:%d,R:%d,B:%d}",
         viewport.Left, viewport.Top, viewport.Right, viewport.Bottom
     ));
-    auto c = psi->TextInfo->GetLastNonSpaceCharacter();
+    auto c = screenInfo._textBuffer->GetLastNonSpaceCharacter();
     VERIFY_ARE_EQUAL(c.Y, 2); // This is the coordinates of the second "foo" from before.
 
     ////////////////////////////////////////////////////////////////////////
     Log::Comment(L"Case 3: RI from top of viewport, when viewport is below top of buffer");
 
-    cursor->SetPosition({0, 5});
-    VERIFY_SUCCEEDED(psi->SetViewportOrigin(TRUE, {0, 5}));
+    cursor.SetPosition({0, 5});
+    VERIFY_SUCCEEDED(screenInfo.SetViewportOrigin(TRUE, {0, 5}));
     bufferWriter->PrintString(L"ABCDEFGH", 9);
-    VERIFY_ARE_EQUAL(cursor->GetPosition().X, 9);
-    VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 5);
-    VERIFY_ARE_EQUAL(psi->GetBufferViewport().Top, 5);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 9);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 5);
+    VERIFY_ARE_EQUAL(screenInfo.GetBufferViewport().Top, 5);
 
-    LOG_IF_FAILED(DoSrvPrivateReverseLineFeed(psi));
+    LOG_IF_FAILED(DoSrvPrivateReverseLineFeed(screenInfo));
 
-    VERIFY_ARE_EQUAL(cursor->GetPosition().X, 9);
-    VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 5);
-    viewport = psi->GetBufferViewport();
+    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 9);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 5);
+    viewport = screenInfo.GetBufferViewport();
     VERIFY_ARE_EQUAL(viewport.Top, 5);
     Log::Comment(NoThrowString().Format(
         L"viewport={L:%d,T:%d,R:%d,B:%d}",
         viewport.Left, viewport.Top, viewport.Right, viewport.Bottom
     ));
-    c = psi->TextInfo->GetLastNonSpaceCharacter();
+    c = screenInfo._textBuffer->GetLastNonSpaceCharacter();
     VERIFY_ARE_EQUAL(c.Y, 6);
 }
 
 void ScreenBufferTests::TestAddTabStop()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer;
-    psi->ClearTabStops();
-    auto scopeExit = wil::ScopeExit([&]() { psi->ClearTabStops(); });
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
+    screenInfo.ClearTabStops();
+    auto scopeExit = wil::ScopeExit([&]() { screenInfo.ClearTabStops(); });
 
     Log::Comment(L"Add tab to empty list.");
-    VERIFY_SUCCEEDED(HRESULT_FROM_NT(psi->AddTabStop(12)));
-    VERIFY_IS_NOT_NULL(psi->_ptsTabs);
+    VERIFY_SUCCEEDED(HRESULT_FROM_NT(screenInfo.AddTabStop(12)));
+    VERIFY_IS_NOT_NULL(screenInfo._ptsTabs);
 
     Log::Comment(L"Add tab to head of existing list.");
-    VERIFY_SUCCEEDED(HRESULT_FROM_NT(psi->AddTabStop(4)));
-    VERIFY_IS_NOT_NULL(psi->_ptsTabs);
-    VERIFY_ARE_EQUAL(4, psi->_ptsTabs->sColumn);
-    VERIFY_ARE_EQUAL(12, psi->_ptsTabs->ptsNext->sColumn);
+    VERIFY_SUCCEEDED(HRESULT_FROM_NT(screenInfo.AddTabStop(4)));
+    VERIFY_IS_NOT_NULL(screenInfo._ptsTabs);
+    VERIFY_ARE_EQUAL(4, screenInfo._ptsTabs->sColumn);
+    VERIFY_ARE_EQUAL(12, screenInfo._ptsTabs->ptsNext->sColumn);
 
     Log::Comment(L"Add tab to tail of existing list.");
-    VERIFY_SUCCEEDED(HRESULT_FROM_NT(psi->AddTabStop(30)));
-    VERIFY_IS_NOT_NULL(psi->_ptsTabs);
-    VERIFY_ARE_EQUAL(4, psi->_ptsTabs->sColumn);
-    VERIFY_ARE_EQUAL(12, psi->_ptsTabs->ptsNext->sColumn);
-    VERIFY_ARE_EQUAL(30, psi->_ptsTabs->ptsNext->ptsNext->sColumn);
+    VERIFY_SUCCEEDED(HRESULT_FROM_NT(screenInfo.AddTabStop(30)));
+    VERIFY_IS_NOT_NULL(screenInfo._ptsTabs);
+    VERIFY_ARE_EQUAL(4, screenInfo._ptsTabs->sColumn);
+    VERIFY_ARE_EQUAL(12, screenInfo._ptsTabs->ptsNext->sColumn);
+    VERIFY_ARE_EQUAL(30, screenInfo._ptsTabs->ptsNext->ptsNext->sColumn);
 
     Log::Comment(L"Add tab to middle of existing list.");
-    VERIFY_SUCCEEDED(HRESULT_FROM_NT(psi->AddTabStop(24)));
-    VERIFY_IS_NOT_NULL(psi->_ptsTabs);
-    VERIFY_ARE_EQUAL(4, psi->_ptsTabs->sColumn);
-    VERIFY_ARE_EQUAL(12, psi->_ptsTabs->ptsNext->sColumn);
-    VERIFY_ARE_EQUAL(24, psi->_ptsTabs->ptsNext->ptsNext->sColumn);
-    VERIFY_ARE_EQUAL(30, psi->_ptsTabs->ptsNext->ptsNext->ptsNext->sColumn);
+    VERIFY_SUCCEEDED(HRESULT_FROM_NT(screenInfo.AddTabStop(24)));
+    VERIFY_IS_NOT_NULL(screenInfo._ptsTabs);
+    VERIFY_ARE_EQUAL(4, screenInfo._ptsTabs->sColumn);
+    VERIFY_ARE_EQUAL(12, screenInfo._ptsTabs->ptsNext->sColumn);
+    VERIFY_ARE_EQUAL(24, screenInfo._ptsTabs->ptsNext->ptsNext->sColumn);
+    VERIFY_ARE_EQUAL(30, screenInfo._ptsTabs->ptsNext->ptsNext->ptsNext->sColumn);
 
     Log::Comment(L"Add tab that duplicates an item in the existing list.");
-    VERIFY_FAILED(HRESULT_FROM_NT(psi->AddTabStop(24)));
-    VERIFY_IS_NOT_NULL(psi->_ptsTabs);
-    VERIFY_ARE_EQUAL(4, psi->_ptsTabs->sColumn);
-    VERIFY_ARE_EQUAL(12, psi->_ptsTabs->ptsNext->sColumn);
-    VERIFY_ARE_EQUAL(24, psi->_ptsTabs->ptsNext->ptsNext->sColumn);
-    VERIFY_ARE_EQUAL(30, psi->_ptsTabs->ptsNext->ptsNext->ptsNext->sColumn);
+    VERIFY_FAILED(HRESULT_FROM_NT(screenInfo.AddTabStop(24)));
+    VERIFY_IS_NOT_NULL(screenInfo._ptsTabs);
+    VERIFY_ARE_EQUAL(4, screenInfo._ptsTabs->sColumn);
+    VERIFY_ARE_EQUAL(12, screenInfo._ptsTabs->ptsNext->sColumn);
+    VERIFY_ARE_EQUAL(24, screenInfo._ptsTabs->ptsNext->ptsNext->sColumn);
+    VERIFY_ARE_EQUAL(30, screenInfo._ptsTabs->ptsNext->ptsNext->ptsNext->sColumn);
 
 }
 
 void ScreenBufferTests::TestClearTabStops()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer;
-    psi->_ptsTabs = nullptr;
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
+    screenInfo._ptsTabs = nullptr;
 
     Log::Comment(L"Clear non-existant tab stops.");
     {
-        psi->ClearTabStops();
-        VERIFY_IS_NULL(psi->_ptsTabs);
+        screenInfo.ClearTabStops();
+        VERIFY_IS_NULL(screenInfo._ptsTabs);
     }
 
     Log::Comment(L"Clear handful of tab stops.");
     {
         SCREEN_INFORMATION::TabStop** rgpTabs = CreateSampleList();
 
-        psi->_ptsTabs = rgpTabs[0];
+        screenInfo._ptsTabs = rgpTabs[0];
 
-        psi->ClearTabStops();
-        VERIFY_IS_NULL(psi->_ptsTabs);
+        screenInfo.ClearTabStops();
+        VERIFY_IS_NULL(screenInfo._ptsTabs);
 
         // They should have all been freed by the operation above, don't double free.
         for (size_t i = 0; i < cSampleListTabs; i++)
@@ -400,20 +399,20 @@ void ScreenBufferTests::TestClearTabStops()
         FreeSampleList(rgpTabs);
     }
 
-    psi->_ptsTabs = nullptr; // don't let global free try to clean this up
+    screenInfo._ptsTabs = nullptr; // don't let global free try to clean this up
 }
 
 void ScreenBufferTests::TestClearTabStop()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer;
-    psi->_ptsTabs = nullptr;
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
+    screenInfo._ptsTabs = nullptr;
 
     Log::Comment(L"Try to clear nonexistant list.");
     {
-        psi->ClearTabStop(0);
+        screenInfo.ClearTabStop(0);
 
-        VERIFY_ARE_EQUAL(nullptr, psi->_ptsTabs, L"List should remain non-existant.");
+        VERIFY_ARE_EQUAL(nullptr, screenInfo._ptsTabs, L"List should remain non-existant.");
     }
 
     Log::Comment(L"Allocate 1 list item and clear it.");
@@ -422,11 +421,11 @@ void ScreenBufferTests::TestClearTabStop()
         tabTest->ptsNext = nullptr;
         tabTest->sColumn = 0;
 
-        psi->_ptsTabs = tabTest;
+        screenInfo._ptsTabs = tabTest;
 
-        psi->ClearTabStop(0);
+        screenInfo.ClearTabStop(0);
 
-        VERIFY_IS_NULL(psi->_ptsTabs);
+        VERIFY_IS_NULL(screenInfo._ptsTabs);
 
         // no free, the ClearTabStop method did it for us.
     }
@@ -437,17 +436,17 @@ void ScreenBufferTests::TestClearTabStop()
         tabTest->ptsNext = nullptr;
         tabTest->sColumn = 0;
 
-        psi->_ptsTabs = tabTest;
+        screenInfo._ptsTabs = tabTest;
 
         Log::Comment(L"Free greater");
-        psi->ClearTabStop(1);
+        screenInfo.ClearTabStop(1);
 
-        VERIFY_IS_NOT_NULL(psi->_ptsTabs);
+        VERIFY_IS_NOT_NULL(screenInfo._ptsTabs);
 
         Log::Comment(L"Free less than");
-        psi->ClearTabStop(-1);
+        screenInfo.ClearTabStop(-1);
 
-        VERIFY_IS_NOT_NULL(psi->_ptsTabs);
+        VERIFY_IS_NOT_NULL(screenInfo._ptsTabs);
 
         delete tabTest;
     }
@@ -456,11 +455,11 @@ void ScreenBufferTests::TestClearTabStop()
     {
         SCREEN_INFORMATION::TabStop** rgpTabListTest = CreateSampleList();
 
-        psi->_ptsTabs = rgpTabListTest[0];
+        screenInfo._ptsTabs = rgpTabListTest[0];
 
-        psi->ClearTabStop(rgSampleListValues[0]);
+        screenInfo.ClearTabStop(rgSampleListValues[0]);
 
-        VERIFY_ARE_EQUAL(rgpTabListTest[1], psi->_ptsTabs, L"1st item should take over as head.");
+        VERIFY_ARE_EQUAL(rgpTabListTest[1], screenInfo._ptsTabs, L"1st item should take over as head.");
         Log::Comment(L"Remaining items should continue pointing to each other and have remaining values");
 
         VERIFY_ARE_EQUAL(rgpTabListTest[1]->ptsNext, rgpTabListTest[2]);
@@ -481,12 +480,12 @@ void ScreenBufferTests::TestClearTabStop()
     {
         SCREEN_INFORMATION::TabStop** rgpTabListTest = CreateSampleList();
 
-        psi->_ptsTabs = rgpTabListTest[0];
+        screenInfo._ptsTabs = rgpTabListTest[0];
 
-        psi->ClearTabStop(rgSampleListValues[1]);
+        screenInfo.ClearTabStop(rgSampleListValues[1]);
 
         Log::Comment(L"List should be reassembled without item 1.");
-        VERIFY_ARE_EQUAL(rgpTabListTest[0], psi->_ptsTabs, L"0th item should stay as head.");
+        VERIFY_ARE_EQUAL(rgpTabListTest[0], screenInfo._ptsTabs, L"0th item should stay as head.");
         VERIFY_ARE_EQUAL(rgpTabListTest[0]->ptsNext, rgpTabListTest[2]);
         VERIFY_ARE_EQUAL(rgpTabListTest[2]->ptsNext, rgpTabListTest[3]);
         VERIFY_ARE_EQUAL(rgpTabListTest[3]->ptsNext, rgpTabListTest[4]);
@@ -505,12 +504,12 @@ void ScreenBufferTests::TestClearTabStop()
     {
         SCREEN_INFORMATION::TabStop** rgpTabListTest = CreateSampleList();
 
-        psi->_ptsTabs = rgpTabListTest[0];
+        screenInfo._ptsTabs = rgpTabListTest[0];
 
-        psi->ClearTabStop(rgSampleListValues[2]);
+        screenInfo.ClearTabStop(rgSampleListValues[2]);
 
         Log::Comment(L"List should be reassembled without items 2 or 3.");
-        VERIFY_ARE_EQUAL(rgpTabListTest[0], psi->_ptsTabs, L"0th item should stay as head.");
+        VERIFY_ARE_EQUAL(rgpTabListTest[0], screenInfo._ptsTabs, L"0th item should stay as head.");
         VERIFY_ARE_EQUAL(rgpTabListTest[0]->ptsNext, rgpTabListTest[1]);
         VERIFY_ARE_EQUAL(rgpTabListTest[1]->ptsNext, rgpTabListTest[4]);
         VERIFY_ARE_EQUAL(rgpTabListTest[4]->ptsNext, nullptr);
@@ -528,12 +527,12 @@ void ScreenBufferTests::TestClearTabStop()
     {
         SCREEN_INFORMATION::TabStop** rgpTabListTest = CreateSampleList();
 
-        psi->_ptsTabs = rgpTabListTest[0];
+        screenInfo._ptsTabs = rgpTabListTest[0];
 
-        psi->ClearTabStop(rgSampleListValues[4]);
+        screenInfo.ClearTabStop(rgSampleListValues[4]);
 
         Log::Comment(L"List should be reassembled without item 4.");
-        VERIFY_ARE_EQUAL(rgpTabListTest[0], psi->_ptsTabs, L"0th item should stay as head.");
+        VERIFY_ARE_EQUAL(rgpTabListTest[0], screenInfo._ptsTabs, L"0th item should stay as head.");
         VERIFY_ARE_EQUAL(rgpTabListTest[0]->ptsNext, rgpTabListTest[1]);
         VERIFY_ARE_EQUAL(rgpTabListTest[1]->ptsNext, rgpTabListTest[2]);
         VERIFY_ARE_EQUAL(rgpTabListTest[2]->ptsNext, rgpTabListTest[3]);
@@ -552,12 +551,12 @@ void ScreenBufferTests::TestClearTabStop()
     {
         SCREEN_INFORMATION::TabStop** rgpTabListTest = CreateSampleList();
 
-        psi->_ptsTabs = rgpTabListTest[0];
+        screenInfo._ptsTabs = rgpTabListTest[0];
 
-        psi->ClearTabStop(9000);
+        screenInfo.ClearTabStop(9000);
 
         Log::Comment(L"List should remain the same.");
-        VERIFY_ARE_EQUAL(rgpTabListTest[0], psi->_ptsTabs, L"0th item should stay as head.");
+        VERIFY_ARE_EQUAL(rgpTabListTest[0], screenInfo._ptsTabs, L"0th item should stay as head.");
         VERIFY_ARE_EQUAL(rgpTabListTest[0]->ptsNext, rgpTabListTest[1]);
         VERIFY_ARE_EQUAL(rgpTabListTest[1]->ptsNext, rgpTabListTest[2]);
         VERIFY_ARE_EQUAL(rgpTabListTest[2]->ptsNext, rgpTabListTest[3]);
@@ -573,20 +572,20 @@ void ScreenBufferTests::TestClearTabStop()
         FreeSampleList(rgpTabListTest); // this will throw an exception in the test if the frees are incorrect
     }
 
-    psi->_ptsTabs = nullptr; // prevent global cleanup of this, we already did it.
+    screenInfo._ptsTabs = nullptr; // prevent global cleanup of this, we already did it.
 }
 
 void ScreenBufferTests::TestGetForwardTab()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer;
-    psi->_ptsTabs = nullptr;
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer();
+    si._ptsTabs = nullptr;
 
     SCREEN_INFORMATION::TabStop** rgpTabs = CreateSampleList();
     {
-        psi->_ptsTabs = rgpTabs[0];
+        si._ptsTabs = rgpTabs[0];
 
-        const COORD coordScreenBufferSize = psi->GetScreenBufferSize();
+        const COORD coordScreenBufferSize = si.GetScreenBufferSize();
         COORD coordCursor;
         coordCursor.Y = coordScreenBufferSize.Y / 2; // in the middle of the buffer, it doesn't make a difference.
 
@@ -598,7 +597,7 @@ void ScreenBufferTests::TestGetForwardTab()
             coordCursorExpected = coordCursor;
             coordCursorExpected.X = rgSampleListValues[0];
 
-            COORD const coordCursorResult = psi->GetForwardTab(coordCursor);
+            COORD const coordCursorResult = si.GetForwardTab(coordCursor);
             VERIFY_ARE_EQUAL(coordCursorExpected, coordCursorResult, L"Cursor advanced to first tab stop from sample list.");
         }
 
@@ -610,7 +609,7 @@ void ScreenBufferTests::TestGetForwardTab()
             coordCursorExpected = coordCursor;
             coordCursorExpected.X = rgSampleListValues[2];
 
-            COORD const coordCursorResult = psi->GetForwardTab(coordCursor);
+            COORD const coordCursorResult = si.GetForwardTab(coordCursor);
             VERIFY_ARE_EQUAL(coordCursorExpected, coordCursorResult, L"Cursor advanced to middle tab stop from sample list.");
         }
 
@@ -622,27 +621,27 @@ void ScreenBufferTests::TestGetForwardTab()
             coordCursorExpected = coordCursor;
             coordCursorExpected.X = coordScreenBufferSize.X - 1;
 
-            COORD const coordCursorResult = psi->GetForwardTab(coordCursor);
+            COORD const coordCursorResult = si.GetForwardTab(coordCursor);
             VERIFY_ARE_EQUAL(coordCursorExpected, coordCursorResult, L"Cursor advanced to end of screen buffer.");
         }
 
         FreeSampleList(rgpTabs);
-        psi->_ptsTabs = nullptr; // don't let global free try to clean this up
+        si._ptsTabs = nullptr; // don't let global free try to clean this up
     }
 }
 
 void ScreenBufferTests::TestGetReverseTab()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer;
-    psi->_ptsTabs = nullptr;
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer();
+    si._ptsTabs = nullptr;
 
     SCREEN_INFORMATION::TabStop** rgpTabs = CreateSampleList();
     {
-        psi->_ptsTabs = rgpTabs[0];
+        si._ptsTabs = rgpTabs[0];
 
         COORD coordCursor;
-        coordCursor.Y = psi->GetScreenBufferSize().Y / 2; // in the middle of the buffer, it doesn't make a difference.
+        coordCursor.Y = si.GetScreenBufferSize().Y / 2; // in the middle of the buffer, it doesn't make a difference.
 
         Log::Comment(L"Find previous tab from before front.");
         {
@@ -652,7 +651,7 @@ void ScreenBufferTests::TestGetReverseTab()
             coordCursorExpected = coordCursor;
             coordCursorExpected.X = 0;
 
-            COORD const coordCursorResult = psi->GetReverseTab(coordCursor);
+            COORD const coordCursorResult = si.GetReverseTab(coordCursor);
             VERIFY_ARE_EQUAL(coordCursorExpected, coordCursorResult, L"Cursor adjusted to beginning of the buffer when it started before sample list.");
         }
 
@@ -664,7 +663,7 @@ void ScreenBufferTests::TestGetReverseTab()
             coordCursorExpected = coordCursor;
             coordCursorExpected.X = rgSampleListValues[1];
 
-            COORD const coordCursorResult = psi->GetReverseTab(coordCursor);
+            COORD const coordCursorResult = si.GetReverseTab(coordCursor);
             VERIFY_ARE_EQUAL(coordCursorExpected, coordCursorResult, L"Cursor adjusted back one tab spot from middle of sample list.");
         }
 
@@ -676,55 +675,54 @@ void ScreenBufferTests::TestGetReverseTab()
             coordCursorExpected = coordCursor;
             coordCursorExpected.X = rgSampleListValues[4];
 
-            COORD const coordCursorResult = psi->GetReverseTab(coordCursor);
+            COORD const coordCursorResult = si.GetReverseTab(coordCursor);
             VERIFY_ARE_EQUAL(coordCursorExpected, coordCursorResult, L"Cursor adjusted to last item in the sample list from position beyond end.");
         }
 
         FreeSampleList(rgpTabs);
-        psi->_ptsTabs = nullptr; // don't let global free try to clean this up
+        si._ptsTabs = nullptr; // don't let global free try to clean this up
     }
 }
 
 void ScreenBufferTests::TestAreTabsSet()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer;
-    psi->_ptsTabs = nullptr;
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer();
+    si._ptsTabs = nullptr;
 
-    VERIFY_IS_FALSE(psi->AreTabsSet());
+    VERIFY_IS_FALSE(si.AreTabsSet());
 
     SCREEN_INFORMATION::TabStop stop;
-    psi->_ptsTabs = &stop;
+    si._ptsTabs = &stop;
 
-    VERIFY_IS_TRUE(psi->AreTabsSet());
+    VERIFY_IS_TRUE(si.AreTabsSet());
 
-    psi->_ptsTabs = nullptr; // don't let global free try to clean this up
+    si._ptsTabs = nullptr; // don't let global free try to clean this up
 }
 
 void ScreenBufferTests::EraseAllTests()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer;
-    auto bufferWriter = psi->GetBufferWriter();
-    auto cursor = psi->TextInfo->GetCursor();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer();
+    auto bufferWriter = si.GetBufferWriter();
+    auto& cursor = si._textBuffer->GetCursor();
     VERIFY_IS_NOT_NULL(bufferWriter);
-    VERIFY_IS_NOT_NULL(cursor);
 
-    VERIFY_ARE_EQUAL(psi->GetBufferViewport().Top, 0);
+    VERIFY_ARE_EQUAL(si.GetBufferViewport().Top, 0);
 
     ////////////////////////////////////////////////////////////////////////
     Log::Comment(L"Case 1: Erase a single line of text in the buffer\n");
 
     bufferWriter->PrintString(L"foo", 3);
-    VERIFY_ARE_EQUAL(cursor->GetPosition().X, 3);
-    VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 0);
-    VERIFY_ARE_EQUAL(psi->GetBufferViewport().Top, 0);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 3);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 0);
+    VERIFY_ARE_EQUAL(si.GetBufferViewport().Top, 0);
 
-    VERIFY_SUCCEEDED(psi->VtEraseAll());
+    VERIFY_SUCCEEDED(si.VtEraseAll());
 
-    VERIFY_ARE_EQUAL(cursor->GetPosition().X, 0);
-    VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 1);
-    auto viewport = psi->GetBufferViewport();
+    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 0);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 1);
+    auto viewport = si.GetBufferViewport();
     VERIFY_ARE_EQUAL(viewport.Top, 1);
     Log::Comment(NoThrowString().Format(
         L"viewport={L:%d,T:%d,R:%d,B:%d}",
@@ -735,19 +733,19 @@ void ScreenBufferTests::EraseAllTests()
     Log::Comment(L"Case 2: Erase multiple lines, below the top of the buffer\n");
 
     bufferWriter->PrintString(L"bar\nbar\nbar", 11);
-    VERIFY_ARE_EQUAL(cursor->GetPosition().X, 3);
-    VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 3);
-    viewport = psi->GetBufferViewport();
+    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 3);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 3);
+    viewport = si.GetBufferViewport();
     VERIFY_ARE_EQUAL(viewport.Top, 1);
     Log::Comment(NoThrowString().Format(
         L"viewport={L:%d,T:%d,R:%d,B:%d}",
         viewport.Left, viewport.Top, viewport.Right, viewport.Bottom
     ));
 
-    VERIFY_SUCCEEDED(psi->VtEraseAll());
-    VERIFY_ARE_EQUAL(cursor->GetPosition().X, 0);
-    VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 4);
-    viewport = psi->GetBufferViewport();
+    VERIFY_SUCCEEDED(si.VtEraseAll());
+    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 0);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 4);
+    viewport = si.GetBufferViewport();
     VERIFY_ARE_EQUAL(viewport.Top, 4);
     Log::Comment(NoThrowString().Format(
         L"viewport={L:%d,T:%d,R:%d,B:%d}",
@@ -758,21 +756,21 @@ void ScreenBufferTests::EraseAllTests()
     ////////////////////////////////////////////////////////////////////////
     Log::Comment(L"Case 3: multiple lines at the bottom of the buffer\n");
 
-    cursor->SetPosition({0, 275});
+    cursor.SetPosition({0, 275});
     bufferWriter->PrintString(L"bar\nbar\nbar", 11);
-    VERIFY_ARE_EQUAL(cursor->GetPosition().X, 3);
-    VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 277);
-    viewport = psi->GetBufferViewport();
+    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 3);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 277);
+    viewport = si.GetBufferViewport();
     Log::Comment(NoThrowString().Format(
         L"viewport={L:%d,T:%d,R:%d,B:%d}",
         viewport.Left, viewport.Top, viewport.Right, viewport.Bottom
     ));
-    VERIFY_SUCCEEDED(psi->VtEraseAll());
+    VERIFY_SUCCEEDED(si.VtEraseAll());
 
-    viewport = psi->GetBufferViewport();
-    auto heightFromBottom = psi->GetScreenBufferSize().Y - (viewport.Bottom - viewport.Top + 1);
-    VERIFY_ARE_EQUAL(cursor->GetPosition().X, 0);
-    VERIFY_ARE_EQUAL(cursor->GetPosition().Y, heightFromBottom);
+    viewport = si.GetBufferViewport();
+    auto heightFromBottom = si.GetScreenBufferSize().Y - (viewport.Bottom - viewport.Top + 1);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 0);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, heightFromBottom);
     VERIFY_ARE_EQUAL(viewport.Top, heightFromBottom);
     Log::Comment(NoThrowString().Format(
         L"viewport={L:%d,T:%d,R:%d,B:%d}",
@@ -782,23 +780,22 @@ void ScreenBufferTests::EraseAllTests()
 
 void ScreenBufferTests::VtResize()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    const TEXT_BUFFER_INFO* const tbi = psi->TextInfo;
-    StateMachine* const stateMachine = psi->GetStateMachine();
-    Cursor* const cursor = tbi->GetCursor();
-    SetFlag(psi->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    TextBuffer& tbi = si.GetTextBuffer();
+    StateMachine* const stateMachine = si.GetStateMachine();
+    Cursor& cursor = tbi.GetCursor();
+    SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     VERIFY_IS_NOT_NULL(stateMachine);
-    VERIFY_IS_NOT_NULL(cursor);
 
-    cursor->SetXPosition(0);
-    cursor->SetYPosition(0);
+    cursor.SetXPosition(0);
+    cursor.SetYPosition(0);
 
-    auto initialSbHeight = psi->GetScreenBufferSize().Y;
-    auto initialSbWidth = psi->GetScreenBufferSize().X;
+    auto initialSbHeight = si.GetScreenBufferSize().Y;
+    auto initialSbWidth = si.GetScreenBufferSize().X;
     // The viewport is an inclusive rect, so we need +1's
-    auto initialViewHeight = psi->GetBufferViewport().Bottom - psi->GetBufferViewport().Top + 1;
-    auto initialViewWidth = psi->GetBufferViewport().Right - psi->GetBufferViewport().Left + 1;
+    auto initialViewHeight = si.GetBufferViewport().Bottom - si.GetBufferViewport().Top + 1;
+    auto initialViewWidth = si.GetBufferViewport().Right - si.GetBufferViewport().Left + 1;
 
     Log::Comment(NoThrowString().Format(
         L"Write '\x1b[8;30;80t'"
@@ -809,11 +806,11 @@ void ScreenBufferTests::VtResize()
     std::wstring sequence = L"\x1b[8;30;80t";
     stateMachine->ProcessString(&sequence[0], sequence.length());
 
-    auto newSbHeight = psi->GetScreenBufferSize().Y;
-    auto newSbWidth = psi->GetScreenBufferSize().X;
+    auto newSbHeight = si.GetScreenBufferSize().Y;
+    auto newSbWidth = si.GetScreenBufferSize().X;
     // The viewport is an inclusive rect, so we need +1's
-    auto newViewHeight = psi->GetBufferViewport().Bottom - psi->GetBufferViewport().Top + 1;
-    auto newViewWidth = psi->GetBufferViewport().Right - psi->GetBufferViewport().Left + 1;
+    auto newViewHeight = si.GetBufferViewport().Bottom - si.GetBufferViewport().Top + 1;
+    auto newViewWidth = si.GetBufferViewport().Right - si.GetBufferViewport().Left + 1;
 
     VERIFY_ARE_EQUAL(initialSbHeight, newSbHeight);
     VERIFY_ARE_EQUAL(80, newSbWidth);
@@ -834,10 +831,10 @@ void ScreenBufferTests::VtResize()
     sequence = L"\x1b[8;40;80t";
     stateMachine->ProcessString(&sequence[0], sequence.length());
 
-    newSbHeight = psi->GetScreenBufferSize().Y;
-    newSbWidth = psi->GetScreenBufferSize().X;
-    newViewHeight = psi->GetBufferViewport().Bottom - psi->GetBufferViewport().Top + 1;
-    newViewWidth = psi->GetBufferViewport().Right - psi->GetBufferViewport().Left + 1;
+    newSbHeight = si.GetScreenBufferSize().Y;
+    newSbWidth = si.GetScreenBufferSize().X;
+    newViewHeight = si.GetBufferViewport().Bottom - si.GetBufferViewport().Top + 1;
+    newViewWidth = si.GetBufferViewport().Right - si.GetBufferViewport().Left + 1;
 
     VERIFY_ARE_EQUAL(initialSbHeight, newSbHeight);
     VERIFY_ARE_EQUAL(80, newSbWidth);
@@ -858,10 +855,10 @@ void ScreenBufferTests::VtResize()
     sequence = L"\x1b[8;40;90t";
     stateMachine->ProcessString(&sequence[0], sequence.length());
 
-    newSbHeight = psi->GetScreenBufferSize().Y;
-    newSbWidth = psi->GetScreenBufferSize().X;
-    newViewHeight = psi->GetBufferViewport().Bottom - psi->GetBufferViewport().Top + 1;
-    newViewWidth = psi->GetBufferViewport().Right - psi->GetBufferViewport().Left + 1;
+    newSbHeight = si.GetScreenBufferSize().Y;
+    newSbWidth = si.GetScreenBufferSize().X;
+    newViewHeight = si.GetBufferViewport().Bottom - si.GetBufferViewport().Top + 1;
+    newViewWidth = si.GetBufferViewport().Right - si.GetBufferViewport().Left + 1;
 
     VERIFY_ARE_EQUAL(initialSbHeight, newSbHeight);
     VERIFY_ARE_EQUAL(90, newSbWidth);
@@ -882,10 +879,10 @@ void ScreenBufferTests::VtResize()
     sequence = L"\x1b[8;12;12t";
     stateMachine->ProcessString(&sequence[0], sequence.length());
 
-    newSbHeight = psi->GetScreenBufferSize().Y;
-    newSbWidth = psi->GetScreenBufferSize().X;
-    newViewHeight = psi->GetBufferViewport().Bottom - psi->GetBufferViewport().Top + 1;
-    newViewWidth = psi->GetBufferViewport().Right - psi->GetBufferViewport().Left + 1;
+    newSbHeight = si.GetScreenBufferSize().Y;
+    newSbWidth = si.GetScreenBufferSize().X;
+    newViewHeight = si.GetBufferViewport().Bottom - si.GetBufferViewport().Top + 1;
+    newViewWidth = si.GetBufferViewport().Right - si.GetBufferViewport().Left + 1;
 
     VERIFY_ARE_EQUAL(initialSbHeight, newSbHeight);
     VERIFY_ARE_EQUAL(12, newSbWidth);
@@ -905,10 +902,10 @@ void ScreenBufferTests::VtResize()
     sequence = L"\x1b[8;0;0t";
     stateMachine->ProcessString(&sequence[0], sequence.length());
 
-    newSbHeight = psi->GetScreenBufferSize().Y;
-    newSbWidth = psi->GetScreenBufferSize().X;
-    newViewHeight = psi->GetBufferViewport().Bottom - psi->GetBufferViewport().Top + 1;
-    newViewWidth = psi->GetBufferViewport().Right - psi->GetBufferViewport().Left + 1;
+    newSbHeight = si.GetScreenBufferSize().Y;
+    newSbWidth = si.GetScreenBufferSize().X;
+    newViewHeight = si.GetBufferViewport().Bottom - si.GetBufferViewport().Top + 1;
+    newViewWidth = si.GetBufferViewport().Right - si.GetBufferViewport().Left + 1;
 
     VERIFY_ARE_EQUAL(initialSbHeight, newSbHeight);
     VERIFY_ARE_EQUAL(initialSbWidth, newSbWidth);
@@ -920,15 +917,15 @@ void ScreenBufferTests::VtResize()
 void ScreenBufferTests::VtSoftResetCursorPosition()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    const TEXT_BUFFER_INFO* const tbi = psi->TextInfo;
-    StateMachine* const stateMachine = psi->GetStateMachine();
-    Cursor* const cursor = tbi->GetCursor();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    const TextBuffer& tbi = si.GetTextBuffer();
+    StateMachine* const stateMachine = si.GetStateMachine();
+    const Cursor& cursor = tbi.GetCursor();
 
     Log::Comment(NoThrowString().Format(
         L"Make sure the viewport is at 0,0"
     ));
-    VERIFY_SUCCEEDED(psi->SetViewportOrigin(true, COORD({0, 0})));
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({0, 0})));
 
     Log::Comment(NoThrowString().Format(
         L"Move the cursor to 2,2, then execute a soft reset.\n"
@@ -937,11 +934,11 @@ void ScreenBufferTests::VtSoftResetCursorPosition()
 
     std::wstring seq = L"\x1b[2;2H";
     stateMachine->ProcessString(&seq[0], seq.length());
-    VERIFY_ARE_EQUAL( COORD({1, 1}), cursor->GetPosition());
+    VERIFY_ARE_EQUAL( COORD({1, 1}), cursor.GetPosition());
 
     seq = L"\x1b[!p";
     stateMachine->ProcessString(&seq[0], seq.length());
-    VERIFY_ARE_EQUAL( COORD({1, 1}), cursor->GetPosition());
+    VERIFY_ARE_EQUAL( COORD({1, 1}), cursor.GetPosition());
 
     Log::Comment(NoThrowString().Format(
         L"Set some margins. The cursor should move home."
@@ -949,7 +946,7 @@ void ScreenBufferTests::VtSoftResetCursorPosition()
 
     seq = L"\x1b[2;10r";
     stateMachine->ProcessString(&seq[0], seq.length());
-    VERIFY_ARE_EQUAL( COORD({0, 0}), cursor->GetPosition());
+    VERIFY_ARE_EQUAL( COORD({0, 0}), cursor.GetPosition());
 
     Log::Comment(NoThrowString().Format(
         L"Move the cursor to 2,2, then execute a soft reset.\n"
@@ -957,18 +954,18 @@ void ScreenBufferTests::VtSoftResetCursorPosition()
     ));
     seq = L"\x1b[2;2H";
     stateMachine->ProcessString(&seq[0], seq.length());
-    VERIFY_ARE_EQUAL( COORD({1, 1}), cursor->GetPosition());
+    VERIFY_ARE_EQUAL( COORD({1, 1}), cursor.GetPosition());
     seq = L"\x1b[!p";
     stateMachine->ProcessString(&seq[0], seq.length());
-    VERIFY_ARE_EQUAL( COORD({1, 1}), cursor->GetPosition());
+    VERIFY_ARE_EQUAL( COORD({1, 1}), cursor.GetPosition());
 }
 
 
 void ScreenBufferTests::VtSetColorTable()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    StateMachine* const stateMachine = psi->GetStateMachine();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    StateMachine* const stateMachine = si.GetStateMachine();
 
     // Start with a known value
     gci.SetColorTableEntry(0, RGB(0, 0, 0));
@@ -1086,29 +1083,29 @@ void ScreenBufferTests::ResizeTraditionalDoesntDoubleFreeAttrRows()
 {
     // there is not much to verify here, this test passes if the console doesn't crash.
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
 
     gci.SetWrapText(false);
-    COORD newBufferSize = psi->_coordScreenBufferSize;
+    COORD newBufferSize = si._coordScreenBufferSize;
     newBufferSize.Y--;
 
-    VERIFY_SUCCESS_NTSTATUS(psi->ResizeTraditional(newBufferSize));
+    VERIFY_SUCCESS_NTSTATUS(si.ResizeTraditional(newBufferSize));
 
 }
 
 void ScreenBufferTests::ResizeAltBuffer()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
-    StateMachine* const stateMachine = psi->GetStateMachine();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    StateMachine* const stateMachine = si.GetStateMachine();
 
 
     Log::Comment(NoThrowString().Format(
         L"Try resizing the alt buffer. Make sure the call doesn't stack overflow."
     ));
 
-    VERIFY_IS_FALSE(psi->_IsAltBuffer());
-    const Viewport originalMainSize = Viewport(psi->_viewport);
+    VERIFY_IS_FALSE(si._IsAltBuffer());
+    const Viewport originalMainSize = Viewport(si._viewport);
 
     Log::Comment(NoThrowString().Format(
         L"Switch to alt buffer"
@@ -1116,9 +1113,9 @@ void ScreenBufferTests::ResizeAltBuffer()
     std::wstring seq = L"\x1b[?1049h";
     stateMachine->ProcessString(&seq[0], seq.length());
 
-    VERIFY_IS_FALSE(psi->_IsAltBuffer());
-    VERIFY_IS_NOT_NULL(psi->_psiAlternateBuffer);
-    SCREEN_INFORMATION* const psiAlt = psi->_psiAlternateBuffer;
+    VERIFY_IS_FALSE(si._IsAltBuffer());
+    VERIFY_IS_NOT_NULL(si._psiAlternateBuffer);
+    SCREEN_INFORMATION* const psiAlt = si._psiAlternateBuffer;
 
     COORD newSize = originalMainSize.Dimensions();
     newSize.X += 2;

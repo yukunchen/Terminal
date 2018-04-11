@@ -45,7 +45,7 @@ void UnlockConsole()
 // Return Value:
 // - STATUS_SUCCESS if successful.
 [[nodiscard]]
-NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle, _In_ const DWORD cbTitle)
+NTSTATUS CONSOLE_INFORMATION::AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle, const DWORD cbTitle)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // Synchronize flags
@@ -85,8 +85,7 @@ NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle
     #pragma prefast(suppress:26035, "If this fails, we just display an empty title, which is ok.")
     StringCbCopyW(gci.Title, cbTitle + sizeof(WCHAR), pwchTitle);
 
-    gci.OriginalTitle =
-        TranslateConsoleTitle(gci.Title, TRUE, FALSE);
+    gci.OriginalTitle = TranslateConsoleTitle(gci.Title, TRUE, FALSE);
     if (gci.OriginalTitle == nullptr)
     {
         Status = STATUS_NO_MEMORY;
@@ -99,11 +98,9 @@ NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle
         goto ErrorExit1b;
     }
 
-    gci.CurrentScreenBuffer =
-        gci.ScreenBuffers;
+    gci.pCurrentScreenBuffer = gci.ScreenBuffers;
 
-    gci.CurrentScreenBuffer->ScrollScale =
-        gci.GetScrollScale();
+    gci.GetActiveOutputBuffer().ScrollScale = gci.GetScrollScale();
 
     gci.ConsoleIme.RefreshAreaAttributes();
 

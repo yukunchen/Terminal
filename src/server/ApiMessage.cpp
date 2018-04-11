@@ -30,9 +30,9 @@ ConsoleHandleData* _CONSOLE_API_MSG::GetObjectHandle() const
 // Return Value:
 // - HRESULT indicating if the payload was successfully read.
 [[nodiscard]]
-HRESULT _CONSOLE_API_MSG::ReadMessageInput(_In_ const ULONG cbOffset,
+HRESULT _CONSOLE_API_MSG::ReadMessageInput(const ULONG cbOffset,
                                            _Out_writes_bytes_(cbSize) PVOID pvBuffer,
-                                           _In_ const ULONG cbSize)
+                                           const ULONG cbSize)
 {
     CD_IO_OPERATION IoOperation;
     IoOperation.Identifier = Descriptor.Identifier;
@@ -90,7 +90,7 @@ HRESULT _CONSOLE_API_MSG::GetInputBuffer(_Outptr_result_bytebuffer_(*pcbSize) vo
 //  Return Value:
 // - HRESULT indicating if the output buffer was successfully retrieved.
 [[nodiscard]]
-HRESULT _CONSOLE_API_MSG::GetAugmentedOutputBuffer(_In_ const ULONG cbFactor,
+HRESULT _CONSOLE_API_MSG::GetAugmentedOutputBuffer(const ULONG cbFactor,
                                                    _Outptr_result_bytebuffer_(*pcbSize) PVOID * const ppvBuffer,
                                                    _Out_ PULONG pcbSize)
 {
@@ -172,12 +172,12 @@ HRESULT _CONSOLE_API_MSG::ReleaseMessageBuffers()
     return hr;
 }
 
-void _CONSOLE_API_MSG::SetReplyStatus(_In_ const NTSTATUS Status)
+void _CONSOLE_API_MSG::SetReplyStatus(const NTSTATUS Status)
 {
     Complete.IoStatus.Status = Status;
 }
 
-void _CONSOLE_API_MSG::SetReplyInformation(_In_ ULONG_PTR const pInformation)
+void _CONSOLE_API_MSG::SetReplyInformation(const ULONG_PTR pInformation)
 {
     Complete.IoStatus.Information = pInformation;
 }

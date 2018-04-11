@@ -13,6 +13,9 @@ Abstract:
 #include <assert.h>
 #include <sal.h>
 
+// This includes support libraries from the CRT, STL, WIL, and GSL
+#include "LibraryIncludes.h"
+
 #include <windows.h>
 #include <windowsx.h>
 
@@ -44,8 +47,3 @@ __inline int NTSTATUS_FROM_WIN32(long x) { return x <= 0 ? (NTSTATUS)x : (NTSTAT
 #include <intsafe.h>
 #pragma prefast(pop)
 
-// This includes support libraries from the CRT, STL, WIL, and GSL
-#include "LibraryIncludes.h"
-
-// CPP 2017 utilities.
-#include "..\..\inc\cpp2017.hpp"

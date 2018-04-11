@@ -181,12 +181,12 @@ HRESULT BgfxEngine::PaintSelection(const SMALL_RECT* const /*rgsrSelection*/, UI
 }
 
 [[nodiscard]]
-HRESULT BgfxEngine::PaintCursor(_In_ COORD const coordCursor,
-                                _In_ ULONG const ulCursorHeightPercent,
-                                _In_ bool const /*fIsDoubleWidth*/,
-                                _In_ CursorType const /*cursorType*/,
-                                _In_ bool const /*fUseColor*/,
-                                _In_ COLORREF const /*cursorColor*/)
+HRESULT BgfxEngine::PaintCursor(const COORD coordCursor,
+                                const ULONG ulCursorHeightPercent,
+                                const bool /*fIsDoubleWidth*/,
+                                const CursorType /*cursorType*/,
+                                const bool /*fUseColor*/,
+                                const COLORREF /*cursorColor*/)
 {
     // TODO: MSFT: 11448021 - Modify BGFX to support rendering full-width
     // characters and a full-width cursor.
@@ -218,7 +218,7 @@ HRESULT BgfxEngine::ClearCursor()
 [[nodiscard]]
 HRESULT BgfxEngine::UpdateDrawingBrushes(COLORREF const /*colorForeground*/,
                                          COLORREF const /*colorBackground*/,
-                                         _In_ WORD const legacyColorAttribute,
+                                         const WORD legacyColorAttribute,
                                          bool const /*fIncludeBackgrounds*/)
 {
     _currentLegacyColorAttribute = legacyColorAttribute;
@@ -227,7 +227,7 @@ HRESULT BgfxEngine::UpdateDrawingBrushes(COLORREF const /*colorForeground*/,
 }
 
 [[nodiscard]]
-HRESULT BgfxEngine::UpdateFont(FontInfoDesired const* const /*pfiFontInfoDesired*/, FontInfo* const /*pfiFontInfo*/)
+HRESULT BgfxEngine::UpdateFont(const FontInfoDesired& /*pfiFontInfoDesired*/, FontInfo& /*pfiFontInfo*/)
 {
     return S_OK;
 }
@@ -246,13 +246,13 @@ HRESULT BgfxEngine::UpdateDpi(int const /*iDpi*/)
 // Return Value:
 // - HRESULT S_OK
 [[nodiscard]]
-HRESULT BgfxEngine::UpdateViewport(_In_ SMALL_RECT const /*srNewViewport*/)
+HRESULT BgfxEngine::UpdateViewport(const SMALL_RECT /*srNewViewport*/)
 {
     return S_OK;
 }
 
 [[nodiscard]]
-HRESULT BgfxEngine::GetProposedFont(FontInfoDesired const* const /*pfiFontInfoDesired*/, FontInfo* const /*pfiFontInfo*/, int const /*iDpi*/)
+HRESULT BgfxEngine::GetProposedFont(const FontInfoDesired& /*pfiFontInfoDesired*/, FontInfo& /*pfiFontInfo*/, int const /*iDpi*/)
 {
     return S_OK;
 }

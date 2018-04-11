@@ -23,34 +23,34 @@ Revision History:
 #include <deque>
 #include <memory>
 
-WCHAR CharToWchar(_In_reads_(cch) const char * const pch, _In_ const UINT cch);
+WCHAR CharToWchar(_In_reads_(cch) const char * const pch, const UINT cch);
 
-void SetConsoleCPInfo(_In_ const BOOL fOutput);
+void SetConsoleCPInfo(const BOOL fOutput);
 
 BOOL CheckBisectStringW(_In_reads_bytes_(cBytes) const WCHAR * pwchBuffer,
                         _In_ DWORD cWords,
                         _In_ DWORD cBytes);
-BOOL CheckBisectProcessW(_In_ const SCREEN_INFORMATION * const pScreenInfo,
+BOOL CheckBisectProcessW(const SCREEN_INFORMATION& ScreenInfo,
                          _In_reads_bytes_(cBytes) const WCHAR * pwchBuffer,
                          _In_ DWORD cWords,
                          _In_ DWORD cBytes,
                          _In_ SHORT sOriginalXPosition,
                          _In_ BOOL fEcho);
 
-int ConvertToOem(_In_ const UINT uiCodePage,
+int ConvertToOem(const UINT uiCodePage,
                  _In_reads_(cchSource) const WCHAR * const pwchSource,
-                 _In_ const UINT cchSource,
+                 const UINT cchSource,
                  _Out_writes_(cchTarget) CHAR * const pchTarget,
-                 _In_ const UINT cchTarget);
+                 const UINT cchTarget);
 
 [[nodiscard]]
 HRESULT SplitToOem(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events);
 
-int ConvertInputToUnicode(_In_ const UINT uiCodePage,
+int ConvertInputToUnicode(const UINT uiCodePage,
                           _In_reads_(cchSource) const CHAR * const pchSource,
-                          _In_ const UINT cchSource,
+                          const UINT cchSource,
                           _Out_writes_(cchTarget) WCHAR * const pwchTarget,
-                          _In_ const UINT cchTarget);
+                          const UINT cchTarget);
 
 
 int ConvertOutputToUnicode(_In_ UINT uiCodePage,

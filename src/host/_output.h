@@ -23,39 +23,39 @@ Revision History:
 
 void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
                                _In_ SHORT cchBuffer,
-                               _In_ PSCREEN_INFORMATION pScreenInfo,
+                               SCREEN_INFORMATION& screenInfo,
                                _Inout_updates_(cchBuffer) DbcsAttribute* const pDbcsAttributes,
-                               _In_ const bool fWasLineWrapped);
+                               const bool fWasLineWrapped);
 
 [[nodiscard]]
 NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimensions.Y * sizeof(CHAR_INFO)) PBYTE const prgbSrc,
-                             _In_ const COORD coordSrcDimensions,
-                             _In_ const SMALL_RECT * const psrSrc,
-                             _In_ PSCREEN_INFORMATION pScreenInfo,
-                             _In_ const COORD coordDest,
+                             const COORD coordSrcDimensions,
+                             const SMALL_RECT * const psrSrc,
+                             SCREEN_INFORMATION& screenInfo,
+                             const COORD coordDest,
                              _In_reads_opt_(coordSrcDimensions.X * coordSrcDimensions.Y) TextAttribute* const pTextAttributes);
 
-void WriteRectToScreenBuffer(_Inout_ SCREEN_INFORMATION& screenInfo,
+void WriteRectToScreenBuffer(SCREEN_INFORMATION& screenInfo,
                              const std::vector<std::vector<OutputCell>>& cells,
                              const COORD coordDest);
 
-void WriteRegionToScreen(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ PSMALL_RECT psrRegion);
+void WriteRegionToScreen(SCREEN_INFORMATION& screenInfo, _In_ PSMALL_RECT psrRegion);
 
-void WriteToScreen(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ const SMALL_RECT srRegion);
+void WriteToScreen(SCREEN_INFORMATION& screenInfo, const SMALL_RECT srRegion);
 
 [[nodiscard]]
-NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
+NTSTATUS WriteOutputString(SCREEN_INFORMATION& screenInfo,
                            _In_reads_(*pcRecords) const VOID * pvBuffer,
-                           _In_ const COORD coordWrite,
-                           _In_ const ULONG ulStringType,
+                           const COORD coordWrite,
+                           const ULONG ulStringType,
                            _Inout_ PULONG pcRecords,    // this value is valid even for error cases
                            _Out_opt_ PULONG pcColumns);
 
 [[nodiscard]]
-NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
+NTSTATUS FillOutput(SCREEN_INFORMATION& screenInfo,
                     _In_ WORD wElement,
-                    _In_ const COORD coordWrite,
-                    _In_ const ULONG ulElementType,
+                    const COORD coordWrite,
+                    const ULONG ulElementType,
                     _Inout_ PULONG pcElements); // this value is valid even for error cases
 
-void FillRectangle(_In_ const CHAR_INFO * const pciFill, _In_ PSCREEN_INFORMATION pScreenInfo, _In_ const SMALL_RECT * const psrTarget);
+void FillRectangle(const CHAR_INFO * const pciFill, SCREEN_INFORMATION& screenInfo, const SMALL_RECT * const psrTarget);

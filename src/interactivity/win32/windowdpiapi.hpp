@@ -54,17 +54,17 @@ namespace Microsoft::Console::Interactivity::Win32
 
         // Module-internal Functions
         BOOL SetProcessDpiAwarenessContext(_In_ DPI_AWARENESS_CONTEXT dpiContext);
-        BOOL EnableChildWindowDpiMessage(_In_ HWND const hwnd,
-                                            _In_ BOOL const fEnable);
+        BOOL EnableChildWindowDpiMessage(const HWND hwnd,
+                                            const BOOL fEnable);
         BOOL AdjustWindowRectExForDpi(_Inout_ LPRECT const lpRect,
-                                        _In_ DWORD const dwStyle,
-                                        _In_ BOOL const bMenu,
-                                        _In_ DWORD const dwExStyle,
-                                        _In_ UINT const dpi);
+                                        const DWORD dwStyle,
+                                        const BOOL bMenu,
+                                        const DWORD dwExStyle,
+                                        const UINT dpi);
 
-        int GetWindowDPI(_In_ HWND const hwnd);
-        int GetSystemMetricsForDpi(_In_ int const nIndex,
-                                    _In_ UINT const dpi);
+        int GetWindowDPI(const HWND hwnd);
+        int GetSystemMetricsForDpi(const int nIndex,
+                                    const UINT dpi);
 
 #ifdef CON_DPIAPI_INDIRECT
         WindowDpiApi();

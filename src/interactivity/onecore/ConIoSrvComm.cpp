@@ -368,7 +368,7 @@ VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
                             rcDisplay.bottom *= coordFont.Y;
 
                             // Ask the screen buffer to resize itself (and all related components) based on the screen size.
-                            globals.getConsoleInformation().CurrentScreenBuffer->ProcessResizeWindow(&rcDisplay, &rcOld);
+                            globals.getConsoleInformation().GetActiveOutputBuffer().ProcessResizeWindow(&rcDisplay, &rcOld);
                         }
                     }
 
@@ -420,7 +420,7 @@ VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
     }
 }
 
-VOID ConIoSrvComm::CleanupForHeadless(_In_ NTSTATUS const status)
+VOID ConIoSrvComm::CleanupForHeadless(const NTSTATUS status)
 {
     if (!_fIsInputInitialized)
     {

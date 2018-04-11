@@ -17,9 +17,6 @@
 
 #define SET_FIELD_AND_SIZE(x) FIELD_OFFSET(Settings, (x)), RTL_FIELD_SIZE(Settings, (x))
 
-// Default word delimiters if no others are specified.
-const WCHAR aWordDelimCharsDefault[WORD_DELIM_MAX] = L"\\" L"+!:=/.<>;|&";
-
 Registry::Registry(_In_ Settings* const pSettings) :
     _pSettings(pSettings)
 {
@@ -64,26 +61,62 @@ void Registry::GetEditKeys(_In_opt_ HKEY hConsoleKey) const
         gci.SetAltF4CloseAllowed(!!dwValue);
     }
 
-    // provide extended word delimiters by default.
-    std::copy(std::begin(aWordDelimCharsDefault),
-              std::end(aWordDelimCharsDefault),
-              ServiceLocator::LocateGlobals().aWordDelimChars);
-
+    // --- START LOAD BEARING CODE ---
+    // NOTE: Because of some accident of history (win2k time or before) the key type of
+    // CONSOLE_REGISTRY_WORD_DELIM was set to REG_DWORD when it should have been REG_SZ. Registry key reads
+    // didn't use to be type checked so the key was "read" and the buffer it was read into was used instead of
+    // the default word delimiters. Meaning that it really just turned off the word delimiter feature entirely
+    // because the buffer was still zero'd out (except for the space character which is handled differently
+    // and not modifiable by this registry setting).
+    //
+    // In order to maintain compatibility with this long-standing behavior we need set the word delimiters
+    // based on three scenarios:
+    // 1. key type is REG_DWORD: have no word delimiters
+    // 2. key type is REG_SZ: someone has specified custom word delimiters, use them
+    // 3. key doesn't exist: use the original default word delimiters
+    //
+    // The space character is always considered a word delimiter, no matter the scenario.
+    //
     // Read word delimiters from registry
-    WCHAR awchBuffer[64];
+    auto& delimiters = ServiceLocator::LocateGlobals().WordDelimiters;
+    delimiters.clear();
     Status = RegistrySerialization::s_QueryValue(hConsoleKey,
                                                  CONSOLE_REGISTRY_WORD_DELIM,
-                                                 sizeof(awchBuffer),
-                                                 REG_SZ,
-                                                 (PBYTE)awchBuffer,
+                                                 sizeof(dwValue),
+                                                 REG_DWORD,
+                                                 reinterpret_cast<BYTE*>(&dwValue),
                                                  nullptr);
-    if (NT_SUCCESS(Status))
+    if (!NT_SUCCESS(Status))
     {
-        // OK, copy it to the word delimiter array.
-        #pragma prefast(suppress:26035, "RegistrySerialization::s_QueryValue will properly terminate strings.")
-        StringCchCopyW(ServiceLocator::LocateGlobals().aWordDelimChars, WORD_DELIM_MAX, awchBuffer);
-        ServiceLocator::LocateGlobals().aWordDelimChars[WORD_DELIM_MAX - 1] = 0;
+        // the key isn't a REG_DWORD, try to read it as a REG_SZ
+        const size_t bufferSize = 64;
+        WCHAR awchBuffer[bufferSize];
+        Status = RegistrySerialization::s_QueryValue(hConsoleKey,
+                                                     CONSOLE_REGISTRY_WORD_DELIM,
+                                                     bufferSize,
+                                                     REG_SZ,
+                                                     reinterpret_cast<BYTE*>(awchBuffer),
+                                                     nullptr);
+        if (NT_SUCCESS(Status))
+        {
+            // we read something, set it as the word delimiters
+            const std::wstring regWordDelimiters{ awchBuffer, awchBuffer + bufferSize };
+            for (const wchar_t wch : regWordDelimiters)
+            {
+                if (wch == '\0')
+                {
+                    break;
+                }
+                delimiters.push_back(wch);
+            }
+        }
+        else
+        {
+            // the key isn't a REG_DWORD or a REG_SZ, fall back to our default word delimiters
+            delimiters = { '\\', '+', '!', ':', '=', '/', '.', '<', '>', ';', '|', '&' };
+        }
     }
+    // --- END LOAD BEARING CODE ---
 
     if (hCurrentUserKey)
     {
@@ -93,13 +126,15 @@ void Registry::GetEditKeys(_In_opt_ HKEY hConsoleKey) const
 }
 
 void Registry::_LoadMappedProperties(_In_reads_(cPropertyMappings) const RegistrySerialization::RegPropertyMap* const rgPropertyMappings,
-                                     _In_ size_t const cPropertyMappings,
-                                     _In_ HKEY const hKey)
+                                     const size_t cPropertyMappings,
+                                     const HKEY hKey)
 {
     // Iterate through properties table and load each setting for common property types
     for (UINT iMapping = 0; iMapping < cPropertyMappings; iMapping++)
     {
         const RegistrySerialization::RegPropertyMap* const pPropMap = &(rgPropertyMappings[iMapping]);
+
+        NTSTATUS Status = STATUS_SUCCESS;
 
         switch (pPropMap->propertyType)
         {
@@ -109,14 +144,21 @@ void Registry::_LoadMappedProperties(_In_reads_(cPropertyMappings) const Registr
         case RegistrySerialization::_RegPropertyType::Byte:
         case RegistrySerialization::_RegPropertyType::Coordinate:
         {
-            LOG_IF_FAILED(RegistrySerialization::s_LoadRegDword(hKey, pPropMap, _pSettings));
+
+            Status = RegistrySerialization::s_LoadRegDword(hKey, pPropMap, _pSettings);
             break;
         }
         case RegistrySerialization::_RegPropertyType::String:
         {
-            LOG_IF_FAILED(RegistrySerialization::s_LoadRegString(hKey, pPropMap, _pSettings));
+            Status = RegistrySerialization::s_LoadRegString(hKey, pPropMap, _pSettings);
             break;
         }
+        }
+
+        // Don't log "file not found" messages. It's fine to not find a registry key. Log other types.
+        if (!NT_SUCCESS(Status) && NTSTATUS_FROM_WIN32(ERROR_FILE_NOT_FOUND) != Status)
+        {
+            LOG_NTSTATUS(Status);
         }
     }
 }

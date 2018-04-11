@@ -6,20 +6,20 @@
 
 #pragma hdrstop
 
-void HandleKeyEvent(_In_ const HWND hWnd,
-                    _In_ const UINT Message,
-                    _In_ const WPARAM wParam,
-                    _In_ const LPARAM lParam,
+void HandleKeyEvent(const HWND hWnd,
+                    const UINT Message,
+                    const WPARAM wParam,
+                    const LPARAM lParam,
                     _Inout_opt_ PBOOL pfUnlockConsole);
-BOOL HandleSysKeyEvent(_In_ const HWND hWnd,
-                       _In_ const UINT Message,
-                       _In_ const WPARAM wParam,
-                       _In_ const LPARAM lParam,
+BOOL HandleSysKeyEvent(const HWND hWnd,
+                       const UINT Message,
+                       const WPARAM wParam,
+                       const LPARAM lParam,
                        _Inout_opt_ PBOOL pfUnlockConsole);
-BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION * const pScreenInfo,
-                      _In_ const UINT Message,
-                      _In_ const WPARAM wParam,
-                      _In_ const LPARAM lParam);
+BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
+                      const UINT Message,
+                      const WPARAM wParam,
+                      const LPARAM lParam);
 
-VOID SetConsoleWindowOwner(_In_ const HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pProcessData);
+VOID SetConsoleWindowOwner(const HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pProcessData);
 DWORD ConsoleInputThreadProcWin32(LPVOID lpParameter);

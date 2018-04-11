@@ -20,25 +20,25 @@ class ConsoleProcessPolicy
 public:
     ~ConsoleProcessPolicy();
 
-    static ConsoleProcessPolicy s_CreateInstance(_In_ const HANDLE hProcess);
+    static ConsoleProcessPolicy s_CreateInstance(const HANDLE hProcess);
 
     bool CanReadOutputBuffer() const;
     bool CanWriteInputBuffer() const;
 
 private:
-    ConsoleProcessPolicy(_In_ const bool fCanReadOutputBuffer,
-                         _In_ const bool fCanWriteInputBuffer);
+    ConsoleProcessPolicy(const bool fCanReadOutputBuffer,
+                         const bool fCanWriteInputBuffer);
 
     [[nodiscard]]
-    static HRESULT s_CheckAppModelPolicy(_In_ const HANDLE hToken,
+    static HRESULT s_CheckAppModelPolicy(const HANDLE hToken,
                                          _Inout_ bool& fIsWrongWayBlocked);
 
     [[nodiscard]]
-    static HRESULT s_CheckIntegrityLevelPolicy(_In_ const HANDLE hOtherToken,
+    static HRESULT s_CheckIntegrityLevelPolicy(const HANDLE hOtherToken,
                                                _Inout_ bool& fIsWrongWayBlocked);
 
     [[nodiscard]]
-    static HRESULT s_GetIntegrityLevel(_In_ const HANDLE hToken, _Out_ DWORD& dwIntegrityLevel);
+    static HRESULT s_GetIntegrityLevel(const HANDLE hToken, _Out_ DWORD& dwIntegrityLevel);
 
     const bool _fCanReadOutputBuffer;
     const bool _fCanWriteInputBuffer;

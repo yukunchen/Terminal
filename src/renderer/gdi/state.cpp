@@ -105,7 +105,7 @@ GdiEngine::~GdiEngine()
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 [[nodiscard]]
-HRESULT GdiEngine::SetHwnd(_In_ HWND const hwnd)
+HRESULT GdiEngine::SetHwnd(const HWND hwnd)
 {
     // First attempt to get the DC and create an appropriate DC
     HDC const hdcRealWindow = GetDC(hwnd);
@@ -148,7 +148,7 @@ HRESULT GdiEngine::SetHwnd(_In_ HWND const hwnd)
 // Return Value:
 // - S_OK or converted HRESULT from last Win32 error from SetWindowLongW
 [[nodiscard]]
-HRESULT GdiEngine::s_SetWindowLongWHelper(_In_ HWND const hWnd, _In_ int const nIndex, _In_ LONG const dwNewLong)
+HRESULT GdiEngine::s_SetWindowLongWHelper(const HWND hWnd, const int nIndex, const LONG dwNewLong)
 {
     // SetWindowLong has strange error handling. On success, it returns the previous Window Long value and doesn't modify the Last Error state.
     // To deal with this, we set the last error to 0/S_OK first, call it, and if the previous long was 0, we check if the error was non-zero before reporting.
@@ -171,10 +171,10 @@ HRESULT GdiEngine::s_SetWindowLongWHelper(_In_ HWND const hWnd, _In_ int const n
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 [[nodiscard]]
-HRESULT GdiEngine::UpdateDrawingBrushes(_In_ COLORREF const colorForeground,
-                                        _In_ COLORREF const colorBackground,
-                                        _In_ WORD const /*legacyColorAttribute*/,
-                                        _In_ bool const fIncludeBackgrounds)
+HRESULT GdiEngine::UpdateDrawingBrushes(const COLORREF colorForeground,
+                                        const COLORREF colorBackground,
+                                        const WORD /*legacyColorAttribute*/,
+                                        const bool fIncludeBackgrounds)
 {
     RETURN_IF_FAILED(_FlushBufferLines());
 
@@ -208,15 +208,15 @@ HRESULT GdiEngine::UpdateDrawingBrushes(_In_ COLORREF const colorForeground,
 // - This method will update the active font on the current device context
 // - NOTE: It is left up to the underling rendering system to choose the nearest font. Please ask for the font dimensions if they are required using the interface. Do not use the size you requested with this structure.
 // Arguments:
-// - pfiFontDesired - Pointer to font information we should use while instantiating a font.
-// - pfiFont - Pointer to font information where the chosen font information will be populated.
+// - FontDesired - reference to font information we should use while instantiating a font.
+// - Font - reference to font information where the chosen font information will be populated.
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 [[nodiscard]]
-HRESULT GdiEngine::UpdateFont(_In_ FontInfoDesired const * const pfiFontDesired, _Out_ FontInfo* const pfiFont)
+HRESULT GdiEngine::UpdateFont(const FontInfoDesired& FontDesired, _Out_ FontInfo& Font)
 {
     wil::unique_hfont hFont;
-    RETURN_IF_FAILED(_GetProposedFont(pfiFontDesired, pfiFont, _iCurrentDpi, hFont));
+    RETURN_IF_FAILED(_GetProposedFont(FontDesired, Font, _iCurrentDpi, hFont));
 
     // Select into DC
     RETURN_LAST_ERROR_IF_NULL(SelectFont(_hdcMemoryContext, hFont.get()));
@@ -225,7 +225,7 @@ HRESULT GdiEngine::UpdateFont(_In_ FontInfoDesired const * const pfiFontDesired,
     RETURN_LAST_ERROR_IF_FALSE(GetTextMetricsW(_hdcMemoryContext, &_tmFontMetrics));
 
     // Now find the size of a 0 in this current font and save it for conversions done later.
-    _coordFontLast = pfiFont->GetSize();
+    _coordFontLast = Font.GetSize();
 
     // Persist font for cleanup (and free existing if necessary)
     if (_hfont != nullptr)
@@ -249,7 +249,7 @@ HRESULT GdiEngine::UpdateFont(_In_ FontInfoDesired const * const pfiFontDesired,
 // Return Value:
 // - HRESULT S_OK, GDI-based error code, or safemath error
 [[nodiscard]]
-HRESULT GdiEngine::UpdateDpi(_In_ int const iDpi)
+HRESULT GdiEngine::UpdateDpi(const int iDpi)
 {
     _iCurrentDpi = iDpi;
     return S_OK;
@@ -263,7 +263,7 @@ HRESULT GdiEngine::UpdateDpi(_In_ int const iDpi)
 // Return Value:
 // - HRESULT S_OK
 [[nodiscard]]
-HRESULT GdiEngine::UpdateViewport(_In_ SMALL_RECT const /*srNewViewport*/)
+HRESULT GdiEngine::UpdateViewport(const SMALL_RECT /*srNewViewport*/)
 {
     return S_OK;
 }
@@ -274,16 +274,16 @@ HRESULT GdiEngine::UpdateViewport(_In_ SMALL_RECT const /*srNewViewport*/)
 // - NOTE: It is left up to the underling rendering system to choose the nearest font. Please ask for the font dimensions if they are required using the interface. Do not use the size you requested with this structure.
 // - If the intent is to immediately turn around and use this font, pass the optional handle parameter and use it immediately.
 // Arguments:
-// - pfiFontDesired - Pointer to font information we should use while instantiating a font.
-// - pfiFont - Pointer to font information where the chosen font information will be populated.
+// - FontDesired - reference to font information we should use while instantiating a font.
+// - Font - reference to font information where the chosen font information will be populated.
 // - iDpi - The DPI we will have when rendering
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 [[nodiscard]]
-HRESULT GdiEngine::GetProposedFont(_In_ FontInfoDesired const * const pfiFontDesired, _Out_ FontInfo* const pfiFont, _In_ int const iDpi)
+HRESULT GdiEngine::GetProposedFont(const FontInfoDesired& FontDesired, _Out_ FontInfo& Font, const int iDpi)
 {
     wil::unique_hfont hFont;
-    return _GetProposedFont(pfiFontDesired, pfiFont, iDpi, hFont);
+    return _GetProposedFont(FontDesired, Font, iDpi, hFont);
 }
 
 // Routine Description:
@@ -292,25 +292,26 @@ HRESULT GdiEngine::GetProposedFont(_In_ FontInfoDesired const * const pfiFontDes
 // - NOTE: It is left up to the underling rendering system to choose the nearest font. Please ask for the font dimensions if they are required using the interface. Do not use the size you requested with this structure.
 // - If the intent is to immediately turn around and use this font, pass the optional handle parameter and use it immediately.
 // Arguments:
-// - pfiFont - Pointer to font information we should use while instantiating a font.
+// - FontDesired - reference to font information we should use while instantiating a font.
+// - Font - the actual font
 // - iDpi - The DPI we will have when rendering
 // - hFont - A smart pointer to receive a handle to a ready-to-use GDI font.
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 [[nodiscard]]
-HRESULT GdiEngine::_GetProposedFont(_In_ FontInfoDesired const * const pfiFontDesired,
-                                    _Out_ FontInfo* const pfiFont,
-                                    _In_ int const iDpi,
+HRESULT GdiEngine::_GetProposedFont(const FontInfoDesired& FontDesired,
+                                    _Out_ FontInfo& Font,
+                                    const int iDpi,
                                     _Inout_ wil::unique_hfont& hFont)
 {
     wil::unique_hdc hdcTemp(CreateCompatibleDC(_hdcMemoryContext));
     RETURN_LAST_ERROR_IF_NULL(hdcTemp.get());
 
     // Get a special engine size because TT fonts can't specify X or we'll get weird scaling under some circumstances.
-    COORD coordFontRequested = pfiFontDesired->GetEngineSize();
+    COORD coordFontRequested = FontDesired.GetEngineSize();
 
     // First, check to see if we're asking for the default raster font.
-    if (pfiFontDesired->IsDefaultRasterFont())
+    if (FontDesired.IsDefaultRasterFont())
     {
         // We're being asked for the default raster font, which gets special handling. In particular, it's the font
         // returned by GetStockObject(OEM_FIXED_FONT).
@@ -336,7 +337,7 @@ HRESULT GdiEngine::_GetProposedFont(_In_ FontInfoDesired const * const pfiFontDe
         LOGFONTW lf = { 0 };
         lf.lfHeight = s_ScaleByDpi(coordFontRequested.Y, iDpi);
         lf.lfWidth = s_ScaleByDpi(coordFontRequested.X, iDpi);
-        lf.lfWeight = pfiFontDesired->GetWeight();
+        lf.lfWeight = FontDesired.GetWeight();
 
         // If we're searching for Terminal, our supported Raster Font, then we must use OEM_CHARSET.
         // If the System's Non-Unicode Setting is set to English (United States) which is 437
@@ -348,18 +349,18 @@ HRESULT GdiEngine::_GetProposedFont(_In_ FontInfoDesired const * const pfiFontDe
         // Because the API is affected by the raster/TT status of the actively selected font, we can't have
         // GDI choosing a TT font for us when we ask for Raster. We have to settle for forcing the current system
         // Terminal font to load even if it doesn't have the glyphs necessary such that the APIs continue to work fine.
-        if (0 == wcscmp(pfiFontDesired->GetFaceName(), L"Terminal"))
+        if (0 == wcscmp(FontDesired.GetFaceName(), L"Terminal"))
         {
             lf.lfCharSet = OEM_CHARSET;
         }
         else
         {
             CHARSETINFO csi;
-            if (!TranslateCharsetInfo((DWORD *)IntToPtr(pfiFontDesired->GetCodePage()), &csi, TCI_SRCCODEPAGE))
+            if (!TranslateCharsetInfo((DWORD *)IntToPtr(FontDesired.GetCodePage()), &csi, TCI_SRCCODEPAGE))
             {
                 // if we failed to translate from codepage to charset, choose our charset depending on what kind of font we're
                 // dealing with. Raster Fonts need to be presented with the OEM charset, while TT fonts need to be ANSI.
-                csi.ciCharset = (((pfiFontDesired->GetFamily()) & TMPF_TRUETYPE) == TMPF_TRUETYPE) ? ANSI_CHARSET : OEM_CHARSET;
+                csi.ciCharset = (((FontDesired.GetFamily()) & TMPF_TRUETYPE) == TMPF_TRUETYPE) ? ANSI_CHARSET : OEM_CHARSET;
             }
 
             lf.lfCharSet = (BYTE)csi.ciCharset;
@@ -370,7 +371,7 @@ HRESULT GdiEngine::_GetProposedFont(_In_ FontInfoDesired const * const pfiFontDe
         // NOTE: not using what GDI gave us because some fonts don't quite roundtrip (e.g. MS Gothic and VL Gothic)
         lf.lfPitchAndFamily = (FIXED_PITCH | FF_MODERN);
 
-        wcscpy_s(lf.lfFaceName, ARRAYSIZE(lf.lfFaceName), pfiFontDesired->GetFaceName());
+        wcscpy_s(lf.lfFaceName, ARRAYSIZE(lf.lfFaceName), FontDesired.GetFaceName());
 
         // Create font.
         hFont.reset(CreateFontIndirectW(&lf));
@@ -415,7 +416,7 @@ HRESULT GdiEngine::_GetProposedFont(_In_ FontInfoDesired const * const pfiFontDe
         WCHAR wszFaceName[LF_FACESIZE];
         RETURN_LAST_ERROR_IF_FALSE(GetTextFaceW(hdcTemp.get(), ARRAYSIZE(wszFaceName), wszFaceName));
 
-        if (pfiFontDesired->IsDefaultRasterFont())
+        if (FontDesired.IsDefaultRasterFont())
         {
             coordFontRequested = coordFont;
         }
@@ -424,12 +425,12 @@ HRESULT GdiEngine::_GetProposedFont(_In_ FontInfoDesired const * const pfiFontDe
             coordFontRequested.X = (SHORT)s_ShrinkByDpi(coordFont.X, iDpi);
         }
 
-        pfiFont->SetFromEngine(wszFaceName,
-                               tm.tmPitchAndFamily,
-                               tm.tmWeight,
-                               pfiFontDesired->IsDefaultRasterFont(),
-                               coordFont,
-                               coordFontRequested);
+        Font.SetFromEngine(wszFaceName,
+                           tm.tmPitchAndFamily,
+                           tm.tmWeight,
+                           FontDesired.IsDefaultRasterFont(),
+                           coordFont,
+                           coordFontRequested);
     }
 
     return S_OK;
@@ -480,4 +481,16 @@ bool GdiEngine::_IsMinimized() const
 bool GdiEngine::_IsFontTrueType() const
 {
     return !!(_tmFontMetrics.tmPitchAndFamily & TMPF_TRUETYPE);
+}
+
+// Routine Description:
+// - Helper to determine whether our window handle is valid.
+//   Allows us to skip operations if we don't have a window.
+// Return Value:
+// - True if it is valid.
+// - False if it is known invalid.
+bool GdiEngine::_IsWindowValid() const
+{
+    return _hwndTargetWindow != INVALID_HANDLE_VALUE &&
+        _hwndTargetWindow != nullptr;
 }

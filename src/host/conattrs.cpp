@@ -21,18 +21,16 @@ struct _HSL
     double h, s, l;
 
     // constructs an HSL color from a RGB Color.
-    _HSL(_In_ const COLORREF rgb)
+    _HSL(const COLORREF rgb)
     {
         const double r = (double) GetRValue(rgb);
         const double g = (double) GetGValue(rgb);
         const double b = (double) GetBValue(rgb);
-        double min, max, diff, sum;
 
-        max = max(max(r, g), b);
-        min = min(min(r, g), b);
+        const auto[min, max] = std::minmax({ r, g, b });
 
-        diff = max - min;
-        sum = max + min;
+        const auto diff = max - min;
+        const auto sum = max + min;
         // Luminence
         l = max / 255.0;
 
@@ -69,7 +67,7 @@ struct _HSL
 // - rgbColorB - The second color to compare, in RGB color.
 // Return value:
 // The "distance" between the two.
-static double _FindDifference(_In_ const _HSL* const phslColorA, _In_ const COLORREF rgbColorB)
+static double _FindDifference(const _HSL* const phslColorA, const COLORREF rgbColorB)
 {
     const _HSL hslColorB = _HSL(rgbColorB);
     return sqrt( pow((hslColorB.h - phslColorA->h), 2) +
@@ -85,7 +83,7 @@ static double _FindDifference(_In_ const _HSL* const phslColorA, _In_ const COLO
 // - cColorTable - The number of elements in ColorTable
 // Return value:
 // The index in ColorTable of the nearest match to Color.
-WORD FindNearestTableIndex(_In_ COLORREF const Color, _In_reads_(cColorTable) const COLORREF* const ColorTable, _In_ const WORD cColorTable)
+WORD FindNearestTableIndex(const COLORREF Color, _In_reads_(cColorTable) const COLORREF* const ColorTable, const WORD cColorTable)
 {
     // Quick check for an exact match in the color table:
     for (WORD i = 0; i < cColorTable; i++)
@@ -119,7 +117,7 @@ WORD FindNearestTableIndex(_In_ COLORREF const Color, _In_reads_(cColorTable) co
 // - xtermTableEntry: the xterm color table index
 // Return Value:
 // - The windows color table equivalent.
-WORD XtermToWindowsIndex(_In_ const size_t xtermTableEntry)
+WORD XtermToWindowsIndex(const size_t xtermTableEntry)
 {
     const bool fRed = IsFlagSet(xtermTableEntry, XTERM_RED_ATTR);
     const bool fGreen = IsFlagSet(xtermTableEntry, XTERM_GREEN_ATTR);
@@ -140,9 +138,9 @@ WORD XtermToWindowsIndex(_In_ const size_t xtermTableEntry)
 // - cColorTable - The number of elements in ColorTable
 // Return value:
 // The index in ColorTable of the nearest match to Color.
-bool FindTableIndex(_In_ COLORREF const Color,
+bool FindTableIndex(const COLORREF Color,
                     _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                    _In_ const WORD cColorTable,
+                    const WORD cColorTable,
                     _Out_ WORD* const pFoundIndex)
 {
     *pFoundIndex = 0;
@@ -165,9 +163,9 @@ bool FindTableIndex(_In_ COLORREF const Color,
 // - cColorTable - The number of elements in ColorTable
 // Return Value:
 // - the COLORREF for the foreground component
-COLORREF ForegroundColor(_In_ const WORD wLegacyAttrs,
+COLORREF ForegroundColor(const WORD wLegacyAttrs,
                          _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                         _In_ const size_t cColorTable)
+                         const size_t cColorTable)
 {
     const byte iColorTableIndex = LOBYTE(wLegacyAttrs) & FG_ATTRS;
 
@@ -184,9 +182,9 @@ COLORREF ForegroundColor(_In_ const WORD wLegacyAttrs,
 // - cColorTable - The number of elements in ColorTable
 // Return Value:
 // - the COLORREF for the background component
-COLORREF BackgroundColor(_In_ const WORD wLegacyAttrs,
+COLORREF BackgroundColor(const WORD wLegacyAttrs,
                          _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                         _In_ const size_t cColorTable)
+                         const size_t cColorTable)
 {
     const byte iColorTableIndex = (LOBYTE(wLegacyAttrs) & BG_ATTRS) >> 4;
 

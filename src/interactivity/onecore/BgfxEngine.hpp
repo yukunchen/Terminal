@@ -35,7 +35,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         HRESULT Invalidate(const SMALL_RECT* const psrRegion);
         [[nodiscard]]
-        HRESULT InvalidateCursor(_In_ const COORD* const pcoordCursor) override;
+        HRESULT InvalidateCursor(const COORD* const pcoordCursor) override;
         [[nodiscard]]
         HRESULT InvalidateSystem(const RECT* const prcDirtyClient);
         [[nodiscard]]
@@ -71,35 +71,35 @@ namespace Microsoft::Console::Render
         HRESULT PaintSelection(const SMALL_RECT* const rgsrSelection, UINT const cRectangles);
 
         [[nodiscard]]
-        HRESULT PaintCursor(_In_ COORD const coordCursor,
-                            _In_ ULONG const ulCursorHeightPercent,
-                            _In_ bool const fIsDoubleWidth,
-                            _In_ CursorType const cursorType,
-                            _In_ bool const fUseColor,
-                            _In_ COLORREF const cursorColor) override;
+        HRESULT PaintCursor(const COORD coordCursor,
+                            const ULONG ulCursorHeightPercent,
+                            const bool fIsDoubleWidth,
+                            const CursorType cursorType,
+                            const bool fUseColor,
+                            const COLORREF cursorColor) override;
         [[nodiscard]]
         HRESULT ClearCursor() override;
 
         [[nodiscard]]
         HRESULT UpdateDrawingBrushes(COLORREF const colorForeground,
                                      COLORREF const colorBackground,
-                                     _In_ WORD const legacyColorAttribute,
+                                     const WORD legacyColorAttribute,
                                      bool const fIncludeBackgrounds);
         [[nodiscard]]
-        HRESULT UpdateFont(FontInfoDesired const* const pfiFontInfoDesired, FontInfo* const pfiFontInfo);
+        HRESULT UpdateFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo);
         [[nodiscard]]
         HRESULT UpdateDpi(int const iDpi);
         [[nodiscard]]
-        HRESULT UpdateViewport(_In_ SMALL_RECT const srNewViewport);
+        HRESULT UpdateViewport(const SMALL_RECT srNewViewport);
 
         [[nodiscard]]
-        HRESULT GetProposedFont(FontInfoDesired const* const pfiFontInfoDesired, FontInfo* const pfiFontInfo, int const iDpi);
+        HRESULT GetProposedFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo, int const iDpi);
 
         SMALL_RECT GetDirtyRectInChars();
         [[nodiscard]]
         HRESULT GetFontSize(_Out_ COORD* const pFontSize) override;
         [[nodiscard]]
-        HRESULT IsCharFullWidthByFont(_In_ WCHAR const wch, _Out_ bool* const pResult) override;
+        HRESULT IsCharFullWidthByFont(const WCHAR wch, _Out_ bool* const pResult) override;
 
     private:
         ULONG_PTR _sharedViewBase;

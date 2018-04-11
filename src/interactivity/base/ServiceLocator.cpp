@@ -27,7 +27,7 @@ Globals                      ServiceLocator::s_globals;
 
 #pragma region Public Methods
 
-void ServiceLocator::RundownAndExit(_In_ HRESULT const hr)
+void ServiceLocator::RundownAndExit(const HRESULT hr)
 {
     // MSFT:15506250
     // In VT I/O Mode, a client application might die before we've rendered

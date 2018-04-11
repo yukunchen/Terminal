@@ -33,7 +33,7 @@ void swap(CharRowBase<GlyphType, StringType>& a, CharRowBase<GlyphType, StringTy
 }
 
 template<typename GlyphType, typename StringType>
-CharRowBase<GlyphType, StringType>::CharRowBase(_In_ const size_t rowWidth, _In_ const GlyphType defaultValue) :
+CharRowBase<GlyphType, StringType>::CharRowBase(const size_t rowWidth, const GlyphType defaultValue) :
     _wrapForced{ false },
     _doubleBytePadded{ false },
     _defaultValue{ defaultValue },
@@ -62,7 +62,7 @@ void CharRowBase<GlyphType, StringType>::swap(_In_ CharRowBase<GlyphType, String
 // Return Value:
 // - <none>
 template<typename GlyphType, typename StringType>
-void CharRowBase<GlyphType, StringType>::SetWrapForced(_In_ bool const wrapForced) noexcept
+void CharRowBase<GlyphType, StringType>::SetWrapForced(const bool wrapForced) noexcept
 {
     _wrapForced = wrapForced;
 }
@@ -86,7 +86,7 @@ bool CharRowBase<GlyphType, StringType>::WasWrapForced() const noexcept
 // Return Value:
 // - <none>
 template<typename GlyphType, typename StringType>
-void CharRowBase<GlyphType, StringType>::SetDoubleBytePadded(_In_ bool const doubleBytePadded) noexcept
+void CharRowBase<GlyphType, StringType>::SetDoubleBytePadded(const bool doubleBytePadded) noexcept
 {
     _doubleBytePadded = doubleBytePadded;
 }
@@ -139,7 +139,7 @@ void CharRowBase<GlyphType, StringType>::Reset()
 // - S_OK on success, otherwise relevant error code
 template<typename GlyphType, typename StringType>
 [[nodiscard]]
-HRESULT CharRowBase<GlyphType, StringType>::Resize(_In_ const size_t newSize) noexcept
+HRESULT CharRowBase<GlyphType, StringType>::Resize(const size_t newSize) noexcept
 {
     try
     {
@@ -210,7 +210,7 @@ size_t CharRowBase<GlyphType, StringType>::MeasureRight() const
 }
 
 template<typename GlyphType, typename StringType>
-void CharRowBase<GlyphType, StringType>::ClearCell(_In_ const size_t column)
+void CharRowBase<GlyphType, StringType>::ClearCell(const size_t column)
 {
     _data.at(column) = { _defaultValue, DbcsAttribute() };
 }
@@ -242,7 +242,7 @@ bool CharRowBase<GlyphType, StringType>::ContainsText() const
 // - the attribute
 // Note: will throw exception if column is out of bounds
 template<typename GlyphType, typename StringType>
-const DbcsAttribute& CharRowBase<GlyphType, StringType>::GetAttribute(_In_ const size_t column) const
+const DbcsAttribute& CharRowBase<GlyphType, StringType>::GetAttribute(const size_t column) const
 {
     return _data.at(column).second;
 }
@@ -255,7 +255,7 @@ const DbcsAttribute& CharRowBase<GlyphType, StringType>::GetAttribute(_In_ const
 // - the attribute
 // Note: will throw exception if column is out of bounds
 template<typename GlyphType, typename StringType>
-DbcsAttribute& CharRowBase<GlyphType, StringType>::GetAttribute(_In_ const size_t column)
+DbcsAttribute& CharRowBase<GlyphType, StringType>::GetAttribute(const size_t column)
 {
     return const_cast<DbcsAttribute&>(static_cast<const CharRowBase<GlyphType, StringType>* const>(this)->GetAttribute(column));
 }
@@ -297,6 +297,41 @@ template<typename GlyphType, typename StringType>
 GlyphType& CharRowBase<GlyphType, StringType>::GetGlyphAt(const size_t column)
 {
     return const_cast<GlyphType&>(static_cast<const CharRowBase<GlyphType, StringType>* const>(this)->GetGlyphAt(column));
+}
+
+// Routine Description:
+// - returns string containing text data exactly how it's stored internally, including doubling of
+// leading/trailing cells.
+// Arguments:
+// - none
+// Return Value:
+// - text stored in char row
+// - Note: will throw exception if out of memory
+template<typename GlyphType, typename StringType>
+StringType CharRowBase<GlyphType, StringType>::GetTextRaw() const
+{
+    StringType str;
+    str.reserve(_data.size());
+    for (auto& cell : _data)
+    {
+        str.push_back(cell.first);
+    }
+    return str;
+}
+
+template<typename GlyphType, typename StringType>
+std::wstring CharRowBase<GlyphType, StringType>::GetText() const
+{
+    std::wstring wstr;
+    wstr.reserve(_data.size());
+    for (auto& cell : _data)
+    {
+        if (!cell.second.IsTrailing())
+        {
+            wstr.push_back(cell.first);
+        }
+    }
+    return wstr;
 }
 
 #pragma warning(pop)

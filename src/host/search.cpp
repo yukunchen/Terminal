@@ -5,13 +5,13 @@
 #include "dbcs.h"
 #include "Ucs2CharRow.hpp"
 
-USHORT SearchForString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
+USHORT SearchForString(const SCREEN_INFORMATION& ScreenInfo,
                        _In_reads_(cchSearch) PCWSTR pwszSearch,
                        _In_range_(1, SEARCH_STRING_LENGTH) USHORT cchSearch,
-                       _In_ const BOOLEAN IgnoreCase,
-                       _In_ const BOOLEAN Reverse,
-                       _In_ const BOOLEAN SearchAndSetAttr,
-                       _In_ const ULONG ulAttr,
+                       const bool IgnoreCase,
+                       const bool Reverse,
+                       const bool SearchAndSetAttr,
+                       const ULONG ulAttr,
                        _Out_opt_ PCOORD coordStringPosition)  // not touched for SearchAndSetAttr case.
 {
     if (coordStringPosition != nullptr)
@@ -20,7 +20,7 @@ USHORT SearchForString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
         coordStringPosition->Y = 0;
     }
 
-    COORD MaxPosition = pScreenInfo->GetScreenBufferSize();
+    COORD MaxPosition = ScreenInfo.GetScreenBufferSize();
     MaxPosition.X -= cchSearch;
     MaxPosition.Y -= 1;
 
@@ -30,11 +30,8 @@ USHORT SearchForString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
     COORD Position;
     if (pSelection->IsInSelectingState())
     {
-        COORD coordSelAnchor;
-        pSelection->GetSelectionAnchor(&coordSelAnchor);
-
-        Position.X = min(coordSelAnchor.X, MaxPosition.X);
-        Position.Y = coordSelAnchor.Y;
+        Position = pSelection->GetSelectionAnchor();
+        Position.X = std::min(Position.X, MaxPosition.X);
     }
     else if (Reverse)
     {
@@ -140,11 +137,12 @@ USHORT SearchForString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
             const ROW* pRow;
             try
             {
-                pRow = &pScreenInfo->TextInfo->GetRowAtIndex(RowIndex);
+                const auto& textBuffer = ScreenInfo.GetTextBuffer();
+                pRow = &textBuffer.GetRowAtIndex(RowIndex);
                 if (RecomputeRow)
                 {
-                    RowIndex = (pScreenInfo->TextInfo->GetFirstRowIndex() + Position.Y) % pScreenInfo->GetScreenBufferSize().Y;
-                    pRow = &pScreenInfo->TextInfo->GetRowAtIndex(RowIndex);
+                    RowIndex = (textBuffer.GetFirstRowIndex() + Position.Y) % ScreenInfo.GetScreenBufferSize().Y;
+                    pRow = &textBuffer.GetRowAtIndex(RowIndex);
                     RecomputeRow = FALSE;
                 }
             }

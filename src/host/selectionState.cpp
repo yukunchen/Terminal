@@ -26,7 +26,7 @@ bool Selection::IsInSelectingState() const
 // - fSelectingOn - Set true to set the global flag on. False to turn the global flag off.
 // Return Value:
 // - <none>
-void Selection::_SetSelectingState(_In_ const bool fSelectingOn)
+void Selection::_SetSelectingState(const bool fSelectingOn)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (fSelectingOn)
@@ -73,7 +73,7 @@ bool Selection::IsLineSelection() const
 // - fAlignToLineSelect - whether or not to use line selection
 // Return Value:
 // - <none>
-void Selection::_AlignAlternateSelection(_In_ const bool fAlignToLineSelect)
+void Selection::_AlignAlternateSelection(const bool fAlignToLineSelect)
 {
     if (fAlignToLineSelect)
     {
@@ -171,15 +171,15 @@ void Selection::MouseUp()
 // Routine Description:
 // - Saves the current cursor position data so it can be manipulated during selection.
 // Arguments:
-// - <none> (Captures global state)
+// - textBuffer - text buffer to set cursor data
 // Return Value:
 // - <none>
-void Selection::_SaveCursorData(_In_ const TEXT_BUFFER_INFO* const pTextInfo)
+void Selection::_SaveCursorData(TextBuffer& textBuffer)
 {
-    Cursor* const pCursor = pTextInfo->GetCursor();
-    _coordSavedCursorPosition = pCursor->GetPosition();
-    _ulSavedCursorSize = pCursor->GetSize();
-    _fSavedCursorVisible = !!pCursor->IsVisible();
+    Cursor& cursor = textBuffer.GetCursor();
+    _coordSavedCursorPosition = cursor.GetPosition();
+    _ulSavedCursorSize = cursor.GetSize();
+    _fSavedCursorVisible = cursor.IsVisible();
 }
 
 // Routine Description:
@@ -188,47 +188,46 @@ void Selection::_SaveCursorData(_In_ const TEXT_BUFFER_INFO* const pTextInfo)
 // - <none> (Restores global state)
 // Return Value:
 // - <none>
-void Selection::_RestoreCursorData(_In_ SCREEN_INFORMATION* const pScreenInfo)
+void Selection::_RestoreCursorData(SCREEN_INFORMATION& screenInfo)
 {
-    Cursor* pCursor = ServiceLocator::LocateGlobals().getConsoleInformation().CurrentScreenBuffer->TextInfo->GetCursor();
-    pScreenInfo->SetCursorInformation(_ulSavedCursorSize, _fSavedCursorVisible, pCursor->GetColor(), pCursor->GetType());
-    LOG_IF_FAILED(pScreenInfo->SetCursorPosition(_coordSavedCursorPosition, TRUE /* TurnOn */));
+    const Cursor& cursor = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetTextBuffer().GetCursor();
+    screenInfo.SetCursorInformation(_ulSavedCursorSize, _fSavedCursorVisible, cursor.GetColor(), cursor.GetType());
+    LOG_IF_FAILED(screenInfo.SetCursorPosition(_coordSavedCursorPosition, true /* TurnOn */));
 }
 
 // Routine Description:
 // - Gets the current selection anchor position
 // Arguments:
-// - pcoordSelectionAnchor - The coordinate to fill with the current selection anchor values
+// - none
 // Return Value:
-// - <none>
-void Selection::GetSelectionAnchor(_Out_ COORD* const pcoordSelectionAnchor) const
+// - current selection anchor
+COORD Selection::GetSelectionAnchor() const noexcept
 {
-    (*pcoordSelectionAnchor) = _coordSelectionAnchor;
+    return _coordSelectionAnchor;
 }
 
 // Routine Description:
 // - Gets the current selection rectangle
 // Arguments:
-// - psrSelectionRect - The rectangle to fill with selection data.
+// - none
 // Return Value:
-// - <none>
-void Selection::GetSelectionRectangle(_Out_ SMALL_RECT* const psrSelectionRect) const
+// - The rectangle to fill with selection data.
+SMALL_RECT Selection::GetSelectionRectangle() const noexcept
 {
-    (*psrSelectionRect) = _srSelectionRect;
+    return _srSelectionRect;
 }
 
 // Routine Description:
 // - Gets the publically facing set of selection flags.
 //   Strips out any internal flags in use.
 // Arguments:
-// - pdwFlags - DWORD to fill with flags data.
+// - none
 // Return Value:
-// - <none>
-void Selection::GetPublicSelectionFlags(_Out_ DWORD* const pdwFlags) const
+// - The public selection flags
+DWORD Selection::GetPublicSelectionFlags() const noexcept
 {
     // CONSOLE_SELECTION_VALID is the union (binary OR) of all externally valid flags in wincon.h
-
-    *pdwFlags = _dwSelectionFlags & CONSOLE_SELECTION_VALID;
+    return (_dwSelectionFlags & CONSOLE_SELECTION_VALID);
 }
 
 // Routine Description:
@@ -238,7 +237,7 @@ void Selection::GetPublicSelectionFlags(_Out_ DWORD* const pdwFlags) const
 // - fLineSelectionOn - whether or not to use line selection
 // Return Value:
 // - <none>
-void Selection::SetLineSelection(_In_ const bool fLineSelectionOn)
+void Selection::SetLineSelection(const bool fLineSelectionOn)
 {
     if (_fLineSelection != fLineSelectionOn)
     {

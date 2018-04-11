@@ -15,9 +15,9 @@
 // - Constructs an instance of the ConsoleProcessHandle Class
 // - NOTE: Can throw if allocation fails or if there is a console policy we do not understand.
 // - NOTE: Not being able to open the process by ID isn't a failure. It will be logged and continued.
-ConsoleProcessHandle::ConsoleProcessHandle(_In_ DWORD const dwProcessId,
-                                           _In_ DWORD const dwThreadId,
-                                           _In_ ULONG const ulProcessGroupId) :
+ConsoleProcessHandle::ConsoleProcessHandle(const DWORD dwProcessId,
+                                           const DWORD dwThreadId,
+                                           const ULONG ulProcessGroupId) :
     dwProcessId(dwProcessId),
     dwThreadId(dwThreadId),
     _ulProcessGroupId(ulProcessGroupId),

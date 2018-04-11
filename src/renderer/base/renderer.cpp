@@ -29,9 +29,10 @@ using namespace Microsoft::Console::Types;
 // NOTE: CAN THROW IF MEMORY ALLOCATION FAILS.
 Renderer::Renderer(_In_ std::unique_ptr<IRenderData> pData,
                    _In_reads_(cEngines) IRenderEngine** const rgpEngines,
-                   _In_ size_t const cEngines) :
+                   const size_t cEngines) :
     _pData(std::move(pData)),
-    _pThread(nullptr)
+    _pThread(nullptr),
+    _tearingDown(false)
 {
     THROW_IF_NULL_ALLOC(_pData);
 
@@ -73,7 +74,7 @@ HRESULT Renderer::s_CreateInstance(_In_ std::unique_ptr<IRenderData> pData,
 [[nodiscard]]
 HRESULT Renderer::s_CreateInstance(_In_ std::unique_ptr<IRenderData> pData,
                                    _In_reads_(cEngines) IRenderEngine** const rgpEngines,
-                                   _In_ size_t const cEngines,
+                                   const size_t cEngines,
                                    _Outptr_result_nullonfailure_ Renderer** const ppRenderer)
 {
     HRESULT hr = S_OK;
@@ -142,7 +143,32 @@ HRESULT Renderer::_PaintFrameForEngine(_In_ IRenderEngine* const pEngine)
 
     // Try to start painting a frame
     HRESULT const hr = pEngine->StartPaint();
-    THROW_IF_FAILED(hr); // Return errors
+
+    // MSFT 16503902:
+    // If we're tearing down, we don't really care that this failed. It's likely
+    //   that the rendering target is already gone. Log the error, and just return.
+    // eg, in wsl, you launch ipconfig. The Pty render's half the output of
+    //      ipconfig before ipconfig exits. In that case, PrepareForTeardown is
+    //      used to render the second half of the text to the master (wsl.exe)
+    //      before we exit.
+    // This fixes the case where we close wsl.exe while cmd.exe is still
+    //      running inside it. In that case, we still PrepareForTeardown, but
+    //      the master end of the pty has already been closed, so we don't
+    //      really care if rendering throws here.
+    // If we have a combination of both - (ubuntu run ipconfig.exe?) ipconfig
+    //      exits, then wsl exits, then we try and paint - but there's no target
+    //      for the paint - still doesn't matter that the last paint failed, we
+    //      can just log it and continue exiting.
+    if (!_tearingDown)
+    {
+        THROW_IF_FAILED(hr); // Return errors
+    }
+    else
+    {
+        LOG_IF_FAILED(hr);
+        return hr;
+    }
+
     RETURN_HR_IF(S_OK, S_FALSE == hr); // Return early if there's nothing to paint.
 
     auto endPaint = wil::ScopeExit([&]()
@@ -193,7 +219,7 @@ void Renderer::_NotifyPaintFrame()
 // - <none>
 // Return Value:
 // - <none>
-void Renderer::TriggerSystemRedraw(_In_ const RECT* const prcDirtyClient)
+void Renderer::TriggerSystemRedraw(const RECT* const prcDirtyClient)
 {
     std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
         LOG_IF_FAILED(pEngine->InvalidateSystem(prcDirtyClient));
@@ -208,7 +234,7 @@ void Renderer::TriggerSystemRedraw(_In_ const RECT* const prcDirtyClient)
 // - <none>
 // Return Value:
 // - <none>
-void Renderer::TriggerRedraw(_In_ const SMALL_RECT* const psrRegion)
+void Renderer::TriggerRedraw(const SMALL_RECT* const psrRegion)
 {
     Viewport view(_pData->GetViewport());
     SMALL_RECT srUpdateRegion = *psrRegion;
@@ -230,7 +256,7 @@ void Renderer::TriggerRedraw(_In_ const SMALL_RECT* const psrRegion)
 // - pcoord: The buffer-space coordinate that has changed.
 // Return Value:
 // - <none>
-void Renderer::TriggerRedraw(_In_ const COORD* const pcoord)
+void Renderer::TriggerRedraw(const COORD* const pcoord)
 {
     SMALL_RECT srRegion = _RegionFromCoord(pcoord);
     TriggerRedraw(&srRegion); // this will notify to paint if we need it.
@@ -245,7 +271,7 @@ void Renderer::TriggerRedraw(_In_ const COORD* const pcoord)
 // - pcoord: The buffer-space position of the cursor.
 // Return Value:
 // - <none>
-void Renderer::TriggerRedrawCursor(_In_ const COORD* const pcoord)
+void Renderer::TriggerRedrawCursor(const COORD* const pcoord)
 {
     Viewport view(_pData->GetViewport());
     COORD updateCoord = *pcoord;
@@ -287,6 +313,7 @@ void Renderer::TriggerRedrawAll()
 // - <none>
 void Renderer::TriggerTeardown()
 {
+    _tearingDown = true;
     for (IRenderEngine* const pEngine : _rgpEngines)
     {
         bool fEngineRequestsRepaint = false;
@@ -372,7 +399,7 @@ void Renderer::TriggerScroll()
 // - <none>
 // Return Value:
 // - <none>
-void Renderer::TriggerScroll(_In_ const COORD* const pcoordDelta)
+void Renderer::TriggerScroll(const COORD* const pcoordDelta)
 {
     std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine){
         LOG_IF_FAILED(pEngine->InvalidateScroll(pcoordDelta));
@@ -407,15 +434,15 @@ void Renderer::TriggerCircling()
 // - Called when a change in font or DPI has been detected.
 // Arguments:
 // - iDpi - New DPI value
-// - pFontInfoDesired - A description of the font we would like to have.
-// - pFontInfo - Data that will be fixed up/filled on return with the chosen font data.
+// - FontInfoDesired - A description of the font we would like to have.
+// - FontInfo - Data that will be fixed up/filled on return with the chosen font data.
 // Return Value:
 // - <none>
-void Renderer::TriggerFontChange(_In_ int const iDpi, _In_ FontInfoDesired const * const pFontInfoDesired, _Out_ FontInfo* const pFontInfo)
+void Renderer::TriggerFontChange(const int iDpi, const FontInfoDesired& FontInfoDesired, _Out_ FontInfo& FontInfo)
 {
     std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine){
         LOG_IF_FAILED(pEngine->UpdateDpi(iDpi));
-        LOG_IF_FAILED(pEngine->UpdateFont(pFontInfoDesired, pFontInfo));
+        LOG_IF_FAILED(pEngine->UpdateFont(FontInfoDesired, FontInfo));
     });
 
     _NotifyPaintFrame();
@@ -431,7 +458,7 @@ void Renderer::TriggerFontChange(_In_ int const iDpi, _In_ FontInfoDesired const
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 [[nodiscard]]
-HRESULT Renderer::GetProposedFont(_In_ int const iDpi, _In_ FontInfoDesired const * const pFontInfoDesired, _Out_ FontInfo* const pFontInfo)
+HRESULT Renderer::GetProposedFont(const int iDpi, const FontInfoDesired& FontInfoDesired, _Out_ FontInfo& FontInfo)
 {
     // If there's no head, return E_FAIL. The caller should decide how to
     //      handle this.
@@ -449,7 +476,7 @@ HRESULT Renderer::GetProposedFont(_In_ int const iDpi, _In_ FontInfoDesired cons
     assert(_rgpEngines.size() <= 2);
     for (IRenderEngine* const pEngine : _rgpEngines)
     {
-        const HRESULT hr = LOG_IF_FAILED(pEngine->GetProposedFont(pFontInfoDesired, pFontInfo, iDpi));
+        const HRESULT hr = LOG_IF_FAILED(pEngine->GetProposedFont(FontInfoDesired, FontInfo, iDpi));
         // We're looking for specifically S_OK, S_FALSE is not good enough.
         if (hr == S_OK)
         {
@@ -497,7 +524,7 @@ COORD Renderer::GetFontSize()
 // - wch - Character to test
 // Return Value:
 // - True if the character is full-width (two wide), false if it is half-width (one wide).
-bool Renderer::IsCharFullWidthByFont(_In_ WCHAR const wch)
+bool Renderer::IsCharFullWidthByFont(const WCHAR wch)
 {
     bool fIsFullWidth = false;
 
@@ -570,28 +597,28 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
     SMALL_RECT srDirty = pEngine->GetDirtyRectInChars();
     view.ConvertFromOrigin(&srDirty);
 
-    const TEXT_BUFFER_INFO* const ptbi = _pData->GetTextBuffer();
+    const TextBuffer& textBuffer = _pData->GetTextBuffer();
 
     // The dirty rectangle may be larger than the backing buffer (anything, including the system, may have
     // requested that we render under the scroll bars). To prevent issues, trim down to the max buffer size
     // (a.k.a. ensure the viewport is between 0 and the max size of the buffer.)
-    COORD const coordBufferSize = ptbi->GetCoordBufferSize();
-    srDirty.Top = max(srDirty.Top, 0);
-    srDirty.Left = max(srDirty.Left, 0);
-    srDirty.Right = min(srDirty.Right, coordBufferSize.X - 1);
-    srDirty.Bottom = min(srDirty.Bottom, coordBufferSize.Y - 1);
+    COORD const coordBufferSize = textBuffer.GetCoordBufferSize();
+    srDirty.Top = std::max(srDirty.Top, 0i16);
+    srDirty.Left = std::max(srDirty.Left, 0i16);
+    srDirty.Right = std::min(srDirty.Right, gsl::narrow<SHORT>(coordBufferSize.X - 1));
+    srDirty.Bottom = std::min(srDirty.Bottom, gsl::narrow<SHORT>(coordBufferSize.Y - 1));
 
     // Also ensure that the dirty rect still fits inside the screen viewport.
-    srDirty.Top = max(srDirty.Top, view.Top());
-    srDirty.Left = max(srDirty.Left, view.Left());
-    srDirty.Right = min(srDirty.Right, view.RightInclusive());
-    srDirty.Bottom = min(srDirty.Bottom, view.BottomInclusive());
+    srDirty.Top = std::max(srDirty.Top, view.Top());
+    srDirty.Left = std::max(srDirty.Left, view.Left());
+    srDirty.Right = std::min(srDirty.Right, view.RightInclusive());
+    srDirty.Bottom = std::min(srDirty.Bottom, view.BottomInclusive());
 
     Viewport viewDirty(srDirty);
     for (SHORT iRow = viewDirty.Top(); iRow <= viewDirty.BottomInclusive(); iRow++)
     {
         // Get row of text data
-        const ROW& Row = ptbi->GetRowByOffset(iRow);
+        const ROW& Row = textBuffer.GetRowByOffset(iRow);
 
         // Get the requested left and right positions from the dirty rectangle.
         size_t iLeft = viewDirty.Left();
@@ -607,14 +634,13 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
 
             const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
 
-            // Get the pointer to the beginning of the text and the maximum length of the line we'll be writing.
-            const std::wstring rowText = charRow.GetText();
-            const wchar_t* const pwsLine = rowText.c_str() + iLeft;
 
+            std::wstring rowText;
             Ucs2CharRow::const_iterator it;
             try
             {
                 it = std::next(charRow.cbegin(), iLeft);
+                rowText = charRow.GetTextRaw();
             }
             catch (...)
             {
@@ -622,6 +648,9 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
                 return;
             }
             const Ucs2CharRow::const_iterator itEnd = charRow.cend();
+
+            // Get the pointer to the beginning of the text
+            const wchar_t* const pwsLine = rowText.c_str() + iLeft;
 
             size_t const cchLine = iRight - iLeft;
 
@@ -668,13 +697,13 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
 // Return Value:
 // - <none>
 void Renderer::_PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEngine,
-                                                  _In_ const ROW& Row,
+                                                  const ROW& Row,
                                                   _In_reads_(cchLine) PCWCHAR const pwsLine,
-                                                  _In_ const Ucs2CharRow::const_iterator it,
-                                                  _In_ const Ucs2CharRow::const_iterator itEnd,
+                                                  const Ucs2CharRow::const_iterator it,
+                                                  const Ucs2CharRow::const_iterator itEnd,
                                                   _In_ size_t cchLine,
                                                   _In_ size_t iFirstAttr,
-                                                  _In_ COORD const coordTarget)
+                                                  const COORD coordTarget)
 {
     const FontInfo* const pFontInfo = _pData->GetFontInfo();
 
@@ -757,13 +786,13 @@ void Renderer::_PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEng
 // Return Value:
 // - <none>
 void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
-                                             _In_ const ROW& Row,
+                                             const ROW& Row,
                                              _In_reads_(cchLine) PCWCHAR const pwsLine,
-                                             _In_ const Ucs2CharRow::const_iterator it,
-                                             _In_ const Ucs2CharRow::const_iterator itEnd,
+                                             const Ucs2CharRow::const_iterator it,
+                                             const Ucs2CharRow::const_iterator itEnd,
                                              _In_ size_t cchLine,
                                              _In_ size_t iFirstAttr,
-                                             _In_ COORD const coordTarget)
+                                             const COORD coordTarget)
 {
     // We may have to write this string in several pieces based on the colors.
 
@@ -790,7 +819,7 @@ void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
         LOG_IF_FAILED(_UpdateDrawingBrushes(pEngine, pRun->GetAttributes(), false));
 
         // The segment we'll write is the shorter of the entire segment we want to draw or the amount of applicable color (Attr applies)
-        size_t cchSegment = min(cchLine - cchWritten, cAttrApplies);
+        size_t cchSegment = std::min(cchLine - cchWritten, cAttrApplies);
 
         if (cchSegment <= 0)
         {
@@ -834,10 +863,10 @@ void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
 [[nodiscard]]
 HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const pEngine,
                                                      _In_reads_(cchLine) PCWCHAR const pwsLine,
-                                                     _In_ const Ucs2CharRow::const_iterator it,
-                                                     _In_ const Ucs2CharRow::const_iterator itEnd,
-                                                     _In_ size_t const cchLine,
-                                                     _In_ COORD const coordTarget)
+                                                     const Ucs2CharRow::const_iterator it,
+                                                     const Ucs2CharRow::const_iterator itEnd,
+                                                     const size_t cchLine,
+                                                     const COORD coordTarget)
 {
     // We need the ability to move the target back to the left slightly in case we start with a trailing byte character.
     COORD coordTargetAdjustable = coordTarget;
@@ -863,7 +892,7 @@ HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const p
             rgSegmentWidth[cchSegment] = 1;
 
             // If this is a leading byte, add 1 more to width as it is double wide
-            if (it->second.IsLeading())
+            if (itCurrent->second.IsLeading())
             {
                 rgSegmentWidth[cchSegment] = 2;
             }
@@ -896,7 +925,7 @@ HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const p
     }
 
     // Draw the line
-    RETURN_IF_FAILED(pEngine->PaintBufferLine(pwsSegment.get(), rgSegmentWidth.get(), min(cchSegment, cchLine), coordTargetAdjustable, fTrimLeft));
+    RETURN_IF_FAILED(pEngine->PaintBufferLine(pwsSegment.get(), rgSegmentWidth.get(), std::min(cchSegment, cchLine), coordTargetAdjustable, fTrimLeft));
 
     return S_OK;
 }
@@ -912,9 +941,9 @@ HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const p
 // Return Value:
 // - <none>
 void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine,
-                                                _In_ const TextAttribute textAttribute,
-                                                _In_ size_t const cchLine,
-                                                _In_ COORD const coordTarget)
+                                                const TextAttribute textAttribute,
+                                                const size_t cchLine,
+                                                const COORD coordTarget)
 {
     COLORREF rgb = textAttribute.CalculateRgbForeground();
 
@@ -953,12 +982,12 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
 // - <none>
 void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
 {
-    const Cursor* const pCursor = _pData->GetCursor();
+    const Cursor& cursor = _pData->GetCursor();
 
-    if (pCursor->IsVisible() && pCursor->IsOn() && !pCursor->IsPopupShown())
+    if (cursor.IsVisible() && cursor.IsOn() && !cursor.IsPopupShown())
     {
         // Get cursor position in buffer
-        COORD coordCursor = pCursor->GetPosition();
+        COORD coordCursor = cursor.GetPosition();
 
         Viewport view(_pData->GetViewport());
 
@@ -966,12 +995,12 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
         //      "dirty" part of the viewport.
 
         // Determine cursor height
-        ULONG ulHeight = pCursor->GetSize();
+        ULONG ulHeight = cursor.GetSize();
 
         // Now adjust the height for the overwrite/insert mode. If we're in overwrite mode, IsDouble will be set.
         // When IsDouble is set, we either need to double the height of the cursor, or if it's already too big,
         // then we need to shrink it by half.
-        if (pCursor->IsDouble())
+        if (cursor.IsDouble())
         {
             if (ulHeight > 50) // 50 because 50 percent is half of 100 percent which is the max size.
             {
@@ -984,7 +1013,7 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
         }
 
         // Determine cursor width
-        bool const fIsDoubleWidth = !!pCursor->IsDoubleWidth();
+        bool const fIsDoubleWidth = cursor.IsDoubleWidth();
 
         // Adjust cursor to viewport
         view.ConvertToOrigin(&coordCursor);
@@ -993,9 +1022,9 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
         LOG_IF_FAILED(pEngine->PaintCursor(coordCursor,
                                            ulHeight,
                                            fIsDoubleWidth,
-                                           pCursor->GetType(),
-                                           pCursor->IsUsingColor(),
-                                           pCursor->GetColor()));
+                                           cursor.GetType(),
+                                           cursor.IsUsingColor(),
+                                           cursor.GetColor()));
     }
 }
 
@@ -1004,12 +1033,12 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
 // - This supports composition drawing area.
 // Arguments:
 // - AreaInfo - Special IME area screen buffer metadata
-// - pTextInfo - Text backing buffer for the special IME area.
+// - textBuffer - Text backing buffer for the special IME area.
 // Return Value:
 // - <none>
 void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
-                         _In_ const std::unique_ptr<ConversionAreaInfo>& AreaInfo,
-                         _In_ const TEXT_BUFFER_INFO* const pTextInfo)
+                         const std::unique_ptr<ConversionAreaInfo>& AreaInfo,
+                         const TextBuffer& textBuffer)
 {
     // If this conversion area isn't hidden (because it is off) or hidden for a scroll operation, then draw it.
     if (!AreaInfo->IsHidden())
@@ -1043,7 +1072,7 @@ void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
             for (SHORT iRow = viewDirty.Top(); iRow < viewDirty.BottomInclusive(); iRow++)
             {
                 // Get row of text data
-                const ROW& Row = pTextInfo->GetRowByOffset(iRow - AreaInfo->CaInfo.coordConView.Y);
+                const ROW& Row = textBuffer.GetRowByOffset(iRow - AreaInfo->CaInfo.coordConView.Y);
 
                 const ICharRow& iCharRow = Row.GetCharRow();
                 // we only support ucs2 encoded char rows
@@ -1051,14 +1080,13 @@ void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
                                 "only support UCS2 char rows currently");
 
                 const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
-                // Get the pointer to the beginning of the text and the maximum length of the line we'll be writing.
-                const std::wstring rowText = charRow.GetText();
-                const wchar_t* const pwsLine = rowText.c_str() + viewDirty.Left() - AreaInfo->CaInfo.coordConView.X;
 
+                std::wstring rowText;
                 Ucs2CharRow::const_iterator it;
                 try
                 {
                     it = std::next(charRow.cbegin(), viewDirty.Left() - AreaInfo->CaInfo.coordConView.X);
+                    rowText = charRow.GetTextRaw();
                 }
                 catch (...)
                 {
@@ -1066,6 +1094,9 @@ void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
                     return;
                 }
                 const Ucs2CharRow::const_iterator itEnd = charRow.cend();
+
+                // Get the pointer to the beginning of the text
+                const wchar_t* const pwsLine = rowText.c_str() + viewDirty.Left() - AreaInfo->CaInfo.coordConView.X;
 
                 size_t const cchLine = viewDirty.Width() - 1;
 
@@ -1098,8 +1129,12 @@ void Renderer::_PaintImeCompositionString(_In_ IRenderEngine* const pEngine)
 
         if (AreaInfo.get() != nullptr)
         {
-            const TEXT_BUFFER_INFO* const ptbi = _pData->GetImeCompositionStringBuffer(i);
-            _PaintIme(pEngine, AreaInfo, ptbi);
+            try
+            {
+                const TextBuffer& textBuffer = _pData->GetImeCompositionStringBuffer(i);
+                _PaintIme(pEngine, AreaInfo, textBuffer);
+            }
+            CATCH_LOG();
         }
     }
 }
@@ -1135,7 +1170,7 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 // Return Value:
 // - <none>
 [[nodiscard]]
-HRESULT Renderer::_UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, _In_ const TextAttribute textAttributes, _In_ bool const fIncludeBackground)
+HRESULT Renderer::_UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, const TextAttribute textAttributes, const bool fIncludeBackground)
 {
     COLORREF rgbForeground = textAttributes.CalculateRgbForeground();
     COLORREF rgbBackground = textAttributes.CalculateRgbBackground();

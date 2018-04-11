@@ -34,7 +34,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         static HRESULT s_CreateInstance(_In_ std::unique_ptr<IRenderData> pData,
                                         _In_reads_(cEngines) IRenderEngine** const rgpEngines,
-                                        _In_ size_t const cEngines,
+                                        const size_t cEngines,
                                         _Outptr_result_nullonfailure_ Renderer** const ppRenderer);
 
         [[nodiscard]]
@@ -46,40 +46,46 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         HRESULT PaintFrame();
 
-        void TriggerSystemRedraw(_In_ const RECT* const prcDirtyClient);
-        void TriggerRedraw(_In_ const SMALL_RECT* const psrRegion);
-        void TriggerRedraw(_In_ const COORD* const pcoord);
-        void TriggerRedrawCursor(_In_ const COORD* const pcoord) override;
-        void TriggerRedrawAll();
+        void TriggerSystemRedraw(const RECT* const prcDirtyClient) override;
+        void TriggerRedraw(const SMALL_RECT* const psrRegion) override;
+        void TriggerRedraw(const COORD* const pcoord) override;
+        void TriggerRedrawCursor(const COORD* const pcoord) override;
+        void TriggerRedrawAll() override;
         void TriggerTeardown() override;
 
-        void TriggerSelection();
-        void TriggerScroll();
-        void TriggerScroll(_In_ const COORD* const pcoordDelta);
+        void TriggerSelection() override;
+        void TriggerScroll() override;
+        void TriggerScroll(const COORD* const pcoordDelta) override;
 
         void TriggerCircling() override;
 
-        void TriggerFontChange(_In_ int const iDpi, _In_ FontInfoDesired const * const pFontInfoDesired, _Out_ FontInfo* const pFontInfo);
+        void TriggerFontChange(const int iDpi,
+                               const FontInfoDesired& FontInfoDesired,
+                               _Out_ FontInfo& FontInfo) override;
 
         [[nodiscard]]
-        HRESULT GetProposedFont(_In_ int const iDpi, _In_ FontInfoDesired const * const pFontInfoDesired, _Out_ FontInfo* const pFontInfo);
+        HRESULT GetProposedFont(const int iDpi,
+                                const FontInfoDesired& FontInfoDesired,
+                                _Out_ FontInfo& FontInfo) override;
 
-        COORD GetFontSize();
-        bool IsCharFullWidthByFont(_In_ WCHAR const wch);
+        COORD GetFontSize() override;
+        bool IsCharFullWidthByFont(const WCHAR wch) override;
 
-        void EnablePainting();
-        void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs);
+        void EnablePainting() override;
+        void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs) override;
 
         void AddRenderEngine(_In_ IRenderEngine* const pEngine) override;
 
     private:
         Renderer(_In_ std::unique_ptr<IRenderData> pData,
                     _In_reads_(cEngines) IRenderEngine** const pEngine,
-                    _In_ size_t const cEngines);
+                    const size_t cEngines);
         std::deque<IRenderEngine*> _rgpEngines;
         const std::unique_ptr<IRenderData> _pData;
 
         RenderThread* _pThread;
+        bool _tearingDown;
+
         void _NotifyPaintFrame();
 
         [[nodiscard]]
@@ -92,40 +98,40 @@ namespace Microsoft::Console::Render
 
         void _PaintBufferOutput(_In_ IRenderEngine* const pEngine);
         void _PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEngine,
-                                                _In_ const ROW& pRow,
+                                                const ROW& pRow,
                                                 _In_reads_(cchLine) PCWCHAR const pwsLine,
-                                                _In_ const Ucs2CharRow::const_iterator it,
-                                                _In_ const Ucs2CharRow::const_iterator itEnd,
+                                                const Ucs2CharRow::const_iterator it,
+                                                const Ucs2CharRow::const_iterator itEnd,
                                                 _In_ size_t cchLine,
                                                 _In_ size_t iFirst,
-                                                _In_ COORD const coordTarget);
+                                                const COORD coordTarget);
         void _PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
-                                            _In_ const ROW& pRow,
+                                            const ROW& pRow,
                                             _In_reads_(cchLine) PCWCHAR const pwsLine,
-                                            _In_ const Ucs2CharRow::const_iterator it,
-                                            _In_ const Ucs2CharRow::const_iterator itEnd,
+                                            const Ucs2CharRow::const_iterator it,
+                                            const Ucs2CharRow::const_iterator itEnd,
                                             _In_ size_t cchLine,
                                             _In_ size_t iFirst,
-                                            _In_ COORD const coordTarget);
+                                            const COORD coordTarget);
         [[nodiscard]]
         HRESULT _PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const pEngine,
                                                     _In_reads_(cchLine) PCWCHAR const pwsLine,
-                                                    _In_ const Ucs2CharRow::const_iterator it,
-                                                    _In_ const Ucs2CharRow::const_iterator itEnd,
-                                                    _In_ size_t const cchLine,
-                                                    _In_ COORD const coordTarget);
-        void _PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine, _In_ const TextAttribute textAttribute, _In_ size_t const cchLine, _In_ COORD const coordTarget);
+                                                    const Ucs2CharRow::const_iterator it,
+                                                    const Ucs2CharRow::const_iterator itEnd,
+                                                    const size_t cchLine,
+                                                    const COORD coordTarget);
+        void _PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine, const TextAttribute textAttribute, const size_t cchLine, const COORD coordTarget);
 
         void _PaintSelection(_In_ IRenderEngine* const pEngine);
         void _PaintCursor(_In_ IRenderEngine* const pEngine);
 
         void _PaintIme(_In_ IRenderEngine* const pEngine,
-                        _In_ const std::unique_ptr<ConversionAreaInfo>& AreaInfo,
-                        _In_ const TEXT_BUFFER_INFO* const pTextInfo);
+                       const std::unique_ptr<ConversionAreaInfo>& AreaInfo,
+                       const TextBuffer& textBuffer);
         void _PaintImeCompositionString(_In_ IRenderEngine* const pEngine);
 
         [[nodiscard]]
-        HRESULT _UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, _In_ const TextAttribute attr, _In_ bool const fIncludeBackground);
+        HRESULT _UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, const TextAttribute attr, const bool fIncludeBackground);
 
         [[nodiscard]]
         HRESULT _ClearOverlays(_In_ IRenderEngine* const pEngine);
@@ -138,8 +144,8 @@ namespace Microsoft::Console::Render
         NTSTATUS _GetSelectionRects(_Outptr_result_buffer_all_(*pcRectangles) SMALL_RECT** const prgsrSelection,
                                     _Out_ UINT* const pcRectangles) const;
 
-        SMALL_RECT _RegionFromCoord(_In_ const COORD* const pcoord) const;
-        COLORREF _ConvertAttrToRGB(_In_ const BYTE bAttr);
+        SMALL_RECT _RegionFromCoord(const COORD* const pcoord) const;
+        COLORREF _ConvertAttrToRGB(const BYTE bAttr);
 
 #ifdef DBG
         // Helper functions to diagnose issues with painting and layout.

@@ -39,17 +39,17 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest : public TermDispatc
 {
     TEST_CLASS(OutputEngineTest);
 
-    virtual void Execute(_In_ wchar_t const wchControl)
+    virtual void Execute(const wchar_t wchControl)
     {
         wchControl;
     }
 
-    virtual void Print(_In_ wchar_t const wchPrintable)
+    virtual void Print(const wchar_t wchPrintable)
     {
         wchPrintable;
     }
 
-    virtual void PrintString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch)
+    virtual void PrintString(_In_reads_(cch) wchar_t* const rgwch, const size_t cch)
     {
         rgwch;
         cch;
@@ -528,17 +528,17 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest : public TermDispatc
 class StateMachineExternalTest : public TermDispatch
 {
     TEST_CLASS(StateMachineExternalTest);
-    virtual void Execute(_In_ wchar_t const wchControl)
+    virtual void Execute(const wchar_t wchControl)
     {
         wchControl;
     }
 
-    virtual void Print(_In_ wchar_t const wchPrintable)
+    virtual void Print(const wchar_t wchPrintable)
     {
         wchPrintable;
     }
 
-    virtual void PrintString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch)
+    virtual void PrintString(_In_reads_(cch) wchar_t* const rgwch, const size_t cch)
     {
         rgwch;
         cch;
@@ -694,14 +694,14 @@ class StateMachineExternalTest : public TermDispatch
         return true;
     }
 
-    virtual bool EraseInDisplay(_In_ EraseType const eraseType)
+    virtual bool EraseInDisplay(const EraseType eraseType)
     { 
         _fEraseDisplay = true;
         _eraseType = eraseType;
         return true;
     }
 
-    virtual bool EraseInLine(_In_ EraseType const eraseType)
+    virtual bool EraseInLine(const EraseType eraseType)
     { 
         _fEraseLine = true;
         _eraseType = eraseType;
@@ -722,15 +722,15 @@ class StateMachineExternalTest : public TermDispatch
         return true;
     }
 
-    virtual bool CursorVisibility(_In_ bool const fIsVisible)
+    virtual bool CursorVisibility(const bool fIsVisible)
     {
         _fCursorVisible = fIsVisible;
         return true;
     }
 
-    virtual bool SetGraphicsRendition(_In_reads_(cOptions) const GraphicsOptions* const rgOptions, _In_ size_t const cOptions)
+    virtual bool SetGraphicsRendition(_In_reads_(cOptions) const GraphicsOptions* const rgOptions, const size_t cOptions)
     {
-        size_t cCopyLength = min(cOptions, s_cMaxOptions); // whichever is smaller, our buffer size or the number given
+        size_t cCopyLength = std::min(cOptions, s_cMaxOptions); // whichever is smaller, our buffer size or the number given
         _cOptions = cCopyLength;
         memcpy(_rgOptions, rgOptions, _cOptions * sizeof(GraphicsOptions));
 
@@ -739,7 +739,7 @@ class StateMachineExternalTest : public TermDispatch
         return true;
     }
 
-    virtual bool DeviceStatusReport(_In_ AnsiStatusType const statusType)
+    virtual bool DeviceStatusReport(const AnsiStatusType statusType)
     {
         _fDeviceStatusReport = true;
         _statusReportType = statusType;
@@ -754,7 +754,7 @@ class StateMachineExternalTest : public TermDispatch
         return true;
     }
 
-    bool _PrivateModeParamsHelper(_In_ PrivateModeParams const param, _In_ bool const fEnable)
+    bool _PrivateModeParamsHelper(_In_ PrivateModeParams const param, const bool fEnable)
     {
         bool fSuccess = false;
         switch(param)
@@ -783,7 +783,7 @@ class StateMachineExternalTest : public TermDispatch
         return fSuccess;
     }
 
-    bool _SetResetPrivateModesHelper(_In_reads_(cParams) const PrivateModeParams* const rParams, _In_ size_t const cParams, _In_ bool const fEnable)
+    bool _SetResetPrivateModesHelper(_In_reads_(cParams) const PrivateModeParams* const rParams, const size_t cParams, const bool fEnable)
     {
         size_t cFailures = 0;
         for (size_t i = 0; i < cParams; i++)
@@ -793,12 +793,12 @@ class StateMachineExternalTest : public TermDispatch
         return cFailures == 0;
     }
 
-    virtual bool SetPrivateModes(_In_reads_(cParams) const PrivateModeParams* const rParams, _In_ size_t const cParams)
+    virtual bool SetPrivateModes(_In_reads_(cParams) const PrivateModeParams* const rParams, const size_t cParams)
     {
         return _SetResetPrivateModesHelper(rParams, cParams, true);
     }
 
-    virtual bool ResetPrivateModes(_In_reads_(cParams) const PrivateModeParams* const rParams, _In_ size_t const cParams)
+    virtual bool ResetPrivateModes(_In_reads_(cParams) const PrivateModeParams* const rParams, const size_t cParams)
     {
         return _SetResetPrivateModesHelper(rParams, cParams, false);
     }
@@ -808,12 +808,12 @@ class StateMachineExternalTest : public TermDispatch
         _uiWindowWidth = uiColumns;
         return true;
     }
-    virtual bool SetVirtualTerminalInputMode(_In_ bool const fApplicationMode)
+    virtual bool SetVirtualTerminalInputMode(const bool fApplicationMode)
     {
         _fCursorKeysMode = fApplicationMode;
         return true;
     }
-    virtual bool EnableCursorBlinking(_In_ bool const bEnable)
+    virtual bool EnableCursorBlinking(const bool bEnable)
     {
         _fCursorBlinking = bEnable;
         return true;
@@ -1211,7 +1211,7 @@ class StateMachineExternalTest : public TermDispatch
         VERIFY_ARE_EQUAL(expectedEraseType, _eraseType);        
     }
 
-    void VerifyGraphicsOptions(_In_reads_(cExpectedOptions) const GraphicsOptions* const rgExpectedOptions, _In_ size_t const cExpectedOptions)
+    void VerifyGraphicsOptions(_In_reads_(cExpectedOptions) const GraphicsOptions* const rgExpectedOptions, const size_t cExpectedOptions)
     {
         VERIFY_ARE_EQUAL(cExpectedOptions, _cOptions);
         bool fOptionsValid = true;

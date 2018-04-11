@@ -35,7 +35,7 @@ void ParserTracing::TraceOnAction(_In_ PCWSTR const pwszName) const
         );
 }
 
-void ParserTracing::TraceOnExecute(_In_ wchar_t const wch) const
+void ParserTracing::TraceOnExecute(const wchar_t wch) const
 {
     INT16 sch = (INT16)wch;
     TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider, "StateMachine_Execute",
@@ -53,7 +53,7 @@ void ParserTracing::TraceOnEvent(_In_ PCWSTR const pwszName) const
         );
 }
 
-void ParserTracing::TraceCharInput(_In_ wchar_t const wch)
+void ParserTracing::TraceCharInput(const wchar_t wch)
 {
     AddSequenceTrace(wch);
     INT16 sch = (INT16)wch;
@@ -65,7 +65,7 @@ void ParserTracing::TraceCharInput(_In_ wchar_t const wch)
         );
 }
 
-void ParserTracing::AddSequenceTrace(_In_ wchar_t const wch)
+void ParserTracing::AddSequenceTrace(const wchar_t wch)
 {
     // -1 to always leave the last character as null/0.
     if (_cchSequenceTrace < s_cMaxSequenceTrace - 1)
@@ -75,7 +75,7 @@ void ParserTracing::AddSequenceTrace(_In_ wchar_t const wch)
     }
 }
 
-void ParserTracing::DispatchSequenceTrace(_In_ bool const fSuccess)
+void ParserTracing::DispatchSequenceTrace(const bool fSuccess)
 {
     if (fSuccess)
     {
@@ -102,7 +102,7 @@ void ParserTracing::ClearSequenceTrace()
 }
 
 // NOTE: I'm expecting this to not be null terminated
-void ParserTracing::DispatchPrintRunTrace(_In_reads_(cchString) wchar_t* pwsString, _In_ size_t const cchString) const
+void ParserTracing::DispatchPrintRunTrace(_In_reads_(cchString) wchar_t* pwsString, const size_t cchString) const
 {
     size_t charsRemaining = cchString;
     wchar_t str[BYTE_MAX + 4 + sizeof(wchar_t) + sizeof('\0')];

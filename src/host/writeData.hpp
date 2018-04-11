@@ -23,26 +23,26 @@ Revision History:
 class WriteData : public IWaitRoutine
 {
 public:
-    WriteData(_In_ SCREEN_INFORMATION* const psiContext,
+    WriteData(SCREEN_INFORMATION& siContext,
               _In_reads_bytes_(cbContext) wchar_t* const pwchContext,
-              _In_ ULONG const cbContext,
-              _In_ UINT const uiOutputCodepage);
+              const ULONG cbContext,
+              const UINT uiOutputCodepage);
     ~WriteData();
 
-    void SetLeadByteAdjustmentStatus(_In_ bool const fLeadByteCaptured,
-                                     _In_ bool const fLeadByteConsumed);
+    void SetLeadByteAdjustmentStatus(const bool fLeadByteCaptured,
+                                     const bool fLeadByteConsumed);
 
-    void SetUtf8ConsumedCharacters(_In_ size_t const cchUtf8Consumed);
+    void SetUtf8ConsumedCharacters(const size_t cchUtf8Consumed);
 
-    BOOL Notify(_In_ WaitTerminationReason const TerminationReason,
-                _In_ BOOLEAN const fIsUnicode,
+    bool Notify(const WaitTerminationReason TerminationReason,
+                const bool fIsUnicode,
                 _Out_ NTSTATUS* const pReplyStatus,
                 _Out_ DWORD* const pNumBytes,
                 _Out_ DWORD* const pControlKeyState,
                 _Out_ void* const pOutputData);
 
 private:
-    SCREEN_INFORMATION* const _psiContext;
+    SCREEN_INFORMATION& _siContext;
     wchar_t* const _pwchContext;
     ULONG const _cbContext;
     UINT const _uiOutputCodepage;

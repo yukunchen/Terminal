@@ -15,32 +15,30 @@
 
 
 // Routine Description:
-// - Creates a new instance of TEXT_BUFFER_INFO
+// - Creates a new instance of TextBuffer
 // Arguments:
-// - pFontInfo - The font to use for this text buffer as specified in the global font cache
+// - fontInfo - The font to use for this text buffer as specified in the global font cache
 // - screenBufferSize - The X by Y dimensions of the new screen buffer
 // - fill - Uses the .Attributes property to decide which default color to apply to all text in this buffer
 // - cursorSize - The height of the cursor within this buffer
 // Return Value:
 // - constructed object
 // Note: may throw exception
-TEXT_BUFFER_INFO::TEXT_BUFFER_INFO(_In_ const FontInfo* const pFontInfo,
-                                   _In_ const COORD screenBufferSize,
-                                   _In_ const CHAR_INFO fill,
-                                   _In_ const UINT cursorSize) :
-    _fiCurrentFont{ *pFontInfo },
-    _fiDesiredFont{ *pFontInfo },
+TextBuffer::TextBuffer(const FontInfo fontInfo,
+                       const COORD screenBufferSize,
+                       const CHAR_INFO fill,
+                       const UINT cursorSize) :
+    _fiCurrentFont{ fontInfo },
+    _fiDesiredFont{ fontInfo },
     _FirstRow{ 0 },
     _ciFill{ fill },
     _coordBufferSize{ screenBufferSize },
-    _pCursor{ nullptr },
+    _cursor{ cursorSize },
     _storage{}
 {
-    THROW_IF_FAILED(HRESULT_FROM_NT(Cursor::CreateInstance(static_cast<ULONG>(cursorSize), &_pCursor)));
-
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    _pCursor->SetColor(gci.GetCursorColor());
-    _pCursor->SetType(gci.GetCursorType());
+    _cursor.SetColor(gci.GetCursorColor());
+    _cursor.SetType(gci.GetCursorType());
 
     // initialize ROWs
     for (size_t i = 0; i < static_cast<size_t>(screenBufferSize.Y); ++i)
@@ -52,51 +50,37 @@ TEXT_BUFFER_INFO::TEXT_BUFFER_INFO(_In_ const FontInfo* const pFontInfo,
 }
 
 // Routine Description:
-// - Destructor to free memory associated with TEXT_BUFFER_INFO
-// - NOTE: This will release font structures which may not have been allocated at CreateInstance time.
-#pragma prefast(push)
-#pragma prefast(disable:6001, "Prefast fires that *this is not initialized, which is absurd since this is a destructor.")
-TEXT_BUFFER_INFO::~TEXT_BUFFER_INFO()
-{
-    if (this->_pCursor != nullptr)
-    {
-        delete this->_pCursor;
-    }
-}
-#pragma prefast(pop)
-
-// Routine Description:
 // - Copies properties from another text buffer into this one.
 // - This is primarily to copy properties that would otherwise not be specified during CreateInstance
 // Arguments:
-// - pOtherBuffer - The text buffer to copy properties from
+// - OtherBuffer - The text buffer to copy properties from
 // Return Value:
 // - <none>
-void TEXT_BUFFER_INFO::CopyProperties(_In_ TEXT_BUFFER_INFO* const pOtherBuffer)
+void TextBuffer::CopyProperties(const TextBuffer& OtherBuffer)
 {
-    SetCurrentFont(pOtherBuffer->GetCurrentFont());
+    _fiCurrentFont = OtherBuffer.GetCurrentFont();
 
-    this->GetCursor()->CopyProperties(pOtherBuffer->GetCursor());
+    GetCursor().CopyProperties(OtherBuffer.GetCursor());
 }
 
-void TEXT_BUFFER_INFO::SetCurrentFont(_In_ const FontInfo* const pfiNewFont)
+FontInfo& TextBuffer::GetCurrentFont()
 {
-    _fiCurrentFont = *pfiNewFont;
+    return _fiCurrentFont;
 }
 
-FontInfo* TEXT_BUFFER_INFO::GetCurrentFont()
+const FontInfo& TextBuffer::GetCurrentFont() const
 {
-    return &_fiCurrentFont;
+    return _fiCurrentFont;
 }
 
-void TEXT_BUFFER_INFO::SetDesiredFont(_In_ const FontInfoDesired* const pfiNewFont)
+FontInfoDesired& TextBuffer::GetDesiredFont()
 {
-    _fiDesiredFont = *pfiNewFont;
+    return _fiDesiredFont;
 }
 
-FontInfoDesired* TEXT_BUFFER_INFO::GetDesiredFont()
+const FontInfoDesired& TextBuffer::GetDesiredFont() const
 {
-    return &_fiDesiredFont;
+    return _fiDesiredFont;
 }
 
 // Routine Description:
@@ -105,7 +89,7 @@ FontInfoDesired* TEXT_BUFFER_INFO::GetDesiredFont()
 // - <none>
 // Return Value:
 // - Total number of rows in the buffer
-UINT TEXT_BUFFER_INFO::TotalRowCount() const
+UINT TextBuffer::TotalRowCount() const
 {
     return static_cast<UINT>(_storage.size());
 }
@@ -116,7 +100,7 @@ UINT TEXT_BUFFER_INFO::TotalRowCount() const
 // - <none>
 // Return Value:
 //  - const reference to the first row.
-const ROW& TEXT_BUFFER_INFO::GetFirstRow() const
+const ROW& TextBuffer::GetFirstRow() const
 {
     return GetRowByOffset(0);
 }
@@ -127,11 +111,10 @@ const ROW& TEXT_BUFFER_INFO::GetFirstRow() const
 // - <none>
 // Return Value:
 //  - reference to the first row.
-ROW& TEXT_BUFFER_INFO::GetFirstRow()
+ROW& TextBuffer::GetFirstRow()
 {
-    return const_cast<ROW&>(static_cast<const TEXT_BUFFER_INFO*>(this)->GetFirstRow());
+    return const_cast<ROW&>(static_cast<const TextBuffer*>(this)->GetFirstRow());
 }
-
 
 // Routine Description:
 // - Retrieves a row from the buffer by its offset from the first row of the text buffer (what corresponds to
@@ -140,13 +123,12 @@ ROW& TEXT_BUFFER_INFO::GetFirstRow()
 // - Number of rows down from the first row of the buffer.
 // Return Value:
 // - const reference to the requested row. Asserts if out of bounds.
-const ROW& TEXT_BUFFER_INFO::GetRowByOffset(_In_ const UINT index) const
+const ROW& TextBuffer::GetRowByOffset(const size_t index) const
 {
-    UINT const totalRows = this->TotalRowCount();
-    ASSERT(index < totalRows);
+    const size_t totalRows = TotalRowCount();
 
     // Rows are stored circularly, so the index you ask for is offset by the start position and mod the total of rows.
-    UINT const offsetIndex = (this->_FirstRow + index) % totalRows;
+    const size_t offsetIndex = (_FirstRow + index) % totalRows;
     return _storage[offsetIndex];
 }
 
@@ -157,9 +139,9 @@ const ROW& TEXT_BUFFER_INFO::GetRowByOffset(_In_ const UINT index) const
 // - Number of rows down from the first row of the buffer.
 // Return Value:
 // - reference to the requested row. Asserts if out of bounds.
-ROW& TEXT_BUFFER_INFO::GetRowByOffset(_In_ const UINT index)
+ROW& TextBuffer::GetRowByOffset(const size_t index)
 {
-    return const_cast<ROW&>(static_cast<const TEXT_BUFFER_INFO*>(this)->GetRowByOffset(index));
+    return const_cast<ROW&>(static_cast<const TextBuffer*>(this)->GetRowByOffset(index));
 }
 
 // Routine Description:
@@ -171,7 +153,7 @@ ROW& TEXT_BUFFER_INFO::GetRowByOffset(_In_ const UINT index)
 // - const reference to the previous row
 // Note:
 // - will throw exception if called with the first row of the text buffer
-const ROW& TEXT_BUFFER_INFO::GetPrevRowNoWrap(_In_ const ROW& Row) const
+const ROW& TextBuffer::GetPrevRowNoWrap(const ROW& Row) const
 {
     int prevRowIndex = Row.GetId() - 1;
     if (prevRowIndex < 0)
@@ -192,9 +174,9 @@ const ROW& TEXT_BUFFER_INFO::GetPrevRowNoWrap(_In_ const ROW& Row) const
 // - reference to the previous row
 // Note:
 // - will throw exception if called with the first row of the text buffer
-ROW& TEXT_BUFFER_INFO::GetPrevRowNoWrap(_In_ const ROW& Row)
+ROW& TextBuffer::GetPrevRowNoWrap(const ROW& Row)
 {
-    return const_cast<ROW&>(static_cast<const TEXT_BUFFER_INFO*>(this)->GetPrevRowNoWrap(Row));
+    return const_cast<ROW&>(static_cast<const TextBuffer*>(this)->GetPrevRowNoWrap(Row));
 }
 
 // Routine Description:
@@ -206,10 +188,10 @@ ROW& TEXT_BUFFER_INFO::GetPrevRowNoWrap(_In_ const ROW& Row)
 // - const reference to the next row
 // Note:
 // - will throw exception if the row passed in is the last row of the screen buffer.
-const ROW& TEXT_BUFFER_INFO::GetNextRowNoWrap(_In_ const ROW& row) const
+const ROW& TextBuffer::GetNextRowNoWrap(const ROW& row) const
 {
     UINT nextRowIndex = row.GetId() + 1;
-    UINT totalRows = this->TotalRowCount();
+    UINT totalRows = TotalRowCount();
 
     if (nextRowIndex >= totalRows)
     {
@@ -229,9 +211,9 @@ const ROW& TEXT_BUFFER_INFO::GetNextRowNoWrap(_In_ const ROW& row) const
 // - const reference to the next row
 // Note:
 // - will throw exception if the row passed in is the last row of the screen buffer.
-ROW& TEXT_BUFFER_INFO::GetNextRowNoWrap(_In_ const ROW& row)
+ROW& TextBuffer::GetNextRowNoWrap(const ROW& row)
 {
-    return const_cast<ROW&>(static_cast<const TEXT_BUFFER_INFO*>(this)->GetNextRowNoWrap(row));
+    return const_cast<ROW&>(static_cast<const TextBuffer*>(this)->GetNextRowNoWrap(row));
 }
 
 // Routine Description:
@@ -243,7 +225,7 @@ ROW& TEXT_BUFFER_INFO::GetNextRowNoWrap(_In_ const ROW& row)
 // - const reference to the row
 // Note:
 // - will throw exception if the index passed would overflow the row storage
-const ROW& TEXT_BUFFER_INFO::GetRowAtIndex(_In_ const UINT index) const
+const ROW& TextBuffer::GetRowAtIndex(const UINT index) const
 {
     if (index >= TotalRowCount())
     {
@@ -261,9 +243,9 @@ const ROW& TEXT_BUFFER_INFO::GetRowAtIndex(_In_ const UINT index) const
 // - reference to the row
 // Note:
 // - will throw exception if the index passed would overflow the row storage
-ROW& TEXT_BUFFER_INFO::GetRowAtIndex(_In_ const UINT index)
+ROW& TextBuffer::GetRowAtIndex(const UINT index)
 {
-    return const_cast<ROW&>(static_cast<const TEXT_BUFFER_INFO*>(this)->GetRowAtIndex(index));
+    return const_cast<ROW&>(static_cast<const TextBuffer*>(this)->GetRowAtIndex(index));
 }
 
 // Routine Description:
@@ -273,7 +255,7 @@ ROW& TEXT_BUFFER_INFO::GetRowAtIndex(_In_ const UINT index)
 // - the row to fetch the previous row for.
 // Return Value:
 // - const reference to the previous row.
-const ROW& TEXT_BUFFER_INFO::GetPrevRow(_In_ const ROW& row) const noexcept
+const ROW& TextBuffer::GetPrevRow(const ROW& row) const noexcept
 {
     const SHORT rowIndex = row.GetId();
     if (rowIndex == 0)
@@ -290,9 +272,9 @@ const ROW& TEXT_BUFFER_INFO::GetPrevRow(_In_ const ROW& row) const noexcept
 // - the row to fetch the previous row for.
 // Return Value:
 // - reference to the previous row.
-ROW& TEXT_BUFFER_INFO::GetPrevRow(_In_ const ROW& row) noexcept
+ROW& TextBuffer::GetPrevRow(const ROW& row) noexcept
 {
-    return const_cast<ROW&>(static_cast<const TEXT_BUFFER_INFO*>(this)->GetPrevRow(row));
+    return const_cast<ROW&>(static_cast<const TextBuffer*>(this)->GetPrevRow(row));
 }
 
 // Routine Description:
@@ -302,7 +284,7 @@ ROW& TEXT_BUFFER_INFO::GetPrevRow(_In_ const ROW& row) noexcept
 // - the row to fetch the next row for.
 // Return Value:
 // - const reference to the next row.
-const ROW& TEXT_BUFFER_INFO::GetNextRow(_In_ const ROW& row) const noexcept
+const ROW& TextBuffer::GetNextRow(const ROW& row) const noexcept
 {
     const UINT rowIndex = static_cast<UINT>(row.GetId());
     if (rowIndex == TotalRowCount() - 1)
@@ -319,9 +301,9 @@ const ROW& TEXT_BUFFER_INFO::GetNextRow(_In_ const ROW& row) const noexcept
 // - the row to fetch the next row for.
 // Return Value:
 // - reference to the next row.
-ROW& TEXT_BUFFER_INFO::GetNextRow(_In_ const ROW& row) noexcept
+ROW& TextBuffer::GetNextRow(const ROW& row) noexcept
 {
-    return const_cast<ROW&>(static_cast<const TEXT_BUFFER_INFO*>(this)->GetNextRow(row));
+    return const_cast<ROW&>(static_cast<const TextBuffer*>(this)->GetNextRow(row));
 }
 
 //Routine Description:
@@ -333,7 +315,7 @@ ROW& TEXT_BUFFER_INFO::GetNextRow(_In_ const ROW& row) noexcept
 // - dbcsAttribute - Double byte information associated with the character about to be inserted into the buffer
 //Return Value:
 // - True if it is valid to insert a character with the given double byte attributes. False otherwise.
-bool TEXT_BUFFER_INFO::AssertValidDoubleByteSequence(_In_ const DbcsAttribute dbcsAttribute)
+bool TextBuffer::AssertValidDoubleByteSequence(const DbcsAttribute dbcsAttribute)
 {
     // To figure out if the sequence is valid, we have to look at the character that comes before the current one
     const COORD coordPrevPosition = GetPreviousFromCursor();
@@ -425,7 +407,7 @@ bool TEXT_BUFFER_INFO::AssertValidDoubleByteSequence(_In_ const DbcsAttribute db
 //Return Value:
 // - true if we successfully prepared the buffer and moved the cursor
 // - false otherwise (out of memory)
-bool TEXT_BUFFER_INFO::_PrepareForDoubleByteSequence(_In_ const DbcsAttribute dbcsAttribute)
+bool TextBuffer::_PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute)
 {
     // Assert the buffer state is ready for this character
     // This function corrects most errors. If this is false, we had an uncorrectable one.
@@ -438,13 +420,13 @@ bool TEXT_BUFFER_INFO::_PrepareForDoubleByteSequence(_In_ const DbcsAttribute db
     // We only need to compensate for leading bytes
     if (dbcsAttribute.IsLeading())
     {
-        short const sBufferWidth = this->_coordBufferSize.X;
+        short const sBufferWidth = _coordBufferSize.X;
 
         // If we're about to lead on the last column in the row, we need to add a padding space
-        if (this->GetCursor()->GetPosition().X == sBufferWidth - 1)
+        if (GetCursor().GetPosition().X == sBufferWidth - 1)
         {
             // set that we're wrapping for double byte reasons
-            ICharRow& iCharRow = GetRowByOffset(this->GetCursor()->GetPosition().Y).GetCharRow();
+            ICharRow& iCharRow = GetRowByOffset(GetCursor().GetPosition().Y).GetCharRow();
             // we only support ucs2 encoded char rows
             FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
                             "only support UCS2 char rows currently");
@@ -467,9 +449,9 @@ bool TEXT_BUFFER_INFO::_PrepareForDoubleByteSequence(_In_ const DbcsAttribute db
 //Return Value:
 // - true if we successfully inserted the character
 // - false otherwise (out of memory)
-bool TEXT_BUFFER_INFO::InsertCharacter(_In_ const wchar_t wch,
-                                       _In_ const DbcsAttribute dbcsAttribute,
-                                       _In_ const TextAttribute attr)
+bool TextBuffer::InsertCharacter(const wchar_t wch,
+                                 const DbcsAttribute dbcsAttribute,
+                                 const TextAttribute attr)
 {
     // Ensure consistent buffer state for double byte characters based on the character type we're about to insert
     bool fSuccess = _PrepareForDoubleByteSequence(dbcsAttribute);
@@ -477,8 +459,8 @@ bool TEXT_BUFFER_INFO::InsertCharacter(_In_ const wchar_t wch,
     if (fSuccess)
     {
         // Get the current cursor position
-        short const iRow = this->GetCursor()->GetPosition().Y; // row stored as logical position, not array position
-        short const iCol = this->GetCursor()->GetPosition().X; // column logical and array positions are equal.
+        short const iRow = GetCursor().GetPosition().Y; // row stored as logical position, not array position
+        short const iCol = GetCursor().GetPosition().X; // column logical and array positions are equal.
 
         // Get the row associated with the given logical position
         ROW& Row = GetRowByOffset(iRow);
@@ -490,7 +472,7 @@ bool TEXT_BUFFER_INFO::InsertCharacter(_In_ const wchar_t wch,
                         "only support UCS2 char rows currently");
 
         Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);;
-        short const cBufferWidth = this->_coordBufferSize.X;
+        short const cBufferWidth = _coordBufferSize.X;
 
         try
         {
@@ -508,7 +490,7 @@ bool TEXT_BUFFER_INFO::InsertCharacter(_In_ const wchar_t wch,
         if (fSuccess)
         {
             // Advance the cursor
-            fSuccess = this->IncrementCursor();
+            fSuccess = IncrementCursor();
         }
     }
     return fSuccess;
@@ -521,7 +503,7 @@ bool TEXT_BUFFER_INFO::InsertCharacter(_In_ const wchar_t wch,
 // - <none> - Always sets to wrap
 //Return Value:
 // - <none>
-void TEXT_BUFFER_INFO::SetWrapOnCurrentRow()
+void TextBuffer::SetWrapOnCurrentRow()
 {
     AdjustWrapOnCurrentRow(true);
 }
@@ -533,10 +515,10 @@ void TEXT_BUFFER_INFO::SetWrapOnCurrentRow()
 // - fSet - True if this row has a wrap. False otherwise.
 //Return Value:
 // - <none>
-void TEXT_BUFFER_INFO::AdjustWrapOnCurrentRow(_In_ bool const fSet)
+void TextBuffer::AdjustWrapOnCurrentRow(const bool fSet)
 {
     // The vertical position of the cursor represents the current row we're manipulating.
-    const UINT uiCurrentRowOffset = this->GetCursor()->GetPosition().Y;
+    const UINT uiCurrentRowOffset = GetCursor().GetPosition().Y;
 
     // Set the wrap status as appropriate
     GetRowByOffset(uiCurrentRowOffset).GetCharRow().SetWrapForced(fSet);
@@ -550,27 +532,27 @@ void TEXT_BUFFER_INFO::AdjustWrapOnCurrentRow(_In_ bool const fSet)
 //Return Value:
 // - true if we successfully moved the cursor.
 // - false otherwise (out of memory)
-bool TEXT_BUFFER_INFO::IncrementCursor()
+bool TextBuffer::IncrementCursor()
 {
     // Cursor position is stored as logical array indices (starts at 0) for the window
     // Buffer Size is specified as the "length" of the array. It would say 80 for valid values of 0-79.
     // So subtract 1 from buffer size in each direction to find the index of the final column in the buffer
 
-    ASSERT(this->_coordBufferSize.X > 0);
-    const short iFinalColumnIndex = this->_coordBufferSize.X - 1;
+    ASSERT(_coordBufferSize.X > 0);
+    const short iFinalColumnIndex = _coordBufferSize.X - 1;
 
     // Move the cursor one position to the right
-    this->GetCursor()->IncrementXPosition(1);
+    GetCursor().IncrementXPosition(1);
 
     bool fSuccess = true;
     // If we've passed the final valid column...
-    if (this->GetCursor()->GetPosition().X > iFinalColumnIndex)
+    if (GetCursor().GetPosition().X > iFinalColumnIndex)
     {
         // Then mark that we've been forced to wrap
-        this->SetWrapOnCurrentRow();
+        SetWrapOnCurrentRow();
 
         // Then move the cursor to a new line
-        fSuccess = this->NewlineCursor();
+        fSuccess = NewlineCursor();
     }
     return fSuccess;
 }
@@ -582,37 +564,37 @@ bool TEXT_BUFFER_INFO::IncrementCursor()
 // - <none>
 //Return Value:
 // - <none>
-void TEXT_BUFFER_INFO::DecrementCursor()
+void TextBuffer::DecrementCursor()
 {
     // Cursor position is stored as logical array indices (starts at 0) for the window
     // Buffer Size is specified as the "length" of the array. It would say 80 for valid values of 0-79.
     // So subtract 1 from buffer size in each direction to find the index of the final column in the buffer
 
-    ASSERT(this->_coordBufferSize.X > 0);
-    const short iFinalColumnIndex = this->_coordBufferSize.X - 1;
+    ASSERT(_coordBufferSize.X > 0);
+    const short iFinalColumnIndex = _coordBufferSize.X - 1;
 
     // Move the cursor one position to the left
-    this->GetCursor()->DecrementXPosition(1);
+    GetCursor().DecrementXPosition(1);
 
     // If we've passed the beginning of the line...
-    if (this->GetCursor()->GetPosition().X < 0)
+    if (GetCursor().GetPosition().X < 0)
     {
         // Move us up a line
-        this->GetCursor()->DecrementYPosition(1);
+        GetCursor().DecrementYPosition(1);
 
         // If we've moved past the top, move back down one and set X to 0.
-        if (this->GetCursor()->GetPosition().Y < 0)
+        if (GetCursor().GetPosition().Y < 0)
         {
-            this->GetCursor()->IncrementYPosition(1);
-            this->GetCursor()->SetXPosition(0);
+            GetCursor().IncrementYPosition(1);
+            GetCursor().SetXPosition(0);
         }
         else
         {
             // Set the X position to the end of the line.
-            this->GetCursor()->SetXPosition(iFinalColumnIndex);
+            GetCursor().SetXPosition(iFinalColumnIndex);
 
             // Then mark that we've backed around the wrap onto this new line and it's no longer a wrap.
-            this->AdjustWrapOnCurrentRow(false);
+            AdjustWrapOnCurrentRow(false);
         }
     }
 }
@@ -623,24 +605,24 @@ void TEXT_BUFFER_INFO::DecrementCursor()
 // - <none>
 //Return Value:
 // - true if we successfully moved the cursor.
-bool TEXT_BUFFER_INFO::NewlineCursor()
+bool TextBuffer::NewlineCursor()
 {
     bool fSuccess = false;
-    ASSERT(this->_coordBufferSize.Y > 0);
-    short const iFinalRowIndex = this->_coordBufferSize.Y - 1;
+    ASSERT(_coordBufferSize.Y > 0);
+    short const iFinalRowIndex = _coordBufferSize.Y - 1;
 
     // Reset the cursor position to 0 and move down one line
-    this->GetCursor()->SetXPosition(0);
-    this->GetCursor()->IncrementYPosition(1);
+    GetCursor().SetXPosition(0);
+    GetCursor().IncrementYPosition(1);
 
     // If we've passed the final valid row...
-    if (this->GetCursor()->GetPosition().Y > iFinalRowIndex)
+    if (GetCursor().GetPosition().Y > iFinalRowIndex)
     {
         // Stay on the final logical/offset row of the buffer.
-        this->GetCursor()->SetYPosition(iFinalRowIndex);
+        GetCursor().SetYPosition(iFinalRowIndex);
 
         // Instead increment the circular buffer to move us into the "oldest" row of the backing buffer
-        fSuccess = this->IncrementCircularBuffer();
+        fSuccess = IncrementCircularBuffer();
     }
     else
     {
@@ -655,7 +637,7 @@ bool TEXT_BUFFER_INFO::NewlineCursor()
 // - <none>
 //Return Value:
 // - true if we successfully incremented the buffer.
-bool TEXT_BUFFER_INFO::IncrementCircularBuffer()
+bool TextBuffer::IncrementCircularBuffer()
 {
     // FirstRow is at any given point in time the array index in the circular buffer that corresponds
     // to the logical position 0 in the window (cursor coordinates and all other coordinates).
@@ -673,12 +655,12 @@ bool TEXT_BUFFER_INFO::IncrementCircularBuffer()
     {
         // Now proceed to increment.
         // Incrementing it will cause the next line down to become the new "top" of the window (the new "0" in logical coordinates)
-        this->_FirstRow++;
+        _FirstRow++;
 
         // If we pass up the height of the buffer, loop back to 0.
-        if (this->_FirstRow >= this->_coordBufferSize.Y)
+        if (_FirstRow >= _coordBufferSize.Y)
         {
-            this->_FirstRow = 0;
+            _FirstRow = 0;
         }
     }
     return fSuccess;
@@ -690,7 +672,7 @@ bool TEXT_BUFFER_INFO::IncrementCircularBuffer()
 // - <none>
 //Return Value:
 // - Coordinate position in screen coordinates (offset coordinates, not array index coordinates).
-COORD TEXT_BUFFER_INFO::GetLastNonSpaceCharacter() const
+COORD TextBuffer::GetLastNonSpaceCharacter() const
 {
     COORD coordEndOfText;
     // Always search the whole buffer, by starting at the bottom.
@@ -713,8 +695,8 @@ COORD TEXT_BUFFER_INFO::GetLastNonSpaceCharacter() const
     }
 
     // don't allow negative results
-    coordEndOfText.Y = max(coordEndOfText.Y, 0);
-    coordEndOfText.X = max(coordEndOfText.X, 0);
+    coordEndOfText.Y = std::max(coordEndOfText.Y, 0i16);
+    coordEndOfText.X = std::max(coordEndOfText.X, 0i16);
 
     return coordEndOfText;
 }
@@ -726,9 +708,9 @@ COORD TEXT_BUFFER_INFO::GetLastNonSpaceCharacter() const
 // Return Value:
 // - Coordinate position in screen coordinates of the character just before the cursor.
 // - NOTE: Will return 0,0 if already in the top left corner
-COORD TEXT_BUFFER_INFO::GetPreviousFromCursor() const
+COORD TextBuffer::GetPreviousFromCursor() const
 {
-    COORD coordPosition = this->GetCursor()->GetPosition();
+    COORD coordPosition = GetCursor().GetPosition();
 
     // If we're not at the left edge, simply move the cursor to the left by one
     if (coordPosition.X > 0)
@@ -741,7 +723,7 @@ COORD TEXT_BUFFER_INFO::GetPreviousFromCursor() const
         if (coordPosition.Y > 0)
         {
             // move the cursor to the right edge
-            coordPosition.X = this->_coordBufferSize.X - 1;
+            coordPosition.X = _coordBufferSize.X - 1;
 
             // and up one line
             coordPosition.Y--;
@@ -751,35 +733,40 @@ COORD TEXT_BUFFER_INFO::GetPreviousFromCursor() const
     return coordPosition;
 }
 
-const SHORT TEXT_BUFFER_INFO::GetFirstRowIndex() const
+const SHORT TextBuffer::GetFirstRowIndex() const
 {
-    return this->_FirstRow;
+    return _FirstRow;
 }
-const COORD TEXT_BUFFER_INFO::GetCoordBufferSize() const
+const COORD TextBuffer::GetCoordBufferSize() const
 {
-    return this->_coordBufferSize;
-}
-
-void TEXT_BUFFER_INFO::SetFirstRowIndex(_In_ SHORT const FirstRowIndex)
-{
-    this->_FirstRow = FirstRowIndex;
-}
-void TEXT_BUFFER_INFO::SetCoordBufferSize(_In_ COORD const coordBufferSize)
-{
-    this->_coordBufferSize = coordBufferSize;
+    return _coordBufferSize;
 }
 
-Cursor* const TEXT_BUFFER_INFO::GetCursor() const
+void TextBuffer::SetFirstRowIndex(const SHORT FirstRowIndex)
 {
-    return this->_pCursor;
+    _FirstRow = FirstRowIndex;
+}
+void TextBuffer::SetCoordBufferSize(const COORD coordBufferSize)
+{
+    _coordBufferSize = coordBufferSize;
 }
 
-CHAR_INFO TEXT_BUFFER_INFO::GetFill() const
+Cursor& TextBuffer::GetCursor()
+{
+    return _cursor;
+}
+
+const Cursor& TextBuffer::GetCursor() const
+{
+    return _cursor;
+}
+
+CHAR_INFO TextBuffer::GetFill() const
 {
     return _ciFill;
 }
 
-void TEXT_BUFFER_INFO::SetFill(_In_ const CHAR_INFO ciFill)
+void TextBuffer::SetFill(const CHAR_INFO ciFill)
 {
     _ciFill = ciFill;
 }
@@ -793,9 +780,9 @@ void TEXT_BUFFER_INFO::SetFill(_In_ const CHAR_INFO ciFill)
 // Return Value:
 // - Success if successful. Invalid parameter if screen buffer size is unexpected. No memory if allocation failed.
 [[nodiscard]]
-NTSTATUS TEXT_BUFFER_INFO::ResizeTraditional(_In_ COORD const currentScreenBufferSize,
-                                             _In_ COORD const newScreenBufferSize,
-                                             _In_ TextAttribute const attributes)
+NTSTATUS TextBuffer::ResizeTraditional(const COORD currentScreenBufferSize,
+                                       const COORD newScreenBufferSize,
+                                       const TextAttribute attributes)
 {
     if (newScreenBufferSize.X < 0 || newScreenBufferSize.Y < 0)
     {
@@ -804,9 +791,9 @@ NTSTATUS TEXT_BUFFER_INFO::ResizeTraditional(_In_ COORD const currentScreenBuffe
     }
 
     SHORT TopRow = 0; // new top row of the screen buffer
-    if (newScreenBufferSize.Y <= GetCursor()->GetPosition().Y)
+    if (newScreenBufferSize.Y <= GetCursor().GetPosition().Y)
     {
-        TopRow = GetCursor()->GetPosition().Y - newScreenBufferSize.Y + 1;
+        TopRow = GetCursor().GetPosition().Y - newScreenBufferSize.Y + 1;
     }
     const SHORT TopRowIndex = (GetFirstRowIndex() + TopRow) % currentScreenBufferSize.Y;
 

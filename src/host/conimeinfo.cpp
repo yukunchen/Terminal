@@ -10,18 +10,18 @@
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
-ConversionAreaBufferInfo::ConversionAreaBufferInfo(_In_ COORD const coordBufferSize) :
+ConversionAreaBufferInfo::ConversionAreaBufferInfo(const COORD coordBufferSize) :
     coordCaBuffer(coordBufferSize),
     rcViewCaWindow({ 0 }),
     coordConView({ 0 })
 {
 }
 
-ConversionAreaInfo::ConversionAreaInfo(_In_ const COORD bufferSize,
-                                       _In_ const COORD windowSize,
-                                       _In_ const CHAR_INFO fill,
-                                       _In_ const CHAR_INFO popupFill,
-                                       _In_ const FontInfo* const pFontInfo) :
+ConversionAreaInfo::ConversionAreaInfo(const COORD bufferSize,
+                                       const COORD windowSize,
+                                       const CHAR_INFO fill,
+                                       const CHAR_INFO popupFill,
+                                       const FontInfo fontInfo) :
     CaInfo{ bufferSize },
     _fIsHidden{ true },
     ScreenBuffer{ nullptr }
@@ -29,7 +29,7 @@ ConversionAreaInfo::ConversionAreaInfo(_In_ const COORD bufferSize,
     SCREEN_INFORMATION* pNewScreen = nullptr;
     // cursor has no height because it won't be rendered for conversion area
     NTSTATUS status = SCREEN_INFORMATION::CreateInstance(windowSize,
-                                                         pFontInfo,
+                                                         fontInfo,
                                                          bufferSize,
                                                          fill,
                                                          popupFill,
@@ -38,7 +38,7 @@ ConversionAreaInfo::ConversionAreaInfo(_In_ const COORD bufferSize,
     if (NT_SUCCESS(status))
     {
         // Suppress painting notifications for modifying a conversion area cursor as they're not actually rendered.
-        pNewScreen->TextInfo->GetCursor()->SetIsConversionArea(TRUE);
+        pNewScreen->GetTextBuffer().GetCursor().SetIsConversionArea(true);
         pNewScreen->ConvScreenInfo = this;
         ScreenBuffer = pNewScreen;
     }
@@ -65,7 +65,7 @@ bool ConversionAreaInfo::IsHidden() const
 // - fIsHidden - True if it should not be drawn. False if it should be drawn.
 // Return Value:
 // - <none>
-void ConversionAreaInfo::SetHidden(_In_ bool const fIsHidden)
+void ConversionAreaInfo::SetHidden(const bool fIsHidden)
 {
     _fIsHidden = fIsHidden;
 }
@@ -102,7 +102,7 @@ ConsoleImeInfo::~ConsoleImeInfo()
 void ConsoleImeInfo::RefreshAreaAttributes()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    TextAttribute const Attributes = gci.CurrentScreenBuffer->GetAttributes();
+    TextAttribute const Attributes = gci.GetActiveOutputBuffer().GetAttributes();
 
     for (unsigned int i = 0; i < ConvAreaCompStr.size(); ++i)
     {
@@ -120,25 +120,21 @@ void ConsoleImeInfo::RefreshAreaAttributes()
 NTSTATUS ConsoleImeInfo::AddConversionArea()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    if (gci.CurrentScreenBuffer == nullptr)
-    {
-        return STATUS_UNSUCCESSFUL;
-    }
 
-    COORD bufferSize = gci.CurrentScreenBuffer->GetScreenBufferSize();
+    COORD bufferSize = gci.GetActiveOutputBuffer().GetScreenBufferSize();
     bufferSize.Y = 1;
 
     COORD windowSize;
-    windowSize.X = gci.CurrentScreenBuffer->GetScreenWindowSizeX();
-    windowSize.Y = gci.CurrentScreenBuffer->GetScreenWindowSizeY();
+    windowSize.X = gci.GetActiveOutputBuffer().GetScreenWindowSizeX();
+    windowSize.Y = gci.GetActiveOutputBuffer().GetScreenWindowSizeY();
 
     CHAR_INFO fill;
-    fill.Attributes = gci.CurrentScreenBuffer->GetAttributes().GetLegacyAttributes();
+    fill.Attributes = gci.GetActiveOutputBuffer().GetAttributes().GetLegacyAttributes();
 
     CHAR_INFO popupFill;
-    popupFill.Attributes = gci.CurrentScreenBuffer->GetPopupAttributes()->GetLegacyAttributes();
+    popupFill.Attributes = gci.GetActiveOutputBuffer().GetPopupAttributes()->GetLegacyAttributes();
 
-    const FontInfo* const pFontInfo = gci.CurrentScreenBuffer->TextInfo->GetCurrentFont();
+    const FontInfo& fontInfo = gci.GetActiveOutputBuffer().GetTextBuffer().GetCurrentFont();
 
     try
     {
@@ -146,7 +142,7 @@ NTSTATUS ConsoleImeInfo::AddConversionArea()
                                                                                                 windowSize,
                                                                                                 fill,
                                                                                                 popupFill,
-                                                                                                pFontInfo);
+                                                                                                fontInfo);
         THROW_HR_IF(E_OUTOFMEMORY, convAreaInfo == nullptr);
 
         ConvAreaCompStr.push_back(std::move(convAreaInfo));

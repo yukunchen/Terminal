@@ -45,7 +45,7 @@ void WriteToConsole(_In_ PCWSTR pwszText)
                   nullptr);
 }
 
-void FormatToConsole(_In_ PCWSTR pwszFunc, _In_ const BOOL bResult, _In_ const DWORD dwError)
+void FormatToConsole(_In_ PCWSTR pwszFunc, const BOOL bResult, const DWORD dwError)
 {
     std::unique_ptr<wchar_t[]> pwszBuffer = std::make_unique<wchar_t[]>(MAX_PATH);
     THROW_IF_FAILED(StringCchPrintfW(pwszBuffer.get(), MAX_PATH, L"%s;%d;%d\r\n", pwszFunc, bResult, dwError));

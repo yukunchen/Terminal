@@ -172,12 +172,12 @@ UiaTextRange* UiaTextRange::Create(_In_ IRawElementProviderSimple* const pProvid
 }
 
 UiaTextRange* UiaTextRange::Create(_In_ IRawElementProviderSimple* const pProvider,
-                                   _In_ const Cursor* const pCursor)
+                                   const Cursor cursor)
 {
     UiaTextRange* range = nullptr;
     try
     {
-        range = new UiaTextRange(pProvider, pCursor);
+        range = new UiaTextRange(pProvider, cursor);
     }
     catch (...)
     {
@@ -192,9 +192,9 @@ UiaTextRange* UiaTextRange::Create(_In_ IRawElementProviderSimple* const pProvid
 }
 
 UiaTextRange* UiaTextRange::Create(_In_ IRawElementProviderSimple* const pProvider,
-                                   _In_ const Endpoint start,
-                                   _In_ const Endpoint end,
-                                   _In_ const bool degenerate)
+                                   const Endpoint start,
+                                   const Endpoint end,
+                                   const bool degenerate)
 {
     UiaTextRange* range = nullptr;
     try
@@ -217,7 +217,7 @@ UiaTextRange* UiaTextRange::Create(_In_ IRawElementProviderSimple* const pProvid
 }
 
 UiaTextRange* UiaTextRange::Create(_In_ IRawElementProviderSimple* const pProvider,
-                                   _In_ const UiaPoint point)
+                                   const UiaPoint point)
 {
     UiaTextRange* range = nullptr;
     try
@@ -255,13 +255,11 @@ UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider) :
 }
 
 UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                           _In_ const Cursor* const pCursor) :
+                           const Cursor cursor) :
     UiaTextRange(pProvider)
 {
-    THROW_HR_IF_NULL(E_POINTER, pCursor);
-
     _degenerate = true;
-    _start = _screenInfoRowToEndpoint(pCursor->GetPosition().Y) + pCursor->GetPosition().X;
+    _start = _screenInfoRowToEndpoint(cursor.GetPosition().Y) + cursor.GetPosition().X;
     _end = _start;
 
 #if defined(_DEBUG) && defined(UIATEXTRANGE_DEBUG_MSGS)
@@ -271,9 +269,9 @@ UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
 }
 
 UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                           _In_ const Endpoint start,
-                           _In_ const Endpoint end,
-                           _In_ const bool degenerate) :
+                           const Endpoint start,
+                           const Endpoint end,
+                           const bool degenerate) :
     UiaTextRange(pProvider)
 {
     THROW_HR_IF(E_INVALIDARG, !degenerate && start > end);
@@ -290,7 +288,7 @@ UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
 
 // returns a degenerate text range of the start of the row closest to the y value of point
 UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                           _In_ const UiaPoint point) :
+                           const UiaPoint point) :
     UiaTextRange(pProvider)
 {
     POINT clientPoint;
@@ -316,9 +314,8 @@ UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
         HWND hwnd = _getWindowHandle();
         ScreenToClient(hwnd, &clientPoint);
 
-        const SCREEN_INFORMATION* const _pScreenInfo = _getScreenInfo();
-        THROW_HR_IF_NULL(E_POINTER, _pScreenInfo);
-        const COORD currentFontSize = _pScreenInfo->GetScreenFontSize();
+        const SCREEN_INFORMATION& _pScreenInfo = _getScreenInfo();
+        const COORD currentFontSize = _pScreenInfo.GetScreenFontSize();
         row = (clientPoint.y / currentFontSize.Y) + viewport.Top;
     }
     _start = _screenInfoRowToEndpoint(row);
@@ -331,7 +328,7 @@ UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
 #endif
 }
 
-UiaTextRange::UiaTextRange(_In_ const UiaTextRange& a) :
+UiaTextRange::UiaTextRange(const UiaTextRange& a) :
     _cRefs{ 1 },
     _pProvider{ a._pProvider },
     _start{ a._start },
@@ -519,7 +516,7 @@ IFACEMETHODIMP UiaTextRange::CompareEndpoints(_In_ TextPatternRangeEndpoint endp
     }
 
     // compare them
-    *pRetVal = clamp(static_cast<int>(ourValue) - static_cast<int>(theirValue), -1, 1);
+    *pRetVal = std::clamp(static_cast<int>(ourValue) - static_cast<int>(theirValue), -1, 1);
 
     // tracing
     ApiMsgCompareEndpoints apiMsg;
@@ -712,7 +709,7 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
             const ScreenInfoRow endScreenInfoRow = _endpointToScreenInfoRow(_end);
             const Column endColumn = _endpointToColumn(_end);
             const unsigned int totalRowsInRange = _rowCountInRange();
-            const TEXT_BUFFER_INFO* const pTextBuffer = _getTextBuffer();
+            const TextBuffer& textBuffer = _getTextBuffer();
 
             ScreenInfoRow currentScreenInfoRow;
             for (unsigned int i = 0; i < totalRowsInRange; ++i)
@@ -724,7 +721,7 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
                     throw UIA_E_INVALIDOPERATION;
                 }
 
-                const ROW& row = pTextBuffer->GetRowAtIndex(rowIndex);
+                const ROW& row = textBuffer.GetRowAtIndex(rowIndex);
                 if (row.GetCharRow().ContainsText())
                 {
                     const size_t rowRight = row.GetCharRow().MeasureRight();
@@ -737,7 +734,7 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
                     if (currentScreenInfoRow == endScreenInfoRow)
                     {
                         // prevent the end from going past the last non-whitespace char in the row
-                        endIndex = min(endColumn + 1, rowRight);
+                        endIndex = std::min(static_cast<size_t>(endColumn + 1), rowRight);
                     }
 
                     // if startIndex >= endIndex then _start is
@@ -1155,7 +1152,7 @@ IFACEMETHODIMP UiaTextRange::GetChildren(_Outptr_result_maybenull_ SAFEARRAY** p
 // - The screen info's current viewport
 const Viewport UiaTextRange::_getViewport()
 {
-    return _getScreenInfo()->GetBufferViewport();
+    return _getScreenInfo().GetBufferViewport();
 }
 
 // Routine Description:
@@ -1189,12 +1186,11 @@ HWND UiaTextRange::_getWindowHandle()
 // - <none>
 // Return Value
 // - the current screen info. May return nullptr.
-SCREEN_INFORMATION* const UiaTextRange::_getScreenInfo()
+SCREEN_INFORMATION& UiaTextRange::_getScreenInfo()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION* const pScreenInfo = gci.CurrentScreenBuffer;
-    THROW_HR_IF_NULL(E_POINTER, pScreenInfo);
-    return pScreenInfo;
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    THROW_HR_IF(E_POINTER, !gci.HasActiveOutputBuffer());
+    return gci.GetActiveOutputBuffer();
 }
 
 // Routine Description:
@@ -1203,12 +1199,9 @@ SCREEN_INFORMATION* const UiaTextRange::_getScreenInfo()
 // - <none>
 // Return Value
 // - the current output text buffer. May return nullptr.
-TEXT_BUFFER_INFO* const UiaTextRange::_getTextBuffer()
+TextBuffer& UiaTextRange::_getTextBuffer()
 {
-    SCREEN_INFORMATION* const pScreenInfo = _getScreenInfo();
-    TEXT_BUFFER_INFO* const pTextBuffer = pScreenInfo->TextInfo;
-    THROW_HR_IF_NULL(E_POINTER, pTextBuffer);
-    return pTextBuffer;
+    return _getScreenInfo().GetTextBuffer();
 }
 
 // Routine Description:
@@ -1219,9 +1212,7 @@ TEXT_BUFFER_INFO* const UiaTextRange::_getTextBuffer()
 // - The number of rows
 const unsigned int UiaTextRange::_getTotalRows()
 {
-    const TEXT_BUFFER_INFO* const pTextBuffer = _getTextBuffer();
-    THROW_HR_IF_NULL(E_POINTER, pTextBuffer);
-    return pTextBuffer->TotalRowCount();
+    return _getTextBuffer().TotalRowCount();
 }
 
 // Routine Description:
@@ -1246,7 +1237,7 @@ const COORD UiaTextRange::_getScreenBufferCoords()
 const unsigned int UiaTextRange::_getRowWidth()
 {
     // make sure that we can't leak a 0
-    return max(_getScreenBufferCoords().X, 1);
+    return std::max(static_cast<unsigned int>(_getScreenBufferCoords().X), 1u);
 }
 
 // Routine Description:
@@ -1255,7 +1246,7 @@ const unsigned int UiaTextRange::_getRowWidth()
 // - endpoint - the endpoint to translate
 // Return Value:
 // - the column value
-const Column UiaTextRange::_endpointToColumn(_In_ const Endpoint endpoint)
+const Column UiaTextRange::_endpointToColumn(const Endpoint endpoint)
 {
     return endpoint % _getRowWidth();
 }
@@ -1266,7 +1257,7 @@ const Column UiaTextRange::_endpointToColumn(_In_ const Endpoint endpoint)
 // - endpoint - the endpoint to convert
 // Return Value:
 // - the text buffer row value
-const TextBufferRow UiaTextRange::_endpointToTextBufferRow(_In_ const Endpoint endpoint)
+const TextBufferRow UiaTextRange::_endpointToTextBufferRow(const Endpoint endpoint)
 {
     return endpoint / _getRowWidth();
 }
@@ -1302,9 +1293,9 @@ const unsigned int UiaTextRange::_rowCountInRange() const
 // - row - the TextBufferRow to convert
 // Return Value:
 // - the equivalent ScreenInfoRow.
-const ScreenInfoRow UiaTextRange::_textBufferRowToScreenInfoRow(_In_ const TextBufferRow row)
+const ScreenInfoRow UiaTextRange::_textBufferRowToScreenInfoRow(const TextBufferRow row)
 {
-    const int firstRowIndex = _getTextBuffer()->GetFirstRowIndex();
+    const int firstRowIndex = _getTextBuffer().GetFirstRowIndex();
     return _normalizeRow(row - firstRowIndex);
 }
 
@@ -1315,7 +1306,7 @@ const ScreenInfoRow UiaTextRange::_textBufferRowToScreenInfoRow(_In_ const TextB
 // - row - the ScreenInfoRow to convert
 // Return Value:
 // - the equivalent ViewportRow.
-const ViewportRow UiaTextRange::_screenInfoRowToViewportRow(_In_ const ScreenInfoRow row)
+const ViewportRow UiaTextRange::_screenInfoRowToViewportRow(const ScreenInfoRow row)
 {
     const Viewport viewport = _getViewport();
     return _screenInfoRowToViewportRow(row, viewport);
@@ -1328,8 +1319,8 @@ const ViewportRow UiaTextRange::_screenInfoRowToViewportRow(_In_ const ScreenInf
 // - viewport - the viewport to use for the conversion
 // Return Value:
 // - the equivalent ViewportRow.
-const ViewportRow UiaTextRange::_screenInfoRowToViewportRow(_In_ const ScreenInfoRow row,
-                                                            _In_ const Viewport viewport)
+const ViewportRow UiaTextRange::_screenInfoRowToViewportRow(const ScreenInfoRow row,
+                                                            const Viewport viewport)
 {
     return row - viewport.Top;
 }
@@ -1342,7 +1333,7 @@ const ViewportRow UiaTextRange::_screenInfoRowToViewportRow(_In_ const ScreenInf
 // - the non-normalized row index
 // Return Value:
 // - the normalized row index
-const Row UiaTextRange::_normalizeRow(_In_ const Row row)
+const Row UiaTextRange::_normalizeRow(const Row row)
 {
     const unsigned int totalRows = _getTotalRows();
     return ((row + totalRows) % totalRows);
@@ -1354,7 +1345,7 @@ const Row UiaTextRange::_normalizeRow(_In_ const Row row)
 // - viewport - The viewport to measure
 // Return Value:
 // - The viewport height
-const unsigned int UiaTextRange::_getViewportHeight(_In_ const Viewport viewport)
+const unsigned int UiaTextRange::_getViewportHeight(const Viewport viewport)
 {
     assert(viewport.Bottom >= viewport.Top);
     // + 1 because COORD is inclusive on both sides so subtracting top
@@ -1368,7 +1359,7 @@ const unsigned int UiaTextRange::_getViewportHeight(_In_ const Viewport viewport
 // - viewport - The viewport to measure
 // Return Value:
 // - The viewport width
-const unsigned int UiaTextRange::_getViewportWidth(_In_ const Viewport viewport)
+const unsigned int UiaTextRange::_getViewportWidth(const Viewport viewport)
 {
     assert(viewport.Right >= viewport.Left);
 
@@ -1384,7 +1375,7 @@ const unsigned int UiaTextRange::_getViewportWidth(_In_ const Viewport viewport)
 // - row - the screen info row to check
 // Return Value:
 // - true if the row is within the bounds of the viewport
-const bool UiaTextRange::_isScreenInfoRowInViewport(_In_ const ScreenInfoRow row)
+const bool UiaTextRange::_isScreenInfoRowInViewport(const ScreenInfoRow row)
 {
     return _isScreenInfoRowInViewport(row, _getViewport());
 }
@@ -1396,8 +1387,8 @@ const bool UiaTextRange::_isScreenInfoRowInViewport(_In_ const ScreenInfoRow row
 // - viewport - the viewport to use for the bounds
 // Return Value:
 // - true if the row is within the bounds of the viewport
-const bool UiaTextRange::_isScreenInfoRowInViewport(_In_ const ScreenInfoRow row,
-                                                    _In_ const Viewport viewport)
+const bool UiaTextRange::_isScreenInfoRowInViewport(const ScreenInfoRow row,
+                                                    const Viewport viewport)
 {
     ViewportRow viewportRow = _screenInfoRowToViewportRow(row, viewport);
     return viewportRow >= 0 &&
@@ -1410,10 +1401,9 @@ const bool UiaTextRange::_isScreenInfoRowInViewport(_In_ const ScreenInfoRow row
 // - row - the ScreenInfoRow to convert
 // Return Value:
 // - the equivalent TextBufferRow.
-const TextBufferRow UiaTextRange::_screenInfoRowToTextBufferRow(_In_ const ScreenInfoRow row)
+const TextBufferRow UiaTextRange::_screenInfoRowToTextBufferRow(const ScreenInfoRow row)
 {
-    const TEXT_BUFFER_INFO* const pTextBuffer = _getTextBuffer();
-    const TextBufferRow firstRowIndex = pTextBuffer->GetFirstRowIndex();
+    const TextBufferRow firstRowIndex = _getTextBuffer().GetFirstRowIndex();
     return _normalizeRow(row + firstRowIndex);
 }
 
@@ -1423,7 +1413,7 @@ const TextBufferRow UiaTextRange::_screenInfoRowToTextBufferRow(_In_ const Scree
 // - row - the TextBufferRow to convert
 // Return Value:
 // - the equivalent Endpoint, starting at the beginning of the TextBufferRow.
-const Endpoint UiaTextRange::_textBufferRowToEndpoint(_In_ const TextBufferRow row)
+const Endpoint UiaTextRange::_textBufferRowToEndpoint(const TextBufferRow row)
 {
     return _getRowWidth() * row;
 }
@@ -1434,7 +1424,7 @@ const Endpoint UiaTextRange::_textBufferRowToEndpoint(_In_ const TextBufferRow r
 // - row - the ScreenInfoRow to convert
 // Return Value:
 // - the equivalent Endpoint.
-const Endpoint UiaTextRange::_screenInfoRowToEndpoint(_In_ const ScreenInfoRow row)
+const Endpoint UiaTextRange::_screenInfoRowToEndpoint(const ScreenInfoRow row)
 {
     return _textBufferRowToEndpoint(_screenInfoRowToTextBufferRow(row));
 }
@@ -1445,7 +1435,7 @@ const Endpoint UiaTextRange::_screenInfoRowToEndpoint(_In_ const ScreenInfoRow r
 // - endpoint - the endpoint to convert
 // Return Value:
 // - the equivalent ScreenInfoRow.
-const ScreenInfoRow UiaTextRange::_endpointToScreenInfoRow(_In_ const Endpoint endpoint)
+const ScreenInfoRow UiaTextRange::_endpointToScreenInfoRow(const Endpoint endpoint)
 {
     return _textBufferRowToScreenInfoRow(_endpointToTextBufferRow(endpoint));
 }
@@ -1459,11 +1449,11 @@ const ScreenInfoRow UiaTextRange::_endpointToScreenInfoRow(_In_ const Endpoint e
 // - <none>
 // Notes:
 // - alters coords. may throw an exception.
-void UiaTextRange::_addScreenInfoRowBoundaries(_In_ const ScreenInfoRow screenInfoRow,
+void UiaTextRange::_addScreenInfoRowBoundaries(const ScreenInfoRow screenInfoRow,
                                                _Inout_ std::vector<double>& coords) const
 {
-    const SCREEN_INFORMATION* const pScreenInfo = _getScreenInfo();
-    const COORD currentFontSize = pScreenInfo->GetScreenFontSize();
+    const SCREEN_INFORMATION& screenInfo = _getScreenInfo();
+    const COORD currentFontSize = screenInfo.GetScreenFontSize();
 
     POINT topLeft;
     POINT bottomRight;
@@ -1567,10 +1557,10 @@ const Column UiaTextRange::_getLastColumnIndex()
 //   -1 if A < B
 //    1 if A > B
 //    0 if A == B
-const int UiaTextRange::_compareScreenCoords(_In_ const ScreenInfoRow rowA,
-                                             _In_ const Column colA,
-                                             _In_ const ScreenInfoRow rowB,
-                                             _In_ const Column colB)
+const int UiaTextRange::_compareScreenCoords(const ScreenInfoRow rowA,
+                                             const Column colA,
+                                             const ScreenInfoRow rowB,
+                                             const Column colB)
 {
     assert(rowA >= _getFirstScreenInfoRowIndex());
     assert(rowA <= _getLastScreenInfoRowIndex());
@@ -1615,8 +1605,8 @@ const int UiaTextRange::_compareScreenCoords(_In_ const ScreenInfoRow rowA,
 // - pAmountMoved - the number of times that the return values are "moved"
 // Return Value:
 // - a pair of endpoints of the form <start, end>
-std::pair<Endpoint, Endpoint> UiaTextRange::_moveByCharacter(_In_ const int moveCount,
-                                                             _In_ const MoveState moveState,
+std::pair<Endpoint, Endpoint> UiaTextRange::_moveByCharacter(const int moveCount,
+                                                             const MoveState moveState,
                                                              _Out_ int* const pAmountMoved)
 {
     if (moveState.Direction == MovementDirection::Forward)
@@ -1629,8 +1619,8 @@ std::pair<Endpoint, Endpoint> UiaTextRange::_moveByCharacter(_In_ const int move
     }
 }
 
-std::pair<Endpoint, Endpoint> UiaTextRange::_moveByCharacterForward(_In_ const int moveCount,
-                                                                    _In_ const MoveState moveState,
+std::pair<Endpoint, Endpoint> UiaTextRange::_moveByCharacterForward(const int moveCount,
+                                                                    const MoveState moveState,
                                                                     _Out_ int* const pAmountMoved)
 {
     *pAmountMoved = 0;
@@ -1642,7 +1632,7 @@ std::pair<Endpoint, Endpoint> UiaTextRange::_moveByCharacterForward(_In_ const i
     {
         // get the current row's right
         const int rowIndex = _screenInfoRowToTextBufferRow(currentScreenInfoRow);
-        const ROW& row = _getTextBuffer()->GetRowAtIndex(rowIndex);
+        const ROW& row = _getTextBuffer().GetRowAtIndex(rowIndex);
         const size_t right = row.GetCharRow().MeasureRight();
 
         // check if we're at the edge of the screen info buffer
@@ -1675,8 +1665,8 @@ std::pair<Endpoint, Endpoint> UiaTextRange::_moveByCharacterForward(_In_ const i
     return std::make_pair<Endpoint, Endpoint>(std::move(start), std::move(end));
 }
 
-std::pair<Endpoint, Endpoint> UiaTextRange::_moveByCharacterBackward(_In_ const int moveCount,
-                                                                     _In_ const MoveState moveState,
+std::pair<Endpoint, Endpoint> UiaTextRange::_moveByCharacterBackward(const int moveCount,
+                                                                     const MoveState moveState,
                                                                      _Out_ int* const pAmountMoved)
 {
     *pAmountMoved = 0;
@@ -1700,7 +1690,7 @@ std::pair<Endpoint, Endpoint> UiaTextRange::_moveByCharacterBackward(_In_ const 
             currentScreenInfoRow += static_cast<int>(moveState.Increment);
             // get the right cell for the next row
             const int rowIndex = _screenInfoRowToTextBufferRow(currentScreenInfoRow);
-            const ROW& row = _getTextBuffer()->GetRowAtIndex(rowIndex);
+            const ROW& row = _getTextBuffer().GetRowAtIndex(rowIndex);
             const size_t right = row.GetCharRow().MeasureRight();
             currentColumn = static_cast<Column>((right == 0) ? 0 : right - 1);
         }
@@ -1732,8 +1722,8 @@ std::pair<Endpoint, Endpoint> UiaTextRange::_moveByCharacterBackward(_In_ const 
 // - pAmountMoved - the number of times that the return values are "moved"
 // Return Value:
 // - a pair of endpoints of the form <start, end>
-std::pair<Endpoint, Endpoint> UiaTextRange::_moveByLine(_In_ const int moveCount,
-                                                        _In_ const MoveState moveState,
+std::pair<Endpoint, Endpoint> UiaTextRange::_moveByLine(const int moveCount,
+                                                        const MoveState moveState,
                                                         _Out_ int* const pAmountMoved)
 {
     *pAmountMoved = 0;
@@ -1779,9 +1769,9 @@ std::pair<Endpoint, Endpoint> UiaTextRange::_moveByLine(_In_ const int moveCount
 // - pAmountMoved - the number of times that the return values are "moved"
 // Return Value:
 // - A tuple of elements of the form <start, end, degenerate>
-std::tuple<Endpoint, Endpoint, bool> UiaTextRange::_moveEndpointByUnitCharacter(_In_ const int moveCount,
-                                                                                _In_ const TextPatternRangeEndpoint endpoint,
-                                                                                _In_ const MoveState moveState,
+std::tuple<Endpoint, Endpoint, bool> UiaTextRange::_moveEndpointByUnitCharacter(const int moveCount,
+                                                                                const TextPatternRangeEndpoint endpoint,
+                                                                                const MoveState moveState,
                                                                                 _Out_ int* const pAmountMoved)
 {
     if (moveState.Direction == MovementDirection::Forward)
@@ -1795,9 +1785,9 @@ std::tuple<Endpoint, Endpoint, bool> UiaTextRange::_moveEndpointByUnitCharacter(
 }
 
 std::tuple<Endpoint, Endpoint, bool>
-UiaTextRange::_moveEndpointByUnitCharacterForward(_In_ const int moveCount,
-                                                  _In_ const TextPatternRangeEndpoint endpoint,
-                                                  _In_ const MoveState moveState,
+UiaTextRange::_moveEndpointByUnitCharacterForward(const int moveCount,
+                                                  const TextPatternRangeEndpoint endpoint,
+                                                  const MoveState moveState,
                                                   _Out_ int* const pAmountMoved)
 {
     *pAmountMoved = 0;
@@ -1821,7 +1811,7 @@ UiaTextRange::_moveEndpointByUnitCharacterForward(_In_ const int moveCount,
     {
         // get the current row's right
         const int rowIndex = _screenInfoRowToTextBufferRow(currentScreenInfoRow);
-        const ROW& row = _getTextBuffer()->GetRowAtIndex(rowIndex);
+        const ROW& row = _getTextBuffer().GetRowAtIndex(rowIndex);
         const size_t right = row.GetCharRow().MeasureRight();
 
         // check if we're at the edge of the screen info buffer
@@ -1882,9 +1872,9 @@ UiaTextRange::_moveEndpointByUnitCharacterForward(_In_ const int moveCount,
 }
 
 std::tuple<Endpoint, Endpoint, bool>
-UiaTextRange::_moveEndpointByUnitCharacterBackward(_In_ const int moveCount,
-                                                   _In_ const TextPatternRangeEndpoint endpoint,
-                                                   _In_ const MoveState moveState,
+UiaTextRange::_moveEndpointByUnitCharacterBackward(const int moveCount,
+                                                   const TextPatternRangeEndpoint endpoint,
+                                                   const MoveState moveState,
                                                    _Out_ int* const pAmountMoved)
 {
     *pAmountMoved = 0;
@@ -1920,7 +1910,7 @@ UiaTextRange::_moveEndpointByUnitCharacterBackward(_In_ const int moveCount,
             currentScreenInfoRow += static_cast<int>(moveState.Increment);
             // get the right cell for the next row
             const int rowIndex = _screenInfoRowToTextBufferRow(currentScreenInfoRow);
-            const ROW& row = _getTextBuffer()->GetRowAtIndex(rowIndex);
+            const ROW& row = _getTextBuffer().GetRowAtIndex(rowIndex);
             const size_t right = row.GetCharRow().MeasureRight();
             currentColumn = static_cast<Column>((right == 0) ? 0 : right - 1);
         }
@@ -1980,9 +1970,9 @@ UiaTextRange::_moveEndpointByUnitCharacterBackward(_In_ const int moveCount,
 // - pAmountMoved - the number of times that the return values are "moved"
 // Return Value:
 // - A tuple of elements of the form <start, end, degenerate>
-std::tuple<Endpoint, Endpoint, bool> UiaTextRange::_moveEndpointByUnitLine(_In_ const int moveCount,
-                                                                           _In_ const TextPatternRangeEndpoint endpoint,
-                                                                           _In_ const MoveState moveState,
+std::tuple<Endpoint, Endpoint, bool> UiaTextRange::_moveEndpointByUnitLine(const int moveCount,
+                                                                           const TextPatternRangeEndpoint endpoint,
+                                                                           const MoveState moveState,
                                                                            _Out_ int* const pAmountMoved)
 {
     *pAmountMoved = 0;
@@ -2138,9 +2128,9 @@ std::tuple<Endpoint, Endpoint, bool> UiaTextRange::_moveEndpointByUnitLine(_In_ 
 // - pAmountMoved - the number of times that the return values are "moved"
 // Return Value:
 // - A tuple of elements of the form <start, end, degenerate>
-std::tuple<Endpoint, Endpoint, bool> UiaTextRange::_moveEndpointByUnitDocument(_In_ const int moveCount,
-                                                                               _In_ const TextPatternRangeEndpoint endpoint,
-                                                                               _In_ const MoveState moveState,
+std::tuple<Endpoint, Endpoint, bool> UiaTextRange::_moveEndpointByUnitDocument(const int moveCount,
+                                                                               const TextPatternRangeEndpoint endpoint,
+                                                                               const MoveState moveState,
                                                                                _Out_ int* const pAmountMoved)
 {
     *pAmountMoved = 0;

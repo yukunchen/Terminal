@@ -87,7 +87,7 @@ void UninitializeConsoleState()
     UnregisterClasses(ghInstance);
 }
 
-void UpdateApplyButton(_In_ const HWND hDlg)
+void UpdateApplyButton(const HWND hDlg)
 {
     if (g_fHostedInFileProperties)
     {

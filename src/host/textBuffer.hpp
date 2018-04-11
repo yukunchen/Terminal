@@ -60,44 +60,44 @@ filling in the last row, and updating the screen.
 #include <wil/resource.h>
 #include <wil/wistd_memory.h>
 
-class TEXT_BUFFER_INFO final
+class TextBuffer final
 {
 public:
-    TEXT_BUFFER_INFO(_In_ const FontInfo* const pFontInfo,
-                     _In_ const COORD screenBufferSize,
-                     _In_ const CHAR_INFO fill,
-                     _In_ const UINT cursorSize);
-    TEXT_BUFFER_INFO(_In_ const TEXT_BUFFER_INFO& a) = delete;
+    TextBuffer(const FontInfo fontInfo,
+               const COORD screenBufferSize,
+               const CHAR_INFO fill,
+               const UINT cursorSize);
+    TextBuffer(const TextBuffer& a) = delete;
 
-    ~TEXT_BUFFER_INFO();
+    ~TextBuffer() = default;
 
     // Used for duplicating properties to another text buffer
-    void CopyProperties(_In_ TEXT_BUFFER_INFO* const pOtherBuffer);
+    void CopyProperties(const TextBuffer& OtherBuffer);
 
     // row manipulation
     const ROW& GetFirstRow() const;
     ROW& GetFirstRow();
 
-    const ROW& GetRowByOffset(_In_ const UINT index) const;
-    ROW& GetRowByOffset(_In_ const UINT index);
+    const ROW& GetRowByOffset(const size_t index) const;
+    ROW& GetRowByOffset(const size_t index);
 
-    const ROW& GetPrevRowNoWrap(_In_ const ROW& row) const;
-    ROW& GetPrevRowNoWrap(_In_ const ROW& row);
+    const ROW& GetPrevRowNoWrap(const ROW& row) const;
+    ROW& GetPrevRowNoWrap(const ROW& row);
 
-    const ROW& GetNextRowNoWrap(_In_ const ROW& row) const;
-    ROW& GetNextRowNoWrap(_In_ const ROW& row);
+    const ROW& GetNextRowNoWrap(const ROW& row) const;
+    ROW& GetNextRowNoWrap(const ROW& row);
 
-    const ROW& GetRowAtIndex(_In_ const UINT index) const;
-    ROW& GetRowAtIndex(_In_ const UINT index);
+    const ROW& GetRowAtIndex(const UINT index) const;
+    ROW& GetRowAtIndex(const UINT index);
 
-    const ROW& GetPrevRow(_In_ const ROW& row) const noexcept;
-    ROW& GetPrevRow(_In_ const ROW& row) noexcept;
+    const ROW& GetPrevRow(const ROW& row) const noexcept;
+    ROW& GetPrevRow(const ROW& row) noexcept;
 
-    const ROW& GetNextRow(_In_ const ROW& row) const noexcept;
-    ROW& GetNextRow(_In_ const ROW& row) noexcept;
+    const ROW& GetNextRow(const ROW& row) const noexcept;
+    ROW& GetNextRow(const ROW& row) noexcept;
 
     // Text insertion functions
-    bool InsertCharacter(_In_ const wchar_t wch, _In_ const DbcsAttribute dbcsAttribute, _In_ const TextAttribute attr);
+    bool InsertCharacter(const wchar_t wch, const DbcsAttribute dbcsAttribute, const TextAttribute attr);
     bool IncrementCursor();
     bool NewlineCursor();
 
@@ -109,33 +109,34 @@ public:
 
     COORD GetLastNonSpaceCharacter() const;
 
-    void SetCurrentFont(_In_ const FontInfo* const pfiNewFont);
-    FontInfo* GetCurrentFont();
+    FontInfo& GetCurrentFont();
+    const FontInfo& GetCurrentFont() const;
 
-    void SetDesiredFont(_In_ const FontInfoDesired* const pfiNewFont);
-    FontInfoDesired* GetDesiredFont();
+    FontInfoDesired& GetDesiredFont();
+    const FontInfoDesired& GetDesiredFont() const;
 
-    Cursor* const GetCursor() const;
+    Cursor& GetCursor();
+    const Cursor& GetCursor() const;
 
     const SHORT GetFirstRowIndex() const;
     const COORD GetCoordBufferSize() const;
 
-    void SetFirstRowIndex(_In_ SHORT const FirstRowIndex);
-    void SetCoordBufferSize(_In_ COORD const coordBufferSize);
+    void SetFirstRowIndex(const SHORT FirstRowIndex);
+    void SetCoordBufferSize(const COORD coordBufferSize);
 
     UINT TotalRowCount() const;
 
     CHAR_INFO GetFill() const;
-    void SetFill(_In_ const CHAR_INFO ciFill);
+    void SetFill(const CHAR_INFO ciFill);
 
     [[nodiscard]]
-    NTSTATUS ResizeTraditional(_In_ COORD const currentScreenBufferSize,
-                               _In_ COORD const newScreenBufferSize,
-                               _In_ TextAttribute const attributes);
+    NTSTATUS ResizeTraditional(const COORD currentScreenBufferSize,
+                               const COORD newScreenBufferSize,
+                               const TextAttribute attributes);
 private:
 
     std::deque<ROW> _storage;
-    Cursor* _pCursor;
+    Cursor _cursor;
 
     SHORT _FirstRow; // indexes top row (not necessarily 0)
 
@@ -148,11 +149,11 @@ private:
     COORD GetPreviousFromCursor() const;
 
     void SetWrapOnCurrentRow();
-    void AdjustWrapOnCurrentRow(_In_ bool const fSet);
+    void AdjustWrapOnCurrentRow(const bool fSet);
 
     // Assist with maintaining proper buffer state for Double Byte character sequences
-    bool _PrepareForDoubleByteSequence(_In_ const DbcsAttribute dbcsAttribute);
-    bool AssertValidDoubleByteSequence(_In_ const DbcsAttribute dbcsAttribute);
+    bool _PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute);
+    bool AssertValidDoubleByteSequence(const DbcsAttribute dbcsAttribute);
 
     CHAR_INFO _ciFill;
 
@@ -160,5 +161,3 @@ private:
     friend class TextBufferTests;
 #endif
 };
-typedef TEXT_BUFFER_INFO *PTEXT_BUFFER_INFO;
-typedef PTEXT_BUFFER_INFO *PPTEXT_BUFFER_INFO;

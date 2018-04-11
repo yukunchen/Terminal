@@ -32,7 +32,7 @@ IDI_CONSOLE      ICON   "..\\..\\res\\console.ico"
 // This is the template for the defaults settings dialog for use with ComCtlv6
 //
 
-DID_SETTINGS DIALOG  0, 0, 240, 226
+DID_SETTINGS DIALOG  0, 0, 240, 240
 CAPTION " Options "
 STYLE WS_VISIBLE | WS_CAPTION | WS_CHILD | DS_MODALFRAME
 FONT 8,"MS Shell Dlg"
@@ -80,11 +80,14 @@ BEGIN
                     CBS_DISABLENOSCROLL |
                     CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP | WS_GROUP
 
-    CONTROL         "&Use legacy console (requires relaunch)", IDD_FORCEV2, "Button",
+    CONTROL         "&Use legacy console (requires relaunch, affects all consoles)", IDD_FORCEV2, "Button",
                     BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP, 10, 199, 200, 10
+                    
+    CONTROL         "Learn more about <A HREF=""https://go.microsoft.com/fwlink/?LinkId=871150"">legacy console mode</A>",
+                    IDD_HELP_LEGACY_LINK, "SysLink", WS_TABSTOP, 21, 211, 179, 10
 
     CONTROL         "Find out more about <A HREF=""https://go.microsoft.com/fwlink/?LinkId=507549"">new console features</A>",
-                    IDD_HELP_SYSLINK, "SysLink", WS_TABSTOP, 10, 211, 200, 10
+                    IDD_HELP_SYSLINK, "SysLink", WS_TABSTOP, 10, 225, 200, 10
 
 
 END
@@ -93,7 +96,7 @@ END
 // This is the template for the specifics settings dialog for use with ComCtlv6
 //
 
-DID_SETTINGS2 DIALOG  0, 0, 245, 226
+DID_SETTINGS2 DIALOG  0, 0, 245, 240
 CAPTION " Options "
 STYLE WS_VISIBLE | WS_CAPTION | WS_CHILD | DS_MODALFRAME
 FONT 8,"MS Shell Dlg"
@@ -138,11 +141,15 @@ BEGIN
     GROUPBOX        "Current code page", IDD_LANGUAGE_GROUPBOX, 10, 170, 225, 24, WS_GROUP
     LTEXT           "",IDD_LANGUAGE, 16, 181, 184, 10, WS_GROUP
 
-    CONTROL         "&Use legacy console (requires relaunch)", IDD_FORCEV2, "Button",
+    CONTROL         "&Use legacy console (requires relaunch, affects all consoles)", IDD_FORCEV2, "Button",
                     BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP, 10, 199, 200, 10
 
+    CONTROL         "Learn more about <A HREF=""https://go.microsoft.com/fwlink/?LinkId=871150"">legacy console mode</A>",
+                    IDD_HELP_LEGACY_LINK, "SysLink", WS_TABSTOP, 21, 211, 179, 10
+
     CONTROL         "Find out more about <A HREF=""https://go.microsoft.com/fwlink/?LinkId=507549"">new console features</A>",
-                    IDD_HELP_SYSLINK, "SysLink", WS_TABSTOP, 10, 211, 200, 10
+                    IDD_HELP_SYSLINK, "SysLink", WS_TABSTOP, 10, 225, 200, 10
+
 END
 
 //
@@ -196,7 +203,7 @@ BEGIN
                     CBS_DISABLENOSCROLL |
                     CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP | WS_GROUP
 
-    CONTROL         "&Use legacy console (requires relaunch)", IDD_FORCEV2, "Button",
+    CONTROL         "&Use legacy console (requires relaunch, affects all consoles)", IDD_FORCEV2, "Button",
                     BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP, 10, 194, 200, 10
 
 END
@@ -249,7 +256,7 @@ BEGIN
     GROUPBOX        "Current code page", IDD_LANGUAGE_GROUPBOX, 10, 160, 225, 24, WS_GROUP
     LTEXT           "",IDD_LANGUAGE, 16, 171, 184, 10, WS_GROUP
 
-    CONTROL         "&Use legacy console (requires relaunch)", IDD_FORCEV2, "Button",
+    CONTROL         "&Use legacy console (requires relaunch, affects all consoles)", IDD_FORCEV2, "Button",
                     BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP, 10, 194, 200, 10
 END
 

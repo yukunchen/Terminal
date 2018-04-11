@@ -59,9 +59,9 @@ public:
     ConsoleHandleData* GetObjectHandle() const;
 
     [[nodiscard]]
-    HRESULT ReadMessageInput(_In_ const ULONG cbOffset, _Out_writes_bytes_(cbSize) PVOID pvBuffer, _In_ const ULONG cbSize);
+    HRESULT ReadMessageInput(const ULONG cbOffset, _Out_writes_bytes_(cbSize) PVOID pvBuffer, const ULONG cbSize);
     [[nodiscard]]
-    HRESULT GetAugmentedOutputBuffer(_In_ const ULONG cbFactor,
+    HRESULT GetAugmentedOutputBuffer(const ULONG cbFactor,
                                       _Outptr_result_bytebuffer_(*pcbSize) PVOID * ppvBuffer,
                                       _Out_ PULONG pcbSize);
     [[nodiscard]]
@@ -72,7 +72,7 @@ public:
     [[nodiscard]]
     HRESULT ReleaseMessageBuffers();
 
-    void SetReplyStatus(_In_ const NTSTATUS Status);
-    void SetReplyInformation(_In_ ULONG_PTR const pInformation);
+    void SetReplyStatus(const NTSTATUS Status);
+    void SetReplyInformation(const ULONG_PTR pInformation);
 
 } CONSOLE_API_MSG, *PCONSOLE_API_MSG, *const PCCONSOLE_API_MSG;

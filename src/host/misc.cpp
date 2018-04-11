@@ -18,7 +18,7 @@
 #define CHAR_NULL      ((char)0)
 
 
-WCHAR CharToWchar(_In_reads_(cch) const char * const pch, _In_ const UINT cch)
+WCHAR CharToWchar(_In_reads_(cch) const char * const pch, const UINT cch)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     WCHAR wc = L'\0';
@@ -30,7 +30,7 @@ WCHAR CharToWchar(_In_reads_(cch) const char * const pch, _In_ const UINT cch)
     return wc;
 }
 
-void SetConsoleCPInfo(_In_ const BOOL fOutput)
+void SetConsoleCPInfo(const BOOL fOutput)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (fOutput)
@@ -39,26 +39,25 @@ void SetConsoleCPInfo(_In_ const BOOL fOutput)
         // to pick a more appropriate font should the current one be unable to render in the new codepage.
         // To do this, we create a copy of the existing font but we change the codepage value to be the new one that was just set in the global structures.
         // NOTE: We need to do this only if everything is set up. This can get called while we're still initializing, so carefully check things for nullptr.
-        SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer;
-        if (psi != nullptr)
+        if (!gci.HasActiveOutputBuffer())
         {
-            TEXT_BUFFER_INFO* const pti = psi->TextInfo;
-            if (pti != nullptr)
-            {
-                const FontInfo* const pfiOld = pti->GetCurrentFont();
-
-                // Use the desired face name when updating the font.
-                // This ensures that if we had a fall back operation last time (the desired
-                // face name didn't support the code page and we have a different less-desirable font currently)
-                // that we'll now give it another shot to use the desired face name in the new code page.
-                FontInfo fiNew(pti->GetDesiredFont()->GetFaceName(),
-                               pfiOld->GetFamily(),
-                               pfiOld->GetWeight(),
-                               pfiOld->GetUnscaledSize(),
-                               gci.OutputCP);
-                psi->UpdateFont(&fiNew);
-            }
+            return;
         }
+
+        SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
+        const auto& textBuffer = screenInfo.GetTextBuffer();
+        const FontInfo& fiOld = textBuffer.GetCurrentFont();
+
+        // Use the desired face name when updating the font.
+        // This ensures that if we had a fall back operation last time (the desired
+        // face name didn't support the code page and we have a different less-desirable font currently)
+        // that we'll now give it another shot to use the desired face name in the new code page.
+        FontInfo fiNew(textBuffer.GetDesiredFont().GetFaceName(),
+                        fiOld.GetFamily(),
+                        fiOld.GetWeight(),
+                        fiOld.GetUnscaledSize(),
+                        gci.OutputCP);
+        screenInfo.UpdateFont(&fiNew);
 
         if (!GetCPInfo(gci.OutputCP, &gci.OutputCPInfo))
         {
@@ -116,7 +115,7 @@ BOOL CheckBisectStringW(_In_reads_bytes_(cBytes) const WCHAR * pwchBuffer,
 // Routine Description:
 // - This routine check bisected on Unicode string end.
 // Arguments:
-// - pScreenInfo - Pointer to screen information structure.
+// - ScreenInfo - reference to screen information structure.
 // - pwchBuffer - Pointer to Unicode string buffer.
 // - cWords - Number of Unicode string.
 // - cBytes - Number of bisect position by byte counts.
@@ -124,14 +123,14 @@ BOOL CheckBisectStringW(_In_reads_bytes_(cBytes) const WCHAR * pwchBuffer,
 // Return Value:
 // - TRUE - Bisected character.
 // - FALSE - Correctly.
-BOOL CheckBisectProcessW(_In_ const SCREEN_INFORMATION * const pScreenInfo,
+BOOL CheckBisectProcessW(const SCREEN_INFORMATION& ScreenInfo,
                          _In_reads_bytes_(cBytes) const WCHAR * pwchBuffer,
                          _In_ DWORD cWords,
                          _In_ DWORD cBytes,
                          _In_ SHORT sOriginalXPosition,
                          _In_ BOOL fEcho)
 {
-    if (IsFlagSet(pScreenInfo->OutputMode, ENABLE_PROCESSED_OUTPUT))
+    if (IsFlagSet(ScreenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT))
     {
         while (cWords && cBytes)
         {
@@ -271,11 +270,11 @@ HRESULT SplitToOem(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events)
 // - cchTarget - size of destination buffer in characters
 // Return Value:
 // - Returns the number characters written to pchTarget, or 0 on failure
-int ConvertToOem(_In_ const UINT uiCodePage,
+int ConvertToOem(const UINT uiCodePage,
                  _In_reads_(cchSource) const WCHAR * const pwchSource,
-                 _In_ const UINT cchSource,
+                 const UINT cchSource,
                  _Out_writes_(cchTarget) CHAR * const pchTarget,
-                 _In_ const UINT cchTarget)
+                 const UINT cchTarget)
 {
     ASSERT(pwchSource != (LPWSTR) pchTarget);
     DBGCHARS(("ConvertToOem U->%d %.*ls\n", uiCodePage, cchSource > 10 ? 10 : cchSource, pwchSource));
@@ -284,11 +283,11 @@ int ConvertToOem(_In_ const UINT uiCodePage,
 }
 
 // Data in the output buffer is the true unicode value.
-int ConvertInputToUnicode(_In_ const UINT uiCodePage,
+int ConvertInputToUnicode(const UINT uiCodePage,
                           _In_reads_(cchSource) const CHAR * const pchSource,
-                          _In_ const UINT cchSource,
+                          const UINT cchSource,
                           _Out_writes_(cchTarget) WCHAR * const pwchTarget,
-                          _In_ const UINT cchTarget)
+                          const UINT cchTarget)
 {
     DBGCHARS(("ConvertInputToUnicode %d->U %.*s\n", uiCodePage, cchSource > 10 ? 10 : cchSource, pchSource));
 

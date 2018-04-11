@@ -20,25 +20,25 @@ Author:
 
 class SCREEN_INFORMATION;
 
-// The WriteBuffer class provides helpers for writing text into the TEXT_BUFFER_INFO that is backing a particular console screen buffer.
+// The WriteBuffer class provides helpers for writing text into the TextBuffer that is backing a particular console screen buffer.
 class WriteBuffer : public Microsoft::Console::VirtualTerminal::AdaptDefaults
 {
 public:
-    WriteBuffer(_In_ Microsoft::Console::IIoProvider* const pIo);
+    WriteBuffer(_In_ Microsoft::Console::IIoProvider& io);
 
     // Implement Adapter callbacks for default cases (non-escape sequences)
-    void Print(_In_ wchar_t const wch);
-    void PrintString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch);
-    void Execute(_In_ wchar_t const wch);
+    void Print(const wchar_t wch);
+    void PrintString(_In_reads_(cch) wchar_t* const rgwch, const size_t cch);
+    void Execute(const wchar_t wch);
 
     [[nodiscard]]
     NTSTATUS GetResult() { return _ntstatus; };
 
 private:
-    void _DefaultCase(_In_ wchar_t const wch);
-    void _DefaultStringCase(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch);
+    void _DefaultCase(const wchar_t wch);
+    void _DefaultStringCase(_In_reads_(cch) wchar_t* const rgwch, const size_t cch);
 
-    const Microsoft::Console::IIoProvider* const _pIo;
+    Microsoft::Console::IIoProvider& _io;
     NTSTATUS _ntstatus;
 };
 
@@ -53,52 +53,52 @@ private:
 class ConhostInternalGetSet : public Microsoft::Console::VirtualTerminal::ConGetSet
 {
 public:
-    ConhostInternalGetSet(_In_ Microsoft::Console::IIoProvider* const pIo);
+    ConhostInternalGetSet(_In_ Microsoft::Console::IIoProvider& io);
 
     virtual BOOL GetConsoleScreenBufferInfoEx(_Out_ CONSOLE_SCREEN_BUFFER_INFOEX* const pConsoleScreenBufferInfoEx) const override;
-    virtual BOOL SetConsoleScreenBufferInfoEx(_In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pConsoleScreenBufferInfoEx) const override;
+    virtual BOOL SetConsoleScreenBufferInfoEx(const CONSOLE_SCREEN_BUFFER_INFOEX* const pConsoleScreenBufferInfoEx) override;
 
-    virtual BOOL SetConsoleCursorPosition(_In_ COORD const coordCursorPosition) override;
+    virtual BOOL SetConsoleCursorPosition(const COORD coordCursorPosition) override;
 
     virtual BOOL GetConsoleCursorInfo(_In_ CONSOLE_CURSOR_INFO* const pConsoleCursorInfo) const override;
-    virtual BOOL SetConsoleCursorInfo(_In_ const CONSOLE_CURSOR_INFO* const pConsoleCursorInfo) override;
+    virtual BOOL SetConsoleCursorInfo(const CONSOLE_CURSOR_INFO* const pConsoleCursorInfo) override;
 
-    virtual BOOL FillConsoleOutputCharacterW(_In_ WCHAR const wch,
-                                             _In_ DWORD const nLength,
-                                             _In_ COORD const dwWriteCoord,
+    virtual BOOL FillConsoleOutputCharacterW(const WCHAR wch,
+                                             const DWORD nLength,
+                                             const COORD dwWriteCoord,
                                              _Out_ DWORD* const pNumberOfCharsWritten) override;
-    virtual BOOL FillConsoleOutputAttribute(_In_ WORD const wAttribute,
-                                            _In_ DWORD const nLength,
-                                            _In_ COORD const dwWriteCoord,
+    virtual BOOL FillConsoleOutputAttribute(const WORD wAttribute,
+                                            const DWORD nLength,
+                                            const COORD dwWriteCoord,
                                             _Out_ DWORD* const pNumberOfAttrsWritten) override;
 
-    virtual BOOL SetConsoleTextAttribute(_In_ WORD const wAttr) override;
-    virtual BOOL PrivateSetLegacyAttributes(_In_ WORD const wAttr,
-                                            _In_ const bool fForeground,
-                                            _In_ const bool fBackground,
-                                            _In_ const bool fMeta) override;
-    virtual BOOL SetConsoleXtermTextAttribute(_In_ int const iXtermTableEntry,
-                                              _In_ const bool fIsForeground) override;
-    virtual BOOL SetConsoleRGBTextAttribute(_In_ COLORREF const rgbColor,
-                                            _In_ const bool fIsForeground) override;
+    virtual BOOL SetConsoleTextAttribute(const WORD wAttr) override;
+    virtual BOOL PrivateSetLegacyAttributes(const WORD wAttr,
+                                            const bool fForeground,
+                                            const bool fBackground,
+                                            const bool fMeta) override;
+    virtual BOOL SetConsoleXtermTextAttribute(const int iXtermTableEntry,
+                                              const bool fIsForeground) override;
+    virtual BOOL SetConsoleRGBTextAttribute(const COLORREF rgbColor,
+                                            const bool fIsForeground) override;
 
     virtual BOOL WriteConsoleInputW(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
                                     _Out_ size_t& eventsWritten) override;
 
-    virtual BOOL ScrollConsoleScreenBufferW(_In_ const SMALL_RECT* pScrollRectangle,
+    virtual BOOL ScrollConsoleScreenBufferW(const SMALL_RECT* pScrollRectangle,
                                             _In_opt_ const SMALL_RECT* pClipRectangle,
                                             _In_ COORD coordDestinationOrigin,
-                                            _In_ const CHAR_INFO* pFill) override;
+                                            const CHAR_INFO* pFill) override;
 
-    virtual BOOL SetConsoleWindowInfo(_In_ BOOL const bAbsolute,
-                                      _In_ const SMALL_RECT* const lpConsoleWindow) override;
+    virtual BOOL SetConsoleWindowInfo(const BOOL bAbsolute,
+                                      const SMALL_RECT* const lpConsoleWindow) override;
 
-    virtual BOOL PrivateSetCursorKeysMode(_In_ bool const fApplicationMode) override;
-    virtual BOOL PrivateSetKeypadMode(_In_ bool const fApplicationMode) override;
+    virtual BOOL PrivateSetCursorKeysMode(const bool fApplicationMode) override;
+    virtual BOOL PrivateSetKeypadMode(const bool fApplicationMode) override;
 
-    virtual BOOL PrivateAllowCursorBlinking(_In_ bool const fEnable) override;
+    virtual BOOL PrivateAllowCursorBlinking(const bool fEnable) override;
 
-    virtual BOOL PrivateSetScrollingRegion(_In_ const SMALL_RECT* const srScrollMargins) override;
+    virtual BOOL PrivateSetScrollingRegion(const SMALL_RECT* const srScrollMargins) override;
 
     virtual BOOL PrivateReverseLineFeed() override;
 
@@ -110,16 +110,16 @@ public:
     virtual BOOL PrivateUseMainScreenBuffer() override;
 
     virtual BOOL PrivateHorizontalTabSet();
-    virtual BOOL PrivateForwardTab(_In_ SHORT const sNumTabs) override;
-    virtual BOOL PrivateBackwardsTab(_In_ SHORT const sNumTabs) override;
-    virtual BOOL PrivateTabClear(_In_ bool const fClearAll) override;
+    virtual BOOL PrivateForwardTab(const SHORT sNumTabs) override;
+    virtual BOOL PrivateBackwardsTab(const SHORT sNumTabs) override;
+    virtual BOOL PrivateTabClear(const bool fClearAll) override;
 
-    virtual BOOL PrivateEnableVT200MouseMode(_In_ bool const fEnabled) override;
-    virtual BOOL PrivateEnableUTF8ExtendedMouseMode(_In_ bool const fEnabled) override;
-    virtual BOOL PrivateEnableSGRExtendedMouseMode(_In_ bool const fEnabled) override;
-    virtual BOOL PrivateEnableButtonEventMouseMode(_In_ bool const fEnabled) override;
-    virtual BOOL PrivateEnableAnyEventMouseMode(_In_ bool const fEnabled) override;
-    virtual BOOL PrivateEnableAlternateScroll(_In_ bool const fEnabled) override;
+    virtual BOOL PrivateEnableVT200MouseMode(const bool fEnabled) override;
+    virtual BOOL PrivateEnableUTF8ExtendedMouseMode(const bool fEnabled) override;
+    virtual BOOL PrivateEnableSGRExtendedMouseMode(const bool fEnabled) override;
+    virtual BOOL PrivateEnableButtonEventMouseMode(const bool fEnabled) override;
+    virtual BOOL PrivateEnableAnyEventMouseMode(const bool fEnabled) override;
+    virtual BOOL PrivateEnableAlternateScroll(const bool fEnabled) override;
     virtual BOOL PrivateEraseAll() override;
 
     virtual BOOL PrivateGetConsoleScreenBufferAttributes(_Out_ WORD* const pwAttributes) override;
@@ -127,8 +127,8 @@ public:
     virtual BOOL PrivatePrependConsoleInput(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
                                             _Out_ size_t& eventsWritten) override;
 
-    virtual BOOL SetCursorStyle(_In_ CursorType const cursorType) override;
-    virtual BOOL SetCursorColor(_In_ COLORREF const cursorColor) override;
+    virtual BOOL SetCursorStyle(const CursorType cursorType) override;
+    virtual BOOL SetCursorColor(const COLORREF cursorColor) override;
 
     virtual BOOL PrivateRefreshWindow() override;
 
@@ -139,11 +139,11 @@ public:
     virtual BOOL GetConsoleOutputCP(_Out_ unsigned int* const puiOutputCP) override;
 
 private:
-    const Microsoft::Console::IIoProvider* const _pIo;
+    Microsoft::Console::IIoProvider& _io;
 
-    BOOL _FillConsoleOutput(_In_ USHORT const usElement,
-                            _In_ ULONG const ulElementType,
-                            _In_ DWORD const nLength,
-                            _In_ COORD const dwWriteCoord,
+    BOOL _FillConsoleOutput(const USHORT usElement,
+                            const ULONG ulElementType,
+                            const DWORD nLength,
+                            const COORD dwWriteCoord,
                             _Out_ DWORD* const pNumberWritten);
 };

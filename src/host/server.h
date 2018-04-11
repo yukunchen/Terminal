@@ -81,11 +81,9 @@ public:
     ConsoleProcessList ProcessHandleList;
     InputBuffer* pInputBuffer;
 
-    PSCREEN_INFORMATION CurrentScreenBuffer;
-    PSCREEN_INFORMATION ScreenBuffers;  // singly linked list
+    SCREEN_INFORMATION* ScreenBuffers;  // singly linked list
     ConsoleWaitQueue OutputQueue;
     LIST_ENTRY CommandHistoryList;
-    LIST_ENTRY ExeAliasList;
     UINT NumCommandHistories;
 
     LPWSTR OriginalTitle;
@@ -113,7 +111,7 @@ public:
     Microsoft::Console::VirtualTerminal::MouseInput terminalMouseInput;
 
     void LockConsole();
-    BOOL TryLockConsole();
+    bool TryLockConsole();
     void UnlockConsole();
     bool IsConsoleLocked() const;
     ULONG GetCSRecursionCount();
@@ -122,7 +120,10 @@ public:
 
     static void HandleTerminalKeyEventCallback(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events);
 
-    SCREEN_INFORMATION* const GetActiveOutputBuffer() const;
+    SCREEN_INFORMATION& GetActiveOutputBuffer() override;
+    const SCREEN_INFORMATION& GetActiveOutputBuffer() const override;
+    bool HasActiveOutputBuffer() const;
+
     InputBuffer* const GetActiveInputBuffer() const;
 
     bool IsInVtIoMode() const;
@@ -130,8 +131,17 @@ public:
     COLORREF GetDefaultForeground() const;
     COLORREF GetDefaultBackground() const;
 
+    [[nodiscard]]
+    static NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle, const DWORD cbTitle);
+    // MSFT:16886775 : get rid of friends
+    friend void SetActiveScreenBuffer(_Inout_ SCREEN_INFORMATION& screenInfo);
+    friend class SCREEN_INFORMATION;
+    friend class CommonState;
+
+
 private:
     CRITICAL_SECTION _csConsoleLock;   // serialize input and output using this
+    SCREEN_INFORMATION* pCurrentScreenBuffer;
 
     Microsoft::Console::VirtualTerminal::VtIo _vtIo;
 };
@@ -145,4 +155,4 @@ private:
 #include "..\server\ObjectHandle.h"
 
 
-void SetActiveScreenBuffer(_Inout_ PSCREEN_INFORMATION pScreenInfo);
+void SetActiveScreenBuffer(SCREEN_INFORMATION& screenInfo);

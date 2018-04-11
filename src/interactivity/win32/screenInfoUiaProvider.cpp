@@ -20,7 +20,7 @@ using namespace Microsoft::Console::Interactivity::Win32;
 using namespace Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProviderTracing;
 
 // A helper function to create a SafeArray Version of an int array of a specified length
-SAFEARRAY* BuildIntSafeArray(_In_reads_(length) const int* const data, _In_ int const length)
+SAFEARRAY* BuildIntSafeArray(_In_reads_(length) const int* const data, const int length)
 {
     SAFEARRAY *psa = SafeArrayCreateVector(VT_I4, 0, length);
     if (psa != nullptr)
@@ -354,12 +354,8 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(_Outptr_result_maybenull_ SAF
         apiMsg.AreaSelected = false;
         apiMsg.SelectionRowCount = 1;
         // return a degenerate range at the cursor position
-        SCREEN_INFORMATION* const pScreenInfo = _getScreenInfo();
-        RETURN_HR_IF_NULL(E_POINTER, pScreenInfo);
-        TEXT_BUFFER_INFO* const pTextBuffer = pScreenInfo->TextInfo;
-        RETURN_HR_IF_NULL(E_POINTER, pTextBuffer);
-        const Cursor* const pCursor = pTextBuffer->GetCursor();
-        RETURN_HR_IF_NULL(E_POINTER, pCursor);
+        SCREEN_INFORMATION& screenInfo = _getScreenInfo();
+        const Cursor& cursor = screenInfo.GetTextBuffer().GetCursor();
 
         // make a safe array
         *ppRetVal = SafeArrayCreateVector(VT_UNKNOWN, 0, 1);
@@ -381,7 +377,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(_Outptr_result_maybenull_ SAF
         try
         {
             range = UiaTextRange::Create(pProvider,
-                                         pCursor);
+                                         cursor);
         }
         catch (...)
         {
@@ -466,9 +462,8 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(_Outptr_result_maybenull_
         gci.UnlockConsole();
     });
 
-    const SCREEN_INFORMATION* const pScreenInfo = _getScreenInfo();
-    RETURN_HR_IF_NULL(E_POINTER, pScreenInfo);
-    const SMALL_RECT viewport = pScreenInfo->GetBufferViewport();
+    const SCREEN_INFORMATION& screenInfo = _getScreenInfo();
+    const SMALL_RECT viewport = screenInfo.GetBufferViewport();
     const COORD screenBufferCoords = _getScreenBufferCoords();
     const int totalLines = screenBufferCoords.Y;
 
@@ -618,10 +613,11 @@ const COORD ScreenInfoUiaProvider::_getScreenBufferCoords() const
     return gci.GetScreenBufferSize();
 }
 
-SCREEN_INFORMATION* const ScreenInfoUiaProvider::_getScreenInfo()
+SCREEN_INFORMATION& ScreenInfoUiaProvider::_getScreenInfo()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.CurrentScreenBuffer;
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    THROW_HR_IF(E_POINTER, !gci.HasActiveOutputBuffer());
+    return gci.GetActiveOutputBuffer();
 }
 
 IConsoleWindow* const ScreenInfoUiaProvider::_getIConsoleWindow()

@@ -15,7 +15,7 @@
 CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     // ProcessHandleList initializes itself
     pInputBuffer(nullptr),
-    CurrentScreenBuffer(nullptr),
+    pCurrentScreenBuffer(nullptr),
     ScreenBuffers(nullptr),
     OutputQueue(),
     // CommandHistoryList initialized below
@@ -39,7 +39,6 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     _vtIo()
 {
     InitializeListHead(&CommandHistoryList);
-    InitializeListHead(&ExeAliasList);
 
     ZeroMemory((void*)&CPInfo, sizeof(CPInfo));
     ZeroMemory((void*)&OutputCPInfo, sizeof(OutputCPInfo));
@@ -65,9 +64,9 @@ void CONSOLE_INFORMATION::LockConsole()
 }
 
 #pragma prefast(suppress:26135, "Adding lock annotation spills into entire project. Future work.")
-BOOL CONSOLE_INFORMATION::TryLockConsole()
+bool CONSOLE_INFORMATION::TryLockConsole()
 {
-    return TryEnterCriticalSection(&_csConsoleLock);
+    return !!TryEnterCriticalSection(&_csConsoleLock);
 }
 
 #pragma prefast(suppress:26135, "Adding lock annotation spills into entire project. Future work.")
@@ -109,9 +108,19 @@ void CONSOLE_INFORMATION::HandleTerminalKeyEventCallback(_Inout_ std::deque<std:
 // - <none>
 // Return Value:
 // - the active screen buffer of the console.
-SCREEN_INFORMATION* const CONSOLE_INFORMATION::GetActiveOutputBuffer() const
+SCREEN_INFORMATION& CONSOLE_INFORMATION::GetActiveOutputBuffer()
 {
-    return CurrentScreenBuffer;
+    return *pCurrentScreenBuffer;
+}
+
+const SCREEN_INFORMATION& CONSOLE_INFORMATION::GetActiveOutputBuffer() const
+{
+    return *pCurrentScreenBuffer;
+}
+
+bool CONSOLE_INFORMATION::HasActiveOutputBuffer() const
+{
+    return (pCurrentScreenBuffer != nullptr);
 }
 
 // Method Description:

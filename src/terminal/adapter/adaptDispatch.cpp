@@ -23,7 +23,7 @@ bool NoOp() { return false; }
 
 AdaptDispatch::AdaptDispatch(_Inout_ ConGetSet* const pConApi,
                              _Inout_ AdaptDefaults* const pDefaults,
-                             _In_ const WORD wDefaultTextAttributes)
+                             const WORD wDefaultTextAttributes)
     : _pConApi(pConApi),
       _pDefaults(pDefaults),
       _wDefaultTextAttributes(wDefaultTextAttributes),
@@ -42,12 +42,12 @@ AdaptDispatch::AdaptDispatch(_Inout_ ConGetSet* const pConApi,
 
 }
 
-void AdaptDispatch::Print(_In_ wchar_t const wchPrintable)
+void AdaptDispatch::Print(const wchar_t wchPrintable)
 {
     _pDefaults->Print(_TermOutput.TranslateKey(wchPrintable));
 }
 
-void AdaptDispatch::PrintString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch)
+void AdaptDispatch::PrintString(_In_reads_(cch) wchar_t* const rgwch, const size_t cch)
 {
     if (_TermOutput.NeedToTranslate())
     {
@@ -67,7 +67,7 @@ void AdaptDispatch::PrintString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_
 // - uiDistance - Magnitude of the move
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::_CursorMovement(_In_ CursorDirection const dir, _In_ unsigned int const uiDistance) const
+bool AdaptDispatch::_CursorMovement(const CursorDirection dir, _In_ unsigned int const uiDistance) const
 {
     // First retrieve some information about the buffer
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
@@ -163,13 +163,13 @@ bool AdaptDispatch::_CursorMovement(_In_ CursorDirection const dir, _In_ unsigne
                     case CursorDirection::Up:
                     case CursorDirection::Left:
                     case CursorDirection::PrevLine:
-                        *pcoordVal = max(*pcoordVal, sBoundaryVal);
+                        *pcoordVal = std::max(*pcoordVal, sBoundaryVal);
                         break;
                     case CursorDirection::Down:
                     case CursorDirection::Right:
                     case CursorDirection::NextLine:
                         // For the bottom and right edges, the viewport value is stated to be one outside the rectangle.
-                        *pcoordVal = min(*pcoordVal, sBoundaryVal - 1);
+                        *pcoordVal = std::min(*pcoordVal, gsl::narrow<SHORT>(sBoundaryVal - 1));
                         break;
                     default:
                         fSuccess = false;
@@ -328,8 +328,8 @@ bool AdaptDispatch::_CursorMovePosition(_In_opt_ const unsigned int* const puiRo
                 if (fSuccess)
                 {
                     // Apply boundary tests to ensure the cursor isn't outside the viewport rectangle.
-                    coordCursor.Y = max(min(coordCursor.Y, csbiex.srWindow.Bottom - 1), csbiex.srWindow.Top);
-                    coordCursor.X = max(min(coordCursor.X, csbiex.srWindow.Right - 1), csbiex.srWindow.Left);
+                    coordCursor.Y = std::clamp(coordCursor.Y, csbiex.srWindow.Top, gsl::narrow<SHORT>(csbiex.srWindow.Bottom - 1));
+                    coordCursor.X = std::clamp(coordCursor.X, csbiex.srWindow.Left, gsl::narrow<SHORT>(csbiex.srWindow.Right - 1));
 
                     // Finally, attempt to set the adjusted cursor position back into the console.
                     fSuccess = !!_pConApi->SetConsoleCursorPosition(coordCursor);
@@ -425,7 +425,7 @@ bool AdaptDispatch::CursorRestorePosition()
 // - fIsVisible - Turns the cursor rendering on (TRUE) or off (FALSE).
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::CursorVisibility(_In_ bool const fIsVisible)
+bool AdaptDispatch::CursorVisibility(const bool fIsVisible)
 {
     // First retrieve the existing cursor visibility structure (since we don't want to change the cursor height.)
     CONSOLE_CURSOR_INFO cci = { 0 };
@@ -452,7 +452,7 @@ bool AdaptDispatch::CursorVisibility(_In_ bool const fIsVisible)
 // - fIsInsert - TRUE if insert mode (cut and paste to the right, away from the cursor). FALSE if delete mode (cut and paste to the left, toward the cursor)
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::_InsertDeleteHelper(_In_ unsigned int const uiCount, _In_ bool const fIsInsert) const
+bool AdaptDispatch::_InsertDeleteHelper(_In_ unsigned int const uiCount, const bool fIsInsert) const
 {
     // We'll be doing short math on the distance since all console APIs use shorts. So check that we can successfully convert the uint into a short first.
     SHORT sDistance;
@@ -555,7 +555,7 @@ bool AdaptDispatch::DeleteCharacter(_In_ unsigned int const uiCount)
 // - wFillColor - The attributes to apply to the erased positions.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::_EraseSingleLineDistanceHelper(_In_ COORD const coordStartPosition, _In_ DWORD const dwLength, _In_ WORD const wFillColor) const
+bool AdaptDispatch::_EraseSingleLineDistanceHelper(const COORD coordStartPosition, const DWORD dwLength, const WORD wFillColor) const
 {
     WCHAR const wchSpace = static_cast<WCHAR>(0x20); // space character. use 0x20 instead of literal space because we can't assume the compiler will always turn ' ' into 0x20.
 
@@ -570,7 +570,7 @@ bool AdaptDispatch::_EraseSingleLineDistanceHelper(_In_ COORD const coordStartPo
     return fSuccess;
 }
 
-bool AdaptDispatch::_EraseAreaHelper(_In_ COORD const coordStartPosition, _In_ COORD const coordLastPosition, _In_ WORD const wFillColor)
+bool AdaptDispatch::_EraseAreaHelper(const COORD coordStartPosition, const COORD coordLastPosition, const WORD wFillColor)
 {
     WCHAR const wchSpace = static_cast<WCHAR>(0x20); // space character. use 0x20 instead of literal space because we can't assume the compiler will always turn ' ' into 0x20.
 
@@ -605,7 +605,7 @@ bool AdaptDispatch::_EraseAreaHelper(_In_ COORD const coordStartPosition, _In_ C
 //           - This is not aware of circular buffer. Line 0 is always the top visible line if you scrolled the whole way up the window.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::_EraseSingleLineHelper(_In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pcsbiex, _In_ EraseType const eraseType, _In_ SHORT const sLineId, _In_ WORD const wFillColor) const
+bool AdaptDispatch::_EraseSingleLineHelper(const CONSOLE_SCREEN_BUFFER_INFOEX* const pcsbiex, const EraseType eraseType, const SHORT sLineId, const WORD wFillColor) const
 {
     COORD coordStartPosition = { 0 };
     coordStartPosition.Y = sLineId ;
@@ -682,7 +682,7 @@ bool AdaptDispatch::EraseCharacters(_In_ unsigned int const uiNumChars)
 //      The scrollback (outside the viewport area)
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::EraseInDisplay(_In_ EraseType const eraseType)
+bool AdaptDispatch::EraseInDisplay(const EraseType eraseType)
 {
     // First things first. If this is a "Scrollback" clear, then just do that.
     // Scrollback clears erase everything in the "scrollback" of a *nix terminal
@@ -763,7 +763,7 @@ bool AdaptDispatch::EraseInDisplay(_In_ EraseType const eraseType)
 // - eraseType - Determines whether to erase: From beginning (left edge) to the cursor, from cursor to end (right edge), or the entire line.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::EraseInLine(_In_ EraseType const eraseType)
+bool AdaptDispatch::EraseInLine(const EraseType eraseType)
 {
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
@@ -785,7 +785,7 @@ bool AdaptDispatch::EraseInLine(_In_ EraseType const eraseType)
 // - statusType - ANSI status type indicating what property we should report back
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::DeviceStatusReport(_In_ AnsiStatusType const statusType)
+bool AdaptDispatch::DeviceStatusReport(const AnsiStatusType statusType)
 {
     bool fSuccess = false;
 
@@ -861,7 +861,7 @@ bool AdaptDispatch::_CursorPositionReport() const
 // - cReply - The length of the string.
 // Return Value:
 // - True if the string was converted to input events and placed into the console input buffer successfuly. False otherwise.
-bool AdaptDispatch::_WriteResponse(_In_reads_(cchReply) PCWSTR pwszReply, _In_ size_t const cchReply) const
+bool AdaptDispatch::_WriteResponse(_In_reads_(cchReply) PCWSTR pwszReply, const size_t cchReply) const
 {
     bool fSuccess = false;
     std::deque<std::unique_ptr<IInputEvent>> inEvents;
@@ -898,7 +898,7 @@ bool AdaptDispatch::_WriteResponse(_In_reads_(cchReply) PCWSTR pwszReply, _In_ s
 // - uiDistance - Magnitude of the move
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::_ScrollMovement(_In_ ScrollDirection const sdDirection, _In_ unsigned int const uiDistance) const
+bool AdaptDispatch::_ScrollMovement(const ScrollDirection sdDirection, _In_ unsigned int const uiDistance) const
 {
     // We'll be doing short math on the distance since all console APIs use shorts. So check that we can successfully convert the uint into a short first.
     SHORT sDistance;
@@ -1012,7 +1012,7 @@ bool AdaptDispatch::_DoDECCOLMHelper(_In_ unsigned int const uiColumns)
     return fSuccess;
 }
 
-bool AdaptDispatch::_PrivateModeParamsHelper(_In_ PrivateModeParams const param, _In_ bool const fEnable)
+bool AdaptDispatch::_PrivateModeParamsHelper(_In_ PrivateModeParams const param, const bool fEnable)
 {
     bool fSuccess = false;
     switch(param)
@@ -1069,7 +1069,7 @@ bool AdaptDispatch::_PrivateModeParamsHelper(_In_ PrivateModeParams const param,
 // - cParams - length of rgParams
 // Return Value:
 // - True if ALL params were handled successfully. False otherwise.
-bool AdaptDispatch::_SetResetPrivateModes(_In_reads_(cParams) const PrivateModeParams* const rgParams, _In_ size_t const cParams, _In_ bool const fEnable)
+bool AdaptDispatch::_SetResetPrivateModes(_In_reads_(cParams) const PrivateModeParams* const rgParams, const size_t cParams, const bool fEnable)
 {
     // because the user might chain together params we don't support with params we DO support, execute all
     // params in the sequence, and only return failure if we failed at least one of them
@@ -1088,7 +1088,7 @@ bool AdaptDispatch::_SetResetPrivateModes(_In_reads_(cParams) const PrivateModeP
 // - cParams - length of rgParams
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::SetPrivateModes(_In_reads_(cParams) const PrivateModeParams* const rgParams, _In_ size_t const cParams)
+bool AdaptDispatch::SetPrivateModes(_In_reads_(cParams) const PrivateModeParams* const rgParams, const size_t cParams)
 {
     return _SetResetPrivateModes(rgParams, cParams, true);
 }
@@ -1100,7 +1100,7 @@ bool AdaptDispatch::SetPrivateModes(_In_reads_(cParams) const PrivateModeParams*
 // - cParams - length of rgParams
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::ResetPrivateModes(_In_reads_(cParams) const PrivateModeParams* const rgParams, _In_ size_t const cParams)
+bool AdaptDispatch::ResetPrivateModes(_In_reads_(cParams) const PrivateModeParams* const rgParams, const size_t cParams)
 {
     return _SetResetPrivateModes(rgParams, cParams, false);
 }
@@ -1110,7 +1110,7 @@ bool AdaptDispatch::ResetPrivateModes(_In_reads_(cParams) const PrivateModeParam
 // - fApplicationMode - set to true to enable Application Mode Input, false for Numeric Mode Input.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::SetKeypadMode(_In_ bool const fApplicationMode)
+bool AdaptDispatch::SetKeypadMode(const bool fApplicationMode)
 {
     return !!_pConApi->PrivateSetKeypadMode(fApplicationMode);
 }
@@ -1120,7 +1120,7 @@ bool AdaptDispatch::SetKeypadMode(_In_ bool const fApplicationMode)
 // - fApplicationMode - set to true to enable Application Mode Input, false for Normal Mode Input.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::SetCursorKeysMode(_In_ bool const fApplicationMode)
+bool AdaptDispatch::SetCursorKeysMode(const bool fApplicationMode)
 {
     return !!_pConApi->PrivateSetCursorKeysMode(fApplicationMode);
 }
@@ -1130,7 +1130,7 @@ bool AdaptDispatch::SetCursorKeysMode(_In_ bool const fApplicationMode)
 // - fEnable - set to true to enable blinking, false to disable
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableCursorBlinking(_In_ bool const fEnable)
+bool AdaptDispatch::EnableCursorBlinking(const bool fEnable)
 {
     return !!_pConApi->PrivateAllowCursorBlinking(fEnable);
 }
@@ -1142,7 +1142,7 @@ bool AdaptDispatch::EnableCursorBlinking(_In_ bool const fEnable)
 // - fInsert - true for insert lines, false for delete.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::_InsertDeleteLines(_In_ unsigned int const uiDistance, _In_ bool const fInsert) const
+bool AdaptDispatch::_InsertDeleteLines(_In_ unsigned int const uiDistance, const bool fInsert) const
 {
     // We'll be doing short math on the distance since all console APIs use shorts. So check that we can successfully convert the uint into a short first.
     SHORT sDistance;
@@ -1225,9 +1225,9 @@ bool AdaptDispatch::DeleteLine(_In_ unsigned int const uiDistance)
 // - sBottomMargin - the line number for the bottom margin.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::SetTopBottomScrollingMargins(_In_ SHORT const sTopMargin,
-                                                 _In_ SHORT const sBottomMargin,
-                                                 _In_ const bool fResetCursor)
+bool AdaptDispatch::SetTopBottomScrollingMargins(const SHORT sTopMargin,
+                                                 const SHORT sBottomMargin,
+                                                 const bool fResetCursor)
 {
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
@@ -1357,7 +1357,7 @@ bool AdaptDispatch::HorizontalTabSet()
 // - sNumTabs - the number of tabs to perform
 // Return value:
 // True if handled successfully. False othewise.
-bool AdaptDispatch::ForwardTab(_In_ SHORT const sNumTabs)
+bool AdaptDispatch::ForwardTab(const SHORT sNumTabs)
 {
     return !!_pConApi->PrivateForwardTab(sNumTabs);
 }
@@ -1369,7 +1369,7 @@ bool AdaptDispatch::ForwardTab(_In_ SHORT const sNumTabs)
 // - sNumTabs - the number of tabs to perform
 // Return value:
 // True if handled successfully. False othewise.
-bool AdaptDispatch::BackwardsTab(_In_ SHORT const sNumTabs)
+bool AdaptDispatch::BackwardsTab(const SHORT sNumTabs)
 {
     return !!_pConApi->PrivateBackwardsTab(sNumTabs);
 }
@@ -1382,7 +1382,7 @@ bool AdaptDispatch::BackwardsTab(_In_ SHORT const sNumTabs)
 // - sClearType - Whether to clear the current column, or all columns, defined in TermDispatch::TabClearType
 // Return value:
 // True if handled successfully. False othewise.
-bool AdaptDispatch::TabClear(_In_ SHORT const sClearType)
+bool AdaptDispatch::TabClear(const SHORT sClearType)
 {
     bool fSuccess = false;
     switch (sClearType)
@@ -1407,7 +1407,7 @@ bool AdaptDispatch::TabClear(_In_ SHORT const sClearType)
 // - wchCharset - The character indicating the charset we should switch to.
 // Return value:
 // True if handled successfully. False othewise.
-bool AdaptDispatch::DesignateCharset(_In_ wchar_t const wchCharset)
+bool AdaptDispatch::DesignateCharset(const wchar_t wchCharset)
 {
     return _TermOutput.DesignateCharset(wchCharset);
 }
@@ -1633,7 +1633,7 @@ bool AdaptDispatch::_EraseAll()
 // - fEnabled - true to enable, false to disable.
 // Return value:
 // True if handled successfully. False othewise.
-bool AdaptDispatch::EnableVT200MouseMode(_In_ bool const fEnabled)
+bool AdaptDispatch::EnableVT200MouseMode(const bool fEnabled)
 {
     return !!_pConApi->PrivateEnableVT200MouseMode(fEnabled);
 }
@@ -1645,7 +1645,7 @@ bool AdaptDispatch::EnableVT200MouseMode(_In_ bool const fEnabled)
 // - fEnabled - true to enable, false to disable.
 // Return value:
 // True if handled successfully. False othewise.
-bool AdaptDispatch::EnableUTF8ExtendedMouseMode(_In_ bool const fEnabled)
+bool AdaptDispatch::EnableUTF8ExtendedMouseMode(const bool fEnabled)
 {
     return !!_pConApi->PrivateEnableUTF8ExtendedMouseMode(fEnabled);
 }
@@ -1657,7 +1657,7 @@ bool AdaptDispatch::EnableUTF8ExtendedMouseMode(_In_ bool const fEnabled)
 // - fEnabled - true to enable, false to disable.
 // Return value:
 // True if handled successfully. False othewise.
-bool AdaptDispatch::EnableSGRExtendedMouseMode(_In_ bool const fEnabled)
+bool AdaptDispatch::EnableSGRExtendedMouseMode(const bool fEnabled)
 {
     return !!_pConApi->PrivateEnableSGRExtendedMouseMode(fEnabled);
 }
@@ -1668,7 +1668,7 @@ bool AdaptDispatch::EnableSGRExtendedMouseMode(_In_ bool const fEnabled)
 // - fEnabled - true to enable, false to disable.
 // Return value:
 // True if handled successfully. False othewise.
-bool AdaptDispatch::EnableButtonEventMouseMode(_In_ bool const fEnabled)
+bool AdaptDispatch::EnableButtonEventMouseMode(const bool fEnabled)
 {
     return !!_pConApi->PrivateEnableButtonEventMouseMode(fEnabled);
 }
@@ -1679,7 +1679,7 @@ bool AdaptDispatch::EnableButtonEventMouseMode(_In_ bool const fEnabled)
 // - fEnabled - true to enable, false to disable.
 // Return value:
 // True if handled successfully. False othewise.
-bool AdaptDispatch::EnableAnyEventMouseMode(_In_ bool const fEnabled)
+bool AdaptDispatch::EnableAnyEventMouseMode(const bool fEnabled)
 {
     return !!_pConApi->PrivateEnableAnyEventMouseMode(fEnabled);
 }
@@ -1691,7 +1691,7 @@ bool AdaptDispatch::EnableAnyEventMouseMode(_In_ bool const fEnabled)
 // - fEnabled - true to enable, false to disable.
 // Return value:
 // True if handled successfully. False othewise.
-bool AdaptDispatch::EnableAlternateScroll(_In_ bool const fEnabled)
+bool AdaptDispatch::EnableAlternateScroll(const bool fEnabled)
 {
     return !!_pConApi->PrivateEnableAlternateScroll(fEnabled);
 }
@@ -1703,7 +1703,7 @@ bool AdaptDispatch::EnableAlternateScroll(_In_ bool const fEnabled)
 // - cursorStyle - The unix-like cursor style to apply to the cursor
 // Return value:
 // True if handled successfully. False othewise.
-bool AdaptDispatch::SetCursorStyle(_In_ const DispatchCommon::CursorStyle cursorStyle)
+bool AdaptDispatch::SetCursorStyle(const DispatchCommon::CursorStyle cursorStyle)
 {
     CursorType actualType = CursorType::Legacy;
     bool fEnableBlinking = false;
@@ -1755,7 +1755,7 @@ bool AdaptDispatch::SetCursorStyle(_In_ const DispatchCommon::CursorStyle cursor
 // - dwColor: The new RGB color value to use.
 // Return Value:
 // True if handled successfully. False othewise.
-bool AdaptDispatch::SetCursorColor(_In_ const COLORREF cursorColor)
+bool AdaptDispatch::SetCursorColor(const COLORREF cursorColor)
 {
     return !!_pConApi->SetCursorColor(cursorColor);
 }
@@ -1767,8 +1767,8 @@ bool AdaptDispatch::SetCursorColor(_In_ const COLORREF cursorColor)
 // - dwColor: The new RGB color value to use.
 // Return Value:
 // True if handled successfully. False othewise.
-bool AdaptDispatch::SetColorTableEntry(_In_ const size_t tableIndex,
-                                       _In_ const DWORD dwColor)
+bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex,
+                                       const DWORD dwColor)
 {
     bool fSuccess = tableIndex < 16;
     if (fSuccess)
@@ -1799,9 +1799,9 @@ bool AdaptDispatch::SetColorTableEntry(_In_ const size_t tableIndex,
 // - cParams - size of rgusParams
 // Return value:
 // True if handled successfully. False othewise.
-bool AdaptDispatch::WindowManipulation(_In_ const DispatchCommon::WindowManipulationType uiFunction,
+bool AdaptDispatch::WindowManipulation(const DispatchCommon::WindowManipulationType uiFunction,
                                        _In_reads_(cParams) const unsigned short* const rgusParams,
-                                       _In_ size_t const cParams)
+                                       const size_t cParams)
 {
     bool fSuccess = false;
     // Other Window Manipulation functions:

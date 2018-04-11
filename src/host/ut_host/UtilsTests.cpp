@@ -1,4 +1,4 @@
-﻿/********************************************************
+/********************************************************
 *                                                       *
 *   Copyright (C) Microsoft. All rights reserved.       *
 *                                                       *
@@ -204,12 +204,12 @@ class UtilsTests
     void SubtractRandom(short &psValue)
     {
         SHORT const sRand = RandomShort();
-        psValue -= max(sRand % psValue, 1);
+        psValue -= gsl::narrow<SHORT>(std::max(sRand % psValue, 1));
     }
 
     TEST_METHOD(TestCompareCoords)
     {
-        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         int result = 5; // not 1, 0, or -1
         COORD coordA;
         COORD coordB;
@@ -218,7 +218,7 @@ class UtilsTests
         COORD coordMaxBuffer;
         coordMaxBuffer.X = SHORT_MAX;
         coordMaxBuffer.Y = SHORT_MAX;
-        gci.CurrentScreenBuffer->SetScreenBufferSize(coordMaxBuffer);
+        gci.GetActiveOutputBuffer().SetScreenBufferSize(coordMaxBuffer);
 
         Log::Comment(L"#1: 0 case. Coords equal");
         FillBothCoordsSameRandom(&coordA, &coordB);

@@ -24,9 +24,9 @@ const std::wstring ConsoleArguments::INHERIT_CURSOR_ARG = L"--inheritcursor";
 const std::wstring ConsoleArguments::FEATURE_ARG = L"--feature";
 const std::wstring ConsoleArguments::FEATURE_PTY_ARG = L"pty";
 
-ConsoleArguments::ConsoleArguments(_In_ const std::wstring& commandline,
-                                   _In_ const HANDLE hStdIn,
-                                   _In_ const HANDLE hStdOut)
+ConsoleArguments::ConsoleArguments(const std::wstring& commandline,
+                                   const HANDLE hStdIn,
+                                   const HANDLE hStdOut)
     : _commandline(commandline),
       _vtInHandle(hStdIn),
       _vtOutHandle(hStdOut)
@@ -213,7 +213,7 @@ HRESULT ConsoleArguments::s_GetArgumentValue(_Inout_ std::vector<std::wstring>& 
 // - E_INVALIDARG if we couldn't parse the text as a valid hex-encoded handle number OR
 //                if the handle value was already filled.
 [[nodiscard]]
-HRESULT ConsoleArguments::s_ParseHandleArg(_In_ const std::wstring& handleAsText, _Inout_ DWORD& handleAsVal)
+HRESULT ConsoleArguments::s_ParseHandleArg(const std::wstring& handleAsText, _Inout_ DWORD& handleAsVal)
 {
     HRESULT hr = S_OK;
 
@@ -257,7 +257,7 @@ HRESULT ConsoleArguments::s_ParseHandleArg(_In_ const std::wstring& handleAsText
 //  S_OK if we parsed the string successfully, otherwise E_INVALIDARG indicating
 //       failure.
 [[nodiscard]]
-HRESULT ConsoleArguments::_GetClientCommandline(_In_ std::vector<std::wstring>& args, _In_ const size_t index, _In_ const bool skipFirst)
+HRESULT ConsoleArguments::_GetClientCommandline(_Inout_ std::vector<std::wstring>& args, const size_t index, const bool skipFirst)
 {
     auto start = args.begin()+index;
 
@@ -576,7 +576,7 @@ short ConsoleArguments::GetHeight() const
 // - Handle
 // Return Value:
 // - True if non zero and not set to invalid magic value. False otherwise.
-bool ConsoleArguments::s_IsValidHandle(_In_ const HANDLE handle)
+bool ConsoleArguments::s_IsValidHandle(const HANDLE handle)
 {
     return handle != 0 && handle != INVALID_HANDLE_VALUE;
 }

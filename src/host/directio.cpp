@@ -149,10 +149,10 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 [[nodiscard]]
 NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
                            _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                           _In_ const size_t eventReadCount,
+                           const size_t eventReadCount,
                            _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
-                           _In_ bool const IsUnicode,
-                           _In_ bool const IsPeek,
+                           const bool IsUnicode,
+                           const bool IsPeek,
                            _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
 {
     *ppWaiter = nullptr;
@@ -260,7 +260,7 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
 [[nodiscard]]
 HRESULT ApiRoutines::PeekConsoleInputAImpl(_In_ IConsoleInputObject* const pInContext,
                                            _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                           _In_ size_t const eventsToRead,
+                                           const size_t eventsToRead,
                                            _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                                            _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
 {
@@ -292,7 +292,7 @@ HRESULT ApiRoutines::PeekConsoleInputAImpl(_In_ IConsoleInputObject* const pInCo
 [[nodiscard]]
 HRESULT ApiRoutines::PeekConsoleInputWImpl(_In_ IConsoleInputObject* const pInContext,
                                            _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                           _In_ size_t const eventsToRead,
+                                           const size_t eventsToRead,
                                            _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                                            _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
 {
@@ -324,7 +324,7 @@ HRESULT ApiRoutines::PeekConsoleInputWImpl(_In_ IConsoleInputObject* const pInCo
 [[nodiscard]]
 HRESULT ApiRoutines::ReadConsoleInputAImpl(_In_ IConsoleInputObject* const pInContext,
                                            _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                           _In_ size_t const eventsToRead,
+                                           const size_t eventsToRead,
                                            _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                                            _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
 {
@@ -356,7 +356,7 @@ HRESULT ApiRoutines::ReadConsoleInputAImpl(_In_ IConsoleInputObject* const pInCo
 [[nodiscard]]
 HRESULT ApiRoutines::ReadConsoleInputWImpl(_In_ IConsoleInputObject* const pInContext,
                                            _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                           _In_ size_t const eventsToRead,
+                                           const size_t eventsToRead,
                                            _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                                            _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
 {
@@ -384,8 +384,8 @@ HRESULT ApiRoutines::ReadConsoleInputWImpl(_In_ IConsoleInputObject* const pInCo
 HRESULT DoSrvWriteConsoleInput(_Inout_ InputBuffer* const pInputBuffer,
                                _Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
                                _Out_ size_t& eventsWritten,
-                               _In_ const bool unicode,
-                               _In_ const bool append)
+                               const bool unicode,
+                               const bool append)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
@@ -677,8 +677,8 @@ NTSTATUS SrvReadConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::ReadConsoleOutput, a->Unicode);
 
     PCHAR_INFO Buffer;
-    ULONG Size;
-    NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetOutputBuffer((PVOID*)&Buffer, &Size));
+    ULONG cbBuffer;
+    NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetOutputBuffer((PVOID*)&Buffer, &cbBuffer));
     if (!NT_SUCCESS(Status))
     {
         return Status;
@@ -711,20 +711,35 @@ NTSTATUS SrvReadConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
         BufferSize.Y = (SHORT)(a->CharRegion.Bottom - a->CharRegion.Top + 1);
 
         if (((BufferSize.X > 0) && (BufferSize.Y > 0)) &&
-            ((BufferSize.X * BufferSize.Y > ULONG_MAX / sizeof(CHAR_INFO)) || (Size < BufferSize.X * BufferSize.Y * sizeof(CHAR_INFO))))
+            ((BufferSize.X * BufferSize.Y > ULONG_MAX / sizeof(CHAR_INFO)) || (cbBuffer < BufferSize.X * BufferSize.Y * sizeof(CHAR_INFO))))
         {
             UnlockConsole();
             return STATUS_INVALID_PARAMETER;
         }
 
-        SCREEN_INFORMATION* const psi = pScreenInfo->GetActiveBuffer();
+        SCREEN_INFORMATION& activeScreenInfo = pScreenInfo->GetActiveBuffer();
 
-        Status = ReadScreenBuffer(psi, Buffer, &a->CharRegion);
+        std::vector<std::vector<OutputCell>> outputCells;
+        Status = ReadScreenBuffer(activeScreenInfo, outputCells, &a->CharRegion);
+        assert(cbBuffer >= outputCells.size() * outputCells[0].size() * sizeof(CHAR_INFO));
+        // convert to CharInfo
+        CHAR_INFO* pCurrCharInfo = Buffer;
+        // copy the data into the char info buffer
+        for (auto& row : outputCells)
+        {
+            for (auto& cell : row)
+            {
+                *pCurrCharInfo = cell.ToCharInfo();
+                ++pCurrCharInfo;
+            }
+        }
+
+
         if (!a->Unicode)
         {
             LOG_IF_FAILED(TranslateOutputToOem(Buffer, BufferSize));
         }
-        else if (!psi->TextInfo->GetCurrentFont()->IsTrueTypeFont())
+        else if (!activeScreenInfo.GetTextBuffer().GetCurrentFont().IsTrueTypeFont())
         {
             // For compatibility reasons, we must maintain the behavior that munges the data if we are writing while a raster font is enabled.
             // This can be removed when raster font support is removed.
@@ -791,14 +806,14 @@ NTSTATUS SrvWriteConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*Reply
             return STATUS_INVALID_PARAMETER;
         }
 
-        PSCREEN_INFORMATION const ScreenBufferInformation = pScreenInfo->GetActiveBuffer();
+        SCREEN_INFORMATION& ScreenBufferInformation = pScreenInfo->GetActiveBuffer();
 
         if (!a->Unicode)
         {
             LOG_IF_FAILED(TranslateOutputToUnicode(Buffer, BufferSize));
             Status = WriteScreenBuffer(ScreenBufferInformation, Buffer, &a->CharRegion);
         }
-        else if (!ScreenBufferInformation->TextInfo->GetCurrentFont()->IsTrueTypeFont())
+        else if (!ScreenBufferInformation.GetTextBuffer().GetCurrentFont().IsTrueTypeFont())
         {
             // For compatibility reasons, we must maintain the behavior that munges the data if we are writing while a raster font is enabled.
             // This can be removed when raster font support is removed.
@@ -1032,9 +1047,9 @@ NTSTATUS SrvFillConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
 }
 
 [[nodiscard]]
-NTSTATUS DoSrvFillConsoleOutput(_In_ SCREEN_INFORMATION* pScreenInfo, _Inout_ CONSOLE_FILLCONSOLEOUTPUT_MSG* pMsg)
+NTSTATUS DoSrvFillConsoleOutput(SCREEN_INFORMATION& screenInfo, _Inout_ CONSOLE_FILLCONSOLEOUTPUT_MSG* pMsg)
 {
-    return FillOutput(pScreenInfo, pMsg->Element, pMsg->WriteCoord, pMsg->ElementType, &pMsg->Length);
+    return FillOutput(screenInfo, pMsg->Element, pMsg->WriteCoord, pMsg->ElementType, &pMsg->Length);
 }
 
 // There used to be a text mode and a graphics mode flag.
@@ -1066,22 +1081,22 @@ NTSTATUS ConsoleCreateScreenBuffer(_Out_ ConsoleHandleData** ppHandle,
 
     ConsoleHandleData::HandleType const HandleType = ConsoleHandleData::HandleType::Output;
 
-    const SCREEN_INFORMATION* const psiExisting = gci.CurrentScreenBuffer;
+    const SCREEN_INFORMATION& siExisting = gci.GetActiveOutputBuffer();
 
     // Create new screen buffer.
     CHAR_INFO Fill;
     Fill.Char.UnicodeChar = UNICODE_SPACE;
-    Fill.Attributes = psiExisting->GetAttributes().GetLegacyAttributes();
+    Fill.Attributes = siExisting.GetAttributes().GetLegacyAttributes();
 
     COORD WindowSize;
-    WindowSize.X = (SHORT)psiExisting->GetScreenWindowSizeX();
-    WindowSize.Y = (SHORT)psiExisting->GetScreenWindowSizeY();
+    WindowSize.X = (SHORT)siExisting.GetScreenWindowSizeX();
+    WindowSize.Y = (SHORT)siExisting.GetScreenWindowSizeY();
 
-    const FontInfo* const pfiExistingFont = psiExisting->TextInfo->GetCurrentFont();
+    const FontInfo& existingFont = siExisting.GetTextBuffer().GetCurrentFont();
 
     PSCREEN_INFORMATION ScreenInfo = nullptr;
     NTSTATUS Status = SCREEN_INFORMATION::CreateInstance(WindowSize,
-                                                         pfiExistingFont,
+                                                         existingFont,
                                                          WindowSize,
                                                          Fill,
                                                          Fill,

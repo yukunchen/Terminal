@@ -28,8 +28,8 @@ const COORD VtEngine::INVALID_COORDS = {-1, -1};
 // Return Value:
 // - An instance of a Renderer.
 VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
-                   _In_ const IDefaultColorProvider& colorProvider,
-                   _In_ const Viewport initialViewport) :
+                   const IDefaultColorProvider& colorProvider,
+                   const Viewport initialViewport) :
     _hFile(std::move(pipe)),
     _colorProvider(colorProvider),
     _LastFG(INVALID_COLOR),
@@ -67,7 +67,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
 [[nodiscard]]
-HRESULT VtEngine::_Write(_In_reads_(cch) const char* const psz, _In_ size_t const cch)
+HRESULT VtEngine::_Write(_In_reads_(cch) const char* const psz, const size_t cch)
 {
 #ifdef UNIT_TESTING
     if (_usingTestCallback)
@@ -90,7 +90,7 @@ HRESULT VtEngine::_Write(_In_reads_(cch) const char* const psz, _In_ size_t cons
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
 [[nodiscard]]
-HRESULT VtEngine::_Write(_In_ const std::string& str)
+HRESULT VtEngine::_Write(const std::string& str)
 {
     return _Write(str.c_str(), str.length());
 }
@@ -105,7 +105,7 @@ HRESULT VtEngine::_Write(_In_ const std::string& str)
 // - S_OK, E_INVALIDARG for a invalid format string, or suitable HRESULT error
 //      from writing pipe.
 [[nodiscard]]
-HRESULT VtEngine::_WriteFormattedString(_In_ const std::string* const pFormat, ...)
+HRESULT VtEngine::_WriteFormattedString(const std::string* const pFormat, ...)
 {
 
     HRESULT hr = E_FAIL;
@@ -135,13 +135,13 @@ HRESULT VtEngine::_WriteFormattedString(_In_ const std::string* const pFormat, .
 // - This method will update the active font on the current device context
 //      Does nothing for vt, the font is handed by the terminal.
 // Arguments:
-// - pfiFontDesired - Pointer to font information we should use while instantiating a font.
-// - pfiFont - Pointer to font information where the chosen font information will be populated.
+// - FontDesired - reference to font information we should use while instantiating a font.
+// - Font - reference to font information where the chosen font information will be populated.
 // Return Value:
 // - HRESULT S_OK
 [[nodiscard]]
-HRESULT VtEngine::UpdateFont(_In_ FontInfoDesired const * const /*pfiFontDesired*/,
-                             _Out_ FontInfo* const /*pfiFont*/)
+HRESULT VtEngine::UpdateFont(const FontInfoDesired& /*pfiFontDesired*/,
+                             _Out_ FontInfo& /*pfiFont*/)
 {
     return S_OK;
 }
@@ -155,7 +155,7 @@ HRESULT VtEngine::UpdateFont(_In_ FontInfoDesired const * const /*pfiFontDesired
 // Return Value:
 // - HRESULT S_OK
 [[nodiscard]]
-HRESULT VtEngine::UpdateDpi(_In_ int const /*iDpi*/)
+HRESULT VtEngine::UpdateDpi(const int /*iDpi*/)
 {
     return S_OK;
 }
@@ -169,7 +169,7 @@ HRESULT VtEngine::UpdateDpi(_In_ int const /*iDpi*/)
 // Return Value:
 // - HRESULT S_OK
 [[nodiscard]]
-HRESULT VtEngine::UpdateViewport(_In_ SMALL_RECT const srNewViewport)
+HRESULT VtEngine::UpdateViewport(const SMALL_RECT srNewViewport)
 {
     HRESULT hr = S_OK;
     const Viewport oldView = _lastViewport;
@@ -234,15 +234,15 @@ HRESULT VtEngine::UpdateViewport(_In_ SMALL_RECT const srNewViewport)
 // - If the intent is to immediately turn around and use this font, pass the optional handle parameter and use it immediately.
 //      Does nothing for vt, the font is handed by the terminal.
 // Arguments:
-// - pfiFontDesired - Pointer to font information we should use while instantiating a font.
-// - pfiFont - Pointer to font information where the chosen font information will be populated.
+// - FontDesired - reference to font information we should use while instantiating a font.
+// - Font - reference to font information where the chosen font information will be populated.
 // - iDpi - The DPI we will have when rendering
 // Return Value:
 // - S_FALSE: This is unsupported by the VT Renderer and should use another engine's value.
 [[nodiscard]]
-HRESULT VtEngine::GetProposedFont(_In_ FontInfoDesired const * const /*pfiFontDesired*/,
-                                  _Out_ FontInfo* const /*pfiFont*/,
-                                  _In_ int const /*iDpi*/)
+HRESULT VtEngine::GetProposedFont(const FontInfoDesired& /*pfiFontDesired*/,
+                                  _Out_ FontInfo& /*pfiFont*/,
+                                  const int /*iDpi*/)
 {
     return S_FALSE;
 }
@@ -318,7 +318,7 @@ HRESULT VtEngine::SuppressResizeRepaint()
 // Return Value:
 // - S_OK
 [[nodiscard]]
-HRESULT VtEngine::InheritCursor(_In_ const COORD coordCursor)
+HRESULT VtEngine::InheritCursor(const COORD coordCursor)
 {
     _virtualTop = coordCursor.Y;
     _lastText = coordCursor;

@@ -90,18 +90,18 @@ public:
         UINT uiCursorSize = 12;
 
         THROW_IF_FAILED(SCREEN_INFORMATION::CreateInstance(coordWindowSize,
-                                                           m_pFontInfo,
+                                                           *m_pFontInfo,
                                                            coordScreenBufferSize,
                                                            ciFill,
                                                            ciPopupFill,
                                                            uiCursorSize,
-                                                           &gci.CurrentScreenBuffer));
+                                                           &gci.pCurrentScreenBuffer));
     }
 
     void CleanupGlobalScreenBuffer()
     {
         const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        delete gci.CurrentScreenBuffer;
+        delete gci.pCurrentScreenBuffer;
     }
 
     void PrepareGlobalInputBuffer()
@@ -119,7 +119,7 @@ public:
     void PrepareCookedReadData()
     {
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        gci.lpCookedReadData = new COOKED_READ_DATA();
+        gci.lpCookedReadData = new COOKED_READ_DATA(gci.GetActiveOutputBuffer());
     }
 
     void CleanupCookedReadData()
@@ -130,7 +130,7 @@ public:
 
     void PrepareNewTextBufferInfo()
     {
-        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         COORD coordScreenBufferSize;
         coordScreenBufferSize.X = s_csBufferWidth;
         coordScreenBufferSize.Y = s_csBufferHeight;
@@ -140,18 +140,18 @@ public:
 
         UINT uiCursorSize = 12;
 
-        m_backupTextBufferInfo = gci.CurrentScreenBuffer->TextInfo;
+        m_backupTextBufferInfo = &gci.pCurrentScreenBuffer->GetTextBuffer();
         try
         {
-            std::unique_ptr<TEXT_BUFFER_INFO> textBuffer = std::make_unique<TEXT_BUFFER_INFO>(m_pFontInfo,
-                                                                                              coordScreenBufferSize,
-                                                                                              ciFill,
-                                                                                              uiCursorSize);
+            std::unique_ptr<TextBuffer> textBuffer = std::make_unique<TextBuffer>(*m_pFontInfo,
+                                                                                  coordScreenBufferSize,
+                                                                                  ciFill,
+                                                                                  uiCursorSize);
             if (textBuffer.get() == nullptr)
             {
                 m_ntstatusTextBufferInfo = STATUS_NO_MEMORY;
             }
-            gci.CurrentScreenBuffer->TextInfo = textBuffer.release();
+            gci.GetActiveOutputBuffer().GetTextBuffer() = *textBuffer.release();
         }
         catch (...)
         {
@@ -161,51 +161,48 @@ public:
 
     void CleanupNewTextBufferInfo()
     {
-        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        ASSERT(gci.CurrentScreenBuffer != nullptr);
-        delete gci.CurrentScreenBuffer->TextInfo;
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        ASSERT(gci.HasActiveOutputBuffer());
 
-        gci.CurrentScreenBuffer->TextInfo = m_backupTextBufferInfo;
+        gci.GetActiveOutputBuffer().GetTextBuffer() = *m_backupTextBufferInfo;
     }
 
     void FillTextBuffer()
     {
-        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // fill with some assorted text that doesn't consume the whole row
         const SHORT cRowsToFill = 4;
 
-        ASSERT(gci.CurrentScreenBuffer != nullptr);
-        ASSERT(gci.CurrentScreenBuffer->TextInfo != nullptr);
+        ASSERT(gci.HasActiveOutputBuffer());
 
-        TEXT_BUFFER_INFO* pTextInfo = gci.CurrentScreenBuffer->TextInfo;
+        TextBuffer& textBuffer = gci.GetActiveOutputBuffer().GetTextBuffer();
 
         for (SHORT iRow = 0; iRow < cRowsToFill; iRow++)
         {
-            ROW& row = pTextInfo->GetRowAtIndex(iRow);
+            ROW& row = textBuffer.GetRowAtIndex(iRow);
             FillRow(&row);
         }
 
-        pTextInfo->GetCursor()->SetYPosition(cRowsToFill);
+        textBuffer.GetCursor().SetYPosition(cRowsToFill);
     }
 
     void FillTextBufferBisect()
     {
-        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // fill with some text that fills the whole row and has bisecting double byte characters
         const SHORT cRowsToFill = s_csBufferHeight;
 
-        ASSERT(gci.CurrentScreenBuffer != nullptr);
-        ASSERT(gci.CurrentScreenBuffer->TextInfo != nullptr);
+        ASSERT(gci.HasActiveOutputBuffer());
 
-        TEXT_BUFFER_INFO* pTextInfo = gci.CurrentScreenBuffer->TextInfo;
+        TextBuffer& textBuffer = gci.GetActiveOutputBuffer().GetTextBuffer();
 
         for (SHORT iRow = 0; iRow < cRowsToFill; iRow++)
         {
-            ROW& row = pTextInfo->GetRowAtIndex(iRow);
+            ROW& row = textBuffer.GetRowAtIndex(iRow);
             FillBisect(&row);
         }
 
-        pTextInfo->GetCursor()->SetYPosition(cRowsToFill);
+        textBuffer.GetCursor().SetYPosition(cRowsToFill);
     }
 
     NTSTATUS GetTextBufferInfoInitResult()
@@ -217,7 +214,7 @@ private:
     HANDLE m_heap;
     NTSTATUS m_ntstatusTextBufferInfo;
     FontInfo* m_pFontInfo;
-    TEXT_BUFFER_INFO* m_backupTextBufferInfo;
+    TextBuffer* m_backupTextBufferInfo;
 
     void FillRow(ROW* pRow)
     {
@@ -316,7 +313,7 @@ private:
         OverwriteColumns(pwszText, pwszText + length, attrs.cbegin(), charRow.begin());
 
         // everything gets default attributes
-        pRow->GetAttrRow().Reset(gci.CurrentScreenBuffer->GetAttributes());
+        pRow->GetAttrRow().Reset(gci.GetActiveOutputBuffer().GetAttributes());
 
         pRow->GetCharRow().SetWrapForced(true);
     }

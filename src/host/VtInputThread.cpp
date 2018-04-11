@@ -26,7 +26,7 @@ using namespace Microsoft::Console;
 // - inheritCursor - a bool indicating if the state machine should expect a
 //      cursor positioning sequence. See MSFT:15681311.
 VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
-                             _In_ const bool inheritCursor)
+                             const bool inheritCursor)
     : _hFile(std::move(hPipe)),
     _utf8Parser(CP_UTF8)
 {
@@ -34,7 +34,7 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
 
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-    std::unique_ptr<ConhostInternalGetSet> pGetSet = std::make_unique<ConhostInternalGetSet>(&gci);
+    std::unique_ptr<ConhostInternalGetSet> pGetSet = std::make_unique<ConhostInternalGetSet>(gci);
     THROW_IF_NULL_ALLOC(pGetSet);
 
     std::unique_ptr<InteractDispatch> pDispatch = std::make_unique<InteractDispatch>(std::move(pGetSet));
@@ -58,7 +58,7 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
 // Return Value:
 // - S_OK on success, otherwise an appropriate failure.
 [[nodiscard]]
-HRESULT VtInputThread::_HandleRunInput(_In_reads_(cch) const byte* const charBuffer, _In_ const int cch)
+HRESULT VtInputThread::_HandleRunInput(_In_reads_(cch) const byte* const charBuffer, const int cch)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.LockConsole();
@@ -98,7 +98,7 @@ DWORD VtInputThread::StaticVtInputThreadProc(_In_ LPVOID lpParameter)
 //      the input recieved. Otherwise, log the error.
 // Return Value:
 // - <none>
-void VtInputThread::DoReadInput(_In_ const bool throwOnFail)
+void VtInputThread::DoReadInput(const bool throwOnFail)
 {
     byte buffer[256];
     DWORD dwRead = 0;

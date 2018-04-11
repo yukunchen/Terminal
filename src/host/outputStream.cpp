@@ -15,8 +15,8 @@
 #pragma hdrstop
 using namespace Microsoft::Console;
 
-WriteBuffer::WriteBuffer(_In_ Microsoft::Console::IIoProvider* const pIo) :
-    _pIo(THROW_IF_NULL_ALLOC(pIo))
+WriteBuffer::WriteBuffer(_In_ Microsoft::Console::IIoProvider& io) :
+    _io{ io }
 {
 }
 
@@ -26,7 +26,7 @@ WriteBuffer::WriteBuffer(_In_ Microsoft::Console::IIoProvider* const pIo) :
 // - wch - The character to be printed.
 // Return Value:
 // - <none>
-void WriteBuffer::Print(_In_ wchar_t const wch)
+void WriteBuffer::Print(const wchar_t wch)
 {
     _DefaultCase(wch);
 }
@@ -37,7 +37,7 @@ void WriteBuffer::Print(_In_ wchar_t const wch)
 // - wch - The character to be printed.
 // Return Value:
 // - <none>
-void WriteBuffer::PrintString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch)
+void WriteBuffer::PrintString(_In_reads_(cch) wchar_t* const rgwch, const size_t cch)
 {
     _DefaultStringCase(rgwch, cch);
 }
@@ -48,7 +48,7 @@ void WriteBuffer::PrintString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t 
 // - wch - The C0 control character to be executed.
 // Return Value:
 // - <none>
-void WriteBuffer::Execute(_In_ wchar_t const wch)
+void WriteBuffer::Execute(const wchar_t wch)
 {
     _DefaultCase(wch);
 }
@@ -59,7 +59,7 @@ void WriteBuffer::Execute(_In_ wchar_t const wch)
 // - wch - The character to be processed by our default text editing/printing mechanisms.
 // Return Value:
 // - <none>
-void WriteBuffer::_DefaultCase(_In_ wchar_t const wch)
+void WriteBuffer::_DefaultCase(const wchar_t wch)
 {
     _DefaultStringCase(const_cast<wchar_t*>(&wch), 1); // WriteCharsLegacy wants mutable chars, so we'll givve it mutable chars.
 }
@@ -70,27 +70,27 @@ void WriteBuffer::_DefaultCase(_In_ wchar_t const wch)
 // - wch - The character to be processed by our default text editing/printing mechanisms.
 // Return Value:
 // - <none>
-void WriteBuffer::_DefaultStringCase(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch)
+void WriteBuffer::_DefaultStringCase(_In_reads_(cch) wchar_t* const rgwch, const size_t cch)
 {
     PWCHAR buffer = &(rgwch[0]);
 
     DWORD dwNumBytes = (DWORD)(cch * sizeof(wchar_t));
 
-    _pIo->GetActiveOutputBuffer()->TextInfo->GetCursor()->SetIsOn(TRUE);
+    _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor().SetIsOn(true);
 
-    _ntstatus = WriteCharsLegacy(_pIo->GetActiveOutputBuffer(),
+    _ntstatus = WriteCharsLegacy(_io.GetActiveOutputBuffer(),
                                  buffer,
                                  buffer,
                                  buffer,
                                  &dwNumBytes,
                                  nullptr,
-                                 _pIo->GetActiveOutputBuffer()->TextInfo->GetCursor()->GetPosition().X,
+                                 _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor().GetPosition().X,
                                  WC_NONDESTRUCTIVE_TAB | WC_DELAY_EOL_WRAP,
                                  nullptr);
 }
 
-ConhostInternalGetSet::ConhostInternalGetSet(_In_ IIoProvider* const pIo) :
-    _pIo(THROW_IF_NULL_ALLOC(pIo))
+ConhostInternalGetSet::ConhostInternalGetSet(_In_ IIoProvider& io) :
+    _io{ io }
 {
 }
 
@@ -103,7 +103,7 @@ ConhostInternalGetSet::ConhostInternalGetSet(_In_ IIoProvider* const pIo) :
 // - TRUE if successful (see DoSrvGetConsoleScreenBufferInfo). FALSE otherwise.
 BOOL ConhostInternalGetSet::GetConsoleScreenBufferInfoEx(_Out_ CONSOLE_SCREEN_BUFFER_INFOEX* const pConsoleScreenBufferInfoEx) const
 {
-    DoSrvGetConsoleScreenBufferInfo(_pIo->GetActiveOutputBuffer(), pConsoleScreenBufferInfoEx);
+    DoSrvGetConsoleScreenBufferInfo(_io.GetActiveOutputBuffer(), pConsoleScreenBufferInfoEx);
     return TRUE;
 }
 
@@ -113,9 +113,9 @@ BOOL ConhostInternalGetSet::GetConsoleScreenBufferInfoEx(_Out_ CONSOLE_SCREEN_BU
 // - pConsoleScreenBufferInfoEx - Pointer to structure containing screen buffer information like the public API call.
 // Return Value:
 // - TRUE if successful (see DoSrvSetConsoleScreenBufferInfo). FALSE otherwise.
-BOOL ConhostInternalGetSet::SetConsoleScreenBufferInfoEx(_In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pConsoleScreenBufferInfoEx) const
+BOOL ConhostInternalGetSet::SetConsoleScreenBufferInfoEx(const CONSOLE_SCREEN_BUFFER_INFOEX* const pConsoleScreenBufferInfoEx)
 {
-    DoSrvSetScreenBufferInfo(_pIo->GetActiveOutputBuffer(), pConsoleScreenBufferInfoEx);
+    DoSrvSetScreenBufferInfo(_io.GetActiveOutputBuffer(), pConsoleScreenBufferInfoEx);
     return TRUE;
 }
 
@@ -125,9 +125,9 @@ BOOL ConhostInternalGetSet::SetConsoleScreenBufferInfoEx(_In_ const CONSOLE_SCRE
 // - coordCursorPosition - new cursor position to set like the public API call.
 // Return Value:
 // - TRUE if successful (see DoSrvSetConsoleCursorPosition). FALSE otherwise.
-BOOL ConhostInternalGetSet::SetConsoleCursorPosition(_In_ COORD const coordCursorPosition)
+BOOL ConhostInternalGetSet::SetConsoleCursorPosition(const COORD coordCursorPosition)
 {
-    return SUCCEEDED(DoSrvSetConsoleCursorPosition(_pIo->GetActiveOutputBuffer(), &coordCursorPosition));
+    return SUCCEEDED(DoSrvSetConsoleCursorPosition(_io.GetActiveOutputBuffer(), &coordCursorPosition));
 }
 
 // Routine Description:
@@ -138,10 +138,10 @@ BOOL ConhostInternalGetSet::SetConsoleCursorPosition(_In_ COORD const coordCurso
 // - TRUE if successful (see DoSrvGetConsoleCursorInfo). FALSE otherwise.
 BOOL ConhostInternalGetSet::GetConsoleCursorInfo(_In_ CONSOLE_CURSOR_INFO* const pConsoleCursorInfo) const
 {
-    BOOLEAN bVisible;
+    bool bVisible;
     DWORD dwSize;
 
-    DoSrvGetConsoleCursorInfo(_pIo->GetActiveOutputBuffer(), &dwSize, &bVisible);
+    DoSrvGetConsoleCursorInfo(_io.GetActiveOutputBuffer(), &dwSize, &bVisible);
     pConsoleCursorInfo->bVisible = bVisible;
     pConsoleCursorInfo->dwSize = dwSize;
     return TRUE;
@@ -153,9 +153,10 @@ BOOL ConhostInternalGetSet::GetConsoleCursorInfo(_In_ CONSOLE_CURSOR_INFO* const
 // - pConsoleCursorInfo - Updated size/visibility information to modify the cursor rendering behavior.
 // Return Value:
 // - TRUE if successful (see DoSrvSetConsoleCursorInfo). FALSE otherwise.
-BOOL ConhostInternalGetSet::SetConsoleCursorInfo(_In_ const CONSOLE_CURSOR_INFO* const pConsoleCursorInfo)
+BOOL ConhostInternalGetSet::SetConsoleCursorInfo(const CONSOLE_CURSOR_INFO* const pConsoleCursorInfo)
 {
-    return SUCCEEDED(DoSrvSetConsoleCursorInfo(_pIo->GetActiveOutputBuffer(), pConsoleCursorInfo->dwSize, !!pConsoleCursorInfo->bVisible));
+    const bool visible = !!pConsoleCursorInfo->bVisible;
+    return SUCCEEDED(DoSrvSetConsoleCursorInfo(_io.GetActiveOutputBuffer(), pConsoleCursorInfo->dwSize, visible));
 }
 
 // Routine Description:
@@ -167,7 +168,7 @@ BOOL ConhostInternalGetSet::SetConsoleCursorInfo(_In_ const CONSOLE_CURSOR_INFO*
 // - pNumberOfCharsWritten - Pointer to memory location to hold the total number of characters written into the buffer
 // Return Value:
 // - TRUE if successful (see DoSrvFillConsoleOutput). FALSE otherwise.
-BOOL ConhostInternalGetSet::FillConsoleOutputCharacterW(_In_ WCHAR const wch, _In_ DWORD const nLength, _In_ COORD const dwWriteCoord, _Out_ DWORD* const pNumberOfCharsWritten)
+BOOL ConhostInternalGetSet::FillConsoleOutputCharacterW(const WCHAR wch, const DWORD nLength, const COORD dwWriteCoord, _Out_ DWORD* const pNumberOfCharsWritten)
 {
     return _FillConsoleOutput(wch, CONSOLE_REAL_UNICODE, nLength, dwWriteCoord, pNumberOfCharsWritten);
 }
@@ -181,7 +182,7 @@ BOOL ConhostInternalGetSet::FillConsoleOutputCharacterW(_In_ WCHAR const wch, _I
 // - pNumberOfCharsWritten - Pointer to memory location to hold the total number of text attributes written into the buffer
 // Return Value:
 // - TRUE if successful (see DoSrvFillConsoleOutput). FALSE otherwise.
-BOOL ConhostInternalGetSet::FillConsoleOutputAttribute(_In_ WORD const wAttribute, _In_ DWORD const nLength, _In_ COORD const dwWriteCoord, _Out_ DWORD* const pNumberOfAttrsWritten)
+BOOL ConhostInternalGetSet::FillConsoleOutputAttribute(const WORD wAttribute, const DWORD nLength, const COORD dwWriteCoord, _Out_ DWORD* const pNumberOfAttrsWritten)
 {
     return _FillConsoleOutput(wAttribute, CONSOLE_ATTRIBUTE, nLength, dwWriteCoord, pNumberOfAttrsWritten);
 }
@@ -196,7 +197,7 @@ BOOL ConhostInternalGetSet::FillConsoleOutputAttribute(_In_ WORD const wAttribut
 // - pNumberOfCharsWritten - Pointer to memory location to hold the total number of elements written into the buffer
 // Return Value:
 // - TRUE if successful (see DoSrvFillConsoleOutput). FALSE otherwise.
-BOOL ConhostInternalGetSet::_FillConsoleOutput(_In_ USHORT const usElement, _In_ ULONG const ulElementType, _In_ DWORD const nLength, _In_ COORD const dwWriteCoord, _Out_ DWORD* const pNumberWritten)
+BOOL ConhostInternalGetSet::_FillConsoleOutput(const USHORT usElement, const ULONG ulElementType, const DWORD nLength, const COORD dwWriteCoord, _Out_ DWORD* const pNumberWritten)
 {
     CONSOLE_FILLCONSOLEOUTPUT_MSG msg;
     msg.Element = usElement;
@@ -204,7 +205,7 @@ BOOL ConhostInternalGetSet::_FillConsoleOutput(_In_ USHORT const usElement, _In_
     msg.WriteCoord = dwWriteCoord;
     msg.Length = nLength;
 
-    BOOL fSuccess = NT_SUCCESS(DoSrvFillConsoleOutput(_pIo->GetActiveOutputBuffer(), &msg));
+    BOOL fSuccess = NT_SUCCESS(DoSrvFillConsoleOutput(_io.GetActiveOutputBuffer(), &msg));
 
     if (fSuccess)
     {
@@ -221,9 +222,9 @@ BOOL ConhostInternalGetSet::_FillConsoleOutput(_In_ USHORT const usElement, _In_
 // - wAttr - new color/graphical attributes to apply as default within the console text buffer
 // Return Value:
 // - TRUE if successful (see DoSrvSetConsoleTextAttribute). FALSE otherwise.
-BOOL ConhostInternalGetSet::SetConsoleTextAttribute(_In_ WORD const wAttr)
+BOOL ConhostInternalGetSet::SetConsoleTextAttribute(const WORD wAttr)
 {
-    return SUCCEEDED(DoSrvSetConsoleTextAttribute(_pIo->GetActiveOutputBuffer(), wAttr));
+    return SUCCEEDED(DoSrvSetConsoleTextAttribute(_io.GetActiveOutputBuffer(), wAttr));
 }
 
 // Routine Description:
@@ -236,12 +237,12 @@ BOOL ConhostInternalGetSet::SetConsoleTextAttribute(_In_ WORD const wAttr)
 // - fMeta - The new attributes contain an update to the meta attributes
 // Return Value:
 // - TRUE if successful (see DoSrvVtSetLegacyAttributes). FALSE otherwise.
-BOOL ConhostInternalGetSet::PrivateSetLegacyAttributes(_In_ WORD const wAttr,
-                                                       _In_ const bool fForeground,
-                                                       _In_ const bool fBackground,
-                                                       _In_ const bool fMeta)
+BOOL ConhostInternalGetSet::PrivateSetLegacyAttributes(const WORD wAttr,
+                                                       const bool fForeground,
+                                                       const bool fBackground,
+                                                       const bool fMeta)
 {
-    DoSrvPrivateSetLegacyAttributes(_pIo->GetActiveOutputBuffer(), wAttr, fForeground, fBackground, fMeta);
+    DoSrvPrivateSetLegacyAttributes(_io.GetActiveOutputBuffer(), wAttr, fForeground, fBackground, fMeta);
     return TRUE;
 }
 
@@ -253,9 +254,9 @@ BOOL ConhostInternalGetSet::PrivateSetLegacyAttributes(_In_ WORD const wAttr,
 // - fIsForeground - Whether or not the color applies to the foreground.
 // Return Value:
 // - TRUE if successful (see DoSrvPrivateSetConsoleXtermTextAttribute). FALSE otherwise.
-BOOL ConhostInternalGetSet::SetConsoleXtermTextAttribute(_In_ int const iXtermTableEntry, _In_ const bool fIsForeground)
+BOOL ConhostInternalGetSet::SetConsoleXtermTextAttribute(const int iXtermTableEntry, const bool fIsForeground)
 {
-    DoSrvPrivateSetConsoleXtermTextAttribute(_pIo->GetActiveOutputBuffer(), iXtermTableEntry, fIsForeground);
+    DoSrvPrivateSetConsoleXtermTextAttribute(_io.GetActiveOutputBuffer(), iXtermTableEntry, fIsForeground);
     return TRUE;
 }
 
@@ -267,9 +268,9 @@ BOOL ConhostInternalGetSet::SetConsoleXtermTextAttribute(_In_ int const iXtermTa
 // - fIsForeground - Whether or not the color applies to the foreground.
 // Return Value:
 // - TRUE if successful (see DoSrvPrivateSetConsoleRGBTextAttribute). FALSE otherwise.
-BOOL ConhostInternalGetSet::SetConsoleRGBTextAttribute(_In_ COLORREF const rgbColor, _In_ const bool fIsForeground)
+BOOL ConhostInternalGetSet::SetConsoleRGBTextAttribute(const COLORREF rgbColor, const bool fIsForeground)
 {
-    DoSrvPrivateSetConsoleRGBTextAttribute(_pIo->GetActiveOutputBuffer(), rgbColor, fIsForeground);
+    DoSrvPrivateSetConsoleRGBTextAttribute(_io.GetActiveOutputBuffer(), rgbColor, fIsForeground);
     return TRUE;
 }
 
@@ -285,7 +286,7 @@ BOOL ConhostInternalGetSet::WriteConsoleInputW(_Inout_ std::deque<std::unique_pt
                                                _Out_ size_t& eventsWritten)
 {
     eventsWritten = 0;
-    return SUCCEEDED(DoSrvWriteConsoleInput(_pIo->GetActiveInputBuffer(),
+    return SUCCEEDED(DoSrvWriteConsoleInput(_io.GetActiveInputBuffer(),
                                             events,
                                             eventsWritten,
                                             true, // unicode
@@ -301,12 +302,12 @@ BOOL ConhostInternalGetSet::WriteConsoleInputW(_Inout_ std::deque<std::unique_pt
 // - pFill - The text/attribute pair to fill all remaining space behind after the "cut" operation (bounded by clip, of course.)
 // Return Value:
 // - TRUE if successful (see DoSrvScrollConsoleScreenBuffer). FALSE otherwise.
-BOOL ConhostInternalGetSet::ScrollConsoleScreenBufferW(_In_ const SMALL_RECT* pScrollRectangle,
+BOOL ConhostInternalGetSet::ScrollConsoleScreenBufferW(const SMALL_RECT* pScrollRectangle,
                                                        _In_opt_ const SMALL_RECT* pClipRectangle,
                                                        _In_ COORD coordDestinationOrigin,
-                                                       _In_ const CHAR_INFO* pFill)
+                                                       const CHAR_INFO* pFill)
 {
-    return SUCCEEDED(DoSrvScrollConsoleScreenBufferW(_pIo->GetActiveOutputBuffer(),
+    return SUCCEEDED(DoSrvScrollConsoleScreenBufferW(_io.GetActiveOutputBuffer(),
                                                      pScrollRectangle,
                                                      &coordDestinationOrigin,
                                                      pClipRectangle,
@@ -321,9 +322,9 @@ BOOL ConhostInternalGetSet::ScrollConsoleScreenBufferW(_In_ const SMALL_RECT* pS
 // - lpConsoleWindow - Info about how to move the viewport
 // Return Value:
 // - TRUE if successful (see DoSrvSetConsoleWindowInfo). FALSE otherwise.
-BOOL ConhostInternalGetSet::SetConsoleWindowInfo(_In_ BOOL const bAbsolute, _In_ const SMALL_RECT* const lpConsoleWindow)
+BOOL ConhostInternalGetSet::SetConsoleWindowInfo(const BOOL bAbsolute, const SMALL_RECT* const lpConsoleWindow)
 {
-    return SUCCEEDED(DoSrvSetConsoleWindowInfo(_pIo->GetActiveOutputBuffer(), !!bAbsolute, lpConsoleWindow));
+    return SUCCEEDED(DoSrvSetConsoleWindowInfo(_io.GetActiveOutputBuffer(), !!bAbsolute, lpConsoleWindow));
 }
 
 // Routine Description:
@@ -334,7 +335,7 @@ BOOL ConhostInternalGetSet::SetConsoleWindowInfo(_In_ BOOL const bAbsolute, _In_
 // - fApplicationMode - set to true to enable Application Mode Input, false for Normal Mode.
 // Return Value:
 // - TRUE if successful (see DoSrvPrivateSetCursorKeysMode). FALSE otherwise.
-BOOL ConhostInternalGetSet::PrivateSetCursorKeysMode(_In_ bool const fApplicationMode)
+BOOL ConhostInternalGetSet::PrivateSetCursorKeysMode(const bool fApplicationMode)
 {
     return NT_SUCCESS(DoSrvPrivateSetCursorKeysMode(fApplicationMode));
 }
@@ -347,7 +348,7 @@ BOOL ConhostInternalGetSet::PrivateSetCursorKeysMode(_In_ bool const fApplicatio
 // - fApplicationMode - set to true to enable Application Mode Input, false for Numeric Mode.
 // Return Value:
 // - TRUE if successful (see DoSrvPrivateSetKeypadMode). FALSE otherwise.
-BOOL ConhostInternalGetSet::PrivateSetKeypadMode(_In_ bool const fApplicationMode)
+BOOL ConhostInternalGetSet::PrivateSetKeypadMode(const bool fApplicationMode)
 {
     return NT_SUCCESS(DoSrvPrivateSetKeypadMode(fApplicationMode));
 }
@@ -360,9 +361,9 @@ BOOL ConhostInternalGetSet::PrivateSetKeypadMode(_In_ bool const fApplicationMod
 // - fEnable - set to true to enable blinking, false to disable
 // Return Value:
 // - TRUE if successful (see DoSrvPrivateAllowCursorBlinking). FALSE otherwise.
-BOOL ConhostInternalGetSet::PrivateAllowCursorBlinking(_In_ bool const fEnable)
+BOOL ConhostInternalGetSet::PrivateAllowCursorBlinking(const bool fEnable)
 {
-    DoSrvPrivateAllowCursorBlinking(_pIo->GetActiveOutputBuffer(), fEnable);
+    DoSrvPrivateAllowCursorBlinking(_io.GetActiveOutputBuffer(), fEnable);
     return TRUE;
 }
 
@@ -374,9 +375,9 @@ BOOL ConhostInternalGetSet::PrivateAllowCursorBlinking(_In_ bool const fEnable)
 // - psrScrollMargins - The bounds of the region to be the scrolling region of the viewport.
 // Return Value:
 // - TRUE if successful (see DoSrvPrivateSetScrollingRegion). FALSE otherwise.
-BOOL ConhostInternalGetSet::PrivateSetScrollingRegion(_In_ const SMALL_RECT* const psrScrollMargins)
+BOOL ConhostInternalGetSet::PrivateSetScrollingRegion(const SMALL_RECT* const psrScrollMargins)
 {
-    return NT_SUCCESS(DoSrvPrivateSetScrollingRegion(_pIo->GetActiveOutputBuffer(), psrScrollMargins));
+    return NT_SUCCESS(DoSrvPrivateSetScrollingRegion(_io.GetActiveOutputBuffer(), psrScrollMargins));
 }
 
 // Routine Description:
@@ -387,7 +388,7 @@ BOOL ConhostInternalGetSet::PrivateSetScrollingRegion(_In_ const SMALL_RECT* con
 // - TRUE if successful (see DoSrvPrivateReverseLineFeed). FALSE otherwise.
 BOOL ConhostInternalGetSet::PrivateReverseLineFeed()
 {
-    return NT_SUCCESS(DoSrvPrivateReverseLineFeed(_pIo->GetActiveOutputBuffer()));
+    return NT_SUCCESS(DoSrvPrivateReverseLineFeed(_io.GetActiveOutputBuffer()));
 }
 
 // Routine Description:
@@ -410,7 +411,7 @@ BOOL ConhostInternalGetSet::SetConsoleTitleW(_In_reads_(sCchTitleLength) const w
 // - TRUE if successful (see DoSrvPrivateUseAlternateScreenBuffer). FALSE otherwise.
 BOOL ConhostInternalGetSet::PrivateUseAlternateScreenBuffer()
 {
-    return NT_SUCCESS(DoSrvPrivateUseAlternateScreenBuffer(_pIo->GetActiveOutputBuffer()));
+    return NT_SUCCESS(DoSrvPrivateUseAlternateScreenBuffer(_io.GetActiveOutputBuffer()));
 }
 
 // Routine Description:
@@ -421,7 +422,7 @@ BOOL ConhostInternalGetSet::PrivateUseAlternateScreenBuffer()
 // - TRUE if successful (see DoSrvPrivateUseMainScreenBuffer). FALSE otherwise.
 BOOL ConhostInternalGetSet::PrivateUseMainScreenBuffer()
 {
-    DoSrvPrivateUseMainScreenBuffer(_pIo->GetActiveOutputBuffer());
+    DoSrvPrivateUseMainScreenBuffer(_io.GetActiveOutputBuffer());
     return TRUE;
 }
 
@@ -445,7 +446,7 @@ BOOL ConhostInternalGetSet::PrivateHorizontalTabSet()
 // - sNumTabs - the number of tabs to execute
 // Return Value:
 // - TRUE if successful (see PrivateForwardTab). FALSE otherwise.
-BOOL ConhostInternalGetSet::PrivateForwardTab(_In_ SHORT const sNumTabs)
+BOOL ConhostInternalGetSet::PrivateForwardTab(const SHORT sNumTabs)
 {
     return NT_SUCCESS(DoSrvPrivateForwardTab(sNumTabs));
 }
@@ -458,7 +459,7 @@ BOOL ConhostInternalGetSet::PrivateForwardTab(_In_ SHORT const sNumTabs)
 // - sNumTabs - the number of tabs to execute
 // Return Value:
 // - TRUE if successful (see PrivateBackwardsTab). FALSE otherwise.
-BOOL ConhostInternalGetSet::PrivateBackwardsTab(_In_ SHORT const sNumTabs)
+BOOL ConhostInternalGetSet::PrivateBackwardsTab(const SHORT sNumTabs)
 {
     return NT_SUCCESS(DoSrvPrivateBackwardsTab(sNumTabs));
 }
@@ -471,7 +472,7 @@ BOOL ConhostInternalGetSet::PrivateBackwardsTab(_In_ SHORT const sNumTabs)
 // - fClearAll - set to true to enable blinking, false to disable
 // Return Value:
 // - TRUE if successful (see PrivateTabClear). FALSE otherwise.
-BOOL ConhostInternalGetSet::PrivateTabClear(_In_ bool const fClearAll)
+BOOL ConhostInternalGetSet::PrivateTabClear(const bool fClearAll)
 {
     DoSrvPrivateTabClear(fClearAll);
     return TRUE;
@@ -485,7 +486,7 @@ BOOL ConhostInternalGetSet::PrivateTabClear(_In_ bool const fClearAll)
 // - fEnabled - set to true to enable vt200 mouse mode, false to disable
 // Return Value:
 // - TRUE if successful (see DoSrvPrivateEnableVT200MouseMode). FALSE otherwise.
-BOOL ConhostInternalGetSet::PrivateEnableVT200MouseMode(_In_ bool const fEnabled)
+BOOL ConhostInternalGetSet::PrivateEnableVT200MouseMode(const bool fEnabled)
 {
     DoSrvPrivateEnableVT200MouseMode(fEnabled);
     return TRUE;
@@ -499,7 +500,7 @@ BOOL ConhostInternalGetSet::PrivateEnableVT200MouseMode(_In_ bool const fEnabled
 // - fEnabled - set to true to enable utf8 extended mouse mode, false to disable
 // Return Value:
 // - TRUE if successful (see DoSrvPrivateEnableUTF8ExtendedMouseMode). FALSE otherwise.
-BOOL ConhostInternalGetSet::PrivateEnableUTF8ExtendedMouseMode(_In_ bool const fEnabled)
+BOOL ConhostInternalGetSet::PrivateEnableUTF8ExtendedMouseMode(const bool fEnabled)
 {
     DoSrvPrivateEnableUTF8ExtendedMouseMode(fEnabled);
     return TRUE;
@@ -513,7 +514,7 @@ BOOL ConhostInternalGetSet::PrivateEnableUTF8ExtendedMouseMode(_In_ bool const f
 // - fEnabled - set to true to enable SGR extended mouse mode, false to disable
 // Return Value:
 // - TRUE if successful (see DoSrvPrivateEnableSGRExtendedMouseMode). FALSE otherwise.
-BOOL ConhostInternalGetSet::PrivateEnableSGRExtendedMouseMode(_In_ bool const fEnabled)
+BOOL ConhostInternalGetSet::PrivateEnableSGRExtendedMouseMode(const bool fEnabled)
 {
     DoSrvPrivateEnableSGRExtendedMouseMode(fEnabled);
     return TRUE;
@@ -527,7 +528,7 @@ BOOL ConhostInternalGetSet::PrivateEnableSGRExtendedMouseMode(_In_ bool const fE
 // - fEnabled - set to true to enable button-event mouse mode, false to disable
 // Return Value:
 // - TRUE if successful (see DoSrvPrivateEnableButtonEventMouseMode). FALSE otherwise.
-BOOL ConhostInternalGetSet::PrivateEnableButtonEventMouseMode(_In_ bool const fEnabled)
+BOOL ConhostInternalGetSet::PrivateEnableButtonEventMouseMode(const bool fEnabled)
 {
     DoSrvPrivateEnableButtonEventMouseMode(fEnabled);
     return TRUE;
@@ -541,7 +542,7 @@ BOOL ConhostInternalGetSet::PrivateEnableButtonEventMouseMode(_In_ bool const fE
 // - fEnabled - set to true to enable any-event mouse mode, false to disable
 // Return Value:
 // - TRUE if successful (see DoSrvPrivateEnableAnyEventMouseMode). FALSE otherwise.
-BOOL ConhostInternalGetSet::PrivateEnableAnyEventMouseMode(_In_ bool const fEnabled)
+BOOL ConhostInternalGetSet::PrivateEnableAnyEventMouseMode(const bool fEnabled)
 {
     DoSrvPrivateEnableAnyEventMouseMode(fEnabled);
     return TRUE;
@@ -555,7 +556,7 @@ BOOL ConhostInternalGetSet::PrivateEnableAnyEventMouseMode(_In_ bool const fEnab
 // - fEnabled - set to true to enable alternate scroll mode, false to disable
 // Return Value:
 // - TRUE if successful (see DoSrvPrivateEnableAnyEventMouseMode). FALSE otherwise.
-BOOL ConhostInternalGetSet::PrivateEnableAlternateScroll(_In_ bool const fEnabled)
+BOOL ConhostInternalGetSet::PrivateEnableAlternateScroll(const bool fEnabled)
 {
     DoSrvPrivateEnableAlternateScroll(fEnabled);
     return TRUE;
@@ -571,7 +572,7 @@ BOOL ConhostInternalGetSet::PrivateEnableAlternateScroll(_In_ bool const fEnable
 // - TRUE if successful (see DoSrvPrivateEraseAll). FALSE otherwise.
 BOOL ConhostInternalGetSet::PrivateEraseAll()
 {
-    return NT_SUCCESS(DoSrvPrivateEraseAll(_pIo->GetActiveOutputBuffer()));
+    return NT_SUCCESS(DoSrvPrivateEraseAll(_io.GetActiveOutputBuffer()));
 }
 
 // Routine Description:
@@ -582,9 +583,9 @@ BOOL ConhostInternalGetSet::PrivateEraseAll()
 // - cursorType: The style of cursor to change the cursor to.
 // Return Value:
 // - TRUE if successful (see DoSrvSetCursorStyle). FALSE otherwise.
-BOOL ConhostInternalGetSet::SetCursorStyle(_In_ CursorType const cursorType)
+BOOL ConhostInternalGetSet::SetCursorStyle(const CursorType cursorType)
 {
-    DoSrvSetCursorStyle(_pIo->GetActiveOutputBuffer(), cursorType);
+    DoSrvSetCursorStyle(_io.GetActiveOutputBuffer(), cursorType);
     return TRUE;
 }
 
@@ -597,7 +598,7 @@ BOOL ConhostInternalGetSet::SetCursorStyle(_In_ CursorType const cursorType)
 // - TRUE if successful. FALSE otherwise.
 BOOL ConhostInternalGetSet::PrivateGetConsoleScreenBufferAttributes(_Out_ WORD* const pwAttributes)
 {
-    return NT_SUCCESS(DoSrvPrivateGetConsoleScreenBufferAttributes(_pIo->GetActiveOutputBuffer(), pwAttributes));
+    return NT_SUCCESS(DoSrvPrivateGetConsoleScreenBufferAttributes(_io.GetActiveOutputBuffer(), pwAttributes));
 }
 
 // Routine Description:
@@ -611,7 +612,7 @@ BOOL ConhostInternalGetSet::PrivateGetConsoleScreenBufferAttributes(_Out_ WORD* 
 BOOL ConhostInternalGetSet::PrivatePrependConsoleInput(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
                                                        _Out_ size_t& eventsWritten)
 {
-    return SUCCEEDED(DoSrvPrivatePrependConsoleInput(_pIo->GetActiveInputBuffer(),
+    return SUCCEEDED(DoSrvPrivatePrependConsoleInput(_io.GetActiveInputBuffer(),
                                                      events,
                                                      eventsWritten));
 }
@@ -624,7 +625,7 @@ BOOL ConhostInternalGetSet::PrivatePrependConsoleInput(_Inout_ std::deque<std::u
 // - TRUE if successful (see DoSrvPrivateRefreshWindow). FALSE otherwise.
 BOOL ConhostInternalGetSet::PrivateRefreshWindow()
 {
-    DoSrvPrivateRefreshWindow(_pIo->GetActiveOutputBuffer());
+    DoSrvPrivateRefreshWindow(_io.GetActiveOutputBuffer());
     return TRUE;
 }
 
@@ -636,7 +637,7 @@ BOOL ConhostInternalGetSet::PrivateRefreshWindow()
 // - TRUE if successful (see DoSrvPrivateWriteConsoleControlInput). FALSE otherwise.
 BOOL ConhostInternalGetSet::PrivateWriteConsoleControlInput(_In_ KeyEvent key)
 {
-    return SUCCEEDED(DoSrvPrivateWriteConsoleControlInput(_pIo->GetActiveInputBuffer(),
+    return SUCCEEDED(DoSrvPrivateWriteConsoleControlInput(_io.GetActiveInputBuffer(),
                                                           key));
 }
 
@@ -673,8 +674,8 @@ BOOL ConhostInternalGetSet::PrivateSuppressResizeRepaint()
 //      it to the legacy inverting behavior.
 // Return Value:
 // - TRUE if successful (see DoSrvSetCursorStyle). FALSE otherwise.
-BOOL ConhostInternalGetSet::SetCursorColor(_In_ COLORREF const cursorColor)
+BOOL ConhostInternalGetSet::SetCursorColor(const COLORREF cursorColor)
 {
-    DoSrvSetCursorColor(_pIo->GetActiveOutputBuffer(), cursorColor);
+    DoSrvSetCursorColor(_io.GetActiveOutputBuffer(), cursorColor);
     return TRUE;
 }

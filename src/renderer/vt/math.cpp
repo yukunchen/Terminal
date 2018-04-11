@@ -39,7 +39,7 @@ SMALL_RECT VtEngine::GetDirtyRectInChars()
 // Return Value:
 // - S_FALSE: This is unsupported by the VT Renderer and should use another engine's value.
 [[nodiscard]]
-HRESULT VtEngine::IsCharFullWidthByFont(_In_ WCHAR const /*wch*/, _Out_ bool* const pResult)
+HRESULT VtEngine::IsCharFullWidthByFont(const WCHAR /*wch*/, _Out_ bool* const pResult)
 {
     *pResult = false;
     return S_FALSE;
@@ -53,12 +53,12 @@ HRESULT VtEngine::IsCharFullWidthByFont(_In_ WCHAR const /*wch*/, _Out_ bool* co
 // - pRectToOr - Add this rectangle to the existing one.
 // Return Value:
 // - <none>
-void VtEngine::_OrRect(_Inout_ SMALL_RECT* const pRectExisting, _In_ const SMALL_RECT* const pRectToOr) const
+void VtEngine::_OrRect(_Inout_ SMALL_RECT* const pRectExisting, const SMALL_RECT* const pRectToOr) const
 {
-    pRectExisting->Left = min(pRectExisting->Left, pRectToOr->Left);
-    pRectExisting->Top = min(pRectExisting->Top, pRectToOr->Top);
-    pRectExisting->Right = max(pRectExisting->Right, pRectToOr->Right);
-    pRectExisting->Bottom = max(pRectExisting->Bottom, pRectToOr->Bottom);
+    pRectExisting->Left = std::min(pRectExisting->Left, pRectToOr->Left);
+    pRectExisting->Top = std::min(pRectExisting->Top, pRectToOr->Top);
+    pRectExisting->Right = std::max(pRectExisting->Right, pRectToOr->Right);
+    pRectExisting->Bottom = std::max(pRectExisting->Bottom, pRectToOr->Bottom);
 }
 
 // Method Description:

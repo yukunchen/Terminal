@@ -78,7 +78,7 @@ Clipboard& Clipboard::Instance()
 // Return Value:
 // - None
 void Clipboard::StringPaste(_In_reads_(cchData) const wchar_t* const pData,
-                            _In_ const size_t cchData)
+                            const size_t cchData)
 {
     if (pData == nullptr)
     {
@@ -113,7 +113,7 @@ void Clipboard::StringPaste(_In_reads_(cchData) const wchar_t* const pData,
 // Note:
 // - will throw exception on error
 std::deque<std::unique_ptr<IInputEvent>> Clipboard::TextToKeyEvents(_In_reads_(cchData) const wchar_t* const pData,
-                                                                    _In_ const size_t cchData)
+                                                                    const size_t cchData)
 {
     THROW_IF_NULL_ALLOC(pData);
 
@@ -184,7 +184,7 @@ void Clipboard::StoreSelectionToClipboard()
     }
 
     // read selection area.
-    SCREEN_INFORMATION* const pScreenInfo = gci.CurrentScreenBuffer;
+    const SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
 
     SMALL_RECT* rgsrSelection;
     UINT cRectsSelected;
@@ -205,12 +205,12 @@ void Clipboard::StoreSelectionToClipboard()
             {
                 const bool fLineSelection = Selection::Instance().IsLineSelection();
 
-                status = RetrieveTextFromBuffer(pScreenInfo,
-                    fLineSelection,
-                    cRectsSelected,
-                    rgsrSelection,
-                    rgTempRows,
-                    rgTempRowLengths);
+                status = RetrieveTextFromBuffer(screenInfo,
+                                                fLineSelection,
+                                                cRectsSelected,
+                                                rgsrSelection,
+                                                rgTempRows,
+                                                rgTempRowLengths);
 
                 if (NT_SUCCESS(status))
                 {
@@ -236,9 +236,9 @@ void Clipboard::StoreSelectionToClipboard()
 }
 
 [[nodiscard]]
-NTSTATUS Clipboard::RetrieveTextFromBuffer(_In_ const SCREEN_INFORMATION* const pScreenInfo,
-                                           _In_ bool const fLineSelection,
-                                           _In_ UINT const cRectsSelected,
+NTSTATUS Clipboard::RetrieveTextFromBuffer(const SCREEN_INFORMATION& screenInfo,
+                                           const bool fLineSelection,
+                                           const UINT cRectsSelected,
                                            _In_reads_(cRectsSelected) const SMALL_RECT* const rgsrSelection,
                                            _Out_writes_(cRectsSelected) PWCHAR* const rgpwszTempText,
                                            _Out_writes_(cRectsSelected) size_t* const rgTempTextLengths)
@@ -261,37 +261,29 @@ NTSTATUS Clipboard::RetrieveTextFromBuffer(_In_ const SCREEN_INFORMATION* const 
         // for each row in the selection
         for (iRect = 0; iRect < cRectsSelected; iRect++)
         {
-            SMALL_RECT srHighlightRow = rgsrSelection[iRect];
+            const SMALL_RECT srHighlightRow = rgsrSelection[iRect];
 
-            SMALL_RECT srSelection;
-            Selection::Instance().GetSelectionRectangle(&srSelection);
+            const SMALL_RECT srSelection = Selection::Instance().GetSelectionRectangle();
 
             const UINT iRow = srSelection.Top + iRect;
 
             // recalculate string length again as the width of the highlight row might have been reduced in the bisect call
-            short sStringLength = srHighlightRow.Right - srHighlightRow.Left + 1;
+            const short sStringLength = srHighlightRow.Right - srHighlightRow.Left + 1;
 
             // this is the source location X/Y coordinates within the active screen buffer to start copying from
-            COORD coordSourcePoint;
-            coordSourcePoint.X = srHighlightRow.Left;
-            coordSourcePoint.Y = srHighlightRow.Top;
+            const COORD coordSourcePoint{ srHighlightRow.Left, srHighlightRow.Top };
 
-            // this is how much to select from the source location. we want one row at a time and the width highlighted.
-            COORD coordSelectionSize;
-            coordSelectionSize.X = sStringLength;
-            coordSelectionSize.Y = 1;
-
-
-            // our output buffer is 1 dimensional and is just as long as the string, so the "rectangle" should specify just a line.
+            // our output buffer is 1 dimensional and is just as long as the string, so the "rectangle" should
+            // specify just a line.
             // length of 80 runs from left 0 to right 79. therefore -1.
-            SMALL_RECT srTargetRect{ 0, 0, sStringLength - 1, 0 };
+            const SMALL_RECT srTargetRect{ 0, 0, sStringLength - 1, 0 };
 
             // retrieve the data from the screen buffer
             std::vector<OutputCell> outputCells;
             std::wstring selectionText;
             try
             {
-                std::vector<std::vector<OutputCell>> cells = ReadRectFromScreenBuffer(*pScreenInfo,
+                std::vector<std::vector<OutputCell>> cells = ReadRectFromScreenBuffer(screenInfo,
                                                                                       coordSourcePoint,
                                                                                       Viewport::FromInclusive(srTargetRect));
                 // we only care about one row so reduce it here
@@ -318,7 +310,7 @@ NTSTATUS Clipboard::RetrieveTextFromBuffer(_In_ const SCREEN_INFORMATION* const 
             const bool mungeData = (GetKeyState(VK_SHIFT) & KEY_PRESSED) == 0;
             if (mungeData)
             {
-                const ROW& Row = pScreenInfo->TextInfo->GetRowByOffset(iRow);
+                const ROW& Row = screenInfo.GetTextBuffer().GetRowByOffset(iRow);
 
                 // FOR LINE SELECTION ONLY: if the row was wrapped, don't remove the spaces at the end.
                 if (!fLineSelection || !Row.GetCharRow().WasWrapForced())
@@ -336,7 +328,7 @@ NTSTATUS Clipboard::RetrieveTextFromBuffer(_In_ const SCREEN_INFORMATION* const 
                     // FOR LINE SELECTION ONLY: if the row was wrapped, do not apply CR/LF.
                     // a.k.a. if the row was NOT wrapped, then we can assume a CR/LF is proper
                     // always apply \r\n for box selection
-                    if (!fLineSelection || !pScreenInfo->TextInfo->GetRowByOffset(iRow).GetCharRow().WasWrapForced())
+                    if (!fLineSelection || !screenInfo.GetTextBuffer().GetRowByOffset(iRow).GetCharRow().WasWrapForced())
                     {
                         selectionText.push_back(UNICODE_CARRIAGERETURN);
                         selectionText.push_back(UNICODE_LINEFEED);
@@ -382,7 +374,7 @@ NTSTATUS Clipboard::RetrieveTextFromBuffer(_In_ const SCREEN_INFORMATION* const 
 // Return Value:
 //  <none>
 [[nodiscard]]
-NTSTATUS Clipboard::CopyTextToSystemClipboard(_In_ const UINT cTotalRows,
+NTSTATUS Clipboard::CopyTextToSystemClipboard(const UINT cTotalRows,
                                               _In_reads_(cTotalRows) const PWCHAR* const rgTempRows,
                                               _In_reads_(cTotalRows) const size_t* const rgTempRowLengths)
 {

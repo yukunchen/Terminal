@@ -9,24 +9,24 @@
 
 using namespace Microsoft::Console::Types;
     
-Viewport::Viewport(_In_ const SMALL_RECT sr) noexcept :
+Viewport::Viewport(const SMALL_RECT sr) noexcept :
     _sr(sr) 
 {
 
 }
 
-Viewport::Viewport(_In_ const Viewport& other) noexcept :
+Viewport::Viewport(const Viewport& other) noexcept :
     _sr(other._sr)
 {
 
 }
 
-Viewport Viewport::FromInclusive(_In_ const SMALL_RECT sr) noexcept
+Viewport Viewport::FromInclusive(const SMALL_RECT sr) noexcept
 {
     return Viewport(sr);
 }
 
-Viewport Viewport::FromExclusive(_In_ const SMALL_RECT sr) noexcept
+Viewport Viewport::FromExclusive(const SMALL_RECT sr) noexcept
 { 
     SMALL_RECT _sr = sr;
     _sr.Bottom -= 1;
@@ -42,9 +42,9 @@ Viewport Viewport::FromExclusive(_In_ const SMALL_RECT sr) noexcept
 // - height: The height of the new viewport
 // Return Value:
 // - a new Viewport at the given origin, with the given dimensions.
-Viewport Viewport::FromDimensions(_In_ const COORD origin,
-                                  _In_ const short width,
-                                  _In_ const short height) noexcept
+Viewport Viewport::FromDimensions(const COORD origin,
+                                  const short width,
+                                  const short height) noexcept
 { 
     return Viewport::FromExclusive({ origin.X, origin.Y, 
                                      origin.X + width, origin.Y + height });
@@ -58,8 +58,8 @@ Viewport Viewport::FromDimensions(_In_ const COORD origin,
 //      in the x and y coordinates respectively.
 // Return Value:
 // - a new Viewport at the given origin, with the given dimensions.
-Viewport Viewport::FromDimensions(_In_ const COORD origin,
-                                  _In_ const COORD dimensions) noexcept
+Viewport Viewport::FromDimensions(const COORD origin,
+                                  const COORD dimensions) noexcept
 { 
     return Viewport::FromExclusive({ origin.X, origin.Y, 
                                      origin.X + dimensions.X, origin.Y + dimensions.Y });
@@ -71,7 +71,7 @@ Viewport Viewport::FromDimensions(_In_ const COORD origin,
 // - origin: origin of the rectangle to create.
 // Return Value:
 // - a 1x1 Viewport at the given coordinate
-Viewport Viewport::FromCoord(_In_ const COORD origin) noexcept
+Viewport Viewport::FromCoord(const COORD origin) noexcept
 { 
     return Viewport::FromInclusive({ origin.X, origin.Y, 
                                      origin.X, origin.Y });
@@ -145,7 +145,7 @@ COORD Viewport::Dimensions() const noexcept
 // - pcoord: a pointer to the coordinate to check
 // Return Value:
 // - true iff the coordinate is within the bounds of this viewport.
-bool Viewport::IsWithinViewport(_In_ const COORD* const pcoord) const noexcept
+bool Viewport::IsWithinViewport(const COORD* const pcoord) const noexcept
 {
     return pcoord->X >= Left() && pcoord->X < RightExclusive() &&
            pcoord->Y >= Top() && pcoord->Y < BottomExclusive();
@@ -160,10 +160,10 @@ bool Viewport::IsWithinViewport(_In_ const COORD* const pcoord) const noexcept
 // - true iff the clipped rectangle is valid (with a width and height both >0)
 bool Viewport::TrimToViewport(_Inout_ SMALL_RECT* const psr) const noexcept
 {
-    psr->Left = max(psr->Left, Left());
-    psr->Right = min(psr->Right, RightExclusive());
-    psr->Top = max(psr->Top, Top());
-    psr->Bottom = min(psr->Bottom, BottomExclusive());
+    psr->Left = std::max(psr->Left, Left());
+    psr->Right = std::min(psr->Right, RightExclusive());
+    psr->Top = std::max(psr->Top, Top());
+    psr->Bottom = std::min(psr->Bottom, BottomExclusive());
 
     return psr->Left < psr->Right && psr->Top < psr->Bottom;
 }
@@ -276,7 +276,7 @@ Viewport Viewport::ToOrigin() const noexcept
 // - other: the viewport to convert to this coordinate space
 // Return Value:
 // - the input viewport in a the coordinate space with origin at (this.Top, this.Left)
-Viewport Viewport::ConvertToOrigin(_In_ const Viewport& other) const noexcept
+Viewport Viewport::ConvertToOrigin(const Viewport& other) const noexcept
 {
     Viewport returnVal = other;
     ConvertToOrigin(&returnVal._sr);
@@ -293,8 +293,8 @@ Viewport Viewport::ConvertToOrigin(_In_ const Viewport& other) const noexcept
 // Return Value:
 // - S_OK if safemath succeeded, otherwise an HR representing the safemath error
 [[nodiscard]]
-HRESULT Viewport::AddCoord(_In_ const Viewport& original,
-                           _In_ const COORD delta,
+HRESULT Viewport::AddCoord(const Viewport& original,
+                           const COORD delta,
                            _Out_ Viewport& modified)
 {
     SHORT newTop = original._sr.Top;
@@ -321,12 +321,12 @@ HRESULT Viewport::AddCoord(_In_ const Viewport& original,
 // - rhs: the other viewport to or together
 // Return Value:
 // - a Veiwport representing the union of the other two viewports.
-Viewport Viewport::OrViewports(_In_ const Viewport& lhs, _In_ const Viewport& rhs) noexcept
+Viewport Viewport::OrViewports(const Viewport& lhs, const Viewport& rhs) noexcept
 {
-    const short Left = min(lhs._sr.Left, rhs._sr.Left);
-    const short Top = min(lhs._sr.Top, rhs._sr.Top);
-    const short Right = max(lhs._sr.Right, rhs._sr.Right);
-    const short Bottom = max(lhs._sr.Bottom, rhs._sr.Bottom);
+    const short Left = std::min(lhs._sr.Left, rhs._sr.Left);
+    const short Top = std::min(lhs._sr.Top, rhs._sr.Top);
+    const short Right = std::max(lhs._sr.Right, rhs._sr.Right);
+    const short Bottom = std::max(lhs._sr.Bottom, rhs._sr.Bottom);
 
     return Viewport({ Left, Top, Right, Bottom });
 }
@@ -337,7 +337,7 @@ Viewport Viewport::OrViewports(_In_ const Viewport& lhs, _In_ const Viewport& rh
 // - <none>
 // Return Value:
 // - true iff top < bottom && left < right
-bool Viewport::IsValid() const
+bool Viewport::IsValid() const noexcept
 {
     return _sr.Top < _sr.Bottom && _sr.Left < _sr.Right;
 }

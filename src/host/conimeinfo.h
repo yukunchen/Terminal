@@ -29,21 +29,21 @@ public:
     SMALL_RECT rcViewCaWindow;
     COORD coordConView;
 
-    ConversionAreaBufferInfo(_In_ COORD const coordBufferSize);
+    ConversionAreaBufferInfo(const COORD coordBufferSize);
 };
 
 class ConversionAreaInfo final
 {
 public:
-    ConversionAreaInfo(_In_ const COORD bufferSize,
-                       _In_ const COORD windowSize,
-                       _In_ const CHAR_INFO fill,
-                       _In_ const CHAR_INFO popupFill,
-                       _In_ const FontInfo* const pFontInfo);
+    ConversionAreaInfo(const COORD bufferSize,
+                       const COORD windowSize,
+                       const CHAR_INFO fill,
+                       const CHAR_INFO popupFill,
+                       const FontInfo fontInfo);
     ~ConversionAreaInfo();
 
     bool IsHidden() const;
-    void SetHidden(_In_ bool const fIsHidden);
+    void SetHidden(const bool fIsHidden);
 
     ConversionAreaBufferInfo CaInfo;
     SCREEN_INFORMATION* ScreenBuffer;

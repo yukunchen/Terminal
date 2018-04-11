@@ -115,7 +115,7 @@ namespace Microsoft::Console::Interactivity::Win32
             MovementDirection Direction;
 
             MoveState(const UiaTextRange& range,
-                        const MovementDirection direction);
+                      const MovementDirection direction);
 
         private:
             MoveState(const ScreenInfoRow startScreenInfoRow,
@@ -142,17 +142,17 @@ namespace Microsoft::Console::Interactivity::Win32
 
         // degenerate range at cursor position
         static UiaTextRange* Create(_In_ IRawElementProviderSimple* const pProvider,
-                                    _In_ const Cursor* const pCursor);
+                                    const Cursor cursor);
 
         // specific endpoint range
         static UiaTextRange* Create(_In_ IRawElementProviderSimple* const pProvider,
-                                    _In_ const Endpoint start,
-                                    _In_ const Endpoint end,
-                                    _In_ const bool degenerate);
+                                    const Endpoint start,
+                                    const Endpoint end,
+                                    const bool degenerate);
 
         // range from a UiaPoint
         static UiaTextRange* Create(_In_ IRawElementProviderSimple* const pProvider,
-                                    _In_ const UiaPoint point);
+                                    const UiaPoint point);
 
         ~UiaTextRange();
 
@@ -166,7 +166,7 @@ namespace Microsoft::Console::Interactivity::Win32
         IFACEMETHODIMP_(ULONG) AddRef();
         IFACEMETHODIMP_(ULONG) Release();
         IFACEMETHODIMP QueryInterface(_In_ REFIID riid,
-                                        _COM_Outptr_result_maybenull_ void** ppInterface);
+                                      _COM_Outptr_result_maybenull_ void** ppInterface);
 
         // ITextRangeProvider methods
         IFACEMETHODIMP Clone(_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal);
@@ -177,29 +177,29 @@ namespace Microsoft::Console::Interactivity::Win32
                                         _Out_ int* pRetVal);
         IFACEMETHODIMP ExpandToEnclosingUnit(_In_ TextUnit unit);
         IFACEMETHODIMP FindAttribute(_In_ TEXTATTRIBUTEID textAttributeId,
-                                        _In_ VARIANT val,
-                                        _In_ BOOL searchBackward,
-                                        _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal);
+                                     _In_ VARIANT val,
+                                     _In_ BOOL searchBackward,
+                                     _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal);
         IFACEMETHODIMP FindText(_In_ BSTR text,
                                 _In_ BOOL searchBackward,
                                 _In_ BOOL ignoreCase,
                                 _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal);
         IFACEMETHODIMP GetAttributeValue(_In_ TEXTATTRIBUTEID textAttributeId,
-                                            _Out_ VARIANT* pRetVal);
+                                         _Out_ VARIANT* pRetVal);
         IFACEMETHODIMP GetBoundingRectangles(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal);
         IFACEMETHODIMP GetEnclosingElement(_Outptr_result_maybenull_ IRawElementProviderSimple** ppRetVal);
         IFACEMETHODIMP GetText(_In_ int maxLength,
-                                _Out_ BSTR* pRetVal);
+                               _Out_ BSTR* pRetVal);
         IFACEMETHODIMP Move(_In_ TextUnit unit,
                             _In_ int count,
                             _Out_ int* pRetVal);
         IFACEMETHODIMP MoveEndpointByUnit(_In_ TextPatternRangeEndpoint endpoint,
-                                            _In_ TextUnit unit,
-                                            _In_ int count,
-                                            _Out_ int* pRetVal);
+                                          _In_ TextUnit unit,
+                                          _In_ int count,
+                                          _Out_ int* pRetVal);
         IFACEMETHODIMP MoveEndpointByRange(_In_ TextPatternRangeEndpoint endpoint,
-                                            _In_ ITextRangeProvider* pTargetRange,
-                                            _In_ TextPatternRangeEndpoint targetEndpoint);
+                                           _In_ ITextRangeProvider* pTargetRange,
+                                           _In_ TextPatternRangeEndpoint targetEndpoint);
         IFACEMETHODIMP Select();
         IFACEMETHODIMP AddToSelection();
         IFACEMETHODIMP RemoveFromSelection();
@@ -220,19 +220,19 @@ namespace Microsoft::Console::Interactivity::Win32
 
         // degenerate range at cursor position
         UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                        _In_ const Cursor* const pCursor);
+                     const Cursor cursor);
 
         // specific endpoint range
         UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                        _In_ const Endpoint start,
-                        _In_ const Endpoint end,
-                        _In_ const bool degenerate);
+                     const Endpoint start,
+                     const Endpoint end,
+                     const bool degenerate);
 
         // range from a UiaPoint
         UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                        _In_ const UiaPoint point);
+                     const UiaPoint point);
 
-        UiaTextRange(_In_ const UiaTextRange& a);
+        UiaTextRange(const UiaTextRange& a);
 
         // used to debug objects passed back and forth
         // between the provider and the client
@@ -267,8 +267,8 @@ namespace Microsoft::Console::Interactivity::Win32
         static const Viewport _getViewport();
         static HWND _getWindowHandle();
         static IConsoleWindow* const _getIConsoleWindow();
-        static SCREEN_INFORMATION* const _getScreenInfo();
-        static TEXT_BUFFER_INFO* const _getTextBuffer();
+        static SCREEN_INFORMATION& _getScreenInfo();
+        static TextBuffer& _getTextBuffer();
         static const COORD _getScreenBufferCoords();
 
         static const unsigned int _getTotalRows();
@@ -282,82 +282,82 @@ namespace Microsoft::Console::Interactivity::Win32
 
         const unsigned int _rowCountInRange() const;
 
-        static const TextBufferRow _endpointToTextBufferRow(_In_ const Endpoint endpoint);
-        static const ScreenInfoRow _textBufferRowToScreenInfoRow(_In_ const TextBufferRow row);
+        static const TextBufferRow _endpointToTextBufferRow(const Endpoint endpoint);
+        static const ScreenInfoRow _textBufferRowToScreenInfoRow(const TextBufferRow row);
 
-        static const TextBufferRow _screenInfoRowToTextBufferRow(_In_ const ScreenInfoRow row);
-        static const Endpoint _textBufferRowToEndpoint(_In_ const TextBufferRow row);
+        static const TextBufferRow _screenInfoRowToTextBufferRow(const ScreenInfoRow row);
+        static const Endpoint _textBufferRowToEndpoint(const TextBufferRow row);
 
-        static const ScreenInfoRow _endpointToScreenInfoRow(_In_ const Endpoint endpoint);
-        static const Endpoint _screenInfoRowToEndpoint(_In_ const ScreenInfoRow row);
+        static const ScreenInfoRow _endpointToScreenInfoRow(const Endpoint endpoint);
+        static const Endpoint _screenInfoRowToEndpoint(const ScreenInfoRow row);
 
-        static const Column _endpointToColumn(_In_ const Endpoint endpoint);
+        static const Column _endpointToColumn(const Endpoint endpoint);
 
-        static const Row _normalizeRow(_In_ const Row row);
+        static const Row _normalizeRow(const Row row);
 
-        static const ViewportRow _screenInfoRowToViewportRow(_In_ const ScreenInfoRow row);
-        static const ViewportRow _screenInfoRowToViewportRow(_In_ const ScreenInfoRow row,
-                                                                _In_ const Viewport viewport);
+        static const ViewportRow _screenInfoRowToViewportRow(const ScreenInfoRow row);
+        static const ViewportRow _screenInfoRowToViewportRow(const ScreenInfoRow row,
+                                                                const Viewport viewport);
 
-        static const bool _isScreenInfoRowInViewport(_In_ const ScreenInfoRow row);
-        static const bool _isScreenInfoRowInViewport(_In_ const ScreenInfoRow row,
-                                                        _In_ const Viewport viewport);
+        static const bool _isScreenInfoRowInViewport(const ScreenInfoRow row);
+        static const bool _isScreenInfoRowInViewport(const ScreenInfoRow row,
+                                                        const Viewport viewport);
 
-        static const unsigned int _getViewportHeight(_In_ const Viewport viewport);
-        static const unsigned int _getViewportWidth(_In_ const Viewport viewport);
+        static const unsigned int _getViewportHeight(const Viewport viewport);
+        static const unsigned int _getViewportWidth(const Viewport viewport);
 
-        void _addScreenInfoRowBoundaries(_In_ const ScreenInfoRow screenInfoRow,
+        void _addScreenInfoRowBoundaries(const ScreenInfoRow screenInfoRow,
                                             _Inout_ std::vector<double>& coords) const;
 
-        static const int _compareScreenCoords(_In_ const ScreenInfoRow rowA,
-                                                _In_ const Column colA,
-                                                _In_ const ScreenInfoRow rowB,
-                                                _In_ const Column colB);
+        static const int _compareScreenCoords(const ScreenInfoRow rowA,
+                                                const Column colA,
+                                                const ScreenInfoRow rowB,
+                                                const Column colB);
 
-        static std::pair<Endpoint, Endpoint> _moveByCharacter(_In_ const int moveCount,
-                                                                _In_ const MoveState moveState,
+        static std::pair<Endpoint, Endpoint> _moveByCharacter(const int moveCount,
+                                                                const MoveState moveState,
                                                                 _Out_ int* const pAmountMoved);
 
-        static std::pair<Endpoint, Endpoint> _moveByCharacterForward(_In_ const int moveCount,
-                                                                        _In_ const MoveState moveState,
+        static std::pair<Endpoint, Endpoint> _moveByCharacterForward(const int moveCount,
+                                                                        const MoveState moveState,
                                                                         _Out_ int* const pAmountMoved);
 
-        static std::pair<Endpoint, Endpoint> _moveByCharacterBackward(_In_ const int moveCount,
-                                                                        _In_ const MoveState moveState,
+        static std::pair<Endpoint, Endpoint> _moveByCharacterBackward(const int moveCount,
+                                                                        const MoveState moveState,
                                                                         _Out_ int* const pAmountMoved);
 
-        static std::pair<Endpoint, Endpoint> _moveByLine(_In_ const int moveCount,
-                                                            _In_ const MoveState moveState,
+        static std::pair<Endpoint, Endpoint> _moveByLine(const int moveCount,
+                                                            const MoveState moveState,
                                                             _Out_ int* const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
-        _moveEndpointByUnitCharacter(_In_ const int moveCount,
-                                        _In_ const TextPatternRangeEndpoint endpoint,
-                                        _In_ const MoveState moveState,
+        _moveEndpointByUnitCharacter(const int moveCount,
+                                        const TextPatternRangeEndpoint endpoint,
+                                        const MoveState moveState,
                                         _Out_ int* const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
-        _moveEndpointByUnitCharacterForward(_In_ const int moveCount,
-                                        _In_ const TextPatternRangeEndpoint endpoint,
-                                        _In_ const MoveState moveState,
+        _moveEndpointByUnitCharacterForward(const int moveCount,
+                                        const TextPatternRangeEndpoint endpoint,
+                                        const MoveState moveState,
                                         _Out_ int* const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
-        _moveEndpointByUnitCharacterBackward(_In_ const int moveCount,
-                                        _In_ const TextPatternRangeEndpoint endpoint,
-                                        _In_ const MoveState moveState,
+        _moveEndpointByUnitCharacterBackward(const int moveCount,
+                                        const TextPatternRangeEndpoint endpoint,
+                                        const MoveState moveState,
                                         _Out_ int* const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
-        _moveEndpointByUnitLine(_In_ const int moveCount,
-                                _In_ const TextPatternRangeEndpoint endpoint,
-                                _In_ const MoveState moveState,
+        _moveEndpointByUnitLine(const int moveCount,
+                                const TextPatternRangeEndpoint endpoint,
+                                const MoveState moveState,
                                 _Out_ int* const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
-        _moveEndpointByUnitDocument(_In_ const int moveCount,
-                                    _In_ const TextPatternRangeEndpoint endpoint,
-                                    _In_ const MoveState moveState,
+        _moveEndpointByUnitDocument(const int moveCount,
+                                    const TextPatternRangeEndpoint endpoint,
+                                    const MoveState moveState,
                                     _Out_ int* const pAmountMoved);
 
 #ifdef UNIT_TESTING
