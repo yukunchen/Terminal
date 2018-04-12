@@ -112,45 +112,19 @@ std::vector<std::vector<OutputCell>> ReadRectFromScreenBuffer(const SCREEN_INFOR
 // - This routine copies a rectangular region from the screen buffer to the screen buffer.  no clipping is done.
 // Arguments:
 // - screenInfo - reference to screen info
-// - psrSource - rectangle in source buffer to copy
-// - coordTarget - upper left coordinates of new location rectangle
-// Return Value:
-// - status of copy
-[[nodiscard]]
-NTSTATUS _CopyRectangle(SCREEN_INFORMATION& screenInfo,
-                        const SMALL_RECT * const psrSource,
-                        const COORD coordTarget)
+// - sourceRect - rectangle in source buffer to copy
+// - targetPoint - upper left coordinates of new location rectangle
+static void _CopyRectangle(SCREEN_INFORMATION& screenInfo,
+                           const SMALL_RECT sourceRect,
+                           const COORD targetPoint)
 {
-    DBGOUTPUT(("_CopyRectangle\n"));
+    const COORD sourcePoint{ sourceRect.Left, sourceRect.Top };
+    const SMALL_RECT targetRect{ 0, 0, sourceRect.Right - sourceRect.Left, sourceRect.Bottom - sourceRect.Top };
 
-    COORD SourcePoint;
-    SourcePoint.X = psrSource->Left;
-    SourcePoint.Y = psrSource->Top;
-
-    SMALL_RECT Target;
-    Target.Left = 0;
-    Target.Top = 0;
-    Target.Right = psrSource->Right - psrSource->Left;
-    Target.Bottom = psrSource->Bottom - psrSource->Top;
-
-    COORD Size;
-    Size.X = Target.Right;
-    Size.Y = Target.Bottom;
-    Size.X++;
-    Size.Y++;
-
-    try
-    {
-        std::vector<std::vector<OutputCell>> cells = ReadRectFromScreenBuffer(screenInfo,
-                                                                              SourcePoint,
-                                                                              Viewport::FromInclusive(Target));
-        WriteRectToScreenBuffer(screenInfo, cells, coordTarget);
-    }
-    catch (...)
-    {
-        return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-    }
-    return STATUS_SUCCESS;
+    std::vector<std::vector<OutputCell>> cells = ReadRectFromScreenBuffer(screenInfo,
+                                                                          sourcePoint,
+                                                                          Viewport::FromInclusive(targetRect));
+    WriteRectToScreenBuffer(screenInfo, cells, targetPoint);
 }
 
 // Routine Description:
@@ -306,7 +280,7 @@ NTSTATUS WriteScreenBuffer(SCREEN_INFORMATION& screenInfo, _In_ PCHAR_INFO pciBu
     TargetPoint.X = psrWriteRegion->Left;
     TargetPoint.Y = psrWriteRegion->Top;
 
-    return WriteRectToScreenBuffer((PBYTE) pciBuffer, SourceSize, &SourceRect, screenInfo, TargetPoint, nullptr);
+    return WriteRectToScreenBuffer((PBYTE)pciBuffer, SourceSize, &SourceRect, screenInfo, TargetPoint, nullptr);
 }
 
 // Routine Description:
@@ -397,7 +371,7 @@ NTSTATUS ReadOutputString(const SCREEN_INFORMATION& screenInfo,
                     const ICharRow& iCharRow = pRow->GetCharRow();
                     // we only support ucs2 encoded char rows
                     FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                                    "only support UCS2 char rows currently");
+                                     "only support UCS2 char rows currently");
 
                     const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
                     const Ucs2CharRow::const_iterator startIt = std::next(charRow.cbegin(), X);
@@ -510,7 +484,7 @@ NTSTATUS ReadOutputString(const SCREEN_INFORMATION& screenInfo,
                     const ICharRow& iCharRow = pRow->GetCharRow();
                     // we only support ucs2 encoded char rows
                     FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                                    "only support UCS2 char rows currently");
+                                     "only support UCS2 char rows currently");
 
                     const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
                     it = std::next(charRow.cbegin(), X);
@@ -595,7 +569,7 @@ NTSTATUS ReadOutputString(const SCREEN_INFORMATION& screenInfo,
     {
         UINT const Codepage = gci.OutputCP;
 
-        NumRead = ConvertToOem(Codepage, TransBuffer, NumRead, (LPSTR) pvBuffer, *pcRecords);
+        NumRead = ConvertToOem(Codepage, TransBuffer, NumRead, (LPSTR)pvBuffer, *pcRecords);
 
         delete[] TransBuffer;
     }
@@ -716,14 +690,17 @@ bool StreamScrollRegion(SCREEN_INFORMATION& screenInfo)
 // - ClipRectangle - Optional pointer to clip region.
 // - DestinationOrigin - Upper left corner of target region.
 // - Fill - Character and attribute to fill source region with.
-// Return Value:
-[[nodiscard]]
-NTSTATUS ScrollRegion(SCREEN_INFORMATION& screenInfo,
-                      _Inout_ PSMALL_RECT psrScroll,
-                      _In_opt_ PSMALL_RECT psrClip,
-                      _In_ COORD coordDestinationOrigin,
-                      _In_ CHAR_INFO ciFill)
+// NOTE: Throws exceptions
+void ScrollRegion(SCREEN_INFORMATION& screenInfo,
+                  const SMALL_RECT scrollRectGiven,
+                  const std::optional<SMALL_RECT> clipRectGiven,
+                  const COORD destinationOriginGiven,
+                  const CHAR_INFO fillGiven)
 {
+    auto fillWith = fillGiven;
+    auto scrollRect = scrollRectGiven;
+    auto originCoordinate = destinationOriginGiven;
+
     // here's how we clip:
 
     // Clip source rectangle to screen buffer => S
@@ -735,289 +712,217 @@ NTSTATUS ScrollRegion(SCREEN_INFORMATION& screenInfo,
     // S2 is the region we copy to T
     // S3 is the region to fill
 
-    if (ciFill.Char.UnicodeChar == '\0' && ciFill.Attributes == 0)
+    if (fillWith.Char.UnicodeChar == UNICODE_NULL && fillWith.Attributes == 0)
     {
-        ciFill.Char.UnicodeChar = L' ';
-        ciFill.Attributes = screenInfo.GetAttributes().GetLegacyAttributes();
+        fillWith.Char.UnicodeChar = UNICODE_SPACE;
+        fillWith.Attributes = screenInfo.GetAttributes().GetLegacyAttributes();
     }
+
+    const auto bufferSize = screenInfo.GetScreenBufferSize();
+    const COORD bufferLimits{ bufferSize.X - 1i16, bufferSize.Y - 1i16 };
 
     // clip the source rectangle to the screen buffer
-    if (psrScroll->Left < 0)
+    if (scrollRect.Left < 0)
     {
-        coordDestinationOrigin.X += -psrScroll->Left;
-        psrScroll->Left = 0;
+        originCoordinate.X += -scrollRect.Left;
+        scrollRect.Left = 0;
     }
-    if (psrScroll->Top < 0)
+    if (scrollRect.Top < 0)
     {
-        coordDestinationOrigin.Y += -psrScroll->Top;
-        psrScroll->Top = 0;
+        originCoordinate.Y += -scrollRect.Top;
+        scrollRect.Top = 0;
     }
 
-    const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
-    if (psrScroll->Right >= coordScreenBufferSize.X)
+    if (scrollRect.Right >= bufferSize.X)
     {
-        psrScroll->Right = (SHORT)(coordScreenBufferSize.X - 1);
+        scrollRect.Right = bufferLimits.X;
     }
-    if (psrScroll->Bottom >= coordScreenBufferSize.Y)
+    if (scrollRect.Bottom >= bufferSize.Y)
     {
-        psrScroll->Bottom = (SHORT)(coordScreenBufferSize.Y - 1);
+        scrollRect.Bottom = bufferLimits.Y;
     }
 
     // if source rectangle doesn't intersect screen buffer, return.
-    if (psrScroll->Bottom < psrScroll->Top || psrScroll->Right < psrScroll->Left)
+    if (scrollRect.Bottom < scrollRect.Top || scrollRect.Right < scrollRect.Left)
     {
-        return STATUS_SUCCESS;
+        return;
     }
 
     // Account for the scroll margins set by DECSTBM
-    SMALL_RECT srScrollMargins = screenInfo.GetScrollMargins();
-    SMALL_RECT srBufferViewport = screenInfo.GetBufferViewport();
+    auto marginRect = screenInfo.GetScrollMargins();
+    const auto viewport = screenInfo.GetBufferViewport();
 
     // The margins are in viewport relative coordinates. Adjust for that.
-    srScrollMargins.Top += srBufferViewport.Top;
-    srScrollMargins.Bottom += srBufferViewport.Top;
-    srScrollMargins.Left += srBufferViewport.Left;
-    srScrollMargins.Right += srBufferViewport.Left;
+    marginRect.Top += viewport.Top;
+    marginRect.Bottom += viewport.Top;
+    marginRect.Left += viewport.Left;
+    marginRect.Right += viewport.Left;
 
-    if (srScrollMargins.Bottom > srScrollMargins.Top)
+    if (marginRect.Bottom > marginRect.Top)
     {
-        if (psrScroll->Top < srScrollMargins.Top)
+        if (scrollRect.Top < marginRect.Top)
         {
-            psrScroll->Top = srScrollMargins.Top;
+            scrollRect.Top = marginRect.Top;
         }
-        if (psrScroll->Bottom >= srScrollMargins.Bottom)
+        if (scrollRect.Bottom >= marginRect.Bottom)
         {
-            psrScroll->Bottom = srScrollMargins.Bottom;
+            scrollRect.Bottom = marginRect.Bottom;
         }
     }
-    SMALL_RECT OurClipRectangle;
+
     // clip the target rectangle
     // if a cliprectangle was provided, clip it to the screen buffer.
     // if not, set the cliprectangle to the screen buffer region.
-    if (psrClip)
-    {
-        // clip the cliprectangle.
-        if (psrClip->Left < 0)
-        {
-            psrClip->Left = 0;
-        }
-        if (psrClip->Top < 0)
-        {
-            psrClip->Top = 0;
-        }
-        if (psrClip->Right >= coordScreenBufferSize.X)
-        {
-            psrClip->Right = (SHORT)(coordScreenBufferSize.X - 1);
-        }
-        if (psrClip->Bottom >= coordScreenBufferSize.Y)
-        {
-            psrClip->Bottom = (SHORT)(coordScreenBufferSize.Y - 1);
-        }
-    }
-    else
-    {
-        OurClipRectangle.Left = 0;
-        OurClipRectangle.Top = 0;
-        OurClipRectangle.Right = (SHORT)(coordScreenBufferSize.X - 1);
-        OurClipRectangle.Bottom = (SHORT)(coordScreenBufferSize.Y - 1);
-        psrClip = &OurClipRectangle;
-    }
+    auto clipRect = clipRectGiven.value_or(SMALL_RECT{ 0, 0, bufferSize.X - 1i16, bufferSize.Y - 1i16 });
+
+    // clip the cliprectangle.
+    clipRect.Left = std::max(clipRect.Left, 0i16);
+    clipRect.Top = std::max(clipRect.Top, 0i16);
+    clipRect.Right = std::min(clipRect.Right, bufferLimits.X);
+    clipRect.Bottom = std::min(clipRect.Bottom, bufferLimits.Y);
+
     // Account for the scroll margins set by DECSTBM
-    if (srScrollMargins.Bottom > srScrollMargins.Top)
+    if (marginRect.Bottom > marginRect.Top)
     {
-        if (psrClip->Top < srScrollMargins.Top)
+        if (clipRect.Top < marginRect.Top)
         {
-            psrClip->Top = srScrollMargins.Top;
+            clipRect.Top = marginRect.Top;
         }
-        if (psrClip->Bottom >= srScrollMargins.Bottom)
+        if (clipRect.Bottom >= marginRect.Bottom)
         {
-            psrClip->Bottom = srScrollMargins.Bottom;
+            clipRect.Bottom = marginRect.Bottom;
         }
     }
     // Create target rectangle based on S => T
     // Clip T to ClipRegion => T
     // Create S2 based on clipped T => S2
 
-    SMALL_RECT ScrollRectangle2 = *psrScroll;
+    auto scrollRect2 = scrollRect;
 
-    SMALL_RECT TargetRectangle;
-    TargetRectangle.Left = coordDestinationOrigin.X;
-    TargetRectangle.Top = coordDestinationOrigin.Y;
-    TargetRectangle.Right = (SHORT)(coordDestinationOrigin.X + (ScrollRectangle2.Right - ScrollRectangle2.Left + 1) - 1);
-    TargetRectangle.Bottom = (SHORT)(coordDestinationOrigin.Y + (ScrollRectangle2.Bottom - ScrollRectangle2.Top + 1) - 1);
+    SMALL_RECT targetRectangle;
+    targetRectangle.Left = originCoordinate.X;
+    targetRectangle.Top = originCoordinate.Y;
+    targetRectangle.Right = (SHORT)(originCoordinate.X + (scrollRect2.Right - scrollRect2.Left + 1) - 1);
+    targetRectangle.Bottom = (SHORT)(originCoordinate.Y + (scrollRect2.Bottom - scrollRect2.Top + 1) - 1);
 
-    if (TargetRectangle.Left < psrClip->Left)
+    if (targetRectangle.Left < clipRect.Left)
     {
-        ScrollRectangle2.Left += psrClip->Left - TargetRectangle.Left;
-        TargetRectangle.Left = psrClip->Left;
+        scrollRect2.Left += clipRect.Left - targetRectangle.Left;
+        targetRectangle.Left = clipRect.Left;
     }
-    if (TargetRectangle.Top < psrClip->Top)
+    if (targetRectangle.Top < clipRect.Top)
     {
-        ScrollRectangle2.Top += psrClip->Top - TargetRectangle.Top;
-        TargetRectangle.Top = psrClip->Top;
+        scrollRect2.Top += clipRect.Top - targetRectangle.Top;
+        targetRectangle.Top = clipRect.Top;
     }
-    if (TargetRectangle.Right > psrClip->Right)
+    if (targetRectangle.Right > clipRect.Right)
     {
-        ScrollRectangle2.Right -= TargetRectangle.Right - psrClip->Right;
-        TargetRectangle.Right = psrClip->Right;
+        scrollRect2.Right -= targetRectangle.Right - clipRect.Right;
+        targetRectangle.Right = clipRect.Right;
     }
-    if (TargetRectangle.Bottom > psrClip->Bottom)
+    if (targetRectangle.Bottom > clipRect.Bottom)
     {
-        ScrollRectangle2.Bottom -= TargetRectangle.Bottom - psrClip->Bottom;
-        TargetRectangle.Bottom = psrClip->Bottom;
+        scrollRect2.Bottom -= targetRectangle.Bottom - clipRect.Bottom;
+        targetRectangle.Bottom = clipRect.Bottom;
     }
 
     // clip scroll rect to clipregion => S3
-    SMALL_RECT ScrollRectangle3 = *psrScroll;
-    if (ScrollRectangle3.Left < psrClip->Left)
-    {
-        ScrollRectangle3.Left = psrClip->Left;
-    }
-    if (ScrollRectangle3.Top < psrClip->Top)
-    {
-        ScrollRectangle3.Top = psrClip->Top;
-    }
-    if (ScrollRectangle3.Right > psrClip->Right)
-    {
-        ScrollRectangle3.Right = psrClip->Right;
-    }
-    if (ScrollRectangle3.Bottom > psrClip->Bottom)
-    {
-        ScrollRectangle3.Bottom = psrClip->Bottom;
-    }
+    SMALL_RECT scrollRect3 = scrollRect;
+    scrollRect3.Left = std::max(scrollRect3.Left, clipRect.Left);
+    scrollRect3.Top = std::max(scrollRect3.Top, clipRect.Top);
+    scrollRect3.Right = std::min(scrollRect3.Right, clipRect.Right);
+    scrollRect3.Bottom = std::min(scrollRect3.Bottom, clipRect.Bottom);
 
     // if scroll rect doesn't intersect clip region, return.
-    if (ScrollRectangle3.Bottom < ScrollRectangle3.Top || ScrollRectangle3.Right < ScrollRectangle3.Left)
+    if (scrollRect3.Bottom < scrollRect3.Top || scrollRect3.Right < scrollRect3.Left)
     {
-        return STATUS_SUCCESS;
+        return;
     }
 
-    NTSTATUS Status = STATUS_SUCCESS;
     // if target rectangle doesn't intersect screen buffer, skip scrolling part.
-    if (!(TargetRectangle.Bottom < TargetRectangle.Top || TargetRectangle.Right < TargetRectangle.Left))
+    if (!(targetRectangle.Bottom < targetRectangle.Top || targetRectangle.Right < targetRectangle.Left))
     {
         // if we can, don't use intermediate scroll region buffer.  do this
         // by figuring out fill rectangle.  NOTE: this code will only work
         // if _CopyRectangle copies from low memory to high memory (otherwise
         // we would overwrite the scroll region before reading it).
 
-        if (ScrollRectangle2.Right == TargetRectangle.Right &&
-            ScrollRectangle2.Left == TargetRectangle.Left && ScrollRectangle2.Top > TargetRectangle.Top && ScrollRectangle2.Top < TargetRectangle.Bottom)
+        if (scrollRect2.Right == targetRectangle.Right &&
+            scrollRect2.Left == targetRectangle.Left && scrollRect2.Top > targetRectangle.Top && scrollRect2.Top < targetRectangle.Bottom)
         {
-            COORD TargetPoint;
-            TargetPoint.X = TargetRectangle.Left;
-            TargetPoint.Y = TargetRectangle.Top;
+            const COORD targetPoint{ targetRectangle.Left, targetRectangle.Top };
 
-            if (ScrollRectangle2.Right == (SHORT)(coordScreenBufferSize.X - 1) &&
-                ScrollRectangle2.Left == 0 && ScrollRectangle2.Bottom == (SHORT)(coordScreenBufferSize.Y - 1) && ScrollRectangle2.Top == 1)
+            if (scrollRect2.Right == (SHORT)(bufferSize.X - 1) &&
+                scrollRect2.Left == 0 && scrollRect2.Bottom == (SHORT)(bufferSize.Y - 1) && scrollRect2.Top == 1)
             {
-                ScrollEntireScreen(screenInfo, (SHORT)(ScrollRectangle2.Top - TargetRectangle.Top));
+                ScrollEntireScreen(screenInfo, (SHORT)(scrollRect2.Top - targetRectangle.Top));
             }
             else
             {
-                Status = _CopyRectangle(screenInfo, &ScrollRectangle2, TargetPoint);
+                _CopyRectangle(screenInfo, scrollRect2, targetPoint);
             }
-            if (NT_SUCCESS(Status))
+
+            SMALL_RECT fillRect;
+            fillRect.Left = targetRectangle.Left;
+            fillRect.Right = targetRectangle.Right;
+            fillRect.Top = (SHORT)(targetRectangle.Bottom + 1);
+            fillRect.Bottom = scrollRect.Bottom;
+            if (fillRect.Top < clipRect.Top)
             {
-                SMALL_RECT FillRect;
-                FillRect.Left = TargetRectangle.Left;
-                FillRect.Right = TargetRectangle.Right;
-                FillRect.Top = (SHORT)(TargetRectangle.Bottom + 1);
-                FillRect.Bottom = psrScroll->Bottom;
-                if (FillRect.Top < psrClip->Top)
-                {
-                    FillRect.Top = psrClip->Top;
-                }
-
-                if (FillRect.Bottom > psrClip->Bottom)
-                {
-                    FillRect.Bottom = psrClip->Bottom;
-                }
-
-                FillRectangle(&ciFill, screenInfo, &FillRect);
-
-                ScrollScreen(screenInfo, &ScrollRectangle2, &FillRect, TargetPoint);
+                fillRect.Top = clipRect.Top;
             }
 
+            if (fillRect.Bottom > clipRect.Bottom)
+            {
+                fillRect.Bottom = clipRect.Bottom;
+            }
+
+            FillRectangle(&fillWith, screenInfo, &fillRect);
+
+            ScrollScreen(screenInfo, &scrollRect2, &fillRect, targetPoint);
         }
 
         // if no overlap, don't need intermediate copy
-        else if (ScrollRectangle3.Right < TargetRectangle.Left ||
-                 ScrollRectangle3.Left > TargetRectangle.Right ||
-                 ScrollRectangle3.Top > TargetRectangle.Bottom ||
-                 ScrollRectangle3.Bottom < TargetRectangle.Top)
+        else if (scrollRect3.Right < targetRectangle.Left ||
+                 scrollRect3.Left > targetRectangle.Right ||
+                 scrollRect3.Top > targetRectangle.Bottom ||
+                 scrollRect3.Bottom < targetRectangle.Top)
         {
-            COORD TargetPoint;
-            TargetPoint.X = TargetRectangle.Left;
-            TargetPoint.Y = TargetRectangle.Top;
-            Status = _CopyRectangle(screenInfo, &ScrollRectangle2, TargetPoint);
-            if (NT_SUCCESS(Status))
-            {
-                FillRectangle(&ciFill, screenInfo, &ScrollRectangle3);
-
-                ScrollScreen(screenInfo, &ScrollRectangle2, &ScrollRectangle3, TargetPoint);
-            }
+            const COORD TargetPoint{ targetRectangle.Left, targetRectangle.Top };
+            _CopyRectangle(screenInfo, scrollRect2, TargetPoint);
+            FillRectangle(&fillWith, screenInfo, &scrollRect3);
+            ScrollScreen(screenInfo, &scrollRect2, &scrollRect3, TargetPoint);
         }
 
         // for the case where the source and target rectangles overlap, we copy the source rectangle, fill it, then copy it to the target.
         else
         {
-            COORD Size;
-            Size.X = (SHORT)(ScrollRectangle2.Right - ScrollRectangle2.Left + 1);
-            Size.Y = (SHORT)(ScrollRectangle2.Bottom - ScrollRectangle2.Top + 1);
-
-            SMALL_RECT TargetRect;
-            TargetRect.Left = 0;
-            TargetRect.Top = 0;
-            TargetRect.Right = ScrollRectangle2.Right - ScrollRectangle2.Left;
-            TargetRect.Bottom = ScrollRectangle2.Bottom - ScrollRectangle2.Top;
-
-            COORD SourcePoint;
-            SourcePoint.X = ScrollRectangle2.Left;
-            SourcePoint.Y = ScrollRectangle2.Top;
+            const COORD size{ scrollRect2.Right - scrollRect2.Left + 1i16,
+                              scrollRect2.Bottom - scrollRect2.Top + 1i16 };
+            const SMALL_RECT targetRect{ 0, 0, scrollRect2.Right - scrollRect2.Left, scrollRect2.Bottom - scrollRect2.Top };
+            const COORD sourcePoint{ scrollRect2.Left, scrollRect2.Top };
 
             std::vector<std::vector<OutputCell>> outputCells;
-            try
-            {
-                outputCells = ReadRectFromScreenBuffer(screenInfo, SourcePoint, Viewport::FromInclusive(TargetRect));
-            }
-            catch (...)
-            {
-                return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-            }
+            outputCells = ReadRectFromScreenBuffer(screenInfo, sourcePoint, Viewport::FromInclusive(targetRect));
 
-            FillRectangle(&ciFill, screenInfo, &ScrollRectangle3);
+            FillRectangle(&fillWith, screenInfo, &scrollRect3);
 
-            SMALL_RECT SourceRectangle;
-            SourceRectangle.Top = 0;
-            SourceRectangle.Left = 0;
-            SourceRectangle.Right = (SHORT)(Size.X - 1);
-            SourceRectangle.Bottom = (SHORT)(Size.Y - 1);
+            const SMALL_RECT sourceRect{ 0, 0, size.X - 1i16, size.Y - 1i16 };
+            const COORD targetPoint{ targetRectangle.Left, targetRectangle.Top };
 
-            COORD TargetPoint;
-            TargetPoint.X = TargetRectangle.Left;
-            TargetPoint.Y = TargetRectangle.Top;
+            WriteRectToScreenBuffer(screenInfo, outputCells, targetPoint);
 
-            try
-            {
-                WriteRectToScreenBuffer(screenInfo, outputCells, TargetPoint);
-            }
-            catch (...)
-            {
-                return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-            }
             // update regions on screen.
-            ScrollScreen(screenInfo, &ScrollRectangle2, &ScrollRectangle3, TargetPoint);
+            ScrollScreen(screenInfo, &scrollRect2, &scrollRect3, targetPoint);
         }
     }
     else
     {
         // Do fill.
-        FillRectangle(&ciFill, screenInfo, &ScrollRectangle3);
+        FillRectangle(&fillWith, screenInfo, &scrollRect3);
 
-        WriteToScreen(screenInfo, ScrollRectangle3);
+        WriteToScreen(screenInfo, scrollRect3);
     }
-    return Status;
 }
 
 void SetActiveScreenBuffer(SCREEN_INFORMATION& screenInfo)

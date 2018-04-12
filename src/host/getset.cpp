@@ -615,27 +615,17 @@ HRESULT DoSrvScrollConsoleScreenBufferW(SCREEN_INFORMATION& screenInfo,
                                         const wchar_t wchFill,
                                         const WORD attrFill)
 {
-    // TODO: MSFT 9574849 - can we make scroll region use these as const so we don't have to screw with them?
-    // Scroll region takes non-const parameters but our API has been updated to use maximal consts.
-    // As such, we will have to copy some items into local variables to prevent the const-ness from leaking beyond this point
-    // until 9574849 is fixed (as above).
-
-    SMALL_RECT* pClipRect = nullptr; // We have to pass nullptr if there wasn't a parameter given to us.
-    SMALL_RECT ClipRect = { 0 };
-    if (pTargetClipRectangle != nullptr)
-    {
-        // If there was a valid clip rectangle given, copy its contents to a non-const local and pass that pointer down.
-        ClipRect = *pTargetClipRectangle;
-        pClipRect = &ClipRect;
-    }
-
-    SMALL_RECT ScrollRectangle = *pSourceRectangle;
-
     CHAR_INFO Fill;
     Fill.Char.UnicodeChar = wchFill;
     Fill.Attributes = attrFill;
+    
+    try
+    {
+        ScrollRegion(screenInfo, *pSourceRectangle, *pTargetClipRectangle, *pTargetOrigin, Fill);
+    }
+    CATCH_RETURN();
 
-    return ScrollRegion(screenInfo, &ScrollRectangle, pClipRect, *pTargetOrigin, Fill);
+    return S_OK;
 }
 
 // Routine Description:

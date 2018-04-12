@@ -41,12 +41,11 @@ NTSTATUS ReadOutputString(const SCREEN_INFORMATION& screenInfo,
                           const ULONG ulStringType,
                           _Inout_ PULONG pcRecords);
 
-[[nodiscard]]
-NTSTATUS ScrollRegion(SCREEN_INFORMATION& screenInfo,
-                      _Inout_ PSMALL_RECT psrScroll,
-                      _In_opt_ PSMALL_RECT psrClip,
-                      _In_ COORD coordDestinationOrigin,
-                      _In_ CHAR_INFO ciFill);
+void ScrollRegion(SCREEN_INFORMATION& screenInfo,
+                  const SMALL_RECT scrollRect,
+                  const std::optional<SMALL_RECT> clipRect,
+                  const COORD destinationOrigin,
+                  const CHAR_INFO fill);
 
 VOID SetConsoleWindowOwner(const HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pProcessData);
 

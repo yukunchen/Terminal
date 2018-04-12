@@ -24,6 +24,7 @@
 #include <map>
 #include <mutex>
 #include <new>
+#include <optional>
 #include <queue>
 #include <stdexcept>
 #include <string>
