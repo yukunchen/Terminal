@@ -116,7 +116,11 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
         ciFill.Attributes = screenInfo.GetAttributes().GetLegacyAttributes();
         ciFill.Char.UnicodeChar = L' ';
 
-        LOG_IF_FAILED(ScrollRegion(screenInfo, &scrollRect, &scrollRect, dest, ciFill));
+        try
+        {
+            ScrollRegion(screenInfo, scrollRect, scrollRect, dest, ciFill);
+        }
+        CATCH_LOG();
 
         coordCursor.Y -= diff;
     }
