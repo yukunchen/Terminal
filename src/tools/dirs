@@ -1,4 +1,4 @@
-DIRS=nihilist{noncrit} \
-     vtapp{noncrit} \
-     vtpipeterm{noncrit} \
+DIRS=nihilist \
+     vtapp \
+     vtpipeterm \
      integrity \

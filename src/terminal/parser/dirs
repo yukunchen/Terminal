@@ -1,4 +1,4 @@
 DIRS=lib \
-     ft_fuzzer{noncrit} \
-     ft_fuzzwrapper{noncrit} \
-     ut_parser{noncrit} \
+     ft_fuzzer \
+     ft_fuzzwrapper \
+     ut_parser \

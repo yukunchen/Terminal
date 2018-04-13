@@ -1,2 +1,2 @@
 DIRS=lib \
-     ut_adapter{noncrit} \
+     ut_adapter \
