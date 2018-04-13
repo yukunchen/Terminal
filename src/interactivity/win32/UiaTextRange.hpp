@@ -142,7 +142,7 @@ namespace Microsoft::Console::Interactivity::Win32
 
         // degenerate range at cursor position
         static UiaTextRange* Create(_In_ IRawElementProviderSimple* const pProvider,
-                                    const Cursor cursor);
+                                    const Cursor& cursor);
 
         // specific endpoint range
         static UiaTextRange* Create(_In_ IRawElementProviderSimple* const pProvider,
@@ -220,7 +220,7 @@ namespace Microsoft::Console::Interactivity::Win32
 
         // degenerate range at cursor position
         UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                     const Cursor cursor);
+                     const Cursor& cursor);
 
         // specific endpoint range
         UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,

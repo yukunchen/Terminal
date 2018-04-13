@@ -140,7 +140,7 @@ public:
 
         UINT uiCursorSize = 12;
 
-        m_backupTextBufferInfo = &gci.pCurrentScreenBuffer->GetTextBuffer();
+        m_backupTextBufferInfo.swap(gci.pCurrentScreenBuffer->_textBuffer);
         try
         {
             std::unique_ptr<TextBuffer> textBuffer = std::make_unique<TextBuffer>(*m_pFontInfo,
@@ -151,7 +151,7 @@ public:
             {
                 m_ntstatusTextBufferInfo = STATUS_NO_MEMORY;
             }
-            gci.GetActiveOutputBuffer().GetTextBuffer() = *textBuffer.release();
+            gci.pCurrentScreenBuffer->_textBuffer.swap(textBuffer);
         }
         catch (...)
         {
@@ -164,7 +164,7 @@ public:
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         ASSERT(gci.HasActiveOutputBuffer());
 
-        gci.GetActiveOutputBuffer().GetTextBuffer() = *m_backupTextBufferInfo;
+        gci.pCurrentScreenBuffer->_textBuffer.swap(m_backupTextBufferInfo);
     }
 
     void FillTextBuffer()
@@ -214,7 +214,7 @@ private:
     HANDLE m_heap;
     NTSTATUS m_ntstatusTextBufferInfo;
     FontInfo* m_pFontInfo;
-    TextBuffer* m_backupTextBufferInfo;
+    std::unique_ptr<TextBuffer> m_backupTextBufferInfo;
 
     void FillRow(ROW* pRow)
     {

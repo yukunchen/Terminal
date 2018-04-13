@@ -32,7 +32,15 @@ public:
     static const unsigned int s_InvertCursorColor = INVALID_COLOR;
 
     Cursor(const ULONG ulSize);
+
     ~Cursor();
+    
+    // No Copy. It will copy the timer handle. Bad news.
+    Cursor(const Cursor&) = delete;
+    Cursor& operator=(const Cursor&) & = delete;
+
+    Cursor(Cursor&&) = default;
+    Cursor& operator=(Cursor&&) & = default;
 
     void UpdateSystemMetrics();
     void SettingsChanged();
