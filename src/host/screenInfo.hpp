@@ -297,5 +297,6 @@ private:
 
 #ifdef UNIT_TESTING
     friend class ScreenBufferTests;
+    friend class CommonState;
 #endif
 };

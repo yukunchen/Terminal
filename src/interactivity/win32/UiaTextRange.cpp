@@ -172,7 +172,7 @@ UiaTextRange* UiaTextRange::Create(_In_ IRawElementProviderSimple* const pProvid
 }
 
 UiaTextRange* UiaTextRange::Create(_In_ IRawElementProviderSimple* const pProvider,
-                                   const Cursor cursor)
+                                   const Cursor& cursor)
 {
     UiaTextRange* range = nullptr;
     try
@@ -255,7 +255,7 @@ UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider) :
 }
 
 UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                           const Cursor cursor) :
+                           const Cursor& cursor) :
     UiaTextRange(pProvider)
 {
     _degenerate = true;
