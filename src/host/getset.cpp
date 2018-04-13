@@ -621,7 +621,11 @@ HRESULT DoSrvScrollConsoleScreenBufferW(SCREEN_INFORMATION& screenInfo,
     
     try
     {
-        ScrollRegion(screenInfo, *pSourceRectangle, *pTargetClipRectangle, *pTargetOrigin, Fill);
+        ScrollRegion(screenInfo, 
+                     *pSourceRectangle, 
+                     pTargetClipRectangle == nullptr ? std::nullopt : std::optional<SMALL_RECT>(*pTargetClipRectangle), 
+                     *pTargetOrigin, 
+                     Fill);
     }
     CATCH_RETURN();
 
