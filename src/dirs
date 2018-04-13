@@ -6,7 +6,7 @@ DIRS=\
      renderer \
      server \
      terminal \
-     testlist{noncrit} \
+     testlist \
      tools \
      tsf \
      types \
