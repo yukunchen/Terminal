@@ -65,7 +65,8 @@ namespace Microsoft::Console::Render
                                         _In_reads_(cchLine) const unsigned char* const rgWidths,
                                         const size_t cchLine,
                                         const COORD coord,
-                                        const bool fTrimLeft) = 0;
+                                        const bool fTrimLeft,
+                                        const bool lineWrapped) = 0;
         [[nodiscard]]
         virtual HRESULT PaintBufferGridLines(const GridLines lines,
                                              const COLORREF color,

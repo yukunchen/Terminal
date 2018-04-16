@@ -244,6 +244,7 @@ HRESULT GdiEngine::PaintBackground()
 // - cchLine - length of line to be read
 // - coord - character coordinate target to render within viewport
 // - fTrimLeft - This specifies whether to trim one character width off the left side of the output. Used for drawing the right-half only of a double-wide character.
+// - lineWrapped - Indicates that this line of text wrapped at the end of the row to the next line.
 // Return Value:
 // - S_OK or suitable GDI HRESULT error.
 // - HISTORICAL NOTES:
@@ -260,7 +261,8 @@ HRESULT GdiEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
                                    _In_reads_(cchLine) const unsigned char* const rgWidths,
                                    const size_t cchLine,
                                    const COORD coord,
-                                   const bool fTrimLeft)
+                                   const bool fTrimLeft,
+                                   const bool /*lineWrapped*/)
 {
     // Exit early if there are no lines to draw.
     RETURN_HR_IF(S_OK, 0 == cchLine);

@@ -151,7 +151,8 @@ HRESULT BgfxEngine::PaintBufferLine(PCWCHAR const pwsLine,
                                     const unsigned char* const /*rgWidths*/,
                                     size_t const cchLine,
                                     COORD const coord,
-                                    bool const /*fTrimLeft*/)
+                                    bool const /*fTrimLeft*/,
+                                    const bool /*lineWrapped*/)
 {
     PVOID NewRunBase = (PVOID)(_sharedViewBase + (coord.Y * 2 * _runLength) + _runLength);
     PCD_IO_CHARACTER NewRun = (PCD_IO_CHARACTER)NewRunBase;

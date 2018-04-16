@@ -261,7 +261,8 @@ HRESULT WddmConEngine::PaintBufferLine(PCWCHAR const pwsLine,
                                        const unsigned char* const /*rgWidths*/,
                                        size_t const cchLine,
                                        COORD const coord,
-                                       bool const /*fTrimLeft*/)
+                                       bool const /*fTrimLeft*/,
+                                       const bool /*lineWrapped*/)
 {
     RETURN_IF_HANDLE_INVALID(_hWddmConCtx);
 

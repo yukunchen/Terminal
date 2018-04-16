@@ -108,7 +108,8 @@ namespace Microsoft::Console::Render
                                                 const Ucs2CharRow::const_iterator itEnd,
                                                 _In_ size_t cchLine,
                                                 _In_ size_t iFirst,
-                                                const COORD coordTarget);
+                                                const COORD coordTarget,
+                                                const bool lineWrapped);
         void _PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
                                             const ROW& pRow,
                                             _In_reads_(cchLine) PCWCHAR const pwsLine,
@@ -116,14 +117,16 @@ namespace Microsoft::Console::Render
                                             const Ucs2CharRow::const_iterator itEnd,
                                             _In_ size_t cchLine,
                                             _In_ size_t iFirst,
-                                            const COORD coordTarget);
+                                            const COORD coordTarget,
+                                            const bool lineWrapped);
         [[nodiscard]]
         HRESULT _PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const pEngine,
                                                     _In_reads_(cchLine) PCWCHAR const pwsLine,
                                                     const Ucs2CharRow::const_iterator it,
                                                     const Ucs2CharRow::const_iterator itEnd,
                                                     const size_t cchLine,
-                                                    const COORD coordTarget);
+                                                    const COORD coordTarget,
+                                                    const bool lineWrapped);
         void _PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine, const TextAttribute textAttribute, const size_t cchLine, const COORD coordTarget);
 
         void _PaintSelection(_In_ IRenderEngine* const pEngine);
