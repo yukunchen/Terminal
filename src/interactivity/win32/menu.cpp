@@ -283,10 +283,16 @@ void Menu::s_ShowPropertiesDialog(HWND const hwnd, BOOL const Defaults)
     {
         Menu::s_PropertiesUpdate(&StateInfo);
     }
-    // s_GetConsoleState created new wchar_t[]s for the title and link title.
+    // s_GetConsoleState may have created new wchar_t[]s for the title and link title.
     //  delete them before they're leaked.
-    delete[] StateInfo.OriginalTitle;
-    delete[] StateInfo.LinkTitle;
+    if (StateInfo.OriginalTitle != nullptr)
+    {
+        delete[] StateInfo.OriginalTitle;
+    }
+    if (StateInfo.LinkTitle != nullptr)
+    {
+        delete[] StateInfo.LinkTitle;
+    }
 }
 
 [[nodiscard]]
@@ -333,13 +339,27 @@ HRESULT Menu::s_GetConsoleState(CONSOLE_STATE_INFO * const pStateInfo)
     memmove(pStateInfo->ColorTable, gci.GetColorTable(), gci.GetColorTableSize() * sizeof(COLORREF));
 
     // Create mutable copies of the titles so the propsheet can do something with them.
-    pStateInfo->OriginalTitle = new wchar_t[gci.GetOriginalTitle().length()+1]{UNICODE_NULL};
-    RETURN_IF_NULL_ALLOC(pStateInfo->OriginalTitle);
-    gci.GetOriginalTitle().copy(pStateInfo->OriginalTitle, gci.GetOriginalTitle().length());
+    if (gci.GetOriginalTitle().length() > 0)
+    {
+        pStateInfo->OriginalTitle = new wchar_t[gci.GetOriginalTitle().length()+1]{UNICODE_NULL};
+        RETURN_IF_NULL_ALLOC(pStateInfo->OriginalTitle);
+        gci.GetOriginalTitle().copy(pStateInfo->OriginalTitle, gci.GetOriginalTitle().length());
+    }
+    else
+    {
+        pStateInfo->OriginalTitle = nullptr;
+    }
 
-    pStateInfo->LinkTitle = new wchar_t[gci.GetLinkTitle().length()+1]{UNICODE_NULL};
-    RETURN_IF_NULL_ALLOC(pStateInfo->LinkTitle);
-    gci.GetLinkTitle().copy(pStateInfo->LinkTitle, gci.GetLinkTitle().length());
+    if (gci.GetLinkTitle().length() > 0)
+    {
+        pStateInfo->LinkTitle = new wchar_t[gci.GetLinkTitle().length()+1]{UNICODE_NULL};
+        RETURN_IF_NULL_ALLOC(pStateInfo->LinkTitle);
+        gci.GetLinkTitle().copy(pStateInfo->LinkTitle, gci.GetLinkTitle().length());
+    }
+    else
+    {
+        pStateInfo->LinkTitle = nullptr;
+    }
 
     pStateInfo->CodePage = gci.OutputCP;
 
