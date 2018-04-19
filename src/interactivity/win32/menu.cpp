@@ -239,6 +239,15 @@ void Menu::s_ShowPropertiesDialog(HWND const hwnd, BOOL const Defaults)
         THROW_IF_FAILED(Menu::s_GetConsoleState(&StateInfo));
         StateInfo.UpdateValues = FALSE;
     }
+
+    // The Property sheet is going to copy the data from the values passed in
+    //      to it, and potentially overwrite StateInfo.*Title.
+    // However, we just allocated wchar_t[]'s for these values.
+    // Stash the pointers to the arrays we just allocated, so we can free those
+    //       arrays correctly.
+    const wchar_t* const allocatedOriginalTitle = StateInfo.OriginalTitle;
+    const wchar_t* const allocatedLinkTitle = StateInfo.LinkTitle;
+
     StateInfo.hWnd = hwnd;
     StateInfo.Defaults = Defaults;
     StateInfo.fIsV2Console = TRUE;
@@ -283,15 +292,16 @@ void Menu::s_ShowPropertiesDialog(HWND const hwnd, BOOL const Defaults)
     {
         Menu::s_PropertiesUpdate(&StateInfo);
     }
+
     // s_GetConsoleState may have created new wchar_t[]s for the title and link title.
     //  delete them before they're leaked.
-    if (StateInfo.OriginalTitle != nullptr)
+    if (allocatedOriginalTitle != nullptr)
     {
-        delete[] StateInfo.OriginalTitle;
+        delete[] allocatedOriginalTitle;
     }
-    if (StateInfo.LinkTitle != nullptr)
+    if (allocatedLinkTitle != nullptr)
     {
-        delete[] StateInfo.LinkTitle;
+        delete[] allocatedLinkTitle;
     }
 }
 
