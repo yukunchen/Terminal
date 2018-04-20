@@ -14,7 +14,7 @@ Author(s):
 #pragma once
 
 #include "../../host/conimeinfo.h"
-#include "../../host/TextAttribute.hpp"
+#include "../../buffer/out/TextAttribute.hpp"
 
 class TextBuffer;
 class Cursor;

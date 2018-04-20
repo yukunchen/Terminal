@@ -19,7 +19,7 @@ Revision History:
 #pragma once
 
 #include "screenInfo.hpp"
-#include "OutputCell.hpp"
+#include "../buffer/out/OutputCell.hpp"
 
 void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
                                _In_ SHORT cchBuffer,

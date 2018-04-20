@@ -15,9 +15,8 @@ Revision History:
 
 #pragma once
 
-#include "..\inc\conime.h"
-#include <vector>
-#include <memory>
+#include "../inc/conime.h"
+#include "../renderer/inc/FontInfo.hpp"
 
 class SCREEN_INFORMATION;
 

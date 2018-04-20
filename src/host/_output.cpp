@@ -10,10 +10,10 @@
 
 #include "dbcs.h"
 #include "misc.h"
-#include "Ucs2CharRow.hpp"
+#include "../buffer/out/Ucs2CharRow.hpp"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
-#include "..\types\inc\Viewport.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
+#include "../types/inc/Viewport.hpp"
 #include <algorithm>
 #include <iterator>
 
@@ -77,8 +77,7 @@ void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
     TextAttributeRun CurrentBufferAttrs;
     CurrentBufferAttrs.SetLength(cchBuffer);
     CurrentBufferAttrs.SetAttributes(screenInfo.GetAttributes());
-    LOG_IF_FAILED(Row.GetAttrRow().InsertAttrRuns(&CurrentBufferAttrs,
-                                                  1,
+    LOG_IF_FAILED(Row.GetAttrRow().InsertAttrRuns({ CurrentBufferAttrs },
                                                   TargetPoint.X,
                                                   (SHORT)(TargetPoint.X + cchBuffer - 1),
                                                   coordScreenBufferSize.X));
@@ -113,11 +112,9 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
     SHORT const XSize = (SHORT)(psrSrc->Right - psrSrc->Left + 1);
     SHORT const YSize = (SHORT)(psrSrc->Bottom - psrSrc->Top + 1);
 
-    // Allocate enough space for the case where; every char is a different color
-    TextAttributeRun* rAttrRunsBuff = new TextAttributeRun[XSize];
-    NTSTATUS Status = NT_TESTNULL(rAttrRunsBuff);
-    if (NT_SUCCESS(Status))
+    try
     {
+        std::vector<TextAttributeRun> AttrRunsBuff;
         PBYTE SourcePtr = prgbSrc;
         BYTE* pbSourceEnd = prgbSrc + ((coordSrcDimensions.X * coordSrcDimensions.Y) * sizeof(CHAR_INFO));
 
@@ -187,28 +184,19 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
             // CJK Languages
             Ucs2CharRow::iterator it;
             Ucs2CharRow::const_iterator itEnd;
-            try
-            {
-                ICharRow& iCharRow = pRow->GetCharRow();
-                // we only support ucs2 encoded char rows
-                FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
+
+            ICharRow& iCharRow = pRow->GetCharRow();
+            // we only support ucs2 encoded char rows
+            FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
                                 "only support UCS2 char rows currently");
 
-                Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
-                it = std::next(charRow.begin(), coordDest.X);
-                itEnd = charRow.cend();
-            }
-            catch (...)
-            {
-                return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-            }
+            Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
+            it = std::next(charRow.begin(), coordDest.X);
+            itEnd = charRow.cend();
 
-
-            TextAttributeRun* pAttrRun = rAttrRunsBuff;
-            pAttrRun->SetLength(0);
-            SHORT NumAttrRuns = 1;
-
-            pAttrRun->SetAttributesFromLegacy(ATTR_OF_PCI(SourcePtr) & ~COMMON_LVB_SBCSDBCS);
+            TextAttributeRun attrRun;
+            attrRun.SetLength(0);
+            attrRun.SetAttributesFromLegacy(ATTR_OF_PCI(SourcePtr) & ~COMMON_LVB_SBCSDBCS);
 
             pRow->GetCharRow().SetWrapForced(false); // clear wrap status for rectangle drawing
 
@@ -222,32 +210,24 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
                     return STATUS_BUFFER_OVERFLOW;
                 }
 
-                try
-                {
-                    it->first = WCHAR_OF_PCI(SourcePtr);
-                    it->second = DbcsAttribute::FromPublicApiAttributeFormat(reinterpret_cast<const CHAR_INFO* const>(SourcePtr)->Attributes);
-                }
-                catch (...)
-                {
-                    return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-                }
+                it->first = WCHAR_OF_PCI(SourcePtr);
+                it->second = DbcsAttribute::FromPublicApiAttributeFormat(reinterpret_cast<const CHAR_INFO* const>(SourcePtr)->Attributes);
 
-                if (pAttrRun->GetAttributes().IsEqualToLegacy((ATTR_OF_PCI(SourcePtr) & ~COMMON_LVB_SBCSDBCS)))
+                if (attrRun.GetAttributes().IsEqualToLegacy((ATTR_OF_PCI(SourcePtr) & ~COMMON_LVB_SBCSDBCS)))
                 {
-                    pAttrRun->SetLength(pAttrRun->GetLength()+1);
+                    attrRun.SetLength(attrRun.GetLength() + 1);
                 }
                 else
                 {
-                    pAttrRun++;
-                    pAttrRun->SetLength(1);
+                    AttrRunsBuff.push_back(attrRun);
+                    attrRun.SetLength(1);
                     // MSKK Apr.02.1993 V-HirotS For KAttr
-                    pAttrRun->SetAttributesFromLegacy(ATTR_OF_PCI(SourcePtr) & ~COMMON_LVB_SBCSDBCS);
-                    NumAttrRuns += 1;
+                    attrRun.SetAttributesFromLegacy(ATTR_OF_PCI(SourcePtr) & ~COMMON_LVB_SBCSDBCS);
                 }
             }
+            AttrRunsBuff.push_back(attrRun);
 
-            LOG_IF_FAILED(pRow->GetAttrRow().InsertAttrRuns(rAttrRunsBuff,
-                                                            NumAttrRuns,
+            LOG_IF_FAILED(pRow->GetAttrRow().InsertAttrRuns(AttrRunsBuff,
                                                             coordDest.X,
                                                             (SHORT)(coordDest.X + XSize - 1),
                                                             coordScreenBufferSize.X));
@@ -294,7 +274,7 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
                     {
                         insert.SetAttributes(lastAttr);
                         insert.SetLength(currentLength);
-                        LOG_IF_FAILED(Row.GetAttrRow().InsertAttrRuns(&insert, 1, destX, (destX + currentLength) - 1, rowWidth));
+                        LOG_IF_FAILED(Row.GetAttrRow().InsertAttrRuns({ insert }, destX, (destX + currentLength) - 1, rowWidth));
 
                         destX = coordDest.X + x;
                         lastAttr = *pSrcAttr;
@@ -308,17 +288,18 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
                 // Make sure to also insert the last run we started.
                 insert.SetAttributes(lastAttr);
                 insert.SetLength(currentLength);
-                LOG_IF_FAILED(Row.GetAttrRow().InsertAttrRuns(&insert, 1, destX, (destX + currentLength) - 1, rowWidth));
+                LOG_IF_FAILED(Row.GetAttrRow().InsertAttrRuns({ insert }, destX, (destX + currentLength) - 1, rowWidth));
 
                 pSrcAttr++; // advance to next row.
             }
         }
-
-        delete[] rAttrRunsBuff;
+    }
+    catch (...)
+    {
+        return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
     }
 
-    return Status;
-
+    return STATUS_SUCCESS;
 }
 
 // Routine Description:
@@ -379,11 +360,7 @@ void WriteRectToScreenBuffer(SCREEN_INFORMATION& screenInfo,
 
         // pack text attributes into runs and insert into attr row
         std::vector<TextAttributeRun> packedAttrs = ATTR_ROW::PackAttrs(textAttrs);
-        std::unique_ptr<TextAttributeRun[]> textAttrRun = std::make_unique<TextAttributeRun[]>(packedAttrs.size());
-        THROW_IF_NULL_ALLOC(textAttrRun.get());
-        std::copy(packedAttrs.begin(), packedAttrs.end(), textAttrRun.get());
-        THROW_IF_FAILED(row.GetAttrRow().InsertAttrRuns(textAttrRun.get(),
-                                                        packedAttrs.size(),
+        THROW_IF_FAILED(row.GetAttrRow().InsertAttrRuns(packedAttrs,
                                                         coordDest.X,
                                                         coordDest.X + textAttrs.size() - 1,
                                                         row.GetCharRow().size()));
@@ -767,83 +744,83 @@ NTSTATUS WriteOutputString(SCREEN_INFORMATION& screenInfo,
     }
     else if (ulStringType == CONSOLE_ATTRIBUTE)
     {
-        PWORD SourcePtr = (PWORD) pvBuffer;
-        UINT uiScreenBufferWidth = coordScreenBufferSize.X;
-        TextAttributeRun* rAttrRunsBuff = new TextAttributeRun[uiScreenBufferWidth];
-        if (rAttrRunsBuff == nullptr) return STATUS_NO_MEMORY;
-        TextAttributeRun* pAttrRun = rAttrRunsBuff;
-        SHORT NumAttrRuns;
-
-
-        for (;;)
+        try
         {
-            if (pRow == nullptr)
-            {
-                ASSERT(false);
-                break;
-            }
+            PWORD SourcePtr = (PWORD)pvBuffer;
+            std::vector<TextAttributeRun> AttrRunsBuff;
+            TextAttributeRun AttrRun;
 
-            // copy the attrs into the screen buffer arrays
-            pAttrRun = rAttrRunsBuff; // for each row, return to the start of the buffer
-            pAttrRun->SetLength(0);
-            pAttrRun->SetAttributesFromLegacy(*SourcePtr & ~COMMON_LVB_SBCSDBCS);
-            NumAttrRuns = 1;
-            for (SHORT j = X; j < coordScreenBufferSize.X; j++, SourcePtr++)
+            for (;;)
             {
-                if (pAttrRun->GetAttributes().IsEqualToLegacy(*SourcePtr & ~COMMON_LVB_SBCSDBCS))
+                if (pRow == nullptr)
                 {
-                    pAttrRun->SetLength(pAttrRun->GetLength() + 1);
+                    ASSERT(false);
+                    break;
+                }
+
+                // copy the attrs into the screen buffer arrays
+                AttrRunsBuff.clear(); // for each row, ensure the buffer is clean
+                AttrRun.SetLength(0);
+                AttrRun.SetAttributesFromLegacy(*SourcePtr & ~COMMON_LVB_SBCSDBCS);
+                for (SHORT j = X; j < coordScreenBufferSize.X; j++, SourcePtr++)
+                {
+                    if (AttrRun.GetAttributes().IsEqualToLegacy(*SourcePtr & ~COMMON_LVB_SBCSDBCS))
+                    {
+                        AttrRun.SetLength(AttrRun.GetLength() + 1);
+                    }
+                    else
+                    {
+                        AttrRunsBuff.push_back(AttrRun);
+                        AttrRun.SetLength(1);
+                        AttrRun.SetAttributesFromLegacy(*SourcePtr & ~COMMON_LVB_SBCSDBCS);
+                    }
+                    NumWritten++;
+                    X++;
+                    if (NumWritten == *pcRecords)
+                    {
+                        break;
+                    }
+                }
+                AttrRunsBuff.push_back(AttrRun);
+                X--;
+
+                // recalculate last non-space char
+
+                LOG_IF_FAILED(pRow->GetAttrRow().InsertAttrRuns(AttrRunsBuff,
+                                                                (SHORT)((Y == coordWrite.Y) ? coordWrite.X : 0),
+                                                                X,
+                                                                coordScreenBufferSize.X));
+
+                try
+                {
+                    pRow = &screenInfo.GetTextBuffer().GetNextRowNoWrap(*pRow);
+                }
+                catch (...)
+                {
+                    pRow = nullptr;
+                }
+
+                if (NumWritten < *pcRecords)
+                {
+                    X = 0;
+                    Y++;
+                    if (Y >= coordScreenBufferSize.Y)
+                    {
+                        break;
+                    }
                 }
                 else
                 {
-                    pAttrRun++;
-                    pAttrRun->SetLength(1);
-                    pAttrRun->SetAttributesFromLegacy(*SourcePtr & ~COMMON_LVB_SBCSDBCS);
-                    NumAttrRuns += 1;
-                }
-                NumWritten++;
-                X++;
-                if (NumWritten == *pcRecords)
-                {
                     break;
                 }
             }
-            X--;
+            screenInfo.ResetTextFlags(coordWrite.X, coordWrite.Y, X, Y);
 
-            // recalculate last non-space char
-
-            LOG_IF_FAILED(pRow->GetAttrRow().InsertAttrRuns(rAttrRunsBuff,
-                                                            NumAttrRuns,
-                                                            (SHORT)((Y == coordWrite.Y) ? coordWrite.X : 0),
-                                                            X,
-                                                            coordScreenBufferSize.X));
-
-            try
-            {
-                pRow = &screenInfo.GetTextBuffer().GetNextRowNoWrap(*pRow);
-            }
-            catch (...)
-            {
-                pRow = nullptr;
-            }
-
-            if (NumWritten < *pcRecords)
-            {
-                X = 0;
-                Y++;
-                if (Y >= coordScreenBufferSize.Y)
-                {
-                    break;
-                }
-            }
-            else
-            {
-                break;
-            }
         }
-        screenInfo.ResetTextFlags(coordWrite.X, coordWrite.Y, X, Y);
-
-        delete[] rAttrRunsBuff;
+        catch (...)
+        {
+            return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+        }
     }
     else
     {
@@ -1149,8 +1126,7 @@ NTSTATUS FillOutput(SCREEN_INFORMATION& screenInfo,
                 AttrRun.SetAttributesFromLegacy(wActual);
             }
 
-            LOG_IF_FAILED(pRow->GetAttrRow().InsertAttrRuns(&AttrRun,
-                                                            1,
+            LOG_IF_FAILED(pRow->GetAttrRow().InsertAttrRuns({ AttrRun },
                                                             (SHORT)(X - AttrRun.GetLength() + 1),
                                                             X,
                                                             coordScreenBufferSize.X));
@@ -1326,8 +1302,7 @@ void FillRectangle(const CHAR_INFO * const pciFill,
         AttrRun.SetLength(XSize);
         AttrRun.SetAttributesFromLegacy(pciFill->Attributes);
 
-        LOG_IF_FAILED(pRow->GetAttrRow().InsertAttrRuns(&AttrRun,
-                                                        1,
+        LOG_IF_FAILED(pRow->GetAttrRow().InsertAttrRuns({ AttrRun },
                                                         psrTarget->Left,
                                                         psrTarget->Right,
                                                         coordScreenBufferSize.X));

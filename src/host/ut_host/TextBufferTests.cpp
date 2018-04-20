@@ -9,12 +9,12 @@
 #include "CommonState.hpp"
 
 #include "globals.h"
-#include "textBuffer.hpp"
-#include "Ucs2CharRow.hpp"
+#include "../buffer/out/textBuffer.hpp"
+#include "../buffer/out/Ucs2CharRow.hpp"
 
 #include "input.h"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 using namespace WEX::Common;
 using namespace WEX::Logging;
@@ -379,10 +379,9 @@ void TextBufferTests::TestInsertCharacter()
     VERIFY_ARE_NOT_EQUAL(charRow.GetGlyphAt(coordCursorBefore.X), wchTest);
     VERIFY_ARE_NOT_EQUAL(charRow.GetAttribute(coordCursorBefore.X), dbcsAttribute);
 
-    TextAttributeRun* pAttrRun;
-    Row.GetAttrRow().FindAttrIndex(coordCursorBefore.X, &pAttrRun, nullptr);
+    auto attr = Row.GetAttrRow().GetAttrByColumn(coordCursorBefore.X);
 
-    VERIFY_IS_FALSE(pAttrRun->GetAttributes().IsEqual(TestAttributes));
+    VERIFY_IS_FALSE(attr.IsEqual(TestAttributes));
 
     // now apply the new data to the buffer
     textBuffer.InsertCharacter(wchTest, dbcsAttribute, TestAttributes);
@@ -391,8 +390,8 @@ void TextBufferTests::TestInsertCharacter()
     VERIFY_ARE_EQUAL(charRow.GetGlyphAt(coordCursorBefore.X), wchTest);
     VERIFY_ARE_EQUAL(charRow.GetAttribute(coordCursorBefore.X), dbcsAttribute);
 
-    Row.GetAttrRow().FindAttrIndex(coordCursorBefore.X, &pAttrRun, nullptr);
-    VERIFY_IS_TRUE(pAttrRun->GetAttributes().IsEqual(TestAttributes));
+    attr = Row.GetAttrRow().GetAttrByColumn(coordCursorBefore.X);
+    VERIFY_IS_TRUE(attr.IsEqual(TestAttributes));
 
     // ensure that the cursor moved to a new position (X or Y or both have changed)
     VERIFY_IS_TRUE((coordCursorBefore.X != textBuffer.GetCursor().GetPosition().X) ||
@@ -633,9 +632,7 @@ void TextBufferTests::TestMixedRgbAndLegacyForeground()
     const short y = cursor.GetPosition().Y;
     const ROW& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
-    std::unique_ptr<TextAttribute[]> attrs = std::make_unique<TextAttribute[]>(tbi._coordBufferSize.X);
-    VERIFY_IS_NOT_NULL(attrs.get());
-    VERIFY_SUCCEEDED(attrRow->UnpackAttrs(attrs.get(), tbi._coordBufferSize.X));
+    const auto attrs = attrRow->UnpackAttrs();
     const auto attrA = attrs[x-2];
     const auto attrB = attrs[x-1];
     Log::Comment(NoThrowString().Format(
@@ -694,9 +691,7 @@ void TextBufferTests::TestMixedRgbAndLegacyBackground()
     const auto y = cursor.GetPosition().Y;
     const auto& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
-    const auto attrs = std::make_unique<TextAttribute[]>(tbi._coordBufferSize.X);
-    VERIFY_IS_NOT_NULL(attrs.get());
-    VERIFY_SUCCESS_NTSTATUS(attrRow->UnpackAttrs(attrs.get(), tbi._coordBufferSize.X));
+    const auto attrs = attrRow->UnpackAttrs();
     const auto attrA = attrs[x-2];
     const auto attrB = attrs[x-1];
     Log::Comment(NoThrowString().Format(
@@ -752,9 +747,7 @@ void TextBufferTests::TestMixedRgbAndLegacyUnderline()
     const auto y = cursor.GetPosition().Y;
     const auto& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
-    std::unique_ptr<TextAttribute[]> attrs = std::make_unique<TextAttribute[]>(tbi._coordBufferSize.X);
-    VERIFY_IS_NOT_NULL(attrs.get());
-    VERIFY_SUCCEEDED(attrRow->UnpackAttrs(attrs.get(), tbi._coordBufferSize.X));
+    const auto attrs = attrRow->UnpackAttrs();
     const auto attrA = attrs[x-2];
     const auto attrB = attrs[x-1];
     Log::Comment(NoThrowString().Format(
@@ -817,9 +810,7 @@ void TextBufferTests::TestMixedRgbAndLegacyBrightness()
     const auto y = cursor.GetPosition().Y;
     const auto& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
-    std::unique_ptr<TextAttribute[]> attrs = std::make_unique<TextAttribute[]>(tbi._coordBufferSize.X);
-    VERIFY_IS_NOT_NULL(attrs.get());
-    VERIFY_SUCCEEDED(attrRow->UnpackAttrs(attrs.get(), tbi._coordBufferSize.X));
+    const auto attrs = attrRow->UnpackAttrs();
     const auto attrA = attrs[x-2];
     const auto attrB = attrs[x-1];
     Log::Comment(NoThrowString().Format(
@@ -885,9 +876,7 @@ void TextBufferTests::TestRgbEraseLine()
         const auto& row = tbi.GetRowByOffset(y);
         const auto attrRow = &row.GetAttrRow();
         const auto len = tbi._coordBufferSize.X;
-        std::unique_ptr<TextAttribute[]> attrs = std::make_unique<TextAttribute[]>(len);
-        VERIFY_IS_NOT_NULL(attrs.get());
-        VERIFY_SUCCESS_NTSTATUS(attrRow->UnpackAttrs(attrs.get(), len));
+        const auto attrs = attrRow->UnpackAttrs();
 
         const auto attr0 = attrs[0];
 
@@ -946,9 +935,7 @@ void TextBufferTests::TestUnBold()
     const auto& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
     const auto len = tbi._coordBufferSize.X;
-    std::unique_ptr<TextAttribute[]> attrs = std::make_unique<TextAttribute[]>(len);
-    VERIFY_IS_NOT_NULL(attrs.get());
-    VERIFY_SUCCESS_NTSTATUS(attrRow->UnpackAttrs(attrs.get(), len));
+    const auto attrs = attrRow->UnpackAttrs();
     const auto attrA = attrs[x-2];
     const auto attrB = attrs[x-1];
 
@@ -1014,9 +1001,7 @@ void TextBufferTests::TestUnBoldRgb()
     const auto& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
     const auto len = tbi._coordBufferSize.X;
-    std::unique_ptr<TextAttribute[]> attrs = std::make_unique<TextAttribute[]>(len);
-    VERIFY_IS_NOT_NULL(attrs.get());
-    VERIFY_SUCCESS_NTSTATUS(attrRow->UnpackAttrs(attrs.get(), len));
+    const auto attrs = attrRow->UnpackAttrs();
     const auto attrA = attrs[x-2];
     const auto attrB = attrs[x-1];
 
@@ -1089,9 +1074,7 @@ void TextBufferTests::TestComplexUnBold()
     const auto& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
     const auto len = tbi._coordBufferSize.X;
-    std::unique_ptr<TextAttribute[]> attrs = std::make_unique<TextAttribute[]>(len);
-    VERIFY_IS_NOT_NULL(attrs.get());
-    VERIFY_SUCCESS_NTSTATUS(attrRow->UnpackAttrs(attrs.get(), len));
+    const auto attrs = attrRow->UnpackAttrs();
     const auto attrA = attrs[x-6];
     const auto attrB = attrs[x-5];
     const auto attrC = attrs[x-4];
@@ -1204,9 +1187,7 @@ void TextBufferTests::CopyAttrs()
     const auto& row = tbi.GetRowByOffset(0);
     const auto attrRow = &row.GetAttrRow();
     const auto len = tbi._coordBufferSize.X;
-    const auto attrs = std::make_unique<TextAttribute[]>(len);
-    VERIFY_IS_NOT_NULL(attrs);
-    VERIFY_SUCCEEDED(attrRow->UnpackAttrs(attrs.get(), len));
+    const auto attrs = attrRow->UnpackAttrs();
     const auto attrA = attrs[0];
     const auto attrB = attrs[1];
 
@@ -1271,9 +1252,7 @@ void TextBufferTests::EmptySgrTest()
     const auto& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
     const auto len = tbi._coordBufferSize.X;
-    const auto attrs = new TextAttribute[len];
-    VERIFY_IS_NOT_NULL(attrs);
-    VERIFY_SUCCEEDED(attrRow->UnpackAttrs(attrs, len));
+    const auto attrs = attrRow->UnpackAttrs();
     const auto attrA = attrs[x-3];
     const auto attrB = attrs[x-2];
     const auto attrC = attrs[x-1];
@@ -1347,9 +1326,7 @@ void TextBufferTests::TestReverseReset()
     const auto& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
     const auto len = tbi._coordBufferSize.X;
-    const auto attrs = new TextAttribute[len];
-    VERIFY_IS_NOT_NULL(attrs);
-    VERIFY_SUCCEEDED(attrRow->UnpackAttrs(attrs, len));
+    const auto attrs = attrRow->UnpackAttrs();
     const auto attrA = attrs[x-3];
     const auto attrB = attrs[x-2];
     const auto attrC = attrs[x-1];
@@ -1473,15 +1450,9 @@ void TextBufferTests::CopyLastAttr()
     const ROW& row2 = tbi.GetRowByOffset(y + 2);
     const ROW& row3 = tbi.GetRowByOffset(y + 3);
     const auto len = tbi._coordBufferSize.X;
-    const auto attrs1 = std::make_unique<TextAttribute[]>(len);
-    const auto attrs2 = std::make_unique<TextAttribute[]>(len);
-    const auto attrs3 = std::make_unique<TextAttribute[]>(len);
-    VERIFY_IS_NOT_NULL(attrs1.get());
-    VERIFY_IS_NOT_NULL(attrs2.get());
-    VERIFY_IS_NOT_NULL(attrs3.get());
-    VERIFY_SUCCEEDED(row1.GetAttrRow().UnpackAttrs(attrs1.get(), len));
-    VERIFY_SUCCEEDED(row2.GetAttrRow().UnpackAttrs(attrs2.get(), len));
-    VERIFY_SUCCEEDED(row3.GetAttrRow().UnpackAttrs(attrs3.get(), len));
+    const auto attrs1 = row1.GetAttrRow().UnpackAttrs();
+    const auto attrs2 = row2.GetAttrRow().UnpackAttrs();
+    const auto attrs3 = row3.GetAttrRow().UnpackAttrs();
 
     const auto attr1A = attrs1[0];
 

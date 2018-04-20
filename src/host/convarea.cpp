@@ -9,9 +9,9 @@
 #include "_output.h"
 
 #include "dbcs.h"
-#include "Ucs2CharRow.hpp"
+#include "../buffer/out/Ucs2CharRow.hpp"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 #pragma hdrstop
 
@@ -782,10 +782,9 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
     CATCH_LOG();
 
     // see if attr string is different.  if so, allocate a new attr buffer and merge the two strings.
-    TextAttributeRun* pExistingHead;
-    Row.GetAttrRow().FindAttrIndex(0, &pExistingHead, nullptr);
+    const auto attr = Row.GetAttrRow().GetAttrByColumn(0);
 
-    if (Row.GetAttrRow()._cList != 1 || !(pExistingHead->GetAttributes().IsEqual(ScreenInfo.GetAttributes())))
+    if (Row.GetAttrRow().GetNumberOfRuns() != 1 || !(attr.IsEqual(ScreenInfo.GetAttributes())))
     {
         TextAttributeRun InsertedRun;
 
@@ -811,8 +810,7 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
 
                 // Each time around the loop, take our new 1-length attribute with the appropriate line attributes (underlines, etc.)
                 // and insert it into the existing Run-Length-Encoded attribute list.
-                LOG_IF_FAILED(Row.GetAttrRow().InsertAttrRuns(&InsertedRun,
-                                                              1,
+                LOG_IF_FAILED(Row.GetAttrRow().InsertAttrRuns({ InsertedRun },
                                                               TargetPoint.X + i,
                                                               (SHORT)(TargetPoint.X + i),
                                                               coordScreenBufferSize.X));
@@ -822,8 +820,7 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
         {
             InsertedRun.SetLength(StringLength);
             InsertedRun.SetAttributesFromLegacy(wScreenAttributes);
-            LOG_IF_FAILED(Row.GetAttrRow().InsertAttrRuns(&InsertedRun,
-                                                          1,
+            LOG_IF_FAILED(Row.GetAttrRow().InsertAttrRuns({ InsertedRun },
                                                           TargetPoint.X,
                                                           (SHORT)(TargetPoint.X + StringLength - 1),
                                                           coordScreenBufferSize.X));

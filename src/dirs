@@ -1,4 +1,5 @@
 DIRS=\
+     buffer \
      interactivity \
      host \
      propsheet \

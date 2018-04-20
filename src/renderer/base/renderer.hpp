@@ -15,16 +15,14 @@ Author(s):
 
 #pragma once
 
-#include "..\inc\IRenderer.hpp"
-#include "..\inc\IRenderEngine.hpp"
-#include "..\inc\IRenderData.hpp"
+#include "../inc/IRenderer.hpp"
+#include "../inc/IRenderEngine.hpp"
+#include "../inc/IRenderData.hpp"
 
 #include "thread.hpp"
-#include <deque>
-#include <memory>
 
-#include "..\..\host\textBuffer.hpp"
-#include "..\..\host\Ucs2CharRow.hpp"
+#include "../../buffer/out/textBuffer.hpp"
+#include "../../buffer/out/Ucs2CharRow.hpp"
 
 namespace Microsoft::Console::Render
 {

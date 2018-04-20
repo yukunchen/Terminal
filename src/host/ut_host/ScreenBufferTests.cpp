@@ -1089,7 +1089,7 @@ void ScreenBufferTests::ResizeTraditionalDoesntDoubleFreeAttrRows()
     COORD newBufferSize = si._coordScreenBufferSize;
     newBufferSize.Y--;
 
-    VERIFY_SUCCESS_NTSTATUS(si.ResizeTraditional(newBufferSize));
+    VERIFY_SUCCEEDED(si.ResizeTraditional(newBufferSize));
 
 }
 

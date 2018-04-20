@@ -24,7 +24,7 @@ unit testing projects in the codebase without a bunch of overhead.
 #include "precomp.h"
 #include "../host/globals.h"
 #include "../host/newdelete.hpp"
-#include "../host/Ucs2CharRow.hpp"
+#include "../buffer/out/Ucs2CharRow.hpp"
 #include "../interactivity/inc/ServiceLocator.hpp"
 
 #include <algorithm>

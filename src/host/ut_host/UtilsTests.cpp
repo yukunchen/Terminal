@@ -187,7 +187,14 @@ class UtilsTests
 
     SHORT RandomShort()
     {
-        return (SHORT)rand() % SHORT_MAX;
+        SHORT s;
+
+        do
+        {
+            s = (SHORT)rand() % SHORT_MAX;
+        } while (s == 0i16);
+
+        return s;
     }
 
     void FillBothCoordsSameRandom(COORD* pcoordA, COORD* pcoordB)

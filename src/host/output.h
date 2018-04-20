@@ -18,7 +18,7 @@ Revision History:
 
 #include "screenInfo.hpp"
 #include "server.h"
-#include "OutputCell.hpp"
+#include "../buffer/out/OutputCell.hpp"
 
 void ScreenBufferSizeChange(const COORD coordNewSize);
 

@@ -9,9 +9,9 @@
 #include "_output.h"
 #include "stream.h"
 #include "scrolling.hpp"
-#include "Ucs2CharRow.hpp"
+#include "../buffer/out/Ucs2CharRow.hpp"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 Selection::Selection() :
     _fSelectionVisible(false),

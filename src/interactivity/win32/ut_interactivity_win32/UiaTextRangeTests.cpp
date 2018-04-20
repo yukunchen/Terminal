@@ -9,10 +9,7 @@
 #include "CommonState.hpp"
 
 #include "UiaTextRange.hpp"
-#include "../../../host/textBuffer.hpp"
-
-#include <vector>
-#include <tuple>
+#include "../../../buffer/out/textBuffer.hpp"
 
 using namespace WEX::Common;
 using namespace WEX::Logging;

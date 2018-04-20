@@ -9,11 +9,12 @@
 #include "screenInfo.hpp"
 #include "dbcs.h"
 #include "output.h"
-#include "Ucs2CharRow.hpp"
+#include "../buffer/out/Ucs2CharRow.hpp"
+
 #include <math.h>
-#include "..\interactivity\inc\ServiceLocator.hpp"
-#include "..\types\inc\Viewport.hpp"
-#include "..\terminal\parser\OutputStateMachineEngine.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
+#include "../types/inc/Viewport.hpp"
+#include "../terminal/parser/OutputStateMachineEngine.hpp"
 
 #pragma hdrstop
 using namespace Microsoft::Console;
@@ -619,8 +620,6 @@ void SCREEN_INFORMATION::ResetTextFlags(const short sStartX,
                                         const short sEndX,
                                         const short sEndY)
 {
-    SHORT RowIndex;
-    WCHAR Char;
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     // Fire off a winevent to let accessibility apps know what changed.
@@ -631,8 +630,7 @@ void SCREEN_INFORMATION::ResetTextFlags(const short sStartX,
 
         if (sStartX == sEndX && sStartY == sEndY)
         {
-            RowIndex = (_textBuffer->GetFirstRowIndex() + sStartY) % coordScreenBufferSize.Y;
-            TextAttributeRun* pAttrRun;
+            const auto RowIndex = (_textBuffer->GetFirstRowIndex() + sStartY) % coordScreenBufferSize.Y;
 
             try
             {
@@ -643,20 +641,17 @@ void SCREEN_INFORMATION::ResetTextFlags(const short sStartX,
                                 "only support UCS2 char rows currently");
 
                 const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
-                Char = charRow.GetGlyphAt(sStartX);
-                Row.GetAttrRow().FindAttrIndex(sStartX, &pAttrRun, nullptr);
+                const auto ch = charRow.GetGlyphAt(sStartX);
+                const auto attr = Row.GetAttrRow().GetAttrByColumn(sStartX);
+                const LONG charAndAttr = MAKELONG(ch, gci.GenerateLegacyAttributes(attr));
+                _pAccessibilityNotifier->NotifyConsoleUpdateSimpleEvent(MAKELONG(sStartX, sStartY),
+                                                                        charAndAttr);
             }
             catch (...)
             {
                 LOG_HR(wil::ResultFromCaughtException());
                 return;
             }
-
-            LONG charAndAttr = MAKELONG(Char,
-                                        gci.GenerateLegacyAttributes(pAttrRun->GetAttributes()));
-
-            _pAccessibilityNotifier->NotifyConsoleUpdateSimpleEvent(MAKELONG(sStartX, sStartY),
-                                                                    charAndAttr);
         }
         else
         {
@@ -1514,9 +1509,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
             }
 
             // Extract the color attribute that applies to this character
-            TextAttributeRun* rAttrRun;
-
-            Row.GetAttrRow().FindAttrIndex(iOldCol, &rAttrRun, nullptr);
+            const auto attr = Row.GetAttrRow().GetAttrByColumn(iOldCol);
 
             if (iOldCol == cOldCursorPos.X && iOldRow == cOldCursorPos.Y)
             {
@@ -1525,7 +1518,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
             }
 
             // Insert it into the new buffer
-            if (!newTextBuffer->InsertCharacter(wchChar, bKAttr, rAttrRun->GetAttributes()))
+            if (!newTextBuffer->InsertCharacter(wchChar, bKAttr, attr))
             {
                 status = STATUS_NO_MEMORY;
                 break;
@@ -1681,7 +1674,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
 [[nodiscard]]
 NTSTATUS SCREEN_INFORMATION::ResizeTraditional(const COORD coordNewScreenSize)
 {
-    return _textBuffer->ResizeTraditional(GetScreenBufferSize(), coordNewScreenSize, _Attributes);
+    return NTSTATUS_FROM_HRESULT(_textBuffer->ResizeTraditional(GetScreenBufferSize(), coordNewScreenSize, _Attributes));
 }
 
 //
@@ -1715,7 +1708,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeScreenBuffer(const COORD coordNewScreenSize,
     }
     else
     {
-        status = ResizeTraditional(coordNewScreenSize);
+        status = NTSTATUS_FROM_HRESULT(ResizeTraditional(coordNewScreenSize));
     }
 
     if (NT_SUCCESS(status))

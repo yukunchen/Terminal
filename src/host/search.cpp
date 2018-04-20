@@ -3,7 +3,7 @@
 #include "search.h"
 
 #include "dbcs.h"
-#include "Ucs2CharRow.hpp"
+#include "../buffer/out/Ucs2CharRow.hpp"
 
 USHORT SearchForString(const SCREEN_INFORMATION& ScreenInfo,
                        _In_reads_(cchSearch) PCWSTR pwszSearch,

@@ -71,13 +71,11 @@ SOURCES = \
     ..\inputReadHandleData.cpp \
     ..\misc.cpp      \
     ..\output.cpp    \
-    ..\OutputCell.cpp \
     ..\srvinit.cpp   \
     ..\outputStream.cpp \
     ..\stream.cpp    \
     ..\dbcs.cpp      \
     ..\convarea.cpp  \
-    ..\textBuffer.cpp \
     ..\screenInfo.cpp \
     ..\newdelete.cpp \
     ..\_output.cpp   \
@@ -99,12 +97,6 @@ SOURCES = \
     ..\conimeinfo.cpp \
     ..\conattrs.cpp \
     ..\ConsoleArguments.cpp \
-    ..\AttrRow.cpp \
-    ..\Ucs2CharRow.cpp \
-    ..\Row.cpp \
-    ..\TextAttribute.cpp \
-    ..\TextAttributeRun.cpp \
-
 
 # -------------------------------------
 # Sources, Headers, and Libraries
@@ -119,6 +111,7 @@ INCLUDES = \
     $(INCLUDES); \
     ..; \
     ..\inc; \
+    ..\..\buffer\out; \
     ..\..\propsheet; \
     ..\..\propslib; \
     ..\..\terminal\parser; \
@@ -180,6 +173,7 @@ TARGETLIBS = \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-ntuser-window-ext-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-shell-shell32-l1.lib \
     $(MODERNCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-uiacore-l1.lib \
+    $(WINCORE_OBJ_PATH)\console\open\src\buffer\out\lib\$(O)\conbufferout.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\tsf\$(O)\contsf.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\propslib\$(O)\conprops.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\terminal\adapter\lib\$(O)\ConTermAdapter.lib \

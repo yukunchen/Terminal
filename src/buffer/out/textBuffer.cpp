@@ -9,7 +9,10 @@
 #include "textBuffer.hpp"
 #include "Ucs2CharRow.hpp"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#pragma warning(push)
+#pragma warning(disable: ALL_CPPCORECHECK_WARNINGS)
+#include "../interactivity/inc/ServiceLocator.hpp"
+#pragma warning(pop)
 
 #pragma hdrstop
 
@@ -411,9 +414,7 @@ bool TextBuffer::_PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute
 {
     // Assert the buffer state is ready for this character
     // This function corrects most errors. If this is false, we had an uncorrectable one.
-    bool const fValidSequence = AssertValidDoubleByteSequence(dbcsAttribute);
-    ASSERT(fValidSequence); // Shouldn't be uncorrectable sequences unless something is very wrong.
-    UNREFERENCED_PARAMETER(fValidSequence);
+    FAIL_FAST_IF_FALSE(AssertValidDoubleByteSequence(dbcsAttribute)); // Shouldn't be uncorrectable sequences unless something is very wrong.
 
     bool fSuccess = true;
     // Now compensate if we don't have enough space for the upcoming double byte sequence
@@ -538,7 +539,7 @@ bool TextBuffer::IncrementCursor()
     // Buffer Size is specified as the "length" of the array. It would say 80 for valid values of 0-79.
     // So subtract 1 from buffer size in each direction to find the index of the final column in the buffer
 
-    ASSERT(_coordBufferSize.X > 0);
+    FAIL_FAST_IF_FALSE(_coordBufferSize.X > 0);
     const short iFinalColumnIndex = _coordBufferSize.X - 1;
 
     // Move the cursor one position to the right
@@ -570,7 +571,7 @@ void TextBuffer::DecrementCursor()
     // Buffer Size is specified as the "length" of the array. It would say 80 for valid values of 0-79.
     // So subtract 1 from buffer size in each direction to find the index of the final column in the buffer
 
-    ASSERT(_coordBufferSize.X > 0);
+    FAIL_FAST_IF_FALSE(_coordBufferSize.X > 0);
     const short iFinalColumnIndex = _coordBufferSize.X - 1;
 
     // Move the cursor one position to the left
@@ -608,7 +609,7 @@ void TextBuffer::DecrementCursor()
 bool TextBuffer::NewlineCursor()
 {
     bool fSuccess = false;
-    ASSERT(_coordBufferSize.Y > 0);
+    FAIL_FAST_IF_FALSE(_coordBufferSize.Y > 0);
     short const iFinalRowIndex = _coordBufferSize.Y - 1;
 
     // Reset the cursor position to 0 and move down one line
@@ -784,11 +785,7 @@ NTSTATUS TextBuffer::ResizeTraditional(const COORD currentScreenBufferSize,
                                        const COORD newScreenBufferSize,
                                        const TextAttribute attributes)
 {
-    if (newScreenBufferSize.X < 0 || newScreenBufferSize.Y < 0)
-    {
-        RIPMSG2(RIP_WARNING, "Invalid screen buffer size (0x%x, 0x%x)", newScreenBufferSize.X, newScreenBufferSize.Y);
-        return STATUS_INVALID_PARAMETER;
-    }
+    RETURN_HR_IF(E_INVALIDARG, newScreenBufferSize.X < 0 || newScreenBufferSize.Y < 0);
 
     SHORT TopRow = 0; // new top row of the screen buffer
     if (newScreenBufferSize.Y <= GetCursor().GetPosition().Y)
@@ -807,10 +804,7 @@ NTSTATUS TextBuffer::ResizeTraditional(const COORD currentScreenBufferSize,
             _storage.pop_front();
         }
     }
-    catch (...)
-    {
-        return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-    }
+    CATCH_RETURN();
     SetFirstRowIndex(0);
 
     // realloc in the Y direction
@@ -826,24 +820,17 @@ NTSTATUS TextBuffer::ResizeTraditional(const COORD currentScreenBufferSize,
         {
             _storage.emplace_back(static_cast<short>(_storage.size()), newScreenBufferSize.X, attributes);
         }
-        catch (...)
-        {
-            return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-        }
+        CATCH_RETURN();
     }
-    HRESULT hr = S_OK;
     for (SHORT i = 0; static_cast<size_t>(i) < _storage.size(); ++i)
     {
         // fix values for sRowId on each row
         _storage[i].SetId(i);
 
         // realloc in the X direction
-        hr = _storage[i].Resize(newScreenBufferSize.X);
-        if (FAILED(hr))
-        {
-            return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-        }
+        RETURN_IF_FAILED(_storage[i].Resize(newScreenBufferSize.X));
     }
+
     SetCoordBufferSize(newScreenBufferSize);
-    return STATUS_SUCCESS;
+    return S_OK;
 }

@@ -6,13 +6,11 @@
 
 #include "precomp.h"
 
-#include "..\..\host\cursor.h"
-#include "..\..\host\textBuffer.hpp"
-#include "..\..\host\conimeinfo.h"
+#include "../../host/cursor.h"
+#include "../../host/conimeinfo.h"
+#include "../../buffer/out/textBuffer.hpp"
 
 #include "renderer.hpp"
-
-#include <algorithm>
 
 #pragma hdrstop
 
@@ -853,12 +851,11 @@ void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
     do
     {
         // First retrieve the attribute that applies starting at the target position and the length for which it applies.
-        TextAttributeRun* pRun = nullptr;
         size_t cAttrApplies = 0;
-        Row.GetAttrRow().FindAttrIndex((UINT)(iFirstAttr + cchWritten), &pRun, &cAttrApplies);
+        const auto attr = Row.GetAttrRow().GetAttrByColumn(iFirstAttr + cchWritten, &cAttrApplies);
 
         // Set the brushes in GDI to this color
-        LOG_IF_FAILED(_UpdateDrawingBrushes(pEngine, pRun->GetAttributes(), false));
+        LOG_IF_FAILED(_UpdateDrawingBrushes(pEngine, attr, false));
 
         // The segment we'll write is the shorter of the entire segment we want to draw or the amount of applicable color (Attr applies)
         size_t cchSegment = std::min(cchLine - cchWritten, cAttrApplies);
@@ -876,7 +873,7 @@ void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
         if (_pData->IsGridLineDrawingAllowed())
         {
             // We're only allowed to draw the grid lines under certain circumstances.
-            _PaintBufferOutputGridLineHelper(pEngine, pRun->GetAttributes(), cchSegment, coordOffset);
+            _PaintBufferOutputGridLineHelper(pEngine, attr, cchSegment, coordOffset);
         }
 
         // Update how much we've written.
