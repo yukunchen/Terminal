@@ -19,9 +19,10 @@ Revision History:
 #pragma once
 
 #include "conapi.h"
-#include "textBuffer.hpp"
+
 #include "settings.hpp"
-#include "TextAttribute.hpp"
+#include "../buffer/out/TextAttribute.hpp"
+#include "../buffer/out/textBuffer.hpp"
 
 #include "outputStream.hpp"
 #include "../terminal/adapter/adaptDispatch.hpp"

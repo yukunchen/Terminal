@@ -199,7 +199,7 @@ size_t CharRowBase<GlyphType, StringType>::MeasureLeft() const
 // Return Value:
 // - The calculated right boundary of the internal string.
 template<typename GlyphType, typename StringType>
-size_t CharRowBase<GlyphType, StringType>::MeasureRight() const
+size_t CharRowBase<GlyphType, StringType>::MeasureRight() const noexcept
 {
     std::vector<value_type>::const_reverse_iterator it = _data.crbegin();
     while (it != _data.crend() && it->first == _defaultValue)
@@ -222,7 +222,7 @@ void CharRowBase<GlyphType, StringType>::ClearCell(const size_t column)
 // Return Value:
 // - True if there is valid text in this row. False otherwise.
 template<typename GlyphType, typename StringType>
-bool CharRowBase<GlyphType, StringType>::ContainsText() const
+bool CharRowBase<GlyphType, StringType>::ContainsText() const noexcept
 {
     for (const value_type& vals : _data)
     {

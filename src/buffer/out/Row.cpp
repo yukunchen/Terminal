@@ -5,6 +5,7 @@
  ********************************************************/
 
 #include "precomp.h"
+#include "Row.hpp"
 #include "Ucs2CharRow.hpp"
 
 // Routine Description:
@@ -29,7 +30,7 @@ void swap(ROW& a, ROW& b) noexcept
 // - constructed object
 ROW::ROW(const SHORT rowId, const short rowWidth, const TextAttribute fillAttribute) :
     _id{ rowId },
-    _rowWidth{ static_cast<size_t>(rowWidth) },
+    _rowWidth{ gsl::narrow<size_t>(rowWidth) },
     _charRow{ std::make_unique<Ucs2CharRow>(rowWidth) },
     _attrRow{ rowWidth, fillAttribute }
 {
@@ -95,7 +96,7 @@ void ROW::swap(ROW& other) noexcept
     swap(_id, other._id);
     swap(_rowWidth, other._rowWidth);
 }
-size_t ROW::size() const
+size_t ROW::size() const noexcept
 {
     return _rowWidth;
 }
@@ -110,12 +111,12 @@ ICharRow& ROW::GetCharRow()
     return const_cast<ICharRow&>(static_cast<const ROW* const>(this)->GetCharRow());
 }
 
-const ATTR_ROW& ROW::GetAttrRow() const
+const ATTR_ROW& ROW::GetAttrRow() const noexcept
 {
     return _attrRow;
 }
 
-ATTR_ROW& ROW::GetAttrRow()
+ATTR_ROW& ROW::GetAttrRow() noexcept
 {
     return const_cast<ATTR_ROW&>(static_cast<const ROW* const>(this)->GetAttrRow());
 }
@@ -125,7 +126,7 @@ SHORT ROW::GetId() const noexcept
     return _id;
 }
 
-void ROW::SetId(const SHORT id)
+void ROW::SetId(const SHORT id) noexcept
 {
     _id = id;
 }
@@ -139,7 +140,16 @@ void ROW::SetId(const SHORT id)
 bool ROW::Reset(const TextAttribute Attr)
 {
     _charRow->Reset();
-    return _attrRow.Reset(Attr);
+    try
+    {
+        _attrRow.Reset(Attr);
+    }
+    catch (...)
+    {
+        LOG_CAUGHT_EXCEPTION();
+        return false;
+    }
+    return true;
 }
 
 // Routine Description:
@@ -151,9 +161,13 @@ bool ROW::Reset(const TextAttribute Attr)
 [[nodiscard]]
 HRESULT ROW::Resize(const size_t width)
 {
-    size_t oldWidth = _charRow->size();
+    const auto oldWidth = _charRow->size();
     RETURN_IF_FAILED(_charRow->Resize(width));
-    RETURN_IF_FAILED(_attrRow.Resize(static_cast<short>(oldWidth), static_cast<short>(width)));
+    try
+    {
+        _attrRow.Resize(oldWidth, width);
+    }
+    CATCH_RETURN();
     return S_OK;
 }
 
@@ -189,16 +203,13 @@ std::vector<OutputCell> ROW::AsCells(const size_t startIndex, const size_t count
     std::vector<OutputCell> cells;
     cells.reserve(size());
 
-    std::unique_ptr<TextAttribute[]> unpackedAttrs = std::make_unique<TextAttribute[]>(size());
-    THROW_IF_NULL_ALLOC(unpackedAttrs.get());
-
     // Unpack the attributes into an array so we can iterate over them.
-    THROW_IF_FAILED(_attrRow.UnpackAttrs(unpackedAttrs.get(), size()));
+    const auto unpackedAttrs = _attrRow.UnpackAttrs();
 
     const Ucs2CharRow* const charRow = static_cast<const Ucs2CharRow* const>(_charRow.get());
     for (size_t i = 0; i < count; ++i)
     {
-        auto index = startIndex + i;
+        const auto index = startIndex + i;
         cells.emplace_back(charRow->GetGlyphAt(index), charRow->GetAttribute(index), unpackedAttrs[index]);
     }
     return cells;
@@ -207,5 +218,5 @@ std::vector<OutputCell> ROW::AsCells(const size_t startIndex, const size_t count
 const OutputCell ROW::at(const size_t column) const
 {
     const Ucs2CharRow* const charRow = static_cast<const Ucs2CharRow* const>(_charRow.get());
-    return { charRow->GetGlyphAt(column), charRow->GetAttribute(column), _attrRow.at(column) };
+    return { charRow->GetGlyphAt(column), charRow->GetAttribute(column), _attrRow.GetAttrByColumn(column) };
 }

@@ -9,7 +9,7 @@
 #include "CommonState.hpp"
 
 #include "globals.h"
-#include "textBuffer.hpp"
+#include "../buffer/out/textBuffer.hpp"
 
 #include "dbcs.h"
 

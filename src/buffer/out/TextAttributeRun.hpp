@@ -24,12 +24,15 @@ Revision History:
 class TextAttributeRun final
 {
 public:
-    size_t GetLength() const;
-    void SetLength(const size_t cchLength);
+    TextAttributeRun() noexcept;
+    TextAttributeRun(const size_t cchLength, const TextAttribute attr) noexcept;
 
-    const TextAttribute GetAttributes() const;
-    void SetAttributes(const TextAttribute textAttribute);
-    void SetAttributesFromLegacy(const WORD wNew);
+    size_t GetLength() const noexcept;
+    void SetLength(const size_t cchLength) noexcept;
+
+    const TextAttribute GetAttributes() const noexcept;
+    void SetAttributes(const TextAttribute textAttribute) noexcept;
+    void SetAttributesFromLegacy(const WORD wNew) noexcept;
 
 private:
     size_t _cchLength;

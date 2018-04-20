@@ -33,17 +33,17 @@ public:
     ~ROW() = default;
 
     void swap(ROW& other) noexcept;
-    size_t size() const;
+    size_t size() const noexcept;
     const OutputCell at(const size_t column) const;
 
     const ICharRow& GetCharRow() const;
     ICharRow& GetCharRow();
 
-    const ATTR_ROW& GetAttrRow() const;
-    ATTR_ROW& GetAttrRow();
+    const ATTR_ROW& GetAttrRow() const noexcept;
+    ATTR_ROW& GetAttrRow() noexcept;
 
     SHORT GetId() const noexcept;
-    void SetId(const SHORT id);
+    void SetId(const SHORT id) noexcept;
 
     bool Reset(const TextAttribute Attr);
     [[nodiscard]]

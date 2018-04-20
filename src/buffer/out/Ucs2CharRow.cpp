@@ -6,6 +6,7 @@
 
 #include "precomp.h"
 #include "Ucs2CharRow.hpp"
+#include "unicode.hpp"
 
 // Routine Description:
 // - swaps two Ucs2CharRows

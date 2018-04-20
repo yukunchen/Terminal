@@ -11,10 +11,10 @@
 
 #include "getset.h"
 #include "misc.h"
-#include "Ucs2CharRow.hpp"
+#include "../buffer/out/Ucs2CharRow.hpp"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
-#include "..\types\inc\Viewport.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
+#include "../types/inc/Viewport.hpp"
 
 #pragma hdrstop
 using namespace Microsoft::Console::Types;
@@ -471,7 +471,7 @@ NTSTATUS ReadOutputString(const SCREEN_INFORMATION& screenInfo,
         else if (ulStringType == CONSOLE_ATTRIBUTE)
         {
             size_t CountOfAttr = 0;
-            TextAttributeRun* pAttrRun;
+            TextAttribute Attr;
             PWORD TargetPtr = (PWORD)BufPtr;
 
             while (NumRead < *pcRecords)
@@ -495,12 +495,12 @@ NTSTATUS ReadOutputString(const SCREEN_INFORMATION& screenInfo,
                     return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
                 }
 
-                pRow->GetAttrRow().FindAttrIndex(X, &pAttrRun, &CountOfAttr);
+                Attr = pRow->GetAttrRow().GetAttrByColumn(X, &CountOfAttr);
 
                 k = 0;
                 for (j = X; j < coordScreenBufferSize.X && it != itEnd; TargetPtr++, ++it)
                 {
-                    const WORD wLegacyAttributes = pAttrRun->GetAttributes().GetLegacyAttributes();
+                    const WORD wLegacyAttributes = Attr.GetLegacyAttributes();
                     if ((j == X) && it->second.IsTrailing())
                     {
                         *TargetPtr = wLegacyAttributes;
@@ -527,9 +527,8 @@ NTSTATUS ReadOutputString(const SCREEN_INFORMATION& screenInfo,
                     ++k;
                     if (static_cast<size_t>(k) == CountOfAttr && j < coordScreenBufferSize.X)
                     {
-                        pAttrRun++;
+                        Attr = pRow->GetAttrRow().GetAttrByColumn(j, &CountOfAttr);
                         k = 0;
-                        CountOfAttr = pAttrRun->GetLength();
                     }
 
                     if (NumRead == *pcRecords)

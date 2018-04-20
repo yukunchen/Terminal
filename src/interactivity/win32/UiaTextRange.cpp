@@ -13,7 +13,7 @@
 #include "../host/tracing.hpp"
 
 #include "../host/selection.hpp"
-#include "../host/Ucs2CharRow.hpp"
+#include "../buffer/out/Ucs2CharRow.hpp"
 
 
 using namespace Microsoft::Console::Interactivity::Win32;

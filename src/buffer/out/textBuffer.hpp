@@ -48,17 +48,15 @@ filling in the last row, and updating the screen.
 
 #pragma once
 
-#include "cursor.h"
+#pragma warning(push)
+#pragma warning(disable: ALL_CPPCORECHECK_WARNINGS)
+#include "../host/cursor.h"
 #include "../renderer/inc/FontInfo.hpp"
 #include "../renderer/inc/FontInfoDesired.hpp"
+#pragma warning(pop)
 
 #include "Row.hpp"
 #include "TextAttribute.hpp"
-
-#include <deque>
-#include <memory>
-#include <wil/resource.h>
-#include <wil/wistd_memory.h>
 
 class TextBuffer final
 {
@@ -130,9 +128,9 @@ public:
     void SetFill(const CHAR_INFO ciFill);
 
     [[nodiscard]]
-    NTSTATUS ResizeTraditional(const COORD currentScreenBufferSize,
-                               const COORD newScreenBufferSize,
-                               const TextAttribute attributes);
+    HRESULT ResizeTraditional(const COORD currentScreenBufferSize,
+                              const COORD newScreenBufferSize,
+                              const TextAttribute attributes);
 private:
 
     std::deque<ROW> _storage;

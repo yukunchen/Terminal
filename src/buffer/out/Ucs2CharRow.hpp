@@ -20,13 +20,9 @@ Revision History:
 
 #pragma once
 
-#include <memory>
-#include <vector>
-
 #include "DbcsAttribute.hpp"
 #include "ICharRow.hpp"
 #include "CharRowBase.hpp"
-
 
 class Ucs2CharRow final : public CharRowBase<wchar_t, std::wstring>
 {
@@ -34,7 +30,7 @@ public:
     Ucs2CharRow(size_t rowWidth);
     Ucs2CharRow(const Ucs2CharRow& a) = default;
     Ucs2CharRow& operator=(const Ucs2CharRow& a);
-    Ucs2CharRow(Ucs2CharRow&& a) noexcept = default;
+    Ucs2CharRow(Ucs2CharRow&& a) = default;
     ~Ucs2CharRow() = default;
 
     void swap(Ucs2CharRow& other) noexcept;

@@ -22,11 +22,11 @@ Revision History:
 class TextAttribute final
 {
 public:
-    TextAttribute();
-    TextAttribute(const WORD wLegacyAttr);
-    TextAttribute(const COLORREF rgbForeground, const COLORREF rgbBackground);
+    TextAttribute() noexcept;
+    TextAttribute(const WORD wLegacyAttr) noexcept;
+    TextAttribute(const COLORREF rgbForeground, const COLORREF rgbBackground) noexcept;
 
-    WORD GetLegacyAttributes() const;
+    WORD GetLegacyAttributes() const noexcept;
 
     COLORREF CalculateRgbForeground() const;
     COLORREF CalculateRgbBackground() const;
@@ -34,22 +34,22 @@ public:
     COLORREF GetRgbForeground() const;
     COLORREF GetRgbBackground() const;
 
-    bool IsLeadingByte() const;
-    bool IsTrailingByte() const;
+    bool IsLeadingByte() const noexcept;
+    bool IsTrailingByte() const noexcept;
 
-    bool IsTopHorizontalDisplayed() const;
-    bool IsBottomHorizontalDisplayed() const;
-    bool IsLeftVerticalDisplayed() const;
-    bool IsRightVerticalDisplayed() const;
+    bool IsTopHorizontalDisplayed() const noexcept;
+    bool IsBottomHorizontalDisplayed() const noexcept;
+    bool IsLeftVerticalDisplayed() const noexcept;
+    bool IsRightVerticalDisplayed() const noexcept;
 
-    void SetFromLegacy(const WORD wLegacy);
-    void SetMetaAttributes(const WORD wMeta);
+    void SetFromLegacy(const WORD wLegacy) noexcept;
+    void SetMetaAttributes(const WORD wMeta) noexcept;
 
-    void SetFrom(const TextAttribute& otherAttr);
-    bool IsEqual(const TextAttribute& otherAttr) const;
-    bool IsEqualToLegacy(const WORD wLegacy) const;
+    void SetFrom(const TextAttribute& otherAttr) noexcept;
+    bool IsEqual(const TextAttribute& otherAttr) const noexcept;
+    bool IsEqualToLegacy(const WORD wLegacy) const noexcept;
 
-    bool IsLegacy() const;
+    bool IsLegacy() const noexcept;
 
     void SetForeground(const COLORREF rgbForeground);
     void SetBackground(const COLORREF rgbBackground);
@@ -59,7 +59,7 @@ private:
     COLORREF _GetRgbForeground() const;
     COLORREF _GetRgbBackground() const;
 
-    bool _IsReverseVideo() const;
+    bool _IsReverseVideo() const noexcept;
 
     WORD _wAttrLegacy;
     bool _fUseRgbColor;

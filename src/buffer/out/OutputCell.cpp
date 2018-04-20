@@ -7,8 +7,11 @@
 #include "precomp.h"
 
 #include "OutputCell.hpp"
-#include "..\interactivity\inc\ServiceLocator.hpp"
 
+#pragma warning(push)
+#pragma warning(disable: ALL_CPPCORECHECK_WARNINGS)
+#include "../interactivity/inc/ServiceLocator.hpp"
+#pragma warning(pop)
 
 OutputCell::OutputCell(const wchar_t charData,
                        const DbcsAttribute dbcsAttribute,

@@ -30,26 +30,26 @@ public:
     using string_type = typename StringType;
 
     CharRowBase(const size_t rowWidth, const GlyphType defaultValue);
-    virtual ~CharRowBase() = default;
+    ~CharRowBase() = default;
 
     void swap(CharRowBase& other) noexcept;
 
     // ICharRow methods
-    void SetWrapForced(const bool wrap) noexcept;
-    bool WasWrapForced() const noexcept;
-    void SetDoubleBytePadded(const bool doubleBytePadded) noexcept;
-    bool WasDoubleBytePadded() const noexcept;
+    void SetWrapForced(const bool wrap) noexcept override;
+    bool WasWrapForced() const noexcept override;
+    void SetDoubleBytePadded(const bool doubleBytePadded) noexcept override;
+    bool WasDoubleBytePadded() const noexcept override;
     size_t size() const noexcept override;
-    void Reset();
+    void Reset() override;
     [[nodiscard]]
-    HRESULT Resize(const size_t newSize) noexcept;
+    HRESULT Resize(const size_t newSize) noexcept override;
     size_t MeasureLeft() const override;
-    size_t MeasureRight() const override;
+    size_t MeasureRight() const noexcept override;
     void ClearCell(const size_t column) override;
-    bool ContainsText() const override;
+    bool ContainsText() const noexcept override;
     const DbcsAttribute& GetAttribute(const size_t column) const override;
     DbcsAttribute& GetAttribute(const size_t column) override;
-    void ClearGlyph(const size_t column);
+    void ClearGlyph(const size_t column) override;
     std::wstring GetText() const override;
 
     // other functions implemented at the template class level

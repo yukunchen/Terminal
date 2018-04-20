@@ -25,12 +25,12 @@ public:
         Trailing = 0x02
     };
 
-    DbcsAttribute() :
+    DbcsAttribute() noexcept :
         _attribute{ Attribute::Single }
     {
     }
 
-    DbcsAttribute(const Attribute attribute) :
+    DbcsAttribute(const Attribute attribute) noexcept :
         _attribute{ attribute }
     {
     }
