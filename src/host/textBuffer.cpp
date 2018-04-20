@@ -33,7 +33,7 @@ TextBuffer::TextBuffer(const FontInfo fontInfo,
     _FirstRow{ 0 },
     _ciFill{ fill },
     _coordBufferSize{ screenBufferSize },
-    _cursor{ cursorSize },
+    _cursor{ cursorSize, *this },
     _storage{}
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
