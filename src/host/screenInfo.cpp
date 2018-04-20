@@ -1443,6 +1443,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
     Cursor& oldCursor = _textBuffer->GetCursor();
     Cursor& newCursor = newTextBuffer->GetCursor();
     // skip any drawing updates that might occur as we manipulate the new buffer
+    oldCursor.StartDeferDrawing();
     newCursor.StartDeferDrawing();
 
     // We need to save the old cursor position so that we can
@@ -1665,6 +1666,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
         newCursor.SetSize(ulSize);
         newCursor.EndDeferDrawing();
     }
+    oldCursor.EndDeferDrawing();
 
     return status;
 }

@@ -20,9 +20,10 @@
 // - Constructor to set default properties for Cursor
 // Arguments:
 // - ulSize - The height of the cursor within this buffer
-Cursor::Cursor(const ULONG ulSize) :
+Cursor::Cursor(const ULONG ulSize, const TextBuffer& parentBuffer) :
     _pAccessibilityNotifier(ServiceLocator::LocateAccessibilityNotifier()),
     _ulSize(ulSize),
+    _parentBuffer{ parentBuffer },
     _fHasMoved(false),
     _fIsVisible(true),
     _fIsOn(true),
@@ -89,9 +90,8 @@ bool Cursor::IsDouble() const noexcept
 bool Cursor::IsDoubleWidth() const
 {
     // Check with the current screen buffer to see if the character under the cursor is double-width.
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    std::vector<OutputCell> cells = gci.GetActiveOutputBuffer().ReadLine(_cPosition.Y, _cPosition.X, 1);
-    return !!IsCharFullWidth(cells[0].GetCharData());
+    const auto cell = _parentBuffer.GetRowByOffset(_cPosition.Y).AsCells(_cPosition.X, 1).at(0);
+    return !!IsCharFullWidth(cell.GetCharData());
 }
 
 bool Cursor::IsConversionArea() const noexcept
@@ -186,7 +186,7 @@ void Cursor::_RedrawCursor()
     {
         if (_fDeferCursorRedraw)
         {
-            _fHaveDeferredCursorRedraw = TRUE;
+            _fHaveDeferredCursorRedraw = true;
         }
         else
         {
