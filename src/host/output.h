@@ -35,20 +35,20 @@ NTSTATUS WriteScreenBuffer(SCREEN_INFORMATION& screenInfo,
 NTSTATUS DoCreateScreenBuffer();
 
 [[nodiscard]]
-NTSTATUS ReadOutputString(const SCREEN_INFORMATION& screenInfo,
-                          _Inout_ PVOID pvBuffer,
-                          const COORD coordRead,
-                          const ULONG ulStringType,
-                          _Inout_ PULONG pcRecords);
-
-[[nodiscard]]
 HRESULT ReadOutputAttributes(const SCREEN_INFORMATION& screenInfo,
                               WORD* const pBuffer,
                               const COORD coordRead,
                               ULONG* const pcRecords);
+
 [[nodiscard]]
 HRESULT ReadOutputStringW(const SCREEN_INFORMATION& screenInfo,
                           wchar_t* const pBuffer,
+                          const COORD coordRead,
+                          ULONG* const pcRecords);
+
+[[nodiscard]]
+HRESULT ReadOutputStringA(const SCREEN_INFORMATION& screenInfo,
+                          char* const pBuffer,
                           const COORD coordRead,
                           ULONG* const pcRecords);
 

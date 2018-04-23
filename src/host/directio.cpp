@@ -930,9 +930,16 @@ NTSTATUS SrvReadConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*
                                                              a->ReadCoord,
                                                              &a->NumRecords));
         }
+        else if (a->StringType == CONSOLE_ASCII)
+        {
+            Status = NTSTATUS_FROM_HRESULT(ReadOutputStringA(pScreenInfo->GetActiveBuffer(),
+                                                             static_cast<char* const>(Buffer),
+                                                             a->ReadCoord,
+                                                             &a->NumRecords));
+        }
         else
         {
-            Status = ReadOutputString(pScreenInfo->GetActiveBuffer(), Buffer, a->ReadCoord, a->StringType, &a->NumRecords);
+            Status = STATUS_INVALID_PARAMETER;
         }
 
         if (NT_SUCCESS(Status))
