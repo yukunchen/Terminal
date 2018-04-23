@@ -31,8 +31,7 @@ Renderer::Renderer(_In_ std::unique_ptr<IRenderData> pData,
     _pData(std::move(pData)),
     _pThread(nullptr),
     _lastTitle(L""),
-    _titleChanged(false),
-    _tearingDown(false)
+    _titleChanged(false)
 {
     THROW_IF_NULL_ALLOC(_pData);
 
@@ -143,40 +142,20 @@ HRESULT Renderer::PaintFrame()
 [[nodiscard]]
 HRESULT Renderer::_PaintFrameForEngine(_In_ IRenderEngine* const pEngine)
 {
-    THROW_HR_IF_NULL(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), pEngine);
+    FAIL_FAST_IF_NULL(pEngine); // This is a programming error. Fail fast.
 
     // Last chance check if anything scrolled without an explicit invalidate notification since the last frame.
     _CheckViewportAndScroll();
 
     // Try to start painting a frame
     HRESULT const hr = pEngine->StartPaint();
+    RETURN_IF_FAILED(hr);
 
-    // MSFT 16503902:
-    // If we're tearing down, we don't really care that this failed. It's likely
-    //   that the rendering target is already gone. Log the error, and just return.
-    // eg, in wsl, you launch ipconfig. The Pty render's half the output of
-    //      ipconfig before ipconfig exits. In that case, PrepareForTeardown is
-    //      used to render the second half of the text to the master (wsl.exe)
-    //      before we exit.
-    // This fixes the case where we close wsl.exe while cmd.exe is still
-    //      running inside it. In that case, we still PrepareForTeardown, but
-    //      the master end of the pty has already been closed, so we don't
-    //      really care if rendering throws here.
-    // If we have a combination of both - (ubuntu run ipconfig.exe?) ipconfig
-    //      exits, then wsl exits, then we try and paint - but there's no target
-    //      for the paint - still doesn't matter that the last paint failed, we
-    //      can just log it and continue exiting.
-    if (!_tearingDown)
+    // Return early if there's nothing to paint.
+    if (S_FALSE == hr)
     {
-        THROW_IF_FAILED(hr); // Return errors
+        return S_OK;
     }
-    else
-    {
-        LOG_IF_FAILED(hr);
-        return hr;
-    }
-
-    RETURN_HR_IF(S_OK, S_FALSE == hr); // Return early if there's nothing to paint.
 
     auto endPaint = wil::ScopeExit([&]()
     {
@@ -323,7 +302,6 @@ void Renderer::TriggerRedrawAll()
 // - <none>
 void Renderer::TriggerTeardown()
 {
-    _tearingDown = true;
     for (IRenderEngine* const pEngine : _rgpEngines)
     {
         bool fEngineRequestsRepaint = false;
