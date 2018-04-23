@@ -46,6 +46,11 @@ HRESULT ReadOutputAttributes(const SCREEN_INFORMATION& screenInfo,
                               WORD* const pBuffer,
                               const COORD coordRead,
                               ULONG* const pcRecords);
+[[nodiscard]]
+HRESULT ReadOutputStringW(const SCREEN_INFORMATION& screenInfo,
+                          wchar_t* const pBuffer,
+                          const COORD coordRead,
+                          ULONG* const pcRecords);
 
 void ScrollRegion(SCREEN_INFORMATION& screenInfo,
                   const SMALL_RECT scrollRect,
