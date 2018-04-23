@@ -41,6 +41,12 @@ NTSTATUS ReadOutputString(const SCREEN_INFORMATION& screenInfo,
                           const ULONG ulStringType,
                           _Inout_ PULONG pcRecords);
 
+[[nodiscard]]
+HRESULT ReadOutputAttributes(const SCREEN_INFORMATION& screenInfo,
+                              WORD* const pBuffer,
+                              const COORD coordRead,
+                              ULONG* const pcRecords);
+
 void ScrollRegion(SCREEN_INFORMATION& screenInfo,
                   const SMALL_RECT scrollRect,
                   const std::optional<SMALL_RECT> clipRect,

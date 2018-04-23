@@ -293,7 +293,6 @@ NTSTATUS WriteScreenBuffer(SCREEN_INFORMATION& screenInfo, _In_ PCHAR_INFO pciBu
 //      CONSOLE_ASCII         - read a string of ASCII characters.
 //      CONSOLE_REAL_UNICODE  - read a string of Real Unicode characters.
 //      CONSOLE_FALSE_UNICODE - read a string of False Unicode characters.
-//      CONSOLE_ATTRIBUTE     - read a string of attributes.
 // - NumRecords - On input, the size of the buffer in elements.  On output, the number of elements read.
 // Return Value:
 [[nodiscard]]
@@ -304,6 +303,8 @@ NTSTATUS ReadOutputString(const SCREEN_INFORMATION& screenInfo,
                           _Inout_ PULONG pcRecords)
 {
     DBGOUTPUT(("ReadOutputString\n"));
+    FAIL_FAST_IF_MSG(ulStringType == CONSOLE_ATTRIBUTE, "ReadOutputString can't read console attributes");
+
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     if (*pcRecords == 0)
@@ -465,93 +466,6 @@ NTSTATUS ReadOutputString(const SCREEN_INFORMATION& screenInfo,
                 if (k && (BufPtrA - 1)->IsLeading())
                 {
                     *(Char - 1) = UNICODE_SPACE;
-                }
-            }
-        }
-        else if (ulStringType == CONSOLE_ATTRIBUTE)
-        {
-            size_t CountOfAttr = 0;
-            TextAttribute Attr;
-            PWORD TargetPtr = (PWORD)BufPtr;
-
-            while (NumRead < *pcRecords)
-            {
-                // Copy the attrs from its array.
-                Ucs2CharRow::const_iterator it;
-                Ucs2CharRow::const_iterator itEnd;
-                try
-                {
-                    const ICharRow& iCharRow = pRow->GetCharRow();
-                    // we only support ucs2 encoded char rows
-                    FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                                     "only support UCS2 char rows currently");
-
-                    const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
-                    it = std::next(charRow.cbegin(), X);
-                    itEnd = charRow.cend();
-                }
-                catch (...)
-                {
-                    return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-                }
-
-                Attr = pRow->GetAttrRow().GetAttrByColumn(X, &CountOfAttr);
-
-                k = 0;
-                for (j = X; j < coordScreenBufferSize.X && it != itEnd; TargetPtr++, ++it)
-                {
-                    const WORD wLegacyAttributes = Attr.GetLegacyAttributes();
-                    if ((j == X) && it->second.IsTrailing())
-                    {
-                        *TargetPtr = wLegacyAttributes;
-                    }
-                    else if (it->second.IsLeading())
-                    {
-                        if ((NumRead == *pcRecords - 1) || (j == coordScreenBufferSize.X - 1))
-                        {
-                            *TargetPtr = wLegacyAttributes;
-                        }
-                        else
-                        {
-                            *TargetPtr = wLegacyAttributes | it->second.GeneratePublicApiAttributeFormat();
-                        }
-                    }
-                    else
-                    {
-                        *TargetPtr = wLegacyAttributes | it->second.GeneratePublicApiAttributeFormat();
-                    }
-
-                    NumRead++;
-                    j += 1;
-
-                    ++k;
-                    if (static_cast<size_t>(k) == CountOfAttr && j < coordScreenBufferSize.X)
-                    {
-                        Attr = pRow->GetAttrRow().GetAttrByColumn(j, &CountOfAttr);
-                        k = 0;
-                    }
-
-                    if (NumRead == *pcRecords)
-                    {
-                        delete[] TransBufferA;
-                        return STATUS_SUCCESS;
-                    }
-                }
-
-                try
-                {
-                    pRow = &screenInfo.GetTextBuffer().GetNextRowNoWrap(*pRow);
-                }
-                catch (...)
-                {
-                    return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-                }
-
-                X = 0;
-                Y++;
-                if (Y >= coordScreenBufferSize.Y)
-                {
-                    break;
                 }
             }
         }
@@ -966,4 +880,82 @@ void CloseConsoleProcessState()
     }
 
     HandleCtrlEvent(CTRL_CLOSE_EVENT);
+}
+
+// Routine Description:
+// - This routine reads a sequence of attributes from the screen buffer.
+// Arguments:
+// - screenInfo - reference to screen buffer information.
+// - pBuffer - Buffer to read into.
+// - coordRead - Screen buffer coordinate to begin reading from.
+// - pcRecords - On input, the size of the buffer in elements.  On output, the number of elements read.
+// Return Value:
+// - relevate NTSTATUS code
+[[nodiscard]]
+HRESULT ReadOutputAttributes(const SCREEN_INFORMATION& screenInfo,
+                              WORD* const pBuffer,
+                              const COORD coordRead,
+                              ULONG* const pcRecords)
+{
+    if (*pcRecords == 0)
+    {
+        return S_OK;
+    }
+
+    const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
+    if (coordRead.X >= coordScreenBufferSize.X ||
+        coordRead.X < 0 ||
+        coordRead.Y >= coordScreenBufferSize.Y ||
+        coordRead.Y < 0)
+    {
+        *pcRecords = 0;
+        return S_OK;
+    }
+
+    const ULONG amountToRead = *pcRecords;
+    std::vector<WORD> attrs;
+    COORD currentLocation = coordRead;
+
+    // read attrs
+    while (attrs.size() < amountToRead)
+    {
+        std::vector<OutputCell> cells;
+        try
+        {
+            cells = screenInfo.ReadLine(currentLocation.Y, currentLocation.X);
+        }
+        CATCH_RETURN();
+
+        for (auto cell : cells)
+        {
+            const WORD legacyAttrs = cell.GetTextAttribute().GetLegacyAttributes();
+            const DbcsAttribute dbcsAttr = cell.GetDbcsAttribute();
+            const bool firstInRow = (currentLocation == coordRead) || (currentLocation.X == 0);
+            const bool lastInRow = (attrs.size() + 1 == amountToRead) || (currentLocation.X + 1 == coordScreenBufferSize.X);
+            const bool justLegacyAttrs = (firstInRow && dbcsAttr.IsTrailing()) || (lastInRow && dbcsAttr.IsLeading());
+            if (justLegacyAttrs)
+            {
+                attrs.push_back(legacyAttrs);
+            }
+            else
+            {
+                attrs.push_back(legacyAttrs | dbcsAttr.GeneratePublicApiAttributeFormat());
+            }
+            currentLocation.X += 1;
+
+            if (attrs.size() == amountToRead)
+            {
+                break;
+            }
+        }
+        // increment for next row
+        currentLocation.X = 0;
+        currentLocation.Y += 1;
+    }
+
+    // move attrs to output array
+    std::copy(attrs.begin(), attrs.end(), pBuffer);
+    *pcRecords = static_cast<ULONG>(attrs.size());
+
+    return S_OK;
 }
