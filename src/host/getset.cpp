@@ -1417,11 +1417,11 @@ void DoSrvPrivateRefreshWindow(_In_ const SCREEN_INFORMATION& screenInfo)
     }
 }
 
-void GetConsoleTitleWImplHelper(_Out_writes_to_opt_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) wchar_t* const pwsTitleBuffer,
-                                   const size_t cchTitleBufferSize,
-                                   _Out_ size_t* const pcchTitleBufferWritten,
-                                   _Out_ size_t* const pcchTitleBufferNeeded,
-                                   const bool fIsOriginal)
+void GetConsoleTitleWImplHelper(_Out_writes_to_opt_(cchTitleBufferSize, *pcchTitleBufferWritten) wchar_t* const pwsTitleBuffer,
+                                const size_t cchTitleBufferSize,
+                                _Out_ size_t* const pcchTitleBufferWritten,
+                                _Out_ size_t* const pcchTitleBufferNeeded,
+                                const bool fIsOriginal)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // Ensure output variables are initialized.

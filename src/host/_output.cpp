@@ -64,10 +64,11 @@ void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
                         "only support UCS2 char rows currently");
 
         Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
-        OverwriteColumns(pwchBuffer,
-                        pwchBuffer + cchBuffer,
-                        pDbcsAttributes,
-                        std::next(charRow.begin(), TargetPoint.X));
+        const auto BufferSpan = gsl::make_span(pwchBuffer, cchBuffer);
+        OverwriteColumns(BufferSpan.begin(),
+                         BufferSpan.end(),
+                         pDbcsAttributes,
+                         std::next(charRow.begin(), TargetPoint.X));
     }
     CATCH_LOG();
 

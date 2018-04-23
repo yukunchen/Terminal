@@ -774,10 +774,12 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
                         "only support UCS2 char rows currently");
 
         Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
-        OverwriteColumns(String,
-                        String + StringLength,
-                        pDbcsAttributes,
-                        std::next(charRow.begin(), TargetPoint.X));
+
+        const auto StringSpan = gsl::make_span(String, StringLength);
+        OverwriteColumns(StringSpan.begin(),
+                         StringSpan.end(),
+                         pDbcsAttributes,
+                         std::next(charRow.begin(), TargetPoint.X));
     }
     CATCH_LOG();
 
