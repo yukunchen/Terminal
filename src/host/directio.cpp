@@ -922,6 +922,14 @@ NTSTATUS SrvReadConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*
                                                                 &a->NumRecords));
 
         }
+        else if (a->StringType == CONSOLE_REAL_UNICODE ||
+                 a->StringType == CONSOLE_FALSE_UNICODE)
+        {
+            Status = NTSTATUS_FROM_HRESULT(ReadOutputStringW(pScreenInfo->GetActiveBuffer(),
+                                                             static_cast<wchar_t* const>(Buffer),
+                                                             a->ReadCoord,
+                                                             &a->NumRecords));
+        }
         else
         {
             Status = ReadOutputString(pScreenInfo->GetActiveBuffer(), Buffer, a->ReadCoord, a->StringType, &a->NumRecords);
