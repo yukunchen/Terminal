@@ -914,7 +914,18 @@ NTSTATUS SrvReadConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*
 
         a->NumRecords /= nSize;
 
-        Status = ReadOutputString(pScreenInfo->GetActiveBuffer(), Buffer, a->ReadCoord, a->StringType, &a->NumRecords);
+        if (a->StringType == CONSOLE_ATTRIBUTE)
+        {
+            Status = NTSTATUS_FROM_HRESULT(ReadOutputAttributes(pScreenInfo->GetActiveBuffer(),
+                                                                static_cast<WORD* const>(Buffer),
+                                                                a->ReadCoord,
+                                                                &a->NumRecords));
+
+        }
+        else
+        {
+            Status = ReadOutputString(pScreenInfo->GetActiveBuffer(), Buffer, a->ReadCoord, a->StringType, &a->NumRecords);
+        }
 
         if (NT_SUCCESS(Status))
         {
