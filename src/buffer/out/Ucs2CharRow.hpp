@@ -50,7 +50,7 @@ constexpr bool operator==(const Ucs2CharRow& a, const Ucs2CharRow& b) noexcept
 }
 
 template<typename InputIt1, typename InputIt2>
-void OverwriteColumns(_In_ InputIt1 startChars, _In_ InputIt1 endChars, _In_ InputIt2 startAttrs, _Out_ Ucs2CharRow::iterator outIt)
+void OverwriteColumns(InputIt1 startChars, InputIt1 endChars, InputIt2 startAttrs, Ucs2CharRow::iterator outIt)
 {
     std::transform(startChars,
                    endChars,
