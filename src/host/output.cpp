@@ -288,11 +288,10 @@ NTSTATUS WriteScreenBuffer(SCREEN_INFORMATION& screenInfo, _In_ PCHAR_INFO pciBu
 // - This routine reads a sequence of attributes from the screen buffer.
 // Arguments:
 // - screenInfo - reference to screen buffer information.
-// - pBuffer - Buffer to read into.
 // - coordRead - Screen buffer coordinate to begin reading from.
-// - pcRecords - On input, the size of the buffer in elements.  On output, the number of elements read.
+// - amountToRead - the number of elements to read
 // Return Value:
-// - relevant HRESULT
+// - vector of attribute data
 std::vector<WORD> ReadOutputAttributes(const SCREEN_INFORMATION& screenInfo,
                                        const COORD coordRead,
                                        const ULONG amountToRead)
@@ -354,6 +353,14 @@ std::vector<WORD> ReadOutputAttributes(const SCREEN_INFORMATION& screenInfo,
     return attrs;
 }
 
+// Routine Description:
+// - This routine reads a sequence of unicode characters from the screen buffer
+// Arguments:
+// - screenInfo - reference to screen buffer information.
+// - coordRead - Screen buffer coordinate to begin reading from.
+// - amountToRead - the number of elements to read
+// Return Value:
+// - vector of wchar data
 std::vector<wchar_t> ReadOutputStringW(const SCREEN_INFORMATION& screenInfo,
                                        const COORD coordRead,
                                        const ULONG amountToRead)
@@ -424,6 +431,14 @@ std::vector<wchar_t> ReadOutputStringW(const SCREEN_INFORMATION& screenInfo,
     return outputText;
 }
 
+// Routine Description:
+// - This routine reads a sequence of ascii characters from the screen buffer
+// Arguments:
+// - screenInfo - reference to screen buffer information.
+// - coordRead - Screen buffer coordinate to begin reading from.
+// - amountToRead - the number of elements to read
+// Return Value:
+// - vector of char data
 std::vector<char> ReadOutputStringA(const SCREEN_INFORMATION& screenInfo,
                                     const COORD coordRead,
                                     const ULONG amountToRead)
@@ -432,7 +447,7 @@ std::vector<char> ReadOutputStringA(const SCREEN_INFORMATION& screenInfo,
     const std::wstring wstr{ wideChars.begin(), wideChars.end() };
 
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    std::deque<char> convertedChars = ConvertToOem(gci.OutputCP, wstr);
+    const std::deque<char> convertedChars = ConvertToOem(gci.OutputCP, wstr);
 
     return { convertedChars.begin(), convertedChars.end() };
 }
