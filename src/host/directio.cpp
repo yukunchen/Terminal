@@ -912,6 +912,7 @@ NTSTATUS SrvReadConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*
                                                                amountToRead);
                 std::copy(attrs.begin(), attrs.end(), static_cast<WORD* const>(Buffer));
                 a->NumRecords = gsl::narrow<ULONG>(attrs.size());
+                Status = STATUS_SUCCESS;
             }
             catch (...)
             {
@@ -929,7 +930,7 @@ NTSTATUS SrvReadConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*
                                                                amountToRead);
                 std::copy(chars.begin(), chars.end(), static_cast<wchar_t* const>(Buffer));
                 a->NumRecords = gsl::narrow<ULONG>(chars.size());
-
+                Status = STATUS_SUCCESS;
             }
             catch (...)
             {
@@ -955,6 +956,7 @@ NTSTATUS SrvReadConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*
                     std::copy(chars.begin(), chars.end(), static_cast<char* const>(Buffer));
                     a->NumRecords = gsl::narrow<ULONG>(chars.size());
                 }
+                Status = STATUS_SUCCESS;
             }
             catch (...)
             {
