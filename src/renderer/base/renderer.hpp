@@ -86,7 +86,6 @@ namespace Microsoft::Console::Render
         bool _titleChanged;
 
         RenderThread* _pThread;
-        bool _tearingDown;
 
         void _NotifyPaintFrame();
 
