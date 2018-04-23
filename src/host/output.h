@@ -34,23 +34,17 @@ NTSTATUS WriteScreenBuffer(SCREEN_INFORMATION& screenInfo,
 [[nodiscard]]
 NTSTATUS DoCreateScreenBuffer();
 
-[[nodiscard]]
-HRESULT ReadOutputAttributes(const SCREEN_INFORMATION& screenInfo,
-                              WORD* const pBuffer,
-                              const COORD coordRead,
-                              ULONG* const pcRecords);
+std::vector<WORD> ReadOutputAttributes(const SCREEN_INFORMATION& screenInfo,
+                                       const COORD coordRead,
+                                       const ULONG amountToRead);
 
-[[nodiscard]]
-HRESULT ReadOutputStringW(const SCREEN_INFORMATION& screenInfo,
-                          wchar_t* const pBuffer,
-                          const COORD coordRead,
-                          ULONG* const pcRecords);
+std::vector<wchar_t> ReadOutputStringW(const SCREEN_INFORMATION& screenInfo,
+                                       const COORD coordRead,
+                                       const ULONG amountToRead);
 
-[[nodiscard]]
-HRESULT ReadOutputStringA(const SCREEN_INFORMATION& screenInfo,
-                          char* const pBuffer,
-                          const COORD coordRead,
-                          ULONG* const pcRecords);
+std::vector<char> ReadOutputStringA(const SCREEN_INFORMATION& screenInfo,
+                                    const COORD coordRead,
+                                    const ULONG amountToRead);
 
 void ScrollRegion(SCREEN_INFORMATION& screenInfo,
                   const SMALL_RECT scrollRect,

@@ -15,6 +15,7 @@
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/Viewport.hpp"
+#include "../types/inc/convert.hpp"
 
 #pragma hdrstop
 using namespace Microsoft::Console::Types;
@@ -292,15 +293,13 @@ NTSTATUS WriteScreenBuffer(SCREEN_INFORMATION& screenInfo, _In_ PCHAR_INFO pciBu
 // - pcRecords - On input, the size of the buffer in elements.  On output, the number of elements read.
 // Return Value:
 // - relevant HRESULT
-[[nodiscard]]
-HRESULT ReadOutputAttributes(const SCREEN_INFORMATION& screenInfo,
-                              WORD* const pBuffer,
-                              const COORD coordRead,
-                              ULONG* const pcRecords)
+std::vector<WORD> ReadOutputAttributes(const SCREEN_INFORMATION& screenInfo,
+                                       const COORD coordRead,
+                                       const ULONG amountToRead)
 {
-    if (*pcRecords == 0)
+    if (amountToRead == 0)
     {
-        return S_OK;
+        return {};
     }
 
     const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
@@ -309,24 +308,16 @@ HRESULT ReadOutputAttributes(const SCREEN_INFORMATION& screenInfo,
         coordRead.Y >= coordScreenBufferSize.Y ||
         coordRead.Y < 0)
     {
-        *pcRecords = 0;
-        return S_OK;
+        return {};
     }
 
-    const ULONG amountToRead = *pcRecords;
     std::vector<WORD> attrs;
     COORD currentLocation = coordRead;
 
     // read attrs
     while (attrs.size() < amountToRead)
     {
-        std::vector<OutputCell> cells;
-        try
-        {
-            cells = screenInfo.ReadLine(currentLocation.Y, currentLocation.X);
-        }
-        CATCH_RETURN();
-
+        std::vector<OutputCell> cells = screenInfo.ReadLine(currentLocation.Y, currentLocation.X);
         for (const auto& cell : cells)
         {
             const WORD legacyAttrs = cell.GetTextAttribute().GetLegacyAttributes();
@@ -360,22 +351,16 @@ HRESULT ReadOutputAttributes(const SCREEN_INFORMATION& screenInfo,
         }
     }
 
-    // move attrs to output array
-    std::copy(attrs.begin(), attrs.end(), pBuffer);
-    *pcRecords = static_cast<ULONG>(attrs.size());
-
-    return S_OK;
+    return attrs;
 }
 
-[[nodiscard]]
-HRESULT ReadOutputStringW(const SCREEN_INFORMATION& screenInfo,
-                          wchar_t* const pBuffer,
-                          const COORD coordRead,
-                          ULONG* const pcRecords)
+std::vector<wchar_t> ReadOutputStringW(const SCREEN_INFORMATION& screenInfo,
+                                       const COORD coordRead,
+                                       const ULONG amountToRead)
 {
-    if (*pcRecords == 0)
+    if (amountToRead == 0)
     {
-        return S_OK;
+        return {};
     }
 
     const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
@@ -384,23 +369,16 @@ HRESULT ReadOutputStringW(const SCREEN_INFORMATION& screenInfo,
         coordRead.Y >= coordScreenBufferSize.Y ||
         coordRead.Y < 0)
     {
-        *pcRecords = 0;
-        return S_OK;
+        return {};
     }
 
-    const ULONG amountToRead = *pcRecords;
     std::vector<OutputCell> dataCells;
     COORD currentLocation = coordRead;
 
     // read char data
     while (dataCells.size() < amountToRead)
     {
-        std::vector<OutputCell> cells;
-        try
-        {
-            cells = screenInfo.ReadLine(currentLocation.Y, currentLocation.X);
-        }
-        CATCH_RETURN();
+        std::vector<OutputCell> cells = screenInfo.ReadLine(currentLocation.Y, currentLocation.X);
 
         // append cells
         dataCells.reserve(dataCells.size() + cells.size());
@@ -443,37 +421,20 @@ HRESULT ReadOutputStringW(const SCREEN_INFORMATION& screenInfo,
         }
     }
 
-    // move chars to output array
-    std::copy(outputText.begin(), outputText.end(), pBuffer);
-    *pcRecords = static_cast<ULONG>(outputText.size());
-
-    return S_OK;
+    return outputText;
 }
 
-[[nodiscard]]
-HRESULT ReadOutputStringA(const SCREEN_INFORMATION& screenInfo,
-                          char* const pBuffer,
-                          const COORD coordRead,
-                          ULONG* const pcRecords)
+std::vector<char> ReadOutputStringA(const SCREEN_INFORMATION& screenInfo,
+                                    const COORD coordRead,
+                                    const ULONG amountToRead)
 {
-    std::unique_ptr<wchar_t[]> tempBuffer = std::make_unique<wchar_t[]>(*pcRecords);
-    if (!tempBuffer.get())
-    {
-        return E_OUTOFMEMORY;
-    }
-
-    const ULONG amountToRead = *pcRecords;
-    ULONG tempSize = *pcRecords;
-    *pcRecords = 0;
-
-    HRESULT hr = ReadOutputStringW(screenInfo, tempBuffer.get(), coordRead, &tempSize);
-    RETURN_IF_FAILED(hr);
-
+    const std::vector<wchar_t> wideChars = ReadOutputStringW(screenInfo, coordRead, amountToRead);
+    const std::wstring wstr{ wideChars.begin(), wideChars.end() };
 
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    ULONG amountRead = ConvertToOem(gci.OutputCP, tempBuffer.get(), tempSize, pBuffer, amountToRead);
-    *pcRecords = amountRead;
-    return S_OK;
+    std::deque<char> convertedChars = ConvertToOem(gci.OutputCP, wstr);
+
+    return { convertedChars.begin(), convertedChars.end() };
 }
 
 void ScreenBufferSizeChange(const COORD coordNewSize)
