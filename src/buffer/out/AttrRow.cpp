@@ -202,7 +202,8 @@ size_t ATTR_ROW::FindAttrIndex(const size_t index, size_t* const pApplies) const
     {
         const auto attrApplies = cTotalLength - index;
         FAIL_FAST_IF_FALSE(attrApplies > 0); // An attribute applies for >0 characters
-        FAIL_FAST_IF_FALSE(attrApplies <= _cchRowWidth); // An attribute applies for a maximum of the total length available to us
+        // MSFT: 17130145 - will restore this and add a better assert to catch the real issue.
+        //FAIL_FAST_IF_FALSE(attrApplies <= _cchRowWidth); // An attribute applies for a maximum of the total length available to us
 
         *pApplies = attrApplies;
     }
