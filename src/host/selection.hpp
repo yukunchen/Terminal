@@ -115,7 +115,10 @@ private:
     // key handling
     bool _HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo);
     bool _HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKeyInfo);
-    void WordByWordSelection(const bool fPrevious, const SMALL_RECT srectEdges, const COORD coordAnchor, _Inout_ COORD *pcoordSelPoint) const;
+    COORD WordByWordSelection(const bool fPrevious,
+                              const SMALL_RECT srectEdges,
+                              const COORD coordAnchor,
+                              const COORD coordSelPoint) const;
 
 
 // -------------------------------------------------------------------------------------------------------
