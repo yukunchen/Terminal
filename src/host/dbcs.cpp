@@ -224,7 +224,8 @@ BYTE CodePageToCharSet(const UINT uiCodePage)
 {
     CHARSETINFO csi;
 
-    if (!ServiceLocator::LocateInputServices()->TranslateCharsetInfo((DWORD *) IntToPtr(uiCodePage), &csi, TCI_SRCCODEPAGE))
+    const auto inputServices = ServiceLocator::LocateInputServices();
+    if (nullptr == inputServices || !inputServices->TranslateCharsetInfo((DWORD *) IntToPtr(uiCodePage), &csi, TCI_SRCCODEPAGE))
     {
         csi.ciCharset = OEM_CHARSET;
     }

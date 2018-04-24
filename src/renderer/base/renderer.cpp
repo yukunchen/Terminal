@@ -302,6 +302,10 @@ void Renderer::TriggerRedrawAll()
 // - <none>
 void Renderer::TriggerTeardown()
 {
+    // We need to shut down the paint thread on teardown.
+    _pThread->WaitForPaintCompletionAndDisable(INFINITE);
+
+    // Then walk through and do one final paint on the caller's thread.
     for (IRenderEngine* const pEngine : _rgpEngines)
     {
         bool fEngineRequestsRepaint = false;
