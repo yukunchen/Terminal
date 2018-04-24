@@ -144,6 +144,10 @@ TARGETLIBS = \
     $(ONECORE_PRIV_SDK_LIB_VPATH)\onecore_internal.lib \
     $(MINCORE_PRIV_SDK_LIB_PATH)\isapisetpresent.lib \
     $(SDK_LIB_PATH)\propsys.lib \
+    $(SDK_LIB_PATH)\d2d1.lib \
+    $(SDK_LIB_PATH)\dwrite.lib \
+    $(SDK_LIB_PATH)\dxgi.lib \
+    $(SDK_LIB_PATH)\d3d11.lib \
     $(MODERNCORE_PRIV_SDK_LIB_VPATH)\api-ms-win-mm-playsound-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-gdi-dc-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-gdi-dc-create-l1.lib \
@@ -165,7 +169,6 @@ TARGETLIBS = \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-window-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-gdi-object-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-gdi-rgn-l1.lib \
-    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-ntuser-console-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-ntuser-cursor-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-ntuser-dc-access-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-ntuser-rawinput-l1.lib \
@@ -190,6 +193,10 @@ TARGETLIBS = \
 
 DELAYLOAD = \
     PROPSYS.dll; \
+    D2D1.dll; \
+    DWrite.dll; \
+    DXGI.dll; \
+    D3D11.dll; \
     OLEAUT32.dll; \
     api-ms-win-mm-playsound-l1.dll; \
     api-ms-win-shcore-scaling-l1.dll; \
@@ -214,7 +221,6 @@ DELAYLOAD = \
     ext-ms-win-ntuser-window-l1.dll; \
     ext-ms-win-rtcore-gdi-object-l1.dll; \
     ext-ms-win-rtcore-gdi-rgn-l1.dll; \
-    ext-ms-win-rtcore-ntuser-console-l1.dll; \
     ext-ms-win-rtcore-ntuser-cursor-l1.dll; \
     ext-ms-win-rtcore-ntuser-dc-access-l1.dll; \
     ext-ms-win-rtcore-ntuser-rawinput-l1.dll; \

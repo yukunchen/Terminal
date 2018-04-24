@@ -33,4 +33,5 @@ INCLUDES = \
 
 SOURCES = \
     $(SOURCES) \
+    ..\main.cxx \
     ..\WddmConRenderer.cpp \
