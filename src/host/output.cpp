@@ -320,6 +320,8 @@ std::vector<WORD> ReadOutputAttributes(const SCREEN_INFORMATION& screenInfo,
             const bool firstInRow = (currentLocation == coordRead) || (currentLocation.X == 0);
             const bool lastInRow = (attrs.size() + 1 == amountToRead) || (currentLocation.X + 1 == coordScreenBufferSize.X);
             const bool justLegacyAttrs = (firstInRow && dbcsAttr.IsTrailing()) || (lastInRow && dbcsAttr.IsLeading());
+            // if a glyph is split between leading/trailing cells and these cells are on different lines
+            // or at the edge of where we're reading then we want only the legacy attrs for that cell
             if (justLegacyAttrs)
             {
                 attrs.push_back(legacyAttrs);
