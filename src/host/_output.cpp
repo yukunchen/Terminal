@@ -214,7 +214,7 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
                 it->first = WCHAR_OF_PCI(SourcePtr);
                 it->second = DbcsAttribute::FromPublicApiAttributeFormat(reinterpret_cast<const CHAR_INFO* const>(SourcePtr)->Attributes);
 
-                if (attrRun.GetAttributes().IsEqualToLegacy((ATTR_OF_PCI(SourcePtr) & ~COMMON_LVB_SBCSDBCS)))
+                if (attrRun.GetAttributes() == ((ATTR_OF_PCI(SourcePtr) & ~COMMON_LVB_SBCSDBCS)))
                 {
                     attrRun.SetLength(attrRun.GetLength() + 1);
                 }
@@ -271,7 +271,7 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
                 pSrcAttr++;
                 for (int x = 1; x < srcWidth; x++)
                 {
-                    if (!pSrcAttr->IsEqual(lastAttr))
+                    if (*pSrcAttr != lastAttr)
                     {
                         insert.SetAttributes(lastAttr);
                         insert.SetLength(currentLength);
@@ -765,7 +765,7 @@ NTSTATUS WriteOutputString(SCREEN_INFORMATION& screenInfo,
                 AttrRun.SetAttributesFromLegacy(*SourcePtr & ~COMMON_LVB_SBCSDBCS);
                 for (SHORT j = X; j < coordScreenBufferSize.X; j++, SourcePtr++)
                 {
-                    if (AttrRun.GetAttributes().IsEqualToLegacy(*SourcePtr & ~COMMON_LVB_SBCSDBCS))
+                    if (AttrRun.GetAttributes() == (*SourcePtr & ~COMMON_LVB_SBCSDBCS))
                     {
                         AttrRun.SetLength(AttrRun.GetLength() + 1);
                     }

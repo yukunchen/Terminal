@@ -786,7 +786,7 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
     // see if attr string is different.  if so, allocate a new attr buffer and merge the two strings.
     const auto attr = Row.GetAttrRow().GetAttrByColumn(0);
 
-    if (Row.GetAttrRow().GetNumberOfRuns() != 1 || !(attr.IsEqual(ScreenInfo.GetAttributes())))
+    if (Row.GetAttrRow().GetNumberOfRuns() != 1 || attr != ScreenInfo.GetAttributes())
     {
         TextAttributeRun InsertedRun;
 

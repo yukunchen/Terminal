@@ -2396,7 +2396,7 @@ const TextAttribute* const SCREEN_INFORMATION::GetPopupAttributes() const
 // <none>
 void SCREEN_INFORMATION::SetAttributes(const TextAttribute& attributes)
 {
-    _Attributes.SetFrom(attributes);
+    _Attributes = attributes;
 
     CHAR_INFO ciFill = _textBuffer->GetFill();
     ciFill.Attributes = _Attributes.GetLegacyAttributes();
@@ -2417,7 +2417,7 @@ void SCREEN_INFORMATION::SetAttributes(const TextAttribute& attributes)
 // <none>
 void SCREEN_INFORMATION::SetPopupAttributes(const TextAttribute& popupAttributes)
 {
-    _PopupAttributes.SetFrom(popupAttributes);
+    _PopupAttributes = popupAttributes;
     // If we're an alt buffer, also update our main buffer.
     if (_psiMainBuffer)
     {

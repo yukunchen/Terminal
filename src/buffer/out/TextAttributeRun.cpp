@@ -36,5 +36,5 @@ const TextAttribute TextAttributeRun::GetAttributes() const noexcept
 
 void TextAttributeRun::SetAttributes(const TextAttribute textAttribute) noexcept
 {
-    _attributes.SetFrom(textAttribute);
+    _attributes = textAttribute;
 }

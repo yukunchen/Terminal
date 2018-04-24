@@ -122,11 +122,6 @@ COLORREF TextAttribute::GetRgbBackground() const
     return rgbColor;
 }
 
-void TextAttribute::SetFrom(const TextAttribute& otherAttr) noexcept
-{
-    *this = otherAttr;
-}
-
 void TextAttribute::SetFromLegacy(const WORD wLegacy) noexcept
 {
     _wAttrLegacy = wLegacy;
@@ -170,17 +165,37 @@ void TextAttribute::SetColor(const COLORREF rgbColor, const bool fIsForeground)
     }
 }
 
-bool TextAttribute::IsEqual(const TextAttribute& otherAttr) const noexcept
+bool operator==(const TextAttribute& a, const TextAttribute& b) noexcept
 {
-    return _wAttrLegacy == otherAttr._wAttrLegacy &&
-           _fUseRgbColor == otherAttr._fUseRgbColor &&
-           _rgbForeground == otherAttr._rgbForeground &&
-           _rgbBackground == otherAttr._rgbBackground;
+    return a._wAttrLegacy == b._wAttrLegacy &&
+        a._fUseRgbColor == b._fUseRgbColor &&
+        a._rgbForeground == b._rgbForeground &&
+        a._rgbBackground == b._rgbBackground;
 }
 
-bool TextAttribute::IsEqualToLegacy(const WORD wLegacy) const noexcept
+bool operator!=(const TextAttribute& a, const TextAttribute& b) noexcept
 {
-    return _wAttrLegacy == wLegacy && !_fUseRgbColor;
+    return !(a == b);
+}
+
+bool operator==(const TextAttribute& attr, const WORD& legacyAttr) noexcept
+{
+    return attr._wAttrLegacy == legacyAttr && !attr._fUseRgbColor;
+}
+
+bool operator!=(const TextAttribute& attr, const WORD& legacyAttr) noexcept
+{
+    return !(attr == legacyAttr);
+}
+
+bool operator==(const WORD& legacyAttr, const TextAttribute& attr) noexcept
+{
+    return attr == legacyAttr;
+}
+
+bool operator!=(const WORD& legacyAttr, const TextAttribute& attr) noexcept
+{
+    return !(attr == legacyAttr);
 }
 
 bool TextAttribute::_IsReverseVideo() const noexcept

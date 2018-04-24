@@ -44,10 +44,13 @@ public:
 
     void SetFromLegacy(const WORD wLegacy) noexcept;
     void SetMetaAttributes(const WORD wMeta) noexcept;
-
-    void SetFrom(const TextAttribute& otherAttr) noexcept;
-    bool IsEqual(const TextAttribute& otherAttr) const noexcept;
-    bool IsEqualToLegacy(const WORD wLegacy) const noexcept;
+        
+    friend bool operator==(const TextAttribute& a, const TextAttribute& b) noexcept;
+    friend bool operator!=(const TextAttribute& a, const TextAttribute& b) noexcept;
+    friend bool operator==(const TextAttribute& attr, const WORD& legacyAttr) noexcept;
+    friend bool operator!=(const TextAttribute& attr, const WORD& legacyAttr) noexcept;
+    friend bool operator==(const WORD& legacyAttr, const TextAttribute& attr) noexcept;
+    friend bool operator!=(const WORD& legacyAttr, const TextAttribute& attr) noexcept;
 
     bool IsLegacy() const noexcept;
 
@@ -70,3 +73,10 @@ private:
     friend class TextBufferTests;
 #endif
 };
+
+bool operator==(const TextAttribute& a, const TextAttribute& b) noexcept;
+bool operator!=(const TextAttribute& a, const TextAttribute& b) noexcept;
+bool operator==(const TextAttribute& attr, const WORD& legacyAttr) noexcept;
+bool operator!=(const TextAttribute& attr, const WORD& legacyAttr) noexcept;
+bool operator==(const WORD& legacyAttr, const TextAttribute& attr) noexcept;
+bool operator!=(const WORD& legacyAttr, const TextAttribute& attr) noexcept;
