@@ -97,7 +97,7 @@ std::vector<std::vector<OutputCell>> ReadRectFromScreenBuffer(const SCREEN_INFOR
                 (colIndex + 1 >= static_cast<size_t>(viewport.Width()) && cells[colIndex].GetDbcsAttribute().IsLeading()))
             {
                 cells[colIndex].GetDbcsAttribute().SetSingle();
-                cells[colIndex].GetCharData() = UNICODE_SPACE;
+                cells[colIndex].GetCharData() = { UNICODE_SPACE };
             }
         }
         cells.resize(viewport.Width(), cells.front());

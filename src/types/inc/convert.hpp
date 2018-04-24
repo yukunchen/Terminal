@@ -58,3 +58,5 @@ std::deque<std::unique_ptr<KeyEvent>> SynthesizeNumpadEvents(const wchar_t wch, 
 
 [[nodiscard]]
 HRESULT IsCharFullWidth(_In_ wchar_t wch, _Out_ bool* const isFullWidth) noexcept;
+
+wchar_t Utf16ToUcs2(const std::vector<wchar_t>& charData);

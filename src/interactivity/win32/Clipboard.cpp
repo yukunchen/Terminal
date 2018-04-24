@@ -302,7 +302,10 @@ NTSTATUS Clipboard::RetrieveTextFromBuffer(const SCREEN_INFORMATION& screenInfo,
             {
                 if (!cell.GetDbcsAttribute().IsTrailing())
                 {
-                    selectionText.push_back(cell.GetCharData());
+                    for (const wchar_t wch : cell.GetCharData())
+                    {
+                        selectionText.push_back(wch);
+                    }
                 }
             }
 

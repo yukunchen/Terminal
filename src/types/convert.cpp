@@ -7,6 +7,8 @@
 #include "precomp.h"
 #include "inc/convert.hpp"
 
+#include "../inc/unicode.hpp"
+
 #ifdef BUILD_ONECORE_INTERACTIVITY
 #include "../../interactivity/inc/VtApiRedirection.hpp"
 #endif
@@ -623,4 +625,17 @@ HRESULT IsCharFullWidth(_In_ wchar_t wch, _Out_ bool* const isFullWidth) noexcep
     }
 
     return S_OK;
+}
+
+wchar_t Utf16ToUcs2(const std::vector<wchar_t>& charData)
+{
+    THROW_HR_IF(E_INVALIDARG, charData.empty());
+    if (charData.size() > 1)
+    {
+        return UNICODE_REPLACEMENT;
+    }
+    else
+    {
+        return charData.front();
+    }
 }
