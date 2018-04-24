@@ -301,10 +301,7 @@ std::vector<WORD> ReadOutputAttributes(const SCREEN_INFORMATION& screenInfo,
     }
 
     const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
-    if (coordRead.X >= coordScreenBufferSize.X ||
-        coordRead.X < 0 ||
-        coordRead.Y >= coordScreenBufferSize.Y ||
-        coordRead.Y < 0)
+    if (!IsCoordInBounds(coordRead, coordScreenBufferSize))
     {
         return {};
     }
@@ -343,7 +340,7 @@ std::vector<WORD> ReadOutputAttributes(const SCREEN_INFORMATION& screenInfo,
         currentLocation.Y += 1;
 
         // stop reading if we reached the end of the screen buffer
-        if (currentLocation.Y >= coordScreenBufferSize.Y)
+        if (!IsCoordInBounds(currentLocation, coordScreenBufferSize))
         {
             break;
         }
@@ -370,10 +367,7 @@ std::vector<wchar_t> ReadOutputStringW(const SCREEN_INFORMATION& screenInfo,
     }
 
     const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
-    if (coordRead.X >= coordScreenBufferSize.X ||
-        coordRead.X < 0 ||
-        coordRead.Y >= coordScreenBufferSize.Y ||
-        coordRead.Y < 0)
+    if (!IsCoordInBounds(coordRead, coordScreenBufferSize))
     {
         return {};
     }
@@ -395,7 +389,7 @@ std::vector<wchar_t> ReadOutputStringW(const SCREEN_INFORMATION& screenInfo,
         currentLocation.Y += 1;
 
         // stop reading if we reached the end of the screen buffer
-        if (currentLocation.Y >= coordScreenBufferSize.Y)
+        if (!IsCoordInBounds(currentLocation, coordScreenBufferSize))
         {
             break;
         }
