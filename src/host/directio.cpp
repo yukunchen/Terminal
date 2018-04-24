@@ -907,9 +907,9 @@ NTSTATUS SrvReadConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*
             const ULONG amountToRead = bufferSize / sizeof(WORD);
             try
             {
-                std::vector<WORD> attrs = ReadOutputAttributes(pScreenInfo->GetActiveBuffer(),
-                                                               a->ReadCoord,
-                                                               amountToRead);
+                const std::vector<WORD> attrs = ReadOutputAttributes(pScreenInfo->GetActiveBuffer(),
+                                                                     a->ReadCoord,
+                                                                     amountToRead);
                 std::copy(attrs.begin(), attrs.end(), static_cast<WORD* const>(Buffer));
                 a->NumRecords = gsl::narrow<ULONG>(attrs.size());
                 Status = STATUS_SUCCESS;
@@ -925,9 +925,9 @@ NTSTATUS SrvReadConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*
             const ULONG amountToRead = bufferSize / sizeof(wchar_t);
             try
             {
-                std::vector<wchar_t> chars = ReadOutputStringW(pScreenInfo->GetActiveBuffer(),
-                                                               a->ReadCoord,
-                                                               amountToRead);
+                const std::vector<wchar_t> chars = ReadOutputStringW(pScreenInfo->GetActiveBuffer(),
+                                                                     a->ReadCoord,
+                                                                     amountToRead);
                 std::copy(chars.begin(), chars.end(), static_cast<wchar_t* const>(Buffer));
                 a->NumRecords = gsl::narrow<ULONG>(chars.size());
                 Status = STATUS_SUCCESS;
@@ -942,9 +942,9 @@ NTSTATUS SrvReadConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*
             const ULONG amountToRead = bufferSize / sizeof(char);
             try
             {
-                std::vector<char> chars = ReadOutputStringA(pScreenInfo->GetActiveBuffer(),
-                                                            a->ReadCoord,
-                                                            amountToRead);
+                const std::vector<char> chars = ReadOutputStringA(pScreenInfo->GetActiveBuffer(),
+                                                                  a->ReadCoord,
+                                                                  amountToRead);
                 if (chars.size() > amountToRead)
                 {
                     // for compatibility reasons, if we receive more chars than can fit in the buffer

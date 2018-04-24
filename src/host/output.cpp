@@ -397,7 +397,7 @@ std::vector<wchar_t> ReadOutputStringW(const SCREEN_INFORMATION& screenInfo,
         }
     }
 
-    // remove  any extra cells
+    // remove any extra cells
     dataCells.resize(amountToRead, dataCells.at(0));
 
     // modify ends according to leading/trailing bytes
@@ -441,7 +441,7 @@ std::vector<char> ReadOutputStringA(const SCREEN_INFORMATION& screenInfo,
     const std::vector<wchar_t> wideChars = ReadOutputStringW(screenInfo, coordRead, amountToRead);
     const std::wstring wstr{ wideChars.begin(), wideChars.end() };
 
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const std::deque<char> convertedChars = ConvertToOem(gci.OutputCP, wstr);
 
     return { convertedChars.begin(), convertedChars.end() };
