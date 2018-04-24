@@ -13,7 +13,6 @@
 #include "../host/tracing.hpp"
 
 #include "../host/selection.hpp"
-#include "../buffer/out/Ucs2CharRow.hpp"
 
 
 using namespace Microsoft::Console::Interactivity::Win32;
@@ -743,14 +742,7 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
                     // wouldn't be any text to grab.
                     if (startIndex < endIndex)
                     {
-                        const ICharRow& iCharRow = row.GetCharRow();
-                        // we only support ucs2 encoded char rows
-                        FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                                        "only support UCS2 char rows currently");
-
-                        const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
-                        // add to result string
-                        wstr += charRow.GetText().substr(startIndex, endIndex - startIndex);
+                        wstr += row.GetText().substr(startIndex, endIndex - startIndex);
                     }
                 }
 
