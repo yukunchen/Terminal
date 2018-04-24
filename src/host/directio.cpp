@@ -901,24 +901,76 @@ NTSTATUS SrvReadConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*
     }
     else
     {
-        ULONG nSize;
-
-        if (a->StringType == CONSOLE_ASCII)
+        const ULONG bufferSize = a->NumRecords;
+        if (a->StringType == CONSOLE_ATTRIBUTE)
         {
-            nSize = sizeof(CHAR);
+            const ULONG amountToRead = bufferSize / sizeof(WORD);
+            try
+            {
+                const std::vector<WORD> attrs = ReadOutputAttributes(pScreenInfo->GetActiveBuffer(),
+                                                                     a->ReadCoord,
+                                                                     amountToRead);
+                std::copy(attrs.begin(), attrs.end(), static_cast<WORD* const>(Buffer));
+                a->NumRecords = gsl::narrow<ULONG>(attrs.size());
+                Status = STATUS_SUCCESS;
+            }
+            catch (...)
+            {
+                Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+            }
+        }
+        else if (a->StringType == CONSOLE_REAL_UNICODE ||
+                 a->StringType == CONSOLE_FALSE_UNICODE)
+        {
+            const ULONG amountToRead = bufferSize / sizeof(wchar_t);
+            try
+            {
+                const std::vector<wchar_t> chars = ReadOutputStringW(pScreenInfo->GetActiveBuffer(),
+                                                                     a->ReadCoord,
+                                                                     amountToRead);
+                std::copy(chars.begin(), chars.end(), static_cast<wchar_t* const>(Buffer));
+                a->NumRecords = gsl::narrow<ULONG>(chars.size());
+                Status = STATUS_SUCCESS;
+            }
+            catch (...)
+            {
+                Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+            }
+        }
+        else if (a->StringType == CONSOLE_ASCII)
+        {
+            const ULONG amountToRead = bufferSize / sizeof(char);
+            try
+            {
+                const std::vector<char> chars = ReadOutputStringA(pScreenInfo->GetActiveBuffer(),
+                                                                  a->ReadCoord,
+                                                                  amountToRead);
+                if (chars.size() > amountToRead)
+                {
+                    // for compatibility reasons, if we receive more chars than can fit in the buffer
+                    // then we don't send anything back.
+                    a->NumRecords = 0;
+                }
+                else
+                {
+                    std::copy(chars.begin(), chars.end(), static_cast<char* const>(Buffer));
+                    a->NumRecords = gsl::narrow<ULONG>(chars.size());
+                }
+                Status = STATUS_SUCCESS;
+            }
+            catch (...)
+            {
+                Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+            }
         }
         else
         {
-            nSize = sizeof(WORD);
+            Status = STATUS_INVALID_PARAMETER;
         }
-
-        a->NumRecords /= nSize;
-
-        Status = ReadOutputString(pScreenInfo->GetActiveBuffer(), Buffer, a->ReadCoord, a->StringType, &a->NumRecords);
 
         if (NT_SUCCESS(Status))
         {
-            m->SetReplyInformation(a->NumRecords * nSize);
+            m->SetReplyInformation(bufferSize);
         }
     }
 

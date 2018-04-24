@@ -317,3 +317,11 @@ int ConvertOutputToUnicode(_In_ UINT uiCodePage,
     delete[] pszT;
     return Length;
 }
+
+bool IsCoordInBounds(const COORD point, const COORD bounds)
+{
+    return !(point.X >= bounds.X ||
+             point.X < 0 ||
+             point.Y >= bounds.Y ||
+             point.Y < 0);
+}
