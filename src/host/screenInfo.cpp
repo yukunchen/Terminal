@@ -634,16 +634,8 @@ void SCREEN_INFORMATION::ResetTextFlags(const short sStartX,
 
             try
             {
-                const ROW& Row = _textBuffer->GetRowAtIndex(RowIndex);
-                const ICharRow& iCharRow = Row.GetCharRow();
-                // we only support ucs2 encoded char rows
-                FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                                "only support UCS2 char rows currently");
-
-                const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
-                const auto ch = charRow.GetGlyphAt(sStartX);
-                const auto attr = Row.GetAttrRow().GetAttrByColumn(sStartX);
-                const LONG charAndAttr = MAKELONG(ch, gci.GenerateLegacyAttributes(attr));
+                const OutputCell cell = ReadLine(RowIndex, sStartX, 1).at(0);
+                const LONG charAndAttr = MAKELONG(cell.GetCharData(), gci.GenerateLegacyAttributes(cell.GetTextAttribute()));
                 _pAccessibilityNotifier->NotifyConsoleUpdateSimpleEvent(MAKELONG(sStartX, sStartY),
                                                                         charAndAttr);
             }
