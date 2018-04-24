@@ -74,10 +74,10 @@ private:
 
     void _PaintSelection() const;
 
-    static void s_BisectSelection(const short sStringLength,
-                                  const COORD coordTargetPoint,
-                                  const SCREEN_INFORMATION& screenInfo,
-                                  _Inout_ SMALL_RECT* const pSmallRect);
+    static SMALL_RECT s_BisectSelection(const short sStringLength,
+                                        const COORD coordTargetPoint,
+                                        const SCREEN_INFORMATION& screenInfo,
+                                        const SMALL_RECT rect);
 
     void _CancelMarkSelection();
     void _CancelMouseSelection();
