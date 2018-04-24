@@ -11,7 +11,6 @@
 
 #include "getset.h"
 #include "misc.h"
-#include "../buffer/out/Ucs2CharRow.hpp"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/Viewport.hpp"
