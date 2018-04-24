@@ -144,6 +144,20 @@ BOOL IsCharFullWidth(_In_ WCHAR wch)
     return FALSE;
 }
 
+bool IsGlyphFullWidth(const std::vector<wchar_t>& charData)
+{
+    THROW_HR_IF(E_INVALIDARG, charData.empty());
+    if (charData.size() == 1)
+    {
+        return !!IsCharFullWidth(charData.front());
+    }
+    else
+    {
+        // TODO find a better way to determine glyph font width
+        return true;
+    }
+}
+
 // Routine Description:
 // - This routine removes the double copies of characters used when storing DBCS/Double-wide characters in the text buffer.
 // Arguments:

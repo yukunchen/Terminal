@@ -14,6 +14,8 @@
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/Viewport.hpp"
+#include "../types/inc/convert.hpp"
+
 #include <algorithm>
 #include <iterator>
 
@@ -355,7 +357,7 @@ void WriteRectToScreenBuffer(SCREEN_INFORMATION& screenInfo,
         for (size_t iCol = 0; iCol < xSize && it != itEnd; ++iCol, ++it)
         {
             const OutputCell& cell = cells[iRow][iCol];
-            it->first = cell.GetCharData();
+            it->first = Utf16ToUcs2(cell.GetCharData());
             it->second = cell.GetDbcsAttribute();
             textAttrs.push_back(cell.GetTextAttribute());
         }
