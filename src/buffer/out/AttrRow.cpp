@@ -13,6 +13,56 @@
 #include "../host/handle.h"
 #pragma warning(pop)
 
+ // Routine Description:
+ // - Debug only method to validate that no adjacent cells of the list have the same color
+ // Arguments:
+ // - run - The run to inspect
+ // Return Value:
+ // - True if it is valid (no adjacent are the same). False otherwise. 
+bool _DebugValidateAdjacentAttributes(const std::vector<TextAttributeRun>& run)
+{
+    // Nothing to compare if run size is < 2.
+    if (run.size() < 2)
+    {
+        return true;
+    }
+
+    // Walk from 1-N
+    for (auto runIter = std::next(run.cbegin()); runIter < run.cend(); runIter++)
+    {
+        // Compare to the previous item
+        const auto runPrev = std::prev(runIter);
+
+        // If two adjacents are equal, it's invalid. Escape.
+        if (runIter->GetAttributes().IsEqual(runPrev->GetAttributes()))
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+// Routine Description:
+// - Debug only method to help add up the total length of every run to help diagnose issues with
+//   manipulating run length encoding in-place.
+// Arguments:
+// - newAttrs - The run to inspect
+// Return Value:
+// - The length of the run (in total number of cells covered by adding up how much each segment covers.)
+size_t _DebugGetTotalLength(const std::vector<TextAttributeRun>& newAttrs)
+{
+    size_t cTotal = 0;
+
+    for (const auto& run : newAttrs)
+    {
+        cTotal += run.GetLength();
+    }
+
+    return cTotal;
+}
+
+
 // Routine Description:
 // - constructor
 // Arguments:
@@ -59,10 +109,12 @@ void ATTR_ROW::Reset(const TextAttribute attr)
 // - newWidth - The new width of the row.
 // Return Value:
 // - <none>, throws exceptions on failures.
-void ATTR_ROW::Resize(const size_t oldWidth, const size_t newWidth)
+void ATTR_ROW::Resize(const size_t newWidth)
 {
+    THROW_HR_IF(E_INVALIDARG, 0 == newWidth);
+
     // Easy case. If the new row is longer, increase the length of the last run by how much new space there is.
-    if (newWidth > oldWidth)
+    if (newWidth > _cchRowWidth)
     {
         LockConsole();
         auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
@@ -71,20 +123,20 @@ void ATTR_ROW::Resize(const size_t oldWidth, const size_t newWidth)
         const TextAttribute defaultAttrs = gci.GetActiveOutputBuffer().GetAttributes();
 
         // Get the attribute that covers the final column of old width.
-        const auto runPos = FindAttrIndex(oldWidth - 1, nullptr);
+        const auto runPos = FindAttrIndex(_cchRowWidth - 1, nullptr);
         auto& run = _list[runPos];
-        
+
 
         // if the last attribute is the same as the current default then extend it
         if (run.GetAttributes().IsEqual(defaultAttrs))
         {
             // Extend its length by the additional columns we're adding.
-            run.SetLength(run.GetLength() + newWidth - oldWidth);
+            run.SetLength(run.GetLength() + newWidth - _cchRowWidth);
         }
         else
         {
             // add a new attribute on the end with the defaults
-            const TextAttributeRun endRun(newWidth - oldWidth, defaultAttrs);
+            const TextAttributeRun endRun(newWidth - _cchRowWidth, defaultAttrs);
             _list.push_back(endRun);
         }
         // Store that the new total width we represent is the new width.
@@ -110,11 +162,14 @@ void ATTR_ROW::Resize(const size_t oldWidth, const size_t newWidth)
 
         // Erase segments after the one we just updated.
         _list.erase(_list.cbegin() + runPos + 1, _list.cend());
- 
+
         // NOTE: Under some circumstances here, we have leftover run segments in memory or blank run segments
         // in memory. We're not going to waste time redimensioning the array in the heap. We're just noting that the useful
         // portions of it have changed.
     }
+
+    FAIL_FAST_IF_FALSE(_cchRowWidth == _DebugGetTotalLength(_list));
+    FAIL_FAST_IF_FALSE(_DebugValidateAdjacentAttributes(_list));
 }
 
 // Routine Description:
@@ -215,7 +270,7 @@ size_t ATTR_ROW::FindAttrIndex(const size_t index, size_t* const pApplies) const
 // - Unpacks run length encoded attributes into an array of words that is the width of the given row.
 //  Return Value:
 // - Throws exceptions on failures
-std::vector<TextAttribute> ATTR_ROW::UnpackAttrs() const 
+std::vector<TextAttribute> ATTR_ROW::UnpackAttrs() const
 {
     std::vector<TextAttribute> attrs;
 
@@ -282,57 +337,6 @@ void TextAttributeRun::SetAttributesFromLegacy(const WORD wNew) noexcept
     _attributes.SetFromLegacy(wNew);
 }
 
-#if DBG
-// Routine Description:
-// - Debug only method to validate that no adjacent cells of the list have the same color
-// Arguments:
-// - run - The run to inspect
-// Return Value:
-// - True if it is valid (no adjacent are the same). False otherwise. 
-bool _DebugValidateAdjacentAttributes(const std::vector<TextAttributeRun>& run)
-{
-    // Nothing to compare if run size is < 2.
-    if (run.size() < 2)
-    {
-        return true;
-    }
-
-    // Walk from 1-N
-    for (auto runIter = run.cbegin() + 1; runIter < run.cend(); runIter++)
-    {
-        // Compare to the previous item
-        const auto runPrev = runIter - 1;
-                
-        // If two adjacents are equal, it's invalid. Escape.
-        if (runIter->GetAttributes().IsEqual(runPrev->GetAttributes()))
-        {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-// Routine Description:
-// - Debug only method to help add up the total length of every run to help diagnose issues with
-//   manipulating run length encoding in-place.
-// Arguments:
-// - newAttrs - The run to inspect
-// Return Value:
-// - The length of the run (in total number of cells covered by adding up how much each segment covers.)
-size_t _DebugGetTotalLength(const std::vector<TextAttributeRun>& newAttrs)
-{
-    size_t cTotal = 0;
-
-    for (auto& run : newAttrs)
-    {
-        cTotal += run.GetLength();
-    }
-
-    return cTotal;
-}
-#endif
-
 // Routine Description:
 // - Takes a array of attribute runs, and inserts them into this row from startIndex to endIndex.
 // - For example, if the current row was was [{4, BLUE}], the merge string
@@ -353,7 +357,7 @@ HRESULT ATTR_ROW::InsertAttrRuns(const std::vector<TextAttributeRun>& newAttrs,
                                  const size_t iEnd,
                                  const size_t cBufferWidth)
 {
-    assert((iEnd - iStart + 1) == _DebugGetTotalLength(newAttrs));
+    FAIL_FAST_IF_FALSE((iEnd - iStart + 1) == _DebugGetTotalLength(newAttrs));
 
     // Definitions:
     // Existing Run = The run length encoded color array we're already storing in memory before this was called.
@@ -366,7 +370,7 @@ HRESULT ATTR_ROW::InsertAttrRuns(const std::vector<TextAttributeRun>& newAttrs,
     // Insert Run: Y1 -> N1 at iStart = 5 and iEnd = 6
     //            (rgInsertAttrs is a 2 length array with Y1->N1 in it and cInsertAttrs = 2)
     // Final Run: R3 -> G2 -> Y1 -> N1 -> G1 -> B2
-    assert(cBufferWidth == _DebugGetTotalLength(_list));
+    FAIL_FAST_IF_FALSE(cBufferWidth == _DebugGetTotalLength(_list));
 
     // We'll need to know what the last valid column is for some calculations versus iEnd
     // because iEnd is specified to us as an inclusive index value.
@@ -395,7 +399,7 @@ HRESULT ATTR_ROW::InsertAttrRuns(const std::vector<TextAttributeRun>& newAttrs,
             existingRun->SetAttributes(NewAttr);
 
             // We are assuming that if our existing run had only 1 item that it covered the entire buffer width.
-            assert(existingRun->GetLength() == cBufferWidth);
+            FAIL_FAST_IF_FALSE(existingRun->GetLength() == cBufferWidth);
             existingRun->SetLength(cBufferWidth); // Set anyway to be safe.
             return S_OK;
         }
@@ -503,7 +507,7 @@ HRESULT ATTR_ROW::InsertAttrRuns(const std::vector<TextAttributeRun>& newAttrs,
     // on how many cells we could have copied from the source before finishing off the new run.
     while (iExistingRunCoverage <= iEnd)
     {
-        assert(pExistingRunPos != pExistingRunEnd);
+        FAIL_FAST_IF_FALSE(pExistingRunPos != pExistingRunEnd);
         iExistingRunCoverage += pExistingRunPos->GetLength();
         pExistingRunPos++;
     }
@@ -601,9 +605,9 @@ HRESULT ATTR_ROW::InsertAttrRuns(const std::vector<TextAttributeRun>& newAttrs,
     // OK, phew. We're done. Now we just need to free the existing run, store the new run in its place,
     // and update the count for the correct length of the new run now that we've filled it up.
 
-    assert(cBufferWidth == _DebugGetTotalLength(newRun));
     newRun.erase(pNewRunPos, newRun.end());
-    assert(_DebugValidateAdjacentAttributes(newRun));
+    FAIL_FAST_IF_FALSE(cBufferWidth == _DebugGetTotalLength(newRun));
+    FAIL_FAST_IF_FALSE(_DebugValidateAdjacentAttributes(newRun));
     _list.swap(newRun);
 
     return S_OK;

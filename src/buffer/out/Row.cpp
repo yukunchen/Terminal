@@ -161,11 +161,10 @@ bool ROW::Reset(const TextAttribute Attr)
 [[nodiscard]]
 HRESULT ROW::Resize(const size_t width)
 {
-    const auto oldWidth = _charRow->size();
     RETURN_IF_FAILED(_charRow->Resize(width));
     try
     {
-        _attrRow.Resize(oldWidth, width);
+        _attrRow.Resize(width);
     }
     CATCH_RETURN();
     return S_OK;

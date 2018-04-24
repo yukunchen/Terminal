@@ -41,7 +41,7 @@ public:
     bool SetAttrToEnd(const UINT iStart, const TextAttribute attr);
     void ReplaceLegacyAttrs(const WORD wToBeReplacedAttr, const WORD wReplaceWith) noexcept;
 
-    void Resize(const size_t oldWidth, const size_t newWidth);
+    void Resize(const size_t newWidth);
 
     [[nodiscard]]
     HRESULT InsertAttrRuns(const std::vector<TextAttributeRun>& newAttrs,

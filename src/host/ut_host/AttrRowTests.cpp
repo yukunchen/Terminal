@@ -576,4 +576,32 @@ class AttrRowTests
             VERIFY_ARE_EQUAL((short)Result, _sDefaultLength);
         }
     }
+
+    TEST_METHOD(TestResize)
+    {
+        CommonState state;
+        state.PrepareGlobalFont();
+        state.PrepareGlobalScreenBuffer();
+
+        pSingle->Resize(240);
+        pChain->Resize(240);
+
+        pSingle->Resize(255);
+        pChain->Resize(255);
+
+        pSingle->Resize(255);
+        pChain->Resize(255);
+
+        pSingle->Resize(60);
+        pChain->Resize(60);
+
+        pSingle->Resize(60);
+        pChain->Resize(60);
+
+        VERIFY_THROWS_SPECIFIC(pSingle->Resize(0), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_INVALIDARG; });
+        VERIFY_THROWS_SPECIFIC(pChain->Resize(0), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_INVALIDARG; });
+
+        state.CleanupGlobalScreenBuffer();
+        state.CleanupGlobalFont();
+    }
 };
