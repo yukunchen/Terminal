@@ -20,7 +20,6 @@ Author(s):
 
 #include <string>
 
-
 typedef void(*PipeReadCallback)(BYTE* buffer, DWORD dwRead);
 
 class VtConsole
@@ -29,7 +28,7 @@ public:
     VtConsole(PipeReadCallback const pfnReadCallback, bool const fHeadless, COORD const initialSize);
     void spawn();
     void spawn(const std::wstring& command);
-    
+
     HANDLE inPipe();
     HANDLE outPipe();
 
@@ -43,13 +42,13 @@ public:
     void deactivate();
 
     void signalWindow(unsigned short sx, unsigned short sy);
-    
+
     static DWORD StaticOutputThreadProc(LPVOID lpParameter);
 
     bool WriteInput(std::string& seq);
 
     bool Repaint();
-    bool Resize(const unsigned int rows, const unsigned int cols);
+    bool Resize(const unsigned short rows, const unsigned short cols);
 
 private:
     COORD _lastDimensions;
@@ -61,7 +60,7 @@ private:
     HANDLE _signalPipe;
     std::wstring _inPipeName;
     std::wstring _outPipeName;
-    
+
     bool _connected = false;
     bool _active = false;
     bool _fHeadless = false;
