@@ -7,7 +7,6 @@
 #include "precomp.h"
 
 #include "search.h"
-#include "../buffer/out/Ucs2CharRow.hpp"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 
@@ -740,17 +739,11 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
         SHORT iNextLeftX = 0;
 
         const COORD cursorPos = textBuffer.GetCursor().GetPosition();
-        const ROW& Row = textBuffer.GetRowByOffset(cursorPos.Y);
-        const ICharRow& iCharRow = Row.GetCharRow();
-        // we only support ucs2 encoded char rows
-        FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                        "only support UCS2 char rows currently");
-
-        const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
 
         try
         {
-            if (charRow.GetAttribute(cursorPos.X).IsLeading())
+            // calculate next right
+            if (ScreenInfo.ReadLine(cursorPos.Y, cursorPos.X, 1).at(0).GetDbcsAttribute().IsLeading())
             {
                 iNextRightX = 2;
             }
@@ -759,33 +752,33 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
                 iNextRightX = 1;
             }
 
+            // calculate next left
             if (cursorPos.X > 0)
             {
-                if (charRow.GetAttribute(cursorPos.X - 1).IsTrailing())
+                iNextLeftX = 1;
+            }
+
+            if (cursorPos.X == 1)
+            {
+                const std::vector<OutputCell> cells = ScreenInfo.ReadLine(cursorPos.Y, 0, 2);
+                if (cells.at(0).GetDbcsAttribute().IsTrailing())
                 {
                     iNextLeftX = 2;
                 }
-                else if (charRow.GetAttribute(cursorPos.X - 1).IsLeading())
+            }
+            else
+            {
+                const std::vector<OutputCell> cells = ScreenInfo.ReadLine(cursorPos.Y, cursorPos.X - 2, 3);
+                if (cells.at(1).GetDbcsAttribute().IsLeading())
                 {
-                    if (cursorPos.X - 1 > 0)
+                    if (cells.at(0).GetDbcsAttribute().IsTrailing())
                     {
-                        if (charRow.GetAttribute(cursorPos.X - 2).IsTrailing())
-                        {
-                            iNextLeftX = 3;
-                        }
-                        else
-                        {
-                            iNextLeftX = 2;
-                        }
+                        iNextLeftX = 3;
                     }
                     else
                     {
-                        iNextLeftX = 1;
+                        iNextLeftX = 2;
                     }
-                }
-                else
-                {
-                    iNextLeftX = 1;
                 }
             }
         }
