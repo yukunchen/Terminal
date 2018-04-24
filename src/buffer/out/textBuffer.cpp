@@ -323,16 +323,10 @@ bool TextBuffer::AssertValidDoubleByteSequence(const DbcsAttribute dbcsAttribute
     // To figure out if the sequence is valid, we have to look at the character that comes before the current one
     const COORD coordPrevPosition = GetPreviousFromCursor();
     ROW& prevRow = GetRowByOffset(coordPrevPosition.Y);
-    ICharRow& iCharRow = prevRow.GetCharRow();
-    // we only support ucs2 encoded char rows
-    FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                     "only support UCS2 char rows currently");
-
-    Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
     DbcsAttribute prevDbcsAttr;
     try
     {
-        prevDbcsAttr = charRow.GetAttribute(coordPrevPosition.X);
+        prevDbcsAttr = prevRow.GetCharRow().GetAttribute(coordPrevPosition.X);
     }
     catch (...)
     {
@@ -428,11 +422,7 @@ bool TextBuffer::_PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute
         {
             // set that we're wrapping for double byte reasons
             ICharRow& iCharRow = GetRowByOffset(GetCursor().GetPosition().Y).GetCharRow();
-            // we only support ucs2 encoded char rows
-            FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                            "only support UCS2 char rows currently");
-
-            static_cast<Ucs2CharRow&>(iCharRow).SetDoubleBytePadded(true);
+            iCharRow.SetDoubleBytePadded(true);
 
             // then move the cursor forward and onto the next row
             fSuccess = IncrementCursor();
