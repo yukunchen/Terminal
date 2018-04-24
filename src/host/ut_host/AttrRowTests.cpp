@@ -40,7 +40,7 @@ namespace WEX {
         public:
             static bool AreEqual(const TextAttributeRun& expected, const TextAttributeRun& actual)
             {
-                return expected.GetAttributes().IsEqual(actual.GetAttributes()) &&
+                return expected.GetAttributes() == actual.GetAttributes() &&
                     expected.GetLength() == actual.GetLength();
             }
 
@@ -153,7 +153,7 @@ class AttrRowTests
             pUnderTest->Reset(attr);
 
             VERIFY_ARE_EQUAL(pUnderTest->_list.size(), 1u);
-            VERIFY_IS_TRUE(pUnderTest->_list[0].GetAttributes().IsEqual(attr));
+            VERIFY_ARE_EQUAL(pUnderTest->_list[0].GetAttributes(), attr);
             VERIFY_ARE_EQUAL(pUnderTest->_list[0].GetLength(), (unsigned int)_sDefaultLength);
         }
     }
@@ -189,7 +189,7 @@ class AttrRowTests
             {
                 const TextAttribute* pCurAttr = &rgAttrs[i];
 
-                if (!pCurAttr->IsEqual(*pPrevAttr))
+                if (*pCurAttr != *pPrevAttr)
                 {
                     cDeltas++;
                 }
@@ -212,7 +212,7 @@ class AttrRowTests
                 pCurrentRun->SetLength(1);
                 for (size_t i = 1; i < cRowLength; i++)
                 {
-                    if (pCurrentRun->GetAttributes().IsEqual(rgAttrs[i]))
+                    if (pCurrentRun->GetAttributes() == rgAttrs[i])
                     {
                         pCurrentRun->SetLength(pCurrentRun->GetLength() + 1);
                     }
@@ -461,7 +461,7 @@ class AttrRowTests
 
         for (auto& attr : attrs)
         {
-            VERIFY_IS_TRUE(attr.IsEqual(_DefaultAttr));
+            VERIFY_ARE_EQUAL(attr, _DefaultAttr);
         }
 
         Log::Comment(L"Checking unpack of the multiple color chain");
@@ -482,7 +482,7 @@ class AttrRowTests
                 MatchingAttr = _DefaultChainAttr;
             }
 
-            VERIFY_IS_TRUE(attr.IsEqual(MatchingAttr));
+            VERIFY_ARE_EQUAL(attr, MatchingAttr);
 
             // Add to the chain run
             cChainRun++;
@@ -514,10 +514,10 @@ class AttrRowTests
         // Was 1 (single), should now have 2 segments
         VERIFY_ARE_EQUAL(pSingle->_list.size(), 2u);
 
-        VERIFY_IS_TRUE(pSingle->_list[0].GetAttributes().IsEqual(_DefaultAttr));
+        VERIFY_ARE_EQUAL(pSingle->_list[0].GetAttributes(), _DefaultAttr);
         VERIFY_ARE_EQUAL(pSingle->_list[0].GetLength(), (unsigned int)(_sDefaultLength - (_sDefaultLength - iTestIndex)));
 
-        VERIFY_IS_TRUE(pSingle->_list[1].GetAttributes().IsEqual(TestAttr));
+        VERIFY_ARE_EQUAL(pSingle->_list[1].GetAttributes(), TestAttr);
         VERIFY_ARE_EQUAL(pSingle->_list[1].GetLength(), (unsigned int)(_sDefaultLength - iTestIndex));
 
         Log::Comment(L"SetAttrToEnd for existing chain of multiple colors.");
@@ -527,19 +527,19 @@ class AttrRowTests
         VERIFY_ARE_EQUAL(pChain->_list.size(), 5u);
 
         // Verify chain colors and lengths
-        VERIFY_IS_TRUE(TextAttribute(0).IsEqual(pChain->_list[0].GetAttributes()));
+        VERIFY_ARE_EQUAL(TextAttribute(0), pChain->_list[0].GetAttributes());
         VERIFY_ARE_EQUAL(pChain->_list[0].GetLength(), (unsigned int)13);
 
-        VERIFY_IS_TRUE(TextAttribute(1).IsEqual(pChain->_list[1].GetAttributes()));
+        VERIFY_ARE_EQUAL(TextAttribute(1), pChain->_list[1].GetAttributes());
         VERIFY_ARE_EQUAL(pChain->_list[1].GetLength(), (unsigned int)13);
 
-        VERIFY_IS_TRUE(TextAttribute(2).IsEqual(pChain->_list[2].GetAttributes()));
+        VERIFY_ARE_EQUAL(TextAttribute(2), pChain->_list[2].GetAttributes());
         VERIFY_ARE_EQUAL(pChain->_list[2].GetLength(), (unsigned int)13);
 
-        VERIFY_IS_TRUE(TextAttribute(3).IsEqual(pChain->_list[3].GetAttributes()));
+        VERIFY_ARE_EQUAL(TextAttribute(3), pChain->_list[3].GetAttributes());
         VERIFY_ARE_EQUAL(pChain->_list[3].GetLength(), (unsigned int)11);
 
-        VERIFY_IS_TRUE(TestAttr.IsEqual(pChain->_list[4].GetAttributes()));
+        VERIFY_ARE_EQUAL(TestAttr, pChain->_list[4].GetAttributes());
         VERIFY_ARE_EQUAL(pChain->_list[4].GetLength(), (unsigned int)30);
 
         Log::Comment(L"SECOND: Set index to 0 to test replacing anything with a single");
@@ -556,7 +556,7 @@ class AttrRowTests
             VERIFY_ARE_EQUAL(pUnderTest->_list.size(), 1u);
 
             // singular pair should contain the color
-            VERIFY_IS_TRUE(pUnderTest->_list[0].GetAttributes().IsEqual(TestAttr));
+            VERIFY_ARE_EQUAL(pUnderTest->_list[0].GetAttributes(), TestAttr);
 
             // and its length should be the length of the whole string
             VERIFY_ARE_EQUAL(pUnderTest->_list[0].GetLength(), (unsigned int)_sDefaultLength);

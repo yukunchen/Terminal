@@ -34,7 +34,7 @@ bool _DebugValidateAdjacentAttributes(const std::vector<TextAttributeRun>& run)
         const auto runPrev = std::prev(runIter);
 
         // If two adjacents are equal, it's invalid. Escape.
-        if (runIter->GetAttributes().IsEqual(runPrev->GetAttributes()))
+        if (runIter->GetAttributes() == runPrev->GetAttributes())
         {
             return false;
         }
@@ -128,7 +128,7 @@ void ATTR_ROW::Resize(const size_t newWidth)
 
 
         // if the last attribute is the same as the current default then extend it
-        if (run.GetAttributes().IsEqual(defaultAttrs))
+        if (run.GetAttributes() == defaultAttrs)
         {
             // Extend its length by the additional columns we're adding.
             run.SetLength(run.GetLength() + newWidth - _cchRowWidth);
@@ -319,7 +319,7 @@ void ATTR_ROW::ReplaceLegacyAttrs(_In_ WORD wToBeReplacedAttr, _In_ WORD wReplac
 
     for (auto& run : _list)
     {
-        if (run.GetAttributes().IsEqual(ToBeReplaced))
+        if (run.GetAttributes() == ToBeReplaced)
         {
             run.SetAttributes(ReplaceWith);
         }
@@ -388,7 +388,7 @@ HRESULT ATTR_ROW::InsertAttrRuns(const std::vector<TextAttributeRun>& newAttrs,
         const TextAttribute NewAttr = newAttrs[0].GetAttributes();
 
         // If the new color is the same as the old, we don't have to do anything and can exit quick.
-        if (existingRun->GetAttributes().IsEqual(NewAttr))
+        if (existingRun->GetAttributes() == NewAttr)
         {
             return S_OK;
         }
@@ -476,7 +476,7 @@ HRESULT ATTR_ROW::InsertAttrRuns(const std::vector<TextAttributeRun>& newAttrs,
         // Now we're still on that "last cell copied" into the new run.
         // If the color of that existing copied cell matches the color of the first segment
         // of the run we're about to insert, we can just increment the length to extend the coverage.
-        if (pNewRunPos->GetAttributes().IsEqual(pInsertRunPos->GetAttributes()))
+        if (pNewRunPos->GetAttributes() == pInsertRunPos->GetAttributes())
         {
             length += pInsertRunPos->GetLength();
 
@@ -541,7 +541,7 @@ HRESULT ATTR_ROW::InsertAttrRuns(const std::vector<TextAttributeRun>& newAttrs,
             // This case is slightly off from the example above. This case is for if the B2 above was actually Y2.
             // That Y2 from the existing run is the same color as the Y2 we just filled a few columns left in the final run
             // so we can just adjust the final run's column count instead of adding another segment here.
-            if (pNewRunPos->GetAttributes().IsEqual(pExistingRunPos->GetAttributes()))
+            if (pNewRunPos->GetAttributes() == pExistingRunPos->GetAttributes())
             {
                 size_t length = pNewRunPos->GetLength();
                 length += (iExistingRunCoverage - (iEnd + 1));
@@ -578,7 +578,7 @@ HRESULT ATTR_ROW::InsertAttrRuns(const std::vector<TextAttributeRun>& newAttrs,
         // New Run desired when done = R3 -> B7
         // Existing run pointer is on B2.
         // We want to merge the 2 from the B2 into the B5 so we get B7.
-        else if (pNewRunPos->GetAttributes().IsEqual(pExistingRunPos->GetAttributes()))
+        else if (pNewRunPos->GetAttributes() == pExistingRunPos->GetAttributes())
         {
             // Add the value from the existing run into the current new run position.
             size_t length = pNewRunPos->GetLength();
@@ -628,7 +628,7 @@ std::vector<TextAttributeRun> ATTR_ROW::PackAttrs(const std::vector<TextAttribut
     }
     for (auto attr : attrs)
     {
-        if (runs.empty() || !runs.back().GetAttributes().IsEqual(attr))
+        if (runs.empty() || runs.back().GetAttributes() != attr)
         {
             const TextAttributeRun run(1, attr);
             runs.push_back(run);

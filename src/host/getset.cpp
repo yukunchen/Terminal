@@ -742,9 +742,7 @@ void DoSrvPrivateSetLegacyAttributes(SCREEN_INFORMATION& screenInfo,
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const TextAttribute OldAttributes = screenInfo.GetAttributes();
-    TextAttribute NewAttributes;
-
-    NewAttributes.SetFrom(OldAttributes);
+    TextAttribute NewAttributes = OldAttributes;
 
     // Always update the legacy component. This prevents the 1m in "^[[32m^[[1m"
     //  from resetting the colors set by the 32m. (for example)
@@ -807,8 +805,7 @@ void DoSrvPrivateSetConsoleXtermTextAttribute(SCREEN_INFORMATION& screenInfo,
                                               const bool fIsForeground)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    TextAttribute NewAttributes;
-    NewAttributes.SetFrom(screenInfo.GetAttributes());
+    TextAttribute NewAttributes = screenInfo.GetAttributes();
 
     COLORREF rgbColor;
     if (iXtermTableEntry < COLOR_TABLE_SIZE)
@@ -832,8 +829,7 @@ void DoSrvPrivateSetConsoleRGBTextAttribute(SCREEN_INFORMATION& screenInfo,
                                             const COLORREF rgbColor,
                                             const bool fIsForeground)
 {
-    TextAttribute NewAttributes;
-    NewAttributes.SetFrom(screenInfo.GetAttributes());
+    TextAttribute NewAttributes = screenInfo.GetAttributes();
     NewAttributes.SetColor(rgbColor, fIsForeground);
     screenInfo.SetAttributes(NewAttributes);
 }
