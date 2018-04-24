@@ -345,7 +345,7 @@ class SelectionTests
         srOriginal.Left = srSelection.Left;
         srOriginal.Right = srSelection.Right;
 
-        Selection::s_BisectSelection(sStringLength, coordTargetPoint, screenInfo, &srSelection);
+        srSelection = Selection::s_BisectSelection(sStringLength, coordTargetPoint, screenInfo, srSelection);
 
         VERIFY_ARE_EQUAL(srOriginal.Top, srSelection.Top);
         VERIFY_ARE_EQUAL(srOriginal.Bottom, srSelection.Bottom);
