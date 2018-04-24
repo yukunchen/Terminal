@@ -362,13 +362,8 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
             // if we're about to split a character in half, keep moving right
             try
             {
-                const ICharRow& iCharRow = gci.GetActiveOutputBuffer().GetTextBuffer().GetRowByOffset(coordSelPoint.Y).GetCharRow();
-                // we only support ucs2 encoded char rows
-                FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                                "only support UCS2 char rows currently");
-
-                const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
-                if (charRow.GetAttribute(coordSelPoint.X).IsTrailing())
+                const auto attr = gci.GetActiveOutputBuffer().ReadLine(coordSelPoint.Y, coordSelPoint.X, 1).at(0).GetDbcsAttribute();
+                if (attr.IsTrailing())
                 {
                     Utils::s_DoIncrementScreenCoordinate(srectEdges, &coordSelPoint);
                 }
@@ -590,13 +585,8 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
     // ensure we're not planting the cursor in the middle of a double-wide character.
     try
     {
-        const ICharRow& iCharRow = gci.GetActiveOutputBuffer().GetTextBuffer().GetRowByOffset(coordSelPoint.Y).GetCharRow();
-        // we only support ucs2 encoded char rows
-        FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                        "only support UCS2 char rows currently");
-
-        const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
-        if (charRow.GetAttribute(coordSelPoint.X).IsTrailing())
+        const auto attr = gci.GetActiveOutputBuffer().ReadLine(coordSelPoint.Y, coordSelPoint.X, 1).at(0).GetDbcsAttribute();
+        if (attr.IsTrailing())
         {
             // try to move off by highlighting the lead half too.
             bool fSuccess = Utils::s_DoDecrementScreenCoordinate(srectEdges, &coordSelPoint);
@@ -697,26 +687,13 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
             // Pull the selection out of the buffer to pass to the
             // search function. Clamp to max search string length.
             // We just copy the bytes out of the row buffer.
-            const ROW& Row = screenInfo.GetTextBuffer().GetRowByOffset(psrSelection->Top);
-
             WCHAR pwszSearchString[SEARCH_STRING_LENGTH + 1];
-            try
+
+            const std::vector<OutputCell> cells = screenInfo.ReadLine(psrSelection->Top, psrSelection->Left);
+            for (size_t i = 0; i < cLength; ++i)
             {
-                const ICharRow& iCharRow = Row.GetCharRow();
-                // we only support ucs2 encoded char rows
-                FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                                "only support UCS2 char rows currently");
-
-                const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
-                const Ucs2CharRow::const_iterator startIt = std::next(charRow.cbegin(), psrSelection->Left);
-                const Ucs2CharRow::const_iterator stopIt = std::next(startIt, cLength);
-                std::transform(startIt, stopIt, pwszSearchString, [](const Ucs2CharRow::value_type& vals)
-                {
-                    return vals.first;
-                });
+                pwszSearchString[i] = cells.at(i).GetCharData();
             }
-            CATCH_LOG();
-
             pwszSearchString[cLength] = L'\0';
 
             // Clear the selection and call the search / mark function.
