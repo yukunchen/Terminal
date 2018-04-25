@@ -9,6 +9,7 @@
 #include "search.h"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
+#include "../types/inc/convert.hpp"
 
 #include <algorithm>
 
@@ -160,10 +161,10 @@ COORD Selection::WordByWordSelection(const bool fReverse,
     }
 
     // get the character at the new position
-    wchar_t wchTest = screenInfo.ReadLine(outCoord.Y, outCoord.X, 1).at(0).GetCharData();
+    std::vector<wchar_t> charData = screenInfo.ReadLine(outCoord.Y, outCoord.X, 1).at(0).GetCharData();
 
     // we want to go until the state change from delim to non-delim
-    bool fCurrIsDelim = IsWordDelim(wchTest);
+    bool fCurrIsDelim = IsWordDelim(charData);
     bool fPrevIsDelim;
 
     // find the edit-line boundaries that we can highlight
@@ -238,8 +239,8 @@ COORD Selection::WordByWordSelection(const bool fReverse,
         }
 
         // get the character associated with the new position
-        wchTest = screenInfo.ReadLine(outCoord.Y, outCoord.X, 1).at(0).GetCharData();
-        fCurrIsDelim = IsWordDelim(wchTest);
+        charData = screenInfo.ReadLine(outCoord.Y, outCoord.X, 1).at(0).GetCharData();
+        fCurrIsDelim = IsWordDelim(charData);
 
         // This is a bit confusing.
         // If we're going Left to Right (!fReverse)...
@@ -691,7 +692,7 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
             const std::vector<OutputCell> cells = screenInfo.ReadLine(psrSelection->Top, psrSelection->Left);
             for (size_t i = 0; i < cLength; ++i)
             {
-                pwszSearchString[i] = cells.at(i).GetCharData();
+                pwszSearchString[i] = Utf16ToUcs2(cells.at(i).GetCharData());
             }
             pwszSearchString[cLength] = L'\0';
 

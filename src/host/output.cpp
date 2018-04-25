@@ -405,11 +405,11 @@ std::vector<wchar_t> ReadOutputStringW(const SCREEN_INFORMATION& screenInfo,
     {
         if (dataCells.front().GetDbcsAttribute().IsTrailing())
         {
-            dataCells.front().GetCharData() = UNICODE_SPACE;
+            dataCells.front().GetCharData() = { UNICODE_SPACE };
         }
         if (dataCells.back().GetDbcsAttribute().IsLeading())
         {
-            dataCells.back().GetCharData() = UNICODE_SPACE;
+            dataCells.back().GetCharData() = { UNICODE_SPACE };
         }
     }
 
@@ -419,7 +419,10 @@ std::vector<wchar_t> ReadOutputStringW(const SCREEN_INFORMATION& screenInfo,
     {
         if (!cell.GetDbcsAttribute().IsTrailing())
         {
-            outputText.push_back(cell.GetCharData());
+            for (const wchar_t wch : cell.GetCharData())
+            {
+                outputText.push_back(wch);
+            }
         }
     }
 
