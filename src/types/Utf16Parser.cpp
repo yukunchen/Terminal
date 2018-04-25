@@ -10,19 +10,21 @@
 
 #include <bitset>
 
-static constexpr std::bitset<6> LeadingSurrogateMask = { 54 };  // 110 110 indicates a leading surrogate
-static constexpr std::bitset<6> TrailingSurrogateMask = { 55 }; // 110 111 indicates a trailing surrogate
+static constexpr unsigned short IndicatorBitCount = 6;
+static constexpr unsigned short WcharShiftAmount = sizeof(wchar_t) * 8 - IndicatorBitCount;
+static constexpr std::bitset<IndicatorBitCount> LeadingSurrogateMask = { 54 };  // 110 110 indicates a leading surrogate
+static constexpr std::bitset<IndicatorBitCount> TrailingSurrogateMask = { 55 }; // 110 111 indicates a trailing surrogate
 
 
 // Routine Description:
-// - formats a utf16 encoded wstring and splits the glyphs into individual collections.
+// - formats a utf16 encoded wstring and splits the codepoints into individual collections.
 // - will drop badly formatted leading/trailing char sequences.
 // - does not validate utf16 input beyond proper leading/trailing char sequences.
 // Arguments:
 // - wstr - the string to parse
 // Return Value:
-// - a vector of utf16 glyphs. glyphs that require surrogate pairs will be grouped
-// together in a vector and glyphs that use only one wchar will be in a vector by themselves.
+// - a vector of utf16 codepoints. glyphs that require surrogate pairs will be grouped
+// together in a vector and codepoints that use only one wchar will be in a vector by themselves.
 std::vector<std::vector<wchar_t>> Utf16Parser::Parse(const std::wstring& wstr)
 {
     std::vector<std::vector<wchar_t>> result;
@@ -59,8 +61,8 @@ std::vector<std::vector<wchar_t>> Utf16Parser::Parse(const std::wstring& wstr)
 // - true if wch is a leading surrogate, false otherwise
 bool Utf16Parser::_isLeadingSurrogate(const wchar_t wch) noexcept
 {
-    const wchar_t bits = wch >> 10;
-    const std::bitset<6> possBits = { bits };
+    const wchar_t bits = wch >> WcharShiftAmount;
+    const std::bitset<IndicatorBitCount> possBits = { bits };
     return (possBits ^ LeadingSurrogateMask).none();
 }
 
@@ -72,7 +74,7 @@ bool Utf16Parser::_isLeadingSurrogate(const wchar_t wch) noexcept
 // - true if wch is a trailing surrogate, false otherwise
 bool Utf16Parser::_isTrailingSurrogate(const wchar_t wch) noexcept
 {
-    const wchar_t bits = wch >> 10;
-    const std::bitset<6> possBits = { bits };
+    const wchar_t bits = wch >> WcharShiftAmount;
+    const std::bitset<IndicatorBitCount> possBits = { bits };
     return (possBits ^ TrailingSurrogateMask).none();
 }

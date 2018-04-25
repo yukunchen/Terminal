@@ -5,7 +5,7 @@ Module Name:
 - Utf16Parser.hpp
 
 Abstract:
-- Parser for grouping together utf16 surrogate pairs from a string of utf16 encoded text
+- Parser for grouping together utf16 codepoints from a string of utf16 encoded text
 
 Author(s):
 - Austin Diviness (AustDi) 25-Apr-2018
