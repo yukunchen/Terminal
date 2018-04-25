@@ -20,7 +20,7 @@ static const std::vector<wchar_t> LatinChar = { 0x0061 }; // uppercase A
 static const std::vector<wchar_t> FullWidthChar = { 0xFF2D }; // fullwidth latin small letter m
 static const std::vector<wchar_t> GaelicChar = { 0x1E41 }; // latin small letter m with dot above
 static const std::vector<wchar_t> HiraganaChar = { 0x3059 }; // hiragana su
-static const std::vector<wchar_t> SunglassesEmoji = { 0xD83D, 0xDe0E }; // smiling face with sunglasses emoji
+static const std::vector<wchar_t> SunglassesEmoji = { 0xD83D, 0xDE0E }; // smiling face with sunglasses emoji
 
 class Utf16ParserTests
 {
@@ -51,7 +51,7 @@ class Utf16ParserTests
         const std::wstring wstr{ SunglassesEmoji.begin(), SunglassesEmoji.end() };
         const std::vector<std::vector<wchar_t>> result = Utf16Parser::Parse(wstr);
 
-        VERIFY_ARE_EQUAL(result.size(), 1);
+        VERIFY_ARE_EQUAL(result.size(), 1u);
         VERIFY_ARE_EQUAL(result.at(0).size(), SunglassesEmoji.size());
         for (size_t i = 0; i < SunglassesEmoji.size(); ++i)
         {
@@ -68,20 +68,21 @@ class Utf16ParserTests
 
         std::vector<std::vector<wchar_t>> result = Utf16Parser::Parse(wstr);
 
-        VERIFY_ARE_EQUAL(result.size(), 1);
+        VERIFY_ARE_EQUAL(result.size(), 1u);
         VERIFY_ARE_EQUAL(result.at(0).size(), SunglassesEmoji.size());
         for (size_t i = 0; i < SunglassesEmoji.size(); ++i)
         {
             VERIFY_ARE_EQUAL(result.at(0).at(i), SunglassesEmoji.at(i));
         }
 
+        // test dropping of invalid trailing surrogates
         wstr = { SunglassesEmoji.begin(), SunglassesEmoji.end() };
         wstr += wstr;
         wstr.at(0) = SunglassesEmoji.at(1); // wstr contains 2 trailing, 1 leading, 1 trailing surrogate sequence
 
         result = Utf16Parser::Parse(wstr);
 
-        VERIFY_ARE_EQUAL(result.size(), 1);
+        VERIFY_ARE_EQUAL(result.size(), 1u);
         VERIFY_ARE_EQUAL(result.at(0).size(), SunglassesEmoji.size());
         for (size_t i = 0; i < SunglassesEmoji.size(); ++i)
         {
