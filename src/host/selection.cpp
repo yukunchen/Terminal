@@ -9,7 +9,6 @@
 #include "_output.h"
 #include "stream.h"
 #include "scrolling.hpp"
-#include "../buffer/out/Ucs2CharRow.hpp"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 
@@ -159,7 +158,7 @@ NTSTATUS Selection::GetSelectionRects(_Outptr_result_buffer_all_(*pcRectangles) 
                     coordTargetPoint.X = srHighlightRow.Left;
                     coordTargetPoint.Y = srHighlightRow.Top;
                     SHORT sStringLength = srHighlightRow.Right - srHighlightRow.Left + 1;
-                    s_BisectSelection(sStringLength, coordTargetPoint, screenInfo, &srHighlightRow);
+                    srHighlightRow = s_BisectSelection(sStringLength, coordTargetPoint, screenInfo, srHighlightRow);
 
                     rgsrSelection[iFinal].Left = srHighlightRow.Left;
                     rgsrSelection[iFinal].Right = srHighlightRow.Right;
@@ -201,57 +200,46 @@ NTSTATUS Selection::GetSelectionRects(_Outptr_result_buffer_all_(*pcRectangles) 
 // - sStringLength - The length of the string we're attempting to clip.
 // - coordTargetPoint - The row/column position within the text buffer that we're about to try to clip.
 // - screenInfo - Screen information structure containing relevant text and dimension information.
-// - pSmallRect - The region of the text that we want to clip, and then adjusted to the region that should be clipped without splicing double-width characters.
+// - rect - The region of the text that we want to clip, and then adjusted to the region that should be
+// clipped without splicing double-width characters.
 // Return Value:
-//  <none>
-void Selection::s_BisectSelection(const short sStringLength,
-                                  const COORD coordTargetPoint,
-                                  const SCREEN_INFORMATION& screenInfo,
-                                  _Inout_ SMALL_RECT* const pSmallRect)
+// - the clipped region
+SMALL_RECT Selection::s_BisectSelection(const short sStringLength,
+                                        const COORD coordTargetPoint,
+                                        const SCREEN_INFORMATION& screenInfo,
+                                        const SMALL_RECT rect)
 {
-    const ROW& Row = screenInfo.GetTextBuffer().GetRowByOffset(coordTargetPoint.Y);
-
+    SMALL_RECT outRect = rect;
+    const TextBuffer& textBuffer = screenInfo.GetTextBuffer();
     try
     {
-        const ICharRow& iCharRow = Row.GetCharRow();
-        // we only support ucs2 encoded char rows
-        FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                        "only support UCS2 char rows currently");
-
-        const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
-        // Check start position of strings
-        if (charRow.GetAttribute(coordTargetPoint.X).IsTrailing())
+        const ROW& row = textBuffer.GetRowByOffset(coordTargetPoint.Y);
+        if (row.GetCharRow().GetAttribute(coordTargetPoint.X).IsTrailing())
         {
             if (coordTargetPoint.X == 0)
             {
-                pSmallRect->Left++;
+                outRect.Left++;
             }
             else
             {
-                pSmallRect->Left--;
+                outRect.Left--;
             }
         }
 
         // Check end position of strings
         if (coordTargetPoint.X + sStringLength < screenInfo.GetScreenBufferSize().X)
         {
-            if (charRow.GetAttribute(coordTargetPoint.X + sStringLength).IsTrailing())
+            if (row.GetCharRow().GetAttribute(coordTargetPoint.X + sStringLength).IsTrailing())
             {
-                pSmallRect->Right++;
+                outRect.Right++;
             }
         }
         else
         {
-            const ROW& RowNext = screenInfo.GetTextBuffer().GetNextRowNoWrap(Row);
-            const ICharRow& iCharRowNext = RowNext.GetCharRow();
-            // we only support ucs2 encoded char rows
-            FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                            "only support UCS2 char rows currently");
-
-            const Ucs2CharRow& charRowNext = static_cast<const Ucs2CharRow&>(iCharRowNext);
-            if (charRowNext.GetAttribute(0).IsTrailing())
+            const ROW& rowNext = textBuffer.GetNextRowNoWrap(row);
+            if (rowNext.GetCharRow().GetAttribute(0).IsTrailing())
             {
-                pSmallRect->Right--;
+                outRect.Right--;
             }
         }
     }
@@ -259,8 +247,8 @@ void Selection::s_BisectSelection(const short sStringLength,
     {
         LOG_HR(wil::ResultFromCaughtException());
     }
+    return outRect;
 }
-
 
 // Routine Description:
 // - Shows the selection area in the window if one is available and not already showing.

@@ -74,10 +74,10 @@ private:
 
     void _PaintSelection() const;
 
-    static void s_BisectSelection(const short sStringLength,
-                                  const COORD coordTargetPoint,
-                                  const SCREEN_INFORMATION& screenInfo,
-                                  _Inout_ SMALL_RECT* const pSmallRect);
+    static SMALL_RECT s_BisectSelection(const short sStringLength,
+                                        const COORD coordTargetPoint,
+                                        const SCREEN_INFORMATION& screenInfo,
+                                        const SMALL_RECT rect);
 
     void _CancelMarkSelection();
     void _CancelMouseSelection();
@@ -115,7 +115,10 @@ private:
     // key handling
     bool _HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo);
     bool _HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKeyInfo);
-    void WordByWordSelection(const bool fPrevious, const SMALL_RECT srectEdges, const COORD coordAnchor, _Inout_ COORD *pcoordSelPoint) const;
+    COORD WordByWordSelection(const bool fPrevious,
+                              const SMALL_RECT srectEdges,
+                              const COORD coordAnchor,
+                              const COORD coordSelPoint) const;
 
 
 // -------------------------------------------------------------------------------------------------------

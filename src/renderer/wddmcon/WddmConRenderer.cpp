@@ -2,6 +2,8 @@
 
 #include "WddmConRenderer.hpp"
 
+#include "main.h"
+
 #pragma hdrstop
 
 //

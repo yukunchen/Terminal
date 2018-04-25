@@ -11,10 +11,10 @@
 
 #include "getset.h"
 #include "misc.h"
-#include "../buffer/out/Ucs2CharRow.hpp"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/Viewport.hpp"
+#include "../types/inc/convert.hpp"
 
 #pragma hdrstop
 using namespace Microsoft::Console::Types;
@@ -284,299 +284,167 @@ NTSTATUS WriteScreenBuffer(SCREEN_INFORMATION& screenInfo, _In_ PCHAR_INFO pciBu
 }
 
 // Routine Description:
-// - This routine reads a string of characters or attributes from the screen buffer.
+// - This routine reads a sequence of attributes from the screen buffer.
 // Arguments:
-// - ScreenInfo - Pointer to screen buffer information.
-// - Buffer - Buffer to read into.
-// - ReadCoord - Screen buffer coordinate to begin reading from.
-// - StringType
-//      CONSOLE_ASCII         - read a string of ASCII characters.
-//      CONSOLE_REAL_UNICODE  - read a string of Real Unicode characters.
-//      CONSOLE_FALSE_UNICODE - read a string of False Unicode characters.
-//      CONSOLE_ATTRIBUTE     - read a string of attributes.
-// - NumRecords - On input, the size of the buffer in elements.  On output, the number of elements read.
+// - screenInfo - reference to screen buffer information.
+// - coordRead - Screen buffer coordinate to begin reading from.
+// - amountToRead - the number of elements to read
 // Return Value:
-[[nodiscard]]
-NTSTATUS ReadOutputString(const SCREEN_INFORMATION& screenInfo,
-                          _Inout_ PVOID pvBuffer,
-                          const COORD coordRead,
-                          const ULONG ulStringType,
-                          _Inout_ PULONG pcRecords)
+// - vector of attribute data
+std::vector<WORD> ReadOutputAttributes(const SCREEN_INFORMATION& screenInfo,
+                                       const COORD coordRead,
+                                       const ULONG amountToRead)
 {
-    DBGOUTPUT(("ReadOutputString\n"));
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-
-    if (*pcRecords == 0)
+    if (amountToRead == 0)
     {
-        return STATUS_SUCCESS;
+        return {};
     }
 
-    ULONG NumRead = 0;
-    SHORT X = coordRead.X;
-    SHORT Y = coordRead.Y;
     const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
-    if (X >= coordScreenBufferSize.X || X < 0 || Y >= coordScreenBufferSize.Y || Y < 0)
+    if (!IsCoordInBounds(coordRead, coordScreenBufferSize))
     {
-        *pcRecords = 0;
-        return STATUS_SUCCESS;
+        return {};
     }
 
-    PWCHAR TransBuffer = nullptr;
-    PWCHAR BufPtr;
-    if (ulStringType == CONSOLE_ASCII)
+    std::vector<WORD> attrs;
+    COORD currentLocation = coordRead;
+
+    // read attrs
+    while (attrs.size() < amountToRead)
     {
-        TransBuffer = new WCHAR[*pcRecords];
-        if (TransBuffer == nullptr)
+        std::vector<OutputCell> cells = screenInfo.ReadLine(currentLocation.Y, currentLocation.X);
+        for (const auto& cell : cells)
         {
-            return STATUS_NO_MEMORY;
-        }
-        BufPtr = TransBuffer;
-    }
-    else
-    {
-        BufPtr = (PWCHAR)pvBuffer;
-    }
-
-    DbcsAttribute* TransBufferA = nullptr;
-    DbcsAttribute* BufPtrA = nullptr;
-
-    {
-        TransBufferA = new DbcsAttribute[*pcRecords];
-        if (TransBufferA == nullptr)
-        {
-            if (TransBuffer != nullptr)
+            const WORD legacyAttrs = cell.GetTextAttribute().GetLegacyAttributes();
+            const DbcsAttribute dbcsAttr = cell.GetDbcsAttribute();
+            const bool firstInRow = (currentLocation == coordRead) || (currentLocation.X == 0);
+            const bool lastInRow = (attrs.size() + 1 == amountToRead) || (currentLocation.X + 1 == coordScreenBufferSize.X);
+            const bool justLegacyAttrs = (firstInRow && dbcsAttr.IsTrailing()) || (lastInRow && dbcsAttr.IsLeading());
+            // if a glyph is split between leading/trailing cells and these cells are on different lines
+            // or at the edge of where we're reading then we want only the legacy attrs for that cell
+            if (justLegacyAttrs)
             {
-                delete[] TransBuffer;
+                attrs.push_back(legacyAttrs);
             }
-
-            return STATUS_NO_MEMORY;
-        }
-
-        BufPtrA = TransBufferA;
-    }
-
-    {
-        const ROW* pRow = &screenInfo.GetTextBuffer().GetRowByOffset(coordRead.Y);
-        SHORT j, k;
-
-        if (ulStringType == CONSOLE_ASCII ||
-            ulStringType == CONSOLE_REAL_UNICODE ||
-            ulStringType == CONSOLE_FALSE_UNICODE)
-        {
-            while (NumRead < *pcRecords)
+            else
             {
-                // copy the chars from its array
-                try
-                {
-                    const ICharRow& iCharRow = pRow->GetCharRow();
-                    // we only support ucs2 encoded char rows
-                    FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                                     "only support UCS2 char rows currently");
-
-                    const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
-                    const Ucs2CharRow::const_iterator startIt = std::next(charRow.cbegin(), X);
-                    size_t copyAmount = *pcRecords - NumRead;
-                    wchar_t* pChars = BufPtr;
-                    DbcsAttribute* pAttrs = BufPtrA;
-                    if (static_cast<size_t>(coordScreenBufferSize.X - X) > copyAmount)
-                    {
-                        std::for_each(startIt, std::next(startIt, copyAmount), [&](const auto& vals)
-                        {
-                            *pChars = vals.first;
-                            ++pChars;
-                            *pAttrs = vals.second;
-                            ++pAttrs;
-                        });
-
-                        NumRead += static_cast<ULONG>(copyAmount);
-                        break;
-                    }
-                    else
-                    {
-                        copyAmount = coordScreenBufferSize.X - X;
-
-                        std::for_each(startIt, std::next(startIt, copyAmount), [&](const auto& vals)
-                        {
-                            *pChars = vals.first;
-                            ++pChars;
-                            *pAttrs = vals.second;
-                            ++pAttrs;
-                        });
-
-                        BufPtr += copyAmount;
-                        BufPtrA += copyAmount;
-
-                        NumRead += static_cast<ULONG>(copyAmount);
-                        pRow = &screenInfo.GetTextBuffer().GetNextRowNoWrap(*pRow);
-                    }
-                }
-                catch (...)
-                {
-                    return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-                }
-
-                X = 0;
-                Y++;
-                if (Y >= coordScreenBufferSize.Y)
-                {
-                    break;
-                }
+                attrs.push_back(legacyAttrs | dbcsAttr.GeneratePublicApiAttributeFormat());
             }
+            currentLocation.X += 1;
 
-            if (NumRead)
+            if (attrs.size() == amountToRead)
             {
-                PWCHAR Char;
-                if (ulStringType == CONSOLE_ASCII)
-                {
-                    Char = BufPtr = TransBuffer;
-                }
-                else
-                {
-                    Char = BufPtr = (PWCHAR)pvBuffer;
-                }
-
-                BufPtrA = TransBufferA;
-#pragma prefast(suppress:__WARNING_BUFFER_OVERFLOW, "This code is fine")
-                if (BufPtrA->IsTrailing())
-                {
-                    j = k = (SHORT)(NumRead - 1);
-                    BufPtr++;
-                    *Char++ = UNICODE_SPACE;
-                    BufPtrA++;
-                    NumRead = 1;
-                }
-                else
-                {
-                    j = k = (SHORT)NumRead;
-                    NumRead = 0;
-                }
-
-                while (j--)
-                {
-                    if (!BufPtrA->IsTrailing())
-                    {
-                        *Char++ = *BufPtr;
-                        NumRead++;
-                    }
-                    BufPtr++;
-                    BufPtrA++;
-                }
-
-                if (k && (BufPtrA - 1)->IsLeading())
-                {
-                    *(Char - 1) = UNICODE_SPACE;
-                }
+                break;
             }
         }
-        else if (ulStringType == CONSOLE_ATTRIBUTE)
+        // increment for next row
+        currentLocation.X = 0;
+        currentLocation.Y += 1;
+
+        // stop reading if we reached the end of the screen buffer
+        if (!IsCoordInBounds(currentLocation, coordScreenBufferSize))
         {
-            size_t CountOfAttr = 0;
-            TextAttribute Attr;
-            PWORD TargetPtr = (PWORD)BufPtr;
-
-            while (NumRead < *pcRecords)
-            {
-                // Copy the attrs from its array.
-                Ucs2CharRow::const_iterator it;
-                Ucs2CharRow::const_iterator itEnd;
-                try
-                {
-                    const ICharRow& iCharRow = pRow->GetCharRow();
-                    // we only support ucs2 encoded char rows
-                    FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                                     "only support UCS2 char rows currently");
-
-                    const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
-                    it = std::next(charRow.cbegin(), X);
-                    itEnd = charRow.cend();
-                }
-                catch (...)
-                {
-                    return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-                }
-
-                Attr = pRow->GetAttrRow().GetAttrByColumn(X, &CountOfAttr);
-
-                k = 0;
-                for (j = X; j < coordScreenBufferSize.X && it != itEnd; TargetPtr++, ++it)
-                {
-                    const WORD wLegacyAttributes = Attr.GetLegacyAttributes();
-                    if ((j == X) && it->second.IsTrailing())
-                    {
-                        *TargetPtr = wLegacyAttributes;
-                    }
-                    else if (it->second.IsLeading())
-                    {
-                        if ((NumRead == *pcRecords - 1) || (j == coordScreenBufferSize.X - 1))
-                        {
-                            *TargetPtr = wLegacyAttributes;
-                        }
-                        else
-                        {
-                            *TargetPtr = wLegacyAttributes | it->second.GeneratePublicApiAttributeFormat();
-                        }
-                    }
-                    else
-                    {
-                        *TargetPtr = wLegacyAttributes | it->second.GeneratePublicApiAttributeFormat();
-                    }
-
-                    NumRead++;
-                    j += 1;
-
-                    ++k;
-                    if (static_cast<size_t>(k) == CountOfAttr && j < coordScreenBufferSize.X)
-                    {
-                        Attr = pRow->GetAttrRow().GetAttrByColumn(j, &CountOfAttr);
-                        k = 0;
-                    }
-
-                    if (NumRead == *pcRecords)
-                    {
-                        delete[] TransBufferA;
-                        return STATUS_SUCCESS;
-                    }
-                }
-
-                try
-                {
-                    pRow = &screenInfo.GetTextBuffer().GetNextRowNoWrap(*pRow);
-                }
-                catch (...)
-                {
-                    return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-                }
-
-                X = 0;
-                Y++;
-                if (Y >= coordScreenBufferSize.Y)
-                {
-                    break;
-                }
-            }
-        }
-        else
-        {
-            *pcRecords = 0;
-            delete[] TransBufferA;
-
-            return STATUS_INVALID_PARAMETER;
+            break;
         }
     }
 
-    if (ulStringType == CONSOLE_ASCII)
+    return attrs;
+}
+
+// Routine Description:
+// - This routine reads a sequence of unicode characters from the screen buffer
+// Arguments:
+// - screenInfo - reference to screen buffer information.
+// - coordRead - Screen buffer coordinate to begin reading from.
+// - amountToRead - the number of elements to read
+// Return Value:
+// - vector of wchar data
+std::vector<wchar_t> ReadOutputStringW(const SCREEN_INFORMATION& screenInfo,
+                                       const COORD coordRead,
+                                       const ULONG amountToRead)
+{
+    if (amountToRead == 0)
     {
-        UINT const Codepage = gci.OutputCP;
-
-        NumRead = ConvertToOem(Codepage, TransBuffer, NumRead, (LPSTR)pvBuffer, *pcRecords);
-
-        delete[] TransBuffer;
+        return {};
     }
 
-    delete[] TransBufferA;
+    const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
+    if (!IsCoordInBounds(coordRead, coordScreenBufferSize))
+    {
+        return {};
+    }
 
-    *pcRecords = NumRead;
-    return STATUS_SUCCESS;
+    std::vector<OutputCell> dataCells;
+    COORD currentLocation = coordRead;
+
+    // read char data
+    while (dataCells.size() < amountToRead)
+    {
+        std::vector<OutputCell> cells = screenInfo.ReadLine(currentLocation.Y, currentLocation.X);
+
+        // append cells
+        dataCells.reserve(dataCells.size() + cells.size());
+        dataCells.insert(dataCells.end(), cells.begin(), cells.end());
+
+        // increment for next row
+        currentLocation.X = 0;
+        currentLocation.Y += 1;
+
+        // stop reading if we reached the end of the screen buffer
+        if (!IsCoordInBounds(currentLocation, coordScreenBufferSize))
+        {
+            break;
+        }
+    }
+
+    // remove any extra cells
+    dataCells.resize(amountToRead, dataCells.at(0));
+
+    // modify ends according to leading/trailing bytes
+    if (!dataCells.empty())
+    {
+        if (dataCells.front().GetDbcsAttribute().IsTrailing())
+        {
+            dataCells.front().GetCharData() = UNICODE_SPACE;
+        }
+        if (dataCells.back().GetDbcsAttribute().IsLeading())
+        {
+            dataCells.back().GetCharData() = UNICODE_SPACE;
+        }
+    }
+
+    // grab char data with respect to leading/trailing bytes
+    std::vector<wchar_t> outputText;
+    for (const auto& cell : dataCells)
+    {
+        if (!cell.GetDbcsAttribute().IsTrailing())
+        {
+            outputText.push_back(cell.GetCharData());
+        }
+    }
+
+    return outputText;
+}
+
+// Routine Description:
+// - This routine reads a sequence of ascii characters from the screen buffer
+// Arguments:
+// - screenInfo - reference to screen buffer information.
+// - coordRead - Screen buffer coordinate to begin reading from.
+// - amountToRead - the number of elements to read
+// Return Value:
+// - vector of char data
+std::vector<char> ReadOutputStringA(const SCREEN_INFORMATION& screenInfo,
+                                    const COORD coordRead,
+                                    const ULONG amountToRead)
+{
+    const std::vector<wchar_t> wideChars = ReadOutputStringW(screenInfo, coordRead, amountToRead);
+    const std::wstring wstr{ wideChars.begin(), wideChars.end() };
+
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const std::deque<char> convertedChars = ConvertToOem(gci.OutputCP, wstr);
+
+    return { convertedChars.begin(), convertedChars.end() };
 }
 
 void ScreenBufferSizeChange(const COORD coordNewSize)

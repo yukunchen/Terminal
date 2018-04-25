@@ -381,7 +381,7 @@ void TextBufferTests::TestInsertCharacter()
 
     auto attr = Row.GetAttrRow().GetAttrByColumn(coordCursorBefore.X);
 
-    VERIFY_IS_FALSE(attr.IsEqual(TestAttributes));
+    VERIFY_ARE_NOT_EQUAL(attr, TestAttributes);
 
     // now apply the new data to the buffer
     textBuffer.InsertCharacter(wchTest, dbcsAttribute, TestAttributes);
@@ -391,7 +391,7 @@ void TextBufferTests::TestInsertCharacter()
     VERIFY_ARE_EQUAL(charRow.GetAttribute(coordCursorBefore.X), dbcsAttribute);
 
     attr = Row.GetAttrRow().GetAttrByColumn(coordCursorBefore.X);
-    VERIFY_IS_TRUE(attr.IsEqual(TestAttributes));
+    VERIFY_ARE_EQUAL(attr, TestAttributes);
 
     // ensure that the cursor moved to a new position (X or Y or both have changed)
     VERIFY_IS_TRUE((coordCursorBefore.X != textBuffer.GetCursor().GetPosition().X) ||

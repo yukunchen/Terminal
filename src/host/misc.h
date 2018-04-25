@@ -58,3 +58,5 @@ int ConvertOutputToUnicode(_In_ UINT uiCodePage,
                            _In_ UINT cchSource,
                            _Out_writes_(cchTarget) WCHAR *pwchTarget,
                            _In_ UINT cchTarget);
+
+bool IsCoordInBounds(const COORD point, const COORD bounds);

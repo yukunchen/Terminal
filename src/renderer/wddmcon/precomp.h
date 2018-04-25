@@ -14,7 +14,12 @@
 #include <typeinfo>
 #include <stdexcept>
 
-#include <ntuserconsoleext.h>
+#include <dxgi.h>
+#include <dxgidwm.h>
+#include <d3d11.h>
+#include <d2d1.h>
+#include <d2d1helper.h>
+#include <dwrite.h>
 
 // This includes support libraries from the CRT, STL, WIL, and GSL
 #include "LibraryIncludes.h"
