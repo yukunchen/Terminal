@@ -928,8 +928,15 @@ NTSTATUS SrvReadConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*
                 const std::vector<wchar_t> chars = ReadOutputStringW(pScreenInfo->GetActiveBuffer(),
                                                                      a->ReadCoord,
                                                                      amountToRead);
-                std::copy(chars.begin(), chars.end(), static_cast<wchar_t* const>(Buffer));
-                a->NumRecords = gsl::narrow<ULONG>(chars.size());
+                if (chars.size() > amountToRead)
+                {
+                    a->NumRecords = 0;
+                }
+                else
+                {
+                    std::copy(chars.begin(), chars.end(), static_cast<wchar_t* const>(Buffer));
+                    a->NumRecords = gsl::narrow<ULONG>(chars.size());
+                }
                 Status = STATUS_SUCCESS;
             }
             catch (...)

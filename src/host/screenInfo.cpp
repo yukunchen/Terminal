@@ -12,9 +12,12 @@
 #include "../buffer/out/Ucs2CharRow.hpp"
 
 #include <math.h>
+
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/Viewport.hpp"
 #include "../terminal/parser/OutputStateMachineEngine.hpp"
+
+#include "../types/inc/convert.hpp"
 
 #pragma hdrstop
 using namespace Microsoft::Console;
@@ -635,7 +638,8 @@ void SCREEN_INFORMATION::ResetTextFlags(const short sStartX,
             try
             {
                 const OutputCell cell = ReadLine(RowIndex, sStartX, 1).at(0);
-                const LONG charAndAttr = MAKELONG(cell.GetCharData(), gci.GenerateLegacyAttributes(cell.GetTextAttribute()));
+                const LONG charAndAttr = MAKELONG(Utf16ToUcs2(cell.GetCharData()),
+                                                  gci.GenerateLegacyAttributes(cell.GetTextAttribute()));
                 _pAccessibilityNotifier->NotifyConsoleUpdateSimpleEvent(MAKELONG(sStartX, sStartY),
                                                                         charAndAttr);
             }
