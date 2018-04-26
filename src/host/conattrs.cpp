@@ -5,7 +5,7 @@ Module Name:
 - conattrs.cpp
 
 Abstract:
-- Defines common operations on console attributes, especially in regards to 
+- Defines common operations on console attributes, especially in regards to
     finding the nearest color from a color table.
 
 Author(s):
@@ -92,9 +92,9 @@ WORD FindNearestTableIndex(const COLORREF Color, _In_reads_(cColorTable) const C
         {
             return i;
         }
-    } 
+    }
 
-    // Did not find an exact match - do an expensive comparison to the elements 
+    // Did not find an exact match - do an expensive comparison to the elements
     //      of the table to find the nearest color.
     const _HSL hslColor = _HSL(Color);
     WORD closest = 0;
@@ -128,6 +128,21 @@ WORD XtermToWindowsIndex(const size_t xtermTableEntry)
            (fGreen ? WINDOWS_GREEN_ATTR : 0x0) +
            (fBlue ? WINDOWS_BLUE_ATTR : 0x0) +
            (fBright ? WINDOWS_BRIGHT_ATTR : 0x0);
+}
+
+// Function Description:
+// - Converts the value of a pair of xterm color table indicies to the legacy attr equivalent.
+// Arguments:
+// - xtermForeground: the xterm color table foreground index
+// - xtermBackground: the xterm color table background index
+// Return Value:
+// - The legacy windows attribute equivalent.
+WORD XtermToLegacy(const size_t xtermForeground, const size_t xtermBackground)
+{
+    const WORD fgAttr = XtermToWindowsIndex(xtermForeground);
+    const WORD bgAttr = XtermToWindowsIndex(xtermBackground);
+
+    return (bgAttr << 4) | fgAttr;
 }
 
 //Routine Description:

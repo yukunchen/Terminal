@@ -108,6 +108,9 @@ class ScreenBufferTests
 
     TEST_METHOD(ResizeAltBuffer);
 
+    TEST_METHOD(VtEraseAllPersistCursor);
+    TEST_METHOD(VtEraseAllPersistCursorFillColor);
+
 };
 
 SCREEN_INFORMATION::TabStop** ScreenBufferTests::CreateSampleList()
@@ -1126,4 +1129,91 @@ void ScreenBufferTests::ResizeAltBuffer()
     ));
     psiAlt->SetViewportSize(&newSize);
     VERIFY_IS_TRUE(true);
+}
+
+void ScreenBufferTests::VtEraseAllPersistCursor()
+{
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    const TextBuffer& tbi = si.GetTextBuffer();
+    StateMachine* const stateMachine = si.GetStateMachine();
+    const Cursor& cursor = tbi.GetCursor();
+
+    Log::Comment(NoThrowString().Format(
+        L"Make sure the viewport is at 0,0"
+    ));
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({0, 0})));
+
+    Log::Comment(NoThrowString().Format(
+        L"Move the cursor to 2,2, then execute a Erase All.\n"
+        L"The cursor should not move relative to the viewport."
+    ));
+
+    std::wstring seq = L"\x1b[2;2H";
+    stateMachine->ProcessString(&seq[0], seq.length());
+    VERIFY_ARE_EQUAL( COORD({1, 1}), cursor.GetPosition());
+
+    seq = L"\x1b[2J";
+    stateMachine->ProcessString(&seq[0], seq.length());
+
+    auto newViewport = si._viewport;
+    COORD expectedCursor = {1, 1};
+    newViewport.ConvertFromOrigin(&expectedCursor);
+
+    VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition());
+
+}
+
+void ScreenBufferTests::VtEraseAllPersistCursorFillColor()
+{
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    const TextBuffer& tbi = si.GetTextBuffer();
+    StateMachine* const stateMachine = si.GetStateMachine();
+
+    Log::Comment(NoThrowString().Format(
+        L"Make sure the viewport is at 0,0"
+    ));
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({0, 0})));
+
+    Log::Comment(NoThrowString().Format(
+        L"Change the colors to dark_red on bright_blue, then execute a Erase All.\n"
+        L"The viewport should be full of dark_red on bright_blue"
+    ));
+
+    auto expectedAttr = TextAttribute(XtermToLegacy(1, 12));
+    std::wstring seq = L"\x1b[31;104m";
+    stateMachine->ProcessString(&seq[0], seq.length());
+
+    VERIFY_ARE_EQUAL(expectedAttr, si._Attributes);
+
+    DebugBreak();
+    seq = L"\x1b[2J";
+    stateMachine->ProcessString(&seq[0], seq.length());
+
+    VERIFY_ARE_EQUAL(expectedAttr, si._Attributes);
+
+    auto newViewport = si._viewport;
+    Log::Comment(NoThrowString().Format(
+        L"new Viewport: %s",
+        VerifyOutputTraits<SMALL_RECT>::ToString(newViewport.ToInclusive()).GetBuffer()
+    ));
+    auto row = tbi.GetRowByOffset(newViewport.Top());
+    auto height = newViewport.Height();
+    auto width = newViewport.Width();
+    for (int i = 0; i < height; i++)
+    {
+        Log::Comment(NoThrowString().Format(
+            L"Row ID: %d", row.GetId()
+        ));
+        Log::Comment(NoThrowString().Format(
+            L"size: %d", tbi.GetFirstRowIndex()
+        ));
+        for (int j = 0; j < width; j++)
+        {
+            VERIFY_ARE_EQUAL(expectedAttr, row.GetAttrRow().GetAttrByColumn(j));
+        }
+
+        row = tbi.GetNextRowNoWrap(row);
+    }
 }
