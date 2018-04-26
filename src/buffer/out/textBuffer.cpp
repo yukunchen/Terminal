@@ -7,7 +7,7 @@
 #include "precomp.h"
 
 #include "textBuffer.hpp"
-#include "Ucs2CharRow.hpp"
+#include "CharRow.hpp"
 
 #pragma warning(push)
 #pragma warning(disable: ALL_CPPCORECHECK_WARNINGS)
@@ -462,7 +462,7 @@ bool TextBuffer::InsertCharacter(const wchar_t wch,
         FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
                         "only support UCS2 char rows currently");
 
-        Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);;
+        CharRow& charRow = static_cast<CharRow&>(iCharRow);;
         short const cBufferWidth = _coordBufferSize.X;
 
         try

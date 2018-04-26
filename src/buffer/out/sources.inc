@@ -35,7 +35,7 @@ SOURCES= \
     ..\TextAttribute.cpp \
     ..\TextAttributeRun.cpp \
     ..\textBuffer.cpp \
-    ..\Ucs2CharRow.cpp \
+    ..\CharRow.cpp \
 
 INCLUDES= \
     $(INCLUDES); \

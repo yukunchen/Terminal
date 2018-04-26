@@ -24,7 +24,7 @@ unit testing projects in the codebase without a bunch of overhead.
 #include "precomp.h"
 #include "../host/globals.h"
 #include "../host/newdelete.hpp"
-#include "../buffer/out/Ucs2CharRow.hpp"
+#include "../buffer/out/CharRow.hpp"
 #include "../interactivity/inc/ServiceLocator.hpp"
 
 #include <algorithm>
@@ -238,7 +238,7 @@ private:
             LOG_HR_MSG(E_FAIL, "we don't support non UCS2 encoded char rows");
             return;
         }
-        Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
+        CharRow& charRow = static_cast<CharRow&>(iCharRow);
         OverwriteColumns(pwszText, pwszText + length, attrs.cbegin(), charRow.begin());
 
         // set some colors
@@ -309,7 +309,7 @@ private:
             LOG_HR_MSG(E_FAIL, "we don't support non UCS2 encoded char rows");
             return;
         }
-        Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
+        CharRow& charRow = static_cast<CharRow&>(iCharRow);
         OverwriteColumns(pwszText, pwszText + length, attrs.cbegin(), charRow.begin());
 
         // everything gets default attributes
