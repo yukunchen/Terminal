@@ -9,7 +9,7 @@
 #include "_output.h"
 
 #include "dbcs.h"
-#include "../buffer/out/Ucs2CharRow.hpp"
+#include "../buffer/out/CharRow.hpp"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 
@@ -773,7 +773,7 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
         FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
                         "only support UCS2 char rows currently");
 
-        Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
+        CharRow& charRow = static_cast<CharRow&>(iCharRow);
 
         const auto StringSpan = gsl::make_span(String, StringLength);
         OverwriteColumns(StringSpan.begin(),
