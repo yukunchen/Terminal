@@ -2635,15 +2635,21 @@ std::pair<COORD, COORD> SCREEN_INFORMATION::GetWordBoundary(const COORD position
         // Trim the leading zeros: 000fe12 -> fe12, except 0x and 0n.
         // Useful for debugging
         const auto& glyph = row.at(start.X + 1).GetCharData();
-        if (end.X > start.X + 2 &&
-            glyph != std::vector<wchar_t>{ L'x' } &&
-            glyph != std::vector<wchar_t>{ L'X' } &&
-            glyph != std::vector<wchar_t>{ L'n' })
+        if (glyph.size() == 1)
         {
-            // Don't touch the selection begins with 0x
-            while (row.at(start.X).GetCharData() == std::vector<wchar_t>{ L'0' } && start.X < end.X - 1)
+            const wchar_t wch = glyph.front();
+            if (end.X > start.X + 2 &&
+                wch != L'x' &&
+                wch != L'X' &&
+                wch != L'n')
             {
-                start.X++;
+                // Don't touch the selection begins with 0x
+                while (row.at(start.X).GetCharData().size() == 1 &&
+                       row.at(start.X).GetCharData().front() == L'0' &&
+                       start.X < end.X - 1)
+                {
+                    start.X++;
+                }
             }
         }
     }
