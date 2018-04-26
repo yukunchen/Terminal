@@ -10,7 +10,7 @@
 
 #include "dbcs.h"
 #include "misc.h"
-#include "../buffer/out/Ucs2CharRow.hpp"
+#include "../buffer/out/CharRow.hpp"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/Viewport.hpp"
@@ -63,7 +63,7 @@ void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
         FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
                         "only support UCS2 char rows currently");
 
-        Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
+        CharRow& charRow = static_cast<CharRow&>(iCharRow);
         const auto BufferSpan = gsl::make_span(pwchBuffer, cchBuffer);
         OverwriteColumns(BufferSpan.begin(),
                          BufferSpan.end(),
@@ -183,15 +183,15 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
             }
 
             // CJK Languages
-            Ucs2CharRow::iterator it;
-            Ucs2CharRow::const_iterator itEnd;
+            CharRow::iterator it;
+            CharRow::const_iterator itEnd;
 
             ICharRow& iCharRow = pRow->GetCharRow();
             // we only support ucs2 encoded char rows
             FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
                                 "only support UCS2 char rows currently");
 
-            Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
+            CharRow& charRow = static_cast<CharRow&>(iCharRow);
             it = std::next(charRow.begin(), coordDest.X);
             itEnd = charRow.cend();
 
@@ -347,9 +347,9 @@ void WriteRectToScreenBuffer(SCREEN_INFORMATION& screenInfo,
         FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
                         "only support UCS2 char rows currently");
 
-        Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
-        Ucs2CharRow::iterator it = std::next(charRow.begin(), coordDest.X);
-        Ucs2CharRow::const_iterator itEnd = charRow.cend();
+        CharRow& charRow = static_cast<CharRow&>(iCharRow);
+        CharRow::iterator it = std::next(charRow.begin(), coordDest.X);
+        CharRow::const_iterator itEnd = charRow.cend();
 
         for (size_t iCol = 0; iCol < xSize && it != itEnd; ++iCol, ++it)
         {
@@ -619,7 +619,7 @@ NTSTATUS WriteOutputString(SCREEN_INFORMATION& screenInfo,
             }
 
             // copy the chars into their arrays
-            Ucs2CharRow::iterator it;
+            CharRow::iterator it;
             try
             {
                 ICharRow& iCharRow = pRow->GetCharRow();
@@ -627,7 +627,7 @@ NTSTATUS WriteOutputString(SCREEN_INFORMATION& screenInfo,
                 FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
                                 "only support UCS2 char rows currently");
 
-                Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
+                CharRow& charRow = static_cast<CharRow&>(iCharRow);
                 it = std::next(charRow.begin(), X);
             }
             catch (...)
@@ -955,7 +955,7 @@ NTSTATUS FillOutput(SCREEN_INFORMATION& screenInfo,
             }
 
             // copy the chars into their arrays
-            Ucs2CharRow::iterator it;
+            CharRow::iterator it;
             try
             {
                 ICharRow& iCharRow = pRow->GetCharRow();
@@ -963,7 +963,7 @@ NTSTATUS FillOutput(SCREEN_INFORMATION& screenInfo,
                 FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
                                 "only support UCS2 char rows currently");
 
-                Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
+                CharRow& charRow = static_cast<CharRow&>(iCharRow);
                 it = std::next(charRow.begin(), X);
             }
             catch (...)
@@ -1242,8 +1242,8 @@ void FillRectangle(const CHAR_INFO * const pciFill,
         CleanupDbcsEdgesForWrite(XSize, TPoint, screenInfo);
         BOOL Width = IsCharFullWidth(pciFill->Char.UnicodeChar);
 
-        Ucs2CharRow::iterator it;
-        Ucs2CharRow::const_iterator itEnd;
+        CharRow::iterator it;
+        CharRow::const_iterator itEnd;
         try
         {
             ICharRow& iCharRow = pRow->GetCharRow();
@@ -1251,7 +1251,7 @@ void FillRectangle(const CHAR_INFO * const pciFill,
             FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
                             "only support UCS2 char rows currently");
 
-            Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
+            CharRow& charRow = static_cast<CharRow&>(iCharRow);
             it = std::next(charRow.begin(), psrTarget->Left);
             itEnd = charRow.cend();
         }

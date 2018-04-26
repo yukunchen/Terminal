@@ -22,7 +22,7 @@ Author(s):
 #include "thread.hpp"
 
 #include "../../buffer/out/textBuffer.hpp"
-#include "../../buffer/out/Ucs2CharRow.hpp"
+#include "../../buffer/out/CharRow.hpp"
 
 namespace Microsoft::Console::Render
 {
@@ -101,27 +101,30 @@ namespace Microsoft::Console::Render
         void _PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEngine,
                                                 const ROW& pRow,
                                                 _In_reads_(cchLine) PCWCHAR const pwsLine,
-                                                const Ucs2CharRow::const_iterator it,
-                                                const Ucs2CharRow::const_iterator itEnd,
+                                                const CharRow::const_iterator it,
+                                                const CharRow::const_iterator itEnd,
                                                 _In_ size_t cchLine,
                                                 _In_ size_t iFirst,
                                                 const COORD coordTarget);
         void _PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
-                                            const ROW& pRow,
-                                            _In_reads_(cchLine) PCWCHAR const pwsLine,
-                                            const Ucs2CharRow::const_iterator it,
-                                            const Ucs2CharRow::const_iterator itEnd,
-                                            _In_ size_t cchLine,
-                                            _In_ size_t iFirst,
-                                            const COORD coordTarget);
+                                           const ROW& pRow,
+                                           _In_reads_(cchLine) PCWCHAR const pwsLine,
+                                           const CharRow::const_iterator it,
+                                           const CharRow::const_iterator itEnd,
+                                           _In_ size_t cchLine,
+                                           _In_ size_t iFirst,
+                                           const COORD coordTarget);
         [[nodiscard]]
         HRESULT _PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const pEngine,
-                                                    _In_reads_(cchLine) PCWCHAR const pwsLine,
-                                                    const Ucs2CharRow::const_iterator it,
-                                                    const Ucs2CharRow::const_iterator itEnd,
-                                                    const size_t cchLine,
-                                                    const COORD coordTarget);
-        void _PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine, const TextAttribute textAttribute, const size_t cchLine, const COORD coordTarget);
+                                                   _In_reads_(cchLine) PCWCHAR const pwsLine,
+                                                   const CharRow::const_iterator it,
+                                                   const CharRow::const_iterator itEnd,
+                                                   const size_t cchLine,
+                                                   const COORD coordTarget);
+        void _PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine,
+                                              const TextAttribute textAttribute,
+                                              const size_t cchLine,
+                                              const COORD coordTarget);
 
         void _PaintSelection(_In_ IRenderEngine* const pEngine);
         void _PaintCursor(_In_ IRenderEngine* const pEngine);

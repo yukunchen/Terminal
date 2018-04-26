@@ -93,7 +93,7 @@ class UiaTextRangeTests
             FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
                             "only support UCS2 char rows currently");
 
-            Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
+            CharRow& charRow = static_cast<CharRow&>(iCharRow);
             for (auto& cell : charRow)
             {
                 cell.first = L'a';
