@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
@@ -8,15 +8,13 @@
     <ClCompile Include="..\TextAttribute.cpp" />
     <ClCompile Include="..\TextAttributeRun.cpp" />
     <ClCompile Include="..\textBuffer.cpp" />
-    <ClCompile Include="..\Ucs2CharRow.cpp" />
+    <ClCompile Include="..\CharRow.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\AttrRow.hpp" />
-    <ClInclude Include="..\CharRowBase.hpp" />
-    <ClInclude Include="..\CharRowBaseImpl.hpp" />
     <ClInclude Include="..\DbcsAttribute.hpp" />
     <ClInclude Include="..\ICharRow.hpp" />
     <ClInclude Include="..\OutputCell.hpp" />
@@ -24,7 +22,7 @@
     <ClInclude Include="..\TextAttribute.h" />
     <ClInclude Include="..\TextAttributeRun.h" />
     <ClInclude Include="..\textBuffer.hpp" />
-    <ClInclude Include="..\Ucs2CharRow.hpp" />
+    <ClInclude Include="..\CharRow.hpp" />
     <ClInclude Include="..\precomp.h" />
   </ItemGroup>
   <PropertyGroup>

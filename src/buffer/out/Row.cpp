@@ -6,7 +6,7 @@
 
 #include "precomp.h"
 #include "Row.hpp"
-#include "Ucs2CharRow.hpp"
+#include "CharRow.hpp"
 
 // Routine Description:
 // - swaps two ROWs
@@ -31,7 +31,7 @@ void swap(ROW& a, ROW& b) noexcept
 ROW::ROW(const SHORT rowId, const short rowWidth, const TextAttribute fillAttribute) :
     _id{ rowId },
     _rowWidth{ gsl::narrow<size_t>(rowWidth) },
-    _charRow{ std::make_unique<Ucs2CharRow>(rowWidth) },
+    _charRow{ std::make_unique<CharRow>(rowWidth) },
     _attrRow{ rowWidth, fillAttribute }
 {
 }
@@ -51,8 +51,8 @@ ROW::ROW(const ROW& a) :
     FAIL_FAST_IF_MSG(a._charRow->GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
                      "only support UCS2 char rows currently");
 
-    Ucs2CharRow charRow = *static_cast<const Ucs2CharRow* const>(a._charRow.get());
-    _charRow = std::make_unique<Ucs2CharRow>(charRow);
+    CharRow charRow = *static_cast<const CharRow* const>(a._charRow.get());
+    _charRow = std::make_unique<CharRow>(charRow);
 }
 
 // Routine Description:
@@ -205,7 +205,7 @@ std::vector<OutputCell> ROW::AsCells(const size_t startIndex, const size_t count
     // Unpack the attributes into an array so we can iterate over them.
     const auto unpackedAttrs = _attrRow.UnpackAttrs();
 
-    const Ucs2CharRow* const charRow = static_cast<const Ucs2CharRow* const>(_charRow.get());
+    const CharRow* const charRow = static_cast<const CharRow* const>(_charRow.get());
     for (size_t i = 0; i < count; ++i)
     {
         const auto index = startIndex + i;
@@ -216,6 +216,6 @@ std::vector<OutputCell> ROW::AsCells(const size_t startIndex, const size_t count
 
 const OutputCell ROW::at(const size_t column) const
 {
-    const Ucs2CharRow* const charRow = static_cast<const Ucs2CharRow* const>(_charRow.get());
+    const CharRow* const charRow = static_cast<const CharRow* const>(_charRow.get());
     return { charRow->GetGlyphAt(column), charRow->GetAttribute(column), _attrRow.GetAttrByColumn(column) };
 }

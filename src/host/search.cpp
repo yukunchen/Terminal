@@ -3,7 +3,7 @@
 #include "search.h"
 
 #include "dbcs.h"
-#include "../buffer/out/Ucs2CharRow.hpp"
+#include "../buffer/out/CharRow.hpp"
 
 USHORT SearchForString(const SCREEN_INFORMATION& ScreenInfo,
                        _In_reads_(cchSearch) PCWSTR pwszSearch,
@@ -162,7 +162,7 @@ USHORT SearchForString(const SCREEN_INFORMATION& ScreenInfo,
                 FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
                                 "only support UCS2 char rows currently");
 
-                const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
+                const CharRow& charRow = static_cast<const CharRow&>(iCharRow);
                 if (charRow.GetAttribute(Position.X).IsTrailing())
                 {
                     goto recalc;
@@ -180,7 +180,7 @@ USHORT SearchForString(const SCREEN_INFORMATION& ScreenInfo,
             FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
                             "only support UCS2 char rows currently");
 
-            const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
+            const CharRow& charRow = static_cast<const CharRow&>(iCharRow);
             rowText = charRow.GetText();
 
             if (IgnoreCase ?

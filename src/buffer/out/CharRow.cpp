@@ -1,58 +1,74 @@
-/*++
-Copyright (c) Microsoft Corporation
+/********************************************************
+ *                                                       *
+ *   Copyright (C) Microsoft. All rights reserved.       *
+ *                                                       *
+ ********************************************************/
 
-Module Name:
-- CharRowBaseImpl.hpp
+#include "precomp.h"
+#include "CharRow.hpp"
+#include "unicode.hpp"
 
-Abstract:
-- implementation of base class for output buffer characters rows
-
-Author(s):
-- Austin Diviness (AustDi) 13-Feb-2018
-
-Revision History:
---*/
-
-#pragma once
-
-// don't warn when one of these functions isn't used by a file that includes this header
-#pragma warning(push)
-#pragma warning(disable:4505)
+// default glyph value, used for reseting the character data portion of a cell
+static constexpr CharRow::glyph_type DefaultValue = UNICODE_SPACE;
 
 // Routine Description:
-// - swaps two CharRowBases
+// - swaps two CharRows
 // Arguments:
-// - a - the first CharRowBase to swap
-// - b - the second CharRowBase to swap
+// - a - the first CharRow to swap
+// - b - the second CharRow to swap
 // Return Value:
 // - <none>
-template<typename GlyphType, typename StringType>
-void swap(CharRowBase<GlyphType, StringType>& a, CharRowBase<GlyphType, StringType>& b) noexcept
+void swap(CharRow& a, CharRow& b) noexcept
 {
     a.swap(b);
 }
 
-template<typename GlyphType, typename StringType>
-CharRowBase<GlyphType, StringType>::CharRowBase(const size_t rowWidth, const GlyphType defaultValue) :
+// Routine Description:
+// - constructor
+// Arguments:
+// - rowWidth - the size (in wchar_t) of the char and attribute rows
+// Return Value:
+// - instantiated object
+// Note: will through if unable to allocate char/attribute buffers
+CharRow::CharRow(size_t rowWidth) :
     _wrapForced{ false },
     _doubleBytePadded{ false },
-    _defaultValue{ defaultValue },
-    _data(rowWidth, value_type(defaultValue, DbcsAttribute{}))
+    _data(rowWidth, value_type(DefaultValue, DbcsAttribute{}))
 {
 }
 
 // Routine Description:
-// - swaps values with another CharRowBase
+// - assignment operator
 // Arguments:
-// - other - the CharRowBase to swap with
+// - CharRow to copy
+// Return Value:
+// - reference to this object
+CharRow& CharRow::operator=(const CharRow& a)
+{
+    CharRow temp(a);
+    this->swap(temp);
+    return *this;
+}
+
+// Routine Description:
+// - swaps values with another CharRow
+// Arguments:
+// - other - the CharRow to swap with
 // Return Value:
 // - <none>
-template<typename GlyphType, typename StringType>
-void CharRowBase<GlyphType, StringType>::swap(_In_ CharRowBase<GlyphType, StringType>& other) noexcept
+void CharRow::swap(CharRow& other) noexcept
 {
+    // this looks kinda weird, but we want the compiler to be able to choose between std::swap and a
+    // specialized swap, so we include both in the same namespace and let it sort it out.
     using std::swap;
     swap(_wrapForced, other._wrapForced);
     swap(_doubleBytePadded, other._doubleBytePadded);
+    swap(_data, other._data);
+}
+
+ICharRow::SupportedEncoding CharRow::GetSupportedEncoding() const noexcept
+{
+    return ICharRow::SupportedEncoding::Ucs2;
 }
 
 // Routine Description:
@@ -61,8 +77,7 @@ void CharRowBase<GlyphType, StringType>::swap(_In_ CharRowBase<GlyphType, String
 // - wrapForced - True if the row ran out of space and we forced to wrap to the next row. False otherwise.
 // Return Value:
 // - <none>
-template<typename GlyphType, typename StringType>
-void CharRowBase<GlyphType, StringType>::SetWrapForced(const bool wrapForced) noexcept
+void CharRow::SetWrapForced(const bool wrapForced) noexcept
 {
     _wrapForced = wrapForced;
 }
@@ -73,8 +88,7 @@ void CharRowBase<GlyphType, StringType>::SetWrapForced(const bool wrapForced) no
 // - <none>
 // Return Value:
 // - True if the row ran out of space and we were forced to wrap to the next row. False otherwise.
-template<typename GlyphType, typename StringType>
-bool CharRowBase<GlyphType, StringType>::WasWrapForced() const noexcept
+bool CharRow::WasWrapForced() const noexcept
 {
     return _wrapForced;
 }
@@ -85,8 +99,7 @@ bool CharRowBase<GlyphType, StringType>::WasWrapForced() const noexcept
 // - fWrapWasForced - True if the row ran out of space for a double byte character and we padded out the row. False otherwise.
 // Return Value:
 // - <none>
-template<typename GlyphType, typename StringType>
-void CharRowBase<GlyphType, StringType>::SetDoubleBytePadded(const bool doubleBytePadded) noexcept
+void CharRow::SetDoubleBytePadded(const bool doubleBytePadded) noexcept
 {
     _doubleBytePadded = doubleBytePadded;
 }
@@ -97,8 +110,7 @@ void CharRowBase<GlyphType, StringType>::SetDoubleBytePadded(const bool doubleBy
 // - <none>
 // Return Value:
 // - True if the row didn't have space for a double byte character and we were padded out the row. False otherwise.
-template<typename GlyphType, typename StringType>
-bool CharRowBase<GlyphType, StringType>::WasDoubleBytePadded() const noexcept
+bool CharRow::WasDoubleBytePadded() const noexcept
 {
     return _doubleBytePadded;
 }
@@ -109,8 +121,7 @@ bool CharRowBase<GlyphType, StringType>::WasDoubleBytePadded() const noexcept
 // - <none>
 // Return Value:
 // - the size of the row
-template<typename GlyphType, typename StringType>
-size_t CharRowBase<GlyphType, StringType>::size() const noexcept
+size_t CharRow::size() const noexcept
 {
     return _data.size();
 }
@@ -121,10 +132,9 @@ size_t CharRowBase<GlyphType, StringType>::size() const noexcept
 // - sRowWidth - The width of the row.
 // Return Value:
 // - <none>
-template<typename GlyphType, typename StringType>
-void CharRowBase<GlyphType, StringType>::Reset()
+void CharRow::Reset()
 {
-    const value_type insertVals{ _defaultValue, DbcsAttribute{} };
+    const value_type insertVals{ DefaultValue, DbcsAttribute{} };
     std::fill(_data.begin(), _data.end(), insertVals);
 
     _wrapForced = false;
@@ -137,13 +147,12 @@ void CharRowBase<GlyphType, StringType>::Reset()
 // - newSize - the new width of the character and attributes rows
 // Return Value:
 // - S_OK on success, otherwise relevant error code
-template<typename GlyphType, typename StringType>
 [[nodiscard]]
-HRESULT CharRowBase<GlyphType, StringType>::Resize(const size_t newSize) noexcept
+HRESULT CharRow::Resize(const size_t newSize) noexcept
 {
     try
     {
-        const value_type insertVals{ _defaultValue, DbcsAttribute{} };
+        const value_type insertVals{ DefaultValue, DbcsAttribute{} };
         _data.resize(newSize, insertVals);
     }
     CATCH_RETURN();
@@ -151,26 +160,22 @@ HRESULT CharRowBase<GlyphType, StringType>::Resize(const size_t newSize) noexcep
     return S_OK;
 }
 
-template<typename GlyphType, typename StringType>
-typename CharRowBase<GlyphType, StringType>::iterator CharRowBase<GlyphType, StringType>::begin() noexcept
+typename CharRow::iterator CharRow::begin() noexcept
 {
     return _data.begin();
 }
 
-template<typename GlyphType, typename StringType>
-typename CharRowBase<GlyphType, StringType>::const_iterator CharRowBase<GlyphType, StringType>::cbegin() const noexcept
+typename CharRow::const_iterator CharRow::cbegin() const noexcept
 {
     return _data.cbegin();
 }
 
-template<typename GlyphType, typename StringType>
-typename CharRowBase<GlyphType, StringType>::iterator CharRowBase<GlyphType, StringType>::end() noexcept
+typename CharRow::iterator CharRow::end() noexcept
 {
     return _data.end();
 }
 
-template<typename GlyphType, typename StringType>
-typename CharRowBase<GlyphType, StringType>::const_iterator CharRowBase<GlyphType, StringType>::cend() const noexcept
+typename CharRow::const_iterator CharRow::cend() const noexcept
 {
     return _data.cend();
 }
@@ -181,11 +186,10 @@ typename CharRowBase<GlyphType, StringType>::const_iterator CharRowBase<GlyphTyp
 // - <none>
 // Return Value:
 // - The calculated left boundary of the internal string.
-template<typename GlyphType, typename StringType>
-size_t CharRowBase<GlyphType, StringType>::MeasureLeft() const
+size_t CharRow::MeasureLeft() const
 {
     std::vector<value_type>::const_iterator it = _data.cbegin();
-    while (it != _data.cend() && it->first == _defaultValue)
+    while (it != _data.cend() && it->first == DefaultValue)
     {
         ++it;
     }
@@ -198,21 +202,19 @@ size_t CharRowBase<GlyphType, StringType>::MeasureLeft() const
 // - <none>
 // Return Value:
 // - The calculated right boundary of the internal string.
-template<typename GlyphType, typename StringType>
-size_t CharRowBase<GlyphType, StringType>::MeasureRight() const noexcept
+size_t CharRow::MeasureRight() const noexcept
 {
     std::vector<value_type>::const_reverse_iterator it = _data.crbegin();
-    while (it != _data.crend() && it->first == _defaultValue)
+    while (it != _data.crend() && it->first == DefaultValue)
     {
         ++it;
     }
     return _data.crend() - it;
 }
 
-template<typename GlyphType, typename StringType>
-void CharRowBase<GlyphType, StringType>::ClearCell(const size_t column)
+void CharRow::ClearCell(const size_t column)
 {
-    _data.at(column) = { _defaultValue, DbcsAttribute() };
+    _data.at(column) = { DefaultValue, DbcsAttribute() };
 }
 
 // Routine Description:
@@ -221,12 +223,11 @@ void CharRowBase<GlyphType, StringType>::ClearCell(const size_t column)
 // - <none>
 // Return Value:
 // - True if there is valid text in this row. False otherwise.
-template<typename GlyphType, typename StringType>
-bool CharRowBase<GlyphType, StringType>::ContainsText() const noexcept
+bool CharRow::ContainsText() const noexcept
 {
     for (const value_type& vals : _data)
     {
-        if (vals.first != _defaultValue)
+        if (vals.first != DefaultValue)
         {
             return true;
         }
@@ -241,8 +242,7 @@ bool CharRowBase<GlyphType, StringType>::ContainsText() const noexcept
 // Return Value:
 // - the attribute
 // Note: will throw exception if column is out of bounds
-template<typename GlyphType, typename StringType>
-const DbcsAttribute& CharRowBase<GlyphType, StringType>::GetAttribute(const size_t column) const
+const DbcsAttribute& CharRow::GetAttribute(const size_t column) const
 {
     return _data.at(column).second;
 }
@@ -254,10 +254,9 @@ const DbcsAttribute& CharRowBase<GlyphType, StringType>::GetAttribute(const size
 // Return Value:
 // - the attribute
 // Note: will throw exception if column is out of bounds
-template<typename GlyphType, typename StringType>
-DbcsAttribute& CharRowBase<GlyphType, StringType>::GetAttribute(const size_t column)
+DbcsAttribute& CharRow::GetAttribute(const size_t column)
 {
-    return const_cast<DbcsAttribute&>(static_cast<const CharRowBase<GlyphType, StringType>* const>(this)->GetAttribute(column));
+    return const_cast<DbcsAttribute&>(static_cast<const CharRow* const>(this)->GetAttribute(column));
 }
 
 // Routine Description:
@@ -267,10 +266,9 @@ DbcsAttribute& CharRowBase<GlyphType, StringType>::GetAttribute(const size_t col
 // Return Value:
 // - <none>
 // Note: will throw exception if column is out of bounds
-template<typename GlyphType, typename StringType>
-void CharRowBase<GlyphType, StringType>::ClearGlyph(const size_t column)
+void CharRow::ClearGlyph(const size_t column)
 {
-    _data.at(column).first = _defaultValue;
+    _data.at(column).first = DefaultValue;
 }
 
 // Routine Description:
@@ -280,8 +278,7 @@ void CharRowBase<GlyphType, StringType>::ClearGlyph(const size_t column)
 // Return Value:
 // - text data at column
 // - Note: will throw exception if column is out of bounds
-template<typename GlyphType, typename StringType>
-const GlyphType& CharRowBase<GlyphType, StringType>::GetGlyphAt(const size_t column) const
+const CharRow::glyph_type& CharRow::GetGlyphAt(const size_t column) const
 {
     return _data.at(column).first;
 }
@@ -293,10 +290,9 @@ const GlyphType& CharRowBase<GlyphType, StringType>::GetGlyphAt(const size_t col
 // Return Value:
 // - text data at column
 // - Note: will throw exception if column is out of bounds
-template<typename GlyphType, typename StringType>
-GlyphType& CharRowBase<GlyphType, StringType>::GetGlyphAt(const size_t column)
+CharRow::glyph_type& CharRow::GetGlyphAt(const size_t column)
 {
-    return const_cast<GlyphType&>(static_cast<const CharRowBase<GlyphType, StringType>* const>(this)->GetGlyphAt(column));
+    return const_cast<glyph_type&>(static_cast<const CharRow* const>(this)->GetGlyphAt(column));
 }
 
 // Routine Description:
@@ -307,10 +303,9 @@ GlyphType& CharRowBase<GlyphType, StringType>::GetGlyphAt(const size_t column)
 // Return Value:
 // - text stored in char row
 // - Note: will throw exception if out of memory
-template<typename GlyphType, typename StringType>
-StringType CharRowBase<GlyphType, StringType>::GetTextRaw() const
+std::wstring CharRow::GetTextRaw() const
 {
-    StringType str;
+    std::wstring str;
     str.reserve(_data.size());
     for (auto& cell : _data)
     {
@@ -319,8 +314,7 @@ StringType CharRowBase<GlyphType, StringType>::GetTextRaw() const
     return str;
 }
 
-template<typename GlyphType, typename StringType>
-std::wstring CharRowBase<GlyphType, StringType>::GetText() const
+std::wstring CharRow::GetText() const
 {
     std::wstring wstr;
     wstr.reserve(_data.size());
@@ -333,5 +327,3 @@ std::wstring CharRowBase<GlyphType, StringType>::GetText() const
     }
     return wstr;
 }
-
-#pragma warning(pop)

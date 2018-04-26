@@ -654,11 +654,11 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
             FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
                             "only support UCS2 char rows currently");
 
-            const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
+            const CharRow& charRow = static_cast<const CharRow&>(iCharRow);
 
 
             std::wstring rowText;
-            Ucs2CharRow::const_iterator it;
+            CharRow::const_iterator it;
             try
             {
                 it = std::next(charRow.cbegin(), iLeft);
@@ -669,7 +669,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
                 LOG_HR(wil::ResultFromCaughtException());
                 return;
             }
-            const Ucs2CharRow::const_iterator itEnd = charRow.cend();
+            const CharRow::const_iterator itEnd = charRow.cend();
 
             // Get the pointer to the beginning of the text
             const wchar_t* const pwsLine = rowText.c_str() + iLeft;
@@ -721,8 +721,8 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
 void Renderer::_PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEngine,
                                                   const ROW& Row,
                                                   _In_reads_(cchLine) PCWCHAR const pwsLine,
-                                                  const Ucs2CharRow::const_iterator it,
-                                                  const Ucs2CharRow::const_iterator itEnd,
+                                                  const CharRow::const_iterator it,
+                                                  const CharRow::const_iterator itEnd,
                                                   _In_ size_t cchLine,
                                                   _In_ size_t iFirstAttr,
                                                   const COORD coordTarget)
@@ -810,8 +810,8 @@ void Renderer::_PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEng
 void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
                                              const ROW& Row,
                                              _In_reads_(cchLine) PCWCHAR const pwsLine,
-                                             const Ucs2CharRow::const_iterator it,
-                                             const Ucs2CharRow::const_iterator itEnd,
+                                             const CharRow::const_iterator it,
+                                             const CharRow::const_iterator itEnd,
                                              _In_ size_t cchLine,
                                              _In_ size_t iFirstAttr,
                                              const COORD coordTarget)
@@ -828,7 +828,7 @@ void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
     // The line segment we'll write will start at the beginning of the text.
     PCWCHAR pwsSegment = pwsLine;
 
-    Ucs2CharRow::const_iterator itSegment = it;
+    CharRow::const_iterator itSegment = it;
 
     do
     {
@@ -884,8 +884,8 @@ void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
 [[nodiscard]]
 HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const pEngine,
                                                      _In_reads_(cchLine) PCWCHAR const pwsLine,
-                                                     const Ucs2CharRow::const_iterator it,
-                                                     const Ucs2CharRow::const_iterator itEnd,
+                                                     const CharRow::const_iterator it,
+                                                     const CharRow::const_iterator itEnd,
                                                      const size_t cchLine,
                                                      const COORD coordTarget)
 {
@@ -901,7 +901,7 @@ HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const p
     wistd::unique_ptr<unsigned char[]> rgSegmentWidth = wil::make_unique_nothrow<unsigned char[]>(cchLine);
     RETURN_IF_NULL_ALLOC(rgSegmentWidth);
 
-    Ucs2CharRow::const_iterator itCurrent = it;
+    CharRow::const_iterator itCurrent = it;
     size_t cchSegment = 0;
     // Walk through the line given character by character and copy necessary items into our local array.
     for (size_t iLine = 0; iLine < cchLine && itCurrent < itEnd; ++iLine, ++itCurrent)
@@ -1100,10 +1100,10 @@ void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
                 FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
                                 "only support UCS2 char rows currently");
 
-                const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
+                const CharRow& charRow = static_cast<const CharRow&>(iCharRow);
 
                 std::wstring rowText;
-                Ucs2CharRow::const_iterator it;
+                CharRow::const_iterator it;
                 try
                 {
                     it = std::next(charRow.cbegin(), viewDirty.Left() - AreaInfo->CaInfo.coordConView.X);
@@ -1114,7 +1114,7 @@ void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
                     LOG_HR(wil::ResultFromCaughtException());
                     return;
                 }
-                const Ucs2CharRow::const_iterator itEnd = charRow.cend();
+                const CharRow::const_iterator itEnd = charRow.cend();
 
                 // Get the pointer to the beginning of the text
                 const wchar_t* const pwsLine = rowText.c_str() + viewDirty.Left() - AreaInfo->CaInfo.coordConView.X;
