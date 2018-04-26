@@ -195,6 +195,7 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
             it = std::next(charRow.begin(), coordDest.X);
             itEnd = charRow.cend();
 
+            AttrRunsBuff.clear(); // ensure we don't have attrs from previous runs of the loop (if applicable).
             TextAttributeRun attrRun;
             attrRun.SetLength(0);
             attrRun.SetAttributesFromLegacy(ATTR_OF_PCI(SourcePtr) & ~COMMON_LVB_SBCSDBCS);

@@ -31,6 +31,7 @@ SOURCES                         =   \
                                     API_FontTests.cpp \
                                     API_InputTests.cpp \
                                     API_ModeTests.cpp \
+                                    API_OutputTests.cpp \
                                     API_RgbColorTests.cpp \
                                     API_TitleTests.cpp \
                                     API_PolicyTests.cpp \
