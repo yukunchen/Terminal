@@ -1187,7 +1187,6 @@ void ScreenBufferTests::VtEraseAllPersistCursorFillColor()
 
     VERIFY_ARE_EQUAL(expectedAttr, si._Attributes);
 
-    DebugBreak();
     seq = L"\x1b[2J";
     stateMachine->ProcessString(&seq[0], seq.length());
 
@@ -1198,22 +1197,16 @@ void ScreenBufferTests::VtEraseAllPersistCursorFillColor()
         L"new Viewport: %s",
         VerifyOutputTraits<SMALL_RECT>::ToString(newViewport.ToInclusive()).GetBuffer()
     ));
-    auto row = tbi.GetRowByOffset(newViewport.Top());
+    auto* pRow = &tbi.GetRowByOffset(newViewport.Top());
     auto height = newViewport.Height();
     auto width = newViewport.Width();
     for (int i = 0; i < height; i++)
     {
-        Log::Comment(NoThrowString().Format(
-            L"Row ID: %d", row.GetId()
-        ));
-        Log::Comment(NoThrowString().Format(
-            L"size: %d", tbi.GetFirstRowIndex()
-        ));
         for (int j = 0; j < width; j++)
         {
-            VERIFY_ARE_EQUAL(expectedAttr, row.GetAttrRow().GetAttrByColumn(j));
+            VERIFY_ARE_EQUAL(expectedAttr, pRow->GetAttrRow().GetAttrByColumn(j));
         }
 
-        row = tbi.GetNextRowNoWrap(row);
+        pRow = &tbi.GetNextRowNoWrap(*pRow);
     }
 }

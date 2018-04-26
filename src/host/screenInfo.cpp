@@ -2520,7 +2520,6 @@ HRESULT SCREEN_INFORMATION::VtEraseAll()
     oldViewport.ConvertToOrigin(&relativeCursor);
 
     short delta = (sNewTop + GetScreenWindowSizeY()) - (GetScreenBufferSize().Y);
-    // bool fRedrawAll = delta > 0;
     for (auto i = 0; i < delta; i++)
     {
         _textBuffer->IncrementCircularBuffer();
@@ -2533,14 +2532,14 @@ HRESULT SCREEN_INFORMATION::VtEraseAll()
     _viewport.ConvertFromOrigin(&relativeCursor);
     RETURN_IF_FAILED(SetCursorPosition(relativeCursor, false));
 
-    // Update all the rows win the current viewport with the currently active attributes.
-    ROW& row = _textBuffer->GetRowByOffset(sNewTop);
+    // Update all the rows in the current viewport with the currently active attributes.
+    ROW* pRow = &_textBuffer->GetRowByOffset(sNewTop);
     auto height = _viewport.Height();
 
     for (int i = 0; i < height; i++)
     {
-        row.GetAttrRow().SetAttrToEnd(0, _Attributes);
-        row = _textBuffer->GetNextRowNoWrap(row);
+        pRow->GetAttrRow().SetAttrToEnd(0, _Attributes);
+        pRow = &_textBuffer->GetNextRowNoWrap(*pRow);
     }
 
     // When the viewport was already at the bottom, the renderer needs to repaint all the new lines.
