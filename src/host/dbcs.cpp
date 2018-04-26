@@ -153,7 +153,7 @@ bool IsGlyphFullWidth(const std::vector<wchar_t>& charData)
     }
     else
     {
-        // TODO find a better way to determine glyph font width
+        // TODO MSFT:17233905 find a better way to determine surrogate pair codepoint width
         return true;
     }
 }
