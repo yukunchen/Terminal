@@ -717,42 +717,44 @@ void ScreenBufferTests::EraseAllTests()
     Log::Comment(L"Case 1: Erase a single line of text in the buffer\n");
 
     bufferWriter->PrintString(L"foo", 3);
-    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 3);
-    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 0);
+    COORD originalRelativePosition = {3, 0};
     VERIFY_ARE_EQUAL(si.GetBufferViewport().Top, 0);
+    VERIFY_ARE_EQUAL(cursor.GetPosition(), originalRelativePosition);
 
     VERIFY_SUCCEEDED(si.VtEraseAll());
 
-    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 0);
-    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 1);
-    auto viewport = si.GetBufferViewport();
-    VERIFY_ARE_EQUAL(viewport.Top, 1);
+    auto viewport = si._viewport;
+    VERIFY_ARE_EQUAL(viewport.Top(), 1);
+    COORD newRelativePos = originalRelativePosition;
+    viewport.ConvertFromOrigin(&newRelativePos);
+    VERIFY_ARE_EQUAL(cursor.GetPosition(), newRelativePos);
     Log::Comment(NoThrowString().Format(
         L"viewport={L:%d,T:%d,R:%d,B:%d}",
-        viewport.Left, viewport.Top, viewport.Right, viewport.Bottom
+        viewport.Left(), viewport.Top(), viewport.RightInclusive(), viewport.BottomInclusive()
     ));
 
     ////////////////////////////////////////////////////////////////////////
     Log::Comment(L"Case 2: Erase multiple lines, below the top of the buffer\n");
 
     bufferWriter->PrintString(L"bar\nbar\nbar", 11);
-    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 3);
-    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 3);
-    viewport = si.GetBufferViewport();
-    VERIFY_ARE_EQUAL(viewport.Top, 1);
+    viewport = si._viewport;
+    originalRelativePosition = cursor.GetPosition();
+    viewport.ConvertToOrigin(&originalRelativePosition);
+    VERIFY_ARE_EQUAL(viewport.Top(), 1);
     Log::Comment(NoThrowString().Format(
         L"viewport={L:%d,T:%d,R:%d,B:%d}",
-        viewport.Left, viewport.Top, viewport.Right, viewport.Bottom
+        viewport.Left(), viewport.Top(), viewport.RightInclusive(), viewport.BottomInclusive()
     ));
 
     VERIFY_SUCCEEDED(si.VtEraseAll());
-    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 0);
-    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 4);
-    viewport = si.GetBufferViewport();
-    VERIFY_ARE_EQUAL(viewport.Top, 4);
+    viewport = si._viewport;
+    VERIFY_ARE_EQUAL(viewport.Top(), 4);
+    newRelativePos = originalRelativePosition;
+    viewport.ConvertFromOrigin(&newRelativePos);
+    VERIFY_ARE_EQUAL(cursor.GetPosition(), newRelativePos);
     Log::Comment(NoThrowString().Format(
         L"viewport={L:%d,T:%d,R:%d,B:%d}",
-        viewport.Left, viewport.Top, viewport.Right, viewport.Bottom
+        viewport.Left(), viewport.Top(), viewport.RightInclusive(), viewport.BottomInclusive()
     ));
 
 
@@ -760,24 +762,29 @@ void ScreenBufferTests::EraseAllTests()
     Log::Comment(L"Case 3: multiple lines at the bottom of the buffer\n");
 
     cursor.SetPosition({0, 275});
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(TRUE, {0, 220}));
     bufferWriter->PrintString(L"bar\nbar\nbar", 11);
+    viewport = si._viewport;
     VERIFY_ARE_EQUAL(cursor.GetPosition().X, 3);
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 277);
-    viewport = si.GetBufferViewport();
+    originalRelativePosition = cursor.GetPosition();
+    viewport.ConvertToOrigin(&originalRelativePosition);
+
     Log::Comment(NoThrowString().Format(
         L"viewport={L:%d,T:%d,R:%d,B:%d}",
-        viewport.Left, viewport.Top, viewport.Right, viewport.Bottom
+        viewport.Left(), viewport.Top(), viewport.RightInclusive(), viewport.BottomInclusive()
     ));
     VERIFY_SUCCEEDED(si.VtEraseAll());
 
-    viewport = si.GetBufferViewport();
-    auto heightFromBottom = si.GetScreenBufferSize().Y - (viewport.Bottom - viewport.Top + 1);
-    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 0);
-    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, heightFromBottom);
-    VERIFY_ARE_EQUAL(viewport.Top, heightFromBottom);
+    viewport = si._viewport;
+    auto heightFromBottom = si.GetScreenBufferSize().Y - (viewport.Height());
+    VERIFY_ARE_EQUAL(viewport.Top(), heightFromBottom);
+    newRelativePos = originalRelativePosition;
+    viewport.ConvertFromOrigin(&newRelativePos);
+    VERIFY_ARE_EQUAL(cursor.GetPosition(), newRelativePos);
     Log::Comment(NoThrowString().Format(
         L"viewport={L:%d,T:%d,R:%d,B:%d}",
-        viewport.Left, viewport.Top, viewport.Right, viewport.Bottom
+        viewport.Left(), viewport.Top(), viewport.RightInclusive(), viewport.BottomInclusive()
     ));
 }
 

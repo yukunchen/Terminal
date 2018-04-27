@@ -2539,7 +2539,7 @@ HRESULT SCREEN_INFORMATION::VtEraseAll()
     for (int i = 0; i < height; i++)
     {
         pRow->GetAttrRow().SetAttrToEnd(0, _Attributes);
-        pRow = &_textBuffer->GetNextRowNoWrap(*pRow);
+        pRow = &_textBuffer->GetNextRow(*pRow);
     }
 
     // Invalidate the entire viewport
