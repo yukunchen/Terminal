@@ -33,21 +33,21 @@ public:
 
     CHAR_INFO ToCharInfo();
 
-    std::vector<wchar_t>& GetCharData() noexcept;
-    DbcsAttribute& GetDbcsAttribute() noexcept;
-    TextAttribute& GetTextAttribute() noexcept;
+    std::vector<wchar_t>& Chars() noexcept;
+    DbcsAttribute& DbcsAttr() noexcept;
+    TextAttribute& TextAttr() noexcept;
 
-    constexpr const std::vector<wchar_t>& GetCharData() const
+    constexpr const std::vector<wchar_t>& Chars() const
     {
         return _charData;
     }
 
-    constexpr const DbcsAttribute& GetDbcsAttribute() const
+    constexpr const DbcsAttribute& DbcsAttr() const
     {
         return _dbcsAttribute;
     }
 
-    constexpr const TextAttribute& GetTextAttribute() const
+    constexpr const TextAttribute& TextAttr() const
     {
         return _textAttribute;
     }

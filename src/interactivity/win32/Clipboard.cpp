@@ -300,9 +300,9 @@ NTSTATUS Clipboard::RetrieveTextFromBuffer(const SCREEN_INFORMATION& screenInfo,
             // copy char data into the string buffer, skipping trailing bytes
             for (auto& cell : outputCells)
             {
-                if (!cell.GetDbcsAttribute().IsTrailing())
+                if (!cell.DbcsAttr().IsTrailing())
                 {
-                    for (const wchar_t wch : cell.GetCharData())
+                    for (const wchar_t wch : cell.Chars())
                     {
                         selectionText.push_back(wch);
                     }

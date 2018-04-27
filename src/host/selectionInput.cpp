@@ -161,7 +161,7 @@ COORD Selection::WordByWordSelection(const bool fReverse,
     }
 
     // get the character at the new position
-    std::vector<wchar_t> charData = screenInfo.ReadLine(outCoord.Y, outCoord.X, 1).at(0).GetCharData();
+    std::vector<wchar_t> charData = screenInfo.ReadLine(outCoord.Y, outCoord.X, 1).at(0).Chars();
 
     // we want to go until the state change from delim to non-delim
     bool fCurrIsDelim = IsWordDelim(charData);
@@ -239,7 +239,7 @@ COORD Selection::WordByWordSelection(const bool fReverse,
         }
 
         // get the character associated with the new position
-        charData = screenInfo.ReadLine(outCoord.Y, outCoord.X, 1).at(0).GetCharData();
+        charData = screenInfo.ReadLine(outCoord.Y, outCoord.X, 1).at(0).Chars();
         fCurrIsDelim = IsWordDelim(charData);
 
         // This is a bit confusing.
@@ -362,7 +362,7 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
             // if we're about to split a character in half, keep moving right
             try
             {
-                const auto attr = gci.GetActiveOutputBuffer().ReadLine(coordSelPoint.Y, coordSelPoint.X, 1).at(0).GetDbcsAttribute();
+                const auto attr = gci.GetActiveOutputBuffer().ReadLine(coordSelPoint.Y, coordSelPoint.X, 1).at(0).DbcsAttr();
                 if (attr.IsTrailing())
                 {
                     Utils::s_DoIncrementScreenCoordinate(srectEdges, &coordSelPoint);
@@ -585,7 +585,7 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
     // ensure we're not planting the cursor in the middle of a double-wide character.
     try
     {
-        const auto attr = gci.GetActiveOutputBuffer().ReadLine(coordSelPoint.Y, coordSelPoint.X, 1).at(0).GetDbcsAttribute();
+        const auto attr = gci.GetActiveOutputBuffer().ReadLine(coordSelPoint.Y, coordSelPoint.X, 1).at(0).DbcsAttr();
         if (attr.IsTrailing())
         {
             // try to move off by highlighting the lead half too.
@@ -692,7 +692,7 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
             const std::vector<OutputCell> cells = screenInfo.ReadLine(psrSelection->Top, psrSelection->Left);
             for (size_t i = 0; i < cLength; ++i)
             {
-                pwszSearchString[i] = Utf16ToUcs2(cells.at(i).GetCharData());
+                pwszSearchString[i] = Utf16ToUcs2(cells.at(i).Chars());
             }
             pwszSearchString[cLength] = L'\0';
 
@@ -744,7 +744,7 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
         try
         {
             // calculate next right
-            if (ScreenInfo.ReadLine(cursorPos.Y, cursorPos.X, 1).at(0).GetDbcsAttribute().IsLeading())
+            if (ScreenInfo.ReadLine(cursorPos.Y, cursorPos.X, 1).at(0).DbcsAttr().IsLeading())
             {
                 iNextRightX = 2;
             }
@@ -762,7 +762,7 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
             if (cursorPos.X == 1)
             {
                 const std::vector<OutputCell> cells = ScreenInfo.ReadLine(cursorPos.Y, 0, 2);
-                if (cells.at(0).GetDbcsAttribute().IsTrailing())
+                if (cells.at(0).DbcsAttr().IsTrailing())
                 {
                     iNextLeftX = 2;
                 }
@@ -770,9 +770,9 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
             else
             {
                 const std::vector<OutputCell> cells = ScreenInfo.ReadLine(cursorPos.Y, cursorPos.X - 2, 3);
-                if (cells.at(1).GetDbcsAttribute().IsLeading())
+                if (cells.at(1).DbcsAttr().IsLeading())
                 {
-                    if (cells.at(0).GetDbcsAttribute().IsTrailing())
+                    if (cells.at(0).DbcsAttr().IsTrailing())
                     {
                         iNextLeftX = 3;
                     }

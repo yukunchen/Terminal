@@ -51,17 +51,17 @@ CHAR_INFO OutputCell::ToCharInfo()
     return charInfo;
 }
 
-std::vector<wchar_t>& OutputCell::GetCharData() noexcept
+std::vector<wchar_t>& OutputCell::Chars() noexcept
 {
     return _charData;
 }
 
-DbcsAttribute& OutputCell::GetDbcsAttribute() noexcept
+DbcsAttribute& OutputCell::DbcsAttr() noexcept
 {
     return _dbcsAttribute;
 }
 
-TextAttribute& OutputCell::GetTextAttribute() noexcept
+TextAttribute& OutputCell::TextAttr() noexcept
 {
     return _textAttribute;
 }
