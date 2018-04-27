@@ -61,7 +61,7 @@ void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
     {
         const TextAttribute defaultTextAttribute = screenInfo.GetAttributes();
         std::vector<OutputCell> cells;
-        for (size_t i = 0; i < cchBuffer; ++i)
+        for (size_t i = 0; i < gsl::narrow<size_t>(cchBuffer); ++i)
         {
             cells.emplace_back(std::vector<wchar_t>{ pwchBuffer[i] }, pDbcsAttributes[i], defaultTextAttribute);
         }
