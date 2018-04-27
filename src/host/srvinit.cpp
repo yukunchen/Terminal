@@ -37,18 +37,17 @@ HRESULT ConsoleServerInitialization(_In_ HANDLE Server, const ConsoleArguments* 
     try
     {
         Globals.pDeviceComm = new DeviceComm(Server);
+
+        Globals.launchArgs = *args;
+
+        Globals.uiOEMCP = GetOEMCP();
+        Globals.uiWindowsCP = GetACP();
+
+        Globals.pFontDefaultList = new RenderFontDefaults();
+
+        FontInfo::s_SetFontDefaultList(Globals.pFontDefaultList);
     }
     CATCH_RETURN();
-
-    Globals.launchArgs = *args;
-
-    Globals.uiOEMCP = GetOEMCP();
-    Globals.uiWindowsCP = GetACP();
-
-    Globals.pFontDefaultList = new RenderFontDefaults();
-    RETURN_IF_NULL_ALLOC(Globals.pFontDefaultList);
-
-    FontInfo::s_SetFontDefaultList(Globals.pFontDefaultList);
 
     // Removed allocation of scroll buffer here.
     return S_OK;
@@ -283,7 +282,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     size_t cbConsoleTitle;
     size_t cbSystemRoot;
 
-    LPWSTR pwszSysRoot = new wchar_t[MAX_PATH];
+    LPWSTR pwszSysRoot = new(std::nothrow) wchar_t[MAX_PATH];
     if (nullptr != pwszSysRoot)
     {
         if (0 != GetWindowsDirectoryW(pwszSysRoot, MAX_PATH))

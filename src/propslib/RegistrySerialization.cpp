@@ -152,7 +152,7 @@ NTSTATUS RegistrySerialization::s_LoadRegString(const HKEY hKey, const _RegPrope
     // number of characters within the field
     size_t const cchField = pPropMap->cbFieldSize / sizeof(WCHAR);
 
-    PWCHAR pwchString = new WCHAR[cchField];
+    PWCHAR pwchString = new(std::nothrow) WCHAR[cchField];
     NTSTATUS Status = NT_TESTNULL(pwchString);
     if (NT_SUCCESS(Status))
     {
@@ -384,7 +384,7 @@ NTSTATUS RegistrySerialization::s_UpdateValue(const HKEY hConsoleKey,
                                               const DWORD cbDataLength)
 {
     NTSTATUS Status = STATUS_UNSUCCESSFUL; // This value won't be used, added to avoid compiler warnings.
-    BYTE* Data = new BYTE[cbDataLength];
+    BYTE* Data = new(std::nothrow) BYTE[cbDataLength];
     if (Data != nullptr)
     {
         // If this is not the main console key but the value is the same,

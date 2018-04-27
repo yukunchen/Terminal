@@ -40,7 +40,6 @@
     <ClInclude Include="..\Icon.hpp" />
     <ClInclude Include="..\InputServices.hpp" />
     <ClInclude Include="..\Menu.hpp" />
-    <ClInclude Include="..\..\..\host\newdelete.hpp" />
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\resource.h" />
     <ClInclude Include="..\screenInfoUiaProvider.hpp" />

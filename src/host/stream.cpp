@@ -521,7 +521,7 @@ NTSTATUS ReadLineInput(_Inout_ InputBuffer* const pInputBuffer,
     // chars as will fit in the user's buffer.
 
     ULONG const TempBufferSize = gsl::narrow<ULONG>(std::max(OutputBufferSize, LINE_INPUT_BUFFER_SIZE));
-    wchar_t* const TempBuffer = (wchar_t*) new BYTE[TempBufferSize];
+    wchar_t* const TempBuffer = (wchar_t*) new(std::nothrow) BYTE[TempBufferSize];
     if (TempBuffer == nullptr)
     {
         if (Echo)
@@ -587,7 +587,7 @@ NTSTATUS ReadLineInput(_Inout_ InputBuffer* const pInputBuffer,
     if (cbExeName > 0)
     {
         CookedReadData.ExeNameLength = (USHORT)cbExeName;
-        CookedReadData.ExeName = (wchar_t*) new BYTE[CookedReadData.ExeNameLength];
+        CookedReadData.ExeName = (wchar_t*) new(std::nothrow) BYTE[CookedReadData.ExeNameLength];
         if (CookedReadData.ExeName)
         {
             memcpy_s(CookedReadData.ExeName, CookedReadData.ExeNameLength, pwsExeName, cbExeName);
@@ -603,7 +603,7 @@ NTSTATUS ReadLineInput(_Inout_ InputBuffer* const pInputBuffer,
     Status = CookedRead(&CookedReadData, Unicode, pReadByteCount, pControlKeyState);
     if (CONSOLE_STATUS_WAIT == Status)
     {
-        COOKED_READ_DATA* pCookedReadWaiter = new COOKED_READ_DATA(std::move(CookedReadData));
+        COOKED_READ_DATA* pCookedReadWaiter = new(std::nothrow) COOKED_READ_DATA(std::move(CookedReadData));
         if (nullptr == pCookedReadWaiter)
         {
             Status = STATUS_NO_MEMORY;
@@ -709,10 +709,6 @@ NTSTATUS ReadCharacterInput(_Inout_ InputBuffer* const pInputBuffer,
             catch (...)
             {
                 return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-            }
-            if (!*ppWaiter)
-            {
-                Status = STATUS_NO_MEMORY;
             }
         }
 

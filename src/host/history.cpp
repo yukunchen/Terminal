@@ -203,7 +203,7 @@ NTSTATUS AddCommand(_In_ PCOMMAND_HISTORY pCmdHistory,
         }
         else
         {
-            *ppCmd = (PCOMMAND) new BYTE[cbCommand + sizeof(COMMAND)];
+            *ppCmd = (PCOMMAND) new(std::nothrow) BYTE[cbCommand + sizeof(COMMAND)];
             if (*ppCmd == nullptr)
             {
                 COMMAND_IND_PREV(pCmdHistory->LastAdded, pCmdHistory);
@@ -360,7 +360,7 @@ PCOMMAND_HISTORY ReallocCommandHistory(_In_opt_ PCOMMAND_HISTORY CurrentCommandH
         return CurrentCommandHistory;
     }
 
-    PCOMMAND_HISTORY const History = (PCOMMAND_HISTORY) new BYTE[sizeof(COMMAND_HISTORY) + NumCommands * sizeof(PCOMMAND)];
+    PCOMMAND_HISTORY const History = (PCOMMAND_HISTORY) new(std::nothrow) BYTE[sizeof(COMMAND_HISTORY) + NumCommands * sizeof(PCOMMAND)];
     if (History == nullptr)
     {
         return CurrentCommandHistory;
@@ -398,7 +398,7 @@ PCOMMAND_HISTORY FindExeCommandHistory(_In_reads_(AppNameLength) PVOID AppName, 
     PWCHAR AppNamePtr = nullptr;
     if (!Unicode)
     {
-        AppNamePtr = new WCHAR[AppNameLength];
+        AppNamePtr = new(std::nothrow) WCHAR[AppNameLength];
         if (AppNamePtr == nullptr)
         {
             return nullptr;
@@ -489,14 +489,15 @@ PCOMMAND_HISTORY AllocateCommandHistory(_In_reads_bytes_(cbAppName) PCWSTR pwszA
             return nullptr;
         }
 
-        History = (PCOMMAND_HISTORY) new BYTE[TotalSize];
+        History = (PCOMMAND_HISTORY) new(std::nothrow) BYTE[TotalSize];
         if (History == nullptr)
         {
             return nullptr;
         }
+        ZeroMemory(History, TotalSize * sizeof(BYTE));
 
         // Length is in bytes. Add 1 so dividing by WCHAR (2) is always rounding up.
-        History->AppName = new WCHAR[(cbAppName + 1) / sizeof(WCHAR)];
+        History->AppName = new(std::nothrow) WCHAR[(cbAppName + 1) / sizeof(WCHAR)];
         if (History->AppName == nullptr)
         {
             delete[] History;
@@ -540,7 +541,7 @@ PCOMMAND_HISTORY AllocateCommandHistory(_In_reads_bytes_(cbAppName) PCWSTR pwszA
             History->LastDisplayed = -1;
             History->FirstCommand = 0;
             // Length is in bytes. Add 1 so dividing by WCHAR (2) is always rounding up.
-            History->AppName = new WCHAR[(cbAppName + 1) / sizeof(WCHAR)];
+            History->AppName = new(std::nothrow) WCHAR[(cbAppName + 1) / sizeof(WCHAR)];
             if (History->AppName == nullptr)
             {
                 History->Flags &= ~CLE_ALLOCATED;

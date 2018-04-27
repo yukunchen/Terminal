@@ -34,33 +34,34 @@ WindowUiaProvider::~WindowUiaProvider()
 
 WindowUiaProvider* WindowUiaProvider::Create()
 {
-    WindowUiaProvider* pWindowProvider = new WindowUiaProvider();
-    if (pWindowProvider == nullptr)
-    {
-        return nullptr;
-    }
-
-    ScreenInfoUiaProvider* pScreenInfoProvider;
+    WindowUiaProvider* pWindowProvider = nullptr;
+    ScreenInfoUiaProvider* pScreenInfoProvider = nullptr;
     try
     {
+        pWindowProvider = new WindowUiaProvider();
         pScreenInfoProvider = new ScreenInfoUiaProvider(pWindowProvider);
-        if (pScreenInfoProvider == nullptr)
+        pWindowProvider->_pScreenInfoProvider = pScreenInfoProvider;
+
+        Tracing::s_TraceUia(pWindowProvider, ApiCall::Create, nullptr);
+
+        return pWindowProvider;
+    }
+    catch (...)
+    {
+        if (nullptr != pWindowProvider)
         {
             pWindowProvider->Release();
-            return nullptr;
         }
-    }
-    catch(...)
-    {
-        pWindowProvider->Release();
+
+        if (nullptr != pScreenInfoProvider)
+        {
+            pScreenInfoProvider->Release();
+        }
+
+        LOG_CAUGHT_EXCEPTION();
+
         return nullptr;
     }
-
-    pWindowProvider->_pScreenInfoProvider = pScreenInfoProvider;
-
-    Tracing::s_TraceUia(pWindowProvider, ApiCall::Create, nullptr);
-
-    return pWindowProvider;
 }
 
 [[nodiscard]]

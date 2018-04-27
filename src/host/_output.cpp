@@ -478,17 +478,19 @@ NTSTATUS WriteOutputString(SCREEN_INFORMATION& screenInfo,
             *pcRecords >= ARRAYSIZE(rgbBufferA))
         {
 
-            TransBuffer = new WCHAR[*pcRecords * 2];
+            TransBuffer = new(std::nothrow) WCHAR[*pcRecords * 2];
             if (TransBuffer == nullptr)
             {
                 return STATUS_NO_MEMORY;
             }
-            TransBufferA = new DbcsAttribute[*pcRecords * 2];
+            ZeroMemory(TransBuffer, *pcRecords * 2 * sizeof(WCHAR));
+            TransBufferA = new(std::nothrow) DbcsAttribute[*pcRecords * 2];
             if (TransBufferA == nullptr)
             {
                 delete[] TransBuffer;
                 return STATUS_NO_MEMORY;
             }
+            ZeroMemory(TransBufferA, *pcRecords * 2 * sizeof(DbcsAttribute));
 
             fLocalHeap = true;
         }
@@ -564,18 +566,20 @@ NTSTATUS WriteOutputString(SCREEN_INFORMATION& screenInfo,
         if (*pcRecords * 2 >= ARRAYSIZE(rgwchBuffer) ||
             *pcRecords * 2 >= ARRAYSIZE(rgbBufferA))
         {
-            TransBuffer = new WCHAR[*pcRecords * 2];
+            TransBuffer = new(std::nothrow) WCHAR[*pcRecords * 2];
             if (TransBuffer == nullptr)
             {
                 return STATUS_NO_MEMORY;
             }
+            ZeroMemory(TransBuffer, *pcRecords * 2 * sizeof(WCHAR));
 
-            TransBufferA = new DbcsAttribute[*pcRecords * 2];
+            TransBufferA = new(std::nothrow) DbcsAttribute[*pcRecords * 2];
             if (TransBufferA == nullptr)
             {
                 delete[] TransBuffer;
                 return STATUS_NO_MEMORY;
             }
+            ZeroMemory(TransBufferA, *pcRecords * 2 * sizeof(DbcsAttribute));
 
             fLocalHeap = true;
         }

@@ -88,14 +88,19 @@ NTSTATUS Window::CreateInstance(_In_ Settings* const pSettings,
 
     if (NT_SUCCESS(status))
     {
-        Window* pNewWindow = new Window();
+        Window* pNewWindow = new(std::nothrow) Window();
 
-        status = pNewWindow->_MakeWindow(pSettings, pScreen);
+        status = NT_TESTNULL(pNewWindow);
 
         if (NT_SUCCESS(status))
         {
-            Window::s_Instance = pNewWindow;
-            LOG_IF_FAILED(ServiceLocator::SetConsoleWindowInstance(pNewWindow));
+            status = pNewWindow->_MakeWindow(pSettings, pScreen);
+
+            if (NT_SUCCESS(status))
+            {
+                Window::s_Instance = pNewWindow;
+                LOG_IF_FAILED(ServiceLocator::SetConsoleWindowInstance(pNewWindow));
+            }
         }
     }
 
@@ -206,11 +211,7 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
     try
     {
         pGdiEngine = new GdiEngine();
-        status = NT_TESTNULL(pGdiEngine);
-        if (NT_SUCCESS(status))
-        {
-            g.pRender->AddRenderEngine(pGdiEngine);
-        }
+        g.pRender->AddRenderEngine(pGdiEngine);
     }
     catch (...)
     {

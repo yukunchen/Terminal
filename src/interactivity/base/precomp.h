@@ -1,5 +1,4 @@
 #include "..\..\host\precomp.h"
-#include "..\..\host\newdelete.hpp"
 
 #ifdef BUILD_ONECORE_INTERACTIVITY
 // From ntdef.h and winnt.h

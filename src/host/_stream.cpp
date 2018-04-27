@@ -528,12 +528,13 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
 
                 if (pwchBuffer - pwchBufferBackupLimit > LOCAL_BUFFER_SIZE)
                 {
-                    pBuffer = new WCHAR[pwchBuffer - pwchBufferBackupLimit];
+                    pBuffer = new(std::nothrow) WCHAR[pwchBuffer - pwchBufferBackupLimit];
                     if (pBuffer == nullptr)
                     {
                         Status = STATUS_NO_MEMORY;
                         goto ExitWriteChars;
                     }
+                    ZeroMemory(pBuffer, sizeof(WCHAR) * (pwchBuffer - pwchBufferBackupLimit));
                 }
                 else
                 {
@@ -1080,8 +1081,9 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject& OutContext,
 
         // (cchTextBufferLength + 2) I think because we might be shoving another unicode char
         // from ScreenInfo->WriteConsoleDbcsLeadByte in front
-        TransBuffer = new WCHAR[cchTextBufferLength + 2];
+        TransBuffer = new(std::nothrow) WCHAR[cchTextBufferLength + 2];
         RETURN_IF_NULL_ALLOC(TransBuffer);
+        ZeroMemory(TransBuffer, sizeof(WCHAR) * (cchTextBufferLength + 2));
 
         TransBufferOriginalLocation = TransBuffer;
 

@@ -128,9 +128,6 @@
     <ClInclude Include="..\WindowMetrics.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\host\newdelete.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\InputServices.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>

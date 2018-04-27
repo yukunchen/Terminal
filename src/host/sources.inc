@@ -77,7 +77,6 @@ SOURCES = \
     ..\dbcs.cpp      \
     ..\convarea.cpp  \
     ..\screenInfo.cpp \
-    ..\newdelete.cpp \
     ..\_output.cpp   \
     ..\_stream.cpp   \
     ..\utils.cpp     \
@@ -125,14 +124,8 @@ INCLUDES = \
     $(SHELL_INC_PATH); \
     $(INTERNAL_SDK_INC_PATH); \
 
-# Because we redefine new/delete in our library, we need to use CRTLIBS
-# to arrange the linking order such that our new/delete is used before the one
-# that is automatically introduced by the CRT.
-# The CRT version is a weak link and will be ignored if it's already found to be
-# defined by someone else.
 # Anything defined here will be defined BEFORE the CRT items the build system adds.
 CRTLIBS = \
-    $(WINCORE_OBJ_PATH)\console\open\src\host\lib\$(O)\conhostv2.lib \
     $(CRTLIBS) \
 
 # The LIB linking order is $(CRTLIBS) <Build System added refs to msvcrt.lib and friends> $(TARGETLIBS)
@@ -176,6 +169,7 @@ TARGETLIBS = \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-ntuser-window-ext-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-shell-shell32-l1.lib \
     $(MODERNCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-uiacore-l1.lib \
+    $(WINCORE_OBJ_PATH)\console\open\src\host\lib\$(O)\conhostv2.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\buffer\out\lib\$(O)\conbufferout.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\tsf\$(O)\contsf.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\propslib\$(O)\conprops.lib \
