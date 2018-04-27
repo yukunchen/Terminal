@@ -2542,7 +2542,7 @@ HRESULT SCREEN_INFORMATION::VtEraseAll()
         pRow = &_textBuffer->GetNextRowNoWrap(*pRow);
     }
 
-    // When the viewport was already at the bottom, the renderer needs to repaint all the new lines.
+    // Invalidate the entire viewport
     if (ServiceLocator::LocateGlobals().pRender != nullptr)
     {
         ServiceLocator::LocateGlobals().pRender->TriggerRedrawAll();
