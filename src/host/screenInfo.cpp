@@ -2471,22 +2471,39 @@ HRESULT SCREEN_INFORMATION::VtEraseAll()
 {
     const COORD coordLastChar = _textBuffer->GetLastNonSpaceCharacter();
     short sNewTop = coordLastChar.Y + 1;
-    const SMALL_RECT oldViewport = GetBufferViewport();
+    const Viewport oldViewport = _viewport;
+    // Stash away the current position of the cursor within the viewport.
+    // We'll need to restore the cursor to that same relative position, after
+    //      we move the viewport.
+    const COORD oldCursorPos = _textBuffer->GetCursor().GetPosition();
+    COORD relativeCursor = oldCursorPos;
+    oldViewport.ConvertToOrigin(&relativeCursor);
 
     short delta = (sNewTop + GetScreenWindowSizeY()) - (GetScreenBufferSize().Y);
-    bool fRedrawAll = delta > 0;
     for (auto i = 0; i < delta; i++)
     {
         _textBuffer->IncrementCircularBuffer();
         sNewTop--;
     }
 
-    const COORD coordNewCursor = {0, sNewTop};
-    RETURN_IF_FAILED(SetViewportOrigin(TRUE, coordNewCursor));
-    RETURN_IF_FAILED(SetCursorPosition(coordNewCursor, false));
+    const COORD coordNewOrigin = {0, sNewTop};
+    RETURN_IF_FAILED(SetViewportOrigin(TRUE, coordNewOrigin));
+    // Restore the relative cursor position
+    _viewport.ConvertFromOrigin(&relativeCursor);
+    RETURN_IF_FAILED(SetCursorPosition(relativeCursor, false));
 
-    // When the viewport was already at the bottom, the renderer needs to repaint all the new lines.
-    if (fRedrawAll && ServiceLocator::LocateGlobals().pRender != nullptr)
+    // Update all the rows in the current viewport with the currently active attributes.
+    ROW* pRow = &_textBuffer->GetRowByOffset(sNewTop);
+    auto height = _viewport.Height();
+
+    for (int i = 0; i < height; i++)
+    {
+        pRow->GetAttrRow().SetAttrToEnd(0, _Attributes);
+        pRow = &_textBuffer->GetNextRow(*pRow);
+    }
+
+    // Invalidate the entire viewport
+    if (ServiceLocator::LocateGlobals().pRender != nullptr)
     {
         ServiceLocator::LocateGlobals().pRender->TriggerRedrawAll();
     }
