@@ -55,7 +55,7 @@ RenderThread::~RenderThread()
 HRESULT RenderThread::s_CreateInstance(_In_ IRenderer* const pRendererParent, 
                                        _Outptr_ RenderThread** const ppRenderThread)
 {
-    RenderThread* pNewThread = new RenderThread(pRendererParent);
+    RenderThread* pNewThread = new(std::nothrow) RenderThread(pRendererParent);
 
     HRESULT hr = (pNewThread == nullptr) ? E_OUTOFMEMORY : S_OK;
 

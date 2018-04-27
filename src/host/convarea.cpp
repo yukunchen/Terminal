@@ -665,7 +665,7 @@ NTSTATUS ImeControl(_In_ PCOPYDATASTRUCT pCopyDataStruct)
                         delete[] gci.ConsoleIme.CompStrData;
                     }
 
-                    gci.ConsoleIme.CompStrData = (LPCONIME_UICOMPMESSAGE) new BYTE[CompStr->dwSize];
+                    gci.ConsoleIme.CompStrData = (LPCONIME_UICOMPMESSAGE) new(std::nothrow) BYTE[CompStr->dwSize];
                     if (gci.ConsoleIme.CompStrData == nullptr)
                     {
                         break;

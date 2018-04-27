@@ -67,12 +67,13 @@ NTSTATUS Selection::GetSelectionRects(_Outptr_result_buffer_all_(*pcRectangles) 
 
         if (NT_SUCCESS(status))
         {
-            rgsrSelection = new SMALL_RECT[cRectangles];
+            rgsrSelection = new(std::nothrow) SMALL_RECT[cRectangles];
 
             status = NT_TESTNULL(rgsrSelection);
 
             if (NT_SUCCESS(status))
             {
+                ZeroMemory(rgsrSelection, cRectangles * sizeof(SMALL_RECT));
                 bool fLineSelection = IsLineSelection();
 
                 // if the anchor (start of select) was in the top right or bottom left of the box,

@@ -506,12 +506,13 @@ NTSTATUS TranslateOutputToOem(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Size)
     {
         return STATUS_NO_MEMORY;
     }
-    PCHAR_INFO TmpBuffer = (PCHAR_INFO) new BYTE[NumBytes];
+    PCHAR_INFO TmpBuffer = (PCHAR_INFO) new(std::nothrow) BYTE[NumBytes];
     PCHAR_INFO const SaveBuffer = TmpBuffer;
     if (TmpBuffer == nullptr)
     {
         return STATUS_NO_MEMORY;
     }
+    ZeroMemory(TmpBuffer, sizeof(BYTE) * NumBytes);
 
     UINT const Codepage = gci.OutputCP;
 

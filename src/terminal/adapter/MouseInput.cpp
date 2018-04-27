@@ -302,7 +302,7 @@ bool MouseInput::_GenerateDefaultSequence(const COORD coordMousePosition,
         const COORD coordVTCoords = s_WinToVTCoord(coordMousePosition);
         const short sEncodedX = s_EncodeDefaultCoordinate(coordVTCoords.X);
         const short sEncodedY = s_EncodeDefaultCoordinate(coordVTCoords.Y);
-		wchar_t* pwchFormat = new wchar_t[7]{ L"\x1b[Mbxy" };
+        wchar_t* pwchFormat = new(std::nothrow) wchar_t[7]{ L"\x1b[Mbxy" };
         if (pwchFormat != nullptr)
         {
             pwchFormat[3] = ' ' + (short)s_WindowsButtonToXEncoding(uiButton, fIsHover, sModifierKeystate, sWheelDelta);
@@ -361,7 +361,7 @@ bool MouseInput::_GenerateUtf8Sequence(const COORD coordMousePosition,
         const COORD coordVTCoords = s_WinToVTCoord(coordMousePosition);
         const short sEncodedX = s_EncodeDefaultCoordinate(coordVTCoords.X);
         const short sEncodedY = s_EncodeDefaultCoordinate(coordVTCoords.Y);
-		wchar_t* pwchFormat = new wchar_t[7]{ L"\x1b[Mbxy" };
+		wchar_t* pwchFormat = new(std::nothrow) wchar_t[7]{ L"\x1b[Mbxy" };
         if (pwchFormat != nullptr)
         {
             // The short cast is safe because we know s_WindowsButtonToXEncoding  never returns more than xff
@@ -416,7 +416,7 @@ bool MouseInput::_GenerateSGRSequence(const COORD coordMousePosition,
 
 	iNeededChars += 1; // for null
 
-    wchar_t* pwchFormat = new wchar_t[iNeededChars];
+    wchar_t* pwchFormat = new(std::nothrow) wchar_t[iNeededChars];
     if (pwchFormat != nullptr)
     {
         int iTakenChars = _snwprintf_s(pwchFormat, iNeededChars, iNeededChars, L"\x1b[<%d;%d;%d%c",

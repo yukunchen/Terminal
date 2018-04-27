@@ -64,7 +64,7 @@ void SystemConfigurationProvider::GetSettingsFromLink(
         {
             gci.SetLinkTitle(std::wstring(pwszTitle, *pdwTitleLength));
 
-            wchar_t* const linkNameForCsi = new wchar_t[gci.GetLinkTitle().length()+1]{0};
+            wchar_t* const linkNameForCsi = new(std::nothrow) wchar_t[gci.GetLinkTitle().length()+1]{0};
             if (linkNameForCsi)
             {
                 gci.GetLinkTitle().copy(linkNameForCsi, gci.GetLinkTitle().length());

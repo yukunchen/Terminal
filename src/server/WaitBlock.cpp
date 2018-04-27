@@ -76,8 +76,6 @@ ConsoleWaitBlock::~ConsoleWaitBlock()
 HRESULT ConsoleWaitBlock::s_CreateWait(_Inout_ CONSOLE_API_MSG* const pWaitReplyMessage,
                                        _In_ IWaitRoutine* const pWaiter)
 {
-    HRESULT hr = S_OK;
-
     ConsoleProcessHandle* const ProcessData = pWaitReplyMessage->GetProcessHandle();
     assert(ProcessData != nullptr);
 
@@ -97,20 +95,15 @@ HRESULT ConsoleWaitBlock::s_CreateWait(_Inout_ CONSOLE_API_MSG* const pWaitReply
                                           pObjectQueue,
                                           pWaitReplyMessage,
                                           pWaiter);
-
-        THROW_IF_NULL_ALLOC(pWaitBlock);
     }
     catch (...)
     {
-        hr = wil::ResultFromCaughtException();
-    }
-
-    if (FAILED(hr))
-    {
+        const HRESULT hr = wil::ResultFromCaughtException();
         pWaitReplyMessage->SetReplyStatus(NTSTATUS_FROM_HRESULT(hr));
+        return hr;
     }
 
-    return hr;
+    return S_OK;
 }
 
 // Routine Description:

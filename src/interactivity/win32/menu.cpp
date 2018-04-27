@@ -62,7 +62,7 @@ NTSTATUS Menu::CreateInstance(HWND hWnd)
     hHeirMenu = LoadMenuW(ServiceLocator::LocateGlobals().hInstance,
                           MAKEINTRESOURCE(ID_CONSOLE_SYSTEMMENU));
 
-    Menu *pNewMenu = new Menu(hMenu, hHeirMenu);
+    Menu *pNewMenu = new(std::nothrow) Menu(hMenu, hHeirMenu);
     status = NT_TESTNULL(pNewMenu);
 
     if (NT_SUCCESS(status))
@@ -351,7 +351,7 @@ HRESULT Menu::s_GetConsoleState(CONSOLE_STATE_INFO * const pStateInfo)
     // Create mutable copies of the titles so the propsheet can do something with them.
     if (gci.GetOriginalTitle().length() > 0)
     {
-        pStateInfo->OriginalTitle = new wchar_t[gci.GetOriginalTitle().length()+1]{UNICODE_NULL};
+        pStateInfo->OriginalTitle = new(std::nothrow) wchar_t[gci.GetOriginalTitle().length()+1]{UNICODE_NULL};
         RETURN_IF_NULL_ALLOC(pStateInfo->OriginalTitle);
         gci.GetOriginalTitle().copy(pStateInfo->OriginalTitle, gci.GetOriginalTitle().length());
     }
@@ -362,7 +362,7 @@ HRESULT Menu::s_GetConsoleState(CONSOLE_STATE_INFO * const pStateInfo)
 
     if (gci.GetLinkTitle().length() > 0)
     {
-        pStateInfo->LinkTitle = new wchar_t[gci.GetLinkTitle().length()+1]{UNICODE_NULL};
+        pStateInfo->LinkTitle = new(std::nothrow) wchar_t[gci.GetLinkTitle().length()+1]{UNICODE_NULL};
         RETURN_IF_NULL_ALLOC(pStateInfo->LinkTitle);
         gci.GetLinkTitle().copy(pStateInfo->LinkTitle, gci.GetLinkTitle().length());
     }

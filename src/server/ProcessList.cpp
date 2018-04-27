@@ -64,8 +64,6 @@ HRESULT ConsoleProcessList::AllocProcessData(const DWORD dwProcessId,
                                                 dwThreadId,
                                                 ulProcessGroupId);
 
-        RETURN_IF_NULL_ALLOC(pProcessData);
-
         // Some applications, when reading the process list through the GetConsoleProcessList API, are expecting
         // the returned list of attached process IDs to be from newest to oldest.
         // As such, we have to put the newest process into the head of the list.
@@ -265,7 +263,6 @@ HRESULT ConsoleProcessList::GetTerminationRecordsByGroupId(const DWORD dwLimitin
         // From all found matches, convert to C-style array to return
         size_t const cchRetVal = TermRecords.size();
         ConsoleProcessTerminationRecord* pRetVal = new ConsoleProcessTerminationRecord[cchRetVal];
-        RETURN_IF_NULL_ALLOC(pRetVal);
 
         for (size_t i = 0; i < cchRetVal; i++)
         {

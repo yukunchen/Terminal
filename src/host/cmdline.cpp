@@ -165,7 +165,7 @@ NTSTATUS BeginPopup(SCREEN_INFORMATION& screenInfo, _In_ PCOMMAND_HISTORY Comman
     Origin.Y = (SHORT)((screenInfo.GetScreenWindowSizeY() - Size.Y) / 2 + screenInfo.GetBufferViewport().Top);
 
     // allocate a popup structure
-    PCLE_POPUP const Popup = new CLE_POPUP();
+    PCLE_POPUP const Popup = new(std::nothrow) CLE_POPUP();
     if (Popup == nullptr)
     {
         return STATUS_NO_MEMORY;
@@ -174,7 +174,7 @@ NTSTATUS BeginPopup(SCREEN_INFORMATION& screenInfo, _In_ PCOMMAND_HISTORY Comman
     // allocate a buffer
     Popup->OldScreenSize = screenInfo.GetScreenBufferSize();
     const size_t cOldContents = Popup->OldScreenSize.X * Size.Y;
-    Popup->OldContents = new CHAR_INFO[cOldContents];
+    Popup->OldContents = new(std::nothrow) CHAR_INFO[cOldContents];
     if (Popup->OldContents == nullptr)
     {
         delete Popup;
@@ -189,6 +189,13 @@ NTSTATUS BeginPopup(SCREEN_INFORMATION& screenInfo, _In_ PCOMMAND_HISTORY Comman
     Popup->Region.Bottom = (SHORT)(Origin.Y + Size.Y - 1);
     Popup->Attributes = screenInfo.GetPopupAttributes()->GetLegacyAttributes();
     Popup->BottomIndex = COMMAND_INDEX_TO_NUM(CommandHistory->LastDisplayed, CommandHistory);
+    Popup->CurrentCommand = 0;
+    for (size_t i = 0; i < ARRAYSIZE(Popup->NumberBuffer); i++)
+    {
+        Popup->NumberBuffer[i] = 0;
+    }
+    Popup->NumberRead = 0;
+    Popup->PopupInputRoutine = nullptr;
 
     // copy old contents
     SMALL_RECT TargetRect;
@@ -614,7 +621,7 @@ NTSTATUS ProcessCommandListInput(_In_ COOKED_READ_DATA* const pCookedReadData)
                 PCHAR TransBuffer;
 
                 // If ansi, translate string.
-                TransBuffer = (PCHAR) new BYTE[dwNumBytes];
+                TransBuffer = (PCHAR) new(std::nothrow) BYTE[dwNumBytes];
                 if (TransBuffer == nullptr)
                 {
                     return STATUS_NO_MEMORY;
@@ -2031,7 +2038,7 @@ void DrawCommandListPopup(_In_ PCLE_POPUP const Popup,
         {
             PWCHAR TransBuffer;
 
-            TransBuffer = new WCHAR[lStringLength];
+            TransBuffer = new(std::nothrow) WCHAR[lStringLength];
             if (TransBuffer == nullptr)
             {
                 return;

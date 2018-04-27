@@ -306,7 +306,7 @@ int ConvertOutputToUnicode(_In_ UINT uiCodePage,
 
     DBGCHARS(("ConvertOutputToUnicode %d->U %.*s\n", uiCodePage, cchSource > 10 ? 10 : cchSource, pchSource));
 
-    LPSTR const pszT = new CHAR[cchSource];
+    LPSTR const pszT = new(std::nothrow) CHAR[cchSource];
     if (pszT == nullptr)
     {
         return 0;

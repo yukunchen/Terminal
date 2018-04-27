@@ -6,7 +6,6 @@
 
 #include "precomp.h"
 
-#include "newdelete.hpp"
 #include "ConsoleArguments.hpp"
 #include "srvinit.h"
 #include "..\server\Entrypoints.h"
@@ -156,7 +155,6 @@ int CALLBACK wWinMain(
     _In_ PWSTR /*pwszCmdLine*/,
     _In_ int /*nCmdShow*/)
 {
-    EnsureHeap();
     ServiceLocator::LocateGlobals().hInstance = hInstance;
 
     ConsoleCheckDebug();
