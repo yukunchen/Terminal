@@ -39,6 +39,7 @@ DWORD RemoveDbcsMarkCell(_Out_writes_(cch) PCHAR_INFO pciDst, _In_reads_(cch) co
 bool IsDBCSLeadByteConsole(const CHAR ch, const CPINFO * const pCPInfo);
 
 BOOL IsCharFullWidth(_In_ WCHAR wch);
+bool IsGlyphFullWidth(const std::vector<wchar_t>& charData);
 
 BYTE CodePageToCharSet(const UINT uiCodePage);
 

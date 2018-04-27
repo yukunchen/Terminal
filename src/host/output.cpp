@@ -93,11 +93,11 @@ std::vector<std::vector<OutputCell>> ReadRectFromScreenBuffer(const SCREEN_INFOR
         for (size_t colIndex = 0; colIndex < static_cast<size_t>(viewport.Width()); ++colIndex)
         {
             // if we're clipping a dbcs char then don't include it, add a space instead
-            if ((colIndex == 0 && cells[colIndex].GetDbcsAttribute().IsTrailing()) ||
-                (colIndex + 1 >= static_cast<size_t>(viewport.Width()) && cells[colIndex].GetDbcsAttribute().IsLeading()))
+            if ((colIndex == 0 && cells[colIndex].DbcsAttr().IsTrailing()) ||
+                (colIndex + 1 >= static_cast<size_t>(viewport.Width()) && cells[colIndex].DbcsAttr().IsLeading()))
             {
-                cells[colIndex].GetDbcsAttribute().SetSingle();
-                cells[colIndex].GetCharData() = UNICODE_SPACE;
+                cells[colIndex].DbcsAttr().SetSingle();
+                cells[colIndex].Chars() = { UNICODE_SPACE };
             }
         }
         cells.resize(viewport.Width(), cells.front());
@@ -315,8 +315,8 @@ std::vector<WORD> ReadOutputAttributes(const SCREEN_INFORMATION& screenInfo,
         std::vector<OutputCell> cells = screenInfo.ReadLine(currentLocation.Y, currentLocation.X);
         for (const auto& cell : cells)
         {
-            const WORD legacyAttrs = cell.GetTextAttribute().GetLegacyAttributes();
-            const DbcsAttribute dbcsAttr = cell.GetDbcsAttribute();
+            const WORD legacyAttrs = cell.TextAttr().GetLegacyAttributes();
+            const DbcsAttribute dbcsAttr = cell.DbcsAttr();
             const bool firstInRow = (currentLocation == coordRead) || (currentLocation.X == 0);
             const bool lastInRow = (attrs.size() + 1 == amountToRead) || (currentLocation.X + 1 == coordScreenBufferSize.X);
             const bool justLegacyAttrs = (firstInRow && dbcsAttr.IsTrailing()) || (lastInRow && dbcsAttr.IsLeading());
@@ -403,13 +403,13 @@ std::vector<wchar_t> ReadOutputStringW(const SCREEN_INFORMATION& screenInfo,
     // modify ends according to leading/trailing bytes
     if (!dataCells.empty())
     {
-        if (dataCells.front().GetDbcsAttribute().IsTrailing())
+        if (dataCells.front().DbcsAttr().IsTrailing())
         {
-            dataCells.front().GetCharData() = UNICODE_SPACE;
+            dataCells.front().Chars() = { UNICODE_SPACE };
         }
-        if (dataCells.back().GetDbcsAttribute().IsLeading())
+        if (dataCells.back().DbcsAttr().IsLeading())
         {
-            dataCells.back().GetCharData() = UNICODE_SPACE;
+            dataCells.back().Chars() = { UNICODE_SPACE };
         }
     }
 
@@ -417,9 +417,12 @@ std::vector<wchar_t> ReadOutputStringW(const SCREEN_INFORMATION& screenInfo,
     std::vector<wchar_t> outputText;
     for (const auto& cell : dataCells)
     {
-        if (!cell.GetDbcsAttribute().IsTrailing())
+        if (!cell.DbcsAttr().IsTrailing())
         {
-            outputText.push_back(cell.GetCharData());
+            for (const wchar_t wch : cell.Chars())
+            {
+                outputText.push_back(wch);
+            }
         }
     }
 
