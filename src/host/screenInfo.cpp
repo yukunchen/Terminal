@@ -638,8 +638,8 @@ void SCREEN_INFORMATION::ResetTextFlags(const short sStartX,
             try
             {
                 const OutputCell cell = ReadLine(RowIndex, sStartX, 1).at(0);
-                const LONG charAndAttr = MAKELONG(Utf16ToUcs2(cell.GetCharData()),
-                                                  gci.GenerateLegacyAttributes(cell.GetTextAttribute()));
+                const LONG charAndAttr = MAKELONG(Utf16ToUcs2(cell.Chars()),
+                                                  gci.GenerateLegacyAttributes(cell.TextAttr()));
                 _pAccessibilityNotifier->NotifyConsoleUpdateSimpleEvent(MAKELONG(sStartX, sStartY),
                                                                         charAndAttr);
             }
@@ -2611,7 +2611,7 @@ std::pair<COORD, COORD> SCREEN_INFORMATION::GetWordBoundary(const COORD position
     // find the start of the word
     while (start.X > 0)
     {
-        if (IsWordDelim(row.at(start.X - 1).GetCharData()))
+        if (IsWordDelim(row.at(start.X - 1).Chars()))
         {
             break;
         }
@@ -2621,7 +2621,7 @@ std::pair<COORD, COORD> SCREEN_INFORMATION::GetWordBoundary(const COORD position
     // find the end of the word
     while (end.X < screenBufferSize.X)
     {
-        if (IsWordDelim(row.at(end.X).GetCharData()))
+        if (IsWordDelim(row.at(end.X).Chars()))
         {
             break;
         }
@@ -2634,7 +2634,7 @@ std::pair<COORD, COORD> SCREEN_INFORMATION::GetWordBoundary(const COORD position
     {
         // Trim the leading zeros: 000fe12 -> fe12, except 0x and 0n.
         // Useful for debugging
-        const auto& glyph = row.at(start.X + 1).GetCharData();
+        const auto& glyph = row.at(start.X + 1).Chars();
         if (glyph.size() == 1)
         {
             const wchar_t wch = glyph.front();
@@ -2644,8 +2644,8 @@ std::pair<COORD, COORD> SCREEN_INFORMATION::GetWordBoundary(const COORD position
                 wch != L'n')
             {
                 // Don't touch the selection begins with 0x
-                while (row.at(start.X).GetCharData().size() == 1 &&
-                       row.at(start.X).GetCharData().front() == L'0' &&
+                while (row.at(start.X).Chars().size() == 1 &&
+                       row.at(start.X).Chars().front() == L'0' &&
                        start.X < end.X - 1)
                 {
                     start.X++;

@@ -357,9 +357,9 @@ void WriteRectToScreenBuffer(SCREEN_INFORMATION& screenInfo,
         for (size_t iCol = 0; iCol < xSize && it != itEnd; ++iCol, ++it)
         {
             const OutputCell& cell = cells[iRow][iCol];
-            it->first = Utf16ToUcs2(cell.GetCharData());
-            it->second = cell.GetDbcsAttribute();
-            textAttrs.push_back(cell.GetTextAttribute());
+            it->first = Utf16ToUcs2(cell.Chars());
+            it->second = cell.DbcsAttr();
+            textAttrs.push_back(cell.TextAttr());
         }
 
         // pack text attributes into runs and insert into attr row
