@@ -1514,13 +1514,7 @@ bool AdaptDispatch::HardReset()
     // Sets the SGR state to normal.
     if (fSuccess)
     {
-        GraphicsOptions opt = GraphicsOptions::Off;
-        fSuccess = SetGraphicsRendition(&opt, 1); // Normal rendition.
-    }
-
-    if (fSuccess)
-    {
-        fSuccess = DesignateCharset(TermDispatch::VTCharacterSets::USASCII); // Default Charset
+        fSuccess = SoftReset();
     }
 
     return fSuccess;
