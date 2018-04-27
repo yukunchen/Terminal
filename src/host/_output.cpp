@@ -57,33 +57,20 @@ void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
         }
     }
 
-    // copy chars
     try
     {
-        ICharRow& iCharRow = Row.GetCharRow();
-        // we only support ucs2 encoded char rows
-        FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                        "only support UCS2 char rows currently");
-
-        CharRow& charRow = static_cast<CharRow&>(iCharRow);
-        const auto BufferSpan = gsl::make_span(pwchBuffer, cchBuffer);
-        OverwriteColumns(BufferSpan.begin(),
-                         BufferSpan.end(),
-                         pDbcsAttributes,
-                         std::next(charRow.begin(), TargetPoint.X));
+        const TextAttribute defaultTextAttribute = screenInfo.GetAttributes();
+        std::vector<OutputCell> cells;
+        for (size_t i = 0; i < cchBuffer; ++i)
+        {
+            cells.emplace_back(std::vector<wchar_t>{ pwchBuffer[i] }, pDbcsAttributes[i], defaultTextAttribute);
+        }
+        screenInfo.WriteLine(cells, TargetPoint.Y, TargetPoint.X);
     }
     CATCH_LOG();
 
     // caller knows the wrap status as this func is called only for drawing one line at a time
     Row.GetCharRow().SetWrapForced(fWasLineWrapped);
-
-    TextAttributeRun CurrentBufferAttrs;
-    CurrentBufferAttrs.SetLength(cchBuffer);
-    CurrentBufferAttrs.SetAttributes(screenInfo.GetAttributes());
-    LOG_IF_FAILED(Row.GetAttrRow().InsertAttrRuns({ CurrentBufferAttrs },
-                                                  TargetPoint.X,
-                                                  (SHORT)(TargetPoint.X + cchBuffer - 1),
-                                                  coordScreenBufferSize.X));
 
     screenInfo.ResetTextFlags(TargetPoint.X, TargetPoint.Y, TargetPoint.X + cchBuffer - 1, TargetPoint.Y);
 }

@@ -22,9 +22,30 @@ Revision History:
 class TextAttribute final
 {
 public:
-    TextAttribute() noexcept;
-    TextAttribute(const WORD wLegacyAttr) noexcept;
-    TextAttribute(const COLORREF rgbForeground, const COLORREF rgbBackground) noexcept;
+    constexpr TextAttribute() noexcept :
+        _wAttrLegacy{ 0 },
+        _fUseRgbColor{ false },
+        _rgbForeground{ RGB(0, 0, 0) },
+        _rgbBackground{ RGB(0, 0, 0) }
+    {
+    }
+
+    constexpr TextAttribute(const WORD wLegacyAttr) noexcept :
+        _wAttrLegacy{ wLegacyAttr },
+        _fUseRgbColor{ false },
+        _rgbForeground{ RGB(0, 0, 0) },
+        _rgbBackground{ RGB(0, 0, 0) }
+    {
+    }
+
+    constexpr TextAttribute(const COLORREF rgbForeground, const COLORREF rgbBackground) noexcept :
+        _wAttrLegacy{ 0 },
+        _fUseRgbColor{ true },
+        _rgbForeground{ rgbForeground },
+        _rgbBackground{ rgbBackground }
+
+    {
+    }
 
     WORD GetLegacyAttributes() const noexcept;
 
@@ -44,7 +65,7 @@ public:
 
     void SetFromLegacy(const WORD wLegacy) noexcept;
     void SetMetaAttributes(const WORD wMeta) noexcept;
-        
+
     friend bool operator==(const TextAttribute& a, const TextAttribute& b) noexcept;
     friend bool operator!=(const TextAttribute& a, const TextAttribute& b) noexcept;
     friend bool operator==(const TextAttribute& attr, const WORD& legacyAttr) noexcept;

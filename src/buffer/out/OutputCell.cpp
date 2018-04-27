@@ -14,21 +14,36 @@
 #pragma warning(pop)
 
 #include "../../types/inc/convert.hpp"
+#include "../../inc/conattrs.hpp"
 
-OutputCell::OutputCell(const wchar_t charData,
+using namespace Microsoft::Console::Interactivity;
+
+static constexpr TextAttribute InvalidTextAttribute{ INVALID_COLOR, INVALID_COLOR };
+
+OutputCell::OutputCell(const std::vector<wchar_t>& charData,
                        const DbcsAttribute dbcsAttribute,
-                       const TextAttribute textAttribute) noexcept :
+                       const TextAttributeBehavior behavior) :
     _charData{ charData },
     _dbcsAttribute{ dbcsAttribute },
-    _textAttribute{ textAttribute }
-{}
+    _textAttribute{ InvalidTextAttribute },
+    _behavior{ behavior }
+{
+    THROW_HR_IF(E_INVALIDARG, charData.empty());
+    THROW_HR_IF(E_INVALIDARG, behavior == TextAttributeBehavior::Stored);
+    if (behavior == TextAttributeBehavior::Default)
+    {
+        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        _textAttribute = gci.GetActiveOutputBuffer().GetAttributes();
+    }
+}
 
 OutputCell::OutputCell(const std::vector<wchar_t>& charData,
                        const DbcsAttribute dbcsAttribute,
                        const TextAttribute textAttribute) :
     _charData{ charData },
     _dbcsAttribute{ dbcsAttribute },
-    _textAttribute{ textAttribute }
+    _textAttribute{ textAttribute },
+    _behavior{ TextAttributeBehavior::Stored }
 {
     THROW_HR_IF(E_INVALIDARG, charData.empty());
 }
@@ -43,6 +58,10 @@ void OutputCell::swap(_Inout_ OutputCell& other) noexcept
 
 CHAR_INFO OutputCell::ToCharInfo()
 {
+    if (_behavior == TextAttributeBehavior::Current)
+    {
+        throw InvalidCharInfoConversionException();
+    }
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     CHAR_INFO charInfo;
     charInfo.Char.UnicodeChar = Utf16ToUcs2(_charData);
@@ -61,7 +80,8 @@ DbcsAttribute& OutputCell::DbcsAttr() noexcept
     return _dbcsAttribute;
 }
 
-TextAttribute& OutputCell::TextAttr() noexcept
+TextAttribute& OutputCell::TextAttr()
 {
+    THROW_HR_IF(E_INVALIDARG, _behavior == TextAttributeBehavior::Current);
     return _textAttribute;
 }

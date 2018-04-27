@@ -7,6 +7,7 @@
 #include "precomp.h"
 #include "Row.hpp"
 #include "CharRow.hpp"
+#include "../types/inc/convert.hpp"
 
 // Routine Description:
 // - swaps two ROWs
@@ -209,13 +210,40 @@ std::vector<OutputCell> ROW::AsCells(const size_t startIndex, const size_t count
     for (size_t i = 0; i < count; ++i)
     {
         const auto index = startIndex + i;
-        cells.emplace_back(charRow->GetGlyphAt(index), charRow->GetAttribute(index), unpackedAttrs[index]);
+        cells.emplace_back(std::vector<wchar_t>{ charRow->GetGlyphAt(index) }, charRow->GetAttribute(index), unpackedAttrs[index]);
     }
     return cells;
+}
+
+std::vector<OutputCell>::const_iterator ROW::WriteCells(const std::vector<OutputCell>::const_iterator start,
+                                                        const std::vector<OutputCell>::const_iterator end,
+                                                        const size_t index)
+{
+    THROW_HR_IF(E_INVALIDARG, index >= _charRow->size());
+    auto it = start;
+    size_t currentIndex = index;
+    while (it != end && currentIndex < _charRow->size())
+    {
+        static_cast<CharRow&>(*_charRow).GetGlyphAt(currentIndex) = Utf16ToUcs2(it->Chars());
+        _charRow->GetAttribute(currentIndex) = it->DbcsAttr();
+        if (it->TextAttrBehavior() != OutputCell::TextAttributeBehavior::Current)
+        {
+            const TextAttributeRun attrRun{ 1, it->TextAttr() };
+            const std::vector<TextAttributeRun> runs{ attrRun };
+            LOG_IF_FAILED(_attrRow.InsertAttrRuns(runs,
+                                                currentIndex,
+                                                currentIndex,
+                                                _charRow->size()));
+        }
+
+        ++it;
+        ++currentIndex;
+    }
+    return it;
 }
 
 const OutputCell ROW::at(const size_t column) const
 {
     const CharRow* const charRow = static_cast<const CharRow* const>(_charRow.get());
-    return { charRow->GetGlyphAt(column), charRow->GetAttribute(column), _attrRow.GetAttrByColumn(column) };
+    return { { charRow->GetGlyphAt(column) }, charRow->GetAttribute(column), _attrRow.GetAttrByColumn(column) };
 }

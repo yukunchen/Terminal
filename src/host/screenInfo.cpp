@@ -2595,6 +2595,21 @@ std::vector<OutputCell> SCREEN_INFORMATION::ReadLine(const size_t rowIndex,
     return row.AsCells(startIndex, count);
 }
 
+void SCREEN_INFORMATION::WriteLine(const std::vector<OutputCell>& cells,
+                                   const size_t rowIndex,
+                                   const size_t startIndex)
+{
+    ROW* pRow = &_textBuffer->GetRowByOffset(rowIndex);
+    auto it = cells.begin();
+    auto currentColumn = startIndex;
+    while (it != cells.end())
+    {
+        it = pRow->WriteCells(it, cells.end(), currentColumn);
+        pRow = &_textBuffer->GetNextRow(*pRow);
+        currentColumn = 0;
+    }
+}
+
 // Routine Description:
 // - finds the boundaries of the word at the given position on the screen
 // Arguments:

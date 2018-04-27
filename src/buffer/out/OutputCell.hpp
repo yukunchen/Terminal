@@ -18,12 +18,32 @@ Author:
 #include "DbcsAttribute.hpp"
 #include "TextAttribute.hpp"
 
+#include <exception>
+
+class InvalidCharInfoConversionException : public std::exception
+{
+    const char* what() noexcept
+    {
+        return "Cannot convert to CHAR_INFO without exlicit TextAttribute";
+    }
+};
+
+
 class OutputCell final
 {
 public:
-    OutputCell(const wchar_t charData,
+    enum class TextAttributeBehavior
+    {
+        Stored, // use contained text attribute
+        Default, // use default text attribute at time of object instantiation
+        Current, // use text attribute of cell being written to
+    };
+
+
+
+    OutputCell(const std::vector<wchar_t>& charData,
                const DbcsAttribute dbcsAttribute,
-               const TextAttribute textAttribute) noexcept;
+               const TextAttributeBehavior behavior);
 
     OutputCell(const std::vector<wchar_t>& charData,
                const DbcsAttribute dbcsAttribute,
@@ -35,7 +55,7 @@ public:
 
     std::vector<wchar_t>& Chars() noexcept;
     DbcsAttribute& DbcsAttr() noexcept;
-    TextAttribute& TextAttr() noexcept;
+    TextAttribute& TextAttr();
 
     constexpr const std::vector<wchar_t>& Chars() const
     {
@@ -47,13 +67,20 @@ public:
         return _dbcsAttribute;
     }
 
-    constexpr const TextAttribute& TextAttr() const
+    const TextAttribute& TextAttr() const
     {
+        THROW_HR_IF(E_INVALIDARG, _behavior == TextAttributeBehavior::Current);
         return _textAttribute;
+    }
+
+    constexpr TextAttributeBehavior TextAttrBehavior() const
+    {
+        return _behavior;
     }
 
 private:
     std::vector<wchar_t> _charData;
     DbcsAttribute _dbcsAttribute;
     TextAttribute _textAttribute;
+    TextAttributeBehavior _behavior;
 };
