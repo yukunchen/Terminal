@@ -11,6 +11,7 @@
 // C
 #include <cassert>
 #include <cwchar>
+#include <cwctype>
 
 // STL
 
