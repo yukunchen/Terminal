@@ -618,10 +618,10 @@ void SCREEN_INFORMATION::UpdateFont(const FontInfo* const pfiNewFont)
 // to aggregate drawing metadata to determine whether or not to use PolyTextOut.
 // After the Nov 2015 graphics refactor, the metadata drawing flag calculation is no longer necessary.
 // This now only notifies accessibility apps of a change.
-void SCREEN_INFORMATION::ResetTextFlags(const short sStartX,
-                                        const short sStartY,
-                                        const short sEndX,
-                                        const short sEndY)
+void SCREEN_INFORMATION::NotifyAccessibilityEventing(const short sStartX,
+                                                     const short sStartY,
+                                                     const short sEndX,
+                                                     const short sEndY)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
@@ -1714,7 +1714,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeScreenBuffer(const COORD coordNewScreenSize,
         const COORD coordSetScreenBufferSize = GetScreenBufferSize();
         _textBuffer->SetCoordBufferSize(coordSetScreenBufferSize);
 
-        ResetTextFlags(0, 0, (SHORT)(coordSetScreenBufferSize.X - 1), (SHORT)(coordSetScreenBufferSize.Y - 1));
+        NotifyAccessibilityEventing(0, 0, (SHORT)(coordSetScreenBufferSize.X - 1), (SHORT)(coordSetScreenBufferSize.Y - 1));
 
         if ((!ConvScreenInfo))
         {

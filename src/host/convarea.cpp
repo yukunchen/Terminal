@@ -842,5 +842,5 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
         return;
     }
 
-    ScreenInfo.ResetTextFlags(TargetPoint.X, TargetPoint.Y, tempShort, TargetPoint.Y);
+    ScreenInfo.NotifyAccessibilityEventing(TargetPoint.X, TargetPoint.Y, tempShort, TargetPoint.Y);
 }

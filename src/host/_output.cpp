@@ -72,7 +72,7 @@ void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
     // caller knows the wrap status as this func is called only for drawing one line at a time
     Row.GetCharRow().SetWrapForced(fWasLineWrapped);
 
-    screenInfo.ResetTextFlags(TargetPoint.X, TargetPoint.Y, TargetPoint.X + cchBuffer - 1, TargetPoint.Y);
+    screenInfo.NotifyAccessibilityEventing(TargetPoint.X, TargetPoint.Y, TargetPoint.X + cchBuffer - 1, TargetPoint.Y);
 }
 
 // Routine Description:
@@ -232,7 +232,10 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
                 pRow = nullptr;
             }
         }
-        screenInfo.ResetTextFlags(coordDest.X, coordDest.Y, (SHORT)(coordDest.X + XSize - 1), (SHORT)(coordDest.Y + YSize - 1));
+        screenInfo.NotifyAccessibilityEventing(coordDest.X,
+                                               coordDest.Y,
+                                               (SHORT)(coordDest.X + XSize - 1),
+                                               (SHORT)(coordDest.Y + YSize - 1));
 
         // The above part of the code seems ridiculous in terms of complexity. especially the dbcs stuff.
         // So we'll copy the attributes here in a not terrible way.
@@ -805,7 +808,7 @@ NTSTATUS WriteOutputString(SCREEN_INFORMATION& screenInfo,
                     break;
                 }
             }
-            screenInfo.ResetTextFlags(coordWrite.X, coordWrite.Y, X, Y);
+            screenInfo.NotifyAccessibilityEventing(coordWrite.X, coordWrite.Y, X, Y);
 
         }
         catch (...)
@@ -1147,7 +1150,7 @@ NTSTATUS FillOutput(SCREEN_INFORMATION& screenInfo,
             }
         }
 
-        screenInfo.ResetTextFlags(coordWrite.X, coordWrite.Y, X, Y);
+        screenInfo.NotifyAccessibilityEventing(coordWrite.X, coordWrite.Y, X, Y);
     }
     else
     {
@@ -1311,5 +1314,5 @@ void FillRectangle(const CHAR_INFO * const pciFill,
         }
     }
 
-    screenInfo.ResetTextFlags(psrTarget->Left, psrTarget->Top, psrTarget->Right, psrTarget->Bottom);
+    screenInfo.NotifyAccessibilityEventing(psrTarget->Left, psrTarget->Top, psrTarget->Right, psrTarget->Bottom);
 }
