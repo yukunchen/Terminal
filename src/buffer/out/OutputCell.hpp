@@ -25,31 +25,35 @@ public:
                const DbcsAttribute dbcsAttribute,
                const TextAttribute textAttribute) noexcept;
 
+    OutputCell(const std::vector<wchar_t>& charData,
+               const DbcsAttribute dbcsAttribute,
+               const TextAttribute textAttribute);
+
     void swap(_Inout_ OutputCell& other) noexcept;
 
     CHAR_INFO ToCharInfo();
 
-    wchar_t& GetCharData() noexcept;
-    DbcsAttribute& GetDbcsAttribute() noexcept;
-    TextAttribute& GetTextAttribute() noexcept;
+    std::vector<wchar_t>& Chars() noexcept;
+    DbcsAttribute& DbcsAttr() noexcept;
+    TextAttribute& TextAttr() noexcept;
 
-    constexpr const wchar_t& GetCharData() const
+    constexpr const std::vector<wchar_t>& Chars() const
     {
         return _charData;
     }
 
-    constexpr const DbcsAttribute& GetDbcsAttribute() const
+    constexpr const DbcsAttribute& DbcsAttr() const
     {
         return _dbcsAttribute;
     }
 
-    constexpr const TextAttribute& GetTextAttribute() const
+    constexpr const TextAttribute& TextAttr() const
     {
         return _textAttribute;
     }
 
 private:
-    wchar_t _charData;
+    std::vector<wchar_t> _charData;
     DbcsAttribute _dbcsAttribute;
     TextAttribute _textAttribute;
 };

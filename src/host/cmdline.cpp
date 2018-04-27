@@ -126,6 +126,15 @@ bool IsWordDelim(const wchar_t wch)
     return std::find(delimiters.begin(), delimiters.end(), wch) != delimiters.end();
 }
 
+bool IsWordDelim(const std::vector<wchar_t>& charData)
+{
+    if (charData.size() != 1)
+    {
+        return false;
+    }
+    return IsWordDelim(charData.front());
+}
+
 [[nodiscard]]
 NTSTATUS BeginPopup(SCREEN_INFORMATION& screenInfo, _In_ PCOMMAND_HISTORY CommandHistory, _In_ COORD PopupSize)
 {
