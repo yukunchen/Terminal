@@ -868,6 +868,18 @@ HRESULT ApiRoutines::GetConsoleAliasExesWImpl(_Out_writes_to_(cchAliasExesBuffer
 }
 
 // Routine Description:
+// - Trims leading spaces off of a string
+// Arguments:
+// - str - String to trim
+void Alias::s_TrimLeadingSpaces(std::wstring& str)
+{
+    // Erase from the beginning of the string up until the first
+    // character found that is not a space.
+    str.erase(str.begin(),
+              std::find_if(str.begin(), str.end(), [](wchar_t ch) { return !std::iswspace(ch); }));
+}
+
+// Routine Description:
 // - Trims trailing \r\n off of a string
 // Arguments:
 // - str - String to trim
@@ -1186,6 +1198,9 @@ std::wstring Alias::s_MatchAndCopyAlias(const std::wstring& sourceText,
     // Trim trailing \r\n off of sourceCopy if it has one.
     s_TrimTrailingCrLf(sourceCopy);
 
+    // Trim leading spaces off of sourceCopy if it has any.
+    s_TrimLeadingSpaces(sourceCopy);
+
     // Check if we have an EXE in the list that matches the request first.
     auto exeIter = g_aliasData.find(exeName);
     if (exeIter == g_aliasData.end())
@@ -1230,7 +1245,7 @@ std::wstring Alias::s_MatchAndCopyAlias(const std::wstring& sourceText,
 
     // The final text will be the target but with macros replaced.
     std::wstring finalText(target);
-    lineCount = s_ReplaceMacros(finalText, tokens, allParams); 
+    lineCount = s_ReplaceMacros(finalText, tokens, allParams);
 
     return finalText;
 }
@@ -1292,21 +1307,16 @@ void Alias::s_MatchAndCopyAliasLegacy(_In_reads_bytes_(cbSource) PWCHAR pwchSour
 }
 
 #ifdef UNIT_TESTING
-bool Alias::s_TestAddAlias(std::wstring& exe,
+void Alias::s_TestAddAlias(std::wstring& exe,
                            std::wstring& alias,
                            std::wstring& target)
 {
-    try
-    {
-        g_aliasData[exe][alias] = target;
-    }
-    catch (...)
-    {
-        LOG_HR(wil::ResultFromCaughtException());
-        return false;
-    }
+    g_aliasData[exe][alias] = target;
+}
 
-    return true;
+void Alias::s_TestClearAliases()
+{
+    g_aliasData.clear();
 }
 
 #endif
