@@ -1285,7 +1285,7 @@ bool StateMachine::FlushToTerminal()
 // - cch - Count of characters in array
 // Return Value:
 // - <none>
-void StateMachine::ProcessString(_Inout_updates_(cch) wchar_t * const rgwch, const size_t cch)
+void StateMachine::ProcessString(const wchar_t* const rgwch, const size_t cch)
 {
     _pwchCurr = rgwch;
     _pwchSequenceStart = rgwch;
@@ -1353,8 +1353,8 @@ void StateMachine::ProcessString(_Inout_updates_(cch) wchar_t * const rgwch, con
             // Reset our state, and put all but the last char in again.
             ResetState();
             // Chars to flush are [pwchSequenceStart, pwchCurr)
-            wchar_t* pwch = _pwchSequenceStart;
-            for (pwch = _pwchSequenceStart; pwch < _pwchCurr-1; pwch++)
+            const wchar_t* pwch = _pwchSequenceStart;
+            for (; pwch < _pwchCurr-1; pwch++)
             {
                 ProcessCharacter(*pwch);
             }

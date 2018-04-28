@@ -188,9 +188,9 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
 // - This routine does not process tabs and backspace properly.  That code will be implemented as part of the line editing services.
 [[nodiscard]]
 NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
-                          _In_range_(<= , pwchBuffer) PWCHAR const pwchBufferBackupLimit,
-                          _In_ PWCHAR pwchBuffer,
-                          _In_reads_bytes_(*pcb) PWCHAR pwchRealUnicode,
+                          _In_range_(<= , pwchBuffer) const wchar_t* const pwchBufferBackupLimit,
+                          _In_ const wchar_t* pwchBuffer,
+                          _In_reads_bytes_(*pcb) const wchar_t* pwchRealUnicode,
                           _Inout_ PDWORD const pcb,
                           _Out_opt_ PULONG const pcSpaces,
                           const SHORT sOriginalXPosition,
@@ -231,7 +231,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
     *pcb = 0;
     TempNumSpaces = 0;
 
-    PWCHAR lpString = pwchRealUnicode;
+    const wchar_t* lpString = pwchRealUnicode;
 
     const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
 
@@ -512,7 +512,8 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
             {
                 PWCHAR pBuffer = nullptr;
                 WCHAR TmpBuffer[LOCAL_BUFFER_SIZE];
-                PWCHAR Tmp, Tmp2;
+                const wchar_t* Tmp;
+                PWCHAR Tmp2;
                 WCHAR LastChar;
 
                 if (pwchBuffer - pwchBufferBackupLimit > LOCAL_BUFFER_SIZE)
@@ -833,9 +834,9 @@ ExitWriteChars:
 // - This routine does not process tabs and backspace properly.  That code will be implemented as part of the line editing services.
 [[nodiscard]]
 NTSTATUS WriteChars(SCREEN_INFORMATION& screenInfo,
-                    _In_range_(<= , pwchBuffer) PWCHAR const pwchBufferBackupLimit,
-                    _In_ PWCHAR pwchBuffer,
-                    _In_reads_bytes_(*pcb) PWCHAR pwchRealUnicode,
+                    _In_range_(<= , pwchBuffer) const wchar_t* const pwchBufferBackupLimit,
+                    _In_ const wchar_t* pwchBuffer,
+                    _In_reads_bytes_(*pcb) const wchar_t* pwchRealUnicode,
                     _Inout_ PDWORD const pcb,
                     _Out_opt_ PULONG const pcSpaces,
                     const SHORT sOriginalXPosition,

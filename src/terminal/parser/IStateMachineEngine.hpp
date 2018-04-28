@@ -24,10 +24,10 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual bool ActionExecute(const wchar_t wch) = 0;
         virtual bool ActionPrint(const wchar_t wch) = 0;
-        virtual bool ActionPrintString(_Inout_updates_(cch) wchar_t* const rgwch,
+        virtual bool ActionPrintString(const wchar_t* const rgwch,
                                        size_t const cch) = 0;
 
-        virtual bool ActionPassThroughString(_Inout_updates_(cch) wchar_t* const rgwch,
+        virtual bool ActionPassThroughString(const wchar_t* const rgwch,
                                              size_t const cch) = 0;
 
         virtual bool ActionEscDispatch(const wchar_t wch,

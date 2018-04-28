@@ -34,7 +34,7 @@ namespace Microsoft::Console::VirtualTerminal
         void AddSequenceTrace(const wchar_t wch);
         void DispatchSequenceTrace(const bool fSuccess);
         void ClearSequenceTrace();
-        void DispatchPrintRunTrace(_In_reads_(cchString) wchar_t* pwsString, const size_t cchString) const;
+        void DispatchPrintRunTrace(const wchar_t* const pwsString, const size_t cchString) const;
 
     private:
         static const size_t s_cMaxSequenceTrace = 32;

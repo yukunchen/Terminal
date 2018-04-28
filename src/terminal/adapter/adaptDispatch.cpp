@@ -47,17 +47,22 @@ void AdaptDispatch::Print(const wchar_t wchPrintable)
     _pDefaults->Print(_TermOutput.TranslateKey(wchPrintable));
 }
 
-void AdaptDispatch::PrintString(_In_reads_(cch) wchar_t* const rgwch, const size_t cch)
+void AdaptDispatch::PrintString(const wchar_t* const rgwch, const size_t cch)
 {
-    if (_TermOutput.NeedToTranslate())
+    try
     {
-        for (size_t i = 0; i < cch; i++)
+        std::unique_ptr<wchar_t[]> tempArray = std::make_unique<wchar_t[]>(cch);
+        if (_TermOutput.NeedToTranslate())
         {
-            rgwch[i] = _TermOutput.TranslateKey(rgwch[i]);
+            for (size_t i = 0; i < cch; i++)
+            {
+                tempArray[i] = _TermOutput.TranslateKey(rgwch[i]);
+            }
         }
-    }
 
-    _pDefaults->PrintString(rgwch, cch);
+        _pDefaults->PrintString(tempArray.get(), cch);
+    }
+    CATCH_LOG();
 }
 
 // Routine Description:
