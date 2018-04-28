@@ -183,16 +183,30 @@ void ROW::ClearColumn(const size_t column)
     _charRow->ClearCell(column);
 }
 
+// Routine Description:
+// - gets the text of the row as it would be shown on the screen
+// Return Value:
+// - wstring containing text for the row
 std::wstring ROW::GetText() const
 {
     return _charRow->GetText();
 }
 
+// Routine Description:
+// - gets the cell data for the row
+// Return Value:
+// - vector of cell data fo rrow, one object per column
 std::vector<OutputCell> ROW::AsCells() const
 {
     return AsCells(0, size());
 }
 
+// Routine Description:
+// - gets the cell data for the row
+// - Arguments:
+// - startIndex - index to start fetching data from
+// Return Value:
+// - vector of cell data fo rrow, one object per column
 std::vector<OutputCell> ROW::AsCells(const size_t startIndex) const
 {
     return AsCells(startIndex, size() - startIndex);

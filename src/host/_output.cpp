@@ -15,6 +15,7 @@
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/Viewport.hpp"
 #include "../types/inc/convert.hpp"
+#include "../types/inc/Utf16Parser.hpp"
 
 #include <algorithm>
 #include <iterator>
@@ -57,13 +58,34 @@ void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
         }
     }
 
+    // pwchBuffer has already had leading/trailing chars duplicated, we need to dedupe them here
+    // so that the loop below can re-dupe them. this is a temporary measure until the callers of this
+    // function no longer dupe the chars themselves.
+    std::wstring wstr;
+    for (size_t i = 0; i < static_cast<size_t>(cchBuffer); ++i)
+    {
+        if (!pDbcsAttributes[i].IsTrailing())
+        {
+            wstr.push_back(pwchBuffer[i]);
+        }
+    }
+
     try
     {
         const TextAttribute defaultTextAttribute = screenInfo.GetAttributes();
+        const auto formattedCharData = Utf16Parser::Parse(wstr);
+
         std::vector<OutputCell> cells;
-        for (size_t i = 0; i < gsl::narrow<size_t>(cchBuffer); ++i)
+        for (const auto chars : formattedCharData)
         {
-            cells.emplace_back(std::vector<wchar_t>{ pwchBuffer[i] }, pDbcsAttributes[i], defaultTextAttribute);
+            DbcsAttribute dbcsAttr;
+            if (IsGlyphFullWidth(chars))
+            {
+                dbcsAttr.SetLeading();
+                cells.emplace_back(chars, dbcsAttr, defaultTextAttribute);
+                dbcsAttr.SetTrailing();
+            }
+            cells.emplace_back(chars, dbcsAttr, defaultTextAttribute);
         }
         screenInfo.WriteLine(cells, TargetPoint.Y, TargetPoint.X);
     }

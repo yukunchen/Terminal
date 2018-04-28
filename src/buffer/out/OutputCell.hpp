@@ -24,7 +24,7 @@ class InvalidCharInfoConversionException : public std::exception
 {
     const char* what() noexcept
     {
-        return "Cannot convert to CHAR_INFO without exlicit TextAttribute";
+        return "Cannot convert to CHAR_INFO without explicit TextAttribute";
     }
 };
 
