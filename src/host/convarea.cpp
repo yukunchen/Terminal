@@ -734,8 +734,6 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
                                   _Inout_ SCREEN_INFORMATION& ScreenInfo,
                                   _In_reads_(StringLength) DbcsAttribute* const pDbcsAttributes)
 {
-    DBGOUTPUT(("StreamWriteToScreenBuffer\n"));
-
     COORD TargetPoint = ScreenInfo.GetTextBuffer().GetCursor().GetPosition();
 
     ROW& Row = ScreenInfo.GetTextBuffer().GetRowByOffset(TargetPoint.Y);
