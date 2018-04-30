@@ -734,24 +734,20 @@ NTSTATUS ConIoSrvComm::InitializeBgfx()
 
         if (NT_SUCCESS(Status))
         {
-            // Create and set the render engine.
-            BgfxEngine* const pBgfxEngine = new BgfxEngine(GetSharedViewBase(),
-                                                           DisplaySize.bottom / FontSize.Height,
-                                                           DisplaySize.right / FontSize.Width,
-                                                           FontSize.Width,
-                                                           FontSize.Height);
-            Status = NT_TESTNULL(pBgfxEngine);
-
-            if (NT_SUCCESS(Status))
+            try
             {
-                try
-                {
-                    globals.pRender->AddRenderEngine(pBgfxEngine);
-                }
-                catch(...)
-                {
-                    Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-                }
+                // Create and set the render engine.
+                BgfxEngine* const pBgfxEngine = new BgfxEngine(GetSharedViewBase(),
+                                                                DisplaySize.bottom / FontSize.Height,
+                                                                DisplaySize.right / FontSize.Width,
+                                                                FontSize.Width,
+                                                                FontSize.Height);
+
+                globals.pRender->AddRenderEngine(pBgfxEngine);
+            }
+            catch(...)
+            {
+                Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
             }
         }
     }
@@ -762,25 +758,18 @@ NTSTATUS ConIoSrvComm::InitializeBgfx()
 [[nodiscard]]
 NTSTATUS ConIoSrvComm::InitializeWddmCon()
 {
-    NTSTATUS Status;
-
     Globals& globals = ServiceLocator::LocateGlobals();
     assert(globals.pRender != nullptr);
-
-    pWddmConEngine = new WddmConEngine();
-    Status = NT_TESTNULL(pWddmConEngine);
-
-    if (NT_SUCCESS(Status))
+    
+    try
     {
-        try
-        {
-            globals.pRender->AddRenderEngine(pWddmConEngine);
-        }
-        catch(...)
-        {
-            Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-        }
+        pWddmConEngine = new WddmConEngine();
+        globals.pRender->AddRenderEngine(pWddmConEngine);
+    }
+    catch(...)
+    {
+        return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
     }
 
-    return Status;
+    return STATUS_SUCCESS;
 }

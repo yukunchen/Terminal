@@ -34,7 +34,7 @@ DWORD ConsoleInputThreadProcOneCore(LPVOID /*lpParam*/)
         if (NT_SUCCESS(Status) && DisplayMode != CIS_DISPLAY_MODE_NONE)
         {
             // Create and set the console window.
-            ConsoleWindow * const wnd = new ConsoleWindow();
+            ConsoleWindow * const wnd = new(std::nothrow) ConsoleWindow();
             Status = NT_TESTNULL(wnd);
 
             if (NT_SUCCESS(Status))

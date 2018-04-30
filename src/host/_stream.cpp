@@ -506,10 +506,20 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                 wchar_t* Tmp2 = nullptr;
                 WCHAR LastChar;
 
-                std::unique_ptr<wchar_t[]> buffer = std::make_unique<wchar_t[]>(pwchBuffer - pwchBufferBackupLimit);
+                const size_t bufferSize = pwchBuffer - pwchBufferBackupLimit;
+                std::unique_ptr<wchar_t[]> buffer;
+                try
+                {
+                    buffer = std::make_unique<wchar_t[]>(bufferSize);
+                    std::fill_n(buffer.get(), bufferSize, UNICODE_NULL);
+                }
+                catch (...)
+                {
+                    return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+                }
 
                 for (i = 0, Tmp2 = buffer.get(), Tmp = pwchBufferBackupLimit;
-                     i < (ULONG)(pwchBuffer - pwchBufferBackupLimit);
+                     i < (ULONG)(bufferSize);
                      i++, Tmp++)
                 {
                     if (*Tmp == UNICODE_BACKSPACE && Tmp2 > buffer.get())
@@ -1043,8 +1053,9 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject& OutContext,
 
         // (cchTextBufferLength + 2) I think because we might be shoving another unicode char
         // from ScreenInfo->WriteConsoleDbcsLeadByte in front
-        TransBuffer = new WCHAR[cchTextBufferLength + 2];
+        TransBuffer = new(std::nothrow) WCHAR[cchTextBufferLength + 2];
         RETURN_IF_NULL_ALLOC(TransBuffer);
+        ZeroMemory(TransBuffer, sizeof(WCHAR) * (cchTextBufferLength + 2));
 
         TransBufferOriginalLocation = TransBuffer;
 

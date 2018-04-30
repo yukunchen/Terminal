@@ -48,7 +48,7 @@ HRESULT CConversionArea::DrawConversionAreaInfo(CComBSTR CompStr,
 
     DWORD dwSize = sizeof(CONIME_UICOMPMESSAGE) + ((CompStr.Length()+1) * sizeof(WCHAR)) + ((ResultStr.Length()+1) * sizeof(WCHAR)) + (cchDisplayAttribute * sizeof(BYTE));
 
-    lpCompStrMem = (LPCONIME_UICOMPMESSAGE) new BYTE[dwSize];
+    lpCompStrMem = (LPCONIME_UICOMPMESSAGE) new(std::nothrow) BYTE[dwSize];
     if (lpCompStrMem == NULL)
     {
         return E_OUTOFMEMORY;

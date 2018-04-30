@@ -265,7 +265,7 @@ bool TerminalInput::_SearchWithModifier(const KeyEvent& keyEvent) const
         if (SUCCEEDED(StringCchLengthW(pMatchingMapping->pwszSequence, _TermKeyMap::s_cchMaxSequenceLength + 1, &cch)) &&
             cch > 0)
         {
-            wchar_t* rwchModifiedSequence = new wchar_t[cch + 1];
+            wchar_t* rwchModifiedSequence = new(std::nothrow) wchar_t[cch + 1];
             if (rwchModifiedSequence != nullptr)
             {
                 memcpy(rwchModifiedSequence, pMatchingMapping->pwszSequence, cch * sizeof(wchar_t));

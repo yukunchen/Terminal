@@ -102,44 +102,28 @@ NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
 
     ASSERT(NT_SUCCESS(status));
 
-    PSCREEN_INFORMATION const pScreen = new SCREEN_INFORMATION(pMetrics, pNotifier, ciFill, ciPopupFill);
-
-    status = NT_TESTNULL(pScreen);
-    if (NT_SUCCESS(status))
+    try
     {
+        PSCREEN_INFORMATION const pScreen = new SCREEN_INFORMATION(pMetrics, pNotifier, ciFill, ciPopupFill);
+
         pScreen->_InitializeBufferDimensions(coordScreenBufferSize, coordWindowSize);
 
-        try
-        {
-            pScreen->_textBuffer = std::make_unique<TextBuffer>(fontInfo,
-                                                                pScreen->GetScreenBufferSize(),
-                                                                ciFill,
-                                                                uiCursorSize);
-            if (pScreen->_textBuffer.get() == nullptr)
-            {
-                status = STATUS_NO_MEMORY;
-            }
-            else
-            {
-                status = STATUS_SUCCESS;
-            }
-        }
-        catch (...)
-        {
-            status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-        }
+        pScreen->_textBuffer = std::make_unique<TextBuffer>(fontInfo,
+                                                            pScreen->GetScreenBufferSize(),
+                                                            ciFill,
+                                                            uiCursorSize);
+        SetLineChar(*pScreen);
 
+        status = pScreen->_InitializeOutputStateMachine();
+        
         if (NT_SUCCESS(status))
         {
-            SetLineChar(*pScreen);
-
-            status = pScreen->_InitializeOutputStateMachine();
-
-            if (NT_SUCCESS(status))
-            {
-                *ppScreen = pScreen;
-            }
+            *ppScreen = pScreen;
         }
+    }
+    catch (...)
+    {
+        status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
     }
 
     LOG_IF_NTSTATUS_FAILED(status);
@@ -258,66 +242,35 @@ void SCREEN_INFORMATION::s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pSc
 [[nodiscard]]
 NTSTATUS SCREEN_INFORMATION::_InitializeOutputStateMachine()
 {
-    ASSERT(_pConApi == nullptr);
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    NTSTATUS status = STATUS_NO_MEMORY;
     try
     {
+        ASSERT(_pConApi == nullptr);
         _pConApi = new ConhostInternalGetSet(gci);
-        status = NT_TESTNULL(_pConApi);
-
-        if (NT_SUCCESS(status))
-        {
-            ASSERT(_pBufferWriter == nullptr);
-            _pBufferWriter = new WriteBuffer(gci);
-            status = NT_TESTNULL(_pBufferWriter);
-        }
-    }
-    catch (...)
-    {
-        status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-    }
-
-    if (NT_SUCCESS(status))
-    {
+        
+        ASSERT(_pBufferWriter == nullptr);
+        _pBufferWriter = new WriteBuffer(gci);
+        
         ASSERT(_pAdapter == nullptr);
         _pAdapter = new AdaptDispatch(_pConApi, _pBufferWriter, _Attributes.GetLegacyAttributes());
-        if (_pAdapter == nullptr)
-        {
-            status = STATUS_NO_MEMORY;
-        }
-    }
-
-    if (NT_SUCCESS(status))
-    {
-        ASSERT(_pStateMachine == nullptr);
 
         // Note that at this point in the setup, we haven't determined if we're
         //      in VtIo mode or not yet. We'll set the OutputStateMachine's
         //      TerminalConnection later, in VtIo::StartIfNeeded
         _pEngine = std::make_shared<OutputStateMachineEngine>(_pAdapter);
 
-        status = NT_TESTNULL(_pEngine.get());
-        if (NT_SUCCESS(status))
-        {
-            _pStateMachine = new StateMachine(_pEngine);
-            status = NT_TESTNULL(_pStateMachine);
-            if (!NT_SUCCESS(status))
-            {
-                // If we failed to instantiate the StateMachine, but succeeded
-                //      in creating an engine, delete the engine.
-                _pEngine.reset();
-            }
-        }
+        ASSERT(_pStateMachine == nullptr);
+        _pStateMachine = new StateMachine(_pEngine);
     }
-
-    if (!NT_SUCCESS(status))
+    catch (...)
     {
         // if any part of initialization failed, free the allocated ones.
         _FreeOutputStateMachine();
+
+        return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
     }
 
-    return status;
+    return STATUS_SUCCESS;
 }
 
 // If we're an alternate buffer, we want to give the GetSet back to our main
@@ -329,10 +282,13 @@ void SCREEN_INFORMATION::_FreeOutputStateMachine()
         {
             s_RemoveScreenBuffer(_psiAlternateBuffer);
         }
+
         if (_pStateMachine != nullptr)
         {
             delete _pStateMachine;
         }
+
+        _pEngine.reset();
 
         if (_pAdapter != nullptr)
         {
@@ -2161,7 +2117,7 @@ NTSTATUS SCREEN_INFORMATION::AddTabStop(const SHORT sColumn)
     TabStop* prev = _ptsTabs;
     if (prev == nullptr || prev->sColumn > sColumn) //if there is no head, or we should insert at the head
     {
-        _ptsTabs = new TabStop();
+        _ptsTabs = new(std::nothrow) TabStop();
         Status = NT_TESTNULL(_ptsTabs);
         if (NT_SUCCESS(Status))
         {
@@ -2192,7 +2148,7 @@ NTSTATUS SCREEN_INFORMATION::AddTabStop(const SHORT sColumn)
         }
         if (!fSearching) //we broke out by finding the right spot to insert,
         {               // NOT by finding an existing tabstop here.
-            TabStop* ptsNewTabStop = new TabStop();
+            TabStop* ptsNewTabStop = new(std::nothrow) TabStop();
             Status = NT_TESTNULL(ptsNewTabStop);
             if (NT_SUCCESS(Status))
             {
@@ -2515,22 +2471,39 @@ HRESULT SCREEN_INFORMATION::VtEraseAll()
 {
     const COORD coordLastChar = _textBuffer->GetLastNonSpaceCharacter();
     short sNewTop = coordLastChar.Y + 1;
-    const SMALL_RECT oldViewport = GetBufferViewport();
+    const Viewport oldViewport = _viewport;
+    // Stash away the current position of the cursor within the viewport.
+    // We'll need to restore the cursor to that same relative position, after
+    //      we move the viewport.
+    const COORD oldCursorPos = _textBuffer->GetCursor().GetPosition();
+    COORD relativeCursor = oldCursorPos;
+    oldViewport.ConvertToOrigin(&relativeCursor);
 
     short delta = (sNewTop + GetScreenWindowSizeY()) - (GetScreenBufferSize().Y);
-    bool fRedrawAll = delta > 0;
     for (auto i = 0; i < delta; i++)
     {
         _textBuffer->IncrementCircularBuffer();
         sNewTop--;
     }
 
-    const COORD coordNewCursor = {0, sNewTop};
-    RETURN_IF_FAILED(SetViewportOrigin(TRUE, coordNewCursor));
-    RETURN_IF_FAILED(SetCursorPosition(coordNewCursor, false));
+    const COORD coordNewOrigin = {0, sNewTop};
+    RETURN_IF_FAILED(SetViewportOrigin(TRUE, coordNewOrigin));
+    // Restore the relative cursor position
+    _viewport.ConvertFromOrigin(&relativeCursor);
+    RETURN_IF_FAILED(SetCursorPosition(relativeCursor, false));
 
-    // When the viewport was already at the bottom, the renderer needs to repaint all the new lines.
-    if (fRedrawAll && ServiceLocator::LocateGlobals().pRender != nullptr)
+    // Update all the rows in the current viewport with the currently active attributes.
+    ROW* pRow = &_textBuffer->GetRowByOffset(sNewTop);
+    auto height = _viewport.Height();
+
+    for (int i = 0; i < height; i++)
+    {
+        pRow->GetAttrRow().SetAttrToEnd(0, _Attributes);
+        pRow = &_textBuffer->GetNextRow(*pRow);
+    }
+
+    // Invalidate the entire viewport
+    if (ServiceLocator::LocateGlobals().pRender != nullptr)
     {
         ServiceLocator::LocateGlobals().pRender->TriggerRedrawAll();
     }

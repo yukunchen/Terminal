@@ -193,12 +193,12 @@ void Clipboard::StoreSelectionToClipboard()
 
     if (NT_SUCCESS(status))
     {
-        PWCHAR* rgTempRows = new PWCHAR[cRectsSelected];
+        PWCHAR* rgTempRows = new(std::nothrow) PWCHAR[cRectsSelected];
         status = NT_TESTNULL(rgTempRows);
 
         if (NT_SUCCESS(status))
         {
-            size_t* rgTempRowLengths = new size_t[cRectsSelected];
+            size_t* rgTempRowLengths = new(std::nothrow) size_t[cRectsSelected];
             status = NT_TESTNULL(rgTempRowLengths);
 
             if (NT_SUCCESS(status))

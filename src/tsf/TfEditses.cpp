@@ -667,7 +667,7 @@ HRESULT CEditSessionCompositionComplete::CompComplete(TfEditCookie ec)
             return S_OK;
         }
 
-        LPWSTR wstr = new WCHAR[ cch + 1 ];
+        LPWSTR wstr = new(std::nothrow) WCHAR[ cch + 1 ];
         if (!wstr) {
             return E_OUTOFMEMORY;
         }
@@ -907,7 +907,7 @@ HRESULT CEditSessionUpdateCompositionString::_MakeCompositionString(TfEditCookie
     // Allocate TF_DISPLAYATTRIBUTE
     //
     ULONG cchDisplayAttribute = (ULONG) CompGuid.Count();
-    TF_DISPLAYATTRIBUTE* DisplayAttribute = new TF_DISPLAYATTRIBUTE [ cchDisplayAttribute ];
+    TF_DISPLAYATTRIBUTE* DisplayAttribute = new(std::nothrow) TF_DISPLAYATTRIBUTE [ cchDisplayAttribute ];
     if (! DisplayAttribute) {
         return E_OUTOFMEMORY;
     }
@@ -1009,7 +1009,12 @@ HRESULT CEditSessionUpdateCompositionString::_MakeInterimString(TfEditCookie ec,
 
         if (lTextLength > 0) {
 
-            LPWSTR wstr = new WCHAR[ lTextLength + 1 ];
+            LPWSTR wstr = new(std::nothrow) WCHAR[ lTextLength + 1 ];
+
+            if (!wstr)
+            {
+                return E_OUTOFMEMORY;
+            }
 
             //
             // Get the result text, finalize it, and erase the result text.
@@ -1059,7 +1064,7 @@ HRESULT CEditSessionUpdateCompositionString::_MakeInterimString(TfEditCookie ec,
     // Allocate TF_DISPLAYATTRIBUTE
     //
     ULONG cchDisplayAttribute = (ULONG) CompGuid.Count();
-    TF_DISPLAYATTRIBUTE* DisplayAttribute = new TF_DISPLAYATTRIBUTE [ cchDisplayAttribute ];
+    TF_DISPLAYATTRIBUTE* DisplayAttribute = new(std::nothrow) TF_DISPLAYATTRIBUTE [ cchDisplayAttribute ];
     if (! DisplayAttribute) {
         return E_OUTOFMEMORY;
     }
@@ -1125,7 +1130,7 @@ HRESULT CEditSessionUpdateCompositionString::_CreateCategoryAndDisplayAttributeM
     //
     // Create Cicero Category Manager
     //
-    pTmpCat = new CicCategoryMgr;
+    pTmpCat = new(std::nothrow) CicCategoryMgr;
     if (pTmpCat) {
         if (SUCCEEDED(hr = pTmpCat->InitCategoryInstance())) {
 
@@ -1134,7 +1139,7 @@ HRESULT CEditSessionUpdateCompositionString::_CreateCategoryAndDisplayAttributeM
                 //
                 // Create Cicero Display Attribute Manager
                 //
-                pTmpDispAttr = new CicDisplayAttributeMgr;
+                pTmpDispAttr = new(std::nothrow) CicDisplayAttributeMgr;
                 if (pTmpDispAttr) {
                     if (SUCCEEDED(hr = pTmpDispAttr->InitDisplayAttributeInstance(pcat))) {
                         *pCicCatMgr = pTmpCat;

@@ -271,7 +271,7 @@ ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
                             _Out_ std::unique_ptr<IInputEvent>& partialEvent)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    PWCHAR const TmpUni = new WCHAR[cchUnicode];
+    PWCHAR const TmpUni = new(std::nothrow) WCHAR[cchUnicode];
     if (TmpUni == nullptr)
     {
         return 0;

@@ -82,11 +82,6 @@ HRESULT Renderer::s_CreateInstance(_In_ std::unique_ptr<IRenderData> pData,
     try
     {
         pNewRenderer = new Renderer(std::move(pData), rgpEngines, cEngines);
-
-        if (pNewRenderer == nullptr)
-        {
-            hr = E_OUTOFMEMORY;
-        }
     }
     CATCH_RETURN();
 
@@ -745,7 +740,7 @@ void Renderer::_PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEng
         if (cbRequired != 0)
         {
             // Allocate buffer for MultiByte
-            PCHAR psConverted = new CHAR[cbRequired];
+            PCHAR psConverted = new(std::nothrow) CHAR[cbRequired];
 
             if (psConverted != nullptr)
             {
@@ -760,7 +755,7 @@ void Renderer::_PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEng
 
                     if (cchRequired != 0)
                     {
-                        pwsConvert = new WCHAR[cchRequired];
+                        pwsConvert = new(std::nothrow) WCHAR[cchRequired];
 
                         if (pwsConvert != nullptr)
                         {

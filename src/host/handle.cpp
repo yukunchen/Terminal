@@ -64,10 +64,6 @@ NTSTATUS CONSOLE_INFORMATION::AllocateConsole(_In_reads_bytes_(cbTitle) const WC
     try
     {
         gci.pInputBuffer = new InputBuffer();
-        if (gci.pInputBuffer == nullptr)
-        {
-            return STATUS_NO_MEMORY;
-        }
     }
     catch(...)
     {

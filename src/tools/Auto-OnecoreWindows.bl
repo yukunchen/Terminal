@@ -1,4 +1,0 @@
-export const projects = [
-    f`nihilist/autogen.bp`,
-    f`vtapp/autogen.bp`,
-];

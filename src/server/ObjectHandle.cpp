@@ -28,7 +28,6 @@ ConsoleHandleData::ConsoleHandleData(const ULONG ulHandleType,
     if (_IsInput())
     {
         _pClientInput = new INPUT_READ_HANDLE_DATA();
-        THROW_IF_NULL_ALLOC(_pClientInput);
     }
 }
 
