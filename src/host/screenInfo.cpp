@@ -2569,17 +2569,37 @@ void SCREEN_INFORMATION::SetTerminalConnection(_In_ ITerminalOutputConnection* c
                                     std::bind(&StateMachine::FlushToTerminal, _pStateMachine));
 }
 
+// Routine Description:
+// - Reads text from the output buffer. will contain text as it would look at the terminal (no duplicate wide chars)
+// Arguments:
+// - rowIndex - the index of the row to read the text for
+// Return Value:
+// - wstring containing row's text
 std::wstring SCREEN_INFORMATION::ReadText(const size_t rowIndex) const
 {
     const ROW& row = _textBuffer->GetRowByOffset(rowIndex);
     return row.GetText();
 }
 
+// Routine Description:
+// - Reads cells from the output buffer.
+// Arguments:
+// - rowIndex - the index of the row to read the text for
+// Return Value:
+// - vector of cells containing row's data.
 std::vector<OutputCell> SCREEN_INFORMATION::ReadLine(const size_t rowIndex) const
 {
     const ROW& row = _textBuffer->GetRowByOffset(rowIndex);
     return row.AsCells();
 }
+
+// Routine Description:
+// - Reads cells from the output buffer.
+// Arguments:
+// - rowIndex - the index of the row to read the text for
+// - startIndex - column in the row to start reading cells from
+// Return Value:
+// - vector of cells containing row's data.
 std::vector<OutputCell> SCREEN_INFORMATION::ReadLine(const size_t rowIndex,
                                                      const size_t startIndex) const
 {
@@ -2587,6 +2607,14 @@ std::vector<OutputCell> SCREEN_INFORMATION::ReadLine(const size_t rowIndex,
     return row.AsCells(startIndex);
 }
 
+// Routine Description:
+// - Reads cells from the output buffer.
+// Arguments:
+// - rowIndex - the index of the row to read the text for
+// - startIndex - column in the row to start reading cells from
+// - count - the number of cells to read
+// Return Value:
+// - vector of cells containing row's data.
 std::vector<OutputCell> SCREEN_INFORMATION::ReadLine(const size_t rowIndex,
                                                      const size_t startIndex,
                                                      const size_t count) const
@@ -2595,6 +2623,14 @@ std::vector<OutputCell> SCREEN_INFORMATION::ReadLine(const size_t rowIndex,
     return row.AsCells(startIndex, count);
 }
 
+// Routine Description:
+// - writes cells to the output buffer.
+// Arguments:
+// - cells - the cells to write to the output buffer
+// - rowIndex - the index of the row to write the text to
+// - startIndex - column in the row to start writing cells to
+// Return Value:
+// - none
 void SCREEN_INFORMATION::WriteLine(const std::vector<OutputCell>& cells,
                                    const size_t rowIndex,
                                    const size_t startIndex)

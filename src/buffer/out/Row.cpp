@@ -203,7 +203,7 @@ std::vector<OutputCell> ROW::AsCells() const
 
 // Routine Description:
 // - gets the cell data for the row
-// - Arguments:
+// Arguments:
 // - startIndex - index to start fetching data from
 // Return Value:
 // - vector of cell data for row, one object per column
@@ -214,7 +214,7 @@ std::vector<OutputCell> ROW::AsCells(const size_t startIndex) const
 
 // Routine Description:
 // - gets the cell data for the row
-// - Arguments:
+// Arguments:
 // - startIndex - index to start fetching data from
 // - count - the number of cells to grab
 // Return Value:
@@ -238,7 +238,7 @@ std::vector<OutputCell> ROW::AsCells(const size_t startIndex, const size_t count
 
 // Routine Description:
 // - writes cell data to the row
-// - Arguments:
+// Arguments:
 // - start - starting iterator to cells to write
 // - end - ending iterator to cell sto write
 // - index - column in row to start writing at
