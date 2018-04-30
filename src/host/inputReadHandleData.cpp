@@ -8,7 +8,11 @@
 
 #include "inputReadHandleData.h"
 
-INPUT_READ_HANDLE_DATA::INPUT_READ_HANDLE_DATA()
+INPUT_READ_HANDLE_DATA::INPUT_READ_HANDLE_DATA() :
+    BytesAvailable(0),
+    CurrentBufPtr(nullptr),
+    BufPtr(nullptr),
+    InputHandleFlags(static_cast<HandleFlags>(0))
 {
     InitializeCriticalSection(&_csReadCountLock);
 }
