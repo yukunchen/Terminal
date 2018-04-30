@@ -51,16 +51,20 @@ void AdaptDispatch::PrintString(const wchar_t* const rgwch, const size_t cch)
 {
     try
     {
-        std::unique_ptr<wchar_t[]> tempArray = std::make_unique<wchar_t[]>(cch);
         if (_TermOutput.NeedToTranslate())
         {
+            std::unique_ptr<wchar_t[]> tempArray = std::make_unique<wchar_t[]>(cch);
             for (size_t i = 0; i < cch; i++)
             {
                 tempArray[i] = _TermOutput.TranslateKey(rgwch[i]);
             }
+            _pDefaults->PrintString(tempArray.get(), cch);
+        }
+        else
+        {
+            _pDefaults->PrintString(rgwch, cch);
         }
 
-        _pDefaults->PrintString(tempArray.get(), cch);
     }
     CATCH_LOG();
 }
