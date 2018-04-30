@@ -61,8 +61,8 @@ public:
     std::wstring GetTextRaw() const;
 
     // working with glyphs
-    const glyph_type& GetGlyphAt(const size_t column) const;
-    glyph_type& GetGlyphAt(const size_t column);
+    const glyph_type& GlyphAt(const size_t column) const;
+    glyph_type& GlyphAt(const size_t column);
 
     // iterators
     iterator begin() noexcept;

@@ -467,7 +467,7 @@ bool TextBuffer::InsertCharacter(const wchar_t wch,
 
         try
         {
-            charRow.GetGlyphAt(iCol) = wch;
+            charRow.GlyphAt(iCol) = wch;
             charRow.DbcsAttrAt(iCol) = dbcsAttribute;
         }
         catch (...)

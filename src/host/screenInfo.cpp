@@ -1496,7 +1496,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
                                 "only support UCS2 char rows currently");
 
                 const CharRow& charRow = static_cast<const CharRow&>(iCharRow);
-                wchChar = charRow.GetGlyphAt(iOldCol);
+                wchChar = charRow.GlyphAt(iOldCol);
                 bKAttr = charRow.DbcsAttrAt(iOldCol);
             }
             catch (...)

@@ -278,7 +278,7 @@ void CharRow::ClearGlyph(const size_t column)
 // Return Value:
 // - text data at column
 // - Note: will throw exception if column is out of bounds
-const CharRow::glyph_type& CharRow::GetGlyphAt(const size_t column) const
+const CharRow::glyph_type& CharRow::GlyphAt(const size_t column) const
 {
     return _data.at(column).first;
 }
@@ -290,9 +290,9 @@ const CharRow::glyph_type& CharRow::GetGlyphAt(const size_t column) const
 // Return Value:
 // - text data at column
 // - Note: will throw exception if column is out of bounds
-CharRow::glyph_type& CharRow::GetGlyphAt(const size_t column)
+CharRow::glyph_type& CharRow::GlyphAt(const size_t column)
 {
-    return const_cast<glyph_type&>(static_cast<const CharRow* const>(this)->GetGlyphAt(column));
+    return const_cast<glyph_type&>(static_cast<const CharRow* const>(this)->GlyphAt(column));
 }
 
 // Routine Description:
