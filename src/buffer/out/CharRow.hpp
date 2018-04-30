@@ -51,8 +51,8 @@ public:
     size_t MeasureRight() const noexcept override;
     void ClearCell(const size_t column) override;
     bool ContainsText() const noexcept override;
-    const DbcsAttribute& GetAttribute(const size_t column) const override;
-    DbcsAttribute& GetAttribute(const size_t column) override;
+    const DbcsAttribute& DbcsAttrAt(const size_t column) const override;
+    DbcsAttribute& DbcsAttrAt(const size_t column) override;
     void ClearGlyph(const size_t column) override;
     std::wstring GetText() const override;
     ICharRow::SupportedEncoding GetSupportedEncoding() const noexcept override;

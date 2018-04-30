@@ -43,7 +43,6 @@ public:
         _fUseRgbColor{ true },
         _rgbForeground{ rgbForeground },
         _rgbBackground{ rgbBackground }
-
     {
     }
 

@@ -1497,7 +1497,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
 
                 const CharRow& charRow = static_cast<const CharRow&>(iCharRow);
                 wchChar = charRow.GetGlyphAt(iOldCol);
-                bKAttr = charRow.GetAttribute(iOldCol);
+                bKAttr = charRow.DbcsAttrAt(iOldCol);
             }
             catch (...)
             {

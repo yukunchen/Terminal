@@ -242,7 +242,7 @@ bool CharRow::ContainsText() const noexcept
 // Return Value:
 // - the attribute
 // Note: will throw exception if column is out of bounds
-const DbcsAttribute& CharRow::GetAttribute(const size_t column) const
+const DbcsAttribute& CharRow::DbcsAttrAt(const size_t column) const
 {
     return _data.at(column).second;
 }
@@ -254,9 +254,9 @@ const DbcsAttribute& CharRow::GetAttribute(const size_t column) const
 // Return Value:
 // - the attribute
 // Note: will throw exception if column is out of bounds
-DbcsAttribute& CharRow::GetAttribute(const size_t column)
+DbcsAttribute& CharRow::DbcsAttrAt(const size_t column)
 {
-    return const_cast<DbcsAttribute&>(static_cast<const CharRow* const>(this)->GetAttribute(column));
+    return const_cast<DbcsAttribute&>(static_cast<const CharRow* const>(this)->DbcsAttrAt(column));
 }
 
 // Routine Description:

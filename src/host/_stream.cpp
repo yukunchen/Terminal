@@ -733,7 +733,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
 
                 try
                 {
-                    if (iCharRow.GetAttribute(TargetPoint.X).IsTrailing())
+                    if (iCharRow.DbcsAttrAt(TargetPoint.X).IsTrailing())
                     {
                         iCharRow.ClearCell(TargetPoint.X);
                         iCharRow.ClearCell(TargetPoint.X - 1);

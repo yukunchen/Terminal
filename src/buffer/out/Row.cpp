@@ -224,7 +224,7 @@ std::vector<OutputCell> ROW::AsCells(const size_t startIndex, const size_t count
     for (size_t i = 0; i < count; ++i)
     {
         const auto index = startIndex + i;
-        cells.emplace_back(std::vector<wchar_t>{ charRow->GetGlyphAt(index) }, charRow->GetAttribute(index), unpackedAttrs[index]);
+        cells.emplace_back(std::vector<wchar_t>{ charRow->GetGlyphAt(index) }, charRow->DbcsAttrAt(index), unpackedAttrs[index]);
     }
     return cells;
 }
@@ -239,7 +239,7 @@ std::vector<OutputCell>::const_iterator ROW::WriteCells(const std::vector<Output
     while (it != end && currentIndex < _charRow->size())
     {
         static_cast<CharRow&>(*_charRow).GetGlyphAt(currentIndex) = Utf16ToUcs2(it->Chars());
-        _charRow->GetAttribute(currentIndex) = it->DbcsAttr();
+        _charRow->DbcsAttrAt(currentIndex) = it->DbcsAttr();
         if (it->TextAttrBehavior() != OutputCell::TextAttributeBehavior::Current)
         {
             const TextAttributeRun attrRun{ 1, it->TextAttr() };
@@ -259,5 +259,5 @@ std::vector<OutputCell>::const_iterator ROW::WriteCells(const std::vector<Output
 const OutputCell ROW::at(const size_t column) const
 {
     const CharRow* const charRow = static_cast<const CharRow* const>(_charRow.get());
-    return { { charRow->GetGlyphAt(column) }, charRow->GetAttribute(column), _attrRow.GetAttrByColumn(column) };
+    return { { charRow->GetGlyphAt(column) }, charRow->DbcsAttrAt(column), _attrRow.GetAttrByColumn(column) };
 }

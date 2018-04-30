@@ -377,7 +377,7 @@ void TextBufferTests::TestInsertCharacter()
     const CharRow& charRow = static_cast<const CharRow&>(iCharRow);
     // ensure that the buffer didn't start with these fields
     VERIFY_ARE_NOT_EQUAL(charRow.GetGlyphAt(coordCursorBefore.X), wchTest);
-    VERIFY_ARE_NOT_EQUAL(charRow.GetAttribute(coordCursorBefore.X), dbcsAttribute);
+    VERIFY_ARE_NOT_EQUAL(charRow.DbcsAttrAt(coordCursorBefore.X), dbcsAttribute);
 
     auto attr = Row.GetAttrRow().GetAttrByColumn(coordCursorBefore.X);
 
@@ -388,7 +388,7 @@ void TextBufferTests::TestInsertCharacter()
 
     // ensure that the buffer position where the cursor WAS contains the test items
     VERIFY_ARE_EQUAL(charRow.GetGlyphAt(coordCursorBefore.X), wchTest);
-    VERIFY_ARE_EQUAL(charRow.GetAttribute(coordCursorBefore.X), dbcsAttribute);
+    VERIFY_ARE_EQUAL(charRow.DbcsAttrAt(coordCursorBefore.X), dbcsAttribute);
 
     attr = Row.GetAttrRow().GetAttrByColumn(coordCursorBefore.X);
     VERIFY_ARE_EQUAL(attr, TestAttributes);

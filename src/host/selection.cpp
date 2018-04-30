@@ -214,7 +214,7 @@ SMALL_RECT Selection::s_BisectSelection(const short sStringLength,
     try
     {
         const ROW& row = textBuffer.GetRowByOffset(coordTargetPoint.Y);
-        if (row.GetCharRow().GetAttribute(coordTargetPoint.X).IsTrailing())
+        if (row.GetCharRow().DbcsAttrAt(coordTargetPoint.X).IsTrailing())
         {
             if (coordTargetPoint.X == 0)
             {
@@ -229,7 +229,7 @@ SMALL_RECT Selection::s_BisectSelection(const short sStringLength,
         // Check end position of strings
         if (coordTargetPoint.X + sStringLength < screenInfo.GetScreenBufferSize().X)
         {
-            if (row.GetCharRow().GetAttribute(coordTargetPoint.X + sStringLength).IsTrailing())
+            if (row.GetCharRow().DbcsAttrAt(coordTargetPoint.X + sStringLength).IsTrailing())
             {
                 outRect.Right++;
             }
@@ -237,7 +237,7 @@ SMALL_RECT Selection::s_BisectSelection(const short sStringLength,
         else
         {
             const ROW& rowNext = textBuffer.GetNextRowNoWrap(row);
-            if (rowNext.GetCharRow().GetAttribute(0).IsTrailing())
+            if (rowNext.GetCharRow().DbcsAttrAt(0).IsTrailing())
             {
                 outRect.Right--;
             }
