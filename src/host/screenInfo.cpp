@@ -115,7 +115,7 @@ NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
         SetLineChar(*pScreen);
 
         status = pScreen->_InitializeOutputStateMachine();
-
+        
         if (NT_SUCCESS(status))
         {
             *ppScreen = pScreen;
