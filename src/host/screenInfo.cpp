@@ -2605,6 +2605,7 @@ void SCREEN_INFORMATION::WriteLine(const std::vector<OutputCell>& cells,
     while (it != cells.end())
     {
         it = pRow->WriteCells(it, cells.end(), currentColumn);
+        pRow->GetCharRow().SetWrapForced(it != cells.end());
         pRow = &_textBuffer->GetNextRow(*pRow);
         currentColumn = 0;
     }
