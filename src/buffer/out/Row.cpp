@@ -195,7 +195,7 @@ std::wstring ROW::GetText() const
 // Routine Description:
 // - gets the cell data for the row
 // Return Value:
-// - vector of cell data fo rrow, one object per column
+// - vector of cell data for row, one object per column
 std::vector<OutputCell> ROW::AsCells() const
 {
     return AsCells(0, size());
@@ -206,12 +206,19 @@ std::vector<OutputCell> ROW::AsCells() const
 // - Arguments:
 // - startIndex - index to start fetching data from
 // Return Value:
-// - vector of cell data fo rrow, one object per column
+// - vector of cell data for row, one object per column
 std::vector<OutputCell> ROW::AsCells(const size_t startIndex) const
 {
     return AsCells(startIndex, size() - startIndex);
 }
 
+// Routine Description:
+// - gets the cell data for the row
+// - Arguments:
+// - startIndex - index to start fetching data from
+// - count - the number of cells to grab
+// Return Value:
+// - vector of cell data for row, one object per column
 std::vector<OutputCell> ROW::AsCells(const size_t startIndex, const size_t count) const
 {
     std::vector<OutputCell> cells;
@@ -229,6 +236,15 @@ std::vector<OutputCell> ROW::AsCells(const size_t startIndex, const size_t count
     return cells;
 }
 
+// Routine Description:
+// - writes cell data to the row
+// - Arguments:
+// - start - starting iterator to cells to write
+// - end - ending iterator to cell sto write
+// - index - column in row to start writing at
+// Return Value:
+// - iterator to first cell that was not written to this row. will be equal to end if all cells were written
+// to row
 std::vector<OutputCell>::const_iterator ROW::WriteCells(const std::vector<OutputCell>::const_iterator start,
                                                         const std::vector<OutputCell>::const_iterator end,
                                                         const size_t index)
@@ -245,9 +261,9 @@ std::vector<OutputCell>::const_iterator ROW::WriteCells(const std::vector<Output
             const TextAttributeRun attrRun{ 1, it->TextAttr() };
             const std::vector<TextAttributeRun> runs{ attrRun };
             LOG_IF_FAILED(_attrRow.InsertAttrRuns(runs,
-                                                currentIndex,
-                                                currentIndex,
-                                                _charRow->size()));
+                                                  currentIndex,
+                                                  currentIndex,
+                                                  _charRow->size()));
         }
 
         ++it;
