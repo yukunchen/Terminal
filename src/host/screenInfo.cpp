@@ -115,7 +115,7 @@ NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
         SetLineChar(*pScreen);
 
         status = pScreen->_InitializeOutputStateMachine();
-        
+
         if (NT_SUCCESS(status))
         {
             *ppScreen = pScreen;
@@ -247,10 +247,10 @@ NTSTATUS SCREEN_INFORMATION::_InitializeOutputStateMachine()
     {
         ASSERT(_pConApi == nullptr);
         _pConApi = new ConhostInternalGetSet(gci);
-        
+
         ASSERT(_pBufferWriter == nullptr);
         _pBufferWriter = new WriteBuffer(gci);
-        
+
         ASSERT(_pAdapter == nullptr);
         _pAdapter = new AdaptDispatch(_pConApi, _pBufferWriter, _Attributes.GetLegacyAttributes());
 
@@ -1442,38 +1442,25 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
         // character)
         for (short iOldCol = 0; iOldCol < iRight; iOldCol++)
         {
-            // Retrieve old character and double-byte attributes
-            WCHAR wchChar;
-            DbcsAttribute bKAttr;
-            try
-            {
-                // we only support ucs2 encoded char rows
-                FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                                "only support UCS2 char rows currently");
-
-                const CharRow& charRow = static_cast<const CharRow&>(iCharRow);
-                wchChar = charRow.GetGlyphAt(iOldCol);
-                bKAttr = charRow.GetAttribute(iOldCol);
-            }
-            catch (...)
-            {
-                return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-            }
-
-            // Extract the color attribute that applies to this character
-            const auto attr = Row.GetAttrRow().GetAttrByColumn(iOldCol);
-
             if (iOldCol == cOldCursorPos.X && iOldRow == cOldCursorPos.Y)
             {
                 cNewCursorPos = newCursor.GetPosition();
                 fFoundCursorPos = true;
             }
 
-            // Insert it into the new buffer
-            if (!newTextBuffer->InsertCharacter(wchChar, bKAttr, attr))
+            try
             {
-                status = STATUS_NO_MEMORY;
-                break;
+                // Insert it into the new buffer
+                const OutputCell cell = Row.AsCells(iOldCol, 1).front();
+                if (!newTextBuffer->InsertCharacter(cell.Chars(), cell.DbcsAttr(), cell.TextAttr()))
+                {
+                    status = STATUS_NO_MEMORY;
+                    break;
+                }
+            }
+            catch (...)
+            {
+                return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
             }
         }
         if (NT_SUCCESS(status))

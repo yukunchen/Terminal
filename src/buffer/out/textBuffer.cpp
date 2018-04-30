@@ -14,6 +14,8 @@
 #include "../interactivity/inc/ServiceLocator.hpp"
 #pragma warning(pop)
 
+#include "../types/inc/convert.hpp"
+
 #pragma hdrstop
 
 
@@ -440,7 +442,7 @@ bool TextBuffer::_PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute
 //Return Value:
 // - true if we successfully inserted the character
 // - false otherwise (out of memory)
-bool TextBuffer::InsertCharacter(const wchar_t wch,
+bool TextBuffer::InsertCharacter(const std::vector<wchar_t> chars,
                                  const DbcsAttribute dbcsAttribute,
                                  const TextAttribute attr)
 {
@@ -458,16 +460,12 @@ bool TextBuffer::InsertCharacter(const wchar_t wch,
 
         // Store character and double byte data
         ICharRow& iCharRow = Row.GetCharRow();
-        // we only support ucs2 encoded char rows
-        FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                        "only support UCS2 char rows currently");
-
         CharRow& charRow = static_cast<CharRow&>(iCharRow);;
         short const cBufferWidth = _coordBufferSize.X;
 
         try
         {
-            charRow.GetGlyphAt(iCol) = wch;
+            charRow.GetGlyphAt(iCol) = Utf16ToUcs2(chars);
             charRow.GetAttribute(iCol) = dbcsAttribute;
         }
         catch (...)
@@ -485,6 +483,11 @@ bool TextBuffer::InsertCharacter(const wchar_t wch,
         }
     }
     return fSuccess;
+}
+
+bool TextBuffer::InsertCharacter(const wchar_t wch, const DbcsAttribute dbcsAttribute, const TextAttribute attr)
+{
+    return InsertCharacter(std::vector<wchar_t>{ wch }, dbcsAttribute, attr);
 }
 
 //Routine Description:
