@@ -1,4 +1,0 @@
-export const projects = [
-    f`lib/autogen.bp`,
-    f`ut_adapter/autogen.bp`,
-];

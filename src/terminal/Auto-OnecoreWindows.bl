@@ -1,4 +1,0 @@
-export const projects = [
-    ...importFile(f`adapter/Auto-OnecoreWindows.bl`).projects,
-    ...importFile(f`parser/Auto-OnecoreWindows.bl`).projects,
-];
