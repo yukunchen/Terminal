@@ -59,7 +59,7 @@ HRESULT CicDisplayAttributeMgr::GetDisplayAttributeTrackPropertyRange(TfEditCook
         //
         // TrackProperties wants an array of GUID *'s
         //
-        ppguidProp = (const GUID **) new GUID* [ulNumProp];
+        ppguidProp = (const GUID **) new(std::nothrow) GUID* [ulNumProp];
         if (ppguidProp == NULL) {
             hr = E_OUTOFMEMORY;
         }
