@@ -198,7 +198,7 @@ bool InputStateMachineEngine::ActionPrint(const wchar_t wch)
 // - cch - length of rgwch
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool InputStateMachineEngine::ActionPrintString(_Inout_updates_(cch) wchar_t* const rgwch,
+bool InputStateMachineEngine::ActionPrintString(const wchar_t* const rgwch,
                                                 const size_t cch)
 {
     if (cch == 0)
@@ -217,7 +217,7 @@ bool InputStateMachineEngine::ActionPrintString(_Inout_updates_(cch) wchar_t* co
 // - cch - length of rgwch
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool InputStateMachineEngine::ActionPassThroughString(_Inout_updates_(cch) wchar_t* const rgwch,
+bool InputStateMachineEngine::ActionPassThroughString(const wchar_t* const rgwch,
                                                       _In_ size_t const cch)
 {
     return ActionPrintString(rgwch, cch);

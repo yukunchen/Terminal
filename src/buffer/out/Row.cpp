@@ -7,6 +7,7 @@
 #include "precomp.h"
 #include "Row.hpp"
 #include "CharRow.hpp"
+#include "../types/inc/convert.hpp"
 
 // Routine Description:
 // - swaps two ROWs
@@ -182,21 +183,42 @@ void ROW::ClearColumn(const size_t column)
     _charRow->ClearCell(column);
 }
 
+// Routine Description:
+// - gets the text of the row as it would be shown on the screen
+// Return Value:
+// - wstring containing text for the row
 std::wstring ROW::GetText() const
 {
     return _charRow->GetText();
 }
 
+// Routine Description:
+// - gets the cell data for the row
+// Return Value:
+// - vector of cell data for row, one object per column
 std::vector<OutputCell> ROW::AsCells() const
 {
     return AsCells(0, size());
 }
 
+// Routine Description:
+// - gets the cell data for the row
+// Arguments:
+// - startIndex - index to start fetching data from
+// Return Value:
+// - vector of cell data for row, one object per column
 std::vector<OutputCell> ROW::AsCells(const size_t startIndex) const
 {
     return AsCells(startIndex, size() - startIndex);
 }
 
+// Routine Description:
+// - gets the cell data for the row
+// Arguments:
+// - startIndex - index to start fetching data from
+// - count - the number of cells to grab
+// Return Value:
+// - vector of cell data for row, one object per column
 std::vector<OutputCell> ROW::AsCells(const size_t startIndex, const size_t count) const
 {
     std::vector<OutputCell> cells;
@@ -209,13 +231,49 @@ std::vector<OutputCell> ROW::AsCells(const size_t startIndex, const size_t count
     for (size_t i = 0; i < count; ++i)
     {
         const auto index = startIndex + i;
-        cells.emplace_back(charRow->GetGlyphAt(index), charRow->GetAttribute(index), unpackedAttrs[index]);
+        cells.emplace_back(std::vector<wchar_t>{ charRow->GlyphAt(index) }, charRow->DbcsAttrAt(index), unpackedAttrs[index]);
     }
     return cells;
+}
+
+// Routine Description:
+// - writes cell data to the row
+// Arguments:
+// - start - starting iterator to cells to write
+// - end - ending iterator to cell sto write
+// - index - column in row to start writing at
+// Return Value:
+// - iterator to first cell that was not written to this row. will be equal to end if all cells were written
+// to row
+std::vector<OutputCell>::const_iterator ROW::WriteCells(const std::vector<OutputCell>::const_iterator start,
+                                                        const std::vector<OutputCell>::const_iterator end,
+                                                        const size_t index)
+{
+    THROW_HR_IF(E_INVALIDARG, index >= _charRow->size());
+    auto it = start;
+    size_t currentIndex = index;
+    while (it != end && currentIndex < _charRow->size())
+    {
+        static_cast<CharRow&>(*_charRow).GlyphAt(currentIndex) = Utf16ToUcs2(it->Chars());
+        _charRow->DbcsAttrAt(currentIndex) = it->DbcsAttr();
+        if (it->TextAttrBehavior() != OutputCell::TextAttributeBehavior::Current)
+        {
+            const TextAttributeRun attrRun{ 1, it->TextAttr() };
+            const std::vector<TextAttributeRun> runs{ attrRun };
+            LOG_IF_FAILED(_attrRow.InsertAttrRuns(runs,
+                                                  currentIndex,
+                                                  currentIndex,
+                                                  _charRow->size()));
+        }
+
+        ++it;
+        ++currentIndex;
+    }
+    return it;
 }
 
 const OutputCell ROW::at(const size_t column) const
 {
     const CharRow* const charRow = static_cast<const CharRow* const>(_charRow.get());
-    return { charRow->GetGlyphAt(column), charRow->GetAttribute(column), _attrRow.GetAttrByColumn(column) };
+    return { { charRow->GlyphAt(column) }, charRow->DbcsAttrAt(column), _attrRow.GetAttrByColumn(column) };
 }

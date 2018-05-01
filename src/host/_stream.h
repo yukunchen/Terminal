@@ -72,9 +72,9 @@ Note:
 --*/
 [[nodiscard]]
 NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
-                          _In_range_(<= , pwchBuffer) PWCHAR const pwchBufferBackupLimit,
-                          _In_ PWCHAR pwchBuffer,
-                          _In_reads_bytes_(*pcb) PWCHAR pwchRealUnicode,
+                          _In_range_(<= , pwchBuffer) const wchar_t* const pwchBufferBackupLimit,
+                          _In_ const wchar_t* pwchBuffer,
+                          _In_reads_bytes_(*pcb) const wchar_t* pwchRealUnicode,
                           _Inout_ PDWORD const pcb,
                           _Out_opt_ PULONG const pcSpaces,
                           const SHORT sOriginalXPosition,
@@ -84,9 +84,9 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
 // The new entry point for WriteChars to act as an intercept in case we place a Virtual Terminal processor in the way.
 [[nodiscard]]
 NTSTATUS WriteChars(SCREEN_INFORMATION& screenInfo,
-                    _In_range_(<= , pwchBuffer) PWCHAR const pwchBufferBackupLimit,
-                    _In_ PWCHAR pwchBuffer,
-                    _In_reads_bytes_(*pcb) PWCHAR pwchRealUnicode,
+                    _In_range_(<= , pwchBuffer) const wchar_t* const pwchBufferBackupLimit,
+                    _In_ const wchar_t* pwchBuffer,
+                    _In_reads_bytes_(*pcb) const wchar_t* pwchRealUnicode,
                     _Inout_ PDWORD const pcb,
                     _Out_opt_ PULONG const pcSpaces,
                     const SHORT sOriginalXPosition,

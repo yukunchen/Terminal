@@ -279,7 +279,7 @@ void TextBufferTests::DoBoundaryTest(PWCHAR const pwszInputString,
     // copy string into buffer
     for (size_t i = 0; i < static_cast<size_t>(cLength); ++i)
     {
-        charRow.GetGlyphAt(i) = pwszInputString[i];
+        charRow.GlyphAt(i) = pwszInputString[i];
     }
 
     // space pad the rest of the string
@@ -376,8 +376,8 @@ void TextBufferTests::TestInsertCharacter()
     VERIFY_ARE_EQUAL(ICharRow::SupportedEncoding::Ucs2, iCharRow.GetSupportedEncoding());
     const CharRow& charRow = static_cast<const CharRow&>(iCharRow);
     // ensure that the buffer didn't start with these fields
-    VERIFY_ARE_NOT_EQUAL(charRow.GetGlyphAt(coordCursorBefore.X), wchTest);
-    VERIFY_ARE_NOT_EQUAL(charRow.GetAttribute(coordCursorBefore.X), dbcsAttribute);
+    VERIFY_ARE_NOT_EQUAL(charRow.GlyphAt(coordCursorBefore.X), wchTest);
+    VERIFY_ARE_NOT_EQUAL(charRow.DbcsAttrAt(coordCursorBefore.X), dbcsAttribute);
 
     auto attr = Row.GetAttrRow().GetAttrByColumn(coordCursorBefore.X);
 
@@ -387,8 +387,8 @@ void TextBufferTests::TestInsertCharacter()
     textBuffer.InsertCharacter(wchTest, dbcsAttribute, TestAttributes);
 
     // ensure that the buffer position where the cursor WAS contains the test items
-    VERIFY_ARE_EQUAL(charRow.GetGlyphAt(coordCursorBefore.X), wchTest);
-    VERIFY_ARE_EQUAL(charRow.GetAttribute(coordCursorBefore.X), dbcsAttribute);
+    VERIFY_ARE_EQUAL(charRow.GlyphAt(coordCursorBefore.X), wchTest);
+    VERIFY_ARE_EQUAL(charRow.DbcsAttrAt(coordCursorBefore.X), dbcsAttribute);
 
     attr = Row.GetAttrRow().GetAttrByColumn(coordCursorBefore.X);
     VERIFY_ARE_EQUAL(attr, TestAttributes);
@@ -593,7 +593,7 @@ void TextBufferTests::TestIncrementCircularBuffer()
         // for the time being, we only support UCS2 char rows
         VERIFY_ARE_EQUAL(ICharRow::SupportedEncoding::Ucs2, iCharRow.GetSupportedEncoding());
         CharRow& charRow = static_cast<CharRow&>(iCharRow);
-        charRow.GetGlyphAt(0) = L'A';
+        charRow.GlyphAt(0) = L'A';
 
         // ensure it does say that it contains text
         VERIFY_IS_TRUE(FirstRow.GetCharRow().ContainsText());

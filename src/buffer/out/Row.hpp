@@ -55,6 +55,10 @@ public:
     std::vector<OutputCell> AsCells(const size_t startIndex) const;
     std::vector<OutputCell> AsCells(const size_t startIndex, const size_t count) const;
 
+    std::vector<OutputCell>::const_iterator WriteCells(const std::vector<OutputCell>::const_iterator start,
+                                                       const std::vector<OutputCell>::const_iterator end,
+                                                       const size_t index);
+
     friend bool operator==(const ROW& a, const ROW& b) noexcept;
 
 #ifdef UNIT_TESTING

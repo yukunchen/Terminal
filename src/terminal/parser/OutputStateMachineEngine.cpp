@@ -59,7 +59,7 @@ bool OutputStateMachineEngine::ActionPrint(const wchar_t wch)
 // - cch - length of rgwch
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool OutputStateMachineEngine::ActionPrintString(_Inout_updates_(cch) wchar_t* const rgwch, const size_t cch)
+bool OutputStateMachineEngine::ActionPrintString(const wchar_t* const rgwch, const size_t cch)
 {
     _pDispatch->PrintString(rgwch, cch); // call print
     return true;
@@ -78,7 +78,7 @@ bool OutputStateMachineEngine::ActionPrintString(_Inout_updates_(cch) wchar_t* c
 // - cch - length of rgwch
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool OutputStateMachineEngine::ActionPassThroughString(_Inout_updates_(cch) wchar_t* const rgwch,
+bool OutputStateMachineEngine::ActionPassThroughString(const wchar_t* const rgwch,
                                                        _In_ size_t const cch)
 {
     bool fSuccess = true;
@@ -1581,4 +1581,3 @@ void OutputStateMachineEngine::SetTerminalConnection(ITerminalOutputConnection* 
     this->_pTtyConnection = pTtyConnection;
     this->_pfnFlushToTerminal = pfnFlushToTerminal;
 }
-
