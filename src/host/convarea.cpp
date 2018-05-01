@@ -12,6 +12,7 @@
 #include "../buffer/out/CharRow.hpp"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
+#include "../types/inc/Utf16Parser.hpp"
 
 #pragma hdrstop
 
@@ -27,10 +28,8 @@ NTSTATUS ConsoleImeResizeScreenBuffer(_Inout_ SCREEN_INFORMATION& ScreenInfo,
                                       _In_ COORD NewScreenSize,
                                       _In_ ConversionAreaInfo* ConvAreaInfo);
 bool InsertConvertedString(_In_ LPCWSTR lpStr);
-void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
-                                  const size_t StringLength,
-                                  _Inout_ SCREEN_INFORMATION& ScreenInfo,
-                                  _In_reads_(StringLength) DbcsAttribute* const pDbcsAttributes);
+void StreamWriteToScreenBufferIME(SCREEN_INFORMATION& screenInfo,
+                                  const std::wstring& wstr);
 
 bool IsValidSmallRect(_In_ PSMALL_RECT const Rect)
 {
@@ -197,7 +196,6 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString,
 
             size_t currentBufferIndex = 0;
             WCHAR LocalBuffer[LOCAL_BUFFER_SIZE];
-            DbcsAttribute dbcsAttributes[LOCAL_BUFFER_SIZE];
 
             WCHAR Char = 0;
             WORD Attr = 0;
@@ -217,11 +215,9 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString,
                         {
                             // leading byte
                             LocalBuffer[currentBufferIndex] = Char;
-                            dbcsAttributes[currentBufferIndex].SetLeading();
                             ++currentBufferIndex;
                             // trailing byte
                             LocalBuffer[currentBufferIndex] = Char;
-                            dbcsAttributes[currentBufferIndex].SetTrailing();
                             ++currentBufferIndex;
 
                             Position.X += 2;
@@ -235,7 +231,6 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString,
                     else
                     {
                         LocalBuffer[currentBufferIndex] = Char;
-                        dbcsAttributes[currentBufferIndex].SetSingle();
                         ++currentBufferIndex;
                         Position.X++;
                     }
@@ -264,7 +259,8 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString,
                 TextAttribute taAttribute = TextAttribute(wLegacyAttr);
                 ConvScreenInfo.SetAttributes(taAttribute);
 
-                StreamWriteToScreenBufferIME(LocalBuffer, currentBufferIndex, ConvScreenInfo, dbcsAttributes);
+                const std::wstring wstr{ LocalBuffer, currentBufferIndex };
+                StreamWriteToScreenBufferIME(ConvScreenInfo, wstr);
 
                 ConvScreenInfo.GetTextBuffer().GetCursor().IncrementXPosition(static_cast<int>(currentBufferIndex));
 
@@ -729,6 +725,48 @@ bool InsertConvertedString(_In_ LPCWSTR lpStr)
     return fResult;
 }
 
+void StreamWriteToScreenBufferIME(SCREEN_INFORMATION& screenInfo,
+                                  const std::wstring& wstr)
+{
+    const COORD TargetPoint = screenInfo.GetTextBuffer().GetCursor().GetPosition();
+    const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
+
+    CleanupDbcsEdgesForWrite(wstr.size(), TargetPoint, screenInfo);
+
+    // TODO figure out text attributes
+
+    // write string to buffer
+    try
+    {
+        const TextAttribute defaultTextAttribute = screenInfo.GetAttributes();
+        const auto formattedCharData = Utf16Parser::Parse(wstr);
+        std::vector<OutputCell> cells;
+        for (const auto chars : formattedCharData)
+        {
+            DbcsAttribute dbcsAttr;
+            if (IsGlyphFullWidth(chars))
+            {
+                dbcsAttr.SetLeading();
+                cells.emplace_back(chars, dbcsAttr, defaultTextAttribute);
+                dbcsAttr.SetTrailing();
+            }
+            cells.emplace_back(chars, dbcsAttr, defaultTextAttribute);
+        }
+        screenInfo.WriteLine(cells, TargetPoint.Y, TargetPoint.X);
+    }
+    CATCH_LOG();
+
+    // notify accessibility eventing
+
+    try
+    {
+        short tempShort = TargetPoint.X + gsl::narrow<short>(wstr.size()) - 1;
+        screenInfo.NotifyAccessibilityEventing(TargetPoint.X, TargetPoint.Y, tempShort, TargetPoint.Y);
+    }
+    CATCH_LOG();
+}
+
+/*
 void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
                                   const size_t StringLength,
                                   _Inout_ SCREEN_INFORMATION& ScreenInfo,
@@ -842,3 +880,4 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
 
     ScreenInfo.NotifyAccessibilityEventing(TargetPoint.X, TargetPoint.Y, tempShort, TargetPoint.Y);
 }
+*/
