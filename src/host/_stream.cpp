@@ -188,9 +188,9 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
 // - This routine does not process tabs and backspace properly.  That code will be implemented as part of the line editing services.
 [[nodiscard]]
 NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
-                          _In_range_(<= , pwchBuffer) PWCHAR const pwchBufferBackupLimit,
-                          _In_ PWCHAR pwchBuffer,
-                          _In_reads_bytes_(*pcb) PWCHAR pwchRealUnicode,
+                          _In_range_(<= , pwchBuffer) const wchar_t* const pwchBufferBackupLimit,
+                          _In_ const wchar_t* pwchBuffer,
+                          _In_reads_bytes_(*pcb) const wchar_t* pwchRealUnicode,
                           _Inout_ PDWORD const pcb,
                           _Out_opt_ PULONG const pcSpaces,
                           const SHORT sOriginalXPosition,
@@ -202,8 +202,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
     Cursor& cursor = textBuffer.GetCursor();
     COORD CursorPosition = cursor.GetPosition();
     NTSTATUS Status = STATUS_SUCCESS;
-    ULONG NumChars;
-    static WCHAR Blanks[TAB_SIZE] = { UNICODE_SPACE,
+    static const WCHAR Blanks[TAB_SIZE] = { UNICODE_SPACE,
         UNICODE_SPACE,
         UNICODE_SPACE,
         UNICODE_SPACE,
@@ -214,25 +213,17 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
     };
     SHORT XPosition;
     WCHAR LocalBuffer[LOCAL_BUFFER_SIZE];
-    PWCHAR LocalBufPtr;
-    ULONG i, j;
-    SMALL_RECT Region;
-    ULONG TabSize;
-    DWORD TempNumSpaces;
-    WCHAR Char;
-    WCHAR RealUnicodeChar;
-    BOOL fUnprocessed = ((screenInfo.OutputMode & ENABLE_PROCESSED_OUTPUT) == 0);
-    DbcsAttribute dbcsAttributes[LOCAL_BUFFER_SIZE];
-    DbcsAttribute* currentDbcsAttribute = nullptr;
+    DWORD TempNumSpaces = 0;
+    const bool fUnprocessed = IsFlagClear(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT);
 
-    // Must not adjust cursor here. It has to stay on for many write scenarios. Consumers should call for the cursor to be turned off if they want that.
+    // Must not adjust cursor here. It has to stay on for many write scenarios. Consumers should call for the
+    // cursor to be turned off if they want that.
 
-    WORD const Attributes = screenInfo.GetAttributes().GetLegacyAttributes();
-    DWORD const BufferSize = *pcb;
+    const WORD Attributes = screenInfo.GetAttributes().GetLegacyAttributes();
+    const DWORD BufferSize = *pcb;
     *pcb = 0;
-    TempNumSpaces = 0;
 
-    PWCHAR lpString = pwchRealUnicode;
+    const wchar_t* lpString = pwchRealUnicode;
 
     const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
 
@@ -241,7 +232,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
         // correct for delayed EOL
         if (cursor.IsDelayedEOLWrap())
         {
-            COORD coordDelayedAt = cursor.GetDelayedAtPosition();
+            const COORD coordDelayedAt = cursor.GetDelayedAtPosition();
             cursor.ResetDelayEOLWrap();
             // Only act on a delayed EOL if we didn't move the cursor to a different position from where the EOL was marked.
             if (coordDelayedAt.X == CursorPosition.X && coordDelayedAt.Y == CursorPosition.Y)
@@ -285,14 +276,13 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
 
         // As an optimization, collect characters in buffer and print out all at once.
         XPosition = cursor.GetPosition().X;
-        i = 0;
-        LocalBufPtr = LocalBuffer;
-        currentDbcsAttribute = dbcsAttributes;
+        ULONG i = 0;
+        wchar_t* LocalBufPtr = LocalBuffer;
         while (*pcb < BufferSize && i < LOCAL_BUFFER_SIZE && XPosition < coordScreenBufferSize.X)
         {
 #pragma prefast(suppress:26019, "Buffer is taken in multiples of 2. Validation is ok.")
-            Char = *lpString;
-            RealUnicodeChar = *pwchRealUnicode;
+            const wchar_t Char = *lpString;
+            const wchar_t RealUnicodeChar = *pwchRealUnicode;
             if (!IS_GLYPH_CHAR(RealUnicodeChar) || fUnprocessed)
             {
                 if (IsCharFullWidth(Char))
@@ -300,15 +290,10 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                     if (i < (LOCAL_BUFFER_SIZE - 1) && XPosition < (coordScreenBufferSize.X - 1))
                     {
                         *LocalBufPtr++ = Char;
-                        currentDbcsAttribute->SetLeading();
-                        ++currentDbcsAttribute;
 
-                        *LocalBufPtr++ = Char;
-                        currentDbcsAttribute->SetTrailing();
-                        ++currentDbcsAttribute;
-
+                        // cursor adjusted by 2 because the char is double width
                         XPosition += 2;
-                        i += 2;
+                        i += 1;
                         pwchBuffer++;
                     }
                     else
@@ -323,8 +308,6 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                     XPosition++;
                     i++;
                     pwchBuffer++;
-                    currentDbcsAttribute->SetSingle();
-                    ++currentDbcsAttribute;
                 }
             }
             else
@@ -360,19 +343,17 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                     }
                     else
                     {
-                        TabSize = NUMBER_OF_SPACES_IN_TAB(XPosition);
+                        const ULONG TabSize = NUMBER_OF_SPACES_IN_TAB(XPosition);
                         XPosition = (SHORT)(XPosition + TabSize);
                         if (XPosition >= coordScreenBufferSize.X || IsFlagSet(dwFlags, WC_NONDESTRUCTIVE_TAB))
                         {
                             goto EndWhile;
                         }
 
-                        for (j = 0; j < TabSize && i < LOCAL_BUFFER_SIZE; j++, i++)
+                        for (ULONG j = 0; j < TabSize && i < LOCAL_BUFFER_SIZE; j++, i++)
                         {
-                            *LocalBufPtr = (WCHAR)' ';
+                            *LocalBufPtr = UNICODE_SPACE;
                             LocalBufPtr++;
-                            currentDbcsAttribute->SetSingle();
-                            ++currentDbcsAttribute;
                         }
                     }
 
@@ -387,30 +368,30 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                     if ((dwFlags & WC_ECHO) && (IS_CONTROL_CHAR(RealUnicodeChar)))
                     {
 
-                    CtrlChar:          if (i < (LOCAL_BUFFER_SIZE - 1))
-                    {
-                        *LocalBufPtr = (WCHAR)'^';
-                        LocalBufPtr++;
-                        XPosition++;
-                        i++;
-                        *LocalBufPtr = (WCHAR)(RealUnicodeChar + (WCHAR)'@');
-                        LocalBufPtr++;
-                        XPosition++;
-                        i++;
-                        pwchBuffer++;
-                        currentDbcsAttribute->SetSingle();
-                        ++currentDbcsAttribute;
-                        currentDbcsAttribute->SetSingle();
-                        ++currentDbcsAttribute;
-                    }
-                                       else
-                                       {
-                                           goto EndWhile;
-                                       }
+                    CtrlChar:
+                        if (i < (LOCAL_BUFFER_SIZE - 1))
+                        {
+                            *LocalBufPtr = (WCHAR)'^';
+                            LocalBufPtr++;
+                            XPosition++;
+                            i++;
+
+                            *LocalBufPtr = (WCHAR)(RealUnicodeChar + (WCHAR)'@');
+                            LocalBufPtr++;
+                            XPosition++;
+                            i++;
+
+                            pwchBuffer++;
+                        }
+                        else
+                        {
+                            goto EndWhile;
+                        }
                     }
                     else
                     {
-                        // As a special favor to incompetent apps that attempt to display control chars, convert to corresponding OEM Glyph Chars
+                        // As a special favor to incompetent apps that attempt to display control chars,
+                        // convert to corresponding OEM Glyph Chars
                         WORD CharType;
 
                         GetStringTypeW(CT_CTYPE1, &RealUnicodeChar, 1, &CharType);
@@ -435,8 +416,6 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                         XPosition++;
                         i++;
                         pwchBuffer++;
-                        currentDbcsAttribute->SetSingle();
-                        ++currentDbcsAttribute;
                     }
                 }
             }
@@ -454,16 +433,20 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
             }
 
             // line was wrapped if we're writing up to the end of the current row
-            bool fWasLineWrapped = XPosition >= coordScreenBufferSize.X;
+            const bool fWasLineWrapped = XPosition >= coordScreenBufferSize.X;
 
-            StreamWriteToScreenBuffer(LocalBuffer, (SHORT)i, screenInfo, dbcsAttributes, fWasLineWrapped);
+            const std::wstring wstr{ LocalBuffer, gsl::narrow<size_t>(i) };
+            StreamWriteToScreenBuffer(screenInfo, wstr, fWasLineWrapped);
+
+
+            SMALL_RECT Region;
             Region.Left = cursor.GetPosition().X;
-            Region.Right = (SHORT)(cursor.GetPosition().X + i - 1);
+            Region.Right = XPosition;
             Region.Top = cursor.GetPosition().Y;
             Region.Bottom = cursor.GetPosition().Y;
             WriteToScreen(screenInfo, Region);
             TempNumSpaces += i;
-            CursorPosition.X = (SHORT)(cursor.GetPosition().X + i);
+            CursorPosition.X = XPosition;
             CursorPosition.Y = cursor.GetPosition().Y;
 
             // enforce a delayed newline if we're about to pass the end and the WC_DELAY_EOL_WRAP flag is set.
@@ -489,8 +472,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                 {
                     *pcSpaces = TempNumSpaces;
                 }
-                Status = STATUS_SUCCESS;
-                goto ExitWriteChars;
+                return STATUS_SUCCESS;
             }
             continue;
         }
@@ -503,8 +485,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
             {
                 *pcSpaces = TempNumSpaces;
             }
-            Status = STATUS_SUCCESS;
-            goto ExitWriteChars;
+            return STATUS_SUCCESS;
         }
 
         ASSERT(screenInfo.OutputMode & ENABLE_PROCESSED_OUTPUT);
@@ -521,47 +502,39 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
             }
             else
             {
-                PWCHAR pBuffer = nullptr;
-                WCHAR TmpBuffer[LOCAL_BUFFER_SIZE];
-                PWCHAR Tmp, Tmp2;
+                const wchar_t* Tmp;
+                wchar_t* Tmp2 = nullptr;
                 WCHAR LastChar;
 
-                if (pwchBuffer - pwchBufferBackupLimit > LOCAL_BUFFER_SIZE)
+                const size_t bufferSize = pwchBuffer - pwchBufferBackupLimit;
+                std::unique_ptr<wchar_t[]> buffer;
+                try
                 {
-                    pBuffer = new(std::nothrow) WCHAR[pwchBuffer - pwchBufferBackupLimit];
-                    if (pBuffer == nullptr)
-                    {
-                        Status = STATUS_NO_MEMORY;
-                        goto ExitWriteChars;
-                    }
-                    ZeroMemory(pBuffer, sizeof(WCHAR) * (pwchBuffer - pwchBufferBackupLimit));
+                    buffer = std::make_unique<wchar_t[]>(bufferSize);
+                    std::fill_n(buffer.get(), bufferSize, UNICODE_NULL);
                 }
-                else
+                catch (...)
                 {
-                    pBuffer = TmpBuffer;
+                    return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
                 }
 
-                for (i = 0, Tmp2 = pBuffer, Tmp = pwchBufferBackupLimit; i < (ULONG)(pwchBuffer - pwchBufferBackupLimit); i++, Tmp++)
+                for (i = 0, Tmp2 = buffer.get(), Tmp = pwchBufferBackupLimit;
+                     i < (ULONG)(bufferSize);
+                     i++, Tmp++)
                 {
-
-
-                    if (*Tmp == UNICODE_BACKSPACE)
+                    if (*Tmp == UNICODE_BACKSPACE && Tmp2 > buffer.get())
                     {
-                        if (Tmp2 > pBuffer)
-                        {
-                            Tmp2--;
-                        }
+                        Tmp2--;
                     }
                     else
                     {
-                        ASSERT(Tmp2 >= pBuffer);
+                        ASSERT(Tmp2 >= buffer.get());
                         *Tmp2++ = *Tmp;
                     }
                 }
-
-                if (Tmp2 == pBuffer)
+                if (Tmp2 == buffer.get())
                 {
-                    LastChar = (WCHAR)' ';
+                    LastChar = UNICODE_SPACE;
                 }
                 else
                 {
@@ -569,10 +542,6 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                     LastChar = *(Tmp2 - 1);
                 }
 
-                if (pBuffer != TmpBuffer)
-                {
-                    delete[] pBuffer;
-                }
 
                 if (LastChar == UNICODE_TAB)
                 {
@@ -599,7 +568,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                     // overwrite second character of ^x sequence.
                     if (dwFlags & WC_DESTRUCTIVE_BACKSPACE)
                     {
-                        NumChars = 1;
+                        ULONG NumChars = 1;
                         LOG_IF_FAILED(WriteOutputString(screenInfo,
                                                         Blanks,
                                                         CursorPosition,
@@ -619,9 +588,13 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                     Status = AdjustCursorPosition(screenInfo, CursorPosition, dwFlags & WC_KEEP_CURSOR_VISIBLE, psScrollY);
                     if (dwFlags & WC_DESTRUCTIVE_BACKSPACE)
                     {
-                        NumChars = 1;
-                        Status = WriteOutputString(screenInfo, Blanks, cursor.GetPosition(), CONSOLE_FALSE_UNICODE, // faster than real unicode
-                                                   &NumChars, nullptr);
+                        ULONG NumChars = 1;
+                        Status = WriteOutputString(screenInfo,
+                                                   Blanks,
+                                                   cursor.GetPosition(),
+                                                   CONSOLE_FALSE_UNICODE, // faster than real unicode
+                                                   &NumChars,
+                                                   nullptr);
                         Status = FillOutput(screenInfo, Attributes, cursor.GetPosition(), CONSOLE_ATTRIBUTE, &NumChars);
                     }
                     CursorPosition.X -= 1;
@@ -639,7 +612,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
             Status = AdjustCursorPosition(screenInfo, CursorPosition, (dwFlags & WC_KEEP_CURSOR_VISIBLE) != 0, psScrollY);
             if (dwFlags & WC_DESTRUCTIVE_BACKSPACE)
             {
-                NumChars = 1;
+                ULONG NumChars = 1;
                 LOG_IF_FAILED(WriteOutputString(screenInfo,
                                                 Blanks,
                                                 cursor.GetPosition(),
@@ -675,13 +648,13 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
             // just move the cursor to the next tab stop.
             if (screenInfo.AreTabsSet())
             {
-                COORD cCursorOld = cursor.GetPosition();
+                const COORD cCursorOld = cursor.GetPosition();
                 // Get Forward tab handles tabbing past the end of the buffer
                 CursorPosition = screenInfo.GetForwardTab(cCursorOld);
             }
             else
             {
-                TabSize = NUMBER_OF_SPACES_IN_TAB(cursor.GetPosition().X);
+                const ULONG TabSize = NUMBER_OF_SPACES_IN_TAB(cursor.GetPosition().X);
                 CursorPosition.X = (SHORT)(cursor.GetPosition().X + TabSize);
 
                 // move cursor forward to next tab stop.  fill space with blanks.
@@ -691,6 +664,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                 pwchBuffer++;
 
                 TempNumSpaces += TabSize;
+                ULONG NumChars = 0;
                 if (CursorPosition.X >= coordScreenBufferSize.X)
                 {
                     NumChars = coordScreenBufferSize.X - cursor.GetPosition().X;
@@ -757,23 +731,24 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
         }
         default:
         {
-            Char = *lpString;
-            if (Char >= (WCHAR)' ' &&
+            const wchar_t Char = *lpString;
+            if (Char >= UNICODE_SPACE &&
                 IsCharFullWidth(Char) &&
                 XPosition >= (coordScreenBufferSize.X - 1) &&
                 (screenInfo.OutputMode & ENABLE_WRAP_AT_EOL_OUTPUT))
             {
-                COORD const TargetPoint = cursor.GetPosition();
+                const COORD TargetPoint = cursor.GetPosition();
                 ROW& Row = textBuffer.GetRowByOffset(TargetPoint.Y);
                 ICharRow& iCharRow = Row.GetCharRow();
 
                 try
                 {
-                    if (iCharRow.GetAttribute(TargetPoint.X).IsTrailing())
+                    if (iCharRow.DbcsAttrAt(TargetPoint.X).IsTrailing())
                     {
                         iCharRow.ClearCell(TargetPoint.X);
                         iCharRow.ClearCell(TargetPoint.X - 1);
 
+                        SMALL_RECT Region;
                         Region.Left = TargetPoint.X - 1;
                         Region.Right = (SHORT)(TargetPoint.X);
                         Region.Top = TargetPoint.Y;
@@ -805,7 +780,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
         }
         if (!NT_SUCCESS(Status))
         {
-            goto ExitWriteChars;
+            return Status;
         }
 
         *pcb += sizeof(WCHAR);
@@ -818,10 +793,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
         *pcSpaces = TempNumSpaces;
     }
 
-    Status = STATUS_SUCCESS;
-
-ExitWriteChars:
-    return Status;
+    return STATUS_SUCCESS;
 }
 
 // Routine Description:
@@ -845,9 +817,9 @@ ExitWriteChars:
 // - This routine does not process tabs and backspace properly.  That code will be implemented as part of the line editing services.
 [[nodiscard]]
 NTSTATUS WriteChars(SCREEN_INFORMATION& screenInfo,
-                    _In_range_(<= , pwchBuffer) PWCHAR const pwchBufferBackupLimit,
-                    _In_ PWCHAR pwchBuffer,
-                    _In_reads_bytes_(*pcb) PWCHAR pwchRealUnicode,
+                    _In_range_(<= , pwchBuffer) const wchar_t* const pwchBufferBackupLimit,
+                    _In_ const wchar_t* pwchBuffer,
+                    _In_reads_bytes_(*pcb) const wchar_t* pwchRealUnicode,
                     _Inout_ PDWORD const pcb,
                     _Out_opt_ PULONG const pcSpaces,
                     const SHORT sOriginalXPosition,

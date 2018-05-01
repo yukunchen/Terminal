@@ -46,7 +46,7 @@ namespace Microsoft::Console::VirtualTerminal
             _pDefaults->Execute(wchControl);
         }
 
-        virtual void PrintString(_In_reads_(cch) wchar_t* const rgwch, const size_t cch);
+        virtual void PrintString(const wchar_t* const rgwch, const size_t cch);
         virtual void Print(const wchar_t wchPrintable);
 
         virtual bool CursorUp(_In_ unsigned int const uiDistance); // CUU

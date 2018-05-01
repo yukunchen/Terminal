@@ -102,7 +102,7 @@ void ParserTracing::ClearSequenceTrace()
 }
 
 // NOTE: I'm expecting this to not be null terminated
-void ParserTracing::DispatchPrintRunTrace(_In_reads_(cchString) wchar_t* pwsString, const size_t cchString) const
+void ParserTracing::DispatchPrintRunTrace(const wchar_t* const pwsString, const size_t cchString) const
 {
     size_t charsRemaining = cchString;
     wchar_t str[BYTE_MAX + 4 + sizeof(wchar_t) + sizeof('\0')];

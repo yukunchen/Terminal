@@ -12,29 +12,6 @@
 #include "../interactivity/inc/ServiceLocator.hpp"
 #pragma warning(pop)
 
-TextAttribute::TextAttribute() noexcept
-{
-    _wAttrLegacy = 0;
-    _fUseRgbColor = false;
-    _rgbForeground = RGB(0, 0, 0);
-    _rgbBackground = RGB(0, 0, 0);
-}
-
-TextAttribute::TextAttribute(const WORD wLegacyAttr) noexcept
-{
-    _wAttrLegacy = wLegacyAttr;
-    _fUseRgbColor = false;
-    _rgbForeground = RGB(0, 0, 0);
-    _rgbBackground = RGB(0, 0, 0);
-}
-
-TextAttribute::TextAttribute(const COLORREF rgbForeground, const COLORREF rgbBackground) noexcept
-{
-    _wAttrLegacy = 0;
-    _rgbForeground = rgbForeground;
-    _rgbBackground = rgbBackground;
-    _fUseRgbColor = true;
-}
 
 WORD TextAttribute::GetLegacyAttributes() const noexcept
 {

@@ -14,11 +14,11 @@ namespace Microsoft
         {
             class EchoDispatch : public TermDispatch
             {
-            public: 
-                void Print(const wchar_t wchPrintable);
-                void PrintString(_In_reads_(cch) wchar_t* const rgwch, const size_t cch);
-                void Execute(const wchar_t wchControl);
+            public:
+                void Print(const wchar_t wchPrintable) override;
+                void PrintString(const wchar_t* const rgwch, const size_t cch) override;
+                void Execute(const wchar_t wchControl) override;
             };
-        };
-    };
-};
+        }
+    }
+}

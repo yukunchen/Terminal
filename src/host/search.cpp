@@ -163,7 +163,7 @@ USHORT SearchForString(const SCREEN_INFORMATION& ScreenInfo,
                                 "only support UCS2 char rows currently");
 
                 const CharRow& charRow = static_cast<const CharRow&>(iCharRow);
-                if (charRow.GetAttribute(Position.X).IsTrailing())
+                if (charRow.DbcsAttrAt(Position.X).IsTrailing())
                 {
                     goto recalc;
                 }

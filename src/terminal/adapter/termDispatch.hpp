@@ -23,7 +23,7 @@ namespace Microsoft::Console::VirtualTerminal
     public:
         virtual void Execute(const wchar_t wchControl) = 0;
         virtual void Print(const wchar_t wchPrintable) = 0;
-        virtual void PrintString(_In_reads_(cch) wchar_t* const rgwch, const size_t cch) = 0;
+        virtual void PrintString(const wchar_t* const rgwch, const size_t cch) = 0;
 
         virtual bool CursorUp(_In_ unsigned int const /*uiDistance*/) { return false; }; // CUU
         virtual bool CursorDown(_In_ unsigned int const /*uiDistance*/) { return false; } // CUD

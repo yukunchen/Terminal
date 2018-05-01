@@ -326,7 +326,7 @@ bool TextBuffer::AssertValidDoubleByteSequence(const DbcsAttribute dbcsAttribute
     DbcsAttribute prevDbcsAttr;
     try
     {
-        prevDbcsAttr = prevRow.GetCharRow().GetAttribute(coordPrevPosition.X);
+        prevDbcsAttr = prevRow.GetCharRow().DbcsAttrAt(coordPrevPosition.X);
     }
     catch (...)
     {
@@ -467,8 +467,8 @@ bool TextBuffer::InsertCharacter(const wchar_t wch,
 
         try
         {
-            charRow.GetGlyphAt(iCol) = wch;
-            charRow.GetAttribute(iCol) = dbcsAttribute;
+            charRow.GlyphAt(iCol) = wch;
+            charRow.DbcsAttrAt(iCol) = dbcsAttribute;
         }
         catch (...)
         {
