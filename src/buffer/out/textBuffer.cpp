@@ -485,6 +485,15 @@ bool TextBuffer::InsertCharacter(const std::vector<wchar_t> chars,
     return fSuccess;
 }
 
+//Routine Description:
+// - Inserts one ucs2 codepoint into the buffer at the current cursor position and advances the cursor as appropriate.
+//Arguments:
+// - wch - The codepoint to insert
+// - dbcsAttribute - Double byte information associated with the codepoint
+// - bAttr - Color data associated with the character
+//Return Value:
+// - true if we successfully inserted the character
+// - false otherwise (out of memory)
 bool TextBuffer::InsertCharacter(const wchar_t wch, const DbcsAttribute dbcsAttribute, const TextAttribute attr)
 {
     return InsertCharacter(std::vector<wchar_t>{ wch }, dbcsAttribute, attr);
