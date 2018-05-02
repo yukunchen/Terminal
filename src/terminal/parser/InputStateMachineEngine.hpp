@@ -33,10 +33,10 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool ActionPrint(const wchar_t wch) override;
 
-        bool ActionPrintString(_Inout_updates_(cch) wchar_t* const rgwch,
+        bool ActionPrintString(const wchar_t* const rgwch,
                                const size_t cch) override;
 
-        bool ActionPassThroughString(_Inout_updates_(cch) wchar_t* const rgwch,
+        bool ActionPassThroughString(const wchar_t* const rgwch,
                                      size_t const cch) override;
 
         bool ActionEscDispatch(const wchar_t wch,

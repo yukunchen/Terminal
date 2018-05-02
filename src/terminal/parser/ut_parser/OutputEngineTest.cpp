@@ -31,28 +31,24 @@ namespace Microsoft
 
 // From VT100.net...
 // 9999-10000 is the classic boundary for most parsers parameter values.
-// 16383-16384 is the boundary for DECSR commands according to EK-VT520-RM section 4.3.3.2 
+// 16383-16384 is the boundary for DECSR commands according to EK-VT520-RM section 4.3.3.2
 // 32767-32768 is our boundary SHORT_MAX for the Windows console
 #define PARAM_VALUES L"{0, 1, 2, 1000, 9999, 10000, 16383, 16384, 32767, 32768, 50000, 999999999}"
 
-class Microsoft::Console::VirtualTerminal::OutputEngineTest : public TermDispatch
+class Microsoft::Console::VirtualTerminal::OutputEngineTest final : public TermDispatch
 {
     TEST_CLASS(OutputEngineTest);
 
-    virtual void Execute(const wchar_t wchControl)
+    virtual void Execute(const wchar_t /*wchControl*/) override
     {
-        wchControl;
     }
 
-    virtual void Print(const wchar_t wchPrintable)
+    virtual void Print(const wchar_t /*wchPrintable*/) override
     {
-        wchPrintable;
     }
 
-    virtual void PrintString(_In_reads_(cch) wchar_t* const rgwch, const size_t cch)
+    virtual void PrintString(const wchar_t* const /*rgwch*/, const size_t /*cch*/) override
     {
-        rgwch;
-        cch;
     }
 
     TEST_METHOD(TestEscapePath)
@@ -65,7 +61,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest : public TermDispatc
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiTest", uiTest));
 
         StateMachine mach(std::make_unique<OutputStateMachineEngine>(this));
-        
+
         // The OscString state shouldn't escape out after an ESC.
         bool shouldEscapeOut = true;
 
@@ -379,7 +375,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest : public TermDispatc
         for (int i = 0; i < MAX_PATH; i++) // The buffer is only 256 long, so any longer value should work :P
         {
             mach.ProcessCharacter(L's');
-            VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscString);  
+            VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscString);
         }
         VERIFY_ARE_EQUAL(mach._sOscNextChar, mach.s_cOscStringMaxLength - 1);
         mach.ProcessCharacter(AsciiChars::BEL);
@@ -404,7 +400,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest : public TermDispatc
         mach.ProcessCharacter(L';');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscString);
         mach.ProcessCharacter(L's');
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscString);  
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscString);
         mach.ProcessCharacter(AsciiChars::BEL);
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
     }
@@ -525,23 +521,20 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest : public TermDispatc
     }
 };
 
-class StateMachineExternalTest : public TermDispatch
+class StateMachineExternalTest final : public TermDispatch
 {
     TEST_CLASS(StateMachineExternalTest);
-    virtual void Execute(const wchar_t wchControl)
+
+    virtual void Execute(const wchar_t /*wchControl*/) override
     {
-        wchControl;
     }
 
-    virtual void Print(const wchar_t wchPrintable)
+    virtual void Print(const wchar_t /*wchPrintable*/) override
     {
-        wchPrintable;
     }
 
-    virtual void PrintString(_In_reads_(cch) wchar_t* const rgwch, const size_t cch)
+    virtual void PrintString(const wchar_t* const /*rgwch*/, const size_t /*cch*/) override
     {
-        rgwch;
-        cch;
     }
 
     unsigned int _uiCursorDistance;
@@ -695,18 +688,18 @@ class StateMachineExternalTest : public TermDispatch
     }
 
     virtual bool EraseInDisplay(const EraseType eraseType)
-    { 
+    {
         _fEraseDisplay = true;
         _eraseType = eraseType;
         return true;
     }
 
     virtual bool EraseInLine(const EraseType eraseType)
-    { 
+    {
         _fEraseLine = true;
         _eraseType = eraseType;
         return true;
-    } 
+    }
 
     virtual bool InsertCharacter(_In_ unsigned int const uiCount)
     {
@@ -896,11 +889,11 @@ class StateMachineExternalTest : public TermDispatch
         {
             InsertNumberToMachine(&mach, uiDistance);
         }
-       
+
         mach.ProcessCharacter(wchCommand);
 
         VERIFY_IS_TRUE(*pfFlag);
-        
+
         unsigned int uiExpectedDistance = 1u;
 
         if (fUseDistance)
@@ -919,7 +912,7 @@ class StateMachineExternalTest : public TermDispatch
 
         unsigned int uiDistance;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiDistance", uiDistance));
-        
+
         TestCsiCursorMovement(L'A', uiDistance, true, &_fCursorUp);
         ClearState();
         TestCsiCursorMovement(L'B', uiDistance, true, &_fCursorDown);
@@ -980,7 +973,7 @@ class StateMachineExternalTest : public TermDispatch
         StateMachine mach(std::make_unique<OutputStateMachineEngine>(this));
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'[');
-        
+
         InsertNumberToMachine(&mach, uiRow);
         mach.ProcessCharacter(L';');
         InsertNumberToMachine(&mach, uiCol);
@@ -1007,7 +1000,7 @@ class StateMachineExternalTest : public TermDispatch
         StateMachine mach(std::make_unique<OutputStateMachineEngine>(this));
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'[');
-        
+
         InsertNumberToMachine(&mach, uiRow);
         mach.ProcessCharacter(L'H');
 
@@ -1022,7 +1015,7 @@ class StateMachineExternalTest : public TermDispatch
     TEST_METHOD(TestCursorSaveLoad)
     {
         StateMachine mach(std::make_unique<OutputStateMachineEngine>(this));
-        
+
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'7');
         VERIFY_IS_TRUE(_fCursorSave);
@@ -1053,7 +1046,7 @@ class StateMachineExternalTest : public TermDispatch
     TEST_METHOD(TestCursorKeysMode)
     {
         StateMachine mach(std::make_unique<OutputStateMachineEngine>(this));
-        
+
         mach.ProcessString(L"\x1b[?1h", 5);
         VERIFY_IS_TRUE(_fCursorKeysMode);
 
@@ -1068,7 +1061,7 @@ class StateMachineExternalTest : public TermDispatch
     TEST_METHOD(TestSetNumberOfColumns)
     {
         StateMachine mach(std::make_unique<OutputStateMachineEngine>(this));
-        
+
         mach.ProcessString(L"\x1b[?3h", 5);
         VERIFY_ARE_EQUAL(_uiWindowWidth, (unsigned int)s_sDECCOLMSetColumns);
 
@@ -1083,7 +1076,7 @@ class StateMachineExternalTest : public TermDispatch
     TEST_METHOD(TestCursorBlinking)
     {
         StateMachine mach(std::make_unique<OutputStateMachineEngine>(this));
-        
+
         mach.ProcessString(L"\x1b[?12h", 6);
         VERIFY_IS_TRUE(_fCursorBlinking);
 
@@ -1098,7 +1091,7 @@ class StateMachineExternalTest : public TermDispatch
     TEST_METHOD(TestCursorVisibility)
     {
         StateMachine mach(std::make_unique<OutputStateMachineEngine>(this));
-        
+
         mach.ProcessString(L"\x1b[?25h", 6);
         VERIFY_IS_TRUE(_fCursorVisible);
 
@@ -1113,7 +1106,7 @@ class StateMachineExternalTest : public TermDispatch
     TEST_METHOD(TestAltBufferSwapping)
     {
         StateMachine mach(std::make_unique<OutputStateMachineEngine>(this));
-        
+
         mach.ProcessString(L"\x1b[?1049h", 8);
         VERIFY_IS_TRUE(_fIsAltBuffer);
 
@@ -1208,7 +1201,7 @@ class StateMachineExternalTest : public TermDispatch
 
 
         VERIFY_IS_TRUE(*pfOperationCallback);
-        VERIFY_ARE_EQUAL(expectedEraseType, _eraseType);        
+        VERIFY_ARE_EQUAL(expectedEraseType, _eraseType);
     }
 
     void VerifyGraphicsOptions(_In_reads_(cExpectedOptions) const GraphicsOptions* const rgExpectedOptions, const size_t cExpectedOptions)
@@ -1476,7 +1469,7 @@ class StateMachineExternalTest : public TermDispatch
         VERIFY_IS_TRUE(_fSetGraphics);
 
         ClearState();
-        
+
         ///////////////////////////////////////////////////////////////////////
 
         Log::Comment(L"Test 2: A couple of sequences all in one string");
@@ -1492,7 +1485,7 @@ class StateMachineExternalTest : public TermDispatch
         rgExpected[4] = GraphicsOptions::BackgroundMagenta;
         expectedEraseType = EraseType::All;
         VerifyGraphicsOptions(rgExpected, 5);
-        VERIFY_ARE_EQUAL(expectedEraseType, _eraseType);  
+        VERIFY_ARE_EQUAL(expectedEraseType, _eraseType);
 
         ClearState();
 
@@ -1504,15 +1497,15 @@ class StateMachineExternalTest : public TermDispatch
         rgExpected[0] = GraphicsOptions::BoldBright;
         rgExpected[1] = GraphicsOptions::ForegroundBlack;
         expectedEraseType = EraseType::All;
-        
+
         VERIFY_IS_TRUE(_fSetGraphics);
         VERIFY_IS_TRUE(_fEraseDisplay);
 
         VerifyGraphicsOptions(rgExpected, 2);
-        VERIFY_ARE_EQUAL(expectedEraseType, _eraseType);   
+        VERIFY_ARE_EQUAL(expectedEraseType, _eraseType);
 
         ClearState();
-        
+
         ///////////////////////////////////////////////////////////////////////
         Log::Comment(L"Test 4: An entire sequence broke into multiple strings");
         mach.ProcessString(L"\x1b[1;", 4);
@@ -1527,12 +1520,12 @@ class StateMachineExternalTest : public TermDispatch
 
         VERIFY_IS_TRUE(_fSetGraphics);
         VERIFY_IS_TRUE(_fEraseDisplay);
-        
+
         VerifyGraphicsOptions(rgExpected, 2);
-        VERIFY_ARE_EQUAL(expectedEraseType, _eraseType);   
+        VERIFY_ARE_EQUAL(expectedEraseType, _eraseType);
 
         ClearState();
-        
+
         ///////////////////////////////////////////////////////////////////////
         Log::Comment(L"Test 5: A sequence with mixed ProcessCharacter and ProcessString calls");
 
@@ -1563,10 +1556,10 @@ class StateMachineExternalTest : public TermDispatch
         expectedEraseType = EraseType::All;
 
         VERIFY_IS_TRUE(_fEraseDisplay);
-        
-        VERIFY_ARE_EQUAL(expectedEraseType, _eraseType);   
+
+        VERIFY_ARE_EQUAL(expectedEraseType, _eraseType);
 
         ClearState();
-        
+
     }
 };

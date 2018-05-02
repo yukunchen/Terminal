@@ -37,7 +37,7 @@ void WriteBuffer::Print(const wchar_t wch)
 // - wch - The character to be printed.
 // Return Value:
 // - <none>
-void WriteBuffer::PrintString(_In_reads_(cch) wchar_t* const rgwch, const size_t cch)
+void WriteBuffer::PrintString(const wchar_t* const rgwch, const size_t cch)
 {
     _DefaultStringCase(rgwch, cch);
 }
@@ -70,18 +70,16 @@ void WriteBuffer::_DefaultCase(const wchar_t wch)
 // - wch - The character to be processed by our default text editing/printing mechanisms.
 // Return Value:
 // - <none>
-void WriteBuffer::_DefaultStringCase(_In_reads_(cch) wchar_t* const rgwch, const size_t cch)
+void WriteBuffer::_DefaultStringCase(_In_reads_(cch) const wchar_t* const rgwch, const size_t cch)
 {
-    PWCHAR buffer = &(rgwch[0]);
-
     DWORD dwNumBytes = (DWORD)(cch * sizeof(wchar_t));
 
     _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor().SetIsOn(true);
 
     _ntstatus = WriteCharsLegacy(_io.GetActiveOutputBuffer(),
-                                 buffer,
-                                 buffer,
-                                 buffer,
+                                 rgwch,
+                                 rgwch,
+                                 rgwch,
                                  &dwNumBytes,
                                  nullptr,
                                  _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor().GetPosition().X,

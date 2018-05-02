@@ -15,6 +15,7 @@
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/Viewport.hpp"
 #include "../types/inc/convert.hpp"
+#include "../types/inc/Utf16Parser.hpp"
 
 #include <algorithm>
 #include <iterator>
@@ -29,63 +30,45 @@ using namespace Microsoft::Console::Types;
 #define ATTR_OF_PCI(p)  (((PCHAR_INFO)(p))->Attributes)
 #define SIZEOF_CI_CELL  sizeof(CHAR_INFO)
 
-void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
-                               _In_ SHORT cchBuffer,
-                               SCREEN_INFORMATION& screenInfo,
-                               _Inout_updates_(cchBuffer) DbcsAttribute* const pDbcsAttributes,
+void StreamWriteToScreenBuffer(SCREEN_INFORMATION& screenInfo,
+                               const std::wstring& wstr,
                                const bool fWasLineWrapped)
 {
-    DBGOUTPUT(("StreamWriteToScreenBuffer\n"));
     COORD const TargetPoint = screenInfo.GetTextBuffer().GetCursor().GetPosition();
     ROW& Row = screenInfo.GetTextBuffer().GetRowByOffset(TargetPoint.Y);
     DBGOUTPUT(("&Row = 0x%p, TargetPoint = (0x%x,0x%x)\n", &Row, TargetPoint.X, TargetPoint.Y));
 
-    // TODO: from CleanupDbcsEdgesForWrite to the end of the if statement seems to never execute
-    // both callers of this function appear to already have handled the line length for double-width characters
-    CleanupDbcsEdgesForWrite(cchBuffer, TargetPoint, screenInfo);
+    CleanupDbcsEdgesForWrite(wstr.size(), TargetPoint, screenInfo);
     const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
-    if (TargetPoint.Y == coordScreenBufferSize.Y - 1 &&
-        TargetPoint.X + cchBuffer >= coordScreenBufferSize.X &&
-        pDbcsAttributes[coordScreenBufferSize.X - TargetPoint.X - 1].IsLeading())
-    {
-        *(pwchBuffer + coordScreenBufferSize.X - TargetPoint.X - 1) = UNICODE_SPACE;
-        pDbcsAttributes[coordScreenBufferSize.X - TargetPoint.X - 1].SetSingle();
-        if (cchBuffer > coordScreenBufferSize.X - TargetPoint.X)
-        {
-            *(pwchBuffer + coordScreenBufferSize.X - TargetPoint.X) = UNICODE_SPACE;
-            pDbcsAttributes[coordScreenBufferSize.X - TargetPoint.X].SetSingle();
-        }
-    }
 
-    // copy chars
     try
     {
-        ICharRow& iCharRow = Row.GetCharRow();
-        // we only support ucs2 encoded char rows
-        FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                        "only support UCS2 char rows currently");
+        const TextAttribute defaultTextAttribute = screenInfo.GetAttributes();
+        const auto formattedCharData = Utf16Parser::Parse(wstr);
 
-        CharRow& charRow = static_cast<CharRow&>(iCharRow);
-        const auto BufferSpan = gsl::make_span(pwchBuffer, cchBuffer);
-        OverwriteColumns(BufferSpan.begin(),
-                         BufferSpan.end(),
-                         pDbcsAttributes,
-                         std::next(charRow.begin(), TargetPoint.X));
+        std::vector<OutputCell> cells;
+        for (const auto chars : formattedCharData)
+        {
+            DbcsAttribute dbcsAttr;
+            if (IsGlyphFullWidth(chars))
+            {
+                dbcsAttr.SetLeading();
+                cells.emplace_back(chars, dbcsAttr, defaultTextAttribute);
+                dbcsAttr.SetTrailing();
+            }
+            cells.emplace_back(chars, dbcsAttr, defaultTextAttribute);
+        }
+        screenInfo.WriteLine(cells, TargetPoint.Y, TargetPoint.X);
     }
     CATCH_LOG();
 
     // caller knows the wrap status as this func is called only for drawing one line at a time
     Row.GetCharRow().SetWrapForced(fWasLineWrapped);
 
-    TextAttributeRun CurrentBufferAttrs;
-    CurrentBufferAttrs.SetLength(cchBuffer);
-    CurrentBufferAttrs.SetAttributes(screenInfo.GetAttributes());
-    LOG_IF_FAILED(Row.GetAttrRow().InsertAttrRuns({ CurrentBufferAttrs },
-                                                  TargetPoint.X,
-                                                  (SHORT)(TargetPoint.X + cchBuffer - 1),
-                                                  coordScreenBufferSize.X));
-
-    screenInfo.ResetTextFlags(TargetPoint.X, TargetPoint.Y, TargetPoint.X + cchBuffer - 1, TargetPoint.Y);
+    screenInfo.NotifyAccessibilityEventing(TargetPoint.X,
+                                           TargetPoint.Y,
+                                           TargetPoint.X + gsl::narrow<short>(wstr.size()) - 1,
+                                           TargetPoint.Y);
 }
 
 // Routine Description:
@@ -245,7 +228,10 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
                 pRow = nullptr;
             }
         }
-        screenInfo.ResetTextFlags(coordDest.X, coordDest.Y, (SHORT)(coordDest.X + XSize - 1), (SHORT)(coordDest.Y + YSize - 1));
+        screenInfo.NotifyAccessibilityEventing(coordDest.X,
+                                               coordDest.Y,
+                                               (SHORT)(coordDest.X + XSize - 1),
+                                               (SHORT)(coordDest.Y + YSize - 1));
 
         // The above part of the code seems ridiculous in terms of complexity. especially the dbcs stuff.
         // So we'll copy the attributes here in a not terrible way.
@@ -822,7 +808,7 @@ NTSTATUS WriteOutputString(SCREEN_INFORMATION& screenInfo,
                     break;
                 }
             }
-            screenInfo.ResetTextFlags(coordWrite.X, coordWrite.Y, X, Y);
+            screenInfo.NotifyAccessibilityEventing(coordWrite.X, coordWrite.Y, X, Y);
 
         }
         catch (...)
@@ -1164,7 +1150,7 @@ NTSTATUS FillOutput(SCREEN_INFORMATION& screenInfo,
             }
         }
 
-        screenInfo.ResetTextFlags(coordWrite.X, coordWrite.Y, X, Y);
+        screenInfo.NotifyAccessibilityEventing(coordWrite.X, coordWrite.Y, X, Y);
     }
     else
     {
@@ -1328,5 +1314,5 @@ void FillRectangle(const CHAR_INFO * const pciFill,
         }
     }
 
-    screenInfo.ResetTextFlags(psrTarget->Left, psrTarget->Top, psrTarget->Right, psrTarget->Bottom);
+    screenInfo.NotifyAccessibilityEventing(psrTarget->Left, psrTarget->Top, psrTarget->Right, psrTarget->Bottom);
 }

@@ -54,8 +54,8 @@ public:
     virtual void ClearCell(const size_t column) = 0;
 
     // dbcs attribute
-    virtual const DbcsAttribute& GetAttribute(const size_t column) const = 0;
-    virtual DbcsAttribute& GetAttribute(const size_t column) = 0;
+    virtual const DbcsAttribute& DbcsAttrAt(const size_t column) const = 0;
+    virtual DbcsAttribute& DbcsAttrAt(const size_t column) = 0;
 
     // glyphs
     virtual void ClearGlyph(const size_t column) = 0;

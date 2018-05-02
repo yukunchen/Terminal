@@ -92,7 +92,7 @@ public:
     [[nodiscard]]
     NTSTATUS ResizeScreenBuffer(const COORD coordNewScreenSize, const bool fDoScrollBarUpdate);
 
-    void ResetTextFlags(const short sStartX, const short sStartY, const short sEndX, const short sEndY);
+    void NotifyAccessibilityEventing(const short sStartX, const short sStartY, const short sEndX, const short sEndY);
 
     void UpdateScrollBars();
     void InternalUpdateScrollBars();
@@ -129,6 +129,10 @@ public:
     std::vector<OutputCell> ReadLine(const size_t rowIndex,
                                      const size_t startIndex,
                                      const size_t count) const;
+
+    void WriteLine(const std::vector<OutputCell>& cells,
+                   const size_t rowIndex,
+                   const size_t startIndex);
 
     std::pair<COORD, COORD> GetWordBoundary(const COORD position) const;
 

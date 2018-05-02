@@ -574,10 +574,10 @@ void SCREEN_INFORMATION::UpdateFont(const FontInfo* const pfiNewFont)
 // to aggregate drawing metadata to determine whether or not to use PolyTextOut.
 // After the Nov 2015 graphics refactor, the metadata drawing flag calculation is no longer necessary.
 // This now only notifies accessibility apps of a change.
-void SCREEN_INFORMATION::ResetTextFlags(const short sStartX,
-                                        const short sStartY,
-                                        const short sEndX,
-                                        const short sEndY)
+void SCREEN_INFORMATION::NotifyAccessibilityEventing(const short sStartX,
+                                                     const short sStartY,
+                                                     const short sEndX,
+                                                     const short sEndY)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
@@ -1657,7 +1657,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeScreenBuffer(const COORD coordNewScreenSize,
         const COORD coordSetScreenBufferSize = GetScreenBufferSize();
         _textBuffer->SetCoordBufferSize(coordSetScreenBufferSize);
 
-        ResetTextFlags(0, 0, (SHORT)(coordSetScreenBufferSize.X - 1), (SHORT)(coordSetScreenBufferSize.Y - 1));
+        NotifyAccessibilityEventing(0, 0, (SHORT)(coordSetScreenBufferSize.X - 1), (SHORT)(coordSetScreenBufferSize.Y - 1));
 
         if ((!ConvScreenInfo))
         {
@@ -2529,17 +2529,37 @@ void SCREEN_INFORMATION::SetTerminalConnection(_In_ ITerminalOutputConnection* c
                                     std::bind(&StateMachine::FlushToTerminal, _pStateMachine));
 }
 
+// Routine Description:
+// - Reads text from the output buffer. will contain text as it would look at the terminal (no duplicate wide chars)
+// Arguments:
+// - rowIndex - the index of the row to read the text for
+// Return Value:
+// - wstring containing row's text
 std::wstring SCREEN_INFORMATION::ReadText(const size_t rowIndex) const
 {
     const ROW& row = _textBuffer->GetRowByOffset(rowIndex);
     return row.GetText();
 }
 
+// Routine Description:
+// - Reads cells from the output buffer.
+// Arguments:
+// - rowIndex - the index of the row to read the text for
+// Return Value:
+// - vector of cells containing row's data.
 std::vector<OutputCell> SCREEN_INFORMATION::ReadLine(const size_t rowIndex) const
 {
     const ROW& row = _textBuffer->GetRowByOffset(rowIndex);
     return row.AsCells();
 }
+
+// Routine Description:
+// - Reads cells from the output buffer.
+// Arguments:
+// - rowIndex - the index of the row to read the text for
+// - startIndex - column in the row to start reading cells from
+// Return Value:
+// - vector of cells containing row's data.
 std::vector<OutputCell> SCREEN_INFORMATION::ReadLine(const size_t rowIndex,
                                                      const size_t startIndex) const
 {
@@ -2547,12 +2567,44 @@ std::vector<OutputCell> SCREEN_INFORMATION::ReadLine(const size_t rowIndex,
     return row.AsCells(startIndex);
 }
 
+// Routine Description:
+// - Reads cells from the output buffer.
+// Arguments:
+// - rowIndex - the index of the row to read the text for
+// - startIndex - column in the row to start reading cells from
+// - count - the number of cells to read
+// Return Value:
+// - vector of cells containing row's data.
 std::vector<OutputCell> SCREEN_INFORMATION::ReadLine(const size_t rowIndex,
                                                      const size_t startIndex,
                                                      const size_t count) const
 {
     const ROW& row = _textBuffer->GetRowByOffset(rowIndex);
     return row.AsCells(startIndex, count);
+}
+
+// Routine Description:
+// - writes cells to the output buffer.
+// Arguments:
+// - cells - the cells to write to the output buffer
+// - rowIndex - the index of the row to write the text to
+// - startIndex - column in the row to start writing cells to
+// Return Value:
+// - none
+void SCREEN_INFORMATION::WriteLine(const std::vector<OutputCell>& cells,
+                                   const size_t rowIndex,
+                                   const size_t startIndex)
+{
+    ROW* pRow = &_textBuffer->GetRowByOffset(rowIndex);
+    auto it = cells.begin();
+    auto currentColumn = startIndex;
+    while (it != cells.end())
+    {
+        it = pRow->WriteCells(it, cells.end(), currentColumn);
+        pRow->GetCharRow().SetWrapForced(it != cells.end());
+        pRow = &_textBuffer->GetNextRow(*pRow);
+        currentColumn = 0;
+    }
 }
 
 // Routine Description:
