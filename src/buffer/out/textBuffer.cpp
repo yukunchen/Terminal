@@ -465,7 +465,7 @@ bool TextBuffer::InsertCharacter(const std::vector<wchar_t> chars,
 
         try
         {
-            charRow.GlyphAt(iCol) = Utf16ToUcs2(chars);
+            charRow.GlyphAt(iCol) = chars;
             charRow.DbcsAttrAt(iCol) = dbcsAttribute;
         }
         catch (...)

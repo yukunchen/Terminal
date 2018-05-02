@@ -902,13 +902,13 @@ HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const p
     for (size_t iLine = 0; iLine < cchLine && itCurrent < itEnd; ++iLine, ++itCurrent)
     {
         // skip copy of trailing bytes. we'll copy leading and single bytes into the final write array.
-        if (!itCurrent->second.IsTrailing())
+        if (!itCurrent->DbcsAttr().IsTrailing())
         {
             pwsSegment[cchSegment] = pwsLine[iLine];
             rgSegmentWidth[cchSegment] = 1;
 
             // If this is a leading byte, add 1 more to width as it is double wide
-            if (itCurrent->second.IsLeading())
+            if (itCurrent->DbcsAttr().IsLeading())
             {
                 rgSegmentWidth[cchSegment] = 2;
             }

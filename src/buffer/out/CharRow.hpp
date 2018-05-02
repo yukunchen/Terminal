@@ -21,14 +21,17 @@ Revision History:
 
 #include "DbcsAttribute.hpp"
 #include "ICharRow.hpp"
+#include "CharRowReference.hpp"
+#include "CharRowCell.hpp"
 
 class CharRow final : public ICharRow
 {
 public:
     using glyph_type = typename wchar_t;
-    using value_type = typename std::pair<glyph_type, DbcsAttribute>;
+    using value_type = typename CharRowCell;
     using iterator = typename std::vector<value_type>::iterator;
     using const_iterator = typename std::vector<value_type>::const_iterator;
+    using reference = typename CharRowReference;
 
     CharRow(size_t rowWidth);
     CharRow(const CharRow& a) = default;
@@ -61,8 +64,8 @@ public:
     std::wstring GetTextRaw() const;
 
     // working with glyphs
-    const glyph_type& GlyphAt(const size_t column) const;
-    glyph_type& GlyphAt(const size_t column);
+    const reference GlyphAt(const size_t column) const;
+    reference GlyphAt(const size_t column);
 
     // iterators
     iterator begin() noexcept;
@@ -71,6 +74,7 @@ public:
     iterator end() noexcept;
     const_iterator cend() const noexcept;
 
+    friend CharRowReference;
     friend constexpr bool operator==(const CharRow& a, const CharRow& b) noexcept;
 
 protected:

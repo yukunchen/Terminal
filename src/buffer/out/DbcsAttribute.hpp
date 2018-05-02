@@ -17,7 +17,6 @@ Revision History:
 
 class DbcsAttribute final
 {
-public:
     enum class Attribute : BYTE
     {
         Single = 0x00,
@@ -25,13 +24,17 @@ public:
         Trailing = 0x02
     };
 
+public:
+
     DbcsAttribute() noexcept :
-        _attribute{ Attribute::Single }
+        _attribute{ Attribute::Single },
+        _mapSpecifier{ 0 }
     {
     }
 
     DbcsAttribute(const Attribute attribute) noexcept :
-        _attribute{ attribute }
+        _attribute{ attribute },
+        _mapSpecifier{ 0 }
     {
     }
 
@@ -55,6 +58,23 @@ public:
         return IsLeading() || IsTrailing();
     }
 
+    constexpr bool IsStored() const noexcept
+    {
+        return _mapSpecifier != 0;
+    }
+
+    constexpr BYTE GetMapIndex() const noexcept
+    {
+        return _mapSpecifier;
+    }
+
+    void SetMapIndex(const BYTE index)
+    {
+        // the top two bits can't be set because of the bit shifting we will do
+        FAIL_FAST_IF(index & 0xC0);
+        _mapSpecifier = index;
+    }
+
     void SetSingle() noexcept
     {
         _attribute = Attribute::Single;
@@ -68,6 +88,11 @@ public:
     void SetTrailing() noexcept
     {
         _attribute = Attribute::Trailing;
+    }
+
+    void EraseMapIndex()
+    {
+        _mapSpecifier = 0;
     }
 
     WORD GeneratePublicApiAttributeFormat() const noexcept
@@ -107,7 +132,8 @@ public:
     friend constexpr bool operator==(const DbcsAttribute& a, const DbcsAttribute& b) noexcept;
 
 private:
-    Attribute _attribute = Attribute::Single;
+    Attribute _attribute : 2;
+    BYTE _mapSpecifier : 6;
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;
