@@ -434,10 +434,10 @@ bool TextBuffer::_PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute
 }
 
 //Routine Description:
-// - Inserts one character into the buffer at the current character position and advances the cursor as appropriate.
+// - Inserts one codepoint into the buffer at the current cursor position and advances the cursor as appropriate.
 //Arguments:
-// - wchChar - The character to insert
-// - dbcsAttribute - Double byte information associated with the charadcter
+// - chars - The codepoint to insert
+// - dbcsAttribute - Double byte information associated with the codepoint
 // - bAttr - Color data associated with the character
 //Return Value:
 // - true if we successfully inserted the character
