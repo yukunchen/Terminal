@@ -36,8 +36,8 @@ SOURCES= \
     ..\TextAttributeRun.cpp \
     ..\textBuffer.cpp \
     ..\CharRow.cpp \
-    ..\CharRowReference.cpp \
     ..\CharRowCell.cpp \
+    ..\CharRowCellReference.cpp \
 
 INCLUDES= \
     $(INCLUDES); \

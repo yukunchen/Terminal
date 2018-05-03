@@ -21,7 +21,7 @@ Revision History:
 
 #include "DbcsAttribute.hpp"
 #include "ICharRow.hpp"
-#include "CharRowReference.hpp"
+#include "CharRowCellReference.hpp"
 #include "CharRowCell.hpp"
 
 class ROW;
@@ -33,7 +33,7 @@ public:
     using value_type = typename CharRowCell;
     using iterator = typename std::vector<value_type>::iterator;
     using const_iterator = typename std::vector<value_type>::const_iterator;
-    using reference = typename CharRowReference;
+    using reference = typename CharRowCellReference;
 
     CharRow(size_t rowWidth, const ROW* parent);
     CharRow(const CharRow& a) = default;
@@ -78,7 +78,7 @@ public:
 
     COORD GetStorageKey(const size_t column);
 
-    friend CharRowReference;
+    friend CharRowCellReference;
     friend constexpr bool operator==(const CharRow& a, const CharRow& b) noexcept;
 
 protected:

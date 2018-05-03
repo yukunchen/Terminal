@@ -43,6 +43,14 @@ namespace std
     template <>
     struct hash<COORD>
     {
+
+        // Routine Description:
+        // - hashes a coord. coord will be hashed by storing the x and y values consecutively in the lower
+        // bits of a size_t.
+        // Arguments:
+        // - coord - the coord to hash
+        // Return Value:
+        // - the hashed coord
         size_t operator()(const COORD& coord) const noexcept
         {
             size_t retVal = coord.Y;

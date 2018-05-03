@@ -155,7 +155,7 @@ HRESULT CharRow::Resize(const size_t newSize) noexcept
 {
     try
     {
-        const value_type insertVals{};
+        const value_type insertVals;
         _data.resize(newSize, insertVals);
     }
     CATCH_RETURN();
@@ -342,6 +342,12 @@ std::wstring CharRow::GetText() const
     return wstr;
 }
 
+// Routine Description:
+// - calculates the key used by the given column of the char row to store glyph data in UnicodeStorage
+// Arguments:
+// - column - the column to generate the key for
+// Return Value:
+// - the COORD key for data access from UnicodeStorage for the column
 COORD CharRow::GetStorageKey(const size_t column)
 {
     return { gsl::narrow<SHORT>(column), _parent->GetId() };

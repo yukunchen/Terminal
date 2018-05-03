@@ -26,17 +26,16 @@ public:
 
     bool IsSpace() const noexcept;
 
-    DbcsAttribute& DbcsAttr();
-    const DbcsAttribute& DbcsAttr() const;
+    DbcsAttribute& DbcsAttr() noexcept;
+    const DbcsAttribute& DbcsAttr() const noexcept;
 
-    wchar_t& Char();
-    const wchar_t& Char() const;
+    wchar_t& Char() noexcept;
+    const wchar_t& Char() const noexcept;
 
     friend constexpr bool operator==(const CharRowCell& a, const CharRowCell& b) noexcept;
 private:
     wchar_t _wch;
     DbcsAttribute _attr;
-
 };
 
 constexpr bool operator==(const CharRowCell& a, const CharRowCell& b) noexcept

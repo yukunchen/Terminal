@@ -2,7 +2,7 @@
 Copyright (c) Microsoft Corporation
 
 Module Name:
-- CharRowReference.hpp
+- CharRowCellCellReference.hpp
 
 Abstract:
 - reference class for the glyph data of a char row cell
@@ -19,19 +19,20 @@ Author(s):
 
 class CharRow;
 
-class CharRowReference final
+class CharRowCellReference final
 {
 public:
 
     using const_iterator = const wchar_t*;
 
-    CharRowReference(CharRow& parent, const size_t index) :
+    CharRowCellReference(CharRow& parent, const size_t index) :
         _parent{ parent },
         _index{ index }
     {
     }
-    CharRowReference(const CharRowReference&) = default;
-    CharRowReference(CharRowReference&&) = default;
+
+    CharRowCellReference(const CharRowCellReference&) = default;
+    CharRowCellReference(CharRowCellReference&&) = default;
 
     void operator=(const std::vector<wchar_t>& chars);
     operator std::vector<wchar_t>() const;
@@ -40,13 +41,14 @@ public:
     const_iterator end() const;
 
 
-    friend bool operator==(const CharRowReference& ref, const std::vector<wchar_t>& glyph);
-    friend bool operator==(const std::vector<wchar_t>& glyph, const CharRowReference& ref);
+    friend bool operator==(const CharRowCellReference& ref, const std::vector<wchar_t>& glyph);
+    friend bool operator==(const std::vector<wchar_t>& glyph, const CharRowCellReference& ref);
 
 private:
+    // what char row the object belongs to
     CharRow& _parent;
+    // the index of the cell in the parent char row
     const size_t _index;
-    wchar_t _lastData;
 
     CharRowCell& _cellData();
     const CharRowCell& _cellData() const;
@@ -54,5 +56,5 @@ private:
     std::vector<wchar_t> _glyphData() const;
 };
 
-bool operator==(const CharRowReference& ref, const std::vector<wchar_t>& glyph);
-bool operator==(const std::vector<wchar_t>& glyph, const CharRowReference& ref);
+bool operator==(const CharRowCellReference& ref, const std::vector<wchar_t>& glyph);
+bool operator==(const std::vector<wchar_t>& glyph, const CharRowCellReference& ref);

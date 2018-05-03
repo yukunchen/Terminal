@@ -28,13 +28,13 @@ public:
 
     DbcsAttribute() noexcept :
         _attribute{ Attribute::Single },
-        _mapSpecifier{ 0 }
+        _storedGlyph{ false }
     {
     }
 
     DbcsAttribute(const Attribute attribute) noexcept :
         _attribute{ attribute },
-        _mapSpecifier{ 0 }
+        _storedGlyph{ false }
     {
     }
 
@@ -60,19 +60,12 @@ public:
 
     constexpr bool IsStored() const noexcept
     {
-        return _mapSpecifier != 0;
+        return _storedGlyph;
     }
 
-    constexpr BYTE GetMapIndex() const noexcept
+    void SetStored(const bool stored)
     {
-        return _mapSpecifier;
-    }
-
-    void SetMapIndex(const BYTE index)
-    {
-        // the top two bits can't be set because of the bit shifting we will do
-        FAIL_FAST_IF(index & 0xC0);
-        _mapSpecifier = index;
+        _storedGlyph = stored;
     }
 
     void SetSingle() noexcept
@@ -92,7 +85,7 @@ public:
 
     void EraseMapIndex()
     {
-        _mapSpecifier = 0;
+        _storedGlyph = 0;
     }
 
     WORD GeneratePublicApiAttributeFormat() const noexcept
@@ -133,7 +126,7 @@ public:
 
 private:
     Attribute _attribute : 2;
-    BYTE _mapSpecifier : 6;
+    bool _storedGlyph : 1;
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;
