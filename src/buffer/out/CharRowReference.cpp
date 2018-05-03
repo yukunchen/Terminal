@@ -15,12 +15,13 @@ void CharRowReference::operator=(const std::vector<wchar_t>& chars)
     if (chars.size() == 1)
     {
         _cellData().Char() = chars.front();
+        _cellData().DbcsAttr().EraseMapIndex();
     }
     else
     {
         auto& storage = UnicodeStorage::GetInstance();
-        auto key = storage.StoreText(chars);
-        _cellData().Char() = key;
+        const auto key = _parent.GetStorageKey(_index);
+        storage.StoreText(key, chars);
         _cellData().DbcsAttr().SetMapIndex(1);
     }
 }
@@ -44,7 +45,7 @@ std::vector<wchar_t> CharRowReference::_glyphData() const
 {
     if (_cellData().DbcsAttr().IsStored())
     {
-        return UnicodeStorage::GetInstance().GetText(_cellData().Char());
+        return UnicodeStorage::GetInstance().GetText(_parent.GetStorageKey(_index));
     }
     else
     {
@@ -56,7 +57,7 @@ CharRowReference::const_iterator CharRowReference::begin() const
 {
     if (_cellData().DbcsAttr().IsStored())
     {
-        return UnicodeStorage::GetInstance().GetText(_cellData().Char()).data();
+        return UnicodeStorage::GetInstance().GetText(_parent.GetStorageKey(_index)).data();
     }
     else
     {
@@ -69,7 +70,7 @@ CharRowReference::const_iterator CharRowReference::end() const
     if (_cellData().DbcsAttr().IsStored())
     {
 
-        const auto& chars = UnicodeStorage::GetInstance().GetText(_cellData().Char());
+        const auto& chars = UnicodeStorage::GetInstance().GetText(_parent.GetStorageKey(_index));
         return chars.data() + chars.size();
     }
     else

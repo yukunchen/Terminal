@@ -20,7 +20,7 @@ Author(s):
 class UnicodeStorage final
 {
 public:
-    using key_type = typename unsigned short;
+    using key_type = typename COORD;
     using mapped_type = typename std::vector<wchar_t>;
 
     static UnicodeStorage& GetInstance()
@@ -34,12 +34,9 @@ public:
         return _map.at(key);
     }
 
-    const key_type StoreText(const std::vector<wchar_t>& text)
+    const void StoreText(const key_type key, const std::vector<wchar_t>& text)
     {
-        _map.emplace(_currentKey, text);
-        auto retVal = _currentKey;
-        ++_currentKey;
-        return retVal;
+        _map.emplace(key, text);
     }
 
     void Erase(const key_type key)
@@ -49,11 +46,9 @@ public:
 
 private:
     UnicodeStorage() :
-        _map{},
-        _currentKey{ 1u }
+        _map{}
     {
     }
 
     std::unordered_map<key_type, mapped_type> _map;
-    key_type _currentKey;
 };

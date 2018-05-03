@@ -1,8 +1,8 @@
 /********************************************************
- *                                                       *
- *   Copyright (C) Microsoft. All rights reserved.       *
- *                                                       *
- ********************************************************/
+*                                                       *
+*   Copyright (C) Microsoft. All rights reserved.       *
+*                                                       *
+********************************************************/
 
 #include "precomp.h"
 #include "Row.hpp"
@@ -32,7 +32,7 @@ void swap(ROW& a, ROW& b) noexcept
 ROW::ROW(const SHORT rowId, const short rowWidth, const TextAttribute fillAttribute) :
     _id{ rowId },
     _rowWidth{ gsl::narrow<size_t>(rowWidth) },
-    _charRow{ std::make_unique<CharRow>(rowWidth) },
+    _charRow{ std::make_unique<CharRow>(rowWidth, this) },
     _attrRow{ rowWidth, fillAttribute }
 {
 }
@@ -254,8 +254,8 @@ std::vector<OutputCell>::const_iterator ROW::WriteCells(const std::vector<Output
     size_t currentIndex = index;
     while (it != end && currentIndex < _charRow->size())
     {
-        static_cast<CharRow&>(*_charRow).GlyphAt(currentIndex) = it->Chars();
         _charRow->DbcsAttrAt(currentIndex) = it->DbcsAttr();
+        static_cast<CharRow&>(*_charRow).GlyphAt(currentIndex) = it->Chars();
         if (it->TextAttrBehavior() != OutputCell::TextAttributeBehavior::Current)
         {
             const TextAttributeRun attrRun{ 1, it->TextAttr() };

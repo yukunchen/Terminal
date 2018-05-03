@@ -8,7 +8,6 @@
 
 #include "CharRowCell.hpp"
 #include "unicode.hpp"
-#include "UnicodeStorage.hpp"
 
 
 // default glyph value, used for reseting the character data portion of a cell
@@ -30,9 +29,6 @@ void CharRowCell::EraseChars()
 {
     if (_attr.IsStored())
     {
-        auto key = _attr.GetMapIndex();
-        auto& storage = UnicodeStorage::GetInstance();
-        storage.Erase(key);
         _attr.EraseMapIndex();
     }
     _wch = DefaultValue;

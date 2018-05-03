@@ -24,6 +24,8 @@ Revision History:
 #include "CharRowReference.hpp"
 #include "CharRowCell.hpp"
 
+class ROW;
+
 class CharRow final : public ICharRow
 {
 public:
@@ -33,7 +35,7 @@ public:
     using const_iterator = typename std::vector<value_type>::const_iterator;
     using reference = typename CharRowReference;
 
-    CharRow(size_t rowWidth);
+    CharRow(size_t rowWidth, const ROW* parent);
     CharRow(const CharRow& a) = default;
     CharRow& operator=(const CharRow& a);
     CharRow(CharRow&& a) = default;
@@ -74,6 +76,8 @@ public:
     iterator end() noexcept;
     const_iterator cend() const noexcept;
 
+    COORD GetStorageKey(const size_t column);
+
     friend CharRowReference;
     friend constexpr bool operator==(const CharRow& a, const CharRow& b) noexcept;
 
@@ -86,6 +90,9 @@ protected:
 
     // storage for glyph data and dbcs attributes
     std::vector<value_type> _data;
+
+    // ROW that this CharRow belongs to
+    const ROW* _parent;
 };
 
 void swap(CharRow& a, CharRow& b) noexcept;

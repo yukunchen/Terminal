@@ -8,6 +8,7 @@
 
 #include "CharRow.hpp"
 #include "unicode.hpp"
+#include "Row.hpp"
 
 // Routine Description:
 // - swaps two CharRows
@@ -28,10 +29,11 @@ void swap(CharRow& a, CharRow& b) noexcept
 // Return Value:
 // - instantiated object
 // Note: will through if unable to allocate char/attribute buffers
-CharRow::CharRow(size_t rowWidth) :
+CharRow::CharRow(size_t rowWidth, const ROW* parent) :
     _wrapForced{ false },
     _doubleBytePadded{ false },
-    _data(rowWidth, value_type())
+    _data(rowWidth, value_type()),
+    _parent{ parent }
 {
 }
 
@@ -62,6 +64,7 @@ void CharRow::swap(CharRow& other) noexcept
     swap(_wrapForced, other._wrapForced);
     swap(_doubleBytePadded, other._doubleBytePadded);
     swap(_data, other._data);
+    swap(_parent, other._parent);
 }
 
 ICharRow::SupportedEncoding CharRow::GetSupportedEncoding() const noexcept
@@ -337,4 +340,9 @@ std::wstring CharRow::GetText() const
         }
     }
     return wstr;
+}
+
+COORD CharRow::GetStorageKey(const size_t column)
+{
+    return { gsl::narrow<SHORT>(column), _parent->GetId() };
 }

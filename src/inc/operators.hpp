@@ -36,3 +36,18 @@ constexpr bool operator!=(const SMALL_RECT& a, const SMALL_RECT& b) noexcept
 {
     return !(a == b);
 }
+
+// std::unordered_map needs help to know how to hash a COORD
+namespace std
+{
+    template <>
+    struct hash<COORD>
+    {
+        size_t operator()(const COORD& coord) const noexcept
+        {
+            size_t retVal = coord.Y;
+            retVal += coord.X << (sizeof(coord.X) * 8);
+            return retVal;
+        }
+    };
+}
