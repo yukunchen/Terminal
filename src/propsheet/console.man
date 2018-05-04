@@ -15,6 +15,7 @@
       versionScope="nonSxS"
       />
   <dependency
+      buildFilter="not build.isWow"
       discoverable="false"
       optional="false"
       resourceType="Resources"
