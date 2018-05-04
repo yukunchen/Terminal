@@ -767,10 +767,6 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
     try
     {
         ICharRow& iCharRow = Row.GetCharRow();
-        // we only support ucs2 encoded char rows
-        FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                        "only support UCS2 char rows currently");
-
         CharRow& charRow = static_cast<CharRow&>(iCharRow);
 
         const auto StringSpan = gsl::make_span(String, StringLength);

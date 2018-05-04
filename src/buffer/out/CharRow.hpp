@@ -22,6 +22,16 @@ Revision History:
 #include "DbcsAttribute.hpp"
 #include "ICharRow.hpp"
 
+// the characters of one row of screen buffer
+// we keep the following values so that we don't write
+// more pixels to the screen than we have to:
+// left is initialized to screenbuffer width.  right is
+// initialized to zero.
+//
+//      [     foo.bar    12-12-61                       ]
+//       ^    ^                  ^                     ^
+//       |    |                  |                     |
+//     Chars Left               Right                end of Chars buffer
 class CharRow final : public ICharRow
 {
 public:
@@ -55,7 +65,6 @@ public:
     DbcsAttribute& DbcsAttrAt(const size_t column) override;
     void ClearGlyph(const size_t column) override;
     std::wstring GetText() const override;
-    ICharRow::SupportedEncoding GetSupportedEncoding() const noexcept override;
 
     // other functions implemented at the template class level
     std::wstring GetTextRaw() const;

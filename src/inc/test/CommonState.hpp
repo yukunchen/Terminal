@@ -232,11 +232,6 @@ private:
         attrs[6].SetTrailing();
 
         ICharRow& iCharRow = pRow->GetCharRow();
-        if (iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2)
-        {
-            LOG_HR_MSG(E_FAIL, "we don't support non UCS2 encoded char rows");
-            return;
-        }
         CharRow& charRow = static_cast<CharRow&>(iCharRow);
         OverwriteColumns(pwszText, pwszText + length, attrs.cbegin(), charRow.begin());
 
@@ -303,11 +298,6 @@ private:
         attrs[79].SetLeading();
 
         ICharRow& iCharRow = pRow->GetCharRow();
-        if (iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2)
-        {
-            LOG_HR_MSG(E_FAIL, "we don't support non UCS2 encoded char rows");
-            return;
-        }
         CharRow& charRow = static_cast<CharRow&>(iCharRow);
         OverwriteColumns(pwszText, pwszText + length, attrs.cbegin(), charRow.begin());
 

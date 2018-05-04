@@ -643,10 +643,6 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
         if (iRight > iLeft)
         {
             const ICharRow& iCharRow = Row.GetCharRow();
-            // we only support ucs2 encoded char rows
-            FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                            "only support UCS2 char rows currently");
-
             const CharRow& charRow = static_cast<const CharRow&>(iCharRow);
 
 
@@ -1089,10 +1085,6 @@ void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
                 const ROW& Row = textBuffer.GetRowByOffset(iRow - AreaInfo->CaInfo.coordConView.Y);
 
                 const ICharRow& iCharRow = Row.GetCharRow();
-                // we only support ucs2 encoded char rows
-                FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                                "only support UCS2 char rows currently");
-
                 const CharRow& charRow = static_cast<const CharRow&>(iCharRow);
 
                 std::wstring rowText;

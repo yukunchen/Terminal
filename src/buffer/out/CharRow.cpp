@@ -66,11 +66,6 @@ void CharRow::swap(CharRow& other) noexcept
     swap(_data, other._data);
 }
 
-ICharRow::SupportedEncoding CharRow::GetSupportedEncoding() const noexcept
-{
-    return ICharRow::SupportedEncoding::Ucs2;
-}
-
 // Routine Description:
 // - Sets the wrap status for the current row
 // Arguments:

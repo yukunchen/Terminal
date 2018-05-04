@@ -89,10 +89,6 @@ class UiaTextRangeTests
         {
             ROW& row = _pTextBuffer->GetRowByOffset(i);
             auto& iCharRow = row.GetCharRow();
-            // we only support ucs2 encoded char rows
-            FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                            "only support UCS2 char rows currently");
-
             CharRow& charRow = static_cast<CharRow&>(iCharRow);
             for (auto& cell : charRow)
             {

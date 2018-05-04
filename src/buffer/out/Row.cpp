@@ -48,10 +48,6 @@ ROW::ROW(const ROW& a) :
     _rowWidth{ a._rowWidth },
     _id{ a._id }
 {
-    // we only support ucs2 encoded char rows
-    FAIL_FAST_IF_MSG(a._charRow->GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                     "only support UCS2 char rows currently");
-
     CharRow charRow = *static_cast<const CharRow* const>(a._charRow.get());
     _charRow = std::make_unique<CharRow>(charRow);
 }
