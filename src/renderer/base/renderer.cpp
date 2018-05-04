@@ -322,20 +322,18 @@ void Renderer::TriggerTeardown()
 // - <none>
 void Renderer::TriggerSelection()
 {
-    // Get selection rectangles
-    SMALL_RECT* rgsrSelection;
-    UINT cRectsSelected;
-
-    if (NT_SUCCESS(_GetSelectionRects(&rgsrSelection, &cRectsSelected)))
+    try
     {
-        std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
-            LOG_IF_FAILED(pEngine->InvalidateSelection(rgsrSelection, cRectsSelected));
-        });
+        // Get selection rectangles
+        const auto rects = _GetSelectionRects();
 
-        delete[] rgsrSelection;
+        std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
+            LOG_IF_FAILED(pEngine->InvalidateSelection(rects));
+        });
 
         _NotifyPaintFrame();
     }
+    CATCH_LOG();
 }
 
 // Routine Description:
@@ -1163,19 +1161,16 @@ void Renderer::_PaintImeCompositionString(_In_ IRenderEngine* const pEngine)
 // - <none>
 void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 {
-    // Get selection rectangles
-    SMALL_RECT* rgsrSelection;
-    UINT cRectsSelected;
-
-    if (NT_SUCCESS(_GetSelectionRects(&rgsrSelection, &cRectsSelected)))
+    try
     {
-        if (cRectsSelected > 0)
+        // Get selection rectangles
+        const auto rectangles = _GetSelectionRects();
+        if (rectangles.size() > 0)
         {
-            LOG_IF_FAILED(pEngine->PaintSelection(rgsrSelection, cRectsSelected));
+            LOG_IF_FAILED(pEngine->PaintSelection(rectangles));
         }
-
-        delete[] rgsrSelection;
     }
+    CATCH_LOG();
 }
 
 // Routine Description:
@@ -1228,33 +1223,24 @@ HRESULT Renderer::_PerformScrolling(_In_ IRenderEngine* const pEngine)
 
 // Routine Description:
 // - Helper to determine the selected region of the buffer.
-// - NOTE: CALLER MUST FREE THE ARRAY RECEIVED IF THE SIZE WAS NON-ZERO
-// Arguments:
-// - prgsrSelection - Pointer to callee allocated array of rectangles representing the selection area, one per line of the selection.
-// - pcRectangles - Count of how many rectangles are in the above array.
 // Return Value:
-// - Success status if we managed to retrieve rectangles. Check with NT_SUCCESS.
-[[nodiscard]]
-NTSTATUS Renderer::_GetSelectionRects(_Outptr_result_buffer_all_(*pcRectangles) SMALL_RECT** const prgsrSelection,
-                                      _Out_ UINT* const pcRectangles) const
+// - A vector of rectangles representing the regions to select, line by line.
+std::vector<SMALL_RECT> Renderer::_GetSelectionRects() const
 {
-    NTSTATUS status = _pData->GetSelectionRects(prgsrSelection, pcRectangles);
+    auto rects = _pData->GetSelectionRects();
+    // Adjust rectangles to viewport
+    Viewport view(_pData->GetViewport());
 
-    if (NT_SUCCESS(status))
+    for (auto& rect : rects)
     {
-        // Adjust rectangles to viewport
-        Viewport view(_pData->GetViewport());
-        for (UINT iRect = 0; iRect < *pcRectangles; iRect++)
-        {
-            view.ConvertToOrigin(&(*prgsrSelection)[iRect]);
+        view.ConvertToOrigin(rect);
 
-            // hopefully temporary, we should be receiving the right selection sizes without correction.
-            (*prgsrSelection)[iRect].Right++;
-            (*prgsrSelection)[iRect].Bottom++;
-        }
+        // hopefully temporary, we should be receiving the right selection sizes without correction.
+        rect.Right++;
+        rect.Bottom++;
     }
 
-    return status;
+    return rects;
 }
 
 // Method Description:

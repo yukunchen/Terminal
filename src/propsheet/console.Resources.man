@@ -15,6 +15,7 @@
       versionScope="nonSxS"
       />
   <file
+      buildFilter="not build.isWow"
       destinationPath="$(runtime.system32)\$(build.cultureNameString)"
       importPath="$(build.locsrc)\"
       name="console.dll.mui"

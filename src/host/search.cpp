@@ -4,212 +4,274 @@
 
 #include "dbcs.h"
 #include "../buffer/out/CharRow.hpp"
+#include "../types/inc/Utf16Parser.hpp"
 
-USHORT SearchForString(const SCREEN_INFORMATION& ScreenInfo,
-                       _In_reads_(cchSearch) PCWSTR pwszSearch,
-                       _In_range_(1, SEARCH_STRING_LENGTH) USHORT cchSearch,
-                       const bool IgnoreCase,
-                       const bool Reverse,
-                       const bool SearchAndSetAttr,
-                       const ULONG ulAttr,
-                       _Out_opt_ PCOORD coordStringPosition)  // not touched for SearchAndSetAttr case.
+// Routine Description:
+// - Constructs a Search object.
+// - Make a Search object then call .FindNext() to locate items.
+// - Once you've found something, you can perfom actions like .Select() or .Color()
+// Arguments:
+// - screenInfo - The screen buffer to search through (the "haystack")
+// - str - The search term you want to find (the "needle")
+// - direction - The direction to search (upward or downward)
+// - sensitivity - Whether or not you care about case
+Search::Search(const SCREEN_INFORMATION& screenInfo,
+               const std::wstring& str,
+               const Direction direction,
+               const Sensitivity sensitivity) :
+    _direction(direction),
+    _sensitivity(sensitivity),
+    _screenInfo(screenInfo),
+    _needle(s_CreateNeedleFromString(str)),
+    _coordAnchor(s_GetInitialAnchor(screenInfo, direction))
 {
-    if (coordStringPosition != nullptr)
+    _coordNext = _coordAnchor;
+}
+
+// Routine Description
+// - Locates the next instance of the search term within the screen buffer.
+// Arguments:
+// - <none> - Uses internal state from constructor
+// Return Value:
+// - True if we found another item. False if we've reached the end of the buffer.
+// - NOTE: You can FindNext() again after False to go around the buffer again.
+bool Search::FindNext()
+{
+    if (_reachedEnd)
     {
-        coordStringPosition->X = 0;
-        coordStringPosition->Y = 0;
+        _reachedEnd = false;
+        return false;
     }
 
-    COORD MaxPosition = ScreenInfo.GetScreenBufferSize();
-    MaxPosition.X -= cchSearch;
-    MaxPosition.Y -= 1;
-
-    Selection* const pSelection = &Selection::Instance();
-
-    // calculate starting position
-    COORD Position;
-    if (pSelection->IsInSelectingState())
+    do
     {
-        Position = pSelection->GetSelectionAnchor();
-        Position.X = std::min(Position.X, MaxPosition.X);
+        if (_FindNeedleInHaystackAt(_coordNext, _coordSelStart, _coordSelEnd))
+        {
+            _UpdateNextPosition();
+            _reachedEnd = _coordNext == _coordAnchor;
+            return true;
+        }
+        else
+        {
+            _UpdateNextPosition();
+        }
+
+    } while (_coordNext != _coordAnchor);
+
+    return false;
+}
+
+// Routine Description:
+// - Takes the found word and selects it in the screen buffer
+void Search::Select() const
+{
+    // Only select if we've found something.
+    if (_coordSelStart != _coordSelEnd)
+    {
+        Selection::Instance().SelectNewRegion(_coordSelStart, _coordSelEnd);
     }
-    else if (Reverse)
+}
+
+// Routine Description:
+// - Takes the found word and applies the given color to it in the screen buffer
+// Arguments:
+// - ulAttr - The legacy color attribute to apply to the word
+void Search::Color(const ULONG ulAttr) const
+{
+    // Only select if we've found something.
+    if (_coordSelStart != _coordSelEnd)
     {
-        Position.X = 0;
-        Position.Y = 0;
+        Selection::Instance().ColorSelection(_coordSelStart, _coordSelEnd, ulAttr);
+    }
+}
+
+// Routine Description:
+// - Finds the anchor position where we will start searches from.
+// - This position will represent the "wrap around" point in the buffer or where
+//   we reach the end of our search.
+// - If the screen buffer given already has a selection in it, it will be used to determine the anchor.
+// - Otherwise, we will choose one of the ends of the screen buffer depending on direction.
+// Arguments:
+// - screenInfo - The screen buffer for determining the anchor
+// - direction - The intended direction of the search
+// Return Value:
+// - Coordinate to start the search from.
+COORD Search::s_GetInitialAnchor(const SCREEN_INFORMATION& screenInfo, const Direction direction)
+{
+    if (Selection::Instance().IsInSelectingState())
+    {
+        auto anchor = Selection::Instance().GetSelectionAnchor();
+        if (direction == Direction::Forward)
+        {
+            Utils::s_IncrementCoordinate(screenInfo.GetScreenBufferSize(), anchor);
+        }
+        else
+        {
+            Utils::s_DecrementCoordinate(screenInfo.GetScreenBufferSize(), anchor);
+        }
+        return anchor;
     }
     else
     {
-        Position.X = MaxPosition.X;
-        Position.Y = MaxPosition.Y;
-    }
-
-    // Prepare search string.
-    WCHAR SearchString2[SEARCH_STRING_LENGTH * 2 + 1];  // search string buffer
-    UINT const cchSearchString2 = ARRAYSIZE(SearchString2);
-    ASSERT(cchSearch == wcslen(pwszSearch) && cchSearch < cchSearchString2);
-
-    PWSTR pStr = SearchString2;
-
-    // boundary to prevent loop overflow. -1 to leave space for the null terminator at the end of the string.
-    const PCWCHAR pwchSearchString2End = SearchString2 + cchSearchString2 - 1;
-
-    while (*pwszSearch && pStr < pwchSearchString2End)
-    {
-        *pStr++ = *pwszSearch;
-#if defined(CON_TB_MARK)
-        // On the screen, one East Asian "FullWidth" character occupies two columns (double width),
-        // so we have to share two screen buffer elements for one DBCS character.
-        // For example, if the screen shows "AB[DBC]CD", the screen buffer will be,
-        //   [L'A'] [L'B'] [DBC(Unicode)] [CON_TB_MARK] [L'C'] [L'D']
-        //   (DBC:: Double Byte Character)
-        // CON_TB_MARK is used to indicate that the column is the trainling byte.
-        //
-        // Before comparing the string with the screen buffer, we need to modify the search
-        // string to match the format of the screen buffer.
-        // If we find a FullWidth character in the search string, put CON_TB_MARK
-        // right after it so that we're able to use NLS functions.
-#else
-        // If KAttribute is used, the above example will look like:
-        // CharRow.Chars: [L'A'] [L'B'] [DBC(Unicode)] [DBC(Unicode)] [L'C'] [L'D']
-        // CharRow.KAttrs:    0      0   LEADING_BYTE  TRAILING_BYTE       0      0
-        //
-        // We do no fixup if SearchAndSetAttr was specified.  In this case the search buffer has
-        // come straight out of the console buffer,  so is already in the required format.
-#endif
-        if (!SearchAndSetAttr
-            && IsCharFullWidth(*pwszSearch)
-            && pStr < pwchSearchString2End)
+        if (direction == Direction::Forward)
         {
-#if defined(CON_TB_MARK)
-            *pStr++ = CON_TB_MARK;
-#else
-            *pStr++ = *pwszSearch;
-#endif
+            return { 0, 0 };
         }
-        ++pwszSearch;
-    }
-
-    *pStr = L'\0';
-
-    USHORT const ColumnWidth = (USHORT)(pStr - SearchString2);
-    pwszSearch = SearchString2;
-
-    // search for the string
-    BOOL RecomputeRow = TRUE;
-    COORD const EndPosition = Position;
-    SHORT RowIndex = 0;
-    try
-    {
-        do
+        else
         {
-    #if !defined(CON_TB_MARK)
-    #if DBG
-            int nLoop = 0;
-    #endif
-        recalc:
-    #endif
-            if (Reverse)
-            {
-                if (--Position.X < 0)
-                {
-                    Position.X = MaxPosition.X;
-                    if (--Position.Y < 0)
-                    {
-                        Position.Y = MaxPosition.Y;
-                    }
-                    RecomputeRow = TRUE;
-                }
-            }
-            else
-            {
-                if (++Position.X > MaxPosition.X)
-                {
-                    Position.X = 0;
-                    if (++Position.Y > MaxPosition.Y)
-                    {
-                        Position.Y = 0;
-                    }
-                    RecomputeRow = TRUE;
-                }
-            }
-
-            const ROW* pRow;
-            try
-            {
-                const auto& textBuffer = ScreenInfo.GetTextBuffer();
-                pRow = &textBuffer.GetRowAtIndex(RowIndex);
-                if (RecomputeRow)
-                {
-                    RowIndex = (textBuffer.GetFirstRowIndex() + Position.Y) % ScreenInfo.GetScreenBufferSize().Y;
-                    pRow = &textBuffer.GetRowAtIndex(RowIndex);
-                    RecomputeRow = FALSE;
-                }
-            }
-            catch (...)
-            {
-                LOG_CAUGHT_EXCEPTION();
-                return 0;
-            }
-
-
-    #if !defined(CON_TB_MARK)
-            ASSERT(nLoop++ < 2);
-            try
-            {
-                const ICharRow& iCharRow = pRow->GetCharRow();
-                // we only support ucs2 encoded char rows
-                FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                                "only support UCS2 char rows currently");
-
-                const CharRow& charRow = static_cast<const CharRow&>(iCharRow);
-                if (charRow.DbcsAttrAt(Position.X).IsTrailing())
-                {
-                    goto recalc;
-                }
-            }
-            catch (...)
-            {
-                LOG_CAUGHT_EXCEPTION();
-                return 0;
-            }
-    #endif
-            std::wstring rowText;
-            const ICharRow& iCharRow = pRow->GetCharRow();
-            // we only support ucs2 encoded char rows
-            FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                            "only support UCS2 char rows currently");
-
-            const CharRow& charRow = static_cast<const CharRow&>(iCharRow);
-            rowText = charRow.GetText();
-
-            if (IgnoreCase ?
-                0 == _wcsnicmp(pwszSearch, &rowText.c_str()[Position.X], cchSearch) :
-                0 == wcsncmp(pwszSearch, &rowText.c_str()[Position.X], cchSearch))
-            {
-                //  If this operation was a normal user find, then return now. Otherwise set the attributes of this match,
-                //  and continue searching the whole buffer.
-                if (!SearchAndSetAttr)
-                {
-                    *coordStringPosition = Position;
-                    return ColumnWidth;
-                }
-                else
-                {
-                    SMALL_RECT Rect;
-                    Rect.Top = Rect.Bottom = Position.Y;
-                    Rect.Left = Position.X;
-                    Rect.Right = Rect.Left + ColumnWidth - 1;
-
-                    pSelection->ColorSelection(&Rect, ulAttr);
-                }
-            }
-        } while (!((Position.X == EndPosition.X) && (Position.Y == EndPosition.Y)));
+            const auto bufferSize = screenInfo.GetScreenBufferSize();
+            return { bufferSize.X - 1, bufferSize.Y - 1 };
+        }
     }
-    catch (...)
+}
+
+// Routine Description:
+// - Attempts to compare the search term (the needle) to the screen buffer (the haystack)
+//   at the given coordinate position of the screen buffer.
+// - Performs one comparison. Call again with new positions to check other spots.
+// Arguments:
+// - pos - The position in the haystack (screen buffer) to compare
+// - start - If we found it, this is filled with the coordinate of the first character of the needle.
+// - end - If we found it, this is filled with the coordinate of the last character of the needle.
+// Return Value:
+// - True if we found it. False if not.
+bool Search::_FindNeedleInHaystackAt(const COORD pos, COORD& start, COORD& end) const
+{
+    start = { 0 };
+    end = { 0 };
+
+    COORD bufferPos = pos;
+
+    for (const auto& needleCell : _needle)
     {
-        return 0;
+        // Haystack is the buffer. Needle is the string we were given.
+        const auto hayIter = _screenInfo.GetTextDataAt(bufferPos);
+        const auto hayChar = *hayIter;
+        //const auto hayChars = gsl::make_span<const wchar_t>(&hayChar, 1);
+        const auto hayChars = gsl::make_span<const wchar_t>(hayChar.begin(), hayChar.end());
+
+        const auto& needleChars = needleCell;
+
+        // If we didn't match at any point of the needle, return false.
+        if (!_CompareChars(hayChars, needleChars))
+        {
+            return false;
+        }
+
+        _IncrementCoord(bufferPos);
     }
 
-    return 0;   // the string was not found
+    _DecrementCoord(bufferPos);
+
+    // If we made it the whole way through the needle, then it was in the haystack.
+    // Fill out the span that we found the result at and return true.
+    start = pos;
+    end = bufferPos;
+
+    return true;
+}
+
+// Routine Description:
+// - Provides an abstraction for comparing two spans of text.
+// - Internally handles case sensitivity based on object construction.
+// Arguments:
+// - one - Span representing the first string of text
+// - two - Span representing the second string of text
+// Return Value:
+// - True if they are the same. False otherwise.
+bool Search::_CompareChars(const gsl::span<const wchar_t>& one, const gsl::span<const wchar_t>& two) const
+{
+    if (one.size() != two.size())
+    {
+        return false;
+    }
+
+    for (ptrdiff_t i = 0; i < one.size(); i++)
+    {
+        if (_ApplySensitivity(one[i]) != _ApplySensitivity(two[i]))
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+// Routine Description:
+// - Provides an abstraction for conditionally applying case sensitivity
+//   based on object construction
+// Arguments:
+// - wch - Character to adjust if necessary
+// Return Value:
+// - Adjusted value (or not).
+wchar_t Search::_ApplySensitivity(const wchar_t wch) const
+{
+    if (_sensitivity == Sensitivity::CaseInsensitive)
+    {
+        return ::towlower(wch);
+    }
+    else
+    {
+        return wch;
+    }
+}
+
+// Routine Description:
+// - Helper to increment a coordinate in respect to the associated screen buffer
+// Arguments
+// - coord - Updated by function to increment one position (will wrap X and Y direction)
+void Search::_IncrementCoord(COORD& coord) const
+{
+    Utils::s_IncrementCoordinate(_screenInfo.GetScreenBufferSize(), coord);
+}
+
+// Routine Description:
+// - Helper to decrement a coordinate in respect to the associated screen buffer
+// Arguments
+// - coord - Updated by function to decrement one position (will wrap X and Y direction)
+void Search::_DecrementCoord(COORD& coord) const
+{
+    Utils::s_DecrementCoordinate(_screenInfo.GetScreenBufferSize(), coord);
+}
+
+// Routine Description:
+// - Helper to update the coordinate position to the next point to be searched
+// Return Value:
+// - True if we haven't reached the end of the buffer. False otherwise.
+void Search::_UpdateNextPosition()
+{
+    if (_direction == Direction::Forward)
+    {
+        _IncrementCoord(_coordNext);
+    }
+    else if (_direction == Direction::Backward)
+    {
+        _DecrementCoord(_coordNext);
+    }
+    else
+    {
+        THROW_HR(E_NOTIMPL);
+    }
+}
+
+// Routine Description:
+// - Creates a "needle" of the correct format for comparison to the screen buffer text data
+//   that we can use for our search
+// Arguments:
+// - wstr - String that will be our search term
+// Return Value:
+// - Structured text data for comparison to screen buffer text data.
+std::vector<std::vector<wchar_t>> Search::s_CreateNeedleFromString(const std::wstring& wstr)
+{
+    const auto charData = Utf16Parser::Parse(wstr);
+    std::vector<std::vector<wchar_t>> cells;
+    for (const auto chars : charData)
+    {
+        if (IsGlyphFullWidth(chars))
+        {
+            cells.emplace_back(chars);
+        }
+        cells.emplace_back(chars);
+    }
+    return cells;
 }

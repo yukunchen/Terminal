@@ -2677,3 +2677,8 @@ const TextBuffer& SCREEN_INFORMATION::GetTextBuffer() const
 {
     return *_textBuffer;
 }
+
+ScreenInfoTextIterator SCREEN_INFORMATION::GetTextDataAt(const COORD at) const
+{
+    return ScreenInfoTextIterator(this, at);
+}

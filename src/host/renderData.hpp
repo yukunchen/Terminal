@@ -34,9 +34,7 @@ public:
 
     const bool IsGridLineDrawingAllowed();
 
-    [[nodiscard]]
-    NTSTATUS GetSelectionRects(_Outptr_result_buffer_all_(*pcRectangles) SMALL_RECT** const prgsrSelection,
-                               _Out_ UINT* const pcRectangles);
+    std::vector<SMALL_RECT> GetSelectionRects();
 
     const std::wstring GetConsoleTitle() const override;
 

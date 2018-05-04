@@ -493,20 +493,15 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
     // No matter what, create a renderer.
     try
     {
-        std::unique_ptr<IRenderData> renderData = std::make_unique<RenderData>();
-        Status = NT_TESTNULL(renderData.get());
+        auto renderData = std::make_unique<RenderData>();
+        Renderer* pRender = nullptr;
+        g.pRender = nullptr;
+        Status = NTSTATUS_FROM_HRESULT(Renderer::s_CreateInstance(std::move(renderData), &(pRender)));
         if (NT_SUCCESS(Status))
         {
-            Renderer* pRender = nullptr;
-            g.pRender = nullptr;
-            Status = NTSTATUS_FROM_HRESULT(Renderer::s_CreateInstance(std::move(renderData), &(pRender)));
-
-            if (NT_SUCCESS(Status))
-            {
-                g.pRender = pRender;
-                // Allow the renderer to paint.
-                g.pRender->EnablePainting();
-            }
+            g.pRender = pRender;
+            // Allow the renderer to paint.
+            g.pRender->EnablePainting();
         }
     }
     catch (...)

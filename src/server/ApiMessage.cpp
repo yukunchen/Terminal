@@ -11,6 +11,13 @@
 #include "ApiMessage.h"
 #include "DeviceComm.h"
 
+_CONSOLE_API_MSG::_CONSOLE_API_MSG() : 
+    _pDeviceComm(nullptr),
+    _pApiRoutines(nullptr)
+{
+    ZeroMemory(this, sizeof(_CONSOLE_API_MSG));
+}
+
 ConsoleProcessHandle* _CONSOLE_API_MSG::GetProcessHandle() const
 {
     return reinterpret_cast<ConsoleProcessHandle*>(Descriptor.Process);

@@ -98,7 +98,7 @@ public:
     void SetType(const CursorType type);
 
 private:
-    Microsoft::Console::Interactivity::IAccessibilityNotifier *_pAccessibilityNotifier;
+    Microsoft::Console::Interactivity::IAccessibilityNotifier* const _pAccessibilityNotifier;
     const TextBuffer& _parentBuffer;
 
     //TODO: seperate the rendering and text placement

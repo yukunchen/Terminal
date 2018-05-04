@@ -26,6 +26,7 @@ Telemetry::Telemetry()
     _fpDirectionDownAverage(0),
     _fpMatchCaseAverage(0),
     _uiFindNextClickedTotal(0),
+    _uiColorSelectionUsed(0),
     _tStartedAt(0),
     _wchProcessFileNames(),
     // Start at position 1, since the first 2 bytes contain the number of strings.
@@ -124,6 +125,13 @@ void Telemetry::LogQuickEditPasteProcUsed()
 void Telemetry::LogQuickEditPasteRawUsed()
 {
     _uiQuickEditPasteRawUsed++;
+    SetUserInteractive();
+}
+
+// Log usage of the Color Selection option.
+void Telemetry::LogColorSelectionUsed()
+{
+    _uiColorSelectionUsed++;
     SetUserInteractive();
 }
 
@@ -388,6 +396,7 @@ void Telemetry::WriteFinalTraceLog()
                 // This can help us determine if they were using multiple consoles at the same time.
                 TraceLoggingInt32(static_cast<int>(_tStartedAt), "StartedUsingAtSeconds"),
                 TraceLoggingInt32(static_cast<int>(tEndedAt), "EndedUsingAtSeconds"),
+                TraceLoggingUInt32(_uiColorSelectionUsed, "ColorSelectionUsed"),
                 TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES));
 
             // Always send this back.  We could only send this back when they click "OK" in the settings dialog, but sending it
