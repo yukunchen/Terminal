@@ -38,10 +38,10 @@ GdiEngine::GdiEngine() :
     _szMemorySurface = { 0 };
 
     _hrgnGdiPaintedSelection = CreateRectRgn(0, 0, 0, 0);
-    THROW_LAST_ERROR_IF_NULL(_hrgnGdiPaintedSelection);
+    THROW_HR_IF_NULL(E_FAIL, _hrgnGdiPaintedSelection);
 
     _hdcMemoryContext = CreateCompatibleDC(nullptr);
-    THROW_LAST_ERROR_IF_NULL(_hdcMemoryContext);
+    THROW_HR_IF_NULL(E_FAIL, _hdcMemoryContext);
 
     // On session zero, text GDI APIs might not be ready.
     // Calling GetTextFace causes a wait that will be
@@ -74,25 +74,25 @@ GdiEngine::~GdiEngine()
 
     if (_hrgnGdiPaintedSelection != nullptr)
     {
-        LOG_LAST_ERROR_IF_FALSE(DeleteObject(_hrgnGdiPaintedSelection));
+        LOG_HR_IF_FALSE(E_FAIL, DeleteObject(_hrgnGdiPaintedSelection));
         _hrgnGdiPaintedSelection = nullptr;
     }
 
     if (_hbitmapMemorySurface != nullptr)
     {
-        LOG_LAST_ERROR_IF_FALSE(DeleteObject(_hbitmapMemorySurface));
+        LOG_HR_IF_FALSE(E_FAIL, DeleteObject(_hbitmapMemorySurface));
         _hbitmapMemorySurface = nullptr;
     }
 
     if (_hfont != nullptr)
     {
-        LOG_LAST_ERROR_IF_FALSE(DeleteObject(_hfont));
+        LOG_HR_IF_FALSE(E_FAIL, DeleteObject(_hfont));
         _hfont = nullptr;
     }
 
     if (_hdcMemoryContext != nullptr)
     {
-        LOG_LAST_ERROR_IF_FALSE(DeleteObject(_hdcMemoryContext));
+        LOG_HR_IF_FALSE(E_FAIL, DeleteObject(_hdcMemoryContext));
         _hdcMemoryContext = nullptr;
     }
 }
@@ -109,15 +109,15 @@ HRESULT GdiEngine::SetHwnd(const HWND hwnd)
 {
     // First attempt to get the DC and create an appropriate DC
     HDC const hdcRealWindow = GetDC(hwnd);
-    RETURN_LAST_ERROR_IF_NULL(hdcRealWindow);
+    RETURN_HR_IF_NULL(E_FAIL, hdcRealWindow);
 
     HDC const hdcNewMemoryContext = CreateCompatibleDC(hdcRealWindow);
-    RETURN_LAST_ERROR_IF_NULL(hdcNewMemoryContext);
+    RETURN_HR_IF_NULL(E_FAIL, hdcNewMemoryContext);
 
     // If we had an existing memory context stored, release it before proceeding.
     if (nullptr != _hdcMemoryContext)
     {
-        LOG_LAST_ERROR_IF_FALSE(DeleteObject(_hdcMemoryContext));
+        LOG_HR_IF_FALSE(E_FAIL, DeleteObject(_hdcMemoryContext));
         _hdcMemoryContext = nullptr;
     }
 
@@ -128,12 +128,12 @@ HRESULT GdiEngine::SetHwnd(const HWND hwnd)
     // If we have a font, apply it to the context.
     if (nullptr != _hfont)
     {
-        LOG_LAST_ERROR_IF_NULL(SelectFont(_hdcMemoryContext, _hfont));
+        LOG_HR_IF_NULL(E_FAIL, SelectFont(_hdcMemoryContext, _hfont));
     }
 
     if (nullptr != hdcRealWindow)
     {
-        LOG_LAST_ERROR_IF_FALSE(ReleaseDC(_hwndTargetWindow, hdcRealWindow));
+        LOG_HR_IF_FALSE(E_FAIL, ReleaseDC(_hwndTargetWindow, hdcRealWindow));
     }
 
     return S_OK;
@@ -183,19 +183,19 @@ HRESULT GdiEngine::UpdateDrawingBrushes(const COLORREF colorForeground,
     // Set the colors for painting text
     if (colorForeground != _lastFg)
     {
-        RETURN_LAST_ERROR_IF(CLR_INVALID == SetTextColor(_hdcMemoryContext, colorForeground));
+        RETURN_HR_IF(E_FAIL, CLR_INVALID == SetTextColor(_hdcMemoryContext, colorForeground));
         _lastFg = colorForeground;
     }
     if (colorBackground != _lastBg)
     {
-        RETURN_LAST_ERROR_IF(CLR_INVALID == SetBkColor(_hdcMemoryContext, colorBackground));
+        RETURN_HR_IF(E_FAIL, CLR_INVALID == SetBkColor(_hdcMemoryContext, colorBackground));
         _lastBg = colorBackground;
     }
 
     if (fIncludeBackgrounds)
     {
         // Set the color for painting the extra DC background area
-        RETURN_LAST_ERROR_IF(CLR_INVALID == SetDCBrushColor(_hdcMemoryContext, colorBackground));
+        RETURN_HR_IF(E_FAIL, CLR_INVALID == SetDCBrushColor(_hdcMemoryContext, colorBackground));
 
         // Set the hung app background painting color
         RETURN_IF_FAILED(s_SetWindowLongWHelper(_hwndTargetWindow, GWL_CONSOLE_BKCOLOR, colorBackground));
@@ -219,10 +219,10 @@ HRESULT GdiEngine::UpdateFont(const FontInfoDesired& FontDesired, _Out_ FontInfo
     RETURN_IF_FAILED(_GetProposedFont(FontDesired, Font, _iCurrentDpi, hFont));
 
     // Select into DC
-    RETURN_LAST_ERROR_IF_NULL(SelectFont(_hdcMemoryContext, hFont.get()));
+    RETURN_HR_IF_NULL(E_FAIL, SelectFont(_hdcMemoryContext, hFont.get()));
 
     // Save off the font metrics for various other calculations
-    RETURN_LAST_ERROR_IF_FALSE(GetTextMetricsW(_hdcMemoryContext, &_tmFontMetrics));
+    RETURN_HR_IF_FALSE(E_FAIL, GetTextMetricsW(_hdcMemoryContext, &_tmFontMetrics));
 
     // Now find the size of a 0 in this current font and save it for conversions done later.
     _coordFontLast = Font.GetSize();
@@ -230,7 +230,7 @@ HRESULT GdiEngine::UpdateFont(const FontInfoDesired& FontDesired, _Out_ FontInfo
     // Persist font for cleanup (and free existing if necessary)
     if (_hfont != nullptr)
     {
-        LOG_LAST_ERROR_IF_FALSE(DeleteObject(_hfont));
+        LOG_HR_IF_FALSE(E_FAIL, DeleteObject(_hfont));
         _hfont = nullptr;
     }
 
@@ -319,7 +319,7 @@ HRESULT GdiEngine::_GetProposedFont(const FontInfoDesired& FontDesired,
                                     _Inout_ wil::unique_hfont& hFont)
 {
     wil::unique_hdc hdcTemp(CreateCompatibleDC(_hdcMemoryContext));
-    RETURN_LAST_ERROR_IF_NULL(hdcTemp.get());
+    RETURN_HR_IF_NULL(E_FAIL, hdcTemp.get());
 
     // Get a special engine size because TT fonts can't specify X or we'll get weird scaling under some circumstances.
     COORD coordFontRequested = FontDesired.GetEngineSize();
@@ -389,20 +389,20 @@ HRESULT GdiEngine::_GetProposedFont(const FontInfoDesired& FontDesired,
 
         // Create font.
         hFont.reset(CreateFontIndirectW(&lf));
-        RETURN_LAST_ERROR_IF_NULL(hFont.get());
+        RETURN_HR_IF_NULL(E_FAIL, hFont.get());
     }
 
     // Select into DC
     wil::unique_hfont hFontOld(SelectFont(hdcTemp.get(), hFont.get()));
-    RETURN_LAST_ERROR_IF_NULL(hFontOld.get());
+    RETURN_HR_IF_NULL(E_FAIL, hFontOld.get());
 
     // Save off the font metrics for various other calculations
     TEXTMETRICW tm;
-    RETURN_LAST_ERROR_IF_FALSE(GetTextMetricsW(hdcTemp.get(), &tm));
+    RETURN_HR_IF_FALSE(E_FAIL, GetTextMetricsW(hdcTemp.get(), &tm));
 
     // Now find the size of a 0 in this current font and save it for conversions done later.
     SIZE sz;
-    RETURN_LAST_ERROR_IF_FALSE(GetTextExtentPoint32W(hdcTemp.get(), L"0", 1, &sz));
+    RETURN_HR_IF_FALSE(E_FAIL, GetTextExtentPoint32W(hdcTemp.get(), L"0", 1, &sz));
 
     COORD coordFont;
     coordFont.X = static_cast<SHORT>(sz.cx);
@@ -428,7 +428,7 @@ HRESULT GdiEngine::_GetProposedFont(const FontInfoDesired& FontDesired,
     {
         // Get the actual font face that we chose
         WCHAR wszFaceName[LF_FACESIZE];
-        RETURN_LAST_ERROR_IF_FALSE(GetTextFaceW(hdcTemp.get(), ARRAYSIZE(wszFaceName), wszFaceName));
+        RETURN_HR_IF_FALSE(E_FAIL, GetTextFaceW(hdcTemp.get(), ARRAYSIZE(wszFaceName), wszFaceName));
 
         if (FontDesired.IsDefaultRasterFont())
         {
