@@ -88,8 +88,7 @@ class UiaTextRangeTests
         for (UINT i = 0; i < _pTextBuffer->TotalRowCount(); ++i)
         {
             ROW& row = _pTextBuffer->GetRowByOffset(i);
-            auto& iCharRow = row.GetCharRow();
-            CharRow& charRow = static_cast<CharRow&>(iCharRow);
+            auto& charRow = row.GetCharRow();
             for (auto& cell : charRow)
             {
                 cell.first = L'a';
