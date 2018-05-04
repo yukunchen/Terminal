@@ -30,26 +30,19 @@ namespace Microsoft::Console::Interactivity::Win32
 
         void Copy();
         void StringPaste(_In_reads_(cchData) PCWCHAR pwchData,
-                            const size_t cchData);
+                         const size_t cchData);
         void Paste();
     private:
         std::deque<std::unique_ptr<IInputEvent>> TextToKeyEvents(_In_reads_(cchData) const wchar_t* const pData,
-                                                                    const size_t cchData);
+                                                                 const size_t cchData);
 
         void StoreSelectionToClipboard();
 
-        [[nodiscard]]
-        NTSTATUS RetrieveTextFromBuffer(const SCREEN_INFORMATION& screenInfo,
-                                        const bool fLineSelection,
-                                        const UINT cRectsSelected,
-                                        _In_reads_(cRectsSelected) const SMALL_RECT* const rgsrSelection,
-                                        _Out_writes_(cRectsSelected) PWCHAR* const rgpwszTempText,
-                                        _Out_writes_(cRectsSelected) size_t* const rgTempTextLengths);
+        std::vector<std::wstring> RetrieveTextFromBuffer(const SCREEN_INFORMATION& screenInfo,
+                                                         const bool lineSelection,
+                                                         const std::vector<SMALL_RECT>& selectionRects);
 
-        [[nodiscard]]
-        NTSTATUS CopyTextToSystemClipboard(const UINT cTotalRows,
-                                           _In_reads_(cTotalRows) const PWCHAR* const rgTempRows,
-                                           _In_reads_(cTotalRows) const size_t* const rgTempRowLengths);
+        void CopyTextToSystemClipboard(const std::vector<std::wstring>& rows);
 
         bool FilterCharacterOnPaste(_Inout_ WCHAR * const pwch);
 

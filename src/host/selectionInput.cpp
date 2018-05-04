@@ -627,7 +627,6 @@ void Selection::CheckAndSetAlternateSelection()
 bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SMALL_RECT* const psrSelection = &_srSelectionRect;
     const WORD wVirtualKeyCode = pInputKeyInfo->GetVirtualKey();
 
     //  It's a numeric key,  a text mode buffer and the color selection regkey is set,
@@ -637,10 +636,12 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
     bool fShiftPressed = pInputKeyInfo->IsShiftPressed();
     bool fCtrlPressed = false;
 
-    //  Shift implies a find-and-color operation.  We only support finding a string,  not
-    //  a block.  So if the selected area is > 1 line in height,  just ignore the shift
-    //  and color the selection.  Also ignore if there is no current selection.
-    if ((fShiftPressed) && (!IsAreaSelected() || (psrSelection->Top != psrSelection->Bottom)))
+    // Shift implies a find-and-color operation.  
+    // We only support finding a string,  not a block.
+    // If it is line selection, we can assemble that across multiple lines to make a search term.
+    // But if it is block selection and the selected area is > 1 line in height, ignore the shift because we can't search.
+    // Also ignore if there is no current selection.
+    if ((fShiftPressed) && (!IsAreaSelected() || (!IsLineSelection() && (_srSelectionRect.Top != _srSelectionRect.Bottom ))))
     {
         fShiftPressed = false;
     }
@@ -655,7 +656,7 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
     SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
 
     //  Clip the selection to within the console buffer
-    screenInfo.ClipToScreenBuffer(psrSelection);
+    screenInfo.ClipToScreenBuffer(&_srSelectionRect);
 
     //  If ALT or CTRL are pressed,  then color the selected area.
     //  ALT+n => fg,  CTRL+n => bg
@@ -678,32 +679,44 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
         // find-and-color request. Otherwise just color the selection.
         if (fShiftPressed)
         {
-            ULONG cLength = psrSelection->Right - psrSelection->Left + 1;
-            if (cLength > SEARCH_STRING_LENGTH)
+            try
             {
-                cLength = SEARCH_STRING_LENGTH;
+                const auto selectionRects = GetSelectionRects();
+                if (selectionRects.size() > 0)
+                {
+                    // Pull the selection out of the buffer to pass to the
+                    // search function. Clamp to max search string length.
+                    // We just copy the bytes out of the row buffer.
+
+                    std::wstring str;
+                    for (const auto& selectRect : selectionRects)
+                    {
+                        auto it = screenInfo.GetTextDataAt(COORD{ selectRect.Left, selectRect.Top });
+
+                        for (SHORT i = 0; i < (selectRect.Right - selectRect.Left + 1); ++i)
+                        {
+                            str.push_back(*it);
+                            it++;
+                        }
+                    }
+
+                    // Clear the selection and call the search / mark function.
+                    ClearSelection();
+
+                    Telemetry::Instance().LogColorSelectionUsed();
+
+                    Search search(screenInfo, str, Search::Direction::Forward, Search::Sensitivity::CaseInsensitive);
+                    while (search.FindNext())
+                    {
+                        search.Color(ulAttr);
+                    }
+                }
             }
-
-            // Pull the selection out of the buffer to pass to the
-            // search function. Clamp to max search string length.
-            // We just copy the bytes out of the row buffer.
-            WCHAR pwszSearchString[SEARCH_STRING_LENGTH + 1];
-
-            const std::vector<OutputCell> cells = screenInfo.ReadLine(psrSelection->Top, psrSelection->Left);
-            for (size_t i = 0; i < cLength; ++i)
-            {
-                pwszSearchString[i] = Utf16ToUcs2(cells.at(i).Chars());
-            }
-            pwszSearchString[cLength] = L'\0';
-
-            // Clear the selection and call the search / mark function.
-            ClearSelection();
-
-            SearchForString(screenInfo, pwszSearchString, (USHORT)cLength, TRUE, FALSE, TRUE, ulAttr, nullptr);
+            CATCH_LOG();
         }
         else
         {
-            ColorSelection(psrSelection, ulAttr);
+            ColorSelection(_srSelectionRect, ulAttr);
             ClearSelection();
         }
 

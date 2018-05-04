@@ -144,9 +144,7 @@ namespace Microsoft::Console::Render
 
         SMALL_RECT _srViewportPrevious;
 
-        [[nodiscard]]
-        NTSTATUS _GetSelectionRects(_Outptr_result_buffer_all_(*pcRectangles) SMALL_RECT** const prgsrSelection,
-                                    _Out_ UINT* const pcRectangles) const;
+        std::vector<SMALL_RECT> _GetSelectionRects() const;
 
         SMALL_RECT _RegionFromCoord(const COORD* const pcoord) const;
         COLORREF _ConvertAttrToRGB(const BYTE bAttr);

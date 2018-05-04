@@ -79,7 +79,7 @@ ROW::ROW(ROW&& a) noexcept :
     _charRow{ std::move(a._charRow) },
     _attrRow{ std::move(a._attrRow) },
     _id{ std::move(a._id) },
-    _rowWidth{ _rowWidth }
+    _rowWidth{ a._rowWidth }
 {
 }
 

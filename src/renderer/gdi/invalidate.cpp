@@ -54,17 +54,16 @@ HRESULT GdiEngine::InvalidateScroll(const COORD* const pcoordDelta)
 // Routine Description:
 // - Notifies us that the console has changed the selection region and would like it updated
 // Arguments:
-// - rgsrSelection - Array of character region rectangles (one per line) that represent the selected area
-// - cRectangles - Length of the array above.
+// - rectangles - Vector of rectangles to draw, line by line
 // Return Value:
 // - HRESULT S_OK or GDI-based error code
-HRESULT GdiEngine::InvalidateSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection, const UINT cRectangles)
+HRESULT GdiEngine::InvalidateSelection(const std::vector<SMALL_RECT>& rectangles)
 {
     // Get the currently selected area as a GDI region
     wil::unique_hrgn hrgnSelection(CreateRectRgn(0, 0, 0, 0));
     RETURN_LAST_ERROR_IF_NULL(hrgnSelection.get());
 
-    RETURN_IF_FAILED(_PaintSelectionCalculateRegion(rgsrSelection, cRectangles, hrgnSelection.get()));
+    RETURN_IF_FAILED(_PaintSelectionCalculateRegion(rectangles, hrgnSelection.get()));
 
     // XOR against the region we saved from the last time we rendered to find out what to invalidate
     // This is the space that needs to be inverted to either select or deselect the existing region into the new one.

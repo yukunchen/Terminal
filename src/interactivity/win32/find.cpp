@@ -47,64 +47,21 @@ INT_PTR FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
                     bool const Reverse = IsDlgButtonChecked(hWnd, ID_CONSOLE_FINDDOWN) == 0;
                     fFindSearchUp = !!Reverse;
                     SCREEN_INFORMATION& ScreenInfo = gci.GetActiveOutputBuffer();
-                    COORD Position;
-                    USHORT const ColumnWidth = SearchForString(ScreenInfo, szBuf, StringLength, IgnoreCase, Reverse, false, 0, &Position);
-                    if (ColumnWidth != 0)
+
+                    std::wstring wstr(szBuf, StringLength);
+
+                    LockConsole();
+                    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+                    Search search(ScreenInfo,
+                                  wstr,
+                                  Reverse ? Search::Direction::Backward : Search::Direction::Forward,
+                                  IgnoreCase ? Search::Sensitivity::CaseInsensitive : Search::Sensitivity::CaseSensitive);
+
+                    if (search.FindNext())
                     {
                         Telemetry::Instance().LogFindDialogNextClicked(StringLength, (Reverse != 0), (IgnoreCase == 0));
-
-                        LockConsole();
-
-                        Selection* pSelection = &Selection::Instance();
-
-                        if (pSelection->IsInSelectingState())
-                        {
-                            pSelection->ClearSelection(true);
-                        }
-
-                        // Position is the start of the selection region
-                        // EndPosition is the end
-                        COORD endPosition;
-                        endPosition.X = Position.X + ColumnWidth - 1;
-                        endPosition.Y = Position.Y;
-
-                        pSelection->InitializeMouseSelection(Position);
-                        pSelection->ShowSelection();
-                        pSelection->ExtendSelection(endPosition);
-
-                        // Make sure the highlighted text will be visible
-                        // TODO: can this just be merged with the select region code?
-                        const SMALL_RECT srSelection = pSelection->GetSelectionRectangle();
-
-                        if (srSelection.Left < ScreenInfo.GetBufferViewport().Left)
-                        {
-                            Position.X = srSelection.Left;
-                        }
-                        else if (srSelection.Right > ScreenInfo.GetBufferViewport().Right)
-                        {
-                            Position.X = srSelection.Right - ScreenInfo.GetScreenWindowSizeX() + 1;
-                        }
-                        else
-                        {
-                            Position.X = ScreenInfo.GetBufferViewport().Left;
-                        }
-
-                        if (srSelection.Top < ScreenInfo.GetBufferViewport().Top)
-                        {
-                            Position.Y = srSelection.Top;
-                        }
-                        else if (srSelection.Bottom > ScreenInfo.GetBufferViewport().Bottom)
-                        {
-                            Position.Y = srSelection.Bottom - ScreenInfo.GetScreenWindowSizeY() + 1;
-                        }
-                        else
-                        {
-                            Position.Y = ScreenInfo.GetBufferViewport().Top;
-                        }
-                        LOG_IF_FAILED(ScreenInfo.SetViewportOrigin(true, Position));
-
-                        UnlockConsole();
-
+                        search.Select();
                         return TRUE;
                     }
                     else
