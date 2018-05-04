@@ -26,12 +26,12 @@ CharRowCell::CharRowCell(const wchar_t wch, const DbcsAttribute attr) :
 }
 
 // Routine Description:
-// - "erases" the glyph. really set't it back to the default "empty" value
+// - "erases" the glyph. really sets it back to the default "empty" value
 void CharRowCell::EraseChars()
 {
     if (_attr.IsStored())
     {
-        _attr.EraseMapIndex();
+        _attr.SetStored(false);
     }
     _wch = DefaultValue;
 }
@@ -40,8 +40,8 @@ void CharRowCell::EraseChars()
 // - resets this object back to the defaults it would have from the default constructor
 void CharRowCell::Reset()
 {
-    EraseChars();
-    _attr.SetSingle();
+    _attr.Reset();
+    _wch = DefaultValue;
 }
 
 // Routine Description:

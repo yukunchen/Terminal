@@ -54,7 +54,7 @@ namespace std
         size_t operator()(const COORD& coord) const noexcept
         {
             size_t retVal = coord.Y;
-            retVal += coord.X << (sizeof(coord.X) * 8);
+            retVal |= coord.X << (sizeof(coord.Y) * 8);
             return retVal;
         }
     };

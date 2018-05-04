@@ -83,9 +83,10 @@ public:
         _attribute = Attribute::Trailing;
     }
 
-    void EraseMapIndex()
+    void Reset() noexcept
     {
-        _storedGlyph = 0;
+        SetSingle();
+        SetStored(false);
     }
 
     WORD GeneratePublicApiAttributeFormat() const noexcept

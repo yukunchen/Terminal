@@ -19,13 +19,13 @@ void CharRowCellReference::operator=(const std::vector<wchar_t>& chars)
     if (chars.size() == 1)
     {
         _cellData().Char() = chars.front();
-        _cellData().DbcsAttr().EraseMapIndex();
+        _cellData().DbcsAttr().SetStored(false);
     }
     else
     {
         auto& storage = UnicodeStorage::GetInstance();
         const auto key = _parent.GetStorageKey(_index);
-        storage.StoreText(key, chars);
+        storage.StoreGlyph(key, chars);
         _cellData().DbcsAttr().SetStored(true);
     }
 }
@@ -109,7 +109,7 @@ CharRowCellReference::const_iterator CharRowCellReference::end() const
 
 bool operator==(const CharRowCellReference& ref, const std::vector<wchar_t>& glyph)
 {
-    if (glyph.size() == 1)
+    if (glyph.size() == 1 && !ref._cellData().DbcsAttr().IsStored())
     {
         return ref._cellData().Char() == glyph.front();
     }

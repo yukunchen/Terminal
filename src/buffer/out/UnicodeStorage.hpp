@@ -40,7 +40,7 @@ public:
     // Return Value:
     // - the glyph data associated with key
     // Note: will throw exception if key is not stored yet
-    const mapped_type& GetText(const key_type key)
+    const mapped_type& GetText(const key_type key) const
     {
         return _map.at(key);
     }
@@ -50,9 +50,9 @@ public:
     // Arguments:
     // - key - the key into the storage
     // - text - the glyph data to store
-    const void StoreText(const key_type key, const std::vector<wchar_t>& text)
+    void StoreGlyph(const key_type key, const std::vector<wchar_t>& glyph)
     {
-        _map.emplace(key, text);
+        _map.emplace(key, glyph);
     }
 
     // Routine Description:
