@@ -17,6 +17,7 @@ Revision History:
 
 class DbcsAttribute final
 {
+private:
     enum class Attribute : BYTE
     {
         Single = 0x00,
@@ -28,13 +29,13 @@ public:
 
     DbcsAttribute() noexcept :
         _attribute{ Attribute::Single },
-        _storedGlyph{ false }
+        _glyphStored{ false }
     {
     }
 
     DbcsAttribute(const Attribute attribute) noexcept :
         _attribute{ attribute },
-        _storedGlyph{ false }
+        _glyphStored{ false }
     {
     }
 
@@ -58,14 +59,14 @@ public:
         return IsLeading() || IsTrailing();
     }
 
-    constexpr bool IsStored() const noexcept
+    constexpr bool IsGlyphStored() const noexcept
     {
-        return _storedGlyph;
+        return _glyphStored;
     }
 
-    void SetStored(const bool stored)
+    void SetGlyphStored(const bool stored)
     {
-        _storedGlyph = stored;
+        _glyphStored = stored;
     }
 
     void SetSingle() noexcept
@@ -86,7 +87,7 @@ public:
     void Reset() noexcept
     {
         SetSingle();
-        SetStored(false);
+        SetGlyphStored(false);
     }
 
     WORD GeneratePublicApiAttributeFormat() const noexcept
@@ -127,7 +128,7 @@ public:
 
 private:
     Attribute _attribute : 2;
-    bool _storedGlyph : 1;
+    bool _glyphStored : 1;
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;

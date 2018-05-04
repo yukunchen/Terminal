@@ -29,9 +29,9 @@ CharRowCell::CharRowCell(const wchar_t wch, const DbcsAttribute attr) :
 // - "erases" the glyph. really sets it back to the default "empty" value
 void CharRowCell::EraseChars()
 {
-    if (_attr.IsStored())
+    if (_attr.IsGlyphStored())
     {
-        _attr.SetStored(false);
+        _attr.SetGlyphStored(false);
     }
     _wch = DefaultValue;
 }
@@ -50,7 +50,7 @@ void CharRowCell::Reset()
 // - true if cell contains a space glyph, false otherwise
 bool CharRowCell::IsSpace() const noexcept
 {
-    return !_attr.IsStored() && _wch == UNICODE_SPACE;
+    return !_attr.IsGlyphStored() && _wch == UNICODE_SPACE;
 }
 
 // Routine Description:

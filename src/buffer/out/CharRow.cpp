@@ -29,7 +29,7 @@ void swap(CharRow& a, CharRow& b) noexcept
 // Return Value:
 // - instantiated object
 // Note: will through if unable to allocate char/attribute buffers
-CharRow::CharRow(size_t rowWidth, const ROW* parent) :
+CharRow::CharRow(size_t rowWidth, ROW* parent) :
     _wrapForced{ false },
     _doubleBytePadded{ false },
     _data(rowWidth, value_type()),
@@ -342,13 +342,23 @@ std::wstring CharRow::GetText() const
     return wstr;
 }
 
+UnicodeStorage& CharRow::GetUnicodeStorage()
+{
+    return _parent->GetUnicodeStorage();
+}
+
+const UnicodeStorage& CharRow::GetUnicodeStorage() const
+{
+    return _parent->GetUnicodeStorage();
+}
+
 // Routine Description:
 // - calculates the key used by the given column of the char row to store glyph data in UnicodeStorage
 // Arguments:
 // - column - the column to generate the key for
 // Return Value:
 // - the COORD key for data access from UnicodeStorage for the column
-COORD CharRow::GetStorageKey(const size_t column)
+COORD CharRow::GetStorageKey(const size_t column) const
 {
     return { gsl::narrow<SHORT>(column), _parent->GetId() };
 }

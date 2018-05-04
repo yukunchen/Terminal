@@ -7,6 +7,7 @@
 #include "precomp.h"
 #include "Row.hpp"
 #include "CharRow.hpp"
+#include "textBuffer.hpp"
 #include "../types/inc/convert.hpp"
 
 // Routine Description:
@@ -29,11 +30,12 @@ void swap(ROW& a, ROW& b) noexcept
 // - fillAttribute - the default text attribute
 // Return Value:
 // - constructed object
-ROW::ROW(const SHORT rowId, const short rowWidth, const TextAttribute fillAttribute) :
+ROW::ROW(const SHORT rowId, const short rowWidth, const TextAttribute fillAttribute, TextBuffer* parent) :
     _id{ rowId },
     _rowWidth{ gsl::narrow<size_t>(rowWidth) },
     _charRow{ std::make_unique<CharRow>(rowWidth, this) },
-    _attrRow{ rowWidth, fillAttribute }
+    _attrRow{ rowWidth, fillAttribute },
+    _parent{ parent }
 {
 }
 
@@ -276,4 +278,14 @@ const OutputCell ROW::at(const size_t column) const
 {
     const CharRow* const charRow = static_cast<const CharRow* const>(_charRow.get());
     return OutputCell{ charRow->GlyphAt(column), charRow->DbcsAttrAt(column), _attrRow.GetAttrByColumn(column) };
+}
+
+UnicodeStorage& ROW::GetUnicodeStorage()
+{
+    return _parent->GetUnicodeStorage();
+}
+
+const UnicodeStorage& ROW::GetUnicodeStorage() const
+{
+    return _parent->GetUnicodeStorage();
 }

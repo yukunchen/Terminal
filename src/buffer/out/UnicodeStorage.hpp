@@ -16,6 +16,28 @@ Author(s):
 #include <vector>
 #include <unordered_map>
 
+// std::unordered_map needs help to know how to hash a COORD
+namespace std
+{
+    template <>
+    struct hash<COORD>
+    {
+
+        // Routine Description:
+        // - hashes a coord. coord will be hashed by storing the x and y values consecutively in the lower
+        // bits of a size_t.
+        // Arguments:
+        // - coord - the coord to hash
+        // Return Value:
+        // - the hashed coord
+        constexpr size_t operator()(const COORD& coord) const noexcept
+        {
+            size_t retVal = coord.Y;
+            retVal |= coord.X << (sizeof(coord.Y) * 8);
+            return retVal;
+        }
+    };
+}
 
 class UnicodeStorage final
 {
@@ -23,14 +45,9 @@ public:
     using key_type = typename COORD;
     using mapped_type = typename std::vector<wchar_t>;
 
-    // Routine Description:
-    // - gets the singleton instance of UnicodeStorage
-    // Return Value:
-    // - the single instance of unicode storage
-    static UnicodeStorage& GetInstance()
+    UnicodeStorage() :
+        _map{}
     {
-        static UnicodeStorage storage;
-        return storage;
     }
 
     // Routine Description:
@@ -49,8 +66,8 @@ public:
     // - stores glyph data associated with key.
     // Arguments:
     // - key - the key into the storage
-    // - text - the glyph data to store
-    void StoreGlyph(const key_type key, const std::vector<wchar_t>& glyph)
+    // - glyph - the glyph data to store
+    void StoreGlyph(const key_type key, const mapped_type& glyph)
     {
         _map.emplace(key, glyph);
     }
@@ -65,10 +82,5 @@ public:
     }
 
 private:
-    UnicodeStorage() :
-        _map{}
-    {
-    }
-
     std::unordered_map<key_type, mapped_type> _map;
 };

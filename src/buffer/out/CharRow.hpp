@@ -23,6 +23,7 @@ Revision History:
 #include "ICharRow.hpp"
 #include "CharRowCellReference.hpp"
 #include "CharRowCell.hpp"
+#include "UnicodeStorage.hpp"
 
 class ROW;
 
@@ -35,7 +36,7 @@ public:
     using const_iterator = typename std::vector<value_type>::const_iterator;
     using reference = typename CharRowCellReference;
 
-    CharRow(size_t rowWidth, const ROW* parent);
+    CharRow(size_t rowWidth, ROW* parent);
     CharRow(const CharRow& a) = default;
     CharRow& operator=(const CharRow& a);
     CharRow(CharRow&& a) = default;
@@ -76,7 +77,9 @@ public:
     iterator end() noexcept;
     const_iterator cend() const noexcept;
 
-    COORD GetStorageKey(const size_t column);
+    UnicodeStorage& GetUnicodeStorage();
+    const UnicodeStorage& GetUnicodeStorage() const;
+    COORD GetStorageKey(const size_t column) const;
 
     friend CharRowCellReference;
     friend constexpr bool operator==(const CharRow& a, const CharRow& b) noexcept;
@@ -92,7 +95,7 @@ protected:
     std::vector<value_type> _data;
 
     // ROW that this CharRow belongs to
-    const ROW* _parent;
+    ROW* _parent;
 };
 
 void swap(CharRow& a, CharRow& b) noexcept;

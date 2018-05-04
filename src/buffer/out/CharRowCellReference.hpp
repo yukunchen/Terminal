@@ -2,7 +2,7 @@
 Copyright (c) Microsoft Corporation
 
 Module Name:
-- CharRowCellCellReference.hpp
+- CharRowCellReference.hpp
 
 Abstract:
 - reference class for the glyph data of a char row cell
@@ -31,8 +31,12 @@ public:
     {
     }
 
+    ~CharRowCellReference() = default;
     CharRowCellReference(const CharRowCellReference&) = default;
     CharRowCellReference(CharRowCellReference&&) = default;
+
+    void operator=(const CharRowCellReference&) = delete;
+    void operator=(CharRowCellReference&&) = delete;
 
     void operator=(const std::vector<wchar_t>& chars);
     operator std::vector<wchar_t>() const;

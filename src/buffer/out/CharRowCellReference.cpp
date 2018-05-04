@@ -19,14 +19,14 @@ void CharRowCellReference::operator=(const std::vector<wchar_t>& chars)
     if (chars.size() == 1)
     {
         _cellData().Char() = chars.front();
-        _cellData().DbcsAttr().SetStored(false);
+        _cellData().DbcsAttr().SetGlyphStored(false);
     }
     else
     {
-        auto& storage = UnicodeStorage::GetInstance();
+        auto& storage = _parent.GetUnicodeStorage();
         const auto key = _parent.GetStorageKey(_index);
         storage.StoreGlyph(key, chars);
-        _cellData().DbcsAttr().SetStored(true);
+        _cellData().DbcsAttr().SetGlyphStored(true);
     }
 }
 
@@ -63,9 +63,9 @@ const CharRowCell& CharRowCellReference::_cellData() const
 // - the glyph data
 std::vector<wchar_t> CharRowCellReference::_glyphData() const
 {
-    if (_cellData().DbcsAttr().IsStored())
+    if (_cellData().DbcsAttr().IsGlyphStored())
     {
-        return UnicodeStorage::GetInstance().GetText(_parent.GetStorageKey(_index));
+        return _parent.GetUnicodeStorage().GetText(_parent.GetStorageKey(_index));
     }
     else
     {
@@ -79,9 +79,9 @@ std::vector<wchar_t> CharRowCellReference::_glyphData() const
 // - iterator of the glyph data
 CharRowCellReference::const_iterator CharRowCellReference::begin() const
 {
-    if (_cellData().DbcsAttr().IsStored())
+    if (_cellData().DbcsAttr().IsGlyphStored())
     {
-        return UnicodeStorage::GetInstance().GetText(_parent.GetStorageKey(_index)).data();
+        return _parent.GetUnicodeStorage().GetText(_parent.GetStorageKey(_index)).data();
     }
     else
     {
@@ -95,10 +95,10 @@ CharRowCellReference::const_iterator CharRowCellReference::begin() const
 // - end iterator of the glyph data
 CharRowCellReference::const_iterator CharRowCellReference::end() const
 {
-    if (_cellData().DbcsAttr().IsStored())
+    if (_cellData().DbcsAttr().IsGlyphStored())
     {
 
-        const auto& chars = UnicodeStorage::GetInstance().GetText(_parent.GetStorageKey(_index));
+        const auto& chars = _parent.GetUnicodeStorage().GetText(_parent.GetStorageKey(_index));
         return chars.data() + chars.size();
     }
     else
@@ -109,13 +109,13 @@ CharRowCellReference::const_iterator CharRowCellReference::end() const
 
 bool operator==(const CharRowCellReference& ref, const std::vector<wchar_t>& glyph)
 {
-    if (glyph.size() == 1 && !ref._cellData().DbcsAttr().IsStored())
+    if (glyph.size() == 1 && !ref._cellData().DbcsAttr().IsGlyphStored())
     {
         return ref._cellData().Char() == glyph.front();
     }
     else
     {
-        const auto& chars = UnicodeStorage::GetInstance().GetText(ref._parent.GetStorageKey(ref._index));
+        const auto& chars = ref._parent.GetUnicodeStorage().GetText(ref._parent.GetStorageKey(ref._index));
         return chars == glyph;
     }
 }

@@ -5,7 +5,9 @@ Module Name:
 - CharRowCell.hpp
 
 Abstract:
-- data structure for one cell of a char row
+- data structure for one cell of a char row. contains the char data for one
+  coordinate position in the output buffer (leading/trailing information and
+  the char itself.
 
 Author(s):
 - Austin Diviness (AustDi) 02-May-2018
