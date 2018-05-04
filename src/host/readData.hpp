@@ -30,7 +30,10 @@ public:
 
     virtual ~ReadData();
 
+    ReadData(const ReadData&) = delete;
     ReadData(ReadData&&);
+    ReadData& operator=(const ReadData&) & = delete;
+    ReadData& operator=(ReadData &&) & = delete;
 
     virtual bool Notify(const WaitTerminationReason TerminationReason,
                         const bool fIsUnicode,

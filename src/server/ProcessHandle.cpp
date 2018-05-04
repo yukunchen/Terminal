@@ -18,13 +18,17 @@
 ConsoleProcessHandle::ConsoleProcessHandle(const DWORD dwProcessId,
                                            const DWORD dwThreadId,
                                            const ULONG ulProcessGroupId) :
+    pWaitBlockQueue(std::make_unique<ConsoleWaitQueue>()),
+    pInputHandle(nullptr),
+    pOutputHandle(nullptr),
+    fRootProcess(false),
     dwProcessId(dwProcessId),
     dwThreadId(dwThreadId),
+    _ulTerminateCount(0),
     _ulProcessGroupId(ulProcessGroupId),
-    pWaitBlockQueue(std::make_unique<ConsoleWaitQueue>()),
     _hProcess(LOG_IF_HANDLE_NULL(OpenProcess(MAXIMUM_ALLOWED,
-                                                 FALSE,
-                                                 dwProcessId))),
+                                             FALSE,
+                                             dwProcessId))),
     _policy(ConsoleProcessPolicy::s_CreateInstance(_hProcess.get()))
 {
     if (nullptr != _hProcess.get())

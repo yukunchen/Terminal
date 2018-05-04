@@ -35,7 +35,7 @@ HRESULT ConsoleProcessList::AllocProcessData(const DWORD dwProcessId,
                                              _In_opt_ ConsoleProcessHandle* const pParentProcessData,
                                              _Outptr_opt_ ConsoleProcessHandle** const ppProcessData)
 {
-    assert(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
+    FAIL_FAST_IF_FALSE(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
 
     ConsoleProcessHandle* pProcessData = FindProcessInList(dwProcessId);
     if (nullptr != pProcessData)
@@ -87,10 +87,10 @@ HRESULT ConsoleProcessList::AllocProcessData(const DWORD dwProcessId,
 // - <none>
 void ConsoleProcessList::FreeProcessData(_In_ ConsoleProcessHandle* const pProcessData)
 {
-    assert(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
+    FAIL_FAST_IF_FALSE(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
 
     // Assert that the item exists in the list. If it doesn't exist, the end/last will be returned.
-    assert(_processes.cend() != std::find(_processes.cbegin(), _processes.cend(), pProcessData));
+    FAIL_FAST_IF_FALSE(_processes.cend() != std::find(_processes.cbegin(), _processes.cend(), pProcessData));
 
     _processes.remove(pProcessData);
 
