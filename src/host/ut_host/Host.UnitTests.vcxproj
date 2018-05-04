@@ -10,6 +10,8 @@
     <ClCompile Include="DbcsTests.cpp" />
     <ClCompile Include="InitTests.cpp" />
     <ClCompile Include="ScreenBufferTests.cpp" />
+    <ClCompile Include="ScreenInfoTextIteratorTests.cpp" />
+    <ClCompile Include="SearchTests.cpp" />
     <ClCompile Include="SelectionTests.cpp" />
     <ClCompile Include="TextBufferTests.cpp" />
     <ClCompile Include="TitleTests.cpp" />

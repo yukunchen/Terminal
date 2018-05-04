@@ -3,11 +3,56 @@
 // This used to be in find.h.
 #define SEARCH_STRING_LENGTH    (80)
 
-USHORT SearchForString(const SCREEN_INFORMATION& ScreenInfo,
-	                   _In_reads_(cchSearch) PCWSTR pwszSearch,
-	                   _In_range_(1, SEARCH_STRING_LENGTH) USHORT cchSearch,
-	                   const bool IgnoreCase,
-	                   const bool Reverse,
-	                   const bool SearchAndSetAttr,
-	                   const ULONG ulAttr,
-	                   _Out_opt_ PCOORD coordStringPosition);  // not touched for SearchAndSetAttr case.
+class Search final
+{
+public:
+    enum class Direction
+    {
+        Forward,
+        Backward
+    };
+
+    enum class Sensitivity
+    {
+        CaseInsensitive,
+        CaseSensitive
+    };
+
+    Search(const SCREEN_INFORMATION& ScreenInfo, 
+           const std::wstring& str, 
+           const Direction dir, 
+           const Sensitivity sensitivity);
+        
+    bool FindNext();
+    void Select() const;
+    void Color(const ULONG ulAttr) const;
+
+private:
+
+    wchar_t _ApplySensitivity(const wchar_t wch) const;
+    bool Search::_FindNeedleInHaystackAt(const COORD pos, COORD& start, COORD& end) const;
+    bool _CompareChars(const gsl::span<const wchar_t>& one, const gsl::span<const wchar_t>& two) const;
+    void _UpdateNextPosition();
+
+    void _IncrementCoord(COORD& coord) const;
+    void _DecrementCoord(COORD& coord) const;
+
+    static COORD s_GetInitialAnchor(const SCREEN_INFORMATION& screenInfo, const Direction dir);
+    static std::vector<std::vector<wchar_t>> s_CreateNeedleFromString(const std::wstring& wstr);
+
+    bool _reachedEnd = false;
+    COORD _coordNext = { 0 };
+    COORD _coordSelStart = { 0 };
+    COORD _coordSelEnd = { 0 };
+
+    const COORD _coordAnchor;
+    const std::vector<std::vector<wchar_t>> _needle;
+    const Direction _direction;
+    const Sensitivity _sensitivity;
+    const SCREEN_INFORMATION& _screenInfo;
+
+#ifdef UNIT_TESTING
+    friend class SearchTests;
+#endif
+};
+

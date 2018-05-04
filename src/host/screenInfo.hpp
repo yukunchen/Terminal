@@ -21,6 +21,7 @@ Revision History:
 #include "conapi.h"
 
 #include "settings.hpp"
+#include "screenInfoTextIterator.hpp"
 #include "../buffer/out/TextAttribute.hpp"
 #include "../buffer/out/textBuffer.hpp"
 
@@ -46,6 +47,8 @@ class ConversionAreaInfo; // forward decl window. circular reference
 class SCREEN_INFORMATION
 {
 public:
+    using const_text_iterator = typename ScreenInfoTextIterator;
+
     [[nodiscard]]
     static NTSTATUS CreateInstance(_In_ COORD coordWindowSize,
                                    const FontInfo fontInfo,
@@ -129,6 +132,8 @@ public:
     std::vector<OutputCell> ReadLine(const size_t rowIndex,
                                      const size_t startIndex,
                                      const size_t count) const;
+                                     
+    const_text_iterator GetTextDataAt(const COORD at) const;
 
     void WriteLine(const std::vector<OutputCell>& cells,
                    const size_t rowIndex,
@@ -300,6 +305,7 @@ private:
     TextAttribute _Attributes;
     TextAttribute _PopupAttributes;
 
+    friend class ScreenInfoTextIterator;
 #ifdef UNIT_TESTING
     friend class ScreenBufferTests;
     friend class CommonState;

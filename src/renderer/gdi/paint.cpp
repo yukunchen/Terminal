@@ -569,12 +569,11 @@ HRESULT GdiEngine::ClearCursor()
 //  - Reads the selected area, selection mode, and active screen buffer
 //    from the global properties and dispatches a GDI invert on the selected text area.
 // Arguments:
-//  - rgsrSelection - Array of rectangles, one per line, that should be inverted to make the selection area
-// - cRectangles - Count of rectangle array length
+//  - rectangles - Vector of rectangles, one per line, that should be inverted to make the selection area
 // Return Value:
 // - S_OK or suitable GDI HRESULT error.
 [[nodiscard]]
-HRESULT GdiEngine::PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection, const UINT cRectangles)
+HRESULT GdiEngine::PaintSelection(const std::vector<SMALL_RECT>& rectangles)
 {
     LOG_IF_FAILED(_FlushBufferLines());
 
@@ -583,7 +582,7 @@ HRESULT GdiEngine::PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* cons
     RETURN_LAST_ERROR_IF_NULL(hrgnSelection.get());
 
     // Adjust the selected region to invert
-    RETURN_IF_FAILED(_PaintSelectionCalculateRegion(rgsrSelection, cRectangles, hrgnSelection.get()));
+    RETURN_IF_FAILED(_PaintSelectionCalculateRegion(rectangles, hrgnSelection.get()));
 
     // Save the painted region for the next paint
     int rgnType = CombineRgn(_hrgnGdiPaintedSelection, hrgnSelection.get(), nullptr, RGN_COPY);
@@ -602,22 +601,20 @@ HRESULT GdiEngine::PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* cons
 //  - Composes a GDI region representing the area of the buffer that
 //    is currently selected based on member variable (selection rectangle) state.
 // Arguments:
-//  - rgsrSelection - Array of rectangles, one per line, that should be inverted to make the selection area
-// - cRectangles - Count of rectangle array length
+//  - rectangles - Vector of rectangles, one per line, that should be inverted to make the selection area
 //  - hrgnSelection - Handle to empty GDI region. Will be filled with selection region information.
 // Return Value:
 //  - HRESULT S_OK or Expect GDI-based errors or memory errors.
 [[nodiscard]]
-HRESULT GdiEngine::_PaintSelectionCalculateRegion(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection,
-                                                  const UINT cRectangles,
-                                                  _Inout_ HRGN const hrgnSelection) const
+HRESULT GdiEngine::_PaintSelectionCalculateRegion(const std::vector<SMALL_RECT>& rectangles,
+                                                 _Inout_ HRGN const hrgnSelection) const
 {
     // for each row in the selection
-    for (UINT iRect = 0; iRect < cRectangles; iRect++)
+    for (const auto& rect : rectangles)
     {
         // multiply character counts by font size to obtain pixels
         RECT rectHighlight;
-        RETURN_IF_FAILED(_ScaleByFont(&rgsrSelection[iRect], &rectHighlight));
+        RETURN_IF_FAILED(_ScaleByFont(&rect, &rectHighlight));
 
         // create region for selection rectangle
         wil::unique_hrgn hrgnLine(CreateRectRgn(rectHighlight.left, rectHighlight.top, rectHighlight.right, rectHighlight.bottom));

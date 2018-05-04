@@ -16,11 +16,13 @@ SOURCES = \
     $(SOURCES) \
     ApiRoutinesTests.cpp \
     AliasTests.cpp \
+    SearchTests.cpp \
     UtilsTests.cpp \
     AttrRowTests.cpp \
     ConsoleArgumentsTests.cpp \
     DbcsTests.cpp \
     ScreenBufferTests.cpp \
+    ScreenBufferTextIteratorTests.cpp \
     TextBufferTests.cpp \
     ClipboardTests.cpp \
     SelectionTests.cpp \
