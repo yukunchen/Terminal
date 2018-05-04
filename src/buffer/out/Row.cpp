@@ -31,7 +31,7 @@ void swap(ROW& a, ROW& b) noexcept
 // - pParent - the text buffer that this row belongs to
 // Return Value:
 // - constructed object
-ROW::ROW(const SHORT rowId, const short rowWidth, const TextAttribute fillAttribute, TextBuffer* pParent) :
+ROW::ROW(const SHORT rowId, const short rowWidth, const TextAttribute fillAttribute, TextBuffer* const pParent) :
     _id{ rowId },
     _rowWidth{ gsl::narrow<size_t>(rowWidth) },
     _charRow{ std::make_unique<CharRow>(rowWidth, this) },

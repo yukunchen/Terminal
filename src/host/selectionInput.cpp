@@ -695,10 +695,7 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
 
                         for (SHORT i = 0; i < (selectRect.Right - selectRect.Left + 1); ++i)
                         {
-                            for (auto wch : *it)
-                            {
-                                str.push_back(wch);
-                            }
+                            str.append((*it).begin(), (*it).end());
                             it++;
                         }
                     }

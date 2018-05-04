@@ -29,7 +29,7 @@ class TextBuffer;
 class ROW final
 {
 public:
-    ROW(const SHORT rowId, const short rowWidth, const TextAttribute fillAttribute, TextBuffer* pParent);
+    ROW(const SHORT rowId, const short rowWidth, const TextAttribute fillAttribute, TextBuffer* const pParent);
     ROW(const ROW& a);
     ROW& operator=(const ROW& a);
     ROW(ROW&& a) noexcept;
