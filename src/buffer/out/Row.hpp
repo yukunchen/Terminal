@@ -29,7 +29,7 @@ class TextBuffer;
 class ROW final
 {
 public:
-    ROW(const SHORT rowId, const short rowWidth, const TextAttribute fillAttribute, TextBuffer* parent);
+    ROW(const SHORT rowId, const short rowWidth, const TextAttribute fillAttribute, TextBuffer* pParent);
     ROW(const ROW& a);
     ROW& operator=(const ROW& a);
     ROW(ROW&& a) noexcept;
@@ -76,7 +76,7 @@ private:
     ATTR_ROW _attrRow;
     SHORT _id;
     size_t _rowWidth;
-    TextBuffer* _parent;
+    TextBuffer* _pParent; // non ownership pointer
 };
 
 void swap(ROW& a, ROW& b) noexcept;

@@ -28,14 +28,15 @@ void swap(ROW& a, ROW& b) noexcept
 // - rowId - the row index in the text buffer
 // - rowWidth - the width of the row, cell elements
 // - fillAttribute - the default text attribute
+// - pParent - the text buffer that this row belongs to
 // Return Value:
 // - constructed object
-ROW::ROW(const SHORT rowId, const short rowWidth, const TextAttribute fillAttribute, TextBuffer* parent) :
+ROW::ROW(const SHORT rowId, const short rowWidth, const TextAttribute fillAttribute, TextBuffer* pParent) :
     _id{ rowId },
     _rowWidth{ gsl::narrow<size_t>(rowWidth) },
     _charRow{ std::make_unique<CharRow>(rowWidth, this) },
     _attrRow{ rowWidth, fillAttribute },
-    _parent{ parent }
+    _pParent{ pParent }
 {
 }
 
@@ -48,12 +49,9 @@ ROW::ROW(const SHORT rowId, const short rowWidth, const TextAttribute fillAttrib
 ROW::ROW(const ROW& a) :
     _attrRow{ a._attrRow },
     _rowWidth{ a._rowWidth },
-    _id{ a._id }
+    _id{ a._id },
+    _pParent{ a._pParent }
 {
-    // we only support ucs2 encoded char rows
-    FAIL_FAST_IF_MSG(a._charRow->GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                     "only support UCS2 char rows currently");
-
     CharRow charRow = *static_cast<const CharRow* const>(a._charRow.get());
     _charRow = std::make_unique<CharRow>(charRow);
 }
@@ -81,12 +79,13 @@ ROW::ROW(ROW&& a) noexcept :
     _charRow{ std::move(a._charRow) },
     _attrRow{ std::move(a._attrRow) },
     _id{ std::move(a._id) },
-    _rowWidth{ _rowWidth }
+    _rowWidth{ _rowWidth },
+    _pParent{ a._pParent }
 {
 }
 
 // Routine Description:
-// - swaps fields with another ROW
+// - swaps fields with another ROW. does not swap parent text buffer
 // Arguments:
 // - other - the object to swap with
 // Return Value:
@@ -98,6 +97,7 @@ void ROW::swap(ROW& other) noexcept
     swap(_attrRow, other._attrRow);
     swap(_id, other._id);
     swap(_rowWidth, other._rowWidth);
+    swap(_pParent, other._pParent);
 }
 size_t ROW::size() const noexcept
 {
@@ -282,10 +282,10 @@ const OutputCell ROW::at(const size_t column) const
 
 UnicodeStorage& ROW::GetUnicodeStorage()
 {
-    return _parent->GetUnicodeStorage();
+    return _pParent->GetUnicodeStorage();
 }
 
 const UnicodeStorage& ROW::GetUnicodeStorage() const
 {
-    return _parent->GetUnicodeStorage();
+    return _pParent->GetUnicodeStorage();
 }

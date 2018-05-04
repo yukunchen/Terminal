@@ -26,14 +26,15 @@ void swap(CharRow& a, CharRow& b) noexcept
 // - constructor
 // Arguments:
 // - rowWidth - the size (in wchar_t) of the char and attribute rows
+// - pParent - the parent ROW
 // Return Value:
 // - instantiated object
 // Note: will through if unable to allocate char/attribute buffers
-CharRow::CharRow(size_t rowWidth, ROW* parent) :
+CharRow::CharRow(size_t rowWidth, ROW* pParent) :
     _wrapForced{ false },
     _doubleBytePadded{ false },
     _data(rowWidth, value_type()),
-    _parent{ parent }
+    _pParent{ pParent }
 {
 }
 
@@ -64,7 +65,7 @@ void CharRow::swap(CharRow& other) noexcept
     swap(_wrapForced, other._wrapForced);
     swap(_doubleBytePadded, other._doubleBytePadded);
     swap(_data, other._data);
-    swap(_parent, other._parent);
+    swap(_pParent, other._pParent);
 }
 
 ICharRow::SupportedEncoding CharRow::GetSupportedEncoding() const noexcept
@@ -344,12 +345,12 @@ std::wstring CharRow::GetText() const
 
 UnicodeStorage& CharRow::GetUnicodeStorage()
 {
-    return _parent->GetUnicodeStorage();
+    return _pParent->GetUnicodeStorage();
 }
 
 const UnicodeStorage& CharRow::GetUnicodeStorage() const
 {
-    return _parent->GetUnicodeStorage();
+    return _pParent->GetUnicodeStorage();
 }
 
 // Routine Description:
@@ -360,5 +361,5 @@ const UnicodeStorage& CharRow::GetUnicodeStorage() const
 // - the COORD key for data access from UnicodeStorage for the column
 COORD CharRow::GetStorageKey(const size_t column) const
 {
-    return { gsl::narrow<SHORT>(column), _parent->GetId() };
+    return { gsl::narrow<SHORT>(column), _pParent->GetId() };
 }
