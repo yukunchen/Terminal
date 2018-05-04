@@ -13,8 +13,10 @@ Author(s):
 --*/
 
 #pragma once
+
+#include "../buffer/out/CharRow.hpp"
+
 class SCREEN_INFORMATION;
-class CharRow;
 
 class ScreenInfoTextIterator : public std::iterator<std::random_access_iterator_tag, const wchar_t>
 {
@@ -42,8 +44,8 @@ public:
 
     ptrdiff_t operator-(const ScreenInfoTextIterator& it);
 
-    const wchar_t& operator*();
-    const wchar_t& operator*() const;
+    const CharRow::reference operator*();
+    const CharRow::reference operator*() const;
     const wchar_t* operator->();
     const wchar_t* getPtr() const;
     const wchar_t* getConstPtr() const;

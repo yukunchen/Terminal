@@ -115,29 +115,29 @@ ptrdiff_t ScreenInfoTextIterator::operator-(const ScreenInfoTextIterator& it)
     return Utils::s_CompareCoords(_psi->GetScreenBufferSize(), _pos, it._pos);
 }
 
-const wchar_t& ScreenInfoTextIterator::operator*()
+const CharRow::reference ScreenInfoTextIterator::operator*()
 {
     return _pRow->GlyphAt(_pos.X);
 }
 
-const wchar_t& ScreenInfoTextIterator::operator*() const
+const CharRow::reference ScreenInfoTextIterator::operator*() const
 {
     return _pRow->GlyphAt(_pos.X);
 }
 
 const wchar_t* ScreenInfoTextIterator::operator->()
 {
-    return &_pRow->GlyphAt(_pos.X);
+    return _pRow->GlyphAt(_pos.X).begin();
 }
 
 const wchar_t* ScreenInfoTextIterator::getPtr() const
 {
-    return &_pRow->GlyphAt(_pos.X);
+    return _pRow->GlyphAt(_pos.X).begin();
 }
 
 const wchar_t* ScreenInfoTextIterator::getConstPtr() const
 {
-    return &_pRow->GlyphAt(_pos.X);
+    return _pRow->GlyphAt(_pos.X).begin();
 }
 
 void ScreenInfoTextIterator::_SetPos(const COORD newPos)
@@ -162,4 +162,3 @@ const CharRow* ScreenInfoTextIterator::s_GetRow(const SCREEN_INFORMATION* const 
     THROW_HR_IF_NULL(E_INVALIDARG, psi);
     return &static_cast<CharRow&>((psi->_textBuffer->GetRowByOffset(pos.Y).GetCharRow()));
 }
-

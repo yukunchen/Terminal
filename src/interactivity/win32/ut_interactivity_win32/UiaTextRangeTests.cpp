@@ -96,7 +96,7 @@ class UiaTextRangeTests
             CharRow& charRow = static_cast<CharRow&>(iCharRow);
             for (auto& cell : charRow)
             {
-                cell.first = L'a';
+                cell.Char() = L'a';
             }
         }
 

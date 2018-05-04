@@ -197,8 +197,8 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
                     return STATUS_BUFFER_OVERFLOW;
                 }
 
-                it->first = WCHAR_OF_PCI(SourcePtr);
-                it->second = DbcsAttribute::FromPublicApiAttributeFormat(reinterpret_cast<const CHAR_INFO* const>(SourcePtr)->Attributes);
+                it->Char() = WCHAR_OF_PCI(SourcePtr);
+                it->DbcsAttr() = DbcsAttribute::FromPublicApiAttributeFormat(reinterpret_cast<const CHAR_INFO* const>(SourcePtr)->Attributes);
 
                 if (attrRun.GetAttributes() == ((ATTR_OF_PCI(SourcePtr) & ~COMMON_LVB_SBCSDBCS)))
                 {
@@ -343,8 +343,8 @@ void WriteRectToScreenBuffer(SCREEN_INFORMATION& screenInfo,
         for (size_t iCol = 0; iCol < xSize && it != itEnd; ++iCol, ++it)
         {
             const OutputCell& cell = cells[iRow][iCol];
-            it->first = Utf16ToUcs2(cell.Chars());
-            it->second = cell.DbcsAttr();
+            it->Char() = Utf16ToUcs2(cell.Chars());
+            it->DbcsAttr() = cell.DbcsAttr();
             textAttrs.push_back(cell.TextAttr());
         }
 
@@ -976,30 +976,30 @@ NTSTATUS FillOutput(SCREEN_INFORMATION& screenInfo,
                 {
                     for (SHORT j = 0; j < (SHORT)(*pcElements - NumWritten); j++)
                     {
-                        it->first = static_cast<wchar_t>(wElement);
+                        it->Char() = static_cast<wchar_t>(wElement);
                         if (StartPosFlag++ & 1)
                         {
-                            it->second.SetTrailing();
+                            it->DbcsAttr().SetTrailing();
                         }
                         else
                         {
-                            it->second.SetLeading();
+                            it->DbcsAttr().SetLeading();
                         }
                         ++it;
                     }
 
                     if (StartPosFlag & 1)
                     {
-                        (it - 1)->first = UNICODE_SPACE;
-                        (it - 1)->second.SetSingle();
+                        (it - 1)->Char() = UNICODE_SPACE;
+                        (it - 1)->DbcsAttr().SetSingle();
                     }
                 }
                 else
                 {
                     for (SHORT j = 0; j < (SHORT)(*pcElements - NumWritten); j++)
                     {
-                        it->first = static_cast<wchar_t>(wElement);
-                        it->second.SetSingle();
+                        it->Char() = static_cast<wchar_t>(wElement);
+                        it->DbcsAttr().SetSingle();
                         ++it;
                     }
                 }
@@ -1019,14 +1019,14 @@ NTSTATUS FillOutput(SCREEN_INFORMATION& screenInfo,
                 {
                     for (SHORT j = 0; j < coordScreenBufferSize.X - X; j++)
                     {
-                        it->first = static_cast<wchar_t>(wElement);
+                        it->Char() = static_cast<wchar_t>(wElement);
                         if (StartPosFlag++ & 1)
                         {
-                            it->second.SetTrailing();
+                            it->DbcsAttr().SetTrailing();
                         }
                         else
                         {
-                            it->second.SetLeading();
+                            it->DbcsAttr().SetLeading();
                         }
                         ++it;
                     }
@@ -1035,8 +1035,8 @@ NTSTATUS FillOutput(SCREEN_INFORMATION& screenInfo,
                 {
                     for (SHORT j = 0; j < coordScreenBufferSize.X - X; j++)
                     {
-                        it->first = static_cast<wchar_t>(wElement);
-                        it->second.SetSingle();
+                        it->Char() = static_cast<wchar_t>(wElement);
+                        it->DbcsAttr().SetSingle();
                         ++it;
                     }
                 }
@@ -1265,27 +1265,27 @@ void FillRectangle(const CHAR_INFO * const pciFill,
                     assert((itEnd - it) % 2 == 0);
                     assert((itEnd - it) >= 2);
 
-                    it->first = pciFill->Char.UnicodeChar;
-                    it->second.SetLeading();
+                    it->Char() = pciFill->Char.UnicodeChar;
+                    it->DbcsAttr().SetLeading();
                     ++it;
 
-                    it->first = pciFill->Char.UnicodeChar;
-                    it->second.SetTrailing();
+                    it->Char() = pciFill->Char.UnicodeChar;
+                    it->DbcsAttr().SetTrailing();
                     ++it;
 
                     ++j;
                 }
                 else
                 {
-                    it->first = UNICODE_NULL;
-                    it->second.SetSingle();
+                    it->Char() = UNICODE_NULL;
+                    it->DbcsAttr().SetSingle();
                     ++it;
                 }
             }
             else
             {
-                it->first = pciFill->Char.UnicodeChar;
-                it->second.SetSingle();
+                it->Char() = pciFill->Char.UnicodeChar;
+                it->DbcsAttr().SetSingle();
                 ++it;
             }
         }
