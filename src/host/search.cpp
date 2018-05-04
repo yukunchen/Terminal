@@ -147,7 +147,6 @@ bool Search::_FindNeedleInHaystackAt(const COORD pos, COORD& start, COORD& end) 
         // Haystack is the buffer. Needle is the string we were given.
         const auto hayIter = _screenInfo.GetTextDataAt(bufferPos);
         const auto hayChar = *hayIter;
-        //const auto hayChars = gsl::make_span<const wchar_t>(&hayChar, 1);
         const auto hayChars = gsl::make_span<const wchar_t>(hayChar.begin(), hayChar.end());
 
         const auto& needleChars = needleCell;

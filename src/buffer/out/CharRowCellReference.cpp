@@ -109,7 +109,16 @@ CharRowCellReference::const_iterator CharRowCellReference::end() const
 
 bool operator==(const CharRowCellReference& ref, const std::vector<wchar_t>& glyph)
 {
-    if (glyph.size() == 1 && !ref._cellData().DbcsAttr().IsGlyphStored())
+    const DbcsAttribute& dbcsAttr = ref._cellData().DbcsAttr();
+    if (glyph.size() == 1 && dbcsAttr.IsGlyphStored())
+    {
+        return false;
+    }
+    else if (glyph.size() > 1 && !dbcsAttr.IsGlyphStored())
+    {
+        return false;
+    }
+    else if (glyph.size() == 1 && !dbcsAttr.IsGlyphStored())
     {
         return ref._cellData().Char() == glyph.front();
     }
