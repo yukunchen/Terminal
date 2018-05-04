@@ -21,16 +21,22 @@ Revision History:
 
 #include "DbcsAttribute.hpp"
 #include "ICharRow.hpp"
+#include "CharRowCellReference.hpp"
+#include "CharRowCell.hpp"
+#include "UnicodeStorage.hpp"
+
+class ROW;
 
 class CharRow final : public ICharRow
 {
 public:
     using glyph_type = typename wchar_t;
-    using value_type = typename std::pair<glyph_type, DbcsAttribute>;
+    using value_type = typename CharRowCell;
     using iterator = typename std::vector<value_type>::iterator;
     using const_iterator = typename std::vector<value_type>::const_iterator;
+    using reference = typename CharRowCellReference;
 
-    CharRow(size_t rowWidth);
+    CharRow(size_t rowWidth, ROW* pParent);
     CharRow(const CharRow& a) = default;
     CharRow& operator=(const CharRow& a);
     CharRow(CharRow&& a) = default;
@@ -61,8 +67,8 @@ public:
     std::wstring GetTextRaw() const;
 
     // working with glyphs
-    const glyph_type& GlyphAt(const size_t column) const;
-    glyph_type& GlyphAt(const size_t column);
+    const reference GlyphAt(const size_t column) const;
+    reference GlyphAt(const size_t column);
 
     // iterators
     iterator begin() noexcept;
@@ -71,6 +77,11 @@ public:
     iterator end() noexcept;
     const_iterator cend() const noexcept;
 
+    UnicodeStorage& GetUnicodeStorage();
+    const UnicodeStorage& GetUnicodeStorage() const;
+    COORD GetStorageKey(const size_t column) const;
+
+    friend CharRowCellReference;
     friend constexpr bool operator==(const CharRow& a, const CharRow& b) noexcept;
 
 protected:
@@ -82,6 +93,9 @@ protected:
 
     // storage for glyph data and dbcs attributes
     std::vector<value_type> _data;
+
+    // ROW that this CharRow belongs to
+    ROW* _pParent;
 };
 
 void swap(CharRow& a, CharRow& b) noexcept;
