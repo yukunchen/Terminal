@@ -108,7 +108,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleCreateObject(_In_ PCONSOLE_API_MSG pMessa
 
 Error:
 
-    assert(!NT_SUCCESS(Status));
+    FAIL_FAST_IF(NT_SUCCESS(Status));
 
     UnlockConsole();
 
@@ -243,8 +243,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
     return nullptr;
 
 Error:
-
-    assert(!NT_SUCCESS(Status));
+    FAIL_FAST_IF(NT_SUCCESS(Status));
 
     if (ProcessData != nullptr)
     {

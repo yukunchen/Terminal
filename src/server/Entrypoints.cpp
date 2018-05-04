@@ -183,7 +183,7 @@ HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine, const Conso
     ExitThread(S_OK);
 
     // We won't hit this. The ExitThread above will kill the caller at this point.
-    assert(false);
+    FAIL_FAST_HR(E_UNEXPECTED);
     return S_OK;
 }
 #pragma warning(pop)
