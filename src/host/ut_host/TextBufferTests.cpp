@@ -271,8 +271,7 @@ void TextBufferTests::DoBoundaryTest(PWCHAR const pwszInputString,
 {
     TextBuffer& textBuffer = GetTbi();
 
-    ICharRow& iCharRow = textBuffer.GetFirstRow().GetCharRow();
-    CharRow& charRow = static_cast<CharRow&>(iCharRow);
+    CharRow& charRow = textBuffer.GetFirstRow().GetCharRow();
 
     // copy string into buffer
     for (size_t i = 0; i < static_cast<size_t>(cLength); ++i)
@@ -369,8 +368,7 @@ void TextBufferTests::TestInsertCharacter()
     WORD const wAttrTest = BACKGROUND_INTENSITY | FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_BLUE;
     TextAttribute TestAttributes = TextAttribute(wAttrTest);
 
-    const ICharRow& iCharRow = Row.GetCharRow();
-    const CharRow& charRow = static_cast<const CharRow&>(iCharRow);
+    const CharRow& charRow = Row.GetCharRow();
     // ensure that the buffer didn't start with these fields
     VERIFY_ARE_NOT_EQUAL(charRow.GlyphAt(coordCursorBefore.X), wchTest);
     VERIFY_ARE_NOT_EQUAL(charRow.DbcsAttrAt(coordCursorBefore.X), dbcsAttribute);
@@ -585,8 +583,7 @@ void TextBufferTests::TestIncrementCircularBuffer()
 
         // fill first row with some stuff
         ROW& FirstRow = textBuffer.GetFirstRow();
-        ICharRow& iCharRow = FirstRow.GetCharRow();
-        CharRow& charRow = static_cast<CharRow&>(iCharRow);
+        CharRow& charRow = FirstRow.GetCharRow();
         charRow.GlyphAt(0) = L'A';
 
         // ensure it does say that it contains text

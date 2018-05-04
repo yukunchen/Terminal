@@ -231,8 +231,7 @@ private:
         attrs[5].SetLeading();
         attrs[6].SetTrailing();
 
-        ICharRow& iCharRow = pRow->GetCharRow();
-        CharRow& charRow = static_cast<CharRow&>(iCharRow);
+        CharRow& charRow = pRow->GetCharRow();
         OverwriteColumns(pwszText, pwszText + length, attrs.cbegin(), charRow.begin());
 
         // set some colors
@@ -297,8 +296,7 @@ private:
         attrs[68].SetTrailing();
         attrs[79].SetLeading();
 
-        ICharRow& iCharRow = pRow->GetCharRow();
-        CharRow& charRow = static_cast<CharRow&>(iCharRow);
+        CharRow& charRow = pRow->GetCharRow();
         OverwriteColumns(pwszText, pwszText + length, attrs.cbegin(), charRow.begin());
 
         // everything gets default attributes

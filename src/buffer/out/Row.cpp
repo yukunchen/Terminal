@@ -32,7 +32,7 @@ void swap(ROW& a, ROW& b) noexcept
 ROW::ROW(const SHORT rowId, const short rowWidth, const TextAttribute fillAttribute) :
     _id{ rowId },
     _rowWidth{ gsl::narrow<size_t>(rowWidth) },
-    _charRow{ std::make_unique<CharRow>(rowWidth) },
+    _charRow{ rowWidth },
     _attrRow{ rowWidth, fillAttribute }
 {
 }
@@ -46,10 +46,9 @@ ROW::ROW(const SHORT rowId, const short rowWidth, const TextAttribute fillAttrib
 ROW::ROW(const ROW& a) :
     _attrRow{ a._attrRow },
     _rowWidth{ a._rowWidth },
-    _id{ a._id }
+    _id{ a._id },
+    _charRow{ a._charRow }
 {
-    CharRow charRow = *static_cast<const CharRow* const>(a._charRow.get());
-    _charRow = std::make_unique<CharRow>(charRow);
 }
 
 // Routine Description:
@@ -98,14 +97,14 @@ size_t ROW::size() const noexcept
     return _rowWidth;
 }
 
-const ICharRow& ROW::GetCharRow() const
+const CharRow& ROW::GetCharRow() const
 {
-    return *_charRow;
+    return _charRow;
 }
 
-ICharRow& ROW::GetCharRow()
+CharRow& ROW::GetCharRow()
 {
-    return const_cast<ICharRow&>(static_cast<const ROW* const>(this)->GetCharRow());
+    return const_cast<CharRow&>(static_cast<const ROW* const>(this)->GetCharRow());
 }
 
 const ATTR_ROW& ROW::GetAttrRow() const noexcept
@@ -136,7 +135,7 @@ void ROW::SetId(const SHORT id) noexcept
 // - <none>
 bool ROW::Reset(const TextAttribute Attr)
 {
-    _charRow->Reset();
+    _charRow.Reset();
     try
     {
         _attrRow.Reset(Attr);
@@ -158,7 +157,7 @@ bool ROW::Reset(const TextAttribute Attr)
 [[nodiscard]]
 HRESULT ROW::Resize(const size_t width)
 {
-    RETURN_IF_FAILED(_charRow->Resize(width));
+    RETURN_IF_FAILED(_charRow.Resize(width));
     try
     {
         _attrRow.Resize(width);
@@ -175,8 +174,8 @@ HRESULT ROW::Resize(const size_t width)
 // - <none>
 void ROW::ClearColumn(const size_t column)
 {
-    THROW_HR_IF(E_INVALIDARG, column >= _charRow->size());
-    _charRow->ClearCell(column);
+    THROW_HR_IF(E_INVALIDARG, column >= _charRow.size());
+    _charRow.ClearCell(column);
 }
 
 // Routine Description:
@@ -185,7 +184,7 @@ void ROW::ClearColumn(const size_t column)
 // - wstring containing text for the row
 std::wstring ROW::GetText() const
 {
-    return _charRow->GetText();
+    return _charRow.GetText();
 }
 
 // Routine Description:
@@ -223,11 +222,10 @@ std::vector<OutputCell> ROW::AsCells(const size_t startIndex, const size_t count
     // Unpack the attributes into an array so we can iterate over them.
     const auto unpackedAttrs = _attrRow.UnpackAttrs();
 
-    const CharRow* const charRow = static_cast<const CharRow* const>(_charRow.get());
     for (size_t i = 0; i < count; ++i)
     {
         const auto index = startIndex + i;
-        cells.emplace_back(std::vector<wchar_t>{ charRow->GlyphAt(index) }, charRow->DbcsAttrAt(index), unpackedAttrs[index]);
+        cells.emplace_back(std::vector<wchar_t>{ _charRow.GlyphAt(index) }, _charRow.DbcsAttrAt(index), unpackedAttrs[index]);
     }
     return cells;
 }
@@ -245,13 +243,13 @@ std::vector<OutputCell>::const_iterator ROW::WriteCells(const std::vector<Output
                                                         const std::vector<OutputCell>::const_iterator end,
                                                         const size_t index)
 {
-    THROW_HR_IF(E_INVALIDARG, index >= _charRow->size());
+    THROW_HR_IF(E_INVALIDARG, index >= _charRow.size());
     auto it = start;
     size_t currentIndex = index;
-    while (it != end && currentIndex < _charRow->size())
+    while (it != end && currentIndex < _charRow.size())
     {
-        static_cast<CharRow&>(*_charRow).GlyphAt(currentIndex) = Utf16ToUcs2(it->Chars());
-        _charRow->DbcsAttrAt(currentIndex) = it->DbcsAttr();
+        _charRow.GlyphAt(currentIndex) = Utf16ToUcs2(it->Chars());
+        _charRow.DbcsAttrAt(currentIndex) = it->DbcsAttr();
         if (it->TextAttrBehavior() != OutputCell::TextAttributeBehavior::Current)
         {
             const TextAttributeRun attrRun{ 1, it->TextAttr() };
@@ -259,7 +257,7 @@ std::vector<OutputCell>::const_iterator ROW::WriteCells(const std::vector<Output
             LOG_IF_FAILED(_attrRow.InsertAttrRuns(runs,
                                                   currentIndex,
                                                   currentIndex,
-                                                  _charRow->size()));
+                                                  _charRow.size()));
         }
 
         ++it;
@@ -270,6 +268,5 @@ std::vector<OutputCell>::const_iterator ROW::WriteCells(const std::vector<Output
 
 const OutputCell ROW::at(const size_t column) const
 {
-    const CharRow* const charRow = static_cast<const CharRow* const>(_charRow.get());
-    return { { charRow->GlyphAt(column) }, charRow->DbcsAttrAt(column), _attrRow.GetAttrByColumn(column) };
+    return { { _charRow.GlyphAt(column) }, _charRow.DbcsAttrAt(column), _attrRow.GetAttrByColumn(column) };
 }

@@ -766,8 +766,7 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
 
     try
     {
-        ICharRow& iCharRow = Row.GetCharRow();
-        CharRow& charRow = static_cast<CharRow&>(iCharRow);
+        CharRow& charRow = Row.GetCharRow();
 
         const auto StringSpan = gsl::make_span(String, StringLength);
         OverwriteColumns(StringSpan.begin(),

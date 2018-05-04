@@ -19,9 +19,9 @@ Revision History:
 
 #pragma once
 
-#include "ICharRow.hpp"
 #include "AttrRow.hpp"
 #include "OutputCell.hpp"
+#include "CharRow.hpp"
 
 class ROW final
 {
@@ -36,8 +36,8 @@ public:
     size_t size() const noexcept;
     const OutputCell at(const size_t column) const;
 
-    const ICharRow& GetCharRow() const;
-    ICharRow& GetCharRow();
+    const CharRow& GetCharRow() const;
+    CharRow& GetCharRow();
 
     const ATTR_ROW& GetAttrRow() const noexcept;
     ATTR_ROW& GetAttrRow() noexcept;
@@ -66,7 +66,7 @@ public:
 #endif
 
 private:
-    std::unique_ptr<ICharRow> _charRow;
+    CharRow _charRow;
     ATTR_ROW _attrRow;
     SHORT _id;
     size_t _rowWidth;

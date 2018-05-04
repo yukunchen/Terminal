@@ -20,7 +20,6 @@ Revision History:
 #pragma once
 
 #include "DbcsAttribute.hpp"
-#include "ICharRow.hpp"
 
 // the characters of one row of screen buffer
 // we keep the following values so that we don't write
@@ -32,7 +31,7 @@ Revision History:
 //       ^    ^                  ^                     ^
 //       |    |                  |                     |
 //     Chars Left               Right                end of Chars buffer
-class CharRow final : public ICharRow
+class CharRow final
 {
 public:
     using glyph_type = typename wchar_t;
@@ -48,23 +47,22 @@ public:
 
     void swap(CharRow& other) noexcept;
 
-    // ICharRow methods
-    void SetWrapForced(const bool wrap) noexcept override;
-    bool WasWrapForced() const noexcept override;
-    void SetDoubleBytePadded(const bool doubleBytePadded) noexcept override;
-    bool WasDoubleBytePadded() const noexcept override;
-    size_t size() const noexcept override;
-    void Reset() override;
+    void SetWrapForced(const bool wrap) noexcept;
+    bool WasWrapForced() const noexcept;
+    void SetDoubleBytePadded(const bool doubleBytePadded) noexcept;
+    bool WasDoubleBytePadded() const noexcept;
+    size_t size() const noexcept;
+    void Reset();
     [[nodiscard]]
-    HRESULT Resize(const size_t newSize) noexcept override;
-    size_t MeasureLeft() const override;
-    size_t MeasureRight() const noexcept override;
-    void ClearCell(const size_t column) override;
-    bool ContainsText() const noexcept override;
-    const DbcsAttribute& DbcsAttrAt(const size_t column) const override;
-    DbcsAttribute& DbcsAttrAt(const size_t column) override;
-    void ClearGlyph(const size_t column) override;
-    std::wstring GetText() const override;
+    HRESULT Resize(const size_t newSize) noexcept;
+    size_t MeasureLeft() const;
+    size_t MeasureRight() const noexcept;
+    void ClearCell(const size_t column);
+    bool ContainsText() const noexcept;
+    const DbcsAttribute& DbcsAttrAt(const size_t column) const;
+    DbcsAttribute& DbcsAttrAt(const size_t column);
+    void ClearGlyph(const size_t column);
+    std::wstring GetText() const;
 
     // other functions implemented at the template class level
     std::wstring GetTextRaw() const;
