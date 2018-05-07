@@ -45,7 +45,7 @@ public:
     using const_iterator = typename std::vector<value_type>::const_iterator;
     using reference = typename CharRowCellReference;
 
-    CharRow(size_t rowWidth, ROW* pParent);
+    CharRow(size_t rowWidth, ROW* const pParent);
     CharRow(const CharRow& a) = default;
     CharRow& operator=(const CharRow& a);
     CharRow(CharRow&& a) = default;

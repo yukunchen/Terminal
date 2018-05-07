@@ -34,7 +34,7 @@ void swap(ROW& a, ROW& b) noexcept
 ROW::ROW(const SHORT rowId, const short rowWidth, const TextAttribute fillAttribute, TextBuffer* const pParent) :
     _id{ rowId },
     _rowWidth{ gsl::narrow<size_t>(rowWidth) },
-    _charRow{ rowWidth },
+    _charRow{ _rowWidth, this },
     _attrRow{ rowWidth, fillAttribute },
     _pParent{ pParent }
 {

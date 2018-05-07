@@ -30,7 +30,7 @@ void swap(CharRow& a, CharRow& b) noexcept
 // Return Value:
 // - instantiated object
 // Note: will through if unable to allocate char/attribute buffers
-CharRow::CharRow(size_t rowWidth, ROW* pParent) :
+CharRow::CharRow(size_t rowWidth, ROW* const pParent) :
     _wrapForced{ false },
     _doubleBytePadded{ false },
     _data(rowWidth, value_type()),
