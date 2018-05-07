@@ -7,17 +7,17 @@
 #include "../types/inc/Utf16Parser.hpp"
 
 // Routine Description:
-// - Constructs a Search object. 
+// - Constructs a Search object.
 // - Make a Search object then call .FindNext() to locate items.
 // - Once you've found something, you can perfom actions like .Select() or .Color()
 // Arguments:
 // - screenInfo - The screen buffer to search through (the "haystack")
 // - str - The search term you want to find (the "needle")
 // - direction - The direction to search (upward or downward)
-// - sensitivity - Whether or not you care about case 
-Search::Search(const SCREEN_INFORMATION& screenInfo, 
+// - sensitivity - Whether or not you care about case
+Search::Search(const SCREEN_INFORMATION& screenInfo,
                const std::wstring& str,
-               const Direction direction, 
+               const Direction direction,
                const Sensitivity sensitivity) :
     _direction(direction),
     _sensitivity(sensitivity),
@@ -57,7 +57,7 @@ bool Search::FindNext()
         }
 
     } while (_coordNext != _coordAnchor);
-    
+
     return false;
 }
 
@@ -147,8 +147,8 @@ bool Search::_FindNeedleInHaystackAt(const COORD pos, COORD& start, COORD& end) 
         // Haystack is the buffer. Needle is the string we were given.
         const auto hayIter = _screenInfo.GetTextDataAt(bufferPos);
         const auto hayChar = *hayIter;
-        const auto hayChars = gsl::make_span<const wchar_t>(&hayChar, 1);
-        
+        const auto hayChars = gsl::make_span<const wchar_t>(hayChar.begin(), hayChar.end());
+
         const auto& needleChars = needleCell;
 
         // If we didn't match at any point of the needle, return false.
@@ -162,11 +162,11 @@ bool Search::_FindNeedleInHaystackAt(const COORD pos, COORD& start, COORD& end) 
 
     _DecrementCoord(bufferPos);
 
-    // If we made it the whole way through the needle, then it was in the haystack. 
+    // If we made it the whole way through the needle, then it was in the haystack.
     // Fill out the span that we found the result at and return true.
     start = pos;
     end = bufferPos;
-    
+
     return true;
 }
 
@@ -197,7 +197,7 @@ bool Search::_CompareChars(const gsl::span<const wchar_t>& one, const gsl::span<
 }
 
 // Routine Description:
-// - Provides an abstraction for conditionally applying case sensitivity 
+// - Provides an abstraction for conditionally applying case sensitivity
 //   based on object construction
 // Arguments:
 // - wch - Character to adjust if necessary
@@ -237,8 +237,8 @@ void Search::_DecrementCoord(COORD& coord) const
 // - Helper to update the coordinate position to the next point to be searched
 // Return Value:
 // - True if we haven't reached the end of the buffer. False otherwise.
-void Search::_UpdateNextPosition() 
-{  
+void Search::_UpdateNextPosition()
+{
     if (_direction == Direction::Forward)
     {
         _IncrementCoord(_coordNext);

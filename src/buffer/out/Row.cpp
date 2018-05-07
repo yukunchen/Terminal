@@ -1,12 +1,13 @@
 /********************************************************
- *                                                       *
- *   Copyright (C) Microsoft. All rights reserved.       *
- *                                                       *
- ********************************************************/
+*                                                       *
+*   Copyright (C) Microsoft. All rights reserved.       *
+*                                                       *
+********************************************************/
 
 #include "precomp.h"
 #include "Row.hpp"
 #include "CharRow.hpp"
+#include "textBuffer.hpp"
 #include "../types/inc/convert.hpp"
 
 // Routine Description:
@@ -27,13 +28,15 @@ void swap(ROW& a, ROW& b) noexcept
 // - rowId - the row index in the text buffer
 // - rowWidth - the width of the row, cell elements
 // - fillAttribute - the default text attribute
+// - pParent - the text buffer that this row belongs to
 // Return Value:
 // - constructed object
-ROW::ROW(const SHORT rowId, const short rowWidth, const TextAttribute fillAttribute) :
+ROW::ROW(const SHORT rowId, const short rowWidth, const TextAttribute fillAttribute, TextBuffer* const pParent) :
     _id{ rowId },
     _rowWidth{ gsl::narrow<size_t>(rowWidth) },
     _charRow{ rowWidth },
-    _attrRow{ rowWidth, fillAttribute }
+    _attrRow{ rowWidth, fillAttribute },
+    _pParent{ pParent }
 {
 }
 
@@ -47,7 +50,8 @@ ROW::ROW(const ROW& a) :
     _attrRow{ a._attrRow },
     _rowWidth{ a._rowWidth },
     _id{ a._id },
-    _charRow{ a._charRow }
+    _charRow{ a._charRow },
+    _pParent{ a._pParent }
 {
 }
 
@@ -74,12 +78,13 @@ ROW::ROW(ROW&& a) noexcept :
     _charRow{ std::move(a._charRow) },
     _attrRow{ std::move(a._attrRow) },
     _id{ std::move(a._id) },
-    _rowWidth{ a._rowWidth }
+    _rowWidth{ a._rowWidth },
+    _pParent{ a._pParent }
 {
 }
 
 // Routine Description:
-// - swaps fields with another ROW
+// - swaps fields with another ROW. does not swap parent text buffer
 // Arguments:
 // - other - the object to swap with
 // Return Value:
@@ -91,6 +96,7 @@ void ROW::swap(ROW& other) noexcept
     swap(_attrRow, other._attrRow);
     swap(_id, other._id);
     swap(_rowWidth, other._rowWidth);
+    swap(_pParent, other._pParent);
 }
 size_t ROW::size() const noexcept
 {
@@ -225,7 +231,7 @@ std::vector<OutputCell> ROW::AsCells(const size_t startIndex, const size_t count
     for (size_t i = 0; i < count; ++i)
     {
         const auto index = startIndex + i;
-        cells.emplace_back(std::vector<wchar_t>{ _charRow.GlyphAt(index) }, _charRow.DbcsAttrAt(index), unpackedAttrs[index]);
+        cells.emplace_back(_charRow.GlyphAt(index), _charRow.DbcsAttrAt(index), unpackedAttrs[index]);
     }
     return cells;
 }
@@ -248,8 +254,8 @@ std::vector<OutputCell>::const_iterator ROW::WriteCells(const std::vector<Output
     size_t currentIndex = index;
     while (it != end && currentIndex < _charRow.size())
     {
-        _charRow.GlyphAt(currentIndex) = Utf16ToUcs2(it->Chars());
         _charRow.DbcsAttrAt(currentIndex) = it->DbcsAttr();
+        _charRow.GlyphAt(currentIndex) = it->Chars();
         if (it->TextAttrBehavior() != OutputCell::TextAttributeBehavior::Current)
         {
             const TextAttributeRun attrRun{ 1, it->TextAttr() };
@@ -268,5 +274,15 @@ std::vector<OutputCell>::const_iterator ROW::WriteCells(const std::vector<Output
 
 const OutputCell ROW::at(const size_t column) const
 {
-    return { { _charRow.GlyphAt(column) }, _charRow.DbcsAttrAt(column), _attrRow.GetAttrByColumn(column) };
+    return { _charRow.GlyphAt(column), _charRow.DbcsAttrAt(column), _attrRow.GetAttrByColumn(column) };
+}
+
+UnicodeStorage& ROW::GetUnicodeStorage()
+{
+    return _pParent->GetUnicodeStorage();
+}
+
+const UnicodeStorage& ROW::GetUnicodeStorage() const
+{
+    return _pParent->GetUnicodeStorage();
 }

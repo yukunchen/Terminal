@@ -9,6 +9,8 @@
     <ClCompile Include="..\TextAttributeRun.cpp" />
     <ClCompile Include="..\textBuffer.cpp" />
     <ClCompile Include="..\CharRow.cpp" />
+    <ClCompile Include="..\CharRowCell.cpp" />
+    <ClCompile Include="..\CharRowCellReference.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -23,7 +25,10 @@
     <ClInclude Include="..\TextAttributeRun.h" />
     <ClInclude Include="..\textBuffer.hpp" />
     <ClInclude Include="..\CharRow.hpp" />
+    <ClInclude Include="..\CharRowCell.hpp" />
+    <ClInclude Include="..\CharRowCellReference.hpp" />
     <ClInclude Include="..\precomp.h" />
+    <ClInclude Include="..\UnicodeStorage.hpp" />
   </ItemGroup>
   <PropertyGroup>
     <ProjectGuid>{0CF235BD-2DA0-407E-90EE-C467E8BBC714}</ProjectGuid>

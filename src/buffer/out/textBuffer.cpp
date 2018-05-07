@@ -50,7 +50,7 @@ TextBuffer::TextBuffer(const FontInfo fontInfo,
     {
         TextAttribute FillAttributes;
         FillAttributes.SetFromLegacy(_ciFill.Attributes);
-        _storage.emplace_back(static_cast<SHORT>(i), screenBufferSize.X, FillAttributes);
+        _storage.emplace_back(static_cast<SHORT>(i), screenBufferSize.X, FillAttributes, this);
     }
 }
 
@@ -464,7 +464,7 @@ bool TextBuffer::InsertCharacter(const std::vector<wchar_t> chars,
 
         try
         {
-            charRow.GlyphAt(iCol) = Utf16ToUcs2(chars);
+            charRow.GlyphAt(iCol) = chars;
             charRow.DbcsAttrAt(iCol) = dbcsAttribute;
         }
         catch (...)
@@ -819,7 +819,7 @@ NTSTATUS TextBuffer::ResizeTraditional(const COORD currentScreenBufferSize,
     {
         try
         {
-            _storage.emplace_back(static_cast<short>(_storage.size()), newScreenBufferSize.X, attributes);
+            _storage.emplace_back(static_cast<short>(_storage.size()), newScreenBufferSize.X, attributes, this);
         }
         CATCH_RETURN();
     }
@@ -834,4 +834,14 @@ NTSTATUS TextBuffer::ResizeTraditional(const COORD currentScreenBufferSize,
 
     SetCoordBufferSize(newScreenBufferSize);
     return S_OK;
+}
+
+const UnicodeStorage& TextBuffer::GetUnicodeStorage() const
+{
+    return _unicodeStorage;
+}
+
+UnicodeStorage& TextBuffer::GetUnicodeStorage()
+{
+    return _unicodeStorage;
 }

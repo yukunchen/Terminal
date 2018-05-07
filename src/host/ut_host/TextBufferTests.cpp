@@ -276,7 +276,7 @@ void TextBufferTests::DoBoundaryTest(PWCHAR const pwszInputString,
     // copy string into buffer
     for (size_t i = 0; i < static_cast<size_t>(cLength); ++i)
     {
-        charRow.GlyphAt(i) = pwszInputString[i];
+        charRow.GlyphAt(i) = { pwszInputString[i] };
     }
 
     // space pad the rest of the string
@@ -357,18 +357,17 @@ void TextBufferTests::TestInsertCharacter()
     COORD const coordCursorBefore = textBuffer.GetCursor().GetPosition();
 
     // Get current row from the buffer
-    const ROW& Row = textBuffer.GetRowByOffset(coordCursorBefore.Y);
+    ROW& Row = textBuffer.GetRowByOffset(coordCursorBefore.Y);
 
     // create some sample test data
-    WCHAR const wchTest = L'Z';
+    const std::vector<wchar_t> wchTest{ L'Z' };
     DbcsAttribute dbcsAttribute;
-    BYTE* pAttribute = reinterpret_cast<BYTE*>(&dbcsAttribute._attribute);
-    // invalid flag, technically, for test only.
-    *pAttribute = 0x80;
+    dbcsAttribute.SetTrailing();
     WORD const wAttrTest = BACKGROUND_INTENSITY | FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_BLUE;
     TextAttribute TestAttributes = TextAttribute(wAttrTest);
 
-    const CharRow& charRow = Row.GetCharRow();
+    CharRow& charRow = Row.GetCharRow();
+    charRow.DbcsAttrAt(coordCursorBefore.X).SetLeading();
     // ensure that the buffer didn't start with these fields
     VERIFY_ARE_NOT_EQUAL(charRow.GlyphAt(coordCursorBefore.X), wchTest);
     VERIFY_ARE_NOT_EQUAL(charRow.DbcsAttrAt(coordCursorBefore.X), dbcsAttribute);
@@ -584,7 +583,7 @@ void TextBufferTests::TestIncrementCircularBuffer()
         // fill first row with some stuff
         ROW& FirstRow = textBuffer.GetFirstRow();
         CharRow& charRow = FirstRow.GetCharRow();
-        charRow.GlyphAt(0) = L'A';
+        charRow.GlyphAt(0) = { L'A' };
 
         // ensure it does say that it contains text
         VERIFY_IS_TRUE(FirstRow.GetCharRow().ContainsText());

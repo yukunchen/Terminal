@@ -22,11 +22,14 @@ Revision History:
 #include "AttrRow.hpp"
 #include "OutputCell.hpp"
 #include "CharRow.hpp"
+#include "UnicodeStorage.hpp"
+
+class TextBuffer;
 
 class ROW final
 {
 public:
-    ROW(const SHORT rowId, const short rowWidth, const TextAttribute fillAttribute);
+    ROW(const SHORT rowId, const short rowWidth, const TextAttribute fillAttribute, TextBuffer* const pParent);
     ROW(const ROW& a);
     ROW& operator=(const ROW& a);
     ROW(ROW&& a) noexcept;
@@ -59,6 +62,9 @@ public:
                                                        const std::vector<OutputCell>::const_iterator end,
                                                        const size_t index);
 
+    UnicodeStorage& GetUnicodeStorage();
+    const UnicodeStorage& GetUnicodeStorage() const;
+
     friend bool operator==(const ROW& a, const ROW& b) noexcept;
 
 #ifdef UNIT_TESTING
@@ -70,7 +76,7 @@ private:
     ATTR_ROW _attrRow;
     SHORT _id;
     size_t _rowWidth;
-
+    TextBuffer* _pParent; // non ownership pointer
 };
 
 void swap(ROW& a, ROW& b) noexcept;

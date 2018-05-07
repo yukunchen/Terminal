@@ -87,7 +87,7 @@ void ScreenInfoTextIteratorTests::BoolOperator()
 {
     const auto it = GetIterator();
     VERIFY_IS_TRUE(it);
-    
+
     VERIFY_THROWS_SPECIFIC(ScreenInfoTextIterator(nullptr, { 0 }); , wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_INVALIDARG; });
 
     const auto& outputBuffer = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer();
@@ -198,7 +198,7 @@ void ScreenInfoTextIteratorTests::PostfixMinusMinusOperator()
 void ScreenInfoTextIteratorTests::PlusOperator()
 {
     auto it = GetIterator();
-    
+
     ptrdiff_t diffUnit = 3;
     COORD expectedPos = it._pos;
     expectedPos.X += gsl::narrow<SHORT>(diffUnit);
@@ -245,7 +245,7 @@ void ScreenInfoTextIteratorTests::DereferenceOperator()
     const auto wcharExpected = cell.Chars().at(0);
     const auto wcharActual = *it;
 
-    VERIFY_ARE_EQUAL(wcharExpected, wcharActual);
+    VERIFY_ARE_EQUAL(wcharExpected, *wcharActual.begin());
 }
 
 void ScreenInfoTextIteratorTests::GetPtr()

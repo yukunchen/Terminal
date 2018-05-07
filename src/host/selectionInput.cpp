@@ -636,7 +636,7 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
     bool fShiftPressed = pInputKeyInfo->IsShiftPressed();
     bool fCtrlPressed = false;
 
-    // Shift implies a find-and-color operation.  
+    // Shift implies a find-and-color operation.
     // We only support finding a string,  not a block.
     // If it is line selection, we can assemble that across multiple lines to make a search term.
     // But if it is block selection and the selected area is > 1 line in height, ignore the shift because we can't search.
@@ -695,7 +695,7 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
 
                         for (SHORT i = 0; i < (selectRect.Right - selectRect.Left + 1); ++i)
                         {
-                            str.push_back(*it);
+                            str.append((*it).begin(), (*it).end());
                             it++;
                         }
                     }

@@ -91,7 +91,7 @@ class UiaTextRangeTests
             auto& charRow = row.GetCharRow();
             for (auto& cell : charRow)
             {
-                cell.first = L'a';
+                cell.Char() = L'a';
             }
         }
 
