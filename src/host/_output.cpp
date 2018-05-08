@@ -200,47 +200,29 @@ NTSTATUS WriteOutputString(SCREEN_INFORMATION& screenInfo,
         return STATUS_SUCCESS;
     }
 
-    WCHAR rgwchBuffer[128] = {0};
-    DbcsAttribute rgbBufferA[128];
+    std::unique_ptr<wchar_t[]> TransBuffer;
+    std::unique_ptr<DbcsAttribute[]> TransBufferA;
+    try
+    {
+        TransBuffer = std::make_unique<wchar_t[]>(*pcRecords * 2);
+        TransBufferA = std::make_unique<DbcsAttribute[]>(*pcRecords * 2);
+    }
+    catch (...)
+    {
+        return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+    }
+    std::fill_n(TransBuffer.get(), *pcRecords * 2, UNICODE_NULL);
+    std::fill_n(TransBufferA.get(), *pcRecords * 2, DbcsAttribute{});
 
     DbcsAttribute* BufferA = nullptr;
-    PWCHAR TransBuffer = nullptr;
-    DbcsAttribute* TransBufferA = nullptr;
-    bool fLocalHeap = false;
     if (ulStringType == CONSOLE_ASCII)
     {
         UINT const Codepage = gci.OutputCP;
 
-        if (*pcRecords >= ARRAYSIZE(rgwchBuffer) ||
-            *pcRecords >= ARRAYSIZE(rgbBufferA))
-        {
-
-            TransBuffer = new(std::nothrow) WCHAR[*pcRecords * 2];
-            if (TransBuffer == nullptr)
-            {
-                return STATUS_NO_MEMORY;
-            }
-            ZeroMemory(TransBuffer, *pcRecords * 2 * sizeof(WCHAR));
-            TransBufferA = new(std::nothrow) DbcsAttribute[*pcRecords * 2];
-            if (TransBufferA == nullptr)
-            {
-                delete[] TransBuffer;
-                return STATUS_NO_MEMORY;
-            }
-            ZeroMemory(TransBufferA, *pcRecords * 2 * sizeof(DbcsAttribute));
-
-            fLocalHeap = true;
-        }
-        else
-        {
-            TransBuffer = rgwchBuffer;
-            TransBufferA = rgbBufferA;
-        }
-
         PCHAR TmpBuf = (PCHAR)pvBuffer;
         PCHAR pchTmpBufEnd = TmpBuf + *pcRecords;
-        PWCHAR TmpTrans = TransBuffer;
-        DbcsAttribute* TmpTransA = TransBufferA;
+        PWCHAR TmpTrans = TransBuffer.get();
+        DbcsAttribute* TmpTransA = TransBufferA.get();
         for (ULONG i = 0; i < *pcRecords;)
         {
             if (TmpBuf >= pchTmpBufEnd)
@@ -286,8 +268,8 @@ NTSTATUS WriteOutputString(SCREEN_INFORMATION& screenInfo,
                 i++;
             }
         }
-        BufferA = TransBufferA;
-        pvBuffer = TransBuffer;
+        BufferA = TransBufferA.get();
+        pvBuffer = TransBuffer.get();
     }
 
     if ((ulStringType == CONSOLE_REAL_UNICODE) || (ulStringType == CONSOLE_FALSE_UNICODE))
@@ -300,35 +282,10 @@ NTSTATUS WriteOutputString(SCREEN_INFORMATION& screenInfo,
 
         // Avoid overflow into TransBufferCharacter and TransBufferAttribute.
         // If hit by IsConsoleFullWidth() then one unicode character needs two spaces on TransBuffer.
-        if (*pcRecords * 2 >= ARRAYSIZE(rgwchBuffer) ||
-            *pcRecords * 2 >= ARRAYSIZE(rgbBufferA))
-        {
-            TransBuffer = new(std::nothrow) WCHAR[*pcRecords * 2];
-            if (TransBuffer == nullptr)
-            {
-                return STATUS_NO_MEMORY;
-            }
-            ZeroMemory(TransBuffer, *pcRecords * 2 * sizeof(WCHAR));
-
-            TransBufferA = new(std::nothrow) DbcsAttribute[*pcRecords * 2];
-            if (TransBufferA == nullptr)
-            {
-                delete[] TransBuffer;
-                return STATUS_NO_MEMORY;
-            }
-            ZeroMemory(TransBufferA, *pcRecords * 2 * sizeof(DbcsAttribute));
-
-            fLocalHeap = true;
-        }
-        else
-        {
-            TransBuffer = rgwchBuffer;
-            TransBufferA = rgbBufferA;
-        }
 
         TmpBuf = (PWCHAR)pvBuffer;
-        TmpTrans = TransBuffer;
-        TmpTransA = TransBufferA;
+        TmpTrans = TransBuffer.get();
+        TmpTransA = TransBufferA.get();
         for (i = 0, jTmp = 0; i < *pcRecords; i++, jTmp++)
         {
             *TmpTrans++ = c = *TmpBuf++;
@@ -347,8 +304,8 @@ NTSTATUS WriteOutputString(SCREEN_INFORMATION& screenInfo,
 
         NumRecordsSavedForUnicode = *pcRecords;
         *pcRecords = jTmp;
-        pvBuffer = TransBuffer;
-        BufferA = TransBufferA;
+        pvBuffer = TransBuffer.get();
+        BufferA = TransBufferA.get();
     }
 
     ROW* pRow = &screenInfo.GetTextBuffer().GetRowByOffset(coordWrite.Y);
@@ -567,21 +524,8 @@ NTSTATUS WriteOutputString(SCREEN_INFORMATION& screenInfo,
         *pcRecords = 0;
         return STATUS_INVALID_PARAMETER;
     }
-    if ((ulStringType == CONSOLE_ASCII) && (TransBuffer != nullptr))
+    if ((ulStringType == CONSOLE_FALSE_UNICODE) || (ulStringType == CONSOLE_REAL_UNICODE))
     {
-        if (fLocalHeap)
-        {
-            delete[] TransBuffer;
-            delete[] TransBufferA;
-        }
-    }
-    else if ((ulStringType == CONSOLE_FALSE_UNICODE) || (ulStringType == CONSOLE_REAL_UNICODE))
-    {
-        if (fLocalHeap)
-        {
-            delete[] TransBuffer;
-            delete[] TransBufferA;
-        }
         NumWritten = NumRecordsSavedForUnicode - (*pcRecords - NumWritten);
     }
 
