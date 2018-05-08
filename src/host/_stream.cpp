@@ -739,14 +739,14 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
             {
                 const COORD TargetPoint = cursor.GetPosition();
                 ROW& Row = textBuffer.GetRowByOffset(TargetPoint.Y);
-                ICharRow& iCharRow = Row.GetCharRow();
+                CharRow& charRow = Row.GetCharRow();
 
                 try
                 {
-                    if (iCharRow.DbcsAttrAt(TargetPoint.X).IsTrailing())
+                    if (charRow.DbcsAttrAt(TargetPoint.X).IsTrailing())
                     {
-                        iCharRow.ClearCell(TargetPoint.X);
-                        iCharRow.ClearCell(TargetPoint.X - 1);
+                        charRow.ClearCell(TargetPoint.X);
+                        charRow.ClearCell(TargetPoint.X - 1);
 
                         SMALL_RECT Region;
                         Region.Left = TargetPoint.X - 1;
@@ -766,11 +766,11 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
 
                 // since you just moved yourself down onto the next row with 1 character, that sounds like a
                 // forced wrap so set the flag
-                iCharRow.SetWrapForced(true);
+                charRow.SetWrapForced(true);
 
                 // Additionally, this padding is only called for IsConsoleFullWidth (a.k.a. when a character
                 // is too wide to fit on the current line).
-                iCharRow.SetDoubleBytePadded(true);
+                charRow.SetDoubleBytePadded(true);
 
                 Status = AdjustCursorPosition(screenInfo, CursorPosition, dwFlags & WC_KEEP_CURSOR_VISIBLE, psScrollY);
                 continue;

@@ -88,12 +88,7 @@ class UiaTextRangeTests
         for (UINT i = 0; i < _pTextBuffer->TotalRowCount(); ++i)
         {
             ROW& row = _pTextBuffer->GetRowByOffset(i);
-            auto& iCharRow = row.GetCharRow();
-            // we only support ucs2 encoded char rows
-            FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                            "only support UCS2 char rows currently");
-
-            CharRow& charRow = static_cast<CharRow&>(iCharRow);
+            auto& charRow = row.GetCharRow();
             for (auto& cell : charRow)
             {
                 cell.Char() = L'a';
@@ -127,7 +122,7 @@ class UiaTextRangeTests
 
     const size_t _getRowWidth() const
     {
-        const ICharRow& charRow = _pTextBuffer->GetFirstRow().GetCharRow();
+        const CharRow& charRow = _pTextBuffer->GetFirstRow().GetCharRow();
         return charRow.MeasureRight()- charRow.MeasureLeft() ;
     }
 
