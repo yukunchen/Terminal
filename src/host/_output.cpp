@@ -173,15 +173,13 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const SMALL_RECT srRegion)
 //                  CONSOLE_FALSE_UNICODE  - write a string of false unicode characters.
 //                  CONSOLE_ATTRIBUTE      - write a string of attributes.
 // - pcRecords - On input, the number of elements to write.  On output, the number of elements written.
-// - pcColumns - receives the number of columns output, which could be more than NumRecords (FE fullwidth chars)
 // Return Value:
 [[nodiscard]]
 NTSTATUS WriteOutputString(SCREEN_INFORMATION& screenInfo,
                            _In_reads_(*pcRecords) const VOID * pvBuffer,
                            const COORD coordWrite,
                            const ULONG ulStringType,
-                           _Inout_ PULONG pcRecords,    // this value is valid even for error cases
-                           _Out_opt_ PULONG pcColumns)
+                           _Inout_ PULONG pcRecords)    // this value is valid even for error cases
 {
     DBGOUTPUT(("WriteOutputString\n"));
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -607,10 +605,6 @@ NTSTATUS WriteOutputString(SCREEN_INFORMATION& screenInfo,
         WriteRegion.Right = X;
     }
     WriteToScreen(screenInfo, WriteRegion);
-    if (pcColumns)
-    {
-        *pcColumns = X + (coordWrite.Y - Y) * coordScreenBufferSize.X - coordWrite.X + 1;
-    }
     *pcRecords = NumWritten;
     return STATUS_SUCCESS;
 }
