@@ -29,6 +29,10 @@ WORD ConvertStringToDec(_In_ PCWSTR pwchToConvert, _Out_opt_ PCWSTR * const ppwc
 class Utils
 {
 public:
+    static void s_IncrementCoordinate(const COORD bufferSize, COORD& coord);
+    static void s_DecrementCoordinate(const COORD bufferSize, COORD& coord);
+    static int s_CompareCoords(const COORD bufferSize, const COORD first, const COORD second);
+
     static bool s_DoDecrementScreenCoordinate(const SMALL_RECT srectEdges, _Inout_ COORD* const pcoordScreen);
     static bool s_DoIncrementScreenCoordinate(const SMALL_RECT srectEdges, _Inout_ COORD* const pcoordScreen);
     static bool s_AddToPosition(const SMALL_RECT srectEdges, const int iAdd, _Inout_ COORD* const pcoordPosition);

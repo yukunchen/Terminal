@@ -57,6 +57,7 @@ filling in the last row, and updating the screen.
 
 #include "Row.hpp"
 #include "TextAttribute.hpp"
+#include "UnicodeStorage.hpp"
 
 class TextBuffer final
 {
@@ -96,6 +97,7 @@ public:
 
     // Text insertion functions
     bool InsertCharacter(const wchar_t wch, const DbcsAttribute dbcsAttribute, const TextAttribute attr);
+    bool InsertCharacter(const std::vector<wchar_t> chars, const DbcsAttribute dbcsAttribute, const TextAttribute attr);
     bool IncrementCursor();
     bool NewlineCursor();
 
@@ -131,6 +133,9 @@ public:
     HRESULT ResizeTraditional(const COORD currentScreenBufferSize,
                               const COORD newScreenBufferSize,
                               const TextAttribute attributes);
+
+    const UnicodeStorage& GetUnicodeStorage() const;
+    UnicodeStorage& GetUnicodeStorage();
 private:
 
     std::deque<ROW> _storage;
@@ -143,6 +148,10 @@ private:
     FontInfo _fiCurrentFont;
     FontInfoDesired _fiDesiredFont;
 
+    CHAR_INFO _ciFill;
+
+    // storage location for glyphs that can't fit into the buffer normally
+    UnicodeStorage _unicodeStorage;
 
     COORD GetPreviousFromCursor() const;
 
@@ -153,7 +162,6 @@ private:
     bool _PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute);
     bool AssertValidDoubleByteSequence(const DbcsAttribute dbcsAttribute);
 
-    CHAR_INFO _ciFill;
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;

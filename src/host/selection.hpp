@@ -27,11 +27,9 @@ using namespace Microsoft::Console::Interactivity;
 class Selection
 {
 public:
-    ~Selection();
+    ~Selection() = default;
 
-    [[nodiscard]]
-    NTSTATUS GetSelectionRects(_Outptr_result_buffer_all_(*pcRectangles) SMALL_RECT** const prgsrSelection,
-                               _Out_ UINT* const pcRectangles) const;
+    std::vector<SMALL_RECT> GetSelectionRects() const;
 
     void ShowSelection();
     void HideSelection();
@@ -60,7 +58,8 @@ public:
 
     void ClearSelection();
     void ClearSelection(const bool fStartingNewSelection);
-    void ColorSelection(_In_ SMALL_RECT* const psrRect, const ULONG ulAttr);
+    void ColorSelection(const SMALL_RECT& srRect, const ULONG ulAttr);
+    void ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const ULONG ulAttr);
 
     // delete these or we can accidentally get copies of the singleton
     Selection(Selection const&) = delete;
@@ -78,6 +77,10 @@ private:
                                         const COORD coordTargetPoint,
                                         const SCREEN_INFORMATION& screenInfo,
                                         const SMALL_RECT rect);
+
+    static std::vector<SMALL_RECT> s_GetSelectionRects(const SMALL_RECT& selectionRect,
+                                                       const COORD selectionAnchor,
+                                                       const bool lineSelection);
 
     void _CancelMarkSelection();
     void _CancelMouseSelection();

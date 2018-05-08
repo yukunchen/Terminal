@@ -21,32 +21,29 @@
 // Arguments:
 // - ulSize - The height of the cursor within this buffer
 Cursor::Cursor(const ULONG ulSize, const TextBuffer& parentBuffer) :
-    _pAccessibilityNotifier(ServiceLocator::LocateAccessibilityNotifier()),
-    _ulSize(ulSize),
+    _pAccessibilityNotifier{ THROW_IF_NULL_ALLOC(ServiceLocator::LocateAccessibilityNotifier()) },
     _parentBuffer{ parentBuffer },
+    _cPosition{ 0 },
     _fHasMoved(false),
     _fIsVisible(true),
     _fIsOn(true),
-    _fBlinkingAllowed(true),
     _fIsDouble(false),
-    _fIsConversionArea(false),
+    _fBlinkingAllowed(true),
     _fDelay(false),
+    _fIsConversionArea(false),
+    _fIsPopupShown(false),
     _fDelayedEolWrap(false),
+    _coordDelayedAt{ 0 },
     _fDeferCursorRedraw(false),
     _fHaveDeferredCursorRedraw(false),
+    _ulSize(ulSize),
     _hCaretBlinkTimer(INVALID_HANDLE_VALUE),
-    _uCaretBlinkTime(INFINITE) // default to no blink
+    _hCaretBlinkTimerQueue(THROW_LAST_ERROR_IF_NULL(CreateTimerQueue())),
+    _uCaretBlinkTime(INFINITE), // default to no blink
+    _cursorType(CursorType::Legacy),
+    _fUseColor(false),
+    _color(s_InvertCursorColor)
 {
-    THROW_IF_NULL_ALLOC(_pAccessibilityNotifier);
-
-    _cPosition = {0};
-    _coordDelayedAt = {0};
-
-    _hCaretBlinkTimerQueue = CreateTimerQueue();
-
-    _fUseColor = false;
-    _color = s_InvertCursorColor;
-    _cursorType = CursorType::Legacy;
 }
 
 Cursor::~Cursor()

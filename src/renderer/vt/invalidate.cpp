@@ -32,14 +32,11 @@ HRESULT VtEngine::InvalidateSystem(const RECT* const /*prcDirtyClient*/)
 // - Notifies us that the console has changed the selection region and would
 //      like it updated
 // Arguments:
-// - rgsrSelection - Array of character region rectangles (one per line) that
-//      represent the selected area
-// - cRectangles - Length of the array above.
+// - rectangles - Vector of rectangles to draw, line by line
 // Return Value:
 // - S_OK
 [[nodiscard]]
-HRESULT VtEngine::InvalidateSelection(_In_reads_(cRectangles) const SMALL_RECT* const /*rgsrSelection*/,
-                                      const UINT /*cRectangles*/)
+HRESULT VtEngine::InvalidateSelection(const std::vector<SMALL_RECT>& /*rectangles*/)
 {
     // Selection shouldn't be handled bt the VT Renderer Host, it should be
     //      handled by the client.

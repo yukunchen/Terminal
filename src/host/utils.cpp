@@ -54,6 +54,46 @@ WORD ConvertStringToDec(_In_ PCWSTR pwchToConvert, _Out_opt_ PCWSTR * const ppwc
 }
 
 // Routine Description:
+// - Increments a coordinate relative to the given buffer
+// Arguments:
+// - bufferSize - Size of the buffer
+// - coord - Updated to increment one position, wrapping X and Y dimensions if necessary
+void Utils::s_IncrementCoordinate(const COORD bufferSize, COORD& coord)
+{
+    coord.X++;
+    if (coord.X >= bufferSize.X)
+    {
+        coord.X = 0;
+        coord.Y++;
+
+        if (coord.Y >= bufferSize.Y)
+        {
+            coord.Y = 0;
+        }
+    }
+}
+
+// Routine Description:
+// - Decrements a coordinate relative to the given buffer
+// Arguments:
+// - bufferSize - Size of the buffer
+// - coord - Updated to decrement one position, wrapping X and Y dimensions if necessary
+void Utils::s_DecrementCoordinate(const COORD bufferSize, COORD& coord)
+{
+    coord.X--;
+    if (coord.X < 0)
+    {
+        coord.X = bufferSize.X - 1;
+        coord.Y--;
+
+        if (coord.Y < 0)
+        {
+            coord.Y = bufferSize.Y - 1;
+        }
+    }
+}
+
+// Routine Description:
 // - Subtracts one from a screen coordinate (in characters, not pixels).
 //   Appropriately wraps upward one row when reaching the left edge.
 // Arguments:
@@ -126,8 +166,9 @@ bool Utils::s_DoIncrementScreenCoordinate(const SMALL_RECT srectEdges, _Inout_ C
 }
 
 // Routine Description:
-// - Compares two coordinate positions to determine whether they're the same, left, or right
+// - Compares two coordinate positions to determine whether they're the same, left, or right within the given buffer size
 // Arguments:
+// - bufferSize - The size of the buffer to use for measurements.
 // - coordFirst - The first coordinate position
 // - coordSecond - The second coordinate position
 // Return Value:
@@ -137,16 +178,13 @@ bool Utils::s_DoIncrementScreenCoordinate(const SMALL_RECT srectEdges, _Inout_ C
 // -  This is so you can do s_CompareCoords(first, second) <= 0 for "first is left or the same as second".
 //    (the < looks like a left arrow :D)
 // -  The magnitude of the result is the distance between the two coordinates when typing characters into the buffer (left to right, top to bottom)
-int Utils::s_CompareCoords(const COORD coordFirst, const COORD coordSecond)
+int Utils::s_CompareCoords(const COORD bufferSize, const COORD coordFirst, const COORD coordSecond)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    // find the width of one row
-    const COORD coordScreenBufferSize = gci.GetActiveOutputBuffer().GetScreenBufferSize();
-    const short cRowWidth = coordScreenBufferSize.X;
+    const short cRowWidth = bufferSize.X;
 
 #ifdef _DEBUG
     // Assert that our coordinates are within the expected boundaries
-    const short cRowHeight = coordScreenBufferSize.Y;
+    const short cRowHeight = bufferSize.Y;
     ASSERT(coordFirst.X >= 0 && coordFirst.X < cRowWidth);
     ASSERT(coordSecond.X >= 0 && coordSecond.X < cRowWidth);
     ASSERT(coordFirst.Y >= 0 && coordFirst.Y < cRowHeight);
@@ -170,6 +208,26 @@ int Utils::s_CompareCoords(const COORD coordFirst, const COORD coordSecond)
     //     Step two will then see that first is 79 - 0 = +79 right of second and add 79
     //     The total is -80 + 79 = -1.
     return retVal;
+}
+
+// Routine Description:
+// - Compares two coordinate positions to determine whether they're the same, left, or right
+// Arguments:
+// - coordFirst - The first coordinate position
+// - coordSecond - The second coordinate position
+// Return Value:
+// -  Negative if First is to the left of the Second.
+// -  0 if First and Second are the same coordinate.
+// -  Positive if First is to the right of the Second.
+// -  This is so you can do s_CompareCoords(first, second) <= 0 for "first is left or the same as second".
+//    (the < looks like a left arrow :D)
+// -  The magnitude of the result is the distance between the two coordinates when typing characters into the buffer (left to right, top to bottom)
+int Utils::s_CompareCoords(const COORD coordFirst, const COORD coordSecond)
+{
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    // find the width of one row
+    const COORD coordScreenBufferSize = gci.GetActiveOutputBuffer().GetScreenBufferSize();
+    return s_CompareCoords(coordScreenBufferSize, coordFirst, coordSecond);
 }
 
 // Routine Description:

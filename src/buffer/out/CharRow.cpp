@@ -1,15 +1,14 @@
 /********************************************************
- *                                                       *
- *   Copyright (C) Microsoft. All rights reserved.       *
- *                                                       *
- ********************************************************/
+*                                                       *
+*   Copyright (C) Microsoft. All rights reserved.       *
+*                                                       *
+********************************************************/
 
 #include "precomp.h"
+
 #include "CharRow.hpp"
 #include "unicode.hpp"
-
-// default glyph value, used for reseting the character data portion of a cell
-static constexpr CharRow::glyph_type DefaultValue = UNICODE_SPACE;
+#include "Row.hpp"
 
 // Routine Description:
 // - swaps two CharRows
@@ -27,13 +26,15 @@ void swap(CharRow& a, CharRow& b) noexcept
 // - constructor
 // Arguments:
 // - rowWidth - the size (in wchar_t) of the char and attribute rows
+// - pParent - the parent ROW
 // Return Value:
 // - instantiated object
 // Note: will through if unable to allocate char/attribute buffers
-CharRow::CharRow(size_t rowWidth) :
+CharRow::CharRow(size_t rowWidth, ROW* const pParent) :
     _wrapForced{ false },
     _doubleBytePadded{ false },
-    _data(rowWidth, value_type(DefaultValue, DbcsAttribute{}))
+    _data(rowWidth, value_type()),
+    _pParent{ pParent }
 {
 }
 
@@ -64,11 +65,7 @@ void CharRow::swap(CharRow& other) noexcept
     swap(_wrapForced, other._wrapForced);
     swap(_doubleBytePadded, other._doubleBytePadded);
     swap(_data, other._data);
-}
-
-ICharRow::SupportedEncoding CharRow::GetSupportedEncoding() const noexcept
-{
-    return ICharRow::SupportedEncoding::Ucs2;
+    swap(_pParent, other._pParent);
 }
 
 // Routine Description:
@@ -134,8 +131,10 @@ size_t CharRow::size() const noexcept
 // - <none>
 void CharRow::Reset()
 {
-    const value_type insertVals{ DefaultValue, DbcsAttribute{} };
-    std::fill(_data.begin(), _data.end(), insertVals);
+    for (auto& cell : _data)
+    {
+        cell.Reset();
+    }
 
     _wrapForced = false;
     _doubleBytePadded = false;
@@ -152,7 +151,7 @@ HRESULT CharRow::Resize(const size_t newSize) noexcept
 {
     try
     {
-        const value_type insertVals{ DefaultValue, DbcsAttribute{} };
+        const value_type insertVals;
         _data.resize(newSize, insertVals);
     }
     CATCH_RETURN();
@@ -189,7 +188,7 @@ typename CharRow::const_iterator CharRow::cend() const noexcept
 size_t CharRow::MeasureLeft() const
 {
     std::vector<value_type>::const_iterator it = _data.cbegin();
-    while (it != _data.cend() && it->first == DefaultValue)
+    while (it != _data.cend() && it->IsSpace())
     {
         ++it;
     }
@@ -205,7 +204,7 @@ size_t CharRow::MeasureLeft() const
 size_t CharRow::MeasureRight() const noexcept
 {
     std::vector<value_type>::const_reverse_iterator it = _data.crbegin();
-    while (it != _data.crend() && it->first == DefaultValue)
+    while (it != _data.crend() && it->IsSpace())
     {
         ++it;
     }
@@ -214,7 +213,7 @@ size_t CharRow::MeasureRight() const noexcept
 
 void CharRow::ClearCell(const size_t column)
 {
-    _data.at(column) = { DefaultValue, DbcsAttribute() };
+    _data.at(column).Reset();
 }
 
 // Routine Description:
@@ -225,9 +224,9 @@ void CharRow::ClearCell(const size_t column)
 // - True if there is valid text in this row. False otherwise.
 bool CharRow::ContainsText() const noexcept
 {
-    for (const value_type& vals : _data)
+    for (const value_type& cell : _data)
     {
-        if (vals.first != DefaultValue)
+        if (!cell.IsSpace())
         {
             return true;
         }
@@ -244,7 +243,7 @@ bool CharRow::ContainsText() const noexcept
 // Note: will throw exception if column is out of bounds
 const DbcsAttribute& CharRow::DbcsAttrAt(const size_t column) const
 {
-    return _data.at(column).second;
+    return _data.at(column).DbcsAttr();
 }
 
 // Routine Description:
@@ -268,7 +267,7 @@ DbcsAttribute& CharRow::DbcsAttrAt(const size_t column)
 // Note: will throw exception if column is out of bounds
 void CharRow::ClearGlyph(const size_t column)
 {
-    _data.at(column).first = DefaultValue;
+    _data.at(column).EraseChars();
 }
 
 // Routine Description:
@@ -278,9 +277,10 @@ void CharRow::ClearGlyph(const size_t column)
 // Return Value:
 // - text data at column
 // - Note: will throw exception if column is out of bounds
-const CharRow::glyph_type& CharRow::GlyphAt(const size_t column) const
+const CharRow::reference CharRow::GlyphAt(const size_t column) const
 {
-    return _data.at(column).first;
+    THROW_HR_IF(E_INVALIDARG, column >= _data.size());
+    return { const_cast<CharRow&>(*this), column };
 }
 
 // Routine Description:
@@ -290,9 +290,10 @@ const CharRow::glyph_type& CharRow::GlyphAt(const size_t column) const
 // Return Value:
 // - text data at column
 // - Note: will throw exception if column is out of bounds
-CharRow::glyph_type& CharRow::GlyphAt(const size_t column)
+CharRow::reference CharRow::GlyphAt(const size_t column)
 {
-    return const_cast<glyph_type&>(static_cast<const CharRow* const>(this)->GlyphAt(column));
+    THROW_HR_IF(E_INVALIDARG, column >= _data.size());
+    return { *this, column };
 }
 
 // Routine Description:
@@ -305,25 +306,55 @@ CharRow::glyph_type& CharRow::GlyphAt(const size_t column)
 // - Note: will throw exception if out of memory
 std::wstring CharRow::GetTextRaw() const
 {
-    std::wstring str;
-    str.reserve(_data.size());
-    for (auto& cell : _data)
+    std::wstring wstr;
+    wstr.reserve(_data.size());
+    for (size_t i = 0;  i < _data.size(); ++i)
     {
-        str.push_back(cell.first);
+        auto glyph = GlyphAt(i);
+        for (auto it = glyph.begin(); it != glyph.end(); ++it)
+        {
+            wstr.push_back(*it);
+        }
     }
-    return str;
+    return wstr;
 }
 
 std::wstring CharRow::GetText() const
 {
     std::wstring wstr;
     wstr.reserve(_data.size());
-    for (auto& cell : _data)
+
+    for (size_t i = 0;  i < _data.size(); ++i)
     {
-        if (!cell.second.IsTrailing())
+        auto glyph = GlyphAt(i);
+        if (!DbcsAttrAt(i).IsTrailing())
         {
-            wstr.push_back(cell.first);
+            for (auto it = glyph.begin(); it != glyph.end(); ++it)
+            {
+                wstr.push_back(*it);
+            }
         }
     }
     return wstr;
+}
+
+UnicodeStorage& CharRow::GetUnicodeStorage()
+{
+    return _pParent->GetUnicodeStorage();
+}
+
+const UnicodeStorage& CharRow::GetUnicodeStorage() const
+{
+    return _pParent->GetUnicodeStorage();
+}
+
+// Routine Description:
+// - calculates the key used by the given column of the char row to store glyph data in UnicodeStorage
+// Arguments:
+// - column - the column to generate the key for
+// Return Value:
+// - the COORD key for data access from UnicodeStorage for the column
+COORD CharRow::GetStorageKey(const size_t column) const
+{
+    return { gsl::narrow<SHORT>(column), _pParent->GetId() };
 }

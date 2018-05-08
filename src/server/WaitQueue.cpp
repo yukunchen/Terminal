@@ -14,7 +14,8 @@
 
 // Routine Description:
 // - Instantiates a new ConsoleWaitQueue
-ConsoleWaitQueue::ConsoleWaitQueue()
+ConsoleWaitQueue::ConsoleWaitQueue() : 
+    _blocks()
 {
 
 }

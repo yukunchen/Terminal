@@ -26,9 +26,6 @@ using namespace Microsoft::Console::Types;
 
 #define MAX_POLY_LINES 80
 
-#define WCHAR_OF_PCI(p) (((PCHAR_INFO)(p))->Char.UnicodeChar)
-#define ATTR_OF_PCI(p)  (((PCHAR_INFO)(p))->Attributes)
-#define SIZEOF_CI_CELL  sizeof(CHAR_INFO)
 
 void StreamWriteToScreenBuffer(SCREEN_INFORMATION& screenInfo,
                                const std::wstring& wstr,
@@ -73,227 +70,6 @@ void StreamWriteToScreenBuffer(SCREEN_INFORMATION& screenInfo,
 
 // Routine Description:
 // - This routine copies a rectangular region to the screen buffer. no clipping is done.
-// - The source should contain Unicode or UnicodeOem chars.
-// Arguments:
-// - prgbSrc - pointer to source buffer (a real VGA buffer or CHAR_INFO[])
-// - coordSrcDimensions - dimensions of source buffer
-// - psrSrc - rectangle in source buffer to copy
-// - screenInfo - reference to screen info
-// - coordDest - upper left coordinates of target rectangle
-// - Codepage - codepage to translate real VGA buffer from,
-//              0xFFFFFFF if Source is CHAR_INFO[] (not requiring translation)
-// Return Value:
-// - <none>
-[[nodiscard]]
-NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimensions.Y * sizeof(CHAR_INFO)) PBYTE const prgbSrc,
-                                 const COORD coordSrcDimensions,
-                                 const SMALL_RECT * const psrSrc,
-                                 SCREEN_INFORMATION& screenInfo,
-                                 const COORD coordDest,
-                                 _In_reads_opt_(coordSrcDimensions.X * coordSrcDimensions.Y) TextAttribute* const pTextAttributes)
-{
-    DBGOUTPUT(("WriteRectToScreenBuffer\n"));
-    const bool fWriteAttributes = pTextAttributes != nullptr;
-
-    SHORT const XSize = (SHORT)(psrSrc->Right - psrSrc->Left + 1);
-    SHORT const YSize = (SHORT)(psrSrc->Bottom - psrSrc->Top + 1);
-
-    try
-    {
-        std::vector<TextAttributeRun> AttrRunsBuff;
-        PBYTE SourcePtr = prgbSrc;
-        BYTE* pbSourceEnd = prgbSrc + ((coordSrcDimensions.X * coordSrcDimensions.Y) * sizeof(CHAR_INFO));
-
-        bool WholeSource = false;
-        if (XSize == coordSrcDimensions.X)
-        {
-            ASSERT(psrSrc->Left == 0);
-            if (psrSrc->Top != 0)
-            {
-                SourcePtr += SCREEN_BUFFER_POINTER(psrSrc->Left, psrSrc->Top, coordSrcDimensions.X, SIZEOF_CI_CELL);
-            }
-            WholeSource = true;
-        }
-
-        const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
-        ROW* pRow = &screenInfo.GetTextBuffer().GetRowByOffset(coordDest.Y);
-        for (SHORT i = 0; i < YSize; i++)
-        {
-            // ensure we have a valid row pointer, if not, skip.
-            if (pRow == nullptr)
-            {
-                ASSERT(false);
-                break;
-            }
-
-            if (!WholeSource)
-            {
-                SourcePtr = prgbSrc + SCREEN_BUFFER_POINTER(psrSrc->Left, psrSrc->Top + i, coordSrcDimensions.X, SIZEOF_CI_CELL);
-            }
-
-            // copy the chars and attrs into their respective arrays
-            COORD TPoint;
-
-            TPoint.X = coordDest.X;
-            TPoint.Y = coordDest.Y + i;
-            CleanupDbcsEdgesForWrite(XSize, TPoint, screenInfo);
-
-            if (TPoint.Y == coordScreenBufferSize.Y - 1 &&
-                TPoint.X + XSize - 1 >= coordScreenBufferSize.X)
-            {
-                const BYTE* const pbLeadingByte = SourcePtr + coordScreenBufferSize.X - TPoint.X - 1;
-                if (((pbLeadingByte + sizeof(CHAR_INFO)) > pbSourceEnd) || (pbLeadingByte < prgbSrc))
-                {
-                    ASSERT(false);
-                    return STATUS_BUFFER_OVERFLOW;
-                }
-
-                if (ATTR_OF_PCI(pbLeadingByte) & COMMON_LVB_LEADING_BYTE)
-                {
-                    WCHAR_OF_PCI(pbLeadingByte) = UNICODE_SPACE;
-                    ATTR_OF_PCI(pbLeadingByte) &= ~COMMON_LVB_SBCSDBCS;
-                    if (XSize - 1 > coordScreenBufferSize.X - TPoint.X - 1)
-                    {
-                        const BYTE* const pbTrailingByte = SourcePtr + coordScreenBufferSize.X - TPoint.X;
-                        if (pbTrailingByte + sizeof(CHAR_INFO) > pbSourceEnd || pbTrailingByte < prgbSrc)
-                        {
-                            ASSERT(false);
-                            return STATUS_BUFFER_OVERFLOW;
-                        }
-
-                        WCHAR_OF_PCI(pbTrailingByte) = UNICODE_SPACE;
-                        ATTR_OF_PCI(pbTrailingByte) &= ~COMMON_LVB_SBCSDBCS;
-                    }
-                }
-            }
-
-            // CJK Languages
-            CharRow::iterator it;
-            CharRow::const_iterator itEnd;
-
-            ICharRow& iCharRow = pRow->GetCharRow();
-            // we only support ucs2 encoded char rows
-            FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                                "only support UCS2 char rows currently");
-
-            CharRow& charRow = static_cast<CharRow&>(iCharRow);
-            it = std::next(charRow.begin(), coordDest.X);
-            itEnd = charRow.cend();
-
-            AttrRunsBuff.clear(); // ensure we don't have attrs from previous runs of the loop (if applicable).
-            TextAttributeRun attrRun;
-            attrRun.SetLength(0);
-            attrRun.SetAttributesFromLegacy(ATTR_OF_PCI(SourcePtr) & ~COMMON_LVB_SBCSDBCS);
-
-            pRow->GetCharRow().SetWrapForced(false); // clear wrap status for rectangle drawing
-
-            for (SHORT j = psrSrc->Left;
-                 j <= psrSrc->Right && it != itEnd;
-                 j++, SourcePtr += SIZEOF_CI_CELL, ++it)
-            {
-                if (SourcePtr + sizeof(CHAR_INFO) > pbSourceEnd || SourcePtr < prgbSrc)
-                {
-                    ASSERT(false);
-                    return STATUS_BUFFER_OVERFLOW;
-                }
-
-                it->first = WCHAR_OF_PCI(SourcePtr);
-                it->second = DbcsAttribute::FromPublicApiAttributeFormat(reinterpret_cast<const CHAR_INFO* const>(SourcePtr)->Attributes);
-
-                if (attrRun.GetAttributes() == ((ATTR_OF_PCI(SourcePtr) & ~COMMON_LVB_SBCSDBCS)))
-                {
-                    attrRun.SetLength(attrRun.GetLength() + 1);
-                }
-                else
-                {
-                    AttrRunsBuff.push_back(attrRun);
-                    attrRun.SetLength(1);
-                    // MSKK Apr.02.1993 V-HirotS For KAttr
-                    attrRun.SetAttributesFromLegacy(ATTR_OF_PCI(SourcePtr) & ~COMMON_LVB_SBCSDBCS);
-                }
-            }
-            AttrRunsBuff.push_back(attrRun);
-
-            LOG_IF_FAILED(pRow->GetAttrRow().InsertAttrRuns(AttrRunsBuff,
-                                                            coordDest.X,
-                                                            (SHORT)(coordDest.X + XSize - 1),
-                                                            coordScreenBufferSize.X));
-
-            try
-            {
-                pRow = &screenInfo.GetTextBuffer().GetNextRowNoWrap(*pRow);
-            }
-            catch (...)
-            {
-                pRow = nullptr;
-            }
-        }
-        screenInfo.NotifyAccessibilityEventing(coordDest.X,
-                                               coordDest.Y,
-                                               (SHORT)(coordDest.X + XSize - 1),
-                                               (SHORT)(coordDest.Y + YSize - 1));
-
-        // The above part of the code seems ridiculous in terms of complexity. especially the dbcs stuff.
-        // So we'll copy the attributes here in a not terrible way.
-        if (fWriteAttributes)
-        {
-            // This is trying to get the arrtibute at (Left,Top) from the source array.
-            // Because it's in a linear array, its at (y*rowLength)+x.
-            const TextAttribute* const pOriginAttr = &(pTextAttributes[(psrSrc->Top * coordSrcDimensions.X) + psrSrc->Left]);
-            const int rowWidth = coordScreenBufferSize.X;
-            const int srcWidth = psrSrc->Right - psrSrc->Left;
-            const TextAttribute* pSrcAttr = pOriginAttr;
-
-            // For each source row, iterate over the attrs in it.
-            //  We're going to create AttrRuns for each attr in the row, starting with the first one.
-            //  If the current attr is different then the last one, then insert the last one, and start a new run.
-            for (int y = coordDest.Y; y < coordSrcDimensions.Y + coordDest.Y; y++)
-            {
-                ROW& Row = screenInfo.GetTextBuffer().GetRowByOffset(y);
-
-                TextAttributeRun insert;
-                int currentLength = 1;  // This is the length of the current run.
-                unsigned int destX = coordDest.X;  // This is where the current run begins in the dest buffer.
-                TextAttribute lastAttr = *pSrcAttr;
-
-                // We've already gotten the value of the first attr, so start at index 1.
-                pSrcAttr++;
-                for (int x = 1; x < srcWidth; x++)
-                {
-                    if (*pSrcAttr != lastAttr)
-                    {
-                        insert.SetAttributes(lastAttr);
-                        insert.SetLength(currentLength);
-                        LOG_IF_FAILED(Row.GetAttrRow().InsertAttrRuns({ insert }, destX, (destX + currentLength) - 1, rowWidth));
-
-                        destX = coordDest.X + x;
-                        lastAttr = *pSrcAttr;
-                        currentLength = 0;
-                    }
-
-                    currentLength++;
-                    pSrcAttr++;
-                }
-
-                // Make sure to also insert the last run we started.
-                insert.SetAttributes(lastAttr);
-                insert.SetLength(currentLength);
-                LOG_IF_FAILED(Row.GetAttrRow().InsertAttrRuns({ insert }, destX, (destX + currentLength) - 1, rowWidth));
-
-                pSrcAttr++; // advance to next row.
-            }
-        }
-    }
-    catch (...)
-    {
-        return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-    }
-
-    return STATUS_SUCCESS;
-}
-
-// Routine Description:
-// - This routine copies a rectangular region to the screen buffer. no clipping is done.
 // Arguments:
 // - screenInfo - reference to screen buffer
 // - cells - cells to copy from
@@ -331,30 +107,7 @@ void WriteRectToScreenBuffer(SCREEN_INFORMATION& screenInfo,
         point.Y = coordDest.Y + static_cast<short>(iRow);
         CleanupDbcsEdgesForWrite(xSize, point, screenInfo);
 
-        ICharRow& iCharRow = row.GetCharRow();
-        // we only support ucs2 encoded char rows
-        FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                        "only support UCS2 char rows currently");
-
-        CharRow& charRow = static_cast<CharRow&>(iCharRow);
-        CharRow::iterator it = std::next(charRow.begin(), coordDest.X);
-        CharRow::const_iterator itEnd = charRow.cend();
-
-        for (size_t iCol = 0; iCol < xSize && it != itEnd; ++iCol, ++it)
-        {
-            const OutputCell& cell = cells[iRow][iCol];
-            it->first = Utf16ToUcs2(cell.Chars());
-            it->second = cell.DbcsAttr();
-            textAttrs.push_back(cell.TextAttr());
-        }
-
-        // pack text attributes into runs and insert into attr row
-        std::vector<TextAttributeRun> packedAttrs = ATTR_ROW::PackAttrs(textAttrs);
-        THROW_IF_FAILED(row.GetAttrRow().InsertAttrRuns(packedAttrs,
-                                                        coordDest.X,
-                                                        coordDest.X + textAttrs.size() - 1,
-                                                        row.GetCharRow().size()));
-
+        screenInfo.WriteLine(cells.at(iRow), coordDest.Y + iRow, coordDest.X);
     }
 }
 
@@ -615,12 +368,7 @@ NTSTATUS WriteOutputString(SCREEN_INFORMATION& screenInfo,
             CharRow::iterator it;
             try
             {
-                ICharRow& iCharRow = pRow->GetCharRow();
-                // we only support ucs2 encoded char rows
-                FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                                "only support UCS2 char rows currently");
-
-                CharRow& charRow = static_cast<CharRow&>(iCharRow);
+                CharRow& charRow = pRow->GetCharRow();
                 it = std::next(charRow.begin(), X);
             }
             catch (...)
@@ -951,12 +699,7 @@ NTSTATUS FillOutput(SCREEN_INFORMATION& screenInfo,
             CharRow::iterator it;
             try
             {
-                ICharRow& iCharRow = pRow->GetCharRow();
-                // we only support ucs2 encoded char rows
-                FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                                "only support UCS2 char rows currently");
-
-                CharRow& charRow = static_cast<CharRow&>(iCharRow);
+                CharRow& charRow = pRow->GetCharRow();
                 it = std::next(charRow.begin(), X);
             }
             catch (...)
@@ -976,30 +719,30 @@ NTSTATUS FillOutput(SCREEN_INFORMATION& screenInfo,
                 {
                     for (SHORT j = 0; j < (SHORT)(*pcElements - NumWritten); j++)
                     {
-                        it->first = static_cast<wchar_t>(wElement);
+                        it->Char() = static_cast<wchar_t>(wElement);
                         if (StartPosFlag++ & 1)
                         {
-                            it->second.SetTrailing();
+                            it->DbcsAttr().SetTrailing();
                         }
                         else
                         {
-                            it->second.SetLeading();
+                            it->DbcsAttr().SetLeading();
                         }
                         ++it;
                     }
 
                     if (StartPosFlag & 1)
                     {
-                        (it - 1)->first = UNICODE_SPACE;
-                        (it - 1)->second.SetSingle();
+                        (it - 1)->Char() = UNICODE_SPACE;
+                        (it - 1)->DbcsAttr().SetSingle();
                     }
                 }
                 else
                 {
                     for (SHORT j = 0; j < (SHORT)(*pcElements - NumWritten); j++)
                     {
-                        it->first = static_cast<wchar_t>(wElement);
-                        it->second.SetSingle();
+                        it->Char() = static_cast<wchar_t>(wElement);
+                        it->DbcsAttr().SetSingle();
                         ++it;
                     }
                 }
@@ -1019,14 +762,14 @@ NTSTATUS FillOutput(SCREEN_INFORMATION& screenInfo,
                 {
                     for (SHORT j = 0; j < coordScreenBufferSize.X - X; j++)
                     {
-                        it->first = static_cast<wchar_t>(wElement);
+                        it->Char() = static_cast<wchar_t>(wElement);
                         if (StartPosFlag++ & 1)
                         {
-                            it->second.SetTrailing();
+                            it->DbcsAttr().SetTrailing();
                         }
                         else
                         {
-                            it->second.SetLeading();
+                            it->DbcsAttr().SetLeading();
                         }
                         ++it;
                     }
@@ -1035,8 +778,8 @@ NTSTATUS FillOutput(SCREEN_INFORMATION& screenInfo,
                 {
                     for (SHORT j = 0; j < coordScreenBufferSize.X - X; j++)
                     {
-                        it->first = static_cast<wchar_t>(wElement);
-                        it->second.SetSingle();
+                        it->Char() = static_cast<wchar_t>(wElement);
+                        it->DbcsAttr().SetSingle();
                         ++it;
                     }
                 }
@@ -1239,12 +982,7 @@ void FillRectangle(const CHAR_INFO * const pciFill,
         CharRow::const_iterator itEnd;
         try
         {
-            ICharRow& iCharRow = pRow->GetCharRow();
-            // we only support ucs2 encoded char rows
-            FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                            "only support UCS2 char rows currently");
-
-            CharRow& charRow = static_cast<CharRow&>(iCharRow);
+            CharRow& charRow = pRow->GetCharRow();
             it = std::next(charRow.begin(), psrTarget->Left);
             itEnd = charRow.cend();
         }
@@ -1265,27 +1003,27 @@ void FillRectangle(const CHAR_INFO * const pciFill,
                     assert((itEnd - it) % 2 == 0);
                     assert((itEnd - it) >= 2);
 
-                    it->first = pciFill->Char.UnicodeChar;
-                    it->second.SetLeading();
+                    it->Char() = pciFill->Char.UnicodeChar;
+                    it->DbcsAttr().SetLeading();
                     ++it;
 
-                    it->first = pciFill->Char.UnicodeChar;
-                    it->second.SetTrailing();
+                    it->Char() = pciFill->Char.UnicodeChar;
+                    it->DbcsAttr().SetTrailing();
                     ++it;
 
                     ++j;
                 }
                 else
                 {
-                    it->first = UNICODE_NULL;
-                    it->second.SetSingle();
+                    it->Char() = UNICODE_NULL;
+                    it->DbcsAttr().SetSingle();
                     ++it;
                 }
             }
             else
             {
-                it->first = pciFill->Char.UnicodeChar;
-                it->second.SetSingle();
+                it->Char() = pciFill->Char.UnicodeChar;
+                it->DbcsAttr().SetSingle();
                 ++it;
             }
         }

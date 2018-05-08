@@ -115,18 +115,14 @@ std::deque<UiaTextRange*> UiaTextRange::GetSelectionRanges(_In_ IRawElementProvi
     std::deque<UiaTextRange*> ranges;
 
     // get the selection rects
-    SMALL_RECT* pSelectionRects;
-    UINT rectCount;
-    NTSTATUS status = Selection::Instance().GetSelectionRects(&pSelectionRects, &rectCount);
-    THROW_IF_FAILED(status);
-    auto selectionRectCleanup = wil::ScopeExit([&] { delete[] pSelectionRects; });
+    const auto rectangles = Selection::Instance().GetSelectionRects();
 
     // create a range for each row
-    for (size_t i = 0; i < rectCount; ++i)
+    for (const auto& rect : rectangles)
     {
-        ScreenInfoRow currentRow = pSelectionRects[i].Top;
-        Endpoint start = _screenInfoRowToEndpoint(currentRow) + pSelectionRects[i].Left;
-        Endpoint end = _screenInfoRowToEndpoint(currentRow) + pSelectionRects[i].Right;
+        ScreenInfoRow currentRow = rect.Top;
+        Endpoint start = _screenInfoRowToEndpoint(currentRow) + rect.Left;
+        Endpoint end = _screenInfoRowToEndpoint(currentRow) + rect.Right;
         UiaTextRange* range = UiaTextRange::Create(pProvider,
                                                    start,
                                                    end,

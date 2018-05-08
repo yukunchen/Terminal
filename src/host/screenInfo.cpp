@@ -115,7 +115,7 @@ NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
         SetLineChar(*pScreen);
 
         status = pScreen->_InitializeOutputStateMachine();
-        
+
         if (NT_SUCCESS(status))
         {
             *ppScreen = pScreen;
@@ -247,10 +247,10 @@ NTSTATUS SCREEN_INFORMATION::_InitializeOutputStateMachine()
     {
         ASSERT(_pConApi == nullptr);
         _pConApi = new ConhostInternalGetSet(gci);
-        
+
         ASSERT(_pBufferWriter == nullptr);
         _pBufferWriter = new WriteBuffer(gci);
-        
+
         ASSERT(_pAdapter == nullptr);
         _pAdapter = new AdaptDispatch(_pConApi, _pBufferWriter, _Attributes.GetLegacyAttributes());
 
@@ -1410,8 +1410,8 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
     {
         // Fetch the row and its "right" which is the last printable character.
         const ROW& Row = _textBuffer->GetRowByOffset(iOldRow);
-        const ICharRow& iCharRow = Row.GetCharRow();
-        short iRight = static_cast<short>(iCharRow.MeasureRight());
+        const CharRow& charRow = Row.GetCharRow();
+        short iRight = static_cast<short>(charRow.MeasureRight());
 
         // There is a special case here. If the row has a "wrap"
         // flag on it, but the right isn't equal to the width (one
@@ -1422,7 +1422,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
         // included.)
         // As such, adjust the "right" to be the width of the row
         // to capture all these spaces
-        if (iCharRow.WasWrapForced())
+        if (charRow.WasWrapForced())
         {
             iRight = cOldColsTotal;
 
@@ -1431,7 +1431,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
             // piece of padding because of a double byte LEADING
             // character, then remove one from the "right" to
             // leave this padding out of the copy process.
-            if (iCharRow.WasDoubleBytePadded())
+            if (charRow.WasDoubleBytePadded())
             {
                 iRight--;
             }
@@ -1442,38 +1442,25 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
         // character)
         for (short iOldCol = 0; iOldCol < iRight; iOldCol++)
         {
-            // Retrieve old character and double-byte attributes
-            WCHAR wchChar;
-            DbcsAttribute bKAttr;
-            try
-            {
-                // we only support ucs2 encoded char rows
-                FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                                "only support UCS2 char rows currently");
-
-                const CharRow& charRow = static_cast<const CharRow&>(iCharRow);
-                wchChar = charRow.GlyphAt(iOldCol);
-                bKAttr = charRow.DbcsAttrAt(iOldCol);
-            }
-            catch (...)
-            {
-                return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-            }
-
-            // Extract the color attribute that applies to this character
-            const auto attr = Row.GetAttrRow().GetAttrByColumn(iOldCol);
-
             if (iOldCol == cOldCursorPos.X && iOldRow == cOldCursorPos.Y)
             {
                 cNewCursorPos = newCursor.GetPosition();
                 fFoundCursorPos = true;
             }
 
-            // Insert it into the new buffer
-            if (!newTextBuffer->InsertCharacter(wchChar, bKAttr, attr))
+            try
             {
-                status = STATUS_NO_MEMORY;
-                break;
+                // Insert it into the new buffer
+                const OutputCell cell = Row.AsCells(iOldCol, 1).front();
+                if (!newTextBuffer->InsertCharacter(cell.Chars(), cell.DbcsAttr(), cell.TextAttr()))
+                {
+                    status = STATUS_NO_MEMORY;
+                    break;
+                }
+            }
+            catch (...)
+            {
+                return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
             }
         }
         if (NT_SUCCESS(status))
@@ -1483,7 +1470,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
             // Only do so if we were not forced to wrap. If we did
             // force a word wrap, then the existing line break was
             // only because we ran out of space.
-            if (iRight < cOldColsTotal && !iCharRow.WasWrapForced())
+            if (iRight < cOldColsTotal && !charRow.WasWrapForced())
             {
                 if (iRight == cOldCursorPos.X && iOldRow == cOldCursorPos.Y)
                 {
@@ -2689,4 +2676,9 @@ TextBuffer& SCREEN_INFORMATION::GetTextBuffer()
 const TextBuffer& SCREEN_INFORMATION::GetTextBuffer() const
 {
     return *_textBuffer;
+}
+
+ScreenInfoTextIterator SCREEN_INFORMATION::GetTextDataAt(const COORD at) const
+{
+    return ScreenInfoTextIterator(this, at);
 }

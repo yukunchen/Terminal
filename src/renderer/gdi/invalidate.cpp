@@ -54,22 +54,21 @@ HRESULT GdiEngine::InvalidateScroll(const COORD* const pcoordDelta)
 // Routine Description:
 // - Notifies us that the console has changed the selection region and would like it updated
 // Arguments:
-// - rgsrSelection - Array of character region rectangles (one per line) that represent the selected area
-// - cRectangles - Length of the array above.
+// - rectangles - Vector of rectangles to draw, line by line
 // Return Value:
 // - HRESULT S_OK or GDI-based error code
-HRESULT GdiEngine::InvalidateSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection, const UINT cRectangles)
+HRESULT GdiEngine::InvalidateSelection(const std::vector<SMALL_RECT>& rectangles)
 {
     // Get the currently selected area as a GDI region
     wil::unique_hrgn hrgnSelection(CreateRectRgn(0, 0, 0, 0));
-    RETURN_LAST_ERROR_IF_NULL(hrgnSelection.get());
+    RETURN_HR_IF_NULL(E_FAIL, hrgnSelection.get());
 
-    RETURN_IF_FAILED(_PaintSelectionCalculateRegion(rgsrSelection, cRectangles, hrgnSelection.get()));
+    RETURN_IF_FAILED(_PaintSelectionCalculateRegion(rectangles, hrgnSelection.get()));
 
     // XOR against the region we saved from the last time we rendered to find out what to invalidate
     // This is the space that needs to be inverted to either select or deselect the existing region into the new one.
     wil::unique_hrgn hrgnInvalid(CreateRectRgn(0, 0, 0, 0));
-    RETURN_LAST_ERROR_IF_NULL(hrgnInvalid.get());
+    RETURN_HR_IF_NULL(E_FAIL, hrgnInvalid.get());
 
     int const iCombineResult = CombineRgn(hrgnInvalid.get(), _hrgnGdiPaintedSelection, hrgnSelection.get(), RGN_XOR);
 
@@ -124,7 +123,7 @@ HRESULT GdiEngine::InvalidateAll()
     }
 
     RECT rc;
-    RETURN_LAST_ERROR_IF_FALSE(GetClientRect(_hwndTargetWindow, &rc));
+    RETURN_HR_IF_FALSE(E_FAIL, GetClientRect(_hwndTargetWindow, &rc));
     RETURN_HR(InvalidateSystem(&rc));
 }
 
@@ -222,7 +221,7 @@ HRESULT GdiEngine::_InvalidRestrict()
     RECT rcClient;
 
     // Do restriction only if retrieving the client rect was successful.
-    RETURN_LAST_ERROR_IF_FALSE(GetClientRect(_hwndTargetWindow, &rcClient));
+    RETURN_HR_IF_FALSE(E_FAIL, GetClientRect(_hwndTargetWindow, &rcClient));
 
     _rcInvalid.left = std::clamp(_rcInvalid.left, rcClient.left, rcClient.right);
     _rcInvalid.right = std::clamp(_rcInvalid.right, rcClient.left, rcClient.right);
@@ -252,6 +251,6 @@ HRESULT GdiEngine::_InvalidateRect(const RECT* const prc)
 HRESULT GdiEngine::_InvalidateRgn(_In_ HRGN hrgn)
 {
     RECT rcInvalid;
-    RETURN_LAST_ERROR_IF_FALSE(GetRgnBox(hrgn, &rcInvalid));
+    RETURN_HR_IF_FALSE(E_FAIL, GetRgnBox(hrgn, &rcInvalid));
     RETURN_HR(_InvalidateRect(&rcInvalid));
 }

@@ -217,7 +217,7 @@ HRESULT ConsoleHandleData::CloseHandle()
 [[nodiscard]]
 HRESULT ConsoleHandleData::_CloseInputHandle()
 {
-    assert(_IsInput());
+    FAIL_FAST_IF_FALSE(_IsInput());
     InputBuffer* pInputBuffer = static_cast<InputBuffer*>(_pvClientPointer);
     INPUT_READ_HANDLE_DATA* pReadHandleData = GetClientInput();
 
@@ -243,7 +243,7 @@ HRESULT ConsoleHandleData::_CloseInputHandle()
         pReadHandleData->LockReadCount();
     }
 
-    assert(pReadHandleData->GetReadCount() == 0);
+    FAIL_FAST_IF_FALSE(pReadHandleData->GetReadCount() == 0);
     pReadHandleData->UnlockReadCount();
 
     delete pReadHandleData;
@@ -273,7 +273,7 @@ HRESULT ConsoleHandleData::_CloseInputHandle()
 [[nodiscard]]
 HRESULT ConsoleHandleData::_CloseOutputHandle()
 {
-    assert(_IsOutput());
+    FAIL_FAST_IF_FALSE(_IsOutput());
     SCREEN_INFORMATION* pScreenInfo = static_cast<SCREEN_INFORMATION*>(_pvClientPointer);
 
     // TODO: MSFT: 9115192 - THIS IS BAD. It should use a destructor.

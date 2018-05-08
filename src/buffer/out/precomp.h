@@ -32,4 +32,5 @@ Abstract:
 
 // private dependencies
 #include "..\host\conddkrefs.h"
+#include "..\inc\operators.hpp"
 #pragma warning(pop)
