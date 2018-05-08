@@ -230,6 +230,20 @@ NTSTATUS WriteScreenBuffer(SCREEN_INFORMATION& screenInfo, _In_ PCHAR_INFO pciBu
         return STATUS_SUCCESS;
     }
 
+    // convert char infos to OutputCells
+    std::vector<std::vector<OutputCell>> cells;
+    cells.reserve(SourceSize.Y);
+    for (short row = 0; row < SourceSize.Y; ++row)
+    {
+        std::vector<OutputCell> rowCells;
+        rowCells.reserve(SourceSize.X);
+        for (short col = 0; col < SourceSize.X; ++col)
+        {
+            rowCells.emplace_back(pciBuffer[row * SourceSize.X + col]);
+        }
+        cells.push_back(rowCells);
+    }
+
     // Ensure that the write region is within the constraints of the screen buffer.
     const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
     if (psrWriteRegion->Left >= coordScreenBufferSize.X || psrWriteRegion->Top >= coordScreenBufferSize.Y)
@@ -237,17 +251,30 @@ NTSTATUS WriteScreenBuffer(SCREEN_INFORMATION& screenInfo, _In_ PCHAR_INFO pciBu
         return STATUS_SUCCESS;
     }
 
+
     SMALL_RECT SourceRect;
-    // Do clipping.
-    if (psrWriteRegion->Right > (SHORT)(coordScreenBufferSize.X - 1))
+    // clip Y direction
+    if (psrWriteRegion->Bottom > coordScreenBufferSize.Y - 1)
     {
-        psrWriteRegion->Right = (SHORT)(coordScreenBufferSize.X - 1);
+        psrWriteRegion->Bottom = coordScreenBufferSize.Y - 1;
+        while (cells.size() > gsl::narrow<size_t>(psrWriteRegion->Bottom - psrWriteRegion->Top))
+        {
+            cells.pop_back();
+        }
     }
     SourceRect.Right = psrWriteRegion->Right - psrWriteRegion->Left;
 
-    if (psrWriteRegion->Bottom > (SHORT)(coordScreenBufferSize.Y - 1))
+    // clip X Direction
+    if (psrWriteRegion->Right > coordScreenBufferSize.X - 1)
     {
-        psrWriteRegion->Bottom = (SHORT)(coordScreenBufferSize.Y - 1);
+        psrWriteRegion->Right = coordScreenBufferSize.X - 1;
+        for (auto& row : cells)
+        {
+            while (row.size() > gsl::narrow<size_t>(psrWriteRegion->Bottom - psrWriteRegion->Top))
+            {
+                row.pop_back();
+            }
+        }
     }
     SourceRect.Bottom = psrWriteRegion->Bottom - psrWriteRegion->Top;
 
@@ -280,7 +307,9 @@ NTSTATUS WriteScreenBuffer(SCREEN_INFORMATION& screenInfo, _In_ PCHAR_INFO pciBu
     TargetPoint.X = psrWriteRegion->Left;
     TargetPoint.Y = psrWriteRegion->Top;
 
-    return WriteRectToScreenBuffer((PBYTE)pciBuffer, SourceSize, &SourceRect, screenInfo, TargetPoint, nullptr);
+
+    WriteRectToScreenBuffer(screenInfo, cells, TargetPoint);
+    return STATUS_SUCCESS;
 }
 
 // Routine Description:

@@ -49,6 +49,8 @@ public:
                const DbcsAttribute dbcsAttribute,
                const TextAttribute textAttribute);
 
+    OutputCell(const CHAR_INFO& charInfo);
+
     void swap(_Inout_ OutputCell& other) noexcept;
 
     CHAR_INFO ToCharInfo();
@@ -83,4 +85,7 @@ private:
     DbcsAttribute _dbcsAttribute;
     TextAttribute _textAttribute;
     TextAttributeBehavior _behavior;
+
+    void _setFromBehavior(const TextAttributeBehavior behavior);
+    void _setFromCharInfo(const CHAR_INFO& charInfo);
 };

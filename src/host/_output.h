@@ -25,14 +25,6 @@ void StreamWriteToScreenBuffer(SCREEN_INFORMATION& screenInfo,
                                const std::wstring& wstr,
                                const bool fWasLineWrapped);
 
-[[nodiscard]]
-NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimensions.Y * sizeof(CHAR_INFO)) PBYTE const prgbSrc,
-                             const COORD coordSrcDimensions,
-                             const SMALL_RECT * const psrSrc,
-                             SCREEN_INFORMATION& screenInfo,
-                             const COORD coordDest,
-                             _In_reads_opt_(coordSrcDimensions.X * coordSrcDimensions.Y) TextAttribute* const pTextAttributes);
-
 void WriteRectToScreenBuffer(SCREEN_INFORMATION& screenInfo,
                              const std::vector<std::vector<OutputCell>>& cells,
                              const COORD coordDest);
