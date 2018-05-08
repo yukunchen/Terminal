@@ -22,7 +22,7 @@ SOURCES = \
     ConsoleArgumentsTests.cpp \
     DbcsTests.cpp \
     ScreenBufferTests.cpp \
-    ScreenBufferTextIteratorTests.cpp \
+    ScreenInfoTextIteratorTests.cpp \
     TextBufferTests.cpp \
     ClipboardTests.cpp \
     SelectionTests.cpp \
