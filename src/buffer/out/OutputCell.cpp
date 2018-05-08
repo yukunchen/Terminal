@@ -29,12 +29,7 @@ OutputCell::OutputCell(const std::vector<wchar_t>& charData,
     _behavior{ behavior }
 {
     THROW_HR_IF(E_INVALIDARG, charData.empty());
-    THROW_HR_IF(E_INVALIDARG, behavior == TextAttributeBehavior::Stored);
-    if (behavior == TextAttributeBehavior::Default)
-    {
-        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        _textAttribute = gci.GetActiveOutputBuffer().GetAttributes();
-    }
+    _setFromBehavior(behavior);
 }
 
 OutputCell::OutputCell(const std::vector<wchar_t>& charData,
@@ -46,6 +41,13 @@ OutputCell::OutputCell(const std::vector<wchar_t>& charData,
     _behavior{ TextAttributeBehavior::Stored }
 {
     THROW_HR_IF(E_INVALIDARG, charData.empty());
+}
+
+OutputCell::OutputCell(const CHAR_INFO& charInfo) :
+    _dbcsAttribute{},
+    _textAttribute{ InvalidTextAttribute }
+{
+    _setFromCharInfo(charInfo);
 }
 
 void OutputCell::swap(_Inout_ OutputCell& other) noexcept
@@ -84,4 +86,30 @@ TextAttribute& OutputCell::TextAttr()
 {
     THROW_HR_IF(E_INVALIDARG, _behavior == TextAttributeBehavior::Current);
     return _textAttribute;
+}
+
+void OutputCell::_setFromBehavior(const TextAttributeBehavior behavior)
+{
+    THROW_HR_IF(E_INVALIDARG, behavior == TextAttributeBehavior::Stored);
+    if (behavior == TextAttributeBehavior::Default)
+    {
+        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        _textAttribute = gci.GetActiveOutputBuffer().GetAttributes();
+    }
+}
+
+void OutputCell::_setFromCharInfo(const CHAR_INFO& charInfo)
+{
+    _charData = { charInfo.Char.UnicodeChar };
+
+    if (IsFlagSet(charInfo.Attributes, COMMON_LVB_LEADING_BYTE))
+    {
+        _dbcsAttribute.SetLeading();
+    }
+    else if (IsFlagSet(charInfo.Attributes, COMMON_LVB_TRAILING_BYTE))
+    {
+        _dbcsAttribute.SetTrailing();
+    }
+    _textAttribute.SetFromLegacy(charInfo.Attributes);
+
 }
