@@ -573,8 +573,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                                                         Blanks,
                                                         CursorPosition,
                                                         CONSOLE_FALSE_UNICODE,   // faster than real unicode
-                                                        &NumChars,
-                                                        nullptr));
+                                                        &NumChars));
                         Status = FillOutput(screenInfo, Attributes, CursorPosition, CONSOLE_ATTRIBUTE, &NumChars);
                     }
 
@@ -593,8 +592,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                                                    Blanks,
                                                    cursor.GetPosition(),
                                                    CONSOLE_FALSE_UNICODE, // faster than real unicode
-                                                   &NumChars,
-                                                   nullptr);
+                                                   &NumChars);
                         Status = FillOutput(screenInfo, Attributes, cursor.GetPosition(), CONSOLE_ATTRIBUTE, &NumChars);
                     }
                     CursorPosition.X -= 1;
@@ -617,8 +615,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                                                 Blanks,
                                                 cursor.GetPosition(),
                                                 CONSOLE_FALSE_UNICODE,  //faster than real unicode
-                                                &NumChars,
-                                                nullptr));
+                                                &NumChars));
                 Status = FillOutput(screenInfo, Attributes, cursor.GetPosition(), CONSOLE_ATTRIBUTE, &NumChars);
             }
             if (cursor.GetPosition().X == 0 && (screenInfo.OutputMode & ENABLE_WRAP_AT_EOL_OUTPUT) && pwchBuffer > pwchBufferBackupLimit)
@@ -686,8 +683,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                                                     Blanks,
                                                     cursor.GetPosition(),
                                                     CONSOLE_FALSE_UNICODE,  // faster than real unicode
-                                                    &NumChars,
-                                                    nullptr));
+                                                    &NumChars));
                     LOG_IF_FAILED(FillOutput(screenInfo, Attributes, cursor.GetPosition(), CONSOLE_ATTRIBUTE, &NumChars));
                 }
 

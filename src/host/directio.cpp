@@ -1052,7 +1052,7 @@ NTSTATUS SrvWriteConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /
                 a->NumRecords = BufferSize / sizeof(WCHAR);
             }
 
-            Status = WriteOutputString(pScreenInfo->GetActiveBuffer(), Buffer, a->WriteCoord, a->StringType, &a->NumRecords, nullptr);
+            Status = WriteOutputString(pScreenInfo->GetActiveBuffer(), Buffer, a->WriteCoord, a->StringType, &a->NumRecords);
         }
     }
 

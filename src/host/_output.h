@@ -38,8 +38,7 @@ NTSTATUS WriteOutputString(SCREEN_INFORMATION& screenInfo,
                            _In_reads_(*pcRecords) const VOID * pvBuffer,
                            const COORD coordWrite,
                            const ULONG ulStringType,
-                           _Inout_ PULONG pcRecords,    // this value is valid even for error cases
-                           _Out_opt_ PULONG pcColumns);
+                           _Inout_ PULONG pcRecords);    // this value is valid even for error cases
 
 [[nodiscard]]
 NTSTATUS FillOutput(SCREEN_INFORMATION& screenInfo,

@@ -1030,7 +1030,7 @@ VOID DrawPromptPopup(_In_ PCLE_POPUP Popup,
         lStringLength = (ULONG)(POPUP_SIZE_X(Popup));
     }
 
-    LOG_IF_FAILED(WriteOutputString(screenInfo, Prompt, WriteCoord, CONSOLE_REAL_UNICODE, &lStringLength, nullptr));
+    LOG_IF_FAILED(WriteOutputString(screenInfo, Prompt, WriteCoord, CONSOLE_REAL_UNICODE, &lStringLength));
 }
 
 // Routine Description:
@@ -2001,8 +2001,7 @@ void DrawCommandListPopup(_In_ PCLE_POPUP const Popup,
                                         CommandNumberPtr,
                                         WriteCoord,
                                         CONSOLE_ASCII,
-                                        (PULONG)& CommandNumberLength,
-                                        nullptr));
+                                        (PULONG)& CommandNumberLength));
 
         // write command to screen
         lStringLength = CommandHistory->Commands[COMMAND_NUM_TO_INDEX(i, CommandHistory)]->CommandLength / sizeof(WCHAR);
@@ -2045,7 +2044,7 @@ void DrawCommandListPopup(_In_ PCLE_POPUP const Popup,
             }
 
             memmove(TransBuffer, CommandHistory->Commands[COMMAND_NUM_TO_INDEX(i, CommandHistory)]->Command, lStringLength * sizeof(WCHAR));
-            LOG_IF_FAILED(WriteOutputString(screenInfo, TransBuffer, WriteCoord, CONSOLE_REAL_UNICODE, &lStringLength, nullptr));
+            LOG_IF_FAILED(WriteOutputString(screenInfo, TransBuffer, WriteCoord, CONSOLE_REAL_UNICODE, &lStringLength));
             delete[] TransBuffer;
         }
 
