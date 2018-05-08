@@ -30,7 +30,7 @@ void swap(CharRow& a, CharRow& b) noexcept
 // Return Value:
 // - instantiated object
 // Note: will through if unable to allocate char/attribute buffers
-CharRow::CharRow(size_t rowWidth, ROW* pParent) :
+CharRow::CharRow(size_t rowWidth, ROW* const pParent) :
     _wrapForced{ false },
     _doubleBytePadded{ false },
     _data(rowWidth, value_type()),
@@ -66,11 +66,6 @@ void CharRow::swap(CharRow& other) noexcept
     swap(_doubleBytePadded, other._doubleBytePadded);
     swap(_data, other._data);
     swap(_pParent, other._pParent);
-}
-
-ICharRow::SupportedEncoding CharRow::GetSupportedEncoding() const noexcept
-{
-    return ICharRow::SupportedEncoding::Ucs2;
 }
 
 // Routine Description:

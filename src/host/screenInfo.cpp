@@ -1410,8 +1410,8 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
     {
         // Fetch the row and its "right" which is the last printable character.
         const ROW& Row = _textBuffer->GetRowByOffset(iOldRow);
-        const ICharRow& iCharRow = Row.GetCharRow();
-        short iRight = static_cast<short>(iCharRow.MeasureRight());
+        const CharRow& charRow = Row.GetCharRow();
+        short iRight = static_cast<short>(charRow.MeasureRight());
 
         // There is a special case here. If the row has a "wrap"
         // flag on it, but the right isn't equal to the width (one
@@ -1422,7 +1422,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
         // included.)
         // As such, adjust the "right" to be the width of the row
         // to capture all these spaces
-        if (iCharRow.WasWrapForced())
+        if (charRow.WasWrapForced())
         {
             iRight = cOldColsTotal;
 
@@ -1431,7 +1431,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
             // piece of padding because of a double byte LEADING
             // character, then remove one from the "right" to
             // leave this padding out of the copy process.
-            if (iCharRow.WasDoubleBytePadded())
+            if (charRow.WasDoubleBytePadded())
             {
                 iRight--;
             }
@@ -1470,7 +1470,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
             // Only do so if we were not forced to wrap. If we did
             // force a word wrap, then the existing line break was
             // only because we ran out of space.
-            if (iRight < cOldColsTotal && !iCharRow.WasWrapForced())
+            if (iRight < cOldColsTotal && !charRow.WasWrapForced())
             {
                 if (iRight == cOldCursorPos.X && iOldRow == cOldCursorPos.Y)
                 {

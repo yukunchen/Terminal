@@ -231,13 +231,7 @@ private:
         attrs[5].SetLeading();
         attrs[6].SetTrailing();
 
-        ICharRow& iCharRow = pRow->GetCharRow();
-        if (iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2)
-        {
-            LOG_HR_MSG(E_FAIL, "we don't support non UCS2 encoded char rows");
-            return;
-        }
-        CharRow& charRow = static_cast<CharRow&>(iCharRow);
+        CharRow& charRow = pRow->GetCharRow();
         OverwriteColumns(pwszText, pwszText + length, attrs.cbegin(), charRow.begin());
 
         // set some colors
@@ -302,13 +296,7 @@ private:
         attrs[68].SetTrailing();
         attrs[79].SetLeading();
 
-        ICharRow& iCharRow = pRow->GetCharRow();
-        if (iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2)
-        {
-            LOG_HR_MSG(E_FAIL, "we don't support non UCS2 encoded char rows");
-            return;
-        }
-        CharRow& charRow = static_cast<CharRow&>(iCharRow);
+        CharRow& charRow = pRow->GetCharRow();
         OverwriteColumns(pwszText, pwszText + length, attrs.cbegin(), charRow.begin());
 
         // everything gets default attributes

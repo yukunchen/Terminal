@@ -47,7 +47,7 @@ std::vector<SMALL_RECT> Selection::s_GetSelectionRects(const SMALL_RECT& selecti
 
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& screenInfo = gci.GetActiveOutputBuffer();
-    
+
     // if the anchor (start of select) was in the top right or bottom left of the box,
     // we need to remove rectangular overlap in the middle.
     // e.g.
@@ -130,7 +130,7 @@ std::vector<SMALL_RECT> Selection::s_GetSelectionRects(const SMALL_RECT& selecti
 
         selectionAreas.emplace_back(highlightRow);
     }
-    
+
     return selectionAreas;
 }
 
@@ -195,10 +195,13 @@ SMALL_RECT Selection::s_BisectSelection(const short sStringLength,
         }
         else
         {
-            const ROW& rowNext = textBuffer.GetNextRowNoWrap(row);
-            if (rowNext.GetCharRow().DbcsAttrAt(0).IsTrailing())
+            if (row.GetId() + 1 < screenInfo.GetScreenBufferSize().Y)
             {
-                outRect.Right--;
+                const ROW& rowNext = textBuffer.GetNextRowNoWrap(row);
+                if (rowNext.GetCharRow().DbcsAttrAt(0).IsTrailing())
+                {
+                    outRect.Right--;
+                }
             }
         }
     }

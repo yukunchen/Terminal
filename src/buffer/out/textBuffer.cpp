@@ -423,8 +423,8 @@ bool TextBuffer::_PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute
         if (GetCursor().GetPosition().X == sBufferWidth - 1)
         {
             // set that we're wrapping for double byte reasons
-            ICharRow& iCharRow = GetRowByOffset(GetCursor().GetPosition().Y).GetCharRow();
-            iCharRow.SetDoubleBytePadded(true);
+            CharRow& charRow = GetRowByOffset(GetCursor().GetPosition().Y).GetCharRow();
+            charRow.SetDoubleBytePadded(true);
 
             // then move the cursor forward and onto the next row
             fSuccess = IncrementCursor();
@@ -459,8 +459,7 @@ bool TextBuffer::InsertCharacter(const std::vector<wchar_t> chars,
         ROW& Row = GetRowByOffset(iRow);
 
         // Store character and double byte data
-        ICharRow& iCharRow = Row.GetCharRow();
-        CharRow& charRow = static_cast<CharRow&>(iCharRow);;
+        CharRow& charRow = Row.GetCharRow();
         short const cBufferWidth = _coordBufferSize.X;
 
         try
