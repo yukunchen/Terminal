@@ -15,6 +15,8 @@ class OutputTests
     TEST_CLASS_CLEANUP(TestCleanup);
 
     TEST_METHOD(BasicWriteConsoleOutputWTest);
+    TEST_METHOD(WriteConsoleOutputAttributeSimpleTest);
+    TEST_METHOD(WriteConsoleOutputAttributeCheckerTest);
 };
 
 bool OutputTests::TestSetup()
@@ -55,4 +57,96 @@ void OutputTests::BasicWriteConsoleOutputWTest()
     SMALL_RECT affected = region;
     VERIFY_SUCCEEDED(WriteConsoleOutputW(consoleOutputHandle, buffer.data(), regionDimensions, regionOrigin, &affected));
     VERIFY_ARE_EQUAL(region, affected);
+}
+
+void OutputTests::WriteConsoleOutputAttributeSimpleTest()
+{
+    // Get output buffer information.
+    const auto consoleOutputHandle = GetStdOutputHandle();
+    SetConsoleActiveScreenBuffer(consoleOutputHandle);
+
+    const DWORD size = 500;
+    const WORD setAttr = FOREGROUND_BLUE | BACKGROUND_RED;
+    const COORD coord{ 0, 0 };
+    DWORD attrsWritten = 0;
+    WORD attributes[size];
+    std::fill_n(attributes, size, setAttr);
+
+    // write some attribute changes
+    VERIFY_SUCCEEDED(WriteConsoleOutputAttribute(consoleOutputHandle, attributes, size, coord, &attrsWritten));
+    VERIFY_ARE_EQUAL(attrsWritten, size);
+
+    // confirm change happened
+    WORD resultAttrs[size];
+    DWORD attrsRead = 0;
+    VERIFY_SUCCEEDED(ReadConsoleOutputAttribute(consoleOutputHandle, resultAttrs, size, coord, &attrsRead));
+    VERIFY_ARE_EQUAL(attrsRead, size);
+
+    for (size_t i = 0; i < size; ++i)
+    {
+        VERIFY_ARE_EQUAL(attributes[i], resultAttrs[i]);
+    }
+}
+
+void OutputTests::WriteConsoleOutputAttributeCheckerTest()
+{
+    // writes a red/green checkerboard pattern on top of some text and makes sure that the text and color attr
+    // changes roundtrip properly through the API
+
+    // Get output buffer information.
+    const auto consoleOutputHandle = GetStdOutputHandle();
+    SetConsoleActiveScreenBuffer(consoleOutputHandle);
+
+    CONSOLE_SCREEN_BUFFER_INFOEX sbiex{ 0 };
+    sbiex.cbSize = sizeof(sbiex);
+
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleScreenBufferInfoEx(consoleOutputHandle, &sbiex));
+    const auto bufferSize = sbiex.dwSize;
+
+    const WORD red = BACKGROUND_RED;
+    const WORD green = BACKGROUND_GREEN;
+
+    const DWORD height = 8;
+    const DWORD width = bufferSize.X;
+    // todo verify less than or equal to buffer size ^^^
+    const DWORD size = width * height;
+    std::unique_ptr<WORD[]> attrs = std::make_unique<WORD[]>(size);
+
+    std::generate(attrs.get(), attrs.get() + size, [=]()
+                  {
+                      static int i = 0;
+                      return i++ % 2 == 0 ? red : green;
+                  });
+
+    // write text
+    const COORD coord{ 0, 0 };
+    DWORD charsWritten = 0;
+    std::unique_ptr<wchar_t[]> wchs = std::make_unique<wchar_t[]>(size);
+    std::fill_n(wchs.get(), size, L'*');
+    VERIFY_SUCCEEDED(WriteConsoleOutputCharacter(consoleOutputHandle, wchs.get(), size, coord, &charsWritten));
+    VERIFY_ARE_EQUAL(charsWritten, size);
+
+    // write attribute changes
+    DWORD attrsWritten = 0;
+    VERIFY_SUCCEEDED(WriteConsoleOutputAttribute(consoleOutputHandle, attrs.get(), size, coord, &attrsWritten));
+    VERIFY_ARE_EQUAL(attrsWritten, size);
+
+    // get changed attributes
+    std::unique_ptr<WORD[]> resultAttrs = std::make_unique<WORD[]>(size);
+    DWORD attrsRead = 0;
+    VERIFY_SUCCEEDED(ReadConsoleOutputAttribute(consoleOutputHandle, resultAttrs.get(), size, coord, &attrsRead));
+    VERIFY_ARE_EQUAL(attrsRead, size);
+
+    // get text
+    std::unique_ptr<wchar_t[]> resultWchs = std::make_unique<wchar_t[]>(size);
+    DWORD charsRead = 0;
+    VERIFY_SUCCEEDED(ReadConsoleOutputCharacter(consoleOutputHandle, resultWchs.get(), size, coord, &charsRead));
+    VERIFY_ARE_EQUAL(charsRead, size);
+
+    // confirm that attributes where set without affecting text
+    for (size_t i = 0; i < size; ++i)
+    {
+        VERIFY_ARE_EQUAL(attrs[i], resultAttrs[i]);
+        VERIFY_ARE_EQUAL(wchs[i], resultWchs[i]);
+    }
 }
