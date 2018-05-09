@@ -1030,7 +1030,12 @@ VOID DrawPromptPopup(_In_ PCLE_POPUP Popup,
         lStringLength = (ULONG)(POPUP_SIZE_X(Popup));
     }
 
-    LOG_IF_FAILED(WriteOutputString(screenInfo, Prompt, WriteCoord, CONSOLE_REAL_UNICODE, &lStringLength));
+    try
+    {
+        std::vector<wchar_t> promptChars{ Prompt, Prompt + lStringLength };
+        WriteOutputStringW(screenInfo, promptChars, WriteCoord);
+    }
+    CATCH_LOG();
 }
 
 // Routine Description:
@@ -2034,19 +2039,13 @@ void DrawCommandListPopup(_In_ PCLE_POPUP const Popup,
         }
 
         WriteCoord.X = (SHORT)(WriteCoord.X + CommandNumberLength);
+        try
         {
-            PWCHAR TransBuffer;
-
-            TransBuffer = new(std::nothrow) WCHAR[lStringLength];
-            if (TransBuffer == nullptr)
-            {
-                return;
-            }
-
-            memmove(TransBuffer, CommandHistory->Commands[COMMAND_NUM_TO_INDEX(i, CommandHistory)]->Command, lStringLength * sizeof(WCHAR));
-            LOG_IF_FAILED(WriteOutputString(screenInfo, TransBuffer, WriteCoord, CONSOLE_REAL_UNICODE, &lStringLength));
-            delete[] TransBuffer;
+            auto command = CommandHistory->Commands[COMMAND_NUM_TO_INDEX(i, CommandHistory)]->Command;
+            std::vector<wchar_t> chars{ command, command + lStringLength };
+            WriteOutputStringW(screenInfo, chars, WriteCoord);
         }
+        CATCH_LOG();
 
         // write attributes to screen
         if (COMMAND_NUM_TO_INDEX(i, CommandHistory) == CurrentCommand)

@@ -227,6 +227,70 @@ ULONG WriteOutputAttributes(SCREEN_INFORMATION& screenInfo,
 }
 
 // Routine Description:
+// - writes text to the screen
+// Arguments:
+// - screenInfo - the screen info to write to
+// - chars - the text to write to the screen
+// - target - the starting coordinate in the screen
+// Return Value:
+// - number of elements written
+ULONG WriteOutputStringW(SCREEN_INFORMATION& screenInfo,
+                         const std::vector<wchar_t> chars,
+                         const COORD target)
+{
+    if (chars.empty())
+    {
+        return 0;
+    }
+
+    const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
+    if (!IsCoordInBounds(target, coordScreenBufferSize))
+    {
+        return 0;
+    }
+
+    // convert to utf16
+    std::wstring wstr{ chars.begin(), chars.end() };
+    const auto formattedCharData = Utf16Parser::Parse(wstr);
+
+    // convert to cells
+    std::vector<OutputCell> cells;
+    for (const auto glyph : formattedCharData)
+    {
+        DbcsAttribute dbcsAttr;
+        if (IsGlyphFullWidth(glyph))
+        {
+            dbcsAttr.SetLeading();
+            cells.emplace_back(glyph, dbcsAttr, OutputCell::TextAttributeBehavior::Current);
+            dbcsAttr.SetTrailing();
+        }
+        cells.emplace_back(glyph, dbcsAttr, OutputCell::TextAttributeBehavior::Current);
+    }
+
+    const auto cellsWritten = screenInfo.WriteLineNoWrap(cells, target.Y, target.X);
+
+    // count number of glyphs that were written
+    ULONG amountWritten = 0;
+    for (auto it = cells.begin(); it != cells.begin() + cellsWritten; ++it)
+    {
+        if (!it->DbcsAttr().IsTrailing())
+        {
+            ++amountWritten;
+        }
+    }
+
+    // tell screen to update screen portion
+    SMALL_RECT writeRegion;
+    writeRegion.Top = target.Y;
+    writeRegion.Bottom = target.Y + (gsl::narrow<SHORT>(chars.size()) / coordScreenBufferSize.X) + 1;
+    writeRegion.Left = 0;
+    writeRegion.Right = coordScreenBufferSize.X;
+    WriteToScreen(screenInfo, writeRegion);
+
+    return amountWritten;
+}
+
+// Routine Description:
 // - This routine writes a string of characters or attributes to the screen buffer.
 // Arguments:
 // - pScreenInfo - reference to screen buffer information.
@@ -245,8 +309,9 @@ NTSTATUS WriteOutputString(SCREEN_INFORMATION& screenInfo,
                            const ULONG ulStringType,
                            _Inout_ PULONG pcRecords)    // this value is valid even for error cases
 {
-
     FAIL_FAST_IF(ulStringType == CONSOLE_ATTRIBUTE);
+    FAIL_FAST_IF(ulStringType == CONSOLE_REAL_UNICODE);
+    FAIL_FAST_IF(ulStringType == CONSOLE_FALSE_UNICODE);
 
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
@@ -256,7 +321,6 @@ NTSTATUS WriteOutputString(SCREEN_INFORMATION& screenInfo,
     }
 
     ULONG NumWritten = 0;
-    ULONG NumRecordsSavedForUnicode = 0;
     SHORT X = coordWrite.X;
     SHORT Y = coordWrite.Y;
     const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
@@ -283,6 +347,7 @@ NTSTATUS WriteOutputString(SCREEN_INFORMATION& screenInfo,
     DbcsAttribute* BufferA = nullptr;
     if (ulStringType == CONSOLE_ASCII)
     {
+        // converts ascii input to unicode. also clips dbcs text at ending edge if not enough space
         UINT const Codepage = gci.OutputCP;
 
         PCHAR TmpBuf = (PCHAR)pvBuffer;
@@ -336,41 +401,6 @@ NTSTATUS WriteOutputString(SCREEN_INFORMATION& screenInfo,
         }
         BufferA = TransBufferA.get();
         pvBuffer = TransBuffer.get();
-    }
-    else if ((ulStringType == CONSOLE_REAL_UNICODE) || (ulStringType == CONSOLE_FALSE_UNICODE))
-    {
-        PWCHAR TmpBuf;
-        PWCHAR TmpTrans;
-        DbcsAttribute* TmpTransA;
-        ULONG i, jTmp;
-        WCHAR c;
-
-        // Avoid overflow into TransBufferCharacter and TransBufferAttribute.
-        // If hit by IsConsoleFullWidth() then one unicode character needs two spaces on TransBuffer.
-
-        TmpBuf = (PWCHAR)pvBuffer;
-        TmpTrans = TransBuffer.get();
-        TmpTransA = TransBufferA.get();
-        for (i = 0, jTmp = 0; i < *pcRecords; i++, jTmp++)
-        {
-            *TmpTrans++ = c = *TmpBuf++;
-            TmpTransA->SetSingle();
-            if (IsCharFullWidth(c))
-            {
-                TmpTransA->SetLeading();
-                ++TmpTransA;
-                *TmpTrans++ = c;
-                TmpTransA->SetTrailing();
-                jTmp++;
-            }
-
-            TmpTransA++;
-        }
-
-        NumRecordsSavedForUnicode = *pcRecords;
-        *pcRecords = jTmp;
-        pvBuffer = TransBuffer.get();
-        BufferA = TransBufferA.get();
     }
 
     ROW* pRow = &screenInfo.GetTextBuffer().GetRowByOffset(coordWrite.Y);
@@ -500,11 +530,6 @@ NTSTATUS WriteOutputString(SCREEN_INFORMATION& screenInfo,
         {
             pRow = nullptr;
         }
-    }
-
-    if ((ulStringType == CONSOLE_FALSE_UNICODE) || (ulStringType == CONSOLE_REAL_UNICODE))
-    {
-        NumWritten = NumRecordsSavedForUnicode - (*pcRecords - NumWritten);
     }
 
     // determine write region.  if we're still on the same line we started
