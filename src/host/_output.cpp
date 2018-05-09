@@ -162,6 +162,71 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const SMALL_RECT srRegion)
 }
 
 // Routine Description:
+// - writes text attributes to the screen
+// Arguments:
+// - screenInfo - the screen info to write to
+// - attrs - the attrs to write to the screen
+// - target - the starting coordinate in the screen
+// Return Value:
+// - number of elements written
+ULONG WriteOutputAttributes(SCREEN_INFORMATION& screenInfo,
+                            const std::vector<WORD>& attrs,
+                            const COORD target)
+{
+    if (attrs.empty())
+    {
+        return 0;
+    }
+
+    const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
+    if (!IsCoordInBounds(target, coordScreenBufferSize))
+    {
+        return 0;
+    }
+
+    ULONG elementsWritten = 0;
+    COORD currentLocation = target;
+    std::vector<TextAttributeRun> runs{ TextAttributeRun() };
+    runs.front().SetLength(1);
+    // write attrs
+    for (size_t i = 0; i < attrs.size(); ++i)
+    {
+        ROW& row = screenInfo.GetTextBuffer().GetRowByOffset(currentLocation.Y);
+        ATTR_ROW& attrRow = row.GetAttrRow();
+        WORD currentAttr = attrs.at(i);
+        // clear dbcs bits
+        ClearAllFlags(currentAttr, COMMON_LVB_SBCSDBCS);
+        // add to attr row
+        runs.front().SetAttributesFromLegacy(currentAttr);
+        THROW_IF_FAILED(attrRow.InsertAttrRuns(runs,
+                                               currentLocation.X,
+                                               currentLocation.X,
+                                               row.size()));
+        ++elementsWritten;
+        ++currentLocation.X;
+        // move to next location
+        if (currentLocation.X == coordScreenBufferSize.X)
+        {
+            currentLocation.X = 0;
+            currentLocation.Y++;
+        }
+        if (!IsCoordInBounds(currentLocation, coordScreenBufferSize))
+        {
+            break;
+        }
+    }
+    // tell screen to update screen portion
+    SMALL_RECT writeRegion;
+    writeRegion.Top = target.Y;
+    writeRegion.Bottom = std::min(currentLocation.Y, coordScreenBufferSize.Y);
+    writeRegion.Left = 0;
+    writeRegion.Right = coordScreenBufferSize.X;
+    WriteToScreen(screenInfo, writeRegion);
+
+    return elementsWritten;
+}
+
+// Routine Description:
 // - This routine writes a string of characters or attributes to the screen buffer.
 // Arguments:
 // - pScreenInfo - reference to screen buffer information.
@@ -171,7 +236,6 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const SMALL_RECT srRegion)
 //                  CONSOLE_ASCII          - write a string of ascii characters.
 //                  CONSOLE_REAL_UNICODE   - write a string of real unicode characters.
 //                  CONSOLE_FALSE_UNICODE  - write a string of false unicode characters.
-//                  CONSOLE_ATTRIBUTE      - write a string of attributes.
 // - pcRecords - On input, the number of elements to write.  On output, the number of elements written.
 // Return Value:
 [[nodiscard]]
@@ -181,7 +245,9 @@ NTSTATUS WriteOutputString(SCREEN_INFORMATION& screenInfo,
                            const ULONG ulStringType,
                            _Inout_ PULONG pcRecords)    // this value is valid even for error cases
 {
-    DBGOUTPUT(("WriteOutputString\n"));
+
+    FAIL_FAST_IF(ulStringType == CONSOLE_ATTRIBUTE);
+
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     if (*pcRecords == 0)
@@ -437,86 +503,6 @@ NTSTATUS WriteOutputString(SCREEN_INFORMATION& screenInfo,
             {
                 pRow = nullptr;
             }
-        }
-    }
-    else if (ulStringType == CONSOLE_ATTRIBUTE)
-    {
-        try
-        {
-            PWORD SourcePtr = (PWORD)pvBuffer;
-            std::vector<TextAttributeRun> AttrRunsBuff;
-            TextAttributeRun AttrRun;
-
-            for (;;)
-            {
-                if (pRow == nullptr)
-                {
-                    ASSERT(false);
-                    break;
-                }
-
-                // copy the attrs into the screen buffer arrays
-                AttrRunsBuff.clear(); // for each row, ensure the buffer is clean
-                AttrRun.SetLength(0);
-                AttrRun.SetAttributesFromLegacy(*SourcePtr & ~COMMON_LVB_SBCSDBCS);
-                for (SHORT j = X; j < coordScreenBufferSize.X; j++, SourcePtr++)
-                {
-                    if (AttrRun.GetAttributes() == (*SourcePtr & ~COMMON_LVB_SBCSDBCS))
-                    {
-                        AttrRun.SetLength(AttrRun.GetLength() + 1);
-                    }
-                    else
-                    {
-                        AttrRunsBuff.push_back(AttrRun);
-                        AttrRun.SetLength(1);
-                        AttrRun.SetAttributesFromLegacy(*SourcePtr & ~COMMON_LVB_SBCSDBCS);
-                    }
-                    NumWritten++;
-                    X++;
-                    if (NumWritten == *pcRecords)
-                    {
-                        break;
-                    }
-                }
-                AttrRunsBuff.push_back(AttrRun);
-                X--;
-
-                // recalculate last non-space char
-
-                LOG_IF_FAILED(pRow->GetAttrRow().InsertAttrRuns(AttrRunsBuff,
-                                                                (SHORT)((Y == coordWrite.Y) ? coordWrite.X : 0),
-                                                                X,
-                                                                coordScreenBufferSize.X));
-
-                try
-                {
-                    pRow = &screenInfo.GetTextBuffer().GetNextRowNoWrap(*pRow);
-                }
-                catch (...)
-                {
-                    pRow = nullptr;
-                }
-
-                if (NumWritten < *pcRecords)
-                {
-                    X = 0;
-                    Y++;
-                    if (Y >= coordScreenBufferSize.Y)
-                    {
-                        break;
-                    }
-                }
-                else
-                {
-                    break;
-                }
-            }
-            screenInfo.NotifyAccessibilityEventing(coordWrite.X, coordWrite.Y, X, Y);
-
-        }
-        catch (...)
-        {
-            return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
         }
     }
     else
