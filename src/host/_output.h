@@ -52,3 +52,7 @@ void FillRectangle(const CHAR_INFO * const pciFill, SCREEN_INFORMATION& screenIn
 ULONG WriteOutputAttributes(SCREEN_INFORMATION& screenInfo,
                             const std::vector<WORD>& attrs,
                             const COORD target);
+
+ULONG WriteOutputStringW(SCREEN_INFORMATION& screenInfo,
+                         const std::vector<wchar_t> chars,
+                         const COORD target);

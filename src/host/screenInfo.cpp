@@ -2590,21 +2590,55 @@ std::vector<OutputCell> SCREEN_INFORMATION::ReadLine(const size_t rowIndex,
 // - rowIndex - the index of the row to write the text to
 // - startIndex - column in the row to start writing cells to
 // Return Value:
-// - none
-void SCREEN_INFORMATION::WriteLine(const std::vector<OutputCell>& cells,
-                                   const size_t rowIndex,
-                                   const size_t startIndex)
+// - the number of cells written
+size_t SCREEN_INFORMATION::WriteLine(const std::vector<OutputCell>& cells,
+                                     const size_t rowIndex,
+                                     const size_t startIndex)
 {
-    ROW* pRow = &_textBuffer->GetRowByOffset(rowIndex);
     auto it = cells.begin();
     auto currentColumn = startIndex;
+    size_t amountWritten = 0;
+    auto currentRowIndex = rowIndex;
     while (it != cells.end())
     {
-        it = pRow->WriteCells(it, cells.end(), currentColumn);
-        pRow->GetCharRow().SetWrapForced(it != cells.end());
-        pRow = &_textBuffer->GetNextRow(*pRow);
+        ROW& row = _textBuffer->GetRowByOffset(currentRowIndex);
+        const auto newIt = row.WriteCells(it, cells.end(), currentColumn);
+        amountWritten += newIt - it;
+        it = newIt;
+        row.GetCharRow().SetWrapForced(it != cells.end());
         currentColumn = 0;
+        ++currentRowIndex;
     }
+    return amountWritten;
+}
+
+// Routine Description:
+// - writes cells to the output buffer. will stop at the end of the screen buffer
+// Arguments:
+// - cells - the cells to write to the output buffer
+// - rowIndex - the index of the row to write the text to
+// - startIndex - column in the row to start writing cells to
+// Return Value:
+// - the number of cells written
+size_t SCREEN_INFORMATION::WriteLineNoWrap(const std::vector<OutputCell>& cells,
+                                           const size_t rowIndex,
+                                           const size_t startIndex)
+{
+    auto it = cells.begin();
+    auto currentColumn = startIndex;
+    size_t amountWritten = 0;
+    auto currentRowIndex = rowIndex;
+    while (it != cells.end() && currentRowIndex < static_cast<size_t>(_textBuffer->TotalRowCount()))
+    {
+        ROW& row = _textBuffer->GetRowByOffset(currentRowIndex);
+        const auto newIt = row.WriteCells(it, cells.end(), currentColumn);
+        amountWritten += newIt - it;
+        it = newIt;
+        row.GetCharRow().SetWrapForced(it != cells.end());
+        currentColumn = 0;
+        ++currentRowIndex;
+    }
+    return amountWritten;
 }
 
 // Routine Description:

@@ -1070,14 +1070,29 @@ NTSTATUS SrvWriteConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /
                     Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
                 }
             }
+            else if (a->StringType == CONSOLE_REAL_UNICODE ||
+                     a->StringType == CONSOLE_FALSE_UNICODE)
+            {
+                try
+                {
+                    const ULONG elementCount = BufferSize / sizeof(wchar_t);
+                    const wchar_t* const pChars = reinterpret_cast<const wchar_t* const>(Buffer);
+                    std::vector<wchar_t> chars{ pChars, pChars + elementCount };
+                    a->NumRecords = WriteOutputStringW(pScreenInfo->GetActiveBuffer(),
+                                                       chars,
+                                                       a->WriteCoord);
+                    Status = STATUS_SUCCESS;
+                }
+                catch (...)
+                {
+                    a->NumRecords = 0;
+                    Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+                }
+            }
             else
             {
-                a->NumRecords = BufferSize / sizeof(WCHAR);
-                Status = WriteOutputString(pScreenInfo->GetActiveBuffer(),
-                                           Buffer,
-                                           a->WriteCoord,
-                                           a->StringType,
-                                           &a->NumRecords);
+                a->NumRecords = 0;
+                Status = STATUS_INVALID_PARAMETER;
             }
         }
     }

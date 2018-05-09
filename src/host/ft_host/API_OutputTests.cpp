@@ -15,6 +15,10 @@ class OutputTests
     TEST_CLASS_CLEANUP(TestCleanup);
 
     TEST_METHOD(BasicWriteConsoleOutputWTest);
+    TEST_METHOD(BasicWriteConsoleOutputATest);
+
+    TEST_METHOD(WriteConsoleOutputCharacterWRunoff);
+
     TEST_METHOD(WriteConsoleOutputAttributeSimpleTest);
     TEST_METHOD(WriteConsoleOutputAttributeCheckerTest);
 };
@@ -33,6 +37,7 @@ void OutputTests::BasicWriteConsoleOutputWTest()
 {
     // Get output buffer information.
     const auto consoleOutputHandle = GetStdOutputHandle();
+    SetConsoleActiveScreenBuffer(consoleOutputHandle);
 
     CONSOLE_SCREEN_BUFFER_INFOEX sbiex{ 0 };
     sbiex.cbSize = sizeof(sbiex);
@@ -57,6 +62,63 @@ void OutputTests::BasicWriteConsoleOutputWTest()
     SMALL_RECT affected = region;
     VERIFY_SUCCEEDED(WriteConsoleOutputW(consoleOutputHandle, buffer.data(), regionDimensions, regionOrigin, &affected));
     VERIFY_ARE_EQUAL(region, affected);
+}
+
+void OutputTests::BasicWriteConsoleOutputATest()
+{
+    // Get output buffer information.
+    const auto consoleOutputHandle = GetStdOutputHandle();
+    SetConsoleActiveScreenBuffer(consoleOutputHandle);
+
+    CONSOLE_SCREEN_BUFFER_INFOEX sbiex{ 0 };
+    sbiex.cbSize = sizeof(sbiex);
+
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleScreenBufferInfoEx(consoleOutputHandle, &sbiex));
+    const auto bufferSize = sbiex.dwSize;
+
+    // Establish a writing region that is the width of the buffer and half the height.
+    const SMALL_RECT region{ 0, 0, bufferSize.X - 1, bufferSize.Y / 2 };
+    const COORD regionDimensions{ region.Right - region.Left + 1, region.Bottom - region.Top + 1 };
+    const auto regionSize = regionDimensions.X * regionDimensions.Y;
+    const COORD regionOrigin{ 0, 0 };
+
+    // Make a test value and fill an array (via a vector) full of it.
+    CHAR_INFO testValue;
+    testValue.Attributes = 0x3e;
+    testValue.Char.AsciiChar = ' ';
+
+    std::vector<CHAR_INFO> buffer(regionSize, testValue);
+
+    // Call the API and confirm results.
+    SMALL_RECT affected = region;
+    VERIFY_SUCCEEDED(WriteConsoleOutputA(consoleOutputHandle, buffer.data(), regionDimensions, regionOrigin, &affected));
+    VERIFY_ARE_EQUAL(region, affected);
+}
+
+void OutputTests::WriteConsoleOutputCharacterWRunoff()
+{
+    // writes text that will not all fit on the screen to verify reported size is correct
+    const auto consoleOutputHandle = GetStdOutputHandle();
+    SetConsoleActiveScreenBuffer(consoleOutputHandle);
+
+    CONSOLE_SCREEN_BUFFER_INFOEX sbiex{ 0 };
+    sbiex.cbSize = sizeof(sbiex);
+
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleScreenBufferInfoEx(consoleOutputHandle, &sbiex));
+    const auto bufferSize = sbiex.dwSize;
+
+    COORD target{ bufferSize.X - 1, bufferSize.Y - 1};
+
+    const std::wstring text = L"hello";
+    DWORD charsWritten = 0;
+    VERIFY_SUCCEEDED(WriteConsoleOutputCharacterW(consoleOutputHandle,
+                                                  text.c_str(),
+                                                  gsl::narrow<DWORD>(text.size()),
+                                                  target,
+                                                  &charsWritten));
+    VERIFY_ARE_EQUAL(charsWritten, 1u);
+
+
 }
 
 void OutputTests::WriteConsoleOutputAttributeSimpleTest()
