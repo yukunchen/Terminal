@@ -337,8 +337,7 @@ NTSTATUS WriteOutputString(SCREEN_INFORMATION& screenInfo,
         BufferA = TransBufferA.get();
         pvBuffer = TransBuffer.get();
     }
-
-    if ((ulStringType == CONSOLE_REAL_UNICODE) || (ulStringType == CONSOLE_FALSE_UNICODE))
+    else if ((ulStringType == CONSOLE_REAL_UNICODE) || (ulStringType == CONSOLE_FALSE_UNICODE))
     {
         PWCHAR TmpBuf;
         PWCHAR TmpTrans;
@@ -375,141 +374,134 @@ NTSTATUS WriteOutputString(SCREEN_INFORMATION& screenInfo,
     }
 
     ROW* pRow = &screenInfo.GetTextBuffer().GetRowByOffset(coordWrite.Y);
-    if ((ulStringType == CONSOLE_REAL_UNICODE) || (ulStringType == CONSOLE_FALSE_UNICODE) || (ulStringType == CONSOLE_ASCII))
+    for (;;)
     {
-        for (;;)
+        if (pRow == nullptr)
         {
-            if (pRow == nullptr)
+            ASSERT(false);
+            break;
+        }
+
+        // copy the chars into their arrays
+        CharRow::iterator it;
+        try
+        {
+            CharRow& charRow = pRow->GetCharRow();
+            it = std::next(charRow.begin(), X);
+        }
+        catch (...)
+        {
+            return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+        }
+
+        if ((ULONG)(coordScreenBufferSize.X - X) >= (*pcRecords - NumWritten))
+        {
+            // The text will not hit the right hand edge, copy it all
+            COORD TPoint;
+
+            TPoint.X = X;
+            TPoint.Y = Y;
+            CleanupDbcsEdgesForWrite((SHORT)(*pcRecords - NumWritten), TPoint, screenInfo);
+
+            if (TPoint.Y == coordScreenBufferSize.Y - 1 &&
+                (SHORT)(TPoint.X + *pcRecords - NumWritten) >= coordScreenBufferSize.X &&
+                BufferA[coordScreenBufferSize.X - TPoint.X - 1].IsLeading())
             {
-                ASSERT(false);
-                break;
+                *((PWCHAR)pvBuffer + coordScreenBufferSize.X - TPoint.X - 1) = UNICODE_SPACE;
+                BufferA[coordScreenBufferSize.X - TPoint.X - 1].SetSingle();
+                if ((SHORT)(*pcRecords - NumWritten) > (SHORT)(coordScreenBufferSize.X - TPoint.X - 1))
+                {
+                    #pragma prefast(suppress:__WARNING_BUFFER_OVERFLOW, "ScreenBufferSize limits this, but it's very obtuse.")
+                    *((PWCHAR)pvBuffer + coordScreenBufferSize.X - TPoint.X) = UNICODE_SPACE;
+                    #pragma prefast(suppress:__WARNING_BUFFER_OVERFLOW, "ScreenBufferSize limits this, but it's very obtuse.")
+                    BufferA[coordScreenBufferSize.X - TPoint.X].SetSingle();
+                }
             }
 
-            // copy the chars into their arrays
-            CharRow::iterator it;
+            const size_t numToWrite = *pcRecords - NumWritten;
             try
             {
-                CharRow& charRow = pRow->GetCharRow();
-                it = std::next(charRow.begin(), X);
+                const wchar_t* const pChars = reinterpret_cast<const wchar_t* const>(pvBuffer);
+                const DbcsAttribute* const pAttrs = static_cast<const DbcsAttribute* const>(BufferA);
+                OverwriteColumns(pChars, pChars + numToWrite, pAttrs, it);
             }
             catch (...)
             {
                 return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
             }
 
-            if ((ULONG)(coordScreenBufferSize.X - X) >= (*pcRecords - NumWritten))
+            X = (SHORT)(X + numToWrite - 1);
+            NumWritten = *pcRecords;
+        }
+        else
+        {
+            // The text will hit the right hand edge, copy only that much.
+            COORD TPoint;
+
+            TPoint.X = X;
+            TPoint.Y = Y;
+            CleanupDbcsEdgesForWrite((SHORT)(coordScreenBufferSize.X - X), TPoint, screenInfo);
+            if (TPoint.Y == coordScreenBufferSize.Y - 1 &&
+                TPoint.X + coordScreenBufferSize.X - X >= coordScreenBufferSize.X &&
+                BufferA[coordScreenBufferSize.X - TPoint.X - 1].IsLeading())
             {
-                // The text will not hit the right hand edge, copy it all
-                COORD TPoint;
-
-                TPoint.X = X;
-                TPoint.Y = Y;
-                CleanupDbcsEdgesForWrite((SHORT)(*pcRecords - NumWritten), TPoint, screenInfo);
-
-                if (TPoint.Y == coordScreenBufferSize.Y - 1 &&
-                    (SHORT)(TPoint.X + *pcRecords - NumWritten) >= coordScreenBufferSize.X &&
-                    BufferA[coordScreenBufferSize.X - TPoint.X - 1].IsLeading())
+                *((PWCHAR)pvBuffer + coordScreenBufferSize.X - TPoint.X - 1) = UNICODE_SPACE;
+                BufferA[coordScreenBufferSize.X - TPoint.X - 1].SetSingle();
+                if (coordScreenBufferSize.X - X > coordScreenBufferSize.X - TPoint.X - 1)
                 {
-                    *((PWCHAR)pvBuffer + coordScreenBufferSize.X - TPoint.X - 1) = UNICODE_SPACE;
-                    BufferA[coordScreenBufferSize.X - TPoint.X - 1].SetSingle();
-                    if ((SHORT)(*pcRecords - NumWritten) > (SHORT)(coordScreenBufferSize.X - TPoint.X - 1))
-                    {
-                        #pragma prefast(suppress:__WARNING_BUFFER_OVERFLOW, "ScreenBufferSize limits this, but it's very obtuse.")
-                        *((PWCHAR)pvBuffer + coordScreenBufferSize.X - TPoint.X) = UNICODE_SPACE;
-                        #pragma prefast(suppress:__WARNING_BUFFER_OVERFLOW, "ScreenBufferSize limits this, but it's very obtuse.")
-                        BufferA[coordScreenBufferSize.X - TPoint.X].SetSingle();
-                    }
-                }
-
-                const size_t numToWrite = *pcRecords - NumWritten;
-                try
-                {
-                    const wchar_t* const pChars = reinterpret_cast<const wchar_t* const>(pvBuffer);
-                    const DbcsAttribute* const pAttrs = static_cast<const DbcsAttribute* const>(BufferA);
-                    OverwriteColumns(pChars, pChars + numToWrite, pAttrs, it);
-                }
-                catch (...)
-                {
-                    return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-                }
-
-                X = (SHORT)(X + numToWrite - 1);
-                NumWritten = *pcRecords;
-            }
-            else
-            {
-                // The text will hit the right hand edge, copy only that much.
-                COORD TPoint;
-
-                TPoint.X = X;
-                TPoint.Y = Y;
-                CleanupDbcsEdgesForWrite((SHORT)(coordScreenBufferSize.X - X), TPoint, screenInfo);
-                if (TPoint.Y == coordScreenBufferSize.Y - 1 &&
-                    TPoint.X + coordScreenBufferSize.X - X >= coordScreenBufferSize.X &&
-                    BufferA[coordScreenBufferSize.X - TPoint.X - 1].IsLeading())
-                {
-                    *((PWCHAR)pvBuffer + coordScreenBufferSize.X - TPoint.X - 1) = UNICODE_SPACE;
-                    BufferA[coordScreenBufferSize.X - TPoint.X - 1].SetSingle();
-                    if (coordScreenBufferSize.X - X > coordScreenBufferSize.X - TPoint.X - 1)
-                    {
-                        *((PWCHAR)pvBuffer + coordScreenBufferSize.X - TPoint.X) = UNICODE_SPACE;
-                        BufferA[coordScreenBufferSize.X - TPoint.X].SetSingle();
-                    }
-                }
-                const size_t numToWrite = coordScreenBufferSize.X - X;
-                try
-                {
-                    const wchar_t* const pChars = reinterpret_cast<const wchar_t* const>(pvBuffer);
-                    const DbcsAttribute* const pAttrs = static_cast<const DbcsAttribute* const>(BufferA);
-                    OverwriteColumns(pChars, pChars + numToWrite, pAttrs, it);
-                }
-                catch (...)
-                {
-                    return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-                }
-                BufferA = BufferA + numToWrite;
-                pvBuffer = (PVOID)((PBYTE)pvBuffer + (numToWrite * sizeof(WCHAR)));
-                NumWritten += static_cast<ULONG>(numToWrite);
-                X = (SHORT)(numToWrite);
-            }
-
-            if (NumWritten < *pcRecords)
-            {
-                // The string hit the right hand edge, so wrap around to the next line by going back round the while loop, unless we
-                // are at the end of the buffer - in which case we simply abandon the remainder of the output string!
-                X = 0;
-                Y++;
-
-                // if we are wrapping around, set that this row is wrapping
-                pRow->GetCharRow().SetWrapForced(true);
-
-                if (Y >= coordScreenBufferSize.Y)
-                {
-                    break;  // abandon output, string is truncated
+                    *((PWCHAR)pvBuffer + coordScreenBufferSize.X - TPoint.X) = UNICODE_SPACE;
+                    BufferA[coordScreenBufferSize.X - TPoint.X].SetSingle();
                 }
             }
-            else
-            {
-                // if we're not wrapping around, set that this row isn't wrapped.
-                pRow->GetCharRow().SetWrapForced(false);
-                break;
-            }
-
+            const size_t numToWrite = coordScreenBufferSize.X - X;
             try
             {
-                pRow = &screenInfo.GetTextBuffer().GetNextRowNoWrap(*pRow);
+                const wchar_t* const pChars = reinterpret_cast<const wchar_t* const>(pvBuffer);
+                const DbcsAttribute* const pAttrs = static_cast<const DbcsAttribute* const>(BufferA);
+                OverwriteColumns(pChars, pChars + numToWrite, pAttrs, it);
             }
             catch (...)
             {
-                pRow = nullptr;
+                return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+            }
+            BufferA = BufferA + numToWrite;
+            pvBuffer = (PVOID)((PBYTE)pvBuffer + (numToWrite * sizeof(WCHAR)));
+            NumWritten += static_cast<ULONG>(numToWrite);
+            X = (SHORT)(numToWrite);
+        }
+
+        if (NumWritten < *pcRecords)
+        {
+            // The string hit the right hand edge, so wrap around to the next line by going back round the while loop, unless we
+            // are at the end of the buffer - in which case we simply abandon the remainder of the output string!
+            X = 0;
+            Y++;
+
+            // if we are wrapping around, set that this row is wrapping
+            pRow->GetCharRow().SetWrapForced(true);
+
+            if (Y >= coordScreenBufferSize.Y)
+            {
+                break;  // abandon output, string is truncated
             }
         }
+        else
+        {
+            // if we're not wrapping around, set that this row isn't wrapped.
+            pRow->GetCharRow().SetWrapForced(false);
+            break;
+        }
+
+        try
+        {
+            pRow = &screenInfo.GetTextBuffer().GetNextRowNoWrap(*pRow);
+        }
+        catch (...)
+        {
+            pRow = nullptr;
+        }
     }
-    else
-    {
-        *pcRecords = 0;
-        return STATUS_INVALID_PARAMETER;
-    }
+
     if ((ulStringType == CONSOLE_FALSE_UNICODE) || (ulStringType == CONSOLE_REAL_UNICODE))
     {
         NumWritten = NumRecordsSavedForUnicode - (*pcRecords - NumWritten);
