@@ -2002,11 +2002,14 @@ void DrawCommandListPopup(_In_ PCLE_POPUP const Popup,
         }
 
         WriteCoord.X = (SHORT)(Popup->Region.Left + 1);
-        LOG_IF_FAILED(WriteOutputString(screenInfo,
-                                        CommandNumberPtr,
-                                        WriteCoord,
-                                        CONSOLE_ASCII,
-                                        (PULONG)& CommandNumberLength));
+        try
+        {
+            std::vector<char> chars{ CommandNumberPtr, CommandNumberPtr + CommandNumberLength };
+            CommandNumberLength = WriteOutputStringA(screenInfo,
+                                                     chars,
+                                                     WriteCoord);
+        }
+        CATCH_LOG();
 
         // write command to screen
         lStringLength = CommandHistory->Commands[COMMAND_NUM_TO_INDEX(i, CommandHistory)]->CommandLength / sizeof(WCHAR);
