@@ -26,25 +26,31 @@ Revision History:
 #define CONIME_CURSOR_RIGHT 0x10
 #define CONIME_CURSOR_LEFT  0x20
 
-typedef __struct_bcount(dwSize) struct _CONIME_UICOMPMESSAGE {
-    DWORD dwSize;
-    DWORD dwCompAttrLen;
-    DWORD dwCompAttrOffset;
-    DWORD dwCompStrLen;
-    DWORD dwCompStrOffset;
-    DWORD dwResultStrLen;
-    DWORD dwResultStrOffset;
-    WORD  CompAttrColor[CONIME_ATTRCOLOR_SIZE];
-} CONIME_UICOMPMESSAGE, *LPCONIME_UICOMPMESSAGE;
+[[nodiscard]]
+HRESULT ImeStartComposition();
+
+[[nodiscard]]
+HRESULT ImeEndComposition();
+
+[[nodiscard]]
+HRESULT ImeComposeData(std::wstring_view text,
+                       std::basic_string_view<BYTE> attributes,
+                       std::basic_string_view<WORD> colorArray);
+
+[[nodiscard]]
+HRESULT ImeClearComposeData();
+
+[[nodiscard]]
+HRESULT ImeComposeResult(std::wstring_view text);
 
 //
 // This is PCOPYDATASTRUCT->dwData values for WM_COPYDAT message consrv from conime.
 //
-#define CI_CONIMECOMPOSITION    0x4B425930
+//#define CI_CONIMECOMPOSITION    0x4B425930
 //unused CI_CONIMEMODEINFO       0x4B425931
 //unused CI_CONIMESYSINFO        0x4B425932
-#define CI_ONSTARTCOMPOSITION   0x4B425933
-#define CI_ONENDCOMPOSITION     0x4B425934
+//#define CI_ONSTARTCOMPOSITION   0x4B425933
+//#define CI_ONENDCOMPOSITION     0x4B425934
 //unused CI_CONIMECANDINFO       0x4B425935
 //unused CI_CONIMESTATEUPDATED   0x4B425936
 

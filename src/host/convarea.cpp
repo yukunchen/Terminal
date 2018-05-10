@@ -75,7 +75,7 @@ void WriteConvRegionToScreen(const SCREEN_INFORMATION& ScreenInfo,
     }
 }
 
-bool InsertConvertedString(_In_ LPCWSTR lpStr)
+bool InsertConvertedString(const std::wstring_view str)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     bool fResult = false;
@@ -97,12 +97,10 @@ bool InsertConvertedString(_In_ LPCWSTR lpStr)
             0, // charData
             dwControlKeyState }; // activeModifierKeys
 
-        while (*lpStr)
+        for (const auto& ch : str)
         {
-            keyEvent.SetCharData(*lpStr);
+            keyEvent.SetCharData(ch);
             inEvents.push_back(std::make_unique<KeyEvent>(keyEvent));
-
-            ++lpStr;
         }
 
         gci.pInputBuffer->Write(inEvents);
@@ -117,16 +115,112 @@ bool InsertConvertedString(_In_ LPCWSTR lpStr)
     return fResult;
 }
 
+[[nodiscard]]
+HRESULT ConsoleImeResizeCompStrView()
+{
+    try
+    {
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        ConsoleImeInfo* const pIme = &gci.ConsoleIme;
+        pIme->RedrawCompMessage();
+    }
+    CATCH_RETURN();
+
+    return S_OK;
+}
 
 [[nodiscard]]
-NTSTATUS ConsoleImeCompStr(_In_ LPCONIME_UICOMPMESSAGE CompStr)
+HRESULT ConsoleImeResizeCompStrScreenBuffer(const COORD coordNewScreenSize)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const Cursor& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
     ConsoleImeInfo* const pIme = &gci.ConsoleIme;
 
-    if (CompStr->dwCompStrLen == 0 || CompStr->dwResultStrLen != 0)
+    return pIme->ResizeAllAreas(coordNewScreenSize);
+}
+
+[[nodiscard]]
+HRESULT ImeStartComposition()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.LockConsole();
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    gci.pInputBuffer->fInComposition = true;
+    return S_OK;
+}
+
+[[nodiscard]]
+HRESULT ImeEndComposition()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.LockConsole();
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    gci.pInputBuffer->fInComposition = false;
+    return S_OK;
+}
+
+[[nodiscard]]
+HRESULT ImeComposeData(std::wstring_view text,
+                       std::basic_string_view<BYTE> attributes,
+                       std::basic_string_view<WORD> colorArray)
+{
+    try
     {
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        gci.LockConsole();
+        auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+        const Cursor& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
+        ConsoleImeInfo* const pIme = &gci.ConsoleIme;
+
+        // Cursor turn OFF.
+        if (cursor.IsVisible())
+        {
+            pIme->SavedCursorVisible = true;
+
+            gci.GetActiveOutputBuffer().SetCursorInformation(
+                cursor.GetSize(),
+                FALSE,
+                cursor.GetColor(),
+                cursor.GetType()
+            );
+        }
+
+        pIme->WriteCompMessage(text, attributes, colorArray);
+    }
+    CATCH_RETURN();
+    return S_OK;
+}
+
+[[nodiscard]]
+HRESULT ImeClearComposeData()
+{
+    try
+    {
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        gci.LockConsole();
+        auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+        ConsoleImeInfo* const pIme = &gci.ConsoleIme;
+        pIme->ClearAllAreas();
+    }
+    CATCH_RETURN();
+    return S_OK;
+}
+
+[[nodiscard]]
+HRESULT ImeComposeResult(std::wstring_view text)
+{
+    try
+    {
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        gci.LockConsole();
+        auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+        const Cursor& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
+        ConsoleImeInfo* const pIme = &gci.ConsoleIme;
+
         // Cursor turn ON.
         if (pIme->SavedCursorVisible)
         {
@@ -143,127 +237,14 @@ NTSTATUS ConsoleImeCompStr(_In_ LPCONIME_UICOMPMESSAGE CompStr)
 
         // Determine string.
         pIme->ClearAllAreas();
-        
-        if (CompStr->dwResultStrLen != 0)
+
+        if (!InsertConvertedString(text))
         {
-            #pragma prefast(suppress:26035, "CONIME_UICOMPMESSAGE structure impossible for PREfast to trace due to its structure.")
-            if (!InsertConvertedString((LPCWSTR) ((PBYTE) CompStr + CompStr->dwResultStrOffset)))
-            {
-                return STATUS_INVALID_HANDLE;
-            }
+            return E_HANDLE;
         }
 
-        if (pIme->CompStrData)
-        {
-            delete[] pIme->CompStrData;
-            pIme->CompStrData = nullptr;
-        }
+        pIme->ClearComposition();
     }
-    else
-    {
-        // Cursor turn OFF.
-        if (cursor.IsVisible())
-        {
-            pIme->SavedCursorVisible = true;
-
-            gci.GetActiveOutputBuffer().SetCursorInformation(
-                cursor.GetSize(),
-                FALSE,
-                cursor.GetColor(),
-                cursor.GetType()
-            );
-
-        }
-
-        try
-        {
-            pIme->WriteCompMessage(CompStr);
-        }
-        CATCH_LOG();
-    }
-
-    return STATUS_SUCCESS;
-}
-
-[[nodiscard]]
-NTSTATUS ConsoleImeResizeCompStrView()
-{
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    ConsoleImeInfo* const pIme = &gci.ConsoleIme;
-
-    // Compositon string
-    LPCONIME_UICOMPMESSAGE const CompStr = pIme->CompStrData;
-    if (CompStr)
-    {
-        try
-        {
-            pIme->WriteCompMessage(CompStr);
-        }
-        CATCH_LOG();
-    }
-
-    return STATUS_SUCCESS;
-}
-
-[[nodiscard]]
-HRESULT ConsoleImeResizeCompStrScreenBuffer(const COORD coordNewScreenSize)
-{
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    ConsoleImeInfo* const pIme = &gci.ConsoleIme;
-
-    return pIme->ResizeAllAreas(coordNewScreenSize);
-}
-
-// Routine Description:
-// - This routine handle WM_COPYDATA message.
-// Arguments:
-// - Console - Pointer to console information structure.
-// - wParam -
-// - lParam -
-// Return Value:
-[[nodiscard]]
-NTSTATUS ImeControl(_In_ PCOPYDATASTRUCT pCopyDataStruct)
-{
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    if (pCopyDataStruct == nullptr)
-    {
-        // fail safe.
-        return STATUS_SUCCESS;
-    }
-
-    switch ((LONG) pCopyDataStruct->dwData)
-    {
-        case CI_CONIMECOMPOSITION:
-            if (pCopyDataStruct->cbData >= sizeof(CONIME_UICOMPMESSAGE))
-            {
-                LPCONIME_UICOMPMESSAGE CompStr;
-
-                CompStr = (LPCONIME_UICOMPMESSAGE) pCopyDataStruct->lpData;
-                if (CompStr && CompStr->dwSize == pCopyDataStruct->cbData)
-                {
-                    if (gci.ConsoleIme.CompStrData)
-                    {
-                        delete[] gci.ConsoleIme.CompStrData;
-                    }
-
-                    gci.ConsoleIme.CompStrData = (LPCONIME_UICOMPMESSAGE) new(std::nothrow) BYTE[CompStr->dwSize];
-                    if (gci.ConsoleIme.CompStrData == nullptr)
-                    {
-                        break;
-                    }
-
-                    memmove(gci.ConsoleIme.CompStrData, CompStr, CompStr->dwSize);
-                    LOG_IF_FAILED(ConsoleImeCompStr(gci.ConsoleIme.CompStrData));
-                }
-            }
-            break;
-        case CI_ONSTARTCOMPOSITION:
-            gci.pInputBuffer->fInComposition = true;
-            break;
-        case CI_ONENDCOMPOSITION:
-            gci.pInputBuffer->fInComposition = false;
-            break;
-    }
-
-    return STATUS_SUCCESS;
+    CATCH_RETURN();
+    return S_OK;
 }

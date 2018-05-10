@@ -320,7 +320,7 @@ STDMETHODIMP CConsoleTSF::OnStartComposition(ITfCompositionView* pCompView, BOOL
             _cCompositions++;
             if (_cCompositions == 1)
             {
-                ConsoleImeSendMessage2(CI_ONSTARTCOMPOSITION, 0, NULL);
+                LOG_IF_FAILED(ImeStartComposition());
             }
         }
     }
@@ -348,7 +348,7 @@ STDMETHODIMP CConsoleTSF::OnEndComposition(ITfCompositionView* pCompView)
         if (!_cCompositions)
         {
             LOG_IF_FAILED(_OnCompleteComposition());
-            ConsoleImeSendMessage2(CI_ONENDCOMPOSITION, 0, NULL);
+            LOG_IF_FAILED(ImeEndComposition());
         }
     }
     return S_OK;

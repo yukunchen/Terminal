@@ -23,9 +23,6 @@ void WriteConvRegionToScreen(const SCREEN_INFORMATION& ScreenInfo,
                              const SMALL_RECT srConvRegion);
 
 [[nodiscard]]
-NTSTATUS ConsoleImeResizeCompStrView();
+HRESULT ConsoleImeResizeCompStrView();
 [[nodiscard]]
 HRESULT ConsoleImeResizeCompStrScreenBuffer(const COORD coordNewScreenSize);
-
-[[nodiscard]]
-NTSTATUS ImeControl(_In_ PCOPYDATASTRUCT pCopyDataStruct);

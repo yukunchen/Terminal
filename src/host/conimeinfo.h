@@ -27,8 +27,6 @@ class SCREEN_INFORMATION;
 class ConsoleImeInfo
 {
 public:
-    // Composition String information
-    LPCONIME_UICOMPMESSAGE CompStrData;
     bool SavedCursorVisible; // whether cursor is visible (set by user)
 
     // IME compositon string information
@@ -36,7 +34,7 @@ public:
     std::vector<ConversionAreaInfo> ConvAreaCompStr;
 
     ConsoleImeInfo();
-    ~ConsoleImeInfo();
+    ~ConsoleImeInfo() = default;
     ConsoleImeInfo(const ConsoleImeInfo&) = delete;
     ConsoleImeInfo(ConsoleImeInfo&&) = delete;
     ConsoleImeInfo& operator=(const ConsoleImeInfo&) & = delete;
@@ -46,7 +44,12 @@ public:
     void ClearAllAreas();
     HRESULT ResizeAllAreas(const COORD newSize);
 
-    void WriteCompMessage(const LPCONIME_UICOMPMESSAGE msg);
+    void WriteCompMessage(const std::wstring_view text,
+                          const std::basic_string_view<BYTE> attributes,
+                          const std::basic_string_view<WORD> colorArray);
+    void RedrawCompMessage();
+
+    void ClearComposition();
 
 private:
     [[nodiscard]]
@@ -69,4 +72,8 @@ private:
                                                                                  COORD& pos,
                                                                                  const SMALL_RECT view,
                                                                                  SCREEN_INFORMATION& screenInfo);
+
+    std::wstring _text;
+    std::basic_string<BYTE> _attributes;
+    std::basic_string<WORD> _colorArray;
 };

@@ -463,7 +463,7 @@ HRESULT DoSrvSetConsoleCursorPosition(SCREEN_INFORMATION& screenInfo,
 
     RETURN_IF_NTSTATUS_FAILED(screenInfo.SetCursorPosition(*pCursorPosition, true));
 
-    LOG_IF_NTSTATUS_FAILED(ConsoleImeResizeCompStrView());
+    LOG_IF_FAILED(ConsoleImeResizeCompStrView());
 
     COORD WindowOrigin;
     WindowOrigin.X = 0;

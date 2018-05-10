@@ -19,18 +19,9 @@
 #define COMMON_LVB_GRID_SINGLEFLAG 0x2000   // DBCS: Grid attribute: use for ime cursor.
 
 ConsoleImeInfo::ConsoleImeInfo() :
-    CompStrData(nullptr),
     SavedCursorVisible(FALSE)
 {
 
-}
-
-ConsoleImeInfo::~ConsoleImeInfo()
-{
-    if (CompStrData != nullptr)
-    {
-        delete[] CompStrData;
-    }
 }
 
 // Routine Description:
@@ -46,15 +37,34 @@ void ConsoleImeInfo::RefreshAreaAttributes()
     }
 }
 
-void ConsoleImeInfo::WriteCompMessage(const LPCONIME_UICOMPMESSAGE msg)
+void ConsoleImeInfo::RedrawCompMessage()
+{
+    if (_text.size() > 0)
+    {
+        ClearAllAreas();
+        _WriteUndeterminedChars(_text, _attributes, _colorArray);
+    }
+}
+
+void ConsoleImeInfo::WriteCompMessage(const std::wstring_view text,
+                                      const std::basic_string_view<BYTE> attributes,
+                                      const std::basic_string_view<WORD> colorArray)
 {
     ClearAllAreas();
 
-    const auto cch = msg->dwCompStrLen / sizeof(wchar_t);
-    const std::wstring_view text((LPWSTR)((PBYTE)msg + msg->dwCompStrOffset), cch);
-    const std::basic_string_view<BYTE> attributes((PBYTE)msg + msg->dwCompAttrOffset, cch);
-    const std::basic_string_view<WORD> colorArray((PWORD)msg->CompAttrColor, CONIME_ATTRCOLOR_SIZE);
+    // Save copies of the composition message in case we need to redraw it as things scroll/resize
+    _text = text;
+    _attributes = attributes;
+    _colorArray = colorArray;
+
     _WriteUndeterminedChars(text, attributes, colorArray);
+}
+
+void ConsoleImeInfo::ClearComposition()
+{
+    _text.clear();
+    _attributes.clear();
+    _colorArray.clear();
 }
 
 // Routine Description:
