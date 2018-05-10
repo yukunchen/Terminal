@@ -20,48 +20,9 @@ Revision History:
 #include "../buffer/out/TextAttribute.hpp"
 #include "../renderer/inc/FontInfo.hpp"
 
+#include "conareainfo.h"
+
 class SCREEN_INFORMATION;
-
-// Internal structures and definitions used by the conversion area.
-class ConversionAreaBufferInfo
-{
-public:
-    COORD coordCaBuffer;
-    SMALL_RECT rcViewCaWindow;
-    COORD coordConView;
-
-    ConversionAreaBufferInfo(const COORD coordBufferSize);
-};
-
-class ConversionAreaInfo final
-{
-public:
-    ConversionAreaInfo(const COORD bufferSize,
-                       const COORD windowSize,
-                       const CHAR_INFO fill,
-                       const CHAR_INFO popupFill,
-                       const FontInfo fontInfo);
-    ~ConversionAreaInfo();
-    ConversionAreaInfo(const ConversionAreaInfo&) = delete;
-    ConversionAreaInfo(ConversionAreaInfo&& other);
-    ConversionAreaInfo& operator=(const ConversionAreaInfo&) & = delete;
-    ConversionAreaInfo& operator=(ConversionAreaInfo&&) & = delete;
-
-    bool IsHidden() const;
-    void SetHidden(const bool fIsHidden);
-    void ClearArea();
-    HRESULT Resize(const COORD newSize);
-
-    void SetViewPos(const COORD pos);
-    void SetWindowInfo(const SMALL_RECT view);
-    void Paint() const;
-
-    ConversionAreaBufferInfo CaInfo;
-    SCREEN_INFORMATION* ScreenBuffer;
-
-private:
-    bool _fIsHidden;
-};
 
 class ConsoleImeInfo
 {
@@ -76,6 +37,10 @@ public:
 
     ConsoleImeInfo();
     ~ConsoleImeInfo();
+    ConsoleImeInfo(const ConsoleImeInfo&) = delete;
+    ConsoleImeInfo(ConsoleImeInfo&&) = delete;
+    ConsoleImeInfo& operator=(const ConsoleImeInfo&) & = delete;
+    ConsoleImeInfo& operator=(ConsoleImeInfo&&) & = delete;
 
     void RefreshAreaAttributes();
     void ClearAllAreas();
@@ -83,10 +48,10 @@ public:
 
     void WriteCompMessage(const LPCONIME_UICOMPMESSAGE msg);
 
-    [[nodiscard]]
-    HRESULT AddConversionArea();
-
 private:
+    [[nodiscard]]
+    HRESULT _AddConversionArea();
+
     void _WriteUndeterminedChars(const std::wstring_view text,
                                  const std::basic_string_view<BYTE> attributes,
                                  const std::basic_string_view<WORD> colorArray);

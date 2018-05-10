@@ -75,7 +75,6 @@ void WriteConvRegionToScreen(const SCREEN_INFORMATION& ScreenInfo,
     }
 }
 
-
 bool InsertConvertedString(_In_ LPCWSTR lpStr)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
