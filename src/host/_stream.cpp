@@ -562,9 +562,9 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                         try
                         {
                             const std::vector<wchar_t> blank{ UNICODE_SPACE };
-                            ULONG NumChars = WriteOutputStringW(screenInfo,
-                                                                blank,
-                                                                CursorPosition);
+                            ULONG NumChars = gsl::narrow<ULONG>(WriteOutputStringW(screenInfo,
+                                                                                   blank,
+                                                                                   CursorPosition));
                             Status = FillOutput(screenInfo, Attributes, CursorPosition, CONSOLE_ATTRIBUTE, &NumChars);
                         }
                         CATCH_LOG();
@@ -583,9 +583,9 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                         try
                         {
                             const std::vector<wchar_t> blank{ UNICODE_SPACE };
-                            ULONG NumChars = WriteOutputStringW(screenInfo,
-                                                                blank,
-                                                                cursor.GetPosition());
+                            ULONG NumChars = gsl::narrow<ULONG>(WriteOutputStringW(screenInfo,
+                                                                                   blank,
+                                                                                   cursor.GetPosition()));
                             Status = FillOutput(screenInfo, Attributes, cursor.GetPosition(), CONSOLE_ATTRIBUTE, &NumChars);
                         }
                         CATCH_LOG();
@@ -608,9 +608,9 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                 try
                 {
                     const std::vector<wchar_t> blank{ UNICODE_SPACE };
-                    ULONG NumChars = WriteOutputStringW(screenInfo,
-                                                        blank,
-                                                        cursor.GetPosition());
+                    ULONG NumChars = gsl::narrow<ULONG>(WriteOutputStringW(screenInfo,
+                                                                           blank,
+                                                                           cursor.GetPosition()));
                     Status = FillOutput(screenInfo, Attributes, cursor.GetPosition(), CONSOLE_ATTRIBUTE, &NumChars);
                 }
                 CATCH_LOG();
@@ -679,9 +679,9 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                     try
                     {
                         const std::vector<wchar_t> blanks(NumChars, UNICODE_SPACE);
-                        NumChars = WriteOutputStringW(screenInfo,
-                                                      blanks,
-                                                      cursor.GetPosition());
+                        NumChars = gsl::narrow<ULONG>(WriteOutputStringW(screenInfo,
+                                                                         blanks,
+                                                                         cursor.GetPosition()));
                         LOG_IF_FAILED(FillOutput(screenInfo, Attributes, cursor.GetPosition(), CONSOLE_ATTRIBUTE, &NumChars));
                     }
                     CATCH_LOG();
