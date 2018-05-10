@@ -1045,12 +1045,21 @@ NTSTATUS SrvWriteConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /
         {
             if (a->StringType == CONSOLE_ASCII)
             {
-                a->NumRecords = BufferSize;
-                Status = WriteOutputString(pScreenInfo->GetActiveBuffer(),
-                                           Buffer,
-                                           a->WriteCoord,
-                                           a->StringType,
-                                           &a->NumRecords);
+
+                try
+                {
+                    const ULONG elementCount = BufferSize;
+                    const char* const pChars = reinterpret_cast<const char* const>(Buffer);
+                    std::vector<char> chars{ pChars, pChars + elementCount };
+                    a->NumRecords = WriteOutputStringA(pScreenInfo->GetActiveBuffer(),
+                                                       chars,
+                                                       a->WriteCoord);
+                }
+                catch (...)
+                {
+                    a->NumRecords = 0;
+                    Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+                }
             }
             else if (a->StringType == CONSOLE_ATTRIBUTE)
             {
