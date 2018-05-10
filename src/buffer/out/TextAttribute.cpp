@@ -209,3 +209,13 @@ bool TextAttribute::IsRightVerticalDisplayed() const noexcept
 {
     return IsFlagSet(_wAttrLegacy, COMMON_LVB_GRID_RVERTICAL);
 }
+
+void TextAttribute::SetLeftVerticalDisplayed(const bool isDisplayed) noexcept
+{
+    UpdateFlag(_wAttrLegacy, COMMON_LVB_GRID_LVERTICAL, isDisplayed);
+}
+
+void TextAttribute::SetRightVerticalDisplayed(const bool isDisplayed) noexcept
+{
+    UpdateFlag(_wAttrLegacy, COMMON_LVB_GRID_RVERTICAL, isDisplayed);
+}

@@ -71,7 +71,7 @@ const TextBuffer& RenderData::GetImeCompositionStringBuffer(_In_ size_t iIndex)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     THROW_HR_IF(E_INVALIDARG, iIndex >= gci.ConsoleIme.ConvAreaCompStr.size());
-    return gci.ConsoleIme.ConvAreaCompStr[iIndex]->ScreenBuffer->GetTextBuffer();
+    return gci.ConsoleIme.ConvAreaCompStr[iIndex].ScreenBuffer->GetTextBuffer();
 }
 
 std::vector<SMALL_RECT> RenderData::GetSelectionRects()

@@ -23,6 +23,9 @@ Revision History:
 
 #define CONIME_ATTRCOLOR_SIZE 8
 
+#define CONIME_CURSOR_RIGHT 0x10
+#define CONIME_CURSOR_LEFT  0x20
+
 typedef __struct_bcount(dwSize) struct _CONIME_UICOMPMESSAGE {
     DWORD dwSize;
     DWORD dwCompAttrLen;

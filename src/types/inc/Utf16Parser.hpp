@@ -20,7 +20,7 @@ Author(s):
 class Utf16Parser final
 {
 public:
-    static std::vector<std::vector<wchar_t>> Parse(const std::wstring& wstr);
+    static std::vector<std::vector<wchar_t>> Parse(std::wstring_view wstr);
 
 private:
     wchar_t _partialSequence;

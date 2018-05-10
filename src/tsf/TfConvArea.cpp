@@ -125,11 +125,11 @@ HRESULT CConversionArea::DrawConversionAreaInfo(CComBSTR CompStr,
         {
             if (CompCursorPos == 0)
             {
-                lpCompAttr[CompCursorPos]   |= (BYTE)0x20;   // special handling for ConSrv... 0x20 = COMMON_LVB_GRID_SINGLEFLAG + COMMON_LVB_GRID_LVERTICAL
+                lpCompAttr[CompCursorPos]   |= (BYTE)CONIME_CURSOR_LEFT;   // special handling for ConSrv... 0x20 = COMMON_LVB_GRID_SINGLEFLAG + COMMON_LVB_GRID_LVERTICAL
             }
             else if (CompCursorPos-1 < cchDisplayAttribute)
             {
-                lpCompAttr[CompCursorPos-1] |= (BYTE)0x10;   // special handling for ConSrv... 0x10 = COMMON_LVB_GRID_SINGLEFLAG + COMMON_LVB_GRID_RVERTICAL
+                lpCompAttr[CompCursorPos-1] |= (BYTE)CONIME_CURSOR_RIGHT;   // special handling for ConSrv... 0x10 = COMMON_LVB_GRID_SINGLEFLAG + COMMON_LVB_GRID_RVERTICAL
             }
         }
 

@@ -1661,7 +1661,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeScreenBuffer(const COORD coordNewScreenSize,
 
         if ((!ConvScreenInfo))
         {
-            if (!NT_SUCCESS(ConsoleImeResizeCompStrScreenBuffer(coordNewScreenSize)))
+            if (FAILED(ConsoleImeResizeCompStrScreenBuffer(coordNewScreenSize)))
             {
                 // If something went wrong, just bail out.
                 return STATUS_INVALID_HANDLE;

@@ -62,6 +62,9 @@ public:
     bool IsLeftVerticalDisplayed() const noexcept;
     bool IsRightVerticalDisplayed() const noexcept;
 
+    void SetLeftVerticalDisplayed(const bool isDisplayed) noexcept;
+    void SetRightVerticalDisplayed(const bool isDisplayed) noexcept;
+
     void SetFromLegacy(const WORD wLegacy) noexcept;
     void SetMetaAttributes(const WORD wMeta) noexcept;
 
