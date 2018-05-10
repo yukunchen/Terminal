@@ -169,9 +169,9 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const SMALL_RECT srRegion)
 // - target - the starting coordinate in the screen
 // Return Value:
 // - number of elements written
-ULONG WriteOutputAttributes(SCREEN_INFORMATION& screenInfo,
-                            const std::vector<WORD>& attrs,
-                            const COORD target)
+size_t WriteOutputAttributes(SCREEN_INFORMATION& screenInfo,
+                             const std::vector<WORD>& attrs,
+                             const COORD target)
 {
     if (attrs.empty())
     {
@@ -184,7 +184,7 @@ ULONG WriteOutputAttributes(SCREEN_INFORMATION& screenInfo,
         return 0;
     }
 
-    ULONG elementsWritten = 0;
+    size_t elementsWritten = 0;
     COORD currentLocation = target;
     std::vector<TextAttributeRun> runs{ TextAttributeRun() };
     runs.front().SetLength(1);
@@ -234,9 +234,9 @@ ULONG WriteOutputAttributes(SCREEN_INFORMATION& screenInfo,
 // - target - the starting coordinate in the screen
 // Return Value:
 // - number of elements written
-ULONG WriteOutputStringW(SCREEN_INFORMATION& screenInfo,
-                         const std::vector<wchar_t> chars,
-                         const COORD target)
+size_t WriteOutputStringW(SCREEN_INFORMATION& screenInfo,
+                          const std::vector<wchar_t> chars,
+                          const COORD target)
 {
     if (chars.empty())
     {
@@ -250,7 +250,7 @@ ULONG WriteOutputStringW(SCREEN_INFORMATION& screenInfo,
     }
 
     // convert to utf16
-    std::wstring wstr{ chars.begin(), chars.end() };
+    const std::wstring wstr{ chars.begin(), chars.end() };
     const auto formattedCharData = Utf16Parser::Parse(wstr);
 
     // convert to cells
@@ -270,7 +270,7 @@ ULONG WriteOutputStringW(SCREEN_INFORMATION& screenInfo,
     const auto cellsWritten = screenInfo.WriteLineNoWrap(cells, target.Y, target.X);
 
     // count number of glyphs that were written
-    ULONG amountWritten = 0;
+    size_t amountWritten = 0;
     for (auto it = cells.begin(); it != cells.begin() + cellsWritten; ++it)
     {
         if (!it->DbcsAttr().IsTrailing())
@@ -298,9 +298,9 @@ ULONG WriteOutputStringW(SCREEN_INFORMATION& screenInfo,
 // - target - the starting coordinate in the screen
 // Return Value:
 // - number of elements written
-ULONG WriteOutputStringA(SCREEN_INFORMATION& screenInfo,
-                         const std::vector<char> chars,
-                         const COORD target)
+size_t WriteOutputStringA(SCREEN_INFORMATION& screenInfo,
+                          const std::vector<char> chars,
+                          const COORD target)
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     try
@@ -314,7 +314,7 @@ ULONG WriteOutputStringA(SCREEN_INFORMATION& screenInfo,
                                    outWchs,
                                    count));
 
-        std::vector<wchar_t> wchs{ outWchs.get(),  outWchs.get() + count };
+        const std::vector<wchar_t> wchs{ outWchs.get(), outWchs.get() + count };
         const auto wideCharsWritten = WriteOutputStringW(screenInfo, wchs, target);
 
         // convert wideCharsWritten to amount of ascii chars written so we can properly report back
@@ -325,7 +325,7 @@ ULONG WriteOutputStringA(SCREEN_INFORMATION& screenInfo,
                                    wideCharsWritten,
                                    outChars,
                                    count));
-        return gsl::narrow<ULONG>(count);
+        return count;
     }
     CATCH_LOG();
     return 0;
