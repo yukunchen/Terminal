@@ -24,8 +24,6 @@
 
 using namespace Microsoft::Console::Types;
 
-#define MAX_POLY_LINES 80
-
 
 void StreamWriteToScreenBuffer(SCREEN_INFORMATION& screenInfo,
                                const std::wstring& wstr,
