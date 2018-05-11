@@ -137,9 +137,8 @@ class AliasTests
                                          buffer.get(),
                                          cbBuffer,
                                          &bufferUsed,
-                                         exe.data(),
-                                         static_cast<USHORT>(exe.size() * sizeof(wchar_t)),
-                                         &linesActual);
+                                         exe,
+                                         linesActual);
 
         // Null terminate buffer for comparison
         buffer[bufferUsed / sizeof(wchar_t)] = L'\0';
@@ -167,14 +166,11 @@ class AliasTests
         ULONG cbTargetUsed = 0;
         auto const cbTargetUsedBefore = cbTargetUsed;
 
-        PWSTR pwszExe = L"exe.exe";
-        USHORT cbExe = static_cast<USHORT>(wcslen(pwszExe) * sizeof(wchar_t));
-
         DWORD dwLines = 0;
         auto const dwLinesBefore = dwLines;
 
         // Register the wrong alias name before we try.
-        std::wstring exe(pwszExe);
+        std::wstring exe(L"exe.exe");
         std::wstring sourceWithoutCRLF(L"SourceWithoutCRLF");
         std::wstring target(L"someTarget");
         Alias::s_TestAddAlias(exe, sourceWithoutCRLF, target);
@@ -187,9 +183,8 @@ class AliasTests
                                          rgwchTarget.get(),
                                          cbTarget,
                                          &cbTargetUsed,
-                                         pwszExe,
-                                         cbExe,
-                                         &dwLines);
+                                         exe,
+                                         dwLines);
 
         // Terminate target buffer with \0 for comparison
         rgwchTarget[cbTargetUsed] = L'\0';
@@ -213,20 +208,18 @@ class AliasTests
         const ULONG cbTarget = static_cast<ULONG>(cchTarget * sizeof(wchar_t));
         ULONG cbTargetUsed = cbTarget;
 
-        PWSTR pwszExe = L"exe.exe";
-        USHORT cbExe = static_cast<USHORT>(wcslen(pwszExe) * sizeof(wchar_t));
-
         DWORD dwLines = 0;
         auto const dwLinesBefore = dwLines;
+
+        std::wstring exeName;
 
         Alias::s_MatchAndCopyAliasLegacy(pwszSource,
                                          cbSource,
                                          rgwchTarget.get(),
                                          cbTarget,
                                          &cbTargetUsed,
-                                         nullptr, // exename nullptr alloc failure
-                                         cbExe,
-                                         &dwLines);
+                                         exeName,
+                                         dwLines);
 
         VERIFY_ARE_EQUAL(cbTarget, cbTargetUsed, L"Byte count shouldn't have changed with failure.");
         VERIFY_ARE_EQUAL(dwLinesBefore, dwLines, L"Line count shouldn't have changed with failure.");
@@ -247,8 +240,7 @@ class AliasTests
         ULONG cbTargetUsed = 0;
         auto const cbTargetUsedBefore = cbTargetUsed;
 
-        PWSTR pwszExe = L"exe.exe";
-        USHORT cbExe = static_cast<USHORT>(wcslen(pwszExe) * sizeof(wchar_t));
+        std::wstring exeName(L"exe.exe");
 
         DWORD dwLines = 0;
         auto const dwLinesBefore = dwLines;
@@ -258,9 +250,8 @@ class AliasTests
                                          rgwchTarget.get(),
                                          cbTarget,
                                          &cbTargetUsed,
-                                         pwszExe, // we didn't pre-set-up the exe name
-                                         cbExe,
-                                         &dwLines);
+                                         exeName, // we didn't pre-set-up the exe name
+                                         dwLines);
 
         VERIFY_ARE_EQUAL(cbTargetUsedBefore, cbTargetUsed, L"No bytes should have been written.");
         VERIFY_ARE_EQUAL(String(rgwchTargetBefore.get(), cchTarget), String(rgwchTarget.get(), cchTarget), L"Target string should be unmodified.");
@@ -282,14 +273,11 @@ class AliasTests
         ULONG cbTargetUsed = 0;
         auto const cbTargetUsedBefore = cbTargetUsed;
 
-        PWSTR pwszExe = L"exe.exe";
-        USHORT cbExe = static_cast<USHORT>(wcslen(pwszExe) * sizeof(wchar_t));
-
         DWORD dwLines = 0;
         auto const dwLinesBefore = dwLines;
 
         // Register the wrong alias name before we try.
-        std::wstring exe(pwszExe);
+        std::wstring exe(L"exe.exe");
         std::wstring badSource(L"wrongSource");
         std::wstring target(L"someTarget");
         Alias::s_TestAddAlias(exe, badSource, target);
@@ -299,9 +287,8 @@ class AliasTests
                                          rgwchTarget.get(),
                                          cbTarget,
                                          &cbTargetUsed,
-                                         pwszExe,
-                                         cbExe,
-                                         &dwLines);
+                                         exe,
+                                         dwLines);
 
         VERIFY_ARE_EQUAL(cbTargetUsedBefore, cbTargetUsed, L"No bytes should be used if nothing was found.");
         VERIFY_ARE_EQUAL(String(rgwchTargetBefore.get(), cchTarget), String(rgwchTarget.get(), cchTarget), L"Target string should be unmodified.");
@@ -323,14 +310,11 @@ class AliasTests
         ULONG cbTargetUsed = 0;
         auto const cbTargetUsedBefore = cbTargetUsed;
 
-        PWSTR pwszExe = L"exe.exe";
-        USHORT cbExe = static_cast<USHORT>(wcslen(pwszExe) * sizeof(wchar_t));
-
         DWORD dwLines = 0;
         auto const dwLinesBefore = dwLines;
 
         // Register the correct alias name before we try.
-        std::wstring exe(pwszExe);
+        std::wstring exe(L"exe.exe");
         std::wstring source(pwszSource);
         std::wstring target(L"someTarget");
         Alias::s_TestAddAlias(exe, source, target);
@@ -341,9 +325,8 @@ class AliasTests
                                          rgwchTarget.get(),
                                          1, // Make the target size too small
                                          &cbTargetUsed,
-                                         pwszExe,
-                                         cbExe,
-                                         &dwLines);
+                                         exe,
+                                         dwLines);
 
         VERIFY_ARE_EQUAL(cbTargetUsedBefore, cbTargetUsed, L"Byte count shouldn't have changed with failure.");
         VERIFY_ARE_EQUAL(dwLinesBefore, dwLines, L"Line count shouldn't have changed with failure.");
@@ -364,14 +347,11 @@ class AliasTests
         ULONG cbTargetUsed = 0;
         auto const cbTargetUsedExpected = cbTarget;
 
-        PWSTR pwszExe = L"exe.exe";
-        USHORT cbExe = static_cast<USHORT>(wcslen(pwszExe) * sizeof(wchar_t));
-
         DWORD dwLines = 0;
         auto const dwLinesExpected = dwLines + 1;
 
         // Register the correct alias name before we try.
-        std::wstring exe(pwszExe);
+        std::wstring exe(L"exe.exe");
         std::wstring source(L"Source");
         std::wstring target(L"someTarget");
         Alias::s_TestAddAlias(exe, source, target);
@@ -384,9 +364,8 @@ class AliasTests
                                          rgwchTarget.get(),
                                          cbTarget,
                                          &cbTargetUsed,
-                                         pwszExe,
-                                         cbExe,
-                                         &dwLines);
+                                         exe,
+                                         dwLines);
 
         VERIFY_ARE_EQUAL(cbTargetUsedExpected, cbTargetUsed, L"No target bytes should be used.");
         VERIFY_ARE_EQUAL(String(targetExpected.data(), gsl::narrow<int>(targetExpected.size())), String(rgwchTarget.get(), cchTarget), L"Target string should match expected.");

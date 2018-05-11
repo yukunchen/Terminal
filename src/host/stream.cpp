@@ -487,8 +487,7 @@ NTSTATUS ReadLineInput(_Inout_ InputBuffer* const pInputBuffer,
                        const ULONG cbInitialData,
                        const DWORD dwCtrlWakeupMask,
                        _In_ INPUT_READ_HANDLE_DATA* const pHandleData,
-                       _In_reads_bytes_opt_(cbExeName) const wchar_t* const pwsExeName,
-                       const ULONG cbExeName,
+                       const std::wstring& exeName,
                        const bool Unicode,
                        _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter,
                        const size_t OutputBufferSize)
@@ -560,7 +559,8 @@ NTSTATUS ReadLineInput(_Inout_ InputBuffer* const pInputBuffer,
                                     !!gci.GetInsertMode(), // InsertMode
                                     IsFlagSet(pInputBuffer->InputMode, ENABLE_PROCESSED_INPUT), // Processed
                                     IsFlagSet(pInputBuffer->InputMode, ENABLE_LINE_INPUT), // Line
-                                    pTempHandleData); // pTempHandle
+                                    pTempHandleData,
+                                    exeName); // pTempHandle
 
     if (cbInitialData > 0)
     {
@@ -584,23 +584,9 @@ NTSTATUS ReadLineInput(_Inout_ InputBuffer* const pInputBuffer,
         }
     }
 
-    if (cbExeName > 0)
-    {
-        CookedReadData.ExeNameLength = (USHORT)cbExeName;
-        CookedReadData.ExeName = (wchar_t*) new(std::nothrow) BYTE[CookedReadData.ExeNameLength];
-        if (CookedReadData.ExeName)
-        {
-            memcpy_s(CookedReadData.ExeName, CookedReadData.ExeNameLength, pwsExeName, cbExeName);
-        }
-        else
-        {
-            CookedReadData.ExeNameLength = 0;
-        }
-    }
-
     gci.lpCookedReadData = &CookedReadData;
 
-    Status = CookedRead(&CookedReadData, Unicode, pReadByteCount, pControlKeyState);
+    Status = CookedReadData.Read(Unicode, *pReadByteCount, *pControlKeyState);
     if (CONSOLE_STATUS_WAIT == Status)
     {
         COOKED_READ_DATA* pCookedReadWaiter = new(std::nothrow) COOKED_READ_DATA(std::move(CookedReadData));
@@ -840,8 +826,7 @@ NTSTATUS DoReadConsole(_Inout_ InputBuffer* const pInputBuffer,
                        const ULONG cbInitialData,
                        const DWORD dwCtrlWakeupMask,
                        _In_ INPUT_READ_HANDLE_DATA* const pHandleData,
-                       _In_reads_bytes_opt_(cbExeName) const wchar_t* const pwsExeName,
-                       const ULONG cbExeName,
+                       const std::wstring& exeName,
                        const bool Unicode,
                        _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
 {
@@ -878,8 +863,7 @@ NTSTATUS DoReadConsole(_Inout_ InputBuffer* const pInputBuffer,
                             cbInitialData,
                             dwCtrlWakeupMask,
                             pHandleData,
-                            pwsExeName,
-                            cbExeName,
+                            exeName,
                             Unicode,
                             ppWaiter,
                             OutputBufferSize);
@@ -913,11 +897,7 @@ HRESULT ApiRoutines::ReadConsoleAImpl(_Inout_ IConsoleInputObject* const pInCont
     ULONG ulTextBuffer;
     RETURN_IF_FAILED(SizeTToULong(cchTextBuffer, &ulTextBuffer));
 
-    size_t cbExeName;
-    RETURN_IF_FAILED(SizeTMult(cchExeName, sizeof(wchar_t), &cbExeName));
-
-    ULONG ulExeName;
-    RETURN_IF_FAILED(SizeTToULong(cbExeName, &ulExeName));
+    const std::wstring exeName{ pwsExeName, cchExeName };
 
     ULONG ulInitialData;
     RETURN_IF_FAILED(SizeTToULong(cchInitialData, &ulInitialData));
@@ -938,8 +918,7 @@ HRESULT ApiRoutines::ReadConsoleAImpl(_Inout_ IConsoleInputObject* const pInCont
                                           ulInitialData,
                                           dwControlWakeupMask,
                                           pHandleData,
-                                          pwsExeName,
-                                          ulExeName,
+                                          exeName,
                                           false,
                                           ppWaiter);
 
@@ -975,11 +954,7 @@ HRESULT ApiRoutines::ReadConsoleWImpl(_Inout_ IConsoleInputObject* const pInCont
     ULONG ulInitialData;
     RETURN_IF_FAILED(SizeTToULong(cbInitialData, &ulInitialData));
 
-    size_t cbExeName;
-    RETURN_IF_FAILED(SizeTMult(cchExeName, sizeof(wchar_t), &cbExeName));
-
-    ULONG ulExeName;
-    RETURN_IF_FAILED(SizeTToULong(cbExeName, &ulExeName));
+    const std::wstring exeName{ pwsExeName, cchExeName };
 
     NTSTATUS const Status = DoReadConsole(pInContext,
                                           hConsoleClient,
@@ -990,8 +965,7 @@ HRESULT ApiRoutines::ReadConsoleWImpl(_Inout_ IConsoleInputObject* const pInCont
                                           ulInitialData,
                                           dwControlWakeupMask,
                                           pHandleData,
-                                          pwsExeName,
-                                          ulExeName,
+                                          exeName,
                                           true,
                                           ppWaiter);
 

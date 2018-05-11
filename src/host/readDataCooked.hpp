@@ -28,9 +28,6 @@ Revision History:
 
 #include "readData.hpp"
 
-// TODO MSFT:11285829 this should be made into a method
-#define AT_EOL(COOKEDREADDATA) ((COOKEDREADDATA)->_BytesRead == ((COOKEDREADDATA)->_CurrentPosition*2))
-
 class COOKED_READ_DATA final : public ReadData
 {
 public:
@@ -52,10 +49,13 @@ public:
                      _In_ bool InsertMode,
                      _In_ bool Processed,
                      _In_ bool Line,
-                     _In_ ConsoleHandleData* pTempHandle
+                     _In_ ConsoleHandleData* pTempHandle,
+                     const std::wstring& exeName
         );
     ~COOKED_READ_DATA() override;
     COOKED_READ_DATA(COOKED_READ_DATA&&) = default;
+
+    bool AtEol() const;
 
     bool Notify(const WaitTerminationReason TerminationReason,
                 const bool fIsUnicode,
@@ -86,12 +86,21 @@ public:
 
 // TODO MSFT:11285829 these variables need to be added to the
 // constructor or otherwise handled during object construction.
-    PWCHAR ExeName;
-    USHORT ExeNameLength;
     ULONG ControlKeyState;
     COORD BeforeDialogCursorPosition; // Currently only used for F9 (ProcessCommandNumberInput) since it's the only pop-up to move the cursor when it starts.
     bool _fIsUnicode;
     DWORD* pdwNumBytes;
+
+    void ProcessAliases(DWORD& lineCount);
+
+    [[nodiscard]]
+    HRESULT Read(const bool isUnicode,
+                 ULONG& numBytes,
+                 ULONG& controlKeyState);
+
+    bool ProcessInput(const wchar_t wch,
+                      const DWORD keyState,
+                      NTSTATUS& status);
 
 // TODO MSFT:11285829 this is a temporary kludge until the constructors are ironed
 // out, so that we can still run the tests in the meantime.
@@ -101,15 +110,7 @@ public:
     {
     }
 #endif
+
+private:
+    std::wstring _exeName;
 };
-
-[[nodiscard]]
-NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
-                    const bool fIsUnicode,
-                    _Inout_ ULONG* const cbNumBytes,
-                    _Out_ ULONG* const ulControlKeyState);
-
-bool ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
-                            _In_ WCHAR wch,
-                            const DWORD dwKeyState,
-                            _Out_ NTSTATUS* pStatus);

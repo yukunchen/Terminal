@@ -570,20 +570,12 @@ NTSTATUS ProcessCommandListInput(_In_ COOKED_READ_DATA* const pCookedReadData)
             Index = Popup->CurrentCommand;
             LOG_IF_FAILED(EndPopup(pCookedReadData->_screenInfo, pCommandHistory));
             SetCurrentCommandLine(pCookedReadData, Index);
-            ProcessCookedReadInput(pCookedReadData, UNICODE_CARRIAGERETURN, 0, &Status);
+            pCookedReadData->ProcessInput(UNICODE_CARRIAGERETURN, 0, Status);
             // complete read
             if (pCookedReadData->_Echo)
             {
                 // check for alias
-                Alias::s_MatchAndCopyAliasLegacy(pCookedReadData->_BackupLimit,
-                                                 pCookedReadData->_BytesRead,
-                                                 pCookedReadData->_BackupLimit,
-                                                 pCookedReadData->_BufferSize,
-                                                 &pCookedReadData->_BytesRead,
-                                                 pCookedReadData->ExeName,
-                                                 pCookedReadData->ExeNameLength,
-                                                 &LineCount);
-
+                pCookedReadData->ProcessAliases(LineCount);
             }
 
             Status = STATUS_SUCCESS;
@@ -1770,7 +1762,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
             pCookedReadData->_screenInfo.SetCursorDBMode((!!pCookedReadData->_InsertMode != gci.GetInsertMode()));
             break;
         case VK_DELETE:
-            if (!AT_EOL(pCookedReadData))
+            if (!pCookedReadData->AtEol())
             {
                 COORD CursorPosition;
 
@@ -1830,7 +1822,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                 // If Ctrl key is pressed, delete a word.
                 // If the start point was word delimiter, just remove delimiters portion only.
                 if ((dwKeyState & CTRL_PRESSED) &&
-                    !AT_EOL(pCookedReadData) &&
+                    !pCookedReadData->AtEol() &&
                     fStartFromDelim ^ !IsWordDelim(*pCookedReadData->_BufPtr))
                 {
                     goto del_repeat;

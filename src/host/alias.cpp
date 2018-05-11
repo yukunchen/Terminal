@@ -1268,16 +1268,13 @@ void Alias::s_MatchAndCopyAliasLegacy(_In_reads_bytes_(cbSource) PWCHAR pwchSour
                                       _Out_writes_bytes_(*pcbTarget) PWCHAR pwchTarget,
                                       _In_ ULONG cbTargetSize,
                                       _Out_ PULONG pcbTargetWritten,
-                                      _In_reads_bytes_(cbExe) PWCHAR pwchExe,
-                                      _In_ USHORT cbExe,
-                                      _Out_ PDWORD pcLines)
+                                      const std::wstring& exeName,
+                                      DWORD& lines)
 {
     try
     {
-        THROW_HR_IF(E_POINTER, pwchExe == nullptr);
-        std::wstring exeName(pwchExe, cbExe / sizeof(WCHAR));
         std::wstring sourceText(pwchSource, cbSource / sizeof(WCHAR));
-        size_t lineCount = *pcLines;
+        size_t lineCount = lines;
 
         const auto targetText = s_MatchAndCopyAlias(sourceText, exeName, lineCount);
 
@@ -1296,7 +1293,7 @@ void Alias::s_MatchAndCopyAliasLegacy(_In_reads_bytes_(cbSource) PWCHAR pwchSour
                 *pcbTargetWritten = gsl::narrow<ULONG>(targetText.size() * sizeof(wchar_t));
 
                 // Return lines info.
-                *pcLines = gsl::narrow<DWORD>(lineCount);
+                lines = gsl::narrow<DWORD>(lineCount);
             }
         }
     }
