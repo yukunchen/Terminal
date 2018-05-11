@@ -1247,7 +1247,6 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
         case VTStates::Ss3Param:
             return _EventSs3Param(wch);
         default:
-            //assert(false);
             return;
         }
     }
@@ -1313,7 +1312,7 @@ void StateMachine::ProcessString(const wchar_t* const rgwch, const size_t cch)
         {
             if (s_IsActionableFromGround(*_pwchCurr))  // If the current char is the start of an escape sequence, or should be executed in ground state...
             {
-                assert(_pwchSequenceStart + _currRunLength <= rgwch + cch);
+                FAIL_FAST_IF_FALSE(_pwchSequenceStart + _currRunLength <= rgwch + cch);
                 #pragma prefast(push)
                 #pragma prefast(disable:__WARNING_BUFFER_OVERFLOW, "Not sure why prefast is getting confused here. Assert immediately above ensures this is fine.")
                 _pEngine->ActionPrintString(_pwchSequenceStart, _currRunLength); // ... print all the chars leading up to it as part of the run...

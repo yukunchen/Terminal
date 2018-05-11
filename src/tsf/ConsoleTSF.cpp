@@ -23,7 +23,6 @@ HRESULT CConsoleTSF::Initialize()
 
     if (_spITfThreadMgr)
     {
-        Assert(0);
         return S_FALSE;
     }
 
@@ -162,7 +161,7 @@ void CConsoleTSF::Uninitialize()
     {
         CComPtr<ITfDocumentMgr> spDocMgr;
         _spITfThreadMgr->AssociateFocus(_hwndConsole, NULL, &spDocMgr);
-        Assert(!spDocMgr || spDocMgr == _spITfDocumentMgr);
+        FAIL_FAST_IF_FALSE(!spDocMgr || spDocMgr == _spITfDocumentMgr);
     }
 
     // Dismiss the input context and document manager.

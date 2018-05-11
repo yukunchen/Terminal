@@ -719,7 +719,7 @@ NTSTATUS ConIoSrvComm::InitializeBgfx()
     NTSTATUS Status;
 
     Globals& globals = ServiceLocator::LocateGlobals();
-    assert(globals.pRender != nullptr);
+    FAIL_FAST_IF_NULL(globals.pRender);
     IWindowMetrics * const Metrics = ServiceLocator::LocateWindowMetrics();
 
     // Fetch the display size from the console driver.
@@ -759,7 +759,7 @@ NTSTATUS ConIoSrvComm::InitializeBgfx()
 NTSTATUS ConIoSrvComm::InitializeWddmCon()
 {
     Globals& globals = ServiceLocator::LocateGlobals();
-    assert(globals.pRender != nullptr);
+    FAIL_FAST_IF_NULL(globals.pRender);
     
     try
     {

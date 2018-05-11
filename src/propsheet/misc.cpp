@@ -421,7 +421,7 @@ DestroyFonts(
  */
 int FontEnumForV2Console(ENUMLOGFONT *pelf, NEWTEXTMETRIC *pntm, int nFontType, LPARAM lParam)
 {
-    assert(ShouldAllowAllMonoTTFonts());
+    FAIL_FAST_IF_FALSE(ShouldAllowAllMonoTTFonts());
     UINT i;
     LPCTSTR ptszFace = pelf->elfLogFont.lfFaceName;
     PFACENODE pFN;

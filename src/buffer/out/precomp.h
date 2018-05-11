@@ -27,7 +27,6 @@ Abstract:
 
 // Windows Header Files:
 #include <windows.h>
-#include <assert.h>
 #include <intsafe.h>
 
 // private dependencies

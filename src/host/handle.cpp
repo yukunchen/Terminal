@@ -107,6 +107,5 @@ NTSTATUS CONSOLE_INFORMATION::AllocateConsole(_In_reads_bytes_(cbTitle) const WC
 ErrorExit2:
     delete gci.pInputBuffer;
 
-    ASSERT(!NT_SUCCESS(Status));
     return Status;
 }

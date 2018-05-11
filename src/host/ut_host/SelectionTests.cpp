@@ -291,14 +291,14 @@ class SelectionTests
 
         // #1: left to right selection
         m_pSelection->_coordSelectionAnchor.X = m_pSelection->_srSelectionRect.Left;
-        ASSERT(m_pSelection->_srSelectionRect.Bottom == m_pSelection->_srSelectionRect.Top);
+        VERIFY_IS_TRUE(m_pSelection->_srSelectionRect.Bottom == m_pSelection->_srSelectionRect.Top);
         m_pSelection->_coordSelectionAnchor.Y = m_pSelection->_srSelectionRect.Bottom;
 
         VerifyGetSelectionRects_LineMode();
 
         // #2: right to left selection
         m_pSelection->_coordSelectionAnchor.X = m_pSelection->_srSelectionRect.Right;
-        ASSERT(m_pSelection->_srSelectionRect.Bottom == m_pSelection->_srSelectionRect.Top);
+        VERIFY_IS_TRUE(m_pSelection->_srSelectionRect.Bottom == m_pSelection->_srSelectionRect.Top);
         m_pSelection->_coordSelectionAnchor.Y = m_pSelection->_srSelectionRect.Top;
 
         VerifyGetSelectionRects_LineMode();
@@ -439,7 +439,7 @@ class SelectionInputTests
         srectEdges.Right = srectEdges.Bottom = sRowWidth - 1;
 
         // false when no cooked read data exists
-        ASSERT(gci.lpCookedReadData == nullptr);
+        VERIFY_IS_TRUE(gci.lpCookedReadData == nullptr);
 
         bool fResult = Selection::s_GetInputLineBoundaries(nullptr, nullptr);
         VERIFY_IS_FALSE(fResult);

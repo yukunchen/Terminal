@@ -34,16 +34,6 @@ Icon::~Icon()
     _DestroyNonDefaultIcons();
 }
 
-Icon::Icon(Icon const&)
-{
-    ASSERT(false); // no copies of the singleton
-}
-
-void Icon::operator=(Icon const&)
-{
-    ASSERT(false); // no copies of the singleton
-}
-
 // Routine Description:
 // - Returns the singleton instance of the Icon
 // Arguments:
@@ -256,10 +246,10 @@ HRESULT Icon::_GetAvailableIconFromReference(_In_ HICON& hIconRef, _In_ HICON& h
     HRESULT hr = S_OK;
 
     // expecting hIconRef to be pointing to either the regular or small custom handles
-    ASSERT(&hIconRef == &_hIcon || &hIconRef == &_hSmIcon);
+    FAIL_FAST_IF_FALSE(&hIconRef == &_hIcon || &hIconRef == &_hSmIcon);
 
     // expecting hDefaultIconRef to be pointing to either the regular or small default handles
-    ASSERT(&hDefaultIconRef == &_hDefaultIcon || &hDefaultIconRef == &_hDefaultSmIcon);
+    FAIL_FAST_IF_FALSE(&hDefaultIconRef == &_hDefaultIcon || &hDefaultIconRef == &_hDefaultSmIcon);
 
     if (hIconRef != nullptr)
     {
@@ -284,7 +274,7 @@ HRESULT Icon::_GetAvailableIconFromReference(_In_ HICON& hIconRef, _In_ HICON& h
 HRESULT Icon::_GetDefaultIconFromReference(_In_ HICON& hIconRef, _Out_ HICON* const phIcon)
 {
     // expecting hIconRef to be pointing to either the regular or small default handles
-    ASSERT(&hIconRef == &_hDefaultIcon || &hIconRef == &_hDefaultSmIcon);
+    FAIL_FAST_IF_FALSE(&hIconRef == &_hDefaultIcon || &hIconRef == &_hDefaultSmIcon);
 
     HRESULT hr = _Initialize();
 
@@ -308,7 +298,7 @@ HRESULT Icon::_GetDefaultIconFromReference(_In_ HICON& hIconRef, _Out_ HICON* co
 HRESULT Icon::_SetIconFromReference(_In_ HICON& hIconRef, const HICON hNewIcon)
 {
     // expecting hIconRef to be pointing to either the regular or small custom handles
-    ASSERT(&hIconRef == &_hIcon || &hIconRef == &_hSmIcon);
+    FAIL_FAST_IF_FALSE(&hIconRef == &_hIcon || &hIconRef == &_hSmIcon);
 
     HRESULT hr = S_OK;
 
@@ -340,7 +330,7 @@ HRESULT Icon::_SetIconFromReference(_In_ HICON& hIconRef, const HICON hNewIcon)
 void Icon::_FreeIconFromReference(_In_ HICON& hIconRef)
 {
     // expecting hIconRef to be pointing to either the regular or small custom handles
-    ASSERT(&hIconRef == &_hIcon || &hIconRef == &_hSmIcon);
+    FAIL_FAST_IF_FALSE(&hIconRef == &_hIcon || &hIconRef == &_hSmIcon);
 
     if (hIconRef != nullptr)
     {
