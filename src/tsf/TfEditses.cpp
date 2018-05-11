@@ -869,27 +869,6 @@ HRESULT CEditSessionUpdateCompositionString::_MakeCompositionString(TfEditCookie
     // Allocate and fill TF_DISPLAYATTRIBUTE
     try
     {
-        ULONG cchDisplayAttribute = (ULONG)CompGuid.Count();
-        std::vector<TF_DISPLAYATTRIBUTE> DisplayAttributes;
-        DisplayAttributes.reserve(cchDisplayAttribute);
-
-        for (DWORD i = 0; i < cchDisplayAttribute; i++) {
-            TF_DISPLAYATTRIBUTE da;
-            ZeroMemory(&da, sizeof(da));
-            da.bAttr = TF_ATTR_OTHER;
-
-            GUID guid;
-            if (SUCCEEDED(cat->GetGUID(*CompGuid.GetAt(i), &guid))) {
-                CLSID clsid;
-                CComPtr<ITfDisplayAttributeInfo> dai;
-                if (SUCCEEDED(dam->GetDisplayAttributeInfo(guid, &dai, &clsid))) {
-                    dai->GetAttributeInfo(&da);
-                }
-            }
-
-            DisplayAttributes.emplace_back(da);
-        }
-
         // Get conversion area service.
         CConversionArea* conv_area = g_pConsoleTSF ? g_pConsoleTSF->GetConversionArea() : NULL;
         RETURN_HR_IF_NULL(E_FAIL, conv_area);
@@ -898,6 +877,27 @@ HRESULT CEditSessionUpdateCompositionString::_MakeCompositionString(TfEditCookie
             return conv_area->DrawResult(ResultStr);
         }
         if (CompStr) {
+            ULONG cchDisplayAttribute = (ULONG)CompGuid.Count();
+            std::vector<TF_DISPLAYATTRIBUTE> DisplayAttributes;
+            DisplayAttributes.reserve(cchDisplayAttribute);
+
+            for (DWORD i = 0; i < cchDisplayAttribute; i++) {
+                TF_DISPLAYATTRIBUTE da;
+                ZeroMemory(&da, sizeof(da));
+                da.bAttr = TF_ATTR_OTHER;
+
+                GUID guid;
+                if (SUCCEEDED(cat->GetGUID(*CompGuid.GetAt(i), &guid))) {
+                    CLSID clsid;
+                    CComPtr<ITfDisplayAttributeInfo> dai;
+                    if (SUCCEEDED(dam->GetDisplayAttributeInfo(guid, &dai, &clsid))) {
+                        dai->GetAttributeInfo(&da);
+                    }
+                }
+
+                DisplayAttributes.emplace_back(da);
+            }
+
             return conv_area->DrawComposition(CompStr, // composition string
                                               DisplayAttributes, // display attributes
                                               CompCursorPos.GetCursorPosition()); // cursor position
@@ -980,29 +980,7 @@ HRESULT CEditSessionUpdateCompositionString::_MakeInterimString(TfEditCookie ec,
     // Allocate and fill TF_DISPLAYATTRIBUTE
     try
     {
-        ULONG cchDisplayAttribute = (ULONG)CompGuid.Count();
-        std::vector<TF_DISPLAYATTRIBUTE> DisplayAttributes;
-        DisplayAttributes.reserve(cchDisplayAttribute);
-
-        for (DWORD i = 0; i < cchDisplayAttribute; i++) {
-            TF_DISPLAYATTRIBUTE da;
-            ZeroMemory(&da, sizeof(da));
-            da.bAttr = TF_ATTR_OTHER;
-            GUID  guid;
-            if (SUCCEEDED(cat->GetGUID(*CompGuid.GetAt(i), &guid))) {
-                CLSID clsid;
-                CComPtr<ITfDisplayAttributeInfo> dai;
-                if (SUCCEEDED(dam->GetDisplayAttributeInfo(guid, &dai, &clsid))) {
-                    dai->GetAttributeInfo(&da);
-                }
-            }
-
-            DisplayAttributes.emplace_back(da);
-        }
-
-        //
         // Get conversion area service.
-        //
         CConversionArea* conv_area = g_pConsoleTSF ? g_pConsoleTSF->GetConversionArea() : NULL;
         RETURN_HR_IF_NULL(E_FAIL, conv_area);
 
@@ -1010,6 +988,26 @@ HRESULT CEditSessionUpdateCompositionString::_MakeInterimString(TfEditCookie ec,
             return conv_area->DrawResult(ResultStr);
         }
         if (CompStr) {
+            ULONG cchDisplayAttribute = (ULONG)CompGuid.Count();
+            std::vector<TF_DISPLAYATTRIBUTE> DisplayAttributes;
+            DisplayAttributes.reserve(cchDisplayAttribute);
+
+            for (DWORD i = 0; i < cchDisplayAttribute; i++) {
+                TF_DISPLAYATTRIBUTE da;
+                ZeroMemory(&da, sizeof(da));
+                da.bAttr = TF_ATTR_OTHER;
+                GUID  guid;
+                if (SUCCEEDED(cat->GetGUID(*CompGuid.GetAt(i), &guid))) {
+                    CLSID clsid;
+                    CComPtr<ITfDisplayAttributeInfo> dai;
+                    if (SUCCEEDED(dam->GetDisplayAttributeInfo(guid, &dai, &clsid))) {
+                        dai->GetAttributeInfo(&da);
+                    }
+                }
+
+                DisplayAttributes.emplace_back(da);
+            }
+
             return conv_area->DrawComposition(CompStr, // composition string (Interim string)
                                               DisplayAttributes); // display attributes
         }

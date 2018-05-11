@@ -1258,15 +1258,15 @@ NTSTATUS DoSrvPrivateBackwardsTab(const SHORT sNumTabs)
 void DoSrvPrivateTabClear(const bool fClearAll)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& _screenBuffer = gci.GetActiveOutputBuffer();
+    SCREEN_INFORMATION& screenBuffer = gci.GetActiveOutputBuffer();
     if (fClearAll)
     {
-        _screenBuffer.ClearTabStops();
+        screenBuffer.ClearTabStops();
     }
     else
     {
-        const COORD cursorPos = _screenBuffer.GetTextBuffer().GetCursor().GetPosition();
-        _screenBuffer.ClearTabStop(cursorPos.X);
+        const COORD cursorPos = screenBuffer.GetTextBuffer().GetCursor().GetPosition();
+        screenBuffer.ClearTabStop(cursorPos.X);
     }
 }
 

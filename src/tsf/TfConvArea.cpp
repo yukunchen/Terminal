@@ -33,15 +33,15 @@ HRESULT CConversionArea::DrawComposition(const CComBSTR& CompStr,
                                          const DWORD CompCursorPos)
 {
     // Set up colors.
-    const std::array<WORD, CONIME_ATTRCOLOR_SIZE> colors{ DEFAULT_COMP_ENTERED,
-                                                          DEFAULT_COMP_ALREADY_CONVERTED,
-                                                          DEFAULT_COMP_CONVERSION,
-                                                          DEFAULT_COMP_YET_CONVERTED,
-                                                          DEFAULT_COMP_INPUT_ERROR,
-                                                          DEFAULT_COMP_INPUT_ERROR,
-                                                          DEFAULT_COMP_INPUT_ERROR,
-                                                          DEFAULT_COMP_INPUT_ERROR
-                                                        };
+    static const std::array<WORD, CONIME_ATTRCOLOR_SIZE> colors{ DEFAULT_COMP_ENTERED,
+                                                                 DEFAULT_COMP_ALREADY_CONVERTED,
+                                                                 DEFAULT_COMP_CONVERSION,
+                                                                 DEFAULT_COMP_YET_CONVERTED,
+                                                                 DEFAULT_COMP_INPUT_ERROR,
+                                                                 DEFAULT_COMP_INPUT_ERROR,
+                                                                 DEFAULT_COMP_INPUT_ERROR,
+                                                                 DEFAULT_COMP_INPUT_ERROR
+                                                               };
 
     std::wstring_view text(CompStr, CompStr.Length());
 
