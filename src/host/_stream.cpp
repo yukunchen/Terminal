@@ -202,15 +202,6 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
     Cursor& cursor = textBuffer.GetCursor();
     COORD CursorPosition = cursor.GetPosition();
     NTSTATUS Status = STATUS_SUCCESS;
-    static const WCHAR Blanks[TAB_SIZE] = { UNICODE_SPACE,
-        UNICODE_SPACE,
-        UNICODE_SPACE,
-        UNICODE_SPACE,
-        UNICODE_SPACE,
-        UNICODE_SPACE,
-        UNICODE_SPACE,
-        UNICODE_SPACE
-    };
     SHORT XPosition;
     WCHAR LocalBuffer[LOCAL_BUFFER_SIZE];
     DWORD TempNumSpaces = 0;
@@ -568,14 +559,15 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                     // overwrite second character of ^x sequence.
                     if (dwFlags & WC_DESTRUCTIVE_BACKSPACE)
                     {
-                        ULONG NumChars = 1;
-                        LOG_IF_FAILED(WriteOutputString(screenInfo,
-                                                        Blanks,
-                                                        CursorPosition,
-                                                        CONSOLE_FALSE_UNICODE,   // faster than real unicode
-                                                        &NumChars,
-                                                        nullptr));
-                        Status = FillOutput(screenInfo, Attributes, CursorPosition, CONSOLE_ATTRIBUTE, &NumChars);
+                        try
+                        {
+                            const std::vector<wchar_t> blank{ UNICODE_SPACE };
+                            ULONG NumChars = gsl::narrow<ULONG>(WriteOutputStringW(screenInfo,
+                                                                                   blank,
+                                                                                   CursorPosition));
+                            Status = FillOutput(screenInfo, Attributes, CursorPosition, CONSOLE_ATTRIBUTE, &NumChars);
+                        }
+                        CATCH_LOG();
                     }
 
                     CursorPosition.X -= 1;
@@ -588,14 +580,15 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                     Status = AdjustCursorPosition(screenInfo, CursorPosition, dwFlags & WC_KEEP_CURSOR_VISIBLE, psScrollY);
                     if (dwFlags & WC_DESTRUCTIVE_BACKSPACE)
                     {
-                        ULONG NumChars = 1;
-                        Status = WriteOutputString(screenInfo,
-                                                   Blanks,
-                                                   cursor.GetPosition(),
-                                                   CONSOLE_FALSE_UNICODE, // faster than real unicode
-                                                   &NumChars,
-                                                   nullptr);
-                        Status = FillOutput(screenInfo, Attributes, cursor.GetPosition(), CONSOLE_ATTRIBUTE, &NumChars);
+                        try
+                        {
+                            const std::vector<wchar_t> blank{ UNICODE_SPACE };
+                            ULONG NumChars = gsl::narrow<ULONG>(WriteOutputStringW(screenInfo,
+                                                                                   blank,
+                                                                                   cursor.GetPosition()));
+                            Status = FillOutput(screenInfo, Attributes, cursor.GetPosition(), CONSOLE_ATTRIBUTE, &NumChars);
+                        }
+                        CATCH_LOG();
                     }
                     CursorPosition.X -= 1;
                 }
@@ -612,14 +605,15 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
             Status = AdjustCursorPosition(screenInfo, CursorPosition, (dwFlags & WC_KEEP_CURSOR_VISIBLE) != 0, psScrollY);
             if (dwFlags & WC_DESTRUCTIVE_BACKSPACE)
             {
-                ULONG NumChars = 1;
-                LOG_IF_FAILED(WriteOutputString(screenInfo,
-                                                Blanks,
-                                                cursor.GetPosition(),
-                                                CONSOLE_FALSE_UNICODE,  //faster than real unicode
-                                                &NumChars,
-                                                nullptr));
-                Status = FillOutput(screenInfo, Attributes, cursor.GetPosition(), CONSOLE_ATTRIBUTE, &NumChars);
+                try
+                {
+                    const std::vector<wchar_t> blank{ UNICODE_SPACE };
+                    ULONG NumChars = gsl::narrow<ULONG>(WriteOutputStringW(screenInfo,
+                                                                           blank,
+                                                                           cursor.GetPosition()));
+                    Status = FillOutput(screenInfo, Attributes, cursor.GetPosition(), CONSOLE_ATTRIBUTE, &NumChars);
+                }
+                CATCH_LOG();
             }
             if (cursor.GetPosition().X == 0 && (screenInfo.OutputMode & ENABLE_WRAP_AT_EOL_OUTPUT) && pwchBuffer > pwchBufferBackupLimit)
             {
@@ -682,13 +676,15 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
 
                 if (!IsFlagSet(dwFlags, WC_NONDESTRUCTIVE_TAB))
                 {
-                    LOG_IF_FAILED(WriteOutputString(screenInfo,
-                                                    Blanks,
-                                                    cursor.GetPosition(),
-                                                    CONSOLE_FALSE_UNICODE,  // faster than real unicode
-                                                    &NumChars,
-                                                    nullptr));
-                    LOG_IF_FAILED(FillOutput(screenInfo, Attributes, cursor.GetPosition(), CONSOLE_ATTRIBUTE, &NumChars));
+                    try
+                    {
+                        const std::vector<wchar_t> blanks(NumChars, UNICODE_SPACE);
+                        NumChars = gsl::narrow<ULONG>(WriteOutputStringW(screenInfo,
+                                                                         blanks,
+                                                                         cursor.GetPosition()));
+                        LOG_IF_FAILED(FillOutput(screenInfo, Attributes, cursor.GetPosition(), CONSOLE_ATTRIBUTE, &NumChars));
+                    }
+                    CATCH_LOG();
                 }
 
             }

@@ -1045,14 +1045,64 @@ NTSTATUS SrvWriteConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /
         {
             if (a->StringType == CONSOLE_ASCII)
             {
-                a->NumRecords = BufferSize;
+
+                try
+                {
+                    const ULONG elementCount = BufferSize;
+                    const char* const pChars = reinterpret_cast<const char* const>(Buffer);
+                    std::vector<char> chars{ pChars, pChars + elementCount };
+                    a->NumRecords = gsl::narrow<ULONG>(WriteOutputStringA(pScreenInfo->GetActiveBuffer(),
+                                                                          chars,
+                                                                          a->WriteCoord));
+                }
+                catch (...)
+                {
+                    a->NumRecords = 0;
+                    Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+                }
+            }
+            else if (a->StringType == CONSOLE_ATTRIBUTE)
+            {
+                try
+                {
+                    const ULONG elementCount = BufferSize / sizeof(WORD);
+                    const WORD* const pAttrs = reinterpret_cast<const WORD* const>(Buffer);
+                    std::vector<WORD> attrs{ pAttrs, pAttrs + elementCount };
+                    a->NumRecords = gsl::narrow<ULONG>(WriteOutputAttributes(pScreenInfo->GetActiveBuffer(),
+                                                                             attrs,
+                                                                             a->WriteCoord));
+                    Status = STATUS_SUCCESS;
+                }
+                catch (...)
+                {
+                    a->NumRecords = 0;
+                    Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+                }
+            }
+            else if (a->StringType == CONSOLE_REAL_UNICODE ||
+                     a->StringType == CONSOLE_FALSE_UNICODE)
+            {
+                try
+                {
+                    const ULONG elementCount = BufferSize / sizeof(wchar_t);
+                    const wchar_t* const pChars = reinterpret_cast<const wchar_t* const>(Buffer);
+                    std::vector<wchar_t> chars{ pChars, pChars + elementCount };
+                    a->NumRecords = gsl::narrow<ULONG>(WriteOutputStringW(pScreenInfo->GetActiveBuffer(),
+                                                                          chars,
+                                                                          a->WriteCoord));
+                    Status = STATUS_SUCCESS;
+                }
+                catch (...)
+                {
+                    a->NumRecords = 0;
+                    Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+                }
             }
             else
             {
-                a->NumRecords = BufferSize / sizeof(WCHAR);
+                a->NumRecords = 0;
+                Status = STATUS_INVALID_PARAMETER;
             }
-
-            Status = WriteOutputString(pScreenInfo->GetActiveBuffer(), Buffer, a->WriteCoord, a->StringType, &a->NumRecords, nullptr);
         }
     }
 
