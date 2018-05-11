@@ -776,7 +776,7 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
                 fillRect.Bottom = clipRect.Bottom;
             }
 
-            FillRectangle(&fillWith, screenInfo, &fillRect);
+            FillRectangle(screenInfo, { fillWith }, fillRect);
 
             ScrollScreen(screenInfo, &scrollRect2, &fillRect, targetPoint);
         }
@@ -789,7 +789,7 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
         {
             const COORD TargetPoint{ targetRectangle.Left, targetRectangle.Top };
             _CopyRectangle(screenInfo, scrollRect2, TargetPoint);
-            FillRectangle(&fillWith, screenInfo, &scrollRect3);
+            FillRectangle(screenInfo, { fillWith }, scrollRect3);
             ScrollScreen(screenInfo, &scrollRect2, &scrollRect3, TargetPoint);
         }
 
@@ -804,7 +804,7 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
             std::vector<std::vector<OutputCell>> outputCells;
             outputCells = ReadRectFromScreenBuffer(screenInfo, sourcePoint, Viewport::FromInclusive(targetRect));
 
-            FillRectangle(&fillWith, screenInfo, &scrollRect3);
+            FillRectangle(screenInfo, { fillWith }, scrollRect3);
 
             const SMALL_RECT sourceRect{ 0, 0, size.X - 1i16, size.Y - 1i16 };
             const COORD targetPoint{ targetRectangle.Left, targetRectangle.Top };
@@ -818,7 +818,7 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
     else
     {
         // Do fill.
-        FillRectangle(&fillWith, screenInfo, &scrollRect3);
+        FillRectangle(screenInfo, { fillWith }, scrollRect3);
 
         WriteToScreen(screenInfo, scrollRect3);
     }
