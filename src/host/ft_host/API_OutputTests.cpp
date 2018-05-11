@@ -205,7 +205,7 @@ void OutputTests::WriteConsoleOutputAttributeCheckerTest()
     VERIFY_SUCCEEDED(ReadConsoleOutputCharacter(consoleOutputHandle, resultWchs.get(), size, coord, &charsRead));
     VERIFY_ARE_EQUAL(charsRead, size);
 
-    // confirm that attributes where set without affecting text
+    // confirm that attributes were set without affecting text
     for (size_t i = 0; i < size; ++i)
     {
         VERIFY_ARE_EQUAL(attrs[i], resultAttrs[i]);

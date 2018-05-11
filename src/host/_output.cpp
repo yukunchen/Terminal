@@ -173,14 +173,13 @@ size_t WriteOutputAttributes(SCREEN_INFORMATION& screenInfo,
 
     size_t elementsWritten = 0;
     COORD currentLocation = target;
-    std::vector<TextAttributeRun> runs{ TextAttributeRun() };
+    std::vector<TextAttributeRun> runs{ {} };
     runs.front().SetLength(1);
     // write attrs
-    for (size_t i = 0; i < attrs.size(); ++i)
+    for (auto currentAttr : attrs)
     {
         ROW& row = screenInfo.GetTextBuffer().GetRowByOffset(currentLocation.Y);
         ATTR_ROW& attrRow = row.GetAttrRow();
-        WORD currentAttr = attrs.at(i);
         // clear dbcs bits
         ClearAllFlags(currentAttr, COMMON_LVB_SBCSDBCS);
         // add to attr row
