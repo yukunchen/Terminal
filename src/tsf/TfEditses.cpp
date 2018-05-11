@@ -614,79 +614,59 @@ HRESULT CEditSessionObject::_GetNoDisplayAttributeRange(TfEditCookie ec, ITfRang
 [[nodiscard]]
 HRESULT CEditSessionCompositionComplete::CompComplete(TfEditCookie ec)
 {
-    HRESULT hr;
-
     ITfContext* pic = g_pConsoleTSF ? g_pConsoleTSF->GetInputContext() : NULL;
-    if (pic == NULL) {
-        return E_FAIL;
-    }
+    RETURN_HR_IF_NULL(E_FAIL, pic);
 
-    //
     // Get the whole text, finalize it, and set empty string in TOM
-    //
     CComPtr<ITfRange> spRange;
     LONG cch;
 
-    hr = GetAllTextRange(ec, pic, &spRange, &cch);
-    if (SUCCEEDED(hr))
+    RETURN_IF_FAILED(GetAllTextRange(ec, pic, &spRange, &cch));
+
+    // Check if a part of the range has already been finalized but not removed yet.
+    // Adjust the range appropriately to avoid inserting the same text twice.
+    long cchCompleted = g_pConsoleTSF->GetCompletedRangeLength();
+    if ((cchCompleted > 0) &&
+        (cchCompleted < cch) &&
+        SUCCEEDED(spRange->ShiftStart(ec, cchCompleted, &cchCompleted, NULL)))
     {
-        // Check if a part of the range has already been finalized but not removed yet.
-        // Adjust the range appropriately to avoid inserting the same text twice.
-        long cchCompleted = g_pConsoleTSF->GetCompletedRangeLength();
-        if ((cchCompleted > 0) &&
-            (cchCompleted < cch) &&
-            SUCCEEDED(spRange->ShiftStart(ec, cchCompleted, &cchCompleted, NULL)))
-        {
-            Assert((cchCompleted > 0) && (cchCompleted < cch));
-            cch -= cchCompleted;
-        }
-        else
-        {
-            cchCompleted = 0;
-        }
+        Assert((cchCompleted > 0) && (cchCompleted < cch));
+        cch -= cchCompleted;
+    }
+    else
+    {
+        cchCompleted = 0;
+    }
 
-        //
-        // Get conversion area service.
-        //
-        CConversionArea* conv_area = g_pConsoleTSF->GetConversionArea();
-        if (conv_area == NULL) {
-            return E_FAIL;
-        }
+    // Get conversion area service.
+    CConversionArea* conv_area = g_pConsoleTSF->GetConversionArea();
+    RETURN_HR_IF_NULL(E_FAIL, conv_area);
 
-        //
-        // If there is no string in TextStore we don't have to do anything.
-        //
-        if (!cch) {
-            //
-            // Clear composition
-            //
-            hr = conv_area->ClearComposition();
+    // If there is no string in TextStore we don't have to do anything.
+    if (!cch) {
+        // Clear composition
+        LOG_IF_FAILED(conv_area->ClearComposition());
+        return S_OK;
+    }
 
-            return S_OK;
-        }
+    HRESULT hr = S_OK;
+    try
+    {
+        auto wstr = std::make_unique<WCHAR[]>(cch + 1);
 
-        LPWSTR wstr = new(std::nothrow) WCHAR[cch + 1];
-        if (!wstr) {
-            return E_OUTOFMEMORY;
-        }
-
-        //
         // Get the whole text, finalize it, and erase the whole text.
-        //
-        if (SUCCEEDED(spRange->GetText(ec, TF_TF_IGNOREEND, wstr, (ULONG)cch, (ULONG*)&cch)))
+        if (SUCCEEDED(spRange->GetText(ec, TF_TF_IGNOREEND, wstr.get(), (ULONG)cch, (ULONG*)&cch)))
         {
-
-            //
             // Make Result String.
-            //
-            CCompString ResultStr(wstr, cch);
+            CCompString ResultStr(wstr.get(), cch);
             hr = conv_area->DrawResult(ResultStr);
         }
-        delete[] wstr;
-
-        // Update the stored length of the completed fragment.
-        g_pConsoleTSF->SetCompletedRangeLength(cchCompleted + cch);
     }
+    CATCH_RETURN();
+
+    // Update the stored length of the completed fragment.
+    g_pConsoleTSF->SetCompletedRangeLength(cchCompleted + cch);
+
     return hr;
 }
 
@@ -950,8 +930,7 @@ HRESULT CEditSessionUpdateCompositionString::_MakeInterimString(TfEditCookie ec,
     RETURN_HR_IF(E_FAIL, lStartResult > 0);
 
     FullTextRange->CompareEnd(ec, InterimRange, TF_ANCHOR_END, &lEndResult);
-    RETURN_HR_IF(E_FAIL, lEndResult < 0);
-    RETURN_HR_IF(E_FAIL, lEndResult > 1);
+    RETURN_HR_IF(E_FAIL, lEndResult != 1);
 
     CCompString ResultStr;
 

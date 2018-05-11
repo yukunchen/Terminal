@@ -139,10 +139,12 @@ public:
                    const size_t rowIndex,
                    const size_t startIndex);
 
+    void ClearTextData();
+
     std::pair<COORD, COORD> GetWordBoundary(const COORD position) const;
 
-    TextBuffer& GetTextBuffer();
-    const TextBuffer& GetTextBuffer() const;
+    TextBuffer& GetTextBuffer() noexcept;
+    const TextBuffer& GetTextBuffer() const noexcept;
 
 
 

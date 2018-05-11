@@ -5,12 +5,14 @@ Module Name:
 - conimeinfo.h
 
 Abstract:
-- This module contains the structures for the console IME
+- This module contains the structures for the console IME entrypoints
+  for overall control
 
 Author:
-- KazuM
+- Michael Niksa (MiNiksa) 10-May-2018
 
 Revision History:
+- From pieces of convarea.cpp originally authored by KazuM
 --*/
 
 #pragma once
@@ -24,11 +26,9 @@ Revision History:
 
 class SCREEN_INFORMATION;
 
-class ConsoleImeInfo
+class ConsoleImeInfo final
 {
 public:
-    bool SavedCursorVisible; // whether cursor is visible (set by user)
-
     // IME compositon string information
     // There is one "composition string" per line that must be rendered on the screen
     std::vector<ConversionAreaInfo> ConvAreaCompStr;
@@ -42,22 +42,29 @@ public:
 
     void RefreshAreaAttributes();
     void ClearAllAreas();
+
+    [[nodiscard]]
     HRESULT ResizeAllAreas(const COORD newSize);
 
     void WriteCompMessage(const std::wstring_view text,
                           const std::basic_string_view<BYTE> attributes,
                           const std::basic_string_view<WORD> colorArray);
-    void RedrawCompMessage();
 
-    void ClearComposition();
+    void WriteResultMessage(const std::wstring_view text);
+
+    void RedrawCompMessage();
 
 private:
     [[nodiscard]]
     HRESULT _AddConversionArea();
 
+    void _ClearComposition();
+
     void _WriteUndeterminedChars(const std::wstring_view text,
                                  const std::basic_string_view<BYTE> attributes,
                                  const std::basic_string_view<WORD> colorArray);
+
+    void _InsertConvertedString(const std::wstring_view text);
 
     static TextAttribute s_RetrieveAttributeAt(const size_t pos,
                                                const std::basic_string_view<BYTE> attributes,
@@ -72,6 +79,10 @@ private:
                                                                                  COORD& pos,
                                                                                  const SMALL_RECT view,
                                                                                  SCREEN_INFORMATION& screenInfo);
+
+    void _SaveCursorVisibility();
+    void _RestoreCursorVisibility();
+    bool _isSavedCursorVisible;
 
     std::wstring _text;
     std::basic_string<BYTE> _attributes;

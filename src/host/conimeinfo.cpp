@@ -19,7 +19,7 @@
 #define COMMON_LVB_GRID_SINGLEFLAG 0x2000   // DBCS: Grid attribute: use for ime cursor.
 
 ConsoleImeInfo::ConsoleImeInfo() :
-    SavedCursorVisible(FALSE)
+    _isSavedCursorVisible(false)
 {
 
 }
@@ -33,23 +33,37 @@ void ConsoleImeInfo::RefreshAreaAttributes()
 
     for (auto& area : ConvAreaCompStr)
     {
-        area.ScreenBuffer->SetAttributes(attributes);
+        area.SetAttributes(attributes);
     }
 }
 
+// Routine Description:
+// - Takes the internally held composition message data from the last WriteCompMessage call
+//   and attempts to redraw it on the screen which will account for changes in viewport dimensions
 void ConsoleImeInfo::RedrawCompMessage()
 {
-    if (_text.size() > 0)
+    if (!_text.empty())
     {
         ClearAllAreas();
         _WriteUndeterminedChars(_text, _attributes, _colorArray);
     }
 }
 
+// Routine Description:
+// - Writes an undetermined composition message to the screen including the text
+//   and color and cursor positioning attribute data so the user can walk through
+//   what they're proposing to insert into the buffer.
+// Arguments:
+// - text - The actual text of what the user would like to insert (UTF-16)
+// - attributes - Encoded attributes including the cursor position and the color index (to the array)
+// - colorArray - An array of colors to use for the text
 void ConsoleImeInfo::WriteCompMessage(const std::wstring_view text,
                                       const std::basic_string_view<BYTE> attributes,
                                       const std::basic_string_view<WORD> colorArray)
 {
+    // Backup the cursor visibility state and turn it off for drawing.
+    _SaveCursorVisibility();
+
     ClearAllAreas();
 
     // Save copies of the composition message in case we need to redraw it as things scroll/resize
@@ -60,7 +74,25 @@ void ConsoleImeInfo::WriteCompMessage(const std::wstring_view text,
     _WriteUndeterminedChars(text, attributes, colorArray);
 }
 
-void ConsoleImeInfo::ClearComposition()
+// Routine Description:
+// - Writes the final result into the screen buffer through the input queue
+//   as if the user had inputted it (if their keyboard was able to)
+// Arguments:
+// - text - The actual text of what the user would like to insert (UTF-16)
+void ConsoleImeInfo::WriteResultMessage(const std::wstring_view text)
+{
+    _RestoreCursorVisibility();
+
+    ClearAllAreas();
+
+    _InsertConvertedString(text);
+
+    _ClearComposition();
+}
+
+// Routine Description:
+// - Clears internally cached composition data from the last WriteCompMessage call.
+void ConsoleImeInfo::_ClearComposition()
 {
     _text.clear();
     _attributes.clear();
@@ -86,6 +118,7 @@ void ConsoleImeInfo::ClearAllAreas()
 // - newSize - New size for conversion areas
 // Return Value:
 // - S_OK or appropriate failure HRESULT.
+[[nodiscard]]
 HRESULT ConsoleImeInfo::ResizeAllAreas(const COORD newSize)
 {
     for (auto& area : ConvAreaCompStr)
@@ -143,6 +176,15 @@ HRESULT ConsoleImeInfo::_AddConversionArea()
     return S_OK;
 }
 
+// Routine Description:
+// - Helper method to decode the cursor and color position out of the encoded attributes
+//   and color array and return it in the TextAttribute structure format
+// Arguments:
+// - pos - Character position in the string (and matching encoded attributes array)
+// - attributes - Encoded attributes holding cursor and color array position
+// - colorArray - Colors to choose from
+// Return Value:
+// - TextAttribute object with color and cursor and line drawing data.
 TextAttribute ConsoleImeInfo::s_RetrieveAttributeAt(const size_t pos,
                                                     const std::basic_string_view<BYTE> attributes,
                                                     const std::basic_string_view<WORD> colorArray)
@@ -155,8 +197,8 @@ TextAttribute ConsoleImeInfo::s_RetrieveAttributeAt(const size_t pos,
     // Legacy attribute is in the color/line format that is understood for drawing
     // We use the lower 3 bits (0-7) from the encoded attribute as the array index to start
     // creating our legacy attribute.
-    WORD legacyAttribute = colorArray[encodedAttribute & 0x7];
-       
+    WORD legacyAttribute = colorArray[encodedAttribute & (CONIME_ATTRCOLOR_SIZE - 1)];
+
     if (IsFlagSet(encodedAttribute, CONIME_CURSOR_RIGHT))
     {
         SetFlag(legacyAttribute, COMMON_LVB_GRID_SINGLEFLAG);
@@ -167,7 +209,7 @@ TextAttribute ConsoleImeInfo::s_RetrieveAttributeAt(const size_t pos,
         SetFlag(legacyAttribute, COMMON_LVB_GRID_SINGLEFLAG);
         SetFlag(legacyAttribute, COMMON_LVB_GRID_LVERTICAL);
     }
-    
+
     return TextAttribute(legacyAttribute);
 }
 
@@ -320,7 +362,7 @@ std::vector<OutputCell>::const_iterator ConsoleImeInfo::_WriteConversionArea(con
     auto& area = ConvAreaCompStr.back();
 
     // Write our text into the conversion area.
-    area.ScreenBuffer->WriteLine(lineVec, 0, insertionPos.X);
+    area.WriteText(lineVec, insertionPos.X);
 
     // Set the viewport and positioning parameters for the conversion area to describe to the renderer
     // the appropriate location to overlay this conversion area on top of the main screen buffer inside the viewport.
@@ -367,7 +409,7 @@ void ConsoleImeInfo::_WriteUndeterminedChars(const std::wstring_view text,
     FAIL_FAST_IF(text.size() != attributes.size());
 
     // If we have no text, return. We've already cleared above.
-    if (text.size() < 1)
+    if (text.empty())
     {
         return;
     }
@@ -393,4 +435,68 @@ void ConsoleImeInfo::_WriteUndeterminedChars(const std::wstring_view text,
     {
         begin = _WriteConversionArea(begin, end, pos, view, screenInfo);
     } while (begin < end);
+}
+
+// Routine Description:
+// - Takes the final text string and injects it into the input buffer
+// Arguments:
+// - text - The text to inject into the input buffer
+void ConsoleImeInfo::_InsertConvertedString(const std::wstring_view text)
+{
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    auto& screenInfo = gci.GetActiveOutputBuffer();
+    if (screenInfo.GetTextBuffer().GetCursor().IsOn())
+    {
+        screenInfo.GetTextBuffer().GetCursor().TimerRoutine(screenInfo);
+    }
+
+    const DWORD dwControlKeyState = GetControlKeyState(0);
+    std::deque<std::unique_ptr<IInputEvent>> inEvents;
+    KeyEvent keyEvent{ TRUE, // keydown
+        1, // repeatCount
+        0, // virtualKeyCode
+        0, // virtualScanCode
+        0, // charData
+        dwControlKeyState }; // activeModifierKeys
+
+    for (const auto& ch : text)
+    {
+        keyEvent.SetCharData(ch);
+        inEvents.push_back(std::make_unique<KeyEvent>(keyEvent));
+    }
+
+    gci.pInputBuffer->Write(inEvents);
+}
+
+// Routine Description:
+// - Backs up the global cursor visibility state if it is shown and disables
+//   it while we work on the conversion areas.
+void ConsoleImeInfo::_SaveCursorVisibility()
+{
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    Cursor& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
+
+    // Cursor turn OFF.
+    if (cursor.IsVisible())
+    {
+        _isSavedCursorVisible = true;
+
+        cursor.SetIsVisible(false);
+    }
+}
+
+// Routine Description:
+// - Restores the global cursor visibility state if it was on when it was backed up.
+void ConsoleImeInfo::_RestoreCursorVisibility()
+{
+    if (_isSavedCursorVisible)
+    {
+        _isSavedCursorVisible = false;
+
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        Cursor& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
+
+        cursor.SetIsVisible(true);
+    }
 }

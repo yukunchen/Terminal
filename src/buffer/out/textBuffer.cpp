@@ -774,6 +774,20 @@ void TextBuffer::SetFill(const CHAR_INFO ciFill)
 }
 
 // Routine Description:
+// - Resets the text contents of this buffer with the default character
+//   and the given color attributes
+// Arguments:
+// - attr - The color to apply to the reset row.
+void TextBuffer::Reset(const TextAttribute attr)
+{
+    for (auto& row : _storage)
+    {
+        row.GetCharRow().Reset();
+        row.GetAttrRow().Reset(attr);
+    }
+}
+
+// Routine Description:
 // - This is the legacy screen resize with minimal changes
 // Arguments:
 // - currentScreenBufferSize - current size of the screen buffer.

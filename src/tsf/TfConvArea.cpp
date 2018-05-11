@@ -24,11 +24,7 @@ Notes:
 #include "TfConvArea.h"
 
 //+---------------------------------------------------------------------------
-//
-//
 // CConversionArea
-//
-//
 //----------------------------------------------------------------------------
 
 [[nodiscard]]
@@ -37,15 +33,15 @@ HRESULT CConversionArea::DrawComposition(const CComBSTR& CompStr,
                                          const DWORD CompCursorPos)
 {
     // Set up colors.
-    std::array<WORD, CONIME_ATTRCOLOR_SIZE> colors;
-    colors[0] = DEFAULT_COMP_ENTERED;
-    colors[1] = DEFAULT_COMP_ALREADY_CONVERTED;
-    colors[2] = DEFAULT_COMP_CONVERSION;
-    colors[3] = DEFAULT_COMP_YET_CONVERTED;
-    colors[4] = DEFAULT_COMP_INPUT_ERROR;
-    colors[5] = DEFAULT_COMP_INPUT_ERROR;
-    colors[6] = DEFAULT_COMP_INPUT_ERROR;
-    colors[7] = DEFAULT_COMP_INPUT_ERROR;
+    const std::array<WORD, CONIME_ATTRCOLOR_SIZE> colors{ DEFAULT_COMP_ENTERED,
+                                                          DEFAULT_COMP_ALREADY_CONVERTED,
+                                                          DEFAULT_COMP_CONVERSION,
+                                                          DEFAULT_COMP_YET_CONVERTED,
+                                                          DEFAULT_COMP_INPUT_ERROR,
+                                                          DEFAULT_COMP_INPUT_ERROR,
+                                                          DEFAULT_COMP_INPUT_ERROR,
+                                                          DEFAULT_COMP_INPUT_ERROR
+                                                        };
 
     std::wstring_view text(CompStr, CompStr.Length());
 

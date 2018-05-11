@@ -1058,11 +1058,14 @@ void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
         // The IME's buffer is typically only one row in size. Some segments are the whole row, some are only a partial row.
         // Then from those, there is a "view" much like there is a view into the main console buffer.
         // Use the "window" and "view" relative to the IME-specific special buffer to figure out the coordinates to draw at within the real console buffer.
-        SMALL_RECT srCaView = AreaInfo.CaInfo.rcViewCaWindow;
-        srCaView.Top += AreaInfo.CaInfo.coordConView.Y;
-        srCaView.Bottom += AreaInfo.CaInfo.coordConView.Y;
-        srCaView.Left += AreaInfo.CaInfo.coordConView.X;
-        srCaView.Right += AreaInfo.CaInfo.coordConView.X;
+
+        const auto placementInfo = AreaInfo.GetAreaBufferInfo();
+
+        SMALL_RECT srCaView = placementInfo.rcViewCaWindow;
+        srCaView.Top += placementInfo.coordConView.Y;
+        srCaView.Bottom += placementInfo.coordConView.Y;
+        srCaView.Left += placementInfo.coordConView.X;
+        srCaView.Right += placementInfo.coordConView.X;
 
         // Set it up in a Viewport helper structure and trim it the IME viewport to be within the full console viewport.
         Viewport viewConv(srCaView);
@@ -1080,14 +1083,14 @@ void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
             for (SHORT iRow = viewDirty.Top(); iRow < viewDirty.BottomInclusive(); iRow++)
             {
                 // Get row of text data
-                const ROW& Row = textBuffer.GetRowByOffset(iRow - AreaInfo.CaInfo.coordConView.Y);
+                const ROW& Row = textBuffer.GetRowByOffset(iRow - placementInfo.coordConView.Y);
                 const CharRow& charRow = Row.GetCharRow();
 
                 std::wstring rowText;
                 CharRow::const_iterator it;
                 try
                 {
-                    it = std::next(charRow.cbegin(), viewDirty.Left() - AreaInfo.CaInfo.coordConView.X);
+                    it = std::next(charRow.cbegin(), viewDirty.Left() - placementInfo.coordConView.X);
                     rowText = charRow.GetTextRaw();
                 }
                 catch (...)
@@ -1098,7 +1101,7 @@ void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
                 const CharRow::const_iterator itEnd = charRow.cend();
 
                 // Get the pointer to the beginning of the text
-                const wchar_t* const pwsLine = rowText.c_str() + viewDirty.Left() - AreaInfo.CaInfo.coordConView.X;
+                const wchar_t* const pwsLine = rowText.c_str() + viewDirty.Left() - placementInfo.coordConView.X;
 
                 size_t const cchLine = viewDirty.Width() - 1;
 
@@ -1107,7 +1110,7 @@ void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
                 coordTarget.X = viewDirty.Left();
                 coordTarget.Y = iRow;
 
-                _PaintBufferOutputRasterFontHelper(pEngine, Row, pwsLine, it, itEnd, cchLine, viewDirty.Left() - AreaInfo.CaInfo.coordConView.X, coordTarget);
+                _PaintBufferOutputRasterFontHelper(pEngine, Row, pwsLine, it, itEnd, cchLine, viewDirty.Left() - placementInfo.coordConView.X, coordTarget);
             }
         }
     }

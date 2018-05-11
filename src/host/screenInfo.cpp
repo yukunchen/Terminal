@@ -2608,6 +2608,18 @@ void SCREEN_INFORMATION::WriteLine(const std::vector<OutputCell>& cells,
 }
 
 // Routine Description:
+// - Clears out the entire text buffer with the default character and 
+//   the current default attribute applied to this screen.
+void SCREEN_INFORMATION::ClearTextData()
+{
+    // Get attribute to clear with
+    const auto attribute = GetAttributes();
+
+    // Clear the text buffer.
+    _textBuffer->Reset(attribute);
+}
+
+// Routine Description:
 // - finds the boundaries of the word at the given position on the screen
 // Arguments:
 // - position - location on the screen to get the word boundary for
@@ -2668,12 +2680,12 @@ std::pair<COORD, COORD> SCREEN_INFORMATION::GetWordBoundary(const COORD position
     return { start, end };
 }
 
-TextBuffer& SCREEN_INFORMATION::GetTextBuffer()
+TextBuffer& SCREEN_INFORMATION::GetTextBuffer() noexcept
 {
     return *_textBuffer;
 }
 
-const TextBuffer& SCREEN_INFORMATION::GetTextBuffer() const
+const TextBuffer& SCREEN_INFORMATION::GetTextBuffer() const noexcept
 {
     return *_textBuffer;
 }

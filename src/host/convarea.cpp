@@ -34,13 +34,15 @@ void WriteConvRegionToScreen(const SCREEN_INFORMATION& ScreenInfo,
 
         if (!ConvAreaInfo.IsHidden())
         {
-            const SMALL_RECT currentViewport = ScreenInfo.GetBufferViewport();
+            const auto currentViewport = ScreenInfo.GetBufferViewport();
+            const auto areaInfo = ConvAreaInfo.GetAreaBufferInfo();
+
             // Do clipping region
             SMALL_RECT Region;
-            Region.Left = currentViewport.Left + ConvAreaInfo.CaInfo.rcViewCaWindow.Left + ConvAreaInfo.CaInfo.coordConView.X;
-            Region.Right = Region.Left + (ConvAreaInfo.CaInfo.rcViewCaWindow.Right - ConvAreaInfo.CaInfo.rcViewCaWindow.Left);
-            Region.Top = currentViewport.Top + ConvAreaInfo.CaInfo.rcViewCaWindow.Top + ConvAreaInfo.CaInfo.coordConView.Y;
-            Region.Bottom = Region.Top + (ConvAreaInfo.CaInfo.rcViewCaWindow.Bottom - ConvAreaInfo.CaInfo.rcViewCaWindow.Top);
+            Region.Left = currentViewport.Left + areaInfo.rcViewCaWindow.Left + areaInfo.coordConView.X;
+            Region.Right = Region.Left + (areaInfo.rcViewCaWindow.Right - areaInfo.rcViewCaWindow.Left);
+            Region.Top = currentViewport.Top + areaInfo.rcViewCaWindow.Top + areaInfo.coordConView.Y;
+            Region.Bottom = Region.Top + (areaInfo.rcViewCaWindow.Bottom - areaInfo.rcViewCaWindow.Top);
 
             SMALL_RECT ClippedRegion;
             ClippedRegion.Left = std::max(Region.Left, currentViewport.Left);
@@ -73,46 +75,6 @@ void WriteConvRegionToScreen(const SCREEN_INFORMATION& ScreenInfo,
             }
         }
     }
-}
-
-bool InsertConvertedString(const std::wstring_view str)
-{
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    bool fResult = false;
-
-    auto& screenInfo = gci.GetActiveOutputBuffer();
-    if (screenInfo.GetTextBuffer().GetCursor().IsOn())
-    {
-        screenInfo.GetTextBuffer().GetCursor().TimerRoutine(screenInfo);
-    }
-
-    const DWORD dwControlKeyState = GetControlKeyState(0);
-    try
-    {
-        std::deque<std::unique_ptr<IInputEvent>> inEvents;
-        KeyEvent keyEvent{ TRUE, // keydown
-            1, // repeatCount
-            0, // virtualKeyCode
-            0, // virtualScanCode
-            0, // charData
-            dwControlKeyState }; // activeModifierKeys
-
-        for (const auto& ch : str)
-        {
-            keyEvent.SetCharData(ch);
-            inEvents.push_back(std::make_unique<KeyEvent>(keyEvent));
-        }
-
-        gci.pInputBuffer->Write(inEvents);
-
-        fResult = true;
-    }
-    catch (...)
-    {
-        LOG_HR(wil::ResultFromCaughtException());
-    }
-
-    return fResult;
 }
 
 [[nodiscard]]
@@ -170,23 +132,8 @@ HRESULT ImeComposeData(std::wstring_view text,
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         gci.LockConsole();
         auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
-
-        const Cursor& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
+        
         ConsoleImeInfo* const pIme = &gci.ConsoleIme;
-
-        // Cursor turn OFF.
-        if (cursor.IsVisible())
-        {
-            pIme->SavedCursorVisible = true;
-
-            gci.GetActiveOutputBuffer().SetCursorInformation(
-                cursor.GetSize(),
-                FALSE,
-                cursor.GetColor(),
-                cursor.GetType()
-            );
-        }
-
         pIme->WriteCompMessage(text, attributes, colorArray);
     }
     CATCH_RETURN();
@@ -217,33 +164,9 @@ HRESULT ImeComposeResult(std::wstring_view text)
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         gci.LockConsole();
         auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
-
-        const Cursor& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
+        
         ConsoleImeInfo* const pIme = &gci.ConsoleIme;
-
-        // Cursor turn ON.
-        if (pIme->SavedCursorVisible)
-        {
-            pIme->SavedCursorVisible = false;
-
-            gci.GetActiveOutputBuffer().SetCursorInformation(
-                cursor.GetSize(),
-                TRUE,
-                cursor.GetColor(),
-                cursor.GetType()
-            );
-
-        }
-
-        // Determine string.
-        pIme->ClearAllAreas();
-
-        if (!InsertConvertedString(text))
-        {
-            return E_HANDLE;
-        }
-
-        pIme->ClearComposition();
+        pIme->WriteResultMessage(text);
     }
     CATCH_RETURN();
     return S_OK;

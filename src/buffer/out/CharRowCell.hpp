@@ -24,7 +24,7 @@ public:
     CharRowCell(const wchar_t wch, const DbcsAttribute attr);
 
     void EraseChars();
-    void Reset();
+    void Reset() noexcept;
 
     bool IsSpace() const noexcept;
 

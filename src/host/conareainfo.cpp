@@ -24,46 +24,34 @@ ConversionAreaInfo::ConversionAreaInfo(const COORD bufferSize,
                                        const CHAR_INFO fill,
                                        const CHAR_INFO popupFill,
                                        const FontInfo fontInfo) :
-    CaInfo{ bufferSize },
-    _fIsHidden{ true },
-    ScreenBuffer{ nullptr }
+    _caInfo{ bufferSize },
+    _isHidden{ true },
+    _screenBuffer{ nullptr }
 {
     SCREEN_INFORMATION* pNewScreen = nullptr;
-    // cursor has no height because it won't be rendered for conversion area
-    NTSTATUS status = SCREEN_INFORMATION::CreateInstance(windowSize,
-                                                         fontInfo,
-                                                         bufferSize,
-                                                         fill,
-                                                         popupFill,
-                                                         0,
-                                                         &pNewScreen);
-    if (NT_SUCCESS(status))
-    {
-        // Suppress painting notifications for modifying a conversion area cursor as they're not actually rendered.
-        pNewScreen->GetTextBuffer().GetCursor().SetIsConversionArea(true);
-        pNewScreen->ConvScreenInfo = this;
-        ScreenBuffer = pNewScreen;
-    }
-    else
-    {
-        THROW_NTSTATUS(status);
-    }
-}
 
-ConversionAreaInfo::~ConversionAreaInfo()
-{
-    if (ScreenBuffer != nullptr)
-    {
-        delete ScreenBuffer;
-    }
+    // cursor has no height because it won't be rendered for conversion area
+    THROW_IF_NTSTATUS_FAILED(SCREEN_INFORMATION::CreateInstance(windowSize,
+                                                                fontInfo,
+                                                                bufferSize,
+                                                                fill,
+                                                                popupFill,
+                                                                0,
+                                                                &pNewScreen));
+
+    // Suppress painting notifications for modifying a conversion area cursor as they're not actually rendered.
+    pNewScreen->GetTextBuffer().GetCursor().SetIsConversionArea(true);
+    pNewScreen->ConvScreenInfo = this;
+
+    _screenBuffer.reset(pNewScreen);
 }
 
 ConversionAreaInfo::ConversionAreaInfo(ConversionAreaInfo&& other) :
-    CaInfo(other.CaInfo),
-    _fIsHidden(other._fIsHidden),
-    ScreenBuffer(nullptr)
+    _caInfo(other._caInfo),
+    _isHidden(other._isHidden),
+    _screenBuffer(nullptr)
 {
-    std::swap(ScreenBuffer, other.ScreenBuffer);
+    std::swap(_screenBuffer, other._screenBuffer);
 }
 
 // Routine Description:
@@ -72,9 +60,9 @@ ConversionAreaInfo::ConversionAreaInfo(ConversionAreaInfo&& other) :
 // - <none>
 // Return Value:
 // - True if it should not be drawn. False if it should be drawn.
-bool ConversionAreaInfo::IsHidden() const
+bool ConversionAreaInfo::IsHidden() const noexcept
 {
-    return _fIsHidden;
+    return _isHidden;
 }
 
 // Routine Description:
@@ -83,120 +71,144 @@ bool ConversionAreaInfo::IsHidden() const
 // - fIsHidden - True if it should not be drawn. False if it should be drawn.
 // Return Value:
 // - <none>
-void ConversionAreaInfo::SetHidden(const bool fIsHidden)
+void ConversionAreaInfo::SetHidden(const bool fIsHidden) noexcept
 {
-    _fIsHidden = fIsHidden;
+    _isHidden = fIsHidden;
+}
+
+// Routine Description:
+// - Retrieves the underlying text buffer for use in rendering data
+const TextBuffer& ConversionAreaInfo::GetTextBuffer() const noexcept
+{
+    return _screenBuffer->GetTextBuffer();
+}
+
+// Routine Description:
+// - Retrieves the layout/overlay information about where to place this conversion area relative to the
+//   existing screen buffers and viewports.
+const ConversionAreaBufferInfo& ConversionAreaInfo::GetAreaBufferInfo() const noexcept
+{
+    return _caInfo;
+}
+
+// Routine Description:
+// - Forwards a color attribute setting request to the internal screen information
+// Arguments:
+// - attr - Color to apply to internal screen buffer
+void ConversionAreaInfo::SetAttributes(const TextAttribute& attr)
+{
+    _screenBuffer->SetAttributes(attr);
+}
+
+// Routine Description:
+// - Writes text into the conversion area. Since conversion areas are only
+//   one line, you can only specify the column to write.
+// Arguments:
+// - text - Text to insert into the conversion area buffer
+// - column - Column to start at (X position)
+void ConversionAreaInfo::WriteText(const std::vector<OutputCell>& text,
+                                   const SHORT column)
+{
+    _screenBuffer->WriteLine(text, 0, column);
 }
 
 // Routine Description:
 // - Clears out a conversion area
-void ConversionAreaInfo::ClearArea()
+void ConversionAreaInfo::ClearArea() noexcept
 {
     SetHidden(true);
 
-    COORD Coord = { 0 };
-    DWORD CharsToWrite = ScreenBuffer->GetScreenBufferSize().X;
-
-    // TODO: This is dumb. There should be a "clear row" method.
-    LOG_IF_FAILED(FillOutput(*ScreenBuffer,
-                             (WCHAR)' ',
-                             Coord,
-                             CONSOLE_FALSE_UNICODE,    // faster than real unicode
-                             &CharsToWrite));
-
-    CharsToWrite = ScreenBuffer->GetScreenBufferSize().X;
-
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-
-    LOG_IF_FAILED(FillOutput(*ScreenBuffer,
-                             gci.GetActiveOutputBuffer().GetAttributes().GetLegacyAttributes(),
-                             Coord,
-                             CONSOLE_ATTRIBUTE,
-                             &CharsToWrite));
+    try
+    {
+        _screenBuffer->ClearTextData();
+    }
+    CATCH_LOG();
 
     Paint();
 }
 
-HRESULT ConversionAreaInfo::Resize(const COORD newSize)
+[[nodiscard]]
+HRESULT ConversionAreaInfo::Resize(const COORD newSize) noexcept
 {
     // attempt to resize underlying buffers
-    RETURN_IF_NTSTATUS_FAILED(ScreenBuffer->ResizeScreenBuffer(newSize, FALSE));
+    RETURN_IF_NTSTATUS_FAILED(_screenBuffer->ResizeScreenBuffer(newSize, FALSE));
 
     // store new size
-    CaInfo.coordCaBuffer = newSize;
+    _caInfo.coordCaBuffer = newSize;
 
     // restrict viewport to buffer size.
     const COORD restriction = { newSize.X - 1i16, newSize.Y - 1i16 };
-    CaInfo.rcViewCaWindow.Left = std::min(CaInfo.rcViewCaWindow.Left, restriction.X);
-    CaInfo.rcViewCaWindow.Right = std::min(CaInfo.rcViewCaWindow.Right, restriction.X);
-    CaInfo.rcViewCaWindow.Top = std::min(CaInfo.rcViewCaWindow.Top, restriction.Y);
-    CaInfo.rcViewCaWindow.Bottom = std::min(CaInfo.rcViewCaWindow.Bottom, restriction.Y);
+    _caInfo.rcViewCaWindow.Left = std::min(_caInfo.rcViewCaWindow.Left, restriction.X);
+    _caInfo.rcViewCaWindow.Right = std::min(_caInfo.rcViewCaWindow.Right, restriction.X);
+    _caInfo.rcViewCaWindow.Top = std::min(_caInfo.rcViewCaWindow.Top, restriction.Y);
+    _caInfo.rcViewCaWindow.Bottom = std::min(_caInfo.rcViewCaWindow.Bottom, restriction.Y);
 
     return S_OK;
 }
 
-void ConversionAreaInfo::SetWindowInfo(const SMALL_RECT view)
+
+void ConversionAreaInfo::SetWindowInfo(const SMALL_RECT view) noexcept
 {
-    if (view.Left != CaInfo.rcViewCaWindow.Left ||
-        view.Top != CaInfo.rcViewCaWindow.Top ||
-        view.Right != CaInfo.rcViewCaWindow.Right ||
-        view.Bottom != CaInfo.rcViewCaWindow.Bottom)
+    if (view.Left != _caInfo.rcViewCaWindow.Left ||
+        view.Top != _caInfo.rcViewCaWindow.Top ||
+        view.Right != _caInfo.rcViewCaWindow.Right ||
+        view.Bottom != _caInfo.rcViewCaWindow.Bottom)
     {
         if (!IsHidden())
         {
             SetHidden(true);
             Paint();
 
-            CaInfo.rcViewCaWindow = view;
+            _caInfo.rcViewCaWindow = view;
             SetHidden(false);
             Paint();
         }
         else
         {
-            CaInfo.rcViewCaWindow = view;
+            _caInfo.rcViewCaWindow = view;
         }
     }
 }
 
-void ConversionAreaInfo::SetViewPos(const COORD pos)
+void ConversionAreaInfo::SetViewPos(const COORD pos) noexcept
 {
     if (IsHidden())
     {
-        CaInfo.coordConView = pos;
+        _caInfo.coordConView = pos;
     }
     else
     {
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-        SMALL_RECT OldRegion = CaInfo.rcViewCaWindow;;
-        OldRegion.Left += CaInfo.coordConView.X;
-        OldRegion.Right += CaInfo.coordConView.X;
-        OldRegion.Top += CaInfo.coordConView.Y;
-        OldRegion.Bottom += CaInfo.coordConView.Y;
+        SMALL_RECT OldRegion = _caInfo.rcViewCaWindow;;
+        OldRegion.Left += _caInfo.coordConView.X;
+        OldRegion.Right += _caInfo.coordConView.X;
+        OldRegion.Top += _caInfo.coordConView.Y;
+        OldRegion.Bottom += _caInfo.coordConView.Y;
         WriteToScreen(gci.GetActiveOutputBuffer(), OldRegion);
 
-        CaInfo.coordConView = pos;
+        _caInfo.coordConView = pos;
 
-        SMALL_RECT NewRegion = CaInfo.rcViewCaWindow;
-        NewRegion.Left += CaInfo.coordConView.X;
-        NewRegion.Right += CaInfo.coordConView.X;
-        NewRegion.Top += CaInfo.coordConView.Y;
-        NewRegion.Bottom += CaInfo.coordConView.Y;
+        SMALL_RECT NewRegion = _caInfo.rcViewCaWindow;
+        NewRegion.Left += _caInfo.coordConView.X;
+        NewRegion.Right += _caInfo.coordConView.X;
+        NewRegion.Top += _caInfo.coordConView.Y;
+        NewRegion.Bottom += _caInfo.coordConView.Y;
         WriteToScreen(gci.GetActiveOutputBuffer(), NewRegion);
     }
 }
 
-void ConversionAreaInfo::Paint() const
+void ConversionAreaInfo::Paint() const noexcept
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& ScreenInfo = gci.GetActiveOutputBuffer();
     const auto viewport = ScreenInfo.GetBufferViewport();
 
     SMALL_RECT WriteRegion;
-    WriteRegion.Left = viewport.Left + CaInfo.coordConView.X + CaInfo.rcViewCaWindow.Left;
-    WriteRegion.Right = WriteRegion.Left + (CaInfo.rcViewCaWindow.Right - CaInfo.rcViewCaWindow.Left);
-    WriteRegion.Top = viewport.Top + CaInfo.coordConView.Y + CaInfo.rcViewCaWindow.Top;
-    WriteRegion.Bottom = WriteRegion.Top + (CaInfo.rcViewCaWindow.Bottom - CaInfo.rcViewCaWindow.Top);
+    WriteRegion.Left = viewport.Left + _caInfo.coordConView.X + _caInfo.rcViewCaWindow.Left;
+    WriteRegion.Right = WriteRegion.Left + (_caInfo.rcViewCaWindow.Right - _caInfo.rcViewCaWindow.Left);
+    WriteRegion.Top = viewport.Top + _caInfo.coordConView.Y + _caInfo.rcViewCaWindow.Top;
+    WriteRegion.Bottom = WriteRegion.Top + (_caInfo.rcViewCaWindow.Bottom - _caInfo.rcViewCaWindow.Top);
 
     if (!IsHidden())
     {

@@ -1,3 +1,19 @@
+/*++
+Copyright (c) Microsoft Corporation
+
+Module Name:
+- search.h
+
+Abstract:
+- This module is used for searching through the screen for a substring
+
+Author(s):
+- Michael Niksa (MiNiksa) 20-Apr-2018
+
+Revision History:
+- From components of find.c by Jerry Shea (jerrysh) 1-May-1997
+--*/
+
 #pragma once
 
 // This used to be in find.h.
