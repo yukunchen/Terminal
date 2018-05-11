@@ -583,8 +583,10 @@ NTSTATUS FillOutput(SCREEN_INFORMATION& screenInfo,
     SMALL_RECT WriteRegion;
     if (screenInfo.ConvScreenInfo)
     {
-        WriteRegion.Top = coordWrite.Y + screenInfo.GetBufferViewport().Left + screenInfo.ConvScreenInfo->CaInfo.coordConView.Y;
-        WriteRegion.Bottom = Y + screenInfo.GetBufferViewport().Left + screenInfo.ConvScreenInfo->CaInfo.coordConView.Y;
+        const auto areaInfo = screenInfo.ConvScreenInfo->GetAreaBufferInfo();
+
+        WriteRegion.Top = coordWrite.Y + screenInfo.GetBufferViewport().Left + areaInfo.coordConView.Y;
+        WriteRegion.Bottom = Y + screenInfo.GetBufferViewport().Left + areaInfo.coordConView.Y;
         if (Y != coordWrite.Y)
         {
             WriteRegion.Left = 0;
@@ -592,8 +594,8 @@ NTSTATUS FillOutput(SCREEN_INFORMATION& screenInfo,
         }
         else
         {
-            WriteRegion.Left = coordWrite.X + screenInfo.GetBufferViewport().Top + screenInfo.ConvScreenInfo->CaInfo.coordConView.X;
-            WriteRegion.Right = X + screenInfo.GetBufferViewport().Top + screenInfo.ConvScreenInfo->CaInfo.coordConView.X;
+            WriteRegion.Left = coordWrite.X + screenInfo.GetBufferViewport().Top + areaInfo.coordConView.X;
+            WriteRegion.Right = X + screenInfo.GetBufferViewport().Top + areaInfo.coordConView.X;
         }
         WriteConvRegionToScreen(gci.GetActiveOutputBuffer(), WriteRegion);
         *pcElements = NumWritten;

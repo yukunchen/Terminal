@@ -753,12 +753,6 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         break;
     }
 
-    case WM_COPYDATA:
-    {
-        Status = ImeControl((PCOPYDATASTRUCT)lParam);
-        break;
-    }
-
     default:
     CallDefWin:
     {

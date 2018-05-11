@@ -38,7 +38,7 @@ void CharRowCell::EraseChars()
 
 // Routine Description:
 // - resets this object back to the defaults it would have from the default constructor
-void CharRowCell::Reset()
+void CharRowCell::Reset() noexcept
 {
     _attr.Reset();
     _wch = DefaultValue;

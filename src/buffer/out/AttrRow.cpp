@@ -18,7 +18,7 @@
  // Arguments:
  // - run - The run to inspect
  // Return Value:
- // - True if it is valid (no adjacent are the same). False otherwise. 
+ // - True if it is valid (no adjacent are the same). False otherwise.
 bool _DebugValidateAdjacentAttributes(const std::vector<TextAttributeRun>& run)
 {
     // Nothing to compare if run size is < 2.
@@ -243,7 +243,7 @@ size_t ATTR_ROW::FindAttrIndex(const size_t index, size_t* const pApplies) const
         runPos++;
     } while (runPos < _list.cend());
 
-    // we should have broken before falling out the while case. 
+    // we should have broken before falling out the while case.
     // if we didn't break, then this ATTR_ROW wasn't filled with enough attributes for the entire row of characters
     FAIL_FAST_IF(runPos >= _list.cend());
 
@@ -324,17 +324,6 @@ void ATTR_ROW::ReplaceLegacyAttrs(_In_ WORD wToBeReplacedAttr, _In_ WORD wReplac
             run.SetAttributes(ReplaceWith);
         }
     }
-}
-
-// Routine Description:
-// - Sets the attributes of this run to the given legacy attributes
-// Arguments:
-// - wNew - the new value for this run's attributes
-// Return Value:
-// <none>
-void TextAttributeRun::SetAttributesFromLegacy(const WORD wNew) noexcept
-{
-    _attributes.SetFromLegacy(wNew);
 }
 
 // Routine Description:
