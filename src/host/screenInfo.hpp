@@ -283,6 +283,11 @@ private:
     void _InitializeBufferDimensions(const COORD coordScreenBufferSize,
                                      const COORD coordViewportSize);
 
+    size_t _WriteLine(const std::vector<OutputCell>& cells,
+                      const size_t rowIndex,
+                      const size_t startIndex,
+                      const bool shouldWrap);
+
     ConhostInternalGetSet* _pConApi;
     WriteBuffer* _pBufferWriter;
     AdaptDispatch* _pAdapter;
