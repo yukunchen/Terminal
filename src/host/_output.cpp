@@ -628,110 +628,57 @@ NTSTATUS FillOutput(SCREEN_INFORMATION& screenInfo,
 }
 
 // Routine Description:
-// - This routine fills a rectangular region in the screen buffer.  no clipping is done.
+// - This routine fills a rectangular region in the screen buffer.
 // Arguments:
-// - pciFill - element to copy to each element in target rect
 // - screenInfo - reference to screen info
-// - psrTarget - rectangle in screen buffer to fill
-// Return Value:
-void FillRectangle(const CHAR_INFO * const pciFill,
-                   SCREEN_INFORMATION& screenInfo,
-                   const SMALL_RECT * const psrTarget)
+// - cell - cell to fill rectangle with
+// - rect - rectangle to fill
+void FillRectangle(SCREEN_INFORMATION& screenInfo,
+                   const OutputCell& cell,
+                   const SMALL_RECT rect)
 {
-    DBGOUTPUT(("FillRectangle\n"));
+    const size_t width = rect.Right - rect.Left + 1;
+    const size_t height = rect.Bottom + rect.Top + 1;
 
-    SHORT XSize = (SHORT)(psrTarget->Right - psrTarget->Left + 1);
-
-    ROW* pRow = &screenInfo.GetTextBuffer().GetRowByOffset(psrTarget->Top);
-    for (SHORT i = psrTarget->Top; i <= psrTarget->Bottom; i++)
+    // generate line to write
+    std::vector<OutputCell> rowCells(width, cell);
+    if (IsGlyphFullWidth(cell.Chars()))
     {
-        if (pRow == nullptr)
+        // set leading and trailing attrs
+        for (size_t i = 0; i < rowCells.size(); ++i)
         {
-            ASSERT(false);
-            break;
-        }
-
-        // Copy the chars and attrs into their respective arrays.
-        COORD TPoint;
-
-        TPoint.X = psrTarget->Left;
-        TPoint.Y = i;
-        CleanupDbcsEdgesForWrite(XSize, TPoint, screenInfo);
-        BOOL Width = IsCharFullWidth(pciFill->Char.UnicodeChar);
-
-        CharRow::iterator it;
-        CharRow::const_iterator itEnd;
-        try
-        {
-            CharRow& charRow = pRow->GetCharRow();
-            it = std::next(charRow.begin(), psrTarget->Left);
-            itEnd = charRow.cend();
-        }
-        catch (...)
-        {
-            LOG_HR(wil::ResultFromCaughtException());
-            return;
-        }
-
-        for (SHORT j = 0; j < XSize && it < itEnd; j++)
-        {
-            if (Width)
+            if (i % 2 == 0)
             {
-                if (j < XSize - 1)
-                {
-                    // we set leading an trailing in pairs so make sure that checking against the end of the
-                    // iterator won't be off by 1
-                    assert((itEnd - it) % 2 == 0);
-                    assert((itEnd - it) >= 2);
-
-                    it->Char() = pciFill->Char.UnicodeChar;
-                    it->DbcsAttr().SetLeading();
-                    ++it;
-
-                    it->Char() = pciFill->Char.UnicodeChar;
-                    it->DbcsAttr().SetTrailing();
-                    ++it;
-
-                    ++j;
-                }
-                else
-                {
-                    it->Char() = UNICODE_NULL;
-                    it->DbcsAttr().SetSingle();
-                    ++it;
-                }
+                rowCells.at(i).DbcsAttr().SetLeading();
             }
             else
             {
-                it->Char() = pciFill->Char.UnicodeChar;
-                it->DbcsAttr().SetSingle();
-                ++it;
+                rowCells.at(i).DbcsAttr().SetTrailing();
             }
         }
-
-        const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
-
-        TextAttributeRun AttrRun;
-        AttrRun.SetLength(XSize);
-        AttrRun.SetAttributesFromLegacy(pciFill->Attributes);
-
-        LOG_IF_FAILED(pRow->GetAttrRow().InsertAttrRuns({ AttrRun },
-                                                        psrTarget->Left,
-                                                        psrTarget->Right,
-                                                        coordScreenBufferSize.X));
-
-        // invalidate row wrapping for rectangular drawing
-        pRow->GetCharRow().SetWrapForced(false);
-
-        try
+        // make sure not to write a partial dbcs sequence
+        if (rowCells.back().DbcsAttr().IsLeading())
         {
-            pRow = &screenInfo.GetTextBuffer().GetNextRowNoWrap(*pRow);
-        }
-        catch (...)
-        {
-            pRow = nullptr;
+            rowCells.back().Chars() = { UNICODE_SPACE };
+            rowCells.back().DbcsAttr().SetSingle();
         }
     }
 
-    screenInfo.NotifyAccessibilityEventing(psrTarget->Left, psrTarget->Top, psrTarget->Right, psrTarget->Bottom);
+    // fill rectangle
+    for (size_t i = 0; i < height; ++i)
+    {
+        const size_t rowIndex = rect.Top + i;
+
+        // cleanup dbcs edges
+        const COORD leftPoint{ rect.Right, gsl::narrow<SHORT>(rowIndex) };
+        CleanupDbcsEdgesForWrite(rowCells.size(), leftPoint, screenInfo);
+
+        // write cells
+        screenInfo.WriteLine(rowCells, rowIndex, rect.Left);
+
+        // force set wrap to false because this is a rectangular operation
+        screenInfo.GetTextBuffer().GetRowByOffset(rowIndex).GetCharRow().SetWrapForced(false);
+    }
+    // notify accessibility listeners that something has changed
+    screenInfo.NotifyAccessibilityEventing(rect.Left, rect.Top, rect.Right, rect.Bottom);
 }
