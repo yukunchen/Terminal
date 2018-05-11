@@ -15,7 +15,6 @@ static constexpr unsigned short WcharShiftAmount = sizeof(wchar_t) * 8 - Indicat
 static constexpr std::bitset<IndicatorBitCount> LeadingSurrogateMask = { 54 };  // 110 110 indicates a leading surrogate
 static constexpr std::bitset<IndicatorBitCount> TrailingSurrogateMask = { 55 }; // 110 111 indicates a trailing surrogate
 
-
 // Routine Description:
 // - formats a utf16 encoded wstring and splits the codepoints into individual collections.
 // - will drop badly formatted leading/trailing char sequences.
@@ -25,7 +24,7 @@ static constexpr std::bitset<IndicatorBitCount> TrailingSurrogateMask = { 55 }; 
 // Return Value:
 // - a vector of utf16 codepoints. glyphs that require surrogate pairs will be grouped
 // together in a vector and codepoints that use only one wchar will be in a vector by themselves.
-std::vector<std::vector<wchar_t>> Utf16Parser::Parse(const std::wstring& wstr)
+std::vector<std::vector<wchar_t>> Utf16Parser::Parse(std::wstring_view wstr)
 {
     std::vector<std::vector<wchar_t>> result;
     std::vector<wchar_t> sequence;

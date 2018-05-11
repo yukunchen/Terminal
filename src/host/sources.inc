@@ -94,6 +94,7 @@ SOURCES = \
     ..\renderData.cpp \
     ..\renderFontDefaults.cpp \
     ..\utf8ToWideCharParser.cpp \
+    ..\conareainfo.cpp \
     ..\conimeinfo.cpp \
     ..\conattrs.cpp \
     ..\ConsoleArguments.cpp \
