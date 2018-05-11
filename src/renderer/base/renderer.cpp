@@ -488,7 +488,7 @@ HRESULT Renderer::GetProposedFont(const int iDpi, const FontInfoDesired& FontInf
     //      renderer. We won't know which is which, so iterate over them.
     //      Only return the result of the successful one if it's not S_FALSE (which is the VT renderer)
     // TODO: 14560740 - The Window might be able to get at this info in a more sane manner
-    assert(_rgpEngines.size() <= 2);
+    FAIL_FAST_IF_FALSE(_rgpEngines.size() <= 2);
     for (IRenderEngine* const pEngine : _rgpEngines)
     {
         const HRESULT hr = LOG_IF_FAILED(pEngine->GetProposedFont(FontInfoDesired, FontInfo, iDpi));
@@ -516,7 +516,7 @@ COORD Renderer::GetFontSize()
     //      renderer. We won't know which is which, so iterate over them.
     //      Only return the result of the successful one if it's not S_FALSE (which is the VT renderer)
     // TODO: 14560740 - The Window might be able to get at this info in a more sane manner
-    assert(_rgpEngines.size() <= 2);
+    FAIL_FAST_IF_FALSE(_rgpEngines.size() <= 2);
 
     for (IRenderEngine* const pEngine : _rgpEngines)
     {
@@ -547,7 +547,7 @@ bool Renderer::IsCharFullWidthByFont(const WCHAR wch)
     //      renderer. We won't know which is which, so iterate over them.
     //      Only return the result of the successful one if it's not S_FALSE (which is the VT renderer)
     // TODO: 14560740 - The Window might be able to get at this info in a more sane manner
-    assert(_rgpEngines.size() <= 2);
+    FAIL_FAST_IF_FALSE(_rgpEngines.size() <= 2);
     for (IRenderEngine* const pEngine : _rgpEngines)
     {
         const HRESULT hr = LOG_IF_FAILED(pEngine->IsCharFullWidthByFont(wch, &fIsFullWidth));

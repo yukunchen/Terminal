@@ -547,18 +547,6 @@ void Telemetry::WriteFinalTraceLog()
     }
 }
 
-// Sends assert information through telemetry.
-void Telemetry::LogAssert(_In_z_ const char* pszSourceText, _In_z_ const char* pszFileName, const int iLineNumber) const
-{
-#pragma prefast(suppress:__WARNING_NONCONST_LOCAL, "Activity can't be const, since it's set to a random value on startup.")
-    TraceLoggingWriteTagged(_activity,
-        "Assert",
-        TraceLoggingString(pszSourceText, "SourceText"),
-        TraceLoggingString(pszFileName, "FileName"),
-        TraceLoggingInt32(iLineNumber, "LineNumber"),
-        TraceLoggingKeyword(MICROSOFT_KEYWORD_TELEMETRY));
-}
-
 // These are legacy error messages with limited value, so don't send them back as telemetry.
 void Telemetry::LogRipMessage(_In_z_ const char* pszMessage, ...) const
 {

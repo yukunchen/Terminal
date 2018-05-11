@@ -54,7 +54,6 @@ __inline NTSTATUS_FROM_WIN32(long x) { return x <= 0 ? (NTSTATUS)x : (NTSTATUS)(
 #endif
 
 #include <winioctl.h>
-#include <assert.h>
 #pragma prefast(push)
 #pragma prefast(disable:26071, "Range violation in Intsafe. Not ours.")
 #define ENABLE_INTSAFE_SIGNED_FUNCTIONS // Only unsigned intsafe math/casts available without this def

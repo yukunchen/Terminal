@@ -188,7 +188,7 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
 
     if (CONSOLE_STATUS_WAIT == Status)
     {
-        assert(readEvents.empty());
+        FAIL_FAST_IF_FALSE(readEvents.empty());
         // If we're told to wait until later, move all of our context
         // to the read data object and send it back up to the server.
         try
@@ -235,7 +235,7 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
         {
             pInputBuffer->StoreReadPartialByteSequence(std::move(readEvents.front()));
             readEvents.pop_front();
-            assert(readEvents.empty());
+            FAIL_FAST_IF_FALSE(readEvents.empty());
         }
     }
     return Status;
@@ -722,7 +722,7 @@ NTSTATUS SrvReadConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
 
         std::vector<std::vector<OutputCell>> outputCells;
         Status = ReadScreenBuffer(activeScreenInfo, outputCells, &a->CharRegion);
-        assert(cbBuffer >= outputCells.size() * outputCells[0].size() * sizeof(CHAR_INFO));
+        FAIL_FAST_IF_FALSE(cbBuffer >= outputCells.size() * outputCells[0].size() * sizeof(CHAR_INFO));
         // convert to CharInfo
         CHAR_INFO* pCurrCharInfo = Buffer;
         // copy the data into the char info buffer
@@ -1185,7 +1185,7 @@ NTSTATUS ConsoleCreateScreenBuffer(_Out_ ConsoleHandleData** ppHandle,
     // If any buffer type except the one we support is set, it's invalid.
     if (IsAnyFlagSet(a->Flags, ~CONSOLE_TEXTMODE_BUFFER))
     {
-        ASSERT(false); // We no longer support anything other than a textmode buffer
+        // We no longer support anything other than a textmode buffer
         return STATUS_INVALID_PARAMETER;
     }
 

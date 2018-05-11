@@ -584,8 +584,8 @@ bool AdaptDispatch::_EraseAreaHelper(const COORD coordStartPosition, const COORD
     WCHAR const wchSpace = static_cast<WCHAR>(0x20); // space character. use 0x20 instead of literal space because we can't assume the compiler will always turn ' ' into 0x20.
 
     DWORD dwCharsWritten = 0;
-    assert(coordStartPosition.X < coordLastPosition.X);
-    assert(coordStartPosition.Y < coordLastPosition.Y);
+    FAIL_FAST_IF_FALSE(coordStartPosition.X < coordLastPosition.X);
+    FAIL_FAST_IF_FALSE(coordStartPosition.Y < coordLastPosition.Y);
     bool fSuccess = false;
     for (short y = coordStartPosition.Y; y < coordLastPosition.Y; y++)
     {
@@ -1557,7 +1557,7 @@ bool AdaptDispatch::_EraseScrollback()
         const SMALL_RECT Screen = csbiex.srWindow;
         const short sWidth = Screen.Right - Screen.Left;
         const short sHeight = Screen.Bottom - Screen.Top;
-        assert(sWidth > 0 && sHeight > 0);
+        FAIL_FAST_IF_FALSE(sWidth > 0 && sHeight > 0);
         const COORD Cursor = csbiex.dwCursorPosition;
 
         // Rectangle to cut out of the existing buffer

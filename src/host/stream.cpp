@@ -76,7 +76,7 @@ NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
         }
         else if (inputEvent.get() == nullptr)
         {
-            assert(!Wait);
+            FAIL_FAST_IF(Wait);
             return STATUS_UNSUCCESSFUL;
         }
 
@@ -995,7 +995,7 @@ HRESULT ApiRoutines::ReadConsoleWImpl(_Inout_ IConsoleInputObject* const pInCont
                                           true,
                                           ppWaiter);
 
-    assert(ulTextBuffer % sizeof(wchar_t) == 0);
+    FAIL_FAST_IF_FALSE(ulTextBuffer % sizeof(wchar_t) == 0);
     *pcchTextBufferWritten = ulTextBuffer / sizeof(wchar_t);
 
     return HRESULT_FROM_NT(Status);

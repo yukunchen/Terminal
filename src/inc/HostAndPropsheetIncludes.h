@@ -43,7 +43,5 @@ typedef NTSTATUS *PNTSTATUS;
                      ((CharSet) == CHINESEBIG5_CHARSET) ? TRUE :    \
                      ((CharSet) == GB2312_CHARSET)      ? TRUE : FALSE )
 
-#include <assert.h>
-
 #include "conddkrefs.h"
 #include "conwinuserrefs.h"

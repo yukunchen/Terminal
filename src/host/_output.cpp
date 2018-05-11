@@ -370,11 +370,7 @@ NTSTATUS FillOutput(SCREEN_INFORMATION& screenInfo,
         DWORD StartPosFlag = 0;
         for (;;)
         {
-            if (pRow == nullptr)
-            {
-                ASSERT(false);
-                break;
-            }
+            FAIL_FAST_IF(pRow == nullptr);
 
             // copy the chars into their arrays
             CharRow::iterator it;
@@ -504,11 +500,7 @@ NTSTATUS FillOutput(SCREEN_INFORMATION& screenInfo,
 
         for (;;)
         {
-            if (pRow == nullptr)
-            {
-                ASSERT(false);
-                break;
-            }
+            FAIL_FAST_IF(pRow == nullptr);
 
             // Copy the attrs into the screen buffer arrays.
             if ((ULONG) (coordScreenBufferSize.X - X) >= (*pcElements - NumWritten))

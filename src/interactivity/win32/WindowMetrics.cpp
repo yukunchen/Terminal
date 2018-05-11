@@ -111,7 +111,7 @@ RECT WindowMetrics::GetMaxWindowRectInPixels(const RECT * const prcSuggested, _O
         hMonitor = MonitorFromWindow(pWindow->GetWindowHandle(), MONITOR_DEFAULTTONEAREST);
     }
 
-    ASSERT(hMonitor != nullptr); // Since we said default to primary, something is seriously wrong with the system if there is no monitor here.
+    FAIL_FAST_IF_NULL(hMonitor); // Since we said default to primary, something is seriously wrong with the system if there is no monitor here.
 
                                  // Now obtain the monitor pixel dimensions
     MONITORINFO MonitorInfo = { 0 };
@@ -284,7 +284,7 @@ void WindowMetrics::ConvertRect(_Inout_ RECT* const prc, const ConvertRectangle 
     }
     default:
     {
-        ASSERT(false); // not implemented
+        FAIL_FAST_HR(E_NOTIMPL); // not implemented
     }
     }
 }

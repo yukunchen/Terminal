@@ -11,7 +11,6 @@
 
 #include "../../inc/unicode.hpp"
 #include "ascii.hpp"
-#include <assert.h>
 
 #ifdef BUILD_ONECORE_INTERACTIVITY
 #include "../../interactivity/inc/VtApiRedirection.hpp"
@@ -588,7 +587,7 @@ size_t InputStateMachineEngine::_GetSingleKeypress(const wchar_t wch,
                                                    _Inout_updates_(cRecords) INPUT_RECORD* const rgInput,
                                                    const size_t cRecords)
 {
-    assert(cRecords >= 2);
+    FAIL_FAST_IF_FALSE(cRecords >= 2);
     if (cRecords < 2)
     {
         return 0;

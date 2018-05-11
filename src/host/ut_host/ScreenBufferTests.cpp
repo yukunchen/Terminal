@@ -150,6 +150,9 @@ void ScreenBufferTests::FreeSampleList(SCREEN_INFORMATION::TabStop** rgList)
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.LockConsole(); // Lock must be taken to manipulate buffer.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
     Log::Comment(L"Testing creating one alternate buffer, then returning to the main buffer.");
     SCREEN_INFORMATION* const psiOriginal = &gci.GetActiveOutputBuffer();
     VERIFY_IS_NULL(psiOriginal->_psiAlternateBuffer);
@@ -179,6 +182,9 @@ void ScreenBufferTests::SingleAlternateBufferCreationTest()
 void ScreenBufferTests::MultipleAlternateBufferCreationTest()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.LockConsole(); // Lock must be taken to manipulate buffer.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
     Log::Comment(L"Testing creating one alternate buffer, then creating another alternate from that first alternate, before returning to the main buffer.");
     SCREEN_INFORMATION* const psiOriginal = &gci.GetActiveOutputBuffer();
     NTSTATUS Status = psiOriginal->UseAlternateScreenBuffer();
@@ -219,6 +225,9 @@ void ScreenBufferTests::MultipleAlternateBufferCreationTest()
 void ScreenBufferTests::MultipleAlternateBuffersFromMainCreationTest()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.LockConsole(); // Lock must be taken to manipulate buffer.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
     Log::Comment(L"Testing creating one alternate buffer, then creating another alternate from the main, before returning to the main buffer.");
     SCREEN_INFORMATION* const psiOriginal = &gci.GetActiveOutputBuffer();
     NTSTATUS Status = psiOriginal->UseAlternateScreenBuffer();
@@ -1106,6 +1115,9 @@ void ScreenBufferTests::ResizeTraditionalDoesntDoubleFreeAttrRows()
 void ScreenBufferTests::ResizeAltBuffer()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.LockConsole(); // Lock must be taken to manipulate buffer.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
     SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
     StateMachine* const stateMachine = si.GetStateMachine();
 

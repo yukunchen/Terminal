@@ -51,7 +51,6 @@ extern "C"
 
 extern "C"
 {
-    #include "debug.h"
     #include "..\inc\contsf.h"
     #include "globals.h"
 }

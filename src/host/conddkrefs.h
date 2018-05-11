@@ -181,9 +181,6 @@ extern "C"
         PLIST_ENTRY NextEntry;
 
         NextEntry = ListHead->Flink;
-        if (NextEntry->Blink != ListHead) {
-            assert(false);
-        }
 
         Entry->Flink = NextEntry;
         Entry->Blink = ListHead;
@@ -204,9 +201,6 @@ extern "C"
 
 
         PrevEntry = ListHead->Blink;
-        if (PrevEntry->Flink != ListHead) {
-            assert(false);
-        }
 
         Entry->Flink = ListHead;
         Entry->Blink = PrevEntry;
@@ -228,9 +222,6 @@ extern "C"
 
         NextEntry = Entry->Flink;
         PrevEntry = Entry->Blink;
-        if ((NextEntry->Blink != Entry) || (PrevEntry->Flink != Entry)) {
-            assert(false);
-        }
 
         PrevEntry->Flink = NextEntry;
         NextEntry->Blink = PrevEntry;

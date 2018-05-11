@@ -556,10 +556,10 @@ void Settings::Validate()
     ClearAllFlags(_wFillAttribute, ~(FG_ATTRS | BG_ATTRS));
     ClearAllFlags(_wPopupFillAttribute, ~(FG_ATTRS | BG_ATTRS));
 
-    ASSERT(_dwWindowSize.X > 0);
-    ASSERT(_dwWindowSize.Y > 0);
-    ASSERT(_dwScreenBufferSize.X > 0);
-    ASSERT(_dwScreenBufferSize.Y > 0);
+    FAIL_FAST_IF_FALSE(_dwWindowSize.X > 0);
+    FAIL_FAST_IF_FALSE(_dwWindowSize.Y > 0);
+    FAIL_FAST_IF_FALSE(_dwScreenBufferSize.X > 0);
+    FAIL_FAST_IF_FALSE(_dwScreenBufferSize.Y > 0);
 }
 
 DWORD Settings::GetVirtTermLevel() const

@@ -205,8 +205,8 @@ NTSTATUS BeginPopup(SCREEN_INFORMATION& screenInfo, _In_ PCOMMAND_HISTORY Comman
     TargetRect.Bottom = Popup->Region.Bottom;
     std::vector<std::vector<OutputCell>> outputCells;
     LOG_IF_FAILED(ReadScreenBuffer(screenInfo, outputCells, &TargetRect));
-    assert(!outputCells.empty());
-    assert(cOldContents == outputCells.size() * outputCells[0].size());
+    FAIL_FAST_IF(outputCells.empty());
+    FAIL_FAST_IF_FALSE(cOldContents == outputCells.size() * outputCells[0].size());
     // copy the data into the char info buffer
     CHAR_INFO* pCurrCharInfo = Popup->OldContents;
     for (auto& row : outputCells)
@@ -234,7 +234,7 @@ NTSTATUS BeginPopup(SCREEN_INFORMATION& screenInfo, _In_ PCOMMAND_HISTORY Comman
 NTSTATUS EndPopup(SCREEN_INFORMATION& screenInfo, _In_ PCOMMAND_HISTORY CommandHistory)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    ASSERT(!CLE_NO_POPUPS(CommandHistory));
+    FAIL_FAST_IF(CLE_NO_POPUPS(CommandHistory));
     if (CLE_NO_POPUPS(CommandHistory))
     {
         return STATUS_UNSUCCESSFUL;
@@ -402,7 +402,7 @@ void RedrawCommandLine(_Inout_ COOKED_READ_DATA* const pCookedReadData)
                                            pCookedReadData->_OriginalCursorPosition.X,
                                            WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
                                            &ScrollY);
-        ASSERT(NT_SUCCESS(Status));
+        FAIL_FAST_IF_NTSTATUS_FAILED(Status);
 
         pCookedReadData->_OriginalCursorPosition.Y += ScrollY;
 
@@ -418,7 +418,7 @@ void RedrawCommandLine(_Inout_ COOKED_READ_DATA* const pCookedReadData)
             CursorPosition.X++;
         }
         Status = AdjustCursorPosition(pCookedReadData->_screenInfo, CursorPosition, TRUE, nullptr);
-        ASSERT(NT_SUCCESS(Status));
+        FAIL_FAST_IF_NTSTATUS_FAILED(Status);
     }
 }
 
@@ -429,8 +429,8 @@ void SetCurrentCommandLine(_In_ COOKED_READ_DATA* const CookedReadData, _In_ SHO
     DeleteCommandLine(CookedReadData, TRUE);
 #pragma prefast(suppress:28931, "Status is not unused. Used by assertions.")
     NTSTATUS Status = RetrieveNthCommand(CookedReadData->_CommandHistory, Index, CookedReadData->_BackupLimit, CookedReadData->_BufferSize, &CookedReadData->_BytesRead);
-    ASSERT(NT_SUCCESS(Status));
-    ASSERT(CookedReadData->_BackupLimit == CookedReadData->_BufPtr);
+    FAIL_FAST_IF_NTSTATUS_FAILED(Status);
+    FAIL_FAST_IF_FALSE(CookedReadData->_BackupLimit == CookedReadData->_BufPtr);
     if (CookedReadData->_Echo)
     {
         SHORT ScrollY = 0;
@@ -443,7 +443,7 @@ void SetCurrentCommandLine(_In_ COOKED_READ_DATA* const CookedReadData, _In_ SHO
                                   CookedReadData->_OriginalCursorPosition.X,
                                   WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
                                   &ScrollY);
-        ASSERT(NT_SUCCESS(Status));
+        FAIL_FAST_IF_NTSTATUS_FAILED(Status);
         CookedReadData->_OriginalCursorPosition.Y += ScrollY;
     }
 
@@ -596,7 +596,7 @@ NTSTATUS ProcessCommandListInput(_In_ COOKED_READ_DATA* const pCookedReadData)
                     SetFlag(pInputReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::MultiLineInput);
                     for (Tmp = pCookedReadData->_BackupLimit; *Tmp != UNICODE_LINEFEED; Tmp++)
                     {
-                        ASSERT(Tmp < (pCookedReadData->_BackupLimit + pCookedReadData->_BytesRead));
+                        FAIL_FAST_IF_FALSE(Tmp < (pCookedReadData->_BackupLimit + pCookedReadData->_BytesRead));
                     }
                     dwNumBytes = (ULONG)(Tmp - pCookedReadData->_BackupLimit + 1) * sizeof(*Tmp);
                 }
@@ -736,12 +736,12 @@ NTSTATUS ProcessCopyFromCharInput(_In_ COOKED_READ_DATA* const pCookedReadData)
                                           pCookedReadData->_OriginalCursorPosition.X,
                                           WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
                                           nullptr);
-                ASSERT(NT_SUCCESS(Status));
+                FAIL_FAST_IF_NTSTATUS_FAILED(Status);
             }
 
             // restore cursor position
             Status = pCookedReadData->_screenInfo.SetCursorPosition(CursorPosition, TRUE);
-            ASSERT(NT_SUCCESS(Status));
+            FAIL_FAST_IF_NTSTATUS_FAILED(Status);
         }
 
         return CONSOLE_STATUS_WAIT_NO_BLOCK;
@@ -809,7 +809,7 @@ NTSTATUS ProcessCopyToCharInput(_In_ COOKED_READ_DATA* const pCookedReadData)
                 ((USHORT)(LastCommand->CommandLength / sizeof(WCHAR)) > ((USHORT)pCookedReadData->_CurrentPosition)))
             {
                 int j = i - pCookedReadData->_CurrentPosition;
-                ASSERT(j > 0);
+                FAIL_FAST_IF_FALSE(j > 0);
                 memmove(pCookedReadData->_BufPtr,
                         &LastCommand->Command[pCookedReadData->_CurrentPosition],
                         j * sizeof(WCHAR));
@@ -831,7 +831,7 @@ NTSTATUS ProcessCopyToCharInput(_In_ COOKED_READ_DATA* const pCookedReadData)
                                               pCookedReadData->_OriginalCursorPosition.X,
                                               WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
                                               &ScrollY);
-                    ASSERT(NT_SUCCESS(Status));
+                    FAIL_FAST_IF_NTSTATUS_FAILED(Status);
                     pCookedReadData->_OriginalCursorPosition.Y += ScrollY;
                     pCookedReadData->_NumberOfVisibleChars += NumSpaces;
                 }
@@ -893,7 +893,7 @@ NTSTATUS ProcessCommandNumberInput(_In_ COOKED_READ_DATA* const pCookedReadData)
                                           pCookedReadData->_OriginalCursorPosition.X,
                                           WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
                                           nullptr);
-                ASSERT(NT_SUCCESS(Status));
+                FAIL_FAST_IF_NTSTATUS_FAILED(Status);
                 pCookedReadData->_screenInfo.SetAttributes(realAttributes);
                 Popup->NumberBuffer[Popup->NumberRead] = Char;
                 Popup->NumberRead += 1;
@@ -917,7 +917,7 @@ NTSTATUS ProcessCommandNumberInput(_In_ COOKED_READ_DATA* const pCookedReadData)
                                           WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
                                           nullptr);
 
-                ASSERT(NT_SUCCESS(Status));
+                FAIL_FAST_IF_NTSTATUS_FAILED(Status);
                 pCookedReadData->_screenInfo.SetAttributes(realAttributes);
                 Popup->NumberBuffer[Popup->NumberRead] = (WCHAR)' ';
                 Popup->NumberRead -= 1;
@@ -945,7 +945,7 @@ NTSTATUS ProcessCommandNumberInput(_In_ COOKED_READ_DATA* const pCookedReadData)
             __analysis_assume(Popup->NumberRead < 6);
             for (i = 0; i < Popup->NumberRead; i++)
             {
-                ASSERT(i < ARRAYSIZE(NumberBuffer));
+                FAIL_FAST_IF_FALSE(i < ARRAYSIZE(NumberBuffer));
                 NumberBuffer[i] = (CHAR)Popup->NumberBuffer[i];
             }
             NumberBuffer[i] = 0;
@@ -1208,7 +1208,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                                          pCookedReadData->_BackupLimit,
                                          pCookedReadData->_BufferSize,
                                          &pCookedReadData->_BytesRead);
-                ASSERT(pCookedReadData->_BackupLimit == pCookedReadData->_BufPtr);
+                FAIL_FAST_IF_FALSE(pCookedReadData->_BackupLimit == pCookedReadData->_BufPtr);
                 if (pCookedReadData->_Echo)
                 {
                     Status = WriteCharsLegacy(pCookedReadData->_screenInfo,
@@ -1220,7 +1220,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                                               pCookedReadData->_OriginalCursorPosition.X,
                                               WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
                                               &ScrollY);
-                    ASSERT(NT_SUCCESS(Status));
+                    FAIL_FAST_IF_NTSTATUS_FAILED(Status);
                     pCookedReadData->_OriginalCursorPosition.Y += ScrollY;
                 }
                 CharsToWrite = pCookedReadData->_BytesRead / sizeof(WCHAR);
@@ -1248,7 +1248,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                                             pCookedReadData->_BackupLimit,
                                             pCookedReadData->_BufferSize,
                                             &pCookedReadData->_BytesRead);
-                ASSERT(pCookedReadData->_BackupLimit == pCookedReadData->_BufPtr);
+                FAIL_FAST_IF_FALSE(pCookedReadData->_BackupLimit == pCookedReadData->_BufPtr);
                 if (pCookedReadData->_Echo)
                 {
                     Status = WriteCharsLegacy(pCookedReadData->_screenInfo,
@@ -1260,7 +1260,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                                               pCookedReadData->_OriginalCursorPosition.X,
                                               WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
                                               &ScrollY);
-                    ASSERT(NT_SUCCESS(Status));
+                    FAIL_FAST_IF_NTSTATUS_FAILED(Status);
                     pCookedReadData->_OriginalCursorPosition.Y += ScrollY;
                 }
                 CharsToWrite = pCookedReadData->_BytesRead / sizeof(WCHAR);
@@ -1284,7 +1284,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                                               pCookedReadData->_OriginalCursorPosition.X,
                                               WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
                                               nullptr);
-                    ASSERT(NT_SUCCESS(Status));
+                    FAIL_FAST_IF_NTSTATUS_FAILED(Status);
                 }
             }
             else
@@ -1324,7 +1324,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                                               pCookedReadData->_OriginalCursorPosition.X,
                                               WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
                                               nullptr);
-                    ASSERT(NT_SUCCESS(Status));
+                    FAIL_FAST_IF_NTSTATUS_FAILED(Status);
                 }
                 CurrentPosition = pCookedReadData->_OriginalCursorPosition;
                 UpdateCursorPosition = true;
@@ -1352,7 +1352,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                             // Skip spaces, until the non-space character is found.
                             while (--LastWord != pCookedReadData->_BackupLimit)
                             {
-                                ASSERT(LastWord > pCookedReadData->_BackupLimit);
+                                FAIL_FAST_IF_FALSE(LastWord > pCookedReadData->_BackupLimit);
                                 if (*LastWord != L' ')
                                 {
                                     break;
@@ -1366,7 +1366,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                                 // Skip WORD_DELIMs until space or non WORD_DELIM is found.
                                 while (--LastWord != pCookedReadData->_BackupLimit)
                                 {
-                                    ASSERT(LastWord > pCookedReadData->_BackupLimit);
+                                    FAIL_FAST_IF_FALSE(LastWord > pCookedReadData->_BackupLimit);
                                     if (*LastWord == L' ' || !IsWordDelim(*LastWord))
                                     {
                                         break;
@@ -1378,7 +1378,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                                 // Skip the regular words
                                 while (--LastWord != pCookedReadData->_BackupLimit)
                                 {
-                                    ASSERT(LastWord > pCookedReadData->_BackupLimit);
+                                    FAIL_FAST_IF_FALSE(LastWord > pCookedReadData->_BackupLimit);
                                     if (IsWordDelim(*LastWord))
                                     {
                                         break;
@@ -1386,7 +1386,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                                 }
                             }
                         }
-                        ASSERT(LastWord >= pCookedReadData->_BackupLimit);
+                        FAIL_FAST_IF_FALSE(LastWord >= pCookedReadData->_BackupLimit);
                         if (LastWord != pCookedReadData->_BackupLimit)
                         {
                             /*
@@ -1459,7 +1459,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                         // A bit better word skipping.
                         PWCHAR BufLast = pCookedReadData->_BackupLimit + pCookedReadData->_BytesRead / sizeof(WCHAR);
 
-                        ASSERT(NextWord < BufLast);
+                        FAIL_FAST_IF_FALSE(NextWord < BufLast);
                         if (*NextWord == L' ')
                         {
                             // If the current character is space, skip to the next non-space character.
@@ -1564,7 +1564,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                                                       pCookedReadData->_OriginalCursorPosition.X,
                                                       WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
                                                       &ScrollY);
-                            ASSERT(NT_SUCCESS(Status));
+                            FAIL_FAST_IF_NTSTATUS_FAILED(Status);
                             pCookedReadData->_OriginalCursorPosition.Y += ScrollY;
                             pCookedReadData->_NumberOfVisibleChars += NumSpaces;
                         }
@@ -1621,7 +1621,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                                                   pCookedReadData->_OriginalCursorPosition.X,
                                                   WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
                                                   &ScrollY);
-                        ASSERT(NT_SUCCESS(Status));
+                        FAIL_FAST_IF_NTSTATUS_FAILED(Status);
                         pCookedReadData->_OriginalCursorPosition.Y += ScrollY;
                         pCookedReadData->_NumberOfVisibleChars += NumSpaces;
                     }
@@ -1669,7 +1669,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                                           pCookedReadData->_OriginalCursorPosition.X,
                                           WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
                                           &ScrollY);
-                ASSERT(NT_SUCCESS(Status));
+                FAIL_FAST_IF_NTSTATUS_FAILED(Status);
                 pCookedReadData->_OriginalCursorPosition.Y += ScrollY;
                 pCookedReadData->_NumberOfVisibleChars += NumSpaces;
             }
@@ -1713,7 +1713,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                                                 pCookedReadData->_BackupLimit,
                                                 pCookedReadData->_BufferSize,
                                                 &pCookedReadData->_BytesRead);
-                    ASSERT(pCookedReadData->_BackupLimit == pCookedReadData->_BufPtr);
+                    FAIL_FAST_IF_FALSE(pCookedReadData->_BackupLimit == pCookedReadData->_BufPtr);
                     if (pCookedReadData->_Echo)
                     {
                         Status = WriteCharsLegacy(pCookedReadData->_screenInfo,
@@ -1725,7 +1725,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                                                   pCookedReadData->_OriginalCursorPosition.X,
                                                   WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
                                                   &ScrollY);
-                        ASSERT(NT_SUCCESS(Status));
+                        FAIL_FAST_IF_NTSTATUS_FAILED(Status);
                         pCookedReadData->_OriginalCursorPosition.Y += ScrollY;
                     }
                     CursorPosition.Y += ScrollY;
@@ -1734,7 +1734,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                     pCookedReadData->_BufPtr = pCookedReadData->_BackupLimit + CurrentPos;
                     pCookedReadData->_CurrentPosition = CurrentPos;
                     Status = pCookedReadData->_screenInfo.SetCursorPosition(CursorPosition, true);
-                    ASSERT(NT_SUCCESS(Status));
+                    FAIL_FAST_IF_NTSTATUS_FAILED(Status);
                 }
             }
             break;
@@ -1807,7 +1807,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                                               pCookedReadData->_OriginalCursorPosition.X,
                                               WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
                                               nullptr);
-                    ASSERT(NT_SUCCESS(Status));
+                    FAIL_FAST_IF_NTSTATUS_FAILED(Status);
                 }
 
                 // restore cursor position
@@ -1824,7 +1824,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                 if (pCookedReadData->_Echo)
                 {
                     Status = AdjustCursorPosition(pCookedReadData->_screenInfo, CurrentPosition, true, nullptr);
-                    ASSERT(NT_SUCCESS(Status));
+                    FAIL_FAST_IF_NTSTATUS_FAILED(Status);
                 }
 
                 // If Ctrl key is pressed, delete a word.
@@ -1838,7 +1838,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
             }
             break;
         default:
-            ASSERT(FALSE);
+            FAIL_FAST_HR(E_NOTIMPL);
             break;
         }
     }
@@ -1846,7 +1846,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
     if (UpdateCursorPosition && pCookedReadData->_Echo)
     {
         Status = AdjustCursorPosition(pCookedReadData->_screenInfo, CurrentPosition, true, nullptr);
-        ASSERT(NT_SUCCESS(Status));
+        FAIL_FAST_IF_NTSTATUS_FAILED(Status);
     }
 
     return STATUS_SUCCESS;
