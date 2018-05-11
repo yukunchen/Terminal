@@ -40,7 +40,9 @@ NTSTATUS FillOutput(SCREEN_INFORMATION& screenInfo,
                     const ULONG ulElementType,
                     _Inout_ PULONG pcElements); // this value is valid even for error cases
 
-void FillRectangle(const CHAR_INFO * const pciFill, SCREEN_INFORMATION& screenInfo, const SMALL_RECT * const psrTarget);
+void FillRectangle(SCREEN_INFORMATION& screenInfo,
+                   const OutputCell& cell,
+                   const SMALL_RECT rect);
 
 size_t WriteOutputAttributes(SCREEN_INFORMATION& screenInfo,
                              const std::vector<WORD>& attrs,
