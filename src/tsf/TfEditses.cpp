@@ -62,7 +62,7 @@ STDAPI_(ULONG) CEditSessionObject::Release()
     long cr;
 
     cr = --m_cRef;
-    Assert(cr >= 0);
+    FAIL_FAST_IF_FALSE(cr >= 0);
 
     if (cr == 0) {
         delete this;
@@ -630,7 +630,7 @@ HRESULT CEditSessionCompositionComplete::CompComplete(TfEditCookie ec)
         (cchCompleted < cch) &&
         SUCCEEDED(spRange->ShiftStart(ec, cchCompleted, &cchCompleted, NULL)))
     {
-        Assert((cchCompleted > 0) && (cchCompleted < cch));
+        FAIL_FAST_IF_FALSE((cchCompleted > 0) && (cchCompleted < cch));
         cch -= cchCompleted;
     }
     else
@@ -941,6 +941,7 @@ HRESULT CEditSessionUpdateCompositionString::_MakeInterimString(TfEditCookie ec,
         // Interim char assume 1 char length.
         // Full text length - 1 means result string length.
         lTextLength--;
+
         FAIL_FAST_IF_FALSE(lTextLength > 0);
 
         if (lTextLength > 0) {

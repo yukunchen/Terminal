@@ -26,9 +26,6 @@ unit testing projects in the codebase without a bunch of overhead.
 #include "../buffer/out/CharRow.hpp"
 #include "../interactivity/inc/ServiceLocator.hpp"
 
-#include <algorithm>
-
-
 class CommonState
 {
 public:
@@ -161,7 +158,7 @@ public:
     void CleanupNewTextBufferInfo()
     {
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        ASSERT(gci.HasActiveOutputBuffer());
+        VERIFY_IS_TRUE(gci.HasActiveOutputBuffer());
 
         gci.pCurrentScreenBuffer->_textBuffer.swap(m_backupTextBufferInfo);
     }
@@ -172,7 +169,7 @@ public:
         // fill with some assorted text that doesn't consume the whole row
         const SHORT cRowsToFill = 4;
 
-        ASSERT(gci.HasActiveOutputBuffer());
+        VERIFY_IS_TRUE(gci.HasActiveOutputBuffer());
 
         TextBuffer& textBuffer = gci.GetActiveOutputBuffer().GetTextBuffer();
 
@@ -191,7 +188,7 @@ public:
         // fill with some text that fills the whole row and has bisecting double byte characters
         const SHORT cRowsToFill = s_csBufferHeight;
 
-        ASSERT(gci.HasActiveOutputBuffer());
+        VERIFY_IS_TRUE(gci.HasActiveOutputBuffer());
 
         TextBuffer& textBuffer = gci.GetActiveOutputBuffer().GetTextBuffer();
 

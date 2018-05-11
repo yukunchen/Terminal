@@ -132,12 +132,16 @@ public:
     std::vector<OutputCell> ReadLine(const size_t rowIndex,
                                      const size_t startIndex,
                                      const size_t count) const;
-                                     
+
     const_text_iterator GetTextDataAt(const COORD at) const;
 
-    void WriteLine(const std::vector<OutputCell>& cells,
-                   const size_t rowIndex,
-                   const size_t startIndex);
+    size_t WriteLine(const std::vector<OutputCell>& cells,
+                     const size_t rowIndex,
+                     const size_t startIndex);
+
+    size_t WriteLineNoWrap(const std::vector<OutputCell>& cells,
+                           const size_t rowIndex,
+                           const size_t startIndex);
 
     void ClearTextData();
 
@@ -280,6 +284,11 @@ private:
 
     void _InitializeBufferDimensions(const COORD coordScreenBufferSize,
                                      const COORD coordViewportSize);
+
+    size_t _WriteLine(const std::vector<OutputCell>& cells,
+                      const size_t rowIndex,
+                      const size_t startIndex,
+                      const bool shouldWrap);
 
     ConhostInternalGetSet* _pConApi;
     WriteBuffer* _pBufferWriter;

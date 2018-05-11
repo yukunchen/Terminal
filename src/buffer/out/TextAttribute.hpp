@@ -68,12 +68,12 @@ public:
     void SetFromLegacy(const WORD wLegacy) noexcept;
     void SetMetaAttributes(const WORD wMeta) noexcept;
 
-    friend bool operator==(const TextAttribute& a, const TextAttribute& b) noexcept;
-    friend bool operator!=(const TextAttribute& a, const TextAttribute& b) noexcept;
-    friend bool operator==(const TextAttribute& attr, const WORD& legacyAttr) noexcept;
-    friend bool operator!=(const TextAttribute& attr, const WORD& legacyAttr) noexcept;
-    friend bool operator==(const WORD& legacyAttr, const TextAttribute& attr) noexcept;
-    friend bool operator!=(const WORD& legacyAttr, const TextAttribute& attr) noexcept;
+    friend constexpr bool operator==(const TextAttribute& a, const TextAttribute& b) noexcept;
+    friend constexpr bool operator!=(const TextAttribute& a, const TextAttribute& b) noexcept;
+    friend constexpr bool operator==(const TextAttribute& attr, const WORD& legacyAttr) noexcept;
+    friend constexpr bool operator!=(const TextAttribute& attr, const WORD& legacyAttr) noexcept;
+    friend constexpr bool operator==(const WORD& legacyAttr, const TextAttribute& attr) noexcept;
+    friend constexpr bool operator!=(const WORD& legacyAttr, const TextAttribute& attr) noexcept;
 
     bool IsLegacy() const noexcept;
 
@@ -97,9 +97,35 @@ private:
 #endif
 };
 
-bool operator==(const TextAttribute& a, const TextAttribute& b) noexcept;
-bool operator!=(const TextAttribute& a, const TextAttribute& b) noexcept;
-bool operator==(const TextAttribute& attr, const WORD& legacyAttr) noexcept;
-bool operator!=(const TextAttribute& attr, const WORD& legacyAttr) noexcept;
-bool operator==(const WORD& legacyAttr, const TextAttribute& attr) noexcept;
-bool operator!=(const WORD& legacyAttr, const TextAttribute& attr) noexcept;
+bool constexpr operator==(const TextAttribute& a, const TextAttribute& b) noexcept
+{
+    return a._wAttrLegacy == b._wAttrLegacy &&
+           a._fUseRgbColor == b._fUseRgbColor &&
+           a._rgbForeground == b._rgbForeground &&
+           a._rgbBackground == b._rgbBackground;
+}
+
+bool constexpr operator!=(const TextAttribute& a, const TextAttribute& b) noexcept
+{
+    return !(a == b);
+}
+
+bool constexpr operator==(const TextAttribute& attr, const WORD& legacyAttr) noexcept
+{
+    return attr._wAttrLegacy == legacyAttr && !attr._fUseRgbColor;
+}
+
+bool constexpr operator!=(const TextAttribute& attr, const WORD& legacyAttr) noexcept
+{
+    return !(attr == legacyAttr);
+}
+
+bool constexpr operator==(const WORD& legacyAttr, const TextAttribute& attr) noexcept
+{
+    return attr == legacyAttr;
+}
+
+bool constexpr operator!=(const WORD& legacyAttr, const TextAttribute& attr) noexcept
+{
+    return !(attr == legacyAttr);
+}

@@ -47,7 +47,6 @@ extern "C"
 
 #include "..\inc\contsf.h"
 
-#include "debug.h"
 #include "globals.h"
 
 #include "TfCtxtComp.h"

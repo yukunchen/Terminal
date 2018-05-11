@@ -344,7 +344,7 @@ void Selection::ExtendSelection(_In_ COORD coordBufferPos)
     if (!IsAreaSelected())
     {
         // we should only be extending a selection that has no area yet if we're coming from mark mode
-        ASSERT(!IsMouseInitiatedSelection());
+        FAIL_FAST_IF(IsMouseInitiatedSelection());
 
         // scroll if necessary to make cursor visible.
         screenInfo.MakeCursorVisible(coordBufferPos);
@@ -511,8 +511,7 @@ void Selection::ClearSelection(const bool fStartingNewSelection)
 void Selection::ColorSelection(const SMALL_RECT& srRect, const ULONG ulAttr)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    // TODO: psrRect should likely one day be replaced with an array of rectangles (in case we have a line selection we want colored)
-    ASSERT(ulAttr <= 0xff);
+    FAIL_FAST_IF_FALSE(ulAttr <= 0xff);
 
     // Read selection rectangle, assumed already clipped to buffer.
     SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();

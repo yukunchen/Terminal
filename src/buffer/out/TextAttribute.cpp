@@ -142,39 +142,6 @@ void TextAttribute::SetColor(const COLORREF rgbColor, const bool fIsForeground)
     }
 }
 
-bool operator==(const TextAttribute& a, const TextAttribute& b) noexcept
-{
-    return a._wAttrLegacy == b._wAttrLegacy &&
-        a._fUseRgbColor == b._fUseRgbColor &&
-        a._rgbForeground == b._rgbForeground &&
-        a._rgbBackground == b._rgbBackground;
-}
-
-bool operator!=(const TextAttribute& a, const TextAttribute& b) noexcept
-{
-    return !(a == b);
-}
-
-bool operator==(const TextAttribute& attr, const WORD& legacyAttr) noexcept
-{
-    return attr._wAttrLegacy == legacyAttr && !attr._fUseRgbColor;
-}
-
-bool operator!=(const TextAttribute& attr, const WORD& legacyAttr) noexcept
-{
-    return !(attr == legacyAttr);
-}
-
-bool operator==(const WORD& legacyAttr, const TextAttribute& attr) noexcept
-{
-    return attr == legacyAttr;
-}
-
-bool operator!=(const WORD& legacyAttr, const TextAttribute& attr) noexcept
-{
-    return !(attr == legacyAttr);
-}
-
 bool TextAttribute::_IsReverseVideo() const noexcept
 {
     return IsFlagSet(_wAttrLegacy, COMMON_LVB_REVERSE_VIDEO);

@@ -19,6 +19,7 @@ Author:
 #include "TextAttribute.hpp"
 
 #include <exception>
+#include <variant>
 
 class InvalidCharInfoConversionException : public std::exception
 {
@@ -39,7 +40,9 @@ public:
         Current, // use text attribute of cell being written to
     };
 
-
+    static std::vector<OutputCell> FromUtf16(const std::vector<std::vector<wchar_t>>& utf16Glyphs);
+    static std::vector<OutputCell> FromUtf16(const std::vector<std::vector<wchar_t>>& utf16Glyphs,
+                                             const TextAttribute defaultTextAttribute);
 
     OutputCell(const std::vector<wchar_t>& charData,
                const DbcsAttribute dbcsAttribute,
@@ -80,6 +83,8 @@ public:
         return _behavior;
     }
 
+    friend bool operator==(const OutputCell& a, const OutputCell& b) noexcept;
+
 private:
     std::vector<wchar_t> _charData;
     DbcsAttribute _dbcsAttribute;
@@ -88,4 +93,8 @@ private:
 
     void _setFromBehavior(const TextAttributeBehavior behavior);
     void _setFromCharInfo(const CHAR_INFO& charInfo);
+    static std::vector<OutputCell> _fromUtf16(const std::vector<std::vector<wchar_t>>& utf16Glyphs,
+                                              const std::variant<TextAttribute, TextAttributeBehavior> textAttrVal);
 };
+
+bool operator==(const OutputCell& a, const OutputCell& b) noexcept;

@@ -188,7 +188,7 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
 
     if (CONSOLE_STATUS_WAIT == Status)
     {
-        assert(readEvents.empty());
+        FAIL_FAST_IF_FALSE(readEvents.empty());
         // If we're told to wait until later, move all of our context
         // to the read data object and send it back up to the server.
         try
@@ -235,7 +235,7 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
         {
             pInputBuffer->StoreReadPartialByteSequence(std::move(readEvents.front()));
             readEvents.pop_front();
-            assert(readEvents.empty());
+            FAIL_FAST_IF_FALSE(readEvents.empty());
         }
     }
     return Status;
@@ -722,7 +722,7 @@ NTSTATUS SrvReadConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
 
         std::vector<std::vector<OutputCell>> outputCells;
         Status = ReadScreenBuffer(activeScreenInfo, outputCells, &a->CharRegion);
-        assert(cbBuffer >= outputCells.size() * outputCells[0].size() * sizeof(CHAR_INFO));
+        FAIL_FAST_IF_FALSE(cbBuffer >= outputCells.size() * outputCells[0].size() * sizeof(CHAR_INFO));
         // convert to CharInfo
         CHAR_INFO* pCurrCharInfo = Buffer;
         // copy the data into the char info buffer
@@ -1045,14 +1045,64 @@ NTSTATUS SrvWriteConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /
         {
             if (a->StringType == CONSOLE_ASCII)
             {
-                a->NumRecords = BufferSize;
+
+                try
+                {
+                    const ULONG elementCount = BufferSize;
+                    const char* const pChars = reinterpret_cast<const char* const>(Buffer);
+                    std::vector<char> chars{ pChars, pChars + elementCount };
+                    a->NumRecords = gsl::narrow<ULONG>(WriteOutputStringA(pScreenInfo->GetActiveBuffer(),
+                                                                          chars,
+                                                                          a->WriteCoord));
+                }
+                catch (...)
+                {
+                    a->NumRecords = 0;
+                    Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+                }
+            }
+            else if (a->StringType == CONSOLE_ATTRIBUTE)
+            {
+                try
+                {
+                    const ULONG elementCount = BufferSize / sizeof(WORD);
+                    const WORD* const pAttrs = reinterpret_cast<const WORD* const>(Buffer);
+                    std::vector<WORD> attrs{ pAttrs, pAttrs + elementCount };
+                    a->NumRecords = gsl::narrow<ULONG>(WriteOutputAttributes(pScreenInfo->GetActiveBuffer(),
+                                                                             attrs,
+                                                                             a->WriteCoord));
+                    Status = STATUS_SUCCESS;
+                }
+                catch (...)
+                {
+                    a->NumRecords = 0;
+                    Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+                }
+            }
+            else if (a->StringType == CONSOLE_REAL_UNICODE ||
+                     a->StringType == CONSOLE_FALSE_UNICODE)
+            {
+                try
+                {
+                    const ULONG elementCount = BufferSize / sizeof(wchar_t);
+                    const wchar_t* const pChars = reinterpret_cast<const wchar_t* const>(Buffer);
+                    std::vector<wchar_t> chars{ pChars, pChars + elementCount };
+                    a->NumRecords = gsl::narrow<ULONG>(WriteOutputStringW(pScreenInfo->GetActiveBuffer(),
+                                                                          chars,
+                                                                          a->WriteCoord));
+                    Status = STATUS_SUCCESS;
+                }
+                catch (...)
+                {
+                    a->NumRecords = 0;
+                    Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+                }
             }
             else
             {
-                a->NumRecords = BufferSize / sizeof(WCHAR);
+                a->NumRecords = 0;
+                Status = STATUS_INVALID_PARAMETER;
             }
-
-            Status = WriteOutputString(pScreenInfo->GetActiveBuffer(), Buffer, a->WriteCoord, a->StringType, &a->NumRecords, nullptr);
         }
     }
 
@@ -1135,7 +1185,7 @@ NTSTATUS ConsoleCreateScreenBuffer(_Out_ ConsoleHandleData** ppHandle,
     // If any buffer type except the one we support is set, it's invalid.
     if (IsAnyFlagSet(a->Flags, ~CONSOLE_TEXTMODE_BUFFER))
     {
-        ASSERT(false); // We no longer support anything other than a textmode buffer
+        // We no longer support anything other than a textmode buffer
         return STATUS_INVALID_PARAMETER;
     }
 

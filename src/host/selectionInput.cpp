@@ -24,7 +24,7 @@ Selection::KeySelectionEventResult Selection::HandleKeySelectionEvent(const INPU
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto inputServices = ServiceLocator::LocateInputServices();
-    ASSERT(IsInSelectingState());
+    FAIL_FAST_IF(!IsInSelectingState());
 
     const WORD wVirtualKeyCode = pInputKeyInfo->GetVirtualKey();
     const bool ctrlPressed = IsFlagSet(inputServices->GetKeyState(VK_CONTROL), KEY_PRESSED);
@@ -269,7 +269,7 @@ COORD Selection::WordByWordSelection(const bool fReverse,
             fMoveSucceeded = Utils::s_DoIncrementScreenCoordinate(srectEdges, &outCoord);
         }
 
-        ASSERT(fMoveSucceeded); // we should never fail to move forward after having moved backward
+        FAIL_FAST_IF(!fMoveSucceeded); // we should never fail to move forward after having moved backward
     }
     return outCoord;
 }
@@ -335,8 +335,8 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
 
     const SHORT sWindowHeight = gci.GetActiveOutputBuffer().GetScreenWindowSizeY();
 
-    ASSERT(coordSelPoint.X >= srectEdges.Left && coordSelPoint.X <= srectEdges.Right);
-    ASSERT(coordSelPoint.Y >= srectEdges.Top && coordSelPoint.Y <= srectEdges.Bottom);
+    FAIL_FAST_IF_FALSE(coordSelPoint.X >= srectEdges.Left && coordSelPoint.X <= srectEdges.Right);
+    FAIL_FAST_IF_FALSE(coordSelPoint.Y >= srectEdges.Top && coordSelPoint.Y <= srectEdges.Bottom);
 
     // retrieve input line information. If we are selecting from within the input line, we need
     // to bound ourselves within the input data first and not move into the back buffer.
@@ -888,7 +888,7 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
         }
 
         default:
-            ASSERT(FALSE);
+            FAIL_FAST_HR(E_NOTIMPL);
         }
 
         // see if shift is down. if so, we're extending the selection. otherwise, we're resetting the anchor

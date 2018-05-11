@@ -1207,7 +1207,7 @@ NTSTATUS DoPrivateTabHelper(const SHORT sNumTabs, _In_ bool fForward)
     SCREEN_INFORMATION& _screenBuffer = gci.GetActiveOutputBuffer();
 
     NTSTATUS Status = STATUS_SUCCESS;
-    ASSERT(sNumTabs >= 0);
+    FAIL_FAST_IF_FALSE(sNumTabs >= 0);
     for (SHORT sTabsExecuted = 0; sTabsExecuted < sNumTabs && NT_SUCCESS(Status); sTabsExecuted++)
     {
         const COORD cursorPos = _screenBuffer.GetTextBuffer().GetCursor().GetPosition();
@@ -1684,7 +1684,7 @@ HRESULT DoSrvSetConsoleTitleW(_In_reads_or_z_(cchBuffer) const wchar_t* const pw
 NTSTATUS DoSrvPrivateSuppressResizeRepaint()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    assert(gci.IsInVtIoMode());
+    FAIL_FAST_IF_FALSE(gci.IsInVtIoMode());
     return NTSTATUS_FROM_HRESULT(gci.GetVtIo()->SuppressResizeRepaint());
 }
 

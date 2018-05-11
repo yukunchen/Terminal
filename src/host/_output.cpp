@@ -24,8 +24,6 @@
 
 using namespace Microsoft::Console::Types;
 
-#define MAX_POLY_LINES 80
-
 
 void StreamWriteToScreenBuffer(SCREEN_INFORMATION& screenInfo,
                                const std::wstring& wstr,
@@ -42,19 +40,8 @@ void StreamWriteToScreenBuffer(SCREEN_INFORMATION& screenInfo,
     {
         const TextAttribute defaultTextAttribute = screenInfo.GetAttributes();
         const auto formattedCharData = Utf16Parser::Parse(wstr);
+        const std::vector<OutputCell> cells = OutputCell::FromUtf16(formattedCharData, defaultTextAttribute);
 
-        std::vector<OutputCell> cells;
-        for (const auto chars : formattedCharData)
-        {
-            DbcsAttribute dbcsAttr;
-            if (IsGlyphFullWidth(chars))
-            {
-                dbcsAttr.SetLeading();
-                cells.emplace_back(chars, dbcsAttr, defaultTextAttribute);
-                dbcsAttr.SetTrailing();
-            }
-            cells.emplace_back(chars, dbcsAttr, defaultTextAttribute);
-        }
         screenInfo.WriteLine(cells, TargetPoint.Y, TargetPoint.X);
     }
     CATCH_LOG();
@@ -162,457 +149,151 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const SMALL_RECT srRegion)
 }
 
 // Routine Description:
-// - This routine writes a string of characters or attributes to the screen buffer.
+// - writes text attributes to the screen
 // Arguments:
-// - pScreenInfo - reference to screen buffer information.
-// - pvBuffer - Buffer to write from.
-// - coordWrite - Screen buffer coordinate to begin writing to.
-// - ulStringType - One of the following:
-//                  CONSOLE_ASCII          - write a string of ascii characters.
-//                  CONSOLE_REAL_UNICODE   - write a string of real unicode characters.
-//                  CONSOLE_FALSE_UNICODE  - write a string of false unicode characters.
-//                  CONSOLE_ATTRIBUTE      - write a string of attributes.
-// - pcRecords - On input, the number of elements to write.  On output, the number of elements written.
-// - pcColumns - receives the number of columns output, which could be more than NumRecords (FE fullwidth chars)
+// - screenInfo - the screen info to write to
+// - attrs - the attrs to write to the screen
+// - target - the starting coordinate in the screen
 // Return Value:
-[[nodiscard]]
-NTSTATUS WriteOutputString(SCREEN_INFORMATION& screenInfo,
-                           _In_reads_(*pcRecords) const VOID * pvBuffer,
-                           const COORD coordWrite,
-                           const ULONG ulStringType,
-                           _Inout_ PULONG pcRecords,    // this value is valid even for error cases
-                           _Out_opt_ PULONG pcColumns)
+// - number of elements written
+size_t WriteOutputAttributes(SCREEN_INFORMATION& screenInfo,
+                             const std::vector<WORD>& attrs,
+                             const COORD target)
 {
-    DBGOUTPUT(("WriteOutputString\n"));
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-
-    if (*pcRecords == 0)
+    if (attrs.empty())
     {
-        return STATUS_SUCCESS;
+        return 0;
     }
 
-    ULONG NumWritten = 0;
-    ULONG NumRecordsSavedForUnicode = 0;
-    SHORT X = coordWrite.X;
-    SHORT Y = coordWrite.Y;
     const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
-    if (X >= coordScreenBufferSize.X || X < 0 || Y >= coordScreenBufferSize.Y || Y < 0)
+    if (!IsCoordInBounds(target, coordScreenBufferSize))
     {
-        *pcRecords = 0;
-        return STATUS_SUCCESS;
+        return 0;
     }
 
-    WCHAR rgwchBuffer[128] = {0};
-    DbcsAttribute rgbBufferA[128];
-
-    DbcsAttribute* BufferA = nullptr;
-    PWCHAR TransBuffer = nullptr;
-    DbcsAttribute* TransBufferA = nullptr;
-    bool fLocalHeap = false;
-    if (ulStringType == CONSOLE_ASCII)
+    size_t elementsWritten = 0;
+    COORD currentLocation = target;
+    std::vector<TextAttributeRun> runs{ {} };
+    runs.front().SetLength(1);
+    // write attrs
+    for (auto currentAttr : attrs)
     {
-        UINT const Codepage = gci.OutputCP;
-
-        if (*pcRecords >= ARRAYSIZE(rgwchBuffer) ||
-            *pcRecords >= ARRAYSIZE(rgbBufferA))
+        ROW& row = screenInfo.GetTextBuffer().GetRowByOffset(currentLocation.Y);
+        ATTR_ROW& attrRow = row.GetAttrRow();
+        // clear dbcs bits
+        ClearAllFlags(currentAttr, COMMON_LVB_SBCSDBCS);
+        // add to attr row
+        runs.front().SetAttributesFromLegacy(currentAttr);
+        THROW_IF_FAILED(attrRow.InsertAttrRuns(runs,
+                                               currentLocation.X,
+                                               currentLocation.X,
+                                               row.size()));
+        ++elementsWritten;
+        ++currentLocation.X;
+        // move to next location
+        if (currentLocation.X == coordScreenBufferSize.X)
         {
-
-            TransBuffer = new(std::nothrow) WCHAR[*pcRecords * 2];
-            if (TransBuffer == nullptr)
-            {
-                return STATUS_NO_MEMORY;
-            }
-            ZeroMemory(TransBuffer, *pcRecords * 2 * sizeof(WCHAR));
-            TransBufferA = new(std::nothrow) DbcsAttribute[*pcRecords * 2];
-            if (TransBufferA == nullptr)
-            {
-                delete[] TransBuffer;
-                return STATUS_NO_MEMORY;
-            }
-            ZeroMemory(TransBufferA, *pcRecords * 2 * sizeof(DbcsAttribute));
-
-            fLocalHeap = true;
+            currentLocation.X = 0;
+            currentLocation.Y++;
         }
-        else
+        if (!IsCoordInBounds(currentLocation, coordScreenBufferSize))
         {
-            TransBuffer = rgwchBuffer;
-            TransBufferA = rgbBufferA;
-        }
-
-        PCHAR TmpBuf = (PCHAR)pvBuffer;
-        PCHAR pchTmpBufEnd = TmpBuf + *pcRecords;
-        PWCHAR TmpTrans = TransBuffer;
-        DbcsAttribute* TmpTransA = TransBufferA;
-        for (ULONG i = 0; i < *pcRecords;)
-        {
-            if (TmpBuf >= pchTmpBufEnd)
-            {
-                ASSERT(false);
-                break;
-            }
-
-            if (IsDBCSLeadByteConsole(*TmpBuf, &gci.OutputCPInfo))
-            {
-                if (i + 1 >= *pcRecords)
-                {
-                    *TmpTrans = UNICODE_SPACE;
-                    TmpTransA->SetSingle();
-                    i++;
-                }
-                else
-                {
-                    if (TmpBuf + 1 >= pchTmpBufEnd)
-                    {
-                        ASSERT(false);
-                        break;
-                    }
-
-                    ConvertOutputToUnicode(Codepage, TmpBuf, 2, TmpTrans, 2);
-                    *(TmpTrans + 1) = *TmpTrans;
-                    TmpTrans += 2;
-                    TmpBuf += 2;
-                    TmpTransA->SetLeading();
-                    ++TmpTransA;
-                    TmpTransA->SetTrailing();
-                    ++TmpTransA;
-                    i += 2;
-                }
-            }
-            else
-            {
-                ConvertOutputToUnicode(Codepage, TmpBuf, 1, TmpTrans, 1);
-                TmpTrans++;
-                TmpBuf++;
-                TmpTransA->SetSingle();
-                ++TmpTransA;
-                i++;
-            }
-        }
-        BufferA = TransBufferA;
-        pvBuffer = TransBuffer;
-    }
-
-    if ((ulStringType == CONSOLE_REAL_UNICODE) || (ulStringType == CONSOLE_FALSE_UNICODE))
-    {
-        PWCHAR TmpBuf;
-        PWCHAR TmpTrans;
-        DbcsAttribute* TmpTransA;
-        ULONG i, jTmp;
-        WCHAR c;
-
-        // Avoid overflow into TransBufferCharacter and TransBufferAttribute.
-        // If hit by IsConsoleFullWidth() then one unicode character needs two spaces on TransBuffer.
-        if (*pcRecords * 2 >= ARRAYSIZE(rgwchBuffer) ||
-            *pcRecords * 2 >= ARRAYSIZE(rgbBufferA))
-        {
-            TransBuffer = new(std::nothrow) WCHAR[*pcRecords * 2];
-            if (TransBuffer == nullptr)
-            {
-                return STATUS_NO_MEMORY;
-            }
-            ZeroMemory(TransBuffer, *pcRecords * 2 * sizeof(WCHAR));
-
-            TransBufferA = new(std::nothrow) DbcsAttribute[*pcRecords * 2];
-            if (TransBufferA == nullptr)
-            {
-                delete[] TransBuffer;
-                return STATUS_NO_MEMORY;
-            }
-            ZeroMemory(TransBufferA, *pcRecords * 2 * sizeof(DbcsAttribute));
-
-            fLocalHeap = true;
-        }
-        else
-        {
-            TransBuffer = rgwchBuffer;
-            TransBufferA = rgbBufferA;
-        }
-
-        TmpBuf = (PWCHAR)pvBuffer;
-        TmpTrans = TransBuffer;
-        TmpTransA = TransBufferA;
-        for (i = 0, jTmp = 0; i < *pcRecords; i++, jTmp++)
-        {
-            *TmpTrans++ = c = *TmpBuf++;
-            TmpTransA->SetSingle();
-            if (IsCharFullWidth(c))
-            {
-                TmpTransA->SetLeading();
-                ++TmpTransA;
-                *TmpTrans++ = c;
-                TmpTransA->SetTrailing();
-                jTmp++;
-            }
-
-            TmpTransA++;
-        }
-
-        NumRecordsSavedForUnicode = *pcRecords;
-        *pcRecords = jTmp;
-        pvBuffer = TransBuffer;
-        BufferA = TransBufferA;
-    }
-
-    ROW* pRow = &screenInfo.GetTextBuffer().GetRowByOffset(coordWrite.Y);
-    if ((ulStringType == CONSOLE_REAL_UNICODE) || (ulStringType == CONSOLE_FALSE_UNICODE) || (ulStringType == CONSOLE_ASCII))
-    {
-        for (;;)
-        {
-            if (pRow == nullptr)
-            {
-                ASSERT(false);
-                break;
-            }
-
-            // copy the chars into their arrays
-            CharRow::iterator it;
-            try
-            {
-                CharRow& charRow = pRow->GetCharRow();
-                it = std::next(charRow.begin(), X);
-            }
-            catch (...)
-            {
-                return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-            }
-
-            if ((ULONG)(coordScreenBufferSize.X - X) >= (*pcRecords - NumWritten))
-            {
-                // The text will not hit the right hand edge, copy it all
-                COORD TPoint;
-
-                TPoint.X = X;
-                TPoint.Y = Y;
-                CleanupDbcsEdgesForWrite((SHORT)(*pcRecords - NumWritten), TPoint, screenInfo);
-
-                if (TPoint.Y == coordScreenBufferSize.Y - 1 &&
-                    (SHORT)(TPoint.X + *pcRecords - NumWritten) >= coordScreenBufferSize.X &&
-                    BufferA[coordScreenBufferSize.X - TPoint.X - 1].IsLeading())
-                {
-                    *((PWCHAR)pvBuffer + coordScreenBufferSize.X - TPoint.X - 1) = UNICODE_SPACE;
-                    BufferA[coordScreenBufferSize.X - TPoint.X - 1].SetSingle();
-                    if ((SHORT)(*pcRecords - NumWritten) > (SHORT)(coordScreenBufferSize.X - TPoint.X - 1))
-                    {
-                        #pragma prefast(suppress:__WARNING_BUFFER_OVERFLOW, "ScreenBufferSize limits this, but it's very obtuse.")
-                        *((PWCHAR)pvBuffer + coordScreenBufferSize.X - TPoint.X) = UNICODE_SPACE;
-                        #pragma prefast(suppress:__WARNING_BUFFER_OVERFLOW, "ScreenBufferSize limits this, but it's very obtuse.")
-                        BufferA[coordScreenBufferSize.X - TPoint.X].SetSingle();
-                    }
-                }
-
-                const size_t numToWrite = *pcRecords - NumWritten;
-                try
-                {
-                    const wchar_t* const pChars = reinterpret_cast<const wchar_t* const>(pvBuffer);
-                    const DbcsAttribute* const pAttrs = static_cast<const DbcsAttribute* const>(BufferA);
-                    OverwriteColumns(pChars, pChars + numToWrite, pAttrs, it);
-                }
-                catch (...)
-                {
-                    return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-                }
-
-                X = (SHORT)(X + numToWrite - 1);
-                NumWritten = *pcRecords;
-            }
-            else
-            {
-                // The text will hit the right hand edge, copy only that much.
-                COORD TPoint;
-
-                TPoint.X = X;
-                TPoint.Y = Y;
-                CleanupDbcsEdgesForWrite((SHORT)(coordScreenBufferSize.X - X), TPoint, screenInfo);
-                if (TPoint.Y == coordScreenBufferSize.Y - 1 &&
-                    TPoint.X + coordScreenBufferSize.X - X >= coordScreenBufferSize.X &&
-                    BufferA[coordScreenBufferSize.X - TPoint.X - 1].IsLeading())
-                {
-                    *((PWCHAR)pvBuffer + coordScreenBufferSize.X - TPoint.X - 1) = UNICODE_SPACE;
-                    BufferA[coordScreenBufferSize.X - TPoint.X - 1].SetSingle();
-                    if (coordScreenBufferSize.X - X > coordScreenBufferSize.X - TPoint.X - 1)
-                    {
-                        *((PWCHAR)pvBuffer + coordScreenBufferSize.X - TPoint.X) = UNICODE_SPACE;
-                        BufferA[coordScreenBufferSize.X - TPoint.X].SetSingle();
-                    }
-                }
-                const size_t numToWrite = coordScreenBufferSize.X - X;
-                try
-                {
-                    const wchar_t* const pChars = reinterpret_cast<const wchar_t* const>(pvBuffer);
-                    const DbcsAttribute* const pAttrs = static_cast<const DbcsAttribute* const>(BufferA);
-                    OverwriteColumns(pChars, pChars + numToWrite, pAttrs, it);
-                }
-                catch (...)
-                {
-                    return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-                }
-                BufferA = BufferA + numToWrite;
-                pvBuffer = (PVOID)((PBYTE)pvBuffer + (numToWrite * sizeof(WCHAR)));
-                NumWritten += static_cast<ULONG>(numToWrite);
-                X = (SHORT)(numToWrite);
-            }
-
-            if (NumWritten < *pcRecords)
-            {
-                // The string hit the right hand edge, so wrap around to the next line by going back round the while loop, unless we
-                // are at the end of the buffer - in which case we simply abandon the remainder of the output string!
-                X = 0;
-                Y++;
-
-                // if we are wrapping around, set that this row is wrapping
-                pRow->GetCharRow().SetWrapForced(true);
-
-                if (Y >= coordScreenBufferSize.Y)
-                {
-                    break;  // abandon output, string is truncated
-                }
-            }
-            else
-            {
-                // if we're not wrapping around, set that this row isn't wrapped.
-                pRow->GetCharRow().SetWrapForced(false);
-                break;
-            }
-
-            try
-            {
-                pRow = &screenInfo.GetTextBuffer().GetNextRowNoWrap(*pRow);
-            }
-            catch (...)
-            {
-                pRow = nullptr;
-            }
+            break;
         }
     }
-    else if (ulStringType == CONSOLE_ATTRIBUTE)
+    // tell screen to update screen portion
+    SMALL_RECT writeRegion;
+    writeRegion.Top = target.Y;
+    writeRegion.Bottom = std::min(currentLocation.Y, coordScreenBufferSize.Y);
+    writeRegion.Left = 0;
+    writeRegion.Right = coordScreenBufferSize.X;
+    WriteToScreen(screenInfo, writeRegion);
+
+    return elementsWritten;
+}
+
+// Routine Description:
+// - writes text to the screen
+// Arguments:
+// - screenInfo - the screen info to write to
+// - chars - the text to write to the screen
+// - target - the starting coordinate in the screen
+// Return Value:
+// - number of elements written
+size_t WriteOutputStringW(SCREEN_INFORMATION& screenInfo,
+                          const std::vector<wchar_t>& chars,
+                          const COORD target)
+{
+    if (chars.empty())
     {
-        try
-        {
-            PWORD SourcePtr = (PWORD)pvBuffer;
-            std::vector<TextAttributeRun> AttrRunsBuff;
-            TextAttributeRun AttrRun;
-
-            for (;;)
-            {
-                if (pRow == nullptr)
-                {
-                    ASSERT(false);
-                    break;
-                }
-
-                // copy the attrs into the screen buffer arrays
-                AttrRunsBuff.clear(); // for each row, ensure the buffer is clean
-                AttrRun.SetLength(0);
-                AttrRun.SetAttributesFromLegacy(*SourcePtr & ~COMMON_LVB_SBCSDBCS);
-                for (SHORT j = X; j < coordScreenBufferSize.X; j++, SourcePtr++)
-                {
-                    if (AttrRun.GetAttributes() == (*SourcePtr & ~COMMON_LVB_SBCSDBCS))
-                    {
-                        AttrRun.SetLength(AttrRun.GetLength() + 1);
-                    }
-                    else
-                    {
-                        AttrRunsBuff.push_back(AttrRun);
-                        AttrRun.SetLength(1);
-                        AttrRun.SetAttributesFromLegacy(*SourcePtr & ~COMMON_LVB_SBCSDBCS);
-                    }
-                    NumWritten++;
-                    X++;
-                    if (NumWritten == *pcRecords)
-                    {
-                        break;
-                    }
-                }
-                AttrRunsBuff.push_back(AttrRun);
-                X--;
-
-                // recalculate last non-space char
-
-                LOG_IF_FAILED(pRow->GetAttrRow().InsertAttrRuns(AttrRunsBuff,
-                                                                (SHORT)((Y == coordWrite.Y) ? coordWrite.X : 0),
-                                                                X,
-                                                                coordScreenBufferSize.X));
-
-                try
-                {
-                    pRow = &screenInfo.GetTextBuffer().GetNextRowNoWrap(*pRow);
-                }
-                catch (...)
-                {
-                    pRow = nullptr;
-                }
-
-                if (NumWritten < *pcRecords)
-                {
-                    X = 0;
-                    Y++;
-                    if (Y >= coordScreenBufferSize.Y)
-                    {
-                        break;
-                    }
-                }
-                else
-                {
-                    break;
-                }
-            }
-            screenInfo.NotifyAccessibilityEventing(coordWrite.X, coordWrite.Y, X, Y);
-
-        }
-        catch (...)
-        {
-            return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-        }
-    }
-    else
-    {
-        *pcRecords = 0;
-        return STATUS_INVALID_PARAMETER;
-    }
-    if ((ulStringType == CONSOLE_ASCII) && (TransBuffer != nullptr))
-    {
-        if (fLocalHeap)
-        {
-            delete[] TransBuffer;
-            delete[] TransBufferA;
-        }
-    }
-    else if ((ulStringType == CONSOLE_FALSE_UNICODE) || (ulStringType == CONSOLE_REAL_UNICODE))
-    {
-        if (fLocalHeap)
-        {
-            delete[] TransBuffer;
-            delete[] TransBufferA;
-        }
-        NumWritten = NumRecordsSavedForUnicode - (*pcRecords - NumWritten);
+        return 0;
     }
 
-    // determine write region.  if we're still on the same line we started
-    // on, left X is the X we started with and right X is the one we're on
-    // now.  otherwise, left X is 0 and right X is the rightmost column of
-    // the screen buffer.
-    //
-    // then update the screen.
-    SMALL_RECT WriteRegion;
-    WriteRegion.Top = coordWrite.Y;
-    WriteRegion.Bottom = Y;
-    if (Y != coordWrite.Y)
+    const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
+    if (!IsCoordInBounds(target, coordScreenBufferSize))
     {
-        WriteRegion.Left = 0;
-        WriteRegion.Right = (SHORT)(coordScreenBufferSize.X - 1);
+        return 0;
     }
-    else
+
+    // convert to utf16 output cells and write
+    const std::wstring wstr{ chars.begin(), chars.end() };
+    const auto formattedCharData = Utf16Parser::Parse(wstr);
+    std::vector<OutputCell> cells = OutputCell::FromUtf16(formattedCharData);
+    const auto cellsWritten = screenInfo.WriteLineNoWrap(cells, target.Y, target.X);
+
+    // tell screen to update screen portion
+    SMALL_RECT writeRegion;
+    writeRegion.Top = target.Y;
+    writeRegion.Bottom = target.Y + (gsl::narrow<SHORT>(chars.size()) / coordScreenBufferSize.X) + 1;
+    writeRegion.Left = 0;
+    writeRegion.Right = coordScreenBufferSize.X;
+    WriteToScreen(screenInfo, writeRegion);
+
+    // count the number of glyphs that were written
+    return std::count_if(cells.begin(),
+                         cells.begin() + cellsWritten,
+                         [](auto&& cell) { return !cell.DbcsAttr().IsTrailing(); });
+}
+
+// Routine Description:
+// - writes text to the screen
+// Arguments:
+// - screenInfo - the screen info to write to
+// - chars - the text to write to the screen
+// - target - the starting coordinate in the screen
+// Return Value:
+// - number of elements written
+size_t WriteOutputStringA(SCREEN_INFORMATION& screenInfo,
+                          const std::vector<char>& chars,
+                          const COORD target)
+{
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    try
     {
-        WriteRegion.Left = coordWrite.X;
-        WriteRegion.Right = X;
+        // convert to wide chars so we can call the W version of this function
+        wistd::unique_ptr<wchar_t[]> outWchs;
+        size_t count = 0;
+        THROW_IF_FAILED(ConvertToW(gci.OutputCP,
+                                   chars.data(),
+                                   chars.size(),
+                                   outWchs,
+                                   count));
+
+        const std::vector<wchar_t> wchs{ outWchs.get(), outWchs.get() + count };
+        const auto wideCharsWritten = WriteOutputStringW(screenInfo, wchs, target);
+
+        // convert wideCharsWritten to amount of ascii chars written so we can properly report back
+        // how many elements were actually written
+        wistd::unique_ptr<char[]> outChars;
+        THROW_IF_FAILED(ConvertToA(gci.OutputCP,
+                                   wchs.data(),
+                                   wideCharsWritten,
+                                   outChars,
+                                   count));
+        return count;
     }
-    WriteToScreen(screenInfo, WriteRegion);
-    if (pcColumns)
-    {
-        *pcColumns = X + (coordWrite.Y - Y) * coordScreenBufferSize.X - coordWrite.X + 1;
-    }
-    *pcRecords = NumWritten;
-    return STATUS_SUCCESS;
+    CATCH_LOG();
+    return 0;
 }
 
 // Routine Description:
@@ -689,11 +370,7 @@ NTSTATUS FillOutput(SCREEN_INFORMATION& screenInfo,
         DWORD StartPosFlag = 0;
         for (;;)
         {
-            if (pRow == nullptr)
-            {
-                ASSERT(false);
-                break;
-            }
+            FAIL_FAST_IF(pRow == nullptr);
 
             // copy the chars into their arrays
             CharRow::iterator it;
@@ -823,11 +500,7 @@ NTSTATUS FillOutput(SCREEN_INFORMATION& screenInfo,
 
         for (;;)
         {
-            if (pRow == nullptr)
-            {
-                ASSERT(false);
-                break;
-            }
+            FAIL_FAST_IF(pRow == nullptr);
 
             // Copy the attrs into the screen buffer arrays.
             if ((ULONG) (coordScreenBufferSize.X - X) >= (*pcElements - NumWritten))
@@ -949,110 +622,57 @@ NTSTATUS FillOutput(SCREEN_INFORMATION& screenInfo,
 }
 
 // Routine Description:
-// - This routine fills a rectangular region in the screen buffer.  no clipping is done.
+// - This routine fills a rectangular region in the screen buffer.
 // Arguments:
-// - pciFill - element to copy to each element in target rect
 // - screenInfo - reference to screen info
-// - psrTarget - rectangle in screen buffer to fill
-// Return Value:
-void FillRectangle(const CHAR_INFO * const pciFill,
-                   SCREEN_INFORMATION& screenInfo,
-                   const SMALL_RECT * const psrTarget)
+// - cell - cell to fill rectangle with
+// - rect - rectangle to fill
+void FillRectangle(SCREEN_INFORMATION& screenInfo,
+                   const OutputCell& cell,
+                   const SMALL_RECT rect)
 {
-    DBGOUTPUT(("FillRectangle\n"));
+    const size_t width = rect.Right - rect.Left + 1;
+    const size_t height = rect.Bottom + rect.Top + 1;
 
-    SHORT XSize = (SHORT)(psrTarget->Right - psrTarget->Left + 1);
-
-    ROW* pRow = &screenInfo.GetTextBuffer().GetRowByOffset(psrTarget->Top);
-    for (SHORT i = psrTarget->Top; i <= psrTarget->Bottom; i++)
+    // generate line to write
+    std::vector<OutputCell> rowCells(width, cell);
+    if (IsGlyphFullWidth(cell.Chars()))
     {
-        if (pRow == nullptr)
+        // set leading and trailing attrs
+        for (size_t i = 0; i < rowCells.size(); ++i)
         {
-            ASSERT(false);
-            break;
-        }
-
-        // Copy the chars and attrs into their respective arrays.
-        COORD TPoint;
-
-        TPoint.X = psrTarget->Left;
-        TPoint.Y = i;
-        CleanupDbcsEdgesForWrite(XSize, TPoint, screenInfo);
-        BOOL Width = IsCharFullWidth(pciFill->Char.UnicodeChar);
-
-        CharRow::iterator it;
-        CharRow::const_iterator itEnd;
-        try
-        {
-            CharRow& charRow = pRow->GetCharRow();
-            it = std::next(charRow.begin(), psrTarget->Left);
-            itEnd = charRow.cend();
-        }
-        catch (...)
-        {
-            LOG_HR(wil::ResultFromCaughtException());
-            return;
-        }
-
-        for (SHORT j = 0; j < XSize && it < itEnd; j++)
-        {
-            if (Width)
+            if (i % 2 == 0)
             {
-                if (j < XSize - 1)
-                {
-                    // we set leading an trailing in pairs so make sure that checking against the end of the
-                    // iterator won't be off by 1
-                    assert((itEnd - it) % 2 == 0);
-                    assert((itEnd - it) >= 2);
-
-                    it->Char() = pciFill->Char.UnicodeChar;
-                    it->DbcsAttr().SetLeading();
-                    ++it;
-
-                    it->Char() = pciFill->Char.UnicodeChar;
-                    it->DbcsAttr().SetTrailing();
-                    ++it;
-
-                    ++j;
-                }
-                else
-                {
-                    it->Char() = UNICODE_NULL;
-                    it->DbcsAttr().SetSingle();
-                    ++it;
-                }
+                rowCells.at(i).DbcsAttr().SetLeading();
             }
             else
             {
-                it->Char() = pciFill->Char.UnicodeChar;
-                it->DbcsAttr().SetSingle();
-                ++it;
+                rowCells.at(i).DbcsAttr().SetTrailing();
             }
         }
-
-        const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
-
-        TextAttributeRun AttrRun;
-        AttrRun.SetLength(XSize);
-        AttrRun.SetAttributesFromLegacy(pciFill->Attributes);
-
-        LOG_IF_FAILED(pRow->GetAttrRow().InsertAttrRuns({ AttrRun },
-                                                        psrTarget->Left,
-                                                        psrTarget->Right,
-                                                        coordScreenBufferSize.X));
-
-        // invalidate row wrapping for rectangular drawing
-        pRow->GetCharRow().SetWrapForced(false);
-
-        try
+        // make sure not to write a partial dbcs sequence
+        if (rowCells.back().DbcsAttr().IsLeading())
         {
-            pRow = &screenInfo.GetTextBuffer().GetNextRowNoWrap(*pRow);
-        }
-        catch (...)
-        {
-            pRow = nullptr;
+            rowCells.back().Chars() = { UNICODE_SPACE };
+            rowCells.back().DbcsAttr().SetSingle();
         }
     }
 
-    screenInfo.NotifyAccessibilityEventing(psrTarget->Left, psrTarget->Top, psrTarget->Right, psrTarget->Bottom);
+    // fill rectangle
+    for (size_t i = 0; i < height; ++i)
+    {
+        const size_t rowIndex = rect.Top + i;
+
+        // cleanup dbcs edges
+        const COORD leftPoint{ rect.Right, gsl::narrow<SHORT>(rowIndex) };
+        CleanupDbcsEdgesForWrite(rowCells.size(), leftPoint, screenInfo);
+
+        // write cells
+        screenInfo.WriteLine(rowCells, rowIndex, rect.Left);
+
+        // force set wrap to false because this is a rectangular operation
+        screenInfo.GetTextBuffer().GetRowByOffset(rowIndex).GetCharRow().SetWrapForced(false);
+    }
+    // notify accessibility listeners that something has changed
+    screenInfo.NotifyAccessibilityEventing(rect.Left, rect.Top, rect.Right, rect.Bottom);
 }
