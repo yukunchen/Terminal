@@ -39,7 +39,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         HRESULT InvalidateSystem(const RECT* const prcDirtyClient);
         [[nodiscard]]
-        HRESULT InvalidateSelection(const SMALL_RECT* const rgsrSelection, UINT const cRectangles);
+        HRESULT InvalidateSelection(const std::vector<SMALL_RECT>& rectangles);
         [[nodiscard]]
         HRESULT InvalidateScroll(const COORD* const pcoordDelta);
         [[nodiscard]]
@@ -68,7 +68,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         HRESULT PaintBufferGridLines(GridLines const lines, COLORREF const color, size_t const cchLine, COORD const coordTarget);
         [[nodiscard]]
-        HRESULT PaintSelection(const SMALL_RECT* const rgsrSelection, UINT const cRectangles);
+        HRESULT PaintSelection(const std::vector<SMALL_RECT>& rectangles);
 
         [[nodiscard]]
         HRESULT PaintCursor(const COORD coordCursor,

@@ -15,10 +15,62 @@
 
 #include "../../types/inc/convert.hpp"
 #include "../../inc/conattrs.hpp"
+#include "../../host/dbcs.h"
 
 using namespace Microsoft::Console::Interactivity;
 
+bool operator==(const OutputCell& a, const OutputCell& b) noexcept
+{
+    return (a._charData == b._charData &&
+            a._dbcsAttribute == b._dbcsAttribute &&
+            a._textAttribute == b._textAttribute &&
+            a._behavior == b._behavior);
+}
+
 static constexpr TextAttribute InvalidTextAttribute{ INVALID_COLOR, INVALID_COLOR };
+
+std::vector<OutputCell> OutputCell::FromUtf16(const std::vector<std::vector<wchar_t>>& utf16Glyphs)
+{
+    return _fromUtf16(utf16Glyphs, { TextAttributeBehavior::Current });
+}
+
+std::vector<OutputCell> OutputCell::FromUtf16(const std::vector<std::vector<wchar_t>>& utf16Glyphs,
+                                              const TextAttribute defaultTextAttribute)
+{
+    return _fromUtf16(utf16Glyphs, { defaultTextAttribute });
+}
+
+std::vector<OutputCell> OutputCell::_fromUtf16(const std::vector<std::vector<wchar_t>>& utf16Glyphs,
+                                               const std::variant<TextAttribute, TextAttributeBehavior> textAttrVariant)
+{
+    std::vector<OutputCell> cells;
+
+    auto constructorDispatch = [&](const std::vector<wchar_t>& glyph, const DbcsAttribute dbcsAttr)
+    {
+        if (textAttrVariant.index() == 0)
+        {
+            cells.emplace_back(glyph, dbcsAttr, std::get<0>(textAttrVariant));
+        }
+        else
+        {
+            cells.emplace_back(glyph, dbcsAttr, std::get<1>(textAttrVariant));
+        }
+    };
+
+    for (const auto glyph : utf16Glyphs)
+    {
+        DbcsAttribute dbcsAttr;
+        if (IsGlyphFullWidth(glyph))
+        {
+            dbcsAttr.SetLeading();
+            constructorDispatch(glyph, dbcsAttr);
+            dbcsAttr.SetTrailing();
+        }
+        constructorDispatch(glyph, dbcsAttr);
+    }
+    return cells;
+}
+
 
 OutputCell::OutputCell(const std::vector<wchar_t>& charData,
                        const DbcsAttribute dbcsAttribute,
