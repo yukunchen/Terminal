@@ -19,6 +19,14 @@
 
 using namespace Microsoft::Console::Interactivity;
 
+bool operator==(const OutputCell& a, const OutputCell& b) noexcept
+{
+    return (a._charData == b._charData &&
+            a._dbcsAttribute == b._dbcsAttribute &&
+            a._textAttribute == b._textAttribute &&
+            a._behavior == b._behavior);
+}
+
 static constexpr TextAttribute InvalidTextAttribute{ INVALID_COLOR, INVALID_COLOR };
 
 std::vector<OutputCell> OutputCell::FromUtf16(const std::vector<std::vector<wchar_t>>& utf16Glyphs)

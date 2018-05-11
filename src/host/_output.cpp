@@ -241,16 +241,6 @@ size_t WriteOutputStringW(SCREEN_INFORMATION& screenInfo,
     std::vector<OutputCell> cells = OutputCell::FromUtf16(formattedCharData);
     const auto cellsWritten = screenInfo.WriteLineNoWrap(cells, target.Y, target.X);
 
-    // count number of glyphs that were written
-    size_t amountWritten = 0;
-    for (auto it = cells.begin(); it != cells.begin() + cellsWritten; ++it)
-    {
-        if (!it->DbcsAttr().IsTrailing())
-        {
-            ++amountWritten;
-        }
-    }
-
     // tell screen to update screen portion
     SMALL_RECT writeRegion;
     writeRegion.Top = target.Y;
@@ -259,7 +249,10 @@ size_t WriteOutputStringW(SCREEN_INFORMATION& screenInfo,
     writeRegion.Right = coordScreenBufferSize.X;
     WriteToScreen(screenInfo, writeRegion);
 
-    return amountWritten;
+    // count the number of glyphs that were written
+    return std::count_if(cells.begin(),
+                         cells.begin() + cellsWritten,
+                         [](auto&& cell) { return !cell.DbcsAttr().IsTrailing(); });
 }
 
 // Routine Description:
