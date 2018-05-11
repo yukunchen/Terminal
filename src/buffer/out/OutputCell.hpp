@@ -83,6 +83,8 @@ public:
         return _behavior;
     }
 
+    friend bool operator==(const OutputCell& a, const OutputCell& b) noexcept;
+
 private:
     std::vector<wchar_t> _charData;
     DbcsAttribute _dbcsAttribute;
@@ -94,3 +96,5 @@ private:
     static std::vector<OutputCell> _fromUtf16(const std::vector<std::vector<wchar_t>>& utf16Glyphs,
                                               const std::variant<TextAttribute, TextAttributeBehavior> textAttrVal);
 };
+
+bool operator==(const OutputCell& a, const OutputCell& b) noexcept;
