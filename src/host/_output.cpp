@@ -40,19 +40,8 @@ void StreamWriteToScreenBuffer(SCREEN_INFORMATION& screenInfo,
     {
         const TextAttribute defaultTextAttribute = screenInfo.GetAttributes();
         const auto formattedCharData = Utf16Parser::Parse(wstr);
+        const std::vector<OutputCell> cells = OutputCell::FromUtf16(formattedCharData, defaultTextAttribute);
 
-        std::vector<OutputCell> cells;
-        for (const auto chars : formattedCharData)
-        {
-            DbcsAttribute dbcsAttr;
-            if (IsGlyphFullWidth(chars))
-            {
-                dbcsAttr.SetLeading();
-                cells.emplace_back(chars, dbcsAttr, defaultTextAttribute);
-                dbcsAttr.SetTrailing();
-            }
-            cells.emplace_back(chars, dbcsAttr, defaultTextAttribute);
-        }
         screenInfo.WriteLine(cells, TargetPoint.Y, TargetPoint.X);
     }
     CATCH_LOG();
@@ -247,24 +236,10 @@ size_t WriteOutputStringW(SCREEN_INFORMATION& screenInfo,
         return 0;
     }
 
-    // convert to utf16
+    // convert to utf16 output cells and write
     const std::wstring wstr{ chars.begin(), chars.end() };
     const auto formattedCharData = Utf16Parser::Parse(wstr);
-
-    // convert to cells
-    std::vector<OutputCell> cells;
-    for (const auto glyph : formattedCharData)
-    {
-        DbcsAttribute dbcsAttr;
-        if (IsGlyphFullWidth(glyph))
-        {
-            dbcsAttr.SetLeading();
-            cells.emplace_back(glyph, dbcsAttr, OutputCell::TextAttributeBehavior::Current);
-            dbcsAttr.SetTrailing();
-        }
-        cells.emplace_back(glyph, dbcsAttr, OutputCell::TextAttributeBehavior::Current);
-    }
-
+    std::vector<OutputCell> cells = OutputCell::FromUtf16(formattedCharData);
     const auto cellsWritten = screenInfo.WriteLineNoWrap(cells, target.Y, target.X);
 
     // count number of glyphs that were written
