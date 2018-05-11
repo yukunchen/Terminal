@@ -47,9 +47,9 @@ size_t WriteOutputAttributes(SCREEN_INFORMATION& screenInfo,
                              const COORD target);
 
 size_t WriteOutputStringW(SCREEN_INFORMATION& screenInfo,
-                          const std::vector<wchar_t> chars,
+                          const std::vector<wchar_t>& chars,
                           const COORD target);
 
 size_t WriteOutputStringA(SCREEN_INFORMATION& screenInfo,
-                          const std::vector<char> chars,
+                          const std::vector<char>& chars,
                           const COORD target);
