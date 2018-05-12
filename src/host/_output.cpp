@@ -296,6 +296,26 @@ size_t WriteOutputStringA(SCREEN_INFORMATION& screenInfo,
     return 0;
 }
 
+// returns amount written
+size_t FillOutputAttributes(SCREEN_INFORMATION& screenInfo,
+                            const TextAttribute attr,
+                            const COORD target,
+                            const size_t amountToWrite)
+{
+    if (amountToWrite == 0)
+    {
+        return 0;
+    }
+
+    const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
+    if (!IsCoordInBounds(target, coordScreenBufferSize))
+    {
+        return 0;
+    }
+
+    return screenInfo.FillTextAttribute(attr, target, amountToWrite);
+}
+
 // Routine Description:
 // - This routine fills the screen buffer with the specified character or attribute.
 // Arguments:
@@ -306,7 +326,6 @@ size_t WriteOutputStringA(SCREEN_INFORMATION& screenInfo,
 //      CONSOLE_ASCII         - element is an ascii character.
 //      CONSOLE_REAL_UNICODE  - element is a real unicode character. These will get converted to False Unicode as required.
 //      CONSOLE_FALSE_UNICODE - element is a False Unicode character.
-//      CONSOLE_ATTRIBUTE     - element is an attribute.
 // - pcElements - On input, the number of elements to write.  On output, the number of elements written.
 // Return Value:
 [[nodiscard]]
@@ -317,6 +336,9 @@ NTSTATUS FillOutput(SCREEN_INFORMATION& screenInfo,
                     _Inout_ PULONG pcElements)  // this value is valid even for error cases
 {
     DBGOUTPUT(("FillOutput\n"));
+
+    FAIL_FAST_IF(ulElementType == CONSOLE_ATTRIBUTE);
+
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (*pcElements == 0)
     {
@@ -494,87 +516,6 @@ NTSTATUS FillOutput(SCREEN_INFORMATION& screenInfo,
                 pRow = nullptr;
             }
         }
-    }
-    else if (ulElementType == CONSOLE_ATTRIBUTE)
-    {
-        TextAttributeRun AttrRun;
-        COORD TPoint;
-        TPoint.X = X;
-        TPoint.Y = Y;
-
-        for (;;)
-        {
-            if (pRow == nullptr)
-            {
-                ASSERT(false);
-                break;
-            }
-
-            // Copy the attrs into the screen buffer arrays.
-            if ((ULONG) (coordScreenBufferSize.X - X) >= (*pcElements - NumWritten))
-            {
-                X = (SHORT)(X + *pcElements - NumWritten - 1);
-                NumWritten = *pcElements;
-            }
-            else
-            {
-                NumWritten += coordScreenBufferSize.X - X;
-                X = (SHORT)(coordScreenBufferSize.X - 1);
-            }
-
-            // Recalculate the last non-space char and merge the two
-            // attribute strings.
-            AttrRun.SetLength((SHORT)((Y == coordWrite.Y) ? (X - coordWrite.X + 1) : (X + 1)));
-
-            // Here we're being a little clever -
-            // Because RGB color can't roundtrip the API, certain VT sequences will forget the RGB color
-            // because their first call to GetScreenBufferInfo returned a legacy attr.
-            // If they're calling this with the default attrs, they likely wanted to use the RGB default attrs.
-            // This could create a scenario where someone emitted RGB with VT,
-            // THEN used the API to FillConsoleOutput with the default attrs, and DIDN'T want the RGB color
-            // they had set.
-            if (screenInfo.InVTMode() && screenInfo.GetAttributes().GetLegacyAttributes() == wElement)
-            {
-                AttrRun.SetAttributes(screenInfo.GetAttributes());
-            }
-            else
-            {
-                WORD wActual = wElement;
-                ClearAllFlags(wActual, COMMON_LVB_SBCSDBCS);
-                AttrRun.SetAttributesFromLegacy(wActual);
-            }
-
-            LOG_IF_FAILED(pRow->GetAttrRow().InsertAttrRuns({ AttrRun },
-                                                            (SHORT)(X - AttrRun.GetLength() + 1),
-                                                            X,
-                                                            coordScreenBufferSize.X));
-
-            // leave row wrap status alone for any attribute fills
-            if (NumWritten < *pcElements)
-            {
-                X = 0;
-                Y++;
-                if (Y >= coordScreenBufferSize.Y)
-                {
-                    break;
-                }
-            }
-            else
-            {
-                break;
-            }
-
-            try
-            {
-                pRow = &screenInfo.GetTextBuffer().GetNextRowNoWrap(*pRow);
-            }
-            catch (...)
-            {
-                pRow = nullptr;
-            }
-        }
-
-        screenInfo.NotifyAccessibilityEventing(coordWrite.X, coordWrite.Y, X, Y);
     }
     else
     {

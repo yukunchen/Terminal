@@ -336,11 +336,15 @@ NTSTATUS FillUndetermineChars(_In_ ConversionAreaInfo* const ConvAreaInfo)
                              &CharsToWrite));
 
     CharsToWrite = ConvAreaInfo->ScreenBuffer->GetScreenBufferSize().X;
-    LOG_IF_FAILED(FillOutput(*ConvAreaInfo->ScreenBuffer,
-                             gci.GetActiveOutputBuffer().GetAttributes().GetLegacyAttributes(),
+    try
+    {
+        FillOutputAttributes(*ConvAreaInfo->ScreenBuffer,
+                             gci.GetActiveOutputBuffer().GetAttributes(),
                              Coord,
-                             CONSOLE_ATTRIBUTE,
-                             &CharsToWrite));
+                             static_cast<size_t>(CharsToWrite));
+    }
+    CATCH_LOG();
+
     ConsoleImePaint(ConvAreaInfo);
     return STATUS_SUCCESS;
 }

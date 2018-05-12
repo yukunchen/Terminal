@@ -1159,7 +1159,30 @@ NTSTATUS SrvFillConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
 [[nodiscard]]
 NTSTATUS DoSrvFillConsoleOutput(SCREEN_INFORMATION& screenInfo, _Inout_ CONSOLE_FILLCONSOLEOUTPUT_MSG* pMsg)
 {
-    return FillOutput(screenInfo, pMsg->Element, pMsg->WriteCoord, pMsg->ElementType, &pMsg->Length);
+    NTSTATUS Status = STATUS_SUCCESS;
+    const auto elementType = pMsg->ElementType;
+    if (elementType == CONSOLE_ATTRIBUTE)
+    {
+        try
+        {
+            size_t amountWritten = FillOutputAttributes(screenInfo,
+                                                        pMsg->Element,
+                                                        pMsg->WriteCoord,
+                                                        static_cast<size_t>(pMsg->Length));
+            pMsg->Length = gsl::narrow<ULONG>(amountWritten);
+            Status = STATUS_SUCCESS;
+        }
+        catch (...)
+        {
+            pMsg->Length = 0;
+            return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+        }
+    }
+    else
+    {
+        Status = FillOutput(screenInfo, pMsg->Element, pMsg->WriteCoord, pMsg->ElementType, &pMsg->Length);
+    }
+    return Status;
 }
 
 // There used to be a text mode and a graphics mode flag.

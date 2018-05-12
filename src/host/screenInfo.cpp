@@ -9,6 +9,8 @@
 #include "screenInfo.hpp"
 #include "dbcs.h"
 #include "output.h"
+#include "_output.h"
+#include "misc.h"
 #include "../buffer/out/CharRow.hpp"
 
 #include <math.h>
@@ -2646,6 +2648,103 @@ size_t SCREEN_INFORMATION::_WriteLine(const std::vector<OutputCell>& cells,
         currentColumn = 0;
         ++currentRowIndex;
     }
+    return amountWritten;
+}
+
+// Routine Description:
+// - fills a text attribute a number of times.
+// Arguments:
+// - attr - the text attribute to fill
+// - target - the starting location of the fill
+// - amountToWrite - the number of cells to fill
+// Return Value:
+// - the number of cells filled
+size_t SCREEN_INFORMATION::FillTextAttribute(const TextAttribute attr,
+                                             const COORD target,
+                                             const size_t amountToWrite)
+{
+    const COORD coordScreenBufferSize = GetScreenBufferSize();
+    std::vector<TextAttributeRun> attrRun{ {} };
+    // Here we're being a little clever -
+    // Because RGB color can't roundtrip the API, certain VT sequences will forget the RGB color
+    // because their first call to GetScreenBufferInfo returned a legacy attr.
+    // If they're calling this with the default attrs, they likely wanted to use the RGB default attrs.
+    // This could create a scenario where someone emitted RGB with VT,
+    // THEN used the API to FillConsoleOutput with the default attrs, and DIDN'T want the RGB color
+    // they had set.
+    if (InVTMode() && GetAttributes().GetLegacyAttributes() == attr.GetLegacyAttributes())
+    {
+        attrRun.front().SetAttributes(GetAttributes());
+    }
+    else
+    {
+        WORD actualAttr = attr.GetLegacyAttributes();
+        ClearAllFlags(actualAttr, COMMON_LVB_SBCSDBCS);
+        attrRun.front().SetAttributesFromLegacy(actualAttr);
+    }
+
+    COORD currentLocation = target;
+    size_t amountWritten = 0;
+    do
+    {
+        const size_t rowIndex = gsl::narrow<size_t>(currentLocation.Y);
+        const size_t writesLeft = amountToWrite - amountWritten;
+        const size_t columnsToFill = std::min(writesLeft, gsl::narrow<size_t>(coordScreenBufferSize.X - currentLocation.X));
+        ROW& row = _textBuffer->GetRowByOffset(currentLocation.Y);
+        ATTR_ROW& attrRow = row.GetAttrRow();
+
+        attrRun.front().SetLength(columnsToFill);
+        THROW_IF_FAILED(attrRow.InsertAttrRuns(attrRun,
+                                               currentLocation.X,
+                                               currentLocation.X + columnsToFill - 1,
+                                               coordScreenBufferSize.X));
+        amountWritten += columnsToFill;
+        currentLocation.X = 0;
+        currentLocation.Y++;
+    }
+    while (amountWritten < amountToWrite && IsCoordInBounds(currentLocation, coordScreenBufferSize));
+
+    NotifyAccessibilityEventing(target.X, target.Y, currentLocation.X, currentLocation.Y);
+
+    // update screen
+    SMALL_RECT rect;
+    if (ConvScreenInfo)
+    {
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        const auto viewport = GetBufferViewport();
+        const auto convCoord = ConvScreenInfo->CaInfo.coordConView;
+
+        rect.Top = target.Y + viewport.Left + convCoord.Y;
+        rect.Bottom = currentLocation.Y + viewport.Left + convCoord.Y;
+        if (target.Y == currentLocation.Y)
+        {
+            rect.Left = target.X + viewport.Top + convCoord.X;
+            rect.Right = currentLocation.X + viewport.Top + convCoord.X;
+        }
+        else
+        {
+            rect.Left = 0;
+            rect.Right = gci.GetActiveOutputBuffer().GetScreenBufferSize().X - 1;
+        }
+        WriteConvRegionToScreen(gci.GetActiveOutputBuffer(), rect);
+    }
+    else
+    {
+        rect.Top = target.Y;
+        rect.Bottom = currentLocation.Y;
+        if (target.Y == currentLocation.Y)
+        {
+            rect.Left = target.X;
+            rect.Right = currentLocation.X - 1;
+        }
+        else
+        {
+            rect.Left = 0;
+            rect.Right = coordScreenBufferSize.X - 1;
+        }
+        WriteToScreen(*this, rect);
+    }
+
     return amountWritten;
 }
 

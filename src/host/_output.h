@@ -40,6 +40,11 @@ NTSTATUS FillOutput(SCREEN_INFORMATION& screenInfo,
                     const ULONG ulElementType,
                     _Inout_ PULONG pcElements); // this value is valid even for error cases
 
+size_t FillOutputAttributes(SCREEN_INFORMATION& screenInfo,
+                            const TextAttribute attr,
+                            const COORD target,
+                            const size_t amountToWrite);
+
 void FillRectangle(SCREEN_INFORMATION& screenInfo,
                    const OutputCell& cell,
                    const SMALL_RECT rect);

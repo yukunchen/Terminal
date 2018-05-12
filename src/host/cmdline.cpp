@@ -1006,11 +1006,15 @@ VOID DrawPromptPopup(_In_ PCLE_POPUP Popup,
     ULONG lStringLength = POPUP_SIZE_X(Popup);
     for (SHORT i = 0; i < POPUP_SIZE_Y(Popup); i++)
     {
-        LOG_IF_FAILED(FillOutput(screenInfo,
-                                 Popup->Attributes.GetLegacyAttributes(),
-                                 WriteCoord,
-                                 CONSOLE_ATTRIBUTE,
-                                 &lStringLength));
+        try
+        {
+            lStringLength = gsl::narrow<ULONG>(FillOutputAttributes(screenInfo,
+                                                                    Popup->Attributes,
+                                                                    WriteCoord,
+                                                                    static_cast<size_t>(lStringLength)));
+        }
+        CATCH_LOG();
+
         LOG_IF_FAILED(FillOutput(screenInfo,
                                  (WCHAR)' ',
                                  WriteCoord,
@@ -1859,7 +1863,14 @@ void DrawCommandListBorder(_In_ PCLE_POPUP const Popup, SCREEN_INFORMATION& scre
     WriteCoord.X = Popup->Region.Left;
     WriteCoord.Y = Popup->Region.Top;
     ULONG Length = POPUP_SIZE_X(Popup) + 2;
-    LOG_IF_FAILED(FillOutput(screenInfo, Popup->Attributes.GetLegacyAttributes(), WriteCoord, CONSOLE_ATTRIBUTE, &Length));
+    try
+    {
+        Length = gsl::narrow<ULONG>(FillOutputAttributes(screenInfo,
+                                                         Popup->Attributes,
+                                                         WriteCoord,
+                                                         static_cast<size_t>(Length)));
+    }
+    CATCH_LOG();
 
     // draw upper left corner
     Length = 1;
@@ -1895,7 +1906,14 @@ void DrawCommandListBorder(_In_ PCLE_POPUP const Popup, SCREEN_INFORMATION& scre
     WriteCoord.X = Popup->Region.Left;
     WriteCoord.Y = Popup->Region.Bottom;
     Length = POPUP_SIZE_X(Popup) + 2;
-    LOG_IF_FAILED(FillOutput(screenInfo, Popup->Attributes.GetLegacyAttributes(), WriteCoord, CONSOLE_ATTRIBUTE, &Length));
+    try
+    {
+        Length = gsl::narrow<ULONG>(FillOutputAttributes(screenInfo,
+                                                         Popup->Attributes,
+                                                         WriteCoord,
+                                                         static_cast<size_t>(Length)));
+    }
+    CATCH_LOG();
 
     // Draw bottom left corner.
     Length = 1;
@@ -1933,14 +1951,29 @@ void UpdateHighlight(_In_ PCLE_POPUP Popup,
     ULONG lStringLength = POPUP_SIZE_X(Popup);
 
     WriteCoord.Y = (SHORT)(Popup->Region.Top + 1 + OldCurrentCommand - TopIndex);
-    LOG_IF_FAILED(FillOutput(screenInfo, PopupLegacyAttributes, WriteCoord, CONSOLE_ATTRIBUTE, &lStringLength));
+    try
+    {
+        lStringLength = gsl::narrow<ULONG>(FillOutputAttributes(screenInfo,
+                                                                Popup->Attributes,
+                                                                WriteCoord,
+                                                                static_cast<size_t>(lStringLength)));
+    }
+    CATCH_LOG();
 
     // highlight new command
     WriteCoord.Y = (SHORT)(Popup->Region.Top + 1 + NewCurrentCommand - TopIndex);
 
     // inverted attributes
-    WORD const Attributes = (WORD)(((PopupLegacyAttributes << 4) & 0xf0) | ((PopupLegacyAttributes >> 4) & 0x0f));
-    LOG_IF_FAILED(FillOutput(screenInfo, Attributes, WriteCoord, CONSOLE_ATTRIBUTE, &lStringLength));
+    try
+    {
+        WORD const Attributes = (WORD)(((PopupLegacyAttributes << 4) & 0xf0) | ((PopupLegacyAttributes >> 4) & 0x0f));
+        TextAttribute attr{ Attributes };
+        lStringLength = gsl::narrow<ULONG>(FillOutputAttributes(screenInfo,
+                                                                attr,
+                                                                WriteCoord,
+                                                                static_cast<size_t>(lStringLength)));
+    }
+    CATCH_LOG();
 }
 
 void DrawCommandListPopup(_In_ PCLE_POPUP const Popup,
@@ -1955,11 +1988,15 @@ void DrawCommandListPopup(_In_ PCLE_POPUP const Popup,
     ULONG lStringLength = POPUP_SIZE_X(Popup);
     for (SHORT i = 0; i < POPUP_SIZE_Y(Popup); ++i)
     {
-        LOG_IF_FAILED(FillOutput(screenInfo,
-                                 Popup->Attributes.GetLegacyAttributes(),
-                                 WriteCoord,
-                                 CONSOLE_ATTRIBUTE,
-                                 &lStringLength));
+        try
+        {
+            lStringLength = gsl::narrow<ULONG>(FillOutputAttributes(screenInfo,
+                                                                    Popup->Attributes,
+                                                                    WriteCoord,
+                                                                    static_cast<size_t>(lStringLength)));
+        }
+        CATCH_LOG();
+
         LOG_IF_FAILED(FillOutput(screenInfo,
                                  (WCHAR)' ',
                                  WriteCoord,
@@ -2058,7 +2095,17 @@ void DrawCommandListPopup(_In_ PCLE_POPUP const Popup,
             // inverted attributes
             WORD const Attributes = (WORD)(((PopupLegacyAttributes << 4) & 0xf0) | ((PopupLegacyAttributes >> 4) & 0x0f));
             lStringLength = POPUP_SIZE_X(Popup);
-            LOG_IF_FAILED(FillOutput(screenInfo, Attributes, WriteCoord, CONSOLE_ATTRIBUTE, &lStringLength));
+
+            try
+            {
+                const TextAttribute attr{ Attributes };
+                FillOutputAttributes(screenInfo,
+                                     attr,
+                                     WriteCoord,
+                                     static_cast<size_t>(lStringLength));
+
+            }
+            CATCH_LOG();
         }
 
         WriteCoord.Y += 1;

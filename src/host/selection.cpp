@@ -528,9 +528,13 @@ void Selection::ColorSelection(const SMALL_RECT& srRect, const ULONG ulAttr)
     // Now color the selection a line at a time.
     for (; (coordTarget.Y < srRect.Top + coordTargetSize.Y); ++coordTarget.Y)
     {
-        DWORD cchWrite = coordTargetSize.X;
+        const size_t cchWrite = gsl::narrow<size_t>(coordTargetSize.X);
 
-        LOG_IF_FAILED(FillOutput(screenInfo, (USHORT)ulAttr, coordTarget, CONSOLE_ATTRIBUTE, &cchWrite));
+        try
+        {
+            FillOutputAttributes(screenInfo, static_cast<WORD>(ulAttr), coordTarget, cchWrite);
+        }
+        CATCH_LOG();
     }
 }
 

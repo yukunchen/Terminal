@@ -143,6 +143,10 @@ public:
                            const size_t rowIndex,
                            const size_t startIndex);
 
+    size_t FillTextAttribute(const TextAttribute attr,
+                             const COORD target,
+                             const size_t amountToWrite);
+
     std::pair<COORD, COORD> GetWordBoundary(const COORD position) const;
 
     TextBuffer& GetTextBuffer();
