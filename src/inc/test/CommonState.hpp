@@ -35,9 +35,12 @@ public:
     static const SHORT s_csBufferWidth = 80;
     static const SHORT s_csBufferHeight = 300;
 
-    CommonState()
+    CommonState() :
+        m_heap(GetProcessHeap()),
+        m_ntstatusTextBufferInfo(STATUS_FAIL_CHECK),
+        m_pFontInfo(nullptr),
+        m_backupTextBufferInfo()
     {
-        m_heap = GetProcessHeap();
     }
 
     ~CommonState()
@@ -146,6 +149,10 @@ public:
             if (textBuffer.get() == nullptr)
             {
                 m_ntstatusTextBufferInfo = STATUS_NO_MEMORY;
+            }
+            else
+            {
+                m_ntstatusTextBufferInfo = STATUS_SUCCESS;
             }
             gci.pCurrentScreenBuffer->_textBuffer.swap(textBuffer);
         }
