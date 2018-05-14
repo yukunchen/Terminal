@@ -339,6 +339,22 @@ NTSTATUS FillOutput(SCREEN_INFORMATION& screenInfo,
 
     FAIL_FAST_IF(ulElementType == CONSOLE_ATTRIBUTE);
 
+    if (ulElementType == CONSOLE_REAL_UNICODE ||
+        ulElementType == CONSOLE_FALSE_UNICODE)
+    {
+        const std::vector<wchar_t> glyph{ static_cast<wchar_t>(wElement) };
+        const size_t amountWritten = FillOutputW(screenInfo, glyph, coordWrite, *pcElements);
+        *pcElements = gsl::narrow<ULONG>(amountWritten);
+        return STATUS_SUCCESS;
+    }
+    else if (ulElementType == CONSOLE_ASCII)
+    {
+        const std::vector<char> glyph{ static_cast<char>(wElement) };
+        const size_t amountWritten = FillOutputA(screenInfo, glyph, coordWrite, *pcElements);
+        *pcElements = gsl::narrow<ULONG>(amountWritten);
+        return STATUS_SUCCESS;
+    }
+
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (*pcElements == 0)
     {
@@ -622,4 +638,54 @@ void FillRectangle(SCREEN_INFORMATION& screenInfo,
     }
     // notify accessibility listeners that something has changed
     screenInfo.NotifyAccessibilityEventing(rect.Left, rect.Top, rect.Right, rect.Bottom);
+}
+
+size_t FillOutputW(SCREEN_INFORMATION& screenInfo,
+                   const std::vector<wchar_t>& glyph,
+                   const COORD target,
+                   const size_t amountToWrite)
+{
+    if (amountToWrite == 0)
+    {
+        return 0;
+    }
+
+    const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
+    if (!IsCoordInBounds(target, coordScreenBufferSize))
+    {
+        return 0;
+    }
+
+    return screenInfo.FillTextGlyph(glyph, target, amountToWrite);
+}
+
+size_t FillOutputA(SCREEN_INFORMATION& screenInfo,
+                   const std::vector<char>& glyph,
+                   const COORD target,
+                   const size_t amountToWrite)
+
+{
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    // convert to wide chars and call W version
+    wistd::unique_ptr<wchar_t[]> outWchs;
+    size_t count = 0;
+    THROW_IF_FAILED(ConvertToW(gci.OutputCP,
+                                glyph.data(),
+                                glyph.size(),
+                                outWchs,
+                                count));
+
+    const std::vector<wchar_t> wideGlyph{ outWchs.get(), outWchs.get() + count };
+    const auto wideCharsWritten = FillOutputW(screenInfo, wideGlyph, target, amountToWrite);
+
+    // convert wideCharsWritten to amount of ascii chars written so we can properly report back
+    // how many elements were actually written
+    wistd::unique_ptr<char[]> outChars;
+    THROW_IF_FAILED(ConvertToA(gci.OutputCP,
+                                wideGlyph.data(),
+                                wideCharsWritten,
+                                outChars,
+                                count));
+    return count;
 }

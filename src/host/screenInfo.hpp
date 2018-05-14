@@ -147,6 +147,12 @@ public:
                              const COORD target,
                              const size_t amountToWrite);
 
+    size_t FillTextGlyph(const std::vector<wchar_t>& glyph,
+                         const COORD target,
+                         const size_t amountToWrite);
+
+    void UpdateScreen(const COORD start, const COORD end);
+
     std::pair<COORD, COORD> GetWordBoundary(const COORD position) const;
 
     TextBuffer& GetTextBuffer();

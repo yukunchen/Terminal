@@ -45,6 +45,16 @@ size_t FillOutputAttributes(SCREEN_INFORMATION& screenInfo,
                             const COORD target,
                             const size_t amountToWrite);
 
+size_t FillOutputW(SCREEN_INFORMATION& screenInfo,
+                   const std::vector<wchar_t>& glyph,
+                   const COORD target,
+                   const size_t amountToWrite);
+
+size_t FillOutputA(SCREEN_INFORMATION& screenInfo,
+                   const std::vector<char>& glyph,
+                   const COORD target,
+                   const size_t amountToWrite);
+
 void FillRectangle(SCREEN_INFORMATION& screenInfo,
                    const OutputCell& cell,
                    const SMALL_RECT rect);

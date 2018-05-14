@@ -14,12 +14,14 @@
 #include "../buffer/out/CharRow.hpp"
 
 #include <math.h>
+#include <iterator>
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/Viewport.hpp"
 #include "../terminal/parser/OutputStateMachineEngine.hpp"
 
 #include "../types/inc/convert.hpp"
+#include "../types/inc/RepeatingIterator.hpp"
 
 #pragma hdrstop
 using namespace Microsoft::Console;
@@ -2705,8 +2707,62 @@ size_t SCREEN_INFORMATION::FillTextAttribute(const TextAttribute attr,
     while (amountWritten < amountToWrite && IsCoordInBounds(currentLocation, coordScreenBufferSize));
 
     NotifyAccessibilityEventing(target.X, target.Y, currentLocation.X, currentLocation.Y);
+    UpdateScreen(target, currentLocation);
+    return amountWritten;
+}
 
-    // update screen
+size_t SCREEN_INFORMATION::FillTextGlyph(const std::vector<wchar_t>& glyph,
+                                         const COORD target,
+                                         const size_t amountToWrite)
+{
+    const COORD coordScreenBufferSize = GetScreenBufferSize();
+
+    const OutputCell cell{ glyph, {}, OutputCell::TextAttributeBehavior::Current };
+    std::vector<OutputCell> cellsToWrite{ cell };
+    if (IsGlyphFullWidth(glyph))
+    {
+        cellsToWrite.push_back(cell);
+        cellsToWrite.at(0).DbcsAttr().SetLeading();
+        cellsToWrite.at(1).DbcsAttr().SetTrailing();
+    }
+
+    auto currentLocation = target;
+    CleanupDbcsEdgesForWrite(amountToWrite, currentLocation, *this);
+    size_t amountWritten = 0;
+
+
+    do
+    {
+        const size_t writesLeft = amountToWrite - amountWritten;
+        const size_t columnsToFill = std::min(writesLeft, gsl::narrow<size_t>(coordScreenBufferSize.X - currentLocation.X));
+        auto& row = _textBuffer->GetRowByOffset(currentLocation.Y);
+        const RepeatingIterator<OutputCell, decltype(cellsToWrite)::const_iterator>  startingIt{ cellsToWrite.begin(),
+                                                                                                 cellsToWrite.end() };
+        const auto it = row.WriteCells(startingIt, startingIt + columnsToFill, currentLocation.X);
+        const short distance = gsl::narrow<short>(std::distance( startingIt, it));
+        currentLocation.X += distance;
+        amountWritten += distance;
+
+        // invalidate row wrap status for any bulk fill of text characters
+        row.GetCharRow().SetWrapForced(false);
+
+        if (!IsCoordInBounds(currentLocation, coordScreenBufferSize))
+        {
+            currentLocation.Y++;
+            currentLocation.X = 0;
+        }
+    }
+    while (amountWritten < amountToWrite && IsCoordInBounds(currentLocation, coordScreenBufferSize));
+
+    NotifyAccessibilityEventing(target.X, target.Y, currentLocation.X, currentLocation.Y);
+    UpdateScreen(target, currentLocation);
+    return amountWritten;
+}
+
+void SCREEN_INFORMATION::UpdateScreen(const COORD start, const COORD end)
+{
+    const COORD coordScreenBufferSize = GetScreenBufferSize();
+
     SMALL_RECT rect;
     if (ConvScreenInfo)
     {
@@ -2714,12 +2770,12 @@ size_t SCREEN_INFORMATION::FillTextAttribute(const TextAttribute attr,
         const auto viewport = GetBufferViewport();
         const auto convCoord = ConvScreenInfo->CaInfo.coordConView;
 
-        rect.Top = target.Y + viewport.Left + convCoord.Y;
-        rect.Bottom = currentLocation.Y + viewport.Left + convCoord.Y;
-        if (target.Y == currentLocation.Y)
+        rect.Top = start.Y + viewport.Left + convCoord.Y;
+        rect.Bottom = end.Y + viewport.Left + convCoord.Y;
+        if (start.Y == end.Y)
         {
-            rect.Left = target.X + viewport.Top + convCoord.X;
-            rect.Right = currentLocation.X + viewport.Top + convCoord.X;
+            rect.Left = start.X + viewport.Top + convCoord.X;
+            rect.Right = end.X + viewport.Top + convCoord.X;
         }
         else
         {
@@ -2730,12 +2786,12 @@ size_t SCREEN_INFORMATION::FillTextAttribute(const TextAttribute attr,
     }
     else
     {
-        rect.Top = target.Y;
-        rect.Bottom = currentLocation.Y;
-        if (target.Y == currentLocation.Y)
+        rect.Top = start.Y;
+        rect.Bottom = end.Y;
+        if (start.Y == end.Y)
         {
-            rect.Left = target.X;
-            rect.Right = currentLocation.X - 1;
+            rect.Left = start.X;
+            rect.Right = end.X - 1;
         }
         else
         {
@@ -2744,8 +2800,6 @@ size_t SCREEN_INFORMATION::FillTextAttribute(const TextAttribute attr,
         }
         WriteToScreen(*this, rect);
     }
-
-    return amountWritten;
 }
 
 // Routine Description:
