@@ -56,7 +56,7 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     _pEngine{ nullptr },
     _coordScreenBufferSize{ 0 },
     _srScrollMargins{ 0 },
-    _viewport{ 0 },
+    _viewport({ 0 }),
     _psiAlternateBuffer{ nullptr },
     _psiMainBuffer{ nullptr },
     _rcAltSavedClientNew{ 0 },
