@@ -35,7 +35,8 @@ public:
                 GetSuggestionWindowPos pfnPosition) :
         _hwndConsole(hwndConsole),
         _pfnPosition(pfnPosition),
-        _cRef(1)
+        _cRef(1),
+        _tid()
     {
     }
 

@@ -16,8 +16,22 @@ using namespace Microsoft::Console::VirtualTerminal;
 StateMachine::StateMachine(_In_ std::shared_ptr<IStateMachineEngine> pEngine) :
     _pEngine(pEngine),
     _state(VTStates::Ground),
-    _trace(Microsoft::Console::VirtualTerminal::ParserTracing())
+    _trace(Microsoft::Console::VirtualTerminal::ParserTracing()),
+    _cParams(0),
+    _pusActiveParam(nullptr),
+    _cIntermediate(0),
+    _wchIntermediate(UNICODE_NULL),
+    _pwchCurr(nullptr),
+    _iParamAccumulatePos(0),
+    // pwchOscStringBuffer Initialized below
+    _pwchSequenceStart(nullptr),
+    // rgusParams Initialized below
+    _sOscNextChar(0),
+    _sOscParam(0),
+    _currRunLength(0)
 {
+    ZeroMemory(_pwchOscStringBuffer, sizeof(_pwchOscStringBuffer));
+    ZeroMemory(_rgusParams, sizeof(_rgusParams));
     _ActionClear();
 }
 

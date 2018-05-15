@@ -33,6 +33,7 @@ Utf8ToWideCharParser::Utf8ToWideCharParser(const unsigned int codePage) :
     _currentState { _State::Ready },
     _convertedWideChars { nullptr }
 {
+    std::fill_n(_utf8CodePointPieces, _UTF8_BYTE_SEQUENCE_MAX, 0ui8);
 }
 
 // Routine Description:

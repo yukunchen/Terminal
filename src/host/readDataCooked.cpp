@@ -77,8 +77,10 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
     _Line{ Line },
     _pTempHandle{ pTempHandle },
     ExeName{ nullptr },
-    ExeNameLength{ 0 }
-
+    ExeNameLength{ 0 },
+    _fIsUnicode{ false },
+    ControlKeyState{ 0 },
+    pdwNumBytes{ nullptr }
 {
 }
 

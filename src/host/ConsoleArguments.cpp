@@ -45,6 +45,12 @@ ConsoleArguments::ConsoleArguments(const std::wstring& commandline,
     _inheritCursor = false;
 }
 
+ConsoleArguments::ConsoleArguments() :
+    ConsoleArguments(L"", nullptr, nullptr)
+{
+
+}
+
 ConsoleArguments& ConsoleArguments::operator=(const ConsoleArguments & other)
 {
     if (this != &other)
