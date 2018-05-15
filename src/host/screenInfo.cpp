@@ -2774,7 +2774,7 @@ void SCREEN_INFORMATION::UpdateScreen(const COORD start, const COORD end)
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         const auto viewport = GetBufferViewport();
-        const auto convCoord = ConvScreenInfo->CaInfo.coordConView;
+        const auto convCoord = ConvScreenInfo->GetAreaBufferInfo().coordConView;
 
         rect.Top = start.Y + viewport.Left + convCoord.Y;
         rect.Bottom = end.Y + viewport.Left + convCoord.Y;
@@ -2806,6 +2806,7 @@ void SCREEN_INFORMATION::UpdateScreen(const COORD start, const COORD end)
         }
         WriteToScreen(*this, rect);
     }
+}
 
 // Routine Description:
 // - Clears out the entire text buffer with the default character and
