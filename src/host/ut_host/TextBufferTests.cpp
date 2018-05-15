@@ -131,7 +131,7 @@ class TextBufferTests
 
 void TextBufferTests::TestBufferCreate()
 {
-    VERIFY_IS_TRUE(NT_SUCCESS(m_state->GetTextBufferInfoInitResult()));
+    VERIFY_SUCCESS_NTSTATUS(m_state->GetTextBufferInfoInitResult());
 }
 
 void TextBufferTests::DoBufferRowIterationTest(TextBuffer& textBuffer)
@@ -204,7 +204,7 @@ void TextBufferTests::TestBufferRowIterationWhenCircular()
 {
     SHORT csBufferHeight = GetBufferHeight();
 
-    ASSERT(csBufferHeight > 4);
+    VERIFY_IS_TRUE(csBufferHeight > 4);
 
     TextBuffer& textBuffer = GetTbi();
 
@@ -218,7 +218,7 @@ void TextBufferTests::TestBufferRowByOffset()
     TextBuffer& textBuffer = GetTbi();
     SHORT csBufferHeight = GetBufferHeight();
 
-    ASSERT(csBufferHeight > 20);
+    VERIFY_IS_TRUE(csBufferHeight > 20);
 
     short sId = csBufferHeight / 2 - 5;
 
@@ -401,10 +401,8 @@ void TextBufferTests::TestIncrementCursor()
 
     short const sBufferWidth = textBuffer._coordBufferSize.X;
 
-    #if DBG
     short const sBufferHeight = textBuffer._coordBufferSize.Y;
-    ASSERT(sBufferWidth > 1 && sBufferHeight > 1);
-    #endif
+    VERIFY_IS_TRUE(sBufferWidth > 1 && sBufferHeight > 1);
 
     Log::Comment(L"Test normal case of moving once to the right within a single line");
     textBuffer.GetCursor().SetXPosition(0);
@@ -436,11 +434,9 @@ void TextBufferTests::TestNewlineCursor()
 
     const short sBufferHeight = textBuffer._coordBufferSize.Y;
 
-    #if DBG
     const short sBufferWidth = textBuffer._coordBufferSize.X;
     // width and height are sufficiently large for upcoming math
-    ASSERT(sBufferWidth > 4 && sBufferHeight > 4);
-    #endif
+    VERIFY_IS_TRUE(sBufferWidth > 4 && sBufferHeight > 4);
 
     Log::Comment(L"Verify standard row increment from somewhere in the buffer");
 
@@ -561,7 +557,7 @@ void TextBufferTests::TestIncrementCircularBuffer()
 
     short const sBufferHeight = textBuffer._coordBufferSize.Y;
 
-    ASSERT(sBufferHeight > 4); // buffer should be sufficiently large
+    VERIFY_IS_TRUE(sBufferHeight > 4); // buffer should be sufficiently large
 
     Log::Comment(L"Test 1 = FirstRow of circular buffer is not the final row of the buffer");
     Log::Comment(L"Test 2 = FirstRow of circular buffer IS THE FINAL ROW of the buffer (and therefore circles)");

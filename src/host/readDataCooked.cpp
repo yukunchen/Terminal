@@ -77,8 +77,10 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
     _Line{ Line },
     _pTempHandle{ pTempHandle },
     ExeName{ nullptr },
-    ExeNameLength{ 0 }
-
+    ExeNameLength{ 0 },
+    _fIsUnicode{ false },
+    ControlKeyState{ 0 },
+    pdwNumBytes{ nullptr }
 {
 }
 
@@ -114,21 +116,19 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
                               _Out_ void* const /*pOutputData*/)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    ASSERT(gci.IsConsoleLocked());
+    FAIL_FAST_IF_FALSE(gci.IsConsoleLocked());
 
     *pNumBytes = 0;
     *pControlKeyState = 0;
 
     *pReplyStatus = STATUS_SUCCESS;
 
-    ASSERT(IsFlagClear(_pInputReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::InputPending));
+    FAIL_FAST_IF_FALSE(IsFlagClear(_pInputReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::InputPending));
 
     // this routine should be called by a thread owning the same lock on the same console as we're reading from.
-#ifdef DBG
     _pInputReadHandleData->LockReadCount();
-    ASSERT(_pInputReadHandleData->GetReadCount() > 0);
+    FAIL_FAST_IF_FALSE(_pInputReadHandleData->GetReadCount() > 0);
     _pInputReadHandleData->UnlockReadCount();
-#endif
 
     // if ctrl-c or ctrl-break was seen, terminate read.
     if (IsAnyFlagSet(TerminationReason, (WaitTerminationReason::CtrlC | WaitTerminationReason::CtrlBreak)))
@@ -179,7 +179,7 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
     // this routine should be called by a thread owning the same
     // lock on the same console as we're reading from.
 
-    ASSERT(gci.IsConsoleLocked());
+    FAIL_FAST_IF_FALSE(gci.IsConsoleLocked());
 
     // MSFT:13994975 This is REALLY weird.
     // When we're doing cooked reading for popups, we come through this method
@@ -418,7 +418,7 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
 #pragma prefast(suppress:__WARNING_BUFFER_OVERFLOW, "LineCount > 1 means there's a UNICODE_LINEFEED")
                 for (Tmp = pCookedReadData->_BackupLimit; *Tmp != UNICODE_LINEFEED; Tmp++)
                 {
-                    ASSERT(Tmp < (pCookedReadData->_BackupLimit + pCookedReadData->_BytesRead));
+                    FAIL_FAST_IF_FALSE(Tmp < (pCookedReadData->_BackupLimit + pCookedReadData->_BytesRead));
                 }
 
                 *cbNumBytes = (ULONG)(Tmp - pCookedReadData->_BackupLimit + 1) * sizeof(*Tmp);
@@ -489,7 +489,6 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
             if (*cbNumBytes > pCookedReadData->_UserBufferSize)
             {
                 Status = STATUS_BUFFER_OVERFLOW;
-                ASSERT(false);
                 delete[] pCookedReadData->_BackupLimit;
                 return Status;
             }
@@ -528,7 +527,6 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
             if (*cbNumBytes > pCookedReadData->_UserBufferSize)
             {
                 Status = STATUS_BUFFER_OVERFLOW;
-                ASSERT(false);
                 return Status;
             }
 
@@ -826,7 +824,6 @@ bool ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
                 pCookedReadData->_OriginalCursorPosition.Y += ScrollY;
                 CursorPosition.Y += ScrollY;
                 *pStatus = AdjustCursorPosition(pCookedReadData->_screenInfo, CursorPosition, TRUE, nullptr);
-                ASSERT(NT_SUCCESS(*pStatus));
                 if (!NT_SUCCESS(*pStatus))
                 {
                     pCookedReadData->_BytesRead = 0;

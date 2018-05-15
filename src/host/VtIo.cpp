@@ -21,7 +21,8 @@ using namespace Microsoft::Console::Types;
 VtIo::VtIo() :
     _usingVt(false),
     _hasSignalThread(false),
-    _lookingForCursorPosition(false)
+    _lookingForCursorPosition(false),
+    _IoMode(VtIoMode::INVALID)
 {
 }
 

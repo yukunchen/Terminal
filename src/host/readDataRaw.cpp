@@ -77,15 +77,13 @@ bool RAW_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
                            _Out_ DWORD* const pControlKeyState,
                            _Out_ void* const /*pOutputData*/)
 {
-#ifdef DBG
     // This routine should be called by a thread owning the same lock
     // on the same console as we're reading from.
     _pInputReadHandleData->LockReadCount();
-    ASSERT(_pInputReadHandleData->GetReadCount() > 0);
+    FAIL_FAST_IF_FALSE(_pInputReadHandleData->GetReadCount() > 0);
     _pInputReadHandleData->UnlockReadCount();
-#endif
 
-    assert(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
+    FAIL_FAST_IF_FALSE(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
 
     *pReplyStatus = STATUS_SUCCESS;
     *pControlKeyState = 0;

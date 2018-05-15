@@ -74,16 +74,14 @@ bool DirectReadData::Notify(const WaitTerminationReason TerminationReason,
                             _Out_ DWORD* const pControlKeyState,
                             _Out_ void* const pOutputData)
 {
-#ifdef DBG
-    assert(pOutputData);
+    FAIL_FAST_IF_NULL(pOutputData);
 
     _pInputReadHandleData->LockReadCount();
-    ASSERT(_pInputReadHandleData->GetReadCount() > 0);
+    FAIL_FAST_IF_FALSE(_pInputReadHandleData->GetReadCount() > 0);
     _pInputReadHandleData->UnlockReadCount();
 
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    assert(gci.IsConsoleLocked());
-#endif
+    FAIL_FAST_IF_FALSE(gci.IsConsoleLocked());
 
     *pReplyStatus = STATUS_SUCCESS;
     *pControlKeyState = 0;
@@ -182,7 +180,7 @@ bool DirectReadData::Notify(const WaitTerminationReason TerminationReason,
         {
             _pInputBuffer->StoreReadPartialByteSequence(std::move(readEvents.front()));
             readEvents.pop_front();
-            assert(readEvents.empty());
+            FAIL_FAST_IF_FALSE(readEvents.empty());
         }
 
         // move events to pOutputData

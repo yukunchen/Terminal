@@ -16,7 +16,8 @@
 using namespace Microsoft::Console;
 
 WriteBuffer::WriteBuffer(_In_ Microsoft::Console::IIoProvider& io) :
-    _io{ io }
+    _io{ io },
+    _ntstatus { STATUS_INVALID_DEVICE_STATE }
 {
 }
 

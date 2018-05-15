@@ -551,7 +551,7 @@ IFACEMETHODIMP UiaTextRange::ExpandToEnclosingUnit(_In_ TextUnit unit)
             // expand to line
             _start = _textBufferRowToEndpoint(_endpointToTextBufferRow(_start));
             _end = _start + _getLastColumnIndex();
-            assert(_start <= _end);
+            FAIL_FAST_IF_FALSE(_start <= _end);
         }
         else
         {
@@ -1098,9 +1098,9 @@ IFACEMETHODIMP UiaTextRange::ScrollIntoView(_In_ BOOL alignToTop)
 
     }
 
-    assert(newViewport.Top >= static_cast<SHORT>(topRow));
-    assert(newViewport.Bottom <= static_cast<SHORT>(bottomRow));
-    assert(_getViewportHeight(oldViewport) == _getViewportHeight(newViewport));
+    FAIL_FAST_IF_FALSE(newViewport.Top >= static_cast<SHORT>(topRow));
+    FAIL_FAST_IF_FALSE(newViewport.Bottom <= static_cast<SHORT>(bottomRow));
+    FAIL_FAST_IF_FALSE(_getViewportHeight(oldViewport) == _getViewportHeight(newViewport));
 
     try
     {
@@ -1269,7 +1269,7 @@ const unsigned int UiaTextRange::_rowCountInRange() const
     const ScreenInfoRow endScreenInfoRow = _endpointToScreenInfoRow(_end);
     const Column endColumn = _endpointToColumn(_end);
 
-    assert(_compareScreenCoords(startScreenInfoRow, startColumn, endScreenInfoRow, endColumn) <= 0);
+    FAIL_FAST_IF_FALSE(_compareScreenCoords(startScreenInfoRow, startColumn, endScreenInfoRow, endColumn) <= 0);
 
     // + 1 to balance subtracting ScreenInfoRows from each other
     return endScreenInfoRow - startScreenInfoRow + 1;
@@ -1335,7 +1335,7 @@ const Row UiaTextRange::_normalizeRow(const Row row)
 // - The viewport height
 const unsigned int UiaTextRange::_getViewportHeight(const Viewport viewport)
 {
-    assert(viewport.Bottom >= viewport.Top);
+    FAIL_FAST_IF_FALSE(viewport.Bottom >= viewport.Top);
     // + 1 because COORD is inclusive on both sides so subtracting top
     // and bottom gets rid of 1 more then it should.
     return viewport.Bottom - viewport.Top + 1;
@@ -1349,7 +1349,7 @@ const unsigned int UiaTextRange::_getViewportHeight(const Viewport viewport)
 // - The viewport width
 const unsigned int UiaTextRange::_getViewportWidth(const Viewport viewport)
 {
-    assert(viewport.Right >= viewport.Left);
+    FAIL_FAST_IF_FALSE(viewport.Right >= viewport.Left);
 
     // + 1 because COORD is inclusive on both sides so subtracting left
     // and right gets rid of 1 more then it should.
@@ -1550,17 +1550,17 @@ const int UiaTextRange::_compareScreenCoords(const ScreenInfoRow rowA,
                                              const ScreenInfoRow rowB,
                                              const Column colB)
 {
-    assert(rowA >= _getFirstScreenInfoRowIndex());
-    assert(rowA <= _getLastScreenInfoRowIndex());
+    FAIL_FAST_IF_FALSE(rowA >= _getFirstScreenInfoRowIndex());
+    FAIL_FAST_IF_FALSE(rowA <= _getLastScreenInfoRowIndex());
 
-    assert(colA >= _getFirstColumnIndex());
-    assert(colA <= _getLastColumnIndex());
+    FAIL_FAST_IF_FALSE(colA >= _getFirstColumnIndex());
+    FAIL_FAST_IF_FALSE(colA <= _getLastColumnIndex());
 
-    assert(rowB >= _getFirstScreenInfoRowIndex());
-    assert(rowB <= _getLastScreenInfoRowIndex());
+    FAIL_FAST_IF_FALSE(rowB >= _getFirstScreenInfoRowIndex());
+    FAIL_FAST_IF_FALSE(rowB <= _getLastScreenInfoRowIndex());
 
-    assert(colB >= _getFirstColumnIndex());
-    assert(colB <= _getLastColumnIndex());
+    FAIL_FAST_IF_FALSE(colB >= _getFirstColumnIndex());
+    FAIL_FAST_IF_FALSE(colB <= _getLastColumnIndex());
 
     if (rowA < rowB)
     {
@@ -1642,10 +1642,10 @@ std::pair<Endpoint, Endpoint> UiaTextRange::_moveByCharacterForward(const int mo
         }
         *pAmountMoved += static_cast<int>(moveState.Increment);
 
-        assert(currentColumn >= _getFirstColumnIndex());
-        assert(currentColumn <= _getLastColumnIndex());
-        assert(currentScreenInfoRow >= _getFirstScreenInfoRowIndex());
-        assert(currentScreenInfoRow <= _getLastScreenInfoRowIndex());
+        FAIL_FAST_IF_FALSE(currentColumn >= _getFirstColumnIndex());
+        FAIL_FAST_IF_FALSE(currentColumn <= _getLastColumnIndex());
+        FAIL_FAST_IF_FALSE(currentScreenInfoRow >= _getFirstScreenInfoRowIndex());
+        FAIL_FAST_IF_FALSE(currentScreenInfoRow <= _getLastScreenInfoRowIndex());
     }
 
     Endpoint start = _screenInfoRowToEndpoint(currentScreenInfoRow) + currentColumn;
@@ -1689,10 +1689,10 @@ std::pair<Endpoint, Endpoint> UiaTextRange::_moveByCharacterBackward(const int m
         }
         *pAmountMoved += static_cast<int>(moveState.Increment);
 
-        assert(currentColumn >= _getFirstColumnIndex());
-        assert(currentColumn <= _getLastColumnIndex());
-        assert(currentScreenInfoRow >= _getFirstScreenInfoRowIndex());
-        assert(currentScreenInfoRow <= _getLastScreenInfoRowIndex());
+        FAIL_FAST_IF_FALSE(currentColumn >= _getFirstColumnIndex());
+        FAIL_FAST_IF_FALSE(currentColumn <= _getLastColumnIndex());
+        FAIL_FAST_IF_FALSE(currentScreenInfoRow >= _getFirstScreenInfoRowIndex());
+        FAIL_FAST_IF_FALSE(currentScreenInfoRow <= _getLastScreenInfoRowIndex());
     }
 
     Endpoint start = _screenInfoRowToEndpoint(currentScreenInfoRow) + currentColumn;
@@ -1736,8 +1736,8 @@ std::pair<Endpoint, Endpoint> UiaTextRange::_moveByLine(const int moveCount,
             currentScreenInfoRow += static_cast<int>(moveState.Increment);
             *pAmountMoved += static_cast<int>(moveState.Increment);
 
-            assert(currentScreenInfoRow >= _getFirstScreenInfoRowIndex());
-            assert(currentScreenInfoRow <= _getLastScreenInfoRowIndex());
+            FAIL_FAST_IF_FALSE(currentScreenInfoRow >= _getFirstScreenInfoRowIndex());
+            FAIL_FAST_IF_FALSE(currentScreenInfoRow <= _getLastScreenInfoRowIndex());
         }
         start = _screenInfoRowToEndpoint(currentScreenInfoRow);
         end = start + _getLastColumnIndex();
@@ -1821,10 +1821,10 @@ UiaTextRange::_moveEndpointByUnitCharacterForward(const int moveCount,
         }
         *pAmountMoved += static_cast<int>(moveState.Increment);
 
-        assert(currentColumn >= _getFirstColumnIndex());
-        assert(currentColumn <= _getLastColumnIndex());
-        assert(currentScreenInfoRow >= _getFirstScreenInfoRowIndex());
-        assert(currentScreenInfoRow <= _getLastScreenInfoRowIndex());
+        FAIL_FAST_IF_FALSE(currentColumn >= _getFirstColumnIndex());
+        FAIL_FAST_IF_FALSE(currentColumn <= _getLastColumnIndex());
+        FAIL_FAST_IF_FALSE(currentScreenInfoRow >= _getFirstScreenInfoRowIndex());
+        FAIL_FAST_IF_FALSE(currentScreenInfoRow <= _getLastScreenInfoRowIndex());
     }
 
     // translate the row back to an endpoint and handle any crossed endpoints
@@ -1909,10 +1909,10 @@ UiaTextRange::_moveEndpointByUnitCharacterBackward(const int moveCount,
         }
         *pAmountMoved += static_cast<int>(moveState.Increment);
 
-        assert(currentColumn >= _getFirstColumnIndex());
-        assert(currentColumn <= _getLastColumnIndex());
-        assert(currentScreenInfoRow >= _getFirstScreenInfoRowIndex());
-        assert(currentScreenInfoRow <= _getLastScreenInfoRowIndex());
+        FAIL_FAST_IF_FALSE(currentColumn >= _getFirstColumnIndex());
+        FAIL_FAST_IF_FALSE(currentColumn <= _getLastColumnIndex());
+        FAIL_FAST_IF_FALSE(currentScreenInfoRow >= _getFirstScreenInfoRowIndex());
+        FAIL_FAST_IF_FALSE(currentScreenInfoRow <= _getLastScreenInfoRowIndex());
     }
 
     // translate the row back to an endpoint and handle any crossed endpoints
@@ -2065,10 +2065,10 @@ std::tuple<Endpoint, Endpoint, bool> UiaTextRange::_moveEndpointByUnitLine(const
         }
     }
 
-    assert(currentColumn >= _getFirstColumnIndex());
-    assert(currentColumn <= _getLastColumnIndex());
-    assert(currentScreenInfoRow >= _getFirstScreenInfoRowIndex());
-    assert(currentScreenInfoRow <= _getLastScreenInfoRowIndex());
+    FAIL_FAST_IF_FALSE(currentColumn >= _getFirstColumnIndex());
+    FAIL_FAST_IF_FALSE(currentColumn <= _getLastColumnIndex());
+    FAIL_FAST_IF_FALSE(currentScreenInfoRow >= _getFirstScreenInfoRowIndex());
+    FAIL_FAST_IF_FALSE(currentScreenInfoRow <= _getLastScreenInfoRowIndex());
 
     // move the row that the endpoint corresponds to
     while (count != 0 && currentScreenInfoRow != moveState.LimitingRow)
@@ -2077,8 +2077,8 @@ std::tuple<Endpoint, Endpoint, bool> UiaTextRange::_moveEndpointByUnitLine(const
         currentScreenInfoRow += static_cast<int>(moveState.Increment);
         *pAmountMoved += static_cast<int>(moveState.Increment);
 
-        assert(currentScreenInfoRow >= _getFirstScreenInfoRowIndex());
-        assert(currentScreenInfoRow <= _getLastScreenInfoRowIndex());
+        FAIL_FAST_IF_FALSE(currentScreenInfoRow >= _getFirstScreenInfoRowIndex());
+        FAIL_FAST_IF_FALSE(currentScreenInfoRow <= _getLastScreenInfoRowIndex());
     }
 
     // translate the row back to an endpoint and handle any crossed endpoints

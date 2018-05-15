@@ -143,7 +143,7 @@ class UtilsTests
         const UINT cTestLoopInstances = 100;
 
         const SHORT sRowWidth = 20;
-        ASSERT(sRowWidth > 0);
+        VERIFY_IS_TRUE(sRowWidth > 0);
 
         // 20x20 box
         SMALL_RECT srectEdges;

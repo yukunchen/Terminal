@@ -33,7 +33,8 @@ ConIoSrvComm::ConIoSrvComm()
       _alpcSharedViewSize(0),
       _alpcSharedViewBase(NULL),
       _displayMode(USHORT_MAX),
-      _fIsInputInitialized(false)
+      _fIsInputInitialized(false),
+      pWddmConEngine(nullptr)
 {
 
 }
@@ -719,7 +720,7 @@ NTSTATUS ConIoSrvComm::InitializeBgfx()
     NTSTATUS Status;
 
     Globals& globals = ServiceLocator::LocateGlobals();
-    assert(globals.pRender != nullptr);
+    FAIL_FAST_IF_NULL(globals.pRender);
     IWindowMetrics * const Metrics = ServiceLocator::LocateWindowMetrics();
 
     // Fetch the display size from the console driver.
@@ -759,7 +760,7 @@ NTSTATUS ConIoSrvComm::InitializeBgfx()
 NTSTATUS ConIoSrvComm::InitializeWddmCon()
 {
     Globals& globals = ServiceLocator::LocateGlobals();
-    assert(globals.pRender != nullptr);
+    FAIL_FAST_IF_NULL(globals.pRender);
     
     try
     {

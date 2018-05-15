@@ -34,27 +34,43 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     _In_ IAccessibilityNotifier *pNotifier,
     const CHAR_INFO ciFill,
     const CHAR_INFO ciPopupFill) :
-    OutputMode(ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT),
-    ResizingWindow(0),
-    Next(nullptr),
-    WheelDelta(0),
-    HWheelDelta(0),
-    FillOutDbcsLeadChar(0),
-    ConvScreenInfo(nullptr),
-    ScrollScale(1ul),
-    _pConsoleWindowMetrics(pMetrics),
-    _pAccessibilityNotifier(pNotifier),
-    _pConApi(nullptr),
-    _pAdapter(nullptr),
-    _pStateMachine(nullptr),
-    _viewport({0}),
-    _ptsTabs(nullptr),
-    _textBuffer{ nullptr }
+    Header{ },
+    OutputMode{ ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT },
+    ResizingWindow{ 0 },
+    WheelDelta{ 0 },
+    HWheelDelta{ 0 },
+    _textBuffer{ nullptr },
+    Next{ nullptr },
+    WriteConsoleDbcsLeadByte{ 0, 0 },
+    FillOutDbcsLeadChar{ 0 },
+    // LineChar initialized below.
+    ConvScreenInfo{ nullptr },
+    ScrollScale{ 1ul },
+    _pConsoleWindowMetrics{ pMetrics },
+    _pAccessibilityNotifier{ pNotifier },
+    _pConApi{ nullptr },
+    _pBufferWriter{ nullptr },
+    _pAdapter{ nullptr },
+    _pStateMachine{ nullptr },
+    _pEngine{ nullptr },
+    _coordScreenBufferSize{ 0 },
+    _srScrollMargins{ 0 },
+    _viewport({ 0 }),
+    _psiAlternateBuffer{ nullptr },
+    _psiMainBuffer{ nullptr },
+    _rcAltSavedClientNew{ 0 },
+    _rcAltSavedClientOld{ 0 },
+    _fAltWindowChanged{ false },
+    _ptsTabs{ nullptr },
+    _Attributes{ ciFill.Attributes },
+    _PopupAttributes{ ciPopupFill.Attributes }
 {
-    WriteConsoleDbcsLeadByte[0] = 0;
-    _srScrollMargins = {0};
-    _Attributes = TextAttribute(ciFill.Attributes);
-    _PopupAttributes = TextAttribute(ciPopupFill.Attributes);
+    LineChar[0] = UNICODE_BOX_DRAW_LIGHT_DOWN_AND_RIGHT;
+    LineChar[1] = UNICODE_BOX_DRAW_LIGHT_DOWN_AND_LEFT;
+    LineChar[2] = UNICODE_BOX_DRAW_LIGHT_HORIZONTAL;
+    LineChar[3] = UNICODE_BOX_DRAW_LIGHT_VERTICAL;
+    LineChar[4] = UNICODE_BOX_DRAW_LIGHT_UP_AND_RIGHT;
+    LineChar[5] = UNICODE_BOX_DRAW_LIGHT_UP_AND_LEFT;
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (gci.GetVirtTermLevel() != 0)
     {
@@ -94,20 +110,14 @@ NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
 {
     *ppScreen = nullptr;
 
-    NTSTATUS status = STATUS_SUCCESS;
-
-    IWindowMetrics *pMetrics = ServiceLocator::LocateWindowMetrics();
-    status = NT_TESTNULL(pMetrics);
-
-    ASSERT(NT_SUCCESS(status));
-
-    IAccessibilityNotifier *pNotifier = ServiceLocator::LocateAccessibilityNotifier();
-    status = NT_TESTNULL(pNotifier);
-
-    ASSERT(NT_SUCCESS(status));
-
     try
     {
+        IWindowMetrics *pMetrics = ServiceLocator::LocateWindowMetrics();
+        THROW_IF_NULL_ALLOC(pMetrics);
+
+        IAccessibilityNotifier *pNotifier = ServiceLocator::LocateAccessibilityNotifier();
+        THROW_IF_NULL_ALLOC(pNotifier);
+
         PSCREEN_INFORMATION const pScreen = new SCREEN_INFORMATION(pMetrics, pNotifier, ciFill, ciPopupFill);
 
         pScreen->_InitializeBufferDimensions(coordScreenBufferSize, coordWindowSize);
@@ -116,22 +126,20 @@ NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
                                                             pScreen->GetScreenBufferSize(),
                                                             ciFill,
                                                             uiCursorSize);
-        SetLineChar(*pScreen);
-
-        status = pScreen->_InitializeOutputStateMachine();
+        const NTSTATUS status = pScreen->_InitializeOutputStateMachine();
 
         if (NT_SUCCESS(status))
         {
             *ppScreen = pScreen;
         }
+
+        LOG_IF_NTSTATUS_FAILED(status);
+        return status;
     }
     catch (...)
     {
-        status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+        return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
     }
-
-    LOG_IF_NTSTATUS_FAILED(status);
-    return status;
 }
 
 void SCREEN_INFORMATION::SetScreenBufferSize(const COORD coordNewBufferSize)
@@ -183,7 +191,7 @@ bool SCREEN_INFORMATION::InVTMode() const
 void SCREEN_INFORMATION::s_InsertScreenBuffer(_In_ PSCREEN_INFORMATION pScreenInfo)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    ASSERT(gci.IsConsoleLocked());
+    FAIL_FAST_IF_FALSE(gci.IsConsoleLocked());
 
     pScreenInfo->Next = gci.ScreenBuffers;
     gci.ScreenBuffers = pScreenInfo;
@@ -218,8 +226,7 @@ void SCREEN_INFORMATION::s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pSc
             Cur = Cur->Next;
         }
 
-        ASSERT(Cur != nullptr);
-        __analysis_assume(Cur != nullptr);
+        FAIL_FAST_IF_NULL(Cur);
         Prev->Next = Cur->Next;
     }
 
@@ -249,13 +256,12 @@ NTSTATUS SCREEN_INFORMATION::_InitializeOutputStateMachine()
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     try
     {
-        ASSERT(_pConApi == nullptr);
         _pConApi = new ConhostInternalGetSet(gci);
 
-        ASSERT(_pBufferWriter == nullptr);
+        FAIL_FAST_IF(_pBufferWriter != nullptr);
         _pBufferWriter = new WriteBuffer(gci);
 
-        ASSERT(_pAdapter == nullptr);
+        FAIL_FAST_IF(_pAdapter != nullptr);
         _pAdapter = new AdaptDispatch(_pConApi, _pBufferWriter, _Attributes.GetLegacyAttributes());
 
         // Note that at this point in the setup, we haven't determined if we're
@@ -263,7 +269,7 @@ NTSTATUS SCREEN_INFORMATION::_InitializeOutputStateMachine()
         //      TerminalConnection later, in VtIo::StartIfNeeded
         _pEngine = std::make_shared<OutputStateMachineEngine>(_pAdapter);
 
-        ASSERT(_pStateMachine == nullptr);
+        FAIL_FAST_IF(_pStateMachine != nullptr);
         _pStateMachine = new StateMachine(_pEngine);
     }
     catch (...)
@@ -366,8 +372,8 @@ void SCREEN_INFORMATION::GetScreenBufferInformation(_Out_ PCOORD pcoordSize,
 // - COORD containing the width and height representing the minimum character grid that can be rendered in the window.
 COORD SCREEN_INFORMATION::GetMinWindowSizeInCharacters(const COORD coordFontSize /*= { 1, 1 }*/) const
 {
-    assert(coordFontSize.X != 0);
-    assert(coordFontSize.Y != 0);
+    FAIL_FAST_IF(coordFontSize.X == 0);
+    FAIL_FAST_IF(coordFontSize.Y == 0);
 
     // prepare rectangle
     RECT const rcWindowInPixels = _pConsoleWindowMetrics->GetMinClientRectInPixels();
@@ -386,8 +392,8 @@ COORD SCREEN_INFORMATION::GetMinWindowSizeInCharacters(const COORD coordFontSize
         coordFont = GetScreenFontSize();
     }
 
-    assert(coordFont.X != 0);
-    assert(coordFont.Y != 0);
+    FAIL_FAST_IF(coordFont.X == 0);
+    FAIL_FAST_IF(coordFont.Y == 0);
 
     coordClientAreaSize.X /= coordFont.X;
     coordClientAreaSize.Y /= coordFont.Y;
@@ -404,8 +410,8 @@ COORD SCREEN_INFORMATION::GetMinWindowSizeInCharacters(const COORD coordFontSize
 // - COORD containing the width and height representing the largest character grid that can be rendered on the current monitor and/or from the current buffer size.
 COORD SCREEN_INFORMATION::GetMaxWindowSizeInCharacters(const COORD coordFontSize /*= { 1, 1 }*/) const
 {
-    assert(coordFontSize.X != 0);
-    assert(coordFontSize.Y != 0);
+    FAIL_FAST_IF(coordFontSize.X == 0);
+    FAIL_FAST_IF(coordFontSize.Y == 0);
 
     const COORD coordScreenBufferSize = GetScreenBufferSize();
     COORD coordClientAreaSize = coordScreenBufferSize;
@@ -435,8 +441,8 @@ COORD SCREEN_INFORMATION::GetMaxWindowSizeInCharacters(const COORD coordFontSize
 // - COORD containing the width and height representing the largest character grid that can be rendered on the current monitor with the maximum size window.
 COORD SCREEN_INFORMATION::GetLargestWindowSizeInCharacters(const COORD coordFontSize /*= { 1, 1 }*/) const
 {
-    assert(coordFontSize.X != 0);
-    assert(coordFontSize.Y != 0);
+    FAIL_FAST_IF(coordFontSize.X == 0);
+    FAIL_FAST_IF(coordFontSize.Y == 0);
 
     RECT const rcClientInPixels = _pConsoleWindowMetrics->GetMaxClientRectInPixels();
 
@@ -454,8 +460,8 @@ COORD SCREEN_INFORMATION::GetLargestWindowSizeInCharacters(const COORD coordFont
         coordFont = GetScreenFontSize();
     }
 
-    assert(coordFont.X != 0);
-    assert(coordFont.Y != 0);
+    FAIL_FAST_IF(coordFont.X == 0);
+    FAIL_FAST_IF(coordFont.Y == 0);
 
     coordClientAreaSize.X /= coordFont.X;
     coordClientAreaSize.Y /= coordFont.Y;
@@ -589,7 +595,7 @@ void SCREEN_INFORMATION::NotifyAccessibilityEventing(const short sStartX,
     if (IsActiveScreenBuffer())
     {
         const COORD coordScreenBufferSize = GetScreenBufferSize();
-        ASSERT(sEndX < coordScreenBufferSize.X);
+        FAIL_FAST_IF_FALSE(sEndX < coordScreenBufferSize.X);
 
         if (sStartX == sEndX && sStartY == sEndY)
         {
@@ -878,8 +884,8 @@ void SCREEN_INFORMATION::ProcessResizeWindow(const RECT* const prcClientNew, con
     // 4. Finally, update the scroll bars.
     UpdateScrollBars();
 
-    ASSERT(_viewport.Top() >= 0);
-    ASSERT(_viewport.IsValid());
+    FAIL_FAST_IF_FALSE(_viewport.Top() >= 0);
+    FAIL_FAST_IF_FALSE(_viewport.IsValid());
 }
 
 #pragma endregion
@@ -1124,7 +1130,7 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(const COORD* const pcoordSize,
                 // the number of rows from the bottom instead.
                 // NOTE: It's += because DeltaY will be negative
                 // already for this circumstance.
-                ASSERT(DeltaY <= 0);
+                FAIL_FAST_IF_FALSE(DeltaY <= 0);
                 srNewViewport.Bottom += DeltaY;
             }
         }
@@ -1170,7 +1176,7 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(const COORD* const pcoordSize,
                     // prompt line.
                     const short cRemainder = 0 - srNewViewport.Top;
                     srNewViewport.Top += cRemainder;
-                    ASSERT(srNewViewport.Top == 0);
+                    FAIL_FAST_IF_FALSE(srNewViewport.Top == 0);
                     srNewViewport.Bottom += cRemainder;
                 }
             }
@@ -1280,12 +1286,12 @@ void SCREEN_INFORMATION::s_CalculateScrollbarVisibility(const RECT* const prcCli
                                                         _Out_ bool* const pfIsHorizontalVisible,
                                                         _Out_ bool* const pfIsVerticalVisible)
 {
-    ASSERT(prcClientArea->left < prcClientArea->right);
-    ASSERT(prcClientArea->top < prcClientArea->bottom);
-    ASSERT(pcoordBufferSize->X > 0);
-    ASSERT(pcoordBufferSize->Y > 0);
-    ASSERT(pcoordFontSize->X > 0);
-    ASSERT(pcoordFontSize->Y > 0);
+    FAIL_FAST_IF_FALSE(prcClientArea->left < prcClientArea->right);
+    FAIL_FAST_IF_FALSE(prcClientArea->top < prcClientArea->bottom);
+    FAIL_FAST_IF_FALSE(pcoordBufferSize->X > 0);
+    FAIL_FAST_IF_FALSE(pcoordBufferSize->Y > 0);
+    FAIL_FAST_IF_FALSE(pcoordFontSize->X > 0);
+    FAIL_FAST_IF_FALSE(pcoordFontSize->Y > 0);
 
     // Start with bars not visible as the initial state of the client area doesn't account for scroll bars.
     *pfIsHorizontalVisible = false;
@@ -1665,7 +1671,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeScreenBuffer(const COORD coordNewScreenSize,
 
         if ((!ConvScreenInfo))
         {
-            if (!NT_SUCCESS(ConsoleImeResizeCompStrScreenBuffer(coordNewScreenSize)))
+            if (FAILED(ConsoleImeResizeCompStrScreenBuffer(coordNewScreenSize)))
             {
                 // If something went wrong, just bail out.
                 return STATUS_INVALID_HANDLE;
@@ -2800,6 +2806,17 @@ void SCREEN_INFORMATION::UpdateScreen(const COORD start, const COORD end)
         }
         WriteToScreen(*this, rect);
     }
+
+// Routine Description:
+// - Clears out the entire text buffer with the default character and
+//   the current default attribute applied to this screen.
+void SCREEN_INFORMATION::ClearTextData()
+{
+    // Get attribute to clear with
+    const auto attribute = GetAttributes();
+
+    // Clear the text buffer.
+    _textBuffer->Reset(attribute);
 }
 
 // Routine Description:
@@ -2863,12 +2880,12 @@ std::pair<COORD, COORD> SCREEN_INFORMATION::GetWordBoundary(const COORD position
     return { start, end };
 }
 
-TextBuffer& SCREEN_INFORMATION::GetTextBuffer()
+TextBuffer& SCREEN_INFORMATION::GetTextBuffer() noexcept
 {
     return *_textBuffer;
 }
 
-const TextBuffer& SCREEN_INFORMATION::GetTextBuffer() const
+const TextBuffer& SCREEN_INFORMATION::GetTextBuffer() const noexcept
 {
     return *_textBuffer;
 }

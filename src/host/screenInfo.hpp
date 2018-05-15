@@ -153,10 +153,13 @@ public:
 
     void UpdateScreen(const COORD start, const COORD end);
 
+    void ClearTextData();
+
+
     std::pair<COORD, COORD> GetWordBoundary(const COORD position) const;
 
-    TextBuffer& GetTextBuffer();
-    const TextBuffer& GetTextBuffer() const;
+    TextBuffer& GetTextBuffer() noexcept;
+    const TextBuffer& GetTextBuffer() const noexcept;
 
 
 
@@ -312,14 +315,14 @@ private:
     //      window client (the "viewport" into the buffer)
     Microsoft::Console::Types::Viewport _viewport;
 
-    SCREEN_INFORMATION* _psiAlternateBuffer = nullptr; // The VT "Alternate" screen buffer.
-    SCREEN_INFORMATION* _psiMainBuffer = nullptr; // A pointer to the main buffer, if this is the alternate buffer.
+    SCREEN_INFORMATION* _psiAlternateBuffer; // The VT "Alternate" screen buffer.
+    SCREEN_INFORMATION* _psiMainBuffer; // A pointer to the main buffer, if this is the alternate buffer.
 
-    RECT _rcAltSavedClientNew = { 0 };
-    RECT _rcAltSavedClientOld = { 0 };
-    bool _fAltWindowChanged = false;
+    RECT _rcAltSavedClientNew;
+    RECT _rcAltSavedClientOld;
+    bool _fAltWindowChanged;
 
-    TabStop* _ptsTabs = nullptr; // The head of the list of Tab Stops
+    TabStop* _ptsTabs; // The head of the list of Tab Stops
 
     TextAttribute _Attributes;
     TextAttribute _PopupAttributes;

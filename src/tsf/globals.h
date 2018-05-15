@@ -55,17 +55,3 @@ Notes:
         (punk) = NULL;          \
     }                           \
 }
-
-//+---------------------------------------------------------------------------
-//
-// Function definition
-//
-//----------------------------------------------------------------------------
-
-#ifdef __cplusplus
-
-// ConSrv protocol
-LRESULT ConsoleImeSendMessage(COPYDATASTRUCT* pCopyData);
-LRESULT ConsoleImeSendMessage2(ULONG_PTR dwData, DWORD cbData, __field_bcount(cbData) PVOID lpData);
-
-#endif // __cplusplus

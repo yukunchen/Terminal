@@ -89,7 +89,7 @@ std::vector<std::vector<OutputCell>> ReadRectFromScreenBuffer(const SCREEN_INFOR
     for (size_t rowIndex = 0; rowIndex < static_cast<size_t>(viewport.Height()); ++rowIndex)
     {
         auto cells = screenInfo.ReadLine(coordSourcePoint.Y + rowIndex, coordSourcePoint.X);
-        ASSERT_FRE(cells.size() >= static_cast<size_t>(viewport.Width()));
+        FAIL_FAST_IF_FALSE(cells.size() >= static_cast<size_t>(viewport.Width()));
         for (size_t colIndex = 0; colIndex < static_cast<size_t>(viewport.Width()); ++colIndex)
         {
             // if we're clipping a dbcs char then don't include it, add a space instead
@@ -103,8 +103,8 @@ std::vector<std::vector<OutputCell>> ReadRectFromScreenBuffer(const SCREEN_INFOR
         cells.resize(viewport.Width(), cells.front());
         result.push_back(cells);
     }
-    ASSERT_FRE(result.size() == static_cast<size_t>(viewport.Height()));
-    ASSERT_FRE(result.at(0).size() == static_cast<size_t>(viewport.Width()));
+    FAIL_FAST_IF_FALSE(result.size() == static_cast<size_t>(viewport.Height()));
+    FAIL_FAST_IF_FALSE(result.at(0).size() == static_cast<size_t>(viewport.Width()));
     return result;
 }
 
@@ -140,7 +140,7 @@ NTSTATUS ReadScreenBuffer(const SCREEN_INFORMATION& screenInfo,
                           _Inout_ PSMALL_RECT psrReadRegion)
 {
     DBGOUTPUT(("ReadScreenBuffer\n"));
-    assert(outputCells.empty());
+    FAIL_FAST_IF_FALSE(outputCells.empty());
 
     // calculate dimensions of caller's buffer.  have to do this calculation before clipping.
     COORD TargetSize;

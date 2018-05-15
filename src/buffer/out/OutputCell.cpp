@@ -164,4 +164,5 @@ void OutputCell::_setFromCharInfo(const CHAR_INFO& charInfo)
     }
     _textAttribute.SetFromLegacy(charInfo.Attributes);
 
+    _behavior = TextAttributeBehavior::Stored;
 }

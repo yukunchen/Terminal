@@ -463,7 +463,7 @@ HRESULT DoSrvSetConsoleCursorPosition(SCREEN_INFORMATION& screenInfo,
 
     RETURN_IF_NTSTATUS_FAILED(screenInfo.SetCursorPosition(*pCursorPosition, true));
 
-    LOG_IF_NTSTATUS_FAILED(ConsoleImeResizeCompStrView());
+    LOG_IF_FAILED(ConsoleImeResizeCompStrView());
 
     COORD WindowOrigin;
     WindowOrigin.X = 0;
@@ -1187,10 +1187,10 @@ void DoSrvPrivateUseMainScreenBuffer(SCREEN_INFORMATION& screenInfo)
 NTSTATUS DoSrvPrivateHorizontalTabSet()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& ScreenBuffer = gci.GetActiveOutputBuffer();
+    SCREEN_INFORMATION& _screenBuffer = gci.GetActiveOutputBuffer();
 
-    const COORD cursorPos = ScreenBuffer.GetTextBuffer().GetCursor().GetPosition();
-    return ScreenBuffer.AddTabStop(cursorPos.X);
+    const COORD cursorPos = _screenBuffer.GetTextBuffer().GetCursor().GetPosition();
+    return _screenBuffer.AddTabStop(cursorPos.X);
 }
 
 // Routine Description:
@@ -1204,18 +1204,18 @@ NTSTATUS DoSrvPrivateHorizontalTabSet()
 NTSTATUS DoPrivateTabHelper(const SHORT sNumTabs, _In_ bool fForward)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& ScreenBuffer = gci.GetActiveOutputBuffer();
+    SCREEN_INFORMATION& _screenBuffer = gci.GetActiveOutputBuffer();
 
     NTSTATUS Status = STATUS_SUCCESS;
-    ASSERT(sNumTabs >= 0);
+    FAIL_FAST_IF_FALSE(sNumTabs >= 0);
     for (SHORT sTabsExecuted = 0; sTabsExecuted < sNumTabs && NT_SUCCESS(Status); sTabsExecuted++)
     {
-        const COORD cursorPos = ScreenBuffer.GetTextBuffer().GetCursor().GetPosition();
-        COORD cNewPos = (fForward) ? ScreenBuffer.GetForwardTab(cursorPos) : ScreenBuffer.GetReverseTab(cursorPos);
+        const COORD cursorPos = _screenBuffer.GetTextBuffer().GetCursor().GetPosition();
+        COORD cNewPos = (fForward) ? _screenBuffer.GetForwardTab(cursorPos) : _screenBuffer.GetReverseTab(cursorPos);
         // GetForwardTab is smart enough to move the cursor to the next line if
         // it's at the end of the current one already. AdjustCursorPos shouldn't
         // to be doing anything funny, just moving the cursor to the location GetForwardTab returns
-        Status = AdjustCursorPosition(ScreenBuffer, cNewPos, TRUE, nullptr);
+        Status = AdjustCursorPosition(_screenBuffer, cNewPos, TRUE, nullptr);
     }
     return Status;
 }
@@ -1258,15 +1258,15 @@ NTSTATUS DoSrvPrivateBackwardsTab(const SHORT sNumTabs)
 void DoSrvPrivateTabClear(const bool fClearAll)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& ScreenBuffer = gci.GetActiveOutputBuffer();
+    SCREEN_INFORMATION& screenBuffer = gci.GetActiveOutputBuffer();
     if (fClearAll)
     {
-        ScreenBuffer.ClearTabStops();
+        screenBuffer.ClearTabStops();
     }
     else
     {
-        const COORD cursorPos = ScreenBuffer.GetTextBuffer().GetCursor().GetPosition();
-        ScreenBuffer.ClearTabStop(cursorPos.X);
+        const COORD cursorPos = screenBuffer.GetTextBuffer().GetCursor().GetPosition();
+        screenBuffer.ClearTabStop(cursorPos.X);
     }
 }
 
@@ -1684,7 +1684,7 @@ HRESULT DoSrvSetConsoleTitleW(_In_reads_or_z_(cchBuffer) const wchar_t* const pw
 NTSTATUS DoSrvPrivateSuppressResizeRepaint()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    assert(gci.IsInVtIoMode());
+    FAIL_FAST_IF_FALSE(gci.IsInVtIoMode());
     return NTSTATUS_FROM_HRESULT(gci.GetVtIo()->SuppressResizeRepaint());
 }
 

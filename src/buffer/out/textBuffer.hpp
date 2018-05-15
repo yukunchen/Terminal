@@ -129,6 +129,8 @@ public:
     CHAR_INFO GetFill() const;
     void SetFill(const CHAR_INFO ciFill);
 
+    void Reset(const TextAttribute attr);
+
     [[nodiscard]]
     HRESULT ResizeTraditional(const COORD currentScreenBufferSize,
                               const COORD newScreenBufferSize,

@@ -29,13 +29,20 @@ Notes:
 class CConversionArea
 {
 public:
-    CConversionArea() { }
-    virtual ~CConversionArea() { }
+    [[nodiscard]]
+    HRESULT DrawComposition(const CComBSTR& CompStr,
+                            const std::vector<TF_DISPLAYATTRIBUTE>& DisplayAttributes,
+                            const DWORD CompCursorPos = -1);
 
     [[nodiscard]]
-    virtual HRESULT DrawConversionAreaInfo(CComBSTR CompStr,
-                                           TF_DISPLAYATTRIBUTE* DisplayAttribute,
-                                           ULONG cchDisplayAttribute,
-                                           CComBSTR ResultStr,
-                                           DWORD CompCursorPos = -1);
+    HRESULT ClearComposition();
+
+    [[nodiscard]]
+    HRESULT DrawResult(const CComBSTR& ResultStr);
+
+private:
+    [[nodiscard]]
+    std::vector<BYTE> _DisplayAttributesToEncodedAttributes(const std::vector<TF_DISPLAYATTRIBUTE>& DisplayAttributes,
+                                                            const DWORD CompCursorPos);
+    
 };

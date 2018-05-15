@@ -448,9 +448,9 @@ NTSTATUS ConsoleInitializeConnectInfo(_In_ PCONSOLE_API_MSG Message, _Out_ PCONS
     }
 
     // Initialize (partially) the connect info with the received data.
-    ASSERT(sizeof(Cac->AppName) == sizeof(Data.ApplicationName));
-    ASSERT(sizeof(Cac->Title) == sizeof(Data.Title));
-    ASSERT(sizeof(Cac->CurDir) == sizeof(Data.CurrentDirectory));
+    FAIL_FAST_IF_FALSE(sizeof(Cac->AppName) == sizeof(Data.ApplicationName));
+    FAIL_FAST_IF_FALSE(sizeof(Cac->Title) == sizeof(Data.Title));
+    FAIL_FAST_IF_FALSE(sizeof(Cac->CurDir) == sizeof(Data.CurrentDirectory));
 
     // unused(Data.IconId)
     Cac->ConsoleInfo.SetHotKey(Data.HotKey);
@@ -517,7 +517,7 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
         IConsoleInputThread *pNewThread = nullptr;
         LOG_IF_FAILED(ServiceLocator::CreateConsoleInputThread(&pNewThread));
 
-        ASSERT(pNewThread);
+        FAIL_FAST_IF_NULL(pNewThread);
 
         Thread = pNewThread->Start();
         if (Thread == nullptr)

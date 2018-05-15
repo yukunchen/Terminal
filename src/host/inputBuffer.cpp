@@ -431,12 +431,12 @@ size_t InputBuffer::Prepend(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& in
         // write the prepend records
         size_t prependEventsWritten;
         _WriteBuffer(inEvents, prependEventsWritten, unusedWaitStatus);
-        assert(unusedWaitStatus);
+        FAIL_FAST_IF_FALSE(unusedWaitStatus);
 
         // write all previously existing records
         size_t existingEventsWritten;
         _WriteBuffer(existingStorage, existingEventsWritten, unusedWaitStatus);
-        assert(!unusedWaitStatus);
+        FAIL_FAST_IF_FALSE(!unusedWaitStatus);
 
         // We need to set the wait event if there were 0 events in the
         // input queue when we started.
@@ -632,8 +632,8 @@ void InputBuffer::_WriteBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>&
 // redundant/out of date with the most current state).
 bool InputBuffer::_CoalesceMouseMovedEvents(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
 {
-    assert(inEvents.size() == 1);
-    assert(!_storage.empty());
+    FAIL_FAST_IF_FALSE(inEvents.size() == 1);
+    FAIL_FAST_IF(_storage.empty());
     const IInputEvent* const pFirstInEvent = inEvents.front().get();
     const IInputEvent* const pLastStoredEvent = _storage.back().get();
     if (pFirstInEvent->EventType() == InputEventType::MouseEvent &&
@@ -674,8 +674,8 @@ bool InputBuffer::_CoalesceMouseMovedEvents(_Inout_ std::deque<std::unique_ptr<I
 // redundant/out of date with the most current state).
 bool InputBuffer::_CoalesceRepeatedKeyPressEvents(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
 {
-    assert(inEvents.size() == 1);
-    assert(!_storage.empty());
+    FAIL_FAST_IF_FALSE(inEvents.size() == 1);
+    FAIL_FAST_IF(_storage.empty());
     const IInputEvent* const pFirstInEvent = inEvents.front().get();
     const IInputEvent* const pLastStoredEvent = _storage.back().get();
     if (pFirstInEvent->EventType() == InputEventType::KeyEvent &&

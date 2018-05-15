@@ -111,7 +111,7 @@ bool Selection::IsAreaSelected() const
 bool Selection::IsKeyboardMarkSelection() const
 {
     // if we're not selecting, we shouldn't be asking what type of selection it is
-    ASSERT(IsInSelectingState());
+    FAIL_FAST_IF(!IsInSelectingState());
 
     return (_dwSelectionFlags & CONSOLE_MOUSE_SELECTION) == 0;
 }
@@ -127,7 +127,7 @@ bool Selection::IsKeyboardMarkSelection() const
 bool Selection::IsMouseInitiatedSelection() const
 {
     // if we're not selecting, we shouldn't be asking what type of selection it is
-    ASSERT(IsInSelectingState());
+    FAIL_FAST_IF(!IsInSelectingState());
 
     return (_dwSelectionFlags & CONSOLE_MOUSE_SELECTION) != 0;
 }

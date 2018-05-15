@@ -62,7 +62,7 @@ STDAPI_(ULONG) CEditSessionObject::Release()
     long cr;
 
     cr = --m_cRef;
-    Assert(cr >= 0);
+    FAIL_FAST_IF_FALSE(cr >= 0);
 
     if (cr == 0) {
         delete this;
@@ -93,12 +93,12 @@ HRESULT CEditSessionObject::GetAllTextRange(TfEditCookie ec, ITfContext* ic, ITf
     // Create the range that covers all the text.
     //
     CComPtr<ITfRange> rangeFull;
-    if (FAILED(hr=ic->GetStart(ec, &rangeFull))) {
+    if (FAILED(hr = ic->GetStart(ec, &rangeFull))) {
         return hr;
     }
 
     LONG cch = 0;
-    if (FAILED(hr=rangeFull->ShiftEnd(ec, LONG_MAX, &cch, lpHaltCond))) {
+    if (FAILED(hr = rangeFull->ShiftEnd(ec, LONG_MAX, &cch, lpHaltCond))) {
         return hr;
     }
 
@@ -178,7 +178,7 @@ HRESULT CEditSessionObject::_GetCursorPosition(TfEditCookie ec, CCompCursorPos& 
         hc.aHaltPos = (sel.style.ase == TF_AE_START) ? TF_ANCHOR_START : TF_ANCHOR_END;
         hc.dwFlags = 0;
 
-        if (SUCCEEDED(hr=GetAllTextRange(ec, pic, &start, &ich, &hc))) {
+        if (SUCCEEDED(hr = GetAllTextRange(ec, pic, &start, &ich, &hc))) {
             CompCursorPos.SetCursorPosition(ich);
         }
 
@@ -237,7 +237,7 @@ HRESULT CEditSessionObject::_GetTextAndAttribute(TfEditCookie ec, ITfRange* rang
         return hr;
     }
 
-    const GUID* guids[] = {&GUID_PROP_COMPOSING};
+    const GUID* guids[] = { &GUID_PROP_COMPOSING };
     const int   guid_size = sizeof(guids) / sizeof(GUID*);
 
     if (FAILED(hr = _GetNoDisplayAttributeRange(ec, rangeIn,
@@ -262,7 +262,7 @@ HRESULT CEditSessionObject::_GetTextAndAttribute(TfEditCookie ec, ITfRange* rang
     }
 
     CComPtr<ITfRange>  range;
-    while(enumComp->Next(1, &range, NULL) == S_OK) {
+    while (enumComp->Next(1, &range, NULL) == S_OK) {
         VARIANT var;
         BOOL fCompExist = FALSE;
 
@@ -274,7 +274,7 @@ HRESULT CEditSessionObject::_GetTextAndAttribute(TfEditCookie ec, ITfRange* rang
                 TF_PROPERTYVAL tfPropertyVal;
 
                 while (EnumPropVal->Next(1, &tfPropertyVal, NULL) == S_OK) {
-                    for (int i=0; i < guid_size; i++) {
+                    for (int i = 0; i < guid_size; i++) {
                         if (IsEqualGUID(tfPropertyVal.guidId, *guids[i])) {
                             if ((V_VT(&tfPropertyVal.varValue) == VT_I4 && V_I4(&tfPropertyVal.varValue) != 0)) {
                                 fCompExist = TRUE;
@@ -561,7 +561,7 @@ HRESULT CEditSessionObject::_GetNoDisplayAttributeRange(TfEditCookie ec, ITfRang
 
     CComPtr<ITfRange> pRange;
 
-    while(enumComp->Next(1, &pRange, NULL) == S_OK) {
+    while (enumComp->Next(1, &pRange, NULL) == S_OK) {
         VARIANT var;
         BOOL fCompExist = FALSE;
 
@@ -573,7 +573,7 @@ HRESULT CEditSessionObject::_GetNoDisplayAttributeRange(TfEditCookie ec, ITfRang
                 TF_PROPERTYVAL tfPropertyVal;
 
                 while (EnumPropVal->Next(1, &tfPropertyVal, NULL) == S_OK) {
-                    for (int i=0; i < guid_size; i++) {
+                    for (int i = 0; i < guid_size; i++) {
                         if (IsEqualGUID(tfPropertyVal.guidId, *guids[i])) {
                             if ((V_VT(&tfPropertyVal.varValue) == VT_I4 && V_I4(&tfPropertyVal.varValue) != 0)) {
                                 fCompExist = TRUE;
@@ -614,83 +614,59 @@ HRESULT CEditSessionObject::_GetNoDisplayAttributeRange(TfEditCookie ec, ITfRang
 [[nodiscard]]
 HRESULT CEditSessionCompositionComplete::CompComplete(TfEditCookie ec)
 {
-    HRESULT hr;
-
     ITfContext* pic = g_pConsoleTSF ? g_pConsoleTSF->GetInputContext() : NULL;
-    if (pic == NULL) {
-        return E_FAIL;
-    }
+    RETURN_HR_IF_NULL(E_FAIL, pic);
 
-    //
     // Get the whole text, finalize it, and set empty string in TOM
-    //
     CComPtr<ITfRange> spRange;
     LONG cch;
 
-    hr = GetAllTextRange(ec, pic, &spRange, &cch);
-    if (SUCCEEDED(hr))
+    RETURN_IF_FAILED(GetAllTextRange(ec, pic, &spRange, &cch));
+
+    // Check if a part of the range has already been finalized but not removed yet.
+    // Adjust the range appropriately to avoid inserting the same text twice.
+    long cchCompleted = g_pConsoleTSF->GetCompletedRangeLength();
+    if ((cchCompleted > 0) &&
+        (cchCompleted < cch) &&
+        SUCCEEDED(spRange->ShiftStart(ec, cchCompleted, &cchCompleted, NULL)))
     {
-        // Check if a part of the range has already been finalized but not removed yet.
-        // Adjust the range appropriately to avoid inserting the same text twice.
-        long cchCompleted = g_pConsoleTSF->GetCompletedRangeLength();
-        if ((cchCompleted > 0) &&
-            (cchCompleted < cch) &&
-            SUCCEEDED(spRange->ShiftStart(ec, cchCompleted, &cchCompleted, NULL)))
-        {
-            Assert((cchCompleted > 0) && (cchCompleted < cch));
-            cch -= cchCompleted;
-        }
-        else
-        {
-            cchCompleted = 0;
-        }
-
-        //
-        // Get conversion area service.
-        //
-        CConversionArea* conv_area = g_pConsoleTSF->GetConversionArea();
-        if (conv_area == NULL) {
-            return E_FAIL;
-        }
-
-        //
-        // If there is no string in TextStore we don't have to do anything.
-        //
-        if (!cch) {
-            //
-            // Clear composition
-            //
-            hr = conv_area->DrawConversionAreaInfo(NULL,                 // composition string
-                                                   NULL, 0,              // display attribute and length
-                                                   NULL);                // result string
-
-            return S_OK;
-        }
-
-        LPWSTR wstr = new(std::nothrow) WCHAR[ cch + 1 ];
-        if (!wstr) {
-            return E_OUTOFMEMORY;
-        }
-
-        //
-        // Get the whole text, finalize it, and erase the whole text.
-        //
-        if (SUCCEEDED(spRange->GetText(ec, TF_TF_IGNOREEND, wstr, (ULONG)cch, (ULONG*)&cch)))
-        {
-
-            //
-            // Make Result String.
-            //
-            CCompString ResultStr(wstr, cch);
-            hr = conv_area->DrawConversionAreaInfo(NULL,                 // composition string
-                                                   NULL, 0,              // display attribute and length
-                                                   ResultStr);           // result string
-        }
-        delete [] wstr;
-
-        // Update the stored length of the completed fragment.
-        g_pConsoleTSF->SetCompletedRangeLength(cchCompleted + cch);
+        FAIL_FAST_IF_FALSE((cchCompleted > 0) && (cchCompleted < cch));
+        cch -= cchCompleted;
     }
+    else
+    {
+        cchCompleted = 0;
+    }
+
+    // Get conversion area service.
+    CConversionArea* conv_area = g_pConsoleTSF->GetConversionArea();
+    RETURN_HR_IF_NULL(E_FAIL, conv_area);
+
+    // If there is no string in TextStore we don't have to do anything.
+    if (!cch) {
+        // Clear composition
+        LOG_IF_FAILED(conv_area->ClearComposition());
+        return S_OK;
+    }
+
+    HRESULT hr = S_OK;
+    try
+    {
+        auto wstr = std::make_unique<WCHAR[]>(cch + 1);
+
+        // Get the whole text, finalize it, and erase the whole text.
+        if (SUCCEEDED(spRange->GetText(ec, TF_TF_IGNOREEND, wstr.get(), (ULONG)cch, (ULONG*)&cch)))
+        {
+            // Make Result String.
+            CCompString ResultStr(wstr.get(), cch);
+            hr = conv_area->DrawResult(ResultStr);
+        }
+    }
+    CATCH_RETURN();
+
+    // Update the stored length of the completed fragment.
+    g_pConsoleTSF->SetCompletedRangeLength(cchCompleted + cch);
+
     return hr;
 }
 
@@ -775,7 +751,7 @@ HRESULT CEditSessionUpdateCompositionString::UpdateCompositionString(TfEditCooki
 
     CComPtr<ITfRange> FullTextRange;
     LONG lTextLength;
-    if (FAILED(hr=GetAllTextRange(ec, pic, &FullTextRange, &lTextLength))) {
+    if (FAILED(hr = GetAllTextRange(ec, pic, &FullTextRange, &lTextLength))) {
         return hr;
     }
 
@@ -861,19 +837,16 @@ HRESULT CEditSessionUpdateCompositionString::_IsInterimSelection(TfEditCookie ec
 HRESULT CEditSessionUpdateCompositionString::_MakeCompositionString(TfEditCookie ec, ITfRange* FullTextRange, BOOL bInWriteSession,
                                                                     CicCategoryMgr* pCicCatMgr, CicDisplayAttributeMgr* pCicDispAttr)
 {
-    HRESULT hr;
     CCompString CompStr;
     CCompTfGuidAtom CompGuid;
     CCompCursorPos CompCursorPos;
     CCompString ResultStr;
     BOOL fIgnorePreviousCompositionResult = FALSE;
 
-    if (FAILED(hr = _GetTextAndAttribute(ec, FullTextRange,
-                                         CompStr, CompGuid, ResultStr,
-                                         bInWriteSession,
-                                         pCicCatMgr, pCicDispAttr))) {
-        return hr;
-    }
+    RETURN_IF_FAILED(_GetTextAndAttribute(ec, FullTextRange,
+                                          CompStr, CompGuid, ResultStr,
+                                          bInWriteSession,
+                                          pCicCatMgr, pCicDispAttr));
 
     if (g_pConsoleTSF && g_pConsoleTSF->IsPendingCompositionCleanup())
     {
@@ -883,78 +856,56 @@ HRESULT CEditSessionUpdateCompositionString::_MakeCompositionString(TfEditCookie
         g_pConsoleTSF->OnCompositionCleanup(TRUE);
     }
 
-    if (FAILED(hr = _GetCursorPosition(ec, CompCursorPos))) {
-        return hr;
-    }
+    RETURN_IF_FAILED(_GetCursorPosition(ec, CompCursorPos));
 
-    //
     // Get display attribute manager
-    //
     ITfDisplayAttributeMgr* dam = pCicDispAttr->GetDisplayAttributeMgr();
-    if (dam == NULL) {
-        return E_FAIL;
-    }
+    RETURN_HR_IF_NULL(E_FAIL, dam);
 
-    //
     // Get category manager
-    //
     ITfCategoryMgr* cat = pCicCatMgr->GetCategoryMgr();
-    if (cat == NULL) {
-        return E_FAIL;
-    }
+    RETURN_HR_IF_NULL(E_FAIL, cat);
 
-    //
-    // Allocate TF_DISPLAYATTRIBUTE
-    //
-    ULONG cchDisplayAttribute = (ULONG) CompGuid.Count();
-    TF_DISPLAYATTRIBUTE* DisplayAttribute = new(std::nothrow) TF_DISPLAYATTRIBUTE [ cchDisplayAttribute ];
-    if (! DisplayAttribute) {
-        return E_OUTOFMEMORY;
-    }
+    // Allocate and fill TF_DISPLAYATTRIBUTE
+    try
+    {
+        // Get conversion area service.
+        CConversionArea* conv_area = g_pConsoleTSF ? g_pConsoleTSF->GetConversionArea() : NULL;
+        RETURN_HR_IF_NULL(E_FAIL, conv_area);
 
-    for (DWORD i = 0; i < cchDisplayAttribute; i++) {
-        FillMemory((void*)&DisplayAttribute[i],  sizeof(TF_DISPLAYATTRIBUTE),  0);
-
-        GUID  guid;
-        if (SUCCEEDED(cat->GetGUID(*CompGuid.GetAt(i),  &guid))) {
-            CLSID clsid;
-            CComPtr<ITfDisplayAttributeInfo> dai;
-            if (SUCCEEDED(dam->GetDisplayAttributeInfo(guid, &dai, &clsid))) {
-                dai->GetAttributeInfo(&DisplayAttribute[i]);
-            }
-            else {
-                DisplayAttribute[i].bAttr = TF_ATTR_OTHER;
-            }
+        if (ResultStr && !fIgnorePreviousCompositionResult) {
+            return conv_area->DrawResult(ResultStr);
         }
-        else {
-            DisplayAttribute[i].bAttr = TF_ATTR_OTHER;
+        if (CompStr) {
+            ULONG cchDisplayAttribute = (ULONG)CompGuid.Count();
+            std::vector<TF_DISPLAYATTRIBUTE> DisplayAttributes;
+            DisplayAttributes.reserve(cchDisplayAttribute);
+
+            for (DWORD i = 0; i < cchDisplayAttribute; i++) {
+                TF_DISPLAYATTRIBUTE da;
+                ZeroMemory(&da, sizeof(da));
+                da.bAttr = TF_ATTR_OTHER;
+
+                GUID guid;
+                if (SUCCEEDED(cat->GetGUID(*CompGuid.GetAt(i), &guid))) {
+                    CLSID clsid;
+                    CComPtr<ITfDisplayAttributeInfo> dai;
+                    if (SUCCEEDED(dam->GetDisplayAttributeInfo(guid, &dai, &clsid))) {
+                        dai->GetAttributeInfo(&da);
+                    }
+                }
+
+                DisplayAttributes.emplace_back(da);
+            }
+
+            return conv_area->DrawComposition(CompStr, // composition string
+                                              DisplayAttributes, // display attributes
+                                              CompCursorPos.GetCursorPosition()); // cursor position
         }
     }
+    CATCH_RETURN();
 
-    //
-    // Get conversion area service.
-    //
-    CConversionArea* conv_area = g_pConsoleTSF ? g_pConsoleTSF->GetConversionArea() : NULL;
-    if (conv_area == NULL) {
-        delete [] DisplayAttribute;
-        return E_FAIL;
-    }
-
-    if (ResultStr && !fIgnorePreviousCompositionResult) {
-        hr = conv_area->DrawConversionAreaInfo(NULL,                                      // composition string
-                                               NULL, 0,                                   // display attribute and length
-                                               ResultStr);                                // result string
-    }
-    if (CompStr) {
-        hr = conv_area->DrawConversionAreaInfo(CompStr,                                  // composition string
-                                               DisplayAttribute, cchDisplayAttribute,    // display attribute and length
-                                               NULL,                                     // result string
-                                               CompCursorPos.GetCursorPosition());       // cursor position
-    }
-
-    delete [] DisplayAttribute;
-
-    return hr;
+    return S_OK;
 }
 
 //+---------------------------------------------------------------------------
@@ -976,141 +927,96 @@ HRESULT CEditSessionUpdateCompositionString::_MakeInterimString(TfEditCookie ec,
     LONG lEndResult;
 
     FullTextRange->CompareStart(ec, InterimRange, TF_ANCHOR_START, &lStartResult);
-    if (lStartResult > 0) {
-        return E_FAIL;
-    }
+    RETURN_HR_IF(E_FAIL, lStartResult > 0);
 
     FullTextRange->CompareEnd(ec, InterimRange, TF_ANCHOR_END, &lEndResult);
-    if (lEndResult < 0) {
-        return E_FAIL;
-    }
-    if (lEndResult > 1) {
-        return E_FAIL;
-    }
-
-    HRESULT hr = S_OK;
+    RETURN_HR_IF(E_FAIL, lEndResult != 1);
 
     CCompString ResultStr;
 
     if (lStartResult < 0) {
-        //
         // Make result string.
-        //
-        if (FAILED(hr=FullTextRange->ShiftEndToRange(ec, InterimRange, TF_ANCHOR_START))) {
-            return hr;
-        }
+        RETURN_IF_FAILED(FullTextRange->ShiftEndToRange(ec, InterimRange, TF_ANCHOR_START));
 
-        //
         // Interim char assume 1 char length.
         // Full text length - 1 means result string length.
-        //
-        lTextLength --;
-        ASSERT(lTextLength > 0);
+        lTextLength--;
+
+        FAIL_FAST_IF_FALSE(lTextLength > 0);
 
         if (lTextLength > 0) {
-
-            LPWSTR wstr = new(std::nothrow) WCHAR[ lTextLength + 1 ];
-
-            if (!wstr)
+            try
             {
-                return E_OUTOFMEMORY;
-            }
+                auto wstr = std::make_unique<WCHAR[]>(lTextLength + 1);
 
-            //
-            // Get the result text, finalize it, and erase the result text.
-            //
-            if (SUCCEEDED(FullTextRange->GetText(ec, TF_TF_IGNOREEND, wstr, (ULONG)lTextLength, (ULONG*)&lTextLength))) {
-                //
-                // Clear the TOM
-                //
-                LOG_IF_FAILED(ClearTextInRange(ec, FullTextRange));
+                // Get the result text, finalize it, and erase the result text.
+                if (SUCCEEDED(FullTextRange->GetText(ec, TF_TF_IGNOREEND, wstr.get(), (ULONG)lTextLength, (ULONG*)&lTextLength))) {
+                    // Clear the TOM
+                    LOG_IF_FAILED(ClearTextInRange(ec, FullTextRange));
+                }
             }
-            delete [] wstr;
+            CATCH_RETURN();
         }
     }
 
-    //
     // Make interim character
-    //
     CCompString CompStr;
     CCompTfGuidAtom CompGuid;
     CCompString _tempResultStr;
 
-    if (FAILED(hr = _GetTextAndAttribute(ec, InterimRange,
-                                         CompStr, CompGuid, _tempResultStr,
-                                         bInWriteSession,
-                                         pCicCatMgr, pCicDispAttr))) {
-        return hr;
-    }
+    RETURN_IF_FAILED(_GetTextAndAttribute(ec, InterimRange,
+                                          CompStr, CompGuid, _tempResultStr,
+                                          bInWriteSession,
+                                          pCicCatMgr, pCicDispAttr));
 
 
-    //
     // Get display attribute manager
-    //
     ITfDisplayAttributeMgr* dam = pCicDispAttr->GetDisplayAttributeMgr();
-    if (dam == NULL) {
-        return E_FAIL;
-    }
+    RETURN_HR_IF_NULL(E_FAIL, dam);
 
-    //
     // Get category manager
-    //
     ITfCategoryMgr* cat = pCicCatMgr->GetCategoryMgr();
-    if (cat == NULL) {
-        return E_FAIL;
-    }
+    RETURN_HR_IF_NULL(E_FAIL, cat);
 
-    //
-    // Allocate TF_DISPLAYATTRIBUTE
-    //
-    ULONG cchDisplayAttribute = (ULONG) CompGuid.Count();
-    TF_DISPLAYATTRIBUTE* DisplayAttribute = new(std::nothrow) TF_DISPLAYATTRIBUTE [ cchDisplayAttribute ];
-    if (! DisplayAttribute) {
-        return E_OUTOFMEMORY;
-    }
+    // Allocate and fill TF_DISPLAYATTRIBUTE
+    try
+    {
+        // Get conversion area service.
+        CConversionArea* conv_area = g_pConsoleTSF ? g_pConsoleTSF->GetConversionArea() : NULL;
+        RETURN_HR_IF_NULL(E_FAIL, conv_area);
 
-    for (DWORD i = 0; i < cchDisplayAttribute; i++) {
-        FillMemory((void*)&DisplayAttribute[i],  sizeof(TF_DISPLAYATTRIBUTE),  0);
-
-        GUID  guid;
-        if (SUCCEEDED(cat->GetGUID(*CompGuid.GetAt(i),  &guid))) {
-            CLSID clsid;
-            CComPtr<ITfDisplayAttributeInfo> dai;
-            if (SUCCEEDED(dam->GetDisplayAttributeInfo(guid, &dai, &clsid))) {
-                dai->GetAttributeInfo(&DisplayAttribute[i]);
-            }
-            else {
-                DisplayAttribute[i].bAttr = TF_ATTR_OTHER;
-            }
+        if (ResultStr) {
+            return conv_area->DrawResult(ResultStr);
         }
-        else {
-            DisplayAttribute[i].bAttr = TF_ATTR_OTHER;
+        if (CompStr) {
+            ULONG cchDisplayAttribute = (ULONG)CompGuid.Count();
+            std::vector<TF_DISPLAYATTRIBUTE> DisplayAttributes;
+            DisplayAttributes.reserve(cchDisplayAttribute);
+
+            for (DWORD i = 0; i < cchDisplayAttribute; i++) {
+                TF_DISPLAYATTRIBUTE da;
+                ZeroMemory(&da, sizeof(da));
+                da.bAttr = TF_ATTR_OTHER;
+                GUID  guid;
+                if (SUCCEEDED(cat->GetGUID(*CompGuid.GetAt(i), &guid))) {
+                    CLSID clsid;
+                    CComPtr<ITfDisplayAttributeInfo> dai;
+                    if (SUCCEEDED(dam->GetDisplayAttributeInfo(guid, &dai, &clsid))) {
+                        dai->GetAttributeInfo(&da);
+                    }
+                }
+
+                DisplayAttributes.emplace_back(da);
+            }
+
+            return conv_area->DrawComposition(CompStr, // composition string (Interim string)
+                                              DisplayAttributes); // display attributes
         }
     }
+    CATCH_RETURN();
 
-    //
-    // Get conversion area service.
-    //
-    CConversionArea* conv_area = g_pConsoleTSF ? g_pConsoleTSF->GetConversionArea() : NULL;
-    if (conv_area == NULL) {
-        delete [] DisplayAttribute;
-        return E_FAIL;
-    }
 
-    if (ResultStr) {
-        hr = conv_area->DrawConversionAreaInfo(NULL,                                      // composition string
-                                               NULL, 0,                                   // display attribute and length
-                                               ResultStr);                                // result string
-    }
-    if (CompStr) {
-        hr = conv_area->DrawConversionAreaInfo(CompStr,                                   // composition string (Interim string)
-                                               DisplayAttribute, cchDisplayAttribute,     // display attribute and length
-                                               NULL);                                     // result string
-    }
-
-    delete [] DisplayAttribute;
-
-    return hr;
+    return S_OK;
 }
 
 //+---------------------------------------------------------------------------

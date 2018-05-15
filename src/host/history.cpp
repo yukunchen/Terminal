@@ -43,7 +43,7 @@ PCOMMAND_HISTORY FindCommandHistory(const HANDLE hProcess)
         ListNext = ListNext->Flink;
         if (History->ProcessHandle == hProcess)
         {
-            ASSERT(History->Flags & CLE_ALLOCATED);
+            FAIL_FAST_IF_FALSE(IsFlagSet(History->Flags, CLE_ALLOCATED));
             return History;
         }
     }
@@ -102,7 +102,7 @@ void FreeCommandHistoryBuffers()
 void ResizeCommandHistoryBuffers(const UINT cCommands)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    ASSERT(cCommands <= SHORT_MAX);
+    FAIL_FAST_IF_FALSE(cCommands <= SHORT_MAX);
     gci.SetHistoryBufferSize(cCommands);
 
     PLIST_ENTRY const ListHead = &gci.CommandHistoryList;
@@ -146,7 +146,7 @@ NTSTATUS AddCommand(_In_ PCOMMAND_HISTORY pCmdHistory,
         return STATUS_NO_MEMORY;
     }
 
-    ASSERT(pCmdHistory->Flags & CLE_ALLOCATED);
+    FAIL_FAST_IF_FALSE(IsFlagSet(pCmdHistory->Flags, CLE_ALLOCATED));
 
     if (cbCommand == 0)
     {
@@ -225,7 +225,7 @@ NTSTATUS RetrieveNthCommand(_In_ PCOMMAND_HISTORY CommandHistory,
                             _In_ ULONG BufferSize,
                             _Out_ PULONG CommandSize)
 {
-    ASSERT(Index < CommandHistory->NumberOfCommands);
+    FAIL_FAST_IF_FALSE(Index < CommandHistory->NumberOfCommands);
     CommandHistory->LastDisplayed = Index;
     PCOMMAND const CommandRecord = CommandHistory->Commands[Index];
     if (CommandRecord->CommandLength > (USHORT) BufferSize)
@@ -253,7 +253,7 @@ NTSTATUS RetrieveCommand(_In_ PCOMMAND_HISTORY CommandHistory,
         return STATUS_UNSUCCESSFUL;
     }
 
-    ASSERT(CommandHistory->Flags & CLE_ALLOCATED);
+    FAIL_FAST_IF_FALSE(IsFlagSet(CommandHistory->Flags, CLE_ALLOCATED));
 
     if (CommandHistory->NumberOfCommands == 0)
     {
@@ -522,7 +522,7 @@ PCOMMAND_HISTORY AllocateCommandHistory(_In_reads_bytes_(cbAppName) PCWSTR pwszA
     if (BestCandidate)
     {
         History = BestCandidate;
-        ASSERT(CLE_NO_POPUPS(History));
+        FAIL_FAST_IF_FALSE(CLE_NO_POPUPS(History));
         if (!SameApp)
         {
             SHORT i;

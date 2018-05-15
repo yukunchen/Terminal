@@ -305,7 +305,7 @@ class AttrRowTests
             uiTotalLength += uiChar2Length;
         }
 
-        assert((uiStartPos + uiTotalLength) >= 1); // assert we won't underflow.
+        VERIFY_IS_TRUE((uiStartPos + uiTotalLength) >= 1); // assert we won't underflow.
         UINT const uiEndPos = uiStartPos + uiTotalLength - 1;
 
         // Calculate our expected final/result run by unpacking original, laying our insertion on it at the index
@@ -506,7 +506,7 @@ class AttrRowTests
 
         Log::Comment(L"FIRST: Set index to > 0 to test making/modifying chains");
         const short iTestIndex = 50;
-        ASSERT(iTestIndex >= 0 && iTestIndex < _sDefaultLength);
+        VERIFY_IS_TRUE(iTestIndex >= 0 && iTestIndex < _sDefaultLength);
 
         Log::Comment(L"SetAttrToEnd for single color applied to whole string.");
         pSingle->SetAttrToEnd(iTestIndex, TestAttr);

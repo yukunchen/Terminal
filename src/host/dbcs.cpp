@@ -15,22 +15,6 @@
 #pragma hdrstop
 
 // Routine Description:
-// - This routine setup of line character code.
-// Arguments:
-// - screenInfo - Pointer to screen information structure.
-// Return Value:
-// - <none>
-void SetLineChar(SCREEN_INFORMATION& screenInfo)
-{
-    screenInfo.LineChar[UPPER_LEFT_CORNER] = 0x250c;
-    screenInfo.LineChar[UPPER_RIGHT_CORNER] = 0x2510;
-    screenInfo.LineChar[HORIZONTAL_LINE] = 0x2500;
-    screenInfo.LineChar[VERTICAL_LINE] = 0x2502;
-    screenInfo.LineChar[BOTTOM_LEFT_CORNER] = 0x2514;
-    screenInfo.LineChar[BOTTOM_RIGHT_CORNER] = 0x2518;
-}
-
-// Routine Description:
 // - This routine check bisected on Ascii string end.
 // Arguments:
 // - pchBuf - Pointer to Ascii string buffer.
@@ -140,7 +124,6 @@ BOOL IsCharFullWidth(_In_ WCHAR wch)
             return ServiceLocator::LocateGlobals().pRender->IsCharFullWidthByFont(wch);
         }
     }
-    ASSERT(FALSE);
     return FALSE;
 }
 
@@ -201,7 +184,7 @@ DWORD RemoveDbcsMarkCell(_Out_writes_(cch) PCHAR_INFO pciDst, _In_reads_(cch) co
     iDst += cchDstToClear;
 
     // now that we're done, we should have copied, left alone, or cleared the entire length.
-    ASSERT(iDst == cch);
+    FAIL_FAST_IF_FALSE(iDst == cch);
 
     return iDst;
 }
@@ -215,7 +198,7 @@ DWORD RemoveDbcsMarkCell(_Out_writes_(cch) PCHAR_INFO pciDst, _In_reads_(cch) co
 // true if ch is a lead byte, false otherwise.
 bool IsDBCSLeadByteConsole(const CHAR ch, const CPINFO * const pCPInfo)
 {
-    ASSERT(pCPInfo != nullptr);
+    FAIL_FAST_IF_NULL(pCPInfo);
     // NOTE: This must be unsigned for the comparison. If we compare signed, this will never hit
     // because lead bytes are ironically enough always above 0x80 (signed char negative range).
     unsigned char const uchComparison = (unsigned char)ch;
