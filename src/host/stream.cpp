@@ -513,23 +513,16 @@ HRESULT ReadLineInput(_Inout_ InputBuffer* const pInputBuffer,
         TempBuffer[i] = UNICODE_SPACE;
     }
 
-    COORD invalidCoord;
-    invalidCoord.X = -1;
-    invalidCoord.Y = -1;
     try
     {
         COOKED_READ_DATA CookedReadData(pInputBuffer, // pInputBuffer
                                         pHandleData, // pInputReadHandleData
                                         screenInfo, // pScreenInfo
                                         TempBufferSize, // BufferSize
-                                        0, // BytesRead
-                                        0, // CurrentPosition
                                         TempBuffer, // BufferPtr
                                         TempBuffer, // BackupLimit
                                         static_cast<ULONG>(OutputBufferSize), // UserBufferSize
                                         pwchBuffer, // UserBuffer
-                                        invalidCoord, // OriginalCursorPosition
-                                        0, // NumberOfVisibleChars
                                         dwCtrlWakeupMask, // CtrlWakeupMask
                                         pCommandHistory, // CommandHistory
                                         exeName); // pTempHandle

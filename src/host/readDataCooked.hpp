@@ -35,14 +35,10 @@ public:
                      _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                      SCREEN_INFORMATION& screenInfo,
                      _In_ ULONG BufferSize,
-                     _In_ ULONG BytesRead,
-                     _In_ ULONG CurrentPosition,
                      _In_ PWCHAR BufPtr,
                      _In_ PWCHAR BackupLimit,
                      _In_ ULONG UserBufferSize,
                      _In_ PWCHAR UserBuffer,
-                     _In_ COORD OriginalCursorPosition,
-                     _In_ DWORD NumberOfVisibleChars,
                      _In_ ULONG CtrlWakeupMask,
                      _In_ COMMAND_HISTORY* CommandHistory,
                      const std::wstring& exeName
@@ -66,7 +62,7 @@ public:
     ULONG _CurrentPosition;  // char position, not byte position
     PWCHAR _BufPtr;
     // should be const. the first char of the buffer
-    PWCHAR /*const*/ _BackupLimit;
+    PWCHAR const _BackupLimit;
     ULONG _UserBufferSize;   // doubled size in ansi case
     PWCHAR _UserBuffer;
     COORD _OriginalCursorPosition;
