@@ -45,10 +45,6 @@ public:
                      _In_ DWORD NumberOfVisibleChars,
                      _In_ ULONG CtrlWakeupMask,
                      _In_ COMMAND_HISTORY* CommandHistory,
-                     _In_ bool Echo,
-                     _In_ bool InsertMode,
-                     _In_ bool Processed,
-                     _In_ bool Line,
                      _In_ ConsoleHandleData* pTempHandle,
                      const std::wstring& exeName
         );
@@ -78,10 +74,10 @@ public:
     DWORD _NumberOfVisibleChars;
     ULONG _CtrlWakeupMask;
     PCOMMAND_HISTORY _CommandHistory;
-    bool _Echo;
+    const bool _Echo;
     bool _InsertMode;
-    bool _Processed;
-    bool _Line;
+    const bool _Processed;
+    const bool _Line;
     ConsoleHandleData* _pTempHandle;
 
 // TODO MSFT:11285829 these variables need to be added to the

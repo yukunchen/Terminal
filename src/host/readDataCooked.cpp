@@ -52,10 +52,6 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
                                    _In_ DWORD NumberOfVisibleChars,
                                    _In_ ULONG CtrlWakeupMask,
                                    _In_ COMMAND_HISTORY* CommandHistory,
-                                   _In_ bool Echo,
-                                   _In_ bool InsertMode,
-                                   _In_ bool Processed,
-                                   _In_ bool Line,
                                    _In_ ConsoleHandleData* pTempHandle,
                                    const std::wstring& exeName
 ) :
@@ -72,13 +68,12 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
     _NumberOfVisibleChars{ NumberOfVisibleChars },
     _CtrlWakeupMask{ CtrlWakeupMask },
     _CommandHistory{ CommandHistory },
-    _Echo{ Echo },
-    _InsertMode{ InsertMode },
-    _Processed{ Processed },
-    _Line{ Line },
+    _Echo{ IsFlagSet(pInputBuffer->InputMode, ENABLE_ECHO_INPUT) },
+    _InsertMode{ ServiceLocator::LocateGlobals().getConsoleInformation().GetInsertMode() },
+    _Processed{ IsFlagSet(pInputBuffer->InputMode, ENABLE_PROCESSED_INPUT) },
+    _Line{ IsFlagSet(pInputBuffer->InputMode, ENABLE_LINE_INPUT) },
     _pTempHandle{ pTempHandle },
     _exeName{ exeName }
-
 {
 }
 
