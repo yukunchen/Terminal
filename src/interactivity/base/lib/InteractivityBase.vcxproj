@@ -14,7 +14,6 @@
   <ItemGroup>
     <ClCompile Include="..\ApiDetector.cpp" />
     <ClCompile Include="..\InteractivityFactory.cpp" />
-    <ClCompile Include="..\..\..\host\newdelete.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -34,7 +33,6 @@
     <ClInclude Include="..\..\inc\VtApiRedirection.hpp" />
     <ClInclude Include="..\ApiDetector.hpp" />
     <ClInclude Include="..\InteractivityFactory.hpp" />
-    <ClInclude Include="..\..\..\host\newdelete.hpp" />
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\..\inc\ServiceLocator.hpp" />
   </ItemGroup>

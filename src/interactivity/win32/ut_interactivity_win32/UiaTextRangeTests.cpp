@@ -9,10 +9,7 @@
 #include "CommonState.hpp"
 
 #include "UiaTextRange.hpp"
-#include "../../../host/textBuffer.hpp"
-
-#include <vector>
-#include <tuple>
+#include "../../../buffer/out/textBuffer.hpp"
 
 using namespace WEX::Common;
 using namespace WEX::Logging;
@@ -91,15 +88,10 @@ class UiaTextRangeTests
         for (UINT i = 0; i < _pTextBuffer->TotalRowCount(); ++i)
         {
             ROW& row = _pTextBuffer->GetRowByOffset(i);
-            auto& iCharRow = row.GetCharRow();
-            // we only support ucs2 encoded char rows
-            FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                            "only support UCS2 char rows currently");
-
-            Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
+            auto& charRow = row.GetCharRow();
             for (auto& cell : charRow)
             {
-                cell.first = L'a';
+                cell.Char() = L'a';
             }
         }
 
@@ -130,7 +122,7 @@ class UiaTextRangeTests
 
     const size_t _getRowWidth() const
     {
-        const ICharRow& charRow = _pTextBuffer->GetFirstRow().GetCharRow();
+        const CharRow& charRow = _pTextBuffer->GetFirstRow().GetCharRow();
         return charRow.MeasureRight()- charRow.MeasureLeft() ;
     }
 

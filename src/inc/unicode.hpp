@@ -31,8 +31,15 @@ Author(s):
 #define UNICODE_NARROW_NBSP ((WCHAR)0x202f)
 #define UNICODE_QUOTE L'\"'
 #define UNICODE_HYPHEN L'-'
+#define UNICODE_BOX_DRAW_LIGHT_DOWN_AND_RIGHT ((WCHAR)0x250c)
+#define UNICODE_BOX_DRAW_LIGHT_DOWN_AND_LEFT ((WCHAR)0x2510)
+#define UNICODE_BOX_DRAW_LIGHT_HORIZONTAL ((WCHAR)0x2500)
+#define UNICODE_BOX_DRAW_LIGHT_VERTICAL ((WCHAR)0x2502)
+#define UNICODE_BOX_DRAW_LIGHT_UP_AND_RIGHT ((WCHAR)0x2514)
+#define UNICODE_BOX_DRAW_LIGHT_UP_AND_LEFT ((WCHAR)0x2518)
 
-// This is the "Ctrl+C" character. 
+// This is the "Ctrl+C" character.
 //      With VKey='C', it generates a CTRL_C_EVENT
 //      With VKey=VK_CANCEL (0x3), it generates a CTRL_BREAK_EVENT
 #define UNICODE_ETX L'\x3'
+#define UNICODE_REPLACEMENT ((WCHAR)0xFFFD)

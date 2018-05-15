@@ -17,6 +17,7 @@ bool FindTableIndex(const COLORREF Color,
                     _Out_ WORD* const pFoundIndex);
 
 WORD XtermToWindowsIndex(const size_t index);
+WORD XtermToLegacy(const size_t xtermForeground, const size_t xtermBackground);
 
 COLORREF ForegroundColor(const WORD wLegacyAttrs,
                          _In_reads_(cColorTable) const COLORREF* const ColorTable,
@@ -47,4 +48,4 @@ enum class CursorType : unsigned int
 
 // Valid COLORREFs are of the pattern 0x00bbggrr. -1 works as an invalid color,
 //      as the highest byte of a valid color is always 0.
-const COLORREF INVALID_COLOR = 0xffffffff;
+constexpr COLORREF INVALID_COLOR = 0xffffffff;

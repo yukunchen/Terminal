@@ -2,6 +2,7 @@
 //    Copyright (C) Microsoft.  All rights reserved.
 //
 
+#include "..\..\inc\conpty.h"
 #include "VtConsole.hpp"
 
 #include <stdlib.h>     /* srand, rand */
@@ -18,7 +19,11 @@
 
 VtConsole::VtConsole(PipeReadCallback const pfnReadCallback,
                      bool const fHeadless,
-                     COORD const initialSize)
+                     COORD const initialSize) :
+    _signalPipe(INVALID_HANDLE_VALUE),
+    _outPipe(INVALID_HANDLE_VALUE),
+    _inPipe(INVALID_HANDLE_VALUE),
+    _dwOutputThreadId(0)
 {
     _pfnReadCallback = pfnReadCallback;
     _fHeadless = fHeadless;
@@ -80,7 +85,7 @@ void VtConsole::_spawn2(const std::wstring& command)
     _inPipe = (
         CreateNamedPipeW(_inPipeName.c_str(), sInPipeOpenMode, sInPipeMode, 1, 0, 0, 0, nullptr)
     );
-    
+
     _outPipe = (
         CreateNamedPipeW(_outPipeName.c_str(), sOutPipeOpenMode, sOutPipeMode, 1, 0, 0, 0, nullptr)
     );
@@ -93,14 +98,14 @@ void VtConsole::_spawn2(const std::wstring& command)
     if (!fSuccess)
     {
         DWORD lastError = GetLastError();
-        if (lastError != ERROR_PIPE_CONNECTED) THROW_LAST_ERROR_IF_FALSE(fSuccess); 
+        if (lastError != ERROR_PIPE_CONNECTED) THROW_LAST_ERROR_IF_FALSE(fSuccess);
     }
 
     fSuccess = !!ConnectNamedPipe(_outPipe, nullptr);
     if (!fSuccess)
     {
         DWORD lastError = GetLastError();
-        if (lastError != ERROR_PIPE_CONNECTED) THROW_LAST_ERROR_IF_FALSE(fSuccess); 
+        if (lastError != ERROR_PIPE_CONNECTED) THROW_LAST_ERROR_IF_FALSE(fSuccess);
     }
 
     _connected = true;
@@ -118,11 +123,25 @@ void VtConsole::_spawn2(const std::wstring& command)
 }
 
 void VtConsole::_spawn3(const std::wstring& command)
-{    
-    _openConsole3(command);
-    
+{
+    // For the non-headless debugging scenario, we're keeping the old initialization path.
+    if (!_fHeadless)
+    {
+        _openConsole3(command);
+
+    }
+    else
+    {
+        THROW_IF_FAILED(CreateConPty(command,
+                                     _lastDimensions.X,
+                                     _lastDimensions.Y,
+                                     &_inPipe,
+                                     &_outPipe,
+                                     &_signalPipe,
+                                     &pi));
+    }
     _connected = true;
-    
+
     // Create our own output handling thread
     // Each console needs to make sure to drain the output from it's backing host.
     _dwOutputThreadId = (DWORD)-1;
@@ -136,11 +155,7 @@ void VtConsole::_spawn3(const std::wstring& command)
 
 PCWSTR GetCmdLine()
 {
-#ifdef __INSIDE_WINDOWS
     return L"conhost.exe";
-#else
-    return L"OpenConsole.exe";
-#endif
 }
 
 void VtConsole::_openConsole2(const std::wstring& command)
@@ -157,7 +172,7 @@ void VtConsole::_openConsole2(const std::wstring& command)
         cmdline += L" --outpipe ";
         cmdline += _outPipeName;
     }
-    
+
     if (_fHeadless)
     {
         cmdline += L" --headless";
@@ -165,13 +180,13 @@ void VtConsole::_openConsole2(const std::wstring& command)
 
     STARTUPINFO si = {0};
     si.cb = sizeof(STARTUPINFOW);
-    
+
     if (command.length() > 0)
     {
         cmdline += L" -- ";
         cmdline += command;
     }
-    else 
+    else
     {
         // si.dwFlags = STARTF_USESHOWWINDOW;
         // si.wShowWindow = SW_MINIMIZE;
@@ -210,19 +225,19 @@ void VtConsole::_openConsole3(const std::wstring& command)
 
     // Create some anon pipes so we can pass handles down and into the console.
     // IMPORTANT NOTE:
-    // We're creating the pipe here with un-inheritable handles, then marking 
+    // We're creating the pipe here with un-inheritable handles, then marking
     //      the conhost sides of the pipes as inheritable. We do this because if
-    //      the entire pipe is marked as inheritable, when we pass the handles 
+    //      the entire pipe is marked as inheritable, when we pass the handles
     //      to CreateProcess, at some point the entire pipe object is copied to
-    //      the conhost process, which includes the terminal side of the pipes 
-    //      (_inPipe and _outPipe). This means that if we die, there's still 
+    //      the conhost process, which includes the terminal side of the pipes
+    //      (_inPipe and _outPipe). This means that if we die, there's still
     //      outstanding handles to our side of the pipes, and those handles are
-    //      in conhost, despite conhost being unable to reference those handles 
+    //      in conhost, despite conhost being unable to reference those handles
     //      and close them.
 
-    // CRITICAL: Close our side of the handles. Otherwise you'll get the same 
+    // CRITICAL: Close our side of the handles. Otherwise you'll get the same
     //      problem if you close conhost, but not us (the terminal).
-    // The conhost sides of the pipe will be unique_hfile's so that they'll get 
+    // The conhost sides of the pipe will be unique_hfile's so that they'll get
     //      closed automatically at the end of the method.
     wil::unique_hfile outPipeConhostSide;
     wil::unique_hfile inPipeConhostSide;
@@ -253,8 +268,8 @@ void VtConsole::_openConsole3(const std::wstring& command)
 
     if(!(_lastDimensions.X == 0 && _lastDimensions.Y == 0))
     {
-        // STARTF_USECOUNTCHARS does not work. 
-        // minkernel/console/client/dllinit will write that value to conhost 
+        // STARTF_USECOUNTCHARS does not work.
+        // minkernel/console/client/dllinit will write that value to conhost
         //  during init of a cmdline application, but because we're starting
         //  conhost directly, that doesn't work for us.
         std::wstringstream ss;
@@ -277,7 +292,7 @@ void VtConsole::_openConsole3(const std::wstring& command)
     {
         si.dwFlags |= STARTF_USESHOWWINDOW;
         si.wShowWindow = SW_MINIMIZE;
-    }    
+    }
 
     bool fSuccess = !!CreateProcess(
         nullptr,
@@ -341,11 +356,8 @@ bool VtConsole::Repaint()
     return WriteInput(seq);
 }
 
-bool VtConsole::Resize(const unsigned int rows, const unsigned int cols)
+bool VtConsole::Resize(const unsigned short rows, const unsigned short cols)
 {
-    std::stringstream ss;
-    ss << "\x1b[8;" << rows << ";" << cols << "t";
-    std::string seq = ss.str();
-    return WriteInput(seq);
+    return SignalResizeWindow(_signalPipe, cols, rows);
 }
 

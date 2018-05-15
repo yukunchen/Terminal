@@ -37,18 +37,17 @@ HRESULT ConsoleServerInitialization(_In_ HANDLE Server, const ConsoleArguments* 
     try
     {
         Globals.pDeviceComm = new DeviceComm(Server);
+
+        Globals.launchArgs = *args;
+
+        Globals.uiOEMCP = GetOEMCP();
+        Globals.uiWindowsCP = GetACP();
+
+        Globals.pFontDefaultList = new RenderFontDefaults();
+
+        FontInfo::s_SetFontDefaultList(Globals.pFontDefaultList);
     }
     CATCH_RETURN();
-
-    Globals.launchArgs = *args;
-
-    Globals.uiOEMCP = GetOEMCP();
-    Globals.uiWindowsCP = GetACP();
-
-    Globals.pFontDefaultList = new RenderFontDefaults();
-    RETURN_IF_NULL_ALLOC(Globals.pFontDefaultList);
-
-    FontInfo::s_SetFontDefaultList(Globals.pFontDefaultList);
 
     // Removed allocation of scroll buffer here.
     return S_OK;
@@ -283,7 +282,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     size_t cbConsoleTitle;
     size_t cbSystemRoot;
 
-    LPWSTR pwszSysRoot = new wchar_t[MAX_PATH];
+    LPWSTR pwszSysRoot = new(std::nothrow) wchar_t[MAX_PATH];
     if (nullptr != pwszSysRoot)
     {
         if (0 != GetWindowsDirectoryW(pwszSysRoot, MAX_PATH))
@@ -449,9 +448,9 @@ NTSTATUS ConsoleInitializeConnectInfo(_In_ PCONSOLE_API_MSG Message, _Out_ PCONS
     }
 
     // Initialize (partially) the connect info with the received data.
-    ASSERT(sizeof(Cac->AppName) == sizeof(Data.ApplicationName));
-    ASSERT(sizeof(Cac->Title) == sizeof(Data.Title));
-    ASSERT(sizeof(Cac->CurDir) == sizeof(Data.CurrentDirectory));
+    FAIL_FAST_IF_FALSE(sizeof(Cac->AppName) == sizeof(Data.ApplicationName));
+    FAIL_FAST_IF_FALSE(sizeof(Cac->Title) == sizeof(Data.Title));
+    FAIL_FAST_IF_FALSE(sizeof(Cac->CurDir) == sizeof(Data.CurrentDirectory));
 
     // unused(Data.IconId)
     Cac->ConsoleInfo.SetHotKey(Data.HotKey);
@@ -494,20 +493,15 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
     // No matter what, create a renderer.
     try
     {
-        std::unique_ptr<IRenderData> renderData = std::make_unique<RenderData>();
-        Status = NT_TESTNULL(renderData.get());
+        auto renderData = std::make_unique<RenderData>();
+        Renderer* pRender = nullptr;
+        g.pRender = nullptr;
+        Status = NTSTATUS_FROM_HRESULT(Renderer::s_CreateInstance(std::move(renderData), &(pRender)));
         if (NT_SUCCESS(Status))
         {
-            Renderer* pRender = nullptr;
-            g.pRender = nullptr;
-            Status = NTSTATUS_FROM_HRESULT(Renderer::s_CreateInstance(std::move(renderData), &(pRender)));
-
-            if (NT_SUCCESS(Status))
-            {
-                g.pRender = pRender;
-                // Allow the renderer to paint.
-                g.pRender->EnablePainting();
-            }
+            g.pRender = pRender;
+            // Allow the renderer to paint.
+            g.pRender->EnablePainting();
         }
     }
     catch (...)
@@ -523,7 +517,7 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
         IConsoleInputThread *pNewThread = nullptr;
         LOG_IF_FAILED(ServiceLocator::CreateConsoleInputThread(&pNewThread));
 
-        ASSERT(pNewThread);
+        FAIL_FAST_IF_NULL(pNewThread);
 
         Thread = pNewThread->Start();
         if (Thread == nullptr)

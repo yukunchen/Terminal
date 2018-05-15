@@ -27,8 +27,7 @@ namespace Microsoft::Console::Render
         HRESULT SetHwnd(const HWND hwnd);
 
         [[nodiscard]]
-        HRESULT InvalidateSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection,
-                                    const UINT cRectangles) override;
+        HRESULT InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) override;
         [[nodiscard]]
         HRESULT InvalidateScroll(const COORD* const pcoordDelta) override;
         [[nodiscard]]
@@ -67,8 +66,7 @@ namespace Microsoft::Console::Render
                                      const size_t cchLine,
                                      const COORD coordTarget) override;
         [[nodiscard]]
-        HRESULT PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection,
-                                const UINT cRectangles) override;
+        HRESULT PaintSelection(const std::vector<SMALL_RECT>& rectangles) override;
 
         [[nodiscard]]
         HRESULT PaintCursor(const COORD coordCursor,
@@ -165,9 +163,8 @@ namespace Microsoft::Console::Render
 
         HRGN _hrgnGdiPaintedSelection;
         [[nodiscard]]
-        HRESULT _PaintSelectionCalculateRegion(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection,
-                                                const UINT cRectangles,
-                                                _Inout_ HRGN const hrgnSelection) const;
+        HRESULT _PaintSelectionCalculateRegion(const std::vector<SMALL_RECT>& rectangles,
+                                               _Inout_ HRGN const hrgnSelection) const;
 
         static const ULONG s_ulMinCursorHeightPercent = 25;
         static const ULONG s_ulMaxCursorHeightPercent = 100;

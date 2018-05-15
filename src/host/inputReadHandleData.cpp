@@ -8,7 +8,13 @@
 
 #include "inputReadHandleData.h"
 
-INPUT_READ_HANDLE_DATA::INPUT_READ_HANDLE_DATA()
+INPUT_READ_HANDLE_DATA::INPUT_READ_HANDLE_DATA() :
+    BytesAvailable(0),
+    CurrentBufPtr(nullptr),
+    BufPtr(nullptr),
+    InputHandleFlags(static_cast<HandleFlags>(0)),
+    _ulReadCount(0),
+    _csReadCountLock({ 0 })
 {
     InitializeCriticalSection(&_csReadCountLock);
 }
@@ -38,7 +44,7 @@ void INPUT_READ_HANDLE_DATA::IncrementReadCount()
 void INPUT_READ_HANDLE_DATA::DecrementReadCount()
 {
     LockReadCount();
-    assert(_ulReadCount > 0);
+    FAIL_FAST_IF_FALSE(_ulReadCount > 0);
     _ulReadCount--;
     UnlockReadCount();
 }

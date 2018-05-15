@@ -71,14 +71,12 @@ const TextBuffer& RenderData::GetImeCompositionStringBuffer(_In_ size_t iIndex)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     THROW_HR_IF(E_INVALIDARG, iIndex >= gci.ConsoleIme.ConvAreaCompStr.size());
-    return gci.ConsoleIme.ConvAreaCompStr[iIndex]->ScreenBuffer->GetTextBuffer();
+    return gci.ConsoleIme.ConvAreaCompStr[iIndex].GetTextBuffer();
 }
 
-[[nodiscard]]
-NTSTATUS RenderData::GetSelectionRects(_Outptr_result_buffer_all_(*pcRectangles) SMALL_RECT** const prgsrSelection,
-                                       _Out_ UINT* const pcRectangles)
+std::vector<SMALL_RECT> RenderData::GetSelectionRects()
 {
-    return Selection::Instance().GetSelectionRects(prgsrSelection, pcRectangles);
+    return Selection::Instance().GetSelectionRects();
 }
 
 const bool RenderData::IsGridLineDrawingAllowed()

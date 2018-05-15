@@ -45,6 +45,12 @@ ConsoleArguments::ConsoleArguments(const std::wstring& commandline,
     _inheritCursor = false;
 }
 
+ConsoleArguments::ConsoleArguments() :
+    ConsoleArguments(L"", nullptr, nullptr)
+{
+
+}
+
 ConsoleArguments& ConsoleArguments::operator=(const ConsoleArguments & other)
 {
     if (this != &other)
@@ -266,7 +272,7 @@ HRESULT ConsoleArguments::_GetClientCommandline(_Inout_ std::vector<std::wstring
     if (skipFirst)
     {
         // Make sure that the arg we're deleting is "--"
-        assert(CLIENT_COMMANDLINE_ARG == start->c_str());
+        FAIL_FAST_IF_FALSE(CLIENT_COMMANDLINE_ARG == start->c_str());
         args.erase(start);
     }
 
@@ -461,7 +467,7 @@ HRESULT ConsoleArguments::ParseCommandline()
     // If we failed to parse an arg, then no need to assert.
     if (SUCCEEDED(hr))
     {
-        assert(args.size() == 0);
+        FAIL_FAST_IF(!args.empty());
     }
 
     return hr;

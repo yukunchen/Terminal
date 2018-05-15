@@ -54,6 +54,46 @@ WORD ConvertStringToDec(_In_ PCWSTR pwchToConvert, _Out_opt_ PCWSTR * const ppwc
 }
 
 // Routine Description:
+// - Increments a coordinate relative to the given buffer
+// Arguments:
+// - bufferSize - Size of the buffer
+// - coord - Updated to increment one position, wrapping X and Y dimensions if necessary
+void Utils::s_IncrementCoordinate(const COORD bufferSize, COORD& coord)
+{
+    coord.X++;
+    if (coord.X >= bufferSize.X)
+    {
+        coord.X = 0;
+        coord.Y++;
+
+        if (coord.Y >= bufferSize.Y)
+        {
+            coord.Y = 0;
+        }
+    }
+}
+
+// Routine Description:
+// - Decrements a coordinate relative to the given buffer
+// Arguments:
+// - bufferSize - Size of the buffer
+// - coord - Updated to decrement one position, wrapping X and Y dimensions if necessary
+void Utils::s_DecrementCoordinate(const COORD bufferSize, COORD& coord)
+{
+    coord.X--;
+    if (coord.X < 0)
+    {
+        coord.X = bufferSize.X - 1;
+        coord.Y--;
+
+        if (coord.Y < 0)
+        {
+            coord.Y = bufferSize.Y - 1;
+        }
+    }
+}
+
+// Routine Description:
 // - Subtracts one from a screen coordinate (in characters, not pixels).
 //   Appropriately wraps upward one row when reaching the left edge.
 // Arguments:
@@ -64,10 +104,10 @@ WORD ConvertStringToDec(_In_ PCWSTR pwchToConvert, _Out_opt_ PCWSTR * const ppwc
 bool Utils::s_DoDecrementScreenCoordinate(const SMALL_RECT srectEdges, _Inout_ COORD* const pcoordScreen)
 {
     // assert that the coord is inside the screen
-    ASSERT(pcoordScreen->X >= srectEdges.Left);
-    ASSERT(pcoordScreen->X <= srectEdges.Right);
-    ASSERT(pcoordScreen->Y >= srectEdges.Top);
-    ASSERT(pcoordScreen->Y <= srectEdges.Bottom);
+    FAIL_FAST_IF_FALSE(pcoordScreen->X >= srectEdges.Left);
+    FAIL_FAST_IF_FALSE(pcoordScreen->X <= srectEdges.Right);
+    FAIL_FAST_IF_FALSE(pcoordScreen->Y >= srectEdges.Top);
+    FAIL_FAST_IF_FALSE(pcoordScreen->Y <= srectEdges.Bottom);
 
     if (pcoordScreen->X == srectEdges.Left)
     {
@@ -100,10 +140,10 @@ bool Utils::s_DoDecrementScreenCoordinate(const SMALL_RECT srectEdges, _Inout_ C
 bool Utils::s_DoIncrementScreenCoordinate(const SMALL_RECT srectEdges, _Inout_ COORD* const pcoordScreen)
 {
     // assert that the coord is inside the screen
-    ASSERT(pcoordScreen->X >= srectEdges.Left);
-    ASSERT(pcoordScreen->X <= srectEdges.Right);
-    ASSERT(pcoordScreen->Y >= srectEdges.Top);
-    ASSERT(pcoordScreen->Y <= srectEdges.Bottom);
+    FAIL_FAST_IF_FALSE(pcoordScreen->X >= srectEdges.Left);
+    FAIL_FAST_IF_FALSE(pcoordScreen->X <= srectEdges.Right);
+    FAIL_FAST_IF_FALSE(pcoordScreen->Y >= srectEdges.Top);
+    FAIL_FAST_IF_FALSE(pcoordScreen->Y <= srectEdges.Bottom);
 
     if (pcoordScreen->X == srectEdges.Right)
     {
@@ -126,8 +166,9 @@ bool Utils::s_DoIncrementScreenCoordinate(const SMALL_RECT srectEdges, _Inout_ C
 }
 
 // Routine Description:
-// - Compares two coordinate positions to determine whether they're the same, left, or right
+// - Compares two coordinate positions to determine whether they're the same, left, or right within the given buffer size
 // Arguments:
+// - bufferSize - The size of the buffer to use for measurements.
 // - coordFirst - The first coordinate position
 // - coordSecond - The second coordinate position
 // Return Value:
@@ -137,21 +178,16 @@ bool Utils::s_DoIncrementScreenCoordinate(const SMALL_RECT srectEdges, _Inout_ C
 // -  This is so you can do s_CompareCoords(first, second) <= 0 for "first is left or the same as second".
 //    (the < looks like a left arrow :D)
 // -  The magnitude of the result is the distance between the two coordinates when typing characters into the buffer (left to right, top to bottom)
-int Utils::s_CompareCoords(const COORD coordFirst, const COORD coordSecond)
+int Utils::s_CompareCoords(const COORD bufferSize, const COORD coordFirst, const COORD coordSecond)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    // find the width of one row
-    const COORD coordScreenBufferSize = gci.GetActiveOutputBuffer().GetScreenBufferSize();
-    const short cRowWidth = coordScreenBufferSize.X;
+    const short cRowWidth = bufferSize.X;
 
-#ifdef _DEBUG
     // Assert that our coordinates are within the expected boundaries
-    const short cRowHeight = coordScreenBufferSize.Y;
-    ASSERT(coordFirst.X >= 0 && coordFirst.X < cRowWidth);
-    ASSERT(coordSecond.X >= 0 && coordSecond.X < cRowWidth);
-    ASSERT(coordFirst.Y >= 0 && coordFirst.Y < cRowHeight);
-    ASSERT(coordSecond.Y >= 0 && coordSecond.Y < cRowHeight);
-#endif
+    const short cRowHeight = bufferSize.Y;
+    FAIL_FAST_IF_FALSE(coordFirst.X >= 0 && coordFirst.X < cRowWidth);
+    FAIL_FAST_IF_FALSE(coordSecond.X >= 0 && coordSecond.X < cRowWidth);
+    FAIL_FAST_IF_FALSE(coordFirst.Y >= 0 && coordFirst.Y < cRowHeight);
+    FAIL_FAST_IF_FALSE(coordSecond.Y >= 0 && coordSecond.Y < cRowHeight);
 
     // First set the distance vertically
     //   If first is on row 4 and second is on row 6, first will be -2 rows behind second * an 80 character row would be -160.
@@ -173,6 +209,26 @@ int Utils::s_CompareCoords(const COORD coordFirst, const COORD coordSecond)
 }
 
 // Routine Description:
+// - Compares two coordinate positions to determine whether they're the same, left, or right
+// Arguments:
+// - coordFirst - The first coordinate position
+// - coordSecond - The second coordinate position
+// Return Value:
+// -  Negative if First is to the left of the Second.
+// -  0 if First and Second are the same coordinate.
+// -  Positive if First is to the right of the Second.
+// -  This is so you can do s_CompareCoords(first, second) <= 0 for "first is left or the same as second".
+//    (the < looks like a left arrow :D)
+// -  The magnitude of the result is the distance between the two coordinates when typing characters into the buffer (left to right, top to bottom)
+int Utils::s_CompareCoords(const COORD coordFirst, const COORD coordSecond)
+{
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    // find the width of one row
+    const COORD coordScreenBufferSize = gci.GetActiveOutputBuffer().GetScreenBufferSize();
+    return s_CompareCoords(coordScreenBufferSize, coordFirst, coordSecond);
+}
+
+// Routine Description:
 // - Finds the opposite corner given a rectangle and one of its corners.
 // - For example, finds the bottom right corner given a rectangle and its top left corner.
 // Arguments:
@@ -184,8 +240,8 @@ int Utils::s_CompareCoords(const COORD coordFirst, const COORD coordSecond)
 void Utils::s_GetOppositeCorner(const SMALL_RECT srRectangle, const COORD coordCorner, _Out_ COORD* const pcoordOpposite)
 {
     // Assert we were given coordinates that are indeed one of the corners of the rectangle.
-    ASSERT(coordCorner.X == srRectangle.Left || coordCorner.X == srRectangle.Right);
-    ASSERT(coordCorner.Y == srRectangle.Top || coordCorner.Y == srRectangle.Bottom);
+    FAIL_FAST_IF_FALSE(coordCorner.X == srRectangle.Left || coordCorner.X == srRectangle.Right);
+    FAIL_FAST_IF_FALSE(coordCorner.Y == srRectangle.Top || coordCorner.Y == srRectangle.Bottom);
 
     pcoordOpposite->X = (srRectangle.Left == coordCorner.X) ? srRectangle.Right : srRectangle.Left;
     pcoordOpposite->Y = (srRectangle.Top == coordCorner.Y) ? srRectangle.Bottom : srRectangle.Top;

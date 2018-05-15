@@ -34,7 +34,7 @@ DWORD ConsoleInputThreadProcOneCore(LPVOID /*lpParam*/)
         if (NT_SUCCESS(Status) && DisplayMode != CIS_DISPLAY_MODE_NONE)
         {
             // Create and set the console window.
-            ConsoleWindow * const wnd = new ConsoleWindow();
+            ConsoleWindow * const wnd = new(std::nothrow) ConsoleWindow();
             Status = NT_TESTNULL(wnd);
 
             if (NT_SUCCESS(Status))
@@ -42,7 +42,7 @@ DWORD ConsoleInputThreadProcOneCore(LPVOID /*lpParam*/)
                 LOG_IF_FAILED(ServiceLocator::SetConsoleWindowInstance(wnd));
 
                 // The console's renderer should be created before we get here.
-                ASSERT(globals.pRender != nullptr);
+                FAIL_FAST_IF_NULL(globals.pRender);
 
                 switch (DisplayMode)
                 {

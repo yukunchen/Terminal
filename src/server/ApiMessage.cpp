@@ -11,6 +11,13 @@
 #include "ApiMessage.h"
 #include "DeviceComm.h"
 
+_CONSOLE_API_MSG::_CONSOLE_API_MSG() : 
+    _pDeviceComm(nullptr),
+    _pApiRoutines(nullptr)
+{
+    ZeroMemory(this, sizeof(_CONSOLE_API_MSG));
+}
+
 ConsoleProcessHandle* _CONSOLE_API_MSG::GetProcessHandle() const
 {
     return reinterpret_cast<ConsoleProcessHandle*>(Descriptor.Process);
@@ -102,8 +109,9 @@ HRESULT _CONSOLE_API_MSG::GetAugmentedOutputBuffer(const ULONG cbFactor,
         ULONG cbWriteSize = Descriptor.OutputSize - State.WriteOffset;
         RETURN_IF_FAILED(ULongMult(cbWriteSize, cbFactor, &cbWriteSize));
 
-        BYTE* pPayload = new BYTE[cbWriteSize];
+        BYTE* pPayload = new(std::nothrow) BYTE[cbWriteSize];
         RETURN_IF_NULL_ALLOC(pPayload);
+        ZeroMemory(pPayload, sizeof(BYTE) * cbWriteSize);
 
         State.OutputBuffer = pPayload; // TODO: MSFT: 9565140 - maintain as smart pointer.
         State.OutputBufferSize = cbWriteSize;

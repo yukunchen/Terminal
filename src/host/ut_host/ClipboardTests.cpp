@@ -72,86 +72,24 @@ class ClipboardTests
 
     const UINT cRectsSelected = 4;
 
-    void SetupRetrieveFromBuffers(bool fLineSelection, SMALL_RECT** prgsrSelection, PWCHAR** prgTempRows, size_t** prgTempRowLengths)
+    std::vector<std::wstring> SetupRetrieveFromBuffers(bool fLineSelection, std::vector<SMALL_RECT>& selection)
     {
-        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // NOTE: This test requires innate knowledge of how the common buffer text is emitted in order to test all cases
         // Please see CommonState.hpp for information on the buffer state per row, the row contents, etc.
 
         // set up and try to retrieve the first 4 rows from the buffer
-        const SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
+        const auto& screenInfo = gci.GetActiveOutputBuffer();
 
-        SMALL_RECT* const rgsrSelection = new SMALL_RECT[cRectsSelected];
+        selection.clear();
+        selection.emplace_back(SMALL_RECT{ 0, 0, 8, 0 });
+        selection.emplace_back(SMALL_RECT{ 0, 1, 14, 1 });
+        selection.emplace_back(SMALL_RECT{ 0, 2, 14, 2 });
+        selection.emplace_back(SMALL_RECT{ 0, 3, 8, 3 });
 
-        rgsrSelection[0].Top = rgsrSelection[0].Bottom = 0;
-        rgsrSelection[0].Left = 0;
-        rgsrSelection[0].Right = 8;
-        rgsrSelection[1].Top = rgsrSelection[1].Bottom = 1;
-        rgsrSelection[1].Left = 0;
-        rgsrSelection[1].Right = 14;
-        rgsrSelection[2].Top = rgsrSelection[2].Bottom = 2;
-        rgsrSelection[2].Left = 0;
-        rgsrSelection[2].Right = 14;
-        rgsrSelection[3].Top = rgsrSelection[3].Bottom = 3;
-        rgsrSelection[3].Left = 0;
-        rgsrSelection[3].Right = 8;
-
-        PWCHAR* rgTempRows = new PWCHAR[cRectsSelected];
-        size_t* rgTempRowLengths = new size_t[cRectsSelected];
-
-        NTSTATUS status = Clipboard::Instance().RetrieveTextFromBuffer(screenInfo,
-                                                                       fLineSelection,
-                                                                       cRectsSelected,
-                                                                       rgsrSelection,
-                                                                       rgTempRows,
-                                                                       rgTempRowLengths);
-
-        // function successful
-        VERIFY_IS_TRUE(NT_SUCCESS(status));
-
-        // verify text lengths match the rows
-
-        VERIFY_ARE_EQUAL(wcslen(rgTempRows[0]), rgTempRowLengths[0]);
-        VERIFY_ARE_EQUAL(wcslen(rgTempRows[1]), rgTempRowLengths[1]);
-        VERIFY_ARE_EQUAL(wcslen(rgTempRows[2]), rgTempRowLengths[2]);
-        VERIFY_ARE_EQUAL(wcslen(rgTempRows[3]), rgTempRowLengths[3]);
-
-        *prgsrSelection = rgsrSelection;
-        *prgTempRows = rgTempRows;
-        *prgTempRowLengths = rgTempRowLengths;
-    }
-
-    void CleanupRetrieveFromBuffers(SMALL_RECT** prgsrSelection, PWCHAR** prgTempRows, size_t** prgTempRowLengths)
-    {
-        if (*prgsrSelection != nullptr)
-        {
-            delete[](*prgsrSelection);
-            *prgsrSelection = nullptr;
-        }
-
-        if (*prgTempRows != nullptr)
-        {
-            PWCHAR* rgTempRows = *prgTempRows;
-
-            for (UINT iRow = 0; iRow < cRectsSelected; iRow++)
-            {
-                PWCHAR pwszRowData = rgTempRows[iRow];
-                if (pwszRowData != nullptr)
-                {
-                    delete[] pwszRowData;
-                    rgTempRows[iRow] = nullptr;
-                }
-            }
-
-            delete[] rgTempRows;
-            *prgTempRows = nullptr;
-        }
-
-        if (*prgTempRowLengths != nullptr)
-        {
-            delete[](*prgTempRowLengths);
-            *prgTempRowLengths = nullptr;
-        }
+        return Clipboard::Instance().RetrieveTextFromBuffer(screenInfo,
+                                                            fLineSelection,
+                                                            selection);
     }
 
 #pragma prefast(push)
@@ -161,36 +99,31 @@ class ClipboardTests
         // NOTE: This test requires innate knowledge of how the common buffer text is emitted in order to test all cases
         // Please see CommonState.hpp for information on the buffer state per row, the row contents, etc.
 
-        SMALL_RECT* rgsrSelection = nullptr;
-        PWCHAR* rgTempRows = nullptr;
-        size_t* rgTempRowLengths = nullptr;
-
-        SetupRetrieveFromBuffers(false, &rgsrSelection, &rgTempRows, &rgTempRowLengths);
+        std::vector<SMALL_RECT> selection;
+        const auto text = SetupRetrieveFromBuffers(false, selection);
 
         // verify trailing bytes were trimmed
         // there are 2 double-byte characters in our sample string (see CommonState.hpp for sample)
         // the width is right - left
-        VERIFY_ARE_EQUAL((short)wcslen(rgTempRows[0]), rgsrSelection[0].Right - rgsrSelection[0].Left + 1);
+        VERIFY_ARE_EQUAL((short)wcslen(text[0].data()), selection[0].Right - selection[0].Left + 1);
 
         // since we're not in line selection, the line should be \r\n terminated
-        PWCHAR tempPtr = rgTempRows[0];
-        tempPtr += rgTempRowLengths[0];
+        PCWCHAR tempPtr = text[0].data();
+        tempPtr += text[0].size();
         tempPtr -= 2;
         VERIFY_ARE_EQUAL(String(tempPtr), String(L"\r\n"));
 
         // since we're not in line selection, spaces should be trimmed from the end
-        tempPtr = rgTempRows[0];
-        tempPtr += rgsrSelection[0].Right - rgsrSelection[0].Left - 2;
+        tempPtr = text[0].data();
+        tempPtr += selection[0].Right - selection[0].Left - 2;
         tempPtr++;
         VERIFY_IS_NULL(wcsrchr(tempPtr, L' '));
 
         // final line of selection should not contain CR/LF
-        tempPtr = rgTempRows[3];
-        tempPtr += rgTempRowLengths[3];
+        tempPtr = text[3].data();
+        tempPtr += text[3].size();
         tempPtr -= 2;
         VERIFY_ARE_NOT_EQUAL(String(tempPtr), String(L"\r\n"));
-
-        CleanupRetrieveFromBuffers(&rgsrSelection, &rgTempRows, &rgTempRowLengths);
     }
 #pragma prefast(pop)
 
@@ -199,36 +132,32 @@ class ClipboardTests
         // NOTE: This test requires innate knowledge of how the common buffer text is emitted in order to test all cases
         // Please see CommonState.hpp for information on the buffer state per row, the row contents, etc.
 
-        SMALL_RECT* rgsrSelection = nullptr;
-        PWCHAR* rgTempRows = nullptr;
-        size_t* rgTempRowLengths = nullptr;
 
-        SetupRetrieveFromBuffers(true, &rgsrSelection, &rgTempRows, &rgTempRowLengths);
+        std::vector<SMALL_RECT> selection;
+        const auto text = SetupRetrieveFromBuffers(true, selection);
 
         // row 2, no wrap
         // no wrap row before the end should have CR/LF
-        PWCHAR tempPtr = rgTempRows[2];
-        tempPtr += rgTempRowLengths[2];
+        PCWCHAR tempPtr = text[2].data();
+        tempPtr += text[2].size();
         tempPtr -= 2;
         VERIFY_ARE_EQUAL(String(tempPtr), String(L"\r\n"));
 
         // no wrap row should trim spaces at the end
-        tempPtr = rgTempRows[2];
+        tempPtr = text[2].data();
         VERIFY_IS_NULL(wcsrchr(tempPtr, L' '));
 
         // row 1, wrap
         // wrap row before the end should *not* have CR/LF
-        tempPtr = rgTempRows[1];
-        tempPtr += rgTempRowLengths[1];
+        tempPtr = text[1].data();
+        tempPtr += text[1].size();
         tempPtr -= 2;
         VERIFY_ARE_NOT_EQUAL(String(tempPtr), String(L"\r\n"));
 
         // wrap row should have spaces at the end
-        tempPtr = rgTempRows[1];
-        wchar_t* ptr = wcsrchr(tempPtr, L' ');
+        tempPtr = text[1].data();
+        const wchar_t* ptr = wcsrchr(tempPtr, L' ');
         VERIFY_IS_NOT_NULL(ptr);
-
-        CleanupRetrieveFromBuffers(&rgsrSelection, &rgTempRows, &rgTempRowLengths);
     }
 
     TEST_METHOD(CanConvertTextToInputEvents)
@@ -402,4 +331,4 @@ class ClipboardTests
             VERIFY_ARE_EQUAL(expectedEvents[i], currentKeyEvent, NoThrowString().Format(L"i == %d", i));
         }
     }
-};
+    };

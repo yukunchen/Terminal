@@ -1769,8 +1769,11 @@ void DbcsWriteRead::Verify(_In_reads_(cExpected) CHAR_INFO* const rgExpected, co
     for (size_t i = 0; i < cExpected; i++)
     {
         // Uncomment these lines for help debugging the verification.
-        /*Log::Comment(VerifyOutputTraits<CHAR_INFO>::ToString(rgExpected[i]));
-        Log::Comment(VerifyOutputTraits<CHAR_INFO>::ToString(rgActual[i]));*/
+        /*
+        Log::Comment(NoThrowString().Format(L"Index: %d:", i));
+        Log::Comment(VerifyOutputTraits<CHAR_INFO>::ToString(rgExpected[i]));
+        Log::Comment(VerifyOutputTraits<CHAR_INFO>::ToString(rgActual[i]));
+        */
 
         VERIFY_ARE_EQUAL(rgExpected[i], rgActual[i]);
     }

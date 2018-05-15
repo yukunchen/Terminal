@@ -25,16 +25,18 @@ Revision History:
 class SCREEN_INFORMATION;
 typedef SCREEN_INFORMATION *PSCREEN_INFORMATION;
 
+class TextBuffer;
+
 class Cursor final
 {
 public:
 
     static const unsigned int s_InvertCursorColor = INVALID_COLOR;
 
-    Cursor(const ULONG ulSize);
+    Cursor(const ULONG ulSize, const TextBuffer& parentBuffer);
 
     ~Cursor();
-    
+
     // No Copy. It will copy the timer handle. Bad news.
     Cursor(const Cursor&) = delete;
     Cursor& operator=(const Cursor&) & = delete;
@@ -96,7 +98,8 @@ public:
     void SetType(const CursorType type);
 
 private:
-    Microsoft::Console::Interactivity::IAccessibilityNotifier *_pAccessibilityNotifier;
+    Microsoft::Console::Interactivity::IAccessibilityNotifier* const _pAccessibilityNotifier;
+    const TextBuffer& _parentBuffer;
 
     //TODO: seperate the rendering and text placement
 

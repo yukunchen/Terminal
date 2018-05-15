@@ -69,13 +69,19 @@
     <ClCompile Include="VtRendererTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="CharRowBaseTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <Clcompile Include="..\..\types\IInputEventStreams.cpp">
       <Filter>Source Files</Filter>
     </Clcompile>
     <ClCompile Include="AliasTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Utf16ParserTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ScreenInfoTextIteratorTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SearchTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

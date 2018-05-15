@@ -9,12 +9,12 @@
 #include "CommonState.hpp"
 
 #include "globals.h"
-#include "textBuffer.hpp"
-#include "Ucs2CharRow.hpp"
+#include "../buffer/out/textBuffer.hpp"
+#include "../buffer/out/CharRow.hpp"
 
 #include "input.h"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 using namespace WEX::Common;
 using namespace WEX::Logging;
@@ -131,7 +131,7 @@ class TextBufferTests
 
 void TextBufferTests::TestBufferCreate()
 {
-    VERIFY_IS_TRUE(NT_SUCCESS(m_state->GetTextBufferInfoInitResult()));
+    VERIFY_SUCCESS_NTSTATUS(m_state->GetTextBufferInfoInitResult());
 }
 
 void TextBufferTests::DoBufferRowIterationTest(TextBuffer& textBuffer)
@@ -204,7 +204,7 @@ void TextBufferTests::TestBufferRowIterationWhenCircular()
 {
     SHORT csBufferHeight = GetBufferHeight();
 
-    ASSERT(csBufferHeight > 4);
+    VERIFY_IS_TRUE(csBufferHeight > 4);
 
     TextBuffer& textBuffer = GetTbi();
 
@@ -218,7 +218,7 @@ void TextBufferTests::TestBufferRowByOffset()
     TextBuffer& textBuffer = GetTbi();
     SHORT csBufferHeight = GetBufferHeight();
 
-    ASSERT(csBufferHeight > 20);
+    VERIFY_IS_TRUE(csBufferHeight > 20);
 
     short sId = csBufferHeight / 2 - 5;
 
@@ -271,15 +271,12 @@ void TextBufferTests::DoBoundaryTest(PWCHAR const pwszInputString,
 {
     TextBuffer& textBuffer = GetTbi();
 
-    ICharRow& iCharRow = textBuffer.GetFirstRow().GetCharRow();
-    // for the time being, we only support UCS2 char rows
-    VERIFY_ARE_EQUAL(ICharRow::SupportedEncoding::Ucs2, iCharRow.GetSupportedEncoding());
-    Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
+    CharRow& charRow = textBuffer.GetFirstRow().GetCharRow();
 
     // copy string into buffer
     for (size_t i = 0; i < static_cast<size_t>(cLength); ++i)
     {
-        charRow.GetGlyphAt(i) = pwszInputString[i];
+        charRow.GlyphAt(i) = { pwszInputString[i] };
     }
 
     // space pad the rest of the string
@@ -360,39 +357,34 @@ void TextBufferTests::TestInsertCharacter()
     COORD const coordCursorBefore = textBuffer.GetCursor().GetPosition();
 
     // Get current row from the buffer
-    const ROW& Row = textBuffer.GetRowByOffset(coordCursorBefore.Y);
+    ROW& Row = textBuffer.GetRowByOffset(coordCursorBefore.Y);
 
     // create some sample test data
-    WCHAR const wchTest = L'Z';
+    const std::vector<wchar_t> wchTest{ L'Z' };
     DbcsAttribute dbcsAttribute;
-    BYTE* pAttribute = reinterpret_cast<BYTE*>(&dbcsAttribute._attribute);
-    // invalid flag, technically, for test only.
-    *pAttribute = 0x80;
+    dbcsAttribute.SetTrailing();
     WORD const wAttrTest = BACKGROUND_INTENSITY | FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_BLUE;
     TextAttribute TestAttributes = TextAttribute(wAttrTest);
 
-    const ICharRow& iCharRow = Row.GetCharRow();
-    // for the time being, we only support UCS2 char rows
-    VERIFY_ARE_EQUAL(ICharRow::SupportedEncoding::Ucs2, iCharRow.GetSupportedEncoding());
-    const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
+    CharRow& charRow = Row.GetCharRow();
+    charRow.DbcsAttrAt(coordCursorBefore.X).SetLeading();
     // ensure that the buffer didn't start with these fields
-    VERIFY_ARE_NOT_EQUAL(charRow.GetGlyphAt(coordCursorBefore.X), wchTest);
-    VERIFY_ARE_NOT_EQUAL(charRow.GetAttribute(coordCursorBefore.X), dbcsAttribute);
+    VERIFY_ARE_NOT_EQUAL(charRow.GlyphAt(coordCursorBefore.X), wchTest);
+    VERIFY_ARE_NOT_EQUAL(charRow.DbcsAttrAt(coordCursorBefore.X), dbcsAttribute);
 
-    TextAttributeRun* pAttrRun;
-    Row.GetAttrRow().FindAttrIndex(coordCursorBefore.X, &pAttrRun, nullptr);
+    auto attr = Row.GetAttrRow().GetAttrByColumn(coordCursorBefore.X);
 
-    VERIFY_IS_FALSE(pAttrRun->GetAttributes().IsEqual(TestAttributes));
+    VERIFY_ARE_NOT_EQUAL(attr, TestAttributes);
 
     // now apply the new data to the buffer
     textBuffer.InsertCharacter(wchTest, dbcsAttribute, TestAttributes);
 
     // ensure that the buffer position where the cursor WAS contains the test items
-    VERIFY_ARE_EQUAL(charRow.GetGlyphAt(coordCursorBefore.X), wchTest);
-    VERIFY_ARE_EQUAL(charRow.GetAttribute(coordCursorBefore.X), dbcsAttribute);
+    VERIFY_ARE_EQUAL(charRow.GlyphAt(coordCursorBefore.X), wchTest);
+    VERIFY_ARE_EQUAL(charRow.DbcsAttrAt(coordCursorBefore.X), dbcsAttribute);
 
-    Row.GetAttrRow().FindAttrIndex(coordCursorBefore.X, &pAttrRun, nullptr);
-    VERIFY_IS_TRUE(pAttrRun->GetAttributes().IsEqual(TestAttributes));
+    attr = Row.GetAttrRow().GetAttrByColumn(coordCursorBefore.X);
+    VERIFY_ARE_EQUAL(attr, TestAttributes);
 
     // ensure that the cursor moved to a new position (X or Y or both have changed)
     VERIFY_IS_TRUE((coordCursorBefore.X != textBuffer.GetCursor().GetPosition().X) ||
@@ -409,10 +401,8 @@ void TextBufferTests::TestIncrementCursor()
 
     short const sBufferWidth = textBuffer._coordBufferSize.X;
 
-    #if DBG
     short const sBufferHeight = textBuffer._coordBufferSize.Y;
-    ASSERT(sBufferWidth > 1 && sBufferHeight > 1);
-    #endif
+    VERIFY_IS_TRUE(sBufferWidth > 1 && sBufferHeight > 1);
 
     Log::Comment(L"Test normal case of moving once to the right within a single line");
     textBuffer.GetCursor().SetXPosition(0);
@@ -444,11 +434,9 @@ void TextBufferTests::TestNewlineCursor()
 
     const short sBufferHeight = textBuffer._coordBufferSize.Y;
 
-    #if DBG
     const short sBufferWidth = textBuffer._coordBufferSize.X;
     // width and height are sufficiently large for upcoming math
-    ASSERT(sBufferWidth > 4 && sBufferHeight > 4);
-    #endif
+    VERIFY_IS_TRUE(sBufferWidth > 4 && sBufferHeight > 4);
 
     Log::Comment(L"Verify standard row increment from somewhere in the buffer");
 
@@ -569,7 +557,7 @@ void TextBufferTests::TestIncrementCircularBuffer()
 
     short const sBufferHeight = textBuffer._coordBufferSize.Y;
 
-    ASSERT(sBufferHeight > 4); // buffer should be sufficiently large
+    VERIFY_IS_TRUE(sBufferHeight > 4); // buffer should be sufficiently large
 
     Log::Comment(L"Test 1 = FirstRow of circular buffer is not the final row of the buffer");
     Log::Comment(L"Test 2 = FirstRow of circular buffer IS THE FINAL ROW of the buffer (and therefore circles)");
@@ -590,11 +578,8 @@ void TextBufferTests::TestIncrementCircularBuffer()
 
         // fill first row with some stuff
         ROW& FirstRow = textBuffer.GetFirstRow();
-        ICharRow& iCharRow = FirstRow.GetCharRow();
-        // for the time being, we only support UCS2 char rows
-        VERIFY_ARE_EQUAL(ICharRow::SupportedEncoding::Ucs2, iCharRow.GetSupportedEncoding());
-        Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
-        charRow.GetGlyphAt(0) = L'A';
+        CharRow& charRow = FirstRow.GetCharRow();
+        charRow.GlyphAt(0) = { L'A' };
 
         // ensure it does say that it contains text
         VERIFY_IS_TRUE(FirstRow.GetCharRow().ContainsText());
@@ -633,9 +618,7 @@ void TextBufferTests::TestMixedRgbAndLegacyForeground()
     const short y = cursor.GetPosition().Y;
     const ROW& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
-    std::unique_ptr<TextAttribute[]> attrs = std::make_unique<TextAttribute[]>(tbi._coordBufferSize.X);
-    VERIFY_IS_NOT_NULL(attrs.get());
-    VERIFY_SUCCEEDED(attrRow->UnpackAttrs(attrs.get(), tbi._coordBufferSize.X));
+    const auto attrs = attrRow->UnpackAttrs();
     const auto attrA = attrs[x-2];
     const auto attrB = attrs[x-1];
     Log::Comment(NoThrowString().Format(
@@ -694,9 +677,7 @@ void TextBufferTests::TestMixedRgbAndLegacyBackground()
     const auto y = cursor.GetPosition().Y;
     const auto& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
-    const auto attrs = std::make_unique<TextAttribute[]>(tbi._coordBufferSize.X);
-    VERIFY_IS_NOT_NULL(attrs.get());
-    VERIFY_SUCCESS_NTSTATUS(attrRow->UnpackAttrs(attrs.get(), tbi._coordBufferSize.X));
+    const auto attrs = attrRow->UnpackAttrs();
     const auto attrA = attrs[x-2];
     const auto attrB = attrs[x-1];
     Log::Comment(NoThrowString().Format(
@@ -752,9 +733,7 @@ void TextBufferTests::TestMixedRgbAndLegacyUnderline()
     const auto y = cursor.GetPosition().Y;
     const auto& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
-    std::unique_ptr<TextAttribute[]> attrs = std::make_unique<TextAttribute[]>(tbi._coordBufferSize.X);
-    VERIFY_IS_NOT_NULL(attrs.get());
-    VERIFY_SUCCEEDED(attrRow->UnpackAttrs(attrs.get(), tbi._coordBufferSize.X));
+    const auto attrs = attrRow->UnpackAttrs();
     const auto attrA = attrs[x-2];
     const auto attrB = attrs[x-1];
     Log::Comment(NoThrowString().Format(
@@ -817,9 +796,7 @@ void TextBufferTests::TestMixedRgbAndLegacyBrightness()
     const auto y = cursor.GetPosition().Y;
     const auto& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
-    std::unique_ptr<TextAttribute[]> attrs = std::make_unique<TextAttribute[]>(tbi._coordBufferSize.X);
-    VERIFY_IS_NOT_NULL(attrs.get());
-    VERIFY_SUCCEEDED(attrRow->UnpackAttrs(attrs.get(), tbi._coordBufferSize.X));
+    const auto attrs = attrRow->UnpackAttrs();
     const auto attrA = attrs[x-2];
     const auto attrB = attrs[x-1];
     Log::Comment(NoThrowString().Format(
@@ -885,9 +862,7 @@ void TextBufferTests::TestRgbEraseLine()
         const auto& row = tbi.GetRowByOffset(y);
         const auto attrRow = &row.GetAttrRow();
         const auto len = tbi._coordBufferSize.X;
-        std::unique_ptr<TextAttribute[]> attrs = std::make_unique<TextAttribute[]>(len);
-        VERIFY_IS_NOT_NULL(attrs.get());
-        VERIFY_SUCCESS_NTSTATUS(attrRow->UnpackAttrs(attrs.get(), len));
+        const auto attrs = attrRow->UnpackAttrs();
 
         const auto attr0 = attrs[0];
 
@@ -946,9 +921,7 @@ void TextBufferTests::TestUnBold()
     const auto& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
     const auto len = tbi._coordBufferSize.X;
-    std::unique_ptr<TextAttribute[]> attrs = std::make_unique<TextAttribute[]>(len);
-    VERIFY_IS_NOT_NULL(attrs.get());
-    VERIFY_SUCCESS_NTSTATUS(attrRow->UnpackAttrs(attrs.get(), len));
+    const auto attrs = attrRow->UnpackAttrs();
     const auto attrA = attrs[x-2];
     const auto attrB = attrs[x-1];
 
@@ -1014,9 +987,7 @@ void TextBufferTests::TestUnBoldRgb()
     const auto& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
     const auto len = tbi._coordBufferSize.X;
-    std::unique_ptr<TextAttribute[]> attrs = std::make_unique<TextAttribute[]>(len);
-    VERIFY_IS_NOT_NULL(attrs.get());
-    VERIFY_SUCCESS_NTSTATUS(attrRow->UnpackAttrs(attrs.get(), len));
+    const auto attrs = attrRow->UnpackAttrs();
     const auto attrA = attrs[x-2];
     const auto attrB = attrs[x-1];
 
@@ -1089,9 +1060,7 @@ void TextBufferTests::TestComplexUnBold()
     const auto& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
     const auto len = tbi._coordBufferSize.X;
-    std::unique_ptr<TextAttribute[]> attrs = std::make_unique<TextAttribute[]>(len);
-    VERIFY_IS_NOT_NULL(attrs.get());
-    VERIFY_SUCCESS_NTSTATUS(attrRow->UnpackAttrs(attrs.get(), len));
+    const auto attrs = attrRow->UnpackAttrs();
     const auto attrA = attrs[x-6];
     const auto attrB = attrs[x-5];
     const auto attrC = attrs[x-4];
@@ -1204,9 +1173,7 @@ void TextBufferTests::CopyAttrs()
     const auto& row = tbi.GetRowByOffset(0);
     const auto attrRow = &row.GetAttrRow();
     const auto len = tbi._coordBufferSize.X;
-    const auto attrs = std::make_unique<TextAttribute[]>(len);
-    VERIFY_IS_NOT_NULL(attrs);
-    VERIFY_SUCCEEDED(attrRow->UnpackAttrs(attrs.get(), len));
+    const auto attrs = attrRow->UnpackAttrs();
     const auto attrA = attrs[0];
     const auto attrB = attrs[1];
 
@@ -1271,9 +1238,7 @@ void TextBufferTests::EmptySgrTest()
     const auto& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
     const auto len = tbi._coordBufferSize.X;
-    const auto attrs = new TextAttribute[len];
-    VERIFY_IS_NOT_NULL(attrs);
-    VERIFY_SUCCEEDED(attrRow->UnpackAttrs(attrs, len));
+    const auto attrs = attrRow->UnpackAttrs();
     const auto attrA = attrs[x-3];
     const auto attrB = attrs[x-2];
     const auto attrC = attrs[x-1];
@@ -1347,9 +1312,7 @@ void TextBufferTests::TestReverseReset()
     const auto& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
     const auto len = tbi._coordBufferSize.X;
-    const auto attrs = new TextAttribute[len];
-    VERIFY_IS_NOT_NULL(attrs);
-    VERIFY_SUCCEEDED(attrRow->UnpackAttrs(attrs, len));
+    const auto attrs = attrRow->UnpackAttrs();
     const auto attrA = attrs[x-3];
     const auto attrB = attrs[x-2];
     const auto attrC = attrs[x-1];
@@ -1473,15 +1436,9 @@ void TextBufferTests::CopyLastAttr()
     const ROW& row2 = tbi.GetRowByOffset(y + 2);
     const ROW& row3 = tbi.GetRowByOffset(y + 3);
     const auto len = tbi._coordBufferSize.X;
-    const auto attrs1 = std::make_unique<TextAttribute[]>(len);
-    const auto attrs2 = std::make_unique<TextAttribute[]>(len);
-    const auto attrs3 = std::make_unique<TextAttribute[]>(len);
-    VERIFY_IS_NOT_NULL(attrs1.get());
-    VERIFY_IS_NOT_NULL(attrs2.get());
-    VERIFY_IS_NOT_NULL(attrs3.get());
-    VERIFY_SUCCEEDED(row1.GetAttrRow().UnpackAttrs(attrs1.get(), len));
-    VERIFY_SUCCEEDED(row2.GetAttrRow().UnpackAttrs(attrs2.get(), len));
-    VERIFY_SUCCEEDED(row3.GetAttrRow().UnpackAttrs(attrs3.get(), len));
+    const auto attrs1 = row1.GetAttrRow().UnpackAttrs();
+    const auto attrs2 = row2.GetAttrRow().UnpackAttrs();
+    const auto attrs3 = row3.GetAttrRow().UnpackAttrs();
 
     const auto attr1A = attrs1[0];
 

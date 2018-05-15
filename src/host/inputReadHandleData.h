@@ -26,6 +26,11 @@ public:
     INPUT_READ_HANDLE_DATA();
     ~INPUT_READ_HANDLE_DATA();
 
+    INPUT_READ_HANDLE_DATA(const INPUT_READ_HANDLE_DATA&) = delete;
+    INPUT_READ_HANDLE_DATA(INPUT_READ_HANDLE_DATA&&) = delete;
+    INPUT_READ_HANDLE_DATA& operator=(const INPUT_READ_HANDLE_DATA&) & = delete;
+    INPUT_READ_HANDLE_DATA& operator=(INPUT_READ_HANDLE_DATA&&) & = delete;
+
     enum HandleFlags
     {
         Closing = 0x1,

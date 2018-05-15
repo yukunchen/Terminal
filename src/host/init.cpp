@@ -10,9 +10,7 @@
 void InitSideBySide(_Out_writes_(ScratchBufferSize) PWSTR ScratchBuffer, __range(MAX_PATH, MAX_PATH) DWORD ScratchBufferSize)
 {
     ACTCTXW actctx = { 0 };
-
-    ASSERT(ScratchBufferSize >= MAX_PATH);
-
+    
     // Account for the fact that sidebyside stuff happens in CreateProcess
     // but conhost is run with RtlCreateUserProcess.
 
@@ -72,7 +70,6 @@ void InitSideBySide(_Out_writes_(ScratchBufferSize) PWSTR ScratchBuffer, __range
     // ACTCTX_FLAG_SET_PROCESS_DEFAULT has nothing to return upon success, so it returns nullptr.
     // There is nothing to cleanup upon ACTCTX_FLAG_SET_PROCESS_DEFAULT success, the data
     // is referenced in the PEB, and lasts till process shutdown.
-    ASSERT(hActCtx == nullptr || hActCtx == INVALID_HANDLE_VALUE);
     if (hActCtx == INVALID_HANDLE_VALUE)
     {
         auto const error = GetLastError();

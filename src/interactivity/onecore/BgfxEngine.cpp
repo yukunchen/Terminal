@@ -53,7 +53,7 @@ HRESULT BgfxEngine::InvalidateSystem(const RECT* const /*prcDirtyClient*/)
 }
 
 [[nodiscard]]
-HRESULT BgfxEngine::InvalidateSelection(const SMALL_RECT* const /*rgsrSelection*/, UINT const /*cRectangles*/)
+HRESULT BgfxEngine::InvalidateSelection(const std::vector<SMALL_RECT>& /*rectangles*/)
 {
     return S_OK;
 }
@@ -176,7 +176,7 @@ HRESULT BgfxEngine::PaintBufferGridLines(GridLines const /*lines*/,
 }
 
 [[nodiscard]]
-HRESULT BgfxEngine::PaintSelection(const SMALL_RECT* const /*rgsrSelection*/, UINT const /*cRectangles*/)
+HRESULT BgfxEngine::PaintSelection(const std::vector<SMALL_RECT>& /*rectangles*/)
 {
     return S_OK;
 }

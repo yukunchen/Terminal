@@ -61,21 +61,15 @@ class SelectionTests
 
     void VerifyGetSelectionRects_BoxMode()
     {
-        SMALL_RECT* rgsrSelection;
-        UINT cRectangles;
-
-        NTSTATUS status = m_pSelection->GetSelectionRects(&rgsrSelection, &cRectangles);
-        VERIFY_IS_TRUE(NT_SUCCESS(status));
-        auto scopeExit = wil::ScopeExit([&]() { delete[] rgsrSelection; });
-
+        const auto selectionRects = m_pSelection->GetSelectionRects();
         const UINT cRectanglesExpected = m_pSelection->_srSelectionRect.Bottom - m_pSelection->_srSelectionRect.Top + 1;
 
-        if (VERIFY_ARE_EQUAL(cRectangles, cRectanglesExpected))
+        if (VERIFY_ARE_EQUAL(cRectanglesExpected, selectionRects.size()))
         {
-            for (UINT iRect = 0; iRect < cRectangles; iRect++)
+            for (auto iRect = 0; iRect < gsl::narrow<int>(selectionRects.size()); iRect++)
             {
                 // ensure each rectangle is exactly the width requested (block selection)
-                SMALL_RECT* psrRect = &rgsrSelection[iRect];
+                const SMALL_RECT* const psrRect = &selectionRects[iRect];
 
                 const short sRectangleLineNumber = (short)iRect + m_pSelection->_srSelectionRect.Top;
 
@@ -137,20 +131,12 @@ class SelectionTests
     void VerifyGetSelectionRects_LineMode()
     {
         const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        SMALL_RECT* rgsrSelection;
-        UINT cRectangles;
 
-        NTSTATUS status = m_pSelection->GetSelectionRects(&rgsrSelection, &cRectangles);
-
-        VERIFY_IS_TRUE(NT_SUCCESS(status));
-        auto scopeExit = wil::ScopeExit([&]() { delete[] rgsrSelection; });
-
+        const auto selectionRects = m_pSelection->GetSelectionRects();
         const UINT cRectanglesExpected = m_pSelection->_srSelectionRect.Bottom - m_pSelection->_srSelectionRect.Top + 1;
 
-        if (VERIFY_ARE_EQUAL(cRectangles, cRectanglesExpected))
+        if (VERIFY_ARE_EQUAL(cRectanglesExpected, selectionRects.size()))
         {
-            ASSERT(cRectangles > 0);
-
             // RULES:
             // 1. If we're only selection one line, select the entire region between the two rectangles.
             //    Else if we're selecting multiple lines...
@@ -161,14 +147,14 @@ class SelectionTests
             //    Remove from selection (but preserve the anchors themselves).
 
             // RULE #1: If 1 line, entire region selected.
-            bool fHaveOneLine = cRectangles == 1;
+            bool fHaveOneLine = selectionRects.size() == 1;
 
             if (fHaveOneLine)
             {
                 SMALL_RECT srSelectionRect = m_pSelection->_srSelectionRect;
                 VERIFY_ARE_EQUAL(srSelectionRect.Top, srSelectionRect.Bottom);
 
-                SMALL_RECT* psrRect = &rgsrSelection[0];
+                const SMALL_RECT* const psrRect = &selectionRects[0];
 
                 VERIFY_ARE_EQUAL(psrRect->Top, srSelectionRect.Top);
                 VERIFY_ARE_EQUAL(psrRect->Bottom, srSelectionRect.Bottom);
@@ -179,10 +165,10 @@ class SelectionTests
             else
             {
                 // RULE #2 : Check extension to edges
-                for (UINT iRect = 0; iRect < cRectangles; iRect++)
+                for (UINT iRect = 0; iRect < selectionRects.size(); iRect++)
                 {
                     // ensure each rectangle is exactly the width requested (block selection)
-                    SMALL_RECT* psrRect = &rgsrSelection[iRect];
+                    const SMALL_RECT* const psrRect = &selectionRects[iRect];
 
                     const short sRectangleLineNumber = (short)iRect + m_pSelection->_srSelectionRect.Top;
 
@@ -190,7 +176,7 @@ class SelectionTests
                     VERIFY_ARE_EQUAL(psrRect->Bottom, sRectangleLineNumber);
 
                     bool fIsFirstLine = iRect == 0;
-                    bool fIsLastLine = iRect == cRectangles - 1;
+                    bool fIsLastLine = iRect == selectionRects.size() - 1;
 
                     // for all lines except the last, the line should reach the right edge of the buffer
                     if (!fIsLastLine)
@@ -208,10 +194,10 @@ class SelectionTests
 
                 // RULE #3: Check first and last line have invalid regions removed, if applicable
                 UINT iFirst = 0;
-                UINT iLast = cRectangles - 1;
+                UINT iLast = gsl::narrow<UINT>(selectionRects.size() - 1u);
 
-                SMALL_RECT* psrFirst = &rgsrSelection[iFirst];
-                SMALL_RECT* psrLast = &rgsrSelection[iLast];
+                const SMALL_RECT* const psrFirst = &selectionRects[iFirst];
+                const SMALL_RECT* const psrLast = &selectionRects[iLast];
 
                 bool fRemoveRegion = false;
 
@@ -305,14 +291,14 @@ class SelectionTests
 
         // #1: left to right selection
         m_pSelection->_coordSelectionAnchor.X = m_pSelection->_srSelectionRect.Left;
-        ASSERT(m_pSelection->_srSelectionRect.Bottom == m_pSelection->_srSelectionRect.Top);
+        VERIFY_IS_TRUE(m_pSelection->_srSelectionRect.Bottom == m_pSelection->_srSelectionRect.Top);
         m_pSelection->_coordSelectionAnchor.Y = m_pSelection->_srSelectionRect.Bottom;
 
         VerifyGetSelectionRects_LineMode();
 
         // #2: right to left selection
         m_pSelection->_coordSelectionAnchor.X = m_pSelection->_srSelectionRect.Right;
-        ASSERT(m_pSelection->_srSelectionRect.Bottom == m_pSelection->_srSelectionRect.Top);
+        VERIFY_IS_TRUE(m_pSelection->_srSelectionRect.Bottom == m_pSelection->_srSelectionRect.Top);
         m_pSelection->_coordSelectionAnchor.Y = m_pSelection->_srSelectionRect.Top;
 
         VerifyGetSelectionRects_LineMode();
@@ -345,7 +331,7 @@ class SelectionTests
         srOriginal.Left = srSelection.Left;
         srOriginal.Right = srSelection.Right;
 
-        Selection::s_BisectSelection(sStringLength, coordTargetPoint, screenInfo, &srSelection);
+        srSelection = Selection::s_BisectSelection(sStringLength, coordTargetPoint, screenInfo, srSelection);
 
         VERIFY_ARE_EQUAL(srOriginal.Top, srSelection.Top);
         VERIFY_ARE_EQUAL(srOriginal.Bottom, srSelection.Bottom);
@@ -453,7 +439,7 @@ class SelectionInputTests
         srectEdges.Right = srectEdges.Bottom = sRowWidth - 1;
 
         // false when no cooked read data exists
-        ASSERT(gci.lpCookedReadData == nullptr);
+        VERIFY_IS_TRUE(gci.lpCookedReadData == nullptr);
 
         bool fResult = Selection::s_GetInputLineBoundaries(nullptr, nullptr);
         VERIFY_IS_FALSE(fResult);

@@ -165,13 +165,11 @@ HRESULT VtEngine::ClearCursor()
 //  Because the selection is the responsibility of the terminal, and not the
 //      host, render nothing.
 // Arguments:
-//  - rgsrSelection - Array of rectangles, one per line, that should be inverted to make the selection area
-//  - cRectangles - Count of rectangle array length
+//  - rectangles - Vector of rectangles, one per line, that should be inverted to make the selection area
 // Return Value:
 // - S_OK
 [[nodiscard]]
-HRESULT VtEngine::PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* const /*rgsrSelection*/,
-                                 const UINT /*cRectangles*/)
+HRESULT VtEngine::PaintSelection(const std::vector<SMALL_RECT>& /*rectangles*/)
 {
     return S_OK;
 }

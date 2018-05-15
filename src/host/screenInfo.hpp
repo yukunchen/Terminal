@@ -19,9 +19,11 @@ Revision History:
 #pragma once
 
 #include "conapi.h"
-#include "textBuffer.hpp"
+
 #include "settings.hpp"
-#include "TextAttribute.hpp"
+#include "screenInfoTextIterator.hpp"
+#include "../buffer/out/TextAttribute.hpp"
+#include "../buffer/out/textBuffer.hpp"
 
 #include "outputStream.hpp"
 #include "../terminal/adapter/adaptDispatch.hpp"
@@ -45,6 +47,8 @@ class ConversionAreaInfo; // forward decl window. circular reference
 class SCREEN_INFORMATION
 {
 public:
+    using const_text_iterator = typename ScreenInfoTextIterator;
+
     [[nodiscard]]
     static NTSTATUS CreateInstance(_In_ COORD coordWindowSize,
                                    const FontInfo fontInfo,
@@ -91,7 +95,7 @@ public:
     [[nodiscard]]
     NTSTATUS ResizeScreenBuffer(const COORD coordNewScreenSize, const bool fDoScrollBarUpdate);
 
-    void ResetTextFlags(const short sStartX, const short sStartY, const short sEndX, const short sEndY);
+    void NotifyAccessibilityEventing(const short sStartX, const short sStartY, const short sEndX, const short sEndY);
 
     void UpdateScrollBars();
     void InternalUpdateScrollBars();
@@ -129,10 +133,22 @@ public:
                                      const size_t startIndex,
                                      const size_t count) const;
 
+    const_text_iterator GetTextDataAt(const COORD at) const;
+
+    size_t WriteLine(const std::vector<OutputCell>& cells,
+                     const size_t rowIndex,
+                     const size_t startIndex);
+
+    size_t WriteLineNoWrap(const std::vector<OutputCell>& cells,
+                           const size_t rowIndex,
+                           const size_t startIndex);
+
+    void ClearTextData();
+
     std::pair<COORD, COORD> GetWordBoundary(const COORD position) const;
 
-    TextBuffer& GetTextBuffer();
-    const TextBuffer& GetTextBuffer() const;
+    TextBuffer& GetTextBuffer() noexcept;
+    const TextBuffer& GetTextBuffer() const noexcept;
 
 
 
@@ -269,6 +285,11 @@ private:
     void _InitializeBufferDimensions(const COORD coordScreenBufferSize,
                                      const COORD coordViewportSize);
 
+    size_t _WriteLine(const std::vector<OutputCell>& cells,
+                      const size_t rowIndex,
+                      const size_t startIndex,
+                      const bool shouldWrap);
+
     ConhostInternalGetSet* _pConApi;
     WriteBuffer* _pBufferWriter;
     AdaptDispatch* _pAdapter;
@@ -283,18 +304,19 @@ private:
     //      window client (the "viewport" into the buffer)
     Microsoft::Console::Types::Viewport _viewport;
 
-    SCREEN_INFORMATION* _psiAlternateBuffer = nullptr; // The VT "Alternate" screen buffer.
-    SCREEN_INFORMATION* _psiMainBuffer = nullptr; // A pointer to the main buffer, if this is the alternate buffer.
+    SCREEN_INFORMATION* _psiAlternateBuffer; // The VT "Alternate" screen buffer.
+    SCREEN_INFORMATION* _psiMainBuffer; // A pointer to the main buffer, if this is the alternate buffer.
 
-    RECT _rcAltSavedClientNew = { 0 };
-    RECT _rcAltSavedClientOld = { 0 };
-    bool _fAltWindowChanged = false;
+    RECT _rcAltSavedClientNew;
+    RECT _rcAltSavedClientOld;
+    bool _fAltWindowChanged;
 
-    TabStop* _ptsTabs = nullptr; // The head of the list of Tab Stops
+    TabStop* _ptsTabs; // The head of the list of Tab Stops
 
     TextAttribute _Attributes;
     TextAttribute _PopupAttributes;
 
+    friend class ScreenInfoTextIterator;
 #ifdef UNIT_TESTING
     friend class ScreenBufferTests;
     friend class CommonState;

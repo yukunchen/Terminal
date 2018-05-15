@@ -2,6 +2,8 @@
 
 #include "WddmConRenderer.hpp"
 
+#include "main.h"
+
 #pragma hdrstop
 
 //
@@ -178,7 +180,7 @@ HRESULT WddmConEngine::InvalidateSystem(const RECT* const /*prcDirtyClient*/)
 }
 
 [[nodiscard]]
-HRESULT WddmConEngine::InvalidateSelection(const SMALL_RECT* const /*rgsrSelection*/, UINT const /*cRectangles*/)
+HRESULT WddmConEngine::InvalidateSelection(const std::vector<SMALL_RECT>& /*rectangles*/)
 {
     return S_OK;
 }
@@ -294,7 +296,7 @@ HRESULT WddmConEngine::PaintBufferGridLines(GridLines const /*lines*/,
 }
 
 [[nodiscard]]
-HRESULT WddmConEngine::PaintSelection(const SMALL_RECT* const /*rgsrSelection*/, UINT const /*cRectangles*/)
+HRESULT WddmConEngine::PaintSelection(const std::vector<SMALL_RECT>& /*rectangles*/)
 {
     return S_OK;
 }

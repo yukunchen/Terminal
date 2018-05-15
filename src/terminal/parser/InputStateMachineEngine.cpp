@@ -11,7 +11,6 @@
 
 #include "../../inc/unicode.hpp"
 #include "ascii.hpp"
-#include <assert.h>
 
 #ifdef BUILD_ONECORE_INTERACTIVITY
 #include "../../interactivity/inc/VtApiRedirection.hpp"
@@ -198,7 +197,7 @@ bool InputStateMachineEngine::ActionPrint(const wchar_t wch)
 // - cch - length of rgwch
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool InputStateMachineEngine::ActionPrintString(_Inout_updates_(cch) wchar_t* const rgwch,
+bool InputStateMachineEngine::ActionPrintString(const wchar_t* const rgwch,
                                                 const size_t cch)
 {
     if (cch == 0)
@@ -217,7 +216,7 @@ bool InputStateMachineEngine::ActionPrintString(_Inout_updates_(cch) wchar_t* co
 // - cch - length of rgwch
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool InputStateMachineEngine::ActionPassThroughString(_Inout_updates_(cch) wchar_t* const rgwch,
+bool InputStateMachineEngine::ActionPassThroughString(const wchar_t* const rgwch,
                                                       _In_ size_t const cch)
 {
     return ActionPrintString(rgwch, cch);
@@ -588,7 +587,7 @@ size_t InputStateMachineEngine::_GetSingleKeypress(const wchar_t wch,
                                                    _Inout_updates_(cRecords) INPUT_RECORD* const rgInput,
                                                    const size_t cRecords)
 {
-    assert(cRecords >= 2);
+    FAIL_FAST_IF_FALSE(cRecords >= 2);
     if (cRecords < 2)
     {
         return 0;

@@ -27,11 +27,9 @@ using namespace Microsoft::Console::Interactivity;
 class Selection
 {
 public:
-    ~Selection();
+    ~Selection() = default;
 
-    [[nodiscard]]
-    NTSTATUS GetSelectionRects(_Outptr_result_buffer_all_(*pcRectangles) SMALL_RECT** const prgsrSelection,
-                               _Out_ UINT* const pcRectangles) const;
+    std::vector<SMALL_RECT> GetSelectionRects() const;
 
     void ShowSelection();
     void HideSelection();
@@ -60,7 +58,8 @@ public:
 
     void ClearSelection();
     void ClearSelection(const bool fStartingNewSelection);
-    void ColorSelection(_In_ SMALL_RECT* const psrRect, const ULONG ulAttr);
+    void ColorSelection(const SMALL_RECT& srRect, const ULONG ulAttr);
+    void ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const ULONG ulAttr);
 
     // delete these or we can accidentally get copies of the singleton
     Selection(Selection const&) = delete;
@@ -74,10 +73,14 @@ private:
 
     void _PaintSelection() const;
 
-    static void s_BisectSelection(const short sStringLength,
-                                  const COORD coordTargetPoint,
-                                  const SCREEN_INFORMATION& screenInfo,
-                                  _Inout_ SMALL_RECT* const pSmallRect);
+    static SMALL_RECT s_BisectSelection(const short sStringLength,
+                                        const COORD coordTargetPoint,
+                                        const SCREEN_INFORMATION& screenInfo,
+                                        const SMALL_RECT rect);
+
+    static std::vector<SMALL_RECT> s_GetSelectionRects(const SMALL_RECT& selectionRect,
+                                                       const COORD selectionAnchor,
+                                                       const bool lineSelection);
 
     void _CancelMarkSelection();
     void _CancelMouseSelection();
@@ -115,7 +118,10 @@ private:
     // key handling
     bool _HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo);
     bool _HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKeyInfo);
-    void WordByWordSelection(const bool fPrevious, const SMALL_RECT srectEdges, const COORD coordAnchor, _Inout_ COORD *pcoordSelPoint) const;
+    COORD WordByWordSelection(const bool fPrevious,
+                              const SMALL_RECT srectEdges,
+                              const COORD coordAnchor,
+                              const COORD coordSelPoint) const;
 
 
 // -------------------------------------------------------------------------------------------------------

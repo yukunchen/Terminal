@@ -37,8 +37,7 @@ namespace Microsoft::Console::Render
         virtual ~VtEngine() override = default;
 
         [[nodiscard]]
-        HRESULT InvalidateSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection,
-                                    const UINT cRectangles) override;
+        HRESULT InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) override;
         [[nodiscard]]
         virtual HRESULT InvalidateScroll(const COORD* const pcoordDelta) = 0;
         [[nodiscard]]
@@ -77,8 +76,7 @@ namespace Microsoft::Console::Render
                                     const size_t cchLine,
                                     const COORD coordTarget) override;
         [[nodiscard]]
-        HRESULT PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection,
-                            const UINT cRectangles) override;
+        HRESULT PaintSelection(const std::vector<SMALL_RECT>& rectangles) override;
 
         [[nodiscard]]
         HRESULT PaintCursor(const COORD coordCursor,

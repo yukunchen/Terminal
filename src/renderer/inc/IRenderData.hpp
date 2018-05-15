@@ -14,7 +14,7 @@ Author(s):
 #pragma once
 
 #include "../../host/conimeinfo.h"
-#include "../../host/TextAttribute.hpp"
+#include "../../buffer/out/TextAttribute.hpp"
 
 class TextBuffer;
 class Cursor;
@@ -38,9 +38,7 @@ namespace Microsoft::Console::Render
 
         virtual const bool IsGridLineDrawingAllowed() = 0;
 
-        [[nodiscard]]
-        virtual NTSTATUS GetSelectionRects(_Outptr_result_buffer_all_(*pcRectangles) SMALL_RECT** const prgsrSelection,
-                                           _Out_ UINT* const pcRectangles) = 0;
+        virtual std::vector<SMALL_RECT> GetSelectionRects() = 0;
 
         virtual const std::wstring GetConsoleTitle() const = 0;
     };

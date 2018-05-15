@@ -1308,15 +1308,15 @@ public:
         return true;
     }
 
-    void Print(const wchar_t /*wch*/)
+    void Print(const wchar_t /*wch*/) override
     {
     }
 
-    void PrintString(_In_reads_(_Param_(2)) wchar_t* const /*rgwch*/, const size_t /*cch*/)
+    void PrintString(_In_reads_(_Param_(2)) const wchar_t* const /*rgwch*/, const size_t /*cch*/) override
     {
     }
 
-    void Execute(const wchar_t /*wch*/)
+    void Execute(const wchar_t /*wch*/) override
     {
     }
 

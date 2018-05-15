@@ -59,7 +59,7 @@ HRESULT CicDisplayAttributeMgr::GetDisplayAttributeTrackPropertyRange(TfEditCook
         //
         // TrackProperties wants an array of GUID *'s
         //
-        ppguidProp = (const GUID **) new GUID* [ulNumProp];
+        ppguidProp = (const GUID **) new(std::nothrow) GUID* [ulNumProp];
         if (ppguidProp == NULL) {
             hr = E_OUTOFMEMORY;
         }
@@ -103,7 +103,7 @@ HRESULT CicDisplayAttributeMgr::GetDisplayAttributeData(ITfCategoryMgr *pcat, Tf
     HRESULT hr = E_FAIL;
 
     if (SUCCEEDED(pProp->GetValue(ec, pRange, &var))) {
-        Assert(var.vt == VT_UNKNOWN);
+        FAIL_FAST_IF_FALSE(var.vt == VT_UNKNOWN);
 
         CComQIPtr<IEnumTfPropertyValue> pEnumPropertyVal(var.punkVal);
         if (pEnumPropertyVal) {
@@ -113,7 +113,7 @@ HRESULT CicDisplayAttributeMgr::GetDisplayAttributeData(ITfCategoryMgr *pcat, Tf
                     continue; // prop has no value over this span
                 }
 
-                Assert(tfPropVal.varValue.vt == VT_I4); // expecting GUIDATOMs
+                FAIL_FAST_IF_FALSE(tfPropVal.varValue.vt == VT_I4); // expecting GUIDATOMs
 
                 TfGuidAtom gaVal = (TfGuidAtom)tfPropVal.varValue.lVal;
 

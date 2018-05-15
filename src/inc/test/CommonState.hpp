@@ -23,12 +23,8 @@ unit testing projects in the codebase without a bunch of overhead.
 
 #include "precomp.h"
 #include "../host/globals.h"
-#include "../host/newdelete.hpp"
-#include "../host/Ucs2CharRow.hpp"
+#include "../buffer/out/CharRow.hpp"
 #include "../interactivity/inc/ServiceLocator.hpp"
-
-#include <algorithm>
-
 
 class CommonState
 {
@@ -39,9 +35,12 @@ public:
     static const SHORT s_csBufferWidth = 80;
     static const SHORT s_csBufferHeight = 300;
 
-    CommonState()
+    CommonState() :
+        m_heap(GetProcessHeap()),
+        m_ntstatusTextBufferInfo(STATUS_FAIL_CHECK),
+        m_pFontInfo(nullptr),
+        m_backupTextBufferInfo()
     {
-        m_heap = GetProcessHeap();
     }
 
     ~CommonState()
@@ -151,6 +150,10 @@ public:
             {
                 m_ntstatusTextBufferInfo = STATUS_NO_MEMORY;
             }
+            else
+            {
+                m_ntstatusTextBufferInfo = STATUS_SUCCESS;
+            }
             gci.pCurrentScreenBuffer->_textBuffer.swap(textBuffer);
         }
         catch (...)
@@ -162,7 +165,7 @@ public:
     void CleanupNewTextBufferInfo()
     {
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        ASSERT(gci.HasActiveOutputBuffer());
+        VERIFY_IS_TRUE(gci.HasActiveOutputBuffer());
 
         gci.pCurrentScreenBuffer->_textBuffer.swap(m_backupTextBufferInfo);
     }
@@ -173,7 +176,7 @@ public:
         // fill with some assorted text that doesn't consume the whole row
         const SHORT cRowsToFill = 4;
 
-        ASSERT(gci.HasActiveOutputBuffer());
+        VERIFY_IS_TRUE(gci.HasActiveOutputBuffer());
 
         TextBuffer& textBuffer = gci.GetActiveOutputBuffer().GetTextBuffer();
 
@@ -192,7 +195,7 @@ public:
         // fill with some text that fills the whole row and has bisecting double byte characters
         const SHORT cRowsToFill = s_csBufferHeight;
 
-        ASSERT(gci.HasActiveOutputBuffer());
+        VERIFY_IS_TRUE(gci.HasActiveOutputBuffer());
 
         TextBuffer& textBuffer = gci.GetActiveOutputBuffer().GetTextBuffer();
 
@@ -232,13 +235,7 @@ private:
         attrs[5].SetLeading();
         attrs[6].SetTrailing();
 
-        ICharRow& iCharRow = pRow->GetCharRow();
-        if (iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2)
-        {
-            LOG_HR_MSG(E_FAIL, "we don't support non UCS2 encoded char rows");
-            return;
-        }
-        Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
+        CharRow& charRow = pRow->GetCharRow();
         OverwriteColumns(pwszText, pwszText + length, attrs.cbegin(), charRow.begin());
 
         // set some colors
@@ -303,13 +300,7 @@ private:
         attrs[68].SetTrailing();
         attrs[79].SetLeading();
 
-        ICharRow& iCharRow = pRow->GetCharRow();
-        if (iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2)
-        {
-            LOG_HR_MSG(E_FAIL, "we don't support non UCS2 encoded char rows");
-            return;
-        }
-        Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
+        CharRow& charRow = pRow->GetCharRow();
         OverwriteColumns(pwszText, pwszText + length, attrs.cbegin(), charRow.begin());
 
         // everything gets default attributes

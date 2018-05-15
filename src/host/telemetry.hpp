@@ -41,13 +41,13 @@ public:
     void LogQuickEditCopyRawUsed();
     void LogQuickEditPasteProcUsed();
     void LogQuickEditPasteRawUsed();
+    void LogColorSelectionUsed();
 
     void LogFindDialogNextClicked(const unsigned int iStringLength, const bool fDirectionDown, const bool fMatchCase);
     void LogProcessConnected(const HANDLE hProcess);
     void FindDialogClosed();
     void WriteFinalTraceLog();
 
-    void LogAssert(_In_z_ const char* pszSourceText, _In_z_ const char* pszFileName, const int iLineNumber) const;
     void LogRipMessage(_In_z_ const char* pszMessage, ...) const;
 
     // Names are from the external API call names.  Note that some names can be different
@@ -140,6 +140,7 @@ private:
     float _fpDirectionDownAverage;
     float _fpMatchCaseAverage;
     unsigned int _uiFindNextClickedTotal;
+    unsigned int _uiColorSelectionUsed;
     time_t _tStartedAt;
     WCHAR const * const c_pwszBashExeName = L"bash.exe";
 
@@ -185,32 +186,6 @@ private:
     unsigned int _uiQuickEditPasteProcUsed;
     unsigned int _uiQuickEditPasteRawUsed;
 };
-
-#ifdef ASSERT
-#undef ASSERT
-#endif
-
-#ifdef DBG
-// Log the assert through telemetry, and also through a normal assertion.
-// Is a drop-in substitute for the ASSERT macro from \internal\sdk\inc\ntrtl_x.h
-#define ASSERT( exp ) \
-  ((!(exp)) ? \
-    (Telemetry::Instance().LogAssert(#exp, __FILE__, __LINE__), assert(#exp), FALSE) : \
-    TRUE)
-#else
-#define ASSERT( exp )         ((void) 0)
-#endif
-
-// Create a "fre" assert that acts like a normal ASSERT on chk, but on fre still sends telemetry.
-#ifdef DBG
-#define ASSERT_FRE ASSERT
-#else
-#define ASSERT_FRE( exp ) \
-  ((!(exp)) ? \
-    (Telemetry::Instance().LogAssert(#exp, __FILE__, __LINE__), FALSE) : \
-    TRUE)
-#endif
-
 
 // Log the RIPMSG through telemetry, and also through a normal OutputDebugStringW call.
 // These are drop-in substitutes for the RIPMSG0-4 macros from \windows\Core\ntcon2\conhost\consrv.h

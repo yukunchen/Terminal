@@ -33,6 +33,7 @@ public:
 
 
 private:
+    static void s_TrimLeadingSpaces(std::wstring& str);
     static void s_TrimTrailingCrLf(std::wstring& str);
     static std::deque<std::wstring> s_Tokenize(const std::wstring& str);
     static std::wstring s_GetArgString(const std::wstring& str);
@@ -62,9 +63,12 @@ private:
                                 size_t& lineCount);
 
 #ifdef UNIT_TESTING
-    static bool s_TestAddAlias(std::wstring& exe,
+    static void s_TestAddAlias(std::wstring& exe,
                                std::wstring& alias,
                                std::wstring& target);
+
+    static void s_TestClearAliases();
+
     friend class AliasTests;
 #endif
 };

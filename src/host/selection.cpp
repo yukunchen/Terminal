@@ -9,24 +9,20 @@
 #include "_output.h"
 #include "stream.h"
 #include "scrolling.hpp"
-#include "Ucs2CharRow.hpp"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 Selection::Selection() :
     _fSelectionVisible(false),
     _ulSavedCursorSize(0),
     _fSavedCursorVisible(false),
-    _dwSelectionFlags(0)
+    _dwSelectionFlags(0),
+    _fLineSelection(true),
+    _fUseAlternateSelection(false)
 {
     ZeroMemory((void*)&_srSelectionRect, sizeof(_srSelectionRect));
     ZeroMemory((void*)&_coordSelectionAnchor, sizeof(_coordSelectionAnchor));
     ZeroMemory((void*)&_coordSavedCursorPosition, sizeof(_coordSavedCursorPosition));
-}
-
-Selection::~Selection()
-{
-
 }
 
 Selection& Selection::Instance()
@@ -38,160 +34,124 @@ Selection& Selection::Instance()
 // Routine Description:
 // - Detemines the line-by-line selection rectangles based on global selection state.
 // Arguments:
-// - <input read from globals>
-// - Writes pointer to array of small rectangles representing selection region of each row
-//   CALLER MUST FREE THIS ARRAY.
-// - Writes pointer to count of rectangles in array
+// - selectionRect - The selection rectangle outlining the region to be selected
+// - selectionAnchor - The corner of the selection rectangle that selection started from
+// - lineSelection - True to process in line mode. False to process in block mode.
 // Return Value:
-// - Success if success. Invalid parameter if global state is incorrect. No memory if out of memory.
-[[nodiscard]]
-NTSTATUS Selection::GetSelectionRects(_Outptr_result_buffer_all_(*pcRectangles) SMALL_RECT** const prgsrSelection,
-                                      _Out_ UINT* const pcRectangles) const
+// - Returns a vector where each SMALL_RECT is one Row worth of the area to be selected.
+// - Returns empty vector if no rows are selected.
+// - Throws exceptions for out of memory issues
+std::vector<SMALL_RECT> Selection::s_GetSelectionRects(const SMALL_RECT& selectionRect,
+                                                       const COORD selectionAnchor,
+                                                       const bool lineSelection)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    NTSTATUS status = STATUS_SUCCESS;
-    SMALL_RECT* rgsrSelection = nullptr;
-    *prgsrSelection = nullptr;
-    *pcRectangles = 0;
+    std::vector<SMALL_RECT> selectionAreas;
 
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& screenInfo = gci.GetActiveOutputBuffer();
+
+    // if the anchor (start of select) was in the top right or bottom left of the box,
+    // we need to remove rectangular overlap in the middle.
+    // e.g.
+    // For selections with the anchor in the top left (A) or bottom right (B),
+    // it is valid to maintain the inner rectangle (+) as part of the selection
+    //               A+++++++================
+    // ==============++++++++B
+    // + and = are valid highlights in this scenario.
+    // For selections with the anchor in in the top right (A) or bottom left (B),
+    // we must remove a portion of the first/last line that lies within the rectangle (+)
+    //               +++++++A=================
+    // ==============B+++++++
+    // Only = is valid for highlight in this scenario.
+    // This is only needed for line selection. Box selection doesn't need to account for this.
+
+    bool removeRectPortion = false;
+
+    if (lineSelection)
+    {
+        const auto selectionStart = selectionAnchor;
+
+        // only if top and bottom aren't the same line... we need the whole rectangle if we're on the same line.
+        // e.g.         A++++++++++++++B
+        // All the + are valid select points.
+        if (selectionRect.Top != selectionRect.Bottom)
+        {
+            if ((selectionStart.X == selectionRect.Right && selectionStart.Y == selectionRect.Top) ||
+                (selectionStart.X == selectionRect.Left && selectionStart.Y == selectionRect.Bottom))
+            {
+                removeRectPortion = true;
+            }
+        }
+    }
+
+    // for each row within the selection rectangle
+    for (short i = selectionRect.Top; i <= selectionRect.Bottom; i++)
+    {
+        // create a rectangle representing the highlight on one row
+        SMALL_RECT highlightRow;
+        highlightRow.Top = i;
+        highlightRow.Bottom = i;
+        highlightRow.Left = selectionRect.Left;
+        highlightRow.Right = selectionRect.Right;
+
+        // compensate for line selection by extending one or both ends of the rectangle to the edge
+        if (lineSelection)
+        {
+            // if not the first row, pad the left selection to the buffer edge
+            if (i != selectionRect.Top)
+            {
+                highlightRow.Left = 0;
+            }
+
+            // if not the last row, pad the right selection to the buffer edge
+            if (i != selectionRect.Bottom)
+            {
+                highlightRow.Right = screenInfo.GetTextBuffer().GetCoordBufferSize().X - 1;
+            }
+
+            // if we've determined we're in a scenario where we must remove the inner rectangle from the lines...
+            if (removeRectPortion)
+            {
+                if (i == selectionRect.Top)
+                {
+                    // from the top row, move the left edge of the highlight line to the right edge of the rectangle
+                    highlightRow.Left = selectionRect.Right;
+                }
+                else if (i == selectionRect.Bottom)
+                {
+                    // from the bottom row, move the right edge of the highlight line to the left edge of the rectangle
+                    highlightRow.Right = selectionRect.Left;
+                }
+            }
+        }
+
+        // compensate for double width characters by calling double-width measuring/limiting function
+        const COORD targetPoint{ highlightRow.Left, highlightRow.Top };
+        const SHORT stringLength = highlightRow.Right - highlightRow.Left + 1;
+        highlightRow = s_BisectSelection(stringLength, targetPoint, screenInfo, highlightRow);
+
+        selectionAreas.emplace_back(highlightRow);
+    }
+
+    return selectionAreas;
+}
+
+// Routine Description:
+// - Detemines the line-by-line selection rectangles based on global selection state.
+// Arguments:
+// - <none> - Uses internal state to know what area is selected already.
+// Return Value:
+// - Returns a vector where each SMALL_RECT is one Row worth of the area to be selected.
+// - Returns empty vector if no rows are selected.
+// - Throws exceptions for out of memory issues
+std::vector<SMALL_RECT> Selection::GetSelectionRects() const
+{
     if (!_fSelectionVisible)
     {
-        return status;
+        return std::vector<SMALL_RECT>();
     }
 
-    if (NT_SUCCESS(status))
-    {
-        const SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
-
-        const SMALL_RECT * const pSelectionRect = &_srSelectionRect;
-        const UINT cRectangles = pSelectionRect->Bottom - pSelectionRect->Top + 1;
-
-        if (NT_SUCCESS(status))
-        {
-            rgsrSelection = new SMALL_RECT[cRectangles];
-
-            status = NT_TESTNULL(rgsrSelection);
-
-            if (NT_SUCCESS(status))
-            {
-                bool fLineSelection = IsLineSelection();
-
-                // if the anchor (start of select) was in the top right or bottom left of the box,
-                // we need to remove rectangular overlap in the middle.
-                // e.g.
-                // For selections with the anchor in the top left (A) or bottom right (B),
-                // it is valid to maintain the inner rectangle (+) as part of the selection
-                //               A+++++++================
-                // ==============++++++++B
-                // + and = are valid highlights in this scenario.
-                // For selections with the anchor in in the top right (A) or bottom left (B),
-                // we must remove a portion of the first/last line that lies within the rectangle (+)
-                //               +++++++A=================
-                // ==============B+++++++
-                // Only = is valid for highlight in this scenario.
-                // This is only needed for line selection. Box selection doesn't need to account for this.
-
-                bool fRemoveRectPortion = false;
-
-                if (fLineSelection)
-                {
-                    const COORD coordSelectStart = _coordSelectionAnchor;
-
-                    // only if top and bottom aren't the same line... we need the whole rectangle if we're on the same line.
-                    // e.g.         A++++++++++++++B
-                    // All the + are valid select points.
-                    if (pSelectionRect->Top != pSelectionRect->Bottom)
-                    {
-                        if ((coordSelectStart.X == pSelectionRect->Right && coordSelectStart.Y == pSelectionRect->Top) ||
-                            (coordSelectStart.X == pSelectionRect->Left && coordSelectStart.Y == pSelectionRect->Bottom))
-                        {
-                            fRemoveRectPortion = true;
-                        }
-                    }
-                }
-
-                UINT iFinal = 0; // index for storing into final array
-
-                // for each row within the selection rectangle
-                for (short iRow = pSelectionRect->Top; iRow <= pSelectionRect->Bottom; iRow++)
-                {
-                    // create a rectangle representing the highlight on one row
-                    SMALL_RECT srHighlightRow;
-
-                    srHighlightRow.Top = iRow;
-                    srHighlightRow.Bottom = iRow;
-                    srHighlightRow.Left = pSelectionRect->Left;
-                    srHighlightRow.Right = pSelectionRect->Right;
-
-                    // compensate for line selection by extending one or both ends of the rectangle to the edge
-                    if (fLineSelection)
-                    {
-                        // if not the first row, pad the left selection to the buffer edge
-                        if (iRow != pSelectionRect->Top)
-                        {
-                            srHighlightRow.Left = 0;
-                        }
-
-                        // if not the last row, pad the right selection to the buffer edge
-                        if (iRow != pSelectionRect->Bottom)
-                        {
-                            srHighlightRow.Right = screenInfo.GetTextBuffer().GetCoordBufferSize().X - 1;
-                        }
-
-                        // if we've determined we're in a scenario where we must remove the inner rectangle from the lines...
-                        if (fRemoveRectPortion)
-                        {
-                            if (iRow == pSelectionRect->Top)
-                            {
-                                // from the top row, move the left edge of the highlight line to the right edge of the rectangle
-                                srHighlightRow.Left = pSelectionRect->Right;
-                            }
-                            else if (iRow == pSelectionRect->Bottom)
-                            {
-                                // from the bottom row, move the right edge of the highlight line to the left edge of the rectangle
-                                srHighlightRow.Right = pSelectionRect->Left;
-                            }
-                        }
-                    }
-
-                    // compensate for double width characters by calling double-width measuring/limiting function
-                    COORD coordTargetPoint;
-                    coordTargetPoint.X = srHighlightRow.Left;
-                    coordTargetPoint.Y = srHighlightRow.Top;
-                    SHORT sStringLength = srHighlightRow.Right - srHighlightRow.Left + 1;
-                    s_BisectSelection(sStringLength, coordTargetPoint, screenInfo, &srHighlightRow);
-
-                    rgsrSelection[iFinal].Left = srHighlightRow.Left;
-                    rgsrSelection[iFinal].Right = srHighlightRow.Right;
-                    rgsrSelection[iFinal].Top = srHighlightRow.Top;
-                    rgsrSelection[iFinal].Bottom = srHighlightRow.Bottom;
-
-                    iFinal++;
-                }
-
-                // validate that we wrote the number of rows we expected to write
-                if (iFinal != cRectangles)
-                {
-                    status = STATUS_UNSUCCESSFUL;
-                }
-            }
-        }
-
-        if (NT_SUCCESS(status))
-        {
-            *prgsrSelection = rgsrSelection;
-            *pcRectangles = cRectangles;
-        }
-        else
-        {
-            if (rgsrSelection != nullptr)
-            {
-                delete[] rgsrSelection;
-            }
-        }
-    }
-
-    return status;
+    return s_GetSelectionRects(_srSelectionRect, _coordSelectionAnchor, IsLineSelection());
 }
 
 // Routine Description:
@@ -201,57 +161,49 @@ NTSTATUS Selection::GetSelectionRects(_Outptr_result_buffer_all_(*pcRectangles) 
 // - sStringLength - The length of the string we're attempting to clip.
 // - coordTargetPoint - The row/column position within the text buffer that we're about to try to clip.
 // - screenInfo - Screen information structure containing relevant text and dimension information.
-// - pSmallRect - The region of the text that we want to clip, and then adjusted to the region that should be clipped without splicing double-width characters.
+// - rect - The region of the text that we want to clip, and then adjusted to the region that should be
+// clipped without splicing double-width characters.
 // Return Value:
-//  <none>
-void Selection::s_BisectSelection(const short sStringLength,
-                                  const COORD coordTargetPoint,
-                                  const SCREEN_INFORMATION& screenInfo,
-                                  _Inout_ SMALL_RECT* const pSmallRect)
+// - the clipped region
+SMALL_RECT Selection::s_BisectSelection(const short sStringLength,
+                                        const COORD coordTargetPoint,
+                                        const SCREEN_INFORMATION& screenInfo,
+                                        const SMALL_RECT rect)
 {
-    const ROW& Row = screenInfo.GetTextBuffer().GetRowByOffset(coordTargetPoint.Y);
-
+    SMALL_RECT outRect = rect;
+    const TextBuffer& textBuffer = screenInfo.GetTextBuffer();
     try
     {
-        const ICharRow& iCharRow = Row.GetCharRow();
-        // we only support ucs2 encoded char rows
-        FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                        "only support UCS2 char rows currently");
-
-        const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
-        // Check start position of strings
-        if (charRow.GetAttribute(coordTargetPoint.X).IsTrailing())
+        const ROW& row = textBuffer.GetRowByOffset(coordTargetPoint.Y);
+        if (row.GetCharRow().DbcsAttrAt(coordTargetPoint.X).IsTrailing())
         {
             if (coordTargetPoint.X == 0)
             {
-                pSmallRect->Left++;
+                outRect.Left++;
             }
             else
             {
-                pSmallRect->Left--;
+                outRect.Left--;
             }
         }
 
         // Check end position of strings
         if (coordTargetPoint.X + sStringLength < screenInfo.GetScreenBufferSize().X)
         {
-            if (charRow.GetAttribute(coordTargetPoint.X + sStringLength).IsTrailing())
+            if (row.GetCharRow().DbcsAttrAt(coordTargetPoint.X + sStringLength).IsTrailing())
             {
-                pSmallRect->Right++;
+                outRect.Right++;
             }
         }
         else
         {
-            const ROW& RowNext = screenInfo.GetTextBuffer().GetNextRowNoWrap(Row);
-            const ICharRow& iCharRowNext = RowNext.GetCharRow();
-            // we only support ucs2 encoded char rows
-            FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                            "only support UCS2 char rows currently");
-
-            const Ucs2CharRow& charRowNext = static_cast<const Ucs2CharRow&>(iCharRowNext);
-            if (charRowNext.GetAttribute(0).IsTrailing())
+            if (row.GetId() + 1 < screenInfo.GetScreenBufferSize().Y)
             {
-                pSmallRect->Right--;
+                const ROW& rowNext = textBuffer.GetNextRowNoWrap(row);
+                if (rowNext.GetCharRow().DbcsAttrAt(0).IsTrailing())
+                {
+                    outRect.Right--;
+                }
             }
         }
     }
@@ -259,8 +211,8 @@ void Selection::s_BisectSelection(const short sStringLength,
     {
         LOG_HR(wil::ResultFromCaughtException());
     }
+    return outRect;
 }
-
 
 // Routine Description:
 // - Shows the selection area in the window if one is available and not already showing.
@@ -394,7 +346,7 @@ void Selection::ExtendSelection(_In_ COORD coordBufferPos)
     if (!IsAreaSelected())
     {
         // we should only be extending a selection that has no area yet if we're coming from mark mode
-        ASSERT(!IsMouseInitiatedSelection());
+        FAIL_FAST_IF(IsMouseInitiatedSelection());
 
         // scroll if necessary to make cursor visible.
         screenInfo.MakeCursorVisible(coordBufferPos);
@@ -558,32 +510,59 @@ void Selection::ClearSelection(const bool fStartingNewSelection)
 // Arguments:
 // - psrRect - Rectangular area to fill with color
 // - ulAttr - The color attributes to apply
-// Return Value:
-// - <none>
-void Selection::ColorSelection(_In_ SMALL_RECT* const psrRect, const ULONG ulAttr)
+void Selection::ColorSelection(const SMALL_RECT& srRect, const ULONG ulAttr)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    // TODO: psrRect should likely one day be replaced with an array of rectangles (in case we have a line selection we want colored)
-    ASSERT(ulAttr <= 0xff);
+    FAIL_FAST_IF_FALSE(ulAttr <= 0xff);
 
     // Read selection rectangle, assumed already clipped to buffer.
     SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
 
     COORD coordTargetSize;
-    coordTargetSize.X = CalcWindowSizeX(&_srSelectionRect);
-    coordTargetSize.Y = CalcWindowSizeY(&_srSelectionRect);
+    coordTargetSize.X = CalcWindowSizeX(&srRect);
+    coordTargetSize.Y = CalcWindowSizeY(&srRect);
 
     COORD coordTarget;
-    coordTarget.X = psrRect->Left;
-    coordTarget.Y = psrRect->Top;
+    coordTarget.X = srRect.Left;
+    coordTarget.Y = srRect.Top;
 
     // Now color the selection a line at a time.
-    for (; (coordTarget.Y < psrRect->Top + coordTargetSize.Y); ++coordTarget.Y)
+    for (; (coordTarget.Y < srRect.Top + coordTargetSize.Y); ++coordTarget.Y)
     {
         DWORD cchWrite = coordTargetSize.X;
 
         LOG_IF_FAILED(FillOutput(screenInfo, (USHORT)ulAttr, coordTarget, CONSOLE_ATTRIBUTE, &cchWrite));
     }
+}
+
+// Routine Description:
+// - Given two points in the buffer space, color the selection between the two with the given attribute.
+// - This will create an internal selection rectangle covering the two points, assume a line selection,
+//   and use the first point as the anchor for the selection (as if the mouse click started at that point)
+// Arguments:
+// - coordSelectionStart - Anchor point (start of selection) for the region to be colored
+// - coordSelectionEnd - Other point referencing the rectangle inscribing the selection area
+// - ulAttr - Color to apply to region.
+void Selection::ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const ULONG ulAttr)
+{
+    // Make a rectangle for the region as if it were selected by a mouse.
+    // We will use the first one as the "anchor" to represent where the mouse went down.
+    SMALL_RECT srSelection;
+    srSelection.Top = std::min(coordSelectionStart.Y, coordSelectionEnd.Y);
+    srSelection.Bottom = std::max(coordSelectionStart.Y, coordSelectionEnd.Y);
+    srSelection.Left = std::min(coordSelectionStart.X, coordSelectionEnd.X);
+    srSelection.Right = std::max(coordSelectionStart.X, coordSelectionEnd.X);
+
+    // Extract row-by-row selection rectangles for the selection area.
+    try
+    {
+        const auto rectangles = s_GetSelectionRects(srSelection, coordSelectionStart, true);
+        for (const auto& rect : rectangles)
+        {
+            ColorSelection(rect, ulAttr);
+        }
+    }
+    CATCH_LOG();
 }
 
 // Routine Description:
@@ -731,7 +710,7 @@ void Selection::SelectAll()
             // Check if both anchor and opposite corner are exactly the bounds of the input line
             const bool fAllInputSelected =
                 ((Utils::s_CompareCoords(coordInputStart, coordOldAnchor) == 0 && Utils::s_CompareCoords(coordInputEnd, coordOldAnchorOpposite) == 0) ||
-                 (Utils::s_CompareCoords(coordInputStart, coordOldAnchorOpposite) == 0 && Utils::s_CompareCoords(coordInputEnd, coordOldAnchor) == 0));
+                (Utils::s_CompareCoords(coordInputStart, coordOldAnchorOpposite) == 0 && Utils::s_CompareCoords(coordInputEnd, coordOldAnchor) == 0));
 
             if (fIsOldSelWithinInput && !fAllInputSelected)
             {

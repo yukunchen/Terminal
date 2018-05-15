@@ -43,7 +43,7 @@ PCOMMAND_HISTORY FindCommandHistory(const HANDLE hProcess)
         ListNext = ListNext->Flink;
         if (History->ProcessHandle == hProcess)
         {
-            ASSERT(History->Flags & CLE_ALLOCATED);
+            FAIL_FAST_IF_FALSE(IsFlagSet(History->Flags, CLE_ALLOCATED));
             return History;
         }
     }
@@ -102,7 +102,7 @@ void FreeCommandHistoryBuffers()
 void ResizeCommandHistoryBuffers(const UINT cCommands)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    ASSERT(cCommands <= SHORT_MAX);
+    FAIL_FAST_IF_FALSE(cCommands <= SHORT_MAX);
     gci.SetHistoryBufferSize(cCommands);
 
     PLIST_ENTRY const ListHead = &gci.CommandHistoryList;
@@ -146,7 +146,7 @@ NTSTATUS AddCommand(_In_ PCOMMAND_HISTORY pCmdHistory,
         return STATUS_NO_MEMORY;
     }
 
-    ASSERT(pCmdHistory->Flags & CLE_ALLOCATED);
+    FAIL_FAST_IF_FALSE(IsFlagSet(pCmdHistory->Flags, CLE_ALLOCATED));
 
     if (cbCommand == 0)
     {
@@ -203,7 +203,7 @@ NTSTATUS AddCommand(_In_ PCOMMAND_HISTORY pCmdHistory,
         }
         else
         {
-            *ppCmd = (PCOMMAND) new BYTE[cbCommand + sizeof(COMMAND)];
+            *ppCmd = (PCOMMAND) new(std::nothrow) BYTE[cbCommand + sizeof(COMMAND)];
             if (*ppCmd == nullptr)
             {
                 COMMAND_IND_PREV(pCmdHistory->LastAdded, pCmdHistory);
@@ -225,7 +225,7 @@ NTSTATUS RetrieveNthCommand(_In_ PCOMMAND_HISTORY CommandHistory,
                             _In_ ULONG BufferSize,
                             _Out_ PULONG CommandSize)
 {
-    ASSERT(Index < CommandHistory->NumberOfCommands);
+    FAIL_FAST_IF_FALSE(Index < CommandHistory->NumberOfCommands);
     CommandHistory->LastDisplayed = Index;
     PCOMMAND const CommandRecord = CommandHistory->Commands[Index];
     if (CommandRecord->CommandLength > (USHORT) BufferSize)
@@ -253,7 +253,7 @@ NTSTATUS RetrieveCommand(_In_ PCOMMAND_HISTORY CommandHistory,
         return STATUS_UNSUCCESSFUL;
     }
 
-    ASSERT(CommandHistory->Flags & CLE_ALLOCATED);
+    FAIL_FAST_IF_FALSE(IsFlagSet(CommandHistory->Flags, CLE_ALLOCATED));
 
     if (CommandHistory->NumberOfCommands == 0)
     {
@@ -360,7 +360,7 @@ PCOMMAND_HISTORY ReallocCommandHistory(_In_opt_ PCOMMAND_HISTORY CurrentCommandH
         return CurrentCommandHistory;
     }
 
-    PCOMMAND_HISTORY const History = (PCOMMAND_HISTORY) new BYTE[sizeof(COMMAND_HISTORY) + NumCommands * sizeof(PCOMMAND)];
+    PCOMMAND_HISTORY const History = (PCOMMAND_HISTORY) new(std::nothrow) BYTE[sizeof(COMMAND_HISTORY) + NumCommands * sizeof(PCOMMAND)];
     if (History == nullptr)
     {
         return CurrentCommandHistory;
@@ -398,7 +398,7 @@ PCOMMAND_HISTORY FindExeCommandHistory(_In_reads_(AppNameLength) PVOID AppName, 
     PWCHAR AppNamePtr = nullptr;
     if (!Unicode)
     {
-        AppNamePtr = new WCHAR[AppNameLength];
+        AppNamePtr = new(std::nothrow) WCHAR[AppNameLength];
         if (AppNamePtr == nullptr)
         {
             return nullptr;
@@ -489,14 +489,15 @@ PCOMMAND_HISTORY AllocateCommandHistory(_In_reads_bytes_(cbAppName) PCWSTR pwszA
             return nullptr;
         }
 
-        History = (PCOMMAND_HISTORY) new BYTE[TotalSize];
+        History = (PCOMMAND_HISTORY) new(std::nothrow) BYTE[TotalSize];
         if (History == nullptr)
         {
             return nullptr;
         }
+        ZeroMemory(History, TotalSize * sizeof(BYTE));
 
         // Length is in bytes. Add 1 so dividing by WCHAR (2) is always rounding up.
-        History->AppName = new WCHAR[(cbAppName + 1) / sizeof(WCHAR)];
+        History->AppName = new(std::nothrow) WCHAR[(cbAppName + 1) / sizeof(WCHAR)];
         if (History->AppName == nullptr)
         {
             delete[] History;
@@ -521,7 +522,7 @@ PCOMMAND_HISTORY AllocateCommandHistory(_In_reads_bytes_(cbAppName) PCWSTR pwszA
     if (BestCandidate)
     {
         History = BestCandidate;
-        ASSERT(CLE_NO_POPUPS(History));
+        FAIL_FAST_IF_FALSE(CLE_NO_POPUPS(History));
         if (!SameApp)
         {
             SHORT i;
@@ -540,7 +541,7 @@ PCOMMAND_HISTORY AllocateCommandHistory(_In_reads_bytes_(cbAppName) PCWSTR pwszA
             History->LastDisplayed = -1;
             History->FirstCommand = 0;
             // Length is in bytes. Add 1 so dividing by WCHAR (2) is always rounding up.
-            History->AppName = new WCHAR[(cbAppName + 1) / sizeof(WCHAR)];
+            History->AppName = new(std::nothrow) WCHAR[(cbAppName + 1) / sizeof(WCHAR)];
             if (History->AppName == nullptr)
             {
                 History->Flags &= ~CLE_ALLOCATED;

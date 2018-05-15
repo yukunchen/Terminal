@@ -47,17 +47,26 @@ void AdaptDispatch::Print(const wchar_t wchPrintable)
     _pDefaults->Print(_TermOutput.TranslateKey(wchPrintable));
 }
 
-void AdaptDispatch::PrintString(_In_reads_(cch) wchar_t* const rgwch, const size_t cch)
+void AdaptDispatch::PrintString(const wchar_t* const rgwch, const size_t cch)
 {
-    if (_TermOutput.NeedToTranslate())
+    try
     {
-        for (size_t i = 0; i < cch; i++)
+        if (_TermOutput.NeedToTranslate())
         {
-            rgwch[i] = _TermOutput.TranslateKey(rgwch[i]);
+            std::unique_ptr<wchar_t[]> tempArray = std::make_unique<wchar_t[]>(cch);
+            for (size_t i = 0; i < cch; i++)
+            {
+                tempArray[i] = _TermOutput.TranslateKey(rgwch[i]);
+            }
+            _pDefaults->PrintString(tempArray.get(), cch);
         }
-    }
+        else
+        {
+            _pDefaults->PrintString(rgwch, cch);
+        }
 
-    _pDefaults->PrintString(rgwch, cch);
+    }
+    CATCH_LOG();
 }
 
 // Routine Description:
@@ -575,8 +584,8 @@ bool AdaptDispatch::_EraseAreaHelper(const COORD coordStartPosition, const COORD
     WCHAR const wchSpace = static_cast<WCHAR>(0x20); // space character. use 0x20 instead of literal space because we can't assume the compiler will always turn ' ' into 0x20.
 
     DWORD dwCharsWritten = 0;
-    assert(coordStartPosition.X < coordLastPosition.X);
-    assert(coordStartPosition.Y < coordLastPosition.Y);
+    FAIL_FAST_IF_FALSE(coordStartPosition.X < coordLastPosition.X);
+    FAIL_FAST_IF_FALSE(coordStartPosition.Y < coordLastPosition.Y);
     bool fSuccess = false;
     for (short y = coordStartPosition.Y; y < coordLastPosition.Y; y++)
     {
@@ -1548,7 +1557,7 @@ bool AdaptDispatch::_EraseScrollback()
         const SMALL_RECT Screen = csbiex.srWindow;
         const short sWidth = Screen.Right - Screen.Left;
         const short sHeight = Screen.Bottom - Screen.Top;
-        assert(sWidth > 0 && sHeight > 0);
+        FAIL_FAST_IF_FALSE(sWidth > 0 && sHeight > 0);
         const COORD Cursor = csbiex.dwCursorPosition;
 
         // Rectangle to cut out of the existing buffer

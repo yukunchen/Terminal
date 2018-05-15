@@ -31,7 +31,7 @@ ConsoleWaitBlock::ConsoleWaitBlock(_In_ ConsoleWaitQueue* const pProcessQueue,
                                    _In_ IWaitRoutine* const pWaiter) :
     _pProcessQueue(THROW_HR_IF_NULL(E_INVALIDARG, pProcessQueue)),
     _pObjectQueue(THROW_HR_IF_NULL(E_INVALIDARG, pObjectQueue)),
-    _pWaiter(pWaiter)
+    _pWaiter(THROW_HR_IF_NULL(E_INVALIDARG, pWaiter))
 {
 
     _pProcessQueue->_blocks.push_front(this);
@@ -76,19 +76,17 @@ ConsoleWaitBlock::~ConsoleWaitBlock()
 HRESULT ConsoleWaitBlock::s_CreateWait(_Inout_ CONSOLE_API_MSG* const pWaitReplyMessage,
                                        _In_ IWaitRoutine* const pWaiter)
 {
-    HRESULT hr = S_OK;
-
     ConsoleProcessHandle* const ProcessData = pWaitReplyMessage->GetProcessHandle();
-    assert(ProcessData != nullptr);
+    FAIL_FAST_IF_NULL(ProcessData);
 
     ConsoleWaitQueue* const pProcessQueue = ProcessData->pWaitBlockQueue.get();
 
     ConsoleHandleData* const pHandleData = pWaitReplyMessage->GetObjectHandle();
-    assert(pHandleData != nullptr);
+    FAIL_FAST_IF_NULL(pHandleData);
 
     ConsoleWaitQueue* pObjectQueue = nullptr;
     LOG_IF_FAILED(pHandleData->GetWaitQueue(&pObjectQueue));
-    assert(pObjectQueue != nullptr);
+    FAIL_FAST_IF_NULL(pObjectQueue);
 
     ConsoleWaitBlock* pWaitBlock;
     try
@@ -97,20 +95,15 @@ HRESULT ConsoleWaitBlock::s_CreateWait(_Inout_ CONSOLE_API_MSG* const pWaitReply
                                           pObjectQueue,
                                           pWaitReplyMessage,
                                           pWaiter);
-
-        THROW_IF_NULL_ALLOC(pWaitBlock);
     }
     catch (...)
     {
-        hr = wil::ResultFromCaughtException();
-    }
-
-    if (FAILED(hr))
-    {
+        const HRESULT hr = wil::ResultFromCaughtException();
         pWaitReplyMessage->SetReplyStatus(NTSTATUS_FROM_HRESULT(hr));
+        return hr;
     }
 
-    return hr;
+    return S_OK;
 }
 
 // Routine Description:
@@ -158,7 +151,7 @@ bool ConsoleWaitBlock::Notify(const WaitTerminationReason TerminationReason)
     }
     default:
     {
-        assert(false); // we shouldn't be getting a wait/notify on API numbers we don't support.
+        FAIL_FAST_HR(E_NOTIMPL); // we shouldn't be getting a wait/notify on API numbers we don't support.
         break;
     }
     }
@@ -230,7 +223,7 @@ bool ConsoleWaitBlock::Notify(const WaitTerminationReason TerminationReason)
     else
     {
         // If fThreadDying is TRUE we need to make sure that we removed the pWaitBlock from the list (which we don't do on this branch).
-        assert(IsFlagClear(TerminationReason, WaitTerminationReason::ThreadDying));
+        FAIL_FAST_IF_FALSE(IsFlagClear(TerminationReason, WaitTerminationReason::ThreadDying));
         fRetVal = false;
     }
 

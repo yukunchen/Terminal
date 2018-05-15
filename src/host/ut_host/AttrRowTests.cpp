@@ -9,7 +9,7 @@
 #include "CommonState.hpp"
 
 #include "globals.h"
-#include "textBuffer.hpp"
+#include "../buffer/out/textBuffer.hpp"
 
 #include "input.h"
 
@@ -40,7 +40,7 @@ namespace WEX {
         public:
             static bool AreEqual(const TextAttributeRun& expected, const TextAttributeRun& actual)
             {
-                return expected.GetAttributes().IsEqual(actual.GetAttributes()) &&
+                return expected.GetAttributes() == actual.GetAttributes() &&
                     expected.GetLength() == actual.GetLength();
             }
 
@@ -104,15 +104,12 @@ class AttrRowTests
 
         // Create the chain
         pChain = new ATTR_ROW(_sDefaultLength, _DefaultAttr);
-        pChain->_cList = sChainSegmentsNeeded;
-        pChain->_rgList = wil::make_unique_nothrow<TextAttributeRun[]>(sChainSegmentsNeeded);
-        pChain->_cchRowWidth = _sDefaultLength;
-        VERIFY_IS_NOT_NULL(pChain->_rgList.get());
+        pChain->_list.resize(sChainSegmentsNeeded);
 
         // Attach all chain segments that are even multiples of the row length
         for (short iChain = 0; iChain < _sDefaultChainLength; iChain++)
         {
-            TextAttributeRun* pRun = &pChain->_rgList[iChain];
+            TextAttributeRun* pRun = &pChain->_list[iChain];
 
             pRun->SetAttributesFromLegacy(iChain); // Just use the chain position as the value
             pRun->SetLength(sChainSegLength);
@@ -122,7 +119,7 @@ class AttrRowTests
         {
             // If we had a leftover, then this chain is one longer than we expected (the default length)
             // So use it as the index (because indicies start at 0)
-            TextAttributeRun* pRun = &pChain->_rgList[_sDefaultChainLength];
+            TextAttributeRun* pRun = &pChain->_list[_sDefaultChainLength];
 
             pRun->SetAttributes(_DefaultChainAttr);
             pRun->SetLength(sChainLeftover);
@@ -155,9 +152,9 @@ class AttrRowTests
 
             pUnderTest->Reset(attr);
 
-            VERIFY_ARE_EQUAL(pUnderTest->_cList, 1u);
-            VERIFY_IS_TRUE(pUnderTest->_rgList.get()->GetAttributes().IsEqual(attr));
-            VERIFY_ARE_EQUAL(pUnderTest->_rgList[0].GetLength(), (unsigned int)_sDefaultLength);
+            VERIFY_ARE_EQUAL(pUnderTest->_list.size(), 1u);
+            VERIFY_ARE_EQUAL(pUnderTest->_list[0].GetAttributes(), attr);
+            VERIFY_ARE_EQUAL(pUnderTest->_list[0].GetLength(), (unsigned int)_sDefaultLength);
         }
     }
 
@@ -192,7 +189,7 @@ class AttrRowTests
             {
                 const TextAttribute* pCurAttr = &rgAttrs[i];
 
-                if (!pCurAttr->IsEqual(*pPrevAttr))
+                if (*pCurAttr != *pPrevAttr)
                 {
                     cDeltas++;
                 }
@@ -215,7 +212,7 @@ class AttrRowTests
                 pCurrentRun->SetLength(1);
                 for (size_t i = 1; i < cRowLength; i++)
                 {
-                    if (pCurrentRun->GetAttributes().IsEqual(rgAttrs[i]))
+                    if (pCurrentRun->GetAttributes() == rgAttrs[i])
                     {
                         pCurrentRun->SetLength(pCurrentRun->GetLength() + 1);
                     }
@@ -240,18 +237,17 @@ class AttrRowTests
     }
 
     void LogChain(_In_ PCWSTR pwszPrefix,
-                  _In_reads_(cRun) TextAttributeRun* const rgRun,
-                  const size_t cRun)
+                  std::vector<TextAttributeRun>& chain)
     {
         NoThrowString str(pwszPrefix);
 
-        if (cRun > 0)
+        if (chain.size() > 0)
         {
-            str.Append(LogRunElement(rgRun[0]));
+            str.Append(LogRunElement(chain[0]));
 
-            for (size_t i = 1; i < cRun; i++)
+            for (size_t i = 1; i < chain.size(); i++)
             {
-                str.AppendFormat(L"->%s", (const wchar_t*)(LogRunElement(rgRun[i])));
+                str.AppendFormat(L"->%s", (const wchar_t*)(LogRunElement(chain[i])));
             }
         }
 
@@ -272,16 +268,15 @@ class AttrRowTests
         // Set up our "original row" that we are going to try to insert into.
         // This will represent a 10 column run of R3->B5->G2 that we will use for all tests.
         ATTR_ROW originalRow{ static_cast<UINT>(_sDefaultLength), _DefaultAttr };
-        originalRow._cList = 3;
-        originalRow._rgList = wil::make_unique_failfast<TextAttributeRun[]>(originalRow._cList);
+        originalRow._list.resize(3);
         originalRow._cchRowWidth = 10;
-        originalRow._rgList[0].SetAttributesFromLegacy('R');
-        originalRow._rgList[0].SetLength(3);
-        originalRow._rgList[1].SetAttributesFromLegacy('B');
-        originalRow._rgList[1].SetLength(5);
-        originalRow._rgList[2].SetAttributesFromLegacy('G');
-        originalRow._rgList[2].SetLength(2);
-        LogChain(L"Original: ", originalRow._rgList.get(), originalRow._cList);
+        originalRow._list[0].SetAttributesFromLegacy('R');
+        originalRow._list[0].SetLength(3);
+        originalRow._list[1].SetAttributesFromLegacy('B');
+        originalRow._list[1].SetLength(5);
+        originalRow._list[2].SetAttributesFromLegacy('G');
+        originalRow._list[2].SetLength(2);
+        LogChain(L"Original: ", originalRow._list);
 
         // Set up our "insertion run"
         size_t cInsertRow = 1;
@@ -290,7 +285,8 @@ class AttrRowTests
             cInsertRow++;
         }
 
-        wistd::unique_ptr<TextAttributeRun[]> insertRow = wil::make_unique_failfast<TextAttributeRun[]>(cInsertRow);
+        std::vector<TextAttributeRun> insertRow;
+        insertRow.resize(cInsertRow);
         insertRow[0].SetAttributesFromLegacy(ch1);
         insertRow[0].SetLength(uiChar1Length);
         if (fUseStr2)
@@ -300,7 +296,7 @@ class AttrRowTests
         }
 
 
-        LogChain(L"Insert: ", insertRow.get(), cInsertRow);
+        LogChain(L"Insert: ", insertRow);
         Log::Comment(NoThrowString().Format(L"At Index: %d", uiStartPos));
 
         UINT uiTotalLength = uiChar1Length;
@@ -309,7 +305,7 @@ class AttrRowTests
             uiTotalLength += uiChar2Length;
         }
 
-        assert((uiStartPos + uiTotalLength) >= 1); // assert we won't underflow.
+        VERIFY_IS_TRUE((uiStartPos + uiTotalLength) >= 1); // assert we won't underflow.
         UINT const uiEndPos = uiStartPos + uiTotalLength - 1;
 
         // Calculate our expected final/result run by unpacking original, laying our insertion on it at the index
@@ -318,8 +314,7 @@ class AttrRowTests
         // The InsertAttrRuns method we test against below is hard to understand but very high performance in production.
 
         // - 1. Unpack
-        wistd::unique_ptr<TextAttribute[]> unpackedOriginal = wil::make_unique_failfast<TextAttribute[]>(originalRow._cchRowWidth);
-        VERIFY_IS_TRUE(NT_SUCCESS(originalRow.UnpackAttrs(unpackedOriginal.get(), originalRow._cchRowWidth)));
+        auto unpackedOriginal = originalRow.UnpackAttrs();
 
         // - 2. Overlay insertion
         UINT uiInsertedCount = 0;
@@ -348,20 +343,23 @@ class AttrRowTests
         // - 3. Pack.
         std::unique_ptr<TextAttributeRun[]> packedRun;
         size_t cPackedRun = 0;
-        VERIFY_SUCCEEDED(PackAttrs(unpackedOriginal.get(), originalRow._cchRowWidth, packedRun, &cPackedRun));
+        VERIFY_SUCCEEDED(PackAttrs(unpackedOriginal.data(), originalRow._cchRowWidth, packedRun, &cPackedRun));
 
         // Now send parameters into InsertAttrRuns and get its opinion on the subject.
-        VERIFY_SUCCEEDED(originalRow.InsertAttrRuns(insertRow.get(), (UINT)cInsertRow, uiStartPos, uiEndPos, (UINT)originalRow._cchRowWidth));
+        VERIFY_SUCCEEDED(originalRow.InsertAttrRuns(insertRow, uiStartPos, uiEndPos, (UINT)originalRow._cchRowWidth));
 
         // Compare and ensure that the expected and actual match.
-        VERIFY_ARE_EQUAL(cPackedRun, originalRow._cList, L"Ensure that number of array elements required for RLE are the same.");
+        VERIFY_ARE_EQUAL(cPackedRun, originalRow._list.size(), L"Ensure that number of array elements required for RLE are the same.");
 
-        LogChain(L"Expected: ", packedRun.get(), cPackedRun);
-        LogChain(L"Actual: ", originalRow._rgList.get(), originalRow._cList);
+        std::vector<TextAttributeRun> packedRunExpected;
+        std::copy_n(packedRun.get(), cPackedRun, std::back_inserter(packedRunExpected));
+
+        LogChain(L"Expected: ", packedRunExpected);
+        LogChain(L"Actual: ", originalRow._list);
 
         for (size_t testIndex = 0; testIndex < cPackedRun; testIndex++)
         {
-            VERIFY_ARE_EQUAL(packedRun[testIndex], originalRow._rgList[testIndex]);
+            VERIFY_ARE_EQUAL(packedRun[testIndex], originalRow._list[testIndex]);
         }
     }
 
@@ -457,32 +455,23 @@ class AttrRowTests
 
     TEST_METHOD(TestUnpackAttrs)
     {
-        TextAttribute* rAttrs;
-        size_t cAttrs;
 
         Log::Comment(L"Checking unpack of a single color for the entire length");
-        cAttrs = pSingle->_cchRowWidth;
-        rAttrs = new TextAttribute[cAttrs];
+        auto attrs = pSingle->UnpackAttrs();
 
-        VERIFY_IS_TRUE(NT_SUCCESS(pSingle->UnpackAttrs(rAttrs, cAttrs)));
-
-        for (size_t iAttrIndex = 0; iAttrIndex < cAttrs; iAttrIndex++)
+        for (auto& attr : attrs)
         {
-            VERIFY_IS_TRUE(rAttrs[iAttrIndex].IsEqual(_DefaultAttr));
+            VERIFY_ARE_EQUAL(attr, _DefaultAttr);
         }
 
-        delete[] rAttrs;
-
         Log::Comment(L"Checking unpack of the multiple color chain");
-        cAttrs = pChain->_cchRowWidth;
-        rAttrs = new TextAttribute[cAttrs];
 
-        VERIFY_IS_TRUE(NT_SUCCESS(pChain->UnpackAttrs(rAttrs, cAttrs)));
+        attrs = pChain->UnpackAttrs();
 
         short cChainRun = 0; // how long we've been looking at the current piece of the chain
         short iChainSegIndex = 0; // which piece of the chain we should be on right now
 
-        for (size_t iAttrIndex = 0; iAttrIndex < cAttrs; iAttrIndex++)
+        for (auto& attr : attrs)
         {
             // by default the chain was assembled above to have the chain segment index be the attribute
             TextAttribute MatchingAttr = TextAttribute(iChainSegIndex);
@@ -493,7 +482,7 @@ class AttrRowTests
                 MatchingAttr = _DefaultChainAttr;
             }
 
-            VERIFY_IS_TRUE(rAttrs[iAttrIndex].IsEqual(MatchingAttr));
+            VERIFY_ARE_EQUAL(attr, MatchingAttr);
 
             // Add to the chain run
             cChainRun++;
@@ -508,8 +497,6 @@ class AttrRowTests
                 iChainSegIndex++;
             }
         }
-
-        delete[] rAttrs;
     }
 
     TEST_METHOD(TestSetAttrToEnd)
@@ -519,41 +506,41 @@ class AttrRowTests
 
         Log::Comment(L"FIRST: Set index to > 0 to test making/modifying chains");
         const short iTestIndex = 50;
-        ASSERT(iTestIndex >= 0 && iTestIndex < _sDefaultLength);
+        VERIFY_IS_TRUE(iTestIndex >= 0 && iTestIndex < _sDefaultLength);
 
         Log::Comment(L"SetAttrToEnd for single color applied to whole string.");
         pSingle->SetAttrToEnd(iTestIndex, TestAttr);
 
         // Was 1 (single), should now have 2 segments
-        VERIFY_ARE_EQUAL(pSingle->_cList, 2u);
+        VERIFY_ARE_EQUAL(pSingle->_list.size(), 2u);
 
-        VERIFY_IS_TRUE(pSingle->_rgList[0].GetAttributes().IsEqual(_DefaultAttr));
-        VERIFY_ARE_EQUAL(pSingle->_rgList[0].GetLength(), (unsigned int)(_sDefaultLength - (_sDefaultLength - iTestIndex)));
+        VERIFY_ARE_EQUAL(pSingle->_list[0].GetAttributes(), _DefaultAttr);
+        VERIFY_ARE_EQUAL(pSingle->_list[0].GetLength(), (unsigned int)(_sDefaultLength - (_sDefaultLength - iTestIndex)));
 
-        VERIFY_IS_TRUE(pSingle->_rgList[1].GetAttributes().IsEqual(TestAttr));
-        VERIFY_ARE_EQUAL(pSingle->_rgList[1].GetLength(), (unsigned int)(_sDefaultLength - iTestIndex));
+        VERIFY_ARE_EQUAL(pSingle->_list[1].GetAttributes(), TestAttr);
+        VERIFY_ARE_EQUAL(pSingle->_list[1].GetLength(), (unsigned int)(_sDefaultLength - iTestIndex));
 
         Log::Comment(L"SetAttrToEnd for existing chain of multiple colors.");
         pChain->SetAttrToEnd(iTestIndex, TestAttr);
 
         // From 7 segments down to 5.
-        VERIFY_ARE_EQUAL(pChain->_cList, 5u);
+        VERIFY_ARE_EQUAL(pChain->_list.size(), 5u);
 
         // Verify chain colors and lengths
-        VERIFY_IS_TRUE(TextAttribute(0).IsEqual(pChain->_rgList[0].GetAttributes()));
-        VERIFY_ARE_EQUAL(pChain->_rgList[0].GetLength(), (unsigned int)13);
+        VERIFY_ARE_EQUAL(TextAttribute(0), pChain->_list[0].GetAttributes());
+        VERIFY_ARE_EQUAL(pChain->_list[0].GetLength(), (unsigned int)13);
 
-        VERIFY_IS_TRUE(TextAttribute(1).IsEqual(pChain->_rgList[1].GetAttributes()));
-        VERIFY_ARE_EQUAL(pChain->_rgList[1].GetLength(), (unsigned int)13);
+        VERIFY_ARE_EQUAL(TextAttribute(1), pChain->_list[1].GetAttributes());
+        VERIFY_ARE_EQUAL(pChain->_list[1].GetLength(), (unsigned int)13);
 
-        VERIFY_IS_TRUE(TextAttribute(2).IsEqual(pChain->_rgList[2].GetAttributes()));
-        VERIFY_ARE_EQUAL(pChain->_rgList[2].GetLength(), (unsigned int)13);
+        VERIFY_ARE_EQUAL(TextAttribute(2), pChain->_list[2].GetAttributes());
+        VERIFY_ARE_EQUAL(pChain->_list[2].GetLength(), (unsigned int)13);
 
-        VERIFY_IS_TRUE(TextAttribute(3).IsEqual(pChain->_rgList[3].GetAttributes()));
-        VERIFY_ARE_EQUAL(pChain->_rgList[3].GetLength(), (unsigned int)11);
+        VERIFY_ARE_EQUAL(TextAttribute(3), pChain->_list[3].GetAttributes());
+        VERIFY_ARE_EQUAL(pChain->_list[3].GetLength(), (unsigned int)11);
 
-        VERIFY_IS_TRUE(TestAttr.IsEqual(pChain->_rgList[4].GetAttributes()));
-        VERIFY_ARE_EQUAL(pChain->_rgList[4].GetLength(), (unsigned int)30);
+        VERIFY_ARE_EQUAL(TestAttr, pChain->_list[4].GetAttributes());
+        VERIFY_ARE_EQUAL(pChain->_list[4].GetLength(), (unsigned int)30);
 
         Log::Comment(L"SECOND: Set index to 0 to test replacing anything with a single");
 
@@ -566,13 +553,13 @@ class AttrRowTests
             pUnderTest->SetAttrToEnd(0, TestAttr);
 
             // should be down to 1 attribute set from beginning to end of string
-            VERIFY_ARE_EQUAL(pUnderTest->_cList, 1u);
+            VERIFY_ARE_EQUAL(pUnderTest->_list.size(), 1u);
 
             // singular pair should contain the color
-            VERIFY_IS_TRUE(pUnderTest->_rgList[0].GetAttributes().IsEqual(TestAttr));
+            VERIFY_ARE_EQUAL(pUnderTest->_list[0].GetAttributes(), TestAttr);
 
             // and its length should be the length of the whole string
-            VERIFY_ARE_EQUAL(pUnderTest->_rgList[0].GetLength(), (unsigned int)_sDefaultLength);
+            VERIFY_ARE_EQUAL(pUnderTest->_list[0].GetLength(), (unsigned int)_sDefaultLength);
         }
     }
 
@@ -588,5 +575,33 @@ class AttrRowTests
 
             VERIFY_ARE_EQUAL((short)Result, _sDefaultLength);
         }
+    }
+
+    TEST_METHOD(TestResize)
+    {
+        CommonState state;
+        state.PrepareGlobalFont();
+        state.PrepareGlobalScreenBuffer();
+
+        pSingle->Resize(240);
+        pChain->Resize(240);
+
+        pSingle->Resize(255);
+        pChain->Resize(255);
+
+        pSingle->Resize(255);
+        pChain->Resize(255);
+
+        pSingle->Resize(60);
+        pChain->Resize(60);
+
+        pSingle->Resize(60);
+        pChain->Resize(60);
+
+        VERIFY_THROWS_SPECIFIC(pSingle->Resize(0), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_INVALIDARG; });
+        VERIFY_THROWS_SPECIFIC(pChain->Resize(0), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_INVALIDARG; });
+
+        state.CleanupGlobalScreenBuffer();
+        state.CleanupGlobalFont();
     }
 };

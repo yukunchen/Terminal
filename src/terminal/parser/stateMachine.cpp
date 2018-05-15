@@ -16,8 +16,22 @@ using namespace Microsoft::Console::VirtualTerminal;
 StateMachine::StateMachine(_In_ std::shared_ptr<IStateMachineEngine> pEngine) :
     _pEngine(pEngine),
     _state(VTStates::Ground),
-    _trace(Microsoft::Console::VirtualTerminal::ParserTracing())
+    _trace(Microsoft::Console::VirtualTerminal::ParserTracing()),
+    _cParams(0),
+    _pusActiveParam(nullptr),
+    _cIntermediate(0),
+    _wchIntermediate(UNICODE_NULL),
+    _pwchCurr(nullptr),
+    _iParamAccumulatePos(0),
+    // pwchOscStringBuffer Initialized below
+    _pwchSequenceStart(nullptr),
+    // rgusParams Initialized below
+    _sOscNextChar(0),
+    _sOscParam(0),
+    _currRunLength(0)
 {
+    ZeroMemory(_pwchOscStringBuffer, sizeof(_pwchOscStringBuffer));
+    ZeroMemory(_rgusParams, sizeof(_rgusParams));
     _ActionClear();
 }
 
@@ -1247,7 +1261,6 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
         case VTStates::Ss3Param:
             return _EventSs3Param(wch);
         default:
-            //assert(false);
             return;
         }
     }
@@ -1285,7 +1298,7 @@ bool StateMachine::FlushToTerminal()
 // - cch - Count of characters in array
 // Return Value:
 // - <none>
-void StateMachine::ProcessString(_Inout_updates_(cch) wchar_t * const rgwch, const size_t cch)
+void StateMachine::ProcessString(const wchar_t* const rgwch, const size_t cch)
 {
     _pwchCurr = rgwch;
     _pwchSequenceStart = rgwch;
@@ -1313,7 +1326,7 @@ void StateMachine::ProcessString(_Inout_updates_(cch) wchar_t * const rgwch, con
         {
             if (s_IsActionableFromGround(*_pwchCurr))  // If the current char is the start of an escape sequence, or should be executed in ground state...
             {
-                assert(_pwchSequenceStart + _currRunLength <= rgwch + cch);
+                FAIL_FAST_IF_FALSE(_pwchSequenceStart + _currRunLength <= rgwch + cch);
                 #pragma prefast(push)
                 #pragma prefast(disable:__WARNING_BUFFER_OVERFLOW, "Not sure why prefast is getting confused here. Assert immediately above ensures this is fine.")
                 _pEngine->ActionPrintString(_pwchSequenceStart, _currRunLength); // ... print all the chars leading up to it as part of the run...
@@ -1353,8 +1366,8 @@ void StateMachine::ProcessString(_Inout_updates_(cch) wchar_t * const rgwch, con
             // Reset our state, and put all but the last char in again.
             ResetState();
             // Chars to flush are [pwchSequenceStart, pwchCurr)
-            wchar_t* pwch = _pwchSequenceStart;
-            for (pwch = _pwchSequenceStart; pwch < _pwchCurr-1; pwch++)
+            const wchar_t* pwch = _pwchSequenceStart;
+            for (; pwch < _pwchCurr-1; pwch++)
             {
                 ProcessCharacter(*pwch);
             }

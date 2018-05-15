@@ -34,10 +34,7 @@ namespace Microsoft::Console::VirtualTerminal
         StateMachine(_In_ std::shared_ptr<IStateMachineEngine> pEngine);
 
         void ProcessCharacter(const wchar_t wch);
-        void ProcessString(_Inout_updates_(cch) wchar_t* const rgwch, const size_t cch);
-        // Note: There is intentionally not a ProcessString that operates
-        //      on a wstring. This is because the in buffer needs to be mutable
-        //      and c_str() only gives you const data.
+        void ProcessString(const wchar_t* const rgwch, const size_t cch);
 
         void ResetState();
 
@@ -146,8 +143,8 @@ namespace Microsoft::Console::VirtualTerminal
         // These members track out state in the parsing of a single string.
         // FlushToTerminal uses these, so that an engine can force a string
         // we're parsing to go straight through to the engine's ActionPassThroughString
-        wchar_t* _pwchCurr;
-        wchar_t* _pwchSequenceStart;
+        const wchar_t* _pwchCurr;
+        const wchar_t* _pwchSequenceStart;
         size_t _currRunLength;
 
     };

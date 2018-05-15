@@ -21,6 +21,13 @@ class AliasTests
         return true;
     }
 
+    TEST_METHOD_SETUP(MethodSetup)
+    {
+        // Don't let aliases spill across test functions.
+        Alias::s_TestClearAliases();
+        return true;
+    }
+
     DWORD _ReplacePercentWithCRLF(std::wstring& string)
     {
         DWORD linesExpected = 0;
@@ -113,7 +120,7 @@ class AliasTests
 
         std::wstring original(originalString);
 
-        VERIFY_IS_TRUE(Alias::s_TestAddAlias(exe, alias, target), L"Was alias added successfully to the global table?");
+        Alias::s_TestAddAlias(exe, alias, target);
 
         // Fill classic wchar_t[] buffer for interfacing with the MatchAndCopyAlias function
         const USHORT bufferSize = 160ui16;
@@ -355,21 +362,23 @@ class AliasTests
         auto rgwchTargetBefore = std::make_unique<wchar_t[]>(cchTarget);
         wcscpy_s(rgwchTargetBefore.get(), cchTarget, rgwchTarget.get());
         ULONG cbTargetUsed = 0;
-        auto const cbTargetUsedBefore = cbTargetUsed;
+        auto const cbTargetUsedExpected = cbTarget;
 
         PWSTR pwszExe = L"exe.exe";
         USHORT cbExe = static_cast<USHORT>(wcslen(pwszExe) * sizeof(wchar_t));
 
         DWORD dwLines = 0;
-        auto const dwLinesBefore = dwLines;
+        auto const dwLinesExpected = dwLines + 1;
 
         // Register the correct alias name before we try.
         std::wstring exe(pwszExe);
-        std::wstring source(pwszSource);
+        std::wstring source(L"Source");
         std::wstring target(L"someTarget");
         Alias::s_TestAddAlias(exe, source, target);
 
-        // We shouldn't be able to match any alias with leading spaces.
+        std::wstring targetExpected = target + L"\r\n";
+
+        // We should be able to match through the leading spaces. They should be stripped.
         Alias::s_MatchAndCopyAliasLegacy(pwszSource,
                                          cbSource,
                                          rgwchTarget.get(),
@@ -379,9 +388,9 @@ class AliasTests
                                          cbExe,
                                          &dwLines);
 
-        VERIFY_ARE_EQUAL(cbTargetUsedBefore, cbTargetUsed, L"No target bytes should be used.");
-        VERIFY_ARE_EQUAL(String(rgwchTargetBefore.get(), cchTarget), String(rgwchTarget.get(), cchTarget), L"Target string should be unmodified.");
-        VERIFY_ARE_EQUAL(dwLinesBefore, dwLines, L"Line count should pass through.");
+        VERIFY_ARE_EQUAL(cbTargetUsedExpected, cbTargetUsed, L"No target bytes should be used.");
+        VERIFY_ARE_EQUAL(String(targetExpected.data(), gsl::narrow<int>(targetExpected.size())), String(rgwchTarget.get(), cchTarget), L"Target string should match expected.");
+        VERIFY_ARE_EQUAL(dwLinesExpected, dwLines, L"Line count be updated to 1.");
     }
 
     TEST_METHOD(TrimTrailing)

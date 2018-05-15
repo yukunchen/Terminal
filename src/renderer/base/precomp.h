@@ -11,7 +11,6 @@ Abstract:
 
 #pragma once
 
-#include <assert.h>
 #include <sal.h>
 
 // This includes support libraries from the CRT, STL, WIL, and GSL

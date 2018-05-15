@@ -6,13 +6,11 @@
 
 #include "precomp.h"
 
-#include "..\..\host\cursor.h"
-#include "..\..\host\textBuffer.hpp"
-#include "..\..\host\conimeinfo.h"
+#include "../../host/cursor.h"
+#include "../../host/conimeinfo.h"
+#include "../../buffer/out/textBuffer.hpp"
 
 #include "renderer.hpp"
-
-#include <algorithm>
 
 #pragma hdrstop
 
@@ -33,8 +31,7 @@ Renderer::Renderer(_In_ std::unique_ptr<IRenderData> pData,
     _pData(std::move(pData)),
     _pThread(nullptr),
     _lastTitle(L""),
-    _titleChanged(false),
-    _tearingDown(false)
+    _titleChanged(false)
 {
     THROW_IF_NULL_ALLOC(_pData);
 
@@ -85,11 +82,6 @@ HRESULT Renderer::s_CreateInstance(_In_ std::unique_ptr<IRenderData> pData,
     try
     {
         pNewRenderer = new Renderer(std::move(pData), rgpEngines, cEngines);
-
-        if (pNewRenderer == nullptr)
-        {
-            hr = E_OUTOFMEMORY;
-        }
     }
     CATCH_RETURN();
 
@@ -145,40 +137,20 @@ HRESULT Renderer::PaintFrame()
 [[nodiscard]]
 HRESULT Renderer::_PaintFrameForEngine(_In_ IRenderEngine* const pEngine)
 {
-    THROW_HR_IF_NULL(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), pEngine);
+    FAIL_FAST_IF_NULL(pEngine); // This is a programming error. Fail fast.
 
     // Last chance check if anything scrolled without an explicit invalidate notification since the last frame.
     _CheckViewportAndScroll();
 
     // Try to start painting a frame
     HRESULT const hr = pEngine->StartPaint();
+    RETURN_IF_FAILED(hr);
 
-    // MSFT 16503902:
-    // If we're tearing down, we don't really care that this failed. It's likely
-    //   that the rendering target is already gone. Log the error, and just return.
-    // eg, in wsl, you launch ipconfig. The Pty render's half the output of
-    //      ipconfig before ipconfig exits. In that case, PrepareForTeardown is
-    //      used to render the second half of the text to the master (wsl.exe)
-    //      before we exit.
-    // This fixes the case where we close wsl.exe while cmd.exe is still
-    //      running inside it. In that case, we still PrepareForTeardown, but
-    //      the master end of the pty has already been closed, so we don't
-    //      really care if rendering throws here.
-    // If we have a combination of both - (ubuntu run ipconfig.exe?) ipconfig
-    //      exits, then wsl exits, then we try and paint - but there's no target
-    //      for the paint - still doesn't matter that the last paint failed, we
-    //      can just log it and continue exiting.
-    if (!_tearingDown)
+    // Return early if there's nothing to paint.
+    if (S_FALSE == hr)
     {
-        THROW_IF_FAILED(hr); // Return errors
+        return S_OK;
     }
-    else
-    {
-        LOG_IF_FAILED(hr);
-        return hr;
-    }
-
-    RETURN_HR_IF(S_OK, S_FALSE == hr); // Return early if there's nothing to paint.
 
     auto endPaint = wil::ScopeExit([&]()
     {
@@ -325,7 +297,10 @@ void Renderer::TriggerRedrawAll()
 // - <none>
 void Renderer::TriggerTeardown()
 {
-    _tearingDown = true;
+    // We need to shut down the paint thread on teardown.
+    _pThread->WaitForPaintCompletionAndDisable(INFINITE);
+
+    // Then walk through and do one final paint on the caller's thread.
     for (IRenderEngine* const pEngine : _rgpEngines)
     {
         bool fEngineRequestsRepaint = false;
@@ -347,20 +322,18 @@ void Renderer::TriggerTeardown()
 // - <none>
 void Renderer::TriggerSelection()
 {
-    // Get selection rectangles
-    SMALL_RECT* rgsrSelection;
-    UINT cRectsSelected;
-
-    if (NT_SUCCESS(_GetSelectionRects(&rgsrSelection, &cRectsSelected)))
+    try
     {
-        std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
-            LOG_IF_FAILED(pEngine->InvalidateSelection(rgsrSelection, cRectsSelected));
-        });
+        // Get selection rectangles
+        const auto rects = _GetSelectionRects();
 
-        delete[] rgsrSelection;
+        std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
+            LOG_IF_FAILED(pEngine->InvalidateSelection(rects));
+        });
 
         _NotifyPaintFrame();
     }
+    CATCH_LOG();
 }
 
 // Routine Description:
@@ -515,7 +488,7 @@ HRESULT Renderer::GetProposedFont(const int iDpi, const FontInfoDesired& FontInf
     //      renderer. We won't know which is which, so iterate over them.
     //      Only return the result of the successful one if it's not S_FALSE (which is the VT renderer)
     // TODO: 14560740 - The Window might be able to get at this info in a more sane manner
-    assert(_rgpEngines.size() <= 2);
+    FAIL_FAST_IF_FALSE(_rgpEngines.size() <= 2);
     for (IRenderEngine* const pEngine : _rgpEngines)
     {
         const HRESULT hr = LOG_IF_FAILED(pEngine->GetProposedFont(FontInfoDesired, FontInfo, iDpi));
@@ -543,7 +516,7 @@ COORD Renderer::GetFontSize()
     //      renderer. We won't know which is which, so iterate over them.
     //      Only return the result of the successful one if it's not S_FALSE (which is the VT renderer)
     // TODO: 14560740 - The Window might be able to get at this info in a more sane manner
-    assert(_rgpEngines.size() <= 2);
+    FAIL_FAST_IF_FALSE(_rgpEngines.size() <= 2);
 
     for (IRenderEngine* const pEngine : _rgpEngines)
     {
@@ -574,7 +547,7 @@ bool Renderer::IsCharFullWidthByFont(const WCHAR wch)
     //      renderer. We won't know which is which, so iterate over them.
     //      Only return the result of the successful one if it's not S_FALSE (which is the VT renderer)
     // TODO: 14560740 - The Window might be able to get at this info in a more sane manner
-    assert(_rgpEngines.size() <= 2);
+    FAIL_FAST_IF_FALSE(_rgpEngines.size() <= 2);
     for (IRenderEngine* const pEngine : _rgpEngines)
     {
         const HRESULT hr = LOG_IF_FAILED(pEngine->IsCharFullWidthByFont(wch, &fIsFullWidth));
@@ -669,16 +642,10 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
         // If there's anything to draw... draw it.
         if (iRight > iLeft)
         {
-            const ICharRow& iCharRow = Row.GetCharRow();
-            // we only support ucs2 encoded char rows
-            FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                            "only support UCS2 char rows currently");
-
-            const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
-
+            const CharRow& charRow = Row.GetCharRow();
 
             std::wstring rowText;
-            Ucs2CharRow::const_iterator it;
+            CharRow::const_iterator it;
             try
             {
                 it = std::next(charRow.cbegin(), iLeft);
@@ -689,7 +656,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
                 LOG_HR(wil::ResultFromCaughtException());
                 return;
             }
-            const Ucs2CharRow::const_iterator itEnd = charRow.cend();
+            const CharRow::const_iterator itEnd = charRow.cend();
 
             // Get the pointer to the beginning of the text
             const wchar_t* const pwsLine = rowText.c_str() + iLeft;
@@ -702,7 +669,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
             coordTarget.Y = iRow - view.Top();
 
             // Determine if this line wrapped:
-            const bool lineWrapped = iRight == static_cast<size_t>(Row.GetCharRow().MeasureRight()) && Row.GetCharRow().WasWrapForced();
+            const bool lineWrapped = Row.GetCharRow().WasWrapForced() && iRight == static_cast<size_t>(Row.GetCharRow().MeasureRight());
 
             // Now draw it.
             _PaintBufferOutputRasterFontHelper(pEngine, Row, pwsLine, it, itEnd, cchLine, iLeft, coordTarget, lineWrapped);
@@ -744,8 +711,8 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
 void Renderer::_PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEngine,
                                                   const ROW& Row,
                                                   _In_reads_(cchLine) PCWCHAR const pwsLine,
-                                                  const Ucs2CharRow::const_iterator it,
-                                                  const Ucs2CharRow::const_iterator itEnd,
+                                                  const CharRow::const_iterator it,
+                                                  const CharRow::const_iterator itEnd,
                                                   _In_ size_t cchLine,
                                                   _In_ size_t iFirstAttr,
                                                   const COORD coordTarget,
@@ -769,7 +736,7 @@ void Renderer::_PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEng
         if (cbRequired != 0)
         {
             // Allocate buffer for MultiByte
-            PCHAR psConverted = new CHAR[cbRequired];
+            PCHAR psConverted = new(std::nothrow) CHAR[cbRequired];
 
             if (psConverted != nullptr)
             {
@@ -784,7 +751,7 @@ void Renderer::_PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEng
 
                     if (cchRequired != 0)
                     {
-                        pwsConvert = new WCHAR[cchRequired];
+                        pwsConvert = new(std::nothrow) WCHAR[cchRequired];
 
                         if (pwsConvert != nullptr)
                         {
@@ -834,8 +801,8 @@ void Renderer::_PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEng
 void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
                                              const ROW& Row,
                                              _In_reads_(cchLine) PCWCHAR const pwsLine,
-                                             const Ucs2CharRow::const_iterator it,
-                                             const Ucs2CharRow::const_iterator itEnd,
+                                             const CharRow::const_iterator it,
+                                             const CharRow::const_iterator itEnd,
                                              _In_ size_t cchLine,
                                              _In_ size_t iFirstAttr,
                                              const COORD coordTarget,
@@ -853,17 +820,16 @@ void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
     // The line segment we'll write will start at the beginning of the text.
     PCWCHAR pwsSegment = pwsLine;
 
-    Ucs2CharRow::const_iterator itSegment = it;
+    CharRow::const_iterator itSegment = it;
 
     do
     {
         // First retrieve the attribute that applies starting at the target position and the length for which it applies.
-        TextAttributeRun* pRun = nullptr;
         size_t cAttrApplies = 0;
-        Row.GetAttrRow().FindAttrIndex((UINT)(iFirstAttr + cchWritten), &pRun, &cAttrApplies);
+        const auto attr = Row.GetAttrRow().GetAttrByColumn(iFirstAttr + cchWritten, &cAttrApplies);
 
         // Set the brushes in GDI to this color
-        LOG_IF_FAILED(_UpdateDrawingBrushes(pEngine, pRun->GetAttributes(), false));
+        LOG_IF_FAILED(_UpdateDrawingBrushes(pEngine, attr, false));
 
         // The segment we'll write is the shorter of the entire segment we want to draw or the amount of applicable color (Attr applies)
         size_t cchSegment = std::min(cchLine - cchWritten, cAttrApplies);
@@ -881,7 +847,7 @@ void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
         if (_pData->IsGridLineDrawingAllowed())
         {
             // We're only allowed to draw the grid lines under certain circumstances.
-            _PaintBufferOutputGridLineHelper(pEngine, pRun->GetAttributes(), cchSegment, coordOffset);
+            _PaintBufferOutputGridLineHelper(pEngine, attr, cchSegment, coordOffset);
         }
 
         // Update how much we've written.
@@ -910,8 +876,8 @@ void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
 [[nodiscard]]
 HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const pEngine,
                                                      _In_reads_(cchLine) PCWCHAR const pwsLine,
-                                                     const Ucs2CharRow::const_iterator it,
-                                                     const Ucs2CharRow::const_iterator itEnd,
+                                                     const CharRow::const_iterator it,
+                                                     const CharRow::const_iterator itEnd,
                                                      const size_t cchLine,
                                                      const COORD coordTarget,
                                                      const bool lineWrapped)
@@ -928,19 +894,19 @@ HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const p
     wistd::unique_ptr<unsigned char[]> rgSegmentWidth = wil::make_unique_nothrow<unsigned char[]>(cchLine);
     RETURN_IF_NULL_ALLOC(rgSegmentWidth);
 
-    Ucs2CharRow::const_iterator itCurrent = it;
+    CharRow::const_iterator itCurrent = it;
     size_t cchSegment = 0;
     // Walk through the line given character by character and copy necessary items into our local array.
     for (size_t iLine = 0; iLine < cchLine && itCurrent < itEnd; ++iLine, ++itCurrent)
     {
         // skip copy of trailing bytes. we'll copy leading and single bytes into the final write array.
-        if (!itCurrent->second.IsTrailing())
+        if (!itCurrent->DbcsAttr().IsTrailing())
         {
             pwsSegment[cchSegment] = pwsLine[iLine];
             rgSegmentWidth[cchSegment] = 1;
 
             // If this is a leading byte, add 1 more to width as it is double wide
-            if (itCurrent->second.IsLeading())
+            if (itCurrent->DbcsAttr().IsLeading())
             {
                 rgSegmentWidth[cchSegment] = 2;
             }
@@ -1085,11 +1051,11 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
 // Return Value:
 // - <none>
 void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
-                         const std::unique_ptr<ConversionAreaInfo>& AreaInfo,
+                         const ConversionAreaInfo& AreaInfo,
                          const TextBuffer& textBuffer)
 {
     // If this conversion area isn't hidden (because it is off) or hidden for a scroll operation, then draw it.
-    if (!AreaInfo->IsHidden())
+    if (!AreaInfo.IsHidden())
     {
         // First get the screen buffer's viewport.
         Viewport view(_pData->GetViewport());
@@ -1098,11 +1064,14 @@ void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
         // The IME's buffer is typically only one row in size. Some segments are the whole row, some are only a partial row.
         // Then from those, there is a "view" much like there is a view into the main console buffer.
         // Use the "window" and "view" relative to the IME-specific special buffer to figure out the coordinates to draw at within the real console buffer.
-        SMALL_RECT srCaView = AreaInfo->CaInfo.rcViewCaWindow;
-        srCaView.Top += AreaInfo->CaInfo.coordConView.Y;
-        srCaView.Bottom += AreaInfo->CaInfo.coordConView.Y;
-        srCaView.Left += AreaInfo->CaInfo.coordConView.X;
-        srCaView.Right += AreaInfo->CaInfo.coordConView.X;
+
+        const auto placementInfo = AreaInfo.GetAreaBufferInfo();
+
+        SMALL_RECT srCaView = placementInfo.rcViewCaWindow;
+        srCaView.Top += placementInfo.coordConView.Y;
+        srCaView.Bottom += placementInfo.coordConView.Y;
+        srCaView.Left += placementInfo.coordConView.X;
+        srCaView.Right += placementInfo.coordConView.X;
 
         // Set it up in a Viewport helper structure and trim it the IME viewport to be within the full console viewport.
         Viewport viewConv(srCaView);
@@ -1120,20 +1089,14 @@ void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
             for (SHORT iRow = viewDirty.Top(); iRow < viewDirty.BottomInclusive(); iRow++)
             {
                 // Get row of text data
-                const ROW& Row = textBuffer.GetRowByOffset(iRow - AreaInfo->CaInfo.coordConView.Y);
-
-                const ICharRow& iCharRow = Row.GetCharRow();
-                // we only support ucs2 encoded char rows
-                FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                                "only support UCS2 char rows currently");
-
-                const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
+                const ROW& Row = textBuffer.GetRowByOffset(iRow - placementInfo.coordConView.Y);
+                const CharRow& charRow = Row.GetCharRow();
 
                 std::wstring rowText;
-                Ucs2CharRow::const_iterator it;
+                CharRow::const_iterator it;
                 try
                 {
-                    it = std::next(charRow.cbegin(), viewDirty.Left() - AreaInfo->CaInfo.coordConView.X);
+                    it = std::next(charRow.cbegin(), viewDirty.Left() - placementInfo.coordConView.X);
                     rowText = charRow.GetTextRaw();
                 }
                 catch (...)
@@ -1141,10 +1104,10 @@ void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
                     LOG_HR(wil::ResultFromCaughtException());
                     return;
                 }
-                const Ucs2CharRow::const_iterator itEnd = charRow.cend();
+                const CharRow::const_iterator itEnd = charRow.cend();
 
                 // Get the pointer to the beginning of the text
-                const wchar_t* const pwsLine = rowText.c_str() + viewDirty.Left() - AreaInfo->CaInfo.coordConView.X;
+                const wchar_t* const pwsLine = rowText.c_str() + viewDirty.Left() - placementInfo.coordConView.X;
 
                 size_t const cchLine = viewDirty.Width() - 1;
 
@@ -1153,7 +1116,8 @@ void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
                 coordTarget.X = viewDirty.Left();
                 coordTarget.Y = iRow;
 
-                _PaintBufferOutputRasterFontHelper(pEngine, Row, pwsLine, it, itEnd, cchLine, viewDirty.Left(), coordTarget, false);
+                _PaintBufferOutputRasterFontHelper(pEngine, Row, pwsLine, it, itEnd, cchLine, viewDirty.Left() - placementInfo.coordConView.X, coordTarget, false);
+
             }
         }
     }
@@ -1173,17 +1137,14 @@ void Renderer::_PaintImeCompositionString(_In_ IRenderEngine* const pEngine)
 
     for (size_t i = 0; i < pImeData->ConvAreaCompStr.size(); i++)
     {
-        const std::unique_ptr<ConversionAreaInfo>& AreaInfo = pImeData->ConvAreaCompStr[i];
+        const auto& AreaInfo = pImeData->ConvAreaCompStr[i];
 
-        if (AreaInfo.get() != nullptr)
+        try
         {
-            try
-            {
-                const TextBuffer& textBuffer = _pData->GetImeCompositionStringBuffer(i);
-                _PaintIme(pEngine, AreaInfo, textBuffer);
-            }
-            CATCH_LOG();
+            const TextBuffer& textBuffer = _pData->GetImeCompositionStringBuffer(i);
+            _PaintIme(pEngine, AreaInfo, textBuffer);
         }
+        CATCH_LOG();
     }
 }
 
@@ -1195,19 +1156,16 @@ void Renderer::_PaintImeCompositionString(_In_ IRenderEngine* const pEngine)
 // - <none>
 void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 {
-    // Get selection rectangles
-    SMALL_RECT* rgsrSelection;
-    UINT cRectsSelected;
-
-    if (NT_SUCCESS(_GetSelectionRects(&rgsrSelection, &cRectsSelected)))
+    try
     {
-        if (cRectsSelected > 0)
+        // Get selection rectangles
+        const auto rectangles = _GetSelectionRects();
+        if (rectangles.size() > 0)
         {
-            LOG_IF_FAILED(pEngine->PaintSelection(rgsrSelection, cRectsSelected));
+            LOG_IF_FAILED(pEngine->PaintSelection(rectangles));
         }
-
-        delete[] rgsrSelection;
     }
+    CATCH_LOG();
 }
 
 // Routine Description:
@@ -1260,33 +1218,24 @@ HRESULT Renderer::_PerformScrolling(_In_ IRenderEngine* const pEngine)
 
 // Routine Description:
 // - Helper to determine the selected region of the buffer.
-// - NOTE: CALLER MUST FREE THE ARRAY RECEIVED IF THE SIZE WAS NON-ZERO
-// Arguments:
-// - prgsrSelection - Pointer to callee allocated array of rectangles representing the selection area, one per line of the selection.
-// - pcRectangles - Count of how many rectangles are in the above array.
 // Return Value:
-// - Success status if we managed to retrieve rectangles. Check with NT_SUCCESS.
-[[nodiscard]]
-NTSTATUS Renderer::_GetSelectionRects(_Outptr_result_buffer_all_(*pcRectangles) SMALL_RECT** const prgsrSelection,
-                                      _Out_ UINT* const pcRectangles) const
+// - A vector of rectangles representing the regions to select, line by line.
+std::vector<SMALL_RECT> Renderer::_GetSelectionRects() const
 {
-    NTSTATUS status = _pData->GetSelectionRects(prgsrSelection, pcRectangles);
+    auto rects = _pData->GetSelectionRects();
+    // Adjust rectangles to viewport
+    Viewport view(_pData->GetViewport());
 
-    if (NT_SUCCESS(status))
+    for (auto& rect : rects)
     {
-        // Adjust rectangles to viewport
-        Viewport view(_pData->GetViewport());
-        for (UINT iRect = 0; iRect < *pcRectangles; iRect++)
-        {
-            view.ConvertToOrigin(&(*prgsrSelection)[iRect]);
+        view.ConvertToOrigin(rect);
 
-            // hopefully temporary, we should be receiving the right selection sizes without correction.
-            (*prgsrSelection)[iRect].Right++;
-            (*prgsrSelection)[iRect].Bottom++;
-        }
+        // hopefully temporary, we should be receiving the right selection sizes without correction.
+        rect.Right++;
+        rect.Bottom++;
     }
 
-    return status;
+    return rects;
 }
 
 // Method Description:

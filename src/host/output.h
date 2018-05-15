@@ -18,7 +18,7 @@ Revision History:
 
 #include "screenInfo.hpp"
 #include "server.h"
-#include "OutputCell.hpp"
+#include "../buffer/out/OutputCell.hpp"
 
 void ScreenBufferSizeChange(const COORD coordNewSize);
 
@@ -34,12 +34,17 @@ NTSTATUS WriteScreenBuffer(SCREEN_INFORMATION& screenInfo,
 [[nodiscard]]
 NTSTATUS DoCreateScreenBuffer();
 
-[[nodiscard]]
-NTSTATUS ReadOutputString(const SCREEN_INFORMATION& screenInfo,
-                          _Inout_ PVOID pvBuffer,
-                          const COORD coordRead,
-                          const ULONG ulStringType,
-                          _Inout_ PULONG pcRecords);
+std::vector<WORD> ReadOutputAttributes(const SCREEN_INFORMATION& screenInfo,
+                                       const COORD coordRead,
+                                       const ULONG amountToRead);
+
+std::vector<wchar_t> ReadOutputStringW(const SCREEN_INFORMATION& screenInfo,
+                                       const COORD coordRead,
+                                       const ULONG amountToRead);
+
+std::vector<char> ReadOutputStringA(const SCREEN_INFORMATION& screenInfo,
+                                    const COORD coordRead,
+                                    const ULONG amountToRead);
 
 void ScrollRegion(SCREEN_INFORMATION& screenInfo,
                   const SMALL_RECT scrollRect,

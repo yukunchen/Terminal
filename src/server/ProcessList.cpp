@@ -35,7 +35,7 @@ HRESULT ConsoleProcessList::AllocProcessData(const DWORD dwProcessId,
                                              _In_opt_ ConsoleProcessHandle* const pParentProcessData,
                                              _Outptr_opt_ ConsoleProcessHandle** const ppProcessData)
 {
-    assert(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
+    FAIL_FAST_IF_FALSE(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
 
     ConsoleProcessHandle* pProcessData = FindProcessInList(dwProcessId);
     if (nullptr != pProcessData)
@@ -64,8 +64,6 @@ HRESULT ConsoleProcessList::AllocProcessData(const DWORD dwProcessId,
                                                 dwThreadId,
                                                 ulProcessGroupId);
 
-        RETURN_IF_NULL_ALLOC(pProcessData);
-
         // Some applications, when reading the process list through the GetConsoleProcessList API, are expecting
         // the returned list of attached process IDs to be from newest to oldest.
         // As such, we have to put the newest process into the head of the list.
@@ -89,10 +87,10 @@ HRESULT ConsoleProcessList::AllocProcessData(const DWORD dwProcessId,
 // - <none>
 void ConsoleProcessList::FreeProcessData(_In_ ConsoleProcessHandle* const pProcessData)
 {
-    assert(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
+    FAIL_FAST_IF_FALSE(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
 
     // Assert that the item exists in the list. If it doesn't exist, the end/last will be returned.
-    assert(_processes.cend() != std::find(_processes.cbegin(), _processes.cend(), pProcessData));
+    FAIL_FAST_IF_FALSE(_processes.cend() != std::find(_processes.cbegin(), _processes.cend(), pProcessData));
 
     _processes.remove(pProcessData);
 
@@ -265,7 +263,6 @@ HRESULT ConsoleProcessList::GetTerminationRecordsByGroupId(const DWORD dwLimitin
         // From all found matches, convert to C-style array to return
         size_t const cchRetVal = TermRecords.size();
         ConsoleProcessTerminationRecord* pRetVal = new ConsoleProcessTerminationRecord[cchRetVal];
-        RETURN_IF_NULL_ALLOC(pRetVal);
 
         for (size_t i = 0; i < cchRetVal; i++)
         {

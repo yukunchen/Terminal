@@ -50,7 +50,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         virtual HRESULT InvalidateSystem(const RECT* const prcDirtyClient) = 0;
         [[nodiscard]]
-        virtual HRESULT InvalidateSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection, const UINT cRectangles) = 0;
+        virtual HRESULT InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) = 0;
         [[nodiscard]]
         virtual HRESULT InvalidateScroll(const COORD* const pcoordDelta) = 0;
         [[nodiscard]]
@@ -73,8 +73,7 @@ namespace Microsoft::Console::Render
                                              const size_t cchLine,
                                              const COORD coordTarget) = 0;
         [[nodiscard]]
-        virtual HRESULT PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection,
-                                       const UINT cRectangles) = 0;
+        virtual HRESULT PaintSelection(const std::vector<SMALL_RECT>& rectangles) = 0;
 
         [[nodiscard]]
         virtual HRESULT PaintCursor(const COORD coordCursor,

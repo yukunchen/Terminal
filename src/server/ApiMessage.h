@@ -26,6 +26,8 @@ class DeviceComm;
 
 typedef struct _CONSOLE_API_MSG
 {
+    _CONSOLE_API_MSG();
+
     CD_IO_COMPLETE Complete;
     CONSOLE_API_STATE State;
 

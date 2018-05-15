@@ -17,7 +17,8 @@ RenderThread::RenderThread(_In_ IRenderer* const pRenderer) :
     _hThread(INVALID_HANDLE_VALUE),
     _hEvent(INVALID_HANDLE_VALUE),
     _hPaintCompletedEvent(INVALID_HANDLE_VALUE),
-    _fKeepRunning(true)
+    _fKeepRunning(true),
+    _hPaintEnabledEvent(INVALID_HANDLE_VALUE)
 {
 
 }
@@ -55,7 +56,7 @@ RenderThread::~RenderThread()
 HRESULT RenderThread::s_CreateInstance(_In_ IRenderer* const pRendererParent, 
                                        _Outptr_ RenderThread** const ppRenderThread)
 {
-    RenderThread* pNewThread = new RenderThread(pRendererParent);
+    RenderThread* pNewThread = new(std::nothrow) RenderThread(pRendererParent);
 
     HRESULT hr = (pNewThread == nullptr) ? E_OUTOFMEMORY : S_OK;
 

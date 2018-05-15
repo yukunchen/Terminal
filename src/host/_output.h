@@ -19,21 +19,11 @@ Revision History:
 #pragma once
 
 #include "screenInfo.hpp"
-#include "OutputCell.hpp"
+#include "../buffer/out/OutputCell.hpp"
 
-void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
-                               _In_ SHORT cchBuffer,
-                               SCREEN_INFORMATION& screenInfo,
-                               _Inout_updates_(cchBuffer) DbcsAttribute* const pDbcsAttributes,
+void StreamWriteToScreenBuffer(SCREEN_INFORMATION& screenInfo,
+                               const std::wstring& wstr,
                                const bool fWasLineWrapped);
-
-[[nodiscard]]
-NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimensions.Y * sizeof(CHAR_INFO)) PBYTE const prgbSrc,
-                             const COORD coordSrcDimensions,
-                             const SMALL_RECT * const psrSrc,
-                             SCREEN_INFORMATION& screenInfo,
-                             const COORD coordDest,
-                             _In_reads_opt_(coordSrcDimensions.X * coordSrcDimensions.Y) TextAttribute* const pTextAttributes);
 
 void WriteRectToScreenBuffer(SCREEN_INFORMATION& screenInfo,
                              const std::vector<std::vector<OutputCell>>& cells,
@@ -44,18 +34,24 @@ void WriteRegionToScreen(SCREEN_INFORMATION& screenInfo, _In_ PSMALL_RECT psrReg
 void WriteToScreen(SCREEN_INFORMATION& screenInfo, const SMALL_RECT srRegion);
 
 [[nodiscard]]
-NTSTATUS WriteOutputString(SCREEN_INFORMATION& screenInfo,
-                           _In_reads_(*pcRecords) const VOID * pvBuffer,
-                           const COORD coordWrite,
-                           const ULONG ulStringType,
-                           _Inout_ PULONG pcRecords,    // this value is valid even for error cases
-                           _Out_opt_ PULONG pcColumns);
-
-[[nodiscard]]
 NTSTATUS FillOutput(SCREEN_INFORMATION& screenInfo,
                     _In_ WORD wElement,
                     const COORD coordWrite,
                     const ULONG ulElementType,
                     _Inout_ PULONG pcElements); // this value is valid even for error cases
 
-void FillRectangle(const CHAR_INFO * const pciFill, SCREEN_INFORMATION& screenInfo, const SMALL_RECT * const psrTarget);
+void FillRectangle(SCREEN_INFORMATION& screenInfo,
+                   const OutputCell& cell,
+                   const SMALL_RECT rect);
+
+size_t WriteOutputAttributes(SCREEN_INFORMATION& screenInfo,
+                             const std::vector<WORD>& attrs,
+                             const COORD target);
+
+size_t WriteOutputStringW(SCREEN_INFORMATION& screenInfo,
+                          const std::vector<wchar_t>& chars,
+                          const COORD target);
+
+size_t WriteOutputStringA(SCREEN_INFORMATION& screenInfo,
+                          const std::vector<char>& chars,
+                          const COORD target);

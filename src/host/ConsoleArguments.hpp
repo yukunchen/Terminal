@@ -24,7 +24,7 @@ public:
                      const HANDLE hStdIn,
                      const HANDLE hStdOut);
 
-    ConsoleArguments() { }
+    ConsoleArguments();
 
     ConsoleArguments& operator=(const ConsoleArguments& other);
 

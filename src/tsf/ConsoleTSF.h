@@ -35,7 +35,8 @@ public:
                 GetSuggestionWindowPos pfnPosition) :
         _hwndConsole(hwndConsole),
         _pfnPosition(pfnPosition),
-        _cRef(1)
+        _cRef(1),
+        _tid()
     {
     }
 
@@ -183,27 +184,27 @@ private:
     CComPtr<ITfContext>     _spITfInputContext;
 
     // Event sink cookies.
-    DWORD   _dwContextOwnerCookie;
-    DWORD   _dwUIElementSinkCookie;
-    DWORD   _dwTextEditSinkCookie;
-    DWORD   _dwActivationSinkCookie;
+    DWORD   _dwContextOwnerCookie = 0;
+    DWORD   _dwUIElementSinkCookie = 0;
+    DWORD   _dwTextEditSinkCookie = 0;
+    DWORD   _dwActivationSinkCookie = 0;
 
     // Conversion area object for the languages.
-    CConversionArea*        _pConversionArea;
+    CConversionArea*        _pConversionArea = nullptr;
 
     // Console info.
     HWND    _hwndConsole;
     GetSuggestionWindowPos _pfnPosition;
 
     // Miscellaneous flags
-    BOOL _fModifyingDoc;            // Set TRUE, when calls ITfRange::SetText
-    BOOL _fCoInitialized;
-    BOOL _fEditSessionRequested;
-    BOOL _fCleanupSessionRequested;
-    BOOL _fCompositionCleanupSkipped;
+    BOOL _fModifyingDoc = FALSE;            // Set TRUE, when calls ITfRange::SetText
+    BOOL _fCoInitialized = FALSE;
+    BOOL _fEditSessionRequested = FALSE;
+    BOOL _fCleanupSessionRequested = FALSE;
+    BOOL _fCompositionCleanupSkipped = FALSE;
 
-    int  _cCompositions;
-    long _cchCompleted;     // length of completed composition waiting for cleanup
+    int  _cCompositions = 0;
+    long _cchCompleted = 0;     // length of completed composition waiting for cleanup
 };
 
 extern CConsoleTSF* g_pConsoleTSF;

@@ -108,6 +108,9 @@ class ScreenBufferTests
 
     TEST_METHOD(ResizeAltBuffer);
 
+    TEST_METHOD(VtEraseAllPersistCursor);
+    TEST_METHOD(VtEraseAllPersistCursorFillColor);
+
 };
 
 SCREEN_INFORMATION::TabStop** ScreenBufferTests::CreateSampleList()
@@ -147,6 +150,9 @@ void ScreenBufferTests::FreeSampleList(SCREEN_INFORMATION::TabStop** rgList)
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.LockConsole(); // Lock must be taken to manipulate buffer.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
     Log::Comment(L"Testing creating one alternate buffer, then returning to the main buffer.");
     SCREEN_INFORMATION* const psiOriginal = &gci.GetActiveOutputBuffer();
     VERIFY_IS_NULL(psiOriginal->_psiAlternateBuffer);
@@ -176,6 +182,9 @@ void ScreenBufferTests::SingleAlternateBufferCreationTest()
 void ScreenBufferTests::MultipleAlternateBufferCreationTest()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.LockConsole(); // Lock must be taken to manipulate buffer.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
     Log::Comment(L"Testing creating one alternate buffer, then creating another alternate from that first alternate, before returning to the main buffer.");
     SCREEN_INFORMATION* const psiOriginal = &gci.GetActiveOutputBuffer();
     NTSTATUS Status = psiOriginal->UseAlternateScreenBuffer();
@@ -216,6 +225,9 @@ void ScreenBufferTests::MultipleAlternateBufferCreationTest()
 void ScreenBufferTests::MultipleAlternateBuffersFromMainCreationTest()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.LockConsole(); // Lock must be taken to manipulate buffer.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
     Log::Comment(L"Testing creating one alternate buffer, then creating another alternate from the main, before returning to the main buffer.");
     SCREEN_INFORMATION* const psiOriginal = &gci.GetActiveOutputBuffer();
     NTSTATUS Status = psiOriginal->UseAlternateScreenBuffer();
@@ -714,42 +726,44 @@ void ScreenBufferTests::EraseAllTests()
     Log::Comment(L"Case 1: Erase a single line of text in the buffer\n");
 
     bufferWriter->PrintString(L"foo", 3);
-    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 3);
-    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 0);
+    COORD originalRelativePosition = {3, 0};
     VERIFY_ARE_EQUAL(si.GetBufferViewport().Top, 0);
+    VERIFY_ARE_EQUAL(cursor.GetPosition(), originalRelativePosition);
 
     VERIFY_SUCCEEDED(si.VtEraseAll());
 
-    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 0);
-    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 1);
-    auto viewport = si.GetBufferViewport();
-    VERIFY_ARE_EQUAL(viewport.Top, 1);
+    auto viewport = si._viewport;
+    VERIFY_ARE_EQUAL(viewport.Top(), 1);
+    COORD newRelativePos = originalRelativePosition;
+    viewport.ConvertFromOrigin(&newRelativePos);
+    VERIFY_ARE_EQUAL(cursor.GetPosition(), newRelativePos);
     Log::Comment(NoThrowString().Format(
         L"viewport={L:%d,T:%d,R:%d,B:%d}",
-        viewport.Left, viewport.Top, viewport.Right, viewport.Bottom
+        viewport.Left(), viewport.Top(), viewport.RightInclusive(), viewport.BottomInclusive()
     ));
 
     ////////////////////////////////////////////////////////////////////////
     Log::Comment(L"Case 2: Erase multiple lines, below the top of the buffer\n");
 
     bufferWriter->PrintString(L"bar\nbar\nbar", 11);
-    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 3);
-    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 3);
-    viewport = si.GetBufferViewport();
-    VERIFY_ARE_EQUAL(viewport.Top, 1);
+    viewport = si._viewport;
+    originalRelativePosition = cursor.GetPosition();
+    viewport.ConvertToOrigin(&originalRelativePosition);
+    VERIFY_ARE_EQUAL(viewport.Top(), 1);
     Log::Comment(NoThrowString().Format(
         L"viewport={L:%d,T:%d,R:%d,B:%d}",
-        viewport.Left, viewport.Top, viewport.Right, viewport.Bottom
+        viewport.Left(), viewport.Top(), viewport.RightInclusive(), viewport.BottomInclusive()
     ));
 
     VERIFY_SUCCEEDED(si.VtEraseAll());
-    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 0);
-    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 4);
-    viewport = si.GetBufferViewport();
-    VERIFY_ARE_EQUAL(viewport.Top, 4);
+    viewport = si._viewport;
+    VERIFY_ARE_EQUAL(viewport.Top(), 4);
+    newRelativePos = originalRelativePosition;
+    viewport.ConvertFromOrigin(&newRelativePos);
+    VERIFY_ARE_EQUAL(cursor.GetPosition(), newRelativePos);
     Log::Comment(NoThrowString().Format(
         L"viewport={L:%d,T:%d,R:%d,B:%d}",
-        viewport.Left, viewport.Top, viewport.Right, viewport.Bottom
+        viewport.Left(), viewport.Top(), viewport.RightInclusive(), viewport.BottomInclusive()
     ));
 
 
@@ -757,24 +771,29 @@ void ScreenBufferTests::EraseAllTests()
     Log::Comment(L"Case 3: multiple lines at the bottom of the buffer\n");
 
     cursor.SetPosition({0, 275});
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(TRUE, {0, 220}));
     bufferWriter->PrintString(L"bar\nbar\nbar", 11);
+    viewport = si._viewport;
     VERIFY_ARE_EQUAL(cursor.GetPosition().X, 3);
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 277);
-    viewport = si.GetBufferViewport();
+    originalRelativePosition = cursor.GetPosition();
+    viewport.ConvertToOrigin(&originalRelativePosition);
+
     Log::Comment(NoThrowString().Format(
         L"viewport={L:%d,T:%d,R:%d,B:%d}",
-        viewport.Left, viewport.Top, viewport.Right, viewport.Bottom
+        viewport.Left(), viewport.Top(), viewport.RightInclusive(), viewport.BottomInclusive()
     ));
     VERIFY_SUCCEEDED(si.VtEraseAll());
 
-    viewport = si.GetBufferViewport();
-    auto heightFromBottom = si.GetScreenBufferSize().Y - (viewport.Bottom - viewport.Top + 1);
-    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 0);
-    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, heightFromBottom);
-    VERIFY_ARE_EQUAL(viewport.Top, heightFromBottom);
+    viewport = si._viewport;
+    auto heightFromBottom = si.GetScreenBufferSize().Y - (viewport.Height());
+    VERIFY_ARE_EQUAL(viewport.Top(), heightFromBottom);
+    newRelativePos = originalRelativePosition;
+    viewport.ConvertFromOrigin(&newRelativePos);
+    VERIFY_ARE_EQUAL(cursor.GetPosition(), newRelativePos);
     Log::Comment(NoThrowString().Format(
         L"viewport={L:%d,T:%d,R:%d,B:%d}",
-        viewport.Left, viewport.Top, viewport.Right, viewport.Bottom
+        viewport.Left(), viewport.Top(), viewport.RightInclusive(), viewport.BottomInclusive()
     ));
 }
 
@@ -1089,13 +1108,16 @@ void ScreenBufferTests::ResizeTraditionalDoesntDoubleFreeAttrRows()
     COORD newBufferSize = si._coordScreenBufferSize;
     newBufferSize.Y--;
 
-    VERIFY_SUCCESS_NTSTATUS(si.ResizeTraditional(newBufferSize));
+    VERIFY_SUCCEEDED(si.ResizeTraditional(newBufferSize));
 
 }
 
 void ScreenBufferTests::ResizeAltBuffer()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.LockConsole(); // Lock must be taken to manipulate buffer.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
     SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
     StateMachine* const stateMachine = si.GetStateMachine();
 
@@ -1126,4 +1148,84 @@ void ScreenBufferTests::ResizeAltBuffer()
     ));
     psiAlt->SetViewportSize(&newSize);
     VERIFY_IS_TRUE(true);
+}
+
+void ScreenBufferTests::VtEraseAllPersistCursor()
+{
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    const TextBuffer& tbi = si.GetTextBuffer();
+    StateMachine* const stateMachine = si.GetStateMachine();
+    const Cursor& cursor = tbi.GetCursor();
+
+    Log::Comment(NoThrowString().Format(
+        L"Make sure the viewport is at 0,0"
+    ));
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({0, 0})));
+
+    Log::Comment(NoThrowString().Format(
+        L"Move the cursor to 2,2, then execute a Erase All.\n"
+        L"The cursor should not move relative to the viewport."
+    ));
+
+    std::wstring seq = L"\x1b[2;2H";
+    stateMachine->ProcessString(&seq[0], seq.length());
+    VERIFY_ARE_EQUAL( COORD({1, 1}), cursor.GetPosition());
+
+    seq = L"\x1b[2J";
+    stateMachine->ProcessString(&seq[0], seq.length());
+
+    auto newViewport = si._viewport;
+    COORD expectedCursor = {1, 1};
+    newViewport.ConvertFromOrigin(&expectedCursor);
+
+    VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition());
+
+}
+
+void ScreenBufferTests::VtEraseAllPersistCursorFillColor()
+{
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    const TextBuffer& tbi = si.GetTextBuffer();
+    StateMachine* const stateMachine = si.GetStateMachine();
+
+    Log::Comment(NoThrowString().Format(
+        L"Make sure the viewport is at 0,0"
+    ));
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({0, 0})));
+
+    Log::Comment(NoThrowString().Format(
+        L"Change the colors to dark_red on bright_blue, then execute a Erase All.\n"
+        L"The viewport should be full of dark_red on bright_blue"
+    ));
+
+    auto expectedAttr = TextAttribute(XtermToLegacy(1, 12));
+    std::wstring seq = L"\x1b[31;104m";
+    stateMachine->ProcessString(&seq[0], seq.length());
+
+    VERIFY_ARE_EQUAL(expectedAttr, si._Attributes);
+
+    seq = L"\x1b[2J";
+    stateMachine->ProcessString(&seq[0], seq.length());
+
+    VERIFY_ARE_EQUAL(expectedAttr, si._Attributes);
+
+    auto newViewport = si._viewport;
+    Log::Comment(NoThrowString().Format(
+        L"new Viewport: %s",
+        VerifyOutputTraits<SMALL_RECT>::ToString(newViewport.ToInclusive()).GetBuffer()
+    ));
+    auto* pRow = &tbi.GetRowByOffset(newViewport.Top());
+    auto height = newViewport.Height();
+    auto width = newViewport.Width();
+    for (int i = 0; i < height; i++)
+    {
+        for (int j = 0; j < width; j++)
+        {
+            VERIFY_ARE_EQUAL(expectedAttr, pRow->GetAttrRow().GetAttrByColumn(j));
+        }
+
+        pRow = &tbi.GetNextRowNoWrap(*pRow);
+    }
 }

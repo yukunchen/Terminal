@@ -15,22 +15,6 @@
 #pragma hdrstop
 
 // Routine Description:
-// - This routine setup of line character code.
-// Arguments:
-// - screenInfo - Pointer to screen information structure.
-// Return Value:
-// - <none>
-void SetLineChar(SCREEN_INFORMATION& screenInfo)
-{
-    screenInfo.LineChar[UPPER_LEFT_CORNER] = 0x250c;
-    screenInfo.LineChar[UPPER_RIGHT_CORNER] = 0x2510;
-    screenInfo.LineChar[HORIZONTAL_LINE] = 0x2500;
-    screenInfo.LineChar[VERTICAL_LINE] = 0x2502;
-    screenInfo.LineChar[BOTTOM_LEFT_CORNER] = 0x2514;
-    screenInfo.LineChar[BOTTOM_RIGHT_CORNER] = 0x2518;
-}
-
-// Routine Description:
 // - This routine check bisected on Ascii string end.
 // Arguments:
 // - pchBuf - Pointer to Ascii string buffer.
@@ -85,7 +69,7 @@ void CleanupDbcsEdgesForWrite(const size_t stringLen,
     {
         ROW& row = textBuffer.GetRowAtIndex(rowIndex);
         // Check start position of strings
-        if (row.GetCharRow().GetAttribute(coordTarget.X).IsTrailing())
+        if (row.GetCharRow().DbcsAttrAt(coordTarget.X).IsTrailing())
         {
             if (coordTarget.X == 0)
             {
@@ -101,7 +85,7 @@ void CleanupDbcsEdgesForWrite(const size_t stringLen,
         if (coordTarget.X + static_cast<short>(stringLen) < coordScreenBufferSize.X)
         {
             size_t column = coordTarget.X + stringLen;
-            if (row.GetCharRow().GetAttribute(column).IsTrailing())
+            if (row.GetCharRow().DbcsAttrAt(column).IsTrailing())
             {
                 row.ClearColumn(column);
             }
@@ -109,7 +93,7 @@ void CleanupDbcsEdgesForWrite(const size_t stringLen,
         else if (coordTarget.Y + 1 < coordScreenBufferSize.Y)
         {
             ROW& rowNext = textBuffer.GetNextRow(row);
-            if (row.GetCharRow().GetAttribute(0).IsTrailing())
+            if (row.GetCharRow().DbcsAttrAt(0).IsTrailing())
             {
                 rowNext.ClearColumn(0);
             }
@@ -140,8 +124,21 @@ BOOL IsCharFullWidth(_In_ WCHAR wch)
             return ServiceLocator::LocateGlobals().pRender->IsCharFullWidthByFont(wch);
         }
     }
-    ASSERT(FALSE);
     return FALSE;
+}
+
+bool IsGlyphFullWidth(const std::vector<wchar_t>& charData)
+{
+    THROW_HR_IF(E_INVALIDARG, charData.empty());
+    if (charData.size() == 1)
+    {
+        return !!IsCharFullWidth(charData.front());
+    }
+    else
+    {
+        // TODO MSFT:17233905 find a better way to determine surrogate pair codepoint width
+        return true;
+    }
 }
 
 // Routine Description:
@@ -187,7 +184,7 @@ DWORD RemoveDbcsMarkCell(_Out_writes_(cch) PCHAR_INFO pciDst, _In_reads_(cch) co
     iDst += cchDstToClear;
 
     // now that we're done, we should have copied, left alone, or cleared the entire length.
-    ASSERT(iDst == cch);
+    FAIL_FAST_IF_FALSE(iDst == cch);
 
     return iDst;
 }
@@ -201,7 +198,7 @@ DWORD RemoveDbcsMarkCell(_Out_writes_(cch) PCHAR_INFO pciDst, _In_reads_(cch) co
 // true if ch is a lead byte, false otherwise.
 bool IsDBCSLeadByteConsole(const CHAR ch, const CPINFO * const pCPInfo)
 {
-    ASSERT(pCPInfo != nullptr);
+    FAIL_FAST_IF_NULL(pCPInfo);
     // NOTE: This must be unsigned for the comparison. If we compare signed, this will never hit
     // because lead bytes are ironically enough always above 0x80 (signed char negative range).
     unsigned char const uchComparison = (unsigned char)ch;
@@ -224,7 +221,8 @@ BYTE CodePageToCharSet(const UINT uiCodePage)
 {
     CHARSETINFO csi;
 
-    if (!ServiceLocator::LocateInputServices()->TranslateCharsetInfo((DWORD *) IntToPtr(uiCodePage), &csi, TCI_SRCCODEPAGE))
+    const auto inputServices = ServiceLocator::LocateInputServices();
+    if (nullptr == inputServices || !inputServices->TranslateCharsetInfo((DWORD *) IntToPtr(uiCodePage), &csi, TCI_SRCCODEPAGE))
     {
         csi.ciCharset = OEM_CHARSET;
     }
@@ -256,7 +254,7 @@ ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
                             _Out_ std::unique_ptr<IInputEvent>& partialEvent)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    PWCHAR const TmpUni = new WCHAR[cchUnicode];
+    PWCHAR const TmpUni = new(std::nothrow) WCHAR[cchUnicode];
     if (TmpUni == nullptr)
     {
         return 0;

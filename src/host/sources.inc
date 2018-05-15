@@ -71,15 +71,13 @@ SOURCES = \
     ..\inputReadHandleData.cpp \
     ..\misc.cpp      \
     ..\output.cpp    \
-    ..\OutputCell.cpp \
     ..\srvinit.cpp   \
     ..\outputStream.cpp \
     ..\stream.cpp    \
     ..\dbcs.cpp      \
     ..\convarea.cpp  \
-    ..\textBuffer.cpp \
     ..\screenInfo.cpp \
-    ..\newdelete.cpp \
+    ..\screenInfoTextIterator.cpp \
     ..\_output.cpp   \
     ..\_stream.cpp   \
     ..\utils.cpp     \
@@ -96,15 +94,10 @@ SOURCES = \
     ..\renderData.cpp \
     ..\renderFontDefaults.cpp \
     ..\utf8ToWideCharParser.cpp \
+    ..\conareainfo.cpp \
     ..\conimeinfo.cpp \
     ..\conattrs.cpp \
     ..\ConsoleArguments.cpp \
-    ..\AttrRow.cpp \
-    ..\Ucs2CharRow.cpp \
-    ..\Row.cpp \
-    ..\TextAttribute.cpp \
-    ..\TextAttributeRun.cpp \
-
 
 # -------------------------------------
 # Sources, Headers, and Libraries
@@ -119,6 +112,7 @@ INCLUDES = \
     $(INCLUDES); \
     ..; \
     ..\inc; \
+    ..\..\buffer\out; \
     ..\..\propsheet; \
     ..\..\propslib; \
     ..\..\terminal\parser; \
@@ -132,14 +126,8 @@ INCLUDES = \
     $(SHELL_INC_PATH); \
     $(INTERNAL_SDK_INC_PATH); \
 
-# Because we redefine new/delete in our library, we need to use CRTLIBS
-# to arrange the linking order such that our new/delete is used before the one
-# that is automatically introduced by the CRT.
-# The CRT version is a weak link and will be ignored if it's already found to be
-# defined by someone else.
 # Anything defined here will be defined BEFORE the CRT items the build system adds.
 CRTLIBS = \
-    $(WINCORE_OBJ_PATH)\console\open\src\host\lib\$(O)\conhostv2.lib \
     $(CRTLIBS) \
 
 # The LIB linking order is $(CRTLIBS) <Build System added refs to msvcrt.lib and friends> $(TARGETLIBS)
@@ -151,6 +139,10 @@ TARGETLIBS = \
     $(ONECORE_PRIV_SDK_LIB_VPATH)\onecore_internal.lib \
     $(MINCORE_PRIV_SDK_LIB_PATH)\isapisetpresent.lib \
     $(SDK_LIB_PATH)\propsys.lib \
+    $(SDK_LIB_PATH)\d2d1.lib \
+    $(SDK_LIB_PATH)\dwrite.lib \
+    $(SDK_LIB_PATH)\dxgi.lib \
+    $(SDK_LIB_PATH)\d3d11.lib \
     $(MODERNCORE_PRIV_SDK_LIB_VPATH)\api-ms-win-mm-playsound-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-gdi-dc-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-gdi-dc-create-l1.lib \
@@ -172,7 +164,6 @@ TARGETLIBS = \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-window-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-gdi-object-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-gdi-rgn-l1.lib \
-    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-ntuser-console-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-ntuser-cursor-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-ntuser-dc-access-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-ntuser-rawinput-l1.lib \
@@ -180,6 +171,8 @@ TARGETLIBS = \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-ntuser-window-ext-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-shell-shell32-l1.lib \
     $(MODERNCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-uiacore-l1.lib \
+    $(WINCORE_OBJ_PATH)\console\open\src\host\lib\$(O)\conhostv2.lib \
+    $(WINCORE_OBJ_PATH)\console\open\src\buffer\out\lib\$(O)\conbufferout.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\tsf\$(O)\contsf.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\propslib\$(O)\conprops.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\terminal\adapter\lib\$(O)\ConTermAdapter.lib \
@@ -196,6 +189,10 @@ TARGETLIBS = \
 
 DELAYLOAD = \
     PROPSYS.dll; \
+    D2D1.dll; \
+    DWrite.dll; \
+    DXGI.dll; \
+    D3D11.dll; \
     OLEAUT32.dll; \
     api-ms-win-mm-playsound-l1.dll; \
     api-ms-win-shcore-scaling-l1.dll; \
@@ -220,7 +217,6 @@ DELAYLOAD = \
     ext-ms-win-ntuser-window-l1.dll; \
     ext-ms-win-rtcore-gdi-object-l1.dll; \
     ext-ms-win-rtcore-gdi-rgn-l1.dll; \
-    ext-ms-win-rtcore-ntuser-console-l1.dll; \
     ext-ms-win-rtcore-ntuser-cursor-l1.dll; \
     ext-ms-win-rtcore-ntuser-dc-access-l1.dll; \
     ext-ms-win-rtcore-ntuser-rawinput-l1.dll; \

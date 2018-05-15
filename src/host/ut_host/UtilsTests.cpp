@@ -143,7 +143,7 @@ class UtilsTests
         const UINT cTestLoopInstances = 100;
 
         const SHORT sRowWidth = 20;
-        ASSERT(sRowWidth > 0);
+        VERIFY_IS_TRUE(sRowWidth > 0);
 
         // 20x20 box
         SMALL_RECT srectEdges;
@@ -187,7 +187,14 @@ class UtilsTests
 
     SHORT RandomShort()
     {
-        return (SHORT)rand() % SHORT_MAX;
+        SHORT s;
+
+        do
+        {
+            s = (SHORT)rand() % SHORT_MAX;
+        } while (s == 0i16);
+
+        return s;
     }
 
     void FillBothCoordsSameRandom(COORD* pcoordA, COORD* pcoordB)

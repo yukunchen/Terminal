@@ -49,8 +49,9 @@ Settings::Settings() :
     _dwVirtTermLevel(0),
     _fUseWindowSizePixels(false),
     _fAutoReturnOnNewline(true), // the historic Windows behavior defaults this to on.
-    _fRenderGridWorldwide(false) // historically grid lines were only rendered in DBCS codepages, so this is false by default unless otherwise specified.
+    _fRenderGridWorldwide(false), // historically grid lines were only rendered in DBCS codepages, so this is false by default unless otherwise specified.
     // window size pixels initialized below
+    _fInterceptCopyPaste(0)
 {
     _dwScreenBufferSize.X = 80;
     _dwScreenBufferSize.Y = 25;
@@ -556,10 +557,10 @@ void Settings::Validate()
     ClearAllFlags(_wFillAttribute, ~(FG_ATTRS | BG_ATTRS));
     ClearAllFlags(_wPopupFillAttribute, ~(FG_ATTRS | BG_ATTRS));
 
-    ASSERT(_dwWindowSize.X > 0);
-    ASSERT(_dwWindowSize.Y > 0);
-    ASSERT(_dwScreenBufferSize.X > 0);
-    ASSERT(_dwScreenBufferSize.Y > 0);
+    FAIL_FAST_IF_FALSE(_dwWindowSize.X > 0);
+    FAIL_FAST_IF_FALSE(_dwWindowSize.Y > 0);
+    FAIL_FAST_IF_FALSE(_dwScreenBufferSize.X > 0);
+    FAIL_FAST_IF_FALSE(_dwScreenBufferSize.Y > 0);
 }
 
 DWORD Settings::GetVirtTermLevel() const

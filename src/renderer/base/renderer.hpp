@@ -15,16 +15,14 @@ Author(s):
 
 #pragma once
 
-#include "..\inc\IRenderer.hpp"
-#include "..\inc\IRenderEngine.hpp"
-#include "..\inc\IRenderData.hpp"
+#include "../inc/IRenderer.hpp"
+#include "../inc/IRenderEngine.hpp"
+#include "../inc/IRenderData.hpp"
 
 #include "thread.hpp"
-#include <deque>
-#include <memory>
 
-#include "..\..\host\textBuffer.hpp"
-#include "..\..\host\Ucs2CharRow.hpp"
+#include "../../buffer/out/textBuffer.hpp"
+#include "../../buffer/out/CharRow.hpp"
 
 namespace Microsoft::Console::Render
 {
@@ -88,7 +86,6 @@ namespace Microsoft::Console::Render
         bool _titleChanged;
 
         RenderThread* _pThread;
-        bool _tearingDown;
 
         void _NotifyPaintFrame();
 
@@ -104,36 +101,42 @@ namespace Microsoft::Console::Render
         void _PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEngine,
                                                 const ROW& pRow,
                                                 _In_reads_(cchLine) PCWCHAR const pwsLine,
-                                                const Ucs2CharRow::const_iterator it,
-                                                const Ucs2CharRow::const_iterator itEnd,
+                                                const CharRow::const_iterator it,
+                                                const CharRow::const_iterator itEnd,
                                                 _In_ size_t cchLine,
                                                 _In_ size_t iFirst,
                                                 const COORD coordTarget,
                                                 const bool lineWrapped);
+
         void _PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
-                                            const ROW& pRow,
-                                            _In_reads_(cchLine) PCWCHAR const pwsLine,
-                                            const Ucs2CharRow::const_iterator it,
-                                            const Ucs2CharRow::const_iterator itEnd,
-                                            _In_ size_t cchLine,
-                                            _In_ size_t iFirst,
-                                            const COORD coordTarget,
-                                            const bool lineWrapped);
+                                           const ROW& pRow,
+                                           _In_reads_(cchLine) PCWCHAR const pwsLine,
+                                           const CharRow::const_iterator it,
+                                           const CharRow::const_iterator itEnd,
+                                           _In_ size_t cchLine,
+                                           _In_ size_t iFirst,
+                                           const COORD coordTarget,
+                                           const bool lineWrapped);
+
         [[nodiscard]]
         HRESULT _PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const pEngine,
-                                                    _In_reads_(cchLine) PCWCHAR const pwsLine,
-                                                    const Ucs2CharRow::const_iterator it,
-                                                    const Ucs2CharRow::const_iterator itEnd,
-                                                    const size_t cchLine,
-                                                    const COORD coordTarget,
-                                                    const bool lineWrapped);
-        void _PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine, const TextAttribute textAttribute, const size_t cchLine, const COORD coordTarget);
+                                                   _In_reads_(cchLine) PCWCHAR const pwsLine,
+                                                   const CharRow::const_iterator it,
+                                                   const CharRow::const_iterator itEnd,
+                                                   const size_t cchLine,
+                                                   const COORD coordTarget,
+                                                   const bool lineWrapped);
+
+        void _PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine,
+                                              const TextAttribute textAttribute,
+                                              const size_t cchLine,
+                                              const COORD coordTarget);
 
         void _PaintSelection(_In_ IRenderEngine* const pEngine);
         void _PaintCursor(_In_ IRenderEngine* const pEngine);
 
         void _PaintIme(_In_ IRenderEngine* const pEngine,
-                       const std::unique_ptr<ConversionAreaInfo>& AreaInfo,
+                       const ConversionAreaInfo& AreaInfo,
                        const TextBuffer& textBuffer);
         void _PaintImeCompositionString(_In_ IRenderEngine* const pEngine);
 
@@ -147,9 +150,7 @@ namespace Microsoft::Console::Render
 
         SMALL_RECT _srViewportPrevious;
 
-        [[nodiscard]]
-        NTSTATUS _GetSelectionRects(_Outptr_result_buffer_all_(*pcRectangles) SMALL_RECT** const prgsrSelection,
-                                    _Out_ UINT* const pcRectangles) const;
+        std::vector<SMALL_RECT> _GetSelectionRects() const;
 
         SMALL_RECT _RegionFromCoord(const COORD* const pcoord) const;
         COLORREF _ConvertAttrToRGB(const BYTE bAttr);

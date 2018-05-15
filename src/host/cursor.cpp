@@ -20,32 +20,30 @@
 // - Constructor to set default properties for Cursor
 // Arguments:
 // - ulSize - The height of the cursor within this buffer
-Cursor::Cursor(const ULONG ulSize) :
-    _pAccessibilityNotifier(ServiceLocator::LocateAccessibilityNotifier()),
-    _ulSize(ulSize),
+Cursor::Cursor(const ULONG ulSize, const TextBuffer& parentBuffer) :
+    _pAccessibilityNotifier{ THROW_IF_NULL_ALLOC(ServiceLocator::LocateAccessibilityNotifier()) },
+    _parentBuffer{ parentBuffer },
+    _cPosition{ 0 },
     _fHasMoved(false),
     _fIsVisible(true),
     _fIsOn(true),
-    _fBlinkingAllowed(true),
     _fIsDouble(false),
-    _fIsConversionArea(false),
+    _fBlinkingAllowed(true),
     _fDelay(false),
+    _fIsConversionArea(false),
+    _fIsPopupShown(false),
     _fDelayedEolWrap(false),
+    _coordDelayedAt{ 0 },
     _fDeferCursorRedraw(false),
     _fHaveDeferredCursorRedraw(false),
+    _ulSize(ulSize),
     _hCaretBlinkTimer(INVALID_HANDLE_VALUE),
-    _uCaretBlinkTime(INFINITE) // default to no blink
+    _hCaretBlinkTimerQueue(THROW_LAST_ERROR_IF_NULL(CreateTimerQueue())),
+    _uCaretBlinkTime(INFINITE), // default to no blink
+    _cursorType(CursorType::Legacy),
+    _fUseColor(false),
+    _color(s_InvertCursorColor)
 {
-    THROW_IF_NULL_ALLOC(_pAccessibilityNotifier);
-
-    _cPosition = {0};
-    _coordDelayedAt = {0};
-
-    _hCaretBlinkTimerQueue = CreateTimerQueue();
-
-    _fUseColor = false;
-    _color = s_InvertCursorColor;
-    _cursorType = CursorType::Legacy;
 }
 
 Cursor::~Cursor()
@@ -89,9 +87,8 @@ bool Cursor::IsDouble() const noexcept
 bool Cursor::IsDoubleWidth() const
 {
     // Check with the current screen buffer to see if the character under the cursor is double-width.
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    std::vector<OutputCell> cells = gci.GetActiveOutputBuffer().ReadLine(_cPosition.Y, _cPosition.X, 1);
-    return !!IsCharFullWidth(cells[0].GetCharData());
+    const auto cell = _parentBuffer.GetRowByOffset(_cPosition.Y).AsCells(_cPosition.X, 1).at(0);
+    return IsGlyphFullWidth(cell.Chars());
 }
 
 bool Cursor::IsConversionArea() const noexcept
@@ -186,7 +183,7 @@ void Cursor::_RedrawCursor()
     {
         if (_fDeferCursorRedraw)
         {
-            _fHaveDeferredCursorRedraw = TRUE;
+            _fHaveDeferredCursorRedraw = true;
         }
         else
         {

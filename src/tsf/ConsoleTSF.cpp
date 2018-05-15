@@ -23,7 +23,6 @@ HRESULT CConsoleTSF::Initialize()
 
     if (_spITfThreadMgr)
     {
-        Assert(0);
         return S_FALSE;
     }
 
@@ -162,7 +161,7 @@ void CConsoleTSF::Uninitialize()
     {
         CComPtr<ITfDocumentMgr> spDocMgr;
         _spITfThreadMgr->AssociateFocus(_hwndConsole, NULL, &spDocMgr);
-        Assert(!spDocMgr || spDocMgr == _spITfDocumentMgr);
+        FAIL_FAST_IF_FALSE(!spDocMgr || spDocMgr == _spITfDocumentMgr);
     }
 
     // Dismiss the input context and document manager.
@@ -320,7 +319,7 @@ STDMETHODIMP CConsoleTSF::OnStartComposition(ITfCompositionView* pCompView, BOOL
             _cCompositions++;
             if (_cCompositions == 1)
             {
-                ConsoleImeSendMessage2(CI_ONSTARTCOMPOSITION, 0, NULL);
+                LOG_IF_FAILED(ImeStartComposition());
             }
         }
     }
@@ -348,7 +347,7 @@ STDMETHODIMP CConsoleTSF::OnEndComposition(ITfCompositionView* pCompView)
         if (!_cCompositions)
         {
             LOG_IF_FAILED(_OnCompleteComposition());
-            ConsoleImeSendMessage2(CI_ONENDCOMPOSITION, 0, NULL);
+            LOG_IF_FAILED(ImeEndComposition());
         }
     }
     return S_OK;
@@ -388,7 +387,11 @@ STDMETHODIMP CConsoleTSF::OnActivated(DWORD /*dwProfileType*/, LANGID /*langid*/
         return S_OK;
     }
 
-    CreateConversionArea();
+    try
+    {
+        CreateConversionArea();
+    }
+    CATCH_RETURN();
 
     return S_OK;
 }
@@ -467,7 +470,7 @@ HRESULT CConsoleTSF::_OnUpdateComposition()
     }
 
     HRESULT hr = E_OUTOFMEMORY;
-    CEditSessionUpdateCompositionString* pEditSession = new CEditSessionUpdateCompositionString();
+    CEditSessionUpdateCompositionString* pEditSession = new(std::nothrow) CEditSessionUpdateCompositionString();
     if (pEditSession)
     {
         // Can't use TF_ES_SYNC because called from OnEndEdit.
@@ -494,7 +497,7 @@ HRESULT CConsoleTSF::_OnCompleteComposition()
     // Update the composition area.
 
     HRESULT hr = E_OUTOFMEMORY;
-    CEditSessionCompositionComplete* pEditSession = new CEditSessionCompositionComplete();
+    CEditSessionCompositionComplete* pEditSession = new(std::nothrow) CEditSessionCompositionComplete();
     if (pEditSession)
     {
         // The composition could have been finalized because of a caret move, therefore it must be
@@ -510,7 +513,7 @@ HRESULT CConsoleTSF::_OnCompleteComposition()
     if (!_fCleanupSessionRequested)
     {
         _fCleanupSessionRequested = TRUE;
-        CEditSessionCompositionCleanup* pEditSessionCleanup = new CEditSessionCompositionCleanup();
+        CEditSessionCompositionCleanup* pEditSessionCleanup = new(std::nothrow) CEditSessionCompositionCleanup();
         if (pEditSessionCleanup)
         {
             // Can't use TF_ES_SYNC because requesting RW while called within another session.

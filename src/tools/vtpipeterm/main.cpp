@@ -231,7 +231,7 @@ std::string toPrintableString(std::string& inString)
     return retval;
 }
 
-void doResize(const short width, const short height)
+void doResize(const unsigned short width, const unsigned short height)
 {
     lastTerminalWidth = width;
     lastTerminalHeight = height;
@@ -240,11 +240,6 @@ void doResize(const short width, const short height)
     {
         console->Resize(height, width);
     }
-
-    std::stringstream ss;
-    ss << "\x1b[8;" << height << ";" << width << "t";
-    std::string seq = ss.str();
-    PrintInputToDebug(seq);
 }
 
 void handleResize()
@@ -256,8 +251,8 @@ void handleResize()
     {
         SMALL_RECT srViewport = csbiex.srWindow;
 
-        short width = srViewport.Right - srViewport.Left + 1;
-        short height = srViewport.Bottom - srViewport.Top + 1;
+        unsigned short width = srViewport.Right - srViewport.Left + 1;
+        unsigned short height = srViewport.Bottom - srViewport.Top + 1;
 
         doResize(width, height);
     }

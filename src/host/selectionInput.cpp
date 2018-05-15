@@ -7,9 +7,9 @@
 #include "precomp.h"
 
 #include "search.h"
-#include "Ucs2CharRow.hpp"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
+#include "../types/inc/convert.hpp"
 
 #include <algorithm>
 
@@ -24,7 +24,7 @@ Selection::KeySelectionEventResult Selection::HandleKeySelectionEvent(const INPU
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto inputServices = ServiceLocator::LocateInputServices();
-    ASSERT(IsInSelectingState());
+    FAIL_FAST_IF(!IsInSelectingState());
 
     const WORD wVirtualKeyCode = pInputKeyInfo->GetVirtualKey();
     const bool ctrlPressed = IsFlagSet(inputServices->GetKeyState(VK_CONTROL), KEY_PRESSED);
@@ -141,38 +141,30 @@ bool Selection::s_IsValidKeyboardLineSelection(const INPUT_KEY_INFO* const pInpu
 // - coordSelPoint: Defines selection region from coordAnchor to this point. Modified to define the new selection region.
 // Return Value:
 // - <none>
-void Selection::WordByWordSelection(const bool fReverse,
-                                    const SMALL_RECT srectEdges,
-                                    const COORD coordAnchor,
-                                    _Inout_ COORD *pcoordSelPoint) const
+COORD Selection::WordByWordSelection(const bool fReverse,
+                                     const SMALL_RECT srectEdges,
+                                     const COORD coordAnchor,
+                                     const COORD coordSelPoint) const
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
+    COORD outCoord = coordSelPoint;
 
     // first move one character in the requested direction
     if (!fReverse)
     {
-        Utils::s_DoIncrementScreenCoordinate(srectEdges, pcoordSelPoint);
+        Utils::s_DoIncrementScreenCoordinate(srectEdges, &outCoord);
     }
     else
     {
-        Utils::s_DoDecrementScreenCoordinate(srectEdges, pcoordSelPoint);
+        Utils::s_DoDecrementScreenCoordinate(srectEdges, &outCoord);
     }
 
     // get the character at the new position
-    WCHAR wchTest = L'\0';
-    {
-        const TextBuffer& textBuffer = gci.GetActiveOutputBuffer().GetTextBuffer();
-        const ICharRow& iCharRow = textBuffer.GetRowByOffset(pcoordSelPoint->Y).GetCharRow();
-        // we only support ucs2 encoded char rows
-        FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                        "only support UCS2 char rows currently");
-
-        const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
-        wchTest = charRow.GetGlyphAt(pcoordSelPoint->X);
-    }
+    std::vector<wchar_t> charData = screenInfo.ReadLine(outCoord.Y, outCoord.X, 1).at(0).Chars();
 
     // we want to go until the state change from delim to non-delim
-    bool fCurrIsDelim = IsWordDelim(wchTest);
+    bool fCurrIsDelim = IsWordDelim(charData);
     bool fPrevIsDelim;
 
     // find the edit-line boundaries that we can highlight
@@ -199,12 +191,12 @@ void Selection::WordByWordSelection(const bool fReverse,
     if (!fReverse)
     {
         // if the selection point is left of the anchor, then we're unhighlighting when moving right
-        fUnhighlighting = Utils::s_CompareCoords(*pcoordSelPoint, coordAnchor) < 0;
+        fUnhighlighting = Utils::s_CompareCoords(outCoord, coordAnchor) < 0;
     }
     else
     {
         // if the selection point is right of the anchor, then we're unhighlighting when moving left
-        fUnhighlighting = Utils::s_CompareCoords(*pcoordSelPoint, coordAnchor) > 0;
+        fUnhighlighting = Utils::s_CompareCoords(outCoord, coordAnchor) > 0;
     }
 
     do
@@ -215,7 +207,7 @@ void Selection::WordByWordSelection(const bool fReverse,
         // to make us "sticky" within the edit line, stop moving once we've reached a given max position left/right
         // users can repeat the command to move past the line and continue word selecting
         // if we're at the max position left, stop moving
-        if (Utils::s_CompareCoords(*pcoordSelPoint, coordMaxLeft) == 0)
+        if (Utils::s_CompareCoords(outCoord, coordMaxLeft) == 0)
         {
             // set move succeeded to false as we can't move any further
             fMoveSucceeded = false;
@@ -225,7 +217,7 @@ void Selection::WordByWordSelection(const bool fReverse,
         // if we're at the max position right, stop moving.
         // we don't want them to "word select" past the end of the edit line as there's likely nothing there.
         // (thus >= and not == like left)
-        if (Utils::s_CompareCoords(*pcoordSelPoint, coordMaxRight) >= 0)
+        if (Utils::s_CompareCoords(outCoord, coordMaxRight) >= 0)
         {
             // set move succeeded to false as we can't move any further.
             fMoveSucceeded = false;
@@ -234,11 +226,11 @@ void Selection::WordByWordSelection(const bool fReverse,
 
         if (!fReverse)
         {
-            fMoveSucceeded = Utils::s_DoIncrementScreenCoordinate(srectEdges, pcoordSelPoint);
+            fMoveSucceeded = Utils::s_DoIncrementScreenCoordinate(srectEdges, &outCoord);
         }
         else
         {
-            fMoveSucceeded = Utils::s_DoDecrementScreenCoordinate(srectEdges, pcoordSelPoint);
+            fMoveSucceeded = Utils::s_DoDecrementScreenCoordinate(srectEdges, &outCoord);
         }
 
         if (!fMoveSucceeded)
@@ -247,16 +239,8 @@ void Selection::WordByWordSelection(const bool fReverse,
         }
 
         // get the character associated with the new position
-        {
-            ICharRow& iCharRow = gci.GetActiveOutputBuffer().GetTextBuffer().GetRowByOffset(pcoordSelPoint->Y).GetCharRow();
-            // we only support ucs2 encoded char rows
-            FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                            "only support UCS2 char rows currently");
-
-            Ucs2CharRow& charRow = static_cast<Ucs2CharRow&>(iCharRow);
-            wchTest = charRow.GetGlyphAt(pcoordSelPoint->X);
-        }
-        fCurrIsDelim = IsWordDelim(wchTest);
+        charData = screenInfo.ReadLine(outCoord.Y, outCoord.X, 1).at(0).Chars();
+        fCurrIsDelim = IsWordDelim(charData);
 
         // This is a bit confusing.
         // If we're going Left to Right (!fReverse)...
@@ -278,15 +262,16 @@ void Selection::WordByWordSelection(const bool fReverse,
     {
         if (!fReverse)
         {
-            fMoveSucceeded = Utils::s_DoDecrementScreenCoordinate(srectEdges, pcoordSelPoint);
+            fMoveSucceeded = Utils::s_DoDecrementScreenCoordinate(srectEdges, &outCoord);
         }
         else
         {
-            fMoveSucceeded = Utils::s_DoIncrementScreenCoordinate(srectEdges, pcoordSelPoint);
+            fMoveSucceeded = Utils::s_DoIncrementScreenCoordinate(srectEdges, &outCoord);
         }
 
-        ASSERT(fMoveSucceeded); // we should never fail to move forward after having moved backward
+        FAIL_FAST_IF(!fMoveSucceeded); // we should never fail to move forward after having moved backward
     }
+    return outCoord;
 }
 
 // Routine Description:
@@ -350,8 +335,8 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
 
     const SHORT sWindowHeight = gci.GetActiveOutputBuffer().GetScreenWindowSizeY();
 
-    ASSERT(coordSelPoint.X >= srectEdges.Left && coordSelPoint.X <= srectEdges.Right);
-    ASSERT(coordSelPoint.Y >= srectEdges.Top && coordSelPoint.Y <= srectEdges.Bottom);
+    FAIL_FAST_IF_FALSE(coordSelPoint.X >= srectEdges.Left && coordSelPoint.X <= srectEdges.Right);
+    FAIL_FAST_IF_FALSE(coordSelPoint.Y >= srectEdges.Top && coordSelPoint.Y <= srectEdges.Bottom);
 
     // retrieve input line information. If we are selecting from within the input line, we need
     // to bound ourselves within the input data first and not move into the back buffer.
@@ -377,13 +362,8 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
             // if we're about to split a character in half, keep moving right
             try
             {
-                const ICharRow& iCharRow = gci.GetActiveOutputBuffer().GetTextBuffer().GetRowByOffset(coordSelPoint.Y).GetCharRow();
-                // we only support ucs2 encoded char rows
-                FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                                "only support UCS2 char rows currently");
-
-                const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
-                if (charRow.GetAttribute(coordSelPoint.X).IsTrailing())
+                const auto attr = gci.GetActiveOutputBuffer().ReadLine(coordSelPoint.Y, coordSelPoint.X, 1).at(0).DbcsAttr();
+                if (attr.IsTrailing())
                 {
                     Utils::s_DoIncrementScreenCoordinate(srectEdges, &coordSelPoint);
                 }
@@ -559,12 +539,12 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
             // shift + ctrl + left/right extends selection to next/prev word boundary
         case VK_LEFT:
         {
-            WordByWordSelection(true, srectEdges, coordAnchor, &coordSelPoint);
+            coordSelPoint = WordByWordSelection(true, srectEdges, coordAnchor, coordSelPoint);
             break;
         }
         case VK_RIGHT:
         {
-            WordByWordSelection(false, srectEdges, coordAnchor, &coordSelPoint);
+            coordSelPoint = WordByWordSelection(false, srectEdges, coordAnchor, coordSelPoint);
             break;
         }
             // shift + ctrl + up/down does the same thing that shift + up/down does
@@ -605,13 +585,8 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
     // ensure we're not planting the cursor in the middle of a double-wide character.
     try
     {
-        const ICharRow& iCharRow = gci.GetActiveOutputBuffer().GetTextBuffer().GetRowByOffset(coordSelPoint.Y).GetCharRow();
-        // we only support ucs2 encoded char rows
-        FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                        "only support UCS2 char rows currently");
-
-        const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
-        if (charRow.GetAttribute(coordSelPoint.X).IsTrailing())
+        const auto attr = gci.GetActiveOutputBuffer().ReadLine(coordSelPoint.Y, coordSelPoint.X, 1).at(0).DbcsAttr();
+        if (attr.IsTrailing())
         {
             // try to move off by highlighting the lead half too.
             bool fSuccess = Utils::s_DoDecrementScreenCoordinate(srectEdges, &coordSelPoint);
@@ -652,7 +627,6 @@ void Selection::CheckAndSetAlternateSelection()
 bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SMALL_RECT* const psrSelection = &_srSelectionRect;
     const WORD wVirtualKeyCode = pInputKeyInfo->GetVirtualKey();
 
     //  It's a numeric key,  a text mode buffer and the color selection regkey is set,
@@ -662,10 +636,12 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
     bool fShiftPressed = pInputKeyInfo->IsShiftPressed();
     bool fCtrlPressed = false;
 
-    //  Shift implies a find-and-color operation.  We only support finding a string,  not
-    //  a block.  So if the selected area is > 1 line in height,  just ignore the shift
-    //  and color the selection.  Also ignore if there is no current selection.
-    if ((fShiftPressed) && (!IsAreaSelected() || (psrSelection->Top != psrSelection->Bottom)))
+    // Shift implies a find-and-color operation.
+    // We only support finding a string,  not a block.
+    // If it is line selection, we can assemble that across multiple lines to make a search term.
+    // But if it is block selection and the selected area is > 1 line in height, ignore the shift because we can't search.
+    // Also ignore if there is no current selection.
+    if ((fShiftPressed) && (!IsAreaSelected() || (!IsLineSelection() && (_srSelectionRect.Top != _srSelectionRect.Bottom ))))
     {
         fShiftPressed = false;
     }
@@ -680,7 +656,7 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
     SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
 
     //  Clip the selection to within the console buffer
-    screenInfo.ClipToScreenBuffer(psrSelection);
+    screenInfo.ClipToScreenBuffer(&_srSelectionRect);
 
     //  If ALT or CTRL are pressed,  then color the selected area.
     //  ALT+n => fg,  CTRL+n => bg
@@ -703,45 +679,44 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
         // find-and-color request. Otherwise just color the selection.
         if (fShiftPressed)
         {
-            ULONG cLength = psrSelection->Right - psrSelection->Left + 1;
-            if (cLength > SEARCH_STRING_LENGTH)
-            {
-                cLength = SEARCH_STRING_LENGTH;
-            }
-
-            // Pull the selection out of the buffer to pass to the
-            // search function. Clamp to max search string length.
-            // We just copy the bytes out of the row buffer.
-            const ROW& Row = screenInfo.GetTextBuffer().GetRowByOffset(psrSelection->Top);
-
-            WCHAR pwszSearchString[SEARCH_STRING_LENGTH + 1];
             try
             {
-                const ICharRow& iCharRow = Row.GetCharRow();
-                // we only support ucs2 encoded char rows
-                FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                                "only support UCS2 char rows currently");
-
-                const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
-                const Ucs2CharRow::const_iterator startIt = std::next(charRow.cbegin(), psrSelection->Left);
-                const Ucs2CharRow::const_iterator stopIt = std::next(startIt, cLength);
-                std::transform(startIt, stopIt, pwszSearchString, [](const Ucs2CharRow::value_type& vals)
+                const auto selectionRects = GetSelectionRects();
+                if (selectionRects.size() > 0)
                 {
-                    return vals.first;
-                });
+                    // Pull the selection out of the buffer to pass to the
+                    // search function. Clamp to max search string length.
+                    // We just copy the bytes out of the row buffer.
+
+                    std::wstring str;
+                    for (const auto& selectRect : selectionRects)
+                    {
+                        auto it = screenInfo.GetTextDataAt(COORD{ selectRect.Left, selectRect.Top });
+
+                        for (SHORT i = 0; i < (selectRect.Right - selectRect.Left + 1); ++i)
+                        {
+                            str.append((*it).begin(), (*it).end());
+                            it++;
+                        }
+                    }
+
+                    // Clear the selection and call the search / mark function.
+                    ClearSelection();
+
+                    Telemetry::Instance().LogColorSelectionUsed();
+
+                    Search search(screenInfo, str, Search::Direction::Forward, Search::Sensitivity::CaseInsensitive);
+                    while (search.FindNext())
+                    {
+                        search.Color(ulAttr);
+                    }
+                }
             }
             CATCH_LOG();
-
-            pwszSearchString[cLength] = L'\0';
-
-            // Clear the selection and call the search / mark function.
-            ClearSelection();
-
-            SearchForString(screenInfo, pwszSearchString, (USHORT)cLength, TRUE, FALSE, TRUE, ulAttr, nullptr);
         }
         else
         {
-            ColorSelection(psrSelection, ulAttr);
+            ColorSelection(_srSelectionRect, ulAttr);
             ClearSelection();
         }
 
@@ -778,17 +753,11 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
         SHORT iNextLeftX = 0;
 
         const COORD cursorPos = textBuffer.GetCursor().GetPosition();
-        const ROW& Row = textBuffer.GetRowByOffset(cursorPos.Y);
-        const ICharRow& iCharRow = Row.GetCharRow();
-        // we only support ucs2 encoded char rows
-        FAIL_FAST_IF_MSG(iCharRow.GetSupportedEncoding() != ICharRow::SupportedEncoding::Ucs2,
-                        "only support UCS2 char rows currently");
-
-        const Ucs2CharRow& charRow = static_cast<const Ucs2CharRow&>(iCharRow);
 
         try
         {
-            if (charRow.GetAttribute(cursorPos.X).IsLeading())
+            // calculate next right
+            if (ScreenInfo.ReadLine(cursorPos.Y, cursorPos.X, 1).at(0).DbcsAttr().IsLeading())
             {
                 iNextRightX = 2;
             }
@@ -797,33 +766,33 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
                 iNextRightX = 1;
             }
 
+            // calculate next left
             if (cursorPos.X > 0)
             {
-                if (charRow.GetAttribute(cursorPos.X - 1).IsTrailing())
+                iNextLeftX = 1;
+            }
+
+            if (cursorPos.X == 1)
+            {
+                const std::vector<OutputCell> cells = ScreenInfo.ReadLine(cursorPos.Y, 0, 2);
+                if (cells.at(0).DbcsAttr().IsTrailing())
                 {
                     iNextLeftX = 2;
                 }
-                else if (charRow.GetAttribute(cursorPos.X - 1).IsLeading())
+            }
+            else
+            {
+                const std::vector<OutputCell> cells = ScreenInfo.ReadLine(cursorPos.Y, cursorPos.X - 2, 3);
+                if (cells.at(1).DbcsAttr().IsLeading())
                 {
-                    if (cursorPos.X - 1 > 0)
+                    if (cells.at(0).DbcsAttr().IsTrailing())
                     {
-                        if (charRow.GetAttribute(cursorPos.X - 2).IsTrailing())
-                        {
-                            iNextLeftX = 3;
-                        }
-                        else
-                        {
-                            iNextLeftX = 2;
-                        }
+                        iNextLeftX = 3;
                     }
                     else
                     {
-                        iNextLeftX = 1;
+                        iNextLeftX = 2;
                     }
-                }
-                else
-                {
-                    iNextLeftX = 1;
                 }
             }
         }
@@ -919,7 +888,7 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
         }
 
         default:
-            ASSERT(FALSE);
+            FAIL_FAST_HR(E_NOTIMPL);
         }
 
         // see if shift is down. if so, we're extending the selection. otherwise, we're resetting the anchor

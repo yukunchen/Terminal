@@ -56,7 +56,6 @@ __inline NTSTATUS_FROM_WIN32(long x) { return x <= 0 ? (NTSTATUS)x : (NTSTATUS)(
 //#include <ntstatus.h>
 
 #include <winioctl.h>
-#include <assert.h>
 #include <intsafe.h>
 
 // This includes support libraries from the CRT, STL, WIL, and GSL

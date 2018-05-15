@@ -6,6 +6,7 @@
 
 #include "precomp.h"
 
+#include <assert.h>
 #include "ProcessPolicy.h"
 
 #include "..\host\globals.h"

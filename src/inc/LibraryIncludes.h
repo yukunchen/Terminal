@@ -9,8 +9,8 @@
 #pragma warning(disable: ALL_CPPCORECHECK_WARNINGS)
 
 // C
-#include <cassert>
 #include <cwchar>
+#include <cwctype>
 
 // STL
 
@@ -29,6 +29,7 @@
 #include <stdexcept>
 #include <string>
 #include <thread>
+#include <tuple>
 #include <utility>
 #include <vector>
 #include <unordered_map>

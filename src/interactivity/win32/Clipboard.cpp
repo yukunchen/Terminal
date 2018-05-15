@@ -26,8 +26,13 @@ using namespace Microsoft::Console::Types;
 
 void Clipboard::Copy()
 {
-    StoreSelectionToClipboard();   // store selection in clipboard
-    Selection::Instance().ClearSelection();   // clear selection in console
+    try
+    {
+        // store selection in clipboard
+        StoreSelectionToClipboard();
+        Selection::Instance().ClearSelection();   // clear selection in console
+    }
+    CATCH_LOG();
 }
 
 /*++
@@ -126,9 +131,9 @@ std::deque<std::unique_ptr<IInputEvent>> Clipboard::TextToKeyEvents(_In_reads_(c
         const bool charAllowed = FilterCharacterOnPaste(&currentChar);
         // filter out linefeed if it's not the first char and preceded
         // by a carriage return
-        const bool skipLinefeed = (i != 0  &&
+        const bool skipLinefeed = (i != 0 &&
                                    currentChar == UNICODE_LINEFEED &&
-                                   pData[i -1] == UNICODE_CARRIAGERETURN);
+                                   pData[i - 1] == UNICODE_CARRIAGERETURN);
 
         if (!charAllowed || skipLinefeed)
         {
@@ -168,344 +173,154 @@ std::deque<std::unique_ptr<IInputEvent>> Clipboard::TextToKeyEvents(_In_reads_(c
 
 // Routine Description:
 // - Copies the selected area onto the global system clipboard.
-// Arguments:
-//  <none>
-// Return Value:
-//  <none>
+// - NOTE: Throws on allocation and other clipboard failures.
 void Clipboard::StoreSelectionToClipboard()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    Selection* pSelection = &Selection::Instance();
+    const auto& selection = Selection::Instance();
 
     // See if there is a selection to get
-    if (!pSelection->IsAreaSelected())
+    if (!selection.IsAreaSelected())
     {
         return;
     }
 
     // read selection area.
-    const SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
+    const auto selectionRects = selection.GetSelectionRects();
+    const bool lineSelection = Selection::Instance().IsLineSelection();
 
-    SMALL_RECT* rgsrSelection;
-    UINT cRectsSelected;
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& screenInfo = gci.GetActiveOutputBuffer();
 
-    NTSTATUS status = pSelection->GetSelectionRects(&rgsrSelection, &cRectsSelected);
+    const auto text = RetrieveTextFromBuffer(screenInfo,
+                                             lineSelection,
+                                             selectionRects);
 
-    if (NT_SUCCESS(status))
-    {
-        PWCHAR* rgTempRows = new PWCHAR[cRectsSelected];
-        status = NT_TESTNULL(rgTempRows);
-
-        if (NT_SUCCESS(status))
-        {
-            size_t* rgTempRowLengths = new size_t[cRectsSelected];
-            status = NT_TESTNULL(rgTempRowLengths);
-
-            if (NT_SUCCESS(status))
-            {
-                const bool fLineSelection = Selection::Instance().IsLineSelection();
-
-                status = RetrieveTextFromBuffer(screenInfo,
-                                                fLineSelection,
-                                                cRectsSelected,
-                                                rgsrSelection,
-                                                rgTempRows,
-                                                rgTempRowLengths);
-
-                if (NT_SUCCESS(status))
-                {
-                    status = CopyTextToSystemClipboard(cRectsSelected, rgTempRows, rgTempRowLengths);
-
-                    for (UINT iRow = 0; iRow < cRectsSelected; iRow++)
-                    {
-                        if (rgTempRows[iRow] != nullptr)
-                        {
-                            delete rgTempRows[iRow];
-                        }
-                    }
-                }
-
-                delete[] rgTempRowLengths;
-            }
-
-            delete[] rgTempRows;
-        }
-
-        delete[] rgsrSelection;
-    }
+    CopyTextToSystemClipboard(text);
 }
 
-[[nodiscard]]
-NTSTATUS Clipboard::RetrieveTextFromBuffer(const SCREEN_INFORMATION& screenInfo,
-                                           const bool fLineSelection,
-                                           const UINT cRectsSelected,
-                                           _In_reads_(cRectsSelected) const SMALL_RECT* const rgsrSelection,
-                                           _Out_writes_(cRectsSelected) PWCHAR* const rgpwszTempText,
-                                           _Out_writes_(cRectsSelected) size_t* const rgTempTextLengths)
+std::vector<std::wstring> Clipboard::RetrieveTextFromBuffer(const SCREEN_INFORMATION& screenInfo,
+                                                            const bool lineSelection,
+                                                            const std::vector<SMALL_RECT>& selectionRects)
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    std::vector<std::wstring> text;
 
-    if (rgpwszTempText == nullptr)
+    // for each row in the selection
+    for (UINT i = 0; i < selectionRects.size(); i++)
     {
-        status = STATUS_INVALID_PARAMETER_5;
-    }
-    else if (rgTempTextLengths == nullptr)
-    {
-        status = STATUS_INVALID_PARAMETER_6;
-    }
+        const SMALL_RECT highlightRow = selectionRects[i];
+        const SMALL_RECT selection = Selection::Instance().GetSelectionRectangle();
+        const UINT iRow = selection.Top + i;
 
-    if (NT_SUCCESS(status))
-    {
-        UINT iRect = 0;
+        // recalculate string length again as the width of the highlight row might have been reduced in the bisect call
+        const short stringLength = highlightRow.Right - highlightRow.Left + 1;
 
-        // for each row in the selection
-        for (iRect = 0; iRect < cRectsSelected; iRect++)
+        // this is the source location X/Y coordinates within the active screen buffer to start copying from
+        const COORD sourcePoint{ highlightRow.Left, highlightRow.Top };
+
+        // our output buffer is 1 dimensional and is just as long as the string, so the "rectangle" should
+        // specify just a line.
+        // length of 80 runs from left 0 to right 79. therefore -1.
+        const SMALL_RECT targetRect{ 0, 0, stringLength - 1, 0 };
+
+        // retrieve the data from the screen buffer
+        std::vector<OutputCell> outputCells;
+        std::wstring selectionText;
+        std::vector<std::vector<OutputCell>> cells = ReadRectFromScreenBuffer(screenInfo,
+                                                                              sourcePoint,
+                                                                              Viewport::FromInclusive(targetRect));
+        // we only care about one row so reduce it here
+        outputCells = cells.at(0);
+        // allocate a string buffer
+        selectionText.reserve(outputCells.size() + 2); // + 2 for \r\n if we munged it
+
+        // copy char data into the string buffer, skipping trailing bytes
+        for (auto& cell : outputCells)
         {
-            const SMALL_RECT srHighlightRow = rgsrSelection[iRect];
-
-            const SMALL_RECT srSelection = Selection::Instance().GetSelectionRectangle();
-
-            const UINT iRow = srSelection.Top + iRect;
-
-            // recalculate string length again as the width of the highlight row might have been reduced in the bisect call
-            const short sStringLength = srHighlightRow.Right - srHighlightRow.Left + 1;
-
-            // this is the source location X/Y coordinates within the active screen buffer to start copying from
-            const COORD coordSourcePoint{ srHighlightRow.Left, srHighlightRow.Top };
-
-            // our output buffer is 1 dimensional and is just as long as the string, so the "rectangle" should
-            // specify just a line.
-            // length of 80 runs from left 0 to right 79. therefore -1.
-            const SMALL_RECT srTargetRect{ 0, 0, sStringLength - 1, 0 };
-
-            // retrieve the data from the screen buffer
-            std::vector<OutputCell> outputCells;
-            std::wstring selectionText;
-            try
+            if (!cell.DbcsAttr().IsTrailing())
             {
-                std::vector<std::vector<OutputCell>> cells = ReadRectFromScreenBuffer(screenInfo,
-                                                                                      coordSourcePoint,
-                                                                                      Viewport::FromInclusive(srTargetRect));
-                // we only care about one row so reduce it here
-                outputCells = cells.at(0);
-                // allocate a string buffer
-                selectionText.reserve(outputCells.size() + 2); // + 2 for \r\n if we munged it
-            }
-            catch (...)
-            {
-                return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-            }
-
-
-            // copy char data into the string buffer, skipping trailing bytes
-            for (auto& cell : outputCells)
-            {
-                if (!cell.GetDbcsAttribute().IsTrailing())
+                for (const wchar_t wch : cell.Chars())
                 {
-                    selectionText.push_back(cell.GetCharData());
-                }
-            }
-
-            // trim trailing spaces
-            const bool mungeData = (GetKeyState(VK_SHIFT) & KEY_PRESSED) == 0;
-            if (mungeData)
-            {
-                const ROW& Row = screenInfo.GetTextBuffer().GetRowByOffset(iRow);
-
-                // FOR LINE SELECTION ONLY: if the row was wrapped, don't remove the spaces at the end.
-                if (!fLineSelection || !Row.GetCharRow().WasWrapForced())
-                {
-                    while (!selectionText.empty() && selectionText.back() == UNICODE_SPACE)
-                    {
-                        selectionText.pop_back();
-                    }
-                }
-
-                // apply CR/LF to the end of the final string, unless we're the last line.
-                // a.k.a if we're earlier than the bottom, then apply CR/LF.
-                if (iRect < cRectsSelected - 1)
-                {
-                    // FOR LINE SELECTION ONLY: if the row was wrapped, do not apply CR/LF.
-                    // a.k.a. if the row was NOT wrapped, then we can assume a CR/LF is proper
-                    // always apply \r\n for box selection
-                    if (!fLineSelection || !screenInfo.GetTextBuffer().GetRowByOffset(iRow).GetCharRow().WasWrapForced())
-                    {
-                        selectionText.push_back(UNICODE_CARRIAGERETURN);
-                        selectionText.push_back(UNICODE_LINEFEED);
-                    }
-                }
-            }
-
-            // save the formatted string and its length for later
-            // +1 for null character termination
-            std::unique_ptr<wchar_t[]> wstrBuffer = std::make_unique<wchar_t[]>(selectionText.size() + 1);
-            if (!wstrBuffer.get())
-            {
-                return STATUS_NO_MEMORY;
-            }
-            std::copy(selectionText.begin(), selectionText.end(), wstrBuffer.get());
-            wstrBuffer[selectionText.size()] = UNICODE_NULL;
-            rgpwszTempText[iRect] = wstrBuffer.release();
-            rgTempTextLengths[iRect] = selectionText.size();
-
-
-        }
-
-        if (!NT_SUCCESS(status))
-        {
-            for (UINT iDelRect = 0; iDelRect < iRect; iDelRect++)
-            {
-                if (rgpwszTempText[iDelRect] != nullptr)
-                {
-                    delete[] rgpwszTempText[iDelRect];
+                    selectionText.push_back(wch);
                 }
             }
         }
+
+        // trim trailing spaces
+        const bool mungeData = (GetKeyState(VK_SHIFT) & KEY_PRESSED) == 0;
+        if (mungeData)
+        {
+            const ROW& Row = screenInfo.GetTextBuffer().GetRowByOffset(iRow);
+
+            // FOR LINE SELECTION ONLY: if the row was wrapped, don't remove the spaces at the end.
+            if (!lineSelection || !Row.GetCharRow().WasWrapForced())
+            {
+                while (!selectionText.empty() && selectionText.back() == UNICODE_SPACE)
+                {
+                    selectionText.pop_back();
+                }
+            }
+
+            // apply CR/LF to the end of the final string, unless we're the last line.
+            // a.k.a if we're earlier than the bottom, then apply CR/LF.
+            if (i < selectionRects.size() - 1)
+            {
+                // FOR LINE SELECTION ONLY: if the row was wrapped, do not apply CR/LF.
+                // a.k.a. if the row was NOT wrapped, then we can assume a CR/LF is proper
+                // always apply \r\n for box selection
+                if (!lineSelection || !screenInfo.GetTextBuffer().GetRowByOffset(iRow).GetCharRow().WasWrapForced())
+                {
+                    selectionText.push_back(UNICODE_CARRIAGERETURN);
+                    selectionText.push_back(UNICODE_LINEFEED);
+                }
+            }
+        }
+
+        text.emplace_back(selectionText);
     }
 
-    return status;
+    return text;
 }
 
 
 // Routine Description:
 // - Copies the text given onto the global system clipboard.
 // Arguments:
-// - cTotalRows
-// Return Value:
-//  <none>
-[[nodiscard]]
-NTSTATUS Clipboard::CopyTextToSystemClipboard(const UINT cTotalRows,
-                                              _In_reads_(cTotalRows) const PWCHAR* const rgTempRows,
-                                              _In_reads_(cTotalRows) const size_t* const rgTempRowLengths)
+// - rows - Rows of text data to copy
+void Clipboard::CopyTextToSystemClipboard(const std::vector<std::wstring>& rows)
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    std::wstring finalString;
 
-    if (rgTempRows == nullptr)
+    // Concatenate strings into one giant string to put onto the clipboard.
+    for (const auto& str : rows)
     {
-        status = STATUS_INVALID_PARAMETER_2;
-    }
-    else if (rgTempRowLengths == nullptr)
-    {
-        status = STATUS_INVALID_PARAMETER_3;
+        finalString += str;
     }
 
-    if (NT_SUCCESS(status))
-    {
+    // allocate the final clipboard data
+    const size_t cchNeeded = finalString.size() + 1;
+    const size_t cbNeeded = sizeof(wchar_t) * cchNeeded;
+    wil::unique_hglobal globalHandle(GlobalAlloc(GMEM_MOVEABLE | GMEM_DDESHARE, cbNeeded));
+    THROW_LAST_ERROR_IF_NULL(globalHandle.get());
 
-        // calculate number of characters in the rows we created
-        size_t cRowCharCount = 0;
+    PWSTR pwszClipboard = (PWSTR)GlobalLock(globalHandle.get());
+    THROW_LAST_ERROR_IF_NULL(pwszClipboard);
 
-        for (UINT iRow = 0; iRow < cTotalRows; iRow++)
-        {
-            size_t cLength;
+    // The pattern gets a bit strange here because there's no good wil built-in for global lock of this type.
+    // Try to copy then immediately unlock. Don't throw until after (so the hglobal won't be freed until we unlock).
+    const HRESULT hr = StringCchCopyW(pwszClipboard, cchNeeded, finalString.data());
+    GlobalUnlock(globalHandle.get());
+    THROW_IF_FAILED(hr);
 
-            if (FAILED(StringCchLengthW(rgTempRows[iRow], rgTempRowLengths[iRow] + 1, &cLength)))
-            {
-                status = STATUS_UNSUCCESSFUL;
-                break;
-            }
+    // Set global data to clipboard
+    THROW_LAST_ERROR_IF_FALSE(OpenClipboard(ServiceLocator::LocateConsoleWindow()->GetWindowHandle()));
+    THROW_LAST_ERROR_IF_FALSE(EmptyClipboard());
+    THROW_LAST_ERROR_IF_NULL(SetClipboardData(CF_UNICODETEXT, globalHandle.get()));
+    THROW_LAST_ERROR_IF_FALSE(CloseClipboard());
 
-            cRowCharCount += cLength;
-        }
-
-        if (NT_SUCCESS(status))
-        {
-            // +1 for null terminator at end of clipboard data
-            cRowCharCount++;
-
-            ASSERT(cRowCharCount > 0);
-
-            // allocate the final clipboard data
-            HANDLE hClipboardDataHandle = GlobalAlloc(GMEM_MOVEABLE | GMEM_DDESHARE, cRowCharCount * sizeof(WCHAR));
-
-            if (hClipboardDataHandle == nullptr)
-            {
-                status = NTSTATUS_FROM_WIN32(GetLastError());
-
-                // if for some reason Get Last Error returned successful, set generic memory error.
-                if (NT_SUCCESS(status))
-                {
-                    status = STATUS_NO_MEMORY;
-                }
-            }
-
-            if (NT_SUCCESS(status))
-            {
-                PWCHAR pwszClipboardPos = (PWCHAR)GlobalLock(hClipboardDataHandle);
-
-                if (pwszClipboardPos == nullptr)
-                {
-                    status = NTSTATUS_FROM_WIN32(GetLastError());
-
-                    // if Get Last Error was successful for some reason, set generic memory error
-                    if (NT_SUCCESS(status))
-                    {
-                        status = STATUS_NO_MEMORY;
-                    }
-                }
-
-                if (NT_SUCCESS(status))
-                {
-                    // copy all text into the final clipboard data handle. There should be no nulls between rows of
-                    // characters, but there should be a \0 at the end.
-                    for (UINT iRow = 0; iRow < cTotalRows; iRow++)
-                    {
-                        if (FAILED(StringCchCopyW(pwszClipboardPos, rgTempRowLengths[iRow] + 1, rgTempRows[iRow])))
-                        {
-                            status = STATUS_UNSUCCESSFUL;
-                            break;
-                        }
-
-                        pwszClipboardPos += rgTempRowLengths[iRow];
-                    }
-
-                    *pwszClipboardPos = UNICODE_NULL;
-
-                    GlobalUnlock(hClipboardDataHandle);
-
-                    if (NT_SUCCESS(status))
-                    {
-                        BOOL fSuccess = OpenClipboard(ServiceLocator::LocateConsoleWindow()->GetWindowHandle());
-                        if (!fSuccess)
-                        {
-                            status = NTSTATUS_FROM_WIN32(GetLastError());
-                        }
-
-                        if (NT_SUCCESS(status))
-                        {
-                            fSuccess = EmptyClipboard();
-                            if (!fSuccess)
-                            {
-                                status = NTSTATUS_FROM_WIN32(GetLastError());
-                            }
-
-                            if (NT_SUCCESS(status))
-                            {
-                                if (SetClipboardData(CF_UNICODETEXT, hClipboardDataHandle) == nullptr)
-                                {
-                                    status = NTSTATUS_FROM_WIN32(GetLastError());
-                                }
-                            }
-
-                            if (!CloseClipboard() && NT_SUCCESS(status))
-                            {
-                                status = NTSTATUS_FROM_WIN32(GetLastError());
-                            }
-                        }
-                    }
-                }
-
-                if (!NT_SUCCESS(status))
-                {
-                    // only free if we failed.
-                    // the memory has to remain allocated if we successfully placed it on the clipboard.
-                    GlobalFree(hClipboardDataHandle);
-                }
-            }
-        }
-    }
-
-    return status;
+    // only free if we failed.
+    // the memory has to remain allocated if we successfully placed it on the clipboard.
+    // Releasing the smart pointer will leave it allocated as we exit scope.
+    globalHandle.release();
 }
 
 // Returns true if the character should be emitted to the paste stream
@@ -521,35 +336,35 @@ bool Clipboard::FilterCharacterOnPaste(_Inout_ WCHAR * const pwch)
         switch (*pwch)
         {
             // swallow tabs to prevent inadvertant tab expansion
-            case UNICODE_TAB:
-            {
-                fAllowChar = false;
-                break;
-            }
+        case UNICODE_TAB:
+        {
+            fAllowChar = false;
+            break;
+        }
 
-            // Replace Unicode space with standard space
-            case UNICODE_NBSP:
-            case UNICODE_NARROW_NBSP:
-            {
-                *pwch = UNICODE_SPACE;
-                break;
-            }
+        // Replace Unicode space with standard space
+        case UNICODE_NBSP:
+        case UNICODE_NARROW_NBSP:
+        {
+            *pwch = UNICODE_SPACE;
+            break;
+        }
 
-            // Replace "smart quotes" with "dumb ones"
-            case UNICODE_LEFT_SMARTQUOTE:
-            case UNICODE_RIGHT_SMARTQUOTE:
-            {
-                *pwch = UNICODE_QUOTE;
-                break;
-            }
+        // Replace "smart quotes" with "dumb ones"
+        case UNICODE_LEFT_SMARTQUOTE:
+        case UNICODE_RIGHT_SMARTQUOTE:
+        {
+            *pwch = UNICODE_QUOTE;
+            break;
+        }
 
-            // Replace Unicode dashes with a standard hypen
-            case UNICODE_EM_DASH:
-            case UNICODE_EN_DASH:
-            {
-                *pwch = UNICODE_HYPHEN;
-                break;
-            }
+        // Replace Unicode dashes with a standard hypen
+        case UNICODE_EM_DASH:
+        case UNICODE_EN_DASH:
+        {
+            *pwch = UNICODE_HYPHEN;
+            break;
+        }
         }
     }
 

@@ -28,7 +28,6 @@ Revision History:
 #define IsBilingualCP(cp) ((cp)==CP_JAPANESE || (cp)==CP_KOREAN)
 #define IsEastAsianCP(cp) ((cp)==CP_JAPANESE || (cp)==CP_KOREAN || (cp)==CP_CHINESE_TRADITIONAL || (cp)==CP_CHINESE_SIMPLIFIED)
 
-void SetLineChar(SCREEN_INFORMATION& screenInfo);
 bool CheckBisectStringA(_In_reads_bytes_(cbBuf) PCHAR pchBuf, _In_ DWORD cbBuf, const CPINFO * const pCPInfo);
 void CleanupDbcsEdgesForWrite(const size_t stringLen,
                               const COORD coordTarget,
@@ -39,6 +38,7 @@ DWORD RemoveDbcsMarkCell(_Out_writes_(cch) PCHAR_INFO pciDst, _In_reads_(cch) co
 bool IsDBCSLeadByteConsole(const CHAR ch, const CPINFO * const pCPInfo);
 
 BOOL IsCharFullWidth(_In_ WCHAR wch);
+bool IsGlyphFullWidth(const std::vector<wchar_t>& charData);
 
 BYTE CodePageToCharSet(const UINT uiCodePage);
 

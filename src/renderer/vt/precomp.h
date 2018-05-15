@@ -10,7 +10,6 @@ Abstract:
 --*/
 
 #include <wchar.h>
-#include <assert.h>
 #include <sal.h>
 
 // This includes support libraries from the CRT, STL, WIL, and GSL

@@ -194,41 +194,35 @@ void HandleFocusEvent(const BOOL fSetFocus)
 
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-#pragma prefast(suppress:28931, "EventsWritten is not unused. Used by assertions.")
-    size_t EventsWritten = 0;
     try
     {
-        EventsWritten = gci.pInputBuffer->Write(std::make_unique<FocusEvent>(!!fSetFocus));
+        const size_t EventsWritten = gci.pInputBuffer->Write(std::make_unique<FocusEvent>(!!fSetFocus));
+        FAIL_FAST_IF(EventsWritten != 1);
     }
     catch (...)
     {
         LOG_HR(wil::ResultFromCaughtException());
     }
-    EventsWritten; // shut the fre build up.
-    ASSERT(EventsWritten == 1);
 }
 
 void HandleMenuEvent(const DWORD wParam)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-#pragma prefast(suppress:28931, "EventsWritten is not unused. Used by assertions.")
     size_t EventsWritten = 0;
     try
     {
         EventsWritten = gci.pInputBuffer->Write(std::make_unique<MenuEvent>(wParam));
+        if (EventsWritten != 1)
+        {
+            RIPMSG0(RIP_WARNING, "PutInputInBuffer: EventsWritten != 1, 1 expected");
+        }
+
     }
     catch (...)
     {
         LOG_HR(wil::ResultFromCaughtException());
     }
-    EventsWritten; // shut the fre build up.
-#if DBG
-    if (EventsWritten != 1)
-    {
-        RIPMSG0(RIP_WARNING, "PutInputInBuffer: EventsWritten != 1, 1 expected");
-    }
-#endif
 }
 
 void HandleCtrlEvent(const DWORD EventType)
@@ -281,7 +275,7 @@ void ProcessCtrlEvents()
 
     // Copy ctrl flags.
     ULONG CtrlFlags = gci.CtrlFlags;
-    ASSERT(!((CtrlFlags & (CONSOLE_CTRL_CLOSE_FLAG | CONSOLE_CTRL_BREAK_FLAG | CONSOLE_CTRL_C_FLAG)) && (CtrlFlags & (CONSOLE_CTRL_LOGOFF_FLAG | CONSOLE_CTRL_SHUTDOWN_FLAG))));
+    FAIL_FAST_IF_FALSE(!((CtrlFlags & (CONSOLE_CTRL_CLOSE_FLAG | CONSOLE_CTRL_BREAK_FLAG | CONSOLE_CTRL_C_FLAG)) && (CtrlFlags & (CONSOLE_CTRL_LOGOFF_FLAG | CONSOLE_CTRL_SHUTDOWN_FLAG))));
 
     gci.CtrlFlags = 0;
 

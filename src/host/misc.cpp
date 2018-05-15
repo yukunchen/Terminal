@@ -23,7 +23,7 @@ WCHAR CharToWchar(_In_reads_(cch) const char * const pch, const UINT cch)
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     WCHAR wc = L'\0';
 
-    ASSERT(IsDBCSLeadByteConsole(*pch, &gci.OutputCPInfo) || cch == 1);
+    FAIL_FAST_IF_FALSE(IsDBCSLeadByteConsole(*pch, &gci.OutputCPInfo) || cch == 1);
 
     ConvertOutputToUnicode(gci.OutputCP, pch, cch, &wc, 1);
 
@@ -276,7 +276,7 @@ int ConvertToOem(const UINT uiCodePage,
                  _Out_writes_(cchTarget) CHAR * const pchTarget,
                  const UINT cchTarget)
 {
-    ASSERT(pwchSource != (LPWSTR) pchTarget);
+    FAIL_FAST_IF_FALSE(pwchSource != (LPWSTR) pchTarget);
     DBGCHARS(("ConvertToOem U->%d %.*ls\n", uiCodePage, cchSource > 10 ? 10 : cchSource, pwchSource));
     #pragma prefast(suppress:__WARNING_W2A_BEST_FIT, "WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.")
     return LOG_IF_WIN32_BOOL_FALSE(WideCharToMultiByte(uiCodePage, 0, pwchSource, cchSource, pchTarget, cchTarget, nullptr, nullptr));
@@ -301,12 +301,12 @@ int ConvertOutputToUnicode(_In_ UINT uiCodePage,
                            _Out_writes_(cchTarget) WCHAR *pwchTarget,
                            _In_ UINT cchTarget)
 {
-    ASSERT(cchTarget > 0);
+    FAIL_FAST_IF_FALSE(cchTarget > 0);
     pwchTarget[0] = L'\0';
 
     DBGCHARS(("ConvertOutputToUnicode %d->U %.*s\n", uiCodePage, cchSource > 10 ? 10 : cchSource, pchSource));
 
-    LPSTR const pszT = new CHAR[cchSource];
+    LPSTR const pszT = new(std::nothrow) CHAR[cchSource];
     if (pszT == nullptr)
     {
         return 0;
@@ -316,4 +316,12 @@ int ConvertOutputToUnicode(_In_ UINT uiCodePage,
     ULONG const Length = MultiByteToWideChar(uiCodePage, MB_USEGLYPHCHARS, pszT, cchSource, pwchTarget, cchTarget);
     delete[] pszT;
     return Length;
+}
+
+bool IsCoordInBounds(const COORD point, const COORD bounds)
+{
+    return !(point.X >= bounds.X ||
+             point.X < 0 ||
+             point.Y >= bounds.Y ||
+             point.Y < 0);
 }

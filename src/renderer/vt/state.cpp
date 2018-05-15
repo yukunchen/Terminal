@@ -267,7 +267,7 @@ HRESULT VtEngine::UpdateViewport(const SMALL_RECT srNewViewport)
                 Viewport rightOfOldViewport = Viewport::FromInclusive({left, top, right, bottom});
                 hr = _InvalidCombine(rightOfOldViewport);
             }
-            if (SUCCEEDED(hr) && oldView.Height() < newView.Width())
+            if (SUCCEEDED(hr) && oldView.Height() < newView.Height())
             {
                 short left = 0;
                 short top = oldView.BottomExclusive();
