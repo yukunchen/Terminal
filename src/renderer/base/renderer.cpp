@@ -428,6 +428,7 @@ void Renderer::TriggerTitleChange()
     const std::wstring newTitle = _pData->GetConsoleTitle();
     // Only change the title if it's actually different from the last frame.
     _titleChanged = _lastTitle != newTitle;
+    _NotifyPaintFrame();
 }
 
 // Routine Description:
