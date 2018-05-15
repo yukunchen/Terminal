@@ -49,7 +49,8 @@ namespace Microsoft::Console::Render
                                 _In_reads_(cchLine) const unsigned char* const rgWidths,
                                 const size_t cchLine,
                                 const COORD coordTarget,
-                                const bool fTrimLeft) override;
+                                const bool fTrimLeft,
+                                const bool lineWrapped) override;
         [[nodiscard]]
         HRESULT ScrollFrame() override;
 
@@ -67,6 +68,7 @@ namespace Microsoft::Console::Render
         const COLORREF* const _ColorTable;
         const WORD _cColorTable;
         const bool _fUseAsciiOnly;
+        bool _previousLineWrapped;
 
     #ifdef UNIT_TESTING
         friend class VtRendererTest;
