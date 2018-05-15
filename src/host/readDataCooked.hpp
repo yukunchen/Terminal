@@ -102,7 +102,27 @@ public:
 // out, so that we can still run the tests in the meantime.
 #if UNIT_TESTING
     COOKED_READ_DATA(SCREEN_INFORMATION& screenInfo) :
-        _screenInfo{ screenInfo }
+        _screenInfo{ screenInfo },
+        _fIsUnicode{ false },
+        _InsertMode{ false },
+        _Line{ false },
+        _NumberOfVisibleChars{ 0 },
+        _CtrlWakeupMask{ 0 },
+        _pTempHandle{ nullptr },
+        _UserBuffer{ nullptr },
+        _CurrentPosition{ 0 },
+        _UserBufferSize{ 0 },
+        ControlKeyState{ 0 },
+        ExeName{ nullptr },
+        _CommandHistory{ nullptr },
+        _BytesRead{ 0 },
+        ExeNameLength{ 0 },
+        _BufPtr{ nullptr },
+        pdwNumBytes{ nullptr },
+        _BackupLimit{ nullptr },
+        _BufferSize{ 0 },
+        _Processed{ false },
+        _Echo{ false }
     {
     }
 #endif

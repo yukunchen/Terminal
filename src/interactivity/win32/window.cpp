@@ -52,7 +52,9 @@ Window* Window::s_Instance = nullptr;
 
 Window::Window() :
     _fIsInFullscreen(false),
-    _fHasMoved(false)
+    _fHasMoved(false),
+    _pSettings(nullptr),
+    _hWnd(0)
 {
     ZeroMemory((void*)&_rcClientLast, sizeof(_rcClientLast));
     ZeroMemory((void*)&_rcNonFullscreenWindowSize, sizeof(_rcNonFullscreenWindowSize));

@@ -29,7 +29,8 @@ GdiEngine::GdiEngine() :
     _fInvalidRectUsed(false),
     _lastFg(INVALID_COLOR),
     _lastBg(INVALID_COLOR),
-    _fPaintStarted(false)
+    _fPaintStarted(false),
+    _hfont((HFONT)INVALID_HANDLE_VALUE)
 {
     ZeroMemory(_pPolyText, sizeof(POLYTEXTW) * s_cPolyTextCache);
     _rcInvalid = { 0 };

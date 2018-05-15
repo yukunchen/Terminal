@@ -16,7 +16,8 @@ using namespace Microsoft::Console::VirtualTerminal;
 
 OutputStateMachineEngine::OutputStateMachineEngine(_In_ TermDispatch* const pDispatch) :
     _pDispatch(pDispatch),
-    _pfnFlushToTerminal(nullptr)
+    _pfnFlushToTerminal(nullptr),
+    _pTtyConnection(nullptr)
 {
 }
 

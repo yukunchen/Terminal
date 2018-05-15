@@ -74,6 +74,9 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
     _Line{ IsFlagSet(pInputBuffer->InputMode, ENABLE_LINE_INPUT) },
     _pTempHandle{ pTempHandle },
     _exeName{ exeName }
+    _fIsUnicode{ false },
+    ControlKeyState{ 0 },
+    pdwNumBytes{ nullptr }
 {
 }
 

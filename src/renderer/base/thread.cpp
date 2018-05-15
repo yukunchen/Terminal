@@ -17,7 +17,8 @@ RenderThread::RenderThread(_In_ IRenderer* const pRenderer) :
     _hThread(INVALID_HANDLE_VALUE),
     _hEvent(INVALID_HANDLE_VALUE),
     _hPaintCompletedEvent(INVALID_HANDLE_VALUE),
-    _fKeepRunning(true)
+    _fKeepRunning(true),
+    _hPaintEnabledEvent(INVALID_HANDLE_VALUE)
 {
 
 }
