@@ -64,7 +64,8 @@ namespace Microsoft::Console::Render
                                 const unsigned char* const rgWidths,
                                 size_t const cchLine,
                                 COORD const coord,
-                                bool const fTrimLeft);
+                                bool const fTrimLeft,
+                                const bool lineWrapped);
         [[nodiscard]]
         HRESULT PaintBufferGridLines(GridLines const lines, COLORREF const color, size_t const cchLine, COORD const coordTarget);
         [[nodiscard]]

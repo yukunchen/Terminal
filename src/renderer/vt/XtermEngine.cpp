@@ -21,7 +21,8 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     VtEngine(std::move(hPipe), colorProvider, initialViewport),
     _ColorTable(ColorTable),
     _cColorTable(cColorTable),
-    _fUseAsciiOnly(fUseAsciiOnly)
+    _fUseAsciiOnly(fUseAsciiOnly),
+    _previousLineWrapped(false)
 {
     // Set out initial cursor position to -1, -1. This will force our initial
     //      paint to manually move the cursor to 0, 0, not just ignore it.
@@ -138,8 +139,18 @@ HRESULT XtermEngine::_MoveCursor(COORD const coord)
         else if (coord.X == 0 && coord.Y == (_lastText.Y+1))
         {
             // Down one line, at the start of the line.
-            std::string seq = "\r\n";
-            hr = _Write(seq);
+
+            // If the previous line wrapped, then the cursor is already at this
+            //      position, we just don't know it yet. Don't emit anything.
+            if (_previousLineWrapped)
+            {
+                hr = S_OK;
+            }
+            else
+            {
+                std::string seq = "\r\n";
+                hr = _Write(seq);
+            }
         }
         else if (coord.X == 0 && coord.Y == _lastText.Y)
         {
@@ -296,8 +307,10 @@ HRESULT XtermEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
                                      _In_reads_(cchLine) const unsigned char* const rgWidths,
                                      const size_t cchLine,
                                      const COORD coord,
-                                     const bool /*fTrimLeft*/)
+                                     const bool /*fTrimLeft*/,
+                                     const bool lineWrapped)
 {
+    _previousLineWrapped = lineWrapped;
     return _fUseAsciiOnly ?
         VtEngine::_PaintAsciiBufferLine(pwsLine, rgWidths, cchLine, coord) :
         VtEngine::_PaintUtf8BufferLine(pwsLine, rgWidths, cchLine, coord);
