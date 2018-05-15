@@ -3228,6 +3228,12 @@ public:
         // Sets the SGR state to normal.
         _pTest->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED;
 
+        // Prepare the results of SoftReset api calls
+        _pTest->_fPrivateSetCursorKeysModeResult = true;
+        _pTest->_fPrivateSetKeypadModeResult = true;
+        _pTest->_fGetConsoleScreenBufferInfoExResult = true;
+        _pTest->_fPrivateSetScrollingRegionResult = true;
+
         VERIFY_IS_TRUE(_pDispatch->HardReset());
         VERIFY_ARE_EQUAL(_pTest->_coordCursorPos, coordExpectedCursorPos);
         VERIFY_ARE_EQUAL(_pTest->_fUsingRgbColor, false);
