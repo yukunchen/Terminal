@@ -15,22 +15,6 @@
 #pragma hdrstop
 
 // Routine Description:
-// - This routine setup of line character code.
-// Arguments:
-// - screenInfo - Pointer to screen information structure.
-// Return Value:
-// - <none>
-void SetLineChar(SCREEN_INFORMATION& screenInfo)
-{
-    screenInfo.LineChar[UPPER_LEFT_CORNER] = 0x250c;
-    screenInfo.LineChar[UPPER_RIGHT_CORNER] = 0x2510;
-    screenInfo.LineChar[HORIZONTAL_LINE] = 0x2500;
-    screenInfo.LineChar[VERTICAL_LINE] = 0x2502;
-    screenInfo.LineChar[BOTTOM_LEFT_CORNER] = 0x2514;
-    screenInfo.LineChar[BOTTOM_RIGHT_CORNER] = 0x2518;
-}
-
-// Routine Description:
 // - This routine check bisected on Ascii string end.
 // Arguments:
 // - pchBuf - Pointer to Ascii string buffer.

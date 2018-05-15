@@ -30,27 +30,42 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     _In_ IAccessibilityNotifier *pNotifier,
     const CHAR_INFO ciFill,
     const CHAR_INFO ciPopupFill) :
-    OutputMode(ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT),
-    ResizingWindow(0),
-    Next(nullptr),
-    WheelDelta(0),
-    HWheelDelta(0),
-    FillOutDbcsLeadChar(0),
-    ConvScreenInfo(nullptr),
-    ScrollScale(1ul),
-    _pConsoleWindowMetrics(pMetrics),
-    _pAccessibilityNotifier(pNotifier),
-    _pConApi(nullptr),
-    _pAdapter(nullptr),
-    _pStateMachine(nullptr),
-    _viewport({0}),
-    _ptsTabs(nullptr),
-    _textBuffer{ nullptr }
+    Header{ },
+    OutputMode{ ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT },
+    ResizingWindow{ 0 },
+    WheelDelta{ 0 },
+    HWheelDelta{ 0 },
+    _textBuffer{ nullptr },
+    Next{ nullptr },
+    WriteConsoleDbcsLeadByte{ 0, 0 },
+    FillOutDbcsLeadChar{ 0 },
+    LineChar{ UNICODE_BOX_DRAW_LIGHT_DOWN_AND_RIGHT,
+              UNICODE_BOX_DRAW_LIGHT_DOWN_AND_LEFT,
+              UNICODE_BOX_DRAW_LIGHT_HORIZONTAL,
+              UNICODE_BOX_DRAW_LIGHT_VERTICAL,
+              UNICODE_BOX_DRAW_LIGHT_UP_AND_RIGHT,
+              UNICODE_BOX_DRAW_LIGHT_UP_AND_LEFT },
+    ConvScreenInfo{ nullptr },
+    ScrollScale{ 1ul },
+    _pConsoleWindowMetrics{ pMetrics },
+    _pAccessibilityNotifier{ pNotifier },
+    _pConApi{ nullptr },
+    _pBufferWriter{ nullptr },
+    _pAdapter{ nullptr },
+    _pStateMachine{ nullptr },
+    _pEngine{ nullptr },
+    _coordScreenBufferSize{ 0 },
+    _srScrollMargins{ 0 },
+    _viewport({ 0 }),
+    _psiAlternateBuffer{ nullptr },
+    _psiMainBuffer{ nullptr },
+    _rcAltSavedClientNew{ 0 },
+    _rcAltSavedClientOld{ 0 },
+    _fAltWindowChanged{ false },
+    _ptsTabs{ nullptr },
+    _Attributes{ ciFill.Attributes },
+    _PopupAttributes{ ciPopupFill.Attributes }
 {
-    WriteConsoleDbcsLeadByte[0] = 0;
-    _srScrollMargins = {0};
-    _Attributes = TextAttribute(ciFill.Attributes);
-    _PopupAttributes = TextAttribute(ciPopupFill.Attributes);
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (gci.GetVirtTermLevel() != 0)
     {
@@ -106,8 +121,6 @@ NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
                                                             pScreen->GetScreenBufferSize(),
                                                             ciFill,
                                                             uiCursorSize);
-        SetLineChar(*pScreen);
-
         const NTSTATUS status = pScreen->_InitializeOutputStateMachine();
 
         if (NT_SUCCESS(status))
@@ -238,7 +251,6 @@ NTSTATUS SCREEN_INFORMATION::_InitializeOutputStateMachine()
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     try
     {
-        FAIL_FAST_IF(_pConApi != nullptr);
         _pConApi = new ConhostInternalGetSet(gci);
 
         FAIL_FAST_IF(_pBufferWriter != nullptr);

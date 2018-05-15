@@ -131,7 +131,7 @@ class TextBufferTests
 
 void TextBufferTests::TestBufferCreate()
 {
-    VERIFY_IS_TRUE(NT_SUCCESS(m_state->GetTextBufferInfoInitResult()));
+    VERIFY_SUCCESS_NTSTATUS(m_state->GetTextBufferInfoInitResult());
 }
 
 void TextBufferTests::DoBufferRowIterationTest(TextBuffer& textBuffer)
