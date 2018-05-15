@@ -52,7 +52,6 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
                                    _In_ DWORD NumberOfVisibleChars,
                                    _In_ ULONG CtrlWakeupMask,
                                    _In_ COMMAND_HISTORY* CommandHistory,
-                                   _In_ ConsoleHandleData* pTempHandle,
                                    const std::wstring& exeName
 ) :
     ReadData(pInputBuffer, pInputReadHandleData),
@@ -72,12 +71,16 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
     _InsertMode{ ServiceLocator::LocateGlobals().getConsoleInformation().GetInsertMode() },
     _Processed{ IsFlagSet(pInputBuffer->InputMode, ENABLE_PROCESSED_INPUT) },
     _Line{ IsFlagSet(pInputBuffer->InputMode, ENABLE_LINE_INPUT) },
-    _pTempHandle{ pTempHandle },
+    _tempHandle{ nullptr },
     _exeName{ exeName },
     _fIsUnicode{ false },
     ControlKeyState{ 0 },
     pdwNumBytes{ nullptr }
 {
+    THROW_IF_FAILED(screenInfo.Header.AllocateIoHandle(ConsoleHandleData::HandleType::Output,
+                                                       GENERIC_WRITE,
+                                                       FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                                       _tempHandle));
 }
 
 // Routine Description:
@@ -132,7 +135,6 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
         *pReplyStatus = STATUS_ALERTED;
         delete[] _BackupLimit;
         gci.lpCookedReadData = nullptr;
-        LOG_IF_FAILED(_pTempHandle->CloseHandle());
         return true;
     }
 
@@ -145,7 +147,6 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
         CleanUpPopups(this);
         delete[] _BackupLimit;
         gci.lpCookedReadData = nullptr;
-        LOG_IF_FAILED(_pTempHandle->CloseHandle());
         return true;
     }
 
@@ -161,7 +162,6 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
         CleanUpPopups(this);
         delete[] _BackupLimit;
         gci.lpCookedReadData = nullptr;
-        LOG_IF_FAILED(_pTempHandle->CloseHandle());
         return true;
     }
 
@@ -221,7 +221,6 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
                     delete[] _BackupLimit;
                 }
                 gci.lpCookedReadData = nullptr;
-                LOG_IF_FAILED(_pTempHandle->CloseHandle());
 
                 return true;
             }
@@ -233,7 +232,6 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
     if (*pReplyStatus != CONSOLE_STATUS_WAIT)
     {
         gci.lpCookedReadData = nullptr;
-        LOG_IF_FAILED(_pTempHandle->CloseHandle());
         return true;
     }
     else
@@ -600,14 +598,14 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
             {
                 NumToWrite = sizeof(WCHAR);
                 status = WriteCharsLegacy(_screenInfo,
-                                           _BackupLimit,
-                                           _BufPtr,
-                                           &wch,
-                                           &NumToWrite,
-                                           &NumSpaces,
-                                           _OriginalCursorPosition.X,
-                                           WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
-                                           &ScrollY);
+                                          _BackupLimit,
+                                          _BufPtr,
+                                          &wch,
+                                          &NumToWrite,
+                                          &NumSpaces,
+                                          _OriginalCursorPosition.X,
+                                          WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
+                                          &ScrollY);
                 if (NT_SUCCESS(status))
                 {
                     _OriginalCursorPosition.Y += ScrollY;
@@ -677,14 +675,14 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                 {
                     NumToWrite = sizeof(WCHAR);
                     status = WriteCharsLegacy(_screenInfo,
-                                               _BackupLimit,
-                                               _BufPtr,
-                                               &wch,
-                                               &NumToWrite,
-                                               nullptr,
-                                               _OriginalCursorPosition.X,
-                                               WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
-                                               nullptr);
+                                              _BackupLimit,
+                                              _BufPtr,
+                                              &wch,
+                                              &NumToWrite,
+                                              nullptr,
+                                              _OriginalCursorPosition.X,
+                                              WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
+                                              nullptr);
                     if (!NT_SUCCESS(status))
                     {
                         RIPMSG1(RIP_WARNING, "WriteCharsLegacy failed %x", status);
@@ -787,14 +785,14 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                 dwFlags |= WC_KEEP_CURSOR_VISIBLE;
             }
             status = WriteCharsLegacy(_screenInfo,
-                                       _BackupLimit,
-                                       _BackupLimit,
-                                       _BackupLimit,
-                                       &NumToWrite,
-                                       &_NumberOfVisibleChars,
-                                       _OriginalCursorPosition.X,
-                                       dwFlags,
-                                       &ScrollY);
+                                      _BackupLimit,
+                                      _BackupLimit,
+                                      _BackupLimit,
+                                      &NumToWrite,
+                                      &_NumberOfVisibleChars,
+                                      _OriginalCursorPosition.X,
+                                      dwFlags,
+                                      &ScrollY);
             if (!NT_SUCCESS(status))
             {
                 RIPMSG1(RIP_WARNING, "WriteCharsLegacy failed 0x%x", status);
@@ -844,14 +842,14 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                 {
                     NumToWrite = sizeof(WCHAR);
                     status = WriteCharsLegacy(_screenInfo,
-                                               _BackupLimit,
-                                               _BufPtr,
-                                               _BufPtr,
-                                               &NumToWrite,
-                                               nullptr,
-                                               _OriginalCursorPosition.X,
-                                               WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
-                                               nullptr);
+                                              _BackupLimit,
+                                              _BufPtr,
+                                              _BufPtr,
+                                              &NumToWrite,
+                                              nullptr,
+                                              _OriginalCursorPosition.X,
+                                              WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
+                                              nullptr);
                     if (!NT_SUCCESS(status))
                     {
                         RIPMSG1(RIP_WARNING, "WriteCharsLegacy failed 0x%x", status);

@@ -45,7 +45,6 @@ public:
                      _In_ DWORD NumberOfVisibleChars,
                      _In_ ULONG CtrlWakeupMask,
                      _In_ COMMAND_HISTORY* CommandHistory,
-                     _In_ ConsoleHandleData* pTempHandle,
                      const std::wstring& exeName
         );
     ~COOKED_READ_DATA() override;
@@ -78,7 +77,6 @@ public:
     bool _InsertMode;
     const bool _Processed;
     const bool _Line;
-    ConsoleHandleData* _pTempHandle;
 
 // TODO MSFT:11285829 these variables need to be added to the
 // constructor or otherwise handled during object construction.
@@ -108,7 +106,6 @@ public:
         _Line{ false },
         _NumberOfVisibleChars{ 0 },
         _CtrlWakeupMask{ 0 },
-        _pTempHandle{ nullptr },
         _UserBuffer{ nullptr },
         _CurrentPosition{ 0 },
         _UserBufferSize{ 0 },
@@ -128,4 +125,5 @@ public:
 
 private:
     std::wstring _exeName;
+    std::unique_ptr<ConsoleHandleData> _tempHandle;
 };

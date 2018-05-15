@@ -131,9 +131,9 @@ NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
                 }
                 // Ignore Escape and Newline chars
                 else if (keyEvent->IsKeyDown() &&
-                         (IsFlagSet(pInputBuffer->InputMode, ENABLE_VIRTUAL_TERMINAL_INPUT) ||
-                          (keyEvent->GetVirtualKeyCode() != VK_ESCAPE &&
-                           keyEvent->GetCharData() != UNICODE_LINEFEED)))
+                    (IsFlagSet(pInputBuffer->InputMode, ENABLE_VIRTUAL_TERMINAL_INPUT) ||
+                         (keyEvent->GetVirtualKeyCode() != VK_ESCAPE &&
+                          keyEvent->GetCharData() != UNICODE_LINEFEED)))
                 {
                     *pwchOut = keyEvent->GetCharData();
                     return STATUS_SUCCESS;
@@ -328,8 +328,8 @@ NTSTATUS ReadPendingInput(_Inout_ InputBuffer* const pInputBuffer,
             if (pHandleData->BytesAvailable == 0 || bufferRemaining == 0)
             {
                 ClearAllFlags(pHandleData->InputHandleFlags,
-                                (INPUT_READ_HANDLE_DATA::HandleFlags::InputPending |
-                                INPUT_READ_HANDLE_DATA::HandleFlags::MultiLineInput));
+                    (INPUT_READ_HANDLE_DATA::HandleFlags::InputPending |
+                     INPUT_READ_HANDLE_DATA::HandleFlags::MultiLineInput));
                 delete[] pHandleData->BufPtr;
                 *pReadByteCount = 1;
                 return STATUS_SUCCESS;
@@ -337,10 +337,10 @@ NTSTATUS ReadPendingInput(_Inout_ InputBuffer* const pInputBuffer,
             else
             {
                 for (NumToWrite = 0, Tmp = pHandleData->CurrentBufPtr, NumToBytes = 0;
-                        NumToBytes < pHandleData->BytesAvailable &&
-                        NumToBytes < bufferRemaining / sizeof(wchar_t) &&
-                        *Tmp != UNICODE_LINEFEED;
-                        (IsCharFullWidth(*Tmp) ? NumToBytes += 2 : NumToBytes++), Tmp++, NumToWrite += sizeof(wchar_t));
+                     NumToBytes < pHandleData->BytesAvailable &&
+                     NumToBytes < bufferRemaining / sizeof(wchar_t) &&
+                     *Tmp != UNICODE_LINEFEED;
+                     (IsCharFullWidth(*Tmp) ? NumToBytes += 2 : NumToBytes++), Tmp++, NumToWrite += sizeof(wchar_t));
             }
         }
 
@@ -380,8 +380,8 @@ NTSTATUS ReadPendingInput(_Inout_ InputBuffer* const pInputBuffer,
             if (pHandleData->BytesAvailable == 0)
             {
                 ClearAllFlags(pHandleData->InputHandleFlags,
-                              (INPUT_READ_HANDLE_DATA::HandleFlags::InputPending |
-                               INPUT_READ_HANDLE_DATA::HandleFlags::MultiLineInput));
+                    (INPUT_READ_HANDLE_DATA::HandleFlags::InputPending |
+                     INPUT_READ_HANDLE_DATA::HandleFlags::MultiLineInput));
                 delete[] pHandleData->BufPtr;
                 *pReadByteCount = 1;
                 return STATUS_SUCCESS;
@@ -389,8 +389,8 @@ NTSTATUS ReadPendingInput(_Inout_ InputBuffer* const pInputBuffer,
             else
             {
                 for (NumToWrite = 0, Tmp = pHandleData->CurrentBufPtr, NumToBytes = 0;
-                        NumToBytes < pHandleData->BytesAvailable && NumToBytes < bufferRemaining / sizeof(wchar_t);
-                        (IsCharFullWidth(*Tmp) ? NumToBytes += 2 : NumToBytes++), Tmp++, NumToWrite += sizeof(wchar_t));
+                     NumToBytes < pHandleData->BytesAvailable && NumToBytes < bufferRemaining / sizeof(wchar_t);
+                     (IsCharFullWidth(*Tmp) ? NumToBytes += 2 : NumToBytes++), Tmp++, NumToWrite += sizeof(wchar_t));
             }
         }
 
@@ -402,8 +402,8 @@ NTSTATUS ReadPendingInput(_Inout_ InputBuffer* const pInputBuffer,
     if (pHandleData->BytesAvailable == 0)
     {
         ClearAllFlags(pHandleData->InputHandleFlags,
-                      (INPUT_READ_HANDLE_DATA::HandleFlags::InputPending |
-                       INPUT_READ_HANDLE_DATA::HandleFlags::MultiLineInput));
+            (INPUT_READ_HANDLE_DATA::HandleFlags::InputPending |
+             INPUT_READ_HANDLE_DATA::HandleFlags::MultiLineInput));
         delete[] pHandleData->BufPtr;
     }
     else
@@ -478,42 +478,25 @@ NTSTATUS ReadPendingInput(_Inout_ InputBuffer* const pInputBuffer,
 // - STATUS_NO_MEMORY in low memory situation
 // - other relevant NTSTATUS codes
 [[nodiscard]]
-NTSTATUS ReadLineInput(_Inout_ InputBuffer* const pInputBuffer,
-                       _In_ HANDLE ProcessData,
-                       _Out_writes_bytes_to_(OutputBufferSize, *pReadByteCount) wchar_t* const pwchBuffer,
-                       _Out_ ULONG* const pReadByteCount,
-                       _Inout_ ULONG* const pControlKeyState,
-                       _In_reads_bytes_opt_(cbInitialData) const wchar_t* const pwsInitialData,
-                       const ULONG cbInitialData,
-                       const DWORD dwCtrlWakeupMask,
-                       _In_ INPUT_READ_HANDLE_DATA* const pHandleData,
-                       const std::wstring& exeName,
-                       const bool Unicode,
-                       _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter,
-                       const size_t OutputBufferSize)
+HRESULT ReadLineInput(_Inout_ InputBuffer* const pInputBuffer,
+                      _In_ HANDLE ProcessData,
+                      _Out_writes_bytes_to_(OutputBufferSize, *pReadByteCount) wchar_t* const pwchBuffer,
+                      _Out_ ULONG* const pReadByteCount,
+                      _Inout_ ULONG* const pControlKeyState,
+                      _In_reads_bytes_opt_(cbInitialData) const wchar_t* const pwsInitialData,
+                      const ULONG cbInitialData,
+                      const DWORD dwCtrlWakeupMask,
+                      _In_ INPUT_READ_HANDLE_DATA* const pHandleData,
+                      const std::wstring& exeName,
+                      const bool Unicode,
+                      _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter,
+                      const size_t OutputBufferSize)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    if (!gci.HasActiveOutputBuffer())
-    {
-        return STATUS_UNSUCCESSFUL;
-    }
+    RETURN_HR_IF(E_FAIL, !gci.HasActiveOutputBuffer());
+
     SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
     PCOMMAND_HISTORY const pCommandHistory = FindCommandHistory(ProcessData);
-
-    // We need to create a temporary handle to the current screen buffer.
-    ConsoleHandleData* pTempHandleData;
-    NTSTATUS Status = NTSTATUS_FROM_HRESULT(screenInfo.Header.AllocateIoHandle(ConsoleHandleData::HandleType::Output,
-                                                                               GENERIC_WRITE,
-                                                                               FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                                                               &pTempHandleData));
-
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-
-    bool Echo = IsFlagSet(pInputBuffer->InputMode, ENABLE_ECHO_INPUT);
-
 
     // to emulate OS/2 KbdStringIn, we read into our own big buffer
     // (256 bytes) until the user types enter.  then return as many
@@ -521,15 +504,7 @@ NTSTATUS ReadLineInput(_Inout_ InputBuffer* const pInputBuffer,
 
     ULONG const TempBufferSize = gsl::narrow<ULONG>(std::max(OutputBufferSize, LINE_INPUT_BUFFER_SIZE));
     wchar_t* const TempBuffer = (wchar_t*) new(std::nothrow) BYTE[TempBufferSize];
-    if (TempBuffer == nullptr)
-    {
-        if (Echo)
-        {
-            LOG_IF_FAILED(pTempHandleData->CloseHandle());
-        }
-
-        return STATUS_NO_MEMORY;
-    }
+    RETURN_IF_NULL_ALLOC(TempBuffer);
 
     // Initialize the user's buffer to spaces. This is done so that
     // moving in the buffer via cursor doesn't do strange things.
@@ -541,68 +516,64 @@ NTSTATUS ReadLineInput(_Inout_ InputBuffer* const pInputBuffer,
     COORD invalidCoord;
     invalidCoord.X = -1;
     invalidCoord.Y = -1;
-    COOKED_READ_DATA CookedReadData(pInputBuffer, // pInputBuffer
-                                    pHandleData, // pInputReadHandleData
-                                    screenInfo, // pScreenInfo
-                                    TempBufferSize, // BufferSize
-                                    0, // BytesRead
-                                    0, // CurrentPosition
-                                    TempBuffer, // BufferPtr
-                                    TempBuffer, // BackupLimit
-                                    static_cast<ULONG>(OutputBufferSize), // UserBufferSize
-                                    pwchBuffer, // UserBuffer
-                                    invalidCoord, // OriginalCursorPosition
-                                    0, // NumberOfVisibleChars
-                                    dwCtrlWakeupMask, // CtrlWakeupMask
-                                    pCommandHistory, // CommandHistory
-                                    pTempHandleData,
-                                    exeName); // pTempHandle
-
-    if (cbInitialData > 0)
+    try
     {
-        memcpy_s(CookedReadData._BufPtr, CookedReadData._BufferSize, pwsInitialData, cbInitialData);
+        COOKED_READ_DATA CookedReadData(pInputBuffer, // pInputBuffer
+                                        pHandleData, // pInputReadHandleData
+                                        screenInfo, // pScreenInfo
+                                        TempBufferSize, // BufferSize
+                                        0, // BytesRead
+                                        0, // CurrentPosition
+                                        TempBuffer, // BufferPtr
+                                        TempBuffer, // BackupLimit
+                                        static_cast<ULONG>(OutputBufferSize), // UserBufferSize
+                                        pwchBuffer, // UserBuffer
+                                        invalidCoord, // OriginalCursorPosition
+                                        0, // NumberOfVisibleChars
+                                        dwCtrlWakeupMask, // CtrlWakeupMask
+                                        pCommandHistory, // CommandHistory
+                                        exeName); // pTempHandle
 
-        CookedReadData._BytesRead += cbInitialData;
-
-        ULONG const cchInitialData = cbInitialData / sizeof(wchar_t);
-        CookedReadData._NumberOfVisibleChars = cchInitialData;
-        CookedReadData._BufPtr += cchInitialData;
-        CookedReadData._CurrentPosition = cchInitialData;
-
-        CookedReadData._OriginalCursorPosition = screenInfo.GetTextBuffer().GetCursor().GetPosition();
-        CookedReadData._OriginalCursorPosition.X -= (SHORT)CookedReadData._CurrentPosition;
-
-        const SHORT sScreenBufferSizeX = screenInfo.GetScreenBufferSize().X;
-        while (CookedReadData._OriginalCursorPosition.X < 0)
+        if (cbInitialData > 0)
         {
-            CookedReadData._OriginalCursorPosition.X += sScreenBufferSizeX;
-            CookedReadData._OriginalCursorPosition.Y -= 1;
+            memcpy_s(CookedReadData._BufPtr, CookedReadData._BufferSize, pwsInitialData, cbInitialData);
+
+            CookedReadData._BytesRead += cbInitialData;
+
+            ULONG const cchInitialData = cbInitialData / sizeof(wchar_t);
+            CookedReadData._NumberOfVisibleChars = cchInitialData;
+            CookedReadData._BufPtr += cchInitialData;
+            CookedReadData._CurrentPosition = cchInitialData;
+
+            CookedReadData._OriginalCursorPosition = screenInfo.GetTextBuffer().GetCursor().GetPosition();
+            CookedReadData._OriginalCursorPosition.X -= (SHORT)CookedReadData._CurrentPosition;
+
+            const SHORT sScreenBufferSizeX = screenInfo.GetScreenBufferSize().X;
+            while (CookedReadData._OriginalCursorPosition.X < 0)
+            {
+                CookedReadData._OriginalCursorPosition.X += sScreenBufferSizeX;
+                CookedReadData._OriginalCursorPosition.Y -= 1;
+            }
         }
-    }
 
-    gci.lpCookedReadData = &CookedReadData;
+        gci.lpCookedReadData = &CookedReadData;
 
-    Status = CookedReadData.Read(Unicode, *pReadByteCount, *pControlKeyState);
-    if (CONSOLE_STATUS_WAIT == Status)
-    {
-        COOKED_READ_DATA* pCookedReadWaiter = new(std::nothrow) COOKED_READ_DATA(std::move(CookedReadData));
-        if (nullptr == pCookedReadWaiter)
+        if (CONSOLE_STATUS_WAIT == CookedReadData.Read(Unicode, *pReadByteCount, *pControlKeyState))
         {
-            Status = STATUS_NO_MEMORY;
-        }
-        else
-        {
+            COOKED_READ_DATA* pCookedReadWaiter = new(std::nothrow) COOKED_READ_DATA(std::move(CookedReadData));
+            RETURN_IF_NULL_ALLOC(pCookedReadWaiter);
+
             gci.lpCookedReadData = pCookedReadWaiter;
             *ppWaiter = pCookedReadWaiter;
         }
+        else
+        {
+            gci.lpCookedReadData = nullptr;
+        }
     }
+    CATCH_RETURN();
 
-    if (CONSOLE_STATUS_WAIT != Status)
-    {
-        gci.lpCookedReadData = nullptr;
-    }
-
-    return Status;
+    return S_OK;
 }
 
 // Routine Description:
@@ -672,11 +643,11 @@ NTSTATUS ReadCharacterInput(_Inout_ InputBuffer* const pInputBuffer,
         else
         {
             Status = GetChar(pInputBuffer,
-                                pBuffer,
-                                true,
-                                nullptr,
-                                nullptr,
-                                nullptr);
+                             pBuffer,
+                             true,
+                             nullptr,
+                             nullptr,
+                             nullptr);
         }
 
         if (Status == CONSOLE_STATUS_WAIT)
@@ -850,19 +821,19 @@ NTSTATUS DoReadConsole(_Inout_ InputBuffer* const pInputBuffer,
     }
     else if (IsFlagSet(pInputBuffer->InputMode, ENABLE_LINE_INPUT))
     {
-        return ReadLineInput(pInputBuffer,
-                            ProcessData,
-                            pwchBuffer,
-                            pcbBuffer,
-                            pControlKeyState,
-                            pwsInitialData,
-                            cbInitialData,
-                            dwCtrlWakeupMask,
-                            pHandleData,
-                            exeName,
-                            Unicode,
-                            ppWaiter,
-                            OutputBufferSize);
+        return NTSTATUS_FROM_HRESULT(ReadLineInput(pInputBuffer,
+                                                   ProcessData,
+                                                   pwchBuffer,
+                                                   pcbBuffer,
+                                                   pControlKeyState,
+                                                   pwsInitialData,
+                                                   cbInitialData,
+                                                   dwCtrlWakeupMask,
+                                                   pHandleData,
+                                                   exeName,
+                                                   Unicode,
+                                                   ppWaiter,
+                                                   OutputBufferSize));
     }
     else
     {

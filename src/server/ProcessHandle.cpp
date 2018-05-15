@@ -37,21 +37,13 @@ ConsoleProcessHandle::ConsoleProcessHandle(const DWORD dwProcessId,
     }
 }
 
-// Routine Description:
-// - Destroys an instance of the ConsoleProcessHandle class.
-// - NOTE: Will close ConsoleHandleData handles if attached.
-ConsoleProcessHandle::~ConsoleProcessHandle()
+CD_CONNECTION_INFORMATION ConsoleProcessHandle::GetConnectionInformation() const
 {
-    // TODO: MSFT: 9358923 Convert to deleters and put CloseHandle in respective destructors? Then use smart pointers? http://osgvsowi/9358923
-    if (pInputHandle != nullptr)
-    {
-        LOG_IF_FAILED(pInputHandle->CloseHandle());
-    }
-
-    if (pOutputHandle != nullptr)
-    {
-        LOG_IF_FAILED(pOutputHandle->CloseHandle());
-    }
+    CD_CONNECTION_INFORMATION result = { 0 };
+    result.Process = reinterpret_cast<ULONG_PTR>(this);
+    result.Input = reinterpret_cast<ULONG_PTR>(pInputHandle.get());
+    result.Output = reinterpret_cast<ULONG_PTR>(pOutputHandle.get());
+    return result;
 }
 
 // Routine Description:

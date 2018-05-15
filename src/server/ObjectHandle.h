@@ -25,13 +25,19 @@ class SCREEN_INFORMATION;
 
 #include "WaitQueue.h"
 
-class ConsoleHandleData
+class ConsoleHandleData final
 {
 public:
     ConsoleHandleData(const ULONG ulHandleType,
                       const ACCESS_MASK amAccess,
                       const ULONG ulShareAccess,
                       _In_ PVOID const pvClientPointer);
+
+    ~ConsoleHandleData();
+    ConsoleHandleData(const ConsoleHandleData&) = delete;
+    ConsoleHandleData(ConsoleHandleData&&) = delete;
+    ConsoleHandleData& operator=(const ConsoleHandleData&) & = delete;
+    ConsoleHandleData& operator=(ConsoleHandleData&&) & = delete;
 
     [[nodiscard]]
     HRESULT GetInputBuffer(const ACCESS_MASK amRequested,

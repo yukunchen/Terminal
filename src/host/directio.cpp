@@ -1174,7 +1174,7 @@ NTSTATUS DoSrvFillConsoleOutput(SCREEN_INFORMATION& screenInfo, _Inout_ CONSOLE_
 //#define CONSOLE_OEMFONT_DISPLAY 4
 
 [[nodiscard]]
-NTSTATUS ConsoleCreateScreenBuffer(_Out_ ConsoleHandleData** ppHandle,
+NTSTATUS ConsoleCreateScreenBuffer(std::unique_ptr<ConsoleHandleData>& handle,
                                    _In_ PCONSOLE_API_MSG /*Message*/,
                                    _In_ PCD_CREATE_OBJECT_INFORMATION Information,
                                    _In_ PCONSOLE_CREATESCREENBUFFER_MSG a)
@@ -1221,7 +1221,7 @@ NTSTATUS ConsoleCreateScreenBuffer(_Out_ ConsoleHandleData** ppHandle,
     Status = NTSTATUS_FROM_HRESULT(ScreenInfo->Header.AllocateIoHandle(HandleType,
                                                                        Information->DesiredAccess,
                                                                        Information->ShareMode,
-                                                                       ppHandle));
+                                                                       handle));
 
     if (!NT_SUCCESS(Status))
     {

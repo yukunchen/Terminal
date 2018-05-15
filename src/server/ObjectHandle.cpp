@@ -32,6 +32,25 @@ ConsoleHandleData::ConsoleHandleData(const ULONG ulHandleType,
 }
 
 // Routine Description:
+// - Closes this handle destroying memory as appropriate and freeing ref counts.
+//   Do not use this handle after closing.
+ConsoleHandleData::~ConsoleHandleData()
+{
+    if (_IsInput())
+    {
+        THROW_IF_FAILED(_CloseInputHandle());
+    }
+    else if (_IsOutput())
+    {
+        THROW_IF_FAILED(_CloseOutputHandle());
+    }
+    else
+    {
+        FAIL_FAST_HR(E_UNEXPECTED);
+    }
+}
+
+// Routine Description:
 // - Checks if this handle represents an input type object.
 // Arguments:
 // - <none>
@@ -177,31 +196,6 @@ HRESULT ConsoleHandleData::GetWaitQueue(_Outptr_ ConsoleWaitQueue** const ppWait
 INPUT_READ_HANDLE_DATA* ConsoleHandleData::GetClientInput() const
 {
     return _pClientInput;
-}
-
-// Routine Description:
-// - Closes this handle destroying memory as appropriate and freeing ref counts.
-//   Do not use this handle after closing.
-// Arguments:
-// - <none>
-// Return Value:
-// - HRESULT S_OK or suitable error code.
-// TODO: MSFT: 9358923 Consider making this a part of the destructor. http://osgvsowi/9358923
-[[nodiscard]]
-HRESULT ConsoleHandleData::CloseHandle()
-{
-    if (_IsInput())
-    {
-        return _CloseInputHandle();
-    }
-    else if (_IsOutput())
-    {
-        return _CloseOutputHandle();
-    }
-    else
-    {
-        return E_UNEXPECTED;
-    }
 }
 
 // Routine Description:

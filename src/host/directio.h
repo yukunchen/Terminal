@@ -49,7 +49,7 @@ NTSTATUS SrvFillConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPen
 NTSTATUS DoSrvFillConsoleOutput(SCREEN_INFORMATION& screenInfo, _Inout_ CONSOLE_FILLCONSOLEOUTPUT_MSG* pMsg);
 
 [[nodiscard]]
-NTSTATUS ConsoleCreateScreenBuffer(_Out_ ConsoleHandleData** ppHandle,
+NTSTATUS ConsoleCreateScreenBuffer(std::unique_ptr<ConsoleHandleData>& handle,
                                    _In_ PCONSOLE_API_MSG Message,
                                    _In_ PCD_CREATE_OBJECT_INFORMATION Information,
                                    _In_ PCONSOLE_CREATESCREENBUFFER_MSG a);

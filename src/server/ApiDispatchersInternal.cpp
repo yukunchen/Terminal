@@ -93,10 +93,10 @@ HRESULT ApiDispatchers::ServerGenerateConsoleCtrlEvent(_Inout_ CONSOLE_API_MSG *
             ProcessHandle = gci.ProcessHandleList.FindProcessInList(ProcessId);
             RETURN_HR_IF_NULL(E_INVALIDARG, ProcessHandle);
             RETURN_IF_FAILED(gci.ProcessHandleList.AllocProcessData(a->ProcessGroupId,
-                                                                                       0,
-                                                                                       a->ProcessGroupId,
-                                                                                       ProcessHandle,
-                                                                                       nullptr));
+                                                                    0,
+                                                                    a->ProcessGroupId,
+                                                                    ProcessHandle,
+                                                                    nullptr));
         }
     }
 
