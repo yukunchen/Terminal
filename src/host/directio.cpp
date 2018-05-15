@@ -1161,9 +1161,9 @@ NTSTATUS DoSrvFillConsoleOutput(SCREEN_INFORMATION& screenInfo, _Inout_ CONSOLE_
 {
     NTSTATUS Status = STATUS_SUCCESS;
     const auto elementType = pMsg->ElementType;
-    if (elementType == CONSOLE_ATTRIBUTE)
+    try
     {
-        try
+        if (elementType == CONSOLE_ATTRIBUTE)
         {
             size_t amountWritten = FillOutputAttributes(screenInfo,
                                                         pMsg->Element,
@@ -1172,16 +1172,38 @@ NTSTATUS DoSrvFillConsoleOutput(SCREEN_INFORMATION& screenInfo, _Inout_ CONSOLE_
             pMsg->Length = gsl::narrow<ULONG>(amountWritten);
             Status = STATUS_SUCCESS;
         }
-        catch (...)
+        else if (elementType == CONSOLE_REAL_UNICODE ||
+                elementType == CONSOLE_FALSE_UNICODE)
+        {
+            size_t amountWritten = FillOutputW(screenInfo,
+                                               { pMsg->Element },
+                                               pMsg->WriteCoord,
+                                               static_cast<size_t>(pMsg->Length));
+            pMsg->Length = gsl::narrow<ULONG>(amountWritten);
+            Status = STATUS_SUCCESS;
+        }
+        else if (elementType == CONSOLE_ASCII)
+        {
+            size_t amountWritten = FillOutputA(screenInfo,
+                                               { static_cast<char>(pMsg->Element) },
+                                               pMsg->WriteCoord,
+                                               static_cast<size_t>(pMsg->Length));
+            pMsg->Length = gsl::narrow<ULONG>(amountWritten);
+            Status = STATUS_SUCCESS;
+        }
+        else
         {
             pMsg->Length = 0;
-            return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+            Status = STATUS_INVALID_PARAMETER;
         }
     }
-    else
+    catch (...)
     {
-        Status = FillOutput(screenInfo, pMsg->Element, pMsg->WriteCoord, pMsg->ElementType, &pMsg->Length);
+        pMsg->Length = 0;
+        return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
     }
+
+
     return Status;
 }
 

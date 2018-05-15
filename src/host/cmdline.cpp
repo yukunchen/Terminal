@@ -367,11 +367,14 @@ void DeleteCommandLine(_Inout_ COOKED_READ_DATA* const pCookedReadData, const bo
         CharsToWrite++;
     }
 
-    LOG_IF_FAILED(FillOutput(pCookedReadData->_screenInfo,
-                             L' ',
-                             coordOriginalCursor,
-                             CONSOLE_FALSE_UNICODE,    // faster than real unicode
-                             &CharsToWrite));
+    try
+    {
+        FillOutputW(pCookedReadData->_screenInfo,
+                    { UNICODE_SPACE },
+                    coordOriginalCursor,
+                    CharsToWrite);
+    }
+    CATCH_LOG();
 
     if (fUpdateFields)
     {
@@ -1012,14 +1015,13 @@ VOID DrawPromptPopup(_In_ PCLE_POPUP Popup,
                                                                     Popup->Attributes,
                                                                     WriteCoord,
                                                                     static_cast<size_t>(lStringLength)));
+
+            lStringLength = gsl::narrow<ULONG>(FillOutputW(screenInfo,
+                                                           { UNICODE_SPACE },
+                                                           WriteCoord,
+                                                           static_cast<size_t>(lStringLength)));
         }
         CATCH_LOG();
-
-        LOG_IF_FAILED(FillOutput(screenInfo,
-                                 (WCHAR)' ',
-                                 WriteCoord,
-                                 CONSOLE_FALSE_UNICODE,   // faster that real unicode
-                                 &lStringLength));
 
         WriteCoord.Y += 1;
     }
@@ -1484,7 +1486,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                             while (++NextWord < BufLast)
                             {
                                 if (fStartFromDelim != IsWordDelim(*NextWord))
-                                {
+                                {
                                     break;
                                 }
                             }
@@ -1862,73 +1864,97 @@ void DrawCommandListBorder(_In_ PCLE_POPUP const Popup, SCREEN_INFORMATION& scre
     COORD WriteCoord;
     WriteCoord.X = Popup->Region.Left;
     WriteCoord.Y = Popup->Region.Top;
-    ULONG Length = POPUP_SIZE_X(Popup) + 2;
     try
     {
-        Length = gsl::narrow<ULONG>(FillOutputAttributes(screenInfo,
-                                                         Popup->Attributes,
-                                                         WriteCoord,
-                                                         static_cast<size_t>(Length)));
+        FillOutputAttributes(screenInfo,
+                             Popup->Attributes,
+                             WriteCoord,
+                             POPUP_SIZE_X(Popup) + 2);
+
+        // draw upper left corner
+        FillOutputW(screenInfo,
+                    { screenInfo.LineChar[UPPER_LEFT_CORNER] },
+                    WriteCoord,
+                    1);
+
+        // draw upper bar
+        WriteCoord.X += 1;
+        FillOutputW(screenInfo,
+                    { screenInfo.LineChar[HORIZONTAL_LINE] },
+                    WriteCoord,
+                    POPUP_SIZE_X(Popup));
+
+        // draw upper right corner
+        WriteCoord.X = Popup->Region.Right;
+        FillOutputW(screenInfo,
+                    { screenInfo.LineChar[UPPER_RIGHT_CORNER] },
+                    WriteCoord,
+                    1);
+
+
     }
     CATCH_LOG();
 
-    // draw upper left corner
-    Length = 1;
-    LOG_IF_FAILED(FillOutput(screenInfo, screenInfo.LineChar[UPPER_LEFT_CORNER], WriteCoord, CONSOLE_REAL_UNICODE, &Length));
-
-    // draw upper bar
-    WriteCoord.X += 1;
-    Length = POPUP_SIZE_X(Popup);
-    LOG_IF_FAILED(FillOutput(screenInfo, screenInfo.LineChar[HORIZONTAL_LINE], WriteCoord, CONSOLE_REAL_UNICODE, &Length));
-
-    // draw upper right corner
-    WriteCoord.X = Popup->Region.Right;
-    Length = 1;
-    LOG_IF_FAILED(FillOutput(screenInfo, screenInfo.LineChar[UPPER_RIGHT_CORNER], WriteCoord, CONSOLE_REAL_UNICODE, &Length));
 
     for (SHORT i = 0; i < POPUP_SIZE_Y(Popup); i++)
     {
         WriteCoord.Y += 1;
         WriteCoord.X = Popup->Region.Left;
 
-        // fill attributes
-        Length = POPUP_SIZE_X(Popup) + 2;
-        LOG_IF_FAILED(FillOutput(screenInfo, Popup->Attributes.GetLegacyAttributes(), WriteCoord, CONSOLE_ATTRIBUTE, &Length));
-        Length = 1;
-        LOG_IF_FAILED(FillOutput(screenInfo, screenInfo.LineChar[VERTICAL_LINE], WriteCoord, CONSOLE_REAL_UNICODE, &Length));
-        WriteCoord.X = Popup->Region.Right;
-        Length = 1;
-        LOG_IF_FAILED(FillOutput(screenInfo, screenInfo.LineChar[VERTICAL_LINE], WriteCoord, CONSOLE_REAL_UNICODE, &Length));
+        try
+        {
+            // fill attributes
+            FillOutputAttributes(screenInfo,
+                                Popup->Attributes,
+                                WriteCoord,
+                                POPUP_SIZE_X(Popup) + 2);
+
+            FillOutputW(screenInfo,
+                        { screenInfo.LineChar[VERTICAL_LINE] },
+                        WriteCoord,
+                        1);
+
+            WriteCoord.X = Popup->Region.Right;
+            FillOutputW(screenInfo,
+                        { screenInfo.LineChar[VERTICAL_LINE] },
+                        WriteCoord,
+                        1);
+        }
+        CATCH_LOG();
     }
 
     // Draw bottom line.
     // Fill attributes of top line.
     WriteCoord.X = Popup->Region.Left;
     WriteCoord.Y = Popup->Region.Bottom;
-    Length = POPUP_SIZE_X(Popup) + 2;
     try
     {
-        Length = gsl::narrow<ULONG>(FillOutputAttributes(screenInfo,
-                                                         Popup->Attributes,
-                                                         WriteCoord,
-                                                         static_cast<size_t>(Length)));
+        FillOutputAttributes(screenInfo,
+                             Popup->Attributes,
+                             WriteCoord,
+                             POPUP_SIZE_X(Popup) + 2);
+        // Draw bottom left corner.
+        WriteCoord.X = Popup->Region.Left;
+        FillOutputW(screenInfo,
+                    { screenInfo.LineChar[BOTTOM_LEFT_CORNER] },
+                    WriteCoord,
+                    1);
+
+        // Draw lower bar.
+        WriteCoord.X += 1;
+        FillOutputW(screenInfo,
+                    { screenInfo.LineChar[HORIZONTAL_LINE] },
+                    WriteCoord,
+                    POPUP_SIZE_X(Popup));
+
+        // draw lower right corner
+        WriteCoord.X = Popup->Region.Right;
+        FillOutputW(screenInfo,
+                    { screenInfo.LineChar[BOTTOM_RIGHT_CORNER] },
+                    WriteCoord,
+                    1);
     }
     CATCH_LOG();
-
-    // Draw bottom left corner.
-    Length = 1;
-    WriteCoord.X = Popup->Region.Left;
-    LOG_IF_FAILED(FillOutput(screenInfo, screenInfo.LineChar[BOTTOM_LEFT_CORNER], WriteCoord, CONSOLE_REAL_UNICODE, &Length));
-
-    // Draw lower bar.
-    WriteCoord.X += 1;
-    Length = POPUP_SIZE_X(Popup);
-    LOG_IF_FAILED(FillOutput(screenInfo, screenInfo.LineChar[HORIZONTAL_LINE], WriteCoord, CONSOLE_REAL_UNICODE, &Length));
-
-    // draw lower right corner
-    WriteCoord.X = Popup->Region.Right;
-    Length = 1;
-    LOG_IF_FAILED(FillOutput(screenInfo, screenInfo.LineChar[BOTTOM_RIGHT_CORNER], WriteCoord, CONSOLE_REAL_UNICODE, &Length));
 }
 
 void UpdateHighlight(_In_ PCLE_POPUP Popup,
@@ -1967,11 +1993,10 @@ void UpdateHighlight(_In_ PCLE_POPUP Popup,
     try
     {
         WORD const Attributes = (WORD)(((PopupLegacyAttributes << 4) & 0xf0) | ((PopupLegacyAttributes >> 4) & 0x0f));
-        TextAttribute attr{ Attributes };
         lStringLength = gsl::narrow<ULONG>(FillOutputAttributes(screenInfo,
-                                                                attr,
+                                                                Attributes,
                                                                 WriteCoord,
-                                                                static_cast<size_t>(lStringLength)));
+                                                                lStringLength));
     }
     CATCH_LOG();
 }
@@ -1993,15 +2018,14 @@ void DrawCommandListPopup(_In_ PCLE_POPUP const Popup,
             lStringLength = gsl::narrow<ULONG>(FillOutputAttributes(screenInfo,
                                                                     Popup->Attributes,
                                                                     WriteCoord,
-                                                                    static_cast<size_t>(lStringLength)));
+                                                                    lStringLength));
+            lStringLength = gsl::narrow<ULONG>(FillOutputW(screenInfo,
+                                                           { UNICODE_SPACE },
+                                                           WriteCoord,
+                                                           lStringLength));
         }
         CATCH_LOG();
 
-        LOG_IF_FAILED(FillOutput(screenInfo,
-                                 (WCHAR)' ',
-                                 WriteCoord,
-                                 CONSOLE_FALSE_UNICODE,   // faster than real unicode
-                                 &lStringLength));
         WriteCoord.Y += 1;
     }
 

@@ -33,13 +33,6 @@ void WriteRegionToScreen(SCREEN_INFORMATION& screenInfo, _In_ PSMALL_RECT psrReg
 
 void WriteToScreen(SCREEN_INFORMATION& screenInfo, const SMALL_RECT srRegion);
 
-[[nodiscard]]
-NTSTATUS FillOutput(SCREEN_INFORMATION& screenInfo,
-                    _In_ WORD wElement,
-                    const COORD coordWrite,
-                    const ULONG ulElementType,
-                    _Inout_ PULONG pcElements); // this value is valid even for error cases
-
 size_t FillOutputAttributes(SCREEN_INFORMATION& screenInfo,
                             const TextAttribute attr,
                             const COORD target,

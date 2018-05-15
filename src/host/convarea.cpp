@@ -329,11 +329,17 @@ NTSTATUS FillUndetermineChars(_In_ ConversionAreaInfo* const ConvAreaInfo)
     COORD Coord = { 0 };
     DWORD CharsToWrite = ConvAreaInfo->ScreenBuffer->GetScreenBufferSize().X;
 
-    LOG_IF_FAILED(FillOutput(*ConvAreaInfo->ScreenBuffer,
-                             (WCHAR)' ',
-                             Coord,
-                             CONSOLE_FALSE_UNICODE,    // faster than real unicode
-                             &CharsToWrite));
+    try
+    {
+        CharsToWrite = gsl::narrow<DWORD>(FillOutputW(*ConvAreaInfo->ScreenBuffer,
+                                                      { UNICODE_SPACE },
+                                                      Coord,
+                                                      CharsToWrite));
+    }
+    catch (...)
+    {
+        return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+    }
 
     CharsToWrite = ConvAreaInfo->ScreenBuffer->GetScreenBufferSize().X;
     try
