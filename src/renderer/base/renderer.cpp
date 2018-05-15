@@ -1228,7 +1228,7 @@ std::vector<SMALL_RECT> Renderer::_GetSelectionRects() const
 
     for (auto& rect : rects)
     {
-        view.ConvertToOrigin(rect);
+        rect = view.ConvertToOrigin(rect).ToInclusive();
 
         // hopefully temporary, we should be receiving the right selection sizes without correction.
         rect.Right++;
