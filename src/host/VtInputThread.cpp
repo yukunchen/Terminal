@@ -28,7 +28,8 @@ using namespace Microsoft::Console;
 VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
                              const bool inheritCursor)
     : _hFile(std::move(hPipe)),
-    _utf8Parser(CP_UTF8)
+    _utf8Parser(CP_UTF8),
+    _dwThreadId(0)
 {
     THROW_IF_HANDLE_INVALID(_hFile.get());
 

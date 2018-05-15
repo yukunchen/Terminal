@@ -33,7 +33,8 @@ ConIoSrvComm::ConIoSrvComm()
       _alpcSharedViewSize(0),
       _alpcSharedViewBase(NULL),
       _displayMode(USHORT_MAX),
-      _fIsInputInitialized(false)
+      _fIsInputInitialized(false),
+      pWddmConEngine(nullptr)
 {
 
 }

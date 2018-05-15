@@ -39,12 +39,7 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     Next{ nullptr },
     WriteConsoleDbcsLeadByte{ 0, 0 },
     FillOutDbcsLeadChar{ 0 },
-    LineChar{ UNICODE_BOX_DRAW_LIGHT_DOWN_AND_RIGHT,
-              UNICODE_BOX_DRAW_LIGHT_DOWN_AND_LEFT,
-              UNICODE_BOX_DRAW_LIGHT_HORIZONTAL,
-              UNICODE_BOX_DRAW_LIGHT_VERTICAL,
-              UNICODE_BOX_DRAW_LIGHT_UP_AND_RIGHT,
-              UNICODE_BOX_DRAW_LIGHT_UP_AND_LEFT },
+    // LineChar initialized below.
     ConvScreenInfo{ nullptr },
     ScrollScale{ 1ul },
     _pConsoleWindowMetrics{ pMetrics },
@@ -66,6 +61,12 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     _Attributes{ ciFill.Attributes },
     _PopupAttributes{ ciPopupFill.Attributes }
 {
+    LineChar[0] = UNICODE_BOX_DRAW_LIGHT_DOWN_AND_RIGHT;
+    LineChar[1] = UNICODE_BOX_DRAW_LIGHT_DOWN_AND_LEFT;
+    LineChar[2] = UNICODE_BOX_DRAW_LIGHT_HORIZONTAL;
+    LineChar[3] = UNICODE_BOX_DRAW_LIGHT_VERTICAL;
+    LineChar[4] = UNICODE_BOX_DRAW_LIGHT_UP_AND_RIGHT;
+    LineChar[5] = UNICODE_BOX_DRAW_LIGHT_UP_AND_LEFT;
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (gci.GetVirtTermLevel() != 0)
     {

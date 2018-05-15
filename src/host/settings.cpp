@@ -49,8 +49,9 @@ Settings::Settings() :
     _dwVirtTermLevel(0),
     _fUseWindowSizePixels(false),
     _fAutoReturnOnNewline(true), // the historic Windows behavior defaults this to on.
-    _fRenderGridWorldwide(false) // historically grid lines were only rendered in DBCS codepages, so this is false by default unless otherwise specified.
+    _fRenderGridWorldwide(false), // historically grid lines were only rendered in DBCS codepages, so this is false by default unless otherwise specified.
     // window size pixels initialized below
+    _fInterceptCopyPaste(0)
 {
     _dwScreenBufferSize.X = 80;
     _dwScreenBufferSize.Y = 25;

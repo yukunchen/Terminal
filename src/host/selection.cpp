@@ -16,7 +16,9 @@ Selection::Selection() :
     _fSelectionVisible(false),
     _ulSavedCursorSize(0),
     _fSavedCursorVisible(false),
-    _dwSelectionFlags(0)
+    _dwSelectionFlags(0),
+    _fLineSelection(true),
+    _fUseAlternateSelection(false)
 {
     ZeroMemory((void*)&_srSelectionRect, sizeof(_srSelectionRect));
     ZeroMemory((void*)&_coordSelectionAnchor, sizeof(_coordSelectionAnchor));
