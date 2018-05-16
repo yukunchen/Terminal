@@ -31,10 +31,6 @@ public:
     INPUT_READ_HANDLE_DATA& operator=(const INPUT_READ_HANDLE_DATA&) & = delete;
     INPUT_READ_HANDLE_DATA& operator=(INPUT_READ_HANDLE_DATA&&) & = delete;
 
-    /*ULONG BytesAvailable;
-    PWCHAR CurrentBufPtr;
-    PWCHAR BufPtr;*/
-
     void IncrementReadCount();
     void DecrementReadCount();
     size_t GetReadCount();

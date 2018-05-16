@@ -71,8 +71,6 @@ public:
     const bool _Processed;
     const bool _Line;
 
-// TODO MSFT:11285829 these variables need to be added to the
-// constructor or otherwise handled during object construction.
     ULONG ControlKeyState;
     COORD BeforeDialogCursorPosition; // Currently only used for F9 (ProcessCommandNumberInput) since it's the only pop-up to move the cursor when it starts.
     bool _fIsUnicode;

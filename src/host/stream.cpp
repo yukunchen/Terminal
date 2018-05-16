@@ -477,7 +477,7 @@ HRESULT ReadLineInput(_Inout_ InputBuffer* const pInputBuffer,
         COOKED_READ_DATA CookedReadData(pInputBuffer, // pInputBuffer
                                         pHandleData, // pInputReadHandleData
                                         screenInfo, // pScreenInfo
-                                        static_cast<ULONG>(OutputBufferSize), // UserBufferSize
+                                        OutputBufferSize, // UserBufferSize
                                         pwchBuffer, // UserBuffer
                                         dwCtrlWakeupMask, // CtrlWakeupMask
                                         pCommandHistory, // CommandHistory
