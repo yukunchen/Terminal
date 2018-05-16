@@ -42,11 +42,6 @@
 // fwd decls
 void DrawCommandListBorder(_In_ PCLE_POPUP const Popup, SCREEN_INFORMATION& screenInfo);
 PCOMMAND GetLastCommand(_In_ PCOMMAND_HISTORY CommandHistory);
-SHORT FindMatchingCommand(_In_ PCOMMAND_HISTORY CommandHistory,
-                          _In_reads_bytes_(CurrentCommandLength) PCWCHAR CurrentCommand,
-                          _In_ ULONG CurrentCommandLength,
-                          _In_ SHORT CurrentIndex,
-                          _In_ DWORD Flags);
 [[nodiscard]]
 NTSTATUS CommandNumberPopup(_In_ COOKED_READ_DATA* const CookedReadData);
 void DrawCommandListPopup(_In_ PCLE_POPUP const Popup,
@@ -469,7 +464,7 @@ NTSTATUS ProcessCommandListInput(_In_ COOKED_READ_DATA* const pCookedReadData)
             return Status;
         }
 
-        SHORT Index;
+        size_t Index;
         if (commandLinePopupKeys)
         {
             switch (Char)
@@ -540,7 +535,7 @@ NTSTATUS ProcessCommandListInput(_In_ COOKED_READ_DATA* const pCookedReadData)
             case VK_RIGHT:
                 Index = Popup->CurrentCommand;
                 LOG_IF_FAILED(EndPopup(pCookedReadData->_screenInfo, pCommandHistory));
-                SetCurrentCommandLine(pCookedReadData, Index);
+                SetCurrentCommandLine(pCookedReadData, (SHORT)Index);
                 return CONSOLE_STATUS_WAIT_NO_BLOCK;
             default:
                 break;
@@ -551,7 +546,7 @@ NTSTATUS ProcessCommandListInput(_In_ COOKED_READ_DATA* const pCookedReadData)
             DWORD LineCount = 1;
             Index = Popup->CurrentCommand;
             LOG_IF_FAILED(EndPopup(pCookedReadData->_screenInfo, pCommandHistory));
-            SetCurrentCommandLine(pCookedReadData, Index);
+            SetCurrentCommandLine(pCookedReadData, (SHORT)Index);
             pCookedReadData->ProcessInput(UNICODE_CARRIAGERETURN, 0, Status);
             // complete read
             if (pCookedReadData->_Echo)
@@ -624,8 +619,7 @@ NTSTATUS ProcessCommandListInput(_In_ COOKED_READ_DATA* const pCookedReadData)
         }
         else
         {
-            Index = FindMatchingCommand(pCookedReadData->_CommandHistory, &Char, 1 * sizeof(WCHAR), Popup->CurrentCommand, FMCFL_JUST_LOOKING);
-            if (Index != -1)
+            if (pCookedReadData->_CommandHistory->FindMatchingCommand({ &Char, 1 }, Popup->CurrentCommand, Index, _COMMAND_HISTORY::MatchOptions::JustLooking))
             {
                 UpdateCommandListPopup((SHORT)(Index - Popup->CurrentCommand),
                                        &Popup->CurrentCommand,
@@ -1672,15 +1666,12 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
         case VK_F8:
             if (pCookedReadData->_CommandHistory)
             {
-                SHORT i;
-
                 // Cycles through the stored commands that start with the characters in the current command.
-                i = FindMatchingCommand(pCookedReadData->_CommandHistory,
-                                        pCookedReadData->_BackupLimit,
-                                        pCookedReadData->_CurrentPosition * sizeof(WCHAR),
-                                        pCookedReadData->_CommandHistory->LastDisplayed,
-                                        0);
-                if (i != -1)
+                size_t index;
+                if (pCookedReadData->_CommandHistory->FindMatchingCommand({ pCookedReadData->_BackupLimit, pCookedReadData->_CurrentPosition },
+                                                                          pCookedReadData->_CommandHistory->LastDisplayed,
+                                                                          index,
+                                                                          _COMMAND_HISTORY::MatchOptions::None))
                 {
                     SHORT CurrentPos;
                     COORD CursorPosition;
@@ -1691,7 +1682,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
 
                     DeleteCommandLine(pCookedReadData, true);
                     Status = RetrieveNthCommand(pCookedReadData->_CommandHistory,
-                                                i,
+                                                (SHORT)index,
                                                 pCookedReadData->_BackupLimit,
                                                 pCookedReadData->_BufferSize,
                                                 &pCookedReadData->_BytesRead);

@@ -165,11 +165,10 @@ NTSTATUS AddCommand(_In_ PCOMMAND_HISTORY pCmdHistory,
 
         if (fHistoryNoDup)
         {
-            SHORT i;
-            i = FindMatchingCommand(pCmdHistory, pwchCommand, cbCommand, pCmdHistory->LastDisplayed, FMCFL_EXACT_MATCH);
-            if (i != -1)
+            size_t index;
+            if (pCmdHistory->FindMatchingCommand({ pwchCommand, cbCommand / sizeof(wchar_t) }, pCmdHistory->LastDisplayed, index, _COMMAND_HISTORY::MatchOptions::ExactMatch))
             {
-                pCmdReuse = RemoveCommand(pCmdHistory, i);
+                pCmdReuse = RemoveCommand(pCmdHistory, (SHORT)index);
             }
         }
 
@@ -419,7 +418,7 @@ COMMAND_HISTORY* FindExeCommandHistory(const std::wstring_view appName)
 // - Console - pointer to console.
 // Return Value:
 // - Pointer to command history buffer.  if none are available, returns nullptr.
-PCOMMAND_HISTORY COMMAND_HISTORY::s_AllocateCommandHistory(const std::wstring_view appName, const HANDLE processHandle)
+_COMMAND_HISTORY* _COMMAND_HISTORY::s_AllocateCommandHistory(const std::wstring_view appName, const HANDLE processHandle)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // Reuse a history buffer.  The buffer must be !CLE_ALLOCATED.
@@ -574,47 +573,49 @@ PCOMMAND RemoveCommand(_In_ PCOMMAND_HISTORY CommandHistory, _In_ SHORT iDel)
 
 // Routine Description:
 // - this routine finds the most recent command that starts with the letters already in the current command.  it returns the array index (no mod needed).
-SHORT FindMatchingCommand(_In_ PCOMMAND_HISTORY CommandHistory,
-                          _In_reads_bytes_(cbIn) PCWCHAR pwchIn,
-                          _In_ size_t cbIn,
-                          _In_ SHORT CommandIndex,  // where to start from
-                          _In_ DWORD Flags)
+[[nodiscard]]
+bool _COMMAND_HISTORY::FindMatchingCommand(const std::wstring_view command,
+                                           const size_t startingIndex,
+                                           size_t& indexFound,
+                                           const MatchOptions options)
 {
-    if (CommandHistory->NumberOfCommands == 0)
+    indexFound = startingIndex;
+
+    if (NumberOfCommands == 0)
     {
-        return -1;
+        return false;
     }
 
-    if (!(Flags & FMCFL_JUST_LOOKING) && (CommandHistory->Flags & CLE_RESET))
+    if (IsFlagClear(options, MatchOptions::JustLooking) && IsFlagSet(Flags, CLE_RESET))
     {
-        CommandHistory->Flags &= ~CLE_RESET;
+        ClearFlag(Flags, CLE_RESET);
     }
     else
     {
-        COMMAND_IND_PREV(CommandIndex, CommandHistory);
+        COMMAND_IND_PREV(indexFound, this);
     }
 
-    if (cbIn == 0)
+    if (command.empty())
     {
-        return CommandIndex;
+        return true;
     }
 
-    for (SHORT i = 0; i < CommandHistory->NumberOfCommands; i++)
+    for (SHORT i = 0; i < NumberOfCommands; i++)
     {
-        PCOMMAND pcmdT = CommandHistory->Commands[CommandIndex];
+        PCOMMAND pcmdT = Commands[indexFound];
 
-        if ((IsFlagClear(Flags, FMCFL_EXACT_MATCH) && (cbIn <= pcmdT->CommandLength)) || ((USHORT)cbIn == pcmdT->CommandLength))
+        if ((IsFlagClear(options, MatchOptions::ExactMatch) && (command.size() <= pcmdT->CommandLength)) || ((USHORT)command.size() == pcmdT->CommandLength))
         {
-            if (!wcsncmp(pcmdT->Command, pwchIn, (USHORT)cbIn / sizeof(WCHAR)))
+            if (!wcsncmp(pcmdT->Command, command.data(), command.size()))
             {
-                return CommandIndex;
+                return true;
             }
         }
 
-        COMMAND_IND_PREV(CommandIndex, CommandHistory);
+        COMMAND_IND_PREV(indexFound, this);
     }
 
-    return -1;
+    return false;
 }
 
 // Routine Description:

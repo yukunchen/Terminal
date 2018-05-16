@@ -29,6 +29,18 @@ typedef struct _COMMAND_HISTORY
     bool IsAppNameMatch(const std::wstring_view other) const;
     static _COMMAND_HISTORY* s_AllocateCommandHistory(const std::wstring_view appName, const HANDLE processHandle);
 
+
+    enum class MatchOptions
+    {
+        None = 0x0,
+        ExactMatch = 0x1,
+        JustLooking = 0x2
+    };
+    bool FindMatchingCommand(const std::wstring_view command,
+                             const size_t startingIndex,
+                             size_t& indexFound,
+                             const MatchOptions options);
+
 private:
     std::wstring _appName;
 public:
@@ -44,6 +56,8 @@ public:
     LIST_ENTRY PopupList;   // pointer to top-level popup
     PCOMMAND Commands[0]; // TODO: refactor
 } COMMAND_HISTORY, *PCOMMAND_HISTORY;
+
+DEFINE_ENUM_FLAG_OPERATORS(_COMMAND_HISTORY::MatchOptions);
 
 [[nodiscard]]
 NTSTATUS AddCommand(_In_ PCOMMAND_HISTORY pCmdHistory,
@@ -62,11 +76,7 @@ bool AtLastCommand(_In_ PCOMMAND_HISTORY CommandHistory);
 void EmptyCommandHistory(_In_opt_ PCOMMAND_HISTORY CommandHistory);
 PCOMMAND GetLastCommand(_In_ PCOMMAND_HISTORY CommandHistory);
 PCOMMAND RemoveCommand(_In_ PCOMMAND_HISTORY CommandHistory, _In_ SHORT iDel);
-SHORT FindMatchingCommand(_In_ PCOMMAND_HISTORY CommandHistory,
-                          _In_reads_bytes_(cbIn) PCWCHAR pwchIn,
-                          _In_ size_t cbIn,
-                          _In_ SHORT CommandIndex,
-                          _In_ DWORD Flags);
+
 [[nodiscard]]
 NTSTATUS RetrieveNthCommand(_In_ PCOMMAND_HISTORY CommandHistory,
                             _In_ SHORT Index,
