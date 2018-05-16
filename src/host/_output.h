@@ -38,7 +38,7 @@ NTSTATUS FillOutput(SCREEN_INFORMATION& screenInfo,
                     _In_ WORD wElement,
                     const COORD coordWrite,
                     const ULONG ulElementType,
-                    _Inout_ PULONG pcElements); // this value is valid even for error cases
+                    _Inout_ size_t* const pcElements); // this value is valid even for error cases
 
 void FillRectangle(SCREEN_INFORMATION& screenInfo,
                    const OutputCell& cell,

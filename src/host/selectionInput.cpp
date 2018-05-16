@@ -961,7 +961,7 @@ bool Selection::s_GetInputLineBoundaries(_Out_opt_ COORD* const pcoordInputStart
     else
     {
         // otherwise, we need to add the number of characters in the input line to the original cursor position
-        Utils::s_AddToPosition(srectEdges, pCookedReadData->_NumberOfVisibleChars, &coordEnd);
+        Utils::s_AddToPosition(srectEdges, gsl::narrow<int>(pCookedReadData->_NumberOfVisibleChars), &coordEnd);
     }
 
     // - 1 so the coordinate is on top of the last position of the text, not one past it.

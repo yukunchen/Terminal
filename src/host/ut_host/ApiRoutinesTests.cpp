@@ -403,7 +403,7 @@ class ApiRoutinesTests
                 s_AdjustOutputWait(false);
                 Log::Comment(L"Dispatching the wait.");
                 NTSTATUS Status = STATUS_SUCCESS;
-                DWORD dwNumBytes = 0;
+                size_t dwNumBytes = 0;
                 DWORD dwControlKeyState = 0; // unused but matches the pattern for read.
                 void* pOutputData = nullptr; // unused for writes but used for read.
                 const BOOL bNotifyResult = pWaiter->Notify(WaitTerminationReason::NoReason, FALSE, &Status, &dwNumBytes, &dwControlKeyState, &pOutputData);
@@ -411,7 +411,7 @@ class ApiRoutinesTests
                 VERIFY_IS_TRUE(!!bNotifyResult, L"Wait completion on notify should be successful.");
                 VERIFY_ARE_EQUAL(STATUS_SUCCESS, Status, L"We should have a successful return code to pass to the caller.");
 
-                const DWORD dwBytesExpected = (DWORD)cchWriteLength;
+                const size_t dwBytesExpected = cchWriteLength;
                 VERIFY_ARE_EQUAL(dwBytesExpected, dwNumBytes, L"We should have the byte length of the string we put in as the returned value.");
             }
         }
@@ -460,7 +460,7 @@ class ApiRoutinesTests
             s_AdjustOutputWait(false);
             Log::Comment(L"Dispatching the wait.");
             NTSTATUS Status = STATUS_SUCCESS;
-            DWORD dwNumBytes = 0;
+            size_t dwNumBytes = 0;
             DWORD dwControlKeyState = 0; // unused but matches the pattern for read.
             void* pOutputData = nullptr; // unused for writes but used for read.
             const BOOL bNotifyResult = pWaiter->Notify(WaitTerminationReason::NoReason, TRUE, &Status, &dwNumBytes, &dwControlKeyState, &pOutputData);
@@ -468,7 +468,7 @@ class ApiRoutinesTests
             VERIFY_IS_TRUE(!!bNotifyResult, L"Wait completion on notify should be successful.");
             VERIFY_ARE_EQUAL(STATUS_SUCCESS, Status, L"We should have a successful return code to pass to the caller.");
 
-            const DWORD dwBytesExpected = (DWORD)(cchTestText * sizeof(wchar_t));
+            const size_t dwBytesExpected = cchTestText * sizeof(wchar_t);
             VERIFY_ARE_EQUAL(dwBytesExpected, dwNumBytes, L"We should have the byte length of the string we put in as the returned value.");
         }
     }

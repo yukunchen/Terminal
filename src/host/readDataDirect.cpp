@@ -70,18 +70,16 @@ DirectReadData::~DirectReadData()
 bool DirectReadData::Notify(const WaitTerminationReason TerminationReason,
                             const bool fIsUnicode,
                             _Out_ NTSTATUS* const pReplyStatus,
-                            _Out_ DWORD* const pNumBytes,
+                            _Out_ size_t* const pNumBytes,
                             _Out_ DWORD* const pControlKeyState,
                             _Out_ void* const pOutputData)
 {
     FAIL_FAST_IF_NULL(pOutputData);
 
-    _pInputReadHandleData->LockReadCount();
-    FAIL_FAST_IF_FALSE(_pInputReadHandleData->GetReadCount() > 0);
-    _pInputReadHandleData->UnlockReadCount();
+    FAIL_FAST_IF(_pInputReadHandleData->GetReadCount() == 0);
 
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    FAIL_FAST_IF_FALSE(gci.IsConsoleLocked());
+    FAIL_FAST_IF(!gci.IsConsoleLocked());
 
     *pReplyStatus = STATUS_SUCCESS;
     *pControlKeyState = 0;
@@ -113,7 +111,7 @@ bool DirectReadData::Notify(const WaitTerminationReason TerminationReason,
     // closed. If so, we decrement the read count. If it goes to
     // zero, we wake up the close thread. Otherwise, we wake up any
     // other thread waiting for data.
-    else if (IsFlagSet(_pInputReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::Closing))
+    else if (IsFlagSet(TerminationReason, WaitTerminationReason::HandleClosing))
     {
         *pReplyStatus = STATUS_ALERTED;
     }
@@ -185,7 +183,7 @@ bool DirectReadData::Notify(const WaitTerminationReason TerminationReason,
 
         // move events to pOutputData
         std::deque<std::unique_ptr<IInputEvent>>* const pOutputDeque = reinterpret_cast<std::deque<std::unique_ptr<IInputEvent>>* const>(pOutputData);
-        *pNumBytes = static_cast<DWORD>(_outEvents.size() * sizeof(INPUT_RECORD));
+        *pNumBytes = _outEvents.size() * sizeof(INPUT_RECORD);
         pOutputDeque->swap(_outEvents);
     }
     return retVal;

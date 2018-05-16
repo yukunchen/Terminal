@@ -191,8 +191,8 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                           _In_range_(<= , pwchBuffer) const wchar_t* const pwchBufferBackupLimit,
                           _In_ const wchar_t* pwchBuffer,
                           _In_reads_bytes_(*pcb) const wchar_t* pwchRealUnicode,
-                          _Inout_ PDWORD const pcb,
-                          _Out_opt_ PULONG const pcSpaces,
+                          _Inout_ size_t* const pcb,
+                          _Out_opt_ size_t* const pcSpaces,
                           const SHORT sOriginalXPosition,
                           const DWORD dwFlags,
                           _Inout_opt_ PSHORT const psScrollY)
@@ -204,14 +204,14 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
     NTSTATUS Status = STATUS_SUCCESS;
     SHORT XPosition;
     WCHAR LocalBuffer[LOCAL_BUFFER_SIZE];
-    DWORD TempNumSpaces = 0;
+    size_t TempNumSpaces = 0;
     const bool fUnprocessed = IsFlagClear(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT);
 
     // Must not adjust cursor here. It has to stay on for many write scenarios. Consumers should call for the
     // cursor to be turned off if they want that.
 
     const WORD Attributes = screenInfo.GetAttributes().GetLegacyAttributes();
-    const DWORD BufferSize = *pcb;
+    const size_t BufferSize = *pcb;
     *pcb = 0;
 
     const wchar_t* lpString = pwchRealUnicode;
@@ -267,7 +267,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
 
         // As an optimization, collect characters in buffer and print out all at once.
         XPosition = cursor.GetPosition().X;
-        ULONG i = 0;
+        size_t i = 0;
         wchar_t* LocalBufPtr = LocalBuffer;
         while (*pcb < BufferSize && i < LOCAL_BUFFER_SIZE && XPosition < coordScreenBufferSize.X)
         {
@@ -389,7 +389,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                         if (CharType == C1_CNTRL)
                         {
                             ConvertOutputToUnicode(gci.OutputCP,
-                                                   (LPSTR)& RealUnicodeChar,
+                                (LPSTR)& RealUnicodeChar,
                                                    1,
                                                    LocalBufPtr,
                                                    1);
@@ -426,7 +426,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
             // line was wrapped if we're writing up to the end of the current row
             const bool fWasLineWrapped = XPosition >= coordScreenBufferSize.X;
 
-            const std::wstring wstr{ LocalBuffer, gsl::narrow<size_t>(i) };
+            const std::wstring wstr{ LocalBuffer, i };
             StreamWriteToScreenBuffer(screenInfo, wstr, fWasLineWrapped);
 
 
@@ -510,8 +510,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                 }
 
                 for (i = 0, Tmp2 = buffer.get(), Tmp = pwchBufferBackupLimit;
-                     i < (ULONG)(bufferSize);
-                     i++, Tmp++)
+                     i < bufferSize; i++, Tmp++)
                 {
                     if (*Tmp == UNICODE_BACKSPACE && Tmp2 > buffer.get())
                     {
@@ -562,9 +561,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                         try
                         {
                             const std::vector<wchar_t> blank{ UNICODE_SPACE };
-                            ULONG NumChars = gsl::narrow<ULONG>(WriteOutputStringW(screenInfo,
-                                                                                   blank,
-                                                                                   CursorPosition));
+                            size_t NumChars = WriteOutputStringW(screenInfo, blank, CursorPosition);
                             Status = FillOutput(screenInfo, Attributes, CursorPosition, CONSOLE_ATTRIBUTE, &NumChars);
                         }
                         CATCH_LOG();
@@ -583,9 +580,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                         try
                         {
                             const std::vector<wchar_t> blank{ UNICODE_SPACE };
-                            ULONG NumChars = gsl::narrow<ULONG>(WriteOutputStringW(screenInfo,
-                                                                                   blank,
-                                                                                   cursor.GetPosition()));
+                            size_t NumChars = WriteOutputStringW(screenInfo, blank, cursor.GetPosition());
                             Status = FillOutput(screenInfo, Attributes, cursor.GetPosition(), CONSOLE_ATTRIBUTE, &NumChars);
                         }
                         CATCH_LOG();
@@ -608,9 +603,9 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                 try
                 {
                     const std::vector<wchar_t> blank{ UNICODE_SPACE };
-                    ULONG NumChars = gsl::narrow<ULONG>(WriteOutputStringW(screenInfo,
-                                                                           blank,
-                                                                           cursor.GetPosition()));
+                    size_t NumChars = WriteOutputStringW(screenInfo,
+                                                         blank,
+                                                         cursor.GetPosition());
                     Status = FillOutput(screenInfo, Attributes, cursor.GetPosition(), CONSOLE_ATTRIBUTE, &NumChars);
                 }
                 CATCH_LOG();
@@ -619,7 +614,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
             {
                 if (CheckBisectProcessW(screenInfo,
                                         pwchBufferBackupLimit,
-                                        (ULONG)(pwchBuffer + 1 - pwchBufferBackupLimit),
+                                        pwchBuffer + 1 - pwchBufferBackupLimit,
                                         coordScreenBufferSize.X - sOriginalXPosition,
                                         sOriginalXPosition,
                                         dwFlags & WC_ECHO))
@@ -648,7 +643,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
             }
             else
             {
-                const ULONG TabSize = NUMBER_OF_SPACES_IN_TAB(cursor.GetPosition().X);
+                const size_t TabSize = NUMBER_OF_SPACES_IN_TAB(cursor.GetPosition().X);
                 CursorPosition.X = (SHORT)(cursor.GetPosition().X + TabSize);
 
                 // move cursor forward to next tab stop.  fill space with blanks.
@@ -658,7 +653,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                 pwchBuffer++;
 
                 TempNumSpaces += TabSize;
-                ULONG NumChars = 0;
+                size_t NumChars = 0;
                 if (CursorPosition.X >= coordScreenBufferSize.X)
                 {
                     NumChars = coordScreenBufferSize.X - cursor.GetPosition().X;
@@ -679,9 +674,9 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                     try
                     {
                         const std::vector<wchar_t> blanks(NumChars, UNICODE_SPACE);
-                        NumChars = gsl::narrow<ULONG>(WriteOutputStringW(screenInfo,
-                                                                         blanks,
-                                                                         cursor.GetPosition()));
+                        NumChars = WriteOutputStringW(screenInfo,
+                                                      blanks,
+                                                      cursor.GetPosition());
                         LOG_IF_FAILED(FillOutput(screenInfo, Attributes, cursor.GetPosition(), CONSOLE_ATTRIBUTE, &NumChars));
                     }
                     CATCH_LOG();
@@ -816,8 +811,8 @@ NTSTATUS WriteChars(SCREEN_INFORMATION& screenInfo,
                     _In_range_(<= , pwchBuffer) const wchar_t* const pwchBufferBackupLimit,
                     _In_ const wchar_t* pwchBuffer,
                     _In_reads_bytes_(*pcb) const wchar_t* pwchRealUnicode,
-                    _Inout_ PDWORD const pcb,
-                    _Out_opt_ PULONG const pcSpaces,
+                    _Inout_ size_t* const pcb,
+                    _Out_opt_ size_t* const pcSpaces,
                     const SHORT sOriginalXPosition,
                     const DWORD dwFlags,
                     _Inout_opt_ PSHORT const psScrollY)
@@ -838,11 +833,11 @@ NTSTATUS WriteChars(SCREEN_INFORMATION& screenInfo,
 
     NTSTATUS Status = STATUS_SUCCESS;
 
-    DWORD const BufferSize = *pcb;
+    size_t const BufferSize = *pcb;
     *pcb = 0;
 
     {
-        DWORD TempNumSpaces = 0;
+        size_t TempNumSpaces = 0;
 
         {
             if (NT_SUCCESS(Status))
@@ -888,7 +883,7 @@ NTSTATUS WriteChars(SCREEN_INFORMATION& screenInfo,
 // - Or a suitable NTSTATUS format error code for memory/string/math failures.
 [[nodiscard]]
 NTSTATUS DoWriteConsole(_In_reads_bytes_(*pcbBuffer) PWCHAR pwchBuffer,
-                        _Inout_ ULONG* const pcbBuffer,
+                        _Inout_ size_t* const pcbBuffer,
                         SCREEN_INFORMATION& screenInfo,
                         _Outptr_result_maybenull_ WriteData** const ppWaiter)
 {
@@ -898,7 +893,7 @@ NTSTATUS DoWriteConsole(_In_reads_bytes_(*pcbBuffer) PWCHAR pwchBuffer,
         try
         {
             *ppWaiter = new WriteData(screenInfo,
-                                      (wchar_t*)pwchBuffer,
+                (wchar_t*)pwchBuffer,
                                       *pcbBuffer,
                                       gci.OutputCP);
         }
@@ -951,13 +946,10 @@ HRESULT WriteConsoleWImplHelper(_In_ IConsoleOutputObject& OutContext,
     size_t cbTextBufferLength;
     RETURN_IF_FAILED(SizeTMult(cchTextBufferLength, sizeof(wchar_t), &cbTextBufferLength));
 
-    ULONG ulTextBufferLength;
-    RETURN_IF_FAILED(SizeTToULong(cbTextBufferLength, &ulTextBufferLength));
-
-    NTSTATUS Status = DoWriteConsole(const_cast<wchar_t*>(pwsTextBuffer), &ulTextBufferLength, OutContext, ppWaiter);
+    NTSTATUS Status = DoWriteConsole(const_cast<wchar_t*>(pwsTextBuffer), &cbTextBufferLength, OutContext, ppWaiter);
 
     // Convert back from bytes to characters for the resulting string length written.
-    *pcchTextBufferRead = ulTextBufferLength / sizeof(wchar_t);
+    *pcchTextBufferRead = cbTextBufferLength / sizeof(wchar_t);
 
     if (Status == CONSOLE_STATUS_WAIT)
     {

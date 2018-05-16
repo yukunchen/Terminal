@@ -314,7 +314,7 @@ NTSTATUS FillOutput(SCREEN_INFORMATION& screenInfo,
                     _In_ WORD wElement,
                     const COORD coordWrite,
                     const ULONG ulElementType,
-                    _Inout_ PULONG pcElements)  // this value is valid even for error cases
+                    _Inout_ size_t* const pcElements)  // this value is valid even for error cases
 {
     DBGOUTPUT(("FillOutput\n"));
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -323,7 +323,7 @@ NTSTATUS FillOutput(SCREEN_INFORMATION& screenInfo,
         return STATUS_SUCCESS;
     }
 
-    ULONG NumWritten = 0;
+    size_t NumWritten = 0;
     SHORT X = coordWrite.X;
     SHORT Y = coordWrite.Y;
     const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
@@ -367,7 +367,7 @@ NTSTATUS FillOutput(SCREEN_INFORMATION& screenInfo,
         ulElementType == CONSOLE_REAL_UNICODE ||
         ulElementType == CONSOLE_FALSE_UNICODE)
     {
-        DWORD StartPosFlag = 0;
+        size_t StartPosFlag = 0;
         for (;;)
         {
             FAIL_FAST_IF(pRow == nullptr);

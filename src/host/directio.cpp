@@ -1159,7 +1159,10 @@ NTSTATUS SrvFillConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
 [[nodiscard]]
 NTSTATUS DoSrvFillConsoleOutput(SCREEN_INFORMATION& screenInfo, _Inout_ CONSOLE_FILLCONSOLEOUTPUT_MSG* pMsg)
 {
-    return FillOutput(screenInfo, pMsg->Element, pMsg->WriteCoord, pMsg->ElementType, &pMsg->Length);
+    size_t length = pMsg->Length;
+    const NTSTATUS status = FillOutput(screenInfo, pMsg->Element, pMsg->WriteCoord, pMsg->ElementType, &length);
+    LOG_IF_FAILED(SizeTToULong(length, &pMsg->Length));
+    return status;
 }
 
 // There used to be a text mode and a graphics mode flag.

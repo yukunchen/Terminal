@@ -20,10 +20,6 @@
 
 #pragma hdrstop
 
-#define LINE_INPUT_BUFFER_SIZE (256 * sizeof(WCHAR))
-
-#define IS_JPN_1BYTE_KATAKANA(c)   ((c) >= 0xa1 && (c) <= 0xdf)
-
 // Routine Description:
 // - This routine is used in stream input.  It gets input and filters it for unicode characters.
 // Arguments:
@@ -185,18 +181,18 @@ NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
 
 // Routine Description:
 // - This routine returns the total number of screen spaces the characters up to the specified character take up.
-ULONG RetrieveTotalNumberOfSpaces(const SHORT sOriginalCursorPositionX,
+size_t RetrieveTotalNumberOfSpaces(const SHORT sOriginalCursorPositionX,
                                   _In_reads_(ulCurrentPosition) const WCHAR * const pwchBuffer,
-                                  _In_ ULONG ulCurrentPosition)
+                                  _In_ size_t ulCurrentPosition)
 {
     SHORT XPosition = sOriginalCursorPositionX;
-    ULONG NumSpaces = 0;
+    size_t NumSpaces = 0;
 
-    for (ULONG i = 0; i < ulCurrentPosition; i++)
+    for (size_t i = 0; i < ulCurrentPosition; i++)
     {
         WCHAR const Char = pwchBuffer[i];
 
-        ULONG NumSpacesForChar;
+        size_t NumSpacesForChar;
         if (Char == UNICODE_TAB)
         {
             NumSpacesForChar = NUMBER_OF_SPACES_IN_TAB(XPosition);
@@ -222,17 +218,17 @@ ULONG RetrieveTotalNumberOfSpaces(const SHORT sOriginalCursorPositionX,
 
 // Routine Description:
 // - This routine returns the number of screen spaces the specified character takes up.
-ULONG RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
+size_t RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
                              _In_reads_(ulCurrentPosition + 1) const WCHAR * const pwchBuffer,
-                             _In_ ULONG ulCurrentPosition)
+                             _In_ size_t ulCurrentPosition)
 {
     WCHAR Char = pwchBuffer[ulCurrentPosition];
     if (Char == UNICODE_TAB)
     {
-        ULONG NumSpaces = 0;
+        size_t NumSpaces = 0;
         SHORT XPosition = sOriginalCursorPositionX;
 
-        for (ULONG i = 0; i <= ulCurrentPosition; i++)
+        for (size_t i = 0; i <= ulCurrentPosition; i++)
         {
             Char = pwchBuffer[i];
             if (Char == UNICODE_TAB)
@@ -290,17 +286,17 @@ ULONG RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
 [[nodiscard]]
 NTSTATUS ReadPendingInput(_Inout_ InputBuffer* const pInputBuffer,
                           _Out_writes_bytes_to_(OutputBufferSize, *pReadByteCount) wchar_t* const pwchBuffer,
-                          _Out_ ULONG* const pReadByteCount,
+                          _Out_ size_t* const pReadByteCount,
                           _In_ INPUT_READ_HANDLE_DATA* const pHandleData,
                           const bool Unicode,
                           const size_t OutputBufferSize)
 {
 
     BOOL fAddDbcsLead = FALSE;
-    ULONG NumToWrite = 0;
-    ULONG NumToBytes = 0;
+    size_t NumToWrite = 0;
+    size_t NumToBytes = 0;
     wchar_t* pBuffer = pwchBuffer;
-    DWORD bufferRemaining = static_cast<DWORD>(OutputBufferSize);
+    size_t bufferRemaining = OutputBufferSize;
     *pReadByteCount = 0;
 
     if (OutputBufferSize < sizeof(wchar_t))
@@ -308,10 +304,13 @@ NTSTATUS ReadPendingInput(_Inout_ InputBuffer* const pInputBuffer,
         return STATUS_BUFFER_TOO_SMALL;
     }
 
-    if (IsFlagSet(pHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::MultiLineInput))
-    {
-        PWSTR Tmp;
+    const auto pending = pHandleData->GetPendingInput();
+    size_t pendingBytes = pending.size();
+    const std::wstring_view pendingAsWstr{ reinterpret_cast<const wchar_t*>(pending.data()), pendingBytes / sizeof(wchar_t) };
+    auto Tmp = pendingAsWstr.cbegin();
 
+    if (pHandleData->IsMultilineInput())
+    {
         if (!Unicode)
         {
             if (pInputBuffer->IsReadPartialByteSequenceAvailable())
@@ -321,23 +320,19 @@ NTSTATUS ReadPendingInput(_Inout_ InputBuffer* const pInputBuffer,
                 *pBuffer = static_cast<char>(pKeyEvent->GetCharData());
                 ++pBuffer;
                 bufferRemaining -= sizeof(wchar_t);
-                pHandleData->BytesAvailable -= sizeof(wchar_t);
+                pendingBytes -= sizeof(wchar_t);
                 fAddDbcsLead = TRUE;
             }
 
-            if (pHandleData->BytesAvailable == 0 || bufferRemaining == 0)
+            if (pendingBytes == 0 || bufferRemaining == 0)
             {
-                ClearAllFlags(pHandleData->InputHandleFlags,
-                    (INPUT_READ_HANDLE_DATA::HandleFlags::InputPending |
-                     INPUT_READ_HANDLE_DATA::HandleFlags::MultiLineInput));
-                delete[] pHandleData->BufPtr;
                 *pReadByteCount = 1;
                 return STATUS_SUCCESS;
             }
             else
             {
-                for (NumToWrite = 0, Tmp = pHandleData->CurrentBufPtr, NumToBytes = 0;
-                     NumToBytes < pHandleData->BytesAvailable &&
+                for (NumToWrite = 0, Tmp = pendingAsWstr.cbegin(), NumToBytes = 0;
+                     NumToBytes < pendingBytes &&
                      NumToBytes < bufferRemaining / sizeof(wchar_t) &&
                      *Tmp != UNICODE_LINEFEED;
                      (IsCharFullWidth(*Tmp) ? NumToBytes += 2 : NumToBytes++), Tmp++, NumToWrite += sizeof(wchar_t));
@@ -346,8 +341,8 @@ NTSTATUS ReadPendingInput(_Inout_ InputBuffer* const pInputBuffer,
 
 
         NumToWrite = 0;
-        Tmp = pHandleData->CurrentBufPtr;
-        while (NumToWrite < pHandleData->BytesAvailable &&
+        Tmp = pendingAsWstr.cbegin();
+        while (NumToWrite < pendingBytes &&
                *Tmp != UNICODE_LINEFEED)
         {
             ++Tmp;
@@ -364,8 +359,6 @@ NTSTATUS ReadPendingInput(_Inout_ InputBuffer* const pInputBuffer,
     {
         if (!Unicode)
         {
-            PWSTR Tmp;
-
             if (pInputBuffer->IsReadPartialByteSequenceAvailable())
             {
                 std::unique_ptr<IInputEvent> event = pInputBuffer->FetchReadPartialByteSequence(false);
@@ -373,64 +366,45 @@ NTSTATUS ReadPendingInput(_Inout_ InputBuffer* const pInputBuffer,
                 *pBuffer = static_cast<char>(pKeyEvent->GetCharData());
                 ++pBuffer;
                 bufferRemaining -= sizeof(wchar_t);
-                pHandleData->BytesAvailable -= sizeof(wchar_t);
+                pendingBytes -= sizeof(wchar_t);
                 fAddDbcsLead = TRUE;
             }
 
-            if (pHandleData->BytesAvailable == 0)
+            if (pendingBytes == 0)
             {
-                ClearAllFlags(pHandleData->InputHandleFlags,
-                    (INPUT_READ_HANDLE_DATA::HandleFlags::InputPending |
-                     INPUT_READ_HANDLE_DATA::HandleFlags::MultiLineInput));
-                delete[] pHandleData->BufPtr;
                 *pReadByteCount = 1;
                 return STATUS_SUCCESS;
             }
             else
             {
-                for (NumToWrite = 0, Tmp = pHandleData->CurrentBufPtr, NumToBytes = 0;
-                     NumToBytes < pHandleData->BytesAvailable && NumToBytes < bufferRemaining / sizeof(wchar_t);
+                for (NumToWrite = 0, Tmp = pendingAsWstr.cbegin(), NumToBytes = 0;
+                     NumToBytes < pendingBytes && NumToBytes < bufferRemaining / sizeof(wchar_t);
                      (IsCharFullWidth(*Tmp) ? NumToBytes += 2 : NumToBytes++), Tmp++, NumToWrite += sizeof(wchar_t));
             }
         }
 
-        NumToWrite = (bufferRemaining < pHandleData->BytesAvailable) ? bufferRemaining : pHandleData->BytesAvailable;
+        NumToWrite = (bufferRemaining < pendingBytes) ? bufferRemaining : pendingBytes;
     }
 
-    memmove(pBuffer, pHandleData->CurrentBufPtr, NumToWrite);
-    pHandleData->BytesAvailable -= NumToWrite;
-    if (pHandleData->BytesAvailable == 0)
+    memmove(pBuffer, pendingAsWstr.data(), NumToWrite);
+    pendingBytes -= NumToWrite;
+    if (pendingBytes != 0)
     {
-        ClearAllFlags(pHandleData->InputHandleFlags,
-            (INPUT_READ_HANDLE_DATA::HandleFlags::InputPending |
-             INPUT_READ_HANDLE_DATA::HandleFlags::MultiLineInput));
-        delete[] pHandleData->BufPtr;
-    }
-    else
-    {
-        pHandleData->CurrentBufPtr = reinterpret_cast<wchar_t*>(reinterpret_cast<byte*>(pHandleData->CurrentBufPtr) + NumToWrite);
+        std::string_view remainingPending{ pending.data() + NumToWrite, pendingBytes };
+        pHandleData->UpdatePending(remainingPending);
     }
 
     if (!Unicode)
     {
         // if ansi, translate string.  we allocated the capture buffer
         // large enough to handle the translated string.
-        std::unique_ptr<char[]> tempBuffer;
-        try
-        {
-            tempBuffer = std::make_unique<char[]>(NumToBytes);
-        }
-        catch (...)
-        {
-            return STATUS_NO_MEMORY;
-        }
-
+        std::unique_ptr<char[]> tempBuffer = std::make_unique<char[]>(NumToBytes);
         std::unique_ptr<IInputEvent> partialEvent;
 
         NumToWrite = TranslateUnicodeToOem(pBuffer,
-                                           NumToWrite / sizeof(wchar_t),
+                                           gsl::narrow<ULONG>(NumToWrite / sizeof(wchar_t)),
                                            tempBuffer.get(),
-                                           NumToBytes,
+                                           gsl::narrow<ULONG>(NumToBytes),
                                            partialEvent);
         if (partialEvent.get())
         {
@@ -481,10 +455,10 @@ NTSTATUS ReadPendingInput(_Inout_ InputBuffer* const pInputBuffer,
 HRESULT ReadLineInput(_Inout_ InputBuffer* const pInputBuffer,
                       _In_ HANDLE ProcessData,
                       _Out_writes_bytes_to_(OutputBufferSize, *pReadByteCount) wchar_t* const pwchBuffer,
-                      _Out_ ULONG* const pReadByteCount,
+                      _Out_ size_t* const pReadByteCount,
                       _Inout_ ULONG* const pControlKeyState,
                       _In_reads_bytes_opt_(cbInitialData) const wchar_t* const pwsInitialData,
-                      const ULONG cbInitialData,
+                      const size_t cbInitialData,
                       const DWORD dwCtrlWakeupMask,
                       _In_ INPUT_READ_HANDLE_DATA* const pHandleData,
                       const std::wstring& exeName,
@@ -498,29 +472,11 @@ HRESULT ReadLineInput(_Inout_ InputBuffer* const pInputBuffer,
     SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
     PCOMMAND_HISTORY const pCommandHistory = FindCommandHistory(ProcessData);
 
-    // to emulate OS/2 KbdStringIn, we read into our own big buffer
-    // (256 bytes) until the user types enter.  then return as many
-    // chars as will fit in the user's buffer.
-
-    ULONG const TempBufferSize = gsl::narrow<ULONG>(std::max(OutputBufferSize, LINE_INPUT_BUFFER_SIZE));
-    wchar_t* const TempBuffer = (wchar_t*) new(std::nothrow) BYTE[TempBufferSize];
-    RETURN_IF_NULL_ALLOC(TempBuffer);
-
-    // Initialize the user's buffer to spaces. This is done so that
-    // moving in the buffer via cursor doesn't do strange things.
-    for (ULONG i = 0; i < TempBufferSize / sizeof(wchar_t); i++)
-    {
-        TempBuffer[i] = UNICODE_SPACE;
-    }
-
     try
     {
         COOKED_READ_DATA CookedReadData(pInputBuffer, // pInputBuffer
                                         pHandleData, // pInputReadHandleData
                                         screenInfo, // pScreenInfo
-                                        TempBufferSize, // BufferSize
-                                        TempBuffer, // BufferPtr
-                                        TempBuffer, // BackupLimit
                                         static_cast<ULONG>(OutputBufferSize), // UserBufferSize
                                         pwchBuffer, // UserBuffer
                                         dwCtrlWakeupMask, // CtrlWakeupMask
@@ -533,7 +489,7 @@ HRESULT ReadLineInput(_Inout_ InputBuffer* const pInputBuffer,
 
             CookedReadData._BytesRead += cbInitialData;
 
-            ULONG const cchInitialData = cbInitialData / sizeof(wchar_t);
+            size_t const cchInitialData = cbInitialData / sizeof(wchar_t);
             CookedReadData._NumberOfVisibleChars = cchInitialData;
             CookedReadData._BufPtr += cchInitialData;
             CookedReadData._CurrentPosition = cchInitialData;
@@ -593,14 +549,14 @@ HRESULT ReadLineInput(_Inout_ InputBuffer* const pInputBuffer,
 [[nodiscard]]
 NTSTATUS ReadCharacterInput(_Inout_ InputBuffer* const pInputBuffer,
                             _Out_writes_bytes_to_(OutputBufferSize, *pReadByteCount) wchar_t* const pwchBuffer,
-                            _Out_ ULONG* const pReadByteCount,
+                            _Out_ size_t* const pReadByteCount,
                             _In_ INPUT_READ_HANDLE_DATA* const pHandleData,
                             const bool Unicode,
                             _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter,
                             const size_t OutputBufferSize)
 {
 
-    ULONG NumToWrite = 0;
+    size_t NumToWrite = 0;
     bool addDbcsLead = false;
     NTSTATUS Status = STATUS_SUCCESS;
     wchar_t* pBuffer = pwchBuffer;
@@ -612,7 +568,7 @@ NTSTATUS ReadCharacterInput(_Inout_ InputBuffer* const pInputBuffer,
         return STATUS_BUFFER_TOO_SMALL;
     }
 
-    if (*pReadByteCount < static_cast<ULONG>(bufferRemaining))
+    if (*pReadByteCount < bufferRemaining)
     {
         wchar_t* pwchBufferTmp = pBuffer;
 
@@ -719,9 +675,9 @@ NTSTATUS ReadCharacterInput(_Inout_ InputBuffer* const pInputBuffer,
             std::unique_ptr<IInputEvent> partialEvent;
 
             *pReadByteCount = TranslateUnicodeToOem(pBuffer,
-                                                    NumToWrite / sizeof(wchar_t),
+                                                    gsl::narrow<ULONG>(NumToWrite / sizeof(wchar_t)),
                                                     tempBuffer.get(),
-                                                    *pReadByteCount,
+                                                    gsl::narrow<ULONG>(*pReadByteCount),
                                                     partialEvent);
 
             if (partialEvent.get())
@@ -780,7 +736,7 @@ NTSTATUS ReadCharacterInput(_Inout_ InputBuffer* const pInputBuffer,
 NTSTATUS DoReadConsole(_Inout_ InputBuffer* const pInputBuffer,
                        _In_ HANDLE ProcessData,
                        _Out_writes_bytes_(*pcbBuffer) wchar_t* const pwchBuffer,
-                       _Inout_ ULONG* const pcbBuffer,
+                       _Inout_ size_t* const pcbBuffer,
                        _Inout_ ULONG* const pControlKeyState,
                        _In_reads_bytes_opt_(cbInitialData) const wchar_t* const pwsInitialData,
                        const ULONG cbInitialData,
@@ -803,7 +759,7 @@ NTSTATUS DoReadConsole(_Inout_ InputBuffer* const pInputBuffer,
     const size_t OutputBufferSize = *pcbBuffer;
     *pcbBuffer = 0;
 
-    if (IsFlagSet(pHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::InputPending))
+    if (pHandleData->IsInputPending())
     {
         return ReadPendingInput(pInputBuffer,
                                 pwchBuffer,
@@ -854,9 +810,6 @@ HRESULT ApiRoutines::ReadConsoleAImpl(_Inout_ IConsoleInputObject* const pInCont
                                       const DWORD dwControlWakeupMask,
                                       _Out_ DWORD* const pdwControlKeyState)
 {
-    ULONG ulTextBuffer;
-    RETURN_IF_FAILED(SizeTToULong(cchTextBuffer, &ulTextBuffer));
-
     const std::wstring exeName{ pwsExeName, cchExeName };
 
     ULONG ulInitialData;
@@ -864,15 +817,16 @@ HRESULT ApiRoutines::ReadConsoleAImpl(_Inout_ IConsoleInputObject* const pInCont
 
     // DoReadConsole performs the same check, but having this here
     // before the function call makes the static analyzer happy.
-    if (ulTextBuffer < sizeof(wchar_t))
+    if (cchTextBuffer < sizeof(wchar_t))
     {
         return HRESULT_FROM_NT(STATUS_BUFFER_TOO_SMALL);
     }
 
+    size_t cbTextBuffer = cchTextBuffer;
     NTSTATUS const Status = DoReadConsole(pInContext,
                                           hConsoleClient,
                                           (wchar_t*)psTextBuffer,
-                                          &ulTextBuffer,
+                                          &cbTextBuffer,
                                           pdwControlKeyState,
                                           (wchar_t*)psInitialData,
                                           ulInitialData,
@@ -882,7 +836,7 @@ HRESULT ApiRoutines::ReadConsoleAImpl(_Inout_ IConsoleInputObject* const pInCont
                                           false,
                                           ppWaiter);
 
-    *pcchTextBufferWritten = ulTextBuffer;
+    *pcchTextBufferWritten = cbTextBuffer;
 
     return HRESULT_FROM_NT(Status);
 }
@@ -905,9 +859,6 @@ HRESULT ApiRoutines::ReadConsoleWImpl(_Inout_ IConsoleInputObject* const pInCont
     size_t cbTextBuffer;
     RETURN_IF_FAILED(SizeTMult(cchTextBuffer, sizeof(wchar_t), &cbTextBuffer));
 
-    ULONG ulTextBuffer;
-    RETURN_IF_FAILED(SizeTToULong(cbTextBuffer, &ulTextBuffer));
-
     size_t cbInitialData;
     RETURN_IF_FAILED(SizeTMult(cchInitialData, sizeof(wchar_t), &cbInitialData));
 
@@ -919,7 +870,7 @@ HRESULT ApiRoutines::ReadConsoleWImpl(_Inout_ IConsoleInputObject* const pInCont
     NTSTATUS const Status = DoReadConsole(pInContext,
                                           hConsoleClient,
                                           pwsTextBuffer,
-                                          &ulTextBuffer,
+                                          &cbTextBuffer,
                                           pdwControlKeyState,
                                           pwsInitialData,
                                           ulInitialData,
@@ -929,8 +880,8 @@ HRESULT ApiRoutines::ReadConsoleWImpl(_Inout_ IConsoleInputObject* const pInCont
                                           true,
                                           ppWaiter);
 
-    FAIL_FAST_IF_FALSE(ulTextBuffer % sizeof(wchar_t) == 0);
-    *pcchTextBufferWritten = ulTextBuffer / sizeof(wchar_t);
+    FAIL_FAST_IF_FALSE(cbTextBuffer % sizeof(wchar_t) == 0);
+    *pcchTextBufferWritten = cbTextBuffer/ sizeof(wchar_t);
 
     return HRESULT_FROM_NT(Status);
 }

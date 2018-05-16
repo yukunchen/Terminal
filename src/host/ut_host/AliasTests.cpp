@@ -127,13 +127,13 @@ class AliasTests
         auto buffer = std::make_unique<wchar_t[]>(bufferSize);
         wcscpy_s(buffer.get(), bufferSize, original.data());
 
-        const ULONG cbBuffer = bufferSize * sizeof(wchar_t);
-        ULONG bufferUsed = 0;
+        const size_t cbBuffer = bufferSize * sizeof(wchar_t);
+        size_t bufferUsed = 0;
         DWORD linesActual = 0;
 
         // Run the match and copy function.        
         Alias::s_MatchAndCopyAliasLegacy(buffer.get(),
-                                         static_cast<ULONG>(wcslen(buffer.get()) * sizeof(wchar_t)),
+                                         wcslen(buffer.get()) * sizeof(wchar_t),
                                          buffer.get(),
                                          cbBuffer,
                                          &bufferUsed,
@@ -154,16 +154,16 @@ class AliasTests
     TEST_METHOD(TestMatchAndCopyTrailingCRLF)
     {
         PWSTR pwszSource = L"SourceWithoutCRLF\r\n";
-        const ULONG cbSource = static_cast<ULONG>(wcslen(pwszSource) * sizeof(wchar_t));
+        const size_t cbSource = wcslen(pwszSource) * sizeof(wchar_t);
 
         const size_t cchTarget = 60;
         auto rgwchTarget = std::make_unique<wchar_t[]>(cchTarget);
-        const ULONG cbTarget = static_cast<ULONG>(cchTarget * sizeof(wchar_t));
+        const size_t cbTarget = cchTarget * sizeof(wchar_t);
         wcscpy_s(rgwchTarget.get(), cchTarget, L"testtesttesttesttest");
         auto rgwchTargetBefore = std::make_unique<wchar_t[]>(cchTarget);
         wcscpy_s(rgwchTargetBefore.get(), cchTarget, rgwchTarget.get());
 
-        ULONG cbTargetUsed = 0;
+        size_t cbTargetUsed = 0;
         auto const cbTargetUsedBefore = cbTargetUsed;
 
         DWORD dwLines = 0;
@@ -176,7 +176,7 @@ class AliasTests
         Alias::s_TestAddAlias(exe, sourceWithoutCRLF, target);
 
         const auto targetExpected = target + L"\r\n";
-        const ULONG cbTargetExpected = gsl::narrow_cast<ULONG>((targetExpected.size()) * sizeof(wchar_t)); // +2 for \r\n that will be added on replace.
+        const size_t cbTargetExpected = targetExpected.size() * sizeof(wchar_t); // +2 for \r\n that will be added on replace.
 
         Alias::s_MatchAndCopyAliasLegacy(pwszSource,
                                          cbSource,
@@ -190,14 +190,14 @@ class AliasTests
         rgwchTarget[cbTargetUsed] = L'\0';
 
         VERIFY_ARE_EQUAL(cbTargetExpected, cbTargetUsed, L"Target bytes should be filled with target size.");
-        VERIFY_ARE_EQUAL(String(targetExpected.data()), String(rgwchTarget.get(), cbTargetUsed / sizeof(wchar_t)), L"Target string should be filled with target data.");
+        VERIFY_ARE_EQUAL(String(targetExpected.data()), String(rgwchTarget.get(), gsl::narrow<int>(cbTargetUsed / sizeof(wchar_t))), L"Target string should be filled with target data.");
         VERIFY_ARE_EQUAL(1u, dwLines, L"Line count should be 1.");
     }
 
     TEST_METHOD(TestMatchAndCopyInvalidExeName)
     {
         PWSTR pwszSource = L"Source";
-        const ULONG cbSource = static_cast<ULONG>(wcslen(pwszSource) * sizeof(wchar_t));
+        const size_t cbSource = wcslen(pwszSource) * sizeof(wchar_t);
 
         const size_t cchTarget = 12;
         auto rgwchTarget = std::make_unique<wchar_t[]>(cchTarget);
@@ -205,8 +205,8 @@ class AliasTests
         auto rgwchTargetBefore = std::make_unique<wchar_t[]>(cchTarget);
         wcscpy_s(rgwchTargetBefore.get(), cchTarget, rgwchTarget.get());
 
-        const ULONG cbTarget = static_cast<ULONG>(cchTarget * sizeof(wchar_t));
-        ULONG cbTargetUsed = cbTarget;
+        const size_t cbTarget = cchTarget * sizeof(wchar_t);
+        size_t cbTargetUsed = cbTarget;
 
         DWORD dwLines = 0;
         auto const dwLinesBefore = dwLines;
@@ -229,15 +229,15 @@ class AliasTests
     TEST_METHOD(TestMatchAndCopyExeNotFound)
     {
         PWSTR pwszSource = L"Source";
-        const ULONG cbSource = static_cast<ULONG>(wcslen(pwszSource) * sizeof(wchar_t));
+        const size_t cbSource = wcslen(pwszSource) * sizeof(wchar_t);
 
         const size_t cchTarget = 12;
         auto rgwchTarget = std::make_unique<wchar_t[]>(cchTarget);
-        const ULONG cbTarget = static_cast<ULONG>(cchTarget * sizeof(wchar_t));
+        const size_t cbTarget = cchTarget * sizeof(wchar_t);
         wcscpy_s(rgwchTarget.get(), cchTarget, L"testtestabc");
         auto rgwchTargetBefore = std::make_unique<wchar_t[]>(cchTarget);
         wcscpy_s(rgwchTargetBefore.get(), cchTarget, rgwchTarget.get());
-        ULONG cbTargetUsed = 0;
+        size_t cbTargetUsed = 0;
         auto const cbTargetUsedBefore = cbTargetUsed;
 
         std::wstring exeName(L"exe.exe");
@@ -261,16 +261,16 @@ class AliasTests
     TEST_METHOD(TestMatchAndCopyAliasNotFound)
     {
         PWSTR pwszSource = L"Source";
-        const ULONG cbSource = static_cast<ULONG>(wcslen(pwszSource) * sizeof(wchar_t));
+        const size_t cbSource = wcslen(pwszSource) * sizeof(wchar_t);
 
         const size_t cchTarget = 12;
         auto rgwchTarget = std::make_unique<wchar_t[]>(cchTarget);
-        const ULONG cbTarget = static_cast<ULONG>(cchTarget * sizeof(wchar_t));
+        const size_t cbTarget = cchTarget * sizeof(wchar_t);
         wcscpy_s(rgwchTarget.get(), cchTarget, L"testtestabc");
         auto rgwchTargetBefore = std::make_unique<wchar_t[]>(cchTarget);
         wcscpy_s(rgwchTargetBefore.get(), cchTarget, rgwchTarget.get());
 
-        ULONG cbTargetUsed = 0;
+        size_t cbTargetUsed = 0;
         auto const cbTargetUsedBefore = cbTargetUsed;
 
         DWORD dwLines = 0;
@@ -298,7 +298,7 @@ class AliasTests
     TEST_METHOD(TestMatchAndCopyTargetTooSmall)
     {
         PWSTR pwszSource = L"Source";
-        const ULONG cbSource = static_cast<ULONG>(wcslen(pwszSource) * sizeof(wchar_t));
+        const size_t cbSource = wcslen(pwszSource) * sizeof(wchar_t);
 
         const size_t cchTarget = 12;
         auto rgwchTarget = std::make_unique<wchar_t[]>(cchTarget);
@@ -306,8 +306,8 @@ class AliasTests
         auto rgwchTargetBefore = std::make_unique<wchar_t[]>(cchTarget);
         wcscpy_s(rgwchTargetBefore.get(), cchTarget, rgwchTarget.get());
 
-        const ULONG cbTarget = static_cast<ULONG>(cchTarget * sizeof(wchar_t));
-        ULONG cbTargetUsed = 0;
+        const size_t cbTarget = cchTarget * sizeof(wchar_t);
+        size_t cbTargetUsed = 0;
         auto const cbTargetUsedBefore = cbTargetUsed;
 
         DWORD dwLines = 0;
@@ -336,15 +336,15 @@ class AliasTests
     TEST_METHOD(TestMatchAndCopyLeadingSpaces)
     {
         PWSTR pwszSource = L" Source";
-        const ULONG cbSource = static_cast<ULONG>(wcslen(pwszSource) * sizeof(wchar_t));
+        const size_t cbSource = wcslen(pwszSource) * sizeof(wchar_t);
 
         const size_t cchTarget = 12;
         auto rgwchTarget = std::make_unique<wchar_t[]>(cchTarget);
-        const ULONG cbTarget = static_cast<ULONG>(cchTarget * sizeof(wchar_t));
+        const size_t cbTarget = cchTarget * sizeof(wchar_t);
         wcscpy_s(rgwchTarget.get(), cchTarget, L"testtestabc");
         auto rgwchTargetBefore = std::make_unique<wchar_t[]>(cchTarget);
         wcscpy_s(rgwchTargetBefore.get(), cchTarget, rgwchTarget.get());
-        ULONG cbTargetUsed = 0;
+        size_t cbTargetUsed = 0;
         auto const cbTargetUsedExpected = cbTarget;
 
         DWORD dwLines = 0;

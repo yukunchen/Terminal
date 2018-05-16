@@ -27,7 +27,7 @@ ConsoleHandleData::ConsoleHandleData(const ULONG ulHandleType,
 {
     if (_IsInput())
     {
-        _pClientInput = new INPUT_READ_HANDLE_DATA();
+        _pClientInput = std::make_unique<INPUT_READ_HANDLE_DATA>();
     }
 }
 
@@ -195,7 +195,7 @@ HRESULT ConsoleHandleData::GetWaitQueue(_Outptr_ ConsoleWaitQueue** const ppWait
 // - Pointer to the input read handle data structure with the aforementioned extra info.
 INPUT_READ_HANDLE_DATA* ConsoleHandleData::GetClientInput() const
 {
-    return _pClientInput;
+    return _pClientInput.get();
 }
 
 // Routine Description:
@@ -215,33 +215,16 @@ HRESULT ConsoleHandleData::_CloseInputHandle()
     InputBuffer* pInputBuffer = static_cast<InputBuffer*>(_pvClientPointer);
     INPUT_READ_HANDLE_DATA* pReadHandleData = GetClientInput();
 
-    if (IsFlagSet(pReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::InputPending))
-    {
-        ClearFlag(pReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::InputPending);
-        delete[] pReadHandleData->BufPtr;
-        pReadHandleData->BufPtr = nullptr;
-    }
-
     // see if there are any reads waiting for data via this handle.  if
     // there are, wake them up.  there aren't any other outstanding i/o
     // operations via this handle because the console lock is held.
 
-    pReadHandleData->LockReadCount();
     if (pReadHandleData->GetReadCount() != 0)
     {
-        pReadHandleData->UnlockReadCount();
-        SetFlag(pReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::Closing);
-
-        pInputBuffer->WaitQueue.NotifyWaiters(TRUE);
-
-        pReadHandleData->LockReadCount();
+        pInputBuffer->WaitQueue.NotifyWaiters(true, WaitTerminationReason::HandleClosing);
     }
 
-    FAIL_FAST_IF_FALSE(pReadHandleData->GetReadCount() == 0);
-    pReadHandleData->UnlockReadCount();
-
-    delete pReadHandleData;
-    pReadHandleData = nullptr;
+    FAIL_FAST_IF(pReadHandleData->GetReadCount() > 0);
 
     // TODO: MSFT: 9115192 - THIS IS BAD. It should use a destructor.
     LOG_IF_FAILED(pInputBuffer->Header.FreeIoHandle(this));

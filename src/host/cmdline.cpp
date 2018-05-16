@@ -63,8 +63,8 @@ void UpdateCommandListPopup(_In_ SHORT Delta,
 NTSTATUS RetrieveCommand(_In_ PCOMMAND_HISTORY CommandHistory,
                          _In_ WORD VirtualKeyCode,
                          _In_reads_bytes_(BufferSize) PWCHAR Buffer,
-                         _In_ ULONG BufferSize,
-                         _Out_ PULONG CommandSize);
+                         _In_ size_t BufferSize,
+                         _Out_ size_t* const CommandSize);
 UINT LoadStringEx(_In_ HINSTANCE hModule, _In_ UINT wID, _Out_writes_(cchBufferMax) LPWSTR lpBuffer, _In_ UINT cchBufferMax, _In_ WORD wLangId);
 
 // Routine Description:
@@ -153,7 +153,6 @@ NTSTATUS BeginPopup(SCREEN_INFORMATION& screenInfo, _In_ PCOMMAND_HISTORY Comman
     }
 
     // make sure there's enough room for the popup borders
-
     if (Size.X < 2 || Size.Y < 2)
     {
         return STATUS_BUFFER_TOO_SMALL;
@@ -345,7 +344,7 @@ void CommandLine::Show()
 
 void DeleteCommandLine(_Inout_ COOKED_READ_DATA* const pCookedReadData, const bool fUpdateFields)
 {
-    DWORD CharsToWrite = pCookedReadData->_NumberOfVisibleChars;
+    size_t CharsToWrite = pCookedReadData->_NumberOfVisibleChars;
     COORD coordOriginalCursor = pCookedReadData->_OriginalCursorPosition;
     const COORD coordBufferSize = pCookedReadData->_screenInfo.GetScreenBufferSize();
 
@@ -368,7 +367,7 @@ void DeleteCommandLine(_Inout_ COOKED_READ_DATA* const pCookedReadData, const bo
     }
 
     LOG_IF_FAILED(FillOutput(pCookedReadData->_screenInfo,
-                             L' ',
+                             UNICODE_SPACE,
                              coordOriginalCursor,
                              CONSOLE_FALSE_UNICODE,    // faster than real unicode
                              &CharsToWrite));
@@ -447,7 +446,7 @@ void SetCurrentCommandLine(_In_ COOKED_READ_DATA* const CookedReadData, _In_ SHO
         CookedReadData->_OriginalCursorPosition.Y += ScrollY;
     }
 
-    DWORD const CharsToWrite = CookedReadData->_BytesRead / sizeof(WCHAR);
+    size_t const CharsToWrite = CookedReadData->_BytesRead / sizeof(WCHAR);
     CookedReadData->_CurrentPosition = CharsToWrite;
     CookedReadData->_BufPtr = CookedReadData->_BackupLimit + CharsToWrite;
 }
@@ -579,33 +578,41 @@ NTSTATUS ProcessCommandListInput(_In_ COOKED_READ_DATA* const pCookedReadData)
             }
 
             Status = STATUS_SUCCESS;
-            DWORD dwNumBytes;
+            size_t NumBytes;
             if (pCookedReadData->_BytesRead > pCookedReadData->_UserBufferSize || LineCount > 1)
             {
                 if (LineCount > 1)
                 {
                     PWSTR Tmp;
-                    SetFlag(pInputReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::MultiLineInput);
                     for (Tmp = pCookedReadData->_BackupLimit; *Tmp != UNICODE_LINEFEED; Tmp++)
                     {
                         FAIL_FAST_IF_FALSE(Tmp < (pCookedReadData->_BackupLimit + pCookedReadData->_BytesRead));
                     }
-                    dwNumBytes = (ULONG)(Tmp - pCookedReadData->_BackupLimit + 1) * sizeof(*Tmp);
+                    NumBytes = (Tmp - pCookedReadData->_BackupLimit + 1) * sizeof(*Tmp);
                 }
                 else
                 {
-                    dwNumBytes = pCookedReadData->_UserBufferSize;
+                    NumBytes = pCookedReadData->_UserBufferSize;
                 }
-                SetFlag(pInputReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::InputPending);
-                pInputReadHandleData->BufPtr = pCookedReadData->_BackupLimit;
-                pInputReadHandleData->BytesAvailable = pCookedReadData->_BytesRead - dwNumBytes;
-                pInputReadHandleData->CurrentBufPtr = (PWCHAR)((PBYTE)pCookedReadData->_BackupLimit + dwNumBytes);
-                memmove(pCookedReadData->_UserBuffer, pCookedReadData->_BackupLimit, dwNumBytes);
+
+                // Copy what we can fit into the user buffer
+                memmove(pCookedReadData->_UserBuffer, pCookedReadData->_BackupLimit, NumBytes);
+
+                // Store all of the remaining as pending until the next read operation.
+                const std::string_view pending{ ((char*)pCookedReadData->_BackupLimit + NumBytes), pCookedReadData->_BytesRead - NumBytes };
+                if (LineCount > 1)
+                {
+                    pInputReadHandleData->SaveMultilinePendingInput(pending);
+                }
+                else
+                {
+                    pInputReadHandleData->SavePendingInput(pending);
+                }
             }
             else
             {
-                dwNumBytes = pCookedReadData->_BytesRead;
-                memmove(pCookedReadData->_UserBuffer, pCookedReadData->_BackupLimit, dwNumBytes);
+                NumBytes = pCookedReadData->_BytesRead;
+                memmove(pCookedReadData->_UserBuffer, pCookedReadData->_BackupLimit, NumBytes);
             }
 
             if (!pCookedReadData->_fIsUnicode)
@@ -613,22 +620,22 @@ NTSTATUS ProcessCommandListInput(_In_ COOKED_READ_DATA* const pCookedReadData)
                 PCHAR TransBuffer;
 
                 // If ansi, translate string.
-                TransBuffer = (PCHAR) new(std::nothrow) BYTE[dwNumBytes];
+                TransBuffer = (PCHAR) new(std::nothrow) BYTE[NumBytes];
                 if (TransBuffer == nullptr)
                 {
                     return STATUS_NO_MEMORY;
                 }
 
-                dwNumBytes = (ULONG)ConvertToOem(gci.CP,
-                                                 pCookedReadData->_UserBuffer,
-                                                 dwNumBytes / sizeof(WCHAR),
-                                                 TransBuffer,
-                                                 dwNumBytes);
-                memmove(pCookedReadData->_UserBuffer, TransBuffer, dwNumBytes);
+                NumBytes = ConvertToOem(gci.CP,
+                                        pCookedReadData->_UserBuffer,
+                                        gsl::narrow<UINT>(NumBytes / sizeof(WCHAR)),
+                                        TransBuffer,
+                                        gsl::narrow<UINT>(NumBytes));
+                memmove(pCookedReadData->_UserBuffer, TransBuffer, NumBytes);
                 delete[] TransBuffer;
             }
 
-            *(pCookedReadData->pdwNumBytes) = dwNumBytes;
+            *(pCookedReadData->pdwNumBytes) = NumBytes;
 
             return CONSOLE_STATUS_READ_COMPLETE;
         }
@@ -690,7 +697,7 @@ NTSTATUS ProcessCopyFromCharInput(_In_ COOKED_READ_DATA* const pCookedReadData)
 
         LOG_IF_FAILED(EndPopup(pCookedReadData->_screenInfo, pCookedReadData->_CommandHistory));
 
-        int i;  // char index (not byte)
+        size_t i;  // char index (not byte)
         // delete from cursor up to specified char
         for (i = pCookedReadData->_CurrentPosition + 1; i < (int)(pCookedReadData->_BytesRead / sizeof(WCHAR)); i++)
         {
@@ -785,7 +792,7 @@ NTSTATUS ProcessCopyToCharInput(_In_ COOKED_READ_DATA* const pCookedReadData)
         PCOMMAND const LastCommand = GetLastCommand(pCookedReadData->_CommandHistory);
         if (LastCommand)
         {
-            int i;
+            size_t i;
 
             // find specified char in last command
             for (i = pCookedReadData->_CurrentPosition + 1; i < (int)(LastCommand->CommandLength / sizeof(WCHAR)); i++)
@@ -800,7 +807,7 @@ NTSTATUS ProcessCopyToCharInput(_In_ COOKED_READ_DATA* const pCookedReadData)
             if (i < (int)(LastCommand->CommandLength / sizeof(WCHAR)) &&
                 ((USHORT)(LastCommand->CommandLength / sizeof(WCHAR)) > ((USHORT)pCookedReadData->_CurrentPosition)))
             {
-                int j = i - pCookedReadData->_CurrentPosition;
+                size_t j = i - pCookedReadData->_CurrentPosition;
                 FAIL_FAST_IF_FALSE(j > 0);
                 memmove(pCookedReadData->_BufPtr,
                         &LastCommand->Command[pCookedReadData->_CurrentPosition],
@@ -808,17 +815,17 @@ NTSTATUS ProcessCopyToCharInput(_In_ COOKED_READ_DATA* const pCookedReadData)
                 pCookedReadData->_CurrentPosition += j;
                 j *= sizeof(WCHAR);
                 pCookedReadData->_BytesRead = std::max(pCookedReadData->_BytesRead,
-                                                       gsl::narrow<ULONG>(pCookedReadData->_CurrentPosition * sizeof(WCHAR)));
+                                                       pCookedReadData->_CurrentPosition * sizeof(WCHAR));
                 if (pCookedReadData->_Echo)
                 {
-                    DWORD NumSpaces;
+                    size_t NumSpaces;
                     SHORT ScrollY = 0;
 
                     Status = WriteCharsLegacy(pCookedReadData->_screenInfo,
                                               pCookedReadData->_BackupLimit,
                                               pCookedReadData->_BufPtr,
                                               pCookedReadData->_BufPtr,
-                                              (PDWORD)&j,
+                                              &j,
                                               &NumSpaces,
                                               pCookedReadData->_OriginalCursorPosition.X,
                                               WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
@@ -872,10 +879,10 @@ NTSTATUS ProcessCommandNumberInput(_In_ COOKED_READ_DATA* const pCookedReadData)
         {
             if (Popup->NumberRead < 5)
             {
-                DWORD CharsToWrite = sizeof(WCHAR);
+                size_t CharsToWrite = sizeof(WCHAR);
                 const TextAttribute realAttributes = pCookedReadData->_screenInfo.GetAttributes();
                 pCookedReadData->_screenInfo.SetAttributes(Popup->Attributes);
-                DWORD NumSpaces;
+                size_t NumSpaces;
                 Status = WriteCharsLegacy(pCookedReadData->_screenInfo,
                                           Popup->NumberBuffer,
                                           &Popup->NumberBuffer[Popup->NumberRead],
@@ -895,10 +902,10 @@ NTSTATUS ProcessCommandNumberInput(_In_ COOKED_READ_DATA* const pCookedReadData)
         {
             if (Popup->NumberRead > 0)
             {
-                DWORD CharsToWrite = sizeof(WCHAR);
+                size_t CharsToWrite = sizeof(WCHAR);
                 const TextAttribute realAttributes = pCookedReadData->_screenInfo.GetAttributes();
                 pCookedReadData->_screenInfo.SetAttributes(Popup->Attributes);
-                DWORD NumSpaces;
+                size_t NumSpaces;
                 Status = WriteCharsLegacy(pCookedReadData->_screenInfo,
                                           Popup->NumberBuffer,
                                           &Popup->NumberBuffer[Popup->NumberRead],
@@ -995,7 +1002,7 @@ VOID DrawPromptPopup(_In_ PCLE_POPUP Popup,
     COORD WriteCoord;
     WriteCoord.X = (SHORT)(Popup->Region.Left + 1);
     WriteCoord.Y = (SHORT)(Popup->Region.Top + 1);
-    ULONG lStringLength = POPUP_SIZE_X(Popup);
+    size_t lStringLength = POPUP_SIZE_X(Popup);
     for (SHORT i = 0; i < POPUP_SIZE_Y(Popup); i++)
     {
         LOG_IF_FAILED(FillOutput(screenInfo,
@@ -1004,7 +1011,7 @@ VOID DrawPromptPopup(_In_ PCLE_POPUP Popup,
                                  CONSOLE_ATTRIBUTE,
                                  &lStringLength));
         LOG_IF_FAILED(FillOutput(screenInfo,
-                                 (WCHAR)' ',
+                                 UNICODE_SPACE,
                                  WriteCoord,
                                  CONSOLE_FALSE_UNICODE,   // faster that real unicode
                                  &lStringLength));
@@ -1157,7 +1164,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     COORD CurrentPosition = { 0 };
-    DWORD CharsToWrite;
+    size_t CharsToWrite;
     NTSTATUS Status;
     SHORT ScrollY = 0;
     const SHORT sScreenBufferSizeX = pCookedReadData->_screenInfo.GetScreenBufferSize().X;
@@ -1537,7 +1544,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                 else if (pCookedReadData->_CommandHistory)
                 {
                     PCOMMAND LastCommand;
-                    DWORD NumSpaces;
+                    size_t NumSpaces;
                     LastCommand = GetLastCommand(pCookedReadData->_CommandHistory);
                     if (LastCommand && (USHORT)(LastCommand->CommandLength / sizeof(WCHAR)) > (USHORT)pCookedReadData->_CurrentPosition)
                     {
@@ -1590,7 +1597,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
             if (pCookedReadData->_CommandHistory)
             {
                 PCOMMAND LastCommand;
-                DWORD NumSpaces, cchCount;
+                size_t NumSpaces, cchCount;
 
                 LastCommand = GetLastCommand(pCookedReadData->_CommandHistory);
                 if (LastCommand && (USHORT)(LastCommand->CommandLength / sizeof(WCHAR)) > (USHORT)pCookedReadData->_CurrentPosition)
@@ -1601,7 +1608,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                     memmove(pCookedReadData->_BufPtr, &LastCommand->Command[pCookedReadData->_CurrentPosition], cchCount * sizeof(WCHAR));
                     pCookedReadData->_CurrentPosition += cchCount;
                     cchCount *= sizeof(WCHAR);
-                    pCookedReadData->_BytesRead = std::max(static_cast<ULONG>(LastCommand->CommandLength), pCookedReadData->_BytesRead);
+                    pCookedReadData->_BytesRead = std::max(static_cast<size_t>(LastCommand->CommandLength), pCookedReadData->_BytesRead);
                     if (pCookedReadData->_Echo)
                     {
                         Status = WriteCharsLegacy(pCookedReadData->_screenInfo,
@@ -1609,7 +1616,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                                                   pCookedReadData->_BufPtr,
                                                   pCookedReadData->_BufPtr,
                                                   &cchCount,
-                                                  (PULONG)&NumSpaces,
+                                                  &NumSpaces,
                                                   pCookedReadData->_OriginalCursorPosition.X,
                                                   WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
                                                   &ScrollY);
@@ -1644,7 +1651,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
         case VK_F6:
         {
             // place a ctrl-z in the current command line
-            DWORD NumSpaces = 0;
+            size_t NumSpaces = 0;
 
             *pCookedReadData->_BufPtr = (WCHAR)0x1a;  // ctrl-z
             pCookedReadData->_BytesRead += sizeof(WCHAR);
@@ -1850,7 +1857,7 @@ void DrawCommandListBorder(_In_ PCLE_POPUP const Popup, SCREEN_INFORMATION& scre
     COORD WriteCoord;
     WriteCoord.X = Popup->Region.Left;
     WriteCoord.Y = Popup->Region.Top;
-    ULONG Length = POPUP_SIZE_X(Popup) + 2;
+    size_t Length = POPUP_SIZE_X(Popup) + 2;
     LOG_IF_FAILED(FillOutput(screenInfo, Popup->Attributes.GetLegacyAttributes(), WriteCoord, CONSOLE_ATTRIBUTE, &Length));
 
     // draw upper left corner
@@ -1922,7 +1929,7 @@ void UpdateHighlight(_In_ PCLE_POPUP Popup,
     const WORD PopupLegacyAttributes = Popup->Attributes.GetLegacyAttributes();
     COORD WriteCoord;
     WriteCoord.X = (SHORT)(Popup->Region.Left + 1);
-    ULONG lStringLength = POPUP_SIZE_X(Popup);
+    size_t lStringLength = POPUP_SIZE_X(Popup);
 
     WriteCoord.Y = (SHORT)(Popup->Region.Top + 1 + OldCurrentCommand - TopIndex);
     LOG_IF_FAILED(FillOutput(screenInfo, PopupLegacyAttributes, WriteCoord, CONSOLE_ATTRIBUTE, &lStringLength));
@@ -1944,7 +1951,7 @@ void DrawCommandListPopup(_In_ PCLE_POPUP const Popup,
     COORD WriteCoord;
     WriteCoord.X = (SHORT)(Popup->Region.Left + 1);
     WriteCoord.Y = (SHORT)(Popup->Region.Top + 1);
-    ULONG lStringLength = POPUP_SIZE_X(Popup);
+    size_t lStringLength = POPUP_SIZE_X(Popup);
     for (SHORT i = 0; i < POPUP_SIZE_Y(Popup); ++i)
     {
         LOG_IF_FAILED(FillOutput(screenInfo,
@@ -1953,7 +1960,7 @@ void DrawCommandListPopup(_In_ PCLE_POPUP const Popup,
                                  CONSOLE_ATTRIBUTE,
                                  &lStringLength));
         LOG_IF_FAILED(FillOutput(screenInfo,
-                                 (WCHAR)' ',
+            (WCHAR)' ',
                                  WriteCoord,
                                  CONSOLE_FALSE_UNICODE,   // faster than real unicode
                                  &lStringLength));
@@ -2006,7 +2013,7 @@ void DrawCommandListPopup(_In_ PCLE_POPUP const Popup,
         // write command to screen
         lStringLength = CommandHistory->Commands[COMMAND_NUM_TO_INDEX(i, CommandHistory)]->CommandLength / sizeof(WCHAR);
         {
-            DWORD lTmpStringLength = lStringLength;
+            size_t lTmpStringLength = lStringLength;
             LONG lPopupLength = (LONG)(POPUP_SIZE_X(Popup) - CommandNumberLength);
             LPWSTR lpStr = CommandHistory->Commands[COMMAND_NUM_TO_INDEX(i, CommandHistory)]->Command;
             while (lTmpStringLength--)

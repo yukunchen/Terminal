@@ -222,8 +222,8 @@ NTSTATUS AddCommand(_In_ PCOMMAND_HISTORY pCmdHistory,
 NTSTATUS RetrieveNthCommand(_In_ PCOMMAND_HISTORY CommandHistory,
                             _In_ SHORT Index, // index, not command number
                             _In_reads_bytes_(BufferSize) PWCHAR Buffer,
-                            _In_ ULONG BufferSize,
-                            _Out_ PULONG CommandSize)
+                            _In_ size_t BufferSize,
+                            _Out_ size_t* const CommandSize)
 {
     FAIL_FAST_IF_FALSE(Index < CommandHistory->NumberOfCommands);
     CommandHistory->LastDisplayed = Index;
@@ -245,8 +245,8 @@ NTSTATUS RetrieveNthCommand(_In_ PCOMMAND_HISTORY CommandHistory,
 NTSTATUS RetrieveCommand(_In_ PCOMMAND_HISTORY CommandHistory,
                          _In_ WORD VirtualKeyCode,
                          _In_reads_bytes_(BufferSize) PWCHAR Buffer,
-                         _In_ ULONG BufferSize,
-                         _Out_ PULONG CommandSize)
+                         _In_ size_t BufferSize,
+                         _Out_ size_t* const CommandSize)
 {
     if (CommandHistory == nullptr)
     {
@@ -619,7 +619,7 @@ PCOMMAND RemoveCommand(_In_ PCOMMAND_HISTORY CommandHistory, _In_ SHORT iDel)
 // - this routine finds the most recent command that starts with the letters already in the current command.  it returns the array index (no mod needed).
 SHORT FindMatchingCommand(_In_ PCOMMAND_HISTORY CommandHistory,
                           _In_reads_bytes_(cbIn) PCWCHAR pwchIn,
-                          _In_ ULONG cbIn,
+                          _In_ size_t cbIn,
                           _In_ SHORT CommandIndex,  // where to start from
                           _In_ DWORD Flags)
 {

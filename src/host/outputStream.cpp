@@ -73,7 +73,7 @@ void WriteBuffer::_DefaultCase(const wchar_t wch)
 // - <none>
 void WriteBuffer::_DefaultStringCase(_In_reads_(cch) const wchar_t* const rgwch, const size_t cch)
 {
-    DWORD dwNumBytes = (DWORD)(cch * sizeof(wchar_t));
+    size_t dwNumBytes = cch * sizeof(wchar_t);
 
     _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor().SetIsOn(true);
 

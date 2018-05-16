@@ -34,10 +34,7 @@ public:
     COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
                      _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                      SCREEN_INFORMATION& screenInfo,
-                     _In_ ULONG BufferSize,
-                     _In_ PWCHAR BufPtr,
-                     _In_ PWCHAR BackupLimit,
-                     _In_ ULONG UserBufferSize,
+                     _In_ size_t UserBufferSize,
                      _In_ PWCHAR UserBuffer,
                      _In_ ULONG CtrlWakeupMask,
                      _In_ COMMAND_HISTORY* CommandHistory,
@@ -51,22 +48,22 @@ public:
     bool Notify(const WaitTerminationReason TerminationReason,
                 const bool fIsUnicode,
                 _Out_ NTSTATUS* const pReplyStatus,
-                _Out_ DWORD* const pNumBytes,
+                _Out_ size_t* const pNumBytes,
                 _Out_ DWORD* const pControlKeyState,
                 _Out_ void* const pOutputData) override;
 
 // TODO MSFT:11285829 member variable should be made private where possible.
     SCREEN_INFORMATION& _screenInfo;
-    ULONG _BufferSize;
-    ULONG _BytesRead;
-    ULONG _CurrentPosition;  // char position, not byte position
+    size_t _BufferSize;
+    size_t _BytesRead;
+    size_t _CurrentPosition;  // char position, not byte position
     PWCHAR _BufPtr;
     // should be const. the first char of the buffer
-    PWCHAR const _BackupLimit;
-    ULONG _UserBufferSize;   // doubled size in ansi case
+    PWCHAR  _BackupLimit;
+    size_t _UserBufferSize;   // doubled size in ansi case
     PWCHAR _UserBuffer;
     COORD _OriginalCursorPosition;
-    DWORD _NumberOfVisibleChars;
+    size_t _NumberOfVisibleChars;
     ULONG _CtrlWakeupMask;
     PCOMMAND_HISTORY _CommandHistory;
     const bool _Echo;
@@ -79,13 +76,13 @@ public:
     ULONG ControlKeyState;
     COORD BeforeDialogCursorPosition; // Currently only used for F9 (ProcessCommandNumberInput) since it's the only pop-up to move the cursor when it starts.
     bool _fIsUnicode;
-    DWORD* pdwNumBytes;
+    size_t* pdwNumBytes;
 
     void ProcessAliases(DWORD& lineCount);
 
     [[nodiscard]]
     HRESULT Read(const bool isUnicode,
-                 ULONG& numBytes,
+                 size_t& numBytes,
                  ULONG& controlKeyState);
 
     bool ProcessInput(const wchar_t wch,
@@ -120,6 +117,7 @@ public:
 #endif
 
 private:
+    std::unique_ptr<byte[]> _buffer;
     std::wstring _exeName;
     std::unique_ptr<ConsoleHandleData> _tempHandle;
 };

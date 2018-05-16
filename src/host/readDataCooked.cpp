@@ -14,6 +14,8 @@
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
+#define LINE_INPUT_BUFFER_SIZE (256 * sizeof(WCHAR))
+
 // Routine Description:
 // - Constructs cooked read data class to hold context across key presses while a user is modifying their 'input line'.
 // Arguments:
@@ -41,10 +43,7 @@
 COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
                                    _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                                    SCREEN_INFORMATION& screenInfo,
-                                   _In_ ULONG BufferSize,
-                                   _In_ PWCHAR BufPtr,
-                                   _In_ PWCHAR BackupLimit,
-                                   _In_ ULONG UserBufferSize,
+                                   _In_ size_t UserBufferSize,
                                    _In_ PWCHAR UserBuffer,
                                    _In_ ULONG CtrlWakeupMask,
                                    _In_ COMMAND_HISTORY* CommandHistory,
@@ -52,11 +51,8 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
 ) :
     ReadData(pInputBuffer, pInputReadHandleData),
     _screenInfo{ screenInfo },
-    _BufferSize{ BufferSize },
     _BytesRead{ 0 },
     _CurrentPosition{ 0 },
-    _BufPtr{ BufPtr },
-    _BackupLimit{ BackupLimit },
     _UserBufferSize{ UserBufferSize },
     _UserBuffer{ UserBuffer },
     _OriginalCursorPosition{ -1, -1 },
@@ -77,6 +73,18 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
                                                        GENERIC_WRITE,
                                                        FILE_SHARE_READ | FILE_SHARE_WRITE,
                                                        _tempHandle));
+
+    // to emulate OS/2 KbdStringIn, we read into our own big buffer
+    // (256 bytes) until the user types enter.  then return as many
+    // chars as will fit in the user's buffer.
+    _BufferSize = std::max(UserBufferSize, LINE_INPUT_BUFFER_SIZE);
+    _buffer = std::make_unique<byte[]>(_BufferSize);
+    _BackupLimit = reinterpret_cast<wchar_t*>(_buffer.get());
+    _BufPtr = reinterpret_cast<wchar_t*>(_buffer.get());
+
+    // Initialize the user's buffer to spaces. This is done so that
+    // moving in the buffer via cursor doesn't do strange things.
+    std::fill_n(_BufPtr, _BufferSize / sizeof(wchar_t), UNICODE_SPACE);
 }
 
 // Routine Description:
@@ -106,30 +114,27 @@ COOKED_READ_DATA::~COOKED_READ_DATA()
 bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
                               const bool fIsUnicode,
                               _Out_ NTSTATUS* const pReplyStatus,
-                              _Out_ DWORD* const pNumBytes,
+                              _Out_ size_t* const pNumBytes,
                               _Out_ DWORD* const pControlKeyState,
                               _Out_ void* const /*pOutputData*/)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    FAIL_FAST_IF_FALSE(gci.IsConsoleLocked());
+    FAIL_FAST_IF(!gci.IsConsoleLocked());
 
     *pNumBytes = 0;
     *pControlKeyState = 0;
 
     *pReplyStatus = STATUS_SUCCESS;
 
-    FAIL_FAST_IF_FALSE(IsFlagClear(_pInputReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::InputPending));
+    FAIL_FAST_IF(_pInputReadHandleData->IsInputPending());
 
     // this routine should be called by a thread owning the same lock on the same console as we're reading from.
-    _pInputReadHandleData->LockReadCount();
-    FAIL_FAST_IF_FALSE(_pInputReadHandleData->GetReadCount() > 0);
-    _pInputReadHandleData->UnlockReadCount();
+    FAIL_FAST_IF(_pInputReadHandleData->GetReadCount() == 0);
 
     // if ctrl-c or ctrl-break was seen, terminate read.
     if (IsAnyFlagSet(TerminationReason, (WaitTerminationReason::CtrlC | WaitTerminationReason::CtrlBreak)))
     {
         *pReplyStatus = STATUS_ALERTED;
-        delete[] _BackupLimit;
         gci.lpCookedReadData = nullptr;
         return true;
     }
@@ -141,7 +146,6 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
 
         // Clean up popup data structures.
         CleanUpPopups(this);
-        delete[] _BackupLimit;
         gci.lpCookedReadData = nullptr;
         return true;
     }
@@ -150,13 +154,12 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
     // so, we decrement the read count. If it goes to zero, we wake up the
     // close thread. Otherwise, we wake up any other thread waiting for data.
 
-    if (IsFlagSet(_pInputReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::Closing))
+    if (IsFlagSet(TerminationReason, WaitTerminationReason::HandleClosing))
     {
         *pReplyStatus = STATUS_ALERTED;
 
         // Clean up popup data structures.
         CleanUpPopups(this);
-        delete[] _BackupLimit;
         gci.lpCookedReadData = nullptr;
         return true;
     }
@@ -209,13 +212,6 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
             if (*pReplyStatus == CONSOLE_STATUS_READ_COMPLETE || (*pReplyStatus != CONSOLE_STATUS_WAIT && *pReplyStatus != CONSOLE_STATUS_WAIT_NO_BLOCK))
             {
                 *pReplyStatus = S_OK;
-                // if there is more input that is pending from the popup, it will be saved in
-                // _pInputReadHandleData by giving it a pointer to _BackupLimit. don't delete _BackupLimit
-                // unless all data was read.
-                if (IsFlagClear(_pInputReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::InputPending))
-                {
-                    delete[] _BackupLimit;
-                }
                 gci.lpCookedReadData = nullptr;
 
                 return true;
@@ -253,7 +249,7 @@ bool COOKED_READ_DATA::AtEol() const
 // - controlKeyState - For some types of reads, this is the modifier key state with the last button press.
 [[nodiscard]]
 HRESULT COOKED_READ_DATA::Read(const bool isUnicode,
-                               ULONG& numBytes,
+                               size_t& numBytes,
                                ULONG& controlKeyState)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -263,8 +259,8 @@ HRESULT COOKED_READ_DATA::Read(const bool isUnicode,
     WCHAR Char;
     bool commandLineEditingKeys = false;
     DWORD KeyState;
-    DWORD NumBytes = 0;
-    ULONG NumToWrite;
+    size_t NumBytes = 0;
+    size_t NumToWrite;
     bool fAddDbcsLead = false;
 
     INPUT_READ_HANDLE_DATA* const pInputReadHandleData = GetInputReadHandleData();
@@ -345,9 +341,9 @@ HRESULT COOKED_READ_DATA::Read(const bool isUnicode,
         {
             // Figure out where real string ends (at carriage return or end of buffer).
             PWCHAR StringPtr = _BackupLimit;
-            ULONG StringLength = _BytesRead;
+            size_t StringLength = _BytesRead;
             bool FoundCR = false;
-            for (ULONG i = 0; i < (_BytesRead / sizeof(WCHAR)); i++)
+            for (size_t i = 0; i < (_BytesRead / sizeof(WCHAR)); i++)
             {
                 if (*StringPtr++ == UNICODE_CARRIAGERETURN)
                 {
@@ -378,8 +374,6 @@ HRESULT COOKED_READ_DATA::Read(const bool isUnicode,
             if (LineCount > 1)
             {
                 PWSTR Tmp;
-
-                SetFlag(pInputReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::MultiLineInput);
                 if (!isUnicode)
                 {
                     if (pInputBuffer->IsReadPartialByteSequenceAvailable())
@@ -430,13 +424,18 @@ HRESULT COOKED_READ_DATA::Read(const bool isUnicode,
                 numBytes = _UserBufferSize;
             }
 
-
-            SetFlag(pInputReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::InputPending);
-            pInputReadHandleData->BufPtr = _BackupLimit;
-            pInputReadHandleData->BytesAvailable = _BytesRead - numBytes;
-            pInputReadHandleData->CurrentBufPtr = (PWCHAR)((PBYTE)_BackupLimit + numBytes);
             __analysis_assume(numBytes <= _UserBufferSize);
             memmove(_UserBuffer, _BackupLimit, numBytes);
+
+            const std::string_view pending{ ((char*)_BackupLimit + numBytes), _BytesRead - numBytes };
+            if (LineCount > 1)
+            {
+                pInputReadHandleData->SaveMultilinePendingInput(pending);
+            }
+            else
+            {
+                pInputReadHandleData->SavePendingInput(pending);
+            }
         }
         else
         {
@@ -456,7 +455,6 @@ HRESULT COOKED_READ_DATA::Read(const bool isUnicode,
                     if (_UserBufferSize == 0)
                     {
                         numBytes = 1;
-                        delete[] _BackupLimit;
                         return STATUS_SUCCESS;
                     }
                 }
@@ -471,13 +469,10 @@ HRESULT COOKED_READ_DATA::Read(const bool isUnicode,
 
             if (numBytes > _UserBufferSize)
             {
-                Status = STATUS_BUFFER_OVERFLOW;
-                delete[] _BackupLimit;
-                return Status;
+                return STATUS_BUFFER_OVERFLOW;
             }
 
             memmove(_UserBuffer, _BackupLimit, numBytes);
-            delete[] _BackupLimit;
         }
         controlKeyState = ControlKeyState;
 
@@ -496,9 +491,9 @@ HRESULT COOKED_READ_DATA::Read(const bool isUnicode,
 
             std::unique_ptr<IInputEvent> partialEvent;
             numBytes = TranslateUnicodeToOem(_UserBuffer,
-                                             numBytes / sizeof(wchar_t),
+                                             gsl::narrow<ULONG>(numBytes / sizeof(wchar_t)),
                                              tempBuffer.get(),
-                                             NumBytes,
+                                             gsl::narrow<ULONG>(NumBytes),
                                              partialEvent);
 
             if (partialEvent.get())
@@ -550,9 +545,9 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                                     NTSTATUS& status)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    DWORD NumSpaces = 0;
+    size_t NumSpaces = 0;
     SHORT ScrollY = 0;
-    ULONG NumToWrite;
+    size_t NumToWrite;
     WCHAR wch = wchOrig;
     bool fStartFromDelim;
 

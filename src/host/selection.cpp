@@ -529,7 +529,7 @@ void Selection::ColorSelection(const SMALL_RECT& srRect, const ULONG ulAttr)
     // Now color the selection a line at a time.
     for (; (coordTarget.Y < srRect.Top + coordTargetSize.Y); ++coordTarget.Y)
     {
-        DWORD cchWrite = coordTargetSize.X;
+        size_t cchWrite = coordTargetSize.X;
 
         LOG_IF_FAILED(FillOutput(screenInfo, (USHORT)ulAttr, coordTarget, CONSOLE_ATTRIBUTE, &cchWrite));
     }

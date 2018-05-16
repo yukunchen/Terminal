@@ -58,7 +58,7 @@ PCOMMAND GetLastCommand(_In_ PCOMMAND_HISTORY CommandHistory);
 PCOMMAND RemoveCommand(_In_ PCOMMAND_HISTORY CommandHistory, _In_ SHORT iDel);
 SHORT FindMatchingCommand(_In_ PCOMMAND_HISTORY CommandHistory,
                           _In_reads_bytes_(cbIn) PCWCHAR pwchIn,
-                          _In_ ULONG cbIn,
+                          _In_ size_t cbIn,
                           _In_ SHORT CommandIndex,
                           _In_ DWORD Flags);
 [[nodiscard]]
@@ -66,7 +66,7 @@ NTSTATUS RetrieveNthCommand(_In_ PCOMMAND_HISTORY CommandHistory,
                             _In_ SHORT Index,
                             _In_reads_bytes_(BufferSize)
                             PWCHAR Buffer,
-                            _In_ ULONG BufferSize, _Out_ PULONG CommandSize);
+                            _In_ size_t BufferSize, _Out_ size_t* const CommandSize);
 
 // COMMAND_IND_NEXT and COMMAND_IND_PREV go to the next and prev command
 // COMMAND_IND_INC  and COMMAND_IND_DEC  go to the next and prev slots

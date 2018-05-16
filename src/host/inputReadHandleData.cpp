@@ -9,50 +9,62 @@
 #include "inputReadHandleData.h"
 
 INPUT_READ_HANDLE_DATA::INPUT_READ_HANDLE_DATA() :
-    BytesAvailable(0),
-    CurrentBufPtr(nullptr),
-    BufPtr(nullptr),
-    InputHandleFlags(static_cast<HandleFlags>(0)),
-    _ulReadCount(0),
-    _csReadCountLock({ 0 })
+    _isInputPending{ false },
+    _isMultilineInput{ false }, 
+    _readCount{ 0 },
+    _readCountLock{},
+    _buffer{}
 {
-    InitializeCriticalSection(&_csReadCountLock);
 }
 
-INPUT_READ_HANDLE_DATA::~INPUT_READ_HANDLE_DATA()
+bool INPUT_READ_HANDLE_DATA::IsInputPending() const
 {
-    DeleteCriticalSection(&_csReadCountLock);
+    return _isInputPending;
 }
 
-_Acquires_lock_(&_csReadCountLock) void INPUT_READ_HANDLE_DATA::LockReadCount()
+bool INPUT_READ_HANDLE_DATA::IsMultilineInput() const
 {
-    EnterCriticalSection(&_csReadCountLock);
+    FAIL_FAST_IF(!_isInputPending); // we shouldn't have multiline input without a pending input.
+    return _isMultilineInput;
 }
 
-_Releases_lock_(&_csReadCountLock) void INPUT_READ_HANDLE_DATA::UnlockReadCount()
+void INPUT_READ_HANDLE_DATA::SaveMultilinePendingInput(std::string_view pending)
 {
-    LeaveCriticalSection(&_csReadCountLock);
+    _isMultilineInput = true;
+    SavePendingInput(pending);
+}
+
+void INPUT_READ_HANDLE_DATA::SavePendingInput(std::string_view pending)
+{
+    _isInputPending = true;
+    UpdatePending(pending);
+}
+
+void INPUT_READ_HANDLE_DATA::UpdatePending(std::string_view pending)
+{
+    _buffer = pending;
+}
+
+std::string_view INPUT_READ_HANDLE_DATA::GetPendingInput() const
+{
+    return _buffer;
 }
 
 void INPUT_READ_HANDLE_DATA::IncrementReadCount()
 {
-    LockReadCount();
-    _ulReadCount++;
-    UnlockReadCount();
+    const auto lock = _readCountLock.lock();
+    _readCount++;
 }
 
 void INPUT_READ_HANDLE_DATA::DecrementReadCount()
 {
-    LockReadCount();
-    FAIL_FAST_IF_FALSE(_ulReadCount > 0);
-    _ulReadCount--;
-    UnlockReadCount();
+    const auto lock = _readCountLock.lock();
+    FAIL_FAST_IF(_readCount == 0);
+    _readCount--;
 }
 
-_Requires_lock_held_(&_csReadCountLock) ULONG INPUT_READ_HANDLE_DATA::GetReadCount() const
+size_t INPUT_READ_HANDLE_DATA::GetReadCount()
 {
-    return _ulReadCount;
+    const auto lock = _readCountLock.lock();
+    return _readCount;
 }
-
-
-

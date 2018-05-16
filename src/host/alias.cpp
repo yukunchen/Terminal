@@ -1264,10 +1264,10 @@ std::wstring Alias::s_MatchAndCopyAlias(const std::wstring& sourceText,
 // Return Value:
 // - None. It will just maintain the source as the target if we can't match an alias.
 void Alias::s_MatchAndCopyAliasLegacy(_In_reads_bytes_(cbSource) PWCHAR pwchSource,
-                                      _In_ ULONG cbSource,
+                                      _In_ size_t cbSource,
                                       _Out_writes_bytes_(*pcbTarget) PWCHAR pwchTarget,
-                                      _In_ ULONG cbTargetSize,
-                                      _Out_ PULONG pcbTargetWritten,
+                                      _In_ size_t cbTargetSize,
+                                      _Out_ size_t* const pcbTargetWritten,
                                       const std::wstring& exeName,
                                       DWORD& lines)
 {

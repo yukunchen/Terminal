@@ -26,7 +26,7 @@
 // - THROW: Throws if space cannot be allocated to copy the given string
 WriteData::WriteData(SCREEN_INFORMATION& siContext,
                      _In_reads_bytes_(cbContext) wchar_t* const pwchContext,
-                     const ULONG cbContext,
+                     const size_t cbContext,
                      const UINT uiOutputCodepage) :
     IWaitRoutine(ReplyDataType::Write),
     _siContext(siContext),
@@ -101,7 +101,7 @@ void WriteData::SetUtf8ConsumedCharacters(const size_t cchUtf8Consumed)
 bool WriteData::Notify(const WaitTerminationReason TerminationReason,
                        const bool fIsUnicode,
                        _Out_ NTSTATUS* const pReplyStatus,
-                       _Out_ DWORD* const pNumBytes,
+                       _Out_ size_t* const pNumBytes,
                        _Out_ DWORD* const pControlKeyState,
                        _Out_ void* const /*pOutputData*/)
 {
@@ -123,7 +123,7 @@ bool WriteData::Notify(const WaitTerminationReason TerminationReason,
     FAIL_FAST_IF_FALSE(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
 
     WriteData* pWaiter = nullptr;
-    ULONG cbContext = _cbContext;
+    size_t cbContext = _cbContext;
     NTSTATUS Status = DoWriteConsole(_pwchContext,
                                      &cbContext,
                                      _siContext,
@@ -171,13 +171,13 @@ bool WriteData::Notify(const WaitTerminationReason TerminationReason,
                 cchTextBufferRead--;
             }
 
-            LOG_IF_FAILED(SizeTToULong(cchTextBufferRead, &cbContext));
+            cbContext = cchTextBufferRead;
         }
         else
         {
             // For UTF-8, we were told exactly how many valid bytes were consumed before we got into the wait state.
             // Just give that value back now.
-            LOG_IF_FAILED(SizeTToULong(_cchUtf8Consumed, &cbContext));
+            cbContext = _cchUtf8Consumed;
         }
     }
 

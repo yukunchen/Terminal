@@ -62,9 +62,6 @@ public:
         return _IsInput();
     }
 
-    [[nodiscard]]
-    HRESULT CloseHandle();
-
     enum HandleType
     {
         Input = 0x1,
@@ -84,7 +81,7 @@ private:
     ACCESS_MASK const _amAccess;
     ULONG const _ulShareAccess;
     PVOID _pvClientPointer; // This will be a pointer to a SCREEN_INFORMATION or INPUT_INFORMATION object.
-    INPUT_READ_HANDLE_DATA* _pClientInput;
+    std::unique_ptr<INPUT_READ_HANDLE_DATA> _pClientInput;
 };
 
 DEFINE_ENUM_FLAG_OPERATORS(ConsoleHandleData::HandleType);
