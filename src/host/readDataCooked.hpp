@@ -87,6 +87,8 @@ public:
                       const DWORD keyState,
                       NTSTATUS& status);
 
+    void CleanUpPopups();
+
 // TODO MSFT:11285829 this is a temporary kludge until the constructors are ironed
 // out, so that we can still run the tests in the meantime.
 #if UNIT_TESTING

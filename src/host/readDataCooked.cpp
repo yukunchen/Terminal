@@ -93,6 +93,7 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
 // - Decrements count of readers waiting on the given handle.
 COOKED_READ_DATA::~COOKED_READ_DATA()
 {
+    CleanUpPopups();
 }
 
 // Routine Description:
@@ -144,9 +145,6 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
     if (IsFlagSet(TerminationReason, WaitTerminationReason::ThreadDying))
     {
         *pReplyStatus = STATUS_THREAD_IS_TERMINATING;
-
-        // Clean up popup data structures.
-        CleanUpPopups(this);
         gci.lpCookedReadData = nullptr;
         return true;
     }
@@ -158,9 +156,6 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
     if (IsFlagSet(TerminationReason, WaitTerminationReason::HandleClosing))
     {
         *pReplyStatus = STATUS_ALERTED;
-
-        // Clean up popup data structures.
-        CleanUpPopups(this);
         gci.lpCookedReadData = nullptr;
         return true;
     }
@@ -867,4 +862,18 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
     }
 
     return false;
+}
+
+void COOKED_READ_DATA::CleanUpPopups()
+{
+    COMMAND_HISTORY* const CommandHistory = _CommandHistory;
+    if (CommandHistory == nullptr)
+    {
+        return;
+    }
+
+    while (!CLE_NO_POPUPS(CommandHistory))
+    {
+        LOG_IF_FAILED(EndPopup(_screenInfo, CommandHistory));
+    }
 }

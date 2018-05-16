@@ -81,11 +81,6 @@ void FreeCommandHistoryBuffers()
         {
 
             RemoveEntryList(&History->ListLink);
-            if (History->AppName)
-            {
-                delete[] History->AppName;
-                History->AppName = nullptr;
-            }
 
             for (SHORT i = 0; i < History->NumberOfCommands; i++)
             {
@@ -121,7 +116,15 @@ void ResizeCommandHistoryBuffers(const UINT cCommands)
     }
 }
 
+static bool CaseInsensitiveEquality(wchar_t a, wchar_t b)
+{
+    return ::towlower(a) == ::towlower(b);
+}
 
+bool _COMMAND_HISTORY::IsAppNameMatch(const std::wstring_view other) const
+{
+    return std::equal(_appName.cbegin(), _appName.cend(), other.cbegin(), other.cend(), CaseInsensitiveEquality);
+}
 
 // Routine Description:
 // - This routine is called when escape is entered or a command is added.
@@ -138,7 +141,7 @@ void ResetCommandHistory(_In_opt_ PCOMMAND_HISTORY CommandHistory)
 [[nodiscard]]
 NTSTATUS AddCommand(_In_ PCOMMAND_HISTORY pCmdHistory,
                     _In_reads_bytes_(cbCommand) PCWCHAR pwchCommand,
-                    const USHORT cbCommand,
+                    const size_t cbCommand,
                     const bool fHistoryNoDup)
 {
     if (pCmdHistory == nullptr || pCmdHistory->MaximumNumberOfCommands == 0)
@@ -351,7 +354,7 @@ bool AtLastCommand(_In_ PCOMMAND_HISTORY CommandHistory)
     }
 }
 
-PCOMMAND_HISTORY ReallocCommandHistory(_In_opt_ PCOMMAND_HISTORY CurrentCommandHistory, const DWORD NumCommands)
+PCOMMAND_HISTORY ReallocCommandHistory(_In_opt_ PCOMMAND_HISTORY CurrentCommandHistory, const size_t NumCommands)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // To protect ourselves from overflow and general arithmetic errors, a limit of SHORT_MAX is put on the size of the command history.
@@ -392,25 +395,9 @@ PCOMMAND_HISTORY ReallocCommandHistory(_In_opt_ PCOMMAND_HISTORY CurrentCommandH
     return History;
 }
 
-PCOMMAND_HISTORY FindExeCommandHistory(_In_reads_(AppNameLength) PVOID AppName, _In_ DWORD AppNameLength, const bool Unicode)
+COMMAND_HISTORY* FindExeCommandHistory(const std::wstring_view appName)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    PWCHAR AppNamePtr = nullptr;
-    if (!Unicode)
-    {
-        AppNamePtr = new(std::nothrow) WCHAR[AppNameLength];
-        if (AppNamePtr == nullptr)
-        {
-            return nullptr;
-        }
-        AppNameLength = ConvertInputToUnicode(gci.CP, (PSTR)AppName, AppNameLength, AppNamePtr, AppNameLength);
-        AppNameLength *= 2;
-    }
-    else
-    {
-        AppNamePtr = (PWCHAR)AppName;
-    }
-
     PLIST_ENTRY const ListHead = &gci.CommandHistoryList;
     PLIST_ENTRY ListNext = ListHead->Flink;
     while (ListNext != ListHead)
@@ -418,18 +405,10 @@ PCOMMAND_HISTORY FindExeCommandHistory(_In_reads_(AppNameLength) PVOID AppName, 
         PCOMMAND_HISTORY const History = CONTAINING_RECORD(ListNext, COMMAND_HISTORY, ListLink);
         ListNext = ListNext->Flink;
 
-        if (History->Flags & CLE_ALLOCATED && !_wcsnicmp(History->AppName, AppNamePtr, (USHORT)AppNameLength / sizeof(WCHAR)))
+        if (IsFlagSet(History->Flags, CLE_ALLOCATED) && History->IsAppNameMatch(appName))
         {
-            if (!Unicode)
-            {
-                delete[] AppNamePtr;
-            }
             return History;
         }
-    }
-    if (!Unicode)
-    {
-        delete[] AppNamePtr;
     }
     return nullptr;
 }
@@ -440,7 +419,7 @@ PCOMMAND_HISTORY FindExeCommandHistory(_In_reads_(AppNameLength) PVOID AppName, 
 // - Console - pointer to console.
 // Return Value:
 // - Pointer to command history buffer.  if none are available, returns nullptr.
-PCOMMAND_HISTORY AllocateCommandHistory(_In_reads_bytes_(cbAppName) PCWSTR pwszAppName, const DWORD cbAppName, _In_ HANDLE hProcess)
+PCOMMAND_HISTORY COMMAND_HISTORY::s_AllocateCommandHistory(const std::wstring_view appName, const HANDLE processHandle)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // Reuse a history buffer.  The buffer must be !CLE_ALLOCATED.
@@ -455,10 +434,10 @@ PCOMMAND_HISTORY AllocateCommandHistory(_In_reads_bytes_(cbAppName) PCWSTR pwszA
         History = CONTAINING_RECORD(ListNext, COMMAND_HISTORY, ListLink);
         ListNext = ListNext->Blink;
 
-        if ((History->Flags & CLE_ALLOCATED) == 0)
+        if (IsFlagClear(History->Flags, CLE_ALLOCATED))
         {
             // use LRU history buffer with same app name
-            if (History->AppName && !_wcsnicmp(History->AppName, pwszAppName, (USHORT)cbAppName / sizeof(WCHAR)))
+            if (History->IsAppNameMatch(appName))
             {
                 BestCandidate = History;
                 SameApp = true;
@@ -496,15 +475,7 @@ PCOMMAND_HISTORY AllocateCommandHistory(_In_reads_bytes_(cbAppName) PCWSTR pwszA
         }
         ZeroMemory(History, TotalSize * sizeof(BYTE));
 
-        // Length is in bytes. Add 1 so dividing by WCHAR (2) is always rounding up.
-        History->AppName = new(std::nothrow) WCHAR[(cbAppName + 1) / sizeof(WCHAR)];
-        if (History->AppName == nullptr)
-        {
-            delete[] History;
-            return nullptr;
-        }
-
-        memmove(History->AppName, pwszAppName, cbAppName);
+        History->_appName = appName;
         History->Flags = CLE_ALLOCATED;
         History->NumberOfCommands = 0;
         History->LastAdded = -1;
@@ -513,7 +484,7 @@ PCOMMAND_HISTORY AllocateCommandHistory(_In_reads_bytes_(cbAppName) PCWSTR pwszA
         History->MaximumNumberOfCommands = (SHORT)gci.GetHistoryBufferSize();
         InsertHeadList(&gci.CommandHistoryList, &History->ListLink);
         gci.NumCommandHistories += 1;
-        History->ProcessHandle = hProcess;
+        History->ProcessHandle = processHandle;
         InitializeListHead(&History->PopupList);
         return History;
     }
@@ -525,13 +496,7 @@ PCOMMAND_HISTORY AllocateCommandHistory(_In_reads_bytes_(cbAppName) PCWSTR pwszA
         FAIL_FAST_IF_FALSE(CLE_NO_POPUPS(History));
         if (!SameApp)
         {
-            SHORT i;
-            if (History->AppName)
-            {
-                delete[] History->AppName;
-            }
-
-            for (i = 0; i < History->NumberOfCommands; i++)
+            for (SHORT i = 0; i < History->NumberOfCommands; i++)
             {
                 delete[] History->Commands[i];
             }
@@ -540,19 +505,11 @@ PCOMMAND_HISTORY AllocateCommandHistory(_In_reads_bytes_(cbAppName) PCWSTR pwszA
             History->LastAdded = -1;
             History->LastDisplayed = -1;
             History->FirstCommand = 0;
-            // Length is in bytes. Add 1 so dividing by WCHAR (2) is always rounding up.
-            History->AppName = new(std::nothrow) WCHAR[(cbAppName + 1) / sizeof(WCHAR)];
-            if (History->AppName == nullptr)
-            {
-                History->Flags &= ~CLE_ALLOCATED;
-                return nullptr;
-            }
-
-            memmove(History->AppName, pwszAppName, cbAppName);
+            History->_appName = appName;
         }
 
-        History->ProcessHandle = hProcess;
-        History->Flags |= CLE_ALLOCATED;
+        History->ProcessHandle = processHandle;
+        SetFlag(History->Flags, CLE_ALLOCATED);
 
         // move to the front of the list
         RemoveEntryList(&BestCandidate->ListLink);
@@ -691,14 +648,10 @@ HRESULT ApiRoutines::ExpungeConsoleCommandHistoryAImpl(_In_reads_or_z_(cchExeNam
 HRESULT ApiRoutines::ExpungeConsoleCommandHistoryWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
                                                        const size_t cchExeNameBufferLength)
 {
-    // Convert character count to DWORD byte count to interface with existing functions
-    DWORD cbExeNameBufferLength;
-    RETURN_IF_FAILED(GetDwordByteCount(cchExeNameBufferLength, &cbExeNameBufferLength));
-
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    EmptyCommandHistory(FindExeCommandHistory((PVOID)pwsExeNameBuffer, cbExeNameBufferLength, TRUE));
+    EmptyCommandHistory(FindExeCommandHistory({ pwsExeNameBuffer, cchExeNameBufferLength }));
 
     return S_OK;
 }
@@ -738,18 +691,10 @@ HRESULT ApiRoutines::SetConsoleNumberOfCommandsWImpl(_In_reads_or_z_(cchExeNameB
                                                      const size_t cchExeNameBufferLength,
                                                      const size_t NumberOfCommands)
 {
-    // Convert character count to DWORD byte count to interface with existing functions
-    DWORD cbExeNameBufferLength;
-    RETURN_IF_FAILED(GetDwordByteCount(cchExeNameBufferLength, &cbExeNameBufferLength));
-
-    // Convert number of commands to DWORD to interface with existing functions
-    DWORD dwNumberOfCommands;
-    RETURN_IF_FAILED(SizeTToDWord(NumberOfCommands, &dwNumberOfCommands));
-
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    ReallocCommandHistory(FindExeCommandHistory((PVOID)pwsExeNameBuffer, cbExeNameBufferLength, TRUE), dwNumberOfCommands);
+    ReallocCommandHistory(FindExeCommandHistory({ pwsExeNameBuffer, cchExeNameBufferLength }), NumberOfCommands);
 
     return S_OK;
 }
@@ -776,14 +721,10 @@ HRESULT GetConsoleCommandHistoryLengthImplHelper(_In_reads_or_z_(cchExeNameBuffe
     // Ensure output variables are initialized
     *pcchCommandHistoryLength = 0;
 
-    // Convert character count to DWORD byte count to interface with existing functions
-    DWORD cbExeNameBufferLength;
-    RETURN_IF_FAILED(GetDwordByteCount(cchExeNameBufferLength, &cbExeNameBufferLength));
-
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    PCOMMAND_HISTORY const pCommandHistory = FindExeCommandHistory((PVOID)pwsExeNameBuffer, cbExeNameBufferLength, TRUE);
+    PCOMMAND_HISTORY const pCommandHistory = FindExeCommandHistory({ pwsExeNameBuffer, cchExeNameBufferLength });
     if (nullptr != pCommandHistory)
     {
         size_t cchNeeded = 0;
@@ -891,11 +832,7 @@ HRESULT GetConsoleCommandHistoryWImplHelper(_In_reads_or_z_(cchExeNameBufferLeng
         *pwsCommandHistoryBuffer = L'\0';
     }
 
-    // Convert size_ts into SHORTs for existing command functions to use.
-    USHORT cbExeNameBufferLength;
-    RETURN_IF_FAILED(GetUShortByteCount(cchExeNameBufferLength, &cbExeNameBufferLength));
-
-    PCOMMAND_HISTORY const CommandHistory = FindExeCommandHistory((PVOID)pwsExeNameBuffer, cbExeNameBufferLength, TRUE);
+    PCOMMAND_HISTORY const CommandHistory = FindExeCommandHistory({ pwsExeNameBuffer, cchExeNameBufferLength });
 
     if (nullptr != CommandHistory)
     {

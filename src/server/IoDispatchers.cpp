@@ -193,7 +193,15 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
         SetFlag(gci.Flags, CONSOLE_INITIALIZED);
     }
 
-    AllocateCommandHistory(Cac.AppName, Cac.AppNameLength, (HANDLE)ProcessData);
+    try
+    {
+        _COMMAND_HISTORY::s_AllocateCommandHistory({ Cac.AppName, Cac.AppNameLength }, (HANDLE)ProcessData);
+    }
+    catch(...)
+    {
+        LOG_CAUGHT_EXCEPTION();
+        goto Error;
+    }
 
     gci.ProcessHandleList.ModifyConsoleProcessFocus(IsFlagSet(gci.Flags, CONSOLE_HAS_FOCUS));
 

@@ -270,20 +270,6 @@ NTSTATUS EndPopup(SCREEN_INFORMATION& screenInfo, _In_ PCOMMAND_HISTORY CommandH
     return STATUS_SUCCESS;
 }
 
-void CleanUpPopups(_In_ COOKED_READ_DATA* const CookedReadData)
-{
-    PCOMMAND_HISTORY const CommandHistory = CookedReadData->_CommandHistory;
-    if (CommandHistory == nullptr)
-    {
-        return;
-    }
-
-    while (!CLE_NO_POPUPS(CommandHistory))
-    {
-        LOG_IF_FAILED(EndPopup(CookedReadData->_screenInfo, CommandHistory));
-    }
-}
-
 CommandLine::CommandLine()
 {
 
@@ -426,23 +412,20 @@ void RedrawCommandLine(_Inout_ COOKED_READ_DATA* const pCookedReadData)
 void SetCurrentCommandLine(_In_ COOKED_READ_DATA* const CookedReadData, _In_ SHORT Index) // index, not command number
 {
     DeleteCommandLine(CookedReadData, TRUE);
-#pragma prefast(suppress:28931, "Status is not unused. Used by assertions.")
-    NTSTATUS Status = RetrieveNthCommand(CookedReadData->_CommandHistory, Index, CookedReadData->_BackupLimit, CookedReadData->_BufferSize, &CookedReadData->_BytesRead);
-    FAIL_FAST_IF_NTSTATUS_FAILED(Status);
+    FAIL_FAST_IF_NTSTATUS_FAILED(RetrieveNthCommand(CookedReadData->_CommandHistory, Index, CookedReadData->_BackupLimit, CookedReadData->_BufferSize, &CookedReadData->_BytesRead));
     FAIL_FAST_IF_FALSE(CookedReadData->_BackupLimit == CookedReadData->_BufPtr);
     if (CookedReadData->_Echo)
     {
         SHORT ScrollY = 0;
-        Status = WriteCharsLegacy(CookedReadData->_screenInfo,
-                                  CookedReadData->_BackupLimit,
-                                  CookedReadData->_BufPtr,
-                                  CookedReadData->_BufPtr,
-                                  &CookedReadData->_BytesRead,
-                                  &CookedReadData->_NumberOfVisibleChars,
-                                  CookedReadData->_OriginalCursorPosition.X,
-                                  WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
-                                  &ScrollY);
-        FAIL_FAST_IF_NTSTATUS_FAILED(Status);
+        FAIL_FAST_IF_NTSTATUS_FAILED(WriteCharsLegacy(CookedReadData->_screenInfo,
+                                                      CookedReadData->_BackupLimit,
+                                                      CookedReadData->_BufPtr,
+                                                      CookedReadData->_BufPtr,
+                                                      &CookedReadData->_BytesRead,
+                                                      &CookedReadData->_NumberOfVisibleChars,
+                                                      CookedReadData->_OriginalCursorPosition.X,
+                                                      WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
+                                                      &ScrollY));
         CookedReadData->_OriginalCursorPosition.Y += ScrollY;
     }
 

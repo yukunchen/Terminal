@@ -113,7 +113,8 @@ void RedrawCommandLine(_Inout_ COOKED_READ_DATA* CookedReadData);
 
 PCOMMAND_HISTORY FindCommandHistory(const HANDLE hProcess);
 
-void CleanUpPopups(_In_ COOKED_READ_DATA* const CookedReadData);
+[[nodiscard]]
+NTSTATUS EndPopup(SCREEN_INFORMATION& screenInfo, _In_ PCOMMAND_HISTORY CommandHistory);
 
 // Values for WriteChars(), WriteCharsLegacy() dwFlags
 #define WC_DESTRUCTIVE_BACKSPACE 0x01
