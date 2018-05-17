@@ -81,7 +81,7 @@ typedef struct _CLE_POPUP
 } CLE_POPUP, *PCLE_POPUP;
 
 
-#define CLE_NO_POPUPS(COMMAND_HISTORY) (&(COMMAND_HISTORY)->PopupList == (COMMAND_HISTORY)->PopupList.Blink)
+#define CLE_NO_POPUPS(CommandHistory) (&(CommandHistory)->PopupList == (CommandHistory)->PopupList.Blink)
 
 class CommandLine
 {
@@ -112,7 +112,7 @@ void DeleteCommandLine(_Inout_ COOKED_READ_DATA* pCookedReadData, const bool fUp
 void RedrawCommandLine(_Inout_ COOKED_READ_DATA* CookedReadData);
 
 [[nodiscard]]
-NTSTATUS EndPopup(SCREEN_INFORMATION& screenInfo, _In_ PCOMMAND_HISTORY CommandHistory);
+NTSTATUS EndPopup(SCREEN_INFORMATION& screenInfo, _In_ CommandHistory* CommandHistory);
 
 // Values for WriteChars(), WriteCharsLegacy() dwFlags
 #define WC_DESTRUCTIVE_BACKSPACE 0x01

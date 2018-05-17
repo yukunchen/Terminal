@@ -24,14 +24,14 @@
 
 #pragma hdrstop
 
-_COMMAND_HISTORY* _COMMAND_HISTORY::s_Find(const HANDLE processHandle)
+CommandHistory* CommandHistory::s_Find(const HANDLE processHandle)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     PLIST_ENTRY const ListHead = &gci.CommandHistoryList;
     PLIST_ENTRY ListNext = ListHead->Flink;
     while (ListNext != ListHead)
     {
-        PCOMMAND_HISTORY const History = CONTAINING_RECORD(ListNext, COMMAND_HISTORY, ListLink);
+        CommandHistory* const History = CONTAINING_RECORD(ListNext, CommandHistory, ListLink);
         ListNext = ListNext->Flink;
         if (History->ProcessHandle == processHandle)
         {
@@ -47,9 +47,9 @@ _COMMAND_HISTORY* _COMMAND_HISTORY::s_Find(const HANDLE processHandle)
 // - This routine marks the command history buffer freed.
 // Arguments:
 // - processHandle - handle to client process.
-void _COMMAND_HISTORY::s_Free(const HANDLE processHandle)
+void CommandHistory::s_Free(const HANDLE processHandle)
 {
-    _COMMAND_HISTORY* const History = _COMMAND_HISTORY::s_Find(processHandle);
+    CommandHistory* const History = CommandHistory::s_Find(processHandle);
     if (History)
     {
         History->Flags &= ~CLE_ALLOCATED;
@@ -57,7 +57,7 @@ void _COMMAND_HISTORY::s_Free(const HANDLE processHandle)
     }
 }
 
-void _COMMAND_HISTORY::s_ResizeAll(const size_t commands)
+void CommandHistory::s_ResizeAll(const size_t commands)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     FAIL_FAST_IF(commands > SHORT_MAX);
@@ -67,10 +67,10 @@ void _COMMAND_HISTORY::s_ResizeAll(const size_t commands)
     PLIST_ENTRY ListNext = ListHead->Flink;
     while (ListNext != ListHead)
     {
-        PCOMMAND_HISTORY const History = CONTAINING_RECORD(ListNext, COMMAND_HISTORY, ListLink);
+        CommandHistory* const History = CONTAINING_RECORD(ListNext, CommandHistory, ListLink);
         ListNext = ListNext->Flink;
 
-        PCOMMAND_HISTORY const NewHistory = ReallocCommandHistory(History, commands);
+        CommandHistory* const NewHistory = ReallocCommandHistory(History, commands);
         COOKED_READ_DATA* const CookedReadData = gci.lpCookedReadData;
         if (CookedReadData && CookedReadData->_CommandHistory == History)
         {
@@ -84,21 +84,21 @@ static bool CaseInsensitiveEquality(wchar_t a, wchar_t b)
     return ::towlower(a) == ::towlower(b);
 }
 
-bool _COMMAND_HISTORY::IsAppNameMatch(const std::wstring_view other) const
+bool CommandHistory::IsAppNameMatch(const std::wstring_view other) const
 {
     return std::equal(_appName.cbegin(), _appName.cend(), other.cbegin(), other.cend(), CaseInsensitiveEquality);
 }
 
 // Routine Description:
 // - This routine is called when escape is entered or a command is added.
-void _COMMAND_HISTORY::_Reset()
+void CommandHistory::_Reset()
 {
     LastDisplayed = LastAdded;
     SetFlag(Flags, CLE_RESET);
 }
 
 [[nodiscard]]
-HRESULT _COMMAND_HISTORY::Add(const std::wstring_view command,
+HRESULT CommandHistory::Add(const std::wstring_view command,
                               const bool suppressDuplicates)
 {
     RETURN_HR_IF(E_OUTOFMEMORY, MaximumNumberOfCommands == 0);
@@ -122,7 +122,7 @@ HRESULT _COMMAND_HISTORY::Add(const std::wstring_view command,
         if (suppressDuplicates)
         {
             size_t index;
-            if (FindMatchingCommand({ pwchCommand, cbCommand / sizeof(wchar_t) }, LastDisplayed, index, _COMMAND_HISTORY::MatchOptions::ExactMatch))
+            if (FindMatchingCommand({ pwchCommand, cbCommand / sizeof(wchar_t) }, LastDisplayed, index, CommandHistory::MatchOptions::ExactMatch))
             {
                 pCmdReuse = RemoveCommand(this, (SHORT)index);
             }
@@ -178,7 +178,7 @@ HRESULT _COMMAND_HISTORY::Add(const std::wstring_view command,
 }
 
 [[nodiscard]]
-NTSTATUS RetrieveNthCommand(_In_ PCOMMAND_HISTORY CommandHistory,
+NTSTATUS RetrieveNthCommand(_In_ CommandHistory* CommandHistory,
                             _In_ SHORT Index, // index, not command number
                             _In_reads_bytes_(BufferSize) PWCHAR Buffer,
                             _In_ size_t BufferSize,
@@ -201,7 +201,7 @@ NTSTATUS RetrieveNthCommand(_In_ PCOMMAND_HISTORY CommandHistory,
 }
 
 [[nodiscard]]
-NTSTATUS RetrieveCommand(_In_ PCOMMAND_HISTORY CommandHistory,
+NTSTATUS RetrieveCommand(_In_ CommandHistory* CommandHistory,
                          _In_ WORD VirtualKeyCode,
                          _In_reads_bytes_(BufferSize) PWCHAR Buffer,
                          _In_ size_t BufferSize,
@@ -246,7 +246,7 @@ NTSTATUS RetrieveCommand(_In_ PCOMMAND_HISTORY CommandHistory,
 }
 
 
-PCOMMAND GetLastCommand(_In_ PCOMMAND_HISTORY CommandHistory)
+PCOMMAND GetLastCommand(_In_ CommandHistory* CommandHistory)
 {
     if (CommandHistory->NumberOfCommands == 0)
     {
@@ -258,7 +258,7 @@ PCOMMAND GetLastCommand(_In_ PCOMMAND_HISTORY CommandHistory)
     }
 }
 
-void EmptyCommandHistory(_In_opt_ PCOMMAND_HISTORY CommandHistory)
+void EmptyCommandHistory(_In_opt_ CommandHistory* CommandHistory)
 {
     if (CommandHistory == nullptr)
     {
@@ -277,7 +277,7 @@ void EmptyCommandHistory(_In_opt_ PCOMMAND_HISTORY CommandHistory)
     CommandHistory->Flags = CLE_RESET;
 }
 
-bool AtFirstCommand(_In_ PCOMMAND_HISTORY CommandHistory)
+bool AtFirstCommand(_In_ CommandHistory* CommandHistory)
 {
     if (CommandHistory == nullptr)
     {
@@ -298,7 +298,7 @@ bool AtFirstCommand(_In_ PCOMMAND_HISTORY CommandHistory)
     return (i == CommandHistory->LastAdded);
 }
 
-bool AtLastCommand(_In_ PCOMMAND_HISTORY CommandHistory)
+bool AtLastCommand(_In_ CommandHistory* CommandHistory)
 {
     if (CommandHistory == nullptr)
     {
@@ -310,7 +310,7 @@ bool AtLastCommand(_In_ PCOMMAND_HISTORY CommandHistory)
     }
 }
 
-PCOMMAND_HISTORY ReallocCommandHistory(_In_opt_ PCOMMAND_HISTORY CurrentCommandHistory, const size_t NumCommands)
+CommandHistory* ReallocCommandHistory(_In_opt_ CommandHistory* CurrentCommandHistory, const size_t NumCommands)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // To protect ourselves from overflow and general arithmetic errors, a limit of SHORT_MAX is put on the size of the command history.
@@ -319,7 +319,7 @@ PCOMMAND_HISTORY ReallocCommandHistory(_In_opt_ PCOMMAND_HISTORY CurrentCommandH
         return CurrentCommandHistory;
     }
 
-    PCOMMAND_HISTORY const History = (PCOMMAND_HISTORY) new(std::nothrow) BYTE[sizeof(COMMAND_HISTORY) + NumCommands * sizeof(PCOMMAND)];
+    CommandHistory* const History = (CommandHistory*) new(std::nothrow) BYTE[sizeof(CommandHistory) + NumCommands * sizeof(PCOMMAND)];
     if (History == nullptr)
     {
         return CurrentCommandHistory;
@@ -351,14 +351,14 @@ PCOMMAND_HISTORY ReallocCommandHistory(_In_opt_ PCOMMAND_HISTORY CurrentCommandH
     return History;
 }
 
-COMMAND_HISTORY* FindExeCommandHistory(const std::wstring_view appName)
+CommandHistory* FindExeCommandHistory(const std::wstring_view appName)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     PLIST_ENTRY const ListHead = &gci.CommandHistoryList;
     PLIST_ENTRY ListNext = ListHead->Flink;
     while (ListNext != ListHead)
     {
-        PCOMMAND_HISTORY const History = CONTAINING_RECORD(ListNext, COMMAND_HISTORY, ListLink);
+        CommandHistory* const History = CONTAINING_RECORD(ListNext, CommandHistory, ListLink);
         ListNext = ListNext->Flink;
 
         if (IsFlagSet(History->Flags, CLE_ALLOCATED) && History->IsAppNameMatch(appName))
@@ -375,19 +375,19 @@ COMMAND_HISTORY* FindExeCommandHistory(const std::wstring_view appName)
 // - Console - pointer to console.
 // Return Value:
 // - Pointer to command history buffer.  if none are available, returns nullptr.
-_COMMAND_HISTORY* _COMMAND_HISTORY::s_Allocate(const std::wstring_view appName, const HANDLE processHandle)
+CommandHistory* CommandHistory::s_Allocate(const std::wstring_view appName, const HANDLE processHandle)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // Reuse a history buffer.  The buffer must be !CLE_ALLOCATED.
     // If possible, the buffer should have the same app name.
     PLIST_ENTRY const ListHead = &gci.CommandHistoryList;
     PLIST_ENTRY ListNext = ListHead->Blink;
-    PCOMMAND_HISTORY BestCandidate = nullptr;
-    PCOMMAND_HISTORY History = nullptr;
+    CommandHistory* BestCandidate = nullptr;
+    CommandHistory* History = nullptr;
     bool SameApp = false;
     while (ListNext != ListHead)
     {
-        History = CONTAINING_RECORD(ListNext, COMMAND_HISTORY, ListLink);
+        History = CONTAINING_RECORD(ListNext, CommandHistory, ListLink);
         ListNext = ListNext->Blink;
 
         if (IsFlagClear(History->Flags, CLE_ALLOCATED))
@@ -419,12 +419,12 @@ _COMMAND_HISTORY* _COMMAND_HISTORY::s_Allocate(const std::wstring_view appName, 
             return nullptr;
         }
 
-        if (FAILED(SizeTAdd(sizeof(COMMAND_HISTORY), Size, &TotalSize)))
+        if (FAILED(SizeTAdd(sizeof(CommandHistory), Size, &TotalSize)))
         {
             return nullptr;
         }
 
-        History = (PCOMMAND_HISTORY) new(std::nothrow) BYTE[TotalSize];
+        History = (CommandHistory*) new(std::nothrow) BYTE[TotalSize];
         if (History == nullptr)
         {
             return nullptr;
@@ -475,7 +475,7 @@ _COMMAND_HISTORY* _COMMAND_HISTORY::s_Allocate(const std::wstring_view appName, 
     return BestCandidate;
 }
 
-PCOMMAND RemoveCommand(_In_ PCOMMAND_HISTORY CommandHistory, _In_ SHORT iDel)
+PCOMMAND RemoveCommand(_In_ CommandHistory* CommandHistory, _In_ SHORT iDel)
 {
     SHORT iFirst = CommandHistory->FirstCommand;
     SHORT iLast = CommandHistory->LastAdded;
@@ -531,7 +531,7 @@ PCOMMAND RemoveCommand(_In_ PCOMMAND_HISTORY CommandHistory, _In_ SHORT iDel)
 // Routine Description:
 // - this routine finds the most recent command that starts with the letters already in the current command.  it returns the array index (no mod needed).
 [[nodiscard]]
-bool _COMMAND_HISTORY::FindMatchingCommand(const std::wstring_view command,
+bool CommandHistory::FindMatchingCommand(const std::wstring_view command,
                                            const size_t startingIndex,
                                            size_t& indexFound,
                                            const MatchOptions options)
@@ -682,7 +682,7 @@ HRESULT GetConsoleCommandHistoryLengthImplHelper(_In_reads_or_z_(cchExeNameBuffe
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    PCOMMAND_HISTORY const pCommandHistory = FindExeCommandHistory({ pwsExeNameBuffer, cchExeNameBufferLength });
+    CommandHistory* const pCommandHistory = FindExeCommandHistory({ pwsExeNameBuffer, cchExeNameBufferLength });
     if (nullptr != pCommandHistory)
     {
         size_t cchNeeded = 0;
@@ -790,7 +790,7 @@ HRESULT GetConsoleCommandHistoryWImplHelper(_In_reads_or_z_(cchExeNameBufferLeng
         *pwsCommandHistoryBuffer = L'\0';
     }
 
-    PCOMMAND_HISTORY const CommandHistory = FindExeCommandHistory({ pwsExeNameBuffer, cchExeNameBufferLength });
+    CommandHistory* const CommandHistory = FindExeCommandHistory({ pwsExeNameBuffer, cchExeNameBufferLength });
 
     if (nullptr != CommandHistory)
     {

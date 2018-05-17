@@ -37,7 +37,7 @@ public:
                      _In_ size_t UserBufferSize,
                      _In_ PWCHAR UserBuffer,
                      _In_ ULONG CtrlWakeupMask,
-                     _In_ COMMAND_HISTORY* CommandHistory,
+                     _In_ CommandHistory* CommandHistory,
                      const std::wstring& exeName
         );
     ~COOKED_READ_DATA() override;
@@ -65,7 +65,7 @@ public:
     COORD _OriginalCursorPosition;
     size_t _NumberOfVisibleChars;
     ULONG _CtrlWakeupMask;
-    PCOMMAND_HISTORY _CommandHistory;
+    CommandHistory* _CommandHistory;
     const bool _Echo;
     bool _InsertMode;
     const bool _Processed;

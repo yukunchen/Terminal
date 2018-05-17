@@ -644,7 +644,7 @@ VOID UpdatePopups(IN WORD NewAttributes, IN WORD NewPopupAttributes, IN WORD Old
     PLIST_ENTRY HistoryListNext = HistoryListHead->Blink;
     while (HistoryListNext != HistoryListHead)
     {
-        PCOMMAND_HISTORY const History = CONTAINING_RECORD(HistoryListNext, COMMAND_HISTORY, ListLink);
+        CommandHistory* const History = CONTAINING_RECORD(HistoryListNext, CommandHistory, ListLink);
         HistoryListNext = HistoryListNext->Blink;
         if (History->Flags & CLE_ALLOCATED && !CLE_NO_POPUPS(History))
         {
@@ -938,7 +938,7 @@ HRESULT ApiRoutines::SetConsoleHistoryInfoImpl(const CONSOLE_HISTORY_INFO* const
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    _COMMAND_HISTORY::s_ResizeAll(pConsoleHistoryInfo->HistoryBufferSize);
+    CommandHistory::s_ResizeAll(pConsoleHistoryInfo->HistoryBufferSize);
     gci.SetNumberOfHistoryBuffers(pConsoleHistoryInfo->NumberOfHistoryBuffers);
 
     UpdateFlag(gci.Flags, CONSOLE_HISTORY_NODUP, IsFlagSet(pConsoleHistoryInfo->dwFlags, HISTORY_NO_DUP_FLAG));

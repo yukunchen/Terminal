@@ -41,21 +41,21 @@
 
 // fwd decls
 void DrawCommandListBorder(_In_ PCLE_POPUP const Popup, SCREEN_INFORMATION& screenInfo);
-PCOMMAND GetLastCommand(_In_ PCOMMAND_HISTORY CommandHistory);
+PCOMMAND GetLastCommand(_In_ CommandHistory* CommandHistory);
 [[nodiscard]]
 NTSTATUS CommandNumberPopup(_In_ COOKED_READ_DATA* const CookedReadData);
 void DrawCommandListPopup(_In_ PCLE_POPUP const Popup,
                           const SHORT CurrentCommand,
-                          _In_ PCOMMAND_HISTORY const CommandHistory,
+                          _In_ CommandHistory* const CommandHistory,
                           SCREEN_INFORMATION& screenInfo);
 void UpdateCommandListPopup(_In_ SHORT Delta,
                             _Inout_ PSHORT CurrentCommand,
-                            _In_ PCOMMAND_HISTORY const CommandHistory,
+                            _In_ CommandHistory* const CommandHistory,
                             _In_ PCLE_POPUP Popup,
                             SCREEN_INFORMATION& screenInfo,
                             const DWORD Flags);
 [[nodiscard]]
-NTSTATUS RetrieveCommand(_In_ PCOMMAND_HISTORY CommandHistory,
+NTSTATUS RetrieveCommand(_In_ CommandHistory* CommandHistory,
                          _In_ WORD VirtualKeyCode,
                          _In_reads_bytes_(BufferSize) PWCHAR Buffer,
                          _In_ size_t BufferSize,
@@ -131,7 +131,7 @@ bool IsWordDelim(const std::vector<wchar_t>& charData)
 }
 
 [[nodiscard]]
-NTSTATUS BeginPopup(SCREEN_INFORMATION& screenInfo, _In_ PCOMMAND_HISTORY CommandHistory, _In_ COORD PopupSize)
+NTSTATUS BeginPopup(SCREEN_INFORMATION& screenInfo, _In_ CommandHistory* CommandHistory, _In_ COORD PopupSize)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // determine popup dimensions
@@ -225,7 +225,7 @@ NTSTATUS BeginPopup(SCREEN_INFORMATION& screenInfo, _In_ PCOMMAND_HISTORY Comman
 }
 
 [[nodiscard]]
-NTSTATUS EndPopup(SCREEN_INFORMATION& screenInfo, _In_ PCOMMAND_HISTORY CommandHistory)
+NTSTATUS EndPopup(SCREEN_INFORMATION& screenInfo, _In_ CommandHistory* CommandHistory)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     FAIL_FAST_IF(CLE_NO_POPUPS(CommandHistory));
@@ -438,7 +438,7 @@ void SetCurrentCommandLine(_In_ COOKED_READ_DATA* const CookedReadData, _In_ SHO
 NTSTATUS ProcessCommandListInput(_In_ COOKED_READ_DATA* const pCookedReadData)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    PCOMMAND_HISTORY const pCommandHistory = pCookedReadData->_CommandHistory;
+    CommandHistory* const pCommandHistory = pCookedReadData->_CommandHistory;
     PCLE_POPUP const Popup = CONTAINING_RECORD(pCommandHistory->PopupList.Flink, CLE_POPUP, ListLink);
     NTSTATUS Status = STATUS_SUCCESS;
     INPUT_READ_HANDLE_DATA* const pInputReadHandleData = pCookedReadData->GetInputReadHandleData();
@@ -619,7 +619,7 @@ NTSTATUS ProcessCommandListInput(_In_ COOKED_READ_DATA* const pCookedReadData)
         }
         else
         {
-            if (pCookedReadData->_CommandHistory->FindMatchingCommand({ &Char, 1 }, Popup->CurrentCommand, Index, _COMMAND_HISTORY::MatchOptions::JustLooking))
+            if (pCookedReadData->_CommandHistory->FindMatchingCommand({ &Char, 1 }, Popup->CurrentCommand, Index, CommandHistory::MatchOptions::JustLooking))
             {
                 UpdateCommandListPopup((SHORT)(Index - Popup->CurrentCommand),
                                        &Popup->CurrentCommand,
@@ -828,7 +828,7 @@ NTSTATUS ProcessCopyToCharInput(_In_ COOKED_READ_DATA* const pCookedReadData)
 [[nodiscard]]
 NTSTATUS ProcessCommandNumberInput(_In_ COOKED_READ_DATA* const pCookedReadData)
 {
-    PCOMMAND_HISTORY const CommandHistory = pCookedReadData->_CommandHistory;
+    CommandHistory* const CommandHistory = pCookedReadData->_CommandHistory;
     PCLE_POPUP const Popup = CONTAINING_RECORD(CommandHistory->PopupList.Flink, CLE_POPUP, ListLink);
     NTSTATUS Status = STATUS_SUCCESS;
     InputBuffer* const pInputBuffer = pCookedReadData->GetInputBuffer();
@@ -951,7 +951,7 @@ NTSTATUS ProcessCommandNumberInput(_In_ COOKED_READ_DATA* const pCookedReadData)
 [[nodiscard]]
 NTSTATUS CommandListPopup(_In_ COOKED_READ_DATA* const CookedReadData)
 {
-    PCOMMAND_HISTORY const CommandHistory = CookedReadData->_CommandHistory;
+    CommandHistory* const CommandHistory = CookedReadData->_CommandHistory;
     PCLE_POPUP const Popup = CONTAINING_RECORD(CommandHistory->PopupList.Flink, CLE_POPUP, ListLink);
 
     SHORT const CurrentCommand = COMMAND_INDEX_TO_NUM(CommandHistory->LastDisplayed, CommandHistory);
@@ -1037,7 +1037,7 @@ NTSTATUS CopyFromCharPopup(_In_ COOKED_READ_DATA* CookedReadData)
         ItemLength = LoadStringW(ServiceLocator::LocateGlobals().hInstance, ID_CONSOLE_MSGCMDLINEF4, ItemString, ARRAYSIZE(ItemString));
     }
 
-    PCOMMAND_HISTORY const CommandHistory = CookedReadData->_CommandHistory;
+    CommandHistory* const CommandHistory = CookedReadData->_CommandHistory;
     PCLE_POPUP const Popup = CONTAINING_RECORD(CommandHistory->PopupList.Flink, CLE_POPUP, ListLink);
 
     DrawPromptPopup(Popup, CookedReadData->_screenInfo, ItemString, ItemLength);
@@ -1070,7 +1070,7 @@ NTSTATUS CopyToCharPopup(_In_ COOKED_READ_DATA* CookedReadData)
         ItemLength = LoadStringW(ServiceLocator::LocateGlobals().hInstance, ID_CONSOLE_MSGCMDLINEF2, ItemString, ARRAYSIZE(ItemString));
     }
 
-    PCOMMAND_HISTORY const CommandHistory = CookedReadData->_CommandHistory;
+    CommandHistory* const CommandHistory = CookedReadData->_CommandHistory;
     PCLE_POPUP const Popup = CONTAINING_RECORD(CommandHistory->PopupList.Flink, CLE_POPUP, ListLink);
     DrawPromptPopup(Popup, CookedReadData->_screenInfo, ItemString, ItemLength);
     Popup->PopupInputRoutine = (PCLE_POPUP_INPUT_ROUTINE)ProcessCopyToCharInput;
@@ -1100,7 +1100,7 @@ NTSTATUS CommandNumberPopup(_In_ COOKED_READ_DATA* const CookedReadData)
         ItemLength = LoadStringW(ServiceLocator::LocateGlobals().hInstance, ID_CONSOLE_MSGCMDLINEF9, ItemString, ARRAYSIZE(ItemString));
     }
 
-    PCOMMAND_HISTORY const CommandHistory = CookedReadData->_CommandHistory;
+    CommandHistory* const CommandHistory = CookedReadData->_CommandHistory;
     PCLE_POPUP const Popup = CONTAINING_RECORD(CommandHistory->PopupList.Flink, CLE_POPUP, ListLink);
 
     if (ItemLength > POPUP_SIZE_X(Popup) - COMMAND_NUMBER_LENGTH)
@@ -1671,7 +1671,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                 if (pCookedReadData->_CommandHistory->FindMatchingCommand({ pCookedReadData->_BackupLimit, pCookedReadData->_CurrentPosition },
                                                                           pCookedReadData->_CommandHistory->LastDisplayed,
                                                                           index,
-                                                                          _COMMAND_HISTORY::MatchOptions::None))
+                                                                          CommandHistory::MatchOptions::None))
                 {
                     SHORT CurrentPos;
                     COORD CursorPosition;
@@ -1918,7 +1918,7 @@ void UpdateHighlight(_In_ PCLE_POPUP Popup,
 
 void DrawCommandListPopup(_In_ PCLE_POPUP const Popup,
                           const SHORT CurrentCommand,
-                          _In_ PCOMMAND_HISTORY const CommandHistory,
+                          _In_ CommandHistory* const CommandHistory,
                           SCREEN_INFORMATION& screenInfo)
 {
     // draw empty popup
@@ -2040,7 +2040,7 @@ void DrawCommandListPopup(_In_ PCLE_POPUP const Popup,
 
 void UpdateCommandListPopup(_In_ SHORT Delta,
                             _Inout_ PSHORT CurrentCommand,   // real index, not command #
-                            _In_ PCOMMAND_HISTORY const CommandHistory,
+                            _In_ CommandHistory* const CommandHistory,
                             _In_ PCLE_POPUP Popup,
                             SCREEN_INFORMATION& screenInfo,
                             const DWORD Flags)

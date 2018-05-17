@@ -46,7 +46,7 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
                                    _In_ size_t UserBufferSize,
                                    _In_ PWCHAR UserBuffer,
                                    _In_ ULONG CtrlWakeupMask,
-                                   _In_ COMMAND_HISTORY* CommandHistory,
+                                   _In_ CommandHistory* CommandHistory,
                                    const std::wstring& exeName
 ) :
     ReadData(pInputBuffer, pInputReadHandleData),
@@ -864,7 +864,7 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
 
 void COOKED_READ_DATA::CleanUpPopups()
 {
-    COMMAND_HISTORY* const CommandHistory = _CommandHistory;
+    CommandHistory* const CommandHistory = _CommandHistory;
     if (CommandHistory == nullptr)
     {
         return;

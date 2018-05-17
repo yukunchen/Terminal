@@ -19,15 +19,16 @@ typedef struct _COMMAND
     WCHAR Command[0]; // TODO: refactor
 } COMMAND, *PCOMMAND;
 
-// COMMAND_HISTORY Flags
+// CommandHistory Flags
 #define CLE_ALLOCATED 0x00000001
 #define CLE_RESET     0x00000002
 
 #pragma warning(disable:4200)
-typedef struct _COMMAND_HISTORY
+class CommandHistory
 {
-    static _COMMAND_HISTORY* s_Allocate(const std::wstring_view appName, const HANDLE processHandle);
-    static _COMMAND_HISTORY* s_Find(const HANDLE processHandle);
+public:
+    static CommandHistory* s_Allocate(const std::wstring_view appName, const HANDLE processHandle);
+    static CommandHistory* s_Find(const HANDLE processHandle);
     static void s_Free(const HANDLE processHandle);
     static void s_ResizeAll(const size_t commands);
 
@@ -63,21 +64,21 @@ public:
     HANDLE ProcessHandle;
     LIST_ENTRY PopupList;   // pointer to top-level popup
     PCOMMAND Commands[0]; // TODO: refactor
-} COMMAND_HISTORY, *PCOMMAND_HISTORY;
+};
 
-DEFINE_ENUM_FLAG_OPERATORS(_COMMAND_HISTORY::MatchOptions);
+DEFINE_ENUM_FLAG_OPERATORS(CommandHistory::MatchOptions);
 
-void EmptyCommandHistory(_In_opt_ PCOMMAND_HISTORY CommandHistory);
-PCOMMAND_HISTORY ReallocCommandHistory(_In_opt_ PCOMMAND_HISTORY CurrentCommandHistory, const size_t NumCommands);
-COMMAND_HISTORY* FindExeCommandHistory(const std::wstring_view appName);
-bool AtFirstCommand(_In_ PCOMMAND_HISTORY CommandHistory);
-bool AtLastCommand(_In_ PCOMMAND_HISTORY CommandHistory);
-void EmptyCommandHistory(_In_opt_ PCOMMAND_HISTORY CommandHistory);
-PCOMMAND GetLastCommand(_In_ PCOMMAND_HISTORY CommandHistory);
-PCOMMAND RemoveCommand(_In_ PCOMMAND_HISTORY CommandHistory, _In_ SHORT iDel);
+void EmptyCommandHistory(_In_opt_ CommandHistory* CommandHistory);
+CommandHistory* ReallocCommandHistory(_In_opt_ CommandHistory* CurrentCommandHistory, const size_t NumCommands);
+CommandHistory* FindExeCommandHistory(const std::wstring_view appName);
+bool AtFirstCommand(_In_ CommandHistory* CommandHistory);
+bool AtLastCommand(_In_ CommandHistory* CommandHistory);
+void EmptyCommandHistory(_In_opt_ CommandHistory* CommandHistory);
+PCOMMAND GetLastCommand(_In_ CommandHistory* CommandHistory);
+PCOMMAND RemoveCommand(_In_ CommandHistory* CommandHistory, _In_ SHORT iDel);
 
 [[nodiscard]]
-NTSTATUS RetrieveNthCommand(_In_ PCOMMAND_HISTORY CommandHistory,
+NTSTATUS RetrieveNthCommand(_In_ CommandHistory* CommandHistory,
                             _In_ SHORT Index,
                             _In_reads_bytes_(BufferSize)
                             PWCHAR Buffer,
