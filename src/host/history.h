@@ -29,6 +29,9 @@ class CommandHistory
 public:
     static CommandHistory* s_Allocate(const std::wstring_view appName, const HANDLE processHandle);
     static CommandHistory* s_Find(const HANDLE processHandle);
+    static CommandHistory* s_FindByExe(const std::wstring_view appName);
+    static CommandHistory* s_Realloc(CommandHistory* const current,
+                                     const size_t commands);
     static void s_Free(const HANDLE processHandle);
     static void s_ResizeAll(const size_t commands);
 
@@ -39,8 +42,8 @@ public:
         JustLooking = 0x2
     };
     bool FindMatchingCommand(const std::wstring_view command,
-                             const size_t startingIndex,
-                             size_t& indexFound,
+                             const SHORT startingIndex,
+                             SHORT& indexFound,
                              const MatchOptions options);
     bool IsAppNameMatch(const std::wstring_view other) const;
 
@@ -48,10 +51,40 @@ public:
     HRESULT Add(const std::wstring_view command,
                 const bool suppressDuplicates);
 
+    [[nodiscard]]
+    HRESULT Retrieve(const WORD virtualKeyCode,
+                     const gsl::span<wchar_t> buffer,
+                     size_t& commandSize);
+
+    [[nodiscard]]
+    HRESULT RetrieveNth(const SHORT index,
+                        const gsl::span<wchar_t> buffer,
+                        size_t& commandSize);
+
+    void Empty();
+
+    bool AtFirstCommand() const;
+    bool AtLastCommand() const;
+
+    PCOMMAND GetLastCommand() const;
+
+    SHORT IndexToNum(const SHORT index) const;
+    SHORT NumToIndex(const SHORT index) const;
+
 private:
     void _Reset();
+    PCOMMAND _Remove(const SHORT iDel);
+
+    // _Next and _Prev go to the next and prev command
+    // _Inc  and _Dec go to the next and prev slots
+    // Don't get the two confused - it matters when the cmd history is not full!
+    void _Prev(SHORT& ind) const;
+    void _Next(SHORT& ind) const;
+    void _Dec(SHORT& ind) const;
+    void _Inc(SHORT& ind) const;
 
     std::wstring _appName;
+
 public:
 
     LIST_ENTRY ListLink;
@@ -67,55 +100,3 @@ public:
 };
 
 DEFINE_ENUM_FLAG_OPERATORS(CommandHistory::MatchOptions);
-
-void EmptyCommandHistory(_In_opt_ CommandHistory* CommandHistory);
-CommandHistory* ReallocCommandHistory(_In_opt_ CommandHistory* CurrentCommandHistory, const size_t NumCommands);
-CommandHistory* FindExeCommandHistory(const std::wstring_view appName);
-bool AtFirstCommand(_In_ CommandHistory* CommandHistory);
-bool AtLastCommand(_In_ CommandHistory* CommandHistory);
-void EmptyCommandHistory(_In_opt_ CommandHistory* CommandHistory);
-PCOMMAND GetLastCommand(_In_ CommandHistory* CommandHistory);
-PCOMMAND RemoveCommand(_In_ CommandHistory* CommandHistory, _In_ SHORT iDel);
-
-[[nodiscard]]
-NTSTATUS RetrieveNthCommand(_In_ CommandHistory* CommandHistory,
-                            _In_ SHORT Index,
-                            _In_reads_bytes_(BufferSize)
-                            PWCHAR Buffer,
-                            _In_ size_t BufferSize, _Out_ size_t* const CommandSize);
-
-// COMMAND_IND_NEXT and COMMAND_IND_PREV go to the next and prev command
-// COMMAND_IND_INC  and COMMAND_IND_DEC  go to the next and prev slots
-//
-// Don't get the two confused - it matters when the cmd history is not full!
-#define COMMAND_IND_PREV(IND, CMDHIST)               \
-{                                                    \
-    if (IND <= 0) {                                  \
-        IND = (CMDHIST)->NumberOfCommands;           \
-    }                                                \
-    IND--;                                           \
-}
-
-#define COMMAND_IND_NEXT(IND, CMDHIST)               \
-{                                                    \
-    ++IND;                                           \
-    if (IND >= (CMDHIST)->NumberOfCommands) {        \
-        IND = 0;                                     \
-    }                                                \
-}
-
-#define COMMAND_IND_DEC(IND, CMDHIST)                \
-{                                                    \
-    if (IND <= 0) {                                  \
-        IND = (CMDHIST)->MaximumNumberOfCommands;    \
-    }                                                \
-    IND--;                                           \
-}
-
-#define COMMAND_IND_INC(IND, CMDHIST)                \
-{                                                    \
-    ++IND;                                           \
-    if (IND >= (CMDHIST)->MaximumNumberOfCommands) { \
-        IND = 0;                                     \
-    }                                                \
-}

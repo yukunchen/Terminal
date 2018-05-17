@@ -41,7 +41,6 @@
 
 // fwd decls
 void DrawCommandListBorder(_In_ PCLE_POPUP const Popup, SCREEN_INFORMATION& screenInfo);
-PCOMMAND GetLastCommand(_In_ CommandHistory* CommandHistory);
 [[nodiscard]]
 NTSTATUS CommandNumberPopup(_In_ COOKED_READ_DATA* const CookedReadData);
 void DrawCommandListPopup(_In_ PCLE_POPUP const Popup,
@@ -54,12 +53,6 @@ void UpdateCommandListPopup(_In_ SHORT Delta,
                             _In_ PCLE_POPUP Popup,
                             SCREEN_INFORMATION& screenInfo,
                             const DWORD Flags);
-[[nodiscard]]
-NTSTATUS RetrieveCommand(_In_ CommandHistory* CommandHistory,
-                         _In_ WORD VirtualKeyCode,
-                         _In_reads_bytes_(BufferSize) PWCHAR Buffer,
-                         _In_ size_t BufferSize,
-                         _Out_ size_t* const CommandSize);
 UINT LoadStringEx(_In_ HINSTANCE hModule, _In_ UINT wID, _Out_writes_(cchBufferMax) LPWSTR lpBuffer, _In_ UINT cchBufferMax, _In_ WORD wLangId);
 
 // Routine Description:
@@ -182,7 +175,7 @@ NTSTATUS BeginPopup(SCREEN_INFORMATION& screenInfo, _In_ CommandHistory* Command
     Popup->Region.Right = (SHORT)(Origin.X + Size.X - 1);
     Popup->Region.Bottom = (SHORT)(Origin.Y + Size.Y - 1);
     Popup->Attributes = screenInfo.GetPopupAttributes()->GetLegacyAttributes();
-    Popup->BottomIndex = COMMAND_INDEX_TO_NUM(CommandHistory->LastDisplayed, CommandHistory);
+    Popup->BottomIndex = CommandHistory->IndexToNum(CommandHistory->LastDisplayed);
     Popup->CurrentCommand = 0;
     for (size_t i = 0; i < ARRAYSIZE(Popup->NumberBuffer); i++)
     {
@@ -407,7 +400,9 @@ void RedrawCommandLine(_Inout_ COOKED_READ_DATA* const pCookedReadData)
 void SetCurrentCommandLine(_In_ COOKED_READ_DATA* const CookedReadData, _In_ SHORT Index) // index, not command number
 {
     DeleteCommandLine(CookedReadData, TRUE);
-    FAIL_FAST_IF_NTSTATUS_FAILED(RetrieveNthCommand(CookedReadData->_CommandHistory, Index, CookedReadData->_BackupLimit, CookedReadData->_BufferSize, &CookedReadData->_BytesRead));
+    FAIL_FAST_IF_FAILED(CookedReadData->_CommandHistory->RetrieveNth(Index,
+                                                                     gsl::make_span(CookedReadData->_BackupLimit, CookedReadData->_BufferSize / sizeof(wchar_t)),
+                                                                     CookedReadData->_BytesRead));
     FAIL_FAST_IF_FALSE(CookedReadData->_BackupLimit == CookedReadData->_BufPtr);
     if (CookedReadData->_Echo)
     {
@@ -766,7 +761,7 @@ NTSTATUS ProcessCopyToCharInput(_In_ COOKED_READ_DATA* const pCookedReadData)
         LOG_IF_FAILED(EndPopup(pCookedReadData->_screenInfo, pCookedReadData->_CommandHistory));
 
         // copy up to specified char
-        PCOMMAND const LastCommand = GetLastCommand(pCookedReadData->_CommandHistory);
+        PCOMMAND const LastCommand = pCookedReadData->_CommandHistory->GetLastCommand();
         if (LastCommand)
         {
             size_t i;
@@ -937,7 +932,7 @@ NTSTATUS ProcessCommandNumberInput(_In_ COOKED_READ_DATA* const pCookedReadData)
             {
                 LOG_IF_FAILED(EndPopup(pCookedReadData->_screenInfo, pCookedReadData->_CommandHistory));
             }
-            SetCurrentCommandLine(pCookedReadData, COMMAND_NUM_TO_INDEX(CommandNumber, pCookedReadData->_CommandHistory));
+            SetCurrentCommandLine(pCookedReadData, pCookedReadData->_CommandHistory->NumToIndex(CommandNumber));
         }
         return CONSOLE_STATUS_WAIT_NO_BLOCK;
     }
@@ -954,7 +949,7 @@ NTSTATUS CommandListPopup(_In_ COOKED_READ_DATA* const CookedReadData)
     CommandHistory* const CommandHistory = CookedReadData->_CommandHistory;
     PCLE_POPUP const Popup = CONTAINING_RECORD(CommandHistory->PopupList.Flink, CLE_POPUP, ListLink);
 
-    SHORT const CurrentCommand = COMMAND_INDEX_TO_NUM(CommandHistory->LastDisplayed, CommandHistory);
+    SHORT const CurrentCommand = CommandHistory->IndexToNum(CommandHistory->LastDisplayed);
 
     if (CurrentCommand < (SHORT)(CommandHistory->NumberOfCommands - POPUP_SIZE_Y(Popup)))
     {
@@ -1176,14 +1171,12 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
             if (wch == VK_F5)
                 wch = VK_UP;
             // for doskey compatibility, buffer isn't circular
-            if (wch == VK_UP && !AtFirstCommand(pCookedReadData->_CommandHistory) || wch == VK_DOWN && !AtLastCommand(pCookedReadData->_CommandHistory))
+            if (wch == VK_UP && !pCookedReadData->_CommandHistory->AtFirstCommand() || wch == VK_DOWN && !pCookedReadData->_CommandHistory->AtLastCommand())
             {
                 DeleteCommandLine(pCookedReadData, true);
-                Status = RetrieveCommand(pCookedReadData->_CommandHistory,
-                                         wch,
-                                         pCookedReadData->_BackupLimit,
-                                         pCookedReadData->_BufferSize,
-                                         &pCookedReadData->_BytesRead);
+                Status = NTSTATUS_FROM_HRESULT(pCookedReadData->_CommandHistory->Retrieve(wch,
+                                                                                          gsl::make_span(pCookedReadData->_BackupLimit, pCookedReadData->_BufferSize / sizeof(wchar_t)),
+                                                                                          pCookedReadData->_BytesRead));
                 FAIL_FAST_IF_FALSE(pCookedReadData->_BackupLimit == pCookedReadData->_BufPtr);
                 if (pCookedReadData->_Echo)
                 {
@@ -1219,11 +1212,9 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                     CommandNumber = (SHORT)(pCookedReadData->_CommandHistory->NumberOfCommands - 1);
                 }
                 DeleteCommandLine(pCookedReadData, true);
-                Status = RetrieveNthCommand(pCookedReadData->_CommandHistory,
-                                            COMMAND_NUM_TO_INDEX(CommandNumber, pCookedReadData->_CommandHistory),
-                                            pCookedReadData->_BackupLimit,
-                                            pCookedReadData->_BufferSize,
-                                            &pCookedReadData->_BytesRead);
+                Status = NTSTATUS_FROM_HRESULT(pCookedReadData->_CommandHistory->RetrieveNth(pCookedReadData->_CommandHistory->NumToIndex(CommandNumber),
+                                                                                             gsl::make_span<wchar_t>(pCookedReadData->_BackupLimit, pCookedReadData->_BufferSize / sizeof(wchar_t)),
+                                                                                             pCookedReadData->_BytesRead));
                 FAIL_FAST_IF_FALSE(pCookedReadData->_BackupLimit == pCookedReadData->_BufPtr);
                 if (pCookedReadData->_Echo)
                 {
@@ -1522,7 +1513,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                 {
                     PCOMMAND LastCommand;
                     size_t NumSpaces;
-                    LastCommand = GetLastCommand(pCookedReadData->_CommandHistory);
+                    LastCommand = pCookedReadData->_CommandHistory->GetLastCommand();
                     if (LastCommand && (USHORT)(LastCommand->CommandLength / sizeof(WCHAR)) > (USHORT)pCookedReadData->_CurrentPosition)
                     {
                         *pCookedReadData->_BufPtr = LastCommand->Command[pCookedReadData->_CurrentPosition];
@@ -1576,7 +1567,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                 PCOMMAND LastCommand;
                 size_t NumSpaces, cchCount;
 
-                LastCommand = GetLastCommand(pCookedReadData->_CommandHistory);
+                LastCommand = pCookedReadData->_CommandHistory->GetLastCommand();
                 if (LastCommand && (USHORT)(LastCommand->CommandLength / sizeof(WCHAR)) > (USHORT)pCookedReadData->_CurrentPosition)
                 {
                     cchCount = (LastCommand->CommandLength / sizeof(WCHAR)) - pCookedReadData->_CurrentPosition;
@@ -1657,7 +1648,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
             {
                 if (pCookedReadData->_CommandHistory)
                 {
-                    EmptyCommandHistory(pCookedReadData->_CommandHistory);
+                    pCookedReadData->_CommandHistory->Empty();
                     pCookedReadData->_CommandHistory->Flags |= CLE_ALLOCATED;
                 }
             }
@@ -1681,11 +1672,9 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                     CursorPosition = pCookedReadData->_screenInfo.GetTextBuffer().GetCursor().GetPosition();
 
                     DeleteCommandLine(pCookedReadData, true);
-                    Status = RetrieveNthCommand(pCookedReadData->_CommandHistory,
-                                                (SHORT)index,
-                                                pCookedReadData->_BackupLimit,
-                                                pCookedReadData->_BufferSize,
-                                                &pCookedReadData->_BytesRead);
+                    Status = NTSTATUS_FROM_HRESULT(pCookedReadData->_CommandHistory->RetrieveNth((SHORT)index,
+                                                                                                 gsl::make_span(pCookedReadData->_BackupLimit, pCookedReadData->_BufferSize),
+                                                                                                 pCookedReadData->_BytesRead));
                     FAIL_FAST_IF_FALSE(pCookedReadData->_BackupLimit == pCookedReadData->_BufPtr);
                     if (pCookedReadData->_Echo)
                     {
@@ -1985,11 +1974,11 @@ void DrawCommandListPopup(_In_ PCLE_POPUP const Popup,
         CATCH_LOG();
 
         // write command to screen
-        lStringLength = CommandHistory->Commands[COMMAND_NUM_TO_INDEX(i, CommandHistory)]->CommandLength / sizeof(WCHAR);
+        lStringLength = CommandHistory->Commands[CommandHistory->NumToIndex(i)]->CommandLength / sizeof(WCHAR);
         {
             size_t lTmpStringLength = lStringLength;
             LONG lPopupLength = (LONG)(POPUP_SIZE_X(Popup) - CommandNumberLength);
-            LPWSTR lpStr = CommandHistory->Commands[COMMAND_NUM_TO_INDEX(i, CommandHistory)]->Command;
+            LPWSTR lpStr = CommandHistory->Commands[CommandHistory->NumToIndex(i)]->Command;
             while (lTmpStringLength--)
             {
                 if (IsCharFullWidth(*lpStr++))
@@ -2017,14 +2006,14 @@ void DrawCommandListPopup(_In_ PCLE_POPUP const Popup,
         WriteCoord.X = (SHORT)(WriteCoord.X + CommandNumberLength);
         try
         {
-            auto command = CommandHistory->Commands[COMMAND_NUM_TO_INDEX(i, CommandHistory)]->Command;
+            auto command = CommandHistory->Commands[CommandHistory->NumToIndex(i)]->Command;
             std::vector<wchar_t> chars{ command, command + lStringLength };
             WriteOutputStringW(screenInfo, chars, WriteCoord);
         }
         CATCH_LOG();
 
         // write attributes to screen
-        if (COMMAND_NUM_TO_INDEX(i, CommandHistory) == CurrentCommand)
+        if (CommandHistory->NumToIndex(i) == CurrentCommand)
         {
             WriteCoord.X = (SHORT)(Popup->Region.Left + 1);
             WORD PopupLegacyAttributes = Popup->Attributes.GetLegacyAttributes();
@@ -2058,12 +2047,12 @@ void UpdateCommandListPopup(_In_ SHORT Delta,
     {
         CurCmdNum = *CurrentCommand;
         NewCmdNum = CurCmdNum + Delta;
-        NewCmdNum = COMMAND_INDEX_TO_NUM(NewCmdNum, CommandHistory);
-        CurCmdNum = COMMAND_INDEX_TO_NUM(CurCmdNum, CommandHistory);
+        NewCmdNum = CommandHistory->IndexToNum(NewCmdNum);
+        CurCmdNum = CommandHistory->IndexToNum(CurCmdNum);
     }
     else
     {
-        CurCmdNum = COMMAND_INDEX_TO_NUM(*CurrentCommand, CommandHistory);
+        CurCmdNum = CommandHistory->IndexToNum(*CurrentCommand);
         NewCmdNum = CurCmdNum + Delta;
         if (NewCmdNum >= CommandHistory->NumberOfCommands)
         {
@@ -2100,14 +2089,14 @@ void UpdateCommandListPopup(_In_ SHORT Delta,
     // write commands to popup
     if (Scroll)
     {
-        DrawCommandListPopup(Popup, COMMAND_NUM_TO_INDEX(NewCmdNum, CommandHistory), CommandHistory, screenInfo);
+        DrawCommandListPopup(Popup, CommandHistory->NumToIndex(NewCmdNum), CommandHistory, screenInfo);
     }
     else
     {
-        UpdateHighlight(Popup, COMMAND_INDEX_TO_NUM((*CurrentCommand), CommandHistory), NewCmdNum, screenInfo);
+        UpdateHighlight(Popup, CommandHistory->IndexToNum(*CurrentCommand), NewCmdNum, screenInfo);
     }
 
-    *CurrentCommand = COMMAND_NUM_TO_INDEX(NewCmdNum, CommandHistory);
+    *CurrentCommand = CommandHistory->NumToIndex(NewCmdNum);
 }
 
 UINT LoadStringEx(_In_ HINSTANCE hModule, _In_ UINT wID, _Out_writes_(cchBufferMax) LPWSTR lpBuffer, _In_ UINT cchBufferMax, _In_ WORD wLangId)
