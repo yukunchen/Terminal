@@ -294,7 +294,7 @@ HRESULT VtEngine::_PaintAsciiBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLin
         RETURN_IF_FAILED(ShortAdd(totalWidth, static_cast<short>(rgWidths[i]), &totalWidth));
     }
 
-    std::wstring wstr = std::wstring(pwsLine);
+    std::wstring wstr = std::wstring(pwsLine, cchLine);
     RETURN_IF_FAILED(VtEngine::_WriteTerminalAscii(wstr));
 
     // Update our internal tracker of the cursor's position
