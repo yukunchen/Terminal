@@ -26,9 +26,10 @@ typedef struct _COMMAND
 #pragma warning(disable:4200)
 typedef struct _COMMAND_HISTORY
 {
-    bool IsAppNameMatch(const std::wstring_view other) const;
-    static _COMMAND_HISTORY* s_AllocateCommandHistory(const std::wstring_view appName, const HANDLE processHandle);
-
+    static _COMMAND_HISTORY* s_Allocate(const std::wstring_view appName, const HANDLE processHandle);
+    static _COMMAND_HISTORY* s_Find(const HANDLE processHandle);
+    static void s_Free(const HANDLE processHandle);
+    static void s_ResizeAll(const size_t commands);
 
     enum class MatchOptions
     {
@@ -40,8 +41,15 @@ typedef struct _COMMAND_HISTORY
                              const size_t startingIndex,
                              size_t& indexFound,
                              const MatchOptions options);
+    bool IsAppNameMatch(const std::wstring_view other) const;
+
+    [[nodiscard]]
+    HRESULT Add(const std::wstring_view command,
+                const bool suppressDuplicates);
 
 private:
+    void _Reset();
+
     std::wstring _appName;
 public:
 
@@ -59,15 +67,6 @@ public:
 
 DEFINE_ENUM_FLAG_OPERATORS(_COMMAND_HISTORY::MatchOptions);
 
-[[nodiscard]]
-NTSTATUS AddCommand(_In_ PCOMMAND_HISTORY pCmdHistory,
-                    _In_reads_bytes_(cbCommand) PCWCHAR pwchCommand,
-                    const size_t cbCommand,
-                    const bool fHistoryNoDup);
-
-void FreeCommandHistory(const HANDLE hProcess);
-void FreeCommandHistoryBuffers();
-void ResizeCommandHistoryBuffers(const UINT cCommands);
 void EmptyCommandHistory(_In_opt_ PCOMMAND_HISTORY CommandHistory);
 PCOMMAND_HISTORY ReallocCommandHistory(_In_opt_ PCOMMAND_HISTORY CurrentCommandHistory, const size_t NumCommands);
 COMMAND_HISTORY* FindExeCommandHistory(const std::wstring_view appName);

@@ -352,12 +352,10 @@ HRESULT COOKED_READ_DATA::Read(const bool isUnicode,
             if (FoundCR)
             {
                 // add to command line recall list
-                LOG_IF_FAILED(AddCommand(_CommandHistory,
-                                         _BackupLimit,
-                                         (USHORT)StringLength,
-                                         IsFlagSet(gci.Flags, CONSOLE_HISTORY_NODUP)));
+                LOG_IF_FAILED(_CommandHistory->Add({ _BackupLimit, StringLength / sizeof(wchar_t) },
+                                                   IsFlagSet(gci.Flags, CONSOLE_HISTORY_NODUP)));
 
-                // check for alias
+                // check69 for alias
                 ProcessAliases(LineCount);
             }
         }

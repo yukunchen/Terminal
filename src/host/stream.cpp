@@ -470,7 +470,7 @@ HRESULT ReadLineInput(_Inout_ InputBuffer* const pInputBuffer,
     RETURN_HR_IF(E_FAIL, !gci.HasActiveOutputBuffer());
 
     SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
-    PCOMMAND_HISTORY const pCommandHistory = FindCommandHistory(ProcessData);
+    COMMAND_HISTORY* const pCommandHistory = _COMMAND_HISTORY::s_Find(ProcessData);
 
     try
     {

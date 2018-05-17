@@ -938,7 +938,7 @@ HRESULT ApiRoutines::SetConsoleHistoryInfoImpl(const CONSOLE_HISTORY_INFO* const
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    ResizeCommandHistoryBuffers(pConsoleHistoryInfo->HistoryBufferSize);
+    _COMMAND_HISTORY::s_ResizeAll(pConsoleHistoryInfo->HistoryBufferSize);
     gci.SetNumberOfHistoryBuffers(pConsoleHistoryInfo->NumberOfHistoryBuffers);
 
     UpdateFlag(gci.Flags, CONSOLE_HISTORY_NODUP, IsFlagSet(pConsoleHistoryInfo->dwFlags, HISTORY_NO_DUP_FLAG));

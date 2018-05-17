@@ -195,7 +195,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
 
     try
     {
-        _COMMAND_HISTORY::s_AllocateCommandHistory({ Cac.AppName, Cac.AppNameLength }, (HANDLE)ProcessData);
+        _COMMAND_HISTORY::s_Allocate({ Cac.AppName, Cac.AppNameLength }, (HANDLE)ProcessData);
     }
     catch(...)
     {
@@ -239,7 +239,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
 
     if (FAILED(ServiceLocator::LocateGlobals().pDeviceComm->CompleteIo(&pReceiveMsg->Complete)))
     {
-        FreeCommandHistory((HANDLE)ProcessData);
+        _COMMAND_HISTORY::s_Free((HANDLE)ProcessData);
         gci.ProcessHandleList.FreeProcessData(ProcessData);
     }
 
@@ -252,7 +252,7 @@ Error:
 
     if (ProcessData != nullptr)
     {
-        FreeCommandHistory((HANDLE)ProcessData);
+        _COMMAND_HISTORY::s_Free((HANDLE)ProcessData);
         gci.ProcessHandleList.FreeProcessData(ProcessData);
     }
 

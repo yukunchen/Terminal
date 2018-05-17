@@ -111,8 +111,6 @@ void DeleteCommandLine(_Inout_ COOKED_READ_DATA* pCookedReadData, const bool fUp
 
 void RedrawCommandLine(_Inout_ COOKED_READ_DATA* CookedReadData);
 
-PCOMMAND_HISTORY FindCommandHistory(const HANDLE hProcess);
-
 [[nodiscard]]
 NTSTATUS EndPopup(SCREEN_INFORMATION& screenInfo, _In_ PCOMMAND_HISTORY CommandHistory);
 
@@ -140,8 +138,5 @@ HRESULT DoSrvSetConsoleTitleW(_In_reads_or_z_(cchBuffer) const wchar_t* const pw
 
 #define COMMAND_NUM_TO_INDEX(NUM, CMDHIST) (SHORT)(((NUM+(CMDHIST)->FirstCommand)%((CMDHIST)->MaximumNumberOfCommands)))
 #define COMMAND_INDEX_TO_NUM(INDEX, CMDHIST) (SHORT)(((INDEX+((CMDHIST)->MaximumNumberOfCommands)-(CMDHIST)->FirstCommand)%((CMDHIST)->MaximumNumberOfCommands)))
-
-#define FMCFL_EXACT_MATCH   1
-#define FMCFL_JUST_LOOKING  2
 
 bool IsValidStringBuffer(_In_ bool Unicode, _In_reads_bytes_(Size) PVOID Buffer, _In_ ULONG Size, _In_ ULONG Count, ...);
