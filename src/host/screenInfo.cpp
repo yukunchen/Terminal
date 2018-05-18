@@ -14,7 +14,6 @@
 #include "../buffer/out/CharRow.hpp"
 
 #include <math.h>
-#include <iterator>
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/Viewport.hpp"
