@@ -11,14 +11,6 @@ Abstract:
 
 #pragma once
 
-// Disable warning about 0 length MSFT compiler struct extension.
-#pragma warning(disable:4200)
-typedef struct _COMMAND
-{
-    size_t CommandLength;
-    WCHAR Command[0]; // TODO: refactor
-} COMMAND, *PCOMMAND;
-
 // CommandHistory Flags
 #define CLE_ALLOCATED 0x00000001
 #define CLE_RESET     0x00000002
@@ -30,8 +22,6 @@ public:
     static CommandHistory* s_Allocate(const std::wstring_view appName, const HANDLE processHandle);
     static CommandHistory* s_Find(const HANDLE processHandle);
     static CommandHistory* s_FindByExe(const std::wstring_view appName);
-    static CommandHistory* s_Realloc(CommandHistory* const current,
-                                     const size_t commands);
     static void s_Free(const HANDLE processHandle);
     static void s_ResizeAll(const size_t commands);
 
@@ -61,6 +51,10 @@ public:
                         const gsl::span<wchar_t> buffer,
                         size_t& commandSize);
 
+    size_t GetNumberOfCommands() const;
+    std::wstring_view GetNth(const SHORT index) const;
+
+    void Realloc(const size_t commands);
     void Empty();
 
     bool AtFirstCommand() const;
@@ -68,12 +62,10 @@ public:
 
     std::wstring_view GetLastCommand() const;
 
-    SHORT IndexToNum(const SHORT index) const;
-    SHORT NumToIndex(const SHORT index) const;
-
 private:
     void _Reset();
-    PCOMMAND _Remove(const SHORT iDel);
+    
+    std::wstring _Remove(const SHORT iDel);
 
     // _Next and _Prev go to the next and prev command
     // _Inc  and _Dec go to the next and prev slots
@@ -83,20 +75,20 @@ private:
     void _Dec(SHORT& ind) const;
     void _Inc(SHORT& ind) const;
 
+    
+    std::vector<std::wstring> _commands;
+    SHORT _maxCommands;
+
     std::wstring _appName;
+    HANDLE _processHandle;
 
 public:
 
     LIST_ENTRY ListLink;
     DWORD Flags;
-    SHORT NumberOfCommands;
-    SHORT LastAdded;
     SHORT LastDisplayed;
-    SHORT FirstCommand; // circular buffer
-    SHORT MaximumNumberOfCommands;
-    HANDLE ProcessHandle;
+    
     LIST_ENTRY PopupList;   // pointer to top-level popup
-    PCOMMAND Commands[0]; // TODO: refactor
 };
 
 DEFINE_ENUM_FLAG_OPERATORS(CommandHistory::MatchOptions);
