@@ -401,7 +401,7 @@ void SetCurrentCommandLine(_In_ COOKED_READ_DATA* const CookedReadData, _In_ SHO
 {
     DeleteCommandLine(CookedReadData, TRUE);
     FAIL_FAST_IF_FAILED(CookedReadData->_CommandHistory->RetrieveNth(Index,
-                                                                     gsl::make_span(CookedReadData->_BackupLimit, CookedReadData->_BufferSize / sizeof(wchar_t)),
+                                                                     CookedReadData->SpanWholeBuffer(),
                                                                      CookedReadData->_BytesRead));
     FAIL_FAST_IF_FALSE(CookedReadData->_BackupLimit == CookedReadData->_BufPtr);
     if (CookedReadData->_Echo)
@@ -761,29 +761,30 @@ NTSTATUS ProcessCopyToCharInput(_In_ COOKED_READ_DATA* const pCookedReadData)
         LOG_IF_FAILED(EndPopup(pCookedReadData->_screenInfo, pCookedReadData->_CommandHistory));
 
         // copy up to specified char
-        PCOMMAND const LastCommand = pCookedReadData->_CommandHistory->GetLastCommand();
-        if (LastCommand)
+        const auto LastCommand = pCookedReadData->_CommandHistory->GetLastCommand();
+        if (!LastCommand.empty())
         {
             size_t i;
 
             // find specified char in last command
-            for (i = pCookedReadData->_CurrentPosition + 1; i < (int)(LastCommand->CommandLength / sizeof(WCHAR)); i++)
+            for (i = pCookedReadData->_CurrentPosition + 1; i < LastCommand.size(); i++)
             {
-                if (LastCommand->Command[i] == Char)
+                if (LastCommand[i] == Char)
                 {
                     break;
                 }
             }
 
             // If we found it, copy up to it.
-            if (i < (int)(LastCommand->CommandLength / sizeof(WCHAR)) &&
-                ((USHORT)(LastCommand->CommandLength / sizeof(WCHAR)) > ((USHORT)pCookedReadData->_CurrentPosition)))
+            if (i < LastCommand.size() &&
+                (LastCommand.size() > pCookedReadData->_CurrentPosition))
             {
                 size_t j = i - pCookedReadData->_CurrentPosition;
                 FAIL_FAST_IF_FALSE(j > 0);
-                memmove(pCookedReadData->_BufPtr,
-                        &LastCommand->Command[pCookedReadData->_CurrentPosition],
-                        j * sizeof(WCHAR));
+                const auto bufferSpan = pCookedReadData->SpanAtPointer();
+                std::copy_n(LastCommand.cbegin() + pCookedReadData->_CurrentPosition,
+                            j,
+                            bufferSpan.begin());
                 pCookedReadData->_CurrentPosition += j;
                 j *= sizeof(WCHAR);
                 pCookedReadData->_BytesRead = std::max(pCookedReadData->_BytesRead,
@@ -1175,7 +1176,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
             {
                 DeleteCommandLine(pCookedReadData, true);
                 Status = NTSTATUS_FROM_HRESULT(pCookedReadData->_CommandHistory->Retrieve(wch,
-                                                                                          gsl::make_span(pCookedReadData->_BackupLimit, pCookedReadData->_BufferSize / sizeof(wchar_t)),
+                                                                                          pCookedReadData->SpanWholeBuffer(),
                                                                                           pCookedReadData->_BytesRead));
                 FAIL_FAST_IF_FALSE(pCookedReadData->_BackupLimit == pCookedReadData->_BufPtr);
                 if (pCookedReadData->_Echo)
@@ -1213,7 +1214,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                 }
                 DeleteCommandLine(pCookedReadData, true);
                 Status = NTSTATUS_FROM_HRESULT(pCookedReadData->_CommandHistory->RetrieveNth(pCookedReadData->_CommandHistory->NumToIndex(CommandNumber),
-                                                                                             gsl::make_span<wchar_t>(pCookedReadData->_BackupLimit, pCookedReadData->_BufferSize / sizeof(wchar_t)),
+                                                                                             pCookedReadData->SpanWholeBuffer(),
                                                                                              pCookedReadData->_BytesRead));
                 FAIL_FAST_IF_FALSE(pCookedReadData->_BackupLimit == pCookedReadData->_BufPtr);
                 if (pCookedReadData->_Echo)
@@ -1511,12 +1512,11 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                 }
                 else if (pCookedReadData->_CommandHistory)
                 {
-                    PCOMMAND LastCommand;
                     size_t NumSpaces;
-                    LastCommand = pCookedReadData->_CommandHistory->GetLastCommand();
-                    if (LastCommand && (USHORT)(LastCommand->CommandLength / sizeof(WCHAR)) > (USHORT)pCookedReadData->_CurrentPosition)
+                    const auto LastCommand = pCookedReadData->_CommandHistory->GetLastCommand();
+                    if (!LastCommand.empty() && LastCommand.size() > pCookedReadData->_CurrentPosition)
                     {
-                        *pCookedReadData->_BufPtr = LastCommand->Command[pCookedReadData->_CurrentPosition];
+                        *pCookedReadData->_BufPtr = LastCommand[pCookedReadData->_CurrentPosition];
                         pCookedReadData->_BytesRead += sizeof(WCHAR);
                         pCookedReadData->_CurrentPosition++;
                         if (pCookedReadData->_Echo)
@@ -1564,19 +1564,17 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
             // Copy the remainder of the previous command to the current command.
             if (pCookedReadData->_CommandHistory)
             {
-                PCOMMAND LastCommand;
                 size_t NumSpaces, cchCount;
 
-                LastCommand = pCookedReadData->_CommandHistory->GetLastCommand();
-                if (LastCommand && (USHORT)(LastCommand->CommandLength / sizeof(WCHAR)) > (USHORT)pCookedReadData->_CurrentPosition)
+                const auto LastCommand = pCookedReadData->_CommandHistory->GetLastCommand();
+                if (!LastCommand.empty() && LastCommand.size() > pCookedReadData->_CurrentPosition)
                 {
-                    cchCount = (LastCommand->CommandLength / sizeof(WCHAR)) - pCookedReadData->_CurrentPosition;
-
-#pragma prefast(suppress:__WARNING_POTENTIAL_BUFFER_OVERFLOW_HIGH_PRIORITY, "This is fine")
-                    memmove(pCookedReadData->_BufPtr, &LastCommand->Command[pCookedReadData->_CurrentPosition], cchCount * sizeof(WCHAR));
+                    cchCount = LastCommand.size() - pCookedReadData->_CurrentPosition;
+                    const auto bufferSpan = pCookedReadData->SpanAtPointer();
+                    std::copy_n(LastCommand.cbegin() + pCookedReadData->_CurrentPosition, cchCount, bufferSpan.begin());
                     pCookedReadData->_CurrentPosition += cchCount;
                     cchCount *= sizeof(WCHAR);
-                    pCookedReadData->_BytesRead = std::max(static_cast<size_t>(LastCommand->CommandLength), pCookedReadData->_BytesRead);
+                    pCookedReadData->_BytesRead = std::max(LastCommand.size() * sizeof(wchar_t), pCookedReadData->_BytesRead);
                     if (pCookedReadData->_Echo)
                     {
                         Status = WriteCharsLegacy(pCookedReadData->_screenInfo,
@@ -1673,7 +1671,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
 
                     DeleteCommandLine(pCookedReadData, true);
                     Status = NTSTATUS_FROM_HRESULT(pCookedReadData->_CommandHistory->RetrieveNth((SHORT)index,
-                                                                                                 gsl::make_span(pCookedReadData->_BackupLimit, pCookedReadData->_BufferSize),
+                                                                                                 pCookedReadData->SpanWholeBuffer(),
                                                                                                  pCookedReadData->_BytesRead));
                     FAIL_FAST_IF_FALSE(pCookedReadData->_BackupLimit == pCookedReadData->_BufPtr);
                     if (pCookedReadData->_Echo)

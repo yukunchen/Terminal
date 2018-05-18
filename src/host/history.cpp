@@ -236,15 +236,15 @@ HRESULT CommandHistory::Retrieve(const WORD virtualKeyCode,
     return RetrieveNth(LastDisplayed, buffer, commandSize);
 }
 
-PCOMMAND CommandHistory::GetLastCommand() const
+std::wstring_view CommandHistory::GetLastCommand() const
 {
     if (NumberOfCommands == 0)
     {
-        return nullptr;
+        return {};
     }
     else
     {
-        return Commands[LastDisplayed];
+        return { Commands[LastDisplayed]->Command, Commands[LastDisplayed]->CommandLength / sizeof(wchar_t) };
     }
 }
 

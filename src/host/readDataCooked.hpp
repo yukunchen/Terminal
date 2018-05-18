@@ -52,6 +52,9 @@ public:
                 _Out_ DWORD* const pControlKeyState,
                 _Out_ void* const pOutputData) override;
 
+    gsl::span<wchar_t> SpanAtPointer();
+    gsl::span<wchar_t> SpanWholeBuffer();
+
 // TODO MSFT:11285829 member variable should be made private where possible.
     SCREEN_INFORMATION& _screenInfo;
     size_t _BufferSize;

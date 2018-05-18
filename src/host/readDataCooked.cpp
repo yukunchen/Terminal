@@ -96,6 +96,17 @@ COOKED_READ_DATA::~COOKED_READ_DATA()
     CleanUpPopups();
 }
 
+gsl::span<wchar_t> COOKED_READ_DATA::SpanWholeBuffer()
+{
+    return gsl::make_span(_BackupLimit, (_BufferSize / sizeof(wchar_t)));
+}
+
+gsl::span<wchar_t> COOKED_READ_DATA::SpanAtPointer() 
+{
+    auto wholeSpan = SpanWholeBuffer();
+    return wholeSpan.subspan(_BufPtr - _BackupLimit);
+}
+
 // Routine Description:
 // - This routine is called to complete a cooked read that blocked in ReadInputBuffer.
 // - The context of the read was saved in the CookedReadData structure.

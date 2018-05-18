@@ -66,7 +66,7 @@ public:
     bool AtFirstCommand() const;
     bool AtLastCommand() const;
 
-    PCOMMAND GetLastCommand() const;
+    std::wstring_view GetLastCommand() const;
 
     SHORT IndexToNum(const SHORT index) const;
     SHORT NumToIndex(const SHORT index) const;
