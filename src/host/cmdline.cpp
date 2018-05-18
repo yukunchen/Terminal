@@ -459,7 +459,7 @@ NTSTATUS ProcessCommandListInput(_In_ COOKED_READ_DATA* const pCookedReadData)
             return Status;
         }
 
-        size_t Index;
+        SHORT Index;
         if (commandLinePopupKeys)
         {
             switch (Char)
@@ -1658,7 +1658,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
             if (pCookedReadData->_CommandHistory)
             {
                 // Cycles through the stored commands that start with the characters in the current command.
-                size_t index;
+                SHORT index;
                 if (pCookedReadData->_CommandHistory->FindMatchingCommand({ pCookedReadData->_BackupLimit, pCookedReadData->_CurrentPosition },
                                                                           pCookedReadData->_CommandHistory->LastDisplayed,
                                                                           index,

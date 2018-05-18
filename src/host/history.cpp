@@ -24,13 +24,6 @@
 
 #pragma hdrstop
 
-CommandHistory::CommandHistory() :
-    _isAllocated(false),
-    _isReset(false)
-{
-
-}
-
 CommandHistory* CommandHistory::s_Find(const HANDLE processHandle)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -128,10 +121,10 @@ HRESULT CommandHistory::Add(const std::wstring_view command,
 
         if (suppressDuplicates)
         {
-            size_t index;
+            SHORT index;
             if (FindMatchingCommand({ pwchCommand, cbCommand / sizeof(wchar_t) }, LastDisplayed, index, CommandHistory::MatchOptions::ExactMatch))
             {
-                pCmdReuse = _Remove((SHORT)index);
+                pCmdReuse = _Remove(index);
             }
         }
 
