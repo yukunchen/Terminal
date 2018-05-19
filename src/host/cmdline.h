@@ -68,7 +68,6 @@ typedef NTSTATUS(*PCLE_POPUP_INPUT_ROUTINE) (_In_ COOKED_READ_DATA* CookedReadDa
 
 typedef struct _CLE_POPUP
 {
-    LIST_ENTRY ListLink;    // pointer to next popup
     SMALL_RECT Region;  // region popup occupies
     TextAttribute Attributes;    // text attributes
     PCHAR_INFO OldContents; // contains data under popup
@@ -79,9 +78,6 @@ typedef struct _CLE_POPUP
     PCLE_POPUP_INPUT_ROUTINE PopupInputRoutine; // routine to call when input is received
     COORD OldScreenSize;
 } CLE_POPUP, *PCLE_POPUP;
-
-
-#define CLE_NO_POPUPS(CommandHistory) (&(CommandHistory)->PopupList == (CommandHistory)->PopupList.Blink)
 
 class CommandLine
 {

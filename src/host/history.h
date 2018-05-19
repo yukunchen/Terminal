@@ -15,15 +15,22 @@ Abstract:
 #define CLE_ALLOCATED 0x00000001
 #define CLE_RESET     0x00000002
 
-#pragma warning(disable:4200)
+struct _CLE_POPUP;
+
 class CommandHistory
 {
 public:
     static CommandHistory* s_Allocate(const std::wstring_view appName, const HANDLE processHandle);
     static CommandHistory* s_Find(const HANDLE processHandle);
     static CommandHistory* s_FindByExe(const std::wstring_view appName);
+    static void s_ReallocExeToFront(const std::wstring_view appName, const size_t commands);
     static void s_Free(const HANDLE processHandle);
     static void s_ResizeAll(const size_t commands);
+    static void s_UpdatePopups(const WORD NewAttributes,
+                               const WORD NewPopupAttributes,
+                               const WORD OldAttributes,
+                               const WORD OldPopupAttributes);
+    static size_t s_CountOfHistories();
 
     enum class MatchOptions
     {
@@ -57,6 +64,9 @@ public:
     void Realloc(const size_t commands);
     void Empty();
 
+    [[nodiscard]]
+    NTSTATUS EndPopup(SCREEN_INFORMATION& screenInfo);
+
     bool AtFirstCommand() const;
     bool AtLastCommand() const;
 
@@ -82,13 +92,13 @@ private:
     std::wstring _appName;
     HANDLE _processHandle;
 
-public:
+    static std::deque<CommandHistory> s_historyLists;
 
-    LIST_ENTRY ListLink;
+public:
     DWORD Flags;
     SHORT LastDisplayed;
     
-    LIST_ENTRY PopupList;   // pointer to top-level popup
+    std::deque<_CLE_POPUP*> PopupList; // pointer to top-level popup
 };
 
 DEFINE_ENUM_FLAG_OPERATORS(CommandHistory::MatchOptions);

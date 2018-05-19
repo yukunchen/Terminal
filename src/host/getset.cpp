@@ -632,54 +632,6 @@ HRESULT DoSrvScrollConsoleScreenBufferW(SCREEN_INFORMATION& screenInfo,
     return S_OK;
 }
 
-// Routine Description:
-// - This routine is called when the user changes the screen/popup colors.
-// - It goes through the popup structures and changes the saved contents to reflect the new screen/popup colors.
-VOID UpdatePopups(IN WORD NewAttributes, IN WORD NewPopupAttributes, IN WORD OldAttributes, IN WORD OldPopupAttributes)
-{
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    WORD const InvertedOldPopupAttributes = (WORD)(((OldPopupAttributes << 4) & 0xf0) | ((OldPopupAttributes >> 4) & 0x0f));
-    WORD const InvertedNewPopupAttributes = (WORD)(((NewPopupAttributes << 4) & 0xf0) | ((NewPopupAttributes >> 4) & 0x0f));
-    PLIST_ENTRY const HistoryListHead = &gci.CommandHistoryList;
-    PLIST_ENTRY HistoryListNext = HistoryListHead->Blink;
-    while (HistoryListNext != HistoryListHead)
-    {
-        CommandHistory* const History = CONTAINING_RECORD(HistoryListNext, CommandHistory, ListLink);
-        HistoryListNext = HistoryListNext->Blink;
-        if (History->Flags & CLE_ALLOCATED && !CLE_NO_POPUPS(History))
-        {
-            PLIST_ENTRY const PopupListHead = &History->PopupList;
-            PLIST_ENTRY PopupListNext = PopupListHead->Blink;
-            while (PopupListNext != PopupListHead)
-            {
-                PCLE_POPUP const Popup = CONTAINING_RECORD(PopupListNext, CLE_POPUP, ListLink);
-                PopupListNext = PopupListNext->Blink;
-                PCHAR_INFO OldContents = Popup->OldContents;
-                for (SHORT i = Popup->Region.Left; i <= Popup->Region.Right; i++)
-                {
-                    for (SHORT j = Popup->Region.Top; j <= Popup->Region.Bottom; j++)
-                    {
-                        if (OldContents->Attributes == OldAttributes)
-                        {
-                            OldContents->Attributes = NewAttributes;
-                        }
-                        else if (OldContents->Attributes == OldPopupAttributes)
-                        {
-                            OldContents->Attributes = NewPopupAttributes;
-                        }
-                        else if (OldContents->Attributes == InvertedOldPopupAttributes)
-                        {
-                            OldContents->Attributes = InvertedNewPopupAttributes;
-                        }
-
-                        OldContents++;
-                    }
-                }
-            }
-        }
-    }
-}
-
 void SetScreenColors(SCREEN_INFORMATION& screenInfo,
                      _In_ WORD Attributes,
                      _In_ WORD PopupAttributes,
@@ -707,7 +659,7 @@ void SetScreenColors(SCREEN_INFORMATION& screenInfo,
 
         if (gci.PopupCount)
         {
-            UpdatePopups(Attributes, PopupAttributes, DefaultAttributes, DefaultPopupAttributes);
+            CommandHistory::s_UpdatePopups(Attributes, PopupAttributes, DefaultAttributes, DefaultPopupAttributes);
         }
 
         // force repaint of entire line

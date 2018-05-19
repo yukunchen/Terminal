@@ -205,7 +205,7 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
     if (_CommandHistory)
     {
         PCLE_POPUP Popup;
-        if (!CLE_NO_POPUPS(_CommandHistory))
+        if (!_CommandHistory->PopupList.empty())
         {
             // (see above comment, MSFT:13994975)
             // Make sure that the popup writes the dwNumBytes to the right place
@@ -214,7 +214,7 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
                 pdwNumBytes = pNumBytes;
             }
 
-            Popup = CONTAINING_RECORD(_CommandHistory->PopupList.Flink, CLE_POPUP, ListLink);
+            Popup = _CommandHistory->PopupList.front();
             *pReplyStatus = (Popup->PopupInputRoutine) (this, nullptr, TRUE);
             if (*pReplyStatus == CONSOLE_STATUS_READ_COMPLETE || (*pReplyStatus != CONSOLE_STATUS_WAIT && *pReplyStatus != CONSOLE_STATUS_WAIT_NO_BLOCK))
             {
@@ -881,7 +881,7 @@ void COOKED_READ_DATA::CleanUpPopups()
         return;
     }
 
-    while (!CLE_NO_POPUPS(CommandHistory))
+    while (!CommandHistory->PopupList.empty())
     {
         LOG_IF_FAILED(EndPopup(_screenInfo, CommandHistory));
     }

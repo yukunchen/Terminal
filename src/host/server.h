@@ -66,6 +66,7 @@ Revision History:
 #define CONSOLE_SUSPENDED (CONSOLE_OUTPUT_SUSPENDED)
 
 class COOKED_READ_DATA;
+class CommandHistory;
 
 class CONSOLE_INFORMATION :
     public Settings,
@@ -83,8 +84,6 @@ public:
 
     SCREEN_INFORMATION* ScreenBuffers;  // singly linked list
     ConsoleWaitQueue OutputQueue;
-    LIST_ENTRY CommandHistoryList;
-    UINT NumCommandHistories;
 
     DWORD Flags;
 

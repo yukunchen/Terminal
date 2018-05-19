@@ -24,19 +24,16 @@
 
 #pragma hdrstop
 
+std::deque<CommandHistory> CommandHistory::s_historyLists;
+
 CommandHistory* CommandHistory::s_Find(const HANDLE processHandle)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    PLIST_ENTRY const ListHead = &gci.CommandHistoryList;
-    PLIST_ENTRY ListNext = ListHead->Flink;
-    while (ListNext != ListHead)
+    for (auto& historyList : s_historyLists)
     {
-        CommandHistory* const History = CONTAINING_RECORD(ListNext, CommandHistory, ListLink);
-        ListNext = ListNext->Flink;
-        if (History->_processHandle == processHandle)
+        if (historyList._processHandle == processHandle)
         {
-            FAIL_FAST_IF_FALSE(IsFlagSet(History->Flags, CLE_ALLOCATED));
-            return History;
+            FAIL_FAST_IF(IsFlagClear(historyList.Flags, CLE_ALLOCATED));
+            return &historyList;
         }
     }
 
@@ -63,14 +60,9 @@ void CommandHistory::s_ResizeAll(const size_t commands)
     FAIL_FAST_IF(commands > SHORT_MAX);
     gci.SetHistoryBufferSize(gsl::narrow<UINT>(commands));
 
-    PLIST_ENTRY const ListHead = &gci.CommandHistoryList;
-    PLIST_ENTRY ListNext = ListHead->Flink;
-    while (ListNext != ListHead)
+    for (auto& historyList : s_historyLists)
     {
-        CommandHistory* const History = CONTAINING_RECORD(ListNext, CommandHistory, ListLink);
-        ListNext = ListNext->Flink;
-
-        History->Realloc(commands);
+        historyList.Realloc(commands);
     }
 }
 
@@ -260,7 +252,6 @@ bool CommandHistory::AtLastCommand() const
 
 void CommandHistory::Realloc(const size_t commands)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // To protect ourselves from overflow and general arithmetic errors, a limit of SHORT_MAX is put on the size of the givenCommand history.
     if (_maxCommands == (SHORT)commands || commands > SHORT_MAX)
     {
@@ -279,28 +270,80 @@ void CommandHistory::Realloc(const size_t commands)
     SetFlag(Flags, CLE_RESET);
     LastDisplayed = gsl::narrow<SHORT>(_commands.size()) - 1;
     _maxCommands = (SHORT)commands;
+}
 
-    RemoveEntryList(&ListLink);
-    InitializeListHead(&PopupList);
-    InsertHeadList(&gci.CommandHistoryList, &ListLink);
+void CommandHistory::s_ReallocExeToFront(const std::wstring_view appName, const size_t commands)
+{
+    const auto history = s_FindByExe(appName);
+    history->Realloc(commands);
+
+    // TODO: cycle to front of list.
+    /*const auto iter = std::find(s_historyLists.begin(), s_historyLists.end(), history);
+    
+    
+    CommandHistory backup = *history;
+    s_historyLists.erase(iter);
+    backup.Realloc(commands);
+    s_historyLists.push_front(backup);*/
 }
 
 CommandHistory* CommandHistory::s_FindByExe(const std::wstring_view appName)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    PLIST_ENTRY const ListHead = &gci.CommandHistoryList;
-    PLIST_ENTRY ListNext = ListHead->Flink;
-    while (ListNext != ListHead)
+    for (auto& historyList : s_historyLists)
     {
-        CommandHistory* const History = CONTAINING_RECORD(ListNext, CommandHistory, ListLink);
-        ListNext = ListNext->Flink;
-
-        if (IsFlagSet(History->Flags, CLE_ALLOCATED) && History->IsAppNameMatch(appName))
+        if (IsFlagSet(historyList.Flags, CLE_ALLOCATED) && historyList.IsAppNameMatch(appName))
         {
-            return History;
+            return &historyList;
         }
     }
     return nullptr;
+}
+
+// Routine Description:
+// - This routine is called when the user changes the screen/popup colors.
+// - It goes through the popup structures and changes the saved contents to reflect the new screen/popup colors.
+void CommandHistory::s_UpdatePopups(const WORD NewAttributes,
+                                    const WORD NewPopupAttributes,
+                                    const WORD OldAttributes,
+                                    const WORD OldPopupAttributes)
+{
+    WORD const InvertedOldPopupAttributes = (WORD)(((OldPopupAttributes << 4) & 0xf0) | ((OldPopupAttributes >> 4) & 0x0f));
+    WORD const InvertedNewPopupAttributes = (WORD)(((NewPopupAttributes << 4) & 0xf0) | ((NewPopupAttributes >> 4) & 0x0f));
+    for (auto& historyList : s_historyLists)
+    {
+        if (IsFlagSet(historyList.Flags, CLE_ALLOCATED) && !historyList.PopupList.empty())
+        {
+            for (const auto Popup : historyList.PopupList)
+            {
+                PCHAR_INFO OldContents = Popup->OldContents;
+                for (SHORT i = Popup->Region.Left; i <= Popup->Region.Right; i++)
+                {
+                    for (SHORT j = Popup->Region.Top; j <= Popup->Region.Bottom; j++)
+                    {
+                        if (OldContents->Attributes == OldAttributes)
+                        {
+                            OldContents->Attributes = NewAttributes;
+                        }
+                        else if (OldContents->Attributes == OldPopupAttributes)
+                        {
+                            OldContents->Attributes = NewPopupAttributes;
+                        }
+                        else if (OldContents->Attributes == InvertedOldPopupAttributes)
+                        {
+                            OldContents->Attributes = InvertedNewPopupAttributes;
+                        }
+
+                        OldContents++;
+                    }
+                }
+            }
+        }
+    }
+}
+
+size_t CommandHistory::s_CountOfHistories()
+{
+    return s_historyLists.size();
 }
 
 // Routine Description:
@@ -314,22 +357,16 @@ CommandHistory* CommandHistory::s_Allocate(const std::wstring_view appName, cons
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // Reuse a history buffer.  The buffer must be !CLE_ALLOCATED.
     // If possible, the buffer should have the same app name.
-    PLIST_ENTRY const ListHead = &gci.CommandHistoryList;
-    PLIST_ENTRY ListNext = ListHead->Blink;
     CommandHistory* BestCandidate = nullptr;
-    CommandHistory* History = nullptr;
     bool SameApp = false;
-    while (ListNext != ListHead)
+    for (auto& historyList : s_historyLists)
     {
-        History = CONTAINING_RECORD(ListNext, CommandHistory, ListLink);
-        ListNext = ListNext->Blink;
-
-        if (IsFlagClear(History->Flags, CLE_ALLOCATED))
+        if (IsFlagClear(historyList.Flags, CLE_ALLOCATED))
         {
             // use LRU history buffer with same app name
-            if (History->IsAppNameMatch(appName))
+            if (historyList.IsAppNameMatch(appName))
             {
-                BestCandidate = History;
+                BestCandidate = &historyList;
                 SameApp = true;
                 break;
             }
@@ -337,51 +374,44 @@ CommandHistory* CommandHistory::s_Allocate(const std::wstring_view appName, cons
             // second best choice is LRU history buffer
             if (BestCandidate == nullptr)
             {
-                BestCandidate = History;
+                BestCandidate = &historyList;
             }
         }
     }
 
     // if there isn't a free buffer for the app name and the maximum number of
     // givenCommand history buffers hasn't been allocated, allocate a new one.
-    if (!SameApp && gci.NumCommandHistories < gci.GetNumberOfHistoryBuffers())
+    if (!SameApp && s_historyLists.size() < gci.GetNumberOfHistoryBuffers())
     {
-        History = new(std::nothrow) CommandHistory();
-        if (History == nullptr)
-        {
-            return nullptr;
-        }
-        ZeroMemory(History, sizeof(History));
+        CommandHistory History;
+        ZeroMemory(&History, sizeof(History));
 
-        History->_appName = appName;
-        History->Flags = CLE_ALLOCATED;
-        History->LastDisplayed = -1;
-        History->_maxCommands = (SHORT)gci.GetHistoryBufferSize();
-        InsertHeadList(&gci.CommandHistoryList, &History->ListLink);
-        gci.NumCommandHistories += 1;
-        History->_processHandle = processHandle;
-        InitializeListHead(&History->PopupList);
-        return History;
+        History._appName = appName;
+        History.Flags = CLE_ALLOCATED;
+        History.LastDisplayed = -1;
+        History._maxCommands = gsl::narrow<SHORT>(gci.GetHistoryBufferSize());
+        History._processHandle = processHandle;
+        return &s_historyLists.emplace_front(History);
     }
 
     // If the app name doesn't match, copy in the new app name and free the old commands.
     if (BestCandidate)
     {
-        History = BestCandidate;
-        FAIL_FAST_IF_FALSE(CLE_NO_POPUPS(History));
+        FAIL_FAST_IF_FALSE(BestCandidate->PopupList.empty());
         if (!SameApp)
         {
-            History->_commands.clear();
-            History->LastDisplayed = -1;
-            History->_appName = appName;
+            BestCandidate->_commands.clear();
+            BestCandidate->LastDisplayed = -1;
+            BestCandidate->_appName = appName;
         }
 
-        History->_processHandle = processHandle;
-        SetFlag(History->Flags, CLE_ALLOCATED);
+        BestCandidate->_processHandle = processHandle;
+        SetFlag(BestCandidate->Flags, CLE_ALLOCATED);
 
-        // move to the front of the list
-        RemoveEntryList(&BestCandidate->ListLink);
-        InsertHeadList(&gci.CommandHistoryList, &BestCandidate->ListLink);
+        // TODO: move to the front of the list
+        /*s_historyLists.erase(std::find(s_historyLists.begin(), s_historyLists.end(), BestCandidate));
+        return &s_historyLists.emplace_front(History);*/
+        return BestCandidate;
     }
 
     return BestCandidate;
@@ -600,7 +630,7 @@ HRESULT ApiRoutines::SetConsoleNumberOfCommandsWImpl(_In_reads_or_z_(cchExeNameB
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    CommandHistory::s_FindByExe({ pwsExeNameBuffer, cchExeNameBufferLength })->Realloc(NumberOfCommands);
+    CommandHistory::s_ReallocExeToFront({ pwsExeNameBuffer, cchExeNameBufferLength }, NumberOfCommands);
 
     return S_OK;
 }
