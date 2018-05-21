@@ -26,7 +26,6 @@
 #include <new>
 #include <optional>
 #include <queue>
-#include <stack>
 #include <stdexcept>
 #include <string>
 #include <thread>

@@ -201,7 +201,7 @@ void RedrawCommandLine(_Inout_ COOKED_READ_DATA* const pCookedReadData)
 {
     if (pCookedReadData->_Echo)
     {
-        // _DrawBorder the command line
+        // Draw the command line
         pCookedReadData->_OriginalCursorPosition = pCookedReadData->_screenInfo.GetTextBuffer().GetCursor().GetPosition();
 
         SHORT ScrollY = 0;

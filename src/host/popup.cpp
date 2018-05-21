@@ -74,8 +74,6 @@ Popup::Popup(SCREEN_INFORMATION& screenInfo, const COORD proposedSize, CommandHi
         // If this is the first popup to be shown, stop the cursor from appearing/blinking
         screenInfo.GetTextBuffer().GetCursor().SetIsPopupShown(true);
     }
-
-    _DrawBorder();
 }
 
 // Routine Description:
@@ -155,17 +153,17 @@ void Popup::_DrawBorder()
         FillOutputW(_screenInfo, { _screenInfo.LineChar[VERTICAL_LINE] }, WriteCoord, 1);
     }
 
-    // _DrawBorder bottom line.
+    // Draw bottom line.
     // Fill attributes of top line.
     WriteCoord.X = _region.Left;
     WriteCoord.Y = _region.Bottom;
     FillOutputAttributes(_screenInfo, Attributes, WriteCoord, Width() + 2);
 
-    // _DrawBorder bottom left corner.
+    // Draw bottom left corner.
     WriteCoord.X = _region.Left;
     FillOutputW(_screenInfo, { _screenInfo.LineChar[BOTTOM_LEFT_CORNER] }, WriteCoord, 1);
 
-    // _DrawBorder lower bar.
+    // Draw lower bar.
     WriteCoord.X += 1;
     FillOutputW(_screenInfo, { _screenInfo.LineChar[HORIZONTAL_LINE] }, WriteCoord, Width());
 
@@ -182,7 +180,7 @@ void Popup::_DrawPrompt(const UINT id)
 {
     std::wstring text = _LoadString(id);
 
-    // _DrawBorder empty popup.
+    // Draw empty popup.
     COORD WriteCoord;
     WriteCoord.X = (SHORT)(_region.Left + 1);
     WriteCoord.Y = (SHORT)(_region.Top + 1);
