@@ -9,6 +9,8 @@
 #include "screenInfo.hpp"
 #include "dbcs.h"
 #include "output.h"
+#include "_output.h"
+#include "misc.h"
 #include "../buffer/out/CharRow.hpp"
 
 #include <math.h>
@@ -18,6 +20,7 @@
 #include "../terminal/parser/OutputStateMachineEngine.hpp"
 
 #include "../types/inc/convert.hpp"
+#include "../types/inc/RepeatingIterator.hpp"
 
 #pragma hdrstop
 using namespace Microsoft::Console;
@@ -2656,7 +2659,156 @@ size_t SCREEN_INFORMATION::_WriteLine(const std::vector<OutputCell>& cells,
 }
 
 // Routine Description:
-// - Clears out the entire text buffer with the default character and 
+// - fills a text attribute a number of times.
+// Arguments:
+// - attr - the text attribute to fill
+// - target - the starting location of the fill
+// - amountToWrite - the number of cells to fill
+// Return Value:
+// - the number of cells filled
+size_t SCREEN_INFORMATION::FillTextAttribute(const TextAttribute attr,
+                                             const COORD target,
+                                             const size_t amountToWrite)
+{
+    const COORD coordScreenBufferSize = GetScreenBufferSize();
+    std::vector<TextAttributeRun> attrRun{ {} };
+    // Here we're being a little clever -
+    // Because RGB color can't roundtrip the API, certain VT sequences will forget the RGB color
+    // because their first call to GetScreenBufferInfo returned a legacy attr.
+    // If they're calling this with the default attrs, they likely wanted to use the RGB default attrs.
+    // This could create a scenario where someone emitted RGB with VT,
+    // THEN used the API to FillConsoleOutput with the default attrs, and DIDN'T want the RGB color
+    // they had set.
+    if (InVTMode() && GetAttributes().GetLegacyAttributes() == attr.GetLegacyAttributes())
+    {
+        attrRun.front().SetAttributes(GetAttributes());
+    }
+    else
+    {
+        WORD actualAttr = attr.GetLegacyAttributes();
+        ClearAllFlags(actualAttr, COMMON_LVB_SBCSDBCS);
+        attrRun.front().SetAttributesFromLegacy(actualAttr);
+    }
+
+    COORD currentLocation = target;
+    size_t amountWritten = 0;
+    do
+    {
+        const size_t rowIndex = gsl::narrow<size_t>(currentLocation.Y);
+        const size_t writesLeft = amountToWrite - amountWritten;
+        const size_t columnsToFill = std::min(writesLeft, gsl::narrow<size_t>(coordScreenBufferSize.X - currentLocation.X));
+        ROW& row = _textBuffer->GetRowByOffset(currentLocation.Y);
+        ATTR_ROW& attrRow = row.GetAttrRow();
+
+        attrRun.front().SetLength(columnsToFill);
+        THROW_IF_FAILED(attrRow.InsertAttrRuns(attrRun,
+                                               currentLocation.X,
+                                               currentLocation.X + columnsToFill - 1,
+                                               coordScreenBufferSize.X));
+        amountWritten += columnsToFill;
+        currentLocation.X = 0;
+        currentLocation.Y++;
+    }
+    while (amountWritten < amountToWrite && IsCoordInBounds(currentLocation, coordScreenBufferSize));
+
+    NotifyAccessibilityEventing(target.X, target.Y, currentLocation.X, currentLocation.Y);
+    UpdateScreen(target, currentLocation);
+    return amountWritten;
+}
+
+size_t SCREEN_INFORMATION::FillTextGlyph(const std::vector<wchar_t>& glyph,
+                                         const COORD target,
+                                         const size_t amountToWrite)
+{
+    const COORD coordScreenBufferSize = GetScreenBufferSize();
+
+    const OutputCell cell{ glyph, {}, OutputCell::TextAttributeBehavior::Current };
+    std::vector<OutputCell> cellsToWrite{ cell };
+    if (IsGlyphFullWidth(glyph))
+    {
+        cellsToWrite.push_back(cell);
+        cellsToWrite.at(0).DbcsAttr().SetLeading();
+        cellsToWrite.at(1).DbcsAttr().SetTrailing();
+    }
+
+    auto currentLocation = target;
+    CleanupDbcsEdgesForWrite(amountToWrite, currentLocation, *this);
+    size_t amountWritten = 0;
+
+
+    do
+    {
+        const size_t writesLeft = amountToWrite - amountWritten;
+        const size_t columnsToFill = std::min(writesLeft, gsl::narrow<size_t>(coordScreenBufferSize.X - currentLocation.X));
+        auto& row = _textBuffer->GetRowByOffset(currentLocation.Y);
+        const RepeatingIterator<OutputCell, decltype(cellsToWrite)::const_iterator>  startingIt{ cellsToWrite.begin(),
+                                                                                                 cellsToWrite.end() };
+        const auto it = row.WriteCells(startingIt, startingIt + columnsToFill, currentLocation.X);
+        const short distance = gsl::narrow<short>(std::distance( startingIt, it));
+        currentLocation.X += distance;
+        amountWritten += distance;
+
+        // invalidate row wrap status for any bulk fill of text characters
+        row.GetCharRow().SetWrapForced(false);
+
+        if (!IsCoordInBounds(currentLocation, coordScreenBufferSize))
+        {
+            currentLocation.Y++;
+            currentLocation.X = 0;
+        }
+    }
+    while (amountWritten < amountToWrite && IsCoordInBounds(currentLocation, coordScreenBufferSize));
+
+    NotifyAccessibilityEventing(target.X, target.Y, currentLocation.X, currentLocation.Y);
+    UpdateScreen(target, currentLocation);
+    return amountWritten;
+}
+
+void SCREEN_INFORMATION::UpdateScreen(const COORD start, const COORD end)
+{
+    const COORD coordScreenBufferSize = GetScreenBufferSize();
+
+    SMALL_RECT rect;
+    if (ConvScreenInfo)
+    {
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        const auto viewport = GetBufferViewport();
+        const auto convCoord = ConvScreenInfo->GetAreaBufferInfo().coordConView;
+
+        rect.Top = start.Y + viewport.Left + convCoord.Y;
+        rect.Bottom = end.Y + viewport.Left + convCoord.Y;
+        if (start.Y == end.Y)
+        {
+            rect.Left = start.X + viewport.Top + convCoord.X;
+            rect.Right = end.X + viewport.Top + convCoord.X;
+        }
+        else
+        {
+            rect.Left = 0;
+            rect.Right = gci.GetActiveOutputBuffer().GetScreenBufferSize().X - 1;
+        }
+        WriteConvRegionToScreen(gci.GetActiveOutputBuffer(), rect);
+    }
+    else
+    {
+        rect.Top = start.Y;
+        rect.Bottom = end.Y;
+        if (start.Y == end.Y)
+        {
+            rect.Left = start.X;
+            rect.Right = end.X - 1;
+        }
+        else
+        {
+            rect.Left = 0;
+            rect.Right = coordScreenBufferSize.X - 1;
+        }
+        WriteToScreen(*this, rect);
+    }
+}
+
+// Routine Description:
+// - Clears out the entire text buffer with the default character and
 //   the current default attribute applied to this screen.
 void SCREEN_INFORMATION::ClearTextData()
 {

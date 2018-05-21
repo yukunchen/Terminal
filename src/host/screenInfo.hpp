@@ -143,7 +143,18 @@ public:
                            const size_t rowIndex,
                            const size_t startIndex);
 
+    size_t FillTextAttribute(const TextAttribute attr,
+                             const COORD target,
+                             const size_t amountToWrite);
+
+    size_t FillTextGlyph(const std::vector<wchar_t>& glyph,
+                         const COORD target,
+                         const size_t amountToWrite);
+
+    void UpdateScreen(const COORD start, const COORD end);
+
     void ClearTextData();
+
 
     std::pair<COORD, COORD> GetWordBoundary(const COORD position) const;
 

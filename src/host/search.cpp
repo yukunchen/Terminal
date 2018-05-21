@@ -76,12 +76,12 @@ void Search::Select() const
 // - Takes the found word and applies the given color to it in the screen buffer
 // Arguments:
 // - ulAttr - The legacy color attribute to apply to the word
-void Search::Color(const ULONG ulAttr) const
+void Search::Color(const TextAttribute attr) const
 {
     // Only select if we've found something.
     if (_coordSelStart != _coordSelEnd)
     {
-        Selection::Instance().ColorSelection(_coordSelStart, _coordSelEnd, ulAttr);
+        Selection::Instance().ColorSelection(_coordSelStart, _coordSelEnd, attr);
     }
 }
 
