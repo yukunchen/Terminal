@@ -58,12 +58,43 @@ public:
     std::vector<OutputCell> AsCells(const size_t startIndex) const;
     std::vector<OutputCell> AsCells(const size_t startIndex, const size_t count) const;
 
-    std::vector<OutputCell>::const_iterator WriteCells(const std::vector<OutputCell>::const_iterator start,
-                                                       const std::vector<OutputCell>::const_iterator end,
-                                                       const size_t index);
-
     UnicodeStorage& GetUnicodeStorage();
     const UnicodeStorage& GetUnicodeStorage() const;
+
+    // Routine Description:
+    // - writes cell data to the row
+    // Arguments:
+    // - start - starting iterator to cells to write
+    // - end - ending iterator to cells to write
+    // - index - column in row to start writing at
+    // Return Value:
+    // - iterator to first cell that was not written to this row. will be equal to end if all cells were written
+    // to row
+    template <typename InputIt>
+    InputIt WriteCells(InputIt start, InputIt end, const size_t index)
+    {
+        THROW_HR_IF(E_INVALIDARG, index >= _charRow.size());
+        auto it = start;
+        size_t currentIndex = index;
+        while (it != end && currentIndex < _charRow.size())
+        {
+            _charRow.DbcsAttrAt(currentIndex) = it->DbcsAttr();
+            _charRow.GlyphAt(currentIndex) = it->Chars();
+            if (it->TextAttrBehavior() != OutputCell::TextAttributeBehavior::Current)
+            {
+                const TextAttributeRun attrRun{ 1, it->TextAttr() };
+                const std::vector<TextAttributeRun> runs{ attrRun };
+                LOG_IF_FAILED(_attrRow.InsertAttrRuns(runs,
+                                                    currentIndex,
+                                                    currentIndex,
+                                                    _charRow.size()));
+            }
+
+            ++it;
+            ++currentIndex;
+        }
+        return it;
+    }
 
     friend bool operator==(const ROW& a, const ROW& b) noexcept;
 
