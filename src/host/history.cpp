@@ -144,10 +144,10 @@ HRESULT CommandHistory::Add(const std::wstring_view newCommand,
         }
 
         // find free record.  if all records are used, free the lru one.
-        if (_commands.size() == _maxCommands)
+        if ((SHORT)_commands.size() == _maxCommands)
         {
             _commands.erase(_commands.cbegin());
-            if (LastDisplayed == _commands.size() - 1)
+            if (LastDisplayed == ((SHORT)_commands.size()) - 1i16)
             {
                 LastDisplayed = -1;
             }
@@ -272,15 +272,15 @@ bool CommandHistory::AtFirstCommand() const
     SHORT i = (SHORT)(LastDisplayed - 1);
     if (i == -1)
     {
-        i = (SHORT)(_commands.size() - 1);
+        i = ((SHORT)_commands.size()) - 1i16;
     }
 
-    return (i == _commands.size() - 1);
+    return (i == ((SHORT)_commands.size()) - 1i16);
 }
 
 bool CommandHistory::AtLastCommand() const
 {
-    return LastDisplayed == _commands.size() - 1;
+    return LastDisplayed == ((SHORT)_commands.size()) - 1i16;
 }
 
 void CommandHistory::Realloc(const size_t commands)
@@ -451,7 +451,7 @@ void CommandHistory::_Prev(SHORT& ind) const
 void CommandHistory::_Next(SHORT& ind) const
 {
     ++ind;
-    if (ind >= _commands.size())
+    if (ind >= (SHORT)_commands.size())
     {
         ind = 0;
     }

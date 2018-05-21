@@ -359,7 +359,7 @@ void Popup::Update(const SHORT originalDelta, const bool wrap)
     {
         CurCmdNum = CurrentCommand;
         NewCmdNum = CurCmdNum + delta;
-        if (NewCmdNum >= _history->GetNumberOfCommands())
+        if (NewCmdNum >= (SHORT)_history->GetNumberOfCommands())
         {
             NewCmdNum = (SHORT)(_history->GetNumberOfCommands() - 1);
         }
@@ -384,9 +384,9 @@ void Popup::Update(const SHORT originalDelta, const bool wrap)
     else if (NewCmdNum > BottomIndex)
     {
         BottomIndex += delta;
-        if (BottomIndex >= _history->GetNumberOfCommands())
+        if (BottomIndex >= (SHORT)_history->GetNumberOfCommands())
         {
-            BottomIndex = (SHORT)(_history->GetNumberOfCommands() - 1);
+            BottomIndex = ((SHORT)_history->GetNumberOfCommands()) - 1i16;
         }
         Scroll = true;
     }
