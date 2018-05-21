@@ -56,13 +56,17 @@ HRESULT CommandHistory::EndPopup()
         return E_FAIL;
     }
 
-    Popup* Popup = PopupList.front();
-    PopupList.pop_front();
-    
-    Popup->End();
+    try
+    {
+        Popup* Popup = PopupList.front();
+        PopupList.pop_front();
 
-    // Free popup structure.
-    delete Popup;
+        Popup->End();
+
+        // Free popup structure.
+        delete Popup;
+    }
+    CATCH_RETURN();
 
     return S_OK;
 }
@@ -345,7 +349,11 @@ void CommandHistory::s_UpdatePopups(const WORD NewAttributes,
         {
             for (const auto Popup : historyList.PopupList)
             {
-                Popup->UpdateStoredColors(NewAttributes, NewPopupAttributes, OldAttributes, OldPopupAttributes);
+                try
+                {
+                    Popup->UpdateStoredColors(NewAttributes, NewPopupAttributes, OldAttributes, OldPopupAttributes);
+                }
+                CATCH_LOG();
             }
         }
     }

@@ -64,10 +64,10 @@ public:
     
     HRESULT DoCallback(COOKED_READ_DATA* const data);
 
-    SHORT Width() const;
-    SHORT Height() const;
+    SHORT Width() const noexcept;
+    SHORT Height() const noexcept;
 
-    COORD GetCursorPosition() const;
+    COORD GetCursorPosition() const noexcept;
 
 private:
 

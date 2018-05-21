@@ -764,21 +764,25 @@ NTSTATUS CommandListPopup(_In_ COOKED_READ_DATA* const CookedReadData)
         PopupSize.X = 40;
         PopupSize.Y = 10;
         
-        const auto Popup = CommandHistory->BeginPopup(CookedReadData->_screenInfo, PopupSize, Popup::PopFunc::CommandList);
-
-        SHORT const CurrentCommand = CommandHistory->LastDisplayed;
-        if (CurrentCommand < (SHORT)(CommandHistory->GetNumberOfCommands() - Popup->Height()))
+        try
         {
-            Popup->BottomIndex = std::max(CurrentCommand, gsl::narrow<SHORT>(Popup->Height() - 1i16));
-        }
-        else
-        {
-            Popup->BottomIndex = (SHORT)(CommandHistory->GetNumberOfCommands() - 1);
-        }
+            const auto Popup = CommandHistory->BeginPopup(CookedReadData->_screenInfo, PopupSize, Popup::PopFunc::CommandList);
 
-        Popup->Draw();
+            SHORT const CurrentCommand = CommandHistory->LastDisplayed;
+            if (CurrentCommand < (SHORT)(CommandHistory->GetNumberOfCommands() - Popup->Height()))
+            {
+                Popup->BottomIndex = std::max(CurrentCommand, gsl::narrow<SHORT>(Popup->Height() - 1i16));
+            }
+            else
+            {
+                Popup->BottomIndex = (SHORT)(CommandHistory->GetNumberOfCommands() - 1);
+            }
 
-        return ProcessCommandListInput(CookedReadData);
+            Popup->Draw();
+
+            return ProcessCommandListInput(CookedReadData);
+        }
+        CATCH_RETURN();
     }
     else
     {
@@ -804,11 +808,15 @@ NTSTATUS CopyFromCharPopup(_In_ COOKED_READ_DATA* CookedReadData)
         PopupSize.X = COPY_FROM_CHAR_PROMPT_LENGTH + 2;
         PopupSize.Y = 1;
 
-        CommandHistory* const CommandHistory = CookedReadData->_CommandHistory;
-        const auto Popup = CommandHistory->BeginPopup(CookedReadData->_screenInfo, PopupSize, Popup::PopFunc::CopyFromChar);
-        Popup->Draw();
+        try
+        {
+            CommandHistory* const CommandHistory = CookedReadData->_CommandHistory;
+            const auto Popup = CommandHistory->BeginPopup(CookedReadData->_screenInfo, PopupSize, Popup::PopFunc::CopyFromChar);
+            Popup->Draw();
 
-        return ProcessCopyFromCharInput(CookedReadData);
+            return ProcessCopyFromCharInput(CookedReadData);
+        }
+        CATCH_RETURN();
     }
     else
     {
@@ -834,11 +842,15 @@ NTSTATUS CopyToCharPopup(_In_ COOKED_READ_DATA* CookedReadData)
         PopupSize.X = COPY_TO_CHAR_PROMPT_LENGTH + 2;
         PopupSize.Y = 1;
 
-        CommandHistory* const CommandHistory = CookedReadData->_CommandHistory;
-        const auto Popup = CommandHistory->BeginPopup(CookedReadData->_screenInfo, PopupSize, Popup::PopFunc::CopyToChar);
-        Popup->Draw();
+        try
+        {
+            CommandHistory* const CommandHistory = CookedReadData->_CommandHistory;
+            const auto Popup = CommandHistory->BeginPopup(CookedReadData->_screenInfo, PopupSize, Popup::PopFunc::CopyToChar);
+            Popup->Draw();
 
-        return ProcessCopyToCharInput(CookedReadData);
+            return ProcessCopyToCharInput(CookedReadData);
+        }
+        CATCH_RETURN();
     }
     else
     {
@@ -864,19 +876,23 @@ HRESULT CommandNumberPopup(_In_ COOKED_READ_DATA* const CookedReadData)
         PopupSize.X = COMMAND_NUMBER_PROMPT_LENGTH + COMMAND_NUMBER_LENGTH;
         PopupSize.Y = 1;
 
-        CommandHistory* const CommandHistory = CookedReadData->_CommandHistory;
-        const auto Popup = CommandHistory->BeginPopup(CookedReadData->_screenInfo, PopupSize, Popup::PopFunc::CommandNumber);
-        Popup->Draw();
+        try
+        {
+            CommandHistory* const CommandHistory = CookedReadData->_CommandHistory;
+            const auto Popup = CommandHistory->BeginPopup(CookedReadData->_screenInfo, PopupSize, Popup::PopFunc::CommandNumber);
+            Popup->Draw();
 
-        // Save the original cursor position in case the user cancels out of the dialog
-        CookedReadData->BeforeDialogCursorPosition = CookedReadData->_screenInfo.GetTextBuffer().GetCursor().GetPosition();
+            // Save the original cursor position in case the user cancels out of the dialog
+            CookedReadData->BeforeDialogCursorPosition = CookedReadData->_screenInfo.GetTextBuffer().GetCursor().GetPosition();
 
-        // Move the cursor into the dialog so the user can type multiple characters for the command number
-        const COORD CursorPosition = Popup->GetCursorPosition();
-        LOG_IF_FAILED(CookedReadData->_screenInfo.SetCursorPosition(CursorPosition, TRUE));
+            // Move the cursor into the dialog so the user can type multiple characters for the command number
+            const COORD CursorPosition = Popup->GetCursorPosition();
+            LOG_IF_FAILED(CookedReadData->_screenInfo.SetCursorPosition(CursorPosition, TRUE));
 
-        // Transfer control to the handler routine
-        return ProcessCommandNumberInput(CookedReadData);
+            // Transfer control to the handler routine
+            return ProcessCommandNumberInput(CookedReadData);
+        }
+        CATCH_RETURN();
     }
     else
     {

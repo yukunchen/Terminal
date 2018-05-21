@@ -498,19 +498,23 @@ void Popup::End()
 // - Passthrough of one of the original popup servicing routines (see cmdline.cpp)
 HRESULT Popup::DoCallback(COOKED_READ_DATA* const data)
 {
-    switch (_callbackOption)
+    try
     {
-    case PopFunc::CommandList:
-        return ProcessCommandListInput(data);
-    case PopFunc::CommandNumber:
-        return ProcessCommandNumberInput(data);
-    case PopFunc::CopyFromChar:
-        return ProcessCopyFromCharInput(data);
-    case PopFunc::CopyToChar:
-        return ProcessCopyToCharInput(data);
-    default:
-        return E_NOTIMPL;
+        switch (_callbackOption)
+        {
+        case PopFunc::CommandList:
+            return ProcessCommandListInput(data);
+        case PopFunc::CommandNumber:
+            return ProcessCommandNumberInput(data);
+        case PopFunc::CopyFromChar:
+            return ProcessCopyFromCharInput(data);
+        case PopFunc::CopyToChar:
+            return ProcessCopyToCharInput(data);
+        default:
+            return E_NOTIMPL;
+        }
     }
+    CATCH_RETURN();
 }
 
 // Routine Description:
@@ -561,7 +565,7 @@ COORD Popup::_CalculateOrigin(const SCREEN_INFORMATION& screenInfo, const COORD 
 // - Helper to return the width of the popup in columns
 // Return Value:
 // - Width of popup inside attached screen buffer.
-SHORT Popup::Width() const
+SHORT Popup::Width() const noexcept
 {
     return _region.Right - _region.Left - 1i16;
 }
@@ -570,7 +574,7 @@ SHORT Popup::Width() const
 // - Helper to return the height of the popup in columns
 // Return Value:
 // - Height of popup inside attached screen buffer.
-SHORT Popup::Height() const
+SHORT Popup::Height() const noexcept
 {
     return _region.Bottom - _region.Top - 1i16;
 }
@@ -580,7 +584,7 @@ SHORT Popup::Height() const
 //   we should overlay the cursor for user input.
 // Return Value:
 // - Coordinate location on the popup where the cursor should be placed.
-COORD Popup::GetCursorPosition() const
+COORD Popup::GetCursorPosition() const noexcept
 {
     COORD CursorPosition;
     CursorPosition.X = (SHORT)(_region.Right - MINIMUM_COMMAND_PROMPT_SIZE);
