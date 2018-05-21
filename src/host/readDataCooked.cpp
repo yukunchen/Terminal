@@ -93,7 +93,7 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
 // - Decrements count of readers waiting on the given handle.
 COOKED_READ_DATA::~COOKED_READ_DATA()
 {
-    CleanUpPopups();
+    CleanUpAllPopups();
 }
 
 gsl::span<wchar_t> COOKED_READ_DATA::SpanWholeBuffer()
@@ -873,16 +873,20 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
     return false;
 }
 
-void COOKED_READ_DATA::CleanUpPopups()
+void COOKED_READ_DATA::EndCurrentPopup()
 {
-    CommandHistory* const CommandHistory = _CommandHistory;
-    if (CommandHistory == nullptr)
+    LOG_IF_FAILED(_CommandHistory->EndPopup(_screenInfo));
+}
+
+void COOKED_READ_DATA::CleanUpAllPopups()
+{
+    if (_CommandHistory == nullptr)
     {
         return;
     }
 
-    while (!CommandHistory->PopupList.empty())
+    while (!_CommandHistory->PopupList.empty())
     {
-        LOG_IF_FAILED(EndPopup(_screenInfo, CommandHistory));
+        LOG_IF_FAILED(_CommandHistory->EndPopup(_screenInfo));
     }
 }

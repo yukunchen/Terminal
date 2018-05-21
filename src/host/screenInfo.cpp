@@ -1643,7 +1643,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeScreenBuffer(const COORD coordNewScreenSize,
     // cancel any popups before resizing or they will not necessarily line up with new buffer positions
     if (nullptr != gci.lpCookedReadData)
     {
-        gci.lpCookedReadData->CleanUpPopups();
+        gci.lpCookedReadData->CleanUpAllPopups();
     }
 
     const bool fWrapText = gci.GetWrapText();

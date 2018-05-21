@@ -40,6 +40,46 @@ CommandHistory* CommandHistory::s_Find(const HANDLE processHandle)
     return nullptr;
 }
 
+[[nodiscard]]
+HRESULT CommandHistory::EndPopup(SCREEN_INFORMATION& screenInfo)
+{
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    if (PopupList.empty())
+    {
+        return E_FAIL;
+    }
+
+    PCLE_POPUP Popup = PopupList.front();
+    PopupList.pop_front();
+
+    // restore previous contents to screen
+    COORD Size;
+    Size.X = Popup->OldScreenSize.X;
+    Size.Y = (SHORT)(Popup->Region.Bottom - Popup->Region.Top + 1);
+
+    SMALL_RECT SourceRect;
+    SourceRect.Left = 0;
+    SourceRect.Top = Popup->Region.Top;
+    SourceRect.Right = Popup->OldScreenSize.X - 1;
+    SourceRect.Bottom = Popup->Region.Bottom;
+
+    LOG_IF_FAILED(WriteScreenBuffer(screenInfo, Popup->OldContents, &SourceRect));
+    WriteToScreen(screenInfo, SourceRect);
+
+    // Free popup structure.
+    delete[] Popup->OldContents;
+    delete Popup;
+    gci.PopupCount--;
+
+    if (gci.PopupCount == 0)
+    {
+        // Notify we're done showing popups.
+        screenInfo.GetTextBuffer().GetCursor().SetIsPopupShown(false);
+    }
+
+    return S_OK;
+}
+
 // Routine Description:
 // - This routine marks the givenCommand history buffer freed.
 // Arguments:
@@ -169,6 +209,8 @@ HRESULT CommandHistory::RetrieveNth(const SHORT index,
 
     std::copy_n(cmd.cbegin(), commandSize, buffer.begin());
 
+    commandSize *= sizeof(wchar_t);
+
     return S_OK;
 }
 
@@ -274,17 +316,19 @@ void CommandHistory::Realloc(const size_t commands)
 
 void CommandHistory::s_ReallocExeToFront(const std::wstring_view appName, const size_t commands)
 {
-    const auto history = s_FindByExe(appName);
-    history->Realloc(commands);
+    for (auto it = s_historyLists.begin(); it != s_historyLists.end(); it++)
+    {
+        if (IsFlagSet(it->Flags, CLE_ALLOCATED) && it->IsAppNameMatch(appName))
+        {
+            CommandHistory backup = *it;
+            backup.Realloc(commands);
 
-    // TODO: cycle to front of list.
-    /*const auto iter = std::find(s_historyLists.begin(), s_historyLists.end(), history);
-    
-    
-    CommandHistory backup = *history;
-    s_historyLists.erase(iter);
-    backup.Realloc(commands);
-    s_historyLists.push_front(backup);*/
+            s_historyLists.erase(it);
+            s_historyLists.push_front(backup);
+
+            return;
+        }
+    }
 }
 
 CommandHistory* CommandHistory::s_FindByExe(const std::wstring_view appName)
@@ -357,24 +401,20 @@ CommandHistory* CommandHistory::s_Allocate(const std::wstring_view appName, cons
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // Reuse a history buffer.  The buffer must be !CLE_ALLOCATED.
     // If possible, the buffer should have the same app name.
-    CommandHistory* BestCandidate = nullptr;
+    std::optional<CommandHistory> BestCandidate;
     bool SameApp = false;
-    for (auto& historyList : s_historyLists)
+
+    for (auto it = s_historyLists.cbegin(); it != s_historyLists.cend(); it++)
     {
-        if (IsFlagClear(historyList.Flags, CLE_ALLOCATED))
+        if (IsFlagClear(it->Flags, CLE_ALLOCATED))
         {
             // use LRU history buffer with same app name
-            if (historyList.IsAppNameMatch(appName))
+            if (it->IsAppNameMatch(appName))
             {
-                BestCandidate = &historyList;
+                BestCandidate = *it;
                 SameApp = true;
+                s_historyLists.erase(it);
                 break;
-            }
-
-            // second best choice is LRU history buffer
-            if (BestCandidate == nullptr)
-            {
-                BestCandidate = &historyList;
             }
         }
     }
@@ -393,9 +433,15 @@ CommandHistory* CommandHistory::s_Allocate(const std::wstring_view appName, cons
         History._processHandle = processHandle;
         return &s_historyLists.emplace_front(History);
     }
+    else
+    {
+        // If there's no space and we matched nothing, take the LRU list (which is the back/last one).
+        BestCandidate = s_historyLists.back();
+        s_historyLists.pop_back();
+    }
 
     // If the app name doesn't match, copy in the new app name and free the old commands.
-    if (BestCandidate)
+    if (BestCandidate.has_value())
     {
         FAIL_FAST_IF_FALSE(BestCandidate->PopupList.empty());
         if (!SameApp)
@@ -408,13 +454,10 @@ CommandHistory* CommandHistory::s_Allocate(const std::wstring_view appName, cons
         BestCandidate->_processHandle = processHandle;
         SetFlag(BestCandidate->Flags, CLE_ALLOCATED);
 
-        // TODO: move to the front of the list
-        /*s_historyLists.erase(std::find(s_historyLists.begin(), s_historyLists.end(), BestCandidate));
-        return &s_historyLists.emplace_front(History);*/
-        return BestCandidate;
+        return &s_historyLists.emplace_front(BestCandidate.value());
     }
 
-    return BestCandidate;
+    return nullptr;
 }
 
 size_t CommandHistory::GetNumberOfCommands() const
@@ -532,6 +575,7 @@ bool CommandHistory::FindMatchingCommand(const std::wstring_view givenCommand,
 
     if (givenCommand.empty())
     {
+        indexFound = 0;
         return true;
     }
 

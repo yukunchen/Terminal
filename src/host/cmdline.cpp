@@ -217,46 +217,6 @@ NTSTATUS BeginPopup(SCREEN_INFORMATION& screenInfo, _In_ CommandHistory* Command
     return STATUS_SUCCESS;
 }
 
-[[nodiscard]]
-NTSTATUS EndPopup(SCREEN_INFORMATION& screenInfo, _In_ CommandHistory* history)
-{
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    if (history->PopupList.empty())
-    {
-        return STATUS_UNSUCCESSFUL;
-    }
-   
-    PCLE_POPUP Popup = history->PopupList.front();
-    history->PopupList.pop_front();
-
-    // restore previous contents to screen
-    COORD Size;
-    Size.X = Popup->OldScreenSize.X;
-    Size.Y = (SHORT)(Popup->Region.Bottom - Popup->Region.Top + 1);
-
-    SMALL_RECT SourceRect;
-    SourceRect.Left = 0;
-    SourceRect.Top = Popup->Region.Top;
-    SourceRect.Right = Popup->OldScreenSize.X - 1;
-    SourceRect.Bottom = Popup->Region.Bottom;
-
-    LOG_IF_FAILED(WriteScreenBuffer(screenInfo, Popup->OldContents, &SourceRect));
-    WriteToScreen(screenInfo, SourceRect);
-
-    // Free popup structure.
-    delete[] Popup->OldContents;
-    delete Popup;
-    gci.PopupCount--;
-
-    if (gci.PopupCount == 0)
-    {
-        // Notify we're done showing popups.
-        screenInfo.GetTextBuffer().GetCursor().SetIsPopupShown(false);
-    }
-
-    return STATUS_SUCCESS;
-}
-
 CommandLine::CommandLine()
 {
 
@@ -483,7 +443,7 @@ NTSTATUS ProcessCommandListInput(_In_ COOKED_READ_DATA* const pCookedReadData)
                 break;
             }
             case VK_ESCAPE:
-                LOG_IF_FAILED(EndPopup(pCookedReadData->_screenInfo, pCommandHistory));
+                pCookedReadData->EndCurrentPopup();
                 return CONSOLE_STATUS_WAIT_NO_BLOCK;
             case VK_UP:
                 UpdateCommandListPopup(-1, &Popup->CurrentCommand, pCommandHistory, Popup, pCookedReadData->_screenInfo, 0);
@@ -528,7 +488,7 @@ NTSTATUS ProcessCommandListInput(_In_ COOKED_READ_DATA* const pCookedReadData)
             case VK_LEFT:
             case VK_RIGHT:
                 Index = Popup->CurrentCommand;
-                LOG_IF_FAILED(EndPopup(pCookedReadData->_screenInfo, pCommandHistory));
+                pCookedReadData->EndCurrentPopup();
                 SetCurrentCommandLine(pCookedReadData, (SHORT)Index);
                 return CONSOLE_STATUS_WAIT_NO_BLOCK;
             default:
@@ -539,7 +499,7 @@ NTSTATUS ProcessCommandListInput(_In_ COOKED_READ_DATA* const pCookedReadData)
         {
             DWORD LineCount = 1;
             Index = Popup->CurrentCommand;
-            LOG_IF_FAILED(EndPopup(pCookedReadData->_screenInfo, pCommandHistory));
+            pCookedReadData->EndCurrentPopup();
             SetCurrentCommandLine(pCookedReadData, (SHORT)Index);
             pCookedReadData->ProcessInput(UNICODE_CARRIAGERETURN, 0, Status);
             // complete read
@@ -661,12 +621,12 @@ NTSTATUS ProcessCopyFromCharInput(_In_ COOKED_READ_DATA* const pCookedReadData)
             switch (Char)
             {
             case VK_ESCAPE:
-                LOG_IF_FAILED(EndPopup(pCookedReadData->_screenInfo, pCookedReadData->_CommandHistory));
+                pCookedReadData->EndCurrentPopup();
                 return CONSOLE_STATUS_WAIT_NO_BLOCK;
             }
         }
 
-        LOG_IF_FAILED(EndPopup(pCookedReadData->_screenInfo, pCookedReadData->_CommandHistory));
+        pCookedReadData->EndCurrentPopup();
 
         size_t i;  // char index (not byte)
         // delete from cursor up to specified char
@@ -752,12 +712,12 @@ NTSTATUS ProcessCopyToCharInput(_In_ COOKED_READ_DATA* const pCookedReadData)
             switch (Char)
             {
             case VK_ESCAPE:
-                LOG_IF_FAILED(EndPopup(pCookedReadData->_screenInfo, pCookedReadData->_CommandHistory));
+                pCookedReadData->EndCurrentPopup();
                 return CONSOLE_STATUS_WAIT_NO_BLOCK;
             }
         }
 
-        LOG_IF_FAILED(EndPopup(pCookedReadData->_screenInfo, pCookedReadData->_CommandHistory));
+        pCookedReadData->EndCurrentPopup();
 
         // copy up to specified char
         const auto LastCommand = pCookedReadData->_CommandHistory->GetLastCommand();
@@ -896,10 +856,10 @@ NTSTATUS ProcessCommandNumberInput(_In_ COOKED_READ_DATA* const pCookedReadData)
         }
         else if (Char == (WCHAR)VK_ESCAPE)
         {
-            LOG_IF_FAILED(EndPopup(pCookedReadData->_screenInfo, pCookedReadData->_CommandHistory));
+            pCookedReadData->EndCurrentPopup();
             if (!CommandHistory->PopupList.empty())
             {
-                LOG_IF_FAILED(EndPopup(pCookedReadData->_screenInfo, pCookedReadData->_CommandHistory));
+                pCookedReadData->EndCurrentPopup();
             }
 
             // Note that CookedReadData's OriginalCursorPosition is the position before ANY text was entered on the edit line.
@@ -927,10 +887,10 @@ NTSTATUS ProcessCommandNumberInput(_In_ COOKED_READ_DATA* const pCookedReadData)
                 CommandNumber = (SHORT)(pCookedReadData->_CommandHistory->GetNumberOfCommands() - 1);
             }
 
-            LOG_IF_FAILED(EndPopup(pCookedReadData->_screenInfo, pCookedReadData->_CommandHistory));
+            pCookedReadData->EndCurrentPopup();
             if (!CommandHistory->PopupList.empty())
             {
-                LOG_IF_FAILED(EndPopup(pCookedReadData->_screenInfo, pCookedReadData->_CommandHistory));
+                pCookedReadData->EndCurrentPopup();
             }
             SetCurrentCommandLine(pCookedReadData, CommandNumber);
         }

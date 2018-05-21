@@ -65,7 +65,7 @@ public:
     void Empty();
 
     [[nodiscard]]
-    NTSTATUS EndPopup(SCREEN_INFORMATION& screenInfo);
+    HRESULT EndPopup(SCREEN_INFORMATION& screenInfo);
 
     bool AtFirstCommand() const;
     bool AtLastCommand() const;
