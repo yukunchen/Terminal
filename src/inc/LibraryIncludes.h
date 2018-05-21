@@ -34,6 +34,7 @@
 #include <utility>
 #include <vector>
 #include <unordered_map>
+#include <iterator>
 
 // WIL
 
@@ -52,4 +53,3 @@
 #include <gsl/gsl>
 
 #pragma warning(pop)
-

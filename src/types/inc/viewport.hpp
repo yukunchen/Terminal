@@ -56,6 +56,7 @@ namespace Microsoft::Console::Types
         bool TrimToViewport(_Inout_ SMALL_RECT* const psr) const noexcept;
         void ConvertToOrigin(_Inout_ SMALL_RECT* const psr) const noexcept;
         void ConvertToOrigin(_Inout_ COORD* const pcoord) const noexcept;
+        [[nodiscard]]
         Viewport ConvertToOrigin(const Viewport& other) const noexcept;
         void ConvertFromOrigin(_Inout_ SMALL_RECT* const psr) const noexcept;
         void ConvertFromOrigin(_Inout_ COORD* const pcoord) const noexcept;

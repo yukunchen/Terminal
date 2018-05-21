@@ -8,9 +8,9 @@
 #include "inc/Viewport.hpp"
 
 using namespace Microsoft::Console::Types;
-    
+
 Viewport::Viewport(const SMALL_RECT sr) noexcept :
-    _sr(sr) 
+    _sr(sr)
 {
 
 }
@@ -27,7 +27,7 @@ Viewport Viewport::FromInclusive(const SMALL_RECT sr) noexcept
 }
 
 Viewport Viewport::FromExclusive(const SMALL_RECT sr) noexcept
-{ 
+{
     SMALL_RECT _sr = sr;
     _sr.Bottom -= 1;
     _sr.Right -= 1;
@@ -45,8 +45,8 @@ Viewport Viewport::FromExclusive(const SMALL_RECT sr) noexcept
 Viewport Viewport::FromDimensions(const COORD origin,
                                   const short width,
                                   const short height) noexcept
-{ 
-    return Viewport::FromExclusive({ origin.X, origin.Y, 
+{
+    return Viewport::FromExclusive({ origin.X, origin.Y,
                                      origin.X + width, origin.Y + height });
 }
 
@@ -60,8 +60,8 @@ Viewport Viewport::FromDimensions(const COORD origin,
 // - a new Viewport at the given origin, with the given dimensions.
 Viewport Viewport::FromDimensions(const COORD origin,
                                   const COORD dimensions) noexcept
-{ 
-    return Viewport::FromExclusive({ origin.X, origin.Y, 
+{
+    return Viewport::FromExclusive({ origin.X, origin.Y,
                                      origin.X + dimensions.X, origin.Y + dimensions.Y });
 }
 
@@ -72,8 +72,8 @@ Viewport Viewport::FromDimensions(const COORD origin,
 // Return Value:
 // - a 1x1 Viewport at the given coordinate
 Viewport Viewport::FromCoord(const COORD origin) noexcept
-{ 
-    return Viewport::FromInclusive({ origin.X, origin.Y, 
+{
+    return Viewport::FromInclusive({ origin.X, origin.Y,
                                      origin.X, origin.Y });
 }
 
@@ -176,7 +176,7 @@ bool Viewport::TrimToViewport(_Inout_ SMALL_RECT* const psr) const noexcept
 // Return Value:
 // - <none>
 void Viewport::ConvertToOrigin(_Inout_ SMALL_RECT* const psr) const noexcept
-{   
+{
     const short dx = Left();
     const short dy = Top();
     psr->Left -= dx;
@@ -206,7 +206,7 @@ void Viewport::ConvertToOrigin(_Inout_ COORD* const pcoord) const noexcept
 // Return Value:
 // - <none>
 void Viewport::ConvertFromOrigin(_Inout_ SMALL_RECT* const psr) const noexcept
-{    
+{
     const short dx = Left();
     const short dy = Top();
     psr->Left += dx;
@@ -276,6 +276,7 @@ Viewport Viewport::ToOrigin() const noexcept
 // - other: the viewport to convert to this coordinate space
 // Return Value:
 // - the input viewport in a the coordinate space with origin at (this.Top, this.Left)
+[[nodiscard]]
 Viewport Viewport::ConvertToOrigin(const Viewport& other) const noexcept
 {
     Viewport returnVal = other;

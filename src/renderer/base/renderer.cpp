@@ -428,6 +428,7 @@ void Renderer::TriggerTitleChange()
     const std::wstring newTitle = _pData->GetConsoleTitle();
     // Only change the title if it's actually different from the last frame.
     _titleChanged = _lastTitle != newTitle;
+    _NotifyPaintFrame();
 }
 
 // Routine Description:
@@ -668,15 +669,18 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
             coordTarget.X = (SHORT)iLeft - view.Left();
             coordTarget.Y = iRow - view.Top();
 
+            // Determine if this line wrapped:
+            const bool lineWrapped = Row.GetCharRow().WasWrapForced() && iRight == static_cast<size_t>(Row.GetCharRow().MeasureRight());
+
             // Now draw it.
-            _PaintBufferOutputRasterFontHelper(pEngine, Row, pwsLine, it, itEnd, cchLine, iLeft, coordTarget);
+            _PaintBufferOutputRasterFontHelper(pEngine, Row, pwsLine, it, itEnd, cchLine, iLeft, coordTarget, lineWrapped);
 
 #if DBG
             if (_fDebug)
             {
                 // Draw a frame shape around the last character of a wrapped row to identify where there are
                 // soft wraps versus hard newlines.
-                if (iRight == static_cast<size_t>(Row.GetCharRow().MeasureRight()) && Row.GetCharRow().WasWrapForced())
+                if (lineWrapped)
                 {
                     IRenderEngine::GridLines lines = IRenderEngine::GridLines::Right | IRenderEngine::GridLines::Bottom;
                     COORD coordDebugTarget;
@@ -712,7 +716,8 @@ void Renderer::_PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEng
                                                   const CharRow::const_iterator itEnd,
                                                   _In_ size_t cchLine,
                                                   _In_ size_t iFirstAttr,
-                                                  const COORD coordTarget)
+                                                  const COORD coordTarget,
+                                                  const bool lineWrapped)
 {
     const FontInfo* const pFontInfo = _pData->GetFontInfo();
 
@@ -771,7 +776,7 @@ void Renderer::_PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEng
     }
 
     // If we are using a TrueType font, just call the next helper down.
-    _PaintBufferOutputColorHelper(pEngine, Row, pwsData, it, itEnd, cchLine, iFirstAttr, coordTarget);
+    _PaintBufferOutputColorHelper(pEngine, Row, pwsData, it, itEnd, cchLine, iFirstAttr, coordTarget, lineWrapped);
 
     if (pwsConvert != nullptr)
     {
@@ -801,7 +806,8 @@ void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
                                              const CharRow::const_iterator itEnd,
                                              _In_ size_t cchLine,
                                              _In_ size_t iFirstAttr,
-                                             const COORD coordTarget)
+                                             const COORD coordTarget,
+                                             const bool lineWrapped)
 {
     // We may have to write this string in several pieces based on the colors.
 
@@ -836,7 +842,7 @@ void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
         }
 
         // Draw the line via double-byte helper to strip duplicates
-        LOG_IF_FAILED(_PaintBufferOutputDoubleByteHelper(pEngine, pwsSegment, itSegment, itEnd, cchSegment, coordOffset));
+        LOG_IF_FAILED(_PaintBufferOutputDoubleByteHelper(pEngine, pwsSegment, itSegment, itEnd, cchSegment, coordOffset, lineWrapped));
 
         // Draw the grid shapes without the double-byte helper as they need to be exactly proportional to what's in the buffer
         if (_pData->IsGridLineDrawingAllowed())
@@ -874,7 +880,8 @@ HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const p
                                                      const CharRow::const_iterator it,
                                                      const CharRow::const_iterator itEnd,
                                                      const size_t cchLine,
-                                                     const COORD coordTarget)
+                                                     const COORD coordTarget,
+                                                     const bool lineWrapped)
 {
     // We need the ability to move the target back to the left slightly in case we start with a trailing byte character.
     COORD coordTargetAdjustable = coordTarget;
@@ -933,7 +940,7 @@ HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const p
     }
 
     // Draw the line
-    RETURN_IF_FAILED(pEngine->PaintBufferLine(pwsSegment.get(), rgSegmentWidth.get(), std::min(cchSegment, cchLine), coordTargetAdjustable, fTrimLeft));
+    RETURN_IF_FAILED(pEngine->PaintBufferLine(pwsSegment.get(), rgSegmentWidth.get(), std::min(cchSegment, cchLine), coordTargetAdjustable, fTrimLeft, lineWrapped));
 
     return S_OK;
 }
@@ -1110,7 +1117,8 @@ void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
                 coordTarget.X = viewDirty.Left();
                 coordTarget.Y = iRow;
 
-                _PaintBufferOutputRasterFontHelper(pEngine, Row, pwsLine, it, itEnd, cchLine, viewDirty.Left() - placementInfo.coordConView.X, coordTarget);
+                _PaintBufferOutputRasterFontHelper(pEngine, Row, pwsLine, it, itEnd, cchLine, viewDirty.Left() - placementInfo.coordConView.X, coordTarget, false);
+
             }
         }
     }
@@ -1221,7 +1229,7 @@ std::vector<SMALL_RECT> Renderer::_GetSelectionRects() const
 
     for (auto& rect : rects)
     {
-        view.ConvertToOrigin(rect);
+        rect = view.ConvertToOrigin(rect).ToInclusive();
 
         // hopefully temporary, we should be receiving the right selection sizes without correction.
         rect.Right++;

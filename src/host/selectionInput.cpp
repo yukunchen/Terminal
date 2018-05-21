@@ -708,7 +708,7 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
                     Search search(screenInfo, str, Search::Direction::Forward, Search::Sensitivity::CaseInsensitive);
                     while (search.FindNext())
                     {
-                        search.Color(ulAttr);
+                        search.Color(TextAttribute{ static_cast<WORD>(ulAttr) });
                     }
                 }
             }
@@ -716,7 +716,7 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
         }
         else
         {
-            ColorSelection(_srSelectionRect, ulAttr);
+            ColorSelection(_srSelectionRect, TextAttribute{ static_cast<WORD>(ulAttr) });
             ClearSelection();
         }
 

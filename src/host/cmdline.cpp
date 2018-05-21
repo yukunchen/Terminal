@@ -177,11 +177,14 @@ void DeleteCommandLine(_Inout_ COOKED_READ_DATA* const pCookedReadData, const bo
         CharsToWrite++;
     }
 
-    LOG_IF_FAILED(FillOutput(pCookedReadData->_screenInfo,
-                             UNICODE_SPACE,
-                             coordOriginalCursor,
-                             CONSOLE_FALSE_UNICODE,    // faster than real unicode
-                             &CharsToWrite));
+    try
+    {
+        FillOutputW(pCookedReadData->_screenInfo,
+                    { UNICODE_SPACE },
+                    coordOriginalCursor,
+                    CharsToWrite);
+    }
+    CATCH_LOG();
 
     if (fUpdateFields)
     {
@@ -1201,6 +1204,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                             {
                                 if (fStartFromDelim != IsWordDelim(*NextWord))
                                 {
+
                                     break;
                                 }
                             }

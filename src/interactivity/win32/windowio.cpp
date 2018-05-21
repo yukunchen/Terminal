@@ -753,6 +753,7 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
                     LOG_HR(wil::ResultFromCaughtException());
                 }
             }
+            pSelection->MouseDown();
         }
         else if ((Message == WM_RBUTTONDOWN) || (Message == WM_RBUTTONDBLCLK))
         {

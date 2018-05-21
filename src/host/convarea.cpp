@@ -132,7 +132,7 @@ HRESULT ImeComposeData(std::wstring_view text,
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         gci.LockConsole();
         auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
-        
+
         ConsoleImeInfo* const pIme = &gci.ConsoleIme;
         pIme->WriteCompMessage(text, attributes, colorArray);
     }
@@ -164,7 +164,7 @@ HRESULT ImeComposeResult(std::wstring_view text)
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         gci.LockConsole();
         auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
-        
+
         ConsoleImeInfo* const pIme = &gci.ConsoleIme;
         pIme->WriteResultMessage(text);
     }

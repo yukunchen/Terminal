@@ -99,7 +99,8 @@ HRESULT VtEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
                                   _In_reads_(cchLine) const unsigned char* const rgWidths,
                                   const size_t cchLine,
                                   const COORD coord,
-                                  const bool /*fTrimLeft*/)
+                                  const bool /*fTrimLeft*/,
+                                  const bool /*lineWrapped*/)
 {
     return VtEngine::_PaintAsciiBufferLine(pwsLine, rgWidths, cchLine, coord);
 }
@@ -293,7 +294,7 @@ HRESULT VtEngine::_PaintAsciiBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLin
         RETURN_IF_FAILED(ShortAdd(totalWidth, static_cast<short>(rgWidths[i]), &totalWidth));
     }
 
-    std::wstring wstr = std::wstring(pwsLine);
+    std::wstring wstr = std::wstring(pwsLine, cchLine);
     RETURN_IF_FAILED(VtEngine::_WriteTerminalAscii(wstr));
 
     // Update our internal tracker of the cursor's position

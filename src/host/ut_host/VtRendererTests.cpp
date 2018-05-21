@@ -106,6 +106,8 @@ class Microsoft::Console::Render::VtRendererTest
     TEST_METHOD(WinTelnetTestColors);
     TEST_METHOD(WinTelnetTestCursor);
 
+    TEST_METHOD(TestWrapping);
+
     void Test16Colors(VtEngine* engine);
 
     std::deque<std::string> qExpectedInput;
@@ -605,7 +607,7 @@ void VtRendererTest::Xterm256TestCursor()
 
         const wchar_t* const line = L"asdfghjkl";
         const unsigned char rgWidths[] = {1, 1, 1, 1, 1, 1, 1, 1, 1};
-        VERIFY_SUCCEEDED(engine->PaintBufferLine(line, rgWidths, 9, {1,1}, false));
+        VERIFY_SUCCEEDED(engine->PaintBufferLine(line, rgWidths, 9, {1,1}, false, false));
 
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
         VERIFY_SUCCEEDED(engine->_MoveCursor({10, 1}));
@@ -951,7 +953,7 @@ void VtRendererTest::XtermTestCursor()
 
         const wchar_t* const line = L"asdfghjkl";
         const unsigned char rgWidths[] = {1, 1, 1, 1, 1, 1, 1, 1, 1};
-        VERIFY_SUCCEEDED(engine->PaintBufferLine(line, rgWidths, 9, {1,1}, false));
+        VERIFY_SUCCEEDED(engine->PaintBufferLine(line, rgWidths, 9, {1,1}, false, false));
 
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
         VERIFY_SUCCEEDED(engine->_MoveCursor({10, 1}));
@@ -1187,7 +1189,7 @@ void VtRendererTest::WinTelnetTestCursor()
 
         const wchar_t* const line = L"asdfghjkl";
         const unsigned char rgWidths[] = {1, 1, 1, 1, 1, 1, 1, 1, 1};
-        VERIFY_SUCCEEDED(engine->PaintBufferLine(line, rgWidths, 9, {1,1}, false));
+        VERIFY_SUCCEEDED(engine->PaintBufferLine(line, rgWidths, 9, {1,1}, false, false));
 
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
         VERIFY_SUCCEEDED(engine->_MoveCursor({10, 1}));
@@ -1205,5 +1207,41 @@ void VtRendererTest::WinTelnetTestCursor()
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
         VERIFY_SUCCEEDED(engine->_MoveCursor({10, 1}));
         WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
+    });
+}
+
+void VtRendererTest::TestWrapping()
+{
+    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), p, SetUpViewport(), g_ColorTable, static_cast<WORD>(COLOR_TABLE_SIZE));
+    auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
+    engine->SetTestCallback(pfn);
+
+    // Verify the first paint does not emit a clear and go home
+    qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
+    TestPaint(*engine, [&]() {
+        WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
+    });
+
+    Viewport view = SetUpViewport();
+
+    TestPaintXterm(*engine, [&]()
+    {
+        Log::Comment(NoThrowString().Format(
+            L"Painting a line that wrapped, then painting another line, and "
+            L"making sure we don't manually move the cursor between those paints."
+        ));
+        qExpectedInput.push_back("\x1b[H");
+        VERIFY_SUCCEEDED(engine->_MoveCursor({0, 0}));
+
+        qExpectedInput.push_back("asdfghjkl");
+        qExpectedInput.push_back("zxcvbnm,.");
+
+        const wchar_t* const line1 = L"asdfghjkl";
+        const wchar_t* const line2 = L"zxcvbnm,.";
+        const unsigned char rgWidths[] = {1, 1, 1, 1, 1, 1, 1, 1, 1};
+        VERIFY_SUCCEEDED(engine->PaintBufferLine(line1, rgWidths, 9, {0,0}, false, true));
+        VERIFY_SUCCEEDED(engine->PaintBufferLine(line2, rgWidths, 9, {0,1}, false, true));
+
     });
 }

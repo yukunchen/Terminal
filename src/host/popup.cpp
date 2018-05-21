@@ -128,22 +128,18 @@ void Popup::_DrawBorder()
     COORD WriteCoord;
     WriteCoord.X = _region.Left;
     WriteCoord.Y = _region.Top;
-    size_t Length = Width() + 2;
-    LOG_IF_FAILED(FillOutput(_screenInfo, Attributes.GetLegacyAttributes(), WriteCoord, CONSOLE_ATTRIBUTE, &Length));
+    FillOutputAttributes(_screenInfo, Attributes, WriteCoord, Width() + 2);
 
     // draw upper left corner
-    Length = 1;
-    LOG_IF_FAILED(FillOutput(_screenInfo, _screenInfo.LineChar[UPPER_LEFT_CORNER], WriteCoord, CONSOLE_REAL_UNICODE, &Length));
+    FillOutputW(_screenInfo, { _screenInfo.LineChar[UPPER_LEFT_CORNER] }, WriteCoord, 1);
 
     // draw upper bar
     WriteCoord.X += 1;
-    Length = Width();
-    LOG_IF_FAILED(FillOutput(_screenInfo, _screenInfo.LineChar[HORIZONTAL_LINE], WriteCoord, CONSOLE_REAL_UNICODE, &Length));
+    FillOutputW(_screenInfo, { _screenInfo.LineChar[HORIZONTAL_LINE] }, WriteCoord, Width());
 
     // draw upper right corner
     WriteCoord.X = _region.Right;
-    Length = 1;
-    LOG_IF_FAILED(FillOutput(_screenInfo, _screenInfo.LineChar[UPPER_RIGHT_CORNER], WriteCoord, CONSOLE_REAL_UNICODE, &Length));
+    FillOutputW(_screenInfo, { _screenInfo.LineChar[UPPER_RIGHT_CORNER] }, WriteCoord, 1);
 
     for (SHORT i = 0; i < Height(); i++)
     {
@@ -151,36 +147,31 @@ void Popup::_DrawBorder()
         WriteCoord.X = _region.Left;
 
         // fill attributes
-        Length = Width() + 2;
-        LOG_IF_FAILED(FillOutput(_screenInfo, Attributes.GetLegacyAttributes(), WriteCoord, CONSOLE_ATTRIBUTE, &Length));
-        Length = 1;
-        LOG_IF_FAILED(FillOutput(_screenInfo, _screenInfo.LineChar[VERTICAL_LINE], WriteCoord, CONSOLE_REAL_UNICODE, &Length));
+        FillOutputAttributes(_screenInfo, Attributes, WriteCoord, Width() + 2);
+
+        FillOutputW(_screenInfo, { _screenInfo.LineChar[VERTICAL_LINE] }, WriteCoord, 1);
+
         WriteCoord.X = _region.Right;
-        Length = 1;
-        LOG_IF_FAILED(FillOutput(_screenInfo, _screenInfo.LineChar[VERTICAL_LINE], WriteCoord, CONSOLE_REAL_UNICODE, &Length));
+        FillOutputW(_screenInfo, { _screenInfo.LineChar[VERTICAL_LINE] }, WriteCoord, 1);
     }
 
     // _DrawBorder bottom line.
     // Fill attributes of top line.
     WriteCoord.X = _region.Left;
     WriteCoord.Y = _region.Bottom;
-    Length = Width() + 2;
-    LOG_IF_FAILED(FillOutput(_screenInfo, Attributes.GetLegacyAttributes(), WriteCoord, CONSOLE_ATTRIBUTE, &Length));
+    FillOutputAttributes(_screenInfo, Attributes, WriteCoord, Width() + 2);
 
     // _DrawBorder bottom left corner.
-    Length = 1;
     WriteCoord.X = _region.Left;
-    LOG_IF_FAILED(FillOutput(_screenInfo, _screenInfo.LineChar[BOTTOM_LEFT_CORNER], WriteCoord, CONSOLE_REAL_UNICODE, &Length));
+    FillOutputW(_screenInfo, { _screenInfo.LineChar[BOTTOM_LEFT_CORNER] }, WriteCoord, 1);
 
     // _DrawBorder lower bar.
     WriteCoord.X += 1;
-    Length = Width();
-    LOG_IF_FAILED(FillOutput(_screenInfo, _screenInfo.LineChar[HORIZONTAL_LINE], WriteCoord, CONSOLE_REAL_UNICODE, &Length));
+    FillOutputW(_screenInfo, { _screenInfo.LineChar[HORIZONTAL_LINE] }, WriteCoord, Width());
 
     // draw lower right corner
     WriteCoord.X = _region.Right;
-    Length = 1;
-    LOG_IF_FAILED(FillOutput(_screenInfo, _screenInfo.LineChar[BOTTOM_RIGHT_CORNER], WriteCoord, CONSOLE_REAL_UNICODE, &Length));
+    FillOutputW(_screenInfo, { _screenInfo.LineChar[BOTTOM_RIGHT_CORNER] }, WriteCoord, 1);
 }
 
 // Routine Description:
@@ -198,16 +189,15 @@ void Popup::_DrawPrompt(const UINT id)
     size_t lStringLength = Width();
     for (SHORT i = 0; i < Height(); i++)
     {
-        LOG_IF_FAILED(FillOutput(_screenInfo,
-                                 Attributes.GetLegacyAttributes(),
-                                 WriteCoord,
-                                 CONSOLE_ATTRIBUTE,
-                                 &lStringLength));
-        LOG_IF_FAILED(FillOutput(_screenInfo,
-                                 UNICODE_SPACE,
-                                 WriteCoord,
-                                 CONSOLE_FALSE_UNICODE,   // faster than real unicode
-                                 &lStringLength));
+        lStringLength = gsl::narrow<ULONG>(FillOutputAttributes(_screenInfo,
+                                                                Attributes,
+                                                                WriteCoord,
+                                                                static_cast<size_t>(lStringLength)));
+
+        lStringLength = gsl::narrow<ULONG>(FillOutputW(_screenInfo,
+                                                       { UNICODE_SPACE },
+                                                       WriteCoord,
+                                                       static_cast<size_t>(lStringLength)));
 
         WriteCoord.Y += 1;
     }
@@ -237,16 +227,14 @@ void Popup::_DrawList()
     size_t lStringLength = Width();
     for (SHORT i = 0; i < Height(); ++i)
     {
-        LOG_IF_FAILED(FillOutput(_screenInfo,
-                                 Attributes.GetLegacyAttributes(),
-                                 WriteCoord,
-                                 CONSOLE_ATTRIBUTE,
-                                 &lStringLength));
-        LOG_IF_FAILED(FillOutput(_screenInfo,
-                                 UNICODE_SPACE,
-                                 WriteCoord,
-                                 CONSOLE_FALSE_UNICODE,   // faster than real unicode
-                                 &lStringLength));
+        lStringLength = FillOutputAttributes(_screenInfo,
+                                             Attributes,
+                                             WriteCoord,
+                                             lStringLength);
+        lStringLength = FillOutputW(_screenInfo,
+                                    { UNICODE_SPACE },
+                                    WriteCoord,
+                                    lStringLength);
         WriteCoord.Y += 1;
     }
 
@@ -337,7 +325,7 @@ void Popup::_DrawList()
             // inverted attributes
             WORD const attr = (WORD)(((PopupLegacyAttributes << 4) & 0xf0) | ((PopupLegacyAttributes >> 4) & 0x0f));
             lStringLength = Width();
-            LOG_IF_FAILED(FillOutput(_screenInfo, attr, WriteCoord, CONSOLE_ATTRIBUTE, &lStringLength));
+            lStringLength = FillOutputAttributes(_screenInfo, attr, WriteCoord, lStringLength);
         }
 
         WriteCoord.Y += 1;
@@ -438,14 +426,14 @@ void Popup::_UpdateHighlight(const SHORT OldCurrentCommand, const SHORT NewCurre
     size_t lStringLength = Width();
 
     WriteCoord.Y = (SHORT)(_region.Top + 1 + OldCurrentCommand - TopIndex);
-    LOG_IF_FAILED(FillOutput(_screenInfo, PopupLegacyAttributes, WriteCoord, CONSOLE_ATTRIBUTE, &lStringLength));
+    lStringLength = FillOutputAttributes(_screenInfo, PopupLegacyAttributes, WriteCoord, lStringLength);
 
     // highlight new command
     WriteCoord.Y = (SHORT)(_region.Top + 1 + NewCurrentCommand - TopIndex);
 
     // inverted attributes
     WORD const attr = (WORD)(((PopupLegacyAttributes << 4) & 0xf0) | ((PopupLegacyAttributes >> 4) & 0x0f));
-    LOG_IF_FAILED(FillOutput(_screenInfo, attr, WriteCoord, CONSOLE_ATTRIBUTE, &lStringLength));
+    lStringLength = FillOutputAttributes(_screenInfo, attr, WriteCoord, lStringLength);
 }
 
 // Routine Description:
