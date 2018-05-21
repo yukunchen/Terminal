@@ -34,14 +34,14 @@ public:
         CaseSensitive
     };
 
-    Search(const SCREEN_INFORMATION& ScreenInfo, 
-           const std::wstring& str, 
-           const Direction dir, 
+    Search(const SCREEN_INFORMATION& ScreenInfo,
+           const std::wstring& str,
+           const Direction dir,
            const Sensitivity sensitivity);
-        
+
     bool FindNext();
     void Select() const;
-    void Color(const ULONG ulAttr) const;
+    void Color(const TextAttribute attr) const;
 
 private:
 
@@ -71,4 +71,3 @@ private:
     friend class SearchTests;
 #endif
 };
-

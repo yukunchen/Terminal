@@ -509,11 +509,10 @@ void Selection::ClearSelection(const bool fStartingNewSelection)
 //   It is assumed to already be in a proper selecting state and the given rectangle should be highlighted with the given color unconditionally.
 // Arguments:
 // - psrRect - Rectangular area to fill with color
-// - ulAttr - The color attributes to apply
-void Selection::ColorSelection(const SMALL_RECT& srRect, const ULONG ulAttr)
+// - attr - The color attributes to apply
+void Selection::ColorSelection(const SMALL_RECT& srRect, const TextAttribute attr)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    FAIL_FAST_IF_FALSE(ulAttr <= 0xff);
 
     // Read selection rectangle, assumed already clipped to buffer.
     SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
@@ -533,7 +532,7 @@ void Selection::ColorSelection(const SMALL_RECT& srRect, const ULONG ulAttr)
 
         try
         {
-            FillOutputAttributes(screenInfo, static_cast<WORD>(ulAttr), coordTarget, cchWrite);
+            FillOutputAttributes(screenInfo, attr, coordTarget, cchWrite);
         }
         CATCH_LOG();
     }
@@ -546,8 +545,8 @@ void Selection::ColorSelection(const SMALL_RECT& srRect, const ULONG ulAttr)
 // Arguments:
 // - coordSelectionStart - Anchor point (start of selection) for the region to be colored
 // - coordSelectionEnd - Other point referencing the rectangle inscribing the selection area
-// - ulAttr - Color to apply to region.
-void Selection::ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const ULONG ulAttr)
+// - attr - Color to apply to region.
+void Selection::ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute attr)
 {
     // Make a rectangle for the region as if it were selected by a mouse.
     // We will use the first one as the "anchor" to represent where the mouse went down.
@@ -563,7 +562,7 @@ void Selection::ColorSelection(const COORD coordSelectionStart, const COORD coor
         const auto rectangles = s_GetSelectionRects(srSelection, coordSelectionStart, true);
         for (const auto& rect : rectangles)
         {
-            ColorSelection(rect, ulAttr);
+            ColorSelection(rect, attr);
         }
     }
     CATCH_LOG();
