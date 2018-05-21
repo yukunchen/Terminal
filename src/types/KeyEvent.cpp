@@ -153,7 +153,7 @@ bool KeyEvent::IsCommandLineEditingKey() const noexcept
 // - None
 // Return Value:
 // - true if this key has special relevance to popups, false otherwise
-bool KeyEvent::IsCommandLinePopupKey() const noexcept
+bool KeyEvent::IsPopupKey() const noexcept
 {
     if (!IsAltPressed() && !IsCtrlPressed())
     {

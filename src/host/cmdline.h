@@ -13,13 +13,15 @@ Author:
 Revision History:
 - Mike Griese (migrie) Jan 2018:
     Refactored the history and alias functionality into their own files.
+- Michael Niksa (miniksa) May 2018:
+    Split apart popup information. Started encapsulating command line things. Removed 0 length buffers.
 Notes:
     The input model for the command line editing popups is complex.
     Here is the relevant pseudocode:
 
     CookedReadWaitRoutine
         if (CookedRead->Popup)
-            Status = (*CookedRead->Popup->PopupInputRoutine)();
+            Status = (*CookedRead->Popup->Callback)();
             if (Status == CONSOLE_STATUS_READ_COMPLETE)
                 return STATUS_SUCCESS;
             return Status;
@@ -32,9 +34,9 @@ Notes:
 
     ProcessCommandLine
         if F7
-            return CommandLinePopup
+            return Popup
 
-    CommandLinePopup
+    Popup
         draw popup
         return ProcessCommandListInput
 
@@ -61,23 +63,6 @@ Notes:
 
 #define DEFAULT_NUMBER_OF_COMMANDS 25
 #define DEFAULT_NUMBER_OF_BUFFERS 4
-
-typedef NTSTATUS(*PCLE_POPUP_INPUT_ROUTINE) (_In_ COOKED_READ_DATA* CookedReadData,
-                                             _Inout_opt_ IWaitRoutine** ppWaiter,
-                                             _In_ bool WaitRoutine);
-
-typedef struct _CLE_POPUP
-{
-    SMALL_RECT Region;  // region popup occupies
-    TextAttribute Attributes;    // text attributes
-    PCHAR_INFO OldContents; // contains data under popup
-    SHORT BottomIndex;  // number of command displayed on last line of popup
-    SHORT CurrentCommand;
-    WCHAR NumberBuffer[6];
-    SHORT NumberRead;
-    PCLE_POPUP_INPUT_ROUTINE PopupInputRoutine; // routine to call when input is received
-    COORD OldScreenSize;
-} CLE_POPUP, *PCLE_POPUP;
 
 class CommandLine
 {
@@ -107,9 +92,6 @@ void DeleteCommandLine(_Inout_ COOKED_READ_DATA* pCookedReadData, const bool fUp
 
 void RedrawCommandLine(_Inout_ COOKED_READ_DATA* CookedReadData);
 
-[[nodiscard]]
-NTSTATUS EndPopup(SCREEN_INFORMATION& screenInfo, _In_ CommandHistory* CommandHistory);
-
 // Values for WriteChars(), WriteCharsLegacy() dwFlags
 #define WC_DESTRUCTIVE_BACKSPACE 0x01
 #define WC_KEEP_CURSOR_VISIBLE   0x02
@@ -133,3 +115,12 @@ HRESULT DoSrvSetConsoleTitleW(_In_reads_or_z_(cchBuffer) const wchar_t* const pw
                               const size_t cchBuffer);
 
 bool IsValidStringBuffer(_In_ bool Unicode, _In_reads_bytes_(Size) PVOID Buffer, _In_ ULONG Size, _In_ ULONG Count, ...);
+
+[[nodiscard]]
+NTSTATUS ProcessCommandListInput(COOKED_READ_DATA* const pCookedReadData);
+[[nodiscard]]
+NTSTATUS ProcessCommandNumberInput(_In_ COOKED_READ_DATA* const pCookedReadData);
+[[nodiscard]]
+NTSTATUS ProcessCopyFromCharInput(_In_ COOKED_READ_DATA* const pCookedReadData);
+[[nodiscard]]
+NTSTATUS ProcessCopyToCharInput(_In_ COOKED_READ_DATA* const pCookedReadData);

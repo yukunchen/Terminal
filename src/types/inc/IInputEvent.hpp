@@ -245,7 +245,7 @@ public:
     void ActivateModifierKey(const ModifierKeyState modifierKey) noexcept;
     bool DoActiveModifierKeysMatch(const std::unordered_set<ModifierKeyState>& consoleModifiers) const noexcept;
     bool IsCommandLineEditingKey() const noexcept;
-    bool IsCommandLinePopupKey() const noexcept;
+    bool IsPopupKey() const noexcept;
 
 private:
     bool _keyDown;

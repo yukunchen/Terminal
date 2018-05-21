@@ -41,41 +41,28 @@ CommandHistory* CommandHistory::s_Find(const HANDLE processHandle)
 }
 
 [[nodiscard]]
-HRESULT CommandHistory::EndPopup(SCREEN_INFORMATION& screenInfo)
+Popup* CommandHistory::BeginPopup(SCREEN_INFORMATION& screenInfo, const COORD size, Popup::PopFunc func)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto pop = std::make_unique<Popup>(screenInfo, size, this, func);
+    PopupList.push_back(pop.get());
+    return pop.release();
+}
+
+[[nodiscard]]
+HRESULT CommandHistory::EndPopup()
+{
     if (PopupList.empty())
     {
         return E_FAIL;
     }
 
-    PCLE_POPUP Popup = PopupList.front();
+    Popup* Popup = PopupList.front();
     PopupList.pop_front();
-
-    // restore previous contents to screen
-    COORD Size;
-    Size.X = Popup->OldScreenSize.X;
-    Size.Y = (SHORT)(Popup->Region.Bottom - Popup->Region.Top + 1);
-
-    SMALL_RECT SourceRect;
-    SourceRect.Left = 0;
-    SourceRect.Top = Popup->Region.Top;
-    SourceRect.Right = Popup->OldScreenSize.X - 1;
-    SourceRect.Bottom = Popup->Region.Bottom;
-
-    LOG_IF_FAILED(WriteScreenBuffer(screenInfo, Popup->OldContents, &SourceRect));
-    WriteToScreen(screenInfo, SourceRect);
+    
+    Popup->End();
 
     // Free popup structure.
-    delete[] Popup->OldContents;
     delete Popup;
-    gci.PopupCount--;
-
-    if (gci.PopupCount == 0)
-    {
-        // Notify we're done showing popups.
-        screenInfo.GetTextBuffer().GetCursor().SetIsPopupShown(false);
-    }
 
     return S_OK;
 }
@@ -351,35 +338,14 @@ void CommandHistory::s_UpdatePopups(const WORD NewAttributes,
                                     const WORD OldAttributes,
                                     const WORD OldPopupAttributes)
 {
-    WORD const InvertedOldPopupAttributes = (WORD)(((OldPopupAttributes << 4) & 0xf0) | ((OldPopupAttributes >> 4) & 0x0f));
-    WORD const InvertedNewPopupAttributes = (WORD)(((NewPopupAttributes << 4) & 0xf0) | ((NewPopupAttributes >> 4) & 0x0f));
+ 
     for (auto& historyList : s_historyLists)
     {
         if (IsFlagSet(historyList.Flags, CLE_ALLOCATED) && !historyList.PopupList.empty())
         {
             for (const auto Popup : historyList.PopupList)
             {
-                PCHAR_INFO OldContents = Popup->OldContents;
-                for (SHORT i = Popup->Region.Left; i <= Popup->Region.Right; i++)
-                {
-                    for (SHORT j = Popup->Region.Top; j <= Popup->Region.Bottom; j++)
-                    {
-                        if (OldContents->Attributes == OldAttributes)
-                        {
-                            OldContents->Attributes = NewAttributes;
-                        }
-                        else if (OldContents->Attributes == OldPopupAttributes)
-                        {
-                            OldContents->Attributes = NewPopupAttributes;
-                        }
-                        else if (OldContents->Attributes == InvertedOldPopupAttributes)
-                        {
-                            OldContents->Attributes = InvertedNewPopupAttributes;
-                        }
-
-                        OldContents++;
-                    }
-                }
+                Popup->UpdateStoredColors(NewAttributes, NewPopupAttributes, OldAttributes, OldPopupAttributes);
             }
         }
     }

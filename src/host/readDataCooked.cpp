@@ -194,7 +194,7 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
     //   because there is a popup to get input from.
     // However, pNumBytes is now the address of a different stack frame, and not
     //   necessarily the same as before (presumably not at all). The
-    //   PopupInputRoutine would try and write the number of bytes read to the
+    //   Callback would try and write the number of bytes read to the
     //   value in pdwNumBytes, and then we'd return up to ConsoleWaitBlock::Notify,
     //   who's dwNumBytes had nothing in it.
     // To fix this, when we hit this with a popup, we're going to make sure to
@@ -204,7 +204,7 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
     //   piece of old spaghetti code.
     if (_CommandHistory)
     {
-        PCLE_POPUP Popup;
+        Popup* Popup;
         if (!_CommandHistory->PopupList.empty())
         {
             // (see above comment, MSFT:13994975)
@@ -215,7 +215,7 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
             }
 
             Popup = _CommandHistory->PopupList.front();
-            *pReplyStatus = (Popup->PopupInputRoutine) (this, nullptr, TRUE);
+            *pReplyStatus = Popup->DoCallback(this);
             if (*pReplyStatus == CONSOLE_STATUS_READ_COMPLETE || (*pReplyStatus != CONSOLE_STATUS_WAIT && *pReplyStatus != CONSOLE_STATUS_WAIT_NO_BLOCK))
             {
                 *pReplyStatus = S_OK;
@@ -875,7 +875,7 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
 
 void COOKED_READ_DATA::EndCurrentPopup()
 {
-    LOG_IF_FAILED(_CommandHistory->EndPopup(_screenInfo));
+    LOG_IF_FAILED(_CommandHistory->EndPopup());
 }
 
 void COOKED_READ_DATA::CleanUpAllPopups()
@@ -887,6 +887,6 @@ void COOKED_READ_DATA::CleanUpAllPopups()
 
     while (!_CommandHistory->PopupList.empty())
     {
-        LOG_IF_FAILED(_CommandHistory->EndPopup(_screenInfo));
+        LOG_IF_FAILED(_CommandHistory->EndPopup());
     }
 }

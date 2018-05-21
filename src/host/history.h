@@ -15,7 +15,7 @@ Abstract:
 #define CLE_ALLOCATED 0x00000001
 #define CLE_RESET     0x00000002
 
-struct _CLE_POPUP;
+#include "popup.h"
 
 class CommandHistory
 {
@@ -65,7 +65,9 @@ public:
     void Empty();
 
     [[nodiscard]]
-    HRESULT EndPopup(SCREEN_INFORMATION& screenInfo);
+    Popup* BeginPopup(SCREEN_INFORMATION& screenInfo, const COORD size, Popup::PopFunc func);
+    [[nodiscard]]
+    HRESULT EndPopup();
 
     bool AtFirstCommand() const;
     bool AtLastCommand() const;
@@ -98,7 +100,7 @@ public:
     DWORD Flags;
     SHORT LastDisplayed;
     
-    std::deque<_CLE_POPUP*> PopupList; // pointer to top-level popup
+    std::deque<Popup*> PopupList; // pointer to top-level popup
 };
 
 DEFINE_ENUM_FLAG_OPERATORS(CommandHistory::MatchOptions);

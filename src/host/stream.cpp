@@ -29,7 +29,7 @@
 // - pCommandLineEditingKeys - if present, arrow keys will be
 // returned. on output, if true, pwchOut contains virtual key code for
 // arrow key.
-// - pCommandLinePopupKeys - if present, arrow keys will be
+// - pPopupKeys - if present, arrow keys will be
 // returned. on output, if true, pwchOut contains virtual key code for
 // arrow key.
 // Return Value:
@@ -39,7 +39,7 @@ NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
                  _Out_ wchar_t* const pwchOut,
                  const bool Wait,
                  _Out_opt_ bool* const pCommandLineEditingKeys,
-                 _Out_opt_ bool* const pCommandLinePopupKeys,
+                 _Out_opt_ bool* const pPopupKeys,
                  _Out_opt_ DWORD* const pdwKeyState)
 {
     if (nullptr != pCommandLineEditingKeys)
@@ -47,9 +47,9 @@ NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
         *pCommandLineEditingKeys = false;
     }
 
-    if (nullptr != pCommandLinePopupKeys)
+    if (nullptr != pPopupKeys)
     {
-        *pCommandLinePopupKeys = false;
+        *pPopupKeys = false;
     }
 
     if (nullptr != pdwKeyState)
@@ -85,9 +85,9 @@ NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
             {
                 commandLineEditKey = keyEvent->IsCommandLineEditingKey();
             }
-            else if (pCommandLinePopupKeys)
+            else if (pPopupKeys)
             {
-                commandLineEditKey = keyEvent->IsCommandLinePopupKey();
+                commandLineEditKey = keyEvent->IsPopupKey();
             }
 
             if (pdwKeyState)
@@ -144,9 +144,9 @@ NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
                     *pwchOut = static_cast<wchar_t>(keyEvent->GetVirtualKeyCode());
                     return STATUS_SUCCESS;
                 }
-                else if (pCommandLinePopupKeys && commandLineEditKey)
+                else if (pPopupKeys && commandLineEditKey)
                 {
-                    *pCommandLinePopupKeys = true;
+                    *pPopupKeys = true;
                     *pwchOut = static_cast<char>(keyEvent->GetVirtualKeyCode());
                     return STATUS_SUCCESS;
                 }

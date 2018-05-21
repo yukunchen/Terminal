@@ -26,7 +26,7 @@ NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
                  _Out_ wchar_t* const pwchOut,
                  const bool Wait,
                  _Out_opt_ bool* const pCommandLineEditingKeys,
-                 _Out_opt_ bool* const pCommandLinePopupKeys,
+                 _Out_opt_ bool* const pPopupKeys,
                  _Out_opt_ DWORD* const pdwKeyState);
 
 // Routine Description:
