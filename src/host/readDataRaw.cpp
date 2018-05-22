@@ -163,7 +163,7 @@ bool RAW_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
         }
         else
         {
-            IsCharFullWidth(*lpBuffer) ? NumBytes += 2 : NumBytes++;
+            NumBytes += IsGlyphFullWidth(*lpBuffer) ? 2 : 1;
             lpBuffer++;
             *pNumBytes += sizeof(WCHAR);
             while (*pNumBytes < _BufferSize)
@@ -180,7 +180,7 @@ bool RAW_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
                     *pReplyStatus = STATUS_SUCCESS;
                     break;
                 }
-                IsCharFullWidth(*lpBuffer) ? NumBytes += 2 : NumBytes++;
+                NumBytes += IsGlyphFullWidth(*lpBuffer) ? 2 : 1;
                 lpBuffer++;
                 *pNumBytes += sizeof(WCHAR);
             }

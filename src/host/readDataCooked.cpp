@@ -412,7 +412,10 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
                     NumBytes = 0;
                     for (Tmp = pCookedReadData->_BackupLimit;
                          *Tmp != UNICODE_LINEFEED && pCookedReadData->_UserBufferSize / sizeof(WCHAR) > NumBytes;
-                         (IsCharFullWidth(*Tmp) ? NumBytes += 2 : NumBytes++), Tmp++);
+                         Tmp++)
+                    {
+                        NumBytes += IsGlyphFullWidth(*Tmp) ? 2 : 1;
+                    }
                 }
 
 #pragma prefast(suppress:__WARNING_BUFFER_OVERFLOW, "LineCount > 1 means there's a UNICODE_LINEFEED")
@@ -442,7 +445,10 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
                     NumToWrite = pCookedReadData->_BytesRead;
                     for (Tmp = pCookedReadData->_BackupLimit;
                          NumToWrite && pCookedReadData->_UserBufferSize / sizeof(WCHAR) > NumBytes;
-                         (IsCharFullWidth(*Tmp) ? NumBytes += 2 : NumBytes++), Tmp++, NumToWrite -= sizeof(WCHAR));
+                         Tmp++, NumToWrite -= sizeof(WCHAR))
+                    {
+                        NumBytes += IsGlyphFullWidth(*Tmp) ? 2 : 1;
+                    }
                 }
                 *cbNumBytes = pCookedReadData->_UserBufferSize;
             }
@@ -481,7 +487,10 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
                 NumToWrite = pCookedReadData->_BytesRead;
                 for (Tmp = pCookedReadData->_BackupLimit;
                      NumToWrite && pCookedReadData->_UserBufferSize / sizeof(WCHAR) > NumBytes;
-                     (IsCharFullWidth(*Tmp) ? NumBytes += 2 : NumBytes++), Tmp++, NumToWrite -= sizeof(WCHAR));
+                     Tmp++, NumToWrite -= sizeof(WCHAR))
+                {
+                    NumBytes += IsGlyphFullWidth(*Tmp) ? 2 : 1;
+                }
             }
 
             *cbNumBytes = pCookedReadData->_BytesRead;

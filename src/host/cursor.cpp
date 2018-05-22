@@ -88,7 +88,7 @@ bool Cursor::IsDoubleWidth() const
 {
     // Check with the current screen buffer to see if the character under the cursor is double-width.
     const auto cell = _parentBuffer.GetRowByOffset(_cPosition.Y).AsCells(_cPosition.X, 1).at(0);
-    return IsGlyphFullWidth(cell.Chars());
+    return IsGlyphFullWidth(std::wstring_view{ cell.Chars().data(), cell.Chars().size() });
 }
 
 bool Cursor::IsConversionArea() const noexcept

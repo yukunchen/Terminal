@@ -7,6 +7,7 @@
 #include "precomp.h"
 #include "dbcs.h"
 #include "misc.h"
+#include "CodepointWidthDetector.hpp"
 
 #include "../types/inc/convert.hpp"
 
@@ -100,45 +101,6 @@ void CleanupDbcsEdgesForWrite(const size_t stringLen,
         }
     }
     CATCH_LOG_RETURN();
-}
-
-// Routine Description:
-// - Determine if the given Unicode char is fullwidth or not. If we fail the
-//      simple lookup, we'll fall back to asking the current renderer whether or
-//      not the character is full width.
-// Return:
-// - FALSE : half width. Uses 1 column per one character
-// - TRUE  : full width. Uses 2 columns per one character
-BOOL IsCharFullWidth(_In_ WCHAR wch)
-{
-    bool isFullWidth = false;
-    HRESULT hr = IsCharFullWidth(wch, &isFullWidth);
-    if (hr == S_OK)
-    {
-        return isFullWidth;
-    }
-    else if (hr == S_FALSE)
-    {
-        if (ServiceLocator::LocateGlobals().pRender != nullptr)
-        {
-            return ServiceLocator::LocateGlobals().pRender->IsCharFullWidthByFont(wch);
-        }
-    }
-    return FALSE;
-}
-
-bool IsGlyphFullWidth(const std::vector<wchar_t>& charData)
-{
-    THROW_HR_IF(E_INVALIDARG, charData.empty());
-    if (charData.size() == 1)
-    {
-        return !!IsCharFullWidth(charData.front());
-    }
-    else
-    {
-        // TODO MSFT:17233905 find a better way to determine surrogate pair codepoint width
-        return true;
-    }
 }
 
 // Routine Description:
@@ -268,7 +230,7 @@ ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
     ULONG i, j;
     for (i = 0, j = 0; i < cchUnicode && j < cbAnsi; i++, j++)
     {
-        if (IsCharFullWidth(TmpUni[i]))
+        if (IsGlyphFullWidth(TmpUni[i]))
         {
             ULONG const NumBytes = sizeof(AsciiDbcs);
             ConvertToOem(gci.CP, &TmpUni[i], 1, (LPSTR) & AsciiDbcs[0], NumBytes);
@@ -318,4 +280,16 @@ ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
 
     delete[] TmpUni;
     return j;
+}
+
+static const CodepointWidthDetector widthDetector;
+
+bool IsGlyphFullWidth(const std::wstring_view glyph)
+{
+    return widthDetector.IsWide(glyph);
+}
+
+bool IsGlyphFullWidth(const wchar_t wch)
+{
+    return widthDetector.IsWide(wch);
 }

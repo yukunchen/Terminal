@@ -10,6 +10,7 @@
 
 #include "dbcs.h"
 #include "misc.h"
+
 #include "../buffer/out/CharRow.hpp"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
@@ -407,7 +408,7 @@ void FillRectangle(SCREEN_INFORMATION& screenInfo,
 
     // generate line to write
     std::vector<OutputCell> rowCells(width, cell);
-    if (IsGlyphFullWidth(cell.Chars()))
+    if (IsGlyphFullWidth(std::wstring_view{ cell.Chars().data(), cell.Chars().size() }))
     {
         // set leading and trailing attrs
         for (size_t i = 0; i < rowCells.size(); ++i)
