@@ -17,6 +17,7 @@ SOURCES = \
     ApiRoutinesTests.cpp \
     AliasTests.cpp \
     SearchTests.cpp \
+    HistoryTests.cpp \
     UtilsTests.cpp \
     AttrRowTests.cpp \
     ConsoleArgumentsTests.cpp \

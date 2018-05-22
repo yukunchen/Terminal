@@ -297,7 +297,7 @@ void CommandHistory::Realloc(const size_t commands)
     _commands.clear();
     for (SHORT i = 0; i < newNumberOfCommands; i++)
     {
-        _commands[i] = oldCommands[i];
+        _commands.emplace_back(oldCommands[i]);
     }
 
     SetFlag(Flags, CLE_RESET);
@@ -398,7 +398,6 @@ CommandHistory* CommandHistory::s_Allocate(const std::wstring_view appName, cons
     if (!SameApp && s_historyLists.size() < gci.GetNumberOfHistoryBuffers())
     {
         CommandHistory History;
-        ZeroMemory(&History, sizeof(History));
 
         History._appName = appName;
         History.Flags = CLE_ALLOCATED;
@@ -407,9 +406,9 @@ CommandHistory* CommandHistory::s_Allocate(const std::wstring_view appName, cons
         History._processHandle = processHandle;
         return &s_historyLists.emplace_front(History);
     }
-    else
+    else if (!BestCandidate.has_value() && s_historyLists.size() > 0)
     {
-        // If there's no space and we matched nothing, take the LRU list (which is the back/last one).
+        // If we have no candidate already and we need one, take the LRU (which is the back/last one).
         BestCandidate = s_historyLists.back();
         s_historyLists.pop_back();
     }
@@ -570,6 +569,14 @@ bool CommandHistory::FindMatchingCommand(const std::wstring_view givenCommand,
 
     return false;
 }
+
+
+#ifdef UNIT_TESTING
+void CommandHistory::s_ClearHistoryListStorage()
+{
+    s_historyLists.clear();
+}
+#endif
 
 // Routine Description:
 // - Clears all givenCommand history for the given EXE name

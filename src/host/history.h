@@ -101,6 +101,11 @@ public:
     SHORT LastDisplayed;
     
     std::deque<Popup*> PopupList; // pointer to top-level popup
+
+#ifdef UNIT_TESTING
+    static void s_ClearHistoryListStorage();
+    friend class HistoryTests;
+#endif
 };
 
 DEFINE_ENUM_FLAG_OPERATORS(CommandHistory::MatchOptions);

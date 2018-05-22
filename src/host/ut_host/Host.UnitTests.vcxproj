@@ -8,6 +8,7 @@
     <ClCompile Include="ClipboardTests.cpp" />
     <ClCompile Include="ConsoleArgumentsTests.cpp" />
     <ClCompile Include="DbcsTests.cpp" />
+    <ClCompile Include="HistoryTests.cpp" />
     <ClCompile Include="InitTests.cpp" />
     <ClCompile Include="ScreenBufferTests.cpp" />
     <ClCompile Include="ScreenInfoTextIteratorTests.cpp" />
