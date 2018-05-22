@@ -874,6 +874,11 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
 
 void COOKED_READ_DATA::EndCurrentPopup()
 {
+    if (_CommandHistory == nullptr)
+    {
+        return;
+    }
+
     LOG_IF_FAILED(_CommandHistory->EndPopup());
 }
 

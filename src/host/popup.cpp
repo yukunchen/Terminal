@@ -345,18 +345,16 @@ void Popup::Update(const SHORT originalDelta, const bool wrap)
     }
     SHORT const Size = Height();
 
-    SHORT CurCmdNum;
-    SHORT NewCmdNum;
+    SHORT CurCmdNum = CurrentCommand;
+    SHORT NewCmdNum = CurCmdNum + delta;
 
     if (wrap)
     {
-        CurCmdNum = CurrentCommand;
-        NewCmdNum = CurCmdNum + delta;
+        // Modulo the number of commands to "circle" around if we went off the end.
+        NewCmdNum %= _history->GetNumberOfCommands();
     }
     else
     {
-        CurCmdNum = CurrentCommand;
-        NewCmdNum = CurCmdNum + delta;
         if (NewCmdNum >= gsl::narrow<SHORT>(_history->GetNumberOfCommands()))
         {
             NewCmdNum = gsl::narrow<SHORT>(_history->GetNumberOfCommands()) - 1i16;

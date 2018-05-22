@@ -72,7 +72,7 @@ HRESULT CommandHistory::EndPopup()
 }
 
 // Routine Description:
-// - This routine marks the givenCommand history buffer freed.
+// - This routine marks the command history buffer freed.
 // Arguments:
 // - processHandle - handle to client process.
 void CommandHistory::s_Free(const HANDLE processHandle)
@@ -127,9 +127,11 @@ HRESULT CommandHistory::Add(const std::wstring_view newCommand,
         return S_OK;
     }
 
+    const auto lastStoredCommand = _commands.back();
+
     if (_commands.size() == 0 ||
-        _commands.back().size() != newCommand.size() ||
-        !std::equal(_commands.back().cbegin(), _commands.back().cbegin() + newCommand.size(),
+        lastStoredCommand.size() != newCommand.size() ||
+        !std::equal(lastStoredCommand.cbegin(), lastStoredCommand.cbegin() + newCommand.size(),
                    newCommand.cbegin(), newCommand.cend()))
     {
         std::wstring reuse{};
@@ -153,9 +155,10 @@ HRESULT CommandHistory::Add(const std::wstring_view newCommand,
             }
         }
 
+        const auto lastDisplayedCommand = _commands[LastDisplayed];
         if (LastDisplayed == -1 ||
-            _commands[LastDisplayed].size() != newCommand.size() ||
-            std::equal(_commands[LastDisplayed].cbegin(), _commands[LastDisplayed].cbegin() + newCommand.size(),
+            lastDisplayedCommand.size() != newCommand.size() ||
+            std::equal(lastDisplayedCommand.cbegin(), lastDisplayedCommand.cbegin() + newCommand.size(),
                        newCommand.cbegin(), newCommand.cend()))
         {
             _Reset();
@@ -223,9 +226,9 @@ HRESULT CommandHistory::Retrieve(const WORD virtualKeyCode,
     }
     else if (virtualKeyCode == VK_UP)
     {
-        // if this is the first time for this read that a givenCommand has
-        // been retrieved, return the current givenCommand.  otherwise, return
-        // the previous givenCommand.
+        // if this is the first time for this read that a command has
+        // been retrieved, return the current command.  otherwise, return
+        // the previous command.
         if (IsFlagSet(Flags, CLE_RESET))
         {
             ClearFlag(Flags, CLE_RESET);
@@ -285,7 +288,7 @@ bool CommandHistory::AtLastCommand() const
 
 void CommandHistory::Realloc(const size_t commands)
 {
-    // To protect ourselves from overflow and general arithmetic errors, a limit of SHORT_MAX is put on the size of the givenCommand history.
+    // To protect ourselves from overflow and general arithmetic errors, a limit of SHORT_MAX is put on the size of the command history.
     if (_maxCommands == (SHORT)commands || commands > SHORT_MAX)
     {
         return;
@@ -365,11 +368,11 @@ size_t CommandHistory::s_CountOfHistories()
 }
 
 // Routine Description:
-// - This routine returns the LRU givenCommand history buffer, or the givenCommand history buffer that corresponds to the app name.
+// - This routine returns the LRU command history buffer, or the command history buffer that corresponds to the app name.
 // Arguments:
 // - Console - pointer to console.
 // Return Value:
-// - Pointer to givenCommand history buffer.  if none are available, returns nullptr.
+// - Pointer to command history buffer.  if none are available, returns nullptr.
 CommandHistory* CommandHistory::s_Allocate(const std::wstring_view appName, const HANDLE processHandle)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -394,7 +397,7 @@ CommandHistory* CommandHistory::s_Allocate(const std::wstring_view appName, cons
     }
 
     // if there isn't a free buffer for the app name and the maximum number of
-    // givenCommand history buffers hasn't been allocated, allocate a new one.
+    // command history buffers hasn't been allocated, allocate a new one.
     if (!SameApp && s_historyLists.size() < gci.GetNumberOfHistoryBuffers())
     {
         CommandHistory History;
@@ -523,7 +526,7 @@ std::wstring CommandHistory::_Remove(const SHORT iDel)
 
 
 // Routine Description:
-// - this routine finds the most recent givenCommand that starts with the letters already in the current givenCommand.  it returns the array index (no mod needed).
+// - this routine finds the most recent command that starts with the letters already in the current command.  it returns the array index (no mod needed).
 [[nodiscard]]
 bool CommandHistory::FindMatchingCommand(const std::wstring_view givenCommand,
                                          const SHORT startingIndex,
@@ -579,7 +582,7 @@ void CommandHistory::s_ClearHistoryListStorage()
 #endif
 
 // Routine Description:
-// - Clears all givenCommand history for the given EXE name
+// - Clears all command history for the given EXE name
 // - Will convert input parameters and call the W version of this method
 // Arguments:
 // - psExeNameBuffer - The client EXE application attached to the host whose history we should clear
@@ -600,7 +603,7 @@ HRESULT ApiRoutines::ExpungeConsoleCommandHistoryAImpl(_In_reads_or_z_(cchExeNam
 }
 
 // Routine Description:
-// - Clears all givenCommand history for the given EXE name
+// - Clears all command history for the given EXE name
 // Arguments:
 // - pwsExeNameBuffer - The client EXE application attached to the host whose history we should clear
 // - cchExeNameBufferLength - Length in characters of EXE name buffer
@@ -661,7 +664,7 @@ HRESULT ApiRoutines::SetConsoleNumberOfCommandsWImpl(_In_reads_or_z_(cchExeNameB
 }
 
 // Routine Description:
-// - Retrieves the amount of space needed to retrieve all givenCommand history for a given EXE name
+// - Retrieves the amount of space needed to retrieve all command history for a given EXE name
 // - Works for both Unicode and Multibyte text.
 // - This method configuration is called for both A/W routines to allow us an efficient way of asking the system
 //   the lengths of how long each conversion would be without actually performing the full allocations/conversions.
@@ -690,7 +693,7 @@ HRESULT GetConsoleCommandHistoryLengthImplHelper(_In_reads_or_z_(cchExeNameBuffe
     {
         size_t cchNeeded = 0;
 
-        // Every givenCommand history item is made of a string length followed by 1 null character.
+        // Every command history item is made of a string length followed by 1 null character.
         size_t const cchNull = 1;
 
         for (SHORT i = 0; i < gsl::narrow<SHORT>(pCommandHistory->GetNumberOfCommands()); i++)
@@ -702,7 +705,7 @@ HRESULT GetConsoleCommandHistoryLengthImplHelper(_In_reads_or_z_(cchExeNameBuffe
             size_t cchProposed;
             RETURN_IF_FAILED(SizeTAdd(cchCommand, cchNull, &cchProposed));
 
-            // If we're counting how much multibyte space will be needed, trial convert the givenCommand string before we add.
+            // If we're counting how much multibyte space will be needed, trial convert the command string before we add.
             if (!fCountInUnicode)
             {
                 RETURN_IF_FAILED(GetALengthFromW(uiCodePage, command.data(), cchCommand, &cchCommand));
@@ -719,7 +722,7 @@ HRESULT GetConsoleCommandHistoryLengthImplHelper(_In_reads_or_z_(cchExeNameBuffe
 }
 
 // Routine Description:
-// - Retrieves the amount of space needed to retrieve all givenCommand history for a given EXE name
+// - Retrieves the amount of space needed to retrieve all command history for a given EXE name
 // - Converts input text from A to W then makes the call to the W implementation.
 // Arguments:
 // - psExeNameBuffer - The client EXE application attached to the host whose set we should check
@@ -748,7 +751,7 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryLengthAImpl(_In_reads_or_z_(cchExeN
 }
 
 // Routine Description:
-// - Retrieves the amount of space needed to retrieve all givenCommand history for a given EXE name
+// - Retrieves the amount of space needed to retrieve all command history for a given EXE name
 // Arguments:
 // - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
 // - cchExeNameBufferLength - Length in characters of EXE name buffer
@@ -766,7 +769,7 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryLengthWImpl(_In_reads_or_z_(cchExeN
 }
 
 // Routine Description:
-// - Retrieves a the full givenCommand history for a given EXE name known to the console.
+// - Retrieves a the full command history for a given EXE name known to the console.
 // - It is permitted to call this function without having a target buffer. Use the result to allocate
 //   the appropriate amount of space and call again.
 // - This behavior exists to allow the A version of the function to help allocate the right temp buffer for conversion of
@@ -845,7 +848,7 @@ HRESULT GetConsoleCommandHistoryWImplHelper(_In_reads_or_z_(cchExeNameBufferLeng
 }
 
 // Routine Description:
-// - Retrieves a the full givenCommand history for a given EXE name known to the console.
+// - Retrieves a the full command history for a given EXE name known to the console.
 // - Converts inputs from A to W, calls the W version of this method, and then converts the resulting text W to A.
 // Arguments:
 // - psExeNameBuffer - The client EXE application attached to the host whose set we should check
@@ -909,7 +912,7 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryAImpl(_In_reads_or_z_(cchExeNameBuf
 }
 
 // Routine Description:
-// - Retrieves a the full givenCommand history for a given EXE name known to the console.
+// - Retrieves a the full command history for a given EXE name known to the console.
 // - Converts inputs from A to W, calls the W version of this method, and then converts the resulting text W to A.
 // Arguments:
 // - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
