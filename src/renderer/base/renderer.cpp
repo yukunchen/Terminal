@@ -533,14 +533,16 @@ COORD Renderer::GetFontSize()
 }
 
 // Routine Description:
-// - Tests against the current rendering engine to see if this particular character would be considered full-width (inscribed in a square, twice as wide as a standard Western character, typically used for CJK languages) or half-width.
+// - Tests against the current rendering engine to see if this particular character would be considered
+// full-width (inscribed in a square, twice as wide as a standard Western character, typically used for CJK
+// languages) or half-width.
 // - Typically used to determine how many positions in the backing buffer a particular character should fill.
 // NOTE: This only handles 1 or 2 wide (in monospace terms) characters.
 // Arguments:
-// - wch - Character to test
+// - glyph - the utf16 encoded codepoint to test
 // Return Value:
-// - True if the character is full-width (two wide), false if it is half-width (one wide).
-bool Renderer::IsCharFullWidthByFont(const WCHAR wch)
+// - True if the codepoint is full-width (two wide), false if it is half-width (one wide).
+bool Renderer::IsGlyphWideByFont(const std::wstring_view glyph)
 {
     bool fIsFullWidth = false;
 
@@ -551,7 +553,7 @@ bool Renderer::IsCharFullWidthByFont(const WCHAR wch)
     FAIL_FAST_IF_FALSE(_rgpEngines.size() <= 2);
     for (IRenderEngine* const pEngine : _rgpEngines)
     {
-        const HRESULT hr = LOG_IF_FAILED(pEngine->IsCharFullWidthByFont(wch, &fIsFullWidth));
+        const HRESULT hr = LOG_IF_FAILED(pEngine->IsGlyphWideByFont(glyph, &fIsFullWidth));
         // We're looking for specifically S_OK, S_FALSE is not good enough.
         if (hr == S_OK)
         {

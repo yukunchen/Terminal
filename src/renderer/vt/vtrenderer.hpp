@@ -111,7 +111,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         HRESULT GetFontSize(_Out_ COORD* const pFontSize) override;
         [[nodiscard]]
-        HRESULT IsCharFullWidthByFont(const WCHAR wch, _Out_ bool* const pResult) override;
+        HRESULT IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) override;
 
         [[nodiscard]]
         HRESULT SuppressResizeRepaint();

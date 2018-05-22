@@ -277,9 +277,8 @@ HRESULT BgfxEngine::GetFontSize(_Out_ COORD* const pFontSize)
 }
 
 [[nodiscard]]
-HRESULT BgfxEngine::IsCharFullWidthByFont(WCHAR const /*wch*/, _Out_ bool* const pResult)
+HRESULT BgfxEngine::IsGlyphWideByFont(const std::wstring_view /*glyph*/, _Out_ bool* const pResult)
 {
-
     *pResult = false;
     return S_OK;
 }

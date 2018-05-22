@@ -37,9 +37,6 @@ DWORD RemoveDbcsMarkCell(_Out_writes_(cch) PCHAR_INFO pciDst, _In_reads_(cch) co
 
 bool IsDBCSLeadByteConsole(const CHAR ch, const CPINFO * const pCPInfo);
 
-BOOL IsCharFullWidth(_In_ WCHAR wch);
-bool IsGlyphFullWidth(const std::vector<wchar_t>& charData);
-
 BYTE CodePageToCharSet(const UINT uiCodePage);
 
 BOOL IsAvailableEastAsianCodePage(const UINT uiCodePage);
@@ -50,3 +47,6 @@ ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
                             _Out_writes_bytes_(cbAnsi) PCHAR pchAnsi,
                             const ULONG cbAnsi,
                             _Out_ std::unique_ptr<IInputEvent>& partialEvent);
+
+bool IsGlyphFullWidth(const std::wstring_view glyph);
+bool IsGlyphFullWidth(const wchar_t wch);

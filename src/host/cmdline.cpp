@@ -17,7 +17,6 @@
 #include "../types/inc/convert.hpp"
 #include "srvinit.h"
 #include "resource.h"
-
 #include "ApiRoutines.h"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
@@ -2080,7 +2079,7 @@ void DrawCommandListPopup(_In_ PCLE_POPUP const Popup,
             LPWSTR lpStr = CommandHistory->Commands[COMMAND_NUM_TO_INDEX(i, CommandHistory)]->Command;
             while (lTmpStringLength--)
             {
-                if (IsCharFullWidth(*lpStr++))
+                if (IsGlyphFullWidth(*lpStr++))
                 {
                     lPopupLength -= 2;
                 }

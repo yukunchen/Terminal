@@ -33,32 +33,42 @@ SMALL_RECT GdiEngine::GetDirtyRectInChars()
 // - Uses the currently selected font to determine how wide the given character will be when renderered.
 // - NOTE: Only supports determining half-width/full-width status for CJK-type languages (e.g. is it 1 character wide or 2. a.k.a. is it a rectangle or square.)
 // Arguments:
-// - wch - Character to check
+// - glyph - utf16 encoded codepoint to check
 // - pResult - recieves return value, True if it is full-width (2 wide). False if it is half-width (1 wide).
 // Return Value:
 // - S_OK
 [[nodiscard]]
-HRESULT GdiEngine::IsCharFullWidthByFont(const WCHAR wch, _Out_ bool* const pResult)
+HRESULT GdiEngine::IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult)
 {
     bool isFullWidth = false;
 
-    if (_IsFontTrueType())
+    if (glyph.size() == 1)
     {
-        ABC abc;
-        if (GetCharABCWidthsW(_hdcMemoryContext, wch, wch, &abc))
+        const wchar_t wch = glyph.front();
+        if (_IsFontTrueType())
         {
-            int const totalWidth = abc.abcA + abc.abcB + abc.abcC;
+            ABC abc;
+            if (GetCharABCWidthsW(_hdcMemoryContext, wch, wch, &abc))
+            {
+                int const totalWidth = abc.abcA + abc.abcB + abc.abcC;
 
-            isFullWidth = totalWidth > _GetFontSize().X;
+                isFullWidth = totalWidth > _GetFontSize().X;
+            }
+        }
+        else
+        {
+            INT cpxWidth = 0;
+            if (GetCharWidth32W(_hdcMemoryContext, wch, wch, &cpxWidth))
+            {
+                isFullWidth = cpxWidth > _GetFontSize().X;
+            }
         }
     }
     else
     {
-        INT cpxWidth = 0;
-        if (GetCharWidth32W(_hdcMemoryContext, wch, wch, &cpxWidth))
-        {
-            isFullWidth = cpxWidth > _GetFontSize().X;
-        }
+        // can't find a way to make gdi measure the width of utf16 surrogate pairs.
+        // in the meantime, better to be too wide than too narrow.
+        isFullWidth = true;
     }
 
     *pResult = isFullWidth;

@@ -108,7 +108,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         virtual HRESULT GetFontSize(_Out_ COORD* const pFontSize) = 0;
         [[nodiscard]]
-        virtual HRESULT IsCharFullWidthByFont(const WCHAR wch, _Out_ bool* const pResult) = 0;
+        virtual HRESULT IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) = 0;
         [[nodiscard]]
         virtual HRESULT UpdateTitle(const std::wstring& newTitle) = 0;
     };
