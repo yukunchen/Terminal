@@ -127,11 +127,9 @@ HRESULT CommandHistory::Add(const std::wstring_view newCommand,
         return S_OK;
     }
 
-    const auto lastStoredCommand = _commands.back();
-
     if (_commands.size() == 0 ||
-        lastStoredCommand.size() != newCommand.size() ||
-        !std::equal(lastStoredCommand.cbegin(), lastStoredCommand.cbegin() + newCommand.size(),
+        _commands.back().size() != newCommand.size() ||
+        !std::equal(_commands.back().cbegin(), _commands.back().cbegin() + newCommand.size(),
                    newCommand.cbegin(), newCommand.cend()))
     {
         std::wstring reuse{};
@@ -155,10 +153,9 @@ HRESULT CommandHistory::Add(const std::wstring_view newCommand,
             }
         }
 
-        const auto lastDisplayedCommand = _commands[LastDisplayed];
         if (LastDisplayed == -1 ||
-            lastDisplayedCommand.size() != newCommand.size() ||
-            std::equal(lastDisplayedCommand.cbegin(), lastDisplayedCommand.cbegin() + newCommand.size(),
+            _commands[LastDisplayed].size() != newCommand.size() ||
+            std::equal(_commands[LastDisplayed].cbegin(), _commands[LastDisplayed].cbegin() + newCommand.size(),
                        newCommand.cbegin(), newCommand.cend()))
         {
             _Reset();
