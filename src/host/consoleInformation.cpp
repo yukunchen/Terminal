@@ -18,9 +18,7 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     pCurrentScreenBuffer(nullptr),
     ScreenBuffers(nullptr),
     OutputQueue(),
-    // CommandHistoryList initialized below
     // ExeAliasList initialized below
-    NumCommandHistories(0),
     _OriginalTitle(),
     _Title(),
     _LinkTitle(),
@@ -38,8 +36,6 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     terminalMouseInput(HandleTerminalKeyEventCallback),
     _vtIo()
 {
-    InitializeListHead(&CommandHistoryList);
-
     ZeroMemory((void*)&CPInfo, sizeof(CPInfo));
     ZeroMemory((void*)&OutputCPInfo, sizeof(OutputCPInfo));
     InitializeCriticalSection(&_csConsoleLock);

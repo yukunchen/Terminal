@@ -39,7 +39,7 @@ ConsoleObjectHeader::ConsoleObjectHeader() :
 HRESULT ConsoleObjectHeader::AllocateIoHandle(const ConsoleHandleData::HandleType ulHandleType,
                                               const ACCESS_MASK amDesired,
                                               const ULONG ulShareMode,
-                                              _Out_ ConsoleHandleData** const ppOut)
+                                              std::unique_ptr<ConsoleHandleData>& out)
 {
     try
     {
@@ -84,7 +84,7 @@ HRESULT ConsoleObjectHeader::AllocateIoHandle(const ConsoleHandleData::HandleTyp
             _ulWriteShareCount++;
         }
 
-        *ppOut = pHandleData.release();
+        out.swap(pHandleData);
     }
     CATCH_RETURN();
 
@@ -93,7 +93,6 @@ HRESULT ConsoleObjectHeader::AllocateIoHandle(const ConsoleHandleData::HandleTyp
 
 // Routine Description:
 // - Frees and decrements ref counts of the handle associated with this object.
-// - This will delete pFree for you.
 // Arguments:
 // - pFree - Pointer to the handle data to be freed
 // Return Value:
@@ -125,8 +124,6 @@ HRESULT ConsoleObjectHeader::FreeIoHandle(_In_ ConsoleHandleData* const pFree)
     {
         _ulWriteShareCount--;
     }
-
-    delete pFree;
 
     return S_OK;
 }

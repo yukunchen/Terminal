@@ -25,7 +25,7 @@ class WriteData : public IWaitRoutine
 public:
     WriteData(SCREEN_INFORMATION& siContext,
               _In_reads_bytes_(cbContext) wchar_t* const pwchContext,
-              const ULONG cbContext,
+              const size_t cbContext,
               const UINT uiOutputCodepage);
     ~WriteData();
 
@@ -37,14 +37,14 @@ public:
     bool Notify(const WaitTerminationReason TerminationReason,
                 const bool fIsUnicode,
                 _Out_ NTSTATUS* const pReplyStatus,
-                _Out_ DWORD* const pNumBytes,
+                _Out_ size_t* const pNumBytes,
                 _Out_ DWORD* const pControlKeyState,
                 _Out_ void* const pOutputData);
 
 private:
     SCREEN_INFORMATION& _siContext;
     wchar_t* const _pwchContext;
-    ULONG const _cbContext;
+    size_t const _cbContext;
     UINT const _uiOutputCodepage;
     bool _fLeadByteCaptured;
     bool _fLeadByteConsumed;

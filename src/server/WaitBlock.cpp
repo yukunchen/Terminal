@@ -117,7 +117,7 @@ bool ConsoleWaitBlock::Notify(const WaitTerminationReason TerminationReason)
     bool fRetVal;
 
     NTSTATUS status;
-    DWORD dwNumBytes = 0;
+    size_t NumBytes = 0;
     DWORD dwControlKeyState;
     bool fIsUnicode = true;
 
@@ -157,11 +157,11 @@ bool ConsoleWaitBlock::Notify(const WaitTerminationReason TerminationReason)
     }
 
     // 2. If we have a waiter, dispatch to it.
-    if (_pWaiter->Notify(TerminationReason, fIsUnicode, &status, &dwNumBytes, &dwControlKeyState, pOutputData))
+    if (_pWaiter->Notify(TerminationReason, fIsUnicode, &status, &NumBytes, &dwControlKeyState, pOutputData))
     {
         // 3. If the wait was successful, set reply info and attach any additional return information that this request type might need.
         _WaitReplyMessage.SetReplyStatus(status);
-        _WaitReplyMessage.SetReplyInformation(dwNumBytes);
+        _WaitReplyMessage.SetReplyInformation(NumBytes);
 
         if (API_NUMBER_GETCONSOLEINPUT == _WaitReplyMessage.msgHeader.ApiNumber)
         {
@@ -195,7 +195,7 @@ bool ConsoleWaitBlock::Notify(const WaitTerminationReason TerminationReason)
             // ReadConsole has this extra reply information with the control key state.
             CONSOLE_READCONSOLE_MSG* a = &(_WaitReplyMessage.u.consoleMsgL1.ReadConsole);
             a->ControlKeyState = dwControlKeyState;
-            a->NumBytes = dwNumBytes;
+            a->NumBytes = gsl::narrow<ULONG>(NumBytes);
 
             // - This routine is called when a ReadConsole or ReadFile request is about to be completed.
             // - It sets the number of bytes written as the information to be written with the completion status and,

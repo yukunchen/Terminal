@@ -27,7 +27,7 @@ public:
     HRESULT AllocateIoHandle(const ConsoleHandleData::HandleType ulHandleType,
                              const ACCESS_MASK amDesired,
                              const ULONG ulShareMode,
-                             _Out_ ConsoleHandleData** const ppOut);
+                             std::unique_ptr<ConsoleHandleData>& out);
 
     [[nodiscard]]
     HRESULT FreeIoHandle(_In_ ConsoleHandleData* const pFree);

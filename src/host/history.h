@@ -11,95 +11,101 @@ Abstract:
 
 #pragma once
 
-// Disable warning about 0 length MSFT compiler struct extension.
-#pragma warning(disable:4200)
-typedef struct _COMMAND
-{
-    USHORT CommandLength;
-    WCHAR Command[0]; // TODO: refactor
-} COMMAND, *PCOMMAND;
-
-// COMMAND_HISTORY Flags
+// CommandHistory Flags
 #define CLE_ALLOCATED 0x00000001
 #define CLE_RESET     0x00000002
 
-#pragma warning(disable:4200)
-typedef struct _COMMAND_HISTORY
+#include "popup.h"
+
+class CommandHistory
 {
-    LIST_ENTRY ListLink;
+public:
+    static CommandHistory* s_Allocate(const std::wstring_view appName, const HANDLE processHandle);
+    static CommandHistory* s_Find(const HANDLE processHandle);
+    static CommandHistory* s_FindByExe(const std::wstring_view appName);
+    static void s_ReallocExeToFront(const std::wstring_view appName, const size_t commands);
+    static void s_Free(const HANDLE processHandle);
+    static void s_ResizeAll(const size_t commands);
+    static void s_UpdatePopups(const WORD NewAttributes,
+                               const WORD NewPopupAttributes,
+                               const WORD OldAttributes,
+                               const WORD OldPopupAttributes);
+    static size_t s_CountOfHistories();
+
+    enum class MatchOptions
+    {
+        None = 0x0,
+        ExactMatch = 0x1,
+        JustLooking = 0x2
+    };
+    bool FindMatchingCommand(const std::wstring_view command,
+                             const SHORT startingIndex,
+                             SHORT& indexFound,
+                             const MatchOptions options);
+    bool IsAppNameMatch(const std::wstring_view other) const;
+
+    [[nodiscard]]
+    HRESULT Add(const std::wstring_view command,
+                const bool suppressDuplicates);
+
+    [[nodiscard]]
+    HRESULT Retrieve(const WORD virtualKeyCode,
+                     const gsl::span<wchar_t> buffer,
+                     size_t& commandSize);
+
+    [[nodiscard]]
+    HRESULT RetrieveNth(const SHORT index,
+                        const gsl::span<wchar_t> buffer,
+                        size_t& commandSize);
+
+    size_t GetNumberOfCommands() const;
+    std::wstring_view GetNth(const SHORT index) const;
+
+    void Realloc(const size_t commands);
+    void Empty();
+
+    [[nodiscard]]
+    Popup* BeginPopup(SCREEN_INFORMATION& screenInfo, const COORD size, Popup::PopFunc func);
+    [[nodiscard]]
+    HRESULT EndPopup();
+
+    bool AtFirstCommand() const;
+    bool AtLastCommand() const;
+
+    std::wstring_view GetLastCommand() const;
+
+private:
+    void _Reset();
+    
+    std::wstring _Remove(const SHORT iDel);
+
+    // _Next and _Prev go to the next and prev command
+    // _Inc  and _Dec go to the next and prev slots
+    // Don't get the two confused - it matters when the cmd history is not full!
+    void _Prev(SHORT& ind) const;
+    void _Next(SHORT& ind) const;
+    void _Dec(SHORT& ind) const;
+    void _Inc(SHORT& ind) const;
+
+    
+    std::vector<std::wstring> _commands;
+    SHORT _maxCommands;
+
+    std::wstring _appName;
+    HANDLE _processHandle;
+
+    static std::deque<CommandHistory> s_historyLists;
+
+public:
     DWORD Flags;
-    PWCHAR AppName;
-    SHORT NumberOfCommands;
-    SHORT LastAdded;
     SHORT LastDisplayed;
-    SHORT FirstCommand; // circular buffer
-    SHORT MaximumNumberOfCommands;
-    HANDLE ProcessHandle;
-    LIST_ENTRY PopupList;   // pointer to top-level popup
-    PCOMMAND Commands[0]; // TODO: refactor
-} COMMAND_HISTORY, *PCOMMAND_HISTORY;
+    
+    std::deque<Popup*> PopupList; // pointer to top-level popup
 
-[[nodiscard]]
-NTSTATUS AddCommand(_In_ PCOMMAND_HISTORY pCmdHistory,
-                    _In_reads_bytes_(cbCommand) PCWCHAR pwchCommand,
-                    const USHORT cbCommand,
-                    const bool fHistoryNoDup);
-PCOMMAND_HISTORY AllocateCommandHistory(_In_reads_bytes_(cbAppName) PCWSTR pwszAppName, const DWORD cbAppName, _In_ HANDLE hProcess);
-void FreeCommandHistory(const HANDLE hProcess);
-void FreeCommandHistoryBuffers();
-void ResizeCommandHistoryBuffers(const UINT cCommands);
-void EmptyCommandHistory(_In_opt_ PCOMMAND_HISTORY CommandHistory);
-PCOMMAND_HISTORY ReallocCommandHistory(_In_opt_ PCOMMAND_HISTORY CurrentCommandHistory, const DWORD NumCommands);
-PCOMMAND_HISTORY FindExeCommandHistory(_In_reads_(AppNameLength) PVOID AppName, _In_ DWORD AppNameLength, const bool UnicodeExe);
-bool AtFirstCommand(_In_ PCOMMAND_HISTORY CommandHistory);
-bool AtLastCommand(_In_ PCOMMAND_HISTORY CommandHistory);
-void EmptyCommandHistory(_In_opt_ PCOMMAND_HISTORY CommandHistory);
-PCOMMAND GetLastCommand(_In_ PCOMMAND_HISTORY CommandHistory);
-PCOMMAND RemoveCommand(_In_ PCOMMAND_HISTORY CommandHistory, _In_ SHORT iDel);
-SHORT FindMatchingCommand(_In_ PCOMMAND_HISTORY CommandHistory,
-                          _In_reads_bytes_(cbIn) PCWCHAR pwchIn,
-                          _In_ ULONG cbIn,
-                          _In_ SHORT CommandIndex,
-                          _In_ DWORD Flags);
-[[nodiscard]]
-NTSTATUS RetrieveNthCommand(_In_ PCOMMAND_HISTORY CommandHistory,
-                            _In_ SHORT Index,
-                            _In_reads_bytes_(BufferSize)
-                            PWCHAR Buffer,
-                            _In_ ULONG BufferSize, _Out_ PULONG CommandSize);
+#ifdef UNIT_TESTING
+    static void s_ClearHistoryListStorage();
+    friend class HistoryTests;
+#endif
+};
 
-// COMMAND_IND_NEXT and COMMAND_IND_PREV go to the next and prev command
-// COMMAND_IND_INC  and COMMAND_IND_DEC  go to the next and prev slots
-//
-// Don't get the two confused - it matters when the cmd history is not full!
-#define COMMAND_IND_PREV(IND, CMDHIST)               \
-{                                                    \
-    if (IND <= 0) {                                  \
-        IND = (CMDHIST)->NumberOfCommands;           \
-    }                                                \
-    IND--;                                           \
-}
-
-#define COMMAND_IND_NEXT(IND, CMDHIST)               \
-{                                                    \
-    ++IND;                                           \
-    if (IND >= (CMDHIST)->NumberOfCommands) {        \
-        IND = 0;                                     \
-    }                                                \
-}
-
-#define COMMAND_IND_DEC(IND, CMDHIST)                \
-{                                                    \
-    if (IND <= 0) {                                  \
-        IND = (CMDHIST)->MaximumNumberOfCommands;    \
-    }                                                \
-    IND--;                                           \
-}
-
-#define COMMAND_IND_INC(IND, CMDHIST)                \
-{                                                    \
-    ++IND;                                           \
-    if (IND >= (CMDHIST)->MaximumNumberOfCommands) { \
-        IND = 0;                                     \
-    }                                                \
-}
+DEFINE_ENUM_FLAG_OPERATORS(CommandHistory::MatchOptions);

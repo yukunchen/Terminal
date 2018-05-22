@@ -27,7 +27,7 @@
 // it's not divisible by the size of a wchar
 RAW_READ_DATA::RAW_READ_DATA(_In_ InputBuffer* const pInputBuffer,
                              _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
-                             const ULONG BufferSize,
+                             const size_t BufferSize,
                              _In_ WCHAR* const BufPtr) :
     ReadData(pInputBuffer, pInputReadHandleData),
     _BufferSize{ BufferSize },
@@ -73,24 +73,22 @@ RAW_READ_DATA::~RAW_READ_DATA()
 bool RAW_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
                            const bool fIsUnicode,
                            _Out_ NTSTATUS* const pReplyStatus,
-                           _Out_ DWORD* const pNumBytes,
+                           _Out_ size_t* const pNumBytes,
                            _Out_ DWORD* const pControlKeyState,
                            _Out_ void* const /*pOutputData*/)
 {
     // This routine should be called by a thread owning the same lock
     // on the same console as we're reading from.
-    _pInputReadHandleData->LockReadCount();
-    FAIL_FAST_IF_FALSE(_pInputReadHandleData->GetReadCount() > 0);
-    _pInputReadHandleData->UnlockReadCount();
+    FAIL_FAST_IF(_pInputReadHandleData->GetReadCount() == 0);
 
-    FAIL_FAST_IF_FALSE(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
+    FAIL_FAST_IF(!ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
 
     *pReplyStatus = STATUS_SUCCESS;
     *pControlKeyState = 0;
 
 
     *pNumBytes = 0;
-    DWORD NumBytes = 0;
+    size_t NumBytes = 0;
 
     PWCHAR lpBuffer;
     bool RetVal = true;
@@ -115,7 +113,7 @@ bool RAW_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
     // closed. If so, we decrement the read count. If it goes to zero,
     // we wake up the close thread. Otherwise, we wake up any other
     // thread waiting for data.
-    else if (IsFlagSet(_pInputReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::Closing))
+    else if (IsFlagSet(TerminationReason, WaitTerminationReason::HandleClosing))
     {
         *pReplyStatus = STATUS_ALERTED;
     }
@@ -207,10 +205,10 @@ bool RAW_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
         std::unique_ptr<IInputEvent> partialEvent;
 
         *pNumBytes = TranslateUnicodeToOem(lpBuffer,
-                                            *pNumBytes / sizeof(wchar_t),
-                                            tempBuffer.get(),
-                                            NumBytes,
-                                            partialEvent);
+                                           gsl::narrow<ULONG>(*pNumBytes / sizeof(wchar_t)),
+                                           tempBuffer.get(),
+                                           gsl::narrow<ULONG>(NumBytes),
+                                           partialEvent);
         if (partialEvent.get())
         {
             _pInputBuffer->StoreReadPartialByteSequence(std::move(partialEvent));

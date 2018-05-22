@@ -11,6 +11,8 @@
 #include "telemetry.hpp"
 #include <time.h>
 
+#include "history.h"
+
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
 TRACELOGGING_DEFINE_PROVIDER(g_hConhostV2EventTraceProvider,
@@ -432,7 +434,7 @@ void Telemetry::WriteFinalTraceLog()
                 TraceLoggingBool(gci.GetFilterOnPaste(), "FilterOnPaste"),
                 TraceLoggingBool(gci.GetTrimLeadingZeros(), "TrimLeadingZeros"),
                 TraceLoggingValue(gci.GetLaunchFaceName(), "LaunchFontName"),
-                TraceLoggingValue(gci.NumCommandHistories, "CommandHistoriesNumber"),
+                TraceLoggingValue(CommandHistory::s_CountOfHistories(), "CommandHistoriesNumber"),
                 TraceLoggingValue(gci.GetCodePage(), "CodePage"),
                 TraceLoggingValue(gci.GetCursorSize(), "CursorSize"),
                 TraceLoggingValue(gci.GetFontFamily(), "FontFamily"),

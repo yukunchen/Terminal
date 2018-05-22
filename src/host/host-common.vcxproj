@@ -27,6 +27,7 @@
     <ClCompile Include="..\ntprivapi.cpp" />
     <ClCompile Include="..\output.cpp" />
     <ClCompile Include="..\outputStream.cpp" />
+    <ClCompile Include="..\popup.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -85,6 +86,7 @@
     <ClInclude Include="..\ntprivapi.hpp" />
     <ClInclude Include="..\output.h" />
     <ClInclude Include="..\outputStream.hpp" />
+    <ClInclude Include="..\popup.h" />
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\readData.hpp" />
     <ClInclude Include="..\readDataCooked.hpp" />

@@ -296,17 +296,19 @@ HRESULT ApiDispatchers::ServerReadConsole(_Inout_ CONSOLE_API_MSG * const m, _In
 
     // 2. Existing data in the buffer that was passed in.
     ULONG const cbInitialData = a->InitialNumBytes;
-    ULONG const cchInitialData = cbInitialData / sizeof(wchar_t);
-    wistd::unique_ptr<wchar_t[]> pwsInitialData;
-
-    if (cbInitialData > 0)
+    std::unique_ptr<char[]> pbInitialData;
+    
+    try
     {
-        pwsInitialData = wil::make_unique_nothrow<wchar_t[]>(cbInitialData);
-        RETURN_IF_NULL_ALLOC(pwsInitialData);
+        if (cbInitialData > 0)
+        {
+            pbInitialData = std::make_unique<char[]>(cbInitialData);
 
-        // This parameter starts immediately after the exe name so skip by that many bytes.
-        RETURN_IF_FAILED(m->ReadMessageInput(cbExeName, pwsInitialData.get(), cbInitialData));
+            // This parameter starts immediately after the exe name so skip by that many bytes.
+            RETURN_IF_FAILED(m->ReadMessageInput(cbExeName, pbInitialData.get(), cbInitialData));
+        }
     }
+    CATCH_RETURN();
 
     // ReadConsole needs this to get the command history list associated with an attached process, but it can be an opaque value.
     HANDLE const hConsoleClient = (HANDLE)m->GetProcessHandle();
@@ -321,6 +323,9 @@ HRESULT ApiDispatchers::ServerReadConsole(_Inout_ CONSOLE_API_MSG * const m, _In
     HRESULT hr;
     if (a->Unicode)
     {
+        wchar_t* const pwsInitialData = reinterpret_cast<wchar_t*>(pbInitialData.get());
+        size_t const cchInitialData = cbInitialData / sizeof(wchar_t);
+
         wchar_t* const pwsOutputBuffer = reinterpret_cast<wchar_t*>(pvBuffer);
         size_t const cchOutputBuffer = cbBufferSize / sizeof(wchar_t);
         size_t cchOutputWritten;
@@ -330,7 +335,7 @@ HRESULT ApiDispatchers::ServerReadConsole(_Inout_ CONSOLE_API_MSG * const m, _In
                                                 cchOutputBuffer,
                                                 &cchOutputWritten,
                                                 &pWaiter,
-                                                pwsInitialData.get(),
+                                                pwsInitialData,
                                                 cchInitialData,
                                                 pwsExeName.get(),
                                                 cchExeName,
@@ -348,15 +353,12 @@ HRESULT ApiDispatchers::ServerReadConsole(_Inout_ CONSOLE_API_MSG * const m, _In
         size_t const cchOutputBuffer = cbBufferSize;
         size_t cchOutputWritten;
 
-        char* const psInitialData = reinterpret_cast<char*>(pwsInitialData.get());
-
-
         hr = m->_pApiRoutines->ReadConsoleAImpl(pInputBuffer,
                                                 psOutputBuffer,
                                                 cchOutputBuffer,
                                                 &cchOutputWritten,
                                                 &pWaiter,
-                                                psInitialData,
+                                                pbInitialData.get(),
                                                 cbInitialData,
                                                 pwsExeName.get(),
                                                 cchExeName,

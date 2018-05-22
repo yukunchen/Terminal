@@ -1257,27 +1257,24 @@ std::wstring Alias::s_MatchAndCopyAlias(const std::wstring& sourceText,
 // - cbSource - length of pwchSource in bytes
 // - pwchTarget - where to store matched string
 // - cbTargetSize - on input, contains size of pwchTarget.  
-// - pcbTargetWritten - On output, contains length of alias stored in pwchTarget.
+// - cbTargetWritten - On output, contains length of alias stored in pwchTarget.
 // - pwchExe - Name of exe that command is associated with to find related aliases
 // - cbExe - Length in bytes of exe name
 // - LineCount - aliases can contain multiple commands.  $T is the command separator
 // Return Value:
 // - None. It will just maintain the source as the target if we can't match an alias.
 void Alias::s_MatchAndCopyAliasLegacy(_In_reads_bytes_(cbSource) PWCHAR pwchSource,
-                                      _In_ ULONG cbSource,
+                                      _In_ size_t cbSource,
                                       _Out_writes_bytes_(*pcbTarget) PWCHAR pwchTarget,
-                                      _In_ ULONG cbTargetSize,
-                                      _Out_ PULONG pcbTargetWritten,
-                                      _In_reads_bytes_(cbExe) PWCHAR pwchExe,
-                                      _In_ USHORT cbExe,
-                                      _Out_ PDWORD pcLines)
+                                      _In_ const size_t cbTargetSize,
+                                      size_t& cbTargetWritten,
+                                      const std::wstring& exeName,
+                                      DWORD& lines)
 {
     try
     {
-        THROW_HR_IF(E_POINTER, pwchExe == nullptr);
-        std::wstring exeName(pwchExe, cbExe / sizeof(WCHAR));
         std::wstring sourceText(pwchSource, cbSource / sizeof(WCHAR));
-        size_t lineCount = *pcLines;
+        size_t lineCount = lines;
 
         const auto targetText = s_MatchAndCopyAlias(sourceText, exeName, lineCount);
 
@@ -1293,10 +1290,10 @@ void Alias::s_MatchAndCopyAliasLegacy(_In_reads_bytes_(cbSource) PWCHAR pwchSour
                 std::copy_n(targetText.data(), targetText.size(), pwchTarget);
 
                 // Return bytes copied.
-                *pcbTargetWritten = gsl::narrow<ULONG>(targetText.size() * sizeof(wchar_t));
+                cbTargetWritten = gsl::narrow<ULONG>(targetText.size() * sizeof(wchar_t));
 
                 // Return lines info.
-                *pcLines = gsl::narrow<DWORD>(lineCount);
+                lines = gsl::narrow<DWORD>(lineCount);
             }
         }
     }

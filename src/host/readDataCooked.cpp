@@ -14,6 +14,8 @@
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
+#define LINE_INPUT_BUFFER_SIZE (256 * sizeof(WCHAR))
+
 // Routine Description:
 // - Constructs cooked read data class to hold context across key presses while a user is modifying their 'input line'.
 // Arguments:
@@ -41,47 +43,49 @@
 COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
                                    _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                                    SCREEN_INFORMATION& screenInfo,
-                                   _In_ ULONG BufferSize,
-                                   _In_ ULONG BytesRead,
-                                   _In_ ULONG CurrentPosition,
-                                   _In_ PWCHAR BufPtr,
-                                   _In_ PWCHAR BackupLimit,
-                                   _In_ ULONG UserBufferSize,
+                                   _In_ size_t UserBufferSize,
                                    _In_ PWCHAR UserBuffer,
-                                   _In_ COORD OriginalCursorPosition,
-                                   _In_ DWORD NumberOfVisibleChars,
                                    _In_ ULONG CtrlWakeupMask,
-                                   _In_ COMMAND_HISTORY* CommandHistory,
-                                   _In_ bool Echo,
-                                   _In_ bool InsertMode,
-                                   _In_ bool Processed,
-                                   _In_ bool Line,
-                                   _In_ ConsoleHandleData* pTempHandle
-    ) :
+                                   _In_ CommandHistory* CommandHistory,
+                                   const std::wstring& exeName
+) :
     ReadData(pInputBuffer, pInputReadHandleData),
     _screenInfo{ screenInfo },
-    _BufferSize{ BufferSize},
-    _BytesRead{ BytesRead},
-    _CurrentPosition{ CurrentPosition},
-    _BufPtr{ BufPtr },
-    _BackupLimit{ BackupLimit },
+    _BytesRead{ 0 },
+    _CurrentPosition{ 0 },
     _UserBufferSize{ UserBufferSize },
     _UserBuffer{ UserBuffer },
-    _OriginalCursorPosition(OriginalCursorPosition),
-    _NumberOfVisibleChars{ NumberOfVisibleChars },
+    _OriginalCursorPosition{ -1, -1 },
+    _NumberOfVisibleChars{ 0 },
     _CtrlWakeupMask{ CtrlWakeupMask },
     _CommandHistory{ CommandHistory },
-    _Echo{ Echo },
-    _InsertMode{ InsertMode },
-    _Processed{ Processed },
-    _Line{ Line },
-    _pTempHandle{ pTempHandle },
-    ExeName{ nullptr },
-    ExeNameLength{ 0 },
+    _Echo{ IsFlagSet(pInputBuffer->InputMode, ENABLE_ECHO_INPUT) },
+    _InsertMode{ ServiceLocator::LocateGlobals().getConsoleInformation().GetInsertMode() },
+    _Processed{ IsFlagSet(pInputBuffer->InputMode, ENABLE_PROCESSED_INPUT) },
+    _Line{ IsFlagSet(pInputBuffer->InputMode, ENABLE_LINE_INPUT) },
+    _tempHandle{ nullptr },
+    _exeName{ exeName },
+    BeforeDialogCursorPosition{ 0, 0 },
     _fIsUnicode{ false },
     ControlKeyState{ 0 },
     pdwNumBytes{ nullptr }
 {
+    THROW_IF_FAILED(screenInfo.Header.AllocateIoHandle(ConsoleHandleData::HandleType::Output,
+                                                       GENERIC_WRITE,
+                                                       FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                                       _tempHandle));
+
+    // to emulate OS/2 KbdStringIn, we read into our own big buffer
+    // (256 bytes) until the user types enter.  then return as many
+    // chars as will fit in the user's buffer.
+    _BufferSize = std::max(UserBufferSize, LINE_INPUT_BUFFER_SIZE);
+    _buffer = std::make_unique<byte[]>(_BufferSize);
+    _BackupLimit = reinterpret_cast<wchar_t*>(_buffer.get());
+    _BufPtr = reinterpret_cast<wchar_t*>(_buffer.get());
+
+    // Initialize the user's buffer to spaces. This is done so that
+    // moving in the buffer via cursor doesn't do strange things.
+    std::fill_n(_BufPtr, _BufferSize / sizeof(wchar_t), UNICODE_SPACE);
 }
 
 // Routine Description:
@@ -89,6 +93,18 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
 // - Decrements count of readers waiting on the given handle.
 COOKED_READ_DATA::~COOKED_READ_DATA()
 {
+    CleanUpAllPopups();
+}
+
+gsl::span<wchar_t> COOKED_READ_DATA::SpanWholeBuffer()
+{
+    return gsl::make_span(_BackupLimit, (_BufferSize / sizeof(wchar_t)));
+}
+
+gsl::span<wchar_t> COOKED_READ_DATA::SpanAtPointer()
+{
+    auto wholeSpan = SpanWholeBuffer();
+    return wholeSpan.subspan(_BufPtr - _BackupLimit);
 }
 
 // Routine Description:
@@ -111,33 +127,28 @@ COOKED_READ_DATA::~COOKED_READ_DATA()
 bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
                               const bool fIsUnicode,
                               _Out_ NTSTATUS* const pReplyStatus,
-                              _Out_ DWORD* const pNumBytes,
+                              _Out_ size_t* const pNumBytes,
                               _Out_ DWORD* const pControlKeyState,
                               _Out_ void* const /*pOutputData*/)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    FAIL_FAST_IF_FALSE(gci.IsConsoleLocked());
+    FAIL_FAST_IF(!gci.IsConsoleLocked());
 
     *pNumBytes = 0;
     *pControlKeyState = 0;
 
     *pReplyStatus = STATUS_SUCCESS;
 
-    FAIL_FAST_IF_FALSE(IsFlagClear(_pInputReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::InputPending));
+    FAIL_FAST_IF(_pInputReadHandleData->IsInputPending());
 
     // this routine should be called by a thread owning the same lock on the same console as we're reading from.
-    _pInputReadHandleData->LockReadCount();
-    FAIL_FAST_IF_FALSE(_pInputReadHandleData->GetReadCount() > 0);
-    _pInputReadHandleData->UnlockReadCount();
+    FAIL_FAST_IF(_pInputReadHandleData->GetReadCount() == 0);
 
     // if ctrl-c or ctrl-break was seen, terminate read.
     if (IsAnyFlagSet(TerminationReason, (WaitTerminationReason::CtrlC | WaitTerminationReason::CtrlBreak)))
     {
         *pReplyStatus = STATUS_ALERTED;
-        delete[] _BackupLimit;
-        delete[] ExeName;
         gci.lpCookedReadData = nullptr;
-        LOG_IF_FAILED(_pTempHandle->CloseHandle());
         return true;
     }
 
@@ -145,13 +156,7 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
     if (IsFlagSet(TerminationReason, WaitTerminationReason::ThreadDying))
     {
         *pReplyStatus = STATUS_THREAD_IS_TERMINATING;
-
-        // Clean up popup data structures.
-        CleanUpPopups(this);
-        delete[] _BackupLimit;
-        delete[] ExeName;
         gci.lpCookedReadData = nullptr;
-        LOG_IF_FAILED(_pTempHandle->CloseHandle());
         return true;
     }
 
@@ -159,16 +164,10 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
     // so, we decrement the read count. If it goes to zero, we wake up the
     // close thread. Otherwise, we wake up any other thread waiting for data.
 
-    if (IsFlagSet(_pInputReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::Closing))
+    if (IsFlagSet(TerminationReason, WaitTerminationReason::HandleClosing))
     {
         *pReplyStatus = STATUS_ALERTED;
-
-        // Clean up popup data structures.
-        CleanUpPopups(this);
-        delete[] _BackupLimit;
-        delete[] ExeName;
         gci.lpCookedReadData = nullptr;
-        LOG_IF_FAILED(_pTempHandle->CloseHandle());
         return true;
     }
 
@@ -195,7 +194,7 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
     //   because there is a popup to get input from.
     // However, pNumBytes is now the address of a different stack frame, and not
     //   necessarily the same as before (presumably not at all). The
-    //   PopupInputRoutine would try and write the number of bytes read to the
+    //   Callback would try and write the number of bytes read to the
     //   value in pdwNumBytes, and then we'd return up to ConsoleWaitBlock::Notify,
     //   who's dwNumBytes had nothing in it.
     // To fix this, when we hit this with a popup, we're going to make sure to
@@ -205,8 +204,8 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
     //   piece of old spaghetti code.
     if (_CommandHistory)
     {
-        PCLE_POPUP Popup;
-        if (!CLE_NO_POPUPS(_CommandHistory))
+        Popup* Popup;
+        if (!_CommandHistory->PopupList.empty())
         {
             // (see above comment, MSFT:13994975)
             // Make sure that the popup writes the dwNumBytes to the right place
@@ -215,21 +214,12 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
                 pdwNumBytes = pNumBytes;
             }
 
-            Popup = CONTAINING_RECORD(_CommandHistory->PopupList.Flink, CLE_POPUP, ListLink);
-             *pReplyStatus = (Popup->PopupInputRoutine) (this, nullptr, TRUE);
+            Popup = _CommandHistory->PopupList.front();
+            *pReplyStatus = Popup->DoCallback(this);
             if (*pReplyStatus == CONSOLE_STATUS_READ_COMPLETE || (*pReplyStatus != CONSOLE_STATUS_WAIT && *pReplyStatus != CONSOLE_STATUS_WAIT_NO_BLOCK))
             {
                 *pReplyStatus = S_OK;
-                // if there is more input that is pending from the popup, it will be saved in
-                // _pInputReadHandleData by giving it a pointer to _BackupLimit. don't delete _BackupLimit
-                // unless all data was read.
-                if (IsFlagClear(_pInputReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::InputPending))
-                {
-                    delete[] _BackupLimit;
-                }
-                delete[] ExeName;
                 gci.lpCookedReadData = nullptr;
-                LOG_IF_FAILED(_pTempHandle->CloseHandle());
 
                 return true;
             }
@@ -237,11 +227,10 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
         }
     }
 
-    *pReplyStatus = CookedRead(this, fIsUnicode, pNumBytes, pControlKeyState);
+    *pReplyStatus = Read(fIsUnicode, *pNumBytes, *pControlKeyState);
     if (*pReplyStatus != CONSOLE_STATUS_WAIT)
     {
         gci.lpCookedReadData = nullptr;
-        LOG_IF_FAILED(_pTempHandle->CloseHandle());
         return true;
     }
     else
@@ -250,38 +239,41 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
     }
 }
 
+bool COOKED_READ_DATA::AtEol() const noexcept
+{
+    return _BytesRead == (_CurrentPosition * 2);
+}
+
 // Routine Description:
 // - Method that actually retrieves a character/input record from the buffer (key press form)
 //   and determines the next action based on the various possible cooked read modes.
 // - Mode options include the F-keys popup menus, keyboard manipulation of the edit line, etc.
 // - This method also does the actual copying of the final manipulated data into the return buffer.
 // Arguments:
-// - pCookedReadData - Pointer to cooked read data information (edit line, client buffer, etc.)
-// - fIsUnicode - Treat as UCS-2 unicode or use Input CP to convert when done.
-// - cbNumBytes - On in, the number of bytes available in the client
+// - isUnicode - Treat as UCS-2 unicode or use Input CP to convert when done.
+// - numBytes - On in, the number of bytes available in the client
 // buffer. On out, the number of bytes consumed in the client buffer.
-// - ulControlKeyState - For some types of reads, this is the modifier key state with the last button press.
+// - controlKeyState - For some types of reads, this is the modifier key state with the last button press.
 [[nodiscard]]
-NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
-                    const bool fIsUnicode,
-                    _Inout_ ULONG* const cbNumBytes,
-                    _Out_ ULONG* const ulControlKeyState)
+HRESULT COOKED_READ_DATA::Read(const bool isUnicode,
+                               size_t& numBytes,
+                               ULONG& controlKeyState)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     NTSTATUS Status = STATUS_SUCCESS;
-    *ulControlKeyState = 0;
+    controlKeyState = 0;
 
     WCHAR Char;
     bool commandLineEditingKeys = false;
     DWORD KeyState;
-    DWORD NumBytes = 0;
-    ULONG NumToWrite;
+    size_t NumBytes = 0;
+    size_t NumToWrite;
     bool fAddDbcsLead = false;
 
-    INPUT_READ_HANDLE_DATA* const pInputReadHandleData = pCookedReadData->GetInputReadHandleData();
-    InputBuffer* const pInputBuffer = pCookedReadData->GetInputBuffer();
+    INPUT_READ_HANDLE_DATA* const pInputReadHandleData = GetInputReadHandleData();
+    InputBuffer* const pInputBuffer = GetInputBuffer();
 
-    while (pCookedReadData->_BytesRead < pCookedReadData->_BufferSize)
+    while (_BytesRead < _BufferSize)
     {
         // This call to GetChar may block.
         Status = GetChar(pInputBuffer,
@@ -294,7 +286,7 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
         {
             if (Status != CONSOLE_STATUS_WAIT)
             {
-                pCookedReadData->_BytesRead = 0;
+                _BytesRead = 0;
             }
             break;
         }
@@ -303,18 +295,19 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
         // up here because the debugger is multi-threaded and calls
         // read before outputting the prompt.
 
-        if (pCookedReadData->_OriginalCursorPosition.X == -1)
+        if (_OriginalCursorPosition.X == -1)
         {
-            pCookedReadData->_OriginalCursorPosition = pCookedReadData->_screenInfo.GetTextBuffer().GetCursor().GetPosition();
+            _OriginalCursorPosition = _screenInfo.GetTextBuffer().GetCursor().GetPosition();
         }
 
         if (commandLineEditingKeys)
         {
             // TODO: this is super weird for command line popups only
-            pCookedReadData->_fIsUnicode = fIsUnicode;
-            pCookedReadData->pdwNumBytes = cbNumBytes;
+            _fIsUnicode = isUnicode;
 
-            Status = ProcessCommandLine(pCookedReadData, Char, KeyState);
+            pdwNumBytes = &numBytes;
+
+            Status = ProcessCommandLine(this, Char, KeyState);
             if (Status == CONSOLE_STATUS_READ_COMPLETE || Status == CONSOLE_STATUS_WAIT)
             {
                 break;
@@ -327,14 +320,14 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
                 }
                 else
                 {
-                    pCookedReadData->_BytesRead = 0;
+                    _BytesRead = 0;
                 }
                 break;
             }
         }
         else
         {
-            if (ProcessCookedReadInput(pCookedReadData, Char, KeyState, &Status))
+            if (ProcessInput(Char, KeyState, Status))
             {
                 gci.Flags |= CONSOLE_IGNORE_NEXT_KEYUP;
                 break;
@@ -350,13 +343,13 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
     {
         DWORD LineCount = 1;
 
-        if (pCookedReadData->_Echo)
+        if (_Echo)
         {
             // Figure out where real string ends (at carriage return or end of buffer).
-            PWCHAR StringPtr = pCookedReadData->_BackupLimit;
-            ULONG StringLength = pCookedReadData->_BytesRead;
+            PWCHAR StringPtr = _BackupLimit;
+            size_t StringLength = _BytesRead;
             bool FoundCR = false;
-            for (ULONG i = 0; i < (pCookedReadData->_BytesRead / sizeof(WCHAR)); i++)
+            for (size_t i = 0; i < (_BytesRead / sizeof(WCHAR)); i++)
             {
                 if (*StringPtr++ == UNICODE_CARRIAGERETURN)
                 {
@@ -369,49 +362,37 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
             if (FoundCR)
             {
                 // add to command line recall list
-                LOG_IF_FAILED(AddCommand(pCookedReadData->_CommandHistory,
-                                         pCookedReadData->_BackupLimit,
-                                         (USHORT)StringLength,
-                                         IsFlagSet(gci.Flags, CONSOLE_HISTORY_NODUP)));
+                LOG_IF_FAILED(_CommandHistory->Add({ _BackupLimit, StringLength / sizeof(wchar_t) },
+                                                   IsFlagSet(gci.Flags, CONSOLE_HISTORY_NODUP)));
 
                 // check for alias
-                Alias::s_MatchAndCopyAliasLegacy(pCookedReadData->_BackupLimit,
-                                                 pCookedReadData->_BytesRead,
-                                                 pCookedReadData->_BackupLimit,
-                                                 pCookedReadData->_BufferSize,
-                                                 &pCookedReadData->_BytesRead,
-                                                 pCookedReadData->ExeName,
-                                                 pCookedReadData->ExeNameLength,
-                                                 &LineCount);
-
+                ProcessAliases(LineCount);
             }
         }
 
         // at this point, a->NumBytes contains the number of bytes in
         // the UNICODE string read.  UserBufferSize contains the converted
         // size of the app's buffer.
-        if (pCookedReadData->_BytesRead > pCookedReadData->_UserBufferSize || LineCount > 1)
+        if (_BytesRead > _UserBufferSize || LineCount > 1)
         {
             if (LineCount > 1)
             {
                 PWSTR Tmp;
-
-                SetFlag(pInputReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::MultiLineInput);
-                if (!fIsUnicode)
+                if (!isUnicode)
                 {
                     if (pInputBuffer->IsReadPartialByteSequenceAvailable())
                     {
                         fAddDbcsLead = true;
-                        std::unique_ptr<IInputEvent> event = pCookedReadData->GetInputBuffer()->FetchReadPartialByteSequence(false);
+                        std::unique_ptr<IInputEvent> event = GetInputBuffer()->FetchReadPartialByteSequence(false);
                         const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(event.get());
-                        *pCookedReadData->_UserBuffer = static_cast<char>(pKeyEvent->GetCharData());
-                        pCookedReadData->_UserBuffer++;
-                        pCookedReadData->_UserBufferSize -= sizeof(wchar_t);
+                        *_UserBuffer = static_cast<char>(pKeyEvent->GetCharData());
+                        _UserBuffer++;
+                        _UserBufferSize -= sizeof(wchar_t);
                     }
 
                     NumBytes = 0;
-                    for (Tmp = pCookedReadData->_BackupLimit;
-                         *Tmp != UNICODE_LINEFEED && pCookedReadData->_UserBufferSize / sizeof(WCHAR) > NumBytes;
+                    for (Tmp = _BackupLimit;
+                         *Tmp != UNICODE_LINEFEED && _UserBufferSize / sizeof(WCHAR) > NumBytes;
                          Tmp++)
                     {
                         NumBytes += IsGlyphFullWidth(*Tmp) ? 2 : 1;
@@ -419,95 +400,96 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
                 }
 
 #pragma prefast(suppress:__WARNING_BUFFER_OVERFLOW, "LineCount > 1 means there's a UNICODE_LINEFEED")
-                for (Tmp = pCookedReadData->_BackupLimit; *Tmp != UNICODE_LINEFEED; Tmp++)
+                for (Tmp = _BackupLimit; *Tmp != UNICODE_LINEFEED; Tmp++)
                 {
-                    FAIL_FAST_IF_FALSE(Tmp < (pCookedReadData->_BackupLimit + pCookedReadData->_BytesRead));
+                    FAIL_FAST_IF_FALSE(Tmp < (_BackupLimit + _BytesRead));
                 }
 
-                *cbNumBytes = (ULONG)(Tmp - pCookedReadData->_BackupLimit + 1) * sizeof(*Tmp);
+                numBytes = (ULONG)(Tmp - _BackupLimit + 1) * sizeof(*Tmp);
             }
             else
             {
-                if (!fIsUnicode)
+                if (!isUnicode)
                 {
                     PWSTR Tmp;
 
                     if (pInputBuffer->IsReadPartialByteSequenceAvailable())
                     {
                         fAddDbcsLead = true;
-                        std::unique_ptr<IInputEvent> event = pCookedReadData->GetInputBuffer()->FetchReadPartialByteSequence(false);
+                        std::unique_ptr<IInputEvent> event = GetInputBuffer()->FetchReadPartialByteSequence(false);
                         const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(event.get());
-                        *pCookedReadData->_UserBuffer = static_cast<char>(pKeyEvent->GetCharData());
-                        pCookedReadData->_UserBuffer++;
-                        pCookedReadData->_UserBufferSize -= sizeof(wchar_t);
+                        *_UserBuffer = static_cast<char>(pKeyEvent->GetCharData());
+                        _UserBuffer++;
+                        _UserBufferSize -= sizeof(wchar_t);
                     }
                     NumBytes = 0;
-                    NumToWrite = pCookedReadData->_BytesRead;
-                    for (Tmp = pCookedReadData->_BackupLimit;
-                         NumToWrite && pCookedReadData->_UserBufferSize / sizeof(WCHAR) > NumBytes;
+                    NumToWrite = _BytesRead;
+                    for (Tmp = _BackupLimit;
+                         NumToWrite && _UserBufferSize / sizeof(WCHAR) > NumBytes;
                          Tmp++, NumToWrite -= sizeof(WCHAR))
                     {
                         NumBytes += IsGlyphFullWidth(*Tmp) ? 2 : 1;
                     }
                 }
-                *cbNumBytes = pCookedReadData->_UserBufferSize;
+                numBytes = _UserBufferSize;
             }
 
+            __analysis_assume(numBytes <= _UserBufferSize);
+            memmove(_UserBuffer, _BackupLimit, numBytes);
 
-            SetFlag(pInputReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::InputPending);
-            pInputReadHandleData->BufPtr = pCookedReadData->_BackupLimit;
-            pInputReadHandleData->BytesAvailable = pCookedReadData->_BytesRead - *cbNumBytes;
-            pInputReadHandleData->CurrentBufPtr = (PWCHAR)((PBYTE)pCookedReadData->_BackupLimit + *cbNumBytes);
-            __analysis_assume(*cbNumBytes <= pCookedReadData->_UserBufferSize);
-            memmove(pCookedReadData->_UserBuffer, pCookedReadData->_BackupLimit, *cbNumBytes);
+            const std::string_view pending{ ((char*)_BackupLimit + numBytes), _BytesRead - numBytes };
+            if (LineCount > 1)
+            {
+                pInputReadHandleData->SaveMultilinePendingInput(pending);
+            }
+            else
+            {
+                pInputReadHandleData->SavePendingInput(pending);
+            }
         }
         else
         {
-            if (!fIsUnicode)
+            if (!isUnicode)
             {
                 PWSTR Tmp;
 
                 if (pInputBuffer->IsReadPartialByteSequenceAvailable())
                 {
                     fAddDbcsLead = true;
-                    std::unique_ptr<IInputEvent> event = pCookedReadData->GetInputBuffer()->FetchReadPartialByteSequence(false);
+                    std::unique_ptr<IInputEvent> event = GetInputBuffer()->FetchReadPartialByteSequence(false);
                     const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(event.get());
-                    *pCookedReadData->_UserBuffer = static_cast<char>(pKeyEvent->GetCharData());
-                    pCookedReadData->_UserBuffer++;
-                    pCookedReadData->_UserBufferSize -= sizeof(wchar_t);
+                    *_UserBuffer = static_cast<char>(pKeyEvent->GetCharData());
+                    _UserBuffer++;
+                    _UserBufferSize -= sizeof(wchar_t);
 
-                    if (pCookedReadData->_UserBufferSize == 0)
+                    if (_UserBufferSize == 0)
                     {
-                        *cbNumBytes = 1;
-                        delete[] pCookedReadData->_BackupLimit;
+                        numBytes = 1;
                         return STATUS_SUCCESS;
                     }
                 }
                 NumBytes = 0;
-                NumToWrite = pCookedReadData->_BytesRead;
-                for (Tmp = pCookedReadData->_BackupLimit;
-                     NumToWrite && pCookedReadData->_UserBufferSize / sizeof(WCHAR) > NumBytes;
+                NumToWrite = _BytesRead;
+                for (Tmp = _BackupLimit;
+                     NumToWrite && _UserBufferSize / sizeof(WCHAR) > NumBytes;
                      Tmp++, NumToWrite -= sizeof(WCHAR))
                 {
                     NumBytes += IsGlyphFullWidth(*Tmp) ? 2 : 1;
                 }
             }
 
-            *cbNumBytes = pCookedReadData->_BytesRead;
+            numBytes = _BytesRead;
 
-            if (*cbNumBytes > pCookedReadData->_UserBufferSize)
+            if (numBytes > _UserBufferSize)
             {
-                Status = STATUS_BUFFER_OVERFLOW;
-                delete[] pCookedReadData->_BackupLimit;
-                return Status;
+                return STATUS_BUFFER_OVERFLOW;
             }
 
-            memmove(pCookedReadData->_UserBuffer, pCookedReadData->_BackupLimit, *cbNumBytes);
-            delete[] pCookedReadData->_BackupLimit;
+            memmove(_UserBuffer, _BackupLimit, numBytes);
         }
-        *ulControlKeyState = pCookedReadData->ControlKeyState;
+        controlKeyState = ControlKeyState;
 
-        if (!fIsUnicode)
+        if (!isUnicode)
         {
             // if ansi, translate string.
             std::unique_ptr<char[]> tempBuffer;
@@ -521,35 +503,44 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
             }
 
             std::unique_ptr<IInputEvent> partialEvent;
-            *cbNumBytes = TranslateUnicodeToOem(pCookedReadData->_UserBuffer,
-                                                *cbNumBytes / sizeof(wchar_t),
-                                                tempBuffer.get(),
-                                                NumBytes,
-                                                partialEvent);
+            numBytes = TranslateUnicodeToOem(_UserBuffer,
+                                             gsl::narrow<ULONG>(numBytes / sizeof(wchar_t)),
+                                             tempBuffer.get(),
+                                             gsl::narrow<ULONG>(NumBytes),
+                                             partialEvent);
 
             if (partialEvent.get())
             {
-                pCookedReadData->GetInputBuffer()->StoreReadPartialByteSequence(std::move(partialEvent));
+                GetInputBuffer()->StoreReadPartialByteSequence(std::move(partialEvent));
             }
 
 
-            if (*cbNumBytes > pCookedReadData->_UserBufferSize)
+            if (numBytes > _UserBufferSize)
             {
                 Status = STATUS_BUFFER_OVERFLOW;
                 return Status;
             }
 
-            memmove(pCookedReadData->_UserBuffer, tempBuffer.get(), *cbNumBytes);
+            memmove(_UserBuffer, tempBuffer.get(), numBytes);
             if (fAddDbcsLead)
             {
-                (*cbNumBytes)++;
+                numBytes++;
             }
         }
-
-        delete[] pCookedReadData->ExeName;
     }
 
     return Status;
+}
+
+void COOKED_READ_DATA::ProcessAliases(DWORD& lineCount)
+{
+    Alias::s_MatchAndCopyAliasLegacy(_BackupLimit,
+                                     _BytesRead,
+                                     _BackupLimit,
+                                     _BufferSize,
+                                     _BytesRead,
+                                     _exeName,
+                                     lineCount);
 }
 
 // Routine Description:
@@ -558,35 +549,34 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
 // Arguments:
 // - pCookedReadData - Pointer to cooked read data information (edit line, client buffer, etc.)
 // - wch - The most recently pressed/retrieved character from the input buffer (keystroke)
-// - dwKeyState - Modifier keys/state information with the pressed key/character
-// - pStatus - The return code to pass to the client
+// - keyState - Modifier keys/state information with the pressed key/character
+// - status - The return code to pass to the client
 // Return Value:
 // - true if read is completed. false if we need to keep waiting and be called again with the user's next keystroke.
-bool ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
-                            _In_ WCHAR wch,
-                            const DWORD dwKeyState,
-                            _Out_ NTSTATUS* pStatus)
+bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
+                                    const DWORD keyState,
+                                    NTSTATUS& status)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    DWORD NumSpaces = 0;
+    size_t NumSpaces = 0;
     SHORT ScrollY = 0;
-    ULONG NumToWrite;
-    WCHAR wchOrig = wch;
+    size_t NumToWrite;
+    WCHAR wch = wchOrig;
     bool fStartFromDelim;
 
-    *pStatus = STATUS_SUCCESS;
-    if (pCookedReadData->_BytesRead >= (pCookedReadData->_BufferSize - (2 * sizeof(WCHAR))) && wch != UNICODE_CARRIAGERETURN && wch != UNICODE_BACKSPACE)
+    status = STATUS_SUCCESS;
+    if (_BytesRead >= (_BufferSize - (2 * sizeof(WCHAR))) && wch != UNICODE_CARRIAGERETURN && wch != UNICODE_BACKSPACE)
     {
         return false;
     }
 
-    if (pCookedReadData->_CtrlWakeupMask != 0 && wch < L' ' && (pCookedReadData->_CtrlWakeupMask & (1 << wch)))
+    if (_CtrlWakeupMask != 0 && wch < L' ' && (_CtrlWakeupMask & (1 << wch)))
     {
-        *pCookedReadData->_BufPtr = wch;
-        pCookedReadData->_BytesRead += sizeof(WCHAR);
-        pCookedReadData->_BufPtr += 1;
-        pCookedReadData->_CurrentPosition += 1;
-        pCookedReadData->ControlKeyState = dwKeyState;
+        *_BufPtr = wch;
+        _BytesRead += sizeof(WCHAR);
+        _BufPtr += 1;
+        _CurrentPosition += 1;
+        ControlKeyState = keyState;
         return true;
     }
 
@@ -595,7 +585,7 @@ bool ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
         wch = UNICODE_BACKSPACE;
     }
 
-    if (AT_EOL(pCookedReadData))
+    if (AtEol())
     {
         // If at end of line, processing is relatively simple. Just store the character and write it to the screen.
         if (wch == UNICODE_BACKSPACE2)
@@ -603,63 +593,63 @@ bool ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
             wch = UNICODE_BACKSPACE;
         }
 
-        if (wch != UNICODE_BACKSPACE || pCookedReadData->_BufPtr != pCookedReadData->_BackupLimit)
+        if (wch != UNICODE_BACKSPACE || _BufPtr != _BackupLimit)
         {
-            fStartFromDelim = IsWordDelim(pCookedReadData->_BufPtr[-1]);
+            fStartFromDelim = IsWordDelim(_BufPtr[-1]);
 
         eol_repeat:
-            if (pCookedReadData->_Echo)
+            if (_Echo)
             {
                 NumToWrite = sizeof(WCHAR);
-                *pStatus = WriteCharsLegacy(pCookedReadData->_screenInfo,
-                                            pCookedReadData->_BackupLimit,
-                                            pCookedReadData->_BufPtr,
-                                            &wch,
-                                            &NumToWrite,
-                                            &NumSpaces,
-                                            pCookedReadData->_OriginalCursorPosition.X,
-                                            WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
-                                            &ScrollY);
-                if (NT_SUCCESS(*pStatus))
+                status = WriteCharsLegacy(_screenInfo,
+                                          _BackupLimit,
+                                          _BufPtr,
+                                          &wch,
+                                          &NumToWrite,
+                                          &NumSpaces,
+                                          _OriginalCursorPosition.X,
+                                          WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
+                                          &ScrollY);
+                if (NT_SUCCESS(status))
                 {
-                    pCookedReadData->_OriginalCursorPosition.Y += ScrollY;
+                    _OriginalCursorPosition.Y += ScrollY;
                 }
                 else
                 {
-                    RIPMSG1(RIP_WARNING, "WriteCharsLegacy failed %x", *pStatus);
+                    RIPMSG1(RIP_WARNING, "WriteCharsLegacy failed %x", status);
                 }
             }
 
-            pCookedReadData->_NumberOfVisibleChars += NumSpaces;
-            if (wch == UNICODE_BACKSPACE && pCookedReadData->_Processed)
+            _NumberOfVisibleChars += NumSpaces;
+            if (wch == UNICODE_BACKSPACE && _Processed)
             {
-                pCookedReadData->_BytesRead -= sizeof(WCHAR);
+                _BytesRead -= sizeof(WCHAR);
 #pragma prefast(suppress:__WARNING_POTENTIAL_BUFFER_OVERFLOW_HIGH_PRIORITY, "This access is fine")
-                *pCookedReadData->_BufPtr = (WCHAR)' ';
-                pCookedReadData->_BufPtr -= 1;
-                pCookedReadData->_CurrentPosition -= 1;
+                *_BufPtr = (WCHAR)' ';
+                _BufPtr -= 1;
+                _CurrentPosition -= 1;
 
                 // Repeat until it hits the word boundary
                 if (wchOrig == EXTKEY_ERASE_PREV_WORD &&
-                    pCookedReadData->_BufPtr != pCookedReadData->_BackupLimit &&
-                    fStartFromDelim ^ !IsWordDelim(pCookedReadData->_BufPtr[-1]))
+                    _BufPtr != _BackupLimit &&
+                    fStartFromDelim ^ !IsWordDelim(_BufPtr[-1]))
                 {
                     goto eol_repeat;
                 }
             }
             else
             {
-                *pCookedReadData->_BufPtr = wch;
-                pCookedReadData->_BytesRead += sizeof(WCHAR);
-                pCookedReadData->_BufPtr += 1;
-                pCookedReadData->_CurrentPosition += 1;
+                *_BufPtr = wch;
+                _BytesRead += sizeof(WCHAR);
+                _BufPtr += 1;
+                _CurrentPosition += 1;
             }
         }
     }
     else
     {
         bool CallWrite = true;
-        const SHORT sScreenBufferSizeX = pCookedReadData->_screenInfo.GetScreenBufferSize().X;
+        const SHORT sScreenBufferSizeX = _screenInfo.GetScreenBufferSize().X;
 
         // processing in the middle of the line is more complex:
 
@@ -669,55 +659,55 @@ bool ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
         // write the new command line to the screen
         // update the cursor position
 
-        if (wch == UNICODE_BACKSPACE && pCookedReadData->_Processed)
+        if (wch == UNICODE_BACKSPACE && _Processed)
         {
             // for backspace, use writechars to calculate the new cursor position.
             // this call also sets the cursor to the right position for the
             // second call to writechars.
 
-            if (pCookedReadData->_BufPtr != pCookedReadData->_BackupLimit)
+            if (_BufPtr != _BackupLimit)
             {
 
-                fStartFromDelim = IsWordDelim(pCookedReadData->_BufPtr[-1]);
+                fStartFromDelim = IsWordDelim(_BufPtr[-1]);
 
             bs_repeat:
                 // we call writechar here so that cursor position gets updated
                 // correctly.  we also call it later if we're not at eol so
                 // that the remainder of the string can be updated correctly.
 
-                if (pCookedReadData->_Echo)
+                if (_Echo)
                 {
                     NumToWrite = sizeof(WCHAR);
-                    *pStatus = WriteCharsLegacy(pCookedReadData->_screenInfo,
-                                                pCookedReadData->_BackupLimit,
-                                                pCookedReadData->_BufPtr,
-                                                &wch,
-                                                &NumToWrite,
-                                                nullptr,
-                                                pCookedReadData->_OriginalCursorPosition.X,
-                                                WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
-                                                nullptr);
-                    if (!NT_SUCCESS(*pStatus))
+                    status = WriteCharsLegacy(_screenInfo,
+                                              _BackupLimit,
+                                              _BufPtr,
+                                              &wch,
+                                              &NumToWrite,
+                                              nullptr,
+                                              _OriginalCursorPosition.X,
+                                              WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
+                                              nullptr);
+                    if (!NT_SUCCESS(status))
                     {
-                        RIPMSG1(RIP_WARNING, "WriteCharsLegacy failed %x", *pStatus);
+                        RIPMSG1(RIP_WARNING, "WriteCharsLegacy failed %x", status);
                     }
                 }
-                pCookedReadData->_BytesRead -= sizeof(WCHAR);
-                pCookedReadData->_BufPtr -= 1;
-                pCookedReadData->_CurrentPosition -= 1;
-                memmove(pCookedReadData->_BufPtr,
-                        pCookedReadData->_BufPtr + 1,
-                        pCookedReadData->_BytesRead - (pCookedReadData->_CurrentPosition * sizeof(WCHAR)));
+                _BytesRead -= sizeof(WCHAR);
+                _BufPtr -= 1;
+                _CurrentPosition -= 1;
+                memmove(_BufPtr,
+                        _BufPtr + 1,
+                        _BytesRead - (_CurrentPosition * sizeof(WCHAR)));
                 {
-                    PWCHAR buf = (PWCHAR)((PBYTE)pCookedReadData->_BackupLimit + pCookedReadData->_BytesRead);
+                    PWCHAR buf = (PWCHAR)((PBYTE)_BackupLimit + _BytesRead);
                     *buf = (WCHAR)' ';
                 }
                 NumSpaces = 0;
 
                 // Repeat until it hits the word boundary
                 if (wchOrig == EXTKEY_ERASE_PREV_WORD &&
-                    pCookedReadData->_BufPtr != pCookedReadData->_BackupLimit &&
-                    fStartFromDelim ^ !IsWordDelim(pCookedReadData->_BufPtr[-1]))
+                    _BufPtr != _BackupLimit &&
+                    fStartFromDelim ^ !IsWordDelim(_BufPtr[-1]))
                 {
                     goto bs_repeat;
                 }
@@ -732,96 +722,96 @@ bool ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
             // store the char
             if (wch == UNICODE_CARRIAGERETURN)
             {
-                pCookedReadData->_BufPtr = (PWCHAR)((PBYTE)pCookedReadData->_BackupLimit + pCookedReadData->_BytesRead);
-                *pCookedReadData->_BufPtr = wch;
-                pCookedReadData->_BufPtr += 1;
-                pCookedReadData->_BytesRead += sizeof(WCHAR);
-                pCookedReadData->_CurrentPosition += 1;
+                _BufPtr = (PWCHAR)((PBYTE)_BackupLimit + _BytesRead);
+                *_BufPtr = wch;
+                _BufPtr += 1;
+                _BytesRead += sizeof(WCHAR);
+                _CurrentPosition += 1;
             }
             else
             {
                 bool fBisect = false;
 
-                if (pCookedReadData->_Echo)
+                if (_Echo)
                 {
-                    if (CheckBisectProcessW(pCookedReadData->_screenInfo,
-                                            pCookedReadData->_BackupLimit,
-                                            pCookedReadData->_CurrentPosition + 1,
-                                            sScreenBufferSizeX - pCookedReadData->_OriginalCursorPosition.X,
-                                            pCookedReadData->_OriginalCursorPosition.X,
+                    if (CheckBisectProcessW(_screenInfo,
+                                            _BackupLimit,
+                                            _CurrentPosition + 1,
+                                            sScreenBufferSizeX - _OriginalCursorPosition.X,
+                                            _OriginalCursorPosition.X,
                                             TRUE))
                     {
                         fBisect = true;
                     }
                 }
 
-                if (pCookedReadData->_InsertMode)
+                if (_InsertMode)
                 {
-                    memmove(pCookedReadData->_BufPtr + 1,
-                            pCookedReadData->_BufPtr,
-                            pCookedReadData->_BytesRead - (pCookedReadData->_CurrentPosition * sizeof(WCHAR)));
-                    pCookedReadData->_BytesRead += sizeof(WCHAR);
+                    memmove(_BufPtr + 1,
+                            _BufPtr,
+                            _BytesRead - (_CurrentPosition * sizeof(WCHAR)));
+                    _BytesRead += sizeof(WCHAR);
                 }
-                *pCookedReadData->_BufPtr = wch;
-                pCookedReadData->_BufPtr += 1;
-                pCookedReadData->_CurrentPosition += 1;
+                *_BufPtr = wch;
+                _BufPtr += 1;
+                _CurrentPosition += 1;
 
                 // calculate new cursor position
-                if (pCookedReadData->_Echo)
+                if (_Echo)
                 {
-                    NumSpaces = RetrieveNumberOfSpaces(pCookedReadData->_OriginalCursorPosition.X,
-                                                       pCookedReadData->_BackupLimit,
-                                                       pCookedReadData->_CurrentPosition - 1);
+                    NumSpaces = RetrieveNumberOfSpaces(_OriginalCursorPosition.X,
+                                                       _BackupLimit,
+                                                       _CurrentPosition - 1);
                     if (NumSpaces > 0 && fBisect)
                         NumSpaces--;
                 }
             }
         }
 
-        if (pCookedReadData->_Echo && CallWrite)
+        if (_Echo && CallWrite)
         {
             COORD CursorPosition;
 
             // save cursor position
-            CursorPosition = pCookedReadData->_screenInfo.GetTextBuffer().GetCursor().GetPosition();
+            CursorPosition = _screenInfo.GetTextBuffer().GetCursor().GetPosition();
             CursorPosition.X = (SHORT)(CursorPosition.X + NumSpaces);
 
             // clear the current command line from the screen
 #pragma prefast(suppress:__WARNING_BUFFER_OVERFLOW, "Not sure why prefast doesn't like this call.")
-            DeleteCommandLine(pCookedReadData, FALSE);
+            DeleteCommandLine(this, FALSE);
 
             // write the new command line to the screen
-            NumToWrite = pCookedReadData->_BytesRead;
+            NumToWrite = _BytesRead;
 
             DWORD dwFlags = WC_DESTRUCTIVE_BACKSPACE | WC_ECHO;
             if (wch == UNICODE_CARRIAGERETURN)
             {
                 dwFlags |= WC_KEEP_CURSOR_VISIBLE;
             }
-            *pStatus = WriteCharsLegacy(pCookedReadData->_screenInfo,
-                                        pCookedReadData->_BackupLimit,
-                                        pCookedReadData->_BackupLimit,
-                                        pCookedReadData->_BackupLimit,
-                                        &NumToWrite,
-                                        &pCookedReadData->_NumberOfVisibleChars,
-                                        pCookedReadData->_OriginalCursorPosition.X,
-                                        dwFlags,
-                                        &ScrollY);
-            if (!NT_SUCCESS(*pStatus))
+            status = WriteCharsLegacy(_screenInfo,
+                                      _BackupLimit,
+                                      _BackupLimit,
+                                      _BackupLimit,
+                                      &NumToWrite,
+                                      &_NumberOfVisibleChars,
+                                      _OriginalCursorPosition.X,
+                                      dwFlags,
+                                      &ScrollY);
+            if (!NT_SUCCESS(status))
             {
-                RIPMSG1(RIP_WARNING, "WriteCharsLegacy failed 0x%x", *pStatus);
-                pCookedReadData->_BytesRead = 0;
+                RIPMSG1(RIP_WARNING, "WriteCharsLegacy failed 0x%x", status);
+                _BytesRead = 0;
                 return true;
             }
 
             // update cursor position
             if (wch != UNICODE_CARRIAGERETURN)
             {
-                if (CheckBisectProcessW(pCookedReadData->_screenInfo,
-                                        pCookedReadData->_BackupLimit,
-                                        pCookedReadData->_CurrentPosition + 1,
-                                        sScreenBufferSizeX - pCookedReadData->_OriginalCursorPosition.X,
-                                        pCookedReadData->_OriginalCursorPosition.X, TRUE))
+                if (CheckBisectProcessW(_screenInfo,
+                                        _BackupLimit,
+                                        _CurrentPosition + 1,
+                                        sScreenBufferSizeX - _OriginalCursorPosition.X,
+                                        _OriginalCursorPosition.X, TRUE))
                 {
                     if (CursorPosition.X == (sScreenBufferSizeX - 1))
                     {
@@ -830,12 +820,12 @@ bool ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
                 }
 
                 // adjust cursor position for WriteChars
-                pCookedReadData->_OriginalCursorPosition.Y += ScrollY;
+                _OriginalCursorPosition.Y += ScrollY;
                 CursorPosition.Y += ScrollY;
-                *pStatus = AdjustCursorPosition(pCookedReadData->_screenInfo, CursorPosition, TRUE, nullptr);
-                if (!NT_SUCCESS(*pStatus))
+                status = AdjustCursorPosition(_screenInfo, CursorPosition, TRUE, nullptr);
+                if (!NT_SUCCESS(status))
                 {
-                    pCookedReadData->_BytesRead = 0;
+                    _BytesRead = 0;
                     return true;
                 }
             }
@@ -847,46 +837,69 @@ bool ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
     // stored at the end of the buffer.
     if (wch == UNICODE_CARRIAGERETURN)
     {
-        if (pCookedReadData->_Processed)
+        if (_Processed)
         {
-            if (pCookedReadData->_BytesRead < pCookedReadData->_BufferSize)
+            if (_BytesRead < _BufferSize)
             {
-                *pCookedReadData->_BufPtr = UNICODE_LINEFEED;
-                if (pCookedReadData->_Echo)
+                *_BufPtr = UNICODE_LINEFEED;
+                if (_Echo)
                 {
                     NumToWrite = sizeof(WCHAR);
-                    *pStatus = WriteCharsLegacy(pCookedReadData->_screenInfo,
-                                                pCookedReadData->_BackupLimit,
-                                                pCookedReadData->_BufPtr,
-                                                pCookedReadData->_BufPtr,
-                                                &NumToWrite,
-                                                nullptr,
-                                                pCookedReadData->_OriginalCursorPosition.X,
-                                                WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
-                                                nullptr);
-                    if (!NT_SUCCESS(*pStatus))
+                    status = WriteCharsLegacy(_screenInfo,
+                                              _BackupLimit,
+                                              _BufPtr,
+                                              _BufPtr,
+                                              &NumToWrite,
+                                              nullptr,
+                                              _OriginalCursorPosition.X,
+                                              WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
+                                              nullptr);
+                    if (!NT_SUCCESS(status))
                     {
-                        RIPMSG1(RIP_WARNING, "WriteCharsLegacy failed 0x%x", *pStatus);
+                        RIPMSG1(RIP_WARNING, "WriteCharsLegacy failed 0x%x", status);
                     }
                 }
-                pCookedReadData->_BytesRead += sizeof(WCHAR);
-                pCookedReadData->_BufPtr++;
-                pCookedReadData->_CurrentPosition += 1;
+                _BytesRead += sizeof(WCHAR);
+                _BufPtr++;
+                _CurrentPosition += 1;
             }
         }
         // reset the cursor back to 25% if necessary
-        if (pCookedReadData->_Line)
+        if (_Line)
         {
-            if (!!pCookedReadData->_InsertMode != gci.GetInsertMode())
+            if (!!_InsertMode != gci.GetInsertMode())
             {
                 // Make cursor small.
-                LOG_IF_FAILED(ProcessCommandLine(pCookedReadData, VK_INSERT, 0));
+                LOG_IF_FAILED(ProcessCommandLine(this, VK_INSERT, 0));
             }
 
-            *pStatus = STATUS_SUCCESS;
+            status = STATUS_SUCCESS;
             return true;
         }
     }
 
     return false;
+}
+
+void COOKED_READ_DATA::EndCurrentPopup()
+{
+    if (_CommandHistory == nullptr)
+    {
+        return;
+    }
+
+    LOG_IF_FAILED(_CommandHistory->EndPopup());
+}
+
+void COOKED_READ_DATA::CleanUpAllPopups()
+{
+    if (_CommandHistory == nullptr)
+    {
+        return;
+    }
+
+    while (!_CommandHistory->PopupList.empty())
+    {
+        LOG_IF_FAILED(_CommandHistory->EndPopup());
+    }
 }

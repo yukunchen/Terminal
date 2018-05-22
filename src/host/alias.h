@@ -19,13 +19,12 @@ public:
     static void s_ClearCmdExeAliases();
 
     static void s_MatchAndCopyAliasLegacy(_In_reads_bytes_(cbSource) PWCHAR pwchSource,
-                                          _In_ ULONG cbSource,
+                                          _In_ size_t cbSource,
                                           _Out_writes_bytes_(*pcbTarget) PWCHAR pwchTarget,
-                                          _In_ ULONG cbTargetSize,
-                                          _Out_ PULONG pcbTargetWritten,
-                                          _In_reads_bytes_(cbExe) PWCHAR pwchExe,
-                                          _In_ USHORT cbExe,
-                                          _Out_ PDWORD pcLines);
+                                          _In_ const size_t cbTargetSize,
+                                          size_t& cbTargetWritten,
+                                          const std::wstring& exeName,
+                                          DWORD& lines);
 
     static std::wstring s_MatchAndCopyAlias(const std::wstring& sourceText,
                                             const std::wstring& exeName,

@@ -52,6 +52,7 @@ SOURCES = \
     ..\selectionState.cpp \
     ..\scrolling.cpp \
     ..\cmdline.cpp   \
+    ..\popup.cpp   \
     ..\alias.cpp   \
     ..\history.cpp   \
     ..\VtIo.cpp   \

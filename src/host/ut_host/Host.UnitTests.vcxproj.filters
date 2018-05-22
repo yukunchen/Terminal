@@ -84,6 +84,9 @@
     <ClCompile Include="SearchTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="HistoryTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="UnicodeLiteral.hpp">

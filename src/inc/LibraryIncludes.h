@@ -18,6 +18,7 @@
 #define NOMINMAX
 
 #include <algorithm>
+#include <atomic>
 #include <deque>
 #include <list>
 #include <memory>

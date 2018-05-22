@@ -43,7 +43,7 @@ public:
     bool Notify(const WaitTerminationReason TerminationReason,
                 const bool fIsUnicode,
                 _Out_ NTSTATUS* const pReplyStatus,
-                _Out_ DWORD* const pNumBytes,
+                _Out_ size_t* const pNumBytes,
                 _Out_ DWORD* const pControlKeyState,
                 _Out_ void* const pOutputData) override;
 

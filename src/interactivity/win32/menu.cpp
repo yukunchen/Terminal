@@ -569,7 +569,7 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
 
     SetScreenColors(ScreenInfo, pStateInfo->ScreenAttributes, pStateInfo->PopupAttributes, TRUE);
 
-    ResizeCommandHistoryBuffers(pStateInfo->HistoryBufferSize);
+    CommandHistory::s_ResizeAll(pStateInfo->HistoryBufferSize);
     gci.SetNumberOfHistoryBuffers(pStateInfo->NumberOfHistoryBuffers);
     if (pStateInfo->HistoryNoDup)
     {

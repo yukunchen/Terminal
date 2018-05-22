@@ -60,15 +60,15 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleCreateObject(_In_ PCONSOLE_API_MSG pMessa
         }
     }
 
-    ConsoleHandleData* Handle = nullptr;
+    std::unique_ptr<ConsoleHandleData> handle;
     // Check the requested type.
     switch (CreateInformation->ObjectType)
     {
     case CD_IO_OBJECT_TYPE_CURRENT_INPUT:
         Status = NTSTATUS_FROM_HRESULT(gci.pInputBuffer->Header.AllocateIoHandle(ConsoleHandleData::HandleType::Input,
-                                                                                                    CreateInformation->DesiredAccess,
-                                                                                                    CreateInformation->ShareMode,
-                                                                                                    &Handle));
+                                                                                 CreateInformation->DesiredAccess,
+                                                                                 CreateInformation->ShareMode,
+                                                                                 handle));
         break;
 
     case CD_IO_OBJECT_TYPE_CURRENT_OUTPUT:
@@ -77,11 +77,11 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleCreateObject(_In_ PCONSOLE_API_MSG pMessa
         Status = NTSTATUS_FROM_HRESULT(ScreenInformation.Header.AllocateIoHandle(ConsoleHandleData::HandleType::Output,
                                                                                  CreateInformation->DesiredAccess,
                                                                                  CreateInformation->ShareMode,
-                                                                                 &Handle));
+                                                                                 handle));
         break;
     }
     case CD_IO_OBJECT_TYPE_NEW_OUTPUT:
-        Status = ConsoleCreateScreenBuffer(&Handle, pMessage, CreateInformation, &pMessage->CreateScreenBuffer);
+        Status = ConsoleCreateScreenBuffer(handle, pMessage, CreateInformation, &pMessage->CreateScreenBuffer);
         break;
 
     default:
@@ -95,11 +95,12 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleCreateObject(_In_ PCONSOLE_API_MSG pMessa
 
     // Complete the request.
     pMessage->SetReplyStatus(STATUS_SUCCESS);
-    pMessage->SetReplyInformation((ULONG_PTR)Handle);
+    pMessage->SetReplyInformation(reinterpret_cast<ULONG_PTR>(handle.get()));
 
-    if (FAILED(ServiceLocator::LocateGlobals().pDeviceComm->CompleteIo(&pMessage->Complete)))
+    if (SUCCEEDED(ServiceLocator::LocateGlobals().pDeviceComm->CompleteIo(&pMessage->Complete)))
     {
-        LOG_IF_FAILED(Handle->CloseHandle());
+        // We've successfully transfered ownership of the handle to the driver. We can release and not free it.
+        handle.release();
     }
 
     UnlockConsole();
@@ -127,7 +128,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleCloseObject(_In_ PCONSOLE_API_MSG pMessag
 {
     LockConsole();
 
-    LOG_IF_FAILED(pMessage->GetObjectHandle()->CloseHandle());
+    delete pMessage->GetObjectHandle();
     pMessage->SetReplyStatus(STATUS_SUCCESS);
 
     UnlockConsole();
@@ -192,16 +193,24 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
         SetFlag(gci.Flags, CONSOLE_INITIALIZED);
     }
 
-    AllocateCommandHistory(Cac.AppName, Cac.AppNameLength, (HANDLE)ProcessData);
+    try
+    {
+        CommandHistory::s_Allocate({ Cac.AppName, Cac.AppNameLength }, (HANDLE)ProcessData);
+    }
+    catch(...)
+    {
+        LOG_CAUGHT_EXCEPTION();
+        goto Error;
+    }
 
     gci.ProcessHandleList.ModifyConsoleProcessFocus(IsFlagSet(gci.Flags, CONSOLE_HAS_FOCUS));
 
     // Create the handles.
 
     Status = NTSTATUS_FROM_HRESULT(gci.pInputBuffer->Header.AllocateIoHandle(ConsoleHandleData::HandleType::Input,
-                                                                                                GENERIC_READ | GENERIC_WRITE,
-                                                                                                FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                                                                                &ProcessData->pInputHandle));
+                                                                             GENERIC_READ | GENERIC_WRITE,
+                                                                             FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                                                             ProcessData->pInputHandle));
 
     if (!NT_SUCCESS(Status))
     {
@@ -213,7 +222,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
     Status = NTSTATUS_FROM_HRESULT(screenInfo.Header.AllocateIoHandle(ConsoleHandleData::HandleType::Output,
                                                                       GENERIC_READ | GENERIC_WRITE,
                                                                       FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                                                      &ProcessData->pOutputHandle));
+                                                                      ProcessData->pOutputHandle));
 
     if (!NT_SUCCESS(Status))
     {
@@ -224,17 +233,13 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
     pReceiveMsg->SetReplyStatus(STATUS_SUCCESS);
     pReceiveMsg->SetReplyInformation(sizeof(CD_CONNECTION_INFORMATION));
 
-    CD_CONNECTION_INFORMATION ConnectionInformation;
+    CD_CONNECTION_INFORMATION ConnectionInformation = ProcessData->GetConnectionInformation();
     pReceiveMsg->Complete.Write.Data = &ConnectionInformation;
     pReceiveMsg->Complete.Write.Size = sizeof(CD_CONNECTION_INFORMATION);
 
-    ConnectionInformation.Process = (ULONG_PTR)ProcessData;
-    ConnectionInformation.Input = (ULONG_PTR)ProcessData->pInputHandle;
-    ConnectionInformation.Output = (ULONG_PTR)ProcessData->pOutputHandle;
-
     if (FAILED(ServiceLocator::LocateGlobals().pDeviceComm->CompleteIo(&pReceiveMsg->Complete)))
     {
-        FreeCommandHistory((HANDLE)ProcessData);
+        CommandHistory::s_Free((HANDLE)ProcessData);
         gci.ProcessHandleList.FreeProcessData(ProcessData);
     }
 
@@ -247,7 +252,7 @@ Error:
 
     if (ProcessData != nullptr)
     {
-        FreeCommandHistory((HANDLE)ProcessData);
+        CommandHistory::s_Free((HANDLE)ProcessData);
         gci.ProcessHandleList.FreeProcessData(ProcessData);
     }
 

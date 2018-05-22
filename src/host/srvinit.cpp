@@ -191,7 +191,7 @@ NTSTATUS RemoveConsole(_In_ ConsoleProcessHandle* ProcessData)
     LockConsole();
     NTSTATUS Status = STATUS_SUCCESS;
 
-    FreeCommandHistory((HANDLE)ProcessData);
+    CommandHistory::s_Free((HANDLE)ProcessData);
 
     bool const fRecomputeOwner = ProcessData->fRootProcess;
     gci.ProcessHandleList.FreeProcessData(ProcessData);

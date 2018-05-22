@@ -83,8 +83,8 @@ void SetConsoleCPInfo(const BOOL fOutput)
 // - TRUE - Bisected character.
 // - FALSE - Correctly.
 BOOL CheckBisectStringW(_In_reads_bytes_(cBytes) const WCHAR * pwchBuffer,
-                        _In_ DWORD cWords,
-                        _In_ DWORD cBytes)
+                        _In_ size_t cWords,
+                        _In_ size_t cBytes)
 {
     while (cWords && cBytes)
     {
@@ -125,8 +125,8 @@ BOOL CheckBisectStringW(_In_reads_bytes_(cBytes) const WCHAR * pwchBuffer,
 // - FALSE - Correctly.
 BOOL CheckBisectProcessW(const SCREEN_INFORMATION& ScreenInfo,
                          _In_reads_bytes_(cBytes) const WCHAR * pwchBuffer,
-                         _In_ DWORD cWords,
-                         _In_ DWORD cBytes,
+                         _In_ size_t cWords,
+                         _In_ size_t cBytes,
                          _In_ SHORT sOriginalXPosition,
                          _In_ BOOL fEcho)
 {
@@ -135,7 +135,7 @@ BOOL CheckBisectProcessW(const SCREEN_INFORMATION& ScreenInfo,
         while (cWords && cBytes)
         {
             WCHAR const Char = *pwchBuffer;
-            if (Char >= (WCHAR)' ')
+            if (Char >= UNICODE_SPACE)
             {
                 if (IsGlyphFullWidth(Char))
                 {
@@ -175,7 +175,7 @@ BOOL CheckBisectProcessW(const SCREEN_INFORMATION& ScreenInfo,
                         break;
                     case UNICODE_TAB:
                     {
-                        ULONG TabSize = NUMBER_OF_SPACES_IN_TAB(sOriginalXPosition);
+                        size_t TabSize = NUMBER_OF_SPACES_IN_TAB(sOriginalXPosition);
                         sOriginalXPosition = (SHORT)(sOriginalXPosition + TabSize);
                         if (cBytes < TabSize)
                             return TRUE;

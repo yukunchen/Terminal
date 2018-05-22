@@ -27,8 +27,8 @@ class ConsoleProcessHandle
 {
 public:
     std::unique_ptr<ConsoleWaitQueue> const pWaitBlockQueue;
-    ConsoleHandleData* pInputHandle;
-    ConsoleHandleData* pOutputHandle;
+    std::unique_ptr<ConsoleHandleData> pInputHandle;
+    std::unique_ptr<ConsoleHandleData> pOutputHandle;
 
     bool fRootProcess;
 
@@ -37,11 +37,17 @@ public:
 
      const ConsoleProcessPolicy GetPolicy() const;
 
+     CD_CONNECTION_INFORMATION GetConnectionInformation() const;
+
 private:
     ConsoleProcessHandle(const DWORD dwProcessId,
                          const DWORD dwThreadId,
                          const ULONG ulProcessGroupId);
-    ~ConsoleProcessHandle();
+    ~ConsoleProcessHandle() = default;
+    ConsoleProcessHandle(const ConsoleProcessHandle&) = delete;
+    ConsoleProcessHandle(ConsoleProcessHandle&&) = delete;
+    ConsoleProcessHandle& operator=(const ConsoleProcessHandle&) & = delete;
+    ConsoleProcessHandle& operator=(ConsoleProcessHandle&&) & = delete;
 
     ULONG _ulTerminateCount;
     ULONG const _ulProcessGroupId;
