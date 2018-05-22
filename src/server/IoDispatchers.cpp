@@ -66,9 +66,9 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleCreateObject(_In_ PCONSOLE_API_MSG pMessa
     {
     case CD_IO_OBJECT_TYPE_CURRENT_INPUT:
         Status = NTSTATUS_FROM_HRESULT(gci.pInputBuffer->Header.AllocateIoHandle(ConsoleHandleData::HandleType::Input,
-                                                                                                    CreateInformation->DesiredAccess,
-                                                                                                    CreateInformation->ShareMode,
-                                                                                                    handle));
+                                                                                 CreateInformation->DesiredAccess,
+                                                                                 CreateInformation->ShareMode,
+                                                                                 handle));
         break;
 
     case CD_IO_OBJECT_TYPE_CURRENT_OUTPUT:

@@ -87,7 +87,7 @@ public:
 
     DWORD Flags;
 
-    WORD PopupCount;
+    std::atomic<WORD> PopupCount;
 
     // the following fields are used for ansi-unicode translation
     UINT CP;

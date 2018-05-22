@@ -93,7 +93,6 @@ HRESULT ConsoleObjectHeader::AllocateIoHandle(const ConsoleHandleData::HandleTyp
 
 // Routine Description:
 // - Frees and decrements ref counts of the handle associated with this object.
-// - This will delete pFree for you.
 // Arguments:
 // - pFree - Pointer to the handle data to be freed
 // Return Value:

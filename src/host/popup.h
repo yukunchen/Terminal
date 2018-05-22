@@ -19,6 +19,7 @@ Revision History:
 
 #pragma once
 
+#include "readDataCooked.hpp"
 #include "screenInfo.hpp"
 
 #define COPY_TO_CHAR_PROMPT_LENGTH 26

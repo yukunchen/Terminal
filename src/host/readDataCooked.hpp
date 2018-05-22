@@ -43,7 +43,7 @@ public:
     ~COOKED_READ_DATA() override;
     COOKED_READ_DATA(COOKED_READ_DATA&&) = default;
 
-    bool AtEol() const;
+    bool AtEol() const noexcept;
 
     bool Notify(const WaitTerminationReason TerminationReason,
                 const bool fIsUnicode,

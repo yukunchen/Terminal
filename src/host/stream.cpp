@@ -306,8 +306,7 @@ NTSTATUS ReadPendingInput(_Inout_ InputBuffer* const pInputBuffer,
 
     const auto pending = pHandleData->GetPendingInput();
     size_t pendingBytes = pending.size();
-    const std::wstring_view pendingAsWstr{ reinterpret_cast<const wchar_t*>(pending.data()), pendingBytes / sizeof(wchar_t) };
-    auto Tmp = pendingAsWstr.cbegin();
+    auto Tmp = pending.cbegin();
 
     if (pHandleData->IsMultilineInput())
     {
@@ -331,7 +330,7 @@ NTSTATUS ReadPendingInput(_Inout_ InputBuffer* const pInputBuffer,
             }
             else
             {
-                for (NumToWrite = 0, Tmp = pendingAsWstr.cbegin(), NumToBytes = 0;
+                for (NumToWrite = 0, Tmp = pending.cbegin(), NumToBytes = 0;
                      NumToBytes < pendingBytes &&
                      NumToBytes < bufferRemaining / sizeof(wchar_t) &&
                      *Tmp != UNICODE_LINEFEED;
@@ -341,7 +340,7 @@ NTSTATUS ReadPendingInput(_Inout_ InputBuffer* const pInputBuffer,
 
 
         NumToWrite = 0;
-        Tmp = pendingAsWstr.cbegin();
+        Tmp = pending.cbegin();
         while (NumToWrite < pendingBytes &&
                *Tmp != UNICODE_LINEFEED)
         {
@@ -377,7 +376,7 @@ NTSTATUS ReadPendingInput(_Inout_ InputBuffer* const pInputBuffer,
             }
             else
             {
-                for (NumToWrite = 0, Tmp = pendingAsWstr.cbegin(), NumToBytes = 0;
+                for (NumToWrite = 0, Tmp = pending.cbegin(), NumToBytes = 0;
                      NumToBytes < pendingBytes && NumToBytes < bufferRemaining / sizeof(wchar_t);
                      (IsCharFullWidth(*Tmp) ? NumToBytes += 2 : NumToBytes++), Tmp++, NumToWrite += sizeof(wchar_t));
             }
@@ -386,7 +385,7 @@ NTSTATUS ReadPendingInput(_Inout_ InputBuffer* const pInputBuffer,
         NumToWrite = (bufferRemaining < pendingBytes) ? bufferRemaining : pendingBytes;
     }
 
-    memmove(pBuffer, pendingAsWstr.data(), NumToWrite);
+    memmove(pBuffer, pending.data(), NumToWrite);
     pendingBytes -= NumToWrite;
     if (pendingBytes != 0)
     {

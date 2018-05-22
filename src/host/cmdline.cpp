@@ -32,7 +32,7 @@ HRESULT CommandNumberPopup(_In_ COOKED_READ_DATA* const CookedReadData);
 // Arguments:
 // - Unicode - Supplies a boolean that is TRUE if the buffer contains Unicode strings, FALSE otherwise.
 // - Buffer - Supplies the buffer to be validated.
-// - size - Supplies the size, in bytes, of the buffer to be validated.
+// - Size - Supplies the size, in bytes, of the buffer to be validated.
 // - Count - Supplies the expected number of strings in the buffer.
 // ... - Supplies a pair of arguments per expected string. The first one is the expected size, in bytes, of the string
 //       and the second one receives a pointer to where the string starts.
@@ -270,7 +270,7 @@ void SetCurrentCommandLine(_In_ COOKED_READ_DATA* const CookedReadData, _In_ SHO
 // - CONSOLE_STATUS_WAIT - we ran out of input, so a wait block was created
 // - CONSOLE_STATUS_READ_COMPLETE - user hit return
 [[nodiscard]]
-NTSTATUS ProcessCommandListInput(COOKED_READ_DATA* const pCookedReadData)
+NTSTATUS ProcessCommandListInput(_In_ COOKED_READ_DATA* const pCookedReadData)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     CommandHistory* const pCommandHistory = pCookedReadData->_CommandHistory;

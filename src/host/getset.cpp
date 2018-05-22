@@ -657,7 +657,7 @@ void SetScreenColors(SCREEN_INFORMATION& screenInfo,
                                             NewPrimaryAttributes,
                                             NewPopupAttributes);
 
-        if (gci.PopupCount)
+        if (gci.PopupCount != 0)
         {
             CommandHistory::s_UpdatePopups(Attributes, PopupAttributes, DefaultAttributes, DefaultPopupAttributes);
         }

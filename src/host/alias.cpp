@@ -1257,7 +1257,7 @@ std::wstring Alias::s_MatchAndCopyAlias(const std::wstring& sourceText,
 // - cbSource - length of pwchSource in bytes
 // - pwchTarget - where to store matched string
 // - cbTargetSize - on input, contains size of pwchTarget.  
-// - pcbTargetWritten - On output, contains length of alias stored in pwchTarget.
+// - cbTargetWritten - On output, contains length of alias stored in pwchTarget.
 // - pwchExe - Name of exe that command is associated with to find related aliases
 // - cbExe - Length in bytes of exe name
 // - LineCount - aliases can contain multiple commands.  $T is the command separator
@@ -1266,8 +1266,8 @@ std::wstring Alias::s_MatchAndCopyAlias(const std::wstring& sourceText,
 void Alias::s_MatchAndCopyAliasLegacy(_In_reads_bytes_(cbSource) PWCHAR pwchSource,
                                       _In_ size_t cbSource,
                                       _Out_writes_bytes_(*pcbTarget) PWCHAR pwchTarget,
-                                      _In_ size_t cbTargetSize,
-                                      _Out_ size_t* const pcbTargetWritten,
+                                      _In_ const size_t cbTargetSize,
+                                      size_t& cbTargetWritten,
                                       const std::wstring& exeName,
                                       DWORD& lines)
 {
@@ -1290,7 +1290,7 @@ void Alias::s_MatchAndCopyAliasLegacy(_In_reads_bytes_(cbSource) PWCHAR pwchSour
                 std::copy_n(targetText.data(), targetText.size(), pwchTarget);
 
                 // Return bytes copied.
-                *pcbTargetWritten = gsl::narrow<ULONG>(targetText.size() * sizeof(wchar_t));
+                cbTargetWritten = gsl::narrow<ULONG>(targetText.size() * sizeof(wchar_t));
 
                 // Return lines info.
                 lines = gsl::narrow<DWORD>(lineCount);

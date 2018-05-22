@@ -136,7 +136,7 @@ class AliasTests
                                          wcslen(buffer.get()) * sizeof(wchar_t),
                                          buffer.get(),
                                          cbBuffer,
-                                         &bufferUsed,
+                                         bufferUsed,
                                          exe,
                                          linesActual);
 
@@ -182,7 +182,7 @@ class AliasTests
                                          cbSource,
                                          rgwchTarget.get(),
                                          cbTarget,
-                                         &cbTargetUsed,
+                                         cbTargetUsed,
                                          exe,
                                          dwLines);
 
@@ -217,7 +217,7 @@ class AliasTests
                                          cbSource,
                                          rgwchTarget.get(),
                                          cbTarget,
-                                         &cbTargetUsed,
+                                         cbTargetUsed,
                                          exeName,
                                          dwLines);
 
@@ -249,7 +249,7 @@ class AliasTests
                                          cbSource,
                                          rgwchTarget.get(),
                                          cbTarget,
-                                         &cbTargetUsed,
+                                         cbTargetUsed,
                                          exeName, // we didn't pre-set-up the exe name
                                          dwLines);
 
@@ -286,7 +286,7 @@ class AliasTests
                                          cbSource,
                                          rgwchTarget.get(),
                                          cbTarget,
-                                         &cbTargetUsed,
+                                         cbTargetUsed,
                                          exe,
                                          dwLines);
 
@@ -324,7 +324,7 @@ class AliasTests
                                          cbSource,
                                          rgwchTarget.get(),
                                          1, // Make the target size too small
-                                         &cbTargetUsed,
+                                         cbTargetUsed,
                                          exe,
                                          dwLines);
 
@@ -363,7 +363,7 @@ class AliasTests
                                          cbSource,
                                          rgwchTarget.get(),
                                          cbTarget,
-                                         &cbTargetUsed,
+                                         cbTargetUsed,
                                          exe,
                                          dwLines);
 

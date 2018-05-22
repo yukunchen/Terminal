@@ -68,8 +68,8 @@ Popup::Popup(SCREEN_INFORMATION& screenInfo, const COORD proposedSize, CommandHi
     }
 
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.PopupCount++;
-    if (1 == gci.PopupCount)
+    const auto countWas = gci.PopupCount.fetch_add(1ui16);
+    if (0 == countWas)
     {
         // If this is the first popup to be shown, stop the cursor from appearing/blinking
         screenInfo.GetTextBuffer().GetCursor().SetIsPopupShown(true);
@@ -82,8 +82,8 @@ Popup::Popup(SCREEN_INFORMATION& screenInfo, const COORD proposedSize, CommandHi
 Popup::~Popup()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.PopupCount--;
-    if (0 == gci.PopupCount)
+    const auto countWas = gci.PopupCount.fetch_sub(1i16);
+    if (1 == countWas)
     {
         // Notify we're done showing popups.
         gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor().SetIsPopupShown(false);
@@ -182,8 +182,8 @@ void Popup::_DrawPrompt(const UINT id)
 
     // Draw empty popup.
     COORD WriteCoord;
-    WriteCoord.X = (SHORT)(_region.Left + 1);
-    WriteCoord.Y = (SHORT)(_region.Top + 1);
+    WriteCoord.X = _region.Left + 1i16;
+    WriteCoord.Y = _region.Top + 1i16;
     size_t lStringLength = Width();
     for (SHORT i = 0; i < Height(); i++)
     {
@@ -200,8 +200,8 @@ void Popup::_DrawPrompt(const UINT id)
         WriteCoord.Y += 1;
     }
 
-    WriteCoord.X = (SHORT)(_region.Left + 1);
-    WriteCoord.Y = (SHORT)(_region.Top + 1);
+    WriteCoord.X = _region.Left + 1i16;
+    WriteCoord.Y = _region.Top + 1i16;
 
     // write prompt to screen
     lStringLength = text.size();
@@ -220,8 +220,8 @@ void Popup::_DrawList()
 {
     // draw empty popup
     COORD WriteCoord;
-    WriteCoord.X = (SHORT)(_region.Left + 1);
-    WriteCoord.Y = (SHORT)(_region.Top + 1);
+    WriteCoord.X = _region.Left + 1i16;
+    WriteCoord.Y = _region.Top + 1i16;
     size_t lStringLength = Width();
     for (SHORT i = 0; i < Height(); ++i)
     {
@@ -233,10 +233,10 @@ void Popup::_DrawList()
                                     { UNICODE_SPACE },
                                     WriteCoord,
                                     lStringLength);
-        WriteCoord.Y += 1;
+        WriteCoord.Y += 1i16;
     }
 
-    WriteCoord.Y = (SHORT)(_region.Top + 1);
+    WriteCoord.Y = _region.Top + 1i16;
     SHORT i = std::max(gsl::narrow<SHORT>(BottomIndex - Height() + 1), 0i16);
     for (; i <= BottomIndex; i++)
     {
@@ -264,12 +264,12 @@ void Popup::_DrawList()
         CommandNumber[CommandNumberLength] = ':';
         CommandNumber[CommandNumberLength + 1] = ' ';
         CommandNumberLength += 2;
-        if (CommandNumberLength > (ULONG)Width())
+        if (CommandNumberLength > static_cast<ULONG>(Width()))
         {
-            CommandNumberLength = (ULONG)Width();
+            CommandNumberLength = static_cast<ULONG>(Width());
         }
 
-        WriteCoord.X = (SHORT)(_region.Left + 1);
+        WriteCoord.X = _region.Left + 1i16;
         try
         {
             std::vector<char> chars{ CommandNumberPtr, CommandNumberPtr + CommandNumberLength };
@@ -284,7 +284,7 @@ void Popup::_DrawList()
         lStringLength = command.size();
         {
             size_t lTmpStringLength = lStringLength;
-            LONG lPopupLength = (LONG)(Width() - CommandNumberLength);
+            LONG lPopupLength = static_cast<LONG>(Width() - CommandNumberLength);
             PCWCHAR lpStr = command.data();
             while (lTmpStringLength--)
             {
@@ -310,7 +310,7 @@ void Popup::_DrawList()
             }
         }
 
-        WriteCoord.X = (SHORT)(WriteCoord.X + CommandNumberLength);
+        WriteCoord.X = gsl::narrow<SHORT>(WriteCoord.X + CommandNumberLength);
 
         std::vector<wchar_t> chars{ command.data(), command.data() + lStringLength };
         WriteOutputStringW(_screenInfo, chars, WriteCoord);
@@ -318,7 +318,7 @@ void Popup::_DrawList()
         // write attributes to screen
         if (i == CurrentCommand)
         {
-            WriteCoord.X = (SHORT)(_region.Left + 1);
+            WriteCoord.X = _region.Left + 1i16;
             WORD PopupLegacyAttributes = Attributes.GetLegacyAttributes();
             // inverted attributes
             WORD const attr = (WORD)(((PopupLegacyAttributes << 4) & 0xf0) | ((PopupLegacyAttributes >> 4) & 0x0f));
@@ -343,7 +343,7 @@ void Popup::Update(const SHORT originalDelta, const bool wrap)
     {
         return;
     }
-    SHORT const Size = (SHORT)Height();
+    SHORT const Size = Height();
 
     SHORT CurCmdNum;
     SHORT NewCmdNum;
@@ -357,9 +357,9 @@ void Popup::Update(const SHORT originalDelta, const bool wrap)
     {
         CurCmdNum = CurrentCommand;
         NewCmdNum = CurCmdNum + delta;
-        if (NewCmdNum >= (SHORT)_history->GetNumberOfCommands())
+        if (NewCmdNum >= gsl::narrow<SHORT>(_history->GetNumberOfCommands()))
         {
-            NewCmdNum = (SHORT)(_history->GetNumberOfCommands() - 1);
+            NewCmdNum = gsl::narrow<SHORT>(_history->GetNumberOfCommands()) - 1i16;
         }
         else if (NewCmdNum < 0)
         {
@@ -373,18 +373,18 @@ void Popup::Update(const SHORT originalDelta, const bool wrap)
     if (NewCmdNum <= BottomIndex - Size)
     {
         BottomIndex += delta;
-        if (BottomIndex < (SHORT)(Size - 1))
+        if (BottomIndex < Size - 1i16)
         {
-            BottomIndex = (SHORT)(Size - 1);
+            BottomIndex = Size - 1i16;
         }
         Scroll = true;
     }
     else if (NewCmdNum > BottomIndex)
     {
         BottomIndex += delta;
-        if (BottomIndex >= (SHORT)_history->GetNumberOfCommands())
+        if (BottomIndex >= gsl::narrow<SHORT>(_history->GetNumberOfCommands()))
         {
-            BottomIndex = ((SHORT)_history->GetNumberOfCommands()) - 1i16;
+            BottomIndex = gsl::narrow<SHORT>(_history->GetNumberOfCommands()) - 1i16;
         }
         Scroll = true;
     }
@@ -416,18 +416,18 @@ void Popup::_UpdateHighlight(const SHORT OldCurrentCommand, const SHORT NewCurre
     }
     else
     {
-        TopIndex = (SHORT)(BottomIndex - Height() + 1);
+        TopIndex = BottomIndex - Height() + 1i16;
     }
     const WORD PopupLegacyAttributes = Attributes.GetLegacyAttributes();
     COORD WriteCoord;
-    WriteCoord.X = (SHORT)(_region.Left + 1);
+    WriteCoord.X = _region.Left + 1i16;
     size_t lStringLength = Width();
 
-    WriteCoord.Y = (SHORT)(_region.Top + 1 + OldCurrentCommand - TopIndex);
+    WriteCoord.Y = _region.Top + 1i16 + OldCurrentCommand - TopIndex;
     lStringLength = FillOutputAttributes(_screenInfo, PopupLegacyAttributes, WriteCoord, lStringLength);
 
     // highlight new command
-    WriteCoord.Y = (SHORT)(_region.Top + 1 + NewCurrentCommand - TopIndex);
+    WriteCoord.Y = _region.Top + 1i16 + NewCurrentCommand - TopIndex;
 
     // inverted attributes
     WORD const attr = (WORD)(((PopupLegacyAttributes << 4) & 0xf0) | ((PopupLegacyAttributes >> 4) & 0x0f));
@@ -475,12 +475,12 @@ void Popup::End()
     // restore previous contents to screen
     COORD Size;
     Size.X = _oldScreenSize.X;
-    Size.Y = (SHORT)(_region.Bottom - _region.Top + 1);
+    Size.Y = _region.Bottom - _region.Top + 1i16;
 
     SMALL_RECT SourceRect;
-    SourceRect.Left = 0;
+    SourceRect.Left = 0i16;
     SourceRect.Top = _region.Top;
-    SourceRect.Right = _oldScreenSize.X - 1;
+    SourceRect.Right = _oldScreenSize.X - 1i16;
     SourceRect.Bottom = _region.Bottom;
 
     LOG_IF_FAILED(WriteScreenBuffer(_screenInfo, _oldContents.data(), &SourceRect));
@@ -585,8 +585,8 @@ SHORT Popup::Height() const noexcept
 COORD Popup::GetCursorPosition() const noexcept
 {
     COORD CursorPosition;
-    CursorPosition.X = (SHORT)(_region.Right - MINIMUM_COMMAND_PROMPT_SIZE);
-    CursorPosition.Y = (SHORT)(_region.Top + 1);
+    CursorPosition.X = _region.Right - static_cast<SHORT>(MINIMUM_COMMAND_PROMPT_SIZE);
+    CursorPosition.Y = _region.Top + 1i16;
     return CursorPosition;
 }
 

@@ -101,7 +101,7 @@ gsl::span<wchar_t> COOKED_READ_DATA::SpanWholeBuffer()
     return gsl::make_span(_BackupLimit, (_BufferSize / sizeof(wchar_t)));
 }
 
-gsl::span<wchar_t> COOKED_READ_DATA::SpanAtPointer() 
+gsl::span<wchar_t> COOKED_READ_DATA::SpanAtPointer()
 {
     auto wholeSpan = SpanWholeBuffer();
     return wholeSpan.subspan(_BufPtr - _BackupLimit);
@@ -239,7 +239,7 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
     }
 }
 
-bool COOKED_READ_DATA::AtEol() const
+bool COOKED_READ_DATA::AtEol() const noexcept
 {
     return _BytesRead == (_CurrentPosition * 2);
 }
@@ -305,7 +305,6 @@ HRESULT COOKED_READ_DATA::Read(const bool isUnicode,
             // TODO: this is super weird for command line popups only
             _fIsUnicode = isUnicode;
 
-            // TODO: 5-11-2018 this is gross af. Pass it or something jeez.
             pdwNumBytes = &numBytes;
 
             Status = ProcessCommandLine(this, Char, KeyState);
@@ -366,7 +365,7 @@ HRESULT COOKED_READ_DATA::Read(const bool isUnicode,
                 LOG_IF_FAILED(_CommandHistory->Add({ _BackupLimit, StringLength / sizeof(wchar_t) },
                                                    IsFlagSet(gci.Flags, CONSOLE_HISTORY_NODUP)));
 
-                // check69 for alias
+                // check for alias
                 ProcessAliases(LineCount);
             }
         }
@@ -530,7 +529,7 @@ void COOKED_READ_DATA::ProcessAliases(DWORD& lineCount)
                                      _BytesRead,
                                      _BackupLimit,
                                      _BufferSize,
-                                     &_BytesRead,
+                                     _BytesRead,
                                      _exeName,
                                      lineCount);
 }

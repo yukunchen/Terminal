@@ -117,7 +117,7 @@ HRESULT DoSrvSetConsoleTitleW(_In_reads_or_z_(cchBuffer) const wchar_t* const pw
 bool IsValidStringBuffer(_In_ bool Unicode, _In_reads_bytes_(Size) PVOID Buffer, _In_ ULONG Size, _In_ ULONG Count, ...);
 
 [[nodiscard]]
-NTSTATUS ProcessCommandListInput(COOKED_READ_DATA* const pCookedReadData);
+NTSTATUS ProcessCommandListInput(_In_ COOKED_READ_DATA* const pCookedReadData);
 [[nodiscard]]
 NTSTATUS ProcessCommandNumberInput(_In_ COOKED_READ_DATA* const pCookedReadData);
 [[nodiscard]]
