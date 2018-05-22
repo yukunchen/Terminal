@@ -12,7 +12,6 @@ INPUT_READ_HANDLE_DATA::INPUT_READ_HANDLE_DATA() :
     _isInputPending{ false },
     _isMultilineInput{ false }, 
     _readCount{ 0 },
-    _readCountLock{},
     _buffer{}
 {
 }
@@ -52,19 +51,16 @@ std::string_view INPUT_READ_HANDLE_DATA::GetPendingInput() const
 
 void INPUT_READ_HANDLE_DATA::IncrementReadCount()
 {
-    const auto lock = _readCountLock.lock();
     _readCount++;
 }
 
 void INPUT_READ_HANDLE_DATA::DecrementReadCount()
 {
-    const auto lock = _readCountLock.lock();
-    FAIL_FAST_IF(_readCount == 0);
-    _readCount--;
+    const size_t prevCount = _readCount.fetch_sub(1);
+    FAIL_FAST_IF(prevCount == 0); // we just underflowed, that's a programming error.
 }
 
 size_t INPUT_READ_HANDLE_DATA::GetReadCount()
 {
-    const auto lock = _readCountLock.lock();
     return _readCount;
 }

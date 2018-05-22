@@ -116,7 +116,7 @@ void WriteRegionToScreen(SCREEN_INFORMATION& screenInfo, _In_ PSMALL_RECT psrReg
 // - This routine writes a screen buffer region to the screen.
 // Arguments:
 // - screenInfo - reference to screen buffer information.
-// - srRegion - _region to write in screen buffer coordinates.  _region is inclusive
+// - srRegion - Region to write in screen buffer coordinates. Region is inclusive
 // Return Value:
 // - <none>
 void WriteToScreen(SCREEN_INFORMATION& screenInfo, const SMALL_RECT srRegion)

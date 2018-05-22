@@ -132,7 +132,7 @@ static void _CopyRectangle(SCREEN_INFORMATION& screenInfo,
 // Arguments:
 // - ScreenInformation - Screen buffer to read from.
 // - outputCells - an empty container to store cell data on output
-// - ReadRegion - _region to read.
+// - ReadRegion - Region to read.
 // Return Value:
 [[nodiscard]]
 NTSTATUS ReadScreenBuffer(const SCREEN_INFORMATION& screenInfo,
@@ -213,7 +213,7 @@ NTSTATUS ReadScreenBuffer(const SCREEN_INFORMATION& screenInfo,
 // Arguments:
 // - ScreenInformation - Screen buffer to write to.
 // - Buffer - Buffer to write from.
-// - ReadRegion - _region to write.
+// - ReadRegion - Region to write.
 // Return Value:
 [[nodiscard]]
 NTSTATUS WriteScreenBuffer(SCREEN_INFORMATION& screenInfo, _In_ PCHAR_INFO pciBuffer, _Inout_ PSMALL_RECT psrWriteRegion)
@@ -585,7 +585,7 @@ bool StreamScrollRegion(SCREEN_INFORMATION& screenInfo)
 // - The scroll region is copied to a third buffer, the scroll region is filled, then the original contents of the scroll region are copied to the destination.
 // Arguments:
 // - screenInfo - reference to screen buffer info.
-// - ScrollRectangle - _region to copy
+// - ScrollRectangle - Region to copy
 // - ClipRectangle - Optional pointer to clip region.
 // - DestinationOrigin - Upper left corner of target region.
 // - Fill - Character and attribute to fill source region with.

@@ -51,7 +51,5 @@ private:
 
     std::string _buffer;
 
-    // the following fields are solely used for input reads.
-    wil::critical_section _readCountLock; // serializes access to read count
-    size_t _readCount;    // number of reads waiting
+    std::atomic<size_t> _readCount;
 };
