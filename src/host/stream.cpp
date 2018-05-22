@@ -201,7 +201,7 @@ size_t RetrieveTotalNumberOfSpaces(const SHORT sOriginalCursorPositionX,
         {
             NumSpacesForChar = 2;
         }
-        else if (IsCharFullWidth(Char))
+        else if (IsGlyphFullWidth(Char))
         {
             NumSpacesForChar = 2;
         }
@@ -239,7 +239,7 @@ size_t RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
             {
                 NumSpaces = 2;
             }
-            else if (IsCharFullWidth(Char))
+            else if (IsGlyphFullWidth(Char))
             {
                 NumSpaces = 2;
             }
@@ -256,7 +256,7 @@ size_t RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
     {
         return 2;
     }
-    else if (IsCharFullWidth(Char))
+    else if (IsGlyphFullWidth(Char))
     {
         return 2;
     }
@@ -331,10 +331,13 @@ NTSTATUS ReadPendingInput(_Inout_ InputBuffer* const pInputBuffer,
             else
             {
                 for (NumToWrite = 0, Tmp = pending.cbegin(), NumToBytes = 0;
-                     NumToBytes < pendingBytes &&
-                     NumToBytes < bufferRemaining / sizeof(wchar_t) &&
-                     *Tmp != UNICODE_LINEFEED;
-                     (IsCharFullWidth(*Tmp) ? NumToBytes += 2 : NumToBytes++), Tmp++, NumToWrite += sizeof(wchar_t));
+                        NumToBytes < pendingBytes &&
+                        NumToBytes < bufferRemaining / sizeof(wchar_t) &&
+                        *Tmp != UNICODE_LINEFEED;
+                        Tmp++, NumToWrite += sizeof(wchar_t))
+                {
+                    NumToBytes += IsGlyphFullWidth(*Tmp) ? 2 : 1;
+                }
             }
         }
 
@@ -377,8 +380,11 @@ NTSTATUS ReadPendingInput(_Inout_ InputBuffer* const pInputBuffer,
             else
             {
                 for (NumToWrite = 0, Tmp = pending.cbegin(), NumToBytes = 0;
-                     NumToBytes < pendingBytes && NumToBytes < bufferRemaining / sizeof(wchar_t);
-                     (IsCharFullWidth(*Tmp) ? NumToBytes += 2 : NumToBytes++), Tmp++, NumToWrite += sizeof(wchar_t));
+                        NumToBytes < pendingBytes && NumToBytes < bufferRemaining / sizeof(wchar_t);
+                        Tmp++, NumToWrite += sizeof(wchar_t))
+                {
+                    NumToBytes += IsGlyphFullWidth(*Tmp) ? 2 : 1;
+                }
             }
         }
 
@@ -621,14 +627,7 @@ NTSTATUS ReadCharacterInput(_Inout_ InputBuffer* const pInputBuffer,
 
         if (!addDbcsLead)
         {
-            if (IsCharFullWidth(*pBuffer))
-            {
-                *pReadByteCount += 2;
-            }
-            else
-            {
-                *pReadByteCount += 1;
-            }
+            *pReadByteCount += IsGlyphFullWidth(*pBuffer) ? 2 : 1;
             NumToWrite += sizeof(wchar_t);
             pBuffer++;
         }
@@ -645,14 +644,7 @@ NTSTATUS ReadCharacterInput(_Inout_ InputBuffer* const pInputBuffer,
             {
                 break;
             }
-            if (IsCharFullWidth(*pBuffer))
-            {
-                *pReadByteCount += 2;
-            }
-            else
-            {
-                *pReadByteCount += 1;
-            }
+            *pReadByteCount += IsGlyphFullWidth(*pBuffer) ? 2 : 1;
             NumToWrite += sizeof(wchar_t);
             pBuffer++;
         }

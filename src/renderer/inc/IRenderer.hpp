@@ -50,7 +50,7 @@ namespace Microsoft::Console::Render
                                         _Out_ FontInfo& FontInfo) = 0;
 
         virtual COORD GetFontSize() = 0;
-        virtual bool IsCharFullWidthByFont(const WCHAR wch) = 0;
+        virtual bool IsGlyphWideByFont(const std::wstring_view glyph) = 0;
 
         virtual void EnablePainting() = 0;
         virtual void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs) = 0;

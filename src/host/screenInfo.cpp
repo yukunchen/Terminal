@@ -2724,7 +2724,7 @@ size_t SCREEN_INFORMATION::FillTextGlyph(const std::vector<wchar_t>& glyph,
 
     const OutputCell cell{ glyph, {}, OutputCell::TextAttributeBehavior::Current };
     std::vector<OutputCell> cellsToWrite{ cell };
-    if (IsGlyphFullWidth(glyph))
+    if (IsGlyphFullWidth(std::wstring_view{ glyph.data(), glyph.size() }))
     {
         cellsToWrite.push_back(cell);
         cellsToWrite.at(0).DbcsAttr().SetLeading();

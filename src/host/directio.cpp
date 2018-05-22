@@ -16,7 +16,6 @@
 #include "misc.h"
 #include "../types/inc/convert.hpp"
 #include "readDataDirect.hpp"
-
 #include "ApiRoutines.h"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
@@ -633,7 +632,7 @@ NTSTATUS TranslateOutputToPaddingUnicode(_Inout_ PCHAR_INFO OutputBuffer, _In_ C
             {
                 OutputBufferR->Attributes = OutputBuffer->Attributes;
                 ClearAllFlags(OutputBufferR->Attributes, COMMON_LVB_SBCSDBCS);
-                if (IsCharFullWidth(OutputBuffer->Char.UnicodeChar))
+                if (IsGlyphFullWidth(OutputBuffer->Char.UnicodeChar))
                 {
                     if (j == Size.X - 1)
                     {
@@ -657,7 +656,7 @@ NTSTATUS TranslateOutputToPaddingUnicode(_Inout_ PCHAR_INFO OutputBuffer, _In_ C
                 OutputBufferR++;
             }
 
-            if (IsCharFullWidth(wch))
+            if (IsGlyphFullWidth(wch))
             {
                 if (j != Size.X - 1)
                 {

@@ -17,9 +17,9 @@
 #include "dbcs.h"
 #include "handle.h"
 #include "misc.h"
-#include "../types/inc/convert.hpp"
-
 #include "utf8ToWidecharParser.hpp"
+
+#include "../types/inc/convert.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
@@ -276,7 +276,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
             const wchar_t RealUnicodeChar = *pwchRealUnicode;
             if (!IS_GLYPH_CHAR(RealUnicodeChar) || fUnprocessed)
             {
-                if (IsCharFullWidth(Char))
+                if (IsGlyphFullWidth(Char))
                 {
                     if (i < (LOCAL_BUFFER_SIZE - 1) && XPosition < (coordScreenBufferSize.X - 1))
                     {
@@ -572,7 +572,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
 
                     CursorPosition.X -= 1;
                 }
-                else if (IsCharFullWidth(LastChar))
+                else if (IsGlyphFullWidth(LastChar))
                 {
                     CursorPosition.X -= 1;
                     TempNumSpaces -= 1;
@@ -730,7 +730,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
         {
             const wchar_t Char = *lpString;
             if (Char >= UNICODE_SPACE &&
-                IsCharFullWidth(Char) &&
+                IsGlyphFullWidth(Char) &&
                 XPosition >= (coordScreenBufferSize.X - 1) &&
                 (screenInfo.OutputMode & ENABLE_WRAP_AT_EOL_OUTPUT))
             {

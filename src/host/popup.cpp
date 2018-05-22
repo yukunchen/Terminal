@@ -288,7 +288,7 @@ void Popup::_DrawList()
             PCWCHAR lpStr = command.data();
             while (lTmpStringLength--)
             {
-                if (IsCharFullWidth(*lpStr++))
+                if (IsGlyphFullWidth(*lpStr++))
                 {
                     lPopupLength -= 2;
                 }

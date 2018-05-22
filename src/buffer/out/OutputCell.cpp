@@ -60,7 +60,7 @@ std::vector<OutputCell> OutputCell::_fromUtf16(const std::vector<std::vector<wch
     for (const auto glyph : utf16Glyphs)
     {
         DbcsAttribute dbcsAttr;
-        if (IsGlyphFullWidth(glyph))
+        if (IsGlyphFullWidth(std::wstring_view{ glyph.data(), glyph.size() }))
         {
             dbcsAttr.SetLeading();
             constructorDispatch(glyph, dbcsAttr);

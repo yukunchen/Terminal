@@ -68,7 +68,7 @@ namespace Microsoft::Console::Render
                                 _Out_ FontInfo& FontInfo) override;
 
         COORD GetFontSize() override;
-        bool IsCharFullWidthByFont(const WCHAR wch) override;
+        bool IsGlyphWideByFont(const std::wstring_view glyph) override;
 
         void EnablePainting() override;
         void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs) override;

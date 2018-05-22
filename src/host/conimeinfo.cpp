@@ -190,7 +190,7 @@ TextAttribute ConsoleImeInfo::s_RetrieveAttributeAt(const size_t pos,
                                                     const std::basic_string_view<WORD> colorArray)
 {
     // Encoded attribute is the shorthand information passed from the IME
-    // that contains a cursor position packed in along with which color in the 
+    // that contains a cursor position packed in along with which color in the
     // given array should apply to the text.
     auto encodedAttribute = attributes[pos];
 
@@ -261,7 +261,7 @@ std::vector<OutputCell> ConsoleImeInfo::s_ConvertToCells(const std::wstring_view
         // right down the middle of the character.
         // Otherwise it's one column and we'll push it in with the default empty DbcsAttribute.
         DbcsAttribute dbcsAttr;
-        if (IsGlyphFullWidth(glyph))
+        if (IsGlyphFullWidth(std::wstring_view{ glyph.data(), glyph.size() }))
         {
             auto leftHalfAttr = drawingAttr;
 
@@ -314,7 +314,7 @@ std::vector<OutputCell>::const_iterator ConsoleImeInfo::_WriteConversionArea(con
                                                                              SCREEN_INFORMATION& screenInfo)
 {
     // The position in the viewport where we will start inserting cells for this conversion area
-    // NOTE: We might exit early if there's not enough space to fit here, so we take a copy of 
+    // NOTE: We might exit early if there's not enough space to fit here, so we take a copy of
     //       the original and increment it up front.
     const auto insertionPos = pos;
 
@@ -382,13 +382,13 @@ std::vector<OutputCell>::const_iterator ConsoleImeInfo::_WriteConversionArea(con
 }
 
 // Routine Description:
-// - Takes information from the IME message to write the "undetermined" text to the 
+// - Takes information from the IME message to write the "undetermined" text to the
 //   conversion area overlays on the screen.
 // - The "undetermined" text represents the word or phrase that the user is currently building
 //   using the IME. They haven't "determined" what they want yet, so it's "undetermined" right now.
 // Arguments:
 // - text - View into the text characters provided by the IME.
-// - attributes - Attributes specifying which color and cursor positioning information should apply to 
+// - attributes - Attributes specifying which color and cursor positioning information should apply to
 //                each text character. This view must be the same size as the text view.
 // - colorArray - 8 colors to be used to format the text for display
 void ConsoleImeInfo::_WriteUndeterminedChars(const std::wstring_view text,
@@ -417,7 +417,7 @@ void ConsoleImeInfo::_WriteUndeterminedChars(const std::wstring_view text,
     // Convert data-to-be-stored into OutputCells.
     const auto cells = s_ConvertToCells(text, attributes, colorArray);
 
-    // Get some starting position information of where to place the conversion areas on top of the existing 
+    // Get some starting position information of where to place the conversion areas on top of the existing
     // screen buffer and viewport positioning.
     // Each conversion area write will adjust these to set up any subsequent calls to go onto the next line.
     auto pos = screenInfo.GetTextBuffer().GetCursor().GetPosition();

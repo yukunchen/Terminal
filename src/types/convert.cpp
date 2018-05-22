@@ -250,14 +250,10 @@ std::deque<std::unique_ptr<KeyEvent>> CharToKeyEvents(const wchar_t wch,
         // Determine DBCS character because these character does not know by VkKeyScan.
         // GetStringTypeW(CT_CTYPE3) & C3_ALPHA can determine all linguistic characters. However, this is
         // not include symbolic character for DBCS.
-        //
-        // IsCharFullWidth can help for DBCS symbolic character.
         WORD CharType = 0;
-        bool isFullWidth = false;
         GetStringTypeW(CT_CTYPE3, &wch, 1, &CharType);
-        LOG_IF_FAILED(IsCharFullWidth(wch, &isFullWidth));
 
-        if (IsFlagSet(CharType, C3_ALPHA) || isFullWidth)
+        if (IsFlagSet(CharType, C3_ALPHA) || GetCharWidth(wch) == CodepointWidth::Wide)
         {
             keyState = 0;
         }
@@ -432,10 +428,11 @@ std::deque<std::unique_ptr<KeyEvent>> SynthesizeNumpadEvents(const wchar_t wch, 
 }
 
 // Routine Description:
-// - Determine if the given Unicode char is fullwidth or not.
-// Return:
-// - FALSE : half width. Uses 1 column per one character
-// - TRUE  : full width. Uses 2 columns per one character
+// - naively determines the width of a UCS2 encoded wchar
+// Arguments:
+// - wch - the wchar_t to measure
+// Return Value:
+// - CodepointWidth indicating width of wch
 // Notes:
 // 04-08-92 ShunK       Created.
 // Jul-27-1992 KazuM    Added Screen Information and Code Page Information.
@@ -449,91 +446,86 @@ std::deque<std::unique_ptr<KeyEvent>> SynthesizeNumpadEvents(const wchar_t wch, 
 //                      display font data (cached) instead.
 // May-23-2017 migrie   Forced Box-Drawing Characters (x2500-x257F) to narrow.
 // Jan-16-2018 migrie   Seperated core lookup from asking the renderer the width
-[[nodiscard]]
-HRESULT IsCharFullWidth(_In_ wchar_t wch, _Out_ bool* const isFullWidth) noexcept
+CodepointWidth GetCharWidth(const wchar_t wch) noexcept
 {
-    RETURN_HR_IF_NULL(E_INVALIDARG, isFullWidth);
-
-    // See http://www.unicode.org/Public/UCD/latest/ucd/EastAsianWidth.txt
-
     // 0x00-0x1F is ambiguous by font
     if (0x20 <= wch && wch <= 0x7e)
     {
         /* ASCII */
-        *isFullWidth = FALSE;
+        return CodepointWidth::Narrow;
     }
     // 0x80 - 0x0451 varies from narrow to ambiguous by character and font (Unicode 9.0)
     else if (0x0452 <= wch && wch <= 0x10FF)
     {
         // From Unicode 9.0, this range is narrow (assorted languages)
-        *isFullWidth = FALSE;
+        return CodepointWidth::Narrow;
     }
     else if (0x1100 <= wch && wch <= 0x115F)
     {
         // From Unicode 9.0, Hangul Choseong is wide
-        *isFullWidth = TRUE;
+        return CodepointWidth::Wide;
     }
     else if (0x1160 <= wch && wch <= 0x200F)
     {
         // From Unicode 9.0, this range is narrow (assorted languages)
-        *isFullWidth = FALSE;
+        return CodepointWidth::Narrow;
     }
     // 0x2500 - 0x257F is the box drawing character range -
     // Technically, these are ambiguous width characters, but applications that
     // use them generally assume that they're narrow to ensure proper alignment.
     else if (0x2500 <= wch && wch <= 0x257F)
     {
-        *isFullWidth = FALSE;
+        return CodepointWidth::Narrow;
     }
     // 0x2010 - 0x2B59 varies between narrow, ambiguous, and wide by character and font (Unicode 9.0)
     else if (0x2B5A <= wch && wch <= 0x2E44)
     {
         // From Unicode 9.0, this range is narrow (assorted languages)
-        *isFullWidth = FALSE;
+        return CodepointWidth::Narrow;
     }
     else if (0x2E80 <= wch && wch <= 0x303e)
     {
         // From Unicode 9.0, this range is wide (assorted languages)
-        *isFullWidth = TRUE;
+        return CodepointWidth::Wide;
     }
     else if (0x3041 <= wch && wch <= 0x3094)
     {
         /* Hiragana */
-        *isFullWidth = TRUE;
+        return CodepointWidth::Wide;
     }
     else if (0x30a1 <= wch && wch <= 0x30f6)
     {
         /* Katakana */
-        *isFullWidth = TRUE;
+        return CodepointWidth::Wide;
     }
     else if (0x3105 <= wch && wch <= 0x312c)
     {
         /* Bopomofo */
-        *isFullWidth = TRUE;
+        return CodepointWidth::Wide;
     }
     else if (0x3131 <= wch && wch <= 0x318e)
     {
         /* Hangul Elements */
-        *isFullWidth = TRUE;
+        return CodepointWidth::Wide;
     }
     else if (0x3190 <= wch && wch <= 0x3247)
     {
         // From Unicode 9.0, this range is wide
-        *isFullWidth = TRUE;
+        return CodepointWidth::Wide;
     }
     else if (0x3251 <= wch && wch <= 0xA4C6)
     {
         // This exception range is narrow width hexagrams.
         if (0x4DC0 <= wch && wch <= 0x4DFF)
         {
-            *isFullWidth = FALSE;
+            return CodepointWidth::Narrow;
         }
         else
         {
             // From Unicode 9.0, this range is wide
             // CJK Unified Ideograph and Yi and Reserved.
             // Includes Han Ideographic range.
-            *isFullWidth = TRUE;
+            return CodepointWidth::Wide;
         }
     }
     else if (0xA4D0 <= wch && wch <= 0xABF9)
@@ -541,24 +533,24 @@ HRESULT IsCharFullWidth(_In_ wchar_t wch, _Out_ bool* const isFullWidth) noexcep
         // This exception range is wide Hangul Choseong
         if (0xA960 <= wch && wch <= 0xA97C)
         {
-            *isFullWidth = TRUE;
+            return CodepointWidth::Wide;
         }
         else
         {
             // From Unicode 9.0, this range is narrow (assorted languages)
-            *isFullWidth = FALSE;
+            return CodepointWidth::Narrow;
         }
     }
     else if (0xac00 <= wch && wch <= 0xd7a3)
     {
         /* Korean Hangul Syllables */
-        *isFullWidth = TRUE;
+        return CodepointWidth::Wide;
     }
     else if (0xD7B0 <= wch && wch <= 0xD7FB)
     {
         // From Unicode 9.0, this range is narrow
         // Hangul Jungseong and Hangul Jongseong
-        *isFullWidth = FALSE;
+        return CodepointWidth::Narrow;
     }
     // 0xD800-0xDFFF is reserved for UTF-16 surrogate pairs.
     // 0xE000-0xF8FF is reserved for private use characters and is therefore always ambiguous.
@@ -567,41 +559,41 @@ HRESULT IsCharFullWidth(_In_ wchar_t wch, _Out_ bool* const isFullWidth) noexcep
         // From Unicode 9.0, this range is wide
         // CJK Compatibility Ideographs
         // Includes Han Compatibility Ideographs
-        *isFullWidth = TRUE;
+        return CodepointWidth::Wide;
     }
     else if (0xFB00 <= wch && wch <= 0xFDFD)
     {
         // From Unicode 9.0, this range is narrow (assorted languages)
-        *isFullWidth = FALSE;
+        return CodepointWidth::Narrow;
     }
     else if (0xFE10 <= wch && wch <= 0xFE6B)
     {
         // This exception range has narrow combining ligatures
         if (0xFE20 <= wch && wch <= 0xFE2F)
         {
-            *isFullWidth = FALSE;
+            return CodepointWidth::Narrow;
         }
         else
         {
             // From Unicode 9.0, this range is wide
             // Presentation forms
-            *isFullWidth = TRUE;
+            return CodepointWidth::Wide;
         }
     }
     else if (0xFE70 <= wch && wch <= 0xFEFF)
     {
         // From Unicode 9.0, this range is narrow
-        *isFullWidth = FALSE;
+        return CodepointWidth::Narrow;
     }
     else if (0xff01 <= wch && wch <= 0xff5e)
     {
         /* Fullwidth ASCII variants */
-        *isFullWidth = TRUE;
+        return CodepointWidth::Wide;
     }
     else if (0xff61 <= wch && wch <= 0xff9f)
     {
         /* Halfwidth Katakana variants */
-        *isFullWidth = FALSE;
+        return CodepointWidth::Narrow;
     }
     else if ((0xffa0 <= wch && wch <= 0xffbe) ||
              (0xffc2 <= wch && wch <= 0xffc7) ||
@@ -610,21 +602,18 @@ HRESULT IsCharFullWidth(_In_ wchar_t wch, _Out_ bool* const isFullWidth) noexcep
              (0xffda <= wch && wch <= 0xffdc))
     {
         /* Halfwidth Hangule variants */
-        *isFullWidth = FALSE;
+        return CodepointWidth::Narrow;
     }
     else if (0xffe0 <= wch && wch <= 0xffe6)
     {
         /* Fullwidth symbol variants */
-        *isFullWidth = TRUE;
+        return CodepointWidth::Wide;
     }
     // Currently we do not support codepoints above 0xffff
     else
     {
-        *isFullWidth = false;
-        return S_FALSE;
+        return CodepointWidth::Invalid;
     }
-
-    return S_OK;
 }
 
 wchar_t Utf16ToUcs2(const std::vector<wchar_t>& charData)

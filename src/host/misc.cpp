@@ -7,9 +7,9 @@
 #include "precomp.h"
 
 #include "misc.h"
-#include "../types/inc/convert.hpp"
-
 #include "dbcs.h"
+
+#include "../types/inc/convert.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
@@ -88,7 +88,7 @@ BOOL CheckBisectStringW(_In_reads_bytes_(cBytes) const WCHAR * pwchBuffer,
 {
     while (cWords && cBytes)
     {
-        if (IsCharFullWidth(*pwchBuffer))
+        if (IsGlyphFullWidth(*pwchBuffer))
         {
             if (cBytes < 2)
             {
@@ -137,7 +137,7 @@ BOOL CheckBisectProcessW(const SCREEN_INFORMATION& ScreenInfo,
             WCHAR const Char = *pwchBuffer;
             if (Char >= UNICODE_SPACE)
             {
-                if (IsCharFullWidth(Char))
+                if (IsGlyphFullWidth(Char))
                 {
                     if (cBytes < 2)
                     {

@@ -393,7 +393,10 @@ HRESULT COOKED_READ_DATA::Read(const bool isUnicode,
                     NumBytes = 0;
                     for (Tmp = _BackupLimit;
                          *Tmp != UNICODE_LINEFEED && _UserBufferSize / sizeof(WCHAR) > NumBytes;
-                         (IsCharFullWidth(*Tmp) ? NumBytes += 2 : NumBytes++), Tmp++);
+                         Tmp++)
+                    {
+                        NumBytes += IsGlyphFullWidth(*Tmp) ? 2 : 1;
+                    }
                 }
 
 #pragma prefast(suppress:__WARNING_BUFFER_OVERFLOW, "LineCount > 1 means there's a UNICODE_LINEFEED")
@@ -423,7 +426,10 @@ HRESULT COOKED_READ_DATA::Read(const bool isUnicode,
                     NumToWrite = _BytesRead;
                     for (Tmp = _BackupLimit;
                          NumToWrite && _UserBufferSize / sizeof(WCHAR) > NumBytes;
-                         (IsCharFullWidth(*Tmp) ? NumBytes += 2 : NumBytes++), Tmp++, NumToWrite -= sizeof(WCHAR));
+                         Tmp++, NumToWrite -= sizeof(WCHAR))
+                    {
+                        NumBytes += IsGlyphFullWidth(*Tmp) ? 2 : 1;
+                    }
                 }
                 numBytes = _UserBufferSize;
             }
@@ -466,7 +472,10 @@ HRESULT COOKED_READ_DATA::Read(const bool isUnicode,
                 NumToWrite = _BytesRead;
                 for (Tmp = _BackupLimit;
                      NumToWrite && _UserBufferSize / sizeof(WCHAR) > NumBytes;
-                     (IsCharFullWidth(*Tmp) ? NumBytes += 2 : NumBytes++), Tmp++, NumToWrite -= sizeof(WCHAR));
+                     Tmp++, NumToWrite -= sizeof(WCHAR))
+                {
+                    NumBytes += IsGlyphFullWidth(*Tmp) ? 2 : 1;
+                }
             }
 
             numBytes = _BytesRead;

@@ -417,7 +417,7 @@ HRESULT WddmConEngine::GetFontSize(_Out_ COORD* const pFontSize)
 }
 
 [[nodiscard]]
-HRESULT WddmConEngine::IsCharFullWidthByFont(WCHAR const /*wch*/, _Out_ bool* const pResult)
+HRESULT WddmConEngine::IsGlyphWideByFont(const std::wstring_view /*glyph*/, _Out_ bool* const pResult)
 {
     *pResult = false;
     return S_OK;

@@ -21,6 +21,7 @@ SOURCES = \
     UtilsTests.cpp \
     AttrRowTests.cpp \
     ConsoleArgumentsTests.cpp \
+    CodepointWidthDetectorTests.cpp \
     DbcsTests.cpp \
     ScreenBufferTests.cpp \
     ScreenInfoTextIteratorTests.cpp \

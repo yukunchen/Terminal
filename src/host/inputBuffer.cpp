@@ -8,6 +8,7 @@
 #include "inputBuffer.hpp"
 #include "dbcs.h"
 #include "stream.h"
+
 #include <functional>
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
@@ -362,7 +363,7 @@ void InputBuffer::_ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>& ou
             if (readEvents.back()->EventType() == InputEventType::KeyEvent)
             {
                 const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(readEvents.back().get());
-                if (IsCharFullWidth(pKeyEvent->GetCharData()))
+                if (IsGlyphFullWidth(pKeyEvent->GetCharData()))
                 {
                     ++virtualReadCount;
                 }
@@ -686,7 +687,7 @@ bool InputBuffer::_CoalesceRepeatedKeyPressEvents(_Inout_ std::deque<std::unique
 
         if (pInKeyEvent->IsKeyDown() &&
             pLastKeyEvent->IsKeyDown() &&
-            !IsCharFullWidth(pInKeyEvent->GetCharData()))
+            !IsGlyphFullWidth(pInKeyEvent->GetCharData()))
         {
             bool sameKey = false;
             if (IsFlagSet(pInKeyEvent->GetActiveModifierKeys(), NLS_IME_CONVERSION) &&

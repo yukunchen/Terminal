@@ -18,6 +18,14 @@ Author:
 #include <memory>
 #include "IInputEvent.hpp"
 
+enum class CodepointWidth : BYTE
+{
+    Narrow,
+    Wide,
+    Ambiguous, // could be narrow or wide depending on the current codepage and font
+    Invalid // not a valid unicode codepoint
+};
+
 [[nodiscard]]
 HRESULT ConvertToW(const UINT uiCodePage,
                    _In_reads_or_z_(cchSource) const char* const rgchSource,
@@ -56,7 +64,6 @@ std::deque<std::unique_ptr<KeyEvent>> SynthesizeKeyboardEvents(const wchar_t wch
 
 std::deque<std::unique_ptr<KeyEvent>> SynthesizeNumpadEvents(const wchar_t wch, const unsigned int codepage);
 
-[[nodiscard]]
-HRESULT IsCharFullWidth(_In_ wchar_t wch, _Out_ bool* const isFullWidth) noexcept;
+CodepointWidth GetCharWidth(const wchar_t wch) noexcept;
 
 wchar_t Utf16ToUcs2(const std::vector<wchar_t>& charData);
