@@ -916,6 +916,14 @@ HRESULT SCREEN_INFORMATION::_AdjustScreenBufferHelper(const RECT* const prcClien
     sizeClientNewPixels.cx = RECT_WIDTH(prcClientNew);
     sizeClientNewPixels.cy = RECT_HEIGHT(prcClientNew);
 
+    // If the new client is too tiny, our viewport will be 1x1.
+    if (sizeClientNewPixels.cx < coordFontSize.X || sizeClientNewPixels.cy < coordFontSize.Y)
+    {
+        pcoordClientNewCharacters->X = 1;
+        pcoordClientNewCharacters->Y = 1;
+        return S_OK;
+    }
+
     // Subtract out scroll bar space if scroll bars will be necessary.
     bool fIsHorizontalVisible = false;
     bool fIsVerticalVisible = false;
