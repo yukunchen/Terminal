@@ -26,10 +26,11 @@ using namespace Microsoft::Console;
 // - inheritCursor - a bool indicating if the state machine should expect a
 //      cursor positioning sequence. See MSFT:15681311.
 VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
-                             const bool inheritCursor)
-    : _hFile(std::move(hPipe)),
-    _utf8Parser(CP_UTF8),
-    _dwThreadId(0)
+                             const bool inheritCursor) :
+    _hFile{ std::move(hPipe) },
+    _hThread{},
+    _utf8Parser{ CP_UTF8 },
+    _dwThreadId{ 0 }
 {
     THROW_IF_HANDLE_INVALID(_hFile.get());
 

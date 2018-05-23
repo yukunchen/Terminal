@@ -29,9 +29,10 @@ using namespace Microsoft::Console::Interactivity;
 // Arguments:
 // - hPipe - a handle to the file representing the read end of the VT pipe.
 PtySignalInputThread::PtySignalInputThread(_In_ wil::unique_hfile hPipe) :
-    _hFile(std::move(hPipe)),
+    _hFile{ std::move(hPipe) },
+    _hThread{},
     _pConApi{ std::make_unique<ConhostInternalGetSet>(ServiceLocator::LocateGlobals().getConsoleInformation()) },
-    _dwThreadId(0)
+    _dwThreadId{ 0 }
 {
     THROW_IF_HANDLE_INVALID(_hFile.get());
     THROW_IF_NULL_ALLOC(_pConApi.get());
