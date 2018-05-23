@@ -82,10 +82,6 @@ std::vector<std::vector<OutputCell>> ReadRectFromScreenBuffer(const SCREEN_INFOR
     std::vector<std::vector<OutputCell>> result;
     result.reserve(viewport.Height());
 
-    const int ScreenBufferWidth = screenInfo.GetScreenBufferSize().X;
-    std::unique_ptr<TextAttribute[]> unpackedAttrs = std::make_unique<TextAttribute[]>(ScreenBufferWidth);
-    THROW_IF_NULL_ALLOC(unpackedAttrs.get());
-
     for (size_t rowIndex = 0; rowIndex < static_cast<size_t>(viewport.Height()); ++rowIndex)
     {
         auto cells = screenInfo.ReadLine(coordSourcePoint.Y + rowIndex, coordSourcePoint.X);

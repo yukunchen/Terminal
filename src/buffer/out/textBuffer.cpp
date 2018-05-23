@@ -39,7 +39,8 @@ TextBuffer::TextBuffer(const FontInfo fontInfo,
     _ciFill{ fill },
     _coordBufferSize{ screenBufferSize },
     _cursor{ cursorSize, *this },
-    _storage{}
+    _storage{},
+    _unicodeStorage{}
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     _cursor.SetColor(gci.GetCursorColor());
