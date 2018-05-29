@@ -246,7 +246,7 @@ void VtConsole::_spawn4(const std::wstring& command)
         siEx = { 0 };
         siEx.StartupInfo.cb = sizeof(STARTUPINFOEX);
         size_t size;
-        InitializeProcThreadAttributeList(NULL, 1, 0, &size);
+        InitializeProcThreadAttributeList(NULL, 1, 0, (PSIZE_T)&size);
         BYTE* attrList = new BYTE[size];
         siEx.lpAttributeList = reinterpret_cast<PPROC_THREAD_ATTRIBUTE_LIST>(attrList);
         fSuccess = InitializeProcThreadAttributeList(siEx.lpAttributeList, 1, 0, (PSIZE_T)&size);
