@@ -25,7 +25,7 @@ typedef void(*PipeReadCallback)(BYTE* buffer, DWORD dwRead);
 class VtConsole
 {
 public:
-    VtConsole(PipeReadCallback const pfnReadCallback, bool const fHeadless, COORD const initialSize);
+    VtConsole(PipeReadCallback const pfnReadCallback, bool const fUseConpty, COORD const initialSize);
     void spawn();
     void spawn(const std::wstring& command);
 
@@ -53,17 +53,19 @@ public:
 private:
     COORD _lastDimensions;
 
-    PROCESS_INFORMATION pi;
+    PROCESS_INFORMATION _piPty;
+    PROCESS_INFORMATION _piClient;
 
     HANDLE _outPipe;
     HANDLE _inPipe;
     HANDLE _signalPipe;
+    HPCON _hPC;
     std::wstring _inPipeName;
     std::wstring _outPipeName;
 
     bool _connected = false;
     bool _active = false;
-    bool _fHeadless = false;
+    bool _fUseConPty = false;
 
     PipeReadCallback _pfnReadCallback;
 
@@ -75,6 +77,7 @@ private:
 
     void _spawn2(const std::wstring& command);
     void _spawn3(const std::wstring& command);
+    void _spawn4(const std::wstring& command);
 
     DWORD _OutputThread();
 

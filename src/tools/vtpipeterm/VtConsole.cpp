@@ -14,11 +14,10 @@
 #include <sstream>
 #include <iomanip>
 #include <assert.h>
-// Defined inside the console host PTY signal thread.
-#define PTY_SIGNAL_RESIZE_WINDOW 8u
+#include <wincon.h>
 
 VtConsole::VtConsole(PipeReadCallback const pfnReadCallback,
-                     bool const fHeadless,
+                     bool const fUseConpty,
                      COORD const initialSize) :
     _signalPipe(INVALID_HANDLE_VALUE),
     _outPipe(INVALID_HANDLE_VALUE),
@@ -26,7 +25,7 @@ VtConsole::VtConsole(PipeReadCallback const pfnReadCallback,
     _dwOutputThreadId(0)
 {
     _pfnReadCallback = pfnReadCallback;
-    _fHeadless = fHeadless;
+    _fUseConPty = fUseConpty;
     _lastDimensions = initialSize;
 
     int r = rand();
@@ -50,12 +49,7 @@ HANDLE VtConsole::outPipe()
 
 void VtConsole::signalWindow(unsigned short sx, unsigned short sy)
 {
-    unsigned short signalPacket[3];
-    signalPacket[0] = PTY_SIGNAL_RESIZE_WINDOW;
-    signalPacket[1] = sx;
-    signalPacket[2] = sy;
-
-    WriteFile(_signalPipe, signalPacket, sizeof(signalPacket), nullptr, nullptr);
+    Resize(sy, sx);
 }
 
 bool VtConsole::WriteInput(std::string& seq)
@@ -71,12 +65,12 @@ bool VtConsole::WriteInput(std::string& seq)
 
 void VtConsole::spawn()
 {
-    _spawn3(L"");
+    _spawn4(L"");
 }
 
 void VtConsole::spawn(const std::wstring& command)
 {
-    _spawn3(command);
+    _spawn4(command);
 }
 
 void VtConsole::_spawn2(const std::wstring& command)
@@ -125,7 +119,7 @@ void VtConsole::_spawn2(const std::wstring& command)
 void VtConsole::_spawn3(const std::wstring& command)
 {
     // For the non-headless debugging scenario, we're keeping the old initialization path.
-    if (!_fHeadless)
+    if (!_fUseConPty)
     {
         _openConsole3(command);
 
@@ -138,7 +132,7 @@ void VtConsole::_spawn3(const std::wstring& command)
                                      &_inPipe,
                                      &_outPipe,
                                      &_signalPipe,
-                                     &pi));
+                                     &_piPty));
     }
     _connected = true;
 
@@ -151,6 +145,152 @@ void VtConsole::_spawn3(const std::wstring& command)
                                   this,
                                   0,
                                   &_dwOutputThreadId);
+}
+
+// Prepares the `lpAttributeList` member of a STARTUPINFOEX for attaching a
+//      client application to a pseudoconsole.
+// Prior to calling this function, hPty should be initialized with a call to
+//      CreatePseudoConsole, and the pAttrList should be initialized with a call
+//      to InitializeProcThreadAttributeList. The caller of
+//      InitializeProcThreadAttributeList should add one to the dwAttributeCount
+//      param when creating the attribute list for usage by this function.
+HRESULT AttachPseudoConsole(HPCON hPC, LPPROC_THREAD_ATTRIBUTE_LIST lpAttributeList)
+{
+    BOOL fSuccess = UpdateProcThreadAttribute(lpAttributeList,
+                                              0,
+                                              PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE,
+                                              hPC,
+                                              sizeof(HPCON),
+                                              NULL,
+                                              NULL);
+    return fSuccess ? S_OK : HRESULT_FROM_WIN32(GetLastError());
+}
+
+// Function Description:
+// - Sample function which combines the creation of some basic anonymous pipes
+//      and passes them to CreatePseudoConsole.
+// Arguments:
+// - size: The size of the conpty to create, in characterrs.
+// - phInput: Receives the handle to the newly-created anonymous pipe for writing input to the conpty.
+// - phOutput: Receives the handle to the newly-created anonymous pipe for reading the output of the conpty.
+// - phPty: Receives a token value to identify this conpty
+HRESULT CreatePseudoConsoleAndHandles(COORD size,
+                                      _In_ DWORD dwFlags,
+                                      _Out_ HANDLE* phInput,
+                                      _Out_ HANDLE* phOutput,
+                                      _Out_ HPCON* phPC)
+{
+    if(phPC == NULL || phInput == NULL || phOutput == NULL)
+    {
+        return E_INVALIDARG;
+    }
+
+    HANDLE outPipeOurSide;
+    HANDLE inPipeOurSide;
+    HANDLE outPipePseudoConsoleSide;
+    HANDLE inPipePseudoConsoleSide;
+
+    HRESULT hr = S_OK;
+    if (!CreatePipe(&inPipePseudoConsoleSide, &inPipeOurSide, NULL, 0))
+    {
+        hr = HRESULT_FROM_WIN32(GetLastError());
+    }
+    if (SUCCEEDED(hr))
+    {
+        if (!CreatePipe(&outPipeOurSide, &outPipePseudoConsoleSide, NULL, 0))
+        {
+            hr = HRESULT_FROM_WIN32(GetLastError());
+        }
+        if (SUCCEEDED(hr))
+        {
+            hr = CreatePseudoConsole(size, inPipePseudoConsoleSide, outPipePseudoConsoleSide, dwFlags, phPC);
+            if (FAILED(hr))
+            {
+                CloseHandle(inPipeOurSide);
+                CloseHandle(outPipeOurSide);
+            }
+            else
+            {
+                *phInput = inPipeOurSide;
+                *phOutput = outPipeOurSide;
+            }
+            CloseHandle(outPipePseudoConsoleSide);
+        }
+        CloseHandle(inPipePseudoConsoleSide);
+    }
+    return hr;
+}
+
+
+// Method Description:
+// - This version of _spawn uses the actual Pty API for creating the conhost,
+//      independent of the child process. We then attach the client later.
+// Arguments:
+// - command: commandline of the child application to attach
+// Return Value:
+// - <none>
+void VtConsole::_spawn4(const std::wstring& command)
+{
+    // For the non-headless debugging scenario, we're keeping the old initialization path.
+    if (!_fUseConPty)
+    {
+        _openConsole3(command);
+    }
+    else
+    {
+        bool fSuccess;
+
+        THROW_IF_FAILED(CreatePseudoConsoleAndHandles(_lastDimensions, 0, &_inPipe, &_outPipe, &_hPC));
+
+        STARTUPINFOEX siEx;
+        siEx = { 0 };
+        siEx.StartupInfo.cb = sizeof(STARTUPINFOEX);
+        size_t size;
+        InitializeProcThreadAttributeList(NULL, 1, 0, &size);
+        BYTE* attrList = new BYTE[size];
+        siEx.lpAttributeList = reinterpret_cast<PPROC_THREAD_ATTRIBUTE_LIST>(attrList);
+        fSuccess = InitializeProcThreadAttributeList(siEx.lpAttributeList, 1, 0, (PSIZE_T)&size);
+        THROW_LAST_ERROR_IF(!fSuccess);
+
+        THROW_IF_FAILED(AttachPseudoConsole(_hPC, siEx.lpAttributeList));
+
+        std::wstring realCommand = command;
+        if (realCommand == L""){
+            realCommand = L"cmd.exe";
+        }
+
+        std::unique_ptr<wchar_t[]> mutableCommandline = std::make_unique<wchar_t[]>(realCommand.length() + 1);
+        THROW_IF_NULL_ALLOC(mutableCommandline);
+
+        HRESULT hr = StringCchCopy(mutableCommandline.get(), realCommand.length()+1, realCommand.c_str());
+        THROW_IF_FAILED(hr);
+        fSuccess = !!CreateProcessW(
+            nullptr,
+            mutableCommandline.get(),
+            nullptr,    // lpProcessAttributes
+            nullptr,    // lpThreadAttributes
+            true,       // bInheritHandles
+            EXTENDED_STARTUPINFO_PRESENT,          // dwCreationFlags
+            nullptr,    // lpEnvironment
+            nullptr,    // lpCurrentDirectory
+            &siEx.StartupInfo,        // lpStartupInfo
+            &_piClient  // lpProcessInformation
+        );
+        THROW_LAST_ERROR_IF(!fSuccess);
+        DeleteProcThreadAttributeList(siEx.lpAttributeList);
+    }
+    _connected = true;
+
+    // Create our own output handling thread
+    // Each console needs to make sure to drain the output from it's backing host.
+    _dwOutputThreadId = (DWORD)-1;
+    _hOutputThread = CreateThread(nullptr,
+                                  0,
+                                  (LPTHREAD_START_ROUTINE)StaticOutputThreadProc,
+                                  this,
+                                  0,
+                                  &_dwOutputThreadId);
+
 }
 
 PCWSTR GetCmdLine()
@@ -173,7 +313,7 @@ void VtConsole::_openConsole2(const std::wstring& command)
         cmdline += _outPipeName;
     }
 
-    if (_fHeadless)
+    if (_fUseConPty)
     {
         cmdline += L" --headless";
     }
@@ -202,7 +342,7 @@ void VtConsole::_openConsole2(const std::wstring& command)
         nullptr,    // lpEnvironment
         nullptr,    // lpCurrentDirectory
         &si,        //lpStartupInfo
-        &pi         //lpProcessInformation
+        &_piPty         //lpProcessInformation
     );
 
     if (!fSuccess)
@@ -218,7 +358,7 @@ void VtConsole::_openConsole3(const std::wstring& command)
 {
     std::wstring cmdline(GetCmdLine());
 
-    if (_fHeadless)
+    if (_fUseConPty)
     {
         cmdline += L" --headless";
     }
@@ -304,7 +444,7 @@ void VtConsole::_openConsole3(const std::wstring& command)
         nullptr,    // lpEnvironment
         nullptr,    // lpCurrentDirectory
         &si,        // lpStartupInfo
-        &pi         // lpProcessInformation
+        &_piPty         // lpProcessInformation
     );
 
     if (!fSuccess)
@@ -358,6 +498,12 @@ bool VtConsole::Repaint()
 
 bool VtConsole::Resize(const unsigned short rows, const unsigned short cols)
 {
-    return SignalResizeWindow(_signalPipe, cols, rows);
+    if (_fUseConPty) {
+        return SUCCEEDED(ResizePseudoConsole(_hPC, {(SHORT)cols, (SHORT)rows}));
+    }
+    else
+    {
+        return SignalResizeWindow(_signalPipe, cols, rows);
+    }
 }
 
