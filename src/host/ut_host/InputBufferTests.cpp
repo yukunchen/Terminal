@@ -18,6 +18,19 @@ class InputBufferTests
 {
     TEST_CLASS(InputBufferTests);
 
+    std::unique_ptr<CommonState> m_state;
+    TEST_CLASS_SETUP(ClassSetup)
+    {
+        m_state = std::make_unique<CommonState>();
+        m_state->InitEvents();
+        return true;
+    }
+
+    TEST_CLASS_CLEANUP(ClassCleanup)
+    {
+        return true;
+    }
+
     static const size_t RECORD_INSERT_COUNT = 12;
 
     INPUT_RECORD MakeKeyEvent(BOOL bKeyDown,
