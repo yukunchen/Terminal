@@ -195,7 +195,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
 
     try
     {
-        CommandHistory::s_Allocate({ Cac.AppName, Cac.AppNameLength }, (HANDLE)ProcessData);
+        CommandHistory::s_Allocate({ Cac.AppName, Cac.AppNameLength / sizeof(wchar_t)}, (HANDLE)ProcessData);
     }
     catch(...)
     {

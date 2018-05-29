@@ -408,9 +408,17 @@ CommandHistory* CommandHistory::s_Allocate(const std::wstring_view appName, cons
     }
     else if (!BestCandidate.has_value() && s_historyLists.size() > 0)
     {
-        // If we have no candidate already and we need one, take the LRU (which is the back/last one).
-        BestCandidate = s_historyLists.back();
-        s_historyLists.pop_back();
+        // If we have no candidate already and we need one, take the LRU (which is the back/last one) which isn't allocated.
+        for (auto it = s_historyLists.crbegin(); it != s_historyLists.crend(); it++)
+        {
+            if (IsFlagClear(it->Flags, CLE_ALLOCATED))
+            {
+                BestCandidate = *it;
+                s_historyLists.erase(std::next(it).base()); // trickery to turn reverse iterator into forward iterator for erase.
+                break;
+            }
+        }
+        
     }
 
     // If the app name doesn't match, copy in the new app name and free the old commands.
@@ -612,7 +620,11 @@ HRESULT ApiRoutines::ExpungeConsoleCommandHistoryWImpl(_In_reads_or_z_(cchExeNam
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    CommandHistory::s_FindByExe({ pwsExeNameBuffer, cchExeNameBufferLength })->Empty();
+    const auto history = CommandHistory::s_FindByExe({ pwsExeNameBuffer, cchExeNameBufferLength });
+    if (history)
+    {
+        history->Empty();
+    }
 
     return S_OK;
 }
