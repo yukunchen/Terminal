@@ -71,34 +71,13 @@ class HistoryTests
 
         VERIFY_ARE_EQUAL(s_NumberOfBuffers, CommandHistory::s_CountOfHistories(), L"We should have maxed out histories.");
 
-        Log::Comment(L"The 'least recently used' one of the first app name should have aged out. Verify we have apps 1-N");
-        for (size_t i = 1; i < _manyApps.size(); i++)
+        Log::Comment(L"Since they were all in use, the last app shouldn't have made an entry");
+        for (size_t i = 0; i < _manyApps.size() - 1; i++)
         {
             VERIFY_IS_NOT_NULL(CommandHistory::s_FindByExe(_manyApps[i]));
         }
 
-        VERIFY_IS_NULL(CommandHistory::s_FindByExe(_manyApps[0]), L"Verify we can't find the 0th app. It should have aged out.");
-    }
-
-    TEST_METHOD(PreventAgingOutByRealloc)
-    {
-        // Insert all but one of the apps into the history
-        for (size_t i = 0; i < 4; i++)
-        {
-            CommandHistory::s_Allocate(_manyApps[i], _MakeHandle(i));
-        }
-
-        // Realloc the first one to the front, it should have been last. This will prevent it from aging out
-        CommandHistory::s_ReallocExeToFront(_manyApps[0], s_BufferSize * 2);
-        
-        // Allocate 1 more. This should force the "oldest" one out.
-        CommandHistory::s_Allocate(_manyApps[4], _MakeHandle(4));
-
-        // The 0th one should still be there because we bumped it by reallocating to front.
-        VERIFY_IS_NOT_NULL(CommandHistory::s_FindByExe(_manyApps[0]));
-
-        // The 1st one should be the oldest one that aged out then. Check that it's gone.
-        VERIFY_IS_NULL(CommandHistory::s_FindByExe(_manyApps[1]));
+        VERIFY_IS_NULL(CommandHistory::s_FindByExe(_manyApps[4]), L"Verify we can't find the last app.");
     }
 
     TEST_METHOD(EnsureHistoryRestoredAfterClientLeavesAndRejoins)
@@ -125,7 +104,7 @@ class HistoryTests
         VERIFY_ARE_EQUAL(s_BufferSize, history->GetNumberOfCommands(), L"Ensure that we still have full commands after freeing and reallocating, same app name, different handle ID");
     }
 
-    TEST_METHOD(TooManyAppsDoesNotInheritHistory)
+    TEST_METHOD(TooManyAppsDoesntTakeList)
     {
         Log::Comment(L"Fill up the number of buffers and each history list to the max.");
         for (size_t i = 0; i < s_NumberOfBuffers; i++)
@@ -142,7 +121,7 @@ class HistoryTests
 
         Log::Comment(L"Add one more app and it should re-use a buffer but it should be clear.");
         auto history = CommandHistory::s_Allocate(_manyApps[4], _MakeHandle(444));
-        VERIFY_ARE_EQUAL(0ul, history->GetNumberOfCommands());
+        VERIFY_IS_NULL(history);
         VERIFY_ARE_EQUAL(s_NumberOfBuffers, CommandHistory::s_historyLists.size());
     }
 

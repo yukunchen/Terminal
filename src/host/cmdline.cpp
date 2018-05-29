@@ -943,12 +943,22 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
             if (wch == VK_F5)
                 wch = VK_UP;
             // for doskey compatibility, buffer isn't circular
-            if (wch == VK_UP && !pCookedReadData->_CommandHistory->AtFirstCommand() || wch == VK_DOWN && !pCookedReadData->_CommandHistory->AtLastCommand())
+            if ((wch == VK_UP && (pCookedReadData->_CommandHistory == nullptr || !pCookedReadData->_CommandHistory->AtFirstCommand())) || 
+                (wch == VK_DOWN && (pCookedReadData->_CommandHistory == nullptr || !pCookedReadData->_CommandHistory->AtLastCommand())))
             {
                 DeleteCommandLine(pCookedReadData, true);
-                Status = NTSTATUS_FROM_HRESULT(pCookedReadData->_CommandHistory->Retrieve(wch,
-                                                                                          pCookedReadData->SpanWholeBuffer(),
-                                                                                          pCookedReadData->_BytesRead));
+
+                if (pCookedReadData->_CommandHistory)
+                {
+                    Status = NTSTATUS_FROM_HRESULT(pCookedReadData->_CommandHistory->Retrieve(wch,
+                                                                                              pCookedReadData->SpanWholeBuffer(),
+                                                                                              pCookedReadData->_BytesRead));
+                }
+                else
+                {
+                    Status = STATUS_UNSUCCESSFUL;
+                }
+
                 FAIL_FAST_IF_FALSE(pCookedReadData->_BackupLimit == pCookedReadData->_BufPtr);
                 if (pCookedReadData->_Echo)
                 {
