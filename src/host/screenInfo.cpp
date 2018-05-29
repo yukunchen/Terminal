@@ -1293,8 +1293,9 @@ void SCREEN_INFORMATION::s_CalculateScrollbarVisibility(const RECT* const prcCli
                                                         _Out_ bool* const pfIsHorizontalVisible,
                                                         _Out_ bool* const pfIsVerticalVisible)
 {
-    FAIL_FAST_IF_FALSE(prcClientArea->left < prcClientArea->right);
-    FAIL_FAST_IF_FALSE(prcClientArea->top < prcClientArea->bottom);
+    // TODO <miniksa>: Audit call sites for this precondition.
+    // FAIL_FAST_IF_FALSE(prcClientArea->left < prcClientArea->right);
+    // FAIL_FAST_IF_FALSE(prcClientArea->top < prcClientArea->bottom);
     FAIL_FAST_IF_FALSE(pcoordBufferSize->X > 0);
     FAIL_FAST_IF_FALSE(pcoordBufferSize->Y > 0);
     FAIL_FAST_IF_FALSE(pcoordFontSize->X > 0);
