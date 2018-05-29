@@ -884,7 +884,8 @@ void SCREEN_INFORMATION::ProcessResizeWindow(const RECT* const prcClientNew, con
     UpdateScrollBars();
 
     FAIL_FAST_IF_FALSE(_viewport.Top() >= 0);
-    FAIL_FAST_IF_FALSE(_viewport.IsValid());
+    // TODO MSFT: 17663344 - Audit call sites for this precondition. Extremely tiny offscreen windows.
+    //FAIL_FAST_IF_FALSE(_viewport.IsValid());
 }
 
 #pragma endregion
@@ -1293,8 +1294,9 @@ void SCREEN_INFORMATION::s_CalculateScrollbarVisibility(const RECT* const prcCli
                                                         _Out_ bool* const pfIsHorizontalVisible,
                                                         _Out_ bool* const pfIsVerticalVisible)
 {
-    FAIL_FAST_IF_FALSE(prcClientArea->left < prcClientArea->right);
-    FAIL_FAST_IF_FALSE(prcClientArea->top < prcClientArea->bottom);
+    // TODO MSFT: 17663344 - Audit call sites for this precondition. Extremely tiny offscreen windows.
+    // FAIL_FAST_IF_FALSE(prcClientArea->left < prcClientArea->right);
+    // FAIL_FAST_IF_FALSE(prcClientArea->top < prcClientArea->bottom);
     FAIL_FAST_IF_FALSE(pcoordBufferSize->X > 0);
     FAIL_FAST_IF_FALSE(pcoordBufferSize->Y > 0);
     FAIL_FAST_IF_FALSE(pcoordFontSize->X > 0);

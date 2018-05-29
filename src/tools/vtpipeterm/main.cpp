@@ -42,7 +42,7 @@ bool prefixPressed = false;
 bool doUnicode = false;
 int lang = TEST_LANG_NONE;
 
-bool g_headless = false;
+bool g_useConpty = false;
 ////////////////////////////////////////////////////////////////////////////////
 // Forward decls
 std::string toPrintableString(std::string& inString);
@@ -103,7 +103,7 @@ HANDLE outPipe()
 
 void newConsole()
 {
-    auto con = new VtConsole(ReadCallback, g_headless, {lastTerminalWidth, lastTerminalHeight});
+    auto con = new VtConsole(ReadCallback, g_useConpty, {lastTerminalWidth, lastTerminalHeight});
     con->spawn();
     consoles.push_back(con);
 }
@@ -433,7 +433,6 @@ void SetupInput()
 {
     DWORD dwInMode = 0;
     GetConsoleMode(hIn, &dwInMode);
-    dwInMode |= ENABLE_VIRTUAL_TERMINAL_INPUT;
     dwInMode = ENABLE_VIRTUAL_TERMINAL_INPUT;
     SetConsoleMode(hIn, dwInMode);
 }
@@ -520,9 +519,9 @@ int __cdecl wmain(int argc, WCHAR* argv[])
         for (int i = 0; i < argc; ++i)
         {
             std::wstring arg = argv[i];
-            if (arg == std::wstring(L"--headless"))
+            if (arg == std::wstring(L"--conpty"))
             {
-                g_headless = true;
+                g_useConpty = true;
             }
             else if (arg == std::wstring(L"--debug"))
             {
