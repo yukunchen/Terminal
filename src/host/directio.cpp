@@ -721,19 +721,33 @@ NTSTATUS SrvReadConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
 
         std::vector<std::vector<OutputCell>> outputCells;
         Status = ReadScreenBuffer(activeScreenInfo, outputCells, &a->CharRegion);
-        FAIL_FAST_IF_FALSE(cbBuffer >= outputCells.size() * outputCells[0].size() * sizeof(CHAR_INFO));
+        
         // convert to CharInfo
-        CHAR_INFO* pCurrCharInfo = Buffer;
-        // copy the data into the char info buffer
-        for (auto& row : outputCells)
+        try
         {
-            for (auto& cell : row)
+            const auto charInfoBuffer = gsl::make_span(Buffer, cbBuffer / sizeof(CHAR_INFO));
+            auto bufferPos = charInfoBuffer.begin();
+            // copy the data into the char info buffer
+            for (auto& row : outputCells)
             {
-                *pCurrCharInfo = cell.ToCharInfo();
-                ++pCurrCharInfo;
+                for (auto& cell : row)
+                {
+                    *bufferPos = cell.ToCharInfo();
+                    bufferPos++;
+                }
             }
         }
+        catch (...)
+        {
+            // Expecting the exception to be related to bounds of the span and/or the buffer size. 
+            // Log the real exception here.
+            LOG_CAUGHT_EXCEPTION();
 
+            // API traditionally returns this value for buffer problems.
+            // So unlock and return this value like the above buffer size check.
+            UnlockConsole();
+            return STATUS_INVALID_PARAMETER; 
+        }
 
         if (!a->Unicode)
         {
