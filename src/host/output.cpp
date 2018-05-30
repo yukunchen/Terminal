@@ -82,23 +82,28 @@ std::vector<std::vector<OutputCell>> ReadRectFromScreenBuffer(const SCREEN_INFOR
     std::vector<std::vector<OutputCell>> result;
     result.reserve(viewport.Height());
 
+    const OutputCell paddingCell{ { UNICODE_SPACE }, {}, OutputCell::TextAttributeBehavior::Default };
     for (size_t rowIndex = 0; rowIndex < static_cast<size_t>(viewport.Height()); ++rowIndex)
     {
         auto cells = screenInfo.ReadLine(coordSourcePoint.Y + rowIndex, coordSourcePoint.X);
-        FAIL_FAST_IF_FALSE(cells.size() >= static_cast<size_t>(viewport.Width()));
-        for (size_t colIndex = 0; colIndex < static_cast<size_t>(viewport.Width()); ++colIndex)
+        FAIL_FAST_IF(cells.size() < static_cast<size_t>(viewport.Width()));
+
+        // clip to viewport size
+        cells.resize(viewport.Width(), paddingCell);
+
+        // if we're clipping a dbcs char then don't include it, add a space instead
+        if (cells.front().DbcsAttr().IsTrailing())
         {
-            // if we're clipping a dbcs char then don't include it, add a space instead
-            if ((colIndex == 0 && cells[colIndex].DbcsAttr().IsTrailing()) ||
-                (colIndex + 1 >= static_cast<size_t>(viewport.Width()) && cells[colIndex].DbcsAttr().IsLeading()))
-            {
-                cells[colIndex].DbcsAttr().SetSingle();
-                cells[colIndex].Chars() = { UNICODE_SPACE };
-            }
+            cells.front() = paddingCell;
         }
-        cells.resize(viewport.Width(), cells.front());
+        if (cells.back().DbcsAttr().IsLeading())
+        {
+            cells.back() = paddingCell;
+        }
+
         result.push_back(cells);
     }
+
     FAIL_FAST_IF_FALSE(result.size() == static_cast<size_t>(viewport.Height()));
     FAIL_FAST_IF_FALSE(result.at(0).size() == static_cast<size_t>(viewport.Width()));
     return result;
