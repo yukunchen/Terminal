@@ -147,7 +147,7 @@ public:
                              const COORD target,
                              const size_t amountToWrite);
 
-    size_t FillTextGlyph(const std::vector<wchar_t>& glyph,
+    size_t FillTextGlyph(const std::wstring_view glyph,
                          const COORD target,
                          const size_t amountToWrite);
 

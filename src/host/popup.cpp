@@ -129,15 +129,15 @@ void Popup::_DrawBorder()
     FillOutputAttributes(_screenInfo, Attributes, WriteCoord, Width() + 2);
 
     // draw upper left corner
-    FillOutputW(_screenInfo, { _screenInfo.LineChar[UPPER_LEFT_CORNER] }, WriteCoord, 1);
+    FillOutputW(_screenInfo, _screenInfo.LineChar[UPPER_LEFT_CORNER], WriteCoord, 1);
 
     // draw upper bar
     WriteCoord.X += 1;
-    FillOutputW(_screenInfo, { _screenInfo.LineChar[HORIZONTAL_LINE] }, WriteCoord, Width());
+    FillOutputW(_screenInfo, _screenInfo.LineChar[HORIZONTAL_LINE], WriteCoord, Width());
 
     // draw upper right corner
     WriteCoord.X = _region.Right;
-    FillOutputW(_screenInfo, { _screenInfo.LineChar[UPPER_RIGHT_CORNER] }, WriteCoord, 1);
+    FillOutputW(_screenInfo, _screenInfo.LineChar[UPPER_RIGHT_CORNER], WriteCoord, 1);
 
     for (SHORT i = 0; i < Height(); i++)
     {
@@ -147,10 +147,10 @@ void Popup::_DrawBorder()
         // fill attributes
         FillOutputAttributes(_screenInfo, Attributes, WriteCoord, Width() + 2);
 
-        FillOutputW(_screenInfo, { _screenInfo.LineChar[VERTICAL_LINE] }, WriteCoord, 1);
+        FillOutputW(_screenInfo, _screenInfo.LineChar[VERTICAL_LINE], WriteCoord, 1);
 
         WriteCoord.X = _region.Right;
-        FillOutputW(_screenInfo, { _screenInfo.LineChar[VERTICAL_LINE] }, WriteCoord, 1);
+        FillOutputW(_screenInfo, _screenInfo.LineChar[VERTICAL_LINE], WriteCoord, 1);
     }
 
     // Draw bottom line.
@@ -161,15 +161,15 @@ void Popup::_DrawBorder()
 
     // Draw bottom left corner.
     WriteCoord.X = _region.Left;
-    FillOutputW(_screenInfo, { _screenInfo.LineChar[BOTTOM_LEFT_CORNER] }, WriteCoord, 1);
+    FillOutputW(_screenInfo, _screenInfo.LineChar[BOTTOM_LEFT_CORNER], WriteCoord, 1);
 
     // Draw lower bar.
     WriteCoord.X += 1;
-    FillOutputW(_screenInfo, { _screenInfo.LineChar[HORIZONTAL_LINE] }, WriteCoord, Width());
+    FillOutputW(_screenInfo, _screenInfo.LineChar[HORIZONTAL_LINE], WriteCoord, Width());
 
     // draw lower right corner
     WriteCoord.X = _region.Right;
-    FillOutputW(_screenInfo, { _screenInfo.LineChar[BOTTOM_RIGHT_CORNER] }, WriteCoord, 1);
+    FillOutputW(_screenInfo, _screenInfo.LineChar[BOTTOM_RIGHT_CORNER], WriteCoord, 1);
 }
 
 // Routine Description:
@@ -193,7 +193,7 @@ void Popup::_DrawPrompt(const UINT id)
                                                                 static_cast<size_t>(lStringLength)));
 
         lStringLength = gsl::narrow<ULONG>(FillOutputW(_screenInfo,
-                                                       { UNICODE_SPACE },
+                                                       UNICODE_SPACE,
                                                        WriteCoord,
                                                        static_cast<size_t>(lStringLength)));
 
@@ -230,7 +230,7 @@ void Popup::_DrawList()
                                              WriteCoord,
                                              lStringLength);
         lStringLength = FillOutputW(_screenInfo,
-                                    { UNICODE_SPACE },
+                                    UNICODE_SPACE,
                                     WriteCoord,
                                     lStringLength);
         WriteCoord.Y += 1i16;

@@ -45,7 +45,7 @@ std::vector<OutputCell> OutputCell::_fromUtf16(const std::vector<std::vector<wch
 {
     std::vector<OutputCell> cells;
 
-    auto constructorDispatch = [&](const std::vector<wchar_t>& glyph, const DbcsAttribute dbcsAttr)
+    auto constructorDispatch = [&](const std::wstring_view glyph, const DbcsAttribute dbcsAttr)
     {
         if (textAttrVariant.index() == 0)
         {
@@ -60,22 +60,23 @@ std::vector<OutputCell> OutputCell::_fromUtf16(const std::vector<std::vector<wch
     for (const auto glyph : utf16Glyphs)
     {
         DbcsAttribute dbcsAttr;
-        if (IsGlyphFullWidth(std::wstring_view{ glyph.data(), glyph.size() }))
+        const std::wstring_view glyphView{ glyph.data(), glyph.size() };
+        if (IsGlyphFullWidth(glyphView))
         {
             dbcsAttr.SetLeading();
-            constructorDispatch(glyph, dbcsAttr);
+            constructorDispatch(glyphView, dbcsAttr);
             dbcsAttr.SetTrailing();
         }
-        constructorDispatch(glyph, dbcsAttr);
+        constructorDispatch(glyphView, dbcsAttr);
     }
     return cells;
 }
 
 
-OutputCell::OutputCell(const std::vector<wchar_t>& charData,
+OutputCell::OutputCell(const std::wstring_view charData,
                        const DbcsAttribute dbcsAttribute,
                        const TextAttributeBehavior behavior) :
-    _charData{ charData },
+    _charData{ charData.begin(), charData.end() },
     _dbcsAttribute{ dbcsAttribute },
     _textAttribute{ InvalidTextAttribute },
     _behavior{ behavior }
@@ -84,10 +85,10 @@ OutputCell::OutputCell(const std::vector<wchar_t>& charData,
     _setFromBehavior(behavior);
 }
 
-OutputCell::OutputCell(const std::vector<wchar_t>& charData,
+OutputCell::OutputCell(const std::wstring_view charData,
                        const DbcsAttribute dbcsAttribute,
                        const TextAttribute textAttribute) :
-    _charData{ charData },
+    _charData{ charData.begin(), charData.end() },
     _dbcsAttribute{ dbcsAttribute },
     _textAttribute{ textAttribute },
     _behavior{ TextAttributeBehavior::Stored }

@@ -44,11 +44,11 @@ public:
     static std::vector<OutputCell> FromUtf16(const std::vector<std::vector<wchar_t>>& utf16Glyphs,
                                              const TextAttribute defaultTextAttribute);
 
-    OutputCell(const std::vector<wchar_t>& charData,
+    OutputCell(const std::wstring_view charData,
                const DbcsAttribute dbcsAttribute,
                const TextAttributeBehavior behavior);
 
-    OutputCell(const std::vector<wchar_t>& charData,
+    OutputCell(const std::wstring_view charData,
                const DbcsAttribute dbcsAttribute,
                const TextAttribute textAttribute);
 

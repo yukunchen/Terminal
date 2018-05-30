@@ -326,16 +326,16 @@ size_t FillOutputAttributes(SCREEN_INFORMATION& screenInfo,
 }
 
 // Routine Description:
-// - fills the screen buffer with the specified glyph
+// - fills the screen buffer with the specified wchar
 // Arguments:
 // - screenInfo - reference to screen buffer information.
-// - glyph - glyph to use to fill
+// - wch - wchar to fill with
 // - target - Screen buffer coordinate to begin writing to.
 // - amountToWrite - the number of elements to write
 // Return Value:
 // - the number of elements written
 size_t FillOutputW(SCREEN_INFORMATION& screenInfo,
-                   const std::vector<wchar_t>& glyph,
+                   const wchar_t wch,
                    const COORD target,
                    const size_t amountToWrite)
 {
@@ -350,23 +350,22 @@ size_t FillOutputW(SCREEN_INFORMATION& screenInfo,
         return 0;
     }
 
-    return screenInfo.FillTextGlyph(glyph, target, amountToWrite);
+    return screenInfo.FillTextGlyph({ &wch, 1 }, target, amountToWrite);
 }
 
 // Routine Description:
-// - fills the screen buffer with the specified glyph
+// - fills the screen buffer with the specified char
 // Arguments:
 // - screenInfo - reference to screen buffer information.
-// - glyph - glyph to use to fill
+// - ch - ascii char to fill
 // - target - Screen buffer coordinate to begin writing to.
 // - amountToWrite - the number of elements to write
 // Return Value:
 // - the number of elements written
 size_t FillOutputA(SCREEN_INFORMATION& screenInfo,
-                   const std::vector<char>& glyph,
+                   const char ch,
                    const COORD target,
                    const size_t amountToWrite)
-
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
@@ -374,23 +373,13 @@ size_t FillOutputA(SCREEN_INFORMATION& screenInfo,
     wistd::unique_ptr<wchar_t[]> outWchs;
     size_t count = 0;
     THROW_IF_FAILED(ConvertToW(gci.OutputCP,
-                                glyph.data(),
-                                glyph.size(),
-                                outWchs,
-                                count));
+                               &ch,
+                               1,
+                               outWchs,
+                               count));
 
-    const std::vector<wchar_t> wideGlyph{ outWchs.get(), outWchs.get() + count };
-    const auto wideCharsWritten = FillOutputW(screenInfo, wideGlyph, target, amountToWrite);
-
-    // convert wideCharsWritten to amount of ascii chars written so we can properly report back
-    // how many elements were actually written
-    wistd::unique_ptr<char[]> outChars;
-    THROW_IF_FAILED(ConvertToA(gci.OutputCP,
-                                wideGlyph.data(),
-                                wideCharsWritten,
-                                outChars,
-                                count));
-    return count;
+    THROW_HR_IF(E_UNEXPECTED, count > 1);
+    return FillOutputW(screenInfo, outWchs[0], target, amountToWrite);
 }
 
 // Routine Description:

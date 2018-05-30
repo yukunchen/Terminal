@@ -180,7 +180,7 @@ void DeleteCommandLine(_Inout_ COOKED_READ_DATA* const pCookedReadData, const bo
     try
     {
         FillOutputW(pCookedReadData->_screenInfo,
-                    { UNICODE_SPACE },
+                    UNICODE_SPACE,
                     coordOriginalCursor,
                     CharsToWrite);
     }
@@ -763,7 +763,7 @@ NTSTATUS CommandListPopup(_In_ COOKED_READ_DATA* const CookedReadData)
         COORD PopupSize;
         PopupSize.X = 40;
         PopupSize.Y = 10;
-        
+
         try
         {
             const auto Popup = CommandHistory->BeginPopup(CookedReadData->_screenInfo, PopupSize, Popup::PopFunc::CommandList);

@@ -2726,7 +2726,19 @@ size_t SCREEN_INFORMATION::FillTextAttribute(const TextAttribute attr,
     return amountWritten;
 }
 
-size_t SCREEN_INFORMATION::FillTextGlyph(const std::vector<wchar_t>& glyph,
+// Routine Description:
+// - fills the screen buffer with the specified utf16 encoded codepoint
+// Arguments:
+// - glyph - glyph to use to fill
+// - target - Screen buffer coordinate to begin writing to.
+// - amountToWrite - the number of times to write the glyph
+// Return Value:
+// - the number of cells that were filled with glyph in the output buffer.
+// Note:
+// - if glyph is a dbcs character then note that the return value if counting the number of cells used,
+// not the number of glyphs written. writing a dbcs char will fill two cells, so the return value would
+// be two.
+size_t SCREEN_INFORMATION::FillTextGlyph(const std::wstring_view glyph,
                                          const COORD target,
                                          const size_t amountToWrite)
 {
