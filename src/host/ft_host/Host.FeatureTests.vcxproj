@@ -7,6 +7,7 @@
     <ClCompile Include="API_CursorTests.cpp" />
     <ClCompile Include="API_DimensionsTests.cpp" />
     <ClCompile Include="API_FileTests.cpp" />
+    <ClCompile Include="API_FillOutputTests.cpp" />
     <ClCompile Include="API_FontTests.cpp" />
     <ClCompile Include="API_InputTests.cpp" />
     <ClCompile Include="API_ModeTests.cpp" />

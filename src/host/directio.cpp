@@ -1189,7 +1189,7 @@ NTSTATUS DoSrvFillConsoleOutput(SCREEN_INFORMATION& screenInfo, _Inout_ CONSOLE_
                  elementType == CONSOLE_FALSE_UNICODE)
         {
             size_t amountWritten = FillOutputW(screenInfo,
-                                               { pMsg->Element },
+                                               pMsg->Element,
                                                pMsg->WriteCoord,
                                                static_cast<size_t>(pMsg->Length));
             pMsg->Length = gsl::narrow<ULONG>(amountWritten);
@@ -1198,7 +1198,7 @@ NTSTATUS DoSrvFillConsoleOutput(SCREEN_INFORMATION& screenInfo, _Inout_ CONSOLE_
         else if (elementType == CONSOLE_ASCII)
         {
             size_t amountWritten = FillOutputA(screenInfo,
-                                               { static_cast<char>(pMsg->Element) },
+                                               static_cast<char>(pMsg->Element),
                                                pMsg->WriteCoord,
                                                static_cast<size_t>(pMsg->Length));
             pMsg->Length = gsl::narrow<ULONG>(amountWritten);

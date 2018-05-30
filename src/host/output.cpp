@@ -70,7 +70,7 @@ NTSTATUS DoCreateScreenBuffer()
 // Arguments:
 // - screenInfo - reference to screen info
 // - coordSourcePoint - upper left coordinates of source rectangle
-// - TargetRect - rectangle in source buffer to copy
+// - viewport - rectangle in source buffer to copy
 // Return Value:
 // - vector of vector of output cell data for read rect
 // Note:
@@ -82,7 +82,8 @@ std::vector<std::vector<OutputCell>> ReadRectFromScreenBuffer(const SCREEN_INFOR
     std::vector<std::vector<OutputCell>> result;
     result.reserve(viewport.Height());
 
-    const OutputCell paddingCell{ { UNICODE_SPACE }, {}, OutputCell::TextAttributeBehavior::Default };
+    const wchar_t spaceChar = UNICODE_SPACE;
+    const OutputCell paddingCell{ std::wstring_view{ &spaceChar, 1 }, {}, OutputCell::TextAttributeBehavior::Default };
     for (size_t rowIndex = 0; rowIndex < static_cast<size_t>(viewport.Height()); ++rowIndex)
     {
         auto cells = screenInfo.ReadLine(coordSourcePoint.Y + rowIndex, coordSourcePoint.X);

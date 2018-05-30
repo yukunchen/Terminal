@@ -39,12 +39,12 @@ size_t FillOutputAttributes(SCREEN_INFORMATION& screenInfo,
                             const size_t amountToWrite);
 
 size_t FillOutputW(SCREEN_INFORMATION& screenInfo,
-                   const std::vector<wchar_t>& glyph,
+                   const wchar_t wch,
                    const COORD target,
                    const size_t amountToWrite);
 
 size_t FillOutputA(SCREEN_INFORMATION& screenInfo,
-                   const std::vector<char>& glyph,
+                   const char ch,
                    const COORD target,
                    const size_t amountToWrite);
 
