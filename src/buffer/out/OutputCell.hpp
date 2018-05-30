@@ -54,6 +54,13 @@ public:
 
     OutputCell(const CHAR_INFO& charInfo);
 
+    OutputCell(const OutputCell&) = default;
+    OutputCell(OutputCell&&) = default;
+
+    OutputCell& operator=(const OutputCell&) = default;
+
+    ~OutputCell() = default;
+
     void swap(_Inout_ OutputCell& other) noexcept;
 
     CHAR_INFO ToCharInfo();

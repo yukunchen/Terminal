@@ -169,6 +169,9 @@ HRESULT ROW::Resize(const size_t width)
         _attrRow.Resize(width);
     }
     CATCH_RETURN();
+
+    _rowWidth = width;
+
     return S_OK;
 }
 
