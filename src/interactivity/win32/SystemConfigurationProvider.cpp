@@ -62,7 +62,9 @@ void SystemConfigurationProvider::GetSettingsFromLink(
     {
         if (SUCCEEDED(CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED)))
         {
-            gci.SetLinkTitle(std::wstring(pwszTitle, *pdwTitleLength));
+            size_t const cch = *pdwTitleLength / sizeof(wchar_t);
+
+            gci.SetLinkTitle(std::wstring(pwszTitle, cch));
 
             wchar_t* const linkNameForCsi = new(std::nothrow) wchar_t[gci.GetLinkTitle().length()+1]{0};
             if (linkNameForCsi)

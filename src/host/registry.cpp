@@ -91,16 +91,17 @@ void Registry::GetEditKeys(_In_opt_ HKEY hConsoleKey) const
         // the key isn't a REG_DWORD, try to read it as a REG_SZ
         const size_t bufferSize = 64;
         WCHAR awchBuffer[bufferSize];
+        DWORD cbWritten = 0;
         Status = RegistrySerialization::s_QueryValue(hConsoleKey,
                                                      CONSOLE_REGISTRY_WORD_DELIM,
-                                                     bufferSize,
+                                                     bufferSize * sizeof(WCHAR),
                                                      REG_SZ,
                                                      reinterpret_cast<BYTE*>(awchBuffer),
-                                                     nullptr);
+                                                     &cbWritten);
         if (NT_SUCCESS(Status))
         {
             // we read something, set it as the word delimiters
-            const std::wstring regWordDelimiters{ awchBuffer, awchBuffer + bufferSize };
+            const std::wstring regWordDelimiters{ awchBuffer, cbWritten / sizeof(wchar_t) };
             for (const wchar_t wch : regWordDelimiters)
             {
                 if (wch == '\0')
