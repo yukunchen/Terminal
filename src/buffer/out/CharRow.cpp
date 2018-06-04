@@ -11,18 +11,6 @@
 #include "Row.hpp"
 
 // Routine Description:
-// - swaps two CharRows
-// Arguments:
-// - a - the first CharRow to swap
-// - b - the second CharRow to swap
-// Return Value:
-// - <none>
-void swap(CharRow& a, CharRow& b) noexcept
-{
-    a.swap(b);
-}
-
-// Routine Description:
 // - constructor
 // Arguments:
 // - rowWidth - the size (in wchar_t) of the char and attribute rows
@@ -36,36 +24,6 @@ CharRow::CharRow(size_t rowWidth, ROW* const pParent) :
     _data(rowWidth, value_type()),
     _pParent{ pParent }
 {
-}
-
-// Routine Description:
-// - assignment operator
-// Arguments:
-// - CharRow to copy
-// Return Value:
-// - reference to this object
-CharRow& CharRow::operator=(const CharRow& a)
-{
-    CharRow temp(a);
-    this->swap(temp);
-    return *this;
-}
-
-// Routine Description:
-// - swaps values with another CharRow
-// Arguments:
-// - other - the CharRow to swap with
-// Return Value:
-// - <none>
-void CharRow::swap(CharRow& other) noexcept
-{
-    // this looks kinda weird, but we want the compiler to be able to choose between std::swap and a
-    // specialized swap, so we include both in the same namespace and let it sort it out.
-    using std::swap;
-    swap(_wrapForced, other._wrapForced);
-    swap(_doubleBytePadded, other._doubleBytePadded);
-    swap(_data, other._data);
-    swap(_pParent, other._pParent);
 }
 
 // Routine Description:

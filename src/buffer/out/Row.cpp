@@ -11,18 +11,6 @@
 #include "../types/inc/convert.hpp"
 
 // Routine Description:
-// - swaps two ROWs
-// Arguments:
-// - a - the first ROW to swap
-// - b - the second ROW to swap
-// Return Value:
-// - <none>
-void swap(ROW& a, ROW& b) noexcept
-{
-    a.swap(b);
-}
-
-// Routine Description:
 // - constructor
 // Arguments:
 // - rowId - the row index in the text buffer
@@ -35,69 +23,11 @@ ROW::ROW(const SHORT rowId, const short rowWidth, const TextAttribute fillAttrib
     _id{ rowId },
     _rowWidth{ gsl::narrow<size_t>(rowWidth) },
     _charRow{ gsl::narrow<size_t>(rowWidth), this },
-    _attrRow{ rowWidth, fillAttribute },
+    _attrRow{ gsl::narrow<UINT>(rowWidth), fillAttribute },
     _pParent{ pParent }
 {
 }
 
-// Routine Description:
-// - copy constructor
-// Arguments:
-// - a - the object to copy
-// Return Value:
-// - the copied object
-ROW::ROW(const ROW& a) :
-    _attrRow{ a._attrRow },
-    _rowWidth{ a._rowWidth },
-    _id{ a._id },
-    _charRow{ a._charRow },
-    _pParent{ a._pParent }
-{
-}
-
-// Routine Description:
-// - assignment operator overload
-// Arguments:
-// - a - the object to copy to this one
-// Return Value:
-// - a reference to this object
-ROW& ROW::operator=(const ROW& a)
-{
-    ROW temp{ a };
-    this->swap(temp);
-    return *this;
-}
-
-// Routine Description:
-// - move constructor
-// Arguments:
-// - a - the object to move
-// Return Value:
-// - the constructed object
-ROW::ROW(ROW&& a) noexcept :
-    _charRow{ std::move(a._charRow) },
-    _attrRow{ std::move(a._attrRow) },
-    _id{ std::move(a._id) },
-    _rowWidth{ a._rowWidth },
-    _pParent{ a._pParent }
-{
-}
-
-// Routine Description:
-// - swaps fields with another ROW. does not swap parent text buffer
-// Arguments:
-// - other - the object to swap with
-// Return Value:
-// - <none>
-void ROW::swap(ROW& other) noexcept
-{
-    using std::swap;
-    swap(_charRow, other._charRow);
-    swap(_attrRow, other._attrRow);
-    swap(_id, other._id);
-    swap(_rowWidth, other._rowWidth);
-    swap(_pParent, other._pParent);
-}
 size_t ROW::size() const noexcept
 {
     return _rowWidth;
