@@ -253,6 +253,8 @@ HRESULT ConsoleHandleData::_CloseOutputHandle()
     FAIL_FAST_IF_FALSE(_IsOutput());
     SCREEN_INFORMATION* pScreenInfo = static_cast<SCREEN_INFORMATION*>(_pvClientPointer);
 
+    pScreenInfo = &pScreenInfo->GetMainBuffer();
+
     // TODO: MSFT: 9115192 - THIS IS BAD. It should use a destructor.
     LOG_IF_FAILED(pScreenInfo->Header.FreeIoHandle(this));
     if (!pScreenInfo->Header.HasAnyOpenHandles())

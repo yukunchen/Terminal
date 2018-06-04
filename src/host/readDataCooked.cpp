@@ -70,10 +70,10 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
     ControlKeyState{ 0 },
     pdwNumBytes{ nullptr }
 {
-    THROW_IF_FAILED(screenInfo.Header.AllocateIoHandle(ConsoleHandleData::HandleType::Output,
-                                                       GENERIC_WRITE,
-                                                       FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                                       _tempHandle));
+    THROW_IF_FAILED(screenInfo.GetMainBuffer().Header.AllocateIoHandle(ConsoleHandleData::HandleType::Output,
+                                                                       GENERIC_WRITE,
+                                                                       FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                                                       _tempHandle));
 
     // to emulate OS/2 KbdStringIn, we read into our own big buffer
     // (256 bytes) until the user types enter.  then return as many
