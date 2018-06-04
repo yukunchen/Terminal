@@ -25,7 +25,6 @@ class ATTR_ROW final
 {
 public:
     ATTR_ROW(const UINT cchRowWidth, const TextAttribute attr);
-    ATTR_ROW(const ATTR_ROW& a);
 
     void Reset(const TextAttribute attr);
 
@@ -59,7 +58,6 @@ private:
 
     std::vector<TextAttributeRun> _list;
     size_t _cchRowWidth;
-
 
 #ifdef UNIT_TESTING
     friend class AttrRowTests;

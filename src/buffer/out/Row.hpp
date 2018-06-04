@@ -30,12 +30,7 @@ class ROW final
 {
 public:
     ROW(const SHORT rowId, const short rowWidth, const TextAttribute fillAttribute, TextBuffer* const pParent);
-    ROW(const ROW& a);
-    ROW& operator=(const ROW& a);
-    ROW(ROW&& a) noexcept;
-    ~ROW() = default;
 
-    void swap(ROW& other) noexcept;
     size_t size() const noexcept;
     const OutputCell at(const size_t column) const;
 
@@ -110,21 +105,11 @@ private:
     TextBuffer* _pParent; // non ownership pointer
 };
 
-void swap(ROW& a, ROW& b) noexcept;
 inline bool operator==(const ROW& a, const ROW& b) noexcept
 {
     return (a._charRow == b._charRow &&
             a._attrRow == b._attrRow &&
+            a._rowWidth == b._rowWidth &&
+            a._pParent == b._pParent &&
             a._id == b._id);
-}
-
-// this sticks specialization of swap() into the std::namespace for Row, so that callers that use
-// std::swap explicitly over calling the global swap can still get the performance benefit.
-namespace std
-{
-    template<>
-    inline void swap<ROW>(ROW& a, ROW& b) noexcept
-    {
-        a.swap(b);
-    }
 }

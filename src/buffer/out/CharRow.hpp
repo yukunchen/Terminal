@@ -46,12 +46,6 @@ public:
     using reference = typename CharRowCellReference;
 
     CharRow(size_t rowWidth, ROW* const pParent);
-    CharRow(const CharRow& a) = default;
-    CharRow& operator=(const CharRow& a);
-    CharRow(CharRow&& a) = default;
-    ~CharRow() = default;
-
-    void swap(CharRow& other) noexcept;
 
     void SetWrapForced(const bool wrap) noexcept;
     bool WasWrapForced() const noexcept;
@@ -105,8 +99,6 @@ protected:
     ROW* _pParent;
 };
 
-void swap(CharRow& a, CharRow& b) noexcept;
-
 constexpr bool operator==(const CharRow& a, const CharRow& b) noexcept
 {
     return (a._wrapForced == b._wrapForced &&
@@ -125,15 +117,4 @@ void OverwriteColumns(InputIt1 startChars, InputIt1 endChars, InputIt2 startAttr
     {
         return CharRow::value_type{ wch, attr };
     });
-}
-
-// this sticks specialization of swap() into the std::namespace for CharRow, so that callers that use
-// std::swap explicitly over calling the global swap can still get the performance benefit.
-namespace std
-{
-    template<>
-    inline void swap<CharRow>(CharRow& a, CharRow& b) noexcept
-    {
-        a.swap(b);
-    }
 }
