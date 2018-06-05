@@ -201,27 +201,6 @@ size_t ATTR_ROW::FindAttrIndex(const size_t index, size_t* const pApplies) const
 }
 
 // Routine Description:
-// - Unpacks run length encoded attributes into an array of words that is the width of the given row.
-//  Return Value:
-// - Throws exceptions on failures
-std::vector<TextAttribute> ATTR_ROW::UnpackAttrs() const
-{
-    std::vector<TextAttribute> attrs;
-
-    // Iterate through every packed TextAttributeRun that is in our internal run length encoding
-    for (auto& run : _list)
-    {
-        // Fill the output array with the associated attribute for the current run length
-        for (size_t runCount = 0; runCount < run.GetLength(); runCount++)
-        {
-            attrs.push_back(run.GetAttributes());
-        }
-    }
-
-    return attrs;
-}
-
-// Routine Description:
 // - Sets the attributes (colors) of all character positions from the given position through the end of the row.
 // Arguments:
 // - iStart - Starting index position within the row
@@ -557,6 +536,26 @@ std::vector<TextAttributeRun> ATTR_ROW::PackAttrs(const std::vector<TextAttribut
         }
     }
     return runs;
+}
+
+ATTR_ROW::const_iterator ATTR_ROW::begin() const noexcept
+{
+    return AttrRowIterator(*this);
+}
+
+ATTR_ROW::const_iterator ATTR_ROW::end() const noexcept
+{
+    return AttrRowIterator::CreateEndIterator(*this);
+}
+
+ATTR_ROW::const_iterator ATTR_ROW::cbegin() const noexcept
+{
+    return AttrRowIterator(*this);
+}
+
+ATTR_ROW::const_iterator ATTR_ROW::cend() const noexcept
+{
+    return AttrRowIterator::CreateEndIterator(*this);
 }
 
 bool operator==(const ATTR_ROW& a, const ATTR_ROW& b) noexcept

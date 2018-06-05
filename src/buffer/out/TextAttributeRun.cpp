@@ -29,7 +29,7 @@ void TextAttributeRun::SetLength(const size_t cchLength) noexcept
     _cchLength = cchLength;
 }
 
-const TextAttribute TextAttributeRun::GetAttributes() const noexcept
+const TextAttribute& TextAttributeRun::GetAttributes() const noexcept
 {
     return _attributes;
 }

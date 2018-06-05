@@ -3,6 +3,7 @@
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
     <ClCompile Include="..\AttrRow.cpp" />
+    <ClCompile Include="..\AttrRowIterator.cpp" />
     <ClCompile Include="..\OutputCell.cpp" />
     <ClCompile Include="..\Row.cpp" />
     <ClCompile Include="..\TextAttribute.cpp" />
@@ -17,6 +18,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\AttrRow.hpp" />
+    <ClInclude Include="..\AttrRowIterator.hpp" />
     <ClInclude Include="..\DbcsAttribute.hpp" />
     <ClInclude Include="..\ICharRow.hpp" />
     <ClInclude Include="..\OutputCell.hpp" />

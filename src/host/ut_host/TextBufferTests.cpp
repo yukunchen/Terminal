@@ -618,7 +618,7 @@ void TextBufferTests::TestMixedRgbAndLegacyForeground()
     const short y = cursor.GetPosition().Y;
     const ROW& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
-    const auto attrs = attrRow->UnpackAttrs();
+    const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
     const auto attrA = attrs[x-2];
     const auto attrB = attrs[x-1];
     Log::Comment(NoThrowString().Format(
@@ -677,7 +677,7 @@ void TextBufferTests::TestMixedRgbAndLegacyBackground()
     const auto y = cursor.GetPosition().Y;
     const auto& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
-    const auto attrs = attrRow->UnpackAttrs();
+    const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
     const auto attrA = attrs[x-2];
     const auto attrB = attrs[x-1];
     Log::Comment(NoThrowString().Format(
@@ -733,7 +733,7 @@ void TextBufferTests::TestMixedRgbAndLegacyUnderline()
     const auto y = cursor.GetPosition().Y;
     const auto& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
-    const auto attrs = attrRow->UnpackAttrs();
+    const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
     const auto attrA = attrs[x-2];
     const auto attrB = attrs[x-1];
     Log::Comment(NoThrowString().Format(
@@ -796,7 +796,7 @@ void TextBufferTests::TestMixedRgbAndLegacyBrightness()
     const auto y = cursor.GetPosition().Y;
     const auto& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
-    const auto attrs = attrRow->UnpackAttrs();
+    const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
     const auto attrA = attrs[x-2];
     const auto attrB = attrs[x-1];
     Log::Comment(NoThrowString().Format(
@@ -862,7 +862,7 @@ void TextBufferTests::TestRgbEraseLine()
         const auto& row = tbi.GetRowByOffset(y);
         const auto attrRow = &row.GetAttrRow();
         const auto len = tbi._coordBufferSize.X;
-        const auto attrs = attrRow->UnpackAttrs();
+        const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
 
         const auto attr0 = attrs[0];
 
@@ -921,7 +921,7 @@ void TextBufferTests::TestUnBold()
     const auto& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
     const auto len = tbi._coordBufferSize.X;
-    const auto attrs = attrRow->UnpackAttrs();
+    const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
     const auto attrA = attrs[x-2];
     const auto attrB = attrs[x-1];
 
@@ -987,7 +987,7 @@ void TextBufferTests::TestUnBoldRgb()
     const auto& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
     const auto len = tbi._coordBufferSize.X;
-    const auto attrs = attrRow->UnpackAttrs();
+    const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
     const auto attrA = attrs[x-2];
     const auto attrB = attrs[x-1];
 
@@ -1060,7 +1060,7 @@ void TextBufferTests::TestComplexUnBold()
     const auto& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
     const auto len = tbi._coordBufferSize.X;
-    const auto attrs = attrRow->UnpackAttrs();
+    const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
     const auto attrA = attrs[x-6];
     const auto attrB = attrs[x-5];
     const auto attrC = attrs[x-4];
@@ -1173,7 +1173,7 @@ void TextBufferTests::CopyAttrs()
     const auto& row = tbi.GetRowByOffset(0);
     const auto attrRow = &row.GetAttrRow();
     const auto len = tbi._coordBufferSize.X;
-    const auto attrs = attrRow->UnpackAttrs();
+    const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
     const auto attrA = attrs[0];
     const auto attrB = attrs[1];
 
@@ -1238,7 +1238,7 @@ void TextBufferTests::EmptySgrTest()
     const auto& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
     const auto len = tbi._coordBufferSize.X;
-    const auto attrs = attrRow->UnpackAttrs();
+    const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
     const auto attrA = attrs[x-3];
     const auto attrB = attrs[x-2];
     const auto attrC = attrs[x-1];
@@ -1312,7 +1312,7 @@ void TextBufferTests::TestReverseReset()
     const auto& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
     const auto len = tbi._coordBufferSize.X;
-    const auto attrs = attrRow->UnpackAttrs();
+    const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
     const auto attrA = attrs[x-3];
     const auto attrB = attrs[x-2];
     const auto attrC = attrs[x-1];
@@ -1436,9 +1436,10 @@ void TextBufferTests::CopyLastAttr()
     const ROW& row2 = tbi.GetRowByOffset(y + 2);
     const ROW& row3 = tbi.GetRowByOffset(y + 3);
     const auto len = tbi._coordBufferSize.X;
-    const auto attrs1 = row1.GetAttrRow().UnpackAttrs();
-    const auto attrs2 = row2.GetAttrRow().UnpackAttrs();
-    const auto attrs3 = row3.GetAttrRow().UnpackAttrs();
+
+    const std::vector<TextAttribute> attrs1{ row1.GetAttrRow().begin(), row1.GetAttrRow().end() };
+    const std::vector<TextAttribute> attrs2{ row2.GetAttrRow().begin(), row2.GetAttrRow().end() };
+    const std::vector<TextAttribute> attrs3{ row3.GetAttrRow().begin(), row3.GetAttrRow().end() };
 
     const auto attr1A = attrs1[0];
 

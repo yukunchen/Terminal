@@ -6,40 +6,42 @@ Module Name:
 - unicode.hpp
 
 Abstract:
-- This file contains macro definitions for some common wchar values.
+- This file contains global vars for some common wchar values.
 - taken from input.h
 
 Author(s):
 - Austin Diviness (AustDi) Oct 2017
 --*/
 
-#define UNICODE_BACKSPACE ((WCHAR)0x08)
+#pragma once
+
+const wchar_t UNICODE_BACKSPACE = 0x8;
 // NOTE: This isn't actually a backspace. It's a graphical block. But
 // I believe it's emitted by one of our ANSI/OEM --> Unicode conversions.
 // We should dig further into this in the future.
-#define UNICODE_BACKSPACE2 ((WCHAR)0x25d8)
-#define UNICODE_CARRIAGERETURN ((WCHAR)0x0d)
-#define UNICODE_LINEFEED ((WCHAR)0x0a)
-#define UNICODE_BELL ((WCHAR)0x07)
-#define UNICODE_TAB ((WCHAR)0x09)
-#define UNICODE_SPACE ((WCHAR)0x20)
-#define UNICODE_LEFT_SMARTQUOTE ((WCHAR)0x201c)
-#define UNICODE_RIGHT_SMARTQUOTE ((WCHAR)0x201d)
-#define UNICODE_EM_DASH ((WCHAR)0x2014)
-#define UNICODE_EN_DASH ((WCHAR)0x2013)
-#define UNICODE_NBSP ((WCHAR)0xa0)
-#define UNICODE_NARROW_NBSP ((WCHAR)0x202f)
-#define UNICODE_QUOTE L'\"'
-#define UNICODE_HYPHEN L'-'
-#define UNICODE_BOX_DRAW_LIGHT_DOWN_AND_RIGHT ((WCHAR)0x250c)
-#define UNICODE_BOX_DRAW_LIGHT_DOWN_AND_LEFT ((WCHAR)0x2510)
-#define UNICODE_BOX_DRAW_LIGHT_HORIZONTAL ((WCHAR)0x2500)
-#define UNICODE_BOX_DRAW_LIGHT_VERTICAL ((WCHAR)0x2502)
-#define UNICODE_BOX_DRAW_LIGHT_UP_AND_RIGHT ((WCHAR)0x2514)
-#define UNICODE_BOX_DRAW_LIGHT_UP_AND_LEFT ((WCHAR)0x2518)
+const wchar_t UNICODE_BACKSPACE2 = 0x25d8;
+const wchar_t UNICODE_CARRIAGERETURN = 0x0d;
+const wchar_t UNICODE_LINEFEED = 0x0a;
+const wchar_t UNICODE_BELL = 0x07;
+const wchar_t UNICODE_TAB = 0x09;
+const wchar_t UNICODE_SPACE = 0x20;
+const wchar_t UNICODE_LEFT_SMARTQUOTE = 0x201c;
+const wchar_t UNICODE_RIGHT_SMARTQUOTE = 0x201d;
+const wchar_t UNICODE_EM_DASH = 0x2014;
+const wchar_t UNICODE_EN_DASH = 0x2013;
+const wchar_t UNICODE_NBSP = 0xa0;
+const wchar_t UNICODE_NARROW_NBSP = 0x202f;
+const wchar_t UNICODE_QUOTE = L'\"';
+const wchar_t UNICODE_HYPHEN = L'-';
+const wchar_t UNICODE_BOX_DRAW_LIGHT_DOWN_AND_RIGHT = 0x250c;
+const wchar_t UNICODE_BOX_DRAW_LIGHT_DOWN_AND_LEFT = 0x2510;
+const wchar_t UNICODE_BOX_DRAW_LIGHT_HORIZONTAL = 0x2500;
+const wchar_t UNICODE_BOX_DRAW_LIGHT_VERTICAL = 0x2502;
+const wchar_t UNICODE_BOX_DRAW_LIGHT_UP_AND_RIGHT = 0x2514;
+const wchar_t UNICODE_BOX_DRAW_LIGHT_UP_AND_LEFT = 0x2518;
 
 // This is the "Ctrl+C" character.
 //      With VKey='C', it generates a CTRL_C_EVENT
 //      With VKey=VK_CANCEL (0x3), it generates a CTRL_BREAK_EVENT
-#define UNICODE_ETX L'\x3'
-#define UNICODE_REPLACEMENT ((WCHAR)0xFFFD)
+const wchar_t UNICODE_ETX = L'\x3';
+const wchar_t UNICODE_REPLACEMENT = 0xFFFD;
