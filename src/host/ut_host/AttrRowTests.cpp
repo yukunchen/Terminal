@@ -314,7 +314,7 @@ class AttrRowTests
         // The InsertAttrRuns method we test against below is hard to understand but very high performance in production.
 
         // - 1. Unpack
-        auto unpackedOriginal = originalRow.UnpackAttrs();
+        std::vector<TextAttribute> unpackedOriginal = { originalRow.begin(), originalRow.end() };
 
         // - 2. Overlay insertion
         UINT uiInsertedCount = 0;
@@ -457,16 +457,18 @@ class AttrRowTests
     {
 
         Log::Comment(L"Checking unpack of a single color for the entire length");
-        auto attrs = pSingle->UnpackAttrs();
-
-        for (auto& attr : attrs)
         {
-            VERIFY_ARE_EQUAL(attr, _DefaultAttr);
+            const std::vector<TextAttribute> attrs{ pSingle->begin(), pSingle->end() };
+
+            for (auto& attr : attrs)
+            {
+                VERIFY_ARE_EQUAL(attr, _DefaultAttr);
+            }
         }
 
         Log::Comment(L"Checking unpack of the multiple color chain");
 
-        attrs = pChain->UnpackAttrs();
+        const std::vector<TextAttribute> attrs{ pChain->begin(), pChain->end() };
 
         short cChainRun = 0; // how long we've been looking at the current piece of the chain
         short iChainSegIndex = 0; // which piece of the chain we should be on right now

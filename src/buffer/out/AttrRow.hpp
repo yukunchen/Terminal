@@ -20,10 +20,13 @@ Revision History:
 #pragma once
 
 #include "TextAttributeRun.hpp"
+#include "AttrRowIterator.hpp"
 
 class ATTR_ROW final
 {
 public:
+    using const_iterator = typename AttrRowIterator;
+
     ATTR_ROW(const UINT cchRowWidth, const TextAttribute attr);
 
     void Reset(const TextAttribute attr);
@@ -48,11 +51,16 @@ public:
                            const size_t iEnd,
                            const size_t cBufferWidth);
 
-    std::vector<TextAttribute> ATTR_ROW::UnpackAttrs() const;
-
     static std::vector<TextAttributeRun> PackAttrs(const std::vector<TextAttribute>& attrs);
 
+    const_iterator begin() const noexcept;
+    const_iterator end() const noexcept;
+
+    const_iterator cbegin() const noexcept;
+    const_iterator cend() const noexcept;
+
     friend bool operator==(const ATTR_ROW& a, const ATTR_ROW& b) noexcept;
+    friend class AttrRowIterator;
 
 private:
 

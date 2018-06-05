@@ -30,7 +30,7 @@ public:
     size_t GetLength() const noexcept;
     void SetLength(const size_t cchLength) noexcept;
 
-    const TextAttribute GetAttributes() const noexcept;
+    const TextAttribute& GetAttributes() const noexcept;
     void SetAttributes(const TextAttribute textAttribute) noexcept;
     void SetAttributesFromLegacy(const WORD wNew) noexcept;
 

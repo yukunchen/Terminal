@@ -82,8 +82,7 @@ std::vector<std::vector<OutputCell>> ReadRectFromScreenBuffer(const SCREEN_INFOR
     std::vector<std::vector<OutputCell>> result;
     result.reserve(viewport.Height());
 
-    const wchar_t spaceChar = UNICODE_SPACE;
-    const OutputCell paddingCell{ std::wstring_view{ &spaceChar, 1 }, {}, OutputCell::TextAttributeBehavior::Default };
+    const OutputCell paddingCell{ std::wstring_view{ &UNICODE_SPACE, 1 }, {}, OutputCell::TextAttributeBehavior::Default };
     for (size_t rowIndex = 0; rowIndex < static_cast<size_t>(viewport.Height()); ++rowIndex)
     {
         auto cells = screenInfo.ReadLine(coordSourcePoint.Y + rowIndex, coordSourcePoint.X);

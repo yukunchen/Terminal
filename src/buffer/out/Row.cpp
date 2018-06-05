@@ -156,16 +156,14 @@ std::vector<OutputCell> ROW::AsCells(const size_t startIndex) const
 std::vector<OutputCell> ROW::AsCells(const size_t startIndex, const size_t count) const
 {
     std::vector<OutputCell> cells;
-    cells.reserve(size());
+    cells.reserve(count);
 
-    // Unpack the attributes into an array so we can iterate over them.
-    const auto unpackedAttrs = _attrRow.UnpackAttrs();
-
-    for (size_t i = 0; i < count; ++i)
+    ATTR_ROW::const_iterator it = std::next(_attrRow.begin(), startIndex);
+    for (size_t i = 0; i < count; ++i, ++it)
     {
         const auto index = startIndex + i;
         const std::vector<wchar_t> glyph = _charRow.GlyphAt(index);
-        cells.emplace_back(std::wstring_view{ glyph.data(), glyph.size() }, _charRow.DbcsAttrAt(index), unpackedAttrs[index]);
+        cells.emplace_back(std::wstring_view{ glyph.data(), glyph.size() }, _charRow.DbcsAttrAt(index), *it);
     }
     return cells;
 }
