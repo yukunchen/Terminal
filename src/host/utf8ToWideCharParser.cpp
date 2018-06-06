@@ -353,10 +353,20 @@ unsigned int Utf8ToWideCharParser::_ParseFullRange(_In_reads_(cb) const byte* co
 // char.
 unsigned int Utf8ToWideCharParser::_InvolvedParse(_In_reads_(cb) const byte* const pInputChars, const unsigned int cb)
 {
-    std::unique_ptr<byte[]> combinedInputBytes = std::make_unique<byte[]>(cb + _bytesStored);
+    // Do safe math to add up the count and error if it won't fit.
+    unsigned int count;
+    const HRESULT hr = UIntAdd(cb, _bytesStored, &count);
+    if (FAILED(hr))
+    {
+        LOG_HR(hr);
+        _currentState = _State::Error;
+        return 0;
+    }
+
+    // Allocate space and copy.
+    std::unique_ptr<byte[]> combinedInputBytes = std::make_unique<byte[]>(count);
     std::copy(_utf8CodePointPieces, _utf8CodePointPieces + _bytesStored, combinedInputBytes.get());
     std::copy(pInputChars, pInputChars + cb, combinedInputBytes.get() + _bytesStored);
-    const unsigned int count = cb + _bytesStored;
     _bytesStored = 0;
     std::pair<std::unique_ptr<byte[]>, unsigned int> validSequence = _RemoveInvalidSequences(combinedInputBytes.get(), count);
     // the input may have only been a partial sequence so we need to

@@ -1327,11 +1327,8 @@ void StateMachine::ProcessString(const wchar_t* const rgwch, const size_t cch)
             if (s_IsActionableFromGround(*_pwchCurr))  // If the current char is the start of an escape sequence, or should be executed in ground state...
             {
                 FAIL_FAST_IF_FALSE(_pwchSequenceStart + _currRunLength <= rgwch + cch);
-                #pragma prefast(push)
-                #pragma prefast(disable:__WARNING_BUFFER_OVERFLOW, "Not sure why prefast is getting confused here. Assert immediately above ensures this is fine.")
                 _pEngine->ActionPrintString(_pwchSequenceStart, _currRunLength); // ... print all the chars leading up to it as part of the run...
                 _trace.DispatchPrintRunTrace(_pwchSequenceStart, _currRunLength);
-                #pragma prefast(pop)
                 s_fProcessIndividually = true; // begin processing future characters individually...
                 _currRunLength = 0;
                 _pwchSequenceStart = _pwchCurr;
