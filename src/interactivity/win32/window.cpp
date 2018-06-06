@@ -39,7 +39,7 @@
 // The following default masks are used in creating windows
 // Make sure that these flags match when switching to fullscreen and back
 #define CONSOLE_WINDOW_FLAGS (WS_OVERLAPPEDWINDOW | WS_HSCROLL | WS_VSCROLL)
-#define CONSOLE_WINDOW_EX_FLAGS (WS_EX_WINDOWEDGE | WS_EX_ACCEPTFILES | WS_EX_APPWINDOW )
+#define CONSOLE_WINDOW_EX_FLAGS (WS_EX_WINDOWEDGE | WS_EX_ACCEPTFILES | WS_EX_APPWINDOW | WS_EX_LAYERED)
 
 // Window class name
 #define CONSOLE_WINDOW_CLASS (L"ConsoleWindowClass")
@@ -1003,17 +1003,8 @@ void Window::ApplyWindowOpacity() const
     const BYTE bAlpha = GetWindowOpacity();
     HWND const hWnd = GetWindowHandle();
 
-    if (bAlpha != BYTE_MAX)
-    {
-        // See: http://msdn.microsoft.com/en-us/library/ms997507.aspx
-        SetWindowLongW(hWnd, GWL_EXSTYLE, GetWindowLongW(hWnd, GWL_EXSTYLE) | WS_EX_LAYERED);
-        SetLayeredWindowAttributes(hWnd, 0, bAlpha, LWA_ALPHA);
-    }
-    else
-    {
-        // if we're at 100% opaque, just turn off the layered style.
-        SetWindowLongW(hWnd, GWL_EXSTYLE, GetWindowLongW(hWnd, GWL_EXSTYLE) & ~WS_EX_LAYERED);
-    }
+    // See: http://msdn.microsoft.com/en-us/library/ms997507.aspx
+    SetLayeredWindowAttributes(hWnd, 0, bAlpha, LWA_ALPHA);
 }
 
 // Routine Description:

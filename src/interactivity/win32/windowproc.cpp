@@ -413,40 +413,33 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
             {
                 // Find the related monitor, the maximum pixel size,
                 // and the dpi for the suggested rect.
-                UINT suggestedDpi;
+                UINT dpiOfMaximum;
                 RECT rcMaximum;
 
                 if (fIsEdgeResize)
                 {
                     // If someone's dragging from the edge to resize in one direction, we want to make sure we never grow past the current monitor.
-                    rcMaximum = ServiceLocator::LocateWindowMetrics<WindowMetrics>()->GetMaxWindowRectInPixels(&rcCurrent, &suggestedDpi);
+                    rcMaximum = ServiceLocator::LocateWindowMetrics<WindowMetrics>()->GetMaxWindowRectInPixels(&rcCurrent, &dpiOfMaximum);
                 }
                 else
                 {
                     // In other circumstances, assume we're snapping around or some other jump (TS).
                     // Just do whatever we're told using the new suggestion as the restriction monitor.
-                    rcMaximum = ServiceLocator::LocateWindowMetrics<WindowMetrics>()->GetMaxWindowRectInPixels(&rcSuggested, &suggestedDpi);
+                    rcMaximum = ServiceLocator::LocateWindowMetrics<WindowMetrics>()->GetMaxWindowRectInPixels(&rcSuggested, &dpiOfMaximum);
                 }
 
-                // Update the current maximum IF the dpi of the suggested monitor matches the current dpi,
-                // or it's uninitialized. This keeps us from applying the wrong restriction if our
-                // monitor changed DPI but we've yet to get notified of that DPI change.
-                // If we do, then we'll restrict the console window BEFORE its been resized
-                // for the DPI change, so we're likely to shrink the window too much.
-                // We'll get a WM_DPICHANGED, resize the window, and then process the restriction
-                // in a few window messages.
-                if (((int)suggestedDpi == g.dpi) || ((_sizeMaximum.cx == 0) && (_sizeMaximum.cy == 0)))
+                // Only apply the maximum size restriction if the current DPI matches the DPI of the
+                // maximum rect. This keeps us from applying the wrong restriction if the monitor
+                // we're moving to has a different DPI but we've yet to get notified of that DPI
+                // change. If we do apply it, then we'll restrict the console window BEFORE its
+                // been resized for the DPI change, so we're likely to shrink the window too much
+                // or worse yet, keep it from moving entirely. We'll get a WM_DPICHANGED,
+                // resize the window, and then process the restriction in a few window messages.
+                if (((int)dpiOfMaximum == g.dpi) &&
+                    ((szSuggested.cx > RECT_WIDTH(&rcMaximum)) || (szSuggested.cy > RECT_HEIGHT(&rcMaximum))))
                 {
-                    _sizeMaximum.cx = RECT_WIDTH(&rcMaximum);
-                    _sizeMaximum.cy = RECT_HEIGHT(&rcMaximum);
-                }
-
-                // If the suggested rect is bigger in size than the maximum size,
-                // then prevent a move and restrict size to the appropriate monitor dimensions.
-                if ((szSuggested.cx > _sizeMaximum.cx) || (szSuggested.cy > _sizeMaximum.cy))
-                {
-                    lpwpos->cx = std::min(_sizeMaximum.cx, szSuggested.cx);
-                    lpwpos->cy = std::min(_sizeMaximum.cy, szSuggested.cy);
+                    lpwpos->cx = std::min(RECT_WIDTH(&rcMaximum), szSuggested.cx);
+                    lpwpos->cy = std::min(RECT_HEIGHT(&rcMaximum), szSuggested.cy);
 
                     // We usually add SWP_NOMOVE so that if the user is dragging the left or top edge
                     // and hits the restriction, then the window just stops growing, it doesn't
