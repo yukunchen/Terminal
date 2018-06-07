@@ -44,8 +44,6 @@ public:
     HANDLE GetSignalHandle() const;
 
     std::wstring GetClientCommandline() const;
-    std::wstring GetVtInPipe() const;
-    std::wstring GetVtOutPipe() const;
     std::wstring GetVtMode() const;
     bool GetForceV1() const;
 
@@ -53,8 +51,6 @@ public:
     short GetHeight() const;
     bool GetInheritCursor() const;
 
-    static const std::wstring VT_IN_PIPE_ARG;
-    static const std::wstring VT_OUT_PIPE_ARG;
     static const std::wstring VT_MODE_ARG;
     static const std::wstring HEADLESS_ARG;
     static const std::wstring SERVER_HANDLE_ARG;
@@ -76,8 +72,6 @@ private:
                      const std::wstring clientCommandline,
                      const HANDLE vtInHandle,
                      const HANDLE vtOutHandle,
-                     const std::wstring vtInPipe,
-                     const std::wstring vtOutPipe,
                      const std::wstring vtMode,
                      const short width,
                      const short height,
@@ -91,8 +85,6 @@ private:
         _clientCommandline(clientCommandline),
         _vtInHandle(vtInHandle),
         _vtOutHandle(vtOutHandle),
-        _vtInPipe(vtInPipe),
-        _vtOutPipe(vtOutPipe),
         _vtMode(vtMode),
         _width(width),
         _height(height),
@@ -112,10 +104,8 @@ private:
     std::wstring _clientCommandline;
 
     HANDLE _vtInHandle;
-    std::wstring _vtInPipe;
 
     HANDLE _vtOutHandle;
-    std::wstring _vtOutPipe;
 
     std::wstring _vtMode;
 
@@ -173,9 +163,6 @@ namespace WEX {
                                                            L"Use VT Handles: '%ws',\r\n"
                                                            L"VT In Handle: '0x%x',\r\n"
                                                            L"VT Out Handle: '0x%x',\r\n"
-                                                           L"Use VT Pipe: '%ws',\r\n"
-                                                           L"VT In Pipe: '%ws',\r\n"
-                                                           L"VT Out Pipe: '%ws',\r\n"
                                                            L"Vt Mode: '%ws',\r\n"
                                                            L"WidthxHeight: '%dx%d',\r\n"
                                                            L"ForceV1: '%ws',\r\n"
@@ -189,9 +176,6 @@ namespace WEX {
                                                            s_ToBoolString(ci.HasVtHandles()),
                                                            ci.GetVtInHandle(),
                                                            ci.GetVtOutHandle(),
-                                                           s_ToBoolString(ci.IsUsingVtPipe()),
-                                                           ci.GetVtInPipe().c_str(),
-                                                           ci.GetVtOutPipe().c_str(),
                                                            ci.GetVtMode().c_str(),
                                                            ci.GetWidth(),
                                                            ci.GetHeight(),
@@ -222,9 +206,6 @@ namespace WEX {
                     expected.HasVtHandles() == actual.HasVtHandles() &&
                     expected.GetVtInHandle() == actual.GetVtInHandle() &&
                     expected.GetVtOutHandle() == actual.GetVtOutHandle() &&
-                    expected.IsUsingVtPipe() == actual.IsUsingVtPipe() &&
-                    expected.GetVtInPipe() == actual.GetVtInPipe() &&
-                    expected.GetVtOutPipe() == actual.GetVtOutPipe() &&
                     expected.GetVtMode() == actual.GetVtMode() &&
                     expected.GetWidth() == actual.GetWidth() &&
                     expected.GetHeight() == actual.GetHeight() &&
@@ -252,8 +233,6 @@ namespace WEX {
                     object.GetClientCommandline().empty() &&
                     (object.GetVtInHandle() == 0 || object.GetVtInHandle() == INVALID_HANDLE_VALUE) &&
                     (object.GetVtOutHandle() == 0 || object.GetVtOutHandle() == INVALID_HANDLE_VALUE) &&
-                    object.GetVtInPipe().empty() &&
-                    object.GetVtOutPipe().empty() &&
                     object.GetVtMode().empty() &&
                     !object.GetForceV1() &&
                     (object.GetWidth() == 0) &&

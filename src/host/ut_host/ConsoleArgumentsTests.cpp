@@ -19,11 +19,9 @@ public:
     TEST_CLASS(ConsoleArgumentsTests);
 
     TEST_METHOD(ArgSplittingTests);
-    TEST_METHOD(VtPipesTest);
     TEST_METHOD(ClientCommandlineTests);
     TEST_METHOD(LegacyFormatsTests);
 
-    TEST_METHOD(IsUsingVtPipeTests);
     TEST_METHOD(IsUsingVtHandleTests);
     TEST_METHOD(CombineVtPipeHandleTests);
     TEST_METHOD(IsVtHandleValidTests);
@@ -66,7 +64,7 @@ void ConsoleArgumentsTests::ArgSplittingTests()
 {
     std::wstring commandline;
 
-    commandline = L"conhost.exe --inpipe foo --outpipe bar this is the commandline";
+    commandline = L"conhost.exe --headless this is the commandline";
     ArgTestsRunner(L"#1 look for a valid commandline",
                    commandline,
                    INVALID_HANDLE_VALUE,
@@ -75,20 +73,18 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     L"this is the commandline", // clientCommandLine,
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
-                                    L"foo", // vtInPipe
-                                    L"bar", // vtOutPipe
                                     L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
-                                    false, // headless
+                                    true, // headless
                                     true, // createServerHandle
                                     0, // serverHandle
                                     0, // signalHandle
                                     false ), // inheritCursor
                    true); // successful parse?
 
-    commandline = L"conhost.exe --inpipe foo --outpipe bar \"this is the commandline\"";
+    commandline = L"conhost.exe \"this is the commandline\"";
     ArgTestsRunner(L"#2 a commandline with quotes",
                    commandline,
                    INVALID_HANDLE_VALUE,
@@ -97,8 +93,6 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     L"this is the commandline", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
-                                    L"foo", // vtInPipe
-                                    L"bar", // vtOutPipe
                                     L"", // vtMode
                                     0, // width
                                     0, // height
@@ -110,29 +104,27 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     false ), // inheritCursor
                    true); // successful parse?
 
-    commandline = L"conhost.exe --inpipe foo \"--outpipe bar this is the commandline\"";
+    commandline = L"conhost.exe --headless \"--vtmode bar this is the commandline\"";
     ArgTestsRunner(L"#3 quotes on an arg",
                    commandline,
                    INVALID_HANDLE_VALUE,
                    INVALID_HANDLE_VALUE,
                    ConsoleArguments(commandline,
-                                    L"--outpipe bar this is the commandline", // clientCommandLine
+                                    L"--vtmode bar this is the commandline", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
-                                    L"foo", // vtInPipe
-                                    L"", // vtOutPipe
                                     L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
-                                    false, // headless
+                                    true, // headless
                                     true, // createServerHandle
                                     0, // serverHandle
                                     0, // signalHandle
                                     false ), // inheritCursor
                    true); // successful parse?
 
-    commandline = L"conhost.exe --inpipe  foo   --outpipe    bar       this      is the    commandline";
+    commandline = L"conhost.exe --headless   --server    0x4       this      is the    commandline";
     ArgTestsRunner(L"#4 Many spaces",
                    commandline,
                    INVALID_HANDLE_VALUE,
@@ -141,20 +133,18 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     L"this is the commandline", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
-                                    L"foo", // vtInPipe
-                                    L"bar", // vtOutPipe
                                     L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
-                                    false, // headless
-                                    true, // createServerHandle
-                                    0, // serverHandle
+                                    true, // headless
+                                    false, // createServerHandle
+                                    0x4, // serverHandle
                                     0, // signalHandle
                                     false ), // inheritCursor
                    true); // successful parse?
 
-    commandline = L"conhost.exe --inpipe\tfoo\t--outpipe\tbar\tthis\tis\tthe\tcommandline";
+    commandline = L"conhost.exe --headless\t--vtmode\txterm\tthis\tis\tthe\tcommandline";
     ArgTestsRunner(L"#5\ttab\tdelimit",
                    commandline,
                    INVALID_HANDLE_VALUE,
@@ -163,30 +153,26 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     L"this is the commandline", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
-                                    L"foo", // vtInPipe
-                                    L"bar", // vtOutPipe
-                                    L"", // vtMode
+                                    L"xterm", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
-                                    false, // headless
+                                    true, // headless
                                     true, // createServerHandle
                                     0, // serverHandle
                                     0, // signalHandle
                                     false ), // inheritCursor
                    true); // successful parse?
 
-    commandline = L"conhost.exe --inpipe\\ foo\\ --outpipe\\ bar\\ this\\ is\\ the\\ commandline";
+    commandline = L"conhost.exe --headless\\ foo\\ --outpipe\\ bar\\ this\\ is\\ the\\ commandline";
     ArgTestsRunner(L"#6 back-slashes won't escape spaces",
                    commandline,
                    INVALID_HANDLE_VALUE,
                    INVALID_HANDLE_VALUE,
                    ConsoleArguments(commandline,
-                                    L"--inpipe\\ foo\\ --outpipe\\ bar\\ this\\ is\\ the\\ commandline", // clientCommandLine
+                                    L"--headless\\ foo\\ --outpipe\\ bar\\ this\\ is\\ the\\ commandline", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
                                     L"", // vtMode
                                     0, // width
                                     0, // height
@@ -198,17 +184,15 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     false ), // inheritCursor
                    true); // successful parse?
 
-    commandline = L"conhost.exe --inpipe\\\tfoo\\\t--outpipe\\\tbar\\\tthis\\\tis\\\tthe\\\tcommandline";
+    commandline = L"conhost.exe --headless\\\tfoo\\\t--outpipe\\\tbar\\\tthis\\\tis\\\tthe\\\tcommandline";
     ArgTestsRunner(L"#7 back-slashes won't escape tabs (but the tabs are still converted to spaces)",
                    commandline,
                    INVALID_HANDLE_VALUE,
                    INVALID_HANDLE_VALUE,
                    ConsoleArguments(commandline,
-                                    L"--inpipe\\ foo\\ --outpipe\\ bar\\ this\\ is\\ the\\ commandline", // clientCommandLine
+                                    L"--headless\\ foo\\ --outpipe\\ bar\\ this\\ is\\ the\\ commandline", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
                                     L"", // vtMode
                                     0, // width
                                     0, // height
@@ -220,7 +204,7 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     false ), // inheritCursor
                    true); // successful parse?
 
-    commandline = L"conhost.exe --inpipe a\\\\\\\\\"b c\" d e";
+    commandline = L"conhost.exe --vtmode a\\\\\\\\\"b c\" d e";
     ArgTestsRunner(L"#8 Combo of backslashes and quotes from msdn",
                    commandline,
                    INVALID_HANDLE_VALUE,
@@ -229,9 +213,7 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     L"d e", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
-                                    L"a\\\\b c", // vtInPipe
-                                    L"", // vtOutPipe
-                                    L"", // vtMode
+                                    L"a\\\\b c", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -241,231 +223,6 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     0, // signalHandle
                                     false ), // inheritCursor
                    true); // successful parse?
-}
-
-void ConsoleArgumentsTests::VtPipesTest()
-{
-    std::wstring commandline;
-
-    commandline = L"conhost.exe --inpipe foo --outpipe bar";
-    ArgTestsRunner(L"#1 look for a valid commandline",
-                  commandline,
-                  INVALID_HANDLE_VALUE,
-                  INVALID_HANDLE_VALUE,
-                  ConsoleArguments(commandline,
-                                   L"", // clientCommandLine
-                                   INVALID_HANDLE_VALUE,
-                                   INVALID_HANDLE_VALUE,
-                                   L"foo", // vtInPipe
-                                   L"bar", // vtOutPipe
-                                   L"", // vtMode
-                                    0, // width
-                                    0, // height
-                                   false, // forceV1
-                                   false, // headless
-                                   true, // createServerHandle
-                                   0, // serverHandle
-                                    0, // signalHandle
-                                    false ), // inheritCursor
-                  true); // successful parse?
-
-    commandline = L"conhost.exe --inpipe foo bar";
-    ArgTestsRunner(L"#2 In, but no out",
-                   commandline,
-                   INVALID_HANDLE_VALUE,
-                   INVALID_HANDLE_VALUE,
-                   ConsoleArguments(commandline,
-                                    L"bar", // clientCommandLine
-                                    INVALID_HANDLE_VALUE,
-                                    INVALID_HANDLE_VALUE,
-                                    L"foo", // vtInPipe
-                                    L"", // vtOutPipe
-                                    L"", // vtMode
-                                    0, // width
-                                    0, // height
-                                    false, // forceV1
-                                    false, // headless
-                                    true, // createServerHandle
-                                    0, // serverHandle
-                                    0, // signalHandle
-                                    false ), // inheritCursor
-                   true); // successful parse?
-
-    commandline = L"conhost.exe --outpipe foo";
-    ArgTestsRunner(L"#3 Out, no in",
-                   commandline,
-                   INVALID_HANDLE_VALUE,
-                   INVALID_HANDLE_VALUE,
-                   ConsoleArguments(commandline,
-                                    L"", // clientCommandLine
-                                    INVALID_HANDLE_VALUE,
-                                    INVALID_HANDLE_VALUE,
-                                    L"", // vtInPipe
-                                    L"foo", // vtOutPipe
-                                    L"", // vtMode
-                                    0, // width
-                                    0, // height
-                                    false, // forceV1
-                                    false, // headless
-                                    true, // createServerHandle
-                                    0, // serverHandle
-                                    0, // signalHandle
-                                    false ), // inheritCursor
-                   true); // successful parse?
-
-    commandline = L"conhost.exe foo";
-    ArgTestsRunner(L"#4 Neither",
-                   commandline,
-                   INVALID_HANDLE_VALUE,
-                   INVALID_HANDLE_VALUE,
-                   ConsoleArguments(commandline,
-                                    L"foo", // clientCommandLine
-                                    INVALID_HANDLE_VALUE,
-                                    INVALID_HANDLE_VALUE,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
-                                    L"", // vtMode
-                                    0, // width
-                                    0, // height
-                                    false, // forceV1
-                                    false, // headless
-                                    true, // createServerHandle
-                                    0, // serverHandle
-                                    0, // signalHandle
-                                    false ), // inheritCursor
-                   true); // successful parse?
-
-    commandline = L"conhost.exe --inpipe --outpipe foo";
-    ArgTestsRunner(L"#5 Mixed (1)",
-                   commandline,
-                   INVALID_HANDLE_VALUE,
-                   INVALID_HANDLE_VALUE,
-                   ConsoleArguments(commandline,
-                                    L"foo", // clientCommandLine
-                                    INVALID_HANDLE_VALUE,
-                                    INVALID_HANDLE_VALUE,
-                                    L"--outpipe", // vtInPipe
-                                    L"", // vtOutPipe
-                                    L"", // vtMode
-                                    0, // width
-                                    0, // height
-                                    false, // forceV1
-                                    false, // headless
-                                    true, // createServerHandle
-                                    0, // serverHandle
-                                    0, // signalHandle
-                                    false ), // inheritCursor
-                   true); // successful parse?
-
-    commandline = L"conhost.exe --inpipe --outpipe --outpipe foo";
-    ArgTestsRunner(L"#6 Mixed (2)",
-                   commandline,
-                   INVALID_HANDLE_VALUE,
-                   INVALID_HANDLE_VALUE,
-                   ConsoleArguments(commandline,
-                                    L"", // clientCommandLine
-                                    INVALID_HANDLE_VALUE,
-                                    INVALID_HANDLE_VALUE,
-                                    L"--outpipe", // vtInPipe
-                                    L"foo", // vtOutPipe
-                                    L"", // vtMode
-                                    0, // width
-                                    0, // height
-                                    false, // forceV1
-                                    false, // headless
-                                    true, // createServerHandle
-                                    0, // serverHandle
-                                    0, // signalHandle
-                                    false ), // inheritCursor
-                   true); // successful parse?
-
-    commandline = L"conhost.exe -- --inpipe foo --outpipe bar";
-    ArgTestsRunner(L"#7 Pipe names in client commandline",
-                   commandline,
-                   INVALID_HANDLE_VALUE,
-                   INVALID_HANDLE_VALUE,
-                   ConsoleArguments(commandline,
-                                    L"--inpipe foo --outpipe bar", // clientCommandLine
-                                    INVALID_HANDLE_VALUE,
-                                    INVALID_HANDLE_VALUE,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
-                                    L"", // vtMode
-                                    0, // width
-                                    0, // height
-                                    false, // forceV1
-                                    false, // headless
-                                    true, // createServerHandle
-                                    0, // serverHandle
-                                    0, // signalHandle
-                                    false ), // inheritCursor
-                   true); // successful parse?
-
-    commandline = L"conhost.exe --inpipe foo --outpipe foo";
-    ArgTestsRunner(L"#8 Pipe names the same",
-                   commandline,
-                   INVALID_HANDLE_VALUE,
-                   INVALID_HANDLE_VALUE,
-                   ConsoleArguments(commandline,
-                                    L"", // clientCommandLine
-                                    INVALID_HANDLE_VALUE,
-                                    INVALID_HANDLE_VALUE,
-                                    L"foo", // vtInPipe
-                                    L"foo", // vtOutPipe
-                                    L"", // vtMode
-                                    0, // width
-                                    0, // height
-                                    false, // forceV1
-                                    false, // headless
-                                    true, // createServerHandle
-                                    0, // serverHandle
-                                    0, // signalHandle
-                                    false ), // inheritCursor
-                   true); // successful parse?
-
-    commandline = L"conhost.exe --inpipe foo --outpipe";
-    ArgTestsRunner(L"#9 Not enough args (1)",
-                   commandline,
-                   INVALID_HANDLE_VALUE,
-                   INVALID_HANDLE_VALUE,
-                   ConsoleArguments(commandline,
-                                    L"", // clientCommandLine
-                                    INVALID_HANDLE_VALUE,
-                                    INVALID_HANDLE_VALUE,
-                                    L"foo", // vtInPipe
-                                    L"", // vtOutPipe
-                                    L"", // vtMode
-                                    0, // width
-                                    0, // height
-                                    false, // forceV1
-                                    false, // headless
-                                    true, // createServerHandle
-                                    0, // serverHandle
-                                    0, // signalHandle
-                                    false ), // inheritCursor
-                   false); // successful parse?
-
-    commandline = L"conhost.exe --inpipe";
-    ArgTestsRunner(L"#10 Not enough args (2)",
-                   commandline,
-                   INVALID_HANDLE_VALUE,
-                   INVALID_HANDLE_VALUE,
-                   ConsoleArguments(commandline,
-                                    L"", // clientCommandLine
-                                    INVALID_HANDLE_VALUE,
-                                    INVALID_HANDLE_VALUE,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
-                                    L"", // vtMode
-                                    0, // width
-                                    0, // height
-                                    false, // forceV1
-                                    false, // headless
-                                    true, // createServerHandle
-                                    0, // serverHandle
-                                    0, // signalHandle
-                                    false ), // inheritCursor
-                   false); // successful parse?
 }
 
 void ConsoleArgumentsTests::ClientCommandlineTests()
@@ -481,8 +238,6 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     L"foo", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
                                     L"", // vtMode
                                     0, // width
                                     0, // height
@@ -503,8 +258,6 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     L"foo", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
                                     L"", // vtMode
                                     0, // width
                                     0, // height
@@ -525,8 +278,6 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     L"foo -- bar", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
                                     L"", // vtMode
                                     0, // width
                                     0, // height
@@ -538,7 +289,7 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     false ), // inheritCursor
                    true); // successful parse?
 
-    commandline = L"conhost.exe --inpipe foo foo -- bar";
+    commandline = L"conhost.exe --vtmode foo foo -- bar";
     ArgTestsRunner(L"#4 Check that a implicit commandline with other expected args is treated as a whole client commandline (2)",
                    commandline,
                    INVALID_HANDLE_VALUE,
@@ -547,9 +298,7 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     L"foo -- bar", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
-                                    L"foo", // vtInPipe
-                                    L"", // vtOutPipe
-                                    L"", // vtMode
+                                    L"foo", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -560,17 +309,15 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     false ), // inheritCursor
                    true); // successful parse?
 
-    commandline = L"conhost.exe console --inpipe foo foo -- bar";
+    commandline = L"conhost.exe console --vtmode foo foo -- bar";
     ArgTestsRunner(L"#5 Check that a implicit commandline with other expected args is treated as a whole client commandline (3)",
                    commandline,
                    INVALID_HANDLE_VALUE,
                    INVALID_HANDLE_VALUE,
                    ConsoleArguments(commandline,
-                                    L"console --inpipe foo foo -- bar", // clientCommandLine
+                                    L"console --vtmode foo foo -- bar", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
                                     L"", // vtMode
                                     0, // width
                                     0, // height
@@ -582,17 +329,15 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     false ), // inheritCursor
                    true); // successful parse?
 
-    commandline = L"conhost.exe console --inpipe foo --outpipe foo -- bar";
+    commandline = L"conhost.exe console --vtmode foo --outpipe foo -- bar";
     ArgTestsRunner(L"#6 Check that a implicit commandline with other expected args is treated as a whole client commandline (4)",
                    commandline,
                    INVALID_HANDLE_VALUE,
                    INVALID_HANDLE_VALUE,
                    ConsoleArguments(commandline,
-                                    L"console --inpipe foo --outpipe foo -- bar", // clientCommandLine
+                                    L"console --vtmode foo --outpipe foo -- bar", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
                                     L"", // vtMode
                                     0, // width
                                     0, // height
@@ -604,7 +349,7 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     false ), // inheritCursor
                    true); // successful parse?
 
-    commandline = L"conhost.exe --inpipe foo -- --outpipe foo bar";
+    commandline = L"conhost.exe --vtmode foo -- --outpipe foo bar";
     ArgTestsRunner(L"#7 Check splitting vt pipes across the explicit commandline does not pull both pipe names out",
                    commandline,
                    INVALID_HANDLE_VALUE,
@@ -613,9 +358,7 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     L"--outpipe foo bar", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
-                                    L"foo", // vtInPipe
-                                    L"", // vtOutPipe
-                                    L"", // vtMode
+                                    L"foo", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
@@ -626,7 +369,7 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     false ), // inheritCursor
                    true); // successful parse?
 
-    commandline = L"conhost.exe --inpipe -- --outpipe foo bar";
+    commandline = L"conhost.exe --vtmode -- --headless bar";
     ArgTestsRunner(L"#8 Let -- be used as a value of a parameter",
                    commandline,
                    INVALID_HANDLE_VALUE,
@@ -635,13 +378,11 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     L"bar", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
-                                    L"--", // vtInPipe
-                                    L"foo", // vtOutPipe
-                                    L"", // vtMode
+                                    L"--", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1
-                                    false, // headless
+                                    true, // headless
                                     true, // createServerHandle
                                     0, // serverHandle
                                     0, // signalHandle
@@ -657,8 +398,6 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
                                     L"", // vtMode
                                     0, // width
                                     0, // height
@@ -679,8 +418,6 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
                                     L"", // vtMode
                                     0, // width
                                     0, // height
@@ -706,8 +443,6 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
                                     L"", // vtMode
                                     0, // width
                                     0, // height
@@ -728,8 +463,6 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
                                     L"", // vtMode
                                     0, // width
                                     0, // height
@@ -750,8 +483,6 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
                                     L"", // vtMode
                                     0, // width
                                     0, // height
@@ -772,8 +503,6 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
                                     L"", // vtMode
                                     0, // width
                                     0, // height
@@ -794,8 +523,6 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
                                     L"", // vtMode
                                     0, // width
                                     0, // height
@@ -816,8 +543,6 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
                                     L"", // vtMode
                                     0, // width
                                     0, // height
@@ -838,8 +563,6 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
                                     L"", // vtMode
                                     0, // width
                                     0, // height
@@ -860,8 +583,6 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
                                     L"", // vtMode
                                     0, // width
                                     0, // height
@@ -872,25 +593,6 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     0, // signalHandle
                                     false ), // inheritCursor
                    true); // successful parse?
-}
-
-void ConsoleArgumentsTests::IsUsingVtPipeTests()
-{
-    ConsoleArguments args(L"", INVALID_HANDLE_VALUE, INVALID_HANDLE_VALUE);
-    VERIFY_IS_FALSE(args.IsUsingVtPipe());
-
-    args._vtInPipe = L"foo";
-    VERIFY_IS_FALSE(args.IsUsingVtPipe());
-
-    args._vtOutPipe = L"bar";
-    VERIFY_IS_TRUE(args.IsUsingVtPipe());
-
-    args._vtInPipe = L"";
-    VERIFY_IS_FALSE(args.IsUsingVtPipe());
-
-    args._vtInPipe = args._vtOutPipe;
-    args._vtOutPipe = L"";
-    VERIFY_IS_FALSE(args.IsUsingVtPipe());
 }
 
 void ConsoleArgumentsTests::IsUsingVtHandleTests()
@@ -930,8 +632,6 @@ void ConsoleArgumentsTests::CombineVtPipeHandleTests()
                                     L"", // clientCommandLine
                                     hInSample,
                                     hOutSample,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
                                     L"", // vtMode
                                     0, // width
                                     0, // height
@@ -952,8 +652,6 @@ void ConsoleArgumentsTests::CombineVtPipeHandleTests()
                                     L"", // clientCommandLine
                                     hInSample,
                                     hOutSample,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
                                     L"telnet", // vtMode
                                     0, // width
                                     0, // height
@@ -964,72 +662,6 @@ void ConsoleArgumentsTests::CombineVtPipeHandleTests()
                                     0, // signalHandle
                                     false ), // inheritCursor
                    true); // successful parse?
-
-    commandline = L"conhost.exe --inpipe input";
-    ArgTestsRunner(L"#3 Check that handles with vt in pipe specified is NOT OK",
-                   commandline,
-                   hInSample,
-                   hOutSample,
-                   ConsoleArguments(commandline,
-                                    L"", // clientCommandLine
-                                    hInSample,
-                                    hOutSample,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
-                                    L"", // vtMode
-                                    0, // width
-                                    0, // height
-                                    false, // forceV1
-                                    false, // headless
-                                    true, // createServerHandle
-                                    0ul, // serverHandle
-                                    0, // signalHandle
-                                    false ), // inheritCursor
-                   false); // successful parse?
-
-    commandline = L"conhost.exe --outpipe output";
-    ArgTestsRunner(L"#4 Check that handles with vt out pipe specified is NOT OK",
-                   commandline,
-                   hInSample,
-                   hOutSample,
-                   ConsoleArguments(commandline,
-                                    L"", // clientCommandLine
-                                    hInSample,
-                                    hOutSample,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
-                                    L"", // vtMode
-                                    0, // width
-                                    0, // height
-                                    false, // forceV1
-                                    false, // headless
-                                    true, // createServerHandle
-                                    0ul, // serverHandle
-                                    0, // signalHandle
-                                    false ), // inheritCursor
-                   false); // successful parse?
-
-    commandline = L"conhost.exe --outpipe output --inpipe input";
-    ArgTestsRunner(L"#5 Check that handles with both vt pipes specified is NOT OK",
-                   commandline,
-                   hInSample,
-                   hOutSample,
-                   ConsoleArguments(commandline,
-                                    L"", // clientCommandLine
-                                    hInSample,
-                                    hOutSample,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
-                                    L"", // vtMode
-                                    0, // width
-                                    0, // height
-                                    false, // forceV1
-                                    false, // headless
-                                    true, // createServerHandle
-                                    0ul, // serverHandle
-                                    0, // signalHandle
-                                    false ), // inheritCursor
-                   false); // successful parse?
 }
 
 void ConsoleArgumentsTests::IsVtHandleValidTests()
@@ -1055,8 +687,6 @@ void ConsoleArgumentsTests::InitialSizeTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
                                     L"", // vtMode
                                     120, // width
                                     30, // height
@@ -1077,8 +707,6 @@ void ConsoleArgumentsTests::InitialSizeTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
                                     L"", // vtMode
                                     120, // width
                                     0, // height
@@ -1099,8 +727,6 @@ void ConsoleArgumentsTests::InitialSizeTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
                                     L"", // vtMode
                                     0, // width
                                     30, // height
@@ -1121,8 +747,6 @@ void ConsoleArgumentsTests::InitialSizeTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
                                     L"", // vtMode
                                     0, // width
                                     0, // height
@@ -1143,8 +767,6 @@ void ConsoleArgumentsTests::InitialSizeTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
                                     L"", // vtMode
                                     -1, // width
                                     0, // height
@@ -1165,8 +787,6 @@ void ConsoleArgumentsTests::InitialSizeTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
                                     L"", // vtMode
                                     0, // width
                                     0, // height
@@ -1187,8 +807,6 @@ void ConsoleArgumentsTests::InitialSizeTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
                                     L"", // vtMode
                                     0, // width
                                     0, // height
@@ -1209,8 +827,6 @@ void ConsoleArgumentsTests::InitialSizeTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
                                     L"", // vtMode
                                     0, // width
                                     0, // height
@@ -1237,8 +853,6 @@ void ConsoleArgumentsTests::HeadlessArgTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
                                     L"", // vtMode
                                     0, // width
                                     0, // height
@@ -1259,8 +873,6 @@ void ConsoleArgumentsTests::HeadlessArgTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
                                     L"", // vtMode
                                     0, // width
                                     0, // height
@@ -1281,8 +893,6 @@ void ConsoleArgumentsTests::HeadlessArgTests()
                                     L"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
                                     L"", // vtMode
                                     0, // width
                                     0, // height
@@ -1303,8 +913,6 @@ void ConsoleArgumentsTests::HeadlessArgTests()
                                     L"foo.exe --headless", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
                                     L"", // vtMode
                                     0, // width
                                     0, // height
@@ -1334,8 +942,6 @@ void ConsoleArgumentsTests::SignalHandleTests()
                                     L"",
                                     hInSample,
                                     hOutSample,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
                                     L"", // vtMode
                                     0, // width
                                     0, // height
@@ -1356,8 +962,6 @@ void ConsoleArgumentsTests::SignalHandleTests()
                                     L"",
                                     hInSample,
                                     hOutSample,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
                                     L"", // vtMode
                                     0, // width
                                     0, // height
@@ -1378,8 +982,6 @@ void ConsoleArgumentsTests::SignalHandleTests()
                                     L"",
                                     hInSample,
                                     hOutSample,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
                                     L"", // vtMode
                                     0, // width
                                     0, // height
@@ -1409,8 +1011,6 @@ void ConsoleArgumentsTests::FeatureArgTests()
                                     L"",
                                     hInSample,
                                     hOutSample,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
                                     L"", // vtMode
                                     0, // width
                                     0, // height
@@ -1430,8 +1030,6 @@ void ConsoleArgumentsTests::FeatureArgTests()
                                     L"",
                                     hInSample,
                                     hOutSample,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
                                     L"", // vtMode
                                     0, // width
                                     0, // height
@@ -1452,8 +1050,6 @@ void ConsoleArgumentsTests::FeatureArgTests()
                                     L"",
                                     hInSample,
                                     hOutSample,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
                                     L"", // vtMode
                                     0, // width
                                     0, // height
@@ -1474,8 +1070,6 @@ void ConsoleArgumentsTests::FeatureArgTests()
                                     L"",
                                     hInSample,
                                     hOutSample,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
                                     L"", // vtMode
                                     0, // width
                                     0, // height
@@ -1496,8 +1090,6 @@ void ConsoleArgumentsTests::FeatureArgTests()
                                     L"",
                                     hInSample,
                                     hOutSample,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
                                     L"", // vtMode
                                     0, // width
                                     0, // height
@@ -1518,8 +1110,6 @@ void ConsoleArgumentsTests::FeatureArgTests()
                                     L"",
                                     hInSample,
                                     hOutSample,
-                                    L"", // vtInPipe
-                                    L"", // vtOutPipe
                                     L"", // vtMode
                                     0, // width
                                     0, // height
