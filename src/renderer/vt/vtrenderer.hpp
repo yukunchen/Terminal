@@ -17,6 +17,7 @@ Author(s):
 #include "../inc/IRenderEngine.hpp"
 #include "../../inc/IDefaultColorProvider.hpp"
 #include "../../inc/ITerminalOutputConnection.hpp"
+#include "../../inc/ITerminalOwner.hpp"
 #include "../../types/inc/Viewport.hpp"
 #include <string>
 #include <functional>
@@ -31,8 +32,8 @@ namespace Microsoft::Console::Render
         static const COORD INVALID_COORDS;
 
         VtEngine(_In_ wil::unique_hfile hPipe,
-                const Microsoft::Console::IDefaultColorProvider& colorProvider,
-                const Microsoft::Console::Types::Viewport initialViewport);
+                 const Microsoft::Console::IDefaultColorProvider& colorProvider,
+                 const Microsoft::Console::Types::Viewport initialViewport);
 
         virtual ~VtEngine() override = default;
 
@@ -130,6 +131,8 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         virtual HRESULT UpdateTitle(const std::wstring& newTitle) override;
 
+        void SetTerminalOwner(Microsoft::Console::ITerminalOwner* const terminalOwner);
+
     protected:
         wil::unique_hfile _hFile;
 
@@ -156,6 +159,10 @@ namespace Microsoft::Console::Render
         bool _circled;
         bool _firstPaint;
         bool _skipCursor;
+
+        bool _pipeBroken;
+        HRESULT _exitResult;
+        Microsoft::Console::ITerminalOwner* _terminalOwner;
 
         [[nodiscard]]
         HRESULT _Write(_In_reads_(cch) const char* const psz, const size_t cch);

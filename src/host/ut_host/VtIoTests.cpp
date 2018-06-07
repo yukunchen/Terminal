@@ -253,7 +253,7 @@ void VtIoTests::DtorTestStackAlloc()
 
         hOutputFile.reset(INVALID_HANDLE_VALUE);
         {
-            VtIo vtio = VtIo();
+            VtIo vtio;
             vtio._pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(hOutputFile),
                                                                      p,
                                                                      SetUpViewport(),
@@ -263,7 +263,7 @@ void VtIoTests::DtorTestStackAlloc()
 
         hOutputFile.reset(INVALID_HANDLE_VALUE);
         {
-            VtIo vtio = VtIo();
+            VtIo vtio;
             vtio._pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
                                                                   p,
                                                                   SetUpViewport(),
@@ -274,7 +274,7 @@ void VtIoTests::DtorTestStackAlloc()
 
         hOutputFile.reset(INVALID_HANDLE_VALUE);
         {
-            VtIo vtio = VtIo();
+            VtIo vtio;
             vtio._pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
                                                                   p,
                                                                   SetUpViewport(),
@@ -285,7 +285,7 @@ void VtIoTests::DtorTestStackAlloc()
 
         hOutputFile.reset(INVALID_HANDLE_VALUE);
         {
-            VtIo vtio = VtIo();
+            VtIo vtio;
             vtio._pVtRenderEngine = std::make_unique<WinTelnetEngine>(std::move(hOutputFile),
                                                                       p,
                                                                       SetUpViewport(),
@@ -321,7 +321,7 @@ void VtIoTests::DtorTestStackAllocMany()
         wil::unique_hfile hOutputFile;
         {
             hOutputFile.reset(INVALID_HANDLE_VALUE);
-            VtIo vtio1 = VtIo();
+            VtIo vtio1;
             vtio1._pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(hOutputFile),
                                                                       p,
                                                                       SetUpViewport(),
@@ -329,7 +329,7 @@ void VtIoTests::DtorTestStackAllocMany()
                                                                       colorTableSize);
 
             hOutputFile.reset(INVALID_HANDLE_VALUE);
-            VtIo vtio2 = VtIo();
+            VtIo vtio2;
             vtio2._pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
                                                                    p,
                                                                    SetUpViewport(),
@@ -338,7 +338,7 @@ void VtIoTests::DtorTestStackAllocMany()
                                                                    false);
 
             hOutputFile.reset(INVALID_HANDLE_VALUE);
-            VtIo vtio3 = VtIo();
+            VtIo vtio3;
             vtio3._pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
                                                                    p,
                                                                    SetUpViewport(),
@@ -347,7 +347,7 @@ void VtIoTests::DtorTestStackAllocMany()
                                                                    true);
 
             hOutputFile.reset(INVALID_HANDLE_VALUE);
-            VtIo vtio4 = VtIo();
+            VtIo vtio4;
             vtio4._pVtRenderEngine = std::make_unique<WinTelnetEngine>(std::move(hOutputFile),
                                                                        p,
                                                                        SetUpViewport(),
@@ -377,7 +377,7 @@ void VtIoTests::BasicAnonymousPipeOpeningWithSignalChannelTest()
 
     Log::Comment(L"\tinitializing vtio");
 
-    VtIo vtio = VtIo();
+    VtIo vtio;
     VERIFY_IS_FALSE(vtio.IsUsingVt());
     VERIFY_IS_FALSE(vtio._hasSignalThread);
     VERIFY_SUCCEEDED(vtio._Initialize(inPipeReadSide.release(), outPipeWriteSide.release(), L"", signalPipeReadSide.release()));

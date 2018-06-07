@@ -30,7 +30,9 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
     _hFile{ std::move(hPipe) },
     _hThread{},
     _utf8Parser{ CP_UTF8 },
-    _dwThreadId{ 0 }
+    _dwThreadId{ 0 },
+    _exitRequested{ false },
+    _exitResult{ S_OK }
 {
     THROW_IF_HANDLE_INVALID(_hFile.get());
 
@@ -114,19 +116,23 @@ void VtInputThread::DoReadInput(const bool throwOnFail)
         DWORD lastError = GetLastError();
         if (lastError == ERROR_BROKEN_PIPE)
         {
+            _exitResult = HRESULT_FROM_WIN32(ERROR_BROKEN_PIPE);
             // This won't return. We'll be terminated.
             CloseConsoleProcessState();
         }
         else
         {
-            THROW_WIN32(lastError);
+            _exitRequested = true;
+            _exitResult = HRESULT_FROM_WIN32(lastError);
+            return;
         }
     }
 
     HRESULT hr = _HandleRunInput(buffer, dwRead);
     if (throwOnFail)
     {
-        THROW_IF_FAILED(hr);
+        _exitResult = hr;
+        _exitRequested = true;
     }
     else
     {
@@ -142,10 +148,11 @@ void VtInputThread::DoReadInput(const bool throwOnFail)
 // - Does not return.
 DWORD VtInputThread::_InputThread()
 {
-    while (true)
+    while (!_exitRequested)
     {
         DoReadInput(true);
     }
+    return _exitResult;
     // Above loop will never return.
 }
 

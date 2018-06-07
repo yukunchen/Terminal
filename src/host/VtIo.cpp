@@ -13,6 +13,7 @@
 #include "../renderer/vt/WinTelnetEngine.hpp"
 
 #include "../renderer/base/renderer.hpp"
+#include "output.h"
 
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::VirtualTerminal;
@@ -74,7 +75,7 @@ HRESULT VtIo::Initialize(const ConsoleArguments * const pArgs)
     _lookingForCursorPosition = pArgs->GetInheritCursor();
 
     // If we were already given VT handles, set up the VT IO engine to use those.
-    if (pArgs->HasVtHandles())
+    if (pArgs->InConptyMode())
     {
         return _Initialize(pArgs->GetVtInHandle(), pArgs->GetVtOutHandle(), pArgs->GetVtMode(), pArgs->GetSignalHandle());
     }
@@ -136,58 +137,65 @@ HRESULT VtIo::_Initialize(const HANDLE InHandle, const HANDLE OutHandle, const s
     wil::unique_hfile hOutputFile;
 
     hInputFile.reset(InHandle);
-    RETURN_LAST_ERROR_IF(hInputFile.get() == INVALID_HANDLE_VALUE);
-
     hOutputFile.reset(OutHandle);
-    RETURN_LAST_ERROR_IF(hOutputFile.get() == INVALID_HANDLE_VALUE);
 
     try
     {
-        _pVtInputThread = std::make_unique<VtInputThread>(std::move(hInputFile), _lookingForCursorPosition);
-
-        Viewport initialViewport = Viewport::FromDimensions({0, 0},
-                                                            gci.GetWindowSize().X,
-                                                            gci.GetWindowSize().Y);
-        switch (_IoMode)
+        if (ConsoleArguments::s_IsValidHandle(hInputFile.get()))
         {
-        case VtIoMode::XTERM_256:
-            _pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(hOutputFile),
-                                                                gci,
-                                                                initialViewport,
-                                                                gci.GetColorTable(),
-                                                                static_cast<WORD>(gci.GetColorTableSize()));
-            break;
-        case VtIoMode::XTERM:
-            _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
-                                                             gci,
-                                                             initialViewport,
-                                                             gci.GetColorTable(),
-                                                             static_cast<WORD>(gci.GetColorTableSize()),
-                                                             false);
-            break;
-        case VtIoMode::XTERM_ASCII:
-            _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
-                                                             gci,
-                                                             initialViewport,
-                                                             gci.GetColorTable(),
-                                                             static_cast<WORD>(gci.GetColorTableSize()),
-                                                             true);
-            break;
-        case VtIoMode::WIN_TELNET:
-            _pVtRenderEngine = std::make_unique<WinTelnetEngine>(std::move(hOutputFile),
+            _pVtInputThread = std::make_unique<VtInputThread>(std::move(hInputFile), _lookingForCursorPosition);
+        }
+
+        if (ConsoleArguments::s_IsValidHandle(hOutputFile.get()))
+        {
+            Viewport initialViewport = Viewport::FromDimensions({0, 0},
+                                                                gci.GetWindowSize().X,
+                                                                gci.GetWindowSize().Y);
+            switch (_IoMode)
+            {
+            case VtIoMode::XTERM_256:
+                _pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(hOutputFile),
+                                                                    gci,
+                                                                    initialViewport,
+                                                                    gci.GetColorTable(),
+                                                                    static_cast<WORD>(gci.GetColorTableSize()));
+                break;
+            case VtIoMode::XTERM:
+                _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
                                                                  gci,
                                                                  initialViewport,
                                                                  gci.GetColorTable(),
-                                                                 static_cast<WORD>(gci.GetColorTableSize()));
-            break;
-        default:
-            return E_FAIL;
+                                                                 static_cast<WORD>(gci.GetColorTableSize()),
+                                                                 false);
+                break;
+            case VtIoMode::XTERM_ASCII:
+                _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
+                                                                 gci,
+                                                                 initialViewport,
+                                                                 gci.GetColorTable(),
+                                                                 static_cast<WORD>(gci.GetColorTableSize()),
+                                                                 true);
+                break;
+            case VtIoMode::WIN_TELNET:
+                _pVtRenderEngine = std::make_unique<WinTelnetEngine>(std::move(hOutputFile),
+                                                                     gci,
+                                                                     initialViewport,
+                                                                     gci.GetColorTable(),
+                                                                     static_cast<WORD>(gci.GetColorTableSize()));
+                break;
+            default:
+                return E_FAIL;
+            }
+            if (_pVtRenderEngine)
+            {
+                _pVtRenderEngine->SetTerminalOwner(reinterpret_cast<ITerminalOwner* const>(this));
+            }
         }
     }
     CATCH_RETURN();
 
     // If we were passed a signal handle, try to open it and make a signal reading thread.
-    if (0 != SignalHandle && INVALID_HANDLE_VALUE != SignalHandle)
+    if (ConsoleArguments::s_IsValidHandle(SignalHandle))
     {
         wil::unique_hfile hSignalFile(SignalHandle);
         try
@@ -227,12 +235,15 @@ HRESULT VtIo::StartIfNeeded()
     }
     Globals& g = ServiceLocator::LocateGlobals();
 
-    try
+    if (_pVtRenderEngine)
     {
-        g.pRender->AddRenderEngine(_pVtRenderEngine.get());
-        g.getConsoleInformation().GetActiveOutputBuffer().SetTerminalConnection(_pVtRenderEngine.get());
+        try
+        {
+            g.pRender->AddRenderEngine(_pVtRenderEngine.get());
+            g.getConsoleInformation().GetActiveOutputBuffer().SetTerminalConnection(_pVtRenderEngine.get());
+        }
+        CATCH_RETURN();
     }
-    CATCH_RETURN();
 
     // MSFT: 15813316
     // If the terminal application wants us to inherit the cursor position,
@@ -241,7 +252,10 @@ HRESULT VtIo::StartIfNeeded()
     //  but don't respond will hang.
     // If we get a response, the InteractDispatch will call SetCursorPosition,
     //      which will call to our VtIo::SetCursorPosition method.
-    if (_lookingForCursorPosition)
+    // We need both handles for this initializetion to work. If we don't have
+    //      both, we'll skip it. They either aren't going to be reading output
+    //      (so they can't get the DSR) or they can't write the response to us.
+    if (_lookingForCursorPosition && _pVtRenderEngine && _pVtInputThread)
     {
         LOG_IF_FAILED(_pVtRenderEngine->RequestCursor());
         while(_lookingForCursorPosition)
@@ -250,7 +264,10 @@ HRESULT VtIo::StartIfNeeded()
         }
     }
 
-    LOG_IF_FAILED(_pVtInputThread->Start());
+    if (_pVtInputThread)
+    {
+        LOG_IF_FAILED(_pVtInputThread->Start());
+    }
 
     if (_hasSignalThread)
     {
@@ -301,4 +318,35 @@ HRESULT VtIo::SetCursorPosition(const COORD coordCursor)
         _lookingForCursorPosition = false;
     }
     return hr;
+}
+
+void VtIo::CloseInput()
+{
+    // This will release the lock when it goes out of scope
+    std::lock_guard<std::mutex> lk(_shutdownLock);
+    _pVtInputThread = nullptr;
+    _ShutdownIfNeeded();
+}
+
+void VtIo::CloseOutput()
+{
+    // This will release the lock when it goes out of scope
+    std::lock_guard<std::mutex> lk(_shutdownLock);
+    _pVtRenderEngine = nullptr;
+    _ShutdownIfNeeded();
+}
+
+
+void VtIo::_ShutdownIfNeeded()
+{
+    if (_usingVt && _pVtInputThread == nullptr && _pVtRenderEngine == nullptr)
+    {
+        // At this point, we no longer have a renderer or inthread. So we've
+        //      effectively been disconnected from the terminal.
+        // TODO/Discussion: We could just stay alive here. We'd be useless, but
+        //  the processes attached could keep going.
+
+        // This won't return. We'll be terminated.
+        CloseConsoleProcessState();
+    }
 }

@@ -467,6 +467,23 @@ bool ConsoleArguments::HasSignalHandle() const
     return s_IsValidHandle(GetSignalHandle());
 }
 
+// Routine Description:
+// - Returns true if we already have opened handles to use for the VT server
+//   streams.
+// - If false, try next to see if we have pipe names to open instead.
+// Arguments:
+// - <none> - uses internal state
+// Return Value:
+// - True or false (see description)
+bool ConsoleArguments::InConptyMode() const
+{
+    // If we only have a signal handle, then that's fine, they probably called
+    //      CreatePseudoConsole with neither handle.
+    // If we only have one of the other handles, that's fine they're still
+    //      invoking us by passing in pipes, so they know what they're doing.
+    return s_IsValidHandle(_vtInHandle) || s_IsValidHandle(_vtOutHandle) || HasSignalHandle();
+}
+
 bool ConsoleArguments::IsHeadless() const
 {
     return _headless;

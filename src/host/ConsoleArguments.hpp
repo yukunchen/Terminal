@@ -33,6 +33,7 @@ public:
 
     bool IsUsingVtPipe() const;
     bool HasVtHandles() const;
+    bool InConptyMode() const;
     bool IsHeadless() const;
     bool ShouldCreateServerHandle() const;
 
@@ -50,6 +51,8 @@ public:
     short GetWidth() const;
     short GetHeight() const;
     bool GetInheritCursor() const;
+
+    static bool s_IsValidHandle(const HANDLE handle);
 
     static const std::wstring VT_MODE_ARG;
     static const std::wstring HEADLESS_ARG;
@@ -143,7 +146,6 @@ private:
     static HRESULT s_ParseHandleArg(const std::wstring& handleAsText,
                                     _Inout_ DWORD& handleAsVal);
 
-    static bool s_IsValidHandle(const HANDLE handle);
 
 #ifdef UNIT_TESTING
     friend class ConsoleArgumentsTests;
