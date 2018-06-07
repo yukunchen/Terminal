@@ -25,7 +25,7 @@ typedef void(*PipeReadCallback)(BYTE* buffer, DWORD dwRead);
 class VtConsole
 {
 public:
-    VtConsole(PipeReadCallback const pfnReadCallback, bool const fUseConpty, COORD const initialSize);
+    VtConsole(PipeReadCallback const pfnReadCallback, bool const fHeadless, bool const fUseConpty, COORD const initialSize);
     void spawn();
     void spawn(const std::wstring& command);
 
@@ -59,25 +59,28 @@ private:
     HANDLE _outPipe;
     HANDLE _inPipe;
     HANDLE _signalPipe;
+
+    #ifndef EXTERNAL_BUILD
     HPCON _hPC;
-    std::wstring _inPipeName;
-    std::wstring _outPipeName;
+    #endif
 
     bool _connected = false;
     bool _active = false;
     bool _fUseConPty = false;
+    bool _fHeadless = false;
 
     PipeReadCallback _pfnReadCallback;
 
     DWORD _dwOutputThreadId;
     HANDLE _hOutputThread = INVALID_HANDLE_VALUE;
 
-    void _openConsole2(const std::wstring& command);
-    void _openConsole3(const std::wstring& command);
+    void _createPseudoConsole(const std::wstring& command);
+    void _createConptyManually(const std::wstring& command);
+    void _createConptyViaCommandline(const std::wstring& command);
 
-    void _spawn2(const std::wstring& command);
-    void _spawn3(const std::wstring& command);
-    void _spawn4(const std::wstring& command);
+    // void _spawn2(const std::wstring& command);
+    // void _spawn3(const std::wstring& command);
+    void _spawn(const std::wstring& command);
 
     DWORD _OutputThread();
 
