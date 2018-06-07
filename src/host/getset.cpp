@@ -347,13 +347,17 @@ HRESULT ApiRoutines::SetConsoleScreenBufferSizeImpl(SCREEN_INFORMATION& context,
 
     SCREEN_INFORMATION& screenInfo = context.GetActiveBuffer();
 
-    COORD const coordMin = screenInfo.GetMinWindowSizeInCharacters();
-
-    // Make sure requested screen buffer size isn't smaller than the window.
-    RETURN_HR_IF(E_INVALIDARG, (pSize->X < screenInfo.GetScreenWindowSizeX() ||
-                                pSize->Y < screenInfo.GetScreenWindowSizeY() ||
-                                pSize->Y < coordMin.Y ||
-                                pSize->X < coordMin.X));
+    // see MSFT:17415266
+    // We only really care about the minimum window size if we have a head.
+    if (!ServiceLocator::LocateGlobals().IsHeadless())
+    {
+        COORD const coordMin = screenInfo.GetMinWindowSizeInCharacters();
+        // Make sure requested screen buffer size isn't smaller than the window.
+        RETURN_HR_IF(E_INVALIDARG, (pSize->X < screenInfo.GetScreenWindowSizeX() ||
+                                    pSize->Y < screenInfo.GetScreenWindowSizeY() ||
+                                    pSize->Y < coordMin.Y ||
+                                    pSize->X < coordMin.X));
+    }
 
     // Ensure the requested size isn't larger than we can handle in our data type.
     RETURN_HR_IF(E_INVALIDARG, (pSize->X == SHORT_MAX || pSize->Y == SHORT_MAX));
@@ -554,9 +558,22 @@ HRESULT DoSrvSetConsoleWindowInfo(SCREEN_INFORMATION& screenInfo,
     NewWindowSize.X = (SHORT)(CalcWindowSizeX(&Window));
     NewWindowSize.Y = (SHORT)(CalcWindowSizeY(&Window));
 
-    COORD const coordMax = screenInfo.GetMaxWindowSizeInCharacters();
+    // see MSFT:17415266
+    // If we have a actual head, we care about the maximum size the window can be.
+    // if we're headless, not so much. However, GetMaxWindowSizeInCharacters
+    //      will only return the buffer size, so we can't use that to clip the arg here.
+    // So only clip the requested size if we're not headless
+    if (!ServiceLocator::LocateGlobals().IsHeadless())
+    {
+        COORD const coordMax = screenInfo.GetMaxWindowSizeInCharacters();
+        RETURN_HR_IF(E_INVALIDARG, (NewWindowSize.X > coordMax.X || NewWindowSize.Y > coordMax.Y));
 
-    RETURN_HR_IF(E_INVALIDARG, (NewWindowSize.X > coordMax.X || NewWindowSize.Y > coordMax.Y));
+    }
+    else
+    {
+        // SetViewportRect doesn't cause the buffer to resize. Manually resize the buffer.
+        RETURN_IF_NTSTATUS_FAILED(screenInfo.ResizeScreenBuffer(Viewport::FromInclusive(Window).Dimensions(), false));
+    }
 
     // Even if it's the same size, we need to post an update in case the scroll bars need to go away.
     screenInfo.SetViewportRect(Viewport::FromInclusive(Window));
