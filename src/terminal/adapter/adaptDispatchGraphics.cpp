@@ -93,7 +93,7 @@ void AdaptDispatch::_SetGraphicsOptionHelper(const GraphicsOptions opt, _Inout_ 
 
         // MSFT:16398982 - Only actually update our colors if we're currently
         //      doing legacy colors in the foreground. Bolding shouldn't
-        //      override an RGB froeground. However, we should regardless
+        //      override an RGB foreground. However, we should regardless
         //      remember that we're bold, so if a new legacy fg comes through
         //      after this, it wil be bolded.
         if (!_fLastForegroundWasRgb)
