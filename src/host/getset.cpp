@@ -618,13 +618,13 @@ HRESULT DoSrvScrollConsoleScreenBufferW(SCREEN_INFORMATION& screenInfo,
     CHAR_INFO Fill;
     Fill.Char.UnicodeChar = wchFill;
     Fill.Attributes = attrFill;
-    
+
     try
     {
-        ScrollRegion(screenInfo, 
-                     *pSourceRectangle, 
-                     pTargetClipRectangle == nullptr ? std::nullopt : std::optional<SMALL_RECT>(*pTargetClipRectangle), 
-                     *pTargetOrigin, 
+        ScrollRegion(screenInfo,
+                     *pSourceRectangle,
+                     pTargetClipRectangle == nullptr ? std::nullopt : std::optional<SMALL_RECT>(*pTargetClipRectangle),
+                     *pTargetOrigin,
                      Fill);
     }
     CATCH_RETURN();
@@ -647,11 +647,18 @@ void SetScreenColors(SCREEN_INFORMATION& screenInfo,
     const TextAttribute NewPrimaryAttributes = TextAttribute(Attributes);
     const TextAttribute NewPopupAttributes = TextAttribute(PopupAttributes);
 
-    screenInfo.SetDefaultAttributes(NewPrimaryAttributes, NewPopupAttributes);
-    gci.ConsoleIme.RefreshAreaAttributes();
-
+    // See MSFT: 16709105
+    // If we're updating the whole screen, we're also changing the value of the
+    //      default attributes. This can happen when we change properties with
+    //      the menu, or set the colors with SetConsoleScreenBufferinfoEx. When
+    //      that happens, we want to update the default attributes in the VT
+    //      adapter as well. If we're not updating the screen (like in a call to
+    //      SetConsoleTextAttributes), then we only want to change the currently
+    //      active attributes, but the adapter's notion of the "default" should
+    //      be left untouched.
     if (UpdateWholeScreen)
     {
+        screenInfo.SetDefaultAttributes(NewPrimaryAttributes, NewPopupAttributes);
         screenInfo.ReplaceDefaultAttributes(oldPrimaryAttributes,
                                             oldPopupAttributes,
                                             NewPrimaryAttributes,
@@ -665,6 +672,14 @@ void SetScreenColors(SCREEN_INFORMATION& screenInfo,
         // force repaint of entire line
         WriteToScreen(screenInfo, screenInfo.GetBufferViewport());
     }
+    else
+    {
+        screenInfo.SetAttributes(NewPrimaryAttributes);
+        screenInfo.SetPopupAttributes(NewPopupAttributes);
+
+    }
+    gci.ConsoleIme.RefreshAreaAttributes();
+
 }
 
 [[nodiscard]]
