@@ -153,14 +153,6 @@ HRESULT CommandHistory::Add(const std::wstring_view newCommand,
             }
         }
 
-        if (LastDisplayed == -1 ||
-            _commands[LastDisplayed].size() != newCommand.size() ||
-            std::equal(_commands[LastDisplayed].cbegin(), _commands[LastDisplayed].cbegin() + newCommand.size(),
-                       newCommand.cbegin(), newCommand.cend()))
-        {
-            _Reset();
-        }
-
         // add newCommand to array
         if (!reuse.empty())
         {
@@ -169,6 +161,14 @@ HRESULT CommandHistory::Add(const std::wstring_view newCommand,
         else
         {
             _commands.emplace_back(newCommand);
+        }
+
+        if (LastDisplayed == -1 ||
+            _commands[LastDisplayed].size() != newCommand.size() ||
+            std::equal(_commands[LastDisplayed].cbegin(), _commands[LastDisplayed].cbegin() + newCommand.size(),
+                       newCommand.cbegin(), newCommand.cend()))
+        {
+            _Reset();
         }
     }
     SetFlag(Flags, CLE_RESET); // remember that we've returned a cmd
@@ -556,7 +556,6 @@ bool CommandHistory::FindMatchingCommand(const std::wstring_view givenCommand,
 
     if (givenCommand.empty())
     {
-        indexFound = 0;
         return true;
     }
 
