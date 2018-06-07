@@ -29,7 +29,7 @@ void AdaptDispatch::s_DisableAllColors(_Inout_ WORD* const pAttr, const bool fIs
     }
     else
     {
-        *pAttr &= ~(BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY); 
+        *pAttr &= ~(BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY);
     }
 }
 
@@ -68,7 +68,7 @@ void AdaptDispatch::s_ApplyColors(_Inout_ WORD* const pAttr, const WORD wApplyTh
 // Arguments:
 // - opt - Graphics option sent to us by the parser/requestor.
 // - pAttr - Pointer to the font attribute field to adjust
-// Return Value: 
+// Return Value:
 // - <none>
 void AdaptDispatch::_SetGraphicsOptionHelper(const GraphicsOptions opt, _Inout_ WORD* const pAttr)
 {
@@ -91,7 +91,15 @@ void AdaptDispatch::_SetGraphicsOptionHelper(const GraphicsOptions opt, _Inout_ 
         // 3x sequences are ONLY bright if this flag is set, and without this the brightness of a 9x could bleed into a 3x.
         _wBrightnessState |= FOREGROUND_INTENSITY;
 
-        _fChangedForeground = true;
+        // MSFT:16398982 - Only actually update our colors if we're currently
+        //      doing legacy colors in the foreground. Bolding shouldn't
+        //      override an RGB froeground. However, we should regardless
+        //      remember that we're bold, so if a new legacy fg comes through
+        //      after this, it wil be bolded.
+        if (!_fLastForegroundWasRgb)
+        {
+            _fChangedForeground = true;
+        }
         break;
     case GraphicsOptions::UnBold:
         ClearFlag(*pAttr, FOREGROUND_INTENSITY);
@@ -288,7 +296,7 @@ void AdaptDispatch::_SetGraphicsOptionHelper(const GraphicsOptions opt, _Inout_ 
 // Routine Description:
 // Returns true if the GraphicsOption represents an extended color option.
 //   These are followed by up to 4 more values which compose the entire option.
-// Return Value: 
+// Return Value:
 // - true if the opt is the indicator for an extended color sequence, false otherwise.
 bool AdaptDispatch::s_IsRgbColorOption(const GraphicsOptions opt)
 {
@@ -302,23 +310,23 @@ bool AdaptDispatch::s_IsRgbColorOption(const GraphicsOptions opt)
 //      Xterm index will use the param that follows to use a color from the preset 256 color xterm color table.
 // Arguments:
 // - rgOptions - An array of options that will be used to generate the RGB color
-// - cOptions - The count of options 
+// - cOptions - The count of options
 // - prgbColor - A pointer to place the generated RGB color into.
 // - pfIsForeground - a pointer to place whether or not the parsed color is for the foreground or not.
 // - pcOptionsConsumed - a pointer to place the number of options we consumed parsing this option.
-// - ColorTable - the windows color table, for xterm indices < 16 
+// - ColorTable - the windows color table, for xterm indices < 16
 // - cColorTable - The number of elements in the windows color table.
-// Return Value: 
+// Return Value:
 // Returns true if we successfully parsed an extended color option from the options array.
 // - This corresponds to the following number of options consumed (pcOptionsConsumed):
 //     1 - false, not enough options to parse.
 //     2 - false, not enough options to parse.
 //     3 - true, parsed an xterm index to a color
 //     5 - true, parsed an RGB color.
-bool AdaptDispatch::_SetRgbColorsHelper(_In_reads_(cOptions) const GraphicsOptions* const rgOptions, 
-                          const size_t cOptions, 
-                          _Out_ COLORREF* const prgbColor, 
-                          _Out_ bool* const pfIsForeground, 
+bool AdaptDispatch::_SetRgbColorsHelper(_In_reads_(cOptions) const GraphicsOptions* const rgOptions,
+                          const size_t cOptions,
+                          _Out_ COLORREF* const prgbColor,
+                          _Out_ bool* const pfIsForeground,
                           _Out_ size_t* const pcOptionsConsumed)
 {
     bool fSuccess = false;
@@ -349,7 +357,10 @@ bool AdaptDispatch::_SetRgbColorsHelper(_In_reads_(cOptions) const GraphicsOptio
             *prgbColor = RGB(red, green, blue);
 
             fSuccess = !!_pConApi->SetConsoleRGBTextAttribute(*prgbColor, *pfIsForeground);
-        } 
+            // If we succeeded, update our internal tracking if the fg/bg are rgb
+            _fLastForegroundWasRgb = (fSuccess && *pfIsForeground) ? true : _fLastForegroundWasRgb;
+            _fLastBackgroundWasRgb = (fSuccess && !*pfIsForeground) ? true : _fLastBackgroundWasRgb;
+        }
         else if (typeOpt == GraphicsOptions::Xterm256Index && cOptions >= 3)
         {
             *pcOptionsConsumed = 3;
@@ -358,6 +369,12 @@ bool AdaptDispatch::_SetRgbColorsHelper(_In_reads_(cOptions) const GraphicsOptio
                 unsigned int tableIndex = rgOptions[2];
 
                 fSuccess = !!_pConApi->SetConsoleXtermTextAttribute(tableIndex, *pfIsForeground);
+
+                // If we succeeded, update our internal tracking if the fg/bg are rgb
+                //      if the index  was a legacy index, it's not RGB anymore.
+                _fLastForegroundWasRgb = (fSuccess && *pfIsForeground) ? (tableIndex >= COLOR_TABLE_SIZE) : _fLastForegroundWasRgb;
+                _fLastBackgroundWasRgb = (fSuccess && !*pfIsForeground) ? (tableIndex >= COLOR_TABLE_SIZE) : _fLastBackgroundWasRgb;
+
             }
         }
     }
@@ -370,7 +387,7 @@ bool AdaptDispatch::_SetRgbColorsHelper(_In_reads_(cOptions) const GraphicsOptio
 // Arguments:
 // - rgOptions - An array of options that will be applied from 0 to N, in order, one at a time by setting or removing flags in the font style properties.
 // - cOptions - The count of options (a.k.a. the N in the above line of comments)
-// Return Value: 
+// Return Value:
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::SetGraphicsRendition(_In_reads_(cOptions) const GraphicsOptions* const rgOptions, const size_t cOptions)
 {
@@ -402,8 +419,10 @@ bool AdaptDispatch::SetGraphicsRendition(_In_reads_(cOptions) const GraphicsOpti
             else
             {
                 _SetGraphicsOptionHelper(opt, &attr);
-
                 fSuccess = !!_pConApi->PrivateSetLegacyAttributes(attr, _fChangedForeground, _fChangedBackground, _fChangedMetaAttrs);
+                // Update our internal tracking of whether the fg/bg are rgb or legacy.
+                _fLastForegroundWasRgb = (_fChangedForeground && fSuccess) ? false : _fLastForegroundWasRgb;
+                _fLastBackgroundWasRgb = (_fChangedBackground && fSuccess) ? false : _fLastBackgroundWasRgb;
 
                 _fChangedForeground = false;
                 _fChangedBackground = false;

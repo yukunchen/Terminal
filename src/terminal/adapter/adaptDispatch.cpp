@@ -31,6 +31,8 @@ AdaptDispatch::AdaptDispatch(_Inout_ ConGetSet* const pConApi,
       _fChangedBackground(false),
       _fChangedForeground(false),
       _fChangedMetaAttrs(false),
+      _fLastForegroundWasRgb(false),
+      _fLastBackgroundWasRgb(false),
       _TermOutput()
 {
     // The top-left corner in VT-speak is 1,1. Our internal array uses 0 indexes, but VT uses 1,1 for top left corner.

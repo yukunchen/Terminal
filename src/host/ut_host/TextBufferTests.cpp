@@ -126,6 +126,7 @@ class TextBufferTests
     TEST_METHOD(CopyLastAttr);
 
     TEST_METHOD(TestTextAttributeColorGetters);
+    TEST_METHOD(TestRgbThenBold);
 
 };
 
@@ -1038,7 +1039,7 @@ void TextBufferTests::TestComplexUnBold()
     //      The first X should be bright green, and not legacy.
     //      The second X should be dark green, and not legacy.
     //      The third X should be rgb(32, 32, 32), and not legacy.
-    //      The fourth X should be bright green, again.
+    //      The fourth X should be unchanged from the third.
     //      The fifth X should be rgb(64, 64, 64), and not legacy.
     //      The sixth X should be dark green, again.
     //      BG = rgb(1;2;3)
@@ -1125,8 +1126,8 @@ void TextBufferTests::TestComplexUnBold()
     VERIFY_ARE_EQUAL(attrC.CalculateRgbForeground(), RGB(32,32,32));
     VERIFY_ARE_EQUAL(attrC.CalculateRgbBackground(), RGB(1,2,3));
 
-    VERIFY_ARE_EQUAL(attrD.CalculateRgbForeground(), bright_green);
-    VERIFY_ARE_EQUAL(attrD.CalculateRgbBackground(), RGB(1,2,3));
+    VERIFY_ARE_EQUAL(attrD.CalculateRgbForeground(), attrC.CalculateRgbForeground());
+    VERIFY_ARE_EQUAL(attrD.CalculateRgbBackground(), attrC.CalculateRgbBackground());
 
     VERIFY_ARE_EQUAL(attrE.CalculateRgbForeground(), RGB(64,64,64));
     VERIFY_ARE_EQUAL(attrE.CalculateRgbBackground(), RGB(1,2,3));
@@ -1512,4 +1513,65 @@ void TextBufferTests::TestTextAttributeColorGetters()
 
     VERIFY_ARE_EQUAL(green, textAttribute.GetRgbBackground());
     VERIFY_ARE_EQUAL(red, textAttribute.CalculateRgbBackground());
+}
+
+void TextBufferTests::TestRgbThenBold()
+{
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    const TextBuffer& tbi = si.GetTextBuffer();
+    StateMachine* const stateMachine = si.GetStateMachine();
+    const Cursor& cursor = tbi.GetCursor();
+    VERIFY_IS_NOT_NULL(stateMachine);
+    // See MSFT:16398982
+    Log::Comment(NoThrowString().Format(
+        L"Test that a bold following a RGB color doesn't remove the RGB color"
+    ));
+    Log::Comment(L"\"\\x1b[38;2;40;40;40m\\x1b[48;2;168;153;132mX\\x1b[1mX\\x1b[m\"");
+    const auto foreground = RGB(40, 40, 40);
+    const auto background = RGB(168, 153, 132);
+
+    wchar_t* sequence = L"\x1b[38;2;40;40;40m\x1b[48;2;168;153;132mX\x1b[1mX\x1b[m";
+    stateMachine->ProcessString(sequence, std::wcslen(sequence));
+    const auto x = cursor.GetPosition().X;
+    const auto y = cursor.GetPosition().Y;
+    const auto& row = tbi.GetRowByOffset(y);
+    const auto attrRow = &row.GetAttrRow();
+    const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+    const auto attrA = attrs[x-2];
+    const auto attrB = attrs[x-1];
+    Log::Comment(NoThrowString().Format(
+        L"cursor={X:%d,Y:%d}",
+        x, y
+    ));
+    Log::Comment(NoThrowString().Format(
+        L"attrA should be RGB, and attrB should be the same as attrA, NOT bolded"
+    ));
+    Log::Comment(NoThrowString().Format(
+        L"attrA={IsLegacy:%d,GetLegacyAttributes:0x%x}",
+        attrA.IsLegacy(), attrA.GetLegacyAttributes()
+    ));
+    Log::Comment(NoThrowString().Format(
+        L"attrA={FG:0x%x,BG:0x%x}",
+        attrA.CalculateRgbForeground(), attrA.CalculateRgbBackground()
+    ));
+    Log::Comment(NoThrowString().Format(
+        L"attrB={IsLegacy:%d,GetLegacyAttributes:0x%x}",
+        attrB.IsLegacy(), attrB.GetLegacyAttributes()
+    ));
+    Log::Comment(NoThrowString().Format(
+        L"attrB={FG:0x%x,BG:0x%x}",
+        attrB.CalculateRgbForeground(), attrB.CalculateRgbBackground()
+    ));
+
+    VERIFY_ARE_EQUAL(attrA.IsLegacy(), false);
+    VERIFY_ARE_EQUAL(attrB.IsLegacy(), false);
+
+    VERIFY_ARE_EQUAL(attrA.CalculateRgbForeground(), foreground);
+    VERIFY_ARE_EQUAL(attrA.CalculateRgbBackground(), background);
+    VERIFY_ARE_EQUAL(attrB.CalculateRgbForeground(), foreground);
+    VERIFY_ARE_EQUAL(attrB.CalculateRgbBackground(), background);
+
+    wchar_t* reset = L"\x1b[0m";
+    stateMachine->ProcessString(reset, std::wcslen(reset));
 }
