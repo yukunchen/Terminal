@@ -78,11 +78,6 @@ HRESULT VtIo::Initialize(const ConsoleArguments * const pArgs)
     {
         return _Initialize(pArgs->GetVtInHandle(), pArgs->GetVtOutHandle(), pArgs->GetVtMode(), pArgs->GetSignalHandle());
     }
-    // Otherwise, if we were given VT pipe names, try to open those.
-    else if (pArgs->IsUsingVtPipe())
-    {
-        return _Initialize(pArgs->GetVtInPipe(), pArgs->GetVtOutPipe(), pArgs->GetVtMode(), pArgs->GetSignalHandle());
-    }
     // Didn't need to initialize if we didn't have VT stuff. It's still OK, but report we did nothing.
     else
     {
@@ -205,72 +200,6 @@ HRESULT VtIo::_Initialize(const HANDLE InHandle, const HANDLE OutHandle, const s
 
     _usingVt = true;
     return S_OK;
-}
-
-// Routine Description:
-// - See _Initialize with 4 parameters. This one is for back-compat with old function signatures that have no signal handle.
-//   It sets the signal handle to 0.
-// Arguments:
-//  InPipeName: a wstring containing the vt input pipe's name. The console will
-//      read VT sequences from this pipe to generate INPUT_RECORDs and other
-//      input events.
-//  OutPipeName: a wstring containing the vt output pipe's name. The console
-//      will be "rendered" to this pipe using VT sequences
-//  VtIoMode: A string containing the console's requested VT mode. This can be
-//      any of the strings in VtIoModes.hpp
-// Return Value:
-//  S_OK if we initialized successfully, otherwise an appropriate HRESULT
-//      indicating failure.
-[[nodiscard]]
-HRESULT VtIo::_Initialize(const std::wstring& InPipeName, const std::wstring& OutPipeName, const std::wstring& VtMode)
-{
-    return _Initialize(InPipeName, OutPipeName, VtMode, INVALID_HANDLE_VALUE);
-}
-
-// Routine Description:
-//  Tries to initialize this VtIo instance from the given pipe names and
-//      VtIoMode. The pipes should have been created already (by the caller of
-//      conhost), in non-overlapped mode.
-//  The VtIoMode string can be the empty string as a default value.
-// Arguments:
-//  InPipeName: a wstring containing the vt input pipe's name. The console will
-//      read VT sequences from this pipe to generate INPUT_RECORDs and other
-//      input events.
-//  OutPipeName: a wstring containing the vt output pipe's name. The console
-//      will be "rendered" to this pipe using VT sequences
-//  VtIoMode: A string containing the console's requested VT mode. This can be
-//      any of the strings in VtIoModes.hpp
-// Return Value:
-//  S_OK if we initialized successfully, otherwise an appropriate HRESULT
-//      indicating failure.
-[[nodiscard]]
-HRESULT VtIo::_Initialize(const std::wstring& InPipeName, const std::wstring& OutPipeName, const std::wstring& VtMode, _In_opt_ HANDLE SignalHandle)
-{
-    wil::unique_hfile hInputFile;
-    hInputFile.reset(
-        CreateFileW(InPipeName.c_str(),
-                    GENERIC_READ,
-                    0,
-                    nullptr,
-                    OPEN_EXISTING,
-                    FILE_ATTRIBUTE_NORMAL,
-                    nullptr)
-    );
-    RETURN_LAST_ERROR_IF(hInputFile.get() == INVALID_HANDLE_VALUE);
-
-    wil::unique_hfile hOutputFile;
-    hOutputFile.reset(
-        CreateFileW(OutPipeName.c_str(),
-                    GENERIC_WRITE,
-                    0,
-                    nullptr,
-                    OPEN_EXISTING,
-                    FILE_ATTRIBUTE_NORMAL,
-                    nullptr)
-    );
-    RETURN_LAST_ERROR_IF(hOutputFile.get() == INVALID_HANDLE_VALUE);
-
-    return _Initialize(hInputFile.release(), hOutputFile.release(), VtMode, SignalHandle);
 }
 
 bool VtIo::IsUsingVt() const
