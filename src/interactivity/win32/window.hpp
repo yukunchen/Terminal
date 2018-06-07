@@ -176,6 +176,8 @@ namespace Microsoft::Console::Interactivity::Win32
         static void s_ReinitializeFontsForDPIChange();
 
         bool _fInDPIChange = false;
+        SIZE _sizeMaximum = { 0 };
+
 
         static void s_ConvertWindowPosToWindowRect(const LPWINDOWPOS lpWindowPos,
                                                     _Out_ RECT* const prc);

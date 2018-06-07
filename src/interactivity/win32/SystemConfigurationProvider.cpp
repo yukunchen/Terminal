@@ -72,7 +72,7 @@ void SystemConfigurationProvider::GetSettingsFromLink(
                 gci.GetLinkTitle().copy(linkNameForCsi, gci.GetLinkTitle().length());
             }
 
-            CONSOLE_STATE_INFO csi = { 0 };
+            CONSOLE_STATE_INFO csi = pLinkSettings->CreateConsoleStateInfo();
             csi.LinkTitle = linkNameForCsi;
             WCHAR wszShortcutTitle[MAX_PATH];
             BOOL fReadConsoleProperties;

@@ -47,7 +47,9 @@ HRESULT ShortcutSerialization::s_GetPropertyBoolValue(_In_ IPropertyStore * cons
 {
     PROPVARIANT propvar;
     HRESULT hr = pPropStore->GetValue(refPropKey, &propvar);
-    if (SUCCEEDED(hr))
+    // Only retrieve the value if we actually found one. If the link didn't have
+    //      the property (eg a new property was added_, then ignore it.
+    if (SUCCEEDED(hr) && propvar.vt != VT_EMPTY)
     {
         hr = PropVariantToBoolean(propvar, pfValue);
     }
@@ -70,7 +72,9 @@ HRESULT ShortcutSerialization::s_GetPropertyByteValue(_In_ IPropertyStore * cons
 {
     PROPVARIANT propvar;
     HRESULT hr = pPropStore->GetValue(refPropKey, &propvar);
-    if (SUCCEEDED(hr))
+    // Only retrieve the value if we actually found one. If the link didn't have
+    //      the property (eg a new property was added_, then ignore it.
+    if (SUCCEEDED(hr) && propvar.vt != VT_EMPTY)
     {
         SHORT sValue;
         hr = PropVariantToInt16(propvar, &sValue);
@@ -92,7 +96,9 @@ HRESULT ShortcutSerialization::s_GetPropertyDwordValue(_Inout_ IPropertyStore * 
 {
     PROPVARIANT propvar;
     HRESULT hr = pPropStore->GetValue(refPropKey, &propvar);
-    if (SUCCEEDED(hr))
+    // Only retrieve the value if we actually found one. If the link didn't have
+    //      the property (eg a new property was added_, then ignore it.
+    if (SUCCEEDED(hr) && propvar.vt != VT_EMPTY)
     {
         DWORD dwValue;
         hr = PropVariantToUInt32(propvar, &dwValue);

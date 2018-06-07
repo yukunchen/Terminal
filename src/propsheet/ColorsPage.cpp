@@ -408,6 +408,7 @@ void PreviewOpacity(HWND hDlg, BYTE bOpacity)
         {
             // TODO: CONSIDER:What happens when this code is eventually ported directly into the shell. Which "hWnd" does this apply to then? Desktop?
             // Hopefully it is simply null. -RSE   http://osgvsowi/2136073
+            SetWindowLongW(hWndConsole, GWL_EXSTYLE, GetWindowLongW(hWndConsole, GWL_EXSTYLE) | WS_EX_LAYERED);
             SetLayeredWindowAttributes(hWndConsole, 0, bOpacity, LWA_ALPHA);
         }
     }
