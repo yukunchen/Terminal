@@ -638,7 +638,7 @@ void FillRectangle(SCREEN_INFORMATION& screenInfo,
                    const SMALL_RECT rect)
 {
     const size_t width = rect.Right - rect.Left + 1;
-    const size_t height = rect.Bottom + rect.Top + 1;
+    const size_t height = rect.Bottom - rect.Top + 1;
 
     // generate line to write
     std::vector<OutputCell> rowCells(width, cell);
