@@ -1844,7 +1844,26 @@ NTSTATUS SCREEN_INFORMATION::SetCursorPosition(const COORD Position, const bool 
         return STATUS_INVALID_PARAMETER;
     }
 
-    cursor.SetPosition(Position);
+    const int iCurrentCursorY = cursor.GetPosition().Y;
+    SMALL_RECT srBufferViewport = GetBufferViewport();
+    SMALL_RECT srMargins = GetScrollMargins();
+    srMargins.Top += srBufferViewport.Top;
+    srMargins.Bottom += srBufferViewport.Top;
+    const bool fMarginsSet = srMargins.Bottom > srMargins.Top;
+    const bool fCursorInMargins = iCurrentCursorY <= srMargins.Bottom && iCurrentCursorY >= srMargins.Top;
+    COORD clampedPos = Position;
+    if (fMarginsSet && /*fCursorInMargins &&*/ InVTMode())
+    {
+        // DebugBreak();
+        // auto v = cursor.GetPosition().Y;
+        auto v = Position.Y;
+        auto lo = srMargins.Top;
+        auto hi = srMargins.Bottom;
+        // clampedPos.X = std::clamp(cursor.GetPosition().X, srMargins.Left, srMargins.Right);
+        clampedPos.Y = std::clamp(v, lo, hi);
+    }
+
+    cursor.SetPosition(clampedPos);
 
     // if we have the focus, adjust the cursor state
     if (gci.Flags & CONSOLE_HAS_FOCUS)
