@@ -113,30 +113,34 @@ void VtInputThread::DoReadInput(const bool throwOnFail)
     //       we want to gracefully close in.
     if (!fSuccess)
     {
+
         DWORD lastError = GetLastError();
-        if (lastError == ERROR_BROKEN_PIPE)
-        {
-            _exitResult = HRESULT_FROM_WIN32(ERROR_BROKEN_PIPE);
-            // This won't return. We'll be terminated.
-            CloseConsoleProcessState();
-        }
-        else
-        {
-            _exitRequested = true;
-            _exitResult = HRESULT_FROM_WIN32(lastError);
-            return;
-        }
+        // if (lastError == ERROR_BROKEN_PIPE)
+        // {
+        //     _exitResult = HRESULT_FROM_WIN32(ERROR_BROKEN_PIPE);
+        //     // This won't return. We'll be terminated.
+        //     CloseConsoleProcessState();
+        // }
+        // else
+        // {
+        // }
+        _exitRequested = true;
+        _exitResult = HRESULT_FROM_WIN32(lastError);
+        return;
     }
 
     HRESULT hr = _HandleRunInput(buffer, dwRead);
-    if (throwOnFail)
+    if (FAILED(hr))
     {
-        _exitResult = hr;
-        _exitRequested = true;
-    }
-    else
-    {
-        LOG_IF_FAILED(hr);
+        if (throwOnFail)
+        {
+            _exitResult = hr;
+            _exitRequested = true;
+        }
+        else
+        {
+            LOG_IF_FAILED(hr);
+        }
     }
 }
 
@@ -152,6 +156,8 @@ DWORD VtInputThread::_InputThread()
     {
         DoReadInput(true);
     }
+    ServiceLocator::LocateGlobals().getConsoleInformation().GetVtIo()->CloseInput();
+
     return _exitResult;
     // Above loop will never return.
 }

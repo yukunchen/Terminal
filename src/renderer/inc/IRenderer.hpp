@@ -56,5 +56,6 @@ namespace Microsoft::Console::Render
         virtual void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs) = 0;
 
         virtual void AddRenderEngine(_In_ IRenderEngine* const pEngine) = 0;
+        virtual void RemoveRenderEngine(_In_ IRenderEngine* const pEngine) = 0;
     };
 }

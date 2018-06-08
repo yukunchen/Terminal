@@ -78,8 +78,6 @@ private:
     void _createConptyManually(const std::wstring& command);
     void _createConptyViaCommandline(const std::wstring& command);
 
-    // void _spawn2(const std::wstring& command);
-    // void _spawn3(const std::wstring& command);
     void _spawn(const std::wstring& command);
 
     DWORD _OutputThread();

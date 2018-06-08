@@ -332,13 +332,26 @@ void VtIo::CloseOutput()
 {
     // This will release the lock when it goes out of scope
     std::lock_guard<std::mutex> lk(_shutdownLock);
-    _pVtRenderEngine = nullptr;
+
+    Globals& g = ServiceLocator::LocateGlobals();
+    // DON'T RemoveRenderEngine, as that requires the engine list lock, and this
+    // is usually being triggered on a paint operation, when the lock is already
+    // owned by the paint.
+    // Instead we're releasing the Engine here. A pointer to it has already been
+    // given to the Renderer, so we don't want the unique_ptr to delete it. The
+    // Renderer will own it's lifetime now.
+    _pVtRenderEngine.release();
+
+    g.getConsoleInformation().GetActiveOutputBuffer().SetTerminalConnection(nullptr);
+
     _ShutdownIfNeeded();
 }
 
 
 void VtIo::_ShutdownIfNeeded()
 {
+    // The callers should have both accquired the _shutdownLock at this point -
+    //      we dont want a race on who is actually responsible for closing it.
     if (_usingVt && _pVtInputThread == nullptr && _pVtRenderEngine == nullptr)
     {
         // At this point, we no longer have a renderer or inthread. So we've
