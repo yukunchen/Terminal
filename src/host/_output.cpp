@@ -635,10 +635,10 @@ NTSTATUS FillOutput(SCREEN_INFORMATION& screenInfo,
 // - rect - rectangle to fill
 void FillRectangle(SCREEN_INFORMATION& screenInfo,
                    const OutputCell& cell,
-                   const SMALL_RECT rect)
+                   const Viewport rect)
 {
-    const size_t width = rect.Right - rect.Left + 1;
-    const size_t height = rect.Bottom - rect.Top + 1;
+    const size_t width = rect.Width();
+    const size_t height = rect.Height();
 
     // generate line to write
     std::vector<OutputCell> rowCells(width, cell);
@@ -667,18 +667,19 @@ void FillRectangle(SCREEN_INFORMATION& screenInfo,
     // fill rectangle
     for (size_t i = 0; i < height; ++i)
     {
-        const size_t rowIndex = rect.Top + i;
+        const size_t rowIndex = rect.Top() + i;
 
         // cleanup dbcs edges
-        const COORD leftPoint{ rect.Right, gsl::narrow<SHORT>(rowIndex) };
+        // Why is this rect.Right for the leftPoint?
+        const COORD leftPoint{ rect.RightInclusive(), gsl::narrow<SHORT>(rowIndex) };
         CleanupDbcsEdgesForWrite(rowCells.size(), leftPoint, screenInfo);
 
         // write cells
-        screenInfo.WriteLine(rowCells, rowIndex, rect.Left);
+        screenInfo.WriteLine(rowCells, rowIndex, rect.Left());
 
         // force set wrap to false because this is a rectangular operation
         screenInfo.GetTextBuffer().GetRowByOffset(rowIndex).GetCharRow().SetWrapForced(false);
     }
     // notify accessibility listeners that something has changed
-    screenInfo.NotifyAccessibilityEventing(rect.Left, rect.Top, rect.Right, rect.Bottom);
+    screenInfo.NotifyAccessibilityEventing(rect.Left(), rect.Top(), rect.RightInclusive(), rect.BottomInclusive());
 }
