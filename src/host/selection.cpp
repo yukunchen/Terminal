@@ -345,8 +345,12 @@ void Selection::ExtendSelection(_In_ COORD coordBufferPos)
 
     if (!IsAreaSelected())
     {
-        // we should only be extending a selection that has no area yet if we're coming from mark mode
-        FAIL_FAST_IF(IsMouseInitiatedSelection());
+        // we should only be extending a selection that has no area yet if we're coming from mark mode.
+        // if not, just return.
+        if (IsMouseInitiatedSelection())
+        {
+            return;
+        }
 
         // scroll if necessary to make cursor visible.
         screenInfo.MakeCursorVisible(coordBufferPos);

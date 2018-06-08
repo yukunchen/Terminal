@@ -24,7 +24,7 @@ TerminalOutput::~TerminalOutput()
 // We include a full table so all we have to do is the lookup.
 // The tables only ever change the values x20 - x7f, hence why the table starts at \x20
 // From http://vt100.net/docs/vt220-rm/table2-4.html
-const wchar_t TerminalOutput::s_rgDECSpecialGraphicsTranslations[s_uiNumDisplayCharacters] 
+const wchar_t TerminalOutput::s_rgDECSpecialGraphicsTranslations[s_uiNumDisplayCharacters]
 {
      L'\x20', L'\x21', L'\x22', L'\x23', L'\x24', L'\x25', L'\x26', L'\x27', L'\x28', L'\x29', L'\x2a', L'\x2b', L'\x2c', L'\x2d', L'\x2e', L'\x2f',
      L'\x30', L'\x31', L'\x32', L'\x33', L'\x34', L'\x35', L'\x36', L'\x37', L'\x38', L'\x39', L'\x3a', L'\x3b', L'\x3c', L'\x3d', L'\x3e', L'\x3f',
@@ -32,14 +32,14 @@ const wchar_t TerminalOutput::s_rgDECSpecialGraphicsTranslations[s_uiNumDisplayC
      L'\x50', L'\x51', L'\x52', L'\x53', L'\x54', L'\x55', L'\x56', L'\x57', L'\x58', L'\x59', L'\x5a', L'\x5b', L'\x5c', L'\x5d', L'\x5e', L'\x5f',
      L'\u25C6', // L'\x60',   -> Diamond
      L'\u2592', // L'\x61',   -> Checkerboard
-     L'\x09'  , // L'\x62',   -> HT
-     L'\x0c'  , // L'\x63',   -> FF 
-     L'\x0d'  , // L'\x64',   -> CR
-     L'\x0a'  , // L'\x65',   -> LF
+     L'\u2409', // L'\x62',   -> HT, SYMBOL FOR HORIZONTAL TABULATION
+     L'\u240c', // L'\x63',   -> FF, SYMBOL FOR FORM FEED
+     L'\u240d', // L'\x64',   -> CR, SYMBOL FOR CARRIAGE RETURN
+     L'\u240a', // L'\x65',   -> LF, SYMBOL FOR LINE FEED
      L'\u00B0', // L'\x66',   -> Degree symbol
      L'\u00B1', // L'\x67',   -> Plus/minus
-     L'\x0a'  , // L'\x68',   -> NL
-     L'\x0b'  , // L'\x69',   -> VT
+     L'\u2424', // L'\x68',   -> NL, SYMBOL FOR NEWLINE
+     L'\u240b', // L'\x69',   -> VT, SYMBOL FOR VERTICAL TABULATION
      L'\u2518', // L'\x6a',   -> Lower-right corner
      L'\u2510', // L'\x6b',   -> Upper-right corner
      L'\u250c', // L'\x6c',   -> Upper-left corner
@@ -107,7 +107,7 @@ wchar_t TerminalOutput::TranslateKey(const wchar_t wch) const
     {
         ; // do nothing, these are the same as default.
     }
-    else 
+    else
     {
         const wchar_t* pwchTranslationTable = _GetTranslationTable();
         if (pwchTranslationTable != nullptr)
@@ -116,5 +116,5 @@ wchar_t TerminalOutput::TranslateKey(const wchar_t wch) const
         }
     }
     return wchFound;
-    
+
 }
