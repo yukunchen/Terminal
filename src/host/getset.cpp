@@ -1102,6 +1102,10 @@ NTSTATUS DoSrvPrivateReverseLineFeed(SCREEN_INFORMATION& screenInfo)
     const SMALL_RECT viewport = screenInfo.GetBufferViewport();
     COORD newCursorPosition = screenInfo.GetTextBuffer().GetCursor().GetPosition();
 
+    // This doesn't seem right anymore.
+    // I think we maybe should only ever be doing the Adjust path. That one will account for the
+    // Scroll margins, but the ScrollBuffer one wont.
+
     // If the cursor is at the top of the viewport, we don't want to shift the viewport up.
     // We want it to stay exactly where it is.
     // In that case, shift the buffer contents down, to emulate inserting a line

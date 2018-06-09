@@ -1852,14 +1852,21 @@ NTSTATUS SCREEN_INFORMATION::SetCursorPosition(const COORD Position, const bool 
     const bool fMarginsSet = srMargins.Bottom > srMargins.Top;
     const bool fCursorInMargins = iCurrentCursorY <= srMargins.Bottom && iCurrentCursorY >= srMargins.Top;
     COORD clampedPos = Position;
-    if (fMarginsSet && /*fCursorInMargins &&*/ InVTMode())
+    const bool verticalOnly = cursor.GetPosition().X == Position.X;
+    // It turns out this isn't totally right:
+    // see https://vt100.net/docs/vt100-ug/chapter3.html
+    // https://vt100.net/docs/vt510-rm/CUP.html
+    // https://vt100.net/docs/vt510-rm/CUU.html
+    // For CUU and CUD, the cursor is confined to the marigns, IFF it was already in the margins.
+    // For CUP, the cursor is not constrained to the margins.
+    // However, the adapter does not differentiate the handling of up/downs and moves.
+    // Maybe I should add a PrivateLineFeed(lines) and add a lines param to ReverseLineFeed
+    // Then the LineFeed functions could attempt to account for the margins, while the cursor position ones could ignore them.
+    if (fMarginsSet && fCursorInMargins && InVTMode() && verticalOnly)
     {
-        // DebugBreak();
-        // auto v = cursor.GetPosition().Y;
         auto v = Position.Y;
         auto lo = srMargins.Top;
         auto hi = srMargins.Bottom;
-        // clampedPos.X = std::clamp(cursor.GetPosition().X, srMargins.Left, srMargins.Right);
         clampedPos.Y = std::clamp(v, lo, hi);
     }
 
