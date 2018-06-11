@@ -87,5 +87,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual BOOL PrivateSuppressResizeRepaint() = 0;
         virtual BOOL IsConsolePty(_Out_ bool* const pIsPty) const = 0;
+
+        virtual BOOL MoveCursorVertically(const short lines) = 0;
+
     };
 }

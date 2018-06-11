@@ -493,6 +493,14 @@ public:
         return TRUE;
     }
 
+    BOOL MoveCursorVertically(const short /*lines*/)
+    {
+        Log::Comment(L"MoveCursorVertically MOCK called...");
+        // TODO
+        // We made it through the adapter, woo! Return true.
+        return TRUE;
+    }
+
     BOOL SetConsoleTitleW(const wchar_t* const pwchWindowTitle, _In_ unsigned short sCchTitleLength)
     {
         Log::Comment(L"SetConsoleTitleW MOCK called...");

@@ -390,6 +390,11 @@ BOOL ConhostInternalGetSet::PrivateReverseLineFeed()
     return NT_SUCCESS(DoSrvPrivateReverseLineFeed(_io.GetActiveOutputBuffer()));
 }
 
+BOOL ConhostInternalGetSet::MoveCursorVertically(const short lines)
+{
+    return NT_SUCCESS(DoSrvMoveCursorVertically(_io.GetActiveOutputBuffer(), lines));
+}
+
 // Routine Description:
 // - Connects the SetConsoleTitleW API call directly into our Driver Message servicing call inside Conhost.exe
 // Arguments:
