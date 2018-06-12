@@ -362,9 +362,11 @@ void VtIo::_ShutdownIfNeeded()
         // if we don't, this will cause us to rundown and exit.
         CloseConsoleProcessState();
 
-        // Force the handling of the control events. Usually this is done before the console unlocks (at the end of the windowproc or after servicing an API call), but because this
+        // If we haven't terminated by now, that's because there's a client that's still attached.
+        // Force the handling of the control events by the attached clients.
         ProcessCtrlEvents();
 
+        // Make sure we terminate.
         ServiceLocator::RundownAndExit(ERROR_BROKEN_PIPE);
     }
 }
