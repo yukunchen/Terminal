@@ -13,7 +13,8 @@
 #include "../renderer/vt/WinTelnetEngine.hpp"
 
 #include "../renderer/base/renderer.hpp"
-#include "output.h"
+#include "input.h" // ProcessCtrlEvents
+#include "output.h" // CloseConsoleProcessState
 
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::VirtualTerminal;
@@ -356,10 +357,14 @@ void VtIo::_ShutdownIfNeeded()
     {
         // At this point, we no longer have a renderer or inthread. So we've
         //      effectively been disconnected from the terminal.
-        // TODO/Discussion: We could just stay alive here. We'd be useless, but
-        //  the processes attached could keep going.
 
-        // This won't return. We'll be terminated.
+        // If we have any remaining attached processes, this will prepare us to send a ctrl+close to them
+        // if we don't, this will cause us to rundown and exit.
         CloseConsoleProcessState();
+
+        // Force the handling of the control events. Usually this is done before the console unlocks (at the end of the windowproc or after servicing an API call), but because this
+        ProcessCtrlEvents();
+
+        ServiceLocator::RundownAndExit(ERROR_BROKEN_PIPE);
     }
 }
