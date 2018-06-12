@@ -18,6 +18,7 @@ Author(s):
 #include "../../inc/IDefaultColorProvider.hpp"
 #include "../../inc/ITerminalOutputConnection.hpp"
 #include "../../types/inc/Viewport.hpp"
+#include "tracing.hpp"
 #include <string>
 #include <functional>
 
@@ -157,6 +158,7 @@ namespace Microsoft::Console::Render
         bool _firstPaint;
         bool _skipCursor;
 
+        Microsoft::Console::VirtualTerminal::RenderTracing _trace;
         [[nodiscard]]
         HRESULT _Write(_In_reads_(cch) const char* const psz, const size_t cch);
         [[nodiscard]]

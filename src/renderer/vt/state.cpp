@@ -48,7 +48,8 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _virtualTop(0),
     _circled(false),
     _firstPaint(false),
-    _skipCursor(false)
+    _skipCursor(false),
+    _trace(Microsoft::Console::VirtualTerminal::RenderTracing())
 {
 #ifndef UNIT_TESTING
     // When unit testing, we can instantiate a VtEngine without a pipe.
@@ -71,6 +72,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
 [[nodiscard]]
 HRESULT VtEngine::_Write(_In_reads_(cch) const char* const psz, const size_t cch)
 {
+    _trace.TraceString(std::string(psz, cch));
 #ifdef UNIT_TESTING
     if (_usingTestCallback)
     {
