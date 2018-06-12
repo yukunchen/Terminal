@@ -74,14 +74,12 @@ namespace Microsoft::Console::Render
         void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs) override;
 
         void AddRenderEngine(_In_ IRenderEngine* const pEngine) override;
-        void RemoveRenderEngine(_In_ IRenderEngine* const pEngine) override;
 
     private:
         Renderer(_In_ std::unique_ptr<IRenderData> pData,
                     _In_reads_(cEngines) IRenderEngine** const pEngine,
                     const size_t cEngines);
         std::deque<IRenderEngine*> _rgpEngines;
-        std::mutex _enginesLock;
         const std::unique_ptr<IRenderData> _pData;
 
         std::wstring _lastTitle;

@@ -58,7 +58,6 @@ Renderer::~Renderer()
         delete _pThread;
     }
 
-    std::lock_guard<std::mutex> lk(_enginesLock);
     std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
         delete pEngine;
     });
@@ -125,8 +124,6 @@ HRESULT Renderer::PaintFrame()
     // We also need this to suppress repainting when the title hasn't actually changed.
     _lastTitle = _pData->GetConsoleTitle();
 
-    // Lock the engines list, so we can't add/remove a engine during a paint frame.
-    std::lock_guard<std::mutex> lk(_enginesLock);
     for (IRenderEngine* const pEngine : _rgpEngines)
     {
         LOG_IF_FAILED(_PaintFrameForEngine(pEngine));
@@ -1256,31 +1253,5 @@ std::vector<SMALL_RECT> Renderer::_GetSelectionRects() const
 void Renderer::AddRenderEngine(_In_ IRenderEngine* const pEngine)
 {
     THROW_IF_NULL_ALLOC(pEngine);
-    std::lock_guard<std::mutex> lk(_enginesLock);
     _rgpEngines.push_back(pEngine);
-}
-
-// Method Description:
-// - Adds another Render engine to this renderer. Future rendering calls will
-//      also be sent to the new renderer.
-// Arguments:
-// - pEngine: The new render engine to be added
-// Return Value:
-// - <none>
-// Throws if we ran out of memory or there was some other error appending the
-//      engine to our collection.
-void Renderer::RemoveRenderEngine(_In_ IRenderEngine* const pEngine)
-{
-    THROW_IF_NULL_ALLOC(pEngine);
-    std::lock_guard<std::mutex> lk(_enginesLock);
-    _rgpEngines.push_back(pEngine);
-
-    std::deque<IRenderEngine*>::iterator match = std::find(_rgpEngines.begin(), _rgpEngines.end(), pEngine);
-    // We shouldn't be removing an engine that's not in the engines list.
-    FAIL_FAST_IF(match == _rgpEngines.end());
-    if (match != _rgpEngines.end())
-    {
-        _rgpEngines.erase(match);
-    }
-
 }
