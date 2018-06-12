@@ -51,7 +51,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _skipCursor(false),
     _pipeBroken(false),
     _exitResult{ S_OK },
-    _terminalOwner{ nullptr}
+    _terminalOwner{ nullptr }
 {
 #ifndef UNIT_TESTING
     // When unit testing, we can instantiate a VtEngine without a pipe.

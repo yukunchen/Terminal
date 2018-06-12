@@ -13,12 +13,14 @@
 #include "../renderer/vt/WinTelnetEngine.hpp"
 
 #include "../renderer/base/renderer.hpp"
+#include "../types/inc/utils.hpp"
 #include "input.h" // ProcessCtrlEvents
 #include "output.h" // CloseConsoleProcessState
 
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::VirtualTerminal;
 using namespace Microsoft::Console::Types;
+using namespace Microsoft::Console::Utils;
 
 VtIo::VtIo() :
     _usingVt(false),
@@ -142,12 +144,12 @@ HRESULT VtIo::_Initialize(const HANDLE InHandle, const HANDLE OutHandle, const s
 
     try
     {
-        if (ConsoleArguments::s_IsValidHandle(hInputFile.get()))
+        if (IsValidHandle(hInputFile.get()))
         {
             _pVtInputThread = std::make_unique<VtInputThread>(std::move(hInputFile), _lookingForCursorPosition);
         }
 
-        if (ConsoleArguments::s_IsValidHandle(hOutputFile.get()))
+        if (IsValidHandle(hOutputFile.get()))
         {
             Viewport initialViewport = Viewport::FromDimensions({0, 0},
                                                                 gci.GetWindowSize().X,
@@ -196,7 +198,7 @@ HRESULT VtIo::_Initialize(const HANDLE InHandle, const HANDLE OutHandle, const s
     CATCH_RETURN();
 
     // If we were passed a signal handle, try to open it and make a signal reading thread.
-    if (ConsoleArguments::s_IsValidHandle(SignalHandle))
+    if (IsValidHandle(SignalHandle))
     {
         wil::unique_hfile hSignalFile(SignalHandle);
         try
@@ -253,7 +255,7 @@ HRESULT VtIo::StartIfNeeded()
     //  but don't respond will hang.
     // If we get a response, the InteractDispatch will call SetCursorPosition,
     //      which will call to our VtIo::SetCursorPosition method.
-    // We need both handles for this initializetion to work. If we don't have
+    // We need both handles for this initialization to work. If we don't have
     //      both, we'll skip it. They either aren't going to be reading output
     //      (so they can't get the DSR) or they can't write the response to us.
     if (_lookingForCursorPosition && _pVtRenderEngine && _pVtInputThread)

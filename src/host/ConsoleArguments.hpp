@@ -52,8 +52,6 @@ public:
     short GetHeight() const;
     bool GetInheritCursor() const;
 
-    static bool s_IsValidHandle(const HANDLE handle);
-
     static const std::wstring VT_MODE_ARG;
     static const std::wstring HEADLESS_ARG;
     static const std::wstring SERVER_HANDLE_ARG;

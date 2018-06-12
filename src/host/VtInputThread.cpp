@@ -138,7 +138,8 @@ void VtInputThread::DoReadInput(const bool throwOnFail)
 //      passes it to _HandleRunInput to be processed by the
 //      InputStateMachineEngine.
 // Return Value:
-// - Does not return.
+// - Any error from reading the pipe or writing to the input buffer that might
+//      have caused us to exit.
 DWORD VtInputThread::_InputThread()
 {
     while (!_exitRequested)
