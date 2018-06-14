@@ -72,7 +72,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
 [[nodiscard]]
 HRESULT VtEngine::_Write(_In_reads_(cch) const char* const psz, const size_t cch)
 {
-    _trace.TraceString(std::string(psz, cch));
+    _trace.TraceString(std::string_view(psz, cch));
 #ifdef UNIT_TESTING
     if (_usingTestCallback)
     {

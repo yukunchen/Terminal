@@ -19,12 +19,12 @@ TRACELOGGING_DECLARE_PROVIDER(g_hConsoleVtRendererTraceProvider);
 
 namespace Microsoft::Console::VirtualTerminal
 {
-    class RenderTracing sealed
+    class RenderTracing final
     {
     public:
 
         RenderTracing();
         ~RenderTracing();
-        void TraceString(const std::string& str) const;
+        void TraceString(const std::string_view& str) const;
     };
 }

@@ -34,7 +34,7 @@ RenderTracing::~RenderTracing()
 // - inString: The string to convert
 // Return Value:
 // - a string with only printable characters in it.
-std::string toPrintableString(const std::string& inString)
+std::string toPrintableString(const std::string_view& inString)
 {
     std::string retval = "";
     for (size_t i = 0; i < inString.length(); i++)
@@ -61,7 +61,7 @@ std::string toPrintableString(const std::string& inString)
     }
     return retval;
 }
-void RenderTracing::TraceString(const std::string& instr) const
+void RenderTracing::TraceString(const std::string_view& instr) const
 {
     const std::string _seq = toPrintableString(instr);
     const char* const seq = _seq.c_str();
