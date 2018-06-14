@@ -670,8 +670,7 @@ void FillRectangle(SCREEN_INFORMATION& screenInfo,
         const size_t rowIndex = rect.Top() + i;
 
         // cleanup dbcs edges
-        // Why is this rect.Right for the leftPoint?
-        const COORD leftPoint{ rect.RightInclusive(), gsl::narrow<SHORT>(rowIndex) };
+        const COORD leftPoint{ rect.Left(), gsl::narrow<SHORT>(rowIndex) };
         CleanupDbcsEdgesForWrite(rowCells.size(), leftPoint, screenInfo);
 
         // write cells
