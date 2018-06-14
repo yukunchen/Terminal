@@ -130,6 +130,7 @@ class TextBufferTests
 
     TEST_METHOD(TestTextAttributeColorGetters);
     TEST_METHOD(TestRgbThenBold);
+    TEST_METHOD(TestResetClearsBoldness);
 
 };
 
@@ -1369,7 +1370,7 @@ void TextBufferTests::TestTextAttributeColorGetters()
     // not set
     VERIFY_IS_FALSE(textAttribute._IsReverseVideo());
 
-    VERIFY_ARE_EQUAL(red, textAttribute.GetRgbForeground(false));
+    VERIFY_ARE_EQUAL(red, textAttribute.GetRgbForeground());
     VERIFY_ARE_EQUAL(red, textAttribute.CalculateRgbForeground());
 
     VERIFY_ARE_EQUAL(green, textAttribute.GetRgbBackground());
@@ -1379,7 +1380,7 @@ void TextBufferTests::TestTextAttributeColorGetters()
     // the same
     textAttribute.SetMetaAttributes(COMMON_LVB_REVERSE_VIDEO);
 
-    VERIFY_ARE_EQUAL(red, textAttribute.GetRgbForeground(false));
+    VERIFY_ARE_EQUAL(red, textAttribute.GetRgbForeground());
     VERIFY_ARE_EQUAL(green, textAttribute.CalculateRgbForeground());
 
     VERIFY_ARE_EQUAL(green, textAttribute.GetRgbBackground());
@@ -1429,6 +1430,63 @@ void TextBufferTests::TestRgbThenBold()
     VERIFY_ARE_EQUAL(attrA.CalculateRgbBackground(), background);
     VERIFY_ARE_EQUAL(attrB.CalculateRgbForeground(), foreground);
     VERIFY_ARE_EQUAL(attrB.CalculateRgbBackground(), background);
+
+    wchar_t* reset = L"\x1b[0m";
+    stateMachine->ProcessString(reset, std::wcslen(reset));
+}
+
+void TextBufferTests::TestResetClearsBoldness()
+{
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    const TextBuffer& tbi = si.GetTextBuffer();
+    StateMachine* const stateMachine = si.GetStateMachine();
+    const Cursor& cursor = tbi.GetCursor();
+    VERIFY_IS_NOT_NULL(stateMachine);
+    Log::Comment(NoThrowString().Format(
+        L"Test that resetting bold attributes clears the boldness."
+    ));
+    const auto x0 = cursor.GetPosition().X;
+    const COLORREF defaultFg = si.GetAttributes().CalculateRgbForeground();
+    const COLORREF defaultBg = si.GetAttributes().CalculateRgbBackground();
+    const auto dark_green = gci.GetColorTableEntry(2);
+    const auto bright_green = gci.GetColorTableEntry(10);
+
+    wchar_t* sequence = L"\x1b[32mA\x1b[1mB\x1b[0mC\x1b[32mD";
+    Log::Comment(NoThrowString().Format(sequence));
+    stateMachine->ProcessString(sequence, std::wcslen(sequence));
+
+    const auto x = cursor.GetPosition().X;
+    const auto y = cursor.GetPosition().Y;
+    const auto& row = tbi.GetRowByOffset(y);
+    const auto attrRow = &row.GetAttrRow();
+    const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+    const auto attrA = attrs[x0];
+    const auto attrB = attrs[x0+1];
+    const auto attrC = attrs[x0+2];
+    const auto attrD = attrs[x0+3];
+    Log::Comment(NoThrowString().Format(
+        L"cursor={X:%d,Y:%d}",
+        x, y
+    ));
+    Log::Comment(NoThrowString().Format(
+        L"attrA should be RGB, and attrB should be the same as attrA, NOT bolded"
+    ));
+
+    LOG_ATTR(attrA);
+    LOG_ATTR(attrB);
+    LOG_ATTR(attrC);
+    LOG_ATTR(attrD);
+
+    VERIFY_ARE_EQUAL(attrA.CalculateRgbForeground(), dark_green);
+    VERIFY_ARE_EQUAL(attrB.CalculateRgbForeground(), bright_green);
+    VERIFY_ARE_EQUAL(attrC.CalculateRgbForeground(), defaultFg);
+    VERIFY_ARE_EQUAL(attrD.CalculateRgbForeground(), dark_green);
+
+    VERIFY_IS_FALSE(attrA.IsBold());
+    VERIFY_IS_TRUE(attrB.IsBold());
+    VERIFY_IS_FALSE(attrC.IsBold());
+    VERIFY_IS_FALSE(attrD.IsBold());
 
     wchar_t* reset = L"\x1b[0m";
     stateMachine->ProcessString(reset, std::wcslen(reset));

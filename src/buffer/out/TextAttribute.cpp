@@ -16,7 +16,6 @@
 WORD TextAttribute::GetLegacyAttributes() const noexcept
 {
     return (_wAttrLegacy | (_isBold ? FOREGROUND_INTENSITY : 0));
-    // return (_wAttrLegacy);
 }
 
 bool TextAttribute::IsLegacy() const noexcept
@@ -30,7 +29,7 @@ bool TextAttribute::IsLegacy() const noexcept
 // - color that should be displayed as the foreground color
 COLORREF TextAttribute::CalculateRgbForeground() const
 {
-    return _IsReverseVideo() ? GetRgbBackground() : GetRgbForeground(true);
+    return _IsReverseVideo() ? GetRgbBackground() : GetRgbForeground();
 }
 
 // Routine Description:
@@ -41,7 +40,7 @@ COLORREF TextAttribute::CalculateRgbForeground() const
 // - color that should be displayed as the background color
 COLORREF TextAttribute::CalculateRgbBackground() const
 {
-    return _IsReverseVideo() ? GetRgbForeground(true) : GetRgbBackground();
+    return _IsReverseVideo() ? GetRgbForeground() : GetRgbBackground();
 }
 
 // Routine Description:
@@ -51,7 +50,7 @@ COLORREF TextAttribute::CalculateRgbBackground() const
 // - None
 // Return Value:
 // - color that is stored as the foreground color
-COLORREF TextAttribute::GetRgbForeground(const bool useBoldness) const
+COLORREF TextAttribute::GetRgbForeground() const
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     COLORREF rgbColor{ 0 };
@@ -61,12 +60,7 @@ COLORREF TextAttribute::GetRgbForeground(const bool useBoldness) const
     }
     else
     {
-        // If we use the GetRgbForeground value here, then when we're creating a new Rgb attr using this as the base, we'll use the brightened attr for the new value, not the original unbrightened value.
-        // if we use the wAttrLegaccy here, then when callers want to get the real RGB value of the attr (with CalCulateRbgForeground, for ex in the renderer), we won't apply the boldness to the returned value.
-        // const byte iColorTableIndex = (LOBYTE(GetLegacyAttributes()) & 0x0F);
-        // const byte iColorTableIndex = (LOBYTE(GetLegacyAttributes() | _wAttrLegacy? FOREGROUND_INTENSITY : 0) & 0x0F);
-        // const byte iColorTableIndex = (LOBYTE(_wAttrLegacy) & 0x0F);
-        const byte iColorTableIndex = (LOBYTE(useBoldness? GetLegacyAttributes() : _wAttrLegacy) & 0x0F);
+        const byte iColorTableIndex = (LOBYTE(GetLegacyAttributes()) & 0x0F);
 
         FAIL_FAST_IF_FALSE(iColorTableIndex >= 0);
         FAIL_FAST_IF_FALSE(iColorTableIndex < gci.GetColorTableSize());
@@ -131,8 +125,7 @@ void TextAttribute::SetBackground(const COLORREF rgbBackground)
     _rgbBackground = rgbBackground;
     if (!_fUseRgbColor)
     {
-        // _wAttrLegacy = _wAttrLegacy | (_isBold ? FOREGROUND_INTENSITY : 0);
-        _rgbForeground = GetRgbForeground(true);
+        _rgbForeground = GetRgbForeground();
     }
     _fUseRgbColor = true;
 }
@@ -223,6 +216,7 @@ void TextAttribute::Embolden() noexcept
 
     _isBold = true;
 }
+
 void TextAttribute::Debolden() noexcept
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();

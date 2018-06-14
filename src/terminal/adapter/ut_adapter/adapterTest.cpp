@@ -326,19 +326,16 @@ public:
         return _fSetConsoleRGBTextAttributeResult;
     }
 
-    BOOL PrivateBoldText(const bool /*isBold*/)
+    BOOL PrivateBoldText(const bool isBold)
     {
         Log::Comment(L"PrivateBoldText MOCK called...");
-        // if (_fSetConsoleRGBTextAttributeResult)
-        // {
-        //     VERIFY_ARE_EQUAL(_fExpectedIsForeground, fIsForeground);
-        //     _fIsForeground = fIsForeground;
-        //     VERIFY_ARE_EQUAL(_ExpectedColor, rgbColor);
-        //     _rgbColor = rgbColor;
-        //     _fUsingRgbColor = true;
-        // }
-        // TODO
-        return TRUE;
+        if (_fPrivateBoldTextResult)
+        {
+            VERIFY_ARE_EQUAL(_fExpectedIsBold, isBold);
+            _fIsBold = isBold;
+            _fExpectedIsBold = false;
+        }
+        return !!_fPrivateBoldTextResult;
     }
 
     BOOL WriteConsoleInputW(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
@@ -1227,6 +1224,9 @@ public:
     bool _fExpectedMeta = false;
     unsigned int _uiExpectedOutputCP;
     bool _fIsPty = false;
+    bool _fPrivateBoldTextResult = false;
+    bool _fExpectedIsBold = false;
+    bool _fIsBold = false;
 
     BOOL _fGetConsoleScreenBufferInfoExResult;
     BOOL _fSetConsoleCursorPositionResult;
@@ -2397,12 +2397,17 @@ public:
             _pTest->_fExpectedForeground = true;
             _pTest->_fExpectedBackground = true;
             _pTest->_fExpectedMeta = true;
+            _pTest->_fPrivateBoldTextResult = true;
+            _pTest->_fExpectedIsBold = false;
+
             break;
         case TermDispatch::GraphicsOptions::BoldBright:
             Log::Comment(L"Testing graphics 'Bold/Bright'");
             _pTest->_wAttribute = 0;
             _pTest->_wExpectedAttribute = FOREGROUND_INTENSITY;
             _pTest->_fExpectedForeground = true;
+            _pTest->_fPrivateBoldTextResult = true;
+            _pTest->_fExpectedIsBold = true;
             break;
         case TermDispatch::GraphicsOptions::Underline:
             Log::Comment(L"Testing graphics 'Underline'");
@@ -2664,6 +2669,8 @@ public:
         _pTest->_fExpectedForeground = true;
         _pTest->_fExpectedBackground = true;
         _pTest->_fExpectedMeta = true;
+        _pTest->_fPrivateBoldTextResult = true;
+        _pTest->_fExpectedIsBold = false;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
 
         Log::Comment(L"Testing graphics 'Foreground Color Blue'");
@@ -2676,13 +2683,18 @@ public:
         rgOptions[0] = TermDispatch::GraphicsOptions::BoldBright;
         _pTest->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_INTENSITY;
         _pTest->_fExpectedForeground = true;
+        _pTest->_fPrivateBoldTextResult = true;
+        _pTest->_fExpectedIsBold = true;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
+        VERIFY_IS_TRUE(_pTest->_fIsBold);
 
         Log::Comment(L"Testing graphics 'Foreground Color Green, with brightness'");
         rgOptions[0] = TermDispatch::GraphicsOptions::ForegroundGreen;
-        _pTest->_wExpectedAttribute = FOREGROUND_GREEN | FOREGROUND_INTENSITY;
+        _pTest->_wExpectedAttribute = FOREGROUND_GREEN/* | FOREGROUND_INTENSITY*/;
         _pTest->_fExpectedForeground = true;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
+        VERIFY_IS_TRUE(IsFlagSet(_pTest->_wAttribute, FOREGROUND_GREEN));
+        VERIFY_IS_TRUE(_pTest->_fIsBold);
 
         Log::Comment(L"Test 2: Disable brightness, use a bright color, next normal call remains not bright");
         Log::Comment(L"Reseting graphics options");
@@ -2691,19 +2703,25 @@ public:
         _pTest->_fExpectedForeground = true;
         _pTest->_fExpectedBackground = true;
         _pTest->_fExpectedMeta = true;
+        _pTest->_fPrivateBoldTextResult = true;
+        _pTest->_fExpectedIsBold = false;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
+        VERIFY_IS_TRUE(IsFlagClear(_pTest->_wAttribute, FOREGROUND_INTENSITY));
+        VERIFY_IS_FALSE(_pTest->_fIsBold);
 
         Log::Comment(L"Testing graphics 'Foreground Color Bright Blue'");
         rgOptions[0] = TermDispatch::GraphicsOptions::BrightForegroundBlue;
         _pTest->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_INTENSITY;
         _pTest->_fExpectedForeground = true;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
+        VERIFY_IS_FALSE(_pTest->_fIsBold);
 
         Log::Comment(L"Testing graphics 'Foreground Color Blue', brightness of 9x series doesn't persist");
         rgOptions[0] = TermDispatch::GraphicsOptions::ForegroundBlue;
         _pTest->_wExpectedAttribute = FOREGROUND_BLUE;
         _pTest->_fExpectedForeground = true;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
+        VERIFY_IS_FALSE(_pTest->_fIsBold);
 
         Log::Comment(L"Test 3: Enable brightness, use a bright color, brightness persists to next normal call");
         Log::Comment(L"Reseting graphics options");
@@ -2712,37 +2730,47 @@ public:
         _pTest->_fExpectedForeground = true;
         _pTest->_fExpectedBackground = true;
         _pTest->_fExpectedMeta = true;
+        _pTest->_fPrivateBoldTextResult = true;
+        _pTest->_fExpectedIsBold = false;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
+        VERIFY_IS_FALSE(_pTest->_fIsBold);
 
         Log::Comment(L"Testing graphics 'Foreground Color Blue'");
         rgOptions[0] = TermDispatch::GraphicsOptions::ForegroundBlue;
         _pTest->_wExpectedAttribute = FOREGROUND_BLUE;
         _pTest->_fExpectedForeground = true;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
+        VERIFY_IS_FALSE(_pTest->_fIsBold);
 
         Log::Comment(L"Enabling brightness");
         rgOptions[0] = TermDispatch::GraphicsOptions::BoldBright;
-        _pTest->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_INTENSITY;
-        _pTest->_fExpectedForeground = true;
+        // _pTest->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_INTENSITY;
+        // _pTest->_fExpectedForeground = true;
+        _pTest->_fPrivateBoldTextResult = true;
+        _pTest->_fExpectedIsBold = true;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
+        VERIFY_IS_TRUE(_pTest->_fIsBold);
 
         Log::Comment(L"Testing graphics 'Foreground Color Bright Blue'");
         rgOptions[0] = TermDispatch::GraphicsOptions::BrightForegroundBlue;
         _pTest->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_INTENSITY;
         _pTest->_fExpectedForeground = true;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
+        VERIFY_IS_TRUE(_pTest->_fIsBold);
 
         Log::Comment(L"Testing graphics 'Foreground Color Blue, with brightness', brightness of 9x series doesn't affect brightness");
         rgOptions[0] = TermDispatch::GraphicsOptions::ForegroundBlue;
-        _pTest->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_INTENSITY;
+        _pTest->_wExpectedAttribute = FOREGROUND_BLUE/* | FOREGROUND_INTENSITY*/;
         _pTest->_fExpectedForeground = true;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
+        VERIFY_IS_TRUE(_pTest->_fIsBold);
 
         Log::Comment(L"Testing graphics 'Foreground Color Green, with brightness'");
         rgOptions[0] = TermDispatch::GraphicsOptions::ForegroundGreen;
-        _pTest->_wExpectedAttribute = FOREGROUND_GREEN | FOREGROUND_INTENSITY;
+        _pTest->_wExpectedAttribute = FOREGROUND_GREEN/* | FOREGROUND_INTENSITY*/;
         _pTest->_fExpectedForeground = true;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
+        VERIFY_IS_TRUE(_pTest->_fIsBold);
     }
 
     TEST_METHOD(DeviceStatusReportTests)
@@ -3235,9 +3263,11 @@ public:
         _pTest->_coordExpectedCursorPos = {0, 0};
         _pTest->_fSetConsoleCursorPositionResult = true;
         _pTest->_fPrivateSetLegacyAttributesResult = true;
+        _pTest->_fPrivateBoldTextResult = true;
         _pTest->_fExpectedForeground = true;
         _pTest->_fExpectedBackground = true;
         _pTest->_fExpectedMeta = true;
+        _pTest->_fExpectedIsBold = false;
         const COORD coordExpectedCursorPos = {0, 0};
 
         // Sets the SGR state to normal.

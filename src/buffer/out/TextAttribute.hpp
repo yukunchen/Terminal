@@ -58,7 +58,7 @@ public:
     COLORREF CalculateRgbForeground() const;
     COLORREF CalculateRgbBackground() const;
 
-    COLORREF GetRgbForeground(const bool useBoldness) const;
+    COLORREF GetRgbForeground() const;
     COLORREF GetRgbBackground() const;
 
     bool IsLeadingByte() const noexcept;

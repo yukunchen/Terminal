@@ -453,6 +453,12 @@ bool AdaptDispatch::SetGraphicsRendition(_In_reads_(cOptions) const GraphicsOpti
                 _fLastForegroundWasRgb = (_fChangedForeground && fSuccess) ? false : _fLastForegroundWasRgb;
                 _fLastBackgroundWasRgb = (_fChangedBackground && fSuccess) ? false : _fLastBackgroundWasRgb;
 
+                // Make sure we un-bold
+                if (fSuccess && opt == GraphicsOptions::Off)
+                {
+                    fSuccess = _SetBoldColorHelper(opt);
+                }
+
                 _fChangedForeground = false;
                 _fChangedBackground = false;
                 _fChangedMetaAttrs = false;
