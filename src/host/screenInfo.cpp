@@ -2544,8 +2544,16 @@ void SCREEN_INFORMATION::_InitializeBufferDimensions(const COORD coordScreenBuff
 // - <none>
 void SCREEN_INFORMATION::SetTerminalConnection(_In_ ITerminalOutputConnection* const pTtyConnection)
 {
-    _pEngine->SetTerminalConnection(pTtyConnection,
-                                    std::bind(&StateMachine::FlushToTerminal, _pStateMachine));
+    if (pTtyConnection)
+    {
+        _pEngine->SetTerminalConnection(pTtyConnection,
+                                        std::bind(&StateMachine::FlushToTerminal, _pStateMachine));
+    }
+    else
+    {
+        _pEngine->SetTerminalConnection(nullptr,
+                                        nullptr);
+    }
 }
 
 // Routine Description:
