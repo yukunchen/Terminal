@@ -37,6 +37,9 @@ namespace Microsoft::Console
         wil::unique_handle _hThread;
         DWORD _dwThreadId;
 
+        bool _exitRequested;
+        HRESULT _exitResult;
+
         std::unique_ptr<StateMachine> _pInputStateMachine;
         Utf8ToWideCharParser _utf8Parser;
     };

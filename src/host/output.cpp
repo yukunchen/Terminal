@@ -776,10 +776,9 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
             {
                 fillRect.Bottom = clipRect.Bottom;
             }
-
             try
             {
-                FillRectangle(screenInfo, { fillWith }, fillRect);
+                FillRectangle(screenInfo, { fillWith }, Viewport::FromInclusive(fillRect));
             }
             CATCH_LOG();
 
@@ -796,7 +795,7 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
             _CopyRectangle(screenInfo, scrollRect2, TargetPoint);
             try
             {
-                FillRectangle(screenInfo, { fillWith }, scrollRect3);
+                FillRectangle(screenInfo, { fillWith }, Viewport::FromInclusive(scrollRect3));
             }
             CATCH_LOG();
             ScrollScreen(screenInfo, &scrollRect2, &scrollRect3, TargetPoint);
@@ -814,7 +813,7 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
             outputCells = ReadRectFromScreenBuffer(screenInfo, sourcePoint, Viewport::FromInclusive(targetRect));
             try
             {
-                FillRectangle(screenInfo, { fillWith }, scrollRect3);
+                FillRectangle(screenInfo, { fillWith }, Viewport::FromInclusive(scrollRect3));
             }
             CATCH_LOG();
 
@@ -832,7 +831,7 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
         // Do fill.
         try
         {
-            FillRectangle(screenInfo, { fillWith }, scrollRect3);
+            FillRectangle(screenInfo, { fillWith }, Viewport::FromInclusive(scrollRect3));
         }
         CATCH_LOG();
 

@@ -15,6 +15,7 @@
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="..\utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\inc\IInputEvent.hpp" />
@@ -22,6 +23,7 @@
     <ClInclude Include="..\inc\convert.hpp" />
     <ClInclude Include="..\inc\Utf16Parser.hpp" />
     <ClInclude Include="..\precomp.h" />
+    <ClInclude Include="..\utils.hpp" />
   </ItemGroup>
   <PropertyGroup>
     <ProjectGuid>{18D09A24-8240-42D6-8CB6-236EEE820263}</ProjectGuid>

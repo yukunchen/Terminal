@@ -38,6 +38,7 @@ SOURCES= \
     ..\WindowBufferSizeEvent.cpp \
     ..\convert.cpp \
     ..\Utf16Parser.cpp \
+    ..\utils.cpp \
 
 INCLUDES= \
     $(INCLUDES); \

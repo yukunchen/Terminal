@@ -42,6 +42,7 @@ bool prefixPressed = false;
 bool doUnicode = false;
 int lang = TEST_LANG_NONE;
 
+bool g_headless = false;
 bool g_useConpty = false;
 ////////////////////////////////////////////////////////////////////////////////
 // Forward decls
@@ -103,7 +104,7 @@ HANDLE outPipe()
 
 void newConsole()
 {
-    auto con = new VtConsole(ReadCallback, g_useConpty, {lastTerminalWidth, lastTerminalHeight});
+    auto con = new VtConsole(ReadCallback, g_headless, g_useConpty, {lastTerminalWidth, lastTerminalHeight});
     con->spawn();
     consoles.push_back(con);
 }
@@ -519,9 +520,18 @@ int __cdecl wmain(int argc, WCHAR* argv[])
         for (int i = 0; i < argc; ++i)
         {
             std::wstring arg = argv[i];
+            if (arg == std::wstring(L"--headless"))
+            {
+                g_headless = true;
+            }
             if (arg == std::wstring(L"--conpty"))
             {
+                #ifdef EXTERNAL_BUILD
+                printf("Can't use conpty APIs in OpenConsole build. Remove --conpty, or build from the OS repo\n");
+                exit(-1);
+                #else
                 g_useConpty = true;
+                #endif
             }
             else if (arg == std::wstring(L"--debug"))
             {
@@ -543,7 +553,7 @@ int __cdecl wmain(int argc, WCHAR* argv[])
     if (fUseDebug)
     {
         // Create a debug console for writting debugging output to.
-        debug = new VtConsole(DebugReadCallback, false, {80,32});
+        debug = new VtConsole(DebugReadCallback, false, false, {80,32});
         // Echo stdin to stdout, but ignore newlines (so cat doesn't echo the input)
         // debug->spawn(L"ubuntu run tr -d '\n' | cat -sA");
         debug->spawn(L"wsl tr -d '\n' | cat -sA");

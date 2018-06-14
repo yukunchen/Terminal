@@ -49,6 +49,9 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _circled(false),
     _firstPaint(false),
     _skipCursor(false),
+    _pipeBroken(false),
+    _exitResult{ S_OK },
+    _terminalOwner{ nullptr },
     _trace {}
 {
 #ifndef UNIT_TESTING
@@ -80,9 +83,20 @@ HRESULT VtEngine::_Write(_In_reads_(cch) const char* const psz, const size_t cch
         return S_OK;
     }
 #endif
-
-    bool fSuccess = !!WriteFile(_hFile.get(), psz, static_cast<DWORD>(cch), nullptr, nullptr);
-    RETURN_LAST_ERROR_IF_FALSE(fSuccess);
+    if (!_pipeBroken)
+    {
+        bool fSuccess = !!WriteFile(_hFile.get(), psz, static_cast<DWORD>(cch), nullptr, nullptr);
+        if (!fSuccess)
+        {
+            _exitResult = HRESULT_FROM_WIN32(GetLastError());
+            _pipeBroken = true;
+            if (_terminalOwner)
+            {
+                _terminalOwner->CloseOutput();
+            }
+            return _exitResult;
+        }
+    }
 
     return S_OK;
 }
@@ -383,4 +397,9 @@ HRESULT VtEngine::InheritCursor(const COORD coordCursor)
     _lastText = coordCursor;
     _skipCursor = true;
     return S_OK;
+}
+
+void VtEngine::SetTerminalOwner(Microsoft::Console::ITerminalOwner* const terminalOwner)
+{
+    _terminalOwner = terminalOwner;
 }
