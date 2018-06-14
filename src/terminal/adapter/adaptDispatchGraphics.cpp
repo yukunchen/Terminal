@@ -77,35 +77,13 @@ void AdaptDispatch::_SetGraphicsOptionHelper(const GraphicsOptions opt, _Inout_ 
     case GraphicsOptions::Off:
         *pAttr = 0;
         *pAttr |= _wDefaultTextAttributes;
-        // Clear out any stored brightness state.
-        _wBrightnessState = 0;
-
         _fChangedForeground = true;
         _fChangedBackground = true;
         _fChangedMetaAttrs = true;
         break;
+    // MSFT:16398982 - These two are now handled by _SetBoldColorHelper
     // case GraphicsOptions::BoldBright:
-    //     *pAttr |= FOREGROUND_INTENSITY;
-    //     // Store that we should use brightness for any normal (non-bright) sequences
-    //     // This is so that 9x series sequences, which are always bright. don't interfere with setting this state.
-    //     // 3x sequences are ONLY bright if this flag is set, and without this the brightness of a 9x could bleed into a 3x.
-    //     _wBrightnessState |= FOREGROUND_INTENSITY;
-
-    //     // MSFT:16398982 - Only actually update our colors if we're currently
-    //     //      doing legacy colors in the foreground. Bolding shouldn't
-    //     //      override an RGB foreground. However, we should regardless
-    //     //      remember that we're bold, so if a new legacy fg comes through
-    //     //      after this, it wil be bolded.
-    //     if (!_fLastForegroundWasRgb)
-    //     {
-    //         _fChangedForeground = true;
-    //     }
-    //     break;
     // case GraphicsOptions::UnBold:
-    //     ClearFlag(*pAttr, FOREGROUND_INTENSITY);
-    //     ClearFlag(_wBrightnessState, FOREGROUND_INTENSITY);
-    //     _fChangedForeground = true;
-    //     break;
     case GraphicsOptions::Negative:
         *pAttr |= COMMON_LVB_REVERSE_VIDEO;
         _fChangedMetaAttrs = true;
@@ -289,8 +267,6 @@ void AdaptDispatch::_SetGraphicsOptionHelper(const GraphicsOptions opt, _Inout_ 
         _fChangedBackground = true;
         break;
     }
-    // Apply the stored brightness state
-    // *pAttr |= _wBrightnessState;
 }
 
 // Routine Description:
@@ -367,9 +343,6 @@ bool AdaptDispatch::_SetRgbColorsHelper(_In_reads_(cOptions) const GraphicsOptio
             *prgbColor = RGB(red, green, blue);
 
             fSuccess = !!_pConApi->SetConsoleRGBTextAttribute(*prgbColor, *pfIsForeground);
-            // If we succeeded, update our internal tracking if the fg/bg are rgb
-            _fLastForegroundWasRgb = (fSuccess && *pfIsForeground) ? true : _fLastForegroundWasRgb;
-            _fLastBackgroundWasRgb = (fSuccess && !*pfIsForeground) ? true : _fLastBackgroundWasRgb;
         }
         else if (typeOpt == GraphicsOptions::Xterm256Index && cOptions >= 3)
         {
@@ -379,12 +352,6 @@ bool AdaptDispatch::_SetRgbColorsHelper(_In_reads_(cOptions) const GraphicsOptio
                 unsigned int tableIndex = rgOptions[2];
 
                 fSuccess = !!_pConApi->SetConsoleXtermTextAttribute(tableIndex, *pfIsForeground);
-
-                // If we succeeded, update our internal tracking if the fg/bg are rgb
-                //      if the index  was a legacy index, it's not RGB anymore.
-                _fLastForegroundWasRgb = (fSuccess && *pfIsForeground) ? (tableIndex >= COLOR_TABLE_SIZE) : _fLastForegroundWasRgb;
-                _fLastBackgroundWasRgb = (fSuccess && !*pfIsForeground) ? (tableIndex >= COLOR_TABLE_SIZE) : _fLastBackgroundWasRgb;
-
             }
         }
     }
@@ -394,14 +361,6 @@ bool AdaptDispatch::_SetRgbColorsHelper(_In_reads_(cOptions) const GraphicsOptio
 bool AdaptDispatch::_SetBoldColorHelper(const GraphicsOptions option)
 {
     const bool bold = (option == GraphicsOptions::BoldBright);
-    if (bold)
-    {
-        SetFlag(_wBrightnessState, FOREGROUND_INTENSITY);
-    }
-    else
-    {
-        ClearFlag(_wBrightnessState, FOREGROUND_INTENSITY);
-    }
     return !!_pConApi->PrivateBoldText(bold);
 }
 
@@ -449,9 +408,6 @@ bool AdaptDispatch::SetGraphicsRendition(_In_reads_(cOptions) const GraphicsOpti
             {
                 _SetGraphicsOptionHelper(opt, &attr);
                 fSuccess = !!_pConApi->PrivateSetLegacyAttributes(attr, _fChangedForeground, _fChangedBackground, _fChangedMetaAttrs);
-                // Update our internal tracking of whether the fg/bg are rgb or legacy.
-                _fLastForegroundWasRgb = (_fChangedForeground && fSuccess) ? false : _fLastForegroundWasRgb;
-                _fLastBackgroundWasRgb = (_fChangedBackground && fSuccess) ? false : _fLastBackgroundWasRgb;
 
                 // Make sure we un-bold
                 if (fSuccess && opt == GraphicsOptions::Off)

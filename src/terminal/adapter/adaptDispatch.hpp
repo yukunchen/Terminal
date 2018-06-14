@@ -157,7 +157,6 @@ namespace Microsoft::Console::VirtualTerminal
 
         WORD _wDefaultTextAttributes;
         COORD _coordSavedCursor;
-        WORD _wBrightnessState;
         SMALL_RECT _srScrollMargins;
 
         bool _fIsSetColumnsEnabled;
@@ -165,8 +164,6 @@ namespace Microsoft::Console::VirtualTerminal
         bool _fChangedForeground;
         bool _fChangedBackground;
         bool _fChangedMetaAttrs;
-        bool _fLastForegroundWasRgb;
-        bool _fLastBackgroundWasRgb;
 
         bool _SetRgbColorsHelper(_In_reads_(cOptions) const GraphicsOptions* const rgOptions,
                                  const size_t cOptions,
