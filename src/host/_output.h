@@ -50,7 +50,7 @@ size_t FillOutputA(SCREEN_INFORMATION& screenInfo,
 
 void FillRectangle(SCREEN_INFORMATION& screenInfo,
                    const OutputCell& cell,
-                   const SMALL_RECT rect);
+                   const Microsoft::Console::Types::Viewport rect);
 
 size_t WriteOutputAttributes(SCREEN_INFORMATION& screenInfo,
                              const std::vector<WORD>& attrs,
