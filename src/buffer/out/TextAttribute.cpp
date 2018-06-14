@@ -15,7 +15,8 @@
 
 WORD TextAttribute::GetLegacyAttributes() const noexcept
 {
-    return _wAttrLegacy;
+    return (_wAttrLegacy | (_isBold ? FOREGROUND_INTENSITY : 0));
+    // return (_wAttrLegacy);
 }
 
 bool TextAttribute::IsLegacy() const noexcept
@@ -29,7 +30,7 @@ bool TextAttribute::IsLegacy() const noexcept
 // - color that should be displayed as the foreground color
 COLORREF TextAttribute::CalculateRgbForeground() const
 {
-    return _IsReverseVideo() ? GetRgbBackground() : GetRgbForeground();
+    return _IsReverseVideo() ? GetRgbBackground() : GetRgbForeground(true);
 }
 
 // Routine Description:
@@ -40,7 +41,7 @@ COLORREF TextAttribute::CalculateRgbForeground() const
 // - color that should be displayed as the background color
 COLORREF TextAttribute::CalculateRgbBackground() const
 {
-    return _IsReverseVideo() ? GetRgbForeground() : GetRgbBackground();
+    return _IsReverseVideo() ? GetRgbForeground(true) : GetRgbBackground();
 }
 
 // Routine Description:
@@ -50,7 +51,7 @@ COLORREF TextAttribute::CalculateRgbBackground() const
 // - None
 // Return Value:
 // - color that is stored as the foreground color
-COLORREF TextAttribute::GetRgbForeground() const
+COLORREF TextAttribute::GetRgbForeground(const bool useBoldness) const
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     COLORREF rgbColor{ 0 };
@@ -60,7 +61,12 @@ COLORREF TextAttribute::GetRgbForeground() const
     }
     else
     {
-        const byte iColorTableIndex = LOBYTE(_wAttrLegacy) & 0x0F;
+        // If we use the GetRgbForeground value here, then when we're creating a new Rgb attr using this as the base, we'll use the brightened attr for the new value, not the original unbrightened value.
+        // if we use the wAttrLegaccy here, then when callers want to get the real RGB value of the attr (with CalCulateRbgForeground, for ex in the renderer), we won't apply the boldness to the returned value.
+        // const byte iColorTableIndex = (LOBYTE(GetLegacyAttributes()) & 0x0F);
+        // const byte iColorTableIndex = (LOBYTE(GetLegacyAttributes() | _wAttrLegacy? FOREGROUND_INTENSITY : 0) & 0x0F);
+        // const byte iColorTableIndex = (LOBYTE(_wAttrLegacy) & 0x0F);
+        const byte iColorTableIndex = (LOBYTE(useBoldness? GetLegacyAttributes() : _wAttrLegacy) & 0x0F);
 
         FAIL_FAST_IF_FALSE(iColorTableIndex >= 0);
         FAIL_FAST_IF_FALSE(iColorTableIndex < gci.GetColorTableSize());
@@ -125,7 +131,8 @@ void TextAttribute::SetBackground(const COLORREF rgbBackground)
     _rgbBackground = rgbBackground;
     if (!_fUseRgbColor)
     {
-        _rgbForeground = GetRgbForeground();
+        // _wAttrLegacy = _wAttrLegacy | (_isBold ? FOREGROUND_INTENSITY : 0);
+        _rgbForeground = GetRgbForeground(true);
     }
     _fUseRgbColor = true;
 }
@@ -141,6 +148,12 @@ void TextAttribute::SetColor(const COLORREF rgbColor, const bool fIsForeground)
         SetBackground(rgbColor);
     }
 }
+
+bool TextAttribute::IsBold() const noexcept
+{
+    return _isBold;
+}
+
 
 bool TextAttribute::_IsReverseVideo() const noexcept
 {
@@ -185,4 +198,50 @@ void TextAttribute::SetLeftVerticalDisplayed(const bool isDisplayed) noexcept
 void TextAttribute::SetRightVerticalDisplayed(const bool isDisplayed) noexcept
 {
     UpdateFlag(_wAttrLegacy, COMMON_LVB_GRID_RVERTICAL, isDisplayed);
+}
+
+void TextAttribute::Embolden() noexcept
+{
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    if (!_isBold && _fUseRgbColor)
+    {
+        // If we're an RGB attr, check if our foreground is one of the colors
+        //      from the dark portion of the color table.
+        // If we are, the recalculate our rgb foreground, using the bright
+        //      version of that color instead.
+        const auto table = gsl::make_span(gci.GetColorTable(), gci.GetColorTableSize());
+        for (size_t i = 0; i < gci.GetColorTableSize()/2; i++)
+        {
+            if (table[i] == _rgbForeground)
+            {
+                _rgbForeground = table[i + FOREGROUND_INTENSITY];
+                break;
+            }
+        }
+    }
+
+    _isBold = true;
+}
+void TextAttribute::Debolden() noexcept
+{
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    if (_isBold && _fUseRgbColor)
+    {
+        // If we're an RGB attr, check if our foreground is one of the colors
+        //      from the bright portion of the color table.
+        // If we are, the recalculate our rgb foreground, using the dark
+        //      version of that color instead.
+        const auto table = gsl::make_span(gci.GetColorTable(), gci.GetColorTableSize());
+        for (size_t i = gci.GetColorTableSize()/2; i < gci.GetColorTableSize(); i++)
+        {
+            if (table[i] == _rgbForeground)
+            {
+                _rgbForeground = table[i - FOREGROUND_INTENSITY];
+                break;
+            }
+        }
+    }
+    _isBold = false;
 }

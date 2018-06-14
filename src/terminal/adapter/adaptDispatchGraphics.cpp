@@ -84,28 +84,28 @@ void AdaptDispatch::_SetGraphicsOptionHelper(const GraphicsOptions opt, _Inout_ 
         _fChangedBackground = true;
         _fChangedMetaAttrs = true;
         break;
-    case GraphicsOptions::BoldBright:
-        *pAttr |= FOREGROUND_INTENSITY;
-        // Store that we should use brightness for any normal (non-bright) sequences
-        // This is so that 9x series sequences, which are always bright. don't interfere with setting this state.
-        // 3x sequences are ONLY bright if this flag is set, and without this the brightness of a 9x could bleed into a 3x.
-        _wBrightnessState |= FOREGROUND_INTENSITY;
+    // case GraphicsOptions::BoldBright:
+    //     *pAttr |= FOREGROUND_INTENSITY;
+    //     // Store that we should use brightness for any normal (non-bright) sequences
+    //     // This is so that 9x series sequences, which are always bright. don't interfere with setting this state.
+    //     // 3x sequences are ONLY bright if this flag is set, and without this the brightness of a 9x could bleed into a 3x.
+    //     _wBrightnessState |= FOREGROUND_INTENSITY;
 
-        // MSFT:16398982 - Only actually update our colors if we're currently
-        //      doing legacy colors in the foreground. Bolding shouldn't
-        //      override an RGB foreground. However, we should regardless
-        //      remember that we're bold, so if a new legacy fg comes through
-        //      after this, it wil be bolded.
-        if (!_fLastForegroundWasRgb)
-        {
-            _fChangedForeground = true;
-        }
-        break;
-    case GraphicsOptions::UnBold:
-        ClearFlag(*pAttr, FOREGROUND_INTENSITY);
-        ClearFlag(_wBrightnessState, FOREGROUND_INTENSITY);
-        _fChangedForeground = true;
-        break;
+    //     // MSFT:16398982 - Only actually update our colors if we're currently
+    //     //      doing legacy colors in the foreground. Bolding shouldn't
+    //     //      override an RGB foreground. However, we should regardless
+    //     //      remember that we're bold, so if a new legacy fg comes through
+    //     //      after this, it wil be bolded.
+    //     if (!_fLastForegroundWasRgb)
+    //     {
+    //         _fChangedForeground = true;
+    //     }
+    //     break;
+    // case GraphicsOptions::UnBold:
+    //     ClearFlag(*pAttr, FOREGROUND_INTENSITY);
+    //     ClearFlag(_wBrightnessState, FOREGROUND_INTENSITY);
+    //     _fChangedForeground = true;
+    //     break;
     case GraphicsOptions::Negative:
         *pAttr |= COMMON_LVB_REVERSE_VIDEO;
         _fChangedMetaAttrs = true;
@@ -290,7 +290,7 @@ void AdaptDispatch::_SetGraphicsOptionHelper(const GraphicsOptions opt, _Inout_ 
         break;
     }
     // Apply the stored brightness state
-    *pAttr |= _wBrightnessState;
+    // *pAttr |= _wBrightnessState;
 }
 
 // Routine Description:
@@ -301,6 +301,16 @@ void AdaptDispatch::_SetGraphicsOptionHelper(const GraphicsOptions opt, _Inout_ 
 bool AdaptDispatch::s_IsRgbColorOption(const GraphicsOptions opt)
 {
     return opt == GraphicsOptions::ForegroundExtended || opt == GraphicsOptions::BackgroundExtended;
+}
+
+// Routine Description:
+// Returns true if the GraphicsOption represents an extended color option.
+//   These are followed by up to 4 more values which compose the entire option.
+// Return Value:
+// - true if the opt is the indicator for an extended color sequence, false otherwise.
+bool AdaptDispatch::s_IsBoldColorOption(const GraphicsOptions opt)
+{
+    return opt == GraphicsOptions::BoldBright || opt == GraphicsOptions::UnBold;
 }
 
 // Routine Description:
@@ -381,6 +391,21 @@ bool AdaptDispatch::_SetRgbColorsHelper(_In_reads_(cOptions) const GraphicsOptio
     return fSuccess;
 }
 
+bool AdaptDispatch::_SetBoldColorHelper(const GraphicsOptions option)
+{
+    const bool bold = (option == GraphicsOptions::BoldBright);
+    if (bold)
+    {
+        SetFlag(_wBrightnessState, FOREGROUND_INTENSITY);
+    }
+    else
+    {
+        ClearFlag(_wBrightnessState, FOREGROUND_INTENSITY);
+    }
+    return !!_pConApi->PrivateBoldText(bold);
+}
+
+
 // Routine Description:
 // - SGR - Modifies the graphical rendering options applied to the next characters written into the buffer.
 //       - Options include colors, invert, underlines, and other "font style" type options.
@@ -404,7 +429,11 @@ bool AdaptDispatch::SetGraphicsRendition(_In_reads_(cOptions) const GraphicsOpti
         for (size_t i = 0; i < cOptions; i++)
         {
             GraphicsOptions opt = rgOptions[i];
-            if (s_IsRgbColorOption(opt))
+            if (s_IsBoldColorOption(opt))
+            {
+                fSuccess = _SetBoldColorHelper(rgOptions[i]);
+            }
+            else if (s_IsRgbColorOption(opt))
             {
                 COLORREF rgbColor;
                 bool fIsForeground = true;

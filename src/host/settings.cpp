@@ -469,7 +469,7 @@ void Settings::ApplyCommandlineArguments(const ConsoleArguments& consoleArgs)
     {
         _dwScreenBufferSize.X = width;
         _dwWindowSize.X = width;
-        
+
         _dwScreenBufferSize.Y = height;
         _dwWindowSize.Y = height;
     }
@@ -992,8 +992,8 @@ WORD Settings::GenerateLegacyAttributes(const TextAttribute attributes) const
     }
     // Get the Line drawing attributes and stash those, we'll need to preserve them.
     const WORD wNonColorAttributes = wLegacyOriginal & (~0xFF);
-    const COLORREF rgbForeground = attributes.GetRgbForeground();
-    const COLORREF rgbBackground = attributes.GetRgbBackground();
+    const COLORREF rgbForeground = attributes.CalculateRgbForeground();
+    const COLORREF rgbBackground = attributes.CalculateRgbBackground();
     const WORD wForegroundIndex = FindNearestTableIndex(rgbForeground);
     const WORD wBackgroundIndex = FindNearestTableIndex(rgbBackground);
     const WORD wCompleteAttr = (wNonColorAttributes) | (wBackgroundIndex << 4) | (wForegroundIndex);

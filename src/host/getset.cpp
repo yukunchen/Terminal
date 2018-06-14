@@ -618,13 +618,13 @@ HRESULT DoSrvScrollConsoleScreenBufferW(SCREEN_INFORMATION& screenInfo,
     CHAR_INFO Fill;
     Fill.Char.UnicodeChar = wchFill;
     Fill.Attributes = attrFill;
-    
+
     try
     {
-        ScrollRegion(screenInfo, 
-                     *pSourceRectangle, 
-                     pTargetClipRectangle == nullptr ? std::nullopt : std::optional<SMALL_RECT>(*pTargetClipRectangle), 
-                     *pTargetOrigin, 
+        ScrollRegion(screenInfo,
+                     *pSourceRectangle,
+                     pTargetClipRectangle == nullptr ? std::nullopt : std::optional<SMALL_RECT>(*pTargetClipRectangle),
+                     *pTargetOrigin,
                      Fill);
     }
     CATCH_RETURN();
@@ -735,7 +735,7 @@ void DoSrvPrivateSetLegacyAttributes(SCREEN_INFORMATION& screenInfo,
 
         if (fForeground)
         {
-            COLORREF rgbColor = gci.GetColorTableEntry(Attribute & FG_ATTRS);
+            COLORREF rgbColor = gci.GetColorTableEntry((Attribute & FG_ATTRS) | (NewAttributes.IsBold() ? FOREGROUND_INTENSITY : 0));
             NewAttributes.SetForeground(rgbColor);
         }
         if (fBackground)
@@ -784,6 +784,22 @@ void DoSrvPrivateSetConsoleRGBTextAttribute(SCREEN_INFORMATION& screenInfo,
     TextAttribute NewAttributes = screenInfo.GetAttributes();
     NewAttributes.SetColor(rgbColor, fIsForeground);
     screenInfo.SetAttributes(NewAttributes);
+}
+
+void DoSrvPrivateBoldText(SCREEN_INFORMATION& screenInfo, const bool bolded)
+{
+    // DebugBreak();
+    auto attrs = screenInfo.GetAttributes();
+    if (bolded)
+    {
+        attrs.Embolden();
+    }
+    else
+    {
+        // DebugBreak();
+        attrs.Debolden();
+    }
+    screenInfo.SetAttributes(attrs);
 }
 
 [[nodiscard]]

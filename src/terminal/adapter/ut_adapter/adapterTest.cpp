@@ -326,6 +326,21 @@ public:
         return _fSetConsoleRGBTextAttributeResult;
     }
 
+    BOOL PrivateBoldText(const bool /*isBold*/)
+    {
+        Log::Comment(L"PrivateBoldText MOCK called...");
+        // if (_fSetConsoleRGBTextAttributeResult)
+        // {
+        //     VERIFY_ARE_EQUAL(_fExpectedIsForeground, fIsForeground);
+        //     _fIsForeground = fIsForeground;
+        //     VERIFY_ARE_EQUAL(_ExpectedColor, rgbColor);
+        //     _rgbColor = rgbColor;
+        //     _fUsingRgbColor = true;
+        // }
+        // TODO
+        return TRUE;
+    }
+
     BOOL WriteConsoleInputW(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
                                     _Out_ size_t& eventsWritten)
     {

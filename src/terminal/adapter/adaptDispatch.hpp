@@ -169,12 +169,16 @@ namespace Microsoft::Console::VirtualTerminal
         bool _fLastBackgroundWasRgb;
 
         bool _SetRgbColorsHelper(_In_reads_(cOptions) const GraphicsOptions* const rgOptions,
-                                    const size_t cOptions,
-                                    _Out_ COLORREF* const prgbColor,
-                                    _Out_ bool* const pfIsForeground,
-                                    _Out_ size_t* const pcOptionsConsumed);
+                                 const size_t cOptions,
+                                 _Out_ COLORREF* const prgbColor,
+                                 _Out_ bool* const pfIsForeground,
+                                 _Out_ size_t* const pcOptionsConsumed);
+
+        bool _SetBoldColorHelper(const GraphicsOptions option);
+
         static bool s_IsXtermColorOption(const GraphicsOptions opt);
         static bool s_IsRgbColorOption(const GraphicsOptions opt);
+        static bool s_IsBoldColorOption(const GraphicsOptions opt);
 
     };
 }

@@ -47,6 +47,8 @@ namespace Microsoft::Console::VirtualTerminal
         virtual BOOL SetConsoleXtermTextAttribute(const int iXtermTableEntry,
                                                   const bool fIsForeground) = 0;
         virtual BOOL SetConsoleRGBTextAttribute(const COLORREF rgbColor, const bool fIsForeground) = 0;
+        virtual BOOL PrivateBoldText(const bool bolded) = 0;
+
         virtual BOOL WriteConsoleInputW(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
                                         _Out_ size_t& eventsWritten) = 0;
         virtual BOOL ScrollConsoleScreenBufferW(const SMALL_RECT* pScrollRectangle,
