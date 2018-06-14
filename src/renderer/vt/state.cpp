@@ -49,7 +49,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _circled(false),
     _firstPaint(false),
     _skipCursor(false),
-    _trace(Microsoft::Console::VirtualTerminal::RenderTracing())
+    _trace {}
 {
 #ifndef UNIT_TESTING
     // When unit testing, we can instantiate a VtEngine without a pipe.
