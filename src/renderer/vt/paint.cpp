@@ -24,6 +24,11 @@ using namespace Microsoft::Console::Types;
 [[nodiscard]]
 HRESULT VtEngine::StartPaint()
 {
+    if (_pipeBroken)
+    {
+        return S_FALSE;
+    }
+
     // If there's nothing to do, quick return
     bool somethingToDo = _fInvalidRectUsed ||
         (_scrollDelta.X != 0 || _scrollDelta.Y != 0) ||

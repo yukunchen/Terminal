@@ -33,6 +33,7 @@ public:
 
     bool IsUsingVtPipe() const;
     bool HasVtHandles() const;
+    bool InConptyMode() const noexcept;
     bool IsHeadless() const;
     bool ShouldCreateServerHandle() const;
 
@@ -143,7 +144,6 @@ private:
     static HRESULT s_ParseHandleArg(const std::wstring& handleAsText,
                                     _Inout_ DWORD& handleAsVal);
 
-    static bool s_IsValidHandle(const HANDLE handle);
 
 #ifdef UNIT_TESTING
     friend class ConsoleArgumentsTests;

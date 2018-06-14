@@ -6,7 +6,9 @@
 
 #include "precomp.h"
 #include "ConsoleArguments.hpp"
+#include "../types/inc/utils.hpp"
 #include <shellapi.h>
+using namespace Microsoft::Console::Utils;
 
 const std::wstring ConsoleArguments::VT_MODE_ARG = L"--vtmode";
 const std::wstring ConsoleArguments::HEADLESS_ARG = L"--headless";
@@ -453,7 +455,7 @@ HRESULT ConsoleArguments::ParseCommandline()
 // - True or false (see description)
 bool ConsoleArguments::HasVtHandles() const
 {
-    return s_IsValidHandle(_vtInHandle) && s_IsValidHandle(_vtOutHandle);
+    return IsValidHandle(_vtInHandle) && IsValidHandle(_vtOutHandle);
 }
 
 // Routine Description:
@@ -464,7 +466,22 @@ bool ConsoleArguments::HasVtHandles() const
 // - True or false (see description)
 bool ConsoleArguments::HasSignalHandle() const
 {
-    return s_IsValidHandle(GetSignalHandle());
+    return IsValidHandle(GetSignalHandle());
+}
+
+// Routine Description:
+// - Returns true if we already have at least one handle for conpty streams.
+// Arguments:
+// - <none> - uses internal state
+// Return Value:
+// - True or false (see description)
+bool ConsoleArguments::InConptyMode() const noexcept
+{
+    // If we only have a signal handle, then that's fine, they probably called
+    //      CreatePseudoConsole with neither handle.
+    // If we only have one of the other handles, that's fine they're still
+    //      invoking us by passing in pipes, so they know what they're doing.
+    return IsValidHandle(_vtInHandle) || IsValidHandle(_vtOutHandle) || HasSignalHandle();
 }
 
 bool ConsoleArguments::IsHeadless() const
@@ -520,17 +537,6 @@ short ConsoleArguments::GetWidth() const
 short ConsoleArguments::GetHeight() const
 {
     return _height;
-}
-
-// Routine Description:
-// - Shorthand check if a handle value is null or invalid.
-// Arguments:
-// - Handle
-// Return Value:
-// - True if non zero and not set to invalid magic value. False otherwise.
-bool ConsoleArguments::s_IsValidHandle(const HANDLE handle)
-{
-    return handle != 0 && handle != INVALID_HANDLE_VALUE;
 }
 
 bool ConsoleArguments::GetInheritCursor() const
