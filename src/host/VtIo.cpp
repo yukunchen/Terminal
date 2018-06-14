@@ -191,7 +191,7 @@ HRESULT VtIo::_Initialize(const HANDLE InHandle, const HANDLE OutHandle, const s
             }
             if (_pVtRenderEngine)
             {
-                _pVtRenderEngine->SetTerminalOwner(reinterpret_cast<ITerminalOwner* const>(this));
+                _pVtRenderEngine->SetTerminalOwner(this);
             }
         }
     }

@@ -13,5 +13,5 @@ Author(s):
 
 namespace Microsoft::Console::Utils
 {
-    bool IsValidHandle(const HANDLE handle);
+    bool IsValidHandle(const HANDLE handle) noexcept;
 }

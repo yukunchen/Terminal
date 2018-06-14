@@ -14,7 +14,7 @@ using namespace Microsoft::Console;
 // - Handle
 // Return Value:
 // - True if non zero and not set to invalid magic value. False otherwise.
-bool Utils::IsValidHandle(const HANDLE handle)
+bool Utils::IsValidHandle(const HANDLE handle) noexcept
 {
     return handle != 0 && handle != INVALID_HANDLE_VALUE;
 }

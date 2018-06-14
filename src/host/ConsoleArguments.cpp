@@ -475,7 +475,7 @@ bool ConsoleArguments::HasSignalHandle() const
 // - <none> - uses internal state
 // Return Value:
 // - True or false (see description)
-bool ConsoleArguments::InConptyMode() const
+bool ConsoleArguments::InConptyMode() const noexcept
 {
     // If we only have a signal handle, then that's fine, they probably called
     //      CreatePseudoConsole with neither handle.

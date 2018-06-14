@@ -33,7 +33,7 @@ public:
 
     bool IsUsingVtPipe() const;
     bool HasVtHandles() const;
-    bool InConptyMode() const;
+    bool InConptyMode() const noexcept;
     bool IsHeadless() const;
     bool ShouldCreateServerHandle() const;
 
