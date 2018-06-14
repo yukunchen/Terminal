@@ -62,7 +62,7 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
 [[nodiscard]]
 HRESULT VtInputThread::_HandleRunInput(_In_reads_(cch) const byte* const charBuffer, const int cch)
 {
-    // Make sure to call the GLOBAL Lock/Unloc, not the gci's lock/unlock.
+    // Make sure to call the GLOBAL Lock/Unlock, not the gci's lock/unlock.
     // Only the global unlock attempts to dispatch ctrl events. If you use the
     //      gci's unlock, when you press C-c, it won't be dispatched until the
     //      next console API call. For something like `powershell sleep 60`,
