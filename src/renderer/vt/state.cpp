@@ -396,6 +396,8 @@ HRESULT VtEngine::InheritCursor(const COORD coordCursor)
     _virtualTop = coordCursor.Y;
     _lastText = coordCursor;
     _skipCursor = true;
+    // Prevent us from clearing the entire viewport on the first paint
+    _firstPaint = false;
     return S_OK;
 }
 

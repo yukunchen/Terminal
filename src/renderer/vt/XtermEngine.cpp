@@ -47,9 +47,22 @@ HRESULT XtermEngine::StartPaint()
     {
         if (_firstPaint)
         {
+            hr = _ClearScreen();
             // As of MSFT:15813316 we are no longer clearing on the first paint.
             _firstPaint = false;
         }
+        else
+        {
+            bool allIsInvalid = Viewport::FromInclusive(GetDirtyRectInChars()) == _lastViewport;
+            if (allIsInvalid)
+            {
+                hr = _ClearScreen();
+                _clearedAllThisFrame = true;
+            }
+        }
+
+        RETURN_IF_FAILED(hr);
+
         if (!_quickReturn)
         {
             if (!_WillWriteSingleChar())
