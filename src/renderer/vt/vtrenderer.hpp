@@ -19,6 +19,7 @@ Author(s):
 #include "../../inc/ITerminalOutputConnection.hpp"
 #include "../../inc/ITerminalOwner.hpp"
 #include "../../types/inc/Viewport.hpp"
+#include "tracing.hpp"
 #include <string>
 #include <functional>
 
@@ -163,6 +164,8 @@ namespace Microsoft::Console::Render
         bool _pipeBroken;
         HRESULT _exitResult;
         Microsoft::Console::ITerminalOwner* _terminalOwner;
+
+        Microsoft::Console::VirtualTerminal::RenderTracing _trace;
 
         [[nodiscard]]
         HRESULT _Write(_In_reads_(cch) const char* const psz, const size_t cch);
