@@ -60,7 +60,7 @@ COLORREF TextAttribute::GetRgbForeground() const
     }
     else
     {
-        const byte iColorTableIndex = (LOBYTE(GetLegacyAttributes()) & 0x0F);
+        const byte iColorTableIndex = (LOBYTE(GetLegacyAttributes()) & FG_ATTRS);
 
         FAIL_FAST_IF_FALSE(iColorTableIndex >= 0);
         FAIL_FAST_IF_FALSE(iColorTableIndex < gci.GetColorTableSize());
@@ -88,7 +88,7 @@ COLORREF TextAttribute::GetRgbBackground() const
     }
     else
     {
-        const byte iColorTableIndex = (LOBYTE(_wAttrLegacy) & 0xF0) >> 4;
+        const byte iColorTableIndex = (LOBYTE(_wAttrLegacy) & BG_ATTRS) >> 4;
 
         FAIL_FAST_IF_FALSE(iColorTableIndex >= 0);
         FAIL_FAST_IF_FALSE(iColorTableIndex < gci.GetColorTableSize());
@@ -195,47 +195,36 @@ void TextAttribute::SetRightVerticalDisplayed(const bool isDisplayed) noexcept
 
 void TextAttribute::Embolden() noexcept
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-
-    if (!_isBold && _fUseRgbColor)
-    {
-        // If we're an RGB attr, check if our foreground is one of the colors
-        //      from the dark portion of the color table.
-        // If we are, the recalculate our rgb foreground, using the bright
-        //      version of that color instead.
-        const auto table = gsl::make_span(gci.GetColorTable(), gci.GetColorTableSize());
-        for (size_t i = 0; i < gci.GetColorTableSize()/2; i++)
-        {
-            if (table[i] == _rgbForeground)
-            {
-                _rgbForeground = table[i + FOREGROUND_INTENSITY];
-                break;
-            }
-        }
-    }
-
-    _isBold = true;
+    _SetBoldness(true);
 }
 
 void TextAttribute::Debolden() noexcept
 {
+    _SetBoldness(false);
+}
+
+void TextAttribute::_SetBoldness(const bool isBold) noexcept
+{
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-    if (_isBold && _fUseRgbColor)
+    // If we're changing our boldness, and we're an RGB attr, check if our color
+    //      is a darkened/brightened version of a color table entry. If it is,
+    //      then we'll instead use the bright/dark version of that color table
+    //      value as our new RGB color.
+    if ((_isBold != isBold) && _fUseRgbColor)
     {
-        // If we're an RGB attr, check if our foreground is one of the colors
-        //      from the bright portion of the color table.
-        // If we are, the recalculate our rgb foreground, using the dark
-        //      version of that color instead.
         const auto table = gsl::make_span(gci.GetColorTable(), gci.GetColorTableSize());
-        for (size_t i = gci.GetColorTableSize()/2; i < gci.GetColorTableSize(); i++)
+        const size_t start = isBold ? 0 : gci.GetColorTableSize()/2;
+        const size_t end = isBold ? gci.GetColorTableSize()/2 : gci.GetColorTableSize();
+        const auto shift = FOREGROUND_INTENSITY * (isBold ? 1 : -1);
+        for (size_t i = start; i < end; i++)
         {
             if (table[i] == _rgbForeground)
             {
-                _rgbForeground = table[i - FOREGROUND_INTENSITY];
+                _rgbForeground = table[i + shift];
                 break;
             }
         }
     }
-    _isBold = false;
+    _isBold = isBold;
 }

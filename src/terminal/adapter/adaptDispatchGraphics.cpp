@@ -284,7 +284,7 @@ bool AdaptDispatch::s_IsRgbColorOption(const GraphicsOptions opt)
 //   These are followed by up to 4 more values which compose the entire option.
 // Return Value:
 // - true if the opt is the indicator for an extended color sequence, false otherwise.
-bool AdaptDispatch::s_IsBoldColorOption(const GraphicsOptions opt)
+bool AdaptDispatch::s_IsBoldColorOption(const GraphicsOptions opt) noexcept
 {
     return opt == GraphicsOptions::BoldBright || opt == GraphicsOptions::UnBold;
 }

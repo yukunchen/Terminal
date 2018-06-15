@@ -1403,7 +1403,7 @@ void TextBufferTests::TestRgbThenBold()
     const auto foreground = RGB(40, 40, 40);
     const auto background = RGB(168, 153, 132);
 
-    wchar_t* sequence = L"\x1b[38;2;40;40;40m\x1b[48;2;168;153;132mX\x1b[1mX\x1b[m";
+    const wchar_t* const sequence = L"\x1b[38;2;40;40;40m\x1b[48;2;168;153;132mX\x1b[1mX\x1b[m";
     stateMachine->ProcessString(sequence, std::wcslen(sequence));
     const auto x = cursor.GetPosition().X;
     const auto y = cursor.GetPosition().Y;

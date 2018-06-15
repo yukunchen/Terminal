@@ -50,5 +50,5 @@ enum class CursorType : unsigned int
 //      as the highest byte of a valid color is always 0.
 constexpr COLORREF INVALID_COLOR = 0xffffffff;
 
-#define COLOR_TABLE_SIZE (16)
-#define XTERM_COLOR_TABLE_SIZE (256)
+constexpr WORD COLOR_TABLE_SIZE = 16;
+constexpr WORD XTERM_COLOR_TABLE_SIZE = 256;

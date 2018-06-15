@@ -175,7 +175,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         static bool s_IsXtermColorOption(const GraphicsOptions opt);
         static bool s_IsRgbColorOption(const GraphicsOptions opt);
-        static bool s_IsBoldColorOption(const GraphicsOptions opt);
+        static bool s_IsBoldColorOption(const GraphicsOptions opt) noexcept;
 
     };
 }

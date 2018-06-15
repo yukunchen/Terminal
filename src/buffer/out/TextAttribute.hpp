@@ -98,6 +98,8 @@ private:
 
     bool _IsReverseVideo() const noexcept;
 
+    void _SetBoldness(const bool isBold) noexcept;
+
     WORD _wAttrLegacy;
     bool _fUseRgbColor;
     COLORREF _rgbForeground;

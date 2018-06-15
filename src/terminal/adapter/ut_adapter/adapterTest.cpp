@@ -2690,7 +2690,7 @@ public:
 
         Log::Comment(L"Testing graphics 'Foreground Color Green, with brightness'");
         rgOptions[0] = TermDispatch::GraphicsOptions::ForegroundGreen;
-        _pTest->_wExpectedAttribute = FOREGROUND_GREEN/* | FOREGROUND_INTENSITY*/;
+        _pTest->_wExpectedAttribute = FOREGROUND_GREEN;
         _pTest->_fExpectedForeground = true;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
         VERIFY_IS_TRUE(IsFlagSet(_pTest->_wAttribute, FOREGROUND_GREEN));
@@ -2744,8 +2744,6 @@ public:
 
         Log::Comment(L"Enabling brightness");
         rgOptions[0] = TermDispatch::GraphicsOptions::BoldBright;
-        // _pTest->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_INTENSITY;
-        // _pTest->_fExpectedForeground = true;
         _pTest->_fPrivateBoldTextResult = true;
         _pTest->_fExpectedIsBold = true;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
@@ -2760,14 +2758,14 @@ public:
 
         Log::Comment(L"Testing graphics 'Foreground Color Blue, with brightness', brightness of 9x series doesn't affect brightness");
         rgOptions[0] = TermDispatch::GraphicsOptions::ForegroundBlue;
-        _pTest->_wExpectedAttribute = FOREGROUND_BLUE/* | FOREGROUND_INTENSITY*/;
+        _pTest->_wExpectedAttribute = FOREGROUND_BLUE;
         _pTest->_fExpectedForeground = true;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
         VERIFY_IS_TRUE(_pTest->_fIsBold);
 
         Log::Comment(L"Testing graphics 'Foreground Color Green, with brightness'");
         rgOptions[0] = TermDispatch::GraphicsOptions::ForegroundGreen;
-        _pTest->_wExpectedAttribute = FOREGROUND_GREEN/* | FOREGROUND_INTENSITY*/;
+        _pTest->_wExpectedAttribute = FOREGROUND_GREEN;
         _pTest->_fExpectedForeground = true;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
         VERIFY_IS_TRUE(_pTest->_fIsBold);
