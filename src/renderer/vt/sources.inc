@@ -26,6 +26,7 @@ SOURCES = \
     ..\math.cpp \
     ..\paint.cpp \
     ..\state.cpp \
+    ..\tracing.cpp \
     ..\WinTelnetEngine.cpp \
     ..\XtermEngine.cpp \
     ..\Xterm256Engine.cpp \

@@ -51,7 +51,8 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _skipCursor(false),
     _pipeBroken(false),
     _exitResult{ S_OK },
-    _terminalOwner{ nullptr }
+    _terminalOwner{ nullptr },
+    _trace {}
 {
 #ifndef UNIT_TESTING
     // When unit testing, we can instantiate a VtEngine without a pipe.
@@ -74,6 +75,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
 [[nodiscard]]
 HRESULT VtEngine::_Write(_In_reads_(cch) const char* const psz, const size_t cch)
 {
+    _trace.TraceString(std::string_view(psz, cch));
 #ifdef UNIT_TESTING
     if (_usingTestCallback)
     {
