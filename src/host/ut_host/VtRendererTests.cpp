@@ -537,7 +537,7 @@ void VtRendererTest::Xterm256TestCursor()
     Log::Comment(NoThrowString().Format(
         L"Test moving the cursor around. Every sequence should have both params to CUP explicitly."
     ));
-    TestPaintXterm(*engine, [&]()
+    TestPaint(*engine, [&]()
     {
         qExpectedInput.push_back("\x1b[2;2H");
         VERIFY_SUCCEEDED(engine->_MoveCursor({1, 1}));
@@ -599,7 +599,7 @@ void VtRendererTest::Xterm256TestCursor()
 
     });
 
-    TestPaintXterm(*engine, [&]()
+    TestPaint(*engine, [&]()
     {
         Log::Comment(NoThrowString().Format(
             L"Sending the same move across paint calls sends nothing."
@@ -627,7 +627,7 @@ void VtRendererTest::Xterm256TestCursor()
 
     // Note that only PaintBufferLine updates the "Real" cursor position, which
     //  the cursor is moved back to at the end of each paint
-    TestPaintXterm(*engine, [&]()
+    TestPaint(*engine, [&]()
     {
         Log::Comment(NoThrowString().Format(
             L"Sending the same move across paint calls sends nothing."
@@ -825,7 +825,7 @@ void VtRendererTest::XtermTestColors()
     qExpectedInput.push_back("\x1b[40m"); // Background DARK_BLACK
     VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15], g_ColorTable[0], 0, false));
 
-    TestPaintXterm(*engine, [&]()
+    TestPaint(*engine, [&]()
     {
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG----"
@@ -860,7 +860,7 @@ void VtRendererTest::XtermTestColors()
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15], g_ColorTable[0], 0, false));
     });
 
-    TestPaintXterm(*engine, [&]()
+    TestPaint(*engine, [&]()
     {
         Log::Comment(NoThrowString().Format(
             L"Make sure that color setting persists across EndPaint/StartPaint"
@@ -893,7 +893,7 @@ void VtRendererTest::XtermTestCursor()
     Log::Comment(NoThrowString().Format(
         L"Test moving the cursor around. Every sequence should have both params to CUP explicitly."
     ));
-    TestPaintXterm(*engine, [&]()
+    TestPaint(*engine, [&]()
     {
         qExpectedInput.push_back("\x1b[2;2H");
         VERIFY_SUCCEEDED(engine->_MoveCursor({1, 1}));
@@ -955,7 +955,7 @@ void VtRendererTest::XtermTestCursor()
 
     });
 
-    TestPaintXterm(*engine, [&]()
+    TestPaint(*engine, [&]()
     {
         Log::Comment(NoThrowString().Format(
             L"Sending the same move across paint calls sends nothing."
@@ -983,7 +983,7 @@ void VtRendererTest::XtermTestCursor()
 
     // Note that only PaintBufferLine updates the "Real" cursor position, which
     //  the cursor is moved back to at the end of each paint
-    TestPaintXterm(*engine, [&]()
+    TestPaint(*engine, [&]()
     {
         Log::Comment(NoThrowString().Format(
             L"Sending the same move across paint calls sends nothing."
@@ -1237,17 +1237,17 @@ void VtRendererTest::TestWrapping()
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    // Verify the first paint does not emit a clear and go home
+    // Verify the first paint emits a clear and go home
     qExpectedInput.push_back("\x1b[2J");
     qExpectedInput.push_back("\x1b[H");
-    qExpectedInput.push_back("\x1b[?25l");
-    qExpectedInput.push_back("\x1b[?25h");
+    VERIFY_IS_TRUE(engine->_firstPaint);
     TestPaint(*engine, [&]() {
+        VERIFY_IS_FALSE(engine->_firstPaint);
     });
 
     Viewport view = SetUpViewport();
 
-    TestPaintXterm(*engine, [&]()
+    TestPaint(*engine, [&]()
     {
         Log::Comment(NoThrowString().Format(
             L"Painting a line that wrapped, then painting another line, and "
