@@ -12,10 +12,14 @@ if not exist %OPENCON%\bin\%ARCH%\%_LAST_BUILD_CONF%\OpenConsole.exe (
 setlocal
 rem Generate a unique name, so that we can debug multiple revisions of the binary at the same time if needed.
 set rand_val=%random%
-set copy_name=OpenConsole\%rand_val%\OpenConsole.exe
-set copy_propsheet_name=OpenConsole\%rand_val%\console.dll
+set _r=%random%
+set _last_build=%OPENCON%\bin\%ARCH%\%_LAST_BUILD_CONF%
+set copy_dir=OpenConsole\%_r%
 
-(echo f | xcopy /Y %OPENCON%\bin\%ARCH%\%_LAST_BUILD_CONF%\OpenConsole.exe %TEMP%\%copy_name%) > nul
-(echo f | xcopy /Y %OPENCON%\bin\%ARCH%\%_LAST_BUILD_CONF%\console.dll %TEMP%\%copy_propsheet_name%) > nul
+(echo f | xcopy /Y %_last_build%\OpenConsole.exe %TEMP%\%copy_dir%\OpenConsole.exe) > nul
+(echo f | xcopy /Y %_last_build%\OpenConsole.exe %TEMP%\%copy_dir%\conhost.exe) > nul
+(echo f | xcopy /Y %_last_build%\VtPipeTerm.exe %TEMP%\%copy_dir%\VtPipeTerm.exe) > nul
+(echo f | xcopy /Y %_last_build%\Nihilist.exe %TEMP%\%copy_dir%\Nihilist.exe) > nul
+(echo f | xcopy /Y %_last_build%\console.dll %TEMP%\%copy_dir%\console.dll) > nul
 
-start %TEMP%\%copy_name% %*
+start %TEMP%\%copy_dir%\OpenConsole.exe %*
