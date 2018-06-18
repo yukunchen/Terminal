@@ -51,7 +51,7 @@ HRESULT XtermEngine::StartPaint()
         //      the screen on the first paint, just to make sure that the
         //      terminal's state is consistent with what we'll be rendering.
         RETURN_IF_FAILED(_ClearScreen());
-        RETURN_IF_FAILED(_CursorHome());
+        _clearedAllThisFrame = true;
         _firstPaint = false;
     }
     else

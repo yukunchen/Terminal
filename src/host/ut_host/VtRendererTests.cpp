@@ -253,7 +253,6 @@ void VtRendererTest::Xterm256TestInvalidate()
 
     // Verify the first paint emits a clear and go home
     qExpectedInput.push_back("\x1b[2J");
-    qExpectedInput.push_back("\x1b[H");
     VERIFY_IS_TRUE(engine->_firstPaint);
     TestPaint(*engine, [&]() {
         VERIFY_IS_FALSE(engine->_firstPaint);
@@ -412,7 +411,6 @@ void VtRendererTest::Xterm256TestColors()
 
     // Verify the first paint emits a clear and go home
     qExpectedInput.push_back("\x1b[2J");
-    qExpectedInput.push_back("\x1b[H");
     VERIFY_IS_TRUE(engine->_firstPaint);
     TestPaint(*engine, [&]() {
         VERIFY_IS_FALSE(engine->_firstPaint);
@@ -526,7 +524,6 @@ void VtRendererTest::Xterm256TestCursor()
 
     // Verify the first paint emits a clear and go home
     qExpectedInput.push_back("\x1b[2J");
-    qExpectedInput.push_back("\x1b[H");
     VERIFY_IS_TRUE(engine->_firstPaint);
     TestPaint(*engine, [&]() {
         VERIFY_IS_FALSE(engine->_firstPaint);
@@ -647,7 +644,6 @@ void VtRendererTest::XtermTestInvalidate()
 
     // Verify the first paint emits a clear and go home
     qExpectedInput.push_back("\x1b[2J");
-    qExpectedInput.push_back("\x1b[H");
     VERIFY_IS_TRUE(engine->_firstPaint);
     TestPaint(*engine, [&]() {
         VERIFY_IS_FALSE(engine->_firstPaint);
@@ -806,7 +802,6 @@ void VtRendererTest::XtermTestColors()
 
     // Verify the first paint emits a clear and go home
     qExpectedInput.push_back("\x1b[2J");
-    qExpectedInput.push_back("\x1b[H");
     VERIFY_IS_TRUE(engine->_firstPaint);
     TestPaint(*engine, [&]() {
         VERIFY_IS_FALSE(engine->_firstPaint);
@@ -882,7 +877,6 @@ void VtRendererTest::XtermTestCursor()
 
     // Verify the first paint emits a clear and go home
     qExpectedInput.push_back("\x1b[2J");
-    qExpectedInput.push_back("\x1b[H");
     VERIFY_IS_TRUE(engine->_firstPaint);
     TestPaint(*engine, [&]() {
         VERIFY_IS_FALSE(engine->_firstPaint);
@@ -1239,7 +1233,6 @@ void VtRendererTest::TestWrapping()
 
     // Verify the first paint emits a clear and go home
     qExpectedInput.push_back("\x1b[2J");
-    qExpectedInput.push_back("\x1b[H");
     VERIFY_IS_TRUE(engine->_firstPaint);
     TestPaint(*engine, [&]() {
         VERIFY_IS_FALSE(engine->_firstPaint);
