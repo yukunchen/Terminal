@@ -147,7 +147,6 @@ bool TextAttribute::IsBold() const noexcept
     return _isBold;
 }
 
-
 bool TextAttribute::_IsReverseVideo() const noexcept
 {
     return IsFlagSet(_wAttrLegacy, COMMON_LVB_REVERSE_VIDEO);

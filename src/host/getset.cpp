@@ -788,7 +788,6 @@ void DoSrvPrivateSetConsoleRGBTextAttribute(SCREEN_INFORMATION& screenInfo,
 
 void DoSrvPrivateBoldText(SCREEN_INFORMATION& screenInfo, const bool bolded)
 {
-    // DebugBreak();
     auto attrs = screenInfo.GetAttributes();
     if (bolded)
     {
@@ -796,7 +795,6 @@ void DoSrvPrivateBoldText(SCREEN_INFORMATION& screenInfo, const bool bolded)
     }
     else
     {
-        // DebugBreak();
         attrs.Debolden();
     }
     screenInfo.SetAttributes(attrs);

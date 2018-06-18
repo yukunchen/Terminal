@@ -364,7 +364,6 @@ bool AdaptDispatch::_SetBoldColorHelper(const GraphicsOptions option)
     return !!_pConApi->PrivateBoldText(bold);
 }
 
-
 // Routine Description:
 // - SGR - Modifies the graphical rendering options applied to the next characters written into the buffer.
 //       - Options include colors, invert, underlines, and other "font style" type options.
