@@ -777,7 +777,7 @@ NTSTATUS CommandListPopup(_In_ COOKED_READ_DATA* const CookedReadData)
             {
                 Popup->BottomIndex = (SHORT)(CommandHistory->GetNumberOfCommands() - 1);
             }
-
+            Popup->CurrentCommand = CurrentCommand;
             Popup->Draw();
 
             return ProcessCommandListInput(CookedReadData);
