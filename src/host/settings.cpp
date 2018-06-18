@@ -469,7 +469,7 @@ void Settings::ApplyCommandlineArguments(const ConsoleArguments& consoleArgs)
     {
         _dwScreenBufferSize.X = width;
         _dwWindowSize.X = width;
-        
+
         _dwScreenBufferSize.Y = height;
         _dwWindowSize.Y = height;
     }
@@ -507,8 +507,51 @@ void Settings::InitFromStateInfo(_In_ PCONSOLE_STATE_INFO pStateInfo)
     _fFilterOnPaste = pStateInfo->fFilterOnPaste;
     _fCtrlKeyShortcutsDisabled = pStateInfo->fCtrlKeyShortcutsDisabled;
     _bLineSelection = pStateInfo->fLineSelection;
-    _bWindowAlpha = pStateInfo->bWindowTransparency;
+    _CursorColor = pStateInfo->CursorColor;
+    _CursorType = static_cast<CursorType>(pStateInfo->CursorType);
+    _fInterceptCopyPaste = pStateInfo->InterceptCopyPaste;
 }
+
+// Method Description:
+// - Create a CONSOLE_STATE_INFO with the current state of this settings structure.
+// Arguments:
+// - <none>
+// Return Value:
+// - a CONSOLE_STATE_INFO with the current state of this settings structure.
+CONSOLE_STATE_INFO Settings::CreateConsoleStateInfo() const
+{
+    CONSOLE_STATE_INFO csi = {0};
+    csi.ScreenAttributes = _wFillAttribute;
+    csi.PopupAttributes = _wPopupFillAttribute;
+    csi.ScreenBufferSize = _dwScreenBufferSize;
+    csi.WindowSize = _dwWindowSize;
+    csi.WindowPosX = (SHORT)_dwWindowOrigin.X;
+    csi.WindowPosY = (SHORT)_dwWindowOrigin.Y;
+    csi.FontSize = _dwFontSize;
+    csi.FontFamily = _uFontFamily;
+    csi.FontWeight = _uFontWeight;
+    StringCchCopyW(csi.FaceName, ARRAYSIZE(_FaceName), _FaceName);
+    csi.CursorSize = _uCursorSize;
+    csi.FullScreen = _bFullScreen;
+    csi.QuickEdit = _bQuickEdit;
+    csi.AutoPosition = _bAutoPosition;
+    csi.InsertMode = _bInsertMode;
+    csi.HistoryNoDup = _bHistoryNoDup;
+    csi.HistoryBufferSize = _uHistoryBufferSize;
+    csi.NumberOfHistoryBuffers = _uNumberOfHistoryBuffers;
+    memmove(csi.ColorTable, _ColorTable, sizeof(_ColorTable));
+    csi.CodePage = _uCodePage;
+    csi.fWrapText = !!_bWrapText;
+    csi.fFilterOnPaste = _fFilterOnPaste;
+    csi.fCtrlKeyShortcutsDisabled = _fCtrlKeyShortcutsDisabled;
+    csi.fLineSelection = _bLineSelection;
+    csi.bWindowTransparency = _bWindowAlpha;
+    csi.CursorColor = _CursorColor;
+    csi.CursorType = static_cast<unsigned int>(_CursorType);
+    csi.InterceptCopyPaste = _fInterceptCopyPaste;
+    return csi;
+}
+
 
 void Settings::Validate()
 {

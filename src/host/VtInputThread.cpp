@@ -16,6 +16,7 @@
 #include "../types/inc/convert.hpp"
 #include "server.h"
 #include "output.h"
+#include "handle.h"
 
 using namespace Microsoft::Console;
 
@@ -30,7 +31,9 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
     _hFile{ std::move(hPipe) },
     _hThread{},
     _utf8Parser{ CP_UTF8 },
-    _dwThreadId{ 0 }
+    _dwThreadId{ 0 },
+    _exitRequested{ false },
+    _exitResult{ S_OK }
 {
     THROW_IF_HANDLE_INVALID(_hFile.get());
 
@@ -61,9 +64,13 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
 [[nodiscard]]
 HRESULT VtInputThread::_HandleRunInput(_In_reads_(cch) const byte* const charBuffer, const int cch)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.LockConsole();
-    auto Unlock = wil::ScopeExit([&] { gci.UnlockConsole(); });
+    // Make sure to call the GLOBAL Lock/Unlock, not the gci's lock/unlock.
+    // Only the global unlock attempts to dispatch ctrl events. If you use the
+    //      gci's unlock, when you press C-c, it won't be dispatched until the
+    //      next console API call. For something like `powershell sleep 60`,
+    //      that won't happen for 60s
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
     try
     {
@@ -111,26 +118,23 @@ void VtInputThread::DoReadInput(const bool throwOnFail)
     //       we want to gracefully close in.
     if (!fSuccess)
     {
-        DWORD lastError = GetLastError();
-        if (lastError == ERROR_BROKEN_PIPE)
-        {
-            // This won't return. We'll be terminated.
-            CloseConsoleProcessState();
-        }
-        else
-        {
-            THROW_WIN32(lastError);
-        }
+        _exitRequested = true;
+        _exitResult = HRESULT_FROM_WIN32(GetLastError());
+        return;
     }
 
     HRESULT hr = _HandleRunInput(buffer, dwRead);
-    if (throwOnFail)
+    if (FAILED(hr))
     {
-        THROW_IF_FAILED(hr);
-    }
-    else
-    {
-        LOG_IF_FAILED(hr);
+        if (throwOnFail)
+        {
+            _exitResult = hr;
+            _exitRequested = true;
+        }
+        else
+        {
+            LOG_IF_FAILED(hr);
+        }
     }
 }
 
@@ -139,14 +143,17 @@ void VtInputThread::DoReadInput(const bool throwOnFail)
 //      passes it to _HandleRunInput to be processed by the
 //      InputStateMachineEngine.
 // Return Value:
-// - Does not return.
+// - Any error from reading the pipe or writing to the input buffer that might
+//      have caused us to exit.
 DWORD VtInputThread::_InputThread()
 {
-    while (true)
+    while (!_exitRequested)
     {
         DoReadInput(true);
     }
-    // Above loop will never return.
+    ServiceLocator::LocateGlobals().getConsoleInformation().GetVtIo()->CloseInput();
+
+    return _exitResult;
 }
 
 // Method Description:
