@@ -165,7 +165,7 @@ HRESULT CommandHistory::Add(const std::wstring_view newCommand,
 
         if (LastDisplayed == -1 ||
             _commands[LastDisplayed].size() != newCommand.size() ||
-            std::equal(_commands[LastDisplayed].cbegin(), _commands[LastDisplayed].cbegin() + newCommand.size(),
+            !std::equal(_commands[LastDisplayed].cbegin(), _commands[LastDisplayed].cbegin() + newCommand.size(),
                        newCommand.cbegin(), newCommand.cend()))
         {
             _Reset();
@@ -559,8 +559,9 @@ bool CommandHistory::FindMatchingCommand(const std::wstring_view givenCommand,
         return true;
     }
 
-    for (const auto& storedCommand : _commands)
+    for (size_t i = 0; i < _commands.size(); i++)
     {
+        const auto& storedCommand = _commands[indexFound];
         if ((IsFlagClear(options, MatchOptions::ExactMatch) && (givenCommand.size() <= storedCommand.size())) || (givenCommand.size() == storedCommand.size()))
         {
             if (std::equal(storedCommand.begin(), storedCommand.begin() + givenCommand.size(),
