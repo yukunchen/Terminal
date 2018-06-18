@@ -19,6 +19,10 @@ Revision History:
 
 #pragma once
 
+#ifdef UNIT_TESTING
+#include "WexTestClass.h"
+#endif
+
 class TextAttribute final
 {
 public:
@@ -26,7 +30,8 @@ public:
         _wAttrLegacy{ 0 },
         _fUseRgbColor{ false },
         _rgbForeground{ RGB(0, 0, 0) },
-        _rgbBackground{ RGB(0, 0, 0) }
+        _rgbBackground{ RGB(0, 0, 0) },
+        _isBold{ false }
     {
     }
 
@@ -34,7 +39,8 @@ public:
         _wAttrLegacy{ wLegacyAttr },
         _fUseRgbColor{ false },
         _rgbForeground{ RGB(0, 0, 0) },
-        _rgbBackground{ RGB(0, 0, 0) }
+        _rgbBackground{ RGB(0, 0, 0) },
+        _isBold{ false }
     {
     }
 
@@ -42,7 +48,8 @@ public:
         _wAttrLegacy{ 0 },
         _fUseRgbColor{ true },
         _rgbForeground{ rgbForeground },
-        _rgbBackground{ rgbBackground }
+        _rgbBackground{ rgbBackground },
+        _isBold{ false }
     {
     }
 
@@ -68,6 +75,9 @@ public:
     void SetFromLegacy(const WORD wLegacy) noexcept;
     void SetMetaAttributes(const WORD wMeta) noexcept;
 
+    void Embolden() noexcept;
+    void Debolden() noexcept;
+
     friend constexpr bool operator==(const TextAttribute& a, const TextAttribute& b) noexcept;
     friend constexpr bool operator!=(const TextAttribute& a, const TextAttribute& b) noexcept;
     friend constexpr bool operator==(const TextAttribute& attr, const WORD& legacyAttr) noexcept;
@@ -76,6 +86,7 @@ public:
     friend constexpr bool operator!=(const WORD& legacyAttr, const TextAttribute& attr) noexcept;
 
     bool IsLegacy() const noexcept;
+    bool IsBold() const noexcept;
 
     void SetForeground(const COLORREF rgbForeground);
     void SetBackground(const COLORREF rgbBackground);
@@ -87,10 +98,13 @@ private:
 
     bool _IsReverseVideo() const noexcept;
 
+    void _SetBoldness(const bool isBold) noexcept;
+
     WORD _wAttrLegacy;
     bool _fUseRgbColor;
     COLORREF _rgbForeground;
     COLORREF _rgbBackground;
+    bool _isBold;
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;
@@ -102,7 +116,8 @@ bool constexpr operator==(const TextAttribute& a, const TextAttribute& b) noexce
     return a._wAttrLegacy == b._wAttrLegacy &&
            a._fUseRgbColor == b._fUseRgbColor &&
            a._rgbForeground == b._rgbForeground &&
-           a._rgbBackground == b._rgbBackground;
+           a._rgbBackground == b._rgbBackground &&
+           a._isBold == b._isBold;
 }
 
 bool constexpr operator!=(const TextAttribute& a, const TextAttribute& b) noexcept
@@ -129,3 +144,27 @@ bool constexpr operator!=(const WORD& legacyAttr, const TextAttribute& attr) noe
 {
     return !(attr == legacyAttr);
 }
+
+#ifdef UNIT_TESTING
+
+namespace WEX {
+    namespace TestExecution {
+        template<>
+        class VerifyOutputTraits < TextAttribute >
+        {
+        public:
+            static WEX::Common::NoThrowString ToString(const TextAttribute& attr)
+            {
+                return WEX::Common::NoThrowString().Format(
+                    L"{IsLegacy:%d,GetLegacyAttributes:0x%02x,FG:0x%06x,BG:0x%06x,bold:%d}",
+                    attr.IsLegacy(),
+                    attr.GetLegacyAttributes(),
+                    attr.CalculateRgbForeground(),
+                    attr.CalculateRgbBackground(),
+                    attr.IsBold()
+                );
+            }
+        };
+    }
+}
+#endif
