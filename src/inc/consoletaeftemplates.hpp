@@ -541,4 +541,5 @@ namespace WEX::TestExecution
             return object.Attributes == 0 && object.Char.UnicodeChar == 0;
         }
     };
+
 }

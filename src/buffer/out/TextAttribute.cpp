@@ -15,7 +15,7 @@
 
 WORD TextAttribute::GetLegacyAttributes() const noexcept
 {
-    return _wAttrLegacy;
+    return (_wAttrLegacy | (_isBold ? FOREGROUND_INTENSITY : 0));
 }
 
 bool TextAttribute::IsLegacy() const noexcept
@@ -60,7 +60,7 @@ COLORREF TextAttribute::GetRgbForeground() const
     }
     else
     {
-        const byte iColorTableIndex = LOBYTE(_wAttrLegacy) & 0x0F;
+        const byte iColorTableIndex = (LOBYTE(GetLegacyAttributes()) & FG_ATTRS);
 
         FAIL_FAST_IF_FALSE(iColorTableIndex >= 0);
         FAIL_FAST_IF_FALSE(iColorTableIndex < gci.GetColorTableSize());
@@ -88,7 +88,7 @@ COLORREF TextAttribute::GetRgbBackground() const
     }
     else
     {
-        const byte iColorTableIndex = (LOBYTE(_wAttrLegacy) & 0xF0) >> 4;
+        const byte iColorTableIndex = (LOBYTE(_wAttrLegacy) & BG_ATTRS) >> 4;
 
         FAIL_FAST_IF_FALSE(iColorTableIndex >= 0);
         FAIL_FAST_IF_FALSE(iColorTableIndex < gci.GetColorTableSize());
@@ -142,6 +142,11 @@ void TextAttribute::SetColor(const COLORREF rgbColor, const bool fIsForeground)
     }
 }
 
+bool TextAttribute::IsBold() const noexcept
+{
+    return _isBold;
+}
+
 bool TextAttribute::_IsReverseVideo() const noexcept
 {
     return IsFlagSet(_wAttrLegacy, COMMON_LVB_REVERSE_VIDEO);
@@ -185,4 +190,40 @@ void TextAttribute::SetLeftVerticalDisplayed(const bool isDisplayed) noexcept
 void TextAttribute::SetRightVerticalDisplayed(const bool isDisplayed) noexcept
 {
     UpdateFlag(_wAttrLegacy, COMMON_LVB_GRID_RVERTICAL, isDisplayed);
+}
+
+void TextAttribute::Embolden() noexcept
+{
+    _SetBoldness(true);
+}
+
+void TextAttribute::Debolden() noexcept
+{
+    _SetBoldness(false);
+}
+
+void TextAttribute::_SetBoldness(const bool isBold) noexcept
+{
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    // If we're changing our boldness, and we're an RGB attr, check if our color
+    //      is a darkened/brightened version of a color table entry. If it is,
+    //      then we'll instead use the bright/dark version of that color table
+    //      value as our new RGB color.
+    if ((_isBold != isBold) && _fUseRgbColor)
+    {
+        const auto table = gsl::make_span(gci.GetColorTable(), gci.GetColorTableSize());
+        const size_t start = isBold ? 0 : gci.GetColorTableSize()/2;
+        const size_t end = isBold ? gci.GetColorTableSize()/2 : gci.GetColorTableSize();
+        const auto shift = FOREGROUND_INTENSITY * (isBold ? 1 : -1);
+        for (size_t i = start; i < end; i++)
+        {
+            if (table[i] == _rgbForeground)
+            {
+                _rgbForeground = table[i + shift];
+                break;
+            }
+        }
+    }
+    _isBold = isBold;
 }
