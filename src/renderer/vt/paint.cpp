@@ -384,7 +384,7 @@ HRESULT VtEngine::_PaintUtf8BufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine
                               (!_clearedAllThisFrame);
     // If we're not using erase char, but we did erase all at the start of the
     //      frame, don't add spaces at the end.
-    const size_t cchActual = (useEraseChar || _clearedAllThisFrame) ?
+    const size_t cchActual = (useEraseChar || (_clearedAllThisFrame)) ?
                                 (cchLine - numSpaces) :
                                 cchLine;
 
@@ -397,7 +397,6 @@ HRESULT VtEngine::_PaintUtf8BufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine
         RETURN_IF_FAILED(_EraseCharacter(static_cast<short>(numSpaces)));
         RETURN_IF_FAILED(_CursorForward(static_cast<short>(numSpaces)));
     }
-
     // Update our internal tracker of the cursor's position
     _lastText.X += totalWidth;
 

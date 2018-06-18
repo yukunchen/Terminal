@@ -47,7 +47,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _suppressResizeRepaint(true),
     _virtualTop(0),
     _circled(false),
-    _firstPaint(false),
+    _firstPaint(true),
     _skipCursor(false),
     _pipeBroken(false),
     _exitResult{ S_OK },
@@ -396,6 +396,8 @@ HRESULT VtEngine::InheritCursor(const COORD coordCursor)
     _virtualTop = coordCursor.Y;
     _lastText = coordCursor;
     _skipCursor = true;
+    // Prevent us from clearing the entire viewport on the first paint
+    _firstPaint = false;
     return S_OK;
 }
 
