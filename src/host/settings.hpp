@@ -39,6 +39,8 @@ public:
     void InitFromStateInfo(_In_ PCONSOLE_STATE_INFO pStateInfo);
     void Validate();
 
+    CONSOLE_STATE_INFO CreateConsoleStateInfo() const;
+
     DWORD GetVirtTermLevel() const;
     void SetVirtTermLevel(const DWORD dwVirtTermLevel);
 

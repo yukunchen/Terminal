@@ -32,7 +32,6 @@ SMALL_RECT Renderer::_RegionFromCoord(const COORD* const pcoord) const
 // - RGB color mapped through the console color table.
 COLORREF Renderer::_ConvertAttrToRGB(const BYTE bAttr)
 {
-    #pragma prefast(suppress: __WARNING_ACCESSIBILITY_COLORAPI, "Using console window specific colors")
     COLORREF* rgColorTable;
     size_t cColors;
 
