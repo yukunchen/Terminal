@@ -42,43 +42,42 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 [[nodiscard]]
 HRESULT XtermEngine::StartPaint()
 {
-    HRESULT hr = VtEngine::StartPaint();
-    if (SUCCEEDED(hr))
+    RETURN_IF_FAILED(VtEngine::StartPaint());
+    if (_firstPaint)
     {
-        if (_firstPaint)
+        // MSFT:17815688
+        // If the caller requested to inherit the cursor, we shouldn't
+        //      clear the screen on the first paint. Otherwise, we'll clear
+        //      the screen on the first paint, just to make sure that the
+        //      terminal's state is consistent with what we'll be rendering.
+        RETURN_IF_FAILED(_ClearScreen());
+        RETURN_IF_FAILED(_CursorHome());
+        _firstPaint = false;
+    }
+    else
+    {
+        if (Viewport::FromInclusive(GetDirtyRectInChars()) == _lastViewport)
         {
-            hr = _ClearScreen();
-            // As of MSFT:15813316 we are no longer clearing on the first paint.
-            _firstPaint = false;
-        }
-        else
-        {
-            bool allIsInvalid = Viewport::FromInclusive(GetDirtyRectInChars()) == _lastViewport;
-            if (allIsInvalid)
-            {
-                hr = _ClearScreen();
-                _clearedAllThisFrame = true;
-            }
-        }
-
-        RETURN_IF_FAILED(hr);
-
-        if (!_quickReturn)
-        {
-            if (!_WillWriteSingleChar())
-            {
-                // Turn off cursor
-                hr = _HideCursor();
-            }
-            else
-            {
-                // Don't re-enable the cursor.
-                _quickReturn = true;
-            }
+            RETURN_IF_FAILED(_ClearScreen());
+            _clearedAllThisFrame = true;
         }
     }
 
-    return hr;
+    if (!_quickReturn)
+    {
+        if (!_WillWriteSingleChar())
+        {
+            // Turn off cursor
+            RETURN_IF_FAILED(_HideCursor());
+        }
+        else
+        {
+            // Don't re-enable the cursor.
+            _quickReturn = true;
+        }
+    }
+
+    return S_OK;
 }
 
 // Routine Description:

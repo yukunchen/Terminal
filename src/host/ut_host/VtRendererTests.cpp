@@ -251,10 +251,12 @@ void VtRendererTest::Xterm256TestInvalidate()
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    // Verify the first paint does not emit a clear and go home
-    qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
+    // Verify the first paint emits a clear and go home
+    qExpectedInput.push_back("\x1b[2J");
+    qExpectedInput.push_back("\x1b[H");
+    VERIFY_IS_TRUE(engine->_firstPaint);
     TestPaint(*engine, [&]() {
-        WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
+        VERIFY_IS_FALSE(engine->_firstPaint);
     });
 
     Viewport view = SetUpViewport();
@@ -263,7 +265,10 @@ void VtRendererTest::Xterm256TestInvalidate()
         L"Make sure that invalidating all invalidates the whole viewport."
     ));
     VERIFY_SUCCEEDED(engine->InvalidateAll());
-    TestPaintXterm(*engine, [&]()
+    qExpectedInput.push_back("\x1b[2J");
+    qExpectedInput.push_back("\x1b[?25l");
+    qExpectedInput.push_back("\x1b[?25h");
+    TestPaint(*engine, [&]()
     {
         VERIFY_ARE_EQUAL(view, engine->_invalidRect);
     });
@@ -382,7 +387,10 @@ void VtRendererTest::Xterm256TestInvalidate()
         VerifyOutputTraits<SMALL_RECT>::ToString(engine->_invalidRect.ToExclusive())
     ));
 
-    TestPaintXterm(*engine, [&]()
+    qExpectedInput.push_back("\x1b[2J");
+    qExpectedInput.push_back("\x1b[?25l");
+    qExpectedInput.push_back("\x1b[?25h");
+    TestPaint(*engine, [&]()
     {
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled one down and one up, nothing should change ----"
@@ -391,9 +399,7 @@ void VtRendererTest::Xterm256TestInvalidate()
         invalid = view.ToExclusive();
         VERIFY_ARE_EQUAL(invalid, engine->_invalidRect.ToExclusive());
 
-        qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
         VERIFY_SUCCEEDED(engine->ScrollFrame());
-        WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
     });
 }
 
@@ -404,10 +410,12 @@ void VtRendererTest::Xterm256TestColors()
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    // Verify the first paint does not emit a clear and go home
-    qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
+    // Verify the first paint emits a clear and go home
+    qExpectedInput.push_back("\x1b[2J");
+    qExpectedInput.push_back("\x1b[H");
+    VERIFY_IS_TRUE(engine->_firstPaint);
     TestPaint(*engine, [&]() {
-        WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
+        VERIFY_IS_FALSE(engine->_firstPaint);
     });
 
     Viewport view = SetUpViewport();
@@ -424,7 +432,7 @@ void VtRendererTest::Xterm256TestColors()
     qExpectedInput.push_back("\x1b[48;2;5;6;7m");
     VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(0x00030201, 0x00070605, 0, false));
 
-    TestPaintXterm(*engine, [&]()
+    TestPaint(*engine, [&]()
     {
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG----"
@@ -440,7 +448,7 @@ void VtRendererTest::Xterm256TestColors()
 
     });
 
-    TestPaintXterm(*engine, [&]()
+    TestPaint(*engine, [&]()
     {
         Log::Comment(NoThrowString().Format(
             L"Make sure that color setting persists across EndPaint/StartPaint"
@@ -462,7 +470,7 @@ void VtRendererTest::Xterm256TestColors()
     qExpectedInput.push_back("\x1b[40m"); // Background DARK_BLACK
     VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15], g_ColorTable[0], 0, false));
 
-    TestPaintXterm(*engine, [&]()
+    TestPaint(*engine, [&]()
     {
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG----"
@@ -497,7 +505,7 @@ void VtRendererTest::Xterm256TestColors()
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15], g_ColorTable[0], 0, false));
     });
 
-    TestPaintXterm(*engine, [&]()
+    TestPaint(*engine, [&]()
     {
         Log::Comment(NoThrowString().Format(
             L"Make sure that color setting persists across EndPaint/StartPaint"
@@ -516,10 +524,12 @@ void VtRendererTest::Xterm256TestCursor()
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    // Verify the first paint does not emit a clear and go home
-    qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
+    // Verify the first paint emits a clear and go home
+    qExpectedInput.push_back("\x1b[2J");
+    qExpectedInput.push_back("\x1b[H");
+    VERIFY_IS_TRUE(engine->_firstPaint);
     TestPaint(*engine, [&]() {
-        WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
+        VERIFY_IS_FALSE(engine->_firstPaint);
     });
 
     Viewport view = SetUpViewport();
@@ -635,10 +645,12 @@ void VtRendererTest::XtermTestInvalidate()
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    // Verify the first paint does not emit a clear and go home
-    qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
+    // Verify the first paint emits a clear and go home
+    qExpectedInput.push_back("\x1b[2J");
+    qExpectedInput.push_back("\x1b[H");
+    VERIFY_IS_TRUE(engine->_firstPaint);
     TestPaint(*engine, [&]() {
-        WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
+        VERIFY_IS_FALSE(engine->_firstPaint);
     });
 
     Viewport view = SetUpViewport();
@@ -647,7 +659,10 @@ void VtRendererTest::XtermTestInvalidate()
         L"Make sure that invalidating all invalidates the whole viewport."
     ));
     VERIFY_SUCCEEDED(engine->InvalidateAll());
-    TestPaintXterm(*engine, [&]()
+    qExpectedInput.push_back("\x1b[2J");
+    qExpectedInput.push_back("\x1b[?25l");
+    qExpectedInput.push_back("\x1b[?25h");
+    TestPaint(*engine, [&]()
     {
         VERIFY_ARE_EQUAL(view, engine->_invalidRect);
     });
@@ -766,7 +781,10 @@ void VtRendererTest::XtermTestInvalidate()
         VerifyOutputTraits<SMALL_RECT>::ToString(engine->_invalidRect.ToExclusive())
     ));
 
-    TestPaintXterm(*engine, [&]()
+    qExpectedInput.push_back("\x1b[2J");
+    qExpectedInput.push_back("\x1b[?25l");
+    qExpectedInput.push_back("\x1b[?25h");
+    TestPaint(*engine, [&]()
     {
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled one down and one up, nothing should change ----"
@@ -775,9 +793,7 @@ void VtRendererTest::XtermTestInvalidate()
         invalid = view.ToExclusive();
         VERIFY_ARE_EQUAL(view, engine->_invalidRect);
 
-        qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
         VERIFY_SUCCEEDED(engine->ScrollFrame());
-        WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
     });
 }
 
@@ -788,10 +804,12 @@ void VtRendererTest::XtermTestColors()
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    // Verify the first paint does not emit a clear and go home
-    qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
+    // Verify the first paint emits a clear and go home
+    qExpectedInput.push_back("\x1b[2J");
+    qExpectedInput.push_back("\x1b[H");
+    VERIFY_IS_TRUE(engine->_firstPaint);
     TestPaint(*engine, [&]() {
-        WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
+        VERIFY_IS_FALSE(engine->_firstPaint);
     });
 
     Viewport view = SetUpViewport();
@@ -862,10 +880,12 @@ void VtRendererTest::XtermTestCursor()
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    // Verify the first paint does not emit a clear and go home
-    qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
+    // Verify the first paint emits a clear and go home
+    qExpectedInput.push_back("\x1b[2J");
+    qExpectedInput.push_back("\x1b[H");
+    VERIFY_IS_TRUE(engine->_firstPaint);
     TestPaint(*engine, [&]() {
-        WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
+        VERIFY_IS_FALSE(engine->_firstPaint);
     });
 
     Viewport view = SetUpViewport();
@@ -1218,9 +1238,11 @@ void VtRendererTest::TestWrapping()
     engine->SetTestCallback(pfn);
 
     // Verify the first paint does not emit a clear and go home
-    qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
+    qExpectedInput.push_back("\x1b[2J");
+    qExpectedInput.push_back("\x1b[H");
+    qExpectedInput.push_back("\x1b[?25l");
+    qExpectedInput.push_back("\x1b[?25h");
     TestPaint(*engine, [&]() {
-        WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
     });
 
     Viewport view = SetUpViewport();
