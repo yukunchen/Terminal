@@ -284,6 +284,24 @@ Viewport Viewport::ConvertToOrigin(const Viewport& other) const noexcept
     return returnVal;
 }
 
+// Method Description:
+// - Translates another viewport out of this viewport's coordinate space.
+// For example:
+//  this = {5, 6, 7, 8} (w,h = 1, 1)
+//  other = {0, 0, 5, 6} (w, h = 5, 6)
+//  result = {5, 6, 10, 12} (w, h = 5, 6)
+// Arguments:
+// - other: the viewport to convert out of this coordinate space
+// Return Value:
+// - the input viewport in a the coordinate space with origin at (0, 0)
+[[nodiscard]]
+Viewport Viewport::ConvertFromOrigin(const Viewport& other) const noexcept
+{
+    Viewport returnVal = other;
+    ConvertFromOrigin(&returnVal._sr);
+    return returnVal;
+}
+
 // Function Description:
 // - Translates a given Viewport by the specified coord amount. Does the
 //      addition with safemath.

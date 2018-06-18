@@ -1076,12 +1076,10 @@ NTSTATUS DoSrvPrivateSetScrollingRegion(SCREEN_INFORMATION& screenInfo, const SM
     }
     if (NT_SUCCESS(Status))
     {
-        SMALL_RECT srViewport = screenInfo.GetBufferViewport();
-        SMALL_RECT srScrollMargins = screenInfo.GetScrollMargins();
+        SMALL_RECT srScrollMargins = screenInfo.GetRelativeScrollMargins().ToInclusive();
         srScrollMargins.Top = psrScrollMargins->Top;
         srScrollMargins.Bottom = psrScrollMargins->Bottom;
-        screenInfo.SetScrollMargins(&srScrollMargins);
-
+        screenInfo.SetScrollMargins(Viewport::FromInclusive(srScrollMargins));
     }
 
     return Status;
@@ -1097,51 +1095,6 @@ NTSTATUS DoSrvPrivateSetScrollingRegion(SCREEN_INFORMATION& screenInfo, const SM
 [[nodiscard]]
 NTSTATUS DoSrvPrivateReverseLineFeed(SCREEN_INFORMATION& screenInfo)
 {
-    return DoSrvMoveCursorVertically(screenInfo, -1);
-    // NTSTATUS Status = STATUS_SUCCESS;
-
-    // const SMALL_RECT viewport = screenInfo.GetBufferViewport();
-    // COORD newCursorPosition = screenInfo.GetTextBuffer().GetCursor().GetPosition();
-
-    // // This doesn't seem right anymore.
-    // // I think we maybe should only ever be doing the Adjust path. That one will account for the
-    // // Scroll margins, but the ScrollBuffer one wont.
-
-    // // If the cursor is at the top of the viewport, we don't want to shift the viewport up.
-    // // We want it to stay exactly where it is.
-    // // In that case, shift the buffer contents down, to emulate inserting a line
-    // //      at the top of the buffer.
-    // if (newCursorPosition.Y > viewport.Top)
-    // {
-    //     // Cursor is below the top line of the viewport
-    //     newCursorPosition.Y -= 1;
-    //     Status = AdjustCursorPosition(screenInfo, newCursorPosition, TRUE, nullptr);
-    // }
-    // else
-    // {
-    //     // Cursor is at the top of the viewport
-    //     const COORD bufferSize = screenInfo.GetScreenBufferSize();
-    //     // Rectangle to cut out of the existing buffer
-    //     SMALL_RECT srScroll;
-    //     srScroll.Left = 0;
-    //     srScroll.Right = bufferSize.X;
-    //     srScroll.Top = viewport.Top;
-    //     srScroll.Bottom = viewport.Bottom - 1;
-    //     // Paste coordinate for cut text above
-    //     COORD coordDestination;
-    //     coordDestination.X = 0;
-    //     coordDestination.Y = viewport.Top + 1;
-
-    //     SMALL_RECT srClip = viewport;
-
-    //     Status = DoSrvScrollConsoleScreenBufferW(screenInfo, &srScroll, &coordDestination, &srClip, L' ', screenInfo.GetAttributes().GetLegacyAttributes());
-    // }
-    // return Status;
-}
-
-[[nodiscard]]
-NTSTATUS DoSrvMoveCursorVertically(SCREEN_INFORMATION& screenInfo, const short lines)
-{
     NTSTATUS Status = STATUS_SUCCESS;
 
     const SMALL_RECT viewport = screenInfo.GetBufferViewport();
@@ -1155,31 +1108,103 @@ NTSTATUS DoSrvMoveCursorVertically(SCREEN_INFORMATION& screenInfo, const short l
     // We want it to stay exactly where it is.
     // In that case, shift the buffer contents down, to emulate inserting a line
     //      at the top of the buffer.
-    newCursorPosition.Y += lines;
-    Status = AdjustCursorPosition(screenInfo, newCursorPosition, TRUE, nullptr);
-    // if (newCursorPosition.Y > viewport.Top)
-    // {
-    //     // Cursor is below the top line of the viewport
-    // }
-    // else
-    // {
-    //     // Cursor is at the top of the viewport
-    //     const COORD bufferSize = screenInfo.GetScreenBufferSize();
-    //     // Rectangle to cut out of the existing buffer
-    //     SMALL_RECT srScroll;
-    //     srScroll.Left = 0;
-    //     srScroll.Right = bufferSize.X;
-    //     srScroll.Top = viewport.Top;
-    //     srScroll.Bottom = viewport.Bottom - 1;
-    //     // Paste coordinate for cut text above
-    //     COORD coordDestination;
-    //     coordDestination.X = 0;
-    //     coordDestination.Y = viewport.Top + 1;
+    if (newCursorPosition.Y > viewport.Top)
+    {
+        // Cursor is below the top line of the viewport
+        newCursorPosition.Y -= 1;
+        Status = AdjustCursorPosition(screenInfo, newCursorPosition, TRUE, nullptr);
+    }
+    else
+    {
+        // Cursor is at the top of the viewport
+        const COORD bufferSize = screenInfo.GetScreenBufferSize();
+        // Rectangle to cut out of the existing buffer
+        SMALL_RECT srScroll;
+        srScroll.Left = 0;
+        srScroll.Right = bufferSize.X;
+        srScroll.Top = viewport.Top;
+        srScroll.Bottom = viewport.Bottom - 1;
+        // Paste coordinate for cut text above
+        COORD coordDestination;
+        coordDestination.X = 0;
+        coordDestination.Y = viewport.Top + 1;
 
-    //     SMALL_RECT srClip = viewport;
+        SMALL_RECT srClip = viewport;
 
-    //     Status = DoSrvScrollConsoleScreenBufferW(screenInfo, &srScroll, &coordDestination, &srClip, L' ', screenInfo.GetAttributes().GetLegacyAttributes());
-    // }
+        Status = DoSrvScrollConsoleScreenBufferW(screenInfo, &srScroll, &coordDestination, &srClip, L' ', screenInfo.GetAttributes().GetLegacyAttributes());
+    }
+    return Status;
+}
+
+[[nodiscard]]
+NTSTATUS DoSrvMoveCursorVertically(SCREEN_INFORMATION& screenInfo, const short lines)
+{
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    Cursor& cursor = screenInfo.GetTextBuffer().GetCursor();
+    const int iCurrentCursorY = cursor.GetPosition().Y;
+    // SMALL_RECT srBufferViewport = GetBufferViewport();
+    SMALL_RECT srMargins = screenInfo.GetAbsoluteScrollMargins().ToInclusive();
+    // srMargins.Top += srBufferViewport.Top;
+    // srMargins.Bottom += srBufferViewport.Top;
+    const bool fMarginsSet = srMargins.Bottom > srMargins.Top;
+    const bool fCursorInMargins = iCurrentCursorY <= srMargins.Bottom && iCurrentCursorY >= srMargins.Top;
+    COORD clampedPos = {cursor.GetPosition().X, cursor.GetPosition().Y+lines};
+    // const bool verticalOnly = cursor.GetPosition().X == Position.X;
+    // It turns out this isn't totally right:
+    // see https://vt100.net/docs/vt100-ug/chapter3.html
+    // https://vt100.net/docs/vt510-rm/CUP.html
+    // https://vt100.net/docs/vt510-rm/CUU.html
+    // For CUU and CUD, the cursor is confined to the marigns, IFF it was already in the margins.
+    // For CUP, the cursor is not constrained to the margins.
+    // However, the adapter does not differentiate the handling of up/downs and moves.
+    // Maybe I should add a PrivateLineFeed(lines) and add a lines param to ReverseLineFeed
+    // Then the LineFeed functions could attempt to account for the margins, while the cursor position ones could ignore them.
+    if (fMarginsSet /*&& fCursorInMargins*/)
+    {
+        auto v = clampedPos.Y;
+        auto lo = srMargins.Top;
+        auto hi = srMargins.Bottom;
+        clampedPos.Y = std::clamp(v, lo, hi);
+    }
+    cursor.SetPosition(clampedPos);
+
+    // const SMALL_RECT viewport = screenInfo.GetBufferViewport();
+    // COORD newCursorPosition = screenInfo.GetTextBuffer().GetCursor().GetPosition();
+
+    // // This doesn't seem right anymore.
+    // // I think we maybe should only ever be doing the Adjust path. That one will account for the
+    // // Scroll margins, but the ScrollBuffer one wont.
+
+    // // If the cursor is at the top of the viewport, we don't want to shift the viewport up.
+    // // We want it to stay exactly where it is.
+    // // In that case, shift the buffer contents down, to emulate inserting a line
+    // //      at the top of the buffer.
+    // newCursorPosition.Y += lines;
+    // Status = AdjustCursorPosition(screenInfo, newCursorPosition, TRUE, nullptr);
+    // // if (newCursorPosition.Y > viewport.Top)
+    // // {
+    // //     // Cursor is below the top line of the viewport
+    // // }
+    // // else
+    // // {
+    // //     // Cursor is at the top of the viewport
+    // //     const COORD bufferSize = screenInfo.GetScreenBufferSize();
+    // //     // Rectangle to cut out of the existing buffer
+    // //     SMALL_RECT srScroll;
+    // //     srScroll.Left = 0;
+    // //     srScroll.Right = bufferSize.X;
+    // //     srScroll.Top = viewport.Top;
+    // //     srScroll.Bottom = viewport.Bottom - 1;
+    // //     // Paste coordinate for cut text above
+    // //     COORD coordDestination;
+    // //     coordDestination.X = 0;
+    // //     coordDestination.Y = viewport.Top + 1;
+
+    // //     SMALL_RECT srClip = viewport;
+
+    // //     Status = DoSrvScrollConsoleScreenBufferW(screenInfo, &srScroll, &coordDestination, &srClip, L' ', screenInfo.GetAttributes().GetLegacyAttributes());
+    // // }
     return Status;
 }
 

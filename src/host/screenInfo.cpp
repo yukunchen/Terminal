@@ -53,7 +53,7 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     _pStateMachine{ nullptr },
     _pEngine{ nullptr },
     _coordScreenBufferSize{ 0 },
-    _srScrollMargins{ 0 },
+    _scrollMargins{ { 0 } },
     _viewport({ 0 }),
     _psiAlternateBuffer{ nullptr },
     _psiMainBuffer{ nullptr },
@@ -1844,33 +1844,34 @@ NTSTATUS SCREEN_INFORMATION::SetCursorPosition(const COORD Position, const bool 
         return STATUS_INVALID_PARAMETER;
     }
 
-    const int iCurrentCursorY = cursor.GetPosition().Y;
-    SMALL_RECT srBufferViewport = GetBufferViewport();
-    SMALL_RECT srMargins = GetScrollMargins();
-    srMargins.Top += srBufferViewport.Top;
-    srMargins.Bottom += srBufferViewport.Top;
-    const bool fMarginsSet = srMargins.Bottom > srMargins.Top;
-    const bool fCursorInMargins = iCurrentCursorY <= srMargins.Bottom && iCurrentCursorY >= srMargins.Top;
-    COORD clampedPos = Position;
-    const bool verticalOnly = cursor.GetPosition().X == Position.X;
-    // It turns out this isn't totally right:
-    // see https://vt100.net/docs/vt100-ug/chapter3.html
-    // https://vt100.net/docs/vt510-rm/CUP.html
-    // https://vt100.net/docs/vt510-rm/CUU.html
-    // For CUU and CUD, the cursor is confined to the marigns, IFF it was already in the margins.
-    // For CUP, the cursor is not constrained to the margins.
-    // However, the adapter does not differentiate the handling of up/downs and moves.
-    // Maybe I should add a PrivateLineFeed(lines) and add a lines param to ReverseLineFeed
-    // Then the LineFeed functions could attempt to account for the margins, while the cursor position ones could ignore them.
-    if (fMarginsSet && fCursorInMargins && InVTMode() && verticalOnly)
-    {
-        auto v = Position.Y;
-        auto lo = srMargins.Top;
-        auto hi = srMargins.Bottom;
-        clampedPos.Y = std::clamp(v, lo, hi);
-    }
+    // const int iCurrentCursorY = cursor.GetPosition().Y;
+    // SMALL_RECT srBufferViewport = GetBufferViewport();
+    // SMALL_RECT srMargins = GetScrollMargins();
+    // srMargins.Top += srBufferViewport.Top;
+    // srMargins.Bottom += srBufferViewport.Top;
+    // const bool fMarginsSet = srMargins.Bottom > srMargins.Top;
+    // const bool fCursorInMargins = iCurrentCursorY <= srMargins.Bottom && iCurrentCursorY >= srMargins.Top;
+    // COORD clampedPos = Position;
+    // const bool verticalOnly = cursor.GetPosition().X == Position.X;
+    // // It turns out this isn't totally right:
+    // // see https://vt100.net/docs/vt100-ug/chapter3.html
+    // // https://vt100.net/docs/vt510-rm/CUP.html
+    // // https://vt100.net/docs/vt510-rm/CUU.html
+    // // For CUU and CUD, the cursor is confined to the marigns, IFF it was already in the margins.
+    // // For CUP, the cursor is not constrained to the margins.
+    // // However, the adapter does not differentiate the handling of up/downs and moves.
+    // // Maybe I should add a PrivateLineFeed(lines) and add a lines param to ReverseLineFeed
+    // // Then the LineFeed functions could attempt to account for the margins, while the cursor position ones could ignore them.
+    // if (fMarginsSet && fCursorInMargins && InVTMode() && verticalOnly)
+    // {
+    //     auto v = Position.Y;
+    //     auto lo = srMargins.Top;
+    //     auto hi = srMargins.Bottom;
+    //     clampedPos.Y = std::clamp(v, lo, hi);
+    // }
 
-    cursor.SetPosition(clampedPos);
+    // cursor.SetPosition(clampedPos);
+    cursor.SetPosition(Position);
 
     // if we have the focus, adjust the cursor state
     if (gci.Flags & CONSOLE_HAS_FOCUS)
@@ -1926,14 +1927,19 @@ void SCREEN_INFORMATION::MakeCursorVisible(const COORD CursorPosition)
     }
 }
 
-void SCREEN_INFORMATION::SetScrollMargins(const SMALL_RECT* const psrMargins)
+void SCREEN_INFORMATION::SetScrollMargins(const Viewport margins)
 {
-    _srScrollMargins = *psrMargins;
+    _scrollMargins = margins;
 }
 
-SMALL_RECT SCREEN_INFORMATION::GetScrollMargins() const
+Viewport SCREEN_INFORMATION::GetAbsoluteScrollMargins() const
 {
-    return _srScrollMargins;
+    return _viewport.ConvertFromOrigin(_scrollMargins);
+}
+
+Viewport SCREEN_INFORMATION::GetRelativeScrollMargins() const
+{
+    return _scrollMargins;
 }
 
 // Routine Description:

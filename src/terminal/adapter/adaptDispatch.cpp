@@ -199,25 +199,45 @@ bool AdaptDispatch::_CursorMovement(const CursorDirection dir, _In_ unsigned int
 }
 
 // Routine Description:
-// - CUP - Handles cursor upward movement by given distance
+// - CUU - Handles cursor upward movement by given distance.
+// CUU and CUD are handled seperately from other CUP sequences, because they are
+//      constrained by the margins.
+// See: https://vt100.net/docs/vt510-rm/CUU.html
+//  "The cursor stops at the top margin. If the cursor is already above the top
+//   margin, then the cursor stops at the top line."
 // Arguments:
 // - uiDistance - Distance to move
 // Return Value:
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::CursorUp(_In_ unsigned int const uiDistance)
 {
-    return _CursorMovement(CursorDirection::Up, uiDistance);
+    SHORT sDelta = 0;
+    if (SUCCEEDED(UIntToShort(uiDistance, &sDelta)))
+    {
+        return !!_pConApi->MoveCursorVertically(-sDelta);
+    }
+    return false;
 }
 
 // Routine Description:
 // - CUD - Handles cursor downward movement by given distance
+// CUU and CUD are handled seperately from other CUP sequences, because they are
+//      constrained by the margins.
+// See: https://vt100.net/docs/vt510-rm/CUU.html
+//  "The cursor stops at the bottom margin. If the cursor is already above the
+//   bottom margin, then the cursor stops at the bottom line."
 // Arguments:
 // - uiDistance - Distance to move
 // Return Value:
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::CursorDown(_In_ unsigned int const uiDistance)
 {
-    return _CursorMovement(CursorDirection::Down, uiDistance);
+    SHORT sDelta = 0;
+    if (SUCCEEDED(UIntToShort(uiDistance, &sDelta)))
+    {
+        return !!_pConApi->MoveCursorVertically(sDelta);
+    }
+    return false;
 }
 
 // Routine Description:

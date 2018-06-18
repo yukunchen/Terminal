@@ -60,6 +60,8 @@ namespace Microsoft::Console::Types
         Viewport ConvertToOrigin(const Viewport& other) const noexcept;
         void ConvertFromOrigin(_Inout_ SMALL_RECT* const psr) const noexcept;
         void ConvertFromOrigin(_Inout_ COORD* const pcoord) const noexcept;
+        [[nodiscard]]
+        Viewport ConvertFromOrigin(const Viewport& other) const noexcept;
 
         SMALL_RECT ToExclusive() const noexcept;
         SMALL_RECT ToInclusive() const noexcept;
