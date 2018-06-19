@@ -105,6 +105,7 @@ public:
 
     BOOL PrivateReverseLineFeed() override;
 
+    BOOL MoveCursorVertically(const short lines) override;
 
     BOOL SetConsoleTitleW(_In_reads_(sCchTitleLength) const wchar_t* const pwchWindowTitle,
                           _In_ unsigned short sCchTitleLength) override;

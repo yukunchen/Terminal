@@ -1090,12 +1090,10 @@ NTSTATUS DoSrvPrivateSetScrollingRegion(SCREEN_INFORMATION& screenInfo, const SM
     }
     if (NT_SUCCESS(Status))
     {
-        SMALL_RECT srViewport = screenInfo.GetBufferViewport();
-        SMALL_RECT srScrollMargins = screenInfo.GetScrollMargins();
+        SMALL_RECT srScrollMargins = screenInfo.GetRelativeScrollMargins().ToInclusive();
         srScrollMargins.Top = psrScrollMargins->Top;
         srScrollMargins.Bottom = psrScrollMargins->Bottom;
-        screenInfo.SetScrollMargins(&srScrollMargins);
-
+        screenInfo.SetScrollMargins(Viewport::FromInclusive(srScrollMargins));
     }
 
     return Status;
@@ -1145,6 +1143,38 @@ NTSTATUS DoSrvPrivateReverseLineFeed(SCREEN_INFORMATION& screenInfo)
 
         Status = DoSrvScrollConsoleScreenBufferW(screenInfo, &srScroll, &coordDestination, &srClip, L' ', screenInfo.GetAttributes().GetLegacyAttributes());
     }
+    return Status;
+}
+
+// Routine Description:
+// - A private API call for moving the cursor vertically in the buffer. This is
+//      because the vertical cursor movements in VT are constrained by the
+//      scroll margins, while the absolute positioning is not.
+// Parameters:
+// - screenInfo - a reference to the screen buffer we should move the cursor for
+// - lines - The number of lines to move the cursor. Up is negative, down positive.
+// Return value:
+// - True if handled successfully. False otherwise.
+[[nodiscard]]
+NTSTATUS DoSrvMoveCursorVertically(SCREEN_INFORMATION& screenInfo, const short lines)
+{
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    Cursor& cursor = screenInfo.GetTextBuffer().GetCursor();
+    const int iCurrentCursorY = cursor.GetPosition().Y;
+    SMALL_RECT srMargins = screenInfo.GetAbsoluteScrollMargins().ToInclusive();
+    const bool fMarginsSet = srMargins.Bottom > srMargins.Top;
+    const bool fCursorInMargins = iCurrentCursorY <= srMargins.Bottom && iCurrentCursorY >= srMargins.Top;
+    COORD clampedPos = {cursor.GetPosition().X, cursor.GetPosition().Y+lines};
+    if (fMarginsSet)
+    {
+        auto v = clampedPos.Y;
+        auto lo = srMargins.Top;
+        auto hi = srMargins.Bottom;
+        clampedPos.Y = std::clamp(v, lo, hi);
+    }
+    cursor.SetPosition(clampedPos);
+
     return Status;
 }
 

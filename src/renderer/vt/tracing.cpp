@@ -17,12 +17,16 @@ using namespace Microsoft::Console::VirtualTerminal;
 
 RenderTracing::RenderTracing()
 {
+    #ifndef UNIT_TESTING
     TraceLoggingRegister(g_hConsoleVtRendererTraceProvider);
+    #endif UNIT_TESTING
 }
 
 RenderTracing::~RenderTracing()
 {
+    #ifndef UNIT_TESTING
     TraceLoggingUnregister(g_hConsoleVtRendererTraceProvider);
+    #endif UNIT_TESTING
 }
 
 // Function Description:
@@ -63,10 +67,14 @@ std::string toPrintableString(const std::string_view& inString)
 }
 void RenderTracing::TraceString(const std::string_view& instr) const
 {
+    #ifndef UNIT_TESTING
     const std::string _seq = toPrintableString(instr);
     const char* const seq = _seq.c_str();
     TraceLoggingWrite(g_hConsoleVtRendererTraceProvider,
                       "VtEngine_TraceString",
                       TraceLoggingString(seq),
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+    #else
+    UNREFERENCED_PARAMETER(instr);
+    #endif UNIT_TESTING
 }

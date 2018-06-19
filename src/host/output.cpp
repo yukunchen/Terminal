@@ -649,15 +649,7 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
     }
 
     // Account for the scroll margins set by DECSTBM
-    auto marginRect = screenInfo.GetScrollMargins();
-    const auto viewport = screenInfo.GetBufferViewport();
-
-    // The margins are in viewport relative coordinates. Adjust for that.
-    marginRect.Top += viewport.Top;
-    marginRect.Bottom += viewport.Top;
-    marginRect.Left += viewport.Left;
-    marginRect.Right += viewport.Left;
-
+    auto marginRect = screenInfo.GetAbsoluteScrollMargins().ToInclusive();
     if (marginRect.Bottom > marginRect.Top)
     {
         if (scrollRect.Top < marginRect.Top)
