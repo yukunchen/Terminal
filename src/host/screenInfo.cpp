@@ -1735,10 +1735,8 @@ void SCREEN_INFORMATION::ClipToScreenBuffer(_Inout_ COORD* const pcoordClip) con
     SMALL_RECT srEdges;
     GetScreenEdges(&srEdges);
 
-    pcoordClip->X = std::max(pcoordClip->X, srEdges.Left);
-    pcoordClip->Y = std::max(pcoordClip->Y, srEdges.Top);
-    pcoordClip->X = std::min(pcoordClip->X, srEdges.Right);
-    pcoordClip->Y = std::min(pcoordClip->Y, srEdges.Bottom);
+    pcoordClip->X = std::clamp(pcoordClip->X, srEdges.Left, srEdges.Right);
+    pcoordClip->Y = std::clamp(pcoordClip->Y, srEdges.Top, srEdges.Bottom);
 }
 
 // Routine Description:

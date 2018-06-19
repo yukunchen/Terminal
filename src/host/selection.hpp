@@ -85,6 +85,8 @@ private:
     void _CancelMarkSelection();
     void _CancelMouseSelection();
 
+    static std::unique_ptr<Selection> _instance;
+
 // -------------------------------------------------------------------------------------------------------
 // input handling (selectionInput.cpp)
 public:
@@ -144,6 +146,8 @@ public:
 
     void SetLineSelection(const bool fLineSelectionOn);
 
+    bool ShouldAllowMouseDragSelection(const COORD mousePosition) const noexcept;
+
     // TODO: these states likely belong somewhere else
     void MouseDown();
     void MouseUp();
@@ -169,6 +173,7 @@ private:
 
     bool _fLineSelection; // whether to use line selection or block selection
     bool _fUseAlternateSelection; // whether the user has triggered the alternate selection method
+    bool _allowMouseDragSelection; // true if the dragging the mouse should change the selection
 
     // Flags for this DWORD are defined in wincon.h. Search for def:CONSOLE_SELECTION_IN_PROGRESS, etc.
     DWORD _dwSelectionFlags;
@@ -184,6 +189,7 @@ private:
     COORD _coordSavedCursorPosition;
     ULONG _ulSavedCursorSize;
     bool _fSavedCursorVisible;
+
 
 #ifdef UNIT_TESTING
     friend class SelectionTests;

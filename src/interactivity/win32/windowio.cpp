@@ -797,7 +797,7 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
         }
         else if (Message == WM_MOUSEMOVE)
         {
-            if (pSelection->IsMouseButtonDown())
+            if (pSelection->IsMouseButtonDown() && pSelection->ShouldAllowMouseDragSelection(MousePosition))
             {
                 pSelection->ExtendSelection(MousePosition);
             }
