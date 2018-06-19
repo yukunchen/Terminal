@@ -93,8 +93,8 @@ HRESULT CreateConPty(const std::wstring& cmdline,
     std::wstringstream ss;
     if (w != 0 && h != 0)
     {
-        ss << L" --width " << w;
-        ss << L" --height " << h;
+        ss << L" --width " << (unsigned long)w;
+        ss << L" --height " << (unsigned long)h;
     }
 
     ss << L" --signal 0x" << std::hex << HandleToUlong(signalPipeConhostSide);
