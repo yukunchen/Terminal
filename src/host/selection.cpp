@@ -12,13 +12,17 @@
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 
+
+std::unique_ptr<Selection> Selection::_instance;
+
 Selection::Selection() :
     _fSelectionVisible(false),
     _ulSavedCursorSize(0),
     _fSavedCursorVisible(false),
     _dwSelectionFlags(0),
     _fLineSelection(true),
-    _fUseAlternateSelection(false)
+    _fUseAlternateSelection(false),
+    _allowMouseDragSelection{ true }
 {
     ZeroMemory((void*)&_srSelectionRect, sizeof(_srSelectionRect));
     ZeroMemory((void*)&_coordSelectionAnchor, sizeof(_coordSelectionAnchor));
@@ -27,8 +31,11 @@ Selection::Selection() :
 
 Selection& Selection::Instance()
 {
-    static Selection s;
-    return s;
+    if (!_instance)
+    {
+        _instance.reset(new Selection());
+    }
+    return *_instance;
 }
 
 // Routine Description:
@@ -293,9 +300,10 @@ void Selection::InitializeMouseSelection(const COORD coordBufferPos)
     _coordSelectionAnchor = coordBufferPos;
 
     // since we've started with just a point, the rectangle is 1x1 on the point given
-    SMALL_RECT* const psrSelRect = &_srSelectionRect;
-    psrSelRect->Left = psrSelRect->Right = coordBufferPos.X;
-    psrSelRect->Top = psrSelRect->Bottom = coordBufferPos.Y;
+    _srSelectionRect.Left = coordBufferPos.X;
+    _srSelectionRect.Right = coordBufferPos.X;
+    _srSelectionRect.Top = coordBufferPos.Y;
+    _srSelectionRect.Bottom = coordBufferPos.Y;
 
     // Check for ALT-Mouse Down "use alternate selection"
     // If in box mode, use line mode. If in line mode, use box mode.
@@ -326,6 +334,7 @@ void Selection::AdjustSelection(const COORD coordSelectionStart, const COORD coo
     // modify the anchor and then just use extend to adjust the other portion of the selection rectangle
     _coordSelectionAnchor = coordSelectionStart;
     ExtendSelection(coordSelectionEnd);
+    _allowMouseDragSelection = false;
 }
 
 // Routine Description:
@@ -339,6 +348,8 @@ void Selection::ExtendSelection(_In_ COORD coordBufferPos)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
+
+    _allowMouseDragSelection = true;
 
     // ensure position is within buffer bounds. Not less than 0 and not greater than the screen buffer size.
     screenInfo.ClipToScreenBuffer(&coordBufferPos);

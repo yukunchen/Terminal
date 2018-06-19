@@ -8,6 +8,11 @@
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
+#include "../types/inc/viewport.hpp"
+
+using namespace Microsoft::Console::Types;
+
+
 // Routine Description:
 // - Determines whether the console is in a selecting state
 // Arguments:
@@ -233,4 +238,19 @@ void Selection::SetLineSelection(const bool fLineSelectionOn)
 
         _fLineSelection = fLineSelectionOn;
     }
+}
+
+// Routine Description:
+// - checks if the selection can be changed by a mouse drag.
+// - this is to allow double-click selection and click-mouse-drag selection to play nice together instead of
+// the click-mouse-drag selection overwriting the double-click selection in case the user moves the mouse
+// while double-clicking.
+// Arguments:
+// - mousePosition - current mouse position
+// Return Value:
+// - true if the selection can be changed by a mouse drag
+bool Selection::ShouldAllowMouseDragSelection(const COORD mousePosition) const noexcept
+{
+    const Viewport viewport = Viewport::FromInclusive(_srSelectionRect);
+    return _allowMouseDragSelection || !viewport.IsWithinViewport(&mousePosition);
 }
