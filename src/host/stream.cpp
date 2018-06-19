@@ -325,6 +325,7 @@ NTSTATUS ReadPendingInput(_Inout_ InputBuffer* const pInputBuffer,
 
             if (pendingBytes == 0 || bufferRemaining == 0)
             {
+                pHandleData->CompletePending();
                 *pReadByteCount = 1;
                 return STATUS_SUCCESS;
             }
@@ -374,6 +375,7 @@ NTSTATUS ReadPendingInput(_Inout_ InputBuffer* const pInputBuffer,
 
             if (pendingBytes == 0)
             {
+                pHandleData->CompletePending();
                 *pReadByteCount = 1;
                 return STATUS_SUCCESS;
             }
@@ -397,6 +399,10 @@ NTSTATUS ReadPendingInput(_Inout_ InputBuffer* const pInputBuffer,
     {
         std::string_view remainingPending{ pending.data() + NumToWrite, pendingBytes };
         pHandleData->UpdatePending(remainingPending);
+    }
+    else
+    {
+        pHandleData->CompletePending();
     }
 
     if (!Unicode)

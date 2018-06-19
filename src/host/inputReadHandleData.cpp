@@ -44,6 +44,13 @@ void INPUT_READ_HANDLE_DATA::UpdatePending(std::string_view pending)
     _buffer = pending;
 }
 
+void INPUT_READ_HANDLE_DATA::CompletePending()
+{
+    _isInputPending = false;
+    _isMultilineInput = false;
+    _buffer.clear();
+}
+
 std::string_view INPUT_READ_HANDLE_DATA::GetPendingInput() const
 {
     return _buffer;
