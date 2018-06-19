@@ -1923,9 +1923,7 @@ Viewport SCREEN_INFORMATION::GetAbsoluteScrollMargins() const
 
 // Method Description:
 // - Returns the scrolling margins boundaries for this screen buffer, relative
-//      to the current viewport. Most callers will want the absolute
-//      positions of the margins, though they are set and stored relative to
-//      origin of the viewport.
+//      to the current viewport.
 // Arguments:
 // - <none>
 Viewport SCREEN_INFORMATION::GetRelativeScrollMargins() const

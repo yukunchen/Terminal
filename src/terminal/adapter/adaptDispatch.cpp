@@ -222,7 +222,7 @@ bool AdaptDispatch::CursorUp(_In_ unsigned int const uiDistance)
 // - CUD - Handles cursor downward movement by given distance
 // CUU and CUD are handled seperately from other CUP sequences, because they are
 //      constrained by the margins.
-// See: https://vt100.net/docs/vt510-rm/CUU.html
+// See: https://vt100.net/docs/vt510-rm/CUD.html
 //  "The cursor stops at the bottom margin. If the cursor is already above the
 //   bottom margin, then the cursor stops at the bottom line."
 // Arguments:

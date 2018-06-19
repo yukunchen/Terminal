@@ -205,7 +205,6 @@ public:
 
     void MakeCursorVisible(const COORD CursorPosition);
 
-    // SMALL_RECT GetScrollMargins() const;
     Microsoft::Console::Types::Viewport GetRelativeScrollMargins() const;
     Microsoft::Console::Types::Viewport GetAbsoluteScrollMargins() const;
     void SetScrollMargins(const Microsoft::Console::Types::Viewport margins);

@@ -396,6 +396,12 @@ BOOL ConhostInternalGetSet::PrivateReverseLineFeed()
     return NT_SUCCESS(DoSrvPrivateReverseLineFeed(_io.GetActiveOutputBuffer()));
 }
 
+// Routine Description:
+// - Connects the MoveCursorVertically call directly into our Driver Message servicing call inside Conhost.exe
+//   MoveCursorVertically is an internal-only "API" call that the vt commands can execute,
+//     but it is not represented as a function call on out public API surface.
+// Return Value:
+// - TRUE if successful (see DoSrvMoveCursorVertically). FALSE otherwise.
 BOOL ConhostInternalGetSet::MoveCursorVertically(const short lines)
 {
     return NT_SUCCESS(DoSrvMoveCursorVertically(_io.GetActiveOutputBuffer(), lines));
