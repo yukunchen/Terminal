@@ -155,14 +155,10 @@ public:
 
     void ClearTextData();
 
-
     std::pair<COORD, COORD> GetWordBoundary(const COORD position) const;
 
     TextBuffer& GetTextBuffer() noexcept;
     const TextBuffer& GetTextBuffer() const noexcept;
-
-
-
 
     DWORD OutputMode;
     WORD ResizingWindow;    // > 0 if we should ignore WM_SIZE messages
@@ -209,8 +205,9 @@ public:
 
     void MakeCursorVisible(const COORD CursorPosition);
 
-    SMALL_RECT GetScrollMargins() const;
-    void SetScrollMargins(const SMALL_RECT* const psrMargins);
+    Microsoft::Console::Types::Viewport GetRelativeScrollMargins() const;
+    Microsoft::Console::Types::Viewport GetAbsoluteScrollMargins() const;
+    void SetScrollMargins(const Microsoft::Console::Types::Viewport margins);
 
     [[nodiscard]]
     NTSTATUS UseAlternateScreenBuffer();
@@ -309,7 +306,7 @@ private:
 
     COORD _coordScreenBufferSize; // dimensions of buffer
 
-    SMALL_RECT _srScrollMargins; //The margins of the VT specified scroll region. Left and Right are currently unused, but could be in the future.
+    Microsoft::Console::Types::Viewport _scrollMargins; //The margins of the VT specified scroll region. Left and Right are currently unused, but could be in the future.
 
     // Specifies which coordinates of the screen buffer are visible in the
     //      window client (the "viewport" into the buffer)

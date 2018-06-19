@@ -71,16 +71,9 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
             coordCursor.X = screenInfo.GetTextBuffer().GetCursor().GetPosition().X;
         }
     }
-    SMALL_RECT srMargins = screenInfo.GetScrollMargins();
+    SMALL_RECT srMargins = screenInfo.GetAbsoluteScrollMargins().ToInclusive();
     const bool fMarginsSet = srMargins.Bottom > srMargins.Top;
     const int iCurrentCursorY = screenInfo.GetTextBuffer().GetCursor().GetPosition().Y;
-
-    SMALL_RECT srBufferViewport = screenInfo.GetBufferViewport();
-    // The margins are in viewport relative coordinates. Adjust for that.
-    srMargins.Top += srBufferViewport.Top;
-    srMargins.Bottom += srBufferViewport.Top;
-    srMargins.Left += srBufferViewport.Left;
-    srMargins.Right += srBufferViewport.Left;
 
     const bool fCursorInMargins = iCurrentCursorY <= srMargins.Bottom && iCurrentCursorY >= srMargins.Top;
     const bool fScrollDown = fMarginsSet && fCursorInMargins && (coordCursor.Y > srMargins.Bottom);
