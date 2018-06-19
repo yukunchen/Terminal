@@ -214,6 +214,7 @@ HRESULT ConsoleHandleData::_CloseInputHandle()
     FAIL_FAST_IF_FALSE(_IsInput());
     InputBuffer* pInputBuffer = static_cast<InputBuffer*>(_pvClientPointer);
     INPUT_READ_HANDLE_DATA* pReadHandleData = GetClientInput();
+    pReadHandleData->CompletePending();
 
     // see if there are any reads waiting for data via this handle.  if
     // there are, wake them up.  there aren't any other outstanding i/o

@@ -767,7 +767,7 @@ void DoSrvPrivateSetLegacyAttributes(SCREEN_INFORMATION& screenInfo,
 
         if (fForeground)
         {
-            COLORREF rgbColor = gci.GetColorTableEntry(Attribute & FG_ATTRS);
+            COLORREF rgbColor = gci.GetColorTableEntry((Attribute & FG_ATTRS) | (NewAttributes.IsBold() ? FOREGROUND_INTENSITY : 0));
             NewAttributes.SetForeground(rgbColor);
         }
         if (fBackground)
@@ -816,6 +816,20 @@ void DoSrvPrivateSetConsoleRGBTextAttribute(SCREEN_INFORMATION& screenInfo,
     TextAttribute NewAttributes = screenInfo.GetAttributes();
     NewAttributes.SetColor(rgbColor, fIsForeground);
     screenInfo.SetAttributes(NewAttributes);
+}
+
+void DoSrvPrivateBoldText(SCREEN_INFORMATION& screenInfo, const bool bolded)
+{
+    auto attrs = screenInfo.GetAttributes();
+    if (bolded)
+    {
+        attrs.Embolden();
+    }
+    else
+    {
+        attrs.Debolden();
+    }
+    screenInfo.SetAttributes(attrs);
 }
 
 [[nodiscard]]

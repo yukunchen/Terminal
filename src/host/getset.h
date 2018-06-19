@@ -92,6 +92,8 @@ void DoSrvPrivateSetConsoleRGBTextAttribute(SCREEN_INFORMATION& screenInfo,
                                             const COLORREF rgbColor,
                                             const bool fIsForeground);
 
+void DoSrvPrivateBoldText(SCREEN_INFORMATION& screenInfo, const bool bolded);
+
 [[nodiscard]]
 NTSTATUS DoSrvPrivateEraseAll(SCREEN_INFORMATION& screenInfo);
 

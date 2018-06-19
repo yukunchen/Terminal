@@ -41,6 +41,7 @@ public:
     void SavePendingInput(std::string_view pending);
     void SaveMultilinePendingInput(std::string_view pending);
     void UpdatePending(std::string_view pending);
+    void CompletePending();
 
     std::string_view GetPendingInput() const;
 

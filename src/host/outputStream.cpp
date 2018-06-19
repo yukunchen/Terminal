@@ -273,6 +273,12 @@ BOOL ConhostInternalGetSet::SetConsoleRGBTextAttribute(const COLORREF rgbColor, 
     return TRUE;
 }
 
+BOOL ConhostInternalGetSet::PrivateBoldText(const bool bolded)
+{
+    DoSrvPrivateBoldText(_io.GetActiveOutputBuffer(), bolded);
+    return TRUE;
+}
+
 // Routine Description:
 // - Connects the WriteConsoleInput API call directly into our Driver Message servicing call inside Conhost.exe
 // Arguments:
