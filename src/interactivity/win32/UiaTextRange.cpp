@@ -1178,7 +1178,7 @@ SCREEN_INFORMATION& UiaTextRange::_getScreenInfo()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     THROW_HR_IF(E_POINTER, !gci.HasActiveOutputBuffer());
-    return gci.GetActiveOutputBuffer();
+    return gci.GetActiveOutputBuffer().GetActiveBuffer();
 }
 
 // Routine Description:
@@ -1211,8 +1211,7 @@ const unsigned int UiaTextRange::_getTotalRows()
 // - The screen buffer size
 const COORD UiaTextRange::_getScreenBufferCoords()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.GetScreenBufferSize();
+    return _getScreenInfo().GetScreenBufferSize();
 }
 
 
