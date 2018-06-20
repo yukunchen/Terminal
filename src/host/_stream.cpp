@@ -258,6 +258,18 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
             }
         }
 
+        if (screenInfo.InVTMode())
+        {
+            // if we're at the beginning of a row and we get a backspace, skip it
+            if (*lpString == UNICODE_BACKSPACE && CursorPosition.X == 0)
+            {
+                *pcb += sizeof(wchar_t);
+                ++lpString;
+                ++pwchRealUnicode;
+                continue;
+            }
+        }
+
         // As an optimization, collect characters in buffer and print out all at once.
         XPosition = cursor.GetPosition().X;
         size_t i = 0;
