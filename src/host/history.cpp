@@ -24,7 +24,13 @@
 
 #pragma hdrstop
 
-std::deque<CommandHistory> CommandHistory::s_historyLists;
+// I need to be a list because we rearrange elements inside to maintain a 
+// "least recently used" state. Doing many rearrangement operations with 
+// a list will maintain the iterator pointers as valid to the elements
+// (where other collections like deque do not.)
+// If CommandHistory::s_Allocate and friends stop shuffling elements 
+// for maintaining LRU, then this datatype can be changed.
+std::list<CommandHistory> CommandHistory::s_historyLists;
 
 CommandHistory* CommandHistory::s_Find(const HANDLE processHandle)
 {
