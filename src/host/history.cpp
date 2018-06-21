@@ -133,50 +133,54 @@ HRESULT CommandHistory::Add(const std::wstring_view newCommand,
         return S_OK;
     }
 
-    if (_commands.size() == 0 ||
-        _commands.back().size() != newCommand.size() ||
-        !std::equal(_commands.back().cbegin(), _commands.back().cbegin() + newCommand.size(),
-                   newCommand.cbegin(), newCommand.cend()))
+    try
     {
-        std::wstring reuse{};
-
-        if (suppressDuplicates)
+        if (_commands.size() == 0 ||
+            _commands.back().size() != newCommand.size() ||
+            !std::equal(_commands.back().cbegin(), _commands.back().cbegin() + newCommand.size(),
+                        newCommand.cbegin(), newCommand.cend()))
         {
-            SHORT index;
-            if (FindMatchingCommand(newCommand, LastDisplayed, index, CommandHistory::MatchOptions::ExactMatch))
+            std::wstring reuse{};
+
+            if (suppressDuplicates)
             {
-                reuse = _Remove(index);
+                SHORT index;
+                if (FindMatchingCommand(newCommand, LastDisplayed, index, CommandHistory::MatchOptions::ExactMatch))
+                {
+                    reuse = _Remove(index);
+                }
             }
-        }
 
-        // find free record.  if all records are used, free the lru one.
-        if ((SHORT)_commands.size() == _maxCommands)
-        {
-            _commands.erase(_commands.cbegin());
-            if (LastDisplayed == ((SHORT)_commands.size()) - 1i16)
+            // find free record.  if all records are used, free the lru one.
+            if ((SHORT)_commands.size() == _maxCommands)
             {
-                LastDisplayed = -1;
+                _commands.erase(_commands.cbegin());
+                if (LastDisplayed == ((SHORT)_commands.size()) - 1i16)
+                {
+                    LastDisplayed = -1;
+                }
             }
-        }
 
-        // add newCommand to array
-        if (!reuse.empty())
-        {
-            _commands.emplace_back(reuse);
-        }
-        else
-        {
-            _commands.emplace_back(newCommand);
-        }
+            // add newCommand to array
+            if (!reuse.empty())
+            {
+                _commands.emplace_back(reuse);
+            }
+            else
+            {
+                _commands.emplace_back(newCommand);
+            }
 
-        if (LastDisplayed == -1 ||
-            _commands[LastDisplayed].size() != newCommand.size() ||
-            !std::equal(_commands[LastDisplayed].cbegin(), _commands[LastDisplayed].cbegin() + newCommand.size(),
-                       newCommand.cbegin(), newCommand.cend()))
-        {
-            _Reset();
+            if (LastDisplayed == -1 ||
+                _commands.at(LastDisplayed).size() != newCommand.size() ||
+                !std::equal(_commands.at(LastDisplayed).cbegin(), _commands.at(LastDisplayed).cbegin() + newCommand.size(),
+                            newCommand.cbegin(), newCommand.cend()))
+            {
+                _Reset();
+            }
         }
     }
+    CATCH_RETURN();
     SetFlag(Flags, CLE_RESET); // remember that we've returned a cmd
 
     return S_OK;
@@ -184,7 +188,13 @@ HRESULT CommandHistory::Add(const std::wstring_view newCommand,
 
 std::wstring_view CommandHistory::GetNth(const SHORT index) const
 {
-    return _commands[index];
+    try
+    {
+        return _commands.at(index);
+    }
+    CATCH_LOG();
+
+    return {};
 }
 
 [[nodiscard]]
@@ -194,21 +204,25 @@ HRESULT CommandHistory::RetrieveNth(const SHORT index,
 {
     LastDisplayed = index;
 
-    const auto& cmd = _commands[index];
-    if (cmd.size() > (size_t)buffer.size())
+    try
     {
-        commandSize = buffer.size(); // room for CRLF?
+        const auto& cmd = _commands.at(index);
+        if (cmd.size() > (size_t)buffer.size())
+        {
+            commandSize = buffer.size(); // room for CRLF?
+        }
+        else
+        {
+            commandSize = cmd.size();
+        }
+
+        std::copy_n(cmd.cbegin(), commandSize, buffer.begin());
+
+        commandSize *= sizeof(wchar_t);
+
+        return S_OK;
     }
-    else
-    {
-        commandSize = cmd.size();
-    }
-
-    std::copy_n(cmd.cbegin(), commandSize, buffer.begin());
-
-    commandSize *= sizeof(wchar_t);
-
-    return S_OK;
+    CATCH_RETURN();
 }
 
 [[nodiscard]]
@@ -251,14 +265,16 @@ HRESULT CommandHistory::Retrieve(const WORD virtualKeyCode,
 
 std::wstring_view CommandHistory::GetLastCommand() const
 {
-    if (_commands.size() == 0)
+    if (_commands.size() != 0)
     {
-        return {};
+        try
+        {
+            return _commands.at(LastDisplayed);
+        }
+        CATCH_LOG();
     }
-    else
-    {
-        return _commands[LastDisplayed];
-    }
+
+    return {};
 }
 
 void CommandHistory::Empty()
@@ -510,29 +526,35 @@ std::wstring CommandHistory::_Remove(const SHORT iDel)
         LastDisplayed = -1;
     }
 
-    const auto str = _commands[iDel];
-
-    if (iDel < iLast)
+    try
     {
-        _commands.erase(_commands.cbegin() + iDel);
-        if ((iDisp > iDel) && (iDisp <= iLast))
-        {
-            _Dec(iDisp);
-        }
-        _Dec(iLast);
-    }
-    else if (iFirst <= iDel)
-    {
-        _commands.erase(_commands.cbegin() + iDel);
-        if ((iDisp >= iFirst) && (iDisp < iDel))
-        {
-            _Inc(iDisp);
-        }
-        _Inc(iFirst);
-    }
+        const auto str = _commands.at(iDel);
 
-    LastDisplayed = iDisp;
-    return str;
+        if (iDel < iLast)
+        {
+            _commands.erase(_commands.cbegin() + iDel);
+            if ((iDisp > iDel) && (iDisp <= iLast))
+            {
+                _Dec(iDisp);
+            }
+            _Dec(iLast);
+        }
+        else if (iFirst <= iDel)
+        {
+            _commands.erase(_commands.cbegin() + iDel);
+            if ((iDisp >= iFirst) && (iDisp < iDel))
+            {
+                _Inc(iDisp);
+            }
+            _Inc(iFirst);
+        }
+
+        LastDisplayed = iDisp;
+        return str;
+    }
+    CATCH_LOG();
+    
+    return {};
 }
 
 
@@ -565,21 +587,25 @@ bool CommandHistory::FindMatchingCommand(const std::wstring_view givenCommand,
         return true;
     }
 
-    for (size_t i = 0; i < _commands.size(); i++)
+    try
     {
-        const auto& storedCommand = _commands[indexFound];
-        if ((IsFlagClear(options, MatchOptions::ExactMatch) && (givenCommand.size() <= storedCommand.size())) || (givenCommand.size() == storedCommand.size()))
+        for (size_t i = 0; i < _commands.size(); i++)
         {
-            if (std::equal(storedCommand.begin(), storedCommand.begin() + givenCommand.size(),
-                           givenCommand.begin(), givenCommand.end(),
-                           CaseInsensitiveEquality))
+            const auto& storedCommand = _commands.at(indexFound);
+            if ((IsFlagClear(options, MatchOptions::ExactMatch) && (givenCommand.size() <= storedCommand.size())) || (givenCommand.size() == storedCommand.size()))
             {
-                return true;
+                if (std::equal(storedCommand.begin(), storedCommand.begin() + givenCommand.size(),
+                               givenCommand.begin(), givenCommand.end(),
+                               CaseInsensitiveEquality))
+                {
+                    return true;
+                }
             }
-        }
 
-        _Prev(indexFound);
+            _Prev(indexFound);
+        }
     }
+    CATCH_LOG();
 
     return false;
 }
