@@ -94,7 +94,7 @@ private:
     std::wstring _appName;
     HANDLE _processHandle;
 
-    static std::deque<CommandHistory> s_historyLists;
+    static std::list<CommandHistory> s_historyLists;
 
 public:
     DWORD Flags;
