@@ -388,7 +388,14 @@ std::deque<std::unique_ptr<KeyEvent>> SynthesizeNumpadEvents(const wchar_t wch, 
     convertedChars = ConvertToOem(codepage, wstr);
     if (convertedChars.size() == 1)
     {
-        unsigned char const uch = gsl::narrow<unsigned char>(convertedChars[0]);
+        // It is OK if the char is "signed -1", we want to interpret that as "unsigned 255" for the 
+        // "integer to character" conversion below with ::to_string, thus the static_cast.
+        // Prime example is nonbreaking space U+00A0 will convert to OEM by codepage 437 to 0xFF which is -1 signed.
+        // But it is absolutely valid as 0xFF or 255 unsigned as the correct CP437 character.
+        // We need to treat it as unsigned because we're going to pretend it was a keypad entry
+        // and you don't enter negative numbers on the keypad.
+        unsigned char const uch = static_cast<unsigned char>(convertedChars[0]);
+
         // unsigned char values are in the range [0, 255] so we need to be
         // able to store up to 4 chars from the conversion (including the end of string char)
         auto charString = std::to_string(uch);
