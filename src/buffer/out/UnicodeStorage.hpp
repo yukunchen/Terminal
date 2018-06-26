@@ -15,6 +15,7 @@ Author(s):
 
 #include <vector>
 #include <unordered_map>
+#include <climits>
 
 // std::unordered_map needs help to know how to hash a COORD
 namespace std
@@ -33,7 +34,8 @@ namespace std
         constexpr size_t operator()(const COORD& coord) const noexcept
         {
             size_t retVal = coord.Y;
-            retVal |= coord.X << (sizeof(coord.Y) * 8);
+            const size_t xCoord = coord.X;
+            retVal |= xCoord << (sizeof(coord.Y) * CHAR_BIT);
             return retVal;
         }
     };
