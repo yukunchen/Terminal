@@ -38,19 +38,19 @@ public:
     bool IsInputPending() const;
     bool IsMultilineInput() const;
 
-    void SavePendingInput(std::string_view pending);
-    void SaveMultilinePendingInput(std::string_view pending);
-    void UpdatePending(std::string_view pending);
+    void SavePendingInput(std::wstring_view pending);
+    void SaveMultilinePendingInput(std::wstring_view pending);
+    void UpdatePending(std::wstring_view pending);
     void CompletePending();
 
-    std::string_view GetPendingInput() const;
+    std::wstring_view GetPendingInput() const;
 
 private:
 
     bool _isInputPending;
     bool _isMultilineInput;
 
-    std::string _buffer;
+    std::wstring _buffer;
 
     std::atomic<size_t> _readCount;
 };

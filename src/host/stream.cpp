@@ -291,7 +291,7 @@ NTSTATUS ReadPendingInput(_Inout_ InputBuffer* const pInputBuffer,
                           const bool Unicode,
                           const size_t OutputBufferSize)
 {
-
+    // TODO: MSFT: 18047766 - Correct this method to not play byte counting games.
     BOOL fAddDbcsLead = FALSE;
     size_t NumToWrite = 0;
     size_t NumToBytes = 0;
@@ -305,7 +305,7 @@ NTSTATUS ReadPendingInput(_Inout_ InputBuffer* const pInputBuffer,
     }
 
     const auto pending = pHandleData->GetPendingInput();
-    size_t pendingBytes = pending.size();
+    size_t pendingBytes = pending.size() * sizeof(wchar_t);
     auto Tmp = pending.cbegin();
 
     if (pHandleData->IsMultilineInput())
@@ -397,7 +397,7 @@ NTSTATUS ReadPendingInput(_Inout_ InputBuffer* const pInputBuffer,
     pendingBytes -= NumToWrite;
     if (pendingBytes != 0)
     {
-        std::string_view remainingPending{ pending.data() + NumToWrite, pendingBytes };
+        std::wstring_view remainingPending{ pending.data() + (NumToWrite / sizeof(wchar_t)) , pendingBytes / sizeof(wchar_t) };
         pHandleData->UpdatePending(remainingPending);
     }
     else
