@@ -11,8 +11,7 @@
   "Dependencies": {
     "Files": [ ],
     "RemoteFiles": [ ],
-    "Packages": [ "Microsoft.Console.Tools.Nihilist" ],
-    "Binaries": [ ]
+    "Packages": [ "Microsoft.Console.Tools.Nihilist" ]
   },
   "Logs": [ ],
   "Plugins": [ ]

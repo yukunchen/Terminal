@@ -16,8 +16,7 @@
         "Microsoft.Console.Tools.VtApp",
         "Microsoft.Test.WinAppDriver.ClientRuntimeLibraries",
         "Microsoft.Test.WinAppDriver.Server"
-    ],
-    "Binaries": [ ]
+    ]
   },
   "Logs": [ ],
   "Plugins": [ ]

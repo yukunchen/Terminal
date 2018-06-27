@@ -11,8 +11,7 @@
   "Dependencies": {
     "Files": [ ],
     "RemoteFiles": [ ],
-    "Packages": [ ],
-    "Binaries": [ ]
+    "Packages": [ ]
   },
   "Logs": [ ],
   "Plugins": [ ]
