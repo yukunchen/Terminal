@@ -126,7 +126,7 @@ public:
     COLORREF GetDefaultForeground() const;
     COLORREF GetDefaultBackground() const;
 
-    void SetTitle(const std::wstring& newTitle);
+    void SetTitle(const std::wstring_view newTitle);
     void SetTitlePrefix(const std::wstring& newTitlePrefix);
     void SetOriginalTitle(const std::wstring& originalTitle);
     void SetLinkTitle(const std::wstring& linkTitle);
@@ -136,7 +136,7 @@ public:
     const std::wstring GetTitleAndPrefix() const;
 
     [[nodiscard]]
-    static NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle, const DWORD cbTitle);
+    static NTSTATUS AllocateConsole(const std::wstring_view title);
     // MSFT:16886775 : get rid of friends
     friend void SetActiveScreenBuffer(_Inout_ SCREEN_INFORMATION& screenInfo);
     friend class SCREEN_INFORMATION;

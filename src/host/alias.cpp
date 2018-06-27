@@ -1088,7 +1088,7 @@ bool Alias::s_TryReplaceNextCommandMacro(const wchar_t ch,
 // Routine Description:
 // - Appends the system line feed (CRLF) to the given string
 // Arguments:
-// - appendToStr - Append the system line feed here 
+// - appendToStr - Append the system line feed here
 // - lineCount - Updates the rolling count of lines if we add a CRLF.
 void Alias::s_AppendCrLf(std::wstring& appendToStr,
                          size_t& lineCount)
@@ -1114,7 +1114,7 @@ size_t Alias::s_ReplaceMacros(std::wstring& str,
     size_t lineCount = 0;
     std::wstring finalText;
 
-    // The target text may contain substitution macros indicated by $. 
+    // The target text may contain substitution macros indicated by $.
     // Walk through and substitute them as appropriate.
     for (auto ch = str.cbegin(); ch < str.cend(); ch++)
     {
@@ -1153,7 +1153,7 @@ size_t Alias::s_ReplaceMacros(std::wstring& str,
                     finalText.push_back(*chNext);
                 }
 
-                // Since we read ahead and used that character, 
+                // Since we read ahead and used that character,
                 // advance the iterator one extra to compensate.
                 ch++;
             }
@@ -1256,7 +1256,7 @@ std::wstring Alias::s_MatchAndCopyAlias(const std::wstring& sourceText,
 // - pwchSource - string to match
 // - cbSource - length of pwchSource in bytes
 // - pwchTarget - where to store matched string
-// - cbTargetSize - on input, contains size of pwchTarget.  
+// - cbTargetSize - on input, contains size of pwchTarget.
 // - cbTargetWritten - On output, contains length of alias stored in pwchTarget.
 // - pwchExe - Name of exe that command is associated with to find related aliases
 // - cbExe - Length in bytes of exe name
@@ -1265,7 +1265,7 @@ std::wstring Alias::s_MatchAndCopyAlias(const std::wstring& sourceText,
 // - None. It will just maintain the source as the target if we can't match an alias.
 void Alias::s_MatchAndCopyAliasLegacy(_In_reads_bytes_(cbSource) PWCHAR pwchSource,
                                       _In_ size_t cbSource,
-                                      _Out_writes_bytes_(*pcbTarget) PWCHAR pwchTarget,
+                                      _Out_writes_bytes_(cbTargetWritten) PWCHAR pwchTarget,
                                       _In_ const size_t cbTargetSize,
                                       size_t& cbTargetWritten,
                                       const std::wstring& exeName,

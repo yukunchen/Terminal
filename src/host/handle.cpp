@@ -40,13 +40,11 @@ void UnlockConsole()
 //   data - input buffer and screen buffer.
 // - NOTE: Will read global ServiceLocator::LocateGlobals().getConsoleInformation expecting Settings to already be filled.
 // Arguments:
-// - Title - Window Title to display
-// - TitleLength - Length of Window Title string
+// - title - Window Title to display
 // Return Value:
 // - STATUS_SUCCESS if successful.
 [[nodiscard]]
-NTSTATUS CONSOLE_INFORMATION::AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle,
-                                              const DWORD cbTitle)
+NTSTATUS CONSOLE_INFORMATION::AllocateConsole(const std::wstring_view title)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // Synchronize flags
@@ -70,11 +68,9 @@ NTSTATUS CONSOLE_INFORMATION::AllocateConsole(_In_reads_bytes_(cbTitle) const WC
         return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
     }
 
-    // Byte count + 1 so dividing by 2 always rounds up. +1 more for trailing null guard.
-    auto titleLength = ((cbTitle + 1) / sizeof(WCHAR)) + 1;
     try
     {
-        gci.SetTitle(std::wstring(pwchTitle, titleLength));
+        gci.SetTitle(title);
         gci.SetOriginalTitle(std::wstring(TranslateConsoleTitle(gci.GetTitle().c_str(), TRUE, FALSE)));
     }
     catch (...)
