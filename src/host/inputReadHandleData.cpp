@@ -27,19 +27,19 @@ bool INPUT_READ_HANDLE_DATA::IsMultilineInput() const
     return _isMultilineInput;
 }
 
-void INPUT_READ_HANDLE_DATA::SaveMultilinePendingInput(std::string_view pending)
+void INPUT_READ_HANDLE_DATA::SaveMultilinePendingInput(std::wstring_view pending)
 {
     _isMultilineInput = true;
     SavePendingInput(pending);
 }
 
-void INPUT_READ_HANDLE_DATA::SavePendingInput(std::string_view pending)
+void INPUT_READ_HANDLE_DATA::SavePendingInput(std::wstring_view pending)
 {
     _isInputPending = true;
     UpdatePending(pending);
 }
 
-void INPUT_READ_HANDLE_DATA::UpdatePending(std::string_view pending)
+void INPUT_READ_HANDLE_DATA::UpdatePending(std::wstring_view pending)
 {
     _buffer = pending;
 }
@@ -51,7 +51,7 @@ void INPUT_READ_HANDLE_DATA::CompletePending()
     _buffer.clear();
 }
 
-std::string_view INPUT_READ_HANDLE_DATA::GetPendingInput() const
+std::wstring_view INPUT_READ_HANDLE_DATA::GetPendingInput() const
 {
     return _buffer;
 }

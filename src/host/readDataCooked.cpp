@@ -440,7 +440,7 @@ HRESULT COOKED_READ_DATA::Read(const bool isUnicode,
             __analysis_assume(numBytes <= _UserBufferSize);
             memmove(_UserBuffer, _BackupLimit, numBytes);
 
-            const std::string_view pending{ ((char*)_BackupLimit + numBytes), _BytesRead - numBytes };
+            const std::wstring_view pending{ _BackupLimit + (numBytes / sizeof(wchar_t)), (_BytesRead - numBytes) / sizeof(wchar_t) };
             if (LineCount > 1)
             {
                 pInputReadHandleData->SaveMultilinePendingInput(pending);

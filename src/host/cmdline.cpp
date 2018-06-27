@@ -386,7 +386,7 @@ NTSTATUS ProcessCommandListInput(_In_ COOKED_READ_DATA* const pCookedReadData)
                 memmove(pCookedReadData->_UserBuffer, pCookedReadData->_BackupLimit, NumBytes);
 
                 // Store all of the remaining as pending until the next read operation.
-                const std::string_view pending{ ((char*)pCookedReadData->_BackupLimit + NumBytes), pCookedReadData->_BytesRead - NumBytes };
+                const std::wstring_view pending{ pCookedReadData->_BackupLimit + (NumBytes / sizeof(wchar_t)), (pCookedReadData->_BytesRead - NumBytes) / sizeof(wchar_t) };
                 if (LineCount > 1)
                 {
                     pInputReadHandleData->SaveMultilinePendingInput(pending);
