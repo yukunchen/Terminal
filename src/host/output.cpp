@@ -86,7 +86,6 @@ std::vector<std::vector<OutputCell>> ReadRectFromScreenBuffer(const SCREEN_INFOR
     for (size_t rowIndex = 0; rowIndex < static_cast<size_t>(viewport.Height()); ++rowIndex)
     {
         auto cells = screenInfo.ReadLine(coordSourcePoint.Y + rowIndex, coordSourcePoint.X);
-        FAIL_FAST_IF(cells.size() < static_cast<size_t>(viewport.Width()));
 
         // clip to viewport size
         cells.resize(viewport.Width(), paddingCell);
