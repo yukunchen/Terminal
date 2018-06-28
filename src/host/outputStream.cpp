@@ -84,7 +84,7 @@ void WriteBuffer::_DefaultStringCase(_In_reads_(cch) const wchar_t* const rgwch,
                                  &dwNumBytes,
                                  nullptr,
                                  _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor().GetPosition().X,
-                                 WC_NONDESTRUCTIVE_TAB | WC_DELAY_EOL_WRAP,
+                                 WC_LIMIT_BACKSPACE | WC_NONDESTRUCTIVE_TAB | WC_DELAY_EOL_WRAP,
                                  nullptr);
 }
 

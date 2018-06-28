@@ -260,8 +260,8 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
 
         if (screenInfo.InVTMode())
         {
-            // if we're at the beginning of a row and we get a backspace, skip it
-            if (*lpString == UNICODE_BACKSPACE && CursorPosition.X == 0)
+            // if we're at the beginning of a row and we get a backspace and told to limit backspacing, skip it
+            if (*lpString == UNICODE_BACKSPACE && CursorPosition.X == 0 && IsFlagSet(dwFlags, WC_LIMIT_BACKSPACE))
             {
                 *pcb += sizeof(wchar_t);
                 ++lpString;
