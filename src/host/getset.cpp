@@ -1688,12 +1688,12 @@ HRESULT DoSrvSetConsoleTitleW(_In_reads_or_z_(cchBuffer) const wchar_t* const pw
             }
         }
 
-        gci.SetTitle(sanitized);
+        gci.SetTitle({ sanitized });
     }
     else
     {
         // SetTitle will trigger the renderer to update the titlebar for us.
-        gci.SetTitle(std::wstring(pwsBuffer, cchBuffer));
+        gci.SetTitle({ pwsBuffer, cchBuffer });
 
     }
 

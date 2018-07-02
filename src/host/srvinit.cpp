@@ -171,11 +171,8 @@ NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
         settings.SetLaunchFaceName(settings.GetFaceName(), LF_FACESIZE);
     }
 
-    // Now we need to actually create the console using the settings given.
-#pragma prefast(suppress:26018, "PREfast can't detect null termination status of Title.")
-
 // Allocate console will read the global ServiceLocator::LocateGlobals().getConsoleInformation for the settings we just set.
-    NTSTATUS Status = CONSOLE_INFORMATION::AllocateConsole(Title, TitleLength);
+    NTSTATUS Status = CONSOLE_INFORMATION::AllocateConsole({ Title, TitleLength / sizeof(wchar_t)});
     if (!NT_SUCCESS(Status))
     {
         return Status;

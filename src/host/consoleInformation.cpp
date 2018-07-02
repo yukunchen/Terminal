@@ -159,9 +159,9 @@ COLORREF CONSOLE_INFORMATION::GetDefaultBackground() const
 // - newTitle: The new value to use for the title
 // Return Value:
 // - <none>
-void CONSOLE_INFORMATION::SetTitle(const std::wstring& newTitle)
+void CONSOLE_INFORMATION::SetTitle(const std::wstring_view newTitle)
 {
-    _Title = newTitle;
+    _Title = std::wstring{ newTitle.begin(), newTitle.end() };
 
     auto* const pRender = ServiceLocator::LocateGlobals().pRender;
     if (pRender)
