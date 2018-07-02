@@ -264,6 +264,7 @@ void Selection::_SetSelectionVisibility(const bool fMakeVisible)
 
         _PaintSelection();
     }
+    LOG_IF_FAILED(ServiceLocator::LocateConsoleWindow()->SignalUia(UIA_Text_TextSelectionChangedEventId));
 }
 
 // Routine Description:
@@ -314,10 +315,10 @@ void Selection::InitializeMouseSelection(const COORD coordBufferPos)
     if (pWindow != nullptr)
     {
         pWindow->UpdateWindowText();
+        LOG_IF_FAILED(pWindow->SignalUia(UIA_Text_TextSelectionChangedEventId));
     }
 
     // Fire off an event to let accessibility apps know the selection has changed.
-
     ServiceLocator::LocateAccessibilityNotifier()->NotifyConsoleCaretEvent(IAccessibilityNotifier::ConsoleCaretEventFlags::CaretSelection, PACKCOORD(coordBufferPos));
 }
 
@@ -413,6 +414,7 @@ void Selection::ExtendSelection(_In_ COORD coordBufferPos)
 
     // Fire off an event to let accessibility apps know the selection has changed.
     ServiceLocator::LocateAccessibilityNotifier()->NotifyConsoleCaretEvent(IAccessibilityNotifier::ConsoleCaretEventFlags::CaretSelection, PACKCOORD(coordBufferPos));
+    LOG_IF_FAILED(ServiceLocator::LocateConsoleWindow()->SignalUia(UIA_Text_TextSelectionChangedEventId));
 }
 
 // Routine Description:
@@ -504,6 +506,7 @@ void Selection::ClearSelection(const bool fStartingNewSelection)
         {
             _CancelMarkSelection();
         }
+        LOG_IF_FAILED(ServiceLocator::LocateConsoleWindow()->SignalUia(UIA_Text_TextSelectionChangedEventId));
 
         _dwSelectionFlags = 0;
 
@@ -621,6 +624,7 @@ void Selection::InitializeMarkSelection()
     if (pWindow != nullptr)
     {
         pWindow->UpdateWindowText();
+        LOG_IF_FAILED(pWindow->SignalUia(UIA_Text_TextSelectionChangedEventId));
     }
 }
 
