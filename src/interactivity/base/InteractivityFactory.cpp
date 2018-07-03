@@ -328,4 +328,63 @@ NTSTATUS InteractivityFactory::CreateInputServices(_Inout_ std::unique_ptr<IInpu
     return status;
 }
 
+[[nodiscard]]
+NTSTATUS InteractivityFactory::CreatePseudoWindow(HWND& hwnd)
+{
+    hwnd = 0;
+    ApiLevel level;
+    NTSTATUS status = ApiDetector::DetectNtUserWindow(&level);;
+    if (NT_SUCCESS(status))
+    {
+        try
+        {
+            WNDCLASS pseudoClass {0};
+            switch (level)
+            {
+            case ApiLevel::Win32:
+                pseudoClass.lpszClassName = L"pseudo";
+                pseudoClass.lpfnWndProc = (WNDPROC)([](HWND h, UINT u, WPARAM w, LPARAM l)->LRESULT{return DefWindowProc(h, u, w, l);});
+                RegisterClass(&pseudoClass);
+                // Attempt to create window
+                hwnd = CreateWindowExW(
+                    0,//WS_EX_NOACTIVATE,
+                    L"pseudo",
+                    nullptr,
+                    WS_OVERLAPPEDWINDOW, //dwStyle
+                    0, // x
+                    0, // y
+                    0, // w
+                    0, // h
+                    HWND_DESKTOP,   //HWND_MESSAGE,
+                    nullptr,
+                    nullptr,
+                    nullptr
+                );
+                if (hwnd == nullptr)
+                {
+                    DWORD const gle = GetLastError();
+                    DebugBreak();
+                    status = NTSTATUS_FROM_WIN32(gle);
+                }
+                break;
+
+    #ifdef BUILD_ONECORE_INTERACTIVITY
+            case ApiLevel::OneCore:
+                hwnd = 0;
+                status = STATUS_SUCCESS;
+                break;
+    #endif
+            default:
+                status = STATUS_INVALID_LEVEL;
+                break;
+            }
+        }
+        catch (...)
+        {
+            status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+        }
+    }
+
+    return status;
+}
 #pragma endregion

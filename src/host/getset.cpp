@@ -905,13 +905,18 @@ void ApiRoutines::GetConsoleWindowImpl(_Out_ HWND* const pHwnd)
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
     IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (pWindow != nullptr)
     {
         *pHwnd = pWindow->GetWindowHandle();
     }
     else
     {
-        *pHwnd = NULL;
+        if (gci.IsInVtIoMode())
+        {
+            *pHwnd = ServiceLocator::LocatePseudoWindow();
+        }
+        // *pHwnd = NULL;
     }
 }
 

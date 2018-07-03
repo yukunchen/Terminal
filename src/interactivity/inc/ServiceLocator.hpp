@@ -82,6 +82,9 @@ namespace Microsoft::Console::Interactivity
 
         static Globals& LocateGlobals();
 
+        static HWND& LocatePseudoWindow();
+
+
     protected:
         ServiceLocator(ServiceLocator const&) = delete;
         ServiceLocator& operator=(ServiceLocator const&) = delete;
@@ -105,5 +108,7 @@ namespace Microsoft::Console::Interactivity
         static std::unique_ptr<IInputServices> s_inputServices;
 
         static Globals s_globals;
+        static bool s_pseudoWindowInitialized;
+        static HWND s_pseudoWindow;
     };
 }

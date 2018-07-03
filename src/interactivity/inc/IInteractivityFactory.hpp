@@ -47,6 +47,9 @@ namespace Microsoft::Console::Interactivity
         virtual NTSTATUS CreateSystemConfigurationProvider(_Inout_ std::unique_ptr<ISystemConfigurationProvider>& provider) = 0;
         [[nodiscard]]
         virtual NTSTATUS CreateInputServices(_Inout_ std::unique_ptr<IInputServices>& services) = 0;
+
+        [[nodiscard]]
+        virtual NTSTATUS CreatePseudoWindow(HWND& hwnd) = 0;
     };
 
     inline IInteractivityFactory::~IInteractivityFactory() {}

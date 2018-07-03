@@ -23,6 +23,9 @@ IConsoleWindow* ServiceLocator::s_consoleWindow = nullptr;
 
 Globals                      ServiceLocator::s_globals;
 
+bool ServiceLocator::s_pseudoWindowInitialized = false;
+HWND ServiceLocator::s_pseudoWindow = 0;
+
 #pragma endregion
 
 #pragma region Public Methods
@@ -268,6 +271,26 @@ IInputServices* ServiceLocator::LocateInputServices()
 Globals& ServiceLocator::LocateGlobals()
 {
     return s_globals;
+}
+
+HWND& ServiceLocator::LocatePseudoWindow()
+{
+    NTSTATUS status = STATUS_SUCCESS;
+    if (!s_pseudoWindowInitialized)
+    {
+        if (s_interactivityFactory.get() == nullptr)
+        {
+            status = ServiceLocator::LoadInteractivityFactory();
+        }
+
+        if (NT_SUCCESS(status))
+        {
+            status = s_interactivityFactory->CreatePseudoWindow(s_pseudoWindow);
+        }
+        s_pseudoWindowInitialized = true;
+    }
+    LOG_IF_NTSTATUS_FAILED(status);
+    return s_pseudoWindow;
 }
 
 #pragma endregion
