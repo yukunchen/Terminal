@@ -1166,6 +1166,11 @@ NTSTATUS DoSrvMoveCursorVertically(SCREEN_INFORMATION& screenInfo, const short l
     const bool fMarginsSet = srMargins.Bottom > srMargins.Top;
     const bool fCursorInMargins = iCurrentCursorY <= srMargins.Bottom && iCurrentCursorY >= srMargins.Top;
     COORD clampedPos = {cursor.GetPosition().X, cursor.GetPosition().Y+lines};
+
+    // Make sure the cursor doesn't move outside the viewport.
+    clampedPos.Y = std::clamp(clampedPos.Y, screenInfo.GetBufferViewport().Top, screenInfo.GetBufferViewport().Bottom);
+
+    // Make sure the cursor stays inside the margins
     if (fMarginsSet)
     {
         auto v = clampedPos.Y;
