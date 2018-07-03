@@ -147,7 +147,9 @@ HRESULT Renderer::_PaintFrameForEngine(_In_ IRenderEngine* const pEngine)
     RETURN_IF_FAILED(hr);
 
     // Return early if there's nothing to paint.
-    if (S_FALSE == hr)
+    // The renderer itself tracks if there's something to do with the title, the
+    //      engine won't know that.
+    if (S_FALSE == hr && !_titleChanged)
     {
         return S_OK;
     }
