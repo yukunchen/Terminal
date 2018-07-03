@@ -916,7 +916,6 @@ void ApiRoutines::GetConsoleWindowImpl(_Out_ HWND* const pHwnd)
         {
             *pHwnd = ServiceLocator::LocatePseudoWindow();
         }
-        // *pHwnd = NULL;
     }
 }
 

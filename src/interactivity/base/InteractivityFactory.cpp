@@ -338,32 +338,25 @@ NTSTATUS InteractivityFactory::CreatePseudoWindow(HWND& hwnd)
     {
         try
         {
+            static const wchar_t* const PSEUDO_WINDOW_CLASS = L"PseudoConsoleWindow";
             WNDCLASS pseudoClass {0};
+            auto wndProc = [](HWND h, UINT u, WPARAM w, LPARAM l) -> LRESULT
+            {
+                return DefWindowProc(h, u, w, l);
+            };
             switch (level)
             {
             case ApiLevel::Win32:
-                pseudoClass.lpszClassName = L"pseudo";
-                pseudoClass.lpfnWndProc = (WNDPROC)([](HWND h, UINT u, WPARAM w, LPARAM l)->LRESULT{return DefWindowProc(h, u, w, l);});
+                pseudoClass.lpszClassName = PSEUDO_WINDOW_CLASS;
+                pseudoClass.lpfnWndProc = (WNDPROC)(wndProc);
                 RegisterClass(&pseudoClass);
                 // Attempt to create window
                 hwnd = CreateWindowExW(
-                    0,//WS_EX_NOACTIVATE,
-                    L"pseudo",
-                    nullptr,
-                    WS_OVERLAPPEDWINDOW, //dwStyle
-                    0, // x
-                    0, // y
-                    0, // w
-                    0, // h
-                    HWND_DESKTOP,   //HWND_MESSAGE,
-                    nullptr,
-                    nullptr,
-                    nullptr
+                    0, PSEUDO_WINDOW_CLASS, nullptr, WS_OVERLAPPEDWINDOW, 0, 0, 0, 0, HWND_DESKTOP, nullptr, nullptr, nullptr
                 );
                 if (hwnd == nullptr)
                 {
                     DWORD const gle = GetLastError();
-                    DebugBreak();
                     status = NTSTATUS_FROM_WIN32(gle);
                 }
                 break;
