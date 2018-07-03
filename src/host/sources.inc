@@ -79,6 +79,7 @@ SOURCES = \
     ..\dbcs.cpp      \
     ..\convarea.cpp  \
     ..\screenInfo.cpp \
+    ..\screenInfoCellIterator.cpp \
     ..\screenInfoTextIterator.cpp \
     ..\_output.cpp   \
     ..\_stream.cpp   \

@@ -24,7 +24,7 @@ SOURCES = \
     CodepointWidthDetectorTests.cpp \
     DbcsTests.cpp \
     ScreenBufferTests.cpp \
-    ScreenInfoTextIteratorTests.cpp \
+    ScreenInfoIteratorTests.cpp \
     TextBufferTests.cpp \
     ClipboardTests.cpp \
     SelectionTests.cpp \

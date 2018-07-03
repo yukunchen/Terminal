@@ -78,11 +78,10 @@ public:
             if (it->TextAttrBehavior() != OutputCell::TextAttributeBehavior::Current)
             {
                 const TextAttributeRun attrRun{ 1, it->TextAttr() };
-                const std::vector<TextAttributeRun> runs{ attrRun };
-                LOG_IF_FAILED(_attrRow.InsertAttrRuns(runs,
-                                                    currentIndex,
-                                                    currentIndex,
-                                                    _charRow.size()));
+                LOG_IF_FAILED(_attrRow.InsertAttrRuns({ &attrRun, 1 },
+                                                      currentIndex,
+                                                      currentIndex,
+                                                      _charRow.size()));
             }
 
             ++it;

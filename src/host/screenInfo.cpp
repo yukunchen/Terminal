@@ -1714,8 +1714,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeScreenBuffer(const COORD coordNewScreenSize,
 // - <none>
 void SCREEN_INFORMATION::ClipToScreenBuffer(_Inout_ SMALL_RECT* const psrClip) const
 {
-    SMALL_RECT srEdges;
-    GetScreenEdges(&srEdges);
+    const SMALL_RECT srEdges = GetScreenEdges();
 
     psrClip->Left = std::max(psrClip->Left, srEdges.Left);
     psrClip->Top = std::max(psrClip->Top, srEdges.Top);
@@ -1732,8 +1731,7 @@ void SCREEN_INFORMATION::ClipToScreenBuffer(_Inout_ SMALL_RECT* const psrClip) c
 // - <none>
 void SCREEN_INFORMATION::ClipToScreenBuffer(_Inout_ COORD* const pcoordClip) const
 {
-    SMALL_RECT srEdges;
-    GetScreenEdges(&srEdges);
+    const SMALL_RECT srEdges = GetScreenEdges();
 
     pcoordClip->X = std::clamp(pcoordClip->X, srEdges.Left, srEdges.Right);
     pcoordClip->Y = std::clamp(pcoordClip->Y, srEdges.Top, srEdges.Bottom);
@@ -1748,13 +1746,15 @@ void SCREEN_INFORMATION::ClipToScreenBuffer(_Inout_ COORD* const pcoordClip) con
 // - psrEdges - Pointer to rectangle to hold the edge data
 // Return Value:
 // - <none>
-void SCREEN_INFORMATION::GetScreenEdges(_Out_ SMALL_RECT* const psrEdges) const
+SMALL_RECT SCREEN_INFORMATION::GetScreenEdges() const noexcept
 {
+    SMALL_RECT edges;
     const COORD coordScreenBufferSize = GetScreenBufferSize();
-    psrEdges->Left = 0;
-    psrEdges->Right = coordScreenBufferSize.X - 1;
-    psrEdges->Top = 0;
-    psrEdges->Bottom = coordScreenBufferSize.Y - 1;
+    edges.Left = 0;
+    edges.Right = coordScreenBufferSize.X - 1;
+    edges.Top = 0;
+    edges.Bottom = coordScreenBufferSize.Y - 1;
+    return edges;
 }
 
 void SCREEN_INFORMATION::MakeCurrentCursorVisible()
@@ -2708,7 +2708,7 @@ size_t SCREEN_INFORMATION::FillTextAttribute(const TextAttribute attr,
                                              const size_t amountToWrite)
 {
     const COORD coordScreenBufferSize = GetScreenBufferSize();
-    std::vector<TextAttributeRun> attrRun{ {} };
+    TextAttributeRun attrRun;
     // Here we're being a little clever -
     // Because RGB color can't roundtrip the API, certain VT sequences will forget the RGB color
     // because their first call to GetScreenBufferInfo returned a legacy attr.
@@ -2718,13 +2718,13 @@ size_t SCREEN_INFORMATION::FillTextAttribute(const TextAttribute attr,
     // they had set.
     if (InVTMode() && GetAttributes().GetLegacyAttributes() == attr.GetLegacyAttributes())
     {
-        attrRun.front().SetAttributes(GetAttributes());
+        attrRun.SetAttributes(GetAttributes());
     }
     else
     {
         WORD actualAttr = attr.GetLegacyAttributes();
         ClearAllFlags(actualAttr, COMMON_LVB_SBCSDBCS);
-        attrRun.front().SetAttributesFromLegacy(actualAttr);
+        attrRun.SetAttributesFromLegacy(actualAttr);
     }
 
     COORD currentLocation = target;
@@ -2737,8 +2737,8 @@ size_t SCREEN_INFORMATION::FillTextAttribute(const TextAttribute attr,
         ROW& row = _textBuffer->GetRowByOffset(currentLocation.Y);
         ATTR_ROW& attrRow = row.GetAttrRow();
 
-        attrRun.front().SetLength(columnsToFill);
-        THROW_IF_FAILED(attrRow.InsertAttrRuns(attrRun,
+        attrRun.SetLength(columnsToFill);
+        THROW_IF_FAILED(attrRow.InsertAttrRuns({ &attrRun, 1 },
                                                currentLocation.X,
                                                currentLocation.X + columnsToFill - 1,
                                                coordScreenBufferSize.X));
@@ -2941,5 +2941,15 @@ const TextBuffer& SCREEN_INFORMATION::GetTextBuffer() const noexcept
 
 ScreenInfoTextIterator SCREEN_INFORMATION::GetTextDataAt(const COORD at) const
 {
-    return ScreenInfoTextIterator(this, at);
+    return ScreenInfoTextIterator(*this, at);
+}
+
+ScreenInfoCellIterator SCREEN_INFORMATION::GetCellDataAt(const COORD at) const
+{
+    return ScreenInfoCellIterator(*this, at);
+}
+
+ScreenInfoCellIterator SCREEN_INFORMATION::GetCellDataAt(const COORD at, const SMALL_RECT limit) const
+{
+    return ScreenInfoCellIterator(*this, at, limit);
 }

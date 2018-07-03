@@ -59,4 +59,6 @@ int ConvertOutputToUnicode(_In_ UINT uiCodePage,
                            _Out_writes_(cchTarget) WCHAR *pwchTarget,
                            _In_ UINT cchTarget);
 
-bool IsCoordInBounds(const COORD point, const COORD bounds);
+bool IsCoordInBounds(const COORD point, const COORD bounds) noexcept;
+bool IsCoordInBoundsInclusive(const COORD point, const SMALL_RECT bounds) noexcept;
+bool IsRectInBoundsInclusive(const SMALL_RECT rect, const SMALL_RECT bounds) noexcept;

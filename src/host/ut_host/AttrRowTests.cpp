@@ -346,7 +346,7 @@ class AttrRowTests
         VERIFY_SUCCEEDED(PackAttrs(unpackedOriginal.data(), originalRow._cchRowWidth, packedRun, &cPackedRun));
 
         // Now send parameters into InsertAttrRuns and get its opinion on the subject.
-        VERIFY_SUCCEEDED(originalRow.InsertAttrRuns(insertRow, uiStartPos, uiEndPos, (UINT)originalRow._cchRowWidth));
+        VERIFY_SUCCEEDED(originalRow.InsertAttrRuns({ insertRow.data(), insertRow.size() }, uiStartPos, uiEndPos, (UINT)originalRow._cchRowWidth));
 
         // Compare and ensure that the expected and actual match.
         VERIFY_ARE_EQUAL(cPackedRun, originalRow._list.size(), L"Ensure that number of array elements required for RLE are the same.");

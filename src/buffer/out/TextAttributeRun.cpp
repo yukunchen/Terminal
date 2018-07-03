@@ -29,6 +29,16 @@ void TextAttributeRun::SetLength(const size_t cchLength) noexcept
     _cchLength = cchLength;
 }
 
+void TextAttributeRun::IncrementLength() noexcept
+{
+    _cchLength++;
+}
+
+void TextAttributeRun::DecrementLength() noexcept
+{
+    _cchLength--;
+}
+
 const TextAttribute& TextAttributeRun::GetAttributes() const noexcept
 {
     return _attributes;

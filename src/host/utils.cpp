@@ -303,5 +303,6 @@ bool Utils::s_AddToPosition(const SMALL_RECT srectEdges, const int iAdd, _Inout_
 void Utils::s_GetCurrentBufferEdges(_Out_ SMALL_RECT* const psrectEdges)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.GetActiveOutputBuffer().GetScreenEdges(psrectEdges);
+    SMALL_RECT edges = gci.GetActiveOutputBuffer().GetScreenEdges();
+    *psrectEdges = edges;
 }

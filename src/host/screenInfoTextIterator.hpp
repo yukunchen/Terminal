@@ -15,51 +15,20 @@ Author(s):
 #pragma once
 
 #include "../buffer/out/CharRow.hpp"
+#include "screenInfoCellIterator.hpp"
 
 class SCREEN_INFORMATION;
 
-class ScreenInfoTextIterator : public std::iterator<std::random_access_iterator_tag, const wchar_t>
+class ScreenInfoTextIterator : public ScreenInfoCellIterator
 {
 public:
-    ScreenInfoTextIterator(const SCREEN_INFORMATION* const psi, COORD pos);
+    ScreenInfoTextIterator(const SCREEN_INFORMATION& si, COORD pos);
 
-    ScreenInfoTextIterator(const ScreenInfoTextIterator& it) = default;
-    ~ScreenInfoTextIterator() = default;
-
-    ScreenInfoTextIterator& operator=(const ScreenInfoTextIterator& it) = default;
-
-    operator bool() const;
-
-    bool operator==(const ScreenInfoTextIterator& it) const;
-    bool operator!=(const ScreenInfoTextIterator& it) const;
-
-    ScreenInfoTextIterator& operator+=(const ptrdiff_t& movement);
-    ScreenInfoTextIterator& operator-=(const ptrdiff_t& movement);
-    ScreenInfoTextIterator& operator++();
-    ScreenInfoTextIterator& operator--();
-    ScreenInfoTextIterator operator++(int);
-    ScreenInfoTextIterator operator--(int);
-    ScreenInfoTextIterator operator+(const ptrdiff_t& movement);
-    ScreenInfoTextIterator operator-(const ptrdiff_t& movement);
-
-    ptrdiff_t operator-(const ScreenInfoTextIterator& it);
-
-    const CharRow::reference operator*();
     const CharRow::reference operator*() const;
-    const wchar_t* operator->();
-    const wchar_t* getPtr() const;
-    const wchar_t* getConstPtr() const;
 
 protected:
 
-    void _SetPos(const COORD newPos);
-    static const CharRow* s_GetRow(const SCREEN_INFORMATION* const psi, const COORD pos);
-
-    const CharRow* _pRow;
-    const SCREEN_INFORMATION* const _psi;
-    COORD _pos;
-
 #if UNIT_TESTING
-    friend class ScreenInfoTextIteratorTests;
+    friend class ScreenInfoIteratorTests;
 #endif
 };
