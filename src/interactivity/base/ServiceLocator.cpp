@@ -273,6 +273,12 @@ Globals& ServiceLocator::LocateGlobals()
     return s_globals;
 }
 
+// Method Description:
+// - Retrieves the pseudo console window, or attempts to instantiate one.
+// Arguments:
+// - <none>
+// Return Value:
+// - a reference to the pseudoconsole window.
 HWND& ServiceLocator::LocatePseudoWindow()
 {
     NTSTATUS status = STATUS_SUCCESS;
