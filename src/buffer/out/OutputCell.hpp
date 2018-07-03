@@ -29,7 +29,6 @@ class InvalidCharInfoConversionException : public std::exception
     }
 };
 
-
 class OutputCell final
 {
 public:

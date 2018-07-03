@@ -719,22 +719,17 @@ NTSTATUS SrvReadConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
 
         SCREEN_INFORMATION& activeScreenInfo = pScreenInfo->GetActiveBuffer();
 
-        std::vector<std::vector<OutputCell>> outputCells;
-        Status = ReadScreenBuffer(activeScreenInfo, outputCells, &a->CharRegion);
-        
-        // convert to CharInfo
+        const COORD coordStart{ a->CharRegion.Left, a->CharRegion.Top };
+
         try
         {
             const auto charInfoBuffer = gsl::make_span(Buffer, cbBuffer / sizeof(CHAR_INFO));
             auto bufferPos = charInfoBuffer.begin();
-            // copy the data into the char info buffer
-            for (auto& row : outputCells)
+
+            auto cellIter = activeScreenInfo.GetCellDataAt(coordStart, a->CharRegion);
+            while (cellIter && bufferPos < charInfoBuffer.end())
             {
-                for (auto& cell : row)
-                {
-                    *bufferPos = cell.ToCharInfo();
-                    bufferPos++;
-                }
+                *bufferPos++ = *cellIter++;
             }
         }
         catch (...)

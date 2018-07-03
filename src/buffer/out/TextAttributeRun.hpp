@@ -29,6 +29,8 @@ public:
 
     size_t GetLength() const noexcept;
     void SetLength(const size_t cchLength) noexcept;
+    void IncrementLength() noexcept;
+    void DecrementLength() noexcept;
 
     const TextAttribute& GetAttributes() const noexcept;
     void SetAttributes(const TextAttribute textAttribute) noexcept;

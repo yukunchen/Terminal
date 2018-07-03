@@ -211,8 +211,8 @@ bool ATTR_ROW::SetAttrToEnd(const UINT iStart, const TextAttribute attr)
 {
     size_t const length = _cchRowWidth - iStart;
 
-    std::vector<TextAttributeRun> run({ TextAttributeRun(length, attr) });
-    return SUCCEEDED(InsertAttrRuns(run, iStart, _cchRowWidth - 1, _cchRowWidth));
+    const TextAttributeRun run(length, attr);
+    return SUCCEEDED(InsertAttrRuns({ &run, 1 }, iStart, _cchRowWidth - 1, _cchRowWidth));
 }
 
 // Routine Description:
@@ -254,7 +254,7 @@ void ATTR_ROW::ReplaceLegacyAttrs(_In_ WORD wToBeReplacedAttr, _In_ WORD wReplac
 // - STATUS_NO_MEMORY if there wasn't enough memory to insert the runs
 //   otherwise STATUS_SUCCESS if we were successful.
 [[nodiscard]]
-HRESULT ATTR_ROW::InsertAttrRuns(const std::vector<TextAttributeRun>& newAttrs,
+HRESULT ATTR_ROW::InsertAttrRuns(const std::basic_string_view<TextAttributeRun> newAttrs,
                                  const size_t iStart,
                                  const size_t iEnd,
                                  const size_t cBufferWidth)
@@ -279,30 +279,55 @@ HRESULT ATTR_ROW::InsertAttrRuns(const std::vector<TextAttributeRun>& newAttrs,
     // Get the existing run that we'll be updating/manipulating.
     const auto existingRun = _list.begin();
 
-    // If the insertion size is 1 and the existing run is 1, do some pre-processing to
+    // If the insertion size is 1, do some pre-processing to
     // see if we can get this done quickly.
-    if (newAttrs.size() == 1 && _list.size() == 1)
+    if (newAttrs.size() == 1)
     {
         // Get the new color attribute we're trying to apply
-        const TextAttribute NewAttr = newAttrs[0].GetAttributes();
+        const TextAttribute NewAttr = newAttrs.at(0).GetAttributes();
 
-        // If the new color is the same as the old, we don't have to do anything and can exit quick.
-        if (existingRun->GetAttributes() == NewAttr)
+        // If the existing run was only 1 element...
+        // ...and the new color is the same as the old, we don't have to do anything and can exit quick.
+        if (_list.size() == 1 && existingRun->GetAttributes() == NewAttr)
         {
             return S_OK;
         }
-        // If the new color is different, but applies for the entire width of the screen, we can just
-        // fix up the existing Run to have the new color for the whole length very quickly.
-        else if (iStart == 0 && iEnd == iLastBufferCol)
+        // .. otherwise if we internally have a list of 2 and we're about to insert a single color
+        // it's probable that we're just walking left-to-right through the row and changing each 
+        // cell one at a time. 
+        // e.g. 
+        // AAAAABBBBBBB
+        // AAAAAABBBBBB
+        // AAAAAAABBBBB
+        // Check for that circumstance by seeing if we're inserting a single run of the 
+        // left side color right at the boundary and just adjust the counts in the existing
+        // two elements in our internal list.
+        else if (_list.size() == 2 && newAttrs.at(0).GetLength() == 1)
         {
-            existingRun->SetAttributes(NewAttr);
+            auto left = _list.begin();
+            if (iStart == left->GetLength() && NewAttr == left->GetAttributes())
+            {
+                auto right = left + 1;
+                left->IncrementLength();
+                right->DecrementLength();
 
-            // We are assuming that if our existing run had only 1 item that it covered the entire buffer width.
-            FAIL_FAST_IF_FALSE(existingRun->GetLength() == cBufferWidth);
-            existingRun->SetLength(cBufferWidth); // Set anyway to be safe.
-            return S_OK;
+                // If we just reduced the right half to zero, just erase it out of the list.
+                if (right->GetLength() == 0)
+                {
+                    _list.erase(right);
+                }
+                return S_OK;
+            }
         }
-        // Else, fall down and keep trying other processing.
+    }
+
+    // If we're about to cover the entire existing run with a new one, we can also make an optimization.
+    if (iStart == 0 && iEnd == iLastBufferCol)
+    {
+        // Just dump what we're given over what we have and call it a day.
+        _list.assign(newAttrs.cbegin(), newAttrs.cend());
+
+        return S_OK;
     }
 
     // In the worst case scenario, we will need a new run that is the length of

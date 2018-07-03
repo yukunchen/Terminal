@@ -174,8 +174,8 @@ size_t WriteOutputAttributes(SCREEN_INFORMATION& screenInfo,
 
     size_t elementsWritten = 0;
     COORD currentLocation = target;
-    std::vector<TextAttributeRun> runs{ {} };
-    runs.front().SetLength(1);
+    TextAttributeRun run;
+    run.SetLength(1);
     // write attrs
     for (auto currentAttr : attrs)
     {
@@ -184,8 +184,8 @@ size_t WriteOutputAttributes(SCREEN_INFORMATION& screenInfo,
         // clear dbcs bits
         ClearAllFlags(currentAttr, COMMON_LVB_SBCSDBCS);
         // add to attr row
-        runs.front().SetAttributesFromLegacy(currentAttr);
-        THROW_IF_FAILED(attrRow.InsertAttrRuns(runs,
+        run.SetAttributesFromLegacy(currentAttr);
+        THROW_IF_FAILED(attrRow.InsertAttrRuns({ &run, 1 },
                                                currentLocation.X,
                                                currentLocation.X,
                                                row.size()));

@@ -318,10 +318,24 @@ int ConvertOutputToUnicode(_In_ UINT uiCodePage,
     return Length;
 }
 
-bool IsCoordInBounds(const COORD point, const COORD bounds)
+bool IsCoordInBounds(const COORD point, const COORD bounds) noexcept
 {
     return !(point.X >= bounds.X ||
              point.X < 0 ||
              point.Y >= bounds.Y ||
              point.Y < 0);
+}
+
+bool IsCoordInBoundsInclusive(const COORD point, const SMALL_RECT bounds) noexcept
+{
+    return point.X >= bounds.Left && point.X <= bounds.Right &&
+        point.Y >= bounds.Top && point.Y <= bounds.Bottom;
+}
+
+bool IsRectInBoundsInclusive(const SMALL_RECT rect, const SMALL_RECT bounds) noexcept
+{
+    return rect.Left >= bounds.Left && rect.Left <= bounds.Right &&
+        rect.Right >= bounds.Left && rect.Right <= bounds.Right &&
+        rect.Top >= bounds.Top && rect.Top <= bounds.Bottom &&
+        rect.Bottom >= bounds.Top && rect.Bottom <= bounds.Bottom;
 }

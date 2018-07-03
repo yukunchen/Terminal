@@ -47,6 +47,7 @@ class ConversionAreaInfo; // forward decl window. circular reference
 class SCREEN_INFORMATION
 {
 public:
+    using const_cell_iterator = typename ScreenInfoCellIterator;
     using const_text_iterator = typename ScreenInfoTextIterator;
 
     [[nodiscard]]
@@ -75,7 +76,7 @@ public:
     void ClipToScreenBuffer(_Inout_ SMALL_RECT* const psrClip) const;
     void ClipToScreenBuffer(_Inout_ COORD* const pcoordClip) const;
 
-    void GetScreenEdges(_Out_ SMALL_RECT* const psrEdges) const;
+    SMALL_RECT GetScreenEdges() const noexcept;
 
     COORD GetMinWindowSizeInCharacters(const COORD coordFontSize = { 1, 1 }) const;
     COORD GetMaxWindowSizeInCharacters(const COORD coordFontSize = { 1, 1 }) const;
@@ -133,6 +134,8 @@ public:
                                      const size_t startIndex,
                                      const size_t count) const;
 
+    const_cell_iterator GetCellDataAt(const COORD at) const;
+    const_cell_iterator GetCellDataAt(const COORD at, const SMALL_RECT limit) const;
     const_text_iterator GetTextDataAt(const COORD at) const;
 
     size_t WriteLine(const std::vector<OutputCell>& cells,
@@ -325,6 +328,7 @@ private:
     TextAttribute _PopupAttributes;
 
     friend class ScreenInfoTextIterator;
+    friend class ScreenInfoCellIterator;
 #ifdef UNIT_TESTING
     friend class ScreenBufferTests;
     friend class CommonState;

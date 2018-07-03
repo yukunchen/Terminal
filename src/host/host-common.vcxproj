@@ -39,6 +39,7 @@
     <ClCompile Include="..\renderData.cpp" />
     <ClCompile Include="..\renderFontDefaults.cpp" />
     <ClCompile Include="..\screenInfo.cpp" />
+    <ClCompile Include="..\screenInfoCellIterator.cpp" />
     <ClCompile Include="..\screenInfoTextIterator.cpp" />
     <ClCompile Include="..\scrolling.cpp" />
     <ClCompile Include="..\search.cpp" />
@@ -97,6 +98,7 @@
     <ClInclude Include="..\renderFontDefaults.hpp" />
     <ClInclude Include="..\resource.h" />
     <ClInclude Include="..\screenInfo.hpp" />
+    <ClInclude Include="..\screenInfoCellIterator.hpp" />
     <ClInclude Include="..\screenInfoTextIterator.hpp" />
     <ClInclude Include="..\scrolling.hpp" />
     <ClInclude Include="..\search.h" />
