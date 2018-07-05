@@ -204,7 +204,6 @@ bool InputStateMachineEngine::ActionPrintString(const wchar_t* const rgwch,
     {
         return true;
     }
-
     return _pDispatch->WriteString(rgwch, cch);
 }
 
