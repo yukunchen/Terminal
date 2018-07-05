@@ -153,6 +153,7 @@ namespace Microsoft::Console::Render
         bool _quickReturn;
         bool _clearedAllThisFrame;
         bool _cursorMoved;
+        bool _resized;
 
         bool _suppressResizeRepaint;
 
