@@ -350,15 +350,11 @@ NTSTATUS InteractivityFactory::CreatePseudoWindow(HWND& hwnd)
         {
             static const wchar_t* const PSEUDO_WINDOW_CLASS = L"PseudoConsoleWindow";
             WNDCLASS pseudoClass {0};
-            auto wndProc = [](HWND h, UINT u, WPARAM w, LPARAM l) -> LRESULT
-            {
-                return DefWindowProc(h, u, w, l);
-            };
             switch (level)
             {
             case ApiLevel::Win32:
                 pseudoClass.lpszClassName = PSEUDO_WINDOW_CLASS;
-                pseudoClass.lpfnWndProc = (WNDPROC)(wndProc);
+                pseudoClass.lpfnWndProc = DefWindowProc;
                 RegisterClass(&pseudoClass);
                 // Attempt to create window
                 hwnd = CreateWindowExW(

@@ -904,14 +904,19 @@ void ApiRoutines::GetConsoleWindowImpl(_Out_ HWND* const pHwnd)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
-    IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (pWindow != nullptr)
     {
         *pHwnd = pWindow->GetWindowHandle();
     }
     else
     {
+        // Some applications will fail silently if this API returns 0 (cygwin)
+        // If we're in pty mode, we need to return a fake window handle that
+        //      doesn't actually do anything, but is a unique HWND to this
+        //      console, so that they know that this console is in fact a real
+        //      console window.
         if (gci.IsInVtIoMode())
         {
             *pHwnd = ServiceLocator::LocatePseudoWindow();

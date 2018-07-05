@@ -82,7 +82,7 @@ namespace Microsoft::Console::Interactivity
 
         static Globals& LocateGlobals();
 
-        static HWND& LocatePseudoWindow();
+        static HWND LocatePseudoWindow();
 
 
     protected:
@@ -109,6 +109,6 @@ namespace Microsoft::Console::Interactivity
 
         static Globals s_globals;
         static bool s_pseudoWindowInitialized;
-        static HWND s_pseudoWindow;
+        static wil::unique_hwnd s_pseudoWindow;
     };
 }

@@ -24,7 +24,7 @@ IConsoleWindow* ServiceLocator::s_consoleWindow = nullptr;
 Globals                      ServiceLocator::s_globals;
 
 bool ServiceLocator::s_pseudoWindowInitialized = false;
-HWND ServiceLocator::s_pseudoWindow = 0;
+wil::unique_hwnd ServiceLocator::s_pseudoWindow = 0;
 
 #pragma endregion
 
@@ -279,7 +279,7 @@ Globals& ServiceLocator::LocateGlobals()
 // - <none>
 // Return Value:
 // - a reference to the pseudoconsole window.
-HWND& ServiceLocator::LocatePseudoWindow()
+HWND ServiceLocator::LocatePseudoWindow()
 {
     NTSTATUS status = STATUS_SUCCESS;
     if (!s_pseudoWindowInitialized)
@@ -291,12 +291,14 @@ HWND& ServiceLocator::LocatePseudoWindow()
 
         if (NT_SUCCESS(status))
         {
-            status = s_interactivityFactory->CreatePseudoWindow(s_pseudoWindow);
+            HWND hwnd;
+            status = s_interactivityFactory->CreatePseudoWindow(hwnd);
+            s_pseudoWindow.reset(hwnd);
         }
         s_pseudoWindowInitialized = true;
     }
     LOG_IF_NTSTATUS_FAILED(status);
-    return s_pseudoWindow;
+    return s_pseudoWindow.get();
 }
 
 #pragma endregion
