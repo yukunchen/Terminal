@@ -328,4 +328,62 @@ NTSTATUS InteractivityFactory::CreateInputServices(_Inout_ std::unique_ptr<IInpu
     return status;
 }
 
+// Method Description:
+// - Attempts to instantiate a "pseudo window" for when we're operating in
+//      pseudoconsole mode. There are some tools (cygwin & derivatives) that use
+//      the GetConsoleWindow API to uniquely identify console sessions. This
+//      function is used to create an invisible window for that scenario, so
+//      that GetConsoleWindow returns a real value.
+// Arguments:
+// - hwnd: Recieves the value of the newly created window's HWND.
+// Return Value:
+// - STATUS_SUCCESS on success, otherwise an appropriate error.
+[[nodiscard]]
+NTSTATUS InteractivityFactory::CreatePseudoWindow(HWND& hwnd)
+{
+    hwnd = 0;
+    ApiLevel level;
+    NTSTATUS status = ApiDetector::DetectNtUserWindow(&level);;
+    if (NT_SUCCESS(status))
+    {
+        try
+        {
+            static const wchar_t* const PSEUDO_WINDOW_CLASS = L"PseudoConsoleWindow";
+            WNDCLASS pseudoClass {0};
+            switch (level)
+            {
+            case ApiLevel::Win32:
+                pseudoClass.lpszClassName = PSEUDO_WINDOW_CLASS;
+                pseudoClass.lpfnWndProc = DefWindowProc;
+                RegisterClass(&pseudoClass);
+                // Attempt to create window
+                hwnd = CreateWindowExW(
+                    0, PSEUDO_WINDOW_CLASS, nullptr, WS_OVERLAPPEDWINDOW, 0, 0, 0, 0, HWND_DESKTOP, nullptr, nullptr, nullptr
+                );
+                if (hwnd == nullptr)
+                {
+                    DWORD const gle = GetLastError();
+                    status = NTSTATUS_FROM_WIN32(gle);
+                }
+                break;
+
+    #ifdef BUILD_ONECORE_INTERACTIVITY
+            case ApiLevel::OneCore:
+                hwnd = 0;
+                status = STATUS_SUCCESS;
+                break;
+    #endif
+            default:
+                status = STATUS_INVALID_LEVEL;
+                break;
+            }
+        }
+        catch (...)
+        {
+            status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+        }
+    }
+
+    return status;
+}
 #pragma endregion
