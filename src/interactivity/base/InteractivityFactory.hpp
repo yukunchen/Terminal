@@ -30,5 +30,8 @@ namespace Microsoft::Console::Interactivity
         NTSTATUS CreateSystemConfigurationProvider(_Inout_ std::unique_ptr<ISystemConfigurationProvider>& provider);
         [[nodiscard]]
         NTSTATUS CreateInputServices(_Inout_ std::unique_ptr<IInputServices>& services);
+
+        [[nodiscard]]
+        NTSTATUS CreatePseudoWindow(HWND& hwnd);
     };
 }
