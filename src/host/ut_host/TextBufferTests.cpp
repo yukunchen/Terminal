@@ -13,6 +13,7 @@
 #include "../buffer/out/CharRow.hpp"
 
 #include "input.h"
+#include "_stream.h"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 
@@ -131,6 +132,9 @@ class TextBufferTests
     TEST_METHOD(TestTextAttributeColorGetters);
     TEST_METHOD(TestRgbThenBold);
     TEST_METHOD(TestResetClearsBoldness);
+
+    TEST_METHOD(TestBackspaceStrings);
+    TEST_METHOD(TestBackspaceStringsAPI);
 
 };
 
@@ -1490,4 +1494,114 @@ void TextBufferTests::TestResetClearsBoldness()
 
     wchar_t* reset = L"\x1b[0m";
     stateMachine->ProcessString(reset, std::wcslen(reset));
+}
+
+void TextBufferTests::TestBackspaceStrings()
+{
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    const TextBuffer& tbi = si.GetTextBuffer();
+    StateMachine* const stateMachine = si.GetStateMachine();
+    const Cursor& cursor = tbi.GetCursor();
+
+    const auto x0 = cursor.GetPosition().X;
+    const auto y0 = cursor.GetPosition().Y;
+
+    Log::Comment(NoThrowString().Format(
+        L"cursor={X:%d,Y:%d}",
+        x0, y0
+    ));
+    std::wstring seq = L"a\b \b";
+    stateMachine->ProcessString(seq.c_str(), seq.length());
+
+    const auto x1 = cursor.GetPosition().X;
+    const auto y1 = cursor.GetPosition().Y;
+
+    VERIFY_ARE_EQUAL(x1, x0);
+    VERIFY_ARE_EQUAL(y1, y0);
+
+    seq = L"a";
+    stateMachine->ProcessString(seq.c_str(), seq.length());
+    seq = L"\b";
+    stateMachine->ProcessString(seq.c_str(), seq.length());
+    seq = L" ";
+    stateMachine->ProcessString(seq.c_str(), seq.length());
+    seq = L"\b";
+    stateMachine->ProcessString(seq.c_str(), seq.length());
+
+    const auto x2 = cursor.GetPosition().X;
+    const auto y2 = cursor.GetPosition().Y;
+
+    VERIFY_ARE_EQUAL(x2, x0);
+    VERIFY_ARE_EQUAL(y2, y0);
+}
+
+void TextBufferTests::TestBackspaceStringsAPI()
+{
+    // Pretty much the same as the above test, but explicitly DOESNT use the
+    //  state machine.
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    const TextBuffer& tbi = si.GetTextBuffer();
+    // StateMachine* const stateMachine = si.GetStateMachine();
+    const Cursor& cursor = tbi.GetCursor();
+
+    gci.SetVirtTermLevel(0);
+    ClearFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+
+    const auto x0 = cursor.GetPosition().X;
+    const auto y0 = cursor.GetPosition().Y;
+
+    Log::Comment(NoThrowString().Format(
+        L"cursor={X:%d,Y:%d}",
+        x0, y0
+    ));
+    // std::wstring seq = L"a\b \b";
+    // stateMachine->ProcessString(seq.c_str(), seq.length());
+    size_t seqSize = 4;
+    size_t seqCb = seqSize*2;
+    {
+        wchar_t* str = L"a\b \b";
+        VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, x0, 0, nullptr));
+
+        VERIFY_ARE_EQUAL(cursor.GetPosition().X, x0);
+        VERIFY_ARE_EQUAL(cursor.GetPosition().Y, y0);
+
+        VERIFY_SUCCEEDED(DoWriteConsole(str, &seqSize, si, nullptr));
+        VERIFY_ARE_EQUAL(cursor.GetPosition().X, x0);
+        VERIFY_ARE_EQUAL(cursor.GetPosition().Y, y0);
+    }
+
+
+    seqSize = 1;
+    seqCb = seqSize*2;
+
+    VERIFY_SUCCEEDED(DoWriteConsole(L"a", &seqSize, si, nullptr));
+    VERIFY_SUCCEEDED(DoWriteConsole(L"\b", &seqSize, si, nullptr));
+    VERIFY_SUCCEEDED(DoWriteConsole(L" ", &seqSize, si, nullptr));
+    VERIFY_SUCCEEDED(DoWriteConsole(L"\b", &seqSize, si, nullptr));
+
+    VERIFY_ARE_EQUAL(cursor.GetPosition().X, x0);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, y0);
+
+    {
+        wchar_t* str = L"a";
+        VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, x0, 0, nullptr));
+    }
+    {
+        wchar_t* str = L"\b";
+        VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, x0, 0, nullptr));
+    }
+    {
+        wchar_t* str = L" ";
+        VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, x0, 0, nullptr));
+    }
+    {
+        wchar_t* str = L"\b";
+        VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, x0, 0, nullptr));
+    }
+
+    VERIFY_ARE_EQUAL(cursor.GetPosition().X, x0);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, y0);
 }

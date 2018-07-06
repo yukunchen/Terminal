@@ -517,9 +517,13 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                 for (i = 0, Tmp2 = buffer.get(), Tmp = pwchBufferBackupLimit;
                      i < bufferSize; i++, Tmp++)
                 {
-                    if (*Tmp == UNICODE_BACKSPACE && Tmp2 > buffer.get())
+                    if (*Tmp == UNICODE_BACKSPACE)
                     {
-                        Tmp2--;
+                        // see 18120085, these two need to be seperate if statements
+                        if (Tmp2 > buffer.get())
+                        {
+                            Tmp2--;
+                        }
                     }
                     else
                     {
