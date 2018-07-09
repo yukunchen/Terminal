@@ -308,6 +308,17 @@ HRESULT ApiRoutines::SetConsoleOutputModeImpl(SCREEN_INFORMATION& Context, const
     gci.SetAutomaticReturnOnNewline(IsFlagSet(screenInfo.OutputMode, DISABLE_NEWLINE_AUTO_RETURN) ? false : true);
     gci.SetGridRenderingAllowedWorldwide(IsFlagSet(screenInfo.OutputMode, ENABLE_LVB_GRID_WORLDWIDE));
 
+    // if we changed rendering modes then redraw the output buffer
+    if (IsFlagSet(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) != IsFlagSet(dwOldMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) ||
+        IsFlagSet(dwNewMode, ENABLE_LVB_GRID_WORLDWIDE) != IsFlagSet(dwOldMode, ENABLE_LVB_GRID_WORLDWIDE))
+    {
+        auto* pRender = ServiceLocator::LocateGlobals().pRender;
+        if (pRender)
+        {
+            pRender->TriggerRedrawAll();
+        }
+    }
+
     return S_OK;
 }
 
