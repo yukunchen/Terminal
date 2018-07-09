@@ -21,6 +21,8 @@ class OutputTests
 
     TEST_METHOD(WriteConsoleOutputAttributeSimpleTest);
     TEST_METHOD(WriteConsoleOutputAttributeCheckerTest);
+
+    TEST_METHOD(WriteBackspaceTest);
 };
 
 bool OutputTests::TestSetup()
@@ -211,4 +213,50 @@ void OutputTests::WriteConsoleOutputAttributeCheckerTest()
         VERIFY_ARE_EQUAL(attrs[i], resultAttrs[i]);
         VERIFY_ARE_EQUAL(wchs[i], resultWchs[i]);
     }
+}
+
+void OutputTests::WriteBackspaceTest()
+{
+    // Get output buffer information.
+    const auto hOut = GetStdOutputHandle();
+    Log::Comment(NoThrowString().Format(
+        L"Outputing \"\\b \\b\" should behave the same as \"\b\", \" \", \"\b\" in seperate WriteConsoleW calls."
+    ));
+
+    DWORD n = 0;
+    CONSOLE_SCREEN_BUFFER_INFO csbi = {0};
+    COORD c = {0, 0};
+    VERIFY_SUCCEEDED(SetConsoleCursorPosition(hOut, c));
+    VERIFY_SUCCEEDED(WriteConsoleW(hOut, L"GoodX", 5, &n, nullptr));
+
+    VERIFY_SUCCEEDED(GetConsoleScreenBufferInfo(hOut, &csbi));
+    VERIFY_ARE_EQUAL(csbi.dwCursorPosition.X, 5);
+    VERIFY_ARE_EQUAL(csbi.dwCursorPosition.Y, 0);
+
+    VERIFY_SUCCEEDED(WriteConsoleW(hOut, L"\b", 1, &n, nullptr));
+    VERIFY_SUCCEEDED(WriteConsoleW(hOut, L" ", 1, &n, nullptr));
+    VERIFY_SUCCEEDED(WriteConsoleW(hOut, L"\b", 1, &n, nullptr));
+
+    VERIFY_SUCCEEDED(GetConsoleScreenBufferInfo(hOut, &csbi));
+    VERIFY_ARE_EQUAL(csbi.dwCursorPosition.X, 4);
+    VERIFY_ARE_EQUAL(csbi.dwCursorPosition.Y, 0);
+
+    VERIFY_SUCCEEDED(WriteConsoleW(hOut, L"\n", 1, &n, nullptr));
+
+    VERIFY_SUCCEEDED(GetConsoleScreenBufferInfo(hOut, &csbi));
+    VERIFY_ARE_EQUAL(csbi.dwCursorPosition.X, 0);
+    VERIFY_ARE_EQUAL(csbi.dwCursorPosition.Y, 1);
+
+    VERIFY_SUCCEEDED(WriteConsoleW(hOut, L"badX", 4, &n, nullptr));
+
+    VERIFY_SUCCEEDED(GetConsoleScreenBufferInfo(hOut, &csbi));
+    VERIFY_ARE_EQUAL(csbi.dwCursorPosition.X, 4);
+    VERIFY_ARE_EQUAL(csbi.dwCursorPosition.Y, 1);
+
+    VERIFY_SUCCEEDED(WriteConsoleW(hOut, L"\b \b", 3, &n, nullptr));
+
+    VERIFY_SUCCEEDED(GetConsoleScreenBufferInfo(hOut, &csbi));
+    VERIFY_ARE_EQUAL(csbi.dwCursorPosition.X, 3);
+    VERIFY_ARE_EQUAL(csbi.dwCursorPosition.Y, 1);
+
 }

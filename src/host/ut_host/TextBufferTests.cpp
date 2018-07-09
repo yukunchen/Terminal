@@ -1557,49 +1557,69 @@ void TextBufferTests::TestBackspaceStringsAPI()
         L"cursor={X:%d,Y:%d}",
         x0, y0
     ));
-    // std::wstring seq = L"a\b \b";
-    // stateMachine->ProcessString(seq.c_str(), seq.length());
-    size_t seqSize = 4;
-    size_t seqCb = seqSize*2;
+
+    // We're going to write an "a" to the buffer in various ways, then try
+    //      backspacing it with "\b \b".
+    // Regardless of how we write those sequences of characters, the end result
+    //      should be the same.
+
+    size_t aCb = 2;
+    VERIFY_SUCCEEDED(DoWriteConsole(L"a", &aCb, si, nullptr));
+
+    size_t seqCb = 6;
+    Log::Comment(NoThrowString().Format(
+        L"Using WriteCharsLegacy, write \\b \\b as a single string."
+    ));
     {
-        wchar_t* str = L"a\b \b";
-        VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, x0, 0, nullptr));
+        wchar_t* str = L"\b \b";
+        VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().X, 0, nullptr));
 
         VERIFY_ARE_EQUAL(cursor.GetPosition().X, x0);
         VERIFY_ARE_EQUAL(cursor.GetPosition().Y, y0);
 
-        VERIFY_SUCCEEDED(DoWriteConsole(str, &seqSize, si, nullptr));
+        Log::Comment(NoThrowString().Format(
+            L"Using DoWriteConsole, write \\b \\b as a single string."
+        ));
+        VERIFY_SUCCEEDED(DoWriteConsole(L"a", &aCb, si, nullptr));
+
+        VERIFY_SUCCEEDED(DoWriteConsole(str, &seqCb, si, nullptr));
         VERIFY_ARE_EQUAL(cursor.GetPosition().X, x0);
         VERIFY_ARE_EQUAL(cursor.GetPosition().Y, y0);
     }
 
+    seqCb = 2;
 
-    seqSize = 1;
-    seqCb = seqSize*2;
+    Log::Comment(NoThrowString().Format(
+        L"Using DoWriteConsole, write \\b \\b as seperate strings."
+    ));
 
-    VERIFY_SUCCEEDED(DoWriteConsole(L"a", &seqSize, si, nullptr));
-    VERIFY_SUCCEEDED(DoWriteConsole(L"\b", &seqSize, si, nullptr));
-    VERIFY_SUCCEEDED(DoWriteConsole(L" ", &seqSize, si, nullptr));
-    VERIFY_SUCCEEDED(DoWriteConsole(L"\b", &seqSize, si, nullptr));
+    VERIFY_SUCCEEDED(DoWriteConsole(L"a", &seqCb, si, nullptr));
+    VERIFY_SUCCEEDED(DoWriteConsole(L"\b", &seqCb, si, nullptr));
+    VERIFY_SUCCEEDED(DoWriteConsole(L" ", &seqCb, si, nullptr));
+    VERIFY_SUCCEEDED(DoWriteConsole(L"\b", &seqCb, si, nullptr));
 
     VERIFY_ARE_EQUAL(cursor.GetPosition().X, x0);
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, y0);
 
+
+    Log::Comment(NoThrowString().Format(
+        L"Using WriteCharsLegacy, write \\b \\b as seperate strings."
+    ));
     {
         wchar_t* str = L"a";
-        VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, x0, 0, nullptr));
+        VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().X, 0, nullptr));
     }
     {
         wchar_t* str = L"\b";
-        VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, x0, 0, nullptr));
+        VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().X, 0, nullptr));
     }
     {
         wchar_t* str = L" ";
-        VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, x0, 0, nullptr));
+        VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().X, 0, nullptr));
     }
     {
         wchar_t* str = L"\b";
-        VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, x0, 0, nullptr));
+        VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().X, 0, nullptr));
     }
 
     VERIFY_ARE_EQUAL(cursor.GetPosition().X, x0);
