@@ -1250,6 +1250,8 @@ void VtRendererTest::TestWrapping()
         VERIFY_SUCCEEDED(engine->_MoveCursor({0, 0}));
 
         qExpectedInput.push_back("asdfghjkl");
+        // TODO: Undoing this behavior due to 18123777. Will come back in MSFT:16485846
+        qExpectedInput.push_back("\r\n");
         qExpectedInput.push_back("zxcvbnm,.");
 
         const wchar_t* const line1 = L"asdfghjkl";
