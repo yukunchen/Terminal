@@ -82,9 +82,6 @@ namespace Microsoft::Console::Render
         std::deque<IRenderEngine*> _rgpEngines;
         const std::unique_ptr<IRenderData> _pData;
 
-        std::wstring _lastTitle;
-        bool _titleChanged;
-
         RenderThread* _pThread;
 
         void _NotifyPaintFrame();
