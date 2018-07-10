@@ -1,10 +1,10 @@
 #pragma once
 
-#include "..\..\renderer\inc\IRenderEngine.hpp"
+#include "..\..\renderer\inc\RenderEngineBase.hpp"
 
 namespace Microsoft::Console::Render
 {
-    class WddmConEngine sealed : public IRenderEngine
+    class WddmConEngine sealed : public RenderEngineBase
     {
     public:
         WddmConEngine();
@@ -93,8 +93,9 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         HRESULT IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) override;
 
+    protected:
         [[nodiscard]]
-        HRESULT UpdateTitle(_In_ const std::wstring& newTitle) override;
+        HRESULT _DoUpdateTitle(_In_ const std::wstring& newTitle) override;
 
     private:
         HANDLE _hWddmConCtx;

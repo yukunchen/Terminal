@@ -350,7 +350,7 @@ HRESULT XtermEngine::WriteTerminalW(const std::wstring& wstr)
 // Return Value:
 // - S_OK
 [[nodiscard]]
-HRESULT XtermEngine::UpdateTitle(const std::wstring& newTitle)
+HRESULT XtermEngine::_DoUpdateTitle(const std::wstring& newTitle)
 {
     // inbox telnet uses xterm-ascii as it's mode. If we're in ascii mode, don't
     //      do anything, to maintain compatibility.

@@ -55,20 +55,22 @@ namespace Microsoft::Console::Render
         HRESULT ScrollFrame() override;
 
         [[nodiscard]]
-        HRESULT UpdateTitle(const std::wstring& newTitle) override;
-        [[nodiscard]]
         HRESULT InvalidateScroll(const COORD* const pcoordDelta) override;
 
         [[nodiscard]]
         HRESULT WriteTerminalW(_In_ const std::wstring& str) override;
 
     protected:
-        [[nodiscard]]
-        HRESULT _MoveCursor(const COORD coord);
         const COLORREF* const _ColorTable;
         const WORD _cColorTable;
         const bool _fUseAsciiOnly;
         bool _previousLineWrapped;
+
+        [[nodiscard]]
+        HRESULT _MoveCursor(const COORD coord);
+
+        [[nodiscard]]
+        HRESULT _DoUpdateTitle(const std::wstring& newTitle) override;
 
     #ifdef UNIT_TESTING
         friend class VtRendererTest;

@@ -295,7 +295,7 @@ HRESULT GdiEngine::GetProposedFont(const FontInfoDesired& FontDesired, _Out_ Fon
 // Return Value:
 // -  S_OK if PostMessageW succeeded, otherwise E_FAIL
 [[nodiscard]]
-HRESULT GdiEngine::UpdateTitle(_In_ const std::wstring& /*newTitle*/)
+HRESULT GdiEngine::_DoUpdateTitle(_In_ const std::wstring& /*newTitle*/)
 {
     // the CM_UPDATE_TITLE handler in windowproc will query the updated title.
     return PostMessageW(_hwndTargetWindow, CM_UPDATE_TITLE, 0, (LPARAM)nullptr)? S_OK : E_FAIL;

@@ -21,11 +21,11 @@ Author(s):
 
 #pragma once
 
-#include "..\..\renderer\inc\IRenderEngine.hpp"
+#include "..\..\renderer\inc\RenderEngineBase.hpp"
 
 namespace Microsoft::Console::Render
 {
-    class BgfxEngine sealed : public IRenderEngine
+    class BgfxEngine sealed : public RenderEngineBase
     {
     public:
         BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWidth, LONG FontWidth, LONG FontHeight);
@@ -102,8 +102,9 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         HRESULT IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) override;
 
+    protected:
         [[nodiscard]]
-        HRESULT UpdateTitle(_In_ const std::wstring& newTitle) override;
+        HRESULT _DoUpdateTitle(_In_ const std::wstring& newTitle) override;
 
     private:
         ULONG_PTR _sharedViewBase;

@@ -13,11 +13,11 @@ Author(s):
 
 #pragma once
 
-#include "..\inc\IRenderEngine.hpp"
+#include "..\inc\RenderEngineBase.hpp"
 
 namespace Microsoft::Console::Render
 {
-    class GdiEngine final : public IRenderEngine
+    class GdiEngine final : public RenderEngineBase
     {
     public:
         GdiEngine();
@@ -103,8 +103,9 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         HRESULT IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) override;
 
+    protected:
         [[nodiscard]]
-        HRESULT UpdateTitle(_In_ const std::wstring& newTitle) override;
+        HRESULT _DoUpdateTitle(_In_ const std::wstring& newTitle) override;
 
     private:
         HWND _hwndTargetWindow;
