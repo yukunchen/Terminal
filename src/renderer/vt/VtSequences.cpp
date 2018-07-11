@@ -207,10 +207,9 @@ HRESULT VtEngine::_CursorHome()
 }
 
 // Method Description:
-// - Formats and writes a sequence to change the current text attributes.
+// - Formats and writes a sequence change the boldness of the following text.
 // Arguments:
-// - wAttr: Windows color table index to emit as a VT sequence
-// - fIsForeground: true if we should emit the foreground sequence, false for background
+// - isBold: If true, we'll bold the text. Otherwise we'll debolden the text.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
@@ -221,10 +220,9 @@ HRESULT VtEngine::_SetGraphicsBoldness(const bool isBold)
 }
 
 // Method Description:
-// - Formats and writes a sequence to change the current text attributes.
+// - Formats and writes a sequence to change the current text attributes to the default.
 // Arguments:
-// - wAttr: Windows color table index to emit as a VT sequence
-// - fIsForeground: true if we should emit the foreground sequence, false for background
+// <none>
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
@@ -255,7 +253,7 @@ HRESULT VtEngine::_SetGraphicsRendition16Color(const WORD wAttr,
     //      handled by _SetGraphicsBoldness. Here, we can emit either bright or
     //      dark colors. For conhost as a terminal, it can't draw bold
     //      characters, so it displays "bold" as bright, and in fact most
-    //      terminala display the bright color when displaying bolded text.
+    //      terminals display the bright color when displaying bolded text.
     // By specifying the boldness and brightness seperately, we'll make sure the
     //      terminal has an accurate representation of our buffer.
     const int vtIndex = 30
