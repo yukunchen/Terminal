@@ -21,11 +21,15 @@
 
 using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
-const int TEST_LANG_NONE = 0;
-const int TEST_LANG_CYRILLIC = 1;
-const int TEST_LANG_CHINESE = 2;
-const int TEST_LANG_JAPANESE = 3;
-const int TEST_LANG_KOREAN = 4;
+// "Do Unicode" strings - C-b, u, then one of these characters to emit a string
+//      of characters that aren't really possible to read from the console currently.
+const int TEST_LANG_NONE = 0; // 0
+const int TEST_LANG_CYRILLIC = 1; // 1
+const int TEST_LANG_CHINESE = 2; // 2
+const int TEST_LANG_JAPANESE = 3; // 3
+const int TEST_LANG_KOREAN = 4; // 4
+const int TEST_LANG_GOOD_POUND = 5; // #
+const int TEST_LANG_BAD_POUND = 6; // $
 
 ////////////////////////////////////////////////////////////////////////////////
 // State
@@ -303,6 +307,12 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
                         case '4':
                             lang = TEST_LANG_KOREAN;
                             break;
+                        case '#':
+                            lang = TEST_LANG_GOOD_POUND;
+                            break;
+                        case '$':
+                            lang = TEST_LANG_BAD_POUND;
+                            break;
                         default:
                             doUnicode = false;
                             lang = TEST_LANG_NONE;
@@ -385,6 +395,12 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
                 break;
             case TEST_LANG_KOREAN:
                 str = "국민경제의 발전을 위한 중요정책의 수립에 관하여 대통령의 자문에 응하기 위하여 국민경제자문회의를 둘 수 있다.";
+                break;
+            case TEST_LANG_GOOD_POUND:
+                str = "\xc2\xa3"; // UTF-8 £
+                break;
+            case TEST_LANG_BAD_POUND:
+                str = "\xa3";  // UTF-16 £
                 break;
             default:
                 str = "";
