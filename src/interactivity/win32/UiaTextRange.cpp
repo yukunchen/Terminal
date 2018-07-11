@@ -496,7 +496,7 @@ IFACEMETHODIMP UiaTextRange::CompareEndpoints(_In_ TextPatternRangeEndpoint endp
     }
     else
     {
-        theirValue = range->GetEnd();
+        theirValue = range->GetEnd() + 1;
     }
 
     // get the values of our endpoint
@@ -507,7 +507,7 @@ IFACEMETHODIMP UiaTextRange::CompareEndpoints(_In_ TextPatternRangeEndpoint endp
     }
     else
     {
-        ourValue = _end;
+        ourValue = _end + 1;
     }
 
     // compare them
@@ -965,6 +965,7 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByRange(_In_ TextPatternRangeEndpoint e
     CATCH_RETURN();
 
     // set endpoint value and check for crossed endpoints
+    bool crossedEndpoints = false;
     if (endpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start)
     {
         _start = targetEndpointValue;
@@ -972,6 +973,7 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByRange(_In_ TextPatternRangeEndpoint e
         {
             // endpoints were crossed
             _end = _start;
+            crossedEndpoints = true;
         }
     }
     else
@@ -981,9 +983,10 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByRange(_In_ TextPatternRangeEndpoint e
         {
             // endpoints were crossed
             _start = _end;
+            crossedEndpoints = true;
         }
     }
-    _degenerate = (_start == _end);
+    _degenerate = crossedEndpoints;
 
     Tracing::s_TraceUia(this, ApiCall::MoveEndpointByRange, &apiMsg);
     return S_OK;

@@ -23,6 +23,9 @@ IConsoleWindow* ServiceLocator::s_consoleWindow = nullptr;
 
 Globals                      ServiceLocator::s_globals;
 
+bool ServiceLocator::s_pseudoWindowInitialized = false;
+wil::unique_hwnd ServiceLocator::s_pseudoWindow = 0;
+
 #pragma endregion
 
 #pragma region Public Methods
@@ -268,6 +271,34 @@ IInputServices* ServiceLocator::LocateInputServices()
 Globals& ServiceLocator::LocateGlobals()
 {
     return s_globals;
+}
+
+// Method Description:
+// - Retrieves the pseudo console window, or attempts to instantiate one.
+// Arguments:
+// - <none>
+// Return Value:
+// - a reference to the pseudoconsole window.
+HWND ServiceLocator::LocatePseudoWindow()
+{
+    NTSTATUS status = STATUS_SUCCESS;
+    if (!s_pseudoWindowInitialized)
+    {
+        if (s_interactivityFactory.get() == nullptr)
+        {
+            status = ServiceLocator::LoadInteractivityFactory();
+        }
+
+        if (NT_SUCCESS(status))
+        {
+            HWND hwnd;
+            status = s_interactivityFactory->CreatePseudoWindow(hwnd);
+            s_pseudoWindow.reset(hwnd);
+        }
+        s_pseudoWindowInitialized = true;
+    }
+    LOG_IF_NTSTATUS_FAILED(status);
+    return s_pseudoWindow.get();
 }
 
 #pragma endregion

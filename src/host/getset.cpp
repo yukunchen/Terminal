@@ -308,6 +308,17 @@ HRESULT ApiRoutines::SetConsoleOutputModeImpl(SCREEN_INFORMATION& Context, const
     gci.SetAutomaticReturnOnNewline(IsFlagSet(screenInfo.OutputMode, DISABLE_NEWLINE_AUTO_RETURN) ? false : true);
     gci.SetGridRenderingAllowedWorldwide(IsFlagSet(screenInfo.OutputMode, ENABLE_LVB_GRID_WORLDWIDE));
 
+    // if we changed rendering modes then redraw the output buffer
+    if (IsFlagSet(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) != IsFlagSet(dwOldMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) ||
+        IsFlagSet(dwNewMode, ENABLE_LVB_GRID_WORLDWIDE) != IsFlagSet(dwOldMode, ENABLE_LVB_GRID_WORLDWIDE))
+    {
+        auto* pRender = ServiceLocator::LocateGlobals().pRender;
+        if (pRender)
+        {
+            pRender->TriggerRedrawAll();
+        }
+    }
+
     return S_OK;
 }
 
@@ -904,14 +915,23 @@ void ApiRoutines::GetConsoleWindowImpl(_Out_ HWND* const pHwnd)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
-    IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
+    const IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (pWindow != nullptr)
     {
         *pHwnd = pWindow->GetWindowHandle();
     }
     else
     {
-        *pHwnd = NULL;
+        // Some applications will fail silently if this API returns 0 (cygwin)
+        // If we're in pty mode, we need to return a fake window handle that
+        //      doesn't actually do anything, but is a unique HWND to this
+        //      console, so that they know that this console is in fact a real
+        //      console window.
+        if (gci.IsInVtIoMode())
+        {
+            *pHwnd = ServiceLocator::LocatePseudoWindow();
+        }
     }
 }
 
@@ -1166,6 +1186,11 @@ NTSTATUS DoSrvMoveCursorVertically(SCREEN_INFORMATION& screenInfo, const short l
     const bool fMarginsSet = srMargins.Bottom > srMargins.Top;
     const bool fCursorInMargins = iCurrentCursorY <= srMargins.Bottom && iCurrentCursorY >= srMargins.Top;
     COORD clampedPos = {cursor.GetPosition().X, cursor.GetPosition().Y+lines};
+
+    // Make sure the cursor doesn't move outside the viewport.
+    clampedPos.Y = std::clamp(clampedPos.Y, screenInfo.GetBufferViewport().Top, screenInfo.GetBufferViewport().Bottom);
+
+    // Make sure the cursor stays inside the margins
     if (fMarginsSet)
     {
         auto v = clampedPos.Y;

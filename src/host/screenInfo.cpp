@@ -1297,10 +1297,10 @@ void SCREEN_INFORMATION::s_CalculateScrollbarVisibility(const RECT* const prcCli
     // TODO MSFT: 17663344 - Audit call sites for this precondition. Extremely tiny offscreen windows.
     // FAIL_FAST_IF_FALSE(prcClientArea->left < prcClientArea->right);
     // FAIL_FAST_IF_FALSE(prcClientArea->top < prcClientArea->bottom);
-    FAIL_FAST_IF_FALSE(pcoordBufferSize->X > 0);
-    FAIL_FAST_IF_FALSE(pcoordBufferSize->Y > 0);
-    FAIL_FAST_IF_FALSE(pcoordFontSize->X > 0);
-    FAIL_FAST_IF_FALSE(pcoordFontSize->Y > 0);
+    // FAIL_FAST_IF_FALSE(pcoordBufferSize->X > 0);
+    // FAIL_FAST_IF_FALSE(pcoordBufferSize->Y > 0);
+    // FAIL_FAST_IF_FALSE(pcoordFontSize->X > 0);
+    // FAIL_FAST_IF_FALSE(pcoordFontSize->Y > 0);
 
     // Start with bars not visible as the initial state of the client area doesn't account for scroll bars.
     *pfIsHorizontalVisible = false;
