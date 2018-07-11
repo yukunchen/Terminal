@@ -25,9 +25,9 @@ using namespace Microsoft::Console::Interactivity::OneCore;
 
 RECT WindowMetrics::GetMinClientRectInPixels()
 {
-    NTSTATUS Status;
-
     ConIoSrvComm *Server;
+
+    NTSTATUS Status;
 
     // We need to always return something viable for this call,
     // so by default, set the font and display size to our headless
@@ -52,7 +52,7 @@ RECT WindowMetrics::GetMinClientRectInPixels()
     Server = ServiceLocator::LocateInputServices<ConIoSrvComm>();
 
     // Figure out what kind of display we are using.
-    Status = Server->RequestGetDisplayMode(&DisplayMode);
+    DisplayMode = Server->GetDisplayMode();
 
     // Note on status propagation:
     //
@@ -65,61 +65,53 @@ RECT WindowMetrics::GetMinClientRectInPixels()
     // SetLastError in their OneCore implementations to reflect whether their
     // return value is accurate.
 
-    if (NT_SUCCESS(Status))
+    switch (DisplayMode)
     {
-        switch (DisplayMode)
+    case CIS_DISPLAY_MODE_BGFX:
+    {
+        // TODO: MSFT: 10916072 This requires switching to kernel mode and calling
+        //       BgkGetConsoleState. The call's result can be cached, though that
+        //       might be a problem for plugging/unplugging monitors or perhaps
+        //       across KVM sessions.
+
+        Status = Server->RequestGetDisplaySize(&DisplaySizeIoctl);
+
+        if (NT_SUCCESS(Status))
         {
-            case CIS_DISPLAY_MODE_BGFX:
+            Status = Server->RequestGetFontSize(&FontSizeIoctl);
+
+            if (NT_SUCCESS(Status))
             {
-                // TODO: MSFT: 10916072 This requires switching to kernel mode and calling
-                //       BgkGetConsoleState. The call's result can be cached, though that
-                //       might be a problem for plugging/unplugging monitors or perhaps
-                //       across KVM sessions.
+                DisplaySize.top = 0;
+                DisplaySize.left = 0;
+                DisplaySize.bottom = DisplaySizeIoctl.Height;
+                DisplaySize.right = DisplaySizeIoctl.Width;
 
-                Status = Server->RequestGetDisplaySize(&DisplaySizeIoctl);
-
-                if (NT_SUCCESS(Status))
-                {
-                    Status = Server->RequestGetFontSize(&FontSizeIoctl);
-
-                    if (NT_SUCCESS(Status))
-                    {
-                        DisplaySize.top = 0;
-                        DisplaySize.left = 0;
-                        DisplaySize.bottom = DisplaySizeIoctl.Height;
-                        DisplaySize.right = DisplaySizeIoctl.Width;
-
-                        FontSize.X = (SHORT)FontSizeIoctl.Width;
-                        FontSize.Y = (SHORT)FontSizeIoctl.Height;
-                    }
-                }
-                else
-                {
-                    SetLastError(Status);
-                }
+                FontSize.X = (SHORT)FontSizeIoctl.Width;
+                FontSize.Y = (SHORT)FontSizeIoctl.Height;
             }
-            break;
-
-            case CIS_DISPLAY_MODE_DIRECTX:
-            {
-                LOG_IF_FAILED(Server->pWddmConEngine->GetFontSize(&FontSize));
-                DisplaySize = Server->pWddmConEngine->GetDisplaySize();
-            }
-            break;
-
-            case CIS_DISPLAY_MODE_NONE:
-            {
-                // When in headless mode and using EMS (Emergency Management
-                // Services), ensure that the buffer isn't zero-sized by
-                // using the default values.
-            }
-            break;
+        }
+        else
+        {
+            SetLastError(Status);
         }
     }
-    else
+    break;
+
+    case CIS_DISPLAY_MODE_DIRECTX:
     {
-        // If we errored, set the error. But we're still going to give a reasonable value back.
-        SetLastError(Status);
+        LOG_IF_FAILED(Server->pWddmConEngine->GetFontSize(&FontSize));
+        DisplaySize = Server->pWddmConEngine->GetDisplaySize();
+    }
+    break;
+
+    case CIS_DISPLAY_MODE_NONE:
+    {
+        // When in headless mode and using EMS (Emergency Management
+        // Services), ensure that the buffer isn't zero-sized by
+        // using the default values.
+    }
+    break;
     }
 
     // The result is expected to be in pixels, not rows/columns.

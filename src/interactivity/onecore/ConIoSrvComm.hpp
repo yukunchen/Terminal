@@ -52,7 +52,7 @@ namespace Microsoft::Console::Interactivity::OneCore
         NTSTATUS RequestGetKeyState(_In_ int iVirtualKey, _Out_ SHORT *psReturnValue);
 
         [[nodiscard]]
-        NTSTATUS RequestGetDisplayMode(_Out_ USHORT *psDisplayMode);
+        USHORT GetDisplayMode() const;
 
         PVOID GetSharedViewBase() const;
 

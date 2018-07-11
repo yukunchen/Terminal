@@ -28,10 +28,9 @@ DWORD ConsoleInputThreadProcOneCore(LPVOID /*lpParam*/)
 
     if (NT_SUCCESS(Status))
     {
-        USHORT DisplayMode;
-        Status = Server->RequestGetDisplayMode(&DisplayMode);
+        USHORT DisplayMode = Server->GetDisplayMode();
 
-        if (NT_SUCCESS(Status) && DisplayMode != CIS_DISPLAY_MODE_NONE)
+        if (DisplayMode != CIS_DISPLAY_MODE_NONE)
         {
             // Create and set the console window.
             ConsoleWindow * const wnd = new(std::nothrow) ConsoleWindow();
