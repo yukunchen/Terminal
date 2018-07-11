@@ -199,8 +199,8 @@ HRESULT VtEngine::_RgbUpdateDrawingBrushes(const COLORREF colorForeground,
     const bool fgIsDefault = colorForeground == _colorProvider.GetDefaultForeground();
     const bool bgIsDefault = colorBackground == _colorProvider.GetDefaultBackground();
 
-    // If we're resetting both the FG and BG to defaults, emit a SGR reset.
-    if (fgChanged && bgChanged && fgIsDefault && bgIsDefault)
+    // If both the FG and BG should be the defaults, emit a SGR reset.
+    if ((fgChanged || bgChanged) && fgIsDefault && bgIsDefault)
     {
         // SGR Reset will also clear out the boldness of the text.
         RETURN_IF_FAILED(_SetGraphicsDefault());
@@ -287,7 +287,8 @@ HRESULT VtEngine::_16ColorUpdateDrawingBrushes(const COLORREF colorForeground,
     const bool fgIsDefault = colorForeground == _colorProvider.GetDefaultForeground();
     const bool bgIsDefault = colorBackground == _colorProvider.GetDefaultBackground();
 
-    if (fgChanged && bgChanged && fgIsDefault && bgIsDefault)
+    // If both the FG and BG should be the defaults, emit a SGR reset.
+    if ((fgChanged || bgChanged) && fgIsDefault && bgIsDefault)
     {
         // SGR Reset will also clear out the boldness of the text.
         RETURN_IF_FAILED(_SetGraphicsDefault());

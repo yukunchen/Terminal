@@ -32,23 +32,7 @@ using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 
-class VtRenderTestColorProvider : public Microsoft::Console::IDefaultColorProvider
-{
-public:
-    virtual ~VtRenderTestColorProvider() = default;
-
-    COLORREF GetDefaultForeground() const
-    {
-        return RGB(0xff, 0xff, 0xff);
-    }
-    COLORREF GetDefaultBackground() const
-    {
-        return RGB(0, 0, 0);
-    }
-};
-
 COLORREF g_ColorTable[COLOR_TABLE_SIZE];
-VtRenderTestColorProvider p;
 static const std::string CLEAR_SCREEN = "\x1b[2J";
 static const std::string CURSOR_HOME = "\x1b[H";
 // Sometimes when we're expecting the renderengine to not write anything,
@@ -56,6 +40,26 @@ static const std::string CURSOR_HOME = "\x1b[H";
 // to make sure nothing else gets written.
 // We don't use null because that will confuse the VERIFY macros re: string length.
 const char* const EMPTY_CALLBACK_SENTINEL = "\xff";
+
+
+class VtRenderTestColorProvider : public Microsoft::Console::IDefaultColorProvider
+{
+public:
+    virtual ~VtRenderTestColorProvider() = default;
+
+    COLORREF GetDefaultForeground() const
+    {
+        // return RGB(0xff, 0xff, 0xff);
+        return g_ColorTable[15];
+    }
+    COLORREF GetDefaultBackground() const
+    {
+        // return RGB(0, 0, 0);
+        return g_ColorTable[0];
+    }
+};
+
+VtRenderTestColorProvider p;
 
 class Microsoft::Console::Render::VtRendererTest
 {
@@ -464,8 +468,8 @@ void VtRendererTest::Xterm256TestColors()
     Log::Comment(NoThrowString().Format(
         L"Begin by setting the default colors - FG,BG = BRIGHT_WHITE,DARK_BLACK"
     ));
-    qExpectedInput.push_back("\x1b[1m\x1b[37m"); // Foreground BRIGHT_WHITE
-    qExpectedInput.push_back("\x1b[40m"); // Background DARK_BLACK
+
+    qExpectedInput.push_back("\x1b[m");
     VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15], g_ColorTable[0], 0, false, false));
 
     TestPaint(*engine, [&]()
@@ -479,7 +483,7 @@ void VtRendererTest::Xterm256TestColors()
         Log::Comment(NoThrowString().Format(
             L"----Change only the FG----"
         ));
-        qExpectedInput.push_back("\x1b[22m\x1b[37m"); // Foreground DARK_WHITE
+        qExpectedInput.push_back("\x1b[37m"); // Foreground DARK_WHITE
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7], g_ColorTable[4], 0, false, false));
 
         Log::Comment(NoThrowString().Format(
@@ -492,14 +496,14 @@ void VtRendererTest::Xterm256TestColors()
             L"----Change only the BG to the 'Default' background----"
         ));
         qExpectedInput.push_back("\x1b[49m"); // Background DARK_BLACK
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7], 0x000000, 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7], g_ColorTable[0], 0, false, false));
 
 
         Log::Comment(NoThrowString().Format(
             L"----Back to defaults----"
         ));
-        qExpectedInput.push_back("\x1b[1m\x1b[37m"); // Foreground BRIGHT_WHITE
-        qExpectedInput.push_back("\x1b[40m"); // Background DARK_BLACK
+
+        qExpectedInput.push_back("\x1b[m");
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15], g_ColorTable[0], 0, false, false));
     });
 
@@ -816,8 +820,8 @@ void VtRendererTest::XtermTestColors()
     Log::Comment(NoThrowString().Format(
         L"Begin by setting the default colors - FG,BG = BRIGHT_WHITE,DARK_BLACK"
     ));
-    qExpectedInput.push_back("\x1b[1m\x1b[37m"); // Foreground BRIGHT_WHITE
-    qExpectedInput.push_back("\x1b[40m"); // Background DARK_BLACK
+
+    qExpectedInput.push_back("\x1b[m");
     VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15], g_ColorTable[0], 0, false, false));
 
     TestPaint(*engine, [&]()
@@ -831,7 +835,7 @@ void VtRendererTest::XtermTestColors()
         Log::Comment(NoThrowString().Format(
             L"----Change only the FG----"
         ));
-        qExpectedInput.push_back("\x1b[22m\x1b[37m"); // Foreground DARK_WHITE
+        qExpectedInput.push_back("\x1b[37m"); // Foreground DARK_WHITE
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7], g_ColorTable[4], 0, false, false));
 
         Log::Comment(NoThrowString().Format(
@@ -844,14 +848,14 @@ void VtRendererTest::XtermTestColors()
             L"----Change only the BG to the 'Default' background----"
         ));
         qExpectedInput.push_back("\x1b[40m"); // Background DARK_BLACK
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7], 0x000000, 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7], g_ColorTable[0], 0, false, false));
 
 
         Log::Comment(NoThrowString().Format(
             L"----Back to defaults----"
         ));
-        qExpectedInput.push_back("\x1b[1m\x1b[37m"); // Foreground BRIGHT_WHITE
-        qExpectedInput.push_back("\x1b[40m"); // Background DARK_BLACK
+
+        qExpectedInput.push_back("\x1b[m");
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15], g_ColorTable[0], 0, false, false));
     });
 
@@ -863,7 +867,6 @@ void VtRendererTest::XtermTestColors()
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15], g_ColorTable[0], 0, false, false));
         WriteCallback(EMPTY_CALLBACK_SENTINEL, 1); // This will make sure nothing was written to the callback
-
     });
 
 }
@@ -1088,8 +1091,8 @@ void VtRendererTest::WinTelnetTestColors()
     Log::Comment(NoThrowString().Format(
         L"Begin by setting the default colors - FG,BG = BRIGHT_WHITE,DARK_BLACK"
     ));
-    qExpectedInput.push_back("\x1b[1m\x1b[37m"); // Foreground BRIGHT_WHITE
-    qExpectedInput.push_back("\x1b[40m"); // Background DARK_BLACK
+
+    qExpectedInput.push_back("\x1b[m");
     VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15], g_ColorTable[0], 0, false, false));
 
     TestPaint(*engine, [&]()
@@ -1103,7 +1106,7 @@ void VtRendererTest::WinTelnetTestColors()
         Log::Comment(NoThrowString().Format(
             L"----Change only the FG----"
         ));
-        qExpectedInput.push_back("\x1b[22m\x1b[37m"); // Foreground DARK_WHITE
+        qExpectedInput.push_back("\x1b[37m"); // Foreground DARK_WHITE
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7], g_ColorTable[4], 0, false, false));
 
         Log::Comment(NoThrowString().Format(
@@ -1116,14 +1119,13 @@ void VtRendererTest::WinTelnetTestColors()
             L"----Change only the BG to the 'Default' background----"
         ));
         qExpectedInput.push_back("\x1b[40m"); // Background DARK_BLACK
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7], 0x000000, 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7], g_ColorTable[0], 0, false, false));
 
 
         Log::Comment(NoThrowString().Format(
             L"----Back to defaults----"
         ));
-        qExpectedInput.push_back("\x1b[1m\x1b[37m"); // Foreground BRIGHT_WHITE
-        qExpectedInput.push_back("\x1b[40m"); // Background DARK_BLACK
+        qExpectedInput.push_back("\x1b[m");
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15], g_ColorTable[0], 0, false, false));
     });
 
