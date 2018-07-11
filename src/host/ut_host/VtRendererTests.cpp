@@ -49,12 +49,10 @@ public:
 
     COLORREF GetDefaultForeground() const
     {
-        // return RGB(0xff, 0xff, 0xff);
         return g_ColorTable[15];
     }
     COLORREF GetDefaultBackground() const
     {
-        // return RGB(0, 0, 0);
         return g_ColorTable[0];
     }
 };

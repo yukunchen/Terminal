@@ -209,7 +209,7 @@ HRESULT VtEngine::_CursorHome()
 // Method Description:
 // - Formats and writes a sequence change the boldness of the following text.
 // Arguments:
-// - isBold: If true, we'll bold the text. Otherwise we'll debolden the text.
+// - isBold: If true, we'll embolden the text. Otherwise we'll debolden the text.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
