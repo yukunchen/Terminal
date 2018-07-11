@@ -28,13 +28,13 @@ using namespace Microsoft::Console::Interactivity::OneCore;
 
 ConIoSrvComm::ConIoSrvComm()
     : _pipeReadHandle(INVALID_HANDLE_VALUE),
-      _pipeWriteHandle(INVALID_HANDLE_VALUE),
-      _alpcClientCommunicationPort(INVALID_HANDLE_VALUE),
-      _alpcSharedViewSize(0),
-      _alpcSharedViewBase(NULL),
-      _displayMode(USHORT_MAX),
-      _fIsInputInitialized(false),
-      pWddmConEngine(nullptr)
+    _pipeWriteHandle(INVALID_HANDLE_VALUE),
+    _alpcClientCommunicationPort(INVALID_HANDLE_VALUE),
+    _alpcSharedViewSize(0),
+    _alpcSharedViewBase(NULL),
+    _displayMode(CIS_DISPLAY_MODE_NONE),
+    _fIsInputInitialized(false),
+    pWddmConEngine(nullptr)
 {
 
 }
@@ -118,7 +118,7 @@ NTSTATUS ConIoSrvComm::Connect()
 
     // Set up the default security QoS descriptor.
     const SECURITY_QUALITY_OF_SERVICE DefaultQoS = {
-        sizeof (SECURITY_QUALITY_OF_SERVICE),
+        sizeof(SECURITY_QUALITY_OF_SERVICE),
         SecurityAnonymous,
         SECURITY_DYNAMIC_TRACKING,
         FALSE
@@ -126,7 +126,7 @@ NTSTATUS ConIoSrvComm::Connect()
 
     // Set up the port attributes.
     PortAttributes.Flags = ALPC_PORFLG_ACCEPT_DUP_HANDLES |
-                           ALPC_PORFLG_ACCEPT_INDIRECT_HANDLES;
+        ALPC_PORFLG_ACCEPT_INDIRECT_HANDLES;
     PortAttributes.MaxMessageLength = sizeof(CIS_MSG);
     PortAttributes.MaxPoolUsage = 0x4000;
     PortAttributes.MaxSectionSize = 0;
@@ -175,7 +175,7 @@ NTSTATUS ConIoSrvComm::Connect()
         {
             // Get each handle out. ALPC does not allow to pass indirect handles
             // all at once; they must be retrieved one by one.
-            for (ULONG Index = 0 ; Index < HandleAttributes->HandleCount ; Index++)
+            for (ULONG Index = 0; Index < HandleAttributes->HandleCount; Index++)
             {
                 HandleInfo.Index = Index;
 
@@ -207,6 +207,9 @@ NTSTATUS ConIoSrvComm::Connect()
 
             // Zero out the view.
             memset(_alpcSharedViewBase, 0, _alpcSharedViewSize);
+
+            // Get the display mode out of the connection message.
+            _displayMode = ConnectionMessage.GetDisplayModeParams.DisplayMode;
         }
     }
 
@@ -272,7 +275,7 @@ VOID ConIoSrvComm::ServiceInputPipe()
         {
             // If we get disconnected, terminate.
             ServiceLocator::RundownAndExit(GetLastError());
-       }
+        }
     }
 }
 
@@ -307,117 +310,108 @@ NTSTATUS ConIoSrvComm::SendRequestReceiveReply(PCIS_MSG Message) const
 VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
 {
     BOOL Ret;
-    NTSTATUS Status;
-
-    USHORT DisplayMode;
-
     IRenderer *Renderer;
-
     CIS_EVENT ReplyEvent;
 
-    Status = RequestGetDisplayMode(&DisplayMode);
+    Renderer = ServiceLocator::LocateGlobals().pRender;
 
-    if (NT_SUCCESS(Status))
+    switch (_displayMode)
     {
-        Renderer = ServiceLocator::LocateGlobals().pRender;
-
-        switch (DisplayMode)
+    case CIS_DISPLAY_MODE_BGFX:
+        if (Event->FocusEvent.IsActive)
         {
-            case CIS_DISPLAY_MODE_BGFX:
-                if (Event->FocusEvent.IsActive)
+            // Allow the renderer to paint (this has an effect only on
+            // the first call).
+            Renderer->EnablePainting();
+
+            // Force a complete redraw.
+            Renderer->TriggerRedrawAll();
+        }
+        break;
+
+    case CIS_DISPLAY_MODE_DIRECTX:
+    {
+        Globals& globals = ServiceLocator::LocateGlobals();
+
+        if (Event->FocusEvent.IsActive)
+        {
+            HRESULT hr = S_OK;
+
+            // Lazy-initialize the WddmCon engine.
+            //
+            // This is necessary because the engine cannot be allowed to
+            // request ownership of the display before whatever instance
+            // of conhost was using it before has relinquished it.
+            if (!pWddmConEngine->IsInitialized())
+            {
+                hr = pWddmConEngine->Initialize();
+                LOG_IF_FAILED(hr);
+
+                // Right after we initialize, synchronize the screen/viewport states with the WddmCon surface dimensions
+                if (SUCCEEDED(hr))
                 {
-                    // Allow the renderer to paint (this has an effect only on
-                    // the first call).
+                    const RECT rcOld = { 0 };
+
+                    // WddmEngine reports display size in characters, adjust to pixels for resize window calc.
+                    RECT rcDisplay = pWddmConEngine->GetDisplaySize();
+
+                    // Get font to adjust char to pixels.
+                    COORD coordFont = { 0 };
+                    LOG_IF_FAILED(pWddmConEngine->GetFontSize(&coordFont));
+
+                    rcDisplay.right *= coordFont.X;
+                    rcDisplay.bottom *= coordFont.Y;
+
+                    // Ask the screen buffer to resize itself (and all related components) based on the screen size.
+                    globals.getConsoleInformation().GetActiveOutputBuffer().ProcessResizeWindow(&rcDisplay, &rcOld);
+                }
+            }
+
+            if (SUCCEEDED(hr))
+            {
+                // Allow acquiring device resources before drawing.
+                hr = pWddmConEngine->Enable();
+                LOG_IF_FAILED(hr);
+                if (SUCCEEDED(hr))
+                {
+                    // Allow the renderer to paint.
                     Renderer->EnablePainting();
 
                     // Force a complete redraw.
                     Renderer->TriggerRedrawAll();
                 }
-            break;
-
-            case CIS_DISPLAY_MODE_DIRECTX:
-            {
-                Globals& globals = ServiceLocator::LocateGlobals();
-
-                if (Event->FocusEvent.IsActive)
-                {
-                    HRESULT hr = S_OK;
-
-                    // Lazy-initialize the WddmCon engine.
-                    //
-                    // This is necessary because the engine cannot be allowed to
-                    // request ownership of the display before whatever instance
-                    // of conhost was using it before has relinquished it.
-                    if (!pWddmConEngine->IsInitialized())
-                    {
-                        hr = pWddmConEngine->Initialize();
-                        LOG_IF_FAILED(hr);
-
-                        // Right after we initialize, synchronize the screen/viewport states with the WddmCon surface dimensions
-                        if (SUCCEEDED(hr))
-                        {
-                            const RECT rcOld = { 0 };
-
-                            // WddmEngine reports display size in characters, adjust to pixels for resize window calc.
-                            RECT rcDisplay = pWddmConEngine->GetDisplaySize();
-
-                            // Get font to adjust char to pixels.
-                            COORD coordFont = {0};
-                            LOG_IF_FAILED(pWddmConEngine->GetFontSize(&coordFont));
-
-                            rcDisplay.right *= coordFont.X;
-                            rcDisplay.bottom *= coordFont.Y;
-
-                            // Ask the screen buffer to resize itself (and all related components) based on the screen size.
-                            globals.getConsoleInformation().GetActiveOutputBuffer().ProcessResizeWindow(&rcDisplay, &rcOld);
-                        }
-                    }
-
-                    if (SUCCEEDED(hr))
-                    {
-                        // Allow acquiring device resources before drawing.
-                        hr = pWddmConEngine->Enable();
-                        LOG_IF_FAILED(hr);
-                        if (SUCCEEDED(hr))
-                        {
-                            // Allow the renderer to paint.
-                            Renderer->EnablePainting();
-
-                            // Force a complete redraw.
-                            Renderer->TriggerRedrawAll();
-                        }
-                    }
-                }
-                else
-                {
-                    if (pWddmConEngine->IsInitialized())
-                    {
-                        // Wait for the currently running paint operation, if any,
-                        // and prevent further attempts to render.
-                        Renderer->WaitForPaintCompletionAndDisable(1000);
-
-                        // Relinquish control of the graphics device (only one
-                        // DirectX application may control the device at any one
-                        // time).
-                        LOG_IF_FAILED(pWddmConEngine->Disable());
-
-                        // Let the Console IO Server that we have relinquished
-                        // control of the display.
-                        ReplyEvent.Type = CIS_EVENT_TYPE_FOCUS_ACK;
-                        Ret = WriteFile(_pipeWriteHandle,
-                                        &ReplyEvent,
-                                        sizeof(CIS_EVENT),
-                                        NULL,
-                                        NULL);
-                    }
-                }
             }
-            break;
-
-            case CIS_DISPLAY_MODE_NONE:
-                // Focus events have no meaning in a headless environment.
-            break;
         }
+        else
+        {
+            if (pWddmConEngine->IsInitialized())
+            {
+                // Wait for the currently running paint operation, if any,
+                // and prevent further attempts to render.
+                Renderer->WaitForPaintCompletionAndDisable(1000);
+
+                // Relinquish control of the graphics device (only one
+                // DirectX application may control the device at any one
+                // time).
+                LOG_IF_FAILED(pWddmConEngine->Disable());
+
+                // Let the Console IO Server that we have relinquished
+                // control of the display.
+                ReplyEvent.Type = CIS_EVENT_TYPE_FOCUS_ACK;
+                Ret = WriteFile(_pipeWriteHandle,
+                                &ReplyEvent,
+                                sizeof(CIS_EVENT),
+                                NULL,
+                                NULL);
+            }
+        }
+    }
+    break;
+
+    case CIS_DISPLAY_MODE_NONE:
+    default:
+        // Focus events have no meaning in a headless environment.
+        break;
     }
 }
 
@@ -598,30 +592,9 @@ NTSTATUS ConIoSrvComm::RequestGetKeyState(_In_ int iVirtualKey, _Out_ SHORT *psR
 }
 
 [[nodiscard]]
-NTSTATUS ConIoSrvComm::RequestGetDisplayMode(_Out_ USHORT *psDisplayMode)
+USHORT ConIoSrvComm::GetDisplayMode() const
 {
-    NTSTATUS Status;
-
-    CIS_MSG Message = { 0 };
-    Message.Type = CIS_MSG_TYPE_GETDISPLAYMODE;
-
-    // Cache the response (USHORT_MAX = not set yet).
-    if (_displayMode == USHORT_MAX)
-    {
-        Status = SendRequestReceiveReply(&Message);
-        if (NT_SUCCESS(Status))
-        {
-            _displayMode = Message.GetDisplayModeParams.DisplayMode;
-            *psDisplayMode = _displayMode;
-        }
-    }
-    else
-    {
-        *psDisplayMode = _displayMode;
-        Status = STATUS_SUCCESS;
-    }
-
-    return Status;
+    return _displayMode;
 }
 
 PVOID ConIoSrvComm::GetSharedViewBase() const
@@ -739,14 +712,14 @@ NTSTATUS ConIoSrvComm::InitializeBgfx()
             {
                 // Create and set the render engine.
                 BgfxEngine* const pBgfxEngine = new BgfxEngine(GetSharedViewBase(),
-                                                                DisplaySize.bottom / FontSize.Height,
-                                                                DisplaySize.right / FontSize.Width,
-                                                                FontSize.Width,
-                                                                FontSize.Height);
+                                                               DisplaySize.bottom / FontSize.Height,
+                                                               DisplaySize.right / FontSize.Width,
+                                                               FontSize.Width,
+                                                               FontSize.Height);
 
                 globals.pRender->AddRenderEngine(pBgfxEngine);
             }
-            catch(...)
+            catch (...)
             {
                 Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
             }
@@ -761,13 +734,13 @@ NTSTATUS ConIoSrvComm::InitializeWddmCon()
 {
     Globals& globals = ServiceLocator::LocateGlobals();
     FAIL_FAST_IF_NULL(globals.pRender);
-    
+
     try
     {
         pWddmConEngine = new WddmConEngine();
         globals.pRender->AddRenderEngine(pWddmConEngine);
     }
-    catch(...)
+    catch (...)
     {
         return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
     }
