@@ -277,7 +277,7 @@ HRESULT VtEngine::_RgbUpdateDrawingBrushes(const COLORREF colorForeground,
 [[nodiscard]]
 HRESULT VtEngine::_16ColorUpdateDrawingBrushes(const COLORREF colorForeground,
                                                const COLORREF colorBackground,
-                                               const bool /*isBold*/,
+                                               const bool isBold,
                                                _In_reads_(cColorTable) const COLORREF* const ColorTable,
                                                const WORD cColorTable)
 {
