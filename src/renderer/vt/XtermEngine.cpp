@@ -56,7 +56,7 @@ HRESULT XtermEngine::StartPaint()
     }
     else
     {
-        if (Viewport::FromInclusive(GetDirtyRectInChars()) == _lastViewport)
+        if (!_resized && Viewport::FromInclusive(GetDirtyRectInChars()) == _lastViewport)
         {
             RETURN_IF_FAILED(_ClearScreen());
             _clearedAllThisFrame = true;
@@ -320,9 +320,8 @@ HRESULT XtermEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
                                      const size_t cchLine,
                                      const COORD coord,
                                      const bool /*fTrimLeft*/,
-                                     const bool lineWrapped)
+                                     const bool /*lineWrapped*/)
 {
-    _previousLineWrapped = lineWrapped;
     return _fUseAsciiOnly ?
         VtEngine::_PaintAsciiBufferLine(pwsLine, rgWidths, cchLine, coord) :
         VtEngine::_PaintUtf8BufferLine(pwsLine, rgWidths, cchLine, coord);

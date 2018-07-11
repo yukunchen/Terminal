@@ -44,6 +44,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _quickReturn(false),
     _clearedAllThisFrame(false),
     _cursorMoved(false),
+    _resized(false),
     _suppressResizeRepaint(true),
     _virtualTop(0),
     _circled(false),
@@ -296,7 +297,7 @@ HRESULT VtEngine::UpdateViewport(const SMALL_RECT srNewViewport)
             }
         }
     }
-
+    _resized = true;
     return hr;
 }
 
