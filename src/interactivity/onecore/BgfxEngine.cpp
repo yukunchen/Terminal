@@ -220,6 +220,7 @@ HRESULT BgfxEngine::ClearCursor()
 HRESULT BgfxEngine::UpdateDrawingBrushes(COLORREF const /*colorForeground*/,
                                          COLORREF const /*colorBackground*/,
                                          const WORD legacyColorAttribute,
+                                         const bool /*isBold*/,
                                          bool const /*fIncludeBackgrounds*/)
 {
     _currentLegacyColorAttribute = legacyColorAttribute;

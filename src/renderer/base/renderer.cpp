@@ -1181,13 +1181,14 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 [[nodiscard]]
 HRESULT Renderer::_UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, const TextAttribute textAttributes, const bool fIncludeBackground)
 {
-    COLORREF rgbForeground = textAttributes.CalculateRgbForeground();
-    COLORREF rgbBackground = textAttributes.CalculateRgbBackground();
-    WORD legacyAttributes = textAttributes.GetLegacyAttributes();
+    const COLORREF rgbForeground = textAttributes.CalculateRgbForeground();
+    const COLORREF rgbBackground = textAttributes.CalculateRgbBackground();
+    const WORD legacyAttributes = textAttributes.GetLegacyAttributes();
+    const bool isBold = textAttributes.IsBold();
 
     // The last color need's to be each engine's responsibility. If it's local to this function,
     //      then on the next engine we might not update the color.
-    RETURN_IF_FAILED(pEngine->UpdateDrawingBrushes(rgbForeground, rgbBackground, legacyAttributes, fIncludeBackground));
+    RETURN_IF_FAILED(pEngine->UpdateDrawingBrushes(rgbForeground, rgbBackground, legacyAttributes, isBold, fIncludeBackground));
 
     return S_OK;
 }
