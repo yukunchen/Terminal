@@ -120,10 +120,11 @@ HRESULT XtermEngine::EndPaint()
 HRESULT XtermEngine::UpdateDrawingBrushes(const COLORREF colorForeground,
                                           const COLORREF colorBackground,
                                           const WORD /*legacyColorAttribute*/,
+                                          const bool isBold,
                                           const bool /*fIncludeBackgrounds*/)
 {
     // The base xterm mode only knows about 16 colors
-    return VtEngine::_16ColorUpdateDrawingBrushes(colorForeground, colorBackground, _ColorTable, _cColorTable);
+    return VtEngine::_16ColorUpdateDrawingBrushes(colorForeground, colorBackground, isBold, _ColorTable, _cColorTable);
 }
 
 // Routine Description:

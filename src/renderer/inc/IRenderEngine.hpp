@@ -90,6 +90,7 @@ namespace Microsoft::Console::Render
         virtual HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
                                              const COLORREF colorBackground,
                                              const WORD legacyColorAttribute,
+                                             const bool isBold,
                                              const bool fIncludeBackgrounds) = 0;
         [[nodiscard]]
         virtual HRESULT UpdateFont(const FontInfoDesired& FontInfoDesired,

@@ -95,6 +95,7 @@ namespace Microsoft::Console::Render
         virtual HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
                                             const COLORREF colorBackground,
                                             const WORD legacyColorAttribute,
+                                            const bool isBold,
                                             const bool fIncludeBackgrounds) = 0;
         [[nodiscard]]
         HRESULT UpdateFont(const FontInfoDesired& pfiFontInfoDesired,
@@ -141,6 +142,7 @@ namespace Microsoft::Console::Render
 
         COLORREF _LastFG;
         COLORREF _LastBG;
+        bool _lastWasBold;
 
         Microsoft::Console::Types::Viewport _lastViewport;
         Microsoft::Console::Types::Viewport _invalidRect;
@@ -219,6 +221,13 @@ namespace Microsoft::Console::Render
                                             const bool fIsForeground);
         [[nodiscard]]
         HRESULT _SetGraphicsRenditionDefaultColor(const bool fIsForeground);
+
+        [[nodiscard]]
+        HRESULT _SetGraphicsBoldness(const bool isBold);
+
+        [[nodiscard]]
+        HRESULT _SetGraphicsDefault();
+
         [[nodiscard]]
         HRESULT _ResizeWindow(const short sWidth, const short sHeight);
 
@@ -227,11 +236,13 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         HRESULT _RgbUpdateDrawingBrushes(const COLORREF colorForeground,
                                         const COLORREF colorBackground,
+                                        const bool isBold,
                                         _In_reads_(cColorTable) const COLORREF* const ColorTable,
                                         const WORD cColorTable);
         [[nodiscard]]
         HRESULT _16ColorUpdateDrawingBrushes(const COLORREF colorForeground,
                                             const COLORREF colorBackground,
+                                            const bool isBold,
                                             _In_reads_(cColorTable) const COLORREF* const ColorTable,
                                             const WORD cColorTable);
 

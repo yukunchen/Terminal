@@ -76,7 +76,11 @@ namespace Microsoft::Console::Render
         HRESULT ClearCursor();
 
         [[nodiscard]]
-        HRESULT UpdateDrawingBrushes(COLORREF const colorForeground, COLORREF const colorBackground, const WORD legacyColorAttribute, bool const fIncludeBackgrounds);
+        HRESULT UpdateDrawingBrushes(COLORREF const colorForeground,
+                                     COLORREF const colorBackground,
+                                     const WORD legacyColorAttribute,
+                                     const bool isBold,
+                                     bool const fIncludeBackgrounds);
         [[nodiscard]]
         HRESULT UpdateFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo);
         [[nodiscard]]

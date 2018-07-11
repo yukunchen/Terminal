@@ -206,6 +206,32 @@ HRESULT VtEngine::_CursorHome()
     return _Write("\x1b[H");
 }
 
+// Method Description:
+// - Formats and writes a sequence to change the current text attributes.
+// Arguments:
+// - wAttr: Windows color table index to emit as a VT sequence
+// - fIsForeground: true if we should emit the foreground sequence, false for background
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]]
+HRESULT VtEngine::_SetGraphicsBoldness(const bool isBold)
+{
+    const std::string fmt = isBold ? "\x1b[1m" : "\x1b[22m";
+    return _Write(fmt);
+}
+
+// Method Description:
+// - Formats and writes a sequence to change the current text attributes.
+// Arguments:
+// - wAttr: Windows color table index to emit as a VT sequence
+// - fIsForeground: true if we should emit the foreground sequence, false for background
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]]
+HRESULT VtEngine::_SetGraphicsDefault()
+{
+    return _Write("\x1b[m");
+}
 
 // Method Description:
 // - Formats and writes a sequence to change the current text attributes.
@@ -218,20 +244,23 @@ HRESULT VtEngine::_CursorHome()
 HRESULT VtEngine::_SetGraphicsRendition16Color(const WORD wAttr,
                                                const bool fIsForeground)
 {
-    // Different formats for:
-    //      Foreground, Bright = "\x1b[1m\x1b[%dm"
-    //      Foreground, Dark = "\x1b[22m\x1b[%dm"
-    //      Any Background = "\x1b[%dm"
-    const std::string fmt = fIsForeground ?
-        (IsFlagSet(wAttr, FOREGROUND_INTENSITY) ? "\x1b[1m\x1b[%dm" : "\x1b[22m\x1b[%dm" ) :
-        ("\x1b[%dm");
+    static const std::string fmt = "\x1b[%dm";
 
     // Always check using the foreground flags, because the bg flags constants
     //  are a higher byte
-    // Foreground sequences are in [30,37]
-    // Background sequences are in [40,47]
+    // Foreground sequences are in [30,37] U [90,97]
+    // Background sequences are in [40,47] U [100,107]
+    // The "dark" sequences are in the first 7 values, the bright sequences in the second set.
+    // Note that text brightness and boldness are different in VT. Boldness is
+    //      handled by _SetGraphicsBoldness. Here, we can emit either bright or
+    //      dark colors. For conhost as a terminal, it can't draw bold
+    //      characters, so it displays "bold" as bright, and in fact most
+    //      terminala display the bright color when displaying bolded text.
+    // By specifying the boldness and brightness seperately, we'll make sure the
+    //      terminal has an accurate representation of our buffer.
     const int vtIndex = 30
                         + (fIsForeground? 0 : 10)
+                        + ((IsFlagSet(wAttr, FOREGROUND_INTENSITY)) ? 60 : 0)
                         + (IsFlagSet(wAttr, FOREGROUND_RED) ? 1 : 0)
                         + (IsFlagSet(wAttr, FOREGROUND_GREEN) ? 2 : 0)
                         + (IsFlagSet(wAttr, FOREGROUND_BLUE) ? 4 : 0);
@@ -263,7 +292,8 @@ HRESULT VtEngine::_SetGraphicsRenditionRGBColor(const COLORREF color,
 }
 
 // Method Description:
-// - Formats and writes a sequence to change the current text attributes.
+// - Formats and writes a sequence to change the current text attributes to the
+//      default foreground or background. Does not affect the boldness of text.
 // Arguments:
 // - fIsForeground: true if we should emit the foreground sequence, false for background
 // Return Value:

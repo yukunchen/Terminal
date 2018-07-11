@@ -43,6 +43,7 @@ namespace Microsoft::Console::Render
         virtual HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
                                             const COLORREF colorBackground,
                                             const WORD legacyColorAttribute,
+                                            const bool isBold,
                                             const bool fIncludeBackgrounds) override;
         [[nodiscard]]
         HRESULT PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
