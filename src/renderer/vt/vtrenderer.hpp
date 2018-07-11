@@ -129,9 +129,6 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         virtual HRESULT WriteTerminalW(const std::wstring& str) = 0;
 
-        // [[nodiscard]]
-        // virtual HRESULT UpdateTitle(const std::wstring& newTitle) override;
-
         void SetTerminalOwner(Microsoft::Console::ITerminalOwner* const terminalOwner);
 
     protected:
