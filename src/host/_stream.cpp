@@ -232,10 +232,17 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                     }
                     else if (*lpString == UNICODE_BACKSPACE)
                     {
-                        // if we have an active wrap and a backspace comes in, we need to just advance and go to the next character. don't process it.
+                        // if we have an active wrap and a backspace comes in, process it by moving the cursor
+                        // back one cell position unless it's already at the start of a row.
                         *pcb += sizeof(WCHAR);
                         lpString++;
                         pwchRealUnicode++;
+                        if (CursorPosition.X != 0)
+                        {
+                            --CursorPosition.X;
+                            Status = AdjustCursorPosition(screenInfo, CursorPosition, IsFlagSet(dwFlags, WC_KEEP_CURSOR_VISIBLE), psScrollY);
+                            CursorPosition = cursor.GetPosition();
+                        }
                         continue;
                     }
                 }

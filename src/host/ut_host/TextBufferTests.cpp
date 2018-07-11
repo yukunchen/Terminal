@@ -132,6 +132,8 @@ class TextBufferTests
     TEST_METHOD(TestRgbThenBold);
     TEST_METHOD(TestResetClearsBoldness);
 
+    TEST_METHOD(TestBackspaceRightSideVt);
+
 };
 
 void TextBufferTests::TestBufferCreate()
@@ -1490,4 +1492,36 @@ void TextBufferTests::TestResetClearsBoldness()
 
     wchar_t* reset = L"\x1b[0m";
     stateMachine->ProcessString(reset, std::wcslen(reset));
+}
+
+void TextBufferTests::TestBackspaceRightSideVt()
+{
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    const TextBuffer& tbi = si.GetTextBuffer();
+    StateMachine* const stateMachine = si.GetStateMachine();
+    const Cursor& cursor = tbi.GetCursor();
+    VERIFY_IS_NOT_NULL(stateMachine);
+
+    Log::Comment(L"verify that backspace has the same behavior as a vt CUB sequence once "
+                 L"we've traversed to the right side of the current row");
+
+    const wchar_t* const sequence = L"\033[1000Cx\by\n";
+    Log::Comment(NoThrowString().Format(sequence));
+
+    const auto preCursorPosition = cursor.GetPosition();
+    stateMachine->ProcessString(sequence, std::wcslen(sequence));
+    const auto postCursorPosition = cursor.GetPosition();
+
+    // make sure newline was handled correctly
+    VERIFY_ARE_EQUAL(0, postCursorPosition.X);
+    VERIFY_ARE_EQUAL(preCursorPosition.Y, postCursorPosition.Y - 1);
+
+    // make sure "yx" was written to the end of the line the cursor started on
+    const auto& row = tbi.GetRowByOffset(preCursorPosition.Y);
+    const auto rowText = row.GetText();
+    auto it = rowText.crbegin();
+    VERIFY_ARE_EQUAL(*it, L'x');
+    ++it;
+    VERIFY_ARE_EQUAL(*it, L'y');
 }
