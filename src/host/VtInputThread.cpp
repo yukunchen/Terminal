@@ -77,8 +77,12 @@ HRESULT VtInputThread::_HandleRunInput(_In_reads_(cch) const byte* const charBuf
         std::unique_ptr<wchar_t[]> pwsSequence;
         unsigned int cchConsumed;
         unsigned int cchSequence;
-
-         RETURN_IF_FAILED(_utf8Parser.Parse(charBuffer, cch, cchConsumed, pwsSequence, cchSequence));
+        auto hr = _utf8Parser.Parse(charBuffer, cch, cchConsumed, pwsSequence, cchSequence);
+        // If we hit a parsing error, eat it. It's bad utf-8, we can't do anything with it.
+        if (FAILED(hr))
+        {
+            return S_FALSE;
+        }
         _pInputStateMachine->ProcessString(pwsSequence.get(), cchSequence);
     }
     CATCH_RETURN();

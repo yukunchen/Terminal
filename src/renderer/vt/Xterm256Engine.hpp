@@ -34,6 +34,7 @@ namespace Microsoft::Console::Render
         HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
                                     const COLORREF colorBackground,
                                     const WORD legacyColorAttribute,
+                                    const bool isBold,
                                     const bool fIncludeBackgrounds) override;
 
     private:

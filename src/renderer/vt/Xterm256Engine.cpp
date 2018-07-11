@@ -36,10 +36,12 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
 HRESULT Xterm256Engine::UpdateDrawingBrushes(const COLORREF colorForeground,
                                              const COLORREF colorBackground,
                                              const WORD /*legacyColorAttribute*/,
+                                             const bool isBold,
                                              const bool /*fIncludeBackgrounds*/)
 {
     return VtEngine::_RgbUpdateDrawingBrushes(colorForeground,
                                               colorBackground,
+                                              isBold,
                                               _ColorTable,
                                               _cColorTable);
 }

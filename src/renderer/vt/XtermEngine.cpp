@@ -56,7 +56,7 @@ HRESULT XtermEngine::StartPaint()
     }
     else
     {
-        if (Viewport::FromInclusive(GetDirtyRectInChars()) == _lastViewport)
+        if (!_resized && Viewport::FromInclusive(GetDirtyRectInChars()) == _lastViewport)
         {
             RETURN_IF_FAILED(_ClearScreen());
             _clearedAllThisFrame = true;
@@ -120,10 +120,11 @@ HRESULT XtermEngine::EndPaint()
 HRESULT XtermEngine::UpdateDrawingBrushes(const COLORREF colorForeground,
                                           const COLORREF colorBackground,
                                           const WORD /*legacyColorAttribute*/,
+                                          const bool isBold,
                                           const bool /*fIncludeBackgrounds*/)
 {
     // The base xterm mode only knows about 16 colors
-    return VtEngine::_16ColorUpdateDrawingBrushes(colorForeground, colorBackground, _ColorTable, _cColorTable);
+    return VtEngine::_16ColorUpdateDrawingBrushes(colorForeground, colorBackground, isBold, _ColorTable, _cColorTable);
 }
 
 // Routine Description:
@@ -320,9 +321,8 @@ HRESULT XtermEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
                                      const size_t cchLine,
                                      const COORD coord,
                                      const bool /*fTrimLeft*/,
-                                     const bool lineWrapped)
+                                     const bool /*lineWrapped*/)
 {
-    _previousLineWrapped = lineWrapped;
     return _fUseAsciiOnly ?
         VtEngine::_PaintAsciiBufferLine(pwsLine, rgWidths, cchLine, coord) :
         VtEngine::_PaintUtf8BufferLine(pwsLine, rgWidths, cchLine, coord);

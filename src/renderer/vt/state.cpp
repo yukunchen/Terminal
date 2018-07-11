@@ -35,6 +35,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _colorProvider(colorProvider),
     _LastFG(INVALID_COLOR),
     _LastBG(INVALID_COLOR),
+    _lastWasBold(false),
     _lastViewport(initialViewport),
     _invalidRect({0}),
     _fInvalidRectUsed(false),
@@ -44,6 +45,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _quickReturn(false),
     _clearedAllThisFrame(false),
     _cursorMoved(false),
+    _resized(false),
     _suppressResizeRepaint(true),
     _virtualTop(0),
     _circled(false),
@@ -296,7 +298,7 @@ HRESULT VtEngine::UpdateViewport(const SMALL_RECT srNewViewport)
             }
         }
     }
-
+    _resized = true;
     return hr;
 }
 

@@ -58,6 +58,7 @@ HRESULT VtEngine::EndPaint()
     _cursorMoved = false;
     _firstPaint = false;
     _skipCursor = false;
+    _resized = false;
     // If we've circled the buffer this frame, move our virtual top upwards.
     // We do this at the END of the frame, so that during the paint, we still
     //      use the original virtual top.
@@ -190,43 +191,74 @@ HRESULT VtEngine::PaintSelection(const std::vector<SMALL_RECT>& /*rectangles*/)
 [[nodiscard]]
 HRESULT VtEngine::_RgbUpdateDrawingBrushes(const COLORREF colorForeground,
                                            const COLORREF colorBackground,
+                                           const bool isBold,
                                            _In_reads_(cColorTable) const COLORREF* const ColorTable,
                                            const WORD cColorTable)
 {
-    WORD wFoundColor = 0;
-    if (colorForeground != _LastFG)
+    const bool fgChanged = colorForeground != _LastFG;
+    const bool bgChanged = colorBackground != _LastBG;
+    const bool fgIsDefault = colorForeground == _colorProvider.GetDefaultForeground();
+    const bool bgIsDefault = colorBackground == _colorProvider.GetDefaultBackground();
+
+    // If both the FG and BG should be the defaults, emit a SGR reset.
+    if ((fgChanged || bgChanged) && fgIsDefault && bgIsDefault)
     {
-        if (colorForeground == _colorProvider.GetDefaultForeground())
-        {
-            RETURN_IF_FAILED(_SetGraphicsRenditionDefaultColor(true));
-        }
-        else if (::FindTableIndex(colorForeground, ColorTable, cColorTable, &wFoundColor))
-        {
-            RETURN_IF_FAILED(_SetGraphicsRendition16Color(wFoundColor, true));
-        }
-        else
-        {
-            RETURN_IF_FAILED(_SetGraphicsRenditionRGBColor(colorForeground, true));
-        }
+        // SGR Reset will also clear out the boldness of the text.
+        RETURN_IF_FAILED(_SetGraphicsDefault());
         _LastFG = colorForeground;
-
-    }
-
-    if (colorBackground != _LastBG)
-    {
-        if (colorBackground == _colorProvider.GetDefaultBackground())
-        {
-            RETURN_IF_FAILED(_SetGraphicsRenditionDefaultColor(false));
-        }
-        else if (::FindTableIndex(colorBackground, ColorTable, cColorTable, &wFoundColor))
-        {
-            RETURN_IF_FAILED(_SetGraphicsRendition16Color(wFoundColor, false));
-        }
-        else
-        {
-            RETURN_IF_FAILED(_SetGraphicsRenditionRGBColor(colorBackground, false));
-        }
         _LastBG = colorBackground;
+        _lastWasBold = false;
+
+        // I'm not sure this is possible currently, but if the text is bold, but
+        //      default colors, make sure we bold it.
+        if (isBold)
+        {
+            RETURN_IF_FAILED(_SetGraphicsBoldness(isBold));
+            _lastWasBold = isBold;
+        }
+    }
+    else
+    {
+        if (_lastWasBold != isBold)
+        {
+            RETURN_IF_FAILED(_SetGraphicsBoldness(isBold));
+            _lastWasBold = isBold;
+        }
+
+        WORD wFoundColor = 0;
+        if (fgChanged)
+        {
+            if (fgIsDefault)
+            {
+                RETURN_IF_FAILED(_SetGraphicsRenditionDefaultColor(true));
+            }
+            else if (::FindTableIndex(colorForeground, ColorTable, cColorTable, &wFoundColor))
+            {
+                RETURN_IF_FAILED(_SetGraphicsRendition16Color(wFoundColor, true));
+            }
+            else
+            {
+                RETURN_IF_FAILED(_SetGraphicsRenditionRGBColor(colorForeground, true));
+            }
+            _LastFG = colorForeground;
+        }
+
+        if (bgChanged)
+        {
+            if (bgIsDefault)
+            {
+                RETURN_IF_FAILED(_SetGraphicsRenditionDefaultColor(false));
+            }
+            else if (::FindTableIndex(colorBackground, ColorTable, cColorTable, &wFoundColor))
+            {
+                RETURN_IF_FAILED(_SetGraphicsRendition16Color(wFoundColor, false));
+            }
+            else
+            {
+                RETURN_IF_FAILED(_SetGraphicsRenditionRGBColor(colorBackground, false));
+            }
+            _LastBG = colorBackground;
+        }
     }
 
     return S_OK;
@@ -246,23 +278,56 @@ HRESULT VtEngine::_RgbUpdateDrawingBrushes(const COLORREF colorForeground,
 [[nodiscard]]
 HRESULT VtEngine::_16ColorUpdateDrawingBrushes(const COLORREF colorForeground,
                                                const COLORREF colorBackground,
+                                               const bool isBold,
                                                _In_reads_(cColorTable) const COLORREF* const ColorTable,
                                                const WORD cColorTable)
 {
-    if (colorForeground != _LastFG)
-    {
-        const WORD wNearestFg = ::FindNearestTableIndex(colorForeground, ColorTable, cColorTable);
-        RETURN_IF_FAILED(_SetGraphicsRendition16Color(wNearestFg, true));
 
+    const bool fgChanged = colorForeground != _LastFG;
+    const bool bgChanged = colorBackground != _LastBG;
+    const bool fgIsDefault = colorForeground == _colorProvider.GetDefaultForeground();
+    const bool bgIsDefault = colorBackground == _colorProvider.GetDefaultBackground();
+
+    // If both the FG and BG should be the defaults, emit a SGR reset.
+    if ((fgChanged || bgChanged) && fgIsDefault && bgIsDefault)
+    {
+        // SGR Reset will also clear out the boldness of the text.
+        RETURN_IF_FAILED(_SetGraphicsDefault());
         _LastFG = colorForeground;
-    }
-
-    if (colorBackground != _LastBG)
-    {
-        const WORD wNearestBg = ::FindNearestTableIndex(colorBackground, ColorTable, cColorTable);
-        RETURN_IF_FAILED(_SetGraphicsRendition16Color(wNearestBg, false));
-
         _LastBG = colorBackground;
+        _lastWasBold = false;
+        // I'm not sure this is possible currently, but if the text is bold, but
+        //      default colors, make sure we bold it.
+        if (isBold)
+        {
+            RETURN_IF_FAILED(_SetGraphicsBoldness(isBold));
+            _lastWasBold = isBold;
+        }
+    }
+    else
+    {
+        if (_lastWasBold != isBold)
+        {
+            RETURN_IF_FAILED(_SetGraphicsBoldness(isBold));
+            _lastWasBold = isBold;
+        }
+
+        if (fgChanged)
+        {
+            const WORD wNearestFg = ::FindNearestTableIndex(colorForeground, ColorTable, cColorTable);
+            RETURN_IF_FAILED(_SetGraphicsRendition16Color(wNearestFg, true));
+
+            _LastFG = colorForeground;
+        }
+
+        if (bgChanged)
+        {
+            const WORD wNearestBg = ::FindNearestTableIndex(colorBackground, ColorTable, cColorTable);
+            RETURN_IF_FAILED(_SetGraphicsRendition16Color(wNearestBg, false));
+
+            _LastBG = colorBackground;
+        }
+
     }
 
     return S_OK;
