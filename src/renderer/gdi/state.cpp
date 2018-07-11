@@ -175,6 +175,7 @@ HRESULT GdiEngine::s_SetWindowLongWHelper(const HWND hWnd, const int nIndex, con
 HRESULT GdiEngine::UpdateDrawingBrushes(const COLORREF colorForeground,
                                         const COLORREF colorBackground,
                                         const WORD /*legacyColorAttribute*/,
+                                        const bool /*isBold*/,
                                         const bool fIncludeBackgrounds)
 {
     RETURN_IF_FAILED(_FlushBufferLines());

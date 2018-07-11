@@ -40,9 +40,10 @@ WinTelnetEngine::WinTelnetEngine(_In_ wil::unique_hfile hPipe,
 HRESULT WinTelnetEngine::UpdateDrawingBrushes(const COLORREF colorForeground,
                                               const COLORREF colorBackground,
                                               const WORD /*legacyColorAttribute*/,
+                                              const bool isBold,
                                               const bool /*fIncludeBackgrounds*/)
 {
-    return VtEngine::_16ColorUpdateDrawingBrushes(colorForeground, colorBackground, _ColorTable, _cColorTable);
+    return VtEngine::_16ColorUpdateDrawingBrushes(colorForeground, colorBackground, isBold, _ColorTable, _cColorTable);
 }
 
 // Routine Description:
