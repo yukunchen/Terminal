@@ -112,26 +112,31 @@ NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
         settings.ApplyDesktopSpecificDefaults();
     }
 
-    // 3. Read the default registry values.
-    Registry reg(&settings);
-    reg.LoadGlobalsFromRegistry();
-    reg.LoadDefaultFromRegistry();
-
-    // 2. Read specific settings
-
-    // Link is expecting the flags from the process to be in already, so apply that first
-    settings.SetStartupFlags(pStartupSettings->GetStartupFlags());
-
-    // We need to see if we were spawned from a link. If we were, we need to
-    // call back into the shell to try to get all the console information from the link.
-    ServiceLocator::LocateSystemConfigurationProvider()->GetSettingsFromLink(&settings, Title, &TitleLength, CurDir, AppName);
-
-    // If we weren't started from a link, this will already be set.
-    // If LoadLinkInfo couldn't find anything, it will remove the flag so we can dig in the registry.
-    if (!(settings.IsStartupTitleIsLinkNameSet()))
+    if (!settings.IsInVtIoMode())
     {
-        reg.LoadFromRegistry(Title);
+        // 3. Read the default registry values.
+        Registry reg(&settings);
+        reg.LoadGlobalsFromRegistry();
+        reg.LoadDefaultFromRegistry();
+
+        // 2. Read specific settings
+
+        // Link is expecting the flags from the process to be in already, so apply that first
+        settings.SetStartupFlags(pStartupSettings->GetStartupFlags());
+
+        // We need to see if we were spawned from a link. If we were, we need to
+        // call back into the shell to try to get all the console information from the link.
+        ServiceLocator::LocateSystemConfigurationProvider()->GetSettingsFromLink(&settings, Title, &TitleLength, CurDir, AppName);
+
+        // If we weren't started from a link, this will already be set.
+        // If LoadLinkInfo couldn't find anything, it will remove the flag so we can dig in the registry.
+        if (!(settings.IsStartupTitleIsLinkNameSet()))
+        {
+            reg.LoadFromRegistry(Title);
+        }
+
     }
+
 
     // 1. The settings we were passed contains STARTUPINFO structure settings to be applied last.
     settings.ApplyStartupInfo(pStartupSettings);
