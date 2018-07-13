@@ -104,7 +104,7 @@ NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
     // 4. Initializing Settings will establish hardcoded defaults.
     // Set to reference of global console information since that's the only place we need to hold the settings.
     CONSOLE_INFORMATION& settings = ServiceLocator::LocateGlobals().getConsoleInformation();
-
+    const auto& launchArgs = ServiceLocator::LocateGlobals().launchArgs;
     // 4b. On Desktop editions, we need to apply a series of Desktop-specific defaults that are better than the
     // ones from the constructor (which are great for OneCore systems.)
     if (s_IsOnDesktop())
@@ -112,32 +112,40 @@ NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
         settings.ApplyDesktopSpecificDefaults();
     }
 
-    // 3. Read the default registry values.
-    Registry reg(&settings);
-    reg.LoadGlobalsFromRegistry();
-    reg.LoadDefaultFromRegistry();
-
-    // 2. Read specific settings
-
-    // Link is expecting the flags from the process to be in already, so apply that first
-    settings.SetStartupFlags(pStartupSettings->GetStartupFlags());
-
-    // We need to see if we were spawned from a link. If we were, we need to
-    // call back into the shell to try to get all the console information from the link.
-    ServiceLocator::LocateSystemConfigurationProvider()->GetSettingsFromLink(&settings, Title, &TitleLength, CurDir, AppName);
-
-    // If we weren't started from a link, this will already be set.
-    // If LoadLinkInfo couldn't find anything, it will remove the flag so we can dig in the registry.
-    if (!(settings.IsStartupTitleIsLinkNameSet()))
+    // Use the launch arguments to check if we're going to be started in pseudoconsole mode.
+    // If we are, we don't want to load any user settings, because that could
+    //      result in some strange rendering results in the end terminal.
+    // Use the launch args because the VtIo hasn't been initialized yet.
+    if (!launchArgs.InConptyMode())
     {
-        reg.LoadFromRegistry(Title);
+        // 3. Read the default registry values.
+        Registry reg(&settings);
+        reg.LoadGlobalsFromRegistry();
+        reg.LoadDefaultFromRegistry();
+
+        // 2. Read specific settings
+
+        // Link is expecting the flags from the process to be in already, so apply that first
+        settings.SetStartupFlags(pStartupSettings->GetStartupFlags());
+
+        // We need to see if we were spawned from a link. If we were, we need to
+        // call back into the shell to try to get all the console information from the link.
+        ServiceLocator::LocateSystemConfigurationProvider()->GetSettingsFromLink(&settings, Title, &TitleLength, CurDir, AppName);
+
+        // If we weren't started from a link, this will already be set.
+        // If LoadLinkInfo couldn't find anything, it will remove the flag so we can dig in the registry.
+        if (!(settings.IsStartupTitleIsLinkNameSet()))
+        {
+            reg.LoadFromRegistry(Title);
+        }
     }
+
 
     // 1. The settings we were passed contains STARTUPINFO structure settings to be applied last.
     settings.ApplyStartupInfo(pStartupSettings);
 
     // 0. The settings passed in via commandline arguments. These should override anything else.
-    settings.ApplyCommandlineArguments(ServiceLocator::LocateGlobals().launchArgs);
+    settings.ApplyCommandlineArguments(launchArgs);
 
     // Validate all applied settings for correctness against final rules.
     settings.Validate();
