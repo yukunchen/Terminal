@@ -1133,7 +1133,7 @@ NTSTATUS DoSrvPrivateReverseLineFeed(SCREEN_INFORMATION& screenInfo)
 
     const SMALL_RECT viewport = screenInfo.GetBufferViewport();
     const COORD oldCursorPosition = screenInfo.GetTextBuffer().GetCursor().GetPosition();
-    const COORD newCursorPosition = { oldCursorPosition.X, oldCursorPosition.Y-1 };
+    const COORD newCursorPosition = { oldCursorPosition.X, oldCursorPosition.Y - 1 };
 
     // If the cursor is at the top of the viewport, we don't want to shift the viewport up.
     // We want it to stay exactly where it is.
