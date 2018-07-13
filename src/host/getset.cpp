@@ -402,10 +402,11 @@ HRESULT ApiRoutines::SetConsoleScreenBufferInfoExImpl(SCREEN_INFORMATION& Contex
 void DoSrvSetScreenBufferInfo(SCREEN_INFORMATION& screenInfo,
                               const CONSOLE_SCREEN_BUFFER_INFOEX* const pInfo)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    Globals& g = ServiceLocator::LocateGlobals();
+    CONSOLE_INFORMATION& gci = g.getConsoleInformation();
 
-    COORD const coordScreenBufferSize = screenInfo.GetScreenBufferSize();
-    COORD const requestedBufferSize = pInfo->dwSize;
+    const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
+    const COORD requestedBufferSize = pInfo->dwSize;
     if (requestedBufferSize.X != coordScreenBufferSize.X ||
         requestedBufferSize.Y != coordScreenBufferSize.Y)
     {
@@ -417,26 +418,31 @@ void DoSrvSetScreenBufferInfo(SCREEN_INFORMATION& screenInfo,
 
         pCommandLine->Show();
     }
+    const COORD newBufferSize = screenInfo.GetScreenBufferSize();
 
     gci.SetColorTable(pInfo->ColorTable, ARRAYSIZE(pInfo->ColorTable));
     SetScreenColors(screenInfo, pInfo->wAttributes, pInfo->wPopupAttributes, TRUE);
 
     const Viewport requestedViewport = Viewport::FromExclusive(pInfo->srWindow);
 
-    COORD NewSize;
-    NewSize.X = std::min(requestedViewport.Width(), pInfo->dwMaximumWindowSize.X);
-    NewSize.Y = std::min(requestedViewport.Height(), pInfo->dwMaximumWindowSize.Y);
+    COORD NewSize = requestedViewport.Dimensions();
+    // If we have a window, clamp the requested viewport to the max window size
+    if (!ServiceLocator::LocateGlobals().IsHeadless())
+    {
+        NewSize.X = std::min(NewSize.X, pInfo->dwMaximumWindowSize.X);
+        NewSize.Y = std::min(NewSize.Y, pInfo->dwMaximumWindowSize.Y);
+    }
 
     // If wrap text is on, then the window width must be the same size as the buffer width
     if (gci.GetWrapText())
     {
-        NewSize.X = coordScreenBufferSize.X;
+        NewSize.X = newBufferSize.X;
     }
 
     if (NewSize.X != screenInfo.GetScreenWindowSizeX() ||
         NewSize.Y != screenInfo.GetScreenWindowSizeY())
     {
-        gci.GetActiveOutputBuffer().SetViewportSize(&NewSize);
+        screenInfo.SetViewportSize(&NewSize);
 
         IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
         if (pWindow != nullptr)
@@ -552,6 +558,7 @@ HRESULT DoSrvSetConsoleWindowInfo(SCREEN_INFORMATION& screenInfo,
                                   const bool IsAbsoluteRectangle,
                                   const SMALL_RECT* const pWindowRectangle)
 {
+    Globals& g = ServiceLocator::LocateGlobals();
     SMALL_RECT Window = *pWindowRectangle;
 
     if (!IsAbsoluteRectangle)
@@ -574,13 +581,13 @@ HRESULT DoSrvSetConsoleWindowInfo(SCREEN_INFORMATION& screenInfo,
     // if we're headless, not so much. However, GetMaxWindowSizeInCharacters
     //      will only return the buffer size, so we can't use that to clip the arg here.
     // So only clip the requested size if we're not headless
-    if (!ServiceLocator::LocateGlobals().IsHeadless())
+    if (!g.IsHeadless())
     {
         COORD const coordMax = screenInfo.GetMaxWindowSizeInCharacters();
         RETURN_HR_IF(E_INVALIDARG, (NewWindowSize.X > coordMax.X || NewWindowSize.Y > coordMax.Y));
 
     }
-    else
+    else if (g.getConsoleInformation().IsInVtIoMode())
     {
         // SetViewportRect doesn't cause the buffer to resize. Manually resize the buffer.
         RETURN_IF_NTSTATUS_FAILED(screenInfo.ResizeScreenBuffer(Viewport::FromInclusive(Window).Dimensions(), false));
