@@ -74,12 +74,14 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
     SMALL_RECT srMargins = screenInfo.GetAbsoluteScrollMargins().ToInclusive();
     const bool fMarginsSet = srMargins.Bottom > srMargins.Top;
     const int iCurrentCursorY = screenInfo.GetTextBuffer().GetCursor().GetPosition().Y;
+    const bool inVtMode = IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
     const bool fCursorInMargins = iCurrentCursorY <= srMargins.Bottom && iCurrentCursorY >= srMargins.Top;
+    const bool cursorAboveViewport = coordCursor.Y < 0 && inVtMode;
     const bool fScrollDown = fMarginsSet && fCursorInMargins && (coordCursor.Y > srMargins.Bottom);
     bool fScrollUp = fMarginsSet && fCursorInMargins && (coordCursor.Y < srMargins.Top);
 
-    const bool fScrollUpWithoutMargins = (!fMarginsSet) && (IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) && coordCursor.Y < 0);
+    const bool fScrollUpWithoutMargins = (!fMarginsSet) && cursorAboveViewport;
     // if we're in VT mode, AND MARGINS AREN'T SET and a Reverse Line Feed took the cursor up past the top of the viewport,
     //   VT style scroll the contents of the screen.
     // This can happen in applications like `less`, that don't set margins, because they're going to

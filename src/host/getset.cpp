@@ -1132,36 +1132,45 @@ NTSTATUS DoSrvPrivateReverseLineFeed(SCREEN_INFORMATION& screenInfo)
     NTSTATUS Status = STATUS_SUCCESS;
 
     const SMALL_RECT viewport = screenInfo.GetBufferViewport();
-    COORD newCursorPosition = screenInfo.GetTextBuffer().GetCursor().GetPosition();
+    const COORD oldCursorPosition = screenInfo.GetTextBuffer().GetCursor().GetPosition();
+    const COORD newCursorPosition = { oldCursorPosition.X, oldCursorPosition.Y-1 };
 
     // If the cursor is at the top of the viewport, we don't want to shift the viewport up.
     // We want it to stay exactly where it is.
     // In that case, shift the buffer contents down, to emulate inserting a line
     //      at the top of the buffer.
-    if (newCursorPosition.Y > viewport.Top)
+    if (oldCursorPosition.Y > viewport.Top)
     {
         // Cursor is below the top line of the viewport
-        newCursorPosition.Y -= 1;
         Status = AdjustCursorPosition(screenInfo, newCursorPosition, TRUE, nullptr);
     }
     else
     {
-        // Cursor is at the top of the viewport
-        const COORD bufferSize = screenInfo.GetScreenBufferSize();
-        // Rectangle to cut out of the existing buffer
-        SMALL_RECT srScroll;
-        srScroll.Left = 0;
-        srScroll.Right = bufferSize.X;
-        srScroll.Top = viewport.Top;
-        srScroll.Bottom = viewport.Bottom - 1;
-        // Paste coordinate for cut text above
-        COORD coordDestination;
-        coordDestination.X = 0;
-        coordDestination.Y = viewport.Top + 1;
+        const auto margins = screenInfo.GetAbsoluteScrollMargins();
+        const bool marginsSet = margins.BottomInclusive() > margins.Top();
 
-        SMALL_RECT srClip = viewport;
+        // If we don't have margins, or the cursor is within the boundaries of the margins
+        // It's important to check if the cursor is in the margins,
+        //      If it's not, but the margins are set, then we don't want to scroll anything
+        if (!marginsSet || margins.IsWithinViewport(&oldCursorPosition))
+        {
+            // Cursor is at the top of the viewport
+            const COORD bufferSize = screenInfo.GetScreenBufferSize();
+            // Rectangle to cut out of the existing buffer
+            SMALL_RECT srScroll;
+            srScroll.Left = 0;
+            srScroll.Right = bufferSize.X;
+            srScroll.Top = viewport.Top;
+            srScroll.Bottom = viewport.Bottom - 1;
+            // Paste coordinate for cut text above
+            COORD coordDestination;
+            coordDestination.X = 0;
+            coordDestination.Y = viewport.Top + 1;
 
-        Status = DoSrvScrollConsoleScreenBufferW(screenInfo, &srScroll, &coordDestination, &srClip, L' ', screenInfo.GetAttributes().GetLegacyAttributes());
+            SMALL_RECT srClip = viewport;
+
+            Status = DoSrvScrollConsoleScreenBufferW(screenInfo, &srScroll, &coordDestination, &srClip, L' ', screenInfo.GetAttributes().GetLegacyAttributes());
+        }
     }
     return Status;
 }
