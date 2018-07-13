@@ -29,9 +29,7 @@ Renderer::Renderer(_In_ std::unique_ptr<IRenderData> pData,
                    _In_reads_(cEngines) IRenderEngine** const rgpEngines,
                    const size_t cEngines) :
     _pData(std::move(pData)),
-    _pThread(nullptr),
-    _lastTitle(L""),
-    _titleChanged(false)
+    _pThread(nullptr)
 {
     THROW_IF_NULL_ALLOC(_pData);
 
@@ -119,17 +117,11 @@ HRESULT Renderer::s_CreateInstance(_In_ std::unique_ptr<IRenderData> pData,
 [[nodiscard]]
 HRESULT Renderer::PaintFrame()
 {
-    // Stash the current title state - each engine will use this value, instead
-    //       of querying individually.
-    // We also need this to suppress repainting when the title hasn't actually changed.
-    _lastTitle = _pData->GetConsoleTitle();
 
     for (IRenderEngine* const pEngine : _rgpEngines)
     {
         LOG_IF_FAILED(_PaintFrameForEngine(pEngine));
     }
-
-    _titleChanged = false;
 
     return S_OK;
 }
@@ -147,6 +139,8 @@ HRESULT Renderer::_PaintFrameForEngine(_In_ IRenderEngine* const pEngine)
     RETURN_IF_FAILED(hr);
 
     // Return early if there's nothing to paint.
+    // The renderer itself tracks if there's something to do with the title, the
+    //      engine won't know that.
     if (S_FALSE == hr)
     {
         return S_OK;
@@ -424,10 +418,11 @@ void Renderer::TriggerCircling()
 // - <none>
 void Renderer::TriggerTitleChange()
 {
-    // _titleChanged = true;
     const std::wstring newTitle = _pData->GetConsoleTitle();
-    // Only change the title if it's actually different from the last frame.
-    _titleChanged = _lastTitle != newTitle;
+    for (IRenderEngine* const pEngine : _rgpEngines)
+    {
+        LOG_IF_FAILED(pEngine->InvalidateTitle(newTitle));
+    }
     _NotifyPaintFrame();
 }
 
@@ -439,11 +434,8 @@ void Renderer::TriggerTitleChange()
 // - the HRESULT of the underlying engine's UpdateTitle call.
 HRESULT Renderer::_PaintTitle(IRenderEngine* const pEngine)
 {
-    if (_titleChanged)
-    {
-        return pEngine->UpdateTitle(_lastTitle);
-    }
-    return S_OK;
+    const std::wstring newTitle = _pData->GetConsoleTitle();
+    return pEngine->UpdateTitle(newTitle);
 }
 
 // Routine Description:

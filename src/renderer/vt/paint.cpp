@@ -32,7 +32,8 @@ HRESULT VtEngine::StartPaint()
     // If there's nothing to do, quick return
     bool somethingToDo = _fInvalidRectUsed ||
         (_scrollDelta.X != 0 || _scrollDelta.Y != 0) ||
-        _cursorMoved;
+        _cursorMoved ||
+        _titleChanged;
 
     _quickReturn = !somethingToDo;
 
@@ -478,7 +479,7 @@ HRESULT VtEngine::_PaintUtf8BufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine
 // Return Value:
 // - S_OK
 [[nodiscard]]
-HRESULT VtEngine::UpdateTitle(const std::wstring& /*newTitle*/)
+HRESULT VtEngine::_DoUpdateTitle(const std::wstring& /*newTitle*/)
 {
     return S_OK;
 }
