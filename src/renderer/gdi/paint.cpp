@@ -28,7 +28,9 @@ HRESULT GdiEngine::StartPaint()
     RETURN_HR_IF(S_FALSE, _fPaintStarted);
 
     // If the window we're painting on is invisible, we don't need to paint. Return quickly.
-    RETURN_HR_IF(S_FALSE, !IsWindowVisible(_hwndTargetWindow));
+    // If the title changed, we will need to try and paint this frame. This will
+    //      make sure the window's title is updated, even if the window isn't visible.
+    RETURN_HR_IF(S_FALSE, (!IsWindowVisible(_hwndTargetWindow) && !_titleChanged));
 
     // At the beginning of a new frame, we have 0 lines ready for painting in PolyTextOut
     _cPolyText = 0;

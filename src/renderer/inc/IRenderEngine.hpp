@@ -59,6 +59,9 @@ namespace Microsoft::Console::Render
         virtual HRESULT InvalidateCircling(_Out_ bool* const pForcePaint) = 0;
 
         [[nodiscard]]
+        virtual HRESULT InvalidateTitle(const std::wstring& proposedTitle) = 0;
+
+        [[nodiscard]]
         virtual HRESULT PaintBackground() = 0;
         [[nodiscard]]
         virtual HRESULT PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,

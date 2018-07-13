@@ -28,6 +28,7 @@ SOURCES = \
     ..\FontInfoBase.cpp \
     ..\FontInfoDesired.cpp \
     ..\math.cpp \
+    ..\RenderEngineBase.cpp \
     ..\renderer.cpp \
     ..\thread.cpp \
 

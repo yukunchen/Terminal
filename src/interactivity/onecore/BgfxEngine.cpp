@@ -23,7 +23,8 @@ using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Interactivity::OneCore;
 
 BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWidth, LONG FontWidth, LONG FontHeight)
-    : _sharedViewBase((ULONG_PTR)SharedViewBase),
+    : RenderEngineBase(),
+      _sharedViewBase((ULONG_PTR)SharedViewBase),
       _displayHeight(DisplayHeight),
       _displayWidth(DisplayWidth),
       _currentLegacyColorAttribute(DEFAULT_COLOR_ATTRIBUTE)
@@ -292,7 +293,7 @@ HRESULT BgfxEngine::IsGlyphWideByFont(const std::wstring_view /*glyph*/, _Out_ b
 // Return Value:
 // - S_OK
 [[nodiscard]]
-HRESULT BgfxEngine::UpdateTitle(_In_ const std::wstring& /*newTitle*/)
+HRESULT BgfxEngine::_DoUpdateTitle(_In_ const std::wstring& /*newTitle*/)
 {
     return S_OK;
 }

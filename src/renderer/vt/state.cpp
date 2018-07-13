@@ -31,6 +31,7 @@ const COORD VtEngine::INVALID_COORDS = {-1, -1};
 VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
                    const IDefaultColorProvider& colorProvider,
                    const Viewport initialViewport) :
+    RenderEngineBase(),
     _hFile(std::move(pipe)),
     _colorProvider(colorProvider),
     _LastFG(INVALID_COLOR),

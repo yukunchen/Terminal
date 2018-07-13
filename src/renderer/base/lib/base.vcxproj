@@ -6,6 +6,7 @@
     <ClCompile Include="..\FontInfoBase.cpp" />
     <ClCompile Include="..\FontInfoDesired.cpp" />
     <ClCompile Include="..\math.cpp" />
+    <ClCompile Include="..\RenderEngineBase.cpp" />
     <ClCompile Include="..\renderer.cpp" />
     <ClCompile Include="..\thread.cpp" />
     <ClCompile Include="..\precomp.cpp">
@@ -20,6 +21,7 @@
     <ClInclude Include="..\..\inc\IRenderData.hpp" />
     <ClInclude Include="..\..\inc\IRenderEngine.hpp" />
     <ClInclude Include="..\..\inc\IRenderer.hpp" />
+    <ClInclude Include="..\..\inc\RenderEngineBase.hpp" />
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\renderer.hpp" />
     <ClInclude Include="..\thread.hpp" />

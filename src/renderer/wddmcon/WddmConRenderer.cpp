@@ -17,8 +17,9 @@
 
 using namespace Microsoft::Console::Render;
 
-WddmConEngine::WddmConEngine()
-    : _hWddmConCtx(INVALID_HANDLE_VALUE),
+WddmConEngine::WddmConEngine() :
+    RenderEngineBase(),
+    _hWddmConCtx(INVALID_HANDLE_VALUE),
     _displayHeight(0),
     _displayWidth(0),
     _displayState(nullptr),
@@ -432,7 +433,7 @@ HRESULT WddmConEngine::IsGlyphWideByFont(const std::wstring_view /*glyph*/, _Out
 // Return Value:
 // - S_OK
 [[nodiscard]]
-HRESULT WddmConEngine::UpdateTitle(_In_ const std::wstring& /*newTitle*/)
+HRESULT WddmConEngine::_DoUpdateTitle(_In_ const std::wstring& /*newTitle*/)
 {
     return S_OK;
 }

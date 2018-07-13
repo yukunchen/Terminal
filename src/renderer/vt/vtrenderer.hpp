@@ -14,7 +14,7 @@ Author(s):
 
 #pragma once
 
-#include "../inc/IRenderEngine.hpp"
+#include "../inc/RenderEngineBase.hpp"
 #include "../../inc/IDefaultColorProvider.hpp"
 #include "../../inc/ITerminalOutputConnection.hpp"
 #include "../../inc/ITerminalOwner.hpp"
@@ -25,7 +25,7 @@ Author(s):
 
 namespace Microsoft::Console::Render
 {
-    class VtEngine : public IRenderEngine, public Microsoft::Console::ITerminalOutputConnection
+    class VtEngine : public RenderEngineBase, public Microsoft::Console::ITerminalOutputConnection
     {
     public:
         // See _PaintUtf8BufferLine for explanation of this value.
@@ -129,9 +129,6 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]]
         virtual HRESULT WriteTerminalW(const std::wstring& str) = 0;
-
-        [[nodiscard]]
-        virtual HRESULT UpdateTitle(const std::wstring& newTitle) override;
 
         void SetTerminalOwner(Microsoft::Console::ITerminalOwner* const terminalOwner);
 
@@ -265,6 +262,10 @@ namespace Microsoft::Console::Render
         HRESULT _WriteTerminalUtf8(const std::wstring& str);
         [[nodiscard]]
         HRESULT _WriteTerminalAscii(const std::wstring& str);
+
+        [[nodiscard]]
+        virtual HRESULT _DoUpdateTitle(const std::wstring& newTitle) override;
+
         /////////////////////////// Unit Testing Helpers ///////////////////////////
     #ifdef UNIT_TESTING
         std::function<bool(const char* const, size_t const)> _pfnTestCallback;
