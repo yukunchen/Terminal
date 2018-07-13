@@ -402,7 +402,7 @@ HRESULT ApiRoutines::SetConsoleScreenBufferInfoExImpl(SCREEN_INFORMATION& Contex
 void DoSrvSetScreenBufferInfo(SCREEN_INFORMATION& screenInfo,
                               const CONSOLE_SCREEN_BUFFER_INFOEX* const pInfo)
 {
-    const Globals& g = ServiceLocator::LocateGlobals();
+    Globals& g = ServiceLocator::LocateGlobals();
     CONSOLE_INFORMATION& gci = g.getConsoleInformation();
 
     const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
@@ -558,6 +558,7 @@ HRESULT DoSrvSetConsoleWindowInfo(SCREEN_INFORMATION& screenInfo,
                                   const bool IsAbsoluteRectangle,
                                   const SMALL_RECT* const pWindowRectangle)
 {
+    Globals& g = ServiceLocator::LocateGlobals();
     SMALL_RECT Window = *pWindowRectangle;
 
     if (!IsAbsoluteRectangle)
@@ -580,13 +581,13 @@ HRESULT DoSrvSetConsoleWindowInfo(SCREEN_INFORMATION& screenInfo,
     // if we're headless, not so much. However, GetMaxWindowSizeInCharacters
     //      will only return the buffer size, so we can't use that to clip the arg here.
     // So only clip the requested size if we're not headless
-    if (!ServiceLocator::LocateGlobals().IsHeadless())
+    if (!g.IsHeadless())
     {
         COORD const coordMax = screenInfo.GetMaxWindowSizeInCharacters();
         RETURN_HR_IF(E_INVALIDARG, (NewWindowSize.X > coordMax.X || NewWindowSize.Y > coordMax.Y));
 
     }
-    else if (ServiceLocator::LocateGlobals().getConsoleInformation().IsInVtIoMode())
+    else if (g.getConsoleInformation().IsInVtIoMode())
     {
         // SetViewportRect doesn't cause the buffer to resize. Manually resize the buffer.
         RETURN_IF_NTSTATUS_FAILED(screenInfo.ResizeScreenBuffer(Viewport::FromInclusive(Window).Dimensions(), false));

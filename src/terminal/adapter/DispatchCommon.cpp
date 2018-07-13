@@ -29,9 +29,9 @@ bool DispatchCommon::s_ResizeWindow(_Inout_ ConGetSet* const pConApi,
 
     // We should do nothing if 0 is passed in for a size.
     bool fSuccess = SUCCEEDED(UShortToShort(usWidth, &sColumns)) &&
-                    SUCCEEDED(UIntToShort(usHeight, &sRows)) &&
+                    SUCCEEDED(UIntToShort(usHeight, &sRows)) && 
                     (usWidth > 0 && usHeight > 0);
-
+    
     if (fSuccess)
     {
         CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
@@ -46,7 +46,7 @@ bool DispatchCommon::s_ResizeWindow(_Inout_ ConGetSet* const pConApi,
                                                                   sRows);
             // Always resize the width of the console
             csbiex.dwSize.X = sColumns;
-            // Only set the screen buffer's height if it's currently less than
+            // Only set the screen buffer's height if it's currently less than 
             //  what we're requesting.
             if(sRows > csbiex.dwSize.Y)
             {
@@ -65,7 +65,7 @@ bool DispatchCommon::s_ResizeWindow(_Inout_ ConGetSet* const pConApi,
             {
                 fSuccess = !!pConApi->SetConsoleWindowInfo(true, &sri);
             }
-        }
+        }   
     }
     return fSuccess;
 }
@@ -82,8 +82,8 @@ bool DispatchCommon::s_RefreshWindow(_Inout_ ConGetSet* const pConApi)
 }
 
 // Routine Description:
-// - Force the host to tell the renderer to not emit anything in response to the
-//      next resize event. This is used by VT I/O to prevent a terminal from
+// - Force the host to tell the renderer to not emit anything in response to the 
+//      next resize event. This is used by VT I/O to prevent a terminal from 
 //      requesting a resize, then having the renderer echo that to the terminal,
 //      then having the terminal echo back to the host...
 // Arguments:
