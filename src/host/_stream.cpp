@@ -20,10 +20,12 @@
 #include "utf8ToWidecharParser.hpp"
 
 #include "../types/inc/convert.hpp"
+#include "../types/inc/Viewport.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
 #pragma hdrstop
+using namespace Microsoft::Console::Types;
 
 // Used by WriteCharsLegacy.
 #define IS_GLYPH_CHAR(wch)   (((wch) < L' ') || ((wch) == 0x007F))
@@ -45,12 +47,12 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
                               const BOOL fKeepCursorVisible,
                               _Inout_opt_ PSHORT psScrollY)
 {
-    const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
+    const COORD bufferSize = screenInfo.GetScreenBufferSize();
     if (coordCursor.X < 0)
     {
         if (coordCursor.Y > 0)
         {
-            coordCursor.X = (SHORT)(coordScreenBufferSize.X + coordCursor.X);
+            coordCursor.X = (SHORT)(bufferSize.X + coordCursor.X);
             coordCursor.Y = (SHORT)(coordCursor.Y - 1);
         }
         else
@@ -58,22 +60,25 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
             coordCursor.X = 0;
         }
     }
-    else if (coordCursor.X >= coordScreenBufferSize.X)
+    else if (coordCursor.X >= bufferSize.X)
     {
         // at end of line. if wrap mode, wrap cursor.  otherwise leave it where it is.
         if (screenInfo.OutputMode & ENABLE_WRAP_AT_EOL_OUTPUT)
         {
-            coordCursor.Y += coordCursor.X / coordScreenBufferSize.X;
-            coordCursor.X = coordCursor.X % coordScreenBufferSize.X;
+            coordCursor.Y += coordCursor.X / bufferSize.X;
+            coordCursor.X = coordCursor.X % bufferSize.X;
         }
         else
         {
             coordCursor.X = screenInfo.GetTextBuffer().GetCursor().GetPosition().X;
         }
     }
+    const auto relativeMargins = screenInfo.GetRelativeScrollMargins();
+    auto viewport = Viewport::FromInclusive(screenInfo.GetBufferViewport());
     SMALL_RECT srMargins = screenInfo.GetAbsoluteScrollMargins().ToInclusive();
     const bool fMarginsSet = srMargins.Bottom > srMargins.Top;
-    const int iCurrentCursorY = screenInfo.GetTextBuffer().GetCursor().GetPosition().Y;
+    COORD currentCursor = screenInfo.GetTextBuffer().GetCursor().GetPosition();
+    const int iCurrentCursorY = currentCursor.Y;
     const bool inVtMode = IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
     const bool fCursorInMargins = iCurrentCursorY <= srMargins.Bottom && iCurrentCursorY >= srMargins.Top;
@@ -93,6 +98,58 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
         srMargins.Bottom = screenInfo.GetBufferViewport().Bottom;
     }
 
+    const bool scrollDownAtTop = fScrollDown && relativeMargins.Top() == 0;
+    if (scrollDownAtTop)
+    {
+
+        // We're trying to scroll down, and the top margin is at the top of the viewport.
+        // In this case, we want the lines that are "scrolled off" to appear in
+        //      the scrollback instead of being discarded.
+        const SHORT delta = coordCursor.Y - srMargins.Bottom;
+        COORD relativeOldCursor = currentCursor;
+        COORD relativeNewCursor = coordCursor;
+        viewport.ConvertToOrigin(&relativeOldCursor);
+        viewport.ConvertToOrigin(&relativeNewCursor);
+        SHORT newTop = viewport.Top() + delta;
+        SHORT newRows = (newTop + viewport.Height()) - bufferSize.Y;
+        for(auto i = 0; i < newRows; i++)
+        {
+            screenInfo.GetTextBuffer().IncrementCircularBuffer();
+            newTop--;
+        }
+
+        const COORD newOrigin = { 0, newTop };
+        SMALL_RECT clipRect;
+        clipRect.Left = 0;
+        clipRect.Top = 0;
+        clipRect.Right = bufferSize.X;
+        clipRect.Bottom = bufferSize.Y;
+        CHAR_INFO ciFill;
+        ciFill.Attributes = screenInfo.GetAttributes().GetLegacyAttributes();
+        ciFill.Char.UnicodeChar = L' ';
+        // Unset the margins to scroll the viewport, then restore them
+        screenInfo.SetScrollMargins(Viewport::FromInclusive({0}));
+        try
+        {
+            // ScrollRegion(screenInfo, viewport.ToInclusive(), clipRect, newOrigin, ciFill);
+            ScrollRegion(screenInfo, viewport.ToInclusive(), std::nullopt, newOrigin, ciFill);
+        }
+        CATCH_LOG();
+        screenInfo.SetScrollMargins(relativeMargins);
+
+        auto hr = screenInfo.SetViewportOrigin(TRUE, newOrigin);
+        if (FAILED(hr))
+        {
+            return NTSTATUS_FROM_HRESULT(hr);
+        }
+        viewport = Viewport::FromInclusive(screenInfo.GetBufferViewport());
+        viewport.ConvertFromOrigin(&relativeOldCursor);
+        viewport.ConvertFromOrigin(&relativeNewCursor);
+        currentCursor = relativeOldCursor;
+        coordCursor = relativeNewCursor;
+        srMargins = screenInfo.GetAbsoluteScrollMargins().ToInclusive();
+    }
+
     if (fScrollUp || fScrollDown)
     {
         SHORT diff = coordCursor.Y - (fScrollUp ? srMargins.Top : srMargins.Bottom);
@@ -107,25 +164,40 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
         dest.X = scrollRect.Left;
         dest.Y = scrollRect.Top - diff;
 
+        SMALL_RECT clipRect = scrollRect;
+        if (scrollDownAtTop)
+        {
+            clipRect.Top -= diff;
+            auto fakeMargins = srMargins;
+            fakeMargins.Top -= diff;
+            auto fakeRelative = viewport.ConvertToOrigin(Viewport::FromInclusive(fakeMargins));
+            DebugBreak();
+            screenInfo.SetScrollMargins(fakeRelative);
+        }
+
         CHAR_INFO ciFill;
         ciFill.Attributes = screenInfo.GetAttributes().GetLegacyAttributes();
         ciFill.Char.UnicodeChar = L' ';
 
         try
         {
-            ScrollRegion(screenInfo, scrollRect, scrollRect, dest, ciFill);
+            ScrollRegion(screenInfo, scrollRect, clipRect, dest, ciFill);
         }
         CATCH_LOG();
+        if (scrollDownAtTop)
+        {
+            screenInfo.SetScrollMargins(relativeMargins);
 
+        }
         coordCursor.Y -= diff;
     }
 
     NTSTATUS Status = STATUS_SUCCESS;
 
-    if (coordCursor.Y >= coordScreenBufferSize.Y)
+    if (coordCursor.Y >= bufferSize.Y)
     {
         // At the end of the buffer. Scroll contents of screen buffer so new position is visible.
-        FAIL_FAST_IF_FALSE(coordCursor.Y == coordScreenBufferSize.Y);
+        FAIL_FAST_IF_FALSE(coordCursor.Y == bufferSize.Y);
         if (!StreamScrollRegion(screenInfo))
         {
             Status = STATUS_NO_MEMORY;
@@ -133,9 +205,9 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
 
         if (nullptr != psScrollY)
         {
-            *psScrollY += (SHORT)(coordScreenBufferSize.Y - coordCursor.Y - 1);
+            *psScrollY += (SHORT)(bufferSize.Y - coordCursor.Y - 1);
         }
-        coordCursor.Y += (SHORT)(coordScreenBufferSize.Y - coordCursor.Y - 1);
+        coordCursor.Y += (SHORT)(bufferSize.Y - coordCursor.Y - 1);
     }
 
 
