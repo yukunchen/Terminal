@@ -99,6 +99,7 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
     }
 
     const bool scrollDownAtTop = fScrollDown && relativeMargins.Top() == 0;
+    SHORT newRows = 0;
     if (scrollDownAtTop)
     {
 
@@ -110,12 +111,16 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
         COORD relativeNewCursor = coordCursor;
         viewport.ConvertToOrigin(&relativeOldCursor);
         viewport.ConvertToOrigin(&relativeNewCursor);
+        SMALL_RECT scrollRect = viewport.ToInclusive();
+
         SHORT newTop = viewport.Top() + delta;
-        SHORT newRows = (newTop + viewport.Height()) - bufferSize.Y;
+        newRows = (newTop + viewport.Height()) - bufferSize.Y;
+        // if (newRows > 0) DebugBreak();
         for(auto i = 0; i < newRows; i++)
         {
             screenInfo.GetTextBuffer().IncrementCircularBuffer();
             newTop--;
+            scrollRect.Top--;
         }
 
         const COORD newOrigin = { 0, newTop };
@@ -132,7 +137,7 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
         try
         {
             // ScrollRegion(screenInfo, viewport.ToInclusive(), clipRect, newOrigin, ciFill);
-            ScrollRegion(screenInfo, viewport.ToInclusive(), std::nullopt, newOrigin, ciFill);
+            ScrollRegion(screenInfo, scrollRect, std::nullopt, newOrigin, ciFill);
         }
         CATCH_LOG();
         screenInfo.SetScrollMargins(relativeMargins);
@@ -165,13 +170,15 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
         dest.Y = scrollRect.Top - diff;
 
         SMALL_RECT clipRect = scrollRect;
+        // if (scrollDownAtTop && newRows == 0)
         if (scrollDownAtTop)
         {
-            clipRect.Top -= diff;
+            // clipRect.Top -= (diff - newRows);
+            clipRect.Top -= (diff);
             auto fakeMargins = srMargins;
-            fakeMargins.Top -= diff;
+            // fakeMargins.Top -= (diff - newRows);
+            fakeMargins.Top -= (diff);
             auto fakeRelative = viewport.ConvertToOrigin(Viewport::FromInclusive(fakeMargins));
-            DebugBreak();
             screenInfo.SetScrollMargins(fakeRelative);
         }
 
