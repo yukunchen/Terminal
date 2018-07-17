@@ -110,6 +110,9 @@ void ConsoleImeInfo::ClearAllAreas()
             area.ClearArea();
         }
     }
+
+    // Also clear internal buffer of string data.
+    _ClearComposition();
 }
 
 // Routine Description:
