@@ -99,23 +99,32 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
     }
 
     const bool scrollDownAtTop = fScrollDown && relativeMargins.Top() == 0;
-    SHORT newRows = 0;
     if (scrollDownAtTop)
     {
-
         // We're trying to scroll down, and the top margin is at the top of the viewport.
         // In this case, we want the lines that are "scrolled off" to appear in
         //      the scrollback instead of being discarded.
+        // To accomplish this, we're going to move the entire viewport down by
+        //      the number of scrolled lines, then scroll the margins content up
+        //      by the number of scrolled lines.
+
         const SHORT delta = coordCursor.Y - srMargins.Bottom;
+        // Stash away the requested cursor position (coordCursor) and the
+        //      current cursor position relative to the viewport.
+        // If we end up moving the viewport, we want these to stay in the same relative location.
         COORD relativeOldCursor = currentCursor;
         COORD relativeNewCursor = coordCursor;
         viewport.ConvertToOrigin(&relativeOldCursor);
         viewport.ConvertToOrigin(&relativeNewCursor);
-        SMALL_RECT scrollRect = viewport.ToInclusive();
 
+        SMALL_RECT scrollRect = viewport.ToInclusive();
         SHORT newTop = viewport.Top() + delta;
-        newRows = (newTop + viewport.Height()) - bufferSize.Y;
-        // if (newRows > 0) DebugBreak();
+        SHORT newRows = (newTop + viewport.Height()) - bufferSize.Y;
+
+        // If we're near the bottom of the buffer, we might need to insert some
+        //      new rows at the bottom.
+        // If we do this, then the viewport is now one line higher than it used
+        //      to be, so it needs to move down by one less line.
         for(auto i = 0; i < newRows; i++)
         {
             screenInfo.GetTextBuffer().IncrementCircularBuffer();
@@ -124,29 +133,26 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
         }
 
         const COORD newOrigin = { 0, newTop };
-        SMALL_RECT clipRect;
-        clipRect.Left = 0;
-        clipRect.Top = 0;
-        clipRect.Right = bufferSize.X;
-        clipRect.Bottom = bufferSize.Y;
         CHAR_INFO ciFill;
         ciFill.Attributes = screenInfo.GetAttributes().GetLegacyAttributes();
-        ciFill.Char.UnicodeChar = L' ';
-        // Unset the margins to scroll the viewport, then restore them
+        ciFill.Char.UnicodeChar = UNICODE_SPACE;
+
+        // Unset the margins to scroll the viewport, then restore them after.
         screenInfo.SetScrollMargins(Viewport::FromInclusive({0}));
         try
         {
-            // ScrollRegion(screenInfo, viewport.ToInclusive(), clipRect, newOrigin, ciFill);
             ScrollRegion(screenInfo, scrollRect, std::nullopt, newOrigin, ciFill);
         }
         CATCH_LOG();
         screenInfo.SetScrollMargins(relativeMargins);
 
+        // Move the viewport down
         auto hr = screenInfo.SetViewportOrigin(TRUE, newOrigin);
         if (FAILED(hr))
         {
             return NTSTATUS_FROM_HRESULT(hr);
         }
+        // reset where our viewport is, and recalculate the cursor and margin positions.
         viewport = Viewport::FromInclusive(screenInfo.GetBufferViewport());
         viewport.ConvertFromOrigin(&relativeOldCursor);
         viewport.ConvertFromOrigin(&relativeNewCursor);
@@ -163,21 +169,23 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
         scrollRect.Top = srMargins.Top;
         scrollRect.Bottom = srMargins.Bottom;
         scrollRect.Left = screenInfo.GetBufferViewport().Left;  // NOTE: Left/Right Scroll margins don't do anything currently.
-        scrollRect.Right = screenInfo.GetBufferViewport().Right - screenInfo.GetBufferViewport().Left; // hmm? Not sure. Might just be .Right
+        scrollRect.Right = screenInfo.GetBufferViewport().Right;
 
         COORD dest;
         dest.X = scrollRect.Left;
         dest.Y = scrollRect.Top - diff;
 
         SMALL_RECT clipRect = scrollRect;
-        // if (scrollDownAtTop && newRows == 0)
+        // Typically ScrollRegion() clips by the scroll margins. However, if
+        //      we're scrolling down at the top of the viewport, we'll need to
+        //      not clip at the margins, instead move the contents of the margins
+        //      up above the viewport. So we'll clear out the current margins, and
+        //      set them to the viewport+(#diff rows above the viewport).
         if (scrollDownAtTop)
         {
-            // clipRect.Top -= (diff - newRows);
-            clipRect.Top -= (diff);
+            clipRect.Top -= diff;
             auto fakeMargins = srMargins;
-            // fakeMargins.Top -= (diff - newRows);
-            fakeMargins.Top -= (diff);
+            fakeMargins.Top -= diff;
             auto fakeRelative = viewport.ConvertToOrigin(Viewport::FromInclusive(fakeMargins));
             screenInfo.SetScrollMargins(fakeRelative);
         }
@@ -191,10 +199,11 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
             ScrollRegion(screenInfo, scrollRect, clipRect, dest, ciFill);
         }
         CATCH_LOG();
+
         if (scrollDownAtTop)
         {
+            // Undo the fake margins we set above
             screenInfo.SetScrollMargins(relativeMargins);
-
         }
         coordCursor.Y -= diff;
     }
