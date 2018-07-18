@@ -51,7 +51,6 @@ PRECOMPILED_OBJ         = precomp.obj
 
 SOURCES = \
     dll.cpp              \
-    readLink.cpp         \
     util.cpp             \
     console.cpp          \
     globals.cpp          \
@@ -72,7 +71,7 @@ INCLUDES = \
     $(INCLUDES); \
     ..\inc; \
     ..\host; \
-    
+
 TARGETLIBS = \
     $(ONECORE_SDK_LIB_VPATH)\onecore.lib \
     $(ONECORE_SDK_LIB_VPATH)\onecoreuap.lib \
