@@ -21,9 +21,12 @@ void ShortcutSerialization::s_InitPropVarFromByte(_In_ BYTE bVal, _Out_ PROPVARI
 
 void ShortcutSerialization::s_InitPropVarFromDword(_In_ DWORD dwVal, _Out_ PROPVARIANT *ppropvar)
 {
-    // A DWORD is a 4-byte unsigned int value, so use the uint member.
-    ppropvar->vt = VT_UINT;
-    ppropvar->uintVal = dwVal;
+    // A DWORD is a 4-byte unsigned int value, so use the ui4 member.
+    // DO NOT use VT_UINT, that doesn't work with PROPVARIANTs.
+    // see: https://docs.microsoft.com/en-us/windows/desktop/api/wtypes/ne-wtypes-varenum
+    // also MSFT:18312914
+    ppropvar->vt = VT_UI4;
+    ppropvar->ulVal = dwVal;
 }
 
 void ShortcutSerialization::s_SetLinkPropertyBoolValue(_In_ IPropertyStore *pps, _In_ REFPROPERTYKEY refPropKey,const BOOL fVal)
@@ -42,6 +45,16 @@ void ShortcutSerialization::s_SetLinkPropertyByteValue(_In_ IPropertyStore *pps,
     PropVariantClear(&propvarByte);
 }
 
+void ShortcutSerialization::s_SetLinkPropertyDwordValue(_Inout_ IPropertyStore *pps,
+                                                        _In_ REFPROPERTYKEY refPropKey,
+                                                        const DWORD dwVal)
+{
+    PROPVARIANT propvarDword;
+    s_InitPropVarFromDword(dwVal, &propvarDword);
+    pps->SetValue(refPropKey, propvarDword);
+    PropVariantClear(&propvarDword);
+}
+
 [[nodiscard]]
 HRESULT ShortcutSerialization::s_GetPropertyBoolValue(_In_ IPropertyStore * const pPropStore, _In_ REFPROPERTYKEY refPropKey, _Out_ BOOL * const pfValue)
 {
@@ -55,16 +68,6 @@ HRESULT ShortcutSerialization::s_GetPropertyBoolValue(_In_ IPropertyStore * cons
     }
 
     return hr;
-}
-
-void ShortcutSerialization::s_SetLinkPropertyDwordValue(_Inout_ IPropertyStore *pps,
-                                                        _In_ REFPROPERTYKEY refPropKey,
-                                                        const DWORD dwVal)
-{
-    PROPVARIANT propvarDword;
-    s_InitPropVarFromDword(dwVal, &propvarDword);
-    pps->SetValue(refPropKey, propvarDword);
-    PropVariantClear(&propvarDword);
 }
 
 [[nodiscard]]
@@ -462,9 +465,8 @@ NTSTATUS ShortcutSerialization::s_SetLinkValues(_In_ PCONSOLE_STATE_INFO pStateI
                     s_SetLinkPropertyBoolValue(pps, PKEY_Console_LineSelection, pStateInfo->fLineSelection);
                     s_SetLinkPropertyByteValue(pps, PKEY_Console_WindowTransparency, pStateInfo->bWindowTransparency);
                     s_SetLinkPropertyDwordValue(pps, PKEY_Console_CursorType, pStateInfo->CursorType);
-                    // todo: MSFT 18312914: Persisting the cursor color fails silently?
                     s_SetLinkPropertyDwordValue(pps, PKEY_Console_CursorColor, pStateInfo->CursorColor);
-                    s_SetLinkPropertyDwordValue(pps, PKEY_Console_InterceptCopyPaste, pStateInfo->InterceptCopyPaste);
+                    s_SetLinkPropertyBoolValue(pps, PKEY_Console_InterceptCopyPaste, pStateInfo->InterceptCopyPaste);
                     hr = pps->Commit();
                     pps->Release();
                 }
