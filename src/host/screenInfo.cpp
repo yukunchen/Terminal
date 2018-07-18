@@ -1232,6 +1232,7 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(const COORD* const pcoordSize,
     srNewViewport.Bottom = std::min(srNewViewport.Bottom, gsl::narrow<SHORT>(coordScreenBufferSize.Y - 1));
 
     _viewport = Viewport::FromInclusive(srNewViewport);
+    UpdateBottom();
     Tracing::s_TraceWindowViewport(srNewViewport);
 }
 
