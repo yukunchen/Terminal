@@ -462,6 +462,7 @@ NTSTATUS ShortcutSerialization::s_SetLinkValues(_In_ PCONSOLE_STATE_INFO pStateI
                     s_SetLinkPropertyBoolValue(pps, PKEY_Console_LineSelection, pStateInfo->fLineSelection);
                     s_SetLinkPropertyByteValue(pps, PKEY_Console_WindowTransparency, pStateInfo->bWindowTransparency);
                     s_SetLinkPropertyDwordValue(pps, PKEY_Console_CursorType, pStateInfo->CursorType);
+                    // todo: MSFT 18312914: Persisting the cursor color fails silently?
                     s_SetLinkPropertyDwordValue(pps, PKEY_Console_CursorColor, pStateInfo->CursorColor);
                     s_SetLinkPropertyDwordValue(pps, PKEY_Console_InterceptCopyPaste, pStateInfo->InterceptCopyPaste);
                     hr = pps->Commit();
