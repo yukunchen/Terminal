@@ -8,7 +8,7 @@ Module Name:
 
 Abstract:
 
-    This file contains functions to read and _rite values
+    This file contains functions to read and write values
     to the registry.
 
 Author:
@@ -23,6 +23,7 @@ Revision History:
 #include <shlwapi.h>
 #include <strsafe.h>
 #include <intsafe.h>
+#include "../inc/conattrs.hpp"
 #pragma hdrstop
 
 #define CONSOLE_REGISTRY_CURRENTPAGE  (L"CurrentPage")
@@ -130,6 +131,9 @@ VOID InitRegistryValues(
     pStateInfo->fCtrlKeyShortcutsDisabled = FALSE;
     pStateInfo->fLineSelection= TRUE;
     pStateInfo->bWindowTransparency = BYTE_MAX;
+    pStateInfo->CursorType = 0;
+    pStateInfo->CursorColor = INVALID_COLOR;
+    pStateInfo->InterceptCopyPaste = FALSE;
     // end v2 console state
 }
 
@@ -512,6 +516,41 @@ DWORD GetRegistryValues(
         {
             pStateInfo->bWindowTransparency = (BYTE)dwValue;
         }
+    }
+
+    // Initial Cursor Color
+    Status = RegistrySerialization::s_QueryValue(hTitleKey,
+                                                 CONSOLE_REGISTRY_CURSORCOLOR,
+                                                 sizeof(dwValue),
+                                                 REG_DWORD,
+                                                 (PBYTE)&dwValue,
+                                                 NULL);
+    if (NT_SUCCESS(Status)) {
+        pStateInfo->CursorColor = dwValue;
+    }
+
+    // Initial Cursor Shape
+    Status = RegistrySerialization::s_QueryValue(hTitleKey,
+                                                 CONSOLE_REGISTRY_CURSORTYPE,
+                                                 sizeof(dwValue),
+                                                 REG_DWORD,
+                                                 (PBYTE)&dwValue,
+                                                 NULL);
+    if (NT_SUCCESS(Status))
+    {
+        pStateInfo->CursorType = dwValue;
+    }
+
+    // Initial Intercept Copy Paste
+    Status = RegistrySerialization::s_QueryValue(hTitleKey,
+                                                 CONSOLE_REGISTRY_INTERCEPTCOPYPASTE,
+                                                 sizeof(dwValue),
+                                                 REG_DWORD,
+                                                 (PBYTE)&dwValue,
+                                                 NULL);
+    if (NT_SUCCESS(Status))
+    {
+        pStateInfo->InterceptCopyPaste = !!dwValue;
     }
 
     //
