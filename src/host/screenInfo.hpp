@@ -110,6 +110,8 @@ public:
     // Forwarders to Window if we're the active buffer.
     [[nodiscard]]
     NTSTATUS SetViewportOrigin(const bool fAbsolute, const COORD coordWindowOrigin);
+    [[nodiscard]]
+    NTSTATUS SetViewportOrigin(const bool fAbsolute, const COORD coordWindowOrigin, const bool updateBottom);
     void SetViewportRect(const Microsoft::Console::Types::Viewport newViewport);
     bool SendNotifyBeep() const;
     bool PostUpdateWindowSize() const;
@@ -253,6 +255,9 @@ public:
 
     void SetTerminalConnection(_In_ Microsoft::Console::ITerminalOutputConnection* const pTtyConnection);
 
+    void UpdateBottom();
+    void MoveToBottom();
+
 private:
     SCREEN_INFORMATION(_In_ IWindowMetrics *pMetrics,
                        _In_ IAccessibilityNotifier *pNotifier,
@@ -326,6 +331,11 @@ private:
 
     TextAttribute _Attributes;
     TextAttribute _PopupAttributes;
+
+    // Tracks the last virtual position the viewport was at. This is not
+    //  affected by the user scrolling the viewport, only when API calls cause
+    //  the viewport to move (SetBufferInfo, WriteConsole, etc)
+    short _virtualBottom;
 
     friend class ScreenInfoTextIterator;
     friend class ScreenInfoCellIterator;

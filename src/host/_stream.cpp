@@ -235,9 +235,11 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
             COORD WindowOrigin;
             WindowOrigin.X = 0;
             WindowOrigin.Y = coordCursor.Y - screenInfo.GetBufferViewport().Bottom;
-            Status = screenInfo.SetViewportOrigin(FALSE, WindowOrigin);
+
+            Status = screenInfo.SetViewportOrigin(false, WindowOrigin, true);
         }
     }
+
     if (NT_SUCCESS(Status))
     {
         if (fKeepCursorVisible)
@@ -246,6 +248,7 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
         }
         Status = screenInfo.SetCursorPosition(coordCursor, !!fKeepCursorVisible);
     }
+
 
     return Status;
 }
@@ -949,6 +952,8 @@ NTSTATUS WriteChars(SCREEN_INFORMATION& screenInfo,
 
     size_t const BufferSize = *pcb;
     *pcb = 0;
+
+    screenInfo.MoveToBottom();
 
     {
         size_t TempNumSpaces = 0;
