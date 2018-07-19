@@ -70,6 +70,8 @@ namespace Microsoft::Console::VirtualTerminal
         virtual BOOL PrivateForwardTab(const SHORT sNumTabs) = 0;
         virtual BOOL PrivateBackwardsTab(const SHORT sNumTabs) = 0;
         virtual BOOL PrivateTabClear(const bool fClearAll) = 0;
+        virtual BOOL PrivateSetDefaultTabStops() = 0;
+
         virtual BOOL PrivateEnableVT200MouseMode(const bool fEnabled) = 0;
         virtual BOOL PrivateEnableUTF8ExtendedMouseMode(const bool fEnabled) = 0;
         virtual BOOL PrivateEnableSGRExtendedMouseMode(const bool fEnabled) = 0;

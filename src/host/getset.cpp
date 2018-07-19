@@ -299,11 +299,19 @@ HRESULT ApiRoutines::SetConsoleOutputModeImpl(SCREEN_INFORMATION& Context, const
     screenInfo.OutputMode = dwNewMode;
 
     // if we're moving from VT on->off
-    if (!IsFlagSet(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) && IsFlagSet(dwOldMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
+    if (IsFlagClear(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) && IsFlagSet(dwOldMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
     {
         // jiggle the handle
         screenInfo.GetStateMachine()->ResetState();
+        screenInfo.ClearTabStops();
     }
+    // if we're moving from VT off->on
+    else if (IsFlagSet(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) &&
+             IsFlagClear(dwOldMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
+    {
+        screenInfo.SetDefaultVtTabStops();
+    }
+
     gci.SetVirtTermLevel(IsFlagSet(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) ? 1 : 0);
     gci.SetAutomaticReturnOnNewline(IsFlagSet(screenInfo.OutputMode, DISABLE_NEWLINE_AUTO_RETURN) ? false : true);
     gci.SetGridRenderingAllowedWorldwide(IsFlagSet(screenInfo.OutputMode, ENABLE_LVB_GRID_WORLDWIDE));
@@ -1259,7 +1267,15 @@ NTSTATUS DoSrvPrivateHorizontalTabSet()
     SCREEN_INFORMATION& _screenBuffer = gci.GetActiveOutputBuffer();
 
     const COORD cursorPos = _screenBuffer.GetTextBuffer().GetCursor().GetPosition();
-    return _screenBuffer.AddTabStop(cursorPos.X);
+    try
+    {
+        _screenBuffer.AddTabStop(cursorPos.X);
+    }
+    catch (...)
+    {
+        return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+    }
+    return STATUS_SUCCESS;
 }
 
 // Routine Description:
@@ -1767,4 +1783,11 @@ void DoSrvIsConsolePty(_Out_ bool* const pIsPty)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     *pIsPty = gci.IsInVtIoMode();
+}
+
+// Routine Description:
+// - a private API call for setting the default tab stops in the active screen buffer.
+void DoSrvPrivateSetDefaultTabStops()
+{
+    ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().SetDefaultVtTabStops();
 }

@@ -77,13 +77,6 @@ class ScreenBufferTests
 
     TEST_METHOD(TestReverseLineFeed);
 
-    size_t const cSampleListTabs = 5;
-    SHORT rgSampleListValues[5] = { 2, 3, 7, 7, 14 };
-
-    SCREEN_INFORMATION::TabStop** CreateSampleList();
-
-    void FreeSampleList(SCREEN_INFORMATION::TabStop** rgList);
-
     TEST_METHOD(TestAddTabStop);
 
     TEST_METHOD(TestClearTabStops);
@@ -112,40 +105,6 @@ class ScreenBufferTests
     TEST_METHOD(VtEraseAllPersistCursorFillColor);
 
 };
-
-SCREEN_INFORMATION::TabStop** ScreenBufferTests::CreateSampleList()
-{
-    SCREEN_INFORMATION::TabStop** rgpTabs = new SCREEN_INFORMATION::TabStop*[cSampleListTabs];
-
-    // create tab stop items and fill with values
-    for (size_t i = 0; i < cSampleListTabs; i++)
-    {
-        rgpTabs[i] = new SCREEN_INFORMATION::TabStop();
-        rgpTabs[i]->sColumn = rgSampleListValues[i];
-    }
-
-    // link up the list
-    for (size_t i = 0; i < cSampleListTabs - 1; i++)
-    {
-        rgpTabs[i]->ptsNext = rgpTabs[i + 1];
-    }
-
-    return rgpTabs;
-}
-
-void ScreenBufferTests::FreeSampleList(SCREEN_INFORMATION::TabStop** rgList)
-{
-    for (size_t i = 0; i < cSampleListTabs; i++)
-    {
-        if (rgList[i] != nullptr)
-        {
-            delete rgList[i];
-        }
-    }
-
-    delete[] rgList;
-}
-
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
 {
@@ -347,369 +306,254 @@ void ScreenBufferTests::TestAddTabStop()
     screenInfo.ClearTabStops();
     auto scopeExit = wil::ScopeExit([&]() { screenInfo.ClearTabStops(); });
 
+    std::list<short> expectedStops{ 12 };
     Log::Comment(L"Add tab to empty list.");
-    VERIFY_SUCCEEDED(HRESULT_FROM_NT(screenInfo.AddTabStop(12)));
-    VERIFY_IS_NOT_NULL(screenInfo._ptsTabs);
+    screenInfo.AddTabStop(12);
+    VERIFY_ARE_EQUAL(expectedStops, screenInfo._tabStops);
 
     Log::Comment(L"Add tab to head of existing list.");
-    VERIFY_SUCCEEDED(HRESULT_FROM_NT(screenInfo.AddTabStop(4)));
-    VERIFY_IS_NOT_NULL(screenInfo._ptsTabs);
-    VERIFY_ARE_EQUAL(4, screenInfo._ptsTabs->sColumn);
-    VERIFY_ARE_EQUAL(12, screenInfo._ptsTabs->ptsNext->sColumn);
+    screenInfo.AddTabStop(4);
+    expectedStops.push_front(4);
+    VERIFY_ARE_EQUAL(expectedStops, screenInfo._tabStops);
 
     Log::Comment(L"Add tab to tail of existing list.");
-    VERIFY_SUCCEEDED(HRESULT_FROM_NT(screenInfo.AddTabStop(30)));
-    VERIFY_IS_NOT_NULL(screenInfo._ptsTabs);
-    VERIFY_ARE_EQUAL(4, screenInfo._ptsTabs->sColumn);
-    VERIFY_ARE_EQUAL(12, screenInfo._ptsTabs->ptsNext->sColumn);
-    VERIFY_ARE_EQUAL(30, screenInfo._ptsTabs->ptsNext->ptsNext->sColumn);
+    screenInfo.AddTabStop(30);
+    expectedStops.push_back(30);
+    VERIFY_ARE_EQUAL(expectedStops, screenInfo._tabStops);
 
     Log::Comment(L"Add tab to middle of existing list.");
-    VERIFY_SUCCEEDED(HRESULT_FROM_NT(screenInfo.AddTabStop(24)));
-    VERIFY_IS_NOT_NULL(screenInfo._ptsTabs);
-    VERIFY_ARE_EQUAL(4, screenInfo._ptsTabs->sColumn);
-    VERIFY_ARE_EQUAL(12, screenInfo._ptsTabs->ptsNext->sColumn);
-    VERIFY_ARE_EQUAL(24, screenInfo._ptsTabs->ptsNext->ptsNext->sColumn);
-    VERIFY_ARE_EQUAL(30, screenInfo._ptsTabs->ptsNext->ptsNext->ptsNext->sColumn);
+    screenInfo.AddTabStop(24);
+    expectedStops.push_back(24);
+    expectedStops.sort();
+    VERIFY_ARE_EQUAL(expectedStops, screenInfo._tabStops);
 
     Log::Comment(L"Add tab that duplicates an item in the existing list.");
-    VERIFY_FAILED(HRESULT_FROM_NT(screenInfo.AddTabStop(24)));
-    VERIFY_IS_NOT_NULL(screenInfo._ptsTabs);
-    VERIFY_ARE_EQUAL(4, screenInfo._ptsTabs->sColumn);
-    VERIFY_ARE_EQUAL(12, screenInfo._ptsTabs->ptsNext->sColumn);
-    VERIFY_ARE_EQUAL(24, screenInfo._ptsTabs->ptsNext->ptsNext->sColumn);
-    VERIFY_ARE_EQUAL(30, screenInfo._ptsTabs->ptsNext->ptsNext->ptsNext->sColumn);
-
+    screenInfo.AddTabStop(24);
+    VERIFY_ARE_EQUAL(expectedStops, screenInfo._tabStops);
 }
 
 void ScreenBufferTests::TestClearTabStops()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
-    screenInfo._ptsTabs = nullptr;
 
     Log::Comment(L"Clear non-existant tab stops.");
     {
         screenInfo.ClearTabStops();
-        VERIFY_IS_NULL(screenInfo._ptsTabs);
+        VERIFY_IS_TRUE(screenInfo._tabStops.empty());
     }
 
     Log::Comment(L"Clear handful of tab stops.");
     {
-        SCREEN_INFORMATION::TabStop** rgpTabs = CreateSampleList();
-
-        screenInfo._ptsTabs = rgpTabs[0];
-
-        screenInfo.ClearTabStops();
-        VERIFY_IS_NULL(screenInfo._ptsTabs);
-
-        // They should have all been freed by the operation above, don't double free.
-        for (size_t i = 0; i < cSampleListTabs; i++)
+        for (auto x : { 3, 6, 13, 2, 25 })
         {
-            rgpTabs[i] = nullptr;
+            screenInfo.AddTabStop(gsl::narrow<short>(x));
         }
-        FreeSampleList(rgpTabs);
+        VERIFY_IS_FALSE(screenInfo._tabStops.empty());
+        screenInfo.ClearTabStops();
+        VERIFY_IS_TRUE(screenInfo._tabStops.empty());
     }
-
-    screenInfo._ptsTabs = nullptr; // don't let global free try to clean this up
 }
 
 void ScreenBufferTests::TestClearTabStop()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
-    screenInfo._ptsTabs = nullptr;
 
     Log::Comment(L"Try to clear nonexistant list.");
     {
         screenInfo.ClearTabStop(0);
 
-        VERIFY_ARE_EQUAL(nullptr, screenInfo._ptsTabs, L"List should remain non-existant.");
+        VERIFY_IS_TRUE(screenInfo._tabStops.empty(), L"List should remain empty");
     }
 
     Log::Comment(L"Allocate 1 list item and clear it.");
     {
-        SCREEN_INFORMATION::TabStop* tabTest = new SCREEN_INFORMATION::TabStop();
-        tabTest->ptsNext = nullptr;
-        tabTest->sColumn = 0;
-
-        screenInfo._ptsTabs = tabTest;
-
+        screenInfo._tabStops.push_back(0);
         screenInfo.ClearTabStop(0);
 
-        VERIFY_IS_NULL(screenInfo._ptsTabs);
-
-        // no free, the ClearTabStop method did it for us.
+        VERIFY_IS_TRUE(screenInfo._tabStops.empty());
     }
 
     Log::Comment(L"Allocate 1 list item and clear non-existant.");
     {
-        SCREEN_INFORMATION::TabStop* tabTest = new SCREEN_INFORMATION::TabStop();
-        tabTest->ptsNext = nullptr;
-        tabTest->sColumn = 0;
-
-        screenInfo._ptsTabs = tabTest;
+        screenInfo._tabStops.push_back(0);
 
         Log::Comment(L"Free greater");
         screenInfo.ClearTabStop(1);
-
-        VERIFY_IS_NOT_NULL(screenInfo._ptsTabs);
+        VERIFY_IS_FALSE(screenInfo._tabStops.empty());
 
         Log::Comment(L"Free less than");
         screenInfo.ClearTabStop(-1);
+        VERIFY_IS_FALSE(screenInfo._tabStops.empty());
 
-        VERIFY_IS_NOT_NULL(screenInfo._ptsTabs);
-
-        delete tabTest;
+        // clear all tab stops
+        screenInfo._tabStops.clear();
     }
 
     Log::Comment(L"Allocate many (5) list items and clear head.");
     {
-        SCREEN_INFORMATION::TabStop** rgpTabListTest = CreateSampleList();
+        std::list<short> inputData = { 3, 5, 6, 10, 15, 17 };
+        screenInfo._tabStops = inputData;
+        screenInfo.ClearTabStop(inputData.front());
 
-        screenInfo._ptsTabs = rgpTabListTest[0];
+        inputData.pop_front();
+        VERIFY_ARE_EQUAL(inputData, screenInfo._tabStops);
 
-        screenInfo.ClearTabStop(rgSampleListValues[0]);
-
-        VERIFY_ARE_EQUAL(rgpTabListTest[1], screenInfo._ptsTabs, L"1st item should take over as head.");
-        Log::Comment(L"Remaining items should continue pointing to each other and have remaining values");
-
-        VERIFY_ARE_EQUAL(rgpTabListTest[1]->ptsNext, rgpTabListTest[2]);
-        VERIFY_ARE_EQUAL(rgpTabListTest[2]->ptsNext, rgpTabListTest[3]);
-        VERIFY_ARE_EQUAL(rgpTabListTest[3]->ptsNext, rgpTabListTest[4]);
-        VERIFY_ARE_EQUAL(rgpTabListTest[4]->ptsNext, nullptr);
-
-        VERIFY_ARE_EQUAL(rgpTabListTest[1]->sColumn, rgSampleListValues[1]);
-        VERIFY_ARE_EQUAL(rgpTabListTest[2]->sColumn, rgSampleListValues[2]);
-        VERIFY_ARE_EQUAL(rgpTabListTest[3]->sColumn, rgSampleListValues[3]);
-        VERIFY_ARE_EQUAL(rgpTabListTest[4]->sColumn, rgSampleListValues[4]);
-
-        rgpTabListTest[0] = nullptr; // don't try to free already freed item.
-        FreeSampleList(rgpTabListTest); // this will throw an exception in the test if the frees are incorrect
+        // clear all tab stops
+        screenInfo._tabStops.clear();
     }
 
     Log::Comment(L"Allocate many (5) list items and clear middle.");
     {
-        SCREEN_INFORMATION::TabStop** rgpTabListTest = CreateSampleList();
+        std::list<short> inputData = { 3, 5, 6, 10, 15, 17 };
+        screenInfo._tabStops = inputData;
+        screenInfo.ClearTabStop(*std::next(inputData.begin()));
 
-        screenInfo._ptsTabs = rgpTabListTest[0];
+        inputData.erase(std::next(inputData.begin()));
+        VERIFY_ARE_EQUAL(inputData, screenInfo._tabStops);
 
-        screenInfo.ClearTabStop(rgSampleListValues[1]);
-
-        Log::Comment(L"List should be reassembled without item 1.");
-        VERIFY_ARE_EQUAL(rgpTabListTest[0], screenInfo._ptsTabs, L"0th item should stay as head.");
-        VERIFY_ARE_EQUAL(rgpTabListTest[0]->ptsNext, rgpTabListTest[2]);
-        VERIFY_ARE_EQUAL(rgpTabListTest[2]->ptsNext, rgpTabListTest[3]);
-        VERIFY_ARE_EQUAL(rgpTabListTest[3]->ptsNext, rgpTabListTest[4]);
-        VERIFY_ARE_EQUAL(rgpTabListTest[4]->ptsNext, nullptr);
-
-        VERIFY_ARE_EQUAL(rgpTabListTest[0]->sColumn, rgSampleListValues[0]);
-        VERIFY_ARE_EQUAL(rgpTabListTest[2]->sColumn, rgSampleListValues[2]);
-        VERIFY_ARE_EQUAL(rgpTabListTest[3]->sColumn, rgSampleListValues[3]);
-        VERIFY_ARE_EQUAL(rgpTabListTest[4]->sColumn, rgSampleListValues[4]);
-
-        rgpTabListTest[1] = nullptr; // don't try to free already freed item.
-        FreeSampleList(rgpTabListTest); // this will throw an exception in the test if the frees are incorrect
-    }
-
-    Log::Comment(L"Allocate many (5) list items and clear middle duplicate.");
-    {
-        SCREEN_INFORMATION::TabStop** rgpTabListTest = CreateSampleList();
-
-        screenInfo._ptsTabs = rgpTabListTest[0];
-
-        screenInfo.ClearTabStop(rgSampleListValues[2]);
-
-        Log::Comment(L"List should be reassembled without items 2 or 3.");
-        VERIFY_ARE_EQUAL(rgpTabListTest[0], screenInfo._ptsTabs, L"0th item should stay as head.");
-        VERIFY_ARE_EQUAL(rgpTabListTest[0]->ptsNext, rgpTabListTest[1]);
-        VERIFY_ARE_EQUAL(rgpTabListTest[1]->ptsNext, rgpTabListTest[4]);
-        VERIFY_ARE_EQUAL(rgpTabListTest[4]->ptsNext, nullptr);
-
-        VERIFY_ARE_EQUAL(rgpTabListTest[0]->sColumn, rgSampleListValues[0]);
-        VERIFY_ARE_EQUAL(rgpTabListTest[1]->sColumn, rgSampleListValues[1]);
-        VERIFY_ARE_EQUAL(rgpTabListTest[4]->sColumn, rgSampleListValues[4]);
-
-        rgpTabListTest[2] = nullptr; // don't try to free already freed item.
-        rgpTabListTest[3] = nullptr; // don't try to free already freed item.
-        FreeSampleList(rgpTabListTest); // this will throw an exception in the test if the frees are incorrect
+        // clear all tab stops
+        screenInfo._tabStops.clear();
     }
 
     Log::Comment(L"Allocate many (5) list items and clear tail.");
     {
-        SCREEN_INFORMATION::TabStop** rgpTabListTest = CreateSampleList();
+        std::list<short> inputData = { 3, 5, 6, 10, 15, 17 };
+        screenInfo._tabStops = inputData;
+        screenInfo.ClearTabStop(inputData.back());
 
-        screenInfo._ptsTabs = rgpTabListTest[0];
+        inputData.pop_back();
+        VERIFY_ARE_EQUAL(inputData, screenInfo._tabStops);
 
-        screenInfo.ClearTabStop(rgSampleListValues[4]);
-
-        Log::Comment(L"List should be reassembled without item 4.");
-        VERIFY_ARE_EQUAL(rgpTabListTest[0], screenInfo._ptsTabs, L"0th item should stay as head.");
-        VERIFY_ARE_EQUAL(rgpTabListTest[0]->ptsNext, rgpTabListTest[1]);
-        VERIFY_ARE_EQUAL(rgpTabListTest[1]->ptsNext, rgpTabListTest[2]);
-        VERIFY_ARE_EQUAL(rgpTabListTest[2]->ptsNext, rgpTabListTest[3]);
-        VERIFY_ARE_EQUAL(rgpTabListTest[3]->ptsNext, nullptr);
-
-        VERIFY_ARE_EQUAL(rgpTabListTest[0]->sColumn, rgSampleListValues[0]);
-        VERIFY_ARE_EQUAL(rgpTabListTest[1]->sColumn, rgSampleListValues[1]);
-        VERIFY_ARE_EQUAL(rgpTabListTest[2]->sColumn, rgSampleListValues[2]);
-        VERIFY_ARE_EQUAL(rgpTabListTest[3]->sColumn, rgSampleListValues[3]);
-
-        rgpTabListTest[4] = nullptr; // don't try to free already freed item.
-        FreeSampleList(rgpTabListTest); // this will throw an exception in the test if the frees are incorrect
+        // clear all tab stops
+        screenInfo._tabStops.clear();
     }
 
     Log::Comment(L"Allocate many (5) list items and clear non-existant item.");
     {
-        SCREEN_INFORMATION::TabStop** rgpTabListTest = CreateSampleList();
-
-        screenInfo._ptsTabs = rgpTabListTest[0];
-
+        std::list<short> inputData = { 3, 5, 6, 10, 15, 17 };
+        screenInfo._tabStops = inputData;
         screenInfo.ClearTabStop(9000);
 
-        Log::Comment(L"List should remain the same.");
-        VERIFY_ARE_EQUAL(rgpTabListTest[0], screenInfo._ptsTabs, L"0th item should stay as head.");
-        VERIFY_ARE_EQUAL(rgpTabListTest[0]->ptsNext, rgpTabListTest[1]);
-        VERIFY_ARE_EQUAL(rgpTabListTest[1]->ptsNext, rgpTabListTest[2]);
-        VERIFY_ARE_EQUAL(rgpTabListTest[2]->ptsNext, rgpTabListTest[3]);
-        VERIFY_ARE_EQUAL(rgpTabListTest[3]->ptsNext, rgpTabListTest[4]);
-        VERIFY_ARE_EQUAL(rgpTabListTest[4]->ptsNext, nullptr);
+        VERIFY_ARE_EQUAL(inputData, screenInfo._tabStops);
 
-        VERIFY_ARE_EQUAL(rgpTabListTest[0]->sColumn, rgSampleListValues[0]);
-        VERIFY_ARE_EQUAL(rgpTabListTest[1]->sColumn, rgSampleListValues[1]);
-        VERIFY_ARE_EQUAL(rgpTabListTest[2]->sColumn, rgSampleListValues[2]);
-        VERIFY_ARE_EQUAL(rgpTabListTest[3]->sColumn, rgSampleListValues[3]);
-        VERIFY_ARE_EQUAL(rgpTabListTest[4]->sColumn, rgSampleListValues[4]);
-
-        FreeSampleList(rgpTabListTest); // this will throw an exception in the test if the frees are incorrect
+        // clear all tab stops
+        screenInfo._tabStops.clear();
     }
-
-    screenInfo._ptsTabs = nullptr; // prevent global cleanup of this, we already did it.
 }
 
 void ScreenBufferTests::TestGetForwardTab()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer();
-    si._ptsTabs = nullptr;
 
-    SCREEN_INFORMATION::TabStop** rgpTabs = CreateSampleList();
+    std::list<short> inputData = { 3, 5, 6, 10, 15, 17 };
+    si._tabStops = inputData;
+
+    const COORD coordScreenBufferSize = si.GetScreenBufferSize();
+    COORD coordCursor;
+    coordCursor.Y = coordScreenBufferSize.Y / 2; // in the middle of the buffer, it doesn't make a difference.
+
+    Log::Comment(L"Find next tab from before front.");
     {
-        si._ptsTabs = rgpTabs[0];
+        coordCursor.X = 0;
 
-        const COORD coordScreenBufferSize = si.GetScreenBufferSize();
-        COORD coordCursor;
-        coordCursor.Y = coordScreenBufferSize.Y / 2; // in the middle of the buffer, it doesn't make a difference.
+        COORD coordCursorExpected;
+        coordCursorExpected = coordCursor;
+        coordCursorExpected.X = inputData.front();
 
-        Log::Comment(L"Find next tab from before front.");
-        {
-            coordCursor.X = 0;
-
-            COORD coordCursorExpected;
-            coordCursorExpected = coordCursor;
-            coordCursorExpected.X = rgSampleListValues[0];
-
-            COORD const coordCursorResult = si.GetForwardTab(coordCursor);
-            VERIFY_ARE_EQUAL(coordCursorExpected, coordCursorResult, L"Cursor advanced to first tab stop from sample list.");
-        }
-
-        Log::Comment(L"Find next tab from in the middle.");
-        {
-            coordCursor.X = 6;
-
-            COORD coordCursorExpected;
-            coordCursorExpected = coordCursor;
-            coordCursorExpected.X = rgSampleListValues[2];
-
-            COORD const coordCursorResult = si.GetForwardTab(coordCursor);
-            VERIFY_ARE_EQUAL(coordCursorExpected, coordCursorResult, L"Cursor advanced to middle tab stop from sample list.");
-        }
-
-        Log::Comment(L"Find next tab from end.");
-        {
-            coordCursor.X = 30;
-
-            COORD coordCursorExpected;
-            coordCursorExpected = coordCursor;
-            coordCursorExpected.X = coordScreenBufferSize.X - 1;
-
-            COORD const coordCursorResult = si.GetForwardTab(coordCursor);
-            VERIFY_ARE_EQUAL(coordCursorExpected, coordCursorResult, L"Cursor advanced to end of screen buffer.");
-        }
-
-        FreeSampleList(rgpTabs);
-        si._ptsTabs = nullptr; // don't let global free try to clean this up
+        COORD const coordCursorResult = si.GetForwardTab(coordCursor);
+        VERIFY_ARE_EQUAL(coordCursorExpected, coordCursorResult, L"Cursor advanced to first tab stop from sample list.");
     }
+
+    Log::Comment(L"Find next tab from in the middle.");
+    {
+        coordCursor.X = 6;
+
+        COORD coordCursorExpected;
+        coordCursorExpected = coordCursor;
+        coordCursorExpected.X = *std::next(inputData.begin(), 3);
+
+        COORD const coordCursorResult = si.GetForwardTab(coordCursor);
+        VERIFY_ARE_EQUAL(coordCursorExpected, coordCursorResult, L"Cursor advanced to middle tab stop from sample list.");
+    }
+
+    Log::Comment(L"Find next tab from end.");
+    {
+        coordCursor.X = 30;
+
+        COORD coordCursorExpected;
+        coordCursorExpected = coordCursor;
+        coordCursorExpected.X = coordScreenBufferSize.X - 1;
+
+        COORD const coordCursorResult = si.GetForwardTab(coordCursor);
+        VERIFY_ARE_EQUAL(coordCursorExpected, coordCursorResult, L"Cursor advanced to end of screen buffer.");
+    }
+
+    si._tabStops.clear();
 }
 
 void ScreenBufferTests::TestGetReverseTab()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer();
-    si._ptsTabs = nullptr;
 
-    SCREEN_INFORMATION::TabStop** rgpTabs = CreateSampleList();
+    std::list<short> inputData = { 3, 5, 6, 10, 15, 17 };
+    si._tabStops = inputData;
+
+    COORD coordCursor;
+    coordCursor.Y = si.GetScreenBufferSize().Y / 2; // in the middle of the buffer, it doesn't make a difference.
+
+    Log::Comment(L"Find previous tab from before front.");
     {
-        si._ptsTabs = rgpTabs[0];
+        coordCursor.X = 1;
 
-        COORD coordCursor;
-        coordCursor.Y = si.GetScreenBufferSize().Y / 2; // in the middle of the buffer, it doesn't make a difference.
+        COORD coordCursorExpected;
+        coordCursorExpected = coordCursor;
+        coordCursorExpected.X = 0;
 
-        Log::Comment(L"Find previous tab from before front.");
-        {
-            coordCursor.X = 1;
-
-            COORD coordCursorExpected;
-            coordCursorExpected = coordCursor;
-            coordCursorExpected.X = 0;
-
-            COORD const coordCursorResult = si.GetReverseTab(coordCursor);
-            VERIFY_ARE_EQUAL(coordCursorExpected, coordCursorResult, L"Cursor adjusted to beginning of the buffer when it started before sample list.");
-        }
-
-        Log::Comment(L"Find previous tab from in the middle.");
-        {
-            coordCursor.X = 6;
-
-            COORD coordCursorExpected;
-            coordCursorExpected = coordCursor;
-            coordCursorExpected.X = rgSampleListValues[1];
-
-            COORD const coordCursorResult = si.GetReverseTab(coordCursor);
-            VERIFY_ARE_EQUAL(coordCursorExpected, coordCursorResult, L"Cursor adjusted back one tab spot from middle of sample list.");
-        }
-
-        Log::Comment(L"Find next tab from end.");
-        {
-            coordCursor.X = 30;
-
-            COORD coordCursorExpected;
-            coordCursorExpected = coordCursor;
-            coordCursorExpected.X = rgSampleListValues[4];
-
-            COORD const coordCursorResult = si.GetReverseTab(coordCursor);
-            VERIFY_ARE_EQUAL(coordCursorExpected, coordCursorResult, L"Cursor adjusted to last item in the sample list from position beyond end.");
-        }
-
-        FreeSampleList(rgpTabs);
-        si._ptsTabs = nullptr; // don't let global free try to clean this up
+        COORD const coordCursorResult = si.GetReverseTab(coordCursor);
+        VERIFY_ARE_EQUAL(coordCursorExpected, coordCursorResult, L"Cursor adjusted to beginning of the buffer when it started before sample list.");
     }
+
+    Log::Comment(L"Find previous tab from in the middle.");
+    {
+        coordCursor.X = 6;
+
+        COORD coordCursorExpected;
+        coordCursorExpected = coordCursor;
+        coordCursorExpected.X = *std::next(inputData.begin());
+
+        COORD const coordCursorResult = si.GetReverseTab(coordCursor);
+        VERIFY_ARE_EQUAL(coordCursorExpected, coordCursorResult, L"Cursor adjusted back one tab spot from middle of sample list.");
+    }
+
+    Log::Comment(L"Find next tab from end.");
+    {
+        coordCursor.X = 30;
+
+        COORD coordCursorExpected;
+        coordCursorExpected = coordCursor;
+        coordCursorExpected.X = inputData.back();
+
+        COORD const coordCursorResult = si.GetReverseTab(coordCursor);
+        VERIFY_ARE_EQUAL(coordCursorExpected, coordCursorResult, L"Cursor adjusted to last item in the sample list from position beyond end.");
+    }
+
+    si._tabStops.clear();
 }
 
 void ScreenBufferTests::TestAreTabsSet()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer();
-    si._ptsTabs = nullptr;
 
+    si._tabStops.clear();
     VERIFY_IS_FALSE(si.AreTabsSet());
 
-    SCREEN_INFORMATION::TabStop stop;
-    si._ptsTabs = &stop;
-
+    si.AddTabStop(1);
     VERIFY_IS_TRUE(si.AreTabsSet());
-
-    si._ptsTabs = nullptr; // don't let global free try to clean this up
 }
 
 void ScreenBufferTests::EraseAllTests()

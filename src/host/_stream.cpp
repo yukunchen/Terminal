@@ -433,7 +433,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                     goto EndWhile;
                     break;
                 case UNICODE_TAB:
-                    if (screenInfo.AreTabsSet())
+                    if (screenInfo.InVTMode())
                     {
                         goto EndWhile;
                     }
@@ -752,7 +752,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
         {
             // if VT-style tabs are set, then handle them the VT way, including not inserting spaces.
             // just move the cursor to the next tab stop.
-            if (screenInfo.AreTabsSet())
+            if (screenInfo.InVTMode())
             {
                 const COORD cCursorOld = cursor.GetPosition();
                 // Get Forward tab handles tabbing past the end of the buffer

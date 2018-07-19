@@ -39,7 +39,7 @@ public:
     void operator=(CharRowCellReference&&) = delete;
 
     void operator=(const std::vector<wchar_t>& chars);
-    operator std::vector<wchar_t>() const;
+    operator std::wstring_view() const;
 
     const_iterator begin() const;
     const_iterator end() const;
@@ -57,7 +57,7 @@ private:
     CharRowCell& _cellData();
     const CharRowCell& _cellData() const;
 
-    std::vector<wchar_t> _glyphData() const;
+    std::wstring_view _glyphData() const;
 };
 
 bool operator==(const CharRowCellReference& ref, const std::vector<wchar_t>& glyph);
