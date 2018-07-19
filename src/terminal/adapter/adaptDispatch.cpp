@@ -1164,56 +1164,6 @@ bool AdaptDispatch::EnableCursorBlinking(const bool fEnable)
 }
 
 // Routine Description:
-// - Generalizes inserting and deleting lines for IL and DL sequences.
-// Arguments:
-// - uiDistance - Magnitude of the insert/delete
-// - fInsert - true for insert lines, false for delete.
-// Return Value:
-// - True if handled successfully. False otherwise.
-bool AdaptDispatch::_InsertDeleteLines(_In_ unsigned int const uiDistance, const bool fInsert) const
-{
-    // We'll be doing short math on the distance since all console APIs use shorts. So check that we can successfully convert the uint into a short first.
-    SHORT sDistance;
-    bool fSuccess = SUCCEEDED(UIntToShort(uiDistance, &sDistance));
-
-    if (fSuccess)
-    {
-        // get current cursor
-        CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
-        csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-        fSuccess = !!_pConApi->GetConsoleScreenBufferInfoEx(&csbiex);
-
-        if (fSuccess)
-        {
-            SMALL_RECT Screen = csbiex.srWindow;
-            COORD Cursor = csbiex.dwCursorPosition;
-
-            // Rectangle to cut out of the existing buffer
-            SMALL_RECT srScroll;
-            srScroll.Left = 0;
-            srScroll.Right = Screen.Right - Screen.Left;
-            srScroll.Top = Cursor.Y;
-            srScroll.Bottom = Screen.Bottom;
-            // Paste coordinate for cut text above
-            COORD coordDestination;
-            coordDestination.X = 0;
-            coordDestination.Y = (Cursor.Y) + (sDistance * (fInsert? 1 : -1));
-
-            SMALL_RECT srClip = csbiex.srWindow;
-            srClip.Top = Cursor.Y;
-
-            // Fill character for remaining space left behind by "cut" operation (or for fill if we "cut" the entire line)
-            CHAR_INFO ciFill;
-            ciFill.Attributes = csbiex.wAttributes;
-            ciFill.Char.UnicodeChar = L' ';
-            fSuccess = !!_pConApi->ScrollConsoleScreenBufferW(&srScroll, &srClip, coordDestination, &ciFill);
-        }
-    }
-
-    return fSuccess;
-}
-
-// Routine Description:
 // - IL - This control function inserts one or more blank lines, starting at the cursor.
 //    As lines are inserted, lines below the cursor and in the scrolling region move down.
 //    Lines scrolled off the page are lost. IL has no effect outside the page margins.
@@ -1223,7 +1173,7 @@ bool AdaptDispatch::_InsertDeleteLines(_In_ unsigned int const uiDistance, const
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::InsertLine(_In_ unsigned int const uiDistance)
 {
-    return _InsertDeleteLines(uiDistance, true);
+    return !!_pConApi->InsertLines(uiDistance);
 }
 
 // Routine Description:
@@ -1240,7 +1190,7 @@ bool AdaptDispatch::InsertLine(_In_ unsigned int const uiDistance)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::DeleteLine(_In_ unsigned int const uiDistance)
 {
-    return _InsertDeleteLines(uiDistance, false);
+    return !!_pConApi->DeleteLines(uiDistance);
 }
 
 // Routine Description:

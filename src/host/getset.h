@@ -116,3 +116,5 @@ NTSTATUS DoSrvPrivateSuppressResizeRepaint();
 void DoSrvIsConsolePty(_Out_ bool* const pIsPty);
 
 void DoSrvPrivateSetDefaultTabStops();
+void DoSrvPrivateDeleteLines(const unsigned int count);
+void DoSrvPrivateInsertLines(const unsigned int count);

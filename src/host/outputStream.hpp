@@ -146,6 +146,9 @@ public:
 
     BOOL IsConsolePty(_Out_ bool* const pIsPty) const override;
 
+    BOOL DeleteLines(const unsigned int count) override;
+    BOOL InsertLines(const unsigned int count) override;
+
 private:
     Microsoft::Console::IIoProvider& _io;
 

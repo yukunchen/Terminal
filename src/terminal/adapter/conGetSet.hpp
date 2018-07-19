@@ -94,5 +94,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual BOOL MoveCursorVertically(const short lines) = 0;
 
+        virtual BOOL DeleteLines(const unsigned int count) = 0;
+        virtual BOOL InsertLines(const unsigned int count) = 0;
+
     };
 }
