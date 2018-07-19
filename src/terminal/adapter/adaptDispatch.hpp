@@ -140,7 +140,6 @@ namespace Microsoft::Console::VirtualTerminal
         void _SetGraphicsOptionHelper(const GraphicsOptions opt, _Inout_ WORD* const pAttr) const;
         bool _InsertDeleteHelper(_In_ unsigned int const uiCount, const bool fIsInsert) const;
         bool _ScrollMovement(const ScrollDirection dir, _In_ unsigned int const uiDistance) const;
-        bool _InsertDeleteLines(_In_ unsigned int const uiDistance, const bool fInsert) const;
         static void s_DisableAllColors(_Inout_ WORD* const pAttr, const bool fIsForeground);
         static void s_ApplyColors(_Inout_ WORD* const pAttr, const WORD wApplyThis, const bool fIsForeground);
 

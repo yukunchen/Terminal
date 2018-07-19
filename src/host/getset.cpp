@@ -1791,3 +1791,65 @@ void DoSrvPrivateSetDefaultTabStops()
 {
     ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().SetDefaultVtTabStops();
 }
+
+// Routine Description:
+// - internal logic for adding or removing lines in the active screen buffer
+// Parameters:
+// - count - the number of lines to modify
+// - insert - true if inserting lines, false if deleting lines
+void DoSrvPrivateModifyLinesImpl(const unsigned int count, const bool insert)
+{
+    auto& screenInfo = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer();
+    auto& textBuffer = screenInfo.GetTextBuffer();
+    const auto cursorPosition = textBuffer.GetCursor().GetPosition();
+    const auto margins = screenInfo.GetAbsoluteScrollMargins();
+    if (margins.IsWithinViewport(&cursorPosition))
+    {
+        const auto screenEdges = screenInfo.GetScreenEdges();
+        // Rectangle to cut out of the existing buffer
+        SMALL_RECT srScroll;
+        srScroll.Left = 0;
+        srScroll.Right = screenEdges.Right - screenEdges.Left;
+        srScroll.Top = cursorPosition.Y;
+        srScroll.Bottom = screenEdges.Bottom;
+        // Paste coordinate for cut text above
+        COORD coordDestination;
+        coordDestination.X = 0;
+        if (insert)
+        {
+            coordDestination.Y = (cursorPosition.Y) + gsl::narrow<short>(count);
+        }
+        else
+        {
+            coordDestination.Y = (cursorPosition.Y) - gsl::narrow<short>(count);
+        }
+
+        SMALL_RECT srClip = screenEdges;
+        srClip.Top = cursorPosition.Y;
+
+        LOG_IF_FAILED(DoSrvScrollConsoleScreenBufferW(screenInfo,
+                                                      &srScroll,
+                                                      &coordDestination,
+                                                      &srClip,
+                                                      UNICODE_SPACE,
+                                                      screenInfo.GetAttributes().GetLegacyAttributes()));
+    }
+}
+
+// Routine Description:
+// - a private API call for deleting lines in the active screen buffer.
+// Parameters:
+// - count - the number of lines to delete
+void DoSrvPrivateDeleteLines(const unsigned int count)
+{
+    DoSrvPrivateModifyLinesImpl(count, false);
+}
+
+// Routine Description:
+// - a private API call for inserting lines in the active screen buffer.
+// Parameters:
+// - count - the number of lines to insert
+void DoSrvPrivateInsertLines(const unsigned int count)
+{
+    DoSrvPrivateModifyLinesImpl(count, true);
+}

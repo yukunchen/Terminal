@@ -717,3 +717,15 @@ BOOL ConhostInternalGetSet::IsConsolePty(_Out_ bool* const pIsPty) const
     DoSrvIsConsolePty(pIsPty);
     return TRUE;
 }
+
+BOOL ConhostInternalGetSet::DeleteLines(const unsigned int count)
+{
+    DoSrvPrivateDeleteLines(count);
+    return TRUE;
+}
+
+BOOL ConhostInternalGetSet::InsertLines(const unsigned int count)
+{
+    DoSrvPrivateInsertLines(count);
+    return TRUE;
+}

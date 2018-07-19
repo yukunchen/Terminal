@@ -714,6 +714,18 @@ public:
         return _fIsConsolePtyResult;
     }
 
+    BOOL DeleteLines(const unsigned int /*count*/)
+    {
+        Log::Comment(L"DeleteLines MOCK called...");
+        return TRUE;
+    }
+
+    BOOL InsertLines(const unsigned int /*count*/)
+    {
+        Log::Comment(L"InsertLines MOCK called...");
+        return TRUE;
+    }
+
     void _IncrementCoordPos(_Inout_ COORD* pcoord)
     {
         pcoord->X++;
