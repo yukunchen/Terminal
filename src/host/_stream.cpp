@@ -147,7 +147,7 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
         screenInfo.SetScrollMargins(relativeMargins);
 
         // Move the viewport down
-        auto hr = screenInfo.SetViewportOrigin(TRUE, newOrigin);
+        auto hr = screenInfo.SetViewportOrigin(true, newOrigin, true);
         if (FAILED(hr))
         {
             return NTSTATUS_FROM_HRESULT(hr);

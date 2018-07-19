@@ -57,7 +57,7 @@ class ScreenBufferTests
     {
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         m_state->PrepareNewTextBufferInfo();
-        VERIFY_SUCCEEDED(gci.GetActiveOutputBuffer().SetViewportOrigin(true, {0, 0}));
+        VERIFY_SUCCEEDED(gci.GetActiveOutputBuffer().SetViewportOrigin(true, {0, 0}, true));
 
         return true;
     }
@@ -320,7 +320,7 @@ void ScreenBufferTests::TestReverseLineFeed()
     Log::Comment(L"Case 3: RI from top of viewport, when viewport is below top of buffer");
 
     cursor.SetPosition({0, 5});
-    VERIFY_SUCCEEDED(screenInfo.SetViewportOrigin(TRUE, {0, 5}));
+    VERIFY_SUCCEEDED(screenInfo.SetViewportOrigin(true, {0, 5}, true));
     bufferWriter->PrintString(L"ABCDEFGH", 9);
     VERIFY_ARE_EQUAL(cursor.GetPosition().X, 9);
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 5);
@@ -771,7 +771,7 @@ void ScreenBufferTests::EraseAllTests()
     Log::Comment(L"Case 3: multiple lines at the bottom of the buffer\n");
 
     cursor.SetPosition({0, 275});
-    VERIFY_SUCCEEDED(si.SetViewportOrigin(TRUE, {0, 220}));
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, {0, 220}, true));
     bufferWriter->PrintString(L"bar\nbar\nbar", 11);
     viewport = si._viewport;
     VERIFY_ARE_EQUAL(cursor.GetPosition().X, 3);
@@ -944,7 +944,7 @@ void ScreenBufferTests::VtSoftResetCursorPosition()
     Log::Comment(NoThrowString().Format(
         L"Make sure the viewport is at 0,0"
     ));
-    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({0, 0})));
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({0, 0}), true));
 
     Log::Comment(NoThrowString().Format(
         L"Move the cursor to 2,2, then execute a soft reset.\n"
@@ -1161,7 +1161,7 @@ void ScreenBufferTests::VtEraseAllPersistCursor()
     Log::Comment(NoThrowString().Format(
         L"Make sure the viewport is at 0,0"
     ));
-    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({0, 0})));
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({0, 0}), true));
 
     Log::Comment(NoThrowString().Format(
         L"Move the cursor to 2,2, then execute a Erase All.\n"
@@ -1193,7 +1193,7 @@ void ScreenBufferTests::VtEraseAllPersistCursorFillColor()
     Log::Comment(NoThrowString().Format(
         L"Make sure the viewport is at 0,0"
     ));
-    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({0, 0})));
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({0, 0}), true));
 
     Log::Comment(NoThrowString().Format(
         L"Change the colors to dark_red on bright_blue, then execute a Erase All.\n"

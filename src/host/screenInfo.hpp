@@ -109,8 +109,6 @@ public:
     void SetBufferViewport(const Microsoft::Console::Types::Viewport newViewport);
     // Forwarders to Window if we're the active buffer.
     [[nodiscard]]
-    NTSTATUS SetViewportOrigin(const bool fAbsolute, const COORD coordWindowOrigin);
-    [[nodiscard]]
     NTSTATUS SetViewportOrigin(const bool fAbsolute, const COORD coordWindowOrigin, const bool updateBottom);
     void SetViewportRect(const Microsoft::Console::Types::Viewport newViewport);
     bool SendNotifyBeep() const;
