@@ -603,7 +603,7 @@ void SCREEN_INFORMATION::NotifyAccessibilityEventing(const short sStartX,
             try
             {
                 const OutputCell cell = ReadLine(RowIndex, sStartX, 1).at(0);
-                const LONG charAndAttr = MAKELONG(Utf16ToUcs2(cell.Chars()),
+                const LONG charAndAttr = MAKELONG(Utf16ToUcs2({ cell.Chars().data(), cell.Chars().size() }),
                                                   gci.GenerateLegacyAttributes(cell.TextAttr()));
                 _pAccessibilityNotifier->NotifyConsoleUpdateSimpleEvent(MAKELONG(sStartX, sStartY),
                                                                         charAndAttr);

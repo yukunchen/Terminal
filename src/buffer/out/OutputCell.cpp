@@ -119,7 +119,7 @@ CHAR_INFO OutputCell::ToCharInfo()
     }
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     CHAR_INFO charInfo;
-    charInfo.Char.UnicodeChar = Utf16ToUcs2(_charData);
+    charInfo.Char.UnicodeChar = Utf16ToUcs2({ _charData.data(), _charData.size() });
     charInfo.Attributes = _dbcsAttribute.GeneratePublicApiAttributeFormat();
     charInfo.Attributes |= gci.GenerateLegacyAttributes(_textAttribute);
     return charInfo;

@@ -623,7 +623,7 @@ CodepointWidth GetCharWidth(const wchar_t wch) noexcept
     }
 }
 
-wchar_t Utf16ToUcs2(const std::vector<wchar_t>& charData)
+wchar_t Utf16ToUcs2(const std::wstring_view charData)
 {
     THROW_HR_IF(E_INVALIDARG, charData.empty());
     if (charData.size() > 1)
