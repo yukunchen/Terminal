@@ -17,9 +17,6 @@
 #define PEMAGIC         ((WORD)'P'+((WORD)'E'<<8))
 static CONSOLE_STATE_INFO g_csi;
 
-
-void GetLinkProperties(_In_ PCWSTR pszLinkName, _Inout_ CONSOLE_STATE_INFO * const pConsoleStateInfo);
-
 using namespace Microsoft::WRL;
 
 // This class exposes console property sheets for use when launching the filesystem shortcut properties dialog.
@@ -110,7 +107,9 @@ private:
 
                 // Not all console shortcuts have console-specific properties. We just take the registry defaults in
                 // those cases.
-                GetLinkProperties(gpStateInfo->LinkTitle, gpStateInfo);
+                BOOL readSettings = FALSE;
+                NTSTATUS s = ShortcutSerialization::s_GetLinkValues(gpStateInfo, &readSettings, nullptr, 0, nullptr, 0, nullptr, nullptr, nullptr);
+                hr = HRESULT_FROM_NT(s);
             }
             else
             {
