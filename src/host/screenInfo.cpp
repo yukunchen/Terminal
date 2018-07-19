@@ -60,9 +60,9 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     _rcAltSavedClientNew{ 0 },
     _rcAltSavedClientOld{ 0 },
     _fAltWindowChanged{ false },
-    _ptsTabs{ nullptr },
     _Attributes{ ciFill.Attributes },
-    _PopupAttributes{ ciPopupFill.Attributes }
+    _PopupAttributes{ ciPopupFill.Attributes },
+    _tabStops{}
 {
     LineChar[0] = UNICODE_BOX_DRAW_LIGHT_DOWN_AND_RIGHT;
     LineChar[1] = UNICODE_BOX_DRAW_LIGHT_DOWN_AND_LEFT;
@@ -87,7 +87,6 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
 SCREEN_INFORMATION::~SCREEN_INFORMATION()
 {
     _FreeOutputStateMachine();
-    ClearTabStops();
 }
 
 // Routine Description:
@@ -2130,62 +2129,15 @@ bool SCREEN_INFORMATION::_IsInPtyMode() const
 // Parameters:
 // - sColumn: the column to add a tab stop to.
 // Return value:
-// - STATUS_SUCCESS if handled successfully. Otherwise, an approriate status code indicating the error.
-//      (This is most likely an allocation failure on the instantiation of the new tab stop.)
-// Note:
-//  This screen buffer is responsible for the lifetime of any tab stops added to it. They can all be freed with ClearTabStops()
-[[nodiscard]]
-NTSTATUS SCREEN_INFORMATION::AddTabStop(const SHORT sColumn)
+// - none
+// Note: may throw exception on allocation error
+void SCREEN_INFORMATION::AddTabStop(const SHORT sColumn)
 {
-    NTSTATUS Status = STATUS_NO_MEMORY;
-
-    TabStop* prev = _ptsTabs;
-    if (prev == nullptr || prev->sColumn > sColumn) //if there is no head, or we should insert at the head
+    if (std::find(_tabStops.begin(), _tabStops.end(), sColumn) == _tabStops.end())
     {
-        _ptsTabs = new(std::nothrow) TabStop();
-        Status = NT_TESTNULL(_ptsTabs);
-        if (NT_SUCCESS(Status))
-        {
-            _ptsTabs->sColumn = sColumn;
-            _ptsTabs->ptsNext = prev;
-        }
+        _tabStops.push_back(sColumn);
+        _tabStops.sort();
     }
-    else
-    {
-        bool fSearching = true;
-        while (fSearching)
-        {
-            // if there's already a tabstop here, don't add another
-            if (prev->sColumn == sColumn)
-            {
-                break;
-            }
-            // if we're at the end, or we should insert after prev
-            if (prev->ptsNext == nullptr || prev->ptsNext->sColumn > sColumn)
-            {
-                fSearching = false;
-                break;
-            }
-            else
-            {
-                prev = prev->ptsNext;
-            }
-        }
-        if (!fSearching) //we broke out by finding the right spot to insert,
-        {               // NOT by finding an existing tabstop here.
-            TabStop* ptsNewTabStop = new(std::nothrow) TabStop();
-            Status = NT_TESTNULL(ptsNewTabStop);
-            if (NT_SUCCESS(Status))
-            {
-                ptsNewTabStop->sColumn = sColumn;
-                ptsNewTabStop->ptsNext = prev->ptsNext;
-                prev->ptsNext = ptsNewTabStop;
-            }
-        }
-
-    }
-    return Status;
-
 }
 
 // Routine Description:
@@ -2194,16 +2146,9 @@ NTSTATUS SCREEN_INFORMATION::AddTabStop(const SHORT sColumn)
 // <none>
 // Return value:
 // <none>
-void SCREEN_INFORMATION::ClearTabStops()
+void SCREEN_INFORMATION::ClearTabStops() noexcept
 {
-    TabStop* curr = _ptsTabs;
-    while (curr != nullptr)
-    {
-        TabStop* prev = curr;
-        curr = curr->ptsNext;
-        delete prev;
-    }
-    _ptsTabs = nullptr;
+    _tabStops.clear();
 }
 
 // Routine Description:
@@ -2212,61 +2157,20 @@ void SCREEN_INFORMATION::ClearTabStops()
 // - sColumn - The column to clear the tab stop for.
 // Return value:
 // <none>
-void SCREEN_INFORMATION::ClearTabStop(const SHORT sColumn)
+void SCREEN_INFORMATION::ClearTabStop(const SHORT sColumn) noexcept
 {
-    if (AreTabsSet())
-    {
-        // When we start, there is no previous item.
-        TabStop* prev = nullptr;
-        // Take the starting "current" item from the class storage.
-        TabStop* curr = _ptsTabs;
-
-        // Dig through every element in the list
-        while (curr != nullptr)
-        {
-            // Hold pointer to next item only after we're sure that the current is valid.
-            TabStop* next = curr->ptsNext; // Will be nullptr if it's the end of the list. This is OK.
-
-            // If the current one matches the column, take it out of the linked list and join the prev and curr items together.
-            if (curr->sColumn == sColumn)
-            {
-                if (prev == nullptr)
-                {
-                    // If we had no previous, we're at the list head and need to update the stored list head pointer to the following item.
-                    _ptsTabs = next;
-                }
-                else
-                {
-                    // If we had a previous, then just connect the next to the "next" pointer of the previous.
-                    prev->ptsNext = next;
-                }
-
-                // And delete the allocation for the current now that nothing is pointing to it anymore.
-                delete curr;
-
-                // Walk forward to the next item.
-                // Prev remains the same as we deleted what would have moved there.
-                curr = next;
-            }
-            else
-            {
-                // Walk forward to the next item.
-                prev = curr;
-                curr = next;
-            }
-        }
-    }
+    _tabStops.remove(sColumn);
 }
 
 // Routine Description:
 // - Places the location that a forwards tab would take cCurrCursorPos to into pcNewCursorPos
 // Parameters:
 // - cCurrCursorPos - The initial cursor location
-// - pcNewCursorPos - The cursor location after a forwards tab.
 // Return value:
 // - <none>
-COORD SCREEN_INFORMATION::GetForwardTab(const COORD cCurrCursorPos)
+COORD SCREEN_INFORMATION::GetForwardTab(const COORD cCurrCursorPos) const noexcept
 {
+
     COORD cNewCursorPos = cCurrCursorPos;
     SHORT sWidth = GetScreenBufferSize().X - 1;
     if (cCurrCursorPos.X == sWidth)
@@ -2274,27 +2178,20 @@ COORD SCREEN_INFORMATION::GetForwardTab(const COORD cCurrCursorPos)
         cNewCursorPos.X = 0;
         cNewCursorPos.Y += 1;
     }
+    else if (_tabStops.empty() || cCurrCursorPos.X >= _tabStops.back())
+    {
+        cNewCursorPos.X = sWidth;
+    }
     else
     {
-        TabStop* ptsNext = _ptsTabs;
-        while (ptsNext != nullptr)
+        // search for next tab stop
+        for (auto it = _tabStops.cbegin(); it != _tabStops.cend(); ++it)
         {
-            if (cCurrCursorPos.X >= ptsNext->sColumn)
+            if (*it > cCurrCursorPos.X)
             {
-                ptsNext = ptsNext->ptsNext;
-            }
-            else
-            {
+                cNewCursorPos.X = *it;
                 break;
             }
-        }
-        if (ptsNext == nullptr)
-        {
-            cNewCursorPos.X = sWidth;
-        }
-        else
-        {
-            cNewCursorPos.X = ptsNext->sColumn;
         }
     }
     return cNewCursorPos;
@@ -2304,29 +2201,26 @@ COORD SCREEN_INFORMATION::GetForwardTab(const COORD cCurrCursorPos)
 // - Places the location that a backwards tab would take cCurrCursorPos to into pcNewCursorPos
 // Parameters:
 // - cCurrCursorPos - The initial cursor location
-// - pcNewCursorPos - The cursor location after a reverse tab.
 // Return value:
 // - <none>
-COORD SCREEN_INFORMATION::GetReverseTab(const COORD cCurrCursorPos)
+COORD SCREEN_INFORMATION::GetReverseTab(const COORD cCurrCursorPos) const noexcept
 {
     COORD cNewCursorPos = cCurrCursorPos;
-    // if we're at 0, or there are NO tabs, or the first tab is farther than where we are
-    if (cCurrCursorPos.X == 0 || (_ptsTabs == nullptr) || (_ptsTabs->sColumn >= cCurrCursorPos.X))
+    // if we're at 0, or there are NO tabs, or the first tab is farther right than where we are
+    if (cCurrCursorPos.X == 0 || _tabStops.empty() || _tabStops.front() >= cCurrCursorPos.X)
     {
         cNewCursorPos.X = 0;
     }
-    else // _ptsTabs != null, and we're past the first tab stop
+    else
     {
-        TabStop* ptsCurr;
-        // while we still have at least one to iterate over, and we are still farther than the current tabstop
-        for (ptsCurr = _ptsTabs;
-             ptsCurr->ptsNext != nullptr && cCurrCursorPos.X > ptsCurr->ptsNext->sColumn;
-             ptsCurr = ptsCurr->ptsNext)
+        for (auto it = _tabStops.crbegin(); it != _tabStops.crend(); ++it)
         {
-            ; //just iterate through till the loop is done.
+            if (*it < cCurrCursorPos.X)
+            {
+                cNewCursorPos.X = *it;
+                break;
+            }
         }
-
-        cNewCursorPos.X = ptsCurr->sColumn;
     }
     return cNewCursorPos;
 }
@@ -2337,9 +2231,22 @@ COORD SCREEN_INFORMATION::GetReverseTab(const COORD cCurrCursorPos)
 // <none>
 // Return value:
 // - true if any VT-style tab stops have been set
-bool SCREEN_INFORMATION::AreTabsSet()
+bool SCREEN_INFORMATION::AreTabsSet() const noexcept
 {
-    return _ptsTabs != nullptr;
+    return !_tabStops.empty();
+}
+
+// Routine Description:
+// - adds default tab stops for vt mode
+void SCREEN_INFORMATION::SetDefaultVtTabStops()
+{
+    _tabStops.clear();
+    const short width = GetScreenBufferSize().X - 1;
+    for(short pos = 0; pos <= width; pos += TAB_SIZE)
+    {
+        AddTabStop(pos);
+    }
+    AddTabStop(width);
 }
 
 // Routine Description:

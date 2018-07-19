@@ -1545,6 +1545,9 @@ bool AdaptDispatch::HardReset()
         fSuccess = SoftReset();
     }
 
+    // delete all current tab stops and reapply
+    _pConApi->PrivateSetDefaultTabStops();
+
     return fSuccess;
 }
 

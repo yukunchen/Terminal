@@ -495,6 +495,16 @@ BOOL ConhostInternalGetSet::PrivateTabClear(const bool fClearAll)
 }
 
 // Routine Description:
+// - Connects the PrivateSetDefaultTabStops call directly into the private api point
+// Return Value:
+// - TRUE
+BOOL ConhostInternalGetSet::PrivateSetDefaultTabStops()
+{
+    DoSrvPrivateSetDefaultTabStops();
+    return TRUE;
+}
+
+// Routine Description:
 // - Connects the PrivateEnableVT200MouseMode call directly into our Driver Message servicing call inside Conhost.exe
 //   PrivateEnableVT200MouseMode is an internal-only "API" call that the vt commands can execute,
 //     but it is not represented as a function call on out public API surface.
