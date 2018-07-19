@@ -759,5 +759,5 @@ void Selection::SelectAll()
     SelectNewRegion(coordNewSelStart, coordNewSelEnd);
 
     // restore the old window position
-    LOG_IF_FAILED(screenInfo.SetViewportOrigin(TRUE, coordWindowOrigin));
+    LOG_IF_FAILED(screenInfo.SetViewportOrigin(true, coordWindowOrigin, true));
 }

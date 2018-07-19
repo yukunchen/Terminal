@@ -753,7 +753,7 @@ void Window::VerticalScroll(const WORD wScrollCommand, const WORD wAbsoluteChang
     }
 
     NewOrigin.Y = std::clamp(NewOrigin.Y, 0i16, gsl::narrow<SHORT>(sScreenBufferSizeY - ScreenInfo.GetScreenWindowSizeY()));
-    LOG_IF_FAILED(ScreenInfo.SetViewportOrigin(TRUE, NewOrigin));
+    LOG_IF_FAILED(ScreenInfo.SetViewportOrigin(true, NewOrigin, false));
 }
 
 // Routine Description:
@@ -827,7 +827,7 @@ void Window::HorizontalScroll(const WORD wScrollCommand, const WORD wAbsoluteCha
     }
     }
     NewOrigin.X = std::clamp(NewOrigin.X, 0i16, gsl::narrow<SHORT>(sScreenBufferSizeX - ScreenInfo.GetScreenWindowSizeX()));
-    LOG_IF_FAILED(ScreenInfo.SetViewportOrigin(TRUE, NewOrigin));
+    LOG_IF_FAILED(ScreenInfo.SetViewportOrigin(true, NewOrigin, false));
 }
 
 BOOL Window::EnableBothScrollBars()

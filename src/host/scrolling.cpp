@@ -157,7 +157,7 @@ void Scrolling::s_HandleMouseWheel(_In_ bool isMouseWheel,
             {
                 NewOrigin.Y = coordBufferSize.Y - ScreenInfo.GetScreenWindowSizeY();
             }
-            LOG_IF_FAILED(ScreenInfo.SetViewportOrigin(TRUE, NewOrigin));
+            LOG_IF_FAILED(ScreenInfo.SetViewportOrigin(true, NewOrigin, false));
         }
     }
     else if (isMouseHWheel && s_ucWheelScrollChars > 0)
@@ -196,7 +196,7 @@ void Scrolling::s_HandleMouseWheel(_In_ bool isMouseWheel,
                 NewOrigin.X = coordBufferSize.X - ScreenInfo.GetScreenWindowSizeX();
             }
 
-            LOG_IF_FAILED(ScreenInfo.SetViewportOrigin(TRUE, NewOrigin));
+            LOG_IF_FAILED(ScreenInfo.SetViewportOrigin(true, NewOrigin, false));
         }
     }
 }
