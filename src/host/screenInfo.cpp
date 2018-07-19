@@ -62,7 +62,8 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     _fAltWindowChanged{ false },
     _Attributes{ ciFill.Attributes },
     _PopupAttributes{ ciPopupFill.Attributes },
-    _tabStops{}
+    _tabStops{},
+    _virtualBottom{ 0 }
 {
     LineChar[0] = UNICODE_BOX_DRAW_LIGHT_DOWN_AND_RIGHT;
     LineChar[1] = UNICODE_BOX_DRAW_LIGHT_DOWN_AND_LEFT;
@@ -722,9 +723,28 @@ void SCREEN_INFORMATION::SetViewportSize(const COORD* const pcoordSize)
     _InternalSetViewportSize(pcoordSize, false, false);
 }
 
+// Method Description:
+// - Update the origin of the buffer's viewport. You can either move the
+//      viewport with a delta relative to it's current location, or set it's
+//      absolute origin. Either way leaves the dimensions of the viewport
+//      unchanged. Also potentially updates our "virtual bottom", the last real
+//      location of the viewport in the buffer.
+//  Also notifies the window implementation to update it's scrollbars.
+// Arguments:
+// - fAbsolute: If true, coordWindowOrigin is the absolute location of the origin of the new viewport.
+//      If false, coordWindowOrigin is a delta to move the viewport relative to it's current position.
+// - coordWindowOrigin: Either the new absolute position of the origin of the
+//      viewport, or a delta to add to the current viewport location.
+// - updateBottom: If true, update our virtual bottom position. This should be
+//      false if we're moving the viewport in response to the users scrolling up
+//      and down in the buffer, but API calls should set this to true.
+// Return Value:
+// - STATUS_INVALID_PARAMETER if the new viewport would be outside the buffer,
+//      else STATUS_SUCCESS
 [[nodiscard]]
 NTSTATUS SCREEN_INFORMATION::SetViewportOrigin(const bool fAbsolute,
-                                               const COORD coordWindowOrigin)
+                                               const COORD coordWindowOrigin,
+                                               const bool updateBottom)
 {
     // calculate window size
     COORD WindowSize = _viewport.Dimensions();
@@ -774,6 +794,14 @@ NTSTATUS SCREEN_INFORMATION::SetViewportOrigin(const bool fAbsolute,
         // Otherwise, just store the new position and go on.
         _viewport = Viewport::FromInclusive(NewWindow);
         Tracing::s_TraceWindowViewport(NewWindow);
+    }
+
+    // Update our internal virtual bottom tracker if requested. This helps keep
+    //      the viewport's logical position consistent from the perspective of a
+    //      VT client application, even if the user scrolls the viewport with the mouse.
+    if (updateBottom)
+    {
+        UpdateBottom();
     }
 
     return STATUS_SUCCESS;
@@ -1218,6 +1246,7 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(const COORD* const pcoordSize,
     srNewViewport.Bottom = std::min(srNewViewport.Bottom, gsl::narrow<SHORT>(coordScreenBufferSize.Y - 1));
 
     _viewport = Viewport::FromInclusive(srNewViewport);
+    UpdateBottom();
     Tracing::s_TraceWindowViewport(srNewViewport);
 }
 
@@ -1605,7 +1634,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
         SHORT const sCursorHeightInViewportAfter = newCursor.GetPosition().Y - _viewport.Top();
         COORD coordCursorHeightDiff = { 0 };
         coordCursorHeightDiff.Y = sCursorHeightInViewportAfter - sCursorHeightInViewportBefore;
-        LOG_IF_FAILED(SetViewportOrigin(FALSE, coordCursorHeightDiff));
+        LOG_IF_FAILED(SetViewportOrigin(false, coordCursorHeightDiff, true));
 
         // Save old cursor size before we delete it
         ULONG const ulSize = oldCursor.GetSize();
@@ -1893,7 +1922,7 @@ void SCREEN_INFORMATION::MakeCursorVisible(const COORD CursorPosition)
 
     if (WindowOrigin.X != 0 || WindowOrigin.Y != 0)
     {
-        LOG_IF_FAILED(SetViewportOrigin(FALSE, WindowOrigin));
+        LOG_IF_FAILED(SetViewportOrigin(false, WindowOrigin, true));
     }
 }
 
@@ -2419,7 +2448,7 @@ HRESULT SCREEN_INFORMATION::VtEraseAll()
     }
 
     const COORD coordNewOrigin = {0, sNewTop};
-    RETURN_IF_FAILED(SetViewportOrigin(TRUE, coordNewOrigin));
+    RETURN_IF_FAILED(SetViewportOrigin(true, coordNewOrigin, true));
     // Restore the relative cursor position
     _viewport.ConvertFromOrigin(&relativeCursor);
     RETURN_IF_FAILED(SetCursorPosition(relativeCursor, false));
@@ -2456,7 +2485,7 @@ void SCREEN_INFORMATION::_InitializeBufferDimensions(const COORD coordScreenBuff
 {
     _viewport = Viewport::FromDimensions({0, 0},
                                          _IsInPtyMode() ? coordScreenBufferSize : coordViewportSize);
-
+    UpdateBottom();
     SetScreenBufferSize(coordScreenBufferSize);
 }
 
@@ -2859,4 +2888,54 @@ ScreenInfoCellIterator SCREEN_INFORMATION::GetCellDataAt(const COORD at) const
 ScreenInfoCellIterator SCREEN_INFORMATION::GetCellDataAt(const COORD at, const SMALL_RECT limit) const
 {
     return ScreenInfoCellIterator(*this, at, limit);
+}
+
+// Method Description:
+// - Updates our internal "virtual bottom" tracker with wherever the viewport
+//      currently is.
+//   MSFT: 17415310 If the new viewport is below where the old virtual bottom
+//      was (eg, the cursor newlined down), then re-initialize the rows from
+//      the old bottom to the new bottom with the current attributes.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void SCREEN_INFORMATION::UpdateBottom()
+{
+    const auto oldBottom = _virtualBottom;
+    const auto newBottom = _viewport.BottomInclusive();
+
+    if (_textBuffer)
+    {
+        if (newBottom > oldBottom && InVTMode())
+        {
+            const auto height = newBottom - oldBottom;
+            ROW* pRow = &_textBuffer->GetRowByOffset(newBottom);
+            for (int i = 0; i < height; i++)
+            {
+                pRow->GetAttrRow().SetAttrToEnd(0, _Attributes);
+                pRow = &_textBuffer->GetNextRow(*pRow);
+            }
+        }
+    }
+
+    _virtualBottom = newBottom;
+}
+
+// Method Description:
+// - Moves the viewport to where we last believed the "virtual bottom" was. This
+//      emulates linux terminal behavior, where there's no buffer, only a
+//      viewport. This is called by WriteChars, on output from an application in
+//      VT mode, before the output is processed by the state machine.
+//   This ensures that if a user scrolls around in the buffer, and a client
+//      application uses VT to control the cursor/buffer, those commands are
+//      still processed relative to the coordinates before the user scrolled the buffer.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void SCREEN_INFORMATION::MoveToBottom()
+{
+    const short newTop = _virtualBottom - _viewport.Height() + 1;
+    LOG_IF_NTSTATUS_FAILED(SetViewportOrigin(true, {0, newTop}, true));
 }

@@ -518,7 +518,7 @@ HRESULT DoSrvSetConsoleCursorPosition(SCREEN_INFORMATION& screenInfo,
         }
     }
 
-    RETURN_IF_NTSTATUS_FAILED(screenInfo.SetViewportOrigin(FALSE, WindowOrigin));
+    RETURN_IF_NTSTATUS_FAILED(screenInfo.SetViewportOrigin(false, WindowOrigin, true));
 
     return S_OK;
 }
