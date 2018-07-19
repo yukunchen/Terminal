@@ -118,6 +118,7 @@ public:
     BOOL PrivateForwardTab(const SHORT sNumTabs) override;
     BOOL PrivateBackwardsTab(const SHORT sNumTabs) override;
     BOOL PrivateTabClear(const bool fClearAll) override;
+    BOOL PrivateSetDefaultTabStops() override;
 
     BOOL PrivateEnableVT200MouseMode(const bool fEnabled) override;
     BOOL PrivateEnableUTF8ExtendedMouseMode(const bool fEnabled) override;

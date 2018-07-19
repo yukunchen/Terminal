@@ -577,6 +577,12 @@ public:
         return TRUE;
     }
 
+    BOOL PrivateSetDefaultTabStops()
+    {
+        Log::Comment(L"PrivateSetDefaultTabStops MOCK called...");
+        return TRUE;
+    }
+
     BOOL PrivateEnableVT200MouseMode(const bool fEnabled)
     {
         Log::Comment(L"PrivateEnableVT200MouseMode MOCK called...");

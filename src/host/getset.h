@@ -114,3 +114,5 @@ void DoSrvGetConsoleOutputCodePage(_Out_ unsigned int* const pCodePage);
 NTSTATUS DoSrvPrivateSuppressResizeRepaint();
 
 void DoSrvIsConsolePty(_Out_ bool* const pIsPty);
+
+void DoSrvPrivateSetDefaultTabStops();

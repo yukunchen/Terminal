@@ -222,19 +222,13 @@ public:
     SCREEN_INFORMATION& GetActiveBuffer();
     const SCREEN_INFORMATION& GetActiveBuffer() const;
 
-    typedef struct _TabStop
-    {
-        SHORT sColumn;
-        struct _TabStop* ptsNext = nullptr;
-    } TabStop;
-
-    [[nodiscard]]
-    NTSTATUS AddTabStop(const SHORT sColumn);
-    void ClearTabStops();
-    void ClearTabStop(const SHORT sColumn);
-    COORD GetForwardTab(const COORD cCurrCursorPos);
-    COORD GetReverseTab(const COORD cCurrCursorPos);
-    bool AreTabsSet();
+    void AddTabStop(const SHORT sColumn);
+    void ClearTabStops() noexcept;
+    void ClearTabStop(const SHORT sColumn) noexcept;
+    COORD GetForwardTab(const COORD cCurrCursorPos) const noexcept;
+    COORD GetReverseTab(const COORD cCurrCursorPos) const noexcept;
+    bool AreTabsSet() const noexcept;
+    void SetDefaultVtTabStops();
 
     TextAttribute GetAttributes() const;
     const TextAttribute* const GetPopupAttributes() const;
@@ -322,7 +316,7 @@ private:
     RECT _rcAltSavedClientOld;
     bool _fAltWindowChanged;
 
-    TabStop* _ptsTabs; // The head of the list of Tab Stops
+    std::list<short> _tabStops;
 
     TextAttribute _Attributes;
     TextAttribute _PopupAttributes;
