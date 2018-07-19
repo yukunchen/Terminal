@@ -34,7 +34,7 @@ void CharRowCellReference::operator=(const std::vector<wchar_t>& chars)
 // - implicit conversion to vector<wchar_t> operator.
 // Return Value:
 // - std::vector<wchar_t> of the glyph data in the referenced cell
-CharRowCellReference::operator std::vector<wchar_t>() const
+CharRowCellReference::operator std::wstring_view() const
 {
     return _glyphData();
 }
@@ -61,15 +61,17 @@ const CharRowCell& CharRowCellReference::_cellData() const
 // - the glyph data of the referenced cell
 // Return Value:
 // - the glyph data
-std::vector<wchar_t> CharRowCellReference::_glyphData() const
+std::wstring_view CharRowCellReference::_glyphData() const
 {
     if (_cellData().DbcsAttr().IsGlyphStored())
     {
-        return _parent.GetUnicodeStorage().GetText(_parent.GetStorageKey(_index));
+        const auto& text = _parent.GetUnicodeStorage().GetText(_parent.GetStorageKey(_index));
+
+        return { text.data(), text.size() };
     }
     else
     {
-        return { _cellData().Char() };
+        return { &_cellData().Char(), 1 };
     }
 }
 

@@ -162,16 +162,16 @@ std::vector<OutputCell> ROW::AsCells(const size_t startIndex, const size_t count
     for (size_t i = 0; i < count; ++i, ++it)
     {
         const auto index = startIndex + i;
-        const std::vector<wchar_t> glyph = _charRow.GlyphAt(index);
-        cells.emplace_back(std::wstring_view{ glyph.data(), glyph.size() }, _charRow.DbcsAttrAt(index), *it);
+        const auto glyph = _charRow.GlyphAt(index);
+        cells.emplace_back(glyph, _charRow.DbcsAttrAt(index), *it);
     }
     return cells;
 }
 
 const OutputCell ROW::at(const size_t column) const
 {
-    const std::vector<wchar_t> glyph = _charRow.GlyphAt(column);
-    return { std::wstring_view{ glyph.data(), glyph.size() }, _charRow.DbcsAttrAt(column), _attrRow.GetAttrByColumn(column) };
+    const auto glyph = _charRow.GlyphAt(column);
+    return { glyph, _charRow.DbcsAttrAt(column), _attrRow.GetAttrByColumn(column) };
 }
 
 UnicodeStorage& ROW::GetUnicodeStorage()
