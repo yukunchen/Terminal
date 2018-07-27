@@ -13,6 +13,7 @@
 #include "../host/tracing.hpp"
 
 #include "../host/selection.hpp"
+#include "../host/search.h"
 
 
 using namespace Microsoft::Console::Interactivity::Win32;
@@ -579,14 +580,52 @@ IFACEMETHODIMP UiaTextRange::FindAttribute(_In_ TEXTATTRIBUTEID /*textAttributeI
     return E_NOTIMPL;
 }
 
-// we don't support this currently
-IFACEMETHODIMP UiaTextRange::FindText(_In_ BSTR /*text*/,
-                                      _In_ BOOL /*searchBackward*/,
-                                      _In_ BOOL /*ignoreCase*/,
-                                      _Outptr_result_maybenull_ ITextRangeProvider** /*ppRetVal*/)
+IFACEMETHODIMP UiaTextRange::FindText(_In_ BSTR text,
+                                      _In_ BOOL searchBackward,
+                                      _In_ BOOL ignoreCase,
+                                      _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
 {
     Tracing::s_TraceUia(this, ApiCall::FindText, nullptr);
-    return E_NOTIMPL;
+
+    *ppRetVal = nullptr;
+    try
+    {
+        const std::wstring wstr{ text, SysStringLen(text) };
+        const auto sensitivity = ignoreCase ? Search::Sensitivity::CaseInsensitive : Search::Sensitivity::CaseSensitive;
+
+        auto searchDirection = Search::Direction::Forward;
+        Endpoint searchAnchor = _start;
+        if (searchBackward)
+        {
+            searchDirection = Search::Direction::Backward;
+            searchAnchor = _end;
+        }
+
+        Search searcher{ _getScreenInfo(), wstr, searchDirection, sensitivity, _endpointToCoord(searchAnchor) };
+
+        HRESULT hr = S_OK;
+        if (searcher.FindNext())
+        {
+            const auto foundLocation = searcher.GetFoundLocation();
+            const Endpoint start = _coordToEndpoint(foundLocation.first);
+            const Endpoint end = _coordToEndpoint(foundLocation.second);
+            // make sure what was found is within the bounds of the current range
+            if ((searchDirection == Search::Direction::Forward && end < _end) ||
+                (searchDirection == Search::Direction::Backward && start > _start))
+            {
+                hr = Clone(ppRetVal);
+                if (SUCCEEDED(hr))
+                {
+                    UiaTextRange& range = static_cast<UiaTextRange&>(**ppRetVal);
+                    range._start = start;
+                    range._end = end;
+                    range._degenerate = false;
+                }
+            }
+        }
+        return hr;
+    }
+    CATCH_RETURN();
 }
 
 IFACEMETHODIMP UiaTextRange::GetAttributeValue(_In_ TEXTATTRIBUTEID textAttributeId,
@@ -2182,4 +2221,14 @@ std::tuple<Endpoint, Endpoint, bool> UiaTextRange::_moveEndpointByUnitDocument(c
     }
 
     return std::make_tuple(start, end, degenerate);
+}
+
+COORD UiaTextRange::_endpointToCoord(const Endpoint endpoint)
+{
+    return { gsl::narrow<short>(_endpointToColumn(endpoint)), gsl::narrow<short>(_endpointToScreenInfoRow(endpoint)) };
+}
+
+Endpoint UiaTextRange::_coordToEndpoint(const COORD coord)
+{
+    return _screenInfoRowToEndpoint(coord.Y) + coord.X;
 }

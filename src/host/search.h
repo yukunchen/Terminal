@@ -39,9 +39,17 @@ public:
            const Direction dir,
            const Sensitivity sensitivity);
 
+    Search(const SCREEN_INFORMATION& ScreenInfo,
+           const std::wstring& str,
+           const Direction dir,
+           const Sensitivity sensitivity,
+           const COORD anchor);
+
     bool FindNext();
     void Select() const;
     void Color(const TextAttribute attr) const;
+
+    std::pair<COORD, COORD> GetFoundLocation() const noexcept;
 
 private:
 

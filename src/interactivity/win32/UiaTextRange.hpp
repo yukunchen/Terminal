@@ -291,6 +291,9 @@ namespace Microsoft::Console::Interactivity::Win32
         static const ScreenInfoRow _endpointToScreenInfoRow(const Endpoint endpoint);
         static const Endpoint _screenInfoRowToEndpoint(const ScreenInfoRow row);
 
+        static COORD _endpointToCoord(const Endpoint endpoint);
+        static Endpoint _coordToEndpoint(const COORD coord);
+
         static const Column _endpointToColumn(const Endpoint endpoint);
 
         static const Row _normalizeRow(const Row row);
