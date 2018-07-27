@@ -515,7 +515,7 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
     }
 
 
-    if (NT_SUCCESS(Status) && p->WindowVisible && !g.launchArgs.IsHeadless())
+    if (NT_SUCCESS(Status) && p->WindowVisible)
     {
         HANDLE Thread = nullptr;
 
@@ -550,18 +550,25 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
                 Status = STATUS_SUCCESS;
             }
 
-            /*
-             * Tell driver to allow clients with UIAccess to connect
-             * to this server even if the security descriptor doesn't
-             * allow it.
-             *
-             * N.B. This allows applications like narrator.exe to have
-             *      access to the console. This is ok because they already
-             *      have access to the console window anyway - this function
-             *      is only called when a window is created.
-             */
+            
+            // If we're not headless, we'll make a real window.
+            // Allow UI Access to the real window but not the little
+            // fake window we would make in headless mode.
+            if (!g.launchArgs.IsHeadless())
+            {
+                /*
+                 * Tell driver to allow clients with UIAccess to connect
+                 * to this server even if the security descriptor doesn't
+                 * allow it.
+                 *
+                 * N.B. This allows applications like narrator.exe to have
+                 *      access to the console. This is ok because they already
+                 *      have access to the console window anyway - this function
+                 *      is only called when a window is created.
+                 */
 
-            LOG_IF_FAILED(g.pDeviceComm->AllowUIAccess());
+                LOG_IF_FAILED(g.pDeviceComm->AllowUIAccess());
+            }
         }
     }
 
