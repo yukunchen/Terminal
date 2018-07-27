@@ -28,6 +28,30 @@ Search::Search(const SCREEN_INFORMATION& screenInfo,
     _coordNext = _coordAnchor;
 }
 
+// Routine Description:
+// - Constructs a Search object.
+// - Make a Search object then call .FindNext() to locate items.
+// - Once you've found something, you can perfom actions like .Select() or .Color()
+// Arguments:
+// - screenInfo - The screen buffer to search through (the "haystack")
+// - str - The search term you want to find (the "needle")
+// - direction - The direction to search (upward or downward)
+// - sensitivity - Whether or not you care about case
+// - anchor - starting search location in screenInfo
+Search::Search(const SCREEN_INFORMATION& screenInfo,
+               const std::wstring& str,
+               const Direction direction,
+               const Sensitivity sensitivity,
+               const COORD anchor) :
+    _direction(direction),
+    _sensitivity(sensitivity),
+    _screenInfo(screenInfo),
+    _needle(s_CreateNeedleFromString(str)),
+    _coordAnchor(anchor)
+{
+    _coordNext = _coordAnchor;
+}
+
 // Routine Description
 // - Locates the next instance of the search term within the screen buffer.
 // Arguments:
@@ -83,6 +107,16 @@ void Search::Color(const TextAttribute attr) const
     {
         Selection::Instance().ColorSelection(_coordSelStart, _coordSelEnd, attr);
     }
+}
+
+// Routine Description:
+// - gets start and end position of text sound by search. only guaranteed to have valid data if FindNext has
+// been called and returned true.
+// Return Value:
+// - pair containing [start, end] coord positions of text found by search
+std::pair<COORD, COORD> Search::GetFoundLocation() const noexcept
+{
+    return { _coordSelStart, _coordSelEnd };
 }
 
 // Routine Description:
