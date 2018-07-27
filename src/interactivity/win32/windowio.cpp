@@ -966,8 +966,24 @@ DWORD ConsoleInputThreadProcWin32(LPVOID /*lpParameter*/)
     InitEnvironmentVariables();
 
     LockConsole();
-    HHOOK hhook;
-    NTSTATUS Status = InitWindowsSubsystem(&hhook);
+    HHOOK hhook = nullptr;
+    NTSTATUS Status = STATUS_SUCCESS;
+    
+    if (!ServiceLocator::LocateGlobals().launchArgs.IsHeadless())
+    {
+        // If we're not headless, set up the main conhost window.
+        Status = InitWindowsSubsystem(&hhook);
+    }
+    else
+    {
+        // If we are headless (because we're a pseudo console), we
+        // will still need a window handle in the win32 environment
+        // in case anyone sends messages at that HWND (vim.exe is an example.)
+        // We have to CreateWindow on the same thread that will pump the messages
+        // which is this thread.
+        ServiceLocator::LocatePseudoWindow();
+    }
+    
     UnlockConsole();
     if (!NT_SUCCESS(Status))
     {
