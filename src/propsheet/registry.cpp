@@ -518,28 +518,28 @@ DWORD GetRegistryValues(
         }
     }
 
-    // Initial Cursor Color
-    Status = RegistrySerialization::s_QueryValue(hTitleKey,
-                                                 CONSOLE_REGISTRY_CURSORCOLOR,
-                                                 sizeof(dwValue),
-                                                 REG_DWORD,
-                                                 (PBYTE)&dwValue,
-                                                 NULL);
-    if (NT_SUCCESS(Status)) {
-        pStateInfo->CursorColor = dwValue;
-    }
-
-    // Initial Cursor Shape
-    Status = RegistrySerialization::s_QueryValue(hTitleKey,
-                                                 CONSOLE_REGISTRY_CURSORTYPE,
-                                                 sizeof(dwValue),
-                                                 REG_DWORD,
-                                                 (PBYTE)&dwValue,
-                                                 NULL);
-    if (NT_SUCCESS(Status))
-    {
-        pStateInfo->CursorType = dwValue;
-    }
+    // TODO: MSFT 18451277 - Re-enable Cursor Color, Style persistence
+    // // Initial Cursor Color
+    // Status = RegistrySerialization::s_QueryValue(hTitleKey,
+    //                                              CONSOLE_REGISTRY_CURSORCOLOR,
+    //                                              sizeof(dwValue),
+    //                                              REG_DWORD,
+    //                                              (PBYTE)&dwValue,
+    //                                              NULL);
+    // if (NT_SUCCESS(Status)) {
+    //     pStateInfo->CursorColor = dwValue;
+    // }
+    // // Initial Cursor Shape
+    // Status = RegistrySerialization::s_QueryValue(hTitleKey,
+    //                                              CONSOLE_REGISTRY_CURSORTYPE,
+    //                                              sizeof(dwValue),
+    //                                              REG_DWORD,
+    //                                              (PBYTE)&dwValue,
+    //                                              NULL);
+    // if (NT_SUCCESS(Status))
+    // {
+    //     pStateInfo->CursorType = dwValue;
+    // }
 
     // Initial Intercept Copy Paste
     Status = RegistrySerialization::s_QueryValue(hTitleKey,
@@ -865,25 +865,24 @@ VOID SetRegistryValues(
 
     SetGlobalRegistryValues();
 
-    //
+    // TODO: MSFT 18451277 - Re-enable Cursor Color, Style persistence
     // Save cursor type and color
     //
+    // dwValue = pStateInfo->CursorType;
+    // LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+    //                                                    hTitleKey,
+    //                                                    CONSOLE_REGISTRY_CURSORTYPE,
+    //                                                    REG_DWORD,
+    //                                                    (BYTE*)&dwValue,
+    //                                                    sizeof(dwValue)));
 
-    dwValue = pStateInfo->CursorType;
-    LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
-                                                       hTitleKey,
-                                                       CONSOLE_REGISTRY_CURSORTYPE,
-                                                       REG_DWORD,
-                                                       (BYTE*)&dwValue,
-                                                       sizeof(dwValue)));
-
-    dwValue = pStateInfo->CursorColor;
-    LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
-                                                       hTitleKey,
-                                                       CONSOLE_REGISTRY_CURSORCOLOR,
-                                                       REG_DWORD,
-                                                       (BYTE*)&dwValue,
-                                                       sizeof(dwValue)));
+    // dwValue = pStateInfo->CursorColor;
+    // LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+    //                                                    hTitleKey,
+    //                                                    CONSOLE_REGISTRY_CURSORCOLOR,
+    //                                                    REG_DWORD,
+    //                                                    (BYTE*)&dwValue,
+    //                                                    sizeof(dwValue)));
 
     dwValue = pStateInfo->InterceptCopyPaste;
     LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
