@@ -518,6 +518,7 @@ DWORD GetRegistryValues(
         }
     }
 
+    // TODO: MSFT 18451277 - Re-enable Cursor Color, Style persistence
     // // Initial Cursor Color
     // Status = RegistrySerialization::s_QueryValue(hTitleKey,
     //                                              CONSOLE_REGISTRY_CURSORCOLOR,
@@ -528,7 +529,6 @@ DWORD GetRegistryValues(
     // if (NT_SUCCESS(Status)) {
     //     pStateInfo->CursorColor = dwValue;
     // }
-
     // // Initial Cursor Shape
     // Status = RegistrySerialization::s_QueryValue(hTitleKey,
     //                                              CONSOLE_REGISTRY_CURSORTYPE,
