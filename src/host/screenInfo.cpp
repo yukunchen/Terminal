@@ -2905,19 +2905,23 @@ void SCREEN_INFORMATION::UpdateBottom()
     const auto oldBottom = _virtualBottom;
     const auto newBottom = _viewport.BottomInclusive();
 
-    if (_textBuffer)
-    {
-        if (newBottom > oldBottom && InVTMode())
-        {
-            const auto height = newBottom - oldBottom;
-            ROW* pRow = &_textBuffer->GetRowByOffset(newBottom);
-            for (int i = 0; i < height; i++)
-            {
-                pRow->GetAttrRow().SetAttrToEnd(0, _Attributes);
-                pRow = &_textBuffer->GetNextRow(*pRow);
-            }
-        }
-    }
+    // MSFT: 18452098 - Undoing this change, as it was too risky to take in
+    // RS5. We still need to fix 17415310 somehow, but this way sometimes can
+    //  cause the buffer to re-initailize emitted lines, especially when the
+    //  buffer is resized.
+    // if (_textBuffer)
+    // {
+    //     if (newBottom > oldBottom && InVTMode())
+    //     {
+    //         const auto height = newBottom - oldBottom;
+    //         ROW* pRow = &_textBuffer->GetRowByOffset(newBottom);
+    //         for (int i = 0; i < height; i++)
+    //         {
+    //             pRow->GetAttrRow().SetAttrToEnd(0, _Attributes);
+    //             pRow = &_textBuffer->GetNextRow(*pRow);
+    //         }
+    //     }
+    // }
 
     _virtualBottom = newBottom;
 }
