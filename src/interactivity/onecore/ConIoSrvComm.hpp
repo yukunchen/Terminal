@@ -78,6 +78,8 @@ namespace Microsoft::Console::Interactivity::OneCore
 
         VOID HandleFocusEvent(PCIS_EVENT const FocusEvent);
 
+        HANDLE _inputPipeThreadHandle;
+        
         HANDLE _pipeReadHandle;
         HANDLE _pipeWriteHandle;
 
