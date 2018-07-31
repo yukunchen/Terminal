@@ -59,9 +59,20 @@ DWORD ConsoleInputThreadProcOneCore(LPVOID /*lpParam*/)
                     globals.ntstatusConsoleInputInitStatus = Status;
                     globals.hConsoleInputInitEvent.SetEvent();
 
-                    // Start listening for input (returns on failure only).
-                    // This will never return.
-                    Server->ServiceInputPipe();
+                    try
+                    {
+                        // Start listening for input (returns on failure only).
+                        // This will never return.
+                        Server->ServiceInputPipe();
+                    }
+                    catch(...)
+                    {
+                        // If we couldn't set up the input thread, log and cleanup
+                        // and go to headless mode instead.
+                        LOG_CAUGHT_EXCEPTION();
+                        Status = wil::ResultFromCaughtException();
+                        Server->CleanupForHeadless(Status);
+                    }
                 }
             }
         }

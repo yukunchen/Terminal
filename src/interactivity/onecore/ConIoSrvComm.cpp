@@ -26,8 +26,9 @@ extern void UnlockConsole();
 
 using namespace Microsoft::Console::Interactivity::OneCore;
 
-ConIoSrvComm::ConIoSrvComm()
-    : _pipeReadHandle(INVALID_HANDLE_VALUE),
+ConIoSrvComm::ConIoSrvComm() :
+    _inputPipeThreadHandle(INVALID_HANDLE_VALUE),
+    _pipeReadHandle(INVALID_HANDLE_VALUE),
     _pipeWriteHandle(INVALID_HANDLE_VALUE),
     _alpcClientCommunicationPort(INVALID_HANDLE_VALUE),
     _alpcSharedViewSize(0),
@@ -41,6 +42,14 @@ ConIoSrvComm::ConIoSrvComm()
 
 ConIoSrvComm::~ConIoSrvComm()
 {
+    // Cancel pending IOs on the input thread that might get us stuck.
+    if (INVALID_HANDLE_VALUE != _inputPipeThreadHandle)
+    {
+        LOG_IF_WIN32_BOOL_FALSE(CancelSynchronousIo(_inputPipeThreadHandle));
+        CloseHandle(_inputPipeThreadHandle);
+        _inputPipeThreadHandle = INVALID_HANDLE_VALUE;
+    }
+    
     // Free any handles we might have open.
     if (INVALID_HANDLE_VALUE != _pipeReadHandle)
     {
@@ -235,6 +244,16 @@ NTSTATUS ConIoSrvComm::EnsureConnection()
 
 VOID ConIoSrvComm::ServiceInputPipe()
 {
+    // Save off a handle to the thread that is coming in here in case it gets blocked and we need to tear down.
+    THROW_HR_IF(E_NOT_VALID_STATE, INVALID_HANDLE_VALUE != _inputPipeThreadHandle); // We can't store two of them, so it's invalid if there are two.
+    THROW_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(),
+                                              GetCurrentThread(),
+                                              GetCurrentProcess(),
+                                              &_inputPipeThreadHandle,
+                                              0,
+                                              FALSE,
+                                              DUPLICATE_SAME_ACCESS));
+    
     BOOL Ret;
 
     CIS_EVENT Event = { 0 };
