@@ -2270,12 +2270,12 @@ bool SCREEN_INFORMATION::AreTabsSet() const noexcept
 void SCREEN_INFORMATION::SetDefaultVtTabStops()
 {
     _tabStops.clear();
-    const short width = GetScreenBufferSize().X - 1;
-    for(short pos = 0; pos <= width; pos += TAB_SIZE)
+    const int width = GetScreenBufferSize().X - 1;
+    for(int pos = 0; pos <= width; pos += TAB_SIZE)
     {
-        AddTabStop(pos);
+        AddTabStop(gsl::narrow<short>(pos));
     }
-    AddTabStop(width);
+    AddTabStop(gsl::narrow<short>(width));
 }
 
 // Routine Description:
