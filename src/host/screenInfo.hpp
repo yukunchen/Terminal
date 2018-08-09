@@ -138,6 +138,10 @@ public:
     const_cell_iterator GetCellDataAt(const COORD at, const SMALL_RECT limit) const;
     const_text_iterator GetTextDataAt(const COORD at) const;
 
+    size_t WriteLine(const OutputCellIterator it,
+                     const size_t rowIndex,
+                     const size_t startIndex);
+
     size_t WriteLine(const std::vector<OutputCell>& cells,
                      const size_t rowIndex,
                      const size_t startIndex);
@@ -292,6 +296,11 @@ private:
 
     void _InitializeBufferDimensions(const COORD coordScreenBufferSize,
                                      const COORD coordViewportSize);
+
+    size_t _WriteLine(const OutputCellIterator givenIt,
+                      const size_t rowIndex,
+                      const size_t startIndex,
+                      const bool shouldWrap);
 
     size_t _WriteLine(const std::vector<OutputCell>& cells,
                       const size_t rowIndex,

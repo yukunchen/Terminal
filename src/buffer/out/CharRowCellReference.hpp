@@ -38,7 +38,7 @@ public:
     void operator=(const CharRowCellReference&) = delete;
     void operator=(CharRowCellReference&&) = delete;
 
-    void operator=(const std::vector<wchar_t>& chars);
+    void operator=(const std::wstring_view chars);
     operator std::wstring_view() const;
 
     const_iterator begin() const;

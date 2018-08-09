@@ -161,7 +161,7 @@ COORD Selection::WordByWordSelection(const bool fReverse,
     }
 
     // get the character at the new position
-    std::vector<wchar_t> charData = screenInfo.ReadLine(outCoord.Y, outCoord.X, 1).at(0).Chars();
+    auto charData = screenInfo.ReadLine(outCoord.Y, outCoord.X, 1).at(0).Chars();
 
     // we want to go until the state change from delim to non-delim
     bool fCurrIsDelim = IsWordDelim(charData);

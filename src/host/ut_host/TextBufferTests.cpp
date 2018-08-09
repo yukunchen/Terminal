@@ -287,7 +287,7 @@ void TextBufferTests::DoBoundaryTest(PWCHAR const pwszInputString,
     // copy string into buffer
     for (size_t i = 0; i < static_cast<size_t>(cLength); ++i)
     {
-        charRow.GlyphAt(i) = { pwszInputString[i] };
+        charRow.GlyphAt(i) = { &pwszInputString[i], 1 };
     }
 
     // space pad the rest of the string
@@ -371,7 +371,8 @@ void TextBufferTests::TestInsertCharacter()
     ROW& Row = textBuffer.GetRowByOffset(coordCursorBefore.Y);
 
     // create some sample test data
-    const std::vector<wchar_t> wchTest{ L'Z' };
+    const auto wch = L'Z';
+    const std::wstring_view wchTest(&wch, 1);
     DbcsAttribute dbcsAttribute;
     dbcsAttribute.SetTrailing();
     WORD const wAttrTest = BACKGROUND_INTENSITY | FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_BLUE;
@@ -590,7 +591,8 @@ void TextBufferTests::TestIncrementCircularBuffer()
         // fill first row with some stuff
         ROW& FirstRow = textBuffer.GetFirstRow();
         CharRow& charRow = FirstRow.GetCharRow();
-        charRow.GlyphAt(0) = { L'A' };
+        const auto stuff = L'A';
+        charRow.GlyphAt(0) = { &stuff, 1 };
 
         // ensure it does say that it contains text
         VERIFY_IS_TRUE(FirstRow.GetCharRow().ContainsText());

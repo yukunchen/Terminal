@@ -40,10 +40,8 @@ void StreamWriteToScreenBuffer(SCREEN_INFORMATION& screenInfo,
     try
     {
         const TextAttribute defaultTextAttribute = screenInfo.GetAttributes();
-        const auto formattedCharData = Utf16Parser::Parse(wstr);
-        const std::vector<OutputCell> cells = OutputCell::FromUtf16(formattedCharData, defaultTextAttribute);
-
-        screenInfo.WriteLine(cells, TargetPoint.Y, TargetPoint.X);
+        const OutputCellIterator it(wstr, defaultTextAttribute);
+        screenInfo.WriteLine(it, TargetPoint.Y, TargetPoint.X);
     }
     CATCH_LOG();
 
@@ -397,7 +395,7 @@ void FillRectangle(SCREEN_INFORMATION& screenInfo,
 
     // generate line to write
     std::vector<OutputCell> rowCells(width, cell);
-    if (IsGlyphFullWidth(std::wstring_view{ cell.Chars().data(), cell.Chars().size() }))
+    if (IsGlyphFullWidth(cell.Chars()))
     {
         // set leading and trailing attrs
         for (size_t i = 0; i < rowCells.size(); ++i)
@@ -414,7 +412,7 @@ void FillRectangle(SCREEN_INFORMATION& screenInfo,
         // make sure not to write a partial dbcs sequence
         if (rowCells.back().DbcsAttr().IsLeading())
         {
-            rowCells.back().Chars() = { UNICODE_SPACE };
+            rowCells.back().SetChars({ &UNICODE_SPACE, 1 });
             rowCells.back().DbcsAttr().SetSingle();
         }
     }

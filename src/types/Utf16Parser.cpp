@@ -16,6 +16,47 @@ static constexpr std::bitset<IndicatorBitCount> LeadingSurrogateMask = { 54 };  
 static constexpr std::bitset<IndicatorBitCount> TrailingSurrogateMask = { 55 }; // 110 111 indicates a trailing surrogate
 
 // Routine Description:
+// - Finds the next single collection for the codepoint out of the given UTF-16 string information.
+// - In simpler terms, it will group UTF-16 surrogate pairs into a single unit or give you a valid single-item UTF-16 character.
+// - Does not validate UTF-16 input beyond proper leading/trailing character sequences.
+// Arguments:
+// - wstr - The UTF-16 string to parse.
+// Return Value:
+// - A view into the string given of just the next codepoint unit. 
+std::wstring_view Utf16Parser::ParseNext(std::wstring_view wstr)
+{
+    size_t pos = 0;
+    size_t length = 0;
+
+    for (auto wch : wstr)
+    {
+        if (_isLeadingSurrogate(wch))
+        {
+            length++;
+        }
+        else if (_isTrailingSurrogate(wch))
+        {
+            if (length != 0)
+            {
+                length++;
+                break;
+            }
+            else
+            {
+                pos++;
+            }
+        }
+        else
+        {
+            length++;
+            break;
+        }
+    }
+
+    return wstr.substr(pos, length);
+}
+
+// Routine Description:
 // - formats a utf16 encoded wstring and splits the codepoints into individual collections.
 // - will drop badly formatted leading/trailing char sequences.
 // - does not validate utf16 input beyond proper leading/trailing char sequences.

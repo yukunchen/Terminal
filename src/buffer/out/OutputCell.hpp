@@ -64,14 +64,11 @@ public:
 
     CHAR_INFO ToCharInfo();
 
-    std::vector<wchar_t>& Chars() noexcept;
+    const std::wstring_view Chars() const noexcept;
+    void SetChars(const std::wstring_view chars);
+
     DbcsAttribute& DbcsAttr() noexcept;
     TextAttribute& TextAttr();
-
-    constexpr const std::vector<wchar_t>& Chars() const
-    {
-        return _charData;
-    }
 
     constexpr const DbcsAttribute& DbcsAttr() const
     {

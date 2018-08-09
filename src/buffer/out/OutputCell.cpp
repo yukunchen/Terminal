@@ -125,9 +125,14 @@ CHAR_INFO OutputCell::ToCharInfo()
     return charInfo;
 }
 
-std::vector<wchar_t>& OutputCell::Chars() noexcept
+const std::wstring_view OutputCell::Chars() const noexcept
 {
-    return _charData;
+	return { _charData.data(), _charData.size() };
+}
+
+void OutputCell::SetChars(const std::wstring_view chars)
+{
+    _charData.assign(chars.cbegin(), chars.cend());
 }
 
 DbcsAttribute& OutputCell::DbcsAttr() noexcept

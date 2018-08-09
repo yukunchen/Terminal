@@ -443,7 +443,7 @@ bool TextBuffer::_PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute
 //Return Value:
 // - true if we successfully inserted the character
 // - false otherwise (out of memory)
-bool TextBuffer::InsertCharacter(const std::vector<wchar_t> chars,
+bool TextBuffer::InsertCharacter(const std::wstring_view chars,
                                  const DbcsAttribute dbcsAttribute,
                                  const TextAttribute attr)
 {
@@ -496,7 +496,7 @@ bool TextBuffer::InsertCharacter(const std::vector<wchar_t> chars,
 // - false otherwise (out of memory)
 bool TextBuffer::InsertCharacter(const wchar_t wch, const DbcsAttribute dbcsAttribute, const TextAttribute attr)
 {
-    return InsertCharacter(std::vector<wchar_t>{ wch }, dbcsAttribute, attr);
+    return InsertCharacter({ &wch, 1 }, dbcsAttribute, attr);
 }
 
 //Routine Description:
