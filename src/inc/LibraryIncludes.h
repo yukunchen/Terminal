@@ -52,4 +52,12 @@
 #define GSL_MULTI_SPAN_H
 #include <gsl/gsl>
 
+// IntSafe
+#define ENABLE_INTSAFE_SIGNED_FUNCTIONS
+#include <intsafe.h>
+
+// WRL
+#include <wrl.h>
+#include <wrl/client.h>
+
 #pragma warning(pop)

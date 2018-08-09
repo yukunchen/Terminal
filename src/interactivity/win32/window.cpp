@@ -32,6 +32,7 @@
 
 #include "..\..\renderer\base\renderer.hpp"
 #include "..\..\renderer\gdi\gdirenderer.hpp"
+#include "..\..\renderer\dx\DxRenderer.hpp"
 
 #include "..\inc\ServiceLocator.hpp"
 #include "..\..\types\inc\Viewport.hpp"
@@ -209,11 +210,21 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
     // Ensure we have appropriate system metrics before we start constructing the window.
     _UpdateSystemMetrics();
 
+    const bool useDx = pSettings->GetUseDx();
     GdiEngine* pGdiEngine = nullptr;
+    DxEngine* pDxEngine = nullptr;
     try
     {
-        pGdiEngine = new GdiEngine();
-        g.pRender->AddRenderEngine(pGdiEngine);
+        if (useDx)
+        {
+            pDxEngine = new DxEngine();
+            g.pRender->AddRenderEngine(pDxEngine);
+        }
+        else
+        {
+            pGdiEngine = new GdiEngine();
+            g.pRender->AddRenderEngine(pGdiEngine);
+        }
     }
     catch (...)
     {
@@ -300,7 +311,19 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
             {
                 _hWnd = hWnd;
 
-                status = NTSTATUS_FROM_HRESULT(pGdiEngine->SetHwnd(hWnd));
+                if (useDx)
+                {
+                    status = NTSTATUS_FROM_HRESULT(pDxEngine->SetHwnd(hWnd));
+
+                    if (NT_SUCCESS(status))
+                    {
+                        status = NTSTATUS_FROM_HRESULT(pDxEngine->Enable());
+                    }
+                }
+                else
+                {
+                    status = NTSTATUS_FROM_HRESULT(pGdiEngine->SetHwnd(hWnd));
+                }
 
                 if (NT_SUCCESS(status))
                 {

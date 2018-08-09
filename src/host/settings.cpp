@@ -51,7 +51,8 @@ Settings::Settings() :
     _fAutoReturnOnNewline(true), // the historic Windows behavior defaults this to on.
     _fRenderGridWorldwide(false), // historically grid lines were only rendered in DBCS codepages, so this is false by default unless otherwise specified.
     // window size pixels initialized below
-    _fInterceptCopyPaste(0)
+    _fInterceptCopyPaste(0),
+    _fUseDx(false)
 {
     _dwScreenBufferSize.X = 80;
     _dwScreenBufferSize.Y = 25;
@@ -1084,4 +1085,9 @@ bool Settings::GetInterceptCopyPaste() const noexcept
 void Settings::SetInterceptCopyPaste(const bool interceptCopyPaste) noexcept
 {
     _fInterceptCopyPaste = interceptCopyPaste;
+}
+
+bool Settings::GetUseDx() const noexcept
+{
+    return _fUseDx;
 }
