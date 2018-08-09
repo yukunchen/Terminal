@@ -170,6 +170,8 @@ public:
     bool GetInterceptCopyPaste() const noexcept;
     void SetInterceptCopyPaste(const bool interceptCopyPaste) noexcept;
 
+    bool GetUseDx() const noexcept;
+
 private:
     DWORD _dwHotKey;
     DWORD _dwStartupFlags;
@@ -211,6 +213,7 @@ private:
     DWORD _dwVirtTermLevel;
     bool _fAutoReturnOnNewline;
     bool _fRenderGridWorldwide;
+    bool _fUseDx;
 
     void _InitColorTable();
 
