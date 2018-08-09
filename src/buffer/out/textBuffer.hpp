@@ -97,7 +97,7 @@ public:
 
     // Text insertion functions
     bool InsertCharacter(const wchar_t wch, const DbcsAttribute dbcsAttribute, const TextAttribute attr);
-    bool InsertCharacter(const std::vector<wchar_t> chars, const DbcsAttribute dbcsAttribute, const TextAttribute attr);
+    bool InsertCharacter(const std::wstring_view chars, const DbcsAttribute dbcsAttribute, const TextAttribute attr);
     bool IncrementCursor();
     bool NewlineCursor();
 

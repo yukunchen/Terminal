@@ -434,11 +434,11 @@ std::vector<wchar_t> ReadOutputStringW(const SCREEN_INFORMATION& screenInfo,
     {
         if (dataCells.front().DbcsAttr().IsTrailing())
         {
-            dataCells.front().Chars() = { UNICODE_SPACE };
+            dataCells.front().SetChars({ &UNICODE_SPACE, 1 });
         }
         if (dataCells.back().DbcsAttr().IsLeading())
         {
-            dataCells.back().Chars() = { UNICODE_SPACE };
+            dataCells.back().SetChars({ &UNICODE_SPACE, 1 });
         }
     }
 

@@ -32,6 +32,8 @@ SOURCES= \
     ..\AttrRow.cpp \
     ..\AttrRowIterator.cpp \
     ..\OutputCell.cpp \
+    ..\OutputCellIterator.cpp \
+    ..\OutputCellView.cpp \
     ..\Row.cpp \
     ..\TextAttribute.cpp \
     ..\TextAttributeRun.cpp \

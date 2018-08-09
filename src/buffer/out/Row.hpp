@@ -21,6 +21,7 @@ Revision History:
 
 #include "AttrRow.hpp"
 #include "OutputCell.hpp"
+#include "OutputCellIterator.hpp"
 #include "CharRow.hpp"
 #include "UnicodeStorage.hpp"
 
@@ -55,6 +56,8 @@ public:
 
     UnicodeStorage& GetUnicodeStorage();
     const UnicodeStorage& GetUnicodeStorage() const;
+
+    OutputCellIterator WriteCells(OutputCellIterator it, const size_t index);
 
     // Routine Description:
     // - writes cell data to the row

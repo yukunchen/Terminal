@@ -183,3 +183,34 @@ const UnicodeStorage& ROW::GetUnicodeStorage() const
 {
     return _pParent->GetUnicodeStorage();
 }
+
+// Routine Description:
+// - writes cell data to the row
+// Arguments:
+// - it - custom console iterator to use for seeking input data. bool() false when it becomes invalid while seeking.
+// - index - column in row to start writing at
+// Return Value:
+// - iterator to first cell that was not written to this row. will be equal to end if all cells were written
+// to row
+OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index)
+{
+    THROW_HR_IF(E_INVALIDARG, index >= _charRow.size());
+    size_t currentIndex = index;
+    while (it && currentIndex < _charRow.size())
+    {
+        _charRow.DbcsAttrAt(currentIndex) = it->DbcsAttr();
+        _charRow.GlyphAt(currentIndex) = it->Chars();
+        if (it->TextAttrBehavior() != OutputCell::TextAttributeBehavior::Current)
+        {
+            const TextAttributeRun attrRun{ 1, it->TextAttr() };
+            LOG_IF_FAILED(_attrRow.InsertAttrRuns({ &attrRun, 1 },
+                                                  currentIndex,
+                                                  currentIndex,
+                                                  _charRow.size()));
+        }
+
+        ++it;
+        ++currentIndex;
+    }
+    return it;
+}

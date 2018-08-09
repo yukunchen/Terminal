@@ -86,7 +86,7 @@ bool IsWordDelim(const wchar_t wch)
     return std::find(delimiters.begin(), delimiters.end(), wch) != delimiters.end();
 }
 
-bool IsWordDelim(const std::vector<wchar_t>& charData)
+bool IsWordDelim(const std::wstring_view charData)
 {
     if (charData.size() != 1)
     {

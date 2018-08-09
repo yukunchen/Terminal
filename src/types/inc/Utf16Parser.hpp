@@ -21,6 +21,7 @@ class Utf16Parser final
 {
 public:
     static std::vector<std::vector<wchar_t>> Parse(std::wstring_view wstr);
+    static std::wstring_view ParseNext(std::wstring_view wstr);
 
 private:
     wchar_t _partialSequence;

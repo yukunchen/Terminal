@@ -603,7 +603,7 @@ void SCREEN_INFORMATION::NotifyAccessibilityEventing(const short sStartX,
             try
             {
                 const OutputCell cell = ReadLine(RowIndex, sStartX, 1).at(0);
-                const LONG charAndAttr = MAKELONG(Utf16ToUcs2({ cell.Chars().data(), cell.Chars().size() }),
+                const LONG charAndAttr = MAKELONG(Utf16ToUcs2(cell.Chars()),
                                                   gci.GenerateLegacyAttributes(cell.TextAttr()));
                 _pAccessibilityNotifier->NotifyConsoleUpdateSimpleEvent(MAKELONG(sStartX, sStartY),
                                                                         charAndAttr);
@@ -675,7 +675,7 @@ VOID SCREEN_INFORMATION::InternalUpdateScrollBars()
         // If this is the main buffer, make sure we enable both of the scroll bars.
         //      The alt buffer likely disabled the scroll bars, this is the only
         //      way to re-enable it.
-        if(!_IsAltBuffer())
+        if (!_IsAltBuffer())
         {
             pWindow->EnableBothScrollBars();
         }
@@ -1116,7 +1116,7 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(const COORD* const pcoordSize,
         if (sLeftProposed >= 0)
         {
             // there's enough room in the backlog to just expand left
-           srNewViewport.Left -= DeltaX;
+            srNewViewport.Left -= DeltaX;
         }
         else
         {
@@ -1275,9 +1275,9 @@ void SCREEN_INFORMATION::_AdjustViewportSize(const RECT* const prcClientNew,
     // will change. In this case especially, users expect the top left
     // to stay in place and the bottom right to adapt.
     bool const fResizeFromLeft = prcClientNew->left != prcClientOld->left &&
-                                 prcClientNew->right == prcClientOld->right;
+        prcClientNew->right == prcClientOld->right;
     bool const fResizeFromTop = prcClientNew->top != prcClientOld->top &&
-                                prcClientNew->bottom == prcClientOld->bottom;
+        prcClientNew->bottom == prcClientOld->bottom;
 
     const Viewport oldViewport = Viewport(_viewport);
 
@@ -2447,7 +2447,7 @@ HRESULT SCREEN_INFORMATION::VtEraseAll()
         sNewTop--;
     }
 
-    const COORD coordNewOrigin = {0, sNewTop};
+    const COORD coordNewOrigin = { 0, sNewTop };
     RETURN_IF_FAILED(SetViewportOrigin(true, coordNewOrigin, true));
     // Restore the relative cursor position
     _viewport.ConvertFromOrigin(&relativeCursor);
@@ -2483,7 +2483,7 @@ HRESULT SCREEN_INFORMATION::VtEraseAll()
 void SCREEN_INFORMATION::_InitializeBufferDimensions(const COORD coordScreenBufferSize,
                                                      const COORD coordViewportSize)
 {
-    _viewport = Viewport::FromDimensions({0, 0},
+    _viewport = Viewport::FromDimensions({ 0, 0 },
                                          _IsInPtyMode() ? coordScreenBufferSize : coordViewportSize);
     UpdateBottom();
     SetScreenBufferSize(coordScreenBufferSize);
@@ -2566,6 +2566,21 @@ std::vector<OutputCell> SCREEN_INFORMATION::ReadLine(const size_t rowIndex,
 }
 
 // Routine Description:
+// - Writes cells to the output buffer.
+// Arguments:
+// - it - Iterator representing output cell data to write.
+// - rowIndex - the index of the row to write the text to
+// - startIndex - column in the row to start writing cells to
+// Return Value:
+// - the number of cells written
+size_t SCREEN_INFORMATION::WriteLine(const OutputCellIterator it,
+                                     const size_t rowIndex,
+                                     const size_t startIndex)
+{
+    return _WriteLine(it, rowIndex, startIndex, true);
+}
+
+// Routine Description:
 // - writes cells to the output buffer.
 // Arguments:
 // - cells - the cells to write to the output buffer
@@ -2593,6 +2608,42 @@ size_t SCREEN_INFORMATION::WriteLineNoWrap(const std::vector<OutputCell>& cells,
                                            const size_t startIndex)
 {
     return _WriteLine(cells, rowIndex, startIndex, false);
+}
+
+// Routine Description:
+// - Writes cells to the output buffer.
+// Arguments:
+// - givenIt - Iterator representing output cell data to write
+// - rowIndex - the index of the row to write the text to
+// - startIndex - column in the row to start writing cells to
+// - shouldWrap - whether text writing should wrap around the text buffer or not
+// Return Value:
+// - the number of cells written
+size_t SCREEN_INFORMATION::_WriteLine(const OutputCellIterator givenIt,
+                                      const size_t rowIndex,
+                                      const size_t startIndex,
+                                      const bool shouldWrap)
+{
+    auto it = givenIt;
+    auto currentColumn = startIndex;
+    size_t amountWritten = 0;
+    auto currentRowIndex = rowIndex;
+    while (it)
+    {
+        if (!shouldWrap && currentRowIndex >= static_cast<size_t>(_textBuffer->TotalRowCount()))
+        {
+            break;
+        }
+
+        ROW& row = _textBuffer->GetRowByOffset(currentRowIndex);
+        const auto newIt = row.WriteCells(it, currentColumn);
+        amountWritten += newIt - it;
+        it = newIt;
+        row.GetCharRow().SetWrapForced(it);
+        currentColumn = 0;
+        ++currentRowIndex;
+    }
+    return amountWritten;
 }
 
 // Routine Description:
@@ -2681,8 +2732,7 @@ size_t SCREEN_INFORMATION::FillTextAttribute(const TextAttribute attr,
         amountWritten += columnsToFill;
         currentLocation.X = 0;
         currentLocation.Y++;
-    }
-    while (amountWritten < amountToWrite && IsCoordInBounds(currentLocation, coordScreenBufferSize));
+    } while (amountWritten < amountToWrite && IsCoordInBounds(currentLocation, coordScreenBufferSize));
 
     NotifyAccessibilityEventing(target.X, target.Y, currentLocation.X, currentLocation.Y);
     UpdateScreen(target, currentLocation);
@@ -2729,7 +2779,7 @@ size_t SCREEN_INFORMATION::FillTextGlyph(const std::wstring_view glyph,
         const RepeatingIterator<OutputCell, decltype(cellsToWrite)::const_iterator>  startingIt{ cellsToWrite.begin(),
                                                                                                  cellsToWrite.end() };
         const auto it = row.WriteCells(startingIt, startingIt + columnsToFill, currentLocation.X);
-        const short distance = gsl::narrow<short>(std::distance( startingIt, it));
+        const short distance = gsl::narrow<short>(std::distance(startingIt, it));
         currentLocation.X += distance;
         amountWritten += distance;
 
@@ -2741,8 +2791,7 @@ size_t SCREEN_INFORMATION::FillTextGlyph(const std::wstring_view glyph,
             currentLocation.Y++;
             currentLocation.X = 0;
         }
-    }
-    while (amountWritten < amountToWrite && IsCoordInBounds(currentLocation, coordScreenBufferSize));
+    } while (amountWritten < amountToWrite && IsCoordInBounds(currentLocation, coordScreenBufferSize));
 
     NotifyAccessibilityEventing(target.X, target.Y, currentLocation.X, currentLocation.Y);
     UpdateScreen(target, currentLocation);
@@ -2941,5 +2990,5 @@ void SCREEN_INFORMATION::UpdateBottom()
 void SCREEN_INFORMATION::MoveToBottom()
 {
     const short newTop = _virtualBottom - _viewport.Height() + 1;
-    LOG_IF_NTSTATUS_FAILED(SetViewportOrigin(true, {0, newTop}, true));
+    LOG_IF_NTSTATUS_FAILED(SetViewportOrigin(true, { 0, newTop }, true));
 }

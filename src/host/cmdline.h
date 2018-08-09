@@ -108,7 +108,7 @@ void RedrawCommandLine(_Inout_ COOKED_READ_DATA* CookedReadData);
 
 // Word delimiters
 bool IsWordDelim(const WCHAR wch);
-bool IsWordDelim(const std::vector<wchar_t>& charData);
+bool IsWordDelim(const std::wstring_view charData);
 
 [[nodiscard]]
 HRESULT DoSrvSetConsoleTitleW(_In_reads_or_z_(cchBuffer) const wchar_t* const pwsBuffer,

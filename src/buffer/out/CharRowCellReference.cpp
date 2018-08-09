@@ -13,7 +13,7 @@
 // - assignment operator. will store extended glyph data in a separate storage location
 // Arguments:
 // - chars - the glyph data to store
-void CharRowCellReference::operator=(const std::vector<wchar_t>& chars)
+void CharRowCellReference::operator=(const std::wstring_view chars)
 {
     THROW_HR_IF(E_INVALIDARG, chars.empty());
     if (chars.size() == 1)
@@ -25,7 +25,7 @@ void CharRowCellReference::operator=(const std::vector<wchar_t>& chars)
     {
         auto& storage = _parent.GetUnicodeStorage();
         const auto key = _parent.GetStorageKey(_index);
-        storage.StoreGlyph(key, chars);
+        storage.StoreGlyph(key, { chars.cbegin(), chars.cend() });
         _cellData().DbcsAttr().SetGlyphStored(true);
     }
 }
