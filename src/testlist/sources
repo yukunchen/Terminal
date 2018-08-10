@@ -16,3 +16,4 @@ TESTLIST_REFERENCE_DIRS=\
     $(OBJ_PATH)\..\host\ft_uia\$O \
     $(OBJ_PATH)\..\terminal\adapter\ut_adapter\$O \
     $(OBJ_PATH)\..\terminal\parser\ut_parser\$O \
+    $(PUBLIC_INTERNAL_PATH)\minkernel\testmetadata\console \

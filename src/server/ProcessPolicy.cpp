@@ -19,7 +19,9 @@
 #define ACCESS_CLAIM_WIN_PKG_PRESENT         0x00000002  // WIN://PKG
 #define ACCESS_CLAIM_WIN_SKUID_PRESENT       0x00000004  // WIN://SKUID
 
+#ifndef NT_ASSERT
 #define NT_ASSERT(_exp) assert(_exp)
+#endif
 
 typedef struct _PS_PKG_CLAIM {
     ULONGLONG Flags : 16;
