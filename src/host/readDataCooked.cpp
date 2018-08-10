@@ -12,6 +12,7 @@
 #include "_stream.h"
 #include "inputBuffer.hpp"
 
+#include "..\interactivity\inc\ServiceLocator.hpp"
 
 #define LINE_INPUT_BUFFER_SIZE (256 * sizeof(WCHAR))
 
@@ -87,12 +88,6 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
     // Initialize the user's buffer to spaces. This is done so that
     // moving in the buffer via cursor doesn't do strange things.
     std::fill_n(_BufPtr, _BufferSize / sizeof(wchar_t), UNICODE_SPACE);
-
-    // TODO MSFT:11285829 find a better way to manage the lifetime of this object in relation to gci
-    // add ourself to the console information
-    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    FAIL_FAST_IF(gci.HasPendingCookedRead()); // there can be only one
-    gci.SetCookedReadData(this);
 }
 
 #if UNIT_TESTING
