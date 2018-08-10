@@ -941,17 +941,17 @@ bool Selection::s_GetInputLineBoundaries(_Out_opt_ COORD* const pcoordInputStart
     SMALL_RECT srectEdges;
     Utils::s_GetCurrentBufferEdges(&srectEdges);
 
-    const COOKED_READ_DATA* const pCookedReadData = gci.lpCookedReadData;
     auto& textBuffer = gci.GetActiveOutputBuffer().GetTextBuffer();
 
     // if we have no read data, we have no input line
-    if (pCookedReadData == nullptr || pCookedReadData->_NumberOfVisibleChars <= 0)
+    if (!gci.HasPendingCookedRead() || gci.CookedReadData().VisibleCharCount() == 0)
     {
         return false;
     }
 
-    const COORD coordStart = pCookedReadData->_OriginalCursorPosition;
-    COORD coordEnd = pCookedReadData->_OriginalCursorPosition;
+    const auto& cookedRead = gci.CookedReadData();
+    const COORD coordStart = cookedRead.OriginalCursorPosition();
+    COORD coordEnd = cookedRead.OriginalCursorPosition();
 
     if (coordEnd.X < 0 && coordEnd.Y < 0)
     {
@@ -961,7 +961,7 @@ bool Selection::s_GetInputLineBoundaries(_Out_opt_ COORD* const pcoordInputStart
     else
     {
         // otherwise, we need to add the number of characters in the input line to the original cursor position
-        Utils::s_AddToPosition(srectEdges, gsl::narrow<int>(pCookedReadData->_NumberOfVisibleChars), &coordEnd);
+        Utils::s_AddToPosition(srectEdges, gsl::narrow<int>(cookedRead.VisibleCharCount()), &coordEnd);
     }
 
     // - 1 so the coordinate is on top of the last position of the text, not one past it.

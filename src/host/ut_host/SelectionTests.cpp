@@ -439,14 +439,17 @@ class SelectionInputTests
         srectEdges.Right = srectEdges.Bottom = sRowWidth - 1;
 
         // false when no cooked read data exists
-        VERIFY_IS_TRUE(gci.lpCookedReadData == nullptr);
+        VERIFY_IS_FALSE(gci.HasPendingCookedRead());
 
         bool fResult = Selection::s_GetInputLineBoundaries(nullptr, nullptr);
         VERIFY_IS_FALSE(fResult);
 
         // prepare some read data
         m_state->PrepareCookedReadData();
-        COOKED_READ_DATA* pCooked = gci.lpCookedReadData;
+        // set up to clean up read data later
+        auto cleanup = wil::ScopeExit([&](){ m_state->CleanupCookedReadData(); });
+
+        COOKED_READ_DATA& readData = gci.CookedReadData();
 
         // backup text info position over remainder of text execution duration
         TextBuffer& textBuffer = gci.GetActiveOutputBuffer().GetTextBuffer();
@@ -455,10 +458,10 @@ class SelectionInputTests
         coordOldTextInfoPos.Y = textBuffer.GetCursor().GetPosition().Y;
 
         // set various cursor positions
-        pCooked->_OriginalCursorPosition.X = 15;
-        pCooked->_OriginalCursorPosition.Y = 3;
+        readData.OriginalCursorPosition().X = 15;
+        readData.OriginalCursorPosition().Y = 3;
 
-        pCooked->_NumberOfVisibleChars = 200;
+        readData.VisibleCharCount() = 200;
 
         textBuffer.GetCursor().SetXPosition(35);
         textBuffer.GetCursor().SetYPosition(35);
@@ -475,24 +478,24 @@ class SelectionInputTests
         VERIFY_IS_TRUE(fResult);
 
         // starting position/boundary should always be where the input line started
-        VERIFY_ARE_EQUAL(coordStart.X, pCooked->_OriginalCursorPosition.X);
-        VERIFY_ARE_EQUAL(coordStart.Y, pCooked->_OriginalCursorPosition.Y);
+        VERIFY_ARE_EQUAL(coordStart.X, readData.OriginalCursorPosition().X);
+        VERIFY_ARE_EQUAL(coordStart.Y, readData.OriginalCursorPosition().Y);
 
         // ending position can vary. it's in one of two spots
         // 1. If the original cooked cursor was valid (which it was this first time), it's NumberOfVisibleChars ahead.
         COORD coordFinalPos;
 
-        const short cCharsToAdjust = ((short)pCooked->_NumberOfVisibleChars - 1); // then -1 to be on the last piece of text, not past it
+        const short cCharsToAdjust = ((short)readData.VisibleCharCount() - 1); // then -1 to be on the last piece of text, not past it
 
-        coordFinalPos.X = (pCooked->_OriginalCursorPosition.X + cCharsToAdjust) % sRowWidth;
-        coordFinalPos.Y = pCooked->_OriginalCursorPosition.Y + ((pCooked->_OriginalCursorPosition.X + cCharsToAdjust) / sRowWidth);
+        coordFinalPos.X = (readData.OriginalCursorPosition().X + cCharsToAdjust) % sRowWidth;
+        coordFinalPos.Y = readData.OriginalCursorPosition().Y + ((readData.OriginalCursorPosition().X + cCharsToAdjust) / sRowWidth);
 
         VERIFY_ARE_EQUAL(coordEnd.X, coordFinalPos.X);
         VERIFY_ARE_EQUAL(coordEnd.Y, coordFinalPos.Y);
 
         // 2. if the original cooked cursor is invalid, then it's the text info cursor position
-        pCooked->_OriginalCursorPosition.X = -1;
-        pCooked->_OriginalCursorPosition.Y = -1;
+        readData.OriginalCursorPosition().X = -1;
+        readData.OriginalCursorPosition().Y = -1;
 
         fResult = Selection::s_GetInputLineBoundaries(nullptr, &coordEnd);
         VERIFY_IS_TRUE(fResult);
@@ -503,7 +506,5 @@ class SelectionInputTests
         // restore text buffer info position
         textBuffer.GetCursor().SetXPosition(coordOldTextInfoPos.X);
         textBuffer.GetCursor().SetYPosition(coordOldTextInfoPos.Y);
-        // clean up read data
-        m_state->CleanupCookedReadData();
     }
 };
