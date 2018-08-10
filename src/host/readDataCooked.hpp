@@ -28,6 +28,8 @@ Revision History:
 
 #include "readData.hpp"
 
+#include "..\interactivity\inc\ServiceLocator.hpp"
+
 class COOKED_READ_DATA final : public ReadData
 {
 public:
@@ -56,7 +58,6 @@ public:
     gsl::span<wchar_t> SpanWholeBuffer();
 
 // TODO MSFT:11285829 member variable should be made private where possible.
-    SCREEN_INFORMATION& _screenInfo;
     size_t _BufferSize;
     size_t _BytesRead;
     size_t _CurrentPosition;  // char position, not byte position
@@ -65,18 +66,7 @@ public:
     PWCHAR  _BackupLimit;
     size_t _UserBufferSize;   // doubled size in ansi case
     PWCHAR _UserBuffer;
-    COORD _OriginalCursorPosition;
-    size_t _NumberOfVisibleChars;
-    ULONG _CtrlWakeupMask;
-    CommandHistory* _CommandHistory;
-    const bool _Echo;
-    bool _InsertMode;
-    const bool _Processed;
-    const bool _Line;
 
-    ULONG ControlKeyState;
-    COORD BeforeDialogCursorPosition; // Currently only used for F9 (ProcessCommandNumberInput) since it's the only pop-up to move the cursor when it starts.
-    bool _fIsUnicode;
     size_t* pdwNumBytes;
 
     void ProcessAliases(DWORD& lineCount);
@@ -93,30 +83,53 @@ public:
     void EndCurrentPopup();
     void CleanUpAllPopups();
 
+    CommandHistory& History() noexcept;
+    bool HasHistory() const noexcept;
+
+    const size_t& VisibleCharCount() const noexcept;
+    size_t& VisibleCharCount() noexcept;
+
+    SCREEN_INFORMATION& ScreenInfo() noexcept;
+
+    const COORD& OriginalCursorPosition() const noexcept;
+    COORD& OriginalCursorPosition() noexcept;
+
+    COORD& BeforeDialogCursorPosition() noexcept;
+
+    bool IsEchoInput() const noexcept;
+    bool IsInsertMode() const noexcept;
+    void SetInsertMode(const bool mode) noexcept;
+    bool IsUnicode() const noexcept;
+
 // TODO MSFT:11285829 this is a temporary kludge until the constructors are ironed
 // out, so that we can still run the tests in the meantime.
 #if UNIT_TESTING
     COOKED_READ_DATA(SCREEN_INFORMATION& screenInfo) :
         _screenInfo{ screenInfo },
-        _fIsUnicode{ false },
-        _InsertMode{ false },
-        _Line{ false },
-        _NumberOfVisibleChars{ 0 },
-        _CtrlWakeupMask{ 0 },
         _UserBuffer{ nullptr },
         _CurrentPosition{ 0 },
         _UserBufferSize{ 0 },
-        ControlKeyState{ 0 },
-        _CommandHistory{ nullptr },
         _BytesRead{ 0 },
         _exeName{},
         _BufPtr{ nullptr },
         pdwNumBytes{ nullptr },
         _BackupLimit{ nullptr },
         _BufferSize{ 0 },
-        _Processed{ false },
-        _Echo{ false }
+
+        _commandHistory{ nullptr },
+        _controlKeyState{ 0 },
+        _ctrlWakeupMask{ 0 },
+        _visibleCharCount{ 0 },
+
+        _echoInput{ false },
+        _lineInput{ false },
+        _processedInput{ false },
+        _insertMode{ false },
+        _unicode{ false }
     {
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        FAIL_FAST_IF(gci.HasPendingCookedRead()); // there can be only one
+        gci.SetCookedReadData(this);
     }
 #endif
 
@@ -124,4 +137,21 @@ private:
     std::unique_ptr<byte[]> _buffer;
     std::wstring _exeName;
     std::unique_ptr<ConsoleHandleData> _tempHandle;
+
+    // TODO MSFT:11285829 make this something other than a deletable pointer
+    // non-ownership pointer
+    CommandHistory* _commandHistory;
+
+    ULONG _controlKeyState;
+    ULONG _ctrlWakeupMask;
+    size_t _visibleCharCount; // TODO MSFT:11285829 is this cells or glyphs? ie. is a wide char counted as 1 or 2?
+    SCREEN_INFORMATION& _screenInfo;
+    COORD _originalCursorPosition; // TODO MSFT:11285829 original to what? the beginning of the prompt?
+    COORD _beforeDialogCursorPosition; // Currently only used for F9 (ProcessCommandNumberInput) since it's the only pop-up to move the cursor when it starts.
+
+    const bool _echoInput;
+    const bool _lineInput;
+    const bool _processedInput;
+    bool _insertMode;
+    bool _unicode;
 };

@@ -146,9 +146,9 @@ class ApiRoutinesTests
 
     TEST_METHOD(ApiSetConsoleInputModeImplInsertCookedRead)
     {
-        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         Log::Comment(L"Turn on insert mode with cooked read data.");
-        gci.lpCookedReadData = new COOKED_READ_DATA(gci.GetActiveOutputBuffer());
+        m_state->PrepareCookedReadData();
+        auto cleanup = wil::ScopeExit([&](){ m_state->CleanupCookedReadData(); });
 
         PrepVerifySetConsoleInputModeImpl(0);
         Log::Comment(L"Success code should result from setting valid flags.");
@@ -157,9 +157,6 @@ class ApiRoutinesTests
         Log::Comment(L"Turn back off and verify.");
         PrepVerifySetConsoleInputModeImpl(0);
         VerifySetConsoleInputModeImpl(S_OK, ENABLE_EXTENDED_FLAGS);
-
-        delete gci.lpCookedReadData;
-        gci.lpCookedReadData = nullptr;
     }
 
     TEST_METHOD(ApiSetConsoleInputModeImplEchoOnLineOff)

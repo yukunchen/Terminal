@@ -12,7 +12,6 @@
 #include "_stream.h"
 #include "inputBuffer.hpp"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
 
 #define LINE_INPUT_BUFFER_SIZE (256 * sizeof(WCHAR))
 
@@ -55,20 +54,22 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
     _CurrentPosition{ 0 },
     _UserBufferSize{ UserBufferSize },
     _UserBuffer{ UserBuffer },
-    _OriginalCursorPosition{ -1, -1 },
-    _NumberOfVisibleChars{ 0 },
-    _CtrlWakeupMask{ CtrlWakeupMask },
-    _CommandHistory{ CommandHistory },
-    _Echo{ IsFlagSet(pInputBuffer->InputMode, ENABLE_ECHO_INPUT) },
-    _InsertMode{ ServiceLocator::LocateGlobals().getConsoleInformation().GetInsertMode() },
-    _Processed{ IsFlagSet(pInputBuffer->InputMode, ENABLE_PROCESSED_INPUT) },
-    _Line{ IsFlagSet(pInputBuffer->InputMode, ENABLE_LINE_INPUT) },
     _tempHandle{ nullptr },
     _exeName{ exeName },
-    BeforeDialogCursorPosition{ 0, 0 },
-    _fIsUnicode{ false },
-    ControlKeyState{ 0 },
-    pdwNumBytes{ nullptr }
+    pdwNumBytes{ nullptr },
+
+    _commandHistory{ CommandHistory },
+    _controlKeyState{ 0 },
+    _ctrlWakeupMask{ CtrlWakeupMask },
+    _visibleCharCount{ 0 },
+    _originalCursorPosition{ -1, -1 },
+    _beforeDialogCursorPosition{ 0, 0 },
+
+    _echoInput{ IsFlagSet(pInputBuffer->InputMode, ENABLE_ECHO_INPUT) },
+    _lineInput{ IsFlagSet(pInputBuffer->InputMode, ENABLE_LINE_INPUT) },
+    _processedInput{ IsFlagSet(pInputBuffer->InputMode, ENABLE_PROCESSED_INPUT) },
+    _insertMode{ ServiceLocator::LocateGlobals().getConsoleInformation().GetInsertMode() },
+    _unicode{ false }
 {
     THROW_IF_FAILED(screenInfo.GetMainBuffer().Header.AllocateIoHandle(ConsoleHandleData::HandleType::Output,
                                                                        GENERIC_WRITE,
@@ -86,6 +87,12 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
     // Initialize the user's buffer to spaces. This is done so that
     // moving in the buffer via cursor doesn't do strange things.
     std::fill_n(_BufPtr, _BufferSize / sizeof(wchar_t), UNICODE_SPACE);
+
+    // TODO MSFT:11285829 find a better way to manage the lifetime of this object in relation to gci
+    // add ourself to the console information
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    FAIL_FAST_IF(gci.HasPendingCookedRead()); // there can be only one
+    gci.SetCookedReadData(this);
 }
 
 // Routine Description:
@@ -94,6 +101,7 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
 COOKED_READ_DATA::~COOKED_READ_DATA()
 {
     CleanUpAllPopups();
+    ServiceLocator::LocateGlobals().getConsoleInformation().SetCookedReadData(nullptr);
 }
 
 gsl::span<wchar_t> COOKED_READ_DATA::SpanWholeBuffer()
@@ -105,6 +113,66 @@ gsl::span<wchar_t> COOKED_READ_DATA::SpanAtPointer()
 {
     auto wholeSpan = SpanWholeBuffer();
     return wholeSpan.subspan(_BufPtr - _BackupLimit);
+}
+
+bool COOKED_READ_DATA::HasHistory() const noexcept
+{
+    return _commandHistory != nullptr;
+}
+
+CommandHistory& COOKED_READ_DATA::History() noexcept
+{
+    return *_commandHistory;
+}
+
+const size_t& COOKED_READ_DATA::VisibleCharCount() const noexcept
+{
+    return _visibleCharCount;
+}
+
+size_t& COOKED_READ_DATA::VisibleCharCount() noexcept
+{
+    return _visibleCharCount;
+}
+
+SCREEN_INFORMATION& COOKED_READ_DATA::ScreenInfo() noexcept
+{
+    return _screenInfo;
+}
+
+const COORD& COOKED_READ_DATA::OriginalCursorPosition() const noexcept
+{
+    return _originalCursorPosition;
+}
+
+COORD& COOKED_READ_DATA::OriginalCursorPosition() noexcept
+{
+    return _originalCursorPosition;
+}
+
+COORD& COOKED_READ_DATA::BeforeDialogCursorPosition() noexcept
+{
+    return _beforeDialogCursorPosition;
+}
+
+bool COOKED_READ_DATA::IsEchoInput() const noexcept
+{
+    return _echoInput;
+}
+
+bool COOKED_READ_DATA::IsInsertMode() const noexcept
+{
+    return _insertMode;
+}
+
+void COOKED_READ_DATA::SetInsertMode(const bool mode) noexcept
+{
+    _insertMode = mode;
+}
+
+bool COOKED_READ_DATA::IsUnicode() const noexcept
+{
+    return _unicode;
 }
 
 // Routine Description:
@@ -148,7 +216,6 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
     if (IsAnyFlagSet(TerminationReason, (WaitTerminationReason::CtrlC | WaitTerminationReason::CtrlBreak)))
     {
         *pReplyStatus = STATUS_ALERTED;
-        gci.lpCookedReadData = nullptr;
         return true;
     }
 
@@ -156,7 +223,6 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
     if (IsFlagSet(TerminationReason, WaitTerminationReason::ThreadDying))
     {
         *pReplyStatus = STATUS_THREAD_IS_TERMINATING;
-        gci.lpCookedReadData = nullptr;
         return true;
     }
 
@@ -167,7 +233,6 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
     if (IsFlagSet(TerminationReason, WaitTerminationReason::HandleClosing))
     {
         *pReplyStatus = STATUS_ALERTED;
-        gci.lpCookedReadData = nullptr;
         return true;
     }
 
@@ -202,10 +267,10 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
     //   the out value into.
     // It's still really weird, but limits the potential fallout of changing a
     //   piece of old spaghetti code.
-    if (_CommandHistory)
+    if (_commandHistory)
     {
         Popup* Popup;
-        if (!_CommandHistory->PopupList.empty())
+        if (!_commandHistory->PopupList.empty())
         {
             // (see above comment, MSFT:13994975)
             // Make sure that the popup writes the dwNumBytes to the right place
@@ -214,13 +279,11 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
                 pdwNumBytes = pNumBytes;
             }
 
-            Popup = _CommandHistory->PopupList.front();
-            *pReplyStatus = Popup->DoCallback(this);
+            Popup = _commandHistory->PopupList.front();
+            *pReplyStatus = Popup->DoCallback(*this);
             if (*pReplyStatus == CONSOLE_STATUS_READ_COMPLETE || (*pReplyStatus != CONSOLE_STATUS_WAIT && *pReplyStatus != CONSOLE_STATUS_WAIT_NO_BLOCK))
             {
                 *pReplyStatus = S_OK;
-                gci.lpCookedReadData = nullptr;
-
                 return true;
             }
             return false;
@@ -230,7 +293,6 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
     *pReplyStatus = Read(fIsUnicode, *pNumBytes, *pControlKeyState);
     if (*pReplyStatus != CONSOLE_STATUS_WAIT)
     {
-        gci.lpCookedReadData = nullptr;
         return true;
     }
     else
@@ -295,19 +357,19 @@ HRESULT COOKED_READ_DATA::Read(const bool isUnicode,
         // up here because the debugger is multi-threaded and calls
         // read before outputting the prompt.
 
-        if (_OriginalCursorPosition.X == -1)
+        if (_originalCursorPosition.X == -1)
         {
-            _OriginalCursorPosition = _screenInfo.GetTextBuffer().GetCursor().GetPosition();
+            _originalCursorPosition = _screenInfo.GetTextBuffer().GetCursor().GetPosition();
         }
 
         if (commandLineEditingKeys)
         {
             // TODO: this is super weird for command line popups only
-            _fIsUnicode = isUnicode;
+            _unicode = isUnicode;
 
             pdwNumBytes = &numBytes;
 
-            Status = ProcessCommandLine(this, Char, KeyState);
+            Status = ProcessCommandLine(*this, Char, KeyState);
             if (Status == CONSOLE_STATUS_READ_COMPLETE || Status == CONSOLE_STATUS_WAIT)
             {
                 break;
@@ -343,7 +405,7 @@ HRESULT COOKED_READ_DATA::Read(const bool isUnicode,
     {
         DWORD LineCount = 1;
 
-        if (_Echo)
+        if (_echoInput)
         {
             // Figure out where real string ends (at carriage return or end of buffer).
             PWCHAR StringPtr = _BackupLimit;
@@ -361,10 +423,10 @@ HRESULT COOKED_READ_DATA::Read(const bool isUnicode,
 
             if (FoundCR)
             {
-                if (_CommandHistory)
+                if (_commandHistory)
                 {
                     // add to command line recall list if we have a history list.
-                    LOG_IF_FAILED(_CommandHistory->Add({ _BackupLimit, StringLength / sizeof(wchar_t) },
+                    LOG_IF_FAILED(_commandHistory->Add({ _BackupLimit, StringLength / sizeof(wchar_t) },
                                                        IsFlagSet(gci.Flags, CONSOLE_HISTORY_NODUP)));
                 }
 
@@ -490,7 +552,7 @@ HRESULT COOKED_READ_DATA::Read(const bool isUnicode,
 
             memmove(_UserBuffer, _BackupLimit, numBytes);
         }
-        controlKeyState = ControlKeyState;
+        controlKeyState = _controlKeyState;
 
         if (!isUnicode)
         {
@@ -573,13 +635,13 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
         return false;
     }
 
-    if (_CtrlWakeupMask != 0 && wch < L' ' && (_CtrlWakeupMask & (1 << wch)))
+    if (_ctrlWakeupMask != 0 && wch < L' ' && (_ctrlWakeupMask & (1 << wch)))
     {
         *_BufPtr = wch;
         _BytesRead += sizeof(WCHAR);
         _BufPtr += 1;
         _CurrentPosition += 1;
-        ControlKeyState = keyState;
+        _controlKeyState = keyState;
         return true;
     }
 
@@ -601,7 +663,7 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
             fStartFromDelim = IsWordDelim(_BufPtr[-1]);
 
         eol_repeat:
-            if (_Echo)
+            if (_echoInput)
             {
                 NumToWrite = sizeof(WCHAR);
                 status = WriteCharsLegacy(_screenInfo,
@@ -610,12 +672,12 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                                           &wch,
                                           &NumToWrite,
                                           &NumSpaces,
-                                          _OriginalCursorPosition.X,
+                                          _originalCursorPosition.X,
                                           WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
                                           &ScrollY);
                 if (NT_SUCCESS(status))
                 {
-                    _OriginalCursorPosition.Y += ScrollY;
+                    _originalCursorPosition.Y += ScrollY;
                 }
                 else
                 {
@@ -623,8 +685,8 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                 }
             }
 
-            _NumberOfVisibleChars += NumSpaces;
-            if (wch == UNICODE_BACKSPACE && _Processed)
+            _visibleCharCount += NumSpaces;
+            if (wch == UNICODE_BACKSPACE && _processedInput)
             {
                 _BytesRead -= sizeof(WCHAR);
 #pragma prefast(suppress:__WARNING_POTENTIAL_BUFFER_OVERFLOW_HIGH_PRIORITY, "This access is fine")
@@ -662,7 +724,7 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
         // write the new command line to the screen
         // update the cursor position
 
-        if (wch == UNICODE_BACKSPACE && _Processed)
+        if (wch == UNICODE_BACKSPACE && _processedInput)
         {
             // for backspace, use writechars to calculate the new cursor position.
             // this call also sets the cursor to the right position for the
@@ -678,7 +740,7 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                 // correctly.  we also call it later if we're not at eol so
                 // that the remainder of the string can be updated correctly.
 
-                if (_Echo)
+                if (_echoInput)
                 {
                     NumToWrite = sizeof(WCHAR);
                     status = WriteCharsLegacy(_screenInfo,
@@ -687,7 +749,7 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                                               &wch,
                                               &NumToWrite,
                                               nullptr,
-                                              _OriginalCursorPosition.X,
+                                              _originalCursorPosition.X,
                                               WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
                                               nullptr);
                     if (!NT_SUCCESS(status))
@@ -735,20 +797,20 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
             {
                 bool fBisect = false;
 
-                if (_Echo)
+                if (_echoInput)
                 {
                     if (CheckBisectProcessW(_screenInfo,
                                             _BackupLimit,
                                             _CurrentPosition + 1,
-                                            sScreenBufferSizeX - _OriginalCursorPosition.X,
-                                            _OriginalCursorPosition.X,
+                                            sScreenBufferSizeX - _originalCursorPosition.X,
+                                            _originalCursorPosition.X,
                                             TRUE))
                     {
                         fBisect = true;
                     }
                 }
 
-                if (_InsertMode)
+                if (_insertMode)
                 {
                     memmove(_BufPtr + 1,
                             _BufPtr,
@@ -760,9 +822,9 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                 _CurrentPosition += 1;
 
                 // calculate new cursor position
-                if (_Echo)
+                if (_echoInput)
                 {
-                    NumSpaces = RetrieveNumberOfSpaces(_OriginalCursorPosition.X,
+                    NumSpaces = RetrieveNumberOfSpaces(_originalCursorPosition.X,
                                                        _BackupLimit,
                                                        _CurrentPosition - 1);
                     if (NumSpaces > 0 && fBisect)
@@ -771,7 +833,7 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
             }
         }
 
-        if (_Echo && CallWrite)
+        if (_echoInput && CallWrite)
         {
             COORD CursorPosition;
 
@@ -781,7 +843,7 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
 
             // clear the current command line from the screen
 #pragma prefast(suppress:__WARNING_BUFFER_OVERFLOW, "Not sure why prefast doesn't like this call.")
-            DeleteCommandLine(this, FALSE);
+            DeleteCommandLine(*this, FALSE);
 
             // write the new command line to the screen
             NumToWrite = _BytesRead;
@@ -796,8 +858,8 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                                       _BackupLimit,
                                       _BackupLimit,
                                       &NumToWrite,
-                                      &_NumberOfVisibleChars,
-                                      _OriginalCursorPosition.X,
+                                      &_visibleCharCount,
+                                      _originalCursorPosition.X,
                                       dwFlags,
                                       &ScrollY);
             if (!NT_SUCCESS(status))
@@ -813,8 +875,8 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                 if (CheckBisectProcessW(_screenInfo,
                                         _BackupLimit,
                                         _CurrentPosition + 1,
-                                        sScreenBufferSizeX - _OriginalCursorPosition.X,
-                                        _OriginalCursorPosition.X, TRUE))
+                                        sScreenBufferSizeX - _originalCursorPosition.X,
+                                        _originalCursorPosition.X, TRUE))
                 {
                     if (CursorPosition.X == (sScreenBufferSizeX - 1))
                     {
@@ -823,7 +885,7 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                 }
 
                 // adjust cursor position for WriteChars
-                _OriginalCursorPosition.Y += ScrollY;
+                _originalCursorPosition.Y += ScrollY;
                 CursorPosition.Y += ScrollY;
                 status = AdjustCursorPosition(_screenInfo, CursorPosition, TRUE, nullptr);
                 if (!NT_SUCCESS(status))
@@ -840,12 +902,12 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
     // stored at the end of the buffer.
     if (wch == UNICODE_CARRIAGERETURN)
     {
-        if (_Processed)
+        if (_processedInput)
         {
             if (_BytesRead < _BufferSize)
             {
                 *_BufPtr = UNICODE_LINEFEED;
-                if (_Echo)
+                if (_echoInput)
                 {
                     NumToWrite = sizeof(WCHAR);
                     status = WriteCharsLegacy(_screenInfo,
@@ -854,7 +916,7 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                                               _BufPtr,
                                               &NumToWrite,
                                               nullptr,
-                                              _OriginalCursorPosition.X,
+                                              _originalCursorPosition.X,
                                               WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
                                               nullptr);
                     if (!NT_SUCCESS(status))
@@ -868,12 +930,12 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
             }
         }
         // reset the cursor back to 25% if necessary
-        if (_Line)
+        if (_lineInput)
         {
-            if (!!_InsertMode != gci.GetInsertMode())
+            if (_insertMode != gci.GetInsertMode())
             {
                 // Make cursor small.
-                LOG_IF_FAILED(ProcessCommandLine(this, VK_INSERT, 0));
+                LOG_IF_FAILED(ProcessCommandLine(*this, VK_INSERT, 0));
             }
 
             status = STATUS_SUCCESS;
@@ -886,23 +948,23 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
 
 void COOKED_READ_DATA::EndCurrentPopup()
 {
-    if (_CommandHistory == nullptr)
+    if (_commandHistory == nullptr)
     {
         return;
     }
 
-    LOG_IF_FAILED(_CommandHistory->EndPopup());
+    LOG_IF_FAILED(_commandHistory->EndPopup());
 }
 
 void COOKED_READ_DATA::CleanUpAllPopups()
 {
-    if (_CommandHistory == nullptr)
+    if (_commandHistory == nullptr)
     {
         return;
     }
 
-    while (!_CommandHistory->PopupList.empty())
+    while (!_commandHistory->PopupList.empty())
     {
-        LOG_IF_FAILED(_CommandHistory->EndPopup());
+        LOG_IF_FAILED(_commandHistory->EndPopup());
     }
 }

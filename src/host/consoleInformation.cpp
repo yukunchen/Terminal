@@ -31,7 +31,7 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     // ColorTable initialized below
     // CPInfo initialized below
     // OutputCPInfo initialized below
-    lpCookedReadData(nullptr),
+    _cookedReadData(nullptr),
     ConsoleIme{},
     terminalMouseInput(HandleTerminalKeyEventCallback),
     _vtIo()
@@ -84,6 +84,26 @@ VtIo* CONSOLE_INFORMATION::GetVtIo()
 bool CONSOLE_INFORMATION::IsInVtIoMode() const
 {
     return _vtIo.IsUsingVt();
+}
+
+bool CONSOLE_INFORMATION::HasPendingCookedRead() const noexcept
+{
+    return _cookedReadData != nullptr;
+}
+
+const COOKED_READ_DATA& CONSOLE_INFORMATION::CookedReadData() const noexcept
+{
+    return *_cookedReadData;
+}
+
+COOKED_READ_DATA& CONSOLE_INFORMATION::CookedReadData() noexcept
+{
+    return *_cookedReadData;
+}
+
+void CONSOLE_INFORMATION::SetCookedReadData(COOKED_READ_DATA* readData) noexcept
+{
+    _cookedReadData = readData;
 }
 
 // Routine Description:

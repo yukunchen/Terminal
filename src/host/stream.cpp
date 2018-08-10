@@ -485,50 +485,41 @@ HRESULT ReadLineInput(_Inout_ InputBuffer* const pInputBuffer,
 
     try
     {
-        COOKED_READ_DATA CookedReadData(pInputBuffer, // pInputBuffer
-                                        pHandleData, // pInputReadHandleData
-                                        screenInfo, // pScreenInfo
-                                        OutputBufferSize, // UserBufferSize
-                                        pwchBuffer, // UserBuffer
-                                        dwCtrlWakeupMask, // CtrlWakeupMask
-                                        pCommandHistory, // CommandHistory
-                                        exeName); // pTempHandle
+        auto cookedReadData = std::make_unique<COOKED_READ_DATA>(pInputBuffer, // pInputBuffer
+                                                                 pHandleData, // pInputReadHandleData
+                                                                 screenInfo, // pScreenInfo
+                                                                 OutputBufferSize, // UserBufferSize
+                                                                 pwchBuffer, // UserBuffer
+                                                                 dwCtrlWakeupMask, // CtrlWakeupMask
+                                                                 pCommandHistory, // CommandHistory
+                                                                 exeName); // pTempHandle
 
         if (cbInitialData > 0)
         {
-            memcpy_s(CookedReadData._BufPtr, CookedReadData._BufferSize, pwsInitialData, cbInitialData);
+            memcpy_s(cookedReadData->_BufPtr, cookedReadData->_BufferSize, pwsInitialData, cbInitialData);
 
-            CookedReadData._BytesRead += cbInitialData;
+            cookedReadData->_BytesRead += cbInitialData;
 
             size_t const cchInitialData = cbInitialData / sizeof(wchar_t);
-            CookedReadData._NumberOfVisibleChars = cchInitialData;
-            CookedReadData._BufPtr += cchInitialData;
-            CookedReadData._CurrentPosition = cchInitialData;
+            cookedReadData->VisibleCharCount() = cchInitialData;
+            cookedReadData->_BufPtr += cchInitialData;
+            cookedReadData->_CurrentPosition = cchInitialData;
 
-            CookedReadData._OriginalCursorPosition = screenInfo.GetTextBuffer().GetCursor().GetPosition();
-            CookedReadData._OriginalCursorPosition.X -= (SHORT)CookedReadData._CurrentPosition;
+            cookedReadData->OriginalCursorPosition() = screenInfo.GetTextBuffer().GetCursor().GetPosition();
+            cookedReadData->OriginalCursorPosition().X -= (SHORT)cookedReadData->_CurrentPosition;
 
             const SHORT sScreenBufferSizeX = screenInfo.GetScreenBufferSize().X;
-            while (CookedReadData._OriginalCursorPosition.X < 0)
+            while (cookedReadData->OriginalCursorPosition().X < 0)
             {
-                CookedReadData._OriginalCursorPosition.X += sScreenBufferSizeX;
-                CookedReadData._OriginalCursorPosition.Y -= 1;
+                cookedReadData->OriginalCursorPosition().X += sScreenBufferSizeX;
+                cookedReadData->OriginalCursorPosition().Y -= 1;
             }
         }
 
-        gci.lpCookedReadData = &CookedReadData;
-
-        if (CONSOLE_STATUS_WAIT == CookedReadData.Read(Unicode, *pReadByteCount, *pControlKeyState))
+        if (CONSOLE_STATUS_WAIT == cookedReadData->Read(Unicode, *pReadByteCount, *pControlKeyState))
         {
-            COOKED_READ_DATA* pCookedReadWaiter = new(std::nothrow) COOKED_READ_DATA(std::move(CookedReadData));
-            RETURN_IF_NULL_ALLOC(pCookedReadWaiter);
-
-            gci.lpCookedReadData = pCookedReadWaiter;
-            *ppWaiter = pCookedReadWaiter;
-        }
-        else
-        {
-            gci.lpCookedReadData = nullptr;
+            // memory will be cleaned up by wait queue
+            *ppWaiter = cookedReadData.release();
         }
     }
     CATCH_RETURN();

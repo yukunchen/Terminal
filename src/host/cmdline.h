@@ -84,13 +84,13 @@ protected:
 };
 
 [[nodiscard]]
-NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
+NTSTATUS ProcessCommandLine(COOKED_READ_DATA& cookedReadData,
                             _In_ WCHAR wch,
                             const DWORD dwKeyState);
 
-void DeleteCommandLine(_Inout_ COOKED_READ_DATA* pCookedReadData, const bool fUpdateFields);
+void DeleteCommandLine(COOKED_READ_DATA& cookedReadData, const bool fUpdateFields);
 
-void RedrawCommandLine(_Inout_ COOKED_READ_DATA* CookedReadData);
+void RedrawCommandLine(COOKED_READ_DATA& cookedReadData);
 
 // Values for WriteChars(), WriteCharsLegacy() dwFlags
 #define WC_DESTRUCTIVE_BACKSPACE 0x01
@@ -117,10 +117,10 @@ HRESULT DoSrvSetConsoleTitleW(_In_reads_or_z_(cchBuffer) const wchar_t* const pw
 bool IsValidStringBuffer(_In_ bool Unicode, _In_reads_bytes_(Size) PVOID Buffer, _In_ ULONG Size, _In_ ULONG Count, ...);
 
 [[nodiscard]]
-NTSTATUS ProcessCommandListInput(_In_ COOKED_READ_DATA* const pCookedReadData);
+NTSTATUS ProcessCommandListInput(COOKED_READ_DATA& cookedReadData);
 [[nodiscard]]
-NTSTATUS ProcessCommandNumberInput(_In_ COOKED_READ_DATA* const pCookedReadData);
+NTSTATUS ProcessCommandNumberInput(COOKED_READ_DATA& cookedReadData);
 [[nodiscard]]
-NTSTATUS ProcessCopyFromCharInput(_In_ COOKED_READ_DATA* const pCookedReadData);
+NTSTATUS ProcessCopyFromCharInput(COOKED_READ_DATA& cookedReadData);
 [[nodiscard]]
-NTSTATUS ProcessCopyToCharInput(_In_ COOKED_READ_DATA* const pCookedReadData);
+NTSTATUS ProcessCopyToCharInput(COOKED_READ_DATA& cookedReadData);

@@ -492,7 +492,7 @@ void Popup::End()
 // - data - The cooked read data object representing the current input state
 // Return Value:
 // - Passthrough of one of the original popup servicing routines (see cmdline.cpp)
-HRESULT Popup::DoCallback(COOKED_READ_DATA* const data)
+HRESULT Popup::DoCallback(COOKED_READ_DATA& data)
 {
     try
     {

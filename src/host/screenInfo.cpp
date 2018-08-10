@@ -1031,18 +1031,18 @@ HRESULT SCREEN_INFORMATION::_AdjustScreenBuffer(const RECT* const prcClientNew)
     if (coordBufferSizeOld.X != coordBufferSizeNew.X ||
         coordBufferSizeOld.Y != coordBufferSizeNew.Y)
     {
-        CommandLine* const pCommandLine = &CommandLine::Instance();
+        CommandLine& commandLine = CommandLine::Instance();
 
         // TODO: Deleting and redrawing the command line during resizing can cause flickering. See: http://osgvsowi/658439
         // 1. Delete input string if necessary (see menu.c)
-        pCommandLine->Hide(FALSE);
+        commandLine.Hide(FALSE);
         _textBuffer->GetCursor().SetIsVisible(false);
 
         // 2. Call the resize screen buffer method (expensive) to redimension the backing buffer (and reflow)
         LOG_IF_FAILED(ResizeScreenBuffer(coordBufferSizeNew, FALSE));
 
         // 3.  Reprint console input string
-        pCommandLine->Show();
+        commandLine.Show();
         _textBuffer->GetCursor().SetIsVisible(true);
     }
 
@@ -1675,16 +1675,16 @@ NTSTATUS SCREEN_INFORMATION::ResizeTraditional(const COORD coordNewScreenSize)
 NTSTATUS SCREEN_INFORMATION::ResizeScreenBuffer(const COORD coordNewScreenSize,
                                                 const bool fDoScrollBarUpdate)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     NTSTATUS status = STATUS_SUCCESS;
 
     // cancel any active selection before resizing or it will not necessarily line up with the new buffer positions
     Selection::Instance().ClearSelection();
 
     // cancel any popups before resizing or they will not necessarily line up with new buffer positions
-    if (nullptr != gci.lpCookedReadData)
+    if (gci.HasPendingCookedRead())
     {
-        gci.lpCookedReadData->CleanUpAllPopups();
+        gci.CookedReadData().CleanUpAllPopups();
     }
 
     const bool fWrapText = gci.GetWrapText();

@@ -49,21 +49,21 @@ public:
     ~Popup();
 
     void Draw();
-    
+
     void Update(const SHORT delta, const bool wrap = false);
     void UpdateStoredColors(const WORD newAttr, const WORD newPopupAttr,
                             const WORD oldAttr, const WORD oldPopupAttr);
 
     void End();
-    
+
     TextAttribute Attributes;    // text attributes
-    
+
     SHORT BottomIndex;  // number of command displayed on last line of popup
     SHORT CurrentCommand;
     WCHAR NumberBuffer[6];
     SHORT NumberRead;
-    
-    HRESULT DoCallback(COOKED_READ_DATA* const data);
+
+    HRESULT DoCallback(COOKED_READ_DATA& data);
 
     SHORT Width() const noexcept;
     SHORT Height() const noexcept;
