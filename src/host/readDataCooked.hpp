@@ -28,8 +28,6 @@ Revision History:
 
 #include "readData.hpp"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
-
 class COOKED_READ_DATA final : public ReadData
 {
 public:
@@ -104,33 +102,7 @@ public:
 // TODO MSFT:11285829 this is a temporary kludge until the constructors are ironed
 // out, so that we can still run the tests in the meantime.
 #if UNIT_TESTING
-    COOKED_READ_DATA(SCREEN_INFORMATION& screenInfo) :
-        _screenInfo{ screenInfo },
-        _UserBuffer{ nullptr },
-        _CurrentPosition{ 0 },
-        _UserBufferSize{ 0 },
-        _BytesRead{ 0 },
-        _exeName{},
-        _BufPtr{ nullptr },
-        pdwNumBytes{ nullptr },
-        _BackupLimit{ nullptr },
-        _BufferSize{ 0 },
-
-        _commandHistory{ nullptr },
-        _controlKeyState{ 0 },
-        _ctrlWakeupMask{ 0 },
-        _visibleCharCount{ 0 },
-
-        _echoInput{ false },
-        _lineInput{ false },
-        _processedInput{ false },
-        _insertMode{ false },
-        _unicode{ false }
-    {
-        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        FAIL_FAST_IF(gci.HasPendingCookedRead()); // there can be only one
-        gci.SetCookedReadData(this);
-    }
+    COOKED_READ_DATA(SCREEN_INFORMATION& screenInfo);
 #endif
 
 private:
