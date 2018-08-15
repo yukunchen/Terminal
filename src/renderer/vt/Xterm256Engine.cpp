@@ -37,7 +37,7 @@ HRESULT Xterm256Engine::UpdateDrawingBrushes(const COLORREF colorForeground,
                                              const COLORREF colorBackground,
                                              const WORD /*legacyColorAttribute*/,
                                              const bool isBold,
-                                             const bool /*fIncludeBackgrounds*/)
+                                             const bool /*fIncludeBackgrounds*/) noexcept
 {
     return VtEngine::_RgbUpdateDrawingBrushes(colorForeground,
                                               colorBackground,

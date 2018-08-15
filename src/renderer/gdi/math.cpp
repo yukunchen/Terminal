@@ -38,7 +38,7 @@ SMALL_RECT GdiEngine::GetDirtyRectInChars()
 // Return Value:
 // - S_OK
 [[nodiscard]]
-HRESULT GdiEngine::IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult)
+HRESULT GdiEngine::IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept
 {
     bool isFullWidth = false;
 
@@ -83,7 +83,7 @@ HRESULT GdiEngine::IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* 
 // Return Value:
 // - S_OK or safe math failure value.
 [[nodiscard]]
-HRESULT GdiEngine::_ScaleByFont(const SMALL_RECT* const psr, _Out_ RECT* const prc) const
+HRESULT GdiEngine::_ScaleByFont(const SMALL_RECT* const psr, _Out_ RECT* const prc) const noexcept
 {
     COORD const coordFontSize = _GetFontSize();
     RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.X == 0 || coordFontSize.Y == 0);
@@ -107,7 +107,7 @@ HRESULT GdiEngine::_ScaleByFont(const SMALL_RECT* const psr, _Out_ RECT* const p
 // Return Value:
 // - S_OK or safe math failure value.
 [[nodiscard]]
-HRESULT GdiEngine::_ScaleByFont(const COORD* const pcoord, _Out_ POINT* const pPoint) const
+HRESULT GdiEngine::_ScaleByFont(const COORD* const pcoord, _Out_ POINT* const pPoint) const noexcept
 {
     COORD const coordFontSize = _GetFontSize();
     RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.X == 0 || coordFontSize.Y == 0);
@@ -129,7 +129,7 @@ HRESULT GdiEngine::_ScaleByFont(const COORD* const pcoord, _Out_ POINT* const pP
 // Return Value:
 // - S_OK or safe math failure value.
 [[nodiscard]]
-HRESULT GdiEngine::_ScaleByFont(const RECT* const prc, _Out_ SMALL_RECT* const psr) const
+HRESULT GdiEngine::_ScaleByFont(const RECT* const prc, _Out_ SMALL_RECT* const psr) const noexcept
 {
     COORD const coordFontSize = _GetFontSize();
     RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.X == 0 || coordFontSize.Y == 0);

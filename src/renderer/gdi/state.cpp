@@ -106,7 +106,7 @@ GdiEngine::~GdiEngine()
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 [[nodiscard]]
-HRESULT GdiEngine::SetHwnd(const HWND hwnd)
+HRESULT GdiEngine::SetHwnd(const HWND hwnd) noexcept 
 {
     // First attempt to get the DC and create an appropriate DC
     HDC const hdcRealWindow = GetDC(hwnd);
@@ -149,7 +149,7 @@ HRESULT GdiEngine::SetHwnd(const HWND hwnd)
 // Return Value:
 // - S_OK or converted HRESULT from last Win32 error from SetWindowLongW
 [[nodiscard]]
-HRESULT GdiEngine::s_SetWindowLongWHelper(const HWND hWnd, const int nIndex, const LONG dwNewLong)
+HRESULT GdiEngine::s_SetWindowLongWHelper(const HWND hWnd, const int nIndex, const LONG dwNewLong) noexcept
 {
     // SetWindowLong has strange error handling. On success, it returns the previous Window Long value and doesn't modify the Last Error state.
     // To deal with this, we set the last error to 0/S_OK first, call it, and if the previous long was 0, we check if the error was non-zero before reporting.
@@ -176,7 +176,7 @@ HRESULT GdiEngine::UpdateDrawingBrushes(const COLORREF colorForeground,
                                         const COLORREF colorBackground,
                                         const WORD /*legacyColorAttribute*/,
                                         const bool /*isBold*/,
-                                        const bool fIncludeBackgrounds)
+                                        const bool fIncludeBackgrounds) noexcept
 {
     RETURN_IF_FAILED(_FlushBufferLines());
 
@@ -215,7 +215,7 @@ HRESULT GdiEngine::UpdateDrawingBrushes(const COLORREF colorForeground,
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 [[nodiscard]]
-HRESULT GdiEngine::UpdateFont(const FontInfoDesired& FontDesired, _Out_ FontInfo& Font)
+HRESULT GdiEngine::UpdateFont(const FontInfoDesired& FontDesired, _Out_ FontInfo& Font) noexcept
 {
     wil::unique_hfont hFont;
     RETURN_IF_FAILED(_GetProposedFont(FontDesired, Font, _iCurrentDpi, hFont));
@@ -251,7 +251,7 @@ HRESULT GdiEngine::UpdateFont(const FontInfoDesired& FontDesired, _Out_ FontInfo
 // Return Value:
 // - HRESULT S_OK, GDI-based error code, or safemath error
 [[nodiscard]]
-HRESULT GdiEngine::UpdateDpi(const int iDpi)
+HRESULT GdiEngine::UpdateDpi(const int iDpi) noexcept
 {
     _iCurrentDpi = iDpi;
     return S_OK;
@@ -265,7 +265,7 @@ HRESULT GdiEngine::UpdateDpi(const int iDpi)
 // Return Value:
 // - HRESULT S_OK
 [[nodiscard]]
-HRESULT GdiEngine::UpdateViewport(const SMALL_RECT /*srNewViewport*/)
+HRESULT GdiEngine::UpdateViewport(const SMALL_RECT /*srNewViewport*/) noexcept
 {
     return S_OK;
 }
@@ -282,7 +282,7 @@ HRESULT GdiEngine::UpdateViewport(const SMALL_RECT /*srNewViewport*/)
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 [[nodiscard]]
-HRESULT GdiEngine::GetProposedFont(const FontInfoDesired& FontDesired, _Out_ FontInfo& Font, const int iDpi)
+HRESULT GdiEngine::GetProposedFont(const FontInfoDesired& FontDesired, _Out_ FontInfo& Font, const int iDpi) noexcept
 {
     wil::unique_hfont hFont;
     return _GetProposedFont(FontDesired, Font, iDpi, hFont);
@@ -296,7 +296,7 @@ HRESULT GdiEngine::GetProposedFont(const FontInfoDesired& FontDesired, _Out_ Fon
 // Return Value:
 // -  S_OK if PostMessageW succeeded, otherwise E_FAIL
 [[nodiscard]]
-HRESULT GdiEngine::_DoUpdateTitle(_In_ const std::wstring& /*newTitle*/)
+HRESULT GdiEngine::_DoUpdateTitle(_In_ const std::wstring& /*newTitle*/) noexcept
 {
     // the CM_UPDATE_TITLE handler in windowproc will query the updated title.
     return PostMessageW(_hwndTargetWindow, CM_UPDATE_TITLE, 0, (LPARAM)nullptr)? S_OK : E_FAIL;
@@ -318,7 +318,7 @@ HRESULT GdiEngine::_DoUpdateTitle(_In_ const std::wstring& /*newTitle*/)
 HRESULT GdiEngine::_GetProposedFont(const FontInfoDesired& FontDesired,
                                     _Out_ FontInfo& Font,
                                     const int iDpi,
-                                    _Inout_ wil::unique_hfont& hFont)
+                                    _Inout_ wil::unique_hfont& hFont) noexcept
 {
     wil::unique_hdc hdcTemp(CreateCompatibleDC(_hdcMemoryContext));
     RETURN_HR_IF_NULL(E_FAIL, hdcTemp.get());
@@ -459,7 +459,7 @@ HRESULT GdiEngine::_GetProposedFont(const FontInfoDesired& FontDesired,
 // Return Value:
 // - S_OK
 [[nodiscard]]
-HRESULT GdiEngine::GetFontSize(_Out_ COORD* const pFontSize)
+HRESULT GdiEngine::GetFontSize(_Out_ COORD* const pFontSize) noexcept
 {
     *pFontSize = _GetFontSize();
     return S_OK;

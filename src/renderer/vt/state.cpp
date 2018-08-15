@@ -76,7 +76,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
 [[nodiscard]]
-HRESULT VtEngine::_Write(_In_reads_(cch) const char* const psz, const size_t cch)
+HRESULT VtEngine::_Write(_In_reads_(cch) const char* const psz, const size_t cch) noexcept
 {
     _trace.TraceString(std::string_view(psz, cch));
 #ifdef UNIT_TESTING
@@ -111,7 +111,7 @@ HRESULT VtEngine::_Write(_In_reads_(cch) const char* const psz, const size_t cch
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
 [[nodiscard]]
-HRESULT VtEngine::_Write(const std::string& str)
+HRESULT VtEngine::_Write(const std::string& str) noexcept
 {
     return _Write(str.c_str(), str.length());
 }
@@ -119,7 +119,7 @@ HRESULT VtEngine::_Write(const std::string& str)
 // Method Description:
 // - Wrapper for ITerminalOutputConnection. See _Write.
 [[nodiscard]]
-HRESULT VtEngine::WriteTerminalUtf8(const std::string& str)
+HRESULT VtEngine::WriteTerminalUtf8(const std::string& str) noexcept
 {
     return _Write(str);
 }
@@ -132,7 +132,7 @@ HRESULT VtEngine::WriteTerminalUtf8(const std::string& str)
 // Return Value:
 // - S_OK or suitable HRESULT error from either conversion or writing pipe.
 [[nodiscard]]
-HRESULT VtEngine::_WriteTerminalUtf8(const std::wstring& wstr)
+HRESULT VtEngine::_WriteTerminalUtf8(const std::wstring& wstr) noexcept
 {
     wistd::unique_ptr<char[]> rgchNeeded;
     size_t needed = 0;
@@ -150,7 +150,7 @@ HRESULT VtEngine::_WriteTerminalUtf8(const std::wstring& wstr)
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
 [[nodiscard]]
-HRESULT VtEngine::_WriteTerminalAscii(const std::wstring& wstr)
+HRESULT VtEngine::_WriteTerminalAscii(const std::wstring& wstr) noexcept
 {
     const size_t cchActual = wstr.length();
 
@@ -181,7 +181,7 @@ HRESULT VtEngine::_WriteTerminalAscii(const std::wstring& wstr)
 // - S_OK, E_INVALIDARG for a invalid format string, or suitable HRESULT error
 //      from writing pipe.
 [[nodiscard]]
-HRESULT VtEngine::_WriteFormattedString(const std::string* const pFormat, ...)
+HRESULT VtEngine::_WriteFormattedString(const std::string* const pFormat, ...) noexcept
 {
 
     HRESULT hr = E_FAIL;
@@ -217,7 +217,7 @@ HRESULT VtEngine::_WriteFormattedString(const std::string* const pFormat, ...)
 // - HRESULT S_OK
 [[nodiscard]]
 HRESULT VtEngine::UpdateFont(const FontInfoDesired& /*pfiFontDesired*/,
-                             _Out_ FontInfo& /*pfiFont*/)
+                             _Out_ FontInfo& /*pfiFont*/) noexcept
 {
     return S_OK;
 }
@@ -231,7 +231,7 @@ HRESULT VtEngine::UpdateFont(const FontInfoDesired& /*pfiFontDesired*/,
 // Return Value:
 // - HRESULT S_OK
 [[nodiscard]]
-HRESULT VtEngine::UpdateDpi(const int /*iDpi*/)
+HRESULT VtEngine::UpdateDpi(const int /*iDpi*/) noexcept
 {
     return S_OK;
 }
@@ -245,7 +245,7 @@ HRESULT VtEngine::UpdateDpi(const int /*iDpi*/)
 // Return Value:
 // - HRESULT S_OK
 [[nodiscard]]
-HRESULT VtEngine::UpdateViewport(const SMALL_RECT srNewViewport)
+HRESULT VtEngine::UpdateViewport(const SMALL_RECT srNewViewport) noexcept
 {
     HRESULT hr = S_OK;
     const Viewport oldView = _lastViewport;
@@ -318,7 +318,7 @@ HRESULT VtEngine::UpdateViewport(const SMALL_RECT srNewViewport)
 [[nodiscard]]
 HRESULT VtEngine::GetProposedFont(const FontInfoDesired& /*pfiFontDesired*/,
                                   _Out_ FontInfo& /*pfiFont*/,
-                                  const int /*iDpi*/)
+                                  const int /*iDpi*/) noexcept
 {
     return S_FALSE;
 }
@@ -330,7 +330,7 @@ HRESULT VtEngine::GetProposedFont(const FontInfoDesired& /*pfiFontDesired*/,
 // Return Value:
 // - S_FALSE: This is unsupported by the VT Renderer and should use another engine's value.
 [[nodiscard]]
-HRESULT VtEngine::GetFontSize(_Out_ COORD* const pFontSize)
+HRESULT VtEngine::GetFontSize(_Out_ COORD* const pFontSize) noexcept
 {
     *pFontSize = COORD({1, 1});
     return S_FALSE;
@@ -377,7 +377,7 @@ bool VtEngine::_AllIsInvalid() const
 // Return Value:
 // - S_OK
 [[nodiscard]]
-HRESULT VtEngine::SuppressResizeRepaint()
+HRESULT VtEngine::SuppressResizeRepaint() noexcept
 {
     _suppressResizeRepaint = true;
     return S_OK;
@@ -394,7 +394,7 @@ HRESULT VtEngine::SuppressResizeRepaint()
 // Return Value:
 // - S_OK
 [[nodiscard]]
-HRESULT VtEngine::InheritCursor(const COORD coordCursor)
+HRESULT VtEngine::InheritCursor(const COORD coordCursor) noexcept
 {
     _virtualTop = coordCursor.Y;
     _lastText = coordCursor;

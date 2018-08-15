@@ -117,7 +117,6 @@ HRESULT Renderer::s_CreateInstance(_In_ std::unique_ptr<IRenderData> pData,
 [[nodiscard]]
 HRESULT Renderer::PaintFrame()
 {
-
     for (IRenderEngine* const pEngine : _rgpEngines)
     {
         LOG_IF_FAILED(_PaintFrameForEngine(pEngine));
@@ -126,10 +125,19 @@ HRESULT Renderer::PaintFrame()
     return S_OK;
 }
 
+extern void LockConsole();
+extern void UnlockConsole();
+
 [[nodiscard]]
 HRESULT Renderer::_PaintFrameForEngine(_In_ IRenderEngine* const pEngine)
 {
     FAIL_FAST_IF_NULL(pEngine); // This is a programming error. Fail fast.
+
+    LockConsole();
+    auto unlock = wil::ScopeExit([&]()
+    {
+        UnlockConsole();
+    });
 
     // Last chance check if anything scrolled without an explicit invalidate notification since the last frame.
     _CheckViewportAndScroll();
@@ -180,6 +188,15 @@ HRESULT Renderer::_PaintFrameForEngine(_In_ IRenderEngine* const pEngine)
 
     // 7. Paint window title
     RETURN_IF_FAILED(_PaintTitle(pEngine));
+
+    // Force scope exit end paint to finish up collecting information and possibly painting
+    endPaint();
+
+    // Force scope exit unlock to let go of global lock so other threads can run
+    unlock();
+
+    // Trigger out-of-lock presentation for renderers that can support it
+    RETURN_IF_FAILED(pEngine->Present());
 
     // As we leave the scope, EndPaint will be called (declared above)
     return S_OK;

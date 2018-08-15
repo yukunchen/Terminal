@@ -18,7 +18,7 @@ using namespace Microsoft::Console::Render;
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT VtEngine::_StopCursorBlinking()
+HRESULT VtEngine::_StopCursorBlinking() noexcept
 {
     return _Write("\x1b[?12l");
 }
@@ -31,7 +31,7 @@ HRESULT VtEngine::_StopCursorBlinking()
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT VtEngine::_StartCursorBlinking()
+HRESULT VtEngine::_StartCursorBlinking() noexcept
 {
     return _Write("\x1b[?12h");
 }
@@ -43,7 +43,7 @@ HRESULT VtEngine::_StartCursorBlinking()
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT VtEngine::_HideCursor()
+HRESULT VtEngine::_HideCursor() noexcept
 {
     return _Write("\x1b[?25l");
 }
@@ -55,7 +55,7 @@ HRESULT VtEngine::_HideCursor()
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT VtEngine::_ShowCursor()
+HRESULT VtEngine::_ShowCursor() noexcept
 {
     return _Write("\x1b[?25h");
 }
@@ -68,7 +68,7 @@ HRESULT VtEngine::_ShowCursor()
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT VtEngine::_EraseLine()
+HRESULT VtEngine::_EraseLine() noexcept
 {
     // The default no-param action of erase line is erase to the right.
     // telnet client doesn't understand the parameterized version,
@@ -88,7 +88,7 @@ HRESULT VtEngine::_EraseLine()
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT VtEngine::_EraseCharacter(const short chars)
+HRESULT VtEngine::_EraseCharacter(const short chars) noexcept
 {
     static const std::string format = "\x1b[%dX";
 
@@ -102,7 +102,7 @@ HRESULT VtEngine::_EraseCharacter(const short chars)
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT VtEngine::_CursorForward(const short chars)
+HRESULT VtEngine::_CursorForward(const short chars) noexcept
 {
 
     static const std::string format = "\x1b[%dC";
@@ -118,7 +118,7 @@ HRESULT VtEngine::_CursorForward(const short chars)
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT VtEngine::_ClearScreen()
+HRESULT VtEngine::_ClearScreen() noexcept
 {
     return _Write("\x1b[2J");
 }
@@ -132,7 +132,7 @@ HRESULT VtEngine::_ClearScreen()
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT VtEngine::_InsertDeleteLine(const short sLines, const bool fInsertLine)
+HRESULT VtEngine::_InsertDeleteLine(const short sLines, const bool fInsertLine) noexcept
 {
     if (sLines <= 0)
     {
@@ -155,7 +155,7 @@ HRESULT VtEngine::_InsertDeleteLine(const short sLines, const bool fInsertLine)
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT VtEngine::_DeleteLine(const short sLines)
+HRESULT VtEngine::_DeleteLine(const short sLines) noexcept
 {
     return _InsertDeleteLine(sLines, false);
 }
@@ -168,7 +168,7 @@ HRESULT VtEngine::_DeleteLine(const short sLines)
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT VtEngine::_InsertLine(const short sLines)
+HRESULT VtEngine::_InsertLine(const short sLines) noexcept
 {
     return _InsertDeleteLine(sLines, true);
 }
@@ -182,7 +182,7 @@ HRESULT VtEngine::_InsertLine(const short sLines)
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT VtEngine::_CursorPosition(const COORD coord)
+HRESULT VtEngine::_CursorPosition(const COORD coord) noexcept
 {
     static const std::string cursorFormat = "\x1b[%d;%dH";
 
@@ -201,7 +201,7 @@ HRESULT VtEngine::_CursorPosition(const COORD coord)
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT VtEngine::_CursorHome()
+HRESULT VtEngine::_CursorHome() noexcept
 {
     return _Write("\x1b[H");
 }
@@ -213,7 +213,7 @@ HRESULT VtEngine::_CursorHome()
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT VtEngine::_SetGraphicsBoldness(const bool isBold)
+HRESULT VtEngine::_SetGraphicsBoldness(const bool isBold) noexcept
 {
     const std::string fmt = isBold ? "\x1b[1m" : "\x1b[22m";
     return _Write(fmt);
@@ -226,7 +226,7 @@ HRESULT VtEngine::_SetGraphicsBoldness(const bool isBold)
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT VtEngine::_SetGraphicsDefault()
+HRESULT VtEngine::_SetGraphicsDefault() noexcept
 {
     return _Write("\x1b[m");
 }
@@ -240,7 +240,7 @@ HRESULT VtEngine::_SetGraphicsDefault()
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
 HRESULT VtEngine::_SetGraphicsRendition16Color(const WORD wAttr,
-                                               const bool fIsForeground)
+                                               const bool fIsForeground) noexcept
 {
     static const std::string fmt = "\x1b[%dm";
 
@@ -276,7 +276,7 @@ HRESULT VtEngine::_SetGraphicsRendition16Color(const WORD wAttr,
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
 HRESULT VtEngine::_SetGraphicsRenditionRGBColor(const COLORREF color,
-                                                const bool fIsForeground)
+                                                const bool fIsForeground) noexcept
 {
     const std::string fmt = fIsForeground ?
         "\x1b[38;2;%d;%d;%dm" :
@@ -297,7 +297,7 @@ HRESULT VtEngine::_SetGraphicsRenditionRGBColor(const COLORREF color,
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT VtEngine::_SetGraphicsRenditionDefaultColor(const bool fIsForeground)
+HRESULT VtEngine::_SetGraphicsRenditionDefaultColor(const bool fIsForeground) noexcept
 {
     const std::string fmt = fIsForeground ? ("\x1b[39m") : ("\x1b[49m");
 
@@ -312,7 +312,7 @@ HRESULT VtEngine::_SetGraphicsRenditionDefaultColor(const bool fIsForeground)
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT VtEngine::_ResizeWindow(const short sWidth, const short sHeight)
+HRESULT VtEngine::_ResizeWindow(const short sWidth, const short sHeight) noexcept
 {
     static const std::string resizeFormat = "\x1b[8;%d;%dt";
     if (sWidth < 0 || sHeight < 0)
@@ -331,7 +331,7 @@ HRESULT VtEngine::_ResizeWindow(const short sWidth, const short sHeight)
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT VtEngine::RequestCursor()
+HRESULT VtEngine::RequestCursor() noexcept
 {
     return _Write("\x1b[6n");
 }
@@ -343,7 +343,7 @@ HRESULT VtEngine::RequestCursor()
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT VtEngine::_ChangeTitle(_In_ const std::string& title)
+HRESULT VtEngine::_ChangeTitle(_In_ const std::string& title) noexcept
 {
     const std::string titleFormat = "\x1b]0;" + title + "\x7";
     return _Write(titleFormat);

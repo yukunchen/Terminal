@@ -22,7 +22,7 @@ using namespace Microsoft::Console::Types;
 // - S_OK if we started to paint. S_FALSE if we didn't need to paint.
 //      HRESULT error code if painting didn't start successfully.
 [[nodiscard]]
-HRESULT VtEngine::StartPaint()
+HRESULT VtEngine::StartPaint() noexcept
 {
     if (_pipeBroken)
     {
@@ -50,7 +50,7 @@ HRESULT VtEngine::StartPaint()
 // Return Value:
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT VtEngine::EndPaint()
+HRESULT VtEngine::EndPaint() noexcept
 {
     _invalidRect = Viewport({ 0 });
     _fInvalidRectUsed = false;
@@ -75,13 +75,26 @@ HRESULT VtEngine::EndPaint()
 }
 
 // Routine Description:
+// - Used to perform longer running presentation steps outside the lock so the other threads can continue.
+// - Not currently used by VtEngine.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_FALSE since we do nothing.
+[[nodiscard]]
+HRESULT VtEngine::Present() noexcept
+{
+    return S_FALSE;
+}
+
+// Routine Description:
 // - Paints the background of the invalid area of the frame.
 // Arguments:
 // - <none>
 // Return Value:
 // - S_OK
 [[nodiscard]]
-HRESULT VtEngine::PaintBackground()
+HRESULT VtEngine::PaintBackground() noexcept
 {
     return S_OK;
 }
@@ -107,7 +120,7 @@ HRESULT VtEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
                                   const size_t cchLine,
                                   const COORD coord,
                                   const bool /*fTrimLeft*/,
-                                  const bool /*lineWrapped*/)
+                                  const bool /*lineWrapped*/) noexcept
 {
     return VtEngine::_PaintAsciiBufferLine(pwsLine, rgWidths, cchLine, coord);
 }
@@ -125,7 +138,7 @@ HRESULT VtEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
 HRESULT VtEngine::PaintBufferGridLines(const GridLines /*lines*/,
                                        const COLORREF /*color*/,
                                        const size_t /*cchLine*/,
-                                       const COORD /*coordTarget*/)
+                                       const COORD /*coordTarget*/) noexcept
 {
     return S_OK;
 }
@@ -144,7 +157,7 @@ HRESULT VtEngine::PaintCursor(const COORD coordCursor,
                               const bool /*fIsDoubleWidth*/,
                               const CursorType /*cursorType*/,
                               const bool /*fUseColor*/,
-                              const COLORREF /*cursorColor*/)
+                              const COLORREF /*cursorColor*/) noexcept
 {
     // MSFT:15933349 - Send the terminal the updated cursor information, if it's changed.
     LOG_IF_FAILED(_MoveCursor(coordCursor));
@@ -160,7 +173,7 @@ HRESULT VtEngine::PaintCursor(const COORD coordCursor,
 // Return Value:
 // - S_OK
 [[nodiscard]]
-HRESULT VtEngine::ClearCursor()
+HRESULT VtEngine::ClearCursor() noexcept
 {
     return S_OK;
 }
@@ -176,7 +189,7 @@ HRESULT VtEngine::ClearCursor()
 // Return Value:
 // - S_OK
 [[nodiscard]]
-HRESULT VtEngine::PaintSelection(const std::vector<SMALL_RECT>& /*rectangles*/)
+HRESULT VtEngine::PaintSelection(const std::vector<SMALL_RECT>& /*rectangles*/) noexcept
 {
     return S_OK;
 }
@@ -194,7 +207,7 @@ HRESULT VtEngine::_RgbUpdateDrawingBrushes(const COLORREF colorForeground,
                                            const COLORREF colorBackground,
                                            const bool isBold,
                                            _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                                           const WORD cColorTable)
+                                           const WORD cColorTable) noexcept
 {
     const bool fgChanged = colorForeground != _LastFG;
     const bool bgChanged = colorBackground != _LastBG;
@@ -281,7 +294,7 @@ HRESULT VtEngine::_16ColorUpdateDrawingBrushes(const COLORREF colorForeground,
                                                const COLORREF colorBackground,
                                                const bool isBold,
                                                _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                                               const WORD cColorTable)
+                                               const WORD cColorTable) noexcept
 {
 
     const bool fgChanged = colorForeground != _LastFG;
@@ -355,7 +368,7 @@ HRESULT VtEngine::_16ColorUpdateDrawingBrushes(const COLORREF colorForeground,
 HRESULT VtEngine::_PaintAsciiBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
                                         _In_reads_(cchLine) const unsigned char* const rgWidths,
                                         const size_t cchLine,
-                                        const COORD coord)
+                                        const COORD coord) noexcept
 {
     RETURN_IF_FAILED(_MoveCursor(coord));
 
@@ -389,7 +402,7 @@ HRESULT VtEngine::_PaintAsciiBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLin
 HRESULT VtEngine::_PaintUtf8BufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
                                        _In_reads_(cchLine) const unsigned char* const rgWidths,
                                        const size_t cchLine,
-                                       const COORD coord)
+                                       const COORD coord) noexcept
 {
     if (coord.Y < _virtualTop)
     {
@@ -479,7 +492,7 @@ HRESULT VtEngine::_PaintUtf8BufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine
 // Return Value:
 // - S_OK
 [[nodiscard]]
-HRESULT VtEngine::_DoUpdateTitle(const std::wstring& /*newTitle*/)
+HRESULT VtEngine::_DoUpdateTitle(const std::wstring& /*newTitle*/) noexcept
 {
     return S_OK;
 }

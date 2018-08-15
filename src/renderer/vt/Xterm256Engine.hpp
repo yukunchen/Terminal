@@ -35,7 +35,7 @@ namespace Microsoft::Console::Render
                                     const COLORREF colorBackground,
                                     const WORD legacyColorAttribute,
                                     const bool isBold,
-                                    const bool fIncludeBackgrounds) override;
+                                    const bool fIncludeBackgrounds) noexcept override;
 
     private:
 

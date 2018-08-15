@@ -34,19 +34,19 @@ namespace Microsoft::Console::Render
                                     const COLORREF colorBackground,
                                     const WORD legacyColorAttribute,
                                     const bool isBold,
-                                    const bool fIncludeBackgrounds) override;
+                                    const bool fIncludeBackgrounds) noexcept override;
         [[nodiscard]]
-        HRESULT ScrollFrame() override;
+        HRESULT ScrollFrame() noexcept override;
 
         [[nodiscard]]
-        HRESULT InvalidateScroll(const COORD* const pcoordDelta) override;
+        HRESULT InvalidateScroll(const COORD* const pcoordDelta) noexcept override;
 
         [[nodiscard]]
-        HRESULT WriteTerminalW(const std::wstring& wstr) override;
+        HRESULT WriteTerminalW(const std::wstring& wstr) noexcept override;
 
 protected:
         [[nodiscard]]
-        HRESULT _MoveCursor(const COORD coord);
+        HRESULT _MoveCursor(const COORD coord) noexcept;
     private:
         const COLORREF* const _ColorTable;
         const WORD _cColorTable;

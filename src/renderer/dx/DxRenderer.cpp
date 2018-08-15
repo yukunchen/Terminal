@@ -615,9 +615,6 @@ HRESULT DxEngine::EndPaint() noexcept
             }
 
             _presentReady = true;
-
-            // TODO: MSFT: 18587890: temporarily call present here instead of deferred.
-            hr = Present();
         }
         else
         {
