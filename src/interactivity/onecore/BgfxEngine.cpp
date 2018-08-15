@@ -190,7 +190,7 @@ HRESULT BgfxEngine::PaintBufferGridLines(GridLines const /*lines*/,
 }
 
 [[nodiscard]]
-HRESULT BgfxEngine::PaintSelection(const std::vector<SMALL_RECT>& /*rectangles*/) noexcept
+HRESULT BgfxEngine::PaintSelection(const SMALL_RECT /*rect*/) noexcept
 {
     return S_OK;
 }

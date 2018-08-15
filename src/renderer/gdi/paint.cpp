@@ -586,60 +586,18 @@ HRESULT GdiEngine::ClearCursor() noexcept
 //  - Reads the selected area, selection mode, and active screen buffer
 //    from the global properties and dispatches a GDI invert on the selected text area.
 // Arguments:
-//  - rectangles - Vector of rectangles, one per line, that should be inverted to make the selection area
+//  - rect - Rectangle to invert or highlight to make the selection area
 // Return Value:
 // - S_OK or suitable GDI HRESULT error.
 [[nodiscard]]
-HRESULT GdiEngine::PaintSelection(const std::vector<SMALL_RECT>& rectangles) noexcept
+HRESULT GdiEngine::PaintSelection(const SMALL_RECT rect) noexcept
 {
     LOG_IF_FAILED(_FlushBufferLines());
 
-    // Get a region ready
-    wil::unique_hrgn hrgnSelection(CreateRectRgn(0, 0, 0, 0));
-    RETURN_HR_IF_NULL(E_FAIL, hrgnSelection.get());
+    RECT pixelRect = { 0 };
+    RETURN_IF_FAILED(_ScaleByFont(&rect, &pixelRect));
 
-    // Adjust the selected region to invert
-    RETURN_IF_FAILED(_PaintSelectionCalculateRegion(rectangles, hrgnSelection.get()));
-
-    // Save the painted region for the next paint
-    int rgnType = CombineRgn(_hrgnGdiPaintedSelection, hrgnSelection.get(), nullptr, RGN_COPY);
-
-    // Don't paint if there was an error in the region or it's empty.
-    if (ERROR != rgnType && NULLREGION != rgnType)
-    {
-        // Do the invert
-        RETURN_HR_IF_FALSE(E_FAIL, InvertRgn(_hdcMemoryContext, hrgnSelection.get()));
-    }
-
-    return S_OK;
-}
-
-// Routine Description:
-//  - Composes a GDI region representing the area of the buffer that
-//    is currently selected based on member variable (selection rectangle) state.
-// Arguments:
-//  - rectangles - Vector of rectangles, one per line, that should be inverted to make the selection area
-//  - hrgnSelection - Handle to empty GDI region. Will be filled with selection region information.
-// Return Value:
-//  - HRESULT S_OK or Expect GDI-based errors or memory errors.
-[[nodiscard]]
-HRESULT GdiEngine::_PaintSelectionCalculateRegion(const std::vector<SMALL_RECT>& rectangles,
-                                                 _Inout_ HRGN const hrgnSelection) const noexcept
-{
-    // for each row in the selection
-    for (const auto& rect : rectangles)
-    {
-        // multiply character counts by font size to obtain pixels
-        RECT rectHighlight;
-        RETURN_IF_FAILED(_ScaleByFont(&rect, &rectHighlight));
-
-        // create region for selection rectangle
-        wil::unique_hrgn hrgnLine(CreateRectRgn(rectHighlight.left, rectHighlight.top, rectHighlight.right, rectHighlight.bottom));
-        RETURN_HR_IF_NULL(E_FAIL, hrgnLine.get());
-
-        // compose onto given selection region
-        LOG_HR_IF_FALSE(E_FAIL, CombineRgn(hrgnSelection, hrgnSelection, hrgnLine.get(), RGN_OR));
-    }
+    RETURN_HR_IF(E_FAIL, !InvertRect(_hdcMemoryContext, &pixelRect));
 
     return S_OK;
 }

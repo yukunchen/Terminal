@@ -68,7 +68,7 @@ namespace Microsoft::Console::Render
                                      const size_t cchLine,
                                      const COORD coordTarget) noexcept override;
         [[nodiscard]]
-        HRESULT PaintSelection(const std::vector<SMALL_RECT>& rectangles) noexcept override;
+        HRESULT PaintSelection(const SMALL_RECT rect) noexcept override;
 
         [[nodiscard]]
         HRESULT PaintCursor(const COORD coordCursor,
@@ -159,16 +159,9 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]]
         HRESULT _InvalidateRect(const RECT* const prc) noexcept;
-        [[nodiscard]]
-        HRESULT _InvalidateRgn(_In_ HRGN hrgn) noexcept;
-
+        
         [[nodiscard]]
         HRESULT _PaintBackgroundColor(const RECT* const prc) noexcept;
-
-        HRGN _hrgnGdiPaintedSelection;
-        [[nodiscard]]
-        HRESULT _PaintSelectionCalculateRegion(const std::vector<SMALL_RECT>& rectangles,
-                                               _Inout_ HRGN const hrgnSelection) const noexcept;
 
         static const ULONG s_ulMinCursorHeightPercent = 25;
         static const ULONG s_ulMaxCursorHeightPercent = 100;

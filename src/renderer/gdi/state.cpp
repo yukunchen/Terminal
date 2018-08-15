@@ -38,9 +38,6 @@ GdiEngine::GdiEngine() :
     _szInvalidScroll = { 0 };
     _szMemorySurface = { 0 };
 
-    _hrgnGdiPaintedSelection = CreateRectRgn(0, 0, 0, 0);
-    THROW_HR_IF_NULL(E_FAIL, _hrgnGdiPaintedSelection);
-
     _hdcMemoryContext = CreateCompatibleDC(nullptr);
     THROW_HR_IF_NULL(E_FAIL, _hdcMemoryContext);
 
@@ -71,12 +68,6 @@ GdiEngine::~GdiEngine()
         {
             delete[] _pPolyText[iPoly].lpstr;
         }
-    }
-
-    if (_hrgnGdiPaintedSelection != nullptr)
-    {
-        LOG_HR_IF_FALSE(E_FAIL, DeleteObject(_hrgnGdiPaintedSelection));
-        _hrgnGdiPaintedSelection = nullptr;
     }
 
     if (_hbitmapMemorySurface != nullptr)

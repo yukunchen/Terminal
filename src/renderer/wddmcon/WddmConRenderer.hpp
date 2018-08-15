@@ -32,7 +32,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         HRESULT InvalidateSystem(const RECT* const prcDirtyClient) noexcept override;
         [[nodiscard]]
-        HRESULT InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept override;
+        HRESULT InvalidateSelection(const SMALL_RECT rect) noexcept override;
         [[nodiscard]]
         HRESULT InvalidateScroll(const COORD* const pcoordDelta) noexcept override;
         [[nodiscard]]

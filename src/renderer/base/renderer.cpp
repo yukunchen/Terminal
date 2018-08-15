@@ -339,8 +339,11 @@ void Renderer::TriggerSelection()
         const auto rects = _GetSelectionRects();
 
         std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
+            LOG_IF_FAILED(pEngine->InvalidateSelection(_previousSelection));
             LOG_IF_FAILED(pEngine->InvalidateSelection(rects));
         });
+
+        _previousSelection = rects;
 
         _NotifyPaintFrame();
     }
@@ -1170,11 +1173,17 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 {
     try
     {
+        SMALL_RECT srDirty = pEngine->GetDirtyRectInChars();
+        Viewport dirtyView = Viewport::FromInclusive(srDirty);
+
         // Get selection rectangles
         const auto rectangles = _GetSelectionRects();
-        if (rectangles.size() > 0)
+        for (auto rect : rectangles)
         {
-            LOG_IF_FAILED(pEngine->PaintSelection(rectangles));
+            if (dirtyView.TrimToViewport(&rect))
+            {
+                LOG_IF_FAILED(pEngine->PaintSelection(rect));
+            }
         }
     }
     CATCH_LOG();
