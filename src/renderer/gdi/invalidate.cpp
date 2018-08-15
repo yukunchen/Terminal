@@ -20,7 +20,7 @@ using namespace Microsoft::Console::Render;
 // - prcDirtyClient - Pointer to pixel area (RECT) of client region the system believes is dirty
 // Return Value:
 // - HRESULT S_OK, GDI-based error code, or safemath error
-HRESULT GdiEngine::InvalidateSystem(const RECT* const prcDirtyClient)
+HRESULT GdiEngine::InvalidateSystem(const RECT* const prcDirtyClient) noexcept
 {
     RETURN_HR(_InvalidCombine(prcDirtyClient));
 }
@@ -31,7 +31,7 @@ HRESULT GdiEngine::InvalidateSystem(const RECT* const prcDirtyClient)
 // - pcoordDelta - Pointer to character dimension (COORD) of the distance the console would like us to move while scrolling.
 // Return Value:
 // - HRESULT S_OK, GDI-based error code, or safemath error
-HRESULT GdiEngine::InvalidateScroll(const COORD* const pcoordDelta)
+HRESULT GdiEngine::InvalidateScroll(const COORD* const pcoordDelta) noexcept
 {
     if (pcoordDelta->X != 0 || pcoordDelta->Y != 0)
     {
@@ -57,7 +57,7 @@ HRESULT GdiEngine::InvalidateScroll(const COORD* const pcoordDelta)
 // - rectangles - Vector of rectangles to draw, line by line
 // Return Value:
 // - HRESULT S_OK or GDI-based error code
-HRESULT GdiEngine::InvalidateSelection(const std::vector<SMALL_RECT>& rectangles)
+HRESULT GdiEngine::InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept
 {
     // Get the currently selected area as a GDI region
     wil::unique_hrgn hrgnSelection(CreateRectRgn(0, 0, 0, 0));
@@ -88,7 +88,7 @@ HRESULT GdiEngine::InvalidateSelection(const std::vector<SMALL_RECT>& rectangles
 // - psrRegion - Character region (SMALL_RECT) that has been changed
 // Return Value:
 // - S_OK, GDI related failure, or safemath failure.
-HRESULT GdiEngine::Invalidate(const SMALL_RECT* const psrRegion)
+HRESULT GdiEngine::Invalidate(const SMALL_RECT* const psrRegion) noexcept
 {
     RECT rcRegion = { 0 };
     RETURN_IF_FAILED(_ScaleByFont(psrRegion, &rcRegion));
@@ -101,7 +101,7 @@ HRESULT GdiEngine::Invalidate(const SMALL_RECT* const psrRegion)
 // - pcoordCursor - the new position of the cursor
 // Return Value:
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
-HRESULT GdiEngine::InvalidateCursor(const COORD* const pcoordCursor)
+HRESULT GdiEngine::InvalidateCursor(const COORD* const pcoordCursor) noexcept
 {
     SMALL_RECT sr = Viewport::FromCoord(*pcoordCursor).ToExclusive();
     return this->Invalidate(&sr);
@@ -114,7 +114,7 @@ HRESULT GdiEngine::InvalidateCursor(const COORD* const pcoordCursor)
 // - <none>
 // Return Value:
 // - S_OK, S_FALSE (if no window yet), GDI related failure, or safemath failure.
-HRESULT GdiEngine::InvalidateAll()
+HRESULT GdiEngine::InvalidateAll() noexcept
 {
     // If we don't have a window, don't bother.
     if (!_IsWindowValid())
@@ -136,7 +136,7 @@ HRESULT GdiEngine::InvalidateAll()
 // - Recieves a bool indicating if we should force the repaint.
 // Return Value:
 // - S_FALSE - we succeeded, but the result was false.
-HRESULT GdiEngine::InvalidateCircling(_Out_ bool* const pForcePaint)
+HRESULT GdiEngine::InvalidateCircling(_Out_ bool* const pForcePaint) noexcept
 {
     *pForcePaint = false;
     return S_FALSE;
@@ -151,7 +151,7 @@ HRESULT GdiEngine::InvalidateCircling(_Out_ bool* const pForcePaint)
 // - Recieves a bool indicating if we should force the repaint.
 // Return Value:
 // - S_FALSE - we succeeded, but the result was false.
-HRESULT GdiEngine::PrepareForTeardown(_Out_ bool* const pForcePaint)
+HRESULT GdiEngine::PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept
 {
     *pForcePaint = false;
     return S_FALSE;
@@ -163,7 +163,7 @@ HRESULT GdiEngine::PrepareForTeardown(_Out_ bool* const pForcePaint)
 // - prc - Pixel region (RECT) that should be repainted on the next frame
 // Return Value:
 // - S_OK, GDI related failure, or safemath failure.
-HRESULT GdiEngine::_InvalidCombine(const RECT* const prc)
+HRESULT GdiEngine::_InvalidCombine(const RECT* const prc) noexcept
 {
     if (!_fInvalidRectUsed)
     {
@@ -187,7 +187,7 @@ HRESULT GdiEngine::_InvalidCombine(const RECT* const prc)
 // - ppt - Distances by which we should move the invalid region in response to a scroll
 // Return Value:
 // - S_OK, GDI related failure, or safemath failure.
-HRESULT GdiEngine::_InvalidOffset(const POINT* const ppt)
+HRESULT GdiEngine::_InvalidOffset(const POINT* const ppt) noexcept
 {
     if (_fInvalidRectUsed)
     {
@@ -215,7 +215,7 @@ HRESULT GdiEngine::_InvalidOffset(const POINT* const ppt)
 // - <none>
 // Return Value:
 // - S_OK, GDI related failure, or safemath failure.
-HRESULT GdiEngine::_InvalidRestrict()
+HRESULT GdiEngine::_InvalidRestrict() noexcept
 {
     // Ensure that the invalid area remains within the bounds of the client area
     RECT rcClient;
@@ -237,7 +237,7 @@ HRESULT GdiEngine::_InvalidRestrict()
 // - prc - Pointer to pixel rectangle representing invalid area to add to next paint frame
 // Return Value:
 // - S_OK, GDI related failure, or safemath failure.
-HRESULT GdiEngine::_InvalidateRect(const RECT* const prc)
+HRESULT GdiEngine::_InvalidateRect(const RECT* const prc) noexcept
 {
     RETURN_HR(_InvalidCombine(prc));
 }
@@ -248,7 +248,7 @@ HRESULT GdiEngine::_InvalidateRect(const RECT* const prc)
 // - hrgn - Handle to pixel region representing invalid area to add to next paint frame
 // Return Value:
 // - S_OK, GDI related failure, or safemath failure.
-HRESULT GdiEngine::_InvalidateRgn(_In_ HRGN hrgn)
+HRESULT GdiEngine::_InvalidateRgn(_In_ HRGN hrgn) noexcept
 {
     RECT rcInvalid;
     RETURN_HR_IF_FALSE(E_FAIL, GetRgnBox(hrgn, &rcInvalid));

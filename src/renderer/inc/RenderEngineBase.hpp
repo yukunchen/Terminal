@@ -27,14 +27,14 @@ namespace Microsoft::Console::Render
         virtual ~RenderEngineBase() = default;
 
         [[nodiscard]]
-        HRESULT InvalidateTitle(const std::wstring& proposedTitle) override;
+        HRESULT InvalidateTitle(const std::wstring& proposedTitle) noexcept override;
 
         [[nodiscard]]
-        HRESULT UpdateTitle(const std::wstring& newTitle) override;
+        HRESULT UpdateTitle(const std::wstring& newTitle) noexcept override;
 
     protected:
         [[nodiscard]]
-        virtual HRESULT _DoUpdateTitle(const std::wstring& newTitle) = 0;
+        virtual HRESULT _DoUpdateTitle(const std::wstring& newTitle) noexcept = 0;
 
         bool _titleChanged;
         std::wstring _lastFrameTitle;

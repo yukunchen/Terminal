@@ -40,7 +40,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 //      error code if painting didn't start successfully, or we failed to write
 //      the pipe.
 [[nodiscard]]
-HRESULT XtermEngine::StartPaint()
+HRESULT XtermEngine::StartPaint() noexcept
 {
     RETURN_IF_FAILED(VtEngine::StartPaint());
     if (_firstPaint)
@@ -88,7 +88,7 @@ HRESULT XtermEngine::StartPaint()
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT XtermEngine::EndPaint()
+HRESULT XtermEngine::EndPaint() noexcept
 {
     HRESULT hr = VtEngine::EndPaint();
     if (SUCCEEDED(hr))
@@ -121,7 +121,7 @@ HRESULT XtermEngine::UpdateDrawingBrushes(const COLORREF colorForeground,
                                           const COLORREF colorBackground,
                                           const WORD /*legacyColorAttribute*/,
                                           const bool isBold,
-                                          const bool /*fIncludeBackgrounds*/)
+                                          const bool /*fIncludeBackgrounds*/) noexcept
 {
     // The base xterm mode only knows about 16 colors
     return VtEngine::_16ColorUpdateDrawingBrushes(colorForeground, colorBackground, isBold, _ColorTable, _cColorTable);
@@ -140,7 +140,7 @@ HRESULT XtermEngine::UpdateDrawingBrushes(const COLORREF colorForeground,
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT XtermEngine::_MoveCursor(COORD const coord)
+HRESULT XtermEngine::_MoveCursor(COORD const coord) noexcept
 {
     HRESULT hr = S_OK;
     if (coord.X != _lastText.X || coord.Y != _lastText.Y)
@@ -208,7 +208,7 @@ HRESULT XtermEngine::_MoveCursor(COORD const coord)
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT XtermEngine::ScrollFrame()
+HRESULT XtermEngine::ScrollFrame() noexcept
 {
     if (_scrollDelta.X != 0)
     {
@@ -265,7 +265,7 @@ HRESULT XtermEngine::ScrollFrame()
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for safemath failure
 [[nodiscard]]
-HRESULT XtermEngine::InvalidateScroll(const COORD* const pcoordDelta)
+HRESULT XtermEngine::InvalidateScroll(const COORD* const pcoordDelta) noexcept
 {
     const short dx = pcoordDelta->X;
     const short dy = pcoordDelta->Y;
@@ -321,7 +321,7 @@ HRESULT XtermEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
                                      const size_t cchLine,
                                      const COORD coord,
                                      const bool /*fTrimLeft*/,
-                                     const bool /*lineWrapped*/)
+                                     const bool /*lineWrapped*/) noexcept
 {
     return _fUseAsciiOnly ?
         VtEngine::_PaintAsciiBufferLine(pwsLine, rgWidths, cchLine, coord) :
@@ -336,7 +336,7 @@ HRESULT XtermEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
 // Return Value:
 // - S_OK or suitable HRESULT error from either conversion or writing pipe.
 [[nodiscard]]
-HRESULT XtermEngine::WriteTerminalW(const std::wstring& wstr)
+HRESULT XtermEngine::WriteTerminalW(const std::wstring& wstr) noexcept
 {
     return _fUseAsciiOnly ?
         VtEngine::_WriteTerminalAscii(wstr) :
@@ -350,7 +350,7 @@ HRESULT XtermEngine::WriteTerminalW(const std::wstring& wstr)
 // Return Value:
 // - S_OK
 [[nodiscard]]
-HRESULT XtermEngine::_DoUpdateTitle(const std::wstring& newTitle)
+HRESULT XtermEngine::_DoUpdateTitle(const std::wstring& newTitle) noexcept
 {
     // inbox telnet uses xterm-ascii as it's mode. If we're in ascii mode, don't
     //      do anything, to maintain compatibility.

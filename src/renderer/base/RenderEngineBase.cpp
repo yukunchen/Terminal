@@ -17,7 +17,7 @@ RenderEngineBase::RenderEngineBase() :
 
 }
 
-HRESULT RenderEngineBase::InvalidateTitle(const std::wstring& proposedTitle)
+HRESULT RenderEngineBase::InvalidateTitle(const std::wstring& proposedTitle) noexcept
 {
     if (proposedTitle != _lastFrameTitle)
     {
@@ -27,7 +27,7 @@ HRESULT RenderEngineBase::InvalidateTitle(const std::wstring& proposedTitle)
     return S_OK;
 }
 
-HRESULT RenderEngineBase::UpdateTitle(const std::wstring& newTitle)
+HRESULT RenderEngineBase::UpdateTitle(const std::wstring& newTitle) noexcept
 {
     HRESULT hr = S_FALSE;
     if (newTitle != _lastFrameTitle)

@@ -41,7 +41,7 @@ HRESULT WinTelnetEngine::UpdateDrawingBrushes(const COLORREF colorForeground,
                                               const COLORREF colorBackground,
                                               const WORD /*legacyColorAttribute*/,
                                               const bool isBold,
-                                              const bool /*fIncludeBackgrounds*/)
+                                              const bool /*fIncludeBackgrounds*/) noexcept
 {
     return VtEngine::_16ColorUpdateDrawingBrushes(colorForeground, colorBackground, isBold, _ColorTable, _cColorTable);
 }
@@ -54,7 +54,7 @@ HRESULT WinTelnetEngine::UpdateDrawingBrushes(const COLORREF colorForeground,
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT WinTelnetEngine::_MoveCursor(COORD const coord)
+HRESULT WinTelnetEngine::_MoveCursor(COORD const coord) noexcept
 {
     HRESULT hr = S_OK;
     // don't try and be clever about moving the cursor.
@@ -81,7 +81,7 @@ HRESULT WinTelnetEngine::_MoveCursor(COORD const coord)
 // Return Value:
 // - S_OK
 [[nodiscard]]
-HRESULT WinTelnetEngine::ScrollFrame()
+HRESULT WinTelnetEngine::ScrollFrame() noexcept
 {
     // win-telnet doesn't know anything about scroll vt sequences
     // every frame, we're repainitng everything, always.
@@ -97,7 +97,7 @@ HRESULT WinTelnetEngine::ScrollFrame()
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT WinTelnetEngine::InvalidateScroll(const COORD* const /*pcoordDelta*/)
+HRESULT WinTelnetEngine::InvalidateScroll(const COORD* const /*pcoordDelta*/) noexcept
 {
     // win-telnet assumes the client doesn't know anything about inserting or
     //  deleting lines.
@@ -113,7 +113,7 @@ HRESULT WinTelnetEngine::InvalidateScroll(const COORD* const /*pcoordDelta*/)
 // Return Value:
 // - S_OK or suitable HRESULT error from either conversion or writing pipe.
 [[nodiscard]]
-HRESULT WinTelnetEngine::WriteTerminalW(_In_ const std::wstring& wstr)
+HRESULT WinTelnetEngine::WriteTerminalW(_In_ const std::wstring& wstr) noexcept
 {
     return VtEngine::_WriteTerminalAscii(wstr);
 }

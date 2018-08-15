@@ -39,7 +39,7 @@ SMALL_RECT VtEngine::GetDirtyRectInChars()
 // Return Value:
 // - S_FALSE: This is unsupported by the VT Renderer and should use another engine's value.
 [[nodiscard]]
-HRESULT VtEngine::IsGlyphWideByFont(const std::wstring_view /*glyph*/, _Out_ bool* const pResult)
+HRESULT VtEngine::IsGlyphWideByFont(const std::wstring_view /*glyph*/, _Out_ bool* const pResult) noexcept
 {
     *pResult = false;
     return S_FALSE;

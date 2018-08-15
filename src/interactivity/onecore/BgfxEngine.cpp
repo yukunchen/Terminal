@@ -36,63 +36,63 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
 }
 
 [[nodiscard]]
-HRESULT BgfxEngine::Invalidate(const SMALL_RECT* const /*psrRegion*/)
+HRESULT BgfxEngine::Invalidate(const SMALL_RECT* const /*psrRegion*/) noexcept
 {
     return S_OK;
 }
 
 [[nodiscard]]
-HRESULT BgfxEngine::InvalidateCursor(const COORD* const /*pcoordCursor*/)
+HRESULT BgfxEngine::InvalidateCursor(const COORD* const /*pcoordCursor*/) noexcept
 {
     return S_OK;
 }
 
 [[nodiscard]]
-HRESULT BgfxEngine::InvalidateSystem(const RECT* const /*prcDirtyClient*/)
+HRESULT BgfxEngine::InvalidateSystem(const RECT* const /*prcDirtyClient*/) noexcept
 {
     return S_OK;
 }
 
 [[nodiscard]]
-HRESULT BgfxEngine::InvalidateSelection(const std::vector<SMALL_RECT>& /*rectangles*/)
+HRESULT BgfxEngine::InvalidateSelection(const std::vector<SMALL_RECT>& /*rectangles*/) noexcept
 {
     return S_OK;
 }
 
 [[nodiscard]]
-HRESULT BgfxEngine::InvalidateScroll(const COORD* const /*pcoordDelta*/)
+HRESULT BgfxEngine::InvalidateScroll(const COORD* const /*pcoordDelta*/) noexcept
 {
     return S_OK;
 }
 
 [[nodiscard]]
-HRESULT BgfxEngine::InvalidateAll()
+HRESULT BgfxEngine::InvalidateAll() noexcept
 {
     return S_OK;
 }
 
 [[nodiscard]]
-HRESULT BgfxEngine::InvalidateCircling(_Out_ bool* const pForcePaint)
+HRESULT BgfxEngine::InvalidateCircling(_Out_ bool* const pForcePaint) noexcept
 {
     *pForcePaint = false;
     return S_FALSE;
 }
 
 [[nodiscard]]
-HRESULT BgfxEngine::PrepareForTeardown(_Out_ bool* const pForcePaint)
+HRESULT BgfxEngine::PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept
 {
     *pForcePaint = false;
     return S_FALSE;
 }
 
 [[nodiscard]]
-HRESULT BgfxEngine::StartPaint()
+HRESULT BgfxEngine::StartPaint() noexcept
 {
     return S_OK;
 }
 
 [[nodiscard]]
-HRESULT BgfxEngine::EndPaint()
+HRESULT BgfxEngine::EndPaint() noexcept
 {
     NTSTATUS Status;
 
@@ -114,14 +114,27 @@ HRESULT BgfxEngine::EndPaint()
     return HRESULT_FROM_NT(Status);
 }
 
+// Routine Description:
+// - Used to perform longer running presentation steps outside the lock so the other threads can continue.
+// - Not currently used by BgfxEngine.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_FALSE since we do nothing.
 [[nodiscard]]
-HRESULT BgfxEngine::ScrollFrame()
+HRESULT BgfxEngine::Present() noexcept
+{
+    return S_FALSE;
+}
+
+[[nodiscard]]
+HRESULT BgfxEngine::ScrollFrame() noexcept
 {
     return S_OK;
 }
 
 [[nodiscard]]
-HRESULT BgfxEngine::PaintBackground()
+HRESULT BgfxEngine::PaintBackground() noexcept
 {
     PVOID OldRunBase;
     PVOID NewRunBase;
@@ -153,7 +166,7 @@ HRESULT BgfxEngine::PaintBufferLine(PCWCHAR const pwsLine,
                                     size_t const cchLine,
                                     COORD const coord,
                                     bool const /*fTrimLeft*/,
-                                    const bool /*lineWrapped*/)
+                                    const bool /*lineWrapped*/) noexcept
 {
     PVOID NewRunBase = (PVOID)(_sharedViewBase + (coord.Y * 2 * _runLength) + _runLength);
     PCD_IO_CHARACTER NewRun = (PCD_IO_CHARACTER)NewRunBase;
@@ -171,13 +184,13 @@ HRESULT BgfxEngine::PaintBufferLine(PCWCHAR const pwsLine,
 HRESULT BgfxEngine::PaintBufferGridLines(GridLines const /*lines*/,
                                          COLORREF const /*color*/,
                                          size_t const /*cchLine*/,
-                                         COORD const /*coordTarget*/)
+                                         COORD const /*coordTarget*/) noexcept
 {
     return S_OK;
 }
 
 [[nodiscard]]
-HRESULT BgfxEngine::PaintSelection(const std::vector<SMALL_RECT>& /*rectangles*/)
+HRESULT BgfxEngine::PaintSelection(const std::vector<SMALL_RECT>& /*rectangles*/) noexcept
 {
     return S_OK;
 }
@@ -188,7 +201,7 @@ HRESULT BgfxEngine::PaintCursor(const COORD coordCursor,
                                 const bool /*fIsDoubleWidth*/,
                                 const CursorType /*cursorType*/,
                                 const bool /*fUseColor*/,
-                                const COLORREF /*cursorColor*/)
+                                const COLORREF /*cursorColor*/) noexcept
 {
     // TODO: MSFT: 11448021 - Modify BGFX to support rendering full-width
     // characters and a full-width cursor.
@@ -205,7 +218,7 @@ HRESULT BgfxEngine::PaintCursor(const COORD coordCursor,
 }
 
 [[nodiscard]]
-HRESULT BgfxEngine::ClearCursor()
+HRESULT BgfxEngine::ClearCursor() noexcept
 {
     NTSTATUS Status;
 
@@ -222,7 +235,7 @@ HRESULT BgfxEngine::UpdateDrawingBrushes(COLORREF const /*colorForeground*/,
                                          COLORREF const /*colorBackground*/,
                                          const WORD legacyColorAttribute,
                                          const bool /*isBold*/,
-                                         bool const /*fIncludeBackgrounds*/)
+                                         bool const /*fIncludeBackgrounds*/) noexcept
 {
     _currentLegacyColorAttribute = legacyColorAttribute;
 
@@ -230,13 +243,13 @@ HRESULT BgfxEngine::UpdateDrawingBrushes(COLORREF const /*colorForeground*/,
 }
 
 [[nodiscard]]
-HRESULT BgfxEngine::UpdateFont(const FontInfoDesired& /*pfiFontInfoDesired*/, FontInfo& /*pfiFontInfo*/)
+HRESULT BgfxEngine::UpdateFont(const FontInfoDesired& /*pfiFontInfoDesired*/, FontInfo& /*pfiFontInfo*/) noexcept
 {
     return S_OK;
 }
 
 [[nodiscard]]
-HRESULT BgfxEngine::UpdateDpi(int const /*iDpi*/)
+HRESULT BgfxEngine::UpdateDpi(int const /*iDpi*/) noexcept
 {
     return S_OK;
 }
@@ -249,13 +262,13 @@ HRESULT BgfxEngine::UpdateDpi(int const /*iDpi*/)
 // Return Value:
 // - HRESULT S_OK
 [[nodiscard]]
-HRESULT BgfxEngine::UpdateViewport(const SMALL_RECT /*srNewViewport*/)
+HRESULT BgfxEngine::UpdateViewport(const SMALL_RECT /*srNewViewport*/) noexcept
 {
     return S_OK;
 }
 
 [[nodiscard]]
-HRESULT BgfxEngine::GetProposedFont(const FontInfoDesired& /*pfiFontInfoDesired*/, FontInfo& /*pfiFontInfo*/, int const /*iDpi*/)
+HRESULT BgfxEngine::GetProposedFont(const FontInfoDesired& /*pfiFontInfoDesired*/, FontInfo& /*pfiFontInfo*/, int const /*iDpi*/) noexcept
 {
     return S_OK;
 }
@@ -272,14 +285,14 @@ SMALL_RECT BgfxEngine::GetDirtyRectInChars()
 }
 
 [[nodiscard]]
-HRESULT BgfxEngine::GetFontSize(_Out_ COORD* const pFontSize)
+HRESULT BgfxEngine::GetFontSize(_Out_ COORD* const pFontSize) noexcept
 {
     *pFontSize =_fontSize;
     return S_OK;
 }
 
 [[nodiscard]]
-HRESULT BgfxEngine::IsGlyphWideByFont(const std::wstring_view /*glyph*/, _Out_ bool* const pResult)
+HRESULT BgfxEngine::IsGlyphWideByFont(const std::wstring_view /*glyph*/, _Out_ bool* const pResult) noexcept
 {
     *pResult = false;
     return S_OK;
@@ -293,7 +306,7 @@ HRESULT BgfxEngine::IsGlyphWideByFont(const std::wstring_view /*glyph*/, _Out_ b
 // Return Value:
 // - S_OK
 [[nodiscard]]
-HRESULT BgfxEngine::_DoUpdateTitle(_In_ const std::wstring& /*newTitle*/)
+HRESULT BgfxEngine::_DoUpdateTitle(_In_ const std::wstring& /*newTitle*/) noexcept
 {
     return S_OK;
 }

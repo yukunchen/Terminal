@@ -24,49 +24,51 @@ namespace Microsoft::Console::Render
         ~GdiEngine() override;
 
         [[nodiscard]]
-        HRESULT SetHwnd(const HWND hwnd);
+        HRESULT SetHwnd(const HWND hwnd) noexcept;
 
         [[nodiscard]]
-        HRESULT InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) override;
+        HRESULT InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept override;
         [[nodiscard]]
-        HRESULT InvalidateScroll(const COORD* const pcoordDelta) override;
+        HRESULT InvalidateScroll(const COORD* const pcoordDelta) noexcept override;
         [[nodiscard]]
-        HRESULT InvalidateSystem(const RECT* const prcDirtyClient) override;
+        HRESULT InvalidateSystem(const RECT* const prcDirtyClient) noexcept override;
         [[nodiscard]]
-        HRESULT Invalidate(const SMALL_RECT* const psrRegion) override;
+        HRESULT Invalidate(const SMALL_RECT* const psrRegion) noexcept override;
         [[nodiscard]]
-        HRESULT InvalidateCursor(const COORD* const pcoordCursor) override;
+        HRESULT InvalidateCursor(const COORD* const pcoordCursor) noexcept override;
         [[nodiscard]]
-        HRESULT InvalidateAll() override;
+        HRESULT InvalidateAll() noexcept override;
         [[nodiscard]]
-        HRESULT InvalidateCircling(_Out_ bool* const pForcePaint) override;
+        HRESULT InvalidateCircling(_Out_ bool* const pForcePaint) noexcept override;
         [[nodiscard]]
-        HRESULT PrepareForTeardown(_Out_ bool* const pForcePaint) override;
+        HRESULT PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept override;
 
         [[nodiscard]]
-        HRESULT StartPaint() override;
+        HRESULT StartPaint() noexcept override;
         [[nodiscard]]
-        HRESULT EndPaint() override;
+        HRESULT EndPaint() noexcept override;
+        [[nodiscard]]
+        HRESULT Present() noexcept override;
 
         [[nodiscard]]
-        HRESULT ScrollFrame() override;
+        HRESULT ScrollFrame() noexcept override;
 
         [[nodiscard]]
-        HRESULT PaintBackground() override;
+        HRESULT PaintBackground() noexcept override;
         [[nodiscard]]
         HRESULT PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
                                 _In_reads_(cchLine) const unsigned char* const rgWidths,
                                 const size_t cchLine,
                                 const COORD coordTarget,
                                 const bool fTrimLeft,
-                                const bool lineWrapped) override;
+                                const bool lineWrapped) noexcept override;
         [[nodiscard]]
         HRESULT PaintBufferGridLines(const GridLines lines,
                                      const COLORREF color,
                                      const size_t cchLine,
-                                     const COORD coordTarget) override;
+                                     const COORD coordTarget) noexcept override;
         [[nodiscard]]
-        HRESULT PaintSelection(const std::vector<SMALL_RECT>& rectangles) override;
+        HRESULT PaintSelection(const std::vector<SMALL_RECT>& rectangles) noexcept override;
 
         [[nodiscard]]
         HRESULT PaintCursor(const COORD coordCursor,
@@ -74,47 +76,47 @@ namespace Microsoft::Console::Render
                             const bool fIsDoubleWidth,
                             const CursorType cursorType,
                             const bool fUseColor,
-                            const COLORREF cursorColor) override;
+                            const COLORREF cursorColor) noexcept override;
 
         [[nodiscard]]
-        HRESULT ClearCursor() override;
+        HRESULT ClearCursor() noexcept override;
 
         [[nodiscard]]
         HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
                                      const COLORREF colorBackground,
                                      const WORD legacyColorAttribute,
                                      const bool isBold,
-                                     const bool fIncludeBackgrounds) override;
+                                     const bool fIncludeBackgrounds) noexcept override;
         [[nodiscard]]
         HRESULT UpdateFont(const FontInfoDesired& FontInfoDesired,
-                           _Out_ FontInfo& FontInfo) override;
+                           _Out_ FontInfo& FontInfo) noexcept override;
         [[nodiscard]]
-        HRESULT UpdateDpi(const int iDpi) override;
+        HRESULT UpdateDpi(const int iDpi) noexcept override;
         [[nodiscard]]
-        HRESULT UpdateViewport(const SMALL_RECT srNewViewport) override;
+        HRESULT UpdateViewport(const SMALL_RECT srNewViewport) noexcept override;
 
         [[nodiscard]]
         HRESULT GetProposedFont(const FontInfoDesired& FontDesired,
                                 _Out_ FontInfo& Font,
-                                const int iDpi) override;
+                                const int iDpi) noexcept override;
 
         SMALL_RECT GetDirtyRectInChars() override;
         [[nodiscard]]
-        HRESULT GetFontSize(_Out_ COORD* const pFontSize) override;
+        HRESULT GetFontSize(_Out_ COORD* const pFontSize) noexcept override;
         [[nodiscard]]
-        HRESULT IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) override;
+        HRESULT IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept override;
 
     protected:
         [[nodiscard]]
-        HRESULT _DoUpdateTitle(_In_ const std::wstring& newTitle) override;
+        HRESULT _DoUpdateTitle(_In_ const std::wstring& newTitle) noexcept override;
 
     private:
         HWND _hwndTargetWindow;
 
         [[nodiscard]]
         static HRESULT s_SetWindowLongWHelper(const HWND hWnd,
-                                                const int nIndex,
-                                                const LONG dwNewLong);
+                                              const int nIndex,
+                                              const LONG dwNewLong) noexcept;
 
         bool _fPaintStarted;
 
@@ -127,7 +129,7 @@ namespace Microsoft::Console::Render
         POLYTEXTW _pPolyText[s_cPolyTextCache];
         size_t _cPolyText;
         [[nodiscard]]
-        HRESULT _FlushBufferLines();
+        HRESULT _FlushBufferLines() noexcept;
 
         RECT _rcCursorInvert;
 
@@ -139,7 +141,7 @@ namespace Microsoft::Console::Render
         SIZE _szMemorySurface;
         HBITMAP _hbitmapMemorySurface;
         [[nodiscard]]
-        HRESULT _PrepareMemoryBitmap(const HWND hwnd);
+        HRESULT _PrepareMemoryBitmap(const HWND hwnd) noexcept;
 
         SIZE _szInvalidScroll;
         RECT _rcInvalid;
@@ -149,34 +151,34 @@ namespace Microsoft::Console::Render
         COLORREF _lastBg;
 
         [[nodiscard]]
-        HRESULT _InvalidCombine(const RECT* const prc);
+        HRESULT _InvalidCombine(const RECT* const prc) noexcept;
         [[nodiscard]]
-        HRESULT _InvalidOffset(const POINT* const ppt);
+        HRESULT _InvalidOffset(const POINT* const ppt) noexcept;
         [[nodiscard]]
-        HRESULT _InvalidRestrict();
+        HRESULT _InvalidRestrict() noexcept;
 
         [[nodiscard]]
-        HRESULT _InvalidateRect(const RECT* const prc);
+        HRESULT _InvalidateRect(const RECT* const prc) noexcept;
         [[nodiscard]]
-        HRESULT _InvalidateRgn(_In_ HRGN hrgn);
+        HRESULT _InvalidateRgn(_In_ HRGN hrgn) noexcept;
 
         [[nodiscard]]
-        HRESULT _PaintBackgroundColor(const RECT* const prc);
+        HRESULT _PaintBackgroundColor(const RECT* const prc) noexcept;
 
         HRGN _hrgnGdiPaintedSelection;
         [[nodiscard]]
         HRESULT _PaintSelectionCalculateRegion(const std::vector<SMALL_RECT>& rectangles,
-                                               _Inout_ HRGN const hrgnSelection) const;
+                                               _Inout_ HRGN const hrgnSelection) const noexcept;
 
         static const ULONG s_ulMinCursorHeightPercent = 25;
         static const ULONG s_ulMaxCursorHeightPercent = 100;
 
         [[nodiscard]]
-        HRESULT _ScaleByFont(const COORD* const pcoord, _Out_ POINT* const pPoint) const;
+        HRESULT _ScaleByFont(const COORD* const pcoord, _Out_ POINT* const pPoint) const noexcept;
         [[nodiscard]]
-        HRESULT _ScaleByFont(const SMALL_RECT* const psr, _Out_ RECT* const prc) const;
+        HRESULT _ScaleByFont(const SMALL_RECT* const psr, _Out_ RECT* const prc) const noexcept;
         [[nodiscard]]
-        HRESULT _ScaleByFont(const RECT* const prc, _Out_ SMALL_RECT* const psr) const;
+        HRESULT _ScaleByFont(const RECT* const prc, _Out_ SMALL_RECT* const psr) const noexcept;
 
         static int s_ScaleByDpi(const int iPx, const int iDpi);
         static int s_ShrinkByDpi(const int iPx, const int iDpi);
@@ -193,7 +195,7 @@ namespace Microsoft::Console::Render
         HRESULT _GetProposedFont(const FontInfoDesired& FontDesired,
                                  _Out_ FontInfo& Font,
                                  const int iDpi,
-                                 _Inout_ wil::unique_hfont& hFont);
+                                 _Inout_ wil::unique_hfont& hFont) noexcept;
 
         COORD _GetFontSize() const;
         bool _IsMinimized() const;

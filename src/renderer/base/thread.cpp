@@ -159,9 +159,6 @@ DWORD WINAPI RenderThread::s_ThreadProc(_In_ LPVOID lpParameter)
     }
 }
 
-extern void LockConsole();
-extern void UnlockConsole();
-
 DWORD WINAPI RenderThread::_ThreadProc()
 {
     while (_fKeepRunning)
@@ -171,9 +168,7 @@ DWORD WINAPI RenderThread::_ThreadProc()
 
         ResetEvent(_hPaintCompletedEvent);
 
-        LockConsole();
         LOG_IF_FAILED(_pRenderer->PaintFrame());
-        UnlockConsole();
 
         SetEvent(_hPaintCompletedEvent);
 

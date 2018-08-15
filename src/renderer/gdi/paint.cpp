@@ -19,7 +19,7 @@ using namespace Microsoft::Console::Render;
 // Return Value:
 // - S_OK if we started to paint. S_FALSE if we didn't need to paint. HRESULT error code if painting didn't start successfully.
 [[nodiscard]]
-HRESULT GdiEngine::StartPaint()
+HRESULT GdiEngine::StartPaint() noexcept
 {
     // If we have no handle, we don't need to paint. Return quickly.
     RETURN_HR_IF(S_FALSE, INVALID_HANDLE_VALUE == _hwndTargetWindow);
@@ -61,7 +61,7 @@ HRESULT GdiEngine::StartPaint()
 // Return Value:
 // - S_OK, suitable GDI HRESULT error, error from Win32 windowing, or safemath error.
 [[nodiscard]]
-HRESULT GdiEngine::ScrollFrame()
+HRESULT GdiEngine::ScrollFrame() noexcept
 {
     // If we don't have any scrolling to do, return early.
     RETURN_HR_IF(S_OK, 0 == _szInvalidScroll.cx && 0 == _szInvalidScroll.cy);
@@ -107,7 +107,7 @@ HRESULT GdiEngine::ScrollFrame()
 // Return Value:
 // - S_OK or suitable GDI HRESULT error.
 [[nodiscard]]
-HRESULT GdiEngine::_PrepareMemoryBitmap(const HWND hwnd)
+HRESULT GdiEngine::_PrepareMemoryBitmap(const HWND hwnd) noexcept
 {
     RECT rcClient;
     RETURN_HR_IF_FALSE(E_FAIL, GetClientRect(hwnd, &rcClient));
@@ -174,7 +174,7 @@ HRESULT GdiEngine::_PrepareMemoryBitmap(const HWND hwnd)
 // Return Value:
 // - S_OK or suitable GDI HRESULT error.
 [[nodiscard]]
-HRESULT GdiEngine::EndPaint()
+HRESULT GdiEngine::EndPaint() noexcept
 {
     // If we try to end a paint that wasn't started, it's invalid. Return.
     RETURN_HR_IF_FALSE(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), _fPaintStarted);
@@ -200,13 +200,26 @@ HRESULT GdiEngine::EndPaint()
 }
 
 // Routine Description:
+// - Used to perform longer running presentation steps outside the lock so the other threads can continue.
+// - Not currently used by GdiEngine.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_FALSE since we do nothing.
+[[nodiscard]]
+HRESULT GdiEngine::Present() noexcept
+{
+    return S_FALSE;
+}
+
+// Routine Description:
 // - Fills the given rectangle with the background color on the drawing context.
 // Arguments:
 // - prc - Rectangle to fill with color
 // Return Value:
 // - S_OK or suitable GDI HRESULT error.
 [[nodiscard]]
-HRESULT GdiEngine::_PaintBackgroundColor(const RECT* const prc)
+HRESULT GdiEngine::_PaintBackgroundColor(const RECT* const prc) noexcept
 {
     wil::unique_hbrush hbr(GetStockBrush(DC_BRUSH));
     RETURN_HR_IF_NULL(E_FAIL, hbr.get());
@@ -227,7 +240,7 @@ HRESULT GdiEngine::_PaintBackgroundColor(const RECT* const prc)
 // Return Value:
 // - S_OK or suitable GDI HRESULT error.
 [[nodiscard]]
-HRESULT GdiEngine::PaintBackground()
+HRESULT GdiEngine::PaintBackground() noexcept
 {
     if (_psInvalidData.fErase)
     {
@@ -264,7 +277,7 @@ HRESULT GdiEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
                                    const size_t cchLine,
                                    const COORD coord,
                                    const bool fTrimLeft,
-                                   const bool /*lineWrapped*/)
+                                   const bool /*lineWrapped*/) noexcept
 {
     // Exit early if there are no lines to draw.
     RETURN_HR_IF(S_OK, 0 == cchLine);
@@ -327,7 +340,7 @@ HRESULT GdiEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
 // Return Value:
 // - S_OK or E_FAIL if GDI failed.
 [[nodiscard]]
-HRESULT GdiEngine::_FlushBufferLines()
+HRESULT GdiEngine::_FlushBufferLines() noexcept
 {
     HRESULT hr = S_OK;
 
@@ -369,7 +382,7 @@ HRESULT GdiEngine::_FlushBufferLines()
 // Return Value:
 // - S_OK or suitable GDI HRESULT error or E_FAIL for GDI errors in functions that don't reliably return a specific error code.
 [[nodiscard]]
-HRESULT GdiEngine::PaintBufferGridLines(const GridLines lines, const COLORREF color, const size_t cchLine, const COORD coordTarget)
+HRESULT GdiEngine::PaintBufferGridLines(const GridLines lines, const COLORREF color, const size_t cchLine, const COORD coordTarget) noexcept
 {
     // Return early if there are no lines to paint.
     RETURN_HR_IF(S_OK, GridLines::None == lines);
@@ -443,7 +456,7 @@ HRESULT GdiEngine::PaintCursor(const COORD coordCursor,
                                const bool fIsDoubleWidth,
                                const CursorType cursorType,
                                const bool fUseColor,
-                               const COLORREF cursorColor)
+                               const COLORREF cursorColor) noexcept
 {
     LOG_IF_FAILED(_FlushBufferLines());
 
@@ -555,7 +568,7 @@ HRESULT GdiEngine::PaintCursor(const COORD coordCursor,
 // Return Value:
 // - S_OK, suitable GDI HRESULT error, or E_FAIL in a GDI error where a specific error isn't set.
 [[nodiscard]]
-HRESULT GdiEngine::ClearCursor()
+HRESULT GdiEngine::ClearCursor() noexcept
 {
     if (!IsRectEmpty(&_rcCursorInvert))
     {
@@ -577,7 +590,7 @@ HRESULT GdiEngine::ClearCursor()
 // Return Value:
 // - S_OK or suitable GDI HRESULT error.
 [[nodiscard]]
-HRESULT GdiEngine::PaintSelection(const std::vector<SMALL_RECT>& rectangles)
+HRESULT GdiEngine::PaintSelection(const std::vector<SMALL_RECT>& rectangles) noexcept
 {
     LOG_IF_FAILED(_FlushBufferLines());
 
@@ -611,7 +624,7 @@ HRESULT GdiEngine::PaintSelection(const std::vector<SMALL_RECT>& rectangles)
 //  - HRESULT S_OK or Expect GDI-based errors or memory errors.
 [[nodiscard]]
 HRESULT GdiEngine::_PaintSelectionCalculateRegion(const std::vector<SMALL_RECT>& rectangles,
-                                                 _Inout_ HRGN const hrgnSelection) const
+                                                 _Inout_ HRGN const hrgnSelection) const noexcept
 {
     // for each row in the selection
     for (const auto& rect : rectangles)

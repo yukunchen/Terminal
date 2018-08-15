@@ -65,7 +65,7 @@ WddmConEngine::~WddmConEngine()
 }
 
 [[nodiscard]]
-HRESULT WddmConEngine::Initialize()
+HRESULT WddmConEngine::Initialize() noexcept
 {
     HRESULT hr;
     RECT DisplaySize;
@@ -149,91 +149,105 @@ bool WddmConEngine::IsInitialized()
 }
 
 [[nodiscard]]
-HRESULT WddmConEngine::Enable()
+HRESULT WddmConEngine::Enable() noexcept
 {
     RETURN_IF_HANDLE_INVALID(_hWddmConCtx);
     return WDDMConEnableDisplayAccess((PHANDLE)_hWddmConCtx, TRUE);
 }
 
 [[nodiscard]]
-HRESULT WddmConEngine::Disable()
+HRESULT WddmConEngine::Disable() noexcept
 {
     RETURN_IF_HANDLE_INVALID(_hWddmConCtx);
     return WDDMConEnableDisplayAccess((PHANDLE)_hWddmConCtx, FALSE);
 }
 
 [[nodiscard]]
-HRESULT WddmConEngine::Invalidate(const SMALL_RECT* const /*psrRegion*/)
+HRESULT WddmConEngine::Invalidate(const SMALL_RECT* const /*psrRegion*/) noexcept
 {
     return S_OK;
 }
 
 [[nodiscard]]
-HRESULT WddmConEngine::InvalidateCursor(const COORD* const /*pcoordCursor*/)
+HRESULT WddmConEngine::InvalidateCursor(const COORD* const /*pcoordCursor*/) noexcept
 {
     return S_OK;
 }
 
 [[nodiscard]]
-HRESULT WddmConEngine::InvalidateSystem(const RECT* const /*prcDirtyClient*/)
+HRESULT WddmConEngine::InvalidateSystem(const RECT* const /*prcDirtyClient*/) noexcept
 {
     return S_OK;
 }
 
 [[nodiscard]]
-HRESULT WddmConEngine::InvalidateSelection(const std::vector<SMALL_RECT>& /*rectangles*/)
+HRESULT WddmConEngine::InvalidateSelection(const std::vector<SMALL_RECT>& /*rectangles*/) noexcept
 {
     return S_OK;
 }
 
 [[nodiscard]]
-HRESULT WddmConEngine::InvalidateScroll(const COORD* const /*pcoordDelta*/)
+HRESULT WddmConEngine::InvalidateScroll(const COORD* const /*pcoordDelta*/) noexcept
 {
     return S_OK;
 }
 
 [[nodiscard]]
-HRESULT WddmConEngine::InvalidateAll()
+HRESULT WddmConEngine::InvalidateAll() noexcept
 {
     return S_OK;
 }
 
 [[nodiscard]]
-HRESULT WddmConEngine::InvalidateCircling(_Out_ bool* const pForcePaint)
+HRESULT WddmConEngine::InvalidateCircling(_Out_ bool* const pForcePaint) noexcept
 {
     *pForcePaint = false;
     return S_FALSE;
 }
 
 [[nodiscard]]
-HRESULT WddmConEngine::PrepareForTeardown(_Out_ bool* const pForcePaint)
+HRESULT WddmConEngine::PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept
 {
     *pForcePaint = false;
     return S_FALSE;
 }
 
 [[nodiscard]]
-HRESULT WddmConEngine::StartPaint()
+HRESULT WddmConEngine::StartPaint() noexcept
 {
     RETURN_IF_HANDLE_INVALID(_hWddmConCtx);
     return WDDMConBeginUpdateDisplayBatch(_hWddmConCtx);
 }
 
 [[nodiscard]]
-HRESULT WddmConEngine::EndPaint()
+HRESULT WddmConEngine::EndPaint() noexcept
 {
     RETURN_IF_HANDLE_INVALID(_hWddmConCtx);
     return WDDMConEndUpdateDisplayBatch(_hWddmConCtx);
 }
 
+// Routine Description:
+// - Used to perform longer running presentation steps outside the lock so the other threads can continue.
+// - Not currently used by WddmConEngine.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_FALSE since we do nothing.
+
 [[nodiscard]]
-HRESULT WddmConEngine::ScrollFrame()
+HRESULT WddmConEngine::Present() noexcept
+{
+    return S_FALSE;
+}
+
+[[nodiscard]]
+HRESULT WddmConEngine::ScrollFrame() noexcept
 {
     return S_OK;
 }
 
 [[nodiscard]]
-HRESULT WddmConEngine::PaintBackground()
+HRESULT WddmConEngine::PaintBackground() noexcept
 {
     RETURN_IF_HANDLE_INVALID(_hWddmConCtx);
 
@@ -265,7 +279,7 @@ HRESULT WddmConEngine::PaintBufferLine(PCWCHAR const pwsLine,
                                        size_t const cchLine,
                                        COORD const coord,
                                        bool const /*fTrimLeft*/,
-                                       const bool /*lineWrapped*/)
+                                       const bool /*lineWrapped*/) noexcept
 {
     RETURN_IF_HANDLE_INVALID(_hWddmConCtx);
 
@@ -291,13 +305,13 @@ HRESULT WddmConEngine::PaintBufferLine(PCWCHAR const pwsLine,
 HRESULT WddmConEngine::PaintBufferGridLines(GridLines const /*lines*/,
                                             COLORREF const /*color*/,
                                             size_t const /*cchLine*/,
-                                            COORD const /*coordTarget*/)
+                                            COORD const /*coordTarget*/) noexcept
 {
     return S_OK;
 }
 
 [[nodiscard]]
-HRESULT WddmConEngine::PaintSelection(const std::vector<SMALL_RECT>& /*rectangles*/)
+HRESULT WddmConEngine::PaintSelection(const std::vector<SMALL_RECT>& /*rectangles*/) noexcept
 {
     return S_OK;
 }
@@ -308,13 +322,13 @@ HRESULT WddmConEngine::PaintCursor(const COORD /*coordCursor*/,
                                    const bool /*fIsDoubleWidth*/,
                                    const CursorType /*cursorType*/,
                                    const bool /*fUseColor*/,
-                                   const COLORREF /*cursorColor*/)
+                                   const COLORREF /*cursorColor*/) noexcept
 {
     return S_OK;
 }
 
 [[nodiscard]]
-HRESULT WddmConEngine::ClearCursor()
+HRESULT WddmConEngine::ClearCursor() noexcept
 {
     return S_OK;
 }
@@ -324,7 +338,7 @@ HRESULT WddmConEngine::UpdateDrawingBrushes(COLORREF const /*colorForeground*/,
                                             COLORREF const /*colorBackground*/,
                                             const WORD legacyColorAttribute,
                                             const bool /*isBold*/,
-                                            bool const /*fIncludeBackgrounds*/)
+                                            bool const /*fIncludeBackgrounds*/) noexcept
 {
     _currentLegacyColorAttribute = legacyColorAttribute;
 
@@ -332,7 +346,7 @@ HRESULT WddmConEngine::UpdateDrawingBrushes(COLORREF const /*colorForeground*/,
 }
 
 [[nodiscard]]
-HRESULT WddmConEngine::UpdateFont(const FontInfoDesired& /*pfiFontInfoDesired*/, FontInfo& fiFontInfo)
+HRESULT WddmConEngine::UpdateFont(const FontInfoDesired& /*pfiFontInfoDesired*/, FontInfo& fiFontInfo) noexcept
 {
     COORD coordSize = {0};
     LOG_IF_FAILED(GetFontSize(&coordSize));
@@ -348,7 +362,7 @@ HRESULT WddmConEngine::UpdateFont(const FontInfoDesired& /*pfiFontInfoDesired*/,
 }
 
 [[nodiscard]]
-HRESULT WddmConEngine::UpdateDpi(int const /*iDpi*/)
+HRESULT WddmConEngine::UpdateDpi(int const /*iDpi*/) noexcept
 {
     return S_OK;
 }
@@ -361,7 +375,7 @@ HRESULT WddmConEngine::UpdateDpi(int const /*iDpi*/)
 // Return Value:
 // - HRESULT S_OK
 [[nodiscard]]
-HRESULT WddmConEngine::UpdateViewport(const SMALL_RECT /*srNewViewport*/)
+HRESULT WddmConEngine::UpdateViewport(const SMALL_RECT /*srNewViewport*/) noexcept
 {
     return S_OK;
 }
@@ -369,7 +383,7 @@ HRESULT WddmConEngine::UpdateViewport(const SMALL_RECT /*srNewViewport*/)
 [[nodiscard]]
 HRESULT WddmConEngine::GetProposedFont(const FontInfoDesired& /*pfiFontInfoDesired*/,
                                        FontInfo& /*pfiFontInfo*/,
-                                       int const /*iDpi*/)
+                                       int const /*iDpi*/) noexcept
 {
     return S_OK;
 }
@@ -397,7 +411,7 @@ RECT WddmConEngine::GetDisplaySize()
 }
 
 [[nodiscard]]
-HRESULT WddmConEngine::GetFontSize(_Out_ COORD* const pFontSize)
+HRESULT WddmConEngine::GetFontSize(_Out_ COORD* const pFontSize) noexcept
 {
     // In order to retrieve the font size being used by DirectX, it is necessary
     // to modify the API set that defines the contract for WddmCon. However, the
@@ -419,7 +433,7 @@ HRESULT WddmConEngine::GetFontSize(_Out_ COORD* const pFontSize)
 }
 
 [[nodiscard]]
-HRESULT WddmConEngine::IsGlyphWideByFont(const std::wstring_view /*glyph*/, _Out_ bool* const pResult)
+HRESULT WddmConEngine::IsGlyphWideByFont(const std::wstring_view /*glyph*/, _Out_ bool* const pResult) noexcept
 {
     *pResult = false;
     return S_OK;
@@ -433,7 +447,7 @@ HRESULT WddmConEngine::IsGlyphWideByFont(const std::wstring_view /*glyph*/, _Out
 // Return Value:
 // - S_OK
 [[nodiscard]]
-HRESULT WddmConEngine::_DoUpdateTitle(_In_ const std::wstring& /*newTitle*/)
+HRESULT WddmConEngine::_DoUpdateTitle(_In_ const std::wstring& /*newTitle*/) noexcept
 {
     return S_OK;
 }

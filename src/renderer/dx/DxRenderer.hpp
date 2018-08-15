@@ -55,7 +55,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         HRESULT EndPaint() noexcept override;
         [[nodiscard]]
-        HRESULT Present() noexcept;
+        HRESULT Present() noexcept override;
 
         [[nodiscard]]
         HRESULT ScrollFrame() noexcept override;

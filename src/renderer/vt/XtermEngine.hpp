@@ -36,30 +36,31 @@ namespace Microsoft::Console::Render
         virtual ~XtermEngine() override = default;
 
         [[nodiscard]]
-        HRESULT StartPaint() override;
+        HRESULT StartPaint() noexcept override;
         [[nodiscard]]
-        HRESULT EndPaint() override;
+        HRESULT EndPaint() noexcept override;
+
         [[nodiscard]]
         virtual HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
                                             const COLORREF colorBackground,
                                             const WORD legacyColorAttribute,
                                             const bool isBold,
-                                            const bool fIncludeBackgrounds) override;
+                                            const bool fIncludeBackgrounds) noexcept override;
         [[nodiscard]]
         HRESULT PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
                                 _In_reads_(cchLine) const unsigned char* const rgWidths,
                                 const size_t cchLine,
                                 const COORD coordTarget,
                                 const bool fTrimLeft,
-                                const bool lineWrapped) override;
+                                const bool lineWrapped) noexcept override;
         [[nodiscard]]
-        HRESULT ScrollFrame() override;
+        HRESULT ScrollFrame() noexcept override;
 
         [[nodiscard]]
-        HRESULT InvalidateScroll(const COORD* const pcoordDelta) override;
+        HRESULT InvalidateScroll(const COORD* const pcoordDelta) noexcept override;
 
         [[nodiscard]]
-        HRESULT WriteTerminalW(_In_ const std::wstring& str) override;
+        HRESULT WriteTerminalW(_In_ const std::wstring& str) noexcept override;
 
     protected:
         const COLORREF* const _ColorTable;
@@ -68,10 +69,10 @@ namespace Microsoft::Console::Render
         bool _previousLineWrapped;
 
         [[nodiscard]]
-        HRESULT _MoveCursor(const COORD coord);
+        HRESULT _MoveCursor(const COORD coord) noexcept override;
 
         [[nodiscard]]
-        HRESULT _DoUpdateTitle(const std::wstring& newTitle) override;
+        HRESULT _DoUpdateTitle(const std::wstring& newTitle) noexcept override;
 
     #ifdef UNIT_TESTING
         friend class VtRendererTest;

@@ -23,7 +23,7 @@ using namespace Microsoft::Console::Render;
 // Return Value:
 // - S_OK
 [[nodiscard]]
-HRESULT VtEngine::InvalidateSystem(const RECT* const /*prcDirtyClient*/)
+HRESULT VtEngine::InvalidateSystem(const RECT* const /*prcDirtyClient*/) noexcept
 {
     return S_OK;
 }
@@ -36,7 +36,7 @@ HRESULT VtEngine::InvalidateSystem(const RECT* const /*prcDirtyClient*/)
 // Return Value:
 // - S_OK
 [[nodiscard]]
-HRESULT VtEngine::InvalidateSelection(const std::vector<SMALL_RECT>& /*rectangles*/)
+HRESULT VtEngine::InvalidateSelection(const std::vector<SMALL_RECT>& /*rectangles*/) noexcept
 {
     // Selection shouldn't be handled bt the VT Renderer Host, it should be
     //      handled by the client.
@@ -52,7 +52,7 @@ HRESULT VtEngine::InvalidateSelection(const std::vector<SMALL_RECT>& /*rectangle
 // Return Value:
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT VtEngine::Invalidate(const SMALL_RECT* const psrRegion)
+HRESULT VtEngine::Invalidate(const SMALL_RECT* const psrRegion) noexcept
 {
     Viewport newInvalid = Viewport::FromExclusive(*psrRegion);
     return this->_InvalidCombine(newInvalid);
@@ -65,7 +65,7 @@ HRESULT VtEngine::Invalidate(const SMALL_RECT* const psrRegion)
 // Return Value:
 // - S_OK
 [[nodiscard]]
-HRESULT VtEngine::InvalidateCursor(const COORD* const pcoordCursor)
+HRESULT VtEngine::InvalidateCursor(const COORD* const pcoordCursor) noexcept
 {
     // If we just inherited the cursor, we're going to get an InvalidateCursor
     //      for both where the old cursor was, and where the new cursor is
@@ -92,7 +92,7 @@ HRESULT VtEngine::InvalidateCursor(const COORD* const pcoordCursor)
 // Return Value:
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT VtEngine::InvalidateAll()
+HRESULT VtEngine::InvalidateAll() noexcept
 {
     return this->_InvalidCombine(_lastViewport.ToOrigin());
 }
@@ -106,7 +106,7 @@ HRESULT VtEngine::InvalidateAll()
 // Return Value:
 // - S_OK
 [[nodiscard]]
-HRESULT VtEngine::InvalidateCircling(_Out_ bool* const pForcePaint)
+HRESULT VtEngine::InvalidateCircling(_Out_ bool* const pForcePaint) noexcept
 {
     *pForcePaint = true;
 
@@ -126,7 +126,7 @@ HRESULT VtEngine::InvalidateCircling(_Out_ bool* const pForcePaint)
 // Return Value:
 // - S_OK
 [[nodiscard]]
-HRESULT VtEngine::PrepareForTeardown(_Out_ bool* const pForcePaint)
+HRESULT VtEngine::PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept
 {
     *pForcePaint = true;
     return S_OK;
@@ -142,7 +142,7 @@ HRESULT VtEngine::PrepareForTeardown(_Out_ bool* const pForcePaint)
 // Return Value:
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT VtEngine::_InvalidCombine(const Viewport invalid)
+HRESULT VtEngine::_InvalidCombine(const Viewport invalid) noexcept
 {
     if (!_fInvalidRectUsed)
     {
@@ -168,7 +168,7 @@ HRESULT VtEngine::_InvalidCombine(const Viewport invalid)
 // Return Value:
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT VtEngine::_InvalidOffset(const COORD* const pCoord)
+HRESULT VtEngine::_InvalidOffset(const COORD* const pCoord) noexcept
 {
     if (_fInvalidRectUsed)
     {
@@ -193,7 +193,7 @@ HRESULT VtEngine::_InvalidOffset(const COORD* const pCoord)
 // Return Value:
 // - S_OK, else an appropriate HRESULT for failing to allocate or safemath failure.
 [[nodiscard]]
-HRESULT VtEngine::_InvalidRestrict()
+HRESULT VtEngine::_InvalidRestrict() noexcept
 {
     SMALL_RECT oldInvalid = _invalidRect.ToExclusive();
 
