@@ -185,11 +185,11 @@ HRESULT VtEngine::ClearCursor() noexcept
 //  Because the selection is the responsibility of the terminal, and not the
 //      host, render nothing.
 // Arguments:
-//  - rectangles - Vector of rectangles, one per line, that should be inverted to make the selection area
+//  - rect - Rectangle to invert or highlight to make the selection area
 // Return Value:
 // - S_OK
 [[nodiscard]]
-HRESULT VtEngine::PaintSelection(const std::vector<SMALL_RECT>& /*rectangles*/) noexcept
+HRESULT VtEngine::PaintSelection(const SMALL_RECT /*rect*/) noexcept
 {
     return S_OK;
 }

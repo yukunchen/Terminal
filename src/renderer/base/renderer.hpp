@@ -148,6 +148,7 @@ namespace Microsoft::Console::Render
         SMALL_RECT _srViewportPrevious;
 
         std::vector<SMALL_RECT> _GetSelectionRects() const;
+        std::vector<SMALL_RECT> _previousSelection;
 
         SMALL_RECT _RegionFromCoord(const COORD* const pcoord) const;
         COLORREF _ConvertAttrToRGB(const BYTE bAttr);

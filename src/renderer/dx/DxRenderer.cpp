@@ -303,7 +303,7 @@ HRESULT DxEngine::Invalidate(const SMALL_RECT* const psrRegion) noexcept
 [[nodiscard]]
 HRESULT DxEngine::InvalidateCursor(const COORD* const pcoordCursor) noexcept
 {
-    SMALL_RECT sr = Microsoft::Console::Types::Viewport::FromCoord(*pcoordCursor).ToExclusive();
+    SMALL_RECT sr = Microsoft::Console::Types::Viewport::FromCoord(*pcoordCursor).ToInclusive();
     return Invalidate(&sr);
 }
 
@@ -507,6 +507,10 @@ void DxEngine::_InvalidOr(SMALL_RECT sr) noexcept
     region.right = sr.Right;
     region.bottom = sr.Bottom;
     _ScaleByFont(region, _glyphCell);
+
+    region.right += _glyphCell.cx;
+    region.bottom += _glyphCell.cy;
+
     _InvalidOr(region);
 }
 
@@ -862,11 +866,11 @@ HRESULT DxEngine::PaintBufferGridLines(GridLines const lines,
 // Routine Description:
 // - Paints an overlay highlight on a portion of the frame to represent selected text
 // Arguments:
-// - rectangles - Vector of character cell positions to highlight
+//  - rect - Rectangle to invert or highlight to make the selection area
 // Return Value:
 // - S_OK or relevant DirectX error.
 [[nodiscard]]
-HRESULT DxEngine::PaintSelection(const std::vector<SMALL_RECT>& rectangles) noexcept
+HRESULT DxEngine::PaintSelection(const SMALL_RECT rect) noexcept
 {
     const auto existingColor = _d2dBrushForeground->GetColor();
     const auto selectionColor = D2D1::ColorF(existingColor.r,
@@ -877,22 +881,19 @@ HRESULT DxEngine::PaintSelection(const std::vector<SMALL_RECT>& rectangles) noex
     _d2dBrushForeground->SetColor(selectionColor);
     const auto resetColorOnExit = wil::scope_exit([&] {_d2dBrushForeground->SetColor(existingColor); });
 
-    for (const auto& rect : rectangles)
-    {
-        RECT pixels;
-        pixels.left = rect.Left * _glyphCell.cx;
-        pixels.top = rect.Top * _glyphCell.cy;
-        pixels.right = rect.Right * _glyphCell.cx;
-        pixels.bottom = rect.Bottom * _glyphCell.cy;
+    RECT pixels;
+    pixels.left = rect.Left * _glyphCell.cx;
+    pixels.top = rect.Top * _glyphCell.cy;
+    pixels.right = rect.Right * _glyphCell.cx;
+    pixels.bottom = rect.Bottom * _glyphCell.cy;
 
-        D2D1_RECT_F draw = { 0 };
-        draw.left = static_cast<float>(pixels.left);
-        draw.top = static_cast<float>(pixels.top);
-        draw.right = static_cast<float>(pixels.right);
-        draw.bottom = static_cast<float>(pixels.bottom);
+    D2D1_RECT_F draw = { 0 };
+    draw.left = static_cast<float>(pixels.left);
+    draw.top = static_cast<float>(pixels.top);
+    draw.right = static_cast<float>(pixels.right);
+    draw.bottom = static_cast<float>(pixels.bottom);
 
-        _d2dRenderTarget->FillRectangle(draw, _d2dBrushForeground.Get());
-    }
+    _d2dRenderTarget->FillRectangle(draw, _d2dBrushForeground.Get());
 
     return S_OK;
 }
@@ -1175,6 +1176,10 @@ SMALL_RECT DxEngine::GetDirtyRectInChars() noexcept
     r.Left = (SHORT)(floor(_invalidRect.left / _glyphCell.cx));
     r.Bottom = (SHORT)(floor(_invalidRect.bottom / _glyphCell.cy));
     r.Right = (SHORT)(floor(_invalidRect.right / _glyphCell.cx));
+
+    // Exclusive to inclusive
+    r.Bottom--;
+    r.Right--;
 
     return r;
 }

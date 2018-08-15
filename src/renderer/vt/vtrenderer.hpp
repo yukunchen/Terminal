@@ -80,7 +80,7 @@ namespace Microsoft::Console::Render
                                     const size_t cchLine,
                                     const COORD coordTarget) noexcept override;
         [[nodiscard]]
-        HRESULT PaintSelection(const std::vector<SMALL_RECT>& rectangles) noexcept override;
+        HRESULT PaintSelection(const SMALL_RECT rect) noexcept override;
 
         [[nodiscard]]
         HRESULT PaintCursor(const COORD coordCursor,

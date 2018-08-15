@@ -79,7 +79,7 @@ namespace Microsoft::Console::Render
                                              const size_t cchLine,
                                              const COORD coordTarget) noexcept = 0;
         [[nodiscard]]
-        virtual HRESULT PaintSelection(const std::vector<SMALL_RECT>& rectangles) noexcept = 0;
+        virtual HRESULT PaintSelection(const SMALL_RECT rect) noexcept = 0;
 
         [[nodiscard]]
         virtual HRESULT PaintCursor(const COORD coordCursor,

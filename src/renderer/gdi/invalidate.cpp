@@ -59,23 +59,9 @@ HRESULT GdiEngine::InvalidateScroll(const COORD* const pcoordDelta) noexcept
 // - HRESULT S_OK or GDI-based error code
 HRESULT GdiEngine::InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept
 {
-    // Get the currently selected area as a GDI region
-    wil::unique_hrgn hrgnSelection(CreateRectRgn(0, 0, 0, 0));
-    RETURN_HR_IF_NULL(E_FAIL, hrgnSelection.get());
-
-    RETURN_IF_FAILED(_PaintSelectionCalculateRegion(rectangles, hrgnSelection.get()));
-
-    // XOR against the region we saved from the last time we rendered to find out what to invalidate
-    // This is the space that needs to be inverted to either select or deselect the existing region into the new one.
-    wil::unique_hrgn hrgnInvalid(CreateRectRgn(0, 0, 0, 0));
-    RETURN_HR_IF_NULL(E_FAIL, hrgnInvalid.get());
-
-    int const iCombineResult = CombineRgn(hrgnInvalid.get(), _hrgnGdiPaintedSelection, hrgnSelection.get(), RGN_XOR);
-
-    if (NULLREGION != iCombineResult && ERROR != iCombineResult)
+    for (const auto& rect : rectangles)
     {
-        // Invalidate that.
-        RETURN_IF_FAILED(_InvalidateRgn(hrgnInvalid.get()));
+        RETURN_IF_FAILED(Invalidate(&rect));
     }
 
     return S_OK;
@@ -240,17 +226,4 @@ HRESULT GdiEngine::_InvalidRestrict() noexcept
 HRESULT GdiEngine::_InvalidateRect(const RECT* const prc) noexcept
 {
     RETURN_HR(_InvalidCombine(prc));
-}
-
-// Routine Description:
-// - Helper to add a pixel region to the invalid area
-// Arguments:
-// - hrgn - Handle to pixel region representing invalid area to add to next paint frame
-// Return Value:
-// - S_OK, GDI related failure, or safemath failure.
-HRESULT GdiEngine::_InvalidateRgn(_In_ HRGN hrgn) noexcept
-{
-    RECT rcInvalid;
-    RETURN_HR_IF_FALSE(E_FAIL, GetRgnBox(hrgn, &rcInvalid));
-    RETURN_HR(_InvalidateRect(&rcInvalid));
 }

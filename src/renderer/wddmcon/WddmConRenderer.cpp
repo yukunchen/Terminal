@@ -181,7 +181,7 @@ HRESULT WddmConEngine::InvalidateSystem(const RECT* const /*prcDirtyClient*/) no
 }
 
 [[nodiscard]]
-HRESULT WddmConEngine::InvalidateSelection(const std::vector<SMALL_RECT>& /*rectangles*/) noexcept
+HRESULT WddmConEngine::InvalidateSelection(const SMALL_RECT /*rect*/) noexcept
 {
     return S_OK;
 }
