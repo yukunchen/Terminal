@@ -1311,7 +1311,8 @@ DWRITE_LINE_SPACING DxEngine::s_DetermineLineSpacing(IDWriteFontFace5* const fon
 [[nodiscard]]
 D2D1_COLOR_F DxEngine::s_ColorFFromColorRef(const COLORREF color) noexcept
 {
+    // Converts BGR color order to RGB.
     const UINT32 rgb = ((color & 0x0000FF) << 16) | (color & 0x00FF00) | ((color & 0xFF0000) >> 16);
 
-    return D2D1::ColorF(color);
+    return D2D1::ColorF(rgb);
 }
