@@ -25,8 +25,8 @@ namespace Microsoft::Console::VirtualTerminal
     class InputStateMachineEngine : public IStateMachineEngine
     {
     public:
-        InputStateMachineEngine(_In_ std::unique_ptr<IInteractDispatch> pDispatch);
-        InputStateMachineEngine(_In_ std::unique_ptr<IInteractDispatch> pDispatch,
+        InputStateMachineEngine(IInteractDispatch* const pDispatch);
+        InputStateMachineEngine(IInteractDispatch* const pDispatch,
                                 const bool lookingForDSR);
 
         bool ActionExecute(const wchar_t wch) override;

@@ -9,24 +9,24 @@
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
-short CalcWindowSizeX(const SMALL_RECT * const pRect)
+short CalcWindowSizeX(const SMALL_RECT& rect) noexcept
 {
-    return pRect->Right - pRect->Left + 1;
+    return rect.Right - rect.Left + 1;
 }
 
-short CalcWindowSizeY(const SMALL_RECT * const pRect)
+short CalcWindowSizeY(const SMALL_RECT& rect) noexcept
 {
-    return pRect->Bottom - pRect->Top + 1;
+    return rect.Bottom - rect.Top + 1;
 }
 
-short CalcCursorYOffsetInPixels(const short sFontSizeY, const ULONG ulSize)
+short CalcCursorYOffsetInPixels(const short sFontSizeY, const ULONG ulSize) noexcept
 {
     // TODO: MSFT 10229700 - Note, we want to likely enforce that this isn't negative.
     // Pretty sure there's not a valid case for negative offsets here.
     return (short)((sFontSizeY)-(ulSize));
 }
 
-WORD ConvertStringToDec(_In_ PCWSTR pwchToConvert, _Out_opt_ PCWSTR * const ppwchEnd)
+WORD ConvertStringToDec(_In_ PCWSTR pwchToConvert, _Out_opt_ PCWSTR * const ppwchEnd) noexcept
 {
     WORD val = 0;
 
@@ -58,7 +58,7 @@ WORD ConvertStringToDec(_In_ PCWSTR pwchToConvert, _Out_opt_ PCWSTR * const ppwc
 // Arguments:
 // - bufferSize - Size of the buffer
 // - coord - Updated to increment one position, wrapping X and Y dimensions if necessary
-void Utils::s_IncrementCoordinate(const COORD bufferSize, COORD& coord)
+void Utils::s_IncrementCoordinate(const COORD bufferSize, COORD& coord) noexcept
 {
     coord.X++;
     if (coord.X >= bufferSize.X)
@@ -78,7 +78,7 @@ void Utils::s_IncrementCoordinate(const COORD bufferSize, COORD& coord)
 // Arguments:
 // - bufferSize - Size of the buffer
 // - coord - Updated to decrement one position, wrapping X and Y dimensions if necessary
-void Utils::s_DecrementCoordinate(const COORD bufferSize, COORD& coord)
+void Utils::s_DecrementCoordinate(const COORD bufferSize, COORD& coord) noexcept
 {
     coord.X--;
     if (coord.X < 0)
@@ -98,23 +98,23 @@ void Utils::s_DecrementCoordinate(const COORD bufferSize, COORD& coord)
 //   Appropriately wraps upward one row when reaching the left edge.
 // Arguments:
 // - srectEdges - The edges of the screen to use as reference
-// - pcoordScreen - Screen coordinate to decrement
+// - coordScreen - Screen coordinate to decrement
 // Return Value:
 // - True if we could successfully decrement. False if we couldn't (stuck in top left corner).
-bool Utils::s_DoDecrementScreenCoordinate(const SMALL_RECT srectEdges, _Inout_ COORD* const pcoordScreen)
+bool Utils::s_DoDecrementScreenCoordinate(const SMALL_RECT srectEdges, COORD& coordScreen) noexcept
 {
     // assert that the coord is inside the screen
-    FAIL_FAST_IF_FALSE(pcoordScreen->X >= srectEdges.Left);
-    FAIL_FAST_IF_FALSE(pcoordScreen->X <= srectEdges.Right);
-    FAIL_FAST_IF_FALSE(pcoordScreen->Y >= srectEdges.Top);
-    FAIL_FAST_IF_FALSE(pcoordScreen->Y <= srectEdges.Bottom);
+    FAIL_FAST_IF_FALSE(coordScreen.X >= srectEdges.Left);
+    FAIL_FAST_IF_FALSE(coordScreen.X <= srectEdges.Right);
+    FAIL_FAST_IF_FALSE(coordScreen.Y >= srectEdges.Top);
+    FAIL_FAST_IF_FALSE(coordScreen.Y <= srectEdges.Bottom);
 
-    if (pcoordScreen->X == srectEdges.Left)
+    if (coordScreen.X == srectEdges.Left)
     {
-        if (pcoordScreen->Y > srectEdges.Top)
+        if (coordScreen.Y > srectEdges.Top)
         {
-            pcoordScreen->Y--;
-            pcoordScreen->X = srectEdges.Right;
+            coordScreen.Y--;
+            coordScreen.X = srectEdges.Right;
         }
         else
         {
@@ -123,7 +123,7 @@ bool Utils::s_DoDecrementScreenCoordinate(const SMALL_RECT srectEdges, _Inout_ C
     }
     else
     {
-        pcoordScreen->X--;
+        coordScreen.X--;
     }
 
     return true;
@@ -134,23 +134,23 @@ bool Utils::s_DoDecrementScreenCoordinate(const SMALL_RECT srectEdges, _Inout_ C
 //   Appropriately wraps downward one row when reaching the right edge.
 // Arguments:
 // - srectEdges - The edges of the screen to use as reference
-// - pcoordScreen - Screen coordinate to increment
+// - coordScreen - Screen coordinate to increment
 // Return Value:
 // - True if we could successfully increment. False if we couldn't (stuck in bottom right corner).
-bool Utils::s_DoIncrementScreenCoordinate(const SMALL_RECT srectEdges, _Inout_ COORD* const pcoordScreen)
+bool Utils::s_DoIncrementScreenCoordinate(const SMALL_RECT srectEdges, COORD& coordScreen) noexcept
 {
     // assert that the coord is inside the screen
-    FAIL_FAST_IF_FALSE(pcoordScreen->X >= srectEdges.Left);
-    FAIL_FAST_IF_FALSE(pcoordScreen->X <= srectEdges.Right);
-    FAIL_FAST_IF_FALSE(pcoordScreen->Y >= srectEdges.Top);
-    FAIL_FAST_IF_FALSE(pcoordScreen->Y <= srectEdges.Bottom);
+    FAIL_FAST_IF_FALSE(coordScreen.X >= srectEdges.Left);
+    FAIL_FAST_IF_FALSE(coordScreen.X <= srectEdges.Right);
+    FAIL_FAST_IF_FALSE(coordScreen.Y >= srectEdges.Top);
+    FAIL_FAST_IF_FALSE(coordScreen.Y <= srectEdges.Bottom);
 
-    if (pcoordScreen->X == srectEdges.Right)
+    if (coordScreen.X == srectEdges.Right)
     {
-        if (pcoordScreen->Y < srectEdges.Bottom)
+        if (coordScreen.Y < srectEdges.Bottom)
         {
-            pcoordScreen->Y++;
-            pcoordScreen->X = srectEdges.Left;
+            coordScreen.Y++;
+            coordScreen.X = srectEdges.Left;
         }
         else
         {
@@ -159,7 +159,7 @@ bool Utils::s_DoIncrementScreenCoordinate(const SMALL_RECT srectEdges, _Inout_ C
     }
     else
     {
-        pcoordScreen->X++;
+        coordScreen.X++;
     }
 
     return true;
@@ -178,7 +178,7 @@ bool Utils::s_DoIncrementScreenCoordinate(const SMALL_RECT srectEdges, _Inout_ C
 // -  This is so you can do s_CompareCoords(first, second) <= 0 for "first is left or the same as second".
 //    (the < looks like a left arrow :D)
 // -  The magnitude of the result is the distance between the two coordinates when typing characters into the buffer (left to right, top to bottom)
-int Utils::s_CompareCoords(const COORD bufferSize, const COORD coordFirst, const COORD coordSecond)
+int Utils::s_CompareCoords(const COORD bufferSize, const COORD coordFirst, const COORD coordSecond) noexcept
 {
     const short cRowWidth = bufferSize.X;
 
@@ -220,7 +220,7 @@ int Utils::s_CompareCoords(const COORD bufferSize, const COORD coordFirst, const
 // -  This is so you can do s_CompareCoords(first, second) <= 0 for "first is left or the same as second".
 //    (the < looks like a left arrow :D)
 // -  The magnitude of the result is the distance between the two coordinates when typing characters into the buffer (left to right, top to bottom)
-int Utils::s_CompareCoords(const COORD coordFirst, const COORD coordSecond)
+int Utils::s_CompareCoords(const COORD coordFirst, const COORD coordSecond) noexcept
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // find the width of one row
@@ -234,17 +234,16 @@ int Utils::s_CompareCoords(const COORD coordFirst, const COORD coordSecond)
 // Arguments:
 // - srRectangle - The rectangle to check
 // - coordCorner - One of the corners of the given rectangle
-// - pcoordOpposite - The opposite corner of the one given.
 // Return Value:
-// - <none>
-void Utils::s_GetOppositeCorner(const SMALL_RECT srRectangle, const COORD coordCorner, _Out_ COORD* const pcoordOpposite)
+// - The opposite corner of the one given.
+COORD Utils::s_GetOppositeCorner(const SMALL_RECT srRectangle, const COORD coordCorner) noexcept
 {
     // Assert we were given coordinates that are indeed one of the corners of the rectangle.
     FAIL_FAST_IF_FALSE(coordCorner.X == srRectangle.Left || coordCorner.X == srRectangle.Right);
     FAIL_FAST_IF_FALSE(coordCorner.Y == srRectangle.Top || coordCorner.Y == srRectangle.Bottom);
 
-    pcoordOpposite->X = (srRectangle.Left == coordCorner.X) ? srRectangle.Right : srRectangle.Left;
-    pcoordOpposite->Y = (srRectangle.Top == coordCorner.Y) ? srRectangle.Bottom : srRectangle.Top;
+    return { (srRectangle.Left == coordCorner.X) ? srRectangle.Right : srRectangle.Left,
+             (srRectangle.Top == coordCorner.Y) ? srRectangle.Bottom : srRectangle.Top };
 }
 
 // Routine Description:
@@ -258,14 +257,14 @@ void Utils::s_GetOppositeCorner(const SMALL_RECT srRectangle, const COORD coordC
 // Return Value:
 // - True if we successfully moved the requested distance. False if we had to stop early.
 // - If False, we will restore the original position to the given coordinate.
-bool Utils::s_AddToPosition(const SMALL_RECT srectEdges, const int iAdd, _Inout_ COORD* const pcoordPosition)
+bool Utils::s_AddToPosition(const SMALL_RECT srectEdges, const int iAdd, COORD& coordPosition) noexcept
 {
-    const COORD coordBackup = *pcoordPosition;
+    const COORD coordBackup = coordPosition;
     bool fSuccess = true; // If nothing happens, we're still successful (e.g. iAdd = 0)
 
     for (int iStart = 0; iStart < iAdd; iStart++)
     {
-        fSuccess = s_DoIncrementScreenCoordinate(srectEdges, pcoordPosition);
+        fSuccess = s_DoIncrementScreenCoordinate(srectEdges, coordPosition);
 
         // If an operation fails, break.
         if (!fSuccess)
@@ -276,7 +275,7 @@ bool Utils::s_AddToPosition(const SMALL_RECT srectEdges, const int iAdd, _Inout_
 
     for (int iStart = 0; iStart > iAdd; iStart--)
     {
-        fSuccess = s_DoDecrementScreenCoordinate(srectEdges, pcoordPosition);
+        fSuccess = s_DoDecrementScreenCoordinate(srectEdges, coordPosition);
 
         // If an operation fails, break.
         if (!fSuccess)
@@ -288,7 +287,7 @@ bool Utils::s_AddToPosition(const SMALL_RECT srectEdges, const int iAdd, _Inout_
     // If any operation failed, revert to backed up state.
     if (!fSuccess)
     {
-        *pcoordPosition = coordBackup;
+        coordPosition = coordBackup;
     }
 
     return fSuccess;
@@ -296,13 +295,9 @@ bool Utils::s_AddToPosition(const SMALL_RECT srectEdges, const int iAdd, _Inout_
 
 // Routine Description:
 // - Retrieves the edges associated with the current screen buffer.
-// Arguments:
-// - psrectEdges - Pointer to rectangle to fill with edge data.
 // Return Value:
-// - <none>
-void Utils::s_GetCurrentBufferEdges(_Out_ SMALL_RECT* const psrectEdges)
+// - current screen buffer edges
+SMALL_RECT Utils::s_GetCurrentBufferEdges() noexcept
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SMALL_RECT edges = gci.GetActiveOutputBuffer().GetScreenEdges();
-    *psrectEdges = edges;
+    return ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetScreenEdges();
 }

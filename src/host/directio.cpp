@@ -208,7 +208,11 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
         // split key events to oem chars if necessary
         if (!IsUnicode)
         {
-            LOG_IF_FAILED(SplitToOem(readEvents));
+            try
+            {
+                SplitToOem(readEvents);
+            }
+            CATCH_LOG();
         }
 
         // combine partial and readEvents
@@ -734,14 +738,14 @@ NTSTATUS SrvReadConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
         }
         catch (...)
         {
-            // Expecting the exception to be related to bounds of the span and/or the buffer size. 
+            // Expecting the exception to be related to bounds of the span and/or the buffer size.
             // Log the real exception here.
             LOG_CAUGHT_EXCEPTION();
 
             // API traditionally returns this value for buffer problems.
             // So unlock and return this value like the above buffer size check.
             UnlockConsole();
-            return STATUS_INVALID_PARAMETER; 
+            return STATUS_INVALID_PARAMETER;
         }
 
         if (!a->Unicode)
@@ -757,7 +761,7 @@ NTSTATUS SrvReadConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
 
         if (NT_SUCCESS(Status))
         {
-            m->SetReplyInformation(CalcWindowSizeX(&a->CharRegion) * CalcWindowSizeY(&a->CharRegion) * sizeof(CHAR_INFO));
+            m->SetReplyInformation(CalcWindowSizeX(a->CharRegion) * CalcWindowSizeY(a->CharRegion) * sizeof(CHAR_INFO));
         }
     }
 

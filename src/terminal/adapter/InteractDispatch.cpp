@@ -15,8 +15,9 @@
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 
-InteractDispatch::InteractDispatch(_In_ std::unique_ptr<ConGetSet> pConApi)
-    : _pConApi(std::move(pConApi))
+// takes ownership of pConApi
+InteractDispatch::InteractDispatch(ConGetSet* const pConApi)
+    : _pConApi(THROW_IF_NULL_ALLOC(pConApi))
 {
 
 }
@@ -112,16 +113,16 @@ bool InteractDispatch::WindowManipulation(const DispatchCommon::WindowManipulati
         case DispatchCommon::WindowManipulationType::RefreshWindow:
             if (cParams == 0)
             {
-                fSuccess = DispatchCommon::s_RefreshWindow(_pConApi.get());
+                fSuccess = DispatchCommon::s_RefreshWindow(*_pConApi);
             }
             break;
         case DispatchCommon::WindowManipulationType::ResizeWindowInCharacters:
             if (cParams == 2)
             {
-                fSuccess = DispatchCommon::s_ResizeWindow(_pConApi.get(), rgusParams[1], rgusParams[0]);
+                fSuccess = DispatchCommon::s_ResizeWindow(*_pConApi, rgusParams[1], rgusParams[0]);
                 if (fSuccess)
                 {
-                    DispatchCommon::s_SuppressResizeRepaint(_pConApi.get());
+                    DispatchCommon::s_SuppressResizeRepaint(*_pConApi);
                 }
             }
             break;

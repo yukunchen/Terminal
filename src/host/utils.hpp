@@ -21,24 +21,25 @@ Author(s):
 #define RECT_WIDTH(x) ((x)->right - (x)->left)
 #define RECT_HEIGHT(x) ((x)->bottom - (x)->top)
 
-short CalcWindowSizeX(const SMALL_RECT * const pRect);
-short CalcWindowSizeY(const SMALL_RECT * const pRect);
-short CalcCursorYOffsetInPixels(const short sFontSizeY, const ULONG ulSize);
-WORD ConvertStringToDec(_In_ PCWSTR pwchToConvert, _Out_opt_ PCWSTR * const ppwchEnd);
+short CalcWindowSizeX(const SMALL_RECT& rect) noexcept;
+short CalcWindowSizeY(const SMALL_RECT& rect) noexcept;
+short CalcCursorYOffsetInPixels(const short sFontSizeY, const ULONG ulSize) noexcept;
+WORD ConvertStringToDec(_In_ PCWSTR pwchToConvert, _Out_opt_ PCWSTR * const ppwchEnd) noexcept;
 
 class Utils
 {
 public:
-    static void s_IncrementCoordinate(const COORD bufferSize, COORD& coord);
-    static void s_DecrementCoordinate(const COORD bufferSize, COORD& coord);
-    static int s_CompareCoords(const COORD bufferSize, const COORD first, const COORD second);
+    static void s_IncrementCoordinate(const COORD bufferSize, COORD& coord) noexcept;
+    static void s_DecrementCoordinate(const COORD bufferSize, COORD& coord) noexcept;
 
-    static bool s_DoDecrementScreenCoordinate(const SMALL_RECT srectEdges, _Inout_ COORD* const pcoordScreen);
-    static bool s_DoIncrementScreenCoordinate(const SMALL_RECT srectEdges, _Inout_ COORD* const pcoordScreen);
+    static bool s_DoDecrementScreenCoordinate(const SMALL_RECT srectEdges, COORD& coordScreen) noexcept;
+    static bool s_DoIncrementScreenCoordinate(const SMALL_RECT srectEdges, COORD& coordScreen) noexcept;
 
-    static bool s_AddToPosition(const SMALL_RECT srectEdges, const int iAdd, _Inout_ COORD* const pcoordPosition);
-    static int s_CompareCoords(const COORD coordFirst, const COORD coordSecond);
-    static void s_GetOppositeCorner(const SMALL_RECT srRectangle, const COORD coordCorner, _Out_ COORD* const pcoordOpposite);
+    static int s_CompareCoords(const COORD bufferSize, const COORD first, const COORD second) noexcept;
+    static int s_CompareCoords(const COORD coordFirst, const COORD coordSecond) noexcept;
 
-    static void s_GetCurrentBufferEdges(_Out_ SMALL_RECT* const psrectEdges);
+    static COORD s_GetOppositeCorner(const SMALL_RECT srRectangle, const COORD coordCorner) noexcept;
+    static bool s_AddToPosition(const SMALL_RECT srectEdges, const int iAdd, COORD& coordPosition) noexcept;
+
+    static SMALL_RECT s_GetCurrentBufferEdges() noexcept;
 };

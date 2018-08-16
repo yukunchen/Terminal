@@ -24,8 +24,8 @@ using namespace Microsoft::Console::Interactivity;
 // - psi - Pointer to screen buffer to seek through
 // - pos - Starting position to retrieve text data from (within screen buffer bounds)
 ScreenInfoCellIterator::ScreenInfoCellIterator(const SCREEN_INFORMATION& si, COORD pos) :
-    ScreenInfoCellIterator(si, 
-                           pos, 
+    ScreenInfoCellIterator(si,
+                           pos,
                            si.GetScreenEdges())
 {
 }
@@ -66,12 +66,12 @@ ScreenInfoCellIterator& ScreenInfoCellIterator::operator+=(const ptrdiff_t& move
     auto newPos = _pos;
     while (move > 0 && !_exceeded)
     {
-        _exceeded = !Utils::s_DoIncrementScreenCoordinate(_bounds, &newPos);
+        _exceeded = !Utils::s_DoIncrementScreenCoordinate(_bounds, newPos);
         move--;
     }
     while (move < 0 && !_exceeded)
     {
-        _exceeded = !Utils::s_DoDecrementScreenCoordinate(_bounds, &newPos);
+        _exceeded = !Utils::s_DoDecrementScreenCoordinate(_bounds, newPos);
         move++;
     }
     _SetPos(newPos);
@@ -152,7 +152,7 @@ const CHAR_INFO ScreenInfoCellIterator::operator*() const
 {
     CHAR_INFO ci;
     ci.Char.UnicodeChar = Utf16ToUcs2(_pRow->GetCharRow().GlyphAt(_pos.X));
-    
+
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     ci.Attributes = _pRow->GetCharRow().DbcsAttrAt(_pos.X).GeneratePublicApiAttributeFormat();
     ci.Attributes |= gci.GenerateLegacyAttributes(_pRow->GetAttrRow().GetAttrByColumn(_pos.X));

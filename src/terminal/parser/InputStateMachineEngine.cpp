@@ -81,12 +81,12 @@ const InputStateMachineEngine::SS3_TO_VKEY InputStateMachineEngine::s_rgSs3Map[]
     { Ss3ActionCodes::SS3_F4, VK_F4 },
 };
 
-InputStateMachineEngine::InputStateMachineEngine(_In_ std::unique_ptr<IInteractDispatch> pDispatch) :
-    InputStateMachineEngine(std::move(pDispatch), false)
+InputStateMachineEngine::InputStateMachineEngine(IInteractDispatch* const pDispatch) :
+    InputStateMachineEngine(pDispatch, false)
 {}
 
-InputStateMachineEngine::InputStateMachineEngine(_In_ std::unique_ptr<IInteractDispatch> pDispatch, const bool lookingForDSR) :
-    _pDispatch(std::move(pDispatch)),
+InputStateMachineEngine::InputStateMachineEngine(IInteractDispatch* const pDispatch, const bool lookingForDSR) :
+    _pDispatch(THROW_IF_NULL_ALLOC(pDispatch)),
     _lookingForDSR(lookingForDSR)
 {
 }

@@ -47,11 +47,7 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     ScrollScale{ 1ul },
     _pConsoleWindowMetrics{ pMetrics },
     _pAccessibilityNotifier{ pNotifier },
-    _pConApi{ nullptr },
-    _pBufferWriter{ nullptr },
-    _pAdapter{ nullptr },
-    _pStateMachine{ nullptr },
-    _pEngine{ nullptr },
+    _stateMachine{ nullptr },
     _coordScreenBufferSize{ 0 },
     _scrollMargins{ { 0 } },
     _viewport({ 0 }),
@@ -154,19 +150,14 @@ COORD SCREEN_INFORMATION::GetScreenBufferSize() const
     return _coordScreenBufferSize;
 }
 
-WriteBuffer* SCREEN_INFORMATION::GetBufferWriter() const
+const StateMachine& SCREEN_INFORMATION::GetStateMachine() const
 {
-    return _pBufferWriter;
+    return *_stateMachine;
 }
 
-AdaptDispatch* SCREEN_INFORMATION::GetAdapterDispatch() const
+StateMachine& SCREEN_INFORMATION::GetStateMachine()
 {
-    return _pAdapter;
-}
-
-StateMachine* SCREEN_INFORMATION::GetStateMachine() const
-{
-    return _pStateMachine;
+    return *_stateMachine;
 }
 
 // Method Description:
@@ -255,21 +246,16 @@ NTSTATUS SCREEN_INFORMATION::_InitializeOutputStateMachine()
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     try
     {
-        _pConApi = new ConhostInternalGetSet(gci);
-
-        FAIL_FAST_IF(_pBufferWriter != nullptr);
-        _pBufferWriter = new WriteBuffer(gci);
-
-        FAIL_FAST_IF(_pAdapter != nullptr);
-        _pAdapter = new AdaptDispatch(_pConApi, _pBufferWriter, _Attributes.GetLegacyAttributes());
+        auto adapter = std::make_unique<AdaptDispatch>(new ConhostInternalGetSet{ gci },
+                                                       new WriteBuffer{ gci },
+                                                       _Attributes.GetLegacyAttributes());
+        THROW_IF_NULL_ALLOC(adapter.get());
 
         // Note that at this point in the setup, we haven't determined if we're
         //      in VtIo mode or not yet. We'll set the OutputStateMachine's
         //      TerminalConnection later, in VtIo::StartIfNeeded
-        _pEngine = std::make_shared<OutputStateMachineEngine>(_pAdapter);
-
-        FAIL_FAST_IF(_pStateMachine != nullptr);
-        _pStateMachine = new StateMachine(_pEngine);
+        _stateMachine = std::make_shared<StateMachine>(new OutputStateMachineEngine(adapter.release()));
+        THROW_IF_NULL_ALLOC(_stateMachine.get());
     }
     catch (...)
     {
@@ -292,27 +278,7 @@ void SCREEN_INFORMATION::_FreeOutputStateMachine()
             s_RemoveScreenBuffer(_psiAlternateBuffer);
         }
 
-        if (_pStateMachine != nullptr)
-        {
-            delete _pStateMachine;
-        }
-
-        _pEngine.reset();
-
-        if (_pAdapter != nullptr)
-        {
-            delete _pAdapter;
-        }
-
-        if (_pBufferWriter != nullptr)
-        {
-            delete _pBufferWriter;
-        }
-
-        if (_pConApi != nullptr)
-        {
-            delete _pConApi;
-        }
+        _stateMachine.reset();
     }
 }
 #pragma endregion
@@ -2036,10 +2002,7 @@ NTSTATUS SCREEN_INFORMATION::_CreateAltBuffer(_Out_ SCREEN_INFORMATION** const p
         // we'll attach the GetSet, etc once we successfully make this buffer the active buffer.
 
         // Set up the new buffers references to our current state machine, dispatcher, getset, etc.
-        (*ppsiNewScreenBuffer)->_pStateMachine = _pStateMachine;
-        (*ppsiNewScreenBuffer)->_pAdapter = _pAdapter;
-        (*ppsiNewScreenBuffer)->_pBufferWriter = _pBufferWriter;
-        (*ppsiNewScreenBuffer)->_pConApi = _pConApi;
+        (*ppsiNewScreenBuffer)->_stateMachine = _stateMachine;
     }
     return Status;
 }
@@ -2351,7 +2314,8 @@ void SCREEN_INFORMATION::SetDefaultAttributes(const TextAttribute& attributes,
 {
     SetAttributes(attributes);
     SetPopupAttributes(popupAttributes);
-    GetAdapterDispatch()->UpdateDefaultColor(attributes.GetLegacyAttributes());
+    auto& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
+    reinterpret_cast<AdaptDispatch&>(engine.Dispatch()).UpdateDefaultColor(attributes.GetLegacyAttributes());
 }
 
 // Method Description:
@@ -2499,15 +2463,16 @@ void SCREEN_INFORMATION::_InitializeBufferDimensions(const COORD coordScreenBuff
 // - <none>
 void SCREEN_INFORMATION::SetTerminalConnection(_In_ ITerminalOutputConnection* const pTtyConnection)
 {
+    OutputStateMachineEngine& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
     if (pTtyConnection)
     {
-        _pEngine->SetTerminalConnection(pTtyConnection,
-                                        std::bind(&StateMachine::FlushToTerminal, _pStateMachine));
+        engine.SetTerminalConnection(pTtyConnection,
+                                     std::bind(&StateMachine::FlushToTerminal, _stateMachine.get()));
     }
     else
     {
-        _pEngine->SetTerminalConnection(nullptr,
-                                        nullptr);
+        engine.SetTerminalConnection(nullptr,
+                                     nullptr);
     }
 }
 

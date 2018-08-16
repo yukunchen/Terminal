@@ -15,12 +15,12 @@ using namespace Microsoft::Console::VirtualTerminal;
 // Method Description:
 // - Resizes the window to the specified dimensions, in characters.
 // Arguments:
-// - pConApi: The ConGetSet implementation to call back into.
+// - conApi: The ConGetSet implementation to call back into.
 // - usWidth: The new width of the window, in columns
 // - usHeight: The new height of the window, in rows
 // Return Value:
 // True if handled successfully. False othewise.
-bool DispatchCommon::s_ResizeWindow(_Inout_ ConGetSet* const pConApi,
+bool DispatchCommon::s_ResizeWindow(ConGetSet& conApi,
                                     const unsigned short usWidth,
                                     const unsigned short usHeight)
 {
@@ -29,14 +29,14 @@ bool DispatchCommon::s_ResizeWindow(_Inout_ ConGetSet* const pConApi,
 
     // We should do nothing if 0 is passed in for a size.
     bool fSuccess = SUCCEEDED(UShortToShort(usWidth, &sColumns)) &&
-                    SUCCEEDED(UIntToShort(usHeight, &sRows)) && 
+                    SUCCEEDED(UIntToShort(usHeight, &sRows)) &&
                     (usWidth > 0 && usHeight > 0);
-    
+
     if (fSuccess)
     {
         CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
         csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-        fSuccess = !!pConApi->GetConsoleScreenBufferInfoEx(&csbiex);
+        fSuccess = !!conApi.GetConsoleScreenBufferInfoEx(&csbiex);
 
         if (fSuccess)
         {
@@ -46,7 +46,7 @@ bool DispatchCommon::s_ResizeWindow(_Inout_ ConGetSet* const pConApi,
                                                                   sRows);
             // Always resize the width of the console
             csbiex.dwSize.X = sColumns;
-            // Only set the screen buffer's height if it's currently less than 
+            // Only set the screen buffer's height if it's currently less than
             //  what we're requesting.
             if(sRows > csbiex.dwSize.Y)
             {
@@ -60,12 +60,12 @@ bool DispatchCommon::s_ResizeWindow(_Inout_ ConGetSet* const pConApi,
             SMALL_RECT sre = newViewport.ToExclusive();
             csbiex.srWindow = sre;
 
-            fSuccess = !!pConApi->SetConsoleScreenBufferInfoEx(&csbiex);
+            fSuccess = !!conApi.SetConsoleScreenBufferInfoEx(&csbiex);
             if (fSuccess)
             {
-                fSuccess = !!pConApi->SetConsoleWindowInfo(true, &sri);
+                fSuccess = !!conApi.SetConsoleWindowInfo(true, &sri);
             }
-        }   
+        }
     }
     return fSuccess;
 }
@@ -73,24 +73,24 @@ bool DispatchCommon::s_ResizeWindow(_Inout_ ConGetSet* const pConApi,
 // Routine Description:
 // - Force the host to repaint the screen.
 // Arguments:
-// - pConApi: The ConGetSet implementation to call back into.
+// - conApi: The ConGetSet implementation to call back into.
 // Return Value:
 // True if handled successfully. False othewise.
-bool DispatchCommon::s_RefreshWindow(_Inout_ ConGetSet* const pConApi)
+bool DispatchCommon::s_RefreshWindow(ConGetSet& conApi)
 {
-    return !!pConApi->PrivateRefreshWindow();
+    return !!conApi.PrivateRefreshWindow();
 }
 
 // Routine Description:
-// - Force the host to tell the renderer to not emit anything in response to the 
-//      next resize event. This is used by VT I/O to prevent a terminal from 
+// - Force the host to tell the renderer to not emit anything in response to the
+//      next resize event. This is used by VT I/O to prevent a terminal from
 //      requesting a resize, then having the renderer echo that to the terminal,
 //      then having the terminal echo back to the host...
 // Arguments:
-// - pConApi: The ConGetSet implementation to call back into.
+// - conApi: The ConGetSet implementation to call back into.
 // Return Value:
 // True if handled successfully. False othewise.
-bool DispatchCommon::s_SuppressResizeRepaint(_Inout_ ConGetSet* const pConApi)
+bool DispatchCommon::s_SuppressResizeRepaint(ConGetSet& conApi)
 {
-    return !!pConApi->PrivateSuppressResizeRepaint();
+    return !!conApi.PrivateSuppressResizeRepaint();
 }

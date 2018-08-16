@@ -67,7 +67,7 @@ class UtilsTests
         coordOriginal.X = coordScreen.X = 15;
         coordOriginal.Y = coordScreen.Y = 25;
 
-        fSuccess = Utils::s_DoIncrementScreenCoordinate(srectEdges, &coordScreen);
+        fSuccess = Utils::s_DoIncrementScreenCoordinate(srectEdges, coordScreen);
 
         VERIFY_IS_TRUE(fSuccess);
         VERIFY_ARE_EQUAL(coordScreen.X, coordOriginal.X + 1);
@@ -77,7 +77,7 @@ class UtilsTests
         coordOriginal.X = coordScreen.X = srectEdges.Right;
         coordOriginal.Y = coordScreen.Y = 25;
 
-        fSuccess = Utils::s_DoIncrementScreenCoordinate(srectEdges, &coordScreen);
+        fSuccess = Utils::s_DoIncrementScreenCoordinate(srectEdges, coordScreen);
 
         VERIFY_IS_TRUE(fSuccess);
         VERIFY_ARE_EQUAL(coordScreen.X, srectEdges.Left);
@@ -87,7 +87,7 @@ class UtilsTests
         coordOriginal.X = coordScreen.X = srectEdges.Right;
         coordOriginal.Y = coordScreen.Y = srectEdges.Bottom;
 
-        fSuccess = Utils::s_DoIncrementScreenCoordinate(srectEdges, &coordScreen);
+        fSuccess = Utils::s_DoIncrementScreenCoordinate(srectEdges, coordScreen);
 
         VERIFY_IS_FALSE(fSuccess);
         VERIFY_ARE_EQUAL(coordScreen.X, srectEdges.Right);
@@ -111,7 +111,7 @@ class UtilsTests
         coordOriginal.X = coordScreen.X = 15;
         coordOriginal.Y = coordScreen.Y = 25;
 
-        fSuccess = Utils::s_DoDecrementScreenCoordinate(srectEdges, &coordScreen);
+        fSuccess = Utils::s_DoDecrementScreenCoordinate(srectEdges, coordScreen);
 
         VERIFY_IS_TRUE(fSuccess);
         VERIFY_ARE_EQUAL(coordScreen.X, coordOriginal.X - 1);
@@ -121,7 +121,7 @@ class UtilsTests
         coordOriginal.X = coordScreen.X = srectEdges.Left;
         coordOriginal.Y = coordScreen.Y = 25;
 
-        fSuccess = Utils::s_DoDecrementScreenCoordinate(srectEdges, &coordScreen);
+        fSuccess = Utils::s_DoDecrementScreenCoordinate(srectEdges, coordScreen);
 
         VERIFY_IS_TRUE(fSuccess);
         VERIFY_ARE_EQUAL(coordScreen.X, srectEdges.Right);
@@ -131,7 +131,7 @@ class UtilsTests
         coordOriginal.X = coordScreen.X = srectEdges.Left;
         coordOriginal.Y = coordScreen.Y = srectEdges.Top;
 
-        fSuccess = Utils::s_DoDecrementScreenCoordinate(srectEdges, &coordScreen);
+        fSuccess = Utils::s_DoDecrementScreenCoordinate(srectEdges, coordScreen);
 
         VERIFY_IS_FALSE(fSuccess);
         VERIFY_ARE_EQUAL(coordScreen.X, srectEdges.Left);
@@ -175,7 +175,7 @@ class UtilsTests
                 fExpectedResult = false;
             }
 
-            bool const fActualResult = Utils::s_AddToPosition(srectEdges, sAddAmount, &coordPos);
+            bool const fActualResult = Utils::s_AddToPosition(srectEdges, sAddAmount, coordPos);
 
             VERIFY_ARE_EQUAL(coordPos.X, coordFinal.X);
             VERIFY_ARE_EQUAL(coordPos.Y, coordFinal.Y);

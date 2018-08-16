@@ -17,6 +17,7 @@
 #include <functional>
 #include <sstream>
 #include <string>
+#include <algorithm>
 
 #ifdef BUILD_ONECORE_INTERACTIVITY
 #include "../../../interactivity/inc/VtApiRedirection.hpp"
@@ -44,6 +45,174 @@ namespace Microsoft
 };
 using namespace Microsoft::Console::VirtualTerminal;
 
+bool IsShiftPressed(const DWORD modifierState)
+{
+    return IsFlagSet(modifierState, SHIFT_PRESSED);
+}
+
+bool IsAltPressed(const DWORD modifierState)
+{
+    return IsAnyFlagSet(modifierState, LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED);
+}
+
+bool IsCtrlPressed(const DWORD modifierState)
+{
+    return IsAnyFlagSet(modifierState, LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED);
+}
+
+bool ModifiersEquivalent(DWORD a, DWORD b)
+{
+    bool fShift = IsShiftPressed(a) == IsShiftPressed(b);
+    bool fAlt = IsAltPressed(a) == IsAltPressed(b);
+    bool fCtrl = IsCtrlPressed(a) == IsCtrlPressed(b);
+    return fShift && fCtrl && fAlt;
+}
+
+class TestState
+{
+public:
+    TestState() :
+        vExpectedInput{},
+        _stateMachine{ nullptr },
+        _expectedToCallWindowManipulation{ false },
+        _expectSendCtrlC{ false },
+        _expectCursorPosition{ false },
+        _expectedCursor{ -1, -1 },
+        _expectedWindowManipulation{ DispatchCommon::WindowManipulationType::Invalid },
+        _expectedCParams{ 0 }
+    {
+        std::fill_n(_expectedParams, ARRAYSIZE(_expectedParams), gsl::narrow<short>(0));
+    }
+
+    void RoundtripTerminalInputCallback(_In_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
+    {
+        // Take all the characters out of the input records here, and put them into
+        //  the input state machine.
+        auto inputRecords = IInputEvent::ToInputRecords(inEvents);
+        std::wstring vtseq = L"";
+        for (auto& inRec : inputRecords)
+        {
+            VERIFY_ARE_EQUAL(KEY_EVENT, inRec.EventType);
+            if (inRec.Event.KeyEvent.bKeyDown)
+            {
+                vtseq += &inRec.Event.KeyEvent.uChar.UnicodeChar;
+            }
+        }
+        Log::Comment(
+            NoThrowString().Format(L"\tvtseq: \"%s\"(%zu)", vtseq.c_str(), vtseq.length())
+        );
+
+        _stateMachine->ProcessString(&vtseq[0], vtseq.length());
+        Log::Comment(L"String processed");
+    }
+
+    void TestInputCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents)
+    {
+        auto records = IInputEvent::ToInputRecords(inEvents);
+        VERIFY_ARE_EQUAL((size_t)1, vExpectedInput.size());
+
+        bool foundEqual = false;
+        INPUT_RECORD irExpected = vExpectedInput.back();
+
+        Log::Comment(
+            NoThrowString().Format(L"\texpected:\t") +
+            VerifyOutputTraits<INPUT_RECORD>::ToString(irExpected)
+        );
+
+        // Look for an equivalent input record.
+        // Differences between left and right modifiers are ignored, as long as one is pressed.
+        // There may be other keypresses, eg. modifier keypresses, those are ignored.
+        for (auto& inRec : records)
+        {
+            Log::Comment(
+                NoThrowString().Format(L"\tActual  :\t") +
+                VerifyOutputTraits<INPUT_RECORD>::ToString(inRec)
+            );
+
+            bool areEqual =
+                (irExpected.EventType == inRec.EventType) &&
+                (irExpected.Event.KeyEvent.bKeyDown == inRec.Event.KeyEvent.bKeyDown) &&
+                (irExpected.Event.KeyEvent.wRepeatCount == inRec.Event.KeyEvent.wRepeatCount) &&
+                (irExpected.Event.KeyEvent.uChar.UnicodeChar == inRec.Event.KeyEvent.uChar.UnicodeChar) &&
+                ModifiersEquivalent(irExpected.Event.KeyEvent.dwControlKeyState, inRec.Event.KeyEvent.dwControlKeyState);
+
+            foundEqual |= areEqual;
+            if (areEqual)
+            {
+                Log::Comment(L"\t\tFound Match");
+            }
+        }
+
+        VERIFY_IS_TRUE(foundEqual);
+        vExpectedInput.clear();
+    }
+
+    void TestInputStringCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents)
+    {
+        auto records = IInputEvent::ToInputRecords(inEvents);
+
+        for (auto expected : vExpectedInput)
+        {
+            Log::Comment(
+                NoThrowString().Format(L"\texpected:\t") +
+                VerifyOutputTraits<INPUT_RECORD>::ToString(expected)
+            );
+
+        }
+
+        INPUT_RECORD irExpected = vExpectedInput.front();
+        Log::Comment(
+            NoThrowString().Format(L"\tLooking for:\t") +
+            VerifyOutputTraits<INPUT_RECORD>::ToString(irExpected)
+        );
+
+
+        // Look for an equivalent input record.
+        // Differences between left and right modifiers are ignored, as long as one is pressed.
+        // There may be other keypresses, eg. modifier keypresses, those are ignored.
+        for (auto& inRec : records)
+        {
+            Log::Comment(
+                NoThrowString().Format(L"\tActual  :\t") +
+                VerifyOutputTraits<INPUT_RECORD>::ToString(inRec)
+            );
+
+            bool areEqual =
+                (irExpected.EventType == inRec.EventType) &&
+                (irExpected.Event.KeyEvent.bKeyDown == inRec.Event.KeyEvent.bKeyDown) &&
+                (irExpected.Event.KeyEvent.wRepeatCount == inRec.Event.KeyEvent.wRepeatCount) &&
+                (irExpected.Event.KeyEvent.uChar.UnicodeChar == inRec.Event.KeyEvent.uChar.UnicodeChar) &&
+                ModifiersEquivalent(irExpected.Event.KeyEvent.dwControlKeyState, inRec.Event.KeyEvent.dwControlKeyState);
+
+            if (areEqual)
+            {
+                Log::Comment(L"\t\tFound Match");
+                vExpectedInput.pop_front();
+                if (vExpectedInput.size() > 0)
+                {
+                    irExpected = vExpectedInput.front();
+                    Log::Comment(
+                        NoThrowString().Format(L"\tLooking for:\t") +
+                        VerifyOutputTraits<INPUT_RECORD>::ToString(irExpected)
+                    );
+                }
+            }
+        }
+        VERIFY_ARE_EQUAL(static_cast<size_t>(0), vExpectedInput.size(), L"Verify we found all the inputs we were expecting");
+        vExpectedInput.clear();
+    }
+
+    std::deque<INPUT_RECORD> vExpectedInput;
+    StateMachine* _stateMachine;
+    bool _expectedToCallWindowManipulation;
+    bool _expectSendCtrlC;
+    bool _expectCursorPosition;
+    COORD _expectedCursor;
+    DispatchCommon::WindowManipulationType _expectedWindowManipulation;
+    unsigned short _expectedParams[16];
+    size_t _expectedCParams;
+};
+
 class Microsoft::Console::VirtualTerminal::InputEngineTest
 {
     TEST_CLASS(InputEngineTest);
@@ -65,9 +234,6 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
 
     TEST_METHOD_SETUP(MethodSetup)
     {
-        vExpectedInput.clear();
-        _expectCursorPosition = false;
-        _expectedCursor = {-1, -1};
         return true;
     }
 
@@ -78,18 +244,6 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
     TEST_METHOD(NonAsciiTest);
     TEST_METHOD(CursorPositioningTest);
 
-    std::unique_ptr<StateMachine> _stateMachine;
-
-    std::deque<INPUT_RECORD> vExpectedInput;
-
-    bool _expectedToCallWindowManipulation;
-    bool _expectSendCtrlC;
-    bool _expectCursorPosition;
-    COORD _expectedCursor;
-    DispatchCommon::WindowManipulationType _expectedWindowManipulation;
-    unsigned short _expectedParams[16];
-    size_t _expectedCParams;
-
     friend class TestInteractDispatch;
 };
 
@@ -98,7 +252,7 @@ class Microsoft::Console::VirtualTerminal::TestInteractDispatch final : public I
 {
 public:
     TestInteractDispatch(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn,
-                         _In_ InputEngineTest* testInstance);
+                         _In_ TestState* testState);
     virtual bool WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& inputEvents) override;
     virtual bool WriteCtrlC() override;
     virtual bool WindowManipulation(const DispatchCommon::WindowManipulationType uiFunction,
@@ -112,13 +266,13 @@ public:
 
 private:
     std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> _pfnWriteInputCallback;
-    InputEngineTest* _testInstance;
+    TestState* _testState; // non-ownership pointer
 };
 
 TestInteractDispatch::TestInteractDispatch(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn,
-                                           _In_ InputEngineTest* testInstance) :
+                                           _In_ TestState* testState) :
     _pfnWriteInputCallback(pfn),
-    _testInstance(testInstance)
+    _testState(testState)
 {
 
 }
@@ -131,7 +285,7 @@ bool TestInteractDispatch::WriteInput(_In_ std::deque<std::unique_ptr<IInputEven
 
 bool TestInteractDispatch::WriteCtrlC()
 {
-    VERIFY_IS_TRUE(_testInstance->_expectSendCtrlC);
+    VERIFY_IS_TRUE(_testState->_expectSendCtrlC);
     KeyEvent key = KeyEvent(true, 1, 'C', 0, UNICODE_ETX, LEFT_CTRL_PRESSED);
     std::deque<std::unique_ptr<IInputEvent>> inputEvents;
     inputEvents.push_back(std::make_unique<KeyEvent>(key));
@@ -143,11 +297,11 @@ bool TestInteractDispatch::WindowManipulation(const DispatchCommon::WindowManipu
                                               const size_t cParams)
 {
 
-    VERIFY_ARE_EQUAL(true, _testInstance->_expectedToCallWindowManipulation);
-    VERIFY_ARE_EQUAL(_testInstance->_expectedWindowManipulation, uiFunction);
+    VERIFY_ARE_EQUAL(true, _testState->_expectedToCallWindowManipulation);
+    VERIFY_ARE_EQUAL(_testState->_expectedWindowManipulation, uiFunction);
     for(size_t i = 0; i < cParams; i++)
     {
-        VERIFY_ARE_EQUAL(_testInstance->_expectedParams[i], rgusParams[i]);
+        VERIFY_ARE_EQUAL(_testState->_expectedParams[i], rgusParams[i]);
     }
     return true;
 }
@@ -174,163 +328,21 @@ bool TestInteractDispatch::WriteString(_In_reads_(cch) const wchar_t* const pws,
 bool TestInteractDispatch::MoveCursor(const unsigned int row,
                                       const unsigned int col)
 {
-    VERIFY_IS_TRUE(_testInstance->_expectCursorPosition);
+    VERIFY_IS_TRUE(_testState->_expectCursorPosition);
     COORD received = { static_cast<short>(col), static_cast<short>(row) };
-    VERIFY_ARE_EQUAL(_testInstance->_expectedCursor, received);
+    VERIFY_ARE_EQUAL(_testState->_expectedCursor, received);
     return true;
-}
-
-bool IsShiftPressed(const DWORD modifierState)
-{
-    return IsFlagSet(modifierState, SHIFT_PRESSED);
-}
-
-bool IsAltPressed(const DWORD modifierState)
-{
-    return IsAnyFlagSet(modifierState, LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED);
-}
-
-bool IsCtrlPressed(const DWORD modifierState)
-{
-    return IsAnyFlagSet(modifierState, LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED);
-}
-
-bool ModifiersEquivalent(DWORD a, DWORD b)
-{
-    bool fShift = IsShiftPressed(a) == IsShiftPressed(b);
-    bool fAlt = IsAltPressed(a) == IsAltPressed(b);
-    bool fCtrl = IsCtrlPressed(a) == IsCtrlPressed(b);
-    return fShift && fCtrl && fAlt;
-}
-
-
-void InputEngineTest::RoundtripTerminalInputCallback(_In_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
-{
-    // Take all the characters out of the input records here, and put them into
-    //  the input state machine.
-    auto inputRecords = IInputEvent::ToInputRecords(inEvents);
-    std::wstring vtseq = L"";
-    for (auto& inRec : inputRecords)
-    {
-        VERIFY_ARE_EQUAL(KEY_EVENT, inRec.EventType);
-        if (inRec.Event.KeyEvent.bKeyDown)
-        {
-            vtseq += &inRec.Event.KeyEvent.uChar.UnicodeChar;
-        }
-    }
-    Log::Comment(
-        NoThrowString().Format(L"\tvtseq: \"%s\"(%zu)", vtseq.c_str(), vtseq.length())
-    );
-
-    _stateMachine->ProcessString(&vtseq[0], vtseq.length());
-    Log::Comment(L"String processed");
-}
-
-void InputEngineTest::TestInputCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents)
-{
-    auto records = IInputEvent::ToInputRecords(inEvents);
-    VERIFY_ARE_EQUAL((size_t)1, vExpectedInput.size());
-
-    bool foundEqual = false;
-    INPUT_RECORD irExpected = vExpectedInput.back();
-
-    Log::Comment(
-        NoThrowString().Format(L"\texpected:\t") +
-        VerifyOutputTraits<INPUT_RECORD>::ToString(irExpected)
-    );
-
-    // Look for an equivalent input record.
-    // Differences between left and right modifiers are ignored, as long as one is pressed.
-    // There may be other keypresses, eg. modifier keypresses, those are ignored.
-    for (auto& inRec : records)
-    {
-        Log::Comment(
-            NoThrowString().Format(L"\tActual  :\t") +
-            VerifyOutputTraits<INPUT_RECORD>::ToString(inRec)
-        );
-
-        bool areEqual =
-            (irExpected.EventType == inRec.EventType) &&
-            (irExpected.Event.KeyEvent.bKeyDown == inRec.Event.KeyEvent.bKeyDown) &&
-            (irExpected.Event.KeyEvent.wRepeatCount == inRec.Event.KeyEvent.wRepeatCount) &&
-            (irExpected.Event.KeyEvent.uChar.UnicodeChar == inRec.Event.KeyEvent.uChar.UnicodeChar) &&
-            ModifiersEquivalent(irExpected.Event.KeyEvent.dwControlKeyState, inRec.Event.KeyEvent.dwControlKeyState);
-
-        foundEqual |= areEqual;
-        if (areEqual)
-        {
-            Log::Comment(L"\t\tFound Match");
-        }
-    }
-
-    VERIFY_IS_TRUE(foundEqual);
-    vExpectedInput.clear();
-}
-
-void InputEngineTest::TestInputStringCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents)
-{
-    auto records = IInputEvent::ToInputRecords(inEvents);
-
-    for (auto expected : vExpectedInput)
-    {
-        Log::Comment(
-            NoThrowString().Format(L"\texpected:\t") +
-            VerifyOutputTraits<INPUT_RECORD>::ToString(expected)
-        );
-
-    }
-
-    INPUT_RECORD irExpected = vExpectedInput.front();
-    Log::Comment(
-        NoThrowString().Format(L"\tLooking for:\t") +
-        VerifyOutputTraits<INPUT_RECORD>::ToString(irExpected)
-    );
-
-
-    // Look for an equivalent input record.
-    // Differences between left and right modifiers are ignored, as long as one is pressed.
-    // There may be other keypresses, eg. modifier keypresses, those are ignored.
-    for (auto& inRec : records)
-    {
-        Log::Comment(
-            NoThrowString().Format(L"\tActual  :\t") +
-            VerifyOutputTraits<INPUT_RECORD>::ToString(inRec)
-        );
-
-        bool areEqual =
-            (irExpected.EventType == inRec.EventType) &&
-            (irExpected.Event.KeyEvent.bKeyDown == inRec.Event.KeyEvent.bKeyDown) &&
-            (irExpected.Event.KeyEvent.wRepeatCount == inRec.Event.KeyEvent.wRepeatCount) &&
-            (irExpected.Event.KeyEvent.uChar.UnicodeChar == inRec.Event.KeyEvent.uChar.UnicodeChar) &&
-            ModifiersEquivalent(irExpected.Event.KeyEvent.dwControlKeyState, inRec.Event.KeyEvent.dwControlKeyState);
-
-        if (areEqual)
-        {
-            Log::Comment(L"\t\tFound Match");
-            vExpectedInput.pop_front();
-            if (vExpectedInput.size() > 0)
-            {
-                irExpected = vExpectedInput.front();
-                Log::Comment(
-                    NoThrowString().Format(L"\tLooking for:\t") +
-                    VerifyOutputTraits<INPUT_RECORD>::ToString(irExpected)
-                );
-            }
-        }
-    }
-    VERIFY_ARE_EQUAL(static_cast<size_t>(0), vExpectedInput.size(), L"Verify we found all the inputs we were expecting");
-    vExpectedInput.clear();
 }
 
 void InputEngineTest::C0Test()
 {
-    auto pfn = std::bind(&InputEngineTest::TestInputCallback, this, std::placeholders::_1);
-    _stateMachine = std::make_unique<StateMachine>(
-            std::make_unique<InputStateMachineEngine>(
-                std::make_unique<TestInteractDispatch>(pfn, this)
-            )
-    );
+    TestState testState;
+    auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
+
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(new TestInteractDispatch(pfn, &testState));
+    auto _stateMachine = std::make_unique<StateMachine>(inputEngine.release());
     VERIFY_IS_NOT_NULL(_stateMachine);
+    testState._stateMachine = _stateMachine.get();
 
     Log::Comment(L"Sending 0x0-0x19 to parser to make sure they're translated correctly back to C-key");
     DisableVerifyExceptions disable;
@@ -389,11 +401,11 @@ void InputEngineTest::C0Test()
                 L"Now we expect 0x%x, 0x%x, 0x%x, 0x%x here",
                 vkey, scanCode, wch, dwModifierState
             ));
-            _expectSendCtrlC = true;
+            testState._expectSendCtrlC = true;
         }
         else
         {
-            _expectSendCtrlC = false;
+            testState._expectSendCtrlC = false;
         }
 
         Log::Comment(NoThrowString().Format(L"Testing char 0x%x", wch));
@@ -409,7 +421,7 @@ void InputEngineTest::C0Test()
         inputRec.Event.KeyEvent.wVirtualScanCode = scanCode;
         inputRec.Event.KeyEvent.uChar.UnicodeChar = wch;
 
-        vExpectedInput.push_back(inputRec);
+        testState.vExpectedInput.push_back(inputRec);
 
         _stateMachine->ProcessString(&inputSeq[0], inputSeq.length());
 
@@ -418,13 +430,13 @@ void InputEngineTest::C0Test()
 
 void InputEngineTest::AlphanumericTest()
 {
-    auto pfn = std::bind(&InputEngineTest::TestInputCallback, this, std::placeholders::_1);
-    _stateMachine = std::make_unique<StateMachine>(
-            std::make_unique<InputStateMachineEngine>(
-                std::make_unique<TestInteractDispatch>(pfn, this)
-            )
-    );
+    TestState testState;
+    auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
+
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(new TestInteractDispatch(pfn, &testState));
+    auto _stateMachine = std::make_unique<StateMachine>(inputEngine.release());
     VERIFY_IS_NOT_NULL(_stateMachine);
+    testState._stateMachine = _stateMachine.get();
 
     Log::Comment(L"Sending every printable ASCII character");
     DisableVerifyExceptions disable;
@@ -455,7 +467,7 @@ void InputEngineTest::AlphanumericTest()
         inputRec.Event.KeyEvent.wVirtualScanCode = scanCode;
         inputRec.Event.KeyEvent.uChar.UnicodeChar = wch;
 
-        vExpectedInput.push_back(inputRec);
+        testState.vExpectedInput.push_back(inputRec);
 
         _stateMachine->ProcessString(&inputSeq[0], inputSeq.length());
     }
@@ -464,19 +476,18 @@ void InputEngineTest::AlphanumericTest()
 
 void InputEngineTest::RoundTripTest()
 {
-    auto pfn = std::bind(&InputEngineTest::TestInputCallback, this, std::placeholders::_1);
-    _stateMachine = std::make_unique<StateMachine>(
-            std::make_unique<InputStateMachineEngine>(
-                std::make_unique<TestInteractDispatch>(pfn, this)
-            )
-    );
+    TestState testState;
+    auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(new TestInteractDispatch(pfn, &testState));
+    auto _stateMachine = std::make_unique<StateMachine>(inputEngine.release());
     VERIFY_IS_NOT_NULL(_stateMachine);
+    testState._stateMachine = _stateMachine.get();
 
     // Send Every VKEY through the TerminalInput module, then take the char's
     //   from the generated INPUT_RECORDs and put them through the InputEngine.
     // The VKEY sequence it writes out should be the same as the original.
 
-    auto pfn2 = std::bind(&InputEngineTest::RoundtripTerminalInputCallback, this, std::placeholders::_1);
+    auto pfn2 = std::bind(&TestState::RoundtripTerminalInputCallback, &testState, std::placeholders::_1);
     TerminalInput terminalInput{ pfn2 };
 
     for (BYTE vkey = 0; vkey < BYTE_MAX; vkey++)
@@ -499,7 +510,7 @@ void InputEngineTest::RoundTripTest()
 
         if (vkey == UNICODE_ETX)
         {
-            _expectSendCtrlC = true;
+            testState._expectSendCtrlC = true;
         }
 
         INPUT_RECORD irTest = { 0 };
@@ -516,8 +527,8 @@ void InputEngineTest::RoundTripTest()
             VerifyOutputTraits<INPUT_RECORD>::ToString(irTest)
         );
 
-        vExpectedInput.clear();
-        vExpectedInput.push_back(irTest);
+        testState.vExpectedInput.clear();
+        testState.vExpectedInput.push_back(irTest);
 
         auto inputKey = IInputEvent::Create(irTest);
         terminalInput.HandleKey(inputKey.get());
@@ -527,13 +538,13 @@ void InputEngineTest::RoundTripTest()
 
 void InputEngineTest::WindowManipulationTest()
 {
-    auto pfn = std::bind(&InputEngineTest::TestInputCallback, this, std::placeholders::_1);
-    _stateMachine = std::make_unique<StateMachine>(
-            std::make_unique<InputStateMachineEngine>(
-                std::make_unique<TestInteractDispatch>(pfn, this)
-            )
-    );
+    TestState testState;
+    auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
+
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(new TestInteractDispatch(pfn, &testState));
+    auto _stateMachine = std::make_unique<StateMachine>(inputEngine.release());
     VERIFY_IS_NOT_NULL(_stateMachine.get());
+    testState._stateMachine = _stateMachine.get();
 
     Log::Comment(NoThrowString().Format(
         L"Try sending a bunch of Window Manipulation sequences. "
@@ -566,25 +577,25 @@ void InputEngineTest::WindowManipulationTest()
             //      before appending them to the string
             seqBuilder << L";" << wszParam1 << L";" << wszParam2;
 
-            _expectedToCallWindowManipulation = true;
-            _expectedCParams = 2;
-            _expectedParams[0] = param1;
-            _expectedParams[1] = param2;
-            _expectedWindowManipulation = static_cast<DispatchCommon::WindowManipulationType>(i);
+            testState._expectedToCallWindowManipulation = true;
+            testState._expectedCParams = 2;
+            testState._expectedParams[0] = param1;
+            testState._expectedParams[1] = param2;
+            testState._expectedWindowManipulation = static_cast<DispatchCommon::WindowManipulationType>(i);
         }
         else if (i == DispatchCommon::WindowManipulationType::RefreshWindow)
         {
             // refresh window doesn't expect any params.
 
-            _expectedToCallWindowManipulation = true;
-            _expectedCParams = 0;
-            _expectedWindowManipulation = static_cast<DispatchCommon::WindowManipulationType>(i);
+            testState._expectedToCallWindowManipulation = true;
+            testState._expectedCParams = 0;
+            testState._expectedWindowManipulation = static_cast<DispatchCommon::WindowManipulationType>(i);
         }
         else
         {
-            _expectedToCallWindowManipulation = false;
-            _expectedCParams = 0;
-            _expectedWindowManipulation = DispatchCommon::WindowManipulationType::Invalid;
+            testState._expectedToCallWindowManipulation = false;
+            testState._expectedCParams = 0;
+            testState._expectedWindowManipulation = DispatchCommon::WindowManipulationType::Invalid;
         }
         seqBuilder << L"t";
         std::wstring seq = seqBuilder.str();
@@ -597,13 +608,13 @@ void InputEngineTest::WindowManipulationTest()
 
 void InputEngineTest::NonAsciiTest()
 {
-    auto pfn = std::bind(&InputEngineTest::TestInputStringCallback, this, std::placeholders::_1);
-    _stateMachine = std::make_unique<StateMachine>(
-            std::make_unique<InputStateMachineEngine>(
-                std::make_unique<TestInteractDispatch>(pfn, this)
-            )
-    );
+    TestState testState;
+    auto pfn = std::bind(&TestState::TestInputStringCallback, &testState, std::placeholders::_1);
+
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(new TestInteractDispatch(pfn, &testState));
+    auto _stateMachine = std::make_unique<StateMachine>(inputEngine.release());
     VERIFY_IS_NOT_NULL(_stateMachine.get());
+    testState._stateMachine = _stateMachine.get();
     Log::Comment(L"Sending various non-ascii strings, and seeing what we get out");
 
     INPUT_RECORD proto = {0};
@@ -630,10 +641,10 @@ void InputEngineTest::NonAsciiTest()
         L"Processing \"%s\"", utf8Input.c_str()
     ));
 
-    vExpectedInput.clear();
-    vExpectedInput.push_back(test);
+    testState.vExpectedInput.clear();
+    testState.vExpectedInput.push_back(test);
     test.Event.KeyEvent.bKeyDown = FALSE;
-    vExpectedInput.push_back(test);
+    testState.vExpectedInput.push_back(test);
     _stateMachine->ProcessString(&utf8Input[0], utf8Input.length());
 
     // "旅", UTF-16: 0x65C5, utf8: "0xE6 0x97 0x85"
@@ -645,23 +656,25 @@ void InputEngineTest::NonAsciiTest()
         L"Processing \"%s\"", utf8Input.c_str()
     ));
 
-    vExpectedInput.clear();
-    vExpectedInput.push_back(test);
+    testState.vExpectedInput.clear();
+    testState.vExpectedInput.push_back(test);
     test.Event.KeyEvent.bKeyDown = FALSE;
-    vExpectedInput.push_back(test);
+    testState.vExpectedInput.push_back(test);
     _stateMachine->ProcessString(&utf8Input[0], utf8Input.length());
 }
 
 void InputEngineTest::CursorPositioningTest()
 {
-    auto pfn = std::bind(&InputEngineTest::TestInputCallback, this, std::placeholders::_1);
-    _stateMachine = std::make_unique<StateMachine>(
-            std::make_unique<InputStateMachineEngine>(
-                std::make_unique<TestInteractDispatch>(pfn, this),
-                true
-            )
-    );
+    TestState testState;
+    auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
+
+    auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
+    VERIFY_IS_NOT_NULL(dispatch.get());
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(dispatch.release(), true);
+    VERIFY_IS_NOT_NULL(inputEngine.get());
+    auto _stateMachine = std::make_unique<StateMachine>(inputEngine.release());
     VERIFY_IS_NOT_NULL(_stateMachine);
+    testState._stateMachine = _stateMachine.get();
 
     Log::Comment(NoThrowString().Format(
         L"Try sending a cursor position response, then send it again. "
@@ -671,15 +684,15 @@ void InputEngineTest::CursorPositioningTest()
     ));
 
     std::wstring seq = L"\x1b[1;4R";
-    _expectCursorPosition = true;
-    _expectedCursor = { 4, 1 };
+    testState._expectCursorPosition = true;
+    testState._expectedCursor = { 4, 1 };
 
     Log::Comment(NoThrowString().Format(
         L"Processing \"%s\"", seq.c_str()
     ));
     _stateMachine->ProcessString(&seq[0], seq.length());
 
-    _expectCursorPosition = false;
+    testState._expectCursorPosition = false;
 
     INPUT_RECORD inputRec;
     inputRec.EventType = KEY_EVENT;
@@ -690,7 +703,7 @@ void InputEngineTest::CursorPositioningTest()
     inputRec.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKey(VK_F3, MAPVK_VK_TO_VSC));
     inputRec.Event.KeyEvent.uChar.UnicodeChar = L'\0';
 
-    vExpectedInput.push_back(inputRec);
+    testState.vExpectedInput.push_back(inputRec);
     Log::Comment(NoThrowString().Format(
         L"Processing \"%s\"", seq.c_str()
     ));

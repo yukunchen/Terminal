@@ -40,13 +40,13 @@ namespace Microsoft::Console::VirtualTerminal
             SteadyBar = 6
         };
 
-        static bool s_ResizeWindow(_Inout_ ConGetSet* const pConApi,
-                                const unsigned short usWidth,
-                                const unsigned short usHeight);
+        static bool s_ResizeWindow(ConGetSet& conApi,
+                                   const unsigned short usWidth,
+                                   const unsigned short usHeight);
 
-        static bool s_RefreshWindow(_Inout_ ConGetSet* const pConApi);
+        static bool s_RefreshWindow(ConGetSet& conApi);
 
-        static bool s_SuppressResizeRepaint(_Inout_ ConGetSet* const pConApi);
+        static bool s_SuppressResizeRepaint(ConGetSet& conApi);
 
     };
 }

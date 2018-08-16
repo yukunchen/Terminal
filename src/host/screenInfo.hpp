@@ -196,9 +196,8 @@ public:
     SHORT GetScreenWindowSizeX() const;
     SHORT GetScreenWindowSizeY() const;
 
-    WriteBuffer* GetBufferWriter() const;
-    AdaptDispatch* GetAdapterDispatch() const;
-    StateMachine* GetStateMachine() const;
+    const StateMachine& GetStateMachine() const;
+    StateMachine& GetStateMachine();
 
 
     void SetCursorInformation(const ULONG Size,
@@ -307,11 +306,7 @@ private:
                       const size_t startIndex,
                       const bool shouldWrap);
 
-    ConhostInternalGetSet* _pConApi;
-    WriteBuffer* _pBufferWriter;
-    AdaptDispatch* _pAdapter;
-    StateMachine* _pStateMachine;
-    std::shared_ptr<OutputStateMachineEngine> _pEngine;
+    std::shared_ptr<StateMachine> _stateMachine;
 
     COORD _coordScreenBufferSize; // dimensions of buffer
 

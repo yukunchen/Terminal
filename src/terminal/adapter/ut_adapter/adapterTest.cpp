@@ -1321,41 +1321,8 @@ private:
     HANDLE _hCon;
 };
 
-
-class AdapterTest : public AdaptDefaults
+class DummyAdapter : public AdaptDefaults
 {
-public:
-
-    TEST_CLASS(AdapterTest);
-
-    TEST_METHOD_SETUP(SetupMethods)
-    {
-        bool fSuccess = true;
-
-        _pTest = new TestGetSet();
-
-        if (_pTest == nullptr)
-        {
-            fSuccess = false;
-        }
-        if (fSuccess)
-        {
-            _pDispatch = new AdaptDispatch(_pTest, this, s_wDefaultFill);
-        }
-        if (_pDispatch == nullptr)
-        {
-            fSuccess = false;
-        }
-        return fSuccess;
-    }
-
-    TEST_METHOD_CLEANUP(CleanupMethods)
-    {
-        delete _pTest;
-        delete _pDispatch;
-        return true;
-    }
-
     void Print(const wchar_t /*wch*/) override
     {
     }
@@ -1366,6 +1333,35 @@ public:
 
     void Execute(const wchar_t /*wch*/) override
     {
+    }
+};
+
+class AdapterTest
+{
+public:
+
+    TEST_CLASS(AdapterTest);
+
+    TEST_METHOD_SETUP(SetupMethods)
+    {
+        bool fSuccess = true;
+
+        _testGetSet = new TestGetSet;
+        fSuccess = _testGetSet != nullptr;
+        if (fSuccess)
+        {
+            // give AdaptDispatch ownership of _testGetSet
+            _pDispatch = new AdaptDispatch(_testGetSet, new DummyAdapter, s_wDefaultFill);
+            fSuccess = _pDispatch != nullptr;
+        }
+        return fSuccess;
+    }
+
+    TEST_METHOD_CLEANUP(CleanupMethods)
+    {
+        delete _pDispatch;
+        _testGetSet = nullptr;
+        return true;
     }
 
     TEST_METHOD(CursorMovementTest)
@@ -1423,23 +1419,23 @@ public:
         // success cases
         // place cursor in top left. moving up is expected to go nowhere (it should get bounded by the viewport)
         Log::Comment(L"Test 1: Cursor doesn't move when placed in corner of viewport.");
-        _pTest->PrepData(direction);
+        _testGetSet->PrepData(direction);
 
         switch (direction)
         {
         case CursorDirection::UP:
             Log::Comment(L"Testing up direction.");
-            _pTest->_expectedLines = -1;
-            _pTest->_fMoveCursorVerticallyResult = true;
+            _testGetSet->_expectedLines = -1;
+            _testGetSet->_fMoveCursorVerticallyResult = true;
             break;
         case CursorDirection::DOWN:
             Log::Comment(L"Testing down direction.");
-            _pTest->_expectedLines = 1;
-            _pTest->_fMoveCursorVerticallyResult = true;
+            _testGetSet->_expectedLines = 1;
+            _testGetSet->_fMoveCursorVerticallyResult = true;
             break;
         default:
-            _pTest->_expectedLines = 0;
-            _pTest->_fMoveCursorVerticallyResult = false;
+            _testGetSet->_expectedLines = 0;
+            _testGetSet->_fMoveCursorVerticallyResult = false;
             break;
         }
 
@@ -1452,18 +1448,18 @@ public:
         switch (direction)
         {
         case CursorDirection::NEXTLINE:
-            _pTest->PrepData(CursorX::RIGHT, CursorY::BOTTOM);
+            _testGetSet->PrepData(CursorX::RIGHT, CursorY::BOTTOM);
             fDoTest1b = true;
             break;
         case CursorDirection::PREVLINE:
-            _pTest->PrepData(CursorX::RIGHT, CursorY::TOP);
+            _testGetSet->PrepData(CursorX::RIGHT, CursorY::TOP);
             fDoTest1b = true;
             break;
         }
 
         if (fDoTest1b)
         {
-            _pTest->_coordExpectedCursorPos.X = _pTest->_srViewport.Left;
+            _testGetSet->_coordExpectedCursorPos.X = _testGetSet->_srViewport.Left;
             VERIFY_IS_TRUE((_pDispatch->*(moveFunc))(1));
         }
         else
@@ -1473,33 +1469,33 @@ public:
 
         // place cursor lower, move up 1.
         Log::Comment(L"Test 2: Cursor moves 1 in the correct direction from viewport.");
-        _pTest->PrepData(CursorX::XCENTER, CursorY::YCENTER);
+        _testGetSet->PrepData(CursorX::XCENTER, CursorY::YCENTER);
 
         switch (direction)
         {
         case CursorDirection::UP:
-            _pTest->_coordExpectedCursorPos.Y--;
-            _pTest->_expectedLines = -1;
-            _pTest->_fMoveCursorVerticallyResult = true;
+            _testGetSet->_coordExpectedCursorPos.Y--;
+            _testGetSet->_expectedLines = -1;
+            _testGetSet->_fMoveCursorVerticallyResult = true;
             break;
         case CursorDirection::DOWN:
-            _pTest->_coordExpectedCursorPos.Y++;
-            _pTest->_expectedLines = 1;
-            _pTest->_fMoveCursorVerticallyResult = true;
+            _testGetSet->_coordExpectedCursorPos.Y++;
+            _testGetSet->_expectedLines = 1;
+            _testGetSet->_fMoveCursorVerticallyResult = true;
             break;
         case CursorDirection::RIGHT:
-            _pTest->_coordExpectedCursorPos.X++;
+            _testGetSet->_coordExpectedCursorPos.X++;
             break;
         case CursorDirection::LEFT:
-            _pTest->_coordExpectedCursorPos.X--;
+            _testGetSet->_coordExpectedCursorPos.X--;
             break;
         case CursorDirection::NEXTLINE:
-            _pTest->_coordExpectedCursorPos.Y++;
-            _pTest->_coordExpectedCursorPos.X = _pTest->_srViewport.Left;
+            _testGetSet->_coordExpectedCursorPos.Y++;
+            _testGetSet->_coordExpectedCursorPos.X = _testGetSet->_srViewport.Left;
             break;
         case CursorDirection::PREVLINE:
-            _pTest->_coordExpectedCursorPos.Y--;
-            _pTest->_coordExpectedCursorPos.X = _pTest->_srViewport.Left;
+            _testGetSet->_coordExpectedCursorPos.Y--;
+            _testGetSet->_coordExpectedCursorPos.X = _testGetSet->_srViewport.Left;
             break;
         }
 
@@ -1507,35 +1503,35 @@ public:
 
         // place cursor and move it up too far. It should get bounded by the viewport.
         Log::Comment(L"Test 3: Cursor moves and gets stuck at viewport when started away from edges and moved beyond edges.");
-        _pTest->PrepData(CursorX::XCENTER, CursorY::YCENTER);
+        _testGetSet->PrepData(CursorX::XCENTER, CursorY::YCENTER);
 
         // Bottom and right viewports are -1 because those two sides are specified to be 1 outside the viewable area.
 
         switch (direction)
         {
         case CursorDirection::UP:
-            _pTest->_coordExpectedCursorPos.Y = _pTest->_srViewport.Top;
-            _pTest->_expectedLines = -100;
-            _pTest->_fMoveCursorVerticallyResult = true;
+            _testGetSet->_coordExpectedCursorPos.Y = _testGetSet->_srViewport.Top;
+            _testGetSet->_expectedLines = -100;
+            _testGetSet->_fMoveCursorVerticallyResult = true;
             break;
         case CursorDirection::DOWN:
-            _pTest->_coordExpectedCursorPos.Y = _pTest->_srViewport.Bottom - 1;
-            _pTest->_expectedLines = 100;
-            _pTest->_fMoveCursorVerticallyResult = true;
+            _testGetSet->_coordExpectedCursorPos.Y = _testGetSet->_srViewport.Bottom - 1;
+            _testGetSet->_expectedLines = 100;
+            _testGetSet->_fMoveCursorVerticallyResult = true;
             break;
         case CursorDirection::RIGHT:
-            _pTest->_coordExpectedCursorPos.X = _pTest->_srViewport.Right - 1;
+            _testGetSet->_coordExpectedCursorPos.X = _testGetSet->_srViewport.Right - 1;
             break;
         case CursorDirection::LEFT:
-            _pTest->_coordExpectedCursorPos.X = _pTest->_srViewport.Left;
+            _testGetSet->_coordExpectedCursorPos.X = _testGetSet->_srViewport.Left;
             break;
         case CursorDirection::NEXTLINE:
-            _pTest->_coordExpectedCursorPos.X = _pTest->_srViewport.Left;
-            _pTest->_coordExpectedCursorPos.Y = _pTest->_srViewport.Bottom - 1;
+            _testGetSet->_coordExpectedCursorPos.X = _testGetSet->_srViewport.Left;
+            _testGetSet->_coordExpectedCursorPos.Y = _testGetSet->_srViewport.Bottom - 1;
             break;
         case CursorDirection::PREVLINE:
-            _pTest->_coordExpectedCursorPos.X = _pTest->_srViewport.Left;
-            _pTest->_coordExpectedCursorPos.Y = _pTest->_srViewport.Top;
+            _testGetSet->_coordExpectedCursorPos.X = _testGetSet->_srViewport.Left;
+            _testGetSet->_coordExpectedCursorPos.Y = _testGetSet->_srViewport.Top;
             break;
         }
 
@@ -1544,52 +1540,52 @@ public:
         // error cases
         // give too large an up distance, cursor move should fail, cursor should stay the same.
         Log::Comment(L"Test 4: When given invalid (massive) move distance that doesn't fit in a short, call fails and cursor doesn't move.");
-        _pTest->PrepData(CursorX::XCENTER, CursorY::YCENTER);
+        _testGetSet->PrepData(CursorX::XCENTER, CursorY::YCENTER);
 
         VERIFY_IS_FALSE((_pDispatch->*(moveFunc))(UINT_MAX));
-        VERIFY_ARE_EQUAL(_pTest->_coordExpectedCursorPos, _pTest->_coordCursorPos);
+        VERIFY_ARE_EQUAL(_testGetSet->_coordExpectedCursorPos, _testGetSet->_coordCursorPos);
 
         // cause short underflow. cursor move should fail. cursor should stay the same.
         Log::Comment(L"Test 5: When an over/underflow occurs in cursor math, call fails and cursor doesn't move.");
-        _pTest->PrepData(direction);
+        _testGetSet->PrepData(direction);
 
         switch (direction)
         {
         case CursorDirection::UP:
         case CursorDirection::PREVLINE:
-            _pTest->_coordCursorPos.Y = -10;
+            _testGetSet->_coordCursorPos.Y = -10;
             break;
         case CursorDirection::DOWN:
         case CursorDirection::NEXTLINE:
-            _pTest->_coordCursorPos.Y = 10;
+            _testGetSet->_coordCursorPos.Y = 10;
             break;
         case CursorDirection::RIGHT:
-            _pTest->_coordCursorPos.X = 10;
+            _testGetSet->_coordCursorPos.X = 10;
             break;
         case CursorDirection::LEFT:
-            _pTest->_coordCursorPos.X = -10;
+            _testGetSet->_coordCursorPos.X = -10;
             break;
         }
 
-        _pTest->_coordExpectedCursorPos = _pTest->_coordCursorPos;
+        _testGetSet->_coordExpectedCursorPos = _testGetSet->_coordCursorPos;
 
         VERIFY_IS_FALSE((_pDispatch->*(moveFunc))(SHRT_MAX+1));
-        VERIFY_ARE_EQUAL(_pTest->_coordExpectedCursorPos, _pTest->_coordCursorPos);
+        VERIFY_ARE_EQUAL(_testGetSet->_coordExpectedCursorPos, _testGetSet->_coordCursorPos);
 
         // SetConsoleCursorPosition throws failure. Parameters are otherwise normal.
         Log::Comment(L"Test 6: When SetConsoleCursorPosition throws a failure, call fails and cursor doesn't move.");
-        _pTest->PrepData(direction);
-        _pTest->_fSetConsoleCursorPositionResult = FALSE;
-        _pTest->_fMoveCursorVerticallyResult = false;
+        _testGetSet->PrepData(direction);
+        _testGetSet->_fSetConsoleCursorPositionResult = FALSE;
+        _testGetSet->_fMoveCursorVerticallyResult = false;
 
         VERIFY_IS_FALSE((_pDispatch->*(moveFunc))(0));
-        VERIFY_ARE_EQUAL(_pTest->_coordExpectedCursorPos, _pTest->_coordCursorPos);
+        VERIFY_ARE_EQUAL(_testGetSet->_coordExpectedCursorPos, _testGetSet->_coordCursorPos);
 
         // GetConsoleScreenBufferInfo throws failure. Parameters are otherwise normal.
         Log::Comment(L"Test 7: When GetConsoleScreenBufferInfo throws a failure, call fails and cursor doesn't move.");
-        _pTest->PrepData(CursorX::LEFT, CursorY::TOP);
-        _pTest->_fGetConsoleScreenBufferInfoExResult = FALSE;
-        _pTest->_fMoveCursorVerticallyResult = true;
+        _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
+        _testGetSet->_fGetConsoleScreenBufferInfoExResult = FALSE;
+        _testGetSet->_fMoveCursorVerticallyResult = true;
         Log::Comment(NoThrowString().Format(
             L"Cursor Up and Down don't need GetConsoleScreenBufferInfoEx, so they will succeed"
         ));
@@ -1601,7 +1597,7 @@ public:
         {
             VERIFY_IS_FALSE((_pDispatch->*(moveFunc))(0));
         }
-        VERIFY_ARE_EQUAL(_pTest->_coordExpectedCursorPos, _pTest->_coordCursorPos);
+        VERIFY_ARE_EQUAL(_testGetSet->_coordExpectedCursorPos, _testGetSet->_coordCursorPos);
     }
 
     TEST_METHOD(CursorPositionTest)
@@ -1610,64 +1606,64 @@ public:
 
 
         Log::Comment(L"Test 1: Place cursor within the viewport. Start from top left, move to middle.");
-        _pTest->PrepData(CursorX::LEFT, CursorY::TOP);
+        _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
 
-        short sCol = (_pTest->_srViewport.Right - _pTest->_srViewport.Left) / 2;
-        short sRow = (_pTest->_srViewport.Bottom - _pTest->_srViewport.Top) / 2;
+        short sCol = (_testGetSet->_srViewport.Right - _testGetSet->_srViewport.Left) / 2;
+        short sRow = (_testGetSet->_srViewport.Bottom - _testGetSet->_srViewport.Top) / 2;
 
-        _pTest->_coordExpectedCursorPos.X = _pTest->_srViewport.Left + (sCol - 1);
-        _pTest->_coordExpectedCursorPos.Y = _pTest->_srViewport.Top + (sRow - 1);
+        _testGetSet->_coordExpectedCursorPos.X = _testGetSet->_srViewport.Left + (sCol - 1);
+        _testGetSet->_coordExpectedCursorPos.Y = _testGetSet->_srViewport.Top + (sRow - 1);
 
         VERIFY_IS_TRUE(_pDispatch->CursorPosition(sRow, sCol));
 
         Log::Comment(L"Test 2: Move to 0, 0 (which is 1,1 in VT speak)");
-        _pTest->PrepData(CursorX::RIGHT, CursorY::BOTTOM);
+        _testGetSet->PrepData(CursorX::RIGHT, CursorY::BOTTOM);
 
-        _pTest->_coordExpectedCursorPos.X = _pTest->_srViewport.Left;
-        _pTest->_coordExpectedCursorPos.Y = _pTest->_srViewport.Top;
+        _testGetSet->_coordExpectedCursorPos.X = _testGetSet->_srViewport.Left;
+        _testGetSet->_coordExpectedCursorPos.Y = _testGetSet->_srViewport.Top;
 
         VERIFY_IS_TRUE(_pDispatch->CursorPosition(1, 1));
 
         Log::Comment(L"Test 3: Move beyond rectangle (down/right too far). Should be bounded back in.");
-        _pTest->PrepData(CursorX::LEFT, CursorY::TOP);
+        _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
 
-        sCol = (_pTest->_srViewport.Right - _pTest->_srViewport.Left) * 2;
-        sRow = (_pTest->_srViewport.Bottom - _pTest->_srViewport.Top) * 2;
+        sCol = (_testGetSet->_srViewport.Right - _testGetSet->_srViewport.Left) * 2;
+        sRow = (_testGetSet->_srViewport.Bottom - _testGetSet->_srViewport.Top) * 2;
 
-        _pTest->_coordExpectedCursorPos.X = _pTest->_srViewport.Right - 1;
-        _pTest->_coordExpectedCursorPos.Y = _pTest->_srViewport.Bottom - 1;
+        _testGetSet->_coordExpectedCursorPos.X = _testGetSet->_srViewport.Right - 1;
+        _testGetSet->_coordExpectedCursorPos.Y = _testGetSet->_srViewport.Bottom - 1;
 
         VERIFY_IS_TRUE(_pDispatch->CursorPosition(sRow, sCol));
 
         Log::Comment(L"Test 4: Values too large for short. Cursor shouldn't move. Return false.");
-        _pTest->PrepData(CursorX::LEFT, CursorY::TOP);
+        _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
 
         VERIFY_IS_FALSE(_pDispatch->CursorPosition(UINT_MAX, UINT_MAX));
 
         Log::Comment(L"Test 5: Overflow during addition. Cursor shouldn't move. Return false.");
-        _pTest->PrepData(CursorX::LEFT, CursorY::TOP);
+        _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
 
-        _pTest->_srViewport.Left = SHRT_MAX;
-        _pTest->_srViewport.Top = SHRT_MAX;
+        _testGetSet->_srViewport.Left = SHRT_MAX;
+        _testGetSet->_srViewport.Top = SHRT_MAX;
 
         VERIFY_IS_FALSE(_pDispatch->CursorPosition(5, 5));
 
         Log::Comment(L"Test 6: GetConsoleInfo API returns false. No move, return false.");
-        _pTest->PrepData(CursorX::LEFT, CursorY::TOP);
+        _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
 
-        _pTest->_fGetConsoleScreenBufferInfoExResult = FALSE;
+        _testGetSet->_fGetConsoleScreenBufferInfoExResult = FALSE;
 
         VERIFY_IS_FALSE(_pDispatch->CursorPosition(1, 1));
 
         Log::Comment(L"Test 7: SetCursor API returns false. No move, return false.");
-        _pTest->PrepData(CursorX::LEFT, CursorY::TOP);
+        _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
 
-        _pTest->_fSetConsoleCursorPositionResult = FALSE;
+        _testGetSet->_fSetConsoleCursorPositionResult = FALSE;
 
         VERIFY_IS_FALSE(_pDispatch->CursorPosition(1, 1));
 
         Log::Comment(L"Test 8: Move to 0,0. Cursor shouldn't move. Return false. 1,1 is the top left corner in VT100 speak. 0,0 isn't a position. The parser will give 1 for a 0 input.");
-        _pTest->PrepData(CursorX::LEFT, CursorY::TOP);
+        _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
 
         VERIFY_IS_FALSE(_pDispatch->CursorPosition(0, 0));
 
@@ -1699,16 +1695,16 @@ public:
         {
         case AbsolutePosition::CursorHorizontal:
             Log::Comment(L"Testing cursor horizontal movement.");
-            psViewportEnd = &_pTest->_srViewport.Right;
-            psViewportStart = &_pTest->_srViewport.Left;
-            psCursorExpected = &_pTest->_coordExpectedCursorPos.X;
+            psViewportEnd = &_testGetSet->_srViewport.Right;
+            psViewportStart = &_testGetSet->_srViewport.Left;
+            psCursorExpected = &_testGetSet->_coordExpectedCursorPos.X;
             moveFunc = &AdaptDispatch::CursorHorizontalPositionAbsolute;
             break;
         case AbsolutePosition::VerticalLine:
             Log::Comment(L"Testing vertical line movement.");
-            psViewportEnd = &_pTest->_srViewport.Bottom;
-            psViewportStart = &_pTest->_srViewport.Top;
-            psCursorExpected = &_pTest->_coordExpectedCursorPos.Y;
+            psViewportEnd = &_testGetSet->_srViewport.Bottom;
+            psViewportStart = &_testGetSet->_srViewport.Top;
+            psCursorExpected = &_testGetSet->_coordExpectedCursorPos.Y;
             moveFunc = &AdaptDispatch::VerticalLinePositionAbsolute;
             break;
         }
@@ -1720,7 +1716,7 @@ public:
         }
 
         Log::Comment(L"Test 1: Place cursor within the viewport. Start from top left, move to middle.");
-        _pTest->PrepData(CursorX::LEFT, CursorY::TOP);
+        _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
 
         short sVal = (*psViewportEnd - *psViewportStart) / 2;
 
@@ -1729,7 +1725,7 @@ public:
         VERIFY_IS_TRUE((_pDispatch->*(moveFunc))(sVal));
 
         Log::Comment(L"Test 2: Move to 0 (which is 1 in VT speak)");
-        _pTest->PrepData(CursorX::RIGHT, CursorY::BOTTOM);
+        _testGetSet->PrepData(CursorX::RIGHT, CursorY::BOTTOM);
 
         *psCursorExpected = *psViewportStart;
         sVal = 1;
@@ -1737,7 +1733,7 @@ public:
         VERIFY_IS_TRUE((_pDispatch->*(moveFunc))(sVal));
 
         Log::Comment(L"Test 3: Move beyond rectangle (down/right too far). Should be bounded back in.");
-        _pTest->PrepData(CursorX::LEFT, CursorY::TOP);
+        _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
 
         sVal = (*psViewportEnd - *psViewportStart) * 2;
 
@@ -1746,41 +1742,41 @@ public:
         VERIFY_IS_TRUE((_pDispatch->*(moveFunc))(sVal));
 
         Log::Comment(L"Test 4: Values too large for short. Cursor shouldn't move. Return false.");
-        _pTest->PrepData(CursorX::LEFT, CursorY::TOP);
+        _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
 
         sVal = SHORT_MAX;
 
         VERIFY_IS_FALSE((_pDispatch->*(moveFunc))(sVal));
 
         Log::Comment(L"Test 5: Overflow during addition. Cursor shouldn't move. Return false.");
-        _pTest->PrepData(CursorX::LEFT, CursorY::TOP);
+        _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
 
-        _pTest->_srViewport.Left = SHRT_MAX;
+        _testGetSet->_srViewport.Left = SHRT_MAX;
 
         sVal = 5;
 
         VERIFY_IS_FALSE((_pDispatch->*(moveFunc))(sVal));
 
         Log::Comment(L"Test 6: GetConsoleInfo API returns false. No move, return false.");
-        _pTest->PrepData(CursorX::LEFT, CursorY::TOP);
+        _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
 
-        _pTest->_fGetConsoleScreenBufferInfoExResult = FALSE;
+        _testGetSet->_fGetConsoleScreenBufferInfoExResult = FALSE;
 
         sVal = 1;
 
         VERIFY_IS_FALSE((_pDispatch->*(moveFunc))(sVal));
 
         Log::Comment(L"Test 7: SetCursor API returns false. No move, return false.");
-        _pTest->PrepData(CursorX::LEFT, CursorY::TOP);
+        _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
 
-        _pTest->_fSetConsoleCursorPositionResult = FALSE;
+        _testGetSet->_fSetConsoleCursorPositionResult = FALSE;
 
         sVal = 1;
 
         VERIFY_IS_FALSE((_pDispatch->*(moveFunc))(sVal));
 
         Log::Comment(L"Test 8: Move to 0. Cursor shouldn't move. Return false. 1 is the left edge in VT100 speak. 0 isn't a position. The parser will give 1 for a 0 input.");
-        _pTest->PrepData(CursorX::LEFT, CursorY::TOP);
+        _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
 
         sVal = 0;
 
@@ -1797,28 +1793,28 @@ public:
         Log::Comment(L"Test 1: Restore with no saved data should move to top-left corner, the null/default position.");
 
         // Move cursor to top left and save off expected position.
-        _pTest->PrepData(CursorX::LEFT, CursorY::TOP);
-        coordExpected = _pTest->_coordExpectedCursorPos;
+        _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
+        coordExpected = _testGetSet->_coordExpectedCursorPos;
 
         // Then move cursor to the middle and reset the expected to the top left.
-        _pTest->PrepData(CursorX::XCENTER, CursorY::YCENTER);
-        _pTest->_coordExpectedCursorPos = coordExpected;
+        _testGetSet->PrepData(CursorX::XCENTER, CursorY::YCENTER);
+        _testGetSet->_coordExpectedCursorPos = coordExpected;
 
         VERIFY_IS_TRUE(_pDispatch->CursorRestorePosition(), L"By default, restore to top left corner (0,0 offset from viewport).");
 
         Log::Comment(L"Test 2: Place cursor in center. Save. Move cursor to corner. Restore. Should come back to center.");
-        _pTest->PrepData(CursorX::XCENTER, CursorY::YCENTER);
+        _testGetSet->PrepData(CursorX::XCENTER, CursorY::YCENTER);
         VERIFY_IS_TRUE(_pDispatch->CursorSavePosition(), L"Succeed at saving position.");
 
         Log::Comment(L"Backup expected cursor (in the middle). Move cursor to corner. Then re-set expected cursor to middle.");
         // save expected cursor position
-        coordExpected = _pTest->_coordExpectedCursorPos;
+        coordExpected = _testGetSet->_coordExpectedCursorPos;
 
         // adjust cursor to corner
-        _pTest->PrepData(CursorX::LEFT, CursorY::BOTTOM);
+        _testGetSet->PrepData(CursorX::LEFT, CursorY::BOTTOM);
 
         // restore expected cursor position to center.
-        _pTest->_coordExpectedCursorPos = coordExpected;
+        _testGetSet->_coordExpectedCursorPos = coordExpected;
 
         VERIFY_IS_TRUE(_pDispatch->CursorRestorePosition(), L"Restoring to corner should succeed. API call inside will test that cursor matched expected position.");
     }
@@ -1840,19 +1836,19 @@ public:
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"fEndingVis", fEnd));
 
         Log::Comment(L"Test 1: Verify successful API call modifies visibility state.");
-        _pTest->PrepData();
-        _pTest->_fCursorVisible = fStart;
-        _pTest->_fExpectedCursorVisible = fEnd;
+        _testGetSet->PrepData();
+        _testGetSet->_fCursorVisible = fStart;
+        _testGetSet->_fExpectedCursorVisible = fEnd;
         VERIFY_IS_TRUE(_pDispatch->CursorVisibility(fEnd));
 
         Log::Comment(L"Test 2: When we fail to get existing cursor information, the dispatch should fail.");
-        _pTest->PrepData();
-        _pTest->_fGetConsoleCursorInfoResult = false;
+        _testGetSet->PrepData();
+        _testGetSet->_fGetConsoleCursorInfoResult = false;
         VERIFY_IS_FALSE(_pDispatch->CursorVisibility(fEnd));
 
         Log::Comment(L"Test 3: When we fail to set updated cursor information, the dispatch should fail.");
-        _pTest->PrepData();
-        _pTest->_fSetConsoleCursorInfoResult = false;
+        _testGetSet->PrepData();
+        _testGetSet->_fSetConsoleCursorInfoResult = false;
         VERIFY_IS_FALSE(_pDispatch->CursorVisibility(fEnd));
     }
 
@@ -1863,10 +1859,10 @@ public:
         Log::Comment(L"Test 1: The big one. Fill the buffer with Qs. Fill the window with Rs. Write a line of ABCDE at the cursor. Then insert 5 spaces at the cursor. Watch spaces get inserted, ABCDE slide right eating up the Rs in the viewport but not modifying the Qs outside.");
 
         // place the cursor in the center.
-        _pTest->PrepData(CursorX::XCENTER, CursorY::YCENTER);
+        _testGetSet->PrepData(CursorX::XCENTER, CursorY::YCENTER);
 
         // Save the cursor position. It shouldn't move for the rest of the test.
-        COORD coordCursorExpected = _pTest->_coordCursorPos;
+        COORD coordCursorExpected = _testGetSet->_coordCursorPos;
 
         // Fill the entire buffer with Qs. Blue on Green.
         WCHAR const wchOuterBuffer = 'Q';
@@ -1874,15 +1870,15 @@ public:
         SMALL_RECT srOuterBuffer;
         srOuterBuffer.Top = 0;
         srOuterBuffer.Left = 0;
-        srOuterBuffer.Bottom = _pTest->_coordBufferSize.Y;
-        srOuterBuffer.Right= _pTest->_coordBufferSize.X;
-        _pTest->FillRectangle(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer);
+        srOuterBuffer.Bottom = _testGetSet->_coordBufferSize.Y;
+        srOuterBuffer.Right= _testGetSet->_coordBufferSize.X;
+        _testGetSet->FillRectangle(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer);
 
         // Fill the viewport with Rs. Red on Blue.
         WCHAR const wchViewport = 'R';
         WORD const wAttrViewport = FOREGROUND_RED | BACKGROUND_BLUE;
-        SMALL_RECT srViewport = _pTest->_srViewport;
-        _pTest->FillRectangle(srViewport, wchViewport, wAttrViewport);
+        SMALL_RECT srViewport = _testGetSet->_srViewport;
+        _testGetSet->FillRectangle(srViewport, wchViewport, wAttrViewport);
 
         // fill some of the text right of the cursor so we can verify it moved it and didn't overwrite it.
         // change the color too so we can make sure that it's fine
@@ -1891,19 +1887,19 @@ public:
         PWSTR const pwszTestText = L"ABCDE";
         size_t cchTestText = wcslen(pwszTestText);
         SMALL_RECT srTestText;
-        srTestText.Top = _pTest->_coordCursorPos.Y;
+        srTestText.Top = _testGetSet->_coordCursorPos.Y;
         srTestText.Bottom = srTestText.Top + 1;
-        srTestText.Left = _pTest->_coordCursorPos.X;
+        srTestText.Left = _testGetSet->_coordCursorPos.X;
         srTestText.Right = srTestText.Left + (SHORT)cchTestText;
-        _pTest->InsertString(_pTest->_coordCursorPos, pwszTestText, wAttrTestText);
+        _testGetSet->InsertString(_testGetSet->_coordCursorPos, pwszTestText, wAttrTestText);
 
         WCHAR const wchInsertExpected = L' ';
-        WORD const wAttrInsertExpected = _pTest->_wAttribute;
+        WORD const wAttrInsertExpected = _testGetSet->_wAttribute;
         size_t const cchInsertSize = 5;
         SMALL_RECT srInsertExpected;
-        srInsertExpected.Top = _pTest->_coordCursorPos.Y;
+        srInsertExpected.Top = _testGetSet->_coordCursorPos.Y;
         srInsertExpected.Bottom = srInsertExpected.Top + 1;
-        srInsertExpected.Left = _pTest->_coordCursorPos.X;
+        srInsertExpected.Left = _testGetSet->_coordCursorPos.X;
         srInsertExpected.Right = srInsertExpected.Left + (SHORT)cchInsertSize;
 
         // the text we inserted is going to move right by the insert size, so adjust that rectangle right.
@@ -1915,92 +1911,92 @@ public:
 
         // the combined area of the letters + the spaces will be 10 characters wide:
         SMALL_RECT srModifiedSpace;
-        srModifiedSpace.Top = _pTest->_coordCursorPos.Y;
+        srModifiedSpace.Top = _testGetSet->_coordCursorPos.Y;
         srModifiedSpace.Bottom = srModifiedSpace.Top + 1;
-        srModifiedSpace.Left = _pTest->_coordCursorPos.X;
+        srModifiedSpace.Left = _testGetSet->_coordCursorPos.X;
         srModifiedSpace.Right = srModifiedSpace.Left +(SHORT)cchInsertSize + (SHORT)cchTestText;
 
         // verify cursor didn't move
-        VERIFY_ARE_EQUAL(coordCursorExpected, _pTest->_coordCursorPos, L"Verify cursor didn't move from insert operation.");
+        VERIFY_ARE_EQUAL(coordCursorExpected, _testGetSet->_coordCursorPos, L"Verify cursor didn't move from insert operation.");
 
         // e.g. we had this in the buffer: QQQRRRRRRABCDERRRRRRRQQQ with the cursor on the A.
         // now we should have this buffer: QQQRRRRRR     ABCDERRQQQ with the cursor on the first space.
 
         // Verify the field of Qs didn't change outside the viewport.
-        VERIFY_IS_TRUE(_pTest->ValidateRectangleContains(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer, srViewport), L"Field of Qs outside viewport should remain unchanged.");
+        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer, srViewport), L"Field of Qs outside viewport should remain unchanged.");
 
         // Verify the field of Rs within the viewport not including the inserted range and the ABCDE shifted right. (10 characters)
-        VERIFY_IS_TRUE(_pTest->ValidateRectangleContains(srViewport, wchViewport, wAttrViewport, srModifiedSpace), L"Field of Rs in the viewport outside modified space should remain unchanged.");
+        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srViewport, wchViewport, wAttrViewport, srModifiedSpace), L"Field of Rs in the viewport outside modified space should remain unchanged.");
 
         // Verify the 5 spaces inserted from the cursor.
-        VERIFY_IS_TRUE(_pTest->ValidateRectangleContains(srInsertExpected, wchInsertExpected, wAttrInsertExpected), L"Spaces should be inserted with the proper attributes at the cursor.");
+        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srInsertExpected, wchInsertExpected, wAttrInsertExpected), L"Spaces should be inserted with the proper attributes at the cursor.");
 
         // Verify the ABCDE sequence was shifted right.
         COORD coordTestText;
         coordTestText.X = srTestText.Left;
         coordTestText.Y = srTestText.Top;
-        VERIFY_IS_TRUE(_pTest->ValidateString(coordTestText, pwszTestText, wAttrTestText), L"Inserted string should have moved to the right by the number of spaces inserted, attributes and text preserved.");
+        VERIFY_IS_TRUE(_testGetSet->ValidateString(coordTestText, pwszTestText, wAttrTestText), L"Inserted string should have moved to the right by the number of spaces inserted, attributes and text preserved.");
 
         // Test case needed for exact end of line (and full line) insert/delete lengths
         Log::Comment(L"Test 2: Inserting at the exact end of the line. Same field of Qs and Rs. Move cursor to right edge of window and insert > 1 space. Only 1 should be inserted, everything else unchanged.");
 
-        _pTest->FillRectangle(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer);
-        _pTest->FillRectangle(srViewport, wchViewport, wAttrViewport);
+        _testGetSet->FillRectangle(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer);
+        _testGetSet->FillRectangle(srViewport, wchViewport, wAttrViewport);
 
         // move cursor to right edge
-        _pTest->_coordCursorPos.X = _pTest->_srViewport.Right - 1;
-        coordCursorExpected = _pTest->_coordCursorPos;
+        _testGetSet->_coordCursorPos.X = _testGetSet->_srViewport.Right - 1;
+        coordCursorExpected = _testGetSet->_coordCursorPos;
 
         // the rectangle where the space should be is exactly the size of the cursor.
-        srModifiedSpace.Top = _pTest->_coordCursorPos.Y;
+        srModifiedSpace.Top = _testGetSet->_coordCursorPos.Y;
         srModifiedSpace.Bottom = srModifiedSpace.Top + 1;
-        srModifiedSpace.Left = _pTest->_coordCursorPos.X;
+        srModifiedSpace.Left = _testGetSet->_coordCursorPos.X;
         srModifiedSpace.Right = srModifiedSpace.Left + 1;
 
         // insert out 5 spots. this should clear them out with spaces and the default fill from the original cursor position
         VERIFY_IS_TRUE(_pDispatch->InsertCharacter(cchInsertSize), L"Verify insert call was sucessful.");
 
         // cursor didn't move
-        VERIFY_ARE_EQUAL(coordCursorExpected, _pTest->_coordCursorPos, L"Verify cursor didn't move from insert operation.");
+        VERIFY_ARE_EQUAL(coordCursorExpected, _testGetSet->_coordCursorPos, L"Verify cursor didn't move from insert operation.");
 
         // Qs are the same outside the viewport
-        VERIFY_IS_TRUE(_pTest->ValidateRectangleContains(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer, srViewport), L"Field of Qs outside viewport should remain unchanged.");
+        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer, srViewport), L"Field of Qs outside viewport should remain unchanged.");
 
         // Entire viewport is Rs except the one space spot
-        VERIFY_IS_TRUE(_pTest->ValidateRectangleContains(srViewport, wchViewport, wAttrViewport, srModifiedSpace), L"Field of Rs in the viewport outside modified space should remain unchanged.");
+        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srViewport, wchViewport, wAttrViewport, srModifiedSpace), L"Field of Rs in the viewport outside modified space should remain unchanged.");
 
         // The 5 inserted spaces at the right edge resulted in 1 space at the right edge
-        VERIFY_IS_TRUE(_pTest->ValidateRectangleContains(srModifiedSpace, wchInsertExpected, wAttrInsertExpected), L"A space was inserted at the cursor position. All extra spaces were discarded as they hit the right boundary.");
+        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srModifiedSpace, wchInsertExpected, wAttrInsertExpected), L"A space was inserted at the cursor position. All extra spaces were discarded as they hit the right boundary.");
 
         Log::Comment(L"Test 3: Inserting at the exact beginning of the line. Same field of Qs and Rs. Move cursor to left edge of window and insert > screen width of space. The whole row should be spaces but nothing outside the viewport should be changed.");
 
-        _pTest->FillRectangle(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer);
-        _pTest->FillRectangle(srViewport, wchViewport, wAttrViewport);
+        _testGetSet->FillRectangle(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer);
+        _testGetSet->FillRectangle(srViewport, wchViewport, wAttrViewport);
 
         // move cursor to left edge
-        _pTest->_coordCursorPos.X = _pTest->_srViewport.Left;
-        coordCursorExpected = _pTest->_coordCursorPos;
+        _testGetSet->_coordCursorPos.X = _testGetSet->_srViewport.Left;
+        coordCursorExpected = _testGetSet->_coordCursorPos;
 
         // the rectangle of spaces should be the entire line at the cursor.
-        srModifiedSpace.Top = _pTest->_coordCursorPos.Y;
+        srModifiedSpace.Top = _testGetSet->_coordCursorPos.Y;
         srModifiedSpace.Bottom = srModifiedSpace.Top + 1;
-        srModifiedSpace.Left = _pTest->_srViewport.Left;
-        srModifiedSpace.Right = _pTest->_srViewport.Right;
+        srModifiedSpace.Left = _testGetSet->_srViewport.Left;
+        srModifiedSpace.Right = _testGetSet->_srViewport.Right;
 
         // insert greater than the entire viewport (the entire buffer width) at the cursor position
-        VERIFY_IS_TRUE(_pDispatch->InsertCharacter(_pTest->_coordBufferSize.X), L"Verify insert call was successful.");
+        VERIFY_IS_TRUE(_pDispatch->InsertCharacter(_testGetSet->_coordBufferSize.X), L"Verify insert call was successful.");
 
         // cursor didn't move
-        VERIFY_ARE_EQUAL(coordCursorExpected, _pTest->_coordCursorPos, L"Verify cursor didn't move from insert operation.");
+        VERIFY_ARE_EQUAL(coordCursorExpected, _testGetSet->_coordCursorPos, L"Verify cursor didn't move from insert operation.");
 
         // Qs are the same outside the viewport
-        VERIFY_IS_TRUE(_pTest->ValidateRectangleContains(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer, srViewport), L"Field of Qs outside viewport should remain unchanged.");
+        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer, srViewport), L"Field of Qs outside viewport should remain unchanged.");
 
         // Entire viewport is Rs except the one space spot
-        VERIFY_IS_TRUE(_pTest->ValidateRectangleContains(srViewport, wchViewport, wAttrViewport, srModifiedSpace), L"Field of Rs in the viewport outside modified space should remain unchanged.");
+        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srViewport, wchViewport, wAttrViewport, srModifiedSpace), L"Field of Rs in the viewport outside modified space should remain unchanged.");
 
         // The inserted spaces at the left edge resulted in an entire line of spaces bounded by the viewport
-        VERIFY_IS_TRUE(_pTest->ValidateRectangleContains(srModifiedSpace, wchInsertExpected, wAttrInsertExpected), L"A whole line of spaces was inserted at the cursor position. All extra spaces were discarded as they hit the right boundary.");
+        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srModifiedSpace, wchInsertExpected, wAttrInsertExpected), L"A whole line of spaces was inserted at the cursor position. All extra spaces were discarded as they hit the right boundary.");
     }
 
     TEST_METHOD(DeleteCharacterTests)
@@ -2010,10 +2006,10 @@ public:
         Log::Comment(L"Test 1: The big one. Fill the buffer with Qs. Fill the window with Rs. Write a line of ABCDE at the cursor. Then insert 5 spaces at the cursor. Watch spaces get inserted, ABCDE slide right eating up the Rs in the viewport but not modifying the Qs outside.");
 
         // place the cursor in the center.
-        _pTest->PrepData(CursorX::XCENTER, CursorY::YCENTER);
+        _testGetSet->PrepData(CursorX::XCENTER, CursorY::YCENTER);
 
         // Save the cursor position. It shouldn't move for the rest of the test.
-        COORD coordCursorExpected = _pTest->_coordCursorPos;
+        COORD coordCursorExpected = _testGetSet->_coordCursorPos;
 
         // Fill the entire buffer with Qs. Blue on Green.
         WCHAR const wchOuterBuffer = 'Q';
@@ -2021,15 +2017,15 @@ public:
         SMALL_RECT srOuterBuffer;
         srOuterBuffer.Top = 0;
         srOuterBuffer.Left = 0;
-        srOuterBuffer.Bottom = _pTest->_coordBufferSize.Y;
-        srOuterBuffer.Right = _pTest->_coordBufferSize.X;
-        _pTest->FillRectangle(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer);
+        srOuterBuffer.Bottom = _testGetSet->_coordBufferSize.Y;
+        srOuterBuffer.Right = _testGetSet->_coordBufferSize.X;
+        _testGetSet->FillRectangle(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer);
 
         // Fill the viewport with Rs. Red on Blue.
         WCHAR const wchViewport = 'R';
         WORD const wAttrViewport = FOREGROUND_RED | BACKGROUND_BLUE;
-        SMALL_RECT srViewport = _pTest->_srViewport;
-        _pTest->FillRectangle(srViewport, wchViewport, wAttrViewport);
+        SMALL_RECT srViewport = _testGetSet->_srViewport;
+        _testGetSet->FillRectangle(srViewport, wchViewport, wAttrViewport);
 
         // fill some of the text right of the cursor so we can verify it moved it and wasn't deleted
         // change the color too so we can make sure that it's fine
@@ -2037,26 +2033,26 @@ public:
         PWSTR const pwszTestText = L"ABCDE";
         size_t cchTestText = wcslen(pwszTestText);
         SMALL_RECT srTestText;
-        srTestText.Top = _pTest->_coordCursorPos.Y;
+        srTestText.Top = _testGetSet->_coordCursorPos.Y;
         srTestText.Bottom = srTestText.Top + 1;
-        srTestText.Left = _pTest->_coordCursorPos.X;
+        srTestText.Left = _testGetSet->_coordCursorPos.X;
         srTestText.Right = srTestText.Left + (SHORT)cchTestText;
-        _pTest->InsertString(_pTest->_coordCursorPos, pwszTestText, wAttrTestText);
+        _testGetSet->InsertString(_testGetSet->_coordCursorPos, pwszTestText, wAttrTestText);
 
         // We're going to delete "in" from the right edge, so set up that rectangle.
         WCHAR const wchDeleteExpected = L' ';
-        WORD const wAttrDeleteExpected = _pTest->_wAttribute;
+        WORD const wAttrDeleteExpected = _testGetSet->_wAttribute;
         size_t const cchDeleteSize = 5;
         SMALL_RECT srDeleteExpected;
-        srDeleteExpected.Top = _pTest->_coordCursorPos.Y;
+        srDeleteExpected.Top = _testGetSet->_coordCursorPos.Y;
         srDeleteExpected.Bottom = srDeleteExpected.Top + 1;
-        srDeleteExpected.Right = _pTest->_srViewport.Right;
+        srDeleteExpected.Right = _testGetSet->_srViewport.Right;
         srDeleteExpected.Left = srDeleteExpected.Right - cchDeleteSize;
 
         // We want the ABCDE to shift left when we delete and onto the cursor. So move the cursor left 5 and adjust the srTestText rectangle left 5 to the new
         // final destination of where they will be after the delete operation occurs.
-        _pTest->_coordCursorPos.X -= cchDeleteSize;
-        coordCursorExpected = _pTest->_coordCursorPos;
+        _testGetSet->_coordCursorPos.X -= cchDeleteSize;
+        coordCursorExpected = _testGetSet->_coordCursorPos;
         srTestText.Left -= cchDeleteSize;
         srTestText.Right -= cchDeleteSize;
 
@@ -2068,102 +2064,102 @@ public:
         // since this is a bit more complicated than the insert case, make this the "special" region and exempt it from the bulk "R" check
         // we'll check the inside of this rect in 3 pieces, for the ABCDE, then for the inner Rs, then for the 5 spaces after.
         SMALL_RECT srSpecialSpace;
-        srSpecialSpace.Top = _pTest->_coordCursorPos.Y;
+        srSpecialSpace.Top = _testGetSet->_coordCursorPos.Y;
         srSpecialSpace.Bottom = srSpecialSpace.Top + 1;
-        srSpecialSpace.Left = _pTest->_coordCursorPos.X;
-        srSpecialSpace.Right = _pTest->_srViewport.Right;
+        srSpecialSpace.Left = _testGetSet->_coordCursorPos.X;
+        srSpecialSpace.Right = _testGetSet->_srViewport.Right;
 
         SMALL_RECT srGap; // gap space is the Rs between ABCDE and the spaces shifted in from the right
         srGap.Left = srTestText.Right;
         srGap.Right = srDeleteExpected.Left;
-        srGap.Top = _pTest->_coordCursorPos.Y;
+        srGap.Top = _testGetSet->_coordCursorPos.Y;
         srGap.Bottom = srGap.Top + 1;
 
         // verify cursor didn't move
-        VERIFY_ARE_EQUAL(coordCursorExpected, _pTest->_coordCursorPos, L"Verify cursor didn't move from insert operation.");
+        VERIFY_ARE_EQUAL(coordCursorExpected, _testGetSet->_coordCursorPos, L"Verify cursor didn't move from insert operation.");
 
         // e.g. we had this in the buffer: QQQRRRRRR-RRRRABCDERRQQQ with the cursor on the -.
         // now we should have this buffer: QQQRRRRRRABCDERR     QQQ with the cursor on the A.
 
         // Verify the field of Qs didn't change outside the viewport.
-        VERIFY_IS_TRUE(_pTest->ValidateRectangleContains(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer, srViewport), L"Field of Qs outside viewport should remain unchanged.");
+        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer, srViewport), L"Field of Qs outside viewport should remain unchanged.");
 
         // Verify the field of Rs within the viewport not including the special range of the ABCDE, the spaces shifted in from the right, and the Rs between them that went along for the ride.
-        VERIFY_IS_TRUE(_pTest->ValidateRectangleContains(srViewport, wchViewport, wAttrViewport, srSpecialSpace), L"Field of Rs in the viewport outside modified space should remain unchanged.");
+        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srViewport, wchViewport, wAttrViewport, srSpecialSpace), L"Field of Rs in the viewport outside modified space should remain unchanged.");
 
         // Verify the 5 spaces shifted in from the right edge due to the delete
-        VERIFY_IS_TRUE(_pTest->ValidateRectangleContains(srDeleteExpected, wchDeleteExpected, wAttrDeleteExpected), L"Spaces should be inserted with the proper attributes from the right end of this line (viewport edge.)");
+        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srDeleteExpected, wchDeleteExpected, wAttrDeleteExpected), L"Spaces should be inserted with the proper attributes from the right end of this line (viewport edge.)");
 
         // Verify the ABCDE sequence was shifted left by 5 toward the cursor.
         COORD coordTestText;
         coordTestText.X = srTestText.Left;
         coordTestText.Y = srTestText.Top;
-        VERIFY_IS_TRUE(_pTest->ValidateString(coordTestText, pwszTestText, wAttrTestText), L"Inserted string should have moved to the left by the number of deletes, attributes and text preserved.");
+        VERIFY_IS_TRUE(_testGetSet->ValidateString(coordTestText, pwszTestText, wAttrTestText), L"Inserted string should have moved to the left by the number of deletes, attributes and text preserved.");
 
         // Verify the field of Rs between the ABCDE and the spaces shifted in from the right
-        VERIFY_IS_TRUE(_pTest->ValidateRectangleContains(srGap, wchViewport, wAttrViewport), L"Viewport Rs should be preserved/shifted left in between the ABCDE and the spaces that came in from the right edge.");
+        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srGap, wchViewport, wAttrViewport), L"Viewport Rs should be preserved/shifted left in between the ABCDE and the spaces that came in from the right edge.");
 
         // Test case needed for exact end of line (and full line) insert/delete lengths
         Log::Comment(L"Test 2: Deleting at the exact end of the line. Same field of Qs and Rs. Move cursor to right edge of window and delete > 1 space. Only 1 should be inserted from the right edge (delete inserts from the right), everything else unchanged.");
 
-        _pTest->FillRectangle(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer);
-        _pTest->FillRectangle(srViewport, wchViewport, wAttrViewport);
+        _testGetSet->FillRectangle(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer);
+        _testGetSet->FillRectangle(srViewport, wchViewport, wAttrViewport);
 
         // move cursor to right edge
-        _pTest->_coordCursorPos.X = _pTest->_srViewport.Right - 1;
-        coordCursorExpected = _pTest->_coordCursorPos;
+        _testGetSet->_coordCursorPos.X = _testGetSet->_srViewport.Right - 1;
+        coordCursorExpected = _testGetSet->_coordCursorPos;
 
         // the rectangle where the space should be is exactly the size of the cursor.
         SMALL_RECT srModifiedSpace;
-        srModifiedSpace.Top = _pTest->_coordCursorPos.Y;
+        srModifiedSpace.Top = _testGetSet->_coordCursorPos.Y;
         srModifiedSpace.Bottom = srModifiedSpace.Top + 1;
-        srModifiedSpace.Left = _pTest->_coordCursorPos.X;
+        srModifiedSpace.Left = _testGetSet->_coordCursorPos.X;
         srModifiedSpace.Right = srModifiedSpace.Left + 1;
 
         // delete out 5 spots. this should clear them out with spaces and the default fill from the original cursor position
         VERIFY_IS_TRUE(_pDispatch->DeleteCharacter(cchDeleteSize), L"Verify delete call was sucessful.");
 
         // cursor didn't move
-        VERIFY_ARE_EQUAL(coordCursorExpected, _pTest->_coordCursorPos, L"Verify cursor didn't move from delete operation.");
+        VERIFY_ARE_EQUAL(coordCursorExpected, _testGetSet->_coordCursorPos, L"Verify cursor didn't move from delete operation.");
 
         // Qs are the same outside the viewport
-        VERIFY_IS_TRUE(_pTest->ValidateRectangleContains(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer, srViewport), L"Field of Qs outside viewport should remain unchanged.");
+        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer, srViewport), L"Field of Qs outside viewport should remain unchanged.");
 
         // Entire viewport is Rs except the one space spot
-        VERIFY_IS_TRUE(_pTest->ValidateRectangleContains(srViewport, wchViewport, wAttrViewport, srModifiedSpace), L"Field of Rs in the viewport outside modified space should remain unchanged.");
+        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srViewport, wchViewport, wAttrViewport, srModifiedSpace), L"Field of Rs in the viewport outside modified space should remain unchanged.");
 
         // The 5 deleted spaces at the right edge resulted in 1 space at the right edge
-        VERIFY_IS_TRUE(_pTest->ValidateRectangleContains(srModifiedSpace, wchDeleteExpected, wAttrDeleteExpected), L"A space was inserted at the cursor position. All extra spaces deleted in from the right continued to cover that one space.");
+        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srModifiedSpace, wchDeleteExpected, wAttrDeleteExpected), L"A space was inserted at the cursor position. All extra spaces deleted in from the right continued to cover that one space.");
 
         Log::Comment(L"Test 3: Deleting at the exact beginning of the line. Same field of Qs and Rs. Move cursor to left edge of window and delete > screen width of space. The whole row should be spaces but nothing outside the viewport should be changed.");
 
-        _pTest->FillRectangle(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer);
-        _pTest->FillRectangle(srViewport, wchViewport, wAttrViewport);
+        _testGetSet->FillRectangle(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer);
+        _testGetSet->FillRectangle(srViewport, wchViewport, wAttrViewport);
 
         // move cursor to left edge
-        _pTest->_coordCursorPos.X = _pTest->_srViewport.Left;
-        coordCursorExpected = _pTest->_coordCursorPos;
+        _testGetSet->_coordCursorPos.X = _testGetSet->_srViewport.Left;
+        coordCursorExpected = _testGetSet->_coordCursorPos;
 
         // the rectangle of spaces should be the entire line at the cursor.
-        srModifiedSpace.Top = _pTest->_coordCursorPos.Y;
+        srModifiedSpace.Top = _testGetSet->_coordCursorPos.Y;
         srModifiedSpace.Bottom = srModifiedSpace.Top + 1;
-        srModifiedSpace.Left = _pTest->_srViewport.Left;
-        srModifiedSpace.Right = _pTest->_srViewport.Right;
+        srModifiedSpace.Left = _testGetSet->_srViewport.Left;
+        srModifiedSpace.Right = _testGetSet->_srViewport.Right;
 
         // delete greater than the entire viewport (the entire buffer width) at the cursor position
-        VERIFY_IS_TRUE(_pDispatch->DeleteCharacter(_pTest->_coordBufferSize.X), L"Verify delete call was successful.");
+        VERIFY_IS_TRUE(_pDispatch->DeleteCharacter(_testGetSet->_coordBufferSize.X), L"Verify delete call was successful.");
 
         // cursor didn't move
-        VERIFY_ARE_EQUAL(coordCursorExpected, _pTest->_coordCursorPos, L"Verify cursor didn't move from insert operation.");
+        VERIFY_ARE_EQUAL(coordCursorExpected, _testGetSet->_coordCursorPos, L"Verify cursor didn't move from insert operation.");
 
         // Qs are the same outside the viewport
-        VERIFY_IS_TRUE(_pTest->ValidateRectangleContains(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer, srViewport), L"Field of Qs outside viewport should remain unchanged.");
+        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer, srViewport), L"Field of Qs outside viewport should remain unchanged.");
 
         // Entire viewport is Rs except the one space spot
-        VERIFY_IS_TRUE(_pTest->ValidateRectangleContains(srViewport, wchViewport, wAttrViewport, srModifiedSpace), L"Field of Rs in the viewport outside modified space should remain unchanged.");
+        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srViewport, wchViewport, wAttrViewport, srModifiedSpace), L"Field of Rs in the viewport outside modified space should remain unchanged.");
 
         // The inserted spaces at the left edge resulted in an entire line of spaces bounded by the viewport
-        VERIFY_IS_TRUE(_pTest->ValidateRectangleContains(srModifiedSpace, wchDeleteExpected, wAttrDeleteExpected), L"A whole line of spaces was inserted from the right (the cursor position was deleted enough times.) Extra deletes just covered up some of the spaces that were shifted in.");
+        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srModifiedSpace, wchDeleteExpected, wAttrDeleteExpected), L"A whole line of spaces was inserted from the right (the cursor position was deleted enough times.) Extra deletes just covered up some of the spaces that were shifted in.");
     }
 
     // Ensures that EraseScrollback (^[[3J) deletes any content from the buffer
@@ -2172,21 +2168,21 @@ public:
     //  scrollback content.
     TEST_METHOD(EraseScrollbackTests)
     {
-        _pTest->PrepData(CursorX::XCENTER, CursorY::YCENTER);
-        _pTest->_wAttribute = _pTest->s_wAttrErase;
+        _testGetSet->PrepData(CursorX::XCENTER, CursorY::YCENTER);
+        _testGetSet->_wAttribute = _testGetSet->s_wAttrErase;
         Log::Comment(L"Starting Test");
 
-        _pTest->_fSetConsoleWindowInfoResult = true;
-        _pTest->_fExpectedWindowAbsolute = true;
+        _testGetSet->_fSetConsoleWindowInfoResult = true;
+        _testGetSet->_fExpectedWindowAbsolute = true;
         SMALL_RECT srRegion = { 0 };
-        srRegion.Bottom = _pTest->_srViewport.Bottom - _pTest->_srViewport.Top - 1;
-        srRegion.Right = _pTest->_srViewport.Right - _pTest->_srViewport.Left - 1;
-        _pTest->_srExpectedConsoleWindow = srRegion;
+        srRegion.Bottom = _testGetSet->_srViewport.Bottom - _testGetSet->_srViewport.Top - 1;
+        srRegion.Right = _testGetSet->_srViewport.Right - _testGetSet->_srViewport.Left - 1;
+        _testGetSet->_srExpectedConsoleWindow = srRegion;
 
         // The cursor will be moved to the same relative location in the new viewport with origin @ 0, 0
-        const COORD coordRelativeCursor = { _pTest->_coordCursorPos.X - _pTest->_srViewport.Left,
-                                            _pTest->_coordCursorPos.Y - _pTest->_srViewport.Top };
-        _pTest->_coordExpectedCursorPos = coordRelativeCursor;
+        const COORD coordRelativeCursor = { _testGetSet->_coordCursorPos.X - _testGetSet->_srViewport.Left,
+                                            _testGetSet->_coordCursorPos.Y - _testGetSet->_srViewport.Top };
+        _testGetSet->_coordExpectedCursorPos = coordRelativeCursor;
 
         VERIFY_IS_TRUE(_pDispatch->EraseInDisplay(TermDispatch::EraseType::Scrollback));
 
@@ -2196,36 +2192,36 @@ public:
         SMALL_RECT rgsrRegionsModified[2];
 
         // Region 0 - Below the viewport
-        srRegion.Top = _pTest->_srViewport.Bottom + 1;
+        srRegion.Top = _testGetSet->_srViewport.Bottom + 1;
         srRegion.Left = 0;
 
-        srRegion.Bottom = _pTest->_coordBufferSize.Y;
-        srRegion.Right = _pTest->_coordBufferSize.X;
+        srRegion.Bottom = _testGetSet->_coordBufferSize.Y;
+        srRegion.Right = _testGetSet->_coordBufferSize.X;
 
         rgsrRegionsModified[0] = srRegion;
 
         // Region 1 - To the right of the viewport
         srRegion.Top = 0;
-        srRegion.Left = _pTest->_srViewport.Right + 1;
+        srRegion.Left = _testGetSet->_srViewport.Right + 1;
 
-        srRegion.Bottom = _pTest->_coordBufferSize.Y;
-        srRegion.Right = _pTest->_coordBufferSize.X;
+        srRegion.Bottom = _testGetSet->_coordBufferSize.Y;
+        srRegion.Right = _testGetSet->_coordBufferSize.X;
 
         rgsrRegionsModified[1] = srRegion;
 
         // Scan entire buffer and ensure only the necessary region has changed.
-        bool fRegionSuccess = _pTest->ValidateEraseBufferState(rgsrRegionsModified, cRegionsToCheck, TestGetSet::s_wchErase, TestGetSet::s_wAttrErase);
+        bool fRegionSuccess = _testGetSet->ValidateEraseBufferState(rgsrRegionsModified, cRegionsToCheck, TestGetSet::s_wchErase, TestGetSet::s_wAttrErase);
         VERIFY_IS_TRUE(fRegionSuccess);
 
         Log::Comment(L"Test 2: Gracefully fail when getting console information fails.");
-        _pTest->PrepData();
-        _pTest->_fGetConsoleScreenBufferInfoExResult = false;
+        _testGetSet->PrepData();
+        _testGetSet->_fGetConsoleScreenBufferInfoExResult = false;
 
         VERIFY_IS_FALSE(_pDispatch->EraseInDisplay(TermDispatch::EraseType::Scrollback));
 
         Log::Comment(L"Test 3: Gracefully fail when filling the rectangle fails.");
-        _pTest->PrepData();
-        _pTest->_fFillConsoleOutputCharacterWResult = false;
+        _testGetSet->PrepData();
+        _testGetSet->_fFillConsoleOutputCharacterWResult = false;
 
         VERIFY_IS_FALSE(_pDispatch->EraseInDisplay(TermDispatch::EraseType::Scrollback));
     }
@@ -2283,8 +2279,8 @@ public:
             Log::Comment(L"Erasing entire display (viewport). May be bounded by the cursor.");
         }
 
-        _pTest->PrepData(CursorX::XCENTER, CursorY::YCENTER);
-        _pTest->_wAttribute = _pTest->s_wAttrErase;
+        _testGetSet->PrepData(CursorX::XCENTER, CursorY::YCENTER);
+        _testGetSet->_wAttribute = _testGetSet->s_wAttrErase;
 
         if (!fEraseScreen)
         {
@@ -2302,17 +2298,17 @@ public:
         // Determine selection rectangle for line containing the cursor.
         // All sides are inclusive of modified data. (unlike viewport normally)
         SMALL_RECT srRegion = { 0 };
-        srRegion.Top = _pTest->_coordCursorPos.Y;
+        srRegion.Top = _testGetSet->_coordCursorPos.Y;
         srRegion.Bottom = srRegion.Top;
 
         switch (eraseType)
         {
         case TermDispatch::EraseType::FromBeginning:
         case TermDispatch::EraseType::All:
-            srRegion.Left = _pTest->_srViewport.Left;
+            srRegion.Left = _testGetSet->_srViewport.Left;
             break;
         case TermDispatch::EraseType::ToEnd:
-            srRegion.Left = _pTest->_coordCursorPos.X;
+            srRegion.Left = _testGetSet->_coordCursorPos.X;
             break;
         default:
             VERIFY_FAIL(L"Unsupported erase type.");
@@ -2322,11 +2318,11 @@ public:
         switch (eraseType)
         {
         case TermDispatch::EraseType::FromBeginning:
-            srRegion.Right = _pTest->_coordCursorPos.X;
+            srRegion.Right = _testGetSet->_coordCursorPos.X;
             break;
         case TermDispatch::EraseType::All:
         case TermDispatch::EraseType::ToEnd:
-            srRegion.Right = _pTest->_srViewport.Right - 1;
+            srRegion.Right = _testGetSet->_srViewport.Right - 1;
             break;
         default:
             VERIFY_FAIL(L"Unsupported erase type.");
@@ -2343,11 +2339,11 @@ public:
             if (eraseType == TermDispatch::EraseType::FromBeginning ||
                 eraseType == TermDispatch::EraseType::All)
             {
-                srRegion.Left = _pTest->_srViewport.Left;
-                srRegion.Right = _pTest->_srViewport.Right - 1; // viewport is exclusive on the right. this test is inclusive so -1.
-                srRegion.Top = _pTest->_srViewport.Top;
+                srRegion.Left = _testGetSet->_srViewport.Left;
+                srRegion.Right = _testGetSet->_srViewport.Right - 1; // viewport is exclusive on the right. this test is inclusive so -1.
+                srRegion.Top = _testGetSet->_srViewport.Top;
 
-                srRegion.Bottom = _pTest->_coordCursorPos.Y - 1; // this might end up being above top. This will be checked below.
+                srRegion.Bottom = _testGetSet->_coordCursorPos.Y - 1; // this might end up being above top. This will be checked below.
 
                 // Only add it if this is still valid.
                 if (srRegion.Bottom >= srRegion.Top)
@@ -2361,11 +2357,11 @@ public:
             if (eraseType == TermDispatch::EraseType::ToEnd ||
                 eraseType == TermDispatch::EraseType::All)
             {
-                srRegion.Left = _pTest->_srViewport.Left;
-                srRegion.Right = _pTest->_srViewport.Right - 1; // viewport is exclusive rectangle on the right. this test uses inclusive rectangles so -1.
-                srRegion.Bottom = _pTest->_srViewport.Bottom - 1; // viewport is exclusive rectangle on the bottom. this test uses inclusive rectangles so -1;
+                srRegion.Left = _testGetSet->_srViewport.Left;
+                srRegion.Right = _testGetSet->_srViewport.Right - 1; // viewport is exclusive rectangle on the right. this test uses inclusive rectangles so -1.
+                srRegion.Bottom = _testGetSet->_srViewport.Bottom - 1; // viewport is exclusive rectangle on the bottom. this test uses inclusive rectangles so -1;
 
-                srRegion.Top = _pTest->_coordCursorPos.Y + 1; // this might end up being below bottom. This will be checked below.
+                srRegion.Top = _testGetSet->_coordCursorPos.Y + 1; // this might end up being below bottom. This will be checked below.
 
                 // Only add it if this is still valid.
                 if (srRegion.Bottom >= srRegion.Top)
@@ -2377,12 +2373,12 @@ public:
         }
 
         // Scan entire buffer and ensure only the necessary region has changed.
-        bool fRegionSuccess = _pTest->ValidateEraseBufferState(rgsrRegionsModified, cRegionsToCheck, TestGetSet::s_wchErase, TestGetSet::s_wAttrErase);
+        bool fRegionSuccess = _testGetSet->ValidateEraseBufferState(rgsrRegionsModified, cRegionsToCheck, TestGetSet::s_wchErase, TestGetSet::s_wAttrErase);
         VERIFY_IS_TRUE(fRegionSuccess);
 
         Log::Comment(L"Test 2: Gracefully fail when getting console information fails.");
-        _pTest->PrepData();
-        _pTest->_fGetConsoleScreenBufferInfoExResult = false;
+        _testGetSet->PrepData();
+        _testGetSet->_fGetConsoleScreenBufferInfoExResult = false;
 
         if (!fEraseScreen)
         {
@@ -2394,8 +2390,8 @@ public:
         }
 
         Log::Comment(L"Test 3: Gracefully fail when filling the rectangle fails.");
-        _pTest->PrepData();
-        _pTest->_fFillConsoleOutputCharacterWResult = false;
+        _testGetSet->PrepData();
+        _testGetSet->_fFillConsoleOutputCharacterWResult = false;
 
         if (!fEraseScreen)
         {
@@ -2414,7 +2410,7 @@ public:
 
         Log::Comment(L"Test 1: Send no options.");
 
-        _pTest->PrepData();
+        _testGetSet->PrepData();
 
         TermDispatch::GraphicsOptions rgOptions[16];
         size_t cOptions = 0;
@@ -2423,15 +2419,15 @@ public:
 
         Log::Comment(L"Test 2: Gracefully fail when getting buffer information fails.");
 
-        _pTest->PrepData();
-        _pTest->_fPrivateGetConsoleScreenBufferAttributesResult = FALSE;
+        _testGetSet->PrepData();
+        _testGetSet->_fPrivateGetConsoleScreenBufferAttributesResult = FALSE;
 
         VERIFY_IS_FALSE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
 
         Log::Comment(L"Test 3: Gracefully fail when setting attribute data fails.");
 
-        _pTest->PrepData();
-        _pTest->_fSetConsoleTextAttributeResult = FALSE;
+        _testGetSet->PrepData();
+        _testGetSet->_fSetConsoleTextAttributeResult = FALSE;
         // Need at least one option in order for the call to be able to fail.
         rgOptions[0] = (TermDispatch::GraphicsOptions) 0;
         cOptions = 1;
@@ -2445,7 +2441,7 @@ public:
         END_TEST_METHOD_PROPERTIES()
 
         Log::Comment(L"Starting test...");
-        _pTest->PrepData();
+        _testGetSet->PrepData();
 
         // Modify variables based on type of this test
         TermDispatch::GraphicsOptions graphicsOption;
@@ -2457,262 +2453,262 @@ public:
         size_t cOptions = 1;
         rgOptions[0] = graphicsOption;
 
-        _pTest->_fPrivateSetLegacyAttributesResult = TRUE;
+        _testGetSet->_fPrivateSetLegacyAttributesResult = TRUE;
 
         switch (graphicsOption)
         {
         case TermDispatch::GraphicsOptions::Off:
             Log::Comment(L"Testing graphics 'Off/Reset'");
-            _pTest->_wAttribute = (WORD)~s_wDefaultFill;
-            _pTest->_wExpectedAttribute = s_wDefaultFill;
-            _pTest->_fExpectedForeground = true;
-            _pTest->_fExpectedBackground = true;
-            _pTest->_fExpectedMeta = true;
-            _pTest->_fPrivateBoldTextResult = true;
-            _pTest->_fExpectedIsBold = false;
+            _testGetSet->_wAttribute = (WORD)~s_wDefaultFill;
+            _testGetSet->_wExpectedAttribute = s_wDefaultFill;
+            _testGetSet->_fExpectedForeground = true;
+            _testGetSet->_fExpectedBackground = true;
+            _testGetSet->_fExpectedMeta = true;
+            _testGetSet->_fPrivateBoldTextResult = true;
+            _testGetSet->_fExpectedIsBold = false;
 
             break;
         case TermDispatch::GraphicsOptions::BoldBright:
             Log::Comment(L"Testing graphics 'Bold/Bright'");
-            _pTest->_wAttribute = 0;
-            _pTest->_wExpectedAttribute = FOREGROUND_INTENSITY;
-            _pTest->_fExpectedForeground = true;
-            _pTest->_fPrivateBoldTextResult = true;
-            _pTest->_fExpectedIsBold = true;
+            _testGetSet->_wAttribute = 0;
+            _testGetSet->_wExpectedAttribute = FOREGROUND_INTENSITY;
+            _testGetSet->_fExpectedForeground = true;
+            _testGetSet->_fPrivateBoldTextResult = true;
+            _testGetSet->_fExpectedIsBold = true;
             break;
         case TermDispatch::GraphicsOptions::Underline:
             Log::Comment(L"Testing graphics 'Underline'");
-            _pTest->_wAttribute = 0;
-            _pTest->_wExpectedAttribute = COMMON_LVB_UNDERSCORE;
-            _pTest->_fExpectedMeta = true;
+            _testGetSet->_wAttribute = 0;
+            _testGetSet->_wExpectedAttribute = COMMON_LVB_UNDERSCORE;
+            _testGetSet->_fExpectedMeta = true;
             break;
         case TermDispatch::GraphicsOptions::Negative:
             Log::Comment(L"Testing graphics 'Negative'");
-            _pTest->_wAttribute = 0;
-            _pTest->_wExpectedAttribute = COMMON_LVB_REVERSE_VIDEO;
-            _pTest->_fExpectedMeta = true;
+            _testGetSet->_wAttribute = 0;
+            _testGetSet->_wExpectedAttribute = COMMON_LVB_REVERSE_VIDEO;
+            _testGetSet->_fExpectedMeta = true;
             break;
         case TermDispatch::GraphicsOptions::NoUnderline:
             Log::Comment(L"Testing graphics 'No Underline'");
-            _pTest->_wAttribute = COMMON_LVB_UNDERSCORE;
-            _pTest->_wExpectedAttribute = 0;
-            _pTest->_fExpectedMeta = true;
+            _testGetSet->_wAttribute = COMMON_LVB_UNDERSCORE;
+            _testGetSet->_wExpectedAttribute = 0;
+            _testGetSet->_fExpectedMeta = true;
             break;
         case TermDispatch::GraphicsOptions::Positive:
             Log::Comment(L"Testing graphics 'Positive'");
-            _pTest->_wAttribute = COMMON_LVB_REVERSE_VIDEO;
-            _pTest->_wExpectedAttribute = 0;
-            _pTest->_fExpectedMeta = true;
+            _testGetSet->_wAttribute = COMMON_LVB_REVERSE_VIDEO;
+            _testGetSet->_wExpectedAttribute = 0;
+            _testGetSet->_fExpectedMeta = true;
             break;
         case TermDispatch::GraphicsOptions::ForegroundBlack:
             Log::Comment(L"Testing graphics 'Foreground Color Black'");
-            _pTest->_wAttribute = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
-            _pTest->_wExpectedAttribute = 0;
-            _pTest->_fExpectedForeground = true;
+            _testGetSet->_wAttribute = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
+            _testGetSet->_wExpectedAttribute = 0;
+            _testGetSet->_fExpectedForeground = true;
             break;
         case TermDispatch::GraphicsOptions::ForegroundBlue:
             Log::Comment(L"Testing graphics 'Foreground Color Blue'");
-            _pTest->_wAttribute = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY;
-            _pTest->_wExpectedAttribute = FOREGROUND_BLUE;
-            _pTest->_fExpectedForeground = true;
+            _testGetSet->_wAttribute = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY;
+            _testGetSet->_wExpectedAttribute = FOREGROUND_BLUE;
+            _testGetSet->_fExpectedForeground = true;
             break;
         case TermDispatch::GraphicsOptions::ForegroundGreen:
             Log::Comment(L"Testing graphics 'Foreground Color Green'");
-            _pTest->_wAttribute = FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
-            _pTest->_wExpectedAttribute = FOREGROUND_GREEN;
-            _pTest->_fExpectedForeground = true;
+            _testGetSet->_wAttribute = FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
+            _testGetSet->_wExpectedAttribute = FOREGROUND_GREEN;
+            _testGetSet->_fExpectedForeground = true;
             break;
         case TermDispatch::GraphicsOptions::ForegroundCyan:
             Log::Comment(L"Testing graphics 'Foreground Color Cyan'");
-            _pTest->_wAttribute = FOREGROUND_RED | FOREGROUND_INTENSITY;
-            _pTest->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_GREEN;
-            _pTest->_fExpectedForeground = true;
+            _testGetSet->_wAttribute = FOREGROUND_RED | FOREGROUND_INTENSITY;
+            _testGetSet->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_GREEN;
+            _testGetSet->_fExpectedForeground = true;
             break;
         case TermDispatch::GraphicsOptions::ForegroundRed:
             Log::Comment(L"Testing graphics 'Foreground Color Red'");
-            _pTest->_wAttribute = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY;
-            _pTest->_wExpectedAttribute = FOREGROUND_RED;
-            _pTest->_fExpectedForeground = true;
+            _testGetSet->_wAttribute = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY;
+            _testGetSet->_wExpectedAttribute = FOREGROUND_RED;
+            _testGetSet->_fExpectedForeground = true;
             break;
         case TermDispatch::GraphicsOptions::ForegroundMagenta:
             Log::Comment(L"Testing graphics 'Foreground Color Magenta'");
-            _pTest->_wAttribute = FOREGROUND_GREEN | FOREGROUND_INTENSITY;
-            _pTest->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_RED;
-            _pTest->_fExpectedForeground = true;
+            _testGetSet->_wAttribute = FOREGROUND_GREEN | FOREGROUND_INTENSITY;
+            _testGetSet->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_RED;
+            _testGetSet->_fExpectedForeground = true;
             break;
         case TermDispatch::GraphicsOptions::ForegroundYellow:
             Log::Comment(L"Testing graphics 'Foreground Color Yellow'");
-            _pTest->_wAttribute = FOREGROUND_BLUE | FOREGROUND_INTENSITY;
-            _pTest->_wExpectedAttribute = FOREGROUND_GREEN | FOREGROUND_RED;
-            _pTest->_fExpectedForeground = true;
+            _testGetSet->_wAttribute = FOREGROUND_BLUE | FOREGROUND_INTENSITY;
+            _testGetSet->_wExpectedAttribute = FOREGROUND_GREEN | FOREGROUND_RED;
+            _testGetSet->_fExpectedForeground = true;
             break;
         case TermDispatch::GraphicsOptions::ForegroundWhite:
             Log::Comment(L"Testing graphics 'Foreground Color White'");
-            _pTest->_wAttribute = FOREGROUND_INTENSITY;
-            _pTest->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED;
-            _pTest->_fExpectedForeground = true;
+            _testGetSet->_wAttribute = FOREGROUND_INTENSITY;
+            _testGetSet->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED;
+            _testGetSet->_fExpectedForeground = true;
             break;
         case TermDispatch::GraphicsOptions::ForegroundDefault:
             Log::Comment(L"Testing graphics 'Foreground Color Default'");
-            _pTest->_wAttribute = (WORD)~_pTest->s_wDefaultAttribute; // set the current attribute to the opposite of default so we can ensure all relevant bits flip.
+            _testGetSet->_wAttribute = (WORD)~_testGetSet->s_wDefaultAttribute; // set the current attribute to the opposite of default so we can ensure all relevant bits flip.
             // To get expected value, take what we started with and change ONLY the background series of bits to what the Default says.
-            _pTest->_wExpectedAttribute = _pTest->_wAttribute; // expect = starting
-            _pTest->_wExpectedAttribute &= ~(FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY); // turn off all bits related to the background
-            _pTest->_wExpectedAttribute |= (s_wDefaultFill & (FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY)); // reapply ONLY background bits from the default attribute.
-            _pTest->_fExpectedForeground = true;
+            _testGetSet->_wExpectedAttribute = _testGetSet->_wAttribute; // expect = starting
+            _testGetSet->_wExpectedAttribute &= ~(FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY); // turn off all bits related to the background
+            _testGetSet->_wExpectedAttribute |= (s_wDefaultFill & (FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY)); // reapply ONLY background bits from the default attribute.
+            _testGetSet->_fExpectedForeground = true;
             break;
         case TermDispatch::GraphicsOptions::BackgroundBlack:
             Log::Comment(L"Testing graphics 'Background Color Black'");
-            _pTest->_wAttribute = BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE | BACKGROUND_INTENSITY;
-            _pTest->_wExpectedAttribute = 0;
-            _pTest->_fExpectedBackground = true;
+            _testGetSet->_wAttribute = BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE | BACKGROUND_INTENSITY;
+            _testGetSet->_wExpectedAttribute = 0;
+            _testGetSet->_fExpectedBackground = true;
             break;
         case TermDispatch::GraphicsOptions::BackgroundBlue:
             Log::Comment(L"Testing graphics 'Background Color Blue'");
-            _pTest->_wAttribute = BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_INTENSITY;
-            _pTest->_wExpectedAttribute = BACKGROUND_BLUE;
-            _pTest->_fExpectedBackground = true;
+            _testGetSet->_wAttribute = BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_INTENSITY;
+            _testGetSet->_wExpectedAttribute = BACKGROUND_BLUE;
+            _testGetSet->_fExpectedBackground = true;
             break;
         case TermDispatch::GraphicsOptions::BackgroundGreen:
             Log::Comment(L"Testing graphics 'Background Color Green'");
-            _pTest->_wAttribute = BACKGROUND_RED | BACKGROUND_BLUE | BACKGROUND_INTENSITY;
-            _pTest->_wExpectedAttribute = BACKGROUND_GREEN;
-            _pTest->_fExpectedBackground = true;
+            _testGetSet->_wAttribute = BACKGROUND_RED | BACKGROUND_BLUE | BACKGROUND_INTENSITY;
+            _testGetSet->_wExpectedAttribute = BACKGROUND_GREEN;
+            _testGetSet->_fExpectedBackground = true;
             break;
         case TermDispatch::GraphicsOptions::BackgroundCyan:
             Log::Comment(L"Testing graphics 'Background Color Cyan'");
-            _pTest->_wAttribute = BACKGROUND_RED | BACKGROUND_INTENSITY;
-            _pTest->_wExpectedAttribute = BACKGROUND_BLUE | BACKGROUND_GREEN;
-            _pTest->_fExpectedBackground = true;
+            _testGetSet->_wAttribute = BACKGROUND_RED | BACKGROUND_INTENSITY;
+            _testGetSet->_wExpectedAttribute = BACKGROUND_BLUE | BACKGROUND_GREEN;
+            _testGetSet->_fExpectedBackground = true;
             break;
         case TermDispatch::GraphicsOptions::BackgroundRed:
             Log::Comment(L"Testing graphics 'Background Color Red'");
-            _pTest->_wAttribute = BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_INTENSITY;
-            _pTest->_wExpectedAttribute = BACKGROUND_RED;
-            _pTest->_fExpectedBackground = true;
+            _testGetSet->_wAttribute = BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_INTENSITY;
+            _testGetSet->_wExpectedAttribute = BACKGROUND_RED;
+            _testGetSet->_fExpectedBackground = true;
             break;
         case TermDispatch::GraphicsOptions::BackgroundMagenta:
             Log::Comment(L"Testing graphics 'Background Color Magenta'");
-            _pTest->_wAttribute = BACKGROUND_GREEN | BACKGROUND_INTENSITY;
-            _pTest->_wExpectedAttribute = BACKGROUND_BLUE | BACKGROUND_RED;
-            _pTest->_fExpectedBackground = true;
+            _testGetSet->_wAttribute = BACKGROUND_GREEN | BACKGROUND_INTENSITY;
+            _testGetSet->_wExpectedAttribute = BACKGROUND_BLUE | BACKGROUND_RED;
+            _testGetSet->_fExpectedBackground = true;
             break;
         case TermDispatch::GraphicsOptions::BackgroundYellow:
             Log::Comment(L"Testing graphics 'Background Color Yellow'");
-            _pTest->_wAttribute = BACKGROUND_BLUE | BACKGROUND_INTENSITY;
-            _pTest->_wExpectedAttribute = BACKGROUND_GREEN | BACKGROUND_RED;
-            _pTest->_fExpectedBackground = true;
+            _testGetSet->_wAttribute = BACKGROUND_BLUE | BACKGROUND_INTENSITY;
+            _testGetSet->_wExpectedAttribute = BACKGROUND_GREEN | BACKGROUND_RED;
+            _testGetSet->_fExpectedBackground = true;
             break;
         case TermDispatch::GraphicsOptions::BackgroundWhite:
             Log::Comment(L"Testing graphics 'Background Color White'");
-            _pTest->_wAttribute = BACKGROUND_INTENSITY;
-            _pTest->_wExpectedAttribute = BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_RED;
-            _pTest->_fExpectedBackground = true;
+            _testGetSet->_wAttribute = BACKGROUND_INTENSITY;
+            _testGetSet->_wExpectedAttribute = BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_RED;
+            _testGetSet->_fExpectedBackground = true;
             break;
         case TermDispatch::GraphicsOptions::BackgroundDefault:
             Log::Comment(L"Testing graphics 'Background Color Default'");
-            _pTest->_wAttribute = (WORD)~_pTest->s_wDefaultAttribute; // set the current attribute to the opposite of default so we can ensure all relevant bits flip.
+            _testGetSet->_wAttribute = (WORD)~_testGetSet->s_wDefaultAttribute; // set the current attribute to the opposite of default so we can ensure all relevant bits flip.
             // To get expected value, take what we started with and change ONLY the background series of bits to what the Default says.
-            _pTest->_wExpectedAttribute = _pTest->_wAttribute; // expect = starting
-            _pTest->_wExpectedAttribute &= ~(BACKGROUND_BLUE| BACKGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY); // turn off all bits related to the background
-            _pTest->_wExpectedAttribute |= (s_wDefaultFill & (BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY)); // reapply ONLY background bits from the default attribute.
-            _pTest->_fExpectedBackground = true;
+            _testGetSet->_wExpectedAttribute = _testGetSet->_wAttribute; // expect = starting
+            _testGetSet->_wExpectedAttribute &= ~(BACKGROUND_BLUE| BACKGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY); // turn off all bits related to the background
+            _testGetSet->_wExpectedAttribute |= (s_wDefaultFill & (BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY)); // reapply ONLY background bits from the default attribute.
+            _testGetSet->_fExpectedBackground = true;
             break;
         case TermDispatch::GraphicsOptions::BrightForegroundBlack:
             Log::Comment(L"Testing graphics 'Bright Foreground Color Black'");
-            _pTest->_wAttribute = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
-            _pTest->_wExpectedAttribute = FOREGROUND_INTENSITY;
-            _pTest->_fExpectedForeground = true;
+            _testGetSet->_wAttribute = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
+            _testGetSet->_wExpectedAttribute = FOREGROUND_INTENSITY;
+            _testGetSet->_fExpectedForeground = true;
             break;
         case TermDispatch::GraphicsOptions::BrightForegroundBlue:
             Log::Comment(L"Testing graphics 'Bright Foreground Color Blue'");
-            _pTest->_wAttribute = FOREGROUND_RED | FOREGROUND_GREEN;
-            _pTest->_wExpectedAttribute = FOREGROUND_INTENSITY | FOREGROUND_BLUE;
-            _pTest->_fExpectedForeground = true;
+            _testGetSet->_wAttribute = FOREGROUND_RED | FOREGROUND_GREEN;
+            _testGetSet->_wExpectedAttribute = FOREGROUND_INTENSITY | FOREGROUND_BLUE;
+            _testGetSet->_fExpectedForeground = true;
             break;
         case TermDispatch::GraphicsOptions::BrightForegroundGreen:
             Log::Comment(L"Testing graphics 'Bright Foreground Color Green'");
-            _pTest->_wAttribute = FOREGROUND_RED | FOREGROUND_BLUE;
-            _pTest->_wExpectedAttribute = FOREGROUND_INTENSITY | FOREGROUND_GREEN;
-            _pTest->_fExpectedForeground = true;
+            _testGetSet->_wAttribute = FOREGROUND_RED | FOREGROUND_BLUE;
+            _testGetSet->_wExpectedAttribute = FOREGROUND_INTENSITY | FOREGROUND_GREEN;
+            _testGetSet->_fExpectedForeground = true;
             break;
         case TermDispatch::GraphicsOptions::BrightForegroundCyan:
             Log::Comment(L"Testing graphics 'Bright Foreground Color Cyan'");
-            _pTest->_wAttribute = FOREGROUND_RED;
-            _pTest->_wExpectedAttribute = FOREGROUND_INTENSITY | FOREGROUND_BLUE | FOREGROUND_GREEN;
-            _pTest->_fExpectedForeground = true;
+            _testGetSet->_wAttribute = FOREGROUND_RED;
+            _testGetSet->_wExpectedAttribute = FOREGROUND_INTENSITY | FOREGROUND_BLUE | FOREGROUND_GREEN;
+            _testGetSet->_fExpectedForeground = true;
             break;
         case TermDispatch::GraphicsOptions::BrightForegroundRed:
             Log::Comment(L"Testing graphics 'Bright Foreground Color Red'");
-            _pTest->_wAttribute = FOREGROUND_BLUE | FOREGROUND_GREEN;
-            _pTest->_wExpectedAttribute = FOREGROUND_INTENSITY | FOREGROUND_RED;
-            _pTest->_fExpectedForeground = true;
+            _testGetSet->_wAttribute = FOREGROUND_BLUE | FOREGROUND_GREEN;
+            _testGetSet->_wExpectedAttribute = FOREGROUND_INTENSITY | FOREGROUND_RED;
+            _testGetSet->_fExpectedForeground = true;
             break;
         case TermDispatch::GraphicsOptions::BrightForegroundMagenta:
             Log::Comment(L"Testing graphics 'Bright Foreground Color Magenta'");
-            _pTest->_wAttribute = FOREGROUND_GREEN;
-            _pTest->_wExpectedAttribute = FOREGROUND_INTENSITY | FOREGROUND_BLUE | FOREGROUND_RED;
-            _pTest->_fExpectedForeground = true;
+            _testGetSet->_wAttribute = FOREGROUND_GREEN;
+            _testGetSet->_wExpectedAttribute = FOREGROUND_INTENSITY | FOREGROUND_BLUE | FOREGROUND_RED;
+            _testGetSet->_fExpectedForeground = true;
             break;
         case TermDispatch::GraphicsOptions::BrightForegroundYellow:
             Log::Comment(L"Testing graphics 'Bright Foreground Color Yellow'");
-            _pTest->_wAttribute = FOREGROUND_BLUE;
-            _pTest->_wExpectedAttribute = FOREGROUND_INTENSITY | FOREGROUND_GREEN | FOREGROUND_RED;
-            _pTest->_fExpectedForeground = true;
+            _testGetSet->_wAttribute = FOREGROUND_BLUE;
+            _testGetSet->_wExpectedAttribute = FOREGROUND_INTENSITY | FOREGROUND_GREEN | FOREGROUND_RED;
+            _testGetSet->_fExpectedForeground = true;
             break;
         case TermDispatch::GraphicsOptions::BrightForegroundWhite:
             Log::Comment(L"Testing graphics 'Bright Foreground Color White'");
-            _pTest->_wAttribute = 0;
-            _pTest->_wExpectedAttribute = FOREGROUND_INTENSITY | FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED;
-            _pTest->_fExpectedForeground = true;
+            _testGetSet->_wAttribute = 0;
+            _testGetSet->_wExpectedAttribute = FOREGROUND_INTENSITY | FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED;
+            _testGetSet->_fExpectedForeground = true;
             break;
         case TermDispatch::GraphicsOptions::BrightBackgroundBlack:
             Log::Comment(L"Testing graphics 'Bright Background Color Black'");
-            _pTest->_wAttribute = BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE;
-            _pTest->_wExpectedAttribute = BACKGROUND_INTENSITY;
-            _pTest->_fExpectedBackground = true;
+            _testGetSet->_wAttribute = BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE;
+            _testGetSet->_wExpectedAttribute = BACKGROUND_INTENSITY;
+            _testGetSet->_fExpectedBackground = true;
             break;
         case TermDispatch::GraphicsOptions::BrightBackgroundBlue:
             Log::Comment(L"Testing graphics 'Bright Background Color Blue'");
-            _pTest->_wAttribute = BACKGROUND_RED | BACKGROUND_GREEN;
-            _pTest->_wExpectedAttribute = BACKGROUND_INTENSITY | BACKGROUND_BLUE;
-            _pTest->_fExpectedBackground = true;
+            _testGetSet->_wAttribute = BACKGROUND_RED | BACKGROUND_GREEN;
+            _testGetSet->_wExpectedAttribute = BACKGROUND_INTENSITY | BACKGROUND_BLUE;
+            _testGetSet->_fExpectedBackground = true;
             break;
         case TermDispatch::GraphicsOptions::BrightBackgroundGreen:
             Log::Comment(L"Testing graphics 'Bright Background Color Green'");
-            _pTest->_wAttribute = BACKGROUND_RED | BACKGROUND_BLUE;
-            _pTest->_wExpectedAttribute = BACKGROUND_INTENSITY | BACKGROUND_GREEN;
-            _pTest->_fExpectedBackground = true;
+            _testGetSet->_wAttribute = BACKGROUND_RED | BACKGROUND_BLUE;
+            _testGetSet->_wExpectedAttribute = BACKGROUND_INTENSITY | BACKGROUND_GREEN;
+            _testGetSet->_fExpectedBackground = true;
             break;
         case TermDispatch::GraphicsOptions::BrightBackgroundCyan:
             Log::Comment(L"Testing graphics 'Bright Background Color Cyan'");
-            _pTest->_wAttribute = BACKGROUND_RED;
-            _pTest->_wExpectedAttribute = BACKGROUND_INTENSITY | BACKGROUND_BLUE | BACKGROUND_GREEN;
-            _pTest->_fExpectedBackground = true;
+            _testGetSet->_wAttribute = BACKGROUND_RED;
+            _testGetSet->_wExpectedAttribute = BACKGROUND_INTENSITY | BACKGROUND_BLUE | BACKGROUND_GREEN;
+            _testGetSet->_fExpectedBackground = true;
             break;
         case TermDispatch::GraphicsOptions::BrightBackgroundRed:
             Log::Comment(L"Testing graphics 'Bright Background Color Red'");
-            _pTest->_wAttribute = BACKGROUND_BLUE | BACKGROUND_GREEN;
-            _pTest->_wExpectedAttribute = BACKGROUND_INTENSITY | BACKGROUND_RED;
-            _pTest->_fExpectedBackground = true;
+            _testGetSet->_wAttribute = BACKGROUND_BLUE | BACKGROUND_GREEN;
+            _testGetSet->_wExpectedAttribute = BACKGROUND_INTENSITY | BACKGROUND_RED;
+            _testGetSet->_fExpectedBackground = true;
             break;
         case TermDispatch::GraphicsOptions::BrightBackgroundMagenta:
             Log::Comment(L"Testing graphics 'Bright Background Color Magenta'");
-            _pTest->_wAttribute = BACKGROUND_GREEN;
-            _pTest->_wExpectedAttribute = BACKGROUND_INTENSITY | BACKGROUND_BLUE | BACKGROUND_RED;
-            _pTest->_fExpectedBackground = true;
+            _testGetSet->_wAttribute = BACKGROUND_GREEN;
+            _testGetSet->_wExpectedAttribute = BACKGROUND_INTENSITY | BACKGROUND_BLUE | BACKGROUND_RED;
+            _testGetSet->_fExpectedBackground = true;
             break;
         case TermDispatch::GraphicsOptions::BrightBackgroundYellow:
             Log::Comment(L"Testing graphics 'Bright Background Color Yellow'");
-            _pTest->_wAttribute = BACKGROUND_BLUE;
-            _pTest->_wExpectedAttribute = BACKGROUND_INTENSITY | BACKGROUND_GREEN | BACKGROUND_RED;
-            _pTest->_fExpectedBackground = true;
+            _testGetSet->_wAttribute = BACKGROUND_BLUE;
+            _testGetSet->_wExpectedAttribute = BACKGROUND_INTENSITY | BACKGROUND_GREEN | BACKGROUND_RED;
+            _testGetSet->_fExpectedBackground = true;
             break;
         case TermDispatch::GraphicsOptions::BrightBackgroundWhite:
             Log::Comment(L"Testing graphics 'Bright Background Color White'");
-            _pTest->_wAttribute = 0;
-            _pTest->_wExpectedAttribute = BACKGROUND_INTENSITY | BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_RED;
-            _pTest->_fExpectedBackground = true;
+            _testGetSet->_wAttribute = 0;
+            _testGetSet->_wExpectedAttribute = BACKGROUND_INTENSITY | BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_RED;
+            _testGetSet->_fExpectedBackground = true;
             break;
         default:
             VERIFY_FAIL(L"Test not implemented yet!");
@@ -2726,9 +2722,9 @@ public:
     {
         Log::Comment(L"Starting test...");
 
-        _pTest->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
+        _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
 
-        _pTest->_fPrivateSetLegacyAttributesResult = TRUE;
+        _testGetSet->_fPrivateSetLegacyAttributesResult = TRUE;
 
         TermDispatch::GraphicsOptions rgOptions[16];
         size_t cOptions = 1;
@@ -2736,110 +2732,110 @@ public:
         Log::Comment(L"Test 1: Basic brightness test");
         Log::Comment(L"Reseting graphics options");
         rgOptions[0] = TermDispatch::GraphicsOptions::Off;
-        _pTest->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED;
-        _pTest->_fExpectedForeground = true;
-        _pTest->_fExpectedBackground = true;
-        _pTest->_fExpectedMeta = true;
-        _pTest->_fPrivateBoldTextResult = true;
-        _pTest->_fExpectedIsBold = false;
+        _testGetSet->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED;
+        _testGetSet->_fExpectedForeground = true;
+        _testGetSet->_fExpectedBackground = true;
+        _testGetSet->_fExpectedMeta = true;
+        _testGetSet->_fPrivateBoldTextResult = true;
+        _testGetSet->_fExpectedIsBold = false;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
 
         Log::Comment(L"Testing graphics 'Foreground Color Blue'");
         rgOptions[0] = TermDispatch::GraphicsOptions::ForegroundBlue;
-        _pTest->_wExpectedAttribute = FOREGROUND_BLUE;
-        _pTest->_fExpectedForeground = true;
+        _testGetSet->_wExpectedAttribute = FOREGROUND_BLUE;
+        _testGetSet->_fExpectedForeground = true;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
 
         Log::Comment(L"Enabling brightness");
         rgOptions[0] = TermDispatch::GraphicsOptions::BoldBright;
-        _pTest->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_INTENSITY;
-        _pTest->_fExpectedForeground = true;
-        _pTest->_fPrivateBoldTextResult = true;
-        _pTest->_fExpectedIsBold = true;
+        _testGetSet->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_INTENSITY;
+        _testGetSet->_fExpectedForeground = true;
+        _testGetSet->_fPrivateBoldTextResult = true;
+        _testGetSet->_fExpectedIsBold = true;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
-        VERIFY_IS_TRUE(_pTest->_fIsBold);
+        VERIFY_IS_TRUE(_testGetSet->_fIsBold);
 
         Log::Comment(L"Testing graphics 'Foreground Color Green, with brightness'");
         rgOptions[0] = TermDispatch::GraphicsOptions::ForegroundGreen;
-        _pTest->_wExpectedAttribute = FOREGROUND_GREEN;
-        _pTest->_fExpectedForeground = true;
+        _testGetSet->_wExpectedAttribute = FOREGROUND_GREEN;
+        _testGetSet->_fExpectedForeground = true;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
-        VERIFY_IS_TRUE(IsFlagSet(_pTest->_wAttribute, FOREGROUND_GREEN));
-        VERIFY_IS_TRUE(_pTest->_fIsBold);
+        VERIFY_IS_TRUE(IsFlagSet(_testGetSet->_wAttribute, FOREGROUND_GREEN));
+        VERIFY_IS_TRUE(_testGetSet->_fIsBold);
 
         Log::Comment(L"Test 2: Disable brightness, use a bright color, next normal call remains not bright");
         Log::Comment(L"Reseting graphics options");
         rgOptions[0] = TermDispatch::GraphicsOptions::Off;
-        _pTest->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED;
-        _pTest->_fExpectedForeground = true;
-        _pTest->_fExpectedBackground = true;
-        _pTest->_fExpectedMeta = true;
-        _pTest->_fPrivateBoldTextResult = true;
-        _pTest->_fExpectedIsBold = false;
+        _testGetSet->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED;
+        _testGetSet->_fExpectedForeground = true;
+        _testGetSet->_fExpectedBackground = true;
+        _testGetSet->_fExpectedMeta = true;
+        _testGetSet->_fPrivateBoldTextResult = true;
+        _testGetSet->_fExpectedIsBold = false;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
-        VERIFY_IS_TRUE(IsFlagClear(_pTest->_wAttribute, FOREGROUND_INTENSITY));
-        VERIFY_IS_FALSE(_pTest->_fIsBold);
+        VERIFY_IS_TRUE(IsFlagClear(_testGetSet->_wAttribute, FOREGROUND_INTENSITY));
+        VERIFY_IS_FALSE(_testGetSet->_fIsBold);
 
         Log::Comment(L"Testing graphics 'Foreground Color Bright Blue'");
         rgOptions[0] = TermDispatch::GraphicsOptions::BrightForegroundBlue;
-        _pTest->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_INTENSITY;
-        _pTest->_fExpectedForeground = true;
+        _testGetSet->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_INTENSITY;
+        _testGetSet->_fExpectedForeground = true;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
-        VERIFY_IS_FALSE(_pTest->_fIsBold);
+        VERIFY_IS_FALSE(_testGetSet->_fIsBold);
 
         Log::Comment(L"Testing graphics 'Foreground Color Blue', brightness of 9x series doesn't persist");
         rgOptions[0] = TermDispatch::GraphicsOptions::ForegroundBlue;
-        _pTest->_wExpectedAttribute = FOREGROUND_BLUE;
-        _pTest->_fExpectedForeground = true;
+        _testGetSet->_wExpectedAttribute = FOREGROUND_BLUE;
+        _testGetSet->_fExpectedForeground = true;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
-        VERIFY_IS_FALSE(_pTest->_fIsBold);
+        VERIFY_IS_FALSE(_testGetSet->_fIsBold);
 
         Log::Comment(L"Test 3: Enable brightness, use a bright color, brightness persists to next normal call");
         Log::Comment(L"Reseting graphics options");
         rgOptions[0] = TermDispatch::GraphicsOptions::Off;
-        _pTest->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED;
-        _pTest->_fExpectedForeground = true;
-        _pTest->_fExpectedBackground = true;
-        _pTest->_fExpectedMeta = true;
-        _pTest->_fPrivateBoldTextResult = true;
-        _pTest->_fExpectedIsBold = false;
+        _testGetSet->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED;
+        _testGetSet->_fExpectedForeground = true;
+        _testGetSet->_fExpectedBackground = true;
+        _testGetSet->_fExpectedMeta = true;
+        _testGetSet->_fPrivateBoldTextResult = true;
+        _testGetSet->_fExpectedIsBold = false;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
-        VERIFY_IS_FALSE(_pTest->_fIsBold);
+        VERIFY_IS_FALSE(_testGetSet->_fIsBold);
 
         Log::Comment(L"Testing graphics 'Foreground Color Blue'");
         rgOptions[0] = TermDispatch::GraphicsOptions::ForegroundBlue;
-        _pTest->_wExpectedAttribute = FOREGROUND_BLUE;
-        _pTest->_fExpectedForeground = true;
+        _testGetSet->_wExpectedAttribute = FOREGROUND_BLUE;
+        _testGetSet->_fExpectedForeground = true;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
-        VERIFY_IS_FALSE(_pTest->_fIsBold);
+        VERIFY_IS_FALSE(_testGetSet->_fIsBold);
 
         Log::Comment(L"Enabling brightness");
         rgOptions[0] = TermDispatch::GraphicsOptions::BoldBright;
-        _pTest->_fPrivateBoldTextResult = true;
-        _pTest->_fExpectedIsBold = true;
+        _testGetSet->_fPrivateBoldTextResult = true;
+        _testGetSet->_fExpectedIsBold = true;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
-        VERIFY_IS_TRUE(_pTest->_fIsBold);
+        VERIFY_IS_TRUE(_testGetSet->_fIsBold);
 
         Log::Comment(L"Testing graphics 'Foreground Color Bright Blue'");
         rgOptions[0] = TermDispatch::GraphicsOptions::BrightForegroundBlue;
-        _pTest->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_INTENSITY;
-        _pTest->_fExpectedForeground = true;
+        _testGetSet->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_INTENSITY;
+        _testGetSet->_fExpectedForeground = true;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
-        VERIFY_IS_TRUE(_pTest->_fIsBold);
+        VERIFY_IS_TRUE(_testGetSet->_fIsBold);
 
         Log::Comment(L"Testing graphics 'Foreground Color Blue, with brightness', brightness of 9x series doesn't affect brightness");
         rgOptions[0] = TermDispatch::GraphicsOptions::ForegroundBlue;
-        _pTest->_wExpectedAttribute = FOREGROUND_BLUE;
-        _pTest->_fExpectedForeground = true;
+        _testGetSet->_wExpectedAttribute = FOREGROUND_BLUE;
+        _testGetSet->_fExpectedForeground = true;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
-        VERIFY_IS_TRUE(_pTest->_fIsBold);
+        VERIFY_IS_TRUE(_testGetSet->_fIsBold);
 
         Log::Comment(L"Testing graphics 'Foreground Color Green, with brightness'");
         rgOptions[0] = TermDispatch::GraphicsOptions::ForegroundGreen;
-        _pTest->_wExpectedAttribute = FOREGROUND_GREEN;
-        _pTest->_fExpectedForeground = true;
+        _testGetSet->_wExpectedAttribute = FOREGROUND_GREEN;
+        _testGetSet->_fExpectedForeground = true;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
-        VERIFY_IS_TRUE(_pTest->_fIsBold);
+        VERIFY_IS_TRUE(_testGetSet->_fIsBold);
     }
 
     TEST_METHOD(DeviceStatusReportTests)
@@ -2847,7 +2843,7 @@ public:
         Log::Comment(L"Starting test...");
 
         Log::Comment(L"Test 1: Verify failure when using bad status.");
-        _pTest->PrepData();
+        _testGetSet->PrepData();
         VERIFY_IS_FALSE(_pDispatch->DeviceStatusReport((TermDispatch::AnsiStatusType) -1));
     }
 
@@ -2856,14 +2852,14 @@ public:
         Log::Comment(L"Starting test...");
 
         Log::Comment(L"Test 1: Verify normal cursor response position.");
-        _pTest->PrepData(CursorX::XCENTER, CursorY::YCENTER);
+        _testGetSet->PrepData(CursorX::XCENTER, CursorY::YCENTER);
 
         // start with the cursor position in the buffer.
-        COORD coordCursorExpected = _pTest->_coordCursorPos;
+        COORD coordCursorExpected = _testGetSet->_coordCursorPos;
 
         // to get to VT, we have to adjust it to its position relative to the viewport.
-        coordCursorExpected.X -= _pTest->_srViewport.Left;
-        coordCursorExpected.Y -= _pTest->_srViewport.Top;
+        coordCursorExpected.X -= _testGetSet->_srViewport.Left;
+        coordCursorExpected.Y -= _testGetSet->_srViewport.Top;
 
         // Then note that VT is 1,1 based for the top left, so add 1. (The rest of the console uses 0,0 for array index bases.)
         coordCursorExpected.X++;
@@ -2874,7 +2870,7 @@ public:
         wchar_t pwszBuffer[50];
 
         swprintf_s(pwszBuffer, ARRAYSIZE(pwszBuffer), L"\x1b[%d;%dR", coordCursorExpected.Y, coordCursorExpected.X);
-        _pTest->ValidateInputEvent(pwszBuffer);
+        _testGetSet->ValidateInputEvent(pwszBuffer);
     }
 
     TEST_METHOD(DeviceAttributesTests)
@@ -2882,15 +2878,15 @@ public:
         Log::Comment(L"Starting test...");
 
         Log::Comment(L"Test 1: Verify normal response.");
-        _pTest->PrepData();
+        _testGetSet->PrepData();
         VERIFY_IS_TRUE(_pDispatch->DeviceAttributes());
 
         PCWSTR pwszExpectedResponse = L"\x1b[?1;0c";
-        _pTest->ValidateInputEvent(pwszExpectedResponse);
+        _testGetSet->ValidateInputEvent(pwszExpectedResponse);
 
         Log::Comment(L"Test 2: Verify failure when WriteConsoleInput doesn't work.");
-        _pTest->PrepData();
-        _pTest->_fPrivatePrependConsoleInputResult = FALSE;
+        _testGetSet->PrepData();
+        _testGetSet->_fPrivatePrependConsoleInputResult = FALSE;
 
         VERIFY_IS_FALSE(_pDispatch->DeviceAttributes());
     }
@@ -2936,10 +2932,10 @@ public:
         }
 
         // place the cursor in the center.
-        _pTest->PrepData(CursorX::XCENTER, CursorY::YCENTER);
+        _testGetSet->PrepData(CursorX::XCENTER, CursorY::YCENTER);
 
         // Save the cursor position. It shouldn't move for the rest of the test.
-        COORD coordCursorExpected = _pTest->_coordCursorPos;
+        COORD coordCursorExpected = _testGetSet->_coordCursorPos;
 
         // Fill the entire buffer with Qs. Blue on Green.
         WCHAR const wchOuterBuffer = 'Q';
@@ -2947,15 +2943,15 @@ public:
         SMALL_RECT srOuterBuffer;
         srOuterBuffer.Top = 0;
         srOuterBuffer.Left = 0;
-        srOuterBuffer.Bottom = _pTest->_coordBufferSize.Y;
-        srOuterBuffer.Right= _pTest->_coordBufferSize.X;
-        _pTest->FillRectangle(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer);
+        srOuterBuffer.Bottom = _testGetSet->_coordBufferSize.Y;
+        srOuterBuffer.Right= _testGetSet->_coordBufferSize.X;
+        _testGetSet->FillRectangle(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer);
 
         // Fill the viewport with Rs. Red on Blue.
         WCHAR const wchViewport = 'R';
         WORD const wAttrViewport = FOREGROUND_RED | BACKGROUND_BLUE;
-        SMALL_RECT srViewport = _pTest->_srViewport;
-        _pTest->FillRectangle(srViewport, wchViewport, wAttrViewport);
+        SMALL_RECT srViewport = _testGetSet->_srViewport;
+        _testGetSet->FillRectangle(srViewport, wchViewport, wAttrViewport);
 
         // Add some characters to see if they moved.
         // change the color too so we can make sure that it's fine
@@ -2964,20 +2960,20 @@ public:
         PWSTR const pwszTestText = L"ABCDE"; // Text is written at y=34, moves to y=33
         size_t cchTestText = wcslen(pwszTestText);
         SMALL_RECT srTestText;
-        srTestText.Top = _pTest->_coordCursorPos.Y;
+        srTestText.Top = _testGetSet->_coordCursorPos.Y;
         srTestText.Bottom = srTestText.Top + 1;
-        srTestText.Left = _pTest->_coordCursorPos.X;
+        srTestText.Left = _testGetSet->_coordCursorPos.X;
         srTestText.Right = srTestText.Left + (SHORT)cchTestText;
-        _pTest->InsertString(_pTest->_coordCursorPos, pwszTestText, wAttrTestText);
+        _testGetSet->InsertString(_testGetSet->_coordCursorPos, pwszTestText, wAttrTestText);
 
         //Scroll Up one line
         VERIFY_IS_TRUE((_pDispatch->*(scrollFunc))(sMagnitude), L"Verify Scroll call was sucessful.");
 
         // verify cursor didn't move
-        VERIFY_ARE_EQUAL(coordCursorExpected, _pTest->_coordCursorPos, L"Verify cursor didn't move from insert operation.");
+        VERIFY_ARE_EQUAL(coordCursorExpected, _testGetSet->_coordCursorPos, L"Verify cursor didn't move from insert operation.");
 
         // Verify the field of Qs didn't change outside the viewport.
-        VERIFY_IS_TRUE(_pTest->ValidateRectangleContains(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer, srViewport),
+        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer, srViewport),
                        L"Field of Qs outside viewport should remain unchanged.");
 
         // Okay, this part get confusing. These change depending on the direction of the test.
@@ -2989,10 +2985,10 @@ public:
         srInViewport.Top = (fScrollUp)? (srViewport.Bottom - sMagnitude) : (srViewport.Top);
         srInViewport.Bottom = srInViewport.Top + sMagnitude;
         WCHAR const wchInViewport = ' ';
-        WORD const wAttrInViewport = _pTest->_wAttribute;
+        WORD const wAttrInViewport = _testGetSet->_wAttribute;
 
         // Verify the bottom line is now empty
-        VERIFY_IS_TRUE(_pTest->ValidateRectangleContains(srInViewport, wchInViewport, wAttrInViewport),
+        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srInViewport, wchInViewport, wAttrInViewport),
                        L"InViewport line(s) should now be blank, with default buffer attributes");
 
         SMALL_RECT srOutside = srViewport;
@@ -3002,7 +2998,7 @@ public:
         WORD const wAttrOutside = wAttrOuterBuffer;
 
         // Verify the line above the viewport is unchanged
-        VERIFY_IS_TRUE(_pTest->ValidateRectangleContains(srOutside, wchOutside, wAttrOutside),
+        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srOutside, wchOutside, wAttrOutside),
                        L"Line(s) above the viewport is unchanged");
 
         // Verify that the line where the ABCDE is now wchViewport
@@ -3010,12 +3006,12 @@ public:
         PWSTR const pwszNewTestText = L"RRRRR";
         coordTestText.X = srTestText.Left;
         coordTestText.Y = srTestText.Top;
-        VERIFY_IS_TRUE(_pTest->ValidateString(coordTestText, pwszNewTestText, wAttrViewport), L"Contents of viewport should have shifted to where the string used to be.");
+        VERIFY_IS_TRUE(_testGetSet->ValidateString(coordTestText, pwszNewTestText, wAttrViewport), L"Contents of viewport should have shifted to where the string used to be.");
 
         // Verify that the line above/below the ABCDE now has the ABCDE
         coordTestText.X = srTestText.Left;
         coordTestText.Y = (fScrollUp)? (srTestText.Top - sMagnitude) : (srTestText.Top + sMagnitude);
-        VERIFY_IS_TRUE(_pTest->ValidateString(coordTestText, pwszTestText, wAttrTestText), L"String should have moved up/down by given magnitude.");
+        VERIFY_IS_TRUE(_testGetSet->ValidateString(coordTestText, pwszTestText, wAttrTestText), L"String should have moved up/down by given magnitude.");
 
     }
 
@@ -3027,15 +3023,15 @@ public:
         // success cases
         // set numeric mode = true
         Log::Comment(L"Test 1: application mode = false");
-        _pTest->_fPrivateSetCursorKeysModeResult = TRUE;
-        _pTest->_fCursorKeysApplicationMode = false;
+        _testGetSet->_fPrivateSetCursorKeysModeResult = TRUE;
+        _testGetSet->_fCursorKeysApplicationMode = false;
 
         VERIFY_IS_TRUE(_pDispatch->SetCursorKeysMode(false));
 
         // set numeric mode = false
         Log::Comment(L"Test 2: application mode = true");
-        _pTest->_fPrivateSetCursorKeysModeResult = TRUE;
-        _pTest->_fCursorKeysApplicationMode = true;
+        _testGetSet->_fPrivateSetCursorKeysModeResult = TRUE;
+        _testGetSet->_fCursorKeysApplicationMode = true;
 
         VERIFY_IS_TRUE(_pDispatch->SetCursorKeysMode(true));
 
@@ -3049,15 +3045,15 @@ public:
         // success cases
         // set numeric mode = true
         Log::Comment(L"Test 1: application mode = false");
-        _pTest->_fPrivateSetKeypadModeResult = TRUE;
-        _pTest->_fKeypadApplicationMode = false;
+        _testGetSet->_fPrivateSetKeypadModeResult = TRUE;
+        _testGetSet->_fKeypadApplicationMode = false;
 
         VERIFY_IS_TRUE(_pDispatch->SetKeypadMode(false));
 
         // set numeric mode = false
         Log::Comment(L"Test 2: application mode = true");
-        _pTest->_fPrivateSetKeypadModeResult = TRUE;
-        _pTest->_fKeypadApplicationMode = true;
+        _testGetSet->_fPrivateSetKeypadModeResult = TRUE;
+        _testGetSet->_fKeypadApplicationMode = true;
 
         VERIFY_IS_TRUE(_pDispatch->SetKeypadMode(true));
 
@@ -3071,15 +3067,15 @@ public:
         // success cases
         // set numeric mode = true
         Log::Comment(L"Test 1: enable blinking = true");
-        _pTest->_fPrivateAllowCursorBlinkingResult = TRUE;
-        _pTest->_fEnable = true;
+        _testGetSet->_fPrivateAllowCursorBlinkingResult = TRUE;
+        _testGetSet->_fEnable = true;
 
         VERIFY_IS_TRUE(_pDispatch->EnableCursorBlinking(true));
 
         // set numeric mode = false
         Log::Comment(L"Test 2: enable blinking = false");
-        _pTest->_fPrivateAllowCursorBlinkingResult = TRUE;
-        _pTest->_fEnable = false;
+        _testGetSet->_fPrivateAllowCursorBlinkingResult = TRUE;
+        _testGetSet->_fEnable = false;
 
         VERIFY_IS_TRUE(_pDispatch->EnableCursorBlinking(false));
 
@@ -3090,62 +3086,62 @@ public:
         Log::Comment(L"Starting test...");
 
         SMALL_RECT srTestMargins = {0};
-        _pTest->_srViewport.Right = 8;
-        _pTest->_srViewport.Bottom = 8;
-        _pTest->_fGetConsoleScreenBufferInfoExResult = TRUE;
+        _testGetSet->_srViewport.Right = 8;
+        _testGetSet->_srViewport.Bottom = 8;
+        _testGetSet->_fGetConsoleScreenBufferInfoExResult = TRUE;
 
         Log::Comment(L"Test 1: Verify having both values is valid.");
-        _pTest->_SetMarginsHelper(&srTestMargins, 2, 6);
-        _pTest->_fPrivateSetScrollingRegionResult = TRUE;
+        _testGetSet->_SetMarginsHelper(&srTestMargins, 2, 6);
+        _testGetSet->_fPrivateSetScrollingRegionResult = TRUE;
         VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom, true));
 
         Log::Comment(L"Test 2: Verify having only top is valid.");
 
-        _pTest->_SetMarginsHelper(&srTestMargins, 7, 0);
-        _pTest->_srExpectedScrollRegion.Bottom = _pTest->_srViewport.Bottom - 1; // We expect the bottom to be the bottom of the viewport, exclusive.
-        _pTest->_fPrivateSetScrollingRegionResult = TRUE;
+        _testGetSet->_SetMarginsHelper(&srTestMargins, 7, 0);
+        _testGetSet->_srExpectedScrollRegion.Bottom = _testGetSet->_srViewport.Bottom - 1; // We expect the bottom to be the bottom of the viewport, exclusive.
+        _testGetSet->_fPrivateSetScrollingRegionResult = TRUE;
         VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom, true));
 
         Log::Comment(L"Test 3: Verify having only bottom is valid.");
 
-        _pTest->_SetMarginsHelper(&srTestMargins, 0, 7);
-        _pTest->_fPrivateSetScrollingRegionResult = TRUE;
+        _testGetSet->_SetMarginsHelper(&srTestMargins, 0, 7);
+        _testGetSet->_fPrivateSetScrollingRegionResult = TRUE;
         VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom, true));
 
         Log::Comment(L"Test 4: Verify having no values is valid.");
 
-        _pTest->_SetMarginsHelper(&srTestMargins, 0, 0);
-        _pTest->_fPrivateSetScrollingRegionResult = TRUE;
+        _testGetSet->_SetMarginsHelper(&srTestMargins, 0, 0);
+        _testGetSet->_fPrivateSetScrollingRegionResult = TRUE;
         VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom, true));
 
         Log::Comment(L"Test 5: Verify having both values, but bad bounds is invalid.");
 
-        _pTest->_SetMarginsHelper(&srTestMargins, 7, 3);
-        _pTest->_fPrivateSetScrollingRegionResult = TRUE;
+        _testGetSet->_SetMarginsHelper(&srTestMargins, 7, 3);
+        _testGetSet->_fPrivateSetScrollingRegionResult = TRUE;
         VERIFY_IS_FALSE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom, true));
 
 
         Log::Comment(L"Test 6: Verify Setting margins to (0, height) clears them");
         // First set,
-        _pTest->_fPrivateSetScrollingRegionResult = TRUE;
-        _pTest->_SetMarginsHelper(&srTestMargins, 2, 6);
+        _testGetSet->_fPrivateSetScrollingRegionResult = TRUE;
+        _testGetSet->_SetMarginsHelper(&srTestMargins, 2, 6);
         VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom, true));
         // Then clear
-        _pTest->_srExpectedScrollRegion.Top = 0;
-        _pTest->_srExpectedScrollRegion.Bottom = 0;
-        _pTest->_SetMarginsHelper(&srTestMargins, 0, 7);
+        _testGetSet->_srExpectedScrollRegion.Top = 0;
+        _testGetSet->_srExpectedScrollRegion.Bottom = 0;
+        _testGetSet->_SetMarginsHelper(&srTestMargins, 0, 7);
         VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom, true));
 
 
         Log::Comment(L"Test 7: Verify Setting margins to (1, height) clears them");
         // First set,
-        _pTest->_fPrivateSetScrollingRegionResult = TRUE;
-        _pTest->_SetMarginsHelper(&srTestMargins, 2, 6);
+        _testGetSet->_fPrivateSetScrollingRegionResult = TRUE;
+        _testGetSet->_SetMarginsHelper(&srTestMargins, 2, 6);
         VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom, true));
         // Then clear
-        _pTest->_srExpectedScrollRegion.Top = 0;
-        _pTest->_srExpectedScrollRegion.Bottom = 0;
-        _pTest->_SetMarginsHelper(&srTestMargins, 0, 7);
+        _testGetSet->_srExpectedScrollRegion.Top = 0;
+        _testGetSet->_srExpectedScrollRegion.Bottom = 0;
+        _testGetSet->_SetMarginsHelper(&srTestMargins, 0, 7);
         VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom, true));
 
     }
@@ -3155,22 +3151,22 @@ public:
     {
         Log::Comment(L"Starting test...");
 
-        _pTest->_fPrivateHorizontalTabSetResult = TRUE;
+        _testGetSet->_fPrivateHorizontalTabSetResult = TRUE;
         VERIFY_IS_TRUE(_pDispatch->HorizontalTabSet());
 
-        _pTest->_sExpectedNumTabs = 16;
+        _testGetSet->_sExpectedNumTabs = 16;
 
-        _pTest->_fPrivateForwardTabResult = TRUE;
+        _testGetSet->_fPrivateForwardTabResult = TRUE;
         VERIFY_IS_TRUE(_pDispatch->ForwardTab(16));
 
-        _pTest->_fPrivateBackwardsTabResult = TRUE;
+        _testGetSet->_fPrivateBackwardsTabResult = TRUE;
         VERIFY_IS_TRUE(_pDispatch->BackwardsTab(16));
 
-        _pTest->_fPrivateTabClearResult = TRUE;
-        _pTest->_fExpectedClearAll = true;
+        _testGetSet->_fPrivateTabClearResult = TRUE;
+        _testGetSet->_fExpectedClearAll = true;
         VERIFY_IS_TRUE(_pDispatch->TabClear(TermDispatch::TabClearType::ClearAllColumns));
 
-        _pTest->_fExpectedClearAll = false;
+        _testGetSet->_fExpectedClearAll = false;
         VERIFY_IS_TRUE(_pDispatch->TabClear(TermDispatch::TabClearType::ClearCurrentColumn));
 
     }
@@ -3181,16 +3177,16 @@ public:
         Log::Comment(L"Starting test...");
 
         Log::Comment(L"Test 1: set title to be non-null");
-        _pTest->_fSetConsoleTitleWResult = TRUE;
+        _testGetSet->_fSetConsoleTitleWResult = TRUE;
         wchar_t* pwchTestString = L"Foo bar";
-        _pTest->_pwchExpectedWindowTitle = pwchTestString;
-        _pTest->_sCchExpectedTitleLength = 8;
+        _testGetSet->_pwchExpectedWindowTitle = pwchTestString;
+        _testGetSet->_sCchExpectedTitleLength = 8;
 
         VERIFY_IS_TRUE(_pDispatch->SetWindowTitle(pwchTestString, 8));
 
         Log::Comment(L"Test 2: set title to be null");
-        _pTest->_fSetConsoleTitleWResult = FALSE;
-        _pTest->_pwchExpectedWindowTitle = nullptr;
+        _testGetSet->_fSetConsoleTitleWResult = FALSE;
+        _testGetSet->_pwchExpectedWindowTitle = nullptr;
 
         VERIFY_IS_TRUE(_pDispatch->SetWindowTitle(nullptr, 8));
 
@@ -3201,45 +3197,45 @@ public:
         Log::Comment(L"Starting test...");
 
         Log::Comment(L"Test 1: Test Default Mouse Mode");
-        _pTest->_fExpectedMouseEnabled = true;
-        _pTest->_fPrivateEnableVT200MouseModeResult = TRUE;
+        _testGetSet->_fExpectedMouseEnabled = true;
+        _testGetSet->_fPrivateEnableVT200MouseModeResult = TRUE;
         VERIFY_IS_TRUE(_pDispatch->EnableVT200MouseMode(true));
-        _pTest->_fExpectedMouseEnabled = false;
+        _testGetSet->_fExpectedMouseEnabled = false;
         VERIFY_IS_TRUE(_pDispatch->EnableVT200MouseMode(false));
 
         Log::Comment(L"Test 2: Test UTF-8 Extended Mouse Mode");
-        _pTest->_fExpectedMouseEnabled = true;
-        _pTest->_fPrivateEnableUTF8ExtendedMouseModeResult = TRUE;
+        _testGetSet->_fExpectedMouseEnabled = true;
+        _testGetSet->_fPrivateEnableUTF8ExtendedMouseModeResult = TRUE;
         VERIFY_IS_TRUE(_pDispatch->EnableUTF8ExtendedMouseMode(true));
-        _pTest->_fExpectedMouseEnabled = false;
+        _testGetSet->_fExpectedMouseEnabled = false;
         VERIFY_IS_TRUE(_pDispatch->EnableUTF8ExtendedMouseMode(false));
 
         Log::Comment(L"Test 3: Test SGR Extended Mouse Mode");
-        _pTest->_fExpectedMouseEnabled = true;
-        _pTest->_fPrivateEnableSGRExtendedMouseModeResult = TRUE;
+        _testGetSet->_fExpectedMouseEnabled = true;
+        _testGetSet->_fPrivateEnableSGRExtendedMouseModeResult = TRUE;
         VERIFY_IS_TRUE(_pDispatch->EnableSGRExtendedMouseMode(true));
-        _pTest->_fExpectedMouseEnabled = false;
+        _testGetSet->_fExpectedMouseEnabled = false;
         VERIFY_IS_TRUE(_pDispatch->EnableSGRExtendedMouseMode(false));
 
         Log::Comment(L"Test 4: Test Button-Event Mouse Mode");
-        _pTest->_fExpectedMouseEnabled = true;
-        _pTest->_fPrivateEnableButtonEventMouseModeResult = TRUE;
+        _testGetSet->_fExpectedMouseEnabled = true;
+        _testGetSet->_fPrivateEnableButtonEventMouseModeResult = TRUE;
         VERIFY_IS_TRUE(_pDispatch->EnableButtonEventMouseMode(true));
-        _pTest->_fExpectedMouseEnabled = false;
+        _testGetSet->_fExpectedMouseEnabled = false;
         VERIFY_IS_TRUE(_pDispatch->EnableButtonEventMouseMode(false));
 
         Log::Comment(L"Test 5: Test Any-Event Mouse Mode");
-        _pTest->_fExpectedMouseEnabled = true;
-        _pTest->_fPrivateEnableAnyEventMouseModeResult = TRUE;
+        _testGetSet->_fExpectedMouseEnabled = true;
+        _testGetSet->_fPrivateEnableAnyEventMouseModeResult = TRUE;
         VERIFY_IS_TRUE(_pDispatch->EnableAnyEventMouseMode(true));
-        _pTest->_fExpectedMouseEnabled = false;
+        _testGetSet->_fExpectedMouseEnabled = false;
         VERIFY_IS_TRUE(_pDispatch->EnableAnyEventMouseMode(false));
 
         Log::Comment(L"Test 6: Test Alt Scroll Mouse Mode");
-        _pTest->_fExpectedAlternateScrollEnabled = true;
-        _pTest->_fPrivateEnableAlternateScrollResult = TRUE;
+        _testGetSet->_fExpectedAlternateScrollEnabled = true;
+        _testGetSet->_fPrivateEnableAlternateScrollResult = TRUE;
         VERIFY_IS_TRUE(_pDispatch->EnableAlternateScroll(true));
-        _pTest->_fExpectedAlternateScrollEnabled = false;
+        _testGetSet->_fExpectedAlternateScrollEnabled = false;
         VERIFY_IS_TRUE(_pDispatch->EnableAlternateScroll(false));
     }
 
@@ -3247,32 +3243,32 @@ public:
     {
         Log::Comment(L"Starting test...");
 
-        _pTest->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
+        _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
 
 
         TermDispatch::GraphicsOptions rgOptions[16];
         size_t cOptions = 3;
 
-        _pTest->_fSetConsoleXtermTextAttributeResult = true;
+        _testGetSet->_fSetConsoleXtermTextAttributeResult = true;
 
         Log::Comment(L"Test 1: Change Foreground");
         rgOptions[0] = TermDispatch::GraphicsOptions::ForegroundExtended;
         rgOptions[1] = TermDispatch::GraphicsOptions::Xterm256Index;
         rgOptions[2] = (TermDispatch::GraphicsOptions)2; // Green
-        _pTest->_wExpectedAttribute = FOREGROUND_GREEN;
-        _pTest->_iExpectedXtermTableEntry = 2;
-        _pTest->_fExpectedIsForeground = true;
-        _pTest->_fUsingRgbColor = false;
+        _testGetSet->_wExpectedAttribute = FOREGROUND_GREEN;
+        _testGetSet->_iExpectedXtermTableEntry = 2;
+        _testGetSet->_fExpectedIsForeground = true;
+        _testGetSet->_fUsingRgbColor = false;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
 
         Log::Comment(L"Test 2: Change Background");
         rgOptions[0] = TermDispatch::GraphicsOptions::BackgroundExtended;
         rgOptions[1] = TermDispatch::GraphicsOptions::Xterm256Index;
         rgOptions[2] = (TermDispatch::GraphicsOptions)9; // Bright Red
-        _pTest->_wExpectedAttribute = FOREGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY;
-        _pTest->_iExpectedXtermTableEntry = 9;
-        _pTest->_fExpectedIsForeground = false;
-        _pTest->_fUsingRgbColor = false;
+        _testGetSet->_wExpectedAttribute = FOREGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY;
+        _testGetSet->_iExpectedXtermTableEntry = 9;
+        _testGetSet->_fExpectedIsForeground = false;
+        _testGetSet->_fUsingRgbColor = false;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
 
 
@@ -3281,9 +3277,9 @@ public:
         rgOptions[0] = TermDispatch::GraphicsOptions::ForegroundExtended;
         rgOptions[1] = TermDispatch::GraphicsOptions::Xterm256Index;
         rgOptions[2] = (TermDispatch::GraphicsOptions)42; // Arbitrary Color
-        _pTest->_iExpectedXtermTableEntry = 42;
-        _pTest->_fExpectedIsForeground = true;
-        _pTest->_fUsingRgbColor = true;
+        _testGetSet->_iExpectedXtermTableEntry = 42;
+        _testGetSet->_fExpectedIsForeground = true;
+        _testGetSet->_fUsingRgbColor = true;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
 
 
@@ -3291,9 +3287,9 @@ public:
         rgOptions[0] = TermDispatch::GraphicsOptions::BackgroundExtended;
         rgOptions[1] = TermDispatch::GraphicsOptions::Xterm256Index;
         rgOptions[2] = (TermDispatch::GraphicsOptions)142; // Arbitrary Color
-        _pTest->_iExpectedXtermTableEntry = 142;
-        _pTest->_fExpectedIsForeground = false;
-        _pTest->_fUsingRgbColor = true;
+        _testGetSet->_iExpectedXtermTableEntry = 142;
+        _testGetSet->_fExpectedIsForeground = false;
+        _testGetSet->_fUsingRgbColor = true;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
 
         Log::Comment(L"Test 5: Change Foreground to Legacy Attr while BG is RGB color");
@@ -3303,10 +3299,10 @@ public:
         rgOptions[0] = TermDispatch::GraphicsOptions::ForegroundExtended;
         rgOptions[1] = TermDispatch::GraphicsOptions::Xterm256Index;
         rgOptions[2] = (TermDispatch::GraphicsOptions)9; // Bright Red
-        _pTest->_wExpectedAttribute = FOREGROUND_RED | FOREGROUND_INTENSITY | BACKGROUND_RED | BACKGROUND_INTENSITY;
-        _pTest->_iExpectedXtermTableEntry = 9;
-        _pTest->_fExpectedIsForeground = true;
-        _pTest->_fUsingRgbColor = false;
+        _testGetSet->_wExpectedAttribute = FOREGROUND_RED | FOREGROUND_INTENSITY | BACKGROUND_RED | BACKGROUND_INTENSITY;
+        _testGetSet->_iExpectedXtermTableEntry = 9;
+        _testGetSet->_fExpectedIsForeground = true;
+        _testGetSet->_fUsingRgbColor = false;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
 
     }
@@ -3316,63 +3312,63 @@ public:
     {
         Log::Comment(L"Starting test...");
 
-        _pTest->PrepData();
+        _testGetSet->PrepData();
 
         ///////////////// Components of a EraseScrollback //////////////////////
-        _pTest->_fExpectedWindowAbsolute = true;
+        _testGetSet->_fExpectedWindowAbsolute = true;
         SMALL_RECT srRegion = { 0 };
-        srRegion.Bottom = _pTest->_srViewport.Bottom - _pTest->_srViewport.Top - 1;
-        srRegion.Right = _pTest->_srViewport.Right - _pTest->_srViewport.Left - 1;
-        _pTest->_srExpectedConsoleWindow = srRegion;
+        srRegion.Bottom = _testGetSet->_srViewport.Bottom - _testGetSet->_srViewport.Top - 1;
+        srRegion.Right = _testGetSet->_srViewport.Right - _testGetSet->_srViewport.Left - 1;
+        _testGetSet->_srExpectedConsoleWindow = srRegion;
         // The cursor will be moved to the same relative location in the new viewport with origin @ 0, 0
-        const COORD coordRelativeCursor = { _pTest->_coordCursorPos.X - _pTest->_srViewport.Left,
-                                            _pTest->_coordCursorPos.Y - _pTest->_srViewport.Top };
+        const COORD coordRelativeCursor = { _testGetSet->_coordCursorPos.X - _testGetSet->_srViewport.Left,
+                                            _testGetSet->_coordCursorPos.Y - _testGetSet->_srViewport.Top };
 
         // Cursor to 1,1
-        _pTest->_coordExpectedCursorPos = {0, 0};
-        _pTest->_fSetConsoleCursorPositionResult = true;
-        _pTest->_fPrivateSetLegacyAttributesResult = true;
-        _pTest->_fPrivateBoldTextResult = true;
-        _pTest->_fExpectedForeground = true;
-        _pTest->_fExpectedBackground = true;
-        _pTest->_fExpectedMeta = true;
-        _pTest->_fExpectedIsBold = false;
+        _testGetSet->_coordExpectedCursorPos = {0, 0};
+        _testGetSet->_fSetConsoleCursorPositionResult = true;
+        _testGetSet->_fPrivateSetLegacyAttributesResult = true;
+        _testGetSet->_fPrivateBoldTextResult = true;
+        _testGetSet->_fExpectedForeground = true;
+        _testGetSet->_fExpectedBackground = true;
+        _testGetSet->_fExpectedMeta = true;
+        _testGetSet->_fExpectedIsBold = false;
         const COORD coordExpectedCursorPos = {0, 0};
 
         // Sets the SGR state to normal.
-        _pTest->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED;
+        _testGetSet->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED;
 
         // Prepare the results of SoftReset api calls
-        _pTest->_fPrivateSetCursorKeysModeResult = true;
-        _pTest->_fPrivateSetKeypadModeResult = true;
-        _pTest->_fGetConsoleScreenBufferInfoExResult = true;
-        _pTest->_fPrivateSetScrollingRegionResult = true;
+        _testGetSet->_fPrivateSetCursorKeysModeResult = true;
+        _testGetSet->_fPrivateSetKeypadModeResult = true;
+        _testGetSet->_fGetConsoleScreenBufferInfoExResult = true;
+        _testGetSet->_fPrivateSetScrollingRegionResult = true;
 
         VERIFY_IS_TRUE(_pDispatch->HardReset());
-        VERIFY_ARE_EQUAL(_pTest->_coordCursorPos, coordExpectedCursorPos);
-        VERIFY_ARE_EQUAL(_pTest->_fUsingRgbColor, false);
+        VERIFY_ARE_EQUAL(_testGetSet->_coordCursorPos, coordExpectedCursorPos);
+        VERIFY_ARE_EQUAL(_testGetSet->_fUsingRgbColor, false);
 
         Log::Comment(L"Test 2: Gracefully fail when getting console information fails.");
-        _pTest->PrepData();
-        _pTest->_fGetConsoleScreenBufferInfoExResult = false;
+        _testGetSet->PrepData();
+        _testGetSet->_fGetConsoleScreenBufferInfoExResult = false;
 
         VERIFY_IS_FALSE(_pDispatch->HardReset());
 
         Log::Comment(L"Test 3: Gracefully fail when filling the rectangle fails.");
-        _pTest->PrepData();
-        _pTest->_fFillConsoleOutputCharacterWResult = false;
+        _testGetSet->PrepData();
+        _testGetSet->_fFillConsoleOutputCharacterWResult = false;
 
         VERIFY_IS_FALSE(_pDispatch->HardReset());
 
         Log::Comment(L"Test 4: Gracefully fail when setting the window fails.");
-        _pTest->PrepData();
-        _pTest->_fSetConsoleWindowInfoResult = false;
+        _testGetSet->PrepData();
+        _testGetSet->_fSetConsoleWindowInfoResult = false;
 
         VERIFY_IS_FALSE(_pDispatch->HardReset());
     }
 
 private:
-    TestGetSet* _pTest;
+    TestGetSet* _testGetSet; // non-ownership pointer
     AdaptDispatch* _pDispatch;
     static const WORD s_wDefaultFill = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED; // dark gray on black.
 };

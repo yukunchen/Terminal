@@ -302,7 +302,7 @@ HRESULT ApiRoutines::SetConsoleOutputModeImpl(SCREEN_INFORMATION& Context, const
     if (IsFlagClear(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) && IsFlagSet(dwOldMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
     {
         // jiggle the handle
-        screenInfo.GetStateMachine()->ResetState();
+        screenInfo.GetStateMachine().ResetState();
         screenInfo.ClearTabStops();
     }
     // if we're moving from VT off->on
@@ -581,8 +581,8 @@ HRESULT DoSrvSetConsoleWindowInfo(SCREEN_INFORMATION& screenInfo,
     RETURN_HR_IF(E_INVALIDARG, (Window.Right < Window.Left || Window.Bottom < Window.Top));
 
     COORD NewWindowSize;
-    NewWindowSize.X = (SHORT)(CalcWindowSizeX(&Window));
-    NewWindowSize.Y = (SHORT)(CalcWindowSizeY(&Window));
+    NewWindowSize.X = (SHORT)(CalcWindowSizeX(Window));
+    NewWindowSize.Y = (SHORT)(CalcWindowSizeY(Window));
 
     // see MSFT:17415266
     // If we have a actual head, we care about the maximum size the window can be.
