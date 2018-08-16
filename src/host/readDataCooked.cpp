@@ -88,6 +88,10 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
     // Initialize the user's buffer to spaces. This is done so that
     // moving in the buffer via cursor doesn't do strange things.
     std::fill_n(_BufPtr, _BufferSize / sizeof(wchar_t), UNICODE_SPACE);
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    FAIL_FAST_IF(gci.HasPendingCookedRead()); // there can be only one
+    gci.SetCookedReadData(this);
 }
 
 #if UNIT_TESTING
