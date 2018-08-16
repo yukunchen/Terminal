@@ -103,6 +103,8 @@ void TextAttribute::SetFromLegacy(const WORD wLegacy) noexcept
 {
     _wAttrLegacy = wLegacy;
     _fUseRgbColor = false;
+    _rgbForeground = 0;
+    _rgbBackground = 0;
 }
 
 void TextAttribute::SetMetaAttributes(const WORD wMeta) noexcept
