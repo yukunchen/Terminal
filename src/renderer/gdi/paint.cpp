@@ -557,7 +557,7 @@ HRESULT GdiEngine::PaintCursor(const COORD coordCursor,
     }
 
     // Save inverted cursor position so we can clear it.
-    _rcCursorInvert = rcBoundaries;
+    _rcCursorInvert = rcInvert;
     return S_OK;
 }
 
@@ -574,6 +574,7 @@ HRESULT GdiEngine::ClearCursor() noexcept
     {
         // We inverted to set the cursor, so invert the same rect to clear it out.
         RETURN_HR_IF_FALSE(E_FAIL, InvertRect(_hdcMemoryContext, &_rcCursorInvert));
+        RETURN_HR_IF_FALSE(E_FAIL, InvertRect(_psInvalidData.hdc, &_rcCursorInvert));
 
         _rcCursorInvert = { 0 };
     }
