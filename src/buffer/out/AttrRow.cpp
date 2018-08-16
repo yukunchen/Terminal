@@ -276,9 +276,6 @@ HRESULT ATTR_ROW::InsertAttrRuns(const std::basic_string_view<TextAttributeRun> 
     // Do the -1 math here now so we don't have to have -1s scattered all over this function.
     const size_t iLastBufferCol = cBufferWidth - 1;
 
-    // Get the existing run that we'll be updating/manipulating.
-    const auto existingRun = _list.begin();
-
     // If the insertion size is 1, do some pre-processing to
     // see if we can get this done quickly.
     if (newAttrs.size() == 1)
@@ -288,7 +285,7 @@ HRESULT ATTR_ROW::InsertAttrRuns(const std::basic_string_view<TextAttributeRun> 
 
         // If the existing run was only 1 element...
         // ...and the new color is the same as the old, we don't have to do anything and can exit quick.
-        if (_list.size() == 1 && existingRun->GetAttributes() == NewAttr)
+        if (_list.size() == 1 && _list.at(0).GetAttributes() == NewAttr)
         {
             return S_OK;
         }
@@ -343,6 +340,9 @@ HRESULT ATTR_ROW::InsertAttrRuns(const std::basic_string_view<TextAttributeRun> 
 
     // We will start analyzing from the beginning of our existing run.
     // Use some pointers to keep track of where we are in walking through our runs.
+
+    // Get the existing run that we'll be updating/manipulating.
+    const auto existingRun = _list.begin();
     auto pExistingRunPos = existingRun;
     const auto pExistingRunEnd = existingRun + _list.size();
     auto pInsertRunPos = newAttrs.begin();
