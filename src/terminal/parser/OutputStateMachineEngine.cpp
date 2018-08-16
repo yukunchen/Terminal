@@ -14,8 +14,9 @@ using namespace Microsoft::Console;
 using namespace Microsoft::Console::VirtualTerminal;
 
 
-OutputStateMachineEngine::OutputStateMachineEngine(_In_ TermDispatch* const pDispatch) :
-    _pDispatch(pDispatch),
+// takes ownership of pDispatch
+OutputStateMachineEngine::OutputStateMachineEngine(TermDispatch* const pDispatch) :
+    _dispatch(pDispatch),
     _pfnFlushToTerminal(nullptr),
     _pTtyConnection(nullptr)
 {
@@ -24,6 +25,16 @@ OutputStateMachineEngine::OutputStateMachineEngine(_In_ TermDispatch* const pDis
 OutputStateMachineEngine::~OutputStateMachineEngine()
 {
 
+}
+
+const TermDispatch& OutputStateMachineEngine::Dispatch() const noexcept
+{
+    return *_dispatch;
+}
+
+TermDispatch& OutputStateMachineEngine::Dispatch() noexcept
+{
+    return *_dispatch;
 }
 
 // Routine Description:
@@ -35,7 +46,7 @@ OutputStateMachineEngine::~OutputStateMachineEngine()
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionExecute(const wchar_t wch)
 {
-    _pDispatch->Execute(wch);
+    _dispatch->Execute(wch);
     return true;
 }
 
@@ -48,7 +59,7 @@ bool OutputStateMachineEngine::ActionExecute(const wchar_t wch)
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionPrint(const wchar_t wch)
 {
-    _pDispatch->Print(wch); // call print
+    _dispatch->Print(wch); // call print
     return true;
 }
 
@@ -62,7 +73,7 @@ bool OutputStateMachineEngine::ActionPrint(const wchar_t wch)
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionPrintString(const wchar_t* const rgwch, const size_t cch)
 {
-    _pDispatch->PrintString(rgwch, cch); // call print
+    _dispatch->PrintString(rgwch, cch); // call print
     return true;
 }
 
@@ -117,47 +128,47 @@ bool OutputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
         switch (wch)
         {
         case VTActionCodes::CUU_CursorUp:
-            fSuccess = _pDispatch->CursorUp(1);
+            fSuccess = _dispatch->CursorUp(1);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::CUU);
             break;
         case VTActionCodes::CUD_CursorDown:
-            fSuccess = _pDispatch->CursorDown(1);
+            fSuccess = _dispatch->CursorDown(1);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::CUD);
             break;
         case VTActionCodes::CUF_CursorForward:
-            fSuccess = _pDispatch->CursorForward(1);
+            fSuccess = _dispatch->CursorForward(1);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::CUF);
             break;
         case VTActionCodes::CUB_CursorBackward:
-            fSuccess = _pDispatch->CursorBackward(1);
+            fSuccess = _dispatch->CursorBackward(1);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::CUB);
             break;
         case VTActionCodes::DECSC_CursorSave:
-            fSuccess = _pDispatch->CursorSavePosition();
+            fSuccess = _dispatch->CursorSavePosition();
             TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSC);
             break;
         case VTActionCodes::DECRC_CursorRestore:
-            fSuccess = _pDispatch->CursorRestorePosition();
+            fSuccess = _dispatch->CursorRestorePosition();
             TermTelemetry::Instance().Log(TermTelemetry::Codes::DECRC);
             break;
         case VTActionCodes::DECKPAM_KeypadApplicationMode:
-            fSuccess = _pDispatch->SetKeypadMode(true);
+            fSuccess = _dispatch->SetKeypadMode(true);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::DECKPAM);
             break;
         case VTActionCodes::DECKPNM_KeypadNumericMode:
-            fSuccess = _pDispatch->SetKeypadMode(false);
+            fSuccess = _dispatch->SetKeypadMode(false);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::DECKPNM);
             break;
         case VTActionCodes::RI_ReverseLineFeed:
-            fSuccess = _pDispatch->ReverseLineFeed();
+            fSuccess = _dispatch->ReverseLineFeed();
             TermTelemetry::Instance().Log(TermTelemetry::Codes::RI);
             break;
         case VTActionCodes::HTS_HorizontalTabSet:
-            fSuccess = _pDispatch->HorizontalTabSet();
+            fSuccess = _dispatch->HorizontalTabSet();
             TermTelemetry::Instance().Log(TermTelemetry::Codes::HTS);
             break;
         case VTActionCodes::RIS_ResetToInitialState:
-            fSuccess = _pDispatch->HardReset();
+            fSuccess = _dispatch->HardReset();
             TermTelemetry::Instance().Log(TermTelemetry::Codes::RIS);
             break;
         default:
@@ -175,7 +186,7 @@ bool OutputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
             switch (designateType)
             {
             case DesignateCharsetTypes::G0:
-                fSuccess = _pDispatch->DesignateCharset(wch);
+                fSuccess = _dispatch->DesignateCharset(wch);
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG0);
                 break;
             case DesignateCharsetTypes::G1:
@@ -308,116 +319,116 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
             switch (wch)
             {
             case VTActionCodes::CUU_CursorUp:
-                fSuccess = _pDispatch->CursorUp(uiDistance);
+                fSuccess = _dispatch->CursorUp(uiDistance);
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::CUU);
                 break;
             case VTActionCodes::CUD_CursorDown:
-                fSuccess = _pDispatch->CursorDown(uiDistance);
+                fSuccess = _dispatch->CursorDown(uiDistance);
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::CUD);
                 break;
             case VTActionCodes::CUF_CursorForward:
-                fSuccess = _pDispatch->CursorForward(uiDistance);
+                fSuccess = _dispatch->CursorForward(uiDistance);
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::CUF);
                 break;
             case VTActionCodes::CUB_CursorBackward:
-                fSuccess = _pDispatch->CursorBackward(uiDistance);
+                fSuccess = _dispatch->CursorBackward(uiDistance);
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::CUB);
                 break;
             case VTActionCodes::CNL_CursorNextLine:
-                fSuccess = _pDispatch->CursorNextLine(uiDistance);
+                fSuccess = _dispatch->CursorNextLine(uiDistance);
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::CNL);
                 break;
             case VTActionCodes::CPL_CursorPrevLine:
-                fSuccess = _pDispatch->CursorPrevLine(uiDistance);
+                fSuccess = _dispatch->CursorPrevLine(uiDistance);
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::CPL);
                 break;
             case VTActionCodes::CHA_CursorHorizontalAbsolute:
-                fSuccess = _pDispatch->CursorHorizontalPositionAbsolute(uiDistance);
+                fSuccess = _dispatch->CursorHorizontalPositionAbsolute(uiDistance);
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::CHA);
                 break;
             case VTActionCodes::VPA_VerticalLinePositionAbsolute:
-                fSuccess = _pDispatch->VerticalLinePositionAbsolute(uiDistance);
+                fSuccess = _dispatch->VerticalLinePositionAbsolute(uiDistance);
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::VPA);
                 break;
             case VTActionCodes::CUP_CursorPosition:
             case VTActionCodes::HVP_HorizontalVerticalPosition:
-                fSuccess = _pDispatch->CursorPosition(uiLine, uiColumn);
+                fSuccess = _dispatch->CursorPosition(uiLine, uiColumn);
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::CUP);
                 break;
             case VTActionCodes::DECSTBM_SetScrollingRegion:
-                fSuccess = _pDispatch->SetTopBottomScrollingMargins(sTopMargin, sBottomMargin, true);
+                fSuccess = _dispatch->SetTopBottomScrollingMargins(sTopMargin, sBottomMargin, true);
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSTBM);
                 break;
             case VTActionCodes::ICH_InsertCharacter:
-                fSuccess = _pDispatch->InsertCharacter(uiDistance);
+                fSuccess = _dispatch->InsertCharacter(uiDistance);
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::ICH);
                 break;
             case VTActionCodes::DCH_DeleteCharacter:
-                fSuccess = _pDispatch->DeleteCharacter(uiDistance);
+                fSuccess = _dispatch->DeleteCharacter(uiDistance);
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::DCH);
                 break;
             case VTActionCodes::ED_EraseDisplay:
-                fSuccess = _pDispatch->EraseInDisplay(eraseType);
+                fSuccess = _dispatch->EraseInDisplay(eraseType);
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::ED);
                 break;
             case VTActionCodes::EL_EraseLine:
-                fSuccess = _pDispatch->EraseInLine(eraseType);
+                fSuccess = _dispatch->EraseInLine(eraseType);
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::EL);
                 break;
             case VTActionCodes::SGR_SetGraphicsRendition:
-                fSuccess = _pDispatch->SetGraphicsRendition(rgGraphicsOptions, cOptions);
+                fSuccess = _dispatch->SetGraphicsRendition(rgGraphicsOptions, cOptions);
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::SGR);
                 break;
             case VTActionCodes::DSR_DeviceStatusReport:
-                fSuccess = _pDispatch->DeviceStatusReport(deviceStatusType);
+                fSuccess = _dispatch->DeviceStatusReport(deviceStatusType);
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::DSR);
                 break;
             case VTActionCodes::DA_DeviceAttributes:
-                fSuccess = _pDispatch->DeviceAttributes();
+                fSuccess = _dispatch->DeviceAttributes();
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::DA);
                 break;
             case VTActionCodes::SU_ScrollUp:
-                fSuccess = _pDispatch->ScrollUp(uiDistance);
+                fSuccess = _dispatch->ScrollUp(uiDistance);
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::SU);
                 break;
             case VTActionCodes::SD_ScrollDown:
-                fSuccess = _pDispatch->ScrollDown(uiDistance);
+                fSuccess = _dispatch->ScrollDown(uiDistance);
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::SD);
                 break;
             case VTActionCodes::ANSISYSSC_CursorSave:
-                fSuccess = _pDispatch->CursorSavePosition();
+                fSuccess = _dispatch->CursorSavePosition();
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::ANSISYSSC);
                 break;
             case VTActionCodes::ANSISYSRC_CursorRestore:
-                fSuccess = _pDispatch->CursorRestorePosition();
+                fSuccess = _dispatch->CursorRestorePosition();
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::ANSISYSRC);
                 break;
             case VTActionCodes::IL_InsertLine:
-                fSuccess = _pDispatch->InsertLine(uiDistance);
+                fSuccess = _dispatch->InsertLine(uiDistance);
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::IL);
                 break;
             case VTActionCodes::DL_DeleteLine:
-                fSuccess = _pDispatch->DeleteLine(uiDistance);
+                fSuccess = _dispatch->DeleteLine(uiDistance);
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::DL);
                 break;
             case VTActionCodes::CHT_CursorForwardTab:
-                fSuccess = _pDispatch->ForwardTab(sNumTabs);
+                fSuccess = _dispatch->ForwardTab(sNumTabs);
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::CHT);
                 break;
             case VTActionCodes::CBT_CursorBackTab:
-                fSuccess = _pDispatch->BackwardsTab(sNumTabs);
+                fSuccess = _dispatch->BackwardsTab(sNumTabs);
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::CBT);
                 break;
             case VTActionCodes::TBC_TabClear:
-                fSuccess = _pDispatch->TabClear(sClearType);
+                fSuccess = _dispatch->TabClear(sClearType);
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::TBC);
                 break;
             case VTActionCodes::ECH_EraseCharacters:
-                fSuccess = _pDispatch->EraseCharacters(uiDistance);
+                fSuccess = _dispatch->EraseCharacters(uiDistance);
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::ECH);
                 break;
             case VTActionCodes::DTTERM_WindowManipulation:
-                fSuccess = _pDispatch->WindowManipulation(static_cast<DispatchCommon::WindowManipulationType>(uiFunction),
+                fSuccess = _dispatch->WindowManipulation(static_cast<DispatchCommon::WindowManipulationType>(uiFunction),
                                                           rgusRemainingArgs,
                                                           cRemainingArgs);
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::DTTERM_WM);
@@ -489,12 +500,12 @@ bool OutputStateMachineEngine::_IntermediateQuestionMarkDispatch(const wchar_t w
         switch(wchAction)
         {
         case VTActionCodes::DECSET_PrivateModeSet:
-            fSuccess = _pDispatch->SetPrivateModes(rgPrivateModeParams, cOptions);
+            fSuccess = _dispatch->SetPrivateModes(rgPrivateModeParams, cOptions);
             //TODO: MSFT:6367459 Add specific telemetry for each of the DECSET/DECRST codes
             TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSET);
             break;
         case VTActionCodes::DECRST_PrivateModeReset:
-            fSuccess = _pDispatch->ResetPrivateModes(rgPrivateModeParams, cOptions);
+            fSuccess = _dispatch->ResetPrivateModes(rgPrivateModeParams, cOptions);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::DECRST);
             break;
         default:
@@ -520,7 +531,7 @@ bool OutputStateMachineEngine::_IntermediateExclamationDispatch(const wchar_t wc
     switch(wchAction)
     {
     case VTActionCodes::DECSTR_SoftReset:
-        fSuccess = _pDispatch->SoftReset();
+        fSuccess = _dispatch->SoftReset();
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSTR);
         break;
     default:
@@ -562,7 +573,7 @@ bool OutputStateMachineEngine::_IntermediateSpaceDispatch(const wchar_t wchActio
         switch(wchAction)
         {
         case VTActionCodes::DECSCUSR_SetCursorStyle:
-            fSuccess = _pDispatch->SetCursorStyle(cursorStyle);
+            fSuccess = _dispatch->SetCursorStyle(cursorStyle);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSCUSR);
             break;
         default:
@@ -651,19 +662,19 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
         case OscActionCodes::SetIconAndWindowTitle:
         case OscActionCodes::SetWindowIcon:
         case OscActionCodes::SetWindowTitle:
-            fSuccess = _pDispatch->SetWindowTitle(pwchTitle, sCchTitleLength);
+            fSuccess = _dispatch->SetWindowTitle(pwchTitle, sCchTitleLength);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCWT);
             break;
         case OscActionCodes::SetColor:
-            fSuccess = _pDispatch->SetColorTableEntry(tableIndex, dwColor);
+            fSuccess = _dispatch->SetColorTableEntry(tableIndex, dwColor);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCCT);
             break;
         case OscActionCodes::SetCursorColor:
-            fSuccess = _pDispatch->SetCursorColor(dwColor);
+            fSuccess = _dispatch->SetCursorColor(dwColor);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCSCC);
             break;
         case OscActionCodes::ResetCursorColor:
-            fSuccess = _pDispatch->SetCursorColor(dwColor);
+            fSuccess = _dispatch->SetCursorColor(dwColor);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCRCC);
             break;
         default:

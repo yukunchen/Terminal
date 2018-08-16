@@ -21,11 +21,12 @@ using namespace Microsoft::Console::VirtualTerminal;
 // - Always false to signify we didn't handle it.
 bool NoOp() { return false; }
 
-AdaptDispatch::AdaptDispatch(_Inout_ ConGetSet* const pConApi,
-                             _Inout_ AdaptDefaults* const pDefaults,
+// Note: AdaptDispatch will take ownership of pConApi and pDefaults
+AdaptDispatch::AdaptDispatch(ConGetSet* const pConApi,
+                             AdaptDefaults* const pDefaults,
                              const WORD wDefaultTextAttributes)
-    : _pConApi(pConApi),
-      _pDefaults(pDefaults),
+    : _conApi{ THROW_IF_NULL_ALLOC(pConApi) },
+      _pDefaults{ THROW_IF_NULL_ALLOC(pDefaults) },
       _wDefaultTextAttributes(wDefaultTextAttributes),
       _fChangedBackground(false),
       _fChangedForeground(false),
@@ -80,7 +81,7 @@ bool AdaptDispatch::_CursorMovement(const CursorDirection dir, _In_ unsigned int
     // First retrieve some information about the buffer
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    bool fSuccess = !!_pConApi->GetConsoleScreenBufferInfoEx(&csbiex);
+    bool fSuccess = !!_conApi->GetConsoleScreenBufferInfoEx(&csbiex);
 
     if (fSuccess)
     {
@@ -187,7 +188,7 @@ bool AdaptDispatch::_CursorMovement(const CursorDirection dir, _In_ unsigned int
                     if (fSuccess)
                     {
                         // Finally, attempt to set the adjusted cursor position back into the console.
-                        fSuccess = !!_pConApi->SetConsoleCursorPosition(coordCursor);
+                        fSuccess = !!_conApi->SetConsoleCursorPosition(coordCursor);
                     }
                 }
             }
@@ -213,7 +214,7 @@ bool AdaptDispatch::CursorUp(_In_ unsigned int const uiDistance)
     SHORT sDelta = 0;
     if (SUCCEEDED(UIntToShort(uiDistance, &sDelta)))
     {
-        return !!_pConApi->MoveCursorVertically(-sDelta);
+        return !!_conApi->MoveCursorVertically(-sDelta);
     }
     return false;
 }
@@ -234,7 +235,7 @@ bool AdaptDispatch::CursorDown(_In_ unsigned int const uiDistance)
     SHORT sDelta = 0;
     if (SUCCEEDED(UIntToShort(uiDistance, &sDelta)))
     {
-        return !!_pConApi->MoveCursorVertically(sDelta);
+        return !!_conApi->MoveCursorVertically(sDelta);
     }
     return false;
 }
@@ -300,7 +301,7 @@ bool AdaptDispatch::_CursorMovePosition(_In_opt_ const unsigned int* const puiRo
     // First retrieve some information about the buffer
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    fSuccess = !!_pConApi->GetConsoleScreenBufferInfoEx(&csbiex);
+    fSuccess = !!_conApi->GetConsoleScreenBufferInfoEx(&csbiex);
 
     if (fSuccess)
     {
@@ -360,7 +361,7 @@ bool AdaptDispatch::_CursorMovePosition(_In_opt_ const unsigned int* const puiRo
                     coordCursor.X = std::clamp(coordCursor.X, csbiex.srWindow.Left, gsl::narrow<SHORT>(csbiex.srWindow.Right - 1));
 
                     // Finally, attempt to set the adjusted cursor position back into the console.
-                    fSuccess = !!_pConApi->SetConsoleCursorPosition(coordCursor);
+                    fSuccess = !!_conApi->SetConsoleCursorPosition(coordCursor);
                 }
             }
         }
@@ -414,7 +415,7 @@ bool AdaptDispatch::CursorSavePosition()
     // First retrieve some information about the buffer
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    bool fSuccess = !!_pConApi->GetConsoleScreenBufferInfoEx(&csbiex);
+    bool fSuccess = !!_conApi->GetConsoleScreenBufferInfoEx(&csbiex);
 
     if (fSuccess)
     {
@@ -457,7 +458,7 @@ bool AdaptDispatch::CursorVisibility(const bool fIsVisible)
 {
     // First retrieve the existing cursor visibility structure (since we don't want to change the cursor height.)
     CONSOLE_CURSOR_INFO cci = { 0 };
-    bool fSuccess = !!_pConApi->GetConsoleCursorInfo(&cci);
+    bool fSuccess = !!_conApi->GetConsoleCursorInfo(&cci);
 
     if (fSuccess)
     {
@@ -465,7 +466,7 @@ bool AdaptDispatch::CursorVisibility(const bool fIsVisible)
         cci.bVisible = fIsVisible;
 
         // Save it back.
-        fSuccess = !!_pConApi->SetConsoleCursorInfo(&cci);
+        fSuccess = !!_conApi->SetConsoleCursorInfo(&cci);
     }
 
     return fSuccess;
@@ -491,7 +492,7 @@ bool AdaptDispatch::_InsertDeleteHelper(_In_ unsigned int const uiCount, const b
         // get current cursor
         CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
         csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-        fSuccess = !!_pConApi->GetConsoleScreenBufferInfoEx(&csbiex);
+        fSuccess = !!_conApi->GetConsoleScreenBufferInfoEx(&csbiex);
 
         if (fSuccess)
         {
@@ -531,18 +532,18 @@ bool AdaptDispatch::_InsertDeleteHelper(_In_ unsigned int const uiCount, const b
                     DWORD dwWritten = 0;
 
                     // if the select/scroll region is off screen to the right or the destination is off screen to the right, fill instead of scrolling.
-                    fSuccess = !!_pConApi->FillConsoleOutputCharacterW(ciFill.Char.UnicodeChar, nLength, csbiex.dwCursorPosition, &dwWritten);
+                    fSuccess = !!_conApi->FillConsoleOutputCharacterW(ciFill.Char.UnicodeChar, nLength, csbiex.dwCursorPosition, &dwWritten);
 
                     if (fSuccess)
                     {
                         dwWritten = 0;
-                        fSuccess = !!_pConApi->FillConsoleOutputAttribute(ciFill.Attributes, nLength, csbiex.dwCursorPosition, &dwWritten);
+                        fSuccess = !!_conApi->FillConsoleOutputAttribute(ciFill.Attributes, nLength, csbiex.dwCursorPosition, &dwWritten);
                     }
                 }
                 else
                 {
                     // clip inside the viewport.
-                    fSuccess = !!_pConApi->ScrollConsoleScreenBufferW(&srScroll, &csbiex.srWindow, coordDestination, &ciFill);
+                    fSuccess = !!_conApi->ScrollConsoleScreenBufferW(&srScroll, &csbiex.srWindow, coordDestination, &ciFill);
                 }
             }
         }
@@ -588,11 +589,11 @@ bool AdaptDispatch::_EraseSingleLineDistanceHelper(const COORD coordStartPositio
     WCHAR const wchSpace = static_cast<WCHAR>(0x20); // space character. use 0x20 instead of literal space because we can't assume the compiler will always turn ' ' into 0x20.
 
     DWORD dwCharsWritten = 0;
-    bool fSuccess = !!_pConApi->FillConsoleOutputCharacterW(wchSpace, dwLength, coordStartPosition, &dwCharsWritten);
+    bool fSuccess = !!_conApi->FillConsoleOutputCharacterW(wchSpace, dwLength, coordStartPosition, &dwCharsWritten);
 
     if (fSuccess)
     {
-        fSuccess = !!_pConApi->FillConsoleOutputAttribute(wFillColor, dwLength, coordStartPosition, &dwCharsWritten);
+        fSuccess = !!_conApi->FillConsoleOutputAttribute(wFillColor, dwLength, coordStartPosition, &dwCharsWritten);
     }
 
     return fSuccess;
@@ -609,10 +610,10 @@ bool AdaptDispatch::_EraseAreaHelper(const COORD coordStartPosition, const COORD
     for (short y = coordStartPosition.Y; y < coordLastPosition.Y; y++)
     {
         const COORD coordLine = {coordStartPosition.X, y};
-        fSuccess = !!_pConApi->FillConsoleOutputCharacterW(wchSpace, coordLastPosition.X - coordStartPosition.X, coordLine, &dwCharsWritten);
+        fSuccess = !!_conApi->FillConsoleOutputCharacterW(wchSpace, coordLastPosition.X - coordStartPosition.X, coordLine, &dwCharsWritten);
         if (fSuccess)
         {
-            fSuccess = !!_pConApi->FillConsoleOutputAttribute(wFillColor, coordLastPosition.X - coordStartPosition.X, coordLine, &dwCharsWritten);
+            fSuccess = !!_conApi->FillConsoleOutputAttribute(wFillColor, coordLastPosition.X - coordStartPosition.X, coordLine, &dwCharsWritten);
         }
 
         if (!fSuccess)
@@ -684,7 +685,7 @@ bool AdaptDispatch::EraseCharacters(_In_ unsigned int const uiNumChars)
 {
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    bool fSuccess = !!_pConApi->GetConsoleScreenBufferInfoEx(&csbiex);
+    bool fSuccess = !!_conApi->GetConsoleScreenBufferInfoEx(&csbiex);
 
     if (fSuccess)
     {
@@ -728,7 +729,7 @@ bool AdaptDispatch::EraseInDisplay(const EraseType eraseType)
 
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    bool fSuccess = !!_pConApi->GetConsoleScreenBufferInfoEx(&csbiex);
+    bool fSuccess = !!_conApi->GetConsoleScreenBufferInfoEx(&csbiex);
 
     if (fSuccess)
     {
@@ -795,7 +796,7 @@ bool AdaptDispatch::EraseInLine(const EraseType eraseType)
 {
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    bool fSuccess = !!_pConApi->GetConsoleScreenBufferInfoEx(&csbiex);
+    bool fSuccess = !!_conApi->GetConsoleScreenBufferInfoEx(&csbiex);
 
     if (fSuccess)
     {
@@ -852,7 +853,7 @@ bool AdaptDispatch::_CursorPositionReport() const
 {
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    bool fSuccess = !!_pConApi->GetConsoleScreenBufferInfoEx(&csbiex);
+    bool fSuccess = !!_conApi->GetConsoleScreenBufferInfoEx(&csbiex);
 
     if (fSuccess)
     {
@@ -914,7 +915,7 @@ bool AdaptDispatch::_WriteResponse(_In_reads_(cchReply) PCWSTR pwszReply, const 
     }
 
     size_t eventsWritten;
-    fSuccess = !!_pConApi->PrivatePrependConsoleInput(inEvents, eventsWritten);
+    fSuccess = !!_conApi->PrivatePrependConsoleInput(inEvents, eventsWritten);
 
     return fSuccess;
 }
@@ -937,7 +938,7 @@ bool AdaptDispatch::_ScrollMovement(const ScrollDirection sdDirection, _In_ unsi
         // get current cursor
         CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
         csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-        fSuccess = !!_pConApi->GetConsoleScreenBufferInfoEx(&csbiex);
+        fSuccess = !!_conApi->GetConsoleScreenBufferInfoEx(&csbiex);
 
         if (fSuccess)
         {
@@ -954,7 +955,7 @@ bool AdaptDispatch::_ScrollMovement(const ScrollDirection sdDirection, _In_ unsi
             CHAR_INFO ciFill;
             ciFill.Attributes = csbiex.wAttributes;
             ciFill.Char.UnicodeChar = L' ';
-            fSuccess = !!_pConApi->ScrollConsoleScreenBufferW(&srScreen, &srScreen, coordDestination, &ciFill);
+            fSuccess = !!_conApi->ScrollConsoleScreenBufferW(&srScreen, &srScreen, coordDestination, &ciFill);
         }
     }
 
@@ -1005,12 +1006,12 @@ bool AdaptDispatch::SetColumns(_In_ unsigned int const uiColumns)
     {
         CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
         csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-        fSuccess = !!_pConApi->GetConsoleScreenBufferInfoEx(&csbiex);
+        fSuccess = !!_conApi->GetConsoleScreenBufferInfoEx(&csbiex);
 
         if (fSuccess)
         {
             csbiex.dwSize.X = sColumns;
-            fSuccess = !!_pConApi->SetConsoleScreenBufferInfoEx(&csbiex);
+            fSuccess = !!_conApi->SetConsoleScreenBufferInfoEx(&csbiex);
         }
     }
     return fSuccess;
@@ -1140,7 +1141,7 @@ bool AdaptDispatch::ResetPrivateModes(_In_reads_(cParams) const PrivateModeParam
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::SetKeypadMode(const bool fApplicationMode)
 {
-    return !!_pConApi->PrivateSetKeypadMode(fApplicationMode);
+    return !!_conApi->PrivateSetKeypadMode(fApplicationMode);
 }
 
 // - DECCKM - Sets the cursor keys input mode to either Application mode or Normal mode (true, false respectively)
@@ -1150,7 +1151,7 @@ bool AdaptDispatch::SetKeypadMode(const bool fApplicationMode)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::SetCursorKeysMode(const bool fApplicationMode)
 {
-    return !!_pConApi->PrivateSetCursorKeysMode(fApplicationMode);
+    return !!_conApi->PrivateSetCursorKeysMode(fApplicationMode);
 }
 
 // - att610 - Enables or disables the cursor blinking.
@@ -1160,7 +1161,7 @@ bool AdaptDispatch::SetCursorKeysMode(const bool fApplicationMode)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableCursorBlinking(const bool fEnable)
 {
-    return !!_pConApi->PrivateAllowCursorBlinking(fEnable);
+    return !!_conApi->PrivateAllowCursorBlinking(fEnable);
 }
 
 // Routine Description:
@@ -1173,7 +1174,7 @@ bool AdaptDispatch::EnableCursorBlinking(const bool fEnable)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::InsertLine(_In_ unsigned int const uiDistance)
 {
-    return !!_pConApi->InsertLines(uiDistance);
+    return !!_conApi->InsertLines(uiDistance);
 }
 
 // Routine Description:
@@ -1190,7 +1191,7 @@ bool AdaptDispatch::InsertLine(_In_ unsigned int const uiDistance)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::DeleteLine(_In_ unsigned int const uiDistance)
 {
-    return !!_pConApi->DeleteLines(uiDistance);
+    return !!_conApi->DeleteLines(uiDistance);
 }
 
 // Routine Description:
@@ -1209,7 +1210,7 @@ bool AdaptDispatch::SetTopBottomScrollingMargins(const SHORT sTopMargin,
 {
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    bool fSuccess = !!_pConApi->GetConsoleScreenBufferInfoEx(&csbiex);
+    bool fSuccess = !!_conApi->GetConsoleScreenBufferInfoEx(&csbiex);
 
     // so notes time: (input -> state machine out -> adapter out -> conhost internal)
     // having only a top param is legal         ([3;r   -> 3,0   -> 3,h  -> 3,h,true)
@@ -1256,7 +1257,7 @@ bool AdaptDispatch::SetTopBottomScrollingMargins(const SHORT sTopMargin,
         {
             _srScrollMargins.Top = sActualTop;
             _srScrollMargins.Bottom = sActualBottom;
-            fSuccess = !!_pConApi->PrivateSetScrollingRegion(&_srScrollMargins);
+            fSuccess = !!_conApi->PrivateSetScrollingRegion(&_srScrollMargins);
             if (fSuccess && fResetCursor)
             {
                 this->CursorPosition(1,1);
@@ -1275,7 +1276,7 @@ bool AdaptDispatch::SetTopBottomScrollingMargins(const SHORT sTopMargin,
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::ReverseLineFeed()
 {
-    return !!_pConApi->PrivateReverseLineFeed();
+    return !!_conApi->PrivateReverseLineFeed();
 }
 
 // Routine Description:
@@ -1288,7 +1289,7 @@ bool AdaptDispatch::ReverseLineFeed()
 bool AdaptDispatch::SetWindowTitle(_In_reads_(cchTitleLength) const wchar_t* const pwchWindowTitle,
                                    _In_ unsigned short cchTitleLength)
 {
-    return !!_pConApi->SetConsoleTitleW(pwchWindowTitle, cchTitleLength);
+    return !!_conApi->SetConsoleTitleW(pwchWindowTitle, cchTitleLength);
 }
 
 // - ASBSET - Creates and swaps to the alternate screen buffer. In virtual terminals, there exists both a "main"
@@ -1300,7 +1301,7 @@ bool AdaptDispatch::SetWindowTitle(_In_reads_(cchTitleLength) const wchar_t* con
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::UseAlternateScreenBuffer()
 {
-    return !!_pConApi->PrivateUseAlternateScreenBuffer();
+    return !!_conApi->PrivateUseAlternateScreenBuffer();
 }
 
 // Routine Description:
@@ -1312,7 +1313,7 @@ bool AdaptDispatch::UseAlternateScreenBuffer()
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::UseMainScreenBuffer()
 {
-    return !!_pConApi->PrivateUseMainScreenBuffer();
+    return !!_conApi->PrivateUseMainScreenBuffer();
 }
 
 //Routine Description:
@@ -1323,7 +1324,7 @@ bool AdaptDispatch::UseMainScreenBuffer()
 // True if handled successfully. False othewise.
 bool AdaptDispatch::HorizontalTabSet()
 {
-    return !!_pConApi->PrivateHorizontalTabSet();
+    return !!_conApi->PrivateHorizontalTabSet();
 }
 
 //Routine Description:
@@ -1337,7 +1338,7 @@ bool AdaptDispatch::HorizontalTabSet()
 // True if handled successfully. False othewise.
 bool AdaptDispatch::ForwardTab(const SHORT sNumTabs)
 {
-    return !!_pConApi->PrivateForwardTab(sNumTabs);
+    return !!_conApi->PrivateForwardTab(sNumTabs);
 }
 
 //Routine Description:
@@ -1349,7 +1350,7 @@ bool AdaptDispatch::ForwardTab(const SHORT sNumTabs)
 // True if handled successfully. False othewise.
 bool AdaptDispatch::BackwardsTab(const SHORT sNumTabs)
 {
-    return !!_pConApi->PrivateBackwardsTab(sNumTabs);
+    return !!_conApi->PrivateBackwardsTab(sNumTabs);
 }
 
 //Routine Description:
@@ -1366,10 +1367,10 @@ bool AdaptDispatch::TabClear(const SHORT sClearType)
     switch (sClearType)
     {
     case TermDispatch::TabClearType::ClearCurrentColumn:
-        fSuccess = !!_pConApi->PrivateTabClear(false);
+        fSuccess = !!_conApi->PrivateTabClear(false);
         break;
     case TermDispatch::TabClearType::ClearAllColumns:
-        fSuccess = !!_pConApi->PrivateTabClear(true);
+        fSuccess = !!_conApi->PrivateTabClear(true);
         break;
     }
     return fSuccess;
@@ -1496,7 +1497,7 @@ bool AdaptDispatch::HardReset()
     }
 
     // delete all current tab stops and reapply
-    _pConApi->PrivateSetDefaultTabStops();
+    _conApi->PrivateSetDefaultTabStops();
 
     return fSuccess;
 }
@@ -1517,7 +1518,7 @@ bool AdaptDispatch::_EraseScrollback()
 {
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    bool fSuccess = !!_pConApi->GetConsoleScreenBufferInfoEx(&csbiex);
+    bool fSuccess = !!_conApi->GetConsoleScreenBufferInfoEx(&csbiex);
     if (fSuccess)
     {
         const SMALL_RECT Screen = csbiex.srWindow;
@@ -1537,7 +1538,7 @@ bool AdaptDispatch::_EraseScrollback()
         CHAR_INFO ciFill;
         ciFill.Attributes = csbiex.wAttributes;
         ciFill.Char.UnicodeChar = static_cast<WCHAR>(0x20); // space character. use 0x20 instead of literal space because we can't assume the compiler will always turn ' ' into 0x20.
-        fSuccess = !!_pConApi->ScrollConsoleScreenBufferW(&srScroll, nullptr, coordDestination, &ciFill);
+        fSuccess = !!_conApi->ScrollConsoleScreenBufferW(&srScroll, nullptr, coordDestination, &ciFill);
         if (fSuccess)
         {
             // Clear everything after the viewport. This is two regions:
@@ -1571,13 +1572,13 @@ bool AdaptDispatch::_EraseScrollback()
                     // SetConsoleWindowInfo uses an inclusive rect, while GetConsoleScreenBufferInfo is exclusive
                     srNewViewport.Right = sWidth - 1;
                     srNewViewport.Bottom = sHeight - 1;
-                    fSuccess = !!_pConApi->SetConsoleWindowInfo(true, &srNewViewport);
+                    fSuccess = !!_conApi->SetConsoleWindowInfo(true, &srNewViewport);
 
                     if (fSuccess)
                     {
                         // Move the cursor to the same relative location.
                         const COORD newCursor = {Cursor.X-Screen.Left, Cursor.Y-Screen.Top};
-                        fSuccess = !!_pConApi->SetConsoleCursorPosition(newCursor);
+                        fSuccess = !!_conApi->SetConsoleCursorPosition(newCursor);
                     }
                 }
             }
@@ -1599,7 +1600,7 @@ bool AdaptDispatch::_EraseScrollback()
 // True if handled successfully. False othewise.
 bool AdaptDispatch::_EraseAll()
 {
-    return !!_pConApi->PrivateEraseAll();
+    return !!_conApi->PrivateEraseAll();
 }
 
 //Routine Description:
@@ -1610,7 +1611,7 @@ bool AdaptDispatch::_EraseAll()
 // True if handled successfully. False othewise.
 bool AdaptDispatch::EnableVT200MouseMode(const bool fEnabled)
 {
-    return !!_pConApi->PrivateEnableVT200MouseMode(fEnabled);
+    return !!_conApi->PrivateEnableVT200MouseMode(fEnabled);
 }
 
 //Routine Description:
@@ -1622,7 +1623,7 @@ bool AdaptDispatch::EnableVT200MouseMode(const bool fEnabled)
 // True if handled successfully. False othewise.
 bool AdaptDispatch::EnableUTF8ExtendedMouseMode(const bool fEnabled)
 {
-    return !!_pConApi->PrivateEnableUTF8ExtendedMouseMode(fEnabled);
+    return !!_conApi->PrivateEnableUTF8ExtendedMouseMode(fEnabled);
 }
 
 //Routine Description:
@@ -1634,7 +1635,7 @@ bool AdaptDispatch::EnableUTF8ExtendedMouseMode(const bool fEnabled)
 // True if handled successfully. False othewise.
 bool AdaptDispatch::EnableSGRExtendedMouseMode(const bool fEnabled)
 {
-    return !!_pConApi->PrivateEnableSGRExtendedMouseMode(fEnabled);
+    return !!_conApi->PrivateEnableSGRExtendedMouseMode(fEnabled);
 }
 
 //Routine Description:
@@ -1645,18 +1646,18 @@ bool AdaptDispatch::EnableSGRExtendedMouseMode(const bool fEnabled)
 // True if handled successfully. False othewise.
 bool AdaptDispatch::EnableButtonEventMouseMode(const bool fEnabled)
 {
-    return !!_pConApi->PrivateEnableButtonEventMouseMode(fEnabled);
+    return !!_conApi->PrivateEnableButtonEventMouseMode(fEnabled);
 }
 
 //Routine Description:
-// Enable Any Event mode - send all mouse events to the input.
+// Enable Any Event mode - send all mouse events to the input.
 //Arguments:
 // - fEnabled - true to enable, false to disable.
 // Return value:
 // True if handled successfully. False othewise.
 bool AdaptDispatch::EnableAnyEventMouseMode(const bool fEnabled)
 {
-    return !!_pConApi->PrivateEnableAnyEventMouseMode(fEnabled);
+    return !!_conApi->PrivateEnableAnyEventMouseMode(fEnabled);
 }
 
 //Routine Description:
@@ -1668,7 +1669,7 @@ bool AdaptDispatch::EnableAnyEventMouseMode(const bool fEnabled)
 // True if handled successfully. False othewise.
 bool AdaptDispatch::EnableAlternateScroll(const bool fEnabled)
 {
-    return !!_pConApi->PrivateEnableAlternateScroll(fEnabled);
+    return !!_conApi->PrivateEnableAlternateScroll(fEnabled);
 }
 
 //Routine Description:
@@ -1681,7 +1682,7 @@ bool AdaptDispatch::EnableAlternateScroll(const bool fEnabled)
 bool AdaptDispatch::SetCursorStyle(const DispatchCommon::CursorStyle cursorStyle)
 {
     bool isPty = false;
-    _pConApi->IsConsolePty(&isPty);
+    _conApi->IsConsolePty(&isPty);
     if (isPty)
     {
         return false;
@@ -1721,10 +1722,10 @@ bool AdaptDispatch::SetCursorStyle(const DispatchCommon::CursorStyle cursorStyle
         break;
     }
 
-    bool fSuccess = !!_pConApi->SetCursorStyle(actualType);
+    bool fSuccess = !!_conApi->SetCursorStyle(actualType);
     if (fSuccess)
     {
-        fSuccess = !!_pConApi->PrivateAllowCursorBlinking(fEnableBlinking);
+        fSuccess = !!_conApi->PrivateAllowCursorBlinking(fEnableBlinking);
     }
 
     return fSuccess;
@@ -1740,13 +1741,13 @@ bool AdaptDispatch::SetCursorStyle(const DispatchCommon::CursorStyle cursorStyle
 bool AdaptDispatch::SetCursorColor(const COLORREF cursorColor)
 {
     bool isPty = false;
-    _pConApi->IsConsolePty(&isPty);
+    _conApi->IsConsolePty(&isPty);
     if (isPty)
     {
         return false;
     }
 
-    return !!_pConApi->SetCursorColor(cursorColor);
+    return !!_conApi->SetCursorColor(cursorColor);
 }
 
 // Method Description:
@@ -1760,7 +1761,7 @@ bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex,
                                        const DWORD dwColor)
 {
     bool isPty = false;
-    _pConApi->IsConsolePty(&isPty);
+    _conApi->IsConsolePty(&isPty);
     if (isPty)
     {
         return false;
@@ -1771,13 +1772,13 @@ bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex,
     {
         CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
         csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-        fSuccess = !!_pConApi->GetConsoleScreenBufferInfoEx(&csbiex);
+        fSuccess = !!_conApi->GetConsoleScreenBufferInfoEx(&csbiex);
         if (fSuccess)
         {
             size_t realIndex = ::XtermToWindowsIndex(tableIndex);
 
             csbiex.ColorTable[realIndex] = dwColor;
-            fSuccess = !!_pConApi->SetConsoleScreenBufferInfoEx(&csbiex);
+            fSuccess = !!_conApi->SetConsoleScreenBufferInfoEx(&csbiex);
         }
     }
     return fSuccess;
@@ -1808,13 +1809,13 @@ bool AdaptDispatch::WindowManipulation(const DispatchCommon::WindowManipulationT
         case DispatchCommon::WindowManipulationType::RefreshWindow:
             if (cParams == 0)
             {
-                fSuccess = DispatchCommon::s_RefreshWindow(_pConApi);
+                fSuccess = DispatchCommon::s_RefreshWindow(*_conApi);
             }
             break;
         case DispatchCommon::WindowManipulationType::ResizeWindowInCharacters:
             if (cParams == 2)
             {
-                fSuccess = DispatchCommon::s_ResizeWindow(_pConApi, rgusParams[1], rgusParams[0]);
+                fSuccess = DispatchCommon::s_ResizeWindow(*_conApi, rgusParams[1], rgusParams[0]);
             }
             break;
         default:

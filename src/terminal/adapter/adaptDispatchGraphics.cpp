@@ -342,7 +342,7 @@ bool AdaptDispatch::_SetRgbColorsHelper(_In_reads_(cOptions) const GraphicsOptio
 
             *prgbColor = RGB(red, green, blue);
 
-            fSuccess = !!_pConApi->SetConsoleRGBTextAttribute(*prgbColor, *pfIsForeground);
+            fSuccess = !!_conApi->SetConsoleRGBTextAttribute(*prgbColor, *pfIsForeground);
         }
         else if (typeOpt == GraphicsOptions::Xterm256Index && cOptions >= 3)
         {
@@ -351,7 +351,7 @@ bool AdaptDispatch::_SetRgbColorsHelper(_In_reads_(cOptions) const GraphicsOptio
             {
                 unsigned int tableIndex = rgOptions[2];
 
-                fSuccess = !!_pConApi->SetConsoleXtermTextAttribute(tableIndex, *pfIsForeground);
+                fSuccess = !!_conApi->SetConsoleXtermTextAttribute(tableIndex, *pfIsForeground);
             }
         }
     }
@@ -361,7 +361,7 @@ bool AdaptDispatch::_SetRgbColorsHelper(_In_reads_(cOptions) const GraphicsOptio
 bool AdaptDispatch::_SetBoldColorHelper(const GraphicsOptions option)
 {
     const bool bold = (option == GraphicsOptions::BoldBright);
-    return !!_pConApi->PrivateBoldText(bold);
+    return !!_conApi->PrivateBoldText(bold);
 }
 
 // Routine Description:
@@ -379,7 +379,7 @@ bool AdaptDispatch::SetGraphicsRendition(_In_reads_(cOptions) const GraphicsOpti
     // because it has to fill the Largest Window Size by asking the OS and wastes time memcpying colors and other data
     // we do not need to resolve this Set Graphics Rendition request.
     WORD attr;
-    bool fSuccess = !!_pConApi->PrivateGetConsoleScreenBufferAttributes(&attr);
+    bool fSuccess = !!_conApi->PrivateGetConsoleScreenBufferAttributes(&attr);
 
     if (fSuccess)
     {
@@ -406,7 +406,7 @@ bool AdaptDispatch::SetGraphicsRendition(_In_reads_(cOptions) const GraphicsOpti
             else
             {
                 _SetGraphicsOptionHelper(opt, &attr);
-                fSuccess = !!_pConApi->PrivateSetLegacyAttributes(attr, _fChangedForeground, _fChangedBackground, _fChangedMetaAttrs);
+                fSuccess = !!_conApi->PrivateSetLegacyAttributes(attr, _fChangedForeground, _fChangedBackground, _fChangedMetaAttrs);
 
                 // Make sure we un-bold
                 if (fSuccess && opt == GraphicsOptions::Off)

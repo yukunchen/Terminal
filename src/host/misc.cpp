@@ -84,7 +84,7 @@ void SetConsoleCPInfo(const BOOL fOutput)
 // - FALSE - Correctly.
 BOOL CheckBisectStringW(_In_reads_bytes_(cBytes) const WCHAR * pwchBuffer,
                         _In_ size_t cWords,
-                        _In_ size_t cBytes)
+                        _In_ size_t cBytes) noexcept
 {
     while (cWords && cBytes)
     {
@@ -214,50 +214,43 @@ BOOL CheckBisectProcessW(const SCREEN_INFORMATION& ScreenInfo,
 // Arguments:
 // - events - on input the IInputEvents to convert. on output, the
 // converted input events
-// ReturnValue:
-// - HRESULT indicating success or error.
-[[nodiscard]]
-HRESULT SplitToOem(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events)
+// Note: may throw on error
+void SplitToOem(std::deque<std::unique_ptr<IInputEvent>>& events)
 {
     const UINT codepage = ServiceLocator::LocateGlobals().getConsoleInformation().CP;
-    try
-    {
-        // convert events to oem codepage
-        std::deque<std::unique_ptr<IInputEvent>> convertedEvents;
-        while (!events.empty())
-        {
-            std::unique_ptr<IInputEvent> currentEvent = std::move(events.front());
-            events.pop_front();
-            if (currentEvent->EventType() == InputEventType::KeyEvent)
-            {
-                const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(currentEvent.get());
-                // convert from wchar to char
-                std::wstring wstr{ pKeyEvent->GetCharData() };
-                std::deque<char> chars = ConvertToOem(codepage, wstr);
 
-                while (!chars.empty())
-                {
-                    std::unique_ptr<KeyEvent> tempEvent = std::make_unique<KeyEvent>(*pKeyEvent);
-                    tempEvent->SetCharData(chars.front());
-                    chars.pop_front();
-                    convertedEvents.push_back(std::move(tempEvent));
-                }
-            }
-            else
+    // convert events to oem codepage
+    std::deque<std::unique_ptr<IInputEvent>> convertedEvents;
+    while (!events.empty())
+    {
+        std::unique_ptr<IInputEvent> currentEvent = std::move(events.front());
+        events.pop_front();
+        if (currentEvent->EventType() == InputEventType::KeyEvent)
+        {
+            const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(currentEvent.get());
+            // convert from wchar to char
+            std::wstring wstr{ pKeyEvent->GetCharData() };
+            std::deque<char> chars = ConvertToOem(codepage, wstr);
+
+            while (!chars.empty())
             {
-                convertedEvents.push_back(std::move(currentEvent));
+                std::unique_ptr<KeyEvent> tempEvent = std::make_unique<KeyEvent>(*pKeyEvent);
+                tempEvent->SetCharData(chars.front());
+                chars.pop_front();
+                convertedEvents.push_back(std::move(tempEvent));
             }
         }
-        // move all events back
-        while (!convertedEvents.empty())
+        else
         {
-            events.push_back(std::move(convertedEvents.front()));
-            convertedEvents.pop_front();
+            convertedEvents.push_back(std::move(currentEvent));
         }
     }
-    CATCH_RETURN();
-
-    return S_OK;
+    // move all events back
+    while (!convertedEvents.empty())
+    {
+        events.push_back(std::move(convertedEvents.front()));
+        convertedEvents.pop_front();
+    }
 }
 
 // Routine Description:
@@ -274,7 +267,7 @@ int ConvertToOem(const UINT uiCodePage,
                  _In_reads_(cchSource) const WCHAR * const pwchSource,
                  const UINT cchSource,
                  _Out_writes_(cchTarget) CHAR * const pchTarget,
-                 const UINT cchTarget)
+                 const UINT cchTarget) noexcept
 {
     FAIL_FAST_IF_FALSE(pwchSource != (LPWSTR) pchTarget);
     DBGCHARS(("ConvertToOem U->%d %.*ls\n", uiCodePage, cchSource > 10 ? 10 : cchSource, pwchSource));
@@ -287,7 +280,7 @@ int ConvertInputToUnicode(const UINT uiCodePage,
                           _In_reads_(cchSource) const CHAR * const pchSource,
                           const UINT cchSource,
                           _Out_writes_(cchTarget) WCHAR * const pwchTarget,
-                          const UINT cchTarget)
+                          const UINT cchTarget) noexcept
 {
     DBGCHARS(("ConvertInputToUnicode %d->U %.*s\n", uiCodePage, cchSource > 10 ? 10 : cchSource, pchSource));
 
@@ -299,23 +292,33 @@ int ConvertOutputToUnicode(_In_ UINT uiCodePage,
                            _In_reads_(cchSource) const CHAR * const pchSource,
                            _In_ UINT cchSource,
                            _Out_writes_(cchTarget) WCHAR *pwchTarget,
-                           _In_ UINT cchTarget)
+                           _In_ UINT cchTarget) noexcept
 {
     FAIL_FAST_IF_FALSE(cchTarget > 0);
     pwchTarget[0] = L'\0';
 
     DBGCHARS(("ConvertOutputToUnicode %d->U %.*s\n", uiCodePage, cchSource > 10 ? 10 : cchSource, pchSource));
 
-    LPSTR const pszT = new(std::nothrow) CHAR[cchSource];
-    if (pszT == nullptr)
+    if (DoBuffersOverlap(reinterpret_cast<const BYTE* const>(pchSource),
+                         cchSource * sizeof(CHAR),
+                         reinterpret_cast<const BYTE* const>(pwchTarget),
+                         cchTarget * sizeof(WCHAR)))
     {
-        return 0;
+        try
+        {
+            // buffers overlap so we need to copy one
+            std::string copyData(pchSource, cchSource);
+            return MultiByteToWideChar(uiCodePage, MB_USEGLYPHCHARS, copyData.data(), cchSource, pwchTarget, cchTarget);
+        }
+        catch (...)
+        {
+            return 0;
+        }
     }
-
-    memmove(pszT, pchSource, cchSource);
-    ULONG const Length = MultiByteToWideChar(uiCodePage, MB_USEGLYPHCHARS, pszT, cchSource, pwchTarget, cchTarget);
-    delete[] pszT;
-    return Length;
+    else
+    {
+        return MultiByteToWideChar(uiCodePage, MB_USEGLYPHCHARS, pchSource, cchSource, pwchTarget, cchTarget);
+    }
 }
 
 bool IsCoordInBounds(const COORD point, const COORD bounds) noexcept
@@ -338,4 +341,23 @@ bool IsRectInBoundsInclusive(const SMALL_RECT rect, const SMALL_RECT bounds) noe
         rect.Right >= bounds.Left && rect.Right <= bounds.Right &&
         rect.Top >= bounds.Top && rect.Top <= bounds.Bottom &&
         rect.Bottom >= bounds.Top && rect.Bottom <= bounds.Bottom;
+}
+
+// Routine Description:
+// - checks if two buffers overlap
+// Arguments:
+// - pBufferA - pointer to start of first buffer
+// - cbBufferA - size of first buffer, in bytes
+// - pBufferB - pointer to start of second buffer
+// - cbBufferB - size of second buffer, in bytes
+// Return Value:
+// - true if buffers overlap, false otherwise
+bool DoBuffersOverlap(const BYTE* const pBufferA,
+                      const UINT cbBufferA,
+                      const BYTE* const pBufferB,
+                      const UINT cbBufferB) noexcept
+{
+    const BYTE* const pBufferAEnd = pBufferA + cbBufferA;
+    const BYTE* const pBufferBEnd = pBufferB + cbBufferB;
+    return (pBufferA <= pBufferB && pBufferAEnd >= pBufferB) || (pBufferB <= pBufferA && pBufferBEnd >= pBufferA);
 }

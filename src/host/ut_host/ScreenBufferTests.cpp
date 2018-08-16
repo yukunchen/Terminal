@@ -228,17 +228,16 @@ void ScreenBufferTests::TestReverseLineFeed()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
-    auto bufferWriter = screenInfo.GetBufferWriter();
+    auto& stateMachine = screenInfo.GetStateMachine();
     auto& cursor = screenInfo._textBuffer->GetCursor();
     auto viewport = screenInfo.GetBufferViewport();
-    VERIFY_IS_NOT_NULL(bufferWriter);
 
     VERIFY_ARE_EQUAL(screenInfo.GetBufferViewport().Top, 0);
 
     ////////////////////////////////////////////////////////////////////////
     Log::Comment(L"Case 1: RI from below top of viewport");
 
-    bufferWriter->PrintString(L"foo\nfoo", 7);
+    stateMachine.ProcessString(L"foo\nfoo", 7);
     VERIFY_ARE_EQUAL(cursor.GetPosition().X, 3);
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 1);
     VERIFY_ARE_EQUAL(screenInfo.GetBufferViewport().Top, 0);
@@ -257,7 +256,7 @@ void ScreenBufferTests::TestReverseLineFeed()
     ////////////////////////////////////////////////////////////////////////
     Log::Comment(L"Case 2: RI from top of viewport");
     cursor.SetPosition({0, 0});
-    bufferWriter->PrintString(L"123456789", 9);
+    stateMachine.ProcessString(L"123456789", 9);
     VERIFY_ARE_EQUAL(cursor.GetPosition().X, 9);
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 0);
     VERIFY_ARE_EQUAL(screenInfo.GetBufferViewport().Top, 0);
@@ -280,7 +279,7 @@ void ScreenBufferTests::TestReverseLineFeed()
 
     cursor.SetPosition({0, 5});
     VERIFY_SUCCEEDED(screenInfo.SetViewportOrigin(true, {0, 5}, true));
-    bufferWriter->PrintString(L"ABCDEFGH", 9);
+    stateMachine.ProcessString(L"ABCDEFGH", 9);
     VERIFY_ARE_EQUAL(cursor.GetPosition().X, 9);
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 5);
     VERIFY_ARE_EQUAL(screenInfo.GetBufferViewport().Top, 5);
@@ -560,16 +559,15 @@ void ScreenBufferTests::EraseAllTests()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer();
-    auto bufferWriter = si.GetBufferWriter();
+    auto& stateMachine = si.GetStateMachine();
     auto& cursor = si._textBuffer->GetCursor();
-    VERIFY_IS_NOT_NULL(bufferWriter);
 
     VERIFY_ARE_EQUAL(si.GetBufferViewport().Top, 0);
 
     ////////////////////////////////////////////////////////////////////////
     Log::Comment(L"Case 1: Erase a single line of text in the buffer\n");
 
-    bufferWriter->PrintString(L"foo", 3);
+    stateMachine.ProcessString(L"foo", 3);
     COORD originalRelativePosition = {3, 0};
     VERIFY_ARE_EQUAL(si.GetBufferViewport().Top, 0);
     VERIFY_ARE_EQUAL(cursor.GetPosition(), originalRelativePosition);
@@ -589,7 +587,7 @@ void ScreenBufferTests::EraseAllTests()
     ////////////////////////////////////////////////////////////////////////
     Log::Comment(L"Case 2: Erase multiple lines, below the top of the buffer\n");
 
-    bufferWriter->PrintString(L"bar\nbar\nbar", 11);
+    stateMachine.ProcessString(L"bar\nbar\nbar", 11);
     viewport = si._viewport;
     originalRelativePosition = cursor.GetPosition();
     viewport.ConvertToOrigin(&originalRelativePosition);
@@ -616,7 +614,7 @@ void ScreenBufferTests::EraseAllTests()
 
     cursor.SetPosition({0, 275});
     VERIFY_SUCCEEDED(si.SetViewportOrigin(true, {0, 220}, true));
-    bufferWriter->PrintString(L"bar\nbar\nbar", 11);
+    stateMachine.ProcessString(L"bar\nbar\nbar", 11);
     viewport = si._viewport;
     VERIFY_ARE_EQUAL(cursor.GetPosition().X, 3);
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 277);
@@ -646,10 +644,9 @@ void ScreenBufferTests::VtResize()
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
     TextBuffer& tbi = si.GetTextBuffer();
-    StateMachine* const stateMachine = si.GetStateMachine();
+    StateMachine& stateMachine = si.GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
     SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
-    VERIFY_IS_NOT_NULL(stateMachine);
 
     cursor.SetXPosition(0);
     cursor.SetYPosition(0);
@@ -667,7 +664,7 @@ void ScreenBufferTests::VtResize()
     ));
 
     std::wstring sequence = L"\x1b[8;30;80t";
-    stateMachine->ProcessString(&sequence[0], sequence.length());
+    stateMachine.ProcessString(&sequence[0], sequence.length());
 
     auto newSbHeight = si.GetScreenBufferSize().Y;
     auto newSbWidth = si.GetScreenBufferSize().X;
@@ -692,7 +689,7 @@ void ScreenBufferTests::VtResize()
     ));
 
     sequence = L"\x1b[8;40;80t";
-    stateMachine->ProcessString(&sequence[0], sequence.length());
+    stateMachine.ProcessString(&sequence[0], sequence.length());
 
     newSbHeight = si.GetScreenBufferSize().Y;
     newSbWidth = si.GetScreenBufferSize().X;
@@ -716,7 +713,7 @@ void ScreenBufferTests::VtResize()
     ));
 
     sequence = L"\x1b[8;40;90t";
-    stateMachine->ProcessString(&sequence[0], sequence.length());
+    stateMachine.ProcessString(&sequence[0], sequence.length());
 
     newSbHeight = si.GetScreenBufferSize().Y;
     newSbWidth = si.GetScreenBufferSize().X;
@@ -740,7 +737,7 @@ void ScreenBufferTests::VtResize()
     ));
 
     sequence = L"\x1b[8;12;12t";
-    stateMachine->ProcessString(&sequence[0], sequence.length());
+    stateMachine.ProcessString(&sequence[0], sequence.length());
 
     newSbHeight = si.GetScreenBufferSize().Y;
     newSbWidth = si.GetScreenBufferSize().X;
@@ -763,7 +760,7 @@ void ScreenBufferTests::VtResize()
     ));
 
     sequence = L"\x1b[8;0;0t";
-    stateMachine->ProcessString(&sequence[0], sequence.length());
+    stateMachine.ProcessString(&sequence[0], sequence.length());
 
     newSbHeight = si.GetScreenBufferSize().Y;
     newSbWidth = si.GetScreenBufferSize().X;
@@ -782,7 +779,7 @@ void ScreenBufferTests::VtSoftResetCursorPosition()
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
     const TextBuffer& tbi = si.GetTextBuffer();
-    StateMachine* const stateMachine = si.GetStateMachine();
+    StateMachine& stateMachine = si.GetStateMachine();
     const Cursor& cursor = tbi.GetCursor();
 
     Log::Comment(NoThrowString().Format(
@@ -796,11 +793,11 @@ void ScreenBufferTests::VtSoftResetCursorPosition()
     ));
 
     std::wstring seq = L"\x1b[2;2H";
-    stateMachine->ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(&seq[0], seq.length());
     VERIFY_ARE_EQUAL( COORD({1, 1}), cursor.GetPosition());
 
     seq = L"\x1b[!p";
-    stateMachine->ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(&seq[0], seq.length());
     VERIFY_ARE_EQUAL( COORD({1, 1}), cursor.GetPosition());
 
     Log::Comment(NoThrowString().Format(
@@ -808,7 +805,7 @@ void ScreenBufferTests::VtSoftResetCursorPosition()
     ));
 
     seq = L"\x1b[2;10r";
-    stateMachine->ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(&seq[0], seq.length());
     VERIFY_ARE_EQUAL( COORD({0, 0}), cursor.GetPosition());
 
     Log::Comment(NoThrowString().Format(
@@ -816,10 +813,10 @@ void ScreenBufferTests::VtSoftResetCursorPosition()
         L"The cursor should not move, even though there are margins."
     ));
     seq = L"\x1b[2;2H";
-    stateMachine->ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(&seq[0], seq.length());
     VERIFY_ARE_EQUAL( COORD({1, 1}), cursor.GetPosition());
     seq = L"\x1b[!p";
-    stateMachine->ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(&seq[0], seq.length());
     VERIFY_ARE_EQUAL( COORD({1, 1}), cursor.GetPosition());
 }
 
@@ -828,7 +825,7 @@ void ScreenBufferTests::VtSetColorTable()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    StateMachine* const stateMachine = si.GetStateMachine();
+    StateMachine& stateMachine = si.GetStateMachine();
 
     // Start with a known value
     gci.SetColorTableEntry(0, RGB(0, 0, 0));
@@ -838,27 +835,27 @@ void ScreenBufferTests::VtSetColorTable()
     ));
 
     std::wstring seq = L"\x1b]4;0;rgb:1/1/1\x7";
-    stateMachine->ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(&seq[0], seq.length());
     VERIFY_ARE_EQUAL(RGB(1,1,1), gci.GetColorTableEntry(::XtermToWindowsIndex(0)));
 
     seq = L"\x1b]4;1;rgb:1/23/1\x7";
-    stateMachine->ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(&seq[0], seq.length());
     VERIFY_ARE_EQUAL(RGB(1,0x23,1), gci.GetColorTableEntry(::XtermToWindowsIndex(1)));
 
     seq = L"\x1b]4;2;rgb:1/23/12\x7";
-    stateMachine->ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(&seq[0], seq.length());
     VERIFY_ARE_EQUAL(RGB(1,0x23,0x12), gci.GetColorTableEntry(::XtermToWindowsIndex(2)));
 
     seq = L"\x1b]4;3;rgb:12/23/12\x7";
-    stateMachine->ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(&seq[0], seq.length());
     VERIFY_ARE_EQUAL(RGB(0x12,0x23,0x12), gci.GetColorTableEntry(::XtermToWindowsIndex(3)));
 
     seq = L"\x1b]4;4;rgb:ff/a1/1b\x7";
-    stateMachine->ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(&seq[0], seq.length());
     VERIFY_ARE_EQUAL(RGB(0xff,0xa1,0x1b), gci.GetColorTableEntry(::XtermToWindowsIndex(4)));
 
     seq = L"\x1b]4;5;rgb:ff/a1/1b\x1b\\";
-    stateMachine->ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(&seq[0], seq.length());
     VERIFY_ARE_EQUAL(RGB(0xff,0xa1,0x1b), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 
     Log::Comment(NoThrowString().Format(
@@ -868,77 +865,77 @@ void ScreenBufferTests::VtSetColorTable()
         L"First start by setting an entry to a known value to compare to."
     ));
     seq = L"\x1b]4;5;rgb:9/9/9\x1b\\";
-    stateMachine->ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(&seq[0], seq.length());
     VERIFY_ARE_EQUAL(RGB(9,9,9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: Missing the first component"
     ));
     seq = L"\x1b]4;5;rgb:/1/1\x1b\\";
-    stateMachine->ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(&seq[0], seq.length());
     VERIFY_ARE_EQUAL(RGB(9,9,9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: too many characters in a component"
     ));
     seq = L"\x1b]4;5;rgb:111/1/1\x1b\\";
-    stateMachine->ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(&seq[0], seq.length());
     VERIFY_ARE_EQUAL(RGB(9,9,9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: too many componenets"
     ));
     seq = L"\x1b]4;5;rgb:1/1/1/1\x1b\\";
-    stateMachine->ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(&seq[0], seq.length());
     VERIFY_ARE_EQUAL(RGB(9,9,9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: no second component"
     ));
     seq = L"\x1b]4;5;rgb:1//1\x1b\\";
-    stateMachine->ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(&seq[0], seq.length());
     VERIFY_ARE_EQUAL(RGB(9,9,9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: no components"
     ));
     seq = L"\x1b]4;5;rgb://\x1b\\";
-    stateMachine->ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(&seq[0], seq.length());
     VERIFY_ARE_EQUAL(RGB(9,9,9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: no third component"
     ));
     seq = L"\x1b]4;5;rgb:1/11/\x1b\\";
-    stateMachine->ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(&seq[0], seq.length());
     VERIFY_ARE_EQUAL(RGB(9,9,9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: rgbi is not a supported color space"
     ));
     seq = L"\x1b]4;5;rgbi:1/1/1\x1b\\";
-    stateMachine->ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(&seq[0], seq.length());
     VERIFY_ARE_EQUAL(RGB(9,9,9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: cmyk is not a supported color space"
     ));
     seq = L"\x1b]4;5;cmyk:1/1/1\x1b\\";
-    stateMachine->ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(&seq[0], seq.length());
     VERIFY_ARE_EQUAL(RGB(9,9,9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: no table index should do nothing"
     ));
     seq = L"\x1b]4;;rgb:1/1/1\x1b\\";
-    stateMachine->ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(&seq[0], seq.length());
     VERIFY_ARE_EQUAL(RGB(9,9,9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: need to specify a color space"
     ));
     seq = L"\x1b]4;5;1/1/1\x1b\\";
-    stateMachine->ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(&seq[0], seq.length());
     VERIFY_ARE_EQUAL(RGB(9,9,9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 }
 
@@ -963,7 +960,7 @@ void ScreenBufferTests::ResizeAltBuffer()
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
 
     SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    StateMachine* const stateMachine = si.GetStateMachine();
+    StateMachine& stateMachine = si.GetStateMachine();
 
 
     Log::Comment(NoThrowString().Format(
@@ -977,7 +974,7 @@ void ScreenBufferTests::ResizeAltBuffer()
         L"Switch to alt buffer"
     ));
     std::wstring seq = L"\x1b[?1049h";
-    stateMachine->ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(&seq[0], seq.length());
 
     VERIFY_IS_FALSE(si._IsAltBuffer());
     VERIFY_IS_NOT_NULL(si._psiAlternateBuffer);
@@ -999,7 +996,7 @@ void ScreenBufferTests::VtEraseAllPersistCursor()
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
     const TextBuffer& tbi = si.GetTextBuffer();
-    StateMachine* const stateMachine = si.GetStateMachine();
+    StateMachine& stateMachine = si.GetStateMachine();
     const Cursor& cursor = tbi.GetCursor();
 
     Log::Comment(NoThrowString().Format(
@@ -1013,11 +1010,11 @@ void ScreenBufferTests::VtEraseAllPersistCursor()
     ));
 
     std::wstring seq = L"\x1b[2;2H";
-    stateMachine->ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(&seq[0], seq.length());
     VERIFY_ARE_EQUAL( COORD({1, 1}), cursor.GetPosition());
 
     seq = L"\x1b[2J";
-    stateMachine->ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(&seq[0], seq.length());
 
     auto newViewport = si._viewport;
     COORD expectedCursor = {1, 1};
@@ -1032,7 +1029,7 @@ void ScreenBufferTests::VtEraseAllPersistCursorFillColor()
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
     const TextBuffer& tbi = si.GetTextBuffer();
-    StateMachine* const stateMachine = si.GetStateMachine();
+    StateMachine& stateMachine = si.GetStateMachine();
 
     Log::Comment(NoThrowString().Format(
         L"Make sure the viewport is at 0,0"
@@ -1046,12 +1043,12 @@ void ScreenBufferTests::VtEraseAllPersistCursorFillColor()
 
     auto expectedAttr = TextAttribute(XtermToLegacy(1, 12));
     std::wstring seq = L"\x1b[31;104m";
-    stateMachine->ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(&seq[0], seq.length());
 
     VERIFY_ARE_EQUAL(expectedAttr, si._Attributes);
 
     seq = L"\x1b[2J";
-    stateMachine->ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(&seq[0], seq.length());
 
     VERIFY_ARE_EQUAL(expectedAttr, si._Attributes);
 

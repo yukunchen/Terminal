@@ -22,7 +22,7 @@ namespace Microsoft::Console::VirtualTerminal
     class OutputStateMachineEngine : public IStateMachineEngine
     {
     public:
-        OutputStateMachineEngine(_In_ TermDispatch* const pDispatch);
+        OutputStateMachineEngine(TermDispatch* const pDispatch);
         ~OutputStateMachineEngine();
 
         bool ActionExecute(const wchar_t wch) override;
@@ -62,9 +62,11 @@ namespace Microsoft::Console::VirtualTerminal
         void SetTerminalConnection(Microsoft::Console::ITerminalOutputConnection* const pTtyConnection,
                                    std::function<bool()> pfnFlushToTerminal);
 
+        const TermDispatch& Dispatch() const noexcept;
+        TermDispatch& Dispatch() noexcept;
 
     private:
-        TermDispatch* _pDispatch;
+        std::unique_ptr<TermDispatch> _dispatch;
         Microsoft::Console::ITerminalOutputConnection* _pTtyConnection;
         std::function<bool()> _pfnFlushToTerminal;
 

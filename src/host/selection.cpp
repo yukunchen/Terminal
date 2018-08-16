@@ -536,8 +536,8 @@ void Selection::ColorSelection(const SMALL_RECT& srRect, const TextAttribute att
     SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
 
     COORD coordTargetSize;
-    coordTargetSize.X = CalcWindowSizeX(&srRect);
-    coordTargetSize.Y = CalcWindowSizeY(&srRect);
+    coordTargetSize.X = CalcWindowSizeX(srRect);
+    coordTargetSize.Y = CalcWindowSizeY(srRect);
 
     COORD coordTarget;
     coordTarget.X = srRect.Left;
@@ -692,10 +692,9 @@ void Selection::SelectAll()
         if (!fOldSelectionExisted)
         {
             // Temporary workaround until MSFT: 614579 is completed.
-            SMALL_RECT srEdges;
-            Utils::s_GetCurrentBufferEdges(&srEdges);
+            SMALL_RECT srEdges = Utils::s_GetCurrentBufferEdges();
             COORD coordOneAfterEnd = coordInputEnd;
-            Utils::s_DoIncrementScreenCoordinate(srEdges, &coordOneAfterEnd);
+            Utils::s_DoIncrementScreenCoordinate(srEdges, coordOneAfterEnd);
 
             if (s_IsWithinBoundaries(screenInfo.GetTextBuffer().GetCursor().GetPosition(), coordInputStart, coordInputEnd))
             {
@@ -721,8 +720,7 @@ void Selection::SelectAll()
             // This is the complex case. We had an existing selection and we have an input area.
 
             // To figure this out, we need the anchor (the point where the selection starts) and its opposite corner
-            COORD coordOldAnchorOpposite;
-            Utils::s_GetOppositeCorner(srOldSelection, coordOldAnchor, &coordOldAnchorOpposite);
+            COORD coordOldAnchorOpposite = Utils::s_GetOppositeCorner(srOldSelection, coordOldAnchor);
 
             // Check if both anchor and opposite corner fall within the input line
             const bool fIsOldSelWithinInput =

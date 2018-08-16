@@ -13,8 +13,8 @@
 using namespace Microsoft::Console::VirtualTerminal;
 
 //Takes ownership of the pEngine.
-StateMachine::StateMachine(_In_ std::shared_ptr<IStateMachineEngine> pEngine) :
-    _pEngine(pEngine),
+StateMachine::StateMachine(IStateMachineEngine* const pEngine) :
+    _pEngine(THROW_IF_NULL_ALLOC(pEngine)),
     _state(VTStates::Ground),
     _trace(Microsoft::Console::VirtualTerminal::ParserTracing()),
     _cParams(0),
@@ -33,6 +33,16 @@ StateMachine::StateMachine(_In_ std::shared_ptr<IStateMachineEngine> pEngine) :
     ZeroMemory(_pwchOscStringBuffer, sizeof(_pwchOscStringBuffer));
     ZeroMemory(_rgusParams, sizeof(_rgusParams));
     _ActionClear();
+}
+
+const IStateMachineEngine& StateMachine::Engine() const noexcept
+{
+    return *_pEngine;
+}
+
+IStateMachineEngine& StateMachine::Engine() noexcept
+{
+    return *_pEngine;
 }
 
 // Routine Description:

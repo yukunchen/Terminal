@@ -152,7 +152,11 @@ bool DirectReadData::Notify(const WaitTerminationReason TerminationReason,
         // split key events to oem chars if necessary
         if (*pReplyStatus == STATUS_SUCCESS && !fIsUnicode)
         {
-            LOG_IF_FAILED(SplitToOem(readEvents));
+            try
+            {
+                SplitToOem(readEvents);
+            }
+            CATCH_LOG();
         }
 
         // combine partial and whole events

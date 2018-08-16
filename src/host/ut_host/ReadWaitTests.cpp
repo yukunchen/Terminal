@@ -57,7 +57,7 @@ class InputRecordConversionTests
             inEvents.push_back(IInputEvent::Create(inRecords[i]));
         }
 
-        VERIFY_SUCCEEDED(SplitToOem(inEvents));
+        SplitToOem(inEvents);
         VERIFY_ARE_EQUAL(INPUT_RECORD_COUNT, inEvents.size());
 
         for (size_t i = 0; i < INPUT_RECORD_COUNT; ++i)
@@ -79,7 +79,7 @@ class InputRecordConversionTests
             inEvents.push_back(IInputEvent::Create(inRecords[i]));
         }
 
-        VERIFY_SUCCEEDED(SplitToOem(inEvents));
+        SplitToOem(inEvents);
         VERIFY_ARE_EQUAL(INPUT_RECORD_COUNT, inEvents.size());
 
         for (size_t i = 0; i < INPUT_RECORD_COUNT; ++i)
@@ -108,7 +108,7 @@ class InputRecordConversionTests
             inEvents.push_back(IInputEvent::Create(inRecords[i]));
         }
 
-        VERIFY_SUCCEEDED(SplitToOem(inEvents));
+        SplitToOem(inEvents);
         VERIFY_ARE_EQUAL(INPUT_RECORD_COUNT * 2, inEvents.size());
 
         // create the data to compare the output to

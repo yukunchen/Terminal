@@ -40,16 +40,13 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     auto pGetSet = std::make_unique<ConhostInternalGetSet>(gci);
-    THROW_IF_NULL_ALLOC(pGetSet);
+    THROW_IF_NULL_ALLOC(pGetSet.get());
 
-    auto pDispatch = std::make_unique<InteractDispatch>(std::move(pGetSet));
-    THROW_IF_NULL_ALLOC(pDispatch);
+    auto engine = std::make_unique<InputStateMachineEngine>(new InteractDispatch(pGetSet.release()), inheritCursor);
+    THROW_IF_NULL_ALLOC(engine.get());
 
-    auto pEngine = std::make_shared<InputStateMachineEngine>(std::move(pDispatch), inheritCursor);
-    THROW_IF_NULL_ALLOC(pEngine);
-
-    _pInputStateMachine = std::make_unique<StateMachine>(pEngine);
-    THROW_IF_NULL_ALLOC(_pInputStateMachine);
+    _pInputStateMachine = std::make_unique<StateMachine>(engine.release());
+    THROW_IF_NULL_ALLOC(_pInputStateMachine.get());
 }
 
 // Method Description:

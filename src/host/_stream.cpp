@@ -494,7 +494,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                         if (CharType == C1_CNTRL)
                         {
                             ConvertOutputToUnicode(gci.OutputCP,
-                                (LPSTR)& RealUnicodeChar,
+                                                   (LPSTR)&RealUnicodeChar,
                                                    1,
                                                    LocalBufPtr,
                                                    1);
@@ -968,10 +968,10 @@ NTSTATUS WriteChars(SCREEN_INFORMATION& screenInfo,
                 // This is the only mode used by DoWriteConsole.
                 FAIL_FAST_IF_FALSE(IsFlagSet(dwFlags, WC_LIMIT_BACKSPACE));
 
-                StateMachine* const pMachine = screenInfo.GetStateMachine();
+                StateMachine& machine = screenInfo.GetStateMachine();
                 size_t const cch = BufferSize / sizeof(WCHAR);
 
-                pMachine->ProcessString(pwchRealUnicode, cch);
+                machine.ProcessString(pwchRealUnicode, cch);
                 *pcb += BufferSize;
             }
         }

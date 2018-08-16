@@ -22,7 +22,7 @@ namespace Microsoft::Console::VirtualTerminal
     {
     public:
 
-        InteractDispatch(const std::unique_ptr<ConGetSet> pConApi);
+        InteractDispatch(ConGetSet* const pConApi);
 
         virtual ~InteractDispatch() override = default;
 

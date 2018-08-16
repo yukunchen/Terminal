@@ -63,11 +63,8 @@ int __cdecl wmain(int argc, wchar_t* argv[])
         hFile = _wfopen(argv[1], L"r");
         wchar_t wch;
         bool fGotChar = GetChar(&wch);
-        
-        EchoDispatch echo;
-        std::unique_ptr<OutputStateMachineEngine> pEngine = std::make_unique<OutputStateMachineEngine>(&echo);
-        THROW_IF_NULL_ALLOC(pEngine);
-        StateMachine machine(std::move(pEngine));
+
+        StateMachine machine(new OutputStateMachineEngine(new EchoDispatch));
 
         wprintf(L"Sending characters to state machine...\r\n");
         while (fGotChar)

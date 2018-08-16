@@ -21,20 +21,16 @@ Author(s):
 
 #define XTERM_COLOR_TABLE_SIZE (256)
 
+
 namespace Microsoft::Console::VirtualTerminal
 {
     class AdaptDispatch : public TermDispatch
     {
     public:
 
-        AdaptDispatch(_Inout_ ConGetSet* const pConApi,
-                        _Inout_ AdaptDefaults* const pDefaults,
-                        const WORD wDefaultTextAttributes);
-
-        void UpdateDefaults(_Inout_ AdaptDefaults* const pDefaults)
-        {
-            _pDefaults = pDefaults;
-        }
+        AdaptDispatch(ConGetSet* const pConApi,
+                      AdaptDefaults* const pDefaults,
+                      const WORD wDefaultTextAttributes);
 
         void UpdateDefaultColor(const WORD wAttributes)
         {
@@ -150,8 +146,8 @@ namespace Microsoft::Console::VirtualTerminal
         bool _PrivateModeParamsHelper(_In_ PrivateModeParams const param, const bool fEnable);
         bool _DoDECCOLMHelper(_In_ unsigned int uiColumns);
 
-        ConGetSet* _pConApi;
-        AdaptDefaults* _pDefaults;
+        std::unique_ptr<ConGetSet> _conApi;
+        std::unique_ptr<AdaptDefaults> _pDefaults;
         TerminalOutput _TermOutput;
 
         WORD _wDefaultTextAttributes;
@@ -175,6 +171,5 @@ namespace Microsoft::Console::VirtualTerminal
         static bool s_IsXtermColorOption(const GraphicsOptions opt);
         static bool s_IsRgbColorOption(const GraphicsOptions opt);
         static bool s_IsBoldColorOption(const GraphicsOptions opt) noexcept;
-
     };
 }

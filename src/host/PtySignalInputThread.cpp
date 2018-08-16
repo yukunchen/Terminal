@@ -71,9 +71,9 @@ HRESULT PtySignalInputThread::_InputThread()
             LockConsole();
             auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-            if (DispatchCommon::s_ResizeWindow(_pConApi.get(), resizeMsg.sx, resizeMsg.sy))
+            if (DispatchCommon::s_ResizeWindow(*_pConApi, resizeMsg.sx, resizeMsg.sy))
             {
-                DispatchCommon::s_SuppressResizeRepaint(_pConApi.get());
+                DispatchCommon::s_SuppressResizeRepaint(*_pConApi);
             }
 
             break;

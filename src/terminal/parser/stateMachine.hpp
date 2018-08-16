@@ -23,7 +23,7 @@ Author(s):
 
 namespace Microsoft::Console::VirtualTerminal
 {
-    class StateMachine sealed
+    class StateMachine final
     {
 #ifdef UNIT_TESTING
         friend class OutputEngineTest;
@@ -31,7 +31,7 @@ namespace Microsoft::Console::VirtualTerminal
 #endif
 
     public:
-        StateMachine(_In_ std::shared_ptr<IStateMachineEngine> pEngine);
+        StateMachine(IStateMachineEngine* const pEngine);
 
         void ProcessCharacter(const wchar_t wch);
         void ProcessString(const wchar_t* const rgwch, const size_t cch);
@@ -39,6 +39,9 @@ namespace Microsoft::Console::VirtualTerminal
         void ResetState();
 
         bool FlushToTerminal();
+
+        const IStateMachineEngine& Engine() const noexcept;
+        IStateMachineEngine& Engine() noexcept;
 
         static const short s_cIntermediateMax = 1;
         static const short s_cParamsMax = 16;
@@ -124,7 +127,8 @@ namespace Microsoft::Console::VirtualTerminal
         };
 
         Microsoft::Console::VirtualTerminal::ParserTracing _trace;
-        std::shared_ptr<IStateMachineEngine> const _pEngine;
+        std::unique_ptr<IStateMachineEngine> _pEngine;
+
 
         VTStates _state;
 
