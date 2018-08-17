@@ -21,8 +21,10 @@ Revision History:
 #include "screenInfo.hpp"
 #include "../buffer/out/OutputCell.hpp"
 
-void StreamWriteToScreenBuffer(SCREEN_INFORMATION& screenInfo,
-                               const std::wstring& wstr,
+void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
+                               _In_ SHORT cchBuffer,
+                               SCREEN_INFORMATION & screenInfo,
+                               _Inout_updates_(cchBuffer) DbcsAttribute* const pDbcsAttributes,
                                const bool fWasLineWrapped);
 
 void WriteRectToScreenBuffer(SCREEN_INFORMATION& screenInfo,

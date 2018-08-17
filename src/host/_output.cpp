@@ -26,16 +26,45 @@
 using namespace Microsoft::Console::Types;
 
 
-void StreamWriteToScreenBuffer(SCREEN_INFORMATION& screenInfo,
-                               const std::wstring& wstr,
+void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
+                               _In_ SHORT cchBuffer,
+                               SCREEN_INFORMATION & screenInfo,
+                               _Inout_updates_(cchBuffer) DbcsAttribute* const pDbcsAttributes,
                                const bool fWasLineWrapped)
 {
+    DBGOUTPUT(("StreamWriteToScreenBuffer\n"));
     COORD const TargetPoint = screenInfo.GetTextBuffer().GetCursor().GetPosition();
     ROW& Row = screenInfo.GetTextBuffer().GetRowByOffset(TargetPoint.Y);
     DBGOUTPUT(("&Row = 0x%p, TargetPoint = (0x%x,0x%x)\n", &Row, TargetPoint.X, TargetPoint.Y));
 
-    CleanupDbcsEdgesForWrite(wstr.size(), TargetPoint, screenInfo);
+    // TODO: from CleanupDbcsEdgesForWrite to the end of the if statement seems to never execute
+    // both callers of this function appear to already have handled the line length for double-width characters
+    CleanupDbcsEdgesForWrite(cchBuffer, TargetPoint, screenInfo);
     const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
+    if (TargetPoint.Y == coordScreenBufferSize.Y - 1 &&
+        TargetPoint.X + cchBuffer >= coordScreenBufferSize.X &&
+        pDbcsAttributes[coordScreenBufferSize.X - TargetPoint.X - 1].IsLeading())
+    {
+        *(pwchBuffer + coordScreenBufferSize.X - TargetPoint.X - 1) = UNICODE_SPACE;
+        pDbcsAttributes[coordScreenBufferSize.X - TargetPoint.X - 1].SetSingle();
+        if (cchBuffer > coordScreenBufferSize.X - TargetPoint.X)
+        {
+            *(pwchBuffer + coordScreenBufferSize.X - TargetPoint.X) = UNICODE_SPACE;
+            pDbcsAttributes[coordScreenBufferSize.X - TargetPoint.X].SetSingle();
+        }
+    }
+
+    // pwchBuffer has already had leading/trailing chars duplicated, we need to dedupe them here
+    // so that the loop below can re-dupe them. this is a temporary measure until the callers of this
+    // function no longer dupe the chars themselves.
+    std::wstring wstr;
+    for (size_t i = 0; i < static_cast<size_t>(cchBuffer); ++i)
+    {
+        if (!pDbcsAttributes[i].IsTrailing())
+        {
+            wstr.push_back(pwchBuffer[i]);
+        }
+    }
 
     try
     {
@@ -48,10 +77,7 @@ void StreamWriteToScreenBuffer(SCREEN_INFORMATION& screenInfo,
     // caller knows the wrap status as this func is called only for drawing one line at a time
     Row.GetCharRow().SetWrapForced(fWasLineWrapped);
 
-    screenInfo.NotifyAccessibilityEventing(TargetPoint.X,
-                                           TargetPoint.Y,
-                                           TargetPoint.X + gsl::narrow<short>(wstr.size()) - 1,
-                                           TargetPoint.Y);
+    screenInfo.NotifyAccessibilityEventing(TargetPoint.X, TargetPoint.Y, TargetPoint.X + cchBuffer - 1, TargetPoint.Y);
 }
 
 // Routine Description:
