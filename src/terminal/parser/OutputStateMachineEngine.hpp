@@ -230,7 +230,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool _GetDesignateType(const wchar_t wchIntermediate,
                                 _Out_ DesignateCharsetTypes* const pDesignateType) const;
 
-        static const DispatchCommon::WindowManipulationType s_DefaultWindowManipulationType = DispatchCommon::WindowManipulationType::Invalid;
+        static const TermDispatch::WindowManipulationType s_DefaultWindowManipulationType = TermDispatch::WindowManipulationType::Invalid;
         _Success_(return)
         bool _GetWindowManipulationType(_In_reads_(cParams) const unsigned short* const rgusParams,
                                         const unsigned short cParams,
@@ -253,11 +253,11 @@ namespace Microsoft::Console::VirtualTerminal
                                     const size_t cchOscString,
                                     _Out_ DWORD* const pRgb) const;
 
-        static const DispatchCommon::CursorStyle s_defaultCursorStyle = DispatchCommon::CursorStyle::BlinkingBlockDefault;
+        static const TermDispatch::CursorStyle s_defaultCursorStyle = TermDispatch::CursorStyle::BlinkingBlockDefault;
         _Success_(return)
         bool _GetCursorStyle(_In_reads_(cParams) const unsigned short* const rgusParams,
                                 const unsigned short cParams,
-                                _Out_ DispatchCommon::CursorStyle* const pCursorStyle) const;
+                                _Out_ TermDispatch::CursorStyle* const pCursorStyle) const;
 
     };
 }

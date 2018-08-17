@@ -13,7 +13,6 @@
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::VirtualTerminal;
 
-
 // takes ownership of pDispatch
 OutputStateMachineEngine::OutputStateMachineEngine(TermDispatch* const pDispatch) :
     _dispatch(pDispatch),
@@ -128,6 +127,7 @@ bool OutputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
         switch (wch)
         {
         case VTActionCodes::CUU_CursorUp:
+
             fSuccess = _dispatch->CursorUp(1);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::CUU);
             break;
@@ -428,9 +428,9 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::ECH);
                 break;
             case VTActionCodes::DTTERM_WindowManipulation:
-                fSuccess = _dispatch->WindowManipulation(static_cast<DispatchCommon::WindowManipulationType>(uiFunction),
-                                                          rgusRemainingArgs,
-                                                          cRemainingArgs);
+                fSuccess = _dispatch->WindowManipulation(static_cast<TermDispatch::WindowManipulationType>(uiFunction),
+                                                         rgusRemainingArgs,
+                                                         cRemainingArgs);
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::DTTERM_WM);
                 break;
             default:
@@ -553,7 +553,7 @@ bool OutputStateMachineEngine::_IntermediateSpaceDispatch(const wchar_t wchActio
                                                           const unsigned short cParams)
 {
     bool fSuccess = false;
-    DispatchCommon::CursorStyle cursorStyle = s_defaultCursorStyle;
+	TermDispatch::CursorStyle cursorStyle = s_defaultCursorStyle;
 
     // Parse params
     switch(wchAction)
@@ -647,7 +647,8 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
         fSuccess = _GetOscSetCursorColor(pwchOscStringBuffer, cchOscString, &dwColor);
         break;
     case OscActionCodes::ResetCursorColor:
-        dwColor = INVALID_COLOR;
+		// the console uses 0xffffffff as an "invalid color" value
+        dwColor = 0xffffffff;
         fSuccess = true;
         break;
     default:
@@ -792,7 +793,7 @@ bool OutputStateMachineEngine::_GetEraseOperation(_In_reads_(cParams) const unsi
         // If there's one parameter, attempt to match it to the values we accept.
         unsigned short const usParam = rgusParams[0];
 
-        switch (usParam)
+        switch (static_cast<TermDispatch::EraseType>(usParam))
         {
         case TermDispatch::EraseType::ToEnd:
         case TermDispatch::EraseType::FromBeginning:
@@ -1527,12 +1528,12 @@ bool OutputStateMachineEngine::_GetWindowManipulationType(_In_reads_(cParams) co
     {
         switch(rgusParams[0])
         {
-            case DispatchCommon::WindowManipulationType::RefreshWindow:
-                *puiFunction = DispatchCommon::WindowManipulationType::RefreshWindow;
+            case TermDispatch::WindowManipulationType::RefreshWindow:
+                *puiFunction = TermDispatch::WindowManipulationType::RefreshWindow;
                 fSuccess = true;
                 break;
-            case DispatchCommon::WindowManipulationType::ResizeWindowInCharacters:
-                *puiFunction = DispatchCommon::WindowManipulationType::ResizeWindowInCharacters;
+            case TermDispatch::WindowManipulationType::ResizeWindowInCharacters:
+                *puiFunction = TermDispatch::WindowManipulationType::ResizeWindowInCharacters;
                 fSuccess = true;
                 break;
             default:
@@ -1554,7 +1555,7 @@ bool OutputStateMachineEngine::_GetWindowManipulationType(_In_reads_(cParams) co
 _Success_(return)
 bool OutputStateMachineEngine::_GetCursorStyle(_In_reads_(cParams) const unsigned short* const rgusParams,
                                                const unsigned short cParams,
-                                               _Out_ DispatchCommon::CursorStyle* const pCursorStyle) const
+                                               _Out_ TermDispatch::CursorStyle* const pCursorStyle) const
 {
     bool fSuccess = false;
     *pCursorStyle = s_defaultCursorStyle;
@@ -1567,7 +1568,7 @@ bool OutputStateMachineEngine::_GetCursorStyle(_In_reads_(cParams) const unsigne
     else if (cParams == 1)
     {
         // If there's one parameter, use it.
-        *pCursorStyle = (DispatchCommon::CursorStyle)rgusParams[0];
+        *pCursorStyle = (TermDispatch::CursorStyle)rgusParams[0];
         fSuccess = true;
     }
 

@@ -14,6 +14,7 @@ Author(s):
 #pragma once
 
 #include "termDispatch.hpp"
+#include "DispatchCommon.hpp"
 #include "conGetSet.hpp"
 #include "adaptDefaults.hpp"
 #include "terminalOutput.hpp"

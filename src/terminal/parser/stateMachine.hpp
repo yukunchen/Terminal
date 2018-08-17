@@ -127,8 +127,8 @@ namespace Microsoft::Console::VirtualTerminal
         };
 
         Microsoft::Console::VirtualTerminal::ParserTracing _trace;
-        std::unique_ptr<IStateMachineEngine> _pEngine;
 
+        std::unique_ptr<IStateMachineEngine> _pEngine;
 
         VTStates _state;
 

@@ -14,7 +14,6 @@ Author(s):
 - Michael Niksa (MiNiksa) 30-July-2015
 --*/
 #pragma once
-#include "DispatchCommon.hpp"
 
 namespace Microsoft::Console::VirtualTerminal
 {
@@ -181,11 +180,29 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool SoftReset(){ return false; } // DECSTR
         virtual bool HardReset(){ return false; } // RIS
 
-        virtual bool SetCursorStyle(const DispatchCommon::CursorStyle /*cursorStyle*/){ return false; } // DECSCUSR
+        enum WindowManipulationType : unsigned int
+        {
+            Invalid = 0,
+            RefreshWindow = 7,
+            ResizeWindowInCharacters = 8,
+        };
+
+        enum class CursorStyle : unsigned int
+        {
+            BlinkingBlock = 0,
+            BlinkingBlockDefault = 1,
+            SteadyBlock = 2,
+            BlinkingUnderline = 3,
+            SteadyUnderline = 4,
+            BlinkingBar = 5,
+            SteadyBar = 6
+        };
+
+        virtual bool SetCursorStyle(const TermDispatch::CursorStyle /*cursorStyle*/){ return false; } // DECSCUSR
         virtual bool SetCursorColor(const COLORREF /*Color*/) { return false; } // OSCSetCursorColor, OSCResetCursorColor
 
         // DTTERM_WindowManipulation
-        virtual bool WindowManipulation(const DispatchCommon::WindowManipulationType /*uiFunction*/,
+        virtual bool WindowManipulation(const TermDispatch::WindowManipulationType /*uiFunction*/,
                                         _In_reads_(_Param_(3)) const unsigned short* const /*rgusParams*/,
                                         const size_t /*cParams*/) { return false; }
 
