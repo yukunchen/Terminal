@@ -59,7 +59,7 @@ public:
     size_t _BufferSize;
     size_t _BytesRead;
     size_t _CurrentPosition;  // char position, not byte position
-    PWCHAR _BufPtr;
+    PWCHAR _BufPtr; // current position to insert chars at
     // should be const. the first char of the buffer
     PWCHAR  _BackupLimit;
     size_t _UserBufferSize;   // doubled size in ansi case
@@ -103,6 +103,7 @@ public:
 // out, so that we can still run the tests in the meantime.
 #if UNIT_TESTING
     COOKED_READ_DATA(SCREEN_INFORMATION& screenInfo);
+    friend class CommandLineTests;
 #endif
 
 private:

@@ -124,3 +124,20 @@ NTSTATUS ProcessCommandNumberInput(COOKED_READ_DATA& cookedReadData);
 NTSTATUS ProcessCopyFromCharInput(COOKED_READ_DATA& cookedReadData);
 [[nodiscard]]
 NTSTATUS ProcessCopyToCharInput(COOKED_READ_DATA& cookedReadData);
+
+void ProcessHistoryCycling(COOKED_READ_DATA& cookedReadData, const CommandHistory::SearchDirection searchDirection);
+void SetPromptToOldestCommand(COOKED_READ_DATA& cookedReadData);
+void SetPromptToNewestCommand(COOKED_READ_DATA& cookedReadData);
+void DeletePromptAfterCursor(COOKED_READ_DATA& cookedReadData) noexcept;
+COORD DeletePromptBeforeCursor(COOKED_READ_DATA& cookedReadData) noexcept;
+COORD MoveCursorToEndOfPrompt(COOKED_READ_DATA& cookedReadData) noexcept;
+COORD MoveCursorToStartOfPrompt(COOKED_READ_DATA& cookedReadData) noexcept;
+COORD MoveCursorLeftByWord(COOKED_READ_DATA& cookedReadData) noexcept;
+COORD MoveCursorLeft(COOKED_READ_DATA& cookedReadData);
+COORD MoveCursorRightByWord(COOKED_READ_DATA& cookedReadData) noexcept;
+COORD MoveCursorRight(COOKED_READ_DATA& cookedReadData) noexcept;
+void InsertCtrlZ(COOKED_READ_DATA& cookedReadData) noexcept;
+void DeleteCommandHistory(COOKED_READ_DATA& cookedReadData) noexcept;
+void FillPromptWithPreviousCommandFragment(COOKED_READ_DATA& cookedReadData) noexcept;
+COORD CycleMatchingCommandHistoryToPrompt(COOKED_READ_DATA& cookedReadData);
+COORD DeleteFromRightOfCursor(COOKED_READ_DATA& cookedReadData) noexcept;
