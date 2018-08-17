@@ -734,15 +734,27 @@ HRESULT DxEngine::PaintBufferLine(PCWCHAR const pwsLine,
 {
     try
     {
+        // Calculate positioning of our origin and bounding rect.
+        D2D1_POINT_2F origin;
+        origin.x = static_cast<float>(coord.X * _glyphCell.cx);
+        origin.y = static_cast<float>(coord.Y * _glyphCell.cy);
+
+        D2D1_RECT_F rect = { 0 };
+        rect.left = origin.x;
+        rect.top = origin.y;
+        rect.right = rect.left + _glyphCell.cx;
+        rect.bottom = rect.top + _glyphCell.cy;
+
+        // Draw background color first
+        _d2dRenderTarget->FillRectangle(rect, _d2dBrushBackground.Get());
+
+        // Now try to draw text on top.
+
         _glyphIds.assign(std::max(cchLine, static_cast<size_t>(1)), 0);
 
         BOOL isTextSimple;
         uint32_t textLengthRead;
         RETURN_IF_FAILED(_dwriteTextAnalyzer->GetTextComplexity(pwsLine, gsl::narrow<UINT32>(cchLine), _dwriteFontFace.Get(), &isTextSimple, &textLengthRead, &_glyphIds[0]));
-
-        D2D1_POINT_2F origin;
-        origin.x = static_cast<float>(coord.X * _glyphCell.cx);
-        origin.y = static_cast<float>(coord.Y * _glyphCell.cy);
 
         if (isTextSimple && textLengthRead == cchLine)
         {
