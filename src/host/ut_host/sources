@@ -36,6 +36,7 @@ SOURCES = \
     VtIoTests.cpp \
     VtRendererTests.cpp \
     ConsoleArgumentsTests.cpp \
+    CommandLineTests.cpp \
     DefaultResource.rc \
 
 

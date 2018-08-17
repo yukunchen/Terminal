@@ -24,11 +24,11 @@
 
 #pragma hdrstop
 
-// I need to be a list because we rearrange elements inside to maintain a 
-// "least recently used" state. Doing many rearrangement operations with 
+// I need to be a list because we rearrange elements inside to maintain a
+// "least recently used" state. Doing many rearrangement operations with
 // a list will maintain the iterator pointers as valid to the elements
 // (where other collections like deque do not.)
-// If CommandHistory::s_Allocate and friends stop shuffling elements 
+// If CommandHistory::s_Allocate and friends stop shuffling elements
 // for maintaining LRU, then this datatype can be changed.
 std::list<CommandHistory> CommandHistory::s_historyLists;
 
@@ -226,7 +226,7 @@ HRESULT CommandHistory::RetrieveNth(const SHORT index,
 }
 
 [[nodiscard]]
-HRESULT CommandHistory::Retrieve(const WORD virtualKeyCode,
+HRESULT CommandHistory::Retrieve(const SearchDirection searchDirection,
                                  const gsl::span<wchar_t> buffer,
                                  size_t& commandSize)
 {
@@ -241,7 +241,7 @@ HRESULT CommandHistory::Retrieve(const WORD virtualKeyCode,
     {
         LastDisplayed = 0;
     }
-    else if (virtualKeyCode == VK_UP)
+    else if (searchDirection == SearchDirection::Previous)
     {
         // if this is the first time for this read that a command has
         // been retrieved, return the current command.  otherwise, return
@@ -364,7 +364,7 @@ void CommandHistory::s_UpdatePopups(const WORD NewAttributes,
                                     const WORD OldAttributes,
                                     const WORD OldPopupAttributes)
 {
- 
+
     for (auto& historyList : s_historyLists)
     {
         if (IsFlagSet(historyList.Flags, CLE_ALLOCATED) && !historyList.PopupList.empty())
@@ -440,7 +440,7 @@ CommandHistory* CommandHistory::s_Allocate(const std::wstring_view appName, cons
                 break;
             }
         }
-        
+
     }
 
     // If the app name doesn't match, copy in the new app name and free the old commands.
@@ -553,7 +553,7 @@ std::wstring CommandHistory::_Remove(const SHORT iDel)
         return str;
     }
     CATCH_LOG();
-    
+
     return {};
 }
 
@@ -609,7 +609,6 @@ bool CommandHistory::FindMatchingCommand(const std::wstring_view givenCommand,
 
     return false;
 }
-
 
 #ifdef UNIT_TESTING
 void CommandHistory::s_ClearHistoryListStorage()

@@ -38,6 +38,13 @@ public:
         ExactMatch = 0x1,
         JustLooking = 0x2
     };
+
+    enum class SearchDirection
+    {
+        Previous,
+        Next
+    };
+
     bool FindMatchingCommand(const std::wstring_view command,
                              const SHORT startingIndex,
                              SHORT& indexFound,
@@ -49,7 +56,7 @@ public:
                 const bool suppressDuplicates);
 
     [[nodiscard]]
-    HRESULT Retrieve(const WORD virtualKeyCode,
+    HRESULT Retrieve(const SearchDirection searchDirection,
                      const gsl::span<wchar_t> buffer,
                      size_t& commandSize);
 
@@ -76,7 +83,7 @@ public:
 
 private:
     void _Reset();
-    
+
     std::wstring _Remove(const SHORT iDel);
 
     // _Next and _Prev go to the next and prev command
@@ -87,7 +94,7 @@ private:
     void _Dec(SHORT& ind) const;
     void _Inc(SHORT& ind) const;
 
-    
+
     std::vector<std::wstring> _commands;
     SHORT _maxCommands;
 
@@ -99,7 +106,7 @@ private:
 public:
     DWORD Flags;
     SHORT LastDisplayed;
-    
+
     std::deque<Popup*> PopupList; // pointer to top-level popup
 
 #ifdef UNIT_TESTING
