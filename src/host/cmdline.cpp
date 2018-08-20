@@ -660,15 +660,16 @@ NTSTATUS ProcessCommandNumberInput(COOKED_READ_DATA& cookedReadData)
 
         if (Char >= L'0' && Char <= L'9')
         {
-            if (Popup->NumberRead < 5)
+            if (Popup->CommandNumberInput().size() < COMMAND_NUMBER_LENGTH)
             {
                 size_t CharsToWrite = sizeof(WCHAR);
                 const TextAttribute realAttributes = cookedReadData.ScreenInfo().GetAttributes();
                 cookedReadData.ScreenInfo().SetAttributes(Popup->Attributes);
                 size_t NumSpaces;
+                const auto numberBuffer = Popup->CommandNumberInput();
                 Status = WriteCharsLegacy(cookedReadData.ScreenInfo(),
-                                          Popup->NumberBuffer,
-                                          &Popup->NumberBuffer[Popup->NumberRead],
+                                          numberBuffer.data(),
+                                          numberBuffer.data() + numberBuffer.size(),
                                           &Char,
                                           &CharsToWrite,
                                           &NumSpaces,
@@ -677,21 +678,28 @@ NTSTATUS ProcessCommandNumberInput(COOKED_READ_DATA& cookedReadData)
                                           nullptr);
                 FAIL_FAST_IF_NTSTATUS_FAILED(Status);
                 cookedReadData.ScreenInfo().SetAttributes(realAttributes);
-                Popup->NumberBuffer[Popup->NumberRead] = Char;
-                Popup->NumberRead += 1;
+                try
+                {
+                    Popup->AddNumberToNumberBuffer(Char);
+                }
+                catch (...)
+                {
+                    return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+                }
             }
         }
         else if (Char == UNICODE_BACKSPACE)
         {
-            if (Popup->NumberRead > 0)
+            if (Popup->CommandNumberInput().size() > 0)
             {
                 size_t CharsToWrite = sizeof(WCHAR);
                 const TextAttribute realAttributes = cookedReadData.ScreenInfo().GetAttributes();
                 cookedReadData.ScreenInfo().SetAttributes(Popup->Attributes);
                 size_t NumSpaces;
+                const auto numberBuffer = Popup->CommandNumberInput();
                 Status = WriteCharsLegacy(cookedReadData.ScreenInfo(),
-                                          Popup->NumberBuffer,
-                                          &Popup->NumberBuffer[Popup->NumberRead],
+                                          numberBuffer.data(),
+                                          numberBuffer.data() + numberBuffer.size(),
                                           &Char,
                                           &CharsToWrite,
                                           &NumSpaces,
@@ -701,8 +709,7 @@ NTSTATUS ProcessCommandNumberInput(COOKED_READ_DATA& cookedReadData)
 
                 FAIL_FAST_IF_NTSTATUS_FAILED(Status);
                 cookedReadData.ScreenInfo().SetAttributes(realAttributes);
-                Popup->NumberBuffer[Popup->NumberRead] = (WCHAR)' ';
-                Popup->NumberRead -= 1;
+                Popup->DeleteLastFromNumberBuffer();
             }
         }
         else if (Char == (WCHAR)VK_ESCAPE)
@@ -720,23 +727,8 @@ NTSTATUS ProcessCommandNumberInput(COOKED_READ_DATA& cookedReadData)
         }
         else if (Char == UNICODE_CARRIAGERETURN)
         {
-            CHAR NumberBuffer[6];
-            int i;
-
-            // This is guaranteed above.
-            __analysis_assume(Popup->NumberRead < 6);
-            for (i = 0; i < Popup->NumberRead; i++)
-            {
-                FAIL_FAST_IF_FALSE(i < ARRAYSIZE(NumberBuffer));
-                NumberBuffer[i] = (CHAR)Popup->NumberBuffer[i];
-            }
-            NumberBuffer[i] = 0;
-
-            SHORT CommandNumber = (SHORT)atoi(NumberBuffer);
-            if ((WORD)CommandNumber >= (WORD)cookedReadData.History().GetNumberOfCommands())
-            {
-                CommandNumber = (SHORT)(cookedReadData.History().GetNumberOfCommands() - 1);
-            }
+            const short CommandNumber = gsl::narrow<short>(std::min(static_cast<size_t>(Popup->ParseCommandNumberInput()),
+                                                                    cookedReadData.History().GetNumberOfCommands() - 1));
 
             cookedReadData.EndCurrentPopup();
             if (!commandHistory.PopupList.empty())
@@ -1268,7 +1260,6 @@ COORD MoveCursorRightByWord(COOKED_READ_DATA& cookedReadData) noexcept
             {
                 if (fStartFromDelim != IsWordDelim(*NextWord))
                 {
-
                     break;
                 }
             }
