@@ -119,7 +119,9 @@ private:
     ULONG _ctrlWakeupMask;
     size_t _visibleCharCount; // TODO MSFT:11285829 is this cells or glyphs? ie. is a wide char counted as 1 or 2?
     SCREEN_INFORMATION& _screenInfo;
-    COORD _originalCursorPosition; // TODO MSFT:11285829 original to what? the beginning of the prompt?
+
+    // Note that cookedReadData's _originalCursorPosition is the position before ANY text was entered on the edit line.
+    COORD _originalCursorPosition;
     COORD _beforeDialogCursorPosition; // Currently only used for F9 (ProcessCommandNumberInput) since it's the only pop-up to move the cursor when it starts.
 
     const bool _echoInput;

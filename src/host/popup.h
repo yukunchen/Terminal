@@ -26,6 +26,8 @@ Revision History:
 #define COPY_FROM_CHAR_PROMPT_LENGTH 28
 
 #define COMMAND_NUMBER_PROMPT_LENGTH 22
+
+// 5 digit number for command history
 #define COMMAND_NUMBER_LENGTH 5
 #define MINIMUM_COMMAND_PROMPT_SIZE COMMAND_NUMBER_LENGTH
 
@@ -59,9 +61,9 @@ public:
     TextAttribute Attributes;    // text attributes
 
     SHORT BottomIndex;  // number of command displayed on last line of popup
+
+    // only used during CommandList popup
     SHORT CurrentCommand;
-    WCHAR NumberBuffer[6];
-    SHORT NumberRead;
 
     HRESULT DoCallback(COOKED_READ_DATA& data);
 
@@ -69,6 +71,12 @@ public:
     SHORT Height() const noexcept;
 
     COORD GetCursorPosition() const noexcept;
+
+    // only used during CommandNumber popup
+    void AddNumberToNumberBuffer(const wchar_t wch);
+    void DeleteLastFromNumberBuffer() noexcept;
+    const std::wstring& CommandNumberInput() const noexcept;
+    int ParseCommandNumberInput() const noexcept;
 
 private:
 
@@ -92,4 +100,7 @@ private:
 
     SCREEN_INFORMATION& _screenInfo;
     CommandHistory* const _history;
+
+    // only used during CommandNumber popup
+    std::wstring _commandNumberInput;
 };

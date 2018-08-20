@@ -29,7 +29,6 @@
 // - func - Which type of popup is this?
 Popup::Popup(SCREEN_INFORMATION& screenInfo, const COORD proposedSize, CommandHistory* const history, const PopFunc func) :
     CurrentCommand(0),
-    NumberRead(0),
     _callbackOption(func),
     BottomIndex(history->LastDisplayed),
     _screenInfo(screenInfo),
@@ -37,7 +36,7 @@ Popup::Popup(SCREEN_INFORMATION& screenInfo, const COORD proposedSize, CommandHi
 {
     Attributes = screenInfo.GetPopupAttributes()->GetLegacyAttributes();
 
-    std::fill_n(NumberBuffer, ARRAYSIZE(NumberBuffer), UNICODE_NULL);
+    _commandNumberInput.reserve(COMMAND_NUMBER_LENGTH);
 
     const COORD size = _CalculateSize(screenInfo, proposedSize);
     const COORD origin = _CalculateOrigin(screenInfo, size);
@@ -684,4 +683,53 @@ UINT Popup::s_LoadStringEx(_In_ HINSTANCE hModule, _In_ UINT wID, _Out_writes_(c
     }
 
     return cch;
+}
+
+// Routine Description:
+// - adds single digit number to the popup's number buffer
+// Arguments:
+// - wch - char of the number to add. must be in the range [L'0', L'9']
+// Note: will throw if wch is out of range
+void Popup::AddNumberToNumberBuffer(const wchar_t wch)
+{
+    THROW_HR_IF(E_INVALIDARG, wch < L'0' || wch > L'9');
+    if (_commandNumberInput.size() < COMMAND_NUMBER_LENGTH)
+    {
+        _commandNumberInput += wch;
+    }
+}
+
+// Routine Description:
+// - removes the last number added to the number buffer
+void Popup::DeleteLastFromNumberBuffer() noexcept
+{
+    if (!_commandNumberInput.empty())
+    {
+        _commandNumberInput.pop_back();
+    }
+}
+
+// Routine Description:
+// - access the number buffer
+// Return Value:
+// - const ref to the number buffer
+const std::wstring& Popup::CommandNumberInput() const noexcept
+{
+    return _commandNumberInput;
+}
+
+// Routine Description:
+// - get numerical value for the data stored in the number buffer
+// Return Value:
+// - parsed integer representing the string value found in the number buffer
+int Popup::ParseCommandNumberInput() const noexcept
+{
+    try
+    {
+        return std::stoi(_commandNumberInput);
+    }
+    catch (...)
+    {
+        return 0;
+    }
 }
