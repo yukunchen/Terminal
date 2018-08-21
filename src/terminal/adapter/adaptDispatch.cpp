@@ -629,12 +629,12 @@ bool AdaptDispatch::_EraseAreaHelper(const COORD coordStartPosition, const COORD
 // - Used by both erase line (used just once) and by erase screen (used in a loop) to erase a portion of the buffer.
 // Arguments:
 // - pcsbiex - Pointer to the console screen buffer that we will be erasing (and getting cursor data from within)
-// - eraseType - Enumeration mode of which kind of erase to perform: beginning to cursor, cursor to end, or entire line.
+// - DispatchTypes::EraseType - Enumeration mode of which kind of erase to perform: beginning to cursor, cursor to end, or entire line.
 // - sLineId - The line number (array index value, starts at 0) of the line to operate on within the buffer.
 //           - This is not aware of circular buffer. Line 0 is always the top visible line if you scrolled the whole way up the window.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::_EraseSingleLineHelper(const CONSOLE_SCREEN_BUFFER_INFOEX* const pcsbiex, const EraseType eraseType, const SHORT sLineId, const WORD wFillColor) const
+bool AdaptDispatch::_EraseSingleLineHelper(const CONSOLE_SCREEN_BUFFER_INFOEX* const pcsbiex, const DispatchTypes::EraseType eraseType, const SHORT sLineId, const WORD wFillColor) const
 {
     COORD coordStartPosition = { 0 };
     coordStartPosition.Y = sLineId ;
@@ -643,11 +643,11 @@ bool AdaptDispatch::_EraseSingleLineHelper(const CONSOLE_SCREEN_BUFFER_INFOEX* c
     // remember that erases are inclusive of the current cursor position.
     switch (eraseType)
     {
-    case EraseType::FromBeginning:
-    case EraseType::All:
+    case DispatchTypes::EraseType::FromBeginning:
+    case DispatchTypes::EraseType::All:
         coordStartPosition.X = pcsbiex->srWindow.Left; // from beginning and the whole line start from the left viewport edge.
         break;
-    case EraseType::ToEnd:
+    case DispatchTypes::EraseType::ToEnd:
         coordStartPosition.X = pcsbiex->dwCursorPosition.X; // from the current cursor position (including it)
         break;
     }
@@ -657,12 +657,12 @@ bool AdaptDispatch::_EraseSingleLineHelper(const CONSOLE_SCREEN_BUFFER_INFOEX* c
     // determine length of erase from erase type
     switch (eraseType)
     {
-    case EraseType::FromBeginning:
+    case DispatchTypes::EraseType::FromBeginning:
         // +1 because if cursor were at the left edge, the length would be 0 and we want to paint at least the 1 character the cursor is on.
         nLength = (pcsbiex->dwCursorPosition.X - pcsbiex->srWindow.Left) + 1;
         break;
-    case EraseType::ToEnd:
-    case EraseType::All:
+    case DispatchTypes::EraseType::ToEnd:
+    case DispatchTypes::EraseType::All:
         // Remember the .Right value is 1 farther than the right most displayed character in the viewport. Therefore no +1.
         nLength = pcsbiex->srWindow.Right - coordStartPosition.X;
         break;
@@ -704,25 +704,25 @@ bool AdaptDispatch::EraseCharacters(_In_ unsigned int const uiNumChars)
 // Routine Description:
 // - ED - Erases a portion of the current viewable area (viewport) of the console.
 // Arguments:
-// - eraseType - Determines whether to erase:
+// - DispatchTypes::EraseType - Determines whether to erase:
 //      From beginning (top-left corner) to the cursor
 //      From cursor to end (bottom-right corner)
 //      The entire viewport area
 //      The scrollback (outside the viewport area)
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::EraseInDisplay(const EraseType eraseType)
+bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
 {
     // First things first. If this is a "Scrollback" clear, then just do that.
     // Scrollback clears erase everything in the "scrollback" of a *nix terminal
     //      Everything that's scrolled off the screen so far.
     // Or if it's an Erase All, then we also need to handle that specially
     //      by moving the current contents of the viewport into the scrollback.
-    if (eraseType == EraseType::Scrollback)
+    if (eraseType == DispatchTypes::EraseType::Scrollback)
     {
         return _EraseScrollback();
     }
-    else if (eraseType == EraseType::All)
+    else if (eraseType == DispatchTypes::EraseType::All)
     {
         return _EraseAll();
     }
@@ -743,12 +743,12 @@ bool AdaptDispatch::EraseInDisplay(const EraseType eraseType)
         // C. All - Erase 1, 2, and 3.
 
         // 1. Lines before cursor line
-        if (eraseType == EraseType::FromBeginning)
+        if (eraseType == DispatchTypes::EraseType::FromBeginning)
         {
             // For beginning and all, erase all complete lines before (above vertically) from the cursor position.
             for (SHORT sStartLine = csbiex.srWindow.Top; sStartLine < csbiex.dwCursorPosition.Y; sStartLine++)
             {
-                fSuccess = _EraseSingleLineHelper(&csbiex, EraseType::All, sStartLine, csbiex.wAttributes);
+                fSuccess = _EraseSingleLineHelper(&csbiex, DispatchTypes::EraseType::All, sStartLine, csbiex.wAttributes);
 
                 if (!fSuccess)
                 {
@@ -766,13 +766,13 @@ bool AdaptDispatch::EraseInDisplay(const EraseType eraseType)
         if (fSuccess)
         {
             // 3. Lines after cursor line
-            if (eraseType == EraseType::ToEnd)
+            if (eraseType == DispatchTypes::EraseType::ToEnd)
             {
                 // For beginning and all, erase all complete lines after (below vertically) the cursor position.
                 // Remember that the viewport bottom value is 1 beyond the viewable area of the viewport.
                 for (SHORT sStartLine = csbiex.dwCursorPosition.Y + 1; sStartLine < csbiex.srWindow.Bottom; sStartLine++)
                 {
-                    fSuccess = _EraseSingleLineHelper(&csbiex, EraseType::All, sStartLine, csbiex.wAttributes);
+                    fSuccess = _EraseSingleLineHelper(&csbiex, DispatchTypes::EraseType::All, sStartLine, csbiex.wAttributes);
 
                     if (!fSuccess)
                     {
@@ -789,10 +789,10 @@ bool AdaptDispatch::EraseInDisplay(const EraseType eraseType)
 // Routine Description:
 // - EL - Erases the line that the cursor is currently on.
 // Arguments:
-// - eraseType - Determines whether to erase: From beginning (left edge) to the cursor, from cursor to end (right edge), or the entire line.
+// - DispatchTypes::EraseType - Determines whether to erase: From beginning (left edge) to the cursor, from cursor to end (right edge), or the entire line.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::EraseInLine(const EraseType eraseType)
+bool AdaptDispatch::EraseInLine(const DispatchTypes::EraseType eraseType)
 {
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
@@ -814,13 +814,13 @@ bool AdaptDispatch::EraseInLine(const EraseType eraseType)
 // - statusType - ANSI status type indicating what property we should report back
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::DeviceStatusReport(const AnsiStatusType statusType)
+bool AdaptDispatch::DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType)
 {
     bool fSuccess = false;
 
     switch (statusType)
     {
-    case AnsiStatusType::CPR_CursorPositionReport:
+    case DispatchTypes::AnsiStatusType::CPR_CursorPositionReport:
         fSuccess = _CursorPositionReport();
         break;
     }
@@ -1031,7 +1031,7 @@ bool AdaptDispatch::_DoDECCOLMHelper(_In_ unsigned int const uiColumns)
         fSuccess = CursorPosition(1, 1);
         if (fSuccess)
         {
-            fSuccess = EraseInDisplay(EraseType::All);
+            fSuccess = EraseInDisplay(DispatchTypes::EraseType::All);
             if (fSuccess)
             {
                 fSuccess = SetTopBottomScrollingMargins(0, 0, false);
@@ -1041,43 +1041,43 @@ bool AdaptDispatch::_DoDECCOLMHelper(_In_ unsigned int const uiColumns)
     return fSuccess;
 }
 
-bool AdaptDispatch::_PrivateModeParamsHelper(_In_ PrivateModeParams const param, const bool fEnable)
+bool AdaptDispatch::_PrivateModeParamsHelper(_In_ DispatchTypes::PrivateModeParams const param, const bool fEnable)
 {
     bool fSuccess = false;
     switch(param)
     {
-    case PrivateModeParams::DECCKM_CursorKeysMode:
+    case DispatchTypes::PrivateModeParams::DECCKM_CursorKeysMode:
         // set - Enable Application Mode, reset - Normal mode
         fSuccess = SetCursorKeysMode(fEnable);
         break;
-    case PrivateModeParams::DECCOLM_SetNumberOfColumns:
+    case DispatchTypes::PrivateModeParams::DECCOLM_SetNumberOfColumns:
         fSuccess = _DoDECCOLMHelper(fEnable? s_sDECCOLMSetColumns : s_sDECCOLMResetColumns);
         break;
-    case PrivateModeParams::ATT610_StartCursorBlink:
+    case DispatchTypes::PrivateModeParams::ATT610_StartCursorBlink:
         fSuccess = EnableCursorBlinking(fEnable);
         break;
-    case PrivateModeParams::DECTCEM_TextCursorEnableMode:
+    case DispatchTypes::PrivateModeParams::DECTCEM_TextCursorEnableMode:
         fSuccess = CursorVisibility(fEnable);
         break;
-    case PrivateModeParams::VT200_MOUSE_MODE:
+    case DispatchTypes::PrivateModeParams::VT200_MOUSE_MODE:
         fSuccess = EnableVT200MouseMode(fEnable);
         break;
-    case PrivateModeParams::BUTTTON_EVENT_MOUSE_MODE:
+    case DispatchTypes::PrivateModeParams::BUTTTON_EVENT_MOUSE_MODE:
         fSuccess = EnableButtonEventMouseMode(fEnable);
         break;
-    case PrivateModeParams::ANY_EVENT_MOUSE_MODE:
+    case DispatchTypes::PrivateModeParams::ANY_EVENT_MOUSE_MODE:
         fSuccess = EnableAnyEventMouseMode(fEnable);
         break;
-    case PrivateModeParams::UTF8_EXTENDED_MODE:
+    case DispatchTypes::PrivateModeParams::UTF8_EXTENDED_MODE:
         fSuccess = EnableUTF8ExtendedMouseMode(fEnable);
         break;
-    case PrivateModeParams::SGR_EXTENDED_MODE:
+    case DispatchTypes::PrivateModeParams::SGR_EXTENDED_MODE:
         fSuccess = EnableSGRExtendedMouseMode(fEnable);
         break;
-    case PrivateModeParams::ALTERNATE_SCROLL:
+    case DispatchTypes::PrivateModeParams::ALTERNATE_SCROLL:
         fSuccess = EnableAlternateScroll(fEnable);
         break;
-    case PrivateModeParams::ASB_AlternateScreenBuffer:
+    case DispatchTypes::PrivateModeParams::ASB_AlternateScreenBuffer:
         fSuccess = fEnable? UseAlternateScreenBuffer() : UseMainScreenBuffer();
         break;
     default:
@@ -1098,7 +1098,7 @@ bool AdaptDispatch::_PrivateModeParamsHelper(_In_ PrivateModeParams const param,
 // - cParams - length of rgParams
 // Return Value:
 // - True if ALL params were handled successfully. False otherwise.
-bool AdaptDispatch::_SetResetPrivateModes(_In_reads_(cParams) const PrivateModeParams* const rgParams, const size_t cParams, const bool fEnable)
+bool AdaptDispatch::_SetResetPrivateModes(_In_reads_(cParams) const DispatchTypes::PrivateModeParams* const rgParams, const size_t cParams, const bool fEnable)
 {
     // because the user might chain together params we don't support with params we DO support, execute all
     // params in the sequence, and only return failure if we failed at least one of them
@@ -1117,7 +1117,7 @@ bool AdaptDispatch::_SetResetPrivateModes(_In_reads_(cParams) const PrivateModeP
 // - cParams - length of rgParams
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::SetPrivateModes(_In_reads_(cParams) const PrivateModeParams* const rgParams, const size_t cParams)
+bool AdaptDispatch::SetPrivateModes(_In_reads_(cParams) const DispatchTypes::PrivateModeParams* const rgParams, const size_t cParams)
 {
     return _SetResetPrivateModes(rgParams, cParams, true);
 }
@@ -1129,7 +1129,7 @@ bool AdaptDispatch::SetPrivateModes(_In_reads_(cParams) const PrivateModeParams*
 // - cParams - length of rgParams
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::ResetPrivateModes(_In_reads_(cParams) const PrivateModeParams* const rgParams, const size_t cParams)
+bool AdaptDispatch::ResetPrivateModes(_In_reads_(cParams) const DispatchTypes::PrivateModeParams* const rgParams, const size_t cParams)
 {
     return _SetResetPrivateModes(rgParams, cParams, false);
 }
@@ -1358,7 +1358,7 @@ bool AdaptDispatch::BackwardsTab(const SHORT sNumTabs)
 //     in clearing only the tab stop in the cursor's current column, if there
 //     is one. ClearAllColumns (3) results in resetting all set tab stops.
 //Arguments:
-// - sClearType - Whether to clear the current column, or all columns, defined in TermDispatch::TabClearType
+// - sClearType - Whether to clear the current column, or all columns, defined in DispatchTypes::TabClearType
 // Return value:
 // True if handled successfully. False othewise.
 bool AdaptDispatch::TabClear(const SHORT sClearType)
@@ -1366,10 +1366,10 @@ bool AdaptDispatch::TabClear(const SHORT sClearType)
     bool fSuccess = false;
     switch (sClearType)
     {
-    case TermDispatch::TabClearType::ClearCurrentColumn:
+    case DispatchTypes::TabClearType::ClearCurrentColumn:
         fSuccess = !!_conApi->PrivateTabClear(false);
         break;
-    case TermDispatch::TabClearType::ClearAllColumns:
+    case DispatchTypes::TabClearType::ClearAllColumns:
         fSuccess = !!_conApi->PrivateTabClear(true);
         break;
     }
@@ -1378,7 +1378,7 @@ bool AdaptDispatch::TabClear(const SHORT sClearType)
 
 //Routine Description:
 // Designate Charset - Sets the active charset to be the one mapped to wch.
-//     See TermDispatch::VTCharacterSets for a list of supported charsets.
+//     See DispatchTypes::VTCharacterSets for a list of supported charsets.
 //     Also http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-Controls-beginning-with-ESC
 //       For a list of all charsets and their codes.
 //     If the specified charset is unsupported, we do nothing (remain on the current one)
@@ -1440,11 +1440,11 @@ bool AdaptDispatch::SoftReset()
     }
     if (fSuccess)
     {
-        fSuccess = DesignateCharset(TermDispatch::VTCharacterSets::USASCII); // Default Charset
+        fSuccess = DesignateCharset(DispatchTypes::VTCharacterSets::USASCII); // Default Charset
     }
     if (fSuccess)
     {
-        GraphicsOptions opt = GraphicsOptions::Off;
+		DispatchTypes::GraphicsOptions opt = DispatchTypes::GraphicsOptions::Off;
         fSuccess = SetGraphicsRendition(&opt, 1); // Normal rendition.
     }
     if (fSuccess)
@@ -1481,7 +1481,7 @@ bool AdaptDispatch::HardReset()
     bool fSuccess = _EraseScrollback();
     if (fSuccess)
     {
-        fSuccess = EraseInDisplay(EraseType::All);
+        fSuccess = EraseInDisplay(DispatchTypes::EraseType::All);
     }
 
     // Cursor to 1,1
@@ -1680,7 +1680,7 @@ bool AdaptDispatch::EnableAlternateScroll(const bool fEnabled)
 // - cursorStyle - The unix-like cursor style to apply to the cursor
 // Return value:
 // True if handled successfully. False othewise.
-bool AdaptDispatch::SetCursorStyle(const TermDispatch::CursorStyle cursorStyle)
+bool AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 {
     bool isPty = false;
     _conApi->IsConsolePty(&isPty);
@@ -1694,30 +1694,30 @@ bool AdaptDispatch::SetCursorStyle(const TermDispatch::CursorStyle cursorStyle)
 
     switch(cursorStyle)
     {
-    case TermDispatch::CursorStyle::BlinkingBlock:
-    case TermDispatch::CursorStyle::BlinkingBlockDefault:
+    case DispatchTypes::CursorStyle::BlinkingBlock:
+    case DispatchTypes::CursorStyle::BlinkingBlockDefault:
         fEnableBlinking = true;
         actualType = CursorType::FullBox;
         break;
-    case TermDispatch::CursorStyle::SteadyBlock:
+    case DispatchTypes::CursorStyle::SteadyBlock:
         fEnableBlinking = false;
         actualType = CursorType::FullBox;
         break;
 
-    case TermDispatch::CursorStyle::BlinkingUnderline:
+    case DispatchTypes::CursorStyle::BlinkingUnderline:
         fEnableBlinking = true;
         actualType = CursorType::Underscore;
         break;
-    case TermDispatch::CursorStyle::SteadyUnderline:
+    case DispatchTypes::CursorStyle::SteadyUnderline:
         fEnableBlinking = false;
         actualType = CursorType::Underscore;
         break;
 
-    case TermDispatch::CursorStyle::BlinkingBar:
+    case DispatchTypes::CursorStyle::BlinkingBar:
         fEnableBlinking = true;
         actualType = CursorType::VerticalBar;
         break;
-    case TermDispatch::CursorStyle::SteadyBar:
+    case DispatchTypes::CursorStyle::SteadyBar:
         fEnableBlinking = false;
         actualType = CursorType::VerticalBar;
         break;
@@ -1797,7 +1797,7 @@ bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex,
 // - cParams - size of rgusParams
 // Return value:
 // True if handled successfully. False othewise.
-bool AdaptDispatch::WindowManipulation(const TermDispatch::WindowManipulationType uiFunction,
+bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationType uiFunction,
                                        _In_reads_(cParams) const unsigned short* const rgusParams,
                                        const size_t cParams)
 {
@@ -1807,13 +1807,13 @@ bool AdaptDispatch::WindowManipulation(const TermDispatch::WindowManipulationTyp
     //  MSFT:13271146 - QueryScreenSize
     switch (uiFunction)
     {
-        case TermDispatch::WindowManipulationType::RefreshWindow:
+        case DispatchTypes::WindowManipulationType::RefreshWindow:
             if (cParams == 0)
             {
                 fSuccess = DispatchCommon::s_RefreshWindow(*_conApi);
             }
             break;
-        case TermDispatch::WindowManipulationType::ResizeWindowInCharacters:
+        case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
             if (cParams == 2)
             {
                 fSuccess = DispatchCommon::s_ResizeWindow(*_conApi, rgusParams[1], rgusParams[0]);

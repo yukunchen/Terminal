@@ -67,8 +67,8 @@ const wchar_t TerminalOutput::s_rgDECSpecialGraphicsTranslations[s_uiNumDisplayC
 bool TerminalOutput::DesignateCharset(const wchar_t wchNewCharset)
 {
     bool result = false;
-    if (wchNewCharset == TermDispatch::VTCharacterSets::DEC_LineDrawing ||
-        wchNewCharset == TermDispatch::VTCharacterSets::USASCII)
+    if (wchNewCharset == DispatchTypes::VTCharacterSets::DEC_LineDrawing ||
+        wchNewCharset == DispatchTypes::VTCharacterSets::USASCII)
     {
         _wchCurrentCharset = wchNewCharset;
         result = true;
@@ -84,7 +84,7 @@ bool TerminalOutput::DesignateCharset(const wchar_t wchNewCharset)
 // - True if the current charset is not USASCII
 bool TerminalOutput::NeedToTranslate() const
 {
-    return _wchCurrentCharset != TermDispatch::VTCharacterSets::USASCII;
+    return _wchCurrentCharset != DispatchTypes::VTCharacterSets::USASCII;
 }
 
 const wchar_t* TerminalOutput::_GetTranslationTable() const
@@ -92,7 +92,7 @@ const wchar_t* TerminalOutput::_GetTranslationTable() const
     const wchar_t* pwchTranslation = nullptr;
     switch (_wchCurrentCharset)
     {
-    case TermDispatch::VTCharacterSets::DEC_LineDrawing:
+    case DispatchTypes::VTCharacterSets::DEC_LineDrawing:
         pwchTranslation = TerminalOutput::s_rgDECSpecialGraphicsTranslations;
         break;
     }
@@ -102,7 +102,7 @@ const wchar_t* TerminalOutput::_GetTranslationTable() const
 wchar_t TerminalOutput::TranslateKey(const wchar_t wch) const
 {
     wchar_t wchFound = wch;
-    if (_wchCurrentCharset == TermDispatch::VTCharacterSets::USASCII ||
+    if (_wchCurrentCharset == DispatchTypes::VTCharacterSets::USASCII ||
          wch < '\x60' || wch > '\x7f') // filter out the region we know is unchanged
     {
         ; // do nothing, these are the same as default.

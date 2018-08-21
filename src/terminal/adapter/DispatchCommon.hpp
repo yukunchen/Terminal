@@ -22,24 +22,6 @@ namespace Microsoft::Console::VirtualTerminal
     {
     public:
 
-        enum WindowManipulationType : unsigned int
-        {
-            Invalid = 0,
-            RefreshWindow = 7,
-            ResizeWindowInCharacters = 8,
-        };
-
-        enum class CursorStyle : unsigned int
-        {
-            BlinkingBlock = 0,
-            BlinkingBlockDefault = 1,
-            SteadyBlock = 2,
-            BlinkingUnderline = 3,
-            SteadyUnderline = 4,
-            BlinkingBar = 5,
-            SteadyBar = 6
-        };
-
         static bool s_ResizeWindow(ConGetSet& conApi,
                                    const unsigned short usWidth,
                                    const unsigned short usHeight);

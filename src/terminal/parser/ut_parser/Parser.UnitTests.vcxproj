@@ -2,9 +2,10 @@
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
 
-  <!-- Only add closed-source files, dependencies here -->
   <Import Project="Parser.UnitTests-common.vcxproj" />
 
+  <!-- Only add closed-source files, dependencies to this file.
+      Any open-source files can go in Parser.UnitTests-common.vcxproj -->
   <ItemGroup>
     <ClCompile Include="InputEngineTest.cpp" />
   </ItemGroup>

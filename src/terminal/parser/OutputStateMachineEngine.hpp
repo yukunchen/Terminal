@@ -142,18 +142,18 @@ namespace Microsoft::Console::VirtualTerminal
             G3
         };
 
-        static const TermDispatch::GraphicsOptions s_defaultGraphicsOption = TermDispatch::GraphicsOptions::Off;
+        static const DispatchTypes::GraphicsOptions s_defaultGraphicsOption = DispatchTypes::GraphicsOptions::Off;
         _Success_(return)
         bool _GetGraphicsOptions(_In_reads_(cParams) const unsigned short* const rgusParams,
                                     const unsigned short cParams,
-                                    _Out_writes_(*pcOptions) TermDispatch::GraphicsOptions* const rgGraphicsOptions,
+                                    _Out_writes_(*pcOptions) DispatchTypes::GraphicsOptions* const rgGraphicsOptions,
                                     _Inout_ size_t* const pcOptions) const;
 
-        static const TermDispatch::EraseType s_defaultEraseType = TermDispatch::EraseType::ToEnd;
+        static const DispatchTypes::EraseType s_defaultEraseType = DispatchTypes::EraseType::ToEnd;
         _Success_(return)
         bool _GetEraseOperation(_In_reads_(cParams) const unsigned short* const rgusParams,
                                 const unsigned short cParams,
-                                _Out_ TermDispatch::EraseType* const pEraseType) const;
+                                _Out_ DispatchTypes::EraseType* const pEraseType) const;
 
         static const unsigned int s_uiDefaultCursorDistance = 1;
         _Success_(return)
@@ -184,7 +184,7 @@ namespace Microsoft::Console::VirtualTerminal
         _Success_(return)
         bool _GetDeviceStatusOperation(_In_reads_(cParams) const unsigned short* const rgusParams,
                                         const unsigned short cParams,
-                                        _Out_ TermDispatch::AnsiStatusType* const pStatusType) const;
+                                        _Out_ DispatchTypes::AnsiStatusType* const pStatusType) const;
 
         _Success_(return)
         bool _VerifyHasNoParameters(const unsigned short cParams) const;
@@ -196,7 +196,7 @@ namespace Microsoft::Console::VirtualTerminal
         _Success_(return)
         bool _GetPrivateModeParams(_In_reads_(cParams) const unsigned short* const rgusParams,
                                     const unsigned short cParams,
-                                    _Out_writes_(*pcParams) TermDispatch::PrivateModeParams* const rgPrivateModeParams,
+                                    _Out_writes_(*pcParams) DispatchTypes::PrivateModeParams* const rgPrivateModeParams,
                                     _Inout_ size_t* const pcParams) const;
 
         static const SHORT s_sDefaultTopMargin = 0;
@@ -230,7 +230,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool _GetDesignateType(const wchar_t wchIntermediate,
                                 _Out_ DesignateCharsetTypes* const pDesignateType) const;
 
-        static const TermDispatch::WindowManipulationType s_DefaultWindowManipulationType = TermDispatch::WindowManipulationType::Invalid;
+        static const DispatchTypes::WindowManipulationType s_DefaultWindowManipulationType = DispatchTypes::WindowManipulationType::Invalid;
         _Success_(return)
         bool _GetWindowManipulationType(_In_reads_(cParams) const unsigned short* const rgusParams,
                                         const unsigned short cParams,
@@ -253,11 +253,11 @@ namespace Microsoft::Console::VirtualTerminal
                                     const size_t cchOscString,
                                     _Out_ DWORD* const pRgb) const;
 
-        static const TermDispatch::CursorStyle s_defaultCursorStyle = TermDispatch::CursorStyle::BlinkingBlockDefault;
+        static const DispatchTypes::CursorStyle s_defaultCursorStyle = DispatchTypes::CursorStyle::BlinkingBlockDefault;
         _Success_(return)
         bool _GetCursorStyle(_In_reads_(cParams) const unsigned short* const rgusParams,
                                 const unsigned short cParams,
-                                _Out_ TermDispatch::CursorStyle* const pCursorStyle) const;
+                                _Out_ DispatchTypes::CursorStyle* const pCursorStyle) const;
 
     };
 }
