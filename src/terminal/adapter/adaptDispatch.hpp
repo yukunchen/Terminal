@@ -100,12 +100,12 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool EnableButtonEventMouseMode(const bool fEnabled); // ?1002
         virtual bool EnableAnyEventMouseMode(const bool fEnabled); // ?1003
         virtual bool EnableAlternateScroll(const bool fEnabled); // ?1007
-        virtual bool SetCursorStyle(const DispatchCommon::CursorStyle cursorStyle); // DECSCUSR
+        virtual bool SetCursorStyle(const TermDispatch::CursorStyle cursorStyle); // DECSCUSR
         virtual bool SetCursorColor(const COLORREF cursorColor);
 
         virtual bool SetColorTableEntry(const size_t tableIndex,
                                         const DWORD dwColor); // OscColorTable
-        virtual bool WindowManipulation(const DispatchCommon::WindowManipulationType uiFunction,
+        virtual bool WindowManipulation(const TermDispatch::WindowManipulationType uiFunction,
                                         _In_reads_(cParams) const unsigned short* const rgusParams,
                                         const size_t cParams); // DTTERM_WindowManipulation
 

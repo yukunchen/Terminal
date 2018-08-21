@@ -1650,7 +1650,8 @@ bool AdaptDispatch::EnableButtonEventMouseMode(const bool fEnabled)
 }
 
 //Routine Description:
-// Enable Any Event mode - send all mouse events to the input.
+// Enable Any Event mode - send all mouse events to the input.
+
 //Arguments:
 // - fEnabled - true to enable, false to disable.
 // Return value:
@@ -1679,7 +1680,7 @@ bool AdaptDispatch::EnableAlternateScroll(const bool fEnabled)
 // - cursorStyle - The unix-like cursor style to apply to the cursor
 // Return value:
 // True if handled successfully. False othewise.
-bool AdaptDispatch::SetCursorStyle(const DispatchCommon::CursorStyle cursorStyle)
+bool AdaptDispatch::SetCursorStyle(const TermDispatch::CursorStyle cursorStyle)
 {
     bool isPty = false;
     _conApi->IsConsolePty(&isPty);
@@ -1693,30 +1694,30 @@ bool AdaptDispatch::SetCursorStyle(const DispatchCommon::CursorStyle cursorStyle
 
     switch(cursorStyle)
     {
-    case DispatchCommon::CursorStyle::BlinkingBlock:
-    case DispatchCommon::CursorStyle::BlinkingBlockDefault:
+    case TermDispatch::CursorStyle::BlinkingBlock:
+    case TermDispatch::CursorStyle::BlinkingBlockDefault:
         fEnableBlinking = true;
         actualType = CursorType::FullBox;
         break;
-    case DispatchCommon::CursorStyle::SteadyBlock:
+    case TermDispatch::CursorStyle::SteadyBlock:
         fEnableBlinking = false;
         actualType = CursorType::FullBox;
         break;
 
-    case DispatchCommon::CursorStyle::BlinkingUnderline:
+    case TermDispatch::CursorStyle::BlinkingUnderline:
         fEnableBlinking = true;
         actualType = CursorType::Underscore;
         break;
-    case DispatchCommon::CursorStyle::SteadyUnderline:
+    case TermDispatch::CursorStyle::SteadyUnderline:
         fEnableBlinking = false;
         actualType = CursorType::Underscore;
         break;
 
-    case DispatchCommon::CursorStyle::BlinkingBar:
+    case TermDispatch::CursorStyle::BlinkingBar:
         fEnableBlinking = true;
         actualType = CursorType::VerticalBar;
         break;
-    case DispatchCommon::CursorStyle::SteadyBar:
+    case TermDispatch::CursorStyle::SteadyBar:
         fEnableBlinking = false;
         actualType = CursorType::VerticalBar;
         break;
@@ -1796,7 +1797,7 @@ bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex,
 // - cParams - size of rgusParams
 // Return value:
 // True if handled successfully. False othewise.
-bool AdaptDispatch::WindowManipulation(const DispatchCommon::WindowManipulationType uiFunction,
+bool AdaptDispatch::WindowManipulation(const TermDispatch::WindowManipulationType uiFunction,
                                        _In_reads_(cParams) const unsigned short* const rgusParams,
                                        const size_t cParams)
 {
@@ -1806,13 +1807,13 @@ bool AdaptDispatch::WindowManipulation(const DispatchCommon::WindowManipulationT
     //  MSFT:13271146 - QueryScreenSize
     switch (uiFunction)
     {
-        case DispatchCommon::WindowManipulationType::RefreshWindow:
+        case TermDispatch::WindowManipulationType::RefreshWindow:
             if (cParams == 0)
             {
                 fSuccess = DispatchCommon::s_RefreshWindow(*_conApi);
             }
             break;
-        case DispatchCommon::WindowManipulationType::ResizeWindowInCharacters:
+        case TermDispatch::WindowManipulationType::ResizeWindowInCharacters:
             if (cParams == 2)
             {
                 fSuccess = DispatchCommon::s_ResizeWindow(*_conApi, rgusParams[1], rgusParams[0]);
