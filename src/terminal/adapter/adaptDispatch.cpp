@@ -1051,7 +1051,7 @@ bool AdaptDispatch::_PrivateModeParamsHelper(_In_ DispatchTypes::PrivateModePara
         fSuccess = SetCursorKeysMode(fEnable);
         break;
     case DispatchTypes::PrivateModeParams::DECCOLM_SetNumberOfColumns:
-        fSuccess = _DoDECCOLMHelper(fEnable? s_sDECCOLMSetColumns : s_sDECCOLMResetColumns);
+        fSuccess = _DoDECCOLMHelper(fEnable? DispatchTypes::s_sDECCOLMSetColumns : DispatchTypes::s_sDECCOLMResetColumns);
         break;
     case DispatchTypes::PrivateModeParams::ATT610_StartCursorBlink:
         fSuccess = EnableCursorBlinking(fEnable);

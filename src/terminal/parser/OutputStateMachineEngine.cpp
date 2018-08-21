@@ -14,7 +14,7 @@ using namespace Microsoft::Console;
 using namespace Microsoft::Console::VirtualTerminal;
 
 // takes ownership of pDispatch
-OutputStateMachineEngine::OutputStateMachineEngine(TermDispatch* const pDispatch) :
+OutputStateMachineEngine::OutputStateMachineEngine(ITermDispatch* const pDispatch) :
     _dispatch(pDispatch),
     _pfnFlushToTerminal(nullptr),
     _pTtyConnection(nullptr)
@@ -26,12 +26,12 @@ OutputStateMachineEngine::~OutputStateMachineEngine()
 
 }
 
-const TermDispatch& OutputStateMachineEngine::Dispatch() const noexcept
+const ITermDispatch& OutputStateMachineEngine::Dispatch() const noexcept
 {
     return *_dispatch;
 }
 
-TermDispatch& OutputStateMachineEngine::Dispatch() noexcept
+ITermDispatch& OutputStateMachineEngine::Dispatch() noexcept
 {
     return *_dispatch;
 }
