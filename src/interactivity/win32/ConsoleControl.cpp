@@ -72,7 +72,7 @@ NTSTATUS ConsoleControl::Control(_In_ ControlType ConsoleCommand,
 #ifdef CON_USERPRIVAPI_INDIRECT
     if (_hUser32 != nullptr)
     {
-        typedef NTSTATUS(*PfnConsoleControl)(ControlType Command, PVOID Information, DWORD Length);
+        typedef NTSTATUS(WINAPI *PfnConsoleControl)(ControlType Command, PVOID Information, DWORD Length);
 
         static PfnConsoleControl pfn = (PfnConsoleControl)GetProcAddress(_hUser32, "ConsoleControl");
 
@@ -93,7 +93,7 @@ BOOL ConsoleControl::EnterReaderModeHelper(_In_ HWND hwnd)
 #ifdef CON_USERPRIVAPI_INDIRECT
     if (_hUser32 != nullptr)
     {
-        typedef BOOL(*PfnEnterReaderModeHelper)(HWND hwnd);
+        typedef BOOL(WINAPI *PfnEnterReaderModeHelper)(HWND hwnd);
 
         static PfnEnterReaderModeHelper pfn = (PfnEnterReaderModeHelper)GetProcAddress(_hUser32, "EnterReaderModeHelper");
 
@@ -115,7 +115,7 @@ BOOL ConsoleControl::TranslateMessageEx(const MSG *pmsg,
 #ifdef CON_USERPRIVAPI_INDIRECT
     if (_hUser32 != nullptr)
     {
-        typedef BOOL(*PfnTranslateMessageEx)(const MSG *pmsg, UINT flags);
+        typedef BOOL(WINAPI *PfnTranslateMessageEx)(const MSG *pmsg, UINT flags);
 
         static PfnTranslateMessageEx pfn = (PfnTranslateMessageEx)GetProcAddress(_hUser32, "TranslateMessageEx");
 

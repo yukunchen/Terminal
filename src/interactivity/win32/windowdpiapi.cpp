@@ -95,7 +95,7 @@ BOOL WindowDpiApi::EnableChildWindowDpiMessage(const HWND hwnd, const BOOL fEnab
 #ifdef CON_DPIAPI_INDIRECT
     if (_hUser32 != nullptr)
     {
-        typedef BOOL(*PfnEnableChildWindowDpiMessage)(HWND hwnd, BOOL fEnable);
+        typedef BOOL(WINAPI *PfnEnableChildWindowDpiMessage)(HWND hwnd, BOOL fEnable);
 
         static bool fTried = false;
         static PfnEnableChildWindowDpiMessage pfn = nullptr;
