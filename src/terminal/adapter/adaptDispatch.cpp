@@ -1034,7 +1034,7 @@ bool AdaptDispatch::_DoDECCOLMHelper(_In_ unsigned int const uiColumns)
             fSuccess = EraseInDisplay(DispatchTypes::EraseType::All);
             if (fSuccess)
             {
-                fSuccess = SetTopBottomScrollingMargins(0, 0, false);
+                fSuccess = _DoSetTopBottomScrollingMargins(0, 0);
             }
         }
     }
@@ -1204,9 +1204,8 @@ bool AdaptDispatch::DeleteLine(_In_ unsigned int const uiDistance)
 // - sBottomMargin - the line number for the bottom margin.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::SetTopBottomScrollingMargins(const SHORT sTopMargin,
-                                                 const SHORT sBottomMargin,
-                                                 const bool fResetCursor)
+bool AdaptDispatch::_DoSetTopBottomScrollingMargins(const SHORT sTopMargin,
+                                                    const SHORT sBottomMargin)
 {
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
@@ -1258,13 +1257,27 @@ bool AdaptDispatch::SetTopBottomScrollingMargins(const SHORT sTopMargin,
             _srScrollMargins.Top = sActualTop;
             _srScrollMargins.Bottom = sActualBottom;
             fSuccess = !!_conApi->PrivateSetScrollingRegion(&_srScrollMargins);
-            if (fSuccess && fResetCursor)
-            {
-                this->CursorPosition(1,1);
-            }
         }
     }
     return fSuccess;
+}
+
+// Routine Description:
+// - DECSTBM - Set Scrolling Region
+// This control function sets the top and bottom margins for the current page.
+//  You cannot perform scrolling outside the margins.
+//  Default: Margins are at the page limits.
+// Arguments:
+// - sTopMargin - the line number for the top margin.
+// - sBottomMargin - the line number for the bottom margin.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::SetTopBottomScrollingMargins(const SHORT sTopMargin,
+                                                 const SHORT sBottomMargin)
+{
+    // When this is called, the cursor should also be moved to home.
+    // Other functions that only need to set/reset the margins should call _DoSetTopBottomScrollingMargins
+    return _DoSetTopBottomScrollingMargins(sTopMargin, sBottomMargin) && CursorPosition(1,1);
 }
 
 // Routine Description:
@@ -1436,7 +1449,7 @@ bool AdaptDispatch::SoftReset()
     if (fSuccess)
     {
         // Top margin = 1; bottom margin = page length.
-        fSuccess = SetTopBottomScrollingMargins(0, 0, false);
+        fSuccess = _DoSetTopBottomScrollingMargins(0, 0);
     }
     if (fSuccess)
     {
