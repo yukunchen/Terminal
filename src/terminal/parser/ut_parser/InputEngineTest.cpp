@@ -208,7 +208,7 @@ public:
     bool _expectSendCtrlC;
     bool _expectCursorPosition;
     COORD _expectedCursor;
-	DispatchTypes::WindowManipulationType _expectedWindowManipulation;
+    DispatchTypes::WindowManipulationType _expectedWindowManipulation;
     unsigned short _expectedParams[16];
     size_t _expectedCParams;
 };
