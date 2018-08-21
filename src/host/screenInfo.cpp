@@ -2236,9 +2236,12 @@ void SCREEN_INFORMATION::SetDefaultVtTabStops()
     const int width = GetScreenBufferSize().X - 1;
     for(int pos = 0; pos <= width; pos += TAB_SIZE)
     {
-        AddTabStop(gsl::narrow<short>(pos));
+        _tabStops.push_back(gsl::narrow<short>(pos));
     }
-    AddTabStop(gsl::narrow<short>(width));
+    if (_tabStops.back() != width)
+    {
+        _tabStops.push_back(gsl::narrow<short>(width));
+    }
 }
 
 // Routine Description:
