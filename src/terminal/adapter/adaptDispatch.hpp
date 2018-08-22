@@ -25,7 +25,7 @@ Author(s):
 
 namespace Microsoft::Console::VirtualTerminal
 {
-    class AdaptDispatch : public TermDispatch
+    class AdaptDispatch : public ITermDispatch
     {
     public:
 

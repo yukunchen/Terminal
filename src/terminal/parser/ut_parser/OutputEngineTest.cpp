@@ -727,7 +727,7 @@ public:
             fSuccess = SetVirtualTerminalInputMode(fEnable);
             break;
         case DispatchTypes::PrivateModeParams::DECCOLM_SetNumberOfColumns:
-            fSuccess = SetColumns((unsigned int)(fEnable? s_sDECCOLMSetColumns : s_sDECCOLMResetColumns));
+            fSuccess = SetColumns(static_cast<unsigned int>(fEnable ? DispatchTypes::s_sDECCOLMSetColumns : DispatchTypes::s_sDECCOLMResetColumns));
             break;
         case DispatchTypes::PrivateModeParams::ATT610_StartCursorBlink:
             fSuccess = EnableCursorBlinking(fEnable);
@@ -1108,12 +1108,12 @@ class StateMachineExternalTest final
         StateMachine mach(new OutputStateMachineEngine(pDispatch));
 
         mach.ProcessString(L"\x1b[?3h", 5);
-        VERIFY_ARE_EQUAL(pDispatch->_uiWindowWidth, (unsigned int)pDispatch->s_sDECCOLMSetColumns);
+        VERIFY_ARE_EQUAL(pDispatch->_uiWindowWidth, static_cast<unsigned int>(DispatchTypes::s_sDECCOLMSetColumns));
 
         pDispatch->ClearState();
 
         mach.ProcessString(L"\x1b[?3l", 5);
-        VERIFY_ARE_EQUAL(pDispatch->_uiWindowWidth, (unsigned int)pDispatch->s_sDECCOLMResetColumns);
+        VERIFY_ARE_EQUAL(pDispatch->_uiWindowWidth, static_cast<unsigned int>(DispatchTypes::s_sDECCOLMResetColumns));
 
         pDispatch->ClearState();
     }

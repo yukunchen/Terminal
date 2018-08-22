@@ -2,6 +2,7 @@ src\inc\cpl_core.h
 src\inc\HostAndPropsheetIncludes.h
 src\inc\ITerminalOutputConnection.hpp
 src\inc\libraryincludes.h
+src\terminal\adapter\ITermDispatch.cpp
 src\terminal\adapter\precomp.cpp
 src\terminal\adapter\precomp.h
 src\terminal\adapter\telemetry.cpp
@@ -26,3 +27,12 @@ src\terminal\parser\lib\parser-common.vcxproj
 src\terminal\parser\ut_parser\OutputEngineTest.cpp
 src\terminal\parser\ut_parser\packages.config
 src\terminal\parser\ut_parser\Parser.UnitTests-common.vcxproj
+src\common.build.dll.props
+src\common.build.exe.or.dll.props
+src\common.build.exe.props
+src\common.build.lib.props
+src\common.build.post.props
+src\common.build.pre.props
+src\common.build.tests.props
+src\unit.tests.x64.runsettings
+src\unit.tests.x86.runsettings
