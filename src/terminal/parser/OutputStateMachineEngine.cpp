@@ -13,7 +13,6 @@
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::VirtualTerminal;
 
-
 // takes ownership of pDispatch
 OutputStateMachineEngine::OutputStateMachineEngine(TermDispatch* const pDispatch) :
     _dispatch(pDispatch),
@@ -238,10 +237,10 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
     SHORT sNumTabs = 0;
     SHORT sClearType = 0;
     unsigned int uiFunction = 0;
-    TermDispatch::EraseType eraseType = TermDispatch::EraseType::ToEnd;
-    TermDispatch::GraphicsOptions rgGraphicsOptions[StateMachine::s_cParamsMax];
-    size_t cOptions = ARRAYSIZE(rgGraphicsOptions);
-    TermDispatch::AnsiStatusType deviceStatusType = (TermDispatch::AnsiStatusType)-1; // there is no default status type.
+    DispatchTypes::EraseType eraseType = DispatchTypes::EraseType::ToEnd;
+    DispatchTypes::GraphicsOptions rgGraphicsOptions[StateMachine::s_cParamsMax];
+    size_t cOptions = StateMachine::s_cParamsMax;
+    DispatchTypes::AnsiStatusType deviceStatusType = (DispatchTypes::AnsiStatusType)-1; // there is no default status type.
 
     // This is all the args after the first arg, and the count of args not including the first one.
     const unsigned short* const rgusRemainingArgs = (cParams > 1) ? rgusParams + 1 : rgusParams;
@@ -428,9 +427,9 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::ECH);
                 break;
             case VTActionCodes::DTTERM_WindowManipulation:
-                fSuccess = _dispatch->WindowManipulation(static_cast<DispatchCommon::WindowManipulationType>(uiFunction),
-                                                          rgusRemainingArgs,
-                                                          cRemainingArgs);
+                fSuccess = _dispatch->WindowManipulation(static_cast<DispatchTypes::WindowManipulationType>(uiFunction),
+                                                         rgusRemainingArgs,
+                                                         cRemainingArgs);
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::DTTERM_WM);
                 break;
             default:
@@ -480,8 +479,8 @@ bool OutputStateMachineEngine::_IntermediateQuestionMarkDispatch(const wchar_t w
 {
     bool fSuccess = false;
 
-    TermDispatch::PrivateModeParams rgPrivateModeParams[StateMachine::s_cParamsMax];
-    size_t cOptions = ARRAYSIZE(rgPrivateModeParams);
+    DispatchTypes::PrivateModeParams rgPrivateModeParams[StateMachine::s_cParamsMax];
+    size_t cOptions = StateMachine::s_cParamsMax;
     // Ensure that there was the right number of params
     switch (wchAction)
     {
@@ -553,7 +552,7 @@ bool OutputStateMachineEngine::_IntermediateSpaceDispatch(const wchar_t wchActio
                                                           const unsigned short cParams)
 {
     bool fSuccess = false;
-    DispatchCommon::CursorStyle cursorStyle = s_defaultCursorStyle;
+    DispatchTypes::CursorStyle cursorStyle = s_defaultCursorStyle;
 
     // Parse params
     switch(wchAction)
@@ -647,7 +646,8 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
         fSuccess = _GetOscSetCursorColor(pwchOscStringBuffer, cchOscString, &dwColor);
         break;
     case OscActionCodes::ResetCursorColor:
-        dwColor = INVALID_COLOR;
+        // the console uses 0xffffffff as an "invalid color" value
+        dwColor = 0xffffffff;
         fSuccess = true;
         break;
     default:
@@ -722,7 +722,7 @@ bool OutputStateMachineEngine::ActionSs3Dispatch(const wchar_t /*wch*/,
 _Success_(return)
 bool OutputStateMachineEngine::_GetGraphicsOptions(_In_reads_(cParams) const unsigned short* const rgusParams,
                                                    const unsigned short cParams,
-                                                   _Out_writes_(*pcOptions) TermDispatch::GraphicsOptions* const rgGraphicsOptions,
+                                                   _Out_writes_(*pcOptions) DispatchTypes::GraphicsOptions* const rgGraphicsOptions,
                                                    _Inout_ size_t* const pcOptions) const
 {
     bool fSuccess = false;
@@ -747,7 +747,7 @@ bool OutputStateMachineEngine::_GetGraphicsOptions(_In_reads_(cParams) const uns
             for (size_t i = 0; i < cParams; i++)
             {
                 // No memcpy. The parameters are shorts. The graphics options are unsigned ints.
-                rgGraphicsOptions[i] = (TermDispatch::GraphicsOptions)rgusParams[i];
+                rgGraphicsOptions[i] = (DispatchTypes::GraphicsOptions)rgusParams[i];
             }
 
             *pcOptions = cParams;
@@ -776,7 +776,7 @@ bool OutputStateMachineEngine::_GetGraphicsOptions(_In_reads_(cParams) const uns
 // Return Value:
 // - True if we successfully pulled an erase type from the parameters we've stored. False otherwise.
 _Success_(return)
-bool OutputStateMachineEngine::_GetEraseOperation(_In_reads_(cParams) const unsigned short* const rgusParams, const unsigned short cParams, _Out_ TermDispatch::EraseType* const pEraseType) const
+bool OutputStateMachineEngine::_GetEraseOperation(_In_reads_(cParams) const unsigned short* const rgusParams, const unsigned short cParams, _Out_ DispatchTypes::EraseType* const pEraseType) const
 {
     bool fSuccess = false; // If we have too many parameters or don't know what to do with the given value, return false.
     *pEraseType = s_defaultEraseType; // if we fail, just put the default type in.
@@ -792,13 +792,13 @@ bool OutputStateMachineEngine::_GetEraseOperation(_In_reads_(cParams) const unsi
         // If there's one parameter, attempt to match it to the values we accept.
         unsigned short const usParam = rgusParams[0];
 
-        switch (usParam)
+        switch (static_cast<DispatchTypes::EraseType>(usParam))
         {
-        case TermDispatch::EraseType::ToEnd:
-        case TermDispatch::EraseType::FromBeginning:
-        case TermDispatch::EraseType::All:
-        case TermDispatch::EraseType::Scrollback:
-            *pEraseType = (TermDispatch::EraseType) usParam;
+        case DispatchTypes::EraseType::ToEnd:
+        case DispatchTypes::EraseType::FromBeginning:
+        case DispatchTypes::EraseType::All:
+        case DispatchTypes::EraseType::Scrollback:
+            *pEraseType = (DispatchTypes::EraseType) usParam;
             fSuccess = true;
             break;
         }
@@ -1004,10 +1004,10 @@ bool OutputStateMachineEngine::_GetTopBottomMargins(_In_reads_(cParams) const un
 // Return Value:
 // - True if we successfully found a device operation in the parameters stored. False otherwise.
 _Success_(return)
-bool OutputStateMachineEngine::_GetDeviceStatusOperation(_In_reads_(cParams) const unsigned short* const rgusParams, const unsigned short cParams, _Out_ TermDispatch::AnsiStatusType* const pStatusType) const
+bool OutputStateMachineEngine::_GetDeviceStatusOperation(_In_reads_(cParams) const unsigned short* const rgusParams, const unsigned short cParams, _Out_ DispatchTypes::AnsiStatusType* const pStatusType) const
 {
     bool fSuccess = false;
-    *pStatusType = (TermDispatch::AnsiStatusType)0;
+    *pStatusType = (DispatchTypes::AnsiStatusType)0;
 
     if (cParams == 1)
     {
@@ -1017,8 +1017,8 @@ bool OutputStateMachineEngine::_GetDeviceStatusOperation(_In_reads_(cParams) con
         switch (usParam)
         {
         // This looks kinda silly, but I want the parser to reject (fSuccess = false) any status types we haven't put here.
-        case (unsigned short)TermDispatch::AnsiStatusType::CPR_CursorPositionReport:
-            *pStatusType = TermDispatch::AnsiStatusType::CPR_CursorPositionReport;
+        case (unsigned short)DispatchTypes::AnsiStatusType::CPR_CursorPositionReport:
+            *pStatusType = DispatchTypes::AnsiStatusType::CPR_CursorPositionReport;
             fSuccess = true;
             break;
         }
@@ -1037,7 +1037,7 @@ bool OutputStateMachineEngine::_GetDeviceStatusOperation(_In_reads_(cParams) con
 _Success_(return)
 bool OutputStateMachineEngine::_GetPrivateModeParams(_In_reads_(cParams) const unsigned short* const rgusParams,
                                                      const unsigned short cParams,
-                                                     _Out_writes_(*pcParams) TermDispatch::PrivateModeParams* const rgPrivateModeParams,
+                                                     _Out_writes_(*pcParams) DispatchTypes::PrivateModeParams* const rgPrivateModeParams,
                                                      _Inout_ size_t* const pcParams) const
 {
     bool fSuccess = false;
@@ -1049,7 +1049,7 @@ bool OutputStateMachineEngine::_GetPrivateModeParams(_In_reads_(cParams) const u
             for (size_t i = 0; i < cParams; i++)
             {
                 // No memcpy. The parameters are shorts. The graphics options are unsigned ints.
-                rgPrivateModeParams[i] = (TermDispatch::PrivateModeParams)rgusParams[i];
+                rgPrivateModeParams[i] = (DispatchTypes::PrivateModeParams)rgusParams[i];
             }
             *pcParams = cParams;
             fSuccess = true;
@@ -1527,12 +1527,12 @@ bool OutputStateMachineEngine::_GetWindowManipulationType(_In_reads_(cParams) co
     {
         switch(rgusParams[0])
         {
-            case DispatchCommon::WindowManipulationType::RefreshWindow:
-                *puiFunction = DispatchCommon::WindowManipulationType::RefreshWindow;
+            case DispatchTypes::WindowManipulationType::RefreshWindow:
+                *puiFunction = DispatchTypes::WindowManipulationType::RefreshWindow;
                 fSuccess = true;
                 break;
-            case DispatchCommon::WindowManipulationType::ResizeWindowInCharacters:
-                *puiFunction = DispatchCommon::WindowManipulationType::ResizeWindowInCharacters;
+            case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
+                *puiFunction = DispatchTypes::WindowManipulationType::ResizeWindowInCharacters;
                 fSuccess = true;
                 break;
             default:
@@ -1554,7 +1554,7 @@ bool OutputStateMachineEngine::_GetWindowManipulationType(_In_reads_(cParams) co
 _Success_(return)
 bool OutputStateMachineEngine::_GetCursorStyle(_In_reads_(cParams) const unsigned short* const rgusParams,
                                                const unsigned short cParams,
-                                               _Out_ DispatchCommon::CursorStyle* const pCursorStyle) const
+                                               _Out_ DispatchTypes::CursorStyle* const pCursorStyle) const
 {
     bool fSuccess = false;
     *pCursorStyle = s_defaultCursorStyle;
@@ -1567,7 +1567,7 @@ bool OutputStateMachineEngine::_GetCursorStyle(_In_reads_(cParams) const unsigne
     else if (cParams == 1)
     {
         // If there's one parameter, use it.
-        *pCursorStyle = (DispatchCommon::CursorStyle)rgusParams[0];
+        *pCursorStyle = (DispatchTypes::CursorStyle)rgusParams[0];
         fSuccess = true;
     }
 

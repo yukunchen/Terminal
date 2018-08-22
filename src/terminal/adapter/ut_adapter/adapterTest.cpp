@@ -2184,7 +2184,7 @@ public:
                                             _testGetSet->_coordCursorPos.Y - _testGetSet->_srViewport.Top };
         _testGetSet->_coordExpectedCursorPos = coordRelativeCursor;
 
-        VERIFY_IS_TRUE(_pDispatch->EraseInDisplay(TermDispatch::EraseType::Scrollback));
+        VERIFY_IS_TRUE(_pDispatch->EraseInDisplay(DispatchTypes::EraseType::Scrollback));
 
         // There are two portions of the screen that are cleared -
         //  below the viewport and to the right of the viewport.
@@ -2217,27 +2217,27 @@ public:
         _testGetSet->PrepData();
         _testGetSet->_fGetConsoleScreenBufferInfoExResult = false;
 
-        VERIFY_IS_FALSE(_pDispatch->EraseInDisplay(TermDispatch::EraseType::Scrollback));
+        VERIFY_IS_FALSE(_pDispatch->EraseInDisplay(DispatchTypes::EraseType::Scrollback));
 
         Log::Comment(L"Test 3: Gracefully fail when filling the rectangle fails.");
         _testGetSet->PrepData();
         _testGetSet->_fFillConsoleOutputCharacterWResult = false;
 
-        VERIFY_IS_FALSE(_pDispatch->EraseInDisplay(TermDispatch::EraseType::Scrollback));
+        VERIFY_IS_FALSE(_pDispatch->EraseInDisplay(DispatchTypes::EraseType::Scrollback));
     }
 
     TEST_METHOD(EraseTests)
     {
         BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Data:uiEraseType", L"{0, 1, 2}") // corresponds to options in TermDispatch::EraseType
+            TEST_METHOD_PROPERTY(L"Data:uiEraseType", L"{0, 1, 2}") // corresponds to options in DispatchTypes::EraseType
             TEST_METHOD_PROPERTY(L"Data:fEraseScreen", L"{FALSE, TRUE}") // corresponds to Line (FALSE) or Screen (TRUE)
         END_TEST_METHOD_PROPERTIES()
 
         // Modify variables based on type of this test
-        TermDispatch::EraseType eraseType;
+        DispatchTypes::EraseType eraseType;
         unsigned int uiEraseType;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiEraseType", uiEraseType));
-        eraseType = (TermDispatch::EraseType)uiEraseType;
+        eraseType = (DispatchTypes::EraseType)uiEraseType;
 
         bool fEraseScreen;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"fEraseScreen", fEraseScreen));
@@ -2247,7 +2247,7 @@ public:
         // This combiniation is a simple VT api call
         // Verify that the adapter calls that function, and do nothing else.
         // This functionality is covered by ScreenBufferTests::EraseAllTests
-        if (eraseType == TermDispatch::EraseType::All && fEraseScreen)
+        if (eraseType == DispatchTypes::EraseType::All && fEraseScreen)
         {
             Log::Comment(L"Testing Erase in Display - All");
             VERIFY_IS_TRUE(_pDispatch->EraseInDisplay(eraseType));
@@ -2257,13 +2257,13 @@ public:
         Log::Comment(L"Test 1: Perform standard erase operation.");
         switch (eraseType)
         {
-        case TermDispatch::EraseType::FromBeginning:
+        case DispatchTypes::EraseType::FromBeginning:
             Log::Comment(L"Erasing line from beginning to cursor.");
             break;
-        case TermDispatch::EraseType::ToEnd:
+        case DispatchTypes::EraseType::ToEnd:
             Log::Comment(L"Erasing line from cursor to end.");
             break;
-        case TermDispatch::EraseType::All:
+        case DispatchTypes::EraseType::All:
             Log::Comment(L"Erasing all.");
             break;
         default:
@@ -2303,11 +2303,11 @@ public:
 
         switch (eraseType)
         {
-        case TermDispatch::EraseType::FromBeginning:
-        case TermDispatch::EraseType::All:
+        case DispatchTypes::EraseType::FromBeginning:
+        case DispatchTypes::EraseType::All:
             srRegion.Left = _testGetSet->_srViewport.Left;
             break;
-        case TermDispatch::EraseType::ToEnd:
+        case DispatchTypes::EraseType::ToEnd:
             srRegion.Left = _testGetSet->_coordCursorPos.X;
             break;
         default:
@@ -2317,11 +2317,11 @@ public:
 
         switch (eraseType)
         {
-        case TermDispatch::EraseType::FromBeginning:
+        case DispatchTypes::EraseType::FromBeginning:
             srRegion.Right = _testGetSet->_coordCursorPos.X;
             break;
-        case TermDispatch::EraseType::All:
-        case TermDispatch::EraseType::ToEnd:
+        case DispatchTypes::EraseType::All:
+        case DispatchTypes::EraseType::ToEnd:
             srRegion.Right = _testGetSet->_srViewport.Right - 1;
             break;
         default:
@@ -2336,8 +2336,8 @@ public:
         if (fEraseScreen)
         {
             // If from beginning or all, add the region *before* the cursor line.
-            if (eraseType == TermDispatch::EraseType::FromBeginning ||
-                eraseType == TermDispatch::EraseType::All)
+            if (eraseType == DispatchTypes::EraseType::FromBeginning ||
+                eraseType == DispatchTypes::EraseType::All)
             {
                 srRegion.Left = _testGetSet->_srViewport.Left;
                 srRegion.Right = _testGetSet->_srViewport.Right - 1; // viewport is exclusive on the right. this test is inclusive so -1.
@@ -2354,8 +2354,8 @@ public:
             }
 
             // If from end or all, add the region *after* the cursor line.
-            if (eraseType == TermDispatch::EraseType::ToEnd ||
-                eraseType == TermDispatch::EraseType::All)
+            if (eraseType == DispatchTypes::EraseType::ToEnd ||
+                eraseType == DispatchTypes::EraseType::All)
             {
                 srRegion.Left = _testGetSet->_srViewport.Left;
                 srRegion.Right = _testGetSet->_srViewport.Right - 1; // viewport is exclusive rectangle on the right. this test uses inclusive rectangles so -1.
@@ -2412,7 +2412,7 @@ public:
 
         _testGetSet->PrepData();
 
-        TermDispatch::GraphicsOptions rgOptions[16];
+        DispatchTypes::GraphicsOptions rgOptions[16];
         size_t cOptions = 0;
 
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
@@ -2429,7 +2429,7 @@ public:
         _testGetSet->PrepData();
         _testGetSet->_fSetConsoleTextAttributeResult = FALSE;
         // Need at least one option in order for the call to be able to fail.
-        rgOptions[0] = (TermDispatch::GraphicsOptions) 0;
+        rgOptions[0] = (DispatchTypes::GraphicsOptions) 0;
         cOptions = 1;
         VERIFY_IS_FALSE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
     }
@@ -2437,19 +2437,19 @@ public:
     TEST_METHOD(GraphicsSingleTests)
     {
         BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Data:uiGraphicsOptions", L"{0, 1, 4, 7, 24, 27, 30, 31, 32, 33, 34, 35, 36, 37, 39, 40, 41, 42, 43, 44, 45, 46, 47, 49, 90, 91, 92, 93, 94, 95, 96, 97, 100, 101, 102, 103, 104, 105, 106, 107}") // corresponds to options in TermDispatch::GraphicsOptions
+            TEST_METHOD_PROPERTY(L"Data:uiGraphicsOptions", L"{0, 1, 4, 7, 24, 27, 30, 31, 32, 33, 34, 35, 36, 37, 39, 40, 41, 42, 43, 44, 45, 46, 47, 49, 90, 91, 92, 93, 94, 95, 96, 97, 100, 101, 102, 103, 104, 105, 106, 107}") // corresponds to options in DispatchTypes::GraphicsOptions
         END_TEST_METHOD_PROPERTIES()
 
         Log::Comment(L"Starting test...");
         _testGetSet->PrepData();
 
         // Modify variables based on type of this test
-        TermDispatch::GraphicsOptions graphicsOption;
+        DispatchTypes::GraphicsOptions graphicsOption;
         unsigned int uiGraphicsOption;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiGraphicsOptions", uiGraphicsOption));
-        graphicsOption = (TermDispatch::GraphicsOptions)uiGraphicsOption;
+        graphicsOption = (DispatchTypes::GraphicsOptions)uiGraphicsOption;
 
-        TermDispatch::GraphicsOptions rgOptions[16];
+        DispatchTypes::GraphicsOptions rgOptions[16];
         size_t cOptions = 1;
         rgOptions[0] = graphicsOption;
 
@@ -2457,7 +2457,7 @@ public:
 
         switch (graphicsOption)
         {
-        case TermDispatch::GraphicsOptions::Off:
+        case DispatchTypes::GraphicsOptions::Off:
             Log::Comment(L"Testing graphics 'Off/Reset'");
             _testGetSet->_wAttribute = (WORD)~s_wDefaultFill;
             _testGetSet->_wExpectedAttribute = s_wDefaultFill;
@@ -2468,7 +2468,7 @@ public:
             _testGetSet->_fExpectedIsBold = false;
 
             break;
-        case TermDispatch::GraphicsOptions::BoldBright:
+        case DispatchTypes::GraphicsOptions::BoldBright:
             Log::Comment(L"Testing graphics 'Bold/Bright'");
             _testGetSet->_wAttribute = 0;
             _testGetSet->_wExpectedAttribute = FOREGROUND_INTENSITY;
@@ -2476,79 +2476,79 @@ public:
             _testGetSet->_fPrivateBoldTextResult = true;
             _testGetSet->_fExpectedIsBold = true;
             break;
-        case TermDispatch::GraphicsOptions::Underline:
+        case DispatchTypes::GraphicsOptions::Underline:
             Log::Comment(L"Testing graphics 'Underline'");
             _testGetSet->_wAttribute = 0;
             _testGetSet->_wExpectedAttribute = COMMON_LVB_UNDERSCORE;
             _testGetSet->_fExpectedMeta = true;
             break;
-        case TermDispatch::GraphicsOptions::Negative:
+        case DispatchTypes::GraphicsOptions::Negative:
             Log::Comment(L"Testing graphics 'Negative'");
             _testGetSet->_wAttribute = 0;
             _testGetSet->_wExpectedAttribute = COMMON_LVB_REVERSE_VIDEO;
             _testGetSet->_fExpectedMeta = true;
             break;
-        case TermDispatch::GraphicsOptions::NoUnderline:
+        case DispatchTypes::GraphicsOptions::NoUnderline:
             Log::Comment(L"Testing graphics 'No Underline'");
             _testGetSet->_wAttribute = COMMON_LVB_UNDERSCORE;
             _testGetSet->_wExpectedAttribute = 0;
             _testGetSet->_fExpectedMeta = true;
             break;
-        case TermDispatch::GraphicsOptions::Positive:
+        case DispatchTypes::GraphicsOptions::Positive:
             Log::Comment(L"Testing graphics 'Positive'");
             _testGetSet->_wAttribute = COMMON_LVB_REVERSE_VIDEO;
             _testGetSet->_wExpectedAttribute = 0;
             _testGetSet->_fExpectedMeta = true;
             break;
-        case TermDispatch::GraphicsOptions::ForegroundBlack:
+        case DispatchTypes::GraphicsOptions::ForegroundBlack:
             Log::Comment(L"Testing graphics 'Foreground Color Black'");
             _testGetSet->_wAttribute = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
             _testGetSet->_wExpectedAttribute = 0;
             _testGetSet->_fExpectedForeground = true;
             break;
-        case TermDispatch::GraphicsOptions::ForegroundBlue:
+        case DispatchTypes::GraphicsOptions::ForegroundBlue:
             Log::Comment(L"Testing graphics 'Foreground Color Blue'");
             _testGetSet->_wAttribute = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY;
             _testGetSet->_wExpectedAttribute = FOREGROUND_BLUE;
             _testGetSet->_fExpectedForeground = true;
             break;
-        case TermDispatch::GraphicsOptions::ForegroundGreen:
+        case DispatchTypes::GraphicsOptions::ForegroundGreen:
             Log::Comment(L"Testing graphics 'Foreground Color Green'");
             _testGetSet->_wAttribute = FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
             _testGetSet->_wExpectedAttribute = FOREGROUND_GREEN;
             _testGetSet->_fExpectedForeground = true;
             break;
-        case TermDispatch::GraphicsOptions::ForegroundCyan:
+        case DispatchTypes::GraphicsOptions::ForegroundCyan:
             Log::Comment(L"Testing graphics 'Foreground Color Cyan'");
             _testGetSet->_wAttribute = FOREGROUND_RED | FOREGROUND_INTENSITY;
             _testGetSet->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_GREEN;
             _testGetSet->_fExpectedForeground = true;
             break;
-        case TermDispatch::GraphicsOptions::ForegroundRed:
+        case DispatchTypes::GraphicsOptions::ForegroundRed:
             Log::Comment(L"Testing graphics 'Foreground Color Red'");
             _testGetSet->_wAttribute = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY;
             _testGetSet->_wExpectedAttribute = FOREGROUND_RED;
             _testGetSet->_fExpectedForeground = true;
             break;
-        case TermDispatch::GraphicsOptions::ForegroundMagenta:
+        case DispatchTypes::GraphicsOptions::ForegroundMagenta:
             Log::Comment(L"Testing graphics 'Foreground Color Magenta'");
             _testGetSet->_wAttribute = FOREGROUND_GREEN | FOREGROUND_INTENSITY;
             _testGetSet->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_RED;
             _testGetSet->_fExpectedForeground = true;
             break;
-        case TermDispatch::GraphicsOptions::ForegroundYellow:
+        case DispatchTypes::GraphicsOptions::ForegroundYellow:
             Log::Comment(L"Testing graphics 'Foreground Color Yellow'");
             _testGetSet->_wAttribute = FOREGROUND_BLUE | FOREGROUND_INTENSITY;
             _testGetSet->_wExpectedAttribute = FOREGROUND_GREEN | FOREGROUND_RED;
             _testGetSet->_fExpectedForeground = true;
             break;
-        case TermDispatch::GraphicsOptions::ForegroundWhite:
+        case DispatchTypes::GraphicsOptions::ForegroundWhite:
             Log::Comment(L"Testing graphics 'Foreground Color White'");
             _testGetSet->_wAttribute = FOREGROUND_INTENSITY;
             _testGetSet->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED;
             _testGetSet->_fExpectedForeground = true;
             break;
-        case TermDispatch::GraphicsOptions::ForegroundDefault:
+        case DispatchTypes::GraphicsOptions::ForegroundDefault:
             Log::Comment(L"Testing graphics 'Foreground Color Default'");
             _testGetSet->_wAttribute = (WORD)~_testGetSet->s_wDefaultAttribute; // set the current attribute to the opposite of default so we can ensure all relevant bits flip.
             // To get expected value, take what we started with and change ONLY the background series of bits to what the Default says.
@@ -2557,55 +2557,55 @@ public:
             _testGetSet->_wExpectedAttribute |= (s_wDefaultFill & (FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY)); // reapply ONLY background bits from the default attribute.
             _testGetSet->_fExpectedForeground = true;
             break;
-        case TermDispatch::GraphicsOptions::BackgroundBlack:
+        case DispatchTypes::GraphicsOptions::BackgroundBlack:
             Log::Comment(L"Testing graphics 'Background Color Black'");
             _testGetSet->_wAttribute = BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE | BACKGROUND_INTENSITY;
             _testGetSet->_wExpectedAttribute = 0;
             _testGetSet->_fExpectedBackground = true;
             break;
-        case TermDispatch::GraphicsOptions::BackgroundBlue:
+        case DispatchTypes::GraphicsOptions::BackgroundBlue:
             Log::Comment(L"Testing graphics 'Background Color Blue'");
             _testGetSet->_wAttribute = BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_INTENSITY;
             _testGetSet->_wExpectedAttribute = BACKGROUND_BLUE;
             _testGetSet->_fExpectedBackground = true;
             break;
-        case TermDispatch::GraphicsOptions::BackgroundGreen:
+        case DispatchTypes::GraphicsOptions::BackgroundGreen:
             Log::Comment(L"Testing graphics 'Background Color Green'");
             _testGetSet->_wAttribute = BACKGROUND_RED | BACKGROUND_BLUE | BACKGROUND_INTENSITY;
             _testGetSet->_wExpectedAttribute = BACKGROUND_GREEN;
             _testGetSet->_fExpectedBackground = true;
             break;
-        case TermDispatch::GraphicsOptions::BackgroundCyan:
+        case DispatchTypes::GraphicsOptions::BackgroundCyan:
             Log::Comment(L"Testing graphics 'Background Color Cyan'");
             _testGetSet->_wAttribute = BACKGROUND_RED | BACKGROUND_INTENSITY;
             _testGetSet->_wExpectedAttribute = BACKGROUND_BLUE | BACKGROUND_GREEN;
             _testGetSet->_fExpectedBackground = true;
             break;
-        case TermDispatch::GraphicsOptions::BackgroundRed:
+        case DispatchTypes::GraphicsOptions::BackgroundRed:
             Log::Comment(L"Testing graphics 'Background Color Red'");
             _testGetSet->_wAttribute = BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_INTENSITY;
             _testGetSet->_wExpectedAttribute = BACKGROUND_RED;
             _testGetSet->_fExpectedBackground = true;
             break;
-        case TermDispatch::GraphicsOptions::BackgroundMagenta:
+        case DispatchTypes::GraphicsOptions::BackgroundMagenta:
             Log::Comment(L"Testing graphics 'Background Color Magenta'");
             _testGetSet->_wAttribute = BACKGROUND_GREEN | BACKGROUND_INTENSITY;
             _testGetSet->_wExpectedAttribute = BACKGROUND_BLUE | BACKGROUND_RED;
             _testGetSet->_fExpectedBackground = true;
             break;
-        case TermDispatch::GraphicsOptions::BackgroundYellow:
+        case DispatchTypes::GraphicsOptions::BackgroundYellow:
             Log::Comment(L"Testing graphics 'Background Color Yellow'");
             _testGetSet->_wAttribute = BACKGROUND_BLUE | BACKGROUND_INTENSITY;
             _testGetSet->_wExpectedAttribute = BACKGROUND_GREEN | BACKGROUND_RED;
             _testGetSet->_fExpectedBackground = true;
             break;
-        case TermDispatch::GraphicsOptions::BackgroundWhite:
+        case DispatchTypes::GraphicsOptions::BackgroundWhite:
             Log::Comment(L"Testing graphics 'Background Color White'");
             _testGetSet->_wAttribute = BACKGROUND_INTENSITY;
             _testGetSet->_wExpectedAttribute = BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_RED;
             _testGetSet->_fExpectedBackground = true;
             break;
-        case TermDispatch::GraphicsOptions::BackgroundDefault:
+        case DispatchTypes::GraphicsOptions::BackgroundDefault:
             Log::Comment(L"Testing graphics 'Background Color Default'");
             _testGetSet->_wAttribute = (WORD)~_testGetSet->s_wDefaultAttribute; // set the current attribute to the opposite of default so we can ensure all relevant bits flip.
             // To get expected value, take what we started with and change ONLY the background series of bits to what the Default says.
@@ -2614,97 +2614,97 @@ public:
             _testGetSet->_wExpectedAttribute |= (s_wDefaultFill & (BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY)); // reapply ONLY background bits from the default attribute.
             _testGetSet->_fExpectedBackground = true;
             break;
-        case TermDispatch::GraphicsOptions::BrightForegroundBlack:
+        case DispatchTypes::GraphicsOptions::BrightForegroundBlack:
             Log::Comment(L"Testing graphics 'Bright Foreground Color Black'");
             _testGetSet->_wAttribute = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
             _testGetSet->_wExpectedAttribute = FOREGROUND_INTENSITY;
             _testGetSet->_fExpectedForeground = true;
             break;
-        case TermDispatch::GraphicsOptions::BrightForegroundBlue:
+        case DispatchTypes::GraphicsOptions::BrightForegroundBlue:
             Log::Comment(L"Testing graphics 'Bright Foreground Color Blue'");
             _testGetSet->_wAttribute = FOREGROUND_RED | FOREGROUND_GREEN;
             _testGetSet->_wExpectedAttribute = FOREGROUND_INTENSITY | FOREGROUND_BLUE;
             _testGetSet->_fExpectedForeground = true;
             break;
-        case TermDispatch::GraphicsOptions::BrightForegroundGreen:
+        case DispatchTypes::GraphicsOptions::BrightForegroundGreen:
             Log::Comment(L"Testing graphics 'Bright Foreground Color Green'");
             _testGetSet->_wAttribute = FOREGROUND_RED | FOREGROUND_BLUE;
             _testGetSet->_wExpectedAttribute = FOREGROUND_INTENSITY | FOREGROUND_GREEN;
             _testGetSet->_fExpectedForeground = true;
             break;
-        case TermDispatch::GraphicsOptions::BrightForegroundCyan:
+        case DispatchTypes::GraphicsOptions::BrightForegroundCyan:
             Log::Comment(L"Testing graphics 'Bright Foreground Color Cyan'");
             _testGetSet->_wAttribute = FOREGROUND_RED;
             _testGetSet->_wExpectedAttribute = FOREGROUND_INTENSITY | FOREGROUND_BLUE | FOREGROUND_GREEN;
             _testGetSet->_fExpectedForeground = true;
             break;
-        case TermDispatch::GraphicsOptions::BrightForegroundRed:
+        case DispatchTypes::GraphicsOptions::BrightForegroundRed:
             Log::Comment(L"Testing graphics 'Bright Foreground Color Red'");
             _testGetSet->_wAttribute = FOREGROUND_BLUE | FOREGROUND_GREEN;
             _testGetSet->_wExpectedAttribute = FOREGROUND_INTENSITY | FOREGROUND_RED;
             _testGetSet->_fExpectedForeground = true;
             break;
-        case TermDispatch::GraphicsOptions::BrightForegroundMagenta:
+        case DispatchTypes::GraphicsOptions::BrightForegroundMagenta:
             Log::Comment(L"Testing graphics 'Bright Foreground Color Magenta'");
             _testGetSet->_wAttribute = FOREGROUND_GREEN;
             _testGetSet->_wExpectedAttribute = FOREGROUND_INTENSITY | FOREGROUND_BLUE | FOREGROUND_RED;
             _testGetSet->_fExpectedForeground = true;
             break;
-        case TermDispatch::GraphicsOptions::BrightForegroundYellow:
+        case DispatchTypes::GraphicsOptions::BrightForegroundYellow:
             Log::Comment(L"Testing graphics 'Bright Foreground Color Yellow'");
             _testGetSet->_wAttribute = FOREGROUND_BLUE;
             _testGetSet->_wExpectedAttribute = FOREGROUND_INTENSITY | FOREGROUND_GREEN | FOREGROUND_RED;
             _testGetSet->_fExpectedForeground = true;
             break;
-        case TermDispatch::GraphicsOptions::BrightForegroundWhite:
+        case DispatchTypes::GraphicsOptions::BrightForegroundWhite:
             Log::Comment(L"Testing graphics 'Bright Foreground Color White'");
             _testGetSet->_wAttribute = 0;
             _testGetSet->_wExpectedAttribute = FOREGROUND_INTENSITY | FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED;
             _testGetSet->_fExpectedForeground = true;
             break;
-        case TermDispatch::GraphicsOptions::BrightBackgroundBlack:
+        case DispatchTypes::GraphicsOptions::BrightBackgroundBlack:
             Log::Comment(L"Testing graphics 'Bright Background Color Black'");
             _testGetSet->_wAttribute = BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE;
             _testGetSet->_wExpectedAttribute = BACKGROUND_INTENSITY;
             _testGetSet->_fExpectedBackground = true;
             break;
-        case TermDispatch::GraphicsOptions::BrightBackgroundBlue:
+        case DispatchTypes::GraphicsOptions::BrightBackgroundBlue:
             Log::Comment(L"Testing graphics 'Bright Background Color Blue'");
             _testGetSet->_wAttribute = BACKGROUND_RED | BACKGROUND_GREEN;
             _testGetSet->_wExpectedAttribute = BACKGROUND_INTENSITY | BACKGROUND_BLUE;
             _testGetSet->_fExpectedBackground = true;
             break;
-        case TermDispatch::GraphicsOptions::BrightBackgroundGreen:
+        case DispatchTypes::GraphicsOptions::BrightBackgroundGreen:
             Log::Comment(L"Testing graphics 'Bright Background Color Green'");
             _testGetSet->_wAttribute = BACKGROUND_RED | BACKGROUND_BLUE;
             _testGetSet->_wExpectedAttribute = BACKGROUND_INTENSITY | BACKGROUND_GREEN;
             _testGetSet->_fExpectedBackground = true;
             break;
-        case TermDispatch::GraphicsOptions::BrightBackgroundCyan:
+        case DispatchTypes::GraphicsOptions::BrightBackgroundCyan:
             Log::Comment(L"Testing graphics 'Bright Background Color Cyan'");
             _testGetSet->_wAttribute = BACKGROUND_RED;
             _testGetSet->_wExpectedAttribute = BACKGROUND_INTENSITY | BACKGROUND_BLUE | BACKGROUND_GREEN;
             _testGetSet->_fExpectedBackground = true;
             break;
-        case TermDispatch::GraphicsOptions::BrightBackgroundRed:
+        case DispatchTypes::GraphicsOptions::BrightBackgroundRed:
             Log::Comment(L"Testing graphics 'Bright Background Color Red'");
             _testGetSet->_wAttribute = BACKGROUND_BLUE | BACKGROUND_GREEN;
             _testGetSet->_wExpectedAttribute = BACKGROUND_INTENSITY | BACKGROUND_RED;
             _testGetSet->_fExpectedBackground = true;
             break;
-        case TermDispatch::GraphicsOptions::BrightBackgroundMagenta:
+        case DispatchTypes::GraphicsOptions::BrightBackgroundMagenta:
             Log::Comment(L"Testing graphics 'Bright Background Color Magenta'");
             _testGetSet->_wAttribute = BACKGROUND_GREEN;
             _testGetSet->_wExpectedAttribute = BACKGROUND_INTENSITY | BACKGROUND_BLUE | BACKGROUND_RED;
             _testGetSet->_fExpectedBackground = true;
             break;
-        case TermDispatch::GraphicsOptions::BrightBackgroundYellow:
+        case DispatchTypes::GraphicsOptions::BrightBackgroundYellow:
             Log::Comment(L"Testing graphics 'Bright Background Color Yellow'");
             _testGetSet->_wAttribute = BACKGROUND_BLUE;
             _testGetSet->_wExpectedAttribute = BACKGROUND_INTENSITY | BACKGROUND_GREEN | BACKGROUND_RED;
             _testGetSet->_fExpectedBackground = true;
             break;
-        case TermDispatch::GraphicsOptions::BrightBackgroundWhite:
+        case DispatchTypes::GraphicsOptions::BrightBackgroundWhite:
             Log::Comment(L"Testing graphics 'Bright Background Color White'");
             _testGetSet->_wAttribute = 0;
             _testGetSet->_wExpectedAttribute = BACKGROUND_INTENSITY | BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_RED;
@@ -2726,12 +2726,12 @@ public:
 
         _testGetSet->_fPrivateSetLegacyAttributesResult = TRUE;
 
-        TermDispatch::GraphicsOptions rgOptions[16];
+        DispatchTypes::GraphicsOptions rgOptions[16];
         size_t cOptions = 1;
 
         Log::Comment(L"Test 1: Basic brightness test");
         Log::Comment(L"Reseting graphics options");
-        rgOptions[0] = TermDispatch::GraphicsOptions::Off;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::Off;
         _testGetSet->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED;
         _testGetSet->_fExpectedForeground = true;
         _testGetSet->_fExpectedBackground = true;
@@ -2741,13 +2741,13 @@ public:
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
 
         Log::Comment(L"Testing graphics 'Foreground Color Blue'");
-        rgOptions[0] = TermDispatch::GraphicsOptions::ForegroundBlue;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundBlue;
         _testGetSet->_wExpectedAttribute = FOREGROUND_BLUE;
         _testGetSet->_fExpectedForeground = true;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
 
         Log::Comment(L"Enabling brightness");
-        rgOptions[0] = TermDispatch::GraphicsOptions::BoldBright;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::BoldBright;
         _testGetSet->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_INTENSITY;
         _testGetSet->_fExpectedForeground = true;
         _testGetSet->_fPrivateBoldTextResult = true;
@@ -2756,7 +2756,7 @@ public:
         VERIFY_IS_TRUE(_testGetSet->_fIsBold);
 
         Log::Comment(L"Testing graphics 'Foreground Color Green, with brightness'");
-        rgOptions[0] = TermDispatch::GraphicsOptions::ForegroundGreen;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundGreen;
         _testGetSet->_wExpectedAttribute = FOREGROUND_GREEN;
         _testGetSet->_fExpectedForeground = true;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
@@ -2765,7 +2765,7 @@ public:
 
         Log::Comment(L"Test 2: Disable brightness, use a bright color, next normal call remains not bright");
         Log::Comment(L"Reseting graphics options");
-        rgOptions[0] = TermDispatch::GraphicsOptions::Off;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::Off;
         _testGetSet->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED;
         _testGetSet->_fExpectedForeground = true;
         _testGetSet->_fExpectedBackground = true;
@@ -2777,14 +2777,14 @@ public:
         VERIFY_IS_FALSE(_testGetSet->_fIsBold);
 
         Log::Comment(L"Testing graphics 'Foreground Color Bright Blue'");
-        rgOptions[0] = TermDispatch::GraphicsOptions::BrightForegroundBlue;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::BrightForegroundBlue;
         _testGetSet->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_INTENSITY;
         _testGetSet->_fExpectedForeground = true;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
         VERIFY_IS_FALSE(_testGetSet->_fIsBold);
 
         Log::Comment(L"Testing graphics 'Foreground Color Blue', brightness of 9x series doesn't persist");
-        rgOptions[0] = TermDispatch::GraphicsOptions::ForegroundBlue;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundBlue;
         _testGetSet->_wExpectedAttribute = FOREGROUND_BLUE;
         _testGetSet->_fExpectedForeground = true;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
@@ -2792,7 +2792,7 @@ public:
 
         Log::Comment(L"Test 3: Enable brightness, use a bright color, brightness persists to next normal call");
         Log::Comment(L"Reseting graphics options");
-        rgOptions[0] = TermDispatch::GraphicsOptions::Off;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::Off;
         _testGetSet->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED;
         _testGetSet->_fExpectedForeground = true;
         _testGetSet->_fExpectedBackground = true;
@@ -2803,35 +2803,35 @@ public:
         VERIFY_IS_FALSE(_testGetSet->_fIsBold);
 
         Log::Comment(L"Testing graphics 'Foreground Color Blue'");
-        rgOptions[0] = TermDispatch::GraphicsOptions::ForegroundBlue;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundBlue;
         _testGetSet->_wExpectedAttribute = FOREGROUND_BLUE;
         _testGetSet->_fExpectedForeground = true;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
         VERIFY_IS_FALSE(_testGetSet->_fIsBold);
 
         Log::Comment(L"Enabling brightness");
-        rgOptions[0] = TermDispatch::GraphicsOptions::BoldBright;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::BoldBright;
         _testGetSet->_fPrivateBoldTextResult = true;
         _testGetSet->_fExpectedIsBold = true;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
         VERIFY_IS_TRUE(_testGetSet->_fIsBold);
 
         Log::Comment(L"Testing graphics 'Foreground Color Bright Blue'");
-        rgOptions[0] = TermDispatch::GraphicsOptions::BrightForegroundBlue;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::BrightForegroundBlue;
         _testGetSet->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_INTENSITY;
         _testGetSet->_fExpectedForeground = true;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
         VERIFY_IS_TRUE(_testGetSet->_fIsBold);
 
         Log::Comment(L"Testing graphics 'Foreground Color Blue, with brightness', brightness of 9x series doesn't affect brightness");
-        rgOptions[0] = TermDispatch::GraphicsOptions::ForegroundBlue;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundBlue;
         _testGetSet->_wExpectedAttribute = FOREGROUND_BLUE;
         _testGetSet->_fExpectedForeground = true;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
         VERIFY_IS_TRUE(_testGetSet->_fIsBold);
 
         Log::Comment(L"Testing graphics 'Foreground Color Green, with brightness'");
-        rgOptions[0] = TermDispatch::GraphicsOptions::ForegroundGreen;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundGreen;
         _testGetSet->_wExpectedAttribute = FOREGROUND_GREEN;
         _testGetSet->_fExpectedForeground = true;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
@@ -2844,7 +2844,7 @@ public:
 
         Log::Comment(L"Test 1: Verify failure when using bad status.");
         _testGetSet->PrepData();
-        VERIFY_IS_FALSE(_pDispatch->DeviceStatusReport((TermDispatch::AnsiStatusType) -1));
+        VERIFY_IS_FALSE(_pDispatch->DeviceStatusReport((DispatchTypes::AnsiStatusType) -1));
     }
 
     TEST_METHOD(DeviceStatus_CursorPositionReportTests)
@@ -2865,7 +2865,7 @@ public:
         coordCursorExpected.X++;
         coordCursorExpected.Y++;
 
-        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(TermDispatch::AnsiStatusType::CPR_CursorPositionReport));
+        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::AnsiStatusType::CPR_CursorPositionReport));
 
         wchar_t pwszBuffer[50];
 
@@ -3164,10 +3164,10 @@ public:
 
         _testGetSet->_fPrivateTabClearResult = TRUE;
         _testGetSet->_fExpectedClearAll = true;
-        VERIFY_IS_TRUE(_pDispatch->TabClear(TermDispatch::TabClearType::ClearAllColumns));
+        VERIFY_IS_TRUE(_pDispatch->TabClear(DispatchTypes::TabClearType::ClearAllColumns));
 
         _testGetSet->_fExpectedClearAll = false;
-        VERIFY_IS_TRUE(_pDispatch->TabClear(TermDispatch::TabClearType::ClearCurrentColumn));
+        VERIFY_IS_TRUE(_pDispatch->TabClear(DispatchTypes::TabClearType::ClearCurrentColumn));
 
     }
 
@@ -3246,15 +3246,15 @@ public:
         _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
 
 
-        TermDispatch::GraphicsOptions rgOptions[16];
+        DispatchTypes::GraphicsOptions rgOptions[16];
         size_t cOptions = 3;
 
         _testGetSet->_fSetConsoleXtermTextAttributeResult = true;
 
         Log::Comment(L"Test 1: Change Foreground");
-        rgOptions[0] = TermDispatch::GraphicsOptions::ForegroundExtended;
-        rgOptions[1] = TermDispatch::GraphicsOptions::Xterm256Index;
-        rgOptions[2] = (TermDispatch::GraphicsOptions)2; // Green
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
+        rgOptions[1] = DispatchTypes::GraphicsOptions::Xterm256Index;
+        rgOptions[2] = (DispatchTypes::GraphicsOptions)2; // Green
         _testGetSet->_wExpectedAttribute = FOREGROUND_GREEN;
         _testGetSet->_iExpectedXtermTableEntry = 2;
         _testGetSet->_fExpectedIsForeground = true;
@@ -3262,9 +3262,9 @@ public:
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
 
         Log::Comment(L"Test 2: Change Background");
-        rgOptions[0] = TermDispatch::GraphicsOptions::BackgroundExtended;
-        rgOptions[1] = TermDispatch::GraphicsOptions::Xterm256Index;
-        rgOptions[2] = (TermDispatch::GraphicsOptions)9; // Bright Red
+        rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundExtended;
+        rgOptions[1] = DispatchTypes::GraphicsOptions::Xterm256Index;
+        rgOptions[2] = (DispatchTypes::GraphicsOptions)9; // Bright Red
         _testGetSet->_wExpectedAttribute = FOREGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY;
         _testGetSet->_iExpectedXtermTableEntry = 9;
         _testGetSet->_fExpectedIsForeground = false;
@@ -3274,9 +3274,9 @@ public:
 
 
         Log::Comment(L"Test 3: Change Foreground to RGB color");
-        rgOptions[0] = TermDispatch::GraphicsOptions::ForegroundExtended;
-        rgOptions[1] = TermDispatch::GraphicsOptions::Xterm256Index;
-        rgOptions[2] = (TermDispatch::GraphicsOptions)42; // Arbitrary Color
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
+        rgOptions[1] = DispatchTypes::GraphicsOptions::Xterm256Index;
+        rgOptions[2] = (DispatchTypes::GraphicsOptions)42; // Arbitrary Color
         _testGetSet->_iExpectedXtermTableEntry = 42;
         _testGetSet->_fExpectedIsForeground = true;
         _testGetSet->_fUsingRgbColor = true;
@@ -3284,9 +3284,9 @@ public:
 
 
         Log::Comment(L"Test 4: Change Background to RGB color");
-        rgOptions[0] = TermDispatch::GraphicsOptions::BackgroundExtended;
-        rgOptions[1] = TermDispatch::GraphicsOptions::Xterm256Index;
-        rgOptions[2] = (TermDispatch::GraphicsOptions)142; // Arbitrary Color
+        rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundExtended;
+        rgOptions[1] = DispatchTypes::GraphicsOptions::Xterm256Index;
+        rgOptions[2] = (DispatchTypes::GraphicsOptions)142; // Arbitrary Color
         _testGetSet->_iExpectedXtermTableEntry = 142;
         _testGetSet->_fExpectedIsForeground = false;
         _testGetSet->_fUsingRgbColor = true;
@@ -3296,9 +3296,9 @@ public:
         // Unfortunately this test isn't all that good, because the adapterTest adapter isn't smart enough
         //   to have it's own color table and translate the pre-existing RGB BG into a legacy BG.
         // Fortunately, the ft_api:RgbColorTests IS smart enough to test that.
-        rgOptions[0] = TermDispatch::GraphicsOptions::ForegroundExtended;
-        rgOptions[1] = TermDispatch::GraphicsOptions::Xterm256Index;
-        rgOptions[2] = (TermDispatch::GraphicsOptions)9; // Bright Red
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
+        rgOptions[1] = DispatchTypes::GraphicsOptions::Xterm256Index;
+        rgOptions[2] = (DispatchTypes::GraphicsOptions)9; // Bright Red
         _testGetSet->_wExpectedAttribute = FOREGROUND_RED | FOREGROUND_INTENSITY | BACKGROUND_RED | BACKGROUND_INTENSITY;
         _testGetSet->_iExpectedXtermTableEntry = 9;
         _testGetSet->_fExpectedIsForeground = true;

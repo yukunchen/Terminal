@@ -14,7 +14,7 @@ Author(s):
 --*/
 #pragma once
 
-#include "DispatchCommon.hpp"
+#include "DispatchTypes.hpp"
 #include "../../types/inc/IInputEvent.hpp"
 
 namespace Microsoft::Console::VirtualTerminal
@@ -30,7 +30,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual bool WriteString(_In_reads_(cch) const wchar_t* const pws, const size_t cch) = 0;
 
-        virtual bool WindowManipulation(const DispatchCommon::WindowManipulationType uiFunction,
+        virtual bool WindowManipulation(const DispatchTypes::WindowManipulationType uiFunction,
                                         _In_reads_(cParams) const unsigned short* const rgusParams,
                                         const size_t cParams) = 0;
 

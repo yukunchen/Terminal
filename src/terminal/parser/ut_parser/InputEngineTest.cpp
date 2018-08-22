@@ -78,7 +78,7 @@ public:
         _expectSendCtrlC{ false },
         _expectCursorPosition{ false },
         _expectedCursor{ -1, -1 },
-        _expectedWindowManipulation{ DispatchCommon::WindowManipulationType::Invalid },
+        _expectedWindowManipulation{ DispatchTypes::WindowManipulationType::Invalid },
         _expectedCParams{ 0 }
     {
         std::fill_n(_expectedParams, ARRAYSIZE(_expectedParams), gsl::narrow<short>(0));
@@ -208,7 +208,7 @@ public:
     bool _expectSendCtrlC;
     bool _expectCursorPosition;
     COORD _expectedCursor;
-    DispatchCommon::WindowManipulationType _expectedWindowManipulation;
+    DispatchTypes::WindowManipulationType _expectedWindowManipulation;
     unsigned short _expectedParams[16];
     size_t _expectedCParams;
 };
@@ -255,7 +255,7 @@ public:
                          _In_ TestState* testState);
     virtual bool WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& inputEvents) override;
     virtual bool WriteCtrlC() override;
-    virtual bool WindowManipulation(const DispatchCommon::WindowManipulationType uiFunction,
+    virtual bool WindowManipulation(const DispatchTypes::WindowManipulationType uiFunction,
                                     _In_reads_(cParams) const unsigned short* const rgusParams,
                                     const size_t cParams) override; // DTTERM_WindowManipulation
     virtual bool WriteString(_In_reads_(cch) const wchar_t* const pws,
@@ -292,7 +292,7 @@ bool TestInteractDispatch::WriteCtrlC()
     return WriteInput(inputEvents);
 }
 
-bool TestInteractDispatch::WindowManipulation(const DispatchCommon::WindowManipulationType uiFunction,
+bool TestInteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulationType uiFunction,
                                               _In_reads_(cParams) const unsigned short* const rgusParams,
                                               const size_t cParams)
 {
@@ -561,7 +561,7 @@ void InputEngineTest::WindowManipulationTest()
 
     for(unsigned int i = 0; i < static_cast<unsigned int>(BYTE_MAX); i++)
     {
-        if (i == DispatchCommon::WindowManipulationType::ResizeWindowInCharacters)
+        if (i == DispatchTypes::WindowManipulationType::ResizeWindowInCharacters)
         {
             fValidType = true;
         }
@@ -570,7 +570,7 @@ void InputEngineTest::WindowManipulationTest()
         seqBuilder << L"\x1b[" << i;
 
 
-        if (i == DispatchCommon::WindowManipulationType::ResizeWindowInCharacters)
+        if (i == DispatchTypes::WindowManipulationType::ResizeWindowInCharacters)
         {
             // We need to build the string with the params as strings for some reason -
             //      x86 would implicitly convert them to chars (eg 123 -> '{')
@@ -581,21 +581,21 @@ void InputEngineTest::WindowManipulationTest()
             testState._expectedCParams = 2;
             testState._expectedParams[0] = param1;
             testState._expectedParams[1] = param2;
-            testState._expectedWindowManipulation = static_cast<DispatchCommon::WindowManipulationType>(i);
+            testState._expectedWindowManipulation = static_cast<DispatchTypes::WindowManipulationType>(i);
         }
-        else if (i == DispatchCommon::WindowManipulationType::RefreshWindow)
+        else if (i == DispatchTypes::WindowManipulationType::RefreshWindow)
         {
             // refresh window doesn't expect any params.
 
             testState._expectedToCallWindowManipulation = true;
             testState._expectedCParams = 0;
-            testState._expectedWindowManipulation = static_cast<DispatchCommon::WindowManipulationType>(i);
+            testState._expectedWindowManipulation = static_cast<DispatchTypes::WindowManipulationType>(i);
         }
         else
         {
             testState._expectedToCallWindowManipulation = false;
             testState._expectedCParams = 0;
-            testState._expectedWindowManipulation = DispatchCommon::WindowManipulationType::Invalid;
+            testState._expectedWindowManipulation = DispatchTypes::WindowManipulationType::Invalid;
         }
         seqBuilder << L"t";
         std::wstring seq = seqBuilder.str();

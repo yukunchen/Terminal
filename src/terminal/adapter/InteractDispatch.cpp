@@ -7,6 +7,7 @@
 #include "precomp.h"
 
 #include "InteractDispatch.hpp"
+#include "DispatchCommon.hpp"
 #include "conGetSet.hpp"
 #include "../../types/inc/Viewport.hpp"
 #include "../../types/inc/convert.hpp"
@@ -100,7 +101,7 @@ bool InteractDispatch::WriteString(_In_reads_(cch) const wchar_t* const pws,
 // - cParams - size of rgusParams
 // Return value:
 // True if handled successfully. False otherwise.
-bool InteractDispatch::WindowManipulation(const DispatchCommon::WindowManipulationType uiFunction,
+bool InteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulationType uiFunction,
                                           _In_reads_(cParams) const unsigned short* const rgusParams,
                                           const size_t cParams)
 {
@@ -110,13 +111,13 @@ bool InteractDispatch::WindowManipulation(const DispatchCommon::WindowManipulati
     //  MSFT:13271146 - QueryScreenSize
     switch (uiFunction)
     {
-        case DispatchCommon::WindowManipulationType::RefreshWindow:
+        case DispatchTypes::WindowManipulationType::RefreshWindow:
             if (cParams == 0)
             {
                 fSuccess = DispatchCommon::s_RefreshWindow(*_pConApi);
             }
             break;
-        case DispatchCommon::WindowManipulationType::ResizeWindowInCharacters:
+        case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
             if (cParams == 2)
             {
                 fSuccess = DispatchCommon::s_ResizeWindow(*_pConApi, rgusParams[1], rgusParams[0]);

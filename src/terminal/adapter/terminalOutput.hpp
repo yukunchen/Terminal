@@ -31,7 +31,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool NeedToTranslate() const;
 
     private:
-        wchar_t _wchCurrentCharset = TermDispatch::VTCharacterSets::USASCII;
+        wchar_t _wchCurrentCharset = DispatchTypes::VTCharacterSets::USASCII;
 
         // The tables only ever change the values x20 - x7f (96 display characters)
         static const unsigned int s_uiNumDisplayCharacters = 96;
