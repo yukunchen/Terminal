@@ -3093,6 +3093,7 @@ public:
         Log::Comment(L"Test 1: Verify having both values is valid.");
         _testGetSet->_SetMarginsHelper(&srTestMargins, 2, 6);
         _testGetSet->_fPrivateSetScrollingRegionResult = TRUE;
+        _testGetSet->_fSetConsoleCursorPositionResult = true;
         VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
 
         Log::Comment(L"Test 2: Verify having only top is valid.");
