@@ -15,8 +15,6 @@ Abstract:
 #define CLE_ALLOCATED 0x00000001
 #define CLE_RESET     0x00000002
 
-#include "popup.h"
-
 class CommandHistory
 {
 public:
@@ -26,10 +24,6 @@ public:
     static void s_ReallocExeToFront(const std::wstring_view appName, const size_t commands);
     static void s_Free(const HANDLE processHandle);
     static void s_ResizeAll(const size_t commands);
-    static void s_UpdatePopups(const WORD NewAttributes,
-                               const WORD NewPopupAttributes,
-                               const WORD OldAttributes,
-                               const WORD OldPopupAttributes);
     static size_t s_CountOfHistories();
 
     enum class MatchOptions
@@ -71,11 +65,6 @@ public:
     void Realloc(const size_t commands);
     void Empty();
 
-    [[nodiscard]]
-    Popup* BeginPopup(SCREEN_INFORMATION& screenInfo, const COORD size, Popup::PopFunc func);
-    [[nodiscard]]
-    HRESULT EndPopup();
-
     bool AtFirstCommand() const;
     bool AtLastCommand() const;
 
@@ -106,8 +95,6 @@ private:
 public:
     DWORD Flags;
     SHORT LastDisplayed;
-
-    std::deque<Popup*> PopupList; // pointer to top-level popup
 
 #ifdef UNIT_TESTING
     static void s_ClearHistoryListStorage();

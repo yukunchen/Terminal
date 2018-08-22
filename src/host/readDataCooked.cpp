@@ -11,6 +11,7 @@
 #include "misc.h"
 #include "_stream.h"
 #include "inputBuffer.hpp"
+#include "cmdline.h"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
@@ -131,7 +132,7 @@ COOKED_READ_DATA::COOKED_READ_DATA(SCREEN_INFORMATION& screenInfo):
 // - Decrements count of readers waiting on the given handle.
 COOKED_READ_DATA::~COOKED_READ_DATA()
 {
-    CleanUpAllPopups();
+    CommandLine::Instance().EndAllPopups();
     ServiceLocator::LocateGlobals().getConsoleInformation().SetCookedReadData(nullptr);
 }
 
@@ -300,8 +301,7 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
     //   piece of old spaghetti code.
     if (_commandHistory)
     {
-        Popup* Popup;
-        if (!_commandHistory->PopupList.empty())
+        if (CommandLine::Instance().HasPopup())
         {
             // (see above comment, MSFT:13994975)
             // Make sure that the popup writes the dwNumBytes to the right place
@@ -310,9 +310,10 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
                 pdwNumBytes = pNumBytes;
             }
 
-            Popup = _commandHistory->PopupList.front();
-            *pReplyStatus = Popup->DoCallback(*this);
-            if (*pReplyStatus == CONSOLE_STATUS_READ_COMPLETE || (*pReplyStatus != CONSOLE_STATUS_WAIT && *pReplyStatus != CONSOLE_STATUS_WAIT_NO_BLOCK))
+            auto& popup = CommandLine::Instance().GetPopup();
+            *pReplyStatus = popup.Process(*this);
+            if (*pReplyStatus == CONSOLE_STATUS_READ_COMPLETE ||
+                (*pReplyStatus != CONSOLE_STATUS_WAIT && *pReplyStatus != CONSOLE_STATUS_WAIT_NO_BLOCK))
             {
                 *pReplyStatus = S_OK;
                 return true;
@@ -400,7 +401,7 @@ HRESULT COOKED_READ_DATA::Read(const bool isUnicode,
 
             pdwNumBytes = &numBytes;
 
-            Status = ProcessCommandLine(*this, Char, KeyState);
+            Status = CommandLine::Instance().ProcessCommandLine(*this, Char, KeyState);
             if (Status == CONSOLE_STATUS_READ_COMPLETE || Status == CONSOLE_STATUS_WAIT)
             {
                 break;
@@ -966,7 +967,7 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
             if (_insertMode != gci.GetInsertMode())
             {
                 // Make cursor small.
-                LOG_IF_FAILED(ProcessCommandLine(*this, VK_INSERT, 0));
+                LOG_IF_FAILED(CommandLine::Instance().ProcessCommandLine(*this, VK_INSERT, 0));
             }
 
             status = STATUS_SUCCESS;
@@ -975,27 +976,4 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
     }
 
     return false;
-}
-
-void COOKED_READ_DATA::EndCurrentPopup()
-{
-    if (_commandHistory == nullptr)
-    {
-        return;
-    }
-
-    LOG_IF_FAILED(_commandHistory->EndPopup());
-}
-
-void COOKED_READ_DATA::CleanUpAllPopups()
-{
-    if (_commandHistory == nullptr)
-    {
-        return;
-    }
-
-    while (!_commandHistory->PopupList.empty())
-    {
-        LOG_IF_FAILED(_commandHistory->EndPopup());
-    }
 }

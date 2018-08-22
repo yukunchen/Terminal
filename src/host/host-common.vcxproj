@@ -3,6 +3,10 @@
   <ItemGroup>
     <ClCompile Include="..\alias.cpp" />
     <ClCompile Include="..\cmdline.cpp" />
+    <ClCompile Include="..\CommandNumberPopup.cpp" />
+    <ClCompile Include="..\CommandListPopup.cpp" />
+    <ClCompile Include="..\CopyFromCharPopup.cpp" />
+    <ClCompile Include="..\CopyToCharPopup.cpp" />
     <ClCompile Include="..\CodepointWidthDetector.cpp" />
     <ClCompile Include="..\conattrs.cpp" />
     <ClCompile Include="..\ConsoleArguments.cpp" />
@@ -64,6 +68,10 @@
     <ClInclude Include="..\alias.h" />
     <ClInclude Include="..\ApiRoutines.h" />
     <ClInclude Include="..\cmdline.h" />
+    <ClInclude Include="..\CommandNumberPopup.hpp" />
+    <ClInclude Include="..\CommandListPopup.hpp" />
+    <ClInclude Include="..\CopyFromCharPopup.hpp" />
+    <ClInclude Include="..\CopyToCharPopup.hpp" />
     <ClInclude Include="..\CodepointWidthDetector.hpp" />
     <ClInclude Include="..\conapi.h" />
     <ClInclude Include="..\conddkrefs.h" />

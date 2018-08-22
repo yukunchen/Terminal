@@ -14,6 +14,8 @@
 #include "dbcs.h"
 #include "handle.h"
 #include "misc.h"
+#include "cmdline.h"
+
 #include "../types/inc/convert.hpp"
 #include "../types/inc/viewport.hpp"
 
@@ -418,13 +420,13 @@ void DoSrvSetScreenBufferInfo(SCREEN_INFORMATION& screenInfo,
     if (requestedBufferSize.X != coordScreenBufferSize.X ||
         requestedBufferSize.Y != coordScreenBufferSize.Y)
     {
-        CommandLine* const pCommandLine = &CommandLine::Instance();
+        CommandLine& commandLine = CommandLine::Instance();
 
-        pCommandLine->Hide(FALSE);
+        commandLine.Hide(FALSE);
 
         LOG_IF_FAILED(screenInfo.ResizeScreenBuffer(pInfo->dwSize, TRUE));
 
-        pCommandLine->Show();
+        commandLine.Show();
     }
     const COORD newBufferSize = screenInfo.GetScreenBufferSize();
 
@@ -707,9 +709,10 @@ void SetScreenColors(SCREEN_INFORMATION& screenInfo,
                                             NewPrimaryAttributes,
                                             NewPopupAttributes);
 
-        if (gci.PopupCount != 0)
+        auto& commandLine = CommandLine::Instance();
+        if (commandLine.HasPopup())
         {
-            CommandHistory::s_UpdatePopups(Attributes, PopupAttributes, DefaultAttributes, DefaultPopupAttributes);
+            commandLine.UpdatePopups(Attributes, PopupAttributes, DefaultAttributes, DefaultPopupAttributes);
         }
 
         // force repaint of entire line

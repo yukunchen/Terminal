@@ -101,6 +101,11 @@ SOURCES = \
     ..\conimeinfo.cpp \
     ..\conattrs.cpp \
     ..\ConsoleArguments.cpp \
+    ..\CommandNumberPopup.cpp \
+    ..\CommandListPopup.cpp \
+    ..\CopyFromCharPopup.cpp \
+    ..\CopyToCharPopup.cpp \
+
 
 # -------------------------------------
 # Sources, Headers, and Libraries

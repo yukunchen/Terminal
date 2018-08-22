@@ -111,37 +111,38 @@ class CommandLineTests
         VERIFY_SUCCEEDED(m_pHistory->Add(L"echo 2", false));
         VERIFY_SUCCEEDED(m_pHistory->Add(L"echo 3", false));
 
-        ProcessHistoryCycling(cookedReadData, CommandHistory::SearchDirection::Next);
+        auto& commandLine = CommandLine::Instance();
+        commandLine._processHistoryCycling(cookedReadData, CommandHistory::SearchDirection::Next);
         // should not have anything on the prompt
         VERIFY_ARE_EQUAL(cookedReadData._BytesRead, 0u);
 
         // go back one history item
-        ProcessHistoryCycling(cookedReadData, CommandHistory::SearchDirection::Previous);
+        commandLine._processHistoryCycling(cookedReadData, CommandHistory::SearchDirection::Previous);
         VerifyPromptText(cookedReadData, L"echo 3");
 
         // try to go to the next history item, prompt shouldn't change
-        ProcessHistoryCycling(cookedReadData, CommandHistory::SearchDirection::Next);
+        commandLine._processHistoryCycling(cookedReadData, CommandHistory::SearchDirection::Next);
         VerifyPromptText(cookedReadData, L"echo 3");
 
         // go back another
-        ProcessHistoryCycling(cookedReadData, CommandHistory::SearchDirection::Previous);
+        commandLine._processHistoryCycling(cookedReadData, CommandHistory::SearchDirection::Previous);
         VerifyPromptText(cookedReadData, L"echo 2");
 
         // go forward
-        ProcessHistoryCycling(cookedReadData, CommandHistory::SearchDirection::Next);
+        commandLine._processHistoryCycling(cookedReadData, CommandHistory::SearchDirection::Next);
         VerifyPromptText(cookedReadData, L"echo 3");
 
         // go back two
-        ProcessHistoryCycling(cookedReadData, CommandHistory::SearchDirection::Previous);
-        ProcessHistoryCycling(cookedReadData, CommandHistory::SearchDirection::Previous);
+        commandLine._processHistoryCycling(cookedReadData, CommandHistory::SearchDirection::Previous);
+        commandLine._processHistoryCycling(cookedReadData, CommandHistory::SearchDirection::Previous);
         VerifyPromptText(cookedReadData, L"echo 1");
 
         // make sure we can't go back further
-        ProcessHistoryCycling(cookedReadData, CommandHistory::SearchDirection::Previous);
+        commandLine._processHistoryCycling(cookedReadData, CommandHistory::SearchDirection::Previous);
         VerifyPromptText(cookedReadData, L"echo 1");
 
         // can still go forward
-        ProcessHistoryCycling(cookedReadData, CommandHistory::SearchDirection::Next);
+        commandLine._processHistoryCycling(cookedReadData, CommandHistory::SearchDirection::Next);
         VerifyPromptText(cookedReadData, L"echo 2");
     }
 
@@ -157,12 +158,13 @@ class CommandLineTests
         VERIFY_SUCCEEDED(m_pHistory->Add(L"echo 2", false));
         VERIFY_SUCCEEDED(m_pHistory->Add(L"echo 3", false));
 
-        SetPromptToOldestCommand(cookedReadData);
+        auto& commandLine = CommandLine::Instance();
+        commandLine._setPromptToOldestCommand(cookedReadData);
         VerifyPromptText(cookedReadData, L"echo 1");
 
         // change prompt and go back to oldest
-        ProcessHistoryCycling(cookedReadData, CommandHistory::SearchDirection::Next);
-        SetPromptToOldestCommand(cookedReadData);
+        commandLine._processHistoryCycling(cookedReadData, CommandHistory::SearchDirection::Next);
+        commandLine._setPromptToOldestCommand(cookedReadData);
         VerifyPromptText(cookedReadData, L"echo 1");
     }
 
@@ -178,12 +180,13 @@ class CommandLineTests
         VERIFY_SUCCEEDED(m_pHistory->Add(L"echo 2", false));
         VERIFY_SUCCEEDED(m_pHistory->Add(L"echo 3", false));
 
-        SetPromptToNewestCommand(cookedReadData);
+        auto& commandLine = CommandLine::Instance();
+        commandLine._setPromptToNewestCommand(cookedReadData);
         VerifyPromptText(cookedReadData, L"echo 3");
 
         // change prompt and go back to newest
-        ProcessHistoryCycling(cookedReadData, CommandHistory::SearchDirection::Previous);
-        SetPromptToNewestCommand(cookedReadData);
+        commandLine._processHistoryCycling(cookedReadData, CommandHistory::SearchDirection::Previous);
+        commandLine._setPromptToNewestCommand(cookedReadData);
         VerifyPromptText(cookedReadData, L"echo 3");
     }
 
@@ -199,9 +202,10 @@ class CommandLineTests
         SetPrompt(cookedReadData, expected);
         VerifyPromptText(cookedReadData, expected);
 
+        auto& commandLine = CommandLine::Instance();
         // set current cursor position somewhere in the middle of the prompt
         MoveCursor(cookedReadData, 4);
-        DeletePromptAfterCursor(cookedReadData);
+        commandLine._deletePromptAfterCursor(cookedReadData);
         VerifyPromptText(cookedReadData, L"test");
     }
 
@@ -219,7 +223,8 @@ class CommandLineTests
 
         // set current cursor position somewhere in the middle of the prompt
         MoveCursor(cookedReadData, 5);
-        const COORD cursorPos = DeletePromptBeforeCursor(cookedReadData);
+        auto& commandLine = CommandLine::Instance();
+        const COORD cursorPos = commandLine._deletePromptBeforeCursor(cookedReadData);
         cookedReadData._CurrentPosition = cursorPos.X;
         VerifyPromptText(cookedReadData, L"word blah");
     }
@@ -246,7 +251,8 @@ class CommandLineTests
 
         MoveCursor(cookedReadData, 0);
 
-        const COORD cursorPos = MoveCursorToEndOfPrompt(cookedReadData);
+        auto& commandLine = CommandLine::Instance();
+        const COORD cursorPos = commandLine._moveCursorToEndOfPrompt(cookedReadData);
         VERIFY_ARE_EQUAL(cursorPos.X, gsl::narrow<short>(expectedCursorPos));
         VERIFY_ARE_EQUAL(cookedReadData._CurrentPosition, expectedCursorPos);
         VERIFY_ARE_EQUAL(cookedReadData._BufPtr, expectedBufferPos);
@@ -269,7 +275,8 @@ class CommandLineTests
         VERIFY_ARE_NOT_EQUAL(cookedReadData._CurrentPosition, 0u);
         VERIFY_ARE_NOT_EQUAL(cookedReadData._BufPtr, cookedReadData._BackupLimit);
 
-        const COORD cursorPos = MoveCursorToStartOfPrompt(cookedReadData);
+        auto& commandLine = CommandLine::Instance();
+        const COORD cursorPos = commandLine._moveCursorToStartOfPrompt(cookedReadData);
         VERIFY_ARE_EQUAL(cursorPos.X, 0);
         VERIFY_ARE_EQUAL(cookedReadData._CurrentPosition, 0u);
         VERIFY_ARE_EQUAL(cookedReadData._BufPtr, cookedReadData._BackupLimit);
@@ -287,29 +294,30 @@ class CommandLineTests
         SetPrompt(cookedReadData, expected);
         VerifyPromptText(cookedReadData, expected);
 
+        auto& commandLine = CommandLine::Instance();
         // cursor position at beginning of "blah"
         short expectedPos = 10;
-        COORD cursorPos = MoveCursorLeftByWord(cookedReadData);
+        COORD cursorPos = commandLine._moveCursorLeftByWord(cookedReadData);
         VERIFY_ARE_EQUAL(cursorPos.X, expectedPos);
         VERIFY_ARE_EQUAL(cookedReadData._CurrentPosition, gsl::narrow<size_t>(expectedPos));
         VERIFY_ARE_EQUAL(cookedReadData._BufPtr, cookedReadData._BackupLimit + expectedPos);
 
         // move again
         expectedPos = 5; // before "word"
-        cursorPos = MoveCursorLeftByWord(cookedReadData);
+        cursorPos = commandLine._moveCursorLeftByWord(cookedReadData);
         VERIFY_ARE_EQUAL(cursorPos.X, expectedPos);
         VERIFY_ARE_EQUAL(cookedReadData._CurrentPosition, gsl::narrow<size_t>(expectedPos));
         VERIFY_ARE_EQUAL(cookedReadData._BufPtr, cookedReadData._BackupLimit + expectedPos);
 
         // move again
         expectedPos = 0; // before "test"
-        cursorPos = MoveCursorLeftByWord(cookedReadData);
+        cursorPos = commandLine._moveCursorLeftByWord(cookedReadData);
         VERIFY_ARE_EQUAL(cursorPos.X, expectedPos);
         VERIFY_ARE_EQUAL(cookedReadData._CurrentPosition, gsl::narrow<size_t>(expectedPos));
         VERIFY_ARE_EQUAL(cookedReadData._BufPtr, cookedReadData._BackupLimit + expectedPos);
 
         // try to move again, nothing should happen
-        cursorPos = MoveCursorLeftByWord(cookedReadData);
+        cursorPos = commandLine._moveCursorLeftByWord(cookedReadData);
         VERIFY_ARE_EQUAL(cursorPos.X, expectedPos);
         VERIFY_ARE_EQUAL(cookedReadData._CurrentPosition, gsl::narrow<size_t>(expectedPos));
         VERIFY_ARE_EQUAL(cookedReadData._BufPtr, cookedReadData._BackupLimit + expectedPos);
@@ -328,9 +336,10 @@ class CommandLineTests
         VerifyPromptText(cookedReadData, expected);
 
         // move left from end of prompt text to the beginning of the prompt
+        auto& commandLine = CommandLine::Instance();
         for (auto it = expected.crbegin(); it != expected.crend(); ++it)
         {
-            const COORD cursorPos = MoveCursorLeft(cookedReadData);
+            const COORD cursorPos = commandLine._moveCursorLeft(cookedReadData);
             VERIFY_ARE_EQUAL(*cookedReadData._BufPtr, *it);
         }
         // should now be at the start of the prompt
@@ -338,7 +347,7 @@ class CommandLineTests
         VERIFY_ARE_EQUAL(cookedReadData._BufPtr, cookedReadData._BackupLimit);
 
         // try to move left a final time, nothing should change
-        const COORD cursorPos = MoveCursorLeft(cookedReadData);
+        const COORD cursorPos = commandLine._moveCursorLeft(cookedReadData);
         VERIFY_ARE_EQUAL(cursorPos.X, 0);
         VERIFY_ARE_EQUAL(cookedReadData._CurrentPosition, 0u);
         VERIFY_ARE_EQUAL(cookedReadData._BufPtr, cookedReadData._BackupLimit);
@@ -391,7 +400,8 @@ class CommandLineTests
         auto& cookedReadData = ServiceLocator::LocateGlobals().getConsoleInformation().CookedReadData();
         InitCookedReadData(cookedReadData, nullptr, buffer.get(), PROMPT_SIZE);
 
-        InsertCtrlZ(cookedReadData);
+        auto& commandLine = CommandLine::Instance();
+        commandLine._insertCtrlZ(cookedReadData);
         VerifyPromptText(cookedReadData, L"\x1a"); // ctrl-z
     }
 
@@ -407,7 +417,8 @@ class CommandLineTests
         VERIFY_SUCCEEDED(m_pHistory->Add(L"echo 2", false));
         VERIFY_SUCCEEDED(m_pHistory->Add(L"echo 3", false));
 
-        DeleteCommandHistory(cookedReadData);
+        auto& commandLine = CommandLine::Instance();
+        commandLine._deleteCommandHistory(cookedReadData);
         VERIFY_ARE_EQUAL(m_pHistory->GetNumberOfCommands(), 0u);
     }
 
@@ -422,7 +433,8 @@ class CommandLineTests
         VERIFY_SUCCEEDED(m_pHistory->Add(L"I'm a little teapot", false));
         SetPrompt(cookedReadData, L"short and stout");
 
-        FillPromptWithPreviousCommandFragment(cookedReadData);
+        auto& commandLine = CommandLine::Instance();
+        commandLine._fillPromptWithPreviousCommandFragment(cookedReadData);
         VerifyPromptText(cookedReadData, L"short and stoutapot");
     }
 
@@ -440,15 +452,16 @@ class CommandLineTests
 
         SetPrompt(cookedReadData, L"i");
 
-        CycleMatchingCommandHistoryToPrompt(cookedReadData);
+        auto& commandLine = CommandLine::Instance();
+        commandLine._cycleMatchingCommandHistoryToPrompt(cookedReadData);
         VerifyPromptText(cookedReadData, L"inflammable");
 
         // make sure we skip to the next "i" history item
-        CycleMatchingCommandHistoryToPrompt(cookedReadData);
+        commandLine._cycleMatchingCommandHistoryToPrompt(cookedReadData);
         VerifyPromptText(cookedReadData, L"I'm a little teapot");
 
         // should cycle back to the start of the command history
-        CycleMatchingCommandHistoryToPrompt(cookedReadData);
+        commandLine._cycleMatchingCommandHistoryToPrompt(cookedReadData);
         VerifyPromptText(cookedReadData, L"inflammable");
     }
 };

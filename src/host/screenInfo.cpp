@@ -1648,10 +1648,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeScreenBuffer(const COORD coordNewScreenSize,
     Selection::Instance().ClearSelection();
 
     // cancel any popups before resizing or they will not necessarily line up with new buffer positions
-    if (gci.HasPendingCookedRead())
-    {
-        gci.CookedReadData().CleanUpAllPopups();
-    }
+    CommandLine::Instance().EndAllPopups();
 
     const bool fWrapText = gci.GetWrapText();
     if (fWrapText)
