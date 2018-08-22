@@ -114,7 +114,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         SteadyBar = 6
     };
 
-    static const short s_sDECCOLMSetColumns = 132;
-    static const short s_sDECCOLMResetColumns = 80;
+    constexpr short s_sDECCOLMSetColumns = 132;
+    constexpr short s_sDECCOLMResetColumns = 80;
 
 }

@@ -13,8 +13,8 @@ Abstract:
 Author(s):
 - Michael Niksa (MiNiksa) 30-July-2015
 --*/
-#include "DispatchTypes.hpp"
 #pragma once
+#include "DispatchTypes.hpp"
 
 namespace Microsoft::Console::VirtualTerminal
 {
@@ -24,35 +24,36 @@ namespace Microsoft::Console::VirtualTerminal
 class Microsoft::Console::VirtualTerminal::ITermDispatch
 {
 public:
+    virtual ~ITermDispatch() = 0;
     virtual void Execute(const wchar_t wchControl) = 0;
     virtual void Print(const wchar_t wchPrintable) = 0;
     virtual void PrintString(const wchar_t* const rgwch, const size_t cch) = 0;
 
-    virtual bool CursorUp(_In_ unsigned int const uiDistance) = 0; // CUU
-    virtual bool CursorDown(_In_ unsigned int const uiDistance) = 0; // CUD
-    virtual bool CursorForward(_In_ unsigned int const uiDistance) = 0; // CUF
-    virtual bool CursorBackward(_In_ unsigned int const uiDistance) = 0; // CUB
-    virtual bool CursorNextLine(_In_ unsigned int const uiDistance) = 0; // CNL
-    virtual bool CursorPrevLine(_In_ unsigned int const uiDistance) = 0; // CPL
-    virtual bool CursorHorizontalPositionAbsolute(_In_ unsigned int const uiColumn) = 0; // CHA
-    virtual bool VerticalLinePositionAbsolute(_In_ unsigned int const uiLine) = 0; // VPA
-    virtual bool CursorPosition(_In_ unsigned int const uiLine, _In_ unsigned int const uiColumn) = 0; // CUP
+    virtual bool CursorUp(const unsigned int uiDistance) = 0; // CUU
+    virtual bool CursorDown(const unsigned int uiDistance) = 0; // CUD
+    virtual bool CursorForward(const unsigned int uiDistance) = 0; // CUF
+    virtual bool CursorBackward(const unsigned int uiDistance) = 0; // CUB
+    virtual bool CursorNextLine(const unsigned int uiDistance) = 0; // CNL
+    virtual bool CursorPrevLine(const unsigned int uiDistance) = 0; // CPL
+    virtual bool CursorHorizontalPositionAbsolute(const unsigned int uiColumn) = 0; // CHA
+    virtual bool VerticalLinePositionAbsolute(const unsigned int uiLine) = 0; // VPA
+    virtual bool CursorPosition(const unsigned int uiLine, const unsigned int uiColumn) = 0; // CUP
     virtual bool CursorSavePosition() = 0; // DECSC
     virtual bool CursorRestorePosition() = 0; // DECRC
     virtual bool CursorVisibility(const bool fIsVisible) = 0; // DECTCEM
-    virtual bool InsertCharacter(_In_ unsigned int const uiCount) = 0; // ICH
-    virtual bool DeleteCharacter(_In_ unsigned int const uiCount) = 0; // DCH
-    virtual bool ScrollUp(_In_ unsigned int const uiDistance) = 0; // SU
-    virtual bool ScrollDown(_In_ unsigned int const uiDistance) = 0; // SD
-    virtual bool InsertLine(_In_ unsigned int const uiDistance) = 0; // IL
-    virtual bool DeleteLine(_In_ unsigned int const uiDistance) = 0; // DL
-    virtual bool SetColumns(_In_ unsigned int const uiColumns) = 0; // DECSCPP, DECCOLM
+    virtual bool InsertCharacter(const unsigned int uiCount) = 0; // ICH
+    virtual bool DeleteCharacter(const unsigned int uiCount) = 0; // DCH
+    virtual bool ScrollUp(const unsigned int uiDistance) = 0; // SU
+    virtual bool ScrollDown(const unsigned int uiDistance) = 0; // SD
+    virtual bool InsertLine(const unsigned int uiDistance) = 0; // IL
+    virtual bool DeleteLine(const unsigned int uiDistance) = 0; // DL
+    virtual bool SetColumns(const unsigned int uiColumns) = 0; // DECSCPP, DECCOLM
     virtual bool SetCursorKeysMode(const bool fApplicationMode) = 0;  // DECCKM
     virtual bool SetKeypadMode(const bool fApplicationMode) = 0;  // DECKPAM, DECKPNM
     virtual bool EnableCursorBlinking(const bool fEnable) = 0;  // ATT610
     virtual bool SetTopBottomScrollingMargins(const SHORT sTopMargin, const SHORT sBottomMargin, const bool fResetCursor) = 0; // DECSTBM
     virtual bool ReverseLineFeed() = 0; // RI
-    virtual bool SetWindowTitle(_In_reads_(sCchTitleLength) const wchar_t* const pwchWindowTitle, _In_ unsigned short sCchTitleLength) = 0; // OscWindowTitle
+    virtual bool SetWindowTitle(_In_reads_(sCchTitleLength) const wchar_t* const pwchWindowTitle, unsigned short sCchTitleLength) = 0; // OscWindowTitle
     virtual bool UseAlternateScreenBuffer() = 0; // ASBSET
     virtual bool UseMainScreenBuffer() = 0; // ASBRST
     virtual bool HorizontalTabSet() = 0; // HTS
@@ -69,7 +70,7 @@ public:
 
     virtual bool EraseInDisplay(const DispatchTypes::EraseType  eraseType) = 0; // ED
     virtual bool EraseInLine(const DispatchTypes::EraseType  eraseType) = 0; // EL
-    virtual bool EraseCharacters(_In_ unsigned int const uiNumChars) = 0; // ECH
+    virtual bool EraseCharacters(const unsigned int uiNumChars) = 0; // ECH
 
     virtual bool SetGraphicsRendition(_In_reads_(cParams) const DispatchTypes::GraphicsOptions* const rgOptions,
                                       const size_t cOptions) = 0; // SGR
@@ -97,4 +98,5 @@ public:
                                     const size_t cParams) = 0;
 
 };
+inline Microsoft::Console::VirtualTerminal::ITermDispatch::~ITermDispatch() { }
 
