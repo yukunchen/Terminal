@@ -82,6 +82,7 @@ class CommandLineTests
         cookedReadData._BackupLimit = pBuffer;
         cookedReadData._BufPtr = pBuffer;
         cookedReadData._exeName = L"cmd.exe";
+        cookedReadData.OriginalCursorPosition() = { 0, 0 };
     }
 
     void SetPrompt(COOKED_READ_DATA& cookedReadData, const std::wstring text)
