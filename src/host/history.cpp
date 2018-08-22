@@ -46,37 +46,6 @@ CommandHistory* CommandHistory::s_Find(const HANDLE processHandle)
     return nullptr;
 }
 
-[[nodiscard]]
-Popup* CommandHistory::BeginPopup(SCREEN_INFORMATION& screenInfo, const COORD size, Popup::PopFunc func)
-{
-    auto pop = std::make_unique<Popup>(screenInfo, size, this, func);
-    PopupList.push_back(pop.get());
-    return pop.release();
-}
-
-[[nodiscard]]
-HRESULT CommandHistory::EndPopup()
-{
-    if (PopupList.empty())
-    {
-        return E_FAIL;
-    }
-
-    try
-    {
-        Popup* Popup = PopupList.front();
-        PopupList.pop_front();
-
-        Popup->End();
-
-        // Free popup structure.
-        delete Popup;
-    }
-    CATCH_RETURN();
-
-    return S_OK;
-}
-
 // Routine Description:
 // - This routine marks the command history buffer freed.
 // Arguments:
@@ -356,31 +325,6 @@ CommandHistory* CommandHistory::s_FindByExe(const std::wstring_view appName)
     return nullptr;
 }
 
-// Routine Description:
-// - This routine is called when the user changes the screen/popup colors.
-// - It goes through the popup structures and changes the saved contents to reflect the new screen/popup colors.
-void CommandHistory::s_UpdatePopups(const WORD NewAttributes,
-                                    const WORD NewPopupAttributes,
-                                    const WORD OldAttributes,
-                                    const WORD OldPopupAttributes)
-{
-
-    for (auto& historyList : s_historyLists)
-    {
-        if (IsFlagSet(historyList.Flags, CLE_ALLOCATED) && !historyList.PopupList.empty())
-        {
-            for (const auto Popup : historyList.PopupList)
-            {
-                try
-                {
-                    Popup->UpdateStoredColors(NewAttributes, NewPopupAttributes, OldAttributes, OldPopupAttributes);
-                }
-                CATCH_LOG();
-            }
-        }
-    }
-}
-
 size_t CommandHistory::s_CountOfHistories()
 {
     return s_historyLists.size();
@@ -446,7 +390,6 @@ CommandHistory* CommandHistory::s_Allocate(const std::wstring_view appName, cons
     // If the app name doesn't match, copy in the new app name and free the old commands.
     if (BestCandidate.has_value())
     {
-        FAIL_FAST_IF_FALSE(BestCandidate->PopupList.empty());
         if (!SameApp)
         {
             BestCandidate->_commands.clear();

@@ -25,18 +25,10 @@
 // Arguments:
 // - screenInfo - Reference to screen on which the popup should be drawn/overlayed.
 // - proposedSize - Suggested size of the popup. May be adjusted based on screen size.
-// - history - Pointer to list of commands that were run to be displayed on some types of popups
-// - func - Which type of popup is this?
-Popup::Popup(SCREEN_INFORMATION& screenInfo, const COORD proposedSize, CommandHistory* const history, const PopFunc func) :
-    CurrentCommand(0),
-    _callbackOption(func),
-    BottomIndex(history->LastDisplayed),
-    _screenInfo(screenInfo),
-    _history(history)
+Popup::Popup(SCREEN_INFORMATION& screenInfo, const COORD proposedSize) :
+    _screenInfo(screenInfo)
 {
-    Attributes = screenInfo.GetPopupAttributes()->GetLegacyAttributes();
-
-    _commandNumberInput.reserve(COMMAND_NUMBER_LENGTH);
+    _attributes = screenInfo.GetPopupAttributes()->GetLegacyAttributes();
 
     const COORD size = _CalculateSize(screenInfo, proposedSize);
     const COORD origin = _CalculateOrigin(screenInfo, size);
@@ -89,32 +81,10 @@ Popup::~Popup()
     }
 }
 
-// Routine Description:
-// - Performs drawing operations relative to the given popup object.
-// - This completely encapsulates backing up the data in the buffer,
-//   drawing the background and border for the popup, then filling
-//   the actual popup title and information to the screen.
 void Popup::Draw()
 {
     _DrawBorder();
-
-    switch (_callbackOption)
-    {
-    case PopFunc::CommandNumber:
-        _DrawPrompt(ID_CONSOLE_MSGCMDLINEF9);
-        break;
-    case PopFunc::CopyToChar:
-        _DrawPrompt(ID_CONSOLE_MSGCMDLINEF2);
-        break;
-    case PopFunc::CopyFromChar:
-        _DrawPrompt(ID_CONSOLE_MSGCMDLINEF4);
-        break;
-    case PopFunc::CommandList:
-        _DrawList();
-        break;
-    default:
-        THROW_HR(E_NOTIMPL);
-    }
+    _DrawContent();
 }
 
 // Routine Description:
@@ -125,7 +95,7 @@ void Popup::_DrawBorder()
     COORD WriteCoord;
     WriteCoord.X = _region.Left;
     WriteCoord.Y = _region.Top;
-    FillOutputAttributes(_screenInfo, Attributes, WriteCoord, Width() + 2);
+    FillOutputAttributes(_screenInfo, _attributes, WriteCoord, Width() + 2);
 
     // draw upper left corner
     FillOutputW(_screenInfo, _screenInfo.LineChar[UPPER_LEFT_CORNER], WriteCoord, 1);
@@ -144,7 +114,7 @@ void Popup::_DrawBorder()
         WriteCoord.X = _region.Left;
 
         // fill attributes
-        FillOutputAttributes(_screenInfo, Attributes, WriteCoord, Width() + 2);
+        FillOutputAttributes(_screenInfo, _attributes, WriteCoord, Width() + 2);
 
         FillOutputW(_screenInfo, _screenInfo.LineChar[VERTICAL_LINE], WriteCoord, 1);
 
@@ -156,7 +126,7 @@ void Popup::_DrawBorder()
     // Fill attributes of top line.
     WriteCoord.X = _region.Left;
     WriteCoord.Y = _region.Bottom;
-    FillOutputAttributes(_screenInfo, Attributes, WriteCoord, Width() + 2);
+    FillOutputAttributes(_screenInfo, _attributes, WriteCoord, Width() + 2);
 
     // Draw bottom left corner.
     WriteCoord.X = _region.Left;
@@ -187,7 +157,7 @@ void Popup::_DrawPrompt(const UINT id)
     for (SHORT i = 0; i < Height(); i++)
     {
         lStringLength = gsl::narrow<ULONG>(FillOutputAttributes(_screenInfo,
-                                                                Attributes,
+                                                                _attributes,
                                                                 WriteCoord,
                                                                 static_cast<size_t>(lStringLength)));
 
@@ -211,224 +181,6 @@ void Popup::_DrawPrompt(const UINT id)
 
     std::vector<wchar_t> promptChars(text.cbegin(), text.cend());
     WriteOutputStringW(_screenInfo, promptChars, WriteCoord);
-}
-
-// Routine Description:
-// - Draws a list of commands for the user to choose from
-void Popup::_DrawList()
-{
-    // draw empty popup
-    COORD WriteCoord;
-    WriteCoord.X = _region.Left + 1i16;
-    WriteCoord.Y = _region.Top + 1i16;
-    size_t lStringLength = Width();
-    for (SHORT i = 0; i < Height(); ++i)
-    {
-        lStringLength = FillOutputAttributes(_screenInfo,
-                                             Attributes,
-                                             WriteCoord,
-                                             lStringLength);
-        lStringLength = FillOutputW(_screenInfo,
-                                    UNICODE_SPACE,
-                                    WriteCoord,
-                                    lStringLength);
-        WriteCoord.Y += 1i16;
-    }
-
-    WriteCoord.Y = _region.Top + 1i16;
-    SHORT i = std::max(gsl::narrow<SHORT>(BottomIndex - Height() + 1), 0i16);
-    for (; i <= BottomIndex; i++)
-    {
-        CHAR CommandNumber[COMMAND_NUMBER_SIZE];
-        // Write command number to screen.
-        if (0 != _itoa_s(i, CommandNumber, ARRAYSIZE(CommandNumber), 10))
-        {
-            return;
-        }
-
-        PCHAR CommandNumberPtr = CommandNumber;
-
-        size_t CommandNumberLength;
-        if (FAILED(StringCchLengthA(CommandNumberPtr, ARRAYSIZE(CommandNumber), &CommandNumberLength)))
-        {
-            return;
-        }
-        __assume_bound(CommandNumberLength);
-
-        if (CommandNumberLength + 1 >= ARRAYSIZE(CommandNumber))
-        {
-            return;
-        }
-
-        CommandNumber[CommandNumberLength] = ':';
-        CommandNumber[CommandNumberLength + 1] = ' ';
-        CommandNumberLength += 2;
-        if (CommandNumberLength > static_cast<ULONG>(Width()))
-        {
-            CommandNumberLength = static_cast<ULONG>(Width());
-        }
-
-        WriteCoord.X = _region.Left + 1i16;
-        try
-        {
-            std::vector<char> chars{ CommandNumberPtr, CommandNumberPtr + CommandNumberLength };
-            CommandNumberLength = WriteOutputStringA(_screenInfo,
-                                                     chars,
-                                                     WriteCoord);
-        }
-        CATCH_LOG();
-
-        // write command to screen
-        auto command = _history->GetNth(i);
-        lStringLength = command.size();
-        {
-            size_t lTmpStringLength = lStringLength;
-            LONG lPopupLength = static_cast<LONG>(Width() - CommandNumberLength);
-            PCWCHAR lpStr = command.data();
-            while (lTmpStringLength--)
-            {
-                if (IsGlyphFullWidth(*lpStr++))
-                {
-                    lPopupLength -= 2;
-                }
-                else
-                {
-                    lPopupLength--;
-                }
-
-                if (lPopupLength <= 0)
-                {
-                    lStringLength -= lTmpStringLength;
-                    if (lPopupLength < 0)
-                    {
-                        lStringLength--;
-                    }
-
-                    break;
-                }
-            }
-        }
-
-        WriteCoord.X = gsl::narrow<SHORT>(WriteCoord.X + CommandNumberLength);
-
-        std::vector<wchar_t> chars{ command.data(), command.data() + lStringLength };
-        WriteOutputStringW(_screenInfo, chars, WriteCoord);
-
-        // write attributes to screen
-        if (i == CurrentCommand)
-        {
-            WriteCoord.X = _region.Left + 1i16;
-            WORD PopupLegacyAttributes = Attributes.GetLegacyAttributes();
-            // inverted attributes
-            WORD const attr = (WORD)(((PopupLegacyAttributes << 4) & 0xf0) | ((PopupLegacyAttributes >> 4) & 0x0f));
-            lStringLength = Width();
-            lStringLength = FillOutputAttributes(_screenInfo, attr, WriteCoord, lStringLength);
-        }
-
-        WriteCoord.Y += 1;
-    }
-}
-
-// Routine Description:
-// - For popup lists, will adjust the position of the highlighted item and
-//   possibly scroll the list if necessary.
-// Arguments:
-// - originalDelta - The number of lines to move up or down
-// - wrap - Down past the bottom or up past the top should wrap the command list
-void Popup::Update(const SHORT originalDelta, const bool wrap)
-{
-    SHORT delta = originalDelta;
-    if (delta == 0)
-    {
-        return;
-    }
-    SHORT const Size = Height();
-
-    SHORT CurCmdNum = CurrentCommand;
-    SHORT NewCmdNum = CurCmdNum + delta;
-
-    if (wrap)
-    {
-        // Modulo the number of commands to "circle" around if we went off the end.
-        NewCmdNum %= _history->GetNumberOfCommands();
-    }
-    else
-    {
-        if (NewCmdNum >= gsl::narrow<SHORT>(_history->GetNumberOfCommands()))
-        {
-            NewCmdNum = gsl::narrow<SHORT>(_history->GetNumberOfCommands()) - 1i16;
-        }
-        else if (NewCmdNum < 0)
-        {
-            NewCmdNum = 0;
-        }
-    }
-    delta = NewCmdNum - CurCmdNum;
-
-    bool Scroll = false;
-    // determine amount to scroll, if any
-    if (NewCmdNum <= BottomIndex - Size)
-    {
-        BottomIndex += delta;
-        if (BottomIndex < Size - 1i16)
-        {
-            BottomIndex = Size - 1i16;
-        }
-        Scroll = true;
-    }
-    else if (NewCmdNum > BottomIndex)
-    {
-        BottomIndex += delta;
-        if (BottomIndex >= gsl::narrow<SHORT>(_history->GetNumberOfCommands()))
-        {
-            BottomIndex = gsl::narrow<SHORT>(_history->GetNumberOfCommands()) - 1i16;
-        }
-        Scroll = true;
-    }
-
-    // write commands to popup
-    if (Scroll)
-    {
-        CurrentCommand = NewCmdNum;
-        _DrawList();
-    }
-    else
-    {
-        _UpdateHighlight(CurrentCommand, NewCmdNum);
-        CurrentCommand = NewCmdNum;
-    }
-}
-
-// Routine Description:
-// - Adjusts the highligted line in a list of commands
-// Arguments:
-// - OldCurrentCommand - The previous command highlighted
-// - NewCurrentCommand - The new command to be highlighted.
-void Popup::_UpdateHighlight(const SHORT OldCurrentCommand, const SHORT NewCurrentCommand)
-{
-    SHORT TopIndex;
-    if (BottomIndex < Height())
-    {
-        TopIndex = 0;
-    }
-    else
-    {
-        TopIndex = BottomIndex - Height() + 1i16;
-    }
-    const WORD PopupLegacyAttributes = Attributes.GetLegacyAttributes();
-    COORD WriteCoord;
-    WriteCoord.X = _region.Left + 1i16;
-    size_t lStringLength = Width();
-
-    WriteCoord.Y = _region.Top + 1i16 + OldCurrentCommand - TopIndex;
-    lStringLength = FillOutputAttributes(_screenInfo, PopupLegacyAttributes, WriteCoord, lStringLength);
-
-    // highlight new command
-    WriteCoord.Y = _region.Top + 1i16 + NewCurrentCommand - TopIndex;
-
-    // inverted attributes
-    WORD const attr = (WORD)(((PopupLegacyAttributes << 4) & 0xf0) | ((PopupLegacyAttributes >> 4) & 0x0f));
-    lStringLength = FillOutputAttributes(_screenInfo, attr, WriteCoord, lStringLength);
 }
 
 // Routine Description:
@@ -482,34 +234,6 @@ void Popup::End()
 
     LOG_IF_FAILED(WriteScreenBuffer(_screenInfo, _oldContents.data(), &SourceRect));
     WriteToScreen(_screenInfo, SourceRect);
-}
-
-// Routine Description:
-// - For popups delayed by a wait for more data, this helps us re-run the input logic
-//   for the specific popup type selected on construction.
-// Arguments:
-// - data - The cooked read data object representing the current input state
-// Return Value:
-// - Passthrough of one of the original popup servicing routines (see cmdline.cpp)
-HRESULT Popup::DoCallback(COOKED_READ_DATA& data)
-{
-    try
-    {
-        switch (_callbackOption)
-        {
-        case PopFunc::CommandList:
-            return ProcessCommandListInput(data);
-        case PopFunc::CommandNumber:
-            return ProcessCommandNumberInput(data);
-        case PopFunc::CopyFromChar:
-            return ProcessCopyFromCharInput(data);
-        case PopFunc::CopyToChar:
-            return ProcessCopyToCharInput(data);
-        default:
-            return E_NOTIMPL;
-        }
-    }
-    CATCH_RETURN();
 }
 
 // Routine Description:
@@ -683,53 +407,4 @@ UINT Popup::s_LoadStringEx(_In_ HINSTANCE hModule, _In_ UINT wID, _Out_writes_(c
     }
 
     return cch;
-}
-
-// Routine Description:
-// - adds single digit number to the popup's number buffer
-// Arguments:
-// - wch - char of the number to add. must be in the range [L'0', L'9']
-// Note: will throw if wch is out of range
-void Popup::AddNumberToNumberBuffer(const wchar_t wch)
-{
-    THROW_HR_IF(E_INVALIDARG, wch < L'0' || wch > L'9');
-    if (_commandNumberInput.size() < COMMAND_NUMBER_LENGTH)
-    {
-        _commandNumberInput += wch;
-    }
-}
-
-// Routine Description:
-// - removes the last number added to the number buffer
-void Popup::DeleteLastFromNumberBuffer() noexcept
-{
-    if (!_commandNumberInput.empty())
-    {
-        _commandNumberInput.pop_back();
-    }
-}
-
-// Routine Description:
-// - access the number buffer
-// Return Value:
-// - const ref to the number buffer
-const std::wstring& Popup::CommandNumberInput() const noexcept
-{
-    return _commandNumberInput;
-}
-
-// Routine Description:
-// - get numerical value for the data stored in the number buffer
-// Return Value:
-// - parsed integer representing the string value found in the number buffer
-int Popup::ParseCommandNumberInput() const noexcept
-{
-    try
-    {
-        return std::stoi(_commandNumberInput);
-    }
-    catch (...)
-    {
-        return 0;
-    }
 }

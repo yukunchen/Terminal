@@ -7,6 +7,10 @@
 
 #include "cmdline.h"
 #include "popup.h"
+#include "CommandNumberPopup.hpp"
+#include "CommandListPopup.hpp"
+#include "CopyFromCharPopup.hpp"
+#include "CopyToCharPopup.hpp"
 
 #include "_output.h"
 #include "output.h"
@@ -24,8 +28,23 @@
 
 #pragma hdrstop
 
-[[nodiscard]]
-HRESULT CommandNumberPopup(COOKED_READ_DATA& cookedReadData);
+// Routine Description:
+// - This routine is called when the user changes the screen/popup colors.
+// - It goes through the popup structures and changes the saved contents to reflect the new screen/popup colors.
+void CommandLine::UpdatePopups(const WORD NewAttributes,
+                               const WORD NewPopupAttributes,
+                               const WORD OldAttributes,
+                               const WORD OldPopupAttributes)
+{
+    for (auto& popup : _popups)
+    {
+        try
+        {
+            popup->UpdateStoredColors(NewAttributes, NewPopupAttributes, OldAttributes, OldPopupAttributes);
+        }
+        CATCH_LOG();
+    }
+}
 
 // Routine Description:
 // - This routine validates a string buffer and returns the pointers of where the strings start within the buffer.
@@ -150,6 +169,46 @@ void CommandLine::Show()
     }
 }
 
+// Routine Description:
+// - checks for the presence of a popup
+// Return Value:
+// - true if popup is present
+bool CommandLine::HasPopup() const noexcept
+{
+    return !_popups.empty();
+}
+
+// Routine Description:
+// - gets the topmost popup
+// Arguments:
+// Return Value:
+// - ref to the topmost popup
+Popup& CommandLine::GetPopup()
+{
+    return *_popups.front();
+}
+
+// Routine Description:
+// - stops the current popup
+void CommandLine::EndCurrentPopup()
+{
+    if (!_popups.empty())
+    {
+        _popups.front()->End();
+        _popups.pop_front();
+    }
+}
+
+// Routine Description:
+// - stops all popups
+void CommandLine::EndAllPopups()
+{
+    while (!_popups.empty())
+    {
+        EndCurrentPopup();
+    }
+}
+
 void DeleteCommandLine(COOKED_READ_DATA& cookedReadData, const bool fUpdateFields)
 {
     size_t CharsToWrite = cookedReadData.VisibleCharCount();
@@ -262,518 +321,22 @@ void SetCurrentCommandLine(COOKED_READ_DATA& cookedReadData, _In_ SHORT Index) /
 }
 
 // Routine Description:
-// - This routine handles the command list popup.  It returns when we're out of input or the user has selected a command line.
-// Return Value:
-// - CONSOLE_STATUS_WAIT - we ran out of input, so a wait block was created
-// - CONSOLE_STATUS_READ_COMPLETE - user hit return
-[[nodiscard]]
-NTSTATUS ProcessCommandListInput(COOKED_READ_DATA& cookedReadData)
-{
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    CommandHistory& commandHistory = cookedReadData.History();
-    Popup* const Popup = commandHistory.PopupList.front();
-    NTSTATUS Status = STATUS_SUCCESS;
-    INPUT_READ_HANDLE_DATA* const pInputReadHandleData = cookedReadData.GetInputReadHandleData();
-    InputBuffer* const pInputBuffer = cookedReadData.GetInputBuffer();
-
-    for (;;)
-    {
-        WCHAR Char;
-        bool PopupKeys = false;
-
-        Status = GetChar(pInputBuffer,
-                         &Char,
-                         true,
-                         nullptr,
-                         &PopupKeys,
-                         nullptr);
-        if (!NT_SUCCESS(Status))
-        {
-            if (Status != CONSOLE_STATUS_WAIT)
-            {
-                cookedReadData._BytesRead = 0;
-            }
-            return Status;
-        }
-
-        SHORT Index;
-        if (PopupKeys)
-        {
-            switch (Char)
-            {
-            case VK_F9:
-            {
-                const HRESULT hr = CommandNumberPopup(cookedReadData);
-                if (S_FALSE == hr)
-                {
-                    // If we couldn't make the popup, break and go around to read another input character.
-                    break;
-                }
-                else
-                {
-                    return hr;
-                }
-            }
-            case VK_ESCAPE:
-                cookedReadData.EndCurrentPopup();
-                return CONSOLE_STATUS_WAIT_NO_BLOCK;
-            case VK_UP:
-                Popup->Update(-1);
-                break;
-            case VK_DOWN:
-                Popup->Update(1);
-                break;
-            case VK_END:
-                // Move waaay forward, UpdateCommandListPopup() can handle it.
-                Popup->Update((SHORT)(commandHistory.GetNumberOfCommands()));
-                break;
-            case VK_HOME:
-                // Move waaay back, UpdateCommandListPopup() can handle it.
-                Popup->Update(-(SHORT)(commandHistory.GetNumberOfCommands()));
-                break;
-            case VK_PRIOR:
-                Popup->Update(-(SHORT)Popup->Height());
-                break;
-            case VK_NEXT:
-                Popup->Update((SHORT)Popup->Height());
-                break;
-            case VK_LEFT:
-            case VK_RIGHT:
-                Index = Popup->CurrentCommand;
-                cookedReadData.EndCurrentPopup();
-                SetCurrentCommandLine(cookedReadData, (SHORT)Index);
-                return CONSOLE_STATUS_WAIT_NO_BLOCK;
-            default:
-                break;
-            }
-        }
-        else if (Char == UNICODE_CARRIAGERETURN)
-        {
-            DWORD LineCount = 1;
-            Index = Popup->CurrentCommand;
-            cookedReadData.EndCurrentPopup();
-            SetCurrentCommandLine(cookedReadData, (SHORT)Index);
-            cookedReadData.ProcessInput(UNICODE_CARRIAGERETURN, 0, Status);
-            // complete read
-            if (cookedReadData.IsEchoInput())
-            {
-                // check for alias
-                cookedReadData.ProcessAliases(LineCount);
-            }
-
-            Status = STATUS_SUCCESS;
-            size_t NumBytes;
-            if (cookedReadData._BytesRead > cookedReadData._UserBufferSize || LineCount > 1)
-            {
-                if (LineCount > 1)
-                {
-                    PWSTR Tmp;
-                    for (Tmp = cookedReadData._BackupLimit; *Tmp != UNICODE_LINEFEED; Tmp++)
-                    {
-                        FAIL_FAST_IF_FALSE(Tmp < (cookedReadData._BackupLimit + cookedReadData._BytesRead));
-                    }
-                    NumBytes = (Tmp - cookedReadData._BackupLimit + 1) * sizeof(*Tmp);
-                }
-                else
-                {
-                    NumBytes = cookedReadData._UserBufferSize;
-                }
-
-                // Copy what we can fit into the user buffer
-                memmove(cookedReadData._UserBuffer, cookedReadData._BackupLimit, NumBytes);
-
-                // Store all of the remaining as pending until the next read operation.
-                const std::wstring_view pending{ cookedReadData._BackupLimit + (NumBytes / sizeof(wchar_t)),
-                                                 (cookedReadData._BytesRead - NumBytes) / sizeof(wchar_t) };
-                if (LineCount > 1)
-                {
-                    pInputReadHandleData->SaveMultilinePendingInput(pending);
-                }
-                else
-                {
-                    pInputReadHandleData->SavePendingInput(pending);
-                }
-            }
-            else
-            {
-                NumBytes = cookedReadData._BytesRead;
-                memmove(cookedReadData._UserBuffer, cookedReadData._BackupLimit, NumBytes);
-            }
-
-            if (!cookedReadData.IsUnicode())
-            {
-                PCHAR TransBuffer;
-
-                // If ansi, translate string.
-                TransBuffer = (PCHAR) new(std::nothrow) BYTE[NumBytes];
-                if (TransBuffer == nullptr)
-                {
-                    return STATUS_NO_MEMORY;
-                }
-
-                NumBytes = ConvertToOem(gci.CP,
-                                        cookedReadData._UserBuffer,
-                                        gsl::narrow<UINT>(NumBytes / sizeof(WCHAR)),
-                                        TransBuffer,
-                                        gsl::narrow<UINT>(NumBytes));
-                memmove(cookedReadData._UserBuffer, TransBuffer, NumBytes);
-                delete[] TransBuffer;
-            }
-
-            *(cookedReadData.pdwNumBytes) = NumBytes;
-
-            return CONSOLE_STATUS_READ_COMPLETE;
-        }
-        else
-        {
-            if (cookedReadData.History().FindMatchingCommand({ &Char, 1 },
-                                                               Popup->CurrentCommand,
-                                                               Index,
-                                                               CommandHistory::MatchOptions::JustLooking))
-            {
-                Popup->Update((SHORT)(Index - Popup->CurrentCommand), true);
-            }
-        }
-    }
-}
-
-// Routine Description:
-// - This routine handles the delete from cursor to char char popup.  It returns when we're out of input or the user has entered a char.
-// Return Value:
-// - CONSOLE_STATUS_WAIT - we ran out of input, so a wait block was created
-// - CONSOLE_STATUS_READ_COMPLETE - user hit return
-[[nodiscard]]
-NTSTATUS ProcessCopyFromCharInput(COOKED_READ_DATA& cookedReadData)
-{
-    NTSTATUS Status = STATUS_SUCCESS;
-    InputBuffer* const pInputBuffer = cookedReadData.GetInputBuffer();
-    for (;;)
-    {
-        WCHAR Char;
-        bool PopupKeys = false;
-        Status = GetChar(pInputBuffer,
-                         &Char,
-                         TRUE,
-                         nullptr,
-                         &PopupKeys,
-                         nullptr);
-        if (!NT_SUCCESS(Status))
-        {
-            if (Status != CONSOLE_STATUS_WAIT)
-            {
-                cookedReadData._BytesRead = 0;
-            }
-
-            return Status;
-        }
-
-        if (PopupKeys)
-        {
-            switch (Char)
-            {
-            case VK_ESCAPE:
-                cookedReadData.EndCurrentPopup();
-                return CONSOLE_STATUS_WAIT_NO_BLOCK;
-            }
-        }
-
-        cookedReadData.EndCurrentPopup();
-
-        size_t i;  // char index (not byte)
-        // delete from cursor up to specified char
-        for (i = cookedReadData._CurrentPosition + 1; i < (int)(cookedReadData._BytesRead / sizeof(WCHAR)); i++)
-        {
-            if (cookedReadData._BackupLimit[i] == Char)
-            {
-                break;
-            }
-        }
-
-        if (i != (int)(cookedReadData._BytesRead / sizeof(WCHAR) + 1))
-        {
-            COORD CursorPosition;
-
-            // save cursor position
-            CursorPosition = cookedReadData.ScreenInfo().GetTextBuffer().GetCursor().GetPosition();
-
-            // Delete commandline.
-            DeleteCommandLine(cookedReadData, FALSE);
-
-            // Delete chars.
-            memmove(&cookedReadData._BackupLimit[cookedReadData._CurrentPosition],
-                    &cookedReadData._BackupLimit[i],
-                    cookedReadData._BytesRead - (i * sizeof(WCHAR)));
-            cookedReadData._BytesRead -= (i - cookedReadData._CurrentPosition) * sizeof(WCHAR);
-
-            // Write commandline.
-            if (cookedReadData.IsEchoInput())
-            {
-                Status = WriteCharsLegacy(cookedReadData.ScreenInfo(),
-                                          cookedReadData._BackupLimit,
-                                          cookedReadData._BackupLimit,
-                                          cookedReadData._BackupLimit,
-                                          &cookedReadData._BytesRead,
-                                          &cookedReadData.VisibleCharCount(),
-                                          cookedReadData.OriginalCursorPosition().X,
-                                          WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
-                                          nullptr);
-                FAIL_FAST_IF_NTSTATUS_FAILED(Status);
-            }
-
-            // restore cursor position
-            Status = cookedReadData.ScreenInfo().SetCursorPosition(CursorPosition, TRUE);
-            FAIL_FAST_IF_NTSTATUS_FAILED(Status);
-        }
-
-        return CONSOLE_STATUS_WAIT_NO_BLOCK;
-    }
-}
-
-// Routine Description:
-// - This routine handles the delete char popup.  It returns when we're out of input or the user has entered a char.
-// Return Value:
-// - CONSOLE_STATUS_WAIT - we ran out of input, so a wait block was created
-// - CONSOLE_STATUS_READ_COMPLETE - user hit return
-[[nodiscard]]
-NTSTATUS ProcessCopyToCharInput(COOKED_READ_DATA& cookedReadData)
-{
-    NTSTATUS Status = STATUS_SUCCESS;
-    InputBuffer* const pInputBuffer = cookedReadData.GetInputBuffer();
-    for (;;)
-    {
-        WCHAR Char;
-        bool PopupKeys = false;
-        Status = GetChar(pInputBuffer,
-                         &Char,
-                         true,
-                         nullptr,
-                         &PopupKeys,
-                         nullptr);
-        if (!NT_SUCCESS(Status))
-        {
-            if (Status != CONSOLE_STATUS_WAIT)
-            {
-                cookedReadData._BytesRead = 0;
-            }
-            return Status;
-        }
-
-        if (PopupKeys)
-        {
-            switch (Char)
-            {
-            case VK_ESCAPE:
-                cookedReadData.EndCurrentPopup();
-                return CONSOLE_STATUS_WAIT_NO_BLOCK;
-            }
-        }
-
-        cookedReadData.EndCurrentPopup();
-
-        // copy up to specified char
-        const auto LastCommand = cookedReadData.History().GetLastCommand();
-        if (!LastCommand.empty())
-        {
-            size_t i;
-
-            // find specified char in last command
-            for (i = cookedReadData._CurrentPosition + 1; i < LastCommand.size(); i++)
-            {
-                if (LastCommand[i] == Char)
-                {
-                    break;
-                }
-            }
-
-            // If we found it, copy up to it.
-            if (i < LastCommand.size() &&
-                (LastCommand.size() > cookedReadData._CurrentPosition))
-            {
-                size_t j = i - cookedReadData._CurrentPosition;
-                FAIL_FAST_IF_FALSE(j > 0);
-                const auto bufferSpan = cookedReadData.SpanAtPointer();
-                std::copy_n(LastCommand.cbegin() + cookedReadData._CurrentPosition,
-                            j,
-                            bufferSpan.begin());
-                cookedReadData._CurrentPosition += j;
-                j *= sizeof(WCHAR);
-                cookedReadData._BytesRead = std::max(cookedReadData._BytesRead,
-                                                     cookedReadData._CurrentPosition * sizeof(WCHAR));
-                if (cookedReadData.IsEchoInput())
-                {
-                    size_t NumSpaces;
-                    SHORT ScrollY = 0;
-
-                    Status = WriteCharsLegacy(cookedReadData.ScreenInfo(),
-                                              cookedReadData._BackupLimit,
-                                              cookedReadData._BufPtr,
-                                              cookedReadData._BufPtr,
-                                              &j,
-                                              &NumSpaces,
-                                              cookedReadData.OriginalCursorPosition().X,
-                                              WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
-                                              &ScrollY);
-                    FAIL_FAST_IF_NTSTATUS_FAILED(Status);
-                    cookedReadData.OriginalCursorPosition().Y += ScrollY;
-                    cookedReadData.VisibleCharCount() += NumSpaces;
-                }
-
-                cookedReadData._BufPtr += j / sizeof(WCHAR);
-            }
-        }
-
-        return CONSOLE_STATUS_WAIT_NO_BLOCK;
-    }
-}
-
-// Routine Description:
-// - This routine handles the command number selection popup.
-// Return Value:
-// - CONSOLE_STATUS_WAIT - we ran out of input, so a wait block was created
-// - CONSOLE_STATUS_READ_COMPLETE - user hit return
-[[nodiscard]]
-NTSTATUS ProcessCommandNumberInput(COOKED_READ_DATA& cookedReadData)
-{
-    CommandHistory& commandHistory = cookedReadData.History();
-    Popup* const Popup = commandHistory.PopupList.front();
-    NTSTATUS Status = STATUS_SUCCESS;
-    InputBuffer* const pInputBuffer = cookedReadData.GetInputBuffer();
-    for (;;)
-    {
-        WCHAR Char;
-        bool PopupKeys = false;
-
-        Status = GetChar(pInputBuffer,
-                         &Char,
-                         TRUE,
-                         nullptr,
-                         &PopupKeys,
-                         nullptr);
-        if (!NT_SUCCESS(Status))
-        {
-            if (Status != CONSOLE_STATUS_WAIT)
-            {
-                cookedReadData._BytesRead = 0;
-            }
-            return Status;
-        }
-
-        if (Char >= L'0' && Char <= L'9')
-        {
-            if (Popup->CommandNumberInput().size() < COMMAND_NUMBER_LENGTH)
-            {
-                size_t CharsToWrite = sizeof(WCHAR);
-                const TextAttribute realAttributes = cookedReadData.ScreenInfo().GetAttributes();
-                cookedReadData.ScreenInfo().SetAttributes(Popup->Attributes);
-                size_t NumSpaces;
-                const auto numberBuffer = Popup->CommandNumberInput();
-                Status = WriteCharsLegacy(cookedReadData.ScreenInfo(),
-                                          numberBuffer.data(),
-                                          numberBuffer.data() + numberBuffer.size(),
-                                          &Char,
-                                          &CharsToWrite,
-                                          &NumSpaces,
-                                          cookedReadData.OriginalCursorPosition().X,
-                                          WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
-                                          nullptr);
-                FAIL_FAST_IF_NTSTATUS_FAILED(Status);
-                cookedReadData.ScreenInfo().SetAttributes(realAttributes);
-                try
-                {
-                    Popup->AddNumberToNumberBuffer(Char);
-                }
-                catch (...)
-                {
-                    return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-                }
-            }
-        }
-        else if (Char == UNICODE_BACKSPACE)
-        {
-            if (Popup->CommandNumberInput().size() > 0)
-            {
-                size_t CharsToWrite = sizeof(WCHAR);
-                const TextAttribute realAttributes = cookedReadData.ScreenInfo().GetAttributes();
-                cookedReadData.ScreenInfo().SetAttributes(Popup->Attributes);
-                size_t NumSpaces;
-                const auto numberBuffer = Popup->CommandNumberInput();
-                Status = WriteCharsLegacy(cookedReadData.ScreenInfo(),
-                                          numberBuffer.data(),
-                                          numberBuffer.data() + numberBuffer.size(),
-                                          &Char,
-                                          &CharsToWrite,
-                                          &NumSpaces,
-                                          cookedReadData.OriginalCursorPosition().X,
-                                          WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
-                                          nullptr);
-
-                FAIL_FAST_IF_NTSTATUS_FAILED(Status);
-                cookedReadData.ScreenInfo().SetAttributes(realAttributes);
-                Popup->DeleteLastFromNumberBuffer();
-            }
-        }
-        else if (Char == (WCHAR)VK_ESCAPE)
-        {
-            cookedReadData.EndCurrentPopup();
-            if (!commandHistory.PopupList.empty())
-            {
-                cookedReadData.EndCurrentPopup();
-            }
-
-            // Note that cookedReadData's OriginalCursorPosition is the position before ANY text was entered on the edit line.
-            // We want to use the position before the cursor was moved for this popup handler specifically, which may be *anywhere* in the edit line
-            // and will be synchronized with the pointers in the cookedReadData structure (BufPtr, etc.)
-            LOG_IF_FAILED(cookedReadData.ScreenInfo().SetCursorPosition(cookedReadData.BeforeDialogCursorPosition(), TRUE));
-        }
-        else if (Char == UNICODE_CARRIAGERETURN)
-        {
-            const short CommandNumber = gsl::narrow<short>(std::min(static_cast<size_t>(Popup->ParseCommandNumberInput()),
-                                                                    cookedReadData.History().GetNumberOfCommands() - 1));
-
-            cookedReadData.EndCurrentPopup();
-            if (!commandHistory.PopupList.empty())
-            {
-                cookedReadData.EndCurrentPopup();
-            }
-            SetCurrentCommandLine(cookedReadData, CommandNumber);
-        }
-        return CONSOLE_STATUS_WAIT_NO_BLOCK;
-    }
-}
-
-// Routine Description:
 // - This routine handles the command list popup.  It puts up the popup, then calls ProcessCommandListInput to get and process input.
 // Return Value:
 // - CONSOLE_STATUS_WAIT - we ran out of input, so a wait block was created
 // - STATUS_SUCCESS - read was fully completed (user hit return)
 [[nodiscard]]
-NTSTATUS CommandListPopup(COOKED_READ_DATA& cookedReadData)
+NTSTATUS CommandLine::_startCommandListPopup(COOKED_READ_DATA& cookedReadData)
 {
     if (cookedReadData.HasHistory() &&
         cookedReadData.History().GetNumberOfCommands())
     {
-        COORD PopupSize;
-        PopupSize.X = 40;
-        PopupSize.Y = 10;
-
-        CommandHistory& commandHistory = cookedReadData.History();
         try
         {
-            const auto Popup = commandHistory.BeginPopup(cookedReadData.ScreenInfo(), PopupSize, Popup::PopFunc::CommandList);
-
-            SHORT const CurrentCommand = commandHistory.LastDisplayed;
-            if (CurrentCommand < (SHORT)(commandHistory.GetNumberOfCommands() - Popup->Height()))
-            {
-                Popup->BottomIndex = std::max(CurrentCommand, gsl::narrow<SHORT>(Popup->Height() - 1i16));
-            }
-            else
-            {
-                Popup->BottomIndex = (SHORT)(commandHistory.GetNumberOfCommands() - 1);
-            }
-            Popup->CurrentCommand = CurrentCommand;
-            Popup->Draw();
-
-            return ProcessCommandListInput(cookedReadData);
+            auto& popup = *_popups.emplace_front(std::make_unique<CommandListPopup>(cookedReadData.ScreenInfo(),
+                                                                                    cookedReadData.History()));
+            popup.Draw();
+            return popup.Process(cookedReadData);
         }
         CATCH_RETURN();
     }
@@ -789,25 +352,18 @@ NTSTATUS CommandListPopup(COOKED_READ_DATA& cookedReadData)
 // - CONSOLE_STATUS_WAIT - we ran out of input, so a wait block was created
 // - STATUS_SUCCESS - read was fully completed (user hit return)
 [[nodiscard]]
-NTSTATUS CopyFromCharPopup(COOKED_READ_DATA& cookedReadData)
+NTSTATUS CommandLine::_startCopyFromCharPopup(COOKED_READ_DATA& cookedReadData)
 {
     // Delete the current command from cursor position to the
     // letter specified by the user. The user is prompted via
     // popup to enter a character.
     if (cookedReadData.HasHistory())
     {
-        COORD PopupSize;
-
-        PopupSize.X = COPY_FROM_CHAR_PROMPT_LENGTH + 2;
-        PopupSize.Y = 1;
-
         try
         {
-            CommandHistory& commandHistory = cookedReadData.History();
-            const auto Popup = commandHistory.BeginPopup(cookedReadData.ScreenInfo(), PopupSize, Popup::PopFunc::CopyFromChar);
-            Popup->Draw();
-
-            return ProcessCopyFromCharInput(cookedReadData);
+            auto& popup = *_popups.emplace_front(std::make_unique<CopyFromCharPopup>(cookedReadData.ScreenInfo()));
+            popup.Draw();
+            return popup.Process(cookedReadData);
         }
         CATCH_RETURN();
     }
@@ -824,24 +380,18 @@ NTSTATUS CopyFromCharPopup(COOKED_READ_DATA& cookedReadData)
 // - STATUS_SUCCESS - read was fully completed (user hit return)
 // - S_FALSE - if we couldn't make a popup because we had no commands
 [[nodiscard]]
-NTSTATUS CopyToCharPopup(COOKED_READ_DATA& cookedReadData)
+NTSTATUS CommandLine::_startCopyToCharPopup(COOKED_READ_DATA& cookedReadData)
 {
     // copy the previous command to the current command, up to but
     // not including the character specified by the user.  the user
     // is prompted via popup to enter a character.
     if (cookedReadData.HasHistory())
     {
-        COORD PopupSize;
-        PopupSize.X = COPY_TO_CHAR_PROMPT_LENGTH + 2;
-        PopupSize.Y = 1;
-
         try
         {
-            CommandHistory& commandHistory = cookedReadData.History();
-            const auto Popup = commandHistory.BeginPopup(cookedReadData.ScreenInfo(), PopupSize, Popup::PopFunc::CopyToChar);
-            Popup->Draw();
-
-            return ProcessCopyToCharInput(cookedReadData);
+            auto& popup = *_popups.emplace_front(std::make_unique<CopyToCharPopup>(cookedReadData.ScreenInfo()));
+            popup.Draw();
+            return popup.Process(cookedReadData);
         }
         CATCH_RETURN();
     }
@@ -858,32 +408,26 @@ NTSTATUS CopyToCharPopup(COOKED_READ_DATA& cookedReadData)
 // - STATUS_SUCCESS - read was fully completed (user hit return)
 // - S_FALSE - if we couldn't make a popup because we had no commands or it wouldn't fit.
 [[nodiscard]]
-HRESULT CommandNumberPopup(COOKED_READ_DATA& cookedReadData)
+HRESULT CommandLine::StartCommandNumberPopup(COOKED_READ_DATA& cookedReadData)
 {
     if (cookedReadData.HasHistory() &&
         cookedReadData.History().GetNumberOfCommands() &&
         cookedReadData.ScreenInfo().GetScreenBufferSize().X >= MINIMUM_COMMAND_PROMPT_SIZE + 2)
     {
-        COORD PopupSize;
-        // 2 is for border
-        PopupSize.X = COMMAND_NUMBER_PROMPT_LENGTH + COMMAND_NUMBER_LENGTH;
-        PopupSize.Y = 1;
-
         try
         {
-            CommandHistory& commandHistory = cookedReadData.History();
-            const auto Popup = commandHistory.BeginPopup(cookedReadData.ScreenInfo(), PopupSize, Popup::PopFunc::CommandNumber);
-            Popup->Draw();
+            auto& popup = *_popups.emplace_front(std::make_unique<CommandNumberPopup>(cookedReadData.ScreenInfo()));
+            popup.Draw();
 
             // Save the original cursor position in case the user cancels out of the dialog
             cookedReadData.BeforeDialogCursorPosition() = cookedReadData.ScreenInfo().GetTextBuffer().GetCursor().GetPosition();
 
             // Move the cursor into the dialog so the user can type multiple characters for the command number
-            const COORD CursorPosition = Popup->GetCursorPosition();
+            const COORD CursorPosition = popup.GetCursorPosition();
             LOG_IF_FAILED(cookedReadData.ScreenInfo().SetCursorPosition(CursorPosition, TRUE));
 
             // Transfer control to the handler routine
-            return ProcessCommandNumberInput(cookedReadData);
+            return popup.Process(cookedReadData);
         }
         CATCH_RETURN();
     }
@@ -901,7 +445,7 @@ HRESULT CommandNumberPopup(COOKED_READ_DATA& cookedReadData)
 // - searchDirection - Direction in history to search
 // Note:
 // - May throw exceptions
-void ProcessHistoryCycling(COOKED_READ_DATA& cookedReadData, const CommandHistory::SearchDirection searchDirection)
+void CommandLine::_processHistoryCycling(COOKED_READ_DATA& cookedReadData, const CommandHistory::SearchDirection searchDirection)
 {
     if (!cookedReadData.HasHistory())
     {
@@ -945,7 +489,7 @@ void ProcessHistoryCycling(COOKED_READ_DATA& cookedReadData, const CommandHistor
 // - cookedReadData - The cooked read data to operate on
 // Note:
 // - May throw exceptions
-void SetPromptToOldestCommand(COOKED_READ_DATA& cookedReadData)
+void CommandLine::_setPromptToOldestCommand(COOKED_READ_DATA& cookedReadData)
 {
     if (cookedReadData.HasHistory() && cookedReadData.History().GetNumberOfCommands())
     {
@@ -981,7 +525,7 @@ void SetPromptToOldestCommand(COOKED_READ_DATA& cookedReadData)
 // - cookedReadData - The cooked read data to operate on
 // Note:
 // - May throw exceptions
-void SetPromptToNewestCommand(COOKED_READ_DATA& cookedReadData)
+void CommandLine::_setPromptToNewestCommand(COOKED_READ_DATA& cookedReadData)
 {
     DeleteCommandLine(cookedReadData, true);
     if (cookedReadData.HasHistory() && cookedReadData.History().GetNumberOfCommands())
@@ -1015,7 +559,7 @@ void SetPromptToNewestCommand(COOKED_READ_DATA& cookedReadData)
 // - Deletes all prompt text to the right of the cursor
 // Arguments:
 // - cookedReadData - The cooked read data to operate on
-void DeletePromptAfterCursor(COOKED_READ_DATA& cookedReadData) noexcept
+void CommandLine::_deletePromptAfterCursor(COOKED_READ_DATA& cookedReadData) noexcept
 {
     DeleteCommandLine(cookedReadData, false);
     cookedReadData._BytesRead = cookedReadData._CurrentPosition * sizeof(WCHAR);
@@ -1039,7 +583,7 @@ void DeletePromptAfterCursor(COOKED_READ_DATA& cookedReadData) noexcept
 // - cookedReadData - The cooked read data to operate on
 // Return Value:
 // - The new cursor position
-COORD DeletePromptBeforeCursor(COOKED_READ_DATA& cookedReadData) noexcept
+COORD CommandLine::_deletePromptBeforeCursor(COOKED_READ_DATA& cookedReadData) noexcept
 {
     DeleteCommandLine(cookedReadData, false);
     cookedReadData._BytesRead -= cookedReadData._CurrentPosition * sizeof(WCHAR);
@@ -1067,7 +611,7 @@ COORD DeletePromptBeforeCursor(COOKED_READ_DATA& cookedReadData) noexcept
 // - cookedReadData - The cooked read data to operate on
 // Return Value:
 // - The new cursor position
-COORD MoveCursorToEndOfPrompt(COOKED_READ_DATA& cookedReadData) noexcept
+COORD CommandLine::_moveCursorToEndOfPrompt(COOKED_READ_DATA& cookedReadData) noexcept
 {
     cookedReadData._CurrentPosition = cookedReadData._BytesRead / sizeof(WCHAR);
     cookedReadData._BufPtr = cookedReadData._BackupLimit + cookedReadData._CurrentPosition;
@@ -1094,7 +638,7 @@ COORD MoveCursorToEndOfPrompt(COOKED_READ_DATA& cookedReadData) noexcept
 // - cookedReadData - The cooked read data to operate on
 // Return Value:
 // - The new cursor position
-COORD MoveCursorToStartOfPrompt(COOKED_READ_DATA& cookedReadData) noexcept
+COORD CommandLine::_moveCursorToStartOfPrompt(COOKED_READ_DATA& cookedReadData) noexcept
 {
     cookedReadData._CurrentPosition = 0;
     cookedReadData._BufPtr = cookedReadData._BackupLimit;
@@ -1107,7 +651,7 @@ COORD MoveCursorToStartOfPrompt(COOKED_READ_DATA& cookedReadData) noexcept
 // - cookedReadData - The cooked read data to operate on
 // Return Value:
 // - New cursor position
-COORD MoveCursorLeftByWord(COOKED_READ_DATA& cookedReadData) noexcept
+COORD CommandLine::_moveCursorLeftByWord(COOKED_READ_DATA& cookedReadData) noexcept
 {
     PWCHAR LastWord;
     COORD cursorPosition = cookedReadData.ScreenInfo().GetTextBuffer().GetCursor().GetPosition();
@@ -1192,7 +736,7 @@ COORD MoveCursorLeftByWord(COOKED_READ_DATA& cookedReadData) noexcept
 // - cookedReadData - The cooked read data to operate on
 // Return Value:
 // - New cursor position
-COORD MoveCursorLeft(COOKED_READ_DATA& cookedReadData)
+COORD CommandLine::_moveCursorLeft(COOKED_READ_DATA& cookedReadData)
 {
     COORD cursorPosition = cookedReadData.ScreenInfo().GetTextBuffer().GetCursor().GetPosition();
     if (cookedReadData._BufPtr != cookedReadData._BackupLimit)
@@ -1228,7 +772,7 @@ COORD MoveCursorLeft(COOKED_READ_DATA& cookedReadData)
 // - cookedReadData - The cooked read data to operate on
 // Return Value:
 // - The new cursor position
-COORD MoveCursorRightByWord(COOKED_READ_DATA& cookedReadData) noexcept
+COORD CommandLine::_moveCursorRightByWord(COOKED_READ_DATA& cookedReadData) noexcept
 {
     COORD cursorPosition = cookedReadData.ScreenInfo().GetTextBuffer().GetCursor().GetPosition();
     if (cookedReadData._CurrentPosition < (cookedReadData._BytesRead / sizeof(WCHAR)))
@@ -1301,7 +845,7 @@ COORD MoveCursorRightByWord(COOKED_READ_DATA& cookedReadData) noexcept
 // - cookedReadData - The cooked read data to operate on
 // Return Value:
 // - The new cursor position
-COORD MoveCursorRight(COOKED_READ_DATA& cookedReadData) noexcept
+COORD CommandLine::_moveCursorRight(COOKED_READ_DATA& cookedReadData) noexcept
 {
     COORD cursorPosition = cookedReadData.ScreenInfo().GetTextBuffer().GetCursor().GetPosition();
     const SHORT sScreenBufferSizeX = cookedReadData.ScreenInfo().GetScreenBufferSize().X;
@@ -1363,7 +907,7 @@ COORD MoveCursorRight(COOKED_READ_DATA& cookedReadData) noexcept
 // - Place a ctrl-z in the current command line
 // Arguments:
 // - cookedReadData - The cooked read data to operate on
-void InsertCtrlZ(COOKED_READ_DATA& cookedReadData) noexcept
+void CommandLine::_insertCtrlZ(COOKED_READ_DATA& cookedReadData) noexcept
 {
     size_t NumSpaces = 0;
 
@@ -1393,7 +937,7 @@ void InsertCtrlZ(COOKED_READ_DATA& cookedReadData) noexcept
 // - Empties the command history for cookedReadData
 // Arguments:
 // - cookedReadData - The cooked read data to operate on
-void DeleteCommandHistory(COOKED_READ_DATA& cookedReadData) noexcept
+void CommandLine::_deleteCommandHistory(COOKED_READ_DATA& cookedReadData) noexcept
 {
     if (cookedReadData.HasHistory())
     {
@@ -1406,7 +950,7 @@ void DeleteCommandHistory(COOKED_READ_DATA& cookedReadData) noexcept
 // - Copy the remainder of the previous command to the current command.
 // Arguments:
 // - cookedReadData - The cooked read data to operate on
-void FillPromptWithPreviousCommandFragment(COOKED_READ_DATA& cookedReadData) noexcept
+void CommandLine::_fillPromptWithPreviousCommandFragment(COOKED_READ_DATA& cookedReadData) noexcept
 {
     if (cookedReadData.HasHistory())
     {
@@ -1447,7 +991,7 @@ void FillPromptWithPreviousCommandFragment(COOKED_READ_DATA& cookedReadData) noe
 // - cookedReadData - The cooked read data to operate on
 // Return Value:
 // - The new cursor position
-COORD CycleMatchingCommandHistoryToPrompt(COOKED_READ_DATA& cookedReadData)
+COORD CommandLine::_cycleMatchingCommandHistoryToPrompt(COOKED_READ_DATA& cookedReadData)
 {
     COORD cursorPosition = cookedReadData.ScreenInfo().GetTextBuffer().GetCursor().GetPosition();
     if (cookedReadData.HasHistory())
@@ -1499,7 +1043,7 @@ COORD CycleMatchingCommandHistoryToPrompt(COOKED_READ_DATA& cookedReadData)
 // - cookedReadData - The cooked read data to operate on
 // Return Value:
 // - The new cursor position
-COORD DeleteFromRightOfCursor(COOKED_READ_DATA& cookedReadData) noexcept
+COORD CommandLine::_deleteFromRightOfCursor(COOKED_READ_DATA& cookedReadData) noexcept
 {
     // save cursor position
     COORD cursorPosition = cookedReadData.ScreenInfo().GetTextBuffer().GetCursor().GetPosition();
@@ -1550,8 +1094,6 @@ COORD DeleteFromRightOfCursor(COOKED_READ_DATA& cookedReadData) noexcept
     return cursorPosition;
 }
 
-
-
 // TODO: [MSFT:4586207] Clean up this mess -- needs helpers. http://osgvsowi/4586207
 // Routine Description:
 // - This routine process command line editing keys.
@@ -1560,9 +1102,9 @@ COORD DeleteFromRightOfCursor(COOKED_READ_DATA& cookedReadData) noexcept
 // - CONSOLE_STATUS_READ_COMPLETE - user hit <enter> in CommandListPopup
 // - STATUS_SUCCESS - everything's cool
 [[nodiscard]]
-NTSTATUS ProcessCommandLine(COOKED_READ_DATA& cookedReadData,
-                            _In_ WCHAR wch,
-                            const DWORD dwKeyState)
+NTSTATUS CommandLine::ProcessCommandLine(COOKED_READ_DATA& cookedReadData,
+                                         _In_ WCHAR wch,
+                                         const DWORD dwKeyState)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     COORD cursorPosition = cookedReadData.ScreenInfo().GetTextBuffer().GetCursor().GetPosition();
@@ -1579,7 +1121,7 @@ NTSTATUS ProcessCommandLine(COOKED_READ_DATA& cookedReadData,
     case VK_DOWN:
         try
         {
-            ProcessHistoryCycling(cookedReadData, CommandHistory::SearchDirection::Next);
+            _processHistoryCycling(cookedReadData, CommandHistory::SearchDirection::Next);
             Status = STATUS_SUCCESS;
         }
         catch (...)
@@ -1591,7 +1133,7 @@ NTSTATUS ProcessCommandLine(COOKED_READ_DATA& cookedReadData,
     case VK_F5:
         try
         {
-            ProcessHistoryCycling(cookedReadData, CommandHistory::SearchDirection::Previous);
+            _processHistoryCycling(cookedReadData, CommandHistory::SearchDirection::Previous);
             Status = STATUS_SUCCESS;
         }
         catch (...)
@@ -1602,7 +1144,7 @@ NTSTATUS ProcessCommandLine(COOKED_READ_DATA& cookedReadData,
     case VK_PRIOR:
         try
         {
-            SetPromptToOldestCommand(cookedReadData);
+            _setPromptToOldestCommand(cookedReadData);
             Status = STATUS_SUCCESS;
         }
         catch (...)
@@ -1613,7 +1155,7 @@ NTSTATUS ProcessCommandLine(COOKED_READ_DATA& cookedReadData,
     case VK_NEXT:
         try
         {
-            SetPromptToNewestCommand(cookedReadData);
+            _setPromptToNewestCommand(cookedReadData);
             Status = STATUS_SUCCESS;
         }
         catch (...)
@@ -1624,35 +1166,35 @@ NTSTATUS ProcessCommandLine(COOKED_READ_DATA& cookedReadData,
     case VK_END:
         if (ctrlPressed)
         {
-            DeletePromptAfterCursor(cookedReadData);
+            _deletePromptAfterCursor(cookedReadData);
         }
         else
         {
-            cursorPosition = MoveCursorToEndOfPrompt(cookedReadData);
+            cursorPosition = _moveCursorToEndOfPrompt(cookedReadData);
             UpdateCursorPosition = true;
         }
         break;
     case VK_HOME:
         if (ctrlPressed)
         {
-            cursorPosition = DeletePromptBeforeCursor(cookedReadData);
+            cursorPosition = _deletePromptBeforeCursor(cookedReadData);
             UpdateCursorPosition = true;
         }
         else
         {
-            cursorPosition = MoveCursorToStartOfPrompt(cookedReadData);
+            cursorPosition = _moveCursorToStartOfPrompt(cookedReadData);
             UpdateCursorPosition = true;
         }
         break;
     case VK_LEFT:
         if (ctrlPressed)
         {
-            cursorPosition = MoveCursorLeftByWord(cookedReadData);
+            cursorPosition = _moveCursorLeftByWord(cookedReadData);
             UpdateCursorPosition = true;
         }
         else
         {
-            cursorPosition = MoveCursorLeft(cookedReadData);
+            cursorPosition = _moveCursorLeft(cookedReadData);
             UpdateCursorPosition = true;
         }
         break;
@@ -1660,7 +1202,7 @@ NTSTATUS ProcessCommandLine(COOKED_READ_DATA& cookedReadData,
     {
         // we don't need to check for end of buffer here because we've
         // already done it.
-        cursorPosition = MoveCursorRight(cookedReadData);
+        cursorPosition = _moveCursorRight(cookedReadData);
         UpdateCursorPosition = true;
         break;
     }
@@ -1669,18 +1211,18 @@ NTSTATUS ProcessCommandLine(COOKED_READ_DATA& cookedReadData,
         // already done it.
         if (ctrlPressed)
         {
-            cursorPosition = MoveCursorRightByWord(cookedReadData);
+            cursorPosition = _moveCursorRightByWord(cookedReadData);
             UpdateCursorPosition = true;
         }
         else
         {
-            cursorPosition = MoveCursorRight(cookedReadData);
+            cursorPosition = _moveCursorRight(cookedReadData);
             UpdateCursorPosition = true;
         }
         break;
     case VK_F2:
     {
-        Status = CopyToCharPopup(cookedReadData);
+        Status = _startCopyToCharPopup(cookedReadData);
         if (S_FALSE == Status)
         {
             // We couldn't make the popup, so loop around and read the next character.
@@ -1692,11 +1234,11 @@ NTSTATUS ProcessCommandLine(COOKED_READ_DATA& cookedReadData,
         }
     }
     case VK_F3:
-        FillPromptWithPreviousCommandFragment(cookedReadData);
+        _fillPromptWithPreviousCommandFragment(cookedReadData);
         break;
     case VK_F4:
     {
-        Status = CopyFromCharPopup(cookedReadData);
+        Status = _startCopyFromCharPopup(cookedReadData);
         if (S_FALSE == Status)
         {
             // We couldn't display a popup. Go around a loop behind.
@@ -1709,24 +1251,24 @@ NTSTATUS ProcessCommandLine(COOKED_READ_DATA& cookedReadData,
     }
     case VK_F6:
     {
-        InsertCtrlZ(cookedReadData);
+        _insertCtrlZ(cookedReadData);
         break;
     }
     case VK_F7:
         if (!ctrlPressed && !altPressed)
         {
-            Status = CommandListPopup(cookedReadData);
+            Status = _startCommandListPopup(cookedReadData);
         }
         else if (altPressed)
         {
-            DeleteCommandHistory(cookedReadData);
+            _deleteCommandHistory(cookedReadData);
         }
         break;
 
     case VK_F8:
         try
         {
-            cursorPosition = CycleMatchingCommandHistoryToPrompt(cookedReadData);
+            cursorPosition = _cycleMatchingCommandHistoryToPrompt(cookedReadData);
             UpdateCursorPosition = true;
         }
         catch (...)
@@ -1736,7 +1278,7 @@ NTSTATUS ProcessCommandLine(COOKED_READ_DATA& cookedReadData,
         break;
     case VK_F9:
     {
-        Status = CommandNumberPopup(cookedReadData);
+        Status = StartCommandNumberPopup(cookedReadData);
         if (S_FALSE == Status)
         {
             // If we couldn't make the popup, break and go around to read another input character.
@@ -1759,7 +1301,7 @@ NTSTATUS ProcessCommandLine(COOKED_READ_DATA& cookedReadData,
         cookedReadData.ScreenInfo().SetCursorDBMode(cookedReadData.IsInsertMode() != gci.GetInsertMode());
         break;
     case VK_DELETE:
-        cursorPosition = DeleteFromRightOfCursor(cookedReadData);
+        cursorPosition = _deleteFromRightOfCursor(cookedReadData);
         UpdateCursorPosition = true;
         break;
     default:

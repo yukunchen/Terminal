@@ -27,6 +27,7 @@ Revision History:
 #pragma once
 
 #include "readData.hpp"
+#include "history.h"
 
 class COOKED_READ_DATA final : public ReadData
 {
@@ -77,9 +78,6 @@ public:
     bool ProcessInput(const wchar_t wch,
                       const DWORD keyState,
                       NTSTATUS& status);
-
-    void EndCurrentPopup();
-    void CleanUpAllPopups();
 
     CommandHistory& History() noexcept;
     bool HasHistory() const noexcept;
