@@ -13,8 +13,8 @@ Abstract:
 Author(s):
 - Michael Niksa (MiNiksa) 30-July-2015
 --*/
+#include "DispatchTypes.hpp"
 #pragma once
-#include "DispatchCommon.hpp"
 
 namespace Microsoft::Console::VirtualTerminal
 {
@@ -64,128 +64,36 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool EnableAlternateScroll(const bool /*fEnabled*/) { return false; } // ?1007
         virtual bool SetColorTableEntry(const size_t /*tableIndex*/, const DWORD /*dwColor*/) { return false; } // OSCColorTable
 
-        enum class EraseType : unsigned int
-        {
-            ToEnd = 0,
-            FromBeginning = 1,
-            All = 2,
-            Scrollback = 3
-        };
-
-        virtual bool EraseInDisplay(const EraseType /* eraseType*/) { return false; } // ED
-        virtual bool EraseInLine(const EraseType /* eraseType*/) { return false; } // EL
+        virtual bool EraseInDisplay(const DispatchTypes::EraseType /* eraseType*/) { return false; } // ED
+        virtual bool EraseInLine(const DispatchTypes::EraseType /* eraseType*/) { return false; } // EL
         virtual bool EraseCharacters(_In_ unsigned int const /*uiNumChars*/){ return false; } // ECH
-
-        enum GraphicsOptions : unsigned int
-        {
-            Off = 0,
-            BoldBright = 1,
-            RGBColor = 2,
-            // 2 is also Faint, decreased intensity (ISO 6429).
-            Underline = 4,
-            Xterm256Index = 5,
-            // 5 is also Blink (appears as Bold).
-            // the 2 and 5 entries here are only for the extended graphics options
-            // as we do not currently support those features individually
-            Negative = 7,
-            UnBold = 22,
-            NoUnderline = 24,
-            Positive = 27,
-            ForegroundBlack = 30,
-            ForegroundRed = 31,
-            ForegroundGreen = 32,
-            ForegroundYellow = 33,
-            ForegroundBlue = 34,
-            ForegroundMagenta = 35,
-            ForegroundCyan = 36,
-            ForegroundWhite = 37,
-            ForegroundExtended = 38,
-            ForegroundDefault = 39,
-            BackgroundBlack = 40,
-            BackgroundRed = 41,
-            BackgroundGreen = 42,
-            BackgroundYellow = 43,
-            BackgroundBlue = 44,
-            BackgroundMagenta = 45,
-            BackgroundCyan = 46,
-            BackgroundWhite = 47,
-            BackgroundExtended = 48,
-            BackgroundDefault = 49,
-            BrightForegroundBlack = 90,
-            BrightForegroundRed = 91,
-            BrightForegroundGreen = 92,
-            BrightForegroundYellow = 93,
-            BrightForegroundBlue = 94,
-            BrightForegroundMagenta = 95,
-            BrightForegroundCyan = 96,
-            BrightForegroundWhite = 97,
-            BrightBackgroundBlack = 100,
-            BrightBackgroundRed = 101,
-            BrightBackgroundGreen = 102,
-            BrightBackgroundYellow = 103,
-            BrightBackgroundBlue = 104,
-            BrightBackgroundMagenta = 105,
-            BrightBackgroundCyan = 106,
-            BrightBackgroundWhite = 107,
-        };
-
-        enum PrivateModeParams : unsigned short
-        {
-            DECCKM_CursorKeysMode = 1,
-            DECCOLM_SetNumberOfColumns = 3,
-            ATT610_StartCursorBlink = 12,
-            DECTCEM_TextCursorEnableMode = 25,
-            VT200_MOUSE_MODE = 1000,
-            BUTTTON_EVENT_MOUSE_MODE = 1002,
-            ANY_EVENT_MOUSE_MODE = 1003,
-            UTF8_EXTENDED_MODE = 1005,
-            SGR_EXTENDED_MODE = 1006,
-            ALTERNATE_SCROLL = 1007,
-            ASB_AlternateScreenBuffer = 1049
-        };
 
         static const short s_sDECCOLMSetColumns = 132;
         static const short s_sDECCOLMResetColumns = 80;
 
-        enum VTCharacterSets : wchar_t
-        {
-            DEC_LineDrawing = L'0',
-            USASCII = L'B'
-        };
+        virtual bool SetGraphicsRendition(_In_reads_(_Param_(2)) const DispatchTypes::GraphicsOptions* const /*rgOptions*/,
+                                          const size_t /*cOptions*/) { return false; } // SGR
 
-        virtual bool SetGraphicsRendition(_In_reads_(_Param_(2)) const GraphicsOptions* const /*rgOptions*/,
-                                            const size_t /*cOptions*/) { return false; } // SGR
-
-        virtual bool SetPrivateModes(_In_reads_(_Param_(2)) const PrivateModeParams* const /*rgParams*/,
+        virtual bool SetPrivateModes(_In_reads_(_Param_(2)) const DispatchTypes::PrivateModeParams* const /*rgParams*/,
                                         const size_t /*cParams*/) { return false; } // DECSET
 
-        virtual bool ResetPrivateModes(_In_reads_(_Param_(2)) const PrivateModeParams* const /*rgParams*/,
+        virtual bool ResetPrivateModes(_In_reads_(_Param_(2)) const DispatchTypes::PrivateModeParams* const /*rgParams*/,
                                         const size_t /*cParams*/) { return false; } // DECRST
 
-        enum class AnsiStatusType : unsigned int
-        {
-            CPR_CursorPositionReport = 6,
-        };
-
-        virtual bool DeviceStatusReport(const AnsiStatusType /*statusType*/) { return false; } // DSR
+        virtual bool DeviceStatusReport(const DispatchTypes::AnsiStatusType /*statusType*/) { return false; } // DSR
         virtual bool DeviceAttributes() { return false; } // DA
 
         virtual bool DesignateCharset(const wchar_t /*wchCharset*/){ return false; } // DesignateCharset
 
-        enum TabClearType : unsigned short
-        {
-            ClearCurrentColumn = 0,
-            ClearAllColumns = 3
-        };
 
         virtual bool SoftReset(){ return false; } // DECSTR
         virtual bool HardReset(){ return false; } // RIS
 
-        virtual bool SetCursorStyle(const DispatchCommon::CursorStyle /*cursorStyle*/){ return false; } // DECSCUSR
+        virtual bool SetCursorStyle(const DispatchTypes::CursorStyle /*cursorStyle*/){ return false; } // DECSCUSR
         virtual bool SetCursorColor(const COLORREF /*Color*/) { return false; } // OSCSetCursorColor, OSCResetCursorColor
 
         // DTTERM_WindowManipulation
-        virtual bool WindowManipulation(const DispatchCommon::WindowManipulationType /*uiFunction*/,
+        virtual bool WindowManipulation(const DispatchTypes::WindowManipulationType /*uiFunction*/,
                                         _In_reads_(_Param_(3)) const unsigned short* const /*rgusParams*/,
                                         const size_t /*cParams*/) { return false; }
 

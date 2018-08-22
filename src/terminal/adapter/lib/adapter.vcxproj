@@ -18,6 +18,7 @@
   <ItemGroup>
     <ClInclude Include="..\adaptDefaults.hpp" />
     <ClInclude Include="..\adaptDispatch.hpp" />
+    <ClInclude Include="..\DispatchTypes.hpp" />
     <ClInclude Include="..\DispatchCommon.hpp" />
     <ClInclude Include="..\InteractDispatch.hpp" />
     <ClInclude Include="..\conGetSet.hpp" />

@@ -561,9 +561,9 @@ public:
         _fEraseLine{ false },
         _fInsertCharacter{ false },
         _fDeleteCharacter{ false },
-        _eraseType{ (EraseType)-1 },
+        _eraseType{ (DispatchTypes::EraseType)-1 },
         _fSetGraphics{ false },
-        _statusReportType{ (AnsiStatusType)-1 },
+        _statusReportType{ (DispatchTypes::AnsiStatusType)-1 },
         _fDeviceStatusReport{ false },
         _fDeviceAttributes{ false },
         _cOptions{ 0 },
@@ -657,14 +657,14 @@ public:
         return true;
     }
 
-    bool EraseInDisplay(const EraseType eraseType) override
+    bool EraseInDisplay(const DispatchTypes::EraseType eraseType) override
     {
         _fEraseDisplay = true;
         _eraseType = eraseType;
         return true;
     }
 
-    bool EraseInLine(const EraseType eraseType) override
+    bool EraseInLine(const DispatchTypes::EraseType eraseType) override
     {
         _fEraseLine = true;
         _eraseType = eraseType;
@@ -691,18 +691,18 @@ public:
         return true;
     }
 
-    bool SetGraphicsRendition(_In_reads_(cOptions) const GraphicsOptions* const rgOptions, const size_t cOptions) override
+    bool SetGraphicsRendition(_In_reads_(cOptions) const DispatchTypes::GraphicsOptions* const rgOptions, const size_t cOptions) override
     {
         size_t cCopyLength = std::min(cOptions, s_cMaxOptions); // whichever is smaller, our buffer size or the number given
         _cOptions = cCopyLength;
-        memcpy(_rgOptions, rgOptions, _cOptions * sizeof(GraphicsOptions));
+        memcpy(_rgOptions, rgOptions, _cOptions * sizeof(DispatchTypes::GraphicsOptions));
 
         _fSetGraphics = true;
 
         return true;
     }
 
-    bool DeviceStatusReport(const AnsiStatusType statusType) override
+    bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) override
     {
         _fDeviceStatusReport = true;
         _statusReportType = statusType;
@@ -717,25 +717,25 @@ public:
         return true;
     }
 
-    bool _PrivateModeParamsHelper(_In_ PrivateModeParams const param, const bool fEnable)
+    bool _PrivateModeParamsHelper(_In_ DispatchTypes::PrivateModeParams const param, const bool fEnable)
     {
         bool fSuccess = false;
         switch(param)
         {
-        case PrivateModeParams::DECCKM_CursorKeysMode:
+        case DispatchTypes::PrivateModeParams::DECCKM_CursorKeysMode:
             // set - Enable Application Mode, reset - Numeric/normal mode
             fSuccess = SetVirtualTerminalInputMode(fEnable);
             break;
-        case PrivateModeParams::DECCOLM_SetNumberOfColumns:
+        case DispatchTypes::PrivateModeParams::DECCOLM_SetNumberOfColumns:
             fSuccess = SetColumns((unsigned int)(fEnable? s_sDECCOLMSetColumns : s_sDECCOLMResetColumns));
             break;
-        case PrivateModeParams::ATT610_StartCursorBlink:
+        case DispatchTypes::PrivateModeParams::ATT610_StartCursorBlink:
             fSuccess = EnableCursorBlinking(fEnable);
             break;
-        case PrivateModeParams::DECTCEM_TextCursorEnableMode:
+        case DispatchTypes::PrivateModeParams::DECTCEM_TextCursorEnableMode:
             fSuccess = CursorVisibility(fEnable);
             break;
-        case PrivateModeParams::ASB_AlternateScreenBuffer:
+        case DispatchTypes::PrivateModeParams::ASB_AlternateScreenBuffer:
             fSuccess = fEnable? UseAlternateScreenBuffer() : UseMainScreenBuffer();
             break;
         default:
@@ -746,7 +746,7 @@ public:
         return fSuccess;
     }
 
-    bool _SetResetPrivateModesHelper(_In_reads_(cParams) const PrivateModeParams* const rParams,
+    bool _SetResetPrivateModesHelper(_In_reads_(cParams) const DispatchTypes::PrivateModeParams* const rParams,
                                      const size_t cParams,
                                      const bool fEnable)
     {
@@ -758,12 +758,12 @@ public:
         return cFailures == 0;
     }
 
-    bool SetPrivateModes(_In_reads_(cParams) const PrivateModeParams* const rParams, const size_t cParams) override
+    bool SetPrivateModes(_In_reads_(cParams) const DispatchTypes::PrivateModeParams* const rParams, const size_t cParams) override
     {
         return _SetResetPrivateModesHelper(rParams, cParams, true);
     }
 
-    bool ResetPrivateModes(_In_reads_(cParams) const PrivateModeParams* const rParams, const size_t cParams) override
+    bool ResetPrivateModes(_In_reads_(cParams) const DispatchTypes::PrivateModeParams* const rParams, const size_t cParams) override
     {
         return _SetResetPrivateModesHelper(rParams, cParams, false);
     }
@@ -817,9 +817,9 @@ public:
     bool _fEraseLine;
     bool _fInsertCharacter;
     bool _fDeleteCharacter;
-    EraseType _eraseType;
+    DispatchTypes::EraseType _eraseType;
     bool _fSetGraphics;
-    AnsiStatusType _statusReportType;
+	DispatchTypes::AnsiStatusType _statusReportType;
     bool _fDeviceStatusReport;
     bool _fDeviceAttributes;
     bool _fIsAltBuffer;
@@ -829,7 +829,7 @@ public:
 
     static const size_t s_cMaxOptions = 16;
     static const unsigned int s_uiGraphicsCleared = UINT_MAX;
-    GraphicsOptions _rgOptions[s_cMaxOptions];
+    DispatchTypes::GraphicsOptions _rgOptions[s_cMaxOptions];
     size_t _cOptions;
 };
 
@@ -1194,13 +1194,13 @@ class StateMachineExternalTest final
     {
         BEGIN_TEST_METHOD_PROPERTIES()
             TEST_METHOD_PROPERTY(L"Data:uiEraseOperation", L"{0, 1}") // for "display" and "line" type erase operations
-            TEST_METHOD_PROPERTY(L"Data:uiEraseType", L"{0, 1, 2, 10}") // maps to TermDispatch::EraseType enum class options.
+            TEST_METHOD_PROPERTY(L"Data:uiDispatchTypes::EraseType", L"{0, 1, 2, 10}") // maps to DispatchTypes::EraseType enum class options.
         END_TEST_METHOD_PROPERTIES()
 
         unsigned int uiEraseOperation;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiEraseOperation", uiEraseOperation));
-        unsigned int uiEraseType;
-        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiEraseType", uiEraseType));
+        unsigned int uiDispatchTypes;
+        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiDispatchTypes::EraseType", uiDispatchTypes));
 
         WCHAR wchOp = L'\0';
         bool* pfOperationCallback = nullptr;
@@ -1229,25 +1229,25 @@ class StateMachineExternalTest final
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'[');
 
-        TermDispatch::EraseType expectedEraseType;
+        DispatchTypes::EraseType expectedDispatchTypes;
 
-        switch (uiEraseType)
+        switch (uiDispatchTypes)
         {
         case 0:
-            expectedEraseType = TermDispatch::EraseType::ToEnd;
-            InsertNumberToMachine(&mach, uiEraseType);
+            expectedDispatchTypes = DispatchTypes::EraseType::ToEnd;
+            InsertNumberToMachine(&mach, uiDispatchTypes);
             break;
         case 1:
-            expectedEraseType = TermDispatch::EraseType::FromBeginning;
-            InsertNumberToMachine(&mach, uiEraseType);
+            expectedDispatchTypes = DispatchTypes::EraseType::FromBeginning;
+            InsertNumberToMachine(&mach, uiDispatchTypes);
             break;
         case 2:
-            expectedEraseType = TermDispatch::EraseType::All;
-            InsertNumberToMachine(&mach, uiEraseType);
+            expectedDispatchTypes = DispatchTypes::EraseType::All;
+            InsertNumberToMachine(&mach, uiDispatchTypes);
             break;
         case 10:
             // Do nothing. Default case of 10 should be like a 0 to the end.
-            expectedEraseType = TermDispatch::EraseType::ToEnd;
+            expectedDispatchTypes = DispatchTypes::EraseType::ToEnd;
             break;
         }
 
@@ -1255,10 +1255,10 @@ class StateMachineExternalTest final
 
 
         VERIFY_IS_TRUE(*pfOperationCallback);
-        VERIFY_ARE_EQUAL(expectedEraseType, pDispatch->_eraseType);
+        VERIFY_ARE_EQUAL(expectedDispatchTypes, pDispatch->_eraseType);
     }
 
-    void VerifyGraphicsOptions(_In_reads_(cExpectedOptions) const TermDispatch::GraphicsOptions* const rgExpectedOptions,
+    void VerifyDispatchTypes(_In_reads_(cExpectedOptions) const DispatchTypes::GraphicsOptions* const rgExpectedOptions,
                                const size_t cExpectedOptions,
                                const StatefulDispatch& dispatch)
     {
@@ -1267,7 +1267,7 @@ class StateMachineExternalTest final
 
         for (size_t i = 0; i < dispatch.s_cMaxOptions; i++)
         {
-            auto expectedOption = (TermDispatch::GraphicsOptions)dispatch.s_uiGraphicsCleared;
+            auto expectedOption = (DispatchTypes::GraphicsOptions)dispatch.s_uiGraphicsCleared;
 
             if (i < cExpectedOptions)
             {
@@ -1292,7 +1292,7 @@ class StateMachineExternalTest final
         VERIFY_IS_NOT_NULL(pDispatch);
         StateMachine mach(new OutputStateMachineEngine(pDispatch));
 
-        TermDispatch::GraphicsOptions rgExpected[16];
+        DispatchTypes::GraphicsOptions rgExpected[16];
 
         Log::Comment(L"Test 1: Check default case.");
         mach.ProcessCharacter(AsciiChars::ESC);
@@ -1300,8 +1300,8 @@ class StateMachineExternalTest final
         mach.ProcessCharacter(L'm');
         VERIFY_IS_TRUE(pDispatch->_fSetGraphics);
 
-        rgExpected[0] = TermDispatch::GraphicsOptions::Off;
-        VerifyGraphicsOptions(rgExpected, 1, *pDispatch);
+        rgExpected[0] = DispatchTypes::GraphicsOptions::Off;
+        VerifyDispatchTypes(rgExpected, 1, *pDispatch);
 
         pDispatch->ClearState();
 
@@ -1313,8 +1313,8 @@ class StateMachineExternalTest final
         mach.ProcessCharacter(L'm');
         VERIFY_IS_TRUE(pDispatch->_fSetGraphics);
 
-        rgExpected[0] = TermDispatch::GraphicsOptions::Off;
-        VerifyGraphicsOptions(rgExpected, 1, *pDispatch);
+        rgExpected[0] = DispatchTypes::GraphicsOptions::Off;
+        VerifyDispatchTypes(rgExpected, 1, *pDispatch);
 
         pDispatch->ClearState();
 
@@ -1336,12 +1336,12 @@ class StateMachineExternalTest final
         mach.ProcessCharacter(L'm');
         VERIFY_IS_TRUE(pDispatch->_fSetGraphics);
 
-        rgExpected[0] = TermDispatch::GraphicsOptions::BoldBright;
-        rgExpected[1] = TermDispatch::GraphicsOptions::Underline;
-        rgExpected[2] = TermDispatch::GraphicsOptions::Negative;
-        rgExpected[3] = TermDispatch::GraphicsOptions::ForegroundBlack;
-        rgExpected[4] = TermDispatch::GraphicsOptions::BackgroundMagenta;
-        VerifyGraphicsOptions(rgExpected, 5, *pDispatch);
+        rgExpected[0] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[1] = DispatchTypes::GraphicsOptions::Underline;
+        rgExpected[2] = DispatchTypes::GraphicsOptions::Negative;
+        rgExpected[3] = DispatchTypes::GraphicsOptions::ForegroundBlack;
+        rgExpected[4] = DispatchTypes::GraphicsOptions::BackgroundMagenta;
+        VerifyDispatchTypes(rgExpected, 5, *pDispatch);
 
         pDispatch->ClearState();
 
@@ -1385,23 +1385,23 @@ class StateMachineExternalTest final
         mach.ProcessCharacter(L'm');
         VERIFY_IS_TRUE(pDispatch->_fSetGraphics);
 
-        rgExpected[0] = TermDispatch::GraphicsOptions::BoldBright;
-        rgExpected[1] = TermDispatch::GraphicsOptions::Underline;
-        rgExpected[2] = TermDispatch::GraphicsOptions::BoldBright;
-        rgExpected[3] = TermDispatch::GraphicsOptions::Underline;
-        rgExpected[4] = TermDispatch::GraphicsOptions::BoldBright;
-        rgExpected[5] = TermDispatch::GraphicsOptions::Underline;
-        rgExpected[6] = TermDispatch::GraphicsOptions::BoldBright;
-        rgExpected[7] = TermDispatch::GraphicsOptions::Underline;
-        rgExpected[8] = TermDispatch::GraphicsOptions::BoldBright;
-        rgExpected[9] = TermDispatch::GraphicsOptions::Underline;
-        rgExpected[10] = TermDispatch::GraphicsOptions::BoldBright;
-        rgExpected[11] = TermDispatch::GraphicsOptions::Underline;
-        rgExpected[12] = TermDispatch::GraphicsOptions::BoldBright;
-        rgExpected[13] = TermDispatch::GraphicsOptions::Underline;
-        rgExpected[14] = TermDispatch::GraphicsOptions::BoldBright;
-        rgExpected[15] = TermDispatch::GraphicsOptions::Underline;
-        VerifyGraphicsOptions(rgExpected, 16, *pDispatch);
+        rgExpected[0] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[1] = DispatchTypes::GraphicsOptions::Underline;
+        rgExpected[2] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[3] = DispatchTypes::GraphicsOptions::Underline;
+        rgExpected[4] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[5] = DispatchTypes::GraphicsOptions::Underline;
+        rgExpected[6] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[7] = DispatchTypes::GraphicsOptions::Underline;
+        rgExpected[8] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[9] = DispatchTypes::GraphicsOptions::Underline;
+        rgExpected[10] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[11] = DispatchTypes::GraphicsOptions::Underline;
+        rgExpected[12] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[13] = DispatchTypes::GraphicsOptions::Underline;
+        rgExpected[14] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[15] = DispatchTypes::GraphicsOptions::Underline;
+        VerifyDispatchTypes(rgExpected, 16, *pDispatch);
 
         pDispatch->ClearState();
 
@@ -1411,9 +1411,9 @@ class StateMachineExternalTest final
         mach.ProcessString(&sequence[0], sequence.length());
         VERIFY_IS_TRUE(pDispatch->_fSetGraphics);
 
-        rgExpected[0] = TermDispatch::GraphicsOptions::BoldBright;
-        rgExpected[1] = TermDispatch::GraphicsOptions::Off;
-        VerifyGraphicsOptions(rgExpected, 2, *pDispatch);
+        rgExpected[0] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[1] = DispatchTypes::GraphicsOptions::Off;
+        VerifyDispatchTypes(rgExpected, 2, *pDispatch);
 
         pDispatch->ClearState();
 
@@ -1423,10 +1423,10 @@ class StateMachineExternalTest final
         mach.ProcessString(&sequence[0], sequence.length());
         VERIFY_IS_TRUE(pDispatch->_fSetGraphics);
 
-        rgExpected[0] = TermDispatch::GraphicsOptions::BoldBright;
-        rgExpected[1] = TermDispatch::GraphicsOptions::Off;
-        rgExpected[2] = TermDispatch::GraphicsOptions::BoldBright;
-        VerifyGraphicsOptions(rgExpected, 3, *pDispatch);
+        rgExpected[0] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[1] = DispatchTypes::GraphicsOptions::Off;
+        rgExpected[2] = DispatchTypes::GraphicsOptions::BoldBright;
+        VerifyDispatchTypes(rgExpected, 3, *pDispatch);
 
         pDispatch->ClearState();
 
@@ -1436,10 +1436,10 @@ class StateMachineExternalTest final
         mach.ProcessString(&sequence[0], sequence.length());
         VERIFY_IS_TRUE(pDispatch->_fSetGraphics);
 
-        rgExpected[0] = TermDispatch::GraphicsOptions::Off;
-        rgExpected[1] = TermDispatch::GraphicsOptions::ForegroundRed;
-        rgExpected[2] = TermDispatch::GraphicsOptions::BoldBright;
-        VerifyGraphicsOptions(rgExpected, 3, *pDispatch);
+        rgExpected[0] = DispatchTypes::GraphicsOptions::Off;
+        rgExpected[1] = DispatchTypes::GraphicsOptions::ForegroundRed;
+        rgExpected[2] = DispatchTypes::GraphicsOptions::BoldBright;
+        VerifyDispatchTypes(rgExpected, 3, *pDispatch);
 
         pDispatch->ClearState();
     }
@@ -1466,7 +1466,7 @@ class StateMachineExternalTest final
         mach.ProcessCharacter(L'n');
 
         VERIFY_IS_TRUE(pDispatch->_fDeviceStatusReport);
-        VERIFY_ARE_EQUAL(TermDispatch::AnsiStatusType::CPR_CursorPositionReport, pDispatch->_statusReportType);
+        VERIFY_ARE_EQUAL(DispatchTypes::AnsiStatusType::CPR_CursorPositionReport, pDispatch->_statusReportType);
 
         pDispatch->ClearState();
 
@@ -1523,8 +1523,8 @@ class StateMachineExternalTest final
         VERIFY_IS_NOT_NULL(pDispatch);
         StateMachine mach(new OutputStateMachineEngine(pDispatch));
 
-        TermDispatch::GraphicsOptions rgExpected[16];
-        TermDispatch::EraseType expectedEraseType;
+        DispatchTypes::GraphicsOptions rgExpected[16];
+        DispatchTypes::EraseType expectedDispatchTypes;
         ///////////////////////////////////////////////////////////////////////
 
         Log::Comment(L"Test 1: Basic String processing. One sequence in a string.");
@@ -1542,14 +1542,14 @@ class StateMachineExternalTest final
         VERIFY_IS_TRUE(pDispatch->_fSetGraphics);
         VERIFY_IS_TRUE(pDispatch->_fEraseDisplay);
 
-        rgExpected[0] = TermDispatch::GraphicsOptions::BoldBright;
-        rgExpected[1] = TermDispatch::GraphicsOptions::Underline;
-        rgExpected[2] = TermDispatch::GraphicsOptions::Negative;
-        rgExpected[3] = TermDispatch::GraphicsOptions::ForegroundBlack;
-        rgExpected[4] = TermDispatch::GraphicsOptions::BackgroundMagenta;
-        expectedEraseType = TermDispatch::EraseType::All;
-        VerifyGraphicsOptions(rgExpected, 5, *pDispatch);
-        VERIFY_ARE_EQUAL(expectedEraseType, pDispatch->_eraseType);
+        rgExpected[0] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[1] = DispatchTypes::GraphicsOptions::Underline;
+        rgExpected[2] = DispatchTypes::GraphicsOptions::Negative;
+        rgExpected[3] = DispatchTypes::GraphicsOptions::ForegroundBlack;
+        rgExpected[4] = DispatchTypes::GraphicsOptions::BackgroundMagenta;
+        expectedDispatchTypes = DispatchTypes::EraseType::All;
+        VerifyDispatchTypes(rgExpected, 5, *pDispatch);
+        VERIFY_ARE_EQUAL(expectedDispatchTypes, pDispatch->_eraseType);
 
         pDispatch->ClearState();
 
@@ -1558,15 +1558,15 @@ class StateMachineExternalTest final
 
         mach.ProcessString(L"\x1b[1;30mHello World\x1b[2J", 22);
 
-        rgExpected[0] = TermDispatch::GraphicsOptions::BoldBright;
-        rgExpected[1] = TermDispatch::GraphicsOptions::ForegroundBlack;
-        expectedEraseType = TermDispatch::EraseType::All;
+        rgExpected[0] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[1] = DispatchTypes::GraphicsOptions::ForegroundBlack;
+        expectedDispatchTypes = DispatchTypes::EraseType::All;
 
         VERIFY_IS_TRUE(pDispatch->_fSetGraphics);
         VERIFY_IS_TRUE(pDispatch->_fEraseDisplay);
 
-        VerifyGraphicsOptions(rgExpected, 2, *pDispatch);
-        VERIFY_ARE_EQUAL(expectedEraseType, pDispatch->_eraseType);
+        VerifyDispatchTypes(rgExpected, 2, *pDispatch);
+        VERIFY_ARE_EQUAL(expectedDispatchTypes, pDispatch->_eraseType);
 
         pDispatch->ClearState();
 
@@ -1578,23 +1578,23 @@ class StateMachineExternalTest final
 
         mach.ProcessString(L"30mHello World\x1b[2J", 18);
 
-        rgExpected[0] = TermDispatch::GraphicsOptions::BoldBright;
-        rgExpected[1] = TermDispatch::GraphicsOptions::ForegroundBlack;
-        expectedEraseType = TermDispatch::EraseType::All;
+        rgExpected[0] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[1] = DispatchTypes::GraphicsOptions::ForegroundBlack;
+        expectedDispatchTypes = DispatchTypes::EraseType::All;
 
         VERIFY_IS_TRUE(pDispatch->_fSetGraphics);
         VERIFY_IS_TRUE(pDispatch->_fEraseDisplay);
 
-        VerifyGraphicsOptions(rgExpected, 2, *pDispatch);
-        VERIFY_ARE_EQUAL(expectedEraseType, pDispatch->_eraseType);
+        VerifyDispatchTypes(rgExpected, 2, *pDispatch);
+        VERIFY_ARE_EQUAL(expectedDispatchTypes, pDispatch->_eraseType);
 
         pDispatch->ClearState();
 
         ///////////////////////////////////////////////////////////////////////
         Log::Comment(L"Test 5: A sequence with mixed ProcessCharacter and ProcessString calls");
 
-        rgExpected[0] = TermDispatch::GraphicsOptions::BoldBright;
-        rgExpected[1] = TermDispatch::GraphicsOptions::ForegroundBlack;
+        rgExpected[0] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[1] = DispatchTypes::GraphicsOptions::ForegroundBlack;
 
         mach.ProcessString(L"\x1b[1;", 4);
         VERIFY_IS_FALSE(pDispatch->_fSetGraphics);
@@ -1613,15 +1613,15 @@ class StateMachineExternalTest final
 
         VERIFY_IS_TRUE(pDispatch->_fSetGraphics);
         VERIFY_IS_FALSE(pDispatch->_fEraseDisplay);
-        VerifyGraphicsOptions(rgExpected, 2, *pDispatch);
+        VerifyDispatchTypes(rgExpected, 2, *pDispatch);
 
         mach.ProcessString(L"Hello World\x1b[2J", 15);
 
-        expectedEraseType = TermDispatch::EraseType::All;
+        expectedDispatchTypes = DispatchTypes::EraseType::All;
 
         VERIFY_IS_TRUE(pDispatch->_fEraseDisplay);
 
-        VERIFY_ARE_EQUAL(expectedEraseType, pDispatch->_eraseType);
+        VERIFY_ARE_EQUAL(expectedDispatchTypes, pDispatch->_eraseType);
 
         pDispatch->ClearState();
 

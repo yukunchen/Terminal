@@ -349,7 +349,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
                 fSuccess = _WriteSingleKey(vkey, dwModifierState);
                 break;
             case CsiActionCodes::DTTERM_WindowManipulation:
-                fSuccess = _pDispatch->WindowManipulation(static_cast<DispatchCommon::WindowManipulationType>(uiFunction),
+                fSuccess = _pDispatch->WindowManipulation(static_cast<DispatchTypes::WindowManipulationType>(uiFunction),
                                                           rgusRemainingArgs,
                                                           cRemainingArgs);
                 break;
@@ -852,18 +852,18 @@ bool InputStateMachineEngine::_GetWindowManipulationType(_In_reads_(cParams) con
                                                          _Out_ unsigned int* const puiFunction) const
 {
     bool fSuccess = false;
-    *puiFunction = DispatchCommon::WindowManipulationType::Invalid;
+    *puiFunction = DispatchTypes::WindowManipulationType::Invalid;
 
     if (cParams > 0)
     {
         switch(rgusParams[0])
         {
-            case DispatchCommon::WindowManipulationType::RefreshWindow:
-                *puiFunction = DispatchCommon::WindowManipulationType::RefreshWindow;
+            case DispatchTypes::WindowManipulationType::RefreshWindow:
+                *puiFunction = DispatchTypes::WindowManipulationType::RefreshWindow;
                 fSuccess = true;
                 break;
-            case DispatchCommon::WindowManipulationType::ResizeWindowInCharacters:
-                *puiFunction = DispatchCommon::WindowManipulationType::ResizeWindowInCharacters;
+            case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
+                *puiFunction = DispatchTypes::WindowManipulationType::ResizeWindowInCharacters;
                 fSuccess = true;
                 break;
             default:
