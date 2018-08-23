@@ -1277,7 +1277,7 @@ bool AdaptDispatch::SetTopBottomScrollingMargins(const SHORT sTopMargin,
 {
     // When this is called, the cursor should also be moved to home.
     // Other functions that only need to set/reset the margins should call _DoSetTopBottomScrollingMargins
-    return _DoSetTopBottomScrollingMargins(sTopMargin, sBottomMargin) && CursorPosition(1,1);
+    return _DoSetTopBottomScrollingMargins(sTopMargin, sBottomMargin) && CursorPosition(1, 1);
 }
 
 // Routine Description:
