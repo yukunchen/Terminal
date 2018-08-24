@@ -3093,56 +3093,57 @@ public:
         Log::Comment(L"Test 1: Verify having both values is valid.");
         _testGetSet->_SetMarginsHelper(&srTestMargins, 2, 6);
         _testGetSet->_fPrivateSetScrollingRegionResult = TRUE;
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom, true));
+        _testGetSet->_fSetConsoleCursorPositionResult = true;
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
 
         Log::Comment(L"Test 2: Verify having only top is valid.");
 
         _testGetSet->_SetMarginsHelper(&srTestMargins, 7, 0);
         _testGetSet->_srExpectedScrollRegion.Bottom = _testGetSet->_srViewport.Bottom - 1; // We expect the bottom to be the bottom of the viewport, exclusive.
         _testGetSet->_fPrivateSetScrollingRegionResult = TRUE;
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom, true));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
 
         Log::Comment(L"Test 3: Verify having only bottom is valid.");
 
         _testGetSet->_SetMarginsHelper(&srTestMargins, 0, 7);
         _testGetSet->_fPrivateSetScrollingRegionResult = TRUE;
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom, true));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
 
         Log::Comment(L"Test 4: Verify having no values is valid.");
 
         _testGetSet->_SetMarginsHelper(&srTestMargins, 0, 0);
         _testGetSet->_fPrivateSetScrollingRegionResult = TRUE;
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom, true));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
 
         Log::Comment(L"Test 5: Verify having both values, but bad bounds is invalid.");
 
         _testGetSet->_SetMarginsHelper(&srTestMargins, 7, 3);
         _testGetSet->_fPrivateSetScrollingRegionResult = TRUE;
-        VERIFY_IS_FALSE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom, true));
+        VERIFY_IS_FALSE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
 
 
         Log::Comment(L"Test 6: Verify Setting margins to (0, height) clears them");
         // First set,
         _testGetSet->_fPrivateSetScrollingRegionResult = TRUE;
         _testGetSet->_SetMarginsHelper(&srTestMargins, 2, 6);
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom, true));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
         // Then clear
         _testGetSet->_srExpectedScrollRegion.Top = 0;
         _testGetSet->_srExpectedScrollRegion.Bottom = 0;
         _testGetSet->_SetMarginsHelper(&srTestMargins, 0, 7);
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom, true));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
 
 
         Log::Comment(L"Test 7: Verify Setting margins to (1, height) clears them");
         // First set,
         _testGetSet->_fPrivateSetScrollingRegionResult = TRUE;
         _testGetSet->_SetMarginsHelper(&srTestMargins, 2, 6);
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom, true));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
         // Then clear
         _testGetSet->_srExpectedScrollRegion.Top = 0;
         _testGetSet->_srExpectedScrollRegion.Bottom = 0;
         _testGetSet->_SetMarginsHelper(&srTestMargins, 0, 7);
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom, true));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
 
     }
 

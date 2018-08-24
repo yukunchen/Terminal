@@ -50,7 +50,7 @@ public:
     virtual bool SetCursorKeysMode(const bool /*fApplicationMode*/) { return false; }  // DECCKM
     virtual bool SetKeypadMode(const bool /*fApplicationMode*/) { return false; }  // DECKPAM, DECKPNM
     virtual bool EnableCursorBlinking(const bool /*fEnable*/) { return false; }  // ATT610
-    virtual bool SetTopBottomScrollingMargins(const SHORT /*sTopMargin*/, const SHORT /*sBottomMargin*/, const bool /*fResetCursor*/) { return false; } // DECSTBM
+    virtual bool SetTopBottomScrollingMargins(const SHORT /*sTopMargin*/, const SHORT /*sBottomMargin*/) { return false; } // DECSTBM
     virtual bool ReverseLineFeed() { return false; } // RI
     virtual bool SetWindowTitle(_In_reads_(_Param_(2)) const wchar_t* const /*pwchWindowTitle*/, unsigned short /*sCchTitleLength*/) { return false; } // OscWindowTitle
     virtual bool UseAlternateScreenBuffer() { return false; } // ASBSET

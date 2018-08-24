@@ -80,8 +80,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool SetKeypadMode(const bool fApplicationMode);  // DECKPAM, DECKPNM
         virtual bool EnableCursorBlinking(const bool bEnable); // ATT610
         virtual bool SetTopBottomScrollingMargins(const SHORT sTopMargin,
-                                                    const SHORT sBottomMargin,
-                                                    const bool fResetCursor); // DECSTBM
+                                                    const SHORT sBottomMargin); // DECSTBM
         virtual bool ReverseLineFeed(); // RI
         virtual bool SetWindowTitle(_In_reads_(cchTitleLength) const wchar_t* const pwchWindowTitle,
                                     _In_ unsigned short cchTitleLength); // OscWindowTitle
@@ -140,6 +139,8 @@ namespace Microsoft::Console::VirtualTerminal
         static void s_DisableAllColors(_Inout_ WORD* const pAttr, const bool fIsForeground);
         static void s_ApplyColors(_Inout_ WORD* const pAttr, const WORD wApplyThis, const bool fIsForeground);
 
+        bool _DoSetTopBottomScrollingMargins(const SHORT sTopMargin,
+                                             const SHORT sBottomMargin);
         bool _CursorPositionReport() const;
 
         bool _WriteResponse(_In_reads_(cchReply) PCWSTR pwszReply, const size_t cchReply) const;
