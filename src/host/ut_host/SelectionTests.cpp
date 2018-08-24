@@ -445,9 +445,12 @@ class SelectionInputTests
         VERIFY_IS_FALSE(fResult);
 
         // prepare some read data
+        m_state->PrepareReadHandle();
+        auto cleanupReadHandle = wil::ScopeExit([&](){ m_state->CleanupReadHandle(); });
+
         m_state->PrepareCookedReadData();
         // set up to clean up read data later
-        auto cleanup = wil::ScopeExit([&](){ m_state->CleanupCookedReadData(); });
+        auto cleanupCookedRead = wil::ScopeExit([&](){ m_state->CleanupCookedReadData(); });
 
         COOKED_READ_DATA& readData = gci.CookedReadData();
 

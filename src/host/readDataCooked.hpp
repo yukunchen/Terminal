@@ -97,10 +97,7 @@ public:
     void SetInsertMode(const bool mode) noexcept;
     bool IsUnicode() const noexcept;
 
-// TODO MSFT:11285829 this is a temporary kludge until the constructors are ironed
-// out, so that we can still run the tests in the meantime.
 #if UNIT_TESTING
-    COOKED_READ_DATA(SCREEN_INFORMATION& screenInfo);
     friend class CommandLineTests;
 #endif
 

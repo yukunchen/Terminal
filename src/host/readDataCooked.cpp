@@ -73,10 +73,12 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
     _insertMode{ ServiceLocator::LocateGlobals().getConsoleInformation().GetInsertMode() },
     _unicode{ false }
 {
+#ifndef UNIT_TESTING
     THROW_IF_FAILED(screenInfo.GetMainBuffer().Header.AllocateIoHandle(ConsoleHandleData::HandleType::Output,
                                                                        GENERIC_WRITE,
                                                                        FILE_SHARE_READ | FILE_SHARE_WRITE,
                                                                        _tempHandle));
+#endif
 
     // to emulate OS/2 KbdStringIn, we read into our own big buffer
     // (256 bytes) until the user types enter.  then return as many
@@ -96,36 +98,6 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
     FAIL_FAST_IF(gci.HasPendingCookedRead()); // there can be only one
     gci.SetCookedReadData(this);
 }
-
-#if UNIT_TESTING
-COOKED_READ_DATA::COOKED_READ_DATA(SCREEN_INFORMATION& screenInfo):
-        _screenInfo{ screenInfo },
-        _UserBuffer{ nullptr },
-        _CurrentPosition{ 0 },
-        _UserBufferSize{ 0 },
-        _BytesRead{ 0 },
-        _exeName{},
-        _BufPtr{ nullptr },
-        pdwNumBytes{ nullptr },
-        _BackupLimit{ nullptr },
-        _BufferSize{ 0 },
-
-        _commandHistory{ nullptr },
-        _controlKeyState{ 0 },
-        _ctrlWakeupMask{ 0 },
-        _visibleCharCount{ 0 },
-
-        _echoInput{ false },
-        _lineInput{ false },
-        _processedInput{ false },
-        _insertMode{ false },
-        _unicode{ false }
-{
-    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    FAIL_FAST_IF(gci.HasPendingCookedRead()); // there can be only one
-    gci.SetCookedReadData(this);
-}
-#endif
 
 // Routine Description:
 // - Destructs a read data class.
