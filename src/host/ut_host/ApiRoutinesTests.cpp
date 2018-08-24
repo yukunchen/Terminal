@@ -147,8 +147,10 @@ class ApiRoutinesTests
     TEST_METHOD(ApiSetConsoleInputModeImplInsertCookedRead)
     {
         Log::Comment(L"Turn on insert mode with cooked read data.");
+        m_state->PrepareReadHandle();
+        auto cleanupReadHandle = wil::ScopeExit([&](){ m_state->CleanupReadHandle(); });
         m_state->PrepareCookedReadData();
-        auto cleanup = wil::ScopeExit([&](){ m_state->CleanupCookedReadData(); });
+        auto cleanupCookedRead = wil::ScopeExit([&](){ m_state->CleanupCookedReadData(); });
 
         PrepVerifySetConsoleInputModeImpl(0);
         Log::Comment(L"Success code should result from setting valid flags.");

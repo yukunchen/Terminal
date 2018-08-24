@@ -23,6 +23,7 @@ unit testing projects in the codebase without a bunch of overhead.
 
 #include "precomp.h"
 #include "../host/globals.h"
+#include "../host/inputReadHandleData.h"
 #include "../buffer/out/CharRow.hpp"
 #include "../interactivity/inc/ServiceLocator.hpp"
 
@@ -39,7 +40,8 @@ public:
         m_heap(GetProcessHeap()),
         m_ntstatusTextBufferInfo(STATUS_FAIL_CHECK),
         m_pFontInfo(nullptr),
-        m_backupTextBufferInfo()
+        m_backupTextBufferInfo(),
+        m_readHandle(nullptr)
     {
     }
 
@@ -51,6 +53,16 @@ public:
     void InitEvents()
     {
         ServiceLocator::LocateGlobals().hInputEvent.create(wil::EventOptions::ManualReset);
+    }
+
+    void PrepareReadHandle()
+    {
+        m_readHandle = std::make_unique<INPUT_READ_HANDLE_DATA>();
+    }
+
+    void CleanupReadHandle()
+    {
+        m_readHandle.reset(nullptr);
     }
 
     void PrepareGlobalFont()
@@ -120,7 +132,14 @@ public:
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // this looks weird, but it's actually ok because the cooked read data hooks itself into
         // CONSOLE_INFORMATION in its constructor.
-        new COOKED_READ_DATA(gci.GetActiveOutputBuffer());
+        new COOKED_READ_DATA(gci.pInputBuffer,
+                             m_readHandle.get(),
+                             gci.GetActiveOutputBuffer(),
+                             0,
+                             nullptr,
+                             0,
+                             nullptr,
+                             L"");
     }
 
     void CleanupCookedReadData()
@@ -220,6 +239,7 @@ private:
     NTSTATUS m_ntstatusTextBufferInfo;
     FontInfo* m_pFontInfo;
     std::unique_ptr<TextBuffer> m_backupTextBufferInfo;
+    std::unique_ptr<INPUT_READ_HANDLE_DATA> m_readHandle;
 
     void FillRow(ROW* pRow)
     {

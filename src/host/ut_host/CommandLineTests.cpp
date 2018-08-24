@@ -42,6 +42,8 @@ class CommandLineTests
     TEST_METHOD_SETUP(MethodSetup)
     {
         m_state->PrepareGlobalScreenBuffer();
+        m_state->PrepareGlobalInputBuffer();
+        m_state->PrepareReadHandle();
         m_state->PrepareCookedReadData();
         m_pHistory = CommandHistory::s_Allocate(L"cmd.exe", (HANDLE)0);
         if (!m_pHistory)
@@ -56,6 +58,8 @@ class CommandLineTests
         CommandHistory::s_Free((HANDLE)0);
         m_pHistory = nullptr;
         m_state->CleanupCookedReadData();
+        m_state->CleanupReadHandle();
+        m_state->CleanupGlobalInputBuffer();
         m_state->CleanupGlobalScreenBuffer();
         return true;
     }
