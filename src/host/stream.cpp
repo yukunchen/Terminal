@@ -516,10 +516,15 @@ HRESULT ReadLineInput(_Inout_ InputBuffer* const pInputBuffer,
             }
         }
 
+        gci.SetCookedReadData(cookedReadData.get());
         if (CONSOLE_STATUS_WAIT == cookedReadData->Read(Unicode, *pReadByteCount, *pControlKeyState))
         {
             // memory will be cleaned up by wait queue
             *ppWaiter = cookedReadData.release();
+        }
+        else
+        {
+            gci.SetCookedReadData(nullptr);
         }
     }
     CATCH_RETURN();
