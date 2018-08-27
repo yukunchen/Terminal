@@ -93,10 +93,6 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
     std::fill_n(_BufPtr, _BufferSize / sizeof(wchar_t), UNICODE_SPACE);
 
     // TODO MSFT:11285829 find a better way to manage the lifetime of this object in relation to gci
-    // add ourself to the console information
-    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    FAIL_FAST_IF(gci.HasPendingCookedRead()); // there can be only one
-    gci.SetCookedReadData(this);
 }
 
 // Routine Description:
@@ -105,7 +101,6 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
 COOKED_READ_DATA::~COOKED_READ_DATA()
 {
     CommandLine::Instance().EndAllPopups();
-    ServiceLocator::LocateGlobals().getConsoleInformation().SetCookedReadData(nullptr);
 }
 
 gsl::span<wchar_t> COOKED_READ_DATA::SpanWholeBuffer()
@@ -220,6 +215,7 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
     if (IsAnyFlagSet(TerminationReason, (WaitTerminationReason::CtrlC | WaitTerminationReason::CtrlBreak)))
     {
         *pReplyStatus = STATUS_ALERTED;
+        gci.SetCookedReadData(nullptr);
         return true;
     }
 
@@ -227,6 +223,7 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
     if (IsFlagSet(TerminationReason, WaitTerminationReason::ThreadDying))
     {
         *pReplyStatus = STATUS_THREAD_IS_TERMINATING;
+        gci.SetCookedReadData(nullptr);
         return true;
     }
 
@@ -237,6 +234,7 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
     if (IsFlagSet(TerminationReason, WaitTerminationReason::HandleClosing))
     {
         *pReplyStatus = STATUS_ALERTED;
+        gci.SetCookedReadData(nullptr);
         return true;
     }
 
@@ -288,6 +286,7 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
                 (*pReplyStatus != CONSOLE_STATUS_WAIT && *pReplyStatus != CONSOLE_STATUS_WAIT_NO_BLOCK))
             {
                 *pReplyStatus = S_OK;
+                gci.SetCookedReadData(nullptr);
                 return true;
             }
             return false;
@@ -297,6 +296,7 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
     *pReplyStatus = Read(fIsUnicode, *pNumBytes, *pControlKeyState);
     if (*pReplyStatus != CONSOLE_STATUS_WAIT)
     {
+        gci.SetCookedReadData(nullptr);
         return true;
     }
     else

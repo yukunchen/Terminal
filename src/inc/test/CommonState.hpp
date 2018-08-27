@@ -130,22 +130,22 @@ public:
     void PrepareCookedReadData()
     {
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        // this looks weird, but it's actually ok because the cooked read data hooks itself into
-        // CONSOLE_INFORMATION in its constructor.
-        new COOKED_READ_DATA(gci.pInputBuffer,
-                             m_readHandle.get(),
-                             gci.GetActiveOutputBuffer(),
-                             0,
-                             nullptr,
-                             0,
-                             nullptr,
-                             L"");
+        auto* readData = new COOKED_READ_DATA(gci.pInputBuffer,
+                                              m_readHandle.get(),
+                                              gci.GetActiveOutputBuffer(),
+                                              0,
+                                              nullptr,
+                                              0,
+                                              nullptr,
+                                              L"");
+        gci.SetCookedReadData(readData);
     }
 
     void CleanupCookedReadData()
     {
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         delete &gci.CookedReadData();
+        gci.SetCookedReadData(nullptr);
     }
 
     void PrepareNewTextBufferInfo()
