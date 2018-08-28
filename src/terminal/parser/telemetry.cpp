@@ -1,8 +1,5 @@
-/********************************************************
-*                                                       *
-*   Copyright (C) Microsoft. All rights reserved.       *
-*                                                       *
-********************************************************/
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT license.
 
 #include <precomp.h>
 
@@ -11,8 +8,7 @@
 TRACELOGGING_DEFINE_PROVIDER(g_hConsoleVirtTermParserEventTraceProvider,
     "Microsoft.Windows.Console.VirtualTerminal.Parser",
     // {c9ba2a84-d3ca-5e19-2bd6-776a0910cb9d}
-    (0xc9ba2a84, 0xd3ca, 0x5e19, 0x2b, 0xd6, 0x77, 0x6a, 0x09, 0x10, 0xcb, 0x9d),
-    TraceLoggingOptionMicrosoftTelemetry());
+    (0xc9ba2a84, 0xd3ca, 0x5e19, 0x2b, 0xd6, 0x77, 0x6a, 0x09, 0x10, 0xcb, 0x9d));
 
 using namespace Microsoft::Console::VirtualTerminal;
 
@@ -31,7 +27,7 @@ TermTelemetry::TermTelemetry()
 {
     TraceLoggingRegister(g_hConsoleVirtTermParserEventTraceProvider);
 
-    // Create a random activityId just in case it doesn't get set later in SetActivityId(). 
+    // Create a random activityId just in case it doesn't get set later in SetActivityId().
     EventActivityIdControl(EVENT_ACTIVITY_CTRL_CREATE_ID, &_activityId);
 }
 #pragma warning(pop)
@@ -44,7 +40,7 @@ TermTelemetry::~TermTelemetry()
 
 // Routine Description:
 // - Logs the usage of a particular VT100 code.
-// 
+//
 // Arguments:
 // - code - VT100 code.
 // Return Value:
@@ -62,7 +58,7 @@ void TermTelemetry::Log(const Codes code)
 
 // Routine Description:
 // - Logs a particular VT100 escape code failed or was unsupported.
-// 
+//
 // Arguments:
 // - code - VT100 code.
 // Return Value:
@@ -84,7 +80,7 @@ void TermTelemetry::LogFailed(const wchar_t wch)
 
 // Routine Description:
 // - Gets and resets the total count of codes used.
-// 
+//
 // Arguments:
 // - <none>
 // Return Value:
@@ -98,7 +94,7 @@ unsigned int TermTelemetry::GetAndResetTimesUsedCurrent()
 
 // Routine Description:
 // - Gets and resets the total count of codes failed.
-// 
+//
 // Arguments:
 // - <none>
 // Return Value:
@@ -112,7 +108,7 @@ unsigned int TermTelemetry::GetAndResetTimesFailedCurrent()
 
 // Routine Description:
 // - Gets and resets the total count of codes failed outside the valid range.
-// 
+//
 // Arguments:
 // - <none>
 // Return Value:
@@ -127,7 +123,7 @@ unsigned int TermTelemetry::GetAndResetTimesFailedOutsideRangeCurrent()
 // Routine Description:
 // - Lets us know whether we should write the final log.  Typically set true when the console has been
 // interacted with, to help reduce the amount of telemetry we're sending.
-// 
+//
 // Arguments:
 // - writeLog - true if we should write the log.
 // Return Value:
@@ -139,7 +135,7 @@ void TermTelemetry::SetShouldWriteFinalLog(const bool writeLog)
 
 // Routine Description:
 // - Sets the activity Id, so we can match our events with other providers (such as Microsoft.Windows.Console.Host).
-// 
+//
 // Arguments:
 // - activityId - Pointer to Guid to set our activity Id to.
 // Return Value:
@@ -152,7 +148,7 @@ void TermTelemetry::SetActivityId(const GUID *activityId)
 // Routine Description:
 // - Writes the final log of all the telemetry collected.  The primary reason to send back a final log instead
 // of individual events is to reduce the amount of telemetry being sent and potentially overloading our servers.
-// 
+//
 // Arguments:
 // - code - VT100 code.
 // Return Value:
@@ -248,8 +244,7 @@ void TermTelemetry::WriteFinalTraceLog() const
                 TraceLoggingUInt32(_uiTimesUsed[OSCSCC], "OscSetCursorColor"),
                 TraceLoggingUInt32(_uiTimesUsed[OSCRCC], "OscResetCursorColor"),
                 TraceLoggingUInt32Array(_uiTimesFailed, ARRAYSIZE(_uiTimesFailed), "Failed"),
-                TraceLoggingUInt32(_uiTimesFailedOutsideRange, "FailedOutsideRange"),
-                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES));
+                TraceLoggingUInt32(_uiTimesFailedOutsideRange, "FailedOutsideRange"));
         }
     }
 }

@@ -1,14 +1,19 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
   <PropertyGroup Condition="'$(Platform)'=='Win32'">
-    <LibraryPath>$(SolutionDir)\dep\DDK\TAEF\lib\x86;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(NETFXKitsDir)Lib\um\x86</LibraryPath>
+    <LibraryPath>
+      %(LibraryPath);$(SolutionDir)\packages\Taef.Redist.Wlk.10.30.180808002\build\Library\x86;$(SolutionDir)\dep\DDK\TAEF\lib\x86;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(NETFXKitsDir)Lib\um\x86;</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Platform)'=='x64'">
-    <LibraryPath>$(SolutionDir)\dep\DDK\TAEF\lib\x64;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
+    <LibraryPath>
+      %(LibraryPath);$(SolutionDir)\packages\Taef.Redist.Wlk.10.30.180808002\build\Library\x64;$(SolutionDir)\dep\DDK\TAEF\lib\x64;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64;</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(SolutionDir)\dep\DDK\TAEF\inc</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>
+        %(AdditionalIncludeDirectories);$(SolutionDir)\packages\Taef.Redist.Wlk.10.30.180808002\build\include;$(SolutionDir)\dep\DDK\TAEF\inc;
+      </AdditionalIncludeDirectories>
       <PreprocessorDefinitions>INLINE_TEST_METHOD_MARKUP;UNIT_TESTING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
