@@ -1,16 +1,8 @@
-src\inc\cpl_core.h
-src\inc\HostAndPropsheetIncludes.h
 src\inc\ITerminalOutputConnection.hpp
 src\inc\libraryincludes.h
 src\terminal\adapter\ITermDispatch.hpp
-src\terminal\adapter\precomp.cpp
-src\terminal\adapter\precomp.h
-src\terminal\adapter\telemetry.cpp
-src\terminal\adapter\telemetry.hpp
 src\terminal\adapter\termDispatch.hpp
 src\terminal\adapter\DispatchTypes.hpp
-src\terminal\adapter\tracing.cpp
-src\terminal\adapter\tracing.hpp
 src\terminal\parser\ascii.hpp
 src\terminal\parser\IStateMachineEngine.hpp
 src\terminal\parser\OutputStateMachineEngine.cpp
