@@ -37,6 +37,7 @@ SOURCES = \
     VtRendererTests.cpp \
     ConsoleArgumentsTests.cpp \
     CommandLineTests.cpp \
+    CopyFromCharPopupTests.cpp \
     DefaultResource.rc \
 
 

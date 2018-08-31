@@ -94,6 +94,9 @@ public:
 
     void EndCurrentPopup();
     void EndAllPopups();
+
+    void DeletePromptAfterCursor(COOKED_READ_DATA& cookedReadData) noexcept;
+    COORD DeleteFromRightOfCursor(COOKED_READ_DATA& cookedReadData) noexcept;
 protected:
     CommandLine();
 
@@ -111,7 +114,6 @@ protected:
     void _processHistoryCycling(COOKED_READ_DATA& cookedReadData, const CommandHistory::SearchDirection searchDirection);
     void _setPromptToOldestCommand(COOKED_READ_DATA& cookedReadData);
     void _setPromptToNewestCommand(COOKED_READ_DATA& cookedReadData);
-    void _deletePromptAfterCursor(COOKED_READ_DATA& cookedReadData) noexcept;
     COORD _deletePromptBeforeCursor(COOKED_READ_DATA& cookedReadData) noexcept;
     COORD _moveCursorToEndOfPrompt(COOKED_READ_DATA& cookedReadData) noexcept;
     COORD _moveCursorToStartOfPrompt(COOKED_READ_DATA& cookedReadData) noexcept;
@@ -123,7 +125,6 @@ protected:
     void _deleteCommandHistory(COOKED_READ_DATA& cookedReadData) noexcept;
     void _fillPromptWithPreviousCommandFragment(COOKED_READ_DATA& cookedReadData) noexcept;
     COORD _cycleMatchingCommandHistoryToPrompt(COOKED_READ_DATA& cookedReadData);
-    COORD _deleteFromRightOfCursor(COOKED_READ_DATA& cookedReadData) noexcept;
 
 
 #ifdef UNIT_TESTING

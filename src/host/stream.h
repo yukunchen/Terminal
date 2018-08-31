@@ -27,7 +27,7 @@ NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
                  const bool Wait,
                  _Out_opt_ bool* const pCommandLineEditingKeys,
                  _Out_opt_ bool* const pPopupKeys,
-                 _Out_opt_ DWORD* const pdwKeyState);
+                 _Out_opt_ DWORD* const pdwKeyState) noexcept;
 
 // Routine Description:
 // - This routine returns the total number of screen spaces the characters up to the specified character take up.
