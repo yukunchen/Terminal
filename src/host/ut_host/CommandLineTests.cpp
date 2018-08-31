@@ -210,7 +210,7 @@ class CommandLineTests
         auto& commandLine = CommandLine::Instance();
         // set current cursor position somewhere in the middle of the prompt
         MoveCursor(cookedReadData, 4);
-        commandLine._deletePromptAfterCursor(cookedReadData);
+        commandLine.DeletePromptAfterCursor(cookedReadData);
         VerifyPromptText(cookedReadData, L"test");
     }
 

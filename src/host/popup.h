@@ -32,6 +32,9 @@ class CommandHistory;
 class Popup
 {
 public:
+
+    using UserInputFunction = std::function<NTSTATUS(COOKED_READ_DATA&, bool&, wchar_t&)>;
+
     Popup(SCREEN_INFORMATION& screenInfo, const COORD proposedSize);
     virtual ~Popup();
     [[nodiscard]]
@@ -44,13 +47,20 @@ public:
 
     void End();
 
-
     SHORT Width() const noexcept;
     SHORT Height() const noexcept;
 
     COORD GetCursorPosition() const noexcept;
 
 protected:
+    // used in test code to alter how the popup fetches use input
+    void SetUserInputFunction(UserInputFunction function) noexcept;
+
+#ifdef UNIT_TESTING
+    friend class CopyFromCharPopupTests;
+#endif
+
+    NTSTATUS _getUserInput(COOKED_READ_DATA& cookedReadData, bool& popupKey, wchar_t& wch) noexcept;
     void _DrawPrompt(const UINT id);
     virtual void _DrawContent() = 0;
 
@@ -66,8 +76,15 @@ private:
     void _DrawBorder();
 
     std::wstring _LoadString(const UINT id);
-    static UINT s_LoadStringEx(_In_ HINSTANCE hModule, _In_ UINT wID, _Out_writes_(cchBufferMax) LPWSTR lpBuffer, _In_ UINT cchBufferMax, _In_ WORD wLangId);
+    static UINT s_LoadStringEx(_In_ HINSTANCE hModule,
+                               _In_ UINT wID,
+                               _Out_writes_(cchBufferMax) LPWSTR lpBuffer,
+                               _In_ UINT cchBufferMax,
+                               _In_ WORD wLangId);
+
+    static NTSTATUS _getUserInputInternal(COOKED_READ_DATA& cookedReadData, bool& popupKey, wchar_t& wch) noexcept;
 
     std::vector<CHAR_INFO> _oldContents; // contains data under popup
     COORD _oldScreenSize;
+    UserInputFunction _userInputFunction;
 };

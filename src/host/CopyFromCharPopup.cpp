@@ -7,7 +7,6 @@
 #include "precomp.h"
 #include "CopyFromCharPopup.hpp"
 
-#include "stream.h"
 #include "_stream.h"
 #include "resource.h"
 
@@ -26,88 +25,39 @@ CopyFromCharPopup::CopyFromCharPopup(SCREEN_INFORMATION& screenInfo) :
 [[nodiscard]]
 NTSTATUS CopyFromCharPopup::Process(COOKED_READ_DATA& cookedReadData) noexcept
 {
-    NTSTATUS Status = STATUS_SUCCESS;
-    InputBuffer* const pInputBuffer = cookedReadData.GetInputBuffer();
-    for (;;)
+    // get user input
+    WCHAR Char = UNICODE_NULL;
+    bool PopupKeys = false;
+    NTSTATUS Status = _getUserInput(cookedReadData, PopupKeys, Char);
+    if (!NT_SUCCESS(Status))
     {
-        WCHAR Char;
-        bool PopupKeys = false;
-        Status = GetChar(pInputBuffer,
-                         &Char,
-                         TRUE,
-                         nullptr,
-                         &PopupKeys,
-                         nullptr);
-        if (!NT_SUCCESS(Status))
-        {
-            if (Status != CONSOLE_STATUS_WAIT)
-            {
-                cookedReadData._BytesRead = 0;
-            }
+        return Status;
+    }
 
-            return Status;
-        }
+    CommandLine::Instance().EndCurrentPopup();
 
-        if (PopupKeys)
-        {
-            switch (Char)
-            {
-            case VK_ESCAPE:
-                CommandLine::Instance().EndCurrentPopup();
-                return CONSOLE_STATUS_WAIT_NO_BLOCK;
-            }
-        }
-
-        CommandLine::Instance().EndCurrentPopup();
-
-        size_t i;  // char index (not byte)
-        // delete from cursor up to specified char
-        for (i = cookedReadData._CurrentPosition + 1; i < (int)(cookedReadData._BytesRead / sizeof(WCHAR)); i++)
-        {
-            if (cookedReadData._BackupLimit[i] == Char)
-            {
-                break;
-            }
-        }
-
-        if (i != (int)(cookedReadData._BytesRead / sizeof(WCHAR) + 1))
-        {
-            COORD CursorPosition;
-
-            // save cursor position
-            CursorPosition = cookedReadData.ScreenInfo().GetTextBuffer().GetCursor().GetPosition();
-
-            // Delete commandline.
-            DeleteCommandLine(cookedReadData, FALSE);
-
-            // Delete chars.
-            memmove(&cookedReadData._BackupLimit[cookedReadData._CurrentPosition],
-                    &cookedReadData._BackupLimit[i],
-                    cookedReadData._BytesRead - (i * sizeof(WCHAR)));
-            cookedReadData._BytesRead -= (i - cookedReadData._CurrentPosition) * sizeof(WCHAR);
-
-            // Write commandline.
-            if (cookedReadData.IsEchoInput())
-            {
-                Status = WriteCharsLegacy(cookedReadData.ScreenInfo(),
-                                          cookedReadData._BackupLimit,
-                                          cookedReadData._BackupLimit,
-                                          cookedReadData._BackupLimit,
-                                          &cookedReadData._BytesRead,
-                                          &cookedReadData.VisibleCharCount(),
-                                          cookedReadData.OriginalCursorPosition().X,
-                                          WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
-                                          nullptr);
-                FAIL_FAST_IF_NTSTATUS_FAILED(Status);
-            }
-
-            // restore cursor position
-            Status = cookedReadData.ScreenInfo().SetCursorPosition(CursorPosition, TRUE);
-            FAIL_FAST_IF_NTSTATUS_FAILED(Status);
-        }
-
+    if (PopupKeys && Char == VK_ESCAPE)
+    {
         return CONSOLE_STATUS_WAIT_NO_BLOCK;
     }
+
+    const auto span = cookedReadData.SpanAtPointer();
+    const auto foundLocation = std::find(std::next(span.begin()), span.end(), Char);
+    if (foundLocation == span.end())
+    {
+        // char not found, delete everything to the right of the cursor
+        CommandLine::Instance().DeletePromptAfterCursor(cookedReadData);
+    }
+    else
+    {
+        // char was found, delete everything between the cursor and it
+        const auto difference = std::distance(span.begin(), foundLocation);
+        for (unsigned int i = 0; i < gsl::narrow<unsigned int>(difference); ++i)
+        {
+            CommandLine::Instance().DeleteFromRightOfCursor(cookedReadData);
+        }
+    }
+    return CONSOLE_STATUS_WAIT_NO_BLOCK;
 }
 
 void CopyFromCharPopup::_DrawContent()

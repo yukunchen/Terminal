@@ -559,7 +559,7 @@ void CommandLine::_setPromptToNewestCommand(COOKED_READ_DATA& cookedReadData)
 // - Deletes all prompt text to the right of the cursor
 // Arguments:
 // - cookedReadData - The cooked read data to operate on
-void CommandLine::_deletePromptAfterCursor(COOKED_READ_DATA& cookedReadData) noexcept
+void CommandLine::DeletePromptAfterCursor(COOKED_READ_DATA& cookedReadData) noexcept
 {
     DeleteCommandLine(cookedReadData, false);
     cookedReadData._BytesRead = cookedReadData._CurrentPosition * sizeof(WCHAR);
@@ -1043,7 +1043,7 @@ COORD CommandLine::_cycleMatchingCommandHistoryToPrompt(COOKED_READ_DATA& cooked
 // - cookedReadData - The cooked read data to operate on
 // Return Value:
 // - The new cursor position
-COORD CommandLine::_deleteFromRightOfCursor(COOKED_READ_DATA& cookedReadData) noexcept
+COORD CommandLine::DeleteFromRightOfCursor(COOKED_READ_DATA& cookedReadData) noexcept
 {
     // save cursor position
     COORD cursorPosition = cookedReadData.ScreenInfo().GetTextBuffer().GetCursor().GetPosition();
@@ -1166,7 +1166,7 @@ NTSTATUS CommandLine::ProcessCommandLine(COOKED_READ_DATA& cookedReadData,
     case VK_END:
         if (ctrlPressed)
         {
-            _deletePromptAfterCursor(cookedReadData);
+            DeletePromptAfterCursor(cookedReadData);
         }
         else
         {
@@ -1301,7 +1301,7 @@ NTSTATUS CommandLine::ProcessCommandLine(COOKED_READ_DATA& cookedReadData,
         cookedReadData.ScreenInfo().SetCursorDBMode(cookedReadData.IsInsertMode() != gci.GetInsertMode());
         break;
     case VK_DELETE:
-        cursorPosition = _deleteFromRightOfCursor(cookedReadData);
+        cursorPosition = DeleteFromRightOfCursor(cookedReadData);
         UpdateCursorPosition = true;
         break;
     default:

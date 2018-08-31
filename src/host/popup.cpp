@@ -12,6 +12,7 @@
 
 #include "dbcs.h"
 #include "srvinit.h"
+#include "stream.h"
 
 #include "resource.h"
 
@@ -26,7 +27,8 @@
 // - screenInfo - Reference to screen on which the popup should be drawn/overlayed.
 // - proposedSize - Suggested size of the popup. May be adjusted based on screen size.
 Popup::Popup(SCREEN_INFORMATION& screenInfo, const COORD proposedSize) :
-    _screenInfo(screenInfo)
+    _screenInfo(screenInfo),
+    _userInputFunction(&Popup::_getUserInputInternal)
 {
     _attributes = screenInfo.GetPopupAttributes()->GetLegacyAttributes();
 
@@ -407,4 +409,50 @@ UINT Popup::s_LoadStringEx(_In_ HINSTANCE hModule, _In_ UINT wID, _Out_writes_(c
     }
 
     return cch;
+}
+
+// Routine Description:
+// - changes the function used to gather user input. for allowing custom input during unit tests only
+// Arguments:
+// - function - function to use to fetch input
+void Popup::SetUserInputFunction(UserInputFunction function) noexcept
+{
+    _userInputFunction = function;
+}
+
+// Routine Description:
+// - gets a single char input from the user
+// Arguments:
+// - cookedReadData - cookedReadData for this popup operation
+// - popupKey - on completion, will be true if key was a popup key
+// - wch - on completion, the char read from the user
+// Return Value:
+// - relevant NTSTATUS
+NTSTATUS Popup::_getUserInput(COOKED_READ_DATA& cookedReadData, bool& popupKey, wchar_t& wch) noexcept
+{
+    return _userInputFunction(cookedReadData, popupKey, wch);
+}
+
+// Routine Description:
+// - gets a single char input from the user using the InputBuffer
+// Arguments:
+// - cookedReadData - cookedReadData for this popup operation
+// - popupKey - on completion, will be true if key was a popup key
+// - wch - on completion, the char read from the user
+// Return Value:
+// - relevant NTSTATUS
+NTSTATUS Popup::_getUserInputInternal(COOKED_READ_DATA& cookedReadData, bool& popupKey, wchar_t& wch) noexcept
+{
+    InputBuffer* const pInputBuffer = cookedReadData.GetInputBuffer();
+    NTSTATUS Status = GetChar(pInputBuffer,
+                              &wch,
+                              true,
+                              nullptr,
+                              &popupKey,
+                              nullptr);
+    if (!NT_SUCCESS(Status) && Status != CONSOLE_STATUS_WAIT)
+    {
+        cookedReadData._BytesRead = 0;
+    }
+    return Status;
 }
