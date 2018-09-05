@@ -56,9 +56,12 @@ public:
     gsl::span<wchar_t> SpanAtPointer();
     gsl::span<wchar_t> SpanWholeBuffer();
 
+    size_t Write(const std::wstring_view wstr);
+
 // TODO MSFT:11285829 member variable should be made private where possible.
     size_t _BufferSize;
     size_t _BytesRead;
+    // insertion position into the buffer (where the conceptual prompt cursor is)
     size_t _CurrentPosition;  // char position, not byte position
     PWCHAR _BufPtr; // current position to insert chars at
     // should be const. the first char of the buffer
@@ -99,6 +102,7 @@ public:
 
 #if UNIT_TESTING
     friend class CommandLineTests;
+    friend class CopyToCharPopupTests;
 #endif
 
 private:

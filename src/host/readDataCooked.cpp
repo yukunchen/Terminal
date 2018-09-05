@@ -949,3 +949,47 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
 
     return false;
 }
+
+// Routine Description:
+// - Writes string to current position in prompt line. can overwrite text to the right of the cursor.
+// Arguments:
+// - wstr - the string to write
+// Return Value:
+// - The number of chars written
+size_t COOKED_READ_DATA::Write(const std::wstring_view wstr)
+{
+    auto end = wstr.end();
+    const size_t charsRemaining = (_BufferSize / sizeof(wchar_t)) - (_BufPtr - _BackupLimit);
+    if (wstr.size() > charsRemaining)
+    {
+        end = std::next(wstr.begin(), charsRemaining);
+    }
+
+    std::copy(wstr.begin(), end, _BufPtr);
+    const size_t charsInserted = end - wstr.begin();
+    size_t bytesInserted = charsInserted * sizeof(wchar_t);
+    _CurrentPosition += charsInserted;
+    _BytesRead += bytesInserted;
+
+
+    if (IsEchoInput())
+    {
+        size_t NumSpaces = 0;
+        SHORT ScrollY = 0;
+
+        FAIL_FAST_IF_NTSTATUS_FAILED(WriteCharsLegacy(ScreenInfo(),
+                                                      _BackupLimit,
+                                                      _BufPtr,
+                                                      _BufPtr,
+                                                      &bytesInserted,
+                                                      &NumSpaces,
+                                                      OriginalCursorPosition().X,
+                                                      WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
+                                                      &ScrollY));
+        OriginalCursorPosition().Y += ScrollY;
+        VisibleCharCount() += NumSpaces;
+    }
+    _BufPtr += charsInserted;
+
+    return charsInserted;
+}
