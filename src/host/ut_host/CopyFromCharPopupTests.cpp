@@ -100,6 +100,8 @@ class CopyFromCharPopupTests
         VERIFY_ARE_EQUAL(testString, resultString);
         VERIFY_ARE_EQUAL(cookedReadData._BytesRead, testString.size() * sizeof(wchar_t));
 
+        // popup has been dismissed
+        VERIFY_IS_FALSE(CommandLine::Instance().HasPopup());
     }
 
     TEST_METHOD(DeleteAllWhenCharNotFound)

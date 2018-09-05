@@ -38,6 +38,7 @@ SOURCES = \
     ConsoleArgumentsTests.cpp \
     CommandLineTests.cpp \
     CopyFromCharPopupTests.cpp \
+    CopyToCharPopupTests.cpp \
     DefaultResource.rc \
 
 
