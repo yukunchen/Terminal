@@ -1124,7 +1124,7 @@ IFACEMETHODIMP UiaTextRange::ScrollIntoView(_In_ BOOL alignToTop)
     {
         // we need to align to the bottom
         // check if we can align to the bottom
-        if (endScreenInfoRow - viewportHeight >= topRow)
+        if (endScreenInfoRow >= viewportHeight)
         {
             // we can align to bottom
             newViewport.Bottom = static_cast<SHORT>(endScreenInfoRow);
