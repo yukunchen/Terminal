@@ -14,7 +14,7 @@
 
 // Routine Description:
 // - Instantiates a new ConsoleWaitQueue
-ConsoleWaitQueue::ConsoleWaitQueue() : 
+ConsoleWaitQueue::ConsoleWaitQueue() :
     _blocks()
 {
 
@@ -81,10 +81,8 @@ bool ConsoleWaitQueue::NotifyWaiters(const bool fNotifyAll,
 {
     bool fResult = false;
 
-    // Blocks are pushed into the head to make storing constant time iterators easy. (See WaitBlock constructor.)
-    // To ensure it acted as a queue, we need to therefore pull items off the end (reverse iterator).
-    auto it = _blocks.crbegin();
-    while (!_blocks.empty() && it != _blocks.crend())
+    auto it = _blocks.cbegin();
+    while (!_blocks.empty() && it != _blocks.cend())
     {
         ConsoleWaitBlock* const WaitBlock = (*it);
         if (nullptr == WaitBlock)
