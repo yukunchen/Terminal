@@ -78,23 +78,23 @@ TARGETLIBS = \
     $(ONECORE_PRIV_SDK_LIB_VPATH)\onecore_internal.lib \
     $(ONECORE_PRIV_SDK_LIB_VPATH)\onecoreuap_internal.lib \
     $(INTERNAL_SDK_LIB_PATH)\onecoreuapuuid.lib \
-    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-gdi-dc-l1.lib \
-    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-gdi-dc-create-l1.lib \
-    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-gdi-draw-l1.lib \
-    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-gdi-font-l1.lib \
-    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-dialogbox-l1.lib \
-    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-draw-l1.lib \
-    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-keyboard-l1.lib \
-    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-gui-l1.lib \
-    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-misc-l1.lib \
-    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-window-l1.lib\
-    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-gdi-object-l1.lib \
-    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-ntuser-cursor-l1.lib \
-    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-ntuser-dc-access-l1.lib \
-    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-ntuser-syscolors-l1.lib \
-    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-ntuser-sysparams-l1.lib\
-    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-shell-shell32-l1.lib \
-    $(ONECOREUAPWINDOWS_LIB_PATH)\ext-ms-win-gdi-internal-desktop-l1-1-1.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-gdi-dc-l1.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-gdi-dc-create-l1.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-gdi-draw-l1.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-gdi-font-l1.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-ntuser-dialogbox-l1.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-ntuser-draw-l1.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-ntuser-keyboard-l1.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-ntuser-gui-l1.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-ntuser-misc-l1.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-ntuser-window-l1.lib\
+    $(MINCORE_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-rtcore-gdi-object-l1.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-rtcore-ntuser-cursor-l1.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-rtcore-ntuser-dc-access-l1.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-rtcore-ntuser-syscolors-l1.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-rtcore-ntuser-sysparams-l1.lib\
+    $(MINCORE_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-shell-shell32-l1.lib \
+    $(ONECOREWINDOWS_INTERNAL_LIB_PATH_L)\ext-ms-win-gdi-internal-desktop-l1-1-1.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\propslib\$(O)\conprops.lib \
 
 # -------------------------------------
