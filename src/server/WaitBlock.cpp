@@ -19,7 +19,7 @@
 // Routine Description:
 // - Initializes a ConsoleWaitBlock
 // - ConsoleWaitBlocks will self-manage their position in their two queues.
-// - They will push themselves into the head and store the iterator for constant deletion time later.
+// - They will push themselves into the tail and store the iterator for constant deletion time later.
 // Arguments:
 // - pProcessQueue - The queue attached to the client process ID that requested this action
 // - pObjectQueue - The queue attached to the console object that will service the action when data arrives
@@ -33,12 +33,8 @@ ConsoleWaitBlock::ConsoleWaitBlock(_In_ ConsoleWaitQueue* const pProcessQueue,
     _pObjectQueue(THROW_HR_IF_NULL(E_INVALIDARG, pObjectQueue)),
     _pWaiter(THROW_HR_IF_NULL(E_INVALIDARG, pWaiter))
 {
-
-    _pProcessQueue->_blocks.push_front(this);
-    _itProcessQueue = _pProcessQueue->_blocks.cbegin();
-
-    _pObjectQueue->_blocks.push_front(this);
-    _itObjectQueue = _pObjectQueue->_blocks.cbegin();
+    _itProcessQueue = _pProcessQueue->_blocks.insert(_pProcessQueue->_blocks.end(), this);
+    _itObjectQueue = _pObjectQueue->_blocks.insert(_pObjectQueue->_blocks.end(), this);
 
     _WaitReplyMessage = *pWaitReplyMessage;
 
