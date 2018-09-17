@@ -742,7 +742,7 @@ HRESULT DxEngine::PaintBufferLine(PCWCHAR const pwsLine,
         D2D1_RECT_F rect = { 0 };
         rect.left = origin.x;
         rect.top = origin.y;
-        rect.right = rect.left + _glyphCell.cx;
+        rect.right = rect.left + (cchLine * _glyphCell.cx);
         rect.bottom = rect.top + _glyphCell.cy;
 
         // Draw background color first
