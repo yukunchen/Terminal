@@ -129,6 +129,7 @@ protected:
 
 #ifdef UNIT_TESTING
     friend class CommandLineTests;
+    friend class CommandNumberPopupTests;
 #endif
 
 private:

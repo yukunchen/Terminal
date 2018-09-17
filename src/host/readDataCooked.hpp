@@ -103,6 +103,7 @@ public:
 #if UNIT_TESTING
     friend class CommandLineTests;
     friend class CopyToCharPopupTests;
+    friend class CommandNumberPopupTests;
 #endif
 
 private:

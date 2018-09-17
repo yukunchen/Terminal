@@ -7,6 +7,7 @@
 #include "WexTestClass.h"
 
 #include "CommonState.hpp"
+#include "PopupTestHelper.hpp"
 
 #include "../../interactivity/inc/ServiceLocator.hpp"
 
@@ -64,28 +65,6 @@ class CopyToCharPopupTests
         return true;
     }
 
-    void InitReadData(COOKED_READ_DATA& cookedReadData,
-                      wchar_t* const pBuffer,
-                      const size_t cchBuffer,
-                      const size_t cursorPosition)
-    {
-        cookedReadData._BufferSize = cchBuffer * sizeof(wchar_t);
-        cookedReadData._BufPtr = pBuffer + cursorPosition;
-        cookedReadData._BackupLimit = pBuffer;
-        cookedReadData.OriginalCursorPosition() = { 0, 0 };
-        cookedReadData._BytesRead = cursorPosition * sizeof(wchar_t);
-        cookedReadData._CurrentPosition = cursorPosition;
-        cookedReadData.VisibleCharCount() = cursorPosition;
-    }
-
-    void InitHistory(CommandHistory& history)
-    {
-        VERIFY_SUCCEEDED(history.Add(L"I'm a little teapot", false));
-        VERIFY_SUCCEEDED(history.Add(L"hear me shout", false));
-        VERIFY_SUCCEEDED(history.Add(L"here is my handle", false));
-        VERIFY_SUCCEEDED(history.Add(L"here is my spout", false));
-    }
-
     TEST_METHOD(CanDismiss)
     {
         // function to simulate user pressing escape key
@@ -107,8 +86,8 @@ class CopyToCharPopupTests
         std::fill(std::begin(buffer), std::end(buffer), UNICODE_SPACE);
         std::copy(testString.begin(), testString.end(), std::begin(buffer));
         auto& cookedReadData = gci.CookedReadData();
-        InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), testString.size());
-        InitHistory(*m_pHistory);
+        PopupTestHelper::InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), testString.size());
+        PopupTestHelper::InitHistory(*m_pHistory);
         cookedReadData._commandHistory = m_pHistory;
 
         VERIFY_ARE_EQUAL(popup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT_NO_BLOCK));
@@ -141,8 +120,8 @@ class CopyToCharPopupTests
         wchar_t buffer[BUFFER_SIZE];
         std::fill(std::begin(buffer), std::end(buffer), UNICODE_SPACE);
         auto& cookedReadData = gci.CookedReadData();
-        InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), 0u);
-        InitHistory(*m_pHistory);
+        PopupTestHelper::InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), 0u);
+        PopupTestHelper::InitHistory(*m_pHistory);
         cookedReadData._commandHistory = m_pHistory;
 
         VERIFY_ARE_EQUAL(popup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT_NO_BLOCK));
@@ -171,8 +150,8 @@ class CopyToCharPopupTests
         wchar_t buffer[BUFFER_SIZE];
         std::fill(std::begin(buffer), std::end(buffer), UNICODE_SPACE);
         auto& cookedReadData = gci.CookedReadData();
-        InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), 0u);
-        InitHistory(*m_pHistory);
+        PopupTestHelper::InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), 0u);
+        PopupTestHelper::InitHistory(*m_pHistory);
         cookedReadData._commandHistory = m_pHistory;
 
         VERIFY_ARE_EQUAL(popup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT_NO_BLOCK));
@@ -210,8 +189,8 @@ class CopyToCharPopupTests
         std::fill(std::begin(buffer), std::end(buffer), UNICODE_SPACE);
         std::copy(testString.begin(), testString.end(), std::begin(buffer));
         auto& cookedReadData = gci.CookedReadData();
-        InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), testString.size());
-        InitHistory(*m_pHistory);
+        PopupTestHelper::InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), testString.size());
+        PopupTestHelper::InitHistory(*m_pHistory);
         cookedReadData._commandHistory = m_pHistory;
 
         const wchar_t* const expectedBufPtr = cookedReadData._BufPtr;
@@ -250,8 +229,8 @@ class CopyToCharPopupTests
         std::fill(std::begin(buffer), std::end(buffer), UNICODE_SPACE);
         std::copy(testString.begin(), testString.end(), std::begin(buffer));
         auto& cookedReadData = gci.CookedReadData();
-        InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), testString.size());
-        InitHistory(*m_pHistory);
+        PopupTestHelper::InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), testString.size());
+        PopupTestHelper::InitHistory(*m_pHistory);
         cookedReadData._commandHistory = m_pHistory;
 
         VERIFY_ARE_EQUAL(popup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT_NO_BLOCK));

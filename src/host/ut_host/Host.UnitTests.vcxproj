@@ -9,6 +9,7 @@
     <ClCompile Include="ConsoleArgumentsTests.cpp" />
     <ClCompile Include="CommandLineTests.cpp" />
     <ClCompile Include="CodepointWidthDetectorTests.cpp" />
+    <ClCompile Include="CommandNumberPopupTests.cpp" />
     <ClCompile Include="CopyFromCharPopupTests.cpp" />
     <ClCompile Include="CopyToCharPopupTests.cpp" />
     <ClCompile Include="DbcsTests.cpp" />
@@ -79,6 +80,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\inc\CommonState.hpp" />
     <ClInclude Include="..\precomp.h" />
+    <ClInclude Include="PopupTestHelper.hpp" />
     <ClInclude Include="UnicodeLiteral.hpp" />
   </ItemGroup>
   <ItemGroup>
