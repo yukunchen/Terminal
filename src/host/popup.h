@@ -59,6 +59,7 @@ protected:
 #ifdef UNIT_TESTING
     friend class CopyFromCharPopupTests;
     friend class CopyToCharPopupTests;
+    friend class CommandNumberPopupTests;
 #endif
 
     NTSTATUS _getUserInput(COOKED_READ_DATA& cookedReadData, bool& popupKey, wchar_t& wch) noexcept;

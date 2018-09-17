@@ -7,6 +7,7 @@
 #include "WexTestClass.h"
 
 #include "CommonState.hpp"
+#include "PopupTestHelper.hpp"
 
 #include "../../interactivity/inc/ServiceLocator.hpp"
 
@@ -56,20 +57,6 @@ class CopyFromCharPopupTests
         return true;
     }
 
-    void InitReadData(COOKED_READ_DATA& cookedReadData,
-                      wchar_t* const pBuffer,
-                      const size_t cchBuffer,
-                      const size_t cursorPosition)
-    {
-        cookedReadData._BufferSize = cchBuffer * sizeof(wchar_t);
-        cookedReadData._BufPtr = pBuffer + cursorPosition;
-        cookedReadData._BackupLimit = pBuffer;
-        cookedReadData.OriginalCursorPosition() = { 0, 0 };
-        cookedReadData._BytesRead = cursorPosition * sizeof(wchar_t);
-        cookedReadData._CurrentPosition = cursorPosition;
-        cookedReadData.VisibleCharCount() = cursorPosition;
-    }
-
     TEST_METHOD(CanDismiss)
     {
         // function to simulate user pressing escape key
@@ -91,7 +78,7 @@ class CopyFromCharPopupTests
         std::fill(std::begin(buffer), std::end(buffer), UNICODE_SPACE);
         std::copy(testString.begin(), testString.end(), std::begin(buffer));
         auto& cookedReadData = gci.CookedReadData();
-        InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), testString.size());
+        PopupTestHelper::InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), testString.size());
 
         VERIFY_ARE_EQUAL(popup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT_NO_BLOCK));
 
@@ -124,7 +111,7 @@ class CopyFromCharPopupTests
         std::fill(std::begin(buffer), std::end(buffer), UNICODE_SPACE);
         std::copy(testString.begin(), testString.end(), std::begin(buffer));
         auto& cookedReadData = gci.CookedReadData();
-        InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), testString.size());
+        PopupTestHelper::InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), testString.size());
         // move cursor to beginning of prompt text
         cookedReadData._CurrentPosition = 0;
 
@@ -154,7 +141,7 @@ class CopyFromCharPopupTests
         std::fill(std::begin(buffer), std::end(buffer), UNICODE_SPACE);
         std::copy(testString.begin(), testString.end(), std::begin(buffer));
         auto& cookedReadData = gci.CookedReadData();
-        InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), testString.size());
+        PopupTestHelper::InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), testString.size());
         // move cursor to index 12
         const size_t index = 12;
         cookedReadData._BufPtr = buffer + index;

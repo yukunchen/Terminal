@@ -17,7 +17,7 @@ Author:
 #include "popup.h"
 
 
-class CommandNumberPopup : public Popup
+class CommandNumberPopup final : public Popup
 {
 public:
     CommandNumberPopup(SCREEN_INFORMATION& screenInfo);
@@ -34,9 +34,13 @@ private:
     void _handleNumber(COOKED_READ_DATA& cookedReadData, const wchar_t wch) noexcept;
     void _handleBackspace(COOKED_READ_DATA& cookedReadData) noexcept;
     void _handleEscape(COOKED_READ_DATA& cookedReadData) noexcept;
-    short _handleReturn(COOKED_READ_DATA& cookedReadData) noexcept;
+    void _handleReturn(COOKED_READ_DATA& cookedReadData) noexcept;
 
     void _push(const wchar_t wch);
     void _pop() noexcept;
     int _parse() const noexcept;
+
+#ifdef UNIT_TESTING
+    friend class CommandNumberPopupTests;
+#endif
 };

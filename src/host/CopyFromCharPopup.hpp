@@ -16,7 +16,7 @@ Author:
 
 #include "popup.h"
 
-class CopyFromCharPopup : public Popup
+class CopyFromCharPopup final : public Popup
 {
 public:
     CopyFromCharPopup(SCREEN_INFORMATION& screenInfo);

@@ -89,11 +89,12 @@ void CommandNumberPopup::_handleBackspace(COOKED_READ_DATA& cookedReadData) noex
 // - cookedReadData - read data to operate on
 void CommandNumberPopup::_handleEscape(COOKED_READ_DATA& cookedReadData) noexcept
 {
-    CommandLine::Instance().EndCurrentPopup();
+    CommandLine::Instance().EndAllPopups();
 
     // Note that cookedReadData's OriginalCursorPosition is the position before ANY text was entered on the edit line.
-    // We want to use the position before the cursor was moved for this popup handler specifically, which may be *anywhere* in the edit line
-    // and will be synchronized with the pointers in the cookedReadData structure (BufPtr, etc.)
+    // We want to use the position before the cursor was moved for this popup handler specifically, which may
+    // be *anywhere* in the edit line and will be synchronized with the pointers in the cookedReadData
+    // structure (BufPtr, etc.)
     LOG_IF_FAILED(cookedReadData.ScreenInfo().SetCursorPosition(cookedReadData.BeforeDialogCursorPosition(), TRUE));
 }
 
@@ -101,13 +102,13 @@ void CommandNumberPopup::_handleEscape(COOKED_READ_DATA& cookedReadData) noexcep
 // - handles return user input. sets the prompt to the history item indicated
 // Arguments:
 // - cookedReadData - read data to operate on
-short CommandNumberPopup::_handleReturn(COOKED_READ_DATA& cookedReadData) noexcept
+void CommandNumberPopup::_handleReturn(COOKED_READ_DATA& cookedReadData) noexcept
 {
-    const short CommandNumber = gsl::narrow<short>(std::min(static_cast<size_t>(_parse()),
-                                                            cookedReadData.History().GetNumberOfCommands() - 1));
+    const short commandNumber = gsl::narrow<short>(std::min(static_cast<size_t>(_parse()),
+                                                             cookedReadData.History().GetNumberOfCommands() - 1));
 
-    SetCurrentCommandLine(cookedReadData, CommandNumber);
-    return CommandNumber;
+    CommandLine::Instance().EndAllPopups();
+    SetCurrentCommandLine(cookedReadData, commandNumber);
 }
 
 // Routine Description:
@@ -119,55 +120,33 @@ short CommandNumberPopup::_handleReturn(COOKED_READ_DATA& cookedReadData) noexce
 NTSTATUS CommandNumberPopup::Process(COOKED_READ_DATA& cookedReadData) noexcept
 {
     NTSTATUS Status = STATUS_SUCCESS;
-    WCHAR Char = UNICODE_NULL;
-    bool PopupKeys = false;
+    WCHAR wch = UNICODE_NULL;
+    bool popupKeys = false;
 
     for(;;)
     {
-        Status = GetChar(cookedReadData.GetInputBuffer(),
-                        &Char,
-                        true,
-                        nullptr,
-                        &PopupKeys,
-                        nullptr);
+        Status = _getUserInput(cookedReadData, popupKeys, wch);
         if (!NT_SUCCESS(Status))
         {
-            if (Status != CONSOLE_STATUS_WAIT)
-            {
-                cookedReadData._BytesRead = 0;
-            }
             return Status;
         }
 
-        bool endPopup = false;
-        short parsedCommandNumber = 0;
-        if (Char >= L'0' && Char <= L'9')
+        if (std::iswdigit(wch))
         {
-            _handleNumber(cookedReadData, Char);
+            _handleNumber(cookedReadData, wch);
         }
-        else if (Char == UNICODE_BACKSPACE)
+        else if (wch == UNICODE_BACKSPACE)
         {
             _handleBackspace(cookedReadData);
         }
-        else if (Char == (WCHAR)VK_ESCAPE)
+        else if (wch == VK_ESCAPE)
         {
             _handleEscape(cookedReadData);
-            endPopup = true;
+            break;
         }
-        else if (Char == UNICODE_CARRIAGERETURN)
+        else if (wch == UNICODE_CARRIAGERETURN)
         {
-            parsedCommandNumber = _handleReturn(cookedReadData);
-            endPopup = true;
-        }
-        if (endPopup)
-        {
-            // CommandNumberPopup can be a 2nd popup, make sure the calling popup goes away as well
-            CommandLine::Instance().EndAllPopups();
-
-            // ending a popup causes it to restore the text behind the popup. this may include the prompt
-            // line, but we want to have effected a change to it. so after the popups are gone we redraw it
-            // just in case
-            SetCurrentCommandLine(cookedReadData, parsedCommandNumber);
+            _handleReturn(cookedReadData);
             break;
         }
     }
@@ -186,7 +165,7 @@ void CommandNumberPopup::_DrawContent()
 // Note: will throw if wch is out of range
 void CommandNumberPopup::_push(const wchar_t wch)
 {
-    THROW_HR_IF(E_INVALIDARG, wch < L'0' || wch > L'9');
+    THROW_HR_IF(E_INVALIDARG, !std::iswdigit(wch));
     if (_userInput.size() < COMMAND_NUMBER_LENGTH)
     {
         _userInput += wch;
