@@ -84,6 +84,7 @@ namespace Microsoft::Console::VirtualTerminal
             // DSR_DeviceStatusReportResponse = L'R',
             CSI_F4 = L'S',
             DTTERM_WindowManipulation = L't',
+            CursorBackTab = L'Z',
         };
 
         enum Ss3ActionCodes : wchar_t
