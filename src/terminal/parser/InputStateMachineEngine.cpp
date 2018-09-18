@@ -307,6 +307,11 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
             dwModifierState = _GetCursorKeysModifierState(rgusParams, cParams);
             fSuccess = _GetCursorKeysVkey(wch, &vkey);
             break;
+        case CsiActionCodes::CursorBackTab:
+            dwModifierState = SHIFT_PRESSED;
+            vkey = VK_TAB;
+            fSuccess = true;
+            break;
         case CsiActionCodes::DTTERM_WindowManipulation:
             fSuccess = _GetWindowManipulationType(rgusParams,
                                                   cParams,
@@ -346,6 +351,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
             case CsiActionCodes::CSI_F1:
             case CsiActionCodes::CSI_F2:
             case CsiActionCodes::CSI_F4:
+            case CsiActionCodes::CursorBackTab:
                 fSuccess = _WriteSingleKey(vkey, dwModifierState);
                 break;
             case CsiActionCodes::DTTERM_WindowManipulation:

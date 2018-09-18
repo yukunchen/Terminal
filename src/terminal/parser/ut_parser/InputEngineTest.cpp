@@ -243,6 +243,7 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
     TEST_METHOD(WindowManipulationTest);
     TEST_METHOD(NonAsciiTest);
     TEST_METHOD(CursorPositioningTest);
+    TEST_METHOD(CSICursorBackTabTest);
 
     friend class TestInteractDispatch;
 };
@@ -704,6 +705,35 @@ void InputEngineTest::CursorPositioningTest()
     inputRec.Event.KeyEvent.uChar.UnicodeChar = L'\0';
 
     testState.vExpectedInput.push_back(inputRec);
+    Log::Comment(NoThrowString().Format(
+        L"Processing \"%s\"", seq.c_str()
+    ));
+    _stateMachine->ProcessString(&seq[0], seq.length());
+}
+
+void InputEngineTest::CSICursorBackTabTest()
+{
+    TestState testState;
+    auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
+
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(new TestInteractDispatch(pfn, &testState));
+    auto _stateMachine = std::make_unique<StateMachine>(inputEngine.release());
+    VERIFY_IS_NOT_NULL(_stateMachine);
+    testState._stateMachine = _stateMachine.get();
+
+    INPUT_RECORD inputRec;
+
+    inputRec.EventType = KEY_EVENT;
+    inputRec.Event.KeyEvent.bKeyDown = TRUE;
+    inputRec.Event.KeyEvent.dwControlKeyState = SHIFT_PRESSED;
+    inputRec.Event.KeyEvent.wRepeatCount = 1;
+    inputRec.Event.KeyEvent.wVirtualKeyCode = VK_TAB;
+    inputRec.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKeyW(VK_TAB, MAPVK_VK_TO_VSC));
+    inputRec.Event.KeyEvent.uChar.UnicodeChar = L'\t';
+
+    testState.vExpectedInput.push_back(inputRec);
+
+    const std::wstring seq = L"\x1b[Z";
     Log::Comment(NoThrowString().Format(
         L"Processing \"%s\"", seq.c_str()
     ));
