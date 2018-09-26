@@ -33,6 +33,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         void ProcessCharacter(const wchar_t wch);
         void ProcessString(const wchar_t* const rgwch, const size_t cch);
+        void ProcessString(const std::wstring& wstr);
 
         void ResetState();
 

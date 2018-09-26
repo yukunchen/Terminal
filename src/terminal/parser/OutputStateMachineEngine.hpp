@@ -67,6 +67,7 @@ namespace Microsoft::Console::VirtualTerminal
         std::unique_ptr<ITermDispatch> _dispatch;
         Microsoft::Console::ITerminalOutputConnection* _pTtyConnection;
         std::function<bool()> _pfnFlushToTerminal;
+        wchar_t _lastPrintedChar;
 
         bool _IntermediateQuestionMarkDispatch(const wchar_t wchAction,
                                                _In_reads_(cParams) const unsigned short* const rgusParams,
@@ -119,7 +120,8 @@ namespace Microsoft::Console::VirtualTerminal
             RIS_ResetToInitialState = L'c', // DA is prefaced by CSI, RIS by ESC
             // 'q' is overloaded - no postfix is DECLL, ' ' postfix is DECSCUSR, and '"' is DECSCA
             DECSCUSR_SetCursorStyle = L'q', // I believe we'll only ever implement DECSCUSR
-            DTTERM_WindowManipulation = L't'
+            DTTERM_WindowManipulation = L't',
+            REP_RepeatCharacter = L'b'
         };
 
         enum OscActionCodes : unsigned int
@@ -256,6 +258,14 @@ namespace Microsoft::Console::VirtualTerminal
         bool _GetCursorStyle(_In_reads_(cParams) const unsigned short* const rgusParams,
                              const unsigned short cParams,
                              _Out_ DispatchTypes::CursorStyle* const pCursorStyle) const;
+
+        static const unsigned int s_uiDefaultRepeatCount = 1;
+        _Success_(return)
+        bool _GetRepeatCount(_In_reads_(cParams) const unsigned short* const rgusParams,
+                             const unsigned short cParams,
+                             _Out_ unsigned int* const puiRepeatCount) const noexcept;
+
+        void _ClearLastChar() noexcept;
 
     };
 }

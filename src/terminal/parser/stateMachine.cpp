@@ -1403,6 +1403,11 @@ void StateMachine::ProcessString(const wchar_t* const rgwch, const size_t cch)
     }
 }
 
+void StateMachine::ProcessString(const std::wstring& wstr)
+{
+    return ProcessString(wstr.c_str(), wstr.length());
+}
+
 // Routine Description:
 // - Wherever the state machine is, whatever it's going, go back to ground.
 //     This is used by conhost to "jiggle the handle" - when VT support is
