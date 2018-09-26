@@ -7,6 +7,8 @@
 
 static const COORD c_coordZero = {0,0};
 
+static const PCWSTR pwszLongFontPath = L"%WINDIR%\\Fonts\\ltype.ttf";
+
 class FontTests
 {
     TEST_CLASS(FontTests)
@@ -28,6 +30,7 @@ class FontTests
     TEST_METHOD(TestSetConsoleFontNegativeSize);
 
     TEST_METHOD(TestFontScenario);
+    TEST_METHOD(TestLongFontNameScenario);
 
     TEST_METHOD(TestSetFontAdjustsWindow);
 };
@@ -196,6 +199,36 @@ void FontTests::TestFontScenario()
     }
 
     VERIFY_ARE_EQUAL(cfieFullExpected, cfiePost);
+}
+
+void FontTests::TestLongFontNameScenario()
+{
+    wistd::unique_ptr<wchar_t[]> expandedLongFontPath;
+    VERIFY_SUCCEEDED(ExpandPathToMutable(pwszLongFontPath, expandedLongFontPath));
+    if (!CheckIfFileExists(expandedLongFontPath.get()))
+    {
+        Log::Comment(L"Lucida Sans Typewriter doesn't exist; skipping long font test.");
+        Log::Result(WEX::Logging::TestResults::Result::Skipped);
+        return;
+    }
+
+    const HANDLE hConsoleOutput = GetStdOutputHandle();
+
+    CONSOLE_FONT_INFOEX cfieSetLong = { 0 };
+    cfieSetLong.cbSize = sizeof(cfieSetLong);
+    cfieSetLong.FontFamily = 54;
+    cfieSetLong.dwFontSize.Y = 12;
+    VERIFY_SUCCEEDED(StringCchCopy(cfieSetLong.FaceName, ARRAYSIZE(cfieSetLong.FaceName), L"Lucida Sans Typewriter"));
+
+    VERIFY_WIN32_BOOL_SUCCEEDED(OneCoreDelay::SetCurrentConsoleFontEx(hConsoleOutput, FALSE, &cfieSetLong));
+
+    CONSOLE_FONT_INFOEX cfiePostLong = { 0 };
+    cfiePostLong.cbSize = sizeof(cfiePostLong);
+    VERIFY_WIN32_BOOL_SUCCEEDED(OneCoreDelay::GetCurrentConsoleFontEx(hConsoleOutput, FALSE, &cfiePostLong));
+
+    Log::Comment(NoThrowString().Format(L"%ls %ls", cfieSetLong.FaceName, cfiePostLong.FaceName));
+
+    VERIFY_ARE_EQUAL(0, NoThrowString(cfieSetLong.FaceName).CompareNoCase(cfiePostLong.FaceName));
 }
 
 void FontTests::TestSetFontAdjustsWindow()
