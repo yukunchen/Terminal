@@ -14,7 +14,8 @@ using namespace Microsoft::Console::VirtualTerminal;
 OutputStateMachineEngine::OutputStateMachineEngine(ITermDispatch* const pDispatch) :
     _dispatch(pDispatch),
     _pfnFlushToTerminal(nullptr),
-    _pTtyConnection(nullptr)
+    _pTtyConnection(nullptr),
+    _lastPrintedChar(AsciiChars::NUL)
 {
 }
 
@@ -43,6 +44,7 @@ ITermDispatch& OutputStateMachineEngine::Dispatch() noexcept
 bool OutputStateMachineEngine::ActionExecute(const wchar_t wch)
 {
     _dispatch->Execute(wch);
+    _ClearLastChar();
     return true;
 }
 
@@ -55,7 +57,14 @@ bool OutputStateMachineEngine::ActionExecute(const wchar_t wch)
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionPrint(const wchar_t wch)
 {
+    // Stash the last character of the string, if it's a graphical character
+    if (wch >= AsciiChars::SPC)
+    {
+        _lastPrintedChar = wch;
+    }
+
     _dispatch->Print(wch); // call print
+
     return true;
 }
 
@@ -69,7 +78,19 @@ bool OutputStateMachineEngine::ActionPrint(const wchar_t wch)
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionPrintString(const wchar_t* const rgwch, const size_t cch)
 {
+    if (cch == 0)
+    {
+        return true;
+    }
+    // Stash the last character of the string, if it's a graphical character
+    const wchar_t wch = rgwch[cch - 1];
+    if (wch >= AsciiChars::SPC)
+    {
+        _lastPrintedChar = wch;
+    }
+
     _dispatch->PrintString(rgwch, cch); // call print
+
     return true;
 }
 
@@ -204,6 +225,9 @@ bool OutputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
             }
         }
     }
+
+    _ClearLastChar();
+
     return fSuccess;
 }
 
@@ -238,7 +262,7 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
     DispatchTypes::GraphicsOptions rgGraphicsOptions[StateMachine::s_cParamsMax];
     size_t cOptions = StateMachine::s_cParamsMax;
     DispatchTypes::AnsiStatusType deviceStatusType = (DispatchTypes::AnsiStatusType)-1; // there is no default status type.
-
+    unsigned int repeatCount = 0;
     // This is all the args after the first arg, and the count of args not including the first one.
     const unsigned short* const rgusRemainingArgs = (cParams > 1) ? rgusParams + 1 : rgusParams;
     const unsigned short cRemainingArgs = (cParams >= 1) ? cParams - 1 : 0;
@@ -302,6 +326,9 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
             break;
         case VTActionCodes::DTTERM_WindowManipulation:
             fSuccess = _GetWindowManipulationType(rgusParams, cParams, &uiFunction);
+            break;
+        case VTActionCodes::REP_RepeatCharacter:
+            fSuccess = _GetRepeatCount(rgusParams, cParams, &repeatCount);
             break;
         default:
             // If no params to fill, param filling was successful.
@@ -429,6 +456,20 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
                                                          cRemainingArgs);
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::DTTERM_WM);
                 break;
+            case VTActionCodes::REP_RepeatCharacter:
+                // Handled w/o the dispatch. This function is unique in that way
+                // If this were in the ITerminalDispatch, then each
+                // implementation would effectively be the same, calling only
+                // functions that are already part of the interface.
+                // Print the last graphical character a number of times.
+                if (_lastPrintedChar != AsciiChars::NUL)
+                {
+                    std::wstring wstr(repeatCount, _lastPrintedChar);
+                    _dispatch->PrintString(wstr.c_str(), wstr.length());
+                }
+                fSuccess = true;
+                TermTelemetry::Instance().Log(TermTelemetry::Codes::REP);
+                break;
             default:
                 // If no functions to call, overall dispatch was a failure.
                 fSuccess = false;
@@ -461,6 +502,8 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
     {
         fSuccess = _pfnFlushToTerminal();
     }
+
+    _ClearLastChar();
 
     return fSuccess;
 }
@@ -688,6 +731,8 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
         fSuccess = _pfnFlushToTerminal();
     }
 
+    _ClearLastChar();
+
     return fSuccess;
 }
 
@@ -706,6 +751,7 @@ bool OutputStateMachineEngine::ActionSs3Dispatch(const wchar_t /*wch*/,
                                                  const unsigned short /*cParams*/)
 {
     // The output engine doesn't handle any SS3 sequences.
+    _ClearLastChar();
     return false;
 }
 
@@ -1589,4 +1635,54 @@ void OutputStateMachineEngine::SetTerminalConnection(ITerminalOutputConnection* 
 {
     this->_pTtyConnection = pTtyConnection;
     this->_pfnFlushToTerminal = pfnFlushToTerminal;
+}
+
+
+// Routine Description:
+// - Retrieves a number of times to repeat the last graphical character
+// Arguments:
+// - puiRepeatCount - Memory location to receive the repeat count
+// Return Value:
+// - True if we successfully pulled the repeat count from the parameters.
+//   False otherwise.
+_Success_(return)
+bool OutputStateMachineEngine::_GetRepeatCount(_In_reads_(cParams) const unsigned short* const rgusParams,
+                                               const unsigned short cParams,
+                                               _Out_ unsigned int* const puiRepeatCount) const noexcept
+{
+    bool fSuccess = false;
+    *puiRepeatCount = s_uiDefaultRepeatCount;
+
+    if (cParams == 0)
+    {
+        // Empty parameter sequences should use the default
+        fSuccess = true;
+    }
+    else if (cParams == 1)
+    {
+        // If there's one parameter, use it.
+        *puiRepeatCount = rgusParams[0];
+        fSuccess = true;
+    }
+
+    // Distances of 0 should be changed to 1.
+    if (*puiRepeatCount == 0)
+    {
+        *puiRepeatCount = s_uiDefaultRepeatCount;
+    }
+
+    return fSuccess;
+}
+
+// Method Description:
+// - Clears our last stored character. The last stored character is the last
+//      graphical character we printed, which is reset if any other action is
+//      dispatched.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void OutputStateMachineEngine::_ClearLastChar() noexcept
+{
+    _lastPrintedChar = AsciiChars::NUL;
 }

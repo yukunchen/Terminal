@@ -39,6 +39,7 @@ namespace Microsoft::Console::VirtualTerminal
         GS = 0x1D, // Group Seperator
         RS = 0x1E, // Record Seperator
         US = 0x1F, // Unit Seperator
+        SPC = 0x20, // Space, first printable character
         DEL = 0x7F, // Delete
     };
 }

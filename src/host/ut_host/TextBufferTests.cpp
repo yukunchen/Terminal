@@ -138,6 +138,8 @@ class TextBufferTests
     TEST_METHOD(TestBackspaceStrings);
     TEST_METHOD(TestBackspaceStringsAPI);
 
+    TEST_METHOD(TestRepeatCharacter);
+
 };
 
 void TextBufferTests::TestBufferCreate()
@@ -1645,4 +1647,124 @@ void TextBufferTests::TestBackspaceStringsAPI()
     VERIFY_ARE_EQUAL(cursor.GetPosition().X, x0);
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, y0);
 
+}
+
+void TextBufferTests::TestRepeatCharacter()
+{
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    TextBuffer& tbi = si.GetTextBuffer();
+    StateMachine& stateMachine = si.GetStateMachine();
+    Cursor& cursor = tbi.GetCursor();
+
+    SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+
+    cursor.SetXPosition(0);
+    cursor.SetYPosition(0);
+
+    Log::Comment(
+        L"Test 0: Simply repeat a single character."
+    );
+
+    std::wstring sequence = L"X";
+    stateMachine.ProcessString(sequence);
+
+    sequence = L"\x1b[b";
+    stateMachine.ProcessString(sequence);
+
+    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 2);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 0);
+
+    {
+        const auto& row0 = tbi.GetRowByOffset(0);
+        const auto row0Text = row0.GetText();
+        VERIFY_ARE_EQUAL(L'X', row0Text[0]);
+        VERIFY_ARE_EQUAL(L'X', row0Text[1]);
+        VERIFY_ARE_EQUAL(L' ', row0Text[2]);
+    }
+
+    Log::Comment(
+        L"Test 1: Try repeating characters after another VT action. It should do nothing."
+    );
+
+    stateMachine.ProcessString(L"\n");
+    stateMachine.ProcessString(L"A");
+    stateMachine.ProcessString(L"B");
+    stateMachine.ProcessString(L"\x1b[A");
+    stateMachine.ProcessString(L"\x1b[b");
+
+    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 2);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 0);
+
+    {
+        const auto& row0 = tbi.GetRowByOffset(0);
+        const auto& row1 = tbi.GetRowByOffset(1);
+        const auto row0Text = row0.GetText();
+        const auto row1Text = row1.GetText();
+        VERIFY_ARE_EQUAL(L'X', row0Text[0]);
+        VERIFY_ARE_EQUAL(L'X', row0Text[1]);
+        VERIFY_ARE_EQUAL(L' ', row0Text[2]);
+        VERIFY_ARE_EQUAL(L'A', row1Text[0]);
+        VERIFY_ARE_EQUAL(L'B', row1Text[1]);
+        VERIFY_ARE_EQUAL(L' ', row1Text[2]);
+    }
+
+    Log::Comment(
+        L"Test 2: Repeat a character lots of times"
+    );
+
+    stateMachine.ProcessString(L"\x1b[3;H");
+    stateMachine.ProcessString(L"C");
+    stateMachine.ProcessString(L"\x1b[5b");
+
+    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 6);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 2);
+
+    {
+        const auto& row2 = tbi.GetRowByOffset(2);
+        const auto row2Text = row2.GetText();
+        VERIFY_ARE_EQUAL(L'C', row2Text[0]);
+        VERIFY_ARE_EQUAL(L'C', row2Text[1]);
+        VERIFY_ARE_EQUAL(L'C', row2Text[2]);
+        VERIFY_ARE_EQUAL(L'C', row2Text[3]);
+        VERIFY_ARE_EQUAL(L'C', row2Text[4]);
+        VERIFY_ARE_EQUAL(L'C', row2Text[5]);
+        VERIFY_ARE_EQUAL(L' ', row2Text[6]);
+    }
+
+    Log::Comment(
+        L"Test 3: try repeating a non-graphical character. It should do nothing."
+    );
+
+    stateMachine.ProcessString(L"\r\n");
+    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 0);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 3);
+    stateMachine.ProcessString(L"D\n");
+    stateMachine.ProcessString(L"\x1b[b");
+
+    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 0);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 4);
+
+
+    Log::Comment(
+        L"Test 4: try repeating multiple times. It should do nothing."
+    );
+
+    stateMachine.ProcessString(L"\r\n");
+    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 0);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 5);
+    stateMachine.ProcessString(L"E");
+    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 1);
+    stateMachine.ProcessString(L"\x1b[b");
+    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 2);
+    stateMachine.ProcessString(L"\x1b[b");
+    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 2);
+
+    {
+        const auto& row5 = tbi.GetRowByOffset(5);
+        const auto row5Text = row5.GetText();
+        VERIFY_ARE_EQUAL(L'E', row5Text[0]);
+        VERIFY_ARE_EQUAL(L'E', row5Text[1]);
+        VERIFY_ARE_EQUAL(L' ', row5Text[2]);
+    }
 }

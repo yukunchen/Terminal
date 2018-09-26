@@ -243,6 +243,7 @@ void TermTelemetry::WriteFinalTraceLog() const
                 TraceLoggingUInt32(_uiTimesUsed[OSCCT], "OscColorTable"),
                 TraceLoggingUInt32(_uiTimesUsed[OSCSCC], "OscSetCursorColor"),
                 TraceLoggingUInt32(_uiTimesUsed[OSCRCC], "OscResetCursorColor"),
+                TraceLoggingUInt32(_uiTimesUsed[REP], "REP"),
                 TraceLoggingUInt32Array(_uiTimesFailed, ARRAYSIZE(_uiTimesFailed), "Failed"),
                 TraceLoggingUInt32(_uiTimesFailedOutsideRange, "FailedOutsideRange"));
         }
