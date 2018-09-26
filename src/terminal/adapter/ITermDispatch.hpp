@@ -1,18 +1,16 @@
-/*++
-Copyright (c) Microsoft Corporation
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT license.
 
+/*
 Module Name:
-- termDispatch.hpp
+- ITermDispatch.hpp
 
 Abstract:
-- This is the base class for all output state machine callbacks. When actions
+- This is the interface for all output state machine callbacks. When actions
     occur, they will be dispatched to the methods on this interface which must
     be implemented by a child class and passed into the state machine on
     creation.
-
-Author(s):
-- Michael Niksa (MiNiksa) 30-July-2015
---*/
+*/
 #pragma once
 #include "DispatchTypes.hpp"
 
