@@ -962,7 +962,7 @@ HRESULT ApiDispatchers::ServerGetConsoleCurrentFont(_Inout_ CONSOLE_API_MSG * co
 
     RETURN_IF_FAILED(m->_pApiRoutines->GetCurrentConsoleFontExImpl(*pObj, a->MaximumWindow, &FontInfo));
 
-    CopyMemory(a->FaceName, FontInfo.FaceName, RTL_NUMBER_OF_V2(a->FaceName));
+    CopyMemory(a->FaceName, FontInfo.FaceName, RTL_NUMBER_OF_V2(a->FaceName) * sizeof(a->FaceName[0]));
     a->FontFamily = FontInfo.FontFamily;
     a->FontIndex = FontInfo.nFont;
     a->FontSize = FontInfo.dwFontSize;
@@ -1528,7 +1528,7 @@ HRESULT ApiDispatchers::ServerSetConsoleCurrentFont(_Inout_ CONSOLE_API_MSG * co
     CONSOLE_FONT_INFOEX Info;
     Info.cbSize = sizeof(Info);
     Info.dwFontSize = a->FontSize;
-    CopyMemory(Info.FaceName, a->FaceName, RTL_NUMBER_OF_V2(Info.FaceName));
+    CopyMemory(Info.FaceName, a->FaceName, RTL_NUMBER_OF_V2(Info.FaceName) * sizeof(Info.FaceName[0]));
     Info.FontFamily = a->FontFamily;
     Info.FontWeight = a->FontWeight;
 

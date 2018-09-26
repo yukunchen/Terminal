@@ -19,45 +19,6 @@ static PCSTR pszCmdGreeting = "Microsoft Windows [Version";
 
 static PCWSTR pwszConhostV1Path = L"%WINDIR%\\system32\\conhostv1.dll";
 
-HRESULT ExpandPathToMutable(_In_ PCWSTR pwszPath, _Out_ wistd::unique_ptr<wchar_t[]>& MutablePath)
-{
-    // Find how many characters we need.
-    const DWORD cchExpanded = ExpandEnvironmentStringsW(pwszPath, nullptr, 0);
-    RETURN_LAST_ERROR_IF(0 == cchExpanded);
-
-    // Allocate space to hold result
-    wistd::unique_ptr<wchar_t[]> NewMutable = wil::make_unique_nothrow<wchar_t[]>(cchExpanded);
-    RETURN_IF_NULL_ALLOC(NewMutable);
-
-    // Expand string into allocated space
-    RETURN_LAST_ERROR_IF(0 == ExpandEnvironmentStringsW(pwszPath, NewMutable.get(), cchExpanded));
-
-    // On success, give our string back out (swapping with what was given and we'll free it for the caller.)
-    MutablePath.swap(NewMutable);
-
-    return S_OK;
-}
-
-bool CheckIfFileExists(_In_ PCWSTR pwszPath)
-{
-    wil::unique_hfile hFile(CreateFileW(pwszPath,
-                                        GENERIC_READ,
-                                        0,
-                                        nullptr,
-                                        OPEN_EXISTING,
-                                        FILE_ATTRIBUTE_NORMAL,
-                                        nullptr));
-
-    if (hFile.get() != nullptr && hFile.get() != INVALID_HANDLE_VALUE)
-    {
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
-
 void CanaryTests::LaunchV1Console()
 {
     // First ensure that this system has the v1 console to test.
