@@ -1,6 +1,7 @@
-/*++
-Copyright (c) Microsoft Corporation
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT license.
 
+/*
 Module Name:
 - IStateMachineEngine.hpp
 
@@ -9,10 +10,7 @@ Abstract:
     The terminal handles input sequences and output sequences differently,
     almost as two seperate grammars. This enables different grammars to leverage
     the existing VT parsing.
-
-Author(s):
-- Mike Griese (migrie) 18 Aug 2017
---*/
+*/
 #pragma once
 namespace Microsoft::Console::VirtualTerminal
 {

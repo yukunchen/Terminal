@@ -1,8 +1,5 @@
-/********************************************************
-*                                                       *
-*   Copyright (C) Microsoft. All rights reserved.       *
-*                                                       *
-********************************************************/
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT license.
 
 #include "precomp.h"
 
@@ -500,7 +497,7 @@ bool OutputStateMachineEngine::_IntermediateQuestionMarkDispatch(const wchar_t w
         {
         case VTActionCodes::DECSET_PrivateModeSet:
             fSuccess = _dispatch->SetPrivateModes(rgPrivateModeParams, cOptions);
-            //TODO: MSFT:6367459 Add specific telemetry for each of the DECSET/DECRST codes
+            //TODO: MSFT:6367459 Add specific logging for each of the DECSET/DECRST codes
             TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSET);
             break;
         case VTActionCodes::DECRST_PrivateModeReset:
@@ -963,10 +960,10 @@ bool OutputStateMachineEngine::_GetXYPosition(_In_reads_(cParams) const unsigned
 _Success_(return)
 bool OutputStateMachineEngine::_GetTopBottomMargins(_In_reads_(cParams) const unsigned short* const rgusParams, const unsigned short cParams, _Out_ SHORT* const psTopMargin, _Out_ SHORT* const psBottomMargin) const
 {
-    // Notes:                           (input -> state machine out -> adapter out -> conhost internal)
-    // having only a top param is legal         ([3;r   -> 3,0   -> 3,h  -> 3,h,true)
-    // having only a bottom param is legal      ([;3r   -> 0,3   -> 1,3  -> 1,3,true)
-    // having neither uses the defaults         ([;r [r -> 0,0   -> 3,h  -> 0,0,false)
+    // Notes:                           (input -> state machine out)
+    // having only a top param is legal         ([3;r   -> 3,0)
+    // having only a bottom param is legal      ([;3r   -> 0,3)
+    // having neither uses the defaults         ([;r [r -> 0,0)
     // an illegal combo (eg, 3;2r) is ignored
 
     bool fSuccess = false;

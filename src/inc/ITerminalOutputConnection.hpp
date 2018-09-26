@@ -1,18 +1,16 @@
-/*++
-Copyright (c) Microsoft Corporation
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT license.
 
+/*
 Module Name:
 - ITerminalOutputConnection.hpp
 
 Abstract:
 - Provides an abstraction for writing to the output pipe connected to the TTY.
-    In VtIo/pty mode, this is implemented by the VtRenderer, such that other
+    In conpty mode, this is implemented by the VtRenderer, such that other
     parts of the codebase (the state machine) can write VT sequences directly
     to the terminal controlling us.
-
-Author(s):
-- Mike Griese (migrie) 28 March 2018
---*/
+*/
 
 #pragma once
 

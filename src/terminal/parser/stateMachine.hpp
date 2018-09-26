@@ -1,18 +1,16 @@
-/*++
-Copyright (c) Microsoft Corporation
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT license.
 
+/*
 Module Name:
 - stateMachine.hpp
 
 Abstract:
 - This declares the entire state machine for handling Virtual Terminal Sequences
-- It is currently designed to handle up to VT100 level escape sequences
 - The design is based from the specifications at http://vt100.net
-
-Author(s):
-- Michael Niksa (MiNiksa) 30-July-2015
-- Mike Griese (migrie) 18 Aug 2017 - Abstracted the engine away for input parsing.
---*/
+- The actual implementation of actions decoded by the StateMachine should be
+  implemented in an IStateMachineEngine.
+*/
 
 #pragma once
 

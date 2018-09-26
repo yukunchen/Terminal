@@ -1,20 +1,19 @@
-/*++
-Copyright (c) Microsoft Corporation
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT license.
 
+/*
 Module Name:
 - telemetry.hpp
 
 Abstract:
 - This module is used for recording all telemetry feedback from the console virtual terminal parser
-
---*/
+*/
 #pragma once
 
 // Including TraceLogging essentials for the binary
 #include <windows.h>
 #include <winmeta.h>
 #include <TraceLoggingProvider.h>
-#include <telemetry\microsofttelemetry.h>
 #include "limits.h"
 
 TRACELOGGING_DECLARE_PROVIDER(g_hConsoleVirtTermParserEventTraceProvider);

@@ -1,15 +1,13 @@
-/*++
-Copyright (c) Microsoft Corporation
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT license.
 
+/*
 Module Name:
 - OutputStateMachineEngine.hpp
 
 Abstract:
 - This is the implementation of the client VT output state machine engine.
-
-Author(s):
-- Mike Griese (migrie) 18 Aug 2017
---*/
+*/
 #pragma once
 
 #include "../adapter/termDispatch.hpp"
@@ -35,27 +33,27 @@ namespace Microsoft::Console::VirtualTerminal
                                      size_t const cch) override;
 
         bool ActionEscDispatch(const wchar_t wch,
-                                const unsigned short cIntermediate,
-                                const wchar_t wchIntermediate) override;
+                               const unsigned short cIntermediate,
+                               const wchar_t wchIntermediate) override;
 
         bool ActionCsiDispatch(const wchar_t wch,
-                                const unsigned short cIntermediate,
-                                const wchar_t wchIntermediate,
-                                _In_reads_(cParams) const unsigned short* const rgusParams,
-                                const unsigned short cParams);
+                               const unsigned short cIntermediate,
+                               const wchar_t wchIntermediate,
+                               _In_reads_(cParams) const unsigned short* const rgusParams,
+                               const unsigned short cParams);
 
         bool ActionClear() override;
 
         bool ActionIgnore() override;
 
         bool ActionOscDispatch(const wchar_t wch,
-                                const unsigned short sOscParam,
-                                _Inout_updates_(cchOscString) wchar_t* const pwchOscStringBuffer,
-                                const unsigned short cchOscString) override;
+                               const unsigned short sOscParam,
+                               _Inout_updates_(cchOscString) wchar_t* const pwchOscStringBuffer,
+                               const unsigned short cchOscString) override;
 
         bool ActionSs3Dispatch(const wchar_t wch,
-                                _In_reads_(cParams) const unsigned short* const rgusParams,
-                                const unsigned short cParams) override;
+                               _In_reads_(cParams) const unsigned short* const rgusParams,
+                               const unsigned short cParams) override;
 
         bool FlushAtEndOfString() const override;
 
@@ -71,8 +69,8 @@ namespace Microsoft::Console::VirtualTerminal
         std::function<bool()> _pfnFlushToTerminal;
 
         bool _IntermediateQuestionMarkDispatch(const wchar_t wchAction,
-                                                _In_reads_(cParams) const unsigned short* const rgusParams,
-                                                const unsigned short cParams);
+                                               _In_reads_(cParams) const unsigned short* const rgusParams,
+                                               const unsigned short cParams);
         bool _IntermediateExclamationDispatch(const wchar_t wch);
         bool _IntermediateSpaceDispatch(const wchar_t wchAction,
                                         _In_reads_(cParams) const unsigned short* const rgusParams,
@@ -145,9 +143,9 @@ namespace Microsoft::Console::VirtualTerminal
         static const DispatchTypes::GraphicsOptions s_defaultGraphicsOption = DispatchTypes::GraphicsOptions::Off;
         _Success_(return)
         bool _GetGraphicsOptions(_In_reads_(cParams) const unsigned short* const rgusParams,
-                                    const unsigned short cParams,
-                                    _Out_writes_(*pcOptions) DispatchTypes::GraphicsOptions* const rgGraphicsOptions,
-                                    _Inout_ size_t* const pcOptions) const;
+                                 const unsigned short cParams,
+                                 _Out_writes_(*pcOptions) DispatchTypes::GraphicsOptions* const rgGraphicsOptions,
+                                 _Inout_ size_t* const pcOptions) const;
 
         static const DispatchTypes::EraseType s_defaultEraseType = DispatchTypes::EraseType::ToEnd;
         _Success_(return)
@@ -170,8 +168,8 @@ namespace Microsoft::Console::VirtualTerminal
         static const unsigned int s_uiDefaultConsoleWidth = 80;
         _Success_(return)
         bool _GetConsoleWidth(_In_reads_(cParams) const unsigned short* const rgusParams,
-                                const unsigned short cParams,
-                                _Out_ unsigned int* const puiConsoleWidth) const;
+                              const unsigned short cParams,
+                              _Out_ unsigned int* const puiConsoleWidth) const;
 
         static const unsigned int s_uiDefaultLine = 1;
         static const unsigned int s_uiDefaultColumn = 1;
@@ -183,52 +181,52 @@ namespace Microsoft::Console::VirtualTerminal
 
         _Success_(return)
         bool _GetDeviceStatusOperation(_In_reads_(cParams) const unsigned short* const rgusParams,
-                                        const unsigned short cParams,
-                                        _Out_ DispatchTypes::AnsiStatusType* const pStatusType) const;
+                                       const unsigned short cParams,
+                                       _Out_ DispatchTypes::AnsiStatusType* const pStatusType) const;
 
         _Success_(return)
         bool _VerifyHasNoParameters(const unsigned short cParams) const;
 
         _Success_(return)
         bool _VerifyDeviceAttributesParams(_In_reads_(cParams) const unsigned short* const rgusParams,
-                                            const unsigned short cParams) const;
+                                           const unsigned short cParams) const;
 
         _Success_(return)
         bool _GetPrivateModeParams(_In_reads_(cParams) const unsigned short* const rgusParams,
-                                    const unsigned short cParams,
-                                    _Out_writes_(*pcParams) DispatchTypes::PrivateModeParams* const rgPrivateModeParams,
-                                    _Inout_ size_t* const pcParams) const;
+                                   const unsigned short cParams,
+                                   _Out_writes_(*pcParams) DispatchTypes::PrivateModeParams* const rgPrivateModeParams,
+                                   _Inout_ size_t* const pcParams) const;
 
         static const SHORT s_sDefaultTopMargin = 0;
         static const SHORT s_sDefaultBottomMargin = 0;
         _Success_(return)
         bool _GetTopBottomMargins(_In_reads_(cParams) const unsigned short* const rgusParams,
-                                    const unsigned short cParams,
-                                    _Out_ SHORT* const psTopMargin,
-                                    _Out_ SHORT* const psBottomMargin) const;
+                                  const unsigned short cParams,
+                                  _Out_ SHORT* const psTopMargin,
+                                  _Out_ SHORT* const psBottomMargin) const;
 
         _Success_(return)
         bool _GetOscTitle(_Inout_updates_(cchOscString) wchar_t* const pwchOscStringBuffer,
-                            const unsigned short cchOscString,
-                            _Outptr_result_buffer_(*pcchTitle) wchar_t** const ppwchTitle,
-                            _Out_ unsigned short * pcchTitle) const;
+                          const unsigned short cchOscString,
+                          _Outptr_result_buffer_(*pcchTitle) wchar_t** const ppwchTitle,
+                          _Out_ unsigned short * pcchTitle) const;
 
         static const SHORT s_sDefaultTabDistance = 1;
         _Success_(return)
         bool _GetTabDistance(_In_reads_(cParams) const unsigned short* const rgusParams,
-                                const unsigned short cParams,
-                                _Out_ SHORT* const psDistance) const;
+                             const unsigned short cParams,
+                             _Out_ SHORT* const psDistance) const;
 
         static const SHORT s_sDefaultTabClearType = 0;
         _Success_(return)
         bool _GetTabClearType(_In_reads_(cParams) const unsigned short* const rgusParams,
-                                const unsigned short cParams,
-                                _Out_ SHORT* const psClearType) const;
+                              const unsigned short cParams,
+                              _Out_ SHORT* const psClearType) const;
 
         static const DesignateCharsetTypes s_DefaultDesignateCharsetType = DesignateCharsetTypes::G0;
         _Success_(return)
         bool _GetDesignateType(const wchar_t wchIntermediate,
-                                _Out_ DesignateCharsetTypes* const pDesignateType) const;
+                               _Out_ DesignateCharsetTypes* const pDesignateType) const;
 
         static const DispatchTypes::WindowManipulationType s_DefaultWindowManipulationType = DispatchTypes::WindowManipulationType::Invalid;
         _Success_(return)
@@ -241,23 +239,23 @@ namespace Microsoft::Console::VirtualTerminal
         static bool s_IsNumber(const wchar_t wch);
         static bool s_IsHexNumber(const wchar_t wch);
         bool _GetOscSetColorTable(_In_reads_(cchOscString) const wchar_t* const pwchOscStringBuffer,
-                                    const size_t cchOscString,
-                                    _Out_ size_t* const pTableIndex,
-                                    _Out_ DWORD* const pRgb) const;
+                                  const size_t cchOscString,
+                                  _Out_ size_t* const pTableIndex,
+                                  _Out_ DWORD* const pRgb) const;
 
         static bool s_ParseColorSpec(_In_reads_(cchBuffer) const wchar_t* const pwchBuffer,
-                                        const size_t cchBuffer,
-                                        _Out_ DWORD* const pRgb);
+                                     const size_t cchBuffer,
+                                     _Out_ DWORD* const pRgb);
 
         bool _GetOscSetCursorColor(_In_reads_(cchOscString) const wchar_t* const pwchOscStringBuffer,
-                                    const size_t cchOscString,
-                                    _Out_ DWORD* const pRgb) const;
+                                   const size_t cchOscString,
+                                   _Out_ DWORD* const pRgb) const;
 
         static const DispatchTypes::CursorStyle s_defaultCursorStyle = DispatchTypes::CursorStyle::BlinkingBlockDefault;
         _Success_(return)
         bool _GetCursorStyle(_In_reads_(cParams) const unsigned short* const rgusParams,
-                                const unsigned short cParams,
-                                _Out_ DispatchTypes::CursorStyle* const pCursorStyle) const;
+                             const unsigned short cParams,
+                             _Out_ DispatchTypes::CursorStyle* const pCursorStyle) const;
 
     };
 }
