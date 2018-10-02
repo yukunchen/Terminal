@@ -601,10 +601,10 @@ void InputTests::TestVtInputGeneration()
 
     Log::Comment(L"First make sure that an arrow keydown is not translated in not-VT mode");
 
-    dwMode = ClearFlag(dwMode, ENABLE_VIRTUAL_TERMINAL_INPUT);
+    dwMode = WI_ClearFlag(dwMode, ENABLE_VIRTUAL_TERMINAL_INPUT);
     SetConsoleMode(hIn, dwMode);
     GetConsoleMode(hIn, &dwMode);
-    VERIFY_IS_FALSE(IsFlagSet(dwMode, ENABLE_VIRTUAL_TERMINAL_INPUT));
+    VERIFY_IS_FALSE(WI_IsFlagSet(dwMode, ENABLE_VIRTUAL_TERMINAL_INPUT));
 
     rgInputRecords[0].EventType = KEY_EVENT;
     rgInputRecords[0].Event.KeyEvent.bKeyDown = TRUE;
@@ -625,10 +625,10 @@ void InputTests::TestVtInputGeneration()
 
     Log::Comment(L"Now, enable VT Input and make sure that a vt sequence comes out the other side.");
 
-    dwMode = SetFlag(dwMode, ENABLE_VIRTUAL_TERMINAL_INPUT);
+    dwMode = WI_SetFlag(dwMode, ENABLE_VIRTUAL_TERMINAL_INPUT);
     SetConsoleMode(hIn, dwMode);
     GetConsoleMode(hIn, &dwMode);
-    VERIFY_IS_TRUE(IsFlagSet(dwMode, ENABLE_VIRTUAL_TERMINAL_INPUT));
+    VERIFY_IS_TRUE(WI_IsFlagSet(dwMode, ENABLE_VIRTUAL_TERMINAL_INPUT));
 
     Log::Comment(L"Flushing");
     VERIFY_WIN32_BOOL_SUCCEEDED(FlushConsoleInputBuffer(hIn));

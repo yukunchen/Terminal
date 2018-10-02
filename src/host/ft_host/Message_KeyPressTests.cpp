@@ -300,20 +300,20 @@ class KeyPressTests
 
         // Maximize windows should not be Overlapped & have a popup
         // Extended style should have a window edge when not maximized
-        VERIFY_IS_TRUE(IsFlagSet(maxStyle, WS_POPUP));
-        VERIFY_IS_TRUE(AreAllFlagsClear(maxStyle, WS_OVERLAPPEDWINDOW));
-        VERIFY_IS_TRUE(IsFlagClear(maxExStyle, WS_EX_WINDOWEDGE));
+        VERIFY_IS_TRUE(WI_IsFlagSet(maxStyle, WS_POPUP));
+        VERIFY_IS_TRUE(WI_AreAllFlagsClear(maxStyle, WS_OVERLAPPEDWINDOW));
+        VERIFY_IS_TRUE(WI_IsFlagClear(maxExStyle, WS_EX_WINDOWEDGE));
 
-        VERIFY_IS_TRUE(IsFlagClear(newStyle, WS_POPUP));
-        VERIFY_IS_TRUE(AreAllFlagsSet(newStyle, WS_OVERLAPPEDWINDOW));
-        VERIFY_IS_TRUE(IsFlagSet(newExStyle, WS_EX_WINDOWEDGE));
+        VERIFY_IS_TRUE(WI_IsFlagClear(newStyle, WS_POPUP));
+        VERIFY_IS_TRUE(WI_AreAllFlagsSet(newStyle, WS_OVERLAPPEDWINDOW));
+        VERIFY_IS_TRUE(WI_IsFlagSet(newExStyle, WS_EX_WINDOWEDGE));
 
         VERIFY_ARE_NOT_EQUAL(maxStyle, oldStyle);
         VERIFY_ARE_NOT_EQUAL(maxExStyle, oldExStyle);
 
         // Ignore the scrollbars when comparing styles
-        ClearAllFlags(oldStyle, WS_HSCROLL | WS_VSCROLL);
-        ClearAllFlags(newStyle, WS_HSCROLL | WS_VSCROLL);
+        WI_ClearAllFlags(oldStyle, WS_HSCROLL | WS_VSCROLL);
+        WI_ClearAllFlags(newStyle, WS_HSCROLL | WS_VSCROLL);
         VERIFY_ARE_EQUAL(oldStyle, newStyle);
         VERIFY_ARE_EQUAL(oldExStyle, newExStyle);
     }

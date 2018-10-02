@@ -109,7 +109,7 @@ void TextAttribute::SetFromLegacy(const WORD wLegacy) noexcept
 
 void TextAttribute::SetMetaAttributes(const WORD wMeta) noexcept
 {
-    UpdateFlagsInMask(_wAttrLegacy, META_ATTRS, wMeta);
+    WI_UpdateFlagsInMask(_wAttrLegacy, META_ATTRS, wMeta);
 }
 
 void TextAttribute::SetForeground(const COLORREF rgbForeground)
@@ -151,47 +151,47 @@ bool TextAttribute::IsBold() const noexcept
 
 bool TextAttribute::_IsReverseVideo() const noexcept
 {
-    return IsFlagSet(_wAttrLegacy, COMMON_LVB_REVERSE_VIDEO);
+    return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_REVERSE_VIDEO);
 }
 
 bool TextAttribute::IsLeadingByte() const noexcept
 {
-    return IsFlagSet(_wAttrLegacy, COMMON_LVB_LEADING_BYTE);
+    return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_LEADING_BYTE);
 }
 
 bool TextAttribute::IsTrailingByte() const noexcept
 {
-    return IsFlagSet(_wAttrLegacy, COMMON_LVB_LEADING_BYTE);
+    return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_LEADING_BYTE);
 }
 
 bool TextAttribute::IsTopHorizontalDisplayed() const noexcept
 {
-    return IsFlagSet(_wAttrLegacy, COMMON_LVB_GRID_HORIZONTAL);
+    return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_GRID_HORIZONTAL);
 }
 
 bool TextAttribute::IsBottomHorizontalDisplayed() const noexcept
 {
-    return IsFlagSet(_wAttrLegacy, COMMON_LVB_UNDERSCORE);
+    return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_UNDERSCORE);
 }
 
 bool TextAttribute::IsLeftVerticalDisplayed() const noexcept
 {
-    return IsFlagSet(_wAttrLegacy, COMMON_LVB_GRID_LVERTICAL);
+    return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_GRID_LVERTICAL);
 }
 
 bool TextAttribute::IsRightVerticalDisplayed() const noexcept
 {
-    return IsFlagSet(_wAttrLegacy, COMMON_LVB_GRID_RVERTICAL);
+    return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_GRID_RVERTICAL);
 }
 
 void TextAttribute::SetLeftVerticalDisplayed(const bool isDisplayed) noexcept
 {
-    UpdateFlag(_wAttrLegacy, COMMON_LVB_GRID_LVERTICAL, isDisplayed);
+    WI_UpdateFlag(_wAttrLegacy, COMMON_LVB_GRID_LVERTICAL, isDisplayed);
 }
 
 void TextAttribute::SetRightVerticalDisplayed(const bool isDisplayed) noexcept
 {
-    UpdateFlag(_wAttrLegacy, COMMON_LVB_GRID_RVERTICAL, isDisplayed);
+    WI_UpdateFlag(_wAttrLegacy, COMMON_LVB_GRID_RVERTICAL, isDisplayed);
 }
 
 void TextAttribute::Embolden() noexcept

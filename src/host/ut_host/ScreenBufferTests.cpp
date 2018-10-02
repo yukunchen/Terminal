@@ -646,7 +646,7 @@ void ScreenBufferTests::VtResize()
     TextBuffer& tbi = si.GetTextBuffer();
     StateMachine& stateMachine = si.GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
-    SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
     cursor.SetXPosition(0);
     cursor.SetYPosition(0);

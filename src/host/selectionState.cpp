@@ -22,7 +22,7 @@ using namespace Microsoft::Console::Types;
 bool Selection::IsInSelectingState() const
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return IsFlagSet(gci.Flags, CONSOLE_SELECTING);
+    return WI_IsFlagSet(gci.Flags, CONSOLE_SELECTING);
 }
 
 // Routine Description:
@@ -34,7 +34,7 @@ bool Selection::IsInSelectingState() const
 void Selection::_SetSelectingState(const bool fSelectingOn)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    UpdateFlag(gci.Flags, CONSOLE_SELECTING, fSelectingOn);
+    WI_UpdateFlag(gci.Flags, CONSOLE_SELECTING, fSelectingOn);
 }
 
 // Routine Description:
@@ -47,7 +47,7 @@ void Selection::_SetSelectingState(const bool fSelectingOn)
 bool Selection::IsInQuickEditMode() const
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return IsFlagSet(gci.Flags, CONSOLE_QUICK_EDIT_MODE);
+    return WI_IsFlagSet(gci.Flags, CONSOLE_QUICK_EDIT_MODE);
 }
 
 // Routine Description:
@@ -97,7 +97,7 @@ void Selection::_AlignAlternateSelection(const bool fAlignToLineSelect)
 // - True if the selection variables contain valid selection data. False otherwise.
 bool Selection::IsAreaSelected() const
 {
-    return IsFlagSet(_dwSelectionFlags, CONSOLE_SELECTION_NOT_EMPTY);
+    return WI_IsFlagSet(_dwSelectionFlags, CONSOLE_SELECTION_NOT_EMPTY);
 }
 
 // Routine Description:
@@ -108,7 +108,7 @@ bool Selection::IsAreaSelected() const
 // - True if the selection was started as mark mode. False otherwise.
 bool Selection::IsKeyboardMarkSelection() const
 {
-    return IsFlagClear(_dwSelectionFlags, CONSOLE_MOUSE_SELECTION);
+    return WI_IsFlagClear(_dwSelectionFlags, CONSOLE_MOUSE_SELECTION);
 }
 
 // Routine Description:
@@ -121,7 +121,7 @@ bool Selection::IsKeyboardMarkSelection() const
 // - True if the selection is mouse-initiated. False otherwise.
 bool Selection::IsMouseInitiatedSelection() const
 {
-    return IsFlagSet(_dwSelectionFlags, CONSOLE_MOUSE_SELECTION);
+    return WI_IsFlagSet(_dwSelectionFlags, CONSOLE_MOUSE_SELECTION);
 }
 
 // Routine Description:
@@ -133,12 +133,12 @@ bool Selection::IsMouseInitiatedSelection() const
 // - True if the mouse button is currently down. False otherwise.
 bool Selection::IsMouseButtonDown() const
 {
-    return IsFlagSet(_dwSelectionFlags, CONSOLE_MOUSE_DOWN);
+    return WI_IsFlagSet(_dwSelectionFlags, CONSOLE_MOUSE_DOWN);
 }
 
 void Selection::MouseDown()
 {
-    SetFlag(_dwSelectionFlags, CONSOLE_MOUSE_DOWN);
+    WI_SetFlag(_dwSelectionFlags, CONSOLE_MOUSE_DOWN);
 
     // We must capture the mouse on button down to ensure we receive messages if
     //      it comes back up outside the window.
@@ -151,7 +151,7 @@ void Selection::MouseDown()
 
 void Selection::MouseUp()
 {
-    ClearFlag(_dwSelectionFlags, CONSOLE_MOUSE_DOWN);
+    WI_ClearFlag(_dwSelectionFlags, CONSOLE_MOUSE_DOWN);
 
     IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
     if (pWindow != nullptr)

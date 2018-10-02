@@ -9,7 +9,7 @@
 
 #include "utf8ToWideCharParser.hpp"
 
-#define IsBitSet IsFlagSet
+#define IsBitSet WI_IsFlagSet
 
 using namespace WEX::Common;
 using namespace WEX::Logging;

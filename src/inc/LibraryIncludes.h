@@ -38,9 +38,6 @@
 
 // WIL
 
-// We want WIL to use the bit operation flags
-#define WIL_SUPPORT_BITOPERATION_PASCAL_NAMES
-
 #include <wil/Common.h>
 #include <wil/Result.h>
 #include <wil/resource.h>

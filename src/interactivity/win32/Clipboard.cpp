@@ -331,7 +331,7 @@ bool Clipboard::FilterCharacterOnPaste(_Inout_ WCHAR * const pwch)
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     bool fAllowChar = true;
     if (gci.GetFilterOnPaste() &&
-        (IsFlagSet(gci.pInputBuffer->InputMode, ENABLE_PROCESSED_INPUT)))
+        (WI_IsFlagSet(gci.pInputBuffer->InputMode, ENABLE_PROCESSED_INPUT)))
     {
         switch (*pwch)
         {

@@ -138,7 +138,7 @@ void HandleKeyEvent(const HWND hWnd,
     WORD VirtualScanCode = LOBYTE(HIWORD(lParam));
     const WORD RepeatCount = LOWORD(lParam);
     const ULONG ControlKeyState = GetControlKeyState(lParam);
-    const BOOL bKeyDown = IsFlagClear(lParam, KEY_TRANSITION_UP);
+    const BOOL bKeyDown = WI_IsFlagClear(lParam, KEY_TRANSITION_UP);
 
     if (bKeyDown)
     {
@@ -479,7 +479,7 @@ BOOL HandleSysKeyEvent(const HWND hWnd, const UINT Message, const WPARAM wParam,
         return TRUE; // let DefWindowProc generate WM_CLOSE
     }
 
-    if (IsFlagClear(lParam, WM_SYSKEYDOWN_ALT_PRESSED))
+    if (WI_IsFlagClear(lParam, WM_SYSKEYDOWN_ALT_PRESSED))
     {   // we're iconic
         // Check for ENTER while iconic (restore accelerator).
         if (VirtualKeyCode == VK_RETURN)
@@ -593,7 +593,7 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
     MousePosition.X /= ScreenFontSize.X;
     MousePosition.Y /= ScreenFontSize.Y;
 
-    const bool fShiftPressed = IsFlagSet(GetKeyState(VK_SHIFT), KEY_PRESSED);
+    const bool fShiftPressed = WI_IsFlagSet(GetKeyState(VK_SHIFT), KEY_PRESSED);
 
     // We need to try and have the virtual terminal handle the mouse's position in viewport coordinates,
     //   not in screen buffer coordinates. It expects the top left to always be 0,0
@@ -811,7 +811,7 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
         return FALSE;
     }
 
-    if (IsFlagClear(gci.pInputBuffer->InputMode, ENABLE_MOUSE_INPUT))
+    if (WI_IsFlagClear(gci.pInputBuffer->InputMode, ENABLE_MOUSE_INPUT))
     {
         ReleaseCapture();
         return TRUE;
@@ -1028,7 +1028,7 @@ DWORD ConsoleInputThreadProcWin32(LPVOID /*lpParameter*/)
             DispatchMessageW(&msg);
         }
         // do this so that alt-tab works while journalling
-        else if (msg.message == WM_SYSKEYDOWN && msg.wParam == VK_TAB && IsFlagSet(msg.lParam, WM_SYSKEYDOWN_ALT_PRESSED))
+        else if (msg.message == WM_SYSKEYDOWN && msg.wParam == VK_TAB && WI_IsFlagSet(msg.lParam, WM_SYSKEYDOWN_ALT_PRESSED))
         {
             // alt is really down
             DispatchMessageW(&msg);

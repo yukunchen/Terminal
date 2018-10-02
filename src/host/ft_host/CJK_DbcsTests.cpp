@@ -949,7 +949,7 @@ void DbcsWriteRead::PrepPattern::DoubledWNegativeOneTrailing(_In_ unsigned int c
     {
         CHAR_INFO* pciCurrent = &pciExpected[i];
 
-        if (WI_IS_FLAG_SET(pciCurrent->Attributes, COMMON_LVB_TRAILING_BYTE))
+        if (WI_IsFlagSet(pciCurrent->Attributes, COMMON_LVB_TRAILING_BYTE))
         {
             pciCurrent->Char.UnicodeChar = 0xFFFF;
         }

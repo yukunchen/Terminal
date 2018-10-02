@@ -407,8 +407,8 @@ void FileTests::TestWriteFileVTProcessing()
     VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleScreenBufferInfoEx(hOut, &csbiexOriginal), L"Retrieve screen buffer properties at beginning of test.");
 
     DWORD dwFlags = 0;
-    SetFlagIf(dwFlags, ENABLE_VIRTUAL_TERMINAL_PROCESSING, fVtOn);
-    SetFlagIf(dwFlags, ENABLE_PROCESSED_OUTPUT, fProcessedOn);
+    WI_SetFlagIf(dwFlags, ENABLE_VIRTUAL_TERMINAL_PROCESSING, fVtOn);
+    WI_SetFlagIf(dwFlags, ENABLE_PROCESSED_OUTPUT, fProcessedOn);
     VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(hOut, dwFlags), L"Turn on relevant flags for test.");
 
     COORD const coordZero = { 0 };
@@ -466,8 +466,8 @@ void FileTests::TestWriteFileDisableNewlineAutoReturn()
     VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleScreenBufferInfoEx(hOut, &csbiexOriginal), L"Retrieve screen buffer properties at beginning of test.");
 
     DWORD dwMode = 0;
-    SetFlagIf(dwMode, DISABLE_NEWLINE_AUTO_RETURN, fDisableAutoReturn);
-    SetFlagIf(dwMode, ENABLE_PROCESSED_OUTPUT, fProcessedOn);
+    WI_SetFlagIf(dwMode, DISABLE_NEWLINE_AUTO_RETURN, fDisableAutoReturn);
+    WI_SetFlagIf(dwMode, ENABLE_PROCESSED_OUTPUT, fProcessedOn);
     VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(hOut, dwMode), L"Set console mode for test.");
 
     COORD const coordZero = { 0 };

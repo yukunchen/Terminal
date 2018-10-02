@@ -95,11 +95,11 @@ public:
         WORD publicAttribute = 0;
         if (IsLeading())
         {
-            SetFlag(publicAttribute, COMMON_LVB_LEADING_BYTE);
+            WI_SetFlag(publicAttribute, COMMON_LVB_LEADING_BYTE);
         }
         if (IsTrailing())
         {
-            SetFlag(publicAttribute, COMMON_LVB_TRAILING_BYTE);
+            WI_SetFlag(publicAttribute, COMMON_LVB_TRAILING_BYTE);
         }
         return publicAttribute;
     }
@@ -107,17 +107,17 @@ public:
     static DbcsAttribute FromPublicApiAttributeFormat(WORD publicAttribute)
     {
         // it's not valid to be both a leading and trailing byte
-        if (AreAllFlagsSet(publicAttribute, COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE))
+        if (WI_AreAllFlagsSet(publicAttribute, COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE))
         {
             THROW_HR(E_INVALIDARG);
         }
 
         DbcsAttribute attr;
-        if (IsFlagSet(publicAttribute, COMMON_LVB_LEADING_BYTE))
+        if (WI_IsFlagSet(publicAttribute, COMMON_LVB_LEADING_BYTE))
         {
             attr.SetLeading();
         }
-        else if (IsFlagSet(publicAttribute, COMMON_LVB_TRAILING_BYTE))
+        else if (WI_IsFlagSet(publicAttribute, COMMON_LVB_TRAILING_BYTE))
         {
             attr.SetTrailing();
         }

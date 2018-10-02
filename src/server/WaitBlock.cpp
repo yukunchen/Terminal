@@ -219,7 +219,7 @@ bool ConsoleWaitBlock::Notify(const WaitTerminationReason TerminationReason)
     else
     {
         // If fThreadDying is TRUE we need to make sure that we removed the pWaitBlock from the list (which we don't do on this branch).
-        FAIL_FAST_IF_FALSE(IsFlagClear(TerminationReason, WaitTerminationReason::ThreadDying));
+        FAIL_FAST_IF_FALSE(WI_IsFlagClear(TerminationReason, WaitTerminationReason::ThreadDying));
         fRetVal = false;
     }
 

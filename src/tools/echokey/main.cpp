@@ -157,12 +157,12 @@ int __cdecl wmain(int argc, wchar_t* argv[])
 
     if (gVtOutput)
     {
-        dwOutMode = SetAllFlags(dwOutMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN);
+        dwOutMode = WI_SetAllFlags(dwOutMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN);
     }
 
     if (gVtInput)
     {
-        dwInMode = SetFlag(dwInMode, ENABLE_VIRTUAL_TERMINAL_INPUT);
+        dwInMode = WI_SetFlag(dwInMode, ENABLE_VIRTUAL_TERMINAL_INPUT);
     }
 
     SetConsoleMode(hOut, dwOutMode);
