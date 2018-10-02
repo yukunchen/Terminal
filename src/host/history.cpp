@@ -199,7 +199,7 @@ HRESULT CommandHistory::Retrieve(const SearchDirection searchDirection,
                                  const gsl::span<wchar_t> buffer,
                                  size_t& commandSize)
 {
-    FAIL_FAST_IF_FALSE(WI_IsFlagSet(Flags, CLE_ALLOCATED));
+    FAIL_FAST_IF(!(WI_IsFlagSet(Flags, CLE_ALLOCATED)));
 
     if (_commands.size() == 0)
     {

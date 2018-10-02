@@ -592,7 +592,7 @@ size_t InputStateMachineEngine::_GetSingleKeypress(const wchar_t wch,
                                                    _Inout_updates_(cRecords) INPUT_RECORD* const rgInput,
                                                    const size_t cRecords)
 {
-    FAIL_FAST_IF_FALSE(cRecords >= 2);
+    FAIL_FAST_IF(!(cRecords >= 2));
     if (cRecords < 2)
     {
         return 0;

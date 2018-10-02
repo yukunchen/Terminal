@@ -1015,16 +1015,16 @@ HRESULT ApiDispatchers::ServerAddConsoleAlias(_Inout_ CONSOLE_API_MSG * const m,
     ULONG const cbInputExeName = a->ExeLength;
     PVOID pvInputSource;
     ULONG const cbInputSource = a->SourceLength;
-    RETURN_HR_IF_FALSE(E_INVALIDARG, IsValidStringBuffer(a->Unicode,
-                                                         pvBuffer,
-                                                         cbBufferSize,
-                                                         3,
-                                                         cbInputExeName,
-                                                         &pvInputExeName,
-                                                         cbInputSource,
-                                                         &pvInputSource,
-                                                         cbInputTarget,
-                                                         &pvInputTarget));
+    RETURN_HR_IF(E_INVALIDARG, !IsValidStringBuffer(a->Unicode,
+                                                    pvBuffer,
+                                                    cbBufferSize,
+                                                    3,
+                                                    cbInputExeName,
+                                                    &pvInputExeName,
+                                                    cbInputSource,
+                                                    &pvInputSource,
+                                                    cbInputTarget,
+                                                    &pvInputTarget));
 
     if (a->Unicode)
     {
@@ -1075,14 +1075,14 @@ HRESULT ApiDispatchers::ServerGetConsoleAlias(_Inout_ CONSOLE_API_MSG * const m,
     ULONG const cbInputExe = a->ExeLength;
     PVOID pvInputSource;
     ULONG const cbInputSource = a->SourceLength;
-    RETURN_HR_IF_FALSE(E_INVALIDARG, IsValidStringBuffer(a->Unicode,
-                                                         pvInputBuffer,
-                                                         cbInputBufferSize,
-                                                         2,
-                                                         cbInputExe,
-                                                         &pvInputExe,
-                                                         cbInputSource,
-                                                         &pvInputSource));
+    RETURN_HR_IF(E_INVALIDARG, !IsValidStringBuffer(a->Unicode,
+                                                    pvInputBuffer,
+                                                    cbInputBufferSize,
+                                                    2,
+                                                    cbInputExe,
+                                                    &pvInputExe,
+                                                    cbInputSource,
+                                                    &pvInputSource));
 
     PVOID pvOutputBuffer;
     ULONG cbOutputBufferSize;

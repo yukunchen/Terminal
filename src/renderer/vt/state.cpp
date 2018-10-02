@@ -59,7 +59,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
 {
 #ifndef UNIT_TESTING
     // When unit testing, we can instantiate a VtEngine without a pipe.
-    THROW_IF_HANDLE_INVALID(_hFile.get());
+    THROW_HR_IF(E_HANDLE, _hFile.get() == INVALID_HANDLE_VALUE);
 #else
     // member is only defined when UNIT_TESTING is.
     _usingTestCallback = false;
@@ -82,7 +82,7 @@ HRESULT VtEngine::_Write(_In_reads_(cch) const char* const psz, const size_t cch
 #ifdef UNIT_TESTING
     if (_usingTestCallback)
     {
-        RETURN_LAST_ERROR_IF_FALSE(_pfnTestCallback(psz, cch));
+        RETURN_LAST_ERROR_IF(!_pfnTestCallback(psz, cch));
         return S_OK;
     }
 #endif

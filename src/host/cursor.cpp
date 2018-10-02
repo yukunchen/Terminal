@@ -537,7 +537,7 @@ void Cursor::SetCaretTimer()
                                      dwEffectivePeriod,
                                      0);
 
-        LOG_LAST_ERROR_IF_FALSE(bRet);
+        LOG_LAST_ERROR_IF(!bRet);
     }
 }
 

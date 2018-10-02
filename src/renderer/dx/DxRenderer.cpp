@@ -558,7 +558,7 @@ HRESULT DxEngine::PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept
 [[nodiscard]]
 HRESULT DxEngine::StartPaint() noexcept
 {
-    RETURN_IF_HANDLE_INVALID(_hwndTarget);
+    RETURN_HR_IF(E_HANDLE, _hwndTarget == INVALID_HANDLE_VALUE);
     RETURN_HR_IF(E_NOT_VALID_STATE, _isPainting); // invalid to start a paint while painting.
 
     if (_isEnabled) {

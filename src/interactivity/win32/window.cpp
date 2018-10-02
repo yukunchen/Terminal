@@ -125,7 +125,7 @@ NTSTATUS Window::s_RegisterWindowClass()
     // Today we never call this more than once.
     // In the future, if we need multiple windows (for tabs, etc.) we will need to make this thread-safe.
     // As such, the window class should always be 0 when we are entering this the first and only time.
-    FAIL_FAST_IF_FALSE(s_atomWindowClass == 0);
+    FAIL_FAST_IF(!(s_atomWindowClass == 0));
 
     // Only register if we haven't already registered
     if (s_atomWindowClass == 0)
@@ -502,10 +502,10 @@ void Window::UpdateWindowText()
     const bool fInMouseSelectMode = pSelection->IsInSelectingState() && pSelection->IsMouseInitiatedSelection();
 
     // should have at most one active mode
-    FAIL_FAST_IF_FALSE((fInKeyboardMarkMode && !fInMouseSelectMode && !fInScrollMode) ||
-                       (!fInKeyboardMarkMode && fInMouseSelectMode && !fInScrollMode) ||
-                       (!fInKeyboardMarkMode && !fInMouseSelectMode && fInScrollMode) ||
-                       (!fInKeyboardMarkMode && !fInMouseSelectMode && !fInScrollMode));
+    FAIL_FAST_IF(!((fInKeyboardMarkMode && !fInMouseSelectMode && !fInScrollMode) ||
+                 (!fInKeyboardMarkMode && fInMouseSelectMode && !fInScrollMode) ||
+                 (!fInKeyboardMarkMode && !fInMouseSelectMode && fInScrollMode) ||
+                 (!fInKeyboardMarkMode && !fInMouseSelectMode && !fInScrollMode)));
 
     // determine which message, if any, we want to use
     DWORD dwMsgId = 0;
@@ -611,7 +611,7 @@ NTSTATUS Window::_InternalSetWindowSize()
         RECT rectSizeTemp = { 0 };
         rectSizeTemp.right = WindowSize.cx;
         rectSizeTemp.bottom = WindowSize.cy;
-        FAIL_FAST_IF_FALSE(rectSizeTemp.top == 0 && rectSizeTemp.left == 0);
+        FAIL_FAST_IF(!(rectSizeTemp.top == 0 && rectSizeTemp.left == 0));
         ServiceLocator::LocateWindowMetrics<WindowMetrics>()->ConvertClientRectToWindowRect(&rectSizeTemp);
 
         // Measure the adjusted rectangle dimensions and fill up the size variable

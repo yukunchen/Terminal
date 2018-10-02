@@ -359,7 +359,7 @@ DWORD VtConsole::_OutputThread()
 
         fSuccess = !!ReadFile(this->outPipe(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr);
 
-        THROW_LAST_ERROR_IF_FALSE(fSuccess);
+        THROW_LAST_ERROR_IF(!fSuccess);
         if (this->_active)
         {
             _pfnReadCallback(buffer, dwRead);

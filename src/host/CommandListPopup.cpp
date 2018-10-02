@@ -112,7 +112,7 @@ void CommandListPopup::_handleReturn(COOKED_READ_DATA& cookedReadData)
             PWSTR Tmp;
             for (Tmp = cookedReadData._BackupLimit; *Tmp != UNICODE_LINEFEED; Tmp++)
             {
-                FAIL_FAST_IF_FALSE(Tmp < (cookedReadData._BackupLimit + cookedReadData._BytesRead));
+                FAIL_FAST_IF(!(Tmp < (cookedReadData._BackupLimit + cookedReadData._BytesRead)));
             }
             NumBytes = (Tmp - cookedReadData._BackupLimit + 1) * sizeof(*Tmp);
         }

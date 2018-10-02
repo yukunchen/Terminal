@@ -146,7 +146,7 @@ DWORD RemoveDbcsMarkCell(_Out_writes_(cch) PCHAR_INFO pciDst, _In_reads_(cch) co
     iDst += cchDstToClear;
 
     // now that we're done, we should have copied, left alone, or cleared the entire length.
-    FAIL_FAST_IF_FALSE(iDst == cch);
+    FAIL_FAST_IF(!(iDst == cch));
 
     return iDst;
 }

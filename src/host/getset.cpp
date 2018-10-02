@@ -869,7 +869,7 @@ HRESULT ApiRoutines::SetConsoleOutputCodePageImpl(const ULONG CodePage)
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
     // Return if it's not known as a valid codepage ID.
-    RETURN_HR_IF_FALSE(E_INVALIDARG, IsValidCodePage(CodePage));
+    RETURN_HR_IF(E_INVALIDARG, !(IsValidCodePage(CodePage)));
 
     // Do nothing if no change.
     if (gci.OutputCP != CodePage)
@@ -891,7 +891,7 @@ HRESULT ApiRoutines::SetConsoleInputCodePageImpl(const ULONG CodePage)
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
     // Return if it's not known as a valid codepage ID.
-    RETURN_HR_IF_FALSE(E_INVALIDARG, IsValidCodePage(CodePage));
+    RETURN_HR_IF(E_INVALIDARG, !(IsValidCodePage(CodePage)));
 
     // Do nothing if no change.
     if (gci.CP != CodePage)
@@ -1028,7 +1028,7 @@ HRESULT ApiRoutines::SetConsoleDisplayModeImpl(SCREEN_INFORMATION& Context,
         SCREEN_INFORMATION&  screenInfo = Context.GetActiveBuffer();
 
         *pNewScreenBufferSize = screenInfo.GetScreenBufferSize();
-        RETURN_HR_IF_FALSE(E_INVALIDARG, screenInfo.IsActiveScreenBuffer());
+        RETURN_HR_IF(E_INVALIDARG, !(screenInfo.IsActiveScreenBuffer()));
     }
 
     IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
@@ -1295,7 +1295,7 @@ NTSTATUS DoPrivateTabHelper(const SHORT sNumTabs, _In_ bool fForward)
     SCREEN_INFORMATION& _screenBuffer = gci.GetActiveOutputBuffer();
 
     NTSTATUS Status = STATUS_SUCCESS;
-    FAIL_FAST_IF_FALSE(sNumTabs >= 0);
+    FAIL_FAST_IF(!(sNumTabs >= 0));
     for (SHORT sTabsExecuted = 0; sTabsExecuted < sNumTabs && NT_SUCCESS(Status); sTabsExecuted++)
     {
         const COORD cursorPos = _screenBuffer.GetTextBuffer().GetCursor().GetPosition();
@@ -1772,7 +1772,7 @@ HRESULT DoSrvSetConsoleTitleW(_In_reads_or_z_(cchBuffer) const wchar_t* const pw
 NTSTATUS DoSrvPrivateSuppressResizeRepaint()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    FAIL_FAST_IF_FALSE(gci.IsInVtIoMode());
+    FAIL_FAST_IF(!(gci.IsInVtIoMode()));
     return NTSTATUS_FROM_HRESULT(gci.GetVtIo()->SuppressResizeRepaint());
 }
 

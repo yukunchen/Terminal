@@ -288,7 +288,7 @@ DWORD GetRegistryValues(
     // Initial code page
     //
 
-    FAIL_FAST_IF_FALSE(OEMCP != 0);
+    FAIL_FAST_IF(!(OEMCP != 0));
     Status = RegistrySerialization::s_QueryValue(hTitleKey,
                                                  CONSOLE_REGISTRY_CODEPAGE,
                                                  sizeof(dwValue),
@@ -699,7 +699,7 @@ VOID SetRegistryValues(
                                                        (BYTE*)&dwValue,
                                                        sizeof(dwValue)));
 
-    FAIL_FAST_IF_FALSE(OEMCP != 0);
+    FAIL_FAST_IF(!(OEMCP != 0));
     if (g_fEastAsianSystem) {
         dwValue = (DWORD) pStateInfo->CodePage;
         LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,

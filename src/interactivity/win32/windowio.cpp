@@ -57,7 +57,7 @@ ULONG ConvertMouseButtonState(_In_ ULONG Flag, _In_ ULONG State)
 VOID SetConsoleWindowOwner(const HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pProcessData)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    FAIL_FAST_IF_FALSE(gci.IsConsoleLocked());
+    FAIL_FAST_IF(!(gci.IsConsoleLocked()));
 
     DWORD dwProcessId;
     DWORD dwThreadId;
@@ -932,7 +932,7 @@ NTSTATUS InitWindowsSubsystem(_Out_ HHOOK * phhook)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     ConsoleProcessHandle* ProcessData = gci.ProcessHandleList.FindProcessInList(ConsoleProcessList::ROOT_PROCESS_ID);
-    FAIL_FAST_IF_FALSE(ProcessData != nullptr && ProcessData->fRootProcess);
+    FAIL_FAST_IF(!(ProcessData != nullptr && ProcessData->fRootProcess));
 
     // Create and activate the main window
     NTSTATUS Status = Window::CreateInstance(&gci, gci.ScreenBuffers);

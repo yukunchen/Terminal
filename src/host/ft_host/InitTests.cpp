@@ -33,7 +33,7 @@ auto OnAppExitKillJob = wil::ScopeExit([&] {
     }
     if (nullptr != hJob.get())
     {
-        THROW_LAST_ERROR_IF_FALSE(TerminateJobObject(hJob.get(), S_OK));
+        THROW_LAST_ERROR_IF(!TerminateJobObject(hJob.get(), S_OK));
     }
 });
 

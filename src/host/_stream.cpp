@@ -213,7 +213,7 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
     if (coordCursor.Y >= bufferSize.Y)
     {
         // At the end of the buffer. Scroll contents of screen buffer so new position is visible.
-        FAIL_FAST_IF_FALSE(coordCursor.Y == bufferSize.Y);
+        FAIL_FAST_IF(!(coordCursor.Y == bufferSize.Y));
         if (!StreamScrollRegion(screenInfo))
         {
             Status = STATUS_NO_MEMORY;
@@ -408,7 +408,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
             }
             else
             {
-                FAIL_FAST_IF_FALSE(WI_IsFlagSet(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT));
+                FAIL_FAST_IF(!(WI_IsFlagSet(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT)));
                 switch (RealUnicodeChar)
                 {
                 case UNICODE_BELL:
@@ -574,7 +574,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
         }
         else if (*pcb >= BufferSize)
         {
-            FAIL_FAST_IF_FALSE(WI_IsFlagSet(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT));
+            FAIL_FAST_IF(!(WI_IsFlagSet(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT)));
 
             // this catches the case where the number of backspaces == the number of characters.
             if (nullptr != pcSpaces)
@@ -584,7 +584,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
             return STATUS_SUCCESS;
         }
 
-        FAIL_FAST_IF_FALSE(WI_IsFlagSet(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT));
+        FAIL_FAST_IF(!(WI_IsFlagSet(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT)));
         switch (*lpString)
         {
         case UNICODE_BACKSPACE:
@@ -629,7 +629,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                     }
                     else
                     {
-                        FAIL_FAST_IF_FALSE(Tmp2 >= buffer.get());
+                        FAIL_FAST_IF(!(Tmp2 >= buffer.get()));
                         *Tmp2++ = *Tmp;
                     }
                 }
@@ -961,12 +961,12 @@ NTSTATUS WriteChars(SCREEN_INFORMATION& screenInfo,
         {
             if (NT_SUCCESS(Status))
             {
-                FAIL_FAST_IF_FALSE(WI_IsFlagSet(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT));
-                FAIL_FAST_IF_FALSE(WI_IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING));
+                FAIL_FAST_IF(!(WI_IsFlagSet(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT)));
+                FAIL_FAST_IF(!(WI_IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING)));
 
                 // defined down in the WriteBuffer default case hiding on the other end of the state machine. See outputStream.cpp
                 // This is the only mode used by DoWriteConsole.
-                FAIL_FAST_IF_FALSE(WI_IsFlagSet(dwFlags, WC_LIMIT_BACKSPACE));
+                FAIL_FAST_IF(!(WI_IsFlagSet(dwFlags, WC_LIMIT_BACKSPACE)));
 
                 StateMachine& machine = screenInfo.GetStateMachine();
                 size_t const cch = BufferSize / sizeof(WCHAR);
@@ -1194,7 +1194,7 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject& OutContext,
             }
             else
             {
-                FAIL_FAST_IF_FALSE(cchConverted == 1);
+                FAIL_FAST_IF(!(cchConverted == 1));
                 dbcsNumBytes = sizeof(wchar_t);
                 TransBuffer[0] = convertedChars[0];
                 BufPtr++;

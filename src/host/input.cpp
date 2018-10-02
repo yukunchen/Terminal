@@ -275,7 +275,7 @@ void ProcessCtrlEvents()
 
     // Copy ctrl flags.
     ULONG CtrlFlags = gci.CtrlFlags;
-    FAIL_FAST_IF_FALSE(!((CtrlFlags & (CONSOLE_CTRL_CLOSE_FLAG | CONSOLE_CTRL_BREAK_FLAG | CONSOLE_CTRL_C_FLAG)) && (CtrlFlags & (CONSOLE_CTRL_LOGOFF_FLAG | CONSOLE_CTRL_SHUTDOWN_FLAG))));
+    FAIL_FAST_IF(!(!((CtrlFlags & (CONSOLE_CTRL_CLOSE_FLAG | CONSOLE_CTRL_BREAK_FLAG | CONSOLE_CTRL_C_FLAG)) && (CtrlFlags & (CONSOLE_CTRL_LOGOFF_FLAG | CONSOLE_CTRL_SHUTDOWN_FLAG)))));
 
     gci.CtrlFlags = 0;
 

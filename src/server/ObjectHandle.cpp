@@ -211,7 +211,7 @@ INPUT_READ_HANDLE_DATA* ConsoleHandleData::GetClientInput() const
 [[nodiscard]]
 HRESULT ConsoleHandleData::_CloseInputHandle()
 {
-    FAIL_FAST_IF_FALSE(_IsInput());
+    FAIL_FAST_IF(!(_IsInput()));
     InputBuffer* pInputBuffer = static_cast<InputBuffer*>(_pvClientPointer);
     INPUT_READ_HANDLE_DATA* pReadHandleData = GetClientInput();
     pReadHandleData->CompletePending();
@@ -251,7 +251,7 @@ HRESULT ConsoleHandleData::_CloseInputHandle()
 [[nodiscard]]
 HRESULT ConsoleHandleData::_CloseOutputHandle()
 {
-    FAIL_FAST_IF_FALSE(_IsOutput());
+    FAIL_FAST_IF(!(_IsOutput()));
     SCREEN_INFORMATION* pScreenInfo = static_cast<SCREEN_INFORMATION*>(_pvClientPointer);
 
     pScreenInfo = &pScreenInfo->GetMainBuffer();
