@@ -12,7 +12,7 @@
 #error WIL exception helpers must be enabled
 #endif
 
-#define IsBitSet IsFlagSet
+#define IsBitSet WI_IsFlagSet
 
 const byte NonAsciiBytePrefix = 0x80;
 

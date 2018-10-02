@@ -168,7 +168,7 @@ StateMachine& SCREEN_INFORMATION::GetStateMachine()
 // true iff this buffer is in Virtual Terminal Output mode.
 bool SCREEN_INFORMATION::InVTMode() const
 {
-    return IsFlagSet(OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    return WI_IsFlagSet(OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 }
 
 // Routine Description:
@@ -625,7 +625,7 @@ VOID SCREEN_INFORMATION::InternalUpdateScrollBars()
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
 
-    ClearFlag(gci.Flags, CONSOLE_UPDATING_SCROLL_BARS);
+    WI_ClearFlag(gci.Flags, CONSOLE_UPDATING_SCROLL_BARS);
 
     if (!IsActiveScreenBuffer())
     {
@@ -2675,7 +2675,7 @@ size_t SCREEN_INFORMATION::FillTextAttribute(const TextAttribute attr,
     else
     {
         WORD actualAttr = attr.GetLegacyAttributes();
-        ClearAllFlags(actualAttr, COMMON_LVB_SBCSDBCS);
+        WI_ClearAllFlags(actualAttr, COMMON_LVB_SBCSDBCS);
         attrRun.SetAttributesFromLegacy(actualAttr);
     }
 

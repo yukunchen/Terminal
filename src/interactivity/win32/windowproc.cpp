@@ -306,11 +306,11 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         //       That means this CONSOLE_IS_ICONIC is unnnecessary when/if we can decouple the drawing with D2D.
         if (IsIconic(hWnd))
         {
-            SetFlag(gci.Flags, CONSOLE_IS_ICONIC);
+            WI_SetFlag(gci.Flags, CONSOLE_IS_ICONIC);
         }
         else
         {
-            ClearFlag(gci.Flags, CONSOLE_IS_ICONIC);
+            WI_ClearFlag(gci.Flags, CONSOLE_IS_ICONIC);
         }
 
         LOG_IF_FAILED(_HandlePaint());
@@ -360,7 +360,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         LPWINDOWPOS lpwpos = (LPWINDOWPOS)lParam;
 
         // We only need to apply restrictions if the size is changing.
-        if (!IsFlagSet(lpwpos->flags, SWP_NOSIZE))
+        if (!WI_IsFlagSet(lpwpos->flags, SWP_NOSIZE))
         {
             // Figure out the suggested dimensions
             RECT rcSuggested;
@@ -409,7 +409,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
             // If the window is maximized, let it do whatever it wants to do.
             // If not, then restrict it to our maximum possible window.
-            if (!IsFlagSet(GetWindowStyle(hWnd), WS_MAXIMIZE))
+            if (!WI_IsFlagSet(GetWindowStyle(hWnd), WS_MAXIMIZE))
             {
                 // Find the related monitor, the maximum pixel size,
                 // and the dpi for the suggested rect.
@@ -781,7 +781,7 @@ void Window::_HandleWindowPosChanged(const LPARAM lParam)
     _fHasMoved = true;
 
     // If the frame changed, update the system metrics.
-    if (IsFlagSet(lpWindowPos->flags, SWP_FRAMECHANGED))
+    if (WI_IsFlagSet(lpWindowPos->flags, SWP_FRAMECHANGED))
     {
         _UpdateSystemMetrics();
     }
@@ -799,7 +799,7 @@ void Window::_HandleWindowPosChanged(const LPARAM lParam)
 
         // If the window is not being resized, including a DPI change, then
         // don't do anything except update our windowrect
-        if (!IsFlagSet(lpWindowPos->flags, SWP_NOSIZE) || _fInDPIChange)
+        if (!WI_IsFlagSet(lpWindowPos->flags, SWP_NOSIZE) || _fInDPIChange)
         {
             ScreenInfo.ProcessResizeWindow(&rcNew, &_rcClientLast);
         }

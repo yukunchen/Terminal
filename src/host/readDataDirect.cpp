@@ -88,7 +88,7 @@ bool DirectReadData::Notify(const WaitTerminationReason TerminationReason,
     std::deque<std::unique_ptr<IInputEvent>> readEvents;
 
     // If ctrl-c or ctrl-break was seen, ignore it.
-    if (IsAnyFlagSet(TerminationReason, (WaitTerminationReason::CtrlC | WaitTerminationReason::CtrlBreak)))
+    if (WI_IsAnyFlagSet(TerminationReason, (WaitTerminationReason::CtrlC | WaitTerminationReason::CtrlBreak)))
     {
         return false;
     }
@@ -103,7 +103,7 @@ bool DirectReadData::Notify(const WaitTerminationReason TerminationReason,
 
     // See if called by CsrDestroyProcess or CsrDestroyThread
     // via ConsoleNotifyWaitBlock. If so, just decrement the ReadCount and return.
-    if (IsFlagSet(TerminationReason, WaitTerminationReason::ThreadDying))
+    if (WI_IsFlagSet(TerminationReason, WaitTerminationReason::ThreadDying))
     {
         *pReplyStatus = STATUS_THREAD_IS_TERMINATING;
     }
@@ -111,7 +111,7 @@ bool DirectReadData::Notify(const WaitTerminationReason TerminationReason,
     // closed. If so, we decrement the read count. If it goes to
     // zero, we wake up the close thread. Otherwise, we wake up any
     // other thread waiting for data.
-    else if (IsFlagSet(TerminationReason, WaitTerminationReason::HandleClosing))
+    else if (WI_IsFlagSet(TerminationReason, WaitTerminationReason::HandleClosing))
     {
         *pReplyStatus = STATUS_ALERTED;
     }

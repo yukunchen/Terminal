@@ -146,7 +146,7 @@ bool InputStateMachineEngine::ActionExecute(const wchar_t wch)
         {
             if (writeCtrl)
             {
-                SetFlag(dwModifierState, LEFT_CTRL_PRESSED);
+                WI_SetFlag(dwModifierState, LEFT_CTRL_PRESSED);
             }
 
             fSuccess = _WriteSingleKey(actualChar, vkey, dwModifierState);
@@ -241,7 +241,7 @@ bool InputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
     if (fSuccess)
     {
         // Alt is definitely pressed in the esc+key case.
-        dwModifierState = SetFlag(dwModifierState, LEFT_ALT_PRESSED);
+        dwModifierState = WI_SetFlag(dwModifierState, LEFT_ALT_PRESSED);
 
         fSuccess = _WriteSingleKey(wch, vk, dwModifierState);
 
@@ -470,9 +470,9 @@ size_t InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch,
         return 0;
     }
 
-    const bool fShift = IsFlagSet(dwModifierState, SHIFT_PRESSED);
-    const bool fCtrl = IsFlagSet(dwModifierState, LEFT_CTRL_PRESSED);
-    const bool fAlt = IsFlagSet(dwModifierState, LEFT_ALT_PRESSED);
+    const bool fShift = WI_IsFlagSet(dwModifierState, SHIFT_PRESSED);
+    const bool fCtrl = WI_IsFlagSet(dwModifierState, LEFT_CTRL_PRESSED);
+    const bool fAlt = WI_IsFlagSet(dwModifierState, LEFT_ALT_PRESSED);
 
     size_t index = 0;
     INPUT_RECORD* next = &rgInput[0];
@@ -481,7 +481,7 @@ size_t InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch,
 
     if (fShift)
     {
-        SetFlag(dwCurrentModifiers, SHIFT_PRESSED);
+        WI_SetFlag(dwCurrentModifiers, SHIFT_PRESSED);
         next->EventType = KEY_EVENT;
         next->Event.KeyEvent.bKeyDown = TRUE;
         next->Event.KeyEvent.dwControlKeyState = dwCurrentModifiers;
@@ -494,7 +494,7 @@ size_t InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch,
     }
     if (fAlt)
     {
-        SetFlag(dwCurrentModifiers, LEFT_ALT_PRESSED);
+        WI_SetFlag(dwCurrentModifiers, LEFT_ALT_PRESSED);
         next->EventType = KEY_EVENT;
         next->Event.KeyEvent.bKeyDown = TRUE;
         next->Event.KeyEvent.dwControlKeyState = dwCurrentModifiers;
@@ -507,7 +507,7 @@ size_t InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch,
     }
     if (fCtrl)
     {
-        SetFlag(dwCurrentModifiers, LEFT_CTRL_PRESSED);
+        WI_SetFlag(dwCurrentModifiers, LEFT_CTRL_PRESSED);
         next->EventType = KEY_EVENT;
         next->Event.KeyEvent.bKeyDown = TRUE;
         next->Event.KeyEvent.dwControlKeyState = dwCurrentModifiers;
@@ -532,7 +532,7 @@ size_t InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch,
 
     if (fCtrl)
     {
-        ClearFlag(dwCurrentModifiers, LEFT_CTRL_PRESSED);
+        WI_ClearFlag(dwCurrentModifiers, LEFT_CTRL_PRESSED);
         next->EventType = KEY_EVENT;
         next->Event.KeyEvent.bKeyDown = FALSE;
         next->Event.KeyEvent.dwControlKeyState = dwCurrentModifiers;
@@ -545,7 +545,7 @@ size_t InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch,
     }
     if (fAlt)
     {
-        ClearFlag(dwCurrentModifiers, LEFT_ALT_PRESSED);
+        WI_ClearFlag(dwCurrentModifiers, LEFT_ALT_PRESSED);
         next->EventType = KEY_EVENT;
         next->Event.KeyEvent.bKeyDown = FALSE;
         next->Event.KeyEvent.dwControlKeyState = dwCurrentModifiers;
@@ -558,7 +558,7 @@ size_t InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch,
     }
     if (fShift)
     {
-        ClearFlag(dwCurrentModifiers, SHIFT_PRESSED);
+        WI_ClearFlag(dwCurrentModifiers, SHIFT_PRESSED);
         next->EventType = KEY_EVENT;
         next->Event.KeyEvent.bKeyDown = FALSE;
         next->Event.KeyEvent.dwControlKeyState = dwCurrentModifiers;
@@ -706,9 +706,9 @@ DWORD InputStateMachineEngine::_GetModifier(const unsigned short modifierParam)
     unsigned short vtParam = modifierParam-1;
     DWORD modifierState = modifierParam > 0 ? ENHANCED_KEY : 0;
 
-    bool fShift = IsFlagSet(vtParam, VT_SHIFT);
-    bool fAlt = IsFlagSet(vtParam, VT_ALT);
-    bool fCtrl = IsFlagSet(vtParam, VT_CTRL);
+    bool fShift = WI_IsFlagSet(vtParam, VT_SHIFT);
+    bool fAlt = WI_IsFlagSet(vtParam, VT_ALT);
+    bool fCtrl = WI_IsFlagSet(vtParam, VT_CTRL);
     return modifierState | (fShift? SHIFT_PRESSED : 0) | (fAlt? LEFT_ALT_PRESSED : 0) | (fCtrl? LEFT_CTRL_PRESSED : 0);
 }
 
@@ -815,9 +815,9 @@ bool InputStateMachineEngine::_GenerateKeyFromChar(const wchar_t wch,
 
     // Because of course, these are not the same flags.
     short dwModifierState = 0 |
-        (IsFlagSet(keyscanModifiers, KEYSCAN_SHIFT) ? SHIFT_PRESSED : 0) |
-        (IsFlagSet(keyscanModifiers, KEYSCAN_CTRL) ? LEFT_CTRL_PRESSED : 0) |
-        (IsFlagSet(keyscanModifiers, KEYSCAN_ALT) ? LEFT_ALT_PRESSED : 0);
+        (WI_IsFlagSet(keyscanModifiers, KEYSCAN_SHIFT) ? SHIFT_PRESSED : 0) |
+        (WI_IsFlagSet(keyscanModifiers, KEYSCAN_CTRL) ? LEFT_CTRL_PRESSED : 0) |
+        (WI_IsFlagSet(keyscanModifiers, KEYSCAN_ALT) ? LEFT_ALT_PRESSED : 0);
 
     if (pVkey != nullptr)
     {

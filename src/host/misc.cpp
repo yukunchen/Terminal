@@ -130,7 +130,7 @@ BOOL CheckBisectProcessW(const SCREEN_INFORMATION& ScreenInfo,
                          _In_ SHORT sOriginalXPosition,
                          _In_ BOOL fEcho)
 {
-    if (IsFlagSet(ScreenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT))
+    if (WI_IsFlagSet(ScreenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT))
     {
         while (cWords && cBytes)
         {

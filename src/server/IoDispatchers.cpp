@@ -172,7 +172,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
         goto Error;
     }
 
-    ProcessData->fRootProcess = IsFlagClear(gci.Flags, CONSOLE_INITIALIZED);
+    ProcessData->fRootProcess = WI_IsFlagClear(gci.Flags, CONSOLE_INITIALIZED);
 
     // ConsoleApp will be false in the AttachConsole case.
     if (Cac.ConsoleApp)
@@ -182,7 +182,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
 
     ServiceLocator::LocateAccessibilityNotifier()->NotifyConsoleStartApplicationEvent(dwProcessId);
 
-    if (IsFlagClear(gci.Flags, CONSOLE_INITIALIZED))
+    if (WI_IsFlagClear(gci.Flags, CONSOLE_INITIALIZED))
     {
         Status = ConsoleAllocateConsole(&Cac);
         if (!NT_SUCCESS(Status))
@@ -190,7 +190,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
             goto Error;
         }
 
-        SetFlag(gci.Flags, CONSOLE_INITIALIZED);
+        WI_SetFlag(gci.Flags, CONSOLE_INITIALIZED);
     }
 
     try
@@ -203,7 +203,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
         goto Error;
     }
 
-    gci.ProcessHandleList.ModifyConsoleProcessFocus(IsFlagSet(gci.Flags, CONSOLE_HAS_FOCUS));
+    gci.ProcessHandleList.ModifyConsoleProcessFocus(WI_IsFlagSet(gci.Flags, CONSOLE_HAS_FOCUS));
 
     // Create the handles.
 

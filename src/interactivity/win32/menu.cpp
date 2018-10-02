@@ -339,8 +339,8 @@ HRESULT Menu::s_GetConsoleState(CONSOLE_STATE_INFO * const pStateInfo)
     pStateInfo->PopupAttributes = ScreenInfo.GetPopupAttributes()->GetLegacyAttributes();
 
     // Ensure that attributes are only describing colors to the properties dialog
-    ClearAllFlags(pStateInfo->ScreenAttributes, ~(FG_ATTRS | BG_ATTRS));
-    ClearAllFlags(pStateInfo->PopupAttributes, ~(FG_ATTRS | BG_ATTRS));
+    WI_ClearAllFlags(pStateInfo->ScreenAttributes, ~(FG_ATTRS | BG_ATTRS));
+    WI_ClearAllFlags(pStateInfo->PopupAttributes, ~(FG_ATTRS | BG_ATTRS));
 
     pStateInfo->HistoryBufferSize = gci.GetHistoryBufferSize();
     pStateInfo->NumberOfHistoryBuffers = gci.GetNumberOfHistoryBuffers();
@@ -564,8 +564,8 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
     gci.SetColorTable(pStateInfo->ColorTable, gci.GetColorTableSize());
 
     // Ensure that attributes only contain color specification.
-    ClearAllFlags(pStateInfo->ScreenAttributes, ~(FG_ATTRS | BG_ATTRS));
-    ClearAllFlags(pStateInfo->PopupAttributes, ~(FG_ATTRS | BG_ATTRS));
+    WI_ClearAllFlags(pStateInfo->ScreenAttributes, ~(FG_ATTRS | BG_ATTRS));
+    WI_ClearAllFlags(pStateInfo->PopupAttributes, ~(FG_ATTRS | BG_ATTRS));
 
     SetScreenColors(ScreenInfo, pStateInfo->ScreenAttributes, pStateInfo->PopupAttributes, TRUE);
 

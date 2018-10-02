@@ -1110,8 +1110,8 @@ NTSTATUS CommandLine::ProcessCommandLine(COOKED_READ_DATA& cookedReadData,
     COORD cursorPosition = cookedReadData.ScreenInfo().GetTextBuffer().GetCursor().GetPosition();
     NTSTATUS Status;
 
-    const bool altPressed = IsAnyFlagSet(dwKeyState, LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED);
-    const bool ctrlPressed = IsAnyFlagSet(dwKeyState, LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED);
+    const bool altPressed = WI_IsAnyFlagSet(dwKeyState, LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED);
+    const bool ctrlPressed = WI_IsAnyFlagSet(dwKeyState, LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED);
     bool UpdateCursorPosition = false;
     switch (wch)
     {

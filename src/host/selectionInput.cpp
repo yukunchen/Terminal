@@ -27,7 +27,7 @@ Selection::KeySelectionEventResult Selection::HandleKeySelectionEvent(const INPU
     FAIL_FAST_IF(!IsInSelectingState());
 
     const WORD wVirtualKeyCode = pInputKeyInfo->GetVirtualKey();
-    const bool ctrlPressed = IsFlagSet(inputServices->GetKeyState(VK_CONTROL), KEY_PRESSED);
+    const bool ctrlPressed = WI_IsFlagSet(inputServices->GetKeyState(VK_CONTROL), KEY_PRESSED);
 
     // if escape or ctrl-c, cancel selection
     if (!IsMouseButtonDown())

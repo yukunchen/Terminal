@@ -107,7 +107,7 @@ HRESULT ApiDispatchers::ServerGetConsoleInput(_Inout_ CONSOLE_API_MSG * const m,
     *pbReplyPending = FALSE;
 
     CONSOLE_GETCONSOLEINPUT_MSG* const a = &m->u.consoleMsgL1.GetConsoleInput;
-    if (IsFlagSet(a->Flags, CONSOLE_READ_NOREMOVE))
+    if (WI_IsFlagSet(a->Flags, CONSOLE_READ_NOREMOVE))
     {
         Telemetry::Instance().LogApiCall(Telemetry::ApiCall::PeekConsoleInput, a->Unicode);
     }
@@ -119,7 +119,7 @@ HRESULT ApiDispatchers::ServerGetConsoleInput(_Inout_ CONSOLE_API_MSG * const m,
     a->NumRecords = 0;
 
     // If any flags are set that are not within our enum, it's invalid.
-    if (IsAnyFlagSet(a->Flags, ~CONSOLE_READ_VALID))
+    if (WI_IsAnyFlagSet(a->Flags, ~CONSOLE_READ_VALID))
     {
         return E_INVALIDARG;
     }
@@ -138,8 +138,8 @@ HRESULT ApiDispatchers::ServerGetConsoleInput(_Inout_ CONSOLE_API_MSG * const m,
     INPUT_RECORD* const rgRecords = reinterpret_cast<INPUT_RECORD*>(pvBuffer);
     size_t const cRecords = cbBufferSize / sizeof(INPUT_RECORD);
 
-    bool const fIsPeek = IsFlagSet(a->Flags, CONSOLE_READ_NOREMOVE);
-    bool const fIsWaitAllowed = IsFlagClear(a->Flags, CONSOLE_READ_NOWAIT);
+    bool const fIsPeek = WI_IsFlagSet(a->Flags, CONSOLE_READ_NOREMOVE);
+    bool const fIsWaitAllowed = WI_IsFlagClear(a->Flags, CONSOLE_READ_NOWAIT);
 
     INPUT_READ_HANDLE_DATA* const pInputReadHandleData = pHandleData->GetClientInput();
 

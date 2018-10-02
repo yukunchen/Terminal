@@ -202,15 +202,15 @@ TextAttribute ConsoleImeInfo::s_RetrieveAttributeAt(const size_t pos,
     // creating our legacy attribute.
     WORD legacyAttribute = colorArray[encodedAttribute & (CONIME_ATTRCOLOR_SIZE - 1)];
 
-    if (IsFlagSet(encodedAttribute, CONIME_CURSOR_RIGHT))
+    if (WI_IsFlagSet(encodedAttribute, CONIME_CURSOR_RIGHT))
     {
-        SetFlag(legacyAttribute, COMMON_LVB_GRID_SINGLEFLAG);
-        SetFlag(legacyAttribute, COMMON_LVB_GRID_RVERTICAL);
+        WI_SetFlag(legacyAttribute, COMMON_LVB_GRID_SINGLEFLAG);
+        WI_SetFlag(legacyAttribute, COMMON_LVB_GRID_RVERTICAL);
     }
-    else if (IsFlagSet(encodedAttribute, CONIME_CURSOR_LEFT))
+    else if (WI_IsFlagSet(encodedAttribute, CONIME_CURSOR_LEFT))
     {
-        SetFlag(legacyAttribute, COMMON_LVB_GRID_SINGLEFLAG);
-        SetFlag(legacyAttribute, COMMON_LVB_GRID_LVERTICAL);
+        WI_SetFlag(legacyAttribute, COMMON_LVB_GRID_SINGLEFLAG);
+        WI_SetFlag(legacyAttribute, COMMON_LVB_GRID_LVERTICAL);
     }
 
     return TextAttribute(legacyAttribute);

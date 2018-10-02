@@ -38,7 +38,7 @@ CommandHistory* CommandHistory::s_Find(const HANDLE processHandle)
     {
         if (historyList._processHandle == processHandle)
         {
-            FAIL_FAST_IF(IsFlagClear(historyList.Flags, CLE_ALLOCATED));
+            FAIL_FAST_IF(WI_IsFlagClear(historyList.Flags, CLE_ALLOCATED));
             return &historyList;
         }
     }
@@ -55,7 +55,7 @@ void CommandHistory::s_Free(const HANDLE processHandle)
     CommandHistory* const History = CommandHistory::s_Find(processHandle);
     if (History)
     {
-        ClearFlag(History->Flags, CLE_ALLOCATED);
+        WI_ClearFlag(History->Flags, CLE_ALLOCATED);
         History->_processHandle = nullptr;
     }
 }
@@ -87,7 +87,7 @@ bool CommandHistory::IsAppNameMatch(const std::wstring_view other) const
 void CommandHistory::_Reset()
 {
     LastDisplayed = gsl::narrow<SHORT>(_commands.size()) - 1;
-    SetFlag(Flags, CLE_RESET);
+    WI_SetFlag(Flags, CLE_RESET);
 }
 
 [[nodiscard]]
@@ -95,7 +95,7 @@ HRESULT CommandHistory::Add(const std::wstring_view newCommand,
                             const bool suppressDuplicates)
 {
     RETURN_HR_IF(E_OUTOFMEMORY, _maxCommands == 0);
-    FAIL_FAST_IF(IsFlagClear(Flags, CLE_ALLOCATED));
+    FAIL_FAST_IF(WI_IsFlagClear(Flags, CLE_ALLOCATED));
 
     if (newCommand.size() == 0)
     {
@@ -150,7 +150,7 @@ HRESULT CommandHistory::Add(const std::wstring_view newCommand,
         }
     }
     CATCH_RETURN();
-    SetFlag(Flags, CLE_RESET); // remember that we've returned a cmd
+    WI_SetFlag(Flags, CLE_RESET); // remember that we've returned a cmd
 
     return S_OK;
 }
@@ -199,7 +199,7 @@ HRESULT CommandHistory::Retrieve(const SearchDirection searchDirection,
                                  const gsl::span<wchar_t> buffer,
                                  size_t& commandSize)
 {
-    FAIL_FAST_IF_FALSE(IsFlagSet(Flags, CLE_ALLOCATED));
+    FAIL_FAST_IF_FALSE(WI_IsFlagSet(Flags, CLE_ALLOCATED));
 
     if (_commands.size() == 0)
     {
@@ -215,9 +215,9 @@ HRESULT CommandHistory::Retrieve(const SearchDirection searchDirection,
         // if this is the first time for this read that a command has
         // been retrieved, return the current command.  otherwise, return
         // the previous command.
-        if (IsFlagSet(Flags, CLE_RESET))
+        if (WI_IsFlagSet(Flags, CLE_RESET))
         {
-            ClearFlag(Flags, CLE_RESET);
+            WI_ClearFlag(Flags, CLE_RESET);
         }
         else
         {
@@ -255,7 +255,7 @@ void CommandHistory::Empty()
 
 bool CommandHistory::AtFirstCommand() const
 {
-    if (IsFlagSet(Flags, CLE_RESET))
+    if (WI_IsFlagSet(Flags, CLE_RESET))
     {
         return FALSE;
     }
@@ -291,7 +291,7 @@ void CommandHistory::Realloc(const size_t commands)
         _commands.emplace_back(oldCommands[i]);
     }
 
-    SetFlag(Flags, CLE_RESET);
+    WI_SetFlag(Flags, CLE_RESET);
     LastDisplayed = gsl::narrow<SHORT>(_commands.size()) - 1;
     _maxCommands = (SHORT)commands;
 }
@@ -300,7 +300,7 @@ void CommandHistory::s_ReallocExeToFront(const std::wstring_view appName, const 
 {
     for (auto it = s_historyLists.begin(); it != s_historyLists.end(); it++)
     {
-        if (IsFlagSet(it->Flags, CLE_ALLOCATED) && it->IsAppNameMatch(appName))
+        if (WI_IsFlagSet(it->Flags, CLE_ALLOCATED) && it->IsAppNameMatch(appName))
         {
             CommandHistory backup = *it;
             backup.Realloc(commands);
@@ -317,7 +317,7 @@ CommandHistory* CommandHistory::s_FindByExe(const std::wstring_view appName)
 {
     for (auto& historyList : s_historyLists)
     {
-        if (IsFlagSet(historyList.Flags, CLE_ALLOCATED) && historyList.IsAppNameMatch(appName))
+        if (WI_IsFlagSet(historyList.Flags, CLE_ALLOCATED) && historyList.IsAppNameMatch(appName))
         {
             return &historyList;
         }
@@ -346,7 +346,7 @@ CommandHistory* CommandHistory::s_Allocate(const std::wstring_view appName, cons
 
     for (auto it = s_historyLists.cbegin(); it != s_historyLists.cend(); it++)
     {
-        if (IsFlagClear(it->Flags, CLE_ALLOCATED))
+        if (WI_IsFlagClear(it->Flags, CLE_ALLOCATED))
         {
             // use LRU history buffer with same app name
             if (it->IsAppNameMatch(appName))
@@ -377,7 +377,7 @@ CommandHistory* CommandHistory::s_Allocate(const std::wstring_view appName, cons
         // If we have no candidate already and we need one, take the LRU (which is the back/last one) which isn't allocated.
         for (auto it = s_historyLists.crbegin(); it != s_historyLists.crend(); it++)
         {
-            if (IsFlagClear(it->Flags, CLE_ALLOCATED))
+            if (WI_IsFlagClear(it->Flags, CLE_ALLOCATED))
             {
                 BestCandidate = *it;
                 s_historyLists.erase(std::next(it).base()); // trickery to turn reverse iterator into forward iterator for erase.
@@ -398,7 +398,7 @@ CommandHistory* CommandHistory::s_Allocate(const std::wstring_view appName, cons
         }
 
         BestCandidate->_processHandle = processHandle;
-        SetFlag(BestCandidate->Flags, CLE_ALLOCATED);
+        WI_SetFlag(BestCandidate->Flags, CLE_ALLOCATED);
 
         return &s_historyLists.emplace_front(BestCandidate.value());
     }
@@ -516,9 +516,9 @@ bool CommandHistory::FindMatchingCommand(const std::wstring_view givenCommand,
         return false;
     }
 
-    if (IsFlagClear(options, MatchOptions::JustLooking) && IsFlagSet(Flags, CLE_RESET))
+    if (WI_IsFlagClear(options, MatchOptions::JustLooking) && WI_IsFlagSet(Flags, CLE_RESET))
     {
-        ClearFlag(Flags, CLE_RESET);
+        WI_ClearFlag(Flags, CLE_RESET);
     }
     else
     {
@@ -535,7 +535,7 @@ bool CommandHistory::FindMatchingCommand(const std::wstring_view givenCommand,
         for (size_t i = 0; i < _commands.size(); i++)
         {
             const auto& storedCommand = _commands.at(indexFound);
-            if ((IsFlagClear(options, MatchOptions::ExactMatch) && (givenCommand.size() <= storedCommand.size())) || (givenCommand.size() == storedCommand.size()))
+            if ((WI_IsFlagClear(options, MatchOptions::ExactMatch) && (givenCommand.size() <= storedCommand.size())) || (givenCommand.size() == storedCommand.size()))
             {
                 if (std::equal(storedCommand.begin(), storedCommand.begin() + givenCommand.size(),
                                givenCommand.begin(), givenCommand.end(),

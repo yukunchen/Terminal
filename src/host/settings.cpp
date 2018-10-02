@@ -422,12 +422,12 @@ void Settings::ApplyStartupInfo(const Settings* const pStartupSettings)
     //      directly.  See minkernel/console/client/dllinit for the
     //      initialization of these values for cmdline applications.
 
-    if (IsFlagSet(dwFlags, STARTF_USECOUNTCHARS))
+    if (WI_IsFlagSet(dwFlags, STARTF_USECOUNTCHARS))
     {
         _dwScreenBufferSize = pStartupSettings->_dwScreenBufferSize;
     }
 
-    if (IsFlagSet(dwFlags, STARTF_USESIZE))
+    if (WI_IsFlagSet(dwFlags, STARTF_USESIZE))
     {
         // WARNING: This size is in pixels when passed in the create process call.
         // It will need to be divided by the font size before use.
@@ -436,18 +436,18 @@ void Settings::ApplyStartupInfo(const Settings* const pStartupSettings)
         _fUseWindowSizePixels = true;
     }
 
-    if (IsFlagSet(dwFlags, STARTF_USEPOSITION))
+    if (WI_IsFlagSet(dwFlags, STARTF_USEPOSITION))
     {
         _dwWindowOrigin = pStartupSettings->_dwWindowOrigin;
         _bAutoPosition = FALSE;
     }
 
-    if (IsFlagSet(dwFlags, STARTF_USEFILLATTRIBUTE))
+    if (WI_IsFlagSet(dwFlags, STARTF_USEFILLATTRIBUTE))
     {
         _wFillAttribute = pStartupSettings->_wFillAttribute;
     }
 
-    if (IsFlagSet(dwFlags, STARTF_USESHOWWINDOW))
+    if (WI_IsFlagSet(dwFlags, STARTF_USESHOWWINDOW))
     {
         _wShowWindow = pStartupSettings->_wShowWindow;
     }
@@ -558,7 +558,7 @@ void Settings::Validate()
 {
     // If we were explicitly given a size in pixels from the startup info, divide by the font to turn it into characters.
     // See: https://msdn.microsoft.com/en-us/library/windows/desktop/ms686331%28v=vs.85%29.aspx
-    if (IsFlagSet(_dwStartupFlags, STARTF_USESIZE))
+    if (WI_IsFlagSet(_dwStartupFlags, STARTF_USESIZE))
     {
         // TODO: FIX
         //// Get the font that we're going to use to convert pixels to characters.
@@ -598,8 +598,8 @@ void Settings::Validate()
     }
 
     // Ensure that our fill attributes only contain colors and not any box drawing or invert attributes.
-    ClearAllFlags(_wFillAttribute, ~(FG_ATTRS | BG_ATTRS));
-    ClearAllFlags(_wPopupFillAttribute, ~(FG_ATTRS | BG_ATTRS));
+    WI_ClearAllFlags(_wFillAttribute, ~(FG_ATTRS | BG_ATTRS));
+    WI_ClearAllFlags(_wPopupFillAttribute, ~(FG_ATTRS | BG_ATTRS));
 
     FAIL_FAST_IF_FALSE(_dwWindowSize.X > 0);
     FAIL_FAST_IF_FALSE(_dwWindowSize.Y > 0);
@@ -772,7 +772,7 @@ void Settings::SetFillAttribute(const WORD wFillAttribute)
     // Do not allow the default fill attribute to use any attrs other than fg/bg colors.
     // This prevents us from accidentally inverting everything or suddenly drawing lines
     // everywhere by defualt.
-    ClearAllFlags(_wFillAttribute, ~(FG_ATTRS | BG_ATTRS));
+    WI_ClearAllFlags(_wFillAttribute, ~(FG_ATTRS | BG_ATTRS));
 }
 
 WORD Settings::GetPopupFillAttribute() const
@@ -786,7 +786,7 @@ void Settings::SetPopupFillAttribute(const WORD wPopupFillAttribute)
     // Do not allow the default popup fill attribute to use any attrs other than fg/bg colors.
     // This prevents us from accidentally inverting everything or suddenly drawing lines
     // everywhere by defualt.
-    ClearAllFlags(_wPopupFillAttribute, ~(FG_ATTRS | BG_ATTRS));
+    WI_ClearAllFlags(_wPopupFillAttribute, ~(FG_ATTRS | BG_ATTRS));
 }
 
 WORD Settings::GetShowWindow() const
@@ -988,7 +988,7 @@ void Settings::SetColorTableEntry(const size_t index, const COLORREF ColorValue)
 
 bool Settings::IsStartupTitleIsLinkNameSet() const
 {
-    return IsFlagSet(_dwStartupFlags, STARTF_TITLEISLINKNAME);
+    return WI_IsFlagSet(_dwStartupFlags, STARTF_TITLEISLINKNAME);
 }
 
 bool Settings::IsFaceNameSet() const

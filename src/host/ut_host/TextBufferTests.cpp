@@ -796,7 +796,7 @@ void TextBufferTests::TestRgbEraseLine()
     TextBuffer& tbi = si.GetTextBuffer();
     StateMachine& stateMachine = si.GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
-    SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
     cursor.SetXPosition(0);
     // Case 1 -
@@ -846,7 +846,7 @@ void TextBufferTests::TestUnBold()
     TextBuffer& tbi = si.GetTextBuffer();
     StateMachine& stateMachine = si.GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
-    SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
     cursor.SetXPosition(0);
     // Case 1 -
@@ -897,7 +897,7 @@ void TextBufferTests::TestUnBoldRgb()
     TextBuffer& tbi = si.GetTextBuffer();
     StateMachine& stateMachine = si.GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
-    SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
     cursor.SetXPosition(0);
     // Case 2 -
@@ -952,7 +952,7 @@ void TextBufferTests::TestComplexUnBold()
     TextBuffer& tbi = si.GetTextBuffer();
     StateMachine& stateMachine = si.GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
-    SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
     cursor.SetXPosition(0);
     // Case 3 -
@@ -1048,7 +1048,7 @@ void TextBufferTests::CopyAttrs()
     TextBuffer& tbi = si.GetTextBuffer();
     StateMachine& stateMachine = si.GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
-    SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
     cursor.SetXPosition(0);
     cursor.SetYPosition(0);
@@ -1099,7 +1099,7 @@ void TextBufferTests::EmptySgrTest()
     StateMachine& stateMachine = si.GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
 
-    SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     cursor.SetXPosition(0);
     cursor.SetYPosition(0);
 
@@ -1162,7 +1162,7 @@ void TextBufferTests::TestReverseReset()
     StateMachine& stateMachine = si.GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
 
-    SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
     cursor.SetXPosition(0);
     cursor.SetYPosition(0);
@@ -1239,7 +1239,7 @@ void TextBufferTests::CopyLastAttr()
     StateMachine& stateMachine = si.GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
 
-    SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
     cursor.SetXPosition(0);
     cursor.SetYPosition(0);
@@ -1570,7 +1570,7 @@ void TextBufferTests::TestBackspaceStringsAPI()
     const Cursor& cursor = tbi.GetCursor();
 
     gci.SetVirtTermLevel(0);
-    ClearFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    WI_ClearFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
     const auto x0 = cursor.GetPosition().X;
     const auto y0 = cursor.GetPosition().Y;
@@ -1657,7 +1657,7 @@ void TextBufferTests::TestRepeatCharacter()
     StateMachine& stateMachine = si.GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
 
-    SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
     cursor.SetXPosition(0);
     cursor.SetYPosition(0);

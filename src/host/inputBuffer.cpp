@@ -690,7 +690,7 @@ bool InputBuffer::_CoalesceRepeatedKeyPressEvents(_Inout_ std::deque<std::unique
             !IsGlyphFullWidth(pInKeyEvent->GetCharData()))
         {
             bool sameKey = false;
-            if (IsFlagSet(pInKeyEvent->GetActiveModifierKeys(), NLS_IME_CONVERSION) &&
+            if (WI_IsFlagSet(pInKeyEvent->GetActiveModifierKeys(), NLS_IME_CONVERSION) &&
                 pInKeyEvent->GetCharData() == pLastKeyEvent->GetCharData() &&
                 pInKeyEvent->GetActiveModifierKeys() == pLastKeyEvent->GetActiveModifierKeys())
             {
@@ -743,15 +743,15 @@ void InputBuffer::_HandleConsoleSuspensionEvents(_Inout_ std::deque<std::unique_
             const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(currEvent.get());
             if (pKeyEvent->IsKeyDown())
             {
-                if (IsFlagSet(gci.Flags, CONSOLE_SUSPENDED) &&
+                if (WI_IsFlagSet(gci.Flags, CONSOLE_SUSPENDED) &&
                     !IsSystemKey(pKeyEvent->GetVirtualKeyCode()))
                 {
                     UnblockWriteConsole(CONSOLE_OUTPUT_SUSPENDED);
                     continue;
                 }
-                else if (IsFlagSet(InputMode, ENABLE_LINE_INPUT) && pKeyEvent->IsPauseKey())
+                else if (WI_IsFlagSet(InputMode, ENABLE_LINE_INPUT) && pKeyEvent->IsPauseKey())
                 {
-                    SetFlag(gci.Flags, CONSOLE_SUSPENDED);
+                    WI_SetFlag(gci.Flags, CONSOLE_SUSPENDED);
                     continue;
                 }
             }
@@ -769,7 +769,7 @@ void InputBuffer::_HandleConsoleSuspensionEvents(_Inout_ std::deque<std::unique_
 // - Returns true if this input buffer is in VT Input mode.
 bool InputBuffer::IsInVirtualTerminalInputMode() const
 {
-    return IsFlagSet(InputMode, ENABLE_VIRTUAL_TERMINAL_INPUT);
+    return WI_IsFlagSet(InputMode, ENABLE_VIRTUAL_TERMINAL_INPUT);
 }
 
 // Routine Description:

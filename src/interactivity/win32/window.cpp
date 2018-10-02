@@ -247,7 +247,7 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
             RECT rectProposed = { pSettings->GetWindowOrigin().X, pSettings->GetWindowOrigin().Y, 0, 0 };
             _CalculateWindowRect(pSettings->GetWindowSize(), &rectProposed); //returns with rectangle filled out
 
-            if (!IsFlagSet(gci.Flags, CONSOLE_AUTO_POSITION))
+            if (!WI_IsFlagSet(gci.Flags, CONSOLE_AUTO_POSITION))
             {
                 //if launched from a shortcut, ensure window is visible on screen
                 if (pSettings->IsStartupTitleIsLinkNameSet())
@@ -289,8 +289,8 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
                 CONSOLE_WINDOW_CLASS,
                 gci.GetTitle().c_str(),
                 CONSOLE_WINDOW_FLAGS,
-                IsFlagSet(gci.Flags,
-                          CONSOLE_AUTO_POSITION) ? CW_USEDEFAULT : rectProposed.left,
+                WI_IsFlagSet(gci.Flags,
+                             CONSOLE_AUTO_POSITION) ? CW_USEDEFAULT : rectProposed.left,
                 rectProposed.top, // field is ignored if CW_USEDEFAULT was chosen above
                 RECT_WIDTH(&rectProposed),
                 RECT_HEIGHT(&rectProposed),
@@ -427,7 +427,7 @@ NTSTATUS Window::SetViewportOrigin(_In_ SMALL_RECT NewWindow)
 
     COORD const FontSize = ScreenInfo.GetScreenFontSize();
 
-    if (IsFlagClear(gci.Flags, CONSOLE_IS_ICONIC))
+    if (WI_IsFlagClear(gci.Flags, CONSOLE_IS_ICONIC))
     {
         Selection* pSelection = &Selection::Instance();
         pSelection->HideSelection();
@@ -560,7 +560,7 @@ void Window::_UpdateWindowSize(const SIZE sizeNew)
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& ScreenInfo = GetScreenInfo();
 
-    if (IsFlagClear(gci.Flags, CONSOLE_IS_ICONIC))
+    if (WI_IsFlagClear(gci.Flags, CONSOLE_IS_ICONIC))
     {
         ScreenInfo.InternalUpdateScrollBars();
 
@@ -588,7 +588,7 @@ NTSTATUS Window::_InternalSetWindowSize()
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& siAttached = GetScreenInfo();
 
-    ClearFlag(gci.Flags, CONSOLE_SETTING_WINDOW_SIZE);
+    WI_ClearFlag(gci.Flags, CONSOLE_SETTING_WINDOW_SIZE);
     if (!IsInFullscreen())
     {
         // Figure out how big to make the window, given the desired client area size.
@@ -1084,14 +1084,14 @@ void Window::SetIsFullscreen(const bool fFullscreenEnabled)
     {
         // moving to fullscreen. remove WS_OVERLAPPEDWINDOW, which specifies styles for non-fullscreen windows (e.g.
         // caption bar). add the WS_POPUP style to allow us to size ourselves to the monitor size.
-        ClearAllFlags(dwWindowStyle, WS_OVERLAPPEDWINDOW);
-        SetFlag(dwWindowStyle, WS_POPUP);
+        WI_ClearAllFlags(dwWindowStyle, WS_OVERLAPPEDWINDOW);
+        WI_SetFlag(dwWindowStyle, WS_POPUP);
     }
     else
     {
         // coming back from fullscreen. undo what we did to get in to fullscreen in the first place.
-        ClearFlag(dwWindowStyle, WS_POPUP);
-        SetAllFlags(dwWindowStyle, WS_OVERLAPPEDWINDOW);
+        WI_ClearFlag(dwWindowStyle, WS_POPUP);
+        WI_SetAllFlags(dwWindowStyle, WS_OVERLAPPEDWINDOW);
     }
     SetWindowLongW(hWnd, GWL_STYLE, dwWindowStyle);
 
@@ -1100,12 +1100,12 @@ void Window::SetIsFullscreen(const bool fFullscreenEnabled)
     if (_fIsInFullscreen)
     {
         // moving to fullscreen. remove the window edge style to avoid an ugly border when not focused.
-        ClearFlag(dwExWindowStyle, WS_EX_WINDOWEDGE);
+        WI_ClearFlag(dwExWindowStyle, WS_EX_WINDOWEDGE);
     }
     else
     {
         // coming back from fullscreen.
-        SetFlag(dwExWindowStyle, WS_EX_WINDOWEDGE);
+        WI_SetFlag(dwExWindowStyle, WS_EX_WINDOWEDGE);
     }
     SetWindowLongW(hWnd, GWL_EXSTYLE, dwExWindowStyle);
 

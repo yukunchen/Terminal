@@ -253,7 +253,7 @@ std::deque<std::unique_ptr<KeyEvent>> CharToKeyEvents(const wchar_t wch,
         WORD CharType = 0;
         GetStringTypeW(CT_CTYPE3, &wch, 1, &CharType);
 
-        if (IsFlagSet(CharType, C3_ALPHA) || GetCharWidth(wch) == CodepointWidth::Wide)
+        if (WI_IsFlagSet(CharType, C3_ALPHA) || GetCharWidth(wch) == CodepointWidth::Wide)
         {
             keyState = 0;
         }
@@ -293,7 +293,7 @@ std::deque<std::unique_ptr<KeyEvent>> SynthesizeKeyboardEvents(const wchar_t wch
     std::deque<std::unique_ptr<KeyEvent>> keyEvents;
 
     // add modifier key event if necessary
-    if (AreAllFlagsSet(modifierState, VkKeyScanModState::CtrlAndAltPressed))
+    if (WI_AreAllFlagsSet(modifierState, VkKeyScanModState::CtrlAndAltPressed))
     {
         altGrSet = true;
         keyEvents.push_back(std::make_unique<KeyEvent>(true,
@@ -303,7 +303,7 @@ std::deque<std::unique_ptr<KeyEvent>> SynthesizeKeyboardEvents(const wchar_t wch
                                                        UNICODE_NULL,
                                                        (ENHANCED_KEY | LEFT_CTRL_PRESSED | RIGHT_ALT_PRESSED)));
     }
-    else if (IsFlagSet(modifierState, VkKeyScanModState::ShiftPressed))
+    else if (WI_IsFlagSet(modifierState, VkKeyScanModState::ShiftPressed))
     {
         shiftSet = true;
         keyEvents.push_back(std::make_unique<KeyEvent>(true,
@@ -318,15 +318,15 @@ std::deque<std::unique_ptr<KeyEvent>> SynthesizeKeyboardEvents(const wchar_t wch
     KeyEvent keyEvent{ true, 1, LOBYTE(keyState), virtualScanCode, wch, 0 };
 
     // add modifier flags if necessary
-    if (IsFlagSet(modifierState, VkKeyScanModState::ShiftPressed))
+    if (WI_IsFlagSet(modifierState, VkKeyScanModState::ShiftPressed))
     {
         keyEvent.ActivateModifierKey(ModifierKeyState::Shift);
     }
-    if (IsFlagSet(modifierState, VkKeyScanModState::CtrlPressed))
+    if (WI_IsFlagSet(modifierState, VkKeyScanModState::CtrlPressed))
     {
         keyEvent.ActivateModifierKey(ModifierKeyState::LeftCtrl);
     }
-    if (AreAllFlagsSet(modifierState, VkKeyScanModState::CtrlAndAltPressed))
+    if (WI_AreAllFlagsSet(modifierState, VkKeyScanModState::CtrlAndAltPressed))
     {
         keyEvent.ActivateModifierKey(ModifierKeyState::RightAlt);
     }

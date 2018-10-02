@@ -123,7 +123,7 @@ DWORD RemoveDbcsMarkCell(_Out_writes_(cch) PCHAR_INFO pciDst, _In_reads_(cch) co
     for (DWORD iSrc = 0; iSrc < cch; iSrc++)
     {
         // If it's not a trailing byte, copy it straight over, stripping out the Leading/Trailing flags from the attributes field.
-        if (!IsFlagSet(pciSrc[iSrc].Attributes, COMMON_LVB_TRAILING_BYTE))
+        if (!WI_IsFlagSet(pciSrc[iSrc].Attributes, COMMON_LVB_TRAILING_BYTE))
         {
             pciDst[iDst] = pciSrc[iSrc];
             pciDst[iDst].Attributes &= ~COMMON_LVB_SBCSDBCS;

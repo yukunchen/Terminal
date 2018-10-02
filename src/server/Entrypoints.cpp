@@ -90,7 +90,7 @@ HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine, const Conso
             GetStartupInfoW(&HostStartupInfo);
 
             // If we were started with Title is Link Name, then pass the flag and the link name down to the child.
-            if (IsFlagSet(HostStartupInfo.dwFlags, STARTF_TITLEISLINKNAME))
+            if (WI_IsFlagSet(HostStartupInfo.dwFlags, STARTF_TITLEISLINKNAME))
             {
                 StartupInformation.StartupInfo.lpTitle = HostStartupInfo.lpTitle;
                 StartupInformation.StartupInfo.dwFlags |= STARTF_TITLEISLINKNAME;
