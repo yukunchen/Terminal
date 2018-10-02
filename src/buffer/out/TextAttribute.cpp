@@ -62,8 +62,8 @@ COLORREF TextAttribute::GetRgbForeground() const
     {
         const byte iColorTableIndex = (LOBYTE(GetLegacyAttributes()) & FG_ATTRS);
 
-        FAIL_FAST_IF_FALSE(iColorTableIndex >= 0);
-        FAIL_FAST_IF_FALSE(iColorTableIndex < gci.GetColorTableSize());
+        FAIL_FAST_IF(!(iColorTableIndex >= 0));
+        FAIL_FAST_IF(!(iColorTableIndex < gci.GetColorTableSize()));
 
         const auto table = gsl::make_span(gci.GetColorTable(), gci.GetColorTableSize());
         rgbColor = table[iColorTableIndex];
@@ -90,8 +90,8 @@ COLORREF TextAttribute::GetRgbBackground() const
     {
         const byte iColorTableIndex = (LOBYTE(_wAttrLegacy) & BG_ATTRS) >> 4;
 
-        FAIL_FAST_IF_FALSE(iColorTableIndex >= 0);
-        FAIL_FAST_IF_FALSE(iColorTableIndex < gci.GetColorTableSize());
+        FAIL_FAST_IF(!(iColorTableIndex >= 0));
+        FAIL_FAST_IF(!(iColorTableIndex < gci.GetColorTableSize()));
 
         const auto table = gsl::make_span(gci.GetColorTable(), gci.GetColorTableSize());
         rgbColor = table[iColorTableIndex];

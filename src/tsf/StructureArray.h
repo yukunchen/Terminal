@@ -57,9 +57,9 @@ public:
     //
     inline void* GetAt(int iIndex) const
     {
-        FAIL_FAST_IF_FALSE(iIndex >= 0);
-        FAIL_FAST_IF_FALSE(iIndex <= _cElements); // there's code that uses the first invalid offset for loop termination
-        FAIL_FAST_IF_FALSE(_pData != NULL);
+        FAIL_FAST_IF(!(iIndex >= 0));
+        FAIL_FAST_IF(!(iIndex <= _cElements)); // there's code that uses the first invalid offset for loop termination
+        FAIL_FAST_IF(!(_pData != NULL));
 
         return _pData + (iIndex * _iElementSize);
     }
@@ -110,7 +110,7 @@ public:
         }
 
         _cElements += cElements;
-        FAIL_FAST_IF_FALSE(_iAllocatedSize >= _cElements);
+        FAIL_FAST_IF(!(_iAllocatedSize >= _cElements));
 
         return TRUE;
     }
@@ -168,8 +168,8 @@ private:
         ULONG ulElementSize;
         ULONG ulBufferSize;
 
-        FAIL_FAST_IF_FALSE(iSizeNew <= _iAllocatedSize);
-        FAIL_FAST_IF_FALSE(_cElements <= iSizeNew);
+        FAIL_FAST_IF(!(iSizeNew <= _iAllocatedSize));
+        FAIL_FAST_IF(!(_cElements <= iSizeNew));
 
         if (iSizeNew == _iAllocatedSize)   // LocalReAlloc will actually re-alloc!  Don't let it.
             return;

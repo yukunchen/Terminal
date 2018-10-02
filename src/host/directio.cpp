@@ -187,7 +187,7 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
 
     if (CONSOLE_STATUS_WAIT == Status)
     {
-        FAIL_FAST_IF_FALSE(readEvents.empty());
+        FAIL_FAST_IF(!(readEvents.empty()));
         // If we're told to wait until later, move all of our context
         // to the read data object and send it back up to the server.
         try
@@ -238,7 +238,7 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
         {
             pInputBuffer->StoreReadPartialByteSequence(std::move(readEvents.front()));
             readEvents.pop_front();
-            FAIL_FAST_IF_FALSE(readEvents.empty());
+            FAIL_FAST_IF(!(readEvents.empty()));
         }
     }
     return Status;

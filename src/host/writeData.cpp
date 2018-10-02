@@ -120,7 +120,7 @@ bool WriteData::Notify(const WaitTerminationReason TerminationReason,
     // This routine should be called by a thread owning the same lock on the
     // same console as we're reading from.
 
-    FAIL_FAST_IF_FALSE(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
+    FAIL_FAST_IF(!(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked()));
 
     WriteData* pWaiter = nullptr;
     size_t cbContext = _cbContext;

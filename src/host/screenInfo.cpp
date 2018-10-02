@@ -181,7 +181,7 @@ bool SCREEN_INFORMATION::InVTMode() const
 void SCREEN_INFORMATION::s_InsertScreenBuffer(_In_ PSCREEN_INFORMATION pScreenInfo)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    FAIL_FAST_IF_FALSE(gci.IsConsoleLocked());
+    FAIL_FAST_IF(!(gci.IsConsoleLocked()));
 
     pScreenInfo->Next = gci.ScreenBuffers;
     gci.ScreenBuffers = pScreenInfo;
@@ -560,7 +560,7 @@ void SCREEN_INFORMATION::NotifyAccessibilityEventing(const short sStartX,
     if (IsActiveScreenBuffer())
     {
         const COORD coordScreenBufferSize = GetScreenBufferSize();
-        FAIL_FAST_IF_FALSE(sEndX < coordScreenBufferSize.X);
+        FAIL_FAST_IF(!(sEndX < coordScreenBufferSize.X));
 
         if (sStartX == sEndX && sStartY == sEndY)
         {
@@ -876,9 +876,9 @@ void SCREEN_INFORMATION::ProcessResizeWindow(const RECT* const prcClientNew, con
     // 4. Finally, update the scroll bars.
     UpdateScrollBars();
 
-    FAIL_FAST_IF_FALSE(_viewport.Top() >= 0);
+    FAIL_FAST_IF(!(_viewport.Top() >= 0));
     // TODO MSFT: 17663344 - Audit call sites for this precondition. Extremely tiny offscreen windows.
-    //FAIL_FAST_IF_FALSE(_viewport.IsValid());
+    //FAIL_FAST_IF(!(_viewport.IsValid()));
 }
 
 #pragma endregion
@@ -1131,7 +1131,7 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(const COORD* const pcoordSize,
                 // the number of rows from the bottom instead.
                 // NOTE: It's += because DeltaY will be negative
                 // already for this circumstance.
-                FAIL_FAST_IF_FALSE(DeltaY <= 0);
+                FAIL_FAST_IF(!(DeltaY <= 0));
                 srNewViewport.Bottom += DeltaY;
             }
         }
@@ -1177,7 +1177,7 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(const COORD* const pcoordSize,
                     // prompt line.
                     const short cRemainder = 0 - srNewViewport.Top;
                     srNewViewport.Top += cRemainder;
-                    FAIL_FAST_IF_FALSE(srNewViewport.Top == 0);
+                    FAIL_FAST_IF(!(srNewViewport.Top == 0));
                     srNewViewport.Bottom += cRemainder;
                 }
             }
@@ -1289,12 +1289,12 @@ void SCREEN_INFORMATION::s_CalculateScrollbarVisibility(const RECT* const prcCli
                                                         _Out_ bool* const pfIsVerticalVisible)
 {
     // TODO MSFT: 17663344 - Audit call sites for this precondition. Extremely tiny offscreen windows.
-    // FAIL_FAST_IF_FALSE(prcClientArea->left < prcClientArea->right);
-    // FAIL_FAST_IF_FALSE(prcClientArea->top < prcClientArea->bottom);
-    // FAIL_FAST_IF_FALSE(pcoordBufferSize->X > 0);
-    // FAIL_FAST_IF_FALSE(pcoordBufferSize->Y > 0);
-    // FAIL_FAST_IF_FALSE(pcoordFontSize->X > 0);
-    // FAIL_FAST_IF_FALSE(pcoordFontSize->Y > 0);
+    // FAIL_FAST_IF(!(prcClientArea->left < prcClientArea->right));
+    // FAIL_FAST_IF(!(prcClientArea->top < prcClientArea->bottom));
+    // FAIL_FAST_IF(!(pcoordBufferSize->X > 0));
+    // FAIL_FAST_IF(!(pcoordBufferSize->Y > 0));
+    // FAIL_FAST_IF(!(pcoordFontSize->X > 0));
+    // FAIL_FAST_IF(!(pcoordFontSize->Y > 0));
 
     // Start with bars not visible as the initial state of the client area doesn't account for scroll bars.
     *pfIsHorizontalVisible = false;

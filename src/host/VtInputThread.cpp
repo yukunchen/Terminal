@@ -35,7 +35,7 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
     _exitRequested{ false },
     _exitResult{ S_OK }
 {
-    THROW_IF_HANDLE_INVALID(_hFile.get());
+    THROW_HR_IF(E_HANDLE, _hFile.get() == INVALID_HANDLE_VALUE);
 
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
@@ -162,8 +162,8 @@ DWORD VtInputThread::_InputThread()
 [[nodiscard]]
 HRESULT VtInputThread::Start()
 {
-    RETURN_IF_HANDLE_INVALID(_hFile.get());
-
+    RETURN_HR_IF(E_HANDLE, !_hFile);
+    
     HANDLE hThread = nullptr;
     // 0 is the right value, https://blogs.msdn.microsoft.com/oldnewthing/20040223-00/?p=40503
     DWORD dwThreadId = 0;
@@ -175,7 +175,7 @@ HRESULT VtInputThread::Start()
                            0,
                            &dwThreadId);
 
-    RETURN_IF_HANDLE_INVALID(hThread);
+    RETURN_LAST_ERROR_IF(hThread == INVALID_HANDLE_VALUE);
     _hThread.reset(hThread);
     _dwThreadId = dwThreadId;
 

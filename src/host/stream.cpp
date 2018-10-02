@@ -873,7 +873,7 @@ HRESULT ApiRoutines::ReadConsoleWImpl(_Inout_ IConsoleInputObject* const pInCont
                                           true,
                                           ppWaiter);
 
-    FAIL_FAST_IF_FALSE(cbTextBuffer % sizeof(wchar_t) == 0);
+    FAIL_FAST_IF(!(cbTextBuffer % sizeof(wchar_t) == 0));
     *pcchTextBufferWritten = cbTextBuffer/ sizeof(wchar_t);
 
     return HRESULT_FROM_NT(Status);

@@ -182,7 +182,7 @@ bool DirectReadData::Notify(const WaitTerminationReason TerminationReason,
         {
             _pInputBuffer->StoreReadPartialByteSequence(std::move(readEvents.front()));
             readEvents.pop_front();
-            FAIL_FAST_IF_FALSE(readEvents.empty());
+            FAIL_FAST_IF(!(readEvents.empty()));
         }
 
         // move events to pOutputData

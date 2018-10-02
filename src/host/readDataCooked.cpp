@@ -245,7 +245,7 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
     // this routine should be called by a thread owning the same
     // lock on the same console as we're reading from.
 
-    FAIL_FAST_IF_FALSE(gci.IsConsoleLocked());
+    FAIL_FAST_IF(!(gci.IsConsoleLocked()));
 
     // MSFT:13994975 This is REALLY weird.
     // When we're doing cooked reading for popups, we come through this method
@@ -471,7 +471,7 @@ HRESULT COOKED_READ_DATA::Read(const bool isUnicode,
 #pragma prefast(suppress:__WARNING_BUFFER_OVERFLOW, "LineCount > 1 means there's a UNICODE_LINEFEED")
                 for (Tmp = _BackupLimit; *Tmp != UNICODE_LINEFEED; Tmp++)
                 {
-                    FAIL_FAST_IF_FALSE(Tmp < (_BackupLimit + _BytesRead));
+                    FAIL_FAST_IF(!(Tmp < (_BackupLimit + _BytesRead)));
                 }
 
                 numBytes = (ULONG)(Tmp - _BackupLimit + 1) * sizeof(*Tmp);

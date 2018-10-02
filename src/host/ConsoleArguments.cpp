@@ -268,7 +268,7 @@ HRESULT ConsoleArguments::_GetClientCommandline(_Inout_ std::vector<std::wstring
     if (skipFirst)
     {
         // Make sure that the arg we're deleting is "--"
-        FAIL_FAST_IF_FALSE(CLIENT_COMMANDLINE_ARG == start->c_str());
+        FAIL_FAST_IF(!(CLIENT_COMMANDLINE_ARG == start->c_str()));
         args.erase(start);
     }
 

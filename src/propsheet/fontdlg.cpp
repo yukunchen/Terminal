@@ -664,7 +664,7 @@ FontListCreate(
     LPWSTR pwszAltTTFace;
     LONG_PTR dwExStyle;
 
-    FAIL_FAST_IF_FALSE(OEMCP != 0); // must be initialized
+    FAIL_FAST_IF(!(OEMCP != 0)); // must be initialized
 
     bLB = ((pwszTTFace == nullptr) || (pwszTTFace[0] == TEXT('\0')));
     if (bLB) {
@@ -829,7 +829,7 @@ FontListCreate(
     i = lcbGETITEMDATA(hWndShow, bLB, lListIndex);
 
     DBGFONTS(("FontListCreate returns 0x%x\n", i));
-    FAIL_FAST_IF_FALSE(i == LB_ERR || (ULONG)i < NumberOfFonts);
+    FAIL_FAST_IF(!(i == LB_ERR || (ULONG)i < NumberOfFonts));
     return i;
 }
 
@@ -1074,7 +1074,7 @@ FindCreateFont(
 
     BYTE CharSet = CodePageToCharSet(CodePage);
 
-    FAIL_FAST_IF_FALSE(OEMCP != 0);
+    FAIL_FAST_IF(!(OEMCP != 0));
 
     DBGFONTS(("FindCreateFont Family=%x %ls (%d,%d) %d %d %x\n",
             Family, pwszFace, Size.X, Size.Y, Weight, CodePage, CharSet));
@@ -1235,7 +1235,7 @@ TryFindExactFont:
     }
 
 FoundFont:
-    FAIL_FAST_IF_FALSE(FontIndex < (int)NumberOfFonts);
+    FAIL_FAST_IF(!(FontIndex < (int)NumberOfFonts));
     DBGFONTS(("FindCreateFont returns %x : %ls (%d,%d)\n", FontIndex,
             FontInfo[FontIndex].FaceName,
             FontInfo[FontIndex].Size.X, FontInfo[FontIndex].Size.Y));
@@ -1371,7 +1371,7 @@ PreviewInit(
 
     DBGFONTS(("Changing Font Number from %d to %d\n",
               g_currentFontIndex, nFont));
-    FAIL_FAST_IF_FALSE((ULONG)nFont < NumberOfFonts);
+    FAIL_FAST_IF(!((ULONG)nFont < NumberOfFonts));
     g_currentFontIndex = nFont;
 
     if (g_fHostedInFileProperties)
@@ -1462,7 +1462,7 @@ PreviewUpdate(
     /*
      * If we've selected a new font, tell the property sheet we've changed
      */
-    FAIL_FAST_IF_FALSE((ULONG)FontIndex < NumberOfFonts);
+    FAIL_FAST_IF(!((ULONG)FontIndex < NumberOfFonts));
     if ((ULONG)FontIndex >= NumberOfFonts) {
         FontIndex = 0;
     }

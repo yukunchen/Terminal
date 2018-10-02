@@ -101,7 +101,7 @@ HRESULT ConsoleObjectHeader::AllocateIoHandle(const ConsoleHandleData::HandleTyp
 HRESULT ConsoleObjectHeader::FreeIoHandle(_In_ ConsoleHandleData* const pFree)
 {
     // This absolutely should not happen and our state is corrupt/bad if we try to release past 0.
-    THROW_HR_IF_FALSE(E_NOT_VALID_STATE, _ulOpenCount > 0);
+    THROW_HR_IF(E_NOT_VALID_STATE, !(_ulOpenCount > 0));
 
     _ulOpenCount--;
 
