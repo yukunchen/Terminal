@@ -67,7 +67,7 @@ HRESULT VtInputThread::_HandleRunInput(_In_reads_(cch) const byte* const charBuf
     //      next console API call. For something like `powershell sleep 60`,
     //      that won't happen for 60s
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     try
     {

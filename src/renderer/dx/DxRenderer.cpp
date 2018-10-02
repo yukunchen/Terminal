@@ -807,7 +807,7 @@ HRESULT DxEngine::PaintBufferGridLines(GridLines const lines,
                                        COORD const coordTarget) noexcept
 {
     const auto existingColor = _d2dBrushForeground->GetColor();
-    const auto restoreBrushOnExit = wil::ScopeExit([&] {_d2dBrushForeground->SetColor(existingColor); });
+    const auto restoreBrushOnExit = wil::scope_exit([&] {_d2dBrushForeground->SetColor(existingColor); });
 
     _d2dBrushForeground->SetColor(D2D1::ColorF(color));
 

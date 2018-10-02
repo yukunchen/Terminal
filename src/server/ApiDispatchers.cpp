@@ -40,7 +40,7 @@ HRESULT ApiDispatchers::ServerGetConsoleMode(_Inout_ CONSOLE_API_MSG * const m, 
     CONSOLE_MODE_MSG* const a = &m->u.consoleMsgL1.GetConsoleMode;
     std::wstring handleType = L"unknown";
 
-    auto tracing = wil::ScopeExit([&]()
+    auto tracing = wil::scope_exit([&]()
     {
         Tracing::s_TraceApi(a, handleType);
     });
@@ -423,7 +423,7 @@ HRESULT ApiDispatchers::ServerWriteConsole(_Inout_ CONSOLE_API_MSG * const m, _I
     // Get input parameter buffer
     PVOID pvBuffer;
     ULONG cbBufferSize;
-    auto tracing = wil::ScopeExit([&]()
+    auto tracing = wil::scope_exit([&]()
     {
         Tracing::s_TraceApi(pvBuffer, a);
     });
@@ -584,7 +584,7 @@ HRESULT ApiDispatchers::ServerGetConsoleScreenBufferInfo(_Inout_ CONSOLE_API_MSG
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleScreenBufferInfoEx);
     CONSOLE_SCREENBUFFERINFO_MSG* const a = &m->u.consoleMsgL2.GetConsoleScreenBufferInfo;
 
-    auto tracing = wil::ScopeExit([&]()
+    auto tracing = wil::scope_exit([&]()
     {
         Tracing::s_TraceApi(a);
     });
@@ -731,7 +731,7 @@ HRESULT ApiDispatchers::ServerSetConsoleTextAttribute(_Inout_ CONSOLE_API_MSG * 
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleTextAttribute);
     CONSOLE_SETTEXTATTRIBUTE_MSG* const a = &m->u.consoleMsgL2.SetConsoleTextAttribute;
 
-    auto tracing = wil::ScopeExit([&]()
+    auto tracing = wil::scope_exit([&]()
     {
         Tracing::s_TraceApi(a);
     });

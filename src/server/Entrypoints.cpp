@@ -118,7 +118,7 @@ HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine, const Conso
                                                                      0,
                                                                      &AttributeListSize));
         // Set cleanup data for ProcThreadAttributeList when successful.
-        auto CleanupProcThreadAttribute = wil::ScopeExit([&]
+        auto CleanupProcThreadAttribute = wil::scope_exit([&]
         {
             DeleteProcThreadAttributeList(StartupInformation.lpAttributeList);
         });

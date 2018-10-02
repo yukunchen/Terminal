@@ -134,7 +134,7 @@ HRESULT Renderer::_PaintFrameForEngine(_In_ IRenderEngine* const pEngine)
     FAIL_FAST_IF_NULL(pEngine); // This is a programming error. Fail fast.
 
     LockConsole();
-    auto unlock = wil::ScopeExit([&]()
+    auto unlock = wil::scope_exit([&]()
     {
         UnlockConsole();
     });
@@ -154,7 +154,7 @@ HRESULT Renderer::_PaintFrameForEngine(_In_ IRenderEngine* const pEngine)
         return S_OK;
     }
 
-    auto endPaint = wil::ScopeExit([&]()
+    auto endPaint = wil::scope_exit([&]()
     {
         LOG_IF_FAILED(pEngine->EndPaint());
     });
@@ -190,10 +190,10 @@ HRESULT Renderer::_PaintFrameForEngine(_In_ IRenderEngine* const pEngine)
     RETURN_IF_FAILED(_PaintTitle(pEngine));
 
     // Force scope exit end paint to finish up collecting information and possibly painting
-    endPaint();
+    endPaint.reset();
 
     // Force scope exit unlock to let go of global lock so other threads can run
-    unlock();
+    unlock.reset();
 
     // Trigger out-of-lock presentation for renderers that can support it
     RETURN_IF_FAILED(pEngine->Present());

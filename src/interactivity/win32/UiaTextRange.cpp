@@ -454,7 +454,7 @@ IFACEMETHODIMP UiaTextRange::Compare(_In_opt_ ITextRangeProvider* pRange, _Out_ 
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.LockConsole();
-    auto Unlock = wil::ScopeExit([&]
+    auto Unlock = wil::scope_exit([&]
     {
         gci.UnlockConsole();
     });
@@ -528,7 +528,7 @@ IFACEMETHODIMP UiaTextRange::CompareEndpoints(_In_ TextPatternRangeEndpoint endp
 IFACEMETHODIMP UiaTextRange::ExpandToEnclosingUnit(_In_ TextUnit unit)
 {
     ServiceLocator::LocateGlobals().getConsoleInformation().LockConsole();
-    auto Unlock = wil::ScopeExit([&]
+    auto Unlock = wil::scope_exit([&]
     {
         ServiceLocator::LocateGlobals().getConsoleInformation().UnlockConsole();
     });
@@ -649,7 +649,7 @@ IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAF
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.LockConsole();
-    auto Unlock = wil::ScopeExit([&]
+    auto Unlock = wil::scope_exit([&]
     {
         gci.UnlockConsole();
     });
@@ -718,7 +718,7 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.LockConsole();
-    auto Unlock = wil::ScopeExit([&]
+    auto Unlock = wil::scope_exit([&]
     {
         gci.UnlockConsole();
     });
@@ -811,7 +811,7 @@ IFACEMETHODIMP UiaTextRange::Move(_In_ TextUnit unit,
                                   _Out_ int* pRetVal)
 {
     ServiceLocator::LocateGlobals().getConsoleInformation().LockConsole();
-    auto Unlock = wil::ScopeExit([&]
+    auto Unlock = wil::scope_exit([&]
     {
         ServiceLocator::LocateGlobals().getConsoleInformation().UnlockConsole();
     });
@@ -877,7 +877,7 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByUnit(_In_ TextPatternRangeEndpoint en
                                                 _Out_ int* pRetVal)
 {
     ServiceLocator::LocateGlobals().getConsoleInformation().LockConsole();
-    auto Unlock = wil::ScopeExit([&]
+    auto Unlock = wil::scope_exit([&]
     {
         ServiceLocator::LocateGlobals().getConsoleInformation().UnlockConsole();
     });
@@ -943,7 +943,7 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByRange(_In_ TextPatternRangeEndpoint e
                                                  _In_ TextPatternRangeEndpoint targetEndpoint)
 {
     ServiceLocator::LocateGlobals().getConsoleInformation().LockConsole();
-    auto Unlock = wil::ScopeExit([&]
+    auto Unlock = wil::scope_exit([&]
     {
         ServiceLocator::LocateGlobals().getConsoleInformation().UnlockConsole();
     });
@@ -1035,7 +1035,7 @@ IFACEMETHODIMP UiaTextRange::Select()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.LockConsole();
-    auto Unlock = wil::ScopeExit([&]
+    auto Unlock = wil::scope_exit([&]
     {
         gci.UnlockConsole();
     });
@@ -1073,7 +1073,7 @@ IFACEMETHODIMP UiaTextRange::ScrollIntoView(_In_ BOOL alignToTop)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.LockConsole();
-    auto Unlock = wil::ScopeExit([&]
+    auto Unlock = wil::scope_exit([&]
     {
         gci.UnlockConsole();
     });

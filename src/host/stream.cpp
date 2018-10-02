@@ -740,7 +740,7 @@ NTSTATUS DoReadConsole(_Inout_ InputBuffer* const pInputBuffer,
                        _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
 {
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     *ppWaiter = nullptr;
 

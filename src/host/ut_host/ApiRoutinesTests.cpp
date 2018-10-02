@@ -148,9 +148,9 @@ class ApiRoutinesTests
     {
         Log::Comment(L"Turn on insert mode with cooked read data.");
         m_state->PrepareReadHandle();
-        auto cleanupReadHandle = wil::ScopeExit([&](){ m_state->CleanupReadHandle(); });
+        auto cleanupReadHandle = wil::scope_exit([&](){ m_state->CleanupReadHandle(); });
         m_state->PrepareCookedReadData();
-        auto cleanupCookedRead = wil::ScopeExit([&](){ m_state->CleanupCookedReadData(); });
+        auto cleanupCookedRead = wil::scope_exit([&](){ m_state->CleanupCookedReadData(); });
 
         PrepVerifySetConsoleInputModeImpl(0);
         Log::Comment(L"Success code should result from setting valid flags.");
@@ -339,7 +339,7 @@ class ApiRoutinesTests
         SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer();
 
         gci.LockConsole();
-        auto Unlock = wil::ScopeExit([&] { gci.UnlockConsole(); });
+        auto Unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
 
         // Ensure global state is updated for our codepage.
         gci.OutputCP = dwCodePage;
@@ -429,7 +429,7 @@ class ApiRoutinesTests
         SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer();
 
         gci.LockConsole();
-        auto Unlock = wil::ScopeExit([&] { gci.UnlockConsole(); });
+        auto Unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
 
         PCWSTR pwszTestText = L"Test Text";
         const size_t cchTestText = wcslen(pwszTestText);

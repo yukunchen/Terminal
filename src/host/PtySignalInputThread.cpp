@@ -69,7 +69,7 @@ HRESULT PtySignalInputThread::_InputThread()
             _GetData(&resizeMsg, sizeof(resizeMsg));
 
             LockConsole();
-            auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+            auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
             if (DispatchCommon::s_ResizeWindow(*_pConApi, resizeMsg.sx, resizeMsg.sy))
             {
