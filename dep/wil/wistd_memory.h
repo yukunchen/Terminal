@@ -1,13 +1,4 @@
-// Windows Internal Libraries (wil)
-// Note: do not include this file directly, include "wil\Resource.h"
-//
-// wil Usage Guidelines:
-// https://microsoft.sharepoint.com/teams/osg_development/Shared%20Documents/Windows%20Internal%20Libraries%20for%20C++%20Usage%20Guide.docx?web=1
-//
-// wil Discussion Alias (wildisc):
-// http://idwebelements/GroupManagement.aspx?Group=wildisc&Operation=join  (one-click join)
 
-#pragma once
 #ifndef _WISTD_MEMORY_H_
 #define _WISTD_MEMORY_H_
 
@@ -25,7 +16,7 @@
 // To promote the use of these core language concepts outside of STL-based binaries, this file is
 // selectively pulling those concepts *directly* from corresponding STL headers.  The corresponding
 // "std::" namespace STL functions and types should be preferred over these in code that is bound to
-// STL.  The implementation and naming of all functions are taken directly from STL, instead using 
+// STL.  The implementation and naming of all functions are taken directly from STL, instead using
 // "wistd" (Windows Internal std) as the namespace.
 //
 // Routines in this namespace should always be considered a reflection of the *current* STL implementation

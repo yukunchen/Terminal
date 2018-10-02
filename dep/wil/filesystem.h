@@ -1,13 +1,14 @@
-#pragma once
+
+#ifndef __WIL_FILESYSTEM_INCLUDED
+#define __WIL_FILESYSTEM_INCLUDED
 
 #include <new>
-#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
 #include <PathCch.h>
-#endif
 #include <combaseapi.h> // Needed for CoTaskMemFree() used in output of some helpers.
-#include "Result.h"
-#include "Resource.h"
-#include "Win32Helpers.h"
+#include <winbase.h> // LocalAlloc
+#include "result.h"
+#include "win32_helpers.h"
+#include "resource.h"
 
 namespace wil
 {
@@ -503,7 +504,7 @@ namespace wil
             return err_policy::HResult(create_common(folderToWatch, isRecursive, filter, wistd::move(callback)));
         }
 
-        wil::unique_hfile& FolderHandle() { return get()->m_folderHandle; }
+        wil::unique_hfile& FolderHandle() { return this->get()->m_folderHandle; }
 
     private:
         // This function exists to avoid template expansion of this code based on err_policy.
@@ -744,11 +745,13 @@ namespace wil
         MAP_INFOCLASS_TO_STRUCT(FileRemoteProtocolInfo, FILE_REMOTE_PROTOCOL_INFO, true, 0);
         MAP_INFOCLASS_TO_STRUCT(FileFullDirectoryInfo, FILE_FULL_DIR_INFO, false, 4096);
         MAP_INFOCLASS_TO_STRUCT(FileFullDirectoryRestartInfo, FILE_FULL_DIR_INFO, true, 0);
+#if (_WIN32_WINNT >= _WIN32_WINNT_WIN8)
         MAP_INFOCLASS_TO_STRUCT(FileStorageInfo, FILE_STORAGE_INFO, true, 0);
         MAP_INFOCLASS_TO_STRUCT(FileAlignmentInfo, FILE_ALIGNMENT_INFO, true, 0);
         MAP_INFOCLASS_TO_STRUCT(FileIdInfo, FILE_ID_INFO, true, 0);
         MAP_INFOCLASS_TO_STRUCT(FileIdExtdDirectoryInfo, FILE_ID_EXTD_DIR_INFO, false, 4096);
         MAP_INFOCLASS_TO_STRUCT(FileIdExtdDirectoryRestartInfo, FILE_ID_EXTD_DIR_INFO, true, 0);
+#endif
 
         // Type unsafe version used in the implementation to avoid template bloat.
         inline HRESULT GetFileInfo(HANDLE fileHandle, FILE_INFO_BY_HANDLE_CLASS infoClass, size_t allocationSize,
@@ -777,8 +780,11 @@ namespace wil
                     }
                     else if (lastError == ERROR_NO_MORE_FILES) // for folder enumeration cases
                     {
-                        resultHolder.reset();
                         break;
+                    }
+                    else if (lastError == ERROR_INVALID_PARAMETER) // operation not supported by file system
+                    {
+                        return HRESULT_FROM_WIN32(lastError);
                     }
                     else
                     {
@@ -794,7 +800,7 @@ namespace wil
     /** Get file information for a variable sized structure, returns an HRESULT.
     ~~~
     wistd::unique_ptr<FILE_NAME_INFO> fileNameInfo;
-    RETURN_IF_FAILED(GetFileInfoNoThrow<FileNameInfo>(fileHandle, fileNameInfo);
+    RETURN_IF_FAILED(GetFileInfoNoThrow<FileNameInfo>(fileHandle, fileNameInfo));
     ~~~
     */
     template <FILE_INFO_BY_HANDLE_CLASS infoClass, typename wistd::enable_if<!details::MapInfoClassToInfoStruct<infoClass>::isFixed, int>::type = 0>
@@ -805,19 +811,24 @@ namespace wil
             sizeof(details::MapInfoClassToInfoStruct<infoClass>::type) + details::MapInfoClassToInfoStruct<infoClass>::extraSize,
             &rawResult);
         result.reset(static_cast<typename details::MapInfoClassToInfoStruct<infoClass>::type*>(rawResult));
-        RETURN_HR(hr);
+        RETURN_HR_IF_EXPECTED(hr, hr == E_INVALIDARG); // operation not supported by file system
+        RETURN_IF_FAILED(hr);
+        return S_OK;
     }
 
     /** Get file information for a fixed sized structure, returns an HRESULT.
     ~~~
     FILE_BASIC_INFO fileBasicInfo;
-    RETURN_IF_FAILED(GetFileInfoNoThrow<FileBasicInfo>(fileHandle, &fileBasicInfo);
+    RETURN_IF_FAILED(GetFileInfoNoThrow<FileBasicInfo>(fileHandle, &fileBasicInfo));
     ~~~
     */
     template <FILE_INFO_BY_HANDLE_CLASS infoClass, typename wistd::enable_if<details::MapInfoClassToInfoStruct<infoClass>::isFixed, int>::type = 0>
     HRESULT GetFileInfoNoThrow(HANDLE fileHandle, _Out_ typename details::MapInfoClassToInfoStruct<infoClass>::type *result) WI_NOEXCEPT
     {
-        RETURN_LAST_ERROR_IF_FALSE(GetFileInformationByHandleEx(fileHandle, infoClass, result, sizeof(*result)));
+        const HRESULT hr = GetFileInformationByHandleEx(fileHandle, infoClass, result, sizeof(*result)) ?
+            S_OK : HRESULT_FROM_WIN32(::GetLastError());
+        RETURN_HR_IF_EXPECTED(hr, hr == E_INVALIDARG); // operation not supported by file system
+        RETURN_IF_FAILED(hr);
         return S_OK;
     }
 
@@ -850,3 +861,5 @@ namespace wil
 #endif // _CPPUNWIND
 #endif // WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
 }
+
+#endif // __WIL_FILESYSTEM_INCLUDED

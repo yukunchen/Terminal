@@ -1,13 +1,16 @@
-#pragma once
+
+#ifndef __WIL_WIN32_HELPERS_INCLUDED
+#define __WIL_WIN32_HELPERS_INCLUDED
+
 #include <minwindef.h> // FILETIME, HINSTANCE
 #include <sysinfoapi.h> // GetSystemTimeAsFileTime
 #include <libloaderapi.h> // GetProcAddress
+#include <Psapi.h> // GetModuleFileNameExW (macro), K32GetModuleFileNameExW
+#include <PathCch.h>
 
-#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
-#include <PathCch.h> // Coming to apps soon
-#endif
-#include "Result.h"
-#include "Resource.h"
+#include "result.h"
+#include "filesystem.h"
+#include "resource.h"
 #include "wistd_functional.h"
 #include "wistd_type_traits.h"
 
@@ -116,7 +119,14 @@ namespace wil
             [&](_Out_writes_(valueLength) PWSTR value, size_t valueLength, _Out_ size_t* valueLengthNeededWithNul) -> HRESULT
         {
             *valueLengthNeededWithNul = ::SearchPathW(path, fileName, extension, static_cast<DWORD>(valueLength), value, nullptr);
-            RETURN_LAST_ERROR_IF(*valueLengthNeededWithNul == 0);
+
+            if (*valueLengthNeededWithNul == 0)
+            {
+                // ERROR_FILE_NOT_FOUND is an expected return value for SearchPathW
+                const HRESULT searchResult = HRESULT_FROM_WIN32(::GetLastError());
+                RETURN_HR_IF_EXPECTED(searchResult, searchResult == HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND));
+                RETURN_IF_FAILED(searchResult);
+            }
 
             // AdaptFixedSizeToAllocatedResult expects that the length will always include the NUL.
             // If the result is copied to the buffer, SearchPathW returns the length of copied string, WITHOUT the NUL.
@@ -153,7 +163,12 @@ namespace wil
     {
         wil::unique_cotaskmem_string expandedName;
         RETURN_IF_FAILED((wil::ExpandEnvironmentStringsW<string_type, stackBufferLength>(input, expandedName)));
-        RETURN_IF_FAILED((wil::SearchPathW<string_type, stackBufferLength>(nullptr, expandedName.get(), nullptr, result)));
+
+        // ERROR_FILE_NOT_FOUND is an expected return value for SearchPathW
+        const HRESULT searchResult = (wil::SearchPathW<string_type, stackBufferLength>(nullptr, expandedName.get(), nullptr, result));
+        RETURN_HR_IF_EXPECTED(searchResult, searchResult == HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND));
+        RETURN_IF_FAILED(searchResult);
+
         return S_OK;
     }
 
@@ -199,15 +214,17 @@ namespace wil
     }
 
     /** Retrieves the fully qualified path for the file containing the specified module loaded
-    by a given process. Callers should be sure to include psapi.h to ensure the correct #define
-    of GetModuleFileNameExW is applied to this header.*/
-    template <typename string_type>
+    by a given process. Note GetModuleFileNameExW is a macro.*/
+    template <typename string_type, size_t initialBufferLength = 128>
     HRESULT GetModuleFileNameExW(_In_opt_ HANDLE process, _In_opt_ HMODULE module, string_type& path)
     {
-        // Creates some waste for shorter paths, but avoids iteration through the loop in common cases where paths
-        // are less than 128 characters.
-        size_t const initialBufferLength = 128;
-        size_t const maxExtendedPathLengthWithNull = wil::maxExtendedPathLength + 1;
+        // initialBufferLength is a template parameter to allow for testing.  It creates some waste for
+        // shorter paths, but avoids iteration through the loop in common cases where paths are less
+        // than 128 characters.
+        // wil::maxExtendedPathLength + 1 (for the null char)
+        // + 1 (to be certain GetModuleFileNameExW didn't truncate)
+        size_t const ensureNoTrucation = (process != nullptr) ? 1 : 0;
+        size_t const maxExtendedPathLengthWithNull = wil::maxExtendedPathLength + 1 + ensureNoTrucation;
 
         details::string_maker<string_type> maker;
 
@@ -218,38 +235,38 @@ namespace wil
             // make() adds space for the trailing null
             RETURN_IF_FAILED(maker.make(nullptr, lengthWithNull - 1));
 
-            DWORD result;
-            DWORD error = ERROR_SUCCESS;
+            DWORD copiedCount;
+            bool copyFailed;
+            bool copySucceededWithNoTruncation;
 
             if (process != nullptr)
             {
-                result = ::GetModuleFileNameExW(process, module, maker.buffer(), static_cast<DWORD>(lengthWithNull));
-                if (result == 0)
-                {
-                    error = ::GetLastError();
-
-                    // Retry with larger buffer when insufficient
-                    RETURN_HR_IF(HRESULT_FROM_WIN32(error), error != ERROR_INSUFFICIENT_BUFFER);
-                }
+                // GetModuleFileNameExW truncates and provides no error or other indication it has done so.
+                // The only way to be sure it didn't truncate is if it didn't need the whole buffer.
+                copiedCount = ::GetModuleFileNameExW(process, module, maker.buffer(), static_cast<DWORD>(lengthWithNull));
+                copyFailed = (0 == copiedCount);
+                copySucceededWithNoTruncation = !copyFailed && (copiedCount < lengthWithNull - 1);
             }
             else
             {
                 // In cases of insufficient buffer, GetModuleFileNameW will return a value equal to lengthWithNull
-                // and set the last error to ERROR_INSUFFICIENT_BUFFER. The only way to know for sure that we got
-                // the entire file name is if GetLastError equals ERROR_SUCCESS.
-                result = ::GetModuleFileNameW(module, maker.buffer(), static_cast<DWORD>(lengthWithNull));
-                error = ::GetLastError();
-                // If we have a real error, result will be zero.
-                RETURN_HR_IF(HRESULT_FROM_WIN32(error), result == 0);
+                // and set the last error to ERROR_INSUFFICIENT_BUFFER.
+                copiedCount = ::GetModuleFileNameW(module, maker.buffer(), static_cast<DWORD>(lengthWithNull));
+                copyFailed = (0 == copiedCount);
+                copySucceededWithNoTruncation = !copyFailed && (copiedCount < lengthWithNull);
             }
 
-            if (error == ERROR_SUCCESS)
+            if (copyFailed)
+            {
+                RETURN_LAST_ERROR();
+            }
+            else if (copySucceededWithNoTruncation)
             {
                 path = maker.release();
                 return S_OK;
             }
 
-            WI_ASSERT(error == ERROR_INSUFFICIENT_BUFFER);
+            WI_ASSERT((process != nullptr) || (::GetLastError() == ERROR_INSUFFICIENT_BUFFER));
 
             if (lengthWithNull == maxExtendedPathLengthWithNull)
             {
@@ -267,10 +284,10 @@ namespace wil
     The module must have been loaded by the current process. The path returned will use the
     same format that was specified when the module was loaded. Therefore, the path can be a
     long or short file name, and can have the prefix '\\?\'. */
-    template <typename string_type>
+    template <typename string_type, size_t initialBufferLength = 128>
     HRESULT GetModuleFileNameW(HMODULE module, string_type& path)
     {
-        return wil::GetModuleFileNameExW<string_type>(nullptr, module, path);
+        return wil::GetModuleFileNameExW<string_type, initialBufferLength>(nullptr, module, path);
     }
 
     template <typename string_type, size_t stackBufferLength = 256>
@@ -512,3 +529,4 @@ namespace wil
 //  Declaration
 #define GetProcAddressByFunctionDeclaration(hinst, fn) reinterpret_cast<decltype(::fn)*>(GetProcAddress(hinst, #fn))
 
+#endif // __WIL_WIN32_HELPERS_INCLUDED
