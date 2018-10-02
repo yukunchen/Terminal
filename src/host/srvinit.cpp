@@ -415,7 +415,7 @@ HRESULT ApiRoutines::GetConsoleLangIdImpl(_Out_ LANGID* const pLangId)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     // This fails a lot and it's totally expected. It only works for a few East Asian code pages.
     // As such, just return it. Do NOT use a wil macro here. It is very noisy.

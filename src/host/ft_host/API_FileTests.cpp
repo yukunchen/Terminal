@@ -57,7 +57,7 @@ void FileTests::TestUtf8WriteFileInvalid()
 {
     Log::Comment(L"Backup original console codepage.");
     UINT const uiOriginalCP = GetConsoleOutputCP();
-    auto restoreOriginalCP = wil::ScopeExit([&] {
+    auto restoreOriginalCP = wil::scope_exit([&] {
         Log::Comment(L"Restore original console codepage.");
         SetConsoleOutputCP(uiOriginalCP);
     });

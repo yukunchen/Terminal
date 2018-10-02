@@ -539,7 +539,7 @@ void InputTests::TestReadWaitOnHandle()
         }
     });
 
-    auto onExit = wil::ScopeExit([&] {
+    auto onExit = wil::scope_exit([&] {
         Log::Comment(L"Tell our background thread to abort waiting, signal it, then wait for it to exit before we finish the test.");
         fAbortWait = true;
         doWait.SetEvent();

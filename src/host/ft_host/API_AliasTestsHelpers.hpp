@@ -138,7 +138,7 @@ void TestGetConsoleAliasHelper(TCH* ptszSourceGiven,
         ZeroMemory(ptchTargetBuffer, cbTargetBuffer);
     }
 
-    auto freeTargetBuffer = wil::ScopeExit([&]()
+    auto freeTargetBuffer = wil::scope_exit([&]()
     {
         if (ptchTargetBuffer != nullptr)
         {
@@ -155,12 +155,12 @@ void TestGetConsoleAliasHelper(TCH* ptszSourceGiven,
     }
     // This is strange because it's a scope exit so we need to declare in the parent scope, then let it go if we didn't actually need it.
     // I just prefer keeping the exit next to the allocation so it doesn't get lost.
-    auto removeAliasOnExit = wil::ScopeExit([&] {
+    auto removeAliasOnExit = wil::scope_exit([&] {
         AddConsoleAliasT(ptszSource, NULL, ptszExeName);
     });
     if (!bSetFirst)
     {
-        removeAliasOnExit.Dismiss();
+        removeAliasOnExit.release();
     }
 
     // Determine what the result codes should be
@@ -214,7 +214,7 @@ void TestGetConsoleAliasHelper(TCH* ptszSourceGiven,
     }
 
     TCH* ptchExpectedTarget;
-    auto freeExpectedTarget = wil::ScopeExit([&] {
+    auto freeExpectedTarget = wil::scope_exit([&] {
         if (ptchExpectedTarget != nullptr)
         {
             delete[] ptchExpectedTarget;

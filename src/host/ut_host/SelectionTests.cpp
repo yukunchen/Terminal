@@ -446,11 +446,11 @@ class SelectionInputTests
 
         // prepare some read data
         m_state->PrepareReadHandle();
-        auto cleanupReadHandle = wil::ScopeExit([&](){ m_state->CleanupReadHandle(); });
+        auto cleanupReadHandle = wil::scope_exit([&](){ m_state->CleanupReadHandle(); });
 
         m_state->PrepareCookedReadData();
         // set up to clean up read data later
-        auto cleanupCookedRead = wil::ScopeExit([&](){ m_state->CleanupCookedReadData(); });
+        auto cleanupCookedRead = wil::scope_exit([&](){ m_state->CleanupCookedReadData(); });
 
         COOKED_READ_DATA& readData = gci.CookedReadData();
 

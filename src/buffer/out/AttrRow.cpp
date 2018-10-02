@@ -54,7 +54,7 @@ void ATTR_ROW::Resize(const size_t newWidth)
     if (newWidth > _cchRowWidth)
     {
         LockConsole();
-        auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
         // get the default attributes
         const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         const TextAttribute defaultAttrs = gci.GetActiveOutputBuffer().GetAttributes();

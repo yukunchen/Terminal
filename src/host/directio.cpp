@@ -162,7 +162,7 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
     }
 
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     std::deque<std::unique_ptr<IInputEvent>> partialEvents;
     if (!IsUnicode)
@@ -391,7 +391,7 @@ HRESULT DoSrvWriteConsoleInput(_Inout_ InputBuffer* const pInputBuffer,
                                const bool append)
 {
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     eventsWritten = 0;
 
@@ -446,7 +446,7 @@ HRESULT DoSrvPrivatePrependConsoleInput(_Inout_ InputBuffer* const pInputBuffer,
                                         _Out_ size_t& eventsWritten)
 {
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     eventsWritten = 0;
 
@@ -486,7 +486,7 @@ HRESULT DoSrvPrivateWriteConsoleControlInput(_Inout_ InputBuffer* const /*pInput
                                              _In_ KeyEvent key)
 {
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     HandleGenericKeyEvent(key, false);
 
@@ -1003,7 +1003,7 @@ NTSTATUS SrvWriteConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /
 {
     PCONSOLE_WRITECONSOLEOUTPUTSTRING_MSG const a = &m->u.consoleMsgL2.WriteConsoleOutputString;
 
-    auto tracing = wil::ScopeExit([&]()
+    auto tracing = wil::scope_exit([&]()
     {
         Tracing::s_TraceApi(a);
     });

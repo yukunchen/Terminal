@@ -401,7 +401,7 @@ HRESULT GdiEngine::PaintBufferGridLines(const GridLines lines, const COLORREF co
     hbr.release(); // If SelectBrush was successful, GDI owns the brush. Release for now.
 
     // On exit, be sure we try to put the brush back how it was originally.
-    auto restoreBrushOnExit = wil::ScopeExit([&] { hbr.reset(SelectBrush(_hdcMemoryContext, hbrPrev.get())); });
+    auto restoreBrushOnExit = wil::scope_exit([&] { hbr.reset(SelectBrush(_hdcMemoryContext, hbrPrev.get())); });
 
     // Get the font size so we know the size of the rectangle lines we'll be inscribing.
     COORD const coordFontSize = _GetFontSize();

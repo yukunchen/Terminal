@@ -1110,7 +1110,7 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject& OutContext,
     bool fLeadByteConsumed = false;
 
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     if (cchTextBufferLength == 0)
     {
@@ -1343,7 +1343,7 @@ HRESULT ApiRoutines::WriteConsoleWImpl(_In_ IConsoleOutputObject& OutContext,
                                        _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
 {
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     return WriteConsoleWImplHelper(OutContext.GetActiveBuffer(),
                                    pwsTextBuffer,

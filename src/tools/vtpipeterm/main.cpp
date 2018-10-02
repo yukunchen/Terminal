@@ -463,7 +463,7 @@ DWORD InputThread(LPVOID /*lpParameter*/)
     unsigned int launchCP = GetConsoleCP();
     THROW_LAST_ERROR_IF(!SetConsoleOutputCP(CP_UTF8));
     THROW_LAST_ERROR_IF(!SetConsoleCP(CP_UTF8));
-    auto restore = wil::ScopeExit([&]
+    auto restore = wil::scope_exit([&]
     {
         SetConsoleOutputCP(launchOutputCP);
         SetConsoleCP(launchCP);

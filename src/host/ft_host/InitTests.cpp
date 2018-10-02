@@ -22,7 +22,7 @@ static FILE* std_in = nullptr;
 // This will automatically try to terminate the job object (and all of the
 // binaries under test that are children) whenever this class gets shut down.
 // also closes the FILE pointers created by reopening stdin and stdout.
-auto OnAppExitKillJob = wil::ScopeExit([&] {
+auto OnAppExitKillJob = wil::scope_exit([&] {
     if (std_out != nullptr)
     {
         fclose(std_out);
@@ -61,7 +61,7 @@ MODULE_SETUP(ModuleSetup)
     // We use regular new (not a smart pointer) and a scope exit delete because CreateProcess needs mutable space
     // and it'd be annoying to const_cast the smart pointer's .get() just for the sake of.
     PWSTR str = new WCHAR[cchNeeded];
-    auto cleanStr = wil::ScopeExit([&] { if (nullptr != str) { delete[] str; }});
+    auto cleanStr = wil::scope_exit([&] { if (nullptr != str) { delete[] str; }});
 
     VERIFY_SUCCEEDED_RETURN(StringCchCopyW(str, cchNeeded, (WCHAR*)value.GetBuffer()));
 
@@ -136,7 +136,7 @@ MODULE_SETUP(ModuleSetup)
                                                                                                              0,
                                                                                                              cbRequired));
     VERIFY_IS_NOT_NULL(pPidList);
-    auto scopeExit = wil::ScopeExit([&]() { HeapFree(GetProcessHeap(), 0, pPidList); });
+    auto scopeExit = wil::scope_exit([&]() { HeapFree(GetProcessHeap(), 0, pPidList); });
 
     VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(QueryInformationJobObject(hJob.get(),
                                                                  JobObjectBasicProcessIdList,
@@ -178,7 +178,7 @@ MODULE_SETUP(ModuleSetup)
     // Replace CRT handles
     // These need to be reopened as read/write or they can affect some of the tests.
     //
-    // std_out and std_in need to be closed when tests are finished, this is handled by the wil::ScopeExit at the
+    // std_out and std_in need to be closed when tests are finished, this is handled by the wil::scope_exit at the
     // top of this file.
     errno_t err = 0;
     err = freopen_s(&std_out, "CONOUT$", "w+", stdout);
