@@ -12,7 +12,7 @@
 #include "..\host\globals.h"
 #include "..\host\telemetry.hpp"
 
-#include <wil\TokenHelpers.h>
+#include <wil\token_helpers.h>
 
 // AttributesPresent flags
 #define ACCESS_CLAIM_WIN_SYSAPPID_PRESENT    0x00000001  // WIN://SYSAPPID
