@@ -1,17 +1,10 @@
-// Windows Internal Libraries (wil)
-// Resource.h: RAII wrappers (smart pointers) and other thin usability pattern wrappers over common Windows patterns.
-//
-// wil Usage Guidelines:
-// https://microsoft.sharepoint.com/teams/osg_development/Shared%20Documents/Windows%20Internal%20Libraries%20for%20C++%20Usage%20Guide.docx?web=1
-//
-// wil Discussion Alias (wildisc):
-// http://idwebelements/GroupManagement.aspx?Group=wildisc&Operation=join  (one-click join)
 
-#pragma once
+#ifndef __WIL_REGISTRY_INCLUDED
+#define __WIL_REGISTRY_INCLUDED
+
 #include <winreg.h>
 #include <new.h> // new(std::nothrow)
-#include "Resource.h" // unique_hkey
-#include "Functional.h"
+#include "resource.h" // unique_hkey
 
 namespace wil
 {
@@ -57,7 +50,7 @@ namespace wil
         struct registry_watcher_state
         {
             registry_watcher_state(unique_hkey &&keyToWatch, bool isRecursive, wistd::function<void(RegistryChangeKind)> &&callback)
-                : m_keyToWatch(wistd::move(keyToWatch)), m_isRecursive(isRecursive), m_callback(wistd::move(callback))
+                : m_keyToWatch(wistd::move(keyToWatch)), m_callback(wistd::move(callback)), m_isRecursive(isRecursive)
             {
             }
             wistd::function<void(RegistryChangeKind)> m_callback;
@@ -91,7 +84,7 @@ namespace wil
                 }
             }
 
-            void ReleaseFromCallback(RegistryChangeKind changeKind)
+            void ReleaseFromCallback(bool rearm)
             {
                 auto lock = m_lock.lock_exclusive();
                 if (0 == ::InterlockedDecrement(&m_refCount))
@@ -103,9 +96,8 @@ namespace wil
                     delete this;
                     // Sleep(1); // Enable for testing to find use after free bugs.
                 }
-                else if (changeKind != RegistryChangeKind::Delete)
+                else if (rearm)
                 {
-                    // Do not re-arm if the change kind is delete.
                     ::SetThreadpoolWait(m_threadPoolWait.get(), m_eventHandle.get(), nullptr);
                 }
             }
@@ -187,14 +179,33 @@ namespace wil
                         const LSTATUS error = RegNotifyChangeKeyValue(watcherState->m_keyToWatch.get(), watcherState->m_isRecursive,
                             REG_NOTIFY_CHANGE_LAST_SET | REG_NOTIFY_CHANGE_NAME | REG_NOTIFY_THREAD_AGNOSTIC,
                             watcherState->m_eventHandle.get(), TRUE);
-                        FAIL_FAST_HR_IF(HRESULT_FROM_WIN32(error),
-                            !((error == ERROR_SUCCESS) || (error == ERROR_KEY_DELETED) || (error == ERROR_ACCESS_DENIED)));
 
-                        auto const changeKind = (error == ERROR_KEY_DELETED) ? RegistryChangeKind::Delete : RegistryChangeKind::Modify;
                         // Call the client before re-arming to ensure that multiple callbacks don't
                         // run concurrently.
-                        watcherState->m_callback(changeKind);
-                        watcherState->ReleaseFromCallback(changeKind);
+                        switch (error)
+                        {
+                        case ERROR_SUCCESS:
+                        case ERROR_ACCESS_DENIED:
+                            // Normal modification: send RegistryChangeKind::Modify and re-arm.
+                            watcherState->m_callback(RegistryChangeKind::Modify);
+                            watcherState->ReleaseFromCallback(true);
+                            break;
+
+                        case ERROR_KEY_DELETED:
+                            // Key deleted, send RegistryChangeKind::Delete, do not re-arm.
+                            watcherState->m_callback(RegistryChangeKind::Delete);
+                            watcherState->ReleaseFromCallback(false);
+                            break;
+
+                        case ERROR_HANDLE_REVOKED:
+                            // Handle revoked.  This can occur if the user session ends before
+                            // the watcher shuts-down.  Disarm silently since there is generally no way to respond.
+                            watcherState->ReleaseFromCallback(false);
+                            break;
+
+                        default:
+                            FAIL_FAST_HR(HRESULT_FROM_WIN32(error));
+                        }
                     }
                 }, watcherState.get(), nullptr));
             RETURN_LAST_ERROR_IF(!watcherState->m_threadPoolWait);
@@ -246,3 +257,4 @@ namespace wil
 #endif // WIL_ENABLE_EXCEPTIONS
 } // namespace wil
 
+#endif

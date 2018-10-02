@@ -1,31 +1,19 @@
-// Windows Internal Libraries (wil)
-// Result.h:  WIL Error Handling Helpers Library
-//
-// Usage Guidelines:
-// https://osgwiki.com/wiki/WIL_Error_Handling_Helpers
-//
-// WIL Discussion Alias (wildisc):
-// http://idwebelements/GroupManagement.aspx?Group=wildisc&Operation=join  (one-click join)
-//
-//! @file
-//! WIL Error Handling Helpers: a family of macros and functions designed to uniformly handle and report
-//! errors across return codes, fail fast, exceptions and logging
 
 #ifndef __WIL_RESULT_INCLUDED
 #define __WIL_RESULT_INCLUDED
 
-// Most functionality is picked up from ResultMacros.h.  This file specifically provides higher level processing of errors when
+// Most functionality is picked up from result_macros.h.  This file specifically provides higher level processing of errors when
 // they are encountered by the underlying macros.
-#include "ResultMacros.h"
+#include "result_macros.h"
 
 // Note that we avoid pulling in STL's memory header from Result.h through Resource.h as we have
 // Result.h customers who are still on older versions of STL (without std::shared_ptr<>).
 #ifndef RESOURCE_SUPPRESS_STL
 #define RESOURCE_SUPPRESS_STL
-#include "Resource.h"
+#include "resource.h"
 #undef RESOURCE_SUPPRESS_STL
 #else
-#include "Resource.h"
+#include "resource.h"
 #endif
 
 // The updated behavior of running init-list ctors during placement new is proper & correct, disable the warning that requests developers verify they want it
@@ -442,7 +430,7 @@ namespace wil
         {
             // ABI contract (carry size to facilitate additive change without re-versioning)
             unsigned short size;
-
+            unsigned char reserved1[2];  // packing, reserved
             // When this failure was seen
             unsigned int sequenceId;
 
@@ -450,8 +438,8 @@ namespace wil
             HRESULT hr;
             PCSTR fileName;
             unsigned short lineNumber;
-            FailureType type;
-            unsigned char reserved;     // packing, reserved
+            unsigned char failureType;  // FailureType
+            unsigned char reserved2;    // packing, reserved
             PCSTR modulePath;
             void* returnAddress;
             void* callerReturnAddress;
@@ -477,7 +465,7 @@ namespace wil
                 hr = info.hr;
                 fileName = nullptr;
                 lineNumber = static_cast<unsigned short>(info.uLineNumber);
-                type = info.type;
+                failureType = static_cast<unsigned char>(info.type);
                 modulePath = nullptr;
                 returnAddress = info.returnAddress;
                 callerReturnAddress = info.callerReturnAddress;
@@ -517,7 +505,7 @@ namespace wil
                 info.hr = hr;
                 info.pszFile = fileName;
                 info.uLineNumber = lineNumber;
-                info.type = type;
+                info.type = static_cast<FailureType>(failureType);
                 info.pszModule = modulePath;
                 info.returnAddress = returnAddress;
                 info.callerReturnAddress = callerReturnAddress;
@@ -743,7 +731,7 @@ namespace wil
 
         return 0;
     }
-    
+
     /** Caches failure information for later retrieval from GetLastError.
     Most people will never need to do this explicitly as failure information is automatically made available per-thread across a process when
     errors are encountered naturally through the WIL macros. */
@@ -875,8 +863,8 @@ namespace wil
         {
         public:
             ThreadFailureCallbackHolder(_In_ IFailureCallback *pCallbackParam, _In_opt_ CallContextInfo *pCallContext = nullptr, bool watchNow = true) WI_NOEXCEPT :
-                m_pCallback(pCallbackParam),
                 m_ppThreadList(nullptr),
+                m_pCallback(pCallbackParam),
                 m_pNext(nullptr),
                 m_threadId(0),
                 m_pCallContext(pCallContext)
@@ -888,8 +876,8 @@ namespace wil
             }
 
             ThreadFailureCallbackHolder(ThreadFailureCallbackHolder &&other) WI_NOEXCEPT :
-                m_pCallback(other.m_pCallback),
                 m_ppThreadList(nullptr),
+                m_pCallback(other.m_pCallback),
                 m_pNext(nullptr),
                 m_threadId(0),
                 m_pCallContext(other.m_pCallContext)
@@ -1102,7 +1090,7 @@ namespace wil
             // Update the process-wide failure cache
             wil::SetLastError(*pFailure);
         }
-        
+
         template<typename T, typename... TCtorArgs> void InitGlobalWithStorage(WilInitializeCommand state, void* storage, T*& global, TCtorArgs&&... args)
         {
             if ((state == WilInitializeCommand::Create) && !global)
@@ -1129,7 +1117,7 @@ namespace wil
         static unsigned char s_processLocalData[sizeof(*details_abi::g_pProcessLocalData)];
         static unsigned char s_threadFailureCallbacks[sizeof(*details::g_pThreadFailureCallbacks)];
 
-        details::InitGlobalWithStorage(state, s_processLocalData, details_abi::g_pProcessLocalData, "WilError_01");
+        details::InitGlobalWithStorage(state, s_processLocalData, details_abi::g_pProcessLocalData, "WilError_02");
         details::InitGlobalWithStorage(state, s_threadFailureCallbacks, details::g_pThreadFailureCallbacks);
     }
 
@@ -1137,9 +1125,9 @@ namespace wil
     namespace details
     {
 #ifndef RESULT_SUPPRESS_STATIC_INITIALIZERS
-        __declspec(selectany) ::wil::details_abi::ProcessLocalStorage<::wil::details_abi::ProcessLocalData> g_processLocalData("WilError_01");
+        __declspec(selectany) ::wil::details_abi::ProcessLocalStorage<::wil::details_abi::ProcessLocalData> g_processLocalData("WilError_02");
         __declspec(selectany) ::wil::details_abi::ThreadLocalStorage<ThreadFailureCallbackHolder*> g_threadFailureCallbacks;
-        
+
         WI_HEADER_INITITALIZATION_FUNCTION(InitializeResultHeader, []
         {
             g_pfnGetContextAndNotifyFailure = GetContextAndNotifyFailure;
@@ -1156,7 +1144,7 @@ namespace wil
     // catch all errors happening in your module through all WIL error handling mechanisms.  The lambda will be called
     // once for each error throw, error return, or error catch that is handled while the returned object is still in
     // scope.  Usage:
-    // 
+    //
     // auto monitor = wil::ThreadFailureCallback([](wil::FailureInfo const &failure)
     // {
     //     // Write your code that logs or cares about failure details here...
@@ -1172,7 +1160,7 @@ namespace wil
     {
         return wil::details::ThreadFailureCallbackFn<TLambda>(nullptr, wistd::forward<TLambda>(fnAtExit));
     }
-    
+
 
     // Much like ThreadFailureCallback, this class will receive WIL failure notifications from the time it's instantiated
     // until the time that it's destroyed.  At any point during that time you can ask for the last failure that was seen
@@ -1268,4 +1256,4 @@ namespace wil
 
 #pragma warning(pop)
 
-#endif // __WIL_RESULT_INCLUDED
+#endif

@@ -1,8 +1,8 @@
-//
-//    Copyright (C) Microsoft.  All rights reserved.
-//
-#pragma once
-#include "Resource.h"
+
+#ifndef __WIL_TOKEN_HELPERS_INCLUDED
+#define __WIL_TOKEN_HELPERS_INCLUDED
+
+#include "resource.h"
 #include <new>
 #include <lmcons.h>         // for UNLEN and DNLEN
 #include <processthreadsapi.h>
@@ -297,7 +297,8 @@ namespace wil
         details::RevertImpersonateToken,
         details::pointer_access_none,
         HANDLE,
-        INVALID_HANDLE_VALUE,
+        INT_PTR,
+        -1,
         HANDLE>;
 
     /** Temporarily impersonates a token on this thread.
@@ -526,3 +527,5 @@ namespace wil
 #endif
 
 } //namespace wil
+
+#endif // __WIL_TOKEN_HELPERS_INCLUDED
