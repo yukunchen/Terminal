@@ -411,7 +411,7 @@ bool TextBuffer::_PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute
 {
     // Assert the buffer state is ready for this character
     // This function corrects most errors. If this is false, we had an uncorrectable one.
-    FAIL_FAST_IF_FALSE(AssertValidDoubleByteSequence(dbcsAttribute)); // Shouldn't be uncorrectable sequences unless something is very wrong.
+    FAIL_FAST_IF(!(AssertValidDoubleByteSequence(dbcsAttribute))); // Shouldn't be uncorrectable sequences unless something is very wrong.
 
     bool fSuccess = true;
     // Now compensate if we don't have enough space for the upcoming double byte sequence
@@ -541,7 +541,7 @@ bool TextBuffer::IncrementCursor()
     // Buffer Size is specified as the "length" of the array. It would say 80 for valid values of 0-79.
     // So subtract 1 from buffer size in each direction to find the index of the final column in the buffer
 
-    FAIL_FAST_IF_FALSE(_coordBufferSize.X > 0);
+    FAIL_FAST_IF(!(_coordBufferSize.X > 0));
     const short iFinalColumnIndex = _coordBufferSize.X - 1;
 
     // Move the cursor one position to the right
@@ -573,7 +573,7 @@ void TextBuffer::DecrementCursor()
     // Buffer Size is specified as the "length" of the array. It would say 80 for valid values of 0-79.
     // So subtract 1 from buffer size in each direction to find the index of the final column in the buffer
 
-    FAIL_FAST_IF_FALSE(_coordBufferSize.X > 0);
+    FAIL_FAST_IF(!(_coordBufferSize.X > 0));
     const short iFinalColumnIndex = _coordBufferSize.X - 1;
 
     // Move the cursor one position to the left
@@ -611,7 +611,7 @@ void TextBuffer::DecrementCursor()
 bool TextBuffer::NewlineCursor()
 {
     bool fSuccess = false;
-    FAIL_FAST_IF_FALSE(_coordBufferSize.Y > 0);
+    FAIL_FAST_IF(!(_coordBufferSize.Y > 0));
     short const iFinalRowIndex = _coordBufferSize.Y - 1;
 
     // Reset the cursor position to 0 and move down one line

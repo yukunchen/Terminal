@@ -80,17 +80,17 @@ HRESULT GdiEngine::ScrollFrame() noexcept
     RETURN_IF_FAILED(LongSub(_szMemorySurface.cy, szGutter.cy, &rcScrollLimit.bottom));
 
     // Scroll real window and memory buffer in-sync.
-    LOG_LAST_ERROR_IF_FALSE(ScrollWindowEx(_hwndTargetWindow,
-                                           _szInvalidScroll.cx,
-                                           _szInvalidScroll.cy,
-                                           &rcScrollLimit,
-                                           &rcScrollLimit,
-                                           nullptr,
-                                           nullptr,
-                                           0));
+    LOG_LAST_ERROR_IF(!ScrollWindowEx(_hwndTargetWindow,
+                                      _szInvalidScroll.cx,
+                                      _szInvalidScroll.cy,
+                                      &rcScrollLimit,
+                                      &rcScrollLimit,
+                                      nullptr,
+                                      nullptr,
+                                      0));
 
     RECT rcUpdate = { 0 };
-    LOG_HR_IF_FALSE(E_FAIL, ScrollDC(_hdcMemoryContext, _szInvalidScroll.cx, _szInvalidScroll.cy, &rcScrollLimit, &rcScrollLimit, nullptr, &rcUpdate));
+    LOG_HR_IF(E_FAIL, !(ScrollDC(_hdcMemoryContext, _szInvalidScroll.cx, _szInvalidScroll.cy, &rcScrollLimit, &rcScrollLimit, nullptr, &rcUpdate)));
 
     LOG_IF_FAILED(_InvalidCombine(&rcUpdate));
 
@@ -110,7 +110,7 @@ HRESULT GdiEngine::ScrollFrame() noexcept
 HRESULT GdiEngine::_PrepareMemoryBitmap(const HWND hwnd) noexcept
 {
     RECT rcClient;
-    RETURN_HR_IF_FALSE(E_FAIL, GetClientRect(hwnd, &rcClient));
+    RETURN_HR_IF(E_FAIL, !(GetClientRect(hwnd, &rcClient)));
 
     SIZE const szClient = _GetRectSize(&rcClient);
 
@@ -138,7 +138,7 @@ HRESULT GdiEngine::_PrepareMemoryBitmap(const HWND hwnd) noexcept
         hbitmapNew.release(); // if SelectBitmap worked, GDI took ownership. Detach from smart object.
 
         // Blt from the DC/bitmap we're already holding onto into the new one.
-        RETURN_HR_IF_FALSE(E_FAIL, BitBlt(hdcTemp.get(), 0, 0, _szMemorySurface.cx, _szMemorySurface.cy, _hdcMemoryContext, 0, 0, SRCCOPY));
+        RETURN_HR_IF(E_FAIL, !(BitBlt(hdcTemp.get(), 0, 0, _szMemorySurface.cx, _szMemorySurface.cy, _hdcMemoryContext, 0, 0, SRCCOPY)));
 
         // Put the junky bitmap back into the temp DC and get our new one out.
         hbitmapNew.reset(SelectBitmap(hdcTemp.get(), hbitmapOnePixelJunk.get()));
@@ -177,21 +177,21 @@ HRESULT GdiEngine::_PrepareMemoryBitmap(const HWND hwnd) noexcept
 HRESULT GdiEngine::EndPaint() noexcept
 {
     // If we try to end a paint that wasn't started, it's invalid. Return.
-    RETURN_HR_IF_FALSE(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), _fPaintStarted);
+    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), !(_fPaintStarted));
 
     LOG_IF_FAILED(_FlushBufferLines());
 
     POINT const pt = _GetInvalidRectPoint();
     SIZE const sz = _GetInvalidRectSize();
 
-    LOG_HR_IF_FALSE(E_FAIL, BitBlt(_psInvalidData.hdc, pt.x, pt.y, sz.cx, sz.cy, _hdcMemoryContext, pt.x, pt.y, SRCCOPY));
+    LOG_HR_IF(E_FAIL, !(BitBlt(_psInvalidData.hdc, pt.x, pt.y, sz.cx, sz.cy, _hdcMemoryContext, pt.x, pt.y, SRCCOPY)));
 
     _rcInvalid = { 0 };
     _fInvalidRectUsed = false;
     _szInvalidScroll = { 0 };
 
-    LOG_HR_IF_FALSE(E_FAIL, GdiFlush());
-    LOG_HR_IF_FALSE(E_FAIL, ReleaseDC(_hwndTargetWindow, _psInvalidData.hdc));
+    LOG_HR_IF(E_FAIL, !(GdiFlush()));
+    LOG_HR_IF(E_FAIL, !(ReleaseDC(_hwndTargetWindow, _psInvalidData.hdc)));
     _psInvalidData.hdc = nullptr;
 
     _fPaintStarted = false;
@@ -226,7 +226,7 @@ HRESULT GdiEngine::_PaintBackgroundColor(const RECT* const prc) noexcept
 
     WHEN_DBG(_PaintDebugRect(prc));
 
-    LOG_HR_IF_FALSE(E_FAIL, FillRect(_hdcMemoryContext, prc, hbr.get()));
+    LOG_HR_IF(E_FAIL, !(FillRect(_hdcMemoryContext, prc, hbr.get())));
 
     WHEN_DBG(_DoDebugBlt(prc));
 
@@ -401,7 +401,7 @@ HRESULT GdiEngine::PaintBufferGridLines(const GridLines lines, const COLORREF co
     hbr.release(); // If SelectBrush was successful, GDI owns the brush. Release for now.
 
     // On exit, be sure we try to put the brush back how it was originally.
-    auto restoreBrushOnExit = wil::ScopeExit([&] { hbr.reset(SelectBrush(_hdcMemoryContext, hbrPrev.get())); });
+    auto restoreBrushOnExit = wil::scope_exit([&] { hbr.reset(SelectBrush(_hdcMemoryContext, hbrPrev.get())); });
 
     // Get the font size so we know the size of the rectangle lines we'll be inscribing.
     COORD const coordFontSize = _GetFontSize();
@@ -411,12 +411,12 @@ HRESULT GdiEngine::PaintBufferGridLines(const GridLines lines, const COLORREF co
     {
         if (lines & GridLines::Top)
         {
-            RETURN_HR_IF_FALSE(E_FAIL, PatBlt(_hdcMemoryContext, ptTarget.x, ptTarget.y, coordFontSize.X, 1, PATCOPY));
+            RETURN_HR_IF(E_FAIL, !(PatBlt(_hdcMemoryContext, ptTarget.x, ptTarget.y, coordFontSize.X, 1, PATCOPY)));
         }
 
         if (lines & GridLines::Left)
         {
-            RETURN_HR_IF_FALSE(E_FAIL, PatBlt(_hdcMemoryContext, ptTarget.x, ptTarget.y, 1, coordFontSize.Y, PATCOPY));
+            RETURN_HR_IF(E_FAIL, !(PatBlt(_hdcMemoryContext, ptTarget.x, ptTarget.y, 1, coordFontSize.Y, PATCOPY)));
         }
 
         // NOTE: Watch out for inclusive/exclusive rectangles here.
@@ -428,12 +428,12 @@ HRESULT GdiEngine::PaintBufferGridLines(const GridLines lines, const COLORREF co
 
         if (lines & GridLines::Bottom)
         {
-            RETURN_HR_IF_FALSE(E_FAIL, PatBlt(_hdcMemoryContext, ptTarget.x, ptTarget.y + coordFontSize.Y - 1, coordFontSize.X, 1, PATCOPY));
+            RETURN_HR_IF(E_FAIL, !(PatBlt(_hdcMemoryContext, ptTarget.x, ptTarget.y + coordFontSize.Y - 1, coordFontSize.X, 1, PATCOPY)));
         }
 
         if (lines & GridLines::Right)
         {
-            RETURN_HR_IF_FALSE(E_FAIL, PatBlt(_hdcMemoryContext, ptTarget.x + coordFontSize.X - 1, ptTarget.y, 1, coordFontSize.Y, PATCOPY));
+            RETURN_HR_IF(E_FAIL, !(PatBlt(_hdcMemoryContext, ptTarget.x + coordFontSize.X - 1, ptTarget.y, 1, coordFontSize.Y, PATCOPY)));
         }
 
         // Move to the next character in this run.
@@ -544,7 +544,7 @@ HRESULT GdiEngine::PaintCursor(const COORD coordCursor,
         HBRUSH hCursorBrush = CreateSolidBrush(cursorColor);
         for (RECT r : rects)
         {
-            RETURN_HR_IF_FALSE(E_FAIL, FillRect(_hdcMemoryContext, &r, hCursorBrush));
+            RETURN_HR_IF(E_FAIL, !(FillRect(_hdcMemoryContext, &r, hCursorBrush)));
         }
         DeleteObject(hCursorBrush);
     }
@@ -552,7 +552,7 @@ HRESULT GdiEngine::PaintCursor(const COORD coordCursor,
     {
         for (RECT r : rects)
         {
-            RETURN_HR_IF_FALSE(E_FAIL, InvertRect(_hdcMemoryContext, &r));
+            RETURN_HR_IF(E_FAIL, !(InvertRect(_hdcMemoryContext, &r)));
         }
     }
 
@@ -573,8 +573,8 @@ HRESULT GdiEngine::ClearCursor() noexcept
     if (!IsRectEmpty(&_rcCursorInvert))
     {
         // We inverted to set the cursor, so invert the same rect to clear it out.
-        RETURN_HR_IF_FALSE(E_FAIL, InvertRect(_hdcMemoryContext, &_rcCursorInvert));
-        RETURN_HR_IF_FALSE(E_FAIL, InvertRect(_psInvalidData.hdc, &_rcCursorInvert));
+        RETURN_HR_IF(E_FAIL, !(InvertRect(_hdcMemoryContext, &_rcCursorInvert)));
+        RETURN_HR_IF(E_FAIL, !(InvertRect(_psInvalidData.hdc, &_rcCursorInvert)));
 
         _rcCursorInvert = { 0 };
     }
@@ -622,7 +622,7 @@ void GdiEngine::_PaintDebugRect(const RECT* const prc) const
             wil::unique_hbrush hbr(GetStockBrush(GRAY_BRUSH));
             if (nullptr != LOG_HR_IF_NULL(E_FAIL, hbr.get()))
             {
-                LOG_HR_IF_FALSE(E_FAIL, FillRect(_hdcMemoryContext, prc, hbr.get()));
+                LOG_HR_IF(E_FAIL, !(FillRect(_hdcMemoryContext, prc, hbr.get())));
 
                 _DoDebugBlt(prc);
             }
@@ -646,7 +646,7 @@ void GdiEngine::_DoDebugBlt(const RECT* const prc) const
     {
         if (!IsRectEmpty(prc))
         {
-            LOG_HR_IF_FALSE(E_FAIL, BitBlt(_psInvalidData.hdc, prc->left, prc->top, prc->right - prc->left, prc->bottom - prc->top, _hdcMemoryContext, prc->left, prc->top, SRCCOPY));
+            LOG_HR_IF(E_FAIL, !(BitBlt(_psInvalidData.hdc, prc->left, prc->top, prc->right - prc->left, prc->bottom - prc->top, _hdcMemoryContext, prc->left, prc->top, SRCCOPY)));
             Sleep(200);
         }
     }

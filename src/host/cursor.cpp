@@ -341,7 +341,7 @@ void Cursor::TimerRoutine(SCREEN_INFORMATION& ScreenInfo)
         pWindow->SetWindowHasMoved(false);
     }
 
-    if (!IsFlagSet(gci.Flags, CONSOLE_HAS_FOCUS))
+    if (!WI_IsFlagSet(gci.Flags, CONSOLE_HAS_FOCUS))
     {
         goto DoScroll;
     }
@@ -364,7 +364,7 @@ void Cursor::TimerRoutine(SCREEN_INFORMATION& ScreenInfo)
             IAccessibilityNotifier::ConsoleCaretEventFlags flags = IAccessibilityNotifier::ConsoleCaretEventFlags::CaretInvisible;
 
             // Flags is expected to be 2, 1, or 0. 2 in selecting (whether or not visible), 1 if just visible, 0 if invisible/noselect.
-            if (IsFlagSet(gci.Flags, CONSOLE_SELECTING))
+            if (WI_IsFlagSet(gci.Flags, CONSOLE_SELECTING))
             {
                 flags = IAccessibilityNotifier::ConsoleCaretEventFlags::CaretSelection;
             }
@@ -537,7 +537,7 @@ void Cursor::SetCaretTimer()
                                      dwEffectivePeriod,
                                      0);
 
-        LOG_LAST_ERROR_IF_FALSE(bRet);
+        LOG_LAST_ERROR_IF(!bRet);
     }
 }
 

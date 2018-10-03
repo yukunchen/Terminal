@@ -303,7 +303,7 @@ void ScreenBufferTests::TestAddTabStop()
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
     screenInfo.ClearTabStops();
-    auto scopeExit = wil::ScopeExit([&]() { screenInfo.ClearTabStops(); });
+    auto scopeExit = wil::scope_exit([&]() { screenInfo.ClearTabStops(); });
 
     std::list<short> expectedStops{ 12 };
     Log::Comment(L"Add tab to empty list.");
@@ -646,7 +646,7 @@ void ScreenBufferTests::VtResize()
     TextBuffer& tbi = si.GetTextBuffer();
     StateMachine& stateMachine = si.GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
-    SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
     cursor.SetXPosition(0);
     cursor.SetYPosition(0);

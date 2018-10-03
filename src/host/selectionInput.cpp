@@ -27,7 +27,7 @@ Selection::KeySelectionEventResult Selection::HandleKeySelectionEvent(const INPU
     FAIL_FAST_IF(!IsInSelectingState());
 
     const WORD wVirtualKeyCode = pInputKeyInfo->GetVirtualKey();
-    const bool ctrlPressed = IsFlagSet(inputServices->GetKeyState(VK_CONTROL), KEY_PRESSED);
+    const bool ctrlPressed = WI_IsFlagSet(inputServices->GetKeyState(VK_CONTROL), KEY_PRESSED);
 
     // if escape or ctrl-c, cancel selection
     if (!IsMouseButtonDown())
@@ -334,8 +334,8 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
 
     const SHORT sWindowHeight = gci.GetActiveOutputBuffer().GetScreenWindowSizeY();
 
-    FAIL_FAST_IF_FALSE(coordSelPoint.X >= srectEdges.Left && coordSelPoint.X <= srectEdges.Right);
-    FAIL_FAST_IF_FALSE(coordSelPoint.Y >= srectEdges.Top && coordSelPoint.Y <= srectEdges.Bottom);
+    FAIL_FAST_IF(!(coordSelPoint.X >= srectEdges.Left && coordSelPoint.X <= srectEdges.Right));
+    FAIL_FAST_IF(!(coordSelPoint.Y >= srectEdges.Top && coordSelPoint.Y <= srectEdges.Bottom));
 
     // retrieve input line information. If we are selecting from within the input line, we need
     // to bound ourselves within the input data first and not move into the back buffer.

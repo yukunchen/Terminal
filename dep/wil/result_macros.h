@@ -1,15 +1,3 @@
-// Windows Internal Libraries (wil)
-// ResultMacros.h:  WIL Error Handling Helpers Library supporting file (error handling macros)
-//
-// Usage Guidelines:
-// https://osgwiki.com/wiki/WIL_Error_Handling_Helpers
-//
-// WIL Discussion Alias (wildisc):
-// http://idwebelements/GroupManagement.aspx?Group=wildisc&Operation=join  (one-click join)
-//
-//! @file
-//! WIL Error Handling Helpers: supporting file defining a family of macros and functions designed
-//! to uniformly handle errors across return codes, fail fast, exceptions and logging
 
 #ifndef __WIL_RESULTMACROS_INCLUDED
 #define __WIL_RESULTMACROS_INCLUDED
@@ -17,7 +5,7 @@
 // WARNING:
 // Code within this scope must satisfy both C99 and C++
 
-#include "Common.h"
+#include "common.h"
 
 #if !defined(__WIL_MIN_KERNEL) && !defined(WIL_KERNEL_MODE)
 #include <Windows.h>
@@ -95,21 +83,6 @@ WI_ODR_PRAGMA("WIL_FreeMemory", "1")
 #endif
 #else
 WI_ODR_PRAGMA("WIL_FreeMemory", "0")
-#endif
-
-#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP | WINAPI_PARTITION_SYSTEM)
-#if !defined(WIL_SUPPRESS_PRIVATE_API_USE) && !defined(__WIL_MIN_KERNEL) && !defined(WIL_KERNEL_MODE)
-__declspec(selectany) HMODULE g_wil_details_ntdllModuleHandle = NULL;
-
-inline HMODULE wil_details_GetNtDllModuleHandle() WI_NOEXCEPT
-{
-    if (!g_wil_details_ntdllModuleHandle)
-    {
-        g_wil_details_ntdllModuleHandle = GetModuleHandleW(L"ntdll.dll");
-    }
-    return g_wil_details_ntdllModuleHandle;
-}
-#endif
 #endif
 /// @endcond
 
@@ -221,10 +194,6 @@ inline HMODULE wil_details_GetNtDllModuleHandle() WI_NOEXCEPT
 #ifndef RESULT_NORETURN_NULL
 #define RESULT_NORETURN_NULL                                _Ret_notnull_
 #endif
-#ifndef RESULT_RAISE_FAST_FAIL_EXCEPTION
-#define RESULT_RAISE_FAST_FAIL_EXCEPTION                    __fastfail(FAST_FAIL_FATAL_APP_EXIT)
-#endif
-
 
 //*****************************************************************************
 // Helpers to setup the macros and functions used below... do not directly use.
@@ -568,36 +537,24 @@ inline HMODULE wil_details_GetNtDllModuleHandle() WI_NOEXCEPT
 #endif
 // end-of-repeated fail-fast handling macros
 // Helpers for return macros
-#define __RETURN_HR_MSG(hr, str, fmt, ...)                   do { HRESULT const __hr = (hr); if (FAILED(__hr)) { __R_FN(Return_HrMsg)(__R_INFO(str) __hr, fmt, __VA_ARGS__); } return __hr; } while (0, 0)
-#define __RETURN_HR_MSG_FAIL(hr, str, fmt, ...)              do { HRESULT const __hr = (hr); __R_FN(Return_HrMsg)(__R_INFO(str) __hr, fmt, __VA_ARGS__); return __hr; } while (0, 0)
-#define __RETURN_WIN32_MSG(err, str, fmt, ...)               do { DWORD const __err = (err); if (FAILED_WIN32(__err)) { return __R_FN(Return_Win32Msg)(__R_INFO(str) __err, fmt, __VA_ARGS__); } return S_OK; } while (0, 0)
-#define __RETURN_WIN32_MSG_FAIL(err, str, fmt, ...)          do { DWORD const __err = (err); return __R_FN(Return_Win32Msg)(__R_INFO(str) __err, fmt, __VA_ARGS__); } while (0, 0)
+#define __RETURN_HR_MSG(hr, str, fmt, ...)                   do { HRESULT __hr = (hr); if (FAILED(__hr)) { __R_FN(Return_HrMsg)(__R_INFO(str) __hr, fmt, __VA_ARGS__); } return __hr; } while (0, 0)
+#define __RETURN_HR_MSG_FAIL(hr, str, fmt, ...)              do { HRESULT __hr = (hr); __R_FN(Return_HrMsg)(__R_INFO(str) __hr, fmt, __VA_ARGS__); return __hr; } while (0, 0)
+#define __RETURN_WIN32_MSG(err, str, fmt, ...)               do { DWORD __err = (err); if (FAILED_WIN32(__err)) { return __R_FN(Return_Win32Msg)(__R_INFO(str) __err, fmt, __VA_ARGS__); } return S_OK; } while (0, 0)
+#define __RETURN_WIN32_MSG_FAIL(err, str, fmt, ...)          do { DWORD __err = (err); return __R_FN(Return_Win32Msg)(__R_INFO(str) __err, fmt, __VA_ARGS__); } while (0, 0)
 #define __RETURN_GLE_MSG_FAIL(str, fmt, ...)                 return __R_FN(Return_GetLastErrorMsg)(__R_INFO(str) fmt, __VA_ARGS__)
-#define __RETURN_NTSTATUS_MSG(status, str, fmt, ...)         do { NTSTATUS const __status = (status); if(FAILED_NTSTATUS(__status)) { return __R_FN(Return_NtStatusMsg)(__R_INFO(str) __status, fmt, __VA_ARGS__); } return S_OK; } while (0, 0)
-#define __RETURN_NTSTATUS_MSG_FAIL(status, str, fmt, ...)    do { NTSTATUS const __status = (status); return __R_FN(Return_NtStatusMsg)(__R_INFO(str) __status, fmt, __VA_ARGS__); } while (0, 0)
-#define __RETURN_HR(hr, str)                                 do { HRESULT const __hr = (hr); if (FAILED(__hr)) { __R_FN(Return_Hr)(__R_INFO(str) __hr); } return __hr; } while (0, 0)
-#define __RETURN_HR_NOFILE(hr, str)                          do { HRESULT const __hr = (hr); if (FAILED(__hr)) { __R_FN(Return_Hr)(__R_INFO_NOFILE(str) __hr); } return __hr; } while (0, 0)
-#define __RETURN_HR_FAIL(hr, str)                            do { HRESULT const __hr = (hr); __R_FN(Return_Hr)(__R_INFO(str) __hr); return __hr; } while (0, 0)
-#define __RETURN_HR_FAIL_NOFILE(hr, str)                     do { HRESULT const __hr = (hr); __R_FN(Return_Hr)(__R_INFO_NOFILE(str) __hr); return __hr; } while (0, 0)
+#define __RETURN_NTSTATUS_MSG(status, str, fmt, ...)         do { NTSTATUS __status = (status); if(FAILED_NTSTATUS(__status)) { return __R_FN(Return_NtStatusMsg)(__R_INFO(str) __status, fmt, __VA_ARGS__); } return S_OK; } while (0, 0)
+#define __RETURN_NTSTATUS_MSG_FAIL(status, str, fmt, ...)    do { NTSTATUS __status = (status); return __R_FN(Return_NtStatusMsg)(__R_INFO(str) __status, fmt, __VA_ARGS__); } while (0, 0)
+#define __RETURN_HR(hr, str)                                 do { HRESULT __hr = (hr); if (FAILED(__hr)) { __R_FN(Return_Hr)(__R_INFO(str) __hr); } return __hr; } while (0, 0)
+#define __RETURN_HR_NOFILE(hr, str)                          do { HRESULT __hr = (hr); if (FAILED(__hr)) { __R_FN(Return_Hr)(__R_INFO_NOFILE(str) __hr); } return __hr; } while (0, 0)
+#define __RETURN_HR_FAIL(hr, str)                            do { HRESULT __hr = (hr); __R_FN(Return_Hr)(__R_INFO(str) __hr); return __hr; } while (0, 0)
+#define __RETURN_HR_FAIL_NOFILE(hr, str)                     do { HRESULT __hr = (hr); __R_FN(Return_Hr)(__R_INFO_NOFILE(str) __hr); return __hr; } while (0, 0)
 #define __RETURN_WIN32(err, str)                             do { DWORD __err = (err); if (FAILED_WIN32(__err)) { return __R_FN(Return_Win32)(__R_INFO(str) __err); } return S_OK; } while (0, 0)
 #define __RETURN_WIN32_FAIL(err, str)                        do { DWORD __err = (err); return __R_FN(Return_Win32)(__R_INFO(str) __err); } while (0, 0)
 #define __RETURN_GLE_FAIL(str)                               return __R_FN(Return_GetLastError)(__R_INFO_ONLY(str))
 #define __RETURN_GLE_FAIL_NOFILE(str)                        return __R_FN(Return_GetLastError)(__R_INFO_NOFILE_ONLY(str))
-#define __RETURN_NTSTATUS(status, str)                       do { NTSTATUS const __status = (status); if(FAILED_NTSTATUS(__status)) { return __R_FN(Return_NtStatus)(__R_INFO(str) __status); } return S_OK; } while (0, 0)
-#define __RETURN_NTSTATUS_FAIL(status, str)                  do { NTSTATUS const __status = (status); return __R_FN(Return_NtStatus)(__R_INFO(str) __status); } while (0, 0)
+#define __RETURN_NTSTATUS(status, str)                       do { NTSTATUS __status = (status); if(FAILED_NTSTATUS(__status)) { return __R_FN(Return_NtStatus)(__R_INFO(str) __status); } return S_OK; } while (0, 0)
+#define __RETURN_NTSTATUS_FAIL(status, str)                  do { NTSTATUS __status = (status); return __R_FN(Return_NtStatus)(__R_INFO(str) __status); } while (0, 0)
 /// @endcond
-
-
-//*****************************************************************************
-// Fail fast helpers (for use only internally to WIL)
-//*****************************************************************************
-
-/// @cond
-#define __FAIL_FAST_ASSERT__(condition)                         do { if (!(condition)) { __RFF_FN(FailFast_Unexpected)(__RFF_INFO_ONLY(#condition)); } } while (0, 0)
-#define __FAIL_FAST_IMMEDIATE_ASSERT__(condition)               do { if (!(condition)) { RESULT_RAISE_FAST_FAIL_EXCEPTION; } } while (0, 0)
-#define __FAIL_FAST_ASSERT_WIN32_BOOL_FALSE__(condition)        __RFF_FN(FailFast_IfWin32BoolFalse)(__RFF_INFO(#condition) wil::verify_BOOL(condition))
-/// @endcond
-
 
 //*****************************************************************************
 // Macros for returning failures as HRESULTs
@@ -610,15 +567,15 @@ inline HMODULE wil_details_GetNtDllModuleHandle() WI_NOEXCEPT
 #define RETURN_NTSTATUS(status)                                 __RETURN_NTSTATUS(status, #status)
 
 // Conditionally returns failures (HRESULT) - always logs failures
-#define RETURN_IF_FAILED(hr)                                    do { HRESULT const __hrRet = wil::verify_hresult(hr); if (FAILED(__hrRet)) { __RETURN_HR_FAIL(__hrRet, #hr); }} while (0, 0)
-#define RETURN_IF_WIN32_BOOL_FALSE(win32BOOL)                   do { BOOL const __boolRet = wil::verify_BOOL(win32BOOL); if (!__boolRet) { __RETURN_GLE_FAIL(#win32BOOL); }} while (0, 0)
-#define RETURN_IF_WIN32_ERROR(win32err)                         do { DWORD const __errRet = (win32err); if (FAILED_WIN32(__errRet)) { __RETURN_WIN32_FAIL(__errRet, #win32err); }} while (0, 0)
+#define RETURN_IF_FAILED(hr)                                    do { HRESULT __hrRet = wil::verify_hresult(hr); if (FAILED(__hrRet)) { __RETURN_HR_FAIL(__hrRet, #hr); }} while (0, 0)
+#define RETURN_IF_WIN32_BOOL_FALSE(win32BOOL)                   do { BOOL __boolRet = wil::verify_BOOL(win32BOOL); if (!__boolRet) { __RETURN_GLE_FAIL(#win32BOOL); }} while (0, 0)
+#define RETURN_IF_WIN32_ERROR(win32err)                         do { DWORD __errRet = (win32err); if (FAILED_WIN32(__errRet)) { __RETURN_WIN32_FAIL(__errRet, #win32err); }} while (0, 0)
 #define RETURN_IF_NULL_ALLOC(ptr)                               do { if ((ptr) == nullptr) { __RETURN_HR_FAIL(E_OUTOFMEMORY, #ptr); }} while (0, 0)
 #define RETURN_HR_IF(hr, condition)                             do { if (wil::verify_bool(condition)) { __RETURN_HR(wil::verify_hresult(hr), #condition); }} while (0, 0)
 #define RETURN_HR_IF_NULL(hr, ptr)                              do { if ((ptr) == nullptr) { __RETURN_HR(wil::verify_hresult(hr), #ptr); }} while (0, 0)
 #define RETURN_LAST_ERROR_IF(condition)                         do { if (wil::verify_bool(condition)) { __RETURN_GLE_FAIL(#condition); }} while (0, 0)
 #define RETURN_LAST_ERROR_IF_NULL(ptr)                          do { if ((ptr) == nullptr) { __RETURN_GLE_FAIL(#ptr); }} while (0, 0)
-#define RETURN_IF_NTSTATUS_FAILED(status)                       do { NTSTATUS const __statusRet = (status); if (FAILED_NTSTATUS(__statusRet)) { __RETURN_NTSTATUS_FAIL(__statusRet, #status); }} while (0, 0)
+#define RETURN_IF_NTSTATUS_FAILED(status)                       do { NTSTATUS __statusRet = (status); if (FAILED_NTSTATUS(__statusRet)) { __RETURN_NTSTATUS_FAIL(__statusRet, #status); }} while (0, 0)
 
 // Always returns a known failure (HRESULT) - always logs a var-arg message on failure
 #define RETURN_HR_MSG(hr, fmt, ...)                             __RETURN_HR_MSG(wil::verify_hresult(hr), #hr, fmt, __VA_ARGS__)
@@ -627,27 +584,48 @@ inline HMODULE wil_details_GetNtDllModuleHandle() WI_NOEXCEPT
 #define RETURN_NTSTATUS_MSG(status, fmt, ...)                   __RETURN_NTSTATUS_MSG(status, #status, fmt, __VA_ARGS__)
 
 // Conditionally returns failures (HRESULT) - always logs a var-arg message on failure
-#define RETURN_IF_FAILED_MSG(hr, fmt, ...)                      do { auto const __hrRet = wil::verify_hresult(hr); if (FAILED(__hrRet)) { __RETURN_HR_MSG_FAIL(__hrRet, #hr, fmt, __VA_ARGS__); }} while (0, 0)
+#define RETURN_IF_FAILED_MSG(hr, fmt, ...)                      do { auto __hrRet = wil::verify_hresult(hr); if (FAILED(__hrRet)) { __RETURN_HR_MSG_FAIL(__hrRet, #hr, fmt, __VA_ARGS__); }} while (0, 0)
 #define RETURN_IF_WIN32_BOOL_FALSE_MSG(win32BOOL, fmt, ...)     do { if (!wil::verify_BOOL(win32BOOL)) { __RETURN_GLE_MSG_FAIL(#win32BOOL, fmt, __VA_ARGS__); }} while (0, 0)
-#define RETURN_IF_WIN32_ERROR_MSG(win32err, fmt, ...)           do { auto const __errRet = (win32err); if (FAILED_WIN32(__errRet)) { __RETURN_WIN32_MSG_FAIL(__errRet, #win32err, fmt, __VA_ARGS__); }} while (0, 0)
+#define RETURN_IF_WIN32_ERROR_MSG(win32err, fmt, ...)           do { auto __errRet = (win32err); if (FAILED_WIN32(__errRet)) { __RETURN_WIN32_MSG_FAIL(__errRet, #win32err, fmt, __VA_ARGS__); }} while (0, 0)
 #define RETURN_IF_NULL_ALLOC_MSG(ptr, fmt, ...)                 do { if ((ptr) == nullptr) { __RETURN_HR_MSG_FAIL(E_OUTOFMEMORY, #ptr, fmt, __VA_ARGS__); }} while (0, 0)
 #define RETURN_HR_IF_MSG(hr, condition, fmt, ...)               do { if (wil::verify_bool(condition)) { __RETURN_HR_MSG(wil::verify_hresult(hr), #condition, fmt, __VA_ARGS__); }} while (0, 0)
 #define RETURN_HR_IF_NULL_MSG(hr, ptr, fmt, ...)                do { if ((ptr) == nullptr) { __RETURN_HR_MSG(wil::verify_hresult(hr), #ptr, fmt, __VA_ARGS__); }} while (0, 0)
 #define RETURN_LAST_ERROR_IF_MSG(condition, fmt, ...)           do { if (wil::verify_bool(condition)) { __RETURN_GLE_MSG_FAIL(#condition, fmt, __VA_ARGS__); }} while (0, 0)
 #define RETURN_LAST_ERROR_IF_NULL_MSG(ptr, fmt, ...)            do { if ((ptr) == nullptr) { __RETURN_GLE_MSG_FAIL(#ptr, fmt, __VA_ARGS__); }} while (0, 0)
-#define RETURN_IF_NTSTATUS_FAILED_MSG(status, fmt, ...)         do { NTSTATUS const __statusRet = (status); if (FAILED_NTSTATUS(__statusRet)) { __RETURN_NTSTATUS_MSG_FAIL(__statusRet, #status, fmt, __VA_ARGS__); }} while (0, 0)
+#define RETURN_IF_NTSTATUS_FAILED_MSG(status, fmt, ...)         do { NTSTATUS __statusRet = (status); if (FAILED_NTSTATUS(__statusRet)) { __RETURN_NTSTATUS_MSG_FAIL(__statusRet, #status, fmt, __VA_ARGS__); }} while (0, 0)
 
 // Conditionally returns failures (HRESULT) - use for failures that are expected in common use - failures are not logged - macros are only for control flow pattern
-#define RETURN_IF_FAILED_EXPECTED(hr)                           do { auto const __hrRet = wil::verify_hresult(hr); if (FAILED(__hrRet)) { return __hrRet; }} while (0, 0)
+#define RETURN_IF_FAILED_EXPECTED(hr)                           do { auto __hrRet = wil::verify_hresult(hr); if (FAILED(__hrRet)) { return __hrRet; }} while (0, 0)
 #define RETURN_IF_WIN32_BOOL_FALSE_EXPECTED(win32BOOL)          do { if (!wil::verify_BOOL(win32BOOL)) { return wil::details::GetLastErrorFailHr(); }} while (0, 0)
-#define RETURN_IF_WIN32_ERROR_EXPECTED(win32err)                do { auto const __errRet = (win32err); if (FAILED_WIN32(__errRet)) { return HRESULT_FROM_WIN32(__errRet); }} while (0, 0)
+#define RETURN_IF_WIN32_ERROR_EXPECTED(win32err)                do { auto __errRet = (win32err); if (FAILED_WIN32(__errRet)) { return HRESULT_FROM_WIN32(__errRet); }} while (0, 0)
 #define RETURN_IF_NULL_ALLOC_EXPECTED(ptr)                      do { if ((ptr) == nullptr) { return E_OUTOFMEMORY; }} while (0, 0)
 #define RETURN_HR_IF_EXPECTED(hr, condition)                    do { if (wil::verify_bool(condition)) { return wil::verify_hresult(hr); }} while (0, 0)
 #define RETURN_HR_IF_NULL_EXPECTED(hr, ptr)                     do { if ((ptr) == nullptr) { return wil::verify_hresult(hr); }} while (0, 0)
 #define RETURN_LAST_ERROR_IF_EXPECTED(condition)                do { if (wil::verify_bool(condition)) { return wil::details::GetLastErrorFailHr(); }} while (0, 0)
 #define RETURN_LAST_ERROR_IF_NULL_EXPECTED(ptr)                 do { if ((ptr) == nullptr) { return wil::details::GetLastErrorFailHr(); }} while (0, 0)
-#define RETURN_IF_NTSTATUS_FAILED_EXPECTED(status)              do { auto const __statusRet = (status); if (FAILED_NTSTATUS(__statusRet)) { return wil::details::NtStatusToHr(__statusRet); }} while (0, 0)
+#define RETURN_IF_NTSTATUS_FAILED_EXPECTED(status)              do { auto __statusRet = (status); if (FAILED_NTSTATUS(__statusRet)) { return wil::details::NtStatusToHr(__statusRet); }} while (0, 0)
 
+// Returns failures (HRESULT) and conditionally logs the failure if it is not in the passed in expected list
+#define __WI_HRESULT_EXPECTED0()                false
+#define __WI_HRESULT_EXPECTED1(e1)              (__hrRet == wil::verify_hresult(e1))
+#define __WI_HRESULT_EXPECTED2(e1, e2)          ((__hrRet == wil::verify_hresult(e1)) || (__hrRet == wil::verify_hresult(e2)))
+#define __WI_HRESULT_EXPECTED3(e1, e2, e3)      ((__hrRet == wil::verify_hresult(e1)) || (__hrRet == wil::verify_hresult(e2)) || (__hrRet == wil::verify_hresult(e3)))
+#define __WI_HRESULT_EXPECTED4(e1, e2, e3, e4)  ((__hrRet == wil::verify_hresult(e1)) || (__hrRet == wil::verify_hresult(e2)) || (__hrRet == wil::verify_hresult(e3)) || (__hrRet == wil::verify_hresult(e4)))
+
+#define RETURN_IF_FAILED_WITH_EXPECTED(hr, hrExpected, ...) \
+    do \
+    { \
+        auto __hrRet = wil::verify_hresult(hr); \
+        if (FAILED(__hrRet)) \
+        { \
+            if ((__hrRet == wil::verify_hresult(hrExpected)) || WI_MACRO_DISPATCH(__WI_HRESULT_EXPECTED, __VA_ARGS__)) \
+            { \
+                return __hrRet; \
+            } \
+            __RETURN_HR_FAIL(__hrRet, #hr); \
+        } \
+    } \
+    while (0, 0)
 
 //*****************************************************************************
 // Macros for logging failures (ignore or pass-through)
@@ -897,175 +875,6 @@ inline HMODULE wil_details_GetNtDllModuleHandle() WI_NOEXCEPT
 #define __WIL_PRIVATE_LOG_HR(hr)                             __R_FN(Log_Hr)(__R_INFO_NOFILE(#hr) wil::verify_hresult(hr))
 #endif
 
-// Old macros names -- to be removed -- do not use
-#ifndef WIL_HIDE_DEPRECATED_1611
-WIL_WARN_DEPRECATED_1611_PRAGMA("THROW_HR_IF_TRUE_MSG", "THROW_LAST_ERROR_IF_TRUE", "THROW_HR_IF_TRUE", "RETURN_IF_NTSTATUS_FAILED_LOG",
-    "RETURN_LAST_ERROR_IF_NULL_LOG", "RETURN_LAST_ERROR_IF_FALSE_LOG", "RETURN_LAST_ERROR_IF_LOG", "RETURN_HR_IF_NULL_LOG",
-    "RETURN_HR_IF_FALSE_LOG", "RETURN_HR_IF_LOG", "RETURN_IF_NULL_ALLOC_LOG", "RETURN_IF_HANDLE_NULL_LOG", "RETURN_IF_HANDLE_INVALID_LOG",
-    "RETURN_IF_WIN32_ERROR_LOG", "RETURN_IF_WIN32_BOOL_FALSE_LOG", "RETURN_IF_FAILED_LOG", "RETURN_NTSTATUS_LOG", "RETURN_WIN32_LOG",
-    "RETURN_LAST_ERROR_LOG", "RETURN_HR_LOG", "FAIL_FAST_HR_IF_TRUE", "LOG_LAST_ERROR_IF_TRUE", "LOG_HR_IF_TRUE_MSG", "LOG_HR_IF_TRUE",
-    "RETURN_HR_IF_TRUE_EXPECTED", "RETURN_HR_IF_TRUE_MSG", "RETURN_HR_IF_TRUE_LOG", "RETURN_LAST_ERROR_IF_TRUE", "RETURN_HR_IF_TRUE",
-    "THROW_LAST_ERROR_IF_FALSE_MSG", "THROW_HR_IF_FALSE_MSG", "THROW_IF_HANDLE_NULL_MSG", "THROW_IF_HANDLE_INVALID_MSG",
-    "THROW_LAST_ERROR_IF_FALSE", "THROW_HR_IF_FALSE", "", "THROW_IF_HANDLE_INVALID", "FAIL_FAST_IMMEDIATE_IF_FALSE",
-    "FAIL_FAST_IF_FALSE_MSG", "FAIL_FAST_IF_FALSE", "FAIL_FAST_LAST_ERROR_IF_FALSE_MSG", "FAIL_FAST_HR_IF_FALSE_MSG",
-    "FAIL_FAST_IF_HANDLE_NULL_MSG", "FAIL_FAST_IF_HANDLE_INVALID_MSG", "FAIL_FAST_LAST_ERROR_IF_FALSE", "FAIL_FAST_HR_IF_FALSE",
-    "FAIL_FAST_IF_HANDLE_NULL", "FAIL_FAST_IF_HANDLE_INVALID", "LOG_LAST_ERROR_IF_FALSE_MSG", "LOG_HR_IF_FALSE_MSG",
-    "LOG_IF_HANDLE_NULL_MSG", "LOG_IF_HANDLE_INVALID_MSG", "LOG_LAST_ERROR_IF_FALSE", "LOG_HR_IF_FALSE", "LOG_IF_HANDLE_NULL",
-    "LOG_IF_HANDLE_INVALID", "RETURN_LAST_ERROR_IF_FALSE_EXPECTED", "RETURN_HR_IF_FALSE_EXPECTED", "RETURN_IF_HANDLE_NULL_EXPECTED",
-    "RETURN_IF_HANDLE_INVALID_EXPECTED", "RETURN_LAST_ERROR_IF_FALSE_MSG", "RETURN_HR_IF_FALSE_MSG", "RETURN_IF_HANDLE_NULL_MSG",
-    "RETURN_IF_HANDLE_INVALID_MSG", "RETURN_LAST_ERROR_IF_FALSE", "RETURN_HR_IF_FALSE", "RETURN_IF_HANDLE_NULL", "RETURN_IF_HANDLE_INVALID")
-// DEPRECATED: Use RAII(unique_hfile) and RETURN_LAST_ERROR_IF(!handle)
-#define RETURN_IF_HANDLE_INVALID(handle)                        do { HANDLE __hRet = (handle); if (__hRet == INVALID_HANDLE_VALUE) { __RETURN_GLE_FAIL(#handle); }} while (0, 0)
-// DEPRECATED: Use RAII(unique_handle) and RETURN_LAST_ERROR_IF(!handle)
-#define RETURN_IF_HANDLE_NULL(handle)                           do { HANDLE __hRet = (handle); if (__hRet == nullptr) { __RETURN_GLE_FAIL(#handle); }} while (0, 0)
-// DEPRECATED: Use RETURN_HR_IF(hr, !condition)
-#define RETURN_HR_IF_FALSE(hr, condition)                       RETURN_HR_IF(hr, !(wil::verify_bool(condition)))
-// DEPRECATED: Use RETURN_LAST_ERROR_IF(!condition)
-#define RETURN_LAST_ERROR_IF_FALSE(condition)                   RETURN_LAST_ERROR_IF(!(wil::verify_bool(condition)))
-// DEPRECATED: Use RAII(unique_hfile) and RETURN_ERROR_IF_MSG(!handle, fmt, ...)
-#define RETURN_IF_HANDLE_INVALID_MSG(handle, fmt, ...)          do { HANDLE __hRet = (handle); if (__hRet == INVALID_HANDLE_VALUE) { __RETURN_GLE_MSG_FAIL(#handle, fmt, __VA_ARGS__); }} while (0, 0)
-// DEPRECATED: Use RAII(unique_handle) and RETURN_LAST_ERROR_IF_MSG(!handle, fmt, ...)
-#define RETURN_IF_HANDLE_NULL_MSG(handle, fmt, ...)             do { HANDLE __hRet = (handle); if (__hRet == nullptr) { __RETURN_GLE_MSG_FAIL(#handle, fmt, __VA_ARGS__); }} while (0, 0)
-// DEPRECATED: Use RETURN_HR_IF_MSG(hr, !condition, fmt, ...)
-#define RETURN_HR_IF_FALSE_MSG(hr, condition, fmt, ...)         RETURN_HR_IF_MSG(hr, !(wil::verify_bool(condition)), fmt, __VA_ARGS__)
-// DEPRECATED: Use RETURN_LAST_ERROR_IF_MSG(!condition, fmt, ...)
-#define RETURN_LAST_ERROR_IF_FALSE_MSG(condition, fmt, ...)     RETURN_LAST_ERROR_IF_MSG(!(wil::verify_bool(condition)), fmt, __VA_ARGS__)
-// DEPRECATED: Use RAII(unique_hfile) and RETURN_LAST_ERROR_IF_EXPECTED(!handle)
-#define RETURN_IF_HANDLE_INVALID_EXPECTED(handle)               do { HANDLE __hRet = (handle); if (__hRet == INVALID_HANDLE_VALUE) { return wil::details::GetLastErrorFailHr(); }} while (0, 0)
-// DEPRECATED: Use RAII(unique_handle) and RETURN_LAST_ERROR_IF_EXPECTED(!handle)
-#define RETURN_IF_HANDLE_NULL_EXPECTED(handle)                  do { HANDLE __hRet = (handle); if (__hRet == nullptr) { return wil::details::GetLastErrorFailHr(); }} while (0, 0)
-// DEPRECATED: Use RETURN_HR_IF_EXPECTED(hr, !condition)
-#define RETURN_HR_IF_FALSE_EXPECTED(hr, condition)              RETURN_HR_IF_EXPECTED(hr, !(wil::verify_bool(condition)))
-// DEPRECATED: Use RETURN_LAST_ERROR_IF_EXPECTED(!condition)
-#define RETURN_LAST_ERROR_IF_FALSE_EXPECTED(condition)          RETURN_LAST_ERROR_IF_EXPECTED(!(wil::verify_bool(condition)))
-// DEPRECATED: Use RAII(unique_hfile) and LOG_ERROR_IF(!handle)
-#define LOG_IF_HANDLE_INVALID(handle)                           __R_FN(Log_IfHandleInvalid)(__R_INFO(#handle) handle)
-// DEPRECATED: Use RAII(unique_handle) and LOG_LAST_ERROR_IF(!handle)
-#define LOG_IF_HANDLE_NULL(handle)                              __R_FN(Log_IfHandleNull)(__R_INFO(#handle) handle)
-// DEPRECATED: Use LOG_HR_IF(hr, !condition)
-#define LOG_HR_IF_FALSE(hr, condition)                          __R_FN(Log_HrIfFalse)(__R_INFO(#condition) wil::verify_hresult(hr), wil::verify_bool(condition))
-// DEPRECATED: Use LOG_LAST_ERROR_IF(!condition)
-#define LOG_LAST_ERROR_IF_FALSE(condition)                      __R_FN(Log_GetLastErrorIfFalse)(__R_INFO(#condition) wil::verify_bool(condition))
-// DEPRECATED: Use RAII(unique_hfile) and LOG_ERROR_IF_MSG(!handle, fmt, ...)
-#define LOG_IF_HANDLE_INVALID_MSG(handle, fmt, ...)             __R_FN(Log_IfHandleInvalidMsg)(__R_INFO(#handle) handle, fmt, __VA_ARGS__)
-// DEPRECATED: Use RAII(unique_handle) and LOG_LAST_ERROR_IF_MSG(!handle, fmt, ...)
-#define LOG_IF_HANDLE_NULL_MSG(handle, fmt, ...)                __R_FN(Log_IfHandleNullMsg)(__R_INFO(#handle) handle, fmt, __VA_ARGS__)
-// DEPRECATED: Use LOG_HR_IF_MSG(hr, !condition, fmt, ...)
-#define LOG_HR_IF_FALSE_MSG(hr, condition, fmt, ...)            __R_FN(Log_HrIfFalseMsg)(__R_INFO(#condition) wil::verify_hresult(hr), wil::verify_bool(condition), fmt, __VA_ARGS__)
-// DEPRECATED: Use LOG_LAST_ERROR_IF_MSG(!condition, fmt, ...)
-#define LOG_LAST_ERROR_IF_FALSE_MSG(condition, fmt, ...)        __R_FN(Log_GetLastErrorIfFalseMsg)(__R_INFO(#condition) wil::verify_bool(condition), fmt, __VA_ARGS__)
-// DEPRECATED: Use RAII(unique_hfile) and FAIL_FAST_ERROR_IF(!handle)
-#define FAIL_FAST_IF_HANDLE_INVALID(handle)                     __RFF_FN(FailFast_IfHandleInvalid)(__RFF_INFO(#handle) handle)
-// DEPRECATED: Use RAII(unique_handle) and FAIL_FAST_LAST_ERROR_IF(!handle)
-#define FAIL_FAST_IF_HANDLE_NULL(handle)                        __RFF_FN(FailFast_IfHandleNull)(__RFF_INFO(#handle) handle)
-// DEPRECATED: Use FAIL_FAST_HR_IF(hr, !condition)
-#define FAIL_FAST_HR_IF_FALSE(hr, condition)                    __RFF_FN(FailFast_HrIfFalse)(__RFF_INFO(#condition) wil::verify_hresult(hr), wil::verify_bool(condition))
-// DEPRECATED: Use FAIL_FAST_LAST_ERROR_IF(!condition)
-#define FAIL_FAST_LAST_ERROR_IF_FALSE(condition)                __RFF_FN(FailFast_GetLastErrorIfFalse)(__RFF_INFO(#condition) wil::verify_bool(condition))
-// DEPRECATED: Use RAII(unique_hfile) and FAIL_FAST_ERROR_IF_MSG(!handle, fmt, ...)
-#define FAIL_FAST_IF_HANDLE_INVALID_MSG(handle, fmt, ...)       __RFF_FN(FailFast_IfHandleInvalidMsg)(__RFF_INFO(#handle) handle, fmt, __VA_ARGS__)
-// DEPRECATED: Use RAII(unique_handle) and FAIL_FAST_LAST_ERROR_IF_MSG(!handle, fmt, ...)
-#define FAIL_FAST_IF_HANDLE_NULL_MSG(handle, fmt, ...)          __RFF_FN(FailFast_IfHandleNullMsg)(__RFF_INFO(#handle) handle, fmt, __VA_ARGS__)
-// DEPRECATED: Use FAIL_FAST_HR_IF_MSG(hr, !condition, fmt, ...)
-#define FAIL_FAST_HR_IF_FALSE_MSG(hr, condition, fmt, ...)      __RFF_FN(FailFast_HrIfFalseMsg)(__RFF_INFO(#condition) wil::verify_hresult(hr), wil::verify_bool(condition), fmt, __VA_ARGS__)
-// DEPRECATED: Use FAIL_FAST_LAST_ERROR_IF_MSG(!condition, fmt, ...)
-#define FAIL_FAST_LAST_ERROR_IF_FALSE_MSG(condition, fmt, ...)  __RFF_FN(FailFast_GetLastErrorIfFalseMsg)(__RFF_INFO(#condition) wil::verify_bool(condition), fmt, __VA_ARGS__)
-// DEPRECATED: Use FAIL_FAST_IF(!condition)
-#define FAIL_FAST_IF_FALSE(condition)                           __RFF_FN(FailFast_IfFalse)(__RFF_INFO(#condition) wil::verify_bool(condition))
-// DEPRECATED: Use FAIL_FAST_IF_MSG(!condition, fmt, ...)
-#define FAIL_FAST_IF_FALSE_MSG(condition, fmt, ...)             __RFF_FN(FailFast_IfFalseMsg)(__RFF_INFO(#condition) wil::verify_bool(condition), fmt, __VA_ARGS__)
-// DEPRECATED: Use FAIL_FAST_IMMEDIATE_IF(condition)
-#define FAIL_FAST_IMMEDIATE_IF_FALSE(condition)                 __RFF_FN(FailFastImmediate_IfFalse)(wil::verify_bool(condition))
-// DEPRECATED: Use RAII(unique_hfile) and THROW_LAST_ERROR_IF(!handle)
-#define THROW_IF_HANDLE_INVALID(handle)                         __R_FN(Throw_IfHandleInvalid)(__R_INFO(#handle) handle)
-// DEPRECATED: Use RAII(unique_handle) and THROW_LAST_ERROR_IF(!handle)
-#define THROW_IF_HANDLE_NULL(handle)                            __R_FN(Throw_IfHandleNull)(__R_INFO(#handle) handle)
-// DEPRECATED: Use THROW_HR_IF(hr, !condition)
-#define THROW_HR_IF_FALSE(hr, condition)                        __R_FN(Throw_HrIfFalse)(__R_INFO(#condition) wil::verify_hresult(hr), wil::verify_bool(condition))
-// DEPRECATED: Use THROW_LAST_ERROR_IF(!condition)
-#define THROW_LAST_ERROR_IF_FALSE(condition)                    __R_FN(Throw_GetLastErrorIfFalse)(__R_INFO(#condition) wil::verify_bool(condition))
-// DEPRECATED: Use RAII(unique_hfile) and THROW_ERROR_IF_MSG(!handle, fmt, ...)
-#define THROW_IF_HANDLE_INVALID_MSG(handle, fmt, ...)           __R_FN(Throw_IfHandleInvalidMsg)(__R_INFO(#handle) handle, fmt, __VA_ARGS__)
-// DEPRECATED: Use RAII(unique_handle) and THROW_LAST_ERROR_IF_MSG(!handle, fmt, ...)
-#define THROW_IF_HANDLE_NULL_MSG(handle, fmt, ...)              __R_FN(Throw_IfHandleNullMsg)(__R_INFO(#handle) handle, fmt, __VA_ARGS__)
-// DEPRECATED: Use THROW_HR_IF_MSG(hr, !condition, fmt, ...)
-#define THROW_HR_IF_FALSE_MSG(hr, condition, fmt, ...)          __R_FN(Throw_HrIfFalseMsg)(__R_INFO(#condition) wil::verify_hresult(hr), wil::verify_bool(condition), fmt, __VA_ARGS__)
-// DEPRECATED: Use THROW_LAST_ERROR_IF_MSG(!condition, fmt, ...)
-#define THROW_LAST_ERROR_IF_FALSE_MSG(condition, fmt, ...)      __R_FN(Throw_GetLastErrorIfFalseMsg)(__R_INFO(#condition) wil::verify_bool(condition), fmt, __VA_ARGS__)
-// DEPRECATED: Use RETURN_HR_IF
-#define RETURN_HR_IF_TRUE               RETURN_HR_IF
-// DEPRECATED: Use RETURN_LAST_ERROR_IF
-#define RETURN_LAST_ERROR_IF_TRUE       RETURN_LAST_ERROR_IF
-// DEPRECATED: Use RETURN_HR_IF_LOG
-#define RETURN_HR_IF_TRUE_LOG           RETURN_HR_IF_LOG
-// DEPRECATED: Use RETURN_HR_IF_MSG
-#define RETURN_HR_IF_TRUE_MSG           RETURN_HR_IF_MSG
-// DEPRECATED: Use RETURN_HR_IF_EXPECTED
-#define RETURN_HR_IF_TRUE_EXPECTED      RETURN_HR_IF_EXPECTED
-// DEPRECATED: Use LOG_HR_IF
-#define LOG_HR_IF_TRUE                  LOG_HR_IF
-// DEPRECATED: Use LOG_HR_IF_MSG
-#define LOG_HR_IF_TRUE_MSG              LOG_HR_IF_MSG
-// DEPRECATED: Use LOG_LAST_ERROR_IF
-#define LOG_LAST_ERROR_IF_TRUE          LOG_LAST_ERROR_IF
-// DEPRECATED: Use FAIL_FAST_HR_IF
-#define FAIL_FAST_HR_IF_TRUE            FAIL_FAST_HR_IF
-// DEPRECATED: Use RETURN_HR
-#define RETURN_HR_LOG                   RETURN_HR
-// DEPRECATED: Use RETURN_LAST_ERROR
-#define RETURN_LAST_ERROR_LOG           RETURN_LAST_ERROR
-// DEPRECATED: Use RETURN_WIN32
-#define RETURN_WIN32_LOG                RETURN_WIN32
-// DEPRECATED: Use RETURN_NTSTATUS
-#define RETURN_NTSTATUS_LOG             RETURN_NTSTATUS
-// DEPRECATED: Use RETURN_IF_FAILED
-#define RETURN_IF_FAILED_LOG            RETURN_IF_FAILED
-// DEPRECATED: Use RETURN_IF_WIN32_BOOL_FALSE
-#define RETURN_IF_WIN32_BOOL_FALSE_LOG  RETURN_IF_WIN32_BOOL_FALSE
-// DEPRECATED: Use RETURN_IF_WIN32_ERROR
-#define RETURN_IF_WIN32_ERROR_LOG       RETURN_IF_WIN32_ERROR
-// DEPRECATED: Use RETURN_IF_HANDLE_INVALID
-#define RETURN_IF_HANDLE_INVALID_LOG    RETURN_IF_HANDLE_INVALID
-// DEPRECATED: Use RETURN_IF_HANDLE_NULL
-#define RETURN_IF_HANDLE_NULL_LOG       RETURN_IF_HANDLE_NULL
-// DEPRECATED: Use RETURN_IF_NULL_ALLOC
-#define RETURN_IF_NULL_ALLOC_LOG        RETURN_IF_NULL_ALLOC
-// DEPRECATED: Use RETURN_HR_IF
-#define RETURN_HR_IF_LOG                RETURN_HR_IF
-// DEPRECATED: Use RETURN_HR_IF_FALSE
-#define RETURN_HR_IF_FALSE_LOG          RETURN_HR_IF_FALSE
-// DEPRECATED: Use RETURN_HR_IF_NULL
-#define RETURN_HR_IF_NULL_LOG           RETURN_HR_IF_NULL
-// DEPRECATED: Use RETURN_LAST_ERROR_IF
-#define RETURN_LAST_ERROR_IF_LOG        RETURN_LAST_ERROR_IF
-// DEPRECATED: Use RETURN_LAST_ERROR_IF_FALSE
-#define RETURN_LAST_ERROR_IF_FALSE_LOG  RETURN_LAST_ERROR_IF_FALSE
-// DEPRECATED: Use RETURN_LAST_ERROR_IF_NULL
-#define RETURN_LAST_ERROR_IF_NULL_LOG   RETURN_LAST_ERROR_IF_NULL
-// DEPRECATED: Use RETURN_IF_NTSTATUS_FAILED
-#define RETURN_IF_NTSTATUS_FAILED_LOG   RETURN_IF_NTSTATUS_FAILED
-
-#ifdef WIL_ENABLE_EXCEPTIONS
-// DEPRECATED: Use THROW_HR_IF
-#define THROW_HR_IF_TRUE                THROW_HR_IF
-// DEPRECATED: Use THROW_LAST_ERROR_IF
-#define THROW_LAST_ERROR_IF_TRUE        THROW_LAST_ERROR_IF
-// DEPRECATED: Use THROW_HR_IF_MSG
-#define THROW_HR_IF_TRUE_MSG            THROW_HR_IF_MSG
-#endif  // WIL_ENABLE_EXCEPTIONS
-#endif // WIL_HIDE_DEPRECATED_1611
-
-#ifndef WIL_SUPPRESS_PRIVATE_API_USE
-
-#if !defined(_NTSYSTEM_)
-#define NTSYSAPI     DECLSPEC_IMPORT
-#else
-#define NTSYSAPI
-#endif
-
-extern "C" NTSYSAPI VOID NTAPI LdrFastFailInLoaderCallout(VOID);
-#endif
-
 namespace wil
 {
     // Indicates the kind of message / failure type that was used to produce a given error
@@ -1188,6 +997,9 @@ namespace wil
 
     // [optionally] Set to true to cause a debug break to occur on a result failure
     __declspec(selectany) bool g_fBreakOnFailure = false;
+
+    // [optionally] customize failfast behavior
+    __declspec(selectany) bool(__stdcall *g_pfnWilFailFast)(const wil::FailureInfo& info) WI_NOEXCEPT = nullptr;
 
     /// @cond
     namespace details
@@ -1351,6 +1163,10 @@ namespace wil
         __declspec(selectany) BOOLEAN(__stdcall *g_pfnRtlDllShutdownInProgress)() WI_NOEXCEPT = nullptr;
         __declspec(selectany) bool g_processShutdownInProgress = false;
 
+        // On Desktop/System WINAPI family: dynalink RaiseFailFastException because we may encounter modules
+        // that do not have RaiseFailFastException in kernelbase.  UWP apps will directly link.
+        __declspec(selectany) void (__stdcall *g_pfnRaiseFailFastException)(PEXCEPTION_RECORD,PCONTEXT,DWORD) = nullptr;
+
         // Exception-based compiled additions
         __declspec(selectany) HRESULT(__stdcall *g_pfnRunFunctorWithExceptionFilter)(IFunctor& functor, IFunctorHost& host, void* returnAddress) = nullptr;
         __declspec(selectany) void(__stdcall *g_pfnRethrow)() = nullptr;
@@ -1360,7 +1176,7 @@ namespace wil
         // C++/cx compiled additions
         extern "C" __declspec(selectany) void(__stdcall *g_pfnThrowPlatformException)(FailureInfo const &failure, PCWSTR debugString) = nullptr;
         extern "C" __declspec(selectany) _Always_(_Post_satisfies_(return < 0)) HRESULT(__stdcall *g_pfnResultFromCaughtException_WinRt)(_Inout_updates_opt_(debugStringChars) PWSTR debugString, _When_(debugString != nullptr, _Pre_satisfies_(debugStringChars > 0)) size_t debugStringChars, _Out_ bool* isNormalized) WI_NOEXCEPT = nullptr;
-        __declspec(selectany) _Always_(_Post_satisfies_(return < 0)) HRESULT(__stdcall *g_pfnResultFromKnownExceptions_WinRt)(const DiagnosticsInfo& diagnostics, void* returnAddress, SupportedExceptions supported, IFunctor& functor) WI_NOEXCEPT = nullptr;
+        __declspec(selectany) _Always_(_Post_satisfies_(return < 0)) HRESULT(__stdcall *g_pfnResultFromKnownExceptions_WinRt)(const DiagnosticsInfo& diagnostics, void* returnAddress, SupportedExceptions supported, IFunctor& functor) = nullptr;
 
         // Plugin to call RoOriginateError (WIL use only)
         __declspec(selectany) void(__stdcall *g_pfnOriginateCallback)(wil::FailureInfo const& failure) WI_NOEXCEPT = nullptr;
@@ -1482,6 +1298,7 @@ namespace wil
             __RFF_CONDITIONAL_METHOD(bool, FailFastImmediate_If)(bool condition) WI_NOEXCEPT;
         }
 
+        __declspec(noreturn) inline void __stdcall WilFailFast(const FailureInfo& info);
         inline void LogFailure(__R_FN_PARAMS_FULL, FailureType type, HRESULT hr, _In_opt_ PCWSTR message,
                                bool fWantDebugString, _Out_writes_(debugStringSizeChars) _Post_z_ PWSTR debugString, _Pre_satisfies_(debugStringSizeChars > 0) size_t debugStringSizeChars,
                                _Out_writes_(callContextStringSizeChars) _Post_z_ PSTR callContextString, _Pre_satisfies_(callContextStringSizeChars > 0) size_t callContextStringSizeChars,
@@ -1490,6 +1307,15 @@ namespace wil
         inline void ReportFailure_ReplaceMsg(__R_FN_PARAMS_FULL, FailureType type, HRESULT hr, _Printf_format_string_ PCSTR formatString, ...);
         __declspec(noinline) inline void ReportFailure_Hr(__R_FN_PARAMS_FULL, FailureType type, HRESULT hr);
         __declspec(noinline) inline HRESULT ReportFailure_CaughtException(__R_FN_PARAMS_FULL, FailureType type, SupportedExceptions supported = SupportedExceptions::Default);
+
+        //*****************************************************************************
+        // Fail fast helpers (for use only internally to WIL)
+        //*****************************************************************************
+
+        /// @cond
+        #define __FAIL_FAST_ASSERT__(condition)                         do { if (!(condition)) { __RFF_FN(FailFast_Unexpected)(__RFF_INFO_ONLY(#condition)); } } while (0, 0)
+        #define __FAIL_FAST_IMMEDIATE_ASSERT__(condition)               do { if (!(condition)) { wil::FailureInfo failure {}; wil::details::WilFailFast(failure); } } while (0, 0)
+        #define __FAIL_FAST_ASSERT_WIN32_BOOL_FALSE__(condition)        __RFF_FN(FailFast_IfWin32BoolFalse)(__RFF_INFO(#condition) wil::verify_BOOL(condition))
 
         // A simple ref-counted buffer class.  The interface is very similar to shared_ptr<>, only it manages
         // an allocated buffer and maintains the size.
@@ -1796,6 +1622,18 @@ namespace wil
             return 1;
         }
 
+        inline __declspec(noreturn) void __stdcall WilRaiseFailFastException(_In_ PEXCEPTION_RECORD er, _In_ PCONTEXT cr, _In_ DWORD flags)
+        {
+            // if we managed to load the pointer either through WilDynamicRaiseFailFastException (PARTITION_DESKTOP etc.)
+            // or via direct linkage (e.g. UWP apps), then use it.
+            if (g_pfnRaiseFailFastException)
+            {
+                g_pfnRaiseFailFastException(er, cr, flags);
+            }
+            // if not, as a best effort, we are just going to call the intrinsic.
+            __fastfail(FAST_FAIL_FATAL_APP_EXIT);
+        }
+
 #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP | WINAPI_PARTITION_SYSTEM)
         inline bool __stdcall GetModuleInformation(_In_opt_ void* address, _Out_opt_ unsigned int* addressOffset, _Out_writes_bytes_opt_(size) char* name, size_t size) WI_NOEXCEPT
         {
@@ -1843,38 +1681,14 @@ namespace wil
             ::DebugBreak();
         }
 
-#ifndef WIL_SUPPRESS_PRIVATE_API_USE
-        inline void __stdcall FailFastInLoaderCallout() WI_NOEXCEPT
+        inline void __stdcall WilDynamicLoadRaiseFailFastException(_In_ PEXCEPTION_RECORD er, _In_ PCONTEXT cr, _In_ DWORD flags)
         {
-            // GetProcAddress is used here since we may be linking against an ntdll that doesn't contain this function
-            // e.g. if this header is used on an OS older than Threshold (which may be the case for IE)
-            auto pfn = reinterpret_cast<decltype(&::LdrFastFailInLoaderCallout)>(GetProcAddress(wil_details_GetNtDllModuleHandle(), "LdrFastFailInLoaderCallout"));
-            if (pfn != nullptr)
+            auto pfnRaiseFailFastException = reinterpret_cast<decltype(WilDynamicLoadRaiseFailFastException)*>(GetProcAddress(GetModuleHandleW(L"kernelbase.dll"), "RaiseFailFastException"));
+            if (pfnRaiseFailFastException)
             {
-                pfn();  // don't do anything non-trivial from DllMain, fail fast.
+                pfnRaiseFailFastException(er, cr, flags);
             }
         }
-
-        inline ULONG __stdcall RtlNtStatusToDosErrorNoTeb(_In_ NTSTATUS status) WI_NOEXCEPT
-        {
-            static decltype(RtlNtStatusToDosErrorNoTeb) *s_pfnRtlNtStatusToDosErrorNoTeb = nullptr;
-            if (s_pfnRtlNtStatusToDosErrorNoTeb == nullptr)
-            {
-                s_pfnRtlNtStatusToDosErrorNoTeb = reinterpret_cast<decltype(RtlNtStatusToDosErrorNoTeb)*>(GetProcAddress(wil_details_GetNtDllModuleHandle(), "RtlNtStatusToDosErrorNoTeb"));
-            }
-            return s_pfnRtlNtStatusToDosErrorNoTeb ? s_pfnRtlNtStatusToDosErrorNoTeb(status) : 0;
-        }
-
-        inline BOOLEAN __stdcall RtlDllShutdownInProgress() WI_NOEXCEPT
-        {
-            static decltype(RtlDllShutdownInProgress) *s_pfnRtlDllShutdownInProgress = nullptr;
-            if (s_pfnRtlDllShutdownInProgress == nullptr)
-            {
-                s_pfnRtlDllShutdownInProgress = reinterpret_cast<decltype(RtlDllShutdownInProgress)*>(GetProcAddress(wil_details_GetNtDllModuleHandle(), "RtlDllShutdownInProgress"));
-            }
-            return s_pfnRtlDllShutdownInProgress ? s_pfnRtlDllShutdownInProgress() : FALSE;
-        }
-#endif
 #endif  // WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP | WINAPI_PARTITION_SYSTEM)
 
         inline bool __stdcall GetModuleInformationFromAddress(_In_opt_ void* address, _Out_opt_ unsigned int* addressOffset, _Out_writes_bytes_opt_(size) char* buffer, size_t size) WI_NOEXCEPT
@@ -2144,131 +1958,6 @@ namespace wil
             __analysis_assume((pReturn >= pStart) && (pReturn <= pEnd));
             return pReturn;
         }
-
-#ifndef WIL_HIDE_DEPRECATED_1611
-        template <typename TLambda>
-        class ScopeExitFn
-        {
-        public:
-            explicit ScopeExitFn(TLambda&& exitFunctor) WI_NOEXCEPT :
-                m_exitFunctor(wistd::move(exitFunctor)),
-                m_shouldRun(true)
-            {
-                static_assert(!wistd::is_lvalue_reference<TLambda>::value && !wistd::is_rvalue_reference<TLambda>::value,
-                              "ScopeExit should only be directly used with lambdas");
-            }
-
-            ScopeExitFn(ScopeExitFn&& other) WI_NOEXCEPT :
-                m_exitFunctor(wistd::move(other.m_exitFunctor)),
-                m_shouldRun(other.m_shouldRun)
-            {
-                other.m_shouldRun = false;
-            }
-
-            ~ScopeExitFn() WI_NOEXCEPT
-            {
-                operator()();
-            }
-
-            void operator()() WI_NOEXCEPT
-            {
-                if (m_shouldRun)
-                {
-                    m_shouldRun = false;
-                    m_exitFunctor();
-                }
-            }
-
-            void Dismiss() WI_NOEXCEPT
-            {
-                m_shouldRun = false;
-            }
-
-            ScopeExitFn(ScopeExitFn const &) = delete;
-            ScopeExitFn & operator=(ScopeExitFn const &) = delete;
-
-        private:
-            TLambda m_exitFunctor;
-            bool m_shouldRun;
-        };
-
-#ifdef WIL_ENABLE_EXCEPTIONS
-        enum class GuardType : unsigned char
-        {
-            Ignore,
-            Log,
-            FailFast
-        };
-
-        template <typename TLambda>
-        class ScopeExitFnGuard
-        {
-        public:
-            explicit ScopeExitFnGuard(GuardType type, TLambda&& exitFunctor) WI_NOEXCEPT :
-                m_exitFunctor(wistd::move(exitFunctor)),
-                m_type(type)
-            {
-                static_assert(!wistd::is_lvalue_reference<TLambda>::value && !wistd::is_rvalue_reference<TLambda>::value,
-                              "ScopeExit should only be directly used with lambdas");
-            }
-
-            ScopeExitFnGuard(ScopeExitFnGuard&& other) WI_NOEXCEPT :
-                m_exitFunctor(wistd::move(other.m_exitFunctor)),
-                m_type(other.m_type),
-                m_shouldRun(other.m_shouldRun)
-            {
-                other.m_shouldRun = false;
-            }
-
-            ~ScopeExitFnGuard() WI_NOEXCEPT
-            {
-                operator()();
-            }
-
-            void operator()() WI_NOEXCEPT
-            {
-                try
-                {
-                    RunWithoutGuard();
-                }
-                catch (...)
-                {
-                    if (m_type == GuardType::FailFast)
-                    {
-                        __WIL_PRIVATE_FAIL_FAST_HR(wil::ResultFromCaughtException());
-                    }
-                    else if (m_type == GuardType::Log)
-                    {
-                        __WIL_PRIVATE_LOG_HR(wil::ResultFromCaughtException());
-                    }
-                    // GuardType::Ignore = no-op
-                }
-            }
-
-            void RunWithoutGuard()
-            {
-                if (m_shouldRun)
-                {
-                    m_shouldRun = false;
-                    m_exitFunctor();
-                }
-            }
-
-            void Dismiss() WI_NOEXCEPT
-            {
-                m_shouldRun = false;
-            }
-
-            ScopeExitFnGuard(const ScopeExitFnGuard&) = delete;
-            ScopeExitFnGuard& operator=(const ScopeExitFnGuard&) = delete;
-
-        private:
-            TLambda m_exitFunctor;
-            GuardType m_type;
-            bool m_shouldRun = true;
-        };
-#endif // WIL_ENABLE_EXCEPTIONS
-#endif // WIL_HIDE_DEPRECATED_1611
     } // details namespace
     /// @endcond
 
@@ -2289,11 +1978,6 @@ namespace wil
     // Calling WilInitialize_ResultMacros_DesktopOrSystem_SuppressPrivateApiUse provides:
     // - The name of the current module in wil::FailureInfo::pszModule
     // - The name of the returning-to module during wil\staging.h failures
-    //
-    // Calling WilInitialize_ResultMacros_DesktopOrSystem additionally provides:
-    // - FAIL_FAST_IMMEDIATE_IF_IN_LOADER_CALLOUT enforcement
-    // - Higher fidelity mapping of NTSTATUS->HRESULT for RETURN_IF_NTSTATUS*
-    // - wil::ProcessShutdownInProgress returns 'true' during process shutdown (false when not called or set)
     //*****************************************************************************
 
 #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP | WINAPI_PARTITION_SYSTEM)
@@ -2304,41 +1988,32 @@ namespace wil
         details::g_pfnGetModuleName        = details::GetCurrentModuleName;
         details::g_pfnGetModuleInformation = details::GetModuleInformation;
         details::g_pfnDebugBreak           = details::DebugBreak;
+        details::g_pfnRaiseFailFastException = wil::details::WilDynamicLoadRaiseFailFastException;
     }
-
-#ifndef WIL_SUPPRESS_PRIVATE_API_USE
-    //! Call this method to initialize WIL manually in a module where RESULT_SUPPRESS_STATIC_INITIALIZERS is required. WIL will
-    //! use internal methods to provide additional diagnostic information & behavior.
-    inline void WilInitialize_ResultMacros_DesktopOrSystem()
-    {
-        WilInitialize_ResultMacros_DesktopOrSystem_SuppressPrivateApiUse();
-        details::g_pfnFailFastInLoaderCallout    = details::FailFastInLoaderCallout;
-        details::g_pfnRtlNtStatusToDosErrorNoTeb = details::RtlNtStatusToDosErrorNoTeb;
-        details::g_pfnRtlDllShutdownInProgress   = details::RtlDllShutdownInProgress;
-    }
-#endif // WIL_SUPPRESS_PRIVATE_API_USE
 
     /// @cond
     namespace details
     {
 #ifndef RESULT_SUPPRESS_STATIC_INITIALIZERS
-#ifdef WIL_SUPPRESS_PRIVATE_API_USE
+#if !defined(BUILD_WINDOWS) || defined(WIL_SUPPRESS_PRIVATE_API_USE)
         WI_HEADER_INITITALIZATION_FUNCTION(WilInitialize_ResultMacros_DesktopOrSystem_SuppressPrivateApiUse, []
         {
             ::wil::WilInitialize_ResultMacros_DesktopOrSystem_SuppressPrivateApiUse();
             return 1;
         });
-#else
-        WI_HEADER_INITITALIZATION_FUNCTION(WilInitialize_ResultMacros_DesktopOrSystem, []
-        {
-            ::wil::WilInitialize_ResultMacros_DesktopOrSystem();
-            return 1;
-        });
-#endif // WIL_SUPPRESS_PRIVATE_API_USE
-#endif // RESULT_SUPPRESS_STATIC_INITIALIZERS
+#endif
+#endif
     }
     /// @endcond
-
+#else // !WINAPI_PARTITION_DESKTOP, !WINAPI_PARTITION_SYSTEM, explicitly assume these modules can direct link
+    namespace details
+    {
+        WI_HEADER_INITITALIZATION_FUNCTION(WilInitialize_ResultMacros_AppOnly, []
+        {
+            g_pfnRaiseFailFastException = ::RaiseFailFastException;
+            return 1;
+        });
+    }
 #endif // WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP | WINAPI_PARTITION_SYSTEM)
 
     //*****************************************************************************
@@ -2611,7 +2286,7 @@ namespace wil
         }
 
         //! Provides a string representing the FailureInfo from this exception.
-        inline const char * __CLR_OR_THIS_CALL what() const override
+        inline const char * __CLR_OR_THIS_CALL what() const WI_NOEXCEPT override
         {
             if (!m_what)
             {
@@ -2639,17 +2314,6 @@ namespace wil
             return fi;
         }
     };
-#endif
-
-#ifndef WIL_HIDE_DEPRECATED_1611
-    WIL_WARN_DEPRECATED_1611_PRAGMA(ScopeExit)
-
-    // DEPRECATED: use wil::scope_exit
-    template <typename TLambda>
-    _Check_return_ inline wil::details::ScopeExitFn<TLambda> ScopeExit(TLambda&& exitFunctor) WI_NOEXCEPT
-    {
-        return wil::details::ScopeExitFn<TLambda>(wistd::forward<TLambda>(exitFunctor));
-    }
 #endif
 
 
@@ -2688,178 +2352,6 @@ namespace wil
         return HRESULT_FROM_WIN32(ERROR_UNHANDLED_EXCEPTION);
     }
 
-#ifdef WIL_ENABLE_EXCEPTIONS
-#ifndef WIL_HIDE_DEPRECATED_1611
-    WIL_WARN_DEPRECATED_1611_PRAGMA(ScopeExitNoExcept, ScopeExitLog, ScopeExitIgnore)
-
-    // DEPRECATED: use wil::scope_exit
-    template <typename TLambda>
-    _Check_return_ inline wil::details::ScopeExitFnGuard<TLambda> ScopeExitNoExcept(TLambda&& exitFunctor) WI_NOEXCEPT
-    {
-        return wil::details::ScopeExitFnGuard<TLambda>(wil::details::GuardType::FailFast, wistd::forward<TLambda>(exitFunctor));
-    }
-
-    // DEPRECATED: use wil::scope_exit_log(WI_DIAGNOSTICS_INFO, [&] {})
-    template <typename TLambda>
-    _Check_return_ inline wil::details::ScopeExitFnGuard<TLambda> ScopeExitLog(TLambda&& exitFunctor) WI_NOEXCEPT
-    {
-        return wil::details::ScopeExitFnGuard<TLambda>(wil::details::GuardType::Log, wistd::forward<TLambda>(exitFunctor));
-    }
-
-    // DEPRECATED: use wil::scope_exit_log or try/catch(...) within the lambda
-    template <typename TLambda>
-    _Check_return_ inline wil::details::ScopeExitFnGuard<TLambda> ScopeExitIgnore(TLambda&& exitFunctor) WI_NOEXCEPT
-    {
-        return wil::details::ScopeExitFnGuard<TLambda>(wil::details::GuardType::Ignore, wistd::forward<TLambda>(exitFunctor));
-    }
-#endif
-
-    //! A lambda-based exception guard that can vary the supported exception types.
-    //! This function accepts a lambda and diagnostics information as its parameters and executes that lambda
-    //! under a try/catch(...) block.  All exceptions are caught and the function reports the exception information
-    //! and diagnostics to telemetry on failure.  An HRESULT is returned that maps to the exception.
-    //!
-    //! Note that an overload exists that does not report failures to telemetry at all.  This version should be preferred
-    //! to that version.  Also note that neither of these versions are preferred over using try catch blocks to accomplish
-    //! the same thing as they will be more efficient.
-    //!
-    //! See @ref page_exception_guards for more information and examples on exception guards.
-    //! ~~~~
-    //! return wil::ResultFromException(WI_DIAGNOSTICS_INFO, [&]
-    //! {
-    //!     // exception-based code
-    //!     // telemetry is reported with full exception information
-    //! });
-    //! ~~~~
-    //! @param diagnostics  Always pass WI_DIAGNOSTICS_INFO as the first parameter
-    //! @param supported    What kind of exceptions you want to support
-    //! @param functor      A lambda that accepts no parameters; any return value is ignored
-    //! @return             S_OK on success (no exception thrown) or an error based upon the exception thrown
-    template <typename Functor>
-    __forceinline HRESULT ResultFromException(const DiagnosticsInfo& diagnostics, SupportedExceptions supported, Functor&& functor) WI_NOEXCEPT
-    {
-        static_assert(details::functor_tag<ErrorReturn::None, Functor>::value != details::tag_return_other::value, "Functor must return void or HRESULT");
-        typename details::functor_tag<ErrorReturn::None, Functor>::functor_wrapper<Functor> functorObject(wistd::forward<Functor>(functor));
-
-        return wil::details::ResultFromException(diagnostics, supported, functorObject);
-    }
-
-    //! A lambda-based exception guard.
-    //! This overload uses SupportedExceptions::Known by default.  See @ref ResultFromException for more detailed information.
-    template <typename Functor>
-    __forceinline HRESULT ResultFromException(const DiagnosticsInfo& diagnostics, Functor&& functor) WI_NOEXCEPT
-    {
-        return ResultFromException(diagnostics, SupportedExceptions::Known, wistd::forward<Functor>(functor));
-    }
-
-    //! A lambda-based exception guard that does not report failures to telemetry.
-    //! This function accepts a lambda as it's only parameter and executes that lambda under a try/catch(...) block.
-    //! All exceptions are caught and the function returns an HRESULT mapping to the exception.
-    //!
-    //! This version (taking only a lambda) does not report failures to telemetry.  An overload with the same name
-    //! can be utilized by passing `WI_DIAGNOSTICS_INFO` as the first parameter and the lambda as the second parameter
-    //! to report failure information to telemetry.
-    //!
-    //! See @ref page_exception_guards for more information and examples on exception guards.
-    //! ~~~~
-    //! hr = wil::ResultFromException([&]
-    //! {
-    //!     // exception-based code
-    //!     // the conversion of exception to HRESULT doesn't report telemetry
-    //! });
-    //!
-    //! hr = wil::ResultFromException(WI_DIAGNOSTICS_INFO, [&]
-    //! {
-    //!     // exception-based code
-    //!     // telemetry is reported with full exception information
-    //! });
-    //! ~~~~
-    //! @param functor  A lambda that accepts no parameters; any return value is ignored
-    //! @return         S_OK on success (no exception thrown) or an error based upon the exception thrown
-    template <typename Functor>
-    inline HRESULT ResultFromException(Functor&& functor) WI_NOEXCEPT try
-    {
-        static_assert(details::functor_tag<ErrorReturn::None, Functor>::value == details::tag_return_void::value, "Functor must return void");
-        typename details::functor_tag<ErrorReturn::None, Functor>::functor_wrapper<Functor> functorObject(wistd::forward<Functor>(functor));
-
-        functorObject.Run();
-        return S_OK;
-    }
-    catch (...)
-    {
-        return ResultFromCaughtException();
-    }
-
-
-    //! A lambda-based exception guard that can identify the origin of unknown exceptions and can vary the supported exception types.
-    //! Functionally this is nearly identical to the corresponding @ref ResultFromException function with the exception
-    //! that it utilizes structured exception handling internally to be able to terminate at the point where a unknown
-    //! exception is thrown, rather than after that unknown exception has been unwound.  Though less efficient, this leads
-    //! to a better debugging experience when analyzing unknown exceptions.
-    //!
-    //! For example:
-    //! ~~~~
-    //! hr = wil::ResultFromExceptionDebug(WI_DIAGNOSTICS_INFO, [&]
-    //! {
-    //!     FunctionWhichMayThrow();
-    //! });
-    //! ~~~~
-    //! Assume FunctionWhichMayThrow() has a bug in it where it accidentally does a `throw E_INVALIDARG;`.  This ends up
-    //! throwing a `long` as an exception object which is not what the caller intended.  The normal @ref ResultFromException
-    //! would fail-fast when this is encountered, but it would do so AFTER FunctionWhichMayThrow() is already off of the
-    //! stack and has been unwound.  Because SEH is used for ResultFromExceptionDebug, the fail-fast occurs with everything
-    //! leading up to and including the `throw INVALIDARG;` still on the stack (and easily debuggable).
-    //!
-    //! The penalty paid for using this, however, is efficiency.  It's far less efficient as a general pattern than either
-    //! using ResultFromException directly or especially using try with CATCH_ macros directly.  Still it's helpful to deploy
-    //! selectively to isolate issues a component may be having with unknown/unhandled exceptions.
-    //!
-    //! The ability to vary the SupportedExceptions that this routine provides adds the ability to track down unexpected
-    //! exceptions not falling into the supported category easily through fail-fast.  For example, by not supporting any
-    //! exception, you can use this function to quickly add an exception guard that will fail-fast any exception at the point
-    //! the exception occurs (the throw) in a codepath where the origination of unknown exceptions need to be tracked down.
-    //!
-    //! Also see @ref ResultFromExceptionDebugNoStdException.  It functions almost identically, but also will fail-fast and stop
-    //! on std::exception based exceptions (but not Platform::Exception^ or wil::ResultException).  Using this can help isolate
-    //! where an unexpected exception is being generated from.
-    //! @param diagnostics  Always pass WI_DIAGNOSTICS_INFO as the first parameter
-    //! @param supported    What kind of exceptions you want to support
-    //! @param functor      A lambda that accepts no parameters; any return value is ignored
-    //! @return             S_OK on success (no exception thrown) or an error based upon the exception thrown
-    template <typename Functor>
-    __forceinline HRESULT ResultFromExceptionDebug(const DiagnosticsInfo& diagnostics, SupportedExceptions supported, Functor&& functor) WI_NOEXCEPT
-    {
-        static_assert(details::functor_tag<ErrorReturn::None, Functor>::value == details::tag_return_void::value, "Functor must return void");
-        typename details::functor_tag<ErrorReturn::None, Functor>::functor_wrapper<Functor> functorObject(wistd::forward<Functor>(functor));
-
-        return wil::details::ResultFromExceptionDebug(diagnostics, supported, functorObject);
-    }
-
-    //! A lambda-based exception guard that can identify the origin of unknown exceptions.
-    //! This overload uses SupportedExceptions::Known by default.  See @ref ResultFromExceptionDebug for more detailed information.
-    template <typename Functor>
-    __forceinline HRESULT ResultFromExceptionDebug(const DiagnosticsInfo& diagnostics, Functor&& functor) WI_NOEXCEPT
-    {
-        static_assert(details::functor_tag<ErrorReturn::None, Functor>::value == details::tag_return_void::value, "Functor must return void");
-        typename details::functor_tag<ErrorReturn::None, Functor>::functor_wrapper<Functor> functorObject(wistd::forward<Functor>(functor));
-
-        return wil::details::ResultFromExceptionDebug(diagnostics, SupportedExceptions::Known, functorObject);
-    }
-
-    //! A fail-fast based exception guard.
-    //! Technically this is an overload of @ref ResultFromExceptionDebug that uses SupportedExceptions::None by default.  Any uncaught
-    //! exception that makes it back to this guard would result in a fail-fast at the point the exception is thrown.
-    template <typename Functor>
-    __forceinline void FailFastException(const DiagnosticsInfo& diagnostics, Functor&& functor) WI_NOEXCEPT
-    {
-        static_assert(details::functor_tag<ErrorReturn::None, Functor>::value == details::tag_return_void::value, "Functor must return void");
-        typename details::functor_tag<ErrorReturn::None, Functor>::functor_wrapper<Functor> functorObject(wistd::forward<Functor>(functor));
-
-        wil::details::ResultFromExceptionDebug(diagnostics, SupportedExceptions::None, functorObject);
-    }
-
-#endif // WIL_ENABLE_EXCEPTIONS
-
     //! Identical to 'throw;', but can be called from error-code neutral code to rethrow in code that *may* be running under an exception context
     inline void RethrowCaughtException()
     {
@@ -2897,7 +2389,8 @@ namespace wil
             // the source of the actual exception being thrown.  The exception guard used by the calling code did not expect this
             // exception type to be thrown or is specifically requesting fail-fast for this class of exception.
 
-            RESULT_RAISE_FAST_FAIL_EXCEPTION;
+            FailureInfo failure{};
+            WilFailFast(failure);
         }
 
         inline void MaybeGetExceptionString(const ResultException& exception, _Out_writes_opt_(debugStringChars) PWSTR debugString, _When_(debugString != nullptr, _Pre_satisfies_(debugStringChars > 0)) size_t debugStringChars)
@@ -3468,6 +2961,154 @@ namespace wil
             return 1;
         });
 
+    }
+
+    //! A lambda-based exception guard that can vary the supported exception types.
+    //! This function accepts a lambda and diagnostics information as its parameters and executes that lambda
+    //! under a try/catch(...) block.  All exceptions are caught and the function reports the exception information
+    //! and diagnostics to telemetry on failure.  An HRESULT is returned that maps to the exception.
+    //!
+    //! Note that an overload exists that does not report failures to telemetry at all.  This version should be preferred
+    //! to that version.  Also note that neither of these versions are preferred over using try catch blocks to accomplish
+    //! the same thing as they will be more efficient.
+    //!
+    //! See @ref page_exception_guards for more information and examples on exception guards.
+    //! ~~~~
+    //! return wil::ResultFromException(WI_DIAGNOSTICS_INFO, [&]
+    //! {
+    //!     // exception-based code
+    //!     // telemetry is reported with full exception information
+    //! });
+    //! ~~~~
+    //! @param diagnostics  Always pass WI_DIAGNOSTICS_INFO as the first parameter
+    //! @param supported    What kind of exceptions you want to support
+    //! @param functor      A lambda that accepts no parameters; any return value is ignored
+    //! @return             S_OK on success (no exception thrown) or an error based upon the exception thrown
+    template <typename Functor>
+    __forceinline HRESULT ResultFromException(const DiagnosticsInfo& diagnostics, SupportedExceptions supported, Functor&& functor) WI_NOEXCEPT
+    {
+        static_assert(details::functor_tag<ErrorReturn::None, Functor>::value != details::tag_return_other::value, "Functor must return void or HRESULT");
+        typename details::functor_tag<ErrorReturn::None, Functor>::template functor_wrapper<Functor> functorObject(wistd::forward<Functor>(functor));
+
+        return wil::details::ResultFromException(diagnostics, supported, functorObject);
+    }
+
+    //! A lambda-based exception guard.
+    //! This overload uses SupportedExceptions::Known by default.  See @ref ResultFromException for more detailed information.
+    template <typename Functor>
+    __forceinline HRESULT ResultFromException(const DiagnosticsInfo& diagnostics, Functor&& functor) WI_NOEXCEPT
+    {
+        return ResultFromException(diagnostics, SupportedExceptions::Known, wistd::forward<Functor>(functor));
+    }
+
+    //! A lambda-based exception guard that does not report failures to telemetry.
+    //! This function accepts a lambda as it's only parameter and executes that lambda under a try/catch(...) block.
+    //! All exceptions are caught and the function returns an HRESULT mapping to the exception.
+    //!
+    //! This version (taking only a lambda) does not report failures to telemetry.  An overload with the same name
+    //! can be utilized by passing `WI_DIAGNOSTICS_INFO` as the first parameter and the lambda as the second parameter
+    //! to report failure information to telemetry.
+    //!
+    //! See @ref page_exception_guards for more information and examples on exception guards.
+    //! ~~~~
+    //! hr = wil::ResultFromException([&]
+    //! {
+    //!     // exception-based code
+    //!     // the conversion of exception to HRESULT doesn't report telemetry
+    //! });
+    //!
+    //! hr = wil::ResultFromException(WI_DIAGNOSTICS_INFO, [&]
+    //! {
+    //!     // exception-based code
+    //!     // telemetry is reported with full exception information
+    //! });
+    //! ~~~~
+    //! @param functor  A lambda that accepts no parameters; any return value is ignored
+    //! @return         S_OK on success (no exception thrown) or an error based upon the exception thrown
+    template <typename Functor>
+    inline HRESULT ResultFromException(Functor&& functor) WI_NOEXCEPT try
+    {
+        static_assert(details::functor_tag<ErrorReturn::None, Functor>::value == details::tag_return_void::value, "Functor must return void");
+        typename details::functor_tag<ErrorReturn::None, Functor>::template functor_wrapper<Functor> functorObject(wistd::forward<Functor>(functor));
+
+        functorObject.Run();
+        return S_OK;
+    }
+    catch (...)
+    {
+        return ResultFromCaughtException();
+    }
+
+
+    //! A lambda-based exception guard that can identify the origin of unknown exceptions and can vary the supported exception types.
+    //! Functionally this is nearly identical to the corresponding @ref ResultFromException function with the exception
+    //! that it utilizes structured exception handling internally to be able to terminate at the point where a unknown
+    //! exception is thrown, rather than after that unknown exception has been unwound.  Though less efficient, this leads
+    //! to a better debugging experience when analyzing unknown exceptions.
+    //!
+    //! For example:
+    //! ~~~~
+    //! hr = wil::ResultFromExceptionDebug(WI_DIAGNOSTICS_INFO, [&]
+    //! {
+    //!     FunctionWhichMayThrow();
+    //! });
+    //! ~~~~
+    //! Assume FunctionWhichMayThrow() has a bug in it where it accidentally does a `throw E_INVALIDARG;`.  This ends up
+    //! throwing a `long` as an exception object which is not what the caller intended.  The normal @ref ResultFromException
+    //! would fail-fast when this is encountered, but it would do so AFTER FunctionWhichMayThrow() is already off of the
+    //! stack and has been unwound.  Because SEH is used for ResultFromExceptionDebug, the fail-fast occurs with everything
+    //! leading up to and including the `throw INVALIDARG;` still on the stack (and easily debuggable).
+    //!
+    //! The penalty paid for using this, however, is efficiency.  It's far less efficient as a general pattern than either
+    //! using ResultFromException directly or especially using try with CATCH_ macros directly.  Still it's helpful to deploy
+    //! selectively to isolate issues a component may be having with unknown/unhandled exceptions.
+    //!
+    //! The ability to vary the SupportedExceptions that this routine provides adds the ability to track down unexpected
+    //! exceptions not falling into the supported category easily through fail-fast.  For example, by not supporting any
+    //! exception, you can use this function to quickly add an exception guard that will fail-fast any exception at the point
+    //! the exception occurs (the throw) in a codepath where the origination of unknown exceptions need to be tracked down.
+    //!
+    //! Also see @ref ResultFromExceptionDebugNoStdException.  It functions almost identically, but also will fail-fast and stop
+    //! on std::exception based exceptions (but not Platform::Exception^ or wil::ResultException).  Using this can help isolate
+    //! where an unexpected exception is being generated from.
+    //! @param diagnostics  Always pass WI_DIAGNOSTICS_INFO as the first parameter
+    //! @param supported    What kind of exceptions you want to support
+    //! @param functor      A lambda that accepts no parameters; any return value is ignored
+    //! @return             S_OK on success (no exception thrown) or an error based upon the exception thrown
+    template <typename Functor>
+    __forceinline HRESULT ResultFromExceptionDebug(const DiagnosticsInfo& diagnostics, SupportedExceptions supported, Functor&& functor) WI_NOEXCEPT
+    {
+        static_assert(details::functor_tag<ErrorReturn::None, Functor>::value == details::tag_return_void::value, "Functor must return void");
+        typename details::functor_tag<ErrorReturn::None, Functor>::template functor_wrapper<Functor> functorObject(wistd::forward<Functor>(functor));
+
+        return wil::details::ResultFromExceptionDebug(diagnostics, supported, functorObject);
+    }
+
+    //! A lambda-based exception guard that can identify the origin of unknown exceptions.
+    //! This overload uses SupportedExceptions::Known by default.  See @ref ResultFromExceptionDebug for more detailed information.
+    template <typename Functor>
+    __forceinline HRESULT ResultFromExceptionDebug(const DiagnosticsInfo& diagnostics, Functor&& functor) WI_NOEXCEPT
+    {
+        static_assert(details::functor_tag<ErrorReturn::None, Functor>::value == details::tag_return_void::value, "Functor must return void");
+        typename details::functor_tag<ErrorReturn::None, Functor>::template functor_wrapper<Functor> functorObject(wistd::forward<Functor>(functor));
+
+        return wil::details::ResultFromExceptionDebug(diagnostics, SupportedExceptions::Known, functorObject);
+    }
+
+    //! A fail-fast based exception guard.
+    //! Technically this is an overload of @ref ResultFromExceptionDebug that uses SupportedExceptions::None by default.  Any uncaught
+    //! exception that makes it back to this guard would result in a fail-fast at the point the exception is thrown.
+    template <typename Functor>
+    __forceinline void FailFastException(const DiagnosticsInfo& diagnostics, Functor&& functor) WI_NOEXCEPT
+    {
+        static_assert(details::functor_tag<ErrorReturn::None, Functor>::value == details::tag_return_void::value, "Functor must return void");
+        typename details::functor_tag<ErrorReturn::None, Functor>::template functor_wrapper<Functor> functorObject(wistd::forward<Functor>(functor));
+
+        wil::details::ResultFromExceptionDebug(diagnostics, SupportedExceptions::None, functorObject);
+    }
+
+    namespace details {
+
 #endif  // WIL_ENABLE_EXCEPTIONS
 
         // Exception guard -- catch exceptions and log them (or handle them with a custom callback)
@@ -3621,6 +3262,45 @@ namespace wil
             }
         }
 
+        inline __declspec(noreturn) void __stdcall WilFailFast(const wil::FailureInfo& failure)
+        {
+            if (g_pfnWilFailFast)
+            {
+                g_pfnWilFailFast(failure);
+            }
+
+#ifdef RESULT_RAISE_FAST_FAIL_EXCEPTION
+            // Use of this macro is an ODR violation - use the callback instead.  This will be removed soon.
+            RESULT_RAISE_FAST_FAIL_EXCEPTION;
+#endif
+
+            // parameter 0 is the !analyze code (FAST_FAIL_FATAL_APP_EXIT)
+            EXCEPTION_RECORD er{};
+            er.NumberParameters = 1;            // default to be safe, see below
+            er.ExceptionCode = static_cast<DWORD>(STATUS_STACK_BUFFER_OVERRUN); // 0xC0000409
+            er.ExceptionFlags = EXCEPTION_NONCONTINUABLE;
+            er.ExceptionInformation[0] = FAST_FAIL_FATAL_APP_EXIT; // see winnt.h, generated from minkernel\published\base\ntrtl_x.w
+            if (failure.returnAddress == 0)                     // FailureInfo does not have _ReturnAddress, have RaiseFailFastException generate it
+            {
+                // http://osgvsowi/17364039 - confirm with !analyze team that this is the best we can do in this case
+                // passing ExceptionCode 0xC0000409 and one param with FAST_FAIL_APP_EXIT will use existing
+                // !analyze funcitonality to crawl the stack looking for the HRESULT
+                // don't pass a 0 HRESULT in param 1 because that will result in worse bucketing.
+                WilRaiseFailFastException(&er, nullptr, FAIL_FAST_GENERATE_EXCEPTION_ADDRESS);
+            }
+            else                                                // use FailureInfo caller address
+            {
+                // parameter 1 is the failing HRESULT
+                // parameter 2 is the line number.  This is never used for bucketing (due to code churn causing re-bucketing) but is available in the dump's
+                // exception record to aid in failure locality. Putting it here prevents it from being poisoned in triage dumps.
+                er.NumberParameters = 3;
+                er.ExceptionInformation[1] = failure.hr;
+                er.ExceptionInformation[2] = failure.uLineNumber;
+                er.ExceptionAddress = failure.returnAddress;
+                WilRaiseFailFastException(&er, nullptr, 0 /* do not generate exception address */);
+            }
+        }
+
         inline __declspec(noinline) void ReportFailure(__R_FN_PARAMS_FULL, FailureType type, HRESULT hr, _In_opt_ PCWSTR message, ReportFailureOptions options)
         {
             bool needPlatformException = ((type == FailureType::Exception) &&
@@ -3639,8 +3319,7 @@ namespace wil
             {
                 if (type == FailureType::FailFast)
                 {
-                    // This is an explicit fail fast - examine the callstack to determine the precise reason for this failure
-                    RESULT_RAISE_FAST_FAIL_EXCEPTION;
+                    WilFailFast(const_cast<FailureInfo&>(failure));
                 }
                 else if (type == FailureType::Exception)
                 {
@@ -3657,7 +3336,7 @@ namespace wil
                     ThrowResultException(failure);
 
                     // Wil was instructed to throw, but doesn't have any capability to do so (global function pointers are not setup)
-                    RESULT_RAISE_FAST_FAIL_EXCEPTION;
+                    WilFailFast(const_cast<FailureInfo&>(failure));
                 }
             }
         }
@@ -5085,12 +4764,12 @@ namespace wil
 
             __RFF_DIRECT_NORET_METHOD(void, FailFastImmediate_Unexpected)() WI_NOEXCEPT
             {
-                RESULT_RAISE_FAST_FAIL_EXCEPTION;
+                __fastfail(FAST_FAIL_FATAL_APP_EXIT);
             }
 
             __RFF_INTERNAL_NORET_METHOD(_FailFastImmediate_Unexpected)() WI_NOEXCEPT
             {
-                RESULT_RAISE_FAST_FAIL_EXCEPTION;
+                __fastfail(FAST_FAIL_FATAL_APP_EXIT);
             }
 
             _Post_satisfies_(return == hr) _When_(FAILED(hr), _Analysis_noreturn_)
@@ -5659,16 +5338,17 @@ namespace wil
     // error-code based modes.
 
     // Use for classes which should return HRESULTs as their error-handling policy
+    // Intentionally removed logging from this policy as logging is more useful at the caller.
     struct err_returncode_policy
     {
         typedef HRESULT result;
 
-        __forceinline static HRESULT Win32BOOL(BOOL fReturn) { RETURN_IF_WIN32_BOOL_FALSE(fReturn); return S_OK; }
-        __forceinline static HRESULT Win32Handle(HANDLE h, _Out_ HANDLE *ph) { *ph = h; RETURN_LAST_ERROR_IF_NULL(h); return S_OK; }
+        __forceinline static HRESULT Win32BOOL(BOOL fReturn) { RETURN_IF_WIN32_BOOL_FALSE_EXPECTED(fReturn); return S_OK; }
+        __forceinline static HRESULT Win32Handle(HANDLE h, _Out_ HANDLE *ph) { *ph = h; RETURN_LAST_ERROR_IF_NULL_EXPECTED(h); return S_OK; }
         _Post_satisfies_(return == hr)
-        __forceinline static HRESULT HResult(HRESULT hr) { RETURN_HR(hr); }
-        __forceinline static HRESULT LastError() { RETURN_LAST_ERROR(); }
-        __forceinline static HRESULT LastErrorIfFalse(bool condition) { if (!condition) { RETURN_LAST_ERROR(); } return S_OK; }
+        __forceinline static HRESULT HResult(HRESULT hr) { return hr; }
+        __forceinline static HRESULT LastError() { return wil::details::GetLastErrorFailHr(); }
+        __forceinline static HRESULT LastErrorIfFalse(bool condition) { RETURN_LAST_ERROR_IF_EXPECTED(!condition); return S_OK; }
         _Post_satisfies_(return == S_OK)
         __forceinline static HRESULT OK() { return S_OK; }
     };

@@ -388,7 +388,7 @@ HRESULT WindowUiaProvider::_EnsureValidHwnd() const
     try
     {
         HWND const hwnd = _GetWindowHandle();
-        RETURN_HR_IF_FALSE((HRESULT)UIA_E_ELEMENTNOTAVAILABLE, IsWindow(hwnd));
+        RETURN_HR_IF((HRESULT)UIA_E_ELEMENTNOTAVAILABLE, !(IsWindow(hwnd)));
     }
     CATCH_RETURN();
     return S_OK;

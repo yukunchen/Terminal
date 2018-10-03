@@ -23,7 +23,7 @@ WCHAR CharToWchar(_In_reads_(cch) const char * const pch, const UINT cch)
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     WCHAR wc = L'\0';
 
-    FAIL_FAST_IF_FALSE(IsDBCSLeadByteConsole(*pch, &gci.OutputCPInfo) || cch == 1);
+    FAIL_FAST_IF(!(IsDBCSLeadByteConsole(*pch, &gci.OutputCPInfo) || cch == 1));
 
     ConvertOutputToUnicode(gci.OutputCP, pch, cch, &wc, 1);
 
@@ -130,7 +130,7 @@ BOOL CheckBisectProcessW(const SCREEN_INFORMATION& ScreenInfo,
                          _In_ SHORT sOriginalXPosition,
                          _In_ BOOL fEcho)
 {
-    if (IsFlagSet(ScreenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT))
+    if (WI_IsFlagSet(ScreenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT))
     {
         while (cWords && cBytes)
         {
@@ -269,7 +269,7 @@ int ConvertToOem(const UINT uiCodePage,
                  _Out_writes_(cchTarget) CHAR * const pchTarget,
                  const UINT cchTarget) noexcept
 {
-    FAIL_FAST_IF_FALSE(pwchSource != (LPWSTR) pchTarget);
+    FAIL_FAST_IF(!(pwchSource != (LPWSTR) pchTarget));
     DBGCHARS(("ConvertToOem U->%d %.*ls\n", uiCodePage, cchSource > 10 ? 10 : cchSource, pwchSource));
     #pragma prefast(suppress:__WARNING_W2A_BEST_FIT, "WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.")
     return LOG_IF_WIN32_BOOL_FALSE(WideCharToMultiByte(uiCodePage, 0, pwchSource, cchSource, pchTarget, cchTarget, nullptr, nullptr));
@@ -294,7 +294,7 @@ int ConvertOutputToUnicode(_In_ UINT uiCodePage,
                            _Out_writes_(cchTarget) WCHAR *pwchTarget,
                            _In_ UINT cchTarget) noexcept
 {
-    FAIL_FAST_IF_FALSE(cchTarget > 0);
+    FAIL_FAST_IF(!(cchTarget > 0));
     pwchTarget[0] = L'\0';
 
     DBGCHARS(("ConvertOutputToUnicode %d->U %.*s\n", uiCodePage, cchSource > 10 ? 10 : cchSource, pchSource));

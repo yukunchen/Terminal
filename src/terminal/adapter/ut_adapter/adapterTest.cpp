@@ -264,15 +264,15 @@ public:
             VERIFY_ARE_EQUAL(_fExpectedMeta, fMeta);
             if (fForeground)
             {
-                UpdateFlagsInMask(_wAttribute, FG_ATTRS, wAttr);
+                WI_UpdateFlagsInMask(_wAttribute, FG_ATTRS, wAttr);
             }
             if (fBackground)
             {
-                UpdateFlagsInMask(_wAttribute, BG_ATTRS, wAttr);
+                WI_UpdateFlagsInMask(_wAttribute, BG_ATTRS, wAttr);
             }
             if (fMeta)
             {
-                UpdateFlagsInMask(_wAttribute, META_ATTRS, wAttr);
+                WI_UpdateFlagsInMask(_wAttribute, META_ATTRS, wAttr);
             }
 
             VERIFY_ARE_EQUAL(_wExpectedAttribute, wAttr);
@@ -2760,7 +2760,7 @@ public:
         _testGetSet->_wExpectedAttribute = FOREGROUND_GREEN;
         _testGetSet->_fExpectedForeground = true;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
-        VERIFY_IS_TRUE(IsFlagSet(_testGetSet->_wAttribute, FOREGROUND_GREEN));
+        VERIFY_IS_TRUE(WI_IsFlagSet(_testGetSet->_wAttribute, FOREGROUND_GREEN));
         VERIFY_IS_TRUE(_testGetSet->_fIsBold);
 
         Log::Comment(L"Test 2: Disable brightness, use a bright color, next normal call remains not bright");
@@ -2773,7 +2773,7 @@ public:
         _testGetSet->_fPrivateBoldTextResult = true;
         _testGetSet->_fExpectedIsBold = false;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
-        VERIFY_IS_TRUE(IsFlagClear(_testGetSet->_wAttribute, FOREGROUND_INTENSITY));
+        VERIFY_IS_TRUE(WI_IsFlagClear(_testGetSet->_wAttribute, FOREGROUND_INTENSITY));
         VERIFY_IS_FALSE(_testGetSet->_fIsBold);
 
         Log::Comment(L"Testing graphics 'Foreground Color Bright Blue'");

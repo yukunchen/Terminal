@@ -162,7 +162,7 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
     }
 
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     std::deque<std::unique_ptr<IInputEvent>> partialEvents;
     if (!IsUnicode)
@@ -187,7 +187,7 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
 
     if (CONSOLE_STATUS_WAIT == Status)
     {
-        FAIL_FAST_IF_FALSE(readEvents.empty());
+        FAIL_FAST_IF(!(readEvents.empty()));
         // If we're told to wait until later, move all of our context
         // to the read data object and send it back up to the server.
         try
@@ -238,7 +238,7 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
         {
             pInputBuffer->StoreReadPartialByteSequence(std::move(readEvents.front()));
             readEvents.pop_front();
-            FAIL_FAST_IF_FALSE(readEvents.empty());
+            FAIL_FAST_IF(!(readEvents.empty()));
         }
     }
     return Status;
@@ -391,7 +391,7 @@ HRESULT DoSrvWriteConsoleInput(_Inout_ InputBuffer* const pInputBuffer,
                                const bool append)
 {
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     eventsWritten = 0;
 
@@ -446,7 +446,7 @@ HRESULT DoSrvPrivatePrependConsoleInput(_Inout_ InputBuffer* const pInputBuffer,
                                         _Out_ size_t& eventsWritten)
 {
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     eventsWritten = 0;
 
@@ -486,7 +486,7 @@ HRESULT DoSrvPrivateWriteConsoleControlInput(_Inout_ InputBuffer* const /*pInput
                                              _In_ KeyEvent key)
 {
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     HandleGenericKeyEvent(key, false);
 
@@ -527,7 +527,7 @@ NTSTATUS TranslateOutputToOem(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Size)
     {
         for (int j = 0; j < Size.X; j++)
         {
-            if (IsFlagSet(TmpBuffer->Attributes, COMMON_LVB_LEADING_BYTE))
+            if (WI_IsFlagSet(TmpBuffer->Attributes, COMMON_LVB_LEADING_BYTE))
             {
                 if (j < Size.X - 1)
                 {   // -1 is safe DBCS in buffer
@@ -548,12 +548,12 @@ NTSTATUS TranslateOutputToOem(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Size)
                 {
                     OutputBuffer->Char.AsciiChar = ' ';
                     OutputBuffer->Attributes = TmpBuffer->Attributes;
-                    ClearAllFlags(OutputBuffer->Attributes, COMMON_LVB_SBCSDBCS);
+                    WI_ClearAllFlags(OutputBuffer->Attributes, COMMON_LVB_SBCSDBCS);
                     OutputBuffer++;
                     TmpBuffer++;
                 }
             }
-            else if (AreAllFlagsClear(TmpBuffer->Attributes, COMMON_LVB_SBCSDBCS))
+            else if (WI_AreAllFlagsClear(TmpBuffer->Attributes, COMMON_LVB_SBCSDBCS))
             {
                 ConvertToOem(Codepage, &TmpBuffer->Char.UnicodeChar, 1, &OutputBuffer->Char.AsciiChar, 1);
                 OutputBuffer->Attributes = TmpBuffer->Attributes;
@@ -581,7 +581,7 @@ NTSTATUS TranslateOutputToUnicode(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Si
     {
         for (int j = 0; j < Size.X; j++)
         {
-            ClearAllFlags(OutputBuffer->Attributes, COMMON_LVB_SBCSDBCS);
+            WI_ClearAllFlags(OutputBuffer->Attributes, COMMON_LVB_SBCSDBCS);
             if (IsDBCSLeadByteConsole(OutputBuffer->Char.AsciiChar, &gci.OutputCPInfo))
             {
                 if (j < Size.X - 1)
@@ -595,11 +595,11 @@ NTSTATUS TranslateOutputToUnicode(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Si
                     ConvertOutputToUnicode(Codepage, &AsciiDbcs[0], 2, &UnicodeDbcs[0], 2);
 
                     OutputBuffer->Char.UnicodeChar = UnicodeDbcs[0];
-                    SetFlag(OutputBuffer->Attributes, COMMON_LVB_LEADING_BYTE);
+                    WI_SetFlag(OutputBuffer->Attributes, COMMON_LVB_LEADING_BYTE);
                     OutputBuffer++;
                     OutputBuffer->Char.UnicodeChar = UNICODE_DBCS_PADDING;
-                    ClearAllFlags(OutputBuffer->Attributes, COMMON_LVB_SBCSDBCS);
-                    SetFlag(OutputBuffer->Attributes, COMMON_LVB_TRAILING_BYTE);
+                    WI_ClearAllFlags(OutputBuffer->Attributes, COMMON_LVB_SBCSDBCS);
+                    WI_SetFlag(OutputBuffer->Attributes, COMMON_LVB_TRAILING_BYTE);
                     OutputBuffer++;
                 }
                 else
@@ -635,7 +635,7 @@ NTSTATUS TranslateOutputToPaddingUnicode(_Inout_ PCHAR_INFO OutputBuffer, _In_ C
             if (OutputBufferR)
             {
                 OutputBufferR->Attributes = OutputBuffer->Attributes;
-                ClearAllFlags(OutputBufferR->Attributes, COMMON_LVB_SBCSDBCS);
+                WI_ClearAllFlags(OutputBufferR->Attributes, COMMON_LVB_SBCSDBCS);
                 if (IsGlyphFullWidth(OutputBuffer->Char.UnicodeChar))
                 {
                     if (j == Size.X - 1)
@@ -645,12 +645,12 @@ NTSTATUS TranslateOutputToPaddingUnicode(_Inout_ PCHAR_INFO OutputBuffer, _In_ C
                     else
                     {
                         OutputBufferR->Char.UnicodeChar = OutputBuffer->Char.UnicodeChar;
-                        SetFlag(OutputBufferR->Attributes, COMMON_LVB_LEADING_BYTE);
+                        WI_SetFlag(OutputBufferR->Attributes, COMMON_LVB_LEADING_BYTE);
                         OutputBufferR++;
                         OutputBufferR->Char.UnicodeChar = UNICODE_DBCS_PADDING;
                         OutputBufferR->Attributes = OutputBuffer->Attributes;
-                        ClearAllFlags(OutputBufferR->Attributes, COMMON_LVB_SBCSDBCS);
-                        SetFlag(OutputBufferR->Attributes, COMMON_LVB_TRAILING_BYTE);
+                        WI_ClearAllFlags(OutputBufferR->Attributes, COMMON_LVB_SBCSDBCS);
+                        WI_SetFlag(OutputBufferR->Attributes, COMMON_LVB_TRAILING_BYTE);
                     }
                 }
                 else
@@ -1003,7 +1003,7 @@ NTSTATUS SrvWriteConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /
 {
     PCONSOLE_WRITECONSOLEOUTPUTSTRING_MSG const a = &m->u.consoleMsgL2.WriteConsoleOutputString;
 
-    auto tracing = wil::ScopeExit([&]()
+    auto tracing = wil::scope_exit([&]()
     {
         Tracing::s_TraceApi(a);
     });
@@ -1240,7 +1240,7 @@ NTSTATUS ConsoleCreateScreenBuffer(std::unique_ptr<ConsoleHandleData>& handle,
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     // If any buffer type except the one we support is set, it's invalid.
-    if (IsAnyFlagSet(a->Flags, ~CONSOLE_TEXTMODE_BUFFER))
+    if (WI_IsAnyFlagSet(a->Flags, ~CONSOLE_TEXTMODE_BUFFER))
     {
         // We no longer support anything other than a textmode buffer
         return STATUS_INVALID_PARAMETER;

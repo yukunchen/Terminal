@@ -341,15 +341,15 @@ bool TerminalInput::_SearchKeyMapping(const KeyEvent& keyEvent,
             // However, if there are modifiers set, then we only want to match
             //      if the key's modifiers are the same as the modifiers in the
             //      mapping.
-            bool modifiersMatch = AreAllFlagsClear(pMap->dwModifiers, MOD_PRESSED);
+            bool modifiersMatch = WI_AreAllFlagsClear(pMap->dwModifiers, MOD_PRESSED);
             if (!modifiersMatch)
             {
                 // The modifier mapping expects certain modifier keys to be
                 //      pressed. Check those as well.
                 modifiersMatch =
-                    (IsFlagSet(pMap->dwModifiers, SHIFT_PRESSED) == keyEvent.IsShiftPressed()) &&
-                    (IsAnyFlagSet(pMap->dwModifiers, ALT_PRESSED) == keyEvent.IsAltPressed()) &&
-                    (IsAnyFlagSet(pMap->dwModifiers, CTRL_PRESSED) == keyEvent.IsCtrlPressed());
+                    (WI_IsFlagSet(pMap->dwModifiers, SHIFT_PRESSED) == keyEvent.IsShiftPressed()) &&
+                    (WI_IsAnyFlagSet(pMap->dwModifiers, ALT_PRESSED) == keyEvent.IsAltPressed()) &&
+                    (WI_IsAnyFlagSet(pMap->dwModifiers, CTRL_PRESSED) == keyEvent.IsCtrlPressed());
             }
 
             if (modifiersMatch)

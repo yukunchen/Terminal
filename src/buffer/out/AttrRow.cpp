@@ -54,7 +54,7 @@ void ATTR_ROW::Resize(const size_t newWidth)
     if (newWidth > _cchRowWidth)
     {
         LockConsole();
-        auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
         // get the default attributes
         const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         const TextAttribute defaultAttrs = gci.GetActiveOutputBuffer().GetAttributes();
@@ -156,11 +156,11 @@ size_t ATTR_ROW::GetNumberOfRuns() const noexcept
 // - const reference to attribute run object
 size_t ATTR_ROW::FindAttrIndex(const size_t index, size_t* const pApplies) const
 {
-    FAIL_FAST_IF_FALSE(index < _cchRowWidth); // The requested index cannot be longer than the total length described by this set of Attrs.
+    FAIL_FAST_IF(!(index < _cchRowWidth)); // The requested index cannot be longer than the total length described by this set of Attrs.
 
     size_t cTotalLength = 0;
 
-    FAIL_FAST_IF_FALSE(_list.size() > 0); // There should be a non-zero and positive number of items in the array.
+    FAIL_FAST_IF(!(_list.size() > 0)); // There should be a non-zero and positive number of items in the array.
 
     // Scan through the internal array from position 0 adding up the lengths that each attribute applies to
     auto runPos = _list.cbegin();
@@ -185,14 +185,14 @@ size_t ATTR_ROW::FindAttrIndex(const size_t index, size_t* const pApplies) const
     // Calculate its remaining applicability if requested
 
     // The length on which the found attribute applies is the total length seen so far minus the index we were searching for.
-    FAIL_FAST_IF_FALSE(cTotalLength > index); // The length of all attributes we counted up so far should be longer than the index requested or we'll underflow.
+    FAIL_FAST_IF(!(cTotalLength > index)); // The length of all attributes we counted up so far should be longer than the index requested or we'll underflow.
 
     if (nullptr != pApplies)
     {
         const auto attrApplies = cTotalLength - index;
-        FAIL_FAST_IF_FALSE(attrApplies > 0); // An attribute applies for >0 characters
+        FAIL_FAST_IF(!(attrApplies > 0)); // An attribute applies for >0 characters
         // MSFT: 17130145 - will restore this and add a better assert to catch the real issue.
-        //FAIL_FAST_IF_FALSE(attrApplies <= _cchRowWidth); // An attribute applies for a maximum of the total length available to us
+        //FAIL_FAST_IF(!(attrApplies <= _cchRowWidth)); // An attribute applies for a maximum of the total length available to us
 
         *pApplies = attrApplies;
     }
@@ -431,7 +431,7 @@ HRESULT ATTR_ROW::InsertAttrRuns(const std::basic_string_view<TextAttributeRun> 
     // on how many cells we could have copied from the source before finishing off the new run.
     while (iExistingRunCoverage <= iEnd)
     {
-        FAIL_FAST_IF_FALSE(pExistingRunPos != pExistingRunEnd);
+        FAIL_FAST_IF(!(pExistingRunPos != pExistingRunEnd));
         iExistingRunCoverage += pExistingRunPos->GetLength();
         pExistingRunPos++;
     }

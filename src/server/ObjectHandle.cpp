@@ -58,7 +58,7 @@ ConsoleHandleData::~ConsoleHandleData()
 // - True if this handle is for an input object. False otherwise.
 bool ConsoleHandleData::_IsInput() const
 {
-    return IsFlagSet(_ulHandleType, HandleType::Input);
+    return WI_IsFlagSet(_ulHandleType, HandleType::Input);
 }
 
 // Routine Description:
@@ -69,7 +69,7 @@ bool ConsoleHandleData::_IsInput() const
 // - True if this handle is for an output object. False otherwise.
 bool ConsoleHandleData::_IsOutput() const
 {
-    return IsFlagSet(_ulHandleType, HandleType::Output);
+    return WI_IsFlagSet(_ulHandleType, HandleType::Output);
 }
 
 // Routine Description:
@@ -80,7 +80,7 @@ bool ConsoleHandleData::_IsOutput() const
 // - True if read is permitted. False otherwise.
 bool ConsoleHandleData::IsReadAllowed() const
 {
-    return IsFlagSet(_amAccess, GENERIC_READ);
+    return WI_IsFlagSet(_amAccess, GENERIC_READ);
 }
 
 // Routine Description:
@@ -91,7 +91,7 @@ bool ConsoleHandleData::IsReadAllowed() const
 // - True if sharing read access is permitted. False otherwise.
 bool ConsoleHandleData::IsReadShared() const
 {
-    return IsFlagSet(_ulShareAccess, FILE_SHARE_READ);
+    return WI_IsFlagSet(_ulShareAccess, FILE_SHARE_READ);
 }
 
 // Routine Description:
@@ -102,7 +102,7 @@ bool ConsoleHandleData::IsReadShared() const
 // - True if write is permitted. False otherwise.
 bool ConsoleHandleData::IsWriteAllowed() const
 {
-    return IsFlagSet(_amAccess, GENERIC_WRITE);
+    return WI_IsFlagSet(_amAccess, GENERIC_WRITE);
 }
 
 // Routine Description:
@@ -113,7 +113,7 @@ bool ConsoleHandleData::IsWriteAllowed() const
 // - True if sharing write access is permitted. False otherwise.
 bool ConsoleHandleData::IsWriteShared() const
 {
-    return IsFlagSet(_ulShareAccess, FILE_SHARE_WRITE);
+    return WI_IsFlagSet(_ulShareAccess, FILE_SHARE_WRITE);
 }
 
 // Routine Description:
@@ -129,8 +129,8 @@ HRESULT ConsoleHandleData::GetInputBuffer(const ACCESS_MASK amRequested,
 {
     *ppInputBuffer = nullptr;
 
-    RETURN_HR_IF(E_ACCESSDENIED, IsAnyFlagClear(_amAccess, amRequested));
-    RETURN_HR_IF(E_HANDLE, IsAnyFlagClear(_ulHandleType, HandleType::Input));
+    RETURN_HR_IF(E_ACCESSDENIED, WI_IsAnyFlagClear(_amAccess, amRequested));
+    RETURN_HR_IF(E_HANDLE, WI_IsAnyFlagClear(_ulHandleType, HandleType::Input));
 
     *ppInputBuffer = static_cast<InputBuffer*>(_pvClientPointer);
 
@@ -150,8 +150,8 @@ HRESULT ConsoleHandleData::GetScreenBuffer(const ACCESS_MASK amRequested,
 {
     *ppScreenInfo = nullptr;
 
-    RETURN_HR_IF(E_ACCESSDENIED, IsAnyFlagClear(_amAccess, amRequested));
-    RETURN_HR_IF(E_HANDLE, IsAnyFlagClear(_ulHandleType, HandleType::Output));
+    RETURN_HR_IF(E_ACCESSDENIED, WI_IsAnyFlagClear(_amAccess, amRequested));
+    RETURN_HR_IF(E_HANDLE, WI_IsAnyFlagClear(_ulHandleType, HandleType::Output));
 
     *ppScreenInfo = static_cast<SCREEN_INFORMATION*>(_pvClientPointer);
 
@@ -211,7 +211,7 @@ INPUT_READ_HANDLE_DATA* ConsoleHandleData::GetClientInput() const
 [[nodiscard]]
 HRESULT ConsoleHandleData::_CloseInputHandle()
 {
-    FAIL_FAST_IF_FALSE(_IsInput());
+    FAIL_FAST_IF(!(_IsInput()));
     InputBuffer* pInputBuffer = static_cast<InputBuffer*>(_pvClientPointer);
     INPUT_READ_HANDLE_DATA* pReadHandleData = GetClientInput();
     pReadHandleData->CompletePending();
@@ -251,7 +251,7 @@ HRESULT ConsoleHandleData::_CloseInputHandle()
 [[nodiscard]]
 HRESULT ConsoleHandleData::_CloseOutputHandle()
 {
-    FAIL_FAST_IF_FALSE(_IsOutput());
+    FAIL_FAST_IF(!(_IsOutput()));
     SCREEN_INFORMATION* pScreenInfo = static_cast<SCREEN_INFORMATION*>(_pvClientPointer);
 
     pScreenInfo = &pScreenInfo->GetMainBuffer();

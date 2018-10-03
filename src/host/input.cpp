@@ -28,7 +28,7 @@ bool IsInProcessedInputMode()
 bool IsInVirtualTerminalInputMode()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return IsFlagSet(gci.pInputBuffer->InputMode, ENABLE_VIRTUAL_TERMINAL_INPUT);
+    return WI_IsFlagSet(gci.pInputBuffer->InputMode, ENABLE_VIRTUAL_TERMINAL_INPUT);
 }
 
 BOOL IsSystemKey(const WORD wVirtualKeyCode)
@@ -123,7 +123,7 @@ void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, const bool generateBreak)
                 gci.pInputBuffer->TerminateRead(WaitTerminationReason::CtrlC);
             }
 
-            if (!(IsFlagSet(gci.Flags, CONSOLE_SUSPENDED)))
+            if (!(WI_IsFlagSet(gci.Flags, CONSOLE_SUSPENDED)))
             {
                 ContinueProcessing = false;
             }
@@ -140,7 +140,7 @@ void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, const bool generateBreak)
                 gci.pInputBuffer->TerminateRead(WaitTerminationReason::CtrlBreak);
             }
 
-            if (!(IsFlagSet(gci.Flags, CONSOLE_SUSPENDED)))
+            if (!(WI_IsFlagSet(gci.Flags, CONSOLE_SUSPENDED)))
             {
                 ContinueProcessing = false;
             }
@@ -262,7 +262,7 @@ void ProcessCtrlEvents()
 
     HRESULT hr = gci.ProcessHandleList
                     .GetTerminationRecordsByGroupId(LimitingProcessId,
-                                                    IsFlagSet(gci.CtrlFlags,
+                                                    WI_IsFlagSet(gci.CtrlFlags,
                                                               CONSOLE_CTRL_CLOSE_FLAG),
                                                     &rgProcessHandleList,
                                                     &cProcessHandleList);
@@ -275,7 +275,7 @@ void ProcessCtrlEvents()
 
     // Copy ctrl flags.
     ULONG CtrlFlags = gci.CtrlFlags;
-    FAIL_FAST_IF_FALSE(!((CtrlFlags & (CONSOLE_CTRL_CLOSE_FLAG | CONSOLE_CTRL_BREAK_FLAG | CONSOLE_CTRL_C_FLAG)) && (CtrlFlags & (CONSOLE_CTRL_LOGOFF_FLAG | CONSOLE_CTRL_SHUTDOWN_FLAG))));
+    FAIL_FAST_IF(!(!((CtrlFlags & (CONSOLE_CTRL_CLOSE_FLAG | CONSOLE_CTRL_BREAK_FLAG | CONSOLE_CTRL_C_FLAG)) && (CtrlFlags & (CONSOLE_CTRL_LOGOFF_FLAG | CONSOLE_CTRL_SHUTDOWN_FLAG)))));
 
     gci.CtrlFlags = 0;
 

@@ -160,11 +160,11 @@ void OutputCell::_setFromCharInfo(const CHAR_INFO& charInfo)
 {
     _charData = { charInfo.Char.UnicodeChar };
 
-    if (IsFlagSet(charInfo.Attributes, COMMON_LVB_LEADING_BYTE))
+    if (WI_IsFlagSet(charInfo.Attributes, COMMON_LVB_LEADING_BYTE))
     {
         _dbcsAttribute.SetLeading();
     }
-    else if (IsFlagSet(charInfo.Attributes, COMMON_LVB_TRAILING_BYTE))
+    else if (WI_IsFlagSet(charInfo.Attributes, COMMON_LVB_TRAILING_BYTE))
     {
         _dbcsAttribute.SetTrailing();
     }

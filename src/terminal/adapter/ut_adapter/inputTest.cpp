@@ -57,28 +57,28 @@ public:
 
     bool ControlAndAltPressed(unsigned int uiKeystate)
     {
-        return IsAnyFlagSet(uiKeystate, LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED)
-               && IsAnyFlagSet(uiKeystate, LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED);
+        return WI_IsAnyFlagSet(uiKeystate, LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED)
+               && WI_IsAnyFlagSet(uiKeystate, LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED);
     }
 
     bool ControlOrAltPressed(unsigned int uiKeystate)
     {
-        return IsAnyFlagSet(uiKeystate, LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED | LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED);
+        return WI_IsAnyFlagSet(uiKeystate, LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED | LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED);
     }
 
     bool ControlPressed(unsigned int uiKeystate)
     {
-        return IsAnyFlagSet(uiKeystate, LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED);
+        return WI_IsAnyFlagSet(uiKeystate, LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED);
     }
 
     bool AltPressed(unsigned int uiKeystate)
     {
-        return IsAnyFlagSet(uiKeystate, LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED);
+        return WI_IsAnyFlagSet(uiKeystate, LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED);
     }
 
     bool ShiftPressed(unsigned int uiKeystate)
     {
-        return IsFlagSet(uiKeystate, SHIFT_PRESSED);
+        return WI_IsFlagSet(uiKeystate, SHIFT_PRESSED);
     }
 };
 

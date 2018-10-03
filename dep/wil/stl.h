@@ -1,25 +1,15 @@
-// Windows Internal Libraries (wil)
-//
-// wil Usage Guidelines:
-// https://microsoft.sharepoint.com/teams/osg_development/Shared%20Documents/Windows%20Internal%20Libraries%20for%20C++%20Usage%20Guide.docx?web=1
-//
-// wil Discussion Alias (wildisc):
-// http://idwebelements/GroupManagement.aspx?Group=wildisc&Operation=join  (one-click join)
-//
-//! @file
-//! Windows STL helpers: custom allocators for STL containers
 
-#pragma once
-#include "Common.h"
-#include "Resource.h"
+#ifndef __WIL_STL_INCLUDED
+#define __WIL_STL_INCLUDED
+
+#include "common.h"
+#include "resource.h"
+#include <memory>
 #include <string>
 
 #if defined(WIL_ENABLE_EXCEPTIONS)
 namespace std
 {
-    template<class _Ty>
-    class allocator;
-
     template<class _Ty, class _Alloc>
     class vector;
 
@@ -36,14 +26,11 @@ namespace wil
     The `wil::secure_allocator` allocator calls `SecureZeroMemory` before deallocating
     memory. This provides a mechanism for secure STL containers such as `wil::secure_vector`,
     `wil::secure_string`, and `wil::secure_wstring`. */
-    template <typename T> 
-    struct secure_allocator 
+    template <typename T>
+    struct secure_allocator
         : public std::allocator<T>
     {
-        typedef typename std::allocator<T>::pointer pointer;
-        typedef typename std::allocator<T>::size_type size_type;
-
-        template<typename Other> 
+        template<typename Other>
         struct rebind
         {
             typedef secure_allocator<Other> other;
@@ -61,24 +48,24 @@ namespace wil
         {
         }
 
-        template <class U> 
+        template <class U>
         secure_allocator(const secure_allocator<U>& a)
             : std::allocator<T>(a)
         {
         }
 
-        pointer allocate(size_type n)
+        T* allocate(size_t n)
         {
             return std::allocator<T>::allocate(n);
         }
 
-        void deallocate(pointer p, size_type n)
+        void deallocate(T* p, size_t n)
         {
             SecureZeroMemory(p, sizeof(T) * n);
             std::allocator<T>::deallocate(p, n);
         }
     };
-    
+
     //! `wil::secure_vector` will be securely zeroed before deallocation.
     template <typename Type>
     using secure_vector = std::vector<Type, secure_allocator<Type>>;
@@ -114,6 +101,15 @@ namespace wil
     }
     /// @endcond
 
+    // str_raw_ptr is an overloaded function that retrieves a const pointer to the first character in a string's buffer.
+    // This is the overload for std::wstring.  Other overloads available in resource.h.
+    inline PCWSTR str_raw_ptr(const std::wstring& str)
+    {
+        return str.c_str();
+    }
+
 } // namespace wil
 
 #endif // WIL_ENABLE_EXCEPTIONS
+
+#endif // __WIL_STL_INCLUDED

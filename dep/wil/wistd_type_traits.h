@@ -1,14 +1,3 @@
-// Windows Internal Libraries (wil)
-// Note: do not include this file directly, include "wil\Common.h"
-//
-// wil Usage Guidelines:
-// https://microsoft.sharepoint.com/teams/osg_development/Shared%20Documents/Windows%20Internal%20Libraries%20for%20C++%20Usage%20Guide.docx?web=1
-//
-// wil Discussion Alias (wildisc):
-// http://idwebelements/GroupManagement.aspx?Group=wildisc&Operation=join  (one-click join)
-//
-//! @file
-//! Selective type traits from STL's <type_traits> header under the `wistd` namespace.
 
 #ifndef _WISTD_TYPE_TRAITS_H_
 #define _WISTD_TYPE_TRAITS_H_
@@ -51,7 +40,7 @@
 // To promote the use of these core language concepts outside of STL-based binaries, this file is
 // selectively pulling those concepts *directly* from corresponding STL headers.  The corresponding
 // "std::" namespace STL functions and types should be preferred over these in code that is bound to
-// STL.  The implementation and naming of all functions are taken directly from STL, instead using 
+// STL.  The implementation and naming of all functions are taken directly from STL, instead using
 // "wistd" (Windows Internal std) as the namespace.
 //
 // Routines in this namespace should always be considered a reflection of the *current* STL implementation
@@ -66,7 +55,7 @@
 namespace wistd     // ("Windows Internal" std)
 {
 #define __WI_COMMA	,	/* for commas in macro parameters */
-  
+
 	// TEMPLATE CLASS unary_function
 template<class _T1,
 	class _Ret>
@@ -200,21 +189,6 @@ template<class _Ty> inline
     return ((typename remove_reference<_Ty>::type&&)_Arg);
     }
 
-
-    // TEMPLATE FUNCTION forward
-template<class _Ty> inline
-    _Ty&& forward(typename remove_reference<_Ty>::type& _Arg) WI_NOEXCEPT
-    { // forward an lvalue
-    return (static_cast<_Ty&&>(_Arg));
-    }
-
-template<class _Ty> inline
-    _Ty&& forward(typename remove_reference<_Ty>::type&& _Arg) WI_NOEXCEPT
-    { // forward anything
-    static_assert(!is_lvalue_reference<_Ty>::value, "bad forward call");
-    return (static_cast<_Ty&&>(_Arg));
-    }
-
         // TEMPLATE CLASS add_rvalue_reference
         template<class _Ty>
     struct add_rvalue_reference
@@ -313,6 +287,20 @@ template<class _Ty>
     {	// determine whether _Ty is a reference
     };
 
+    // TEMPLATE FUNCTION forward
+    template<class _Ty> inline
+        _Ty&& forward(typename remove_reference<_Ty>::type& _Arg) WI_NOEXCEPT
+    { // forward an lvalue
+        return (static_cast<_Ty&&>(_Arg));
+    }
+
+    template<class _Ty> inline
+        _Ty&& forward(typename remove_reference<_Ty>::type&& _Arg) WI_NOEXCEPT
+    { // forward anything
+        static_assert(!is_lvalue_reference<_Ty>::value, "bad forward call");
+        return (static_cast<_Ty&&>(_Arg));
+    }
+
     // TEMPLATE CLASS conditional
 template<bool _Test, class _Ty1, class _Ty2>
     struct conditional
@@ -385,14 +373,14 @@ template<class _Ty>
     {	// determine whether _Ty is an abstract class
     };
 
-    
+
     // TEMPLATE CLASS is_class
 template<class _Ty>
     struct is_class __WI_IS_CLASS(_Ty)
     {	// determine whether _Ty is a class
     };
 
-    
+
     // TEMPLATE CLASS is_empty
 template<class _Ty>
     struct is_empty __WI_IS_EMPTY(_Ty)
@@ -951,19 +939,17 @@ template<>
 	};
  #endif /* _HAS_CHAR16_T_LANGUAGE_SUPPORT */
 
- #ifdef _LONGLONG
 template<>
-	struct _Is_integral<_LONGLONG>
+	struct _Is_integral<__int64>
 		: true_type
 	{	// determine whether _Ty is integral
 	};
 
 template<>
-	struct _Is_integral<_ULONGLONG>
+	struct _Is_integral<unsigned __int64>
 		: true_type
 	{	// determine whether _Ty is integral
 	};
- #endif /* _LONGLONG */
 
 	// TEMPLATE CLASS is_integral
 template<class _Ty>
@@ -1410,6 +1396,48 @@ template <typename _Ty>
     {
         return (_Left < _Right) ? _Right : _Left;
     }
+
+	// STRUCT TEMPLATE is_signed
+#pragma warning(push)
+#pragma warning(disable: 4296)	// expression is always false
+template<class _Ty,
+	bool = is_integral<_Ty>::value>
+	struct _Sign_base
+	{	// determine whether integral _Ty is a signed or unsigned type
+	using _Uty = typename remove_cv<_Ty>::type;
+	using _Signed = bool_constant<_Uty(-1) < _Uty(0)>;
+	using _Unsigned = bool_constant<_Uty(0) < _Uty(-1)>;
+	};
+#pragma warning(pop)
+
+template<class _Ty>
+	struct _Sign_base<_Ty, false>
+	{	// floating-point _Ty is signed
+		// non-arithmetic _Ty is neither signed nor unsigned
+	using _Signed = typename is_floating_point<_Ty>::type;
+	using _Unsigned = false_type;
+	};
+
+template<class _Ty>
+	struct is_signed
+		: _Sign_base<_Ty>::_Signed
+	{	// determine whether _Ty is a signed type
+	};
+
+template<class _Ty>
+	constexpr bool is_signed_v = is_signed<_Ty>::value;
+
+	// STRUCT TEMPLATE is_unsigned
+template<class _Ty>
+	struct is_unsigned
+		: _Sign_base<_Ty>::_Unsigned
+	{	// determine whether _Ty is an unsigned type
+	};
+
+template<class _Ty>
+	constexpr bool is_unsigned_v = is_unsigned<_Ty>::value;
+
+
 } // wistd
 /// @endcond
 

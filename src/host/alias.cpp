@@ -107,7 +107,7 @@ HRESULT ApiRoutines::AddConsoleAliasWImpl(_In_reads_or_z_(cchSourceBufferLength)
                                           const size_t cchExeNameBufferLength)
 {
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     RETURN_HR_IF(E_INVALIDARG, cchSourceBufferLength == 0);
 
@@ -243,7 +243,7 @@ HRESULT ApiRoutines::GetConsoleAliasAImpl(_In_reads_or_z_(cchSourceBufferLength)
     }
 
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     // Convert our input parameters to Unicode.
     wistd::unique_ptr<wchar_t[]> pwsSource;
@@ -312,7 +312,7 @@ HRESULT ApiRoutines::GetConsoleAliasWImpl(_In_reads_or_z_(cchSourceBufferLength)
                                           const size_t cchExeNameBufferLength)
 {
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     HRESULT hr = GetConsoleAliasWImplHelper(pwsSourceBuffer, cchSourceBufferLength, pwsTargetBuffer, cchTargetBufferLength, pcchTargetBufferWritten, pwsExeNameBuffer, cchExeNameBufferLength);
 
@@ -424,7 +424,7 @@ HRESULT ApiRoutines::GetConsoleAliasesLengthAImpl(_In_reads_or_z_(cchExeNameBuff
     *pcchAliasesBufferRequired = 0;
 
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     // Convert our input parameters to Unicode
     wistd::unique_ptr<wchar_t[]> pwsExeName;
@@ -448,7 +448,7 @@ HRESULT ApiRoutines::GetConsoleAliasesLengthWImpl(_In_reads_or_z_(cchExeNameBuff
                                                   _Out_ size_t* const pcchAliasesBufferRequired)
 {
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     return GetConsoleAliasesLengthWImplHelper(pwsExeNameBuffer, cchExeNameBufferLength, true, 0, pcchAliasesBufferRequired);
 }
@@ -590,7 +590,7 @@ HRESULT ApiRoutines::GetConsoleAliasesAImpl(_In_reads_or_z_(cchExeNameBufferLeng
     *psAliasBuffer = '\0';
 
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     // Convert our input parameters to Unicode.
     wistd::unique_ptr<wchar_t[]> pwsExeName;
@@ -646,7 +646,7 @@ HRESULT ApiRoutines::GetConsoleAliasesWImpl(_In_reads_or_z_(cchExeNameBufferLeng
                                             _Out_ size_t* const pcchAliasBufferWritten)
 {
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     return GetConsoleAliasesWImplHelper(pwsExeNameBuffer, cchExeNameBufferLength, pwsAliasBuffer, cchAliasBufferLength, pcchAliasBufferWritten);
 }
@@ -706,7 +706,7 @@ HRESULT ApiRoutines::GetConsoleAliasExesLengthAImpl(_Out_ size_t* const pcchAlia
 {
     LockConsole();
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     return GetConsoleAliasExesLengthImplHelper(false, gci.CP, pcchAliasExesBufferRequired);
 }
@@ -720,7 +720,7 @@ HRESULT ApiRoutines::GetConsoleAliasExesLengthAImpl(_Out_ size_t* const pcchAlia
 HRESULT ApiRoutines::GetConsoleAliasExesLengthWImpl(_Out_ size_t* const pcchAliasExesBufferRequired)
 {
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     return GetConsoleAliasExesLengthImplHelper(true, 0, pcchAliasExesBufferRequired);
 }
@@ -815,7 +815,7 @@ HRESULT ApiRoutines::GetConsoleAliasExesAImpl(_Out_writes_to_(cchAliasExesBuffer
     *psAliasExesBuffer = '\0';
 
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     // Figure our how big our temporary Unicode buffer must be to retrieve output
     size_t cchAliasExesBufferNeeded;
@@ -862,7 +862,7 @@ HRESULT ApiRoutines::GetConsoleAliasExesWImpl(_Out_writes_to_(cchAliasExesBuffer
                                               _Out_ size_t* const pcchAliasExesBufferWritten)
 {
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     return GetConsoleAliasExesWImplHelper(pwsAliasExesBuffer, cchAliasExesBufferLength, pcchAliasExesBufferWritten);
 }

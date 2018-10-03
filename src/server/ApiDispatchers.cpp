@@ -40,7 +40,7 @@ HRESULT ApiDispatchers::ServerGetConsoleMode(_Inout_ CONSOLE_API_MSG * const m, 
     CONSOLE_MODE_MSG* const a = &m->u.consoleMsgL1.GetConsoleMode;
     std::wstring handleType = L"unknown";
 
-    auto tracing = wil::ScopeExit([&]()
+    auto tracing = wil::scope_exit([&]()
     {
         Tracing::s_TraceApi(a, handleType);
     });
@@ -107,7 +107,7 @@ HRESULT ApiDispatchers::ServerGetConsoleInput(_Inout_ CONSOLE_API_MSG * const m,
     *pbReplyPending = FALSE;
 
     CONSOLE_GETCONSOLEINPUT_MSG* const a = &m->u.consoleMsgL1.GetConsoleInput;
-    if (IsFlagSet(a->Flags, CONSOLE_READ_NOREMOVE))
+    if (WI_IsFlagSet(a->Flags, CONSOLE_READ_NOREMOVE))
     {
         Telemetry::Instance().LogApiCall(Telemetry::ApiCall::PeekConsoleInput, a->Unicode);
     }
@@ -119,7 +119,7 @@ HRESULT ApiDispatchers::ServerGetConsoleInput(_Inout_ CONSOLE_API_MSG * const m,
     a->NumRecords = 0;
 
     // If any flags are set that are not within our enum, it's invalid.
-    if (IsAnyFlagSet(a->Flags, ~CONSOLE_READ_VALID))
+    if (WI_IsAnyFlagSet(a->Flags, ~CONSOLE_READ_VALID))
     {
         return E_INVALIDARG;
     }
@@ -138,8 +138,8 @@ HRESULT ApiDispatchers::ServerGetConsoleInput(_Inout_ CONSOLE_API_MSG * const m,
     INPUT_RECORD* const rgRecords = reinterpret_cast<INPUT_RECORD*>(pvBuffer);
     size_t const cRecords = cbBufferSize / sizeof(INPUT_RECORD);
 
-    bool const fIsPeek = IsFlagSet(a->Flags, CONSOLE_READ_NOREMOVE);
-    bool const fIsWaitAllowed = IsFlagClear(a->Flags, CONSOLE_READ_NOWAIT);
+    bool const fIsPeek = WI_IsFlagSet(a->Flags, CONSOLE_READ_NOREMOVE);
+    bool const fIsWaitAllowed = WI_IsFlagClear(a->Flags, CONSOLE_READ_NOWAIT);
 
     INPUT_READ_HANDLE_DATA* const pInputReadHandleData = pHandleData->GetClientInput();
 
@@ -423,7 +423,7 @@ HRESULT ApiDispatchers::ServerWriteConsole(_Inout_ CONSOLE_API_MSG * const m, _I
     // Get input parameter buffer
     PVOID pvBuffer;
     ULONG cbBufferSize;
-    auto tracing = wil::ScopeExit([&]()
+    auto tracing = wil::scope_exit([&]()
     {
         Tracing::s_TraceApi(pvBuffer, a);
     });
@@ -584,7 +584,7 @@ HRESULT ApiDispatchers::ServerGetConsoleScreenBufferInfo(_Inout_ CONSOLE_API_MSG
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleScreenBufferInfoEx);
     CONSOLE_SCREENBUFFERINFO_MSG* const a = &m->u.consoleMsgL2.GetConsoleScreenBufferInfo;
 
-    auto tracing = wil::ScopeExit([&]()
+    auto tracing = wil::scope_exit([&]()
     {
         Tracing::s_TraceApi(a);
     });
@@ -731,7 +731,7 @@ HRESULT ApiDispatchers::ServerSetConsoleTextAttribute(_Inout_ CONSOLE_API_MSG * 
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleTextAttribute);
     CONSOLE_SETTEXTATTRIBUTE_MSG* const a = &m->u.consoleMsgL2.SetConsoleTextAttribute;
 
-    auto tracing = wil::ScopeExit([&]()
+    auto tracing = wil::scope_exit([&]()
     {
         Tracing::s_TraceApi(a);
     });
@@ -1015,16 +1015,16 @@ HRESULT ApiDispatchers::ServerAddConsoleAlias(_Inout_ CONSOLE_API_MSG * const m,
     ULONG const cbInputExeName = a->ExeLength;
     PVOID pvInputSource;
     ULONG const cbInputSource = a->SourceLength;
-    RETURN_HR_IF_FALSE(E_INVALIDARG, IsValidStringBuffer(a->Unicode,
-                                                         pvBuffer,
-                                                         cbBufferSize,
-                                                         3,
-                                                         cbInputExeName,
-                                                         &pvInputExeName,
-                                                         cbInputSource,
-                                                         &pvInputSource,
-                                                         cbInputTarget,
-                                                         &pvInputTarget));
+    RETURN_HR_IF(E_INVALIDARG, !IsValidStringBuffer(a->Unicode,
+                                                    pvBuffer,
+                                                    cbBufferSize,
+                                                    3,
+                                                    cbInputExeName,
+                                                    &pvInputExeName,
+                                                    cbInputSource,
+                                                    &pvInputSource,
+                                                    cbInputTarget,
+                                                    &pvInputTarget));
 
     if (a->Unicode)
     {
@@ -1075,14 +1075,14 @@ HRESULT ApiDispatchers::ServerGetConsoleAlias(_Inout_ CONSOLE_API_MSG * const m,
     ULONG const cbInputExe = a->ExeLength;
     PVOID pvInputSource;
     ULONG const cbInputSource = a->SourceLength;
-    RETURN_HR_IF_FALSE(E_INVALIDARG, IsValidStringBuffer(a->Unicode,
-                                                         pvInputBuffer,
-                                                         cbInputBufferSize,
-                                                         2,
-                                                         cbInputExe,
-                                                         &pvInputExe,
-                                                         cbInputSource,
-                                                         &pvInputSource));
+    RETURN_HR_IF(E_INVALIDARG, !IsValidStringBuffer(a->Unicode,
+                                                    pvInputBuffer,
+                                                    cbInputBufferSize,
+                                                    2,
+                                                    cbInputExe,
+                                                    &pvInputExe,
+                                                    cbInputSource,
+                                                    &pvInputSource));
 
     PVOID pvOutputBuffer;
     ULONG cbOutputBufferSize;

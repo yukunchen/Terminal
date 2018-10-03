@@ -26,9 +26,9 @@ ConsoleProcessHandle::ConsoleProcessHandle(const DWORD dwProcessId,
     dwThreadId(dwThreadId),
     _ulTerminateCount(0),
     _ulProcessGroupId(ulProcessGroupId),
-    _hProcess(LOG_IF_HANDLE_NULL(OpenProcess(MAXIMUM_ALLOWED,
-                                             FALSE,
-                                             dwProcessId))),
+    _hProcess(LOG_LAST_ERROR_IF_NULL(OpenProcess(MAXIMUM_ALLOWED,
+                                                 FALSE,
+                                                 dwProcessId))),
     _policy(ConsoleProcessPolicy::s_CreateInstance(_hProcess.get()))
 {
     if (nullptr != _hProcess.get())

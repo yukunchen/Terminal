@@ -299,7 +299,7 @@ void SetCurrentCommandLine(COOKED_READ_DATA& cookedReadData, _In_ SHORT Index) /
     FAIL_FAST_IF_FAILED(cookedReadData.History().RetrieveNth(Index,
                                                              cookedReadData.SpanWholeBuffer(),
                                                              cookedReadData._BytesRead));
-    FAIL_FAST_IF_FALSE(cookedReadData._BackupLimit == cookedReadData._BufPtr);
+    FAIL_FAST_IF(!(cookedReadData._BackupLimit == cookedReadData._BufPtr));
     if (cookedReadData.IsEchoInput())
     {
         SHORT ScrollY = 0;
@@ -462,7 +462,7 @@ void CommandLine::_processHistoryCycling(COOKED_READ_DATA& cookedReadData, const
         THROW_IF_FAILED(cookedReadData.History().Retrieve(searchDirection,
                                                           cookedReadData.SpanWholeBuffer(),
                                                           cookedReadData._BytesRead));
-        FAIL_FAST_IF_FALSE(cookedReadData._BackupLimit == cookedReadData._BufPtr);
+        FAIL_FAST_IF(!(cookedReadData._BackupLimit == cookedReadData._BufPtr));
         if (cookedReadData.IsEchoInput())
         {
             short ScrollY = 0;
@@ -498,7 +498,7 @@ void CommandLine::_setPromptToOldestCommand(COOKED_READ_DATA& cookedReadData)
         THROW_IF_FAILED(cookedReadData.History().RetrieveNth(commandNumber,
                                                              cookedReadData.SpanWholeBuffer(),
                                                              cookedReadData._BytesRead));
-        FAIL_FAST_IF_FALSE(cookedReadData._BackupLimit == cookedReadData._BufPtr);
+        FAIL_FAST_IF(!(cookedReadData._BackupLimit == cookedReadData._BufPtr));
         if (cookedReadData.IsEchoInput())
         {
             short ScrollY = 0;
@@ -534,7 +534,7 @@ void CommandLine::_setPromptToNewestCommand(COOKED_READ_DATA& cookedReadData)
         THROW_IF_FAILED(cookedReadData.History().RetrieveNth(commandNumber,
                                                              cookedReadData.SpanWholeBuffer(),
                                                              cookedReadData._BytesRead));
-        FAIL_FAST_IF_FALSE(cookedReadData._BackupLimit == cookedReadData._BufPtr);
+        FAIL_FAST_IF(!(cookedReadData._BackupLimit == cookedReadData._BufPtr));
         if (cookedReadData.IsEchoInput())
         {
             short ScrollY = 0;
@@ -666,7 +666,7 @@ COORD CommandLine::_moveCursorLeftByWord(COOKED_READ_DATA& cookedReadData) noexc
                 // Skip spaces, until the non-space character is found.
                 while (--LastWord != cookedReadData._BackupLimit)
                 {
-                    FAIL_FAST_IF_FALSE(LastWord > cookedReadData._BackupLimit);
+                    FAIL_FAST_IF(!(LastWord > cookedReadData._BackupLimit));
                     if (*LastWord != L' ')
                     {
                         break;
@@ -680,7 +680,7 @@ COORD CommandLine::_moveCursorLeftByWord(COOKED_READ_DATA& cookedReadData) noexc
                     // Skip WORD_DELIMs until space or non WORD_DELIM is found.
                     while (--LastWord != cookedReadData._BackupLimit)
                     {
-                        FAIL_FAST_IF_FALSE(LastWord > cookedReadData._BackupLimit);
+                        FAIL_FAST_IF(!(LastWord > cookedReadData._BackupLimit));
                         if (*LastWord == L' ' || !IsWordDelim(*LastWord))
                         {
                             break;
@@ -692,7 +692,7 @@ COORD CommandLine::_moveCursorLeftByWord(COOKED_READ_DATA& cookedReadData) noexc
                     // Skip the regular words
                     while (--LastWord != cookedReadData._BackupLimit)
                     {
-                        FAIL_FAST_IF_FALSE(LastWord > cookedReadData._BackupLimit);
+                        FAIL_FAST_IF(!(LastWord > cookedReadData._BackupLimit));
                         if (IsWordDelim(*LastWord))
                         {
                             break;
@@ -700,7 +700,7 @@ COORD CommandLine::_moveCursorLeftByWord(COOKED_READ_DATA& cookedReadData) noexc
                     }
                 }
             }
-            FAIL_FAST_IF_FALSE(LastWord >= cookedReadData._BackupLimit);
+            FAIL_FAST_IF(!(LastWord >= cookedReadData._BackupLimit));
             if (LastWord != cookedReadData._BackupLimit)
             {
 
@@ -782,7 +782,7 @@ COORD CommandLine::_moveCursorRightByWord(COOKED_READ_DATA& cookedReadData) noex
         // A bit better word skipping.
         PWCHAR BufLast = cookedReadData._BackupLimit + cookedReadData._BytesRead / sizeof(WCHAR);
 
-        FAIL_FAST_IF_FALSE(NextWord < BufLast);
+        FAIL_FAST_IF(!(NextWord < BufLast));
         if (*NextWord == L' ')
         {
             // If the current character is space, skip to the next non-space character.
@@ -1011,7 +1011,7 @@ COORD CommandLine::_cycleMatchingCommandHistoryToPrompt(COOKED_READ_DATA& cooked
             THROW_IF_FAILED(cookedReadData.History().RetrieveNth((SHORT)index,
                                                                  cookedReadData.SpanWholeBuffer(),
                                                                  cookedReadData._BytesRead));
-            FAIL_FAST_IF_FALSE(cookedReadData._BackupLimit == cookedReadData._BufPtr);
+            FAIL_FAST_IF(!(cookedReadData._BackupLimit == cookedReadData._BufPtr));
             if (cookedReadData.IsEchoInput())
             {
                 short ScrollY = 0;
@@ -1110,8 +1110,8 @@ NTSTATUS CommandLine::ProcessCommandLine(COOKED_READ_DATA& cookedReadData,
     COORD cursorPosition = cookedReadData.ScreenInfo().GetTextBuffer().GetCursor().GetPosition();
     NTSTATUS Status;
 
-    const bool altPressed = IsAnyFlagSet(dwKeyState, LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED);
-    const bool ctrlPressed = IsAnyFlagSet(dwKeyState, LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED);
+    const bool altPressed = WI_IsAnyFlagSet(dwKeyState, LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED);
+    const bool ctrlPressed = WI_IsAnyFlagSet(dwKeyState, LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED);
     bool UpdateCursorPosition = false;
     switch (wch)
     {

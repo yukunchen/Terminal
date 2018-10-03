@@ -123,7 +123,7 @@ DWORD RemoveDbcsMarkCell(_Out_writes_(cch) PCHAR_INFO pciDst, _In_reads_(cch) co
     for (DWORD iSrc = 0; iSrc < cch; iSrc++)
     {
         // If it's not a trailing byte, copy it straight over, stripping out the Leading/Trailing flags from the attributes field.
-        if (!IsFlagSet(pciSrc[iSrc].Attributes, COMMON_LVB_TRAILING_BYTE))
+        if (!WI_IsFlagSet(pciSrc[iSrc].Attributes, COMMON_LVB_TRAILING_BYTE))
         {
             pciDst[iDst] = pciSrc[iSrc];
             pciDst[iDst].Attributes &= ~COMMON_LVB_SBCSDBCS;
@@ -146,7 +146,7 @@ DWORD RemoveDbcsMarkCell(_Out_writes_(cch) PCHAR_INFO pciDst, _In_reads_(cch) co
     iDst += cchDstToClear;
 
     // now that we're done, we should have copied, left alone, or cleared the entire length.
-    FAIL_FAST_IF_FALSE(iDst == cch);
+    FAIL_FAST_IF(!(iDst == cch));
 
     return iDst;
 }

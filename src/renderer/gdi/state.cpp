@@ -72,19 +72,19 @@ GdiEngine::~GdiEngine()
 
     if (_hbitmapMemorySurface != nullptr)
     {
-        LOG_HR_IF_FALSE(E_FAIL, DeleteObject(_hbitmapMemorySurface));
+        LOG_HR_IF(E_FAIL, !(DeleteObject(_hbitmapMemorySurface)));
         _hbitmapMemorySurface = nullptr;
     }
 
     if (_hfont != nullptr)
     {
-        LOG_HR_IF_FALSE(E_FAIL, DeleteObject(_hfont));
+        LOG_HR_IF(E_FAIL, !(DeleteObject(_hfont)));
         _hfont = nullptr;
     }
 
     if (_hdcMemoryContext != nullptr)
     {
-        LOG_HR_IF_FALSE(E_FAIL, DeleteObject(_hdcMemoryContext));
+        LOG_HR_IF(E_FAIL, !(DeleteObject(_hdcMemoryContext)));
         _hdcMemoryContext = nullptr;
     }
 }
@@ -109,7 +109,7 @@ HRESULT GdiEngine::SetHwnd(const HWND hwnd) noexcept
     // If we had an existing memory context stored, release it before proceeding.
     if (nullptr != _hdcMemoryContext)
     {
-        LOG_HR_IF_FALSE(E_FAIL, DeleteObject(_hdcMemoryContext));
+        LOG_HR_IF(E_FAIL, !(DeleteObject(_hdcMemoryContext)));
         _hdcMemoryContext = nullptr;
     }
 
@@ -125,7 +125,7 @@ HRESULT GdiEngine::SetHwnd(const HWND hwnd) noexcept
 
     if (nullptr != hdcRealWindow)
     {
-        LOG_HR_IF_FALSE(E_FAIL, ReleaseDC(_hwndTargetWindow, hdcRealWindow));
+        LOG_HR_IF(E_FAIL, !(ReleaseDC(_hwndTargetWindow, hdcRealWindow)));
     }
 
     return S_OK;
@@ -215,7 +215,7 @@ HRESULT GdiEngine::UpdateFont(const FontInfoDesired& FontDesired, _Out_ FontInfo
     RETURN_HR_IF_NULL(E_FAIL, SelectFont(_hdcMemoryContext, hFont.get()));
 
     // Save off the font metrics for various other calculations
-    RETURN_HR_IF_FALSE(E_FAIL, GetTextMetricsW(_hdcMemoryContext, &_tmFontMetrics));
+    RETURN_HR_IF(E_FAIL, !(GetTextMetricsW(_hdcMemoryContext, &_tmFontMetrics)));
 
     // Now find the size of a 0 in this current font and save it for conversions done later.
     _coordFontLast = Font.GetSize();
@@ -223,7 +223,7 @@ HRESULT GdiEngine::UpdateFont(const FontInfoDesired& FontDesired, _Out_ FontInfo
     // Persist font for cleanup (and free existing if necessary)
     if (_hfont != nullptr)
     {
-        LOG_HR_IF_FALSE(E_FAIL, DeleteObject(_hfont));
+        LOG_HR_IF(E_FAIL, !(DeleteObject(_hfont)));
         _hfont = nullptr;
     }
 
@@ -391,11 +391,11 @@ HRESULT GdiEngine::_GetProposedFont(const FontInfoDesired& FontDesired,
 
     // Save off the font metrics for various other calculations
     TEXTMETRICW tm;
-    RETURN_HR_IF_FALSE(E_FAIL, GetTextMetricsW(hdcTemp.get(), &tm));
+    RETURN_HR_IF(E_FAIL, !(GetTextMetricsW(hdcTemp.get(), &tm)));
 
     // Now find the size of a 0 in this current font and save it for conversions done later.
     SIZE sz;
-    RETURN_HR_IF_FALSE(E_FAIL, GetTextExtentPoint32W(hdcTemp.get(), L"0", 1, &sz));
+    RETURN_HR_IF(E_FAIL, !(GetTextExtentPoint32W(hdcTemp.get(), L"0", 1, &sz)));
 
     COORD coordFont;
     coordFont.X = static_cast<SHORT>(sz.cx);
@@ -421,7 +421,7 @@ HRESULT GdiEngine::_GetProposedFont(const FontInfoDesired& FontDesired,
     {
         // Get the actual font face that we chose
         WCHAR wszFaceName[LF_FACESIZE];
-        RETURN_HR_IF_FALSE(E_FAIL, GetTextFaceW(hdcTemp.get(), ARRAYSIZE(wszFaceName), wszFaceName));
+        RETURN_HR_IF(E_FAIL, !(GetTextFaceW(hdcTemp.get(), ARRAYSIZE(wszFaceName), wszFaceName)));
 
         if (FontDesired.IsDefaultRasterFont())
         {
