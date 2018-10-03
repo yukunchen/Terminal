@@ -205,7 +205,8 @@ void Telemetry::FindDialogClosed()
         TraceLoggingValue(_fpDirectionDownAverage, "DirectionDownAverage"),
         TraceLoggingValue(_fpMatchCaseAverage, "MatchCaseAverage"),
         TraceLoggingValue(_uiFindNextClickedTotal, "FindNextButtonClickedTotal"),
-        TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES));
+        TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+        TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
     // Get ready for the next time the dialog is used.
     _fpFindStringLengthAverage = 0;
@@ -399,7 +400,8 @@ void Telemetry::WriteFinalTraceLog()
                 TraceLoggingInt32(static_cast<int>(_tStartedAt), "StartedUsingAtSeconds"),
                 TraceLoggingInt32(static_cast<int>(tEndedAt), "EndedUsingAtSeconds"),
                 TraceLoggingUInt32(_uiColorSelectionUsed, "ColorSelectionUsed"),
-                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES));
+                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
             // Always send this back.  We could only send this back when they click "OK" in the settings dialog, but sending it
             // back every time should give us a good idea of their current, final settings, and not just only when they change a setting.
@@ -445,7 +447,8 @@ void Telemetry::WriteFinalTraceLog()
                 TraceLoggingValue(gci.GetFillAttribute(), "FillAttribute"),
                 TraceLoggingValue(gci.GetPopupFillAttribute(), "PopupFillAttribute"),
                 TraceLoggingValue(gci.GetShowWindow(), "ShowWindow"),
-                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES));
+                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
             // I could use the TraceLoggingUIntArray, but then we would have to know the order of the enums on the backend.
             // So just log each enum count separately with its string representation which makes it more human readable.
@@ -510,7 +513,8 @@ void Telemetry::WriteFinalTraceLog()
                 TraceLoggingUInt32(_rguiTimesApiUsed[WriteConsoleOutput], "WriteConsoleOutput"),
                 TraceLoggingUInt32(_rguiTimesApiUsed[WriteConsoleOutputAttribute], "WriteConsoleOutputAttribute"),
                 TraceLoggingUInt32(_rguiTimesApiUsed[WriteConsoleOutputCharacter], "WriteConsoleOutputCharacter"),
-                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES));
+                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
             for (int n = 0; n < ARRAYSIZE(_rguiTimesApiUsedAnsi); n++)
             {
@@ -541,7 +545,8 @@ void Telemetry::WriteFinalTraceLog()
                         TraceLoggingUInt32(_rguiTimesApiUsedAnsi[WriteConsoleInput], "WriteConsoleInput"),
                         TraceLoggingUInt32(_rguiTimesApiUsedAnsi[WriteConsoleOutput], "WriteConsoleOutput"),
                         TraceLoggingUInt32(_rguiTimesApiUsedAnsi[WriteConsoleOutputCharacter], "WriteConsoleOutputCharacter"),
-                        TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES));
+                        TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                        TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
                     break;
                 }
             }
