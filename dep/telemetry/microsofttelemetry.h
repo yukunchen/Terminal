@@ -13,6 +13,7 @@ Abstract:
         - Keywords for categories (applies to TraceLogging and manifested events)
         - Event tags to influence persistence and latency
         - Field tags to influence PII treatment
+        - Privacy data tag types
 
     These should be used only by ETW providers in the Microsoft Telemetry provider group {4f50731a-89cf-4782-b3e0-dce8c90476ba}.
 
@@ -63,16 +64,60 @@ Example:
 #define TraceLoggingOptionMicrosoftTelemetry() \
     TraceLoggingOptionGroup(0x4f50731a, 0x89cf, 0x4782, 0xb3, 0xe0, 0xdc, 0xe8, 0xc9, 0x4, 0x76, 0xba)
 
+/*
+Macro TraceLoggingOptionWindowsCoreTelemetry():
+Wrapper macro for use in TRACELOGGING_DEFINE_PROVIDER that declares the
+provider's membership in the Windows Core Telemetry provider group
+{c7de053a-0c2e-4a44-91a2-5222ec2ecdf1}. Membership in this group means that
+events with keyword MICROSOFT_KEYWORD_CRITICAL_DATA or event tag
+MICROSOFT_EVENTTAG_CORE_DATA will be recognized as "telemetry" events by
+UTC even at the Basic level.
+
+    TraceLoggingOptionWindowsCoreTelemetry()
+
+is equivalent to:
+
+    TraceLoggingOptionGroup(0xc7de053a, 0x0c2e, 0x4a44, 0x91, 0xa2, 0x52, 0x22, 0xec, 0x2e, 0xcd, 0xf1).
+
+Example:
+
+    TRACELOGGING_DEFINE_PROVIDER(g_hMyProvider, "MyProvider",
+        (0xb3864c38, 0x4273, 0x58c5, 0x54, 0x5b, 0x8b, 0x36, 0x08, 0x34, 0x34, 0x71),
+        TraceLoggingOptionWindowsCoreTelemetry());
+*/
+#define TraceLoggingOptionWindowsCoreTelemetry() \
+    TraceLoggingOptionGroup(0xc7de053a, 0x0c2e, 0x4a44, 0x91, 0xa2, 0x52, 0x22, 0xec, 0x2e, 0xcd, 0xf1)
+
+/*
+Privacy data tagging: Use TelemetryPrivacyDataTag(tag) in a telemetry
+TraceLoggingWrite macro to indicate the type of data being collected.
+Use the PDT macro values. If necessary, multiple tags may be OR'ed together,
+e.g. TelemetryPrivacyDataTag(PDT_BrowsingHistory | PDT_ProductAndServiceUsage).
+
+Typical usage:
+
+    TraceLoggingWrite(
+        g_hMyProviderHandle,
+        "MyPerformanceEvent",
+        TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance),
+        TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+        TraceLoggingValue(MyPerformanceData));
+
+Common PDT macros are defined below. Additional macros for advanced scenarios
+are defined in MicrosoftTelemetryPrivacy.h.
+*/
+#define TelemetryPrivacyDataTag(tag) TraceLoggingUInt64((tag), "PartA_PrivTags")
+
+#define PDT_BrowsingHistory                    0x0000000000000002u
+#define PDT_DeviceConnectivityAndConfiguration 0x0000000000000800u
+#define PDT_InkingTypingAndSpeechUtterance     0x0000000000020000u
+#define PDT_ProductAndServicePerformance       0x0000000001000000u
+#define PDT_ProductAndServiceUsage             0x0000000002000000u
+#define PDT_SoftwareSetupAndInventory          0x0000000080000000u
+
 #ifndef MICROSOFTTELEMETRY_NO_FUNCTIONS
 
 #include <evntprov.h>
-
-// Enum declaration may be missing from older evntprov.h:
-enum _EVENT_INFO_CLASS
-#if !defined(__INTELLISENSE__) && defined(__cplusplus) && (_MSC_VER >= 1700)
-    : int // base type for enum forward declaration
-#endif
-    ;
 
 /*
 Macro MICROSOFTTELEMETRY_EVENT_SET_INFORMATION:
@@ -176,7 +221,7 @@ Return Value:
     which occurs if running on a system that does not support Microsoft
     Telemetry.
 
---*/    
+--*/
 {
 #ifdef _ETW_KM_
     NTSTATUS Status = STATUS_NOT_SUPPORTED;
@@ -193,7 +238,7 @@ Return Value:
 
     Status = MICROSOFTTELEMETRY_EVENT_SET_INFORMATION(
         RegHandle,
-        (enum _EVENT_INFO_CLASS)2, // EventProviderSetTraits
+        (EVENT_INFO_CLASS)2, // EventProviderSetTraits
         (PVOID)Traits,
         *(USHORT*)Traits);
 
@@ -205,7 +250,7 @@ Return Value:
 
     typedef NTSTATUS(NTAPI* PFEtwSetInformation)(
         _In_ REGHANDLE RegHandle,
-        _In_ enum _EVENT_INFO_CLASS InformationClass,
+        _In_ EVENT_INFO_CLASS InformationClass,
         _In_reads_bytes_opt_(InformationLength) PVOID EventInformation,
         _In_ ULONG InformationLength);
     static UNICODE_STRING strEtwSetInformation = {
@@ -222,7 +267,7 @@ Return Value:
     {
         Status = pfEtwSetInformation(
             RegHandle,
-            (enum _EVENT_INFO_CLASS)2, // EventProviderSetTraits
+            (EVENT_INFO_CLASS)2, // EventProviderSetTraits
             (PVOID)Traits,
             *(USHORT*)Traits);
     }
@@ -235,7 +280,7 @@ Return Value:
     {
         typedef ULONG(WINAPI* PFEventSetInformation)(
             _In_ REGHANDLE RegHandle,
-            _In_ enum _EVENT_INFO_CLASS InformationClass,
+            _In_ EVENT_INFO_CLASS InformationClass,
             _In_reads_bytes_opt_(InformationLength) PVOID EventInformation,
             _In_ ULONG InformationLength);
         PFEventSetInformation pfEventSetInformation =
@@ -243,7 +288,7 @@ Return Value:
         if (pfEventSetInformation) {
             Status = pfEventSetInformation(
                 RegHandle,
-                (enum _EVENT_INFO_CLASS)2, // EventProviderSetTraits
+                (EVENT_INFO_CLASS)2, // EventProviderSetTraits
                 (PVOID)Traits,
                 *(USHORT*)Traits);
         }
@@ -305,7 +350,7 @@ Return Value:
     which occurs if running on a system that does not support Microsoft
     Telemetry.
 
---*/    
+--*/
 {
     static UCHAR const Traits[] = {
         0x16, 0x00, 0x00, 0x13, 0x00, 0x01,
@@ -348,7 +393,7 @@ Routine Description:
     {976a8310-986e-4640-8bfb-7736ee6d9b65}. Membership in this group means
     that events the following keywords will be recognized as "telemetry"
     events by UTC:
-   
+
     - 0x20000000 (Telemetry)
     - 0x40000000 (Measures)
     - 0x80000000 (CriticalData)
@@ -373,7 +418,7 @@ Return Value:
     which occurs if running on a system that does not support Microsoft
     Telemetry.
 
---*/    
+--*/
 {
     static UCHAR const Traits[] = {
         0x16, 0x00, 0x00, 0x13, 0x00, 0x01,
@@ -393,6 +438,10 @@ Telemetry categories that can be assigned as event keywords:
     MICROSOFT_KEYWORD_TELEMETRY:     Events for general-purpose telemetry
 
 Only one telemetry category should be assigned per event, though an event may also participate in other non-telemetry keywords.
+
+Some categories (such as CRITICAL_DATA) require formal approval before they can be used. Refer to
+https://osgwiki.com/wiki/Common_Schema_Event_Overrides
+for details on the requirements and how to start the approval process.
 */
 
 // c.f. WINEVENT_KEYWORD_RESERVED_63-56 0xFF00000000000000 // Bits 63-56 - channel keywords
@@ -433,41 +482,53 @@ Events may then be decorated with ms:CriticalData, ms:Measures, and ms:Telemetry
 /*
 Event tags that can be assigned to influence how the telemetry client handles events (TraceLogging only):
 
-    MICROSOFT_EVENTTAG_CORE_DATA:            This event contains high-priority "core data".
+    MICROSOFT_EVENTTAG_CORE_DATA:                This event contains high-priority "core data".
 
-    MICROSOFT_EVENTTAG_INJECT_XTOKEN:        Inject an Xbox identity token into this event.
+    MICROSOFT_EVENTTAG_INJECT_XTOKEN:            Inject an Xbox identity token into this event.
 
-    MICROSOFT_EVENTTAG_REALTIME_LATENCY:     Send these events in real time.
-    MICROSOFT_EVENTTAG_COSTDEFERRED_LATENCY: Treat these events like NORMAL_LATENCY until they've been stuck on the device for too long,
-                                                then allow them to upload over costed networks.
-    MICROSOFT_EVENTTAG_NORMAL_LATENCY:       Send these events via the preferred connection based on device policy.
-    
-    MICROSOFT_EVENTTAG_CRITICAL_PERSISTENCE: Delete these events last when low on spool space.
-    MICROSOFT_EVENTTAG_NORMAL_PERSISTENCE:   Delete these events first when low on spool space.
-    
-    MICROSOFT_EVENTTAG_DROP_PII:             The event's Part A will be reduced.
-    MICROSOFT_EVENTTAG_HASH_PII:             The event's Part A will be obscured.
-    MICROSOFT_EVENTTAG_MARK_PII:             The event's Part A will be kept as-is and routed to a private stream in the backend.
+    MICROSOFT_EVENTTAG_REALTIME_LATENCY:         Send these events in real time.
+    MICROSOFT_EVENTTAG_COSTDEFERRED_LATENCY:     Treat these events like NORMAL_LATENCY until they've been stuck on the device for too long,
+                                                    then allow them to upload over costed networks.
+    MICROSOFT_EVENTTAG_NORMAL_LATENCY:           Send these events via the preferred connection based on device policy.
+
+    MICROSOFT_EVENTTAG_CRITICAL_PERSISTENCE:     Delete these events last when low on spool space.
+    MICROSOFT_EVENTTAG_NORMAL_PERSISTENCE:       Delete these events first when low on spool space.
+
+    MICROSOFT_EVENTTAG_DROP_PII:                 The event's Part A will be reduced.
+    MICROSOFT_EVENTTAG_HASH_PII:                 The event's Part A will be obscured.
+    MICROSOFT_EVENTTAG_MARK_PII:                 The event's Part A will be kept as-is and routed to a private stream in the backend.
+    MICROSOFT_EVENTTAG_DROP_PII_EXCEPT_IP:       The event's Part A will be reduced but the IP address will be stamped on the server.
+
+    MICROSOFT_EVENTTAG_AGGREGATE:                The event should be aggregated by the telemetry client rather than sending each discrete event.
 
 For example:
 
     TraceLoggingWrite(..., TraceLoggingEventTag(MICROSOFT_EVENTTAG_REALTIME_LATENCY), ...)
+
+Some tags require formal approval before they can be used. Refer to
+https://osgwiki.com/wiki/Common_Schema_Event_Overrides
+for details on the requirements and how to start the approval process.
+
+Note:
+    Only the first 28 bits of the following event tag fields are allowed to be used. The rest will get dropped.
 */
+#define MICROSOFT_EVENTTAG_AGGREGATE                0x00010000
 
-#define MICROSOFT_EVENTTAG_COSTDEFERRED_LATENCY 0x00040000
+#define MICROSOFT_EVENTTAG_DROP_PII_EXCEPT_IP       0x00020000
+#define MICROSOFT_EVENTTAG_COSTDEFERRED_LATENCY     0x00040000
 
-#define MICROSOFT_EVENTTAG_CORE_DATA            0x00080000
-#define MICROSOFT_EVENTTAG_INJECT_XTOKEN        0x00100000
+#define MICROSOFT_EVENTTAG_CORE_DATA                0x00080000
+#define MICROSOFT_EVENTTAG_INJECT_XTOKEN            0x00100000
 
-#define MICROSOFT_EVENTTAG_REALTIME_LATENCY     0x00200000
-#define MICROSOFT_EVENTTAG_NORMAL_LATENCY       0x00400000
+#define MICROSOFT_EVENTTAG_REALTIME_LATENCY         0x00200000
+#define MICROSOFT_EVENTTAG_NORMAL_LATENCY           0x00400000
 
-#define MICROSOFT_EVENTTAG_CRITICAL_PERSISTENCE 0x00800000
-#define MICROSOFT_EVENTTAG_NORMAL_PERSISTENCE   0x01000000
+#define MICROSOFT_EVENTTAG_CRITICAL_PERSISTENCE     0x00800000
+#define MICROSOFT_EVENTTAG_NORMAL_PERSISTENCE       0x01000000
 
-#define MICROSOFT_EVENTTAG_DROP_PII             0x02000000
-#define MICROSOFT_EVENTTAG_HASH_PII             0x04000000
-#define MICROSOFT_EVENTTAG_MARK_PII             0x08000000
+#define MICROSOFT_EVENTTAG_DROP_PII                 0x02000000
+#define MICROSOFT_EVENTTAG_HASH_PII                 0x04000000
+#define MICROSOFT_EVENTTAG_MARK_PII                 0x08000000
 
 /*
 Field tags that can be assigned to influence how the telemetry client handles fields and generates
