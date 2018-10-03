@@ -70,7 +70,7 @@ public:
     virtual bool EraseInLine(const DispatchTypes::EraseType  eraseType) = 0; // EL
     virtual bool EraseCharacters(const unsigned int uiNumChars) = 0; // ECH
 
-    virtual bool SetGraphicsRendition(_In_reads_(cParams) const DispatchTypes::GraphicsOptions* const rgOptions,
+    virtual bool SetGraphicsRendition(_In_reads_(cOptions) const DispatchTypes::GraphicsOptions* const rgOptions,
                                       const size_t cOptions) = 0; // SGR
 
     virtual bool SetPrivateModes(_In_reads_(cParams) const DispatchTypes::PrivateModeParams* const rgParams,
