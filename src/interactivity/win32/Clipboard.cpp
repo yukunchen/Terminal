@@ -312,10 +312,10 @@ void Clipboard::CopyTextToSystemClipboard(const std::vector<std::wstring>& rows)
     THROW_IF_FAILED(hr);
 
     // Set global data to clipboard
-    THROW_LAST_ERROR_IF_FALSE(OpenClipboard(ServiceLocator::LocateConsoleWindow()->GetWindowHandle()));
-    THROW_LAST_ERROR_IF_FALSE(EmptyClipboard());
+    THROW_LAST_ERROR_IF(!OpenClipboard(ServiceLocator::LocateConsoleWindow()->GetWindowHandle()));
+    THROW_LAST_ERROR_IF(!EmptyClipboard());
     THROW_LAST_ERROR_IF_NULL(SetClipboardData(CF_UNICODETEXT, globalHandle.get()));
-    THROW_LAST_ERROR_IF_FALSE(CloseClipboard());
+    THROW_LAST_ERROR_IF(!CloseClipboard());
 
     // only free if we failed.
     // the memory has to remain allocated if we successfully placed it on the clipboard.
@@ -331,7 +331,7 @@ bool Clipboard::FilterCharacterOnPaste(_Inout_ WCHAR * const pwch)
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     bool fAllowChar = true;
     if (gci.GetFilterOnPaste() &&
-        (IsFlagSet(gci.pInputBuffer->InputMode, ENABLE_PROCESSED_INPUT)))
+        (WI_IsFlagSet(gci.pInputBuffer->InputMode, ENABLE_PROCESSED_INPUT)))
     {
         switch (*pwch)
         {

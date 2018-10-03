@@ -47,17 +47,17 @@ using namespace Microsoft::Console::VirtualTerminal;
 
 bool IsShiftPressed(const DWORD modifierState)
 {
-    return IsFlagSet(modifierState, SHIFT_PRESSED);
+    return WI_IsFlagSet(modifierState, SHIFT_PRESSED);
 }
 
 bool IsAltPressed(const DWORD modifierState)
 {
-    return IsAnyFlagSet(modifierState, LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED);
+    return WI_IsAnyFlagSet(modifierState, LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED);
 }
 
 bool IsCtrlPressed(const DWORD modifierState)
 {
-    return IsAnyFlagSet(modifierState, LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED);
+    return WI_IsAnyFlagSet(modifierState, LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED);
 }
 
 bool ModifiersEquivalent(DWORD a, DWORD b)
@@ -378,13 +378,13 @@ void InputEngineTest::C0Test()
         DWORD dwModifierState = 0;
         if (writeCtrl)
         {
-            dwModifierState = SetFlag(dwModifierState, LEFT_CTRL_PRESSED);
+            dwModifierState = WI_SetFlag(dwModifierState, LEFT_CTRL_PRESSED);
         }
         // If we need to press shift for this key, but not on alphabetical chars
         //  Eg simulating C-z, not C-S-z.
-        if (IsFlagSet(keyscanModifiers, 1) && (expectedWch < L'A' || expectedWch > L'Z' ))
+        if (WI_IsFlagSet(keyscanModifiers, 1) && (expectedWch < L'A' || expectedWch > L'Z' ))
         {
-            dwModifierState = SetFlag(dwModifierState, SHIFT_PRESSED);
+            dwModifierState = WI_SetFlag(dwModifierState, SHIFT_PRESSED);
         }
 
         // Just make sure we write the same thing telnetd did:
@@ -452,9 +452,9 @@ void InputEngineTest::AlphanumericTest()
         short keyscanModifiers = (keyscan >> 8) & 0xff;
         // Because of course, these are not the same flags.
         DWORD dwModifierState = 0 |
-            (IsFlagSet(keyscanModifiers, 1) ? SHIFT_PRESSED : 0) |
-            (IsFlagSet(keyscanModifiers, 2) ? LEFT_CTRL_PRESSED : 0) |
-            (IsFlagSet(keyscanModifiers, 4) ? LEFT_ALT_PRESSED : 0) ;
+            (WI_IsFlagSet(keyscanModifiers, 1) ? SHIFT_PRESSED : 0) |
+            (WI_IsFlagSet(keyscanModifiers, 2) ? LEFT_CTRL_PRESSED : 0) |
+            (WI_IsFlagSet(keyscanModifiers, 4) ? LEFT_ALT_PRESSED : 0) ;
 
         Log::Comment(NoThrowString().Format(L"Testing char 0x%x", wch));
         Log::Comment(NoThrowString().Format(L"Input Sequence=\"%s\"", inputSeq.c_str()));
@@ -502,11 +502,11 @@ void InputEngineTest::RoundTripTest()
         if (vkey >= 'A' && vkey <= 'Z')
         {
             // A-Z need shift pressed in addition to the 'a'-'z' chars.
-            uiActualKeystate = SetFlag(uiActualKeystate, SHIFT_PRESSED);
+            uiActualKeystate = WI_SetFlag(uiActualKeystate, SHIFT_PRESSED);
         }
         else if (vkey == VK_CANCEL  || vkey == VK_PAUSE)
         {
-            uiActualKeystate = SetFlag(uiActualKeystate, LEFT_CTRL_PRESSED);
+            uiActualKeystate = WI_SetFlag(uiActualKeystate, LEFT_CTRL_PRESSED);
         }
 
         if (vkey == UNICODE_ETX)

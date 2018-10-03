@@ -441,10 +441,10 @@ void PrintOutputToDebug(std::string& rawOutput)
 void SetupOutput()
 {
     DWORD dwMode = 0;
-    THROW_LAST_ERROR_IF_FALSE(GetConsoleMode(hOut, &dwMode));
+    THROW_LAST_ERROR_IF(!GetConsoleMode(hOut, &dwMode));
     dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
     dwMode |= DISABLE_NEWLINE_AUTO_RETURN;
-    THROW_LAST_ERROR_IF_FALSE(SetConsoleMode(hOut, dwMode));
+    THROW_LAST_ERROR_IF(!SetConsoleMode(hOut, dwMode));
 }
 void SetupInput()
 {
@@ -461,9 +461,9 @@ DWORD InputThread(LPVOID /*lpParameter*/)
 
     unsigned int launchOutputCP = GetConsoleOutputCP();
     unsigned int launchCP = GetConsoleCP();
-    THROW_LAST_ERROR_IF_FALSE(SetConsoleOutputCP(CP_UTF8));
-    THROW_LAST_ERROR_IF_FALSE(SetConsoleCP(CP_UTF8));
-    auto restore = wil::ScopeExit([&]
+    THROW_LAST_ERROR_IF(!SetConsoleOutputCP(CP_UTF8));
+    THROW_LAST_ERROR_IF(!SetConsoleCP(CP_UTF8));
+    auto restore = wil::scope_exit([&]
     {
         SetConsoleOutputCP(launchOutputCP);
         SetConsoleCP(launchCP);

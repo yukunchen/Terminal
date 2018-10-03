@@ -109,7 +109,7 @@ HRESULT GdiEngine::InvalidateAll() noexcept
     }
 
     RECT rc;
-    RETURN_HR_IF_FALSE(E_FAIL, GetClientRect(_hwndTargetWindow, &rc));
+    RETURN_HR_IF(E_FAIL, !(GetClientRect(_hwndTargetWindow, &rc)));
     RETURN_HR(InvalidateSystem(&rc));
 }
 
@@ -207,7 +207,7 @@ HRESULT GdiEngine::_InvalidRestrict() noexcept
     RECT rcClient;
 
     // Do restriction only if retrieving the client rect was successful.
-    RETURN_HR_IF_FALSE(E_FAIL, GetClientRect(_hwndTargetWindow, &rcClient));
+    RETURN_HR_IF(E_FAIL, !(GetClientRect(_hwndTargetWindow, &rcClient)));
 
     _rcInvalid.left = std::clamp(_rcInvalid.left, rcClient.left, rcClient.right);
     _rcInvalid.right = std::clamp(_rcInvalid.right, rcClient.left, rcClient.right);

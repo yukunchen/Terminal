@@ -103,7 +103,7 @@ void AliasTests::TestGetConsoleAlias()
         char* szExpectedTarget = nullptr;
         char* szExeName = nullptr;
 
-        auto cleanupSource = wil::ScopeExit([&] {
+        auto cleanupSource = wil::scope_exit([&] {
             if (nullptr != szSource)
             {
                 delete[] szSource;
@@ -111,7 +111,7 @@ void AliasTests::TestGetConsoleAlias()
             }
         });
 
-        auto cleanupExpectedTarget = wil::ScopeExit([&] {
+        auto cleanupExpectedTarget = wil::scope_exit([&] {
             if (nullptr != szExpectedTarget)
             {
                 delete[] szExpectedTarget;
@@ -119,7 +119,7 @@ void AliasTests::TestGetConsoleAlias()
             }
         });
 
-        auto cleanupExeName = wil::ScopeExit([&] {
+        auto cleanupExeName = wil::scope_exit([&] {
             if (nullptr != szExeName)
             {
                 delete[] szExeName;

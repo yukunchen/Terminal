@@ -259,7 +259,7 @@ HRESULT ConsoleCreateIoThreadLegacy(_In_ HANDLE Server, const ConsoleArguments* 
     RETURN_IF_FAILED(ServiceLocator::LocateGlobals().pDeviceComm->SetServerInformation(&ServerInformation));
 
     HANDLE const hThread = CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)ConsoleIoThread, 0, 0, nullptr);
-    RETURN_IF_HANDLE_NULL(hThread);
+    RETURN_HR_IF(E_HANDLE, hThread == nullptr);
     LOG_IF_WIN32_BOOL_FALSE(CloseHandle(hThread)); // The thread will run on its own and close itself. Free the associated handle.
 
     return S_OK;
@@ -415,7 +415,7 @@ HRESULT ApiRoutines::GetConsoleLangIdImpl(_Out_ LANGID* const pLangId)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     // This fails a lot and it's totally expected. It only works for a few East Asian code pages.
     // As such, just return it. Do NOT use a wil macro here. It is very noisy.
@@ -453,9 +453,9 @@ NTSTATUS ConsoleInitializeConnectInfo(_In_ PCONSOLE_API_MSG Message, _Out_ PCONS
     }
 
     // Initialize (partially) the connect info with the received data.
-    FAIL_FAST_IF_FALSE(sizeof(Cac->AppName) == sizeof(Data.ApplicationName));
-    FAIL_FAST_IF_FALSE(sizeof(Cac->Title) == sizeof(Data.Title));
-    FAIL_FAST_IF_FALSE(sizeof(Cac->CurDir) == sizeof(Data.CurrentDirectory));
+    FAIL_FAST_IF(!(sizeof(Cac->AppName) == sizeof(Data.ApplicationName)));
+    FAIL_FAST_IF(!(sizeof(Cac->Title) == sizeof(Data.Title)));
+    FAIL_FAST_IF(!(sizeof(Cac->CurDir) == sizeof(Data.CurrentDirectory)));
 
     // unused(Data.IconId)
     Cac->ConsoleInfo.SetHotKey(Data.HotKey);

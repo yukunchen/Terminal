@@ -104,10 +104,10 @@ void Utils::s_DecrementCoordinate(const COORD bufferSize, COORD& coord) noexcept
 bool Utils::s_DoDecrementScreenCoordinate(const SMALL_RECT srectEdges, COORD& coordScreen) noexcept
 {
     // assert that the coord is inside the screen
-    FAIL_FAST_IF_FALSE(coordScreen.X >= srectEdges.Left);
-    FAIL_FAST_IF_FALSE(coordScreen.X <= srectEdges.Right);
-    FAIL_FAST_IF_FALSE(coordScreen.Y >= srectEdges.Top);
-    FAIL_FAST_IF_FALSE(coordScreen.Y <= srectEdges.Bottom);
+    FAIL_FAST_IF(!(coordScreen.X >= srectEdges.Left));
+    FAIL_FAST_IF(!(coordScreen.X <= srectEdges.Right));
+    FAIL_FAST_IF(!(coordScreen.Y >= srectEdges.Top));
+    FAIL_FAST_IF(!(coordScreen.Y <= srectEdges.Bottom));
 
     if (coordScreen.X == srectEdges.Left)
     {
@@ -140,10 +140,10 @@ bool Utils::s_DoDecrementScreenCoordinate(const SMALL_RECT srectEdges, COORD& co
 bool Utils::s_DoIncrementScreenCoordinate(const SMALL_RECT srectEdges, COORD& coordScreen) noexcept
 {
     // assert that the coord is inside the screen
-    FAIL_FAST_IF_FALSE(coordScreen.X >= srectEdges.Left);
-    FAIL_FAST_IF_FALSE(coordScreen.X <= srectEdges.Right);
-    FAIL_FAST_IF_FALSE(coordScreen.Y >= srectEdges.Top);
-    FAIL_FAST_IF_FALSE(coordScreen.Y <= srectEdges.Bottom);
+    FAIL_FAST_IF(!(coordScreen.X >= srectEdges.Left));
+    FAIL_FAST_IF(!(coordScreen.X <= srectEdges.Right));
+    FAIL_FAST_IF(!(coordScreen.Y >= srectEdges.Top));
+    FAIL_FAST_IF(!(coordScreen.Y <= srectEdges.Bottom));
 
     if (coordScreen.X == srectEdges.Right)
     {
@@ -184,10 +184,10 @@ int Utils::s_CompareCoords(const COORD bufferSize, const COORD coordFirst, const
 
     // Assert that our coordinates are within the expected boundaries
     const short cRowHeight = bufferSize.Y;
-    FAIL_FAST_IF_FALSE(coordFirst.X >= 0 && coordFirst.X < cRowWidth);
-    FAIL_FAST_IF_FALSE(coordSecond.X >= 0 && coordSecond.X < cRowWidth);
-    FAIL_FAST_IF_FALSE(coordFirst.Y >= 0 && coordFirst.Y < cRowHeight);
-    FAIL_FAST_IF_FALSE(coordSecond.Y >= 0 && coordSecond.Y < cRowHeight);
+    FAIL_FAST_IF(!(coordFirst.X >= 0 && coordFirst.X < cRowWidth));
+    FAIL_FAST_IF(!(coordSecond.X >= 0 && coordSecond.X < cRowWidth));
+    FAIL_FAST_IF(!(coordFirst.Y >= 0 && coordFirst.Y < cRowHeight));
+    FAIL_FAST_IF(!(coordSecond.Y >= 0 && coordSecond.Y < cRowHeight));
 
     // First set the distance vertically
     //   If first is on row 4 and second is on row 6, first will be -2 rows behind second * an 80 character row would be -160.
@@ -239,8 +239,8 @@ int Utils::s_CompareCoords(const COORD coordFirst, const COORD coordSecond) noex
 COORD Utils::s_GetOppositeCorner(const SMALL_RECT srRectangle, const COORD coordCorner) noexcept
 {
     // Assert we were given coordinates that are indeed one of the corners of the rectangle.
-    FAIL_FAST_IF_FALSE(coordCorner.X == srRectangle.Left || coordCorner.X == srRectangle.Right);
-    FAIL_FAST_IF_FALSE(coordCorner.Y == srRectangle.Top || coordCorner.Y == srRectangle.Bottom);
+    FAIL_FAST_IF(!(coordCorner.X == srRectangle.Left || coordCorner.X == srRectangle.Right));
+    FAIL_FAST_IF(!(coordCorner.Y == srRectangle.Top || coordCorner.Y == srRectangle.Bottom));
 
     return { (srRectangle.Left == coordCorner.X) ? srRectangle.Right : srRectangle.Left,
              (srRectangle.Top == coordCorner.Y) ? srRectangle.Bottom : srRectangle.Top };

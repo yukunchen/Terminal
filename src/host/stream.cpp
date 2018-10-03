@@ -127,7 +127,7 @@ NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
                 }
                 // Ignore Escape and Newline chars
                 else if (keyEvent->IsKeyDown() &&
-                    (IsFlagSet(pInputBuffer->InputMode, ENABLE_VIRTUAL_TERMINAL_INPUT) ||
+                    (WI_IsFlagSet(pInputBuffer->InputMode, ENABLE_VIRTUAL_TERMINAL_INPUT) ||
                          (keyEvent->GetVirtualKeyCode() != VK_ESCAPE &&
                           keyEvent->GetCharData() != UNICODE_LINEFEED)))
                 {
@@ -740,7 +740,7 @@ NTSTATUS DoReadConsole(_Inout_ InputBuffer* const pInputBuffer,
                        _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
 {
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     *ppWaiter = nullptr;
 
@@ -761,7 +761,7 @@ NTSTATUS DoReadConsole(_Inout_ InputBuffer* const pInputBuffer,
                                 Unicode,
                                 OutputBufferSize);
     }
-    else if (IsFlagSet(pInputBuffer->InputMode, ENABLE_LINE_INPUT))
+    else if (WI_IsFlagSet(pInputBuffer->InputMode, ENABLE_LINE_INPUT))
     {
         return NTSTATUS_FROM_HRESULT(ReadLineInput(pInputBuffer,
                                                    ProcessData,
@@ -873,7 +873,7 @@ HRESULT ApiRoutines::ReadConsoleWImpl(_Inout_ IConsoleInputObject* const pInCont
                                           true,
                                           ppWaiter);
 
-    FAIL_FAST_IF_FALSE(cbTextBuffer % sizeof(wchar_t) == 0);
+    FAIL_FAST_IF(!(cbTextBuffer % sizeof(wchar_t) == 0));
     *pcchTextBufferWritten = cbTextBuffer/ sizeof(wchar_t);
 
     return HRESULT_FROM_NT(Status);
@@ -884,7 +884,7 @@ VOID UnblockWriteConsole(const DWORD dwReason)
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.Flags &= ~dwReason;
 
-    if (AreAllFlagsClear(gci.Flags, (CONSOLE_SUSPENDED | CONSOLE_SELECTING | CONSOLE_SCROLLBAR_TRACKING)))
+    if (WI_AreAllFlagsClear(gci.Flags, (CONSOLE_SUSPENDED | CONSOLE_SELECTING | CONSOLE_SCROLLBAR_TRACKING)))
     {
         // There is no longer any reason to suspend output, so unblock it.
         gci.OutputQueue.NotifyWaiters(true);

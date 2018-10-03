@@ -10,7 +10,7 @@
 DeviceComm::DeviceComm(_In_ HANDLE Server) :
     _Server(Server)
 {
-    THROW_IF_HANDLE_INVALID(Server);
+    THROW_HR_IF(E_HANDLE, Server == INVALID_HANDLE_VALUE);
 }
 
 

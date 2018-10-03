@@ -123,7 +123,7 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const SMALL_RECT srRegion)
     DBGOUTPUT(("WriteToScreen\n"));
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // update to screen, if we're not iconic.
-    if (!screenInfo.IsActiveScreenBuffer() || IsFlagSet(gci.Flags, CONSOLE_IS_ICONIC))
+    if (!screenInfo.IsActiveScreenBuffer() || WI_IsFlagSet(gci.Flags, CONSOLE_IS_ICONIC))
     {
         return;
     }
@@ -180,7 +180,7 @@ size_t WriteOutputAttributes(SCREEN_INFORMATION& screenInfo,
         ROW& row = screenInfo.GetTextBuffer().GetRowByOffset(currentLocation.Y);
         ATTR_ROW& attrRow = row.GetAttrRow();
         // clear dbcs bits
-        ClearAllFlags(currentAttr, COMMON_LVB_SBCSDBCS);
+        WI_ClearAllFlags(currentAttr, COMMON_LVB_SBCSDBCS);
         // add to attr row
         run.SetAttributesFromLegacy(currentAttr);
         THROW_IF_FAILED(attrRow.InsertAttrRuns({ &run, 1 },

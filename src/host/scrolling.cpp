@@ -24,7 +24,7 @@ void Scrolling::s_UpdateSystemMetrics()
 bool Scrolling::s_IsInScrollMode()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return IsFlagSet(gci.Flags, CONSOLE_SCROLLING);
+    return WI_IsFlagSet(gci.Flags, CONSOLE_SCROLLING);
 }
 
 void Scrolling::s_DoScroll()
@@ -36,7 +36,7 @@ void Scrolling::s_DoScroll()
         // clear any selection we may have -- can't scroll and select at the same time
         Selection::Instance().ClearSelection();
 
-        SetFlag(gci.Flags, CONSOLE_SCROLLING);
+        WI_SetFlag(gci.Flags, CONSOLE_SCROLLING);
 
         if (pWindow != nullptr)
         {
@@ -49,7 +49,7 @@ void Scrolling::s_ClearScroll()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
-    ClearFlag(gci.Flags, CONSOLE_SCROLLING);
+    WI_ClearFlag(gci.Flags, CONSOLE_SCROLLING);
     if (pWindow != nullptr)
     {
         pWindow->UpdateWindowText();

@@ -108,7 +108,7 @@ bool WriteData::Notify(const WaitTerminationReason TerminationReason,
     *pNumBytes = _cbContext;
     *pControlKeyState = 0;
 
-    if (IsFlagSet(TerminationReason, WaitTerminationReason::ThreadDying))
+    if (WI_IsFlagSet(TerminationReason, WaitTerminationReason::ThreadDying))
     {
         *pReplyStatus = STATUS_THREAD_IS_TERMINATING;
         return true;
@@ -120,7 +120,7 @@ bool WriteData::Notify(const WaitTerminationReason TerminationReason,
     // This routine should be called by a thread owning the same lock on the
     // same console as we're reading from.
 
-    FAIL_FAST_IF_FALSE(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
+    FAIL_FAST_IF(!(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked()));
 
     WriteData* pWaiter = nullptr;
     size_t cbContext = _cbContext;

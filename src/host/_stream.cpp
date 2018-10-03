@@ -79,7 +79,7 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
     const bool fMarginsSet = srMargins.Bottom > srMargins.Top;
     COORD currentCursor = screenInfo.GetTextBuffer().GetCursor().GetPosition();
     const int iCurrentCursorY = currentCursor.Y;
-    const bool inVtMode = IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    const bool inVtMode = WI_IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
     const bool fCursorInMargins = iCurrentCursorY <= srMargins.Bottom && iCurrentCursorY >= srMargins.Top;
     const bool cursorAboveViewport = coordCursor.Y < 0 && inVtMode;
@@ -213,7 +213,7 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
     if (coordCursor.Y >= bufferSize.Y)
     {
         // At the end of the buffer. Scroll contents of screen buffer so new position is visible.
-        FAIL_FAST_IF_FALSE(coordCursor.Y == bufferSize.Y);
+        FAIL_FAST_IF(!(coordCursor.Y == bufferSize.Y));
         if (!StreamScrollRegion(screenInfo))
         {
             Status = STATUS_NO_MEMORY;
@@ -291,7 +291,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
     SHORT XPosition;
     WCHAR LocalBuffer[LOCAL_BUFFER_SIZE];
     size_t TempNumSpaces = 0;
-    const bool fUnprocessed = IsFlagClear(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT);
+    const bool fUnprocessed = WI_IsFlagClear(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT);
 
     // Must not adjust cursor here. It has to stay on for many write scenarios. Consumers should call for the
     // cursor to be turned off if they want that.
@@ -316,7 +316,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
             {
                 bool fDoEolWrap = false;
 
-                if (IsFlagSet(dwFlags, WC_DELAY_EOL_WRAP))
+                if (WI_IsFlagSet(dwFlags, WC_DELAY_EOL_WRAP))
                 {
                     // Correct if it's a printable character and whoever called us still understands/wants delayed EOL wrap.
                     if (*lpString >= UNICODE_SPACE)
@@ -333,7 +333,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                         if (CursorPosition.X != 0)
                         {
                             --CursorPosition.X;
-                            Status = AdjustCursorPosition(screenInfo, CursorPosition, IsFlagSet(dwFlags, WC_KEEP_CURSOR_VISIBLE), psScrollY);
+                            Status = AdjustCursorPosition(screenInfo, CursorPosition, WI_IsFlagSet(dwFlags, WC_KEEP_CURSOR_VISIBLE), psScrollY);
                             CursorPosition = cursor.GetPosition();
                         }
                         continue;
@@ -351,7 +351,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                     CursorPosition.X = 0;
                     CursorPosition.Y++;
 
-                    Status = AdjustCursorPosition(screenInfo, CursorPosition, IsFlagSet(dwFlags, WC_KEEP_CURSOR_VISIBLE), psScrollY);
+                    Status = AdjustCursorPosition(screenInfo, CursorPosition, WI_IsFlagSet(dwFlags, WC_KEEP_CURSOR_VISIBLE), psScrollY);
 
                     CursorPosition = cursor.GetPosition();
                 }
@@ -361,7 +361,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
         if (screenInfo.InVTMode())
         {
             // if we're at the beginning of a row and we get a backspace and told to limit backspacing, skip it
-            if (*lpString == UNICODE_BACKSPACE && CursorPosition.X == 0 && IsFlagSet(dwFlags, WC_LIMIT_BACKSPACE))
+            if (*lpString == UNICODE_BACKSPACE && CursorPosition.X == 0 && WI_IsFlagSet(dwFlags, WC_LIMIT_BACKSPACE))
             {
                 *pcb += sizeof(wchar_t);
                 ++lpString;
@@ -408,7 +408,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
             }
             else
             {
-                FAIL_FAST_IF_FALSE(IsFlagSet(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT));
+                FAIL_FAST_IF(!(WI_IsFlagSet(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT)));
                 switch (RealUnicodeChar)
                 {
                 case UNICODE_BELL:
@@ -441,7 +441,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                     {
                         const ULONG TabSize = NUMBER_OF_SPACES_IN_TAB(XPosition);
                         XPosition = (SHORT)(XPosition + TabSize);
-                        if (XPosition >= coordScreenBufferSize.X || IsFlagSet(dwFlags, WC_NONDESTRUCTIVE_TAB))
+                        if (XPosition >= coordScreenBufferSize.X || WI_IsFlagSet(dwFlags, WC_NONDESTRUCTIVE_TAB))
                         {
                             goto EndWhile;
                         }
@@ -546,7 +546,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
             CursorPosition.Y = cursor.GetPosition().Y;
 
             // enforce a delayed newline if we're about to pass the end and the WC_DELAY_EOL_WRAP flag is set.
-            if (IsFlagSet(dwFlags, WC_DELAY_EOL_WRAP) && CursorPosition.X >= coordScreenBufferSize.X)
+            if (WI_IsFlagSet(dwFlags, WC_DELAY_EOL_WRAP) && CursorPosition.X >= coordScreenBufferSize.X)
             {
                 // Our cursor position as of this time is going to remain on the last position in this column.
                 CursorPosition.X = coordScreenBufferSize.X - 1;
@@ -559,7 +559,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
             }
             else
             {
-                Status = AdjustCursorPosition(screenInfo, CursorPosition, IsFlagSet(dwFlags, WC_KEEP_CURSOR_VISIBLE), psScrollY);
+                Status = AdjustCursorPosition(screenInfo, CursorPosition, WI_IsFlagSet(dwFlags, WC_KEEP_CURSOR_VISIBLE), psScrollY);
             }
 
             if (*pcb == BufferSize)
@@ -574,7 +574,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
         }
         else if (*pcb >= BufferSize)
         {
-            FAIL_FAST_IF_FALSE(IsFlagSet(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT));
+            FAIL_FAST_IF(!(WI_IsFlagSet(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT)));
 
             // this catches the case where the number of backspaces == the number of characters.
             if (nullptr != pcSpaces)
@@ -584,7 +584,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
             return STATUS_SUCCESS;
         }
 
-        FAIL_FAST_IF_FALSE(IsFlagSet(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT));
+        FAIL_FAST_IF(!(WI_IsFlagSet(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT)));
         switch (*lpString)
         {
         case UNICODE_BACKSPACE:
@@ -629,7 +629,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                     }
                     else
                     {
-                        FAIL_FAST_IF_FALSE(Tmp2 >= buffer.get());
+                        FAIL_FAST_IF(!(Tmp2 >= buffer.get()));
                         *Tmp2++ = *Tmp;
                     }
                 }
@@ -786,7 +786,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                     CursorPosition.Y = cursor.GetPosition().Y;
                 }
 
-                if (!IsFlagSet(dwFlags, WC_NONDESTRUCTIVE_TAB))
+                if (!WI_IsFlagSet(dwFlags, WC_NONDESTRUCTIVE_TAB))
                 {
                     try
                     {
@@ -934,8 +934,8 @@ NTSTATUS WriteChars(SCREEN_INFORMATION& screenInfo,
                     const DWORD dwFlags,
                     _Inout_opt_ PSHORT const psScrollY)
 {
-    if (!IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) ||
-        !IsFlagSet(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT))
+    if (!WI_IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) ||
+        !WI_IsFlagSet(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT))
     {
         return WriteCharsLegacy(screenInfo,
                                 pwchBufferBackupLimit,
@@ -961,12 +961,12 @@ NTSTATUS WriteChars(SCREEN_INFORMATION& screenInfo,
         {
             if (NT_SUCCESS(Status))
             {
-                FAIL_FAST_IF_FALSE(IsFlagSet(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT));
-                FAIL_FAST_IF_FALSE(IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING));
+                FAIL_FAST_IF(!(WI_IsFlagSet(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT)));
+                FAIL_FAST_IF(!(WI_IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING)));
 
                 // defined down in the WriteBuffer default case hiding on the other end of the state machine. See outputStream.cpp
                 // This is the only mode used by DoWriteConsole.
-                FAIL_FAST_IF_FALSE(IsFlagSet(dwFlags, WC_LIMIT_BACKSPACE));
+                FAIL_FAST_IF(!(WI_IsFlagSet(dwFlags, WC_LIMIT_BACKSPACE)));
 
                 StateMachine& machine = screenInfo.GetStateMachine();
                 size_t const cch = BufferSize / sizeof(WCHAR);
@@ -1007,7 +1007,7 @@ NTSTATUS DoWriteConsole(_In_reads_bytes_(*pcbBuffer) PWCHAR pwchBuffer,
                         _Outptr_result_maybenull_ WriteData** const ppWaiter)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    if (IsAnyFlagSet(gci.Flags, (CONSOLE_SUSPENDED | CONSOLE_SELECTING | CONSOLE_SCROLLBAR_TRACKING)))
+    if (WI_IsAnyFlagSet(gci.Flags, (CONSOLE_SUSPENDED | CONSOLE_SELECTING | CONSOLE_SCROLLBAR_TRACKING)))
     {
         try
         {
@@ -1110,7 +1110,7 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject& OutContext,
     bool fLeadByteConsumed = false;
 
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     if (cchTextBufferLength == 0)
     {
@@ -1194,7 +1194,7 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject& OutContext,
             }
             else
             {
-                FAIL_FAST_IF_FALSE(cchConverted == 1);
+                FAIL_FAST_IF(!(cchConverted == 1));
                 dbcsNumBytes = sizeof(wchar_t);
                 TransBuffer[0] = convertedChars[0];
                 BufPtr++;
@@ -1343,7 +1343,7 @@ HRESULT ApiRoutines::WriteConsoleWImpl(_In_ IConsoleOutputObject& OutContext,
                                        _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
 {
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     return WriteConsoleWImplHelper(OutContext.GetActiveBuffer(),
                                    pwsTextBuffer,

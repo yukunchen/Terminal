@@ -134,7 +134,7 @@ HRESULT Renderer::_PaintFrameForEngine(_In_ IRenderEngine* const pEngine)
     FAIL_FAST_IF_NULL(pEngine); // This is a programming error. Fail fast.
 
     LockConsole();
-    auto unlock = wil::ScopeExit([&]()
+    auto unlock = wil::scope_exit([&]()
     {
         UnlockConsole();
     });
@@ -154,7 +154,7 @@ HRESULT Renderer::_PaintFrameForEngine(_In_ IRenderEngine* const pEngine)
         return S_OK;
     }
 
-    auto endPaint = wil::ScopeExit([&]()
+    auto endPaint = wil::scope_exit([&]()
     {
         LOG_IF_FAILED(pEngine->EndPaint());
     });
@@ -190,10 +190,10 @@ HRESULT Renderer::_PaintFrameForEngine(_In_ IRenderEngine* const pEngine)
     RETURN_IF_FAILED(_PaintTitle(pEngine));
 
     // Force scope exit end paint to finish up collecting information and possibly painting
-    endPaint();
+    endPaint.reset();
 
     // Force scope exit unlock to let go of global lock so other threads can run
-    unlock();
+    unlock.reset();
 
     // Trigger out-of-lock presentation for renderers that can support it
     RETURN_IF_FAILED(pEngine->Present());
@@ -501,7 +501,7 @@ HRESULT Renderer::GetProposedFont(const int iDpi, const FontInfoDesired& FontInf
     //      renderer. We won't know which is which, so iterate over them.
     //      Only return the result of the successful one if it's not S_FALSE (which is the VT renderer)
     // TODO: 14560740 - The Window might be able to get at this info in a more sane manner
-    FAIL_FAST_IF_FALSE(_rgpEngines.size() <= 2);
+    FAIL_FAST_IF(!(_rgpEngines.size() <= 2));
     for (IRenderEngine* const pEngine : _rgpEngines)
     {
         const HRESULT hr = LOG_IF_FAILED(pEngine->GetProposedFont(FontInfoDesired, FontInfo, iDpi));
@@ -529,7 +529,7 @@ COORD Renderer::GetFontSize()
     //      renderer. We won't know which is which, so iterate over them.
     //      Only return the result of the successful one if it's not S_FALSE (which is the VT renderer)
     // TODO: 14560740 - The Window might be able to get at this info in a more sane manner
-    FAIL_FAST_IF_FALSE(_rgpEngines.size() <= 2);
+    FAIL_FAST_IF(!(_rgpEngines.size() <= 2));
 
     for (IRenderEngine* const pEngine : _rgpEngines)
     {
@@ -562,7 +562,7 @@ bool Renderer::IsGlyphWideByFont(const std::wstring_view glyph)
     //      renderer. We won't know which is which, so iterate over them.
     //      Only return the result of the successful one if it's not S_FALSE (which is the VT renderer)
     // TODO: 14560740 - The Window might be able to get at this info in a more sane manner
-    FAIL_FAST_IF_FALSE(_rgpEngines.size() <= 2);
+    FAIL_FAST_IF(!(_rgpEngines.size() <= 2));
     for (IRenderEngine* const pEngine : _rgpEngines)
     {
         const HRESULT hr = LOG_IF_FAILED(pEngine->IsGlyphWideByFont(glyph, &fIsFullWidth));

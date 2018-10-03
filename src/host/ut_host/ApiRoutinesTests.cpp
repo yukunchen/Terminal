@@ -57,9 +57,9 @@ class ApiRoutinesTests
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         gci.Flags = 0;
         gci.pInputBuffer->InputMode = ulOriginalInputMode & ~(ENABLE_QUICK_EDIT_MODE | ENABLE_AUTO_POSITION | ENABLE_INSERT_MODE | ENABLE_EXTENDED_FLAGS);
-        gci.SetInsertMode(IsFlagSet(ulOriginalInputMode, ENABLE_INSERT_MODE));
-        UpdateFlag(gci.Flags, CONSOLE_QUICK_EDIT_MODE, IsFlagSet(ulOriginalInputMode, ENABLE_QUICK_EDIT_MODE));
-        UpdateFlag(gci.Flags, CONSOLE_AUTO_POSITION, IsFlagSet(ulOriginalInputMode, ENABLE_AUTO_POSITION));
+        gci.SetInsertMode(WI_IsFlagSet(ulOriginalInputMode, ENABLE_INSERT_MODE));
+        WI_UpdateFlag(gci.Flags, CONSOLE_QUICK_EDIT_MODE, WI_IsFlagSet(ulOriginalInputMode, ENABLE_QUICK_EDIT_MODE));
+        WI_UpdateFlag(gci.Flags, CONSOLE_AUTO_POSITION, WI_IsFlagSet(ulOriginalInputMode, ENABLE_AUTO_POSITION));
 
         // Set cursor DB to on so we can verify that it turned off when the Insert Mode changes.
         gci.GetActiveOutputBuffer().SetCursorDBMode(true);
@@ -76,10 +76,10 @@ class ApiRoutinesTests
 
         // The expected mode set in the buffer is the mode given minus the flags that are stored in different fields.
         ULONG ulModeExpected = ulNewMode;
-        ClearAllFlags(ulModeExpected, (ENABLE_QUICK_EDIT_MODE | ENABLE_AUTO_POSITION | ENABLE_INSERT_MODE | ENABLE_EXTENDED_FLAGS));
-        bool const fQuickEditExpected = IsFlagSet(ulNewMode, ENABLE_QUICK_EDIT_MODE);
-        bool const fAutoPositionExpected = IsFlagSet(ulNewMode, ENABLE_AUTO_POSITION);
-        bool const fInsertModeExpected = IsFlagSet(ulNewMode, ENABLE_INSERT_MODE);
+        WI_ClearAllFlags(ulModeExpected, (ENABLE_QUICK_EDIT_MODE | ENABLE_AUTO_POSITION | ENABLE_INSERT_MODE | ENABLE_EXTENDED_FLAGS));
+        bool const fQuickEditExpected = WI_IsFlagSet(ulNewMode, ENABLE_QUICK_EDIT_MODE);
+        bool const fAutoPositionExpected = WI_IsFlagSet(ulNewMode, ENABLE_AUTO_POSITION);
+        bool const fInsertModeExpected = WI_IsFlagSet(ulNewMode, ENABLE_INSERT_MODE);
 
         // If the insert mode changed, we expect the cursor to have turned off.
         bool const fCursorDBModeExpected = ((!!_fPrevInsertMode) == fInsertModeExpected);
@@ -90,8 +90,8 @@ class ApiRoutinesTests
         // Now do verifications of final state.
         VERIFY_ARE_EQUAL(hrExpected, hrActual);
         VERIFY_ARE_EQUAL(ulModeExpected, pii->InputMode);
-        VERIFY_ARE_EQUAL(fQuickEditExpected, IsFlagSet(gci.Flags, CONSOLE_QUICK_EDIT_MODE));
-        VERIFY_ARE_EQUAL(fAutoPositionExpected, IsFlagSet(gci.Flags, CONSOLE_AUTO_POSITION));
+        VERIFY_ARE_EQUAL(fQuickEditExpected, WI_IsFlagSet(gci.Flags, CONSOLE_QUICK_EDIT_MODE));
+        VERIFY_ARE_EQUAL(fAutoPositionExpected, WI_IsFlagSet(gci.Flags, CONSOLE_AUTO_POSITION));
         VERIFY_ARE_EQUAL(!!fInsertModeExpected, !!gci.GetInsertMode());
         VERIFY_ARE_EQUAL(fCursorDBModeExpected, gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor().IsDouble());
     }
@@ -148,9 +148,9 @@ class ApiRoutinesTests
     {
         Log::Comment(L"Turn on insert mode with cooked read data.");
         m_state->PrepareReadHandle();
-        auto cleanupReadHandle = wil::ScopeExit([&](){ m_state->CleanupReadHandle(); });
+        auto cleanupReadHandle = wil::scope_exit([&](){ m_state->CleanupReadHandle(); });
         m_state->PrepareCookedReadData();
-        auto cleanupCookedRead = wil::ScopeExit([&](){ m_state->CleanupCookedReadData(); });
+        auto cleanupCookedRead = wil::scope_exit([&](){ m_state->CleanupCookedReadData(); });
 
         PrepVerifySetConsoleInputModeImpl(0);
         Log::Comment(L"Success code should result from setting valid flags.");
@@ -188,8 +188,8 @@ class ApiRoutinesTests
 
         VERIFY_ARE_EQUAL(S_OK, hr);
         VERIFY_ARE_EQUAL(true, !!gci.GetInsertMode());
-        VERIFY_ARE_EQUAL(true, IsFlagSet(gci.Flags, CONSOLE_QUICK_EDIT_MODE));
-        VERIFY_ARE_EQUAL(true, IsFlagSet(gci.Flags, CONSOLE_AUTO_POSITION));
+        VERIFY_ARE_EQUAL(true, WI_IsFlagSet(gci.Flags, CONSOLE_QUICK_EDIT_MODE));
+        VERIFY_ARE_EQUAL(true, WI_IsFlagSet(gci.Flags, CONSOLE_AUTO_POSITION));
     }
 
     TEST_METHOD(ApiSetConsoleInputModeImplPSReadlineScenario)
@@ -313,8 +313,8 @@ class ApiRoutinesTests
 
     static void s_AdjustOutputWait(const bool fShouldBlock)
     {
-        SetFlagIf(ServiceLocator::LocateGlobals().getConsoleInformation().Flags, CONSOLE_SELECTING, fShouldBlock);
-        ClearFlagIf(ServiceLocator::LocateGlobals().getConsoleInformation().Flags, CONSOLE_SELECTING, !fShouldBlock);
+        WI_SetFlagIf(ServiceLocator::LocateGlobals().getConsoleInformation().Flags, CONSOLE_SELECTING, fShouldBlock);
+        WI_ClearFlagIf(ServiceLocator::LocateGlobals().getConsoleInformation().Flags, CONSOLE_SELECTING, !fShouldBlock);
     }
 
     TEST_METHOD(ApiWriteConsoleA)
@@ -339,7 +339,7 @@ class ApiRoutinesTests
         SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer();
 
         gci.LockConsole();
-        auto Unlock = wil::ScopeExit([&] { gci.UnlockConsole(); });
+        auto Unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
 
         // Ensure global state is updated for our codepage.
         gci.OutputCP = dwCodePage;
@@ -429,7 +429,7 @@ class ApiRoutinesTests
         SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer();
 
         gci.LockConsole();
-        auto Unlock = wil::ScopeExit([&] { gci.UnlockConsole(); });
+        auto Unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
 
         PCWSTR pwszTestText = L"Test Text";
         const size_t cchTestText = wcslen(pwszTestText);

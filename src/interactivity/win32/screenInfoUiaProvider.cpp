@@ -341,7 +341,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(_Outptr_result_maybenull_ SAF
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     ApiMsgGetSelection apiMsg;
     gci.LockConsole();
-    auto Unlock = wil::ScopeExit([&]
+    auto Unlock = wil::scope_exit([&]
     {
         gci.UnlockConsole();
     });
@@ -457,7 +457,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(_Outptr_result_maybenull_
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     gci.LockConsole();
-    auto Unlock = wil::ScopeExit([&]
+    auto Unlock = wil::scope_exit([&]
     {
         gci.UnlockConsole();
     });

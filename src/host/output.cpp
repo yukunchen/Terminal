@@ -103,8 +103,8 @@ std::vector<std::vector<OutputCell>> ReadRectFromScreenBuffer(const SCREEN_INFOR
         result.push_back(cells);
     }
 
-    FAIL_FAST_IF_FALSE(result.size() == static_cast<size_t>(viewport.Height()));
-    FAIL_FAST_IF_FALSE(result.at(0).size() == static_cast<size_t>(viewport.Width()));
+    FAIL_FAST_IF(!(result.size() == static_cast<size_t>(viewport.Height())));
+    FAIL_FAST_IF(!(result.at(0).size() == static_cast<size_t>(viewport.Width())));
     return result;
 }
 
@@ -140,7 +140,7 @@ NTSTATUS ReadScreenBuffer(const SCREEN_INFORMATION& screenInfo,
                           _Inout_ PSMALL_RECT psrReadRegion)
 {
     DBGOUTPUT(("ReadScreenBuffer\n"));
-    FAIL_FAST_IF_FALSE(outputCells.empty());
+    FAIL_FAST_IF(!(outputCells.empty()));
 
     // calculate dimensions of caller's buffer.  have to do this calculation before clipping.
     COORD TargetSize;

@@ -67,9 +67,9 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
     _originalCursorPosition{ -1, -1 },
     _beforeDialogCursorPosition{ 0, 0 },
 
-    _echoInput{ IsFlagSet(pInputBuffer->InputMode, ENABLE_ECHO_INPUT) },
-    _lineInput{ IsFlagSet(pInputBuffer->InputMode, ENABLE_LINE_INPUT) },
-    _processedInput{ IsFlagSet(pInputBuffer->InputMode, ENABLE_PROCESSED_INPUT) },
+    _echoInput{ WI_IsFlagSet(pInputBuffer->InputMode, ENABLE_ECHO_INPUT) },
+    _lineInput{ WI_IsFlagSet(pInputBuffer->InputMode, ENABLE_LINE_INPUT) },
+    _processedInput{ WI_IsFlagSet(pInputBuffer->InputMode, ENABLE_PROCESSED_INPUT) },
     _insertMode{ ServiceLocator::LocateGlobals().getConsoleInformation().GetInsertMode() },
     _unicode{ false }
 {
@@ -212,7 +212,7 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
     FAIL_FAST_IF(_pInputReadHandleData->GetReadCount() == 0);
 
     // if ctrl-c or ctrl-break was seen, terminate read.
-    if (IsAnyFlagSet(TerminationReason, (WaitTerminationReason::CtrlC | WaitTerminationReason::CtrlBreak)))
+    if (WI_IsAnyFlagSet(TerminationReason, (WaitTerminationReason::CtrlC | WaitTerminationReason::CtrlBreak)))
     {
         *pReplyStatus = STATUS_ALERTED;
         gci.SetCookedReadData(nullptr);
@@ -220,7 +220,7 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
     }
 
     // See if we were called because the thread that owns this wait block is exiting.
-    if (IsFlagSet(TerminationReason, WaitTerminationReason::ThreadDying))
+    if (WI_IsFlagSet(TerminationReason, WaitTerminationReason::ThreadDying))
     {
         *pReplyStatus = STATUS_THREAD_IS_TERMINATING;
         gci.SetCookedReadData(nullptr);
@@ -231,7 +231,7 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
     // so, we decrement the read count. If it goes to zero, we wake up the
     // close thread. Otherwise, we wake up any other thread waiting for data.
 
-    if (IsFlagSet(TerminationReason, WaitTerminationReason::HandleClosing))
+    if (WI_IsFlagSet(TerminationReason, WaitTerminationReason::HandleClosing))
     {
         *pReplyStatus = STATUS_ALERTED;
         gci.SetCookedReadData(nullptr);
@@ -245,7 +245,7 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
     // this routine should be called by a thread owning the same
     // lock on the same console as we're reading from.
 
-    FAIL_FAST_IF_FALSE(gci.IsConsoleLocked());
+    FAIL_FAST_IF(!(gci.IsConsoleLocked()));
 
     // MSFT:13994975 This is REALLY weird.
     // When we're doing cooked reading for popups, we come through this method
@@ -431,7 +431,7 @@ HRESULT COOKED_READ_DATA::Read(const bool isUnicode,
                 {
                     // add to command line recall list if we have a history list.
                     LOG_IF_FAILED(_commandHistory->Add({ _BackupLimit, StringLength / sizeof(wchar_t) },
-                                                       IsFlagSet(gci.Flags, CONSOLE_HISTORY_NODUP)));
+                                                       WI_IsFlagSet(gci.Flags, CONSOLE_HISTORY_NODUP)));
                 }
 
                 // check for alias
@@ -471,7 +471,7 @@ HRESULT COOKED_READ_DATA::Read(const bool isUnicode,
 #pragma prefast(suppress:__WARNING_BUFFER_OVERFLOW, "LineCount > 1 means there's a UNICODE_LINEFEED")
                 for (Tmp = _BackupLimit; *Tmp != UNICODE_LINEFEED; Tmp++)
                 {
-                    FAIL_FAST_IF_FALSE(Tmp < (_BackupLimit + _BytesRead));
+                    FAIL_FAST_IF(!(Tmp < (_BackupLimit + _BytesRead)));
                 }
 
                 numBytes = (ULONG)(Tmp - _BackupLimit + 1) * sizeof(*Tmp);

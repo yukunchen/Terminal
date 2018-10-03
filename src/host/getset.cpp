@@ -39,23 +39,23 @@ void ApiRoutines::GetConsoleInputModeImpl(_In_ InputBuffer* const pContext, _Out
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleMode);
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     *pMode = pContext->InputMode;
 
-    if (IsFlagSet(gci.Flags, CONSOLE_USE_PRIVATE_FLAGS))
+    if (WI_IsFlagSet(gci.Flags, CONSOLE_USE_PRIVATE_FLAGS))
     {
-        SetFlag(*pMode, ENABLE_EXTENDED_FLAGS);
-        SetFlagIf(*pMode, ENABLE_INSERT_MODE, gci.GetInsertMode());
-        SetFlagIf(*pMode, ENABLE_QUICK_EDIT_MODE, IsFlagSet(gci.Flags, CONSOLE_QUICK_EDIT_MODE));
-        SetFlagIf(*pMode, ENABLE_AUTO_POSITION, IsFlagSet(gci.Flags, CONSOLE_AUTO_POSITION));
+        WI_SetFlag(*pMode, ENABLE_EXTENDED_FLAGS);
+        WI_SetFlagIf(*pMode, ENABLE_INSERT_MODE, gci.GetInsertMode());
+        WI_SetFlagIf(*pMode, ENABLE_QUICK_EDIT_MODE, WI_IsFlagSet(gci.Flags, CONSOLE_QUICK_EDIT_MODE));
+        WI_SetFlagIf(*pMode, ENABLE_AUTO_POSITION, WI_IsFlagSet(gci.Flags, CONSOLE_AUTO_POSITION));
     }
 }
 
 void ApiRoutines::GetConsoleOutputModeImpl(_In_ const SCREEN_INFORMATION& Context, _Out_ ULONG* const pMode)
 {
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     *pMode = Context.GetActiveBuffer().OutputMode;
 }
@@ -64,7 +64,7 @@ void ApiRoutines::GetConsoleOutputModeImpl(_In_ const SCREEN_INFORMATION& Contex
 HRESULT ApiRoutines::GetNumberOfConsoleInputEventsImpl(_In_ InputBuffer* const pContext, _Out_ ULONG* const pEvents)
 {
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     size_t readyEventCount = pContext->GetNumberOfReadyEvents();
     RETURN_IF_FAILED(SizeTToULong(readyEventCount, pEvents));
@@ -76,7 +76,7 @@ void ApiRoutines::GetConsoleScreenBufferInfoExImpl(_In_ const SCREEN_INFORMATION
                                                    _Out_ CONSOLE_SCREEN_BUFFER_INFOEX* const pScreenBufferInfoEx)
 {
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     DoSrvGetConsoleScreenBufferInfo(Context.GetActiveBuffer(), pScreenBufferInfoEx);
 }
@@ -101,7 +101,7 @@ void ApiRoutines::GetConsoleCursorInfoImpl(_In_ const SCREEN_INFORMATION& Contex
                                            _Out_ bool* const pIsVisible)
 {
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     DoSrvGetConsoleCursorInfo(Context.GetActiveBuffer(), pCursorSize, pIsVisible);
 }
@@ -117,14 +117,14 @@ void DoSrvGetConsoleCursorInfo(_In_ const SCREEN_INFORMATION& screenInfo,
 void ApiRoutines::GetConsoleSelectionInfoImpl(_Out_ CONSOLE_SELECTION_INFO* const pConsoleSelectionInfo)
 {
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     const Selection* const pSelection = &Selection::Instance();
     if (pSelection->IsInSelectingState())
     {
         pConsoleSelectionInfo->dwFlags = pSelection->GetPublicSelectionFlags();
 
-        SetFlag(pConsoleSelectionInfo->dwFlags, CONSOLE_SELECTION_IN_PROGRESS);
+        WI_SetFlag(pConsoleSelectionInfo->dwFlags, CONSOLE_SELECTION_IN_PROGRESS);
 
         pConsoleSelectionInfo->dwSelectionAnchor = pSelection->GetSelectionAnchor();
         pConsoleSelectionInfo->srSelection = pSelection->GetSelectionRectangle();
@@ -138,7 +138,7 @@ void ApiRoutines::GetConsoleSelectionInfoImpl(_Out_ CONSOLE_SELECTION_INFO* cons
 void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(_Out_ ULONG* const pButtons)
 {
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     *pButtons = ServiceLocator::LocateSystemConfigurationProvider()->GetNumberOfMouseButtons();
 }
@@ -149,7 +149,7 @@ HRESULT ApiRoutines::GetConsoleFontSizeImpl(_In_ const SCREEN_INFORMATION& Conte
                                             _Out_ COORD* const pFontSize)
 {
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     if (FontIndex == 0)
     {
@@ -171,7 +171,7 @@ HRESULT ApiRoutines::GetCurrentConsoleFontExImpl(const SCREEN_INFORMATION& Conte
                                                  _Out_ CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx)
 {
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     const SCREEN_INFORMATION& activeScreenInfo = Context.GetActiveBuffer();
 
@@ -204,7 +204,7 @@ HRESULT ApiRoutines::SetCurrentConsoleFontExImpl(SCREEN_INFORMATION& Context,
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     SCREEN_INFORMATION& activeScreenInfo = Context.GetActiveBuffer();
 
@@ -238,17 +238,17 @@ HRESULT ApiRoutines::SetConsoleInputModeImpl(_In_ InputBuffer* const pContext, c
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    if (IsAnyFlagSet(Mode, PRIVATE_MODES))
+    if (WI_IsAnyFlagSet(Mode, PRIVATE_MODES))
     {
-        SetFlag(gci.Flags, CONSOLE_USE_PRIVATE_FLAGS);
+        WI_SetFlag(gci.Flags, CONSOLE_USE_PRIVATE_FLAGS);
 
-        UpdateFlag(gci.Flags, CONSOLE_QUICK_EDIT_MODE, IsFlagSet(Mode, ENABLE_QUICK_EDIT_MODE));
-        UpdateFlag(gci.Flags, CONSOLE_AUTO_POSITION, IsFlagSet(Mode, ENABLE_AUTO_POSITION));
+        WI_UpdateFlag(gci.Flags, CONSOLE_QUICK_EDIT_MODE, WI_IsFlagSet(Mode, ENABLE_QUICK_EDIT_MODE));
+        WI_UpdateFlag(gci.Flags, CONSOLE_AUTO_POSITION, WI_IsFlagSet(Mode, ENABLE_AUTO_POSITION));
 
         const bool PreviousInsertMode = gci.GetInsertMode();
-        gci.SetInsertMode(IsFlagSet(Mode, ENABLE_INSERT_MODE));
+        gci.SetInsertMode(WI_IsFlagSet(Mode, ENABLE_INSERT_MODE));
         if (gci.GetInsertMode() != PreviousInsertMode)
         {
             gci.GetActiveOutputBuffer().SetCursorDBMode(false);
@@ -260,11 +260,11 @@ HRESULT ApiRoutines::SetConsoleInputModeImpl(_In_ InputBuffer* const pContext, c
     }
     else
     {
-        ClearFlag(gci.Flags, CONSOLE_USE_PRIVATE_FLAGS);
+        WI_ClearFlag(gci.Flags, CONSOLE_USE_PRIVATE_FLAGS);
     }
 
     pContext->InputMode = Mode;
-    ClearAllFlags(pContext->InputMode, PRIVATE_MODES);
+    WI_ClearAllFlags(pContext->InputMode, PRIVATE_MODES);
 
     // NOTE: For compatibility reasons, we need to set the modes and then return the error codes, not the other way around
     //       as might be expected.
@@ -275,10 +275,10 @@ HRESULT ApiRoutines::SetConsoleInputModeImpl(_In_ InputBuffer* const pContext, c
     //       relies on it to properly receive the ^C printout and make a new line when the user presses Ctrl+C.
     {
         // Flags we don't understand are invalid.
-        RETURN_HR_IF(E_INVALIDARG, IsAnyFlagSet(Mode, ~(INPUT_MODES | PRIVATE_MODES)));
+        RETURN_HR_IF(E_INVALIDARG, WI_IsAnyFlagSet(Mode, ~(INPUT_MODES | PRIVATE_MODES)));
 
         // ECHO on with LINE off is invalid.
-        RETURN_HR_IF(E_INVALIDARG, IsFlagSet(Mode, ENABLE_ECHO_INPUT) && IsFlagClear(Mode, ENABLE_LINE_INPUT));
+        RETURN_HR_IF(E_INVALIDARG, WI_IsFlagSet(Mode, ENABLE_ECHO_INPUT) && WI_IsFlagClear(Mode, ENABLE_LINE_INPUT));
     }
 
     return S_OK;
@@ -289,10 +289,10 @@ HRESULT ApiRoutines::SetConsoleOutputModeImpl(SCREEN_INFORMATION& Context, const
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     // Flags we don't understand are invalid.
-    RETURN_HR_IF(E_INVALIDARG, IsAnyFlagSet(Mode, ~OUTPUT_MODES));
+    RETURN_HR_IF(E_INVALIDARG, WI_IsAnyFlagSet(Mode, ~OUTPUT_MODES));
 
     SCREEN_INFORMATION& screenInfo = Context.GetActiveBuffer();
     const DWORD dwOldMode = screenInfo.OutputMode;
@@ -301,26 +301,26 @@ HRESULT ApiRoutines::SetConsoleOutputModeImpl(SCREEN_INFORMATION& Context, const
     screenInfo.OutputMode = dwNewMode;
 
     // if we're moving from VT on->off
-    if (IsFlagClear(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) && IsFlagSet(dwOldMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
+    if (WI_IsFlagClear(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) && WI_IsFlagSet(dwOldMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
     {
         // jiggle the handle
         screenInfo.GetStateMachine().ResetState();
         screenInfo.ClearTabStops();
     }
     // if we're moving from VT off->on
-    else if (IsFlagSet(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) &&
-             IsFlagClear(dwOldMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
+    else if (WI_IsFlagSet(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) &&
+             WI_IsFlagClear(dwOldMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
     {
         screenInfo.SetDefaultVtTabStops();
     }
 
-    gci.SetVirtTermLevel(IsFlagSet(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) ? 1 : 0);
-    gci.SetAutomaticReturnOnNewline(IsFlagSet(screenInfo.OutputMode, DISABLE_NEWLINE_AUTO_RETURN) ? false : true);
-    gci.SetGridRenderingAllowedWorldwide(IsFlagSet(screenInfo.OutputMode, ENABLE_LVB_GRID_WORLDWIDE));
+    gci.SetVirtTermLevel(WI_IsFlagSet(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) ? 1 : 0);
+    gci.SetAutomaticReturnOnNewline(WI_IsFlagSet(screenInfo.OutputMode, DISABLE_NEWLINE_AUTO_RETURN) ? false : true);
+    gci.SetGridRenderingAllowedWorldwide(WI_IsFlagSet(screenInfo.OutputMode, ENABLE_LVB_GRID_WORLDWIDE));
 
     // if we changed rendering modes then redraw the output buffer
-    if (IsFlagSet(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) != IsFlagSet(dwOldMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) ||
-        IsFlagSet(dwNewMode, ENABLE_LVB_GRID_WORLDWIDE) != IsFlagSet(dwOldMode, ENABLE_LVB_GRID_WORLDWIDE))
+    if (WI_IsFlagSet(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) != WI_IsFlagSet(dwOldMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) ||
+        WI_IsFlagSet(dwNewMode, ENABLE_LVB_GRID_WORLDWIDE) != WI_IsFlagSet(dwOldMode, ENABLE_LVB_GRID_WORLDWIDE))
     {
         auto* pRender = ServiceLocator::LocateGlobals().pRender;
         if (pRender)
@@ -335,7 +335,7 @@ HRESULT ApiRoutines::SetConsoleOutputModeImpl(SCREEN_INFORMATION& Context, const
 void ApiRoutines::SetConsoleActiveScreenBufferImpl(SCREEN_INFORMATION& newContext)
 {
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     SetActiveScreenBuffer(newContext.GetActiveBuffer());
 }
@@ -343,7 +343,7 @@ void ApiRoutines::SetConsoleActiveScreenBufferImpl(SCREEN_INFORMATION& newContex
 void ApiRoutines::FlushConsoleInputBuffer(_In_ InputBuffer* const pContext)
 {
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     pContext->Flush();
 }
@@ -352,7 +352,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& Cont
                                                   _Out_ COORD* const pSize)
 {
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     const SCREEN_INFORMATION& screenInfo = Context.GetActiveBuffer();
 
@@ -364,7 +364,7 @@ HRESULT ApiRoutines::SetConsoleScreenBufferSizeImpl(SCREEN_INFORMATION& context,
                                                     const COORD* const pSize)
 {
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     SCREEN_INFORMATION& screenInfo = context.GetActiveBuffer();
 
@@ -403,7 +403,7 @@ HRESULT ApiRoutines::SetConsoleScreenBufferInfoExImpl(SCREEN_INFORMATION& Contex
                                 pScreenBufferInfoEx->dwSize.Y == SHRT_MAX));
 
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     DoSrvSetScreenBufferInfo(Context.GetActiveBuffer(), pScreenBufferInfoEx);
     return S_OK;
@@ -472,7 +472,7 @@ HRESULT ApiRoutines::SetConsoleCursorPositionImpl(SCREEN_INFORMATION& Context,
                                                   const COORD* const pCursorPosition)
 {
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     return DoSrvSetConsoleCursorPosition(Context.GetActiveBuffer(), pCursorPosition);
 }
@@ -531,7 +531,7 @@ HRESULT ApiRoutines::SetConsoleCursorInfoImpl(SCREEN_INFORMATION& Context,
                                               const bool IsVisible)
 {
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     return DoSrvSetConsoleCursorInfo(Context.GetActiveBuffer(), CursorSize, IsVisible);
 }
@@ -558,7 +558,7 @@ HRESULT ApiRoutines::SetConsoleWindowInfoImpl(SCREEN_INFORMATION& Context,
                                               const SMALL_RECT* const pWindowRectangle)
 {
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     return DoSrvSetConsoleWindowInfo(Context.GetActiveBuffer(), IsAbsoluteRectangle, pWindowRectangle);
 }
@@ -642,7 +642,7 @@ HRESULT ApiRoutines::ScrollConsoleScreenBufferWImpl(SCREEN_INFORMATION& Context,
                                                     const WORD attrFill)
 {
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     return DoSrvScrollConsoleScreenBufferW(Context,
                                            pSourceRectangle,
@@ -733,7 +733,7 @@ HRESULT ApiRoutines::SetConsoleTextAttributeImpl(SCREEN_INFORMATION& Context,
                                                  const WORD Attribute)
 {
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     return DoSrvSetConsoleTextAttribute(Context, Attribute);
 }
@@ -741,7 +741,7 @@ HRESULT ApiRoutines::SetConsoleTextAttributeImpl(SCREEN_INFORMATION& Context,
 [[nodiscard]]
 HRESULT DoSrvSetConsoleTextAttribute(SCREEN_INFORMATION& screenInfo, const WORD Attribute)
 {
-    RETURN_HR_IF(E_INVALIDARG, IsAnyFlagSet(Attribute, ~VALID_TEXT_ATTRIBUTES));
+    RETURN_HR_IF(E_INVALIDARG, WI_IsAnyFlagSet(Attribute, ~VALID_TEXT_ATTRIBUTES));
 
     SetScreenColors(screenInfo, Attribute, screenInfo.GetPopupAttributes()->GetLegacyAttributes(), FALSE);
     return S_OK;
@@ -762,15 +762,15 @@ void DoSrvPrivateSetLegacyAttributes(SCREEN_INFORMATION& screenInfo,
     WORD wNewLegacy = NewAttributes.GetLegacyAttributes();
     if (fForeground)
     {
-        UpdateFlagsInMask(wNewLegacy, FG_ATTRS, Attribute);
+        WI_UpdateFlagsInMask(wNewLegacy, FG_ATTRS, Attribute);
     }
     if (fBackground)
     {
-        UpdateFlagsInMask(wNewLegacy, BG_ATTRS, Attribute);
+        WI_UpdateFlagsInMask(wNewLegacy, BG_ATTRS, Attribute);
     }
     if (fMeta)
     {
-        UpdateFlagsInMask(wNewLegacy, META_ATTRS, Attribute);
+        WI_UpdateFlagsInMask(wNewLegacy, META_ATTRS, Attribute);
     }
     NewAttributes.SetFromLegacy(wNewLegacy);
 
@@ -781,8 +781,8 @@ void DoSrvPrivateSetLegacyAttributes(SCREEN_INFORMATION& screenInfo,
         // If the old attributes were "reversed", and the new ones aren't,
         //  then flip the colors back.
         bool resetReverse = fMeta &&
-            (IsFlagClear(Attribute, COMMON_LVB_REVERSE_VIDEO)) &&
-            (IsFlagSet(OldAttributes.GetLegacyAttributes(), COMMON_LVB_REVERSE_VIDEO));
+            (WI_IsFlagClear(Attribute, COMMON_LVB_REVERSE_VIDEO)) &&
+            (WI_IsFlagSet(OldAttributes.GetLegacyAttributes(), COMMON_LVB_REVERSE_VIDEO));
         if (resetReverse)
         {
             NewAttributes.SetForeground(OldAttributes.CalculateRgbBackground());
@@ -866,10 +866,10 @@ HRESULT ApiRoutines::SetConsoleOutputCodePageImpl(const ULONG CodePage)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     // Return if it's not known as a valid codepage ID.
-    RETURN_HR_IF_FALSE(E_INVALIDARG, IsValidCodePage(CodePage));
+    RETURN_HR_IF(E_INVALIDARG, !(IsValidCodePage(CodePage)));
 
     // Do nothing if no change.
     if (gci.OutputCP != CodePage)
@@ -888,10 +888,10 @@ HRESULT ApiRoutines::SetConsoleInputCodePageImpl(const ULONG CodePage)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     // Return if it's not known as a valid codepage ID.
-    RETURN_HR_IF_FALSE(E_INVALIDARG, IsValidCodePage(CodePage));
+    RETURN_HR_IF(E_INVALIDARG, !(IsValidCodePage(CodePage)));
 
     // Do nothing if no change.
     if (gci.CP != CodePage)
@@ -909,7 +909,7 @@ void ApiRoutines::GetConsoleInputCodePageImpl(_Out_ ULONG* const pCodePage)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     *pCodePage = gci.CP;
 }
@@ -923,7 +923,7 @@ void DoSrvGetConsoleOutputCodePage(_Out_ unsigned int* const pCodePage)
 void ApiRoutines::GetConsoleOutputCodePageImpl(_Out_ ULONG* const pCodePage)
 {
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
     unsigned int uiCodepage;
     DoSrvGetConsoleOutputCodePage(&uiCodepage);
     *pCodePage = uiCodepage;
@@ -932,7 +932,7 @@ void ApiRoutines::GetConsoleOutputCodePageImpl(_Out_ ULONG* const pCodePage)
 void ApiRoutines::GetConsoleWindowImpl(_Out_ HWND* const pHwnd)
 {
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
     const IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (pWindow != nullptr)
@@ -957,11 +957,11 @@ void ApiRoutines::GetConsoleHistoryInfoImpl(_Out_ CONSOLE_HISTORY_INFO* const pC
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     pConsoleHistoryInfo->HistoryBufferSize = gci.GetHistoryBufferSize();
     pConsoleHistoryInfo->NumberOfHistoryBuffers = gci.GetNumberOfHistoryBuffers();
-    SetFlagIf(pConsoleHistoryInfo->dwFlags, HISTORY_NO_DUP_FLAG, IsFlagSet(gci.Flags, CONSOLE_HISTORY_NODUP));
+    WI_SetFlagIf(pConsoleHistoryInfo->dwFlags, HISTORY_NO_DUP_FLAG, WI_IsFlagSet(gci.Flags, CONSOLE_HISTORY_NODUP));
 }
 
 HRESULT ApiRoutines::SetConsoleHistoryInfoImpl(const CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo)
@@ -969,15 +969,15 @@ HRESULT ApiRoutines::SetConsoleHistoryInfoImpl(const CONSOLE_HISTORY_INFO* const
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     RETURN_HR_IF(E_INVALIDARG, pConsoleHistoryInfo->HistoryBufferSize > SHORT_MAX);
     RETURN_HR_IF(E_INVALIDARG, pConsoleHistoryInfo->NumberOfHistoryBuffers > SHORT_MAX);
-    RETURN_HR_IF(E_INVALIDARG, IsAnyFlagSet(pConsoleHistoryInfo->dwFlags, ~CHI_VALID_FLAGS));
+    RETURN_HR_IF(E_INVALIDARG, WI_IsAnyFlagSet(pConsoleHistoryInfo->dwFlags, ~CHI_VALID_FLAGS));
 
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     CommandHistory::s_ResizeAll(pConsoleHistoryInfo->HistoryBufferSize);
     gci.SetNumberOfHistoryBuffers(pConsoleHistoryInfo->NumberOfHistoryBuffers);
 
-    UpdateFlag(gci.Flags, CONSOLE_HISTORY_NODUP, IsFlagSet(pConsoleHistoryInfo->dwFlags, HISTORY_NO_DUP_FLAG));
+    WI_UpdateFlag(gci.Flags, CONSOLE_HISTORY_NODUP, WI_IsFlagSet(pConsoleHistoryInfo->dwFlags, HISTORY_NO_DUP_FLAG));
 
     return S_OK;
 }
@@ -986,7 +986,7 @@ HRESULT ApiRoutines::SetConsoleHistoryInfoImpl(const CONSOLE_HISTORY_INFO* const
 void ApiRoutines::GetConsoleDisplayModeImpl(_Out_ ULONG* const pFlags)
 {
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     // Initialize flags portion of structure
     *pFlags = 0;
@@ -994,7 +994,7 @@ void ApiRoutines::GetConsoleDisplayModeImpl(_Out_ ULONG* const pFlags)
     IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
     if (pWindow != nullptr && pWindow->IsInFullscreen())
     {
-        SetFlag(*pFlags, CONSOLE_FULLSCREEN_MODE);
+        WI_SetFlag(*pFlags, CONSOLE_FULLSCREEN_MODE);
     }
 }
 
@@ -1023,23 +1023,23 @@ HRESULT ApiRoutines::SetConsoleDisplayModeImpl(SCREEN_INFORMATION& Context,
     // we'll release early.
     LockConsole();
     {
-        auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
         SCREEN_INFORMATION&  screenInfo = Context.GetActiveBuffer();
 
         *pNewScreenBufferSize = screenInfo.GetScreenBufferSize();
-        RETURN_HR_IF_FALSE(E_INVALIDARG, screenInfo.IsActiveScreenBuffer());
+        RETURN_HR_IF(E_INVALIDARG, !(screenInfo.IsActiveScreenBuffer()));
     }
 
     IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
-    if (IsFlagSet(Flags, CONSOLE_FULLSCREEN_MODE))
+    if (WI_IsFlagSet(Flags, CONSOLE_FULLSCREEN_MODE))
     {
         if (pWindow != nullptr)
         {
             pWindow->SetIsFullscreen(true);
         }
     }
-    else if (IsFlagSet(Flags, CONSOLE_WINDOWED_MODE))
+    else if (WI_IsFlagSet(Flags, CONSOLE_WINDOWED_MODE))
     {
         if (pWindow != nullptr)
         {
@@ -1295,7 +1295,7 @@ NTSTATUS DoPrivateTabHelper(const SHORT sNumTabs, _In_ bool fForward)
     SCREEN_INFORMATION& _screenBuffer = gci.GetActiveOutputBuffer();
 
     NTSTATUS Status = STATUS_SUCCESS;
-    FAIL_FAST_IF_FALSE(sNumTabs >= 0);
+    FAIL_FAST_IF(!(sNumTabs >= 0));
     for (SHORT sTabsExecuted = 0; sTabsExecuted < sNumTabs && NT_SUCCESS(Status); sTabsExecuted++)
     {
         const COORD cursorPos = _screenBuffer.GetTextBuffer().GetCursor().GetPosition();
@@ -1645,7 +1645,7 @@ HRESULT ApiRoutines::GetConsoleTitleAImpl(_Out_writes_to_(cchTitleBufferSize, *p
                                           _Out_ size_t* const pcchTitleBufferNeeded)
 {
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     return GetConsoleTitleAImplHelper(psTitleBuffer,
                                       cchTitleBufferSize,
@@ -1660,7 +1660,7 @@ void ApiRoutines::GetConsoleTitleWImpl(_Out_writes_to_(cchTitleBufferSize, *pcch
                                           _Out_ size_t* const pcchTitleBufferNeeded)
 {
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     GetConsoleTitleWImplHelper(pwsTitleBuffer,
                                cchTitleBufferSize,
@@ -1676,7 +1676,7 @@ HRESULT ApiRoutines::GetConsoleOriginalTitleAImpl(_Out_writes_to_(cchTitleBuffer
                                                   _Out_ size_t* const pcchTitleBufferNeeded)
 {
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     return GetConsoleTitleAImplHelper(psTitleBuffer,
                                       cchTitleBufferSize,
@@ -1691,7 +1691,7 @@ void ApiRoutines::GetConsoleOriginalTitleWImpl(_Out_writes_to_(cchTitleBufferSiz
                                                   _Out_ size_t* const pcchTitleBufferNeeded)
 {
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     GetConsoleTitleWImplHelper(pwsTitleBuffer,
                                cchTitleBufferSize,
@@ -1721,7 +1721,7 @@ HRESULT ApiRoutines::SetConsoleTitleWImpl(_In_reads_or_z_(cchTitleBufferSize) co
                                           const size_t cchTitleBufferSize)
 {
     LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     return DoSrvSetConsoleTitleW(pwsTitleBuffer,
                                  cchTitleBufferSize);
@@ -1772,7 +1772,7 @@ HRESULT DoSrvSetConsoleTitleW(_In_reads_or_z_(cchBuffer) const wchar_t* const pw
 NTSTATUS DoSrvPrivateSuppressResizeRepaint()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    FAIL_FAST_IF_FALSE(gci.IsInVtIoMode());
+    FAIL_FAST_IF(!(gci.IsInVtIoMode()));
     return NTSTATUS_FROM_HRESULT(gci.GetVtIo()->SuppressResizeRepaint());
 }
 

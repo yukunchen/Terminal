@@ -258,10 +258,10 @@ HRESULT VtEngine::_SetGraphicsRendition16Color(const WORD wAttr,
     //      terminal has an accurate representation of our buffer.
     const int vtIndex = 30
                         + (fIsForeground? 0 : 10)
-                        + ((IsFlagSet(wAttr, FOREGROUND_INTENSITY)) ? 60 : 0)
-                        + (IsFlagSet(wAttr, FOREGROUND_RED) ? 1 : 0)
-                        + (IsFlagSet(wAttr, FOREGROUND_GREEN) ? 2 : 0)
-                        + (IsFlagSet(wAttr, FOREGROUND_BLUE) ? 4 : 0);
+                        + ((WI_IsFlagSet(wAttr, FOREGROUND_INTENSITY)) ? 60 : 0)
+                        + (WI_IsFlagSet(wAttr, FOREGROUND_RED) ? 1 : 0)
+                        + (WI_IsFlagSet(wAttr, FOREGROUND_GREEN) ? 2 : 0)
+                        + (WI_IsFlagSet(wAttr, FOREGROUND_BLUE) ? 4 : 0);
 
     return _WriteFormattedString(&fmt, vtIndex);
 }

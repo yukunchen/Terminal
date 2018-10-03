@@ -96,16 +96,16 @@ bool RAW_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
     bool fSkipFinally = false;
 
     // If a ctrl-c is seen, don't terminate read. If ctrl-break is seen, terminate read.
-    if (IsFlagSet(TerminationReason, WaitTerminationReason::CtrlC))
+    if (WI_IsFlagSet(TerminationReason, WaitTerminationReason::CtrlC))
     {
         return false;
     }
-    else if (IsFlagSet(TerminationReason, WaitTerminationReason::CtrlBreak))
+    else if (WI_IsFlagSet(TerminationReason, WaitTerminationReason::CtrlBreak))
     {
         *pReplyStatus = STATUS_ALERTED;
     }
     // See if we were called because the thread that owns this wait block is exiting.
-    else if (IsFlagSet(TerminationReason, WaitTerminationReason::ThreadDying))
+    else if (WI_IsFlagSet(TerminationReason, WaitTerminationReason::ThreadDying))
     {
         *pReplyStatus = STATUS_THREAD_IS_TERMINATING;
     }
@@ -113,7 +113,7 @@ bool RAW_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
     // closed. If so, we decrement the read count. If it goes to zero,
     // we wake up the close thread. Otherwise, we wake up any other
     // thread waiting for data.
-    else if (IsFlagSet(TerminationReason, WaitTerminationReason::HandleClosing))
+    else if (WI_IsFlagSet(TerminationReason, WaitTerminationReason::HandleClosing))
     {
         *pReplyStatus = STATUS_ALERTED;
     }

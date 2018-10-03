@@ -558,7 +558,7 @@ HRESULT DxEngine::PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept
 [[nodiscard]]
 HRESULT DxEngine::StartPaint() noexcept
 {
-    RETURN_IF_HANDLE_INVALID(_hwndTarget);
+    RETURN_HR_IF(E_HANDLE, _hwndTarget == INVALID_HANDLE_VALUE);
     RETURN_HR_IF(E_NOT_VALID_STATE, _isPainting); // invalid to start a paint while painting.
 
     if (_isEnabled) {
@@ -807,7 +807,7 @@ HRESULT DxEngine::PaintBufferGridLines(GridLines const lines,
                                        COORD const coordTarget) noexcept
 {
     const auto existingColor = _d2dBrushForeground->GetColor();
-    const auto restoreBrushOnExit = wil::ScopeExit([&] {_d2dBrushForeground->SetColor(existingColor); });
+    const auto restoreBrushOnExit = wil::scope_exit([&] {_d2dBrushForeground->SetColor(existingColor); });
 
     _d2dBrushForeground->SetColor(D2D1::ColorF(color));
 

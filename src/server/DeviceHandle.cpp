@@ -100,7 +100,7 @@ DeviceHandle::_CreateHandle(
 
     if (Inheritable)
     {
-        SetFlag(Flags, OBJ_INHERIT);
+        WI_SetFlag(Flags, OBJ_INHERIT);
     }
 
     UNICODE_STRING Name;

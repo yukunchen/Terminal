@@ -83,7 +83,7 @@ const bool RenderData::IsGridLineDrawingAllowed()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // If virtual terminal output is set, grid line drawing is a must. It is always allowed.
-    if (IsFlagSet(gci.GetActiveOutputBuffer().OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
+    if (WI_IsFlagSet(gci.GetActiveOutputBuffer().OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
     {
         return true;
     }

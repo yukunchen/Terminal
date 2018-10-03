@@ -34,7 +34,7 @@ PtySignalInputThread::PtySignalInputThread(_In_ wil::unique_hfile hPipe) :
     _pConApi{ std::make_unique<ConhostInternalGetSet>(ServiceLocator::LocateGlobals().getConsoleInformation()) },
     _dwThreadId{ 0 }
 {
-    THROW_IF_HANDLE_INVALID(_hFile.get());
+    THROW_HR_IF(E_HANDLE, _hFile.get() == INVALID_HANDLE_VALUE);
     THROW_IF_NULL_ALLOC(_pConApi.get());
 }
 
@@ -69,7 +69,7 @@ HRESULT PtySignalInputThread::_InputThread()
             _GetData(&resizeMsg, sizeof(resizeMsg));
 
             LockConsole();
-            auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+            auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
             if (DispatchCommon::s_ResizeWindow(*_pConApi, resizeMsg.sx, resizeMsg.sy))
             {
@@ -132,7 +132,7 @@ bool PtySignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pBu
 [[nodiscard]]
 HRESULT PtySignalInputThread::Start()
 {
-    RETURN_IF_HANDLE_INVALID(_hFile.get());
+    RETURN_LAST_ERROR_IF(!_hFile);
 
     HANDLE hThread = nullptr;
     // 0 is the right value, https://blogs.msdn.microsoft.com/oldnewthing/20040223-00/?p=40503
@@ -145,7 +145,7 @@ HRESULT PtySignalInputThread::Start()
                            0,
                            &dwThreadId);
 
-    RETURN_IF_HANDLE_INVALID(hThread);
+    RETURN_LAST_ERROR_IF(hThread == INVALID_HANDLE_VALUE);
     _hThread.reset(hThread);
     _dwThreadId = dwThreadId;
 

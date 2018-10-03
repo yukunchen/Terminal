@@ -571,15 +571,15 @@ short MouseInput::s_EncodeDefaultCoordinate(const short sCoordinateValue)
 unsigned int MouseInput::s_GetPressedButton()
 {
     unsigned int uiButton = WM_LBUTTONUP; // Will be treated as a release, or no button pressed.
-    if (IsFlagSet(GetKeyState(VK_LBUTTON), KEY_PRESSED))
+    if (WI_IsFlagSet(GetKeyState(VK_LBUTTON), KEY_PRESSED))
     {
         uiButton = WM_LBUTTONDOWN;
     }
-    else if (IsFlagSet(GetKeyState(VK_MBUTTON), KEY_PRESSED))
+    else if (WI_IsFlagSet(GetKeyState(VK_MBUTTON), KEY_PRESSED))
     {
         uiButton = WM_MBUTTONDOWN;
     }
-    else if (IsFlagSet(GetKeyState(VK_RBUTTON), KEY_PRESSED))
+    else if (WI_IsFlagSet(GetKeyState(VK_RBUTTON), KEY_PRESSED))
     {
         uiButton = WM_RBUTTONDOWN;
     }

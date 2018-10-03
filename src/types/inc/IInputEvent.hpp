@@ -13,7 +13,6 @@ Author:
 
 #pragma once
 
-#define WIL_SUPPORT_BITOPERATION_PASCAL_NAMES
 #include <wil\common.h>
 #include <wil\resource.h>
 
@@ -164,28 +163,28 @@ public:
 
     constexpr bool IsShiftPressed() const noexcept
     {
-        return IsFlagSet(_activeModifierKeys, SHIFT_PRESSED);
+        return WI_IsFlagSet(_activeModifierKeys, SHIFT_PRESSED);
     }
 
     constexpr bool IsAltPressed() const noexcept
     {
-        return IsAnyFlagSet(_activeModifierKeys, ALT_PRESSED);
+        return WI_IsAnyFlagSet(_activeModifierKeys, ALT_PRESSED);
     }
 
     constexpr bool IsCtrlPressed() const noexcept
     {
-        return IsAnyFlagSet(_activeModifierKeys, CTRL_PRESSED);
+        return WI_IsAnyFlagSet(_activeModifierKeys, CTRL_PRESSED);
     }
 
     constexpr bool IsAltGrPressed() const noexcept
     {
-        return IsFlagSet(_activeModifierKeys, LEFT_CTRL_PRESSED) &&
-               IsFlagSet(_activeModifierKeys, RIGHT_ALT_PRESSED);
+        return WI_IsFlagSet(_activeModifierKeys, LEFT_CTRL_PRESSED) &&
+               WI_IsFlagSet(_activeModifierKeys, RIGHT_ALT_PRESSED);
     }
 
     constexpr bool IsModifierPressed() const noexcept
     {
-        return IsAnyFlagSet(_activeModifierKeys, MOD_PRESSED);
+        return WI_IsAnyFlagSet(_activeModifierKeys, MOD_PRESSED);
     }
 
     constexpr bool IsCursorKey() const noexcept
@@ -196,7 +195,7 @@ public:
 
     constexpr bool IsAltNumpadSet() const noexcept
     {
-        return IsFlagSet(_activeModifierKeys, ALTNUMPAD_BIT);
+        return WI_IsFlagSet(_activeModifierKeys, ALTNUMPAD_BIT);
     }
 
     constexpr bool IsKeyDown() const noexcept
