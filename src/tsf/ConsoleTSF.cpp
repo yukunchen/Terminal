@@ -161,7 +161,6 @@ void CConsoleTSF::Uninitialize()
     {
         CComPtr<ITfDocumentMgr> spDocMgr;
         _spITfThreadMgr->AssociateFocus(_hwndConsole, NULL, &spDocMgr);
-        FAIL_FAST_IF(!(!spDocMgr || spDocMgr == _spITfDocumentMgr));
     }
 
     // Dismiss the input context and document manager.
