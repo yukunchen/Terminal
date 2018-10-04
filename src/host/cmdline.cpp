@@ -896,6 +896,16 @@ COORD CommandLine::_moveCursorRight(COOKED_READ_DATA& cookedReadData) noexcept
                                                               &ScrollY));
                 cookedReadData.OriginalCursorPosition().Y += ScrollY;
                 cookedReadData.VisibleCharCount() += NumSpaces;
+                // update reported cursor position
+                if (ScrollY != 0)
+                {
+                    cursorPosition.X = 0;
+                    cursorPosition.Y += ScrollY;
+                }
+                else
+                {
+                    cursorPosition.X += 1;
+                }
             }
             cookedReadData._BufPtr += 1;
         }
