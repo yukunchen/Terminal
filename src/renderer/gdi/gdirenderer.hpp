@@ -77,10 +77,7 @@ namespace Microsoft::Console::Render
                             const CursorType cursorType,
                             const bool fUseColor,
                             const COLORREF cursorColor) noexcept override;
-
-        [[nodiscard]]
-        HRESULT ClearCursor() noexcept override;
-
+        
         [[nodiscard]]
         HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
                                      const COLORREF colorBackground,
@@ -200,6 +197,12 @@ namespace Microsoft::Console::Render
         bool _fDebug = false;
         void _PaintDebugRect(const RECT* const prc) const;
         void _DoDebugBlt(const RECT* const prc) const;
+
+        void _DebugBltAll() const;
+
+        HWND _debugWindow;
+        void _CreateDebugWindow();
+        HDC _debugContext;
 #endif
     };
 }

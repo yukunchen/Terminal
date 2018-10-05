@@ -90,9 +90,6 @@ namespace Microsoft::Console::Render
                                     const COLORREF cursorColor) noexcept = 0;
 
         [[nodiscard]]
-        virtual HRESULT ClearCursor() noexcept = 0;
-
-        [[nodiscard]]
         virtual HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
                                              const COLORREF colorBackground,
                                              const WORD legacyColorAttribute,

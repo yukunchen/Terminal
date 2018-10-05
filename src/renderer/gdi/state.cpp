@@ -23,6 +23,9 @@ using namespace Microsoft::Console::Render;
 // - An instance of a Renderer.
 GdiEngine::GdiEngine() :
     _hwndTargetWindow((HWND)INVALID_HANDLE_VALUE),
+#if DBG
+    _debugWindow((HWND)INVALID_HANDLE_VALUE),
+#endif
     _iCurrentDpi(s_iBaseDpi),
     _hbitmapMemorySurface(nullptr),
     _cPolyText(0),
@@ -52,6 +55,13 @@ GdiEngine::GdiEngine() :
     // able to interact with services through the common
     // desktop (e.g., window messages)).
     GetTextFaceW(_hdcMemoryContext, 0, nullptr);
+
+#if DBG
+    if (_fDebug)
+    {
+        _CreateDebugWindow();
+    }
+#endif
 }
 
 // Routine Description:
@@ -127,6 +137,16 @@ HRESULT GdiEngine::SetHwnd(const HWND hwnd) noexcept
     {
         LOG_HR_IF(E_FAIL, !(ReleaseDC(_hwndTargetWindow, hdcRealWindow)));
     }
+
+#if DBG
+    if (_debugWindow != INVALID_HANDLE_VALUE && _debugWindow != 0)
+    {
+        RECT rc = { 0 };
+        THROW_IF_WIN32_BOOL_FALSE(GetWindowRect(_hwndTargetWindow, &rc));
+
+        THROW_IF_WIN32_BOOL_FALSE(SetWindowPos(_debugWindow, nullptr, 0, 0, rc.right - rc.left, rc.bottom - rc.top, SWP_NOMOVE));
+    }
+#endif
 
     return S_OK;
 }

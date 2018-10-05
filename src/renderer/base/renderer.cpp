@@ -162,10 +162,7 @@ HRESULT Renderer::_PaintFrameForEngine(_In_ IRenderEngine* const pEngine)
     // A. Prep Colors
     RETURN_IF_FAILED(_UpdateDrawingBrushes(pEngine, _pData->GetDefaultBrushColors(), true));
 
-    // B. Clear Overlays
-    RETURN_IF_FAILED(_ClearOverlays(pEngine));
-
-    // C. Perform Scroll Operations
+    // B. Perform Scroll Operations
     RETURN_IF_FAILED(_PerformScrolling(pEngine));
 
     // 1. Paint Background
@@ -174,19 +171,16 @@ HRESULT Renderer::_PaintFrameForEngine(_In_ IRenderEngine* const pEngine)
     // 2. Paint Rows of Text
     _PaintBufferOutput(pEngine);
 
-    // 3. Paint Input
-    //_PaintCookedInput(); // unnecessary, input is also stored in the output buffer.
-
-    // 4. Paint IME composition area
+    // 3. Paint IME composition area
     _PaintImeCompositionString(pEngine);
 
-    // 5. Paint Selection
+    // 4. Paint Selection
     _PaintSelection(pEngine);
 
-    // 6. Paint Cursor
+    // 5. Paint Cursor
     _PaintCursor(pEngine);
 
-    // 7. Paint window title
+    // 6. Paint window title
     RETURN_IF_FAILED(_PaintTitle(pEngine));
 
     // Force scope exit end paint to finish up collecting information and possibly painting
@@ -1209,19 +1203,6 @@ HRESULT Renderer::_UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, const
     RETURN_IF_FAILED(pEngine->UpdateDrawingBrushes(rgbForeground, rgbBackground, legacyAttributes, isBold, fIncludeBackground));
 
     return S_OK;
-}
-
-// Routine Description:
-// - Helper called at the beginning of a frame to clear any overlaid text, cursors, or other items that we don't
-//   want to have included when the existing frame is scrolled
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-[[nodiscard]]
-HRESULT Renderer::_ClearOverlays(_In_ IRenderEngine* const pEngine)
-{
-    return pEngine->ClearCursor();
 }
 
 // Routine Description:

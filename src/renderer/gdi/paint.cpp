@@ -49,6 +49,10 @@ HRESULT GdiEngine::StartPaint() noexcept
     _psInvalidData.fErase = TRUE;
     _psInvalidData.rcPaint = _rcInvalid;
 
+#if DBG
+    _debugContext = GetDC(_debugWindow);
+#endif
+
     return S_OK;
 }
 
@@ -65,6 +69,17 @@ HRESULT GdiEngine::ScrollFrame() noexcept
 {
     // If we don't have any scrolling to do, return early.
     RETURN_HR_IF(S_OK, 0 == _szInvalidScroll.cx && 0 == _szInvalidScroll.cy);
+
+    // If we have an inverted cursor, we have to see if we have to clean it before we scroll to prevent 
+    // left behind cursor copies in the scrolled region.
+    if (!IsRectEmpty(&_rcCursorInvert))
+    {
+        // Clean both the in-memory and actual window context.
+        RETURN_HR_IF(E_FAIL, !(InvertRect(_hdcMemoryContext, &_rcCursorInvert)));
+        RETURN_HR_IF(E_FAIL, !(InvertRect(_psInvalidData.hdc, &_rcCursorInvert)));
+
+        _rcCursorInvert = { 0 };
+    }
 
     // We have to limit the region that can be scrolled to not include the gutters.
     // Gutters are defined as sub-character width pixels at the bottom or right of the screen.
@@ -91,7 +106,7 @@ HRESULT GdiEngine::ScrollFrame() noexcept
 
     RECT rcUpdate = { 0 };
     LOG_HR_IF(E_FAIL, !(ScrollDC(_hdcMemoryContext, _szInvalidScroll.cx, _szInvalidScroll.cy, &rcScrollLimit, &rcScrollLimit, nullptr, &rcUpdate)));
-
+    
     LOG_IF_FAILED(_InvalidCombine(&rcUpdate));
 
     // update invalid rect for the remainder of paint functions
@@ -185,6 +200,7 @@ HRESULT GdiEngine::EndPaint() noexcept
     SIZE const sz = _GetInvalidRectSize();
 
     LOG_HR_IF(E_FAIL, !(BitBlt(_psInvalidData.hdc, pt.x, pt.y, sz.cx, sz.cy, _hdcMemoryContext, pt.x, pt.y, SRCCOPY)));
+    WHEN_DBG(_DebugBltAll());
 
     _rcInvalid = { 0 };
     _fInvalidRectUsed = false;
@@ -195,6 +211,11 @@ HRESULT GdiEngine::EndPaint() noexcept
     _psInvalidData.hdc = nullptr;
 
     _fPaintStarted = false;
+
+#if DBG
+    ReleaseDC(_debugWindow, _debugContext);
+    _debugContext = nullptr;
+#endif
 
     return S_OK;
 }
@@ -481,24 +502,24 @@ HRESULT GdiEngine::PaintCursor(const COORD coordCursor,
 
     RECT rcInvert = rcBoundaries;
     // depending on the cursorType, add rects to that set
-    switch(cursorType)
+    switch (cursorType)
     {
     case CursorType::Legacy:
-        {
-            // Now adjust the cursor height
-            // enforce min/max cursor height
-            ULONG ulHeight = ulCursorHeightPercent;
-            ulHeight = std::max(ulHeight, s_ulMinCursorHeightPercent); // No smaller than 25%
-            ulHeight = std::min(ulHeight, s_ulMaxCursorHeightPercent); // No larger than 100%
+    {
+        // Now adjust the cursor height
+        // enforce min/max cursor height
+        ULONG ulHeight = ulCursorHeightPercent;
+        ulHeight = std::max(ulHeight, s_ulMinCursorHeightPercent); // No smaller than 25%
+        ulHeight = std::min(ulHeight, s_ulMaxCursorHeightPercent); // No larger than 100%
 
-            ulHeight = MulDiv(coordFontSize.Y, ulHeight, 100); // divide by 100 because percent.
+        ulHeight = MulDiv(coordFontSize.Y, ulHeight, 100); // divide by 100 because percent.
 
-            // Reduce the height of the top to be relative to the bottom by the height we want.
-            RETURN_IF_FAILED(LongSub(rcInvert.bottom, ulHeight, &rcInvert.top));
+        // Reduce the height of the top to be relative to the bottom by the height we want.
+        RETURN_IF_FAILED(LongSub(rcInvert.bottom, ulHeight, &rcInvert.top));
 
-            rects.push_back(rcInvert);
-        }
-        break;
+        rects.push_back(rcInvert);
+    }
+    break;
 
     case CursorType::VerticalBar:
         RETURN_IF_FAILED(LongAdd(rcInvert.left, 1, &rcInvert.right));
@@ -511,25 +532,25 @@ HRESULT GdiEngine::PaintCursor(const COORD coordCursor,
         break;
 
     case CursorType::EmptyBox:
-        {
-            RECT top, left, right, bottom;
-            top = left = right = bottom = rcBoundaries;
-            RETURN_IF_FAILED(LongAdd(top.top, 1, &top.bottom));
-            RETURN_IF_FAILED(LongAdd(bottom.bottom, -1, &bottom.top));
-            RETURN_IF_FAILED(LongAdd(left.left, 1, &left.right));
-            RETURN_IF_FAILED(LongAdd(right.right, -1, &right.left));
+    {
+        RECT top, left, right, bottom;
+        top = left = right = bottom = rcBoundaries;
+        RETURN_IF_FAILED(LongAdd(top.top, 1, &top.bottom));
+        RETURN_IF_FAILED(LongAdd(bottom.bottom, -1, &bottom.top));
+        RETURN_IF_FAILED(LongAdd(left.left, 1, &left.right));
+        RETURN_IF_FAILED(LongAdd(right.right, -1, &right.left));
 
-            RETURN_IF_FAILED(LongAdd(top.left, 1, &top.left));
-            RETURN_IF_FAILED(LongAdd(bottom.left, 1, &bottom.left));
-            RETURN_IF_FAILED(LongAdd(top.right, -1, &top.right));
-            RETURN_IF_FAILED(LongAdd(bottom.right, -1, &bottom.right));
+        RETURN_IF_FAILED(LongAdd(top.left, 1, &top.left));
+        RETURN_IF_FAILED(LongAdd(bottom.left, 1, &bottom.left));
+        RETURN_IF_FAILED(LongAdd(top.right, -1, &top.right));
+        RETURN_IF_FAILED(LongAdd(bottom.right, -1, &bottom.right));
 
-            rects.push_back(top);
-            rects.push_back(left);
-            rects.push_back(right);
-            rects.push_back(bottom);
-        }
-        break;
+        rects.push_back(top);
+        rects.push_back(left);
+        rects.push_back(right);
+        rects.push_back(bottom);
+    }
+    break;
 
     case CursorType::FullBox:
         rects.push_back(rcInvert);
@@ -558,26 +579,8 @@ HRESULT GdiEngine::PaintCursor(const COORD coordCursor,
 
     // Save inverted cursor position so we can clear it.
     _rcCursorInvert = rcInvert;
-    return S_OK;
-}
 
-// Routine Description:
-// - Clears out the cursor that was set in the previous PaintCursor call.
-// Arguments:
-// - <none>
-// Return Value:
-// - S_OK, suitable GDI HRESULT error, or E_FAIL in a GDI error where a specific error isn't set.
-[[nodiscard]]
-HRESULT GdiEngine::ClearCursor() noexcept
-{
-    if (!IsRectEmpty(&_rcCursorInvert))
-    {
-        // We inverted to set the cursor, so invert the same rect to clear it out.
-        RETURN_HR_IF(E_FAIL, !(InvertRect(_hdcMemoryContext, &_rcCursorInvert)));
-        RETURN_HR_IF(E_FAIL, !(InvertRect(_psInvalidData.hdc, &_rcCursorInvert)));
-
-        _rcCursorInvert = { 0 };
-    }
+    WHEN_DBG(_DebugBltAll());
 
     return S_OK;
 }
@@ -604,6 +607,41 @@ HRESULT GdiEngine::PaintSelection(const SMALL_RECT rect) noexcept
 }
 
 #ifdef DBG
+
+void GdiEngine::_CreateDebugWindow()
+{
+    if (_fDebug)
+    {
+        const auto className = L"ConsoleGdiDebugWindow";
+
+        WNDCLASSEX wc = { 0 };
+        wc.cbSize = sizeof(WNDCLASSEX);
+        wc.style = CS_OWNDC;
+        wc.lpfnWndProc = DefWindowProcW;
+        wc.hInstance = nullptr;
+        wc.lpszClassName = className;
+
+        THROW_LAST_ERROR_IF(0 == RegisterClassExW(&wc));
+
+        _debugWindow = CreateWindowExW(0,
+                                       className,
+                                       L"ConhostGdiDebugWindow",
+                                       0,
+                                       0,
+                                       0,
+                                       0,
+                                       0,
+                                       0,
+                                       nullptr,
+                                       nullptr,
+                                       nullptr);
+
+        THROW_LAST_ERROR_IF_NULL(_debugWindow);
+
+        ShowWindow(_debugWindow, SW_SHOWNORMAL);
+    }
+}
+
 // Routine Description:
 // - Will fill a given rectangle with a gray shade to help identify which portion of the screen is being debugged.
 // - Will attempt immediate BLT so you can see it.
@@ -646,9 +684,18 @@ void GdiEngine::_DoDebugBlt(const RECT* const prc) const
     {
         if (!IsRectEmpty(prc))
         {
-            LOG_HR_IF(E_FAIL, !(BitBlt(_psInvalidData.hdc, prc->left, prc->top, prc->right - prc->left, prc->bottom - prc->top, _hdcMemoryContext, prc->left, prc->top, SRCCOPY)));
-            Sleep(200);
+            LOG_HR_IF(E_FAIL, !(BitBlt(_debugContext, prc->left, prc->top, prc->right - prc->left, prc->bottom - prc->top, _hdcMemoryContext, prc->left, prc->top, SRCCOPY)));
+            Sleep(100);
         }
+    }
+}
+
+void GdiEngine::_DebugBltAll() const
+{
+    if (_fDebug)
+    {
+        BitBlt(_debugContext, 0, 0, _szMemorySurface.cx, _szMemorySurface.cy, _hdcMemoryContext, 0, 0, SRCCOPY);
+        Sleep(100);
     }
 }
 #endif
