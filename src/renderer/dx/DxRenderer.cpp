@@ -1012,18 +1012,6 @@ HRESULT DxEngine::PaintCursor(const COORD coordCursor,
 }
 
 // Routine Description:
-// - Unused in this renderer
-// Arguments:
-// - <none>
-// Return Value:
-// - S_OK
-[[nodiscard]]
-HRESULT DxEngine::ClearCursor() noexcept
-{
-    return S_OK;
-}
-
-// Routine Description:
 // - Updates the default brush colors used for drawing
 // Arguments:
 // - colorForeground - Foreground brush color

@@ -166,19 +166,6 @@ HRESULT VtEngine::PaintCursor(const COORD coordCursor,
 }
 
 // Routine Description:
-// - Clears out the cursor that was set in the previous PaintCursor call.
-//      VT doesn't need to do anything to "unpaint" the old cursor location.
-// Arguments:
-// - <none>
-// Return Value:
-// - S_OK
-[[nodiscard]]
-HRESULT VtEngine::ClearCursor() noexcept
-{
-    return S_OK;
-}
-
-// Routine Description:
 //  - Inverts the selected region on the current screen buffer.
 //  - Reads the selected area, selection mode, and active screen buffer
 //    from the global properties and dispatches a GDI invert on the selected text area.

@@ -141,8 +141,6 @@ namespace Microsoft::Console::Render
         HRESULT _UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, const TextAttribute attr, const bool fIncludeBackground);
 
         [[nodiscard]]
-        HRESULT _ClearOverlays(_In_ IRenderEngine* const pEngine);
-        [[nodiscard]]
         HRESULT _PerformScrolling(_In_ IRenderEngine* const pEngine);
 
         SMALL_RECT _srViewportPrevious;
