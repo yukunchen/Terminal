@@ -76,9 +76,6 @@ namespace Microsoft::Console::Render
                             const COLORREF cursorColor) noexcept override;
 
         [[nodiscard]]
-        HRESULT ClearCursor() noexcept override;
-
-        [[nodiscard]]
         HRESULT UpdateDrawingBrushes(COLORREF const colorForeground,
                                      COLORREF const colorBackground,
                                      const WORD legacyColorAttribute,

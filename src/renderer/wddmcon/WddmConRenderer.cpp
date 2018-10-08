@@ -328,12 +328,6 @@ HRESULT WddmConEngine::PaintCursor(const COORD /*coordCursor*/,
 }
 
 [[nodiscard]]
-HRESULT WddmConEngine::ClearCursor() noexcept
-{
-    return S_OK;
-}
-
-[[nodiscard]]
 HRESULT WddmConEngine::UpdateDrawingBrushes(COLORREF const /*colorForeground*/,
                                             COLORREF const /*colorBackground*/,
                                             const WORD legacyColorAttribute,
