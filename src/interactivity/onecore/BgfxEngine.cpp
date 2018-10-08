@@ -218,19 +218,6 @@ HRESULT BgfxEngine::PaintCursor(const COORD coordCursor,
 }
 
 [[nodiscard]]
-HRESULT BgfxEngine::ClearCursor() noexcept
-{
-    NTSTATUS Status;
-
-    CD_IO_CURSOR_INFORMATION CursorInfo = { 0 };
-    CursorInfo.IsVisible = FALSE;
-
-    Status = ServiceLocator::LocateInputServices<ConIoSrvComm>()->RequestSetCursor(&CursorInfo);
-
-    return HRESULT_FROM_NT(Status);
-}
-
-[[nodiscard]]
 HRESULT BgfxEngine::UpdateDrawingBrushes(COLORREF const /*colorForeground*/,
                                          COLORREF const /*colorBackground*/,
                                          const WORD legacyColorAttribute,
