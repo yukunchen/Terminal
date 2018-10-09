@@ -111,9 +111,14 @@ RECT WindowMetrics::GetMaxWindowRectInPixels(const RECT * const prcSuggested, _O
         hMonitor = MonitorFromWindow(pWindow->GetWindowHandle(), MONITOR_DEFAULTTONEAREST);
     }
 
-    FAIL_FAST_IF_NULL(hMonitor); // Since we said default to primary, something is seriously wrong with the system if there is no monitor here.
+    // If for whatever reason there is no monitor, we're going to give back whatever we got since we can't figure anything out.
+    // We won't adjust the DPI either. That's OK. DPI doesn't make much sense with no display.
+    if (nullptr == hMonitor)
+    {
+        return rc;
+    }
 
-                                 // Now obtain the monitor pixel dimensions
+    // Now obtain the monitor pixel dimensions
     MONITORINFO MonitorInfo = { 0 };
     MonitorInfo.cbSize = sizeof(MONITORINFO);
 
