@@ -174,6 +174,9 @@ HRESULT DxEngine::_CreateDeviceResources(const bool createSwapChain) noexcept
                                                                nullptr,
                                                                &_dxgiSwapChain));
 
+        // With a new swap chain, mark the entire thing as invalid.
+        RETURN_IF_FAILED(InvalidateAll());
+
         RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(0, IID_PPV_ARGS(&_dxgiSurface)));
 
         D2D1_RENDER_TARGET_PROPERTIES props =
