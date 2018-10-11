@@ -29,6 +29,7 @@
 
 #include "..\inc\ServiceLocator.hpp"
 
+#include "../interactivity/win32/windowtheme.hpp"
 #include "../interactivity/win32/windowUiaProvider.hpp"
 #include "../interactivity/win32/CustomWindowMessages.h"
 
@@ -341,6 +342,9 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
     case WM_SETTINGCHANGE:
     {
+        WindowTheme theme;
+        theme.TrySetDarkMode(hWnd);
+
         gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor().SettingsChanged();
     }
     __fallthrough;
