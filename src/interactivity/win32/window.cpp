@@ -14,6 +14,7 @@
 #include "windowio.hpp"
 #include "windowdpiapi.hpp"
 #include "windowmetrics.hpp"
+#include "windowtheme.hpp"
 #include "windowUiaProvider.hpp"
 
 #include "..\..\host\globals.h"
@@ -351,6 +352,10 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
                         // running. This works around chicken & egg cases involving window size calculations having to do with font
                         // sizes, DPI, and non-primary monitors (see MSFT #2367234).
                         siAttached.PostUpdateWindowSize();
+
+                        // Locate window theming modules and try to set the dark mode.
+                        WindowTheme theme;
+                        theme.TrySetDarkMode(_hWnd);
                     }
                 }
             }

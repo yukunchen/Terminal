@@ -56,6 +56,7 @@ SOURCES = \
     ..\windowio.cpp \
     ..\WindowMetrics.cpp \
     ..\windowproc.cpp \
+    ..\windowtheme.cpp \
     ..\windowUiaProvider.cpp \
 
 INCLUDES = \
