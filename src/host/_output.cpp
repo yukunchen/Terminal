@@ -34,7 +34,22 @@ void StreamWriteToScreenBuffer(SCREEN_INFORMATION& screenInfo,
     ROW& Row = screenInfo.GetTextBuffer().GetRowByOffset(TargetPoint.Y);
     DBGOUTPUT(("&Row = 0x%p, TargetPoint = (0x%x,0x%x)\n", &Row, TargetPoint.X, TargetPoint.Y));
 
-    CleanupDbcsEdgesForWrite(wstr.size(), TargetPoint, screenInfo);
+    // We have to provide a column count to CleanupDbcsEdgesForWrite so it can understand
+    // how many columns will be filled and correct as necessary.
+    size_t charCount = 0;
+    for (const auto& wch : wstr)
+    {
+        if (IsGlyphFullWidth(wch))
+        {
+            charCount += 2;
+        }
+        else
+        {
+            charCount++;
+        }
+    }
+    CleanupDbcsEdgesForWrite(charCount, TargetPoint, screenInfo);
+
     const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
 
     try
