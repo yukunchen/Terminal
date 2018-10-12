@@ -687,6 +687,7 @@ public:
         // We made it through the adapter, woo! Return true.
         return TRUE;
     }
+
     BOOL PrivateSuppressResizeRepaint()
     {
         Log::Comment(L"PrivateSuppressResizeRepaint MOCK called...");
@@ -724,6 +725,12 @@ public:
     {
         Log::Comment(L"InsertLines MOCK called...");
         return TRUE;
+    }
+
+    BOOL MoveToBottom() const
+    {
+        Log::Comment(L"MoveToBottom MOCK called...");
+        return _fMoveToBottomResult;
     }
 
     void _IncrementCoordPos(_Inout_ COORD* pcoord)
@@ -789,6 +796,7 @@ public:
         _fScrollConsoleScreenBufferWResult = TRUE;
         _fSetConsoleWindowInfoResult = TRUE;
         _fPrivateGetConsoleScreenBufferAttributesResult = TRUE;
+        _fMoveToBottomResult = true;
 
         _PrepCharsBuffer(wch, wAttr);
 
@@ -1316,6 +1324,7 @@ public:
     BOOL _fGetConsoleOutputCPResult = false;
     BOOL _fIsConsolePtyResult = false;
     bool _fMoveCursorVerticallyResult = false;
+    bool _fMoveToBottomResult = false;
 
 private:
     HANDLE _hCon;
@@ -3094,6 +3103,7 @@ public:
         _testGetSet->_SetMarginsHelper(&srTestMargins, 2, 6);
         _testGetSet->_fPrivateSetScrollingRegionResult = TRUE;
         _testGetSet->_fSetConsoleCursorPositionResult = true;
+        _testGetSet->_fMoveToBottomResult = true;
         VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
 
         Log::Comment(L"Test 2: Verify having only top is valid.");

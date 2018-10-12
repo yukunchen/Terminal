@@ -1856,3 +1856,15 @@ void DoSrvPrivateInsertLines(const unsigned int count)
 {
     DoSrvPrivateModifyLinesImpl(count, true);
 }
+
+// Method Description:
+// - Snaps the screen buffer's viewport to the "virtual bottom", the last place
+//the viewport was before the user scrolled it (with the mouse or scrollbar)
+// Arguments:
+// - screenInfo: the buffer to move the viewport for.
+// Return Value:
+// - <none>
+void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
+{
+    screenInfo.MoveToBottom();
+}

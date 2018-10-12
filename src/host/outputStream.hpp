@@ -149,6 +149,8 @@ public:
     BOOL DeleteLines(const unsigned int count) override;
     BOOL InsertLines(const unsigned int count) override;
 
+    BOOL MoveToBottom() const override;
+
 private:
     Microsoft::Console::IIoProvider& _io;
 

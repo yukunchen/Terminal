@@ -81,7 +81,9 @@ bool AdaptDispatch::_CursorMovement(const CursorDirection dir, _In_ unsigned int
     // First retrieve some information about the buffer
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    bool fSuccess = !!_conApi->GetConsoleScreenBufferInfoEx(&csbiex);
+    // Make sure to reset the viewport (with MoveToBottom )to where it was
+    //      before the user scrolled the console output
+    bool fSuccess = !!(_conApi->MoveToBottom() && _conApi->GetConsoleScreenBufferInfoEx(&csbiex));
 
     if (fSuccess)
     {
@@ -301,7 +303,9 @@ bool AdaptDispatch::_CursorMovePosition(_In_opt_ const unsigned int* const puiRo
     // First retrieve some information about the buffer
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    fSuccess = !!_conApi->GetConsoleScreenBufferInfoEx(&csbiex);
+    // Make sure to reset the viewport (with MoveToBottom )to where it was
+    //      before the user scrolled the console output
+    fSuccess = !!(_conApi->MoveToBottom() && _conApi->GetConsoleScreenBufferInfoEx(&csbiex));
 
     if (fSuccess)
     {
@@ -415,7 +419,9 @@ bool AdaptDispatch::CursorSavePosition()
     // First retrieve some information about the buffer
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    bool fSuccess = !!_conApi->GetConsoleScreenBufferInfoEx(&csbiex);
+    // Make sure to reset the viewport (with MoveToBottom )to where it was
+    //      before the user scrolled the console output
+    bool fSuccess = !!(_conApi->MoveToBottom() && _conApi->GetConsoleScreenBufferInfoEx(&csbiex));
 
     if (fSuccess)
     {
@@ -492,7 +498,9 @@ bool AdaptDispatch::_InsertDeleteHelper(_In_ unsigned int const uiCount, const b
         // get current cursor
         CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
         csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-        fSuccess = !!_conApi->GetConsoleScreenBufferInfoEx(&csbiex);
+        // Make sure to reset the viewport (with MoveToBottom )to where it was
+        //      before the user scrolled the console output
+        fSuccess = !!(_conApi->MoveToBottom() && _conApi->GetConsoleScreenBufferInfoEx(&csbiex));
 
         if (fSuccess)
         {
@@ -637,7 +645,7 @@ bool AdaptDispatch::_EraseAreaHelper(const COORD coordStartPosition, const COORD
 bool AdaptDispatch::_EraseSingleLineHelper(const CONSOLE_SCREEN_BUFFER_INFOEX* const pcsbiex, const DispatchTypes::EraseType eraseType, const SHORT sLineId, const WORD wFillColor) const
 {
     COORD coordStartPosition = { 0 };
-    coordStartPosition.Y = sLineId ;
+    coordStartPosition.Y = sLineId;
 
     // determine start position from the erase type
     // remember that erases are inclusive of the current cursor position.
@@ -729,7 +737,9 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
 
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    bool fSuccess = !!_conApi->GetConsoleScreenBufferInfoEx(&csbiex);
+    // Make sure to reset the viewport (with MoveToBottom )to where it was
+    //      before the user scrolled the console output
+    bool fSuccess = !!(_conApi->MoveToBottom() && _conApi->GetConsoleScreenBufferInfoEx(&csbiex));
 
     if (fSuccess)
     {
@@ -853,7 +863,9 @@ bool AdaptDispatch::_CursorPositionReport() const
 {
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    bool fSuccess = !!_conApi->GetConsoleScreenBufferInfoEx(&csbiex);
+    // Make sure to reset the viewport (with MoveToBottom )to where it was
+    //      before the user scrolled the console output
+    bool fSuccess = !!(_conApi->MoveToBottom() && _conApi->GetConsoleScreenBufferInfoEx(&csbiex));
 
     if (fSuccess)
     {
@@ -938,7 +950,9 @@ bool AdaptDispatch::_ScrollMovement(const ScrollDirection sdDirection, _In_ unsi
         // get current cursor
         CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
         csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-        fSuccess = !!_conApi->GetConsoleScreenBufferInfoEx(&csbiex);
+        // Make sure to reset the viewport (with MoveToBottom )to where it was
+        //      before the user scrolled the console output
+        fSuccess = !!(_conApi->MoveToBottom() && _conApi->GetConsoleScreenBufferInfoEx(&csbiex));
 
         if (fSuccess)
         {
@@ -1209,7 +1223,9 @@ bool AdaptDispatch::_DoSetTopBottomScrollingMargins(const SHORT sTopMargin,
 {
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    bool fSuccess = !!_conApi->GetConsoleScreenBufferInfoEx(&csbiex);
+    // Make sure to reset the viewport (with MoveToBottom )to where it was
+    //      before the user scrolled the console output
+    bool fSuccess = !!(_conApi->MoveToBottom() && _conApi->GetConsoleScreenBufferInfoEx(&csbiex));
 
     // so notes time: (input -> state machine out -> adapter out -> conhost internal)
     // having only a top param is legal         ([3;r   -> 3,0   -> 3,h  -> 3,h,true)
@@ -1531,7 +1547,9 @@ bool AdaptDispatch::_EraseScrollback()
 {
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    bool fSuccess = !!_conApi->GetConsoleScreenBufferInfoEx(&csbiex);
+    // Make sure to reset the viewport (with MoveToBottom )to where it was
+    //      before the user scrolled the console output
+    bool fSuccess = !!(_conApi->GetConsoleScreenBufferInfoEx(&csbiex) && _conApi->MoveToBottom());
     if (fSuccess)
     {
         const SMALL_RECT Screen = csbiex.srWindow;

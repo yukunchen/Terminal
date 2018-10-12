@@ -729,3 +729,16 @@ BOOL ConhostInternalGetSet::InsertLines(const unsigned int count)
     DoSrvPrivateInsertLines(count);
     return TRUE;
 }
+
+// Method Description:
+// - Connects the MoveToBottom call directly into our Driver Message servicing
+//      call inside Conhost.exe
+// Arguments:
+// <none>
+// Return Value:
+// - TRUE if successful (see DoSrvPrivateMoveToBottom). FALSE otherwise.
+BOOL ConhostInternalGetSet::MoveToBottom() const
+{
+    DoSrvPrivateMoveToBottom(_io.GetActiveOutputBuffer());
+    return TRUE;
+}

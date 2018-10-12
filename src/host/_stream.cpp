@@ -953,8 +953,6 @@ NTSTATUS WriteChars(SCREEN_INFORMATION& screenInfo,
     size_t const BufferSize = *pcb;
     *pcb = 0;
 
-    screenInfo.MoveToBottom();
-
     {
         size_t TempNumSpaces = 0;
 
