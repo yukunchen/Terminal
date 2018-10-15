@@ -27,7 +27,6 @@ Notes:
 extern "C"
 {
     #include <winuser.h>
-    #include "uxtheme.h"
 
     #include <stdlib.h>
     #include <string.h>
