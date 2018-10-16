@@ -34,7 +34,8 @@ WindowTheme::WindowTheme()
 // - hwnd - Window to apply dark mode to
 // Return Value:
 // - S_OK or suitable HRESULT from theming or DWM engines.
-HRESULT WindowTheme::TrySetDarkMode(HWND hwnd) const
+[[nodiscard]]
+HRESULT WindowTheme::TrySetDarkMode(HWND hwnd) const noexcept
 {
     const auto isDarkMode = _IsDarkMode();
 
@@ -59,15 +60,15 @@ HRESULT WindowTheme::TrySetDarkMode(HWND hwnd) const
 // - <none>
 // Return Value:
 // - TRUE if dark mode is allowed. FALSE if it is not.
-BOOL WindowTheme::_IsDarkMode() const
+bool WindowTheme::_IsDarkMode() const noexcept
 {
     if (_ShouldAppsUseDarkMode() && !_IsHighContrast())
     {
-        return TRUE;
+        return true;
     }
     else
     {
-        return FALSE;
+        return false;
     }
 }
 
@@ -77,7 +78,7 @@ BOOL WindowTheme::_IsDarkMode() const
 // - <none>
 // Return Value:
 // - True if the system is in high contrast (shouldn't change theme further.) False otherwise.
-bool WindowTheme::_IsHighContrast() const
+bool WindowTheme::_IsHighContrast() const noexcept
 {
     BOOL fHighContrast = FALSE;
     HIGHCONTRAST hc = { sizeof(hc) };
@@ -94,7 +95,7 @@ bool WindowTheme::_IsHighContrast() const
 // - <none>
 // Return Value:
 // - True if the user chose dark mode in settings. False otherwise.
-bool WindowTheme::_ShouldAppsUseDarkMode() const
+bool WindowTheme::_ShouldAppsUseDarkMode() const noexcept
 {
     if (_module.get() != nullptr)
     {
