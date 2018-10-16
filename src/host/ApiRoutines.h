@@ -20,6 +20,7 @@ Revision History:
 
 class ApiRoutines : public IApiRoutines
 {
+public:
 #pragma region ObjectManagement
     /*HRESULT CreateInitialObjects(_Out_ InputBuffer** const ppInputObject,
     _Out_ SCREEN_INFORMATION** const ppOutputObject);

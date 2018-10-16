@@ -19,6 +19,7 @@ Revision History:
 #include "selection.hpp"
 #include "server.h"
 #include "ConsoleArguments.hpp"
+#include "ApiRoutines.h"
 
 #include "..\renderer\inc\IRenderData.hpp"
 #include "..\renderer\inc\IRenderEngine.hpp"
@@ -65,6 +66,8 @@ public:
     IFontDefaultList* pFontDefaultList;
 
     bool IsHeadless() const;
+
+    ApiRoutines api;
 
 private:
     CONSOLE_INFORMATION ciConsoleInformation;
