@@ -48,13 +48,14 @@ namespace Microsoft::Console::Interactivity::Win32
     public:
         WindowTheme();
 
-        HRESULT TrySetDarkMode(HWND hwnd) const;
+        [[nodiscard]]
+        HRESULT TrySetDarkMode(HWND hwnd) const noexcept;
 
     private:
-        BOOL _IsDarkMode() const;
+        bool _IsDarkMode() const noexcept;
 
-        bool _IsHighContrast() const;
-        bool _ShouldAppsUseDarkMode() const;
+        bool _IsHighContrast() const noexcept;
+        bool _ShouldAppsUseDarkMode() const noexcept;
 
         wil::unique_hmodule _module;
     };
