@@ -61,10 +61,6 @@ NTSTATUS ConsoleWindow::SetViewportOrigin(SMALL_RECT NewWindow)
     return STATUS_SUCCESS;
 }
 
-void ConsoleWindow::SetWindowHasMoved(BOOL const /*fHasMoved*/)
-{
-}
-
 void ConsoleWindow::CaptureMouse()
 {
 }

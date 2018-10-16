@@ -77,8 +77,6 @@ namespace Microsoft::Console::Interactivity::Win32
         BOOL PostUpdateWindowSize() const;
         BOOL PostUpdateExtendedEditKeys() const;
 
-        void SetWindowHasMoved(const BOOL fHasMoved);
-
         [[nodiscard]]
         HRESULT SignalUia(_In_ EVENTID id);
 
@@ -179,7 +177,5 @@ namespace Microsoft::Console::Interactivity::Win32
 
         static void s_ConvertWindowPosToWindowRect(const LPWINDOWPOS lpWindowPos,
                                                     _Out_ RECT* const prc);
-
-        BOOL _fHasMoved;
     };
 }

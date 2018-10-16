@@ -36,7 +36,6 @@ namespace Microsoft::Console::Interactivity
         virtual void SetIsFullscreen(const bool fFullscreenEnabled) = 0;
         [[nodiscard]]
         virtual NTSTATUS SetViewportOrigin(_In_ SMALL_RECT NewWindow) = 0;
-        virtual void SetWindowHasMoved(const BOOL fHasMoved) = 0;
 
         virtual void CaptureMouse() = 0;
         virtual BOOL ReleaseMouse() = 0;

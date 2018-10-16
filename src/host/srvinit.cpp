@@ -615,10 +615,11 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
 // - This routine never returns. The process exits when no more references or clients exist.
 DWORD ConsoleIoThread()
 {
-    ApiRoutines Routines;
+    auto& globals = ServiceLocator::LocateGlobals();
+
     CONSOLE_API_MSG ReceiveMsg;
-    ReceiveMsg._pApiRoutines = &Routines;
-    ReceiveMsg._pDeviceComm = ServiceLocator::LocateGlobals().pDeviceComm;
+    ReceiveMsg._pApiRoutines = &globals.api;
+    ReceiveMsg._pDeviceComm = globals.pDeviceComm;
     PCONSOLE_API_MSG ReplyMsg = nullptr;
 
     bool fShouldExit = false;

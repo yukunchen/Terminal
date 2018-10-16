@@ -8,6 +8,7 @@
 #include "consoleKeyInfo.hpp"
 #include "window.hpp"
 
+#include "..\..\host\ApiRoutines.h"
 #include "..\..\host\init.hpp"
 #include "..\..\host\input.h"
 #include "..\..\host\handle.h"
@@ -352,8 +353,6 @@ void HandleKeyEvent(const HWND hWnd,
                 if (opacityDelta != 0)
                 {
                     ServiceLocator::LocateConsoleWindow<Window>()->ChangeWindowOpacity(opacityDelta);
-                    ServiceLocator::LocateConsoleWindow()->SetWindowHasMoved(true);
-
                     return;
                 }
 
@@ -534,6 +533,26 @@ BOOL HandleSysKeyEvent(const HWND hWnd, const UINT Message, const WPARAM wParam,
     return FALSE;
 }
 
+[[nodiscard]]
+static HRESULT _AdjustFontSize(const SHORT delta) noexcept
+{
+    auto& globals = ServiceLocator::LocateGlobals();
+    auto& screenInfo = globals.getConsoleInformation().GetActiveOutputBuffer();
+
+    // Increase or decrease font by delta through the API to ensure our behavior matches public behavior.
+
+    CONSOLE_FONT_INFOEX font = { 0 };
+    font.cbSize = sizeof(font);
+
+    RETURN_IF_FAILED(globals.api.GetCurrentConsoleFontExImpl(screenInfo, false, &font));
+
+    font.dwFontSize.Y += delta;
+
+    RETURN_IF_FAILED(globals.api.SetCurrentConsoleFontExImpl(screenInfo, false, &font));
+
+    return S_OK;
+}
+
 // Routine Description:
 // - Returns TRUE if DefWindowProc should be called.
 BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
@@ -659,12 +678,20 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
     {
         const short sKeyState = GET_KEYSTATE_WPARAM(wParam);
 
-        // ctrl+shift+scroll will adjust the transparency of the window
-        if ((sKeyState & MK_SHIFT) && (sKeyState & MK_CONTROL))
+        if (WI_IsFlagSet(sKeyState, MK_CONTROL))
         {
             const short sDelta = GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
-            ServiceLocator::LocateConsoleWindow<Window>()->ChangeWindowOpacity(OPACITY_DELTA_INTERVAL * sDelta);
-            ServiceLocator::LocateConsoleWindow()->SetWindowHasMoved(true);
+
+            // ctrl+shift+scroll adjusts opacity of the window
+            if (WI_IsFlagSet(sKeyState, MK_SHIFT))
+            {
+                ServiceLocator::LocateConsoleWindow<Window>()->ChangeWindowOpacity(OPACITY_DELTA_INTERVAL * sDelta);
+            }
+            // ctrl+scroll adjusts the font size
+            else
+            {
+                LOG_IF_FAILED(_AdjustFontSize(sDelta));
+            }
         }
     }
 

@@ -782,7 +782,6 @@ void Window::_HandleWindowPosChanged(const LPARAM lParam)
     SCREEN_INFORMATION& ScreenInfo = GetScreenInfo();
 
     LPWINDOWPOS const lpWindowPos = (LPWINDOWPOS)lParam;
-    _fHasMoved = true;
 
     // If the frame changed, update the system metrics.
     if (WI_IsFlagSet(lpWindowPos->flags, SWP_FRAMECHANGED))

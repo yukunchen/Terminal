@@ -54,7 +54,6 @@ Window* Window::s_Instance = nullptr;
 
 Window::Window() :
     _fIsInFullscreen(false),
-    _fHasMoved(false),
     _pSettings(nullptr),
     _hWnd(0)
 {
@@ -1260,11 +1259,6 @@ LRESULT Window::s_RegPersistWindowOpacity(_In_ PCWSTR const pwszTitle, const Win
         RegCloseKey(hCurrentUserKey);
     }
     return Status;
-}
-
-void Window::SetWindowHasMoved(const BOOL fHasMoved)
-{
-    _fHasMoved = fHasMoved;
 }
 
 // Routine Description:
