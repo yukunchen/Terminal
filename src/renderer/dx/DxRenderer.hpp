@@ -112,6 +112,7 @@ namespace Microsoft::Console::Render
 
     private:
         HWND _hwndTarget;
+        int _dpi;
 
         bool _isEnabled;
         bool _isPainting;
@@ -190,8 +191,18 @@ namespace Microsoft::Console::Render
         Microsoft::WRL::ComPtr<IDWriteFontFace5> _FindFontFace(const std::wstring& familyName,
                                                                DWRITE_FONT_WEIGHT weight,
                                                                DWRITE_FONT_STRETCH stretch,
-                                                               DWRITE_FONT_STYLE style);
-        
+                                                               DWRITE_FONT_STYLE style) const;
+
+        [[nodiscard]]
+        HRESULT _GetProposedFont(const FontInfoDesired& desired,
+                                 FontInfo& actual,
+                                 const int dpi,
+                                 float& baseline,
+                                 float& fontSize,
+                                 Microsoft::WRL::ComPtr<IDWriteTextFormat2>& textFormat,
+                                 Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1>& textAnalyzer,
+                                 Microsoft::WRL::ComPtr<IDWriteFontFace5>& fontFace) const noexcept;
+
         [[nodiscard]]
         COORD _GetFontSize() const noexcept;
 
