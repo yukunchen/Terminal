@@ -122,6 +122,9 @@ namespace Microsoft::Console::Render
         float _fontSize;
         float _baseline;
 
+        D2D1_COLOR_F _foregroundColor;
+        D2D1_COLOR_F _backgroundColor;
+
         // Persistent heap memory to optimize line drawing performance.
         // It is very costly to keep allocating/deallocating this for every line drawn.
         // Instead, we're going to hold onto approximately one line worth of heap memory here
@@ -216,5 +219,8 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]]
         static D2D1_COLOR_F s_ColorFFromColorRef(const COLORREF color) noexcept;
+
+        [[nodiscard]]
+        static DXGI_RGBA s_RgbaFromColorF(const D2D1_COLOR_F color) noexcept;
     };
 }

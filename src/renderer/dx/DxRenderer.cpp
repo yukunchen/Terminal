@@ -161,6 +161,7 @@ HRESULT DxEngine::_CreateDeviceResources(const bool createSwapChain) noexcept
         SwapChainDesc.BufferCount = 2;
         SwapChainDesc.SampleDesc.Count = 1;
         SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
+        SwapChainDesc.Scaling = DXGI_SCALING_NONE;
 
         RECT rect = { 0 };
         RETURN_IF_WIN32_BOOL_FALSE(GetClientRect(_hwndTarget, &rect));
@@ -174,6 +175,11 @@ HRESULT DxEngine::_CreateDeviceResources(const bool createSwapChain) noexcept
                                                                nullptr,
                                                                nullptr,
                                                                &_dxgiSwapChain));
+
+        // Set the background color of the swap chain for the area outside the hwnd (when resize happens)
+        const auto dxgiColor = s_RgbaFromColorF(_backgroundColor);
+
+        RETURN_IF_FAILED(_dxgiSwapChain->SetBackgroundColor(&dxgiColor));
 
         // With a new swap chain, mark the entire thing as invalid.
         RETURN_IF_FAILED(InvalidateAll());
@@ -1032,8 +1038,19 @@ HRESULT DxEngine::UpdateDrawingBrushes(COLORREF const colorForeground,
                                        const bool /*isBold*/,
                                        bool const /*fIncludeBackgrounds*/) noexcept
 {
-    _d2dBrushForeground->SetColor(s_ColorFFromColorRef(colorForeground));
-    _d2dBrushBackground->SetColor(s_ColorFFromColorRef(colorBackground));
+    _foregroundColor = s_ColorFFromColorRef(colorForeground);
+    _backgroundColor = s_ColorFFromColorRef(colorBackground);
+
+    _d2dBrushForeground->SetColor(_foregroundColor);
+    _d2dBrushBackground->SetColor(_backgroundColor);
+
+    // If we have a swap chain, set the background color there too so the area
+    // outside the chain on a resize can be filled in with an appropriate color value.
+    if (_dxgiSwapChain)
+    {
+        const auto dxgiColor = s_RgbaFromColorF(_backgroundColor);
+        RETURN_IF_FAILED(_dxgiSwapChain->SetBackgroundColor(&dxgiColor));
+    }
 
     return S_OK;
 }
@@ -1372,4 +1389,21 @@ D2D1_COLOR_F DxEngine::s_ColorFFromColorRef(const COLORREF color) noexcept
     const UINT32 rgb = ((color & 0x0000FF) << 16) | (color & 0x00FF00) | ((color & 0xFF0000) >> 16);
 
     return D2D1::ColorF(rgb);
+}
+
+// Routine Description:
+// - Helps convert a Direct2D ColorF into a DXGI RGBA
+// Arguments:
+// - color - Direct2D Color F
+// Return Value:
+// - DXGI RGBA
+[[nodiscard]]
+DXGI_RGBA DxEngine::s_RgbaFromColorF(const D2D1_COLOR_F color) noexcept
+{
+    DXGI_RGBA rgba;
+    rgba.a = color.a;
+    rgba.b = color.b;
+    rgba.g = color.g;
+    rgba.r = color.r;
+    return rgba;
 }
