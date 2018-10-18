@@ -29,7 +29,8 @@ DxEngine::DxEngine() :
     _fontSize{ 0 },
     _glyphCell{ 0 },
     _haveDeviceResources{ false },
-    _hwndTarget((HWND)INVALID_HANDLE_VALUE)
+    _hwndTarget((HWND)INVALID_HANDLE_VALUE),
+    _dpi(USER_DEFAULT_SCREEN_DPI)
 {
     THROW_IF_FAILED(D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, IID_PPV_ARGS(&_d2dFactory)));
 
@@ -111,7 +112,7 @@ HRESULT DxEngine::_EnableDisplayAccess(const bool outputEnabled) noexcept
 [[nodiscard]]
 HRESULT DxEngine::_CreateDeviceResources(const bool createSwapChain) noexcept
 {
-    if (_haveDeviceResources) 
+    if (_haveDeviceResources)
     {
         _ReleaseDeviceResources();
     }
@@ -708,10 +709,10 @@ HRESULT DxEngine::ScrollFrame() noexcept
 HRESULT DxEngine::PaintBackground() noexcept
 {
     _d2dRenderTarget->FillRectangle(D2D1::RectF((float)_invalidRect.left,
-                                                (float)_invalidRect.top,
+        (float)_invalidRect.top,
                                                 (float)_invalidRect.right,
                                                 (float)_invalidRect.bottom),
-                                                _d2dBrushBackground.Get());
+                                    _d2dBrushBackground.Get());
 
     return S_OK;
 }
@@ -1047,92 +1048,37 @@ HRESULT DxEngine::UpdateDrawingBrushes(COLORREF const colorForeground,
 [[nodiscard]]
 HRESULT DxEngine::UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo& fiFontInfo) noexcept
 {
-    try
-    {
-        const std::wstring fontName(pfiFontInfoDesired.GetFaceName());
-        const DWRITE_FONT_WEIGHT weight = DWRITE_FONT_WEIGHT_NORMAL;
-        const DWRITE_FONT_STYLE style = DWRITE_FONT_STYLE_NORMAL;
-        const DWRITE_FONT_STRETCH stretch = DWRITE_FONT_STRETCH_NORMAL;
+    const auto hr = _GetProposedFont(pfiFontInfoDesired,
+                                     fiFontInfo,
+                                     _dpi,
+                                     _baseline,
+                                     _fontSize,
+                                     _dwriteTextFormat,
+                                     _dwriteTextAnalyzer,
+                                     _dwriteFontFace);
 
-        const auto fontFace = _FindFontFace(fontName, weight, stretch, style);
+    const auto size = fiFontInfo.GetSize();
 
-        DWRITE_FONT_METRICS1 fontMetrics;
-        fontFace->GetMetrics(&fontMetrics);
+    _glyphCell.cx = size.X;
+    _glyphCell.cy = size.Y;
 
-        _baseline = static_cast<float>(fontMetrics.descent) / fontMetrics.designUnitsPerEm;
-        const UINT32 spaceCodePoint = UNICODE_SPACE;
-        UINT16 spaceGlyphIndex;
-        THROW_IF_FAILED(fontFace->GetGlyphIndicesW(&spaceCodePoint, 1, &spaceGlyphIndex));
-
-        INT32 advanceInDesignUnits;
-        THROW_IF_FAILED(fontFace->GetDesignGlyphAdvances(1, &spaceGlyphIndex, &advanceInDesignUnits));
-
-        const float heightDesired = static_cast<float>(pfiFontInfoDesired.GetEngineSize().Y);
-        const float widthAdvance = static_cast<float>(advanceInDesignUnits) / fontMetrics.designUnitsPerEm;
-        const float widthApprox = heightDesired * widthAdvance;
-        const float widthExact = round(widthApprox);
-        const float fontSize = widthExact / widthAdvance;
-
-        const auto lineSpacing = s_DetermineLineSpacing(fontFace.Get(), fontSize, ceilf(fontSize));
-
-        Microsoft::WRL::ComPtr<IDWriteTextFormat> format;
-        THROW_IF_FAILED(_dwriteFactory->CreateTextFormat(fontName.data(),
-                                                         nullptr,
-                                                         weight,
-                                                         style,
-                                                         stretch,
-                                                         fontSize,
-                                                         L"",
-                                                         &format));
-
-        THROW_IF_FAILED(format.As(&_dwriteTextFormat));
-
-        Microsoft::WRL::ComPtr<IDWriteTextAnalyzer> analyzer;
-        THROW_IF_FAILED(_dwriteFactory->CreateTextAnalyzer(&analyzer));
-        THROW_IF_FAILED(analyzer.As(&_dwriteTextAnalyzer));
-
-        _dwriteFontFace = fontFace;
-
-        THROW_IF_FAILED(_dwriteTextFormat->SetLineSpacing(&lineSpacing));
-        THROW_IF_FAILED(_dwriteTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR));
-        THROW_IF_FAILED(_dwriteTextFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP));
-
-        _glyphCell.cx = gsl::narrow<LONG>(widthExact);
-        _glyphCell.cy = gsl::narrow<LONG>(ceilf(fontSize));
-
-        _fontSize = fontSize;
-
-        COORD coordSize = { 0 };
-        THROW_IF_FAILED(GetFontSize(&coordSize));
-
-        const auto familyNameLength = _dwriteTextFormat->GetFontFamilyNameLength() + 1; // 1 for space for null
-        const auto familyNameBuffer = std::make_unique<wchar_t[]>(familyNameLength);
-        THROW_IF_FAILED(_dwriteTextFormat->GetFontFamilyName(familyNameBuffer.get(), familyNameLength));
-
-        const DWORD weightDword = static_cast<DWORD>(_dwriteTextFormat->GetFontWeight());
-
-        fiFontInfo.SetFromEngine(familyNameBuffer.get(),
-                                 fiFontInfo.GetFamily(),
-                                 weightDword,
-                                 true,
-                                 coordSize,
-                                 coordSize);
-
-    }
-    CATCH_RETURN();
-
-    return S_OK;
+    return hr;
 }
 
 // Routine Description:
-// - Not currently used by this renderer.
+// - Sets the DPI in this renderer
 // Arguments:
-// - iDpi - <unused>
+// - iDpi - DPI
 // Return Value:
 // - S_OK
 [[nodiscard]]
-HRESULT DxEngine::UpdateDpi(int const /*iDpi*/) noexcept
+HRESULT DxEngine::UpdateDpi(int const iDpi) noexcept
 {
+    // Updating the DPI happens in step with triggering an `UpdateFont`.
+    // Therefore, we're just going to store the new value and wait for font and painting calls
+    // to come in for any actual changes.
+
+    _dpi = iDpi;
     return S_OK;
 }
 
@@ -1158,11 +1104,24 @@ HRESULT DxEngine::UpdateViewport(const SMALL_RECT /*srNewViewport*/) noexcept
 // Return Value:
 // - S_OK
 [[nodiscard]]
-HRESULT DxEngine::GetProposedFont(const FontInfoDesired& /*pfiFontInfoDesired*/,
-                                  FontInfo& /*pfiFontInfo*/,
-                                  int const /*iDpi*/) noexcept
+HRESULT DxEngine::GetProposedFont(const FontInfoDesired& pfiFontInfoDesired,
+                                  FontInfo& pfiFontInfo,
+                                  int const iDpi) noexcept
 {
-    return S_OK;
+    float baseline;
+    float fontSize;
+    Microsoft::WRL::ComPtr<IDWriteTextFormat2> format;
+    Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> analyzer;
+    Microsoft::WRL::ComPtr<IDWriteFontFace5> face;
+
+    return _GetProposedFont(pfiFontInfoDesired,
+                            pfiFontInfo,
+                            iDpi,
+                            baseline,
+                            fontSize,
+                            format,
+                            analyzer,
+                            face);
 }
 
 // Routine Description:
@@ -1252,7 +1211,7 @@ HRESULT DxEngine::_DoUpdateTitle(_In_ const std::wstring& /*newTitle*/) noexcept
 Microsoft::WRL::ComPtr<IDWriteFontFace5> DxEngine::_FindFontFace(const std::wstring& familyName,
                                                                  DWRITE_FONT_WEIGHT weight,
                                                                  DWRITE_FONT_STRETCH stretch,
-                                                                 DWRITE_FONT_STYLE style)
+                                                                 DWRITE_FONT_STYLE style) const
 {
     Microsoft::WRL::ComPtr<IDWriteFontFace5> fontFace;
 
@@ -1278,6 +1237,101 @@ Microsoft::WRL::ComPtr<IDWriteFontFace5> DxEngine::_FindFontFace(const std::wstr
     }
 
     return fontFace;
+}
+
+// Routine Description:
+// - Updates the font used for drawing
+// Arguments:
+// - desired - Information specifying the font that is requested
+// - actual - Filled with the nearest font actually chosen for drawing
+// - dpi - The DPI of the screen
+// Return Value:
+// - S_OK or relevant DirectX error
+[[nodiscard]]
+HRESULT DxEngine::_GetProposedFont(const FontInfoDesired& desired,
+                                   FontInfo& actual,
+                                   const int dpi,
+                                   float& baseline,
+                                   float& fontSize,
+                                   Microsoft::WRL::ComPtr<IDWriteTextFormat2>& textFormat,
+                                   Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1>& textAnalyzer,
+                                   Microsoft::WRL::ComPtr<IDWriteFontFace5>& fontFace) const noexcept
+{
+    try
+    {
+        const std::wstring fontName(desired.GetFaceName());
+        const DWRITE_FONT_WEIGHT weight = DWRITE_FONT_WEIGHT_NORMAL;
+        const DWRITE_FONT_STYLE style = DWRITE_FONT_STYLE_NORMAL;
+        const DWRITE_FONT_STRETCH stretch = DWRITE_FONT_STRETCH_NORMAL;
+
+        const auto face = _FindFontFace(fontName, weight, stretch, style);
+
+        DWRITE_FONT_METRICS1 fontMetrics;
+        face->GetMetrics(&fontMetrics);
+
+        baseline = static_cast<float>(fontMetrics.descent) / fontMetrics.designUnitsPerEm;
+        const UINT32 spaceCodePoint = UNICODE_SPACE;
+        UINT16 spaceGlyphIndex;
+        THROW_IF_FAILED(face->GetGlyphIndicesW(&spaceCodePoint, 1, &spaceGlyphIndex));
+
+        INT32 advanceInDesignUnits;
+        THROW_IF_FAILED(face->GetDesignGlyphAdvances(1, &spaceGlyphIndex, &advanceInDesignUnits));
+
+        const float heightDesired = (float)(desired.GetEngineSize().Y) * ((float)dpi / (float)USER_DEFAULT_SCREEN_DPI);
+        const float widthAdvance = static_cast<float>(advanceInDesignUnits) / fontMetrics.designUnitsPerEm;
+        const float widthApprox = heightDesired * widthAdvance;
+        const float widthExact = round(widthApprox);
+        fontSize = widthExact / widthAdvance;
+
+        const auto lineSpacing = s_DetermineLineSpacing(face.Get(), fontSize, ceilf(fontSize));
+
+        Microsoft::WRL::ComPtr<IDWriteTextFormat> format;
+        THROW_IF_FAILED(_dwriteFactory->CreateTextFormat(fontName.data(),
+                                                         nullptr,
+                                                         weight,
+                                                         style,
+                                                         stretch,
+                                                         fontSize,
+                                                         L"",
+                                                         &format));
+
+        THROW_IF_FAILED(format.As(&textFormat));
+
+        Microsoft::WRL::ComPtr<IDWriteTextAnalyzer> analyzer;
+        THROW_IF_FAILED(_dwriteFactory->CreateTextAnalyzer(&analyzer));
+        THROW_IF_FAILED(analyzer.As(&textAnalyzer));
+
+        fontFace = face;
+
+        THROW_IF_FAILED(textFormat->SetLineSpacing(&lineSpacing));
+        THROW_IF_FAILED(textFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR));
+        THROW_IF_FAILED(textFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP));
+
+        COORD coordSize = { 0 };
+        coordSize.X = gsl::narrow<SHORT>(widthExact);
+        coordSize.Y = gsl::narrow<SHORT>(ceilf(fontSize));
+
+        const auto familyNameLength = textFormat->GetFontFamilyNameLength() + 1; // 1 for space for null
+        const auto familyNameBuffer = std::make_unique<wchar_t[]>(familyNameLength);
+        THROW_IF_FAILED(textFormat->GetFontFamilyName(familyNameBuffer.get(), familyNameLength));
+
+        const DWORD weightDword = static_cast<DWORD>(textFormat->GetFontWeight());
+
+        auto coordUnscaled = coordSize;
+        coordUnscaled.X = gsl::narrow<SHORT>(MulDiv(coordUnscaled.X, USER_DEFAULT_SCREEN_DPI, dpi));
+        coordUnscaled.Y = gsl::narrow<SHORT>(MulDiv(coordUnscaled.Y, USER_DEFAULT_SCREEN_DPI, dpi));
+
+        actual.SetFromEngine(familyNameBuffer.get(),
+                             desired.GetFamily(),
+                             weightDword,
+                             false,
+                             coordSize,
+                             coordUnscaled);
+
+    }
+    CATCH_RETURN();
+
+    return S_OK;
 }
 
 // Routine Description:
