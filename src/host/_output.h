@@ -20,10 +20,15 @@ Revision History:
 
 #include "screenInfo.hpp"
 #include "../buffer/out/OutputCell.hpp"
+#include "../buffer/out/OutputCellRect.hpp"
 
 void StreamWriteToScreenBuffer(SCREEN_INFORMATION& screenInfo,
                                const std::wstring& wstr,
                                const bool fWasLineWrapped);
+
+void WriteRectToScreenBufferOC(SCREEN_INFORMATION& screenInfo,
+                               const OutputCellRect& cells,
+                               const COORD dest);
 
 void WriteRectToScreenBuffer(SCREEN_INFORMATION& screenInfo,
                              const std::vector<std::vector<OutputCell>>& cells,

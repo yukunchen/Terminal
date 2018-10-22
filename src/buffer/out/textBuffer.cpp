@@ -18,6 +18,7 @@
 
 #pragma hdrstop
 
+using namespace Microsoft::Console::Types;
 
 // Routine Description:
 // - Creates a new instance of TextBuffer
@@ -744,6 +745,10 @@ const COORD TextBuffer::GetCoordBufferSize() const
 {
     return _coordBufferSize;
 }
+const Viewport TextBuffer::GetSize() const
+{
+    return Viewport::FromDimensions({ 0, 0 }, _coordBufferSize);
+}
 
 void TextBuffer::SetFirstRowIndex(const SHORT FirstRowIndex)
 {
@@ -752,6 +757,111 @@ void TextBuffer::SetFirstRowIndex(const SHORT FirstRowIndex)
 void TextBuffer::SetCoordBufferSize(const COORD coordBufferSize)
 {
     _coordBufferSize = coordBufferSize;
+}
+
+void TextBuffer::ScrollRows(const SHORT firstRow, const SHORT size, const SHORT delta)
+{
+    // If we don't have to move anything, leave early.
+    if (delta == 0)
+    {
+        return;
+    }
+
+    // OK. We're about to play games by moving rows around within the deque to 
+    // scroll a massive region in a faster way than copying things.
+    // To make this easier, first correct the circular buffer to have the first row be 0 again.
+    if (_FirstRow != 0)
+    {
+        // Rotate the buffer to put the first row at the front.
+        std::rotate(_storage.begin(), _storage.begin() + _FirstRow, _storage.end());
+        
+        // The first row is now at the top.
+        _FirstRow = 0;
+    }
+
+    // Rotate just the subsection specified
+    if (delta < 0)
+    {
+        // The layout is like this:
+        // delta is -2, size is 3, firstRow is 5
+        // We want 3 rows from 5 (5, 6, and 7) to move up 2 spots.
+        // --- (storage) ----
+        // | 0 begin
+        // | 1
+        // | 2
+        // | 3 A. begin + firstRow + delta (because delta is negative)
+        // | 4
+        // | 5 B. begin + firstRow         
+        // | 6 
+        // | 7
+        // | 8 C. begin + firstRow + size
+        // | 9 
+        // | 10
+        // | 11
+        // - end
+        // We want B to slide up to A (the negative delta) and everything from [B,C) to slide up with it.
+        // So the final layout will be
+        // --- (storage) ----
+        // | 0 begin
+        // | 1
+        // | 2
+        // | 5
+        // | 6
+        // | 7 
+        // | 3
+        // | 4
+        // | 8
+        // | 9 
+        // | 10
+        // | 11
+        // - end
+        std::rotate(_storage.begin() + firstRow + delta, _storage.begin() + firstRow, _storage.begin() + firstRow + size);
+    }
+    else
+    {
+        // The layout is like this:
+        // delta is 2, size is 3, firstRow is 5
+        // We want 3 rows from 5 (5, 6, and 7) to move down 2 spots.
+        // --- (storage) ----
+        // | 0 begin
+        // | 1
+        // | 2
+        // | 3 
+        // | 4
+        // | 5 A. begin + firstRow         
+        // | 6 
+        // | 7
+        // | 8 B. begin + firstRow + size
+        // | 9 
+        // | 10 C. begin + firstRow + size + delta
+        // | 11
+        // - end
+        // We want B-1 to slide down to C-1 (the positive delta) and everything from [A, B) to slide down with it.
+        // So the final layout will be
+        // --- (storage) ----
+        // | 0 begin
+        // | 1
+        // | 2
+        // | 3 
+        // | 4
+        // | 8
+        // | 9 
+        // | 5
+        // | 6 
+        // | 7 
+        // | 10
+        // | 11
+        // - end
+        std::rotate(_storage.begin() + firstRow, _storage.begin() + firstRow + size, _storage.begin() + firstRow + size + delta);
+    }
+
+    // Renumber the IDs.
+    // TODO: MSFT: 19352358 - ensure everyone can handle rows getting renumbered or stop numbering them.
+    SHORT i = 0;
+    for (auto& it : _storage)
+    {
+        it.SetId(i++);
+    }
 }
 
 Cursor& TextBuffer::GetCursor()

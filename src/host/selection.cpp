@@ -353,7 +353,11 @@ void Selection::ExtendSelection(_In_ COORD coordBufferPos)
     _allowMouseDragSelection = true;
 
     // ensure position is within buffer bounds. Not less than 0 and not greater than the screen buffer size.
-    screenInfo.ClipToScreenBuffer(&coordBufferPos);
+    try
+    {
+        screenInfo.GetSize().Clamp(coordBufferPos);
+    }
+    CATCH_LOG_RETURN();
 
     if (!IsAreaSelected())
     {
@@ -692,9 +696,9 @@ void Selection::SelectAll()
         if (!fOldSelectionExisted)
         {
             // Temporary workaround until MSFT: 614579 is completed.
-            SMALL_RECT srEdges = Utils::s_GetCurrentBufferEdges();
+            const auto bufferSize = screenInfo.GetSize();
             COORD coordOneAfterEnd = coordInputEnd;
-            Utils::s_DoIncrementScreenCoordinate(srEdges, coordOneAfterEnd);
+            bufferSize.IncrementInBounds(coordOneAfterEnd);
 
             if (s_IsWithinBoundaries(screenInfo.GetTextBuffer().GetCursor().GetPosition(), coordInputStart, coordInputEnd))
             {

@@ -19,6 +19,7 @@ Revision History:
 #include "screenInfo.hpp"
 #include "server.h"
 #include "../buffer/out/OutputCell.hpp"
+#include "../buffer/out/OutputCellRect.hpp"
 
 void ScreenBufferSizeChange(const COORD coordNewSize);
 
@@ -60,9 +61,11 @@ std::vector<std::vector<OutputCell>> ReadRectFromScreenBuffer(const SCREEN_INFOR
                                                               const COORD coordSourcePoint,
                                                               const Microsoft::Console::Types::Viewport viewport);
 
+OutputCellRect ReadRectFromScreenBufferOC(const SCREEN_INFORMATION& screenInfo,
+                                          const COORD coordSourcePoint,
+                                          const Microsoft::Console::Types::Viewport viewport);
+
 SHORT ScrollEntireScreen(SCREEN_INFORMATION& screenInfo, const SHORT sScrollValue);
 
 // For handling process handle state, not the window state itself.
 void CloseConsoleProcessState();
-
-void GetNonBiDiKeyboardLayout(_In_ HKL * const phklActive);

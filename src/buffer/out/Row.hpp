@@ -23,6 +23,7 @@ Revision History:
 #include "OutputCell.hpp"
 #include "OutputCellIterator.hpp"
 #include "CharRow.hpp"
+#include "RowCellIterator.hpp"
 #include "UnicodeStorage.hpp"
 
 class TextBuffer;
@@ -54,6 +55,9 @@ public:
     std::vector<OutputCell> AsCells(const size_t startIndex) const;
     std::vector<OutputCell> AsCells(const size_t startIndex, const size_t count) const;
 
+    RowCellIterator AsCellIter(const size_t startIndex) const;
+    RowCellIterator AsCellIter(const size_t startIndex, const size_t count) const;
+
     UnicodeStorage& GetUnicodeStorage();
     const UnicodeStorage& GetUnicodeStorage() const;
 
@@ -78,7 +82,7 @@ public:
         {
             _charRow.DbcsAttrAt(currentIndex) = it->DbcsAttr();
             _charRow.GlyphAt(currentIndex) = it->Chars();
-            if (it->TextAttrBehavior() != OutputCell::TextAttributeBehavior::Current)
+            if (it->TextAttrBehavior() != TextAttributeBehavior::Current)
             {
                 const TextAttributeRun attrRun{ 1, it->TextAttr() };
                 LOG_IF_FAILED(_attrRow.InsertAttrRuns({ &attrRun, 1 },

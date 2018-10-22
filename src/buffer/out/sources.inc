@@ -33,11 +33,15 @@ SOURCES= \
     ..\AttrRowIterator.cpp \
     ..\OutputCell.cpp \
     ..\OutputCellIterator.cpp \
+    ..\OutputCellRect.cpp \
     ..\OutputCellView.cpp \
     ..\Row.cpp \
+    ..\RowCellIterator.cpp \
     ..\TextAttribute.cpp \
     ..\TextAttributeRun.cpp \
     ..\textBuffer.cpp \
+    ..\textBufferCellIterator.cpp \
+    ..\textBufferTextIterator.cpp \
     ..\CharRow.cpp \
     ..\CharRowCell.cpp \
     ..\CharRowCellReference.cpp \

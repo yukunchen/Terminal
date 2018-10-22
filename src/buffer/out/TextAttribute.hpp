@@ -111,6 +111,14 @@ private:
 #endif
 };
 
+enum class TextAttributeBehavior
+{
+    Stored, // use contained text attribute
+    Default, // use default text attribute at time of object instantiation
+    Current, // use text attribute of cell being written to
+};
+
+
 bool constexpr operator==(const TextAttribute& a, const TextAttribute& b) noexcept
 {
     return a._wAttrLegacy == b._wAttrLegacy &&

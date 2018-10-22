@@ -733,7 +733,8 @@ NTSTATUS SrvReadConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
             auto cellIter = activeScreenInfo.GetCellDataAt(coordStart, a->CharRegion);
             while (cellIter && bufferPos < charInfoBuffer.end())
             {
-                *bufferPos++ = *cellIter++;
+                *bufferPos++ = cellIter.AsCharInfo();
+                cellIter++;
             }
         }
         catch (...)

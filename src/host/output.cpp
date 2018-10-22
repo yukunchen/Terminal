@@ -82,7 +82,7 @@ std::vector<std::vector<OutputCell>> ReadRectFromScreenBuffer(const SCREEN_INFOR
     std::vector<std::vector<OutputCell>> result;
     result.reserve(viewport.Height());
 
-    const OutputCell paddingCell{ std::wstring_view{ &UNICODE_SPACE, 1 }, {}, OutputCell::TextAttributeBehavior::Default };
+    const OutputCell paddingCell{ std::wstring_view{ &UNICODE_SPACE, 1 }, {}, TextAttributeBehavior::Default };
     for (size_t rowIndex = 0; rowIndex < static_cast<size_t>(viewport.Height()); ++rowIndex)
     {
         auto cells = screenInfo.ReadLine(coordSourcePoint.Y + rowIndex, coordSourcePoint.X);
@@ -109,6 +109,59 @@ std::vector<std::vector<OutputCell>> ReadRectFromScreenBuffer(const SCREEN_INFOR
 }
 
 // Routine Description:
+// - This routine copies a rectangular region from the screen buffer. no clipping is done.
+// Arguments:
+// - screenInfo - reference to screen info
+// - coordSourcePoint - upper left coordinates of source rectangle
+// - viewport - rectangle in source buffer to copy
+// Return Value:
+// - rectangular output cell data structure
+// Note:
+// - will throw exception on error.
+OutputCellRect ReadRectFromScreenBufferOC(const SCREEN_INFORMATION& screenInfo,
+                                          const COORD coordSourcePoint,
+                                          const Viewport viewport)
+{
+    OutputCellRect result(viewport.Height(), viewport.Width());
+
+    const OutputCell paddingCell{ std::wstring_view{ &UNICODE_SPACE, 1 }, {}, TextAttributeBehavior::Default };
+    for (size_t rowIndex = 0; rowIndex < static_cast<size_t>(viewport.Height()); ++rowIndex)
+    {
+        COORD location = coordSourcePoint;
+        location.Y += (SHORT)rowIndex;
+
+        auto data = screenInfo.GetCellLineDataAt(location);
+        const auto span = result.GetRow(rowIndex);
+        auto it = span.begin();
+
+        // Copy row data while there still is data and we haven't run out of rect to store it into.
+        while (data && it < span.end())
+        {
+            *it++ = *data++;
+        }
+
+        // Pad out any remaining space.
+        while (it < span.end())
+        {
+            *it++ = paddingCell;
+        }
+
+        // if we're clipping a dbcs char then don't include it, add a space instead
+        if (span.begin()->DbcsAttr().IsTrailing())
+        {
+            *span.begin() = paddingCell;
+        }
+        if (span.rbegin()->DbcsAttr().IsLeading())
+        {
+            *span.rbegin() = paddingCell;
+        }
+
+    }
+
+    return result;
+}
+
+// Routine Description:
 // - This routine copies a rectangular region from the screen buffer to the screen buffer.  no clipping is done.
 // Arguments:
 // - screenInfo - reference to screen info
@@ -121,10 +174,29 @@ static void _CopyRectangle(SCREEN_INFORMATION& screenInfo,
     const COORD sourcePoint{ sourceRect.Left, sourceRect.Top };
     const SMALL_RECT targetRect{ 0, 0, sourceRect.Right - sourceRect.Left, sourceRect.Bottom - sourceRect.Top };
 
-    std::vector<std::vector<OutputCell>> cells = ReadRectFromScreenBuffer(screenInfo,
-                                                                          sourcePoint,
-                                                                          Viewport::FromInclusive(targetRect));
-    WriteRectToScreenBuffer(screenInfo, cells, targetPoint);
+    const auto sourceView = Viewport::FromInclusive(sourceRect);
+    const auto targetView = Viewport::FromInclusive(targetRect);
+
+    const auto bufferSize = screenInfo.GetScreenBufferSize();
+
+    const auto sourceFullRows = sourceView.Width() == bufferSize.X;
+    const auto targetFullRows = targetView.Width() == bufferSize.X;
+    const auto verticalCopyOnly = sourcePoint.X == 0 && targetPoint.X == 0;
+
+    if (sourceFullRows && targetFullRows && verticalCopyOnly)
+    {
+        const auto delta = targetPoint.Y - sourcePoint.Y;
+
+        screenInfo.GetTextBuffer().ScrollRows(sourcePoint.Y, sourceView.Height(), gsl::narrow<SHORT>(delta));
+    }
+    else
+    {
+        const auto cells = ReadRectFromScreenBufferOC(screenInfo,
+                                                      sourcePoint,
+                                                      targetView);
+
+        WriteRectToScreenBufferOC(screenInfo, cells, targetPoint);
+    }
 }
 
 // Routine Description:

@@ -146,6 +146,11 @@ std::vector<OutputCell> ROW::AsCells(const size_t startIndex) const
     return AsCells(startIndex, size() - startIndex);
 }
 
+RowCellIterator ROW::AsCellIter(const size_t startIndex) const
+{
+    return AsCellIter(startIndex, size() - startIndex);
+}
+
 // Routine Description:
 // - gets the cell data for the row
 // Arguments:
@@ -166,6 +171,11 @@ std::vector<OutputCell> ROW::AsCells(const size_t startIndex, const size_t count
         cells.emplace_back(glyph, _charRow.DbcsAttrAt(index), *it);
     }
     return cells;
+}
+
+RowCellIterator ROW::AsCellIter(const size_t startIndex, const size_t count) const
+{
+    return RowCellIterator(*this, startIndex, count);
 }
 
 const OutputCell ROW::at(const size_t column) const
@@ -200,7 +210,7 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index)
     {
         _charRow.DbcsAttrAt(currentIndex) = it->DbcsAttr();
         _charRow.GlyphAt(currentIndex) = it->Chars();
-        if (it->TextAttrBehavior() != OutputCell::TextAttributeBehavior::Current)
+        if (it->TextAttrBehavior() != TextAttributeBehavior::Current)
         {
             const TextAttributeRun attrRun{ 1, it->TextAttr() };
             LOG_IF_FAILED(_attrRow.InsertAttrRuns({ &attrRun, 1 },

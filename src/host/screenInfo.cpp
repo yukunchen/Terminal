@@ -49,8 +49,8 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     _pAccessibilityNotifier{ pNotifier },
     _stateMachine{ nullptr },
     _coordScreenBufferSize{ 0 },
-    _scrollMargins{ { 0 } },
-    _viewport({ 0 }),
+    _scrollMargins{ Viewport::FromCoord({0}) },
+    _viewport(Viewport::Empty()),
     _psiAlternateBuffer{ nullptr },
     _psiMainBuffer{ nullptr },
     _rcAltSavedClientNew{ 0 },
@@ -148,6 +148,11 @@ void SCREEN_INFORMATION::SetScreenBufferSize(const COORD coordNewBufferSize)
 COORD SCREEN_INFORMATION::GetScreenBufferSize() const
 {
     return _coordScreenBufferSize;
+}
+
+Viewport SCREEN_INFORMATION::GetSize() const noexcept
+{
+    return Viewport::FromDimensions({ 0, 0 }, _coordScreenBufferSize);
 }
 
 const StateMachine& SCREEN_INFORMATION::GetStateMachine() const
@@ -1697,47 +1702,12 @@ NTSTATUS SCREEN_INFORMATION::ResizeScreenBuffer(const COORD coordNewScreenSize,
 // - <none>
 void SCREEN_INFORMATION::ClipToScreenBuffer(_Inout_ SMALL_RECT* const psrClip) const
 {
-    const SMALL_RECT srEdges = GetScreenEdges();
+    const auto bufferSize = GetSize();
 
-    psrClip->Left = std::max(psrClip->Left, srEdges.Left);
-    psrClip->Top = std::max(psrClip->Top, srEdges.Top);
-    psrClip->Right = std::min(psrClip->Right, srEdges.Right);
-    psrClip->Bottom = std::min(psrClip->Bottom, srEdges.Bottom);
-}
-
-// Routine Description:
-// - Given a coordinate containing screen buffer coordinates (character-level positioning, not pixel)
-//   This method will ensure that it is within the buffer.
-// Arguments:
-// - pcoordClip - Pointer to coordinate holding data to be trimmed
-// Return Value:
-// - <none>
-void SCREEN_INFORMATION::ClipToScreenBuffer(_Inout_ COORD* const pcoordClip) const
-{
-    const SMALL_RECT srEdges = GetScreenEdges();
-
-    pcoordClip->X = std::clamp(pcoordClip->X, srEdges.Left, srEdges.Right);
-    pcoordClip->Y = std::clamp(pcoordClip->Y, srEdges.Top, srEdges.Bottom);
-}
-
-// Routine Description:
-// - Gets the edges of the screen buffer.
-//   "Edges" refers to the inclusive final positions in each direction of the screen buffer area.
-//   For example, a line that is 80 characters long will go from positions 0 to 79 in the buffer.
-//   In this case, 0 is the left edge and 79 is the right edge. The last inclusive index of these points in the buffer.
-// Arguments:
-// - psrEdges - Pointer to rectangle to hold the edge data
-// Return Value:
-// - <none>
-SMALL_RECT SCREEN_INFORMATION::GetScreenEdges() const noexcept
-{
-    SMALL_RECT edges;
-    const COORD coordScreenBufferSize = GetScreenBufferSize();
-    edges.Left = 0;
-    edges.Right = coordScreenBufferSize.X - 1;
-    edges.Top = 0;
-    edges.Bottom = coordScreenBufferSize.Y - 1;
-    return edges;
+    psrClip->Left = std::max(psrClip->Left, bufferSize.Left());
+    psrClip->Top = std::max(psrClip->Top, bufferSize.Top());
+    psrClip->Right = std::min(psrClip->Right, bufferSize.RightInclusive());
+    psrClip->Bottom = std::min(psrClip->Bottom, bufferSize.BottomInclusive());
 }
 
 void SCREEN_INFORMATION::MakeCurrentCursorVisible()
@@ -2714,7 +2684,7 @@ size_t SCREEN_INFORMATION::FillTextGlyph(const std::wstring_view glyph,
 {
     const COORD coordScreenBufferSize = GetScreenBufferSize();
 
-    const OutputCell cell{ glyph, {}, OutputCell::TextAttributeBehavior::Current };
+    const OutputCell cell{ glyph, {}, TextAttributeBehavior::Current };
     std::vector<OutputCell> cellsToWrite{ cell };
     if (IsGlyphFullWidth(std::wstring_view{ glyph.data(), glyph.size() }))
     {
@@ -2881,19 +2851,30 @@ const TextBuffer& SCREEN_INFORMATION::GetTextBuffer() const noexcept
     return *_textBuffer;
 }
 
-ScreenInfoTextIterator SCREEN_INFORMATION::GetTextDataAt(const COORD at) const
+TextBufferTextIterator SCREEN_INFORMATION::GetTextDataAt(const COORD at) const
 {
-    return ScreenInfoTextIterator(*this, at);
+    return TextBufferTextIterator(GetTextBuffer(), at);
 }
 
-ScreenInfoCellIterator SCREEN_INFORMATION::GetCellDataAt(const COORD at) const
+TextBufferCellIterator SCREEN_INFORMATION::GetCellDataAt(const COORD at) const
 {
-    return ScreenInfoCellIterator(*this, at);
+    return TextBufferCellIterator(GetTextBuffer(), at);
 }
 
-ScreenInfoCellIterator SCREEN_INFORMATION::GetCellDataAt(const COORD at, const SMALL_RECT limit) const
+TextBufferCellIterator SCREEN_INFORMATION::GetCellLineDataAt(const COORD at) const
 {
-    return ScreenInfoCellIterator(*this, at, limit);
+    SMALL_RECT limit;
+    limit.Top = at.Y;
+    limit.Bottom = at.Y;
+    limit.Left = at.X;
+    limit.Right = GetScreenBufferSize().X - 1;
+
+    return TextBufferCellIterator(GetTextBuffer(), at, Viewport::FromInclusive(limit));
+}
+
+TextBufferCellIterator SCREEN_INFORMATION::GetCellDataAt(const COORD at, const SMALL_RECT limit) const
+{
+    return TextBufferCellIterator(GetTextBuffer(), at, Viewport::FromInclusive(limit));
 }
 
 // Method Description:

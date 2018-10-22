@@ -6,20 +6,19 @@
 
 #include "precomp.h"
 
-#include "screenInfoTextIterator.hpp"
+#include "textBufferTextIterator.hpp"
 
-#include "misc.h"
-
-#include "../buffer/out/CharRow.hpp"
+#include "CharRow.hpp"
+#include "Row.hpp"
 
 #pragma hdrstop
 
-ScreenInfoTextIterator::ScreenInfoTextIterator(const SCREEN_INFORMATION& si, COORD pos) :
-    ScreenInfoCellIterator(si, pos)
+TextBufferTextIterator::TextBufferTextIterator(const TextBuffer& buffer, COORD pos) :
+    TextBufferCellIterator(buffer, pos)
 {
 }
 
-const CharRow::reference ScreenInfoTextIterator::operator*() const
+const CharRow::reference TextBufferTextIterator::operator*() const
 {
     return _pRow->GetCharRow().GlyphAt(_pos.X);
 }

@@ -2,7 +2,7 @@
 Copyright (c) Microsoft Corporation
 
 Module Name:
-- screenInfoTextIterator.hpp
+- textBufferTextIterator.hpp
 
 Abstract:
 - This module abstracts walking through text on the screen
@@ -15,20 +15,20 @@ Author(s):
 #pragma once
 
 #include "../buffer/out/CharRow.hpp"
-#include "screenInfoCellIterator.hpp"
+#include "textBufferCellIterator.hpp"
 
 class SCREEN_INFORMATION;
 
-class ScreenInfoTextIterator : public ScreenInfoCellIterator
+class TextBufferTextIterator final : public TextBufferCellIterator
 {
 public:
-    ScreenInfoTextIterator(const SCREEN_INFORMATION& si, COORD pos);
+    TextBufferTextIterator(const TextBuffer& buffer, COORD pos);
 
     const CharRow::reference operator*() const;
 
 protected:
 
 #if UNIT_TESTING
-    friend class ScreenInfoIteratorTests;
+    friend class TextBufferIteratorTests;
 #endif
 };

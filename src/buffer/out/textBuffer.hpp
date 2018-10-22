@@ -58,6 +58,7 @@ filling in the last row, and updating the screen.
 #include "Row.hpp"
 #include "TextAttribute.hpp"
 #include "UnicodeStorage.hpp"
+#include "../types/inc/Viewport.hpp"
 
 class TextBuffer final
 {
@@ -121,8 +122,12 @@ public:
     const SHORT GetFirstRowIndex() const;
     const COORD GetCoordBufferSize() const;
 
+    const Microsoft::Console::Types::Viewport GetSize() const;
+
     void SetFirstRowIndex(const SHORT FirstRowIndex);
     void SetCoordBufferSize(const COORD coordBufferSize);
+
+    void ScrollRows(const SHORT firstRow, const SHORT size, const SHORT delta);
 
     UINT TotalRowCount() const;
 
@@ -163,7 +168,6 @@ private:
     // Assist with maintaining proper buffer state for Double Byte character sequences
     bool _PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute);
     bool AssertValidDoubleByteSequence(const DbcsAttribute dbcsAttribute);
-
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;

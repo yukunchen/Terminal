@@ -16,16 +16,33 @@ OutputCellIterator::OutputCellIterator(const std::wstring_view utf16Text, const 
     _utf16Run(utf16Text),
     _singleAttribute(attribute),
     _pos(0),
-    _currentView(s_GenerateView(utf16Text, attribute))
+    _currentView(s_GenerateView(utf16Text, attribute)),
+    _mode(Mode::Loose)
+{
+
+}
+
+OutputCellIterator::OutputCellIterator(const std::basic_string_view<OutputCell> cells) :
+    _cells(cells),
+    _pos(0),
+    _currentView(s_GenerateView(cells.at(0))),
+    _mode(Mode::Cell)
 {
 
 }
 
 OutputCellIterator::operator bool() const noexcept
 {
-    // In lieu of using start and end, this custom iterator type simply becomes bool false
-    // when we run out of items to iterate over.
-    return _pos < _utf16Run.length();
+    if (_mode == Mode::Loose)
+    {
+        // In lieu of using start and end, this custom iterator type simply becomes bool false
+        // when we run out of items to iterate over.
+        return _pos < _utf16Run.length();
+    }
+    else
+    {
+        return _pos < _cells.length();
+    }
 }
 
 bool OutputCellIterator::operator==(const OutputCellIterator& it) const noexcept
@@ -42,10 +59,18 @@ bool OutputCellIterator::operator!=(const OutputCellIterator& it) const noexcept
 
 OutputCellIterator& OutputCellIterator::operator+=(const ptrdiff_t& movement)
 {
-    if (!_TryMoveTrailing())
+    if (_mode == Mode::Loose)
+    {
+        if (!_TryMoveTrailing())
+        {
+            _pos += movement;
+            _currentView = s_GenerateView(_utf16Run.substr(_pos), _singleAttribute);
+        }
+    }
+    else
     {
         _pos += movement;
-        _RefreshView();
+        _currentView = s_GenerateView(_cells.at(_pos));
     }
 
     return (*this);
@@ -110,18 +135,6 @@ bool OutputCellIterator::_TryMoveTrailing()
 }
 
 // Routine Description:
-// - Member function to update the view to the current position in the buffer with 
-//   the data held on this object.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void OutputCellIterator::_RefreshView()
-{
-    _currentView = s_GenerateView(_utf16Run.substr(_pos), _singleAttribute);
-}
-
-// Routine Description:
 // - Static function to create a view.
 // - It's pulled out statically so it can be used during construction with just the given
 //   variables (so OutputCellView doesn't need an empty default constructor)
@@ -142,7 +155,20 @@ OutputCellView OutputCellIterator::s_GenerateView(const std::wstring_view view,
     }
 
     const auto textAttr = attr;
-    const auto behavior = OutputCell::TextAttributeBehavior::Stored;
+    const auto behavior = TextAttributeBehavior::Stored;
 
     return OutputCellView(glyph, dbcsAttr, textAttr, behavior);
+}
+
+// Routine Description:
+// - Static function to create a view.
+// - It's pulled out statically so it can be used during construction with just the given
+//   variables (so OutputCellView doesn't need an empty default constructor)
+// Arguments:
+// - cell - A reference to the cell for which we will make the read-only view
+// Return Value:
+// - Object representing the view into this cell
+OutputCellView OutputCellIterator::s_GenerateView(const OutputCell& cell)
+{
+    return OutputCellView(cell.Chars(), cell.DbcsAttr(), cell.TextAttr(), cell.TextAttrBehavior());
 }

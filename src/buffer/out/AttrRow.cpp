@@ -565,22 +565,22 @@ std::vector<TextAttributeRun> ATTR_ROW::PackAttrs(const std::vector<TextAttribut
 
 ATTR_ROW::const_iterator ATTR_ROW::begin() const noexcept
 {
-    return AttrRowIterator(*this);
+    return AttrRowIterator(this);
 }
 
 ATTR_ROW::const_iterator ATTR_ROW::end() const noexcept
 {
-    return AttrRowIterator::CreateEndIterator(*this);
+    return AttrRowIterator::CreateEndIterator(this);
 }
 
 ATTR_ROW::const_iterator ATTR_ROW::cbegin() const noexcept
 {
-    return AttrRowIterator(*this);
+    return AttrRowIterator(this);
 }
 
 ATTR_ROW::const_iterator ATTR_ROW::cend() const noexcept
 {
-    return AttrRowIterator::CreateEndIterator(*this);
+    return AttrRowIterator::CreateEndIterator(this);
 }
 
 bool operator==(const ATTR_ROW& a, const ATTR_ROW& b) noexcept
