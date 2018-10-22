@@ -17,6 +17,7 @@ Author:
 
 #include "DbcsAttribute.hpp"
 #include "TextAttribute.hpp"
+#include "OutputCellView.hpp"
 
 #include <exception>
 #include <variant>
@@ -32,16 +33,9 @@ class InvalidCharInfoConversionException : public std::exception
 class OutputCell final
 {
 public:
-    enum class TextAttributeBehavior
-    {
-        Stored, // use contained text attribute
-        Default, // use default text attribute at time of object instantiation
-        Current, // use text attribute of cell being written to
-    };
-
     static std::vector<OutputCell> FromUtf16(const std::vector<std::vector<wchar_t>>& utf16Glyphs);
-    static std::vector<OutputCell> FromUtf16(const std::vector<std::vector<wchar_t>>& utf16Glyphs,
-                                             const TextAttribute defaultTextAttribute);
+    
+    OutputCell() = default;
 
     OutputCell(const std::wstring_view charData,
                const DbcsAttribute dbcsAttribute,
@@ -52,15 +46,15 @@ public:
                const TextAttribute textAttribute);
 
     OutputCell(const CHAR_INFO& charInfo);
+    OutputCell(const OutputCellView& view);
 
     OutputCell(const OutputCell&) = default;
     OutputCell(OutputCell&&) = default;
 
     OutputCell& operator=(const OutputCell&) = default;
+    OutputCell& operator=(OutputCell&&) = default;
 
     ~OutputCell() = default;
-
-    void swap(_Inout_ OutputCell& other) noexcept;
 
     CHAR_INFO ToCharInfo();
 
@@ -89,13 +83,17 @@ public:
     friend bool operator==(const OutputCell& a, const OutputCell& b) noexcept;
 
 private:
+    wchar_t _singleChar;
     std::vector<wchar_t> _charData;
     DbcsAttribute _dbcsAttribute;
     TextAttribute _textAttribute;
     TextAttributeBehavior _behavior;
 
+    bool _useSingle() const noexcept;
     void _setFromBehavior(const TextAttributeBehavior behavior);
     void _setFromCharInfo(const CHAR_INFO& charInfo);
+    void _setFromStringView(const std::wstring_view view);
+    void _setFromOutputCellView(const OutputCellView& cell);
     static std::vector<OutputCell> _fromUtf16(const std::vector<std::vector<wchar_t>>& utf16Glyphs,
                                               const std::variant<TextAttribute, TextAttributeBehavior> textAttrVal);
 };

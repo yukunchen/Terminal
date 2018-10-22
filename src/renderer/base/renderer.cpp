@@ -225,7 +225,7 @@ void Renderer::TriggerSystemRedraw(const RECT* const prcDirtyClient)
 // - <none>
 void Renderer::TriggerRedraw(const SMALL_RECT* const psrRegion)
 {
-    Viewport view(_pData->GetViewport());
+    Viewport view = Viewport::FromInclusive(_pData->GetViewport());
     SMALL_RECT srUpdateRegion = *psrRegion;
 
     if (view.TrimToViewport(&srUpdateRegion))
@@ -262,10 +262,10 @@ void Renderer::TriggerRedraw(const COORD* const pcoord)
 // - <none>
 void Renderer::TriggerRedrawCursor(const COORD* const pcoord)
 {
-    Viewport view(_pData->GetViewport());
+    Viewport view = Viewport::FromInclusive(_pData->GetViewport());
     COORD updateCoord = *pcoord;
 
-    if (view.IsWithinViewport(&updateCoord))
+    if (view.IsInBounds(updateCoord))
     {
         view.ConvertToOrigin(&updateCoord);
         for (IRenderEngine* pEngine : _rgpEngines)
@@ -616,7 +616,7 @@ HRESULT Renderer::_PaintBackground(_In_ IRenderEngine* const pEngine)
 // - <none>
 void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
 {
-    Viewport view(_pData->GetViewport());
+    Viewport view = Viewport::FromInclusive(_pData->GetViewport());
 
     SMALL_RECT srDirty = pEngine->GetDirtyRectInChars();
     view.ConvertFromOrigin(&srDirty);
@@ -638,7 +638,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
     srDirty.Right = std::min(srDirty.Right, view.RightInclusive());
     srDirty.Bottom = std::min(srDirty.Bottom, view.BottomInclusive());
 
-    Viewport viewDirty(srDirty);
+    Viewport viewDirty = Viewport::FromInclusive(srDirty);
     for (SHORT iRow = viewDirty.Top(); iRow <= viewDirty.BottomInclusive(); iRow++)
     {
         // Get row of text data
@@ -1012,7 +1012,7 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
         // Get cursor position in buffer
         COORD coordCursor = cursor.GetPosition();
 
-        Viewport view(_pData->GetViewport());
+        Viewport view = Viewport::FromInclusive(_pData->GetViewport());
 
         // Always attempt to paint the cursor, even if it's not within the
         //      "dirty" part of the viewport.
@@ -1067,7 +1067,7 @@ void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
     if (!AreaInfo.IsHidden())
     {
         // First get the screen buffer's viewport.
-        Viewport view(_pData->GetViewport());
+        Viewport view = Viewport::FromInclusive(_pData->GetViewport());
 
         // Now get the IME's viewport and adjust it to where it is supposed to be relative to the window.
         // The IME's buffer is typically only one row in size. Some segments are the whole row, some are only a partial row.
@@ -1083,7 +1083,7 @@ void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
         srCaView.Right += placementInfo.coordConView.X;
 
         // Set it up in a Viewport helper structure and trim it the IME viewport to be within the full console viewport.
-        Viewport viewConv(srCaView);
+        Viewport viewConv = Viewport::FromInclusive(srCaView);
 
         SMALL_RECT srDirty = pEngine->GetDirtyRectInChars();
 
@@ -1093,7 +1093,7 @@ void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
 
         if (viewConv.TrimToViewport(&srDirty))
         {
-            Viewport viewDirty(srDirty);
+            Viewport viewDirty = Viewport::FromInclusive(srDirty);
 
             for (SHORT iRow = viewDirty.Top(); iRow < viewDirty.BottomInclusive(); iRow++)
             {
@@ -1227,11 +1227,11 @@ std::vector<SMALL_RECT> Renderer::_GetSelectionRects() const
 {
     auto rects = _pData->GetSelectionRects();
     // Adjust rectangles to viewport
-    Viewport view(_pData->GetViewport());
+    Viewport view = Viewport::FromInclusive(_pData->GetViewport());
 
     for (auto& rect : rects)
     {
-        rect = view.ConvertToOrigin(rect).ToInclusive();
+        rect = view.ConvertToOrigin(Viewport::FromInclusive(rect)).ToInclusive();
 
         // hopefully temporary, we should be receiving the right selection sizes without correction.
         rect.Right++;

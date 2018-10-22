@@ -1170,7 +1170,7 @@ NTSTATUS DoSrvPrivateReverseLineFeed(SCREEN_INFORMATION& screenInfo)
         // If we don't have margins, or the cursor is within the boundaries of the margins
         // It's important to check if the cursor is in the margins,
         //      If it's not, but the margins are set, then we don't want to scroll anything
-        if (!marginsSet || margins.IsWithinViewport(&oldCursorPosition))
+        if (!marginsSet || margins.IsInBounds(oldCursorPosition))
         {
             // Cursor is at the top of the viewport
             const COORD bufferSize = screenInfo.GetScreenBufferSize();
@@ -1806,9 +1806,9 @@ void DoSrvPrivateModifyLinesImpl(const unsigned int count, const bool insert)
     auto& textBuffer = screenInfo.GetTextBuffer();
     const auto cursorPosition = textBuffer.GetCursor().GetPosition();
     const auto margins = screenInfo.GetAbsoluteScrollMargins();
-    if (margins.IsWithinViewport(&cursorPosition))
+    if (margins.IsInBounds(cursorPosition))
     {
-        const auto screenEdges = screenInfo.GetScreenEdges();
+        const auto screenEdges = screenInfo.GetSize().ToInclusive();
         // Rectangle to cut out of the existing buffer
         SMALL_RECT srScroll;
         srScroll.Left = 0;

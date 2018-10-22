@@ -21,9 +21,10 @@ Revision History:
 #include "conapi.h"
 
 #include "settings.hpp"
-#include "screenInfoTextIterator.hpp"
 #include "../buffer/out/TextAttribute.hpp"
 #include "../buffer/out/textBuffer.hpp"
+#include "../buffer/out/textBufferCellIterator.hpp"
+#include "../buffer/out/textBufferTextIterator.hpp"
 
 #include "outputStream.hpp"
 #include "../terminal/adapter/adaptDispatch.hpp"
@@ -47,8 +48,8 @@ class ConversionAreaInfo; // forward decl window. circular reference
 class SCREEN_INFORMATION
 {
 public:
-    using const_cell_iterator = typename ScreenInfoCellIterator;
-    using const_text_iterator = typename ScreenInfoTextIterator;
+    using const_cell_iterator = typename TextBufferCellIterator;
+    using const_text_iterator = typename TextBufferTextIterator;
 
     [[nodiscard]]
     static NTSTATUS CreateInstance(_In_ COORD coordWindowSize,
@@ -74,9 +75,6 @@ public:
     void MakeCurrentCursorVisible();
 
     void ClipToScreenBuffer(_Inout_ SMALL_RECT* const psrClip) const;
-    void ClipToScreenBuffer(_Inout_ COORD* const pcoordClip) const;
-
-    SMALL_RECT GetScreenEdges() const noexcept;
 
     COORD GetMinWindowSizeInCharacters(const COORD coordFontSize = { 1, 1 }) const;
     COORD GetMaxWindowSizeInCharacters(const COORD coordFontSize = { 1, 1 }) const;
@@ -86,6 +84,7 @@ public:
     void ProcessResizeWindow(const RECT* const prcClientNew, const RECT* const prcClientOld);
     void SetViewportSize(const COORD* const pcoordSize);
 
+    Microsoft::Console::Types::Viewport GetSize() const noexcept;
     COORD GetScreenBufferSize() const;
     void SetScreenBufferSize(const COORD coordNewBufferSize);
 
@@ -135,6 +134,7 @@ public:
                                      const size_t count) const;
 
     const_cell_iterator GetCellDataAt(const COORD at) const;
+    const_cell_iterator GetCellLineDataAt(const COORD at) const;
     const_cell_iterator GetCellDataAt(const COORD at, const SMALL_RECT limit) const;
     const_text_iterator GetTextDataAt(const COORD at) const;
 
@@ -333,9 +333,8 @@ private:
     //  the viewport to move (SetBufferInfo, WriteConsole, etc)
     short _virtualBottom;
 
-    friend class ScreenInfoTextIterator;
-    friend class ScreenInfoCellIterator;
 #ifdef UNIT_TESTING
+    friend class TextBufferIteratorTests;
     friend class ScreenBufferTests;
     friend class CommonState;
 #endif

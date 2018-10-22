@@ -11,7 +11,7 @@
 OutputCellView::OutputCellView(const std::wstring_view view,
                                const DbcsAttribute dbcsAttr,
                                const TextAttribute textAttr,
-                               const OutputCell::TextAttributeBehavior behavior) :
+                               const TextAttributeBehavior behavior) :
     _view(view),
     _dbcsAttr(dbcsAttr),
     _textAttr(textAttr),
@@ -35,7 +35,7 @@ TextAttribute OutputCellView::TextAttr() const
     return _textAttr;
 }
 
-OutputCell::TextAttributeBehavior OutputCellView::TextAttrBehavior() const
+TextAttributeBehavior OutputCellView::TextAttrBehavior() const
 {
     return _behavior;
 }

@@ -371,10 +371,6 @@ class ViewportTests
         view.Clamp(pos);
         VERIFY_ARE_NOT_EQUAL(before, pos, L"Verify clamp modified position out the bottom right corner back.");
         VERIFY_ARE_EQUAL(expected, pos, L"Verify position was clamped into the bottom right corner.");
-
-        Viewport invalidView = Viewport::Empty();
-        VERIFY_THROWS_SPECIFIC(invalidView.Clamp(pos),
-                               wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_NOT_VALID_STATE; });
     }
 
     TEST_METHOD(IncrementInBounds)

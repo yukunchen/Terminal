@@ -121,7 +121,7 @@ private:
     bool _HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo);
     bool _HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKeyInfo);
     COORD WordByWordSelection(const bool fPrevious,
-                              const SMALL_RECT srectEdges,
+                              const Microsoft::Console::Types::Viewport& bufferSize,
                               const COORD coordAnchor,
                               const COORD coordSelPoint) const;
 

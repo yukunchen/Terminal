@@ -21,7 +21,8 @@ using namespace Microsoft::Console::Interactivity;
 
 bool operator==(const OutputCell& a, const OutputCell& b) noexcept
 {
-    return (a._charData == b._charData &&
+    return (a._singleChar == b._singleChar &&
+            a._charData == b._charData &&
             a._dbcsAttribute == b._dbcsAttribute &&
             a._textAttribute == b._textAttribute &&
             a._behavior == b._behavior);
@@ -32,12 +33,6 @@ static constexpr TextAttribute InvalidTextAttribute{ INVALID_COLOR, INVALID_COLO
 std::vector<OutputCell> OutputCell::FromUtf16(const std::vector<std::vector<wchar_t>>& utf16Glyphs)
 {
     return _fromUtf16(utf16Glyphs, { TextAttributeBehavior::Current });
-}
-
-std::vector<OutputCell> OutputCell::FromUtf16(const std::vector<std::vector<wchar_t>>& utf16Glyphs,
-                                              const TextAttribute defaultTextAttribute)
-{
-    return _fromUtf16(utf16Glyphs, { defaultTextAttribute });
 }
 
 std::vector<OutputCell> OutputCell::_fromUtf16(const std::vector<std::vector<wchar_t>>& utf16Glyphs,
@@ -72,43 +67,42 @@ std::vector<OutputCell> OutputCell::_fromUtf16(const std::vector<std::vector<wch
     return cells;
 }
 
-
 OutputCell::OutputCell(const std::wstring_view charData,
                        const DbcsAttribute dbcsAttribute,
                        const TextAttributeBehavior behavior) :
-    _charData{ charData.begin(), charData.end() },
+    _singleChar{ UNICODE_INVALID },
     _dbcsAttribute{ dbcsAttribute },
     _textAttribute{ InvalidTextAttribute },
     _behavior{ behavior }
 {
     THROW_HR_IF(E_INVALIDARG, charData.empty());
+    _setFromStringView(charData);
     _setFromBehavior(behavior);
 }
 
 OutputCell::OutputCell(const std::wstring_view charData,
                        const DbcsAttribute dbcsAttribute,
                        const TextAttribute textAttribute) :
-    _charData{ charData.begin(), charData.end() },
+    _singleChar{ UNICODE_INVALID }, 
     _dbcsAttribute{ dbcsAttribute },
     _textAttribute{ textAttribute },
     _behavior{ TextAttributeBehavior::Stored }
 {
     THROW_HR_IF(E_INVALIDARG, charData.empty());
+    _setFromStringView(charData);
 }
 
 OutputCell::OutputCell(const CHAR_INFO& charInfo) :
+    _singleChar{ UNICODE_INVALID },
     _dbcsAttribute{},
     _textAttribute{ InvalidTextAttribute }
 {
     _setFromCharInfo(charInfo);
 }
 
-void OutputCell::swap(_Inout_ OutputCell& other) noexcept
+OutputCell::OutputCell(const OutputCellView& cell)
 {
-    using std::swap;
-    swap(_charData, other._charData);
-    swap(_dbcsAttribute, other._dbcsAttribute);
-    swap(_textAttribute, other._textAttribute);
+    _setFromOutputCellView(cell);
 }
 
 CHAR_INFO OutputCell::ToCharInfo()
@@ -119,7 +113,16 @@ CHAR_INFO OutputCell::ToCharInfo()
     }
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     CHAR_INFO charInfo;
-    charInfo.Char.UnicodeChar = Utf16ToUcs2({ _charData.data(), _charData.size() });
+    
+    if (_useSingle())
+    {
+        charInfo.Char.UnicodeChar = _singleChar;
+    }
+    else
+    {
+        charInfo.Char.UnicodeChar = Utf16ToUcs2({ _charData.data(), _charData.size() });
+    }
+
     charInfo.Attributes = _dbcsAttribute.GeneratePublicApiAttributeFormat();
     charInfo.Attributes |= gci.GenerateLegacyAttributes(_textAttribute);
     return charInfo;
@@ -127,12 +130,19 @@ CHAR_INFO OutputCell::ToCharInfo()
 
 const std::wstring_view OutputCell::Chars() const noexcept
 {
-	return { _charData.data(), _charData.size() };
+    if (_useSingle())
+    {
+        return { &_singleChar, 1 };
+    }
+    else
+    {
+        return { _charData.data(), _charData.size() };
+    }
 }
 
 void OutputCell::SetChars(const std::wstring_view chars)
 {
-    _charData.assign(chars.cbegin(), chars.cend());
+    _setFromStringView(chars);
 }
 
 DbcsAttribute& OutputCell::DbcsAttr() noexcept
@@ -144,6 +154,11 @@ TextAttribute& OutputCell::TextAttr()
 {
     THROW_HR_IF(E_INVALIDARG, _behavior == TextAttributeBehavior::Current);
     return _textAttribute;
+}
+
+bool OutputCell::_useSingle() const noexcept
+{
+    return _charData.empty();
 }
 
 void OutputCell::_setFromBehavior(const TextAttributeBehavior behavior)
@@ -158,7 +173,7 @@ void OutputCell::_setFromBehavior(const TextAttributeBehavior behavior)
 
 void OutputCell::_setFromCharInfo(const CHAR_INFO& charInfo)
 {
-    _charData = { charInfo.Char.UnicodeChar };
+    _singleChar = charInfo.Char.UnicodeChar;
 
     if (WI_IsFlagSet(charInfo.Attributes, COMMON_LVB_LEADING_BYTE))
     {
@@ -171,4 +186,36 @@ void OutputCell::_setFromCharInfo(const CHAR_INFO& charInfo)
     _textAttribute.SetFromLegacy(charInfo.Attributes);
 
     _behavior = TextAttributeBehavior::Stored;
+}
+
+void OutputCell::_setFromStringView(const std::wstring_view view)
+{
+    _singleChar = UNICODE_INVALID;
+
+    if (view.size() == 1)
+    {
+        _singleChar = view.at(0);
+    }
+    else
+    {
+        _charData.assign(view.cbegin(), view.cend());
+    }
+}
+
+void OutputCell::_setFromOutputCellView(const OutputCellView& cell)
+{
+    _dbcsAttribute = cell.DbcsAttr();
+    _textAttribute = cell.TextAttr();
+    _behavior = cell.TextAttrBehavior();
+
+    const auto& view = cell.Chars();
+    if (view.size() > 1)
+    {
+        _charData.assign(view.cbegin(), view.cend());
+        _singleChar = UNICODE_INVALID;
+    }
+    else
+    {
+        _singleChar = view.front();
+    }
 }

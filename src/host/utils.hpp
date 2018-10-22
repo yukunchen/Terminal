@@ -29,17 +29,8 @@ WORD ConvertStringToDec(_In_ PCWSTR pwchToConvert, _Out_opt_ PCWSTR * const ppwc
 class Utils
 {
 public:
-    static void s_IncrementCoordinate(const COORD bufferSize, COORD& coord) noexcept;
-    static void s_DecrementCoordinate(const COORD bufferSize, COORD& coord) noexcept;
-
-    static bool s_DoDecrementScreenCoordinate(const SMALL_RECT srectEdges, COORD& coordScreen) noexcept;
-    static bool s_DoIncrementScreenCoordinate(const SMALL_RECT srectEdges, COORD& coordScreen) noexcept;
-
     static int s_CompareCoords(const COORD bufferSize, const COORD first, const COORD second) noexcept;
     static int s_CompareCoords(const COORD coordFirst, const COORD coordSecond) noexcept;
 
     static COORD s_GetOppositeCorner(const SMALL_RECT srRectangle, const COORD coordCorner) noexcept;
-    static bool s_AddToPosition(const SMALL_RECT srectEdges, const int iAdd, COORD& coordPosition) noexcept;
-
-    static SMALL_RECT s_GetCurrentBufferEdges() noexcept;
 };

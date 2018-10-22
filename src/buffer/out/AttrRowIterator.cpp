@@ -9,60 +9,30 @@
 #include "AttrRowIterator.hpp"
 #include "AttrRow.hpp"
 
-AttrRowIterator AttrRowIterator::CreateEndIterator(const ATTR_ROW& attrRow)
+AttrRowIterator AttrRowIterator::CreateEndIterator(const ATTR_ROW* const attrRow)
 {
     AttrRowIterator it{ attrRow };
     it._setToEnd();
     return it;
 }
 
-AttrRowIterator::AttrRowIterator(const ATTR_ROW& attrRow) :
-    _attrRow{ attrRow },
-    _currentRunIndex{ 0 },
-    _currentAttributeIndex{ 0 },
-    _logicalIndex{ 0 },
-    _alreadyAccessed{ false }
+AttrRowIterator::AttrRowIterator(const ATTR_ROW* const attrRow) :
+    _pAttrRow{ attrRow },
+    _run{ attrRow->_list.cbegin() },
+    _currentAttributeIndex{ 0 }
 {
 }
 
 AttrRowIterator::operator bool() const noexcept
 {
-    if (_alreadyAccessed)
-    {
-        return (_currentRunIndex < _attrRow._list.size());
-    }
-    else
-    {
-        return (_logicalIndex < _attrRow._cchRowWidth);
-    }
+    return _run < _pAttrRow->_list.cend();
 }
 
 bool AttrRowIterator::operator==(const AttrRowIterator& it) const
 {
-    if (_alreadyAccessed && it._alreadyAccessed)
-    {
-        return (_attrRow == it._attrRow &&
-                _currentRunIndex == it._currentRunIndex &&
-                _currentAttributeIndex == it._currentAttributeIndex);
-    }
-    else if (!_alreadyAccessed && !it._alreadyAccessed)
-    {
-        return (_logicalIndex == it._logicalIndex);
-    }
-    // the two iterators are in different internal states. convert a copy of one to the "accessed" state so
-    // they can be compared.
-    else if (_alreadyAccessed && !it._alreadyAccessed)
-    {
-        auto copy = it;
-        copy._convertToAccessed();
-        return (*this == copy);
-    }
-    else
-    {
-        auto copy = *this;
-        copy._convertToAccessed();
-        return (it == copy);
-    }
+    return (_pAttrRow == it._pAttrRow &&
+            _run == it._run &&
+            _currentAttributeIndex == it._currentAttributeIndex);
 }
 
 bool AttrRowIterator::operator!=(const AttrRowIterator& it) const
@@ -83,6 +53,25 @@ AttrRowIterator AttrRowIterator::operator++(int)
     return copy;
 }
 
+AttrRowIterator& AttrRowIterator::operator+=(const ptrdiff_t& movement)
+{
+    if (movement >= 0)
+    {
+        _increment(gsl::narrow<size_t>(movement));
+    }
+    else
+    {
+        _decrement(gsl::narrow<size_t>(-movement));
+    }
+
+    return *this;
+}
+
+AttrRowIterator& AttrRowIterator::operator-=(const ptrdiff_t& movement)
+{
+    return this->operator+=(-movement);
+}
+
 AttrRowIterator& AttrRowIterator::operator--()
 {
     _decrement(1);
@@ -98,20 +87,12 @@ AttrRowIterator AttrRowIterator::operator--(int)
 
 const TextAttribute* AttrRowIterator::operator->() const
 {
-    if (!_alreadyAccessed)
-    {
-        const_cast<AttrRowIterator&>(*this)._convertToAccessed();
-    }
-    return &_attrRow._list.at(_currentRunIndex).GetAttributes();
+    return &_run->GetAttributes();
 }
 
 const TextAttribute& AttrRowIterator::operator*() const
 {
-    if (!_alreadyAccessed)
-    {
-        const_cast<AttrRowIterator&>(*this)._convertToAccessed();
-    }
-    return _attrRow._list.at(_currentRunIndex).GetAttributes();
+    return _run->GetAttributes();
 }
 
 // Routine Description:
@@ -120,26 +101,19 @@ const TextAttribute& AttrRowIterator::operator*() const
 // - count - the amount to increment by
 void AttrRowIterator::_increment(size_t count)
 {
-    if (!_alreadyAccessed)
+    while (count > 0)
     {
-        _logicalIndex += count;
-    }
-    else
-    {
-        while (count > 0)
+        const size_t runLength = _run->GetLength();
+        if (count + _currentAttributeIndex < runLength)
         {
-            const size_t runLength = _attrRow._list.at(_currentRunIndex).GetLength();
-            if (count + _currentAttributeIndex < runLength)
-            {
-                _currentAttributeIndex += count;
-                return;
-            }
-            else
-            {
-                count -= runLength - _currentAttributeIndex;
-                ++_currentRunIndex;
-                _currentAttributeIndex = 0;
-            }
+            _currentAttributeIndex += count;
+            return;
+        }
+        else
+        {
+            count -= runLength - _currentAttributeIndex;
+            ++_run;
+            _currentAttributeIndex = 0;
         }
     }
 }
@@ -150,48 +124,19 @@ void AttrRowIterator::_increment(size_t count)
 // - count - the amount to decrement by
 void AttrRowIterator::_decrement(size_t count)
 {
-    if (!_alreadyAccessed)
+    while (count > 0)
     {
-        _logicalIndex -= count;
-    }
-    else
-    {
-        while (count > 0)
+        if (count < _currentAttributeIndex)
         {
-            if (count < _currentAttributeIndex)
-            {
-                _currentAttributeIndex -= count;
-                return;
-            }
-            else
-            {
-                count -= _currentAttributeIndex;
-                --_currentRunIndex;
-                _currentAttributeIndex = _attrRow._list.at(_currentRunIndex).GetLength() - 1;
-            }
+            _currentAttributeIndex -= count;
+            return;
         }
-    }
-}
-
-// Routine Description:
-// - converts the iterator to an "accessed" iterator, switching over to the other set of indices
-void AttrRowIterator::_convertToAccessed()
-{
-    // can only do this process once and there's no going back
-    FAIL_FAST_IF(_alreadyAccessed);
-
-    _alreadyAccessed = true;
-    if (_logicalIndex >= _attrRow._cchRowWidth)
-    {
-        // this is an end iterator, which can go one past the end of a list.
-        // FindAttrIndex doesn't like this, so handle it here instead
-        _setToEnd();
-    }
-    else
-    {
-        size_t amountRemaining = 0;
-        _currentRunIndex = _attrRow.FindAttrIndex(_logicalIndex, &amountRemaining);
-        _currentAttributeIndex = _attrRow._list.at(_currentRunIndex).GetLength() - amountRemaining;
+        else
+        {
+            count -= _currentAttributeIndex;
+            --_run;
+            _currentAttributeIndex = _run->GetLength() - 1;
+        }
     }
 }
 
@@ -199,7 +144,6 @@ void AttrRowIterator::_convertToAccessed()
 // - sets fields on the iterator to describe the end() state of the ATTR_ROW
 void AttrRowIterator::_setToEnd()
 {
-    _alreadyAccessed = true;
-    _currentRunIndex = _attrRow._list.size();
+    _run = _pAttrRow->_list.cend();
     _currentAttributeIndex = 0;
 }

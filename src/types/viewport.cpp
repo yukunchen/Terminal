@@ -21,6 +21,11 @@ Viewport::Viewport(const Viewport& other) noexcept :
 
 }
 
+Viewport Viewport::Empty() noexcept
+{
+    return Viewport({ 0, 0, -1, -1 });
+}
+
 Viewport Viewport::FromInclusive(const SMALL_RECT sr) noexcept
 {
     return Viewport(sr);
@@ -140,15 +145,230 @@ COORD Viewport::Dimensions() const noexcept
 }
 
 // Method Description:
-// - Returns true if the input coord is within the bounds of this viewport
+// - Determines if the given viewport fits within this viewport.
 // Arguments:
-// - pcoord: a pointer to the coordinate to check
+// - other - The viewport to fit inside this one
 // Return Value:
-// - true iff the coordinate is within the bounds of this viewport.
-bool Viewport::IsWithinViewport(const COORD* const pcoord) const noexcept
+// - True if it fits. False otherwise.
+bool Viewport::IsInBounds(const Viewport& other) const noexcept
 {
-    return pcoord->X >= Left() && pcoord->X < RightExclusive() &&
-           pcoord->Y >= Top() && pcoord->Y < BottomExclusive();
+    return other.Left() >= Left() && other.Left() <= RightInclusive() &&
+        other.RightInclusive() >= Left() && other.RightInclusive() <= RightInclusive() &&
+        other.Top() >= Top() && other.Top() <= other.BottomInclusive() &&
+        other.BottomInclusive() >= Top() && other.BottomInclusive() <= BottomInclusive();
+}
+
+// Method Description:
+// - Determines if the given coordinate position lies within this viewport.
+// Arguments:
+// - pos - Coordinate position
+// Return Value:
+// - True if it lies inside the viewport. False otherwise.
+bool Viewport::IsInBounds(const COORD& pos) const noexcept
+{
+    return pos.X >= Left() && pos.X < RightExclusive() &&
+        pos.Y >= Top() && pos.Y < BottomExclusive();
+}
+
+// Method Description:
+// - Clamps a coordinate position into the inside of this viewport.
+// Arguments:
+// - pos - coordinate to update/clamp
+// Return Value:
+// - <none>
+void Viewport::Clamp(COORD& pos) const
+{
+    THROW_HR_IF(E_NOT_VALID_STATE, !IsValid()); // we can't clamp to an invalid viewport.
+
+    pos.X = std::clamp(pos.X, Left(), RightInclusive());
+    pos.Y = std::clamp(pos.Y, Top(), BottomInclusive());
+}
+
+// Method Description:
+// - Moves the coordinate given by the number of positions and
+//   in the direction given (repeated increment or decrement)
+// Arguments:
+// - move - Magnitude and direction of the move
+// - pos - The coordinate position to adjust
+// Return Value:
+// - True if we successfully moved the requested distance. False if we had to stop early.
+// - If False, we will restore the original position to the given coordinate.
+bool Viewport::MoveInBounds(const ptrdiff_t move, COORD& pos) const noexcept
+{
+    const auto backup = pos;
+    bool success = true; // If nothing happens, we're still successful (e.g. add = 0)
+
+    for (int i = 0; i < move; i++)
+    {
+        success = IncrementInBounds(pos);
+
+        // If an operation fails, break.
+        if (!success)
+        {
+            break;
+        }
+    }
+
+    for (int i = 0; i > move; i--)
+    {
+        success = DecrementInBounds(pos);
+
+        // If an operation fails, break.
+        if (!success)
+        {
+            break;
+        }
+    }
+
+    // If any operation failed, revert to backed up state.
+    if (!success)
+    {
+        pos = backup;
+    }
+
+    return success;
+}
+
+// Method Description:
+// - Increments the given coordinate within the bounds of this viewport.
+// Arguments:
+// - pos - Coordinate position that will be incremented, if it can be.
+// Return Value:
+// - True if it could be incremented. False if it would move outside.
+bool Viewport::IncrementInBounds(COORD& pos) const noexcept
+{
+    auto copy = pos;
+
+    if (IncrementInBoundsCircular(copy))
+    {
+        pos = copy;
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+// Method Description:
+// - Increments the given coordinate within the bounds of this viewport
+//   rotating around to the top when reaching the bottom right corner.
+// Arguments:
+// - pos - Coordinate position that will be incremented.
+// Return Value:
+// - True if it could be incremented inside the viewport.
+// - False if it rolled over from the bottom right corner back to the top.
+bool Viewport::IncrementInBoundsCircular(COORD& pos) const noexcept
+{
+    // Assert that the position given fits inside this viewport.
+    FAIL_FAST_IF(!IsInBounds(pos));
+
+    if (pos.X == RightInclusive())
+    {
+        pos.Y++;
+        pos.X = Left();
+
+        if (pos.Y > BottomInclusive())
+        {
+            pos.Y = Top(); 
+            return false;
+        }
+    }
+    else
+    {
+        pos.X++;
+    }
+
+    return true;
+}
+
+// Method Description:
+// - Decrements the given coordinate within the bounds of this viewport.
+// Arguments:
+// - pos - Coordinate position that will be incremented, if it can be.
+// Return Value:
+// - True if it could be incremented. False if it would move outside.
+bool Viewport::DecrementInBounds(COORD& pos) const noexcept
+{
+    auto copy = pos;
+    if (DecrementInBoundsCircular(copy))
+    {
+        pos = copy;
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+// Method Description:
+// - Decrements the given coordinate within the bounds of this viewport
+//   rotating around to the bottom right when reaching the top left corner.
+// Arguments:
+// - pos - Coordinate position that will be decremented.
+// Return Value:
+// - True if it could be decremented inside the viewport.
+// - False if it rolled over from the top left corner back to the bottom right.
+bool Viewport::DecrementInBoundsCircular(COORD& pos) const noexcept
+{
+    // Assert that the position given fits inside this viewport.
+    FAIL_FAST_IF(!IsInBounds(pos));
+
+    if (pos.X == Left())
+    {
+        pos.Y--;
+        pos.X = RightInclusive();
+
+        if (pos.Y < Top())
+        {
+            pos.Y = BottomInclusive();
+            return false;
+        }
+    }
+    else
+    {
+        pos.X--;
+    }
+
+    return true;
+}
+
+// Routine Description:
+// - Compares two coordinate positions to determine whether they're the same, left, or right within the given buffer size
+// Arguments:
+// - first- The first coordinate position
+// - second - The second coordinate position
+// Return Value:
+// -  Negative if First is to the left of the Second.
+// -  0 if First and Second are the same coordinate.
+// -  Positive if First is to the right of the Second.
+// -  This is so you can do s_CompareCoords(first, second) <= 0 for "first is left or the same as second".
+//    (the < looks like a left arrow :D)
+// -  The magnitude of the result is the distance between the two coordinates when typing characters into the buffer (left to right, top to bottom)
+int Viewport::CompareInBounds(const COORD& first, const COORD& second) const noexcept
+{
+    // Assert that our coordinates are within the expected boundaries
+    FAIL_FAST_IF(!IsInBounds(first));
+    FAIL_FAST_IF(!IsInBounds(second));
+    
+    // First set the distance vertically
+    //   If first is on row 4 and second is on row 6, first will be -2 rows behind second * an 80 character row would be -160.
+    //   For the same row, it'll be 0 rows * 80 character width = 0 difference.
+    int retVal = (first.Y - second.Y) * Width();
+
+    // Now adjust for horizontal differences
+    //   If first is in position 15 and second is in position 30, first is -15 left in relation to 30.
+    retVal += (first.X - second.X);
+
+    // Further notes:
+    //   If we already moved behind one row, this will help correct for when first is right of second.
+    //     For example, with row 4, col 79 and row 5, col 0 as first and second respectively, the distance is -1.
+    //     Assume the row width is 80.
+    //     Step one will set the retVal as -80 as first is one row behind the second.
+    //     Step two will then see that first is 79 - 0 = +79 right of second and add 79
+    //     The total is -80 + 79 = -1.
+    return retVal;
 }
 
 // Method Description:
@@ -351,12 +571,9 @@ Viewport Viewport::OrViewports(const Viewport& lhs, const Viewport& rhs) noexcep
 }
 
 // Method Description:
-// - Returns true if the rectangle described by this Viewport has positive dimensions.
-// Arguments:
-// - <none>
-// Return Value:
-// - true iff top < bottom && left < right
+// - Returns true if the rectangle described by this Viewport has internal space 
+// - i.e. it has a positive, non-zero height and width.
 bool Viewport::IsValid() const noexcept
 {
-    return _sr.Top < _sr.Bottom && _sr.Left < _sr.Right;
+    return Height() > 0 && Width() > 0;
 }

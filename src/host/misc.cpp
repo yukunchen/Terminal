@@ -329,20 +329,6 @@ bool IsCoordInBounds(const COORD point, const COORD bounds) noexcept
              point.Y < 0);
 }
 
-bool IsCoordInBoundsInclusive(const COORD point, const SMALL_RECT bounds) noexcept
-{
-    return point.X >= bounds.Left && point.X <= bounds.Right &&
-        point.Y >= bounds.Top && point.Y <= bounds.Bottom;
-}
-
-bool IsRectInBoundsInclusive(const SMALL_RECT rect, const SMALL_RECT bounds) noexcept
-{
-    return rect.Left >= bounds.Left && rect.Left <= bounds.Right &&
-        rect.Right >= bounds.Left && rect.Right <= bounds.Right &&
-        rect.Top >= bounds.Top && rect.Top <= bounds.Bottom &&
-        rect.Bottom >= bounds.Top && rect.Bottom <= bounds.Bottom;
-}
-
 // Routine Description:
 // - checks if two buffers overlap
 // Arguments:

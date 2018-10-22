@@ -19,22 +19,21 @@ namespace Microsoft::Console::Types
     class Viewport final
     {
     public:
-
-        Viewport(const SMALL_RECT sr) noexcept;
-
         ~Viewport() {}
         Viewport(const Viewport& other) noexcept;
         Viewport(Viewport&&) = default;
         Viewport& operator=(const Viewport&)& = default;
         Viewport& operator=(Viewport&&)& = default;
 
+        static Viewport Empty() noexcept;
+
         static Viewport FromInclusive(const SMALL_RECT sr) noexcept;
 
         static Viewport FromExclusive(const SMALL_RECT sr) noexcept;
 
         static Viewport FromDimensions(const COORD origin,
-                                    const short width,
-                                    const short height) noexcept;
+                                       const short width,
+                                       const short height) noexcept;
 
         static Viewport FromDimensions(const COORD origin,
                                        const COORD dimensions) noexcept;
@@ -52,7 +51,18 @@ namespace Microsoft::Console::Types
         COORD Origin() const noexcept;
         COORD Dimensions() const noexcept;
 
-        bool IsWithinViewport(const COORD* const pcoord) const noexcept;
+        bool IsInBounds(const Viewport& other) const noexcept;
+        bool IsInBounds(const COORD& pos) const noexcept;
+
+        void Clamp(COORD& pos) const;
+
+        bool MoveInBounds(const ptrdiff_t move, COORD& pos) const noexcept;
+        bool IncrementInBounds(COORD& pos) const noexcept;
+        bool IncrementInBoundsCircular(COORD& pos) const noexcept;
+        bool DecrementInBounds(COORD& pos) const noexcept;
+        bool DecrementInBoundsCircular(COORD& pos) const noexcept;
+        int CompareInBounds(const COORD& first, const COORD& second) const noexcept;
+
         bool TrimToViewport(_Inout_ SMALL_RECT* const psr) const noexcept;
         void ConvertToOrigin(_Inout_ SMALL_RECT* const psr) const noexcept;
         void ConvertToOrigin(_Inout_ COORD* const pcoord) const noexcept;
@@ -78,9 +88,14 @@ namespace Microsoft::Console::Types
                                     const Viewport& rhs) noexcept;
 
     private:
+        Viewport(const SMALL_RECT sr) noexcept;
+
         // This is always stored as a Inclusive rect.
         SMALL_RECT _sr;
 
+#if UNIT_TESTING
+        friend class ViewportTests;
+#endif
     };
 }
 

@@ -252,5 +252,5 @@ void Selection::SetLineSelection(const bool fLineSelectionOn)
 bool Selection::ShouldAllowMouseDragSelection(const COORD mousePosition) const noexcept
 {
     const Viewport viewport = Viewport::FromInclusive(_srSelectionRect);
-    return _allowMouseDragSelection || !viewport.IsWithinViewport(&mousePosition);
+    return _allowMouseDragSelection || !viewport.IsInBounds(mousePosition);
 }

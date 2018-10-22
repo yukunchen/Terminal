@@ -24,7 +24,7 @@ SOURCES = \
     CodepointWidthDetectorTests.cpp \
     DbcsTests.cpp \
     ScreenBufferTests.cpp \
-    ScreenInfoIteratorTests.cpp \
+    TextBufferIteratorTests.cpp \
     TextBufferTests.cpp \
     ClipboardTests.cpp \
     SelectionTests.cpp \
@@ -35,6 +35,7 @@ SOURCES = \
     InputBufferTests.cpp \
     VtIoTests.cpp \
     VtRendererTests.cpp \
+    ViewportTests.cpp \
     ConsoleArgumentsTests.cpp \
     CommandLineTests.cpp \
     CommandNumberPopupTests.cpp \

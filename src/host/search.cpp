@@ -137,11 +137,11 @@ COORD Search::s_GetInitialAnchor(const SCREEN_INFORMATION& screenInfo, const Dir
         auto anchor = Selection::Instance().GetSelectionAnchor();
         if (direction == Direction::Forward)
         {
-            Utils::s_IncrementCoordinate(screenInfo.GetScreenBufferSize(), anchor);
+            screenInfo.GetSize().IncrementInBoundsCircular(anchor);
         }
         else
         {
-            Utils::s_DecrementCoordinate(screenInfo.GetScreenBufferSize(), anchor);
+            screenInfo.GetSize().DecrementInBoundsCircular(anchor);
         }
         return anchor;
     }
@@ -255,7 +255,7 @@ wchar_t Search::_ApplySensitivity(const wchar_t wch) const
 // - coord - Updated by function to increment one position (will wrap X and Y direction)
 void Search::_IncrementCoord(COORD& coord) const
 {
-    Utils::s_IncrementCoordinate(_screenInfo.GetScreenBufferSize(), coord);
+    _screenInfo.GetSize().IncrementInBoundsCircular(coord);
 }
 
 // Routine Description:
@@ -264,7 +264,7 @@ void Search::_IncrementCoord(COORD& coord) const
 // - coord - Updated by function to decrement one position (will wrap X and Y direction)
 void Search::_DecrementCoord(COORD& coord) const
 {
-    Utils::s_DecrementCoordinate(_screenInfo.GetScreenBufferSize(), coord);
+    _screenInfo.GetSize().DecrementInBoundsCircular(coord);
 }
 
 // Routine Description:

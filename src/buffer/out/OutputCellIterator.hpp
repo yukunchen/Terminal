@@ -20,6 +20,7 @@ Revision History:
 
 #include "TextAttribute.hpp"
 
+#include "OutputCell.hpp"
 #include "OutputCellView.hpp"
 
 class OutputCellIterator final
@@ -32,6 +33,7 @@ public:
     using reference = OutputCellView&;
 
     OutputCellIterator(const std::wstring_view utf16Text, const TextAttribute attribute);
+    OutputCellIterator(const std::basic_string_view<OutputCell> cells);
     ~OutputCellIterator() = default;
 
     OutputCellIterator& operator=(const OutputCellIterator& it) = default;
@@ -46,21 +48,34 @@ public:
     OutputCellIterator operator++(int);
     OutputCellIterator operator+(const ptrdiff_t& movement);
 
-    ptrdiff_t operator-(const OutputCellIterator& it);
-
     const OutputCellView& operator*() const;
     const OutputCellView* operator->() const;
 
 private:
+    
+    enum class Mode 
+    { 
+        // Loose mode is where we're given text and attributes in a raw sort of form
+        // like while data is being inserted from an API call.
+        Loose, 
+
+        // Cell mode is where we have an already fully structured cell data usually
+        // from accessing/copying data already put into the OutputBuffer.
+        Cell 
+    };
+    Mode _mode;
+
     std::wstring_view _utf16Run;
     TextAttribute _singleAttribute;
+    std::basic_string_view<OutputCell> _cells;
 
     bool _TryMoveTrailing();
 
-    OutputCellView s_GenerateView(const std::wstring_view view,
+    static OutputCellView s_GenerateView(const std::wstring_view view,
                                   const TextAttribute attr);
 
-    void _RefreshView();
+    static OutputCellView s_GenerateView(const OutputCell& cell);
+
     OutputCellView _currentView;
 
     size_t _pos;

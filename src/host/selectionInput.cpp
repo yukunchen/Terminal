@@ -13,6 +13,8 @@
 
 #include <algorithm>
 
+using namespace Microsoft::Console::Types;
+
 // Routine Description:
 // - Handles a keyboard event for extending the current selection
 // - Must be called when the console is in selecting state.
@@ -136,13 +138,13 @@ bool Selection::s_IsValidKeyboardLineSelection(const INPUT_KEY_INFO* const pInpu
 // - By default operates in a left-to-right fashion.
 // Arguments:
 // - fReverse: Specifies that this function should operate in reverse. E.g. Right-to-left.
-// - srectEdges: The edges of the current screen buffer. All values are valid positions within the screen buffer.
+// - bufferSize: The dimensions of the screen buffer.
 // - coordAnchor: The point within the buffer (inside the edges) where this selection started.
 // - coordSelPoint: Defines selection region from coordAnchor to this point. Modified to define the new selection region.
 // Return Value:
 // - <none>
 COORD Selection::WordByWordSelection(const bool fReverse,
-                                     const SMALL_RECT srectEdges,
+                                     const Viewport& bufferSize,
                                      const COORD coordAnchor,
                                      const COORD coordSelPoint) const
 {
@@ -153,11 +155,11 @@ COORD Selection::WordByWordSelection(const bool fReverse,
     // first move one character in the requested direction
     if (!fReverse)
     {
-        Utils::s_DoIncrementScreenCoordinate(srectEdges, outCoord);
+        bufferSize.IncrementInBounds(outCoord);
     }
     else
     {
-        Utils::s_DoDecrementScreenCoordinate(srectEdges, outCoord);
+        bufferSize.DecrementInBounds(outCoord);
     }
 
     // get the character at the new position
@@ -175,11 +177,11 @@ COORD Selection::WordByWordSelection(const bool fReverse,
     // if line boundaries fail, then set them to the buffer corners so they don't restrict anything.
     if (!fSuccess)
     {
-        coordMaxLeft.X = srectEdges.Left;
-        coordMaxLeft.Y = srectEdges.Top;
+        coordMaxLeft.X = bufferSize.Left();
+        coordMaxLeft.Y = bufferSize.Top();
 
-        coordMaxRight.X = srectEdges.Right;
-        coordMaxRight.Y = srectEdges.Bottom;
+        coordMaxRight.X = bufferSize.RightInclusive();
+        coordMaxRight.Y = bufferSize.BottomInclusive();
     }
 
     // track whether we failed to move during an operation
@@ -226,11 +228,11 @@ COORD Selection::WordByWordSelection(const bool fReverse,
 
         if (!fReverse)
         {
-            fMoveSucceeded = Utils::s_DoIncrementScreenCoordinate(srectEdges, outCoord);
+            bufferSize.IncrementInBounds(outCoord);
         }
         else
         {
-            fMoveSucceeded = Utils::s_DoDecrementScreenCoordinate(srectEdges, outCoord);
+            bufferSize.DecrementInBounds(outCoord);
         }
 
         if (!fMoveSucceeded)
@@ -262,11 +264,11 @@ COORD Selection::WordByWordSelection(const bool fReverse,
     {
         if (!fReverse)
         {
-            fMoveSucceeded = Utils::s_DoDecrementScreenCoordinate(srectEdges, outCoord);
+            bufferSize.DecrementInBounds(outCoord);
         }
         else
         {
-            fMoveSucceeded = Utils::s_DoIncrementScreenCoordinate(srectEdges, outCoord);
+            bufferSize.IncrementInBounds(outCoord);
         }
 
         FAIL_FAST_IF(!fMoveSucceeded); // we should never fail to move forward after having moved backward
@@ -330,12 +332,11 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
     coordSelPoint.Y = coordAnchor.Y == rectSelection.Top ? rectSelection.Bottom : rectSelection.Top;
 
     // this is the maximum size of the buffer
-    SMALL_RECT srectEdges = Utils::s_GetCurrentBufferEdges();
+    const auto bufferSize = gci.GetActiveOutputBuffer().GetSize();
 
     const SHORT sWindowHeight = gci.GetActiveOutputBuffer().GetScreenWindowSizeY();
 
-    FAIL_FAST_IF(!(coordSelPoint.X >= srectEdges.Left && coordSelPoint.X <= srectEdges.Right));
-    FAIL_FAST_IF(!(coordSelPoint.Y >= srectEdges.Top && coordSelPoint.Y <= srectEdges.Bottom));
+    FAIL_FAST_IF(!bufferSize.IsInBounds(coordSelPoint));
 
     // retrieve input line information. If we are selecting from within the input line, we need
     // to bound ourselves within the input data first and not move into the back buffer.
@@ -351,12 +352,12 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
             // shift + left/right extends the selection by one character, wrapping at screen edge
         case VK_LEFT:
         {
-            Utils::s_DoDecrementScreenCoordinate(srectEdges, coordSelPoint);
+            bufferSize.DecrementInBounds(coordSelPoint);
             break;
         }
         case VK_RIGHT:
         {
-            Utils::s_DoIncrementScreenCoordinate(srectEdges, coordSelPoint);
+            bufferSize.IncrementInBounds(coordSelPoint);
 
             // if we're about to split a character in half, keep moving right
             try
@@ -364,7 +365,7 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
                 const auto attr = gci.GetActiveOutputBuffer().ReadLine(coordSelPoint.Y, coordSelPoint.X, 1).at(0).DbcsAttr();
                 if (attr.IsTrailing())
                 {
-                    Utils::s_DoIncrementScreenCoordinate(srectEdges, coordSelPoint);
+                    bufferSize.IncrementInBounds(coordSelPoint);
                 }
             }
             CATCH_LOG();
@@ -374,7 +375,7 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
             // shift + up/down extends the selection by one row, stopping at top or bottom of screen
         case VK_UP:
         {
-            if (coordSelPoint.Y > srectEdges.Top)
+            if (coordSelPoint.Y > bufferSize.Top())
             {
                 coordSelPoint.Y--;
             }
@@ -382,7 +383,7 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
         }
         case VK_DOWN:
         {
-            if (coordSelPoint.Y < srectEdges.Bottom)
+            if (coordSelPoint.Y < bufferSize.BottomInclusive())
             {
                 coordSelPoint.Y++;
             }
@@ -392,18 +393,18 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
         case VK_NEXT:
         {
             coordSelPoint.Y += sWindowHeight; // TODO: potential overflow
-            if (coordSelPoint.Y > srectEdges.Bottom)
+            if (coordSelPoint.Y > bufferSize.BottomInclusive())
             {
-                coordSelPoint.Y = srectEdges.Bottom;
+                coordSelPoint.Y = bufferSize.BottomInclusive();
             }
             break;
         }
         case VK_PRIOR:
         {
             coordSelPoint.Y -= sWindowHeight; // TODO: potential underflow
-            if (coordSelPoint.Y < srectEdges.Top)
+            if (coordSelPoint.Y < bufferSize.Top())
             {
-                coordSelPoint.Y = srectEdges.Top;
+                coordSelPoint.Y = bufferSize.Top();
             }
             break;
         }
@@ -526,7 +527,7 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
             }
 
             // otherwise, fall through and go to selecting the whole line to the end.
-            coordSelPoint.X = srectEdges.Right;
+            coordSelPoint.X = bufferSize.RightInclusive();
             break;
         }
         }
@@ -538,18 +539,18 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
             // shift + ctrl + left/right extends selection to next/prev word boundary
         case VK_LEFT:
         {
-            coordSelPoint = WordByWordSelection(true, srectEdges, coordAnchor, coordSelPoint);
+            coordSelPoint = WordByWordSelection(true, bufferSize, coordAnchor, coordSelPoint);
             break;
         }
         case VK_RIGHT:
         {
-            coordSelPoint = WordByWordSelection(false, srectEdges, coordAnchor, coordSelPoint);
+            coordSelPoint = WordByWordSelection(false, bufferSize, coordAnchor, coordSelPoint);
             break;
         }
             // shift + ctrl + up/down does the same thing that shift + up/down does
         case VK_UP:
         {
-            if (coordSelPoint.Y > srectEdges.Top)
+            if (coordSelPoint.Y > bufferSize.Top())
             {
                 coordSelPoint.Y--;
             }
@@ -557,7 +558,7 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
         }
         case VK_DOWN:
         {
-            if (coordSelPoint.Y < srectEdges.Bottom)
+            if (coordSelPoint.Y < bufferSize.BottomInclusive())
             {
                 coordSelPoint.Y++;
             }
@@ -588,12 +589,12 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
         if (attr.IsTrailing())
         {
             // try to move off by highlighting the lead half too.
-            bool fSuccess = Utils::s_DoDecrementScreenCoordinate(srectEdges, coordSelPoint);
+            bool fSuccess = bufferSize.DecrementInBounds(coordSelPoint);
 
             // if that fails, move off to the next character
             if (!fSuccess)
             {
-                Utils::s_DoIncrementScreenCoordinate(srectEdges, coordSelPoint);
+                bufferSize.IncrementInBounds(coordSelPoint);
             }
         }
     }
@@ -937,7 +938,7 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
 bool Selection::s_GetInputLineBoundaries(_Out_opt_ COORD* const pcoordInputStart, _Out_opt_ COORD* const pcoordInputEnd)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SMALL_RECT srectEdges = Utils::s_GetCurrentBufferEdges();
+    const auto bufferSize = gci.GetActiveOutputBuffer().GetSize();
 
     auto& textBuffer = gci.GetActiveOutputBuffer().GetTextBuffer();
 
@@ -959,11 +960,11 @@ bool Selection::s_GetInputLineBoundaries(_Out_opt_ COORD* const pcoordInputStart
     else
     {
         // otherwise, we need to add the number of characters in the input line to the original cursor position
-        Utils::s_AddToPosition(srectEdges, gsl::narrow<int>(cookedRead.VisibleCharCount()), coordEnd);
+        bufferSize.MoveInBounds(cookedRead.VisibleCharCount(), coordEnd);
     }
 
     // - 1 so the coordinate is on top of the last position of the text, not one past it.
-    Utils::s_AddToPosition(srectEdges, -1, coordEnd);
+    bufferSize.MoveInBounds(-1, coordEnd);
 
     if (pcoordInputStart != nullptr)
     {

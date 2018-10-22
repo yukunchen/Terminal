@@ -39,6 +39,7 @@ const wchar_t UNICODE_BOX_DRAW_LIGHT_HORIZONTAL = 0x2500;
 const wchar_t UNICODE_BOX_DRAW_LIGHT_VERTICAL = 0x2502;
 const wchar_t UNICODE_BOX_DRAW_LIGHT_UP_AND_RIGHT = 0x2514;
 const wchar_t UNICODE_BOX_DRAW_LIGHT_UP_AND_LEFT = 0x2518;
+const wchar_t UNICODE_INVALID = 0xFFFF;
 
 // This is the "Ctrl+C" character.
 //      With VKey='C', it generates a CTRL_C_EVENT

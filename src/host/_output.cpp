@@ -91,7 +91,6 @@ void WriteRectToScreenBuffer(SCREEN_INFORMATION& screenInfo,
     }
     const size_t xSize = cells.at(0).size();
     const size_t ySize = cells.size();
-    const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
 
     // copy data to output buffer
     for (size_t iRow = 0; iRow < ySize; ++iRow)
@@ -109,6 +108,37 @@ void WriteRectToScreenBuffer(SCREEN_INFORMATION& screenInfo,
         CleanupDbcsEdgesForWrite(xSize, point, screenInfo);
 
         screenInfo.WriteLine(cells.at(iRow), coordDest.Y + iRow, coordDest.X);
+    }
+}
+
+// Routine Description:
+// - Writes a rectangular section of output cells (from the OutputCellRect struct)
+//   into the screen at the given destination.
+// Arguments:
+// - screenInfo - screen to update
+// - rect - rectangular output cell data
+// - dest - coordinate within screen to write with data
+// Return Value:
+// - <none>
+void WriteRectToScreenBufferOC(SCREEN_INFORMATION& screenInfo,
+                               const OutputCellRect& rect,
+                               const COORD dest)
+{
+    for (size_t i = 0; i < rect.Height(); i++)
+    {
+        const auto iter = rect.GetRowIter(i);
+
+        ROW& row = screenInfo.GetTextBuffer().GetRowByOffset(dest.Y + static_cast<UINT>(i));
+        // clear wrap status for rectangle drawing
+        row.GetCharRow().SetWrapForced(false);
+
+        // fix up any leading trailing bytes at edges
+        COORD point;
+        point.X = dest.X;
+        point.Y = dest.Y + static_cast<short>(i);
+        CleanupDbcsEdgesForWrite(rect.Width(), point, screenInfo);
+
+        screenInfo.WriteLine(iter, dest.Y + i, dest.X);
     }
 }
 

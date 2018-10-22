@@ -16,9 +16,9 @@
     <ClCompile Include="HistoryTests.cpp" />
     <ClCompile Include="InitTests.cpp" />
     <ClCompile Include="ScreenBufferTests.cpp" />
-    <ClCompile Include="ScreenInfoIteratorTests.cpp" />
     <ClCompile Include="SearchTests.cpp" />
     <ClCompile Include="SelectionTests.cpp" />
+    <ClCompile Include="TextBufferIteratorTests.cpp" />
     <ClCompile Include="TextBufferTests.cpp" />
     <ClCompile Include="TitleTests.cpp" />
     <ClCompile Include="UtilsTests.cpp" />
@@ -26,6 +26,7 @@
     <ClCompile Include="Utf16ParserTests.cpp" />
     <ClCompile Include="InputBufferTests.cpp" />
     <ClCompile Include="ReadWaitTests.cpp" />
+    <ClCompile Include="ViewportTests.cpp" />
     <ClCompile Include="VtIoTests.cpp" />
     <ClCompile Include="VtRendererTests.cpp" />
     <Clcompile Include="..\..\types\IInputEventStreams.cpp" />

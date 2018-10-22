@@ -59,8 +59,6 @@ int ConvertOutputToUnicode(_In_ UINT uiCodePage,
                            _In_ UINT cchTarget) noexcept;
 
 bool IsCoordInBounds(const COORD point, const COORD bounds) noexcept;
-bool IsCoordInBoundsInclusive(const COORD point, const SMALL_RECT bounds) noexcept;
-bool IsRectInBoundsInclusive(const SMALL_RECT rect, const SMALL_RECT bounds) noexcept;
 
 bool DoBuffersOverlap(const BYTE* const pBufferA,
                       const UINT cbBufferA,

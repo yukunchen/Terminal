@@ -52,7 +52,7 @@ HRESULT VtEngine::StartPaint() noexcept
 [[nodiscard]]
 HRESULT VtEngine::EndPaint() noexcept
 {
-    _invalidRect = Viewport({ 0 });
+    _invalidRect = Viewport::Empty();
     _fInvalidRectUsed = false;
     _scrollDelta = {0};
     _clearedAllThisFrame = false;

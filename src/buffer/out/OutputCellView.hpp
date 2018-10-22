@@ -20,7 +20,6 @@ Revision History:
 
 #include "DbcsAttribute.hpp"
 #include "TextAttribute.hpp"
-#include "OutputCell.hpp"
 
 class OutputCellView
 {
@@ -29,12 +28,12 @@ public:
     OutputCellView(const std::wstring_view view,
                    const DbcsAttribute dbcsAttr,
                    const TextAttribute textAttr,
-                   const OutputCell::TextAttributeBehavior behavior);
+                   const TextAttributeBehavior behavior);
 
     std::wstring_view Chars() const;
     DbcsAttribute DbcsAttr() const;
     TextAttribute TextAttr() const;
-    OutputCell::TextAttributeBehavior TextAttrBehavior() const;
+    TextAttributeBehavior TextAttrBehavior() const;
 
     bool operator==(const OutputCellView& view) const noexcept;
     bool operator!=(const OutputCellView& view) const noexcept;
@@ -43,5 +42,5 @@ private:
     std::wstring_view _view;
     DbcsAttribute _dbcsAttr;
     TextAttribute _textAttr;
-    OutputCell::TextAttributeBehavior _behavior;
+    TextAttributeBehavior _behavior;
 };
