@@ -38,6 +38,7 @@ SOURCES = \
     ViewportTests.cpp \
     ConsoleArgumentsTests.cpp \
     CommandLineTests.cpp \
+    CommandListPopupTests.cpp \
     CommandNumberPopupTests.cpp \
     CopyFromCharPopupTests.cpp \
     CopyToCharPopupTests.cpp \

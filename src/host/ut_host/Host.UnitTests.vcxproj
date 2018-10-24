@@ -9,6 +9,7 @@
     <ClCompile Include="ConsoleArgumentsTests.cpp" />
     <ClCompile Include="CommandLineTests.cpp" />
     <ClCompile Include="CodepointWidthDetectorTests.cpp" />
+    <ClCompile Include="CommandListPopupTests.cpp" />
     <ClCompile Include="CommandNumberPopupTests.cpp" />
     <ClCompile Include="CopyFromCharPopupTests.cpp" />
     <ClCompile Include="CopyToCharPopupTests.cpp" />

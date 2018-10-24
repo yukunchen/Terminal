@@ -187,33 +187,24 @@ NTSTATUS CommandListPopup::Process(COOKED_READ_DATA& cookedReadData) noexcept
 
     for (;;)
     {
-        WCHAR Char;
-        bool PopupKeys = false;
+        WCHAR wch = UNICODE_NULL;
+        bool popupKeys = false;
 
-        Status = GetChar(cookedReadData.GetInputBuffer(),
-                         &Char,
-                         true,
-                         nullptr,
-                         &PopupKeys,
-                         nullptr);
+        Status = _getUserInput(cookedReadData, popupKeys, wch);
         if (!NT_SUCCESS(Status))
         {
-            if (Status != CONSOLE_STATUS_WAIT)
-            {
-                cookedReadData._BytesRead = 0;
-            }
             return Status;
         }
 
-        if (PopupKeys)
+        if (popupKeys)
         {
-            Status = _handlePopupKeys(cookedReadData, Char);
+            Status = _handlePopupKeys(cookedReadData, wch);
             if (Status != STATUS_SUCCESS)
             {
                 return Status;
             }
         }
-        else if (Char == UNICODE_CARRIAGERETURN)
+        else if (wch == UNICODE_CARRIAGERETURN)
         {
             _handleReturn(cookedReadData);
             return CONSOLE_STATUS_READ_COMPLETE;
@@ -221,7 +212,7 @@ NTSTATUS CommandListPopup::Process(COOKED_READ_DATA& cookedReadData) noexcept
         else
         {
             // cycle through commands that start with the letter of the key pressed
-            _cycleSelectionToMatchingCommands(cookedReadData, Char);
+            _cycleSelectionToMatchingCommands(cookedReadData, wch);
         }
     }
 }
