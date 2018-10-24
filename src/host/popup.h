@@ -60,6 +60,7 @@ protected:
     friend class CopyFromCharPopupTests;
     friend class CopyToCharPopupTests;
     friend class CommandNumberPopupTests;
+    friend class CommandListPopupTests;
 #endif
 
     NTSTATUS _getUserInput(COOKED_READ_DATA& cookedReadData, bool& popupKey, wchar_t& wch) noexcept;

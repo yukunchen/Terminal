@@ -40,4 +40,8 @@ private:
     SHORT _currentCommand;
     SHORT _bottomIndex;  // number of command displayed on last line of popup
     const CommandHistory& _history;
+
+#ifdef UNIT_TESTING
+    friend class CommandListPopupTests;
+#endif
 };

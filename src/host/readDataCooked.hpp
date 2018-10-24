@@ -104,6 +104,7 @@ public:
     friend class CommandLineTests;
     friend class CopyToCharPopupTests;
     friend class CommandNumberPopupTests;
+    friend class CommandListPopupTests;
 #endif
 
 private:
