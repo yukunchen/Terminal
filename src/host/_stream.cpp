@@ -522,10 +522,12 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
     EndWhile:
         if (i != 0)
         {
+            CursorPosition = cursor.GetPosition();
+
             // Make sure we don't write past the end of the buffer.
-            if (i > (ULONG)coordScreenBufferSize.X - cursor.GetPosition().X)
+            if (i > (ULONG)coordScreenBufferSize.X - CursorPosition.X)
             {
-                i = (ULONG)coordScreenBufferSize.X - cursor.GetPosition().X;
+                i = (ULONG)coordScreenBufferSize.X - CursorPosition.X;
             }
 
             // line was wrapped if we're writing up to the end of the current row
@@ -538,7 +540,6 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
 
             TempNumSpaces += i;
             CursorPosition.X = XPosition;
-            CursorPosition.Y = cursor.GetPosition().Y;
 
             // enforce a delayed newline if we're about to pass the end and the WC_DELAY_EOL_WRAP flag is set.
             if (WI_IsFlagSet(dwFlags, WC_DELAY_EOL_WRAP) && CursorPosition.X >= coordScreenBufferSize.X)
