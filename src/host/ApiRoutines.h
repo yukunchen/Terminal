@@ -132,23 +132,26 @@ public:
 
 #pragma region L2
 
-    //HRESULT FillConsoleOutputAttributeImpl(_In_ SCREEN_INFORMATION* const pContext,
-    //                                               const WORD Attribute,
-    //                                               const DWORD LengthToWrite,
-    //                                               const COORD StartingCoordinate,
-    //                                               _Out_ DWORD* const pCellsModified);
+    [[nodiscard]]
+    virtual HRESULT FillConsoleOutputAttributeImpl(IConsoleOutputObject& OutContext,
+                                                   const WORD attribute,
+                                                   const size_t lengthToWrite,
+                                                   const COORD startingCoordinate,
+                                                   size_t& cellsModified) noexcept override;
 
-    //HRESULT FillConsoleOutputCharacterAImpl(_In_ SCREEN_INFORMATION* const pContext,
-    //                                                const char Character,
-    //                                                const DWORD LengthToWrite,
-    //                                                const COORD StartingCoordinate,
-    //                                                _Out_ DWORD* const pCellsModified);
+    [[nodiscard]]
+    virtual HRESULT FillConsoleOutputCharacterAImpl(IConsoleOutputObject& OutContext,
+                                                    const char character,
+                                                    const size_t lengthToWrite,
+                                                    const COORD startingCoordinate,
+                                                    size_t& cellsModified) noexcept override;
 
-    //HRESULT FillConsoleOutputCharacterWImpl(_In_ SCREEN_INFORMATION* const pContext,
-    //                                                const wchar_t Character,
-    //                                                const DWORD LengthToWrite,
-    //                                                const COORD StartingCoordinate,
-    //                                                _Out_ DWORD* const pCellsModified);
+    [[nodiscard]]
+    virtual HRESULT FillConsoleOutputCharacterWImpl(IConsoleOutputObject& OutContext,
+                                                    const wchar_t character,
+                                                    const size_t lengthToWrite,
+                                                    const COORD startingCoordinate,
+                                                    size_t& cellsModified) noexcept override;
 
     //// Process based. Restrict in protocol side?
     //HRESULT GenerateConsoleCtrlEventImpl(const ULONG ProcessGroupFilter,
@@ -259,23 +262,23 @@ public:
     //                                        const SMALL_RECT* const pTargetRectangle,
     //                                        _Out_ SMALL_RECT* const pAffectedRectangle);
 
-    //HRESULT WriteConsoleOutputAttributeImpl(_In_ SCREEN_INFORMATION* const pContext,
-    //                                                _In_reads_(AttributeBufferLength) const WORD* const pAttributeBuffer,
-    //                                                const ULONG AttributeBufferLength,
-    //                                                const COORD* const pTargetOrigin,
-    //                                                _Out_ ULONG* const pAttributeBufferRead);
+    [[nodiscard]]
+    virtual HRESULT WriteConsoleOutputAttributeImpl(IConsoleOutputObject& OutContext,
+                                                    const std::basic_string_view<WORD> attrs,
+                                                    const COORD target,
+                                                    size_t& used) noexcept override;
 
-    //HRESULT WriteConsoleOutputCharacterAImpl(_In_ SCREEN_INFORMATION* const pContext,
-    //                                                 _In_reads_(TextBufferLength) const char* const pTextBuffer,
-    //                                                 const ULONG TextBufferLength,
-    //                                                 const COORD* const pTargetOrigin,
-    //                                                 _Out_ ULONG* const pTextBufferRead);
+    [[nodiscard]]
+    virtual HRESULT WriteConsoleOutputCharacterAImpl(IConsoleOutputObject& OutContext,
+                                                     const std::string_view text,
+                                                     const COORD target,
+                                                     size_t& used) noexcept override;
 
-    //HRESULT WriteConsoleOutputCharacterWImpl(_In_ SCREEN_INFORMATION* const pContext,
-    //                                                 _In_reads_(TextBufferLength) const wchar_t* const pTextBuffer,
-    //                                                 const ULONG TextBufferLength,
-    //                                                 const COORD* const pTargetOrigin,
-    //                                                 _Out_ ULONG* const pTextBufferRead);
+    [[nodiscard]]
+    virtual HRESULT WriteConsoleOutputCharacterWImpl(IConsoleOutputObject& OutContext,
+                                                     const std::wstring_view text,
+                                                     const COORD target,
+                                                     size_t& used) noexcept override;
 
     //HRESULT ReadConsoleOutputA(_In_ SCREEN_INFORMATION* const pContext,
     //                                   _Out_writes_(pTextBufferSize->X * pTextBufferSize->Y) CHAR_INFO* const pTextBuffer,

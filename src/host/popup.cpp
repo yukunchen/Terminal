@@ -20,6 +20,8 @@
 
 #pragma hdrstop
 
+using namespace Microsoft::Console::Types;
+
 // Routine Description:
 // - Creates an object representing an interactive popup overlay during cooked mode command line editing.
 // - NOTE: Modifies global popup count (and adjusts cursor visibility as appropriate.)
@@ -40,7 +42,7 @@ Popup::Popup(SCREEN_INFORMATION& screenInfo, const COORD proposedSize) :
     _region.Right = gsl::narrow<SHORT>(origin.X + size.X - 1i16);
     _region.Bottom = gsl::narrow<SHORT>(origin.Y + size.Y - 1i16);
 
-    _oldScreenSize = screenInfo.GetScreenBufferSize();
+    _oldScreenSize = screenInfo.GetBufferSize().Dimensions();
 
     SMALL_RECT TargetRect;
     TargetRect.Left = 0;
@@ -48,17 +50,8 @@ Popup::Popup(SCREEN_INFORMATION& screenInfo, const COORD proposedSize) :
     TargetRect.Right = _oldScreenSize.X - 1;
     TargetRect.Bottom = _region.Bottom;
 
-    std::vector<std::vector<OutputCell>> outputCells;
-    LOG_IF_FAILED(ReadScreenBuffer(screenInfo, outputCells, &TargetRect));
-    FAIL_FAST_IF(outputCells.empty());
-    // copy the data into the char info buffer
-    for (auto& row : outputCells)
-    {
-        for (auto& cell : row)
-        {
-            _oldContents.push_back(cell.ToCharInfo());
-        }
-    }
+    // copy the data into the backup buffer
+    _oldContents = screenInfo.ReadRect(Viewport::FromInclusive(TargetRect));
 
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto countWas = gci.PopupCount.fetch_add(1ui16);
@@ -97,18 +90,18 @@ void Popup::_DrawBorder()
     COORD WriteCoord;
     WriteCoord.X = _region.Left;
     WriteCoord.Y = _region.Top;
-    FillOutputAttributes(_screenInfo, _attributes, WriteCoord, Width() + 2);
+    _screenInfo.Write(OutputCellIterator(_attributes, Width() + 2), WriteCoord);
 
     // draw upper left corner
-    FillOutputW(_screenInfo, _screenInfo.LineChar[UPPER_LEFT_CORNER], WriteCoord, 1);
+    _screenInfo.Write(OutputCellIterator(_screenInfo.LineChar[UPPER_LEFT_CORNER], 1), WriteCoord);
 
     // draw upper bar
     WriteCoord.X += 1;
-    FillOutputW(_screenInfo, _screenInfo.LineChar[HORIZONTAL_LINE], WriteCoord, Width());
+    _screenInfo.Write(OutputCellIterator(_screenInfo.LineChar[HORIZONTAL_LINE], Width()), WriteCoord);
 
     // draw upper right corner
     WriteCoord.X = _region.Right;
-    FillOutputW(_screenInfo, _screenInfo.LineChar[UPPER_RIGHT_CORNER], WriteCoord, 1);
+    _screenInfo.Write(OutputCellIterator(_screenInfo.LineChar[UPPER_RIGHT_CORNER], 1), WriteCoord);
 
     for (SHORT i = 0; i < Height(); i++)
     {
@@ -116,31 +109,31 @@ void Popup::_DrawBorder()
         WriteCoord.X = _region.Left;
 
         // fill attributes
-        FillOutputAttributes(_screenInfo, _attributes, WriteCoord, Width() + 2);
+        _screenInfo.Write(OutputCellIterator(_attributes, Width() + 2), WriteCoord);
 
-        FillOutputW(_screenInfo, _screenInfo.LineChar[VERTICAL_LINE], WriteCoord, 1);
+        _screenInfo.Write(OutputCellIterator(_screenInfo.LineChar[VERTICAL_LINE], 1), WriteCoord);
 
         WriteCoord.X = _region.Right;
-        FillOutputW(_screenInfo, _screenInfo.LineChar[VERTICAL_LINE], WriteCoord, 1);
+        _screenInfo.Write(OutputCellIterator(_screenInfo.LineChar[VERTICAL_LINE], 1), WriteCoord);
     }
 
     // Draw bottom line.
     // Fill attributes of top line.
     WriteCoord.X = _region.Left;
     WriteCoord.Y = _region.Bottom;
-    FillOutputAttributes(_screenInfo, _attributes, WriteCoord, Width() + 2);
+    _screenInfo.Write(OutputCellIterator(_attributes, Width() + 2), WriteCoord);
 
     // Draw bottom left corner.
     WriteCoord.X = _region.Left;
-    FillOutputW(_screenInfo, _screenInfo.LineChar[BOTTOM_LEFT_CORNER], WriteCoord, 1);
+    _screenInfo.Write(OutputCellIterator(_screenInfo.LineChar[BOTTOM_LEFT_CORNER], 1), WriteCoord);
 
     // Draw lower bar.
     WriteCoord.X += 1;
-    FillOutputW(_screenInfo, _screenInfo.LineChar[HORIZONTAL_LINE], WriteCoord, Width());
+    _screenInfo.Write(OutputCellIterator(_screenInfo.LineChar[HORIZONTAL_LINE], Width()), WriteCoord);
 
     // draw lower right corner
     WriteCoord.X = _region.Right;
-    FillOutputW(_screenInfo, _screenInfo.LineChar[BOTTOM_RIGHT_CORNER], WriteCoord, 1);
+    _screenInfo.Write(OutputCellIterator(_screenInfo.LineChar[BOTTOM_RIGHT_CORNER], 1), WriteCoord);
 }
 
 // Routine Description:
@@ -158,15 +151,9 @@ void Popup::_DrawPrompt(const UINT id)
     size_t lStringLength = Width();
     for (SHORT i = 0; i < Height(); i++)
     {
-        lStringLength = gsl::narrow<ULONG>(FillOutputAttributes(_screenInfo,
-                                                                _attributes,
-                                                                WriteCoord,
-                                                                static_cast<size_t>(lStringLength)));
-
-        lStringLength = gsl::narrow<ULONG>(FillOutputW(_screenInfo,
-                                                       UNICODE_SPACE,
-                                                       WriteCoord,
-                                                       static_cast<size_t>(lStringLength)));
+        const OutputCellIterator it(UNICODE_SPACE, _attributes, lStringLength);
+        const auto done = _screenInfo.Write(it, WriteCoord);
+        lStringLength = done.GetCellDistance(it);
 
         WriteCoord.Y += 1;
     }
@@ -181,8 +168,11 @@ void Popup::_DrawPrompt(const UINT id)
         text = text.substr(0, Width());
     }
 
-    std::vector<wchar_t> promptChars(text.cbegin(), text.cend());
-    WriteOutputStringW(_screenInfo, promptChars, WriteCoord);
+    size_t used;
+    LOG_IF_FAILED(ServiceLocator::LocateGlobals().api.WriteConsoleOutputCharacterWImpl(_screenInfo,
+                                                                                       text,
+                                                                                       WriteCoord,
+                                                                                       used));
 }
 
 // Routine Description:
@@ -200,21 +190,34 @@ void Popup::UpdateStoredColors(const WORD newAttr, const WORD newPopupAttr,
     WORD const oldPopupAttrInv = (WORD)(((oldPopupAttr << 4) & 0xf0) | ((oldPopupAttr >> 4) & 0x0f));
     WORD const newPopupAttrInv = (WORD)(((newPopupAttr << 4) & 0xf0) | ((newPopupAttr >> 4) & 0x0f));
 
-    for (auto& ci : _oldContents)
+    // Walk through every row in the rectangle
+    for (size_t i = 0; i < _oldContents.Height(); i++)
     {
-        if (ci.Attributes == oldAttr)
-        {
-            ci.Attributes = newAttr;
-        }
-        else if (ci.Attributes == oldPopupAttr)
-        {
-            ci.Attributes = newPopupAttr;
-        }
-        else if (ci.Attributes == oldPopupAttrInv)
-        {
-            ci.Attributes = newPopupAttrInv;
-        }
+        auto row = _oldContents.GetRow(i);
 
+        // Walk through every cell
+        for (auto& cell : row)
+        {
+            auto& attr = cell.TextAttr();
+            
+            if (attr.IsLegacy())
+            {
+                const auto legacy = attr.GetLegacyAttributes();
+
+                if (legacy == oldAttr)
+                {
+                    attr.SetFromLegacy(newAttr);
+                }
+                else if (legacy == oldPopupAttr)
+                {
+                    attr.SetFromLegacy(newPopupAttr);
+                }
+                else if (legacy == oldPopupAttrInv)
+                {
+                    attr.SetFromLegacy(newPopupAttrInv);
+                }
+            }
+        }
     }
 }
 
@@ -224,9 +227,6 @@ void Popup::UpdateStoredColors(const WORD newAttr, const WORD newPopupAttr,
 void Popup::End()
 {
     // restore previous contents to screen
-    COORD Size;
-    Size.X = _oldScreenSize.X;
-    Size.Y = _region.Bottom - _region.Top + 1i16;
 
     SMALL_RECT SourceRect;
     SourceRect.Left = 0i16;
@@ -234,8 +234,9 @@ void Popup::End()
     SourceRect.Right = _oldScreenSize.X - 1i16;
     SourceRect.Bottom = _region.Bottom;
 
-    LOG_IF_FAILED(WriteScreenBuffer(_screenInfo, _oldContents.data(), &SourceRect));
-    WriteToScreen(_screenInfo, SourceRect);
+    const auto sourceViewport = Viewport::FromInclusive(SourceRect);
+
+    _screenInfo.WriteRect(_oldContents, sourceViewport.Origin());
 }
 
 // Routine Description:
@@ -251,14 +252,11 @@ COORD Popup::_CalculateSize(const SCREEN_INFORMATION& screenInfo, const COORD pr
     COORD size = proposedSize;
     size.X += 2;    // add borders
     size.Y += 2;    // add borders
-    if (size.X >= (SHORT)(screenInfo.GetScreenWindowSizeX()))
-    {
-        size.X = (SHORT)(screenInfo.GetScreenWindowSizeX());
-    }
-    if (size.Y >= (SHORT)(screenInfo.GetScreenWindowSizeY()))
-    {
-        size.Y = (SHORT)(screenInfo.GetScreenWindowSizeY());
-    }
+
+    const COORD viewportSize = screenInfo.GetViewport().Dimensions();
+
+    size.X = std::min(size.X, viewportSize.X);
+    size.Y = std::min(size.Y, viewportSize.Y);
 
     // make sure there's enough room for the popup borders
     THROW_HR_IF(E_NOT_SUFFICIENT_BUFFER, size.X < 2 || size.Y < 2);
@@ -275,10 +273,12 @@ COORD Popup::_CalculateSize(const SCREEN_INFORMATION& screenInfo, const COORD pr
 // - Coordinate position of the origin point of the popup
 COORD Popup::_CalculateOrigin(const SCREEN_INFORMATION& screenInfo, const COORD size)
 {
+    const auto viewport = screenInfo.GetViewport();
+
     // determine origin.  center popup on window
     COORD origin;
-    origin.X = (SHORT)((screenInfo.GetScreenWindowSizeX() - size.X) / 2 + screenInfo.GetBufferViewport().Left);
-    origin.Y = (SHORT)((screenInfo.GetScreenWindowSizeY() - size.Y) / 2 + screenInfo.GetBufferViewport().Top);
+    origin.X = gsl::narrow<SHORT>((viewport.Width() - size.X) / 2 + viewport.Left());
+    origin.Y = gsl::narrow<SHORT>((viewport.Height() - size.Y) / 2 + viewport.Top());
     return origin;
 }
 

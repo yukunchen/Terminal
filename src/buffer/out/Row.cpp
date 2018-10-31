@@ -126,62 +126,14 @@ std::wstring ROW::GetText() const
     return _charRow.GetText();
 }
 
-// Routine Description:
-// - gets the cell data for the row
-// Return Value:
-// - vector of cell data for row, one object per column
-std::vector<OutputCell> ROW::AsCells() const
-{
-    return AsCells(0, size());
-}
-
-// Routine Description:
-// - gets the cell data for the row
-// Arguments:
-// - startIndex - index to start fetching data from
-// Return Value:
-// - vector of cell data for row, one object per column
-std::vector<OutputCell> ROW::AsCells(const size_t startIndex) const
-{
-    return AsCells(startIndex, size() - startIndex);
-}
-
 RowCellIterator ROW::AsCellIter(const size_t startIndex) const
 {
     return AsCellIter(startIndex, size() - startIndex);
 }
 
-// Routine Description:
-// - gets the cell data for the row
-// Arguments:
-// - startIndex - index to start fetching data from
-// - count - the number of cells to grab
-// Return Value:
-// - vector of cell data for row, one object per column
-std::vector<OutputCell> ROW::AsCells(const size_t startIndex, const size_t count) const
-{
-    std::vector<OutputCell> cells;
-    cells.reserve(count);
-
-    ATTR_ROW::const_iterator it = std::next(_attrRow.begin(), startIndex);
-    for (size_t i = 0; i < count; ++i, ++it)
-    {
-        const auto index = startIndex + i;
-        const auto glyph = _charRow.GlyphAt(index);
-        cells.emplace_back(glyph, _charRow.DbcsAttrAt(index), *it);
-    }
-    return cells;
-}
-
 RowCellIterator ROW::AsCellIter(const size_t startIndex, const size_t count) const
 {
     return RowCellIterator(*this, startIndex, count);
-}
-
-const OutputCell ROW::at(const size_t column) const
-{
-    const auto glyph = _charRow.GlyphAt(column);
-    return { glyph, _charRow.DbcsAttrAt(column), _attrRow.GetAttrByColumn(column) };
 }
 
 UnicodeStorage& ROW::GetUnicodeStorage()
@@ -199,17 +151,22 @@ const UnicodeStorage& ROW::GetUnicodeStorage() const
 // Arguments:
 // - it - custom console iterator to use for seeking input data. bool() false when it becomes invalid while seeking.
 // - index - column in row to start writing at
+// - setWrap - set the wrap flags if we hit the end of the row while writing and there's still more data in the iterator.
+// - limitRight - right inclusive column ID for the last write in this row. (optional, will just write to the end of row if nullopt)
 // Return Value:
-// - iterator to first cell that was not written to this row. will be equal to end if all cells were written
-// to row
-OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index)
+// - iterator to first cell that was not written to this row. 
+OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, const bool setWrap, std::optional<size_t> limitRight)
 {
     THROW_HR_IF(E_INVALIDARG, index >= _charRow.size());
+    THROW_HR_IF(E_INVALIDARG, limitRight.value_or(0) >= _charRow.size()); 
     size_t currentIndex = index;
-    while (it && currentIndex < _charRow.size())
+
+    // If we're given a right-side column limit, use it. Otherwise, the write limit is the final column index available in the char row.
+    const auto finalColumnInRow = limitRight.value_or(_charRow.size() - 1);
+
+    while (it && currentIndex <= finalColumnInRow)
     {
-        _charRow.DbcsAttrAt(currentIndex) = it->DbcsAttr();
-        _charRow.GlyphAt(currentIndex) = it->Chars();
+        // Fill the color if the behavior isn't set to keeping the current color.
         if (it->TextAttrBehavior() != TextAttributeBehavior::Current)
         {
             const TextAttributeRun attrRun{ 1, it->TextAttr() };
@@ -219,8 +176,50 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index)
                                                   _charRow.size()));
         }
 
-        ++it;
+        // Fill the text if the behavior isn't set to saying there's only a color stored in this iterator.
+        if (it->TextAttrBehavior() != TextAttributeBehavior::StoredOnly)
+        {
+            const bool fillingLastColumn = currentIndex == finalColumnInRow;
+
+            // TODO: MSFT: 19452170 - We need to ensure when writing any trailing byte that the one to the left
+            // is a matching leading byte. Likewise, if we're writing a leading byte, we need to make sure we still have space in this loop
+            // for the trailing byte coming up before writing it.
+
+            // If we're trying to fill the first cell with a trailing byte, pad it out instead by clearing it.
+            // Don't increment iterator. We'll advance the index and try again with this value on the next round through the loop.
+            if (currentIndex == 0 && it->DbcsAttr().IsTrailing())
+            {
+                _charRow.ClearCell(currentIndex);
+            }
+            // If we're trying to fill the last cell with a leading byte, pad it out instead by clearing it.
+            // Don't increment iterator. We'll exit because we couldn't write a lead at the end of a line.
+            else if (fillingLastColumn && it->DbcsAttr().IsLeading())
+            {
+                _charRow.ClearCell(currentIndex);
+                _charRow.SetDoubleBytePadded(true);
+            }
+            // Otherwise, copy the data given and increment the iterator.
+            else
+            {
+                _charRow.DbcsAttrAt(currentIndex) = it->DbcsAttr();
+                _charRow.GlyphAt(currentIndex) = it->Chars();
+                ++it;
+            }
+
+            // If we're asked to set the wrap status and we just filled the last column with some text, set wrap status on the row.
+            if (setWrap && fillingLastColumn)
+            {
+                _charRow.SetWrapForced(true);
+            }
+        }
+        else
+        {
+            ++it;
+        }
+
+        // Move to the next cell for the next time through the loop.
         ++currentIndex;
     }
+
     return it;
 }

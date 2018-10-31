@@ -34,7 +34,6 @@ public:
     ROW(const SHORT rowId, const short rowWidth, const TextAttribute fillAttribute, TextBuffer* const pParent);
 
     size_t size() const noexcept;
-    const OutputCell at(const size_t column) const;
 
     const CharRow& GetCharRow() const;
     CharRow& GetCharRow();
@@ -51,9 +50,6 @@ public:
 
     void ClearColumn(const size_t column);
     std::wstring GetText() const;
-    std::vector<OutputCell> AsCells() const;
-    std::vector<OutputCell> AsCells(const size_t startIndex) const;
-    std::vector<OutputCell> AsCells(const size_t startIndex, const size_t count) const;
 
     RowCellIterator AsCellIter(const size_t startIndex) const;
     RowCellIterator AsCellIter(const size_t startIndex, const size_t count) const;
@@ -61,41 +57,7 @@ public:
     UnicodeStorage& GetUnicodeStorage();
     const UnicodeStorage& GetUnicodeStorage() const;
 
-    OutputCellIterator WriteCells(OutputCellIterator it, const size_t index);
-
-    // Routine Description:
-    // - writes cell data to the row
-    // Arguments:
-    // - start - starting iterator to cells to write
-    // - end - ending iterator to cells to write
-    // - index - column in row to start writing at
-    // Return Value:
-    // - iterator to first cell that was not written to this row. will be equal to end if all cells were written
-    // to row
-    template <typename InputIt>
-    InputIt WriteCells(InputIt start, InputIt end, const size_t index)
-    {
-        THROW_HR_IF(E_INVALIDARG, index >= _charRow.size());
-        auto it = start;
-        size_t currentIndex = index;
-        while (it != end && currentIndex < _charRow.size())
-        {
-            _charRow.DbcsAttrAt(currentIndex) = it->DbcsAttr();
-            _charRow.GlyphAt(currentIndex) = it->Chars();
-            if (it->TextAttrBehavior() != TextAttributeBehavior::Current)
-            {
-                const TextAttributeRun attrRun{ 1, it->TextAttr() };
-                LOG_IF_FAILED(_attrRow.InsertAttrRuns({ &attrRun, 1 },
-                                                      currentIndex,
-                                                      currentIndex,
-                                                      _charRow.size()));
-            }
-
-            ++it;
-            ++currentIndex;
-        }
-        return it;
-    }
+    OutputCellIterator WriteCells(OutputCellIterator it, const size_t index, const bool setWrap, std::optional<size_t> limitRight = std::nullopt);
 
     friend bool operator==(const ROW& a, const ROW& b) noexcept;
 

@@ -185,6 +185,24 @@ void Viewport::Clamp(COORD& pos) const
 }
 
 // Method Description:
+// - Clamps a viewport into the inside of this viewport.
+// Arguments:
+// - other - Viewport to clamp to the inside of this viewport
+// Return Value:
+// - Clamped viewport
+Viewport Viewport::Clamp(const Viewport& other) const
+{
+    auto clampMe = other.ToInclusive();
+
+    clampMe.Left = std::clamp(clampMe.Left, Left(), RightInclusive());
+    clampMe.Right = std::clamp(clampMe.Right, Left(), RightInclusive());
+    clampMe.Top = std::clamp(clampMe.Top, Top(), BottomInclusive());
+    clampMe.Bottom = std::clamp(clampMe.Bottom, Top(), BottomInclusive());
+
+    return Viewport::FromInclusive(clampMe);
+}
+
+// Method Description:
 // - Moves the coordinate given by the number of positions and
 //   in the direction given (repeated increment or decrement)
 // Arguments:

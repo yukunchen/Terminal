@@ -22,6 +22,45 @@ static const WORD leftShiftScanCode = 0x2A;
 
 // Routine Description:
 // - Takes a multibyte string, allocates the appropriate amount of memory for the conversion, performs the conversion,
+//   and returns the Unicode UTF-16 result in the smart pointer (and the length).
+// Arguments:
+// - codepage - Windows Code Page representing the multibyte source text
+// - source - View of multibyte characters of source text
+// Return Value:
+// - The UTF-16 wide string.
+// - NOTE: Throws suitable HRESULT errors from memory allocation, safe math, or MultiByteToWideChar failures.
+[[nodiscard]]
+std::wstring ConvertToW(const UINT codePage, const std::string_view source)
+{
+    // If there's nothing to convert, bail early.
+    if (source.empty())
+    {
+        return {};
+    }
+
+    int iSource; // convert to int because Mb2Wc requires it.
+    THROW_IF_FAILED(SizeTToInt(source.size(), &iSource));
+
+    // Ask how much space we will need.
+    int const iTarget = MultiByteToWideChar(codePage, 0, source.data(), iSource, nullptr, 0);
+    THROW_LAST_ERROR_IF(0 == iTarget);
+
+    size_t cchNeeded;
+    THROW_IF_FAILED(IntToSizeT(iTarget, &cchNeeded));
+
+    // Allocate ourselves space in a smart pointer.
+    std::unique_ptr<wchar_t[]> pwsOut = std::make_unique<wchar_t[]>(cchNeeded);
+    THROW_IF_NULL_ALLOC(pwsOut);
+
+    // Attempt conversion for real.
+    THROW_LAST_ERROR_IF(0 == MultiByteToWideChar(codePage, 0, source.data(), iSource, pwsOut.get(), iTarget));
+
+    // Return as a string
+    return std::wstring(pwsOut.get(), cchNeeded);
+}
+
+// Routine Description:
+// - Takes a multibyte string, allocates the appropriate amount of memory for the conversion, performs the conversion,
 //   and returns the Unicode UCS-2 result in the smart pointer (and the length).
 // Arguments:
 // - uiCodePage - Windows Code Page representing the multibyte source text
@@ -67,6 +106,47 @@ HRESULT ConvertToW(const UINT uiCodePage,
     pwsTarget.swap(pwsOut);
 
     return S_OK;
+}
+
+// Routine Description:
+// - Takes a wide string, allocates the appropriate amount of memory for the conversion, performs the conversion,
+//   and returns the Multibyte result
+// Arguments:
+// - codepage - Windows Code Page representing the multibyte destination text
+// - source - Unicode (UTF-16) characters of source text
+// Return Value:
+// - The multibyte string encoded in the given codepage
+// - NOTE: Throws suitable HRESULT errors from memory allocation, safe math, or MultiByteToWideChar failures.
+[[nodiscard]]
+std::string ConvertToA(const UINT codepage, const std::wstring_view source)
+{
+    // If there's nothing to convert, bail early.
+    if (source.empty())
+    {
+        return {};
+    }
+    
+    int iSource; // convert to int because Wc2Mb requires it.
+    THROW_IF_FAILED(SizeTToInt(source.size(), &iSource));
+
+    // Ask how much space we will need.
+#pragma prefast(suppress:__WARNING_W2A_BEST_FIT, "WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.")
+    int const iTarget = WideCharToMultiByte(codepage, 0, source.data(), iSource, nullptr, 0, nullptr, nullptr);
+    THROW_LAST_ERROR_IF(0 == iTarget);
+
+    size_t cchNeeded;
+    THROW_IF_FAILED(IntToSizeT(iTarget, &cchNeeded));
+
+    // Allocate ourselves space in a smart pointer
+    std::unique_ptr<char[]> psOut = std::make_unique<char[]>(cchNeeded);
+    THROW_IF_NULL_ALLOC(psOut.get());
+
+    // Attempt conversion for real.
+#pragma prefast(suppress:__WARNING_W2A_BEST_FIT, "WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.")
+    THROW_LAST_ERROR_IF(0 == WideCharToMultiByte(codepage, 0, source.data(), iSource, psOut.get(), iTarget, nullptr, nullptr));
+
+    // Return as a string
+    return std::string(psOut.get(), cchNeeded);
 }
 
 // Routine Description:
@@ -118,6 +198,39 @@ HRESULT ConvertToA(const UINT uiCodePage,
 
     return S_OK;
 }
+
+// Routine Description:
+// - Takes a wide string, and determines how many bytes it would take to store it with the given Multibyte codepage.
+// Arguments:
+// - codepage - Windows Code Page representing the multibyte destination text
+// - source - Array of Unicode characters of source text
+// Return Value:
+// - Length in characters of multibyte buffer that would be required to hold this text after conversion
+// - NOTE: Throws suitable HRESULT errors from memory allocation, safe math, or WideCharToMultiByte failures.
+[[nodiscard]]
+size_t GetALengthFromW(const UINT codepage, const std::wstring_view source)
+{
+    // If there's no bytes, bail early.
+    if (source.empty())
+    {
+        return 0;
+    }
+
+    int iSource; // convert to int because Wc2Mb requires it
+    THROW_IF_FAILED(SizeTToInt(source.size(), &iSource));
+
+    // Ask how many bytes this string consumes in the other codepage
+#pragma prefast(suppress:__WARNING_W2A_BEST_FIT, "WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.")
+    int const iTarget = WideCharToMultiByte(codepage, 0, source.data(), iSource, nullptr, 0, nullptr, nullptr);
+    THROW_LAST_ERROR_IF(0 == iTarget);
+
+    // Convert types safely.
+    size_t cchTarget;
+    THROW_IF_FAILED(IntToSizeT(iTarget, &cchTarget));
+
+    return cchTarget;
+}
+
 
 // Routine Description:
 // - Takes a wide (UCS-2 Unicode) string, and determines how many bytes it would take to store it with the given Multibyte codepage.
@@ -189,54 +302,6 @@ HRESULT GetDwordByteCount(_In_ size_t cchUnicode,
     RETURN_IF_FAILED(SizeTMult(cchUnicode, sizeof(wchar_t), &cbUnicode));
     RETURN_IF_FAILED(SizeTToDWord(cbUnicode, pcb));
     return S_OK;
-}
-
-// Routine Description:
-// - Converts unicode characters to ANSI given a destination codepage
-// Arguments:
-// - codepage - codepage for use in conversion
-// - source - the string to convert
-// Return Value:
-// - returns a deque of converted chars
-// Note:
-// - will throw on error
-std::deque<char> ConvertToOem(const UINT codepage,
-                              const std::wstring& source)
-{
-    std::deque<char> outChars;
-    // no point in trying to convert an empty string
-    if (source == L"")
-    {
-        return outChars;
-    }
-
-    int bufferSize = WideCharToMultiByte(codepage,
-                                         0,
-                                         source.c_str(),
-                                         gsl::narrow<int>(source.size()),
-                                         nullptr,
-                                         0,
-                                         nullptr,
-                                         nullptr);
-    THROW_LAST_ERROR_IF(bufferSize == 0);
-
-    auto convertedChars = std::vector<char>(bufferSize);
-    bufferSize = WideCharToMultiByte(codepage,
-                                     0,
-                                     source.c_str(),
-                                     gsl::narrow<int>(source.size()),
-                                     convertedChars.data(),
-                                     bufferSize,
-                                     nullptr,
-                                     nullptr);
-    THROW_LAST_ERROR_IF(bufferSize == 0);
-
-    for (int i = 0; i < bufferSize; ++i)
-    {
-        outChars.push_back(convertedChars[i]);
-    }
-
-    return outChars;
 }
 
 std::deque<std::unique_ptr<KeyEvent>> CharToKeyEvents(const wchar_t wch,
@@ -383,9 +448,7 @@ std::deque<std::unique_ptr<KeyEvent>> SynthesizeNumpadEvents(const wchar_t wch, 
 
     const int radix = 10;
     std::wstring wstr{ wch };
-    std::deque<char> convertedChars;
-
-    convertedChars = ConvertToOem(codepage, wstr);
+    const auto convertedChars = ConvertToA(codepage, wstr);
     if (convertedChars.size() == 1)
     {
         // It is OK if the char is "signed -1", we want to interpret that as "unsigned 255" for the

@@ -66,322 +66,32 @@ NTSTATUS DoCreateScreenBuffer()
 }
 
 // Routine Description:
-// - This routine copies a rectangular region from the screen buffer. no clipping is done.
-// Arguments:
-// - screenInfo - reference to screen info
-// - coordSourcePoint - upper left coordinates of source rectangle
-// - viewport - rectangle in source buffer to copy
-// Return Value:
-// - vector of vector of output cell data for read rect
-// Note:
-// - will throw exception on error.
-std::vector<std::vector<OutputCell>> ReadRectFromScreenBuffer(const SCREEN_INFORMATION& screenInfo,
-                                                              const COORD coordSourcePoint,
-                                                              const Viewport viewport)
-{
-    std::vector<std::vector<OutputCell>> result;
-    result.reserve(viewport.Height());
-
-    const OutputCell paddingCell{ std::wstring_view{ &UNICODE_SPACE, 1 }, {}, TextAttributeBehavior::Default };
-    for (size_t rowIndex = 0; rowIndex < static_cast<size_t>(viewport.Height()); ++rowIndex)
-    {
-        auto cells = screenInfo.ReadLine(coordSourcePoint.Y + rowIndex, coordSourcePoint.X);
-
-        // clip to viewport size
-        cells.resize(viewport.Width(), paddingCell);
-
-        // if we're clipping a dbcs char then don't include it, add a space instead
-        if (cells.front().DbcsAttr().IsTrailing())
-        {
-            cells.front() = paddingCell;
-        }
-        if (cells.back().DbcsAttr().IsLeading())
-        {
-            cells.back() = paddingCell;
-        }
-
-        result.push_back(cells);
-    }
-
-    FAIL_FAST_IF(!(result.size() == static_cast<size_t>(viewport.Height())));
-    FAIL_FAST_IF(!(result.at(0).size() == static_cast<size_t>(viewport.Width())));
-    return result;
-}
-
-// Routine Description:
-// - This routine copies a rectangular region from the screen buffer. no clipping is done.
-// Arguments:
-// - screenInfo - reference to screen info
-// - coordSourcePoint - upper left coordinates of source rectangle
-// - viewport - rectangle in source buffer to copy
-// Return Value:
-// - rectangular output cell data structure
-// Note:
-// - will throw exception on error.
-OutputCellRect ReadRectFromScreenBufferOC(const SCREEN_INFORMATION& screenInfo,
-                                          const COORD coordSourcePoint,
-                                          const Viewport viewport)
-{
-    OutputCellRect result(viewport.Height(), viewport.Width());
-
-    const OutputCell paddingCell{ std::wstring_view{ &UNICODE_SPACE, 1 }, {}, TextAttributeBehavior::Default };
-    for (size_t rowIndex = 0; rowIndex < static_cast<size_t>(viewport.Height()); ++rowIndex)
-    {
-        COORD location = coordSourcePoint;
-        location.Y += (SHORT)rowIndex;
-
-        auto data = screenInfo.GetCellLineDataAt(location);
-        const auto span = result.GetRow(rowIndex);
-        auto it = span.begin();
-
-        // Copy row data while there still is data and we haven't run out of rect to store it into.
-        while (data && it < span.end())
-        {
-            *it++ = *data++;
-        }
-
-        // Pad out any remaining space.
-        while (it < span.end())
-        {
-            *it++ = paddingCell;
-        }
-
-        // if we're clipping a dbcs char then don't include it, add a space instead
-        if (span.begin()->DbcsAttr().IsTrailing())
-        {
-            *span.begin() = paddingCell;
-        }
-        if (span.rbegin()->DbcsAttr().IsLeading())
-        {
-            *span.rbegin() = paddingCell;
-        }
-
-    }
-
-    return result;
-}
-
-// Routine Description:
 // - This routine copies a rectangular region from the screen buffer to the screen buffer.  no clipping is done.
 // Arguments:
 // - screenInfo - reference to screen info
 // - sourceRect - rectangle in source buffer to copy
 // - targetPoint - upper left coordinates of new location rectangle
 static void _CopyRectangle(SCREEN_INFORMATION& screenInfo,
-                           const SMALL_RECT sourceRect,
-                           const COORD targetPoint)
+                           const Viewport source,
+                           const COORD target)
 {
-    const COORD sourcePoint{ sourceRect.Left, sourceRect.Top };
-    const SMALL_RECT targetRect{ 0, 0, sourceRect.Right - sourceRect.Left, sourceRect.Bottom - sourceRect.Top };
+    const auto bufferSize = screenInfo.GetBufferSize().Dimensions();
 
-    const auto sourceView = Viewport::FromInclusive(sourceRect);
-    const auto targetView = Viewport::FromInclusive(targetRect);
-
-    const auto bufferSize = screenInfo.GetScreenBufferSize();
-
-    const auto sourceFullRows = sourceView.Width() == bufferSize.X;
-    const auto targetFullRows = targetView.Width() == bufferSize.X;
-    const auto verticalCopyOnly = sourcePoint.X == 0 && targetPoint.X == 0;
+    const auto sourceFullRows = source.Width() == bufferSize.X;
+    const auto targetFullRows = target.X == bufferSize.X;
+    const auto verticalCopyOnly = source.Left() == 0 && target.X == 0;
 
     if (sourceFullRows && targetFullRows && verticalCopyOnly)
     {
-        const auto delta = targetPoint.Y - sourcePoint.Y;
+        const auto delta = target.Y - source.Top();
 
-        screenInfo.GetTextBuffer().ScrollRows(sourcePoint.Y, sourceView.Height(), gsl::narrow<SHORT>(delta));
+        screenInfo.GetTextBuffer().ScrollRows(source.Top(), source.Height(), gsl::narrow<SHORT>(delta));
     }
     else
     {
-        const auto cells = ReadRectFromScreenBufferOC(screenInfo,
-                                                      sourcePoint,
-                                                      targetView);
-
-        WriteRectToScreenBufferOC(screenInfo, cells, targetPoint);
+        const auto cells = screenInfo.ReadRect(source);
+        screenInfo.WriteRect(cells, target);
     }
-}
-
-// Routine Description:
-// - This routine reads a rectangular region from the screen buffer. The region is first clipped.
-// Arguments:
-// - ScreenInformation - Screen buffer to read from.
-// - outputCells - an empty container to store cell data on output
-// - ReadRegion - Region to read.
-// Return Value:
-[[nodiscard]]
-NTSTATUS ReadScreenBuffer(const SCREEN_INFORMATION& screenInfo,
-                          _Inout_ std::vector<std::vector<OutputCell>>& outputCells,
-                          _Inout_ PSMALL_RECT psrReadRegion)
-{
-    DBGOUTPUT(("ReadScreenBuffer\n"));
-    FAIL_FAST_IF(!(outputCells.empty()));
-
-    // calculate dimensions of caller's buffer.  have to do this calculation before clipping.
-    COORD TargetSize;
-    TargetSize.X = (SHORT)(psrReadRegion->Right - psrReadRegion->Left + 1);
-    TargetSize.Y = (SHORT)(psrReadRegion->Bottom - psrReadRegion->Top + 1);
-
-    if (TargetSize.X <= 0 || TargetSize.Y <= 0)
-    {
-        psrReadRegion->Right = psrReadRegion->Left - 1;
-        psrReadRegion->Bottom = psrReadRegion->Top - 1;
-        return STATUS_SUCCESS;
-    }
-
-    // do clipping.
-    const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
-    if (psrReadRegion->Right > (SHORT)(coordScreenBufferSize.X - 1))
-    {
-        psrReadRegion->Right = (SHORT)(coordScreenBufferSize.X - 1);
-    }
-    if (psrReadRegion->Bottom > (SHORT)(coordScreenBufferSize.Y - 1))
-    {
-        psrReadRegion->Bottom = (SHORT)(coordScreenBufferSize.Y - 1);
-    }
-
-    COORD TargetPoint;
-    if (psrReadRegion->Left < 0)
-    {
-        TargetPoint.X = -psrReadRegion->Left;
-        psrReadRegion->Left = 0;
-    }
-    else
-    {
-        TargetPoint.X = 0;
-    }
-
-    if (psrReadRegion->Top < 0)
-    {
-        TargetPoint.Y = -psrReadRegion->Top;
-        psrReadRegion->Top = 0;
-    }
-    else
-    {
-        TargetPoint.Y = 0;
-    }
-
-    COORD SourcePoint;
-    SourcePoint.X = psrReadRegion->Left;
-    SourcePoint.Y = psrReadRegion->Top;
-
-    SMALL_RECT Target;
-    Target.Left = TargetPoint.X;
-    Target.Top = TargetPoint.Y;
-    Target.Right = TargetPoint.X + (psrReadRegion->Right - psrReadRegion->Left);
-    Target.Bottom = TargetPoint.Y + (psrReadRegion->Bottom - psrReadRegion->Top);
-
-    try
-    {
-        outputCells = ReadRectFromScreenBuffer(screenInfo, SourcePoint, Viewport::FromInclusive(Target));
-    }
-    catch (...)
-    {
-        return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-    }
-    return STATUS_SUCCESS;
-}
-
-// Routine Description:
-// - This routine write a rectangular region to the screen buffer. The region is first clipped.
-// - The region should contain Unicode or UnicodeOem chars.
-// Arguments:
-// - ScreenInformation - Screen buffer to write to.
-// - Buffer - Buffer to write from.
-// - ReadRegion - Region to write.
-// Return Value:
-[[nodiscard]]
-NTSTATUS WriteScreenBuffer(SCREEN_INFORMATION& screenInfo, _In_ PCHAR_INFO pciBuffer, _Inout_ PSMALL_RECT psrWriteRegion)
-{
-    DBGOUTPUT(("WriteScreenBuffer\n"));
-
-    // Calculate dimensions of caller's buffer; this calculation must be done before clipping.
-    COORD SourceSize;
-    SourceSize.X = (SHORT)(psrWriteRegion->Right - psrWriteRegion->Left + 1);
-    SourceSize.Y = (SHORT)(psrWriteRegion->Bottom - psrWriteRegion->Top + 1);
-
-    if (SourceSize.X <= 0 || SourceSize.Y <= 0)
-    {
-        return STATUS_SUCCESS;
-    }
-
-    // convert char infos to OutputCells
-    std::vector<std::vector<OutputCell>> cells;
-    cells.reserve(SourceSize.Y);
-    for (short row = 0; row < SourceSize.Y; ++row)
-    {
-        std::vector<OutputCell> rowCells;
-        rowCells.reserve(SourceSize.X);
-        for (short col = 0; col < SourceSize.X; ++col)
-        {
-            rowCells.emplace_back(pciBuffer[row * SourceSize.X + col]);
-        }
-        cells.push_back(rowCells);
-    }
-
-    // Ensure that the write region is within the constraints of the screen buffer.
-    const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
-    if (psrWriteRegion->Left >= coordScreenBufferSize.X || psrWriteRegion->Top >= coordScreenBufferSize.Y)
-    {
-        return STATUS_SUCCESS;
-    }
-
-
-    SMALL_RECT SourceRect;
-    // clip Y direction
-    if (psrWriteRegion->Bottom > coordScreenBufferSize.Y - 1)
-    {
-        psrWriteRegion->Bottom = coordScreenBufferSize.Y - 1;
-        while (cells.size() > gsl::narrow<size_t>(psrWriteRegion->Bottom - psrWriteRegion->Top))
-        {
-            cells.pop_back();
-        }
-    }
-    SourceRect.Right = psrWriteRegion->Right - psrWriteRegion->Left;
-
-    // clip X Direction
-    if (psrWriteRegion->Right > coordScreenBufferSize.X - 1)
-    {
-        psrWriteRegion->Right = coordScreenBufferSize.X - 1;
-        for (auto& row : cells)
-        {
-            while (row.size() > gsl::narrow<size_t>(psrWriteRegion->Bottom - psrWriteRegion->Top))
-            {
-                row.pop_back();
-            }
-        }
-    }
-    SourceRect.Bottom = psrWriteRegion->Bottom - psrWriteRegion->Top;
-
-    if (psrWriteRegion->Left < 0)
-    {
-        SourceRect.Left = -psrWriteRegion->Left;
-        psrWriteRegion->Left = 0;
-    }
-    else
-    {
-        SourceRect.Left = 0;
-    }
-
-    if (psrWriteRegion->Top < 0)
-    {
-        SourceRect.Top = -psrWriteRegion->Top;
-        psrWriteRegion->Top = 0;
-    }
-    else
-    {
-        SourceRect.Top = 0;
-    }
-
-    if (SourceRect.Left > SourceRect.Right || SourceRect.Top > SourceRect.Bottom)
-    {
-        return STATUS_INVALID_PARAMETER;
-    }
-
-    COORD TargetPoint;
-    TargetPoint.X = psrWriteRegion->Left;
-    TargetPoint.Y = psrWriteRegion->Top;
-
-
-    WriteRectToScreenBuffer(screenInfo, cells, TargetPoint);
-    return STATUS_SUCCESS;
 }
 
 // Routine Description:
@@ -396,60 +106,48 @@ std::vector<WORD> ReadOutputAttributes(const SCREEN_INFORMATION& screenInfo,
                                        const COORD coordRead,
                                        const ULONG amountToRead)
 {
+    // Short circuit. If nothing to read, leave early.
     if (amountToRead == 0)
     {
         return {};
     }
 
-    const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
-    if (!IsCoordInBounds(coordRead, coordScreenBufferSize))
+    // Short circuit, if reading out of bounds, leave early.
+    if (!screenInfo.GetBufferSize().IsInBounds(coordRead))
     {
         return {};
     }
 
-    std::vector<WORD> attrs;
-    COORD currentLocation = coordRead;
+    // Get iterator to the position we should start reading at.
+    auto it = screenInfo.GetCellDataAt(coordRead);
 
-    // read attrs
-    while (attrs.size() < amountToRead)
+    // Count up the number of cells we've attempted to read.
+    ULONG amountRead = 0;
+
+    // Prepare the return value string.
+    std::vector<WORD> retVal;
+    retVal.reserve(amountToRead); // Reserve the number of cells. If we have >U+FFFF, it will auto-grow later and that's OK.
+
+    // While we haven't read enough cells yet and the iterator is still valid (hasn't reached end of buffer)
+    while (amountRead < amountToRead && it)
     {
-        std::vector<OutputCell> cells = screenInfo.ReadLine(currentLocation.Y, currentLocation.X);
-        for (const auto& cell : cells)
+        // If the first thing we read is trailing, pad with a space.
+        // OR If the last thing we read is leading, pad with a space.
+        if ((amountRead == 0 && it->DbcsAttr().IsTrailing()) ||
+            (amountRead == (amountToRead - 1) && it->DbcsAttr().IsLeading()))
         {
-            const WORD legacyAttrs = cell.TextAttr().GetLegacyAttributes();
-            const DbcsAttribute dbcsAttr = cell.DbcsAttr();
-            const bool firstInRow = (currentLocation == coordRead) || (currentLocation.X == 0);
-            const bool lastInRow = (attrs.size() + 1 == amountToRead) || (currentLocation.X + 1 == coordScreenBufferSize.X);
-            const bool justLegacyAttrs = (firstInRow && dbcsAttr.IsTrailing()) || (lastInRow && dbcsAttr.IsLeading());
-            // if a glyph is split between leading/trailing cells and these cells are on different lines
-            // or at the edge of where we're reading then we want only the legacy attrs for that cell
-            if (justLegacyAttrs)
-            {
-                attrs.push_back(legacyAttrs);
-            }
-            else
-            {
-                attrs.push_back(legacyAttrs | dbcsAttr.GeneratePublicApiAttributeFormat());
-            }
-            currentLocation.X += 1;
-
-            if (attrs.size() == amountToRead)
-            {
-                break;
-            }
+            retVal.push_back(it->TextAttr().GetLegacyAttributes());
         }
-        // increment for next row
-        currentLocation.X = 0;
-        currentLocation.Y += 1;
-
-        // stop reading if we reached the end of the screen buffer
-        if (!IsCoordInBounds(currentLocation, coordScreenBufferSize))
+        else
         {
-            break;
+            retVal.push_back(it->TextAttr().GetLegacyAttributes() | it->DbcsAttr().GeneratePublicApiAttributeFormat());
         }
+
+        amountRead++;
+        it++;
     }
 
-    return attrs;
+    return retVal;
 }
 
 // Routine Description:
@@ -459,75 +157,57 @@ std::vector<WORD> ReadOutputAttributes(const SCREEN_INFORMATION& screenInfo,
 // - coordRead - Screen buffer coordinate to begin reading from.
 // - amountToRead - the number of elements to read
 // Return Value:
-// - vector of wchar data
-std::vector<wchar_t> ReadOutputStringW(const SCREEN_INFORMATION& screenInfo,
-                                       const COORD coordRead,
-                                       const ULONG amountToRead)
+// - wstring
+std::wstring ReadOutputStringW(const SCREEN_INFORMATION& screenInfo,
+                               const COORD coordRead,
+                               const ULONG amountToRead)
 {
+    // Short circuit. If nothing to read, leave early.
     if (amountToRead == 0)
     {
         return {};
     }
 
-    const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
-    if (!IsCoordInBounds(coordRead, coordScreenBufferSize))
+    // Short circuit, if reading out of bounds, leave early.
+    if (!screenInfo.GetBufferSize().IsInBounds(coordRead))
     {
         return {};
     }
 
-    std::vector<OutputCell> dataCells;
-    COORD currentLocation = coordRead;
+    // Get iterator to the position we should start reading at.
+    auto it = screenInfo.GetCellDataAt(coordRead);
 
-    // read char data
-    while (dataCells.size() < amountToRead)
+    // Count up the number of cells we've attempted to read.
+    ULONG amountRead = 0;
+
+    // Prepare the return value string.
+    std::wstring retVal;
+    retVal.reserve(amountToRead); // Reserve the number of cells. If we have >U+FFFF, it will auto-grow later and that's OK.
+
+    // While we haven't read enough cells yet and the iterator is still valid (hasn't reached end of buffer)
+    while (amountRead < amountToRead && it)
     {
-        std::vector<OutputCell> cells = screenInfo.ReadLine(currentLocation.Y, currentLocation.X);
-
-        // append cells
-        dataCells.reserve(dataCells.size() + cells.size());
-        dataCells.insert(dataCells.end(), cells.begin(), cells.end());
-
-        // increment for next row
-        currentLocation.X = 0;
-        currentLocation.Y += 1;
-
-        // stop reading if we reached the end of the screen buffer
-        if (!IsCoordInBounds(currentLocation, coordScreenBufferSize))
+        // If the first thing we read is trailing, pad with a space.
+        // OR If the last thing we read is leading, pad with a space.
+        if ((amountRead == 0 && it->DbcsAttr().IsTrailing()) ||
+            (amountRead == (amountToRead - 1) && it->DbcsAttr().IsLeading()))
         {
-            break;
+            retVal += UNICODE_SPACE;
         }
-    }
-
-    // remove any extra cells
-    dataCells.resize(amountToRead, dataCells.at(0));
-
-    // modify ends according to leading/trailing bytes
-    if (!dataCells.empty())
-    {
-        if (dataCells.front().DbcsAttr().IsTrailing())
+        else
         {
-            dataCells.front().SetChars({ &UNICODE_SPACE, 1 });
-        }
-        if (dataCells.back().DbcsAttr().IsLeading())
-        {
-            dataCells.back().SetChars({ &UNICODE_SPACE, 1 });
-        }
-    }
-
-    // grab char data with respect to leading/trailing bytes
-    std::vector<wchar_t> outputText;
-    for (const auto& cell : dataCells)
-    {
-        if (!cell.DbcsAttr().IsTrailing())
-        {
-            for (const wchar_t wch : cell.Chars())
+            // Otherwise, add anything that isn't a trailing cell. (Trailings are duplicate copies of the leading.)
+            if (!it->DbcsAttr().IsTrailing())
             {
-                outputText.push_back(wch);
+                retVal += it->Chars();
             }
         }
-    }
 
-    return outputText;
+        amountRead++;
+        it++;
+    }
+  
+    return retVal;
 }
 
 // Routine Description:
@@ -542,11 +222,10 @@ std::vector<char> ReadOutputStringA(const SCREEN_INFORMATION& screenInfo,
                                     const COORD coordRead,
                                     const ULONG amountToRead)
 {
-    const std::vector<wchar_t> wideChars = ReadOutputStringW(screenInfo, coordRead, amountToRead);
-    const std::wstring wstr{ wideChars.begin(), wideChars.end() };
+    const auto wstr = ReadOutputStringW(screenInfo, coordRead, amountToRead);
 
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const std::deque<char> convertedChars = ConvertToOem(gci.OutputCP, wstr);
+    const auto convertedChars = ConvertToA(gci.OutputCP, wstr);
 
     return { convertedChars.begin(), convertedChars.end() };
 }
@@ -589,17 +268,17 @@ void ScrollScreen(SCREEN_INFORMATION& screenInfo,
             // and the size is the size of psrScroll.
             // NOTE: psrScroll is an INCLUSIVE rectangle, so we must add 1 when measuring width as R-L or B-T
             Viewport scrollRect = Viewport::FromInclusive(*psrScroll);
-            SMALL_RECT rcWritten = Viewport::FromDimensions(coordTarget, scrollRect.Width(), scrollRect.Height()).ToExclusive();
+            const auto written = Viewport::FromDimensions(coordTarget, scrollRect.Width(), scrollRect.Height());
 
-            pRender->TriggerRedraw(&rcWritten);
+            pRender->TriggerRedraw(written);
 
             // psrMerge was just filled exactly where it's stated.
             if (psrMerge != nullptr)
             {
                 // psrMerge is an inclusive rectangle. Make it exclusive to deal with the renderer.
-                SMALL_RECT rcMerge = Viewport::FromInclusive(*psrMerge).ToExclusive();
+                const auto merge = Viewport::FromInclusive(*psrMerge);
 
-                pRender->TriggerRedraw(&rcMerge);
+                pRender->TriggerRedraw(merge);
             }
         }
     }
@@ -613,7 +292,7 @@ SHORT ScrollEntireScreen(SCREEN_INFORMATION& screenInfo, const SHORT sScrollValu
     SHORT const RowIndex = screenInfo.GetTextBuffer().GetFirstRowIndex();
 
     // update screen buffer
-    screenInfo.GetTextBuffer().SetFirstRowIndex((SHORT)((RowIndex + sScrollValue) % screenInfo.GetScreenBufferSize().Y));
+    screenInfo.GetTextBuffer().SetFirstRowIndex((SHORT)((RowIndex + sScrollValue) % screenInfo.GetBufferSize().Height()));
 
     return RowIndex;
 }
@@ -689,7 +368,7 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
         fillWith.Attributes = screenInfo.GetAttributes().GetLegacyAttributes();
     }
 
-    const auto bufferSize = screenInfo.GetScreenBufferSize();
+    const auto bufferSize = screenInfo.GetBufferSize().Dimensions();
     const COORD bufferLimits{ bufferSize.X - 1i16, bufferSize.Y - 1i16 };
 
     // clip the source rectangle to the screen buffer
@@ -822,7 +501,7 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
             }
             else
             {
-                _CopyRectangle(screenInfo, scrollRect2, targetPoint);
+                _CopyRectangle(screenInfo, Viewport::FromInclusive(scrollRect2), targetPoint);
             }
 
             SMALL_RECT fillRect;
@@ -839,11 +518,7 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
             {
                 fillRect.Bottom = clipRect.Bottom;
             }
-            try
-            {
-                FillRectangle(screenInfo, { fillWith }, Viewport::FromInclusive(fillRect));
-            }
-            CATCH_LOG();
+            screenInfo.WriteRect(OutputCellIterator(fillWith), Viewport::FromInclusive(fillRect));
 
             ScrollScreen(screenInfo, &scrollRect2, &fillRect, targetPoint);
         }
@@ -855,35 +530,25 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
                  scrollRect3.Bottom < targetRectangle.Top)
         {
             const COORD TargetPoint{ targetRectangle.Left, targetRectangle.Top };
-            _CopyRectangle(screenInfo, scrollRect2, TargetPoint);
-            try
-            {
-                FillRectangle(screenInfo, { fillWith }, Viewport::FromInclusive(scrollRect3));
-            }
-            CATCH_LOG();
+            _CopyRectangle(screenInfo, Viewport::FromInclusive(scrollRect2), TargetPoint);
+
+            screenInfo.WriteRect(OutputCellIterator(fillWith), Viewport::FromInclusive(scrollRect3));
+
             ScrollScreen(screenInfo, &scrollRect2, &scrollRect3, TargetPoint);
         }
 
         // for the case where the source and target rectangles overlap, we copy the source rectangle, fill it, then copy it to the target.
         else
         {
-            const COORD size{ scrollRect2.Right - scrollRect2.Left + 1i16,
-                              scrollRect2.Bottom - scrollRect2.Top + 1i16 };
-            const SMALL_RECT targetRect{ 0, 0, scrollRect2.Right - scrollRect2.Left, scrollRect2.Bottom - scrollRect2.Top };
-            const COORD sourcePoint{ scrollRect2.Left, scrollRect2.Top };
+            // Backup cells from screen
+            const auto cells = screenInfo.ReadRect(Viewport::FromInclusive(scrollRect2));
 
-            std::vector<std::vector<OutputCell>> outputCells;
-            outputCells = ReadRectFromScreenBuffer(screenInfo, sourcePoint, Viewport::FromInclusive(targetRect));
-            try
-            {
-                FillRectangle(screenInfo, { fillWith }, Viewport::FromInclusive(scrollRect3));
-            }
-            CATCH_LOG();
+            // Fill cells in screen
+            screenInfo.WriteRect(OutputCellIterator(fillWith), Viewport::FromInclusive(scrollRect3));
 
-            const SMALL_RECT sourceRect{ 0, 0, size.X - 1i16, size.Y - 1i16 };
+            // Replaced backed up cells at target
             const COORD targetPoint{ targetRectangle.Left, targetRectangle.Top };
-
-            WriteRectToScreenBuffer(screenInfo, outputCells, targetPoint);
+            screenInfo.WriteRect(cells, targetPoint);
 
             // update regions on screen.
             ScrollScreen(screenInfo, &scrollRect2, &scrollRect3, targetPoint);
@@ -892,13 +557,7 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
     else
     {
         // Do fill.
-        try
-        {
-            FillRectangle(screenInfo, { fillWith }, Viewport::FromInclusive(scrollRect3));
-        }
-        CATCH_LOG();
-
-        WriteToScreen(screenInfo, scrollRect3);
+        screenInfo.WriteRect(OutputCellIterator(fillWith), Viewport::FromInclusive(scrollRect3));
     }
 }
 
@@ -926,7 +585,7 @@ void SetActiveScreenBuffer(SCREEN_INFORMATION& screenInfo)
     gci.ConsoleIme.RefreshAreaAttributes();
 
     // Write data to screen.
-    WriteToScreen(screenInfo, screenInfo.GetBufferViewport());
+    WriteToScreen(screenInfo, screenInfo.GetViewport());
 }
 
 // TODO: MSFT 9450717 This should join the ProcessList class when CtrlEvents become moved into the server. https://osgvsowi/9450717

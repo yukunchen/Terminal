@@ -65,10 +65,10 @@ public:
 
     BOOL FillConsoleOutputCharacterW(const WCHAR wch, const DWORD nLength,
                                      const COORD dwWriteCoord,
-                                     _Out_ DWORD* const pNumberOfCharsWritten) override;
+                                     size_t& numberOfCharsWritten) noexcept override;
     BOOL FillConsoleOutputAttribute(const WORD wAttribute, const DWORD nLength,
                                     const COORD dwWriteCoord,
-                                    _Out_ DWORD* const pNumberOfAttrsWritten) override;
+                                    size_t& numberOfAttrsWritten) noexcept override;
 
     BOOL SetConsoleTextAttribute(const WORD wAttr) override;
 
@@ -153,10 +153,4 @@ public:
 
 private:
     Microsoft::Console::IIoProvider& _io;
-
-    BOOL _FillConsoleOutput(const USHORT usElement,
-                            const ULONG ulElementType,
-                            const DWORD nLength,
-                            const COORD dwWriteCoord,
-                            _Out_ DWORD* const pNumberWritten);
 };

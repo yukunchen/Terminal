@@ -537,15 +537,15 @@ bool AdaptDispatch::_InsertDeleteHelper(_In_ unsigned int const uiCount, const b
                 if (srScroll.Left >= csbiex.srWindow.Right || coordDestination.X >= csbiex.srWindow.Right)
                 {
                     DWORD const nLength = csbiex.srWindow.Right - csbiex.dwCursorPosition.X;
-                    DWORD dwWritten = 0;
+                    size_t written = 0;
 
                     // if the select/scroll region is off screen to the right or the destination is off screen to the right, fill instead of scrolling.
-                    fSuccess = !!_conApi->FillConsoleOutputCharacterW(ciFill.Char.UnicodeChar, nLength, csbiex.dwCursorPosition, &dwWritten);
+                    fSuccess = !!_conApi->FillConsoleOutputCharacterW(ciFill.Char.UnicodeChar, nLength, csbiex.dwCursorPosition, written);
 
                     if (fSuccess)
                     {
-                        dwWritten = 0;
-                        fSuccess = !!_conApi->FillConsoleOutputAttribute(ciFill.Attributes, nLength, csbiex.dwCursorPosition, &dwWritten);
+                        written = 0;
+                        fSuccess = !!_conApi->FillConsoleOutputAttribute(ciFill.Attributes, nLength, csbiex.dwCursorPosition, written);
                     }
                 }
                 else
@@ -596,12 +596,12 @@ bool AdaptDispatch::_EraseSingleLineDistanceHelper(const COORD coordStartPositio
 {
     WCHAR const wchSpace = static_cast<WCHAR>(0x20); // space character. use 0x20 instead of literal space because we can't assume the compiler will always turn ' ' into 0x20.
 
-    DWORD dwCharsWritten = 0;
-    bool fSuccess = !!_conApi->FillConsoleOutputCharacterW(wchSpace, dwLength, coordStartPosition, &dwCharsWritten);
+    size_t written = 0;
+    bool fSuccess = !!_conApi->FillConsoleOutputCharacterW(wchSpace, dwLength, coordStartPosition, written);
 
     if (fSuccess)
     {
-        fSuccess = !!_conApi->FillConsoleOutputAttribute(wFillColor, dwLength, coordStartPosition, &dwCharsWritten);
+        fSuccess = !!_conApi->FillConsoleOutputAttribute(wFillColor, dwLength, coordStartPosition, written);
     }
 
     return fSuccess;
@@ -611,17 +611,17 @@ bool AdaptDispatch::_EraseAreaHelper(const COORD coordStartPosition, const COORD
 {
     WCHAR const wchSpace = static_cast<WCHAR>(0x20); // space character. use 0x20 instead of literal space because we can't assume the compiler will always turn ' ' into 0x20.
 
-    DWORD dwCharsWritten = 0;
+    size_t written = 0;
     FAIL_FAST_IF(!(coordStartPosition.X < coordLastPosition.X));
     FAIL_FAST_IF(!(coordStartPosition.Y < coordLastPosition.Y));
     bool fSuccess = false;
     for (short y = coordStartPosition.Y; y < coordLastPosition.Y; y++)
     {
         const COORD coordLine = {coordStartPosition.X, y};
-        fSuccess = !!_conApi->FillConsoleOutputCharacterW(wchSpace, coordLastPosition.X - coordStartPosition.X, coordLine, &dwCharsWritten);
+        fSuccess = !!_conApi->FillConsoleOutputCharacterW(wchSpace, coordLastPosition.X - coordStartPosition.X, coordLine, written);
         if (fSuccess)
         {
-            fSuccess = !!_conApi->FillConsoleOutputAttribute(wFillColor, coordLastPosition.X - coordStartPosition.X, coordLine, &dwCharsWritten);
+            fSuccess = !!_conApi->FillConsoleOutputAttribute(wFillColor, coordLastPosition.X - coordStartPosition.X, coordLine, written);
         }
 
         if (!fSuccess)

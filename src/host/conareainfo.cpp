@@ -11,6 +11,11 @@
 #include "_output.h"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
+#include "../types/inc/viewport.hpp"
+
+#pragma hdrstop
+
+using namespace Microsoft::Console::Types;
 
 ConversionAreaBufferInfo::ConversionAreaBufferInfo(const COORD coordBufferSize) :
     coordCaBuffer(coordBufferSize),
@@ -109,7 +114,8 @@ void ConversionAreaInfo::SetAttributes(const TextAttribute& attr)
 void ConversionAreaInfo::WriteText(const std::vector<OutputCell>& text,
                                    const SHORT column)
 {
-    _screenBuffer->WriteLine(text, 0, column);
+    std::basic_string_view<OutputCell> view(text.data(), text.size());
+    _screenBuffer->Write(view, { column, 0 });
 }
 
 // Routine Description:
@@ -185,7 +191,7 @@ void ConversionAreaInfo::SetViewPos(const COORD pos) noexcept
         OldRegion.Right += _caInfo.coordConView.X;
         OldRegion.Top += _caInfo.coordConView.Y;
         OldRegion.Bottom += _caInfo.coordConView.Y;
-        WriteToScreen(gci.GetActiveOutputBuffer(), OldRegion);
+        WriteToScreen(gci.GetActiveOutputBuffer(), Viewport::FromInclusive(OldRegion));
 
         _caInfo.coordConView = pos;
 
@@ -194,7 +200,7 @@ void ConversionAreaInfo::SetViewPos(const COORD pos) noexcept
         NewRegion.Right += _caInfo.coordConView.X;
         NewRegion.Top += _caInfo.coordConView.Y;
         NewRegion.Bottom += _caInfo.coordConView.Y;
-        WriteToScreen(gci.GetActiveOutputBuffer(), NewRegion);
+        WriteToScreen(gci.GetActiveOutputBuffer(), Viewport::FromInclusive(NewRegion));
     }
 }
 
@@ -202,20 +208,20 @@ void ConversionAreaInfo::Paint() const noexcept
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& ScreenInfo = gci.GetActiveOutputBuffer();
-    const auto viewport = ScreenInfo.GetBufferViewport();
+    const auto viewport = ScreenInfo.GetViewport();
 
     SMALL_RECT WriteRegion;
-    WriteRegion.Left = viewport.Left + _caInfo.coordConView.X + _caInfo.rcViewCaWindow.Left;
+    WriteRegion.Left = viewport.Left() + _caInfo.coordConView.X + _caInfo.rcViewCaWindow.Left;
     WriteRegion.Right = WriteRegion.Left + (_caInfo.rcViewCaWindow.Right - _caInfo.rcViewCaWindow.Left);
-    WriteRegion.Top = viewport.Top + _caInfo.coordConView.Y + _caInfo.rcViewCaWindow.Top;
+    WriteRegion.Top = viewport.Top() + _caInfo.coordConView.Y + _caInfo.rcViewCaWindow.Top;
     WriteRegion.Bottom = WriteRegion.Top + (_caInfo.rcViewCaWindow.Bottom - _caInfo.rcViewCaWindow.Top);
 
     if (!IsHidden())
     {
-        WriteConvRegionToScreen(ScreenInfo, WriteRegion);
+        WriteConvRegionToScreen(ScreenInfo, Viewport::FromInclusive(WriteRegion));
     }
     else
     {
-        WriteToScreen(ScreenInfo, WriteRegion);
+        WriteToScreen(ScreenInfo, Viewport::FromInclusive(WriteRegion));
     }
 }

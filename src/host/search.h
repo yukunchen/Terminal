@@ -55,7 +55,7 @@ private:
 
     wchar_t _ApplySensitivity(const wchar_t wch) const;
     bool Search::_FindNeedleInHaystackAt(const COORD pos, COORD& start, COORD& end) const;
-    bool _CompareChars(const gsl::span<const wchar_t>& one, const gsl::span<const wchar_t>& two) const;
+    bool _CompareChars(const std::wstring_view one, const std::wstring_view two) const;
     void _UpdateNextPosition();
 
     void _IncrementCoord(COORD& coord) const;

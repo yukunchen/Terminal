@@ -112,7 +112,7 @@ int Utils::s_CompareCoords(const COORD coordFirst, const COORD coordSecond) noex
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // find the width of one row
-    const COORD coordScreenBufferSize = gci.GetActiveOutputBuffer().GetScreenBufferSize();
+    const COORD coordScreenBufferSize = gci.GetActiveOutputBuffer().GetBufferSize().Dimensions();
     return s_CompareCoords(coordScreenBufferSize, coordFirst, coordSecond);
 }
 

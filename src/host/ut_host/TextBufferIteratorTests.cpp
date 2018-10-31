@@ -69,7 +69,7 @@ class TextBufferIteratorTests
         VERIFY_IS_TRUE(it);
 
         const auto& outputBuffer = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer();
-        const auto size = outputBuffer.GetScreenBufferSize();
+        const auto size = outputBuffer.GetBufferSize().Dimensions();
         T itInvalidPos(it);
         itInvalidPos._exceeded = true;
         VERIFY_IS_FALSE(itInvalidPos);
@@ -97,7 +97,7 @@ class TextBufferIteratorTests
 
         COORD oneOff = it._pos;
         oneOff.X++;
-        const auto it2 = T(it._buffer, oneOff);
+        const auto it2 = GetIteratorAt<T>(oneOff);
 
         VERIFY_ARE_NOT_EQUAL(it, it2);
     }
@@ -113,7 +113,7 @@ class TextBufferIteratorTests
         ptrdiff_t diffUnit = 3;
         COORD expectedPos = it._pos;
         expectedPos.X += gsl::narrow<SHORT>(diffUnit);
-        const auto itExpected = T(it._buffer, expectedPos);
+        const auto itExpected = GetIteratorAt<T>(expectedPos);
 
         it += diffUnit;
 
@@ -131,7 +131,7 @@ class TextBufferIteratorTests
         ptrdiff_t diffUnit = 3;
         COORD pos = itExpected._pos;
         pos.X += gsl::narrow<SHORT>(diffUnit);
-        auto itOffset = T(itExpected._buffer, pos);
+        auto itOffset = GetIteratorAt<T>(pos);
 
         itOffset -= diffUnit;
 
@@ -148,7 +148,7 @@ class TextBufferIteratorTests
 
         COORD expectedPos = itActual._pos;
         expectedPos.X++;
-        const auto itExpected = T(itActual._buffer, expectedPos);
+        const auto itExpected = GetIteratorAt<T>(expectedPos);
 
         ++itActual;
 
@@ -165,7 +165,7 @@ class TextBufferIteratorTests
 
         COORD pos = itExpected._pos;
         pos.X++;
-        auto itActual = T(itExpected._buffer, pos);
+        auto itActual = GetIteratorAt<T>(pos);
 
         --itActual;
 
@@ -182,7 +182,7 @@ class TextBufferIteratorTests
 
         COORD expectedPos = it._pos;
         expectedPos.X++;
-        const auto itExpected = T(it._buffer, expectedPos);
+        const auto itExpected = GetIteratorAt<T>(expectedPos);
 
         ++it;
 
@@ -199,7 +199,7 @@ class TextBufferIteratorTests
 
         COORD pos = itExpected._pos;
         pos.X++;
-        auto itActual = T(itExpected._buffer, pos);
+        auto itActual = GetIteratorAt<T>(pos);
 
         itActual--;
 
@@ -217,7 +217,7 @@ class TextBufferIteratorTests
         ptrdiff_t diffUnit = 3;
         COORD expectedPos = it._pos;
         expectedPos.X += gsl::narrow<SHORT>(diffUnit);
-        const auto itExpected = T(it._buffer, expectedPos);
+        const auto itExpected = GetIteratorAt<T>(expectedPos);
 
         const auto itActual = it + diffUnit;
 
@@ -235,7 +235,7 @@ class TextBufferIteratorTests
         ptrdiff_t diffUnit = 3;
         COORD pos = itExpected._pos;
         pos.X += gsl::narrow<SHORT>(diffUnit);
-        auto itOffset = T(itExpected._buffer, pos);
+        auto itOffset = GetIteratorAt<T>(pos);
 
         const auto itActual = itOffset - diffUnit;
 
@@ -273,38 +273,49 @@ template <typename T>
 T GetIterator() {}
 
 template <typename T>
+T GetIteratorAt(COORD at) {}
+
+template <typename T>
 T GetIteratorWithAdvance() {}
+
+template<>
+TextBufferCellIterator GetIteratorAt<TextBufferCellIterator>(COORD at)
+{
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& outputBuffer = gci.GetActiveOutputBuffer();
+    return outputBuffer.GetCellDataAt(at);
+}
 
 template<>
 TextBufferCellIterator GetIterator<TextBufferCellIterator>()
 {
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto& outputBuffer = gci.GetActiveOutputBuffer();
-    return outputBuffer.GetCellDataAt({ 0 });
+    return GetIteratorAt<TextBufferCellIterator>({ 0 });
 }
 
 template<>
 TextBufferCellIterator GetIteratorWithAdvance<TextBufferCellIterator>()
 {
+    return GetIteratorAt<TextBufferCellIterator>({ 5, 5 });
+}
+
+template<>
+TextBufferTextIterator GetIteratorAt<TextBufferTextIterator>(COORD at)
+{
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& outputBuffer = gci.GetActiveOutputBuffer();
-    return outputBuffer.GetCellDataAt({ 5, 5 });
+    return outputBuffer.GetTextDataAt(at);
 }
 
 template<>
 TextBufferTextIterator GetIterator<TextBufferTextIterator>()
 {
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto& outputBuffer = gci.GetActiveOutputBuffer();
-    return outputBuffer.GetTextDataAt({ 0 });
+    return GetIteratorAt<TextBufferTextIterator>({ 0 });
 }
 
 template<>
 TextBufferTextIterator GetIteratorWithAdvance<TextBufferTextIterator>()
 {
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto& outputBuffer = gci.GetActiveOutputBuffer();
-    return outputBuffer.GetTextDataAt({ 5, 5 });
+    return GetIteratorAt<TextBufferTextIterator>({ 5, 5 });
 }
 
 void TextBufferIteratorTests::BoolOperatorText()
@@ -318,7 +329,7 @@ void TextBufferIteratorTests::BoolOperatorCell()
 
     Log::Comment(L"For cells, also check incrementing past the end.");
     const auto& outputBuffer = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer();
-    const auto size = outputBuffer.GetScreenBufferSize();
+    const auto size = outputBuffer.GetBufferSize().Dimensions();
     TextBufferCellIterator it(outputBuffer.GetTextBuffer(), { size.X-1, size.Y-1 });
     VERIFY_IS_TRUE(it);
     it++;
@@ -441,10 +452,11 @@ void TextBufferIteratorTests::AsCharInfoCell()
     const auto it = GetIterator<TextBufferCellIterator>();
 
     const auto& outputBuffer = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer();
-    const auto cellExpected = outputBuffer.ReadLine(it._pos.Y).at(it._pos.X);
-    VERIFY_ARE_EQUAL(1u, cellExpected.Chars().size());
-    const auto wcharExpected = cellExpected.Chars().at(0);
-    const auto attrExpected = cellExpected.TextAttr().GetLegacyAttributes();
+
+    const auto& row = outputBuffer._textBuffer->GetRowByOffset(it._pos.Y);
+
+    const auto wcharExpected = *row.GetCharRow().GlyphAt(it._pos.X).begin();
+    const auto attrExpected = row.GetAttrRow().GetAttrByColumn(it._pos.X).GetLegacyAttributes();
 
     const auto cellActual = it.AsCharInfo();
     const auto wcharActual = cellActual.Char.UnicodeChar;
@@ -460,13 +472,13 @@ void TextBufferIteratorTests::DereferenceOperatorText()
     const auto it = GetIterator<TextBufferTextIterator>();
 
     const auto& outputBuffer = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer();
-    const auto cell = outputBuffer.ReadLine(it._pos.Y).at(it._pos.X);
-    VERIFY_ARE_EQUAL(1u, cell.Chars().size());
 
-    const auto wcharExpected = cell.Chars().at(0);
+    const auto& row = outputBuffer._textBuffer->GetRowByOffset(it._pos.Y);
+
+    const auto wcharExpected = row.GetCharRow().GlyphAt(it._pos.X);
     const auto wcharActual = *it;
 
-    VERIFY_ARE_EQUAL(wcharExpected, *wcharActual.begin());
+    VERIFY_ARE_EQUAL(*wcharExpected.begin(), *wcharActual.begin());
 }
 
 void TextBufferIteratorTests::DereferenceOperatorCell()
@@ -474,12 +486,14 @@ void TextBufferIteratorTests::DereferenceOperatorCell()
     m_state->FillTextBuffer();
     const auto it = GetIterator<TextBufferCellIterator>();
 
+
     const auto& outputBuffer = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer();
-    const auto cellExpected = outputBuffer.ReadLine(it._pos.Y).at(it._pos.X);
-    VERIFY_ARE_EQUAL(1u, cellExpected.Chars().size());
-    const auto textExpected = cellExpected.Chars();
-    const auto dbcsExpected = cellExpected.DbcsAttr();
-    const auto attrExpected = cellExpected.TextAttr();
+
+    const auto& row = outputBuffer._textBuffer->GetRowByOffset(it._pos.Y);
+
+    const auto textExpected = (std::wstring_view)row.GetCharRow().GlyphAt(it._pos.X);
+    const auto dbcsExpected = row.GetCharRow().DbcsAttrAt(it._pos.X);
+    const auto attrExpected = row.GetAttrRow().GetAttrByColumn(it._pos.X).GetLegacyAttributes();
 
     const auto cellActual = *it;
     const auto textActual = cellActual.Chars();

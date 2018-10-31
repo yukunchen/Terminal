@@ -149,12 +149,10 @@ HRESULT ConsoleImeInfo::_AddConversionArea()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-    COORD bufferSize = gci.GetActiveOutputBuffer().GetScreenBufferSize();
+    COORD bufferSize = gci.GetActiveOutputBuffer().GetBufferSize().Dimensions();
     bufferSize.Y = 1;
 
-    COORD windowSize;
-    windowSize.X = gci.GetActiveOutputBuffer().GetScreenWindowSizeX();
-    windowSize.Y = gci.GetActiveOutputBuffer().GetScreenWindowSizeY();
+    const COORD windowSize = gci.GetActiveOutputBuffer().GetViewport().Dimensions();
 
     CHAR_INFO fill;
     fill.Attributes = gci.GetActiveOutputBuffer().GetAttributes().GetLegacyAttributes();
@@ -314,7 +312,7 @@ std::vector<OutputCell> ConsoleImeInfo::s_ConvertToCells(const std::wstring_view
 std::vector<OutputCell>::const_iterator ConsoleImeInfo::_WriteConversionArea(const std::vector<OutputCell>::const_iterator begin,
                                                                              const std::vector<OutputCell>::const_iterator end,
                                                                              COORD& pos,
-                                                                             const SMALL_RECT view,
+                                                                             const Microsoft::Console::Types::Viewport view,
                                                                              SCREEN_INFORMATION& screenInfo)
 {
     // The position in the viewport where we will start inserting cells for this conversion area
@@ -324,11 +322,11 @@ std::vector<OutputCell>::const_iterator ConsoleImeInfo::_WriteConversionArea(con
 
     // Advance the cursor position to set up the next call for success (insert the next conversion area
     // at the beginning of the following line)
-    pos.X = view.Left;
+    pos.X = view.Left();
     pos.Y++;
 
     // The index of the last column in the viewport. (view is inclusive)
-    const auto finalViewColumn = view.Right;
+    const auto finalViewColumn = view.RightInclusive();
 
     // The maximum number of cells we can insert into a line.
     const auto lineWidth = finalViewColumn - insertionPos.X + 1; // +1 because view was inclusive
@@ -372,7 +370,7 @@ std::vector<OutputCell>::const_iterator ConsoleImeInfo::_WriteConversionArea(con
     // the appropriate location to overlay this conversion area on top of the main screen buffer inside the viewport.
     const SMALL_RECT region{ insertionPos.X, 0, gsl::narrow<SHORT>(insertionPos.X + lineVec.size() - 1), 0 };
     area.SetWindowInfo(region);
-    area.SetViewPos({ 0 - view.Left, insertionPos.Y - view.Top });
+    area.SetViewPos({ 0 - view.Left(), insertionPos.Y - view.Top() });
 
     // Make it visible and paint it.
     area.SetHidden(false);
@@ -425,7 +423,7 @@ void ConsoleImeInfo::_WriteUndeterminedChars(const std::wstring_view text,
     // screen buffer and viewport positioning.
     // Each conversion area write will adjust these to set up any subsequent calls to go onto the next line.
     auto pos = screenInfo.GetTextBuffer().GetCursor().GetPosition();
-    const auto view = screenInfo.GetBufferViewport();
+    const auto view = screenInfo.GetViewport();
     // Set cursor position relative to viewport
 
     // Set up our iterators. We will walk through the entire set of cells from beginning to end.

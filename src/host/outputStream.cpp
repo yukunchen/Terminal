@@ -12,12 +12,14 @@
 #include "getset.h"
 #include "directio.h"
 
+#include "../interactivity/inc/ServiceLocator.hpp"
+
 #pragma hdrstop
 using namespace Microsoft::Console;
 
 WriteBuffer::WriteBuffer(_In_ Microsoft::Console::IIoProvider& io) :
     _io{ io },
-    _ntstatus { STATUS_INVALID_DEVICE_STATE }
+    _ntstatus{ STATUS_INVALID_DEVICE_STATE }
 {
 }
 
@@ -164,12 +166,16 @@ BOOL ConhostInternalGetSet::SetConsoleCursorInfo(const CONSOLE_CURSOR_INFO* cons
 // - wch - Character to use for filling the buffer
 // - nLength - The length of the fill run in characters (depending on mode, will wrap at the window edge so multiple lines are the sum of the total length)
 // - dwWriteCoord - The first fill character's coordinate position in the buffer (writes continue rightward and possibly down from there)
-// - pNumberOfCharsWritten - Pointer to memory location to hold the total number of characters written into the buffer
+// - numberOfCharsWritten - Pointer to memory location to hold the total number of characters written into the buffer
 // Return Value:
-// - TRUE if successful (see DoSrvFillConsoleOutput). FALSE otherwise.
-BOOL ConhostInternalGetSet::FillConsoleOutputCharacterW(const WCHAR wch, const DWORD nLength, const COORD dwWriteCoord, _Out_ DWORD* const pNumberOfCharsWritten)
+// - TRUE if successful (see FillConsoleOutputCharacterWImpl). FALSE otherwise.
+BOOL ConhostInternalGetSet::FillConsoleOutputCharacterW(const WCHAR wch, const DWORD nLength, const COORD dwWriteCoord, size_t& numberOfCharsWritten) noexcept
 {
-    return _FillConsoleOutput(wch, CONSOLE_REAL_UNICODE, nLength, dwWriteCoord, pNumberOfCharsWritten);
+    return SUCCEEDED(ServiceLocator::LocateGlobals().api.FillConsoleOutputCharacterWImpl(_io.GetActiveOutputBuffer(),
+                                                                                         wch,
+                                                                                         nLength,
+                                                                                         dwWriteCoord,
+                                                                                         numberOfCharsWritten));
 }
 
 // Routine Description:
@@ -178,40 +184,16 @@ BOOL ConhostInternalGetSet::FillConsoleOutputCharacterW(const WCHAR wch, const D
 // - wAttribute - Text attribute (colors/font style) for filling the buffer
 // - nLength - The length of the fill run in characters (depending on mode, will wrap at the window edge so multiple lines are the sum of the total length)
 // - dwWriteCoord - The first fill character's coordinate position in the buffer (writes continue rightward and possibly down from there)
-// - pNumberOfCharsWritten - Pointer to memory location to hold the total number of text attributes written into the buffer
+// - numberOfCharsWritten - Pointer to memory location to hold the total number of text attributes written into the buffer
 // Return Value:
-// - TRUE if successful (see DoSrvFillConsoleOutput). FALSE otherwise.
-BOOL ConhostInternalGetSet::FillConsoleOutputAttribute(const WORD wAttribute, const DWORD nLength, const COORD dwWriteCoord, _Out_ DWORD* const pNumberOfAttrsWritten)
+// - TRUE if successful (see FillConsoleOutputAttributeImpl). FALSE otherwise.
+BOOL ConhostInternalGetSet::FillConsoleOutputAttribute(const WORD wAttribute, const DWORD nLength, const COORD dwWriteCoord, size_t& numberOfAttrsWritten) noexcept
 {
-    return _FillConsoleOutput(wAttribute, CONSOLE_ATTRIBUTE, nLength, dwWriteCoord, pNumberOfAttrsWritten);
-}
-
-// Routine Description:
-// - Helper to consolidate FillConsole calls into the same internal message/API call pattern.
-// Arguments:
-// - usElement - Variable element type to fill the console with (characters, attributes)
-// - ulElementType - Flag to specify which type of fill to perform with usElement variable.
-// - nLength - The length of the fill run in characters (depending on mode, will wrap at the window edge so multiple lines are the sum of the total length)
-// - dwWriteCoord - The first fill character's coordinate position in the buffer (writes continue rightward and possibly down from there)
-// - pNumberOfCharsWritten - Pointer to memory location to hold the total number of elements written into the buffer
-// Return Value:
-// - TRUE if successful (see DoSrvFillConsoleOutput). FALSE otherwise.
-BOOL ConhostInternalGetSet::_FillConsoleOutput(const USHORT usElement, const ULONG ulElementType, const DWORD nLength, const COORD dwWriteCoord, _Out_ DWORD* const pNumberWritten)
-{
-    CONSOLE_FILLCONSOLEOUTPUT_MSG msg;
-    msg.Element = usElement;
-    msg.ElementType = ulElementType;
-    msg.WriteCoord = dwWriteCoord;
-    msg.Length = nLength;
-
-    BOOL fSuccess = NT_SUCCESS(DoSrvFillConsoleOutput(_io.GetActiveOutputBuffer(), &msg));
-
-    if (fSuccess)
-    {
-        *pNumberWritten = msg.Length; // the length value is replaced when exiting with the number written.
-    }
-
-    return fSuccess;
+    return SUCCEEDED(ServiceLocator::LocateGlobals().api.FillConsoleOutputAttributeImpl(_io.GetActiveOutputBuffer(),
+                                                                                        wAttribute,
+                                                                                        nLength,
+                                                                                        dwWriteCoord,
+                                                                                        numberOfAttrsWritten));
 }
 
 // Routine Description:

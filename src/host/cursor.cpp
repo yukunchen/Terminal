@@ -87,8 +87,8 @@ bool Cursor::IsDouble() const noexcept
 bool Cursor::IsDoubleWidth() const
 {
     // Check with the current screen buffer to see if the character under the cursor is double-width.
-    const auto cell = _parentBuffer.GetRowByOffset(_cPosition.Y).AsCells(_cPosition.X, 1).at(0);
-    return IsGlyphFullWidth(cell.Chars());
+    TextBufferTextIterator it(TextBufferCellIterator(_parentBuffer, _cPosition));
+    return IsGlyphFullWidth(*it);
 }
 
 bool Cursor::IsConversionArea() const noexcept
@@ -346,8 +346,8 @@ void Cursor::TimerRoutine(SCREEN_INFORMATION& ScreenInfo)
         SetHasMoved(false);
 
         RECT rc;
-        rc.left = (GetPosition().X - ScreenInfo.GetBufferViewport().Left) * ScreenInfo.GetScreenFontSize().X;
-        rc.top = (GetPosition().Y - ScreenInfo.GetBufferViewport().Top) * ScreenInfo.GetScreenFontSize().Y;
+        rc.left = (GetPosition().X - ScreenInfo.GetViewport().Left()) * ScreenInfo.GetScreenFontSize().X;
+        rc.top = (GetPosition().Y - ScreenInfo.GetViewport().Top()) * ScreenInfo.GetScreenFontSize().Y;
         rc.right = rc.left + ScreenInfo.GetScreenFontSize().X;
         rc.bottom = rc.top + ScreenInfo.GetScreenFontSize().Y;
 

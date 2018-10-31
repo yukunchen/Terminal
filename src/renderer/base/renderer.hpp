@@ -45,7 +45,7 @@ namespace Microsoft::Console::Render
         HRESULT PaintFrame();
 
         void TriggerSystemRedraw(const RECT* const prcDirtyClient) override;
-        void TriggerRedraw(const SMALL_RECT* const psrRegion) override;
+        void TriggerRedraw(const Microsoft::Console::Types::Viewport& region) override;
         void TriggerRedraw(const COORD* const pcoord) override;
         void TriggerRedrawCursor(const COORD* const pcoord) override;
         void TriggerRedrawAll() override;
@@ -148,7 +148,6 @@ namespace Microsoft::Console::Render
         std::vector<SMALL_RECT> _GetSelectionRects() const;
         std::vector<SMALL_RECT> _previousSelection;
 
-        SMALL_RECT _RegionFromCoord(const COORD* const pcoord) const;
         COLORREF _ConvertAttrToRGB(const BYTE bAttr);
 
         [[nodiscard]]

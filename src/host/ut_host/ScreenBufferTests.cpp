@@ -104,6 +104,10 @@ class ScreenBufferTests
     TEST_METHOD(VtEraseAllPersistCursor);
     TEST_METHOD(VtEraseAllPersistCursorFillColor);
 
+    TEST_METHOD(GetWordBoundary);
+    void GetWordBoundaryTrimZeros(bool on);
+    TEST_METHOD(GetWordBoundaryTrimZerosOn);
+    TEST_METHOD(GetWordBoundaryTrimZerosOff);
 };
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
@@ -230,9 +234,9 @@ void ScreenBufferTests::TestReverseLineFeed()
     SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
     auto& stateMachine = screenInfo.GetStateMachine();
     auto& cursor = screenInfo._textBuffer->GetCursor();
-    auto viewport = screenInfo.GetBufferViewport();
+    auto viewport = screenInfo.GetViewport();
 
-    VERIFY_ARE_EQUAL(screenInfo.GetBufferViewport().Top, 0);
+    VERIFY_ARE_EQUAL(viewport.Top(), 0);
 
     ////////////////////////////////////////////////////////////////////////
     Log::Comment(L"Case 1: RI from below top of viewport");
@@ -240,17 +244,17 @@ void ScreenBufferTests::TestReverseLineFeed()
     stateMachine.ProcessString(L"foo\nfoo", 7);
     VERIFY_ARE_EQUAL(cursor.GetPosition().X, 3);
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 1);
-    VERIFY_ARE_EQUAL(screenInfo.GetBufferViewport().Top, 0);
+    VERIFY_ARE_EQUAL(viewport.Top(), 0);
 
     VERIFY_SUCCEEDED(DoSrvPrivateReverseLineFeed(screenInfo));
 
     VERIFY_ARE_EQUAL(cursor.GetPosition().X, 3);
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 0);
-    viewport = screenInfo.GetBufferViewport();
-    VERIFY_ARE_EQUAL(viewport.Top, 0);
+    viewport = screenInfo.GetViewport();
+    VERIFY_ARE_EQUAL(viewport.Top(), 0);
     Log::Comment(NoThrowString().Format(
         L"viewport={L:%d,T:%d,R:%d,B:%d}",
-        viewport.Left, viewport.Top, viewport.Right, viewport.Bottom
+        viewport.Left(), viewport.Top(), viewport.RightInclusive(), viewport.BottomInclusive()
     ));
 
     ////////////////////////////////////////////////////////////////////////
@@ -259,17 +263,17 @@ void ScreenBufferTests::TestReverseLineFeed()
     stateMachine.ProcessString(L"123456789", 9);
     VERIFY_ARE_EQUAL(cursor.GetPosition().X, 9);
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 0);
-    VERIFY_ARE_EQUAL(screenInfo.GetBufferViewport().Top, 0);
+    VERIFY_ARE_EQUAL(screenInfo.GetViewport().Top(), 0);
 
     VERIFY_SUCCEEDED(DoSrvPrivateReverseLineFeed(screenInfo));
 
     VERIFY_ARE_EQUAL(cursor.GetPosition().X, 9);
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 0);
-    viewport = screenInfo.GetBufferViewport();
-    VERIFY_ARE_EQUAL(viewport.Top, 0);
+    viewport = screenInfo.GetViewport();
+    VERIFY_ARE_EQUAL(viewport.Top(), 0);
     Log::Comment(NoThrowString().Format(
         L"viewport={L:%d,T:%d,R:%d,B:%d}",
-        viewport.Left, viewport.Top, viewport.Right, viewport.Bottom
+        viewport.Left(), viewport.Top(), viewport.RightInclusive(), viewport.BottomInclusive()
     ));
     auto c = screenInfo._textBuffer->GetLastNonSpaceCharacter();
     VERIFY_ARE_EQUAL(c.Y, 2); // This is the coordinates of the second "foo" from before.
@@ -282,17 +286,17 @@ void ScreenBufferTests::TestReverseLineFeed()
     stateMachine.ProcessString(L"ABCDEFGH", 9);
     VERIFY_ARE_EQUAL(cursor.GetPosition().X, 9);
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 5);
-    VERIFY_ARE_EQUAL(screenInfo.GetBufferViewport().Top, 5);
+    VERIFY_ARE_EQUAL(screenInfo.GetViewport().Top(), 5);
 
     LOG_IF_FAILED(DoSrvPrivateReverseLineFeed(screenInfo));
 
     VERIFY_ARE_EQUAL(cursor.GetPosition().X, 9);
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 5);
-    viewport = screenInfo.GetBufferViewport();
-    VERIFY_ARE_EQUAL(viewport.Top, 5);
+    viewport = screenInfo.GetViewport();
+    VERIFY_ARE_EQUAL(viewport.Top(), 5);
     Log::Comment(NoThrowString().Format(
         L"viewport={L:%d,T:%d,R:%d,B:%d}",
-        viewport.Left, viewport.Top, viewport.Right, viewport.Bottom
+        viewport.Left(), viewport.Top(), viewport.RightInclusive(), viewport.BottomInclusive()
     ));
     c = screenInfo._textBuffer->GetLastNonSpaceCharacter();
     VERIFY_ARE_EQUAL(c.Y, 6);
@@ -450,7 +454,7 @@ void ScreenBufferTests::TestGetForwardTab()
     std::list<short> inputData = { 3, 5, 6, 10, 15, 17 };
     si._tabStops = inputData;
 
-    const COORD coordScreenBufferSize = si.GetScreenBufferSize();
+    const COORD coordScreenBufferSize = si.GetBufferSize().Dimensions();
     COORD coordCursor;
     coordCursor.Y = coordScreenBufferSize.Y / 2; // in the middle of the buffer, it doesn't make a difference.
 
@@ -502,7 +506,7 @@ void ScreenBufferTests::TestGetReverseTab()
     si._tabStops = inputData;
 
     COORD coordCursor;
-    coordCursor.Y = si.GetScreenBufferSize().Y / 2; // in the middle of the buffer, it doesn't make a difference.
+    coordCursor.Y = si.GetBufferSize().Height() / 2; // in the middle of the buffer, it doesn't make a difference.
 
     Log::Comment(L"Find previous tab from before front.");
     {
@@ -562,14 +566,14 @@ void ScreenBufferTests::EraseAllTests()
     auto& stateMachine = si.GetStateMachine();
     auto& cursor = si._textBuffer->GetCursor();
 
-    VERIFY_ARE_EQUAL(si.GetBufferViewport().Top, 0);
+    VERIFY_ARE_EQUAL(si.GetViewport().Top(), 0);
 
     ////////////////////////////////////////////////////////////////////////
     Log::Comment(L"Case 1: Erase a single line of text in the buffer\n");
 
     stateMachine.ProcessString(L"foo", 3);
     COORD originalRelativePosition = {3, 0};
-    VERIFY_ARE_EQUAL(si.GetBufferViewport().Top, 0);
+    VERIFY_ARE_EQUAL(si.GetViewport().Top(), 0);
     VERIFY_ARE_EQUAL(cursor.GetPosition(), originalRelativePosition);
 
     VERIFY_SUCCEEDED(si.VtEraseAll());
@@ -628,7 +632,7 @@ void ScreenBufferTests::EraseAllTests()
     VERIFY_SUCCEEDED(si.VtEraseAll());
 
     viewport = si._viewport;
-    auto heightFromBottom = si.GetScreenBufferSize().Y - (viewport.Height());
+    auto heightFromBottom = si.GetBufferSize().Height() - (viewport.Height());
     VERIFY_ARE_EQUAL(viewport.Top(), heightFromBottom);
     newRelativePos = originalRelativePosition;
     viewport.ConvertFromOrigin(&newRelativePos);
@@ -651,11 +655,10 @@ void ScreenBufferTests::VtResize()
     cursor.SetXPosition(0);
     cursor.SetYPosition(0);
 
-    auto initialSbHeight = si.GetScreenBufferSize().Y;
-    auto initialSbWidth = si.GetScreenBufferSize().X;
-    // The viewport is an inclusive rect, so we need +1's
-    auto initialViewHeight = si.GetBufferViewport().Bottom - si.GetBufferViewport().Top + 1;
-    auto initialViewWidth = si.GetBufferViewport().Right - si.GetBufferViewport().Left + 1;
+    auto initialSbHeight = si.GetBufferSize().Height();
+    auto initialSbWidth = si.GetBufferSize().Width();
+    auto initialViewHeight = si.GetViewport().Height();
+    auto initialViewWidth = si.GetViewport().Width();
 
     Log::Comment(NoThrowString().Format(
         L"Write '\x1b[8;30;80t'"
@@ -666,11 +669,10 @@ void ScreenBufferTests::VtResize()
     std::wstring sequence = L"\x1b[8;30;80t";
     stateMachine.ProcessString(&sequence[0], sequence.length());
 
-    auto newSbHeight = si.GetScreenBufferSize().Y;
-    auto newSbWidth = si.GetScreenBufferSize().X;
-    // The viewport is an inclusive rect, so we need +1's
-    auto newViewHeight = si.GetBufferViewport().Bottom - si.GetBufferViewport().Top + 1;
-    auto newViewWidth = si.GetBufferViewport().Right - si.GetBufferViewport().Left + 1;
+    auto newSbHeight = si.GetBufferSize().Height();
+    auto newSbWidth = si.GetBufferSize().Width();
+    auto newViewHeight = si.GetViewport().Height();
+    auto newViewWidth = si.GetViewport().Width();
 
     VERIFY_ARE_EQUAL(initialSbHeight, newSbHeight);
     VERIFY_ARE_EQUAL(80, newSbWidth);
@@ -691,10 +693,10 @@ void ScreenBufferTests::VtResize()
     sequence = L"\x1b[8;40;80t";
     stateMachine.ProcessString(&sequence[0], sequence.length());
 
-    newSbHeight = si.GetScreenBufferSize().Y;
-    newSbWidth = si.GetScreenBufferSize().X;
-    newViewHeight = si.GetBufferViewport().Bottom - si.GetBufferViewport().Top + 1;
-    newViewWidth = si.GetBufferViewport().Right - si.GetBufferViewport().Left + 1;
+    newSbHeight = si.GetBufferSize().Height();
+    newSbWidth = si.GetBufferSize().Width();
+    newViewHeight = si.GetViewport().Height();
+    newViewWidth = si.GetViewport().Width();
 
     VERIFY_ARE_EQUAL(initialSbHeight, newSbHeight);
     VERIFY_ARE_EQUAL(80, newSbWidth);
@@ -715,10 +717,10 @@ void ScreenBufferTests::VtResize()
     sequence = L"\x1b[8;40;90t";
     stateMachine.ProcessString(&sequence[0], sequence.length());
 
-    newSbHeight = si.GetScreenBufferSize().Y;
-    newSbWidth = si.GetScreenBufferSize().X;
-    newViewHeight = si.GetBufferViewport().Bottom - si.GetBufferViewport().Top + 1;
-    newViewWidth = si.GetBufferViewport().Right - si.GetBufferViewport().Left + 1;
+    newSbHeight = si.GetBufferSize().Height();
+    newSbWidth = si.GetBufferSize().Width();
+    newViewHeight = si.GetViewport().Height();
+    newViewWidth = si.GetViewport().Width();
 
     VERIFY_ARE_EQUAL(initialSbHeight, newSbHeight);
     VERIFY_ARE_EQUAL(90, newSbWidth);
@@ -739,10 +741,10 @@ void ScreenBufferTests::VtResize()
     sequence = L"\x1b[8;12;12t";
     stateMachine.ProcessString(&sequence[0], sequence.length());
 
-    newSbHeight = si.GetScreenBufferSize().Y;
-    newSbWidth = si.GetScreenBufferSize().X;
-    newViewHeight = si.GetBufferViewport().Bottom - si.GetBufferViewport().Top + 1;
-    newViewWidth = si.GetBufferViewport().Right - si.GetBufferViewport().Left + 1;
+    newSbHeight = si.GetBufferSize().Height();
+    newSbWidth = si.GetBufferSize().Width();
+    newViewHeight = si.GetViewport().Height();
+    newViewWidth = si.GetViewport().Width();
 
     VERIFY_ARE_EQUAL(initialSbHeight, newSbHeight);
     VERIFY_ARE_EQUAL(12, newSbWidth);
@@ -762,10 +764,10 @@ void ScreenBufferTests::VtResize()
     sequence = L"\x1b[8;0;0t";
     stateMachine.ProcessString(&sequence[0], sequence.length());
 
-    newSbHeight = si.GetScreenBufferSize().Y;
-    newSbWidth = si.GetScreenBufferSize().X;
-    newViewHeight = si.GetBufferViewport().Bottom - si.GetBufferViewport().Top + 1;
-    newViewWidth = si.GetBufferViewport().Right - si.GetBufferViewport().Left + 1;
+    newSbHeight = si.GetBufferSize().Height();
+    newSbWidth = si.GetBufferSize().Width();
+    newViewHeight = si.GetViewport().Height();
+    newViewWidth = si.GetViewport().Width();
 
     VERIFY_ARE_EQUAL(initialSbHeight, newSbHeight);
     VERIFY_ARE_EQUAL(initialSbWidth, newSbWidth);
@@ -946,11 +948,10 @@ void ScreenBufferTests::ResizeTraditionalDoesntDoubleFreeAttrRows()
     SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
 
     gci.SetWrapText(false);
-    COORD newBufferSize = si._coordScreenBufferSize;
+    COORD newBufferSize = si.GetBufferSize().Dimensions();
     newBufferSize.Y--;
 
     VERIFY_SUCCEEDED(si.ResizeTraditional(newBufferSize));
-
 }
 
 void ScreenBufferTests::ResizeAltBuffer()
@@ -989,6 +990,14 @@ void ScreenBufferTests::ResizeAltBuffer()
     ));
     psiAlt->SetViewportSize(&newSize);
     VERIFY_IS_TRUE(true);
+
+    Log::Comment(NoThrowString().Format(
+        L"Switch back from buffer"
+    ));
+    seq = L"\x1b[?1049l";
+    stateMachine.ProcessString(&seq[0], seq.length());
+    VERIFY_IS_FALSE(si._IsAltBuffer());
+    VERIFY_IS_NULL(si._psiAlternateBuffer);
 }
 
 void ScreenBufferTests::VtEraseAllPersistCursor()
@@ -1057,16 +1066,159 @@ void ScreenBufferTests::VtEraseAllPersistCursorFillColor()
         L"new Viewport: %s",
         VerifyOutputTraits<SMALL_RECT>::ToString(newViewport.ToInclusive()).GetBuffer()
     ));
-    auto* pRow = &tbi.GetRowByOffset(newViewport.Top());
+    
+    auto iter = tbi.GetCellDataAt(newViewport.Origin());
     auto height = newViewport.Height();
     auto width = newViewport.Width();
     for (int i = 0; i < height; i++)
     {
         for (int j = 0; j < width; j++)
         {
-            VERIFY_ARE_EQUAL(expectedAttr, pRow->GetAttrRow().GetAttrByColumn(j));
+            VERIFY_ARE_EQUAL(expectedAttr, iter->TextAttr());
+            iter++;
         }
-
-        pRow = &tbi.GetNextRowNoWrap(*pRow);
     }
+}
+
+void ScreenBufferTests::GetWordBoundary()
+{
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+
+    const auto text = L"This is some test text for word boundaries.";
+    const auto length = wcslen(text);
+
+    // Make the buffer as big as our test text.
+    const COORD newBufferSize = { gsl::narrow<SHORT>(length), 10 };
+    VERIFY_SUCCEEDED(si.GetTextBuffer().ResizeTraditional(si.GetBufferSize().Dimensions(), newBufferSize, si.GetAttributes()));
+
+    const OutputCellIterator it(text, si.GetAttributes());
+    si.Write(it, { 0,0 });
+
+    // Now find some words in it.
+    Log::Comment(L"Find first word from its front.");
+    COORD expectedFirst = { 0, 0 };
+    COORD expectedSecond = { 4, 0 };
+
+    auto boundary = si.GetWordBoundary({ 0, 0 });
+    VERIFY_ARE_EQUAL(expectedFirst, boundary.first);
+    VERIFY_ARE_EQUAL(expectedSecond, boundary.second);
+
+    Log::Comment(L"Find first word from its middle.");
+    boundary = si.GetWordBoundary({ 1, 0 });
+    VERIFY_ARE_EQUAL(expectedFirst, boundary.first);
+    VERIFY_ARE_EQUAL(expectedSecond, boundary.second);
+
+    Log::Comment(L"Find first word from its end.");
+    boundary = si.GetWordBoundary({ 3, 0 });
+    VERIFY_ARE_EQUAL(expectedFirst, boundary.first);
+    VERIFY_ARE_EQUAL(expectedSecond, boundary.second);
+
+    Log::Comment(L"Find middle word from its front.");
+    expectedFirst = { 13, 0 };
+    expectedSecond = { 17, 0 };
+    boundary = si.GetWordBoundary({ 13, 0 });
+    VERIFY_ARE_EQUAL(expectedFirst, boundary.first);
+    VERIFY_ARE_EQUAL(expectedSecond, boundary.second);
+
+    Log::Comment(L"Find middle word from its middle.");
+    boundary = si.GetWordBoundary({ 15, 0 });
+    VERIFY_ARE_EQUAL(expectedFirst, boundary.first);
+    VERIFY_ARE_EQUAL(expectedSecond, boundary.second);
+
+    Log::Comment(L"Find middle word from its end.");
+    boundary = si.GetWordBoundary({ 16, 0 });
+    VERIFY_ARE_EQUAL(expectedFirst, boundary.first);
+    VERIFY_ARE_EQUAL(expectedSecond, boundary.second);
+
+    Log::Comment(L"Find end word from its front.");
+    expectedFirst = { 32, 0 };
+    expectedSecond = { 43, 0 };
+    boundary = si.GetWordBoundary({ 32, 0 });
+    VERIFY_ARE_EQUAL(expectedFirst, boundary.first);
+    VERIFY_ARE_EQUAL(expectedSecond, boundary.second);
+
+    Log::Comment(L"Find end word from its middle.");
+    boundary = si.GetWordBoundary({ 39, 0 });
+    VERIFY_ARE_EQUAL(expectedFirst, boundary.first);
+    VERIFY_ARE_EQUAL(expectedSecond, boundary.second);
+
+    Log::Comment(L"Find end word from its end.");
+    boundary = si.GetWordBoundary({ 43, 0 });
+    VERIFY_ARE_EQUAL(expectedFirst, boundary.first);
+    VERIFY_ARE_EQUAL(expectedSecond, boundary.second);
+
+    Log::Comment(L"Find a word starting from a boundary character.");
+    expectedFirst = { 8, 0 };
+    expectedSecond = { 12, 0 };
+    boundary = si.GetWordBoundary({ 12, 0 });
+    VERIFY_ARE_EQUAL(expectedFirst, boundary.first);
+    VERIFY_ARE_EQUAL(expectedSecond, boundary.second);
+}
+
+void ScreenBufferTests::GetWordBoundaryTrimZeros(const bool on)
+{
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+
+    const auto text = L"000fe12 0xfe12 0Xfe12 0nfe12 0Nfe12";
+    const auto length = wcslen(text);
+
+    // Make the buffer as big as our test text.
+    const COORD newBufferSize = { gsl::narrow<SHORT>(length), 10 };
+    VERIFY_SUCCEEDED(si.GetTextBuffer().ResizeTraditional(si.GetBufferSize().Dimensions(), newBufferSize, si.GetAttributes()));
+
+    const OutputCellIterator it(text, si.GetAttributes());
+    si.Write(it, { 0, 0 });
+
+    gci.SetTrimLeadingZeros(on);
+
+    COORD expectedFirst;
+    COORD expectedSecond;
+    std::pair<COORD, COORD> boundary;
+
+    Log::Comment(L"Find lead with 000");
+    expectedFirst = on ? COORD{ 3, 0 } : COORD{ 0, 0 };
+    expectedSecond = COORD{ 7, 0 };
+    boundary = si.GetWordBoundary({ 0, 0 });
+    VERIFY_ARE_EQUAL(expectedFirst, boundary.first);
+    VERIFY_ARE_EQUAL(expectedSecond, boundary.second);
+
+    Log::Comment(L"Find lead with 0x");
+    expectedFirst = COORD{ 8, 0 };
+    expectedSecond = COORD{ 14, 0 };
+    boundary = si.GetWordBoundary({ 8, 0 });
+    VERIFY_ARE_EQUAL(expectedFirst, boundary.first);
+    VERIFY_ARE_EQUAL(expectedSecond, boundary.second);
+
+    Log::Comment(L"Find lead with 0X");
+    expectedFirst = COORD{ 15, 0 };
+    expectedSecond = COORD{ 21, 0 };
+    boundary = si.GetWordBoundary({ 15, 0 });
+    VERIFY_ARE_EQUAL(expectedFirst, boundary.first);
+    VERIFY_ARE_EQUAL(expectedSecond, boundary.second);
+
+    Log::Comment(L"Find lead with 0n");
+    expectedFirst = COORD{ 22, 0 };
+    expectedSecond = COORD{ 28, 0 };
+    boundary = si.GetWordBoundary({ 22, 0 });
+    VERIFY_ARE_EQUAL(expectedFirst, boundary.first);
+    VERIFY_ARE_EQUAL(expectedSecond, boundary.second);
+
+    Log::Comment(L"Find lead with 0N");
+    expectedFirst = on ? COORD{ 30, 0 } : COORD{ 29, 0 };
+    expectedSecond = COORD{ 35, 0 };
+    boundary = si.GetWordBoundary({ 29, 0 });
+    VERIFY_ARE_EQUAL(expectedFirst, boundary.first);
+    VERIFY_ARE_EQUAL(expectedSecond, boundary.second);
+}
+
+void ScreenBufferTests::GetWordBoundaryTrimZerosOn()
+{
+    GetWordBoundaryTrimZeros(true);
+}
+
+void ScreenBufferTests::GetWordBoundaryTrimZerosOff()
+{
+    GetWordBoundaryTrimZeros(false);
 }

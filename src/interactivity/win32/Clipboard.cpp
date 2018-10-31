@@ -207,42 +207,27 @@ std::vector<std::wstring> Clipboard::RetrieveTextFromBuffer(const SCREEN_INFORMA
     // for each row in the selection
     for (UINT i = 0; i < selectionRects.size(); i++)
     {
-        const SMALL_RECT highlightRow = selectionRects[i];
         const SMALL_RECT selection = Selection::Instance().GetSelectionRectangle();
         const UINT iRow = selection.Top + i;
-
-        // recalculate string length again as the width of the highlight row might have been reduced in the bisect call
-        const short stringLength = highlightRow.Right - highlightRow.Left + 1;
-
-        // this is the source location X/Y coordinates within the active screen buffer to start copying from
-        const COORD sourcePoint{ highlightRow.Left, highlightRow.Top };
-
-        // our output buffer is 1 dimensional and is just as long as the string, so the "rectangle" should
-        // specify just a line.
-        // length of 80 runs from left 0 to right 79. therefore -1.
-        const SMALL_RECT targetRect{ 0, 0, stringLength - 1, 0 };
+        
+        const Viewport highlight = Viewport::FromInclusive(selectionRects[i]);
 
         // retrieve the data from the screen buffer
-        std::vector<OutputCell> outputCells;
-        std::wstring selectionText;
-        std::vector<std::vector<OutputCell>> cells = ReadRectFromScreenBuffer(screenInfo,
-                                                                              sourcePoint,
-                                                                              Viewport::FromInclusive(targetRect));
-        // we only care about one row so reduce it here
-        outputCells = cells.at(0);
+        auto it = screenInfo.GetCellDataAt(highlight.Origin(), highlight);
+
         // allocate a string buffer
-        selectionText.reserve(outputCells.size() + 2); // + 2 for \r\n if we munged it
+        std::wstring selectionText;
+        selectionText.reserve(highlight.Width() + 2); // + 2 for \r\n if we munged it
 
         // copy char data into the string buffer, skipping trailing bytes
-        for (auto& cell : outputCells)
+        while (it)
         {
+            const auto& cell = *it;
             if (!cell.DbcsAttr().IsTrailing())
             {
-                for (const wchar_t wch : cell.Chars())
-                {
-                    selectionText.push_back(wch);
-                }
+                selectionText.append(cell.Chars());
             }
+            it++;
         }
 
         // trim trailing spaces

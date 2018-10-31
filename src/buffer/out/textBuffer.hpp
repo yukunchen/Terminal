@@ -60,6 +60,9 @@ filling in the last row, and updating the screen.
 #include "UnicodeStorage.hpp"
 #include "../types/inc/Viewport.hpp"
 
+#include "../buffer/out/textBufferCellIterator.hpp"
+#include "../buffer/out/textBufferTextIterator.hpp"
+
 class TextBuffer final
 {
 public:
@@ -75,57 +78,51 @@ public:
     void CopyProperties(const TextBuffer& OtherBuffer);
 
     // row manipulation
-    const ROW& GetFirstRow() const;
-    ROW& GetFirstRow();
-
     const ROW& GetRowByOffset(const size_t index) const;
     ROW& GetRowByOffset(const size_t index);
 
-    const ROW& GetPrevRowNoWrap(const ROW& row) const;
-    ROW& GetPrevRowNoWrap(const ROW& row);
-
-    const ROW& GetNextRowNoWrap(const ROW& row) const;
-    ROW& GetNextRowNoWrap(const ROW& row);
-
-    const ROW& GetRowAtIndex(const UINT index) const;
-    ROW& GetRowAtIndex(const UINT index);
-
-    const ROW& GetPrevRow(const ROW& row) const noexcept;
-    ROW& GetPrevRow(const ROW& row) noexcept;
-
-    const ROW& GetNextRow(const ROW& row) const noexcept;
-    ROW& GetNextRow(const ROW& row) noexcept;
+    TextBufferCellIterator GetCellDataAt(const COORD at) const;
+    TextBufferCellIterator GetCellLineDataAt(const COORD at) const;
+    TextBufferCellIterator GetCellDataAt(const COORD at, const Microsoft::Console::Types::Viewport limit) const;
+    TextBufferTextIterator GetTextDataAt(const COORD at) const;
+    TextBufferTextIterator GetTextLineDataAt(const COORD at) const;
+    TextBufferTextIterator GetTextDataAt(const COORD at, const Microsoft::Console::Types::Viewport limit) const;
 
     // Text insertion functions
+    OutputCellIterator Write(const OutputCellIterator givenIt);
+
+    OutputCellIterator Write(const OutputCellIterator givenIt,
+                             const COORD target);
+
+    OutputCellIterator WriteLine(const OutputCellIterator givenIt,
+                                 const COORD target,
+                                 const bool setWrap = false,
+                                 const std::optional<size_t> limitRight = std::nullopt);
+
     bool InsertCharacter(const wchar_t wch, const DbcsAttribute dbcsAttribute, const TextAttribute attr);
     bool InsertCharacter(const std::wstring_view chars, const DbcsAttribute dbcsAttribute, const TextAttribute attr);
     bool IncrementCursor();
     bool NewlineCursor();
-
-    // Cursor adjustment
-    void DecrementCursor();
 
     // Scroll needs access to this to quickly rotate around the buffer.
     bool IncrementCircularBuffer();
 
     COORD GetLastNonSpaceCharacter() const;
 
-    FontInfo& GetCurrentFont();
-    const FontInfo& GetCurrentFont() const;
+    FontInfo& GetCurrentFont() noexcept;
+    const FontInfo& GetCurrentFont() const noexcept;
 
-    FontInfoDesired& GetDesiredFont();
-    const FontInfoDesired& GetDesiredFont() const;
+    FontInfoDesired& GetDesiredFont() noexcept;
+    const FontInfoDesired& GetDesiredFont() const noexcept;
 
     Cursor& GetCursor();
     const Cursor& GetCursor() const;
 
     const SHORT GetFirstRowIndex() const;
-    const COORD GetCoordBufferSize() const;
 
     const Microsoft::Console::Types::Viewport GetSize() const;
 
     void SetFirstRowIndex(const SHORT FirstRowIndex);
-    void SetCoordBufferSize(const COORD coordBufferSize);
 
     void ScrollRows(const SHORT firstRow, const SHORT size, const SHORT delta);
 
@@ -143,33 +140,38 @@ public:
 
     const UnicodeStorage& GetUnicodeStorage() const;
     UnicodeStorage& GetUnicodeStorage();
+
 private:
 
     std::deque<ROW> _storage;
     Cursor _cursor;
 
-    SHORT _FirstRow; // indexes top row (not necessarily 0)
+    SHORT _firstRow; // indexes top row (not necessarily 0)
 
-    COORD _coordBufferSize; // TODO: can we just measure the number of rows and/or their allocated width for this?
+    FontInfo _currentFont;
+    FontInfoDesired _desiredFont;
 
-    FontInfo _fiCurrentFont;
-    FontInfoDesired _fiDesiredFont;
-
-    CHAR_INFO _ciFill;
+    CHAR_INFO _fill;
 
     // storage location for glyphs that can't fit into the buffer normally
     UnicodeStorage _unicodeStorage;
 
-    COORD GetPreviousFromCursor() const;
+    COORD _GetPreviousFromCursor() const;
 
-    void SetWrapOnCurrentRow();
-    void AdjustWrapOnCurrentRow(const bool fSet);
+    void _SetWrapOnCurrentRow();
+    void _AdjustWrapOnCurrentRow(const bool fSet);
+
+    void _NotifyPaint(const Microsoft::Console::Types::Viewport& viewport) const;
 
     // Assist with maintaining proper buffer state for Double Byte character sequences
     bool _PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute);
-    bool AssertValidDoubleByteSequence(const DbcsAttribute dbcsAttribute);
+    bool _AssertValidDoubleByteSequence(const DbcsAttribute dbcsAttribute);
+
+    ROW& _GetFirstRow();
+    ROW& _GetPrevRowNoWrap(const ROW& row);
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;
+    friend class UiaTextRangeTests;
 #endif
 };

@@ -29,9 +29,6 @@ Revision History:
 #define IsEastAsianCP(cp) ((cp)==CP_JAPANESE || (cp)==CP_KOREAN || (cp)==CP_CHINESE_TRADITIONAL || (cp)==CP_CHINESE_SIMPLIFIED)
 
 bool CheckBisectStringA(_In_reads_bytes_(cbBuf) PCHAR pchBuf, _In_ DWORD cbBuf, const CPINFO * const pCPInfo);
-void CleanupDbcsEdgesForWrite(const size_t stringLen,
-                              const COORD coordTarget,
-                              SCREEN_INFORMATION& screenInfo);
 
 DWORD RemoveDbcsMarkCell(_Out_writes_(cch) PCHAR_INFO pciDst, _In_reads_(cch) const CHAR_INFO * pciSrc, _In_ DWORD cch);
 

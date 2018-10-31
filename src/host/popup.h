@@ -87,7 +87,7 @@ private:
 
     static NTSTATUS _getUserInputInternal(COOKED_READ_DATA& cookedReadData, bool& popupKey, wchar_t& wch) noexcept;
 
-    std::vector<CHAR_INFO> _oldContents; // contains data under popup
+    OutputCellRect _oldContents; // contains data under popup
     COORD _oldScreenSize;
     UserInputFunction _userInputFunction;
 };

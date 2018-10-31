@@ -12,13 +12,15 @@
 
 #pragma hdrstop
 
+using namespace Microsoft::Console::Types;
+
 bool IsValidSmallRect(_In_ PSMALL_RECT const Rect)
 {
     return (Rect->Right >= Rect->Left && Rect->Bottom >= Rect->Top);
 }
 
 void WriteConvRegionToScreen(const SCREEN_INFORMATION& ScreenInfo,
-                             const SMALL_RECT srConvRegion)
+                             const Viewport& convRegion)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (!ScreenInfo.IsActiveScreenBuffer())
@@ -34,7 +36,7 @@ void WriteConvRegionToScreen(const SCREEN_INFORMATION& ScreenInfo,
 
         if (!ConvAreaInfo.IsHidden())
         {
-            const auto currentViewport = ScreenInfo.GetBufferViewport();
+            const auto currentViewport = ScreenInfo.GetViewport().ToInclusive();
             const auto areaInfo = ConvAreaInfo.GetAreaBufferInfo();
 
             // Do clipping region
@@ -53,10 +55,10 @@ void WriteConvRegionToScreen(const SCREEN_INFORMATION& ScreenInfo,
             if (IsValidSmallRect(&ClippedRegion))
             {
                 Region = ClippedRegion;
-                ClippedRegion.Left = std::max(Region.Left, srConvRegion.Left);
-                ClippedRegion.Top = std::max(Region.Top, srConvRegion.Top);
-                ClippedRegion.Right = std::min(Region.Right, srConvRegion.Right);
-                ClippedRegion.Bottom = std::min(Region.Bottom, srConvRegion.Bottom);
+                ClippedRegion.Left = std::max(Region.Left, convRegion.Left());
+                ClippedRegion.Top = std::max(Region.Top, convRegion.Top());
+                ClippedRegion.Right = std::min(Region.Right, convRegion.RightInclusive());
+                ClippedRegion.Bottom = std::min(Region.Bottom, convRegion.BottomInclusive());
                 if (IsValidSmallRect(&ClippedRegion))
                 {
                     // if we have a renderer, we need to update.
@@ -69,7 +71,7 @@ void WriteConvRegionToScreen(const SCREEN_INFORMATION& ScreenInfo,
                         srExclusive.Right++;
                         srExclusive.Bottom++;
 
-                        ServiceLocator::LocateGlobals().pRender->TriggerRedraw(&srExclusive);
+                        ServiceLocator::LocateGlobals().pRender->TriggerRedraw(Viewport::FromExclusive(srExclusive));
                     }
                 }
             }

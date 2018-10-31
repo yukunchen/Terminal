@@ -15,6 +15,7 @@ Author(s):
 
 #include "FontInfoDesired.hpp"
 #include "IRenderEngine.hpp"
+#include "../types/inc/viewport.hpp"
 
 namespace Microsoft::Console::Render
 {
@@ -28,7 +29,7 @@ namespace Microsoft::Console::Render
 
         virtual void TriggerSystemRedraw(const RECT* const prcDirtyClient) = 0;
 
-        virtual void TriggerRedraw(const SMALL_RECT* const psrRegion) = 0;
+        virtual void TriggerRedraw(const Microsoft::Console::Types::Viewport& region) = 0;
         virtual void TriggerRedraw(const COORD* const pcoord) = 0;
         virtual void TriggerRedrawCursor(const COORD* const pcoord) = 0;
 

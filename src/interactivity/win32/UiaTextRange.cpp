@@ -294,7 +294,7 @@ UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
     const IConsoleWindow* const pIConsoleWindow = _getIConsoleWindow();
     const Window* const pWindow = static_cast<const Window* const>(pIConsoleWindow);
     const RECT windowRect = pWindow->GetWindowRect();
-    const Viewport viewport = _getViewport();
+    const SMALL_RECT viewport = _getViewport().ToInclusive();
     ScreenInfoRow row;
     if (clientPoint.y <= windowRect.top)
     {
@@ -749,13 +749,7 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
             for (unsigned int i = 0; i < totalRowsInRange; ++i)
             {
                 currentScreenInfoRow = startScreenInfoRow + i;
-                const int rowIndex = _screenInfoRowToTextBufferRow(currentScreenInfoRow);
-                if (rowIndex >= static_cast<int>(_getTotalRows()) || rowIndex < 0)
-                {
-                    throw UIA_E_INVALIDOPERATION;
-                }
-
-                const ROW& row = textBuffer.GetRowAtIndex(rowIndex);
+                const ROW& row = textBuffer.GetRowByOffset(currentScreenInfoRow);
                 if (row.GetCharRow().ContainsText())
                 {
                     const size_t rowRight = row.GetCharRow().MeasureRight();
@@ -1078,7 +1072,7 @@ IFACEMETHODIMP UiaTextRange::ScrollIntoView(_In_ BOOL alignToTop)
         gci.UnlockConsole();
     });
 
-    Viewport oldViewport;
+    SMALL_RECT oldViewport;
     unsigned int viewportHeight;
     // range rows
     ScreenInfoRow startScreenInfoRow;
@@ -1088,7 +1082,7 @@ IFACEMETHODIMP UiaTextRange::ScrollIntoView(_In_ BOOL alignToTop)
     ScreenInfoRow bottomRow;
     try
     {
-        oldViewport = _getViewport();
+        oldViewport = _getViewport().ToInclusive();
         viewportHeight = _getViewportHeight(oldViewport);
         // range rows
         startScreenInfoRow = _endpointToScreenInfoRow(_start);
@@ -1099,7 +1093,7 @@ IFACEMETHODIMP UiaTextRange::ScrollIntoView(_In_ BOOL alignToTop)
     }
     CATCH_RETURN();
 
-    Viewport newViewport = oldViewport;
+    SMALL_RECT newViewport = oldViewport;
 
     // there's a bunch of +1/-1s here for setting the viewport. These
     // are to account for the inclusivity of the viewport boundaries.
@@ -1180,9 +1174,9 @@ IFACEMETHODIMP UiaTextRange::GetChildren(_Outptr_result_maybenull_ SAFEARRAY** p
 // - <none>
 // Return Value:
 // - The screen info's current viewport
-const Viewport UiaTextRange::_getViewport()
+const Microsoft::Console::Types::Viewport& UiaTextRange::_getViewport()
 {
-    return _getScreenInfo().GetBufferViewport();
+    return _getScreenInfo().GetViewport();
 }
 
 // Routine Description:
@@ -1253,7 +1247,7 @@ const unsigned int UiaTextRange::_getTotalRows()
 // - The screen buffer size
 const COORD UiaTextRange::_getScreenBufferCoords()
 {
-    return _getScreenInfo().GetScreenBufferSize();
+    return _getScreenInfo().GetBufferSize().Dimensions();
 }
 
 
@@ -1337,7 +1331,7 @@ const ScreenInfoRow UiaTextRange::_textBufferRowToScreenInfoRow(const TextBuffer
 // - the equivalent ViewportRow.
 const ViewportRow UiaTextRange::_screenInfoRowToViewportRow(const ScreenInfoRow row)
 {
-    const Viewport viewport = _getViewport();
+    const SMALL_RECT viewport = _getViewport().ToInclusive();
     return _screenInfoRowToViewportRow(row, viewport);
 }
 
@@ -1349,7 +1343,7 @@ const ViewportRow UiaTextRange::_screenInfoRowToViewportRow(const ScreenInfoRow 
 // Return Value:
 // - the equivalent ViewportRow.
 const ViewportRow UiaTextRange::_screenInfoRowToViewportRow(const ScreenInfoRow row,
-                                                            const Viewport viewport)
+                                                            const SMALL_RECT viewport)
 {
     return row - viewport.Top;
 }
@@ -1374,7 +1368,7 @@ const Row UiaTextRange::_normalizeRow(const Row row)
 // - viewport - The viewport to measure
 // Return Value:
 // - The viewport height
-const unsigned int UiaTextRange::_getViewportHeight(const Viewport viewport)
+const unsigned int UiaTextRange::_getViewportHeight(const SMALL_RECT viewport)
 {
     FAIL_FAST_IF(!(viewport.Bottom >= viewport.Top));
     // + 1 because COORD is inclusive on both sides so subtracting top
@@ -1388,7 +1382,7 @@ const unsigned int UiaTextRange::_getViewportHeight(const Viewport viewport)
 // - viewport - The viewport to measure
 // Return Value:
 // - The viewport width
-const unsigned int UiaTextRange::_getViewportWidth(const Viewport viewport)
+const unsigned int UiaTextRange::_getViewportWidth(const SMALL_RECT viewport)
 {
     FAIL_FAST_IF(!(viewport.Right >= viewport.Left));
 
@@ -1406,7 +1400,7 @@ const unsigned int UiaTextRange::_getViewportWidth(const Viewport viewport)
 // - true if the row is within the bounds of the viewport
 const bool UiaTextRange::_isScreenInfoRowInViewport(const ScreenInfoRow row)
 {
-    return _isScreenInfoRowInViewport(row, _getViewport());
+    return _isScreenInfoRowInViewport(row, _getViewport().ToInclusive());
 }
 
 // Routine Description:
@@ -1417,7 +1411,7 @@ const bool UiaTextRange::_isScreenInfoRowInViewport(const ScreenInfoRow row)
 // Return Value:
 // - true if the row is within the bounds of the viewport
 const bool UiaTextRange::_isScreenInfoRowInViewport(const ScreenInfoRow row,
-                                                    const Viewport viewport)
+                                                    const SMALL_RECT viewport)
 {
     ViewportRow viewportRow = _screenInfoRowToViewportRow(row, viewport);
     return viewportRow >= 0 &&
@@ -1508,7 +1502,7 @@ void UiaTextRange::_addScreenInfoRowBoundaries(const ScreenInfoRow screenInfoRow
     else
     {
         // _end is not on this row so span to the end of the row
-        bottomRight.x = _getViewportWidth(_getViewport()) * currentFontSize.X;
+        bottomRight.x = _getViewportWidth(_getViewport().ToInclusive()) * currentFontSize.X;
     }
 
     // we add the font height only once here because we are adding each line individually
@@ -1660,8 +1654,7 @@ std::pair<Endpoint, Endpoint> UiaTextRange::_moveByCharacterForward(const int mo
     for (int i = 0; i < abs(count); ++i)
     {
         // get the current row's right
-        const int rowIndex = _screenInfoRowToTextBufferRow(currentScreenInfoRow);
-        const ROW& row = _getTextBuffer().GetRowAtIndex(rowIndex);
+        const ROW& row = _getTextBuffer().GetRowByOffset(currentScreenInfoRow);
         const size_t right = row.GetCharRow().MeasureRight();
 
         // check if we're at the edge of the screen info buffer
@@ -1718,8 +1711,7 @@ std::pair<Endpoint, Endpoint> UiaTextRange::_moveByCharacterBackward(const int m
 
             currentScreenInfoRow += static_cast<int>(moveState.Increment);
             // get the right cell for the next row
-            const int rowIndex = _screenInfoRowToTextBufferRow(currentScreenInfoRow);
-            const ROW& row = _getTextBuffer().GetRowAtIndex(rowIndex);
+            const ROW& row = _getTextBuffer().GetRowByOffset(currentScreenInfoRow);
             const size_t right = row.GetCharRow().MeasureRight();
             currentColumn = static_cast<Column>((right == 0) ? 0 : right - 1);
         }
@@ -1839,8 +1831,7 @@ UiaTextRange::_moveEndpointByUnitCharacterForward(const int moveCount,
     for (int i = 0; i < abs(count); ++i)
     {
         // get the current row's right
-        const int rowIndex = _screenInfoRowToTextBufferRow(currentScreenInfoRow);
-        const ROW& row = _getTextBuffer().GetRowAtIndex(rowIndex);
+        const ROW& row = _getTextBuffer().GetRowByOffset(currentScreenInfoRow);
         const size_t right = row.GetCharRow().MeasureRight();
 
         // check if we're at the edge of the screen info buffer
@@ -1938,8 +1929,7 @@ UiaTextRange::_moveEndpointByUnitCharacterBackward(const int moveCount,
 
             currentScreenInfoRow += static_cast<int>(moveState.Increment);
             // get the right cell for the next row
-            const int rowIndex = _screenInfoRowToTextBufferRow(currentScreenInfoRow);
-            const ROW& row = _getTextBuffer().GetRowAtIndex(rowIndex);
+            const ROW& row = _getTextBuffer().GetRowByOffset(currentScreenInfoRow);
             const size_t right = row.GetCharRow().MeasureRight();
             currentColumn = static_cast<Column>((right == 0) ? 0 : right - 1);
         }

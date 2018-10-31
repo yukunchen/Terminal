@@ -47,7 +47,7 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
                               const BOOL fKeepCursorVisible,
                               _Inout_opt_ PSHORT psScrollY)
 {
-    const COORD bufferSize = screenInfo.GetScreenBufferSize();
+    const COORD bufferSize = screenInfo.GetBufferSize().Dimensions();
     if (coordCursor.X < 0)
     {
         if (coordCursor.Y > 0)
@@ -74,7 +74,7 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
         }
     }
     const auto relativeMargins = screenInfo.GetRelativeScrollMargins();
-    auto viewport = Viewport::FromInclusive(screenInfo.GetBufferViewport());
+    auto viewport = screenInfo.GetViewport();
     SMALL_RECT srMargins = screenInfo.GetAbsoluteScrollMargins().ToInclusive();
     const bool fMarginsSet = srMargins.Bottom > srMargins.Top;
     COORD currentCursor = screenInfo.GetTextBuffer().GetCursor().GetPosition();
@@ -95,7 +95,7 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
     {
         fScrollUp = true;
         srMargins.Top = 0;
-        srMargins.Bottom = screenInfo.GetBufferViewport().Bottom;
+        srMargins.Bottom = screenInfo.GetViewport().BottomInclusive();
     }
 
     const bool scrollDownAtTop = fScrollDown && relativeMargins.Top() == 0;
@@ -153,7 +153,7 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
             return NTSTATUS_FROM_HRESULT(hr);
         }
         // reset where our viewport is, and recalculate the cursor and margin positions.
-        viewport = Viewport::FromInclusive(screenInfo.GetBufferViewport());
+        viewport = screenInfo.GetViewport();
         viewport.ConvertFromOrigin(&relativeOldCursor);
         viewport.ConvertFromOrigin(&relativeNewCursor);
         currentCursor = relativeOldCursor;
@@ -168,8 +168,8 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
         SMALL_RECT scrollRect = { 0 };
         scrollRect.Top = srMargins.Top;
         scrollRect.Bottom = srMargins.Bottom;
-        scrollRect.Left = screenInfo.GetBufferViewport().Left;  // NOTE: Left/Right Scroll margins don't do anything currently.
-        scrollRect.Right = screenInfo.GetBufferViewport().Right;
+        scrollRect.Left = screenInfo.GetViewport().Left();  // NOTE: Left/Right Scroll margins don't do anything currently.
+        scrollRect.Right = screenInfo.GetViewport().RightInclusive();
 
         COORD dest;
         dest.X = scrollRect.Left;
@@ -230,11 +230,11 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
     if (NT_SUCCESS(Status))
     {
         // if at right or bottom edge of window, scroll right or down one char.
-        if (coordCursor.Y > screenInfo.GetBufferViewport().Bottom)
+        if (coordCursor.Y > screenInfo.GetViewport().BottomInclusive())
         {
             COORD WindowOrigin;
             WindowOrigin.X = 0;
-            WindowOrigin.Y = coordCursor.Y - screenInfo.GetBufferViewport().Bottom;
+            WindowOrigin.Y = coordCursor.Y - screenInfo.GetViewport().BottomInclusive();
 
             Status = screenInfo.SetViewportOrigin(false, WindowOrigin, true);
         }
@@ -302,7 +302,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
 
     const wchar_t* lpString = pwchRealUnicode;
 
-    const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
+    const COORD coordScreenBufferSize = screenInfo.GetBufferSize().Dimensions();
 
     while (*pcb < BufferSize)
     {
@@ -529,18 +529,13 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
             }
 
             // line was wrapped if we're writing up to the end of the current row
-            const bool fWasLineWrapped = XPosition >= coordScreenBufferSize.X;
+            OutputCellIterator it(std::wstring_view(LocalBuffer, i), screenInfo.GetAttributes());
+            screenInfo.Write(it);
 
-            const std::wstring wstr{ LocalBuffer, i };
-            StreamWriteToScreenBuffer(screenInfo, wstr, fWasLineWrapped);
+            // Notify accessibility
+            screenInfo.NotifyAccessibilityEventing(CursorPosition.X, CursorPosition.Y,
+                                                   CursorPosition.X + gsl::narrow<SHORT>(i - 1), CursorPosition.Y);
 
-
-            SMALL_RECT Region;
-            Region.Left = cursor.GetPosition().X;
-            Region.Right = XPosition;
-            Region.Top = cursor.GetPosition().Y;
-            Region.Bottom = cursor.GetPosition().Y;
-            WriteToScreen(screenInfo, Region);
             TempNumSpaces += i;
             CursorPosition.X = XPosition;
             CursorPosition.Y = cursor.GetPosition().Y;
@@ -671,11 +666,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                     {
                         try
                         {
-                            const std::vector<wchar_t> blank{ UNICODE_SPACE };
-                            size_t numChars = WriteOutputStringW(screenInfo,
-                                                                 blank,
-                                                                 CursorPosition);
-                            FillOutputAttributes(screenInfo, Attributes, CursorPosition, numChars);
+                            screenInfo.Write(OutputCellIterator(UNICODE_SPACE, Attributes, 1), CursorPosition);
                             Status = STATUS_SUCCESS;
                         }
                         CATCH_LOG();
@@ -693,11 +684,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                     {
                         try
                         {
-                            const std::vector<wchar_t> blank{ UNICODE_SPACE };
-                            size_t numChars = WriteOutputStringW(screenInfo,
-                                                                 blank,
-                                                                 CursorPosition);
-                            FillOutputAttributes(screenInfo, Attributes, CursorPosition, numChars);
+                            screenInfo.Write(OutputCellIterator(UNICODE_SPACE, Attributes, 1), CursorPosition);
                             Status = STATUS_SUCCESS;
                         }
                         CATCH_LOG();
@@ -719,11 +706,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
             {
                 try
                 {
-                    const std::vector<wchar_t> blank{ UNICODE_SPACE };
-                    size_t numChars = WriteOutputStringW(screenInfo,
-                                                         blank,
-                                                         cursor.GetPosition());
-                    FillOutputAttributes(screenInfo, Attributes, cursor.GetPosition(), numChars);
+                    screenInfo.Write(OutputCellIterator(UNICODE_SPACE, Attributes, 1), cursor.GetPosition());
                 }
                 CATCH_LOG();
             }
@@ -790,11 +773,9 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
                 {
                     try
                     {
-                        const std::vector<wchar_t> blanks(NumChars, UNICODE_SPACE);
-                        NumChars = WriteOutputStringW(screenInfo,
-                                                      blanks,
-                                                      cursor.GetPosition());
-                        NumChars = FillOutputAttributes(screenInfo, Attributes, cursor.GetPosition(), NumChars);
+                        const OutputCellIterator it(UNICODE_SPACE, Attributes, NumChars);
+                        const auto done = screenInfo.Write(it, cursor.GetPosition());
+                        NumChars = done.GetCellDistance(it);
                     }
                     CATCH_LOG();
                 }
@@ -851,17 +832,18 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
 
                 try
                 {
+                    // If we're on top of a trailing cell, clear it and the previous cell.
                     if (charRow.DbcsAttrAt(TargetPoint.X).IsTrailing())
                     {
-                        charRow.ClearCell(TargetPoint.X);
-                        charRow.ClearCell(TargetPoint.X - 1);
+                        // Space to clear for 2 cells.
+                        OutputCellIterator it(UNICODE_SPACE, 2);
 
-                        SMALL_RECT Region;
-                        Region.Left = TargetPoint.X - 1;
-                        Region.Right = (SHORT)(TargetPoint.X);
-                        Region.Top = TargetPoint.Y;
-                        Region.Bottom = TargetPoint.Y;
-                        WriteToScreen(screenInfo, Region);
+                        // Back target point up one.
+                        auto writeTarget = TargetPoint;
+                        writeTarget.X--;
+
+                        // Write 2 clear cells.
+                        screenInfo.Write(it, writeTarget);
                     }
                 }
                 catch (...)

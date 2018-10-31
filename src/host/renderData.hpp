@@ -23,7 +23,7 @@ public:
     RenderData();
     virtual ~RenderData();
 
-    const SMALL_RECT GetViewport();
+    const Microsoft::Console::Types::Viewport& GetViewport();
     const TextBuffer& GetTextBuffer();
     const FontInfo* GetFontInfo();
     const TextAttribute GetDefaultBrushColors();

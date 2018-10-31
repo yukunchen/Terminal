@@ -718,7 +718,7 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
     else
     {
         bool CallWrite = true;
-        const SHORT sScreenBufferSizeX = _screenInfo.GetScreenBufferSize().X;
+        const SHORT sScreenBufferSizeX = _screenInfo.GetBufferSize().Width();
 
         // processing in the middle of the line is more complex:
 

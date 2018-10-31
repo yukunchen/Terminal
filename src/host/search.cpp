@@ -137,11 +137,11 @@ COORD Search::s_GetInitialAnchor(const SCREEN_INFORMATION& screenInfo, const Dir
         auto anchor = Selection::Instance().GetSelectionAnchor();
         if (direction == Direction::Forward)
         {
-            screenInfo.GetSize().IncrementInBoundsCircular(anchor);
+            screenInfo.GetBufferSize().IncrementInBoundsCircular(anchor);
         }
         else
         {
-            screenInfo.GetSize().DecrementInBoundsCircular(anchor);
+            screenInfo.GetBufferSize().DecrementInBoundsCircular(anchor);
         }
         return anchor;
     }
@@ -153,7 +153,7 @@ COORD Search::s_GetInitialAnchor(const SCREEN_INFORMATION& screenInfo, const Dir
         }
         else
         {
-            const auto bufferSize = screenInfo.GetScreenBufferSize();
+            const auto bufferSize = screenInfo.GetBufferSize().Dimensions();
             return { bufferSize.X - 1, bufferSize.Y - 1 };
         }
     }
@@ -180,10 +180,8 @@ bool Search::_FindNeedleInHaystackAt(const COORD pos, COORD& start, COORD& end) 
     {
         // Haystack is the buffer. Needle is the string we were given.
         const auto hayIter = _screenInfo.GetTextDataAt(bufferPos);
-        const auto hayChar = *hayIter;
-        const auto hayChars = gsl::make_span<const wchar_t>(hayChar.begin(), hayChar.end());
-
-        const auto& needleChars = needleCell;
+        const auto hayChars = *hayIter;
+        const auto needleChars = std::wstring_view(needleCell.data(), needleCell.size());
 
         // If we didn't match at any point of the needle, return false.
         if (!_CompareChars(hayChars, needleChars))
@@ -208,18 +206,18 @@ bool Search::_FindNeedleInHaystackAt(const COORD pos, COORD& start, COORD& end) 
 // - Provides an abstraction for comparing two spans of text.
 // - Internally handles case sensitivity based on object construction.
 // Arguments:
-// - one - Span representing the first string of text
-// - two - Span representing the second string of text
+// - one - String view representing the first string of text
+// - two - String view representing the second string of text
 // Return Value:
 // - True if they are the same. False otherwise.
-bool Search::_CompareChars(const gsl::span<const wchar_t>& one, const gsl::span<const wchar_t>& two) const
+bool Search::_CompareChars(const std::wstring_view one, const std::wstring_view two) const
 {
     if (one.size() != two.size())
     {
         return false;
     }
 
-    for (ptrdiff_t i = 0; i < one.size(); i++)
+    for (size_t i = 0; i < one.size(); i++)
     {
         if (_ApplySensitivity(one[i]) != _ApplySensitivity(two[i]))
         {
@@ -255,7 +253,7 @@ wchar_t Search::_ApplySensitivity(const wchar_t wch) const
 // - coord - Updated by function to increment one position (will wrap X and Y direction)
 void Search::_IncrementCoord(COORD& coord) const
 {
-    _screenInfo.GetSize().IncrementInBoundsCircular(coord);
+    _screenInfo.GetBufferSize().IncrementInBoundsCircular(coord);
 }
 
 // Routine Description:
@@ -264,7 +262,7 @@ void Search::_IncrementCoord(COORD& coord) const
 // - coord - Updated by function to decrement one position (will wrap X and Y direction)
 void Search::_DecrementCoord(COORD& coord) const
 {
-    _screenInfo.GetSize().DecrementInBoundsCircular(coord);
+    _screenInfo.GetBufferSize().DecrementInBoundsCircular(coord);
 }
 
 // Routine Description:

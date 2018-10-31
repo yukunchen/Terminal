@@ -34,11 +34,11 @@ namespace Microsoft::Console::VirtualTerminal
         virtual BOOL FillConsoleOutputCharacterW(const WCHAR wch,
                                                  const DWORD nLength,
                                                  const COORD dwWriteCoord,
-                                                 _Out_ DWORD* const pNumberOfCharsWritten) = 0;
+                                                 size_t& numberOfCharsWritten) noexcept = 0;
         virtual BOOL FillConsoleOutputAttribute(const WORD wAttribute,
                                                 const DWORD nLength,
                                                 const COORD dwWriteCoord,
-                                                _Out_ DWORD* const pNumberOfAttrsWritten) = 0;
+                                                size_t& numberOfAttrsWritten) noexcept = 0;
         virtual BOOL SetConsoleTextAttribute(const WORD wAttr) = 0;
         virtual BOOL PrivateSetLegacyAttributes(const WORD wAttr,
                                                 const bool fForeground,

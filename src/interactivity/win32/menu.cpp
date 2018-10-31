@@ -310,9 +310,8 @@ HRESULT Menu::s_GetConsoleState(CONSOLE_STATE_INFO * const pStateInfo)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const SCREEN_INFORMATION& ScreenInfo = gci.GetActiveOutputBuffer();
-    pStateInfo->ScreenBufferSize = ScreenInfo.GetScreenBufferSize();
-    pStateInfo->WindowSize.X = ScreenInfo.GetScreenWindowSizeX();
-    pStateInfo->WindowSize.Y = ScreenInfo.GetScreenWindowSizeY();
+    pStateInfo->ScreenBufferSize = ScreenInfo.GetBufferSize().Dimensions();
+    pStateInfo->WindowSize = ScreenInfo.GetViewport().Dimensions();
 
     const RECT rcWindow = ServiceLocator::LocateConsoleWindow<Window>()->GetWindowRect();
     pStateInfo->WindowPosX = rcWindow.left;
@@ -503,7 +502,7 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
         }
 
         // Now adjust the buffer size first to whatever we want it to be if it's different than before.
-        const COORD coordScreenBufferSize = ScreenInfo.GetScreenBufferSize();
+        const COORD coordScreenBufferSize = ScreenInfo.GetBufferSize().Dimensions();
         if (coordBuffer.X != coordScreenBufferSize.X ||
             coordBuffer.Y != coordScreenBufferSize.Y)
         {

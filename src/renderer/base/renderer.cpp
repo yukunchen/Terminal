@@ -223,10 +223,10 @@ void Renderer::TriggerSystemRedraw(const RECT* const prcDirtyClient)
 // - <none>
 // Return Value:
 // - <none>
-void Renderer::TriggerRedraw(const SMALL_RECT* const psrRegion)
+void Renderer::TriggerRedraw(const Viewport& region)
 {
-    Viewport view = Viewport::FromInclusive(_pData->GetViewport());
-    SMALL_RECT srUpdateRegion = *psrRegion;
+    Viewport view = _pData->GetViewport();
+    SMALL_RECT srUpdateRegion = region.ToExclusive();
 
     if (view.TrimToViewport(&srUpdateRegion))
     {
@@ -247,8 +247,7 @@ void Renderer::TriggerRedraw(const SMALL_RECT* const psrRegion)
 // - <none>
 void Renderer::TriggerRedraw(const COORD* const pcoord)
 {
-    SMALL_RECT srRegion = _RegionFromCoord(pcoord);
-    TriggerRedraw(&srRegion); // this will notify to paint if we need it.
+    TriggerRedraw(Viewport::FromCoord(*pcoord)); // this will notify to paint if we need it.
 }
 
 // Routine Description:
@@ -262,7 +261,7 @@ void Renderer::TriggerRedraw(const COORD* const pcoord)
 // - <none>
 void Renderer::TriggerRedrawCursor(const COORD* const pcoord)
 {
-    Viewport view = Viewport::FromInclusive(_pData->GetViewport());
+    Viewport view = _pData->GetViewport();
     COORD updateCoord = *pcoord;
 
     if (view.IsInBounds(updateCoord))
@@ -353,7 +352,7 @@ void Renderer::TriggerSelection()
 bool Renderer::_CheckViewportAndScroll()
 {
     SMALL_RECT const srOldViewport = _srViewportPrevious;
-    SMALL_RECT const srNewViewport = _pData->GetViewport();
+    SMALL_RECT const srNewViewport = _pData->GetViewport().ToInclusive();
 
     COORD coordDelta;
     coordDelta.X = srOldViewport.Left - srNewViewport.Left;
@@ -616,7 +615,7 @@ HRESULT Renderer::_PaintBackground(_In_ IRenderEngine* const pEngine)
 // - <none>
 void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
 {
-    Viewport view = Viewport::FromInclusive(_pData->GetViewport());
+    Viewport view = _pData->GetViewport();
 
     SMALL_RECT srDirty = pEngine->GetDirtyRectInChars();
     view.ConvertFromOrigin(&srDirty);
@@ -626,7 +625,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
     // The dirty rectangle may be larger than the backing buffer (anything, including the system, may have
     // requested that we render under the scroll bars). To prevent issues, trim down to the max buffer size
     // (a.k.a. ensure the viewport is between 0 and the max size of the buffer.)
-    COORD const coordBufferSize = textBuffer.GetCoordBufferSize();
+    COORD const coordBufferSize = textBuffer.GetSize().Dimensions();
     srDirty.Top = std::max(srDirty.Top, 0i16);
     srDirty.Left = std::max(srDirty.Left, 0i16);
     srDirty.Right = std::min(srDirty.Right, gsl::narrow<SHORT>(coordBufferSize.X - 1));
@@ -1012,7 +1011,7 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
         // Get cursor position in buffer
         COORD coordCursor = cursor.GetPosition();
 
-        Viewport view = Viewport::FromInclusive(_pData->GetViewport());
+        Viewport view = _pData->GetViewport();
 
         // Always attempt to paint the cursor, even if it's not within the
         //      "dirty" part of the viewport.
@@ -1067,7 +1066,7 @@ void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
     if (!AreaInfo.IsHidden())
     {
         // First get the screen buffer's viewport.
-        Viewport view = Viewport::FromInclusive(_pData->GetViewport());
+        Viewport view = _pData->GetViewport();
 
         // Now get the IME's viewport and adjust it to where it is supposed to be relative to the window.
         // The IME's buffer is typically only one row in size. Some segments are the whole row, some are only a partial row.
@@ -1227,7 +1226,7 @@ std::vector<SMALL_RECT> Renderer::_GetSelectionRects() const
 {
     auto rects = _pData->GetSelectionRects();
     // Adjust rectangles to viewport
-    Viewport view = Viewport::FromInclusive(_pData->GetViewport());
+    Viewport view = _pData->GetViewport();
 
     for (auto& rect : rects)
     {

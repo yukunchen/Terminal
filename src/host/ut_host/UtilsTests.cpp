@@ -81,7 +81,6 @@ class UtilsTests
 
     TEST_METHOD(TestCompareCoords)
     {
-        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         int result = 5; // not 1, 0, or -1
         COORD coordA;
         COORD coordB;
@@ -90,12 +89,11 @@ class UtilsTests
         COORD coordMaxBuffer;
         coordMaxBuffer.X = SHORT_MAX;
         coordMaxBuffer.Y = SHORT_MAX;
-        gci.GetActiveOutputBuffer().SetScreenBufferSize(coordMaxBuffer);
 
         Log::Comment(L"#1: 0 case. Coords equal");
         FillBothCoordsSameRandom(&coordA, &coordB);
         LogCoordinates(coordA, coordB);
-        result = Utils::s_CompareCoords(coordA, coordB);
+        result = Utils::s_CompareCoords(coordMaxBuffer, coordA, coordB);
         VERIFY_ARE_EQUAL(result, 0);
 
         Log::Comment(L"#2: -1 case. A comes before B");
@@ -103,14 +101,14 @@ class UtilsTests
         FillBothCoordsSameRandom(&coordA, &coordB);
         SubtractRandom(coordA.X);
         LogCoordinates(coordA, coordB);
-        result = Utils::s_CompareCoords(coordA, coordB);
+        result = Utils::s_CompareCoords(coordMaxBuffer, coordA, coordB);
         VERIFY_IS_LESS_THAN(result, 0);
 
         Log::Comment(L"B. A above B, same column");
         FillBothCoordsSameRandom(&coordA, &coordB);
         SubtractRandom(coordA.Y);
         LogCoordinates(coordA, coordB);
-        result = Utils::s_CompareCoords(coordA, coordB);
+        result = Utils::s_CompareCoords(coordMaxBuffer, coordA, coordB);
         VERIFY_IS_LESS_THAN(result, 0);
 
         Log::Comment(L"C. A up and to the left of B.");
@@ -118,7 +116,7 @@ class UtilsTests
         SubtractRandom(coordA.Y);
         SubtractRandom(coordA.X);
         LogCoordinates(coordA, coordB);
-        result = Utils::s_CompareCoords(coordA, coordB);
+        result = Utils::s_CompareCoords(coordMaxBuffer, coordA, coordB);
         VERIFY_IS_LESS_THAN(result, 0);
 
         Log::Comment(L"D. A up and to the right of B.");
@@ -126,7 +124,7 @@ class UtilsTests
         SubtractRandom(coordA.Y);
         SubtractRandom(coordB.X);
         LogCoordinates(coordA, coordB);
-        result = Utils::s_CompareCoords(coordA, coordB);
+        result = Utils::s_CompareCoords(coordMaxBuffer, coordA, coordB);
         VERIFY_IS_LESS_THAN(result, 0);
 
         Log::Comment(L"#3: 1 case. A comes after B");
@@ -134,14 +132,14 @@ class UtilsTests
         FillBothCoordsSameRandom(&coordA, &coordB);
         SubtractRandom(coordB.X);
         LogCoordinates(coordA, coordB);
-        result = Utils::s_CompareCoords(coordA, coordB);
+        result = Utils::s_CompareCoords(coordMaxBuffer, coordA, coordB);
         VERIFY_IS_GREATER_THAN(result, 0);
 
         Log::Comment(L"B. A below B, same column");
         FillBothCoordsSameRandom(&coordA, &coordB);
         SubtractRandom(coordB.Y);
         LogCoordinates(coordA, coordB);
-        result = Utils::s_CompareCoords(coordA, coordB);
+        result = Utils::s_CompareCoords(coordMaxBuffer, coordA, coordB);
         VERIFY_IS_GREATER_THAN(result, 0);
 
         Log::Comment(L"C. A down and to the left of B");
@@ -149,7 +147,7 @@ class UtilsTests
         SubtractRandom(coordB.Y);
         SubtractRandom(coordA.X);
         LogCoordinates(coordA, coordB);
-        result = Utils::s_CompareCoords(coordA, coordB);
+        result = Utils::s_CompareCoords(coordMaxBuffer, coordA, coordB);
         VERIFY_IS_GREATER_THAN(result, 0);
 
         Log::Comment(L"D. A down and to the right of B");
@@ -157,7 +155,7 @@ class UtilsTests
         SubtractRandom(coordB.Y);
         SubtractRandom(coordB.X);
         LogCoordinates(coordA, coordB);
-        result = Utils::s_CompareCoords(coordA, coordB);
+        result = Utils::s_CompareCoords(coordMaxBuffer, coordA, coordB);
         VERIFY_IS_GREATER_THAN(result, 0);
     }
 };

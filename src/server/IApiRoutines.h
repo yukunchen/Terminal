@@ -149,24 +149,24 @@ public:
 
     [[nodiscard]]
     virtual HRESULT FillConsoleOutputAttributeImpl(IConsoleOutputObject& OutContext,
-                                                   const WORD Attribute,
-                                                   const DWORD LengthToWrite,
-                                                   const COORD StartingCoordinate,
-                                                   _Out_ DWORD* const pCellsModified);
+                                                   const WORD attribute,
+                                                   const size_t lengthToWrite,
+                                                   const COORD startingCoordinate,
+                                                   size_t& cellsModified) noexcept = 0;
 
     [[nodiscard]]
     virtual HRESULT FillConsoleOutputCharacterAImpl(IConsoleOutputObject& OutContext,
-                                                    const char Character,
-                                                    const DWORD LengthToWrite,
-                                                    const COORD StartingCoordinate,
-                                                    _Out_ DWORD* const pCellsModified);
+                                                    const char character,
+                                                    const size_t lengthToWrite,
+                                                    const COORD startingCoordinate,
+                                                    size_t& cellsModified) noexcept = 0;
 
     [[nodiscard]]
     virtual HRESULT FillConsoleOutputCharacterWImpl(IConsoleOutputObject& OutContext,
-                                                    const wchar_t Character,
-                                                    const DWORD LengthToWrite,
-                                                    const COORD StartingCoordinate,
-                                                    _Out_ DWORD* const pCellsModified);
+                                                    const wchar_t character,
+                                                    const size_t lengthToWrite,
+                                                    const COORD startingCoordinate,
+                                                    size_t& cellsModified) noexcept = 0;
 
     virtual void SetConsoleActiveScreenBufferImpl(IConsoleOutputObject& NewOutContext) = 0;
 
@@ -282,24 +282,21 @@ public:
 
     [[nodiscard]]
     virtual HRESULT WriteConsoleOutputAttributeImpl(IConsoleOutputObject& OutContext,
-                                                    _In_reads_(AttributeBufferLength) const WORD* const pAttributeBuffer,
-                                                    const ULONG AttributeBufferLength,
-                                                    const COORD* const pTargetOrigin,
-                                                    _Out_ ULONG* const pAttributeBufferRead);
+                                                    const std::basic_string_view<WORD> attrs,
+                                                    const COORD target,
+                                                    size_t& used) noexcept = 0;
 
     [[nodiscard]]
     virtual HRESULT WriteConsoleOutputCharacterAImpl(IConsoleOutputObject& OutContext,
-                                                     _In_reads_(TextBufferLength) const char* const pTextBuffer,
-                                                     const ULONG TextBufferLength,
-                                                     const COORD* const pTargetOrigin,
-                                                     _Out_ ULONG* const pTextBufferRead);
+                                                     const std::string_view text,
+                                                     const COORD target,
+                                                     size_t& used) noexcept = 0;
 
     [[nodiscard]]
     virtual HRESULT WriteConsoleOutputCharacterWImpl(IConsoleOutputObject& OutContext,
-                                                     _In_reads_(TextBufferLength) const wchar_t* const pTextBuffer,
-                                                     const ULONG TextBufferLength,
-                                                     const COORD* const pTargetOrigin,
-                                                     _Out_ ULONG* const pTextBufferRead);
+                                                     const std::wstring_view text,
+                                                     const COORD target,
+                                                     size_t& used) noexcept = 0;
 
     [[nodiscard]]
     virtual HRESULT ReadConsoleOutputA(const IConsoleOutputObject& OutContext,

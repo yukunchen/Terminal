@@ -167,9 +167,9 @@ void CommandListPopup::_cycleSelectionToMatchingCommands(COOKED_READ_DATA& cooke
 {
     short Index = 0;
     if (cookedReadData.History().FindMatchingCommand({ &wch, 1 },
-                                                      _currentCommand,
-                                                      Index,
-                                                      CommandHistory::MatchOptions::JustLooking))
+                                                     _currentCommand,
+                                                     Index,
+                                                     CommandHistory::MatchOptions::JustLooking))
     {
         _update((SHORT)(Index - _currentCommand), true);
     }
@@ -233,16 +233,13 @@ void CommandListPopup::_drawList()
     size_t lStringLength = Width();
     for (SHORT i = 0; i < Height(); ++i)
     {
-        lStringLength = FillOutputAttributes(_screenInfo,
-                                             _attributes,
-                                             WriteCoord,
-                                             lStringLength);
-        lStringLength = FillOutputW(_screenInfo,
-                                    UNICODE_SPACE,
-                                    WriteCoord,
-                                    lStringLength);
+        const OutputCellIterator spaces(UNICODE_SPACE, _attributes, lStringLength);
+        const auto result = _screenInfo.Write(spaces, WriteCoord);
+        lStringLength = result.GetCellDistance(spaces);
         WriteCoord.Y += 1i16;
     }
+
+    auto& api = ServiceLocator::LocateGlobals().api;
 
     WriteCoord.Y = _region.Top + 1i16;
     SHORT i = std::max(gsl::narrow<SHORT>(_bottomIndex - Height() + 1), 0i16);
@@ -278,14 +275,11 @@ void CommandListPopup::_drawList()
         }
 
         WriteCoord.X = _region.Left + 1i16;
-        try
-        {
-            std::vector<char> chars{ CommandNumberPtr, CommandNumberPtr + CommandNumberLength };
-            CommandNumberLength = WriteOutputStringA(_screenInfo,
-                                                     chars,
-                                                     WriteCoord);
-        }
-        CATCH_LOG();
+
+        LOG_IF_FAILED(api.WriteConsoleOutputCharacterAImpl(_screenInfo,
+                                                           { CommandNumberPtr, CommandNumberLength },
+                                                           WriteCoord,
+                                                           CommandNumberLength));
 
         // write command to screen
         auto command = _history.GetNth(i);
@@ -319,9 +313,11 @@ void CommandListPopup::_drawList()
         }
 
         WriteCoord.X = gsl::narrow<SHORT>(WriteCoord.X + CommandNumberLength);
-
-        std::vector<wchar_t> chars{ command.data(), command.data() + lStringLength };
-        WriteOutputStringW(_screenInfo, chars, WriteCoord);
+        size_t used;
+        LOG_IF_FAILED(api.WriteConsoleOutputCharacterWImpl(_screenInfo,
+                                                           { command.data(), lStringLength },
+                                                           WriteCoord,
+                                                           used));
 
         // write attributes to screen
         if (i == _currentCommand)
@@ -331,7 +327,11 @@ void CommandListPopup::_drawList()
             // inverted attributes
             WORD const attr = (WORD)(((PopupLegacyAttributes << 4) & 0xf0) | ((PopupLegacyAttributes >> 4) & 0x0f));
             lStringLength = Width();
-            lStringLength = FillOutputAttributes(_screenInfo, attr, WriteCoord, lStringLength);
+
+            const OutputCellIterator it(attr, lStringLength);
+            const auto done = _screenInfo.Write(it, WriteCoord);
+
+            lStringLength = done.GetCellDistance(it);
         }
 
         WriteCoord.Y += 1;
@@ -430,12 +430,17 @@ void CommandListPopup::_updateHighlight(const SHORT OldCurrentCommand, const SHO
     size_t lStringLength = Width();
 
     WriteCoord.Y = _region.Top + 1i16 + OldCurrentCommand - TopIndex;
-    lStringLength = FillOutputAttributes(_screenInfo, PopupLegacyAttributes, WriteCoord, lStringLength);
+
+    const OutputCellIterator it(PopupLegacyAttributes, lStringLength);
+    const auto done = _screenInfo.Write(it, WriteCoord);
+    lStringLength = done.GetCellDistance(it);
 
     // highlight new command
     WriteCoord.Y = _region.Top + 1i16 + NewCurrentCommand - TopIndex;
 
     // inverted attributes
     WORD const attr = (WORD)(((PopupLegacyAttributes << 4) & 0xf0) | ((PopupLegacyAttributes >> 4) & 0x0f));
-    lStringLength = FillOutputAttributes(_screenInfo, attr, WriteCoord, lStringLength);
+    const OutputCellIterator itAttr(attr, lStringLength);
+    const auto doneAttr = _screenInfo.Write(itAttr, WriteCoord);
+    lStringLength = done.GetCellDistance(itAttr);
 }

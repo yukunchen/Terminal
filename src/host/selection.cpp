@@ -113,7 +113,7 @@ std::vector<SMALL_RECT> Selection::s_GetSelectionRects(const SMALL_RECT& selecti
             // if not the last row, pad the right selection to the buffer edge
             if (i != selectionRect.Bottom)
             {
-                highlightRow.Right = screenInfo.GetTextBuffer().GetCoordBufferSize().X - 1;
+                highlightRow.Right = screenInfo.GetBufferSize().RightInclusive();
             }
 
             // if we've determined we're in a scenario where we must remove the inner rectangle from the lines...
@@ -178,11 +178,10 @@ SMALL_RECT Selection::s_BisectSelection(const short sStringLength,
                                         const SMALL_RECT rect)
 {
     SMALL_RECT outRect = rect;
-    const TextBuffer& textBuffer = screenInfo.GetTextBuffer();
     try
     {
-        const ROW& row = textBuffer.GetRowByOffset(coordTargetPoint.Y);
-        if (row.GetCharRow().DbcsAttrAt(coordTargetPoint.X).IsTrailing())
+        auto iter = screenInfo.GetCellDataAt(coordTargetPoint);
+        if (iter->DbcsAttr().IsTrailing())
         {
             if (coordTargetPoint.X == 0)
             {
@@ -195,29 +194,31 @@ SMALL_RECT Selection::s_BisectSelection(const short sStringLength,
         }
 
         // Check end position of strings
-        if (coordTargetPoint.X + sStringLength < screenInfo.GetScreenBufferSize().X)
+        if (coordTargetPoint.X + sStringLength < screenInfo.GetBufferSize().Width())
         {
-            if (row.GetCharRow().DbcsAttrAt(coordTargetPoint.X + sStringLength).IsTrailing())
+            iter += sStringLength;
+            if (iter->DbcsAttr().IsTrailing())
             {
                 outRect.Right++;
             }
         }
         else
         {
-            if (row.GetId() + 1 < screenInfo.GetScreenBufferSize().Y)
+            // TODO: MSFT: 19452170 - I'm pretty sure we can't have bisecting text inserted into the buffer
+            // so is this even necessary beyond the contrived scenario and test?
+            if (coordTargetPoint.Y + 1 < screenInfo.GetBufferSize().Height())
             {
-                const ROW& rowNext = textBuffer.GetNextRowNoWrap(row);
-                if (rowNext.GetCharRow().DbcsAttrAt(0).IsTrailing())
+                const auto nextLineIter = screenInfo.GetCellDataAt({ 0, coordTargetPoint.Y + 1 });
+                if (nextLineIter->DbcsAttr().IsTrailing())
                 {
                     outRect.Right--;
                 }
             }
         }
+
     }
-    catch (...)
-    {
-        LOG_HR(wil::ResultFromCaughtException());
-    }
+    CATCH_LOG();
+    
     return outRect;
 }
 
@@ -355,7 +356,7 @@ void Selection::ExtendSelection(_In_ COORD coordBufferPos)
     // ensure position is within buffer bounds. Not less than 0 and not greater than the screen buffer size.
     try
     {
-        screenInfo.GetSize().Clamp(coordBufferPos);
+        screenInfo.GetBufferSize().Clamp(coordBufferPos);
     }
     CATCH_LOG_RETURN();
 
@@ -554,7 +555,7 @@ void Selection::ColorSelection(const SMALL_RECT& srRect, const TextAttribute att
 
         try
         {
-            FillOutputAttributes(screenInfo, attr, coordTarget, cchWrite);
+            screenInfo.Write(OutputCellIterator(attr, cchWrite), coordTarget);
         }
         CATCH_LOG();
     }
@@ -667,9 +668,7 @@ void Selection::SelectAll()
     // save the old window position
     SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
 
-    COORD coordWindowOrigin;
-    coordWindowOrigin.X = screenInfo.GetBufferViewport().Left;
-    coordWindowOrigin.Y = screenInfo.GetBufferViewport().Top;
+    COORD coordWindowOrigin = screenInfo.GetViewport().Origin();
 
     // Get existing selection rectangle parameters
     const bool fOldSelectionExisted = IsAreaSelected();
@@ -696,7 +695,7 @@ void Selection::SelectAll()
         if (!fOldSelectionExisted)
         {
             // Temporary workaround until MSFT: 614579 is completed.
-            const auto bufferSize = screenInfo.GetSize();
+            const auto bufferSize = screenInfo.GetBufferSize();
             COORD coordOneAfterEnd = coordInputEnd;
             bufferSize.IncrementInBounds(coordOneAfterEnd);
 
@@ -755,7 +754,7 @@ void Selection::SelectAll()
     if (!IsLineSelection())
     {
         coordNewSelStart.X = 0;
-        coordNewSelEnd.X = screenInfo.GetScreenBufferSize().X - 1;
+        coordNewSelEnd.X = screenInfo.GetBufferSize().RightInclusive();
     }
 
     SelectNewRegion(coordNewSelStart, coordNewSelEnd);

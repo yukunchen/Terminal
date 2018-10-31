@@ -377,6 +377,58 @@ class ViewportTests
                                wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_NOT_VALID_STATE; });
     }
 
+    TEST_METHOD(ClampViewport)
+    {
+        // Create the rectangle/view we will clamp to.
+        SMALL_RECT rect;
+        rect.Top = 3;
+        rect.Bottom = 5;
+        rect.Left = 10;
+        rect.Right = 20;
+
+        const auto view = Viewport::FromInclusive(rect);
+
+        Log::Comment(L"Make a rectangle that is larger than and fully encompasses our clamping rectangle.");
+        SMALL_RECT testRect;
+        testRect.Top = rect.Top - 3;
+        testRect.Bottom = rect.Bottom + 3;
+        testRect.Left = rect.Left - 3;
+        testRect.Right = rect.Right + 3;
+
+        auto testView = Viewport::FromInclusive(testRect);
+
+        auto actual = view.Clamp(testView);
+        VERIFY_ARE_EQUAL(view, actual, L"All sides should get reduced down to the size of the given rect.");
+
+        Log::Comment(L"Make a rectangle that is fully inscribed inside our clamping rectangle.");
+        testRect.Top = rect.Top + 1;
+        testRect.Bottom = rect.Bottom - 1;
+        testRect.Left = rect.Left + 1;
+        testRect.Right = rect.Right - 1;
+        testView = Viewport::FromInclusive(testRect);
+
+        actual = view.Clamp(testView);
+        VERIFY_ARE_EQUAL(testView, actual, L"Verify that nothing changed because this rectangle already sat fully inside the clamping rectangle.");
+
+        Log::Comment(L"Craft a rectangle where the left is outside the right, right is outside the left, top is outside the bottom, and bottom is outside the top.");
+        testRect.Top = rect.Bottom + 10;
+        testRect.Bottom = rect.Top - 10;
+        testRect.Left = rect.Right + 10;
+        testRect.Right = rect.Left - 10;
+        testView = Viewport::FromInclusive(testRect);
+
+        Log::Comment(L"We expect it to be pulled back so each coordinate is in bounds, but the rectangle is still invalid (since left will be > right).");
+        SMALL_RECT expected;
+        expected.Top = rect.Bottom;
+        expected.Bottom = rect.Top;
+        expected.Left = rect.Right;
+        expected.Right = rect.Left;
+        const auto expectedView = Viewport::FromInclusive(expected);
+
+        actual = view.Clamp(testView);
+        VERIFY_ARE_EQUAL(expectedView, actual, L"Every dimension should be pulled just inside the clamping rectangle.");
+    }
+
     TEST_METHOD(IncrementInBounds)
     {
         bool success = false;

@@ -19,6 +19,7 @@ Author(s):
 
 #include "../inc/IConsoleWindow.hpp"
 #include "../../host/cursor.h"
+#include "../types/inc/viewport.hpp"
 
 #include <deque>
 #include <tuple>
@@ -56,7 +57,6 @@ typedef int ViewportRow;
 typedef unsigned int ScreenInfoRow;
 typedef unsigned int TextBufferRow;
 
-typedef SMALL_RECT Viewport;
 typedef unsigned long long IdType;
 
 // A Column is a row agnostic value that refers to the column an
@@ -129,7 +129,7 @@ namespace Microsoft::Console::Interactivity::Win32
                       const MovementDirection direction);
 
 #ifdef UNIT_TESTING
-        friend class ::UiaTextRangeTests;
+            friend class ::UiaTextRangeTests;
 #endif
         };
 
@@ -264,7 +264,7 @@ namespace Microsoft::Console::Interactivity::Win32
         // then both endpoints will contain the same value.
         bool _degenerate;
 
-        static const Viewport _getViewport();
+        static const Microsoft::Console::Types::Viewport& _getViewport();
         static HWND _getWindowHandle();
         static IConsoleWindow* const _getIConsoleWindow();
         static SCREEN_INFORMATION& _getScreenInfo();
@@ -300,68 +300,68 @@ namespace Microsoft::Console::Interactivity::Win32
 
         static const ViewportRow _screenInfoRowToViewportRow(const ScreenInfoRow row);
         static const ViewportRow _screenInfoRowToViewportRow(const ScreenInfoRow row,
-                                                                const Viewport viewport);
+                                                             const SMALL_RECT viewport);
 
         static const bool _isScreenInfoRowInViewport(const ScreenInfoRow row);
         static const bool _isScreenInfoRowInViewport(const ScreenInfoRow row,
-                                                        const Viewport viewport);
+                                                     const SMALL_RECT viewport);
 
-        static const unsigned int _getViewportHeight(const Viewport viewport);
-        static const unsigned int _getViewportWidth(const Viewport viewport);
+        static const unsigned int _getViewportHeight(const SMALL_RECT viewport);
+        static const unsigned int _getViewportWidth(const SMALL_RECT viewport);
 
         void _addScreenInfoRowBoundaries(const ScreenInfoRow screenInfoRow,
-                                            _Inout_ std::vector<double>& coords) const;
+                                         _Inout_ std::vector<double>& coords) const;
 
         static const int _compareScreenCoords(const ScreenInfoRow rowA,
-                                                const Column colA,
-                                                const ScreenInfoRow rowB,
-                                                const Column colB);
+                                              const Column colA,
+                                              const ScreenInfoRow rowB,
+                                              const Column colB);
 
         static std::pair<Endpoint, Endpoint> _moveByCharacter(const int moveCount,
-                                                                const MoveState moveState,
-                                                                _Out_ int* const pAmountMoved);
+                                                              const MoveState moveState,
+                                                              _Out_ int* const pAmountMoved);
 
         static std::pair<Endpoint, Endpoint> _moveByCharacterForward(const int moveCount,
-                                                                        const MoveState moveState,
-                                                                        _Out_ int* const pAmountMoved);
+                                                                     const MoveState moveState,
+                                                                     _Out_ int* const pAmountMoved);
 
         static std::pair<Endpoint, Endpoint> _moveByCharacterBackward(const int moveCount,
-                                                                        const MoveState moveState,
-                                                                        _Out_ int* const pAmountMoved);
+                                                                      const MoveState moveState,
+                                                                      _Out_ int* const pAmountMoved);
 
         static std::pair<Endpoint, Endpoint> _moveByLine(const int moveCount,
-                                                            const MoveState moveState,
-                                                            _Out_ int* const pAmountMoved);
+                                                         const MoveState moveState,
+                                                         _Out_ int* const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
-        _moveEndpointByUnitCharacter(const int moveCount,
-                                        const TextPatternRangeEndpoint endpoint,
-                                        const MoveState moveState,
-                                        _Out_ int* const pAmountMoved);
+            _moveEndpointByUnitCharacter(const int moveCount,
+                                         const TextPatternRangeEndpoint endpoint,
+                                         const MoveState moveState,
+                                         _Out_ int* const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
-        _moveEndpointByUnitCharacterForward(const int moveCount,
-                                        const TextPatternRangeEndpoint endpoint,
-                                        const MoveState moveState,
-                                        _Out_ int* const pAmountMoved);
+            _moveEndpointByUnitCharacterForward(const int moveCount,
+                                                const TextPatternRangeEndpoint endpoint,
+                                                const MoveState moveState,
+                                                _Out_ int* const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
-        _moveEndpointByUnitCharacterBackward(const int moveCount,
-                                        const TextPatternRangeEndpoint endpoint,
-                                        const MoveState moveState,
-                                        _Out_ int* const pAmountMoved);
+            _moveEndpointByUnitCharacterBackward(const int moveCount,
+                                                 const TextPatternRangeEndpoint endpoint,
+                                                 const MoveState moveState,
+                                                 _Out_ int* const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
-        _moveEndpointByUnitLine(const int moveCount,
-                                const TextPatternRangeEndpoint endpoint,
-                                const MoveState moveState,
-                                _Out_ int* const pAmountMoved);
-
-        static std::tuple<Endpoint, Endpoint, bool>
-        _moveEndpointByUnitDocument(const int moveCount,
+            _moveEndpointByUnitLine(const int moveCount,
                                     const TextPatternRangeEndpoint endpoint,
                                     const MoveState moveState,
                                     _Out_ int* const pAmountMoved);
+
+        static std::tuple<Endpoint, Endpoint, bool>
+            _moveEndpointByUnitDocument(const int moveCount,
+                                        const TextPatternRangeEndpoint endpoint,
+                                        const MoveState moveState,
+                                        _Out_ int* const pAmountMoved);
 
 #ifdef UNIT_TESTING
         friend class ::UiaTextRangeTests;

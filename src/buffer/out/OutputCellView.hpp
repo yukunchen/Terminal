@@ -25,15 +25,17 @@ class OutputCellView
 {
 public:
 
+    OutputCellView();
+
     OutputCellView(const std::wstring_view view,
                    const DbcsAttribute dbcsAttr,
                    const TextAttribute textAttr,
                    const TextAttributeBehavior behavior);
 
-    std::wstring_view Chars() const;
-    DbcsAttribute DbcsAttr() const;
-    TextAttribute TextAttr() const;
-    TextAttributeBehavior TextAttrBehavior() const;
+    const std::wstring_view& Chars() const noexcept;
+    DbcsAttribute DbcsAttr() const noexcept;
+    TextAttribute TextAttr() const noexcept;
+    TextAttributeBehavior TextAttrBehavior() const noexcept;
 
     bool operator==(const OutputCellView& view) const noexcept;
     bool operator!=(const OutputCellView& view) const noexcept;

@@ -230,13 +230,12 @@ void SplitToOem(std::deque<std::unique_ptr<IInputEvent>>& events)
             const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(currentEvent.get());
             // convert from wchar to char
             std::wstring wstr{ pKeyEvent->GetCharData() };
-            std::deque<char> chars = ConvertToOem(codepage, wstr);
+            const auto str = ConvertToA(codepage, wstr);
 
-            while (!chars.empty())
+            for (auto& ch : str)
             {
                 std::unique_ptr<KeyEvent> tempEvent = std::make_unique<KeyEvent>(*pKeyEvent);
-                tempEvent->SetCharData(chars.front());
-                chars.pop_front();
+                tempEvent->SetCharData(ch);
                 convertedEvents.push_back(std::move(tempEvent));
             }
         }
@@ -319,14 +318,6 @@ int ConvertOutputToUnicode(_In_ UINT uiCodePage,
     {
         return MultiByteToWideChar(uiCodePage, MB_USEGLYPHCHARS, pchSource, cchSource, pwchTarget, cchTarget);
     }
-}
-
-bool IsCoordInBounds(const COORD point, const COORD bounds) noexcept
-{
-    return !(point.X >= bounds.X ||
-             point.X < 0 ||
-             point.Y >= bounds.Y ||
-             point.Y < 0);
 }
 
 // Routine Description:

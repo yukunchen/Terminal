@@ -21,6 +21,7 @@ Revision History:
 #include "conapi.h"
 
 #include "settings.hpp"
+#include "../buffer/out/OutputCellRect.hpp"
 #include "../buffer/out/TextAttribute.hpp"
 #include "../buffer/out/textBuffer.hpp"
 #include "../buffer/out/textBufferCellIterator.hpp"
@@ -48,8 +49,6 @@ class ConversionAreaInfo; // forward decl window. circular reference
 class SCREEN_INFORMATION
 {
 public:
-    using const_cell_iterator = typename TextBufferCellIterator;
-    using const_text_iterator = typename TextBufferTextIterator;
 
     [[nodiscard]]
     static NTSTATUS CreateInstance(_In_ COORD coordWindowSize,
@@ -81,12 +80,7 @@ public:
     COORD GetLargestWindowSizeInCharacters(const COORD coordFontSize = { 1, 1 }) const;
     COORD GetScrollBarSizesInCharacters() const;
 
-    void ProcessResizeWindow(const RECT* const prcClientNew, const RECT* const prcClientOld);
-    void SetViewportSize(const COORD* const pcoordSize);
-
-    Microsoft::Console::Types::Viewport GetSize() const noexcept;
-    COORD GetScreenBufferSize() const;
-    void SetScreenBufferSize(const COORD coordNewBufferSize);
+    Microsoft::Console::Types::Viewport GetBufferSize() const;
 
     COORD GetScreenFontSize() const;
     void UpdateFont(const FontInfo* const pfiNewFont);
@@ -104,12 +98,16 @@ public:
     bool IsMaximizedX() const;
     bool IsMaximizedY() const;
 
-    SMALL_RECT GetBufferViewport() const;
-    void SetBufferViewport(const Microsoft::Console::Types::Viewport newViewport);
+    const Microsoft::Console::Types::Viewport& GetViewport() const noexcept;
+    void SetViewport(const Microsoft::Console::Types::Viewport& newViewport);
+
+    void ProcessResizeWindow(const RECT* const prcClientNew, const RECT* const prcClientOld);
+    void SetViewportSize(const COORD* const pcoordSize);
+
     // Forwarders to Window if we're the active buffer.
     [[nodiscard]]
     NTSTATUS SetViewportOrigin(const bool fAbsolute, const COORD coordWindowOrigin, const bool updateBottom);
-    void SetViewportRect(const Microsoft::Console::Types::Viewport newViewport);
+
     bool SendNotifyBeep() const;
     bool PostUpdateWindowSize() const;
 
@@ -124,41 +122,25 @@ public:
     static void s_InsertScreenBuffer(_In_ SCREEN_INFORMATION* const pScreenInfo);
     static void s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pScreenInfo);
 
+    OutputCellRect ReadRect(const Microsoft::Console::Types::Viewport location) const;
 
-    std::wstring ReadText(const size_t rowIndex) const;
-    std::vector<OutputCell> ReadLine(const size_t rowIndex) const;
-    std::vector<OutputCell> ReadLine(const size_t rowIndex,
-                                     const size_t startIndex) const;
-    std::vector<OutputCell> ReadLine(const size_t rowIndex,
-                                     const size_t startIndex,
-                                     const size_t count) const;
+    TextBufferCellIterator GetCellDataAt(const COORD at) const;
+    TextBufferCellIterator GetCellLineDataAt(const COORD at) const;
+    TextBufferCellIterator GetCellDataAt(const COORD at, const Microsoft::Console::Types::Viewport limit) const;
+    TextBufferTextIterator GetTextDataAt(const COORD at) const;
+    TextBufferTextIterator GetTextLineDataAt(const COORD at) const;
+    TextBufferTextIterator GetTextDataAt(const COORD at, const Microsoft::Console::Types::Viewport limit) const;
 
-    const_cell_iterator GetCellDataAt(const COORD at) const;
-    const_cell_iterator GetCellLineDataAt(const COORD at) const;
-    const_cell_iterator GetCellDataAt(const COORD at, const SMALL_RECT limit) const;
-    const_text_iterator GetTextDataAt(const COORD at) const;
+    OutputCellIterator Write(const OutputCellIterator it);
 
-    size_t WriteLine(const OutputCellIterator it,
-                     const size_t rowIndex,
-                     const size_t startIndex);
+    OutputCellIterator Write(const OutputCellIterator it,
+                             const COORD target);
 
-    size_t WriteLine(const std::vector<OutputCell>& cells,
-                     const size_t rowIndex,
-                     const size_t startIndex);
+    OutputCellIterator WriteRect(const OutputCellIterator it,
+                                 const Microsoft::Console::Types::Viewport viewport);
 
-    size_t WriteLineNoWrap(const std::vector<OutputCell>& cells,
-                           const size_t rowIndex,
-                           const size_t startIndex);
-
-    size_t FillTextAttribute(const TextAttribute attr,
-                             const COORD target,
-                             const size_t amountToWrite);
-
-    size_t FillTextGlyph(const std::wstring_view glyph,
-                         const COORD target,
-                         const size_t amountToWrite);
-
-    void UpdateScreen(const COORD start, const COORD end);
+    void WriteRect(const OutputCellRect& data,
+                   const COORD location);
 
     void ClearTextData();
 
@@ -193,12 +175,8 @@ public:
 
     bool IsActiveScreenBuffer() const;
 
-    SHORT GetScreenWindowSizeX() const;
-    SHORT GetScreenWindowSizeY() const;
-
     const StateMachine& GetStateMachine() const;
     StateMachine& GetStateMachine();
-
 
     void SetCursorInformation(const ULONG Size,
                               const bool Visible,
@@ -293,22 +271,7 @@ private:
     bool _IsAltBuffer() const;
     bool _IsInPtyMode() const;
 
-    void _InitializeBufferDimensions(const COORD coordScreenBufferSize,
-                                     const COORD coordViewportSize);
-
-    size_t _WriteLine(const OutputCellIterator givenIt,
-                      const size_t rowIndex,
-                      const size_t startIndex,
-                      const bool shouldWrap);
-
-    size_t _WriteLine(const std::vector<OutputCell>& cells,
-                      const size_t rowIndex,
-                      const size_t startIndex,
-                      const bool shouldWrap);
-
     std::shared_ptr<StateMachine> _stateMachine;
-
-    COORD _coordScreenBufferSize; // dimensions of buffer
 
     Microsoft::Console::Types::Viewport _scrollMargins; //The margins of the VT specified scroll region. Left and Right are currently unused, but could be in the future.
 

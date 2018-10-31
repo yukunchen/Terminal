@@ -122,7 +122,7 @@ class UiaTextRangeTests
 
     const size_t _getRowWidth() const
     {
-        const CharRow& charRow = _pTextBuffer->GetFirstRow().GetCharRow();
+        const CharRow& charRow = _pTextBuffer->_GetFirstRow().GetCharRow();
         return charRow.MeasureRight()- charRow.MeasureLeft() ;
     }
 
@@ -155,7 +155,7 @@ class UiaTextRangeTests
     TEST_METHOD(CanCheckIfScreenInfoRowIsInViewport)
     {
         // check a viewport that's one line tall
-        Viewport viewport;
+        SMALL_RECT viewport;
         viewport.Top = 0;
         viewport.Bottom = 0;
 
@@ -176,7 +176,7 @@ class UiaTextRangeTests
     {
         const int totalRows = _pTextBuffer->TotalRowCount();
 
-        Viewport viewport;
+        SMALL_RECT viewport;
         viewport.Top = 0;
         viewport.Bottom = 10;
 
@@ -279,7 +279,7 @@ class UiaTextRangeTests
 
     TEST_METHOD(CanGetViewportHeight)
     {
-        Viewport viewport;
+        SMALL_RECT viewport;
         viewport.Top = 0;
         viewport.Bottom = 0;
 
@@ -294,7 +294,7 @@ class UiaTextRangeTests
 
     TEST_METHOD(CanGetViewportWidth)
     {
-        Viewport viewport;
+        SMALL_RECT viewport;
         viewport.Left = 0;
         viewport.Right = 0;
 
@@ -333,7 +333,7 @@ class UiaTextRangeTests
     TEST_METHOD(CanMoveByCharacter)
     {
         const Column firstColumnIndex = 0;
-        const Column lastColumnIndex = _pScreenInfo->GetScreenBufferSize().X - 1;
+        const Column lastColumnIndex = _pScreenInfo->GetBufferSize().Width() - 1;
         const ScreenInfoRow topRow = 0;
         const ScreenInfoRow bottomRow = _pTextBuffer->TotalRowCount() - 1;
 
@@ -466,7 +466,7 @@ class UiaTextRangeTests
     TEST_METHOD(CanMoveByLine)
     {
         const Column firstColumnIndex = 0;
-        const Column lastColumnIndex = _pScreenInfo->GetScreenBufferSize().X - 1;
+        const Column lastColumnIndex = _pScreenInfo->GetBufferSize().Width() - 1;
         const ScreenInfoRow topRow = 0;
         const ScreenInfoRow bottomRow = _pTextBuffer->TotalRowCount() - 1;
 
@@ -598,7 +598,7 @@ class UiaTextRangeTests
     TEST_METHOD(CanMoveEndpointByUnitCharacter)
     {
         const Column firstColumnIndex = 0;
-        const Column lastColumnIndex = _pScreenInfo->GetScreenBufferSize().X - 1;
+        const Column lastColumnIndex = _pScreenInfo->GetBufferSize().Width() - 1;
         const ScreenInfoRow topRow = 0;
         const ScreenInfoRow bottomRow = _pTextBuffer->TotalRowCount() - 1;
 
@@ -785,7 +785,7 @@ class UiaTextRangeTests
     TEST_METHOD(CanMoveEndpointByUnitLine)
     {
         const Column firstColumnIndex = 0;
-        const Column lastColumnIndex = _pScreenInfo->GetScreenBufferSize().X - 1;
+        const Column lastColumnIndex = _pScreenInfo->GetBufferSize().Width() - 1;
         const ScreenInfoRow topRow = 0;
         const ScreenInfoRow bottomRow = _pTextBuffer->TotalRowCount() - 1;
 
@@ -1013,7 +1013,7 @@ class UiaTextRangeTests
     TEST_METHOD(CanMoveEndpointByUnitDocument)
     {
         const Column firstColumnIndex = 0;
-        const Column lastColumnIndex = _pScreenInfo->GetScreenBufferSize().X - 1;
+        const Column lastColumnIndex = _pScreenInfo->GetBufferSize().Width() - 1;
         const ScreenInfoRow topRow = 0;
         const ScreenInfoRow bottomRow = _pTextBuffer->TotalRowCount() - 1;
 

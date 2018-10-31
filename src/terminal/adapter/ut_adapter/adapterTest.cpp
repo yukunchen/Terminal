@@ -184,7 +184,7 @@ public:
         return _fPrivateAllowCursorBlinkingResult;
     }
 
-    BOOL FillConsoleOutputCharacterW(const WCHAR wch, const DWORD nLength, const COORD dwWriteCoord, _Out_ DWORD* const pNumberOfCharsWritten)
+    BOOL FillConsoleOutputCharacterW(const WCHAR wch, const DWORD nLength, const COORD dwWriteCoord, size_t& numberOfCharsWritten) noexcept
     {
         Log::Comment(L"FillConsoleOutputCharacterW MOCK called...");
 
@@ -205,14 +205,14 @@ public:
             }
         }
 
-        *pNumberOfCharsWritten = dwCharsWritten;
+        numberOfCharsWritten = dwCharsWritten;
 
         Log::Comment(NoThrowString().Format(L"Fill wrote %d characters.", dwCharsWritten));
 
         return _fFillConsoleOutputCharacterWResult;
     }
 
-    BOOL FillConsoleOutputAttribute(const WORD wAttribute, const DWORD nLength, const COORD dwWriteCoord, _Out_ DWORD* const pNumberOfAttrsWritten)
+    BOOL FillConsoleOutputAttribute(const WORD wAttribute, const DWORD nLength, const COORD dwWriteCoord, size_t& numberOfAttrsWritten) noexcept
     {
         Log::Comment(L"FillConsoleOutputAttribute MOCK called...");
 
@@ -233,7 +233,7 @@ public:
             }
         }
 
-        *pNumberOfAttrsWritten = dwCharsWritten;
+        numberOfAttrsWritten = dwCharsWritten;
 
         Log::Comment(NoThrowString().Format(L"Fill modified %d characters.", dwCharsWritten));
 
@@ -880,17 +880,17 @@ public:
         _rgchars = new CHAR_INFO[cchTotalBufferSize];
 
         COORD coordStart = { 0 };
-        DWORD dwCharsWritten = 0;
+        size_t written = 0;
 
         // Fill buffer with Zs.
         Log::Comment(L"Filling buffer with characters so we can tell what's deleted.");
-        FillConsoleOutputCharacterW(wch, cchTotalBufferSize, coordStart, &dwCharsWritten);
+        FillConsoleOutputCharacterW(wch, cchTotalBufferSize, coordStart, written);
 
         // Fill attributes with 0s
         Log::Comment(L"Filling buffer with attributes so we can tell what happened.");
-        FillConsoleOutputAttribute(wAttr, cchTotalBufferSize, coordStart, &dwCharsWritten);
+        FillConsoleOutputAttribute(wAttr, cchTotalBufferSize, coordStart, written);
 
-        VERIFY_ARE_EQUAL(((DWORD)cchTotalBufferSize), dwCharsWritten, L"Ensure the writer says all characters in the buffer were filled.");
+        VERIFY_ARE_EQUAL(((DWORD)cchTotalBufferSize), ((DWORD)written), L"Ensure the writer says all characters in the buffer were filled.");
     }
 
     void _FreeCharsBuffer()
