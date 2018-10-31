@@ -487,11 +487,7 @@ OutputCellView OutputCellIterator::s_GenerateView(const wchar_t& wch, const Text
 // - legacyAttr - View representing a single legacy color
 // Return Value:
 // - Object representing the view into this cell
-<<<<<<< HEAD
-OutputCellView OutputCellIterator::s_GenerateView(const WORD& legacyAttr)
-=======
 OutputCellView OutputCellIterator::s_GenerateViewLegacyAttr(const WORD& legacyAttr)
->>>>>>> inbox
 {
     WORD cleanAttr = legacyAttr;
     WI_ClearAllFlags(cleanAttr, COMMON_LVB_SBCSDBCS); // don't use legacy lead/trailing byte flags for colors
