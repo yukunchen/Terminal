@@ -48,7 +48,7 @@ NTSTATUS ConsoleWindow::SetViewportOrigin(SMALL_RECT NewWindow)
     Selection* pSelection = &Selection::Instance();
     pSelection->HideSelection();
 
-    ScreenInfo.SetBufferViewport(Viewport::FromInclusive(NewWindow));
+    ScreenInfo.SetViewport(Viewport::FromInclusive(NewWindow));
 
     if (ServiceLocator::LocateGlobals().pRender != nullptr)
     {

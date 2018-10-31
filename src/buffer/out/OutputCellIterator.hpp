@@ -38,7 +38,7 @@ public:
     OutputCellIterator(const CHAR_INFO& charInfo, const size_t fillLimit = 0);
     OutputCellIterator(const std::wstring_view utf16Text);
     OutputCellIterator(const std::wstring_view utf16Text, const TextAttribute attribute);
-    OutputCellIterator(const std::basic_string_view<WORD> legacyAttributes);
+    OutputCellIterator(const std::basic_string_view<WORD> legacyAttributes, const bool unused);
     OutputCellIterator(const std::basic_string_view<CHAR_INFO> charInfos);
     OutputCellIterator(const std::basic_string_view<OutputCell> cells);
     ~OutputCellIterator() = default;
@@ -108,7 +108,7 @@ private:
                                          const TextAttributeBehavior behavior);
 
     static OutputCellView s_GenerateView(const wchar_t& wch);
-    static OutputCellView s_GenerateView(const WORD& legacyAttr);
+    static OutputCellView s_GenerateViewLegacyAttr(const WORD& legacyAttr);
     static OutputCellView s_GenerateView(const TextAttribute& attr);
     static OutputCellView s_GenerateView(const wchar_t& wch, const TextAttribute& attr);
     static OutputCellView s_GenerateView(const CHAR_INFO& charInfo);
