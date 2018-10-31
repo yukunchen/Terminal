@@ -288,7 +288,7 @@ HRESULT ApiRoutines::GetConsoleAliasWImpl(const std::wstring_view source,
 
         if (FAILED(hr))
         {
-            written = target.length();
+            written = target.size();
         }
 
         return hr;
