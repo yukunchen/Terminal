@@ -27,10 +27,7 @@ public:
     TextBufferCellIterator(const TextBuffer& buffer, COORD pos);
     TextBufferCellIterator(const TextBuffer& buffer, COORD pos, const Microsoft::Console::Types::Viewport limits);
 
-    TextBufferCellIterator(const TextBufferCellIterator& it) = default;
     ~TextBufferCellIterator() = default;
-
-    TextBufferCellIterator& operator=(const TextBufferCellIterator& it) = default;
 
     operator bool() const noexcept;
 
@@ -50,12 +47,16 @@ public:
 
     const CHAR_INFO AsCharInfo() const;
 
-    const OutputCellView operator*() const;
+    const OutputCellView& operator*() const noexcept;
+    const OutputCellView* operator->() const noexcept;
 
 protected:
 
     void _SetPos(const COORD newPos);
+    void _GenerateView();
     static const ROW* s_GetRow(const TextBuffer& buffer, const COORD pos);
+
+    OutputCellView _view;
 
     const ROW* _pRow;
     AttrRowIterator _attrIter;
@@ -66,6 +67,7 @@ protected:
 
 #if UNIT_TESTING
     friend class TextBufferIteratorTests;
+    friend class ApiRoutinesTests;
 #endif
 };
 

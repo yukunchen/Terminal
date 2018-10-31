@@ -24,24 +24,15 @@ Revision History:
 void ScreenBufferSizeChange(const COORD coordNewSize);
 
 [[nodiscard]]
-NTSTATUS ReadScreenBuffer(const SCREEN_INFORMATION& screenInfo,
-                          _Inout_ std::vector<std::vector<OutputCell>>& outputCells,
-                          _Inout_ PSMALL_RECT psrReadRegion);
-[[nodiscard]]
-NTSTATUS WriteScreenBuffer(SCREEN_INFORMATION& screenInfo,
-                           _In_ PCHAR_INFO pciBuffer,
-                           _Inout_ PSMALL_RECT psrWriteRegion);
-
-[[nodiscard]]
 NTSTATUS DoCreateScreenBuffer();
 
 std::vector<WORD> ReadOutputAttributes(const SCREEN_INFORMATION& screenInfo,
                                        const COORD coordRead,
                                        const ULONG amountToRead);
 
-std::vector<wchar_t> ReadOutputStringW(const SCREEN_INFORMATION& screenInfo,
-                                       const COORD coordRead,
-                                       const ULONG amountToRead);
+std::wstring ReadOutputStringW(const SCREEN_INFORMATION& screenInfo,
+                               const COORD coordRead,
+                               const ULONG amountToRead);
 
 std::vector<char> ReadOutputStringA(const SCREEN_INFORMATION& screenInfo,
                                     const COORD coordRead,
@@ -56,14 +47,6 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
 VOID SetConsoleWindowOwner(const HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pProcessData);
 
 bool StreamScrollRegion(SCREEN_INFORMATION& screenInfo);
-
-std::vector<std::vector<OutputCell>> ReadRectFromScreenBuffer(const SCREEN_INFORMATION& screenInfo,
-                                                              const COORD coordSourcePoint,
-                                                              const Microsoft::Console::Types::Viewport viewport);
-
-OutputCellRect ReadRectFromScreenBufferOC(const SCREEN_INFORMATION& screenInfo,
-                                          const COORD coordSourcePoint,
-                                          const Microsoft::Console::Types::Viewport viewport);
 
 SHORT ScrollEntireScreen(SCREEN_INFORMATION& screenInfo, const SHORT sScrollValue);
 

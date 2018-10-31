@@ -16,6 +16,8 @@ Author(s):
 
 #pragma once
 
+#include "../types/inc/Viewport.hpp"
+
 namespace Microsoft::Console::Interactivity::Win32
 {
     class UiaTextRange;
@@ -66,7 +68,7 @@ public:
     static void s_TraceApi(const CONSOLE_SETTEXTATTRIBUTE_MSG* const a);
     static void s_TraceApi(const CONSOLE_WRITECONSOLEOUTPUTSTRING_MSG* const a);
 
-    static void s_TraceWindowViewport(const SMALL_RECT viewport);
+    static void s_TraceWindowViewport(const Microsoft::Console::Types::Viewport& viewport);
 
     static void s_TraceChars(_In_z_ const char* pszMessage, ...);
     static void s_TraceOutput(_In_z_ const char* pszMessage, ...);

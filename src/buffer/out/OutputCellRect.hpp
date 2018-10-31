@@ -28,6 +28,7 @@ Revision History:
 class OutputCellRect final
 {
 public:
+    OutputCellRect();
     OutputCellRect(const size_t rows, const size_t cols);
 
     gsl::span<OutputCell> GetRow(const size_t row);
@@ -41,6 +42,6 @@ private:
     
     OutputCell* _FindRowOffset(const size_t row) const;
 
-    const size_t _cols;
-    const size_t _rows;
+    size_t _cols;
+    size_t _rows;
 };

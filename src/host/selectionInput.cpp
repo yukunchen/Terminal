@@ -163,7 +163,7 @@ COORD Selection::WordByWordSelection(const bool fReverse,
     }
 
     // get the character at the new position
-    auto charData = screenInfo.ReadLine(outCoord.Y, outCoord.X, 1).at(0).Chars();
+    auto charData = *screenInfo.GetTextDataAt(outCoord);
 
     // we want to go until the state change from delim to non-delim
     bool fCurrIsDelim = IsWordDelim(charData);
@@ -241,7 +241,7 @@ COORD Selection::WordByWordSelection(const bool fReverse,
         }
 
         // get the character associated with the new position
-        charData = screenInfo.ReadLine(outCoord.Y, outCoord.X, 1).at(0).Chars();
+        charData = *screenInfo.GetTextDataAt(outCoord);
         fCurrIsDelim = IsWordDelim(charData);
 
         // This is a bit confusing.
@@ -332,9 +332,9 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
     coordSelPoint.Y = coordAnchor.Y == rectSelection.Top ? rectSelection.Bottom : rectSelection.Top;
 
     // this is the maximum size of the buffer
-    const auto bufferSize = gci.GetActiveOutputBuffer().GetSize();
+    const auto bufferSize = gci.GetActiveOutputBuffer().GetBufferSize();
 
-    const SHORT sWindowHeight = gci.GetActiveOutputBuffer().GetScreenWindowSizeY();
+    const SHORT sWindowHeight = gci.GetActiveOutputBuffer().GetViewport().Height();
 
     FAIL_FAST_IF(!bufferSize.IsInBounds(coordSelPoint));
 
@@ -362,7 +362,7 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
             // if we're about to split a character in half, keep moving right
             try
             {
-                const auto attr = gci.GetActiveOutputBuffer().ReadLine(coordSelPoint.Y, coordSelPoint.X, 1).at(0).DbcsAttr();
+                const auto attr = gci.GetActiveOutputBuffer().GetCellDataAt(coordSelPoint)->DbcsAttr();
                 if (attr.IsTrailing())
                 {
                     bufferSize.IncrementInBounds(coordSelPoint);
@@ -585,7 +585,7 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
     // ensure we're not planting the cursor in the middle of a double-wide character.
     try
     {
-        const auto attr = gci.GetActiveOutputBuffer().ReadLine(coordSelPoint.Y, coordSelPoint.X, 1).at(0).DbcsAttr();
+        const auto attr = gci.GetActiveOutputBuffer().GetCellDataAt(coordSelPoint)->DbcsAttr();
         if (attr.IsTrailing())
         {
             // try to move off by highlighting the lead half too.
@@ -756,8 +756,10 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
 
         try
         {
+            auto it = ScreenInfo.GetCellLineDataAt(cursorPos);
+
             // calculate next right
-            if (ScreenInfo.ReadLine(cursorPos.Y, cursorPos.X, 1).at(0).DbcsAttr().IsLeading())
+            if (it->DbcsAttr().IsLeading())
             {
                 iNextRightX = 2;
             }
@@ -774,18 +776,19 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
 
             if (cursorPos.X == 1)
             {
-                const std::vector<OutputCell> cells = ScreenInfo.ReadLine(cursorPos.Y, 0, 2);
-                if (cells.at(0).DbcsAttr().IsTrailing())
+                it--;
+                if (it->DbcsAttr().IsTrailing())
                 {
                     iNextLeftX = 2;
                 }
             }
             else
             {
-                const std::vector<OutputCell> cells = ScreenInfo.ReadLine(cursorPos.Y, cursorPos.X - 2, 3);
-                if (cells.at(1).DbcsAttr().IsLeading())
+                it--;
+                if (it->DbcsAttr().IsLeading())
                 {
-                    if (cells.at(0).DbcsAttr().IsTrailing())
+                    it--;
+                    if (it->DbcsAttr().IsTrailing())
                     {
                         iNextLeftX = 3;
                     }
@@ -803,7 +806,7 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
         {
         case VK_RIGHT:
         {
-            if (cursorPos.X + iNextRightX < ScreenInfo.GetScreenBufferSize().X)
+            if (cursorPos.X + iNextRightX < ScreenInfo.GetBufferSize().Width())
             {
                 cursor.IncrementXPosition(iNextRightX);
             }
@@ -830,7 +833,7 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
 
         case VK_DOWN:
         {
-            if (cursorPos.Y + 1 < ScreenInfo.GetScreenBufferSize().Y)
+            if (cursorPos.Y + 1 < ScreenInfo.GetBufferSize().Height())
             {
                 cursor.IncrementYPosition(1);
             }
@@ -839,8 +842,8 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
 
         case VK_NEXT:
         {
-            cursor.IncrementYPosition(ScreenInfo.GetScreenWindowSizeY() - 1);
-            const COORD coordBufferSize = ScreenInfo.GetScreenBufferSize();
+            cursor.IncrementYPosition(ScreenInfo.GetViewport().Height() - 1);
+            const COORD coordBufferSize = ScreenInfo.GetBufferSize().Dimensions();
             if (cursor.GetPosition().Y >= coordBufferSize.Y)
             {
                 cursor.SetYPosition(coordBufferSize.Y - 1);
@@ -850,7 +853,7 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
 
         case VK_PRIOR:
         {
-            cursor.DecrementYPosition(ScreenInfo.GetScreenWindowSizeY() - 1);
+            cursor.DecrementYPosition(ScreenInfo.GetViewport().Height() - 1);
             if (cursor.GetPosition().Y < 0)
             {
                 cursor.SetYPosition(0);
@@ -861,7 +864,7 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
         case VK_END:
         {
             // End by itself should go to end of current line. Ctrl-End should go to end of buffer.
-            cursor.SetXPosition(ScreenInfo.GetScreenBufferSize().X - 1);
+            cursor.SetXPosition(ScreenInfo.GetBufferSize().RightInclusive());
 
             if (pInputKeyInfo->IsCtrlPressed())
             {
@@ -938,7 +941,7 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
 bool Selection::s_GetInputLineBoundaries(_Out_opt_ COORD* const pcoordInputStart, _Out_opt_ COORD* const pcoordInputEnd)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto bufferSize = gci.GetActiveOutputBuffer().GetSize();
+    const auto bufferSize = gci.GetActiveOutputBuffer().GetBufferSize();
 
     auto& textBuffer = gci.GetActiveOutputBuffer().GetTextBuffer();
 

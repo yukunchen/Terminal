@@ -178,13 +178,13 @@ void Tracing::s_TraceApi(const CONSOLE_WRITECONSOLEOUTPUTSTRING_MSG* const a)
         );
 }
 
-void Tracing::s_TraceWindowViewport(const SMALL_RECT viewport)
+void Tracing::s_TraceWindowViewport(const Microsoft::Console::Types::Viewport& viewport)
 {
     TraceLoggingWrite(g_hConhostV2EventTraceProvider, "WindowViewport",
-        TraceLoggingInt32(viewport.Bottom - viewport.Top, "ViewHeight"),
-        TraceLoggingInt32(viewport.Right - viewport.Left, "ViewWidth"),
-        TraceLoggingInt32(viewport.Top, "OriginTop"),
-        TraceLoggingInt32(viewport.Left, "OriginLeft"),
+        TraceLoggingInt32(viewport.Height(), "ViewHeight"),
+        TraceLoggingInt32(viewport.Width(), "ViewWidth"),
+        TraceLoggingInt32(viewport.Top(), "OriginTop"),
+        TraceLoggingInt32(viewport.Left(), "OriginLeft"),
         TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
         TraceLoggingKeyword(TraceKeywords::General)
         );

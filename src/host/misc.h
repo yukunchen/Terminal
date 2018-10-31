@@ -58,8 +58,6 @@ int ConvertOutputToUnicode(_In_ UINT uiCodePage,
                            _Out_writes_(cchTarget) WCHAR *pwchTarget,
                            _In_ UINT cchTarget) noexcept;
 
-bool IsCoordInBounds(const COORD point, const COORD bounds) noexcept;
-
 bool DoBuffersOverlap(const BYTE* const pBufferA,
                       const UINT cbBufferA,
                       const BYTE* const pBufferB,

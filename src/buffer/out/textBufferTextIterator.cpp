@@ -13,12 +13,32 @@
 
 #pragma hdrstop
 
-TextBufferTextIterator::TextBufferTextIterator(const TextBuffer& buffer, COORD pos) :
-    TextBufferCellIterator(buffer, pos)
+using namespace Microsoft::Console::Types;
+
+// Routine Description:
+// - Narrows the view of a cell iterator into a text only iterator.
+// Arguments:
+// - A cell iterator
+TextBufferTextIterator::TextBufferTextIterator(const TextBufferCellIterator& cellIt) :
+    TextBufferCellIterator(cellIt)
 {
 }
 
-const CharRow::reference TextBufferTextIterator::operator*() const
+// Routine Description:
+// - Returns the text information from the text buffer position addressed by this iterator.
+// Return Value:
+// - Read only UTF-16 text data
+const std::wstring_view TextBufferTextIterator::operator*() const
 {
-    return _pRow->GetCharRow().GlyphAt(_pos.X);
+    return _view.Chars();
 }
+
+// Routine Description:
+// - Returns the text information from the text buffer position addressed by this iterator.
+// Return Value:
+// - Read only UTF-16 text data
+const std::wstring_view* TextBufferTextIterator::operator->() const
+{
+    return &_view.Chars();
+}
+

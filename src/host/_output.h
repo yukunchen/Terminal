@@ -19,52 +19,6 @@ Revision History:
 #pragma once
 
 #include "screenInfo.hpp"
-#include "../buffer/out/OutputCell.hpp"
-#include "../buffer/out/OutputCellRect.hpp"
+#include "../types/inc/viewport.hpp"
 
-void StreamWriteToScreenBuffer(SCREEN_INFORMATION& screenInfo,
-                               const std::wstring& wstr,
-                               const bool fWasLineWrapped);
-
-void WriteRectToScreenBufferOC(SCREEN_INFORMATION& screenInfo,
-                               const OutputCellRect& cells,
-                               const COORD dest);
-
-void WriteRectToScreenBuffer(SCREEN_INFORMATION& screenInfo,
-                             const std::vector<std::vector<OutputCell>>& cells,
-                             const COORD coordDest);
-
-void WriteRegionToScreen(SCREEN_INFORMATION& screenInfo, _In_ PSMALL_RECT psrRegion);
-
-void WriteToScreen(SCREEN_INFORMATION& screenInfo, const SMALL_RECT srRegion);
-
-size_t FillOutputAttributes(SCREEN_INFORMATION& screenInfo,
-                            const TextAttribute attr,
-                            const COORD target,
-                            const size_t amountToWrite);
-
-size_t FillOutputW(SCREEN_INFORMATION& screenInfo,
-                   const wchar_t wch,
-                   const COORD target,
-                   const size_t amountToWrite);
-
-size_t FillOutputA(SCREEN_INFORMATION& screenInfo,
-                   const char ch,
-                   const COORD target,
-                   const size_t amountToWrite);
-
-void FillRectangle(SCREEN_INFORMATION& screenInfo,
-                   const OutputCell& cell,
-                   const Microsoft::Console::Types::Viewport rect);
-
-size_t WriteOutputAttributes(SCREEN_INFORMATION& screenInfo,
-                             const std::vector<WORD>& attrs,
-                             const COORD target);
-
-size_t WriteOutputStringW(SCREEN_INFORMATION& screenInfo,
-                          const std::vector<wchar_t>& chars,
-                          const COORD target);
-
-size_t WriteOutputStringA(SCREEN_INFORMATION& screenInfo,
-                          const std::vector<char>& chars,
-                          const COORD target);
+void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Microsoft::Console::Types::Viewport& region);

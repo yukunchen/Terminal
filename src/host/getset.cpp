@@ -374,8 +374,8 @@ HRESULT ApiRoutines::SetConsoleScreenBufferSizeImpl(SCREEN_INFORMATION& context,
     {
         COORD const coordMin = screenInfo.GetMinWindowSizeInCharacters();
         // Make sure requested screen buffer size isn't smaller than the window.
-        RETURN_HR_IF(E_INVALIDARG, (pSize->X < screenInfo.GetScreenWindowSizeX() ||
-                                    pSize->Y < screenInfo.GetScreenWindowSizeY() ||
+        RETURN_HR_IF(E_INVALIDARG, (pSize->X < screenInfo.GetViewport().Width() ||
+                                    pSize->Y < screenInfo.GetViewport().Height() ||
                                     pSize->Y < coordMin.Y ||
                                     pSize->X < coordMin.X));
     }
@@ -384,7 +384,7 @@ HRESULT ApiRoutines::SetConsoleScreenBufferSizeImpl(SCREEN_INFORMATION& context,
     RETURN_HR_IF(E_INVALIDARG, (pSize->X == SHORT_MAX || pSize->Y == SHORT_MAX));
 
     // Only do the resize if we're actually changing one of the dimensions
-    COORD const coordScreenBufferSize = screenInfo.GetScreenBufferSize();
+    COORD const coordScreenBufferSize = screenInfo.GetBufferSize().Dimensions();
     if (pSize->X != coordScreenBufferSize.X || pSize->Y != coordScreenBufferSize.Y)
     {
         RETURN_NTSTATUS(screenInfo.ResizeScreenBuffer(*pSize, TRUE));
@@ -415,7 +415,7 @@ void DoSrvSetScreenBufferInfo(SCREEN_INFORMATION& screenInfo,
     Globals& g = ServiceLocator::LocateGlobals();
     CONSOLE_INFORMATION& gci = g.getConsoleInformation();
 
-    const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
+    const COORD coordScreenBufferSize = screenInfo.GetBufferSize().Dimensions();
     const COORD requestedBufferSize = pInfo->dwSize;
     if (requestedBufferSize.X != coordScreenBufferSize.X ||
         requestedBufferSize.Y != coordScreenBufferSize.Y)
@@ -428,7 +428,7 @@ void DoSrvSetScreenBufferInfo(SCREEN_INFORMATION& screenInfo,
 
         commandLine.Show();
     }
-    const COORD newBufferSize = screenInfo.GetScreenBufferSize();
+    const COORD newBufferSize = screenInfo.GetBufferSize().Dimensions();
 
     gci.SetColorTable(pInfo->ColorTable, ARRAYSIZE(pInfo->ColorTable));
     SetScreenColors(screenInfo, pInfo->wAttributes, pInfo->wPopupAttributes, TRUE);
@@ -449,8 +449,8 @@ void DoSrvSetScreenBufferInfo(SCREEN_INFORMATION& screenInfo,
         NewSize.X = newBufferSize.X;
     }
 
-    if (NewSize.X != screenInfo.GetScreenWindowSizeX() ||
-        NewSize.Y != screenInfo.GetScreenWindowSizeY())
+    if (NewSize.X != screenInfo.GetViewport().Width() ||
+        NewSize.Y != screenInfo.GetViewport().Height())
     {
         screenInfo.SetViewportSize(&NewSize);
 
@@ -483,7 +483,7 @@ HRESULT DoSrvSetConsoleCursorPosition(SCREEN_INFORMATION& screenInfo,
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-    const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
+    const COORD coordScreenBufferSize = screenInfo.GetBufferSize().Dimensions();
     RETURN_HR_IF(E_INVALIDARG, (pCursorPosition->X >= coordScreenBufferSize.X ||
                                 pCursorPosition->Y >= coordScreenBufferSize.Y ||
                                 pCursorPosition->X < 0 ||
@@ -500,7 +500,7 @@ HRESULT DoSrvSetConsoleCursorPosition(SCREEN_INFORMATION& screenInfo,
     WindowOrigin.X = 0;
     WindowOrigin.Y = 0;
     {
-        const SMALL_RECT currentViewport = screenInfo.GetBufferViewport();
+        const SMALL_RECT currentViewport = screenInfo.GetViewport().ToInclusive();
         if (currentViewport.Left > pCursorPosition->X)
         {
             WindowOrigin.X = pCursorPosition->X - currentViewport.Left;
@@ -573,7 +573,7 @@ HRESULT DoSrvSetConsoleWindowInfo(SCREEN_INFORMATION& screenInfo,
 
     if (!IsAbsoluteRectangle)
     {
-        SMALL_RECT currentViewport = screenInfo.GetBufferViewport();
+        SMALL_RECT currentViewport = screenInfo.GetViewport().ToInclusive();
         Window.Left += currentViewport.Left;
         Window.Right += currentViewport.Right;
         Window.Top += currentViewport.Top;
@@ -604,12 +604,12 @@ HRESULT DoSrvSetConsoleWindowInfo(SCREEN_INFORMATION& screenInfo,
     }
 
     // Even if it's the same size, we need to post an update in case the scroll bars need to go away.
-    screenInfo.SetViewportRect(Viewport::FromInclusive(Window));
+    screenInfo.SetViewport(Viewport::FromInclusive(Window));
     if (screenInfo.IsActiveScreenBuffer())
     {
         // TODO: MSFT: 9574827 - shouldn't we be looking at or at least logging the failure codes here? (Or making them non-void?)
         screenInfo.PostUpdateWindowSize();
-        WriteToScreen(screenInfo, screenInfo.GetBufferViewport());
+        WriteToScreen(screenInfo, screenInfo.GetViewport());
     }
     return S_OK;
 }
@@ -716,7 +716,7 @@ void SetScreenColors(SCREEN_INFORMATION& screenInfo,
         }
 
         // force repaint of entire line
-        WriteToScreen(screenInfo, screenInfo.GetBufferViewport());
+        WriteToScreen(screenInfo, screenInfo.GetViewport());
     }
     else
     {
@@ -1027,7 +1027,7 @@ HRESULT ApiRoutines::SetConsoleDisplayModeImpl(SCREEN_INFORMATION& Context,
 
         SCREEN_INFORMATION&  screenInfo = Context.GetActiveBuffer();
 
-        *pNewScreenBufferSize = screenInfo.GetScreenBufferSize();
+        *pNewScreenBufferSize = screenInfo.GetBufferSize().Dimensions();
         RETURN_HR_IF(E_INVALIDARG, !(screenInfo.IsActiveScreenBuffer()));
     }
 
@@ -1149,7 +1149,7 @@ NTSTATUS DoSrvPrivateReverseLineFeed(SCREEN_INFORMATION& screenInfo)
 {
     NTSTATUS Status = STATUS_SUCCESS;
 
-    const SMALL_RECT viewport = screenInfo.GetBufferViewport();
+    const SMALL_RECT viewport = screenInfo.GetViewport().ToInclusive();
     const COORD oldCursorPosition = screenInfo.GetTextBuffer().GetCursor().GetPosition();
     const COORD newCursorPosition = { oldCursorPosition.X, oldCursorPosition.Y - 1 };
 
@@ -1173,7 +1173,7 @@ NTSTATUS DoSrvPrivateReverseLineFeed(SCREEN_INFORMATION& screenInfo)
         if (!marginsSet || margins.IsInBounds(oldCursorPosition))
         {
             // Cursor is at the top of the viewport
-            const COORD bufferSize = screenInfo.GetScreenBufferSize();
+            const COORD bufferSize = screenInfo.GetBufferSize().Dimensions();
             // Rectangle to cut out of the existing buffer
             SMALL_RECT srScroll;
             srScroll.Left = 0;
@@ -1215,7 +1215,7 @@ NTSTATUS DoSrvMoveCursorVertically(SCREEN_INFORMATION& screenInfo, const short l
     COORD clampedPos = {cursor.GetPosition().X, cursor.GetPosition().Y+lines};
 
     // Make sure the cursor doesn't move outside the viewport.
-    clampedPos.Y = std::clamp(clampedPos.Y, screenInfo.GetBufferViewport().Top, screenInfo.GetBufferViewport().Bottom);
+    screenInfo.GetViewport().Clamp(clampedPos);
 
     // Make sure the cursor stays inside the margins
     if (fMarginsSet)
@@ -1808,7 +1808,7 @@ void DoSrvPrivateModifyLinesImpl(const unsigned int count, const bool insert)
     const auto margins = screenInfo.GetAbsoluteScrollMargins();
     if (margins.IsInBounds(cursorPosition))
     {
-        const auto screenEdges = screenInfo.GetSize().ToInclusive();
+        const auto screenEdges = screenInfo.GetBufferSize().ToInclusive();
         // Rectangle to cut out of the existing buffer
         SMALL_RECT srScroll;
         srScroll.Left = 0;

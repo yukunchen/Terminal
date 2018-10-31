@@ -14,7 +14,6 @@ Author(s):
 
 #pragma once
 
-#include "../buffer/out/CharRow.hpp"
 #include "textBufferCellIterator.hpp"
 
 class SCREEN_INFORMATION;
@@ -22,9 +21,10 @@ class SCREEN_INFORMATION;
 class TextBufferTextIterator final : public TextBufferCellIterator
 {
 public:
-    TextBufferTextIterator(const TextBuffer& buffer, COORD pos);
+    TextBufferTextIterator(const TextBufferCellIterator& cellIter);
 
-    const CharRow::reference operator*() const;
+    const std::wstring_view operator*() const;
+    const std::wstring_view* operator->() const;
 
 protected:
 

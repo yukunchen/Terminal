@@ -15,6 +15,7 @@
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
+using namespace Microsoft::Console::Types;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 
@@ -470,5 +471,230 @@ class ApiRoutinesTests
             const size_t dwBytesExpected = cchTestText * sizeof(wchar_t);
             VERIFY_ARE_EQUAL(dwBytesExpected, dwNumBytes, L"We should have the byte length of the string we put in as the returned value.");
         }
+    }
+
+    void ValidateScreen(SCREEN_INFORMATION& si, 
+                        const CHAR_INFO background,
+                        const CHAR_INFO fill,
+                        const COORD delta)
+    {
+        auto& activeSi = si.GetActiveBuffer();
+        auto bufferSize = activeSi.GetBufferSize();
+
+        // Find the background area viewport by taking the size, translating it by the delta, then cropping it back to the buffer size.
+        Viewport backgroundArea = Viewport::Empty();
+        VERIFY_SUCCEEDED(Viewport::AddCoord(bufferSize, delta, backgroundArea));
+        bufferSize.Clamp(backgroundArea);
+        
+        auto it = activeSi.GetCellDataAt({ 0, 0 }); // We're going to walk the whole thing. Start in the top left corner.
+
+        while (it)
+        {
+            if (backgroundArea.IsInBounds(it._pos))
+            {
+                VERIFY_ARE_EQUAL(background, it.AsCharInfo());
+            }
+            else
+            {
+                VERIFY_ARE_EQUAL(fill, it.AsCharInfo());
+            }
+            it++;
+        }
+    }
+
+    void ValidateComplexScreen(SCREEN_INFORMATION& si,
+                               const CHAR_INFO background,
+                               const CHAR_INFO fill,
+                               const CHAR_INFO scroll,
+                               const Viewport scrollArea,
+                               const COORD destPoint)
+    {
+        auto& activeSi = si.GetActiveBuffer();
+        auto bufferSize = activeSi.GetBufferSize();
+
+        // Find the delta by comparing the scroll area to the destination point
+        COORD delta;
+        delta.X = destPoint.X - scrollArea.Left();
+        delta.Y = destPoint.Y - scrollArea.Top();
+
+        // Find the area where the scroll text should have gone by taking the scrolled area by the delta
+        Viewport scrolledDestination = Viewport::Empty();
+        VERIFY_SUCCEEDED(Viewport::AddCoord(scrollArea, delta, scrolledDestination));
+        bufferSize.Clamp(scrolledDestination);
+
+        auto it = activeSi.GetCellDataAt({ 0, 0 }); // We're going to walk the whole thing. Start in the top left corner.
+
+        while (it)
+        {
+            // Three states.
+            // 1. We filled the background with something (background CHAR_INFO)
+            // 2. We filled another smaller area with a different something (scroll CHAR_INFO)
+            // 3. We moved #2 by delta and the uncovered area was filled with a third something (fill CHAR_INFO)
+
+            // If it's in the scrolled destination, it's the value that just got moved.
+            if (scrolledDestination.IsInBounds(it._pos))
+            {
+                VERIFY_ARE_EQUAL(scroll, it.AsCharInfo());
+            }
+            // Otherwise, if it's not in the destination but it was in the source, assume it got filled in.
+            else if (scrollArea.IsInBounds(it._pos))
+            {
+                VERIFY_ARE_EQUAL(fill, it.AsCharInfo());
+            }
+            // Lastly if it's not in either spot, it should have our background CHAR_INFO
+            else
+            {
+                VERIFY_ARE_EQUAL(background, it.AsCharInfo());
+            }
+            it++;
+        }
+    }
+
+    TEST_METHOD(ApiScrollConsoleScreenBufferW)
+    {
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer();
+
+        VERIFY_SUCCEEDED(si.GetTextBuffer().ResizeTraditional(si.GetBufferSize().Dimensions(), { 5, 5 }, si.GetAttributes()), L"Make the buffer small so this doesn't take forever.");
+        
+        gci.LockConsole();
+        auto Unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+        CHAR_INFO fill;
+        fill.Char.UnicodeChar = L'A';
+        fill.Attributes = FOREGROUND_RED;
+
+        const auto bufferSize = si.GetBufferSize();
+
+        SMALL_RECT scroll = bufferSize.ToInclusive();
+        COORD destination{ 0, -2 }; // scroll up.
+
+        Log::Comment(L"Fill screen with green Zs. Scroll all up by two, backfilling with red As. Confirm every cell.");
+        si.GetActiveBuffer().ClearTextData(); // Clean out screen
+
+        CHAR_INFO background;
+        background.Char.UnicodeChar = L'Z';
+        background.Attributes = FOREGROUND_GREEN;
+
+        si.GetActiveBuffer().Write(OutputCellIterator(background), { 0, 0 }); // Fill entire screen with green Zs.
+
+        // Scroll everything up and backfill with red As.
+        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, &scroll, &destination, nullptr, fill.Char.UnicodeChar, fill.Attributes));
+        ValidateScreen(si, background, fill, destination);
+     
+        Log::Comment(L"Fill screen with green Zs. Scroll all down by two, backfilling with red As. Confirm every cell.");
+
+        si.GetActiveBuffer().ClearTextData(); // Clean out screen
+        si.GetActiveBuffer().Write(OutputCellIterator(background), { 0, 0 }); // Fill entire screen with green Zs.
+
+        // Scroll everything down and backfill with red As.
+        destination = { 0, 2 };
+        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, &scroll, &destination, nullptr, fill.Char.UnicodeChar, fill.Attributes));
+        ValidateScreen(si, background, fill, destination);
+
+        Log::Comment(L"Fill screen with green Zs. Scroll all left by two, backfilling with red As. Confirm every cell.");
+
+        si.GetActiveBuffer().ClearTextData(); // Clean out screen
+        si.GetActiveBuffer().Write(OutputCellIterator(background), { 0, 0 }); // Fill entire screen with green Zs.
+
+        // Scroll everything left and backfill with red As.
+        destination = { -2, 0 };
+        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, &scroll, &destination, nullptr, fill.Char.UnicodeChar, fill.Attributes));
+        ValidateScreen(si, background, fill, destination);
+
+        Log::Comment(L"Fill screen with green Zs. Scroll all right by two, backfilling with red As. Confirm every cell.");
+
+        si.GetActiveBuffer().ClearTextData(); // Clean out screen
+        si.GetActiveBuffer().Write(OutputCellIterator(background), { 0, 0 }); // Fill entire screen with green Zs.
+
+        // Scroll everything right and backfill with red As.
+        destination = { 2, 0 };
+        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, &scroll, &destination, nullptr, fill.Char.UnicodeChar, fill.Attributes));
+        ValidateScreen(si, background, fill, destination);
+
+        Log::Comment(L"Fill screen with green Zs. Move everything down and right by two, backfilling with red As. Confirm every cell.");
+
+        si.GetActiveBuffer().ClearTextData(); // Clean out screen
+        si.GetActiveBuffer().Write(OutputCellIterator(background), { 0, 0 }); // Fill entire screen with green Zs.
+
+        // Scroll everything down and right and backfill with red As.
+        destination = { 2, 2 };
+        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, &scroll, &destination, nullptr, fill.Char.UnicodeChar, fill.Attributes));
+        ValidateScreen(si, background, fill, destination);
+
+        Log::Comment(L"Fill screen with green Zs. Move everything up and left by two, backfilling with red As. Confirm every cell.");
+
+        si.GetActiveBuffer().ClearTextData(); // Clean out screen
+        si.GetActiveBuffer().Write(OutputCellIterator(background), { 0, 0 }); // Fill entire screen with green Zs.
+
+        // Scroll everything up and left and backfill with red As.
+        destination = { -2, -2 };
+        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, &scroll, &destination, nullptr, fill.Char.UnicodeChar, fill.Attributes));
+        ValidateScreen(si, background, fill, destination);
+
+        Log::Comment(L"Scroll everything completely off the screen.");
+
+        si.GetActiveBuffer().ClearTextData(); // Clean out screen
+        si.GetActiveBuffer().Write(OutputCellIterator(background), { 0, 0 }); // Fill entire screen with green Zs.
+
+        // Scroll everything way off the screen.
+        destination = { 0, -10 };
+        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, &scroll, &destination, nullptr, fill.Char.UnicodeChar, fill.Attributes));
+        ValidateScreen(si, background, fill, destination);
+
+        Log::Comment(L"Scroll everything completely off the screen but use a null fill and confirm it is replaced with default attribute spaces.");
+
+        si.GetActiveBuffer().ClearTextData(); // Clean out screen
+        si.GetActiveBuffer().Write(OutputCellIterator(background), { 0, 0 }); // Fill entire screen with green Zs.
+        // Scroll everything way off the screen.
+        destination = { -10, -10 };
+
+        CHAR_INFO nullFill = { 0 };
+
+        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, &scroll, &destination, nullptr, nullFill.Char.UnicodeChar, nullFill.Attributes));
+
+        CHAR_INFO fillExpected;
+        fillExpected.Char.UnicodeChar = UNICODE_SPACE;
+        fillExpected.Attributes = si.GetAttributes().GetLegacyAttributes();
+        ValidateScreen(si, background, fillExpected, destination);
+
+        Log::Comment(L"Scroll a small portion of the screen in an overlapping fashion.");
+        scroll.Top = 1;
+        scroll.Bottom = 2;
+        scroll.Left = 1;
+        scroll.Right = 2;
+
+        si.GetActiveBuffer().ClearTextData(); // Clean out screen
+        si.GetActiveBuffer().Write(OutputCellIterator(background), { 0, 0 }); // Fill entire screen with green Zs.
+
+        // Fill the scroll rectangle with Blue Bs.
+        CHAR_INFO scrollRect;
+        scrollRect.Char.UnicodeChar = L'B';
+        scrollRect.Attributes = FOREGROUND_BLUE;
+        si.GetActiveBuffer().WriteRect(OutputCellIterator(scrollRect), Viewport::FromInclusive(scroll));
+
+        // We're going to move our little embedded rectangle of Blue Bs inside the field of Green Zs down and to the right just one.
+        destination = { scroll.Left + 1, scroll.Top + 1 };
+
+        // Move rectangle and backfill with red As.
+        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, &scroll, &destination, nullptr, fill.Char.UnicodeChar, fill.Attributes));
+
+        ValidateComplexScreen(si, background, fill, scrollRect, Viewport::FromInclusive(scroll), destination);
+
+        Log::Comment(L"Scroll a small portion of the screen in a non-overlapping fashion.");
+
+        si.GetActiveBuffer().ClearTextData(); // Clean out screen
+        si.GetActiveBuffer().Write(OutputCellIterator(background), { 0, 0 }); // Fill entire screen with green Zs.
+
+        // Fill the scroll rectangle with Blue Bs.
+        si.GetActiveBuffer().WriteRect(OutputCellIterator(scrollRect), Viewport::FromInclusive(scroll));
+
+        // We're going to move our little embedded rectangle of Blue Bs inside the field of Green Zs down and to the right just one.
+        destination = { scroll.Left + 2, scroll.Top + 2 };
+
+        // Move rectangle and backfill with red As.
+        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, &scroll, &destination, nullptr, fill.Char.UnicodeChar, fill.Attributes));
+
+        ValidateComplexScreen(si, background, fill, scrollRect, Viewport::FromInclusive(scroll), destination);
     }
 };

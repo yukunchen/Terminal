@@ -19,8 +19,10 @@ Revision History:
 
 #include "server.h"
 
+#include "../types/inc/Viewport.hpp"
+
 void WriteConvRegionToScreen(const SCREEN_INFORMATION& ScreenInfo,
-                             const SMALL_RECT srConvRegion);
+                             const Microsoft::Console::Types::Viewport& convRegion);
 
 [[nodiscard]]
 HRESULT ConsoleImeResizeCompStrView();

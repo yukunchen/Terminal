@@ -66,17 +66,11 @@ class TextBufferTests
 
     TEST_METHOD(TestBufferCreate);
 
-    void DoBufferRowIterationTest(TextBuffer& textBuffer);
-
     TextBuffer& GetTbi();
 
     SHORT GetBufferWidth();
 
     SHORT GetBufferHeight();
-
-    TEST_METHOD(TestBufferRowIteration);
-
-    TEST_METHOD(TestBufferRowIterationWhenCircular);
 
     TEST_METHOD(TestBufferRowByOffset);
 
@@ -147,50 +141,6 @@ void TextBufferTests::TestBufferCreate()
     VERIFY_SUCCESS_NTSTATUS(m_state->GetTextBufferInfoInitResult());
 }
 
-void TextBufferTests::DoBufferRowIterationTest(TextBuffer& textBuffer)
-{
-    const ROW* pFirstRow = &textBuffer.GetFirstRow();
-    const ROW* pPrior = nullptr;
-    const ROW* pRow = pFirstRow;
-    VERIFY_IS_NOT_NULL(pRow);
-
-    UINT cRows = 0;
-    while (pRow != nullptr)
-    {
-        cRows++;
-        pPrior = pRow; // save off the previous for a reverse check
-        try
-        {
-            pRow = &textBuffer.GetNextRowNoWrap(*pRow);
-        }
-        catch (...)
-        {
-            pRow = nullptr;
-        }
-
-        // if we didn't just hit the last row...
-        if (pRow != nullptr)
-        {
-            // grab the previous row from the one we just found
-            const ROW* pPriorCheck;
-            try
-            {
-                pPriorCheck = &textBuffer.GetPrevRowNoWrap(*pRow);
-            }
-            catch (...)
-            {
-                pPriorCheck = nullptr;
-            }
-
-            // it should still equal what the row was before we started this iteration
-            VERIFY_ARE_EQUAL(pPrior, pPriorCheck);
-        }
-    }
-
-    // the number of rows we iterated through should be the same as the window size.
-    VERIFY_ARE_EQUAL(textBuffer.TotalRowCount(), cRows);
-}
-
 TextBuffer& TextBufferTests::GetTbi()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -199,31 +149,12 @@ TextBuffer& TextBufferTests::GetTbi()
 
 SHORT TextBufferTests::GetBufferWidth()
 {
-    return GetTbi()._coordBufferSize.X;
+    return GetTbi().GetSize().Width();
 }
 
 SHORT TextBufferTests::GetBufferHeight()
 {
-    return GetTbi()._coordBufferSize.Y;
-}
-
-
-void TextBufferTests::TestBufferRowIteration()
-{
-    DoBufferRowIterationTest(GetTbi());
-}
-
-void TextBufferTests::TestBufferRowIterationWhenCircular()
-{
-    SHORT csBufferHeight = GetBufferHeight();
-
-    VERIFY_IS_TRUE(csBufferHeight > 4);
-
-    TextBuffer& textBuffer = GetTbi();
-
-    textBuffer._FirstRow = csBufferHeight / 2 + 2; // sets to a bit over half way around.
-
-    DoBufferRowIterationTest(textBuffer);
+    return GetTbi().GetSize().Height();
 }
 
 void TextBufferTests::TestBufferRowByOffset()
@@ -243,7 +174,7 @@ void TextBufferTests::TestWrapFlag()
 {
     TextBuffer& textBuffer = GetTbi();
 
-    ROW& Row = textBuffer.GetFirstRow();
+    ROW& Row = textBuffer._GetFirstRow();
 
     // no wrap by default
     VERIFY_IS_FALSE(Row.GetCharRow().WasWrapForced());
@@ -261,7 +192,7 @@ void TextBufferTests::TestDoubleBytePadFlag()
 {
     TextBuffer& textBuffer = GetTbi();
 
-    ROW& Row = textBuffer.GetFirstRow();
+    ROW& Row = textBuffer._GetFirstRow();
 
     // no padding by default
     VERIFY_IS_FALSE(Row.GetCharRow().WasDoubleBytePadded());
@@ -284,7 +215,7 @@ void TextBufferTests::DoBoundaryTest(PWCHAR const pwszInputString,
 {
     TextBuffer& textBuffer = GetTbi();
 
-    CharRow& charRow = textBuffer.GetFirstRow().GetCharRow();
+    CharRow& charRow = textBuffer._GetFirstRow().GetCharRow();
 
     // copy string into buffer
     for (size_t i = 0; i < static_cast<size_t>(cLength); ++i)
@@ -329,9 +260,9 @@ void TextBufferTests::TestCopyProperties()
 {
     TextBuffer& otherTbi = GetTbi();
 
-    std::unique_ptr<TextBuffer> testTextBuffer = std::make_unique<TextBuffer>(otherTbi._fiCurrentFont,
-                                                                                          otherTbi._coordBufferSize,
-                                                                                          otherTbi._ciFill,
+    std::unique_ptr<TextBuffer> testTextBuffer = std::make_unique<TextBuffer>(otherTbi._currentFont,
+                                                                                          otherTbi.GetSize().Dimensions(),
+                                                                                          otherTbi._fill,
                                                                                           12);
     VERIFY_IS_NOT_NULL(testTextBuffer.get());
 
@@ -413,9 +344,9 @@ void TextBufferTests::TestIncrementCursor()
     // only checking X increments here
     // Y increments are covered in the NewlineCursor test
 
-    short const sBufferWidth = textBuffer._coordBufferSize.X;
+    short const sBufferWidth = textBuffer.GetSize().Width();
 
-    short const sBufferHeight = textBuffer._coordBufferSize.Y;
+    short const sBufferHeight = textBuffer.GetSize().Height();
     VERIFY_IS_TRUE(sBufferWidth > 1 && sBufferHeight > 1);
 
     Log::Comment(L"Test normal case of moving once to the right within a single line");
@@ -446,9 +377,9 @@ void TextBufferTests::TestNewlineCursor()
     TextBuffer& textBuffer = GetTbi();
 
 
-    const short sBufferHeight = textBuffer._coordBufferSize.Y;
+    const short sBufferHeight = textBuffer.GetSize().Height();
 
-    const short sBufferWidth = textBuffer._coordBufferSize.X;
+    const short sBufferWidth = textBuffer.GetSize().Width();
     // width and height are sufficiently large for upcoming math
     VERIFY_IS_TRUE(sBufferWidth > 4 && sBufferHeight > 4);
 
@@ -548,7 +479,7 @@ void TextBufferTests::TestSetWrapOnCurrentRow()
     Row.GetCharRow().SetWrapForced(false);
 
     // trigger wrap
-    textBuffer.SetWrapOnCurrentRow();
+    textBuffer._SetWrapOnCurrentRow();
 
     // ensure this row was flipped
     VERIFY_IS_TRUE(Row.GetCharRow().WasWrapForced());
@@ -559,7 +490,7 @@ void TextBufferTests::TestSetWrapOnCurrentRow()
     Row.GetCharRow().SetWrapForced(true);
 
     // trigger wrap
-    textBuffer.SetWrapOnCurrentRow();
+    textBuffer._SetWrapOnCurrentRow();
 
     // ensure row is still on
     VERIFY_IS_TRUE(Row.GetCharRow().WasWrapForced());
@@ -569,7 +500,7 @@ void TextBufferTests::TestIncrementCircularBuffer()
 {
     TextBuffer& textBuffer = GetTbi();
 
-    short const sBufferHeight = textBuffer._coordBufferSize.Y;
+    short const sBufferHeight = textBuffer.GetSize().Height();
 
     VERIFY_IS_TRUE(sBufferHeight > 4); // buffer should be sufficiently large
 
@@ -588,10 +519,10 @@ void TextBufferTests::TestIncrementCircularBuffer()
             iNextRowIndex = 0;
         }
 
-        textBuffer._FirstRow = iRowToTestIndex;
+        textBuffer._firstRow = iRowToTestIndex;
 
         // fill first row with some stuff
-        ROW& FirstRow = textBuffer.GetFirstRow();
+        ROW& FirstRow = textBuffer._GetFirstRow();
         CharRow& charRow = FirstRow.GetCharRow();
         const auto stuff = L'A';
         charRow.GlyphAt(0) = { &stuff, 1 };
@@ -603,8 +534,8 @@ void TextBufferTests::TestIncrementCircularBuffer()
         textBuffer.IncrementCircularBuffer();
 
         // validate that first row has moved
-        VERIFY_ARE_EQUAL(textBuffer._FirstRow, iNextRowIndex); // first row has incremented
-        VERIFY_ARE_NOT_EQUAL(textBuffer.GetFirstRow(), FirstRow); // the old first row is no longer the first
+        VERIFY_ARE_EQUAL(textBuffer._firstRow, iNextRowIndex); // first row has incremented
+        VERIFY_ARE_NOT_EQUAL(textBuffer._GetFirstRow(), FirstRow); // the old first row is no longer the first
 
         // ensure old first row has been emptied
         VERIFY_IS_FALSE(FirstRow.GetCharRow().ContainsText());
@@ -819,7 +750,7 @@ void TextBufferTests::TestRgbEraseLine()
 
         const auto& row = tbi.GetRowByOffset(y);
         const auto attrRow = &row.GetAttrRow();
-        const auto len = tbi._coordBufferSize.X;
+        const auto len = tbi.GetSize().Width();
         const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
 
         const auto attr0 = attrs[0];
@@ -870,7 +801,7 @@ void TextBufferTests::TestUnBold()
 
     const auto& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
-    const auto len = tbi._coordBufferSize.X;
+    const auto len = tbi.GetSize().Width();
     const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
     const auto attrA = attrs[x-2];
     const auto attrB = attrs[x-1];
@@ -922,7 +853,7 @@ void TextBufferTests::TestUnBoldRgb()
 
     const auto& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
-    const auto len = tbi._coordBufferSize.X;
+    const auto len = tbi.GetSize().Width();
     const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
     const auto attrA = attrs[x-2];
     const auto attrB = attrs[x-1];
@@ -982,7 +913,7 @@ void TextBufferTests::TestComplexUnBold()
 
     const auto& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
-    const auto len = tbi._coordBufferSize.X;
+    const auto len = tbi.GetSize().Width();
     const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
     const auto attrA = attrs[x-6];
     const auto attrB = attrs[x-5];
@@ -1073,7 +1004,7 @@ void TextBufferTests::CopyAttrs()
 
     const auto& row = tbi.GetRowByOffset(0);
     const auto attrRow = &row.GetAttrRow();
-    const auto len = tbi._coordBufferSize.X;
+    const auto len = tbi.GetSize().Width();
     const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
     const auto attrA = attrs[0];
     const auto attrB = attrs[1];
@@ -1127,7 +1058,7 @@ void TextBufferTests::EmptySgrTest()
 
     const auto& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
-    const auto len = tbi._coordBufferSize.X;
+    const auto len = tbi.GetSize().Width();
     const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
     const auto attrA = attrs[x-3];
     const auto attrB = attrs[x-2];
@@ -1193,7 +1124,7 @@ void TextBufferTests::TestReverseReset()
 
     const auto& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
-    const auto len = tbi._coordBufferSize.X;
+    const auto len = tbi.GetSize().Width();
     const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
     const auto attrA = attrs[x-3];
     const auto attrB = attrs[x-2];
@@ -1308,7 +1239,7 @@ void TextBufferTests::CopyLastAttr()
     const ROW& row1 = tbi.GetRowByOffset(y + 1);
     const ROW& row2 = tbi.GetRowByOffset(y + 2);
     const ROW& row3 = tbi.GetRowByOffset(y + 3);
-    const auto len = tbi._coordBufferSize.X;
+    const auto len = tbi.GetSize().Width();
 
     const std::vector<TextAttribute> attrs1{ row1.GetAttrRow().begin(), row1.GetAttrRow().end() };
     const std::vector<TextAttribute> attrs2{ row2.GetAttrRow().begin(), row2.GetAttrRow().end() };

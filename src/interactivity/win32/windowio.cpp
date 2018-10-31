@@ -649,10 +649,10 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
         }
     }
 
-    MousePosition.X += ScreenInfo.GetBufferViewport().Left;
-    MousePosition.Y += ScreenInfo.GetBufferViewport().Top;
+    MousePosition.X += ScreenInfo.GetViewport().Left();
+    MousePosition.Y += ScreenInfo.GetViewport().Top();
 
-    const COORD coordScreenBufferSize = ScreenInfo.GetScreenBufferSize();
+    const COORD coordScreenBufferSize = ScreenInfo.GetBufferSize().Dimensions();
 
     // make sure mouse position is clipped to screen buffer
     if (MousePosition.X < 0)

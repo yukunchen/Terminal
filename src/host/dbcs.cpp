@@ -50,60 +50,6 @@ bool CheckBisectStringA(_In_reads_bytes_(cbBuf) PCHAR pchBuf, _In_ DWORD cbBuf, 
 }
 
 // Routine Description:
-// - updates dbcs attributes of output buffer cells at the beginning and end of where a string will be
-// written. This is to clean up leading trailing pairs when one of the cells in the pair is about to be overwritten.
-// Arguments:
-// - stringLen - the length of the string to write
-// - coordTarget - the location the string will be written to
-// - screenInfo - the screen buffer to update
-// Return Value:
-// - <none>
-void CleanupDbcsEdgesForWrite(const size_t stringLen,
-                              const COORD coordTarget,
-                              SCREEN_INFORMATION& screenInfo)
-{
-    TextBuffer& textBuffer = screenInfo.GetTextBuffer();
-    const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
-    const SHORT rowIndex = (textBuffer.GetFirstRowIndex() + coordTarget.Y) % coordScreenBufferSize.Y;
-
-    try
-    {
-        ROW& row = textBuffer.GetRowAtIndex(rowIndex);
-        // Check start position of strings
-        if (row.GetCharRow().DbcsAttrAt(coordTarget.X).IsTrailing())
-        {
-            if (coordTarget.X == 0)
-            {
-                textBuffer.GetPrevRow(row).ClearColumn(coordScreenBufferSize.X - 1);
-            }
-            else
-            {
-                row.ClearColumn(coordTarget.X - 1);
-            }
-        }
-
-        // Check end position of strings
-        if (coordTarget.X + static_cast<short>(stringLen) < coordScreenBufferSize.X)
-        {
-            size_t column = coordTarget.X + stringLen;
-            if (row.GetCharRow().DbcsAttrAt(column).IsTrailing())
-            {
-                row.ClearColumn(column);
-            }
-        }
-        else if (coordTarget.Y + 1 < coordScreenBufferSize.Y)
-        {
-            ROW& rowNext = textBuffer.GetNextRow(row);
-            if (row.GetCharRow().DbcsAttrAt(0).IsTrailing())
-            {
-                rowNext.ClearColumn(0);
-            }
-        }
-    }
-    CATCH_LOG_RETURN();
-}
-
-// Routine Description:
 // - This routine removes the double copies of characters used when storing DBCS/Double-wide characters in the text buffer.
 // Arguments:
 // - pciDst - Pointer to destination.

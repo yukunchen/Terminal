@@ -213,7 +213,7 @@ void DeleteCommandLine(COOKED_READ_DATA& cookedReadData, const bool fUpdateField
 {
     size_t CharsToWrite = cookedReadData.VisibleCharCount();
     COORD coordOriginalCursor = cookedReadData.OriginalCursorPosition();
-    const COORD coordBufferSize = cookedReadData.ScreenInfo().GetScreenBufferSize();
+    const COORD coordBufferSize = cookedReadData.ScreenInfo().GetBufferSize().Dimensions();
 
     // catch the case where the current command has scrolled off the top of the screen.
     if (coordOriginalCursor.Y < 0)
@@ -235,10 +235,7 @@ void DeleteCommandLine(COOKED_READ_DATA& cookedReadData, const bool fUpdateField
 
     try
     {
-        FillOutputW(cookedReadData.ScreenInfo(),
-                    UNICODE_SPACE,
-                    coordOriginalCursor,
-                    CharsToWrite);
+        cookedReadData.ScreenInfo().Write(OutputCellIterator(UNICODE_SPACE, CharsToWrite), coordOriginalCursor);
     }
     CATCH_LOG();
 
@@ -282,7 +279,7 @@ void RedrawCommandLine(COOKED_READ_DATA& cookedReadData)
                                                                cookedReadData._CurrentPosition);
         if (CheckBisectStringW(cookedReadData._BackupLimit,
                                cookedReadData._CurrentPosition,
-                               cookedReadData.ScreenInfo().GetScreenBufferSize().X - cookedReadData.OriginalCursorPosition().X))
+                               cookedReadData.ScreenInfo().GetBufferSize().Width() - cookedReadData.OriginalCursorPosition().X))
         {
             CursorPosition.X++;
         }
@@ -412,7 +409,7 @@ HRESULT CommandLine::StartCommandNumberPopup(COOKED_READ_DATA& cookedReadData)
 {
     if (cookedReadData.HasHistory() &&
         cookedReadData.History().GetNumberOfCommands() &&
-        cookedReadData.ScreenInfo().GetScreenBufferSize().X >= MINIMUM_COMMAND_PROMPT_SIZE + 2)
+        cookedReadData.ScreenInfo().GetBufferSize().Width() >= MINIMUM_COMMAND_PROMPT_SIZE + 2)
     {
         try
         {
@@ -619,7 +616,7 @@ COORD CommandLine::_moveCursorToEndOfPrompt(COOKED_READ_DATA& cookedReadData) no
     cursorPosition.X = (SHORT)(cookedReadData.OriginalCursorPosition().X + cookedReadData.VisibleCharCount());
     cursorPosition.Y = cookedReadData.OriginalCursorPosition().Y;
 
-    const SHORT sScreenBufferSizeX = cookedReadData.ScreenInfo().GetScreenBufferSize().X;
+    const SHORT sScreenBufferSizeX = cookedReadData.ScreenInfo().GetBufferSize().Width();
     if (CheckBisectProcessW(cookedReadData.ScreenInfo(),
                             cookedReadData._BackupLimit,
                             cookedReadData._CurrentPosition,
@@ -719,7 +716,7 @@ COORD CommandLine::_moveCursorLeftByWord(COOKED_READ_DATA& cookedReadData) noexc
                                     RetrieveTotalNumberOfSpaces(cookedReadData.OriginalCursorPosition().X,
                                                                 cookedReadData._BackupLimit,
                                                                 cookedReadData._CurrentPosition));
-        const SHORT sScreenBufferSizeX = cookedReadData.ScreenInfo().GetScreenBufferSize().X;
+        const SHORT sScreenBufferSizeX = cookedReadData.ScreenInfo().GetBufferSize().Width();
         if (CheckBisectStringW(cookedReadData._BackupLimit,
                                 cookedReadData._CurrentPosition + 1,
                                 sScreenBufferSizeX - cookedReadData.OriginalCursorPosition().X))
@@ -749,7 +746,7 @@ COORD CommandLine::_moveCursorLeft(COOKED_READ_DATA& cookedReadData)
                                     RetrieveNumberOfSpaces(cookedReadData.OriginalCursorPosition().X,
                                                             cookedReadData._BackupLimit,
                                                             cookedReadData._CurrentPosition));
-        const SHORT sScreenBufferSizeX = cookedReadData.ScreenInfo().GetScreenBufferSize().X;
+        const SHORT sScreenBufferSizeX = cookedReadData.ScreenInfo().GetBufferSize().Width();
         if (CheckBisectProcessW(cookedReadData.ScreenInfo(),
                                 cookedReadData._BackupLimit,
                                 cookedReadData._CurrentPosition + 2,
@@ -828,7 +825,7 @@ COORD CommandLine::_moveCursorRightByWord(COOKED_READ_DATA& cookedReadData) noex
                                    RetrieveTotalNumberOfSpaces(cookedReadData.OriginalCursorPosition().X,
                                                                cookedReadData._BackupLimit,
                                                                cookedReadData._CurrentPosition));
-        const SHORT sScreenBufferSizeX = cookedReadData.ScreenInfo().GetScreenBufferSize().X;
+        const SHORT sScreenBufferSizeX = cookedReadData.ScreenInfo().GetBufferSize().Width();
         if (CheckBisectStringW(cookedReadData._BackupLimit,
                                 cookedReadData._CurrentPosition + 1,
                                 sScreenBufferSizeX - cookedReadData.OriginalCursorPosition().X))
@@ -848,7 +845,7 @@ COORD CommandLine::_moveCursorRightByWord(COOKED_READ_DATA& cookedReadData) noex
 COORD CommandLine::_moveCursorRight(COOKED_READ_DATA& cookedReadData) noexcept
 {
     COORD cursorPosition = cookedReadData.ScreenInfo().GetTextBuffer().GetCursor().GetPosition();
-    const SHORT sScreenBufferSizeX = cookedReadData.ScreenInfo().GetScreenBufferSize().X;
+    const SHORT sScreenBufferSizeX = cookedReadData.ScreenInfo().GetBufferSize().Width();
     // If not at the end of the line, move cursor position right.
     if (cookedReadData._CurrentPosition < (cookedReadData._BytesRead / sizeof(WCHAR)))
     {
@@ -1090,7 +1087,7 @@ COORD CommandLine::DeleteFromRightOfCursor(COOKED_READ_DATA& cookedReadData) noe
         }
 
         // restore cursor position
-        const SHORT sScreenBufferSizeX = cookedReadData.ScreenInfo().GetScreenBufferSize().X;
+        const SHORT sScreenBufferSizeX = cookedReadData.ScreenInfo().GetBufferSize().Width();
         if (CheckBisectProcessW(cookedReadData.ScreenInfo(),
                                 cookedReadData._BackupLimit,
                                 cookedReadData._CurrentPosition + 1,

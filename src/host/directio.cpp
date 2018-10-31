@@ -15,12 +15,15 @@
 #include "handle.h"
 #include "misc.h"
 #include "../types/inc/convert.hpp"
+#include "../types/inc/viewport.hpp"
 #include "readDataDirect.hpp"
 #include "ApiRoutines.h"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
 #pragma hdrstop
+
+using namespace Microsoft::Console::Types;
 
 class CONSOLE_INFORMATION;
 
@@ -521,8 +524,8 @@ NTSTATUS TranslateOutputToOem(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Size)
 
     memmove(TmpBuffer, OutputBuffer, Size.X * Size.Y * sizeof(CHAR_INFO));
 
-    #pragma prefast(push)
-    #pragma prefast(disable:26019, "The buffer is the correct size for any given DBCS characters. No additional validation needed.")
+#pragma prefast(push)
+#pragma prefast(disable:26019, "The buffer is the correct size for any given DBCS characters. No additional validation needed.")
     for (int i = 0; i < Size.Y; i++)
     {
         for (int j = 0; j < Size.X; j++)
@@ -730,7 +733,7 @@ NTSTATUS SrvReadConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
             const auto charInfoBuffer = gsl::make_span(Buffer, cbBuffer / sizeof(CHAR_INFO));
             auto bufferPos = charInfoBuffer.begin();
 
-            auto cellIter = activeScreenInfo.GetCellDataAt(coordStart, a->CharRegion);
+            auto cellIter = activeScreenInfo.GetCellDataAt(coordStart, Viewport::FromInclusive(a->CharRegion));
             while (cellIter && bufferPos < charInfoBuffer.end())
             {
                 *bufferPos++ = cellIter.AsCharInfo();
@@ -825,7 +828,16 @@ NTSTATUS SrvWriteConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*Reply
         if (!a->Unicode)
         {
             LOG_IF_FAILED(TranslateOutputToUnicode(Buffer, BufferSize));
-            Status = WriteScreenBuffer(ScreenBufferInformation, Buffer, &a->CharRegion);
+            try
+            {
+                const auto charInfos = std::basic_string_view<CHAR_INFO>(Buffer, BufferSize.X * BufferSize.Y);
+                OutputCellIterator it(charInfos);
+                ScreenBufferInformation.WriteRect(it, Viewport::FromInclusive(a->CharRegion));
+            }
+            catch (...)
+            {
+                Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+            }
         }
         else if (!ScreenBufferInformation.GetTextBuffer().GetCurrentFont().IsTrueTypeFont())
         {
@@ -849,18 +861,24 @@ NTSTATUS SrvWriteConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*Reply
             }
 
             LOG_IF_FAILED(TranslateOutputToPaddingUnicode(Buffer, BufferSize, &TransBuffer[0]));
-            Status = WriteScreenBuffer(ScreenBufferInformation, &TransBuffer[0], &a->CharRegion);
+            try
+            {
+                const auto charInfos = std::basic_string_view<CHAR_INFO>(TransBuffer, BufferSize.X * BufferSize.Y);
+                OutputCellIterator it(charInfos);
+                ScreenBufferInformation.WriteRect(it, Viewport::FromInclusive(a->CharRegion));
+            }
+            catch (...)
+            {
+                Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+            }
+
             delete[] TransBuffer;
         }
         else
         {
-            Status = WriteScreenBuffer(ScreenBufferInformation, Buffer, &a->CharRegion);
-        }
-
-        if (NT_SUCCESS(Status))
-        {
-            // cause screen to be updated
-            WriteToScreen(ScreenBufferInformation, a->CharRegion);
+            const auto charInfos = std::basic_string_view<CHAR_INFO>(Buffer, BufferSize.X * BufferSize.Y);
+            OutputCellIterator it(charInfos);
+            ScreenBufferInformation.WriteRect(it, Viewport::FromInclusive(a->CharRegion));
         }
     }
 
@@ -921,9 +939,9 @@ NTSTATUS SrvReadConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*
             const ULONG amountToRead = bufferSize / sizeof(WORD);
             try
             {
-                const std::vector<WORD> attrs = ReadOutputAttributes(pScreenInfo->GetActiveBuffer(),
-                                                                     a->ReadCoord,
-                                                                     amountToRead);
+                const auto attrs = ReadOutputAttributes(pScreenInfo->GetActiveBuffer(),
+                                                        a->ReadCoord,
+                                                        amountToRead);
                 std::copy(attrs.begin(), attrs.end(), static_cast<WORD* const>(Buffer));
                 a->NumRecords = gsl::narrow<ULONG>(attrs.size());
                 Status = STATUS_SUCCESS;
@@ -939,9 +957,9 @@ NTSTATUS SrvReadConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*
             const ULONG amountToRead = bufferSize / sizeof(wchar_t);
             try
             {
-                const std::vector<wchar_t> chars = ReadOutputStringW(pScreenInfo->GetActiveBuffer(),
-                                                                     a->ReadCoord,
-                                                                     amountToRead);
+                const auto chars = ReadOutputStringW(pScreenInfo->GetActiveBuffer(),
+                                                     a->ReadCoord,
+                                                     amountToRead);
                 if (chars.size() > amountToRead)
                 {
                     a->NumRecords = 0;
@@ -999,227 +1017,6 @@ NTSTATUS SrvReadConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*
     return Status;
 }
 
-[[nodiscard]]
-NTSTATUS SrvWriteConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
-{
-    PCONSOLE_WRITECONSOLEOUTPUTSTRING_MSG const a = &m->u.consoleMsgL2.WriteConsoleOutputString;
-
-    auto tracing = wil::scope_exit([&]()
-    {
-        Tracing::s_TraceApi(a);
-    });
-
-    switch (a->StringType)
-    {
-    case CONSOLE_ATTRIBUTE:
-        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::WriteConsoleOutputAttribute);
-        break;
-    case CONSOLE_ASCII:
-        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::WriteConsoleOutputCharacter, false);
-        break;
-    case CONSOLE_REAL_UNICODE:
-    case CONSOLE_FALSE_UNICODE:
-        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::WriteConsoleOutputCharacter, true);
-        break;
-    }
-
-    PVOID Buffer;
-    ULONG BufferSize;
-    NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetInputBuffer(&Buffer, &BufferSize));
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-
-    LockConsole();
-
-    ConsoleHandleData* HandleData = m->GetObjectHandle();
-    if (HandleData == nullptr)
-    {
-        Status = NTSTATUS_FROM_WIN32(ERROR_INVALID_HANDLE);
-    }
-
-    SCREEN_INFORMATION* pScreenInfo = nullptr;
-    if (NT_SUCCESS(Status))
-    {
-        Status = NTSTATUS_FROM_HRESULT(HandleData->GetScreenBuffer(GENERIC_WRITE, &pScreenInfo));
-    }
-    if (!NT_SUCCESS(Status))
-    {
-        a->NumRecords = 0;
-    }
-    else
-    {
-        if (a->WriteCoord.X < 0 || a->WriteCoord.Y < 0)
-        {
-            Status = STATUS_INVALID_PARAMETER;
-        }
-        else
-        {
-            if (a->StringType == CONSOLE_ASCII)
-            {
-
-                try
-                {
-                    const ULONG elementCount = BufferSize;
-                    const char* const pChars = reinterpret_cast<const char* const>(Buffer);
-                    std::vector<char> chars{ pChars, pChars + elementCount };
-                    a->NumRecords = gsl::narrow<ULONG>(WriteOutputStringA(pScreenInfo->GetActiveBuffer(),
-                                                                          chars,
-                                                                          a->WriteCoord));
-                }
-                catch (...)
-                {
-                    a->NumRecords = 0;
-                    Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-                }
-            }
-            else if (a->StringType == CONSOLE_ATTRIBUTE)
-            {
-                try
-                {
-                    const ULONG elementCount = BufferSize / sizeof(WORD);
-                    const WORD* const pAttrs = reinterpret_cast<const WORD* const>(Buffer);
-                    std::vector<WORD> attrs{ pAttrs, pAttrs + elementCount };
-                    a->NumRecords = gsl::narrow<ULONG>(WriteOutputAttributes(pScreenInfo->GetActiveBuffer(),
-                                                                             attrs,
-                                                                             a->WriteCoord));
-                    Status = STATUS_SUCCESS;
-                }
-                catch (...)
-                {
-                    a->NumRecords = 0;
-                    Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-                }
-            }
-            else if (a->StringType == CONSOLE_REAL_UNICODE ||
-                     a->StringType == CONSOLE_FALSE_UNICODE)
-            {
-                try
-                {
-                    const ULONG elementCount = BufferSize / sizeof(wchar_t);
-                    const wchar_t* const pChars = reinterpret_cast<const wchar_t* const>(Buffer);
-                    std::vector<wchar_t> chars{ pChars, pChars + elementCount };
-                    a->NumRecords = gsl::narrow<ULONG>(WriteOutputStringW(pScreenInfo->GetActiveBuffer(),
-                                                                          chars,
-                                                                          a->WriteCoord));
-                    Status = STATUS_SUCCESS;
-                }
-                catch (...)
-                {
-                    a->NumRecords = 0;
-                    Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-                }
-            }
-            else
-            {
-                a->NumRecords = 0;
-                Status = STATUS_INVALID_PARAMETER;
-            }
-        }
-    }
-
-    UnlockConsole();
-    return Status;
-}
-
-[[nodiscard]]
-NTSTATUS SrvFillConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
-{
-    PCONSOLE_FILLCONSOLEOUTPUT_MSG const a = &m->u.consoleMsgL2.FillConsoleOutput;
-
-    switch (a->ElementType)
-    {
-    case CONSOLE_ATTRIBUTE:
-        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::FillConsoleOutputAttribute);
-        break;
-    case CONSOLE_ASCII:
-        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::FillConsoleOutputCharacter, false);
-        break;
-    case CONSOLE_REAL_UNICODE:
-    case CONSOLE_FALSE_UNICODE:
-        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::FillConsoleOutputCharacter, true);
-        break;
-    }
-
-    LockConsole();
-    NTSTATUS Status = STATUS_SUCCESS;
-
-    ConsoleHandleData* HandleData = m->GetObjectHandle();
-    if (HandleData == nullptr)
-    {
-        Status = NTSTATUS_FROM_WIN32(ERROR_INVALID_HANDLE);
-    }
-
-    SCREEN_INFORMATION* pScreenInfo = nullptr;
-    if (NT_SUCCESS(Status))
-    {
-        Status = NTSTATUS_FROM_HRESULT(HandleData->GetScreenBuffer(GENERIC_WRITE, &pScreenInfo));
-    }
-    if (!NT_SUCCESS(Status))
-    {
-        a->Length = 0;
-    }
-    else
-    {
-        Status = DoSrvFillConsoleOutput(pScreenInfo->GetActiveBuffer(), a);
-    }
-
-    UnlockConsole();
-    return Status;
-}
-
-[[nodiscard]]
-NTSTATUS DoSrvFillConsoleOutput(SCREEN_INFORMATION& screenInfo, _Inout_ CONSOLE_FILLCONSOLEOUTPUT_MSG* pMsg)
-{
-    NTSTATUS Status = STATUS_SUCCESS;
-    const auto elementType = pMsg->ElementType;
-    try
-    {
-        if (elementType == CONSOLE_ATTRIBUTE)
-        {
-            size_t amountWritten = FillOutputAttributes(screenInfo,
-                                                        pMsg->Element,
-                                                        pMsg->WriteCoord,
-                                                        static_cast<size_t>(pMsg->Length));
-            pMsg->Length = gsl::narrow<ULONG>(amountWritten);
-            Status = STATUS_SUCCESS;
-        }
-        else if (elementType == CONSOLE_REAL_UNICODE ||
-                 elementType == CONSOLE_FALSE_UNICODE)
-        {
-            size_t amountWritten = FillOutputW(screenInfo,
-                                               pMsg->Element,
-                                               pMsg->WriteCoord,
-                                               static_cast<size_t>(pMsg->Length));
-            pMsg->Length = gsl::narrow<ULONG>(amountWritten);
-            Status = STATUS_SUCCESS;
-        }
-        else if (elementType == CONSOLE_ASCII)
-        {
-            size_t amountWritten = FillOutputA(screenInfo,
-                                               static_cast<char>(pMsg->Element),
-                                               pMsg->WriteCoord,
-                                               static_cast<size_t>(pMsg->Length));
-            pMsg->Length = gsl::narrow<ULONG>(amountWritten);
-            Status = STATUS_SUCCESS;
-        }
-        else
-        {
-            pMsg->Length = 0;
-            Status = STATUS_INVALID_PARAMETER;
-        }
-    }
-    catch (...)
-    {
-        pMsg->Length = 0;
-        return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-    }
-
-
-    return Status;
-}
-
 // There used to be a text mode and a graphics mode flag.
 // Text mode was used for regular applications like CMD.exe.
 // Graphics mode was used for bitmap VDM buffers and is no longer supported.
@@ -1256,9 +1053,7 @@ NTSTATUS ConsoleCreateScreenBuffer(std::unique_ptr<ConsoleHandleData>& handle,
     Fill.Char.UnicodeChar = UNICODE_SPACE;
     Fill.Attributes = siExisting.GetAttributes().GetLegacyAttributes();
 
-    COORD WindowSize;
-    WindowSize.X = (SHORT)siExisting.GetScreenWindowSizeX();
-    WindowSize.Y = (SHORT)siExisting.GetScreenWindowSizeY();
+    COORD WindowSize = siExisting.GetViewport().Dimensions();
 
     const FontInfo& existingFont = siExisting.GetTextBuffer().GetCurrentFont();
 

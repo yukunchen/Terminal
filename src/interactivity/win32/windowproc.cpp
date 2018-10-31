@@ -202,12 +202,9 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
         // Retrieve the additional parameters we need for the math call based on the current window & buffer properties.
 
-        const SMALL_RECT srViewport = ScreenInfo.GetBufferViewport();
-        COORD coordWindowInChars;
-        coordWindowInChars.X = srViewport.Right - srViewport.Left + 1;
-        coordWindowInChars.Y = srViewport.Bottom - srViewport.Top + 1;
+        COORD coordWindowInChars = ScreenInfo.GetViewport().Dimensions();
 
-        const COORD coordBufferSize = ScreenInfo.GetTextBuffer().GetCoordBufferSize();
+        const COORD coordBufferSize = ScreenInfo.GetTextBuffer().GetSize().Dimensions();
 
         // Now call the math calculation for our proposed size.
         RECT rectProposed = { 0 };

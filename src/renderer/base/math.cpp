@@ -14,17 +14,6 @@ using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 
 // Routine Description:
-// - Converts a coordinate into a 1x1 rectangle (with exclusive bottom/right) representing the same location.
-// Arguments:
-// - Coordinate
-// Return Value:
-// - Exclusive rectangle representing same 1x1 area as given coordinate.
-SMALL_RECT Renderer::_RegionFromCoord(const COORD* const pcoord) const
-{
-    return Viewport::FromCoord(*pcoord).ToExclusive();
-}
-
-// Routine Description:
 // - Takes text attriute data (compressed 16 color data) and looks up the respective RGB color value in our color table.
 // Arguments:
 // - Word attribute data from the text buffer for a particular character.

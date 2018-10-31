@@ -9,6 +9,7 @@
 #include "_output.h"
 
 #include "dbcs.h"
+#include "handle.h"
 #include "misc.h"
 
 #include "../buffer/out/CharRow.hpp"
@@ -25,137 +26,6 @@
 
 using namespace Microsoft::Console::Types;
 
-
-void StreamWriteToScreenBuffer(SCREEN_INFORMATION& screenInfo,
-                               const std::wstring& wstr,
-                               const bool fWasLineWrapped)
-{
-    COORD const TargetPoint = screenInfo.GetTextBuffer().GetCursor().GetPosition();
-    ROW& Row = screenInfo.GetTextBuffer().GetRowByOffset(TargetPoint.Y);
-    DBGOUTPUT(("&Row = 0x%p, TargetPoint = (0x%x,0x%x)\n", &Row, TargetPoint.X, TargetPoint.Y));
-
-    // We have to provide a column count to CleanupDbcsEdgesForWrite so it can understand
-    // how many columns will be filled and correct as necessary.
-    size_t charCount = 0;
-    for (const auto& wch : wstr)
-    {
-        if (IsGlyphFullWidth(wch))
-        {
-            charCount += 2;
-        }
-        else
-        {
-            charCount++;
-        }
-    }
-    CleanupDbcsEdgesForWrite(charCount, TargetPoint, screenInfo);
-
-    const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
-
-    try
-    {
-        const TextAttribute defaultTextAttribute = screenInfo.GetAttributes();
-        const OutputCellIterator it(wstr, defaultTextAttribute);
-        screenInfo.WriteLine(it, TargetPoint.Y, TargetPoint.X);
-    }
-    CATCH_LOG();
-
-    // caller knows the wrap status as this func is called only for drawing one line at a time
-    Row.GetCharRow().SetWrapForced(fWasLineWrapped);
-
-    screenInfo.NotifyAccessibilityEventing(TargetPoint.X,
-                                           TargetPoint.Y,
-                                           TargetPoint.X + gsl::narrow<short>(wstr.size()) - 1,
-                                           TargetPoint.Y);
-}
-
-// Routine Description:
-// - This routine copies a rectangular region to the screen buffer. no clipping is done.
-// Arguments:
-// - screenInfo - reference to screen buffer
-// - cells - cells to copy from
-// - coordDest - the coordinate position to overwrite data at
-// Return Value:
-// - <none>
-// Note:
-// - will throw exception on failure
-void WriteRectToScreenBuffer(SCREEN_INFORMATION& screenInfo,
-                             const std::vector<std::vector<OutputCell>>& cells,
-                             const COORD coordDest)
-{
-    DBGOUTPUT(("WriteRectToScreenBuffer\n"));
-    // don't do anything if we're not actually writing anything
-    if (cells.empty())
-    {
-        return;
-    }
-    const size_t xSize = cells.at(0).size();
-    const size_t ySize = cells.size();
-
-    // copy data to output buffer
-    for (size_t iRow = 0; iRow < ySize; ++iRow)
-    {
-        ROW& row = screenInfo.GetTextBuffer().GetRowByOffset(coordDest.Y + static_cast<UINT>(iRow));
-        // clear wrap status for rectangle drawing
-        row.GetCharRow().SetWrapForced(false);
-
-        std::vector<TextAttribute> textAttrs;
-
-        // fix up any leading trailing bytes at edges
-        COORD point;
-        point.X = coordDest.X;
-        point.Y = coordDest.Y + static_cast<short>(iRow);
-        CleanupDbcsEdgesForWrite(xSize, point, screenInfo);
-
-        screenInfo.WriteLine(cells.at(iRow), coordDest.Y + iRow, coordDest.X);
-    }
-}
-
-// Routine Description:
-// - Writes a rectangular section of output cells (from the OutputCellRect struct)
-//   into the screen at the given destination.
-// Arguments:
-// - screenInfo - screen to update
-// - rect - rectangular output cell data
-// - dest - coordinate within screen to write with data
-// Return Value:
-// - <none>
-void WriteRectToScreenBufferOC(SCREEN_INFORMATION& screenInfo,
-                               const OutputCellRect& rect,
-                               const COORD dest)
-{
-    for (size_t i = 0; i < rect.Height(); i++)
-    {
-        const auto iter = rect.GetRowIter(i);
-
-        ROW& row = screenInfo.GetTextBuffer().GetRowByOffset(dest.Y + static_cast<UINT>(i));
-        // clear wrap status for rectangle drawing
-        row.GetCharRow().SetWrapForced(false);
-
-        // fix up any leading trailing bytes at edges
-        COORD point;
-        point.X = dest.X;
-        point.Y = dest.Y + static_cast<short>(i);
-        CleanupDbcsEdgesForWrite(rect.Width(), point, screenInfo);
-
-        screenInfo.WriteLine(iter, dest.Y + i, dest.X);
-    }
-}
-
-void WriteRegionToScreen(SCREEN_INFORMATION& screenInfo, _In_ PSMALL_RECT psrRegion)
-{
-    if (screenInfo.IsActiveScreenBuffer())
-    {
-        if (ServiceLocator::LocateGlobals().pRender != nullptr)
-        {
-            // convert inclusive rectangle to exclusive rectangle
-            SMALL_RECT srExclusive = Viewport::FromInclusive(*psrRegion).ToExclusive();
-
-            ServiceLocator::LocateGlobals().pRender->TriggerRedraw(&srExclusive);
-        }
-    }
-}
-
 // Routine Description:
 // - This routine writes a screen buffer region to the screen.
 // Arguments:
@@ -163,7 +33,7 @@ void WriteRegionToScreen(SCREEN_INFORMATION& screenInfo, _In_ PSMALL_RECT psrReg
 // - srRegion - Region to write in screen buffer coordinates. Region is inclusive
 // Return Value:
 // - <none>
-void WriteToScreen(SCREEN_INFORMATION& screenInfo, const SMALL_RECT srRegion)
+void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
 {
     DBGOUTPUT(("WriteToScreen\n"));
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -173,87 +43,63 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const SMALL_RECT srRegion)
         return;
     }
 
-    // clip region
-    SMALL_RECT ClippedRegion;
+    // clip region to fit within the viewport
+    const auto clippedRegion = screenInfo.GetViewport().Clamp(region);
+    if (!clippedRegion.IsValid())
     {
-        const SMALL_RECT currentViewport = screenInfo.GetBufferViewport();
-        ClippedRegion.Left = std::max(srRegion.Left, currentViewport.Left);
-        ClippedRegion.Top = std::max(srRegion.Top, currentViewport.Top);
-        ClippedRegion.Right = std::min(srRegion.Right, currentViewport.Right);
-        ClippedRegion.Bottom = std::min(srRegion.Bottom, currentViewport.Bottom);
-        if (ClippedRegion.Right < ClippedRegion.Left || ClippedRegion.Bottom < ClippedRegion.Top)
+        return;
+    }
+
+    if (screenInfo.IsActiveScreenBuffer())
+    {
+        if (ServiceLocator::LocateGlobals().pRender != nullptr)
         {
-            return;
+            ServiceLocator::LocateGlobals().pRender->TriggerRedraw(region);
         }
     }
 
-    WriteRegionToScreen(screenInfo, &ClippedRegion);
-
-    WriteConvRegionToScreen(screenInfo, srRegion);
+    WriteConvRegionToScreen(screenInfo, region);
 }
 
 // Routine Description:
 // - writes text attributes to the screen
 // Arguments:
-// - screenInfo - the screen info to write to
+// - OutContext - the screen info to write to
 // - attrs - the attrs to write to the screen
 // - target - the starting coordinate in the screen
+// - used - number of elements written
 // Return Value:
-// - number of elements written
-size_t WriteOutputAttributes(SCREEN_INFORMATION& screenInfo,
-                             const std::vector<WORD>& attrs,
-                             const COORD target)
+// - S_OK, E_INVALIDARG or similar HRESULT error.
+[[nodiscard]]
+HRESULT ApiRoutines::WriteConsoleOutputAttributeImpl(IConsoleOutputObject& OutContext,
+                                                     const std::basic_string_view<WORD> attrs,
+                                                     const COORD target,
+                                                     size_t& used) noexcept
 {
+    // Set used to 0 from the beginning in case we exit early.
+    used = 0;
+
     if (attrs.empty())
     {
-        return 0;
+        return S_OK;
     }
 
-    const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
-    if (!IsCoordInBounds(target, coordScreenBufferSize))
+    LockConsole();
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+    auto& screenInfo = OutContext.GetActiveBuffer();
+    const auto bufferSize = screenInfo.GetBufferSize();
+    if (!bufferSize.IsInBounds(target))
     {
-        return 0;
+        return E_INVALIDARG;
     }
 
-    size_t elementsWritten = 0;
-    COORD currentLocation = target;
-    TextAttributeRun run;
-    run.SetLength(1);
-    // write attrs
-    for (auto currentAttr : attrs)
-    {
-        ROW& row = screenInfo.GetTextBuffer().GetRowByOffset(currentLocation.Y);
-        ATTR_ROW& attrRow = row.GetAttrRow();
-        // clear dbcs bits
-        WI_ClearAllFlags(currentAttr, COMMON_LVB_SBCSDBCS);
-        // add to attr row
-        run.SetAttributesFromLegacy(currentAttr);
-        THROW_IF_FAILED(attrRow.InsertAttrRuns({ &run, 1 },
-                                               currentLocation.X,
-                                               currentLocation.X,
-                                               row.size()));
-        ++elementsWritten;
-        ++currentLocation.X;
-        // move to next location
-        if (currentLocation.X == coordScreenBufferSize.X)
-        {
-            currentLocation.X = 0;
-            currentLocation.Y++;
-        }
-        if (!IsCoordInBounds(currentLocation, coordScreenBufferSize))
-        {
-            break;
-        }
-    }
-    // tell screen to update screen portion
-    SMALL_RECT writeRegion;
-    writeRegion.Top = target.Y;
-    writeRegion.Bottom = std::min(currentLocation.Y, coordScreenBufferSize.Y);
-    writeRegion.Left = 0;
-    writeRegion.Right = coordScreenBufferSize.X;
-    WriteToScreen(screenInfo, writeRegion);
+    const OutputCellIterator it(attrs);
+    const auto done = screenInfo.Write(attrs, target);
 
-    return elementsWritten;
+    used = done.GetCellDistance(it);
+
+    return S_OK;
 }
 
 // Routine Description:
@@ -262,41 +108,42 @@ size_t WriteOutputAttributes(SCREEN_INFORMATION& screenInfo,
 // - screenInfo - the screen info to write to
 // - chars - the text to write to the screen
 // - target - the starting coordinate in the screen
+// - used - number of elements written
 // Return Value:
-// - number of elements written
-size_t WriteOutputStringW(SCREEN_INFORMATION& screenInfo,
-                          const std::vector<wchar_t>& chars,
-                          const COORD target)
+// - S_OK, E_INVALIDARG or similar HRESULT error.
+[[nodiscard]]
+HRESULT ApiRoutines::WriteConsoleOutputCharacterWImpl(IConsoleOutputObject& OutContext,
+                                                      const std::wstring_view chars,
+                                                      const COORD target,
+                                                      size_t& used) noexcept
 {
+    // Set used to 0 from the beginning in case we exit early.
+    used = 0;
+
     if (chars.empty())
     {
-        return 0;
+        return S_OK;
     }
 
-    const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
-    if (!IsCoordInBounds(target, coordScreenBufferSize))
+    LockConsole();
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+    auto& screenInfo = OutContext.GetActiveBuffer();
+    const auto bufferSize = screenInfo.GetBufferSize();
+    if (!bufferSize.IsInBounds(target))
     {
-        return 0;
+        return E_INVALIDARG;
     }
 
-    // convert to utf16 output cells and write
-    const std::wstring wstr{ chars.begin(), chars.end() };
-    const auto formattedCharData = Utf16Parser::Parse(wstr);
-    std::vector<OutputCell> cells = OutputCell::FromUtf16(formattedCharData);
-    const auto cellsWritten = screenInfo.WriteLineNoWrap(cells, target.Y, target.X);
+    try
+    {
+        OutputCellIterator it(chars);
+        const auto finished = screenInfo.Write(it, target);
+        used = finished.GetInputDistance(it);
+    }
+    CATCH_RETURN();
 
-    // tell screen to update screen portion
-    SMALL_RECT writeRegion;
-    writeRegion.Top = target.Y;
-    writeRegion.Bottom = target.Y + (gsl::narrow<SHORT>(chars.size()) / coordScreenBufferSize.X) + 1;
-    writeRegion.Left = 0;
-    writeRegion.Right = coordScreenBufferSize.X;
-    WriteToScreen(screenInfo, writeRegion);
-
-    // count the number of glyphs that were written
-    return std::count_if(cells.begin(),
-                         cells.begin() + cellsWritten,
-                         [](auto&& cell) { return !cell.DbcsAttr().IsTrailing(); });
+    return S_OK;
 }
 
 // Routine Description:
@@ -305,178 +152,182 @@ size_t WriteOutputStringW(SCREEN_INFORMATION& screenInfo,
 // - screenInfo - the screen info to write to
 // - chars - the text to write to the screen
 // - target - the starting coordinate in the screen
+// - used - number of elements written
 // Return Value:
-// - number of elements written
-size_t WriteOutputStringA(SCREEN_INFORMATION& screenInfo,
-                          const std::vector<char>& chars,
-                          const COORD target)
+// - S_OK, E_INVALIDARG or similar HRESULT error.
+[[nodiscard]]
+HRESULT ApiRoutines::WriteConsoleOutputCharacterAImpl(IConsoleOutputObject& OutContext,
+                                                      const std::string_view chars,
+                                                      const COORD target,
+                                                      size_t& used) noexcept
 {
+    // Set used to 0 from the beginning in case we exit early.
+    used = 0;
+
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto codepage = gci.OutputCP;
     try
     {
         // convert to wide chars so we can call the W version of this function
-        wistd::unique_ptr<wchar_t[]> outWchs;
-        size_t count = 0;
-        THROW_IF_FAILED(ConvertToW(gci.OutputCP,
-                                   chars.data(),
-                                   chars.size(),
-                                   outWchs,
-                                   count));
+        const auto wideChars = ConvertToW(codepage, chars);
 
-        const std::vector<wchar_t> wchs{ outWchs.get(), outWchs.get() + count };
-        const auto wideCharsWritten = WriteOutputStringW(screenInfo, wchs, target);
+        size_t wideCharsWritten = 0;
+        RETURN_IF_FAILED(WriteConsoleOutputCharacterWImpl(OutContext, wideChars, target, wideCharsWritten));
 
-        // convert wideCharsWritten to amount of ascii chars written so we can properly report back
+        // Create a view over the wide chars and reduce it to the amount actually written (do in two steps to enforce bounds)
+        std::wstring_view writtenView(wideChars);
+        writtenView = writtenView.substr(0, wideCharsWritten);
+
+        // Look over written wide chars to find equilalent count of ascii chars so we can properly report back
         // how many elements were actually written
-        wistd::unique_ptr<char[]> outChars;
-        THROW_IF_FAILED(ConvertToA(gci.OutputCP,
-                                   wchs.data(),
-                                   wideCharsWritten,
-                                   outChars,
-                                   count));
-        return count;
+        used = GetALengthFromW(codepage, writtenView);
     }
-    CATCH_LOG();
-    return 0;
+    CATCH_RETURN();
+
+    return S_OK;
 }
 
 // Routine Description:
 // - fills the screen buffer with the specified text attribute
 // Arguments:
-// - screenInfo - reference to screen buffer information.
-// - attr - the text attribute to use to fill
-// - target - Screen buffer coordinate to begin writing to.
-// - amountToWrite - the number of elements to write
+// - OutContext - reference to screen buffer information.
+// - attribute - the text attribute to use to fill
+// - lengthToWrite - the number of elements to write
+// - startingCoordinate - Screen buffer coordinate to begin writing to.
+// - cellsModified - the number of elements written
 // Return Value:
-// - the number of elements written
-size_t FillOutputAttributes(SCREEN_INFORMATION& screenInfo,
-                            const TextAttribute attr,
-                            const COORD target,
-                            const size_t amountToWrite)
+// - S_OK or suitable HRESULT code from failure to write (memory issues, invalid arg, etc.)
+[[nodiscard]]
+HRESULT ApiRoutines::FillConsoleOutputAttributeImpl(IConsoleOutputObject& OutContext,
+                                                    const WORD attribute, 
+                                                    const size_t lengthToWrite,
+                                                    const COORD startingCoordinate,
+                                                    size_t& cellsModified) noexcept
 {
-    if (amountToWrite == 0)
+    // Set modified cells to 0 from the beginning.
+    cellsModified = 0;
+
+    if (lengthToWrite == 0)
     {
-        return 0;
+        return S_OK;
     }
 
-    const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
-    if (!IsCoordInBounds(target, coordScreenBufferSize))
+    LockConsole();
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+    auto& screenBuffer = OutContext.GetActiveBuffer();
+    const auto bufferSize = screenBuffer.GetBufferSize();
+    if (!bufferSize.IsInBounds(startingCoordinate))
     {
-        return 0;
+        return S_OK;
     }
 
-    return screenInfo.FillTextAttribute(attr, target, amountToWrite);
+    try
+    {
+        TextAttribute useThisAttr(attribute);
+
+        // Here we're being a little clever -
+        // Because RGB color can't roundtrip the API, certain VT sequences will forget the RGB color
+        // because their first call to GetScreenBufferInfo returned a legacy attr.
+        // If they're calling this with the default attrs, they likely wanted to use the RGB default attrs.
+        // This could create a scenario where someone emitted RGB with VT,
+        // THEN used the API to FillConsoleOutput with the default attrs, and DIDN'T want the RGB color
+        // they had set.
+        if (screenBuffer.InVTMode() && screenBuffer.GetAttributes().GetLegacyAttributes() == useThisAttr.GetLegacyAttributes())
+        {
+            useThisAttr = TextAttribute(screenBuffer.GetAttributes());
+        }
+
+        const OutputCellIterator it(useThisAttr, lengthToWrite);
+        const auto done = screenBuffer.Write(it, startingCoordinate);
+
+        cellsModified = done.GetCellDistance(it);
+
+        // Notify accessibility
+        auto endingCoordinate = startingCoordinate;
+        bufferSize.MoveInBounds(cellsModified, endingCoordinate);
+        screenBuffer.NotifyAccessibilityEventing(startingCoordinate.X, startingCoordinate.Y, endingCoordinate.X, endingCoordinate.Y);
+    }
+    CATCH_RETURN();
+
+    return S_OK;
 }
 
 // Routine Description:
 // - fills the screen buffer with the specified wchar
 // Arguments:
-// - screenInfo - reference to screen buffer information.
-// - wch - wchar to fill with
-// - target - Screen buffer coordinate to begin writing to.
-// - amountToWrite - the number of elements to write
+// - OutContext - reference to screen buffer information.
+// - character - wchar to fill with
+// - lengthToWrite - the number of elements to write
+// - startingCoordinate - Screen buffer coordinate to begin writing to.
+// - cellsModified - the number of elements written
 // Return Value:
-// - the number of elements written
-size_t FillOutputW(SCREEN_INFORMATION& screenInfo,
-                   const wchar_t wch,
-                   const COORD target,
-                   const size_t amountToWrite)
+// - S_OK or suitable HRESULT code from failure to write (memory issues, invalid arg, etc.)
+[[nodiscard]]
+HRESULT ApiRoutines::FillConsoleOutputCharacterWImpl(IConsoleOutputObject& OutContext,
+                                                     const wchar_t character,
+                                                     const size_t lengthToWrite,
+                                                     const COORD startingCoordinate,
+                                                     size_t& cellsModified) noexcept
 {
-    if (amountToWrite == 0)
+    // Set modified cells to 0 from the beginning.
+    cellsModified = 0;
+
+    if (lengthToWrite == 0)
     {
-        return 0;
+        return S_OK;
     }
 
-    const COORD coordScreenBufferSize = screenInfo.GetScreenBufferSize();
-    if (!IsCoordInBounds(target, coordScreenBufferSize))
+    LockConsole();
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+    // TODO: does this even need to be here or will it exit quickly?
+    auto& screenInfo = OutContext.GetActiveBuffer();
+    const auto bufferSize = screenInfo.GetBufferSize();
+    if (!bufferSize.IsInBounds(startingCoordinate))
     {
-        return 0;
+        return S_OK;
     }
 
-    return screenInfo.FillTextGlyph({ &wch, 1 }, target, amountToWrite);
+    try
+    {
+        const OutputCellIterator it(character, lengthToWrite);
+        const auto done = screenInfo.Write(it, startingCoordinate);
+        cellsModified = done.GetInputDistance(it);
+
+        // Notify accessibility
+        auto endingCoordinate = startingCoordinate;
+        bufferSize.MoveInBounds(cellsModified, endingCoordinate);
+        screenInfo.NotifyAccessibilityEventing(startingCoordinate.X, startingCoordinate.Y, endingCoordinate.X, endingCoordinate.Y);
+    }
+    CATCH_RETURN();
+
+    return S_OK;
 }
 
 // Routine Description:
 // - fills the screen buffer with the specified char
 // Arguments:
-// - screenInfo - reference to screen buffer information.
-// - ch - ascii char to fill
-// - target - Screen buffer coordinate to begin writing to.
-// - amountToWrite - the number of elements to write
+// - OutContext - reference to screen buffer information.
+// - character - ascii character to fill with
+// - lengthToWrite - the number of elements to write
+// - startingCoordinate - Screen buffer coordinate to begin writing to.
+// - cellsModified - the number of elements written
 // Return Value:
-// - the number of elements written
-size_t FillOutputA(SCREEN_INFORMATION& screenInfo,
-                   const char ch,
-                   const COORD target,
-                   const size_t amountToWrite)
+// - S_OK or suitable HRESULT code from failure to write (memory issues, invalid arg, etc.)
+[[nodiscard]]
+HRESULT ApiRoutines::FillConsoleOutputCharacterAImpl(IConsoleOutputObject& OutContext,
+                                                     const char character,
+                                                     const size_t lengthToWrite,
+                                                     const COORD startingCoordinate,
+                                                     size_t& cellsModified) noexcept
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     // convert to wide chars and call W version
-    wistd::unique_ptr<wchar_t[]> outWchs;
-    size_t count = 0;
-    THROW_IF_FAILED(ConvertToW(gci.OutputCP,
-                               &ch,
-                               1,
-                               outWchs,
-                               count));
+    const auto wchs = ConvertToW(gci.OutputCP, { &character, 1 });
 
-    THROW_HR_IF(E_UNEXPECTED, count > 1);
-    return FillOutputW(screenInfo, outWchs[0], target, amountToWrite);
-}
+    LOG_HR_IF(E_UNEXPECTED, wchs.size() > 1);
 
-// Routine Description:
-// - This routine fills a rectangular region in the screen buffer.
-// Arguments:
-// - screenInfo - reference to screen info
-// - cell - cell to fill rectangle with
-// - rect - rectangle to fill
-void FillRectangle(SCREEN_INFORMATION& screenInfo,
-                   const OutputCell& cell,
-                   const Viewport rect)
-{
-    const size_t width = rect.Width();
-    const size_t height = rect.Height();
-
-    // generate line to write
-    std::vector<OutputCell> rowCells(width, cell);
-    if (IsGlyphFullWidth(cell.Chars()))
-    {
-        // set leading and trailing attrs
-        for (size_t i = 0; i < rowCells.size(); ++i)
-        {
-            if (i % 2 == 0)
-            {
-                rowCells.at(i).DbcsAttr().SetLeading();
-            }
-            else
-            {
-                rowCells.at(i).DbcsAttr().SetTrailing();
-            }
-        }
-        // make sure not to write a partial dbcs sequence
-        if (rowCells.back().DbcsAttr().IsLeading())
-        {
-            rowCells.back().SetChars({ &UNICODE_SPACE, 1 });
-            rowCells.back().DbcsAttr().SetSingle();
-        }
-    }
-
-    // fill rectangle
-    for (size_t i = 0; i < height; ++i)
-    {
-        const size_t rowIndex = rect.Top() + i;
-
-        // cleanup dbcs edges
-        const COORD leftPoint{ rect.Left(), gsl::narrow<SHORT>(rowIndex) };
-        CleanupDbcsEdgesForWrite(rowCells.size(), leftPoint, screenInfo);
-
-        // write cells
-        screenInfo.WriteLine(rowCells, rowIndex, rect.Left());
-
-        // force set wrap to false because this is a rectangular operation
-        screenInfo.GetTextBuffer().GetRowByOffset(rowIndex).GetCharRow().SetWrapForced(false);
-    }
-    // notify accessibility listeners that something has changed
-    screenInfo.NotifyAccessibilityEventing(rect.Left(), rect.Top(), rect.RightInclusive(), rect.BottomInclusive());
+    return FillConsoleOutputCharacterWImpl(OutContext, wchs.at(0), lengthToWrite, startingCoordinate, cellsModified);
 }

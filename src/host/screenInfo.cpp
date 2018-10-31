@@ -20,7 +20,6 @@
 #include "../terminal/parser/OutputStateMachineEngine.hpp"
 
 #include "../types/inc/convert.hpp"
-#include "../types/inc/RepeatingIterator.hpp"
 
 #pragma hdrstop
 using namespace Microsoft::Console;
@@ -48,7 +47,6 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     _pConsoleWindowMetrics{ pMetrics },
     _pAccessibilityNotifier{ pNotifier },
     _stateMachine{ nullptr },
-    _coordScreenBufferSize{ 0 },
     _scrollMargins{ Viewport::FromCoord({0}) },
     _viewport(Viewport::Empty()),
     _psiAlternateBuffer{ nullptr },
@@ -115,10 +113,14 @@ NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
 
         PSCREEN_INFORMATION const pScreen = new SCREEN_INFORMATION(pMetrics, pNotifier, ciFill, ciPopupFill);
 
-        pScreen->_InitializeBufferDimensions(coordScreenBufferSize, coordWindowSize);
+        // Set up viewport
+        pScreen->_viewport = Viewport::FromDimensions({ 0, 0 },
+                                                      pScreen->_IsInPtyMode() ? coordScreenBufferSize : coordWindowSize);
+        pScreen->UpdateBottom();
 
+        // Set up text buffer
         pScreen->_textBuffer = std::make_unique<TextBuffer>(fontInfo,
-                                                            pScreen->GetScreenBufferSize(),
+                                                            coordScreenBufferSize,
                                                             ciFill,
                                                             uiCursorSize);
         const NTSTATUS status = pScreen->_InitializeOutputStateMachine();
@@ -137,22 +139,9 @@ NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
     }
 }
 
-void SCREEN_INFORMATION::SetScreenBufferSize(const COORD coordNewBufferSize)
+Viewport SCREEN_INFORMATION::GetBufferSize() const
 {
-    COORD coordCandidate;
-    coordCandidate.X = std::max(1i16, coordNewBufferSize.X);
-    coordCandidate.Y = std::max(1i16, coordNewBufferSize.Y);
-    _coordScreenBufferSize = coordCandidate;
-}
-
-COORD SCREEN_INFORMATION::GetScreenBufferSize() const
-{
-    return _coordScreenBufferSize;
-}
-
-Viewport SCREEN_INFORMATION::GetSize() const noexcept
-{
-    return Viewport::FromDimensions({ 0, 0 }, _coordScreenBufferSize);
+    return _textBuffer->GetSize();
 }
 
 const StateMachine& SCREEN_INFORMATION::GetStateMachine() const
@@ -183,7 +172,7 @@ bool SCREEN_INFORMATION::InVTMode() const
 // Return Value:
 // Note:
 // - The console lock must be held when calling this routine.
-void SCREEN_INFORMATION::s_InsertScreenBuffer(_In_ PSCREEN_INFORMATION pScreenInfo)
+void SCREEN_INFORMATION::s_InsertScreenBuffer(_In_ SCREEN_INFORMATION* const pScreenInfo)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     FAIL_FAST_IF(!(gci.IsConsoleLocked()));
@@ -319,7 +308,7 @@ void SCREEN_INFORMATION::GetScreenBufferInformation(_Out_ PCOORD pcoordSize,
                                                     _Out_writes_(COLOR_TABLE_SIZE) LPCOLORREF lpColorTable) const
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    *pcoordSize = GetScreenBufferSize();
+    *pcoordSize = GetBufferSize().Dimensions();
 
     *pcoordCursorPosition = _textBuffer->GetCursor().GetPosition();
 
@@ -383,7 +372,7 @@ COORD SCREEN_INFORMATION::GetMaxWindowSizeInCharacters(const COORD coordFontSize
     FAIL_FAST_IF(coordFontSize.X == 0);
     FAIL_FAST_IF(coordFontSize.Y == 0);
 
-    const COORD coordScreenBufferSize = GetScreenBufferSize();
+    const COORD coordScreenBufferSize = GetBufferSize().Dimensions();
     COORD coordClientAreaSize = coordScreenBufferSize;
 
     //  Important re: headless consoles on onecore (for telnetd, etc.)
@@ -458,30 +447,8 @@ void SCREEN_INFORMATION::GetRequiredConsoleSizeInPixels(_Out_ PSIZE const pRequi
     COORD const coordFontSize = _textBuffer->GetCurrentFont().GetSize();
 
     // TODO: Assert valid size boundaries
-    pRequiredSize->cx = GetScreenWindowSizeX() * coordFontSize.X;
-    pRequiredSize->cy = GetScreenWindowSizeY() * coordFontSize.Y;
-}
-
-// Method Description:
-// - Returns the width of the viewport, in characters.
-// Arguments:
-// - <none>
-// Return Value:
-// - the width of the viewport, in characters.
-SHORT SCREEN_INFORMATION::GetScreenWindowSizeX() const
-{
-    return _viewport.Width();
-}
-
-// Method Description:
-// - Returns the height of the viewport, in characters.
-// Arguments:
-// - <none>
-// Return Value:
-// - the height of the viewport, in characters.
-SHORT SCREEN_INFORMATION::GetScreenWindowSizeY() const
-{
-    return _viewport.Height();
+    pRequiredSize->cx = GetViewport().Width() * coordFontSize.X;
+    pRequiredSize->cy = GetViewport().Height() * coordFontSize.Y;
 }
 
 COORD SCREEN_INFORMATION::GetScreenFontSize() const
@@ -536,9 +503,7 @@ void SCREEN_INFORMATION::UpdateFont(const FontInfo* const pfiNewFont)
         IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
         if (nullptr != pWindow)
         {
-            COORD coordViewport;
-            coordViewport.X = GetScreenWindowSizeX();
-            coordViewport.Y = GetScreenWindowSizeY();
+            COORD coordViewport = GetViewport().Dimensions();
             pWindow->UpdateWindowSize(coordViewport);
         }
     }
@@ -564,18 +529,16 @@ void SCREEN_INFORMATION::NotifyAccessibilityEventing(const short sStartX,
     // Fire off a winevent to let accessibility apps know what changed.
     if (IsActiveScreenBuffer())
     {
-        const COORD coordScreenBufferSize = GetScreenBufferSize();
+        const COORD coordScreenBufferSize = GetBufferSize().Dimensions();
         FAIL_FAST_IF(!(sEndX < coordScreenBufferSize.X));
 
         if (sStartX == sEndX && sStartY == sEndY)
         {
-            const auto RowIndex = (_textBuffer->GetFirstRowIndex() + sStartY) % coordScreenBufferSize.Y;
-
             try
             {
-                const OutputCell cell = ReadLine(RowIndex, sStartX, 1).at(0);
-                const LONG charAndAttr = MAKELONG(Utf16ToUcs2(cell.Chars()),
-                                                  gci.GenerateLegacyAttributes(cell.TextAttr()));
+                const auto cellData = GetCellDataAt({ sStartX, sStartY });
+                const LONG charAndAttr = MAKELONG(Utf16ToUcs2(cellData->Chars()),
+                                                  gci.GenerateLegacyAttributes(cellData->TextAttr()));
                 _pAccessibilityNotifier->NotifyConsoleUpdateSimpleEvent(MAKELONG(sStartX, sStartY),
                                                                         charAndAttr);
             }
@@ -641,7 +604,7 @@ VOID SCREEN_INFORMATION::InternalUpdateScrollBars()
 
     if (pWindow != nullptr)
     {
-        const COORD coordScreenBufferSize = GetScreenBufferSize();
+        const auto buffer = GetBufferSize();
 
         // If this is the main buffer, make sure we enable both of the scroll bars.
         //      The alt buffer likely disabled the scroll bars, this is the only
@@ -653,13 +616,13 @@ VOID SCREEN_INFORMATION::InternalUpdateScrollBars()
 
         pWindow->UpdateScrollBar(true,
                                  _IsAltBuffer(),
-                                 GetScreenWindowSizeY(),
-                                 coordScreenBufferSize.Y - 1,
+                                 _viewport.Height(),
+                                 buffer.BottomInclusive(),
                                  _viewport.Top());
         pWindow->UpdateScrollBar(false,
                                  _IsAltBuffer(),
-                                 GetScreenWindowSizeX(),
-                                 coordScreenBufferSize.X - 1,
+                                 _viewport.Width(),
+                                 buffer.RightInclusive(),
                                  _viewport.Left());
     }
 
@@ -688,7 +651,9 @@ void SCREEN_INFORMATION::SetViewportSize(const COORD* const pcoordSize)
 
         if (_psiMainBuffer)
         {
-            _psiMainBuffer->SetViewportSize(&_coordScreenBufferSize);
+            const auto bufferSize = GetBufferSize().Dimensions();
+
+            _psiMainBuffer->SetViewportSize(&bufferSize);
         }
     }
     _InternalSetViewportSize(pcoordSize, false, false);
@@ -744,7 +709,7 @@ NTSTATUS SCREEN_INFORMATION::SetViewportOrigin(const bool fAbsolute,
     NewWindow.Bottom = (SHORT)(NewWindow.Top + WindowSize.Y - 1);
 
     // see if new window origin would extend window beyond extent of screen buffer
-    const COORD coordScreenBufferSize = GetScreenBufferSize();
+    const COORD coordScreenBufferSize = GetBufferSize().Dimensions();
     if (NewWindow.Left < 0 ||
         NewWindow.Top < 0 ||
         NewWindow.Right < 0 ||
@@ -764,7 +729,7 @@ NTSTATUS SCREEN_INFORMATION::SetViewportOrigin(const bool fAbsolute,
     {
         // Otherwise, just store the new position and go on.
         _viewport = Viewport::FromInclusive(NewWindow);
-        Tracing::s_TraceWindowViewport(NewWindow);
+        Tracing::s_TraceWindowViewport(_viewport);
     }
 
     // Update our internal virtual bottom tracker if requested. This helps keep
@@ -776,52 +741,6 @@ NTSTATUS SCREEN_INFORMATION::SetViewportOrigin(const bool fAbsolute,
     }
 
     return STATUS_SUCCESS;
-}
-
-// Routine Description:
-// - This routine updates the size of the rectangle representing the viewport into the text buffer.
-// - It is specified in character count within the buffer.
-// - It will be corrected to not exceed the limits of the current screen buffer dimensions.
-// Arguments:
-// newViewport: The new viewport to use. If it's out of bounds in the negative
-//      direction it will be shifted to positive coordinates. If it's bigger
-//      that the screen buffer, it will be clamped to the size of the buffer.
-// Return Value:
-// - None
-void SCREEN_INFORMATION::SetViewportRect(const Viewport newViewport)
-{
-    // make sure there's something to do
-    if (newViewport == _viewport)
-    {
-        return;
-    }
-
-    // do adjustments on a copy that's easily manipulated.
-    SMALL_RECT srCorrected = newViewport.ToInclusive();
-
-    if (srCorrected.Left < 0)
-    {
-        srCorrected.Right -= srCorrected.Left;
-        srCorrected.Left = 0;
-    }
-    if (srCorrected.Top < 0)
-    {
-        srCorrected.Bottom -= srCorrected.Top;
-        srCorrected.Top = 0;
-    }
-
-    const COORD coordScreenBufferSize = GetScreenBufferSize();
-    if (srCorrected.Right >= coordScreenBufferSize.X)
-    {
-        srCorrected.Right = coordScreenBufferSize.X;
-    }
-    if (srCorrected.Bottom >= coordScreenBufferSize.Y)
-    {
-        srCorrected.Bottom = coordScreenBufferSize.Y;
-    }
-
-    _viewport = Viewport::FromInclusive(srCorrected);
-    Tracing::s_TraceWindowViewport(srCorrected);
 }
 
 bool SCREEN_INFORMATION::SendNotifyBeep() const
@@ -958,7 +877,7 @@ HRESULT SCREEN_INFORMATION::_AdjustScreenBuffer(const RECT* const prcClientNew)
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // Prepare the buffer sizes.
     // We need the main's size here to maintain the right scrollbar visibility.
-    COORD const coordBufferSizeOld = _IsAltBuffer() ? _psiMainBuffer->GetScreenBufferSize() : GetScreenBufferSize();
+    COORD const coordBufferSizeOld = _IsAltBuffer() ? _psiMainBuffer->GetBufferSize().Dimensions() : GetBufferSize().Dimensions();
     COORD coordBufferSizeNew = coordBufferSizeOld;
 
     // First figure out how many characters we could fit into the new window given the old buffer size
@@ -1030,7 +949,7 @@ HRESULT SCREEN_INFORMATION::_AdjustScreenBuffer(const RECT* const prcClientNew)
 // - <none>
 void SCREEN_INFORMATION::_CalculateViewportSize(const RECT* const prcClientArea, _Out_ COORD* const pcoordSize)
 {
-    COORD const coordBufferSize = GetScreenBufferSize();
+    COORD const coordBufferSize = GetBufferSize().Dimensions();
     COORD const coordFontSize = GetScreenFontSize();
 
     SIZE sizeClientPixels = { 0 };
@@ -1071,9 +990,9 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(const COORD* const pcoordSize,
                                                   const bool fResizeFromTop,
                                                   const bool fResizeFromLeft)
 {
-    const short DeltaX = pcoordSize->X - GetScreenWindowSizeX();
-    const short DeltaY = pcoordSize->Y - GetScreenWindowSizeY();
-    const COORD coordScreenBufferSize = GetScreenBufferSize();
+    const short DeltaX = pcoordSize->X - _viewport.Width();
+    const short DeltaY = pcoordSize->Y - _viewport.Height();
+    const COORD coordScreenBufferSize = GetBufferSize().Dimensions();
 
     // do adjustments on a copy that's easily manipulated.
     SMALL_RECT srNewViewport = _viewport.ToInclusive();
@@ -1218,7 +1137,7 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(const COORD* const pcoordSize,
 
     _viewport = Viewport::FromInclusive(srNewViewport);
     UpdateBottom();
-    Tracing::s_TraceWindowViewport(srNewViewport);
+    Tracing::s_TraceWindowViewport(_viewport);
 }
 
 // Routine Description:
@@ -1268,7 +1187,7 @@ void SCREEN_INFORMATION::_AdjustViewportSize(const RECT* const prcClientNew,
         if ((_viewport.Width() != oldViewport.Width()) ||
             (_viewport.Height() != oldViewport.Height()))
         {
-            ScreenBufferSizeChange(GetScreenBufferSize());
+            ScreenBufferSizeChange(GetBufferSize().Dimensions());
         }
     }
 }
@@ -1350,13 +1269,13 @@ bool SCREEN_INFORMATION::IsMaximizedBoth() const
 bool SCREEN_INFORMATION::IsMaximizedX() const
 {
     // If the viewport is displaying the entire size of the allocated buffer, it's maximized.
-    return _viewport.Left() == 0 && (_viewport.Width() == GetScreenBufferSize().X);
+    return _viewport.Left() == 0 && (_viewport.Width() == GetBufferSize().Width());
 }
 
 bool SCREEN_INFORMATION::IsMaximizedY() const
 {
     // If the viewport is displaying the entire size of the allocated buffer, it's maximized.
-    return _viewport.Top() == 0 && (_viewport.Height() == GetScreenBufferSize().Y);
+    return _viewport.Top() == 0 && (_viewport.Height() == GetBufferSize().Height());
 }
 
 #pragma endregion
@@ -1410,10 +1329,11 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
     COORD cOldLastChar = _textBuffer->GetLastNonSpaceCharacter();
 
     short const cOldRowsTotal = cOldLastChar.Y + 1;
-    short const cOldColsTotal = GetScreenBufferSize().X;
+    short const cOldColsTotal = GetBufferSize().Width();
 
     COORD cNewCursorPos = { 0 };
     bool fFoundCursorPos = false;
+
     NTSTATUS status = STATUS_SUCCESS;
     // Loop through all the rows of the old buffer and reprint them into the new buffer
     for (short iOldRow = 0; iOldRow < cOldRowsTotal; iOldRow++)
@@ -1460,9 +1380,12 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
 
             try
             {
-                // Insert it into the new buffer
-                const OutputCell cell = Row.AsCells(iOldCol, 1).front();
-                if (!newTextBuffer->InsertCharacter(cell.Chars(), cell.DbcsAttr(), cell.TextAttr()))
+                // TODO: MSFT: 19446208 - this should just use an iterator and the inserter...
+                const auto glyph = Row.GetCharRow().GlyphAt(iOldCol);
+                const auto dbcsAttr = Row.GetCharRow().DbcsAttrAt(iOldCol);
+                const auto textAttr = Row.GetAttrRow().GetAttrByColumn(iOldCol);
+
+                if (!newTextBuffer->InsertCharacter(glyph, dbcsAttr, textAttr))
                 {
                     status = STATUS_NO_MEMORY;
                     break;
@@ -1623,7 +1546,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
 [[nodiscard]]
 NTSTATUS SCREEN_INFORMATION::ResizeTraditional(const COORD coordNewScreenSize)
 {
-    return NTSTATUS_FROM_HRESULT(_textBuffer->ResizeTraditional(GetScreenBufferSize(), coordNewScreenSize, _Attributes));
+    return NTSTATUS_FROM_HRESULT(_textBuffer->ResizeTraditional(GetBufferSize().Dimensions(), coordNewScreenSize, _Attributes));
 }
 
 //
@@ -1659,12 +1582,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeScreenBuffer(const COORD coordNewScreenSize,
 
     if (NT_SUCCESS(status))
     {
-        SetScreenBufferSize(coordNewScreenSize);
-
-        const COORD coordSetScreenBufferSize = GetScreenBufferSize();
-        _textBuffer->SetCoordBufferSize(coordSetScreenBufferSize);
-
-        NotifyAccessibilityEventing(0, 0, (SHORT)(coordSetScreenBufferSize.X - 1), (SHORT)(coordSetScreenBufferSize.Y - 1));
+        NotifyAccessibilityEventing(0, 0, (SHORT)(coordNewScreenSize.X - 1), (SHORT)(coordNewScreenSize.Y - 1));
 
         if ((!ConvScreenInfo))
         {
@@ -1685,7 +1603,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeScreenBuffer(const COORD coordNewScreenSize,
         {
             UpdateScrollBars();
         }
-        ScreenBufferSizeChange(coordSetScreenBufferSize);
+        ScreenBufferSizeChange(coordNewScreenSize);
     }
 
     return status;
@@ -1702,7 +1620,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeScreenBuffer(const COORD coordNewScreenSize,
 // - <none>
 void SCREEN_INFORMATION::ClipToScreenBuffer(_Inout_ SMALL_RECT* const psrClip) const
 {
-    const auto bufferSize = GetSize();
+    const auto bufferSize = GetBufferSize();
 
     psrClip->Left = std::max(psrClip->Left, bufferSize.Left());
     psrClip->Top = std::max(psrClip->Top, bufferSize.Top());
@@ -1789,7 +1707,7 @@ NTSTATUS SCREEN_INFORMATION::SetCursorPosition(const COORD Position, const bool 
     // Ensure that the cursor position is within the constraints of the screen
     // buffer.
     //
-    const COORD coordScreenBufferSize = GetScreenBufferSize();
+    const COORD coordScreenBufferSize = GetBufferSize().Dimensions();
     if (Position.X >= coordScreenBufferSize.X || Position.Y >= coordScreenBufferSize.Y || Position.X < 0 || Position.Y < 0)
     {
         return STATUS_INVALID_PARAMETER;
@@ -2008,7 +1926,7 @@ NTSTATUS SCREEN_INFORMATION::UseAlternateScreenBuffer()
         // Kind of a hack until we have proper signal channels: If the client app wants window size events, send one for
         // the new alt buffer's size (this is so WSL can update the TTY size when the MainSB.viewportWidth <
         // MainSB.bufferWidth (which can happen with wrap text disabled))
-        ScreenBufferSizeChange(psiNewAltBuffer->GetScreenBufferSize());
+        ScreenBufferSizeChange(psiNewAltBuffer->GetBufferSize().Dimensions());
 
         // Tell the VT MouseInput handler that we're in the Alt buffer now
         gci.terminalMouseInput.UseAlternateScreenBuffer();
@@ -2038,7 +1956,7 @@ void SCREEN_INFORMATION::UseMainScreenBuffer()
         psiMain->UpdateScrollBars(); // The alt had disabled scrollbars, re-enable them
 
         // send a _coordScreenBufferSizeChangeEvent for the new Sb viewport
-        ScreenBufferSizeChange(psiMain->GetScreenBufferSize());
+        ScreenBufferSizeChange(psiMain->GetBufferSize().Dimensions());
 
         SCREEN_INFORMATION* psiAlt = psiMain->_psiAlternateBuffer;
         psiMain->_psiAlternateBuffer = nullptr;
@@ -2123,7 +2041,7 @@ COORD SCREEN_INFORMATION::GetForwardTab(const COORD cCurrCursorPos) const noexce
 {
 
     COORD cNewCursorPos = cCurrCursorPos;
-    SHORT sWidth = GetScreenBufferSize().X - 1;
+    SHORT sWidth = GetBufferSize().RightInclusive();
     if (cCurrCursorPos.X == sWidth)
     {
         cNewCursorPos.X = 0;
@@ -2192,8 +2110,8 @@ bool SCREEN_INFORMATION::AreTabsSet() const noexcept
 void SCREEN_INFORMATION::SetDefaultVtTabStops()
 {
     _tabStops.clear();
-    const int width = GetScreenBufferSize().X - 1;
-    for(int pos = 0; pos <= width; pos += TAB_SIZE)
+    const int width = GetBufferSize().RightInclusive();
+    for (int pos = 0; pos <= width; pos += TAB_SIZE)
     {
         _tabStops.push_back(gsl::narrow<short>(pos));
     }
@@ -2310,7 +2228,7 @@ void SCREEN_INFORMATION::ReplaceDefaultAttributes(const TextAttribute& oldAttrib
     const WORD InvertedNewPopupAttributes = (WORD)(((newLegacyPopupAttributes << 4) & 0xf0) | ((newLegacyPopupAttributes >> 4) & 0x0f));
 
     // change all chars with default color
-    const SHORT sScreenBufferSizeY = GetScreenBufferSize().Y;
+    const SHORT sScreenBufferSizeY = GetBufferSize().Height();
     for (SHORT i = 0; i < sScreenBufferSizeY; i++)
     {
         ROW& Row = _textBuffer->GetRowByOffset(i);
@@ -2332,14 +2250,55 @@ void SCREEN_INFORMATION::ReplaceDefaultAttributes(const TextAttribute& oldAttrib
 // - <none>
 // Return Value:
 // - the viewport bounds as an inclusive rect.
-SMALL_RECT SCREEN_INFORMATION::GetBufferViewport() const
+const Viewport& SCREEN_INFORMATION::GetViewport() const noexcept
 {
-    return _viewport.ToInclusive();
+    return _viewport;
 }
 
-void SCREEN_INFORMATION::SetBufferViewport(const Viewport newViewport)
+// Routine Description:
+// - This routine updates the size of the rectangle representing the viewport into the text buffer.
+// - It is specified in character count within the buffer.
+// - It will be corrected to not exceed the limits of the current screen buffer dimensions.
+// Arguments:
+// newViewport: The new viewport to use. If it's out of bounds in the negative
+//      direction it will be shifted to positive coordinates. If it's bigger
+//      that the screen buffer, it will be clamped to the size of the buffer.
+// Return Value:
+// - None
+void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport)
 {
-    _viewport = Viewport(newViewport);
+    // make sure there's something to do
+    if (newViewport == _viewport)
+    {
+        return;
+    }
+
+    // do adjustments on a copy that's easily manipulated.
+    SMALL_RECT srCorrected = newViewport.ToInclusive();
+
+    if (srCorrected.Left < 0)
+    {
+        srCorrected.Right -= srCorrected.Left;
+        srCorrected.Left = 0;
+    }
+    if (srCorrected.Top < 0)
+    {
+        srCorrected.Bottom -= srCorrected.Top;
+        srCorrected.Top = 0;
+    }
+
+    const COORD coordScreenBufferSize = GetBufferSize().Dimensions();
+    if (srCorrected.Right >= coordScreenBufferSize.X)
+    {
+        srCorrected.Right = coordScreenBufferSize.X;
+    }
+    if (srCorrected.Bottom >= coordScreenBufferSize.Y)
+    {
+        srCorrected.Bottom = coordScreenBufferSize.Y;
+    }
+
+    _viewport = Viewport::FromInclusive(srCorrected);
+    Tracing::s_TraceWindowViewport(_viewport);
 }
 
 // Method Description:
@@ -2366,7 +2325,7 @@ HRESULT SCREEN_INFORMATION::VtEraseAll()
     COORD relativeCursor = oldCursorPos;
     oldViewport.ConvertToOrigin(&relativeCursor);
 
-    short delta = (sNewTop + GetScreenWindowSizeY()) - (GetScreenBufferSize().Y);
+    short delta = (sNewTop + _viewport.Height()) - (GetBufferSize().Height());
     for (auto i = 0; i < delta; i++)
     {
         _textBuffer->IncrementCircularBuffer();
@@ -2380,39 +2339,10 @@ HRESULT SCREEN_INFORMATION::VtEraseAll()
     RETURN_IF_FAILED(SetCursorPosition(relativeCursor, false));
 
     // Update all the rows in the current viewport with the currently active attributes.
-    ROW* pRow = &_textBuffer->GetRowByOffset(sNewTop);
-    auto height = _viewport.Height();
-
-    for (int i = 0; i < height; i++)
-    {
-        pRow->GetAttrRow().SetAttrToEnd(0, _Attributes);
-        pRow = &_textBuffer->GetNextRow(*pRow);
-    }
-
-    // Invalidate the entire viewport
-    if (ServiceLocator::LocateGlobals().pRender != nullptr)
-    {
-        ServiceLocator::LocateGlobals().pRender->TriggerRedrawAll();
-    }
+    OutputCellIterator it(_Attributes);
+    WriteRect(it, _viewport);
 
     return S_OK;
-}
-
-// Method Description:
-// - Initialize the dimensions of the screenbuffer. If we're in VT I/O mode,
-//      then use the screen buffer dimensions as the size of the viewport.
-// Arguments:
-// - coordScreenBufferSize: The initial dimensions of the screen buffer, in characters.
-// - coordViewportSize: The initial dimensions of the viewport, in characters.
-// Return Value:
-// - <none>
-void SCREEN_INFORMATION::_InitializeBufferDimensions(const COORD coordScreenBufferSize,
-                                                     const COORD coordViewportSize)
-{
-    _viewport = Viewport::FromDimensions({ 0, 0 },
-                                         _IsInPtyMode() ? coordScreenBufferSize : coordViewportSize);
-    UpdateBottom();
-    SetScreenBufferSize(coordScreenBufferSize);
 }
 
 // Method Description:
@@ -2439,332 +2369,130 @@ void SCREEN_INFORMATION::SetTerminalConnection(_In_ ITerminalOutputConnection* c
 }
 
 // Routine Description:
-// - Reads text from the output buffer. will contain text as it would look at the terminal (no duplicate wide chars)
+// - This routine copies a rectangular region from the screen buffer. no clipping is done.
 // Arguments:
-// - rowIndex - the index of the row to read the text for
+// - viewport - rectangle in source buffer to copy
 // Return Value:
-// - wstring containing row's text
-std::wstring SCREEN_INFORMATION::ReadText(const size_t rowIndex) const
+// - output cell rectangle copy of screen buffer data
+// Note:
+// - will throw exception on error.
+OutputCellRect SCREEN_INFORMATION::ReadRect(const Viewport viewport) const
 {
-    const ROW& row = _textBuffer->GetRowByOffset(rowIndex);
-    return row.GetText();
+    // If the viewport given doesn't fit inside this screen, it's not a valid argument.
+    THROW_HR_IF(E_INVALIDARG, !GetBufferSize().IsInBounds(viewport));
+
+    OutputCellRect result(viewport.Height(), viewport.Width());
+
+    const OutputCell paddingCell{ std::wstring_view{ &UNICODE_SPACE, 1 }, {}, TextAttributeBehavior::Default };
+    for (size_t rowIndex = 0; rowIndex < gsl::narrow<size_t>(viewport.Height()); ++rowIndex)
+    {
+        COORD location = viewport.Origin();
+        location.Y += (SHORT)rowIndex;
+
+        auto data = GetCellLineDataAt(location);
+        const auto span = result.GetRow(rowIndex);
+        auto it = span.begin();
+
+        // Copy row data while there still is data and we haven't run out of rect to store it into.
+        while (data && it < span.end())
+        {
+            *it++ = *data++;
+        }
+
+        // Pad out any remaining space.
+        while (it < span.end())
+        {
+            *it++ = paddingCell;
+        }
+
+        // if we're clipping a dbcs char then don't include it, add a space instead
+        if (span.begin()->DbcsAttr().IsTrailing())
+        {
+            *span.begin() = paddingCell;
+        }
+        if (span.rbegin()->DbcsAttr().IsLeading())
+        {
+            *span.rbegin() = paddingCell;
+        }
+
+    }
+
+    return result;
 }
 
 // Routine Description:
-// - Reads cells from the output buffer.
+// - Writes cells to the output buffer at the cursor position.
 // Arguments:
-// - rowIndex - the index of the row to read the text for
+// - it - Iterator representing output cell data to write.
 // Return Value:
-// - vector of cells containing row's data.
-std::vector<OutputCell> SCREEN_INFORMATION::ReadLine(const size_t rowIndex) const
+// - the iterator at its final position
+// Note:
+// - will throw exception on error.
+OutputCellIterator SCREEN_INFORMATION::Write(const OutputCellIterator it)
 {
-    const ROW& row = _textBuffer->GetRowByOffset(rowIndex);
-    return row.AsCells();
-}
-
-// Routine Description:
-// - Reads cells from the output buffer.
-// Arguments:
-// - rowIndex - the index of the row to read the text for
-// - startIndex - column in the row to start reading cells from
-// Return Value:
-// - vector of cells containing row's data.
-std::vector<OutputCell> SCREEN_INFORMATION::ReadLine(const size_t rowIndex,
-                                                     const size_t startIndex) const
-{
-    const ROW& row = _textBuffer->GetRowByOffset(rowIndex);
-    return row.AsCells(startIndex);
-}
-
-// Routine Description:
-// - Reads cells from the output buffer.
-// Arguments:
-// - rowIndex - the index of the row to read the text for
-// - startIndex - column in the row to start reading cells from
-// - count - the number of cells to read
-// Return Value:
-// - vector of cells containing row's data.
-std::vector<OutputCell> SCREEN_INFORMATION::ReadLine(const size_t rowIndex,
-                                                     const size_t startIndex,
-                                                     const size_t count) const
-{
-    const ROW& row = _textBuffer->GetRowByOffset(rowIndex);
-    return row.AsCells(startIndex, count);
+    return _textBuffer->Write(it);
 }
 
 // Routine Description:
 // - Writes cells to the output buffer.
 // Arguments:
 // - it - Iterator representing output cell data to write.
-// - rowIndex - the index of the row to write the text to
-// - startIndex - column in the row to start writing cells to
+// - target - The position to start writing at
 // Return Value:
-// - the number of cells written
-size_t SCREEN_INFORMATION::WriteLine(const OutputCellIterator it,
-                                     const size_t rowIndex,
-                                     const size_t startIndex)
-{
-    return _WriteLine(it, rowIndex, startIndex, true);
-}
-
-// Routine Description:
-// - writes cells to the output buffer.
-// Arguments:
-// - cells - the cells to write to the output buffer
-// - rowIndex - the index of the row to write the text to
-// - startIndex - column in the row to start writing cells to
-// Return Value:
-// - the number of cells written
-size_t SCREEN_INFORMATION::WriteLine(const std::vector<OutputCell>& cells,
-                                     const size_t rowIndex,
-                                     const size_t startIndex)
-{
-    return _WriteLine(cells, rowIndex, startIndex, true);
-}
-
-// Routine Description:
-// - writes cells to the output buffer. will stop at the end of the screen buffer
-// Arguments:
-// - cells - the cells to write to the output buffer
-// - rowIndex - the index of the row to write the text to
-// - startIndex - column in the row to start writing cells to
-// Return Value:
-// - the number of cells written
-size_t SCREEN_INFORMATION::WriteLineNoWrap(const std::vector<OutputCell>& cells,
-                                           const size_t rowIndex,
-                                           const size_t startIndex)
-{
-    return _WriteLine(cells, rowIndex, startIndex, false);
-}
-
-// Routine Description:
-// - Writes cells to the output buffer.
-// Arguments:
-// - givenIt - Iterator representing output cell data to write
-// - rowIndex - the index of the row to write the text to
-// - startIndex - column in the row to start writing cells to
-// - shouldWrap - whether text writing should wrap around the text buffer or not
-// Return Value:
-// - the number of cells written
-size_t SCREEN_INFORMATION::_WriteLine(const OutputCellIterator givenIt,
-                                      const size_t rowIndex,
-                                      const size_t startIndex,
-                                      const bool shouldWrap)
-{
-    auto it = givenIt;
-    auto currentColumn = startIndex;
-    size_t amountWritten = 0;
-    auto currentRowIndex = rowIndex;
-    while (it)
-    {
-        if (!shouldWrap && currentRowIndex >= static_cast<size_t>(_textBuffer->TotalRowCount()))
-        {
-            break;
-        }
-
-        ROW& row = _textBuffer->GetRowByOffset(currentRowIndex);
-        const auto newIt = row.WriteCells(it, currentColumn);
-        amountWritten += newIt - it;
-        it = newIt;
-        row.GetCharRow().SetWrapForced(it);
-        currentColumn = 0;
-        ++currentRowIndex;
-    }
-    return amountWritten;
-}
-
-// Routine Description:
-// - writes cells to the output buffer.
-// Arguments:
-// - cells - the cells to write to the output buffer
-// - rowIndex - the index of the row to write the text to
-// - startIndex - column in the row to start writing cells to
-// - shouldWrap - whether text writing should wrap around the text buffer or not
-// Return Value:
-// - the number of cells written
-size_t SCREEN_INFORMATION::_WriteLine(const std::vector<OutputCell>& cells,
-                                      const size_t rowIndex,
-                                      const size_t startIndex,
-                                      const bool shouldWrap)
-{
-    auto it = cells.begin();
-    auto currentColumn = startIndex;
-    size_t amountWritten = 0;
-    auto currentRowIndex = rowIndex;
-    while (it != cells.end())
-    {
-        if (!shouldWrap && currentRowIndex >= static_cast<size_t>(_textBuffer->TotalRowCount()))
-        {
-            break;
-        }
-
-        ROW& row = _textBuffer->GetRowByOffset(currentRowIndex);
-        const auto newIt = row.WriteCells(it, cells.end(), currentColumn);
-        amountWritten += newIt - it;
-        it = newIt;
-        row.GetCharRow().SetWrapForced(it != cells.end());
-        currentColumn = 0;
-        ++currentRowIndex;
-    }
-    return amountWritten;
-}
-
-// Routine Description:
-// - fills a text attribute a number of times.
-// Arguments:
-// - attr - the text attribute to fill
-// - target - the starting location of the fill
-// - amountToWrite - the number of cells to fill
-// Return Value:
-// - the number of cells filled
-size_t SCREEN_INFORMATION::FillTextAttribute(const TextAttribute attr,
-                                             const COORD target,
-                                             const size_t amountToWrite)
-{
-    const COORD coordScreenBufferSize = GetScreenBufferSize();
-    TextAttributeRun attrRun;
-    // Here we're being a little clever -
-    // Because RGB color can't roundtrip the API, certain VT sequences will forget the RGB color
-    // because their first call to GetScreenBufferInfo returned a legacy attr.
-    // If they're calling this with the default attrs, they likely wanted to use the RGB default attrs.
-    // This could create a scenario where someone emitted RGB with VT,
-    // THEN used the API to FillConsoleOutput with the default attrs, and DIDN'T want the RGB color
-    // they had set.
-    if (InVTMode() && GetAttributes().GetLegacyAttributes() == attr.GetLegacyAttributes())
-    {
-        attrRun.SetAttributes(GetAttributes());
-    }
-    else
-    {
-        WORD actualAttr = attr.GetLegacyAttributes();
-        WI_ClearAllFlags(actualAttr, COMMON_LVB_SBCSDBCS);
-        attrRun.SetAttributesFromLegacy(actualAttr);
-    }
-
-    COORD currentLocation = target;
-    size_t amountWritten = 0;
-    do
-    {
-        const size_t rowIndex = gsl::narrow<size_t>(currentLocation.Y);
-        const size_t writesLeft = amountToWrite - amountWritten;
-        const size_t columnsToFill = std::min(writesLeft, gsl::narrow<size_t>(coordScreenBufferSize.X - currentLocation.X));
-        ROW& row = _textBuffer->GetRowByOffset(currentLocation.Y);
-        ATTR_ROW& attrRow = row.GetAttrRow();
-
-        attrRun.SetLength(columnsToFill);
-        THROW_IF_FAILED(attrRow.InsertAttrRuns({ &attrRun, 1 },
-                                               currentLocation.X,
-                                               currentLocation.X + columnsToFill - 1,
-                                               coordScreenBufferSize.X));
-        amountWritten += columnsToFill;
-        currentLocation.X = 0;
-        currentLocation.Y++;
-    } while (amountWritten < amountToWrite && IsCoordInBounds(currentLocation, coordScreenBufferSize));
-
-    NotifyAccessibilityEventing(target.X, target.Y, currentLocation.X, currentLocation.Y);
-    UpdateScreen(target, currentLocation);
-    return amountWritten;
-}
-
-// Routine Description:
-// - fills the screen buffer with the specified utf16 encoded codepoint
-// Arguments:
-// - glyph - glyph to use to fill
-// - target - Screen buffer coordinate to begin writing to.
-// - amountToWrite - the number of times to write the glyph
-// Return Value:
-// - the number of cells that were filled with glyph in the output buffer.
+// - the iterator at its final position
 // Note:
-// - if glyph is a dbcs character then note that the return value if counting the number of cells used,
-// not the number of glyphs written. writing a dbcs char will fill two cells, so the return value would
-// be two.
-size_t SCREEN_INFORMATION::FillTextGlyph(const std::wstring_view glyph,
-                                         const COORD target,
-                                         const size_t amountToWrite)
+// - will throw exception on error.
+OutputCellIterator SCREEN_INFORMATION::Write(const OutputCellIterator it,
+                                             const COORD target)
 {
-    const COORD coordScreenBufferSize = GetScreenBufferSize();
-
-    const OutputCell cell{ glyph, {}, TextAttributeBehavior::Current };
-    std::vector<OutputCell> cellsToWrite{ cell };
-    if (IsGlyphFullWidth(std::wstring_view{ glyph.data(), glyph.size() }))
-    {
-        cellsToWrite.push_back(cell);
-        cellsToWrite.at(0).DbcsAttr().SetLeading();
-        cellsToWrite.at(1).DbcsAttr().SetTrailing();
-    }
-
-    auto currentLocation = target;
-    CleanupDbcsEdgesForWrite(amountToWrite, currentLocation, *this);
-    size_t amountWritten = 0;
-
-
-    do
-    {
-        const size_t writesLeft = amountToWrite - amountWritten;
-        const size_t columnsToFill = std::min(writesLeft, gsl::narrow<size_t>(coordScreenBufferSize.X - currentLocation.X));
-        auto& row = _textBuffer->GetRowByOffset(currentLocation.Y);
-        const RepeatingIterator<OutputCell, decltype(cellsToWrite)::const_iterator>  startingIt{ cellsToWrite.begin(),
-                                                                                                 cellsToWrite.end() };
-        const auto it = row.WriteCells(startingIt, startingIt + columnsToFill, currentLocation.X);
-        const short distance = gsl::narrow<short>(std::distance(startingIt, it));
-        currentLocation.X += distance;
-        amountWritten += distance;
-
-        // invalidate row wrap status for any bulk fill of text characters
-        row.GetCharRow().SetWrapForced(false);
-
-        if (!IsCoordInBounds(currentLocation, coordScreenBufferSize))
-        {
-            currentLocation.Y++;
-            currentLocation.X = 0;
-        }
-    } while (amountWritten < amountToWrite && IsCoordInBounds(currentLocation, coordScreenBufferSize));
-
-    NotifyAccessibilityEventing(target.X, target.Y, currentLocation.X, currentLocation.Y);
-    UpdateScreen(target, currentLocation);
-    return amountWritten;
+    return _textBuffer->Write(it, target);
 }
 
-void SCREEN_INFORMATION::UpdateScreen(const COORD start, const COORD end)
+// Routine Description:
+// - This routine writes a rectangular region into the screen buffer.
+// Arguments:
+// - it - Iterator to the data to insert
+// - viewport - rectangular region for insertion
+// Return Value:
+// - the iterator at its final position
+// Note:
+// - will throw exception on error.
+OutputCellIterator SCREEN_INFORMATION::WriteRect(const OutputCellIterator it,
+                                                 const Viewport viewport)
 {
-    const COORD coordScreenBufferSize = GetScreenBufferSize();
+    THROW_HR_IF(E_INVALIDARG, viewport.Height() <= 0);
+    THROW_HR_IF(E_INVALIDARG, viewport.Width() <= 0);
 
-    SMALL_RECT rect;
-    if (ConvScreenInfo)
+    OutputCellIterator iter = it;
+    for (auto i = viewport.Top(); i < viewport.BottomExclusive(); i++)
     {
-        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        const auto viewport = GetBufferViewport();
-        const auto convCoord = ConvScreenInfo->GetAreaBufferInfo().coordConView;
-
-        rect.Top = start.Y + viewport.Left + convCoord.Y;
-        rect.Bottom = end.Y + viewport.Left + convCoord.Y;
-        if (start.Y == end.Y)
-        {
-            rect.Left = start.X + viewport.Top + convCoord.X;
-            rect.Right = end.X + viewport.Top + convCoord.X;
-        }
-        else
-        {
-            rect.Left = 0;
-            rect.Right = gci.GetActiveOutputBuffer().GetScreenBufferSize().X - 1;
-        }
-        WriteConvRegionToScreen(gci.GetActiveOutputBuffer(), rect);
+        iter = _textBuffer->WriteLine(iter, { viewport.Left(), i }, false, viewport.RightInclusive());
     }
-    else
+
+    return iter;
+}
+
+// Routine Description:
+// - This routine writes a rectangular region into the screen buffer. 
+// Arguments:
+// - data - rectangular data in memory buffer
+// - location - origin point (top left corner) of where to write rectangular data
+// Return Value:
+// - <none>
+// Note:
+// - will throw exception on error.
+void SCREEN_INFORMATION::WriteRect(const OutputCellRect& data,
+                                   const COORD location)
+{
+    for (size_t i = 0; i < data.Height(); i++)
     {
-        rect.Top = start.Y;
-        rect.Bottom = end.Y;
-        if (start.Y == end.Y)
-        {
-            rect.Left = start.X;
-            rect.Right = end.X - 1;
-        }
-        else
-        {
-            rect.Left = 0;
-            rect.Right = coordScreenBufferSize.X - 1;
-        }
-        WriteToScreen(*this, rect);
+        const auto iter = data.GetRowIter(i);
+
+        COORD point;
+        point.X = location.X;
+        point.Y = location.Y + static_cast<short>(i);
+
+        _textBuffer->WriteLine(iter, point);
     }
 }
 
@@ -2788,29 +2516,34 @@ void SCREEN_INFORMATION::ClearTextData()
 // - word boundary positions
 std::pair<COORD, COORD> SCREEN_INFORMATION::GetWordBoundary(const COORD position) const
 {
-    const ROW& row = _textBuffer->GetRowByOffset(position.Y);
-    const COORD screenBufferSize = GetScreenBufferSize();
-    COORD start{ position };
-    COORD end{ position };
+    COORD clampedPosition = position;
+    GetBufferSize().Clamp(clampedPosition);
+
+    COORD start{ clampedPosition };
+    COORD end{ clampedPosition };
 
     // find the start of the word
-    while (start.X > 0)
+    auto startIt = GetTextLineDataAt(clampedPosition);
+    while (startIt)
     {
-        if (IsWordDelim(row.at(start.X - 1).Chars()))
+        --startIt;
+        if (!startIt || IsWordDelim(*startIt))
         {
             break;
         }
-        start.X--;
+        --start.X;
     }
 
     // find the end of the word
-    while (end.X < screenBufferSize.X)
+    auto endIt = GetTextLineDataAt(clampedPosition);
+    while (endIt)
     {
-        if (IsWordDelim(row.at(end.X).Chars()))
+        if (IsWordDelim(*endIt))
         {
             break;
         }
-        end.X++;
+        ++endIt;
+        ++end.X;
     }
 
     // trim leading zeros if we need to
@@ -2819,21 +2552,35 @@ std::pair<COORD, COORD> SCREEN_INFORMATION::GetWordBoundary(const COORD position
     {
         // Trim the leading zeros: 000fe12 -> fe12, except 0x and 0n.
         // Useful for debugging
-        const auto& glyph = row.at(start.X + 1).Chars();
-        if (glyph.size() == 1)
+
+        // Get iterator from the start of the selection
+        auto trimIt = GetTextLineDataAt(start);
+
+        // Advance to the second character to check if it's an x or n.
+        trimIt++;
+
+        // Only process if it's a single character. If it's a complicated run, then it's not an x or n.
+        if (trimIt->size() == 1)
         {
-            const wchar_t wch = glyph.front();
+            // Get the single character
+            const auto wch = trimIt->front();
+
+            // If the string is long enough to have stuff after the 0x/0n and it doesn't have one...
             if (end.X > start.X + 2 &&
                 wch != L'x' &&
                 wch != L'X' &&
                 wch != L'n')
             {
-                // Don't touch the selection begins with 0x
-                while (row.at(start.X).Chars().size() == 1 &&
-                       row.at(start.X).Chars().front() == L'0' &&
+                trimIt--; // Back up to the first character again
+
+                // Now loop through and advance the selection forward each time
+                // we find a single character '0' to Trim off the leading zeroes.
+                while (trimIt->size() == 1 &&
+                       trimIt->front() == L'0' &&
                        start.X < end.X - 1)
                 {
                     start.X++;
+                    trimIt++;
                 }
             }
         }
@@ -2853,28 +2600,32 @@ const TextBuffer& SCREEN_INFORMATION::GetTextBuffer() const noexcept
 
 TextBufferTextIterator SCREEN_INFORMATION::GetTextDataAt(const COORD at) const
 {
-    return TextBufferTextIterator(GetTextBuffer(), at);
+    return _textBuffer->GetTextDataAt(at);
 }
 
 TextBufferCellIterator SCREEN_INFORMATION::GetCellDataAt(const COORD at) const
 {
-    return TextBufferCellIterator(GetTextBuffer(), at);
+    return _textBuffer->GetCellDataAt(at);
+}
+
+TextBufferTextIterator SCREEN_INFORMATION::GetTextLineDataAt(const COORD at) const
+{
+    return _textBuffer->GetTextLineDataAt(at);
 }
 
 TextBufferCellIterator SCREEN_INFORMATION::GetCellLineDataAt(const COORD at) const
 {
-    SMALL_RECT limit;
-    limit.Top = at.Y;
-    limit.Bottom = at.Y;
-    limit.Left = at.X;
-    limit.Right = GetScreenBufferSize().X - 1;
-
-    return TextBufferCellIterator(GetTextBuffer(), at, Viewport::FromInclusive(limit));
+    return _textBuffer->GetCellLineDataAt(at);
 }
 
-TextBufferCellIterator SCREEN_INFORMATION::GetCellDataAt(const COORD at, const SMALL_RECT limit) const
+TextBufferTextIterator SCREEN_INFORMATION::GetTextDataAt(const COORD at, const Viewport limit) const
 {
-    return TextBufferCellIterator(GetTextBuffer(), at, Viewport::FromInclusive(limit));
+    return _textBuffer->GetTextDataAt(at, limit);
+}
+
+TextBufferCellIterator SCREEN_INFORMATION::GetCellDataAt(const COORD at, const Viewport limit) const
+{
+    return _textBuffer->GetCellDataAt(at, limit);
 }
 
 // Method Description:

@@ -34,11 +34,10 @@ TextBuffer::TextBuffer(const FontInfo fontInfo,
                        const COORD screenBufferSize,
                        const CHAR_INFO fill,
                        const UINT cursorSize) :
-    _fiCurrentFont{ fontInfo },
-    _fiDesiredFont{ fontInfo },
-    _FirstRow{ 0 },
-    _ciFill{ fill },
-    _coordBufferSize{ screenBufferSize },
+    _currentFont{ fontInfo },
+    _desiredFont{ fontInfo },
+    _firstRow{ 0 },
+    _fill{ fill },
     _cursor{ cursorSize, *this },
     _storage{},
     _unicodeStorage{}
@@ -51,7 +50,7 @@ TextBuffer::TextBuffer(const FontInfo fontInfo,
     for (size_t i = 0; i < static_cast<size_t>(screenBufferSize.Y); ++i)
     {
         TextAttribute FillAttributes;
-        FillAttributes.SetFromLegacy(_ciFill.Attributes);
+        FillAttributes.SetFromLegacy(_fill.Attributes);
         _storage.emplace_back(static_cast<SHORT>(i), screenBufferSize.X, FillAttributes, this);
     }
 }
@@ -65,29 +64,29 @@ TextBuffer::TextBuffer(const FontInfo fontInfo,
 // - <none>
 void TextBuffer::CopyProperties(const TextBuffer& OtherBuffer)
 {
-    _fiCurrentFont = OtherBuffer.GetCurrentFont();
+    _currentFont = OtherBuffer.GetCurrentFont();
 
     GetCursor().CopyProperties(OtherBuffer.GetCursor());
 }
 
-FontInfo& TextBuffer::GetCurrentFont()
+FontInfo& TextBuffer::GetCurrentFont() noexcept
 {
-    return _fiCurrentFont;
+    return _currentFont;
 }
 
-const FontInfo& TextBuffer::GetCurrentFont() const
+const FontInfo& TextBuffer::GetCurrentFont() const noexcept
 {
-    return _fiCurrentFont;
+    return _currentFont;
 }
 
-FontInfoDesired& TextBuffer::GetDesiredFont()
+FontInfoDesired& TextBuffer::GetDesiredFont() noexcept
 {
-    return _fiDesiredFont;
+    return _desiredFont;
 }
 
-const FontInfoDesired& TextBuffer::GetDesiredFont() const
+const FontInfoDesired& TextBuffer::GetDesiredFont() const noexcept
 {
-    return _fiDesiredFont;
+    return _desiredFont;
 }
 
 // Routine Description:
@@ -102,28 +101,6 @@ UINT TextBuffer::TotalRowCount() const
 }
 
 // Routine Description:
-// - Retrieves the first row from the underlying buffer.
-// Arguments:
-// - <none>
-// Return Value:
-//  - const reference to the first row.
-const ROW& TextBuffer::GetFirstRow() const
-{
-    return GetRowByOffset(0);
-}
-
-// Routine Description:
-// - Retrieves the first row from the underlying buffer.
-// Arguments:
-// - <none>
-// Return Value:
-//  - reference to the first row.
-ROW& TextBuffer::GetFirstRow()
-{
-    return const_cast<ROW&>(static_cast<const TextBuffer*>(this)->GetFirstRow());
-}
-
-// Routine Description:
 // - Retrieves a row from the buffer by its offset from the first row of the text buffer (what corresponds to
 // the top row of the screen buffer)
 // Arguments:
@@ -135,7 +112,7 @@ const ROW& TextBuffer::GetRowByOffset(const size_t index) const
     const size_t totalRows = TotalRowCount();
 
     // Rows are stored circularly, so the index you ask for is offset by the start position and mod the total of rows.
-    const size_t offsetIndex = (_FirstRow + index) % totalRows;
+    const size_t offsetIndex = (_firstRow + index) % totalRows;
     return _storage[offsetIndex];
 }
 
@@ -152,165 +129,81 @@ ROW& TextBuffer::GetRowByOffset(const size_t index)
 }
 
 // Routine Description:
-// - Retrieves the row that comes before the given row.
-// - Does not wrap around the screen buffer.
+// - Retrieves read-only text iterator at the given buffer location
 // Arguments:
-// - The current row.
+// - at - X,Y position in buffer for iterator start position
 // Return Value:
-// - const reference to the previous row
-// Note:
-// - will throw exception if called with the first row of the text buffer
-const ROW& TextBuffer::GetPrevRowNoWrap(const ROW& Row) const
+// - Read-only iterator of text data only.
+TextBufferTextIterator TextBuffer::GetTextDataAt(const COORD at) const
 {
-    int prevRowIndex = Row.GetId() - 1;
-    if (prevRowIndex < 0)
-    {
-        prevRowIndex = TotalRowCount() - 1;
-    }
-
-    THROW_HR_IF(E_FAIL, Row.GetId() == _FirstRow);
-    return _storage[prevRowIndex];
+    return TextBufferTextIterator(GetCellDataAt(at));
 }
 
 // Routine Description:
-// - Retrieves the row that comes before the given row.
-// - Does not wrap around the screen buffer.
+// - Retrieves read-only cell iterator at the given buffer location
 // Arguments:
-// - The current row.
+// - at - X,Y position in buffer for iterator start position
 // Return Value:
-// - reference to the previous row
-// Note:
-// - will throw exception if called with the first row of the text buffer
-ROW& TextBuffer::GetPrevRowNoWrap(const ROW& Row)
+// - Read-only iterator of cell data.
+TextBufferCellIterator TextBuffer::GetCellDataAt(const COORD at) const
 {
-    return const_cast<ROW&>(static_cast<const TextBuffer*>(this)->GetPrevRowNoWrap(Row));
+    return TextBufferCellIterator(*this, at);
 }
 
 // Routine Description:
-// - Retrieves the row that comes after the given row.
-// - Does not wrap around the screen buffer.
+// - Retrieves read-only text iterator at the given buffer location
+//   but restricted to only the specific line (Y coordinate).
 // Arguments:
-// - The current row.
+// - at - X,Y position in buffer for iterator start position
 // Return Value:
-// - const reference to the next row
-// Note:
-// - will throw exception if the row passed in is the last row of the screen buffer.
-const ROW& TextBuffer::GetNextRowNoWrap(const ROW& row) const
+// - Read-only iterator of text data only.
+TextBufferTextIterator TextBuffer::GetTextLineDataAt(const COORD at) const
 {
-    UINT nextRowIndex = row.GetId() + 1;
-    UINT totalRows = TotalRowCount();
-
-    if (nextRowIndex >= totalRows)
-    {
-        nextRowIndex = 0;
-    }
-
-    THROW_HR_IF(E_FAIL, nextRowIndex == static_cast<UINT>(_FirstRow));
-    return _storage[nextRowIndex];
+    return TextBufferTextIterator(GetCellLineDataAt(at));
 }
 
 // Routine Description:
-// - Retrieves the row that comes after the given row.
-// - Does not wrap around the screen buffer.
+// - Retrieves read-only cell iterator at the given buffer location
+//   but restricted to only the specific line (Y coordinate).
 // Arguments:
-// - The current row.
+// - at - X,Y position in buffer for iterator start position
 // Return Value:
-// - const reference to the next row
-// Note:
-// - will throw exception if the row passed in is the last row of the screen buffer.
-ROW& TextBuffer::GetNextRowNoWrap(const ROW& row)
+// - Read-only iterator of cell data.
+TextBufferCellIterator TextBuffer::GetCellLineDataAt(const COORD at) const
 {
-    return const_cast<ROW&>(static_cast<const TextBuffer*>(this)->GetNextRowNoWrap(row));
+    SMALL_RECT limit;
+    limit.Top = at.Y;
+    limit.Bottom = at.Y;
+    limit.Left = 0;
+    limit.Right = GetSize().RightInclusive();
+
+    return TextBufferCellIterator(*this, at, Viewport::FromInclusive(limit));
 }
 
 // Routine Description:
-// - Retrieves the row at the specified index of the text buffer, without referring to which row is the first
-// row of the screen buffer
+// - Retrieves read-only text iterator at the given buffer location
+//   but restricted to operate only inside the given viewport.
 // Arguments:
-// - the index to fetch the row for
+// - at - X,Y position in buffer for iterator start position
+// - limit - boundaries for the iterator to operate within
 // Return Value:
-// - const reference to the row
-// Note:
-// - will throw exception if the index passed would overflow the row storage
-const ROW& TextBuffer::GetRowAtIndex(const UINT index) const
+// - Read-only iterator of text data only.
+TextBufferTextIterator TextBuffer::GetTextDataAt(const COORD at, const Viewport limit) const
 {
-    if (index >= TotalRowCount())
-    {
-        THROW_HR(E_INVALIDARG);
-    }
-    return _storage[index];
+    return TextBufferTextIterator(GetCellDataAt(at, limit));
 }
 
 // Routine Description:
-// - Retrieves the row at the specified index of the text buffer, without referring to which row is the first
-// row of the screen buffer
+// - Retrieves read-only cell iterator at the given buffer location
+//   but restricted to operate only inside the given viewport.
 // Arguments:
-// - the index to fetch the row for
+// - at - X,Y position in buffer for iterator start position
+// - limit - boundaries for the iterator to operate within
 // Return Value:
-// - reference to the row
-// Note:
-// - will throw exception if the index passed would overflow the row storage
-ROW& TextBuffer::GetRowAtIndex(const UINT index)
+// - Read-only iterator of cell data.
+TextBufferCellIterator TextBuffer::GetCellDataAt(const COORD at, const Viewport limit) const
 {
-    return const_cast<ROW&>(static_cast<const TextBuffer*>(this)->GetRowAtIndex(index));
-}
-
-// Routine Description:
-// - Retrieves the row previous to the one passed in.
-// - will wrap around the buffer, so don't use in a loop.
-// Arguments:
-// - the row to fetch the previous row for.
-// Return Value:
-// - const reference to the previous row.
-const ROW& TextBuffer::GetPrevRow(const ROW& row) const noexcept
-{
-    const SHORT rowIndex = row.GetId();
-    if (rowIndex == 0)
-    {
-        return _storage[TotalRowCount() - 1];
-    }
-    return _storage[rowIndex - 1];
-}
-
-// Routine Description:
-// - Retrieves the row previous to the one passed in.
-// - will wrap around the buffer, so don't use in a loop.
-// Arguments:
-// - the row to fetch the previous row for.
-// Return Value:
-// - reference to the previous row.
-ROW& TextBuffer::GetPrevRow(const ROW& row) noexcept
-{
-    return const_cast<ROW&>(static_cast<const TextBuffer*>(this)->GetPrevRow(row));
-}
-
-// Routine Description:
-// - Retrieves the row after the one passed in.
-// - will wrap around the buffer, so don't use in a loop.
-// Arguments:
-// - the row to fetch the next row for.
-// Return Value:
-// - const reference to the next row.
-const ROW& TextBuffer::GetNextRow(const ROW& row) const noexcept
-{
-    const UINT rowIndex = static_cast<UINT>(row.GetId());
-    if (rowIndex == TotalRowCount() - 1)
-    {
-        return _storage[0];
-    }
-    return _storage[rowIndex + 1];
-}
-
-// Routine Description:
-// - Retrieves the row after the one passed in.
-// - will wrap around the buffer, so don't use in a loop.
-// Arguments:
-// - the row to fetch the next row for.
-// Return Value:
-// - reference to the next row.
-ROW& TextBuffer::GetNextRow(const ROW& row) noexcept
-{
-    return const_cast<ROW&>(static_cast<const TextBuffer*>(this)->GetNextRow(row));
+    return TextBufferCellIterator(*this, at, limit);
 }
 
 //Routine Description:
@@ -322,10 +215,10 @@ ROW& TextBuffer::GetNextRow(const ROW& row) noexcept
 // - dbcsAttribute - Double byte information associated with the character about to be inserted into the buffer
 //Return Value:
 // - True if it is valid to insert a character with the given double byte attributes. False otherwise.
-bool TextBuffer::AssertValidDoubleByteSequence(const DbcsAttribute dbcsAttribute)
+bool TextBuffer::_AssertValidDoubleByteSequence(const DbcsAttribute dbcsAttribute)
 {
     // To figure out if the sequence is valid, we have to look at the character that comes before the current one
-    const COORD coordPrevPosition = GetPreviousFromCursor();
+    const COORD coordPrevPosition = _GetPreviousFromCursor();
     ROW& prevRow = GetRowByOffset(coordPrevPosition.Y);
     DbcsAttribute prevDbcsAttr;
     try
@@ -412,14 +305,14 @@ bool TextBuffer::_PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute
 {
     // Assert the buffer state is ready for this character
     // This function corrects most errors. If this is false, we had an uncorrectable one.
-    FAIL_FAST_IF(!(AssertValidDoubleByteSequence(dbcsAttribute))); // Shouldn't be uncorrectable sequences unless something is very wrong.
+    FAIL_FAST_IF(!(_AssertValidDoubleByteSequence(dbcsAttribute))); // Shouldn't be uncorrectable sequences unless something is very wrong.
 
     bool fSuccess = true;
     // Now compensate if we don't have enough space for the upcoming double byte sequence
     // We only need to compensate for leading bytes
     if (dbcsAttribute.IsLeading())
     {
-        short const sBufferWidth = _coordBufferSize.X;
+        short const sBufferWidth = GetSize().Width();
 
         // If we're about to lead on the last column in the row, we need to add a padding space
         if (GetCursor().GetPosition().X == sBufferWidth - 1)
@@ -433,6 +326,87 @@ bool TextBuffer::_PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute
         }
     }
     return fSuccess;
+}
+
+// Routine Description:
+// - Writes cells to the output buffer. Writes at the cursor.
+// Arguments:
+// - givenIt - Iterator representing output cell data to write
+// Return Value:
+// - The final position of the iterator
+OutputCellIterator TextBuffer::Write(const OutputCellIterator givenIt)
+{
+    const auto& cursor = GetCursor();
+    const auto target = cursor.GetPosition();
+
+    const auto finalIt = Write(givenIt, target);
+
+    return finalIt;
+}
+
+// Routine Description:
+// - Writes cells to the output buffer.
+// Arguments:
+// - givenIt - Iterator representing output cell data to write
+// - target - the row/column to start writing the text to
+// Return Value:
+// - The final position of the iterator
+OutputCellIterator TextBuffer::Write(const OutputCellIterator givenIt,
+                                     const COORD target)
+{
+    // Make mutable copy so we can walk.
+    auto it = givenIt;
+
+    // Make mutable target so we can walk down lines.
+    auto lineTarget = target;
+
+    // Get size of the text buffer so we can stay in bounds.
+    const auto size = GetSize();
+
+    // While there's still data in the iterator and we're still targeting in bounds...
+    while (it && size.IsInBounds(lineTarget))
+    {
+        // Attempt to write as much data as possible onto this line.
+        it = WriteLine(it, lineTarget, true);
+
+        // Move to the next line down.
+        lineTarget.X = 0;
+        ++lineTarget.Y;
+    }
+
+    return it;
+}
+
+// Routine Description:
+// - Writes one line of text to the output buffer.
+// Arguments:
+// - givenIt - The iterator that will dereference into cell data to insert
+// - target - Coordinate targeted within output buffer
+// - setWrap - Whether we should try to set the wrap flag if we write up to the end of the line and have more data
+// - limitRight - Optionally restrict the right boundary for writing (e.g. stop writing earlier than the end of line)
+// Return Value:
+// - The iterator, but advanced to where we stopped writing. Use to find input consumed length or cells written length.
+OutputCellIterator TextBuffer::WriteLine(const OutputCellIterator givenIt,
+                                         const COORD target,
+                                         const bool setWrap,
+                                         std::optional<size_t> limitRight)
+{
+    // If we're not in bounds, exit early.
+    if (!GetSize().IsInBounds(target))
+    {
+        return givenIt;
+    }
+
+    //  Get the row and write the cells
+    ROW& row = GetRowByOffset(target.Y);
+    const auto newIt = row.WriteCells(givenIt, target.X, setWrap, limitRight);
+
+    // Take the cell distance written and notify that it needs to be repainted.
+    const auto written = newIt.GetCellDistance(givenIt);
+    const Viewport paint = Viewport::FromDimensions(target, { gsl::narrow<SHORT>(written), 1 });
+    _NotifyPaint(paint);
+
+    return newIt;
 }
 
 //Routine Description:
@@ -462,7 +436,7 @@ bool TextBuffer::InsertCharacter(const std::wstring_view chars,
 
         // Store character and double byte data
         CharRow& charRow = Row.GetCharRow();
-        short const cBufferWidth = _coordBufferSize.X;
+        short const cBufferWidth = GetSize().Width();
 
         try
         {
@@ -507,9 +481,9 @@ bool TextBuffer::InsertCharacter(const wchar_t wch, const DbcsAttribute dbcsAttr
 // - <none> - Always sets to wrap
 //Return Value:
 // - <none>
-void TextBuffer::SetWrapOnCurrentRow()
+void TextBuffer::_SetWrapOnCurrentRow()
 {
-    AdjustWrapOnCurrentRow(true);
+    _AdjustWrapOnCurrentRow(true);
 }
 
 //Routine Description:
@@ -519,7 +493,7 @@ void TextBuffer::SetWrapOnCurrentRow()
 // - fSet - True if this row has a wrap. False otherwise.
 //Return Value:
 // - <none>
-void TextBuffer::AdjustWrapOnCurrentRow(const bool fSet)
+void TextBuffer::_AdjustWrapOnCurrentRow(const bool fSet)
 {
     // The vertical position of the cursor represents the current row we're manipulating.
     const UINT uiCurrentRowOffset = GetCursor().GetPosition().Y;
@@ -541,9 +515,7 @@ bool TextBuffer::IncrementCursor()
     // Cursor position is stored as logical array indices (starts at 0) for the window
     // Buffer Size is specified as the "length" of the array. It would say 80 for valid values of 0-79.
     // So subtract 1 from buffer size in each direction to find the index of the final column in the buffer
-
-    FAIL_FAST_IF(!(_coordBufferSize.X > 0));
-    const short iFinalColumnIndex = _coordBufferSize.X - 1;
+    const short iFinalColumnIndex = GetSize().RightInclusive();
 
     // Move the cursor one position to the right
     GetCursor().IncrementXPosition(1);
@@ -553,54 +525,12 @@ bool TextBuffer::IncrementCursor()
     if (GetCursor().GetPosition().X > iFinalColumnIndex)
     {
         // Then mark that we've been forced to wrap
-        SetWrapOnCurrentRow();
+        _SetWrapOnCurrentRow();
 
         // Then move the cursor to a new line
         fSuccess = NewlineCursor();
     }
     return fSuccess;
-}
-
-//Routine Description:
-// - Decrements the cursor one position in the buffer as if text is being backspaced out of the buffer.
-// - NOTE: Will remove a wrap marker if it goes around a row
-//Arguments:
-// - <none>
-//Return Value:
-// - <none>
-void TextBuffer::DecrementCursor()
-{
-    // Cursor position is stored as logical array indices (starts at 0) for the window
-    // Buffer Size is specified as the "length" of the array. It would say 80 for valid values of 0-79.
-    // So subtract 1 from buffer size in each direction to find the index of the final column in the buffer
-
-    FAIL_FAST_IF(!(_coordBufferSize.X > 0));
-    const short iFinalColumnIndex = _coordBufferSize.X - 1;
-
-    // Move the cursor one position to the left
-    GetCursor().DecrementXPosition(1);
-
-    // If we've passed the beginning of the line...
-    if (GetCursor().GetPosition().X < 0)
-    {
-        // Move us up a line
-        GetCursor().DecrementYPosition(1);
-
-        // If we've moved past the top, move back down one and set X to 0.
-        if (GetCursor().GetPosition().Y < 0)
-        {
-            GetCursor().IncrementYPosition(1);
-            GetCursor().SetXPosition(0);
-        }
-        else
-        {
-            // Set the X position to the end of the line.
-            GetCursor().SetXPosition(iFinalColumnIndex);
-
-            // Then mark that we've backed around the wrap onto this new line and it's no longer a wrap.
-            AdjustWrapOnCurrentRow(false);
-        }
-    }
 }
 
 //Routine Description:
@@ -612,8 +542,7 @@ void TextBuffer::DecrementCursor()
 bool TextBuffer::NewlineCursor()
 {
     bool fSuccess = false;
-    FAIL_FAST_IF(!(_coordBufferSize.Y > 0));
-    short const iFinalRowIndex = _coordBufferSize.Y - 1;
+    short const iFinalRowIndex = GetSize().BottomInclusive();
 
     // Reset the cursor position to 0 and move down one line
     GetCursor().SetXPosition(0);
@@ -653,18 +582,18 @@ bool TextBuffer::IncrementCircularBuffer()
 
     // First, clean out the old "first row" as it will become the "last row" of the buffer after the circle is performed.
     TextAttribute FillAttributes;
-    FillAttributes.SetFromLegacy(_ciFill.Attributes);
-    bool fSuccess = _storage[_FirstRow].Reset(FillAttributes);
+    FillAttributes.SetFromLegacy(_fill.Attributes);
+    bool fSuccess = _storage[_firstRow].Reset(FillAttributes);
     if (fSuccess)
     {
         // Now proceed to increment.
         // Incrementing it will cause the next line down to become the new "top" of the window (the new "0" in logical coordinates)
-        _FirstRow++;
+        _firstRow++;
 
         // If we pass up the height of the buffer, loop back to 0.
-        if (_FirstRow >= _coordBufferSize.Y)
+        if (_firstRow >= GetSize().Height())
         {
-            _FirstRow = 0;
+            _firstRow = 0;
         }
     }
     return fSuccess;
@@ -680,7 +609,7 @@ COORD TextBuffer::GetLastNonSpaceCharacter() const
 {
     COORD coordEndOfText;
     // Always search the whole buffer, by starting at the bottom.
-    coordEndOfText.Y = _coordBufferSize.Y - 1;
+    coordEndOfText.Y = GetSize().BottomInclusive();
 
     const ROW* pCurrRow = &GetRowByOffset(coordEndOfText.Y);
     // The X position of the end of the valid text is the Right draw boundary (which is one beyond the final valid character)
@@ -712,7 +641,7 @@ COORD TextBuffer::GetLastNonSpaceCharacter() const
 // Return Value:
 // - Coordinate position in screen coordinates of the character just before the cursor.
 // - NOTE: Will return 0,0 if already in the top left corner
-COORD TextBuffer::GetPreviousFromCursor() const
+COORD TextBuffer::_GetPreviousFromCursor() const
 {
     COORD coordPosition = GetCursor().GetPosition();
 
@@ -727,7 +656,7 @@ COORD TextBuffer::GetPreviousFromCursor() const
         if (coordPosition.Y > 0)
         {
             // move the cursor to the right edge
-            coordPosition.X = _coordBufferSize.X - 1;
+            coordPosition.X = GetSize().RightInclusive();
 
             // and up one line
             coordPosition.Y--;
@@ -739,24 +668,16 @@ COORD TextBuffer::GetPreviousFromCursor() const
 
 const SHORT TextBuffer::GetFirstRowIndex() const
 {
-    return _FirstRow;
-}
-const COORD TextBuffer::GetCoordBufferSize() const
-{
-    return _coordBufferSize;
+    return _firstRow;
 }
 const Viewport TextBuffer::GetSize() const
 {
-    return Viewport::FromDimensions({ 0, 0 }, _coordBufferSize);
+    return Viewport::FromDimensions({ 0, 0 }, { gsl::narrow<SHORT>(_storage.at(0).size()), gsl::narrow<SHORT>(_storage.size()) });
 }
 
 void TextBuffer::SetFirstRowIndex(const SHORT FirstRowIndex)
 {
-    _FirstRow = FirstRowIndex;
-}
-void TextBuffer::SetCoordBufferSize(const COORD coordBufferSize)
-{
-    _coordBufferSize = coordBufferSize;
+    _firstRow = FirstRowIndex;
 }
 
 void TextBuffer::ScrollRows(const SHORT firstRow, const SHORT size, const SHORT delta)
@@ -770,13 +691,13 @@ void TextBuffer::ScrollRows(const SHORT firstRow, const SHORT size, const SHORT 
     // OK. We're about to play games by moving rows around within the deque to 
     // scroll a massive region in a faster way than copying things.
     // To make this easier, first correct the circular buffer to have the first row be 0 again.
-    if (_FirstRow != 0)
+    if (_firstRow != 0)
     {
         // Rotate the buffer to put the first row at the front.
-        std::rotate(_storage.begin(), _storage.begin() + _FirstRow, _storage.end());
-        
+        std::rotate(_storage.begin(), _storage.begin() + _firstRow, _storage.end());
+
         // The first row is now at the top.
-        _FirstRow = 0;
+        _firstRow = 0;
     }
 
     // Rotate just the subsection specified
@@ -876,12 +797,12 @@ const Cursor& TextBuffer::GetCursor() const
 
 CHAR_INFO TextBuffer::GetFill() const
 {
-    return _ciFill;
+    return _fill;
 }
 
 void TextBuffer::SetFill(const CHAR_INFO ciFill)
 {
-    _ciFill = ciFill;
+    _fill = ciFill;
 }
 
 // Routine Description:
@@ -957,7 +878,6 @@ NTSTATUS TextBuffer::ResizeTraditional(const COORD currentScreenBufferSize,
         RETURN_IF_FAILED(_storage[i].Resize(newScreenBufferSize.X));
     }
 
-    SetCoordBufferSize(newScreenBufferSize);
     return S_OK;
 }
 
@@ -969,4 +889,53 @@ const UnicodeStorage& TextBuffer::GetUnicodeStorage() const
 UnicodeStorage& TextBuffer::GetUnicodeStorage()
 {
     return _unicodeStorage;
+}
+
+void TextBuffer::_NotifyPaint(const Viewport& viewport) const
+{
+    // If there's a render pointer...
+    const auto pRender = ServiceLocator::LocateGlobals().pRender;
+    if (pRender != nullptr)
+    {
+        // And we're the active text buffer (compare pointer to global state)
+        const auto pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer().GetTextBuffer();
+
+        if (pActive == this)
+        {
+            // Then call to trigger a redraw
+            pRender->TriggerRedraw(viewport);
+        }
+    }
+}
+
+// Routine Description:
+// - Retrieves the first row from the underlying buffer.
+// Arguments:
+// - <none>
+// Return Value:
+//  - reference to the first row.
+ROW& TextBuffer::_GetFirstRow()
+{
+    return GetRowByOffset(0);
+}
+
+// Routine Description:
+// - Retrieves the row that comes before the given row.
+// - Does not wrap around the screen buffer.
+// Arguments:
+// - The current row.
+// Return Value:
+// - reference to the previous row
+// Note:
+// - will throw exception if called with the first row of the text buffer
+ROW& TextBuffer::_GetPrevRowNoWrap(const ROW& Row)
+{
+    int prevRowIndex = Row.GetId() - 1;
+    if (prevRowIndex < 0)
+    {
+        prevRowIndex = TotalRowCount() - 1;
+    }
+
+    THROW_HR_IF(E_FAIL, Row.GetId() == _firstRow);
+    return _storage[prevRowIndex];
 }

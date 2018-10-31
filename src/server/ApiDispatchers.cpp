@@ -297,7 +297,7 @@ HRESULT ApiDispatchers::ServerReadConsole(_Inout_ CONSOLE_API_MSG * const m, _In
     // 2. Existing data in the buffer that was passed in.
     ULONG const cbInitialData = a->InitialNumBytes;
     std::unique_ptr<char[]> pbInitialData;
-    
+
     try
     {
         if (cbInitialData > 0)
@@ -495,9 +495,76 @@ HRESULT ApiDispatchers::ServerWriteConsole(_Inout_ CONSOLE_API_MSG * const m, _I
 }
 
 [[nodiscard]]
-HRESULT ApiDispatchers::ServerFillConsoleOutput(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
+HRESULT ApiDispatchers::ServerFillConsoleOutput(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    RETURN_NTSTATUS(SrvFillConsoleOutput(m, pbReplyPending));
+    PCONSOLE_FILLCONSOLEOUTPUT_MSG const a = &m->u.consoleMsgL2.FillConsoleOutput;
+
+    switch (a->ElementType)
+    {
+    case CONSOLE_ATTRIBUTE:
+        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::FillConsoleOutputAttribute);
+        break;
+    case CONSOLE_ASCII:
+        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::FillConsoleOutputCharacter, false);
+        break;
+    case CONSOLE_REAL_UNICODE:
+    case CONSOLE_FALSE_UNICODE:
+        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::FillConsoleOutputCharacter, true);
+        break;
+    }
+
+    // Capture length of initial fill.
+    size_t fill = a->Length;
+
+    // Set written length to 0 in case we early return.
+    a->Length = 0;
+
+    // Make sure we have a valid screen buffer.
+    ConsoleHandleData* HandleData = m->GetObjectHandle();
+    RETURN_HR_IF_NULL(E_HANDLE, HandleData);
+    SCREEN_INFORMATION* pScreenInfo;
+    RETURN_IF_FAILED(HandleData->GetScreenBuffer(GENERIC_WRITE, &pScreenInfo));
+
+
+    HRESULT hr;
+    size_t amountWritten;
+    switch (a->ElementType)
+    {
+    case CONSOLE_ATTRIBUTE:
+    {
+        hr = m->_pApiRoutines->FillConsoleOutputAttributeImpl(*pScreenInfo, 
+                                                              a->Element, 
+                                                              fill, 
+                                                              a->WriteCoord, 
+                                                              amountWritten);
+        break;
+    }
+    case CONSOLE_REAL_UNICODE:
+    case CONSOLE_FALSE_UNICODE:
+    {
+        hr = m->_pApiRoutines->FillConsoleOutputCharacterWImpl(*pScreenInfo, 
+                                                               a->Element, 
+                                                               fill, 
+                                                               a->WriteCoord, 
+                                                               amountWritten);
+        break;
+    }
+    case CONSOLE_ASCII:
+    {
+        hr = m->_pApiRoutines->FillConsoleOutputCharacterAImpl(*pScreenInfo, 
+                                                               static_cast<char>(a->Element), 
+                                                               fill, 
+                                                               a->WriteCoord, 
+                                                               amountWritten);
+        break;
+    }
+    default:
+        return E_INVALIDARG;
+    }
+
+    LOG_IF_FAILED(SizeTToDWord(amountWritten, &a->Length));
+
+    return hr;
 }
 
 [[nodiscard]]
@@ -811,9 +878,89 @@ HRESULT ApiDispatchers::ServerWriteConsoleOutput(_Inout_ CONSOLE_API_MSG * const
 }
 
 [[nodiscard]]
-HRESULT ApiDispatchers::ServerWriteConsoleOutputString(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
+HRESULT ApiDispatchers::ServerWriteConsoleOutputString(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    RETURN_NTSTATUS(SrvWriteConsoleOutputString(m, pbReplyPending));
+    PCONSOLE_WRITECONSOLEOUTPUTSTRING_MSG const a = &m->u.consoleMsgL2.WriteConsoleOutputString;
+
+    auto tracing = wil::scope_exit([&]()
+    {
+        Tracing::s_TraceApi(a);
+    });
+
+    switch (a->StringType)
+    {
+    case CONSOLE_ATTRIBUTE:
+        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::WriteConsoleOutputAttribute);
+        break;
+    case CONSOLE_ASCII:
+        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::WriteConsoleOutputCharacter, false);
+        break;
+    case CONSOLE_REAL_UNICODE:
+    case CONSOLE_FALSE_UNICODE:
+        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::WriteConsoleOutputCharacter, true);
+        break;
+    }
+
+    // Set written records to 0 in case we early return.
+    a->NumRecords = 0;
+
+    // Make sure we have a valid screen buffer.
+    ConsoleHandleData* HandleData = m->GetObjectHandle();
+    RETURN_HR_IF_NULL(E_HANDLE, HandleData);
+    SCREEN_INFORMATION* pScreenInfo;
+    RETURN_IF_FAILED(HandleData->GetScreenBuffer(GENERIC_WRITE, &pScreenInfo));
+
+    // Get input parameter buffer
+    PVOID pvBuffer;
+    ULONG cbBufferSize;
+    RETURN_IF_FAILED(m->GetInputBuffer(&pvBuffer, &cbBufferSize));
+
+    HRESULT hr;
+    size_t used;
+    switch (a->StringType)
+    {
+    case CONSOLE_ASCII:
+    {
+        const std::string_view text(reinterpret_cast<char*>(pvBuffer), cbBufferSize);
+        
+        hr = m->_pApiRoutines->WriteConsoleOutputCharacterAImpl(*pScreenInfo,
+                                                                text,
+                                                                a->WriteCoord,
+                                                                used);
+
+        break;
+    }
+    case CONSOLE_REAL_UNICODE:
+    case CONSOLE_FALSE_UNICODE:
+    {
+        const std::wstring_view text(reinterpret_cast<wchar_t*>(pvBuffer), cbBufferSize / sizeof(wchar_t));
+     
+        hr = m->_pApiRoutines->WriteConsoleOutputCharacterWImpl(*pScreenInfo,
+                                                                text,
+                                                                a->WriteCoord,
+                                                                used);
+        
+        break;
+    }
+    case CONSOLE_ATTRIBUTE:
+    {
+        const std::basic_string_view<WORD> text(reinterpret_cast<WORD*>(pvBuffer), cbBufferSize / sizeof(WORD));
+
+        hr = m->_pApiRoutines->WriteConsoleOutputAttributeImpl(*pScreenInfo,
+                                                               text,
+                                                               a->WriteCoord,
+                                                               used);
+
+        break;
+    }
+    default:
+        return E_INVALIDARG;
+    }
+
+    // We need to return how many records were consumed off of the string
+    LOG_IF_FAILED(SizeTToULong(used, &a->NumRecords));
+
+    return hr;
 }
 
 [[nodiscard]]

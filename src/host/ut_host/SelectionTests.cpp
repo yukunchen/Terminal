@@ -182,7 +182,7 @@ class SelectionTests
                     if (!fIsLastLine)
                     {
                         // buffer size = 80, then selection goes 0 to 79. Thus X - 1.
-                        VERIFY_ARE_EQUAL(psrRect->Right, gci.GetActiveOutputBuffer().GetTextBuffer().GetCoordBufferSize().X - 1);
+                        VERIFY_ARE_EQUAL(psrRect->Right, gci.GetActiveOutputBuffer().GetTextBuffer().GetSize().RightInclusive());
                     }
 
                     // for all lines except the first, the line should reach the left edge of the buffer

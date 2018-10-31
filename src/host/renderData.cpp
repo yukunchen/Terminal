@@ -24,10 +24,10 @@ RenderData::~RenderData()
 
 }
 
-const SMALL_RECT RenderData::GetViewport()
+const Microsoft::Console::Types::Viewport& RenderData::GetViewport()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.GetActiveOutputBuffer().GetBufferViewport();
+    return gci.GetActiveOutputBuffer().GetViewport();
 }
 
 const TextBuffer& RenderData::GetTextBuffer()

@@ -55,6 +55,7 @@ namespace Microsoft::Console::Types
         bool IsInBounds(const COORD& pos) const noexcept;
 
         void Clamp(COORD& pos) const;
+        Viewport Clamp(const Viewport& other) const;
 
         bool MoveInBounds(const ptrdiff_t move, COORD& pos) const noexcept;
         bool IncrementInBounds(COORD& pos) const noexcept;

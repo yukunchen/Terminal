@@ -15,6 +15,7 @@ Author(s):
 
 #include "../../host/conimeinfo.h"
 #include "../../buffer/out/TextAttribute.hpp"
+#include "../../types/inc/viewport.hpp"
 
 class TextBuffer;
 class Cursor;
@@ -26,7 +27,7 @@ namespace Microsoft::Console::Render
     {
     public:
         virtual ~IRenderData() = 0;
-        virtual const SMALL_RECT GetViewport() = 0;
+        virtual const Microsoft::Console::Types::Viewport& GetViewport() = 0;
         virtual const TextBuffer& GetTextBuffer() = 0;
         virtual const FontInfo* GetFontInfo() = 0;
         virtual const TextAttribute GetDefaultBrushColors() = 0;

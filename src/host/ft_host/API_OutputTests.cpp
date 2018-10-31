@@ -187,7 +187,7 @@ void OutputTests::WriteConsoleOutputAttributeCheckerTest()
     DWORD charsWritten = 0;
     std::unique_ptr<wchar_t[]> wchs = std::make_unique<wchar_t[]>(size);
     std::fill_n(wchs.get(), size, L'*');
-    VERIFY_SUCCEEDED(WriteConsoleOutputCharacter(consoleOutputHandle, wchs.get(), size, coord, &charsWritten));
+    VERIFY_SUCCEEDED(WriteConsoleOutputCharacterW(consoleOutputHandle, wchs.get(), size, coord, &charsWritten));
     VERIFY_ARE_EQUAL(charsWritten, size);
 
     // write attribute changes
@@ -204,7 +204,7 @@ void OutputTests::WriteConsoleOutputAttributeCheckerTest()
     // get text
     std::unique_ptr<wchar_t[]> resultWchs = std::make_unique<wchar_t[]>(size);
     DWORD charsRead = 0;
-    VERIFY_SUCCEEDED(ReadConsoleOutputCharacter(consoleOutputHandle, resultWchs.get(), size, coord, &charsRead));
+    VERIFY_SUCCEEDED(ReadConsoleOutputCharacterW(consoleOutputHandle, resultWchs.get(), size, coord, &charsRead));
     VERIFY_ARE_EQUAL(charsRead, size);
 
     // confirm that attributes were set without affecting text

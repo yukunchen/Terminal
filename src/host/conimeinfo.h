@@ -21,6 +21,7 @@ Revision History:
 #include "../buffer/out/OutputCell.hpp"
 #include "../buffer/out/TextAttribute.hpp"
 #include "../renderer/inc/FontInfo.hpp"
+#include "../types/inc/viewport.hpp"
 
 #include "conareainfo.h"
 
@@ -77,7 +78,7 @@ private:
     std::vector<OutputCell>::const_iterator ConsoleImeInfo::_WriteConversionArea(const std::vector<OutputCell>::const_iterator begin,
                                                                                  const std::vector<OutputCell>::const_iterator end,
                                                                                  COORD& pos,
-                                                                                 const SMALL_RECT view,
+                                                                                 const Microsoft::Console::Types::Viewport view,
                                                                                  SCREEN_INFORMATION& screenInfo);
 
     void _SaveCursorVisibility();

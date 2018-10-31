@@ -463,12 +463,12 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(_Outptr_result_maybenull_
     });
 
     const SCREEN_INFORMATION& screenInfo = _getScreenInfo();
-    const SMALL_RECT viewport = screenInfo.GetBufferViewport();
+    const auto viewport = screenInfo.GetViewport();
     const COORD screenBufferCoords = _getScreenBufferCoords();
     const int totalLines = screenBufferCoords.Y;
 
     // make a safe array
-    const size_t rowCount = viewport.Bottom - viewport.Top + 1;
+    const size_t rowCount = viewport.Height();
     *ppRetVal = SafeArrayCreateVector(VT_UNKNOWN, 0, static_cast<ULONG>(rowCount));
     if (*ppRetVal == nullptr)
     {
@@ -478,7 +478,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(_Outptr_result_maybenull_
     // stuff each visible line in the safearray
     for (size_t i = 0; i < rowCount; ++i)
     {
-        const int lineNumber = (viewport.Top + i) % totalLines;
+        const int lineNumber = (viewport.Top() + i) % totalLines;
         const int start = lineNumber * screenBufferCoords.X;
         // - 1 to get the last column in the row
         const int end = start + screenBufferCoords.X - 1;

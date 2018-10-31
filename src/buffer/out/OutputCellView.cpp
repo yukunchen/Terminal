@@ -8,6 +8,25 @@
 
 #include "OutputCellView.hpp"
 
+// Routine Description:
+// - Constructs a read-only view of data formatted as a single output buffer cell
+// - This constructor creates an empty default view.
+OutputCellView::OutputCellView() : 
+    _view{},
+    _dbcsAttr{},
+    _textAttr{},
+    _behavior{ TextAttributeBehavior::Default }
+{
+
+}
+
+// Routine Description:
+// - Constructs a read-only view of data formatted as a single output buffer cell
+// Arguments:
+// - view - String data for the text displayed on screen
+// - dbcsAttr - Describes column width information (double byte character data)
+// - textAttr - Describes color and formatting data
+// - behavior - Describes where to retrieve color/format data. From this view? From defaults? etc.
 OutputCellView::OutputCellView(const std::wstring_view view,
                                const DbcsAttribute dbcsAttr,
                                const TextAttribute textAttr,
@@ -20,26 +39,48 @@ OutputCellView::OutputCellView(const std::wstring_view view,
 
 }
 
-std::wstring_view OutputCellView::Chars() const
+// Routine Description:
+// - Returns reference to view over text data
+// Return Value:
+// - Reference to UTF-16 character data
+const std::wstring_view& OutputCellView::Chars() const noexcept
 {
     return _view;
 }
 
-DbcsAttribute OutputCellView::DbcsAttr() const
+// Routine Description:
+// - Retrieves character cell width data
+// Return Value:
+// - DbcsAttribute data
+DbcsAttribute OutputCellView::DbcsAttr() const noexcept
 {
     return _dbcsAttr;
 }
 
-TextAttribute OutputCellView::TextAttr() const
+// Routine Description:
+// - Retrieves text color/formatting information
+// Return Value:
+// - TextAttribute with encoded formatting data
+TextAttribute OutputCellView::TextAttr() const noexcept
 {
     return _textAttr;
 }
 
-TextAttributeBehavior OutputCellView::TextAttrBehavior() const
+// Routine Description:
+// - Retrieves behavior for inserting this cell into the buffer. See enum for details.
+// Return Value:
+// - TextAttributeBehavior enum value
+TextAttributeBehavior OutputCellView::TextAttrBehavior() const noexcept
 {
     return _behavior;
 }
 
+// Routine Description:
+// - Compares two views
+// Arguments:
+// - it - Other view to compare to this one
+// Return Value:
+// - True if all contents/references are equal. False otherwise.
 bool OutputCellView::operator==(const OutputCellView& it) const noexcept
 {
     return _view == it._view &&
@@ -47,6 +88,13 @@ bool OutputCellView::operator==(const OutputCellView& it) const noexcept
         _textAttr == it._textAttr &&
         _behavior == it._behavior;
 }
+
+// Routine Description:
+// - Compares two views for inequality
+// Arguments:
+// - it - Other view to compare tot his one.
+// Return Value:
+// - True if any contents or references are inequal. False if they're all equal.
 bool OutputCellView::operator!=(const OutputCellView& it) const noexcept
 {
     return !(*this == it);

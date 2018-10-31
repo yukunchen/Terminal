@@ -126,7 +126,7 @@ void AttrRowIterator::_decrement(size_t count)
 {
     while (count > 0)
     {
-        if (count < _currentAttributeIndex)
+        if (count <= _currentAttributeIndex)
         {
             _currentAttributeIndex -= count;
             return;

@@ -203,7 +203,7 @@ public:
 
         for (SHORT iRow = 0; iRow < cRowsToFill; iRow++)
         {
-            ROW& row = textBuffer.GetRowAtIndex(iRow);
+            ROW& row = textBuffer.GetRowByOffset(iRow);
             FillRow(&row);
         }
 
@@ -217,12 +217,12 @@ public:
         const SHORT cRowsToFill = s_csBufferHeight;
 
         VERIFY_IS_TRUE(gci.HasActiveOutputBuffer());
-
+        
         TextBuffer& textBuffer = gci.GetActiveOutputBuffer().GetTextBuffer();
 
         for (SHORT iRow = 0; iRow < cRowsToFill; iRow++)
         {
-            ROW& row = textBuffer.GetRowAtIndex(iRow);
+            ROW& row = textBuffer.GetRowByOffset(iRow);
             FillBisect(&row);
         }
 

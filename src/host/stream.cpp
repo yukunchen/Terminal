@@ -508,7 +508,7 @@ HRESULT ReadLineInput(_Inout_ InputBuffer* const pInputBuffer,
             cookedReadData->OriginalCursorPosition() = screenInfo.GetTextBuffer().GetCursor().GetPosition();
             cookedReadData->OriginalCursorPosition().X -= (SHORT)cookedReadData->_CurrentPosition;
 
-            const SHORT sScreenBufferSizeX = screenInfo.GetScreenBufferSize().X;
+            const SHORT sScreenBufferSizeX = screenInfo.GetBufferSize().Width();
             while (cookedReadData->OriginalCursorPosition().X < 0)
             {
                 cookedReadData->OriginalCursorPosition().X += sScreenBufferSizeX;
