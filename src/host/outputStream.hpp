@@ -107,8 +107,7 @@ public:
 
     BOOL MoveCursorVertically(const short lines) override;
 
-    BOOL SetConsoleTitleW(_In_reads_(sCchTitleLength) const wchar_t* const pwchWindowTitle,
-                          _In_ unsigned short sCchTitleLength) override;
+    BOOL SetConsoleTitleW(const std::wstring_view title) override;
 
     BOOL PrivateUseAlternateScreenBuffer() override;
 

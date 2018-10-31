@@ -564,86 +564,88 @@ void CommandHistory::s_ClearHistoryListStorage()
 // - Clears all command history for the given EXE name
 // - Will convert input parameters and call the W version of this method
 // Arguments:
-// - psExeNameBuffer - The client EXE application attached to the host whose history we should clear
-// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// - exeName - The client EXE application attached to the host whose history we should clear
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-HRESULT ApiRoutines::ExpungeConsoleCommandHistoryAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
-                                                       const size_t cchExeNameBufferLength)
+HRESULT ApiRoutines::ExpungeConsoleCommandHistoryAImpl(const std::string_view exeName) noexcept
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    wistd::unique_ptr<wchar_t[]> pwsExeName;
-    size_t cchExeName;
-    RETURN_IF_FAILED(ConvertToW(gci.CP, psExeNameBuffer, cchExeNameBufferLength, pwsExeName, cchExeName));
 
+    try
+    {
+        const auto exeNameW = ConvertToW(gci.CP, exeName);
 
-    return ExpungeConsoleCommandHistoryWImpl(pwsExeName.get(),
-                                             cchExeName);
+        return ExpungeConsoleCommandHistoryWImpl(exeNameW);
+    }
+    CATCH_RETURN();
 }
 
 // Routine Description:
 // - Clears all command history for the given EXE name
 // Arguments:
-// - pwsExeNameBuffer - The client EXE application attached to the host whose history we should clear
-// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// - exeName - The client EXE application attached to the host whose history we should clear
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-HRESULT ApiRoutines::ExpungeConsoleCommandHistoryWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                                       const size_t cchExeNameBufferLength)
+HRESULT ApiRoutines::ExpungeConsoleCommandHistoryWImpl(const std::wstring_view exeName) noexcept
 {
     LockConsole();
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    const auto history = CommandHistory::s_FindByExe({ pwsExeNameBuffer, cchExeNameBufferLength });
-    if (history)
+    try
     {
-        history->Empty();
-    }
+        const auto history = CommandHistory::s_FindByExe(exeName);
+        if (history)
+        {
+            history->Empty();
+        }
 
-    return S_OK;
+        return S_OK;
+    }
+    CATCH_RETURN();
 }
 
 // Routine Description:
 // - Sets the number of commands that will be stored in history for a given EXE name
 // - Will convert input parameters and call the W version of this method
 // Arguments:
-// - psExeNameBuffer - A client EXE application attached to the host
-// - cchExeNameBufferLength - Length in characters of EXE name buffer
-// - NumberOfCommands - Specifies the maximum length of the associated history buffer
+// - exeName - A client EXE application attached to the host
+// - numberOfCommands - Specifies the maximum length of the associated history buffer
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-HRESULT ApiRoutines::SetConsoleNumberOfCommandsAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
-                                                     const size_t cchExeNameBufferLength,
-                                                     const size_t NumberOfCommands)
+HRESULT ApiRoutines::SetConsoleNumberOfCommandsAImpl(const std::string_view exeName,
+                                                     const size_t numberOfCommands) noexcept
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    wistd::unique_ptr<wchar_t[]> pwsExeName;
-    size_t cchExeName;
-    RETURN_IF_FAILED(ConvertToW(gci.CP, psExeNameBuffer, cchExeNameBufferLength, pwsExeName, cchExeName));
 
-    return SetConsoleNumberOfCommandsWImpl(pwsExeName.get(),
-                                           cchExeName,
-                                           NumberOfCommands);
+    try
+    {
+        const auto exeNameW = ConvertToW(gci.CP, exeName);
+
+        return SetConsoleNumberOfCommandsWImpl(exeNameW, numberOfCommands);
+    }
+    CATCH_RETURN();
 }
 
 // Routine Description:
 // - Sets the number of commands that will be stored in history for a given EXE name
 // Arguments:
-// - pwsExeNameBuffer - A client EXE application attached to the host
-// - cchExeNameBufferLength - Length in characters of EXE name buffer
-// - NumberOfCommands - Specifies the maximum length of the associated history buffer
+// - exeName - A client EXE application attached to the host
+// - numberOfCommands - Specifies the maximum length of the associated history buffer
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-HRESULT ApiRoutines::SetConsoleNumberOfCommandsWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                                     const size_t cchExeNameBufferLength,
-                                                     const size_t NumberOfCommands)
+HRESULT ApiRoutines::SetConsoleNumberOfCommandsWImpl(const std::wstring_view exeName,
+                                                     const size_t numberOfCommands) noexcept
 {
     LockConsole();
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    CommandHistory::s_ReallocExeToFront({ pwsExeNameBuffer, cchExeNameBufferLength }, NumberOfCommands);
+    try
+    {
+        CommandHistory::s_ReallocExeToFront(exeName, numberOfCommands);
 
-    return S_OK;
+        return S_OK;
+    }
+    CATCH_RETURN();
 }
 
 // Routine Description:
@@ -652,26 +654,24 @@ HRESULT ApiRoutines::SetConsoleNumberOfCommandsWImpl(_In_reads_or_z_(cchExeNameB
 // - This method configuration is called for both A/W routines to allow us an efficient way of asking the system
 //   the lengths of how long each conversion would be without actually performing the full allocations/conversions.
 // Arguments:
-// - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
-// - cchExeNameBufferLength - Length in characters of EXE name buffer
-// - fCountInUnicode - True for W version (UCS-2 Unicode) calls. False for A version calls (all multibyte formats.)
-// - uiCodePage - Set to valid Windows Codepage for A version calls. Ignored for W (but typically just set to 0.)
-// - pcchCommandHistoryLength - Pointer to receive the length of buffer that would be required to retrieve all history for the given exe.
+// - exeName - The client EXE application attached to the host whose set we should check
+// - countInUnicode - True for W version (UCS-2 Unicode) calls. False for A version calls (all multibyte formats.)
+// - codepage - Set to valid Windows Codepage for A version calls. Ignored for W (but typically just set to 0.)
+// - historyLength - Receives the length of buffer that would be required to retrieve all history for the given exe.
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-HRESULT GetConsoleCommandHistoryLengthImplHelper(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                                 const size_t cchExeNameBufferLength,
-                                                 const bool fCountInUnicode,
-                                                 const UINT uiCodePage,
-                                                 _Out_ size_t* const pcchCommandHistoryLength)
+HRESULT GetConsoleCommandHistoryLengthImplHelper(const std::wstring_view exeName,
+                                                 const bool countInUnicode,
+                                                 const UINT codepage,
+                                                 size_t& historyLength)
 {
     // Ensure output variables are initialized
-    *pcchCommandHistoryLength = 0;
+    historyLength = 0;
 
     LockConsole();
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    CommandHistory* const pCommandHistory = CommandHistory::s_FindByExe({ pwsExeNameBuffer, cchExeNameBufferLength });
+    CommandHistory* const pCommandHistory = CommandHistory::s_FindByExe(exeName);
     if (nullptr != pCommandHistory)
     {
         size_t cchNeeded = 0;
@@ -689,16 +689,16 @@ HRESULT GetConsoleCommandHistoryLengthImplHelper(_In_reads_or_z_(cchExeNameBuffe
             RETURN_IF_FAILED(SizeTAdd(cchCommand, cchNull, &cchProposed));
 
             // If we're counting how much multibyte space will be needed, trial convert the command string before we add.
-            if (!fCountInUnicode)
+            if (!countInUnicode)
             {
-                RETURN_IF_FAILED(GetALengthFromW(uiCodePage, command.data(), cchCommand, &cchCommand));
+                cchCommand = GetALengthFromW(codepage, command);
             }
 
             // Accumulate the result
             RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchProposed, &cchNeeded));
         }
 
-        *pcchCommandHistoryLength = cchNeeded;
+        historyLength = cchNeeded;
     }
 
     return S_OK;
@@ -708,47 +708,48 @@ HRESULT GetConsoleCommandHistoryLengthImplHelper(_In_reads_or_z_(cchExeNameBuffe
 // - Retrieves the amount of space needed to retrieve all command history for a given EXE name
 // - Converts input text from A to W then makes the call to the W implementation.
 // Arguments:
-// - psExeNameBuffer - The client EXE application attached to the host whose set we should check
-// - cchExeNameBufferLength - Length in characters of EXE name buffer
-// - pcchCommandHistoryLength - Pointer to receive the length of buffer that would be required to retrieve all history for the given exe.
+// - exeName - The client EXE application attached to the host whose set we should check
+// - length - Receives the length of buffer that would be required to retrieve all history for the given exe.
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-HRESULT ApiRoutines::GetConsoleCommandHistoryLengthAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
-                                                         const size_t cchExeNameBufferLength,
-                                                         _Out_ size_t* const pcchCommandHistoryLength)
+HRESULT ApiRoutines::GetConsoleCommandHistoryLengthAImpl(const std::string_view exeName,
+                                                         size_t& length) noexcept
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    UINT const uiCodePage = gci.CP;
+    UINT const codepage = gci.CP;
 
     // Ensure output variables are initialized
-    *pcchCommandHistoryLength = 0;
+    length = 0;
 
     LockConsole();
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    wistd::unique_ptr<wchar_t[]> pwsExeName;
-    size_t cchExeName;
-    RETURN_IF_FAILED(ConvertToW(uiCodePage, psExeNameBuffer, cchExeNameBufferLength, pwsExeName, cchExeName));
-
-    return GetConsoleCommandHistoryLengthImplHelper(pwsExeName.get(), cchExeName, false, uiCodePage, pcchCommandHistoryLength);
+    try
+    {
+        const auto exeNameW = ConvertToW(codepage, exeName);
+        return GetConsoleCommandHistoryLengthImplHelper(exeNameW, false, codepage, length);
+    }
+    CATCH_RETURN();
 }
 
 // Routine Description:
 // - Retrieves the amount of space needed to retrieve all command history for a given EXE name
 // Arguments:
-// - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
-// - cchExeNameBufferLength - Length in characters of EXE name buffer
-// - pcchCommandHistoryLength - Pointer to receive the length of buffer that would be required to retrieve all history for the given exe.
+// - exeName - The client EXE application attached to the host whose set we should check
+// - length - Receives the length of buffer that would be required to retrieve all history for the given exe.
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-HRESULT ApiRoutines::GetConsoleCommandHistoryLengthWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                                         const size_t cchExeNameBufferLength,
-                                                         _Out_ size_t* const pcchCommandHistoryLength)
+HRESULT ApiRoutines::GetConsoleCommandHistoryLengthWImpl(const std::wstring_view exeName,
+                                                         size_t& length) noexcept
 {
     LockConsole();
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    return GetConsoleCommandHistoryLengthImplHelper(pwsExeNameBuffer, cchExeNameBufferLength, true, 0, pcchCommandHistoryLength);
+    try
+    {
+        return GetConsoleCommandHistoryLengthImplHelper(exeName, true, 0, length);
+    }
+    CATCH_RETURN();
 }
 
 // Routine Description:
@@ -758,32 +759,28 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryLengthWImpl(_In_reads_or_z_(cchExeN
 // - This behavior exists to allow the A version of the function to help allocate the right temp buffer for conversion of
 //   the output/result data.
 // Arguments:
-// - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
-// - cchExeNameBufferLength - Length in characters of EXE name buffer
-// - pwsCommandHistoryBuffer - The target buffer for data we are attempting to retrieve. Optionally nullptr to retrieve needed space.
-// - cchCommandHistoryBufferLength - Length in characters of target buffer. Set to 0 when buffer is nullptr.
-// - pcchCommandHistoryBufferWrittenOrNeeded - Pointer to space that will specify how many characters were written (if buffer is valid)
-//                                             or how many characters would have been consumed.
+// - exeName - The client EXE application attached to the host whose set we should check
+// - historyBuffer - The target buffer for data we are attempting to retrieve. Optionally empty to retrieve needed space.
+// - writtenOrNeeded - Will specify how many characters were written (if buffer is valid)
+//                     or how many characters would have been consumed.
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-HRESULT GetConsoleCommandHistoryWImplHelper(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                            const size_t cchExeNameBufferLength,
-                                            _Out_writes_to_opt_(cchCommandHistoryBufferLength, *pcchCommandHistoryBufferWrittenOrNeeded) _Always_(_Post_z_) wchar_t* const pwsCommandHistoryBuffer,
-                                            const size_t cchCommandHistoryBufferLength,
-                                            _Out_ size_t* const pcchCommandHistoryBufferWrittenOrNeeded)
+HRESULT GetConsoleCommandHistoryWImplHelper(const std::wstring_view exeName,
+                                            gsl::span<wchar_t> historyBuffer,
+                                            size_t& writtenOrNeeded) 
 {
     // Ensure output variables are initialized
-    *pcchCommandHistoryBufferWrittenOrNeeded = 0;
-    if (nullptr != pwsCommandHistoryBuffer)
+    writtenOrNeeded = 0;
+    if (historyBuffer.size() > 0)
     {
-        *pwsCommandHistoryBuffer = L'\0';
+        historyBuffer.at(0) = UNICODE_NULL;
     }
 
-    CommandHistory* const CommandHistory = CommandHistory::s_FindByExe({ pwsExeNameBuffer, cchExeNameBufferLength });
+    CommandHistory* const CommandHistory = CommandHistory::s_FindByExe(exeName);
 
     if (nullptr != CommandHistory)
     {
-        PWCHAR CommandBufferW = pwsCommandHistoryBuffer;
+        PWCHAR CommandBufferW = historyBuffer.data();
 
         size_t cchTotalLength = 0;
 
@@ -800,16 +797,16 @@ HRESULT GetConsoleCommandHistoryWImplHelper(_In_reads_or_z_(cchExeNameBufferLeng
 
             // If we can return the data, attempt to do so until we're done or it overflows.
             // If we cannot return data, we're just going to loop anyway and count how much space we'd need.
-            if (nullptr != pwsCommandHistoryBuffer)
+            if (historyBuffer.size() > 0)
             {
                 // Calculate what the new total would be after we add what we need.
                 size_t cchNewTotal;
                 RETURN_IF_FAILED(SizeTAdd(cchTotalLength, cchNeeded, &cchNewTotal));
 
-                RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), cchNewTotal > cchCommandHistoryBufferLength);
+                RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), cchNewTotal > gsl::narrow<size_t>(historyBuffer.size()));
 
                 size_t cchRemaining;
-                RETURN_IF_FAILED(SizeTSub(cchCommandHistoryBufferLength,
+                RETURN_IF_FAILED(SizeTSub(historyBuffer.size(),
                                           cchTotalLength,
                                           &cchRemaining));
 
@@ -824,7 +821,7 @@ HRESULT GetConsoleCommandHistoryWImplHelper(_In_reads_or_z_(cchExeNameBufferLeng
             RETURN_IF_FAILED(SizeTAdd(cchTotalLength, cchNeeded, &cchTotalLength));
         }
 
-        *pcchCommandHistoryBufferWrittenOrNeeded = cchTotalLength;
+        writtenOrNeeded = cchTotalLength;
     }
 
     return S_OK;
@@ -834,85 +831,85 @@ HRESULT GetConsoleCommandHistoryWImplHelper(_In_reads_or_z_(cchExeNameBufferLeng
 // - Retrieves a the full command history for a given EXE name known to the console.
 // - Converts inputs from A to W, calls the W version of this method, and then converts the resulting text W to A.
 // Arguments:
-// - psExeNameBuffer - The client EXE application attached to the host whose set we should check
-// - cchExeNameBufferLength - Length in characters of EXE name buffer
-// - psCommandHistoryBuffer - The target buffer for data we are attempting to retrieve.
-// - cchCommandHistoryBufferLength - Length in characters of target buffer.
-// - pcchCommandHistoryBufferWrittenOrNeeded - Pointer to space that will specify how many characters were written
+// - exeName - The client EXE application attached to the host whose set we should check
+// - commandHistory - The target buffer for data we are attempting to retrieve.
+// - written - Will specify how many characters were written
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-HRESULT ApiRoutines::GetConsoleCommandHistoryAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
-                                                   const size_t cchExeNameBufferLength,
-                                                   _Out_writes_to_(cchCommandHistoryBufferLength, *pcchCommandHistoryBufferWritten) _Always_(_Post_z_) char* const psCommandHistoryBuffer,
-                                                   const size_t cchCommandHistoryBufferLength,
-                                                   _Out_ size_t* const pcchCommandHistoryBufferWritten)
+HRESULT ApiRoutines::GetConsoleCommandHistoryAImpl(const std::string_view exeName,
+                                                   gsl::span<char> commandHistory,
+                                                   size_t& written) noexcept
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    UINT const uiCodePage = gci.CP;
+    UINT const codepage = gci.CP;
 
     // Ensure output variables are initialized
-    *pcchCommandHistoryBufferWritten = 0;
-    *psCommandHistoryBuffer = '\0';
+    written = 0;
 
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    try
+    {
+        if (commandHistory.size() > 0)
+        {
+            commandHistory.at(0) = ANSI_NULL;
+        }
 
-    // Convert our input parameters to Unicode.
-    wistd::unique_ptr<wchar_t[]> pwsExeName;
-    size_t cchExeName;
-    RETURN_IF_FAILED(ConvertToW(uiCodePage, psExeNameBuffer, cchExeNameBufferLength, pwsExeName, cchExeName));
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    // Figure out how big our temporary Unicode buffer must be to retrieve output
-    size_t cchCommandBufferNeeded;
-    RETURN_IF_FAILED(GetConsoleCommandHistoryWImplHelper(pwsExeName.get(), cchExeName, nullptr, 0, &cchCommandBufferNeeded));
+        // Convert our input parameters to Unicode.
+        const auto exeNameW = ConvertToW(codepage, exeName);
+        
+        // Figure out how big our temporary Unicode buffer must be to retrieve output
+        size_t bufferNeeded;
+        RETURN_IF_FAILED(GetConsoleCommandHistoryWImplHelper(exeNameW, {}, bufferNeeded));
 
-    // If there's nothing to get, then simply return.
-    RETURN_HR_IF(S_OK, 0 == cchCommandBufferNeeded);
+        // If there's nothing to get, then simply return.
+        RETURN_HR_IF(S_OK, 0 == bufferNeeded);
 
-    // Allocate a unicode buffer of the right size.
-    wistd::unique_ptr<wchar_t[]> pwsCommand = wil::make_unique_nothrow<wchar_t[]>(cchCommandBufferNeeded);
-    RETURN_IF_NULL_ALLOC(pwsCommand);
+        // Allocate a unicode buffer of the right size.
+        std::unique_ptr<wchar_t[]> buffer = std::make_unique<wchar_t[]>(bufferNeeded);
+        RETURN_IF_NULL_ALLOC(buffer);
 
-    // Call the Unicode version of this method
-    size_t cchCommandBufferWritten;
-    RETURN_IF_FAILED(GetConsoleCommandHistoryWImplHelper(pwsExeName.get(), cchExeName, pwsCommand.get(), cchCommandBufferNeeded, &cchCommandBufferWritten));
+        // Call the Unicode version of this method
+        size_t bufferWritten;
+        RETURN_IF_FAILED(GetConsoleCommandHistoryWImplHelper(exeNameW, gsl::span<wchar_t>(buffer.get(), bufferNeeded), bufferWritten));
 
-    // Convert result to A
-    wistd::unique_ptr<char[]> psConverted;
-    size_t cchConverted;
-    RETURN_IF_FAILED(ConvertToA(uiCodePage, pwsCommand.get(), cchCommandBufferWritten, psConverted, cchConverted));
+        // Convert result to A
+        const auto converted = ConvertToA(codepage, { buffer.get(), bufferWritten });
+        
+        // Copy safely to output buffer
+        // - CommandHistory are a series of null terminated strings. We cannot use a SafeString function to copy.
+        //   So instead, validate and use raw memory copy.
+        RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), converted.size() > gsl::narrow<size_t>(commandHistory.size()));
+        memcpy_s(commandHistory.data(), commandHistory.size(), converted.data(), converted.size());
 
-    // Copy safely to output buffer
-    // - CommandHistory are a series of null terminated strings. We cannot use a SafeString function to copy.
-    //   So instead, validate and use raw memory copy.
-    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), cchConverted > cchCommandHistoryBufferLength);
-    memcpy_s(psCommandHistoryBuffer, cchCommandHistoryBufferLength, psConverted.get(), cchConverted);
+        // And return the size copied.
+        written = converted.size();
 
-    // And return the size copied.
-    *pcchCommandHistoryBufferWritten = cchConverted;
-
-    return S_OK;
+        return S_OK;
+    }
+    CATCH_RETURN();
 }
 
 // Routine Description:
 // - Retrieves a the full command history for a given EXE name known to the console.
 // - Converts inputs from A to W, calls the W version of this method, and then converts the resulting text W to A.
 // Arguments:
-// - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
-// - cchExeNameBufferLength - Length in characters of EXE name buffer
-// - pwsCommandHistoryBuffer - The target buffer for data we are attempting to retrieve.
-// - cchCommandHistoryBufferLength - Length in characters of target buffer.
-// - pcchCommandHistoryBufferWrittenOrNeeded - Pointer to space that will specify how many characters were written
+// - exeName - The client EXE application attached to the host whose set we should check
+// - commandHistory - The target buffer for data we are attempting to retrieve.
+// - written - Will specify how many characters were written
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-HRESULT ApiRoutines::GetConsoleCommandHistoryWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                                   const size_t cchExeNameBufferLength,
-                                                   _Out_writes_to_(cchCommandHistoryBufferLength, *pcchCommandHistoryBufferWritten) _Always_(_Post_z_) wchar_t* const pwsCommandHistoryBuffer,
-                                                   const size_t cchCommandHistoryBufferLength,
-                                                   _Out_ size_t* const pcchCommandHistoryBufferWritten)
+HRESULT ApiRoutines::GetConsoleCommandHistoryWImpl(const std::wstring_view exeName,
+                                                   gsl::span<wchar_t> commandHistory,
+                                                   size_t& written) noexcept
 {
     LockConsole();
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    return GetConsoleCommandHistoryWImplHelper(pwsExeNameBuffer, cchExeNameBufferLength, pwsCommandHistoryBuffer, cchCommandHistoryBufferLength, pcchCommandHistoryBufferWritten);
+    try
+    {
+        return GetConsoleCommandHistoryWImplHelper(exeName, commandHistory, written);
+    }
+    CATCH_RETURN();
 }

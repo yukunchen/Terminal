@@ -1162,23 +1162,22 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject& OutContext,
             // and write the wide char to TransBuffer[0]
             ScreenInfo.WriteConsoleDbcsLeadByte[1] = *(PCHAR)BufPtr;
 
-            wistd::unique_ptr<wchar_t[]> convertedChars;
-            size_t cchConverted = 0;
-            if (FAILED(ConvertToW(gci.OutputCP,
-                                  reinterpret_cast<const char* const>(ScreenInfo.WriteConsoleDbcsLeadByte),
-                                  ARRAYSIZE(ScreenInfo.WriteConsoleDbcsLeadByte),
-                                  convertedChars,
-                                  cchConverted)))
+            try
+            {
+                const std::string_view leadByte(reinterpret_cast<const char* const>(ScreenInfo.WriteConsoleDbcsLeadByte),
+                                                ARRAYSIZE(ScreenInfo.WriteConsoleDbcsLeadByte));
+
+                const std::wstring converted = ConvertToW(gci.OutputCP, leadByte);
+
+                FAIL_FAST_IF(converted.size() != 1);
+                dbcsNumBytes = sizeof(wchar_t);
+                TransBuffer[0] = converted.at(0);
+                BufPtr++;
+            }
+            catch (...)
             {
                 Status = STATUS_UNSUCCESSFUL;
                 dbcsNumBytes = 0;
-            }
-            else
-            {
-                FAIL_FAST_IF(!(cchConverted == 1));
-                dbcsNumBytes = sizeof(wchar_t);
-                TransBuffer[0] = convertedChars[0];
-                BufPtr++;
             }
 
             // this looks weird to be always incrementing even if the conversion failed, but this is the
@@ -1253,7 +1252,11 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject& OutContext,
             size_t cchTextBufferRead = 0;
 
             // Start by counting the number of A bytes we used in printing our W string to the screen.
-            LOG_IF_FAILED(GetALengthFromW(uiCodePage, pwchBuffer, cchBufferRead, &cchTextBufferRead));
+            try
+            {
+                cchTextBufferRead = GetALengthFromW(uiCodePage, { pwchBuffer, cchBufferRead });
+            }
+            CATCH_LOG();
 
             // If we captured a byte off the string this time around up above, it means we didn't feed
             // it into the WriteConsoleW above, and therefore its consumption isn't accounted for

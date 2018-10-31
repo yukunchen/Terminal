@@ -359,10 +359,10 @@ HRESULT XtermEngine::_DoUpdateTitle(const std::wstring& newTitle) noexcept
         return S_OK;
     }
 
-    wistd::unique_ptr<char[]> rgchNeeded;
-    size_t needed = 0;
-    RETURN_IF_FAILED(ConvertToA(CP_UTF8, newTitle.c_str(), newTitle.length()+1, rgchNeeded, needed));
-    std::string s = std::string(rgchNeeded.get(), needed);
-
-    return VtEngine::_ChangeTitle(s);
+    try
+    {
+        const auto converted = ConvertToA(CP_UTF8, newTitle);
+        return VtEngine::_ChangeTitle(converted);
+    }
+    CATCH_RETURN();
 }

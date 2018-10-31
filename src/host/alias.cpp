@@ -44,95 +44,81 @@ struct case_insensitive_equality
 };
 
 std::unordered_map<std::wstring,
-                   std::unordered_map<std::wstring,
-                       std::wstring,
-                       case_insensitive_hash,
-                       case_insensitive_equality>,
-                   case_insensitive_hash,
-                   case_insensitive_equality> g_aliasData;
+    std::unordered_map<std::wstring,
+    std::wstring,
+    case_insensitive_hash,
+    case_insensitive_equality>,
+    case_insensitive_hash,
+    case_insensitive_equality> g_aliasData;
 
 // Routine Description:
 // - Adds a command line alias to the global set.
 // - Converts and calls the W version of this function.
 // Arguments:
-// - psSourceBuffer - The shorthand/alias or source buffer to set
-// - cchSourceBufferLength - Length in characters of source buffer
-// - psTargetBuffer - The destination/expansion or target buffer to set
-// - cchTargetBufferLength - Length in characters of target buffer
-// - psExeNameBuffer - The client EXE application attached to the host to whom this substitution will apply
-// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// - source - The shorthand/alias or source buffer to set
+// - target- The destination/expansion or target buffer to set
+// - exeName - The client EXE application attached to the host to whom this substitution will apply
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-HRESULT ApiRoutines::AddConsoleAliasAImpl(_In_reads_or_z_(cchSourceBufferLength) const char* const psSourceBuffer,
-                                          const size_t cchSourceBufferLength,
-                                          _In_reads_or_z_(cchTargetBufferLength) const char* const psTargetBuffer,
-                                          const size_t cchTargetBufferLength,
-                                          _In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
-                                          const size_t cchExeNameBufferLength)
+[[nodiscard]]
+HRESULT ApiRoutines::AddConsoleAliasAImpl(const std::string_view source,
+                                          const std::string_view target,
+                                          const std::string_view exeName) noexcept
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    UINT const uiCodePage = gci.CP;
+    UINT const codepage = gci.CP;
 
-    wistd::unique_ptr<wchar_t[]> pwsSource;
-    size_t cchSource;
-    RETURN_IF_FAILED(ConvertToW(uiCodePage, psSourceBuffer, cchSourceBufferLength, pwsSource, cchSource));
+    try
+    {
+        const auto sourceW = ConvertToW(codepage, source);
+        const auto targetW = ConvertToW(codepage, target);
+        const auto exeNameW = ConvertToW(codepage, exeName);
 
-    wistd::unique_ptr<wchar_t[]> pwsTarget;
-    size_t cchTarget;
-    RETURN_IF_FAILED(ConvertToW(uiCodePage, psTargetBuffer, cchTargetBufferLength, pwsTarget, cchTarget));
-
-    wistd::unique_ptr<wchar_t[]> pwsExeName;
-    size_t cchExeName;
-    RETURN_IF_FAILED(ConvertToW(uiCodePage, psExeNameBuffer, cchExeNameBufferLength, pwsExeName, cchExeName));
-
-    return AddConsoleAliasWImpl(pwsSource.get(), cchSource, pwsTarget.get(), cchTarget, pwsExeName.get(), cchExeName);
+        return AddConsoleAliasWImpl(sourceW, targetW, exeNameW);
+    }
+    CATCH_RETURN();
 }
 
 // Routine Description:
 // - Adds a command line alias to the global set.
 // Arguments:
-// - pwsSourceBuffer - The shorthand/alias or source buffer to set
-// - cchSourceBufferLength - Length in characters of source buffer
-// - pwsTargetBuffer - The destination/expansion or target buffer to set
-// - cchTargetBufferLength - Length in characters of target buffer
-// - pwsExeNameBuffer - The client EXE application attached to the host to whom this substitution will apply
-// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// - source - The shorthand/alias or source buffer to set
+// - target - The destination/expansion or target buffer to set
+// - exeName - The client EXE application attached to the host to whom this substitution will apply
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-HRESULT ApiRoutines::AddConsoleAliasWImpl(_In_reads_or_z_(cchSourceBufferLength) const wchar_t* const pwsSourceBuffer,
-                                          const size_t cchSourceBufferLength,
-                                          _In_reads_or_z_(cchTargetBufferLength) const wchar_t* const pwsTargetBuffer,
-                                          const size_t cchTargetBufferLength,
-                                          _In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                          const size_t cchExeNameBufferLength)
+[[nodiscard]]
+HRESULT ApiRoutines::AddConsoleAliasWImpl(const std::wstring_view source,
+                                          const std::wstring_view target,
+                                          const std::wstring_view exeName) noexcept
 {
     LockConsole();
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    RETURN_HR_IF(E_INVALIDARG, cchSourceBufferLength == 0);
+    RETURN_HR_IF(E_INVALIDARG, source.size() == 0);
 
     try
     {
-        std::wstring exeName(pwsExeNameBuffer, cchExeNameBufferLength);
-        std::wstring source(pwsSourceBuffer, cchSourceBufferLength);
-        std::wstring target(pwsTargetBuffer, cchTargetBufferLength);
+        std::wstring exeNameString(exeName);
+        std::wstring sourceString(source);
+        std::wstring targetString(target);
 
-        std::transform(exeName.begin(), exeName.end(), exeName.begin(), towlower);
-        std::transform(source.begin(), source.end(), source.begin(), towlower);
+        std::transform(exeNameString.begin(), exeNameString.end(), exeNameString.begin(), towlower);
+        std::transform(sourceString.begin(), sourceString.end(), sourceString.begin(), towlower);
 
-        if (target.size() == 0)
+        if (targetString.size() == 0)
         {
             // Only try to dig in and erase if the exeName exists.
-            auto exeData = g_aliasData.find(exeName);
+            auto exeData = g_aliasData.find(exeNameString);
             if (exeData != g_aliasData.end())
             {
-                g_aliasData[exeName].erase(source);
+                g_aliasData[exeNameString].erase(sourceString);
             }
         }
         else
         {
             // Map will auto-create each level as necessary
-            g_aliasData[exeName][source] = target;
+            g_aliasData[exeNameString][sourceString] = targetString;
         }
     }
     CATCH_RETURN();
@@ -147,65 +133,57 @@ HRESULT ApiRoutines::AddConsoleAliasWImpl(_In_reads_or_z_(cchSourceBufferLength)
 // - This behavior exists to allow the A version of the function to help allocate the right temp buffer for conversion of
 //   the output/result data.
 // Arguments:
-// - pwsSourceBuffer - The shorthand/alias or source buffer to use in lookup
-// - cchSourceBufferLength - Length in characters of source buffer
-// - pwsTargetBuffer - The destination/expansion or target buffer we are attempting to retrieve. Optionally nullptr to retrieve needed space.
-// - cchTargetBufferLength - Length in characters of target buffer. Set to 0 when pwsTargetBuffer is nullptr.
-// - pcchTargetBufferWrittenOrNeeded - Pointer to space that will specify how many characters were written (if pwsTargetBuffer is valid)
-//                                     or how many characters would have been consumed (if pwsTargetBuffer was valid.)
-// - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
-// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// - source - The shorthand/alias or source buffer to use in lookup
+// - target - The destination/expansion or target buffer we are attempting to retrieve. Optionally nullopt to retrieve needed space.
+// - writtenOrNeeded - Will specify how many characters were written (if target has value)
+//                     or how many characters would have been consumed (if target is nullopt).
+// - exeName - The client EXE application attached to the host whose set we should check
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-HRESULT GetConsoleAliasWImplHelper(_In_reads_or_z_(cchSourceBufferLength) const wchar_t* const pwsSourceBuffer,
-                                   const size_t cchSourceBufferLength,
-                                   _Out_writes_to_opt_(cchTargetBufferLength, *pcchTargetBufferWrittenOrNeeded) _Always_(_Post_z_) wchar_t* const pwsTargetBuffer,
-                                   const size_t cchTargetBufferLength,
-                                   _Out_ size_t* const pcchTargetBufferWrittenOrNeeded,
-                                   _In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                   const size_t cchExeNameBufferLength)
+[[nodiscard]]
+HRESULT GetConsoleAliasWImplHelper(const std::wstring_view source,
+                                   std::optional<gsl::span<wchar_t>> target,
+                                   size_t& writtenOrNeeded,
+                                   const std::wstring_view exeName)
 {
     // Ensure output variables are initialized
-    *pcchTargetBufferWrittenOrNeeded = 0;
-    if (nullptr != pwsTargetBuffer && cchTargetBufferLength > 0)
+    writtenOrNeeded = 0;
+
+    if (target.has_value() && target.value().size() > 0)
     {
-        *pwsTargetBuffer = L'\0';
+        target.value().at(0) = UNICODE_NULL;
     }
 
-    try
+    std::wstring exeNameString(exeName);
+    std::wstring sourceString(source);
+
+    // For compatibility, return ERROR_GEN_FAILURE for any result where the alias can't be found.
+    // We use .find for the iterators then dereference to search without creating entries.
+    const auto exeIter = g_aliasData.find(exeNameString);
+    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_GEN_FAILURE), exeIter == g_aliasData.end());
+    const auto exeData = exeIter->second;
+    const auto sourceIter = exeData.find(sourceString);
+    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_GEN_FAILURE), sourceIter == exeData.end());
+    const auto targetString = sourceIter->second;
+    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_GEN_FAILURE), targetString.size() == 0);
+
+    // TargetLength is a byte count, convert to characters.
+    size_t targetSize = targetString.size();
+    size_t const cchNull = 1;
+
+    // The total space we need is the length of the string + the null terminator.
+    size_t neededSize;
+    RETURN_IF_FAILED(SizeTAdd(targetSize, cchNull, &neededSize));
+
+    writtenOrNeeded = neededSize;
+
+    if (target.has_value())
     {
-        std::wstring exeName(pwsExeNameBuffer, cchExeNameBufferLength);
-        std::wstring source(pwsSourceBuffer, cchSourceBufferLength);
+        // if the user didn't give us enough space, return with insufficient buffer code early.
+        RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER), gsl::narrow<size_t>(target.value().size()) < neededSize);
 
-        // For compatibility, return ERROR_GEN_FAILURE for any result where the alias can't be found.
-        // We use .find for the iterators then dereference to search without creating entries.
-        const auto exeIter = g_aliasData.find(exeName);
-        RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_GEN_FAILURE), exeIter == g_aliasData.end());
-        const auto exeData = exeIter->second;
-        const auto sourceIter = exeData.find(source);
-        RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_GEN_FAILURE), sourceIter == exeData.end());
-        const auto target = sourceIter->second;
-        RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_GEN_FAILURE), target.size() == 0);
-
-        // TargetLength is a byte count, convert to characters.
-        size_t cchTarget = target.size();
-        size_t const cchNull = 1;
-
-        // The total space we need is the length of the string + the null terminator.
-        size_t cchNeeded;
-        RETURN_IF_FAILED(SizeTAdd(cchTarget, cchNull, &cchNeeded));
-
-        *pcchTargetBufferWrittenOrNeeded = cchNeeded;
-
-        if (nullptr != pwsTargetBuffer)
-        {
-            // if the user didn't give us enough space, return with insufficient buffer code early.
-            RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER), cchTargetBufferLength < cchNeeded);
-
-            RETURN_IF_FAILED(StringCchCopyNW(pwsTargetBuffer, cchTargetBufferLength, target.data(), cchTarget));
-        }
+        RETURN_IF_FAILED(StringCchCopyNW(target.value().data(), target.value().size(), targetString.data(), targetSize));
     }
-    CATCH_RETURN();
 
     return S_OK;
 }
@@ -215,119 +193,112 @@ HRESULT GetConsoleAliasWImplHelper(_In_reads_or_z_(cchSourceBufferLength) const 
 // - This function will convert input parameters from A to W, call the W version of the routine,
 //   and attempt to convert the resulting data back to A for return.
 // Arguments:
-// - pwsSourceBuffer - The shorthand/alias or source buffer to use in lookup
-// - cchSourceBufferLength - Length in characters of source buffer
-// - pwsTargetBuffer - The destination/expansion or target buffer we are attempting to retrieve.
-// - cchTargetBufferLength - Length in characters of target buffer.
-// - pcchTargetBufferWritten - Pointer to space that will specify how many characters were written
-// - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
-// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// - source - The shorthand/alias or source buffer to use in lookup
+// - target - The destination/expansion or target buffer we are attempting to retrieve.
+// - written - Will specify how many characters were written
+// - exeName - The client EXE application attached to the host whose set we should check
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-HRESULT ApiRoutines::GetConsoleAliasAImpl(_In_reads_or_z_(cchSourceBufferLength) const char* const psSourceBuffer,
-                                          const size_t cchSourceBufferLength,
-                                          _Out_writes_to_(cchTargetBufferLength, *pcchTargetBufferWritten) _Always_(_Post_z_) char* const psTargetBuffer,
-                                          const size_t cchTargetBufferLength,
-                                          _Out_ size_t* const pcchTargetBufferWritten,
-                                          _In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
-                                          const size_t cchExeNameBufferLength)
+[[nodiscard]]
+HRESULT ApiRoutines::GetConsoleAliasAImpl(const std::string_view source,
+                                          gsl::span<char> target,
+                                          size_t& written,
+                                          const std::string_view exeName) noexcept
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    UINT const uiCodePage = gci.CP;
+    UINT const codepage = gci.CP;
 
     // Ensure output variables are initialized
-    *pcchTargetBufferWritten = 0;
-    if (nullptr != psTargetBuffer && cchTargetBufferLength > 0)
+    written = 0;
+    try
     {
-        *psTargetBuffer = L'\0';
+        if (target.size() > 0)
+        {
+            target.at(0) = ANSI_NULL;
+        }
+
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+        // Convert our input parameters to Unicode.
+        const auto sourceW = ConvertToW(codepage, source);
+        const auto exeNameW = ConvertToW(codepage, exeName);
+
+        // Figure out how big our temporary Unicode buffer must be to retrieve output
+        size_t targetNeeded;
+        RETURN_IF_FAILED(GetConsoleAliasWImplHelper(sourceW, std::nullopt, targetNeeded, exeNameW));
+
+        // If there's nothing to get, then simply return.
+        RETURN_HR_IF(S_OK, 0 == targetNeeded);
+
+        // If the user hasn't given us a buffer at all and we need one, return an error.
+        RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER), 0 == target.size());
+
+        // Allocate a unicode buffer of the right size.
+        std::unique_ptr<wchar_t[]> targetBuffer = std::make_unique<wchar_t[]>(targetNeeded);
+        RETURN_IF_NULL_ALLOC(targetBuffer);
+
+        // Call the Unicode version of this method
+        size_t targetWritten;
+        RETURN_IF_FAILED(GetConsoleAliasWImplHelper(sourceW,
+                                                    gsl::span<wchar_t>(targetBuffer.get(), targetNeeded),
+                                                    targetWritten,
+                                                    exeNameW));
+
+        // Set the return size copied to the size given before we attempt to copy.
+        // Then multiply by sizeof(wchar_t) due to a long standing bug that we must preserve for compatibility.
+        // On failure, the API has historically given back this value.
+        written = target.size() * sizeof(wchar_t);
+
+        // Convert result to A
+        const auto converted = ConvertToA(codepage, { targetBuffer.get(), targetWritten });
+
+        // Copy safely to output buffer
+        RETURN_IF_FAILED(StringCchCopyNA(target.data(), target.size(), converted.data(), converted.size()));
+
+        // And return the size copied.
+        written = converted.size();
+
+        return S_OK;
     }
-
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-    // Convert our input parameters to Unicode.
-    wistd::unique_ptr<wchar_t[]> pwsSource;
-    size_t cchSource;
-    RETURN_IF_FAILED(ConvertToW(uiCodePage, psSourceBuffer, cchSourceBufferLength, pwsSource, cchSource));
-
-    wistd::unique_ptr<wchar_t[]> pwsExeName;
-    size_t cchExeName;
-    RETURN_IF_FAILED(ConvertToW(uiCodePage, psExeNameBuffer, cchExeNameBufferLength, pwsExeName, cchExeName));
-
-    // Figure out how big our temporary Unicode buffer must be to retrieve output
-    size_t cchTargetBufferNeeded;
-    RETURN_IF_FAILED(GetConsoleAliasWImplHelper(pwsSource.get(), cchSource, nullptr, 0, &cchTargetBufferNeeded, pwsExeName.get(), cchExeName));
-
-    // If there's nothing to get, then simply return.
-    RETURN_HR_IF(S_OK, 0 == cchTargetBufferNeeded);
-
-    // If the user hasn't given us a buffer at all and we need one, return an error.
-    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER), 0 == cchTargetBufferLength);
-
-    // Allocate a unicode buffer of the right size.
-    wistd::unique_ptr<wchar_t[]> pwsTarget = wil::make_unique_nothrow<wchar_t[]>(cchTargetBufferNeeded);
-    RETURN_IF_NULL_ALLOC(pwsTarget);
-
-    // Call the Unicode version of this method
-    size_t cchTargetBufferWritten;
-    RETURN_IF_FAILED(GetConsoleAliasWImplHelper(pwsSource.get(), cchSource, pwsTarget.get(), cchTargetBufferNeeded, &cchTargetBufferWritten, pwsExeName.get(), cchExeName));
-
-    // Set the return size copied to the size given before we attempt to copy.
-    // Then multiply by sizeof(wchar_t) due to a long standing bug that we must preserve for compatibility.
-    // On failure, the API has historically given back this value.
-    *pcchTargetBufferWritten = cchTargetBufferLength * sizeof(wchar_t);
-
-    // Convert result to A
-    wistd::unique_ptr<char[]> psConverted;
-    size_t cchConverted;
-    RETURN_IF_FAILED(ConvertToA(uiCodePage, pwsTarget.get(), cchTargetBufferWritten, psConverted, cchConverted));
-
-    // Copy safely to output buffer
-    RETURN_IF_FAILED(StringCchCopyNA(psTargetBuffer, cchTargetBufferLength, psConverted.get(), cchConverted));
-
-    // And return the size copied.
-    *pcchTargetBufferWritten = cchConverted;
-
-    return S_OK;
+    CATCH_RETURN();
 }
 
 // Routine Description:
 // - Retrieves a command line alias from the global set.
 // Arguments:
-// - pwsSourceBuffer - The shorthand/alias or source buffer to use in lookup
-// - cchSourceBufferLength - Length in characters of source buffer
-// - pwsTargetBuffer - The destination/expansion or target buffer we are attempting to retrieve.
-// - cchTargetBufferLength - Length in characters of target buffer.
-// - pcchTargetBufferWritten - Pointer to space that will specify how many characters were written
-// - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
-// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// - source - The shorthand/alias or source buffer to use in lookup
+// - target - The destination/expansion or target buffer we are attempting to retrieve.
+// - written - Will specify how many characters were written
+// - exeName - The client EXE application attached to the host whose set we should check
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-HRESULT ApiRoutines::GetConsoleAliasWImpl(_In_reads_or_z_(cchSourceBufferLength) const wchar_t* const pwsSourceBuffer,
-                                          const size_t cchSourceBufferLength,
-                                          _Out_writes_to_(cchTargetBufferLength, *pcchTargetBufferWritten) _Always_(_Post_z_) wchar_t* const pwsTargetBuffer,
-                                          const size_t cchTargetBufferLength,
-                                          _Out_ size_t* const pcchTargetBufferWritten,
-                                          _In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                          const size_t cchExeNameBufferLength)
+[[nodiscard]]
+HRESULT ApiRoutines::GetConsoleAliasWImpl(const std::wstring_view source,
+                                          gsl::span<wchar_t> target,
+                                          size_t& written,
+                                          const std::wstring_view exeName) noexcept
 {
     LockConsole();
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    HRESULT hr = GetConsoleAliasWImplHelper(pwsSourceBuffer, cchSourceBufferLength, pwsTargetBuffer, cchTargetBufferLength, pcchTargetBufferWritten, pwsExeNameBuffer, cchExeNameBufferLength);
-
-    if (FAILED(hr))
+    try
     {
-        *pcchTargetBufferWritten = cchTargetBufferLength;
-    }
+        HRESULT hr = GetConsoleAliasWImplHelper(source, target, written, exeName);
 
-    return hr;
+        if (FAILED(hr))
+        {
+            written = target.length();
+        }
+
+        return hr;
+    }
+    CATCH_RETURN();
 }
 
 // These variables define the seperator character and the length of the string.
 // They will be used to as the joiner between source and target strings when returning alias data in list form.
-static PCWSTR const pwszAliasesSeperator = L"=";
-static size_t const cchAliasesSeperator = wcslen(pwszAliasesSeperator);
+static std::wstring aliasesSeparator(L"=");
 
 // Routine Description:
 // - Retrieves the amount of space needed to hold all aliases (source=target pairs) for the given EXE name
@@ -335,44 +306,39 @@ static size_t const cchAliasesSeperator = wcslen(pwszAliasesSeperator);
 // - This method configuration is called for both A/W routines to allow us an efficient way of asking the system
 //   the lengths of how long each conversion would be without actually performing the full allocations/conversions.
 // Arguments:
-// - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
-// - cchExeNameBufferLength - Length in characters of EXE name buffer
-// - fCountInUnicode - True for W version (UCS-2 Unicode) calls. False for A version calls (all multibyte formats.)
-// - uiCodePage - Set to valid Windows Codepage for A version calls. Ignored for W (but typically just set to 0.)
-// - pcchAliasesBufferRequired - Pointer to receive the length of buffer that would be required to retrieve all aliases for the given exe.
+// - exeName - The client EXE application attached to the host whose set we should check
+// - countInUnicode - True for W version (UTF-16 Unicode) calls. False for A version calls (all multibyte formats.)
+// - codepage - Set to valid Windows Codepage for A version calls. Ignored for W (but typically just set to 0.)
+// - bufferRequired - Receives the length of buffer that would be required to retrieve all aliases for the given exe.
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-HRESULT GetConsoleAliasesLengthWImplHelper(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                           const size_t cchExeNameBufferLength,
-                                           const bool fCountInUnicode,
-                                           const UINT uiCodePage,
-                                           _Out_ size_t* const pcchAliasesBufferRequired)
+[[nodiscard]]
+HRESULT GetConsoleAliasesLengthWImplHelper(const std::wstring_view exeName,
+                                           const bool countInUnicode,
+                                           const UINT codepage,
+                                           size_t& bufferRequired)
 {
     // Ensure output variables are initialized
-    *pcchAliasesBufferRequired = 0;
-
-    // Convert size_ts into SHORTs for existing alias functions to use.
-    USHORT cbExeNameBufferLength;
-    RETURN_IF_FAILED(GetUShortByteCount(cchExeNameBufferLength, &cbExeNameBufferLength));
-
+    bufferRequired = 0;
+    
     try
     {
-        std::wstring exeName(pwsExeNameBuffer, cchExeNameBufferLength);
+        const std::wstring exeNameString(exeName);
 
         size_t cchNeeded = 0;
 
         // Each of the aliases will be made up of the source, a seperator, the target, then a null character.
         // They are of the form "Source=Target" when returned.
         size_t const cchNull = 1;
-        size_t cchSeperator = cchAliasesSeperator;
+        size_t cchSeperator = aliasesSeparator.size();
         // If we're counting how much multibyte space will be needed, trial convert the seperator before we add.
-        if (!fCountInUnicode)
+        if (!countInUnicode)
         {
-            RETURN_IF_FAILED(GetALengthFromW(uiCodePage, pwszAliasesSeperator, cchSeperator, &cchSeperator));
+            cchSeperator = GetALengthFromW(codepage, aliasesSeparator);
         }
 
         // Find without creating.
-        auto exeIter = g_aliasData.find(exeName);
+        auto exeIter = g_aliasData.find(exeNameString);
         if (exeIter != g_aliasData.end())
         {
             auto list = exeIter->second;
@@ -383,10 +349,10 @@ HRESULT GetConsoleAliasesLengthWImplHelper(_In_reads_or_z_(cchExeNameBufferLengt
                 size_t cchTarget = pair.second.size();
 
                 // If we're counting how much multibyte space will be needed, trial convert the source and target strings before we add.
-                if (!fCountInUnicode)
+                if (!countInUnicode)
                 {
-                    RETURN_IF_FAILED(GetALengthFromW(uiCodePage, pair.first.data(), cchSource, &cchSource));
-                    RETURN_IF_FAILED(GetALengthFromW(uiCodePage, pair.second.data(), cchTarget, &cchTarget));
+                    cchSource = GetALengthFromW(codepage, pair.first);
+                    cchTarget = GetALengthFromW(codepage, pair.second);
                 }
 
                 // Accumulate all sizes to the final string count.
@@ -397,7 +363,7 @@ HRESULT GetConsoleAliasesLengthWImplHelper(_In_reads_or_z_(cchExeNameBufferLengt
             }
         }
 
-        *pcchAliasesBufferRequired = cchNeeded;
+        bufferRequired = cchNeeded;
     }
     CATCH_RETURN();
 
@@ -408,49 +374,53 @@ HRESULT GetConsoleAliasesLengthWImplHelper(_In_reads_or_z_(cchExeNameBufferLengt
 // - Retrieves the amount of space needed to hold all aliases (source=target pairs) for the given EXE name
 // - Converts input text from A to W then makes the call to the W implementation.
 // Arguments:
-// - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
-// - cchExeNameBufferLength - Length in characters of EXE name buffer
-// - pcchAliasesBufferRequired - Pointer to receive the length of buffer that would be required to retrieve all aliases for the given exe.
+// - exeName - The client EXE application attached to the host whose set we should check
+// - bufferRequired - Receives the length of buffer that would be required to retrieve all aliases for the given exe.
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-HRESULT ApiRoutines::GetConsoleAliasesLengthAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
-                                                  const size_t cchExeNameBufferLength,
-                                                  _Out_ size_t* const pcchAliasesBufferRequired)
+[[nodiscard]]
+HRESULT ApiRoutines::GetConsoleAliasesLengthAImpl(const std::string_view exeName,
+                                                  size_t& bufferRequired) noexcept
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    UINT const uiCodePage = gci.CP;
+    UINT const codepage = gci.CP;
 
     // Ensure output variables are initialized
-    *pcchAliasesBufferRequired = 0;
+    bufferRequired = 0;
 
     LockConsole();
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     // Convert our input parameters to Unicode
-    wistd::unique_ptr<wchar_t[]> pwsExeName;
-    size_t cchExeName;
-    RETURN_IF_FAILED(ConvertToW(uiCodePage, psExeNameBuffer, cchExeNameBufferLength, pwsExeName, cchExeName));
+    try
+    {
+        const auto exeNameW = ConvertToW(codepage, exeName);
 
-    return GetConsoleAliasesLengthWImplHelper(pwsExeName.get(), cchExeName, false, uiCodePage, pcchAliasesBufferRequired);
+        return GetConsoleAliasesLengthWImplHelper(exeNameW, false, codepage, bufferRequired);
+    }
+    CATCH_RETURN();
 }
 
 // Routine Description:
 // - Retrieves the amount of space needed to hold all aliases (source=target pairs) for the given EXE name
 // - Converts input text from A to W then makes the call to the W implementation.
 // Arguments:
-// - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
-// - cchExeNameBufferLength - Length in characters of EXE name buffer
-// - pcchAliasesBufferRequired - Pointer to receive the length of buffer that would be required to retrieve all aliases for the given exe.
+// - exeName - The client EXE application attached to the host whose set we should check
+// - bufferRequired - Receives the length of buffer that would be required to retrieve all aliases for the given exe.
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-HRESULT ApiRoutines::GetConsoleAliasesLengthWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                                  const size_t cchExeNameBufferLength,
-                                                  _Out_ size_t* const pcchAliasesBufferRequired)
+[[nodiscard]]
+HRESULT ApiRoutines::GetConsoleAliasesLengthWImpl(const std::wstring_view exeName,
+                                                  size_t& bufferRequired) noexcept
 {
     LockConsole();
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    return GetConsoleAliasesLengthWImplHelper(pwsExeNameBuffer, cchExeNameBufferLength, true, 0, pcchAliasesBufferRequired);
+    try
+    {
+        return GetConsoleAliasesLengthWImplHelper(exeName, true, 0, bufferRequired);
+    }
+    CATCH_RETURN();
 }
 
 // Routine Description:
@@ -472,95 +442,88 @@ void Alias::s_ClearCmdExeAliases()
 // - This behavior exists to allow the A version of the function to help allocate the right temp buffer for conversion of
 //   the output/result data.
 // Arguments:
-// - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
-// - cchExeNameBufferLength - Length in characters of EXE name buffer
-// - pwsAliasBuffer - The target buffer to hold all alias pairs we are trying to retrieve.
-//                    Optionally nullptr to retrieve needed space.
-// - cchAliasBufferLength - Length in characters of target buffer. Set to 0 when buffer is nullptr.
-// - pcchAliasBufferWrittenOrNeeded - Pointer to space that will specify how many characters were written (if buffer is valid)
-//                                     or how many characters would have been consumed.
+// - exeName  - The client EXE application attached to the host whose set we should check
+// - aliasBuffer - The target buffer to hold all alias pairs we are trying to retrieve.
+//                 Optionally nullopt to retrieve needed space.
+// - writtenOrNeeded - Pointer to space that will specify how many characters were written (if buffer is valid)
+//                     or how many characters would have been needed (if buffer is nullopt).
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-HRESULT GetConsoleAliasesWImplHelper(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                     const size_t cchExeNameBufferLength,
-                                     _Out_writes_to_opt_(cchAliasBufferLength, *pcchAliasBufferWrittenOrNeeded) _Always_(_Post_z_) wchar_t* const pwsAliasBuffer,
-                                     const size_t cchAliasBufferLength,
-                                     _Out_ size_t* const pcchAliasBufferWrittenOrNeeded)
+[[nodiscard]]
+HRESULT GetConsoleAliasesWImplHelper(const std::wstring_view exeName,
+                                     std::optional<gsl::span<wchar_t>> aliasBuffer,
+                                     size_t& writtenOrNeeded)
 {
     // Ensure output variables are initialized.
-    *pcchAliasBufferWrittenOrNeeded = 0;
-    if (nullptr != pwsAliasBuffer)
+    writtenOrNeeded = 0;
+
+    if (aliasBuffer.has_value() && aliasBuffer.value().size() > 0)
     {
-        *pwsAliasBuffer = L'\0';
+        aliasBuffer.value().at(0) = UNICODE_NULL;
     }
 
-    try
+    std::wstring exeNameString(exeName);
+
+    LPWSTR AliasesBufferPtrW = aliasBuffer.has_value() ? aliasBuffer.value().data() : nullptr;
+    size_t cchTotalLength = 0; // accumulate the characters we need/have copied as we walk the list
+
+    // Each of the alises will be made up of the source, a seperator, the target, then a null character.
+    // They are of the form "Source=Target" when returned.
+    size_t const cchNull = 1;
+
+    // Find without creating.
+    auto exeIter = g_aliasData.find(exeNameString);
+    if (exeIter != g_aliasData.end())
     {
-        std::wstring exeName(pwsExeNameBuffer, cchExeNameBufferLength);
-
-        LPWSTR AliasesBufferPtrW = pwsAliasBuffer;
-        size_t cchTotalLength = 0; // accumulate the characters we need/have copied as we walk the list
-
-        // Each of the alises will be made up of the source, a seperator, the target, then a null character.
-        // They are of the form "Source=Target" when returned.
-        size_t const cchNull = 1;
-
-        // Find without creating.
-        auto exeIter = g_aliasData.find(exeName);
-        if (exeIter != g_aliasData.end())
+        auto list = exeIter->second;
+        for (auto& pair : list)
         {
-            auto list = exeIter->second;
-            for (auto& pair : list)
+            // Alias stores lengths in bytes.
+            size_t const cchSource = pair.first.size();
+            size_t const cchTarget = pair.second.size();
+
+            // Add up how many characters we will need for the full alias data.
+            size_t cchNeeded = 0;
+            RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchSource, &cchNeeded));
+            RETURN_IF_FAILED(SizeTAdd(cchNeeded, aliasesSeparator.size(), &cchNeeded));
+            RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchTarget, &cchNeeded));
+            RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchNull, &cchNeeded));
+
+            // If we can return the data, attempt to do so until we're done or it overflows.
+            // If we cannot return data, we're just going to loop anyway and count how much space we'd need.
+            if (aliasBuffer.has_value())
             {
-                // Alias stores lengths in bytes.
-                size_t const cchSource = pair.first.size();
-                size_t const cchTarget = pair.second.size();
+                // Calculate the new final total after we add what we need to see if it will exceed the limit
+                size_t cchNewTotal;
+                RETURN_IF_FAILED(SizeTAdd(cchTotalLength, cchNeeded, &cchNewTotal));
 
-                // Add up how many characters we will need for the full alias data.
-                size_t cchNeeded = 0;
-                RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchSource, &cchNeeded));
-                RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchAliasesSeperator, &cchNeeded));
-                RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchTarget, &cchNeeded));
-                RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchNull, &cchNeeded));
+                RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), cchNewTotal > gsl::narrow<size_t>(aliasBuffer.value().size()));
 
-                // If we can return the data, attempt to do so until we're done or it overflows.
-                // If we cannot return data, we're just going to loop anyway and count how much space we'd need.
-                if (nullptr != pwsAliasBuffer)
-                {
-                    // Calculate the new final total after we add what we need to see if it will exceed the limit
-                    size_t cchNewTotal;
-                    RETURN_IF_FAILED(SizeTAdd(cchTotalLength, cchNeeded, &cchNewTotal));
+                size_t cchAliasBufferRemaining;
+                RETURN_IF_FAILED(SizeTSub(aliasBuffer.value().size(), cchTotalLength, &cchAliasBufferRemaining));
 
-                    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), cchNewTotal > cchAliasBufferLength);
+                RETURN_IF_FAILED(StringCchCopyNW(AliasesBufferPtrW, cchAliasBufferRemaining, pair.first.data(), cchSource));
+                RETURN_IF_FAILED(SizeTSub(cchAliasBufferRemaining, cchSource, &cchAliasBufferRemaining));
+                AliasesBufferPtrW += cchSource;
 
-                    size_t cchAliasBufferRemaining;
-                    RETURN_IF_FAILED(SizeTSub(cchAliasBufferLength, cchTotalLength, &cchAliasBufferRemaining));
+                RETURN_IF_FAILED(StringCchCopyNW(AliasesBufferPtrW, cchAliasBufferRemaining, aliasesSeparator.data(), aliasesSeparator.size()));
+                RETURN_IF_FAILED(SizeTSub(cchAliasBufferRemaining, aliasesSeparator.size(), &cchAliasBufferRemaining));
+                AliasesBufferPtrW += aliasesSeparator.size();
 
-                    RETURN_IF_FAILED(StringCchCopyNW(AliasesBufferPtrW, cchAliasBufferRemaining, pair.first.data(), cchSource));
-                    RETURN_IF_FAILED(SizeTSub(cchAliasBufferRemaining, cchSource, &cchAliasBufferRemaining));
-                    AliasesBufferPtrW += cchSource;
+                RETURN_IF_FAILED(StringCchCopyNW(AliasesBufferPtrW, cchAliasBufferRemaining, pair.second.data(), cchTarget));
+                RETURN_IF_FAILED(SizeTSub(cchAliasBufferRemaining, cchTarget, &cchAliasBufferRemaining));
+                AliasesBufferPtrW += cchTarget;
 
-                    RETURN_IF_FAILED(StringCchCopyNW(AliasesBufferPtrW, cchAliasBufferRemaining, pwszAliasesSeperator, cchAliasesSeperator));
-                    RETURN_IF_FAILED(SizeTSub(cchAliasBufferRemaining, cchAliasesSeperator, &cchAliasBufferRemaining));
-                    AliasesBufferPtrW += cchAliasesSeperator;
-
-                    RETURN_IF_FAILED(StringCchCopyNW(AliasesBufferPtrW, cchAliasBufferRemaining, pair.second.data(), cchTarget));
-                    RETURN_IF_FAILED(SizeTSub(cchAliasBufferRemaining, cchTarget, &cchAliasBufferRemaining));
-                    AliasesBufferPtrW += cchTarget;
-
-                    // StringCchCopyNW ensures that the destination string is null terminated, so simply advance the pointer.
-                    RETURN_IF_FAILED(SizeTSub(cchAliasBufferRemaining, 1, &cchAliasBufferRemaining));
-                    AliasesBufferPtrW += cchNull;
-                }
-
-                RETURN_IF_FAILED(SizeTAdd(cchTotalLength, cchNeeded, &cchTotalLength));
+                // StringCchCopyNW ensures that the destination string is null terminated, so simply advance the pointer.
+                RETURN_IF_FAILED(SizeTSub(cchAliasBufferRemaining, 1, &cchAliasBufferRemaining));
+                AliasesBufferPtrW += cchNull;
             }
+
+            RETURN_IF_FAILED(SizeTAdd(cchTotalLength, cchNeeded, &cchTotalLength));
         }
-
-        *pcchAliasBufferWrittenOrNeeded = cchTotalLength;
-
     }
-    CATCH_RETURN();
+
+    writtenOrNeeded = cchTotalLength;
 
     return S_OK;
 }
@@ -569,86 +532,89 @@ HRESULT GetConsoleAliasesWImplHelper(_In_reads_or_z_(cchExeNameBufferLength) con
 // - Retrieves all source=target pairs representing alias definitions for a given EXE name
 // - Will convert all input from A to W, call the W version of the function, then convert resulting W to A text and return.
 // Arguments:
-// - psExeNameBuffer - The client EXE application attached to the host whose set we should check
-// - cchExeNameBufferLength - Length in characters of EXE name buffer
-// - psAliasBuffer - The target buffer to hold all alias pairs we are trying to retrieve.
-// - cchAliasBufferLength - Length in characters of target buffer. Set to 0 when buffer is nullptr.
-// - pcchAliasBufferWritten - Pointer to space that will specify how many characters were written
+// - exeName - The client EXE application attached to the host whose set we should check
+// - alias - The target buffer to hold all alias pairs we are trying to retrieve.
+// - written - Will specify how many characters were written
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-HRESULT ApiRoutines::GetConsoleAliasesAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
-                                            const size_t cchExeNameBufferLength,
-                                            _Out_writes_to_(cchAliasBufferLength, *pcchAliasBufferWritten) _Always_(_Post_z_) char* const psAliasBuffer,
-                                            const size_t cchAliasBufferLength,
-                                            _Out_ size_t* const pcchAliasBufferWritten)
+[[nodiscard]]
+HRESULT ApiRoutines::GetConsoleAliasesAImpl(const std::string_view exeName,
+                                            gsl::span<char> alias,
+                                            size_t& written) noexcept
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    UINT const uiCodePage = gci.CP;
+    UINT const codepage = gci.CP;
 
     // Ensure output variables are initialized
-    *pcchAliasBufferWritten = 0;
-    *psAliasBuffer = '\0';
+    written = 0;
 
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    try
+    {
+        if (alias.size() > 0)
+        {
+            alias.at(0) = '\0';
+        }
 
-    // Convert our input parameters to Unicode.
-    wistd::unique_ptr<wchar_t[]> pwsExeName;
-    size_t cchExeName;
-    RETURN_IF_FAILED(ConvertToW(uiCodePage, psExeNameBuffer, cchExeNameBufferLength, pwsExeName, cchExeName));
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    // Figure out how big our temporary Unicode buffer must be to retrieve output
-    size_t cchAliasBufferNeeded;
-    RETURN_IF_FAILED(GetConsoleAliasesWImplHelper(pwsExeName.get(), cchExeName, nullptr, 0, &cchAliasBufferNeeded));
+        // Convert our input parameters to Unicode.
+        const auto exeNameW = ConvertToW(codepage, exeName);
+        wistd::unique_ptr<wchar_t[]> pwsExeName;
 
-    // If there's nothing to get, then simply return.
-    RETURN_HR_IF(S_OK, 0 == cchAliasBufferNeeded);
+        // Figure out how big our temporary Unicode buffer must be to retrieve output
+        size_t bufferNeeded;
+        RETURN_IF_FAILED(GetConsoleAliasesWImplHelper(exeNameW, std::nullopt, bufferNeeded));
 
-    // Allocate a unicode buffer of the right size.
-    wistd::unique_ptr<wchar_t[]> pwsAlias = wil::make_unique_nothrow<wchar_t[]>(cchAliasBufferNeeded);
-    RETURN_IF_NULL_ALLOC(pwsAlias);
+        // If there's nothing to get, then simply return.
+        RETURN_HR_IF(S_OK, 0 == bufferNeeded);
 
-    // Call the Unicode version of this method
-    size_t cchAliasBufferWritten;
-    RETURN_IF_FAILED(GetConsoleAliasesWImplHelper(pwsExeName.get(), cchExeName, pwsAlias.get(), cchAliasBufferNeeded, &cchAliasBufferWritten));
+        // Allocate a unicode buffer of the right size.
+        std::unique_ptr<wchar_t[]> aliasBuffer = std::make_unique<wchar_t[]>(bufferNeeded);
+        RETURN_IF_NULL_ALLOC(aliasBuffer);
 
-    // Convert result to A
-    wistd::unique_ptr<char[]> psConverted;
-    size_t cchConverted;
-    RETURN_IF_FAILED(ConvertToA(uiCodePage, pwsAlias.get(), cchAliasBufferWritten, psConverted, cchConverted));
+        // Call the Unicode version of this method
+        size_t bufferWritten;
+        RETURN_IF_FAILED(GetConsoleAliasesWImplHelper(exeNameW, gsl::span<wchar_t>(aliasBuffer.get(), bufferNeeded), bufferWritten));
 
-    // Copy safely to the output buffer
-    // - Aliases are a series of null terminated strings. We cannot use a SafeString function to copy.
-    //   So instead, validate and use raw memory copy.
-    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), cchConverted > cchAliasBufferLength);
-    memcpy_s(psAliasBuffer, cchAliasBufferLength, psConverted.get(), cchConverted);
+        // Convert result to A
+        const auto converted = ConvertToA(codepage, { aliasBuffer.get(), bufferWritten });
 
-    // And return the size copied.
-    *pcchAliasBufferWritten = cchConverted;
+        // Copy safely to the output buffer
+        // - Aliases are a series of null terminated strings. We cannot use a SafeString function to copy.
+        //   So instead, validate and use raw memory copy.
+        RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), converted.size() > gsl::narrow<size_t>(alias.size()));
+        memcpy_s(alias.data(), alias.size(), converted.data(), converted.size());
 
-    return S_OK;
+        // And return the size copied.
+        written = converted.size();
+
+        return S_OK;
+    }
+    CATCH_RETURN();
 }
 
 // Routine Description:
 // - Retrieves all source=target pairs representing alias definitions for a given EXE name
 // Arguments:
-// - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
-// - cchExeNameBufferLength - Length in characters of EXE name buffer
-// - pwsAliasBuffer - The target buffer to hold all alias pairs we are trying to retrieve.
-// - cchAliasBufferLength - Length in characters of target buffer. Set to 0 when buffer is nullptr.
-// - pcchAliasBufferWritten - Pointer to space that will specify how many characters were written
+// - exeName - The client EXE application attached to the host whose set we should check
+// - alias - The target buffer to hold all alias pairs we are trying to retrieve.
+// - written - Will specify how many characters were written
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-HRESULT ApiRoutines::GetConsoleAliasesWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                            const size_t cchExeNameBufferLength,
-                                            _Out_writes_to_(cchAliasBufferLength, *pcchAliasBufferWritten) _Always_(_Post_z_) wchar_t* const pwsAliasBuffer,
-                                            const size_t cchAliasBufferLength,
-                                            _Out_ size_t* const pcchAliasBufferWritten)
+[[nodiscard]]
+HRESULT ApiRoutines::GetConsoleAliasesWImpl(const std::wstring_view exeName,
+                                            gsl::span<wchar_t> alias,
+                                            size_t& written) noexcept
 {
     LockConsole();
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    return GetConsoleAliasesWImplHelper(pwsExeNameBuffer, cchExeNameBufferLength, pwsAliasBuffer, cchAliasBufferLength, pcchAliasBufferWritten);
+    try
+    {
+        return GetConsoleAliasesWImplHelper(exeName, alias, written);
+    }
+    CATCH_RETURN();
 }
 
 // Routine Description:
@@ -657,41 +623,38 @@ HRESULT ApiRoutines::GetConsoleAliasesWImpl(_In_reads_or_z_(cchExeNameBufferLeng
 // - This method configuration is called for both A/W routines to allow us an efficient way of asking the system
 //   the lengths of how long each conversion would be without actually performing the full allocations/conversions.
 // Arguments:
-// - fCountInUnicode - True for W version (UCS-2 Unicode) calls. False for A version calls (all multibyte formats.)
-// - uiCodePage - Set to valid Windows Codepage for A version calls. Ignored for W (but typically just set to 0.)
-// - pcchAliasExesBufferRequired - Pointer to receive the length of buffer that would be required to retrieve all relevant EXE names.
+// - countInUnicode - True for W version (UCS-2 Unicode) calls. False for A version calls (all multibyte formats.)
+// - codepage - Set to valid Windows Codepage for A version calls. Ignored for W (but typically just set to 0.)
+// - bufferRequired - Receives the length of buffer that would be required to retrieve all relevant EXE names.
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-HRESULT GetConsoleAliasExesLengthImplHelper(const bool fCountInUnicode, const UINT uiCodePage, _Out_ size_t* const pcchAliasExesBufferRequired)
+[[nodiscard]]
+HRESULT GetConsoleAliasExesLengthImplHelper(const bool countInUnicode, const UINT codepage, size_t& bufferRequired)
 {
     // Ensure output variables are initialized
-    *pcchAliasExesBufferRequired = 0;
+    bufferRequired = 0;
 
-    try
+    size_t cchNeeded = 0;
+
+    // Each alias exe will be made up of the string payload and a null terminator.
+    size_t const cchNull = 1;
+
+    for (auto& pair : g_aliasData)
     {
-        size_t cchNeeded = 0;
+        size_t cchExe = pair.first.size();
 
-        // Each alias exe will be made up of the string payload and a null terminator.
-        size_t const cchNull = 1;
-
-        for (auto& pair : g_aliasData)
+        // If we're counting how much multibyte space will be needed, trial convert the exe string before we add.
+        if (!countInUnicode)
         {
-            size_t cchExe = pair.first.size();
-
-            // If we're counting how much multibyte space will be needed, trial convert the exe string before we add.
-            if (!fCountInUnicode)
-            {
-                RETURN_IF_FAILED(GetALengthFromW(uiCodePage, pair.first.data(), cchExe, &cchExe));
-            }
-
-            // Accumulate to total
-            RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchExe, &cchNeeded));
-            RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchNull, &cchNeeded));
+            cchExe = GetALengthFromW(codepage, pair.first);
         }
 
-        *pcchAliasExesBufferRequired = cchNeeded;
+        // Accumulate to total
+        RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchExe, &cchNeeded));
+        RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchNull, &cchNeeded));
     }
-    CATCH_RETURN();
+
+    bufferRequired = cchNeeded;
 
     return S_OK;
 }
@@ -699,30 +662,32 @@ HRESULT GetConsoleAliasExesLengthImplHelper(const bool fCountInUnicode, const UI
 // Routine Description:
 // - Retrieves the amount of space needed to hold all EXE names with aliases defined that are known to the console
 // Arguments:
-// - pcchAliasExesBufferRequired - Pointer to receive the length of buffer that would be required to retrieve all relevant EXE names.
+// - bufferRequired - Receives the length of buffer that would be required to retrieve all relevant EXE names.
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-HRESULT ApiRoutines::GetConsoleAliasExesLengthAImpl(_Out_ size_t* const pcchAliasExesBufferRequired)
+[[nodiscard]]
+HRESULT ApiRoutines::GetConsoleAliasExesLengthAImpl(size_t& bufferRequired) noexcept
 {
     LockConsole();
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    return GetConsoleAliasExesLengthImplHelper(false, gci.CP, pcchAliasExesBufferRequired);
+    return GetConsoleAliasExesLengthImplHelper(false, gci.CP, bufferRequired);
 }
 
 // Routine Description:
 // - Retrieves the amount of space needed to hold all EXE names with aliases defined that are known to the console
 // Arguments:
-// - pcchAliasExesBufferRequired - Pointer to receive the length of buffer that would be required to retrieve all relevant EXE names.
+// - bufferRequired - Pointer to receive the length of buffer that would be required to retrieve all relevant EXE names.
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-HRESULT ApiRoutines::GetConsoleAliasExesLengthWImpl(_Out_ size_t* const pcchAliasExesBufferRequired)
+[[nodiscard]]
+HRESULT ApiRoutines::GetConsoleAliasExesLengthWImpl(size_t& bufferRequired) noexcept
 {
     LockConsole();
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    return GetConsoleAliasExesLengthImplHelper(true, 0, pcchAliasExesBufferRequired);
+    return GetConsoleAliasExesLengthImplHelper(true, 0, bufferRequired);
 }
 
 // Routine Description:
@@ -733,63 +698,60 @@ HRESULT ApiRoutines::GetConsoleAliasExesLengthWImpl(_Out_ size_t* const pcchAlia
 //   the output/result data.
 // Arguments:
 // - pwsAliasExesBuffer - The target buffer to hold all known EXE names we are trying to retrieve.
-//                        Optionally nullptr to retrieve needed space.
+//                        Optionally nullopt to retrieve needed space.
 // - cchAliasExesBufferLength - Length in characters of target buffer. Set to 0 when buffer is nullptr.
 // - pcchAliasExesBufferWrittenOrNeeded - Pointer to space that will specify how many characters were written (if buffer is valid)
-//                                        or how many characters would have been consumed.
+//                                        or how many characters would have been needed (if buffer is nullopt).
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-HRESULT GetConsoleAliasExesWImplHelper(_Out_writes_to_opt_(cchAliasExesBufferLength, *pcchAliasExesBufferWrittenOrNeeded) _Always_(_Post_z_) wchar_t* const pwsAliasExesBuffer,
-                                       const size_t cchAliasExesBufferLength,
-                                       _Out_ size_t* const pcchAliasExesBufferWrittenOrNeeded)
+[[nodiscard]]
+HRESULT GetConsoleAliasExesWImplHelper(std::optional<gsl::span<wchar_t>> aliasExesBuffer,
+                                       size_t& writtenOrNeeded)
 {
     // Ensure output variables are initialized.
-    *pcchAliasExesBufferWrittenOrNeeded = 0;
-    if (nullptr != pwsAliasExesBuffer)
+    writtenOrNeeded = 0;
+    if (aliasExesBuffer.has_value() && aliasExesBuffer.value().size() > 0)
     {
-        *pwsAliasExesBuffer = L'\0';
+        aliasExesBuffer.value().at(0) = UNICODE_NULL;
     }
 
-    try
+    LPWSTR AliasExesBufferPtrW = aliasExesBuffer.has_value() ? aliasExesBuffer.value().data() : nullptr;
+    size_t cchTotalLength = 0; // accumulate the characters we need/have copied as we walk the list
+
+    size_t const cchNull = 1;
+
+    for (auto& pair : g_aliasData)
     {
-        LPWSTR AliasExesBufferPtrW = pwsAliasExesBuffer;
-        size_t cchTotalLength = 0; // accumulate the characters we need/have copied as we walk the list
+        // AliasList stores length in bytes. Add 1 for null terminator.
+        size_t const cchExe = pair.first.size();
 
-        size_t const cchNull = 1;
+        size_t cchNeeded;
+        RETURN_IF_FAILED(SizeTAdd(cchExe, cchNull, &cchNeeded));
 
-        for (auto& pair : g_aliasData)
+        // If we can return the data, attempt to do so until we're done or it overflows.
+        // If we cannot return data, we're just going to loop anyway and count how much space we'd need.
+        if (aliasExesBuffer.has_value())
         {
-            // AliasList stores length in bytes. Add 1 for null terminator.
-            size_t const cchExe = pair.first.size();
+            // Calculate the new total length after we add to the buffer
+            // Error out early if there is a problem.
+            size_t cchNewTotal;
+            RETURN_IF_FAILED(SizeTAdd(cchTotalLength, cchNeeded, &cchNewTotal));
+            RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), cchNewTotal > gsl::narrow<size_t>(aliasExesBuffer.value().size()));
 
-            size_t cchNeeded;
-            RETURN_IF_FAILED(SizeTAdd(cchExe, cchNull, &cchNeeded));
+            size_t cchRemaining;
+            RETURN_IF_FAILED(SizeTSub(aliasExesBuffer.value().size(), cchTotalLength, &cchRemaining));
 
-            // If we can return the data, attempt to do so until we're done or it overflows.
-            // If we cannot return data, we're just going to loop anyway and count how much space we'd need.
-            if (nullptr != pwsAliasExesBuffer)
-            {
-                // Calculate the new total length after we add to the buffer
-                // Error out early if there is a problem.
-                size_t cchNewTotal;
-                RETURN_IF_FAILED(SizeTAdd(cchTotalLength, cchNeeded, &cchNewTotal));
-                RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), cchNewTotal > cchAliasExesBufferLength);
-
-                size_t cchRemaining;
-                RETURN_IF_FAILED(SizeTSub(cchAliasExesBufferLength, cchTotalLength, &cchRemaining));
-
-                RETURN_IF_FAILED(StringCchCopyNW(AliasExesBufferPtrW, cchRemaining, pair.first.data(), cchExe));
-                AliasExesBufferPtrW += cchNeeded;
-            }
-
-            // Accumulate the total written amount.
-            RETURN_IF_FAILED(SizeTAdd(cchTotalLength, cchNeeded, &cchTotalLength));
-
+            RETURN_IF_FAILED(StringCchCopyNW(AliasExesBufferPtrW, cchRemaining, pair.first.data(), cchExe));
+            AliasExesBufferPtrW += cchNeeded;
         }
 
-        *pcchAliasExesBufferWrittenOrNeeded = cchTotalLength;
+        // Accumulate the total written amount.
+        RETURN_IF_FAILED(SizeTAdd(cchTotalLength, cchNeeded, &cchTotalLength));
+
     }
-    CATCH_RETURN();
+
+    writtenOrNeeded = cchTotalLength;
+
 
     return S_OK;
 }
@@ -798,55 +760,60 @@ HRESULT GetConsoleAliasExesWImplHelper(_Out_writes_to_opt_(cchAliasExesBufferLen
 // - Retrieves all EXE names with aliases defined that are known to the console.
 // - Will call the W version of the function and convert all text back to A on returning.
 // Arguments:
-// - psAliasExesBuffer - The target buffer to hold all known EXE names we are trying to retrieve.
-// - cchAliasExesBufferLength - Length in characters of target buffer. Set to 0 when buffer is nullptr.
-// - pcchAliasExesBufferWrittenOrNeeded - Pointer to space that will specify how many characters were written
+// - aliasExes - The target buffer to hold all known EXE names we are trying to retrieve.
+// - written - Specifies how many characters were written
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-HRESULT ApiRoutines::GetConsoleAliasExesAImpl(_Out_writes_to_(cchAliasExesBufferLength, *pcchAliasExesBufferWritten) _Always_(_Post_z_) char* const psAliasExesBuffer,
-                                              const size_t cchAliasExesBufferLength,
-                                              _Out_ size_t* const pcchAliasExesBufferWritten)
+[[nodiscard]]
+HRESULT ApiRoutines::GetConsoleAliasExesAImpl(gsl::span<char> aliasExes,
+                                              size_t& written) noexcept
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    UINT const uiCodePage = gci.CP;
+    UINT const codepage = gci.CP;
 
     // Ensure output variables are initialized
-    *pcchAliasExesBufferWritten = 0;
-    *psAliasExesBuffer = '\0';
+    written = 0;
 
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    try
+    {
+        if (aliasExes.size() > 0)
+        {
+            aliasExes.at(0) = '\0';
+        }
 
-    // Figure our how big our temporary Unicode buffer must be to retrieve output
-    size_t cchAliasExesBufferNeeded;
-    RETURN_IF_FAILED(GetConsoleAliasExesWImplHelper(nullptr, 0, &cchAliasExesBufferNeeded));
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    // If there's nothing to get, then simply return.
-    RETURN_HR_IF(S_OK, 0 == cchAliasExesBufferNeeded);
+        // Figure our how big our temporary Unicode buffer must be to retrieve output
+        size_t bufferNeeded;
+        RETURN_IF_FAILED(GetConsoleAliasExesWImplHelper(std::nullopt, bufferNeeded));
 
-    // Allocate a unicode buffer of the right size.
-    wistd::unique_ptr<wchar_t[]> pwsTarget = wil::make_unique_nothrow<wchar_t[]>(cchAliasExesBufferNeeded);
-    RETURN_IF_NULL_ALLOC(pwsTarget);
+        // If there's nothing to get, then simply return.
+        RETURN_HR_IF(S_OK, 0 == bufferNeeded);
 
-    // Call the Unicode version of this method
-    size_t cchAliasExesBufferWritten;
-    RETURN_IF_FAILED(GetConsoleAliasExesWImplHelper(pwsTarget.get(), cchAliasExesBufferNeeded, &cchAliasExesBufferWritten));
+        // Allocate a unicode buffer of the right size.
+        std::unique_ptr<wchar_t[]> targetBuffer = std::make_unique<wchar_t[]>(bufferNeeded);
+        RETURN_IF_NULL_ALLOC(targetBuffer);
 
-    // Convert result to A
-    wistd::unique_ptr<char[]> psConverted;
-    size_t cchConverted;
-    RETURN_IF_FAILED(ConvertToA(uiCodePage, pwsTarget.get(), cchAliasExesBufferWritten, psConverted, cchConverted));
+        // Call the Unicode version of this method
+        size_t bufferWritten;
+        RETURN_IF_FAILED(GetConsoleAliasExesWImplHelper(gsl::span<wchar_t>(targetBuffer.get(), bufferNeeded), bufferWritten));
 
-    // Copy safely to the output buffer
-    // - AliasExes are a series of null terminated strings. We cannot use a SafeString function to copy.
-    //   So instead, validate and use raw memory copy.
-    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), cchConverted > cchAliasExesBufferLength);
-    memcpy_s(psAliasExesBuffer, cchAliasExesBufferLength, psConverted.get(), cchConverted);
+        // Convert result to A
+        const auto converted = ConvertToA(codepage, { targetBuffer.get(), bufferWritten });
 
-    // And return the size copied.
-    *pcchAliasExesBufferWritten = cchConverted;
+        // Copy safely to the output buffer
+        // - AliasExes are a series of null terminated strings. We cannot use a SafeString function to copy.
+        //   So instead, validate and use raw memory copy.
+        RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), converted.size() > gsl::narrow<size_t>(aliasExes.size()));
+        memcpy_s(aliasExes.data(), aliasExes.size(), converted.data(), converted.size());
 
-    return S_OK;
+        // And return the size copied.
+        written = converted.size();
+
+        return S_OK;
+    }
+    CATCH_RETURN();
 }
 
 // Routine Description:
@@ -857,14 +824,18 @@ HRESULT ApiRoutines::GetConsoleAliasExesAImpl(_Out_writes_to_(cchAliasExesBuffer
 // - pcchAliasExesBufferWrittenOrNeeded - Pointer to space that will specify how many characters were written
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-HRESULT ApiRoutines::GetConsoleAliasExesWImpl(_Out_writes_to_(cchAliasExesBufferLength, *pcchAliasExesBufferWritten) _Always_(_Post_z_)  wchar_t* const pwsAliasExesBuffer,
-                                              const size_t cchAliasExesBufferLength,
-                                              _Out_ size_t* const pcchAliasExesBufferWritten)
+[[nodiscard]]
+HRESULT ApiRoutines::GetConsoleAliasExesWImpl(gsl::span<wchar_t> aliasExes,
+                                              size_t& written) noexcept
 {
     LockConsole();
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    return GetConsoleAliasExesWImplHelper(pwsAliasExesBuffer, cchAliasExesBufferLength, pcchAliasExesBufferWritten);
+    try
+    {
+        return GetConsoleAliasExesWImplHelper(aliasExes, written);
+    }
+    CATCH_RETURN();
 }
 
 // Routine Description:

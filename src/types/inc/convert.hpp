@@ -31,40 +31,12 @@ std::wstring ConvertToW(const UINT codepage,
                         const std::string_view source);
 
 [[nodiscard]]
-HRESULT ConvertToW(const UINT uiCodePage,
-                   _In_reads_or_z_(cchSource) const char* const rgchSource,
-                   const size_t cchSource,
-                   _Inout_ wistd::unique_ptr<wchar_t[]>& pwsTarget,
-                   _Out_ size_t& cchTarget);
-
-[[nodiscard]]
 std::string ConvertToA(const UINT codepage,
                        const std::wstring_view source);
 
 [[nodiscard]]
-HRESULT ConvertToA(const UINT uiCodePage,
-                   _In_reads_or_z_(cchSource) const wchar_t* const rgwchSource,
-                   _In_ size_t cchSource,
-                   _Inout_ wistd::unique_ptr<char[]>& psTarget,
-                   _Out_ size_t& cchTarget);
-
-[[nodiscard]]
 size_t GetALengthFromW(const UINT codepage,
                        const std::wstring_view source);
-
-[[nodiscard]]
-HRESULT GetALengthFromW(const UINT uiCodePage,
-                        _In_reads_or_z_(cchSource) const wchar_t* const rgwchSource,
-                        const size_t cchSource,
-                        _Out_ size_t* const pcchTarget);
-
-[[nodiscard]]
-HRESULT GetUShortByteCount(_In_ size_t cchUnicode,
-                           _Out_ USHORT* const pcb);
-
-[[nodiscard]]
-HRESULT GetDwordByteCount(_In_ size_t cchUnicode,
-                          _Out_ DWORD* const pcb);
 
 std::deque<std::unique_ptr<KeyEvent>> CharToKeyEvents(const wchar_t wch, const unsigned int codepage);
 

@@ -702,7 +702,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
         case OscActionCodes::SetIconAndWindowTitle:
         case OscActionCodes::SetWindowIcon:
         case OscActionCodes::SetWindowTitle:
-            fSuccess = _dispatch->SetWindowTitle(pwchTitle, sCchTitleLength);
+            fSuccess = _dispatch->SetWindowTitle({ pwchTitle, sCchTitleLength });
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCWT);
             break;
         case OscActionCodes::SetColor:

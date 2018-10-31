@@ -51,7 +51,7 @@ public:
     virtual bool EnableCursorBlinking(const bool fEnable) = 0;  // ATT610
     virtual bool SetTopBottomScrollingMargins(const SHORT sTopMargin, const SHORT sBottomMargin) = 0; // DECSTBM
     virtual bool ReverseLineFeed() = 0; // RI
-    virtual bool SetWindowTitle(_In_reads_(sCchTitleLength) const wchar_t* const pwchWindowTitle, unsigned short sCchTitleLength) = 0; // OscWindowTitle
+    virtual bool SetWindowTitle(std::wstring_view title) = 0; // OscWindowTitle
     virtual bool UseAlternateScreenBuffer() = 0; // ASBSET
     virtual bool UseMainScreenBuffer() = 0; // ASBRST
     virtual bool HorizontalTabSet() = 0; // HTS

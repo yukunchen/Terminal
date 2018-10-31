@@ -317,12 +317,10 @@ public:
                                       _Out_ size_t* const pcchTitleBufferNeeded) override;
 
     [[nodiscard]]
-    HRESULT SetConsoleTitleAImpl(_In_reads_or_z_(cchTitleBufferSize) const char* const psTitleBuffer,
-                                 const size_t cchTitleBufferSize) override;
+    HRESULT SetConsoleTitleAImpl(const std::string_view title) noexcept override;
 
     [[nodiscard]]
-    HRESULT SetConsoleTitleWImpl(_In_reads_or_z_(cchTitleBufferSize) const wchar_t* const pwsTitleBuffer,
-                                 const size_t cchTitleBufferSize) override;
+    HRESULT SetConsoleTitleWImpl(const std::wstring_view title) noexcept override;
 
 #pragma endregion
 
@@ -348,122 +346,92 @@ public:
     void GetConsoleDisplayModeImpl(_Out_ ULONG* const pFlags) override;
 
     [[nodiscard]]
-    HRESULT AddConsoleAliasAImpl(_In_reads_or_z_(cchSourceBufferLength) const char* const psSourceBuffer,
-                                 const size_t cchSourceBufferLength,
-                                 _In_reads_or_z_(cchTargetBufferLength) const char* const psTargetBuffer,
-                                 const size_t cchTargetBufferLength,
-                                 _In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
-                                 const size_t cchExeNameBufferLength) override;
+    virtual HRESULT AddConsoleAliasAImpl(const std::string_view source,
+                                         const std::string_view target,
+                                         const std::string_view exeName) noexcept override;
 
     [[nodiscard]]
-    HRESULT AddConsoleAliasWImpl(_In_reads_or_z_(cchSourceBufferLength) const wchar_t* const pwsSourceBuffer,
-                                 const size_t cchSourceBufferLength,
-                                 _In_reads_or_z_(cchTargetBufferLength) const wchar_t* const pwsTargetBuffer,
-                                 const size_t cchTargetBufferLength,
-                                 _In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                 const size_t cchExeNameBufferLength) override;
+    virtual HRESULT AddConsoleAliasWImpl(const std::wstring_view source,
+                                         const std::wstring_view target,
+                                         const std::wstring_view exeName) noexcept override;
 
     [[nodiscard]]
-    HRESULT GetConsoleAliasAImpl(_In_reads_or_z_(cchSourceBufferLength) const char* const psSourceBuffer,
-                                 const size_t cchSourceBufferLength,
-                                 _Out_writes_to_(cchTargetBufferLength, *pcchTargetBufferWritten) _Always_(_Post_z_) char* const psTargetBuffer,
-                                 const size_t cchTargetBufferLength,
-                                 _Out_ size_t* const pcchTargetBufferWritten,
-                                 _In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
-                                 const size_t cchExeNameBufferLength) override;
+    virtual HRESULT GetConsoleAliasAImpl(const std::string_view source,
+                                         gsl::span<char> target,
+                                         size_t& written,
+                                         const std::string_view exeName) noexcept override;
 
     [[nodiscard]]
-    HRESULT GetConsoleAliasWImpl(_In_reads_or_z_(cchSourceBufferLength) const wchar_t* const pwsSourceBuffer,
-                                 const size_t cchSourceBufferLength,
-                                 _Out_writes_to_(cchTargetBufferLength, *pcchTargetBufferWritten) _Always_(_Post_z_) wchar_t* const pwsTargetBuffer,
-                                 const size_t cchTargetBufferLength,
-                                 _Out_ size_t* const pcchTargetBufferWritten,
-                                 _In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                 const size_t cchExeNameBufferLength) override;
+    virtual HRESULT GetConsoleAliasWImpl(const std::wstring_view source,
+                                         gsl::span<wchar_t> target,
+                                         size_t& written,
+                                         const std::wstring_view exeName) noexcept override;
 
     [[nodiscard]]
-    HRESULT GetConsoleAliasesLengthAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
-                                         const size_t cchExeNameBufferLength,
-                                         _Out_ size_t* const pcchAliasesBufferRequired) override;
+    virtual HRESULT GetConsoleAliasesLengthAImpl(const std::string_view exeName,
+                                                 size_t& bufferRequired) noexcept override;
 
     [[nodiscard]]
-    HRESULT GetConsoleAliasesLengthWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                         const size_t cchExeNameBufferLength,
-                                         _Out_ size_t* const pcchAliasesBufferRequired) override;
+    virtual HRESULT GetConsoleAliasesLengthWImpl(const std::wstring_view exeName,
+                                                 size_t& bufferRequired) noexcept override;
 
     [[nodiscard]]
-    HRESULT GetConsoleAliasExesLengthAImpl(_Out_ size_t* const pcchAliasExesBufferRequired) override;
+    virtual HRESULT GetConsoleAliasExesLengthAImpl(size_t& bufferRequired) noexcept override;
 
     [[nodiscard]]
-    HRESULT GetConsoleAliasExesLengthWImpl(_Out_ size_t* const pcchAliasExesBufferRequired) override;
+    virtual HRESULT GetConsoleAliasExesLengthWImpl(size_t& bufferRequired) noexcept override;
 
     [[nodiscard]]
-    HRESULT GetConsoleAliasesAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
-                                   const size_t cchExeNameBufferLength,
-                                   _Out_writes_to_(cchAliasBufferLength, *pcchAliasBufferWritten) _Always_(_Post_z_) char* const psAliasBuffer,
-                                   const size_t cchAliasBufferLength,
-                                   _Out_ size_t* const pcchAliasBufferWritten) override;
+    virtual HRESULT GetConsoleAliasesAImpl(const std::string_view exeName,
+                                           gsl::span<char> alias,
+                                           size_t& written) noexcept override;
 
     [[nodiscard]]
-    HRESULT GetConsoleAliasesWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                   const size_t cchExeNameBufferLength,
-                                   _Out_writes_to_(cchAliasBufferLength, *pcchAliasBufferWritten) _Always_(_Post_z_) wchar_t* const pwsAliasBuffer,
-                                   const size_t cchAliasBufferLength,
-                                   _Out_ size_t* const pcchAliasBufferWritten) override;
+    virtual HRESULT GetConsoleAliasesWImpl(const std::wstring_view exeName,
+                                           gsl::span<wchar_t> alias,
+                                           size_t& written) noexcept override;
 
     [[nodiscard]]
-    HRESULT GetConsoleAliasExesAImpl(_Out_writes_to_(cchAliasExesBufferLength, *pcchAliasExesBufferWritten) _Always_(_Post_z_) char* const psAliasExesBuffer,
-                                     const size_t cchAliasExesBufferLength,
-                                     _Out_ size_t* const pcchAliasExesBufferWritten) override;
+    virtual HRESULT GetConsoleAliasExesAImpl(gsl::span<char> aliasExes,
+                                             size_t& written) noexcept override;
 
     [[nodiscard]]
-    HRESULT GetConsoleAliasExesWImpl(_Out_writes_to_(cchAliasExesBufferLength, *pcchAliasExesBufferWritten) _Always_(_Post_z_) wchar_t* const pwsAliasExesBuffer,
-                                     const size_t cchAliasExesBufferLength,
-                                     _Out_ size_t* const pcchAliasExesBufferWritten) override;
+    virtual HRESULT GetConsoleAliasExesWImpl(gsl::span<wchar_t> aliasExes,
+                                             size_t& written) noexcept override;
 
 #pragma region CMDext Private API
 
     [[nodiscard]]
-    HRESULT ExpungeConsoleCommandHistoryAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
-                                              const size_t cchExeNameBufferLength) override;
+    virtual HRESULT ExpungeConsoleCommandHistoryAImpl(const std::string_view exeName) noexcept override;
 
     [[nodiscard]]
-    HRESULT ExpungeConsoleCommandHistoryWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                              const size_t cchExeNameBufferLength) override;
+    virtual HRESULT ExpungeConsoleCommandHistoryWImpl(const std::wstring_view exeName) noexcept override;
 
     [[nodiscard]]
-    HRESULT SetConsoleNumberOfCommandsAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
-                                            const size_t cchExeNameBufferLength,
-                                            const size_t NumberOfCommands) override;
+    virtual HRESULT SetConsoleNumberOfCommandsAImpl(const std::string_view exeName,
+                                                    const size_t numberOfCommands) noexcept override;
 
     [[nodiscard]]
-    HRESULT SetConsoleNumberOfCommandsWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                            const size_t cchExeNameBufferLength,
-                                            const size_t NumberOfCommands) override;
+    virtual HRESULT SetConsoleNumberOfCommandsWImpl(const std::wstring_view exeName,
+                                                    const size_t numberOfCommands) noexcept override;
 
     [[nodiscard]]
-    HRESULT GetConsoleCommandHistoryLengthAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
-                                                const size_t cchExeNameBufferLength,
-                                                _Out_ size_t* const pcchCommandHistoryLength) override;
+    virtual HRESULT GetConsoleCommandHistoryLengthAImpl(const std::string_view exeName,
+                                                        size_t& length) noexcept override;
 
     [[nodiscard]]
-    HRESULT GetConsoleCommandHistoryLengthWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                                const size_t cchExeNameBufferLength,
-                                                _Out_ size_t* const pcchCommandHistoryLength) override;
+    virtual HRESULT GetConsoleCommandHistoryLengthWImpl(const std::wstring_view exeName,
+                                                        size_t& length) noexcept override;
 
     [[nodiscard]]
-    HRESULT GetConsoleCommandHistoryAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
-                                          const size_t cchExeNameBufferLength,
-                                          _Out_writes_to_(cchCommandHistoryBufferLength, *pcchCommandHistoryBufferWritten) _Always_(_Post_z_) char* const psCommandHistoryBuffer,
-                                          const size_t cchCommandHistoryBufferLength,
-                                          _Out_ size_t* const pcchCommandHistoryBufferWritten) override;
+    virtual HRESULT GetConsoleCommandHistoryAImpl(const std::string_view exeName,
+                                                  gsl::span<char> commandHistory,
+                                                  size_t& written) noexcept override;
 
     [[nodiscard]]
-    HRESULT GetConsoleCommandHistoryWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                          const size_t cchExeNameBufferLength,
-                                          _Out_writes_to_(cchCommandHistoryBufferLength, *pcchCommandHistoryBufferWritten) _Always_(_Post_z_) wchar_t* const pwsCommandHistoryBuffer,
-                                          const size_t cchCommandHistoryBufferLength,
-                                          _Out_ size_t* const pcchCommandHistoryBufferWritten) override;
+    virtual HRESULT GetConsoleCommandHistoryWImpl(const std::wstring_view exeName,
+                                                  gsl::span<wchar_t> commandHistory,
+                                                  size_t& written) noexcept override;
 
 #pragma endregion
 

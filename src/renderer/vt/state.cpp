@@ -134,10 +134,12 @@ HRESULT VtEngine::WriteTerminalUtf8(const std::string& str) noexcept
 [[nodiscard]]
 HRESULT VtEngine::_WriteTerminalUtf8(const std::wstring& wstr) noexcept
 {
-    wistd::unique_ptr<char[]> rgchNeeded;
-    size_t needed = 0;
-    RETURN_IF_FAILED(ConvertToA(CP_UTF8, wstr.c_str(), wstr.length(), rgchNeeded, needed));
-    return _Write(rgchNeeded.get(), needed);
+    try
+    {
+        const auto converted = ConvertToA(CP_UTF8, wstr);
+        return _Write(converted);
+    }
+    CATCH_RETURN();
 }
 
 // Method Description:

@@ -1311,14 +1311,12 @@ bool AdaptDispatch::ReverseLineFeed()
 // Routine Description:
 // - OSC Set Window Title - Sets the title of the window
 // Arguments:
-// - pwchWindowTitle - The string to set the title to. Must be null terminated.
-// - cchTitleLength - The length of the title string specified by pwchWindowTitle
+// - title - The string to set the title to. Must be null terminated.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::SetWindowTitle(_In_reads_(cchTitleLength) const wchar_t* const pwchWindowTitle,
-                                   _In_ unsigned short cchTitleLength)
+bool AdaptDispatch::SetWindowTitle(std::wstring_view title)
 {
-    return !!_conApi->SetConsoleTitleW(pwchWindowTitle, cchTitleLength);
+    return !!_conApi->SetConsoleTitleW(title);
 }
 
 // - ASBSET - Creates and swaps to the alternate screen buffer. In virtual terminals, there exists both a "main"

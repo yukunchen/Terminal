@@ -57,9 +57,8 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
         {
             const KeyEvent* const keyEvent = static_cast<const KeyEvent* const>(currentEvent.get());
 
-            wistd::unique_ptr<wchar_t[]> outWChar;
-            size_t size;
-            HRESULT hr;
+            std::wstring outWChar;
+            HRESULT hr = S_OK;
 
             // convert char data to unicode
             if (IsDBCSLeadByteConsole(static_cast<char>(keyEvent->GetCharData()), &gci.CPInfo))
@@ -80,11 +79,14 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
                     static_cast<char>(keyEvent->GetCharData()),
                     static_cast<char>(keyEventEndByte->GetCharData())
                 };
-                hr = ConvertToW(gci.CP,
-                                inBytes,
-                                ARRAYSIZE(inBytes),
-                                outWChar,
-                                size);
+                try
+                {
+                    outWChar = ConvertToW(gci.CP, { inBytes, ARRAYSIZE(inBytes) });
+                }
+                catch (...)
+                {
+                    hr = wil::ResultFromCaughtException();
+                }
             }
             else
             {
@@ -92,22 +94,25 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
                 {
                     static_cast<char>(keyEvent->GetCharData())
                 };
-                hr = ConvertToW(gci.CP,
-                                inBytes,
-                                ARRAYSIZE(inBytes),
-                                outWChar,
-                                size);
+                try
+                {
+                    outWChar = ConvertToW(gci.CP, { inBytes, ARRAYSIZE(inBytes) });
+                }
+                catch (...)
+                {
+                    hr = wil::ResultFromCaughtException();
+                }
             }
 
             // push unicode key events back out
-            if (SUCCEEDED(hr) && size > 0)
+            if (SUCCEEDED(hr) && outWChar.size() > 0)
             {
                 KeyEvent unicodeKeyEvent = *keyEvent;
-                for (size_t i = 0; i < size; ++i)
+                for (const auto wch : outWChar)
                 {
-                    unicodeKeyEvent.SetCharData(outWChar[i]);
                     try
                     {
+                        unicodeKeyEvent.SetCharData(wch);
                         outEvents.push_back(std::make_unique<KeyEvent>(unicodeKeyEvent));
                     }
                     catch (...)

@@ -153,7 +153,11 @@ bool WriteData::Notify(const WaitTerminationReason TerminationReason,
             size_t cchTextBufferRead = 0;
 
             // Start by counting the number of A bytes we used in printing our W string to the screen.
-            LOG_IF_FAILED(GetALengthFromW(_uiOutputCodepage, _pwchContext, cchContext, &cchTextBufferRead));
+            try
+            {
+                cchTextBufferRead = GetALengthFromW(_uiOutputCodepage, { _pwchContext, cchContext });
+            }
+            CATCH_LOG();
 
             // If we captured a byte off the string this time around up above, it means we didn't feed
             // it into the WriteConsoleW above, and therefore its consumption isn't accounted for

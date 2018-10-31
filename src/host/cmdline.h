@@ -161,8 +161,7 @@ bool IsWordDelim(const WCHAR wch);
 bool IsWordDelim(const std::wstring_view charData);
 
 [[nodiscard]]
-HRESULT DoSrvSetConsoleTitleW(_In_reads_or_z_(cchBuffer) const wchar_t* const pwsBuffer,
-                              const size_t cchBuffer);
+HRESULT DoSrvSetConsoleTitleW(const std::wstring_view title) noexcept;
 
 bool IsValidStringBuffer(_In_ bool Unicode, _In_reads_bytes_(Size) PVOID Buffer, _In_ ULONG Size, _In_ ULONG Count, ...);
 
