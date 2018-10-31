@@ -48,7 +48,7 @@ public:
     virtual bool EnableCursorBlinking(const bool /*fEnable*/) { return false; }  // ATT610
     virtual bool SetTopBottomScrollingMargins(const SHORT /*sTopMargin*/, const SHORT /*sBottomMargin*/) { return false; } // DECSTBM
     virtual bool ReverseLineFeed() { return false; } // RI
-    virtual bool SetWindowTitle(_In_reads_(_Param_(2)) const wchar_t* const /*pwchWindowTitle*/, unsigned short /*sCchTitleLength*/) { return false; } // OscWindowTitle
+    virtual bool SetWindowTitle(std::wstring_view /*title*/) { return false; } // OscWindowTitle
     virtual bool UseAlternateScreenBuffer() { return false; } // ASBSET
     virtual bool UseMainScreenBuffer() { return false; } // ASBRST
     virtual bool HorizontalTabSet() { return false; } // HTS

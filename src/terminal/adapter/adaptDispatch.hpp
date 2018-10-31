@@ -82,8 +82,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool SetTopBottomScrollingMargins(const SHORT sTopMargin,
                                                     const SHORT sBottomMargin); // DECSTBM
         virtual bool ReverseLineFeed(); // RI
-        virtual bool SetWindowTitle(_In_reads_(cchTitleLength) const wchar_t* const pwchWindowTitle,
-                                    _In_ unsigned short cchTitleLength); // OscWindowTitle
+        virtual bool SetWindowTitle(const std::wstring_view title) override; // OscWindowTitle
         virtual bool UseAlternateScreenBuffer(); // ASBSET
         virtual bool UseMainScreenBuffer(); // ASBRST
         virtual bool HorizontalTabSet(); // HTS

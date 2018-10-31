@@ -516,14 +516,14 @@ public:
         return !!_fMoveCursorVerticallyResult;
     }
 
-    BOOL SetConsoleTitleW(const wchar_t* const pwchWindowTitle, _In_ unsigned short sCchTitleLength)
+    BOOL SetConsoleTitleW(const std::wstring_view title)
     {
         Log::Comment(L"SetConsoleTitleW MOCK called...");
 
         if (_fSetConsoleTitleWResult)
         {
-            VERIFY_ARE_EQUAL(_pwchExpectedWindowTitle, pwchWindowTitle);
-            VERIFY_ARE_EQUAL(_sCchExpectedTitleLength, sCchTitleLength);
+            VERIFY_ARE_EQUAL(_pwchExpectedWindowTitle, title.data());
+            VERIFY_ARE_EQUAL(_sCchExpectedTitleLength, title.size());
         }
         return TRUE;
     }
@@ -3193,13 +3193,13 @@ public:
         _testGetSet->_pwchExpectedWindowTitle = pwchTestString;
         _testGetSet->_sCchExpectedTitleLength = 8;
 
-        VERIFY_IS_TRUE(_pDispatch->SetWindowTitle(pwchTestString, 8));
+        VERIFY_IS_TRUE(_pDispatch->SetWindowTitle({ pwchTestString, 8 }));
 
         Log::Comment(L"Test 2: set title to be null");
         _testGetSet->_fSetConsoleTitleWResult = FALSE;
         _testGetSet->_pwchExpectedWindowTitle = nullptr;
 
-        VERIFY_IS_TRUE(_pDispatch->SetWindowTitle(nullptr, 8));
+        VERIFY_IS_TRUE(_pDispatch->SetWindowTitle({}));
 
     }
 

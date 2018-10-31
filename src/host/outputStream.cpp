@@ -392,13 +392,12 @@ BOOL ConhostInternalGetSet::MoveCursorVertically(const short lines)
 // Routine Description:
 // - Connects the SetConsoleTitleW API call directly into our Driver Message servicing call inside Conhost.exe
 // Arguments:
-// - pwchWindowTitle - The null-terminated string to set as the window title
-// - sCchTitleLength - the number of characters in the title
+// - title - The null-terminated string to set as the window title
 // Return Value:
 // - TRUE if successful (see DoSrvSetConsoleTitle). FALSE otherwise.
-BOOL ConhostInternalGetSet::SetConsoleTitleW(_In_reads_(sCchTitleLength) const wchar_t* const pwchWindowTitle, _In_ unsigned short sCchTitleLength)
+BOOL ConhostInternalGetSet::SetConsoleTitleW(std::wstring_view title)
 {
-    return SUCCEEDED(DoSrvSetConsoleTitleW(pwchWindowTitle, sCchTitleLength));
+    return SUCCEEDED(DoSrvSetConsoleTitleW(title));
 }
 
 // Routine Description:

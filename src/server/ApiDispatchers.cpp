@@ -1053,17 +1053,13 @@ HRESULT ApiDispatchers::ServerSetConsoleTitle(_Inout_ CONSOLE_API_MSG * const m,
 
     if (a->Unicode)
     {
-        wchar_t* const pwsBuffer = reinterpret_cast<wchar_t*>(pvBuffer);
-        size_t const cchBuffer = cbOriginalLength / sizeof(wchar_t);
-        return m->_pApiRoutines->SetConsoleTitleWImpl(pwsBuffer,
-                                                      cchBuffer);
+        const std::wstring_view title(reinterpret_cast<wchar_t*>(pvBuffer), cbOriginalLength / sizeof(wchar_t));
+        return m->_pApiRoutines->SetConsoleTitleWImpl(title);
     }
     else
     {
-        char* const psBuffer = reinterpret_cast<char*>(pvBuffer);
-        size_t const cchBuffer = cbOriginalLength;
-        return m->_pApiRoutines->SetConsoleTitleAImpl(psBuffer,
-                                                      cchBuffer);
+        const std::string_view title(reinterpret_cast<char*>(pvBuffer), cbOriginalLength);
+        return m->_pApiRoutines->SetConsoleTitleAImpl(title);
     }
 }
 
@@ -1175,36 +1171,19 @@ HRESULT ApiDispatchers::ServerAddConsoleAlias(_Inout_ CONSOLE_API_MSG * const m,
 
     if (a->Unicode)
     {
-        wchar_t* const pwsInputSource = reinterpret_cast<wchar_t*>(pvInputSource);
-        size_t const cchInputSource = cbInputSource / sizeof(wchar_t);
-        wchar_t* const pwsInputTarget = reinterpret_cast<wchar_t*>(pvInputTarget);
-        size_t const cchInputTarget = cbInputTarget / sizeof(wchar_t);
-        wchar_t* const pwsInputExeName = reinterpret_cast<wchar_t*>(pvInputExeName);
-        size_t const cchInputExeName = cbInputExeName / sizeof(wchar_t);
+        const std::wstring_view inputSource(reinterpret_cast<wchar_t*>(pvInputSource), cbInputSource / sizeof(wchar_t));
+        const std::wstring_view inputTarget(reinterpret_cast<wchar_t*>(pvInputTarget), cbInputTarget / sizeof(wchar_t));
+        const std::wstring_view inputExeName(reinterpret_cast<wchar_t*>(pvInputExeName), cbInputExeName / sizeof(wchar_t));
 
-        return m->_pApiRoutines->AddConsoleAliasWImpl(pwsInputSource,
-                                                      cchInputSource,
-                                                      pwsInputTarget,
-                                                      cchInputTarget,
-                                                      pwsInputExeName,
-                                                      cchInputExeName);
+        return m->_pApiRoutines->AddConsoleAliasWImpl(inputSource, inputTarget, inputExeName);
     }
     else
     {
-        char* const psInputSource = reinterpret_cast<char*>(pvInputSource);
-        size_t const cchInputSource = cbInputSource;
-        char* const psInputTarget = reinterpret_cast<char*>(pvInputTarget);
-        size_t const cchInputTarget = cbInputTarget;
-        char* const psInputExeName = reinterpret_cast<char*>(pvInputExeName);
-        size_t const cchInputExeName = cbInputExeName;
+        const std::string_view inputSource(reinterpret_cast<char*>(pvInputSource), cbInputSource);
+        const std::string_view inputTarget(reinterpret_cast<char*>(pvInputTarget), cbInputTarget);
+        const std::string_view inputExeName(reinterpret_cast<char*>(pvInputExeName), cbInputExeName);
 
-
-        return m->_pApiRoutines->AddConsoleAliasAImpl(psInputSource,
-                                                      cchInputSource,
-                                                      psInputTarget,
-                                                      cchInputTarget,
-                                                      psInputExeName,
-                                                      cchInputExeName);
+        return m->_pApiRoutines->AddConsoleAliasAImpl(inputSource, inputTarget, inputExeName);
     }
 }
 
@@ -1239,44 +1218,24 @@ HRESULT ApiDispatchers::ServerGetConsoleAlias(_Inout_ CONSOLE_API_MSG * const m,
     size_t cbWritten;
     if (a->Unicode)
     {
-        const wchar_t* const pwsInputExe = reinterpret_cast<wchar_t*>(pvInputExe);
-        size_t const cchInputExe = cbInputExe / sizeof(wchar_t);
-        const wchar_t* const pwsInputSource = reinterpret_cast<wchar_t*>(pvInputSource);
-        size_t const cchInputSource = cbInputSource / sizeof(wchar_t);
-
-        wchar_t* const pwsOutputBuffer = reinterpret_cast<wchar_t*>(pvOutputBuffer);
-        size_t const cchOutputBuffer = cbOutputBufferSize / sizeof(wchar_t);
+        const std::wstring_view inputSource(reinterpret_cast<wchar_t*>(pvInputSource), cbInputSource / sizeof(wchar_t));
+        const std::wstring_view inputExeName(reinterpret_cast<wchar_t*>(pvInputExe), cbInputExe / sizeof(wchar_t));
+        gsl::span<wchar_t> outputBuffer(reinterpret_cast<wchar_t*>(pvOutputBuffer), cbOutputBufferSize / sizeof(wchar_t));
         size_t cchWritten;
 
-        hr = m->_pApiRoutines->GetConsoleAliasWImpl(pwsInputSource,
-                                                    cchInputSource,
-                                                    pwsOutputBuffer,
-                                                    cchOutputBuffer,
-                                                    &cchWritten,
-                                                    pwsInputExe,
-                                                    cchInputExe);
+        hr = m->_pApiRoutines->GetConsoleAliasWImpl(inputSource, outputBuffer, cchWritten, inputExeName);
 
         // We must set the reply length in bytes. Convert back from characters.
         RETURN_IF_FAILED(SizeTMult(cchWritten, sizeof(wchar_t), &cbWritten));
     }
     else
     {
-        const char* const psInputExe = reinterpret_cast<char*>(pvInputExe);
-        size_t const cchInputExe = cbInputExe;
-        const char* const psInputSource = reinterpret_cast<char*>(pvInputSource);
-        size_t const cchInputSource = cbInputSource;
-
-        char* const psOutputBuffer = reinterpret_cast<char*>(pvOutputBuffer);
-        size_t const cchOutputBuffer = cbOutputBufferSize;
+        const std::string_view inputSource(reinterpret_cast<char*>(pvInputSource), cbInputSource);
+        const std::string_view inputExeName(reinterpret_cast<char*>(pvInputExe), cbInputExe);
+        gsl::span<char> outputBuffer(reinterpret_cast<char*>(pvOutputBuffer), cbOutputBufferSize);
         size_t cchWritten;
 
-        hr = m->_pApiRoutines->GetConsoleAliasAImpl(psInputSource,
-                                                    cchInputSource,
-                                                    psOutputBuffer,
-                                                    cchOutputBuffer,
-                                                    &cchWritten,
-                                                    psInputExe,
-                                                    cchInputExe);
+        hr = m->_pApiRoutines->GetConsoleAliasAImpl(inputSource, outputBuffer, cchWritten, inputExeName);
 
         cbWritten = cchWritten;
     }
@@ -1311,19 +1270,17 @@ HRESULT ApiDispatchers::ServerGetConsoleAliasesLength(_Inout_ CONSOLE_API_MSG * 
     size_t cbAliasesLength;
     if (a->Unicode)
     {
-        const wchar_t* const pwsExeName = reinterpret_cast<wchar_t*>(pvExeName);
-        size_t const cchExeName = cbExeNameLength / sizeof(wchar_t);
+        const std::wstring_view inputExeName(reinterpret_cast<wchar_t*>(pvExeName), cbExeNameLength / sizeof(wchar_t));
         size_t cchAliasesLength;
-        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasesLengthWImpl(pwsExeName, cchExeName, &cchAliasesLength));
+        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasesLengthWImpl(inputExeName, cchAliasesLength));
 
         RETURN_IF_FAILED(SizeTMult(cchAliasesLength, sizeof(wchar_t), &cbAliasesLength));
     }
     else
     {
-        const char* const psExeName = reinterpret_cast<char*>(pvExeName);
-        size_t const cchExeName = cbExeNameLength;
+        const std::string_view inputExeName(reinterpret_cast<char*>(pvExeName), cbExeNameLength);
         size_t cchAliasesLength;
-        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasesLengthAImpl(psExeName, cchExeName, &cchAliasesLength));
+        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasesLengthAImpl(inputExeName, cchAliasesLength));
 
         cbAliasesLength = cchAliasesLength;
     }
@@ -1343,13 +1300,13 @@ HRESULT ApiDispatchers::ServerGetConsoleAliasExesLength(_Inout_ CONSOLE_API_MSG 
     if (a->Unicode)
     {
         size_t cchAliasExesLength;
-        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasExesLengthWImpl(&cchAliasExesLength));
-        cbAliasExesLength = cchAliasExesLength /= sizeof(wchar_t);
+        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasExesLengthWImpl(cchAliasExesLength));
+        cbAliasExesLength = cchAliasExesLength * sizeof(wchar_t);
     }
     else
     {
         size_t cchAliasExesLength;
-        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasExesLengthAImpl(&cchAliasExesLength));
+        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasExesLengthAImpl(cchAliasExesLength));
         cbAliasExesLength = cchAliasExesLength;
     }
 
@@ -1375,36 +1332,23 @@ HRESULT ApiDispatchers::ServerGetConsoleAliases(_Inout_ CONSOLE_API_MSG * const 
     size_t cbWritten;
     if (a->Unicode)
     {
-        const wchar_t* const pwsExeName = reinterpret_cast<wchar_t*>(pvExeName);
-        size_t const cchExeName = cbExeNameLength / sizeof(wchar_t);
-
-        wchar_t* const pwsAliasesBuffer = reinterpret_cast<wchar_t*>(pvOutputBuffer);
-        size_t const cchAliasesBuffer = cbAliasesBufferLength / sizeof(wchar_t);
+        const std::wstring_view inputExeName(reinterpret_cast<wchar_t*>(pvExeName), cbExeNameLength / sizeof(wchar_t));
+        gsl::span<wchar_t> outputBuffer(reinterpret_cast<wchar_t*>(pvOutputBuffer), cbAliasesBufferLength / sizeof(wchar_t));
         size_t cchWritten;
 
-        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasesWImpl(pwsExeName,
-                                                                  cchExeName,
-                                                                  pwsAliasesBuffer,
-                                                                  cchAliasesBuffer,
-                                                                  &cchWritten));
+        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasesWImpl(inputExeName, outputBuffer, cchWritten));
 
         // We must set the reply length in bytes. Convert back from characters.
         RETURN_IF_FAILED(SizeTMult(cchWritten, sizeof(wchar_t), &cbWritten));
     }
     else
     {
-        const char* const psExeName = reinterpret_cast<char*>(pvExeName);
-        size_t const cchExeName = cbExeNameLength;
-
-        char* const psAliasesBuffer = reinterpret_cast<char*>(pvOutputBuffer);
-        size_t const cchAliasesBuffer = cbAliasesBufferLength;
+        const std::string_view inputExeName(reinterpret_cast<char*>(pvExeName), cbExeNameLength);
+        gsl::span<char> outputBuffer(reinterpret_cast<char*>(pvOutputBuffer), cbAliasesBufferLength);
         size_t cchWritten;
 
-        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasesAImpl(psExeName,
-                                                                  cchExeName,
-                                                                  psAliasesBuffer,
-                                                                  cchAliasesBuffer,
-                                                                  &cchWritten));
+        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasesAImpl(inputExeName, outputBuffer, cchWritten));
+
         cbWritten = cchWritten;
     }
 
@@ -1428,23 +1372,17 @@ HRESULT ApiDispatchers::ServerGetConsoleAliasExes(_Inout_ CONSOLE_API_MSG * cons
     size_t cbWritten;
     if (a->Unicode)
     {
-        wchar_t* const pwsBuffer = reinterpret_cast<wchar_t*>(pvBuffer);
-        size_t const cchBuffer = cbAliasExesBufferLength / sizeof(wchar_t);
+        gsl::span<wchar_t> outputBuffer(reinterpret_cast<wchar_t*>(pvBuffer), cbAliasExesBufferLength / sizeof(wchar_t));
         size_t cchWritten;
-        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasExesWImpl(pwsBuffer,
-                                                                    cchBuffer,
-                                                                    &cchWritten));
+        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasExesWImpl(outputBuffer, cchWritten));
 
         RETURN_IF_FAILED(SizeTMult(cchWritten, sizeof(wchar_t), &cbWritten));
     }
     else
     {
-        char* const psBuffer = reinterpret_cast<char*>(pvBuffer);
-        size_t const cchBuffer = cbAliasExesBufferLength;
+        gsl::span<char> outputBuffer(reinterpret_cast<char*>(pvBuffer), cbAliasExesBufferLength);
         size_t cchWritten;
-        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasExesAImpl(psBuffer,
-                                                                    cchBuffer,
-                                                                    &cchWritten));
+        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasExesAImpl(outputBuffer, cchWritten));
 
         cbWritten = cchWritten;
     }
@@ -1468,17 +1406,15 @@ HRESULT ApiDispatchers::ServerExpungeConsoleCommandHistory(_Inout_ CONSOLE_API_M
 
     if (a->Unicode)
     {
-        const wchar_t* const pwsExeName = reinterpret_cast<wchar_t*>(pvExeName);
-        size_t const cchExeName = cbExeNameLength / sizeof(wchar_t);
+        const std::wstring_view inputExeName(reinterpret_cast<wchar_t*>(pvExeName), cbExeNameLength / sizeof(wchar_t));
 
-        return m->_pApiRoutines->ExpungeConsoleCommandHistoryWImpl(pwsExeName, cchExeName);
+        return m->_pApiRoutines->ExpungeConsoleCommandHistoryWImpl(inputExeName);
     }
     else
     {
-        const char* const psExeName = reinterpret_cast<char*>(pvExeName);
-        size_t const cchExeName = cbExeNameLength;
+        const std::string_view inputExeName(reinterpret_cast<char*>(pvExeName), cbExeNameLength);
 
-        return m->_pApiRoutines->ExpungeConsoleCommandHistoryAImpl(psExeName, cchExeName);
+        return m->_pApiRoutines->ExpungeConsoleCommandHistoryAImpl(inputExeName);
     }
 }
 
@@ -1493,21 +1429,15 @@ HRESULT ApiDispatchers::ServerSetConsoleNumberOfCommands(_Inout_ CONSOLE_API_MSG
     size_t const NumberOfCommands = a->NumCommands;
     if (a->Unicode)
     {
-        const wchar_t* const pwsExeName = reinterpret_cast<wchar_t*>(pvExeName);
-        size_t const cchExeName = cbExeNameLength / sizeof(wchar_t);
+        const std::wstring_view inputExeName(reinterpret_cast<wchar_t*>(pvExeName), cbExeNameLength / sizeof(wchar_t));
 
-        return m->_pApiRoutines->SetConsoleNumberOfCommandsWImpl(pwsExeName,
-                                                                 cchExeName,
-                                                                 NumberOfCommands);
+        return m->_pApiRoutines->SetConsoleNumberOfCommandsWImpl(inputExeName, NumberOfCommands);
     }
     else
     {
-        const char* const psExeName = reinterpret_cast<char*>(pvExeName);
-        size_t const cchExeName = cbExeNameLength;
+        const std::string_view inputExeName(reinterpret_cast<char*>(pvExeName), cbExeNameLength);
 
-        return m->_pApiRoutines->SetConsoleNumberOfCommandsAImpl(psExeName,
-                                                                 cchExeName,
-                                                                 NumberOfCommands);
+        return m->_pApiRoutines->SetConsoleNumberOfCommandsAImpl(inputExeName, NumberOfCommands);
     }
 }
 
@@ -1524,10 +1454,9 @@ HRESULT ApiDispatchers::ServerGetConsoleCommandHistoryLength(_Inout_ CONSOLE_API
     if (a->Unicode)
     {
         size_t cchCommandHistoryLength;
-        const wchar_t* const pwsExeName = reinterpret_cast<wchar_t*>(pvExeName);
-        size_t const cchExeName = cbExeNameLength / sizeof(wchar_t);
+        const std::wstring_view inputExeName(reinterpret_cast<wchar_t*>(pvExeName), cbExeNameLength / sizeof(wchar_t));
 
-        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleCommandHistoryLengthWImpl(pwsExeName, cchExeName, &cchCommandHistoryLength));
+        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleCommandHistoryLengthWImpl(inputExeName, cchCommandHistoryLength));
 
         // We must set the reply length in bytes. Convert back from characters.
         RETURN_IF_FAILED(SizeTMult(cchCommandHistoryLength, sizeof(wchar_t), &cbCommandHistoryLength));
@@ -1535,10 +1464,9 @@ HRESULT ApiDispatchers::ServerGetConsoleCommandHistoryLength(_Inout_ CONSOLE_API
     else
     {
         size_t cchCommandHistoryLength;
-        const char* const psExeName = reinterpret_cast<char*>(pvExeName);
-        size_t const cchExeName = cbExeNameLength;
+        const std::string_view inputExeName(reinterpret_cast<char*>(pvExeName), cbExeNameLength);
 
-        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleCommandHistoryLengthAImpl(psExeName, cchExeName, &cchCommandHistoryLength));
+        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleCommandHistoryLengthAImpl(inputExeName, cchCommandHistoryLength));
 
         cbCommandHistoryLength = cchCommandHistoryLength;
     }
@@ -1565,36 +1493,20 @@ HRESULT ApiDispatchers::ServerGetConsoleCommandHistory(_Inout_ CONSOLE_API_MSG *
     size_t cbWritten;
     if (a->Unicode)
     {
-        const wchar_t* const pwsExeName = reinterpret_cast<wchar_t*>(pvExeName);
-        size_t const cchExeName = cbExeNameLength / sizeof(wchar_t);
-
-        wchar_t* const pwsOutput = reinterpret_cast<wchar_t*>(pvOutputBuffer);
-        size_t const cchOutput = cbOutputBuffer / sizeof(wchar_t);
+        const std::wstring_view inputExeName(reinterpret_cast<wchar_t*>(pvExeName), cbExeNameLength / sizeof(wchar_t));
+        gsl::span<wchar_t> outputBuffer(reinterpret_cast<wchar_t*>(pvOutputBuffer), cbOutputBuffer / sizeof(wchar_t));
         size_t cchWritten;
-
-        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleCommandHistoryWImpl(pwsExeName,
-                                                                         cchExeName,
-                                                                         pwsOutput,
-                                                                         cchOutput,
-                                                                         &cchWritten));
+        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleCommandHistoryWImpl(inputExeName, outputBuffer, cchWritten));
 
         // We must set the reply length in bytes. Convert back from characters.
         RETURN_IF_FAILED(SizeTMult(cchWritten, sizeof(wchar_t), &cbWritten));
     }
     else
     {
-        const char* const psExeName = reinterpret_cast<char*>(pvExeName);
-        size_t const cchExeName = cbExeNameLength;
-
-        char* const psOutput = reinterpret_cast<char*>(pvOutputBuffer);
-        size_t const cchOutput = cbOutputBuffer;
+        const std::string_view inputExeName(reinterpret_cast<char*>(pvExeName), cbExeNameLength);
+        gsl::span<char> outputBuffer(reinterpret_cast<char*>(pvOutputBuffer), cbOutputBuffer);
         size_t cchWritten;
-
-        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleCommandHistoryAImpl(psExeName,
-                                                                         cchExeName,
-                                                                         psOutput,
-                                                                         cchOutput,
-                                                                         &cchWritten));
+        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleCommandHistoryAImpl(inputExeName, outputBuffer, cchWritten));
 
         cbWritten = cchWritten;
     }
