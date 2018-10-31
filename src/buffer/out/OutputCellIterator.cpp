@@ -112,9 +112,11 @@ OutputCellIterator::OutputCellIterator(const std::wstring_view utf16Text, const 
 // - This is an iterator over legacy colors only. The text is not modified.
 // Arguments:
 // - legacyAttrs - One legacy color item per cell
-OutputCellIterator::OutputCellIterator(const std::basic_string_view<WORD> legacyAttrs) :
+// - unused - useless bool to change function signature for legacyAttrs constructor because the C++ compiler in
+//             razzle cannot distinguish between a std::wstring_view and a std::basic_string_view<WORD>
+OutputCellIterator::OutputCellIterator(const std::basic_string_view<WORD> legacyAttrs, const bool /*unused*/) :
     _mode(Mode::LegacyAttr),
-    _currentView(s_GenerateView(legacyAttrs.at(0))),
+    _currentView(s_GenerateViewLegacyAttr(legacyAttrs.at(0))),
     _legacyAttrs(legacyAttrs),
     _distance(0),
     _pos(0),
@@ -485,7 +487,11 @@ OutputCellView OutputCellIterator::s_GenerateView(const wchar_t& wch, const Text
 // - legacyAttr - View representing a single legacy color
 // Return Value:
 // - Object representing the view into this cell
+<<<<<<< HEAD
 OutputCellView OutputCellIterator::s_GenerateView(const WORD& legacyAttr)
+=======
+OutputCellView OutputCellIterator::s_GenerateViewLegacyAttr(const WORD& legacyAttr)
+>>>>>>> inbox
 {
     WORD cleanAttr = legacyAttr;
     WI_ClearAllFlags(cleanAttr, COMMON_LVB_SBCSDBCS); // don't use legacy lead/trailing byte flags for colors
