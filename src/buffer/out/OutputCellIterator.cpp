@@ -296,7 +296,7 @@ OutputCellIterator& OutputCellIterator::operator++()
         _pos++;
         if (operator bool())
         {
-            _currentView = s_GenerateView(_legacyAttrs.at(_pos));
+            _currentView = s_GenerateViewLegacyAttr(_legacyAttrs.at(_pos));
         }
         break;
     }
