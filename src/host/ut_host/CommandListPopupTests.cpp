@@ -18,6 +18,8 @@ using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 
 static constexpr size_t BUFFER_SIZE = 256;
+static constexpr UINT s_NumberOfHistoryBuffers = 4;
+static constexpr UINT s_HistoryBufferSize = 50;
 
 class CommandListPopupTests
 {
@@ -30,6 +32,10 @@ class CommandListPopupTests
     {
         m_state = std::make_unique<CommonState>();
         m_state->PrepareGlobalFont();
+
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        gci.SetNumberOfHistoryBuffers(s_NumberOfHistoryBuffers);
+        gci.SetHistoryBufferSize(s_HistoryBufferSize);
         return true;
     }
 
