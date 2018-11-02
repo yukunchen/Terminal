@@ -92,19 +92,13 @@ public:
         coordScreenBufferSize.X = s_csBufferWidth;
         coordScreenBufferSize.Y = s_csBufferHeight;
 
-        CHAR_INFO ciFill;
-        ciFill.Attributes = FOREGROUND_BLUE | FOREGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY;
-
-        CHAR_INFO ciPopupFill;
-        ciPopupFill.Attributes = FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_RED;
-
         UINT uiCursorSize = 12;
 
         THROW_IF_FAILED(SCREEN_INFORMATION::CreateInstance(coordWindowSize,
                                                            *m_pFontInfo,
                                                            coordScreenBufferSize,
-                                                           ciFill,
-                                                           ciPopupFill,
+                                                           gci.GetDefaultAttributes(),
+                                                           TextAttribute{ FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_RED },
                                                            uiCursorSize,
                                                            &gci.pCurrentScreenBuffer));
     }
@@ -155,9 +149,6 @@ public:
         coordScreenBufferSize.X = s_csBufferWidth;
         coordScreenBufferSize.Y = s_csBufferHeight;
 
-        CHAR_INFO ciFill;
-        ciFill.Attributes = FOREGROUND_BLUE | FOREGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY;
-
         UINT uiCursorSize = 12;
 
         m_backupTextBufferInfo.swap(gci.pCurrentScreenBuffer->_textBuffer);
@@ -165,7 +156,7 @@ public:
         {
             std::unique_ptr<TextBuffer> textBuffer = std::make_unique<TextBuffer>(*m_pFontInfo,
                                                                                   coordScreenBufferSize,
-                                                                                  ciFill,
+                                                                                  TextAttribute{FOREGROUND_BLUE | FOREGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY},
                                                                                   uiCursorSize);
             if (textBuffer.get() == nullptr)
             {

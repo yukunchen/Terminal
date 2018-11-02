@@ -40,10 +40,14 @@ namespace Microsoft::Console::VirtualTerminal
                                                 const COORD dwWriteCoord,
                                                 size_t& numberOfAttrsWritten) noexcept = 0;
         virtual BOOL SetConsoleTextAttribute(const WORD wAttr) = 0;
+
         virtual BOOL PrivateSetLegacyAttributes(const WORD wAttr,
                                                 const bool fForeground,
                                                 const bool fBackground,
                                                 const bool fMeta) = 0;
+
+        virtual BOOL PrivateSetDefaultAttributes(const bool fForeground, const bool fBackground) = 0;
+
         virtual BOOL SetConsoleXtermTextAttribute(const int iXtermTableEntry,
                                                   const bool fIsForeground) = 0;
         virtual BOOL SetConsoleRGBTextAttribute(const COLORREF rgbColor, const bool fIsForeground) = 0;

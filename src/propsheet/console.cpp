@@ -455,6 +455,7 @@ BOOL PopulatePropSheetPageArray(_Out_writes_(cPsps) PROPSHEETPAGE *pPsp, const s
         PROPSHEETPAGE* const pFontPage = &(pPsp[FONT_PAGE_INDEX]);
         PROPSHEETPAGE* const pLayoutPage = &(pPsp[LAYOUT_PAGE_INDEX]);
         PROPSHEETPAGE* const pColorsPage = &(pPsp[COLORS_PAGE_INDEX]);
+        PROPSHEETPAGE* const pTerminalPage = &(pPsp[TERMINAL_PAGE_INDEX]);
 
         pOptionsPage->dwSize      = sizeof(PROPSHEETPAGE);
         pOptionsPage->hInstance   = ghInstance;
@@ -490,6 +491,15 @@ BOOL PopulatePropSheetPageArray(_Out_writes_(cPsps) PROPSHEETPAGE *pPsp, const s
         pColorsPage->pfnDlgProc  = ColorDlgProc;
         pColorsPage->lParam      = COLORS_PAGE_INDEX;
         pOptionsPage->dwFlags      = PSP_DEFAULT;
+        if (g_fForceV2)
+        {
+            pTerminalPage->dwSize      = sizeof(PROPSHEETPAGE);
+            pTerminalPage->hInstance   = ghInstance;
+            pTerminalPage->pszTemplate = MAKEINTRESOURCE(DID_TERMINAL);
+            pTerminalPage->pfnDlgProc  = TerminalDlgProc;
+            pTerminalPage->lParam      = TERMINAL_PAGE_INDEX;
+            pTerminalPage->dwFlags     = PSP_DEFAULT;
+        }
 
         // Register callbacks if requested (used for file property sheet purposes)
         if (fRegisterCallbacks)
@@ -581,7 +591,7 @@ INT_PTR ConsolePropertySheet(__in HWND hWnd, __in PCONSOLE_STATE_INFO pStateInfo
     psh.hIcon = gpStateInfo->hIcon;
     psh.hInstance = ghInstance;
     psh.pszCaption = awchBuffer;
-    psh.nPages = ARRAYSIZE(psp);
+    psh.nPages = g_fForceV2 ? NUMBER_OF_PAGES : V1_NUMBER_OF_PAGES;
     psh.nStartPage = min(gnCurrentPage, ARRAYSIZE(psp));
     psh.ppsp = psp;
     psh.pfnCallback = NULL;
@@ -616,10 +626,21 @@ INT_PTR ConsolePropertySheet(__in HWND hWnd, __in PCONSOLE_STATE_INFO pStateInfo
 void RegisterClasses(HINSTANCE hModule)
 {
     WNDCLASS wc;
-
-    wc.lpszClassName = TEXT("cpColor");
+    wc.lpszClassName = TEXT("SimpleColor");
     wc.hInstance     = hModule;
-    wc.lpfnWndProc   = (WNDPROC) ColorControlProc;
+    wc.lpfnWndProc   = (WNDPROC) SimpleColorControlProc;
+    wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
+    wc.hIcon         = NULL;
+    wc.lpszMenuName  = NULL;
+    wc.hbrBackground = (HBRUSH) (COLOR_WINDOW + 1);
+    wc.style         = CS_HREDRAW | CS_VREDRAW;
+    wc.cbClsExtra    = 0;
+    wc.cbWndExtra    = 0;
+    RegisterClass(&wc);
+
+    wc.lpszClassName = TEXT("ColorTableColor");
+    wc.hInstance     = hModule;
+    wc.lpfnWndProc   = (WNDPROC) ColorTableControlProc;
     wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
     wc.hIcon         = NULL;
     wc.lpszMenuName  = NULL;

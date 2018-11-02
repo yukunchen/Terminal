@@ -37,7 +37,6 @@ GdiEngine::GdiEngine() :
 {
     ZeroMemory(_pPolyText, sizeof(POLYTEXTW) * s_cPolyTextCache);
     _rcInvalid = { 0 };
-    _rcCursorInvert = { 0 };
     _szInvalidScroll = { 0 };
     _szMemorySurface = { 0 };
 
@@ -107,7 +106,7 @@ GdiEngine::~GdiEngine()
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 [[nodiscard]]
-HRESULT GdiEngine::SetHwnd(const HWND hwnd) noexcept 
+HRESULT GdiEngine::SetHwnd(const HWND hwnd) noexcept
 {
     // First attempt to get the DC and create an appropriate DC
     HDC const hdcRealWindow = GetDC(hwnd);

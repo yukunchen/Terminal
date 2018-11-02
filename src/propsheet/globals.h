@@ -1,14 +1,14 @@
 // Copyright (c) 2016  Microsoft Corporation
-// 
+//
 // Module Name:
 //     globals.h
-// 
+//
 // Abstract:
-//     One seperate container for many of the global variables in the propsheet 
-//     
+//     One seperate container for many of the global variables in the propsheet
+//
 // Author:
-//     Mike Griese (mikegr) 2016-Oct 
-// 
+//     Mike Griese (mikegr) 2016-Oct
+//
 // Revision History:
 
 #pragma once
@@ -46,3 +46,7 @@ extern BOOL fChangeCodePage;
 
 extern BOOL g_fSettingsDlgInitialized;
 extern BOOL InEM_UNDO;
+
+extern COLORREF g_fakeForegroundColor;
+extern COLORREF g_fakeBackgroundColor;
+extern COLORREF g_fakeCursorColor;

@@ -103,6 +103,8 @@ void TextAttribute::SetFromLegacy(const WORD wLegacy) noexcept
 {
     _wAttrLegacy = wLegacy;
     _fUseRgbColor = false;
+    _defaultFg = false;
+    _defaultBg = false;
     _rgbForeground = 0;
     _rgbBackground = 0;
 }
@@ -228,4 +230,56 @@ void TextAttribute::_SetBoldness(const bool isBold) noexcept
         }
     }
     _isBold = isBold;
+}
+
+void TextAttribute::SetDefaultForeground(const COLORREF rgbForeground, const WORD wAttrDefault) noexcept
+{
+    if(rgbForeground == INVALID_COLOR)
+    {
+        return;
+    }
+    WI_UpdateFlagsInMask(_wAttrLegacy, FG_ATTRS, wAttrDefault);
+    SetForeground(rgbForeground);
+    _defaultFg = true;
+}
+
+void TextAttribute::SetDefaultBackground(const COLORREF rgbBackground, const WORD wAttrDefault) noexcept
+{
+    if(rgbBackground == INVALID_COLOR)
+    {
+        return;
+    }
+    WI_UpdateFlagsInMask(_wAttrLegacy, BG_ATTRS, wAttrDefault);
+    SetBackground(rgbBackground);
+    _defaultBg = true;
+}
+
+// Method Description:
+// - Returns true if this attribute indicates it's foreground is the "default"
+//      foreground. It's _rgbForeground will contain the actual value of the
+//      default foreground. If the default colors are ever changed, this method
+//      should be used to identify attributes with the default fg value, and
+//      update them accordingly.
+// Arguments:
+// - <none>
+// Return Value:
+// - true iff this attribute indicates it's the "default" foreground color.
+bool TextAttribute::ForegroundIsDefault() const noexcept
+{
+    return _defaultFg;
+}
+
+// Method Description:
+// - Returns true if this attribute indicates it's background is the "default"
+//      background. It's _rgbBackground will contain the actual value of the
+//      default background. If the default colors are ever changed, this method
+//      should be used to identify attributes with the default bg value, and
+//      update them accordingly.
+// Arguments:
+// - <none>
+// Return Value:
+// - true iff this attribute indicates it's the "default" background color.
+bool TextAttribute::BackgroundIsDefault() const noexcept
+{
+    return _defaultBg;
 }

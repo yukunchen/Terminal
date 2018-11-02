@@ -77,6 +77,9 @@ public:
                                     const bool fBackground,
                                     const bool fMeta) override;
 
+    BOOL PrivateSetDefaultAttributes(const bool fForeground,
+                                     const bool fBackground) override;
+
     BOOL SetConsoleXtermTextAttribute(const int iXtermTableEntry,
                                       const bool fIsForeground) override;
 

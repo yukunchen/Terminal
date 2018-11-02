@@ -134,6 +134,8 @@ VOID InitRegistryValues(
     pStateInfo->CursorType = 0;
     pStateInfo->CursorColor = INVALID_COLOR;
     pStateInfo->InterceptCopyPaste = FALSE;
+    pStateInfo->DefaultForeground = INVALID_COLOR;
+    pStateInfo->DefaultBackground = INVALID_COLOR;
     // end v2 console state
 }
 
@@ -518,28 +520,27 @@ DWORD GetRegistryValues(
         }
     }
 
-    // TODO: MSFT 18451277 - Re-enable Cursor Color, Style persistence
-    // // Initial Cursor Color
-    // Status = RegistrySerialization::s_QueryValue(hTitleKey,
-    //                                              CONSOLE_REGISTRY_CURSORCOLOR,
-    //                                              sizeof(dwValue),
-    //                                              REG_DWORD,
-    //                                              (PBYTE)&dwValue,
-    //                                              NULL);
-    // if (NT_SUCCESS(Status)) {
-    //     pStateInfo->CursorColor = dwValue;
-    // }
-    // // Initial Cursor Shape
-    // Status = RegistrySerialization::s_QueryValue(hTitleKey,
-    //                                              CONSOLE_REGISTRY_CURSORTYPE,
-    //                                              sizeof(dwValue),
-    //                                              REG_DWORD,
-    //                                              (PBYTE)&dwValue,
-    //                                              NULL);
-    // if (NT_SUCCESS(Status))
-    // {
-    //     pStateInfo->CursorType = dwValue;
-    // }
+    // Initial Cursor Color
+    Status = RegistrySerialization::s_QueryValue(hTitleKey,
+                                                 CONSOLE_REGISTRY_CURSORCOLOR,
+                                                 sizeof(dwValue),
+                                                 REG_DWORD,
+                                                 (PBYTE)&dwValue,
+                                                 NULL);
+    if (NT_SUCCESS(Status)) {
+        pStateInfo->CursorColor = dwValue;
+    }
+    // Initial Cursor Shape
+    Status = RegistrySerialization::s_QueryValue(hTitleKey,
+                                                 CONSOLE_REGISTRY_CURSORTYPE,
+                                                 sizeof(dwValue),
+                                                 REG_DWORD,
+                                                 (PBYTE)&dwValue,
+                                                 NULL);
+    if (NT_SUCCESS(Status))
+    {
+        pStateInfo->CursorType = dwValue;
+    }
 
     // Initial Intercept Copy Paste
     Status = RegistrySerialization::s_QueryValue(hTitleKey,
@@ -551,6 +552,39 @@ DWORD GetRegistryValues(
     if (NT_SUCCESS(Status))
     {
         pStateInfo->InterceptCopyPaste = !!dwValue;
+    }
+
+    // Initial Foreground Color
+    Status = RegistrySerialization::s_QueryValue(hTitleKey,
+                                                 CONSOLE_REGISTRY_DEFAULTFOREGROUND,
+                                                 sizeof(dwValue),
+                                                 REG_DWORD,
+                                                 (PBYTE)&dwValue,
+                                                 NULL);
+    if (NT_SUCCESS(Status)) {
+        pStateInfo->DefaultForeground = dwValue;
+    }
+
+    // Initial Background Color
+    Status = RegistrySerialization::s_QueryValue(hTitleKey,
+                                                 CONSOLE_REGISTRY_DEFAULTBACKGROUND,
+                                                 sizeof(dwValue),
+                                                 REG_DWORD,
+                                                 (PBYTE)&dwValue,
+                                                 NULL);
+    if (NT_SUCCESS(Status)) {
+        pStateInfo->DefaultBackground = dwValue;
+    }
+
+    // Initial Background Color
+    Status = RegistrySerialization::s_QueryValue(hTitleKey,
+                                                 CONSOLE_REGISTRY_TERMINALSCROLLING,
+                                                 sizeof(dwValue),
+                                                 REG_DWORD,
+                                                 (PBYTE)&dwValue,
+                                                 NULL);
+    if (NT_SUCCESS(Status)) {
+        pStateInfo->TerminalScrolling = dwValue;
     }
 
     //
@@ -865,29 +899,49 @@ VOID SetRegistryValues(
 
     SetGlobalRegistryValues();
 
-    // TODO: MSFT 18451277 - Re-enable Cursor Color, Style persistence
     // Save cursor type and color
-    //
-    // dwValue = pStateInfo->CursorType;
-    // LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
-    //                                                    hTitleKey,
-    //                                                    CONSOLE_REGISTRY_CURSORTYPE,
-    //                                                    REG_DWORD,
-    //                                                    (BYTE*)&dwValue,
-    //                                                    sizeof(dwValue)));
+    dwValue = pStateInfo->CursorType;
+    LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                       hTitleKey,
+                                                       CONSOLE_REGISTRY_CURSORTYPE,
+                                                       REG_DWORD,
+                                                       (BYTE*)&dwValue,
+                                                       sizeof(dwValue)));
 
-    // dwValue = pStateInfo->CursorColor;
-    // LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
-    //                                                    hTitleKey,
-    //                                                    CONSOLE_REGISTRY_CURSORCOLOR,
-    //                                                    REG_DWORD,
-    //                                                    (BYTE*)&dwValue,
-    //                                                    sizeof(dwValue)));
+    dwValue = pStateInfo->CursorColor;
+    LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                       hTitleKey,
+                                                       CONSOLE_REGISTRY_CURSORCOLOR,
+                                                       REG_DWORD,
+                                                       (BYTE*)&dwValue,
+                                                       sizeof(dwValue)));
 
     dwValue = pStateInfo->InterceptCopyPaste;
     LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
                                                        hTitleKey,
                                                        CONSOLE_REGISTRY_INTERCEPTCOPYPASTE,
+                                                       REG_DWORD,
+                                                       (BYTE*)&dwValue,
+                                                       sizeof(dwValue)));
+
+    dwValue = pStateInfo->TerminalScrolling;
+    LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                       hTitleKey,
+                                                       CONSOLE_REGISTRY_TERMINALSCROLLING,
+                                                       REG_DWORD,
+                                                       (BYTE*)&dwValue,
+                                                       sizeof(dwValue)));
+    dwValue = pStateInfo->DefaultForeground;
+    LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                       hTitleKey,
+                                                       CONSOLE_REGISTRY_DEFAULTFOREGROUND,
+                                                       REG_DWORD,
+                                                       (BYTE*)&dwValue,
+                                                       sizeof(dwValue)));
+    dwValue = pStateInfo->DefaultBackground;
+    LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                       hTitleKey,
+                                                       CONSOLE_REGISTRY_DEFAULTBACKGROUND,
                                                        REG_DWORD,
                                                        (BYTE*)&dwValue,
                                                        sizeof(dwValue)));

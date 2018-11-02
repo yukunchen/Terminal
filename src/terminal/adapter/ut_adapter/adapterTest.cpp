@@ -68,7 +68,7 @@ using namespace Microsoft::Console::VirtualTerminal;
 class TestGetSet final : public ConGetSet
 {
 public:
-    BOOL GetConsoleScreenBufferInfoEx(_Out_ CONSOLE_SCREEN_BUFFER_INFOEX* const psbiex) const
+    BOOL GetConsoleScreenBufferInfoEx(_Out_ CONSOLE_SCREEN_BUFFER_INFOEX* const psbiex) const override
     {
         Log::Comment(L"GetConsoleScreenBufferInfoEx MOCK returning data...");
 
@@ -82,7 +82,7 @@ public:
 
         return _fGetConsoleScreenBufferInfoExResult;
     }
-    BOOL SetConsoleScreenBufferInfoEx(const CONSOLE_SCREEN_BUFFER_INFOEX* const psbiex)
+    BOOL SetConsoleScreenBufferInfoEx(const CONSOLE_SCREEN_BUFFER_INFOEX* const psbiex) override
     {
         Log::Comment(L"SetConsoleScreenBufferInfoEx MOCK returning data...");
 
@@ -95,7 +95,7 @@ public:
         }
         return _fSetConsoleScreenBufferInfoExResult;
     }
-    BOOL SetConsoleCursorPosition(const COORD dwCursorPosition)
+    BOOL SetConsoleCursorPosition(const COORD dwCursorPosition) override
     {
         Log::Comment(L"SetConsoleCursorPosition MOCK called...");
 
@@ -108,7 +108,7 @@ public:
         return _fSetConsoleCursorPositionResult;
     }
 
-    BOOL GetConsoleCursorInfo(_In_ CONSOLE_CURSOR_INFO* const pConsoleCursorInfo) const
+    BOOL GetConsoleCursorInfo(_In_ CONSOLE_CURSOR_INFO* const pConsoleCursorInfo) const override
     {
         Log::Comment(L"GetConsoleCursorInfo MOCK called...");
 
@@ -121,7 +121,7 @@ public:
         return _fGetConsoleCursorInfoResult;
     }
 
-    BOOL SetConsoleCursorInfo(const CONSOLE_CURSOR_INFO* const pConsoleCursorInfo)
+    BOOL SetConsoleCursorInfo(const CONSOLE_CURSOR_INFO* const pConsoleCursorInfo) override
     {
         Log::Comment(L"SetConsoleCursorInfo MOCK called...");
 
@@ -134,7 +134,7 @@ public:
         return _fSetConsoleCursorInfoResult;
     }
 
-    BOOL SetConsoleWindowInfo(const BOOL bAbsolute, const SMALL_RECT* const lpConsoleWindow)
+    BOOL SetConsoleWindowInfo(const BOOL bAbsolute, const SMALL_RECT* const lpConsoleWindow) override
     {
         Log::Comment(L"SetConsoleWindowInfo MOCK called...");
 
@@ -148,7 +148,7 @@ public:
         return _fSetConsoleWindowInfoResult;
     }
 
-    BOOL PrivateSetCursorKeysMode(const bool fCursorKeysApplicationMode)
+    BOOL PrivateSetCursorKeysMode(const bool fCursorKeysApplicationMode) override
     {
         Log::Comment(L"PrivateSetCursorKeysMode MOCK called...");
 
@@ -160,7 +160,7 @@ public:
         return _fPrivateSetCursorKeysModeResult;
     }
 
-    BOOL PrivateSetKeypadMode(const bool fKeypadApplicationMode)
+    BOOL PrivateSetKeypadMode(const bool fKeypadApplicationMode) override
     {
         Log::Comment(L"PrivateSetKeypadMode MOCK called...");
 
@@ -172,7 +172,7 @@ public:
         return _fPrivateSetKeypadModeResult;
     }
 
-    BOOL PrivateAllowCursorBlinking(const bool fEnable)
+    BOOL PrivateAllowCursorBlinking(const bool fEnable) override
     {
         Log::Comment(L"PrivateAllowCursorBlinking MOCK called...");
 
@@ -184,7 +184,7 @@ public:
         return _fPrivateAllowCursorBlinkingResult;
     }
 
-    BOOL FillConsoleOutputCharacterW(const WCHAR wch, const DWORD nLength, const COORD dwWriteCoord, size_t& numberOfCharsWritten) noexcept
+    BOOL FillConsoleOutputCharacterW(const WCHAR wch, const DWORD nLength, const COORD dwWriteCoord, size_t& numberOfCharsWritten) noexcept override
     {
         Log::Comment(L"FillConsoleOutputCharacterW MOCK called...");
 
@@ -212,7 +212,7 @@ public:
         return _fFillConsoleOutputCharacterWResult;
     }
 
-    BOOL FillConsoleOutputAttribute(const WORD wAttribute, const DWORD nLength, const COORD dwWriteCoord, size_t& numberOfAttrsWritten) noexcept
+    BOOL FillConsoleOutputAttribute(const WORD wAttribute, const DWORD nLength, const COORD dwWriteCoord, size_t& numberOfAttrsWritten) noexcept override
     {
         Log::Comment(L"FillConsoleOutputAttribute MOCK called...");
 
@@ -240,7 +240,7 @@ public:
         return _fFillConsoleOutputAttributeResult;
     }
 
-    BOOL SetConsoleTextAttribute(const WORD wAttr)
+    BOOL SetConsoleTextAttribute(const WORD wAttr) override
     {
         Log::Comment(L"SetConsoleTextAttribute MOCK called...");
 
@@ -254,7 +254,7 @@ public:
         return _fSetConsoleTextAttributeResult;
     }
 
-    BOOL PrivateSetLegacyAttributes(const WORD wAttr, const bool fForeground, const bool fBackground, const bool fMeta)
+    BOOL PrivateSetLegacyAttributes(const WORD wAttr, const bool fForeground, const bool fBackground, const bool fMeta) override
     {
         Log::Comment(L"PrivateSetLegacyAttributes MOCK called...");
         if (_fPrivateSetLegacyAttributesResult)
@@ -283,7 +283,7 @@ public:
         return _fPrivateSetLegacyAttributesResult;
     }
 
-    BOOL SetConsoleXtermTextAttribute(const int iXtermTableEntry, const bool fIsForeground)
+    BOOL SetConsoleXtermTextAttribute(const int iXtermTableEntry, const bool fIsForeground) override
     {
         Log::Comment(L"SetConsoleXtermTextAttribute MOCK called...");
 
@@ -311,7 +311,7 @@ public:
         return _fSetConsoleXtermTextAttributeResult;
     }
 
-    BOOL SetConsoleRGBTextAttribute(const COLORREF rgbColor, const bool fIsForeground)
+    BOOL SetConsoleRGBTextAttribute(const COLORREF rgbColor, const bool fIsForeground) override
     {
         Log::Comment(L"SetConsoleRGBTextAttribute MOCK called...");
         if (_fSetConsoleRGBTextAttributeResult)
@@ -326,7 +326,7 @@ public:
         return _fSetConsoleRGBTextAttributeResult;
     }
 
-    BOOL PrivateBoldText(const bool isBold)
+    BOOL PrivateBoldText(const bool isBold) override
     {
         Log::Comment(L"PrivateBoldText MOCK called...");
         if (_fPrivateBoldTextResult)
@@ -339,7 +339,7 @@ public:
     }
 
     BOOL WriteConsoleInputW(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
-                                    _Out_ size_t& eventsWritten)
+                            _Out_ size_t& eventsWritten) override
     {
         Log::Comment(L"WriteConsoleInputW MOCK called...");
 
@@ -357,7 +357,7 @@ public:
     }
 
     BOOL PrivatePrependConsoleInput(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
-                                            _Out_ size_t& eventsWritten)
+                                    _Out_ size_t& eventsWritten) override
     {
         Log::Comment(L"PrivatePrependConsoleInput MOCK called...");
 
@@ -374,7 +374,7 @@ public:
         return _fPrivatePrependConsoleInputResult;
     }
 
-    BOOL PrivateWriteConsoleControlInput(_In_ KeyEvent key)
+    BOOL PrivateWriteConsoleControlInput(_In_ KeyEvent key) override
     {
         Log::Comment(L"PrivateWriteConsoleControlInput MOCK called...");
 
@@ -400,7 +400,7 @@ public:
         }
     }
 
-    BOOL ScrollConsoleScreenBufferW(const SMALL_RECT* pScrollRectangle, _In_opt_ const SMALL_RECT* pClipRectangle, _In_ COORD dwDestinationOrigin, const CHAR_INFO* pFill)
+    BOOL ScrollConsoleScreenBufferW(const SMALL_RECT* pScrollRectangle, _In_opt_ const SMALL_RECT* pClipRectangle, _In_ COORD dwDestinationOrigin, const CHAR_INFO* pFill) override
     {
         Log::Comment(L"ScrollConsoleScreenBufferW MOCK called...");
 
@@ -486,7 +486,7 @@ public:
         return _fScrollConsoleScreenBufferWResult;
     }
 
-    BOOL PrivateSetScrollingRegion(const SMALL_RECT* const psrScrollMargins)
+    BOOL PrivateSetScrollingRegion(const SMALL_RECT* const psrScrollMargins) override
     {
         Log::Comment(L"PrivateSetScrollingRegion MOCK called...");
 
@@ -498,14 +498,14 @@ public:
         return _fPrivateSetScrollingRegionResult;
     }
 
-    BOOL PrivateReverseLineFeed()
+    BOOL PrivateReverseLineFeed() override
     {
         Log::Comment(L"PrivateReverseLineFeed MOCK called...");
         // We made it through the adapter, woo! Return true.
         return TRUE;
     }
 
-    BOOL MoveCursorVertically(const short lines)
+    BOOL MoveCursorVertically(const short lines) override
     {
         Log::Comment(L"MoveCursorVertically MOCK called...");
         if (_fMoveCursorVerticallyResult)
@@ -528,26 +528,26 @@ public:
         return TRUE;
     }
 
-    BOOL PrivateUseAlternateScreenBuffer()
+    BOOL PrivateUseAlternateScreenBuffer() override
     {
         Log::Comment(L"PrivateUseAlternateScreenBuffer MOCK called...");
         return true;
     }
 
-    BOOL PrivateUseMainScreenBuffer()
+    BOOL PrivateUseMainScreenBuffer() override
     {
         Log::Comment(L"PrivateUseMainScreenBuffer MOCK called...");
         return true;
     }
 
-    BOOL PrivateHorizontalTabSet()
+    BOOL PrivateHorizontalTabSet() override
     {
         Log::Comment(L"PrivateHorizontalTabSet MOCK called...");
         // We made it through the adapter, woo! Return true.
         return TRUE;
     }
 
-    BOOL PrivateForwardTab(const SHORT sNumTabs)
+    BOOL PrivateForwardTab(const SHORT sNumTabs) override
     {
         Log::Comment(L"PrivateForwardTab MOCK called...");
         if (_fPrivateForwardTabResult)
@@ -557,7 +557,7 @@ public:
         return TRUE;
     }
 
-    BOOL PrivateBackwardsTab(const SHORT sNumTabs)
+    BOOL PrivateBackwardsTab(const SHORT sNumTabs) override
     {
         Log::Comment(L"PrivateBackwardsTab MOCK called...");
         if (_fPrivateBackwardsTabResult)
@@ -567,7 +567,7 @@ public:
         return TRUE;
     }
 
-    BOOL PrivateTabClear(const bool fClearAll)
+    BOOL PrivateTabClear(const bool fClearAll) override
     {
         Log::Comment(L"PrivateTabClear MOCK called...");
         if (_fPrivateTabClearResult)
@@ -577,13 +577,13 @@ public:
         return TRUE;
     }
 
-    BOOL PrivateSetDefaultTabStops()
+    BOOL PrivateSetDefaultTabStops() override
     {
         Log::Comment(L"PrivateSetDefaultTabStops MOCK called...");
         return TRUE;
     }
 
-    BOOL PrivateEnableVT200MouseMode(const bool fEnabled)
+    BOOL PrivateEnableVT200MouseMode(const bool fEnabled) override
     {
         Log::Comment(L"PrivateEnableVT200MouseMode MOCK called...");
         if (_fPrivateEnableVT200MouseModeResult)
@@ -593,7 +593,7 @@ public:
         return _fPrivateEnableVT200MouseModeResult;
     }
 
-    BOOL PrivateEnableUTF8ExtendedMouseMode(const bool fEnabled)
+    BOOL PrivateEnableUTF8ExtendedMouseMode(const bool fEnabled) override
     {
         Log::Comment(L"PrivateEnableUTF8ExtendedMouseMode MOCK called...");
         if (_fPrivateEnableUTF8ExtendedMouseModeResult)
@@ -603,7 +603,7 @@ public:
         return _fPrivateEnableUTF8ExtendedMouseModeResult;
     }
 
-    BOOL PrivateEnableSGRExtendedMouseMode(const bool fEnabled)
+    BOOL PrivateEnableSGRExtendedMouseMode(const bool fEnabled) override
     {
         Log::Comment(L"PrivateEnableSGRExtendedMouseMode MOCK called...");
         if (_fPrivateEnableSGRExtendedMouseModeResult)
@@ -613,7 +613,7 @@ public:
         return _fPrivateEnableSGRExtendedMouseModeResult;
     }
 
-    BOOL PrivateEnableButtonEventMouseMode(const bool fEnabled)
+    BOOL PrivateEnableButtonEventMouseMode(const bool fEnabled) override
     {
         Log::Comment(L"PrivateEnableButtonEventMouseMode MOCK called...");
         if (_fPrivateEnableButtonEventMouseModeResult)
@@ -623,7 +623,7 @@ public:
         return _fPrivateEnableButtonEventMouseModeResult;
     }
 
-    BOOL PrivateEnableAnyEventMouseMode(const bool fEnabled)
+    BOOL PrivateEnableAnyEventMouseMode(const bool fEnabled) override
     {
         Log::Comment(L"PrivateEnableAnyEventMouseMode MOCK called...");
         if (_fPrivateEnableAnyEventMouseModeResult)
@@ -633,7 +633,7 @@ public:
         return _fPrivateEnableAnyEventMouseModeResult;
     }
 
-    BOOL PrivateEnableAlternateScroll(const bool fEnabled)
+    BOOL PrivateEnableAlternateScroll(const bool fEnabled) override
     {
         Log::Comment(L"PrivateEnableAlternateScroll MOCK called...");
         if (_fPrivateEnableAlternateScrollResult)
@@ -643,13 +643,13 @@ public:
         return _fPrivateEnableAlternateScrollResult;
     }
 
-    BOOL PrivateEraseAll()
+    BOOL PrivateEraseAll() override
     {
         Log::Comment(L"PrivateEraseAll MOCK called...");
         return TRUE;
     }
 
-    BOOL SetCursorStyle(const CursorType cursorType)
+    BOOL SetCursorStyle(const CursorType cursorType) override
     {
         Log::Comment(L"SetCursorStyle MOCK called...");
         if (_fSetCursorStyleResult)
@@ -659,7 +659,7 @@ public:
         return _fSetCursorStyleResult;
     }
 
-    BOOL SetCursorColor(const COLORREF cursorColor)
+    BOOL SetCursorColor(const COLORREF cursorColor) override
     {
         Log::Comment(L"SetCursorColor MOCK called...");
         if (_fSetCursorColorResult)
@@ -669,7 +669,7 @@ public:
         return _fSetCursorColorResult;
     }
 
-    BOOL PrivateGetConsoleScreenBufferAttributes(_Out_ WORD* const pwAttributes)
+    BOOL PrivateGetConsoleScreenBufferAttributes(_Out_ WORD* const pwAttributes) override
     {
         Log::Comment(L"PrivateGetConsoleScreenBufferAttributes MOCK returning data...");
 
@@ -681,21 +681,21 @@ public:
         return _fPrivateGetConsoleScreenBufferAttributesResult;
     }
 
-    BOOL PrivateRefreshWindow()
+    BOOL PrivateRefreshWindow() override
     {
         Log::Comment(L"PrivateRefreshWindow MOCK called...");
         // We made it through the adapter, woo! Return true.
         return TRUE;
     }
 
-    BOOL PrivateSuppressResizeRepaint()
+    BOOL PrivateSuppressResizeRepaint() override
     {
         Log::Comment(L"PrivateSuppressResizeRepaint MOCK called...");
         VERIFY_IS_TRUE(false, L"AdaptDispatch should never be calling this function.");
         return FALSE;
     }
 
-    BOOL GetConsoleOutputCP(_Out_ unsigned int* const puiOutputCP)
+    BOOL GetConsoleOutputCP(_Out_ unsigned int* const puiOutputCP) override
     {
         Log::Comment(L"GetConsoleOutputCP MOCK called...");
         if (_fGetConsoleOutputCPResult)
@@ -705,7 +705,7 @@ public:
         return _fGetConsoleOutputCPResult;
     }
 
-    BOOL IsConsolePty(_Out_ bool* const isPty) const
+    BOOL IsConsolePty(_Out_ bool* const isPty) const override
     {
         Log::Comment(L"IsConsolePty MOCK called...");
         if (_fIsConsolePtyResult)
@@ -715,19 +715,41 @@ public:
         return _fIsConsolePtyResult;
     }
 
-    BOOL DeleteLines(const unsigned int /*count*/)
+    BOOL DeleteLines(const unsigned int /*count*/) override
     {
         Log::Comment(L"DeleteLines MOCK called...");
         return TRUE;
     }
 
-    BOOL InsertLines(const unsigned int /*count*/)
+    BOOL InsertLines(const unsigned int /*count*/) override
     {
         Log::Comment(L"InsertLines MOCK called...");
         return TRUE;
     }
 
-    BOOL MoveToBottom() const
+    BOOL PrivateSetDefaultAttributes(const bool fForeground,
+                                     const bool fBackground) override
+    {
+        Log::Comment(L"PrivateSetDefaultAttributes MOCK called...");
+        if (_fPrivateSetDefaultAttributesResult)
+        {
+            VERIFY_ARE_EQUAL(_fExpectedForeground, fForeground);
+            VERIFY_ARE_EQUAL(_fExpectedBackground, fBackground);
+            if (fForeground)
+            {
+                WI_UpdateFlagsInMask(_wAttribute, FG_ATTRS, s_wDefaultFill);
+            }
+            if (fBackground)
+            {
+                WI_UpdateFlagsInMask(_wAttribute, BG_ATTRS, s_wDefaultFill);
+            }
+
+            _fExpectedForeground = _fExpectedBackground = false;
+        }
+        return _fPrivateSetDefaultAttributesResult;
+    }
+
+    BOOL MoveToBottom() const override
     {
         Log::Comment(L"MoveToBottom MOCK called...");
         return _fMoveToBottomResult;
@@ -1232,6 +1254,7 @@ public:
     static const WCHAR s_wchDefault = L'Z';
     static const WORD s_wAttrErase = FOREGROUND_BLUE | FOREGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY;
     static const WORD s_wDefaultAttribute = 0;
+    static const WORD s_wDefaultFill = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED; // dark gray on black.
 
     CHAR_INFO* _rgchars = nullptr;
     std::deque<std::unique_ptr<IInputEvent>> _events;
@@ -1324,6 +1347,7 @@ public:
     BOOL _fGetConsoleOutputCPResult = false;
     BOOL _fIsConsolePtyResult = false;
     bool _fMoveCursorVerticallyResult = false;
+    bool _fPrivateSetDefaultAttributesResult = false;
     bool _fMoveToBottomResult = false;
 
 private:
@@ -1360,7 +1384,7 @@ public:
         if (fSuccess)
         {
             // give AdaptDispatch ownership of _testGetSet
-            _pDispatch = new AdaptDispatch(_testGetSet, new DummyAdapter, s_wDefaultFill);
+            _pDispatch = new AdaptDispatch(_testGetSet, new DummyAdapter, _testGetSet->s_wDefaultFill);
             fSuccess = _pDispatch != nullptr;
         }
         return fSuccess;
@@ -2468,8 +2492,9 @@ public:
         {
         case DispatchTypes::GraphicsOptions::Off:
             Log::Comment(L"Testing graphics 'Off/Reset'");
-            _testGetSet->_wAttribute = (WORD)~s_wDefaultFill;
-            _testGetSet->_wExpectedAttribute = s_wDefaultFill;
+            _testGetSet->_wAttribute = (WORD)~_testGetSet->s_wDefaultFill;
+            _testGetSet->_wExpectedAttribute = 0;
+            _testGetSet->_fPrivateSetDefaultAttributesResult = true;
             _testGetSet->_fExpectedForeground = true;
             _testGetSet->_fExpectedBackground = true;
             _testGetSet->_fExpectedMeta = true;
@@ -2559,11 +2584,12 @@ public:
             break;
         case DispatchTypes::GraphicsOptions::ForegroundDefault:
             Log::Comment(L"Testing graphics 'Foreground Color Default'");
+            _testGetSet->_fPrivateSetDefaultAttributesResult = true;
             _testGetSet->_wAttribute = (WORD)~_testGetSet->s_wDefaultAttribute; // set the current attribute to the opposite of default so we can ensure all relevant bits flip.
             // To get expected value, take what we started with and change ONLY the background series of bits to what the Default says.
             _testGetSet->_wExpectedAttribute = _testGetSet->_wAttribute; // expect = starting
             _testGetSet->_wExpectedAttribute &= ~(FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY); // turn off all bits related to the background
-            _testGetSet->_wExpectedAttribute |= (s_wDefaultFill & (FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY)); // reapply ONLY background bits from the default attribute.
+            _testGetSet->_wExpectedAttribute |= (_testGetSet->s_wDefaultFill & (FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY)); // reapply ONLY background bits from the default attribute.
             _testGetSet->_fExpectedForeground = true;
             break;
         case DispatchTypes::GraphicsOptions::BackgroundBlack:
@@ -2616,11 +2642,12 @@ public:
             break;
         case DispatchTypes::GraphicsOptions::BackgroundDefault:
             Log::Comment(L"Testing graphics 'Background Color Default'");
+            _testGetSet->_fPrivateSetDefaultAttributesResult = true;
             _testGetSet->_wAttribute = (WORD)~_testGetSet->s_wDefaultAttribute; // set the current attribute to the opposite of default so we can ensure all relevant bits flip.
             // To get expected value, take what we started with and change ONLY the background series of bits to what the Default says.
             _testGetSet->_wExpectedAttribute = _testGetSet->_wAttribute; // expect = starting
             _testGetSet->_wExpectedAttribute &= ~(BACKGROUND_BLUE| BACKGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY); // turn off all bits related to the background
-            _testGetSet->_wExpectedAttribute |= (s_wDefaultFill & (BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY)); // reapply ONLY background bits from the default attribute.
+            _testGetSet->_wExpectedAttribute |= (_testGetSet->s_wDefaultFill & (BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY)); // reapply ONLY background bits from the default attribute.
             _testGetSet->_fExpectedBackground = true;
             break;
         case DispatchTypes::GraphicsOptions::BrightForegroundBlack:
@@ -2741,7 +2768,8 @@ public:
         Log::Comment(L"Test 1: Basic brightness test");
         Log::Comment(L"Reseting graphics options");
         rgOptions[0] = DispatchTypes::GraphicsOptions::Off;
-        _testGetSet->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED;
+        _testGetSet->_fPrivateSetDefaultAttributesResult = true;
+        _testGetSet->_wExpectedAttribute = 0;
         _testGetSet->_fExpectedForeground = true;
         _testGetSet->_fExpectedBackground = true;
         _testGetSet->_fExpectedMeta = true;
@@ -2775,7 +2803,8 @@ public:
         Log::Comment(L"Test 2: Disable brightness, use a bright color, next normal call remains not bright");
         Log::Comment(L"Reseting graphics options");
         rgOptions[0] = DispatchTypes::GraphicsOptions::Off;
-        _testGetSet->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED;
+        _testGetSet->_fPrivateSetDefaultAttributesResult = true;
+        _testGetSet->_wExpectedAttribute = 0;
         _testGetSet->_fExpectedForeground = true;
         _testGetSet->_fExpectedBackground = true;
         _testGetSet->_fExpectedMeta = true;
@@ -2802,7 +2831,8 @@ public:
         Log::Comment(L"Test 3: Enable brightness, use a bright color, brightness persists to next normal call");
         Log::Comment(L"Reseting graphics options");
         rgOptions[0] = DispatchTypes::GraphicsOptions::Off;
-        _testGetSet->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED;
+        _testGetSet->_fPrivateSetDefaultAttributesResult = true;
+        _testGetSet->_wExpectedAttribute = 0;
         _testGetSet->_fExpectedForeground = true;
         _testGetSet->_fExpectedBackground = true;
         _testGetSet->_fExpectedMeta = true;
@@ -3339,6 +3369,7 @@ public:
         _testGetSet->_coordExpectedCursorPos = {0, 0};
         _testGetSet->_fSetConsoleCursorPositionResult = true;
         _testGetSet->_fPrivateSetLegacyAttributesResult = true;
+        _testGetSet->_fPrivateSetDefaultAttributesResult = true;
         _testGetSet->_fPrivateBoldTextResult = true;
         _testGetSet->_fExpectedForeground = true;
         _testGetSet->_fExpectedBackground = true;
@@ -3346,8 +3377,9 @@ public:
         _testGetSet->_fExpectedIsBold = false;
         const COORD coordExpectedCursorPos = {0, 0};
 
-        // Sets the SGR state to normal.
-        _testGetSet->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED;
+        // We're expecting _SetDefaultColorHelper to call
+        //      PrivateSetLegacyAttributes with 0 as the wAttr param.
+        _testGetSet->_wExpectedAttribute = 0;
 
         // Prepare the results of SoftReset api calls
         _testGetSet->_fPrivateSetCursorKeysModeResult = true;
@@ -3381,5 +3413,4 @@ public:
 private:
     TestGetSet* _testGetSet; // non-ownership pointer
     AdaptDispatch* _pDispatch;
-    static const WORD s_wDefaultFill = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED; // dark gray on black.
 };

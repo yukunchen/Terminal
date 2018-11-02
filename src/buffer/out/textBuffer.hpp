@@ -68,7 +68,7 @@ class TextBuffer final
 public:
     TextBuffer(const FontInfo fontInfo,
                const COORD screenBufferSize,
-               const CHAR_INFO fill,
+               const TextAttribute defaultAttributes,
                const UINT cursorSize);
     TextBuffer(const TextBuffer& a) = delete;
 
@@ -128,8 +128,7 @@ public:
 
     UINT TotalRowCount() const;
 
-    CHAR_INFO GetFill() const;
-    void SetFill(const CHAR_INFO ciFill);
+    void SetCurrentAttributes(const TextAttribute currentAttributes);
 
     void Reset(const TextAttribute attr);
 
@@ -151,7 +150,7 @@ private:
     FontInfo _currentFont;
     FontInfoDesired _desiredFont;
 
-    CHAR_INFO _fill;
+    TextAttribute _currentAttributes;
 
     // storage location for glyphs that can't fit into the buffer normally
     UnicodeStorage _unicodeStorage;

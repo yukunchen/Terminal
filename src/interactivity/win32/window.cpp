@@ -629,6 +629,7 @@ NTSTATUS Window::_InternalSetWindowSize()
             {
                 WindowSize.cy += ServiceLocator::LocateGlobals().sHorizontalScrollSize;
             }
+
             if (!siAttached.GetMainBuffer().IsMaximizedY())
             {
                 WindowSize.cx += ServiceLocator::LocateGlobals().sVerticalScrollSize;
@@ -791,18 +792,14 @@ void Window::VerticalScroll(const WORD wScrollCommand, const WORD wAbsoluteChang
 // - <none>
 void Window::HorizontalScroll(const WORD wScrollCommand, const WORD wAbsoluteChange)
 {
-    COORD NewOrigin;
-
     // Log a telemetry event saying the user interacted with the Console
     Telemetry::Instance().SetUserInteractive();
 
     SCREEN_INFORMATION& ScreenInfo = GetScreenInfo();
-
     const SHORT sScreenBufferSizeX = ScreenInfo.GetBufferSize().Width();
-    
     const auto& viewport = ScreenInfo.GetViewport();
+    COORD NewOrigin = viewport.Origin();
 
-    NewOrigin = viewport.Origin();
     switch (wScrollCommand)
     {
     case SB_LINEUP:
@@ -862,7 +859,11 @@ BOOL Window::EnableBothScrollBars()
     return EnableScrollBar(_hWnd, SB_BOTH, ESB_ENABLE_BOTH);
 }
 
-int Window::UpdateScrollBar(bool isVertical, bool isAltBuffer, UINT pageSize, int maxSize, int viewportPosition)
+int Window::UpdateScrollBar(bool isVertical,
+                            bool isAltBuffer,
+                            UINT pageSize,
+                            int maxSize,
+                            int viewportPosition)
 {
     SCROLLINFO si;
     si.cbSize = sizeof(si);
@@ -899,24 +900,30 @@ void Window::s_ConvertWindowPosToWindowRect(const LPWINDOWPOS lpWindowPos, _Out_
 // - <none>
 void Window::_CalculateWindowRect(const COORD coordWindowInChars, _Inout_ RECT* const prectWindow) const
 {
+    auto& g = ServiceLocator::LocateGlobals();
     const SCREEN_INFORMATION& siAttached = GetScreenInfo();
     const COORD coordFontSize = siAttached.GetScreenFontSize();
     const HWND hWnd = GetWindowHandle();
     const COORD coordBufferSize = siAttached.GetBufferSize().Dimensions();
-    const int iDpi = ServiceLocator::LocateGlobals().dpi;
+    const int iDpi = g.dpi;
 
     s_CalculateWindowRect(coordWindowInChars, iDpi, coordFontSize, coordBufferSize, hWnd, prectWindow);
 }
 
 // Routine Description:
-// - Converts character counts of the viewport (client area, screen buffer) into the outer pixel dimensions of the window
+// - Converts character counts of the viewport (client area, screen buffer) into
+//      the outer pixel dimensions of the window
 // Arguments:
 // - coordWindowInChars - The size of the viewport
-// - iDpi - The DPI of the monitor on which this window will reside (used to get DPI-scaled system metrics)
-// - coordFontSize - the size in pixels of the font on the monitor (this should be already scaled for DPI)
+// - iDpi - The DPI of the monitor on which this window will reside
+//      (used to get DPI-scaled system metrics)
+// - coordFontSize - the size in pixels of the font on the monitor
+//      (this should be already scaled for DPI)
 // - coordBufferSize - the character count of the buffer rectangle in X by Y
-// - hWnd - If available, a handle to the window we would change so we can retrieve its class information for border/titlebar/etc metrics.
-// - prectWindow - rectangle to fill with pixel positions of the outer edge rectangle for this window
+// - hWnd - If available, a handle to the window we would change so we can
+//      retrieve its class information for border/titlebar/etc metrics.
+// - prectWindow - rectangle to fill with pixel positions of the outer edge
+//      rectangle for this window
 // Return Value:
 // - <none>
 void Window::s_CalculateWindowRect(const COORD coordWindowInChars,

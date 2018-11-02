@@ -5,31 +5,27 @@
 ********************************************************/
 #include "precomp.h"
 #include "ColorsPage.h"
+#include "ColorControl.h"
 
 static BYTE ColorArray[4];
 static int iColor;
 
 // Routine Description:
 // - Window proc for the color buttons
-LRESULT ColorControlProc(HWND hColor, UINT wMsg, WPARAM wParam, LPARAM lParam)
+LRESULT ColorTableControlProc(HWND hColor, UINT wMsg, WPARAM wParam, LPARAM lParam)
 {
     PAINTSTRUCT ps;
     int ColorId;
     RECT rColor;
     RECT rTemp;
-    HBRUSH hbr;
     HDC hdc;
     HWND hWnd;
     HWND hDlg;
-    COLORREF rgbBrush;
 
     ColorId = GetWindowLong(hColor, GWL_ID);
     hDlg = GetParent(hColor);
 
     switch (wMsg) {
-        case WM_GETDLGCODE:
-            return DLGC_WANTARROWS | DLGC_WANTTAB;
-            break;
         case WM_SETFOCUS:
             if (ColorArray[iColor] != (BYTE)(ColorId - IDD_COLOR_1)) {
                 hWnd = GetDlgItem(hDlg, ColorArray[iColor]+IDD_COLOR_1);
@@ -80,29 +76,23 @@ LRESULT ColorControlProc(HWND hColor, UINT wMsg, WPARAM wParam, LPARAM lParam)
                         ColorId - IDD_COLOR_1, (LPARAM)hColor);
             break;
         case WM_PAINT:
+
             BeginPaint(hColor, &ps);
             GetClientRect(hColor, &rColor);
-            rgbBrush = GetNearestColor(ps.hdc, AttrToRGB(ColorId-IDD_COLOR_1));
-            if ((hbr = CreateSolidBrush(rgbBrush)) != NULL) {
-                //
-                // are we the selected color for the current object?
-                //
-                if (ColorArray[iColor] == (BYTE)(ColorId - IDD_COLOR_1)) {
-                    //
-                    // highlight the selected color
-                    //
-                    FrameRect(ps.hdc, &rColor, (HBRUSH)GetStockObject(BLACK_BRUSH));
-                    InflateRect(&rColor, -1, -1);
-                    FrameRect(ps.hdc, &rColor, (HBRUSH)GetStockObject(BLACK_BRUSH));
-                }
+
+            // are we the selected color for the current object?
+            if (ColorArray[iColor] == (BYTE)(ColorId - IDD_COLOR_1)) {
+                // highlight the selected color
+                FrameRect(ps.hdc, &rColor, (HBRUSH)GetStockObject(BLACK_BRUSH));
                 InflateRect(&rColor, -1, -1);
-                FillRect(ps.hdc, &rColor, hbr);
-                DeleteObject(hbr);
+                FrameRect(ps.hdc, &rColor, (HBRUSH)GetStockObject(BLACK_BRUSH));
             }
+
+            SimpleColorDoPaint(hColor, ps, ColorId);
             EndPaint(hColor, &ps);
             break;
         default:
-            return DefWindowProc(hColor, wMsg, wParam, lParam);
+            return SimpleColorControlProc(hColor, wMsg, wParam, lParam);
             break;
     }
     return TRUE;
@@ -177,7 +167,7 @@ INT_PTR WINAPI ColorDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lParam)
             if (!fHaveInitialized) {
                 return FALSE;
             }
-            
+
             Item = LOWORD(wParam);
             switch (Item) {
                 case IDD_COLOR_SCREEN_TEXT:

@@ -216,7 +216,9 @@ bool ATTR_ROW::SetAttrToEnd(const UINT iStart, const TextAttribute attr)
 }
 
 // Routine Description:
-// - Replaces all runs in the row with the given wToBeReplacedAttr with the new attribute wReplaceWith.
+// - Replaces all runs in the row with the given wToBeReplacedAttr with the new
+//      attribute wReplaceWith. This method is used for replacing specifically
+//      legacy attributes.
 // Arguments:
 // - wToBeReplacedAttr - the legacy attribute to replace in this row.
 // - wReplaceWith - the new value for the matching runs' attributes.
@@ -230,14 +232,48 @@ void ATTR_ROW::ReplaceLegacyAttrs(_In_ WORD wToBeReplacedAttr, _In_ WORD wReplac
     TextAttribute ReplaceWith;
     ReplaceWith.SetFromLegacy(wReplaceWith);
 
+    ReplaceAttrs(ToBeReplaced, ReplaceWith);
+}
+
+
+// Method Description:
+// - Replaces all runs in the row with the given toBeReplacedAttr with the new
+//      attribute replaceWith.
+// Arguments:
+// - toBeReplacedAttr - the attribute to replace in this row.
+// - replaceWith - the new value for the matching runs' attributes.
+// Return Value:
+// - <none>
+void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAttribute& replaceWith) noexcept
+{
     for (auto& run : _list)
     {
-        if (run.GetAttributes() == ToBeReplaced)
+        // If the attributes are an exact match, this is easy, replace them.
+        // If the old attributes are "default" forground/background,
+        //      and we're trying to replace them with new defaults, then the
+        //      attributes won't match, but we should replace their values
+        //      anyways with the new default values.
+        if (run.GetAttributes() == toBeReplacedAttr)
         {
-            run.SetAttributes(ReplaceWith);
+            run.SetAttributes(replaceWith);
+        }
+        else if (run.GetAttributes().ForegroundIsDefault() && replaceWith.ForegroundIsDefault())
+        {
+            TextAttribute runAttrs = run.GetAttributes();
+            runAttrs.SetDefaultForeground(replaceWith.GetRgbForeground(),
+                                          runAttrs.GetLegacyAttributes());
+            run.SetAttributes(runAttrs);
+        }
+        else if (run.GetAttributes().BackgroundIsDefault() && replaceWith.BackgroundIsDefault())
+        {
+            TextAttribute runAttrs = run.GetAttributes();
+            runAttrs.SetDefaultBackground(replaceWith.GetRgbBackground(),
+                                          runAttrs.GetLegacyAttributes());
+            run.SetAttributes(runAttrs);
         }
     }
 }
+
 
 // Routine Description:
 // - Takes a array of attribute runs, and inserts them into this row from startIndex to endIndex.
@@ -290,13 +326,13 @@ HRESULT ATTR_ROW::InsertAttrRuns(const std::basic_string_view<TextAttributeRun> 
             return S_OK;
         }
         // .. otherwise if we internally have a list of 2 and we're about to insert a single color
-        // it's probable that we're just walking left-to-right through the row and changing each 
-        // cell one at a time. 
-        // e.g. 
+        // it's probable that we're just walking left-to-right through the row and changing each
+        // cell one at a time.
+        // e.g.
         // AAAAABBBBBBB
         // AAAAAABBBBBB
         // AAAAAAABBBBB
-        // Check for that circumstance by seeing if we're inserting a single run of the 
+        // Check for that circumstance by seeing if we're inserting a single run of the
         // left side color right at the boundary and just adjust the counts in the existing
         // two elements in our internal list.
         else if (_list.size() == 2 && newAttrs.at(0).GetLength() == 1)

@@ -54,8 +54,8 @@ public:
     static NTSTATUS CreateInstance(_In_ COORD coordWindowSize,
                                    const FontInfo fontInfo,
                                    _In_ COORD coordScreenBufferSize,
-                                   const CHAR_INFO ciFill,
-                                   const CHAR_INFO ciPopupFill,
+                                   const TextAttribute defaultAttributes,
+                                   const TextAttribute popupAttributes,
                                    const UINT uiCursorSize,
                                    _Outptr_ SCREEN_INFORMATION ** const ppScreen);
 
@@ -234,8 +234,8 @@ public:
 private:
     SCREEN_INFORMATION(_In_ IWindowMetrics *pMetrics,
                        _In_ IAccessibilityNotifier *pNotifier,
-                       const CHAR_INFO ciFill,
-                       const CHAR_INFO ciPopupFill);
+                       const TextAttribute defaultAttributes,
+                       const TextAttribute popupAttributes);
 
     IWindowMetrics *_pConsoleWindowMetrics;
     IAccessibilityNotifier *_pAccessibilityNotifier;

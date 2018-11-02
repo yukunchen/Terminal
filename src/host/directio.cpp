@@ -1054,20 +1054,14 @@ NTSTATUS ConsoleCreateScreenBuffer(std::unique_ptr<ConsoleHandleData>& handle,
     const SCREEN_INFORMATION& siExisting = gci.GetActiveOutputBuffer();
 
     // Create new screen buffer.
-    CHAR_INFO Fill;
-    Fill.Char.UnicodeChar = UNICODE_SPACE;
-    Fill.Attributes = siExisting.GetAttributes().GetLegacyAttributes();
-
     COORD WindowSize = siExisting.GetViewport().Dimensions();
-
     const FontInfo& existingFont = siExisting.GetTextBuffer().GetCurrentFont();
-
     PSCREEN_INFORMATION ScreenInfo = nullptr;
     NTSTATUS Status = SCREEN_INFORMATION::CreateInstance(WindowSize,
                                                          existingFont,
                                                          WindowSize,
-                                                         Fill,
-                                                         Fill,
+                                                         siExisting.GetAttributes(),
+                                                         siExisting.GetAttributes(),
                                                          CURSOR_SMALL_SIZE,
                                                          &ScreenInfo);
 

@@ -14,6 +14,8 @@
     <ClCompile Include="OptionsPage.cpp" />
     <ClCompile Include="LayoutPage.cpp" />
     <ClCompile Include="ColorsPage.cpp" />
+    <ClCompile Include="ColorControl.cpp" />
+    <ClCompile Include="TerminalPage.cpp" />
     <ClCompile Include="registry.cpp" />
     <ClCompile Include="util.cpp" />
     <ClCompile Include="precomp.cpp">
@@ -30,6 +32,8 @@
     <ClInclude Include="OptionsPage.h" />
     <ClInclude Include="LayoutPage.h" />
     <ClInclude Include="ColorsPage.h" />
+    <ClInclude Include="ColorControl.h" />
+    <ClInclude Include="TerminalPage.h" />
     <ClInclude Include="menu.h" />
     <ClInclude Include="precomp.h" />
   </ItemGroup>

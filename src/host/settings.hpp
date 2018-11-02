@@ -170,6 +170,17 @@ public:
     bool GetInterceptCopyPaste() const noexcept;
     void SetInterceptCopyPaste(const bool interceptCopyPaste) noexcept;
 
+    COLORREF GetDefaultForegroundColor() const noexcept;
+    void SetDefaultForegroundColor(const COLORREF defaultForeground) noexcept;
+
+    COLORREF GetDefaultBackgroundColor() const noexcept;
+    void SetDefaultBackgroundColor(const COLORREF defaultBackground) noexcept;
+
+    TextAttribute GetDefaultAttributes() const noexcept;
+
+    bool IsTerminalScrolling() const noexcept;
+    void SetTerminalScrolling(const bool terminalScrollingEnabled) noexcept;
+
     bool GetUseDx() const noexcept;
 
 private:
@@ -230,6 +241,9 @@ private:
 
     bool _fInterceptCopyPaste;
 
+    COLORREF _DefaultForeground;
+    COLORREF _DefaultBackground;
+    bool _TerminalScrolling;
     friend class RegistrySerialization;
 
 public:
