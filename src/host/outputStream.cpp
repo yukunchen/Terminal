@@ -209,6 +209,21 @@ BOOL ConhostInternalGetSet::SetConsoleTextAttribute(const WORD wAttr)
 }
 
 // Routine Description:
+// - Connects the PrivateSetDefaultAttributes API call directly into our Driver Message servicing call inside Conhost.exe
+//     Sets the FG and/or BG to the Default attributes values.
+// Arguments:
+// - fForeground - Set the foreground to the default attributes
+// - fBackground - Set the background to the default attributes
+// Return Value:
+// - TRUE if successful (see DoSrvPrivateSetDefaultAttributes). FALSE otherwise.
+BOOL ConhostInternalGetSet::PrivateSetDefaultAttributes(const bool fForeground,
+                                                        const bool fBackground)
+{
+    DoSrvPrivateSetDefaultAttributes(_io.GetActiveOutputBuffer(), fForeground, fBackground);
+    return TRUE;
+}
+
+// Routine Description:
 // - Connects the PrivateSetLegacyAttributes API call directly into our Driver Message servicing call inside Conhost.exe
 //     Sets only the components of the attributes requested with the fForeground, fBackground, and fMeta flags.
 // Arguments:

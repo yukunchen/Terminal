@@ -38,6 +38,7 @@
 
 
 using namespace Microsoft::Console::Interactivity::Win32;
+using namespace Microsoft::Console::Types;
 
 // The static and specific window procedures for this class are contained here
 #pragma region Window Procedure
@@ -201,8 +202,8 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         // Then from the client area we need to calculate the window area (using the proposed DPI scalar here as well.)
 
         // Retrieve the additional parameters we need for the math call based on the current window & buffer properties.
-
-        COORD coordWindowInChars = ScreenInfo.GetViewport().Dimensions();
+        const Viewport viewport = ScreenInfo.GetViewport();
+        COORD coordWindowInChars = viewport.Dimensions();
 
         const COORD coordBufferSize = ScreenInfo.GetTextBuffer().GetSize().Dimensions();
 

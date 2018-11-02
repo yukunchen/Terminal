@@ -57,7 +57,10 @@ SOURCES = \
     fontdlg.cpp          \
     OptionsPage.cpp      \
     ColorsPage.cpp       \
+    ColorControl.cpp     \
+    ColorsPage.cpp       \
     LayoutPage.cpp       \
+    TerminalPage.cpp     \
     init.cpp             \
     misc.cpp             \
     preview.cpp          \

@@ -32,12 +32,12 @@ using namespace Microsoft::Console::Types;
 // Note: may throw exception
 TextBuffer::TextBuffer(const FontInfo fontInfo,
                        const COORD screenBufferSize,
-                       const CHAR_INFO fill,
+                       const TextAttribute defaultAttributes,
                        const UINT cursorSize) :
     _currentFont{ fontInfo },
     _desiredFont{ fontInfo },
     _firstRow{ 0 },
-    _fill{ fill },
+    _currentAttributes{ defaultAttributes },
     _cursor{ cursorSize, *this },
     _storage{},
     _unicodeStorage{}
@@ -49,9 +49,7 @@ TextBuffer::TextBuffer(const FontInfo fontInfo,
     // initialize ROWs
     for (size_t i = 0; i < static_cast<size_t>(screenBufferSize.Y); ++i)
     {
-        TextAttribute FillAttributes;
-        FillAttributes.SetFromLegacy(_fill.Attributes);
-        _storage.emplace_back(static_cast<SHORT>(i), screenBufferSize.X, FillAttributes, this);
+        _storage.emplace_back(static_cast<SHORT>(i), screenBufferSize.X, _currentAttributes, this);
     }
 }
 
@@ -581,9 +579,7 @@ bool TextBuffer::IncrementCircularBuffer()
     }
 
     // First, clean out the old "first row" as it will become the "last row" of the buffer after the circle is performed.
-    TextAttribute FillAttributes;
-    FillAttributes.SetFromLegacy(_fill.Attributes);
-    bool fSuccess = _storage[_firstRow].Reset(FillAttributes);
+    bool fSuccess = _storage.at(_firstRow).Reset(_currentAttributes);
     if (fSuccess)
     {
         // Now proceed to increment.
@@ -688,7 +684,7 @@ void TextBuffer::ScrollRows(const SHORT firstRow, const SHORT size, const SHORT 
         return;
     }
 
-    // OK. We're about to play games by moving rows around within the deque to 
+    // OK. We're about to play games by moving rows around within the deque to
     // scroll a massive region in a faster way than copying things.
     // To make this easier, first correct the circular buffer to have the first row be 0 again.
     if (_firstRow != 0)
@@ -712,11 +708,11 @@ void TextBuffer::ScrollRows(const SHORT firstRow, const SHORT size, const SHORT 
         // | 2
         // | 3 A. begin + firstRow + delta (because delta is negative)
         // | 4
-        // | 5 B. begin + firstRow         
-        // | 6 
+        // | 5 B. begin + firstRow
+        // | 6
         // | 7
         // | 8 C. begin + firstRow + size
-        // | 9 
+        // | 9
         // | 10
         // | 11
         // - end
@@ -728,11 +724,11 @@ void TextBuffer::ScrollRows(const SHORT firstRow, const SHORT size, const SHORT 
         // | 2
         // | 5
         // | 6
-        // | 7 
+        // | 7
         // | 3
         // | 4
         // | 8
-        // | 9 
+        // | 9
         // | 10
         // | 11
         // - end
@@ -747,13 +743,13 @@ void TextBuffer::ScrollRows(const SHORT firstRow, const SHORT size, const SHORT 
         // | 0 begin
         // | 1
         // | 2
-        // | 3 
+        // | 3
         // | 4
-        // | 5 A. begin + firstRow         
-        // | 6 
+        // | 5 A. begin + firstRow
+        // | 6
         // | 7
         // | 8 B. begin + firstRow + size
-        // | 9 
+        // | 9
         // | 10 C. begin + firstRow + size + delta
         // | 11
         // - end
@@ -763,13 +759,13 @@ void TextBuffer::ScrollRows(const SHORT firstRow, const SHORT size, const SHORT 
         // | 0 begin
         // | 1
         // | 2
-        // | 3 
+        // | 3
         // | 4
         // | 8
-        // | 9 
+        // | 9
         // | 5
-        // | 6 
-        // | 7 
+        // | 6
+        // | 7
         // | 10
         // | 11
         // - end
@@ -795,14 +791,9 @@ const Cursor& TextBuffer::GetCursor() const
     return _cursor;
 }
 
-CHAR_INFO TextBuffer::GetFill() const
+void TextBuffer::SetCurrentAttributes(const TextAttribute currentAttributes)
 {
-    return _fill;
-}
-
-void TextBuffer::SetFill(const CHAR_INFO ciFill)
-{
-    _fill = ciFill;
+    _currentAttributes = currentAttributes;
 }
 
 // Routine Description:

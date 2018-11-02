@@ -380,10 +380,14 @@ HRESULT Menu::s_GetConsoleState(CONSOLE_STATE_INFO * const pStateInfo)
     pStateInfo->fLineSelection = gci.GetLineSelection();
     pStateInfo->bWindowTransparency = ServiceLocator::LocateConsoleWindow<Window>()->GetWindowOpacity();
 
-    pStateInfo->CursorType = static_cast<unsigned int>(gci.GetCursorType());
-    pStateInfo->CursorColor = gci.GetCursorColor();
-
     pStateInfo->InterceptCopyPaste = gci.GetInterceptCopyPaste();
+
+    // Get the properties from the settings - CONSOLE_INFORMATION overloads
+    //  these methods to implement IDefaultColorProvider
+    pStateInfo->DefaultForeground = gci.GetDefaultForegroundColor();
+    pStateInfo->DefaultBackground = gci.GetDefaultBackgroundColor();
+
+    pStateInfo->TerminalScrolling = gci.IsTerminalScrolling();
     // end console v2 properties
     return S_OK;
 }
@@ -463,10 +467,15 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
     gci.SetFontWeight(fontApplied.GetWeight());
     gci.SetFaceName(fontApplied.GetFaceName(), LF_FACESIZE);
 
+    gci.SetCursorColor(pStateInfo->CursorColor);
+    gci.SetCursorType(static_cast<CursorType>(pStateInfo->CursorType));
+
     ScreenInfo.SetCursorInformation(pStateInfo->CursorSize,
                                      ScreenInfo.GetTextBuffer().GetCursor().IsVisible(),
                                      pStateInfo->CursorColor,
                                      static_cast<CursorType>(pStateInfo->CursorType));
+
+    gci.SetTerminalScrolling(pStateInfo->TerminalScrolling);
 
     {
         // Requested window in characters
@@ -566,7 +575,10 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
     WI_ClearAllFlags(pStateInfo->ScreenAttributes, ~(FG_ATTRS | BG_ATTRS));
     WI_ClearAllFlags(pStateInfo->PopupAttributes, ~(FG_ATTRS | BG_ATTRS));
 
-    SetScreenColors(ScreenInfo, pStateInfo->ScreenAttributes, pStateInfo->PopupAttributes, TRUE);
+    gci.SetDefaultForegroundColor(pStateInfo->DefaultForeground);
+    gci.SetDefaultBackgroundColor(pStateInfo->DefaultBackground);
+
+    SetScreenColors(ScreenInfo, pStateInfo->ScreenAttributes, pStateInfo->PopupAttributes, TRUE, gci.GetDefaultForegroundColor(), gci.GetDefaultBackgroundColor());
 
     CommandHistory::s_ResizeAll(pStateInfo->HistoryBufferSize);
     gci.SetNumberOfHistoryBuffers(pStateInfo->NumberOfHistoryBuffers);
@@ -586,6 +598,7 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
     gci.ConsoleIme.RefreshAreaAttributes();
 
     gci.SetInterceptCopyPaste(!!pStateInfo->InterceptCopyPaste);
+
 }
 
 #pragma endregion

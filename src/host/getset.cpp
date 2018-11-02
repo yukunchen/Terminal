@@ -431,7 +431,7 @@ void DoSrvSetScreenBufferInfo(SCREEN_INFORMATION& screenInfo,
     const COORD newBufferSize = screenInfo.GetBufferSize().Dimensions();
 
     gci.SetColorTable(pInfo->ColorTable, ARRAYSIZE(pInfo->ColorTable));
-    SetScreenColors(screenInfo, pInfo->wAttributes, pInfo->wPopupAttributes, TRUE);
+    SetScreenColors(screenInfo, pInfo->wAttributes, pInfo->wPopupAttributes, TRUE, gci.GetDefaultForegroundColor(), gci.GetDefaultBackgroundColor());
 
     const Viewport requestedViewport = Viewport::FromExclusive(pInfo->srWindow);
 
@@ -678,9 +678,11 @@ HRESULT DoSrvScrollConsoleScreenBufferW(SCREEN_INFORMATION& screenInfo,
 }
 
 void SetScreenColors(SCREEN_INFORMATION& screenInfo,
-                     _In_ WORD Attributes,
-                     _In_ WORD PopupAttributes,
-                     _In_ BOOL UpdateWholeScreen)
+                     const WORD Attributes,
+                     const WORD PopupAttributes,
+                     const BOOL UpdateWholeScreen,
+                     const COLORREF defaultForeground,
+                     const COLORREF defaultBackground)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
@@ -704,9 +706,15 @@ void SetScreenColors(SCREEN_INFORMATION& screenInfo,
     if (UpdateWholeScreen)
     {
         screenInfo.SetDefaultAttributes(NewPrimaryAttributes, NewPopupAttributes);
+
+        // Replace existing defaults with new defaults.
+        TextAttribute newDefaults = NewPrimaryAttributes;
+        newDefaults.SetDefaultForeground(defaultForeground, Attributes);
+        newDefaults.SetDefaultBackground(defaultBackground, Attributes);
+
         screenInfo.ReplaceDefaultAttributes(oldPrimaryAttributes,
                                             oldPopupAttributes,
-                                            NewPrimaryAttributes,
+                                            newDefaults,
                                             NewPopupAttributes);
 
         auto& commandLine = CommandLine::Instance();
@@ -739,11 +747,17 @@ HRESULT ApiRoutines::SetConsoleTextAttributeImpl(SCREEN_INFORMATION& Context,
 }
 
 [[nodiscard]]
-HRESULT DoSrvSetConsoleTextAttribute(SCREEN_INFORMATION& screenInfo, const WORD Attribute)
+HRESULT DoSrvSetConsoleTextAttribute(SCREEN_INFORMATION& screenInfo, const WORD Attribute) noexcept
 {
     RETURN_HR_IF(E_INVALIDARG, WI_IsAnyFlagSet(Attribute, ~VALID_TEXT_ATTRIBUTES));
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-    SetScreenColors(screenInfo, Attribute, screenInfo.GetPopupAttributes()->GetLegacyAttributes(), FALSE);
+    SetScreenColors(screenInfo,
+                    Attribute,
+                    screenInfo.GetPopupAttributes()->GetLegacyAttributes(),
+                    FALSE,
+                    gci.GetDefaultForegroundColor(),
+                    gci.GetDefaultBackgroundColor());
     return S_OK;
 }
 
@@ -783,6 +797,16 @@ void DoSrvPrivateSetLegacyAttributes(SCREEN_INFORMATION& screenInfo,
         bool resetReverse = fMeta &&
             (WI_IsFlagClear(Attribute, COMMON_LVB_REVERSE_VIDEO)) &&
             (WI_IsFlagSet(OldAttributes.GetLegacyAttributes(), COMMON_LVB_REVERSE_VIDEO));
+
+        if (OldAttributes.ForegroundIsDefault() && !fForeground)
+        {
+            NewAttributes.SetDefaultForeground(gci.GetDefaultForeground(), gci.GetFillAttribute());
+        }
+        if (OldAttributes.BackgroundIsDefault() && !fBackground)
+        {
+            NewAttributes.SetDefaultBackground(gci.GetDefaultBackground(), gci.GetFillAttribute());
+        }
+
         if (resetReverse)
         {
             NewAttributes.SetForeground(OldAttributes.CalculateRgbBackground());
@@ -811,6 +835,44 @@ void DoSrvPrivateSetLegacyAttributes(SCREEN_INFORMATION& screenInfo,
     }
 
     screenInfo.SetAttributes(NewAttributes);
+}
+
+void DoSrvPrivateSetDefaultAttributes(SCREEN_INFORMATION& screenInfo,
+                                      const bool fForeground,
+                                      const bool fBackground)
+{
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto wFill = gci.GetFillAttribute();
+    const auto defaultFG = gci.GetDefaultForeground();
+    const auto defaultBG = gci.GetDefaultBackground();
+
+    TextAttribute NewAttributes = screenInfo.GetAttributes();
+    if (fForeground)
+    {
+        if (defaultFG != INVALID_COLOR)
+        {
+            NewAttributes.SetDefaultForeground(defaultFG, wFill);
+            screenInfo.SetAttributes(NewAttributes);
+        }
+        else
+        {
+            DoSrvPrivateSetLegacyAttributes(screenInfo, wFill, true, false, false);
+        }
+    }
+    NewAttributes = screenInfo.GetAttributes();
+    if (fBackground)
+    {
+        if (defaultBG != INVALID_COLOR)
+        {
+            NewAttributes.SetDefaultBackground(defaultBG, wFill);
+            screenInfo.SetAttributes(NewAttributes);
+        }
+        else
+        {
+            DoSrvPrivateSetLegacyAttributes(screenInfo, wFill, false, true, false);
+        }
+    }
+
 }
 
 void DoSrvPrivateSetConsoleXtermTextAttribute(SCREEN_INFORMATION& screenInfo,

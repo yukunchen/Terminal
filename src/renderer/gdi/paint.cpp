@@ -70,15 +70,18 @@ HRESULT GdiEngine::ScrollFrame() noexcept
     // If we don't have any scrolling to do, return early.
     RETURN_HR_IF(S_OK, 0 == _szInvalidScroll.cx && 0 == _szInvalidScroll.cy);
 
-    // If we have an inverted cursor, we have to see if we have to clean it before we scroll to prevent 
+    // If we have an inverted cursor, we have to see if we have to clean it before we scroll to prevent
     // left behind cursor copies in the scrolled region.
-    if (!IsRectEmpty(&_rcCursorInvert))
+    if (cursorInvertRects.size() > 0)
     {
-        // Clean both the in-memory and actual window context.
-        RETURN_HR_IF(E_FAIL, !(InvertRect(_hdcMemoryContext, &_rcCursorInvert)));
-        RETURN_HR_IF(E_FAIL, !(InvertRect(_psInvalidData.hdc, &_rcCursorInvert)));
+        for (RECT r : cursorInvertRects)
+        {
+            // Clean both the in-memory and actual window context.
+            RETURN_HR_IF(E_FAIL, !(InvertRect(_hdcMemoryContext, &r)));
+            RETURN_HR_IF(E_FAIL, !(InvertRect(_psInvalidData.hdc, &r)));
+        }
 
-        _rcCursorInvert = { 0 };
+        cursorInvertRects.clear();
     }
 
     // We have to limit the region that can be scrolled to not include the gutters.
@@ -106,7 +109,7 @@ HRESULT GdiEngine::ScrollFrame() noexcept
 
     RECT rcUpdate = { 0 };
     LOG_HR_IF(E_FAIL, !(ScrollDC(_hdcMemoryContext, _szInvalidScroll.cx, _szInvalidScroll.cy, &rcScrollLimit, &rcScrollLimit, nullptr, &rcUpdate)));
-    
+
     LOG_IF_FAILED(_InvalidCombine(&rcUpdate));
 
     // update invalid rect for the remainder of paint functions
@@ -498,62 +501,62 @@ HRESULT GdiEngine::PaintCursor(const COORD coordCursor,
     }
 
     // Make a set of RECTs to paint.
-    std::vector<RECT> rects;
+    cursorInvertRects.clear();
 
     RECT rcInvert = rcBoundaries;
     // depending on the cursorType, add rects to that set
     switch (cursorType)
     {
     case CursorType::Legacy:
-    {
-        // Now adjust the cursor height
-        // enforce min/max cursor height
-        ULONG ulHeight = ulCursorHeightPercent;
-        ulHeight = std::max(ulHeight, s_ulMinCursorHeightPercent); // No smaller than 25%
-        ulHeight = std::min(ulHeight, s_ulMaxCursorHeightPercent); // No larger than 100%
+        {
+            // Now adjust the cursor height
+            // enforce min/max cursor height
+            ULONG ulHeight = ulCursorHeightPercent;
+            ulHeight = std::max(ulHeight, s_ulMinCursorHeightPercent); // No smaller than 25%
+            ulHeight = std::min(ulHeight, s_ulMaxCursorHeightPercent); // No larger than 100%
 
-        ulHeight = MulDiv(coordFontSize.Y, ulHeight, 100); // divide by 100 because percent.
+            ulHeight = MulDiv(coordFontSize.Y, ulHeight, 100); // divide by 100 because percent.
 
-        // Reduce the height of the top to be relative to the bottom by the height we want.
-        RETURN_IF_FAILED(LongSub(rcInvert.bottom, ulHeight, &rcInvert.top));
+            // Reduce the height of the top to be relative to the bottom by the height we want.
+            RETURN_IF_FAILED(LongSub(rcInvert.bottom, ulHeight, &rcInvert.top));
 
-        rects.push_back(rcInvert);
-    }
-    break;
+            cursorInvertRects.push_back(rcInvert);
+        }
+        break;
 
     case CursorType::VerticalBar:
         RETURN_IF_FAILED(LongAdd(rcInvert.left, 1, &rcInvert.right));
-        rects.push_back(rcInvert);
+        cursorInvertRects.push_back(rcInvert);
         break;
 
     case CursorType::Underscore:
         RETURN_IF_FAILED(LongAdd(rcInvert.bottom, -1, &rcInvert.top));
-        rects.push_back(rcInvert);
+        cursorInvertRects.push_back(rcInvert);
         break;
 
     case CursorType::EmptyBox:
-    {
-        RECT top, left, right, bottom;
-        top = left = right = bottom = rcBoundaries;
-        RETURN_IF_FAILED(LongAdd(top.top, 1, &top.bottom));
-        RETURN_IF_FAILED(LongAdd(bottom.bottom, -1, &bottom.top));
-        RETURN_IF_FAILED(LongAdd(left.left, 1, &left.right));
-        RETURN_IF_FAILED(LongAdd(right.right, -1, &right.left));
+        {
+            RECT top, left, right, bottom;
+            top = left = right = bottom = rcBoundaries;
+            RETURN_IF_FAILED(LongAdd(top.top, 1, &top.bottom));
+            RETURN_IF_FAILED(LongAdd(bottom.bottom, -1, &bottom.top));
+            RETURN_IF_FAILED(LongAdd(left.left, 1, &left.right));
+            RETURN_IF_FAILED(LongAdd(right.right, -1, &right.left));
 
-        RETURN_IF_FAILED(LongAdd(top.left, 1, &top.left));
-        RETURN_IF_FAILED(LongAdd(bottom.left, 1, &bottom.left));
-        RETURN_IF_FAILED(LongAdd(top.right, -1, &top.right));
-        RETURN_IF_FAILED(LongAdd(bottom.right, -1, &bottom.right));
+            RETURN_IF_FAILED(LongAdd(top.left, 1, &top.left));
+            RETURN_IF_FAILED(LongAdd(bottom.left, 1, &bottom.left));
+            RETURN_IF_FAILED(LongAdd(top.right, -1, &top.right));
+            RETURN_IF_FAILED(LongAdd(bottom.right, -1, &bottom.right));
 
-        rects.push_back(top);
-        rects.push_back(left);
-        rects.push_back(right);
-        rects.push_back(bottom);
-    }
-    break;
+            cursorInvertRects.push_back(top);
+            cursorInvertRects.push_back(left);
+            cursorInvertRects.push_back(right);
+            cursorInvertRects.push_back(bottom);
+        }
+        break;
 
     case CursorType::FullBox:
-        rects.push_back(rcInvert);
+        cursorInvertRects.push_back(rcInvert);
         break;
 
     default:
@@ -563,24 +566,21 @@ HRESULT GdiEngine::PaintCursor(const COORD coordCursor,
     if (fUseColor)
     {
         HBRUSH hCursorBrush = CreateSolidBrush(cursorColor);
-        for (RECT r : rects)
+        for (RECT r : cursorInvertRects)
         {
             RETURN_HR_IF(E_FAIL, !(FillRect(_hdcMemoryContext, &r, hCursorBrush)));
         }
         DeleteObject(hCursorBrush);
+        // Clear out the inverted rects, so that we don't re-invert them next frame.
+        cursorInvertRects.clear();
     }
     else
     {
-        for (RECT r : rects)
+        for (RECT r : cursorInvertRects)
         {
             RETURN_HR_IF(E_FAIL, !(InvertRect(_hdcMemoryContext, &r)));
         }
     }
-
-    // Save inverted cursor position so we can clear it.
-    _rcCursorInvert = rcInvert;
-
-    WHEN_DBG(_DebugBltAll());
 
     return S_OK;
 }

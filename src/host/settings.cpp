@@ -52,6 +52,8 @@ Settings::Settings() :
     _fRenderGridWorldwide(false), // historically grid lines were only rendered in DBCS codepages, so this is false by default unless otherwise specified.
     // window size pixels initialized below
     _fInterceptCopyPaste(0),
+    _DefaultForeground(INVALID_COLOR),
+    _DefaultBackground(INVALID_COLOR),
     _fUseDx(false)
 {
     _dwScreenBufferSize.X = 80;
@@ -511,6 +513,9 @@ void Settings::InitFromStateInfo(_In_ PCONSOLE_STATE_INFO pStateInfo)
     _CursorColor = pStateInfo->CursorColor;
     _CursorType = static_cast<CursorType>(pStateInfo->CursorType);
     _fInterceptCopyPaste = pStateInfo->InterceptCopyPaste;
+    _DefaultForeground = pStateInfo->DefaultForeground;
+    _DefaultBackground = pStateInfo->DefaultBackground;
+    _TerminalScrolling = pStateInfo->TerminalScrolling;
 }
 
 // Method Description:
@@ -550,6 +555,9 @@ CONSOLE_STATE_INFO Settings::CreateConsoleStateInfo() const
     csi.CursorColor = _CursorColor;
     csi.CursorType = static_cast<unsigned int>(_CursorType);
     csi.InterceptCopyPaste = _fInterceptCopyPaste;
+    csi.DefaultForeground = _DefaultForeground;
+    csi.DefaultBackground = _DefaultBackground;
+    csi.TerminalScrolling = _TerminalScrolling;
     return csi;
 }
 
@@ -771,7 +779,7 @@ void Settings::SetFillAttribute(const WORD wFillAttribute)
 
     // Do not allow the default fill attribute to use any attrs other than fg/bg colors.
     // This prevents us from accidentally inverting everything or suddenly drawing lines
-    // everywhere by defualt.
+    // everywhere by default.
     WI_ClearAllFlags(_wFillAttribute, ~(FG_ATTRS | BG_ATTRS));
 }
 
@@ -1085,6 +1093,50 @@ bool Settings::GetInterceptCopyPaste() const noexcept
 void Settings::SetInterceptCopyPaste(const bool interceptCopyPaste) noexcept
 {
     _fInterceptCopyPaste = interceptCopyPaste;
+}
+
+COLORREF Settings::GetDefaultForegroundColor() const noexcept
+{
+    return _DefaultForeground;
+}
+
+void Settings::SetDefaultForegroundColor(const COLORREF defaultForeground) noexcept
+{
+    _DefaultForeground = defaultForeground;
+}
+
+COLORREF Settings::GetDefaultBackgroundColor() const noexcept
+{
+    return _DefaultBackground;
+}
+
+void Settings::SetDefaultBackgroundColor(const COLORREF defaultBackground) noexcept
+{
+    _DefaultBackground = defaultBackground;
+}
+
+TextAttribute Settings::GetDefaultAttributes() const noexcept
+{
+    TextAttribute attrs(_wFillAttribute);
+    if (_DefaultForeground != INVALID_COLOR)
+    {
+        attrs.SetDefaultForeground(_DefaultForeground, _wFillAttribute);
+    }
+    if (_DefaultBackground != INVALID_COLOR)
+    {
+        attrs.SetDefaultBackground(_DefaultBackground, _wFillAttribute);
+    }
+    return attrs;
+}
+
+bool Settings::IsTerminalScrolling() const noexcept
+{
+    return _TerminalScrolling;
+}
+
+void Settings::SetTerminalScrolling(const bool terminalScrollingEnabled) noexcept
+{
+    _TerminalScrolling = terminalScrollingEnabled;
 }
 
 bool Settings::GetUseDx() const noexcept

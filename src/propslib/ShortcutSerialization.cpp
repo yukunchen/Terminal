@@ -190,23 +190,34 @@ HRESULT ShortcutSerialization::s_PopulateV2Properties(_In_ IShellLink * const ps
         {
             hr = s_GetPropertyByteValue(pPropStoreLnk, PKEY_Console_WindowTransparency, &pStateInfo->bWindowTransparency);
         }
-        // TODO: MSFT 18451277 - Re-enable Cursor Color, Style persistence
-        // if (SUCCEEDED(hr))
-        // {
-        //     DWORD placeholder = 0;
-        //     hr = s_GetPropertyDwordValue(pPropStoreLnk, PKEY_Console_CursorType, &placeholder);
-        //     if (SUCCEEDED(hr))
-        //     {
-        //         pStateInfo->CursorType = (unsigned int) placeholder;
-        //     }
-        // }
-        // if (SUCCEEDED(hr))
-        // {
-        //     hr = s_GetPropertyDwordValue(pPropStoreLnk, PKEY_Console_CursorColor, &pStateInfo->CursorColor);
-        // }
+        if (SUCCEEDED(hr))
+        {
+            DWORD placeholder = 0;
+            hr = s_GetPropertyDwordValue(pPropStoreLnk, PKEY_Console_CursorType, &placeholder);
+            if (SUCCEEDED(hr))
+            {
+                pStateInfo->CursorType = (unsigned int) placeholder;
+            }
+        }
+        if (SUCCEEDED(hr))
+        {
+            hr = s_GetPropertyDwordValue(pPropStoreLnk, PKEY_Console_CursorColor, &pStateInfo->CursorColor);
+        }
         if (SUCCEEDED(hr))
         {
             hr = s_GetPropertyBoolValue(pPropStoreLnk, PKEY_Console_InterceptCopyPaste, &pStateInfo->InterceptCopyPaste);
+        }
+        if (SUCCEEDED(hr))
+        {
+            hr = s_GetPropertyDwordValue(pPropStoreLnk, PKEY_Console_DefaultForeground, &pStateInfo->DefaultForeground);
+        }
+        if (SUCCEEDED(hr))
+        {
+            hr = s_GetPropertyDwordValue(pPropStoreLnk, PKEY_Console_DefaultBackground, &pStateInfo->DefaultBackground);
+        }
+        if (SUCCEEDED(hr))
+        {
+            hr = s_GetPropertyBoolValue(pPropStoreLnk, PKEY_Console_TerminalScrolling, &pStateInfo->TerminalScrolling);
         }
 
         pPropStoreLnk->Release();
@@ -465,10 +476,12 @@ NTSTATUS ShortcutSerialization::s_SetLinkValues(_In_ PCONSOLE_STATE_INFO pStateI
                     s_SetLinkPropertyBoolValue(pps, PKEY_Console_CtrlKeyShortcutsDisabled, pStateInfo->fCtrlKeyShortcutsDisabled);
                     s_SetLinkPropertyBoolValue(pps, PKEY_Console_LineSelection, pStateInfo->fLineSelection);
                     s_SetLinkPropertyByteValue(pps, PKEY_Console_WindowTransparency, pStateInfo->bWindowTransparency);
-                    // TODO: MSFT 18451277 - Re-enable Cursor Color, Style persistence
-                    // s_SetLinkPropertyDwordValue(pps, PKEY_Console_CursorType, pStateInfo->CursorType);
-                    // s_SetLinkPropertyDwordValue(pps, PKEY_Console_CursorColor, pStateInfo->CursorColor);
+                    s_SetLinkPropertyDwordValue(pps, PKEY_Console_CursorType, pStateInfo->CursorType);
+                    s_SetLinkPropertyDwordValue(pps, PKEY_Console_CursorColor, pStateInfo->CursorColor);
                     s_SetLinkPropertyBoolValue(pps, PKEY_Console_InterceptCopyPaste, pStateInfo->InterceptCopyPaste);
+                    s_SetLinkPropertyDwordValue(pps, PKEY_Console_DefaultForeground, pStateInfo->DefaultForeground);
+                    s_SetLinkPropertyDwordValue(pps, PKEY_Console_DefaultBackground, pStateInfo->DefaultBackground);
+                    s_SetLinkPropertyBoolValue(pps, PKEY_Console_TerminalScrolling, pStateInfo->TerminalScrolling);
                     hr = pps->Commit();
                     pps->Release();
                 }

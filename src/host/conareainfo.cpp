@@ -39,8 +39,8 @@ ConversionAreaInfo::ConversionAreaInfo(const COORD bufferSize,
     THROW_IF_NTSTATUS_FAILED(SCREEN_INFORMATION::CreateInstance(windowSize,
                                                                 fontInfo,
                                                                 bufferSize,
-                                                                fill,
-                                                                popupFill,
+                                                                { fill.Attributes },
+                                                                { popupFill.Attributes },
                                                                 0,
                                                                 &pNewScreen));
 

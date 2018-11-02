@@ -25,13 +25,6 @@ using namespace Microsoft::Console::Types;
 NTSTATUS DoCreateScreenBuffer()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    CHAR_INFO Fill;
-    Fill.Attributes = gci.GetFillAttribute();
-    Fill.Char.UnicodeChar = UNICODE_SPACE;
-
-    CHAR_INFO PopupFill;
-    PopupFill.Attributes = gci.GetPopupFillAttribute();
-    PopupFill.Char.UnicodeChar = UNICODE_SPACE;
 
     FontInfo fiFont(gci.GetFaceName(),
                     static_cast<BYTE>(gci.GetFontFamily()),
@@ -49,8 +42,8 @@ NTSTATUS DoCreateScreenBuffer()
     NTSTATUS Status = SCREEN_INFORMATION::CreateInstance(gci.GetWindowSize(),
                                                          fiFont,
                                                          gci.GetScreenBufferSize(),
-                                                         Fill,
-                                                         PopupFill,
+                                                         gci.GetDefaultAttributes(),
+                                                         TextAttribute{ gci.GetPopupFillAttribute() },
                                                          gci.GetCursorSize(),
                                                          &gci.ScreenBuffers);
 
@@ -120,13 +113,12 @@ std::vector<WORD> ReadOutputAttributes(const SCREEN_INFORMATION& screenInfo,
 
     // Get iterator to the position we should start reading at.
     auto it = screenInfo.GetCellDataAt(coordRead);
-
     // Count up the number of cells we've attempted to read.
     ULONG amountRead = 0;
-
     // Prepare the return value string.
     std::vector<WORD> retVal;
-    retVal.reserve(amountToRead); // Reserve the number of cells. If we have >U+FFFF, it will auto-grow later and that's OK.
+    // Reserve the number of cells. If we have >U+FFFF, it will auto-grow later and that's OK.
+    retVal.reserve(amountToRead);
 
     // While we haven't read enough cells yet and the iterator is still valid (hasn't reached end of buffer)
     while (amountRead < amountToRead && it)
@@ -206,7 +198,7 @@ std::wstring ReadOutputStringW(const SCREEN_INFORMATION& screenInfo,
         amountRead++;
         it++;
     }
-  
+
     return retVal;
 }
 
@@ -577,7 +569,10 @@ void SetActiveScreenBuffer(SCREEN_INFORMATION& screenInfo)
     SetScreenColors(screenInfo,
                     screenInfo.GetAttributes().GetLegacyAttributes(),
                     screenInfo.GetPopupAttributes()->GetLegacyAttributes(),
-                    FALSE);
+                    FALSE,
+                    gci.GetDefaultForegroundColor(),
+                    gci.GetDefaultBackgroundColor()
+                    );
 
     // Set window size.
     screenInfo.PostUpdateWindowSize();

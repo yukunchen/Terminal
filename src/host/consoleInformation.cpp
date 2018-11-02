@@ -151,25 +151,33 @@ InputBuffer* const CONSOLE_INFORMATION::GetActiveInputBuffer() const
 }
 
 // Method Description:
-// - Return the default foreground color of the console.
+// - Return the default foreground color of the console. If the settings are
+//      configured to have a default foreground color (separate from the color
+//      table), this will return that value. Otherwise it will return the value
+//      from the colortable corresponding to our default attributes.
 // Arguments:
 // - <none>
 // Return Value:
 // - the default foreground color of the console.
 COLORREF CONSOLE_INFORMATION::GetDefaultForeground() const
 {
-    return ForegroundColor(GetFillAttribute(), GetColorTable(), GetColorTableSize());
+    const auto fg = Settings::GetDefaultForegroundColor();
+    return fg != INVALID_COLOR ? fg : ForegroundColor(GetFillAttribute(), GetColorTable(), GetColorTableSize());
 }
 
 // Method Description:
-// - Return the default background color of the console.
+// - Return the default background color of the console. If the settings are
+//      configured to have a default background color (separate from the color
+//      table), this will return that value. Otherwise it will return the value
+//      from the colortable corresponding to our default attributes.
 // Arguments:
 // - <none>
 // Return Value:
 // - the default background color of the console.
 COLORREF CONSOLE_INFORMATION::GetDefaultBackground() const
 {
-    return BackgroundColor(GetFillAttribute(), GetColorTable(), GetColorTableSize());
+    const auto bg = Settings::GetDefaultBackgroundColor();
+    return bg != INVALID_COLOR ? bg : BackgroundColor(GetFillAttribute(), GetColorTable(), GetColorTableSize());
 }
 
 // Method Description:

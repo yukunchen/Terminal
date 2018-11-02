@@ -121,6 +121,41 @@ Revision History:
 #define IDD_INTERCEPT_COPY_PASTE    515
 #define IDD_HELP_LEGACY_LINK        516
 
+
+#define DID_TERMINAL                        600
+#define IDD_USE_TERMINAL_FG                 601
+#define IDD_TERMINAL_FG_REDSCROLL           602
+#define IDD_TERMINAL_FG_GREENSCROLL         603
+#define IDD_TERMINAL_FG_BLUESCROLL          604
+#define IDD_USE_TERMINAL_BG                 605
+#define IDD_TERMINAL_BG_REDSCROLL           606
+#define IDD_TERMINAL_BG_GREENSCROLL         607
+#define IDD_TERMINAL_BG_BLUESCROLL          608
+#define IDD_TERMINAL_FGCOLOR                609
+#define IDD_TERMINAL_BGCOLOR                610
+#define IDD_TERMINAL_INVERSE_CURSOR         611
+#define IDD_TERMINAL_CURSOR_USECOLOR        612
+#define IDD_TERMINAL_CURSOR_COLOR           613
+#define IDD_TERMINAL_CURSOR_REDSCROLL       614
+#define IDD_TERMINAL_CURSOR_GREENSCROLL     615
+#define IDD_TERMINAL_CURSOR_BLUESCROLL      616
+#define IDD_TERMINAL_LEGACY_CURSOR          617
+#define IDD_TERMINAL_VERTBAR                618
+#define IDD_TERMINAL_UNDERSCORE             619
+#define IDD_TERMINAL_EMPTYBOX               620
+#define IDD_TERMINAL_SOLIDBOX               621
+#define IDD_DISABLE_SCROLLFORWARD           622
+#define IDD_TERMINAL_FG_RED                 623
+#define IDD_TERMINAL_FG_GREEN               624
+#define IDD_TERMINAL_FG_BLUE                625
+#define IDD_TERMINAL_BG_RED                 626
+#define IDD_TERMINAL_BG_GREEN               627
+#define IDD_TERMINAL_BG_BLUE                628
+#define IDD_TERMINAL_CURSOR_RED             629
+#define IDD_TERMINAL_CURSOR_GREEN           630
+#define IDD_TERMINAL_CURSOR_BLUE            631
+#define IDD_HELP_TERMINAL                   632
+
 #define BM_TRUETYPE_ICON            1000
 
 

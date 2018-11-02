@@ -30,8 +30,8 @@ using namespace Microsoft::Console::Types;
 SCREEN_INFORMATION::SCREEN_INFORMATION(
     _In_ IWindowMetrics *pMetrics,
     _In_ IAccessibilityNotifier *pNotifier,
-    const CHAR_INFO ciFill,
-    const CHAR_INFO ciPopupFill) :
+    const TextAttribute defaultAttributes,
+    const TextAttribute popupAttributes) :
     Header{ },
     OutputMode{ ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT },
     ResizingWindow{ 0 },
@@ -54,8 +54,8 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     _rcAltSavedClientNew{ 0 },
     _rcAltSavedClientOld{ 0 },
     _fAltWindowChanged{ false },
-    _Attributes{ ciFill.Attributes },
-    _PopupAttributes{ ciPopupFill.Attributes },
+    _Attributes{ defaultAttributes },
+    _PopupAttributes{ popupAttributes },
     _tabStops{},
     _virtualBottom{ 0 }
 {
@@ -96,8 +96,8 @@ SCREEN_INFORMATION::~SCREEN_INFORMATION()
 NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
                                             const FontInfo fontInfo,
                                             _In_ COORD coordScreenBufferSize,
-                                            const CHAR_INFO ciFill,
-                                            const CHAR_INFO ciPopupFill,
+                                            const TextAttribute defaultAttributes,
+                                            const TextAttribute popupAttributes,
                                             const UINT uiCursorSize,
                                             _Outptr_ SCREEN_INFORMATION** const ppScreen)
 {
@@ -111,7 +111,7 @@ NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
         IAccessibilityNotifier *pNotifier = ServiceLocator::LocateAccessibilityNotifier();
         THROW_IF_NULL_ALLOC(pNotifier);
 
-        PSCREEN_INFORMATION const pScreen = new SCREEN_INFORMATION(pMetrics, pNotifier, ciFill, ciPopupFill);
+        PSCREEN_INFORMATION const pScreen = new SCREEN_INFORMATION(pMetrics, pNotifier, defaultAttributes, popupAttributes);
 
         // Set up viewport
         pScreen->_viewport = Viewport::FromDimensions({ 0, 0 },
@@ -121,7 +121,7 @@ NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
         // Set up text buffer
         pScreen->_textBuffer = std::make_unique<TextBuffer>(fontInfo,
                                                             coordScreenBufferSize,
-                                                            ciFill,
+                                                            defaultAttributes,
                                                             uiCursorSize);
         const NTSTATUS status = pScreen->_InitializeOutputStateMachine();
 
@@ -615,9 +615,9 @@ VOID SCREEN_INFORMATION::InternalUpdateScrollBars()
         }
 
         pWindow->UpdateScrollBar(true,
-                                 _IsAltBuffer(),
+                                 _IsAltBuffer() | gci.IsTerminalScrolling(),
                                  _viewport.Height(),
-                                 buffer.BottomInclusive(),
+                                 gci.IsTerminalScrolling() ? _virtualBottom : buffer.BottomInclusive(),
                                  _viewport.Top());
         pWindow->UpdateScrollBar(false,
                                  _IsAltBuffer(),
@@ -707,6 +707,19 @@ NTSTATUS SCREEN_INFORMATION::SetViewportOrigin(const bool fAbsolute,
     }
     NewWindow.Right = (SHORT)(NewWindow.Left + WindowSize.X - 1);
     NewWindow.Bottom = (SHORT)(NewWindow.Top + WindowSize.Y - 1);
+
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    // If we're in terminal scrolling mode, and we're rying to set the viewport
+    //      below the logical viewport, without updating our virtual bottom
+    //      (the logical viewport's position), dont.
+    //  Instead move us to the bottom of the logical viewport.
+    if (gci.IsTerminalScrolling() && !updateBottom && NewWindow.Bottom > _virtualBottom)
+    {
+        const short delta = _virtualBottom - NewWindow.Bottom;
+        NewWindow.Top += delta;
+        NewWindow.Bottom += delta;
+    }
 
     // see if new window origin would extend window beyond extent of screen buffer
     const COORD coordScreenBufferSize = GetBufferSize().Dimensions();
@@ -851,6 +864,7 @@ HRESULT SCREEN_INFORMATION::_AdjustScreenBufferHelper(const RECT* const prcClien
     {
         sizeClientNewPixels.cy -= ServiceLocator::LocateGlobals().sHorizontalScrollSize;
     }
+
     if (fIsVerticalVisible)
     {
         sizeClientNewPixels.cx -= ServiceLocator::LocateGlobals().sVerticalScrollSize;
@@ -968,6 +982,7 @@ void SCREEN_INFORMATION::_CalculateViewportSize(const RECT* const prcClientArea,
     {
         sizeClientPixels.cy -= ServiceLocator::LocateGlobals().sHorizontalScrollSize;
     }
+
     if (fIsVerticalVisible)
     {
         sizeClientPixels.cx -= ServiceLocator::LocateGlobals().sVerticalScrollSize;
@@ -1297,15 +1312,12 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
     }
 
     // First allocate a new text buffer to take the place of the current one.
-    CHAR_INFO ciFill;
-    ciFill.Attributes = _Attributes.GetLegacyAttributes();
-
     std::unique_ptr<TextBuffer> newTextBuffer;
     try
     {
         newTextBuffer = std::make_unique<TextBuffer>(_textBuffer->GetCurrentFont(),
                                                      coordNewScreenSize,
-                                                     ciFill,
+                                                     _Attributes,
                                                      0); // temporarily set size to 0 so it won't render.
     }
     catch (...)
@@ -1855,10 +1867,6 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
 NTSTATUS SCREEN_INFORMATION::_CreateAltBuffer(_Out_ SCREEN_INFORMATION** const ppsiNewScreenBuffer)
 {
     // Create new screen buffer.
-    CHAR_INFO Fill;
-    Fill.Char.UnicodeChar = UNICODE_SPACE;
-    Fill.Attributes = _Attributes.GetLegacyAttributes();
-
     COORD WindowSize = _viewport.Dimensions();
 
     const FontInfo& existingFont = _textBuffer->GetCurrentFont();
@@ -1866,8 +1874,8 @@ NTSTATUS SCREEN_INFORMATION::_CreateAltBuffer(_Out_ SCREEN_INFORMATION** const p
     NTSTATUS Status = SCREEN_INFORMATION::CreateInstance(WindowSize,
                                                          existingFont,
                                                          WindowSize,
-                                                         Fill,
-                                                         Fill,
+                                                         GetAttributes(),
+                                                         *GetPopupAttributes(),
                                                          CURSOR_SMALL_SIZE,
                                                          ppsiNewScreenBuffer);
     if (NT_SUCCESS(Status))
@@ -2154,9 +2162,7 @@ void SCREEN_INFORMATION::SetAttributes(const TextAttribute& attributes)
 {
     _Attributes = attributes;
 
-    CHAR_INFO ciFill = _textBuffer->GetFill();
-    ciFill.Attributes = _Attributes.GetLegacyAttributes();
-    _textBuffer->SetFill(ciFill);
+    _textBuffer->SetCurrentAttributes(_Attributes);
 
     // If we're an alt buffer, also update our main buffer.
     if (_psiMainBuffer)
@@ -2218,9 +2224,7 @@ void SCREEN_INFORMATION::ReplaceDefaultAttributes(const TextAttribute& oldAttrib
                                                   const TextAttribute& newAttributes,
                                                   const TextAttribute& newPopupAttributes)
 {
-    const WORD oldLegacyAttributes = oldAttributes.GetLegacyAttributes();
     const WORD oldLegacyPopupAttributes = oldPopupAttributes.GetLegacyAttributes();
-    const WORD newLegacyAttributes = newAttributes.GetLegacyAttributes();
     const WORD newLegacyPopupAttributes = newPopupAttributes.GetLegacyAttributes();
 
     // TODO: MSFT 9354902: Fix this up to be clearer with less magic bit shifting and less magic numbers. http://osgvsowi/9354902
@@ -2233,7 +2237,7 @@ void SCREEN_INFORMATION::ReplaceDefaultAttributes(const TextAttribute& oldAttrib
     {
         ROW& Row = _textBuffer->GetRowByOffset(i);
         ATTR_ROW& attrRow = Row.GetAttrRow();
-        attrRow.ReplaceLegacyAttrs(oldLegacyAttributes, newLegacyAttributes);
+        attrRow.ReplaceAttrs(oldAttributes, newAttributes);
         attrRow.ReplaceLegacyAttrs(oldLegacyPopupAttributes, newLegacyPopupAttributes);
         attrRow.ReplaceLegacyAttrs(InvertedOldPopupAttributes, InvertedNewPopupAttributes);
     }
@@ -2382,7 +2386,6 @@ OutputCellRect SCREEN_INFORMATION::ReadRect(const Viewport viewport) const
     THROW_HR_IF(E_INVALIDARG, !GetBufferSize().IsInBounds(viewport));
 
     OutputCellRect result(viewport.Height(), viewport.Width());
-
     const OutputCell paddingCell{ std::wstring_view{ &UNICODE_SPACE, 1 }, {}, TextAttributeBehavior::Default };
     for (size_t rowIndex = 0; rowIndex < gsl::narrow<size_t>(viewport.Height()); ++rowIndex)
     {
@@ -2473,7 +2476,7 @@ OutputCellIterator SCREEN_INFORMATION::WriteRect(const OutputCellIterator it,
 }
 
 // Routine Description:
-// - This routine writes a rectangular region into the screen buffer. 
+// - This routine writes a rectangular region into the screen buffer.
 // Arguments:
 // - data - rectangular data in memory buffer
 // - location - origin point (top left corner) of where to write rectangular data

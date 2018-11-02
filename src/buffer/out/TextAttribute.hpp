@@ -31,7 +31,9 @@ public:
         _fUseRgbColor{ false },
         _rgbForeground{ RGB(0, 0, 0) },
         _rgbBackground{ RGB(0, 0, 0) },
-        _isBold{ false }
+        _isBold{ false },
+        _defaultFg{ false },
+        _defaultBg{ false }
     {
     }
 
@@ -40,7 +42,9 @@ public:
         _fUseRgbColor{ false },
         _rgbForeground{ RGB(0, 0, 0) },
         _rgbBackground{ RGB(0, 0, 0) },
-        _isBold{ false }
+        _isBold{ false },
+        _defaultFg{ false },
+        _defaultBg{ false }
     {
     }
 
@@ -49,7 +53,9 @@ public:
         _fUseRgbColor{ true },
         _rgbForeground{ rgbForeground },
         _rgbBackground{ rgbBackground },
-        _isBold{ false }
+        _isBold{ false },
+        _defaultFg{ false },
+        _defaultBg{ false }
     {
     }
 
@@ -92,6 +98,12 @@ public:
     void SetBackground(const COLORREF rgbBackground);
     void SetColor(const COLORREF rgbColor, const bool fIsForeground);
 
+    void SetDefaultForeground(const COLORREF rgbForeground, const WORD wAttrDefault) noexcept;
+    void SetDefaultBackground(const COLORREF rgbBackground, const WORD wAttrDefault) noexcept;
+
+    bool ForegroundIsDefault() const noexcept;
+    bool BackgroundIsDefault() const noexcept;
+
 private:
     COLORREF _GetRgbForeground() const;
     COLORREF _GetRgbBackground() const;
@@ -105,6 +117,8 @@ private:
     COLORREF _rgbForeground;
     COLORREF _rgbBackground;
     bool _isBold;
+    bool _defaultFg;
+    bool _defaultBg;
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;
@@ -126,6 +140,8 @@ bool constexpr operator==(const TextAttribute& a, const TextAttribute& b) noexce
            a._fUseRgbColor == b._fUseRgbColor &&
            a._rgbForeground == b._rgbForeground &&
            a._rgbBackground == b._rgbBackground &&
+           a._defaultFg == b._defaultFg &&
+           a._defaultBg == b._defaultBg &&
            a._isBold == b._isBold;
 }
 
@@ -165,12 +181,14 @@ namespace WEX {
             static WEX::Common::NoThrowString ToString(const TextAttribute& attr)
             {
                 return WEX::Common::NoThrowString().Format(
-                    L"{IsLegacy:%d,GetLegacyAttributes:0x%02x,FG:0x%06x,BG:0x%06x,bold:%d}",
+                    L"{IsLegacy:%d,GetLegacyAttributes:0x%02x,FG:0x%06x,BG:0x%06x,bold:%d,default:(%d,%d)}",
                     attr.IsLegacy(),
                     attr.GetLegacyAttributes(),
                     attr.CalculateRgbForeground(),
                     attr.CalculateRgbBackground(),
-                    attr.IsBold()
+                    attr.IsBold(),
+                    attr.ForegroundIsDefault(),
+                    attr.BackgroundIsDefault()
                 );
             }
         };

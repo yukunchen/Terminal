@@ -290,6 +290,16 @@ bool AdaptDispatch::s_IsBoldColorOption(const DispatchTypes::GraphicsOptions opt
     return opt == DispatchTypes::GraphicsOptions::BoldBright || opt == DispatchTypes::GraphicsOptions::UnBold;
 }
 
+// Function Description:
+// - checks if this graphics option should set either the console's FG or BG to
+//the default attributes.
+// Return Value:
+// - true if the opt sets either/or attribute to the defaults, false otherwise.
+bool AdaptDispatch::s_IsDefaultColorOption(const DispatchTypes::GraphicsOptions opt) noexcept
+{
+    return opt == DispatchTypes::GraphicsOptions::Off || opt == DispatchTypes::GraphicsOptions::ForegroundDefault || opt == DispatchTypes::GraphicsOptions::BackgroundDefault;
+}
+
 // Routine Description:
 // - Helper to parse extended graphics options, which start with 38 (FG) or 48 (BG)
 //     These options are followed by either a 2 (RGB) or 5 (xterm index)
@@ -365,6 +375,21 @@ bool AdaptDispatch::_SetBoldColorHelper(const DispatchTypes::GraphicsOptions opt
     return !!_conApi->PrivateBoldText(bold);
 }
 
+bool AdaptDispatch::_SetDefaultColorHelper(const DispatchTypes::GraphicsOptions option)
+{
+    const bool fg = option == GraphicsOptions::Off || option == GraphicsOptions::ForegroundDefault;
+    const bool bg = option == GraphicsOptions::Off || option == GraphicsOptions::BackgroundDefault;
+    bool success = _conApi->PrivateSetDefaultAttributes(fg, bg);
+    if (success && fg && bg)
+    {
+        // If we're resetting both the FG & BG, also reset the meta attributes (underline)
+        //      as well as the boldness
+        success = _conApi->PrivateSetLegacyAttributes(0, false, false, true) &&
+                  _conApi->PrivateBoldText(false);
+    }
+    return success;
+}
+
 // Routine Description:
 // - SGR - Modifies the graphical rendering options applied to the next characters written into the buffer.
 //       - Options include colors, invert, underlines, and other "font style" type options.
@@ -388,7 +413,11 @@ bool AdaptDispatch::SetGraphicsRendition(_In_reads_(cOptions) const DispatchType
         for (size_t i = 0; i < cOptions; i++)
         {
             DispatchTypes::GraphicsOptions opt = rgOptions[i];
-            if (s_IsBoldColorOption(opt))
+            if (s_IsDefaultColorOption(opt))
+            {
+                return _SetDefaultColorHelper(opt);
+            }
+            else if (s_IsBoldColorOption(opt))
             {
                 fSuccess = _SetBoldColorHelper(rgOptions[i]);
             }

@@ -346,6 +346,9 @@ namespace Conhost.UIA.Tests.Common.NativeMethods
         public static readonly Wtypes.PROPERTYKEY PKEY_Console_CursorType = new Wtypes.PROPERTYKEY() { fmtid = PKEY_Console_FormatId, pid = 8 };
         public static readonly Wtypes.PROPERTYKEY PKEY_Console_CursorColor = new Wtypes.PROPERTYKEY() { fmtid = PKEY_Console_FormatId, pid = 9 };
         public static readonly Wtypes.PROPERTYKEY PKEY_Console_InterceptCopyPaste = new Wtypes.PROPERTYKEY() { fmtid = PKEY_Console_FormatId, pid = 10 };
+        public static readonly Wtypes.PROPERTYKEY PKEY_Console_DefaultForeground = new Wtypes.PROPERTYKEY() { fmtid = PKEY_Console_FormatId, pid = 11 };
+        public static readonly Wtypes.PROPERTYKEY PKEY_Console_DefaultBackground = new Wtypes.PROPERTYKEY() { fmtid = PKEY_Console_FormatId, pid = 12 };
+        public static readonly Wtypes.PROPERTYKEY PKEY_Console_TerminalScrolling = new Wtypes.PROPERTYKEY() { fmtid = PKEY_Console_FormatId, pid = 13 };
 
         public static readonly uint NT_CONSOLE_PROPS_SIG = 0xA0000002;
         public static readonly uint NT_FE_CONSOLE_PROPS_SIG = 0xA0000004;
@@ -379,6 +382,9 @@ namespace Conhost.UIA.Tests.Common.NativeMethods
             public uint CursorType;
             public WinCon.COLORREF CursorColor;
             public bool InterceptCopyPaste;
+            public WinCon.COLORREF DefaultForeground;
+            public WinCon.COLORREF DefaultBackground;
+            public bool TerminalScrolling;
         }
 
         [StructLayout(LayoutKind.Sequential)]

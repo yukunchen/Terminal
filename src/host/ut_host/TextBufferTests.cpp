@@ -262,7 +262,7 @@ void TextBufferTests::TestCopyProperties()
 
     std::unique_ptr<TextBuffer> testTextBuffer = std::make_unique<TextBuffer>(otherTbi._currentFont,
                                                                                           otherTbi.GetSize().Dimensions(),
-                                                                                          otherTbi._fill,
+                                                                                          otherTbi._currentAttributes,
                                                                                           12);
     VERIFY_IS_NOT_NULL(testTextBuffer.get());
 
@@ -1108,8 +1108,12 @@ void TextBufferTests::TestReverseReset()
     //      The first X should be (fg,bg) = (rgb(128;5;255), dark_green)
     //      The second X should be (fg,bg) = (dark_green, rgb(128;5;255))
     //      The third X should be (fg,bg) = (rgb(128;5;255), dark_green)
-    std::wstring sequence = L"\x1b[42m\x1b[38;2;128;5;255mX\x1b[7mX\x1b[27mX";
-    stateMachine.ProcessString(&sequence[0], sequence.length());
+    std::wstring sequence0 = L"\x1b[42m\x1b[38;2;128;5;255mX";
+    std::wstring sequence1 = L"\x1b[7mX";
+    std::wstring sequence2 = L"\x1b[27mX";
+    stateMachine.ProcessString(&sequence0[0], sequence0.length());
+    stateMachine.ProcessString(&sequence1[0], sequence1.length());
+    stateMachine.ProcessString(&sequence2[0], sequence2.length());
 
     const auto x = cursor.GetPosition().X;
     const auto y = cursor.GetPosition().Y;

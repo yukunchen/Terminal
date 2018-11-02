@@ -128,7 +128,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         HRESULT _FlushBufferLines() noexcept;
 
-        RECT _rcCursorInvert;
+        std::vector<RECT> cursorInvertRects;
 
         COORD _coordFontLast;
         int _iCurrentDpi;
@@ -156,7 +156,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]]
         HRESULT _InvalidateRect(const RECT* const prc) noexcept;
-        
+
         [[nodiscard]]
         HRESULT _PaintBackgroundColor(const RECT* const prc) noexcept;
 

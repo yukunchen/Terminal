@@ -215,7 +215,7 @@ INT_PTR WINAPI SettingsDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lPara
 
     case WM_NOTIFY:
     {
-        if (IDD_HELP_SYSLINK == (int)wParam && lParam)
+        if (lParam && (wParam == IDD_HELP_SYSLINK || wParam == IDD_HELP_LEGACY_LINK))
         {
             // handle hyperlink click or keyboard activation
             switch(((LPNMHDR)lParam)->code)
