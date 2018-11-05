@@ -51,7 +51,7 @@ public:
     void ReinitializeInputBuffer();
     void WakeUpReadersWaitingForData();
     void TerminateRead(_In_ WaitTerminationReason Flag);
-    size_t GetNumberOfReadyEvents();
+    size_t GetNumberOfReadyEvents() const;
     void Flush();
     void FlushAllButKeys();
 

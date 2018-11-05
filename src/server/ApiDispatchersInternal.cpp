@@ -65,7 +65,7 @@ HRESULT ApiDispatchers::ServerGetConsoleLangId(_Inout_ CONSOLE_API_MSG * const m
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleLangId);
 
     // TODO: MSFT: 9115192 - This should probably just ask through GetOutputCP and convert it ourselves on this side.
-    return m->_pApiRoutines->GetConsoleLangIdImpl(&a->LangId);
+    return m->_pApiRoutines->GetConsoleLangIdImpl(a->LangId);
 }
 
 [[nodiscard]]
