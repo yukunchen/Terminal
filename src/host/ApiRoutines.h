@@ -220,23 +220,23 @@ public:
                                      const bool isAbsolute,
                                      const SMALL_RECT& windowRect) noexcept override;
 
-    //HRESULT ReadConsoleOutputAttributeImpl(_In_ SCREEN_INFORMATION* const pContext,
-    //                                               const COORD* const pSourceOrigin,
-    //                                               _Out_writes_to_(AttributeBufferLength, *pAttributeBufferWritten) WORD* const pAttributeBuffer,
-    //                                               const ULONG AttributeBufferLength,
-    //                                               _Out_ ULONG* const pAttributeBufferWritten);
+    [[nodiscard]]
+    HRESULT ReadConsoleOutputAttributeImpl(const IConsoleOutputObject& context,
+                                           const COORD origin,
+                                           gsl::span<WORD> buffer,
+                                           size_t& written) noexcept override;
 
-    //HRESULT ReadConsoleOutputCharacterAImpl(_In_ SCREEN_INFORMATION* const pContext,
-    //                                                const COORD* const pSourceOrigin,
-    //                                                _Out_writes_to_(TextBufferLength, *pTextBufferWritten) char* const pTextBuffer,
-    //                                                const ULONG pTextBufferLength,
-    //                                                _Out_ ULONG* const pTextBufferWritten);
+    [[nodiscard]]
+    HRESULT ReadConsoleOutputCharacterAImpl(const IConsoleOutputObject& context,
+                                            const COORD origin,
+                                            gsl::span<char> buffer,
+                                            size_t& written) noexcept override;
 
-    //HRESULT ReadConsoleOutputCharacterWImpl(_In_ SCREEN_INFORMATION* const pContext,
-    //                                                const COORD* const pSourceOrigin,
-    //                                                _Out_writes_to_(TextBufferLength, *pTextBufferWritten) wchar_t* const pTextBuffer,
-    //                                                const ULONG TextBufferLength,
-    //                                                _Out_ ULONG* const pTextBufferWritten);
+    [[nodiscard]]
+    HRESULT ReadConsoleOutputCharacterWImpl(const IConsoleOutputObject& context,
+                                            const COORD origin,
+                                            gsl::span<wchar_t> buffer,
+                                            size_t& written) noexcept override;
 
     //HRESULT WriteConsoleInputAImpl(_In_ InputBuffer* const pContext,
     //                                       _In_reads_(InputBufferLength) const INPUT_RECORD* const pInputBuffer,
