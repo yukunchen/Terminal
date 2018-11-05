@@ -383,59 +383,127 @@ HRESULT ApiRoutines::ReadConsoleInputWImpl(_In_ IConsoleInputObject* const pInCo
 // Routine Description:
 // - Writes events to the input buffer
 // Arguments:
-// - pInputBuffer - the input buffer to write to
+// - context - the input buffer to write to
 // - events - the events to written
-// - eventsWritten - on output, the number of events written
-// - unicode - true if events are unicode char data
+// - written  - on output, the number of events written
 // - append - true if events should be written to the end of the input
 // buffer, false if they should be written to the front
 // Return Value:
 // - HRESULT indicating success or failure
 [[nodiscard]]
-HRESULT DoSrvWriteConsoleInput(_Inout_ InputBuffer* const pInputBuffer,
-                               _Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
-                               _Out_ size_t& eventsWritten,
-                               const bool unicode,
-                               const bool append)
+static HRESULT _WriteConsoleInputWImplHelper(InputBuffer& context,
+                                            std::deque<std::unique_ptr<IInputEvent>>& events,
+                                            size_t& written,
+                                            const bool append) noexcept
 {
+    try
+    {
+        // add to InputBuffer
+        if (append)
+        {
+            written = context.Write(events);
+        }
+        else
+        {
+            written = context.Prepend(events);
+        }
+
+        return S_OK;
+    }
+    CATCH_RETURN();
+}
+
+// Routine Description:
+// - Writes events to the input buffer already formed into IInputEvents (private call)
+// Arguments:
+// - context - the input buffer to write to
+// - events - the events to written
+// - written  - on output, the number of events written
+// - append - true if events should be written to the end of the input
+// buffer, false if they should be written to the front
+// Return Value:
+// - HRESULT indicating success or failure
+HRESULT DoSrvPrivateWriteConsoleInputW(_Inout_ InputBuffer* const pInputBuffer,
+                                       _Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
+                                       _Out_ size_t& eventsWritten,
+                                       const bool append)
+{
+    return _WriteConsoleInputWImplHelper(*pInputBuffer, events, eventsWritten, append);
+}
+
+// Routine Description:
+// - Writes events to the input buffer, translating from codepage to unicode first
+// Arguments:
+// - context - the input buffer to write to
+// - buffer - the events to written
+// - written  - on output, the number of events written
+// - append - true if events should be written to the end of the input
+// buffer, false if they should be written to the front
+// Return Value:
+// - HRESULT indicating success or failure
+[[nodiscard]]
+HRESULT ApiRoutines::WriteConsoleInputAImpl(InputBuffer& context,
+                                            const std::basic_string_view<INPUT_RECORD> buffer,
+                                            size_t& written,
+                                            const bool append) noexcept
+{
+    written = 0;
+
     LockConsole();
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    eventsWritten = 0;
-
     try
     {
+        auto events = IInputEvent::Create(buffer);
+
         // add partial byte event if necessary
-        if (pInputBuffer->IsWritePartialByteSequenceAvailable())
+        if (context.IsWritePartialByteSequenceAvailable())
         {
-            events.push_front(pInputBuffer->FetchWritePartialByteSequence(false));
+            events.push_front(context.FetchWritePartialByteSequence(false));
         }
 
         // convert to unicode if necessary
-        if (!unicode)
-        {
-            std::unique_ptr<IInputEvent> partialEvent;
-            EventsToUnicode(events, partialEvent);
+        std::unique_ptr<IInputEvent> partialEvent;
+        EventsToUnicode(events, partialEvent);
 
-            if (partialEvent.get())
-            {
-                pInputBuffer->StoreWritePartialByteSequence(std::move(partialEvent));
-            }
+        if (partialEvent.get())
+        {
+            context.StoreWritePartialByteSequence(std::move(partialEvent));
         }
+
+        return _WriteConsoleInputWImplHelper(context, events, written, append);
     }
     CATCH_RETURN();
+}
 
-    // add to InputBuffer
-    if (append)
-    {
-        eventsWritten = static_cast<ULONG>(pInputBuffer->Write(events));
-    }
-    else
-    {
-        eventsWritten = static_cast<ULONG>(pInputBuffer->Prepend(events));
-    }
+// Routine Description:
+// - Writes events to the input buffer
+// Arguments:
+// - context - the input buffer to write to
+// - buffer - the events to written
+// - written  - on output, the number of events written
+// - append - true if events should be written to the end of the input
+// buffer, false if they should be written to the front
+// Return Value:
+// - HRESULT indicating success or failure
+[[nodiscard]]
+HRESULT ApiRoutines::WriteConsoleInputWImpl(InputBuffer& context,
+                                            const std::basic_string_view<INPUT_RECORD> buffer,
+                                            size_t& written,
+                                            const bool append) noexcept
+{
+    written = 0;
 
-    return S_OK;
+    LockConsole();
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+    try
+    {
+        auto events = IInputEvent::Create(buffer);
+
+        return _WriteConsoleInputWImplHelper(context, events, written, append);
+    }
+    CATCH_RETURN();
 }
 
 // Function Description:

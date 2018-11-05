@@ -904,11 +904,9 @@ HRESULT ApiDispatchers::ServerWriteConsoleInput(_Inout_ CONSOLE_API_MSG * const 
 
     RETURN_HR_IF(E_ACCESSDENIED, !m->GetProcessHandle()->GetPolicy().CanWriteInputBuffer());
 
-    INPUT_RECORD* Buffer;
-    ULONG Size;
-    RETURN_IF_FAILED(m->GetInputBuffer((PVOID*)&Buffer, &Size));
-
-    const size_t inputRecordCount = Size / sizeof(INPUT_RECORD);
+    PVOID pvBuffer;
+    ULONG cbSize;
+    RETURN_IF_FAILED(m->GetInputBuffer(&pvBuffer, &cbSize));
 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
@@ -916,16 +914,18 @@ HRESULT ApiDispatchers::ServerWriteConsoleInput(_Inout_ CONSOLE_API_MSG * const 
     InputBuffer* pInputBuffer;
     RETURN_IF_FAILED(pObjectHandle->GetInputBuffer(GENERIC_WRITE, &pInputBuffer));
 
-    std::deque<std::unique_ptr<IInputEvent>> events;
-    try
+    size_t written;
+    std::basic_string_view<INPUT_RECORD> buffer(reinterpret_cast<INPUT_RECORD*>(pvBuffer), cbSize / sizeof(INPUT_RECORD));
+    if (!a->Unicode)
     {
-        events = IInputEvent::Create(gsl::make_span(Buffer, inputRecordCount));
+        RETURN_IF_FAILED(m->_pApiRoutines->WriteConsoleInputAImpl(*pInputBuffer, buffer, written, !!a->Append));
     }
-    CATCH_RETURN();
+    else
+    {
+        RETURN_IF_FAILED(m->_pApiRoutines->WriteConsoleInputWImpl(*pInputBuffer, buffer, written, !!a->Append));
+    }
 
-    size_t eventsWritten;
-    RETURN_IF_FAILED(DoSrvWriteConsoleInput(pInputBuffer, events, eventsWritten, !!a->Unicode, !!a->Append));
-    a->NumRecords = static_cast<ULONG>(eventsWritten);
+    RETURN_IF_FAILED(SizeTToULong(written, &a->NumRecords));
 
     return S_OK;
 }

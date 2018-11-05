@@ -221,22 +221,34 @@ public:
                                      const SMALL_RECT& windowRect) noexcept override;
 
     [[nodiscard]]
-    HRESULT ReadConsoleOutputAttributeImpl(const IConsoleOutputObject& context,
+    HRESULT ReadConsoleOutputAttributeImpl(const SCREEN_INFORMATION& context,
                                            const COORD origin,
                                            gsl::span<WORD> buffer,
                                            size_t& written) noexcept override;
 
     [[nodiscard]]
-    HRESULT ReadConsoleOutputCharacterAImpl(const IConsoleOutputObject& context,
+    HRESULT ReadConsoleOutputCharacterAImpl(const SCREEN_INFORMATION& context,
                                             const COORD origin,
                                             gsl::span<char> buffer,
                                             size_t& written) noexcept override;
 
     [[nodiscard]]
-    HRESULT ReadConsoleOutputCharacterWImpl(const IConsoleOutputObject& context,
+    HRESULT ReadConsoleOutputCharacterWImpl(const SCREEN_INFORMATION& context,
                                             const COORD origin,
                                             gsl::span<wchar_t> buffer,
                                             size_t& written) noexcept override;
+
+    [[nodiscard]]
+    HRESULT WriteConsoleInputAImpl(InputBuffer& context,
+                                   const std::basic_string_view<INPUT_RECORD> buffer,
+                                   size_t& written,
+                                   const bool append) noexcept override;
+
+    [[nodiscard]]
+    HRESULT WriteConsoleInputWImpl(InputBuffer& context,
+                                   const std::basic_string_view<INPUT_RECORD> buffer,
+                                   size_t& written,
+                                   const bool append) noexcept override;
 
     //HRESULT WriteConsoleInputAImpl(_In_ InputBuffer* const pContext,
     //                                       _In_reads_(InputBufferLength) const INPUT_RECORD* const pInputBuffer,

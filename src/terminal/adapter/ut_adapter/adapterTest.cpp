@@ -302,9 +302,9 @@ public:
                 bool fGreen = (iXtermTableEntry & 0x02) > 0;
                 bool fBlue = (iXtermTableEntry & 0x04) > 0;
                 bool fBright = (iXtermTableEntry & 0x08) > 0;
-                WORD iWinEntry = (fRed? 0x4:0x0) | (fGreen? 0x2:0x0) | (fBlue? 0x1:0x0) | (fBright? 0x8:0x0);
+                WORD iWinEntry = (fRed ? 0x4 : 0x0) | (fGreen ? 0x2 : 0x0) | (fBlue ? 0x1 : 0x0) | (fBright ? 0x8 : 0x0);
                 _wAttribute = fIsForeground ? ((_wAttribute & 0xF0) | iWinEntry)
-                                            : ((iWinEntry<<4) | (_wAttribute & 0x0F));
+                    : ((iWinEntry << 4) | (_wAttribute & 0x0F));
             }
         }
 
@@ -338,12 +338,12 @@ public:
         return !!_fPrivateBoldTextResult;
     }
 
-    BOOL WriteConsoleInputW(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
-                            _Out_ size_t& eventsWritten) override
+    BOOL PrivateWriteConsoleInputW(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
+                                   _Out_ size_t& eventsWritten) override
     {
-        Log::Comment(L"WriteConsoleInputW MOCK called...");
+        Log::Comment(L"PrivateWriteConsoleInputW MOCK called...");
 
-        if (_fWriteConsoleInputWResult)
+        if (_fPrivateWriteConsoleInputWResult)
         {
             // move all the input events we were given into local storage so we can test against them
             Log::Comment(NoThrowString().Format(L"Moving %zu input events into local storage...", events.size()));
@@ -353,7 +353,7 @@ public:
             eventsWritten = _events.size();
         }
 
-        return _fWriteConsoleInputWResult;
+        return _fPrivateWriteConsoleInputWResult;
     }
 
     BOOL PrivatePrependConsoleInput(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
@@ -511,7 +511,7 @@ public:
         if (_fMoveCursorVerticallyResult)
         {
             VERIFY_ARE_EQUAL(_expectedLines, lines);
-            _coordCursorPos = {_coordCursorPos.X, _coordCursorPos.Y+lines};
+            _coordCursorPos = { _coordCursorPos.X, _coordCursorPos.Y + lines };
         }
         return !!_fMoveCursorVerticallyResult;
     }
@@ -812,7 +812,7 @@ public:
         _fFillConsoleOutputCharacterWResult = TRUE;
         _fFillConsoleOutputAttributeResult = TRUE;
         _fSetConsoleTextAttributeResult = TRUE;
-        _fWriteConsoleInputWResult = TRUE;
+        _fPrivateWriteConsoleInputWResult = TRUE;
         _fPrivatePrependConsoleInputResult = TRUE;
         _fPrivateWriteConsoleControlInputResult = TRUE;
         _fScrollConsoleScreenBufferWResult = TRUE;
@@ -1241,8 +1241,8 @@ public:
         rect->Top = top;
         rect->Bottom = bottom;
         //The rectangle is going to get converted from VT space to conhost space
-        _srExpectedScrollRegion.Top = (top > 0)? rect->Top - 1 : rect->Top;
-        _srExpectedScrollRegion.Bottom = (bottom > 0)? rect->Bottom - 1 : rect->Bottom;
+        _srExpectedScrollRegion.Top = (top > 0) ? rect->Top - 1 : rect->Top;
+        _srExpectedScrollRegion.Bottom = (bottom > 0) ? rect->Bottom - 1 : rect->Bottom;
     }
 
     ~TestGetSet()
@@ -1298,7 +1298,7 @@ public:
     BOOL _fFillConsoleOutputCharacterWResult = false;
     BOOL _fFillConsoleOutputAttributeResult = false;
     BOOL _fSetConsoleTextAttributeResult = false;
-    BOOL _fWriteConsoleInputWResult = false;
+    BOOL _fPrivateWriteConsoleInputWResult = false;
     BOOL _fPrivatePrependConsoleInputResult = false;
     BOOL _fPrivateWriteConsoleControlInputResult = false;
     BOOL _fScrollConsoleScreenBufferWResult = false;
@@ -1308,7 +1308,7 @@ public:
     BOOL _fSetConsoleScreenBufferInfoExResult = false;
 
     COORD _coordExpectedScreenBufferSize = { 0, 0 };
-    SMALL_RECT _srExpectedScreenBufferViewport { 0, 0, 0, 0 };
+    SMALL_RECT _srExpectedScreenBufferViewport{ 0, 0, 0, 0 };
     WORD  _wExpectedAttributes = 0;
     BOOL _fPrivateSetCursorKeysModeResult = false;
     BOOL _fPrivateSetKeypadModeResult = false;
@@ -1401,9 +1401,9 @@ public:
     {
         BEGIN_TEST_METHOD_PROPERTIES()
             TEST_METHOD_PROPERTY(L"Data:uiDirection", L"{0, 1, 2, 3, 4, 5}") // These values align with the CursorDirection enum class to try all the directions.
-        END_TEST_METHOD_PROPERTIES()
+            END_TEST_METHOD_PROPERTIES()
 
-        Log::Comment(L"Starting test...");
+            Log::Comment(L"Starting test...");
 
         // Used to switch between the various function options.
         typedef bool(AdaptDispatch::*CursorMoveFunc)(unsigned int);
@@ -1602,7 +1602,7 @@ public:
 
         _testGetSet->_coordExpectedCursorPos = _testGetSet->_coordCursorPos;
 
-        VERIFY_IS_FALSE((_pDispatch->*(moveFunc))(SHRT_MAX+1));
+        VERIFY_IS_FALSE((_pDispatch->*(moveFunc))(SHRT_MAX + 1));
         VERIFY_ARE_EQUAL(_testGetSet->_coordExpectedCursorPos, _testGetSet->_coordCursorPos);
 
         // SetConsoleCursorPosition throws failure. Parameters are otherwise normal.
@@ -1706,9 +1706,9 @@ public:
     {
         BEGIN_TEST_METHOD_PROPERTIES()
             TEST_METHOD_PROPERTY(L"Data:uiDirection", L"{0, 1}") // These values align with the CursorDirection enum class to try all the directions.
-        END_TEST_METHOD_PROPERTIES()
+            END_TEST_METHOD_PROPERTIES()
 
-        Log::Comment(L"Starting test...");
+            Log::Comment(L"Starting test...");
 
 
         //// Used to switch between the various function options.
@@ -1857,9 +1857,9 @@ public:
         BEGIN_TEST_METHOD_PROPERTIES()
             TEST_METHOD_PROPERTY(L"Data:fStartingVis", L"{TRUE, FALSE}")
             TEST_METHOD_PROPERTY(L"Data:fEndingVis", L"{TRUE, FALSE}")
-        END_TEST_METHOD_PROPERTIES()
+            END_TEST_METHOD_PROPERTIES()
 
-        Log::Comment(L"Starting test...");
+            Log::Comment(L"Starting test...");
 
 
         // Modify variables based on permutations of this test.
@@ -1904,7 +1904,7 @@ public:
         srOuterBuffer.Top = 0;
         srOuterBuffer.Left = 0;
         srOuterBuffer.Bottom = _testGetSet->_coordBufferSize.Y;
-        srOuterBuffer.Right= _testGetSet->_coordBufferSize.X;
+        srOuterBuffer.Right = _testGetSet->_coordBufferSize.X;
         _testGetSet->FillRectangle(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer);
 
         // Fill the viewport with Rs. Red on Blue.
@@ -1947,7 +1947,7 @@ public:
         srModifiedSpace.Top = _testGetSet->_coordCursorPos.Y;
         srModifiedSpace.Bottom = srModifiedSpace.Top + 1;
         srModifiedSpace.Left = _testGetSet->_coordCursorPos.X;
-        srModifiedSpace.Right = srModifiedSpace.Left +(SHORT)cchInsertSize + (SHORT)cchTestText;
+        srModifiedSpace.Right = srModifiedSpace.Left + (SHORT)cchInsertSize + (SHORT)cchTestText;
 
         // verify cursor didn't move
         VERIFY_ARE_EQUAL(coordCursorExpected, _testGetSet->_coordCursorPos, L"Verify cursor didn't move from insert operation.");
@@ -2264,10 +2264,10 @@ public:
         BEGIN_TEST_METHOD_PROPERTIES()
             TEST_METHOD_PROPERTY(L"Data:uiEraseType", L"{0, 1, 2}") // corresponds to options in DispatchTypes::EraseType
             TEST_METHOD_PROPERTY(L"Data:fEraseScreen", L"{FALSE, TRUE}") // corresponds to Line (FALSE) or Screen (TRUE)
-        END_TEST_METHOD_PROPERTIES()
+            END_TEST_METHOD_PROPERTIES()
 
-        // Modify variables based on type of this test
-        DispatchTypes::EraseType eraseType;
+            // Modify variables based on type of this test
+            DispatchTypes::EraseType eraseType;
         unsigned int uiEraseType;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiEraseType", uiEraseType));
         eraseType = (DispatchTypes::EraseType)uiEraseType;
@@ -2471,9 +2471,9 @@ public:
     {
         BEGIN_TEST_METHOD_PROPERTIES()
             TEST_METHOD_PROPERTY(L"Data:uiGraphicsOptions", L"{0, 1, 4, 7, 24, 27, 30, 31, 32, 33, 34, 35, 36, 37, 39, 40, 41, 42, 43, 44, 45, 46, 47, 49, 90, 91, 92, 93, 94, 95, 96, 97, 100, 101, 102, 103, 104, 105, 106, 107}") // corresponds to options in DispatchTypes::GraphicsOptions
-        END_TEST_METHOD_PROPERTIES()
+            END_TEST_METHOD_PROPERTIES()
 
-        Log::Comment(L"Starting test...");
+            Log::Comment(L"Starting test...");
         _testGetSet->PrepData();
 
         // Modify variables based on type of this test
@@ -2646,7 +2646,7 @@ public:
             _testGetSet->_wAttribute = (WORD)~_testGetSet->s_wDefaultAttribute; // set the current attribute to the opposite of default so we can ensure all relevant bits flip.
             // To get expected value, take what we started with and change ONLY the background series of bits to what the Default says.
             _testGetSet->_wExpectedAttribute = _testGetSet->_wAttribute; // expect = starting
-            _testGetSet->_wExpectedAttribute &= ~(BACKGROUND_BLUE| BACKGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY); // turn off all bits related to the background
+            _testGetSet->_wExpectedAttribute &= ~(BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY); // turn off all bits related to the background
             _testGetSet->_wExpectedAttribute |= (_testGetSet->s_wDefaultFill & (BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY)); // reapply ONLY background bits from the default attribute.
             _testGetSet->_fExpectedBackground = true;
             break;
@@ -2883,7 +2883,7 @@ public:
 
         Log::Comment(L"Test 1: Verify failure when using bad status.");
         _testGetSet->PrepData();
-        VERIFY_IS_FALSE(_pDispatch->DeviceStatusReport((DispatchTypes::AnsiStatusType) -1));
+        VERIFY_IS_FALSE(_pDispatch->DeviceStatusReport((DispatchTypes::AnsiStatusType) - 1));
     }
 
     TEST_METHOD(DeviceStatus_CursorPositionReportTests)
@@ -2935,9 +2935,9 @@ public:
         BEGIN_TEST_METHOD_PROPERTIES()
             TEST_METHOD_PROPERTY(L"Data:uiDirection", L"{0, 1}") // These values align with the ScrollDirection enum class to try all the directions.
             TEST_METHOD_PROPERTY(L"Data:uiMagnitude", L"{1, 2, 5}") // These values align with the ScrollDirection enum class to try all the directions.
-        END_TEST_METHOD_PROPERTIES()
+            END_TEST_METHOD_PROPERTIES()
 
-        Log::Comment(L"Starting test...");
+            Log::Comment(L"Starting test...");
 
         // Used to switch between the various function options.
         typedef bool(AdaptDispatch::*ScrollFunc)(const unsigned int);
@@ -2983,7 +2983,7 @@ public:
         srOuterBuffer.Top = 0;
         srOuterBuffer.Left = 0;
         srOuterBuffer.Bottom = _testGetSet->_coordBufferSize.Y;
-        srOuterBuffer.Right= _testGetSet->_coordBufferSize.X;
+        srOuterBuffer.Right = _testGetSet->_coordBufferSize.X;
         _testGetSet->FillRectangle(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer);
 
         // Fill the viewport with Rs. Red on Blue.
@@ -3021,7 +3021,7 @@ public:
         // DOWN         Top Line        Bottom plus One
         const bool fScrollUp = (direction == ScrollDirection::UP);
         SMALL_RECT srInViewport = srViewport;
-        srInViewport.Top = (fScrollUp)? (srViewport.Bottom - sMagnitude) : (srViewport.Top);
+        srInViewport.Top = (fScrollUp) ? (srViewport.Bottom - sMagnitude) : (srViewport.Top);
         srInViewport.Bottom = srInViewport.Top + sMagnitude;
         WCHAR const wchInViewport = ' ';
         WORD const wAttrInViewport = _testGetSet->_wAttribute;
@@ -3031,7 +3031,7 @@ public:
                        L"InViewport line(s) should now be blank, with default buffer attributes");
 
         SMALL_RECT srOutside = srViewport;
-        srOutside.Top = (fScrollUp)? (srViewport.Top - sMagnitude) : (srViewport.Bottom);
+        srOutside.Top = (fScrollUp) ? (srViewport.Top - sMagnitude) : (srViewport.Bottom);
         srOutside.Bottom = srOutside.Top + sMagnitude;
         WCHAR const wchOutside = wchOuterBuffer;
         WORD const wAttrOutside = wAttrOuterBuffer;
@@ -3049,7 +3049,7 @@ public:
 
         // Verify that the line above/below the ABCDE now has the ABCDE
         coordTestText.X = srTestText.Left;
-        coordTestText.Y = (fScrollUp)? (srTestText.Top - sMagnitude) : (srTestText.Top + sMagnitude);
+        coordTestText.Y = (fScrollUp) ? (srTestText.Top - sMagnitude) : (srTestText.Top + sMagnitude);
         VERIFY_IS_TRUE(_testGetSet->ValidateString(coordTestText, pwszTestText, wAttrTestText), L"String should have moved up/down by given magnitude.");
 
     }
@@ -3124,7 +3124,7 @@ public:
     {
         Log::Comment(L"Starting test...");
 
-        SMALL_RECT srTestMargins = {0};
+        SMALL_RECT srTestMargins = { 0 };
         _testGetSet->_srViewport.Right = 8;
         _testGetSet->_srViewport.Bottom = 8;
         _testGetSet->_fGetConsoleScreenBufferInfoExResult = TRUE;
@@ -3366,7 +3366,7 @@ public:
                                             _testGetSet->_coordCursorPos.Y - _testGetSet->_srViewport.Top };
 
         // Cursor to 1,1
-        _testGetSet->_coordExpectedCursorPos = {0, 0};
+        _testGetSet->_coordExpectedCursorPos = { 0, 0 };
         _testGetSet->_fSetConsoleCursorPositionResult = true;
         _testGetSet->_fPrivateSetLegacyAttributesResult = true;
         _testGetSet->_fPrivateSetDefaultAttributesResult = true;
@@ -3375,7 +3375,7 @@ public:
         _testGetSet->_fExpectedBackground = true;
         _testGetSet->_fExpectedMeta = true;
         _testGetSet->_fExpectedIsBold = false;
-        const COORD coordExpectedCursorPos = {0, 0};
+        const COORD coordExpectedCursorPos = { 0, 0 };
 
         // We're expecting _SetDefaultColorHelper to call
         //      PrivateSetLegacyAttributes with 0 as the wAttr param.
