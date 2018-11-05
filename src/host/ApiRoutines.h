@@ -29,27 +29,27 @@ public:
 #pragma endregion
 
 #pragma region L1
-    void GetConsoleInputCodePageImpl(_Out_ ULONG* const pCodePage) override;
+    void GetConsoleInputCodePageImpl(ULONG& codepage) noexcept override;
 
-    void GetConsoleOutputCodePageImpl(_Out_ ULONG* const pCodePage) override;
+    void GetConsoleOutputCodePageImpl(ULONG& codepage) noexcept override;
 
-    void GetConsoleInputModeImpl(_In_ InputBuffer* const pContext,
-                                 _Out_ ULONG* const pMode) override;
+    void GetConsoleInputModeImpl(InputBuffer& context,
+                                 ULONG& mode) noexcept override;
 
-    void GetConsoleOutputModeImpl(_In_ const SCREEN_INFORMATION& Context,
-                                  _Out_ ULONG* const pMode) override;
-
-    [[nodiscard]]
-    HRESULT SetConsoleInputModeImpl(_In_ InputBuffer* const pContext,
-                                    const ULONG Mode) override;
+    void GetConsoleOutputModeImpl(SCREEN_INFORMATION& context,
+                                  ULONG& mode) noexcept override;
 
     [[nodiscard]]
-    HRESULT SetConsoleOutputModeImpl(_Inout_ SCREEN_INFORMATION& Context,
-                                     const ULONG Mode) override;
+    HRESULT SetConsoleInputModeImpl(InputBuffer& context,
+                                    const ULONG mode) noexcept override;
 
     [[nodiscard]]
-    HRESULT GetNumberOfConsoleInputEventsImpl(_In_ InputBuffer* const pContext,
-                                              _Out_ ULONG* const pEvents) override;
+    HRESULT SetConsoleOutputModeImpl(SCREEN_INFORMATION& context,
+                                     const ULONG Mode) noexcept override;
+
+    [[nodiscard]]
+    HRESULT GetNumberOfConsoleInputEventsImpl(const InputBuffer& context,
+                                              ULONG& events) noexcept override;
 
     [[nodiscard]]
     HRESULT PeekConsoleInputAImpl(_In_ IConsoleInputObject* const pInContext,
@@ -125,7 +125,7 @@ public:
 
 #pragma region ThreadCreationInfo
     [[nodiscard]]
-    HRESULT GetConsoleLangIdImpl(_Out_ LANGID* const pLangId) override;
+    HRESULT GetConsoleLangIdImpl(LANGID& langId) noexcept override;
 #pragma endregion
 
 #pragma endregion
@@ -157,43 +157,43 @@ public:
     //HRESULT GenerateConsoleCtrlEventImpl(const ULONG ProcessGroupFilter,
     //                                             const ULONG ControlEvent);
 
-    void SetConsoleActiveScreenBufferImpl(SCREEN_INFORMATION& NewContext) override;
+    void SetConsoleActiveScreenBufferImpl(SCREEN_INFORMATION& newContext) noexcept override;
 
-    void FlushConsoleInputBuffer(_In_ InputBuffer* const pContext) override;
-
-    [[nodiscard]]
-    HRESULT SetConsoleInputCodePageImpl(const ULONG CodePage) override;
+    void FlushConsoleInputBuffer(InputBuffer& context) noexcept override;
 
     [[nodiscard]]
-    HRESULT SetConsoleOutputCodePageImpl(const ULONG CodePage) override;
-
-    void GetConsoleCursorInfoImpl(_In_ const SCREEN_INFORMATION& Context,
-                                  _Out_ ULONG* const pCursorSize,
-                                  _Out_ bool* const pIsVisible) override;
+    HRESULT SetConsoleInputCodePageImpl(const ULONG codepage) noexcept override;
 
     [[nodiscard]]
-    HRESULT SetConsoleCursorInfoImpl(SCREEN_INFORMATION& Context,
-                                     const ULONG CursorSize,
-                                     const bool IsVisible) override;
+    HRESULT SetConsoleOutputCodePageImpl(const ULONG codepage) noexcept override;
+
+    void GetConsoleCursorInfoImpl(const SCREEN_INFORMATION& context,
+                                  ULONG& size,
+                                  bool& isVisible) noexcept override;
+
+    [[nodiscard]]
+    HRESULT SetConsoleCursorInfoImpl(SCREEN_INFORMATION& context,
+                                     const ULONG size,
+                                     const bool isVisible) noexcept override;
 
     //// driver will pare down for non-Ex method
-    void GetConsoleScreenBufferInfoExImpl(const SCREEN_INFORMATION& Context,
-                                          _Out_ CONSOLE_SCREEN_BUFFER_INFOEX* const pScreenBufferInfoEx) override;
+    void GetConsoleScreenBufferInfoExImpl(const SCREEN_INFORMATION& context,
+                                          CONSOLE_SCREEN_BUFFER_INFOEX& data) noexcept override;
 
     [[nodiscard]]
-    HRESULT SetConsoleScreenBufferInfoExImpl(SCREEN_INFORMATION& Context,
-                                             const CONSOLE_SCREEN_BUFFER_INFOEX* const pScreenBufferInfoEx) override;
+    HRESULT SetConsoleScreenBufferInfoExImpl(SCREEN_INFORMATION& context,
+                                             const CONSOLE_SCREEN_BUFFER_INFOEX& data) noexcept override;
 
     [[nodiscard]]
-    HRESULT SetConsoleScreenBufferSizeImpl(SCREEN_INFORMATION& Context,
-                                           const COORD* const pSize) override;
+    HRESULT SetConsoleScreenBufferSizeImpl(SCREEN_INFORMATION& context,
+                                           const COORD size) noexcept override;
 
     [[nodiscard]]
-    HRESULT SetConsoleCursorPositionImpl(SCREEN_INFORMATION& Context,
-                                         const COORD* const pCursorPosition) override;
+    HRESULT SetConsoleCursorPositionImpl(SCREEN_INFORMATION& context,
+                                         const COORD position) noexcept override;
 
-    void GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& Context,
-                                         _Out_ COORD* const pSize) override;
+    void GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& context,
+                                         COORD& size) noexcept override;
 
     [[nodiscard]]
     HRESULT ScrollConsoleScreenBufferAImpl(SCREEN_INFORMATION& Context,
@@ -212,13 +212,13 @@ public:
                                            const WORD attrFill) override;
 
     [[nodiscard]]
-    HRESULT SetConsoleTextAttributeImpl(SCREEN_INFORMATION& Context,
-                                        const WORD Attribute) override;
+    HRESULT SetConsoleTextAttributeImpl(SCREEN_INFORMATION& context,
+                                        const WORD attribute) noexcept override;
 
     [[nodiscard]]
-    HRESULT SetConsoleWindowInfoImpl(SCREEN_INFORMATION& Context,
-                                     const bool IsAbsoluteRectangle,
-                                     const SMALL_RECT* const pWindowRectangle) override;
+    HRESULT SetConsoleWindowInfoImpl(SCREEN_INFORMATION& context,
+                                     const bool isAbsolute,
+                                     const SMALL_RECT& windowRect) noexcept override;
 
     //HRESULT ReadConsoleOutputAttributeImpl(_In_ SCREEN_INFORMATION* const pContext,
     //                                               const COORD* const pSourceOrigin,
@@ -325,25 +325,25 @@ public:
 #pragma endregion
 
 #pragma region L3
-    void GetNumberOfConsoleMouseButtonsImpl(_Out_ ULONG* const pButtons) override;
+    void GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept override;
 
     [[nodiscard]]
-    HRESULT GetConsoleFontSizeImpl(const SCREEN_INFORMATION& Context,
-                                   const DWORD FontIndex,
-                                   _Out_ COORD* const pFontSize) override;
+    HRESULT GetConsoleFontSizeImpl(const SCREEN_INFORMATION& context,
+                                   const DWORD index,
+                                   COORD& size) noexcept override;
 
     //// driver will pare down for non-Ex method
     [[nodiscard]]
-    HRESULT GetCurrentConsoleFontExImpl(const SCREEN_INFORMATION& Context,
-                                        const bool IsForMaximumWindowSize,
-                                        _Out_ CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx) override;
+    HRESULT GetCurrentConsoleFontExImpl(const SCREEN_INFORMATION& context,
+                                        const bool isForMaximumWindowSize,
+                                        CONSOLE_FONT_INFOEX& consoleFontInfoEx) noexcept override;
 
     [[nodiscard]]
-    HRESULT SetConsoleDisplayModeImpl(SCREEN_INFORMATION& Context,
-                                      const ULONG Flags,
-                                      _Out_ COORD* const pNewScreenBufferSize) override;
+    HRESULT SetConsoleDisplayModeImpl(SCREEN_INFORMATION& context,
+                                      const ULONG flags,
+                                      COORD& newSize) noexcept override;
 
-    void GetConsoleDisplayModeImpl(_Out_ ULONG* const pFlags) override;
+    void GetConsoleDisplayModeImpl(ULONG& flags) noexcept override;
 
     [[nodiscard]]
     virtual HRESULT AddConsoleAliasAImpl(const std::string_view source,
@@ -435,19 +435,19 @@ public:
 
 #pragma endregion
 
-    void GetConsoleWindowImpl(_Out_ HWND* const pHwnd) override;
+    void GetConsoleWindowImpl(HWND& hwnd) noexcept override;
 
-    void GetConsoleSelectionInfoImpl(_Out_ CONSOLE_SELECTION_INFO* const pConsoleSelectionInfo) override;
+    void GetConsoleSelectionInfoImpl(CONSOLE_SELECTION_INFO& consoleSelectionInfo) noexcept override;
 
-    void GetConsoleHistoryInfoImpl(_Out_ CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo) override;
-
-    [[nodiscard]]
-    HRESULT SetConsoleHistoryInfoImpl(const CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo) override;
+    void GetConsoleHistoryInfoImpl(CONSOLE_HISTORY_INFO& consoleHistoryInfo) noexcept override;
 
     [[nodiscard]]
-    HRESULT SetCurrentConsoleFontExImpl(SCREEN_INFORMATION& Context,
-                                        const bool IsForMaximumWindowSize,
-                                        const CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx) override;
+    HRESULT SetConsoleHistoryInfoImpl(const CONSOLE_HISTORY_INFO& consoleHistoryInfo) noexcept override;
+
+    [[nodiscard]]
+    HRESULT SetCurrentConsoleFontExImpl(IConsoleOutputObject& context,
+                                        const bool isForMaximumWindowSize,
+                                        const CONSOLE_FONT_INFOEX& consoleFontInfoEx) noexcept override;
 
 #pragma endregion
 };

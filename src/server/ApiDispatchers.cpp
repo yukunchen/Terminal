@@ -23,12 +23,12 @@ HRESULT ApiDispatchers::ServerGetConsoleCP(_Inout_ CONSOLE_API_MSG * const m, _I
     if (a->Output)
     {
         Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleOutputCP);
-        m->_pApiRoutines->GetConsoleOutputCodePageImpl(&a->CodePage);
+        m->_pApiRoutines->GetConsoleOutputCodePageImpl(a->CodePage);
     }
     else
     {
         Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleCP);
-        m->_pApiRoutines->GetConsoleInputCodePageImpl(&a->CodePage);
+        m->_pApiRoutines->GetConsoleInputCodePageImpl(a->CodePage);
     }
     return S_OK;
 }
@@ -52,14 +52,14 @@ HRESULT ApiDispatchers::ServerGetConsoleMode(_Inout_ CONSOLE_API_MSG * const m, 
         handleType = L"input handle";
         InputBuffer* pObj;
         RETURN_IF_FAILED(pObjectHandle->GetInputBuffer(GENERIC_READ, &pObj));
-        m->_pApiRoutines->GetConsoleInputModeImpl(pObj, &a->Mode);
+        m->_pApiRoutines->GetConsoleInputModeImpl(*pObj, a->Mode);
     }
     else
     {
         handleType = L"output handle";
         SCREEN_INFORMATION* pObj;
         RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_READ, &pObj));
-        m->_pApiRoutines->GetConsoleOutputModeImpl(*pObj, &a->Mode);
+        m->_pApiRoutines->GetConsoleOutputModeImpl(*pObj, a->Mode);
     }
     return S_OK;
 }
@@ -76,7 +76,7 @@ HRESULT ApiDispatchers::ServerSetConsoleMode(_Inout_ CONSOLE_API_MSG * const m, 
     {
         InputBuffer* pObj;
         RETURN_IF_FAILED(pObjectHandle->GetInputBuffer(GENERIC_WRITE, &pObj));
-        return m->_pApiRoutines->SetConsoleInputModeImpl(pObj, a->Mode);
+        return m->_pApiRoutines->SetConsoleInputModeImpl(*pObj, a->Mode);
     }
     else
     {
@@ -98,7 +98,7 @@ HRESULT ApiDispatchers::ServerGetNumberOfInputEvents(_Inout_ CONSOLE_API_MSG * c
     InputBuffer* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetInputBuffer(GENERIC_READ, &pObj));
 
-    return m->_pApiRoutines->GetNumberOfConsoleInputEventsImpl(pObj, &a->ReadyEvents);
+    return m->_pApiRoutines->GetNumberOfConsoleInputEventsImpl(*pObj, a->ReadyEvents);
 }
 
 [[nodiscard]]
@@ -591,7 +591,7 @@ HRESULT ApiDispatchers::ServerFlushConsoleInputBuffer(_Inout_ CONSOLE_API_MSG * 
     InputBuffer* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetInputBuffer(GENERIC_WRITE, &pObj));
 
-    m->_pApiRoutines->FlushConsoleInputBuffer(pObj);
+    m->_pApiRoutines->FlushConsoleInputBuffer(*pObj);
     return S_OK;
 }
 
@@ -625,7 +625,7 @@ HRESULT ApiDispatchers::ServerGetConsoleCursorInfo(_Inout_ CONSOLE_API_MSG * con
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
 
     bool visible = false;
-    m->_pApiRoutines->GetConsoleCursorInfoImpl(*pObj, &a->CursorSize, &visible);
+    m->_pApiRoutines->GetConsoleCursorInfoImpl(*pObj, a->CursorSize, visible);
     a->Visible = !!visible;
     return S_OK;
 }
@@ -665,7 +665,7 @@ HRESULT ApiDispatchers::ServerGetConsoleScreenBufferInfo(_Inout_ CONSOLE_API_MSG
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_READ, &pObj));
 
-    m->_pApiRoutines->GetConsoleScreenBufferInfoExImpl(*pObj, &ex);
+    m->_pApiRoutines->GetConsoleScreenBufferInfoExImpl(*pObj, ex);
 
     a->FullscreenSupported = !!ex.bFullscreenSupported;
     size_t const ColorTableSizeInBytes = RTL_NUMBER_OF_V2(ex.ColorTable) * sizeof(*ex.ColorTable);
@@ -711,7 +711,7 @@ HRESULT ApiDispatchers::ServerSetConsoleScreenBufferInfo(_Inout_ CONSOLE_API_MSG
     ex.wAttributes = a->Attributes;
     ex.wPopupAttributes = a->PopupAttributes;
 
-    return m->_pApiRoutines->SetConsoleScreenBufferInfoExImpl(*pObj, &ex);
+    return m->_pApiRoutines->SetConsoleScreenBufferInfoExImpl(*pObj, ex);
 }
 
 [[nodiscard]]
@@ -726,7 +726,7 @@ HRESULT ApiDispatchers::ServerSetConsoleScreenBufferSize(_Inout_ CONSOLE_API_MSG
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
 
-    return m->_pApiRoutines->SetConsoleScreenBufferSizeImpl(*pObj, &a->Size);
+    return m->_pApiRoutines->SetConsoleScreenBufferSizeImpl(*pObj, a->Size);
 }
 
 [[nodiscard]]
@@ -741,7 +741,7 @@ HRESULT ApiDispatchers::ServerSetConsoleCursorPosition(_Inout_ CONSOLE_API_MSG *
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
 
-    return m->_pApiRoutines->SetConsoleCursorPositionImpl(*pObj, &a->CursorPosition);
+    return m->_pApiRoutines->SetConsoleCursorPositionImpl(*pObj, a->CursorPosition);
 }
 
 [[nodiscard]]
@@ -756,7 +756,7 @@ HRESULT ApiDispatchers::ServerGetLargestConsoleWindowSize(_Inout_ CONSOLE_API_MS
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
 
-    m->_pApiRoutines->GetLargestConsoleWindowSizeImpl(*pObj, &a->Size);
+    m->_pApiRoutines->GetLargestConsoleWindowSizeImpl(*pObj, a->Size);
     return S_OK;
 }
 
@@ -823,7 +823,7 @@ HRESULT ApiDispatchers::ServerSetConsoleWindowInfo(_Inout_ CONSOLE_API_MSG * con
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
 
-    return m->_pApiRoutines->SetConsoleWindowInfoImpl(*pObj, a->Absolute, &a->Window);
+    return m->_pApiRoutines->SetConsoleWindowInfoImpl(*pObj, a->Absolute, a->Window);
 }
 
 [[nodiscard]]
@@ -1069,7 +1069,7 @@ HRESULT ApiDispatchers::ServerGetConsoleMouseInfo(_Inout_ CONSOLE_API_MSG * cons
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetNumberOfConsoleMouseButtons);
     CONSOLE_GETMOUSEINFO_MSG* const a = &m->u.consoleMsgL3.GetConsoleMouseInfo;
 
-    m->_pApiRoutines->GetNumberOfConsoleMouseButtonsImpl(&a->NumButtons);
+    m->_pApiRoutines->GetNumberOfConsoleMouseButtonsImpl(a->NumButtons);
     return S_OK;
 }
 
@@ -1085,7 +1085,7 @@ HRESULT ApiDispatchers::ServerGetConsoleFontSize(_Inout_ CONSOLE_API_MSG * const
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_READ, &pObj));
 
-    return m->_pApiRoutines->GetConsoleFontSizeImpl(*pObj, a->FontIndex, &a->FontSize);
+    return m->_pApiRoutines->GetConsoleFontSizeImpl(*pObj, a->FontIndex, a->FontSize);
 }
 
 [[nodiscard]]
@@ -1103,7 +1103,7 @@ HRESULT ApiDispatchers::ServerGetConsoleCurrentFont(_Inout_ CONSOLE_API_MSG * co
     CONSOLE_FONT_INFOEX FontInfo = { 0 };
     FontInfo.cbSize = sizeof(FontInfo);
 
-    RETURN_IF_FAILED(m->_pApiRoutines->GetCurrentConsoleFontExImpl(*pObj, a->MaximumWindow, &FontInfo));
+    RETURN_IF_FAILED(m->_pApiRoutines->GetCurrentConsoleFontExImpl(*pObj, a->MaximumWindow, FontInfo));
 
     CopyMemory(a->FaceName, FontInfo.FaceName, RTL_NUMBER_OF_V2(a->FaceName) * sizeof(a->FaceName[0]));
     a->FontFamily = FontInfo.FontFamily;
@@ -1126,7 +1126,7 @@ HRESULT ApiDispatchers::ServerSetConsoleDisplayMode(_Inout_ CONSOLE_API_MSG * co
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
 
-    return m->_pApiRoutines->SetConsoleDisplayModeImpl(*pObj, a->dwFlags, &a->ScreenBufferDimensions);
+    return m->_pApiRoutines->SetConsoleDisplayModeImpl(*pObj, a->dwFlags, a->ScreenBufferDimensions);
 }
 
 [[nodiscard]]
@@ -1137,7 +1137,7 @@ HRESULT ApiDispatchers::ServerGetConsoleDisplayMode(_Inout_ CONSOLE_API_MSG * co
 
     // Historically this has never checked the handles. It just returns global state.
 
-    m->_pApiRoutines->GetConsoleDisplayModeImpl(&a->ModeFlags);
+    m->_pApiRoutines->GetConsoleDisplayModeImpl(a->ModeFlags);
     return S_OK;
 }
 
@@ -1525,7 +1525,7 @@ HRESULT ApiDispatchers::ServerGetConsoleWindow(_Inout_ CONSOLE_API_MSG * const m
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleWindow);
     CONSOLE_GETCONSOLEWINDOW_MSG* const a = &m->u.consoleMsgL3.GetConsoleWindow;
 
-    m->_pApiRoutines->GetConsoleWindowImpl(&a->hwnd);
+    m->_pApiRoutines->GetConsoleWindowImpl(a->hwnd);
     return S_OK;
 }
 
@@ -1535,7 +1535,7 @@ HRESULT ApiDispatchers::ServerGetConsoleSelectionInfo(_Inout_ CONSOLE_API_MSG * 
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleSelectionInfo);
     CONSOLE_GETSELECTIONINFO_MSG* const a = &m->u.consoleMsgL3.GetConsoleSelectionInfo;
 
-    m->_pApiRoutines->GetConsoleSelectionInfoImpl(&a->SelectionInfo);
+    m->_pApiRoutines->GetConsoleSelectionInfoImpl(a->SelectionInfo);
     return S_OK;
 }
 
@@ -1548,7 +1548,7 @@ HRESULT ApiDispatchers::ServerGetConsoleHistory(_Inout_ CONSOLE_API_MSG * const 
     CONSOLE_HISTORY_INFO info;
     info.cbSize = sizeof(info);
 
-    m->_pApiRoutines->GetConsoleHistoryInfoImpl(&info);
+    m->_pApiRoutines->GetConsoleHistoryInfoImpl(info);
 
     a->dwFlags = info.dwFlags;
     a->HistoryBufferSize = info.HistoryBufferSize;
@@ -1569,7 +1569,7 @@ HRESULT ApiDispatchers::ServerSetConsoleHistory(_Inout_ CONSOLE_API_MSG * const 
     info.HistoryBufferSize = a->HistoryBufferSize;
     info.NumberOfHistoryBuffers = a->NumberOfHistoryBuffers;
 
-    return m->_pApiRoutines->SetConsoleHistoryInfoImpl(&info);
+    return m->_pApiRoutines->SetConsoleHistoryInfoImpl(info);
 }
 
 [[nodiscard]]
@@ -1591,5 +1591,5 @@ HRESULT ApiDispatchers::ServerSetConsoleCurrentFont(_Inout_ CONSOLE_API_MSG * co
     Info.FontFamily = a->FontFamily;
     Info.FontWeight = a->FontWeight;
 
-    return m->_pApiRoutines->SetCurrentConsoleFontExImpl(*pObj, a->MaximumWindow, &Info);
+    return m->_pApiRoutines->SetCurrentConsoleFontExImpl(*pObj, a->MaximumWindow, Info);
 }

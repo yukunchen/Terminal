@@ -411,15 +411,19 @@ NTSTATUS GetConsoleLangId(const UINT uiOutputCP, _Out_ LANGID * const pLangId)
 }
 
 [[nodiscard]]
-HRESULT ApiRoutines::GetConsoleLangIdImpl(_Out_ LANGID* const pLangId)
+HRESULT ApiRoutines::GetConsoleLangIdImpl(LANGID& langId) noexcept
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    try
+    {
+        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    // This fails a lot and it's totally expected. It only works for a few East Asian code pages.
-    // As such, just return it. Do NOT use a wil macro here. It is very noisy.
-    return HRESULT_FROM_NT(GetConsoleLangId(gci.OutputCP, pLangId));
+        // This fails a lot and it's totally expected. It only works for a few East Asian code pages.
+        // As such, just return it. Do NOT use a wil macro here. It is very noisy.
+        return HRESULT_FROM_NT(GetConsoleLangId(gci.OutputCP, &langId));
+    }
+    CATCH_RETURN();
 }
 
 // Routine Description:

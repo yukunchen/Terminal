@@ -86,7 +86,7 @@ class ApiRoutinesTests
         bool const fCursorDBModeExpected = ((!!_fPrevInsertMode) == fInsertModeExpected);
 
         // Call the API
-        HRESULT const hrActual = _pApiRoutines->SetConsoleInputModeImpl(pii, ulNewMode);
+        HRESULT const hrActual = _pApiRoutines->SetConsoleInputModeImpl(*pii, ulNewMode);
 
         // Now do verifications of final state.
         VERIFY_ARE_EQUAL(hrExpected, hrActual);
@@ -185,7 +185,7 @@ class ApiRoutinesTests
         Log::Comment(L"Verify that we cannot unset various extended flags without the ENABLE_EXTENDED_FLAGS flag.");
         PrepVerifySetConsoleInputModeImpl(ENABLE_INSERT_MODE | ENABLE_QUICK_EDIT_MODE | ENABLE_AUTO_POSITION);
         InputBuffer* const pii = gci.pInputBuffer;
-        HRESULT const hr = _pApiRoutines->SetConsoleInputModeImpl(pii, 0);
+        HRESULT const hr = _pApiRoutines->SetConsoleInputModeImpl(*pii, 0);
 
         VERIFY_ARE_EQUAL(S_OK, hr);
         VERIFY_ARE_EQUAL(true, !!gci.GetInsertMode());

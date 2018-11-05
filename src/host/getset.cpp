@@ -34,584 +34,624 @@
 
 using namespace Microsoft::Console::Types;
 
-void ApiRoutines::GetConsoleInputModeImpl(_In_ InputBuffer* const pContext, _Out_ ULONG* const pMode)
+void ApiRoutines::GetConsoleInputModeImpl(InputBuffer& context, ULONG& mode) noexcept
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleMode);
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-    *pMode = pContext->InputMode;
-
-    if (WI_IsFlagSet(gci.Flags, CONSOLE_USE_PRIVATE_FLAGS))
+    try
     {
-        WI_SetFlag(*pMode, ENABLE_EXTENDED_FLAGS);
-        WI_SetFlagIf(*pMode, ENABLE_INSERT_MODE, gci.GetInsertMode());
-        WI_SetFlagIf(*pMode, ENABLE_QUICK_EDIT_MODE, WI_IsFlagSet(gci.Flags, CONSOLE_QUICK_EDIT_MODE));
-        WI_SetFlagIf(*pMode, ENABLE_AUTO_POSITION, WI_IsFlagSet(gci.Flags, CONSOLE_AUTO_POSITION));
+        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleMode);
+        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+        mode = context.InputMode;
+
+        if (WI_IsFlagSet(gci.Flags, CONSOLE_USE_PRIVATE_FLAGS))
+        {
+            WI_SetFlag(mode, ENABLE_EXTENDED_FLAGS);
+            WI_SetFlagIf(mode, ENABLE_INSERT_MODE, gci.GetInsertMode());
+            WI_SetFlagIf(mode, ENABLE_QUICK_EDIT_MODE, WI_IsFlagSet(gci.Flags, CONSOLE_QUICK_EDIT_MODE));
+            WI_SetFlagIf(mode, ENABLE_AUTO_POSITION, WI_IsFlagSet(gci.Flags, CONSOLE_AUTO_POSITION));
+        }
     }
+    CATCH_LOG();
 }
 
-void ApiRoutines::GetConsoleOutputModeImpl(_In_ const SCREEN_INFORMATION& Context, _Out_ ULONG* const pMode)
+void ApiRoutines::GetConsoleOutputModeImpl(SCREEN_INFORMATION& context, ULONG& mode) noexcept
 {
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    try
+    {
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    *pMode = Context.GetActiveBuffer().OutputMode;
+        mode = context.GetActiveBuffer().OutputMode;
+    }
+    CATCH_LOG();
 }
 
 [[nodiscard]]
-HRESULT ApiRoutines::GetNumberOfConsoleInputEventsImpl(_In_ InputBuffer* const pContext, _Out_ ULONG* const pEvents)
+HRESULT ApiRoutines::GetNumberOfConsoleInputEventsImpl(const InputBuffer& context, ULONG& events) noexcept
 {
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-    size_t readyEventCount = pContext->GetNumberOfReadyEvents();
-    RETURN_IF_FAILED(SizeTToULong(readyEventCount, pEvents));
-
-    return S_OK;
-}
-
-void ApiRoutines::GetConsoleScreenBufferInfoExImpl(_In_ const SCREEN_INFORMATION& Context,
-                                                   _Out_ CONSOLE_SCREEN_BUFFER_INFOEX* const pScreenBufferInfoEx)
-{
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-    DoSrvGetConsoleScreenBufferInfo(Context.GetActiveBuffer(), pScreenBufferInfoEx);
-}
-
-void DoSrvGetConsoleScreenBufferInfo(_In_ const SCREEN_INFORMATION& screenInfo, _Out_ CONSOLE_SCREEN_BUFFER_INFOEX* pInfo)
-{
-    pInfo->bFullscreenSupported = FALSE; // traditional full screen with the driver support is no longer supported.
-    screenInfo.GetScreenBufferInformation(&pInfo->dwSize,
-                                          &pInfo->dwCursorPosition,
-                                          &pInfo->srWindow,
-                                          &pInfo->wAttributes,
-                                          &pInfo->dwMaximumWindowSize,
-                                          &pInfo->wPopupAttributes,
-                                          pInfo->ColorTable);
-    // Callers of this function expect to recieve an exclusive rect, not an inclusive one.
-    pInfo->srWindow.Right += 1;
-    pInfo->srWindow.Bottom += 1;
-}
-
-void ApiRoutines::GetConsoleCursorInfoImpl(_In_ const SCREEN_INFORMATION& Context,
-                                           _Out_ ULONG* const pCursorSize,
-                                           _Out_ bool* const pIsVisible)
-{
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-    DoSrvGetConsoleCursorInfo(Context.GetActiveBuffer(), pCursorSize, pIsVisible);
-}
-
-void DoSrvGetConsoleCursorInfo(_In_ const SCREEN_INFORMATION& screenInfo,
-                               _Out_ ULONG* const pCursorSize,
-                               _Out_ bool* const pIsVisible)
-{
-    *pCursorSize = screenInfo.GetTextBuffer().GetCursor().GetSize();
-    *pIsVisible = screenInfo.GetTextBuffer().GetCursor().IsVisible();
-}
-
-void ApiRoutines::GetConsoleSelectionInfoImpl(_Out_ CONSOLE_SELECTION_INFO* const pConsoleSelectionInfo)
-{
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-    const Selection* const pSelection = &Selection::Instance();
-    if (pSelection->IsInSelectingState())
+    try
     {
-        pConsoleSelectionInfo->dwFlags = pSelection->GetPublicSelectionFlags();
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-        WI_SetFlag(pConsoleSelectionInfo->dwFlags, CONSOLE_SELECTION_IN_PROGRESS);
+        size_t readyEventCount = context.GetNumberOfReadyEvents();
+        RETURN_IF_FAILED(SizeTToULong(readyEventCount, &events));
 
-        pConsoleSelectionInfo->dwSelectionAnchor = pSelection->GetSelectionAnchor();
-        pConsoleSelectionInfo->srSelection = pSelection->GetSelectionRectangle();
-    }
-    else
-    {
-        ZeroMemory(pConsoleSelectionInfo, sizeof(pConsoleSelectionInfo));
-    }
-}
-
-void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(_Out_ ULONG* const pButtons)
-{
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-    *pButtons = ServiceLocator::LocateSystemConfigurationProvider()->GetNumberOfMouseButtons();
-}
-
-[[nodiscard]]
-HRESULT ApiRoutines::GetConsoleFontSizeImpl(_In_ const SCREEN_INFORMATION& Context,
-                                            const DWORD FontIndex,
-                                            _Out_ COORD* const pFontSize)
-{
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-    if (FontIndex == 0)
-    {
-        // As of the November 2015 renderer system, we only have a single font at index 0.
-        *pFontSize = Context.GetActiveBuffer().GetTextBuffer().GetCurrentFont().GetUnscaledSize();
         return S_OK;
     }
-    else
-    {
-        // Invalid font is 0,0 with STATUS_INVALID_PARAMETER
-        *pFontSize = { 0 };
-        return E_INVALIDARG;
-    }
+    CATCH_RETURN();
 }
 
-[[nodiscard]]
-HRESULT ApiRoutines::GetCurrentConsoleFontExImpl(const SCREEN_INFORMATION& Context,
-                                                 const bool IsForMaximumWindowSize,
-                                                 _Out_ CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx)
+void ApiRoutines::GetConsoleScreenBufferInfoExImpl(const SCREEN_INFORMATION& context,
+                                                   CONSOLE_SCREEN_BUFFER_INFOEX& data) noexcept
 {
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-    const SCREEN_INFORMATION& activeScreenInfo = Context.GetActiveBuffer();
-
-    COORD WindowSize;
-    if (IsForMaximumWindowSize)
+    try
     {
-        WindowSize = activeScreenInfo.GetMaxWindowSizeInCharacters();
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+        data.bFullscreenSupported = FALSE; // traditional full screen with the driver support is no longer supported.
+        context.GetScreenBufferInformation(&data.dwSize,
+                                           &data.dwCursorPosition,
+                                           &data.srWindow,
+                                           &data.wAttributes,
+                                           &data.dwMaximumWindowSize,
+                                           &data.wPopupAttributes,
+                                           data.ColorTable);
+        // Callers of this function expect to recieve an exclusive rect, not an inclusive one.
+        data.srWindow.Right += 1;
+        data.srWindow.Bottom += 1;
     }
-    else
-    {
-        WindowSize = activeScreenInfo.GetTextBuffer().GetCurrentFont().GetUnscaledSize();
-    }
-    pConsoleFontInfoEx->dwFontSize = WindowSize;
-
-    pConsoleFontInfoEx->nFont = 0;
-
-    const FontInfo& fontInfo = activeScreenInfo.GetTextBuffer().GetCurrentFont();
-    pConsoleFontInfoEx->FontFamily = fontInfo.GetFamily();
-    pConsoleFontInfoEx->FontWeight = fontInfo.GetWeight();
-
-    RETURN_IF_FAILED(StringCchCopyW(pConsoleFontInfoEx->FaceName, ARRAYSIZE(pConsoleFontInfoEx->FaceName), fontInfo.GetFaceName()));
-
-    return S_OK;
+    CATCH_LOG();
 }
 
-[[nodiscard]]
-HRESULT ApiRoutines::SetCurrentConsoleFontExImpl(SCREEN_INFORMATION& Context,
-                                                 const bool /*IsForMaximumWindowSize*/,
-                                                 const CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx)
+void ApiRoutines::GetConsoleCursorInfoImpl(const SCREEN_INFORMATION& context,
+                                           ULONG& size,
+                                           bool& isVisible) noexcept
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-    SCREEN_INFORMATION& activeScreenInfo = Context.GetActiveBuffer();
-
-    WCHAR FaceName[ARRAYSIZE(pConsoleFontInfoEx->FaceName)];
-    RETURN_IF_FAILED(StringCchCopyW(FaceName, ARRAYSIZE(FaceName), pConsoleFontInfoEx->FaceName));
-
-    FontInfo fi(FaceName,
-                static_cast<BYTE>(pConsoleFontInfoEx->FontFamily),
-                pConsoleFontInfoEx->FontWeight,
-                pConsoleFontInfoEx->dwFontSize,
-                gci.OutputCP);
-
-    // TODO: MSFT: 9574827 - should this have a failure case?
-    activeScreenInfo.UpdateFont(&fi);
-
-    // If this is the active screen buffer, also cause the window to refresh its viewport size.
-    if (activeScreenInfo.IsActiveScreenBuffer())
+    try
     {
-        IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
-        if (nullptr != pWindow)
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+        size = context.GetTextBuffer().GetCursor().GetSize();
+        isVisible = context.GetTextBuffer().GetCursor().IsVisible();
+    }
+    CATCH_LOG();
+}
+
+void ApiRoutines::GetConsoleSelectionInfoImpl(CONSOLE_SELECTION_INFO& consoleSelectionInfo) noexcept
+{
+    try
+    {
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+        const Selection* const pSelection = &Selection::Instance();
+        if (pSelection->IsInSelectingState())
         {
-            pWindow->PostUpdateWindowSize();
+            consoleSelectionInfo.dwFlags = pSelection->GetPublicSelectionFlags();
+
+            WI_SetFlag(consoleSelectionInfo.dwFlags, CONSOLE_SELECTION_IN_PROGRESS);
+
+            consoleSelectionInfo.dwSelectionAnchor = pSelection->GetSelectionAnchor();
+            consoleSelectionInfo.srSelection = pSelection->GetSelectionRectangle();
+        }
+        else
+        {
+            ZeroMemory(&consoleSelectionInfo, sizeof(consoleSelectionInfo));
         }
     }
+    CATCH_LOG();
+}
 
-    return S_OK;
+void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
+{
+    try
+    {
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+        buttons = ServiceLocator::LocateSystemConfigurationProvider()->GetNumberOfMouseButtons();
+    }
+    CATCH_LOG();
 }
 
 [[nodiscard]]
-HRESULT ApiRoutines::SetConsoleInputModeImpl(_In_ InputBuffer* const pContext, const ULONG Mode)
+HRESULT ApiRoutines::GetConsoleFontSizeImpl(const SCREEN_INFORMATION& context,
+                                            const DWORD index,
+                                            COORD& size) noexcept
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-    if (WI_IsAnyFlagSet(Mode, PRIVATE_MODES))
+    try
     {
-        WI_SetFlag(gci.Flags, CONSOLE_USE_PRIVATE_FLAGS);
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-        WI_UpdateFlag(gci.Flags, CONSOLE_QUICK_EDIT_MODE, WI_IsFlagSet(Mode, ENABLE_QUICK_EDIT_MODE));
-        WI_UpdateFlag(gci.Flags, CONSOLE_AUTO_POSITION, WI_IsFlagSet(Mode, ENABLE_AUTO_POSITION));
-
-        const bool PreviousInsertMode = gci.GetInsertMode();
-        gci.SetInsertMode(WI_IsFlagSet(Mode, ENABLE_INSERT_MODE));
-        if (gci.GetInsertMode() != PreviousInsertMode)
+        if (index == 0)
         {
-            gci.GetActiveOutputBuffer().SetCursorDBMode(false);
-            if (gci.HasPendingCookedRead())
+            // As of the November 2015 renderer system, we only have a single font at index 0.
+            size = context.GetActiveBuffer().GetTextBuffer().GetCurrentFont().GetUnscaledSize();
+            return S_OK;
+        }
+        else
+        {
+            // Invalid font is 0,0 with STATUS_INVALID_PARAMETER
+            size = { 0 };
+            return E_INVALIDARG;
+        }
+    }
+    CATCH_RETURN();
+}
+
+[[nodiscard]]
+HRESULT ApiRoutines::GetCurrentConsoleFontExImpl(const SCREEN_INFORMATION& context,
+                                                 const bool isForMaximumWindowSize,
+                                                 CONSOLE_FONT_INFOEX& consoleFontInfoEx) noexcept
+{
+    try
+    {
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+        const SCREEN_INFORMATION& activeScreenInfo = context.GetActiveBuffer();
+
+        COORD WindowSize;
+        if (isForMaximumWindowSize)
+        {
+            WindowSize = activeScreenInfo.GetMaxWindowSizeInCharacters();
+        }
+        else
+        {
+            WindowSize = activeScreenInfo.GetTextBuffer().GetCurrentFont().GetUnscaledSize();
+        }
+        consoleFontInfoEx.dwFontSize = WindowSize;
+
+        consoleFontInfoEx.nFont = 0;
+
+        const FontInfo& fontInfo = activeScreenInfo.GetTextBuffer().GetCurrentFont();
+        consoleFontInfoEx.FontFamily = fontInfo.GetFamily();
+        consoleFontInfoEx.FontWeight = fontInfo.GetWeight();
+
+        RETURN_IF_FAILED(StringCchCopyW(consoleFontInfoEx.FaceName, ARRAYSIZE(consoleFontInfoEx.FaceName), fontInfo.GetFaceName()));
+
+        return S_OK;
+    }
+    CATCH_RETURN();
+}
+
+[[nodiscard]]
+HRESULT ApiRoutines::SetCurrentConsoleFontExImpl(IConsoleOutputObject& context,
+                                                 const bool /*isForMaximumWindowSize*/,
+                                                 const CONSOLE_FONT_INFOEX& consoleFontInfoEx) noexcept
+{
+    try
+    {
+        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+        SCREEN_INFORMATION& activeScreenInfo = context.GetActiveBuffer();
+
+        WCHAR FaceName[ARRAYSIZE(consoleFontInfoEx.FaceName)];
+        RETURN_IF_FAILED(StringCchCopyW(FaceName, ARRAYSIZE(FaceName), consoleFontInfoEx.FaceName));
+
+        FontInfo fi(FaceName,
+                    static_cast<BYTE>(consoleFontInfoEx.FontFamily),
+                    consoleFontInfoEx.FontWeight,
+                    consoleFontInfoEx.dwFontSize,
+                    gci.OutputCP);
+
+        // TODO: MSFT: 9574827 - should this have a failure case?
+        activeScreenInfo.UpdateFont(&fi);
+
+        // If this is the active screen buffer, also cause the window to refresh its viewport size.
+        if (activeScreenInfo.IsActiveScreenBuffer())
+        {
+            IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+            if (nullptr != pWindow)
             {
-                gci.CookedReadData().SetInsertMode(gci.GetInsertMode());
+                pWindow->PostUpdateWindowSize();
             }
         }
+
+        return S_OK;
     }
-    else
-    {
-        WI_ClearFlag(gci.Flags, CONSOLE_USE_PRIVATE_FLAGS);
-    }
-
-    pContext->InputMode = Mode;
-    WI_ClearAllFlags(pContext->InputMode, PRIVATE_MODES);
-
-    // NOTE: For compatibility reasons, we need to set the modes and then return the error codes, not the other way around
-    //       as might be expected.
-    //       This is a bug from a long time ago and some applications depend on this functionality to operate properly.
-    //       ---
-    //       A prime example of this is that PSReadline module in Powershell will set the invalid mode 0x1e4
-    //       which includes 0x4 for ECHO_INPUT but turns off 0x2 for LINE_INPUT. This is invalid, but PSReadline
-    //       relies on it to properly receive the ^C printout and make a new line when the user presses Ctrl+C.
-    {
-        // Flags we don't understand are invalid.
-        RETURN_HR_IF(E_INVALIDARG, WI_IsAnyFlagSet(Mode, ~(INPUT_MODES | PRIVATE_MODES)));
-
-        // ECHO on with LINE off is invalid.
-        RETURN_HR_IF(E_INVALIDARG, WI_IsFlagSet(Mode, ENABLE_ECHO_INPUT) && WI_IsFlagClear(Mode, ENABLE_LINE_INPUT));
-    }
-
-    return S_OK;
+    CATCH_RETURN();
 }
 
 [[nodiscard]]
-HRESULT ApiRoutines::SetConsoleOutputModeImpl(SCREEN_INFORMATION& Context, const ULONG Mode)
+HRESULT ApiRoutines::SetConsoleInputModeImpl(InputBuffer& context, const ULONG mode) noexcept
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-    // Flags we don't understand are invalid.
-    RETURN_HR_IF(E_INVALIDARG, WI_IsAnyFlagSet(Mode, ~OUTPUT_MODES));
-
-    SCREEN_INFORMATION& screenInfo = Context.GetActiveBuffer();
-    const DWORD dwOldMode = screenInfo.OutputMode;
-    const DWORD dwNewMode = Mode;
-
-    screenInfo.OutputMode = dwNewMode;
-
-    // if we're moving from VT on->off
-    if (WI_IsFlagClear(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) && WI_IsFlagSet(dwOldMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
+    try
     {
-        // jiggle the handle
-        screenInfo.GetStateMachine().ResetState();
-        screenInfo.ClearTabStops();
-    }
-    // if we're moving from VT off->on
-    else if (WI_IsFlagSet(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) &&
-             WI_IsFlagClear(dwOldMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
-    {
-        screenInfo.SetDefaultVtTabStops();
-    }
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    gci.SetVirtTermLevel(WI_IsFlagSet(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) ? 1 : 0);
-    gci.SetAutomaticReturnOnNewline(WI_IsFlagSet(screenInfo.OutputMode, DISABLE_NEWLINE_AUTO_RETURN) ? false : true);
-    gci.SetGridRenderingAllowedWorldwide(WI_IsFlagSet(screenInfo.OutputMode, ENABLE_LVB_GRID_WORLDWIDE));
-
-    // if we changed rendering modes then redraw the output buffer
-    if (WI_IsFlagSet(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) != WI_IsFlagSet(dwOldMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) ||
-        WI_IsFlagSet(dwNewMode, ENABLE_LVB_GRID_WORLDWIDE) != WI_IsFlagSet(dwOldMode, ENABLE_LVB_GRID_WORLDWIDE))
-    {
-        auto* pRender = ServiceLocator::LocateGlobals().pRender;
-        if (pRender)
+        if (WI_IsAnyFlagSet(mode, PRIVATE_MODES))
         {
-            pRender->TriggerRedrawAll();
+            WI_SetFlag(gci.Flags, CONSOLE_USE_PRIVATE_FLAGS);
+
+            WI_UpdateFlag(gci.Flags, CONSOLE_QUICK_EDIT_MODE, WI_IsFlagSet(mode, ENABLE_QUICK_EDIT_MODE));
+            WI_UpdateFlag(gci.Flags, CONSOLE_AUTO_POSITION, WI_IsFlagSet(mode, ENABLE_AUTO_POSITION));
+
+            const bool PreviousInsertMode = gci.GetInsertMode();
+            gci.SetInsertMode(WI_IsFlagSet(mode, ENABLE_INSERT_MODE));
+            if (gci.GetInsertMode() != PreviousInsertMode)
+            {
+                gci.GetActiveOutputBuffer().SetCursorDBMode(false);
+                if (gci.HasPendingCookedRead())
+                {
+                    gci.CookedReadData().SetInsertMode(gci.GetInsertMode());
+                }
+            }
         }
+        else
+        {
+            WI_ClearFlag(gci.Flags, CONSOLE_USE_PRIVATE_FLAGS);
+        }
+
+        context.InputMode = mode;
+        WI_ClearAllFlags(context.InputMode, PRIVATE_MODES);
+
+        // NOTE: For compatibility reasons, we need to set the modes and then return the error codes, not the other way around
+        //       as might be expected.
+        //       This is a bug from a long time ago and some applications depend on this functionality to operate properly.
+        //       ---
+        //       A prime example of this is that PSReadline module in Powershell will set the invalid mode 0x1e4
+        //       which includes 0x4 for ECHO_INPUT but turns off 0x2 for LINE_INPUT. This is invalid, but PSReadline
+        //       relies on it to properly receive the ^C printout and make a new line when the user presses Ctrl+C.
+        {
+            // Flags we don't understand are invalid.
+            RETURN_HR_IF(E_INVALIDARG, WI_IsAnyFlagSet(mode, ~(INPUT_MODES | PRIVATE_MODES)));
+
+            // ECHO on with LINE off is invalid.
+            RETURN_HR_IF(E_INVALIDARG, WI_IsFlagSet(mode, ENABLE_ECHO_INPUT) && WI_IsFlagClear(mode, ENABLE_LINE_INPUT));
+        }
+
+        return S_OK;
     }
-
-    return S_OK;
+    CATCH_RETURN();
 }
 
-void ApiRoutines::SetConsoleActiveScreenBufferImpl(SCREEN_INFORMATION& newContext)
+[[nodiscard]]
+HRESULT ApiRoutines::SetConsoleOutputModeImpl(SCREEN_INFORMATION& context, const ULONG mode) noexcept
 {
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    try
+    {
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    SetActiveScreenBuffer(newContext.GetActiveBuffer());
+        // Flags we don't understand are invalid.
+        RETURN_HR_IF(E_INVALIDARG, WI_IsAnyFlagSet(mode, ~OUTPUT_MODES));
+
+        SCREEN_INFORMATION& screenInfo = context.GetActiveBuffer();
+        const DWORD dwOldMode = screenInfo.OutputMode;
+        const DWORD dwNewMode = mode;
+
+        screenInfo.OutputMode = dwNewMode;
+
+        // if we're moving from VT on->off
+        if (WI_IsFlagClear(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) && WI_IsFlagSet(dwOldMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
+        {
+            // jiggle the handle
+            screenInfo.GetStateMachine().ResetState();
+            screenInfo.ClearTabStops();
+        }
+        // if we're moving from VT off->on
+        else if (WI_IsFlagSet(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) &&
+                 WI_IsFlagClear(dwOldMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
+        {
+            screenInfo.SetDefaultVtTabStops();
+        }
+
+        gci.SetVirtTermLevel(WI_IsFlagSet(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) ? 1 : 0);
+        gci.SetAutomaticReturnOnNewline(WI_IsFlagSet(screenInfo.OutputMode, DISABLE_NEWLINE_AUTO_RETURN) ? false : true);
+        gci.SetGridRenderingAllowedWorldwide(WI_IsFlagSet(screenInfo.OutputMode, ENABLE_LVB_GRID_WORLDWIDE));
+
+        // if we changed rendering modes then redraw the output buffer
+        if (WI_IsFlagSet(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) != WI_IsFlagSet(dwOldMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) ||
+            WI_IsFlagSet(dwNewMode, ENABLE_LVB_GRID_WORLDWIDE) != WI_IsFlagSet(dwOldMode, ENABLE_LVB_GRID_WORLDWIDE))
+        {
+            auto* pRender = ServiceLocator::LocateGlobals().pRender;
+            if (pRender)
+            {
+                pRender->TriggerRedrawAll();
+            }
+        }
+
+        return S_OK;
+    }
+    CATCH_RETURN();
 }
 
-void ApiRoutines::FlushConsoleInputBuffer(_In_ InputBuffer* const pContext)
+void ApiRoutines::SetConsoleActiveScreenBufferImpl(SCREEN_INFORMATION& newContext) noexcept
 {
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    try
+    {
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    pContext->Flush();
+        SetActiveScreenBuffer(newContext.GetActiveBuffer());
+    }
+    CATCH_LOG();
 }
 
-void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& Context,
-                                                  _Out_ COORD* const pSize)
+void ApiRoutines::FlushConsoleInputBuffer(InputBuffer& context) noexcept
 {
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    try
+    {
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    const SCREEN_INFORMATION& screenInfo = Context.GetActiveBuffer();
+        context.Flush();
+    }
+    CATCH_LOG();
+}
 
-    *pSize = screenInfo.GetLargestWindowSizeInCharacters();
+void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& context,
+                                                  COORD& size) noexcept
+{
+    try
+    {
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+        const SCREEN_INFORMATION& screenInfo = context.GetActiveBuffer();
+
+        size = screenInfo.GetLargestWindowSizeInCharacters();
+    }
+    CATCH_LOG();
 }
 
 [[nodiscard]]
 HRESULT ApiRoutines::SetConsoleScreenBufferSizeImpl(SCREEN_INFORMATION& context,
-                                                    const COORD* const pSize)
+                                                    const COORD size) noexcept
 {
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-    SCREEN_INFORMATION& screenInfo = context.GetActiveBuffer();
-
-    // see MSFT:17415266
-    // We only really care about the minimum window size if we have a head.
-    if (!ServiceLocator::LocateGlobals().IsHeadless())
+    try
     {
-        COORD const coordMin = screenInfo.GetMinWindowSizeInCharacters();
-        // Make sure requested screen buffer size isn't smaller than the window.
-        RETURN_HR_IF(E_INVALIDARG, (pSize->X < screenInfo.GetViewport().Width() ||
-                                    pSize->Y < screenInfo.GetViewport().Height() ||
-                                    pSize->Y < coordMin.Y ||
-                                    pSize->X < coordMin.X));
-    }
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    // Ensure the requested size isn't larger than we can handle in our data type.
-    RETURN_HR_IF(E_INVALIDARG, (pSize->X == SHORT_MAX || pSize->Y == SHORT_MAX));
+        SCREEN_INFORMATION& screenInfo = context.GetActiveBuffer();
 
-    // Only do the resize if we're actually changing one of the dimensions
-    COORD const coordScreenBufferSize = screenInfo.GetBufferSize().Dimensions();
-    if (pSize->X != coordScreenBufferSize.X || pSize->Y != coordScreenBufferSize.Y)
-    {
-        RETURN_NTSTATUS(screenInfo.ResizeScreenBuffer(*pSize, TRUE));
-    }
-
-    return S_OK;
-}
-
-[[nodiscard]]
-HRESULT ApiRoutines::SetConsoleScreenBufferInfoExImpl(SCREEN_INFORMATION& Context,
-                                                      const CONSOLE_SCREEN_BUFFER_INFOEX* const pScreenBufferInfoEx)
-{
-    RETURN_HR_IF(E_INVALIDARG, (pScreenBufferInfoEx->dwSize.X == 0 ||
-                                pScreenBufferInfoEx->dwSize.Y == 0 ||
-                                pScreenBufferInfoEx->dwSize.X == SHRT_MAX ||
-                                pScreenBufferInfoEx->dwSize.Y == SHRT_MAX));
-
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-    DoSrvSetScreenBufferInfo(Context.GetActiveBuffer(), pScreenBufferInfoEx);
-    return S_OK;
-}
-
-void DoSrvSetScreenBufferInfo(SCREEN_INFORMATION& screenInfo,
-                              const CONSOLE_SCREEN_BUFFER_INFOEX* const pInfo)
-{
-    Globals& g = ServiceLocator::LocateGlobals();
-    CONSOLE_INFORMATION& gci = g.getConsoleInformation();
-
-    const COORD coordScreenBufferSize = screenInfo.GetBufferSize().Dimensions();
-    const COORD requestedBufferSize = pInfo->dwSize;
-    if (requestedBufferSize.X != coordScreenBufferSize.X ||
-        requestedBufferSize.Y != coordScreenBufferSize.Y)
-    {
-        CommandLine& commandLine = CommandLine::Instance();
-
-        commandLine.Hide(FALSE);
-
-        LOG_IF_FAILED(screenInfo.ResizeScreenBuffer(pInfo->dwSize, TRUE));
-
-        commandLine.Show();
-    }
-    const COORD newBufferSize = screenInfo.GetBufferSize().Dimensions();
-
-    gci.SetColorTable(pInfo->ColorTable, ARRAYSIZE(pInfo->ColorTable));
-    SetScreenColors(screenInfo, pInfo->wAttributes, pInfo->wPopupAttributes, TRUE, gci.GetDefaultForegroundColor(), gci.GetDefaultBackgroundColor());
-
-    const Viewport requestedViewport = Viewport::FromExclusive(pInfo->srWindow);
-
-    COORD NewSize = requestedViewport.Dimensions();
-    // If we have a window, clamp the requested viewport to the max window size
-    if (!ServiceLocator::LocateGlobals().IsHeadless())
-    {
-        NewSize.X = std::min(NewSize.X, pInfo->dwMaximumWindowSize.X);
-        NewSize.Y = std::min(NewSize.Y, pInfo->dwMaximumWindowSize.Y);
-    }
-
-    // If wrap text is on, then the window width must be the same size as the buffer width
-    if (gci.GetWrapText())
-    {
-        NewSize.X = newBufferSize.X;
-    }
-
-    if (NewSize.X != screenInfo.GetViewport().Width() ||
-        NewSize.Y != screenInfo.GetViewport().Height())
-    {
-        screenInfo.SetViewportSize(&NewSize);
-
-        IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
-        if (pWindow != nullptr)
+        // see MSFT:17415266
+        // We only really care about the minimum window size if we have a head.
+        if (!ServiceLocator::LocateGlobals().IsHeadless())
         {
-            pWindow->UpdateWindowSize(NewSize);
-        }
-    }
-
-    // Despite the fact that this API takes in a srWindow for the viewport, it traditionally actually doesn't set
-    //  anything using that member - for moving the viewport, you need SetConsoleWindowInfo
-    //  (see https://msdn.microsoft.com/en-us/library/windows/desktop/ms686125(v=vs.85).aspx and DoSrvSetConsoleWindowInfo)
-    // Note that it also doesn't set cursor position.
-}
-
-[[nodiscard]]
-HRESULT ApiRoutines::SetConsoleCursorPositionImpl(SCREEN_INFORMATION& Context,
-                                                  const COORD* const pCursorPosition)
-{
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-    return DoSrvSetConsoleCursorPosition(Context.GetActiveBuffer(), pCursorPosition);
-}
-
-[[nodiscard]]
-HRESULT DoSrvSetConsoleCursorPosition(SCREEN_INFORMATION& screenInfo,
-                                      const COORD* const pCursorPosition)
-{
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-
-    const COORD coordScreenBufferSize = screenInfo.GetBufferSize().Dimensions();
-    RETURN_HR_IF(E_INVALIDARG, (pCursorPosition->X >= coordScreenBufferSize.X ||
-                                pCursorPosition->Y >= coordScreenBufferSize.Y ||
-                                pCursorPosition->X < 0 ||
-                                pCursorPosition->Y < 0));
-
-    // MSFT: 15813316 - Try to use this SetCursorPosition call to inherit the cursor position.
-    RETURN_IF_FAILED(gci.GetVtIo()->SetCursorPosition(*pCursorPosition));
-
-    RETURN_IF_NTSTATUS_FAILED(screenInfo.SetCursorPosition(*pCursorPosition, true));
-
-    LOG_IF_FAILED(ConsoleImeResizeCompStrView());
-
-    COORD WindowOrigin;
-    WindowOrigin.X = 0;
-    WindowOrigin.Y = 0;
-    {
-        const SMALL_RECT currentViewport = screenInfo.GetViewport().ToInclusive();
-        if (currentViewport.Left > pCursorPosition->X)
-        {
-            WindowOrigin.X = pCursorPosition->X - currentViewport.Left;
-        }
-        else if (currentViewport.Right < pCursorPosition->X)
-        {
-            WindowOrigin.X = pCursorPosition->X - currentViewport.Right;
+            COORD const coordMin = screenInfo.GetMinWindowSizeInCharacters();
+            // Make sure requested screen buffer size isn't smaller than the window.
+            RETURN_HR_IF(E_INVALIDARG, (size.X < screenInfo.GetViewport().Width() ||
+                                        size.Y < screenInfo.GetViewport().Height() ||
+                                        size.Y < coordMin.Y ||
+                                        size.X < coordMin.X));
         }
 
-        if (currentViewport.Top > pCursorPosition->Y)
+        // Ensure the requested size isn't larger than we can handle in our data type.
+        RETURN_HR_IF(E_INVALIDARG, (size.X == SHORT_MAX || size.Y == SHORT_MAX));
+
+        // Only do the resize if we're actually changing one of the dimensions
+        COORD const coordScreenBufferSize = screenInfo.GetBufferSize().Dimensions();
+        if (size.X != coordScreenBufferSize.X || size.Y != coordScreenBufferSize.Y)
         {
-            WindowOrigin.Y = pCursorPosition->Y - currentViewport.Top;
+            RETURN_NTSTATUS(screenInfo.ResizeScreenBuffer(size, TRUE));
         }
-        else if (currentViewport.Bottom < pCursorPosition->Y)
+
+        return S_OK;
+    }
+    CATCH_RETURN();
+}
+
+[[nodiscard]]
+HRESULT ApiRoutines::SetConsoleScreenBufferInfoExImpl(SCREEN_INFORMATION& context,
+                                                      const CONSOLE_SCREEN_BUFFER_INFOEX& data) noexcept
+{
+    try
+    {
+        RETURN_HR_IF(E_INVALIDARG, (data.dwSize.X == 0 ||
+                                    data.dwSize.Y == 0 ||
+                                    data.dwSize.X == SHRT_MAX ||
+                                    data.dwSize.Y == SHRT_MAX));
+
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+        Globals& g = ServiceLocator::LocateGlobals();
+        CONSOLE_INFORMATION& gci = g.getConsoleInformation();
+
+        const COORD coordScreenBufferSize = context.GetBufferSize().Dimensions();
+        const COORD requestedBufferSize = data.dwSize;
+        if (requestedBufferSize.X != coordScreenBufferSize.X ||
+            requestedBufferSize.Y != coordScreenBufferSize.Y)
         {
-            WindowOrigin.Y = pCursorPosition->Y - currentViewport.Bottom;
+            CommandLine& commandLine = CommandLine::Instance();
+
+            commandLine.Hide(FALSE);
+
+            LOG_IF_FAILED(context.ResizeScreenBuffer(data.dwSize, TRUE));
+
+            commandLine.Show();
         }
+        const COORD newBufferSize = context.GetBufferSize().Dimensions();
+
+        gci.SetColorTable(data.ColorTable, ARRAYSIZE(data.ColorTable));
+        SetScreenColors(context, data.wAttributes, data.wPopupAttributes, TRUE, gci.GetDefaultForegroundColor(), gci.GetDefaultBackgroundColor());
+
+        const Viewport requestedViewport = Viewport::FromExclusive(data.srWindow);
+
+        COORD NewSize = requestedViewport.Dimensions();
+        // If we have a window, clamp the requested viewport to the max window size
+        if (!ServiceLocator::LocateGlobals().IsHeadless())
+        {
+            NewSize.X = std::min(NewSize.X, data.dwMaximumWindowSize.X);
+            NewSize.Y = std::min(NewSize.Y, data.dwMaximumWindowSize.Y);
+        }
+
+        // If wrap text is on, then the window width must be the same size as the buffer width
+        if (gci.GetWrapText())
+        {
+            NewSize.X = newBufferSize.X;
+        }
+
+        if (NewSize.X != context.GetViewport().Width() ||
+            NewSize.Y != context.GetViewport().Height())
+        {
+            context.SetViewportSize(&NewSize);
+
+            IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+            if (pWindow != nullptr)
+            {
+                pWindow->UpdateWindowSize(NewSize);
+            }
+        }
+
+        // Despite the fact that this API takes in a srWindow for the viewport, it traditionally actually doesn't set
+        //  anything using that member - for moving the viewport, you need SetConsoleWindowInfo
+        //  (see https://msdn.microsoft.com/en-us/library/windows/desktop/ms686125(v=vs.85).aspx and DoSrvSetConsoleWindowInfo)
+        // Note that it also doesn't set cursor position.
+
+        return S_OK;
     }
-
-    RETURN_IF_NTSTATUS_FAILED(screenInfo.SetViewportOrigin(false, WindowOrigin, true));
-
-    return S_OK;
+    CATCH_RETURN();
 }
 
 [[nodiscard]]
-HRESULT ApiRoutines::SetConsoleCursorInfoImpl(SCREEN_INFORMATION& Context,
-                                              const ULONG CursorSize,
-                                              const bool IsVisible)
+HRESULT ApiRoutines::SetConsoleCursorPositionImpl(SCREEN_INFORMATION& context,
+                                                  const COORD position) noexcept
 {
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    try
+    {
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    return DoSrvSetConsoleCursorInfo(Context.GetActiveBuffer(), CursorSize, IsVisible);
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+        const COORD coordScreenBufferSize = context.GetBufferSize().Dimensions();
+        RETURN_HR_IF(E_INVALIDARG, (position.X >= coordScreenBufferSize.X ||
+                                    position.Y >= coordScreenBufferSize.Y ||
+                                    position.X < 0 ||
+                                    position.Y < 0));
+
+        // MSFT: 15813316 - Try to use this SetCursorPosition call to inherit the cursor position.
+        RETURN_IF_FAILED(gci.GetVtIo()->SetCursorPosition(position));
+
+        RETURN_IF_NTSTATUS_FAILED(context.SetCursorPosition(position, true));
+
+        LOG_IF_FAILED(ConsoleImeResizeCompStrView());
+
+        COORD WindowOrigin;
+        WindowOrigin.X = 0;
+        WindowOrigin.Y = 0;
+        {
+            const SMALL_RECT currentViewport = context.GetViewport().ToInclusive();
+            if (currentViewport.Left > position.X)
+            {
+                WindowOrigin.X = position.X - currentViewport.Left;
+            }
+            else if (currentViewport.Right < position.X)
+            {
+                WindowOrigin.X = position.X - currentViewport.Right;
+            }
+
+            if (currentViewport.Top > position.Y)
+            {
+                WindowOrigin.Y = position.Y - currentViewport.Top;
+            }
+            else if (currentViewport.Bottom < position.Y)
+            {
+                WindowOrigin.Y = position.Y - currentViewport.Bottom;
+            }
+        }
+
+        RETURN_IF_NTSTATUS_FAILED(context.SetViewportOrigin(false, WindowOrigin, true));
+
+        return S_OK;
+    }
+    CATCH_RETURN();
 }
 
 [[nodiscard]]
-HRESULT DoSrvSetConsoleCursorInfo(SCREEN_INFORMATION& screenInfo,
-                                  const ULONG CursorSize,
-                                  const bool IsVisible)
+HRESULT ApiRoutines::SetConsoleCursorInfoImpl(SCREEN_INFORMATION& context,
+                                              const ULONG size,
+                                              const bool isVisible) noexcept
 {
-    // If more than 100% or less than 0% cursor height, reject it.
-    RETURN_HR_IF(E_INVALIDARG, (CursorSize > 100 || CursorSize == 0));
+    try
+    {
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    screenInfo.SetCursorInformation(CursorSize,
-                                    IsVisible,
-                                    screenInfo.GetTextBuffer().GetCursor().GetColor(),
-                                    screenInfo.GetTextBuffer().GetCursor().GetType());
+        // If more than 100% or less than 0% cursor height, reject it.
+        RETURN_HR_IF(E_INVALIDARG, (size > 100 || size == 0));
 
-    return S_OK;
+        context.SetCursorInformation(size,
+                                     isVisible,
+                                     context.GetTextBuffer().GetCursor().GetColor(),
+                                     context.GetTextBuffer().GetCursor().GetType());
+
+        return S_OK;
+    }
+    CATCH_RETURN();
 }
 
 [[nodiscard]]
-HRESULT ApiRoutines::SetConsoleWindowInfoImpl(SCREEN_INFORMATION& Context,
-                                              const bool IsAbsoluteRectangle,
-                                              const SMALL_RECT* const pWindowRectangle)
+HRESULT ApiRoutines::SetConsoleWindowInfoImpl(SCREEN_INFORMATION& context,
+                                              const bool isAbsolute,
+                                              const SMALL_RECT& windowRect) noexcept
 {
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-    return DoSrvSetConsoleWindowInfo(Context.GetActiveBuffer(), IsAbsoluteRectangle, pWindowRectangle);
-}
-
-[[nodiscard]]
-HRESULT DoSrvSetConsoleWindowInfo(SCREEN_INFORMATION& screenInfo,
-                                  const bool IsAbsoluteRectangle,
-                                  const SMALL_RECT* const pWindowRectangle)
-{
-    Globals& g = ServiceLocator::LocateGlobals();
-    SMALL_RECT Window = *pWindowRectangle;
-
-    if (!IsAbsoluteRectangle)
+    try
     {
-        SMALL_RECT currentViewport = screenInfo.GetViewport().ToInclusive();
-        Window.Left += currentViewport.Left;
-        Window.Right += currentViewport.Right;
-        Window.Top += currentViewport.Top;
-        Window.Bottom += currentViewport.Bottom;
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+        Globals& g = ServiceLocator::LocateGlobals();
+        SMALL_RECT Window = windowRect;
+
+        if (!isAbsolute)
+        {
+            SMALL_RECT currentViewport = context.GetViewport().ToInclusive();
+            Window.Left += currentViewport.Left;
+            Window.Right += currentViewport.Right;
+            Window.Top += currentViewport.Top;
+            Window.Bottom += currentViewport.Bottom;
+        }
+
+        RETURN_HR_IF(E_INVALIDARG, (Window.Right < Window.Left || Window.Bottom < Window.Top));
+
+        COORD NewWindowSize;
+        NewWindowSize.X = (SHORT)(CalcWindowSizeX(Window));
+        NewWindowSize.Y = (SHORT)(CalcWindowSizeY(Window));
+
+        // see MSFT:17415266
+        // If we have a actual head, we care about the maximum size the window can be.
+        // if we're headless, not so much. However, GetMaxWindowSizeInCharacters
+        //      will only return the buffer size, so we can't use that to clip the arg here.
+        // So only clip the requested size if we're not headless
+        if (!g.IsHeadless())
+        {
+            COORD const coordMax = context.GetMaxWindowSizeInCharacters();
+            RETURN_HR_IF(E_INVALIDARG, (NewWindowSize.X > coordMax.X || NewWindowSize.Y > coordMax.Y));
+
+        }
+        else if (g.getConsoleInformation().IsInVtIoMode())
+        {
+            // SetViewportRect doesn't cause the buffer to resize. Manually resize the buffer.
+            RETURN_IF_NTSTATUS_FAILED(context.ResizeScreenBuffer(Viewport::FromInclusive(Window).Dimensions(), false));
+        }
+
+        // Even if it's the same size, we need to post an update in case the scroll bars need to go away.
+        context.SetViewport(Viewport::FromInclusive(Window));
+        if (context.IsActiveScreenBuffer())
+        {
+            // TODO: MSFT: 9574827 - shouldn't we be looking at or at least logging the failure codes here? (Or making them non-void?)
+            context.PostUpdateWindowSize();
+            WriteToScreen(context, context.GetViewport());
+        }
+        return S_OK;
     }
-
-    RETURN_HR_IF(E_INVALIDARG, (Window.Right < Window.Left || Window.Bottom < Window.Top));
-
-    COORD NewWindowSize;
-    NewWindowSize.X = (SHORT)(CalcWindowSizeX(Window));
-    NewWindowSize.Y = (SHORT)(CalcWindowSizeY(Window));
-
-    // see MSFT:17415266
-    // If we have a actual head, we care about the maximum size the window can be.
-    // if we're headless, not so much. However, GetMaxWindowSizeInCharacters
-    //      will only return the buffer size, so we can't use that to clip the arg here.
-    // So only clip the requested size if we're not headless
-    if (!g.IsHeadless())
-    {
-        COORD const coordMax = screenInfo.GetMaxWindowSizeInCharacters();
-        RETURN_HR_IF(E_INVALIDARG, (NewWindowSize.X > coordMax.X || NewWindowSize.Y > coordMax.Y));
-
-    }
-    else if (g.getConsoleInformation().IsInVtIoMode())
-    {
-        // SetViewportRect doesn't cause the buffer to resize. Manually resize the buffer.
-        RETURN_IF_NTSTATUS_FAILED(screenInfo.ResizeScreenBuffer(Viewport::FromInclusive(Window).Dimensions(), false));
-    }
-
-    // Even if it's the same size, we need to post an update in case the scroll bars need to go away.
-    screenInfo.SetViewport(Viewport::FromInclusive(Window));
-    if (screenInfo.IsActiveScreenBuffer())
-    {
-        // TODO: MSFT: 9574827 - shouldn't we be looking at or at least logging the failure codes here? (Or making them non-void?)
-        screenInfo.PostUpdateWindowSize();
-        WriteToScreen(screenInfo, screenInfo.GetViewport());
-    }
-    return S_OK;
+    CATCH_RETURN();
 }
 
 [[nodiscard]]
@@ -737,28 +777,26 @@ void SetScreenColors(SCREEN_INFORMATION& screenInfo,
 }
 
 [[nodiscard]]
-HRESULT ApiRoutines::SetConsoleTextAttributeImpl(SCREEN_INFORMATION& Context,
-                                                 const WORD Attribute)
+HRESULT ApiRoutines::SetConsoleTextAttributeImpl(SCREEN_INFORMATION& context,
+                                                 const WORD attribute) noexcept
 {
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    try
+    {
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    return DoSrvSetConsoleTextAttribute(Context, Attribute);
-}
+        RETURN_HR_IF(E_INVALIDARG, WI_IsAnyFlagSet(attribute, ~VALID_TEXT_ATTRIBUTES));
+        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-[[nodiscard]]
-HRESULT DoSrvSetConsoleTextAttribute(SCREEN_INFORMATION& screenInfo, const WORD Attribute) noexcept
-{
-    RETURN_HR_IF(E_INVALIDARG, WI_IsAnyFlagSet(Attribute, ~VALID_TEXT_ATTRIBUTES));
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-
-    SetScreenColors(screenInfo,
-                    Attribute,
-                    screenInfo.GetPopupAttributes()->GetLegacyAttributes(),
-                    FALSE,
-                    gci.GetDefaultForegroundColor(),
-                    gci.GetDefaultBackgroundColor());
-    return S_OK;
+        SetScreenColors(context,
+                        attribute,
+                        context.GetPopupAttributes()->GetLegacyAttributes(),
+                        FALSE,
+                        gci.GetDefaultForegroundColor(),
+                        gci.GetDefaultBackgroundColor());
+        return S_OK;
+    }
+    CATCH_RETURN();
 }
 
 void DoSrvPrivateSetLegacyAttributes(SCREEN_INFORMATION& screenInfo,
@@ -924,56 +962,68 @@ void DoSrvPrivateBoldText(SCREEN_INFORMATION& screenInfo, const bool bolded)
 }
 
 [[nodiscard]]
-HRESULT ApiRoutines::SetConsoleOutputCodePageImpl(const ULONG CodePage)
+HRESULT ApiRoutines::SetConsoleOutputCodePageImpl(const ULONG codepage) noexcept
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-    // Return if it's not known as a valid codepage ID.
-    RETURN_HR_IF(E_INVALIDARG, !(IsValidCodePage(CodePage)));
-
-    // Do nothing if no change.
-    if (gci.OutputCP != CodePage)
+    try
     {
-        // Set new code page
-        gci.OutputCP = CodePage;
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-        SetConsoleCPInfo(TRUE);
+        // Return if it's not known as a valid codepage ID.
+        RETURN_HR_IF(E_INVALIDARG, !(IsValidCodePage(codepage)));
+
+        // Do nothing if no change.
+        if (gci.OutputCP != codepage)
+        {
+            // Set new code page
+            gci.OutputCP = codepage;
+
+            SetConsoleCPInfo(TRUE);
+        }
+
+        return S_OK;
     }
-
-    return S_OK;
+    CATCH_RETURN();
 }
 
 [[nodiscard]]
-HRESULT ApiRoutines::SetConsoleInputCodePageImpl(const ULONG CodePage)
+HRESULT ApiRoutines::SetConsoleInputCodePageImpl(const ULONG codepage) noexcept
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-    // Return if it's not known as a valid codepage ID.
-    RETURN_HR_IF(E_INVALIDARG, !(IsValidCodePage(CodePage)));
-
-    // Do nothing if no change.
-    if (gci.CP != CodePage)
+    try
     {
-        // Set new code page
-        gci.CP = CodePage;
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-        SetConsoleCPInfo(FALSE);
+        // Return if it's not known as a valid codepage ID.
+        RETURN_HR_IF(E_INVALIDARG, !(IsValidCodePage(codepage)));
+
+        // Do nothing if no change.
+        if (gci.CP != codepage)
+        {
+            // Set new code page
+            gci.CP = codepage;
+
+            SetConsoleCPInfo(FALSE);
+        }
+
+        return S_OK;
     }
-
-    return S_OK;
+    CATCH_RETURN();
 }
 
-void ApiRoutines::GetConsoleInputCodePageImpl(_Out_ ULONG* const pCodePage)
+void ApiRoutines::GetConsoleInputCodePageImpl(ULONG& codepage) noexcept
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    try
+    {
+        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    *pCodePage = gci.CP;
+        codepage = gci.CP;
+    }
+    CATCH_LOG();
 }
 
 void DoSrvGetConsoleOutputCodePage(_Out_ unsigned int* const pCodePage)
@@ -982,93 +1032,113 @@ void DoSrvGetConsoleOutputCodePage(_Out_ unsigned int* const pCodePage)
     *pCodePage = gci.OutputCP;
 }
 
-void ApiRoutines::GetConsoleOutputCodePageImpl(_Out_ ULONG* const pCodePage)
+void ApiRoutines::GetConsoleOutputCodePageImpl(ULONG& codepage) noexcept
 {
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-    unsigned int uiCodepage;
-    DoSrvGetConsoleOutputCodePage(&uiCodepage);
-    *pCodePage = uiCodepage;
+    try
+    {
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        unsigned int uiCodepage;
+        DoSrvGetConsoleOutputCodePage(&uiCodepage);
+        codepage = uiCodepage;
+    }
+    CATCH_LOG();
 }
 
-void ApiRoutines::GetConsoleWindowImpl(_Out_ HWND* const pHwnd)
+void ApiRoutines::GetConsoleWindowImpl(HWND& hwnd) noexcept
 {
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-    const IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    if (pWindow != nullptr)
+    try
     {
-        *pHwnd = pWindow->GetWindowHandle();
-    }
-    else
-    {
-        // Some applications will fail silently if this API returns 0 (cygwin)
-        // If we're in pty mode, we need to return a fake window handle that
-        //      doesn't actually do anything, but is a unique HWND to this
-        //      console, so that they know that this console is in fact a real
-        //      console window.
-        if (gci.IsInVtIoMode())
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
+        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        if (pWindow != nullptr)
         {
-            *pHwnd = ServiceLocator::LocatePseudoWindow();
+            hwnd = pWindow->GetWindowHandle();
+        }
+        else
+        {
+            // Some applications will fail silently if this API returns 0 (cygwin)
+            // If we're in pty mode, we need to return a fake window handle that
+            //      doesn't actually do anything, but is a unique HWND to this
+            //      console, so that they know that this console is in fact a real
+            //      console window.
+            if (gci.IsInVtIoMode())
+            {
+                hwnd = ServiceLocator::LocatePseudoWindow();
+            }
         }
     }
+    CATCH_LOG();
 }
 
-void ApiRoutines::GetConsoleHistoryInfoImpl(_Out_ CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo)
+void ApiRoutines::GetConsoleHistoryInfoImpl(CONSOLE_HISTORY_INFO& consoleHistoryInfo) noexcept
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    try
+    {
+        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    pConsoleHistoryInfo->HistoryBufferSize = gci.GetHistoryBufferSize();
-    pConsoleHistoryInfo->NumberOfHistoryBuffers = gci.GetNumberOfHistoryBuffers();
-    WI_SetFlagIf(pConsoleHistoryInfo->dwFlags, HISTORY_NO_DUP_FLAG, WI_IsFlagSet(gci.Flags, CONSOLE_HISTORY_NODUP));
+        consoleHistoryInfo.HistoryBufferSize = gci.GetHistoryBufferSize();
+        consoleHistoryInfo.NumberOfHistoryBuffers = gci.GetNumberOfHistoryBuffers();
+        WI_SetFlagIf(consoleHistoryInfo.dwFlags, HISTORY_NO_DUP_FLAG, WI_IsFlagSet(gci.Flags, CONSOLE_HISTORY_NODUP));
+    }
+    CATCH_LOG();
 }
 
-HRESULT ApiRoutines::SetConsoleHistoryInfoImpl(const CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo)
+HRESULT ApiRoutines::SetConsoleHistoryInfoImpl(const CONSOLE_HISTORY_INFO& consoleHistoryInfo) noexcept
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    RETURN_HR_IF(E_INVALIDARG, pConsoleHistoryInfo->HistoryBufferSize > SHORT_MAX);
-    RETURN_HR_IF(E_INVALIDARG, pConsoleHistoryInfo->NumberOfHistoryBuffers > SHORT_MAX);
-    RETURN_HR_IF(E_INVALIDARG, WI_IsAnyFlagSet(pConsoleHistoryInfo->dwFlags, ~CHI_VALID_FLAGS));
+    try
+    {
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        RETURN_HR_IF(E_INVALIDARG, consoleHistoryInfo.HistoryBufferSize > SHORT_MAX);
+        RETURN_HR_IF(E_INVALIDARG, consoleHistoryInfo.NumberOfHistoryBuffers > SHORT_MAX);
+        RETURN_HR_IF(E_INVALIDARG, WI_IsAnyFlagSet(consoleHistoryInfo.dwFlags, ~CHI_VALID_FLAGS));
 
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    CommandHistory::s_ResizeAll(pConsoleHistoryInfo->HistoryBufferSize);
-    gci.SetNumberOfHistoryBuffers(pConsoleHistoryInfo->NumberOfHistoryBuffers);
+        CommandHistory::s_ResizeAll(consoleHistoryInfo.HistoryBufferSize);
+        gci.SetNumberOfHistoryBuffers(consoleHistoryInfo.NumberOfHistoryBuffers);
 
-    WI_UpdateFlag(gci.Flags, CONSOLE_HISTORY_NODUP, WI_IsFlagSet(pConsoleHistoryInfo->dwFlags, HISTORY_NO_DUP_FLAG));
+        WI_UpdateFlag(gci.Flags, CONSOLE_HISTORY_NODUP, WI_IsFlagSet(consoleHistoryInfo.dwFlags, HISTORY_NO_DUP_FLAG));
 
-    return S_OK;
+        return S_OK;
+    }
+    CATCH_RETURN();
 }
 
 // NOTE: This was in private.c, but turns out to be a public API: http://msdn.microsoft.com/en-us/library/windows/desktop/ms683164(v=vs.85).aspx
-void ApiRoutines::GetConsoleDisplayModeImpl(_Out_ ULONG* const pFlags)
+void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
 {
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-    // Initialize flags portion of structure
-    *pFlags = 0;
-
-    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
-    if (pWindow != nullptr && pWindow->IsInFullscreen())
+    try
     {
-        WI_SetFlag(*pFlags, CONSOLE_FULLSCREEN_MODE);
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+        // Initialize flags portion of structure
+        flags = 0;
+
+        IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+        if (pWindow != nullptr && pWindow->IsInFullscreen())
+        {
+            WI_SetFlag(flags, CONSOLE_FULLSCREEN_MODE);
+        }
     }
+    CATCH_LOG();
 }
 
 // Routine Description:
 // - This routine sets the console display mode for an output buffer.
 // - This API is only supported on x86 machines.
 // Parameters:
-// - hConsoleOutput - Supplies a console output handle.
-// - dwFlags - Specifies the display mode. Options are:
+// - context - Supplies a console output handle.
+// - flags - Specifies the display mode. Options are:
 //      CONSOLE_FULLSCREEN_MODE - data is displayed fullscreen
 //      CONSOLE_WINDOWED_MODE - data is displayed in a window
-// - lpNewScreenBufferDimensions - On output, contains the new dimensions of the screen buffer.  The dimensions are in rows and columns for textmode screen buffers.
+// - newSize - On output, contains the new dimensions of the screen buffer.  The dimensions are in rows and columns for textmode screen buffers.
 // Return value:
 // - TRUE - The operation was successful.
 // - FALSE/nullptr - The operation failed. Extended error status is available using GetLastError.
@@ -1076,44 +1146,48 @@ void ApiRoutines::GetConsoleDisplayModeImpl(_Out_ ULONG* const pFlags)
 // - This was in private.c, but turns out to be a public API:
 // - See: http://msdn.microsoft.com/en-us/library/windows/desktop/ms686028(v=vs.85).aspx
 [[nodiscard]]
-HRESULT ApiRoutines::SetConsoleDisplayModeImpl(SCREEN_INFORMATION& Context,
-                                               const ULONG Flags,
-                                               _Out_ COORD* const pNewScreenBufferSize)
+HRESULT ApiRoutines::SetConsoleDisplayModeImpl(SCREEN_INFORMATION& context,
+                                               const ULONG flags,
+                                               COORD& newSize) noexcept
 {
-    // SetIsFullscreen() below ultimately calls SetwindowLong, which ultimately calls SendMessage(). If we retain
-    // the console lock, we'll deadlock since ConsoleWindowProc takes the lock before processing messages. Instead,
-    // we'll release early.
-    LockConsole();
+    try
     {
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-        SCREEN_INFORMATION&  screenInfo = Context.GetActiveBuffer();
-
-        *pNewScreenBufferSize = screenInfo.GetBufferSize().Dimensions();
-        RETURN_HR_IF(E_INVALIDARG, !(screenInfo.IsActiveScreenBuffer()));
-    }
-
-    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
-    if (WI_IsFlagSet(Flags, CONSOLE_FULLSCREEN_MODE))
-    {
-        if (pWindow != nullptr)
+        // SetIsFullscreen() below ultimately calls SetwindowLong, which ultimately calls SendMessage(). If we retain
+        // the console lock, we'll deadlock since ConsoleWindowProc takes the lock before processing messages. Instead,
+        // we'll release early.
+        LockConsole();
         {
-            pWindow->SetIsFullscreen(true);
-        }
-    }
-    else if (WI_IsFlagSet(Flags, CONSOLE_WINDOWED_MODE))
-    {
-        if (pWindow != nullptr)
-        {
-            pWindow->SetIsFullscreen(false);
-        }
-    }
-    else
-    {
-        RETURN_HR(E_INVALIDARG);
-    }
+            auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    return S_OK;
+            SCREEN_INFORMATION&  screenInfo = context.GetActiveBuffer();
+
+            newSize = screenInfo.GetBufferSize().Dimensions();
+            RETURN_HR_IF(E_INVALIDARG, !(screenInfo.IsActiveScreenBuffer()));
+        }
+
+        IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+        if (WI_IsFlagSet(flags, CONSOLE_FULLSCREEN_MODE))
+        {
+            if (pWindow != nullptr)
+            {
+                pWindow->SetIsFullscreen(true);
+            }
+        }
+        else if (WI_IsFlagSet(flags, CONSOLE_WINDOWED_MODE))
+        {
+            if (pWindow != nullptr)
+            {
+                pWindow->SetIsFullscreen(false);
+            }
+        }
+        else
+        {
+            RETURN_HR(E_INVALIDARG);
+        }
+
+        return S_OK;
+    }
+    CATCH_RETURN();
 }
 
 // Routine Description:
@@ -1274,7 +1348,7 @@ NTSTATUS DoSrvMoveCursorVertically(SCREEN_INFORMATION& screenInfo, const short l
     SMALL_RECT srMargins = screenInfo.GetAbsoluteScrollMargins().ToInclusive();
     const bool fMarginsSet = srMargins.Bottom > srMargins.Top;
     const bool fCursorInMargins = iCurrentCursorY <= srMargins.Bottom && iCurrentCursorY >= srMargins.Top;
-    COORD clampedPos = {cursor.GetPosition().X, cursor.GetPosition().Y+lines};
+    COORD clampedPos = { cursor.GetPosition().X, cursor.GetPosition().Y + lines };
 
     // Make sure the cursor doesn't move outside the viewport.
     screenInfo.GetViewport().Clamp(clampedPos);
@@ -1716,9 +1790,9 @@ HRESULT ApiRoutines::GetConsoleTitleAImpl(_Out_writes_to_(cchTitleBufferSize, *p
 }
 
 void ApiRoutines::GetConsoleTitleWImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) wchar_t* const pwsTitleBuffer,
-                                          const size_t cchTitleBufferSize,
-                                          _Out_ size_t* const pcchTitleBufferWritten,
-                                          _Out_ size_t* const pcchTitleBufferNeeded)
+                                       const size_t cchTitleBufferSize,
+                                       _Out_ size_t* const pcchTitleBufferWritten,
+                                       _Out_ size_t* const pcchTitleBufferNeeded)
 {
     LockConsole();
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
@@ -1747,9 +1821,9 @@ HRESULT ApiRoutines::GetConsoleOriginalTitleAImpl(_Out_writes_to_(cchTitleBuffer
 }
 
 void ApiRoutines::GetConsoleOriginalTitleWImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) wchar_t* const pwsTitleBuffer,
-                                                  const size_t cchTitleBufferSize,
-                                                  _Out_ size_t* const pcchTitleBufferWritten,
-                                                  _Out_ size_t* const pcchTitleBufferNeeded)
+                                               const size_t cchTitleBufferSize,
+                                               _Out_ size_t* const pcchTitleBufferWritten,
+                                               _Out_ size_t* const pcchTitleBufferNeeded)
 {
     LockConsole();
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
@@ -1796,7 +1870,7 @@ HRESULT DoSrvSetConsoleTitleW(const std::wstring_view title) noexcept
     {
         std::wstring sanitized;
         sanitized.reserve(title.size());
-        for(size_t i = 0; i < title.size(); i++)
+        for (size_t i = 0; i < title.size(); i++)
         {
             if (title.at(i) >= UNICODE_SPACE)
             {

@@ -18,22 +18,6 @@ Revision History:
 class SCREEN_INFORMATION;
 
 
-void DoSrvGetConsoleScreenBufferInfo(const SCREEN_INFORMATION& screenInfo,
-                                     _Out_ CONSOLE_SCREEN_BUFFER_INFOEX* const pInfo);
-void DoSrvSetScreenBufferInfo(SCREEN_INFORMATION& screenInfo, const CONSOLE_SCREEN_BUFFER_INFOEX* const pInfo);
-void DoSrvGetConsoleCursorInfo(const SCREEN_INFORMATION& screenInfo,
-                               _Out_ ULONG* const pCursorSize,
-                               _Out_ bool* const pIsVisible);
-
-[[nodiscard]]
-HRESULT DoSrvSetConsoleCursorPosition(SCREEN_INFORMATION& screenInfo, const COORD* const pCursorPosition);
-[[nodiscard]]
-HRESULT DoSrvSetConsoleCursorInfo(SCREEN_INFORMATION& screenInfo, const ULONG CursorSize, const bool IsVisible);
-[[nodiscard]]
-HRESULT DoSrvSetConsoleWindowInfo(SCREEN_INFORMATION& screenInfo,
-                                  const bool IsAbsoluteRectangle,
-                                  const SMALL_RECT* const pWindowRectangle);
-
 [[nodiscard]]
 HRESULT DoSrvScrollConsoleScreenBufferW(SCREEN_INFORMATION& screenInfo,
                                         const SMALL_RECT* const pSourceRectangle,
@@ -42,8 +26,6 @@ HRESULT DoSrvScrollConsoleScreenBufferW(SCREEN_INFORMATION& screenInfo,
                                         const wchar_t wchFill,
                                         const WORD attrFill);
 
-[[nodiscard]]
-HRESULT DoSrvSetConsoleTextAttribute(SCREEN_INFORMATION& screenInfo, const WORD Attribute) noexcept;
 void DoSrvPrivateSetLegacyAttributes(SCREEN_INFORMATION& screenInfo,
                                      const WORD Attribute,
                                      const bool fForeground,
