@@ -891,135 +891,85 @@ NTSTATUS SrvWriteConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*Reply
     return Status;
 }
 
-
 [[nodiscard]]
-NTSTATUS SrvReadConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
+HRESULT ApiRoutines::ReadConsoleOutputAttributeImpl(const SCREEN_INFORMATION& context,
+                                                    const COORD origin,
+                                                    gsl::span<WORD> buffer,
+                                                    size_t& written) noexcept
 {
-    PCONSOLE_READCONSOLEOUTPUTSTRING_MSG const a = &m->u.consoleMsgL2.ReadConsoleOutputString;
-
-    switch (a->StringType)
-    {
-    case CONSOLE_ATTRIBUTE:
-        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::ReadConsoleOutputAttribute);
-        break;
-    case CONSOLE_ASCII:
-        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::ReadConsoleOutputCharacter, false);
-        break;
-    case CONSOLE_REAL_UNICODE:
-    case CONSOLE_FALSE_UNICODE:
-        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::ReadConsoleOutputCharacter, true);
-        break;
-    }
-
-    PVOID Buffer;
-    NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetOutputBuffer(&Buffer, &a->NumRecords));
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
+    written = 0;
 
     LockConsole();
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    ConsoleHandleData* HandleData = m->GetObjectHandle();
-    if (HandleData == nullptr)
+    try
     {
-        Status = NTSTATUS_FROM_WIN32(ERROR_INVALID_HANDLE);
-    }
+        const auto attrs = ReadOutputAttributes(context.GetActiveBuffer(), origin, buffer.size());
+        std::copy(attrs.cbegin(), attrs.cend(), buffer.begin());
+        written = attrs.size();
 
-    SCREEN_INFORMATION* pScreenInfo = nullptr;
-    if (NT_SUCCESS(Status))
-    {
-        Status = NTSTATUS_FROM_HRESULT(HandleData->GetScreenBuffer(GENERIC_READ, &pScreenInfo));
+        return S_OK;
     }
-    if (!NT_SUCCESS(Status))
+    CATCH_RETURN();
+}
+
+[[nodiscard]]
+HRESULT ApiRoutines::ReadConsoleOutputCharacterAImpl(const SCREEN_INFORMATION& context,
+                                                     const COORD origin,
+                                                     gsl::span<char> buffer,
+                                                     size_t& written) noexcept
+{
+    written = 0;
+
+    LockConsole();
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+    try
     {
-        // a region of zero size is indicated by the right and bottom coordinates being less than the left and top.
-        a->NumRecords = 0;
-    }
-    else
-    {
-        const ULONG bufferSize = a->NumRecords;
-        if (a->StringType == CONSOLE_ATTRIBUTE)
+        const auto chars = ReadOutputStringA(context.GetActiveBuffer(),
+                                             origin,
+                                             buffer.size());
+
+        // for compatibility reasons, if we receive more chars than can fit in the buffer
+            // then we don't send anything back.
+        if (chars.size() <= gsl::narrow<size_t>(buffer.size()))
         {
-            const ULONG amountToRead = bufferSize / sizeof(WORD);
-            try
-            {
-                const auto attrs = ReadOutputAttributes(pScreenInfo->GetActiveBuffer(),
-                                                        a->ReadCoord,
-                                                        amountToRead);
-                std::copy(attrs.begin(), attrs.end(), static_cast<WORD* const>(Buffer));
-                a->NumRecords = gsl::narrow<ULONG>(attrs.size());
-                Status = STATUS_SUCCESS;
-            }
-            catch (...)
-            {
-                Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-            }
-        }
-        else if (a->StringType == CONSOLE_REAL_UNICODE ||
-                 a->StringType == CONSOLE_FALSE_UNICODE)
-        {
-            const ULONG amountToRead = bufferSize / sizeof(wchar_t);
-            try
-            {
-                const auto chars = ReadOutputStringW(pScreenInfo->GetActiveBuffer(),
-                                                     a->ReadCoord,
-                                                     amountToRead);
-                if (chars.size() > amountToRead)
-                {
-                    a->NumRecords = 0;
-                }
-                else
-                {
-                    std::copy(chars.begin(), chars.end(), static_cast<wchar_t* const>(Buffer));
-                    a->NumRecords = gsl::narrow<ULONG>(chars.size());
-                }
-                Status = STATUS_SUCCESS;
-            }
-            catch (...)
-            {
-                Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-            }
-        }
-        else if (a->StringType == CONSOLE_ASCII)
-        {
-            const ULONG amountToRead = bufferSize / sizeof(char);
-            try
-            {
-                const std::vector<char> chars = ReadOutputStringA(pScreenInfo->GetActiveBuffer(),
-                                                                  a->ReadCoord,
-                                                                  amountToRead);
-                if (chars.size() > amountToRead)
-                {
-                    // for compatibility reasons, if we receive more chars than can fit in the buffer
-                    // then we don't send anything back.
-                    a->NumRecords = 0;
-                }
-                else
-                {
-                    std::copy(chars.begin(), chars.end(), static_cast<char* const>(Buffer));
-                    a->NumRecords = gsl::narrow<ULONG>(chars.size());
-                }
-                Status = STATUS_SUCCESS;
-            }
-            catch (...)
-            {
-                Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-            }
-        }
-        else
-        {
-            Status = STATUS_INVALID_PARAMETER;
+            std::copy(chars.cbegin(), chars.cend(), buffer.begin());
+            written = chars.size();
         }
 
-        if (NT_SUCCESS(Status))
-        {
-            m->SetReplyInformation(bufferSize);
-        }
+        return S_OK;
     }
+    CATCH_RETURN();
+}
 
-    UnlockConsole();
-    return Status;
+[[nodiscard]]
+HRESULT ApiRoutines::ReadConsoleOutputCharacterWImpl(const SCREEN_INFORMATION& context,
+                                                     const COORD origin,
+                                                     gsl::span<wchar_t> buffer,
+                                                     size_t& written) noexcept
+{
+    written = 0;
+
+    LockConsole();
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+    try
+    {
+        const auto chars = ReadOutputStringW(context.GetActiveBuffer(),
+                                             origin,
+                                             buffer.size());
+
+        // Only copy if the whole result will fit.
+        if (chars.size() <= gsl::narrow<size_t>(buffer.size()))
+        {
+            std::copy(chars.cbegin(), chars.cend(), buffer.begin());
+            written = chars.size();
+        }
+
+        return S_OK;
+    }
+    CATCH_RETURN();
 }
 
 // There used to be a text mode and a graphics mode flag.

@@ -827,11 +827,70 @@ HRESULT ApiDispatchers::ServerSetConsoleWindowInfo(_Inout_ CONSOLE_API_MSG * con
 }
 
 [[nodiscard]]
-HRESULT ApiDispatchers::ServerReadConsoleOutputString(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
+HRESULT ApiDispatchers::ServerReadConsoleOutputString(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const /*pbReplyPending*/)
 {
     RETURN_HR_IF(E_ACCESSDENIED, !m->GetProcessHandle()->GetPolicy().CanReadOutputBuffer());
 
-    RETURN_NTSTATUS(SrvReadConsoleOutputString(m, pbReplyPending));
+    CONSOLE_READCONSOLEOUTPUTSTRING_MSG* const a = &m->u.consoleMsgL2.ReadConsoleOutputString;
+
+    switch (a->StringType)
+    {
+    case CONSOLE_ATTRIBUTE:
+        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::ReadConsoleOutputAttribute);
+        break;
+    case CONSOLE_ASCII:
+        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::ReadConsoleOutputCharacter, false);
+        break;
+    case CONSOLE_REAL_UNICODE:
+    case CONSOLE_FALSE_UNICODE:
+        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::ReadConsoleOutputCharacter, true);
+        break;
+    }
+
+    a->NumRecords = 0; // Set to 0 records returned in case we have failures.
+
+    PVOID pvBuffer;
+    ULONG cbBuffer;
+    RETURN_IF_FAILED(m->GetOutputBuffer(&pvBuffer, &cbBuffer));
+
+    ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
+
+    SCREEN_INFORMATION* pScreenInfo;
+    RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_READ, &pScreenInfo));
+
+    size_t written;
+    switch (a->StringType)
+    {
+    case CONSOLE_ATTRIBUTE:
+    {
+        const gsl::span<WORD> buffer(reinterpret_cast<WORD*>(pvBuffer), cbBuffer / sizeof(WORD));
+        RETURN_IF_FAILED(m->_pApiRoutines->ReadConsoleOutputAttributeImpl(*pScreenInfo, a->ReadCoord, buffer, written));
+        break;
+    }
+    case CONSOLE_REAL_UNICODE:
+    case CONSOLE_FALSE_UNICODE:
+    {
+        const gsl::span<wchar_t> buffer(reinterpret_cast<wchar_t*>(pvBuffer), cbBuffer / sizeof(wchar_t));
+        RETURN_IF_FAILED(m->_pApiRoutines->ReadConsoleOutputCharacterWImpl(*pScreenInfo, a->ReadCoord, buffer, written));
+        break;
+    }
+    case CONSOLE_ASCII:
+    {
+        const gsl::span<char> buffer(reinterpret_cast<char*>(pvBuffer), cbBuffer);
+        RETURN_IF_FAILED(m->_pApiRoutines->ReadConsoleOutputCharacterAImpl(*pScreenInfo, a->ReadCoord, buffer, written));
+        break;
+    }
+    default:
+        return E_INVALIDARG;
+    }
+
+    // Report count of records now in the buffer (varies based on type)
+    RETURN_IF_FAILED(SizeTToULong(written, &a->NumRecords));
+
+    m->SetReplyInformation(cbBuffer); // Set the reply buffer size to what we were originally told the buffer size was (on the way in)
+
+    return S_OK;
 }
 
 [[nodiscard]]

@@ -11,36 +11,6 @@
 // This exists as a base class until we're all migrated over.
 
 [[nodiscard]]
-HRESULT IApiRoutines::ReadConsoleOutputAttributeImpl(const IConsoleOutputObject& /*OutContext*/,
-                                                     const COORD* const /*pSourceOrigin*/,
-                                                     _Out_writes_to_(_Param_(4), *_Param_(5)) WORD* const /*pAttributeBuffer*/,
-                                                     const ULONG /*AttributeBufferLength*/,
-                                                     _Out_ ULONG* const /*pAttributeBufferWritten*/)
-{
-    FAIL_FAST_HR(E_NOTIMPL);
-}
-
-[[nodiscard]]
-HRESULT IApiRoutines::ReadConsoleOutputCharacterAImpl(const IConsoleOutputObject& /*OutContext*/,
-                                                      const COORD* const /*pSourceOrigin*/,
-                                                      _Out_writes_to_(_Param_(4), *_Param_(5)) char* const /*pTextBuffer*/,
-                                                      const ULONG /*TextBufferLength*/,
-                                                       _Out_ ULONG* const /*pTextBufferWritten*/)
-{
-    FAIL_FAST_HR(E_NOTIMPL);
-}
-
-[[nodiscard]]
-HRESULT IApiRoutines::ReadConsoleOutputCharacterWImpl(const IConsoleOutputObject& /*OutContext*/,
-                                                      const COORD* const /*pSourceOrigin*/,
-                                                      _Out_writes_to_(_Param_(4), *_Param_(5)) wchar_t* const /*pTextBuffer*/,
-                                                      const ULONG /*TextBufferLength*/,
-                                                       _Out_ ULONG* const /*pTextBufferWritten*/)
-{
-    FAIL_FAST_HR(E_NOTIMPL);
-}
-
-[[nodiscard]]
 HRESULT IApiRoutines::WriteConsoleInputAImpl(_In_ IConsoleInputObject* const /*pInContext*/,
                                              _In_reads_(_Param_(3)) const INPUT_RECORD* const /*pInputBuffer*/,
                                              const ULONG /*InputBufferLength*/,

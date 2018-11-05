@@ -232,25 +232,22 @@ public:
                                              const SMALL_RECT& windowRect) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT ReadConsoleOutputAttributeImpl(const IConsoleOutputObject& OutContext,
-                                                   const COORD* const pSourceOrigin,
-                                                   _Out_writes_to_(AttributeBufferLength, *pAttributeBufferWritten) WORD* const pAttributeBuffer,
-                                                   const ULONG AttributeBufferLength,
-                                                   _Out_ ULONG* const pAttributeBufferWritten);
+    virtual HRESULT ReadConsoleOutputAttributeImpl(const IConsoleOutputObject& context,
+                                                   const COORD origin,
+                                                   gsl::span<WORD> buffer,
+                                                   size_t& written) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT ReadConsoleOutputCharacterAImpl(const IConsoleOutputObject& OutContext,
-                                                    const COORD* const pSourceOrigin,
-                                                    _Out_writes_to_(TextBufferLength, *pTextBufferWritten) char* const pTextBuffer,
-                                                    const ULONG TextBufferLength,
-                                                    _Out_ ULONG* const pTextBufferWritten);
+    virtual HRESULT ReadConsoleOutputCharacterAImpl(const IConsoleOutputObject& context,
+                                                    const COORD origin,
+                                                    gsl::span<char> buffer,
+                                                    size_t& written) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT ReadConsoleOutputCharacterWImpl(const IConsoleOutputObject& OutContext,
-                                                    const COORD* const pSourceOrigin,
-                                                    _Out_writes_to_(TextBufferLength, *pTextBufferWritten) wchar_t* const pTextBuffer,
-                                                    const ULONG TextBufferLength,
-                                                    _Out_ ULONG* const pTextBufferWritten);
+    virtual HRESULT ReadConsoleOutputCharacterWImpl(const IConsoleOutputObject& context,
+                                                    const COORD origin,
+                                                    gsl::span<wchar_t> buffer,
+                                                    size_t& written) noexcept = 0;
 
     [[nodiscard]]
     virtual HRESULT WriteConsoleInputAImpl(_In_ IConsoleInputObject* const pInContext,
