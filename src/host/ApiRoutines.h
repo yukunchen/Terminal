@@ -133,25 +133,25 @@ public:
 #pragma region L2
 
     [[nodiscard]]
-    virtual HRESULT FillConsoleOutputAttributeImpl(IConsoleOutputObject& OutContext,
-                                                   const WORD attribute,
-                                                   const size_t lengthToWrite,
-                                                   const COORD startingCoordinate,
-                                                   size_t& cellsModified) noexcept override;
+    HRESULT FillConsoleOutputAttributeImpl(IConsoleOutputObject& OutContext,
+                                           const WORD attribute,
+                                           const size_t lengthToWrite,
+                                           const COORD startingCoordinate,
+                                           size_t& cellsModified) noexcept override;
 
     [[nodiscard]]
-    virtual HRESULT FillConsoleOutputCharacterAImpl(IConsoleOutputObject& OutContext,
-                                                    const char character,
-                                                    const size_t lengthToWrite,
-                                                    const COORD startingCoordinate,
-                                                    size_t& cellsModified) noexcept override;
+    HRESULT FillConsoleOutputCharacterAImpl(IConsoleOutputObject& OutContext,
+                                            const char character,
+                                            const size_t lengthToWrite,
+                                            const COORD startingCoordinate,
+                                            size_t& cellsModified) noexcept override;
 
     [[nodiscard]]
-    virtual HRESULT FillConsoleOutputCharacterWImpl(IConsoleOutputObject& OutContext,
-                                                    const wchar_t character,
-                                                    const size_t lengthToWrite,
-                                                    const COORD startingCoordinate,
-                                                    size_t& cellsModified) noexcept override;
+    HRESULT FillConsoleOutputCharacterWImpl(IConsoleOutputObject& OutContext,
+                                            const wchar_t character,
+                                            const size_t lengthToWrite,
+                                            const COORD startingCoordinate,
+                                            size_t& cellsModified) noexcept override;
 
     //// Process based. Restrict in protocol side?
     //HRESULT GenerateConsoleCtrlEventImpl(const ULONG ProcessGroupFilter,
@@ -263,22 +263,22 @@ public:
     //                                        _Out_ SMALL_RECT* const pAffectedRectangle);
 
     [[nodiscard]]
-    virtual HRESULT WriteConsoleOutputAttributeImpl(IConsoleOutputObject& OutContext,
-                                                    const std::basic_string_view<WORD> attrs,
-                                                    const COORD target,
-                                                    size_t& used) noexcept override;
+    HRESULT WriteConsoleOutputAttributeImpl(IConsoleOutputObject& OutContext,
+                                            const std::basic_string_view<WORD> attrs,
+                                            const COORD target,
+                                            size_t& used) noexcept override;
 
     [[nodiscard]]
-    virtual HRESULT WriteConsoleOutputCharacterAImpl(IConsoleOutputObject& OutContext,
-                                                     const std::string_view text,
-                                                     const COORD target,
-                                                     size_t& used) noexcept override;
+    HRESULT WriteConsoleOutputCharacterAImpl(IConsoleOutputObject& OutContext,
+                                             const std::string_view text,
+                                             const COORD target,
+                                             size_t& used) noexcept override;
 
     [[nodiscard]]
-    virtual HRESULT WriteConsoleOutputCharacterWImpl(IConsoleOutputObject& OutContext,
-                                                     const std::wstring_view text,
-                                                     const COORD target,
-                                                     size_t& used) noexcept override;
+    HRESULT WriteConsoleOutputCharacterWImpl(IConsoleOutputObject& OutContext,
+                                             const std::wstring_view text,
+                                             const COORD target,
+                                             size_t& used) noexcept override;
 
     //HRESULT ReadConsoleOutputA(_In_ SCREEN_INFORMATION* const pContext,
     //                                   _Out_writes_(pTextBufferSize->X * pTextBufferSize->Y) CHAR_INFO* const pTextBuffer,
@@ -295,26 +295,24 @@ public:
     //                                   _Out_ SMALL_RECT* const pReadRectangle);
 
     [[nodiscard]]
-    HRESULT GetConsoleTitleAImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) char* const psTitleBuffer,
-                                 const size_t cchTitleBufferSize,
-                                 _Out_ size_t* const pcchTitleBufferWritten,
-                                 _Out_ size_t* const pcchTitleBufferNeeded) override;
-
-    void GetConsoleTitleWImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) wchar_t* const pwsTitleBuffer,
-                              const size_t cchTitleBufferSize,
-                              _Out_ size_t* const pcchTitleBufferWritten,
-                              _Out_ size_t* const pcchTitleBufferNeeded) override;
+    HRESULT GetConsoleTitleAImpl(gsl::span<char> title,
+                                 size_t& written,
+                                 size_t& needed) noexcept override;
 
     [[nodiscard]]
-    HRESULT GetConsoleOriginalTitleAImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) char* const psTitleBuffer,
-                                         const size_t cchTitleBufferSize,
-                                         _Out_ size_t* const pcchTitleBufferWritten,
-                                         _Out_ size_t* const pcchTitleBufferNeeded) override;
+    HRESULT GetConsoleTitleWImpl(gsl::span<wchar_t> title,
+                                 size_t& written,
+                                 size_t& needed) noexcept override;
 
-    void GetConsoleOriginalTitleWImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) wchar_t* const pwsTitleBuffer,
-                                      const size_t cchTitleBufferSize,
-                                      _Out_ size_t* const pcchTitleBufferWritten,
-                                      _Out_ size_t* const pcchTitleBufferNeeded) override;
+    [[nodiscard]]
+    HRESULT GetConsoleOriginalTitleAImpl(gsl::span<char> title,
+                                         size_t& written,
+                                         size_t& needed) noexcept override;
+
+    [[nodiscard]]
+    HRESULT GetConsoleOriginalTitleWImpl(gsl::span<wchar_t> title,
+                                         size_t& written,
+                                         size_t& needed) noexcept override;
 
     [[nodiscard]]
     HRESULT SetConsoleTitleAImpl(const std::string_view title) noexcept override;
@@ -346,92 +344,92 @@ public:
     void GetConsoleDisplayModeImpl(ULONG& flags) noexcept override;
 
     [[nodiscard]]
-    virtual HRESULT AddConsoleAliasAImpl(const std::string_view source,
-                                         const std::string_view target,
-                                         const std::string_view exeName) noexcept override;
+    HRESULT AddConsoleAliasAImpl(const std::string_view source,
+                                 const std::string_view target,
+                                 const std::string_view exeName) noexcept override;
 
     [[nodiscard]]
-    virtual HRESULT AddConsoleAliasWImpl(const std::wstring_view source,
-                                         const std::wstring_view target,
-                                         const std::wstring_view exeName) noexcept override;
+    HRESULT AddConsoleAliasWImpl(const std::wstring_view source,
+                                 const std::wstring_view target,
+                                 const std::wstring_view exeName) noexcept override;
 
     [[nodiscard]]
-    virtual HRESULT GetConsoleAliasAImpl(const std::string_view source,
-                                         gsl::span<char> target,
-                                         size_t& written,
-                                         const std::string_view exeName) noexcept override;
+    HRESULT GetConsoleAliasAImpl(const std::string_view source,
+                                 gsl::span<char> target,
+                                 size_t& written,
+                                 const std::string_view exeName) noexcept override;
 
     [[nodiscard]]
-    virtual HRESULT GetConsoleAliasWImpl(const std::wstring_view source,
-                                         gsl::span<wchar_t> target,
-                                         size_t& written,
-                                         const std::wstring_view exeName) noexcept override;
+    HRESULT GetConsoleAliasWImpl(const std::wstring_view source,
+                                 gsl::span<wchar_t> target,
+                                 size_t& written,
+                                 const std::wstring_view exeName) noexcept override;
 
     [[nodiscard]]
-    virtual HRESULT GetConsoleAliasesLengthAImpl(const std::string_view exeName,
-                                                 size_t& bufferRequired) noexcept override;
+    HRESULT GetConsoleAliasesLengthAImpl(const std::string_view exeName,
+                                         size_t& bufferRequired) noexcept override;
 
     [[nodiscard]]
-    virtual HRESULT GetConsoleAliasesLengthWImpl(const std::wstring_view exeName,
-                                                 size_t& bufferRequired) noexcept override;
+    HRESULT GetConsoleAliasesLengthWImpl(const std::wstring_view exeName,
+                                         size_t& bufferRequired) noexcept override;
 
     [[nodiscard]]
-    virtual HRESULT GetConsoleAliasExesLengthAImpl(size_t& bufferRequired) noexcept override;
+    HRESULT GetConsoleAliasExesLengthAImpl(size_t& bufferRequired) noexcept override;
 
     [[nodiscard]]
-    virtual HRESULT GetConsoleAliasExesLengthWImpl(size_t& bufferRequired) noexcept override;
+    HRESULT GetConsoleAliasExesLengthWImpl(size_t& bufferRequired) noexcept override;
 
     [[nodiscard]]
-    virtual HRESULT GetConsoleAliasesAImpl(const std::string_view exeName,
-                                           gsl::span<char> alias,
-                                           size_t& written) noexcept override;
+    HRESULT GetConsoleAliasesAImpl(const std::string_view exeName,
+                                   gsl::span<char> alias,
+                                   size_t& written) noexcept override;
 
     [[nodiscard]]
-    virtual HRESULT GetConsoleAliasesWImpl(const std::wstring_view exeName,
-                                           gsl::span<wchar_t> alias,
-                                           size_t& written) noexcept override;
+    HRESULT GetConsoleAliasesWImpl(const std::wstring_view exeName,
+                                   gsl::span<wchar_t> alias,
+                                   size_t& written) noexcept override;
 
     [[nodiscard]]
-    virtual HRESULT GetConsoleAliasExesAImpl(gsl::span<char> aliasExes,
-                                             size_t& written) noexcept override;
+    HRESULT GetConsoleAliasExesAImpl(gsl::span<char> aliasExes,
+                                     size_t& written) noexcept override;
 
     [[nodiscard]]
-    virtual HRESULT GetConsoleAliasExesWImpl(gsl::span<wchar_t> aliasExes,
-                                             size_t& written) noexcept override;
+    HRESULT GetConsoleAliasExesWImpl(gsl::span<wchar_t> aliasExes,
+                                     size_t& written) noexcept override;
 
 #pragma region CMDext Private API
 
     [[nodiscard]]
-    virtual HRESULT ExpungeConsoleCommandHistoryAImpl(const std::string_view exeName) noexcept override;
+    HRESULT ExpungeConsoleCommandHistoryAImpl(const std::string_view exeName) noexcept override;
 
     [[nodiscard]]
-    virtual HRESULT ExpungeConsoleCommandHistoryWImpl(const std::wstring_view exeName) noexcept override;
+    HRESULT ExpungeConsoleCommandHistoryWImpl(const std::wstring_view exeName) noexcept override;
 
     [[nodiscard]]
-    virtual HRESULT SetConsoleNumberOfCommandsAImpl(const std::string_view exeName,
-                                                    const size_t numberOfCommands) noexcept override;
+    HRESULT SetConsoleNumberOfCommandsAImpl(const std::string_view exeName,
+                                            const size_t numberOfCommands) noexcept override;
 
     [[nodiscard]]
-    virtual HRESULT SetConsoleNumberOfCommandsWImpl(const std::wstring_view exeName,
-                                                    const size_t numberOfCommands) noexcept override;
+    HRESULT SetConsoleNumberOfCommandsWImpl(const std::wstring_view exeName,
+                                            const size_t numberOfCommands) noexcept override;
 
     [[nodiscard]]
-    virtual HRESULT GetConsoleCommandHistoryLengthAImpl(const std::string_view exeName,
-                                                        size_t& length) noexcept override;
+    HRESULT GetConsoleCommandHistoryLengthAImpl(const std::string_view exeName,
+                                                size_t& length) noexcept override;
 
     [[nodiscard]]
-    virtual HRESULT GetConsoleCommandHistoryLengthWImpl(const std::wstring_view exeName,
-                                                        size_t& length) noexcept override;
+    HRESULT GetConsoleCommandHistoryLengthWImpl(const std::wstring_view exeName,
+                                                size_t& length) noexcept override;
 
     [[nodiscard]]
-    virtual HRESULT GetConsoleCommandHistoryAImpl(const std::string_view exeName,
-                                                  gsl::span<char> commandHistory,
-                                                  size_t& written) noexcept override;
+    HRESULT GetConsoleCommandHistoryAImpl(const std::string_view exeName,
+                                          gsl::span<char> commandHistory,
+                                          size_t& written) noexcept override;
 
     [[nodiscard]]
-    virtual HRESULT GetConsoleCommandHistoryWImpl(const std::wstring_view exeName,
-                                                  gsl::span<wchar_t> commandHistory,
-                                                  size_t& written) noexcept override;
+    HRESULT GetConsoleCommandHistoryWImpl(const std::wstring_view exeName,
+                                          gsl::span<wchar_t> commandHistory,
+                                          size_t& written) noexcept override;
 
 #pragma endregion
 

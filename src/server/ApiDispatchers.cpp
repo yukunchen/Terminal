@@ -532,29 +532,29 @@ HRESULT ApiDispatchers::ServerFillConsoleOutput(_Inout_ CONSOLE_API_MSG * const 
     {
     case CONSOLE_ATTRIBUTE:
     {
-        hr = m->_pApiRoutines->FillConsoleOutputAttributeImpl(*pScreenInfo, 
-                                                              a->Element, 
-                                                              fill, 
-                                                              a->WriteCoord, 
+        hr = m->_pApiRoutines->FillConsoleOutputAttributeImpl(*pScreenInfo,
+                                                              a->Element,
+                                                              fill,
+                                                              a->WriteCoord,
                                                               amountWritten);
         break;
     }
     case CONSOLE_REAL_UNICODE:
     case CONSOLE_FALSE_UNICODE:
     {
-        hr = m->_pApiRoutines->FillConsoleOutputCharacterWImpl(*pScreenInfo, 
-                                                               a->Element, 
-                                                               fill, 
-                                                               a->WriteCoord, 
+        hr = m->_pApiRoutines->FillConsoleOutputCharacterWImpl(*pScreenInfo,
+                                                               a->Element,
+                                                               fill,
+                                                               a->WriteCoord,
                                                                amountWritten);
         break;
     }
     case CONSOLE_ASCII:
     {
-        hr = m->_pApiRoutines->FillConsoleOutputCharacterAImpl(*pScreenInfo, 
-                                                               static_cast<char>(a->Element), 
-                                                               fill, 
-                                                               a->WriteCoord, 
+        hr = m->_pApiRoutines->FillConsoleOutputCharacterAImpl(*pScreenInfo,
+                                                               static_cast<char>(a->Element),
+                                                               fill,
+                                                               a->WriteCoord,
                                                                amountWritten);
         break;
     }
@@ -922,7 +922,7 @@ HRESULT ApiDispatchers::ServerWriteConsoleOutputString(_Inout_ CONSOLE_API_MSG *
     case CONSOLE_ASCII:
     {
         const std::string_view text(reinterpret_cast<char*>(pvBuffer), cbBufferSize);
-        
+
         hr = m->_pApiRoutines->WriteConsoleOutputCharacterAImpl(*pScreenInfo,
                                                                 text,
                                                                 a->WriteCoord,
@@ -934,12 +934,12 @@ HRESULT ApiDispatchers::ServerWriteConsoleOutputString(_Inout_ CONSOLE_API_MSG *
     case CONSOLE_FALSE_UNICODE:
     {
         const std::wstring_view text(reinterpret_cast<wchar_t*>(pvBuffer), cbBufferSize / sizeof(wchar_t));
-     
+
         hr = m->_pApiRoutines->WriteConsoleOutputCharacterWImpl(*pScreenInfo,
                                                                 text,
                                                                 a->WriteCoord,
                                                                 used);
-        
+
         break;
     }
     case CONSOLE_ATTRIBUTE:
@@ -984,57 +984,45 @@ HRESULT ApiDispatchers::ServerGetConsoleTitle(_Inout_ CONSOLE_API_MSG * const m,
     HRESULT hr = S_OK;
     if (a->Unicode)
     {
-        wchar_t* const pwsBuffer = reinterpret_cast<wchar_t*>(pvBuffer);
-        size_t const cchBuffer = cbBuffer / sizeof(wchar_t);
-        size_t cchWritten;
-        size_t cchNeeded;
+        gsl::span<wchar_t> buffer(reinterpret_cast<wchar_t*>(pvBuffer), cbBuffer / sizeof(wchar_t));
+        size_t written;
+        size_t needed;
         if (a->Original)
         {
-            m->_pApiRoutines->GetConsoleOriginalTitleWImpl(pwsBuffer,
-                                                           cchBuffer,
-                                                           &cchWritten,
-                                                           &cchNeeded);
+            // This API traditionally doesn't return an HRESULT. Log and discard.
+            LOG_IF_FAILED(m->_pApiRoutines->GetConsoleOriginalTitleWImpl(buffer, written, needed));
         }
         else
         {
-            m->_pApiRoutines->GetConsoleTitleWImpl(pwsBuffer,
-                                                   cchBuffer,
-                                                   &cchWritten,
-                                                   &cchNeeded);
+            // This API traditionally doesn't return an HRESULT. Log and discard.
+            LOG_IF_FAILED(m->_pApiRoutines->GetConsoleTitleWImpl(buffer, written, needed));
         }
 
         // We must return the needed length of the title string in the TitleLength.
-        LOG_IF_FAILED(SizeTToULong(cchNeeded, &a->TitleLength));
+        LOG_IF_FAILED(SizeTToULong(needed, &a->TitleLength));
 
         // We must return the actually written length of the title string in the reply.
-        m->SetReplyInformation(cchWritten * sizeof(wchar_t));
+        m->SetReplyInformation(written * sizeof(wchar_t));
     }
     else
     {
-        char* const psBuffer = reinterpret_cast<char*>(pvBuffer);
-        size_t const cchBuffer = cbBuffer;
-        size_t cchWritten;
-        size_t cchNeeded;
+        gsl::span<char> buffer(reinterpret_cast<char*>(pvBuffer), cbBuffer);
+        size_t written;
+        size_t needed;
         if (a->Original)
         {
-            hr = m->_pApiRoutines->GetConsoleOriginalTitleAImpl(psBuffer,
-                                                                cchBuffer,
-                                                                &cchWritten,
-                                                                &cchNeeded);
+            hr = m->_pApiRoutines->GetConsoleOriginalTitleAImpl(buffer, written, needed);
         }
         else
         {
-            hr = m->_pApiRoutines->GetConsoleTitleAImpl(psBuffer,
-                                                        cchBuffer,
-                                                        &cchWritten,
-                                                        &cchNeeded);
+            hr = m->_pApiRoutines->GetConsoleTitleAImpl(buffer, written, needed);
         }
 
         // We must return the needed length of the title string in the TitleLength.
-        LOG_IF_FAILED(SizeTToULong(cchNeeded, &a->TitleLength));
+        LOG_IF_FAILED(SizeTToULong(needed, &a->TitleLength));
 
         // We must return the actually written length of the title string in the reply.
-        m->SetReplyInformation(cchWritten * sizeof(char));
+        m->SetReplyInformation(written * sizeof(char));
     }
 
     return hr;

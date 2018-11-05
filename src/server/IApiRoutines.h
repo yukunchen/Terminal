@@ -315,26 +315,24 @@ public:
                                        _Out_ SMALL_RECT* const pReadRectangle);
 
     [[nodiscard]]
-    virtual HRESULT GetConsoleTitleAImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) char* const psTitleBuffer,
-                                         const size_t cchTitleBufferSize,
-                                         _Out_ size_t* const pcchTitleBufferWritten,
-                                         _Out_ size_t* const pcchTitleBufferNeeded) = 0;
-
-    virtual void GetConsoleTitleWImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) wchar_t* const pwsTitleBuffer,
-                                      const size_t cchTitleBufferSize,
-                                      _Out_ size_t* const pcchTitleBufferWritten,
-                                      _Out_ size_t* const pcchTitleBufferNeeded) = 0;
+    virtual HRESULT GetConsoleTitleAImpl(gsl::span<char> title,
+                                         size_t& written,
+                                         size_t& needed) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT GetConsoleOriginalTitleAImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) char* const psTitleBuffer,
-                                                 const size_t cchTitleBufferSize,
-                                                 _Out_ size_t* const pcchTitleBufferWritten,
-                                                 _Out_ size_t* const pcchTitleBufferNeeded) = 0;
+    virtual HRESULT GetConsoleTitleWImpl(gsl::span<wchar_t> title,
+                                         size_t& written,
+                                         size_t& needed) noexcept = 0;
 
-    virtual void GetConsoleOriginalTitleWImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) wchar_t* const pwsTitleBuffer,
-                                              const size_t cchTitleBufferSize,
-                                              _Out_ size_t* const pcchTitleBufferWritten,
-                                              _Out_ size_t* const pcchTitleBufferNeeded) = 0;
+    [[nodiscard]]
+    virtual HRESULT GetConsoleOriginalTitleAImpl(gsl::span<char> title,
+                                                 size_t& written,
+                                                 size_t& needed) noexcept = 0;
+
+    [[nodiscard]]
+    virtual HRESULT GetConsoleOriginalTitleWImpl(gsl::span<wchar_t> title,
+                                              size_t& written,
+                                              size_t& needed) noexcept = 0;
 
     [[nodiscard]]
     virtual HRESULT SetConsoleTitleAImpl(const std::string_view title) noexcept = 0;
