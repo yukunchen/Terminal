@@ -250,16 +250,16 @@ public:
                                                     size_t& written) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT WriteConsoleInputAImpl(_In_ IConsoleInputObject* const pInContext,
-                                           _In_reads_(InputBufferLength) const INPUT_RECORD* const pInputBuffer,
-                                           const ULONG InputBufferLength,
-                                           _Out_ ULONG* const pInputBufferRead);
+    virtual HRESULT WriteConsoleInputAImpl(IConsoleInputObject& context,
+                                           const std::basic_string_view<INPUT_RECORD> buffer,
+                                           size_t& written,
+                                           const bool append) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT WriteConsoleInputWImpl(_In_ IConsoleInputObject* const pInContext,
-                                           _In_reads_(InputBufferLength) const INPUT_RECORD* const pInputBuffer,
-                                           const ULONG InputBufferLength,
-                                           _Out_ ULONG* const pInputBufferRead);
+    virtual HRESULT WriteConsoleInputWImpl(IConsoleInputObject& context,
+                                           const std::basic_string_view<INPUT_RECORD> buffer,
+                                           size_t& written,
+                                           const bool append) noexcept = 0;
 
     [[nodiscard]]
     virtual HRESULT WriteConsoleOutputAImpl(IConsoleOutputObject& OutContext,
@@ -328,8 +328,8 @@ public:
 
     [[nodiscard]]
     virtual HRESULT GetConsoleOriginalTitleWImpl(gsl::span<wchar_t> title,
-                                              size_t& written,
-                                              size_t& needed) noexcept = 0;
+                                                 size_t& written,
+                                                 size_t& needed) noexcept = 0;
 
     [[nodiscard]]
     virtual HRESULT SetConsoleTitleAImpl(const std::string_view title) noexcept = 0;

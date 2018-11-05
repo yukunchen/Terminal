@@ -36,7 +36,7 @@ InteractDispatch::InteractDispatch(ConGetSet* const pConApi)
 bool InteractDispatch::WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& inputEvents)
 {
     size_t dwWritten = 0;
-    return !!_pConApi->WriteConsoleInputW(inputEvents, dwWritten);
+    return !!_pConApi->PrivateWriteConsoleInputW(inputEvents, dwWritten);
 }
 
 // Method Description:

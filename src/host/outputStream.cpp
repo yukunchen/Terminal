@@ -283,15 +283,15 @@ BOOL ConhostInternalGetSet::PrivateBoldText(const bool bolded)
 // - eventsWritten - on output, the number of events written
 // Return Value:
 // - TRUE if successful (see DoSrvWriteConsoleInput). FALSE otherwise.
-BOOL ConhostInternalGetSet::WriteConsoleInputW(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
-                                               _Out_ size_t& eventsWritten)
+BOOL ConhostInternalGetSet::PrivateWriteConsoleInputW(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
+                                                      _Out_ size_t& eventsWritten)
 {
     eventsWritten = 0;
-    return SUCCEEDED(DoSrvWriteConsoleInput(_io.GetActiveInputBuffer(),
-                                            events,
-                                            eventsWritten,
-                                            true, // unicode
-                                            true)); // append
+
+    return SUCCEEDED(DoSrvPrivateWriteConsoleInputW(_io.GetActiveInputBuffer(),
+                                                    events,
+                                                    eventsWritten,
+                                                    true)); // append
 }
 
 // Routine Description:
