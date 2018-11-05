@@ -61,11 +61,11 @@ public:
 
     WORD GetLegacyAttributes() const noexcept;
 
-    COLORREF CalculateRgbForeground() const;
-    COLORREF CalculateRgbBackground() const;
+    COLORREF CalculateRgbForeground(std::basic_string_view<COLORREF> colorTable, COLORREF defaultColor) const;
+    COLORREF CalculateRgbBackground(std::basic_string_view<COLORREF> colorTable, COLORREF defaultColor) const;
 
-    COLORREF GetRgbForeground() const;
-    COLORREF GetRgbBackground() const;
+    COLORREF GetRgbForeground(std::basic_string_view<COLORREF> colorTable, COLORREF defaultColor) const;
+    COLORREF GetRgbBackground(std::basic_string_view<COLORREF> colorTable, COLORREF defaultColor) const;
 
     bool IsLeadingByte() const noexcept;
     bool IsTrailingByte() const noexcept;
@@ -105,8 +105,8 @@ public:
     bool BackgroundIsDefault() const noexcept;
 
 private:
-    COLORREF _GetRgbForeground() const;
-    COLORREF _GetRgbBackground() const;
+    // COLORREF _GetRgbForeground(std::basic_string_view<COLORREF>& colorTable, COLORREF defaultColor) const;
+    // COLORREF _GetRgbBackground(std::basic_string_view<COLORREF>& colorTable, COLORREF defaultColor) const;
 
     bool _IsReverseVideo() const noexcept;
 
@@ -181,11 +181,12 @@ namespace WEX {
             static WEX::Common::NoThrowString ToString(const TextAttribute& attr)
             {
                 return WEX::Common::NoThrowString().Format(
-                    L"{IsLegacy:%d,GetLegacyAttributes:0x%02x,FG:0x%06x,BG:0x%06x,bold:%d,default:(%d,%d)}",
+                    // L"{IsLegacy:%d,GetLegacyAttributes:0x%02x,FG:0x%06x,BG:0x%06x,bold:%d,default:(%d,%d)}",
+                    L"{IsLegacy:%d,GetLegacyAttributes:0x%02x,FG:%s,BG:%s,bold:%d,default:(%d,%d)}",
                     attr.IsLegacy(),
                     attr.GetLegacyAttributes(),
-                    attr.CalculateRgbForeground(),
-                    attr.CalculateRgbBackground(),
+                    L"TODO",// attr.CalculateRgbForeground(),
+                    L"TODO",// attr.CalculateRgbBackground(),
                     attr.IsBold(),
                     attr.ForegroundIsDefault(),
                     attr.BackgroundIsDefault()

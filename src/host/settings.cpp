@@ -1026,7 +1026,6 @@ COLORREF Settings::GetColorTableEntry(const size_t index) const
     }
 }
 
-
 // Routine Description:
 // - Generates a legacy attribute from the given TextAttributes.
 //     This needs to be a method on the Settings because the generated index
@@ -1044,8 +1043,8 @@ WORD Settings::GenerateLegacyAttributes(const TextAttribute attributes) const
     }
     // Get the Line drawing attributes and stash those, we'll need to preserve them.
     const WORD wNonColorAttributes = wLegacyOriginal & (~0xFF);
-    const COLORREF rgbForeground = attributes.GetRgbForeground();
-    const COLORREF rgbBackground = attributes.GetRgbBackground();
+    const COLORREF rgbForeground = GetForegroundColor(attributes);
+    const COLORREF rgbBackground = GetBackgroundColor(attributes);
     const WORD wForegroundIndex = FindNearestTableIndex(rgbForeground);
     const WORD wBackgroundIndex = FindNearestTableIndex(rgbBackground);
     const WORD wCompleteAttr = (wNonColorAttributes) | (wBackgroundIndex << 4) | (wForegroundIndex);
@@ -1142,4 +1141,46 @@ void Settings::SetTerminalScrolling(const bool terminalScrollingEnabled) noexcep
 bool Settings::GetUseDx() const noexcept
 {
     return _fUseDx;
+}
+
+// Method Description:
+// - Return the default foreground color of the console. If the settings are
+//      configured to have a default foreground color (separate from the color
+//      table), this will return that value. Otherwise it will return the value
+//      from the colortable corresponding to our default attributes.
+// Arguments:
+// - <none>
+// Return Value:
+// - the default foreground color of the console.
+COLORREF Settings::CalculateDefaultForeground() const
+{
+    const auto fg = GetDefaultForegroundColor();
+    return fg != INVALID_COLOR ? fg : ForegroundColor(GetFillAttribute(), GetColorTable(), GetColorTableSize());
+}
+
+// Method Description:
+// - Return the default background color of the console. If the settings are
+//      configured to have a default background color (separate from the color
+//      table), this will return that value. Otherwise it will return the value
+//      from the colortable corresponding to our default attributes.
+// Arguments:
+// - <none>
+// Return Value:
+// - the default background color of the console.
+COLORREF Settings::CalculateDefaultBackground() const
+{
+    const auto bg = GetDefaultBackgroundColor();
+    return bg != INVALID_COLOR ? bg : BackgroundColor(GetFillAttribute(), GetColorTable(), GetColorTableSize());
+}
+
+COLORREF Settings::GetForegroundColor(const TextAttribute& attr) const
+{
+    const auto tableView = std::basic_string_view<COLORREF>(&GetColorTable()[0], GetColorTableSize());
+    return attr.GetRgbForeground(tableView, CalculateDefaultForeground());
+}
+
+COLORREF Settings::GetBackgroundColor(const TextAttribute& attr) const
+{
+    const auto tableView = std::basic_string_view<COLORREF>(&GetColorTable()[0], GetColorTableSize());
+    return attr.GetRgbBackground(tableView, CalculateDefaultBackground());
 }

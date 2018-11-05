@@ -25,12 +25,15 @@ namespace WEX {
         public:
             static WEX::Common::NoThrowString ToString(const TextAttributeRun& tar)
             {
-                return WEX::Common::NoThrowString().Format(L"Length: %d, IsLegacy: %d, LegacyAttr: %d, RgbFg: %d, RgbBg: %d",
-                                                           tar.GetLength(),
-                                                           tar.GetAttributes().IsLegacy(),
-                                                           tar.GetAttributes().GetLegacyAttributes(),
-                                                           tar.GetAttributes().CalculateRgbForeground(),
-                                                           tar.GetAttributes().CalculateRgbBackground());
+                tar;
+                return L"TODO";
+                // TODO: re-implement logging a TAR's attributes
+                // return WEX::Common::NoThrowString().Format(L"Length: %d, IsLegacy: %d, LegacyAttr: %d, RgbFg: %d, RgbBg: %d",
+                //                                            tar.GetLength(),
+                //                                            tar.GetAttributes().IsLegacy(),
+                //                                            tar.GetAttributes().GetLegacyAttributes(),
+                //                                            tar.GetAttributes().CalculateRgbForeground(),
+                //                                            tar.GetAttributes().CalculateRgbBackground());
             }
         };
 

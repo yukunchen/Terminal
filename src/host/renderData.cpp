@@ -110,3 +110,15 @@ const std::wstring RenderData::GetConsoleTitle() const
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetTitleAndPrefix();
 }
+
+const COLORREF RenderData::GetForeground(const TextAttribute& attr) const
+{
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.GetForegroundColor(attr);
+}
+
+const COLORREF RenderData::GetBackground(const TextAttribute& attr) const
+{
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.GetBackgroundColor(attr);
+}

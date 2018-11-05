@@ -6,12 +6,7 @@
 
 #include "precomp.h"
 #include "TextAttribute.hpp"
-
-#pragma warning(push)
-#pragma warning(disable: ALL_CPPCORECHECK_WARNINGS)
-#include "../interactivity/inc/ServiceLocator.hpp"
-#pragma warning(pop)
-
+#include "..\..\inc\conattrs.hpp"
 
 WORD TextAttribute::GetLegacyAttributes() const noexcept
 {
@@ -27,9 +22,10 @@ bool TextAttribute::IsLegacy() const noexcept
 // - None
 // Return Value:
 // - color that should be displayed as the foreground color
-COLORREF TextAttribute::CalculateRgbForeground() const
+COLORREF TextAttribute::CalculateRgbForeground(std::basic_string_view<COLORREF> colorTable,
+                                               COLORREF defaultColor) const
 {
-    return _IsReverseVideo() ? GetRgbBackground() : GetRgbForeground();
+    return _IsReverseVideo() ? GetRgbBackground(colorTable, defaultColor) : GetRgbForeground(colorTable, defaultColor);
 }
 
 // Routine Description:
@@ -38,9 +34,10 @@ COLORREF TextAttribute::CalculateRgbForeground() const
 // - None
 // Return Value:
 // - color that should be displayed as the background color
-COLORREF TextAttribute::CalculateRgbBackground() const
+COLORREF TextAttribute::CalculateRgbBackground(std::basic_string_view<COLORREF> colorTable,
+                                               COLORREF defaultColor) const
 {
-    return _IsReverseVideo() ? GetRgbForeground() : GetRgbBackground();
+    return _IsReverseVideo() ? GetRgbForeground(colorTable, defaultColor) : GetRgbBackground(colorTable, defaultColor);
 }
 
 // Routine Description:
@@ -50,9 +47,11 @@ COLORREF TextAttribute::CalculateRgbBackground() const
 // - None
 // Return Value:
 // - color that is stored as the foreground color
-COLORREF TextAttribute::GetRgbForeground() const
+COLORREF TextAttribute::GetRgbForeground(std::basic_string_view<COLORREF> colorTable,
+                                         COLORREF /*defaultColor*/) const
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    // TODO: GetRgbForeground should be affected by our boldness -
+    // Bold should use the top 8 of the color table if we're a legacy attribute.
     COLORREF rgbColor{ 0 };
     if (_fUseRgbColor)
     {
@@ -63,10 +62,9 @@ COLORREF TextAttribute::GetRgbForeground() const
         const byte iColorTableIndex = (LOBYTE(GetLegacyAttributes()) & FG_ATTRS);
 
         FAIL_FAST_IF(!(iColorTableIndex >= 0));
-        FAIL_FAST_IF(!(iColorTableIndex < gci.GetColorTableSize()));
+        FAIL_FAST_IF(!(iColorTableIndex < colorTable.size()));
 
-        const auto table = gsl::make_span(gci.GetColorTable(), gci.GetColorTableSize());
-        rgbColor = table[iColorTableIndex];
+        rgbColor = colorTable[iColorTableIndex];
     }
     return rgbColor;
 }
@@ -78,9 +76,9 @@ COLORREF TextAttribute::GetRgbForeground() const
 // - None
 // Return Value:
 // - color that is stored as the background color
-COLORREF TextAttribute::GetRgbBackground() const
+COLORREF TextAttribute::GetRgbBackground(std::basic_string_view<COLORREF> colorTable,
+                                         COLORREF /*defaultColor*/) const
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     COLORREF rgbColor{ 0 };
     if (_fUseRgbColor)
     {
@@ -91,10 +89,9 @@ COLORREF TextAttribute::GetRgbBackground() const
         const byte iColorTableIndex = (LOBYTE(_wAttrLegacy) & BG_ATTRS) >> 4;
 
         FAIL_FAST_IF(!(iColorTableIndex >= 0));
-        FAIL_FAST_IF(!(iColorTableIndex < gci.GetColorTableSize()));
+        FAIL_FAST_IF(!(iColorTableIndex < colorTable.size()));
 
-        const auto table = gsl::make_span(gci.GetColorTable(), gci.GetColorTableSize());
-        rgbColor = table[iColorTableIndex];
+        rgbColor = colorTable[iColorTableIndex];
     }
     return rgbColor;
 }
@@ -119,7 +116,9 @@ void TextAttribute::SetForeground(const COLORREF rgbForeground)
     _rgbForeground = rgbForeground;
     if (!_fUseRgbColor)
     {
-        _rgbBackground = GetRgbBackground();
+        // TODO: The other color should not be affected by a change in this onw
+        // Leave the other color unchanged.
+        // _rgbBackground = GetRgbBackground();
     }
     _fUseRgbColor = true;
 }
@@ -129,7 +128,9 @@ void TextAttribute::SetBackground(const COLORREF rgbBackground)
     _rgbBackground = rgbBackground;
     if (!_fUseRgbColor)
     {
-        _rgbForeground = GetRgbForeground();
+        // TODO: The other color should not be affected by a change in this onw
+        // Leave the other color unchanged.
+        // _rgbForeground = GetRgbForeground();
     }
     _fUseRgbColor = true;
 }
@@ -208,27 +209,28 @@ void TextAttribute::Debolden() noexcept
 
 void TextAttribute::_SetBoldness(const bool isBold) noexcept
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    // TODO: We should mark the attributes as bold, but GetColor should be affected by our boldness.
+    // const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-    // If we're changing our boldness, and we're an RGB attr, check if our color
-    //      is a darkened/brightened version of a color table entry. If it is,
-    //      then we'll instead use the bright/dark version of that color table
-    //      value as our new RGB color.
-    if ((_isBold != isBold) && _fUseRgbColor)
-    {
-        const auto table = gsl::make_span(gci.GetColorTable(), gci.GetColorTableSize());
-        const size_t start = isBold ? 0 : gci.GetColorTableSize()/2;
-        const size_t end = isBold ? gci.GetColorTableSize()/2 : gci.GetColorTableSize();
-        const auto shift = FOREGROUND_INTENSITY * (isBold ? 1 : -1);
-        for (size_t i = start; i < end; i++)
-        {
-            if (table[i] == _rgbForeground)
-            {
-                _rgbForeground = table[i + shift];
-                break;
-            }
-        }
-    }
+    // // If we're changing our boldness, and we're an RGB attr, check if our color
+    // //      is a darkened/brightened version of a color table entry. If it is,
+    // //      then we'll instead use the bright/dark version of that color table
+    // //      value as our new RGB color.
+    // if ((_isBold != isBold) && _fUseRgbColor)
+    // {
+    //     const auto table = gsl::make_span(gci.GetColorTable(), gci.GetColorTableSize());
+    //     const size_t start = isBold ? 0 : gci.GetColorTableSize()/2;
+    //     const size_t end = isBold ? gci.GetColorTableSize()/2 : gci.GetColorTableSize();
+    //     const auto shift = FOREGROUND_INTENSITY * (isBold ? 1 : -1);
+    //     for (size_t i = start; i < end; i++)
+    //     {
+    //         if (table[i] == _rgbForeground)
+    //         {
+    //             _rgbForeground = table[i + shift];
+    //             break;
+    //         }
+    //     }
+    // }
     _isBold = isBold;
 }
 

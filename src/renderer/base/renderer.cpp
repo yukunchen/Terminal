@@ -967,7 +967,7 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
                                                 const size_t cchLine,
                                                 const COORD coordTarget)
 {
-    COLORREF rgb = textAttribute.CalculateRgbForeground();
+    COLORREF rgb = _pData->GetForeground(textAttribute);
 
     // Convert console grid line representations into rendering engine enum representations.
     IRenderEngine::GridLines lines = IRenderEngine::GridLines::None;
@@ -1192,8 +1192,8 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 [[nodiscard]]
 HRESULT Renderer::_UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, const TextAttribute textAttributes, const bool fIncludeBackground)
 {
-    const COLORREF rgbForeground = textAttributes.CalculateRgbForeground();
-    const COLORREF rgbBackground = textAttributes.CalculateRgbBackground();
+    const COLORREF rgbForeground = _pData->GetForeground(textAttributes);
+    const COLORREF rgbBackground = _pData->GetBackground(textAttributes);
     const WORD legacyAttributes = textAttributes.GetLegacyAttributes();
     const bool isBold = textAttributes.IsBold();
 

@@ -800,22 +800,24 @@ void DoSrvPrivateSetLegacyAttributes(SCREEN_INFORMATION& screenInfo,
 
         if (OldAttributes.ForegroundIsDefault() && !fForeground)
         {
-            NewAttributes.SetDefaultForeground(gci.GetDefaultForeground(), gci.GetFillAttribute());
+            NewAttributes.SetDefaultForeground(gci.CalculateDefaultForeground(), gci.GetFillAttribute());
         }
         if (OldAttributes.BackgroundIsDefault() && !fBackground)
         {
-            NewAttributes.SetDefaultBackground(gci.GetDefaultBackground(), gci.GetFillAttribute());
+            NewAttributes.SetDefaultBackground(gci.CalculateDefaultBackground(), gci.GetFillAttribute());
         }
 
         if (resetReverse)
         {
-            NewAttributes.SetForeground(OldAttributes.CalculateRgbBackground());
-            NewAttributes.SetBackground(OldAttributes.CalculateRgbForeground());
+            // TODO: Come back to this - I think this whole method's going to get way simpler.
+            NewAttributes.SetForeground(gci.GetBackgroundColor(OldAttributes));
+            NewAttributes.SetBackground(gci.GetForegroundColor(OldAttributes));
         }
         else
         {
-            NewAttributes.SetForeground(OldAttributes.CalculateRgbForeground());
-            NewAttributes.SetBackground(OldAttributes.CalculateRgbBackground());
+            // TODO: Come back to this - I think this whole method's going to get way simpler.
+            NewAttributes.SetForeground(gci.GetForegroundColor(OldAttributes));
+            NewAttributes.SetBackground(gci.GetBackgroundColor(OldAttributes));
         }
 
         if (fForeground)
@@ -843,8 +845,8 @@ void DoSrvPrivateSetDefaultAttributes(SCREEN_INFORMATION& screenInfo,
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto wFill = gci.GetFillAttribute();
-    const auto defaultFG = gci.GetDefaultForeground();
-    const auto defaultBG = gci.GetDefaultBackground();
+    const auto defaultFG = gci.CalculateDefaultForeground();
+    const auto defaultBG = gci.CalculateDefaultBackground();
 
     TextAttribute NewAttributes = screenInfo.GetAttributes();
     if (fForeground)
