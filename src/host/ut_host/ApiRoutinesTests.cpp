@@ -579,7 +579,7 @@ class ApiRoutinesTests
         si.GetActiveBuffer().Write(OutputCellIterator(background), { 0, 0 }); // Fill entire screen with green Zs.
 
         // Scroll everything up and backfill with red As.
-        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, &scroll, &destination, nullptr, fill.Char.UnicodeChar, fill.Attributes));
+        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, std::nullopt, fill.Char.UnicodeChar, fill.Attributes));
         ValidateScreen(si, background, fill, destination);
      
         Log::Comment(L"Fill screen with green Zs. Scroll all down by two, backfilling with red As. Confirm every cell.");
@@ -589,7 +589,7 @@ class ApiRoutinesTests
 
         // Scroll everything down and backfill with red As.
         destination = { 0, 2 };
-        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, &scroll, &destination, nullptr, fill.Char.UnicodeChar, fill.Attributes));
+        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, std::nullopt, fill.Char.UnicodeChar, fill.Attributes));
         ValidateScreen(si, background, fill, destination);
 
         Log::Comment(L"Fill screen with green Zs. Scroll all left by two, backfilling with red As. Confirm every cell.");
@@ -599,7 +599,7 @@ class ApiRoutinesTests
 
         // Scroll everything left and backfill with red As.
         destination = { -2, 0 };
-        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, &scroll, &destination, nullptr, fill.Char.UnicodeChar, fill.Attributes));
+        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, std::nullopt, fill.Char.UnicodeChar, fill.Attributes));
         ValidateScreen(si, background, fill, destination);
 
         Log::Comment(L"Fill screen with green Zs. Scroll all right by two, backfilling with red As. Confirm every cell.");
@@ -609,7 +609,7 @@ class ApiRoutinesTests
 
         // Scroll everything right and backfill with red As.
         destination = { 2, 0 };
-        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, &scroll, &destination, nullptr, fill.Char.UnicodeChar, fill.Attributes));
+        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, std::nullopt, fill.Char.UnicodeChar, fill.Attributes));
         ValidateScreen(si, background, fill, destination);
 
         Log::Comment(L"Fill screen with green Zs. Move everything down and right by two, backfilling with red As. Confirm every cell.");
@@ -619,7 +619,7 @@ class ApiRoutinesTests
 
         // Scroll everything down and right and backfill with red As.
         destination = { 2, 2 };
-        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, &scroll, &destination, nullptr, fill.Char.UnicodeChar, fill.Attributes));
+        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, std::nullopt, fill.Char.UnicodeChar, fill.Attributes));
         ValidateScreen(si, background, fill, destination);
 
         Log::Comment(L"Fill screen with green Zs. Move everything up and left by two, backfilling with red As. Confirm every cell.");
@@ -629,7 +629,7 @@ class ApiRoutinesTests
 
         // Scroll everything up and left and backfill with red As.
         destination = { -2, -2 };
-        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, &scroll, &destination, nullptr, fill.Char.UnicodeChar, fill.Attributes));
+        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, std::nullopt, fill.Char.UnicodeChar, fill.Attributes));
         ValidateScreen(si, background, fill, destination);
 
         Log::Comment(L"Scroll everything completely off the screen.");
@@ -639,7 +639,7 @@ class ApiRoutinesTests
 
         // Scroll everything way off the screen.
         destination = { 0, -10 };
-        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, &scroll, &destination, nullptr, fill.Char.UnicodeChar, fill.Attributes));
+        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, std::nullopt, fill.Char.UnicodeChar, fill.Attributes));
         ValidateScreen(si, background, fill, destination);
 
         Log::Comment(L"Scroll everything completely off the screen but use a null fill and confirm it is replaced with default attribute spaces.");
@@ -651,7 +651,7 @@ class ApiRoutinesTests
 
         CHAR_INFO nullFill = { 0 };
 
-        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, &scroll, &destination, nullptr, nullFill.Char.UnicodeChar, nullFill.Attributes));
+        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, std::nullopt, nullFill.Char.UnicodeChar, nullFill.Attributes));
 
         CHAR_INFO fillExpected;
         fillExpected.Char.UnicodeChar = UNICODE_SPACE;
@@ -677,7 +677,7 @@ class ApiRoutinesTests
         destination = { scroll.Left + 1, scroll.Top + 1 };
 
         // Move rectangle and backfill with red As.
-        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, &scroll, &destination, nullptr, fill.Char.UnicodeChar, fill.Attributes));
+        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, std::nullopt, fill.Char.UnicodeChar, fill.Attributes));
 
         ValidateComplexScreen(si, background, fill, scrollRect, Viewport::FromInclusive(scroll), destination);
 
@@ -693,7 +693,7 @@ class ApiRoutinesTests
         destination = { scroll.Left + 2, scroll.Top + 2 };
 
         // Move rectangle and backfill with red As.
-        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, &scroll, &destination, nullptr, fill.Char.UnicodeChar, fill.Attributes));
+        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, std::nullopt, fill.Char.UnicodeChar, fill.Attributes));
 
         ValidateComplexScreen(si, background, fill, scrollRect, Viewport::FromInclusive(scroll), destination);
     }

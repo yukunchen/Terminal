@@ -18,14 +18,6 @@ Revision History:
 class SCREEN_INFORMATION;
 
 
-[[nodiscard]]
-HRESULT DoSrvScrollConsoleScreenBufferW(SCREEN_INFORMATION& screenInfo,
-                                        const SMALL_RECT* const pSourceRectangle,
-                                        const COORD* const pTargetOrigin,
-                                        _In_opt_ const SMALL_RECT* const pTargetClipRectangle,
-                                        const wchar_t wchFill,
-                                        const WORD attrFill);
-
 void DoSrvPrivateSetLegacyAttributes(SCREEN_INFORMATION& screenInfo,
                                      const WORD Attribute,
                                      const bool fForeground,

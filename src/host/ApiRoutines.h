@@ -196,20 +196,20 @@ public:
                                          COORD& size) noexcept override;
 
     [[nodiscard]]
-    HRESULT ScrollConsoleScreenBufferAImpl(SCREEN_INFORMATION& Context,
-                                           const SMALL_RECT* const pSourceRectangle,
-                                           const COORD* const pTargetOrigin,
-                                           _In_opt_ const SMALL_RECT* const pTargetClipRectangle,
-                                           const char chFill,
-                                           const WORD attrFill) override;
+    HRESULT ScrollConsoleScreenBufferAImpl(SCREEN_INFORMATION& context,
+                                           const SMALL_RECT& source,
+                                           const COORD target,
+                                           std::optional<SMALL_RECT> clip,
+                                           const char fillCharacter,
+                                           const WORD fillAttribute) noexcept override;
 
     [[nodiscard]]
-    HRESULT ScrollConsoleScreenBufferWImpl(SCREEN_INFORMATION& Context,
-                                           const SMALL_RECT* const pSourceRectangle,
-                                           const COORD* const pTargetOrigin,
-                                           _In_opt_ const SMALL_RECT* const pTargetClipRectangle,
-                                           const wchar_t wchFill,
-                                           const WORD attrFill) override;
+    HRESULT ScrollConsoleScreenBufferWImpl(SCREEN_INFORMATION& context,
+                                           const SMALL_RECT& source,
+                                           const COORD target,
+                                           std::optional<SMALL_RECT> clip,
+                                           const wchar_t fillCharacter,
+                                           const WORD fillAttribute) noexcept override;
 
     [[nodiscard]]
     HRESULT SetConsoleTextAttributeImpl(SCREEN_INFORMATION& context,

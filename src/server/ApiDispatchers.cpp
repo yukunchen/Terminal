@@ -775,18 +775,18 @@ HRESULT ApiDispatchers::ServerScrollConsoleScreenBuffer(_Inout_ CONSOLE_API_MSG 
     if (a->Unicode)
     {
         return m->_pApiRoutines->ScrollConsoleScreenBufferWImpl(*pObj,
-                                                                &a->ScrollRectangle,
-                                                                &a->DestinationOrigin,
-                                                                a->Clip ? &a->ClipRectangle : nullptr,
+                                                                a->ScrollRectangle,
+                                                                a->DestinationOrigin,
+                                                                a->Clip ? std::optional<SMALL_RECT>(a->ClipRectangle) : std::nullopt,
                                                                 a->Fill.Char.UnicodeChar,
                                                                 a->Fill.Attributes);
     }
     else
     {
         return m->_pApiRoutines->ScrollConsoleScreenBufferAImpl(*pObj,
-                                                                &a->ScrollRectangle,
-                                                                &a->DestinationOrigin,
-                                                                a->Clip ? &a->ClipRectangle : nullptr,
+                                                                a->ScrollRectangle,
+                                                                a->DestinationOrigin,
+                                                                a->Clip ? std::optional<SMALL_RECT>(a->ClipRectangle) : std::nullopt,
                                                                 a->Fill.Char.AsciiChar,
                                                                 a->Fill.Attributes);
     }

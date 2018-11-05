@@ -207,20 +207,20 @@ public:
                                                  COORD& size) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT ScrollConsoleScreenBufferAImpl(IConsoleOutputObject& OutContext,
-                                                   const SMALL_RECT* const pSourceRectangle,
-                                                   const COORD* const pTargetOrigin,
-                                                   _In_opt_ const SMALL_RECT* const pTargetClipRectangle,
-                                                   const char chFill,
-                                                   const WORD attrFill) = 0;
+    virtual HRESULT ScrollConsoleScreenBufferAImpl(IConsoleOutputObject& context,
+                                                   const SMALL_RECT& source,
+                                                   const COORD target,
+                                                   std::optional<SMALL_RECT> clip,
+                                                   const char fillCharacter,
+                                                   const WORD fillAttribute) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT ScrollConsoleScreenBufferWImpl(IConsoleOutputObject& OutContext,
-                                                   const SMALL_RECT* const pSourceRectangle,
-                                                   const COORD* const pTargetOrigin,
-                                                   _In_opt_ const SMALL_RECT* const pTargetClipRectangle,
-                                                   const wchar_t wchFill,
-                                                   const WORD attrFill) = 0;
+    virtual HRESULT ScrollConsoleScreenBufferWImpl(IConsoleOutputObject& context,
+                                                   const SMALL_RECT& source,
+                                                   const COORD target,
+                                                   std::optional<SMALL_RECT> clip,
+                                                   const wchar_t fillCharacter,
+                                                   const WORD fillAttribute) noexcept = 0;
 
     [[nodiscard]]
     virtual HRESULT SetConsoleTextAttributeImpl(IConsoleOutputObject& context,
