@@ -250,16 +250,6 @@ public:
                                    size_t& written,
                                    const bool append) noexcept override;
 
-    //HRESULT WriteConsoleInputAImpl(_In_ InputBuffer* const pContext,
-    //                                       _In_reads_(InputBufferLength) const INPUT_RECORD* const pInputBuffer,
-    //                                       const ULONG InputBufferLength,
-    //                                       _Out_ ULONG* const pInputBufferRead);
-
-    //HRESULT WriteConsoleInputWImpl(_In_ InputBuffer* const pContext,
-    //                                       _In_reads_(InputBufferLength) const INPUT_RECORD* const pInputBuffer,
-    //                                       const ULONG InputBufferLength,
-    //                                       _Out_ ULONG* const pInputBufferRead);
-
     //HRESULT WriteConsoleOutputAImpl(_In_ SCREEN_INFORMATION* const pContext,
     //                                        _In_reads_(pTextBufferSize->X * pTextBufferSize->Y) const CHAR_INFO* const pTextBuffer,
     //                                        const COORD* const pTextBufferSize,
