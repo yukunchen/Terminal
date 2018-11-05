@@ -655,66 +655,45 @@ HRESULT ApiRoutines::SetConsoleWindowInfoImpl(SCREEN_INFORMATION& context,
 }
 
 [[nodiscard]]
-HRESULT ApiRoutines::ScrollConsoleScreenBufferAImpl(SCREEN_INFORMATION& Context,
-                                                    const SMALL_RECT* const pSourceRectangle,
-                                                    const COORD* const pTargetOrigin,
-                                                    _In_opt_ const SMALL_RECT* const pTargetClipRectangle,
-                                                    const char chFill,
-                                                    const WORD attrFill)
+HRESULT ApiRoutines::ScrollConsoleScreenBufferAImpl(SCREEN_INFORMATION& context,
+                                                    const SMALL_RECT& source,
+                                                    const COORD target,
+                                                    std::optional<SMALL_RECT> clip,
+                                                    const char fillCharacter,
+                                                    const WORD fillAttribute) noexcept
 {
-    wchar_t const wchFill = CharToWchar(&chFill, 1);
-
-    return ScrollConsoleScreenBufferWImpl(Context,
-                                          pSourceRectangle,
-                                          pTargetOrigin,
-                                          pTargetClipRectangle,
-                                          wchFill,
-                                          attrFill);
-}
-
-
-[[nodiscard]]
-HRESULT ApiRoutines::ScrollConsoleScreenBufferWImpl(SCREEN_INFORMATION& Context,
-                                                    const SMALL_RECT* const pSourceRectangle,
-                                                    const COORD* const pTargetOrigin,
-                                                    _In_opt_ const SMALL_RECT* const pTargetClipRectangle,
-                                                    const wchar_t wchFill,
-                                                    const WORD attrFill)
-{
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-    return DoSrvScrollConsoleScreenBufferW(Context,
-                                           pSourceRectangle,
-                                           pTargetOrigin,
-                                           pTargetClipRectangle,
-                                           wchFill,
-                                           attrFill);
-}
-
-[[nodiscard]]
-HRESULT DoSrvScrollConsoleScreenBufferW(SCREEN_INFORMATION& screenInfo,
-                                        const SMALL_RECT* const pSourceRectangle,
-                                        const COORD* const pTargetOrigin,
-                                        _In_opt_ const SMALL_RECT* const pTargetClipRectangle,
-                                        const wchar_t wchFill,
-                                        const WORD attrFill)
-{
-    CHAR_INFO Fill;
-    Fill.Char.UnicodeChar = wchFill;
-    Fill.Attributes = attrFill;
-
     try
     {
-        ScrollRegion(screenInfo,
-                     *pSourceRectangle,
-                     pTargetClipRectangle == nullptr ? std::nullopt : std::optional<SMALL_RECT>(*pTargetClipRectangle),
-                     *pTargetOrigin,
-                     Fill);
+        wchar_t const unicodeFillCharacter = CharToWchar(&fillCharacter, 1);
+
+        return ScrollConsoleScreenBufferWImpl(context, source, target, clip, unicodeFillCharacter, fillAttribute);
     }
     CATCH_RETURN();
+}
 
-    return S_OK;
+
+[[nodiscard]]
+HRESULT ApiRoutines::ScrollConsoleScreenBufferWImpl(SCREEN_INFORMATION& context,
+                                                    const SMALL_RECT& source,
+                                                    const COORD target,
+                                                    std::optional<SMALL_RECT> clip,
+                                                    const wchar_t fillCharacter,
+                                                    const WORD fillAttribute) noexcept
+{
+    try
+    {
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+        CHAR_INFO fill;
+        fill.Char.UnicodeChar = fillCharacter;
+        fill.Attributes = fillAttribute;
+
+        ScrollRegion(context, source, clip, target, fill);
+
+        return S_OK;
+    }
+    CATCH_RETURN();
 }
 
 void SetScreenColors(SCREEN_INFORMATION& screenInfo,
@@ -1323,7 +1302,12 @@ NTSTATUS DoSrvPrivateReverseLineFeed(SCREEN_INFORMATION& screenInfo)
 
             SMALL_RECT srClip = viewport;
 
-            Status = DoSrvScrollConsoleScreenBufferW(screenInfo, &srScroll, &coordDestination, &srClip, L' ', screenInfo.GetAttributes().GetLegacyAttributes());
+            Status = NTSTATUS_FROM_HRESULT(ServiceLocator::LocateGlobals().api.ScrollConsoleScreenBufferWImpl(screenInfo,
+                                                                                                              srScroll,
+                                                                                                              coordDestination,
+                                                                                                              srClip,
+                                                                                                              UNICODE_SPACE,
+                                                                                                              screenInfo.GetAttributes().GetLegacyAttributes()));
         }
     }
     return Status;
@@ -1956,12 +1940,12 @@ void DoSrvPrivateModifyLinesImpl(const unsigned int count, const bool insert)
         SMALL_RECT srClip = screenEdges;
         srClip.Top = cursorPosition.Y;
 
-        LOG_IF_FAILED(DoSrvScrollConsoleScreenBufferW(screenInfo,
-                                                      &srScroll,
-                                                      &coordDestination,
-                                                      &srClip,
-                                                      UNICODE_SPACE,
-                                                      screenInfo.GetAttributes().GetLegacyAttributes()));
+        LOG_IF_FAILED(ServiceLocator::LocateGlobals().api.ScrollConsoleScreenBufferWImpl(screenInfo,
+                                                                                         srScroll,
+                                                                                         coordDestination,
+                                                                                         srClip,
+                                                                                         UNICODE_SPACE,
+                                                                                         screenInfo.GetAttributes().GetLegacyAttributes()));
     }
 }
 

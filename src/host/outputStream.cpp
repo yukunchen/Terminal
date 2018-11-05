@@ -308,12 +308,12 @@ BOOL ConhostInternalGetSet::ScrollConsoleScreenBufferW(const SMALL_RECT* pScroll
                                                        _In_ COORD coordDestinationOrigin,
                                                        const CHAR_INFO* pFill)
 {
-    return SUCCEEDED(DoSrvScrollConsoleScreenBufferW(_io.GetActiveOutputBuffer(),
-                                                     pScrollRectangle,
-                                                     &coordDestinationOrigin,
-                                                     pClipRectangle,
-                                                     pFill->Char.UnicodeChar,
-                                                     pFill->Attributes));
+    return SUCCEEDED(ServiceLocator::LocateGlobals().api.ScrollConsoleScreenBufferWImpl(_io.GetActiveOutputBuffer(),
+                                                                                        *pScrollRectangle,
+                                                                                        coordDestinationOrigin,
+                                                                                        pClipRectangle != nullptr ? std::optional<SMALL_RECT>(*pClipRectangle) : std::nullopt,
+                                                                                        pFill->Char.UnicodeChar,
+                                                                                        pFill->Attributes));
 }
 
 // Routine Description:
