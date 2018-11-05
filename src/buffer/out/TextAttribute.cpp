@@ -8,14 +8,9 @@
 #include "TextAttribute.hpp"
 #include "..\..\inc\conattrs.hpp"
 
-WORD TextAttribute::GetLegacyAttributes() const noexcept
-{
-    return (_wAttrLegacy | (_isBold ? FOREGROUND_INTENSITY : 0));
-}
-
 bool TextAttribute::IsLegacy() const noexcept
 {
-    return _fUseRgbColor == false;
+    return _foreground.IsLegacy() && _background.IsLegacy();
 }
 
 // Arguments:
@@ -48,25 +43,26 @@ COLORREF TextAttribute::CalculateRgbBackground(std::basic_string_view<COLORREF> 
 // Return Value:
 // - color that is stored as the foreground color
 COLORREF TextAttribute::GetRgbForeground(std::basic_string_view<COLORREF> colorTable,
-                                         COLORREF /*defaultColor*/) const
+                                         COLORREF defaultColor) const
 {
     // TODO: GetRgbForeground should be affected by our boldness -
     // Bold should use the top 8 of the color table if we're a legacy attribute.
-    COLORREF rgbColor{ 0 };
-    if (_fUseRgbColor)
-    {
-        rgbColor = _rgbForeground;
-    }
-    else
-    {
-        const byte iColorTableIndex = (LOBYTE(GetLegacyAttributes()) & FG_ATTRS);
+    return _foreground.GetColor(colorTable, defaultColor, _isBold);
+    // COLORREF rgbColor{ 0 };
+    // if (_fUseRgbColor)
+    // {
+    //     rgbColor = _rgbForeground;
+    // }
+    // else
+    // {
+    //     const byte iColorTableIndex = (LOBYTE(GetLegacyAttributes()) & FG_ATTRS);
 
-        FAIL_FAST_IF(!(iColorTableIndex >= 0));
-        FAIL_FAST_IF(!(iColorTableIndex < colorTable.size()));
+    //     FAIL_FAST_IF(!(iColorTableIndex >= 0));
+    //     FAIL_FAST_IF(!(iColorTableIndex < colorTable.size()));
 
-        rgbColor = colorTable[iColorTableIndex];
-    }
-    return rgbColor;
+    //     rgbColor = colorTable[iColorTableIndex];
+    // }
+    // return rgbColor;
 }
 
 // Routine Description:
@@ -77,34 +73,26 @@ COLORREF TextAttribute::GetRgbForeground(std::basic_string_view<COLORREF> colorT
 // Return Value:
 // - color that is stored as the background color
 COLORREF TextAttribute::GetRgbBackground(std::basic_string_view<COLORREF> colorTable,
-                                         COLORREF /*defaultColor*/) const
+                                         COLORREF defaultColor) const
 {
-    COLORREF rgbColor{ 0 };
-    if (_fUseRgbColor)
-    {
-        rgbColor = _rgbBackground;
-    }
-    else
-    {
-        const byte iColorTableIndex = (LOBYTE(_wAttrLegacy) & BG_ATTRS) >> 4;
+    return _background.GetColor(colorTable, defaultColor, false);
+    // COLORREF rgbColor{ 0 };
+    // if (_fUseRgbColor)
+    // {
+    //     rgbColor = _rgbBackground;
+    // }
+    // else
+    // {
+    //     const byte iColorTableIndex = (LOBYTE(_wAttrLegacy) & BG_ATTRS) >> 4;
 
-        FAIL_FAST_IF(!(iColorTableIndex >= 0));
-        FAIL_FAST_IF(!(iColorTableIndex < colorTable.size()));
+    //     FAIL_FAST_IF(!(iColorTableIndex >= 0));
+    //     FAIL_FAST_IF(!(iColorTableIndex < colorTable.size()));
 
-        rgbColor = colorTable[iColorTableIndex];
-    }
-    return rgbColor;
+    //     rgbColor = colorTable[iColorTableIndex];
+    // }
+    // return rgbColor;
 }
 
-void TextAttribute::SetFromLegacy(const WORD wLegacy) noexcept
-{
-    _wAttrLegacy = wLegacy;
-    _fUseRgbColor = false;
-    _defaultFg = false;
-    _defaultBg = false;
-    _rgbForeground = 0;
-    _rgbBackground = 0;
-}
 
 void TextAttribute::SetMetaAttributes(const WORD wMeta) noexcept
 {
@@ -113,26 +101,28 @@ void TextAttribute::SetMetaAttributes(const WORD wMeta) noexcept
 
 void TextAttribute::SetForeground(const COLORREF rgbForeground)
 {
-    _rgbForeground = rgbForeground;
-    if (!_fUseRgbColor)
-    {
-        // TODO: The other color should not be affected by a change in this onw
-        // Leave the other color unchanged.
-        // _rgbBackground = GetRgbBackground();
-    }
-    _fUseRgbColor = true;
+    _foreground = TextColor(rgbForeground);
+    // _rgbForeground = rgbForeground;
+    // if (!_fUseRgbColor)
+    // {
+    //     // TODO: The other color should not be affected by a change in this onw
+    //     // Leave the other color unchanged.
+    //     // _rgbBackground = GetRgbBackground();
+    // }
+    // _fUseRgbColor = true;
 }
 
 void TextAttribute::SetBackground(const COLORREF rgbBackground)
 {
-    _rgbBackground = rgbBackground;
-    if (!_fUseRgbColor)
-    {
-        // TODO: The other color should not be affected by a change in this onw
-        // Leave the other color unchanged.
-        // _rgbForeground = GetRgbForeground();
-    }
-    _fUseRgbColor = true;
+    _background = TextColor(rgbBackground);
+    // _rgbBackground = rgbBackground;
+    // if (!_fUseRgbColor)
+    // {
+    //     // TODO: The other color should not be affected by a change in this onw
+    //     // Leave the other color unchanged.
+    //     // _rgbForeground = GetRgbForeground();
+    // }
+    // _fUseRgbColor = true;
 }
 
 void TextAttribute::SetColor(const COLORREF rgbColor, const bool fIsForeground)
@@ -234,26 +224,30 @@ void TextAttribute::_SetBoldness(const bool isBold) noexcept
     _isBold = isBold;
 }
 
-void TextAttribute::SetDefaultForeground(const COLORREF rgbForeground, const WORD wAttrDefault) noexcept
+void TextAttribute::SetDefaultForeground(const COLORREF /*rgbForeground*/, const WORD /*wAttrDefault*/) noexcept
 {
-    if(rgbForeground == INVALID_COLOR)
-    {
-        return;
-    }
-    WI_UpdateFlagsInMask(_wAttrLegacy, FG_ATTRS, wAttrDefault);
-    SetForeground(rgbForeground);
-    _defaultFg = true;
+    // TODO remove params from signature
+    _foreground = TextColor();
+    // if(rgbForeground == INVALID_COLOR)
+    // {
+    //     return;
+    // }
+    // WI_UpdateFlagsInMask(_wAttrLegacy, FG_ATTRS, wAttrDefault);
+    // SetForeground(rgbForeground);
+    // _defaultFg = true;
 }
 
-void TextAttribute::SetDefaultBackground(const COLORREF rgbBackground, const WORD wAttrDefault) noexcept
+void TextAttribute::SetDefaultBackground(const COLORREF /*rgbBackground*/, const WORD /*wAttrDefault*/) noexcept
 {
-    if(rgbBackground == INVALID_COLOR)
-    {
-        return;
-    }
-    WI_UpdateFlagsInMask(_wAttrLegacy, BG_ATTRS, wAttrDefault);
-    SetBackground(rgbBackground);
-    _defaultBg = true;
+    // TODO remove params from signature
+    _background = TextColor();
+    // if(rgbBackground == INVALID_COLOR)
+    // {
+    //     return;
+    // }
+    // WI_UpdateFlagsInMask(_wAttrLegacy, BG_ATTRS, wAttrDefault);
+    // SetBackground(rgbBackground);
+    // _defaultBg = true;
 }
 
 // Method Description:
@@ -268,7 +262,7 @@ void TextAttribute::SetDefaultBackground(const COLORREF rgbBackground, const WOR
 // - true iff this attribute indicates it's the "default" foreground color.
 bool TextAttribute::ForegroundIsDefault() const noexcept
 {
-    return _defaultFg;
+    return _foreground.IsDefault();
 }
 
 // Method Description:
@@ -283,5 +277,5 @@ bool TextAttribute::ForegroundIsDefault() const noexcept
 // - true iff this attribute indicates it's the "default" background color.
 bool TextAttribute::BackgroundIsDefault() const noexcept
 {
-    return _defaultBg;
+    return _background.IsDefault();
 }

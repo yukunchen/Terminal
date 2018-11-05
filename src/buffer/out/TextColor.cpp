@@ -41,7 +41,7 @@ void TextColor::SetDefault()
     _meta = IS_DEFAULT;
 }
 
-COLORREF TextColor::GetColor(gsl::span<COLORREF>& colorTable, COLORREF defaultColor) const
+COLORREF TextColor::GetColor(std::basic_string_view<COLORREF> colorTable, const COLORREF defaultColor, bool isBold) const
 {
     if (IsDefault())
     {
@@ -54,7 +54,18 @@ COLORREF TextColor::GetColor(gsl::span<COLORREF>& colorTable, COLORREF defaultCo
     else
     {
         FAIL_FAST_IF(colorTable.size() < _red);
-        return colorTable[_red];
+        // If the color is already bright (it's in index [8,15] or it's a
+        //       256color value [16,255], then boldness does nothing.
+        if (isBold && _red < 8)
+        {
+            FAIL_FAST_IF(colorTable.size() < 16);
+            FAIL_FAST_IF(_red + 8 > colorTable.size());
+            return colorTable[_red + 8];
+        }
+        else
+        {
+            return colorTable[_red];
+        }
     }
 }
 

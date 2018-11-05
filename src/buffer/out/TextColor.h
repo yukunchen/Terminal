@@ -63,7 +63,16 @@ public:
     void SetIndex(const BYTE index);
     void SetDefault();
 
-    COLORREF GetColor(gsl::span<COLORREF>& colorTable, COLORREF defaultColor) const;
+    COLORREF GetColor(std::basic_string_view<COLORREF> colorTable, const COLORREF defaultColor, const bool isBold) const;
+
+    // BYTE GetIndex() const;
+    constexpr BYTE TextColor::GetIndex() const
+    {
+        // TODO: maybe take a defaultIndex param that we return if we're a default attr?
+        // TODO: maybe make a version that does the HSL nearest color lookup?
+        return _red;
+    }
+
 
 private:
     const static unsigned int IS_DEFAULT_BIT = 0;
@@ -76,6 +85,7 @@ private:
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;
+    template<typename TextColor> friend class WEX::TestExecution::VerifyOutputTraits;
 #endif
 };
 

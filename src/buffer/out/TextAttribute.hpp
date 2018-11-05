@@ -18,6 +18,8 @@ Revision History:
 --*/
 
 #pragma once
+#include "TextColor.h"
+#include "../../inc/conattrs.hpp"
 
 #ifdef UNIT_TESTING
 #include "WexTestClass.h"
@@ -28,38 +30,39 @@ class TextAttribute final
 public:
     constexpr TextAttribute() noexcept :
         _wAttrLegacy{ 0 },
-        _fUseRgbColor{ false },
-        _rgbForeground{ RGB(0, 0, 0) },
-        _rgbBackground{ RGB(0, 0, 0) },
-        _isBold{ false },
-        _defaultFg{ false },
-        _defaultBg{ false }
+        _foreground{},
+        _background{},
+        _isBold{ false }
     {
     }
 
     constexpr TextAttribute(const WORD wLegacyAttr) noexcept :
-        _wAttrLegacy{ wLegacyAttr },
-        _fUseRgbColor{ false },
-        _rgbForeground{ RGB(0, 0, 0) },
-        _rgbBackground{ RGB(0, 0, 0) },
-        _isBold{ false },
-        _defaultFg{ false },
-        _defaultBg{ false }
+        _wAttrLegacy{ 0 },
+        _foreground{},
+        _background{},
+        _isBold{ false }
     {
+        SetFromLegacy(wLegacyAttr);
     }
 
     constexpr TextAttribute(const COLORREF rgbForeground, const COLORREF rgbBackground) noexcept :
         _wAttrLegacy{ 0 },
-        _fUseRgbColor{ true },
-        _rgbForeground{ rgbForeground },
-        _rgbBackground{ rgbBackground },
-        _isBold{ false },
-        _defaultFg{ false },
-        _defaultBg{ false }
+        _foreground{rgbForeground},
+        _background{rgbBackground},
+        _isBold{ false }
     {
     }
 
-    WORD GetLegacyAttributes() const noexcept;
+    // WORD GetLegacyAttributes() const noexcept;
+    constexpr WORD TextAttribute::GetLegacyAttributes() const noexcept
+    {
+        // TODO: Should this take a defaultLegacy value, if the Default is set for either fg/bg?
+        // Maybe
+        BYTE fg = (_foreground.GetIndex() & FG_ATTRS);
+        BYTE bg = (_background.GetIndex() & BG_ATTRS) << 4;
+        WORD meta = (_wAttrLegacy & META_ATTRS);
+        return (fg | bg | meta) | (_isBold ? FOREGROUND_INTENSITY : 0);
+    }
 
     COLORREF CalculateRgbForeground(std::basic_string_view<COLORREF> colorTable, COLORREF defaultColor) const;
     COLORREF CalculateRgbBackground(std::basic_string_view<COLORREF> colorTable, COLORREF defaultColor) const;
@@ -69,7 +72,6 @@ public:
 
     bool IsLeadingByte() const noexcept;
     bool IsTrailingByte() const noexcept;
-
     bool IsTopHorizontalDisplayed() const noexcept;
     bool IsBottomHorizontalDisplayed() const noexcept;
     bool IsLeftVerticalDisplayed() const noexcept;
@@ -78,7 +80,16 @@ public:
     void SetLeftVerticalDisplayed(const bool isDisplayed) noexcept;
     void SetRightVerticalDisplayed(const bool isDisplayed) noexcept;
 
-    void SetFromLegacy(const WORD wLegacy) noexcept;
+    // void SetFromLegacy(const WORD wLegacy) noexcept;
+    constexpr void SetFromLegacy(const WORD wLegacy) noexcept
+    {
+        _wAttrLegacy = wLegacy;
+        BYTE fgIndex = (BYTE)(wLegacy & FG_ATTRS);
+        BYTE bgIndex = (BYTE)(wLegacy & BG_ATTRS) >> 4;
+        _foreground = TextColor(fgIndex);
+        _background = TextColor(bgIndex);
+    }
+
     void SetMetaAttributes(const WORD wMeta) noexcept;
 
     void Embolden() noexcept;
@@ -113,12 +124,14 @@ private:
     void _SetBoldness(const bool isBold) noexcept;
 
     WORD _wAttrLegacy;
-    bool _fUseRgbColor;
-    COLORREF _rgbForeground;
-    COLORREF _rgbBackground;
+    // bool _fUseRgbColor;
+    // COLORREF _rgbForeground;
+    // COLORREF _rgbBackground;
+    TextColor _foreground;
+    TextColor _background;
     bool _isBold;
-    bool _defaultFg;
-    bool _defaultBg;
+    // bool _defaultFg;
+    // bool _defaultBg;
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;
@@ -134,38 +147,36 @@ enum class TextAttributeBehavior
 };
 
 
-bool constexpr operator==(const TextAttribute& a, const TextAttribute& b) noexcept
+constexpr bool operator==(const TextAttribute& a, const TextAttribute& b) noexcept
 {
     return a._wAttrLegacy == b._wAttrLegacy &&
-           a._fUseRgbColor == b._fUseRgbColor &&
-           a._rgbForeground == b._rgbForeground &&
-           a._rgbBackground == b._rgbBackground &&
-           a._defaultFg == b._defaultFg &&
-           a._defaultBg == b._defaultBg &&
+           a._foreground == b._foreground &&
+           a._background == b._background &&
            a._isBold == b._isBold;
 }
 
-bool constexpr operator!=(const TextAttribute& a, const TextAttribute& b) noexcept
+constexpr bool operator!=(const TextAttribute& a, const TextAttribute& b) noexcept
 {
     return !(a == b);
 }
 
-bool constexpr operator==(const TextAttribute& attr, const WORD& legacyAttr) noexcept
+constexpr bool operator==(const TextAttribute& attr, const WORD& legacyAttr) noexcept
 {
-    return attr._wAttrLegacy == legacyAttr && !attr._fUseRgbColor;
+    // TODO: Does this still make sense?
+    return attr.GetLegacyAttributes() == legacyAttr;
 }
 
-bool constexpr operator!=(const TextAttribute& attr, const WORD& legacyAttr) noexcept
+constexpr bool operator!=(const TextAttribute& attr, const WORD& legacyAttr) noexcept
 {
     return !(attr == legacyAttr);
 }
 
-bool constexpr operator==(const WORD& legacyAttr, const TextAttribute& attr) noexcept
+constexpr bool operator==(const WORD& legacyAttr, const TextAttribute& attr) noexcept
 {
     return attr == legacyAttr;
 }
 
-bool constexpr operator!=(const WORD& legacyAttr, const TextAttribute& attr) noexcept
+constexpr bool operator!=(const WORD& legacyAttr, const TextAttribute& attr) noexcept
 {
     return !(attr == legacyAttr);
 }
