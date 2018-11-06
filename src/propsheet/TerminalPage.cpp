@@ -349,22 +349,49 @@ INT_PTR WINAPI TerminalDlgProc(const HWND hDlg, const UINT wMsg, const WPARAM wP
             return TerminalDlgCommand(hDlg, LOWORD(wParam), HIWORD(wParam));
         case WM_NOTIFY:
         {
-            const PSHNOTIFY * const pshn = (LPPSHNOTIFY)lParam;
-            switch (pshn->hdr.code) {
-                case PSN_APPLY:
-                    EndDlgPage(hDlg, !pshn->lParam);
-                    return TRUE;
-                case PSN_KILLACTIVE:
+            if (lParam && (wParam == IDD_HELP_TERMINAL))
+            {
+                // handle hyperlink click or keyboard activation
+                switch(((LPNMHDR)lParam)->code)
                 {
-                    // Fake the dialog proc into thinking the edit control just
-                    // lost focus so it'll update properly
-                    int item = GetDlgCtrlID(GetFocus());
-                    if (item)
+                    case NM_CLICK:
+                    case NM_RETURN:
                     {
-                        SendMessage(hDlg, WM_COMMAND, MAKELONG(item, EN_KILLFOCUS), 0);
+                        PNMLINK pnmLink = (PNMLINK)lParam;
+                        if (0 == pnmLink->item.iLink)
+                        {
+                            ShellExecute(NULL,
+                                         L"open",
+                                         pnmLink->item.szUrl,
+                                         NULL,
+                                         NULL,
+                                         SW_SHOW);
+                        }
+
+                        break;
                     }
-                    return TRUE;
                 }
+            }
+            else
+            {
+                const PSHNOTIFY * const pshn = (LPPSHNOTIFY)lParam;
+                switch (pshn->hdr.code) {
+                    case PSN_APPLY:
+                        EndDlgPage(hDlg, !pshn->lParam);
+                        return TRUE;
+                    case PSN_KILLACTIVE:
+                    {
+                        // Fake the dialog proc into thinking the edit control just
+                        // lost focus so it'll update properly
+                        int item = GetDlgCtrlID(GetFocus());
+                        if (item)
+                        {
+                            SendMessage(hDlg, WM_COMMAND, MAKELONG(item, EN_KILLFOCUS), 0);
+                        }
+                        return TRUE;
+                    }
+                }
+
             }
         }
         case WM_VSCROLL:
