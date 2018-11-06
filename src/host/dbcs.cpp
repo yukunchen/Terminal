@@ -51,11 +51,13 @@ bool CheckBisectStringA(_In_reads_bytes_(cbBuf) PCHAR pchBuf, _In_ DWORD cbBuf, 
 
 // Routine Description:
 // - This routine removes the double copies of characters used when storing DBCS/Double-wide characters in the text buffer.
+// - It munges up Unicode cells that are about to be returned whenever there is DBCS data and a raster font is enabled.
+// - This function is ONLY FOR COMPATIBILITY PURPOSES. Please do not introduce new usages.
 // Arguments:
 // - buffer - The buffer to walk and fix
 // Return Value:
 // - The length of the final modified buffer.
-DWORD RemoveDbcsMarkCell(const gsl::span<CHAR_INFO> buffer)
+DWORD UnicodeRasterFontCellMunge(const gsl::span<CHAR_INFO> buffer)
 {
     // Walk through the source CHAR_INFO and copy each to the destination.
     // EXCEPT for trailing bytes (this will de-duplicate the leading/trailing byte double copies of the CHAR_INFOs as stored in the buffer).

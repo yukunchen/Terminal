@@ -22,7 +22,7 @@ class DbcsTests
 {
     TEST_CLASS(DbcsTests);
 
-    TEST_METHOD(TestRemoveDbcsMarkAll)
+    TEST_METHOD(TestUnicodeRasterFontCellMunge)
     {
         const size_t cchTestSize = 20;
 
@@ -61,9 +61,9 @@ class DbcsTests
 
         const gsl::span<CHAR_INFO> buffer(rgci, ARRAYSIZE(rgci));
         
-        // feed it into RemoveDbcsMarkCell to confirm that it is working properly.
+        // feed it into UnicodeRasterFontCellMunge to confirm that it is working properly.
         // do it in-place to confirm that it can operate properly in the common case.
-        DWORD dwResult = RemoveDbcsMarkCell(buffer);
+        DWORD dwResult = UnicodeRasterFontCellMunge(buffer);
         
         // the final length returned should be the same as the length we started with
         if (VERIFY_ARE_EQUAL(ARRAYSIZE(rgci), dwResult, L"Ensure the length claims that we are the same before and after."))
