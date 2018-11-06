@@ -591,9 +591,7 @@ static HRESULT _ConvertCellsToAInplace(const UINT codepage, const gsl::span<CHAR
 {
     try
     {
-        std::vector<CHAR_INFO> tempBuffer;
-        tempBuffer.reserve(buffer.size());
-        std::copy(buffer.cbegin(), buffer.cend(), tempBuffer.begin());
+        std::vector<CHAR_INFO> tempBuffer(buffer.cbegin(), buffer.cend());
 
         const auto size = rectangle.Dimensions();
         auto tempIter = tempBuffer.cbegin();

@@ -1943,6 +1943,9 @@ void DbcsTests::TestDbcsBisect()
 {
     HANDLE const hOut = GetStdOutputHandle();
 
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleCP(JAPANESE_CP));
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleOutputCP(JAPANESE_CP));
+
     UINT dwCP = GetConsoleCP();
     VERIFY_ARE_EQUAL(dwCP, JAPANESE_CP);
 
