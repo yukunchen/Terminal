@@ -881,7 +881,7 @@ HRESULT ApiRoutines::ReadConsoleOutputWImpl(const SCREEN_INFORMATION& context,
         {
             // For compatibility reasons, we must maintain the behavior that munges the data if we are writing while a raster font is enabled.
             // This can be removed when raster font support is removed.
-            RemoveDbcsMarkCell(buffer);
+            UnicodeRasterFontCellMunge(buffer);
         }
 
         return S_OK;
