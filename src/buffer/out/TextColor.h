@@ -8,11 +8,11 @@ Abstract:
 - contains data for a single color of the text. Text Attributes are composed of
   two of these - one for the foreground and one for the background.
   The color can be in one of three states:
-    * Default Colors - The terminal should use the terminal's notion of whetever
+    * Default Colors - The terminal should use the terminal's notion of whatever
       the default color should be for this component.
       It's up to the terminal that's consuming this buffer to control the
       behavior of default attributes.
-      Terminals typically have a pair of Default colors that are seperate from
+      Terminals typically have a pair of Default colors that are separate from
       their color table. This component should use that value.
       Consoles also can have a legacy table index as their default colors.
     * Indexed Color - The terminal should use our value as an index into the
