@@ -18,8 +18,8 @@ Author(s):
 #include "precomp.h"
 
 #include "../inc/IConsoleWindow.hpp"
-#include "../../host/cursor.h"
 #include "../types/inc/viewport.hpp"
+#include "../../buffer/out/cursor.h"
 
 #include <deque>
 #include <tuple>

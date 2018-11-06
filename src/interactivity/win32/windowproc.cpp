@@ -18,7 +18,6 @@
 
 #include "..\..\host\_output.h"
 #include "..\..\host\output.h"
-#include "..\..\host\cursor.h"
 #include "..\..\host\dbcs.h"
 #include "..\..\host\handle.h"
 #include "..\..\host\input.h"

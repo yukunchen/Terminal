@@ -12,6 +12,7 @@
 #include "_stream.h"
 #include "inputBuffer.hpp"
 #include "cmdline.h"
+#include "../types/inc/GlyphWidth.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 

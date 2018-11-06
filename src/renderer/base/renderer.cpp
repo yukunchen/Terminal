@@ -6,7 +6,6 @@
 
 #include "precomp.h"
 
-#include "../../host/cursor.h"
 #include "../../host/conimeinfo.h"
 #include "../../buffer/out/textBuffer.hpp"
 

@@ -13,6 +13,7 @@
 #include "dbcs.h"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
+#include "../types/inc/GlyphWidth.hpp"
 #include "../types/inc/Utf16Parser.hpp"
 
 // Attributes flags:

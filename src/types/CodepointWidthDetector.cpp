@@ -5,10 +5,7 @@
 ********************************************************/
 
 #include "precomp.h"
-#include "CodepointWidthDetector.hpp"
-
-#include "../interactivity/inc/ServiceLocator.hpp"
-
+#include "inc/CodepointWidthDetector.hpp"
 
 // Routine Description:
 // - returns the width type of codepoint by searching the map generated from the unicode spec
@@ -98,9 +95,9 @@ bool CodepointWidthDetector::_lookupIsWide(const std::wstring_view glyph) const 
     const CodepointWidth width = GetWidth(glyph);
     if (width == CodepointWidth::Ambiguous)
     {
-        if (ServiceLocator::LocateGlobals().pRender != nullptr)
+        if (_hasFallback)
         {
-            return ServiceLocator::LocateGlobals().pRender->IsGlyphWideByFont(glyph);
+            return _pfnFallbackMethod(glyph);
         }
     }
     else
@@ -135,6 +132,14 @@ unsigned int CodepointWidthDetector::_extractCodepoint(const std::wstring_view g
         return codepoint;
     }
 }
+
+
+void CodepointWidthDetector::SetFallbackMethod(std::function<bool(const std::wstring_view)> pfnFallback)
+{
+    _pfnFallbackMethod = pfnFallback;
+    _hasFallback = true;
+}
+
 
 void CodepointWidthDetector::_populateUnicodeSearchMap()
 {

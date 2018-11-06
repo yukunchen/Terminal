@@ -50,11 +50,11 @@ filling in the last row, and updating the screen.
 
 #pragma warning(push)
 #pragma warning(disable: ALL_CPPCORECHECK_WARNINGS)
-#include "../host/cursor.h"
 #include "../renderer/inc/FontInfo.hpp"
 #include "../renderer/inc/FontInfoDesired.hpp"
 #pragma warning(pop)
 
+#include "cursor.h"
 #include "Row.hpp"
 #include "TextAttribute.hpp"
 #include "UnicodeStorage.hpp"

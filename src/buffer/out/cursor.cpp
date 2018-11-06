@@ -7,11 +7,11 @@
 #include "precomp.h"
 
 #include "cursor.h"
+#include "../../types/inc/GlyphWidth.hpp"
 
-#include "dbcs.h"
-#include "handle.h"
-#include "scrolling.hpp"
-
+// TODO: Remove all of these.
+#include "../../host/handle.h"
+#include "../../host/scrolling.hpp"
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
 #pragma hdrstop

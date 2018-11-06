@@ -60,7 +60,6 @@ SOURCES = \
     ..\PtySignalInputThread.cpp \
     ..\CodepointWidthDetector.cpp \
     ..\consoleInformation.cpp \
-    ..\cursor.cpp    \
     ..\search.cpp    \
     ..\directio.cpp  \
     ..\getset.cpp    \

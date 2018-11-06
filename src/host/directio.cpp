@@ -14,10 +14,12 @@
 #include "dbcs.h"
 #include "handle.h"
 #include "misc.h"
-#include "../types/inc/convert.hpp"
-#include "../types/inc/viewport.hpp"
 #include "readDataDirect.hpp"
 #include "ApiRoutines.h"
+
+#include "../types/inc/convert.hpp"
+#include "../types/inc/GlyphWidth.hpp"
+#include "../types/inc/viewport.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 

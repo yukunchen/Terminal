@@ -15,6 +15,8 @@
 
 #include "ApiRoutines.h"
 
+#include "../types/inc/GlyphWidth.hpp"
+
 #include "..\server\Entrypoints.h"
 #include "..\server\IoSorter.h"
 
@@ -507,6 +509,10 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
             g.pRender = pRender;
             // Allow the renderer to paint.
             g.pRender->EnablePainting();
+
+            // Set up the renderer to be used to calculate the width of a glyph,
+            //      should we be unable to figure out it's width another way.
+            SetGlyphWidthFallback(std::bind(&Renderer::IsGlyphWideByFont, pRender, std::placeholders::_1));
         }
     }
     catch (...)
@@ -550,7 +556,7 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
                 Status = STATUS_SUCCESS;
             }
 
-            
+
             // If we're not headless, we'll make a real window.
             // Allow UI Access to the real window but not the little
             // fake window we would make in headless mode.
