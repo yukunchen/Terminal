@@ -110,18 +110,16 @@ public:
                              _Out_ DWORD* const pdwControlKeyState) override;
 
     [[nodiscard]]
-    HRESULT WriteConsoleAImpl(IConsoleOutputObject& OutContext,
-                              _In_reads_(cchTextBufferLength) const char* const psTextBuffer,
-                              const size_t cchTextBufferLength,
-                              _Out_ size_t* const pcchTextBufferRead,
-                              _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter) override;
+    HRESULT WriteConsoleAImpl(IConsoleOutputObject& context,
+                              const std::string_view buffer,
+                              size_t& read,
+                              std::unique_ptr<IWaitRoutine>& waiter) noexcept override;
 
     [[nodiscard]]
-    HRESULT WriteConsoleWImpl(IConsoleOutputObject& OutContext,
-                              _In_reads_(cchTextBufferLength) const wchar_t* const pwsTextBuffer,
-                              const size_t cchTextBufferLength,
-                              _Out_ size_t* const pcchTextBufferRead,
-                              _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter) override;
+    HRESULT WriteConsoleWImpl(IConsoleOutputObject& context,
+                              const std::wstring_view buffer,
+                              size_t& read,
+                              std::unique_ptr<IWaitRoutine>& waiter) noexcept override;
 
 #pragma region ThreadCreationInfo
     [[nodiscard]]

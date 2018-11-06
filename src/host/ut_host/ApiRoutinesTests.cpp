@@ -380,23 +380,23 @@ class ApiRoutinesTests
             }
 
             size_t cchRead = 0;
-            IWaitRoutine* pWaiter = nullptr;
+            std::unique_ptr<IWaitRoutine> waiter;
 
             // The increment is either the specified length or the remaining text in the string (if that is smaller).
             const size_t cchWriteLength = std::min(cchIncrement, cchTestText - i);
 
             // Run the test method
-            const HRESULT hr = _pApiRoutines->WriteConsoleAImpl(si, pszTestText + i, cchWriteLength, &cchRead, &pWaiter);
+            const HRESULT hr = _pApiRoutines->WriteConsoleAImpl(si, { pszTestText + i, cchWriteLength }, cchRead, waiter);
 
             VERIFY_ARE_EQUAL(S_OK, hr, L"Successful result code from writing.");
             if (!fInduceWait)
             {
-                VERIFY_IS_NULL(pWaiter, L"We should have no waiter for this case.");
+                VERIFY_IS_NULL(waiter.get(), L"We should have no waiter for this case.");
                 VERIFY_ARE_EQUAL(cchWriteLength, cchRead, L"We should have the same character count back as 'written' that we gave in.");
             }
             else
             {
-                VERIFY_IS_NOT_NULL(pWaiter, L"We should have a waiter for this case.");
+                VERIFY_IS_NOT_NULL(waiter.get(), L"We should have a waiter for this case.");
                 // The cchRead is irrelevant at this point as it's not going to be returned until we're off the wait.
 
                 Log::Comment(L"Unblocking global output state so the wait can be serviced.");
@@ -406,7 +406,7 @@ class ApiRoutinesTests
                 size_t dwNumBytes = 0;
                 DWORD dwControlKeyState = 0; // unused but matches the pattern for read.
                 void* pOutputData = nullptr; // unused for writes but used for read.
-                const BOOL bNotifyResult = pWaiter->Notify(WaitTerminationReason::NoReason, FALSE, &Status, &dwNumBytes, &dwControlKeyState, &pOutputData);
+                const BOOL bNotifyResult = waiter->Notify(WaitTerminationReason::NoReason, FALSE, &Status, &dwNumBytes, &dwControlKeyState, &pOutputData);
 
                 VERIFY_IS_TRUE(!!bNotifyResult, L"Wait completion on notify should be successful.");
                 VERIFY_ARE_EQUAL(STATUS_SUCCESS, Status, L"We should have a successful return code to pass to the caller.");
@@ -432,8 +432,7 @@ class ApiRoutinesTests
         gci.LockConsole();
         auto Unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
 
-        PCWSTR pwszTestText = L"Test Text";
-        const size_t cchTestText = wcslen(pwszTestText);
+        const std::wstring testText(L"Test text");
 
         if (fInduceWait)
         {
@@ -442,18 +441,18 @@ class ApiRoutinesTests
         }
 
         size_t cchRead = 0;
-        IWaitRoutine* pWaiter = nullptr;
-        const HRESULT hr = _pApiRoutines->WriteConsoleWImpl(si, pwszTestText, cchTestText, &cchRead, &pWaiter);
+        std::unique_ptr<IWaitRoutine> waiter;
+        const HRESULT hr = _pApiRoutines->WriteConsoleWImpl(si, testText, cchRead, waiter);
 
         VERIFY_ARE_EQUAL(S_OK, hr, L"Successful result code from writing.");
         if (!fInduceWait)
         {
-            VERIFY_IS_NULL(pWaiter, L"We should have no waiter for this case.");
-            VERIFY_ARE_EQUAL(cchTestText, cchRead, L"We should have the same character count back as 'written' that we gave in.");
+            VERIFY_IS_NULL(waiter.get(), L"We should have no waiter for this case.");
+            VERIFY_ARE_EQUAL(testText.size(), cchRead, L"We should have the same character count back as 'written' that we gave in.");
         }
         else
         {
-            VERIFY_IS_NOT_NULL(pWaiter, L"We should have a waiter for this case.");
+            VERIFY_IS_NOT_NULL(waiter.get(), L"We should have a waiter for this case.");
             // The cchRead is irrelevant at this point as it's not going to be returned until we're off the wait.
 
             Log::Comment(L"Unblocking global output state so the wait can be serviced.");
@@ -463,12 +462,12 @@ class ApiRoutinesTests
             size_t dwNumBytes = 0;
             DWORD dwControlKeyState = 0; // unused but matches the pattern for read.
             void* pOutputData = nullptr; // unused for writes but used for read.
-            const BOOL bNotifyResult = pWaiter->Notify(WaitTerminationReason::NoReason, TRUE, &Status, &dwNumBytes, &dwControlKeyState, &pOutputData);
+            const BOOL bNotifyResult = waiter->Notify(WaitTerminationReason::NoReason, TRUE, &Status, &dwNumBytes, &dwControlKeyState, &pOutputData);
 
             VERIFY_IS_TRUE(!!bNotifyResult, L"Wait completion on notify should be successful.");
             VERIFY_ARE_EQUAL(STATUS_SUCCESS, Status, L"We should have a successful return code to pass to the caller.");
 
-            const size_t dwBytesExpected = cchTestText * sizeof(wchar_t);
+            const size_t dwBytesExpected = testText.size() * sizeof(wchar_t);
             VERIFY_ARE_EQUAL(dwBytesExpected, dwNumBytes, L"We should have the byte length of the string we put in as the returned value.");
         }
     }
