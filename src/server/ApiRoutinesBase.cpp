@@ -31,25 +31,3 @@ HRESULT IApiRoutines::WriteConsoleOutputWImpl(IConsoleOutputObject& /*OutContext
 {
     FAIL_FAST_HR(E_NOTIMPL);
 }
-
-[[nodiscard]]
-HRESULT IApiRoutines::ReadConsoleOutputA(const IConsoleOutputObject& /*OutContext*/,
-                                         _Out_writes_(_Param_(3)->X * _Param_(3)->Y) CHAR_INFO* const /*pTextBuffer*/,
-                                         const COORD* const /*pTextBufferSize*/,
-                                         const COORD* const /*pTextBufferTargetOrigin*/,
-                                         const SMALL_RECT* const /*pSourceRectangle*/,
-                                          _Out_ SMALL_RECT* const /*pReadRectangle*/)
-{
-    FAIL_FAST_HR(E_NOTIMPL);
-}
-
-[[nodiscard]]
-HRESULT IApiRoutines::ReadConsoleOutputW(const IConsoleOutputObject& /*OutContext*/,
-                                         _Out_writes_(_Param_(3)->X * _Param_(3)->Y) CHAR_INFO* const /*pTextBuffer*/,
-                                         const COORD* const /*pTextBufferSize*/,
-                                         const COORD* const /*pTextBufferTargetOrigin*/,
-                                         const SMALL_RECT* const /*pSourceRectangle*/,
-                                          _Out_ SMALL_RECT* const /*pReadRectangle*/)
-{
-    FAIL_FAST_HR(E_NOTIMPL);
-}

@@ -1027,7 +1027,60 @@ HRESULT ApiDispatchers::ServerReadConsoleOutput(_Inout_ CONSOLE_API_MSG * const 
 {
     RETURN_HR_IF(E_ACCESSDENIED, !m->GetProcessHandle()->GetPolicy().CanReadOutputBuffer());
 
-    RETURN_NTSTATUS(SrvReadConsoleOutput(m, pbReplyPending));
+    CONSOLE_READCONSOLEOUTPUT_MSG* const a = &m->u.consoleMsgL2.ReadConsoleOutput;
+
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::ReadConsoleOutput, a->Unicode);
+
+    // Backup data region passed and set it to a zero size region in case we exit early for failures.
+    const auto originalRegion = Microsoft::Console::Types::Viewport::FromInclusive(a->CharRegion);
+    const auto zeroRegion = Microsoft::Console::Types::Viewport::FromDimensions(originalRegion.Origin(), { 0, 0 });
+    a->CharRegion = zeroRegion.ToInclusive();
+
+    PVOID pvBuffer;
+    ULONG cbBuffer;
+    RETURN_IF_FAILED(m->GetOutputBuffer(&pvBuffer, &cbBuffer));
+
+    ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
+
+    SCREEN_INFORMATION* pScreenInfo;
+    RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_READ, &pScreenInfo));
+
+    // Validate parameters
+    size_t regionArea;
+    RETURN_IF_FAILED(SizeTMult(originalRegion.Dimensions().X, originalRegion.Dimensions().Y, &regionArea));
+    size_t regionBytes;
+    RETURN_IF_FAILED(SizeTMult(regionArea, sizeof(CHAR_INFO), &regionBytes));
+    RETURN_HR_IF(E_INVALIDARG, regionArea > 0 && ((regionArea > ULONG_MAX / sizeof(CHAR_INFO)) || (cbBuffer < regionBytes)));
+    
+    gsl::span<CHAR_INFO> buffer(reinterpret_cast<CHAR_INFO*>(pvBuffer), cbBuffer / sizeof(CHAR_INFO));
+    auto finalRegion = Microsoft::Console::Types::Viewport::Empty(); // the actual region read out of the buffer
+    if (!a->Unicode)
+    {
+        RETURN_IF_FAILED(m->_pApiRoutines->ReadConsoleOutputAImpl(*pScreenInfo,
+                                                                  buffer,
+                                                                  originalRegion,
+                                                                  finalRegion));
+    }
+    else
+    {
+        RETURN_IF_FAILED(m->_pApiRoutines->ReadConsoleOutputWImpl(*pScreenInfo,
+                                                                  buffer,
+                                                                  originalRegion,
+                                                                  finalRegion));
+    }
+
+    a->CharRegion = finalRegion.ToInclusive();
+
+    // Calculate the byte size of the final region
+    size_t finalRegionArea;
+    RETURN_IF_FAILED(SizeTMult(finalRegion.Dimensions().X, finalRegion.Dimensions().Y, &finalRegionArea));
+    size_t finalRegionBytes;
+    RETURN_IF_FAILED(SizeTMult(finalRegionArea, sizeof(CHAR_INFO), &finalRegionBytes));
+    
+    m->SetReplyInformation(finalRegionBytes); // Give back the byte length of the buffer that we will be returning
+
+    return S_OK;
 }
 
 [[nodiscard]]
