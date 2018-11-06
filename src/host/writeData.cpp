@@ -122,17 +122,17 @@ bool WriteData::Notify(const WaitTerminationReason TerminationReason,
 
     FAIL_FAST_IF(!(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked()));
 
-    WriteData* pWaiter = nullptr;
+    std::unique_ptr<WriteData> waiter;
     size_t cbContext = _cbContext;
     NTSTATUS Status = DoWriteConsole(_pwchContext,
                                      &cbContext,
                                      _siContext,
-                                     &pWaiter);
+                                     waiter);
 
     if (Status == CONSOLE_STATUS_WAIT)
     {
         // an extra waiter will be created by DoWriteConsole, but we're already a waiter so discard it.
-        delete pWaiter;
+        waiter.reset();
         return false;
     }
 

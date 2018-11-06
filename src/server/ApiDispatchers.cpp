@@ -429,7 +429,7 @@ HRESULT ApiDispatchers::ServerWriteConsole(_Inout_ CONSOLE_API_MSG * const m, _I
     });
     RETURN_IF_FAILED(m->GetInputBuffer(&pvBuffer, &cbBufferSize));
 
-    IWaitRoutine* pWaiter = nullptr;
+    std::unique_ptr<IWaitRoutine> waiter;
     size_t cbRead;
 
     // We have to hold onto the HR from the call and return it.
@@ -439,30 +439,20 @@ HRESULT ApiDispatchers::ServerWriteConsole(_Inout_ CONSOLE_API_MSG * const m, _I
     HRESULT hr;
     if (a->Unicode)
     {
-        const wchar_t* const pwsInputBuffer = reinterpret_cast<wchar_t*>(pvBuffer);
-        size_t const cchInputBuffer = cbBufferSize / sizeof(wchar_t);
+        const std::wstring_view buffer(reinterpret_cast<wchar_t*>(pvBuffer), cbBufferSize / sizeof(wchar_t));
         size_t cchInputRead;
 
-        hr = m->_pApiRoutines->WriteConsoleWImpl(*pScreenInfo,
-                                                 pwsInputBuffer,
-                                                 cchInputBuffer,
-                                                 &cchInputRead,
-                                                 &pWaiter);
+        hr = m->_pApiRoutines->WriteConsoleWImpl(*pScreenInfo, buffer, cchInputRead, waiter);
 
         // We must set the reply length in bytes. Convert back from characters.
         LOG_IF_FAILED(SizeTMult(cchInputRead, sizeof(wchar_t), &cbRead));
     }
     else
     {
-        const char* const psInputBuffer = reinterpret_cast<char*>(pvBuffer);
-        size_t const cchInputBuffer = cbBufferSize;
+        const std::string_view buffer(reinterpret_cast<char*>(pvBuffer), cbBufferSize);
         size_t cchInputRead;
 
-        hr = m->_pApiRoutines->WriteConsoleAImpl(*pScreenInfo,
-                                                 psInputBuffer,
-                                                 cchInputBuffer,
-                                                 &cchInputRead,
-                                                 &pWaiter);
+        hr = m->_pApiRoutines->WriteConsoleAImpl(*pScreenInfo, buffer, cchInputRead, waiter);
 
         // Reply length is already in bytes (chars), don't need to convert.
         cbRead = cchInputRead;
@@ -471,14 +461,13 @@ HRESULT ApiDispatchers::ServerWriteConsole(_Inout_ CONSOLE_API_MSG * const m, _I
     // We must return the byte length of the read data in the message.
     LOG_IF_FAILED(SizeTToULong(cbRead, &a->NumBytes));
 
-    if (nullptr != pWaiter)
+    if (nullptr != waiter.get())
     {
         // If we received a waiter, we need to queue the wait and not reply.
-        hr = ConsoleWaitQueue::s_CreateWait(m, pWaiter);
+        hr = ConsoleWaitQueue::s_CreateWait(m, waiter.release());
         if (FAILED(hr))
         {
-            delete pWaiter;
-            pWaiter = nullptr;
+            waiter.reset();
         }
         else
         {
