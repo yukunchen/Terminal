@@ -57,7 +57,7 @@ bool CheckBisectStringA(_In_reads_bytes_(cbBuf) PCHAR pchBuf, _In_ DWORD cbBuf, 
 // - buffer - The buffer to walk and fix
 // Return Value:
 // - The length of the final modified buffer.
-DWORD UnicodeRasterFontCellMunge(const gsl::span<CHAR_INFO> buffer)
+DWORD UnicodeRasterFontCellMungeOnRead(const gsl::span<CHAR_INFO> buffer)
 {
     // Walk through the source CHAR_INFO and copy each to the destination.
     // EXCEPT for trailing bytes (this will de-duplicate the leading/trailing byte double copies of the CHAR_INFOs as stored in the buffer).
@@ -80,7 +80,7 @@ DWORD UnicodeRasterFontCellMunge(const gsl::span<CHAR_INFO> buffer)
     }
 
     // Zero out the remaining part of the destination buffer that we didn't use.
-    DWORD const cchDstToClear = buffer.size() - iDst;
+    DWORD const cchDstToClear = gsl::narrow<DWORD>(buffer.size()) - iDst;
 
     if (cchDstToClear > 0)
     {

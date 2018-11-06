@@ -570,185 +570,224 @@ HRESULT DoSrvPrivateWriteConsoleControlInput(_Inout_ InputBuffer* const /*pInput
 }
 
 // Routine Description:
-// - This is used when the app reads oem from the output buffer the app wants
-//   real OEM characters. We have real Unicode or UnicodeOem.
+// - This is used when the app is reading output as cells and needs them converted
+//   into a particular codepage on the way out.
 // Arguments:
+// - codepage - The relevant codepage for translation
 // - buffer - This is the buffer containing all of the character data to be converted
 // - rectangle - This is the rectangle describing the region that the buffer covers.
 // Return Value:
 // - Generally S_OK. Could be a memory or math error code.
 [[nodiscard]]
-HRESULT TranslateOutputToOem(const gsl::span<CHAR_INFO> buffer, const Viewport rectangle)
+static HRESULT _ConvertCellsToAInplace(const UINT codepage, const gsl::span<CHAR_INFO> buffer, const Viewport rectangle) noexcept
 {
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto codepage = gci.OutputCP;
-    std::vector<CHAR_INFO> tempBuffer;
-    tempBuffer.reserve(buffer.size());
-    std::copy(buffer.cbegin(), buffer.cend(), tempBuffer.begin());
-
-    const auto size = rectangle.Dimensions();
-    auto tempIter = tempBuffer.cbegin();
-    auto outIter = buffer.begin();
-
-    for (int i = 0; i < size.Y; i++)
+    try
     {
-        for (int j = 0; j < size.X; j++)
-        {
-            // Any time we see the lead flag, we presume there will be a trailing one following it.
-            // Giving us two bytes of space (one per cell in the ascii part of the character union)
-            // to fill with whatever this Unicode character converts into.
-            if (WI_IsFlagSet(tempIter->Attributes, COMMON_LVB_LEADING_BYTE))
-            {
-                // As long as we're not looking at the exact last column of the buffer...
-                if (j < size.X - 1)
-                {
-                    // Walk forward one because we're about to consume two cells.
-                    j++;
-                    
-                    // Try to convert the unicode character (2 bytes) in the leading cell to the codepage.
-                    CHAR AsciiDbcs[2] = { 0 };
-                    auto NumBytes = sizeof(AsciiDbcs);
-                    NumBytes = ConvertToOem(codepage, &tempIter->Char.UnicodeChar, 1, &AsciiDbcs[0], NumBytes);
+        std::vector<CHAR_INFO> tempBuffer;
+        tempBuffer.reserve(buffer.size());
+        std::copy(buffer.cbegin(), buffer.cend(), tempBuffer.begin());
 
-                    // Fill the 1 byte (AsciiChar) portion of the leading and trailing cells with each of the bytes returned.
-                    outIter->Char.AsciiChar = AsciiDbcs[0];
-                    outIter->Attributes = tempIter->Attributes;
-                    outIter++;
-                    tempIter++;
-                    outIter->Char.AsciiChar = AsciiDbcs[1];
-                    outIter->Attributes = tempIter->Attributes;
-                    outIter++;
-                    tempIter++;
-                }
-                else
-                {
-                    // When we're in the last column with only a leading byte, we can't return that without a trailing.
-                    // Instead, replace the output data with just a space and clear all flags.
-                    outIter->Char.AsciiChar = UNICODE_SPACE;
-                    outIter->Attributes = tempIter->Attributes;
-                    WI_ClearAllFlags(outIter->Attributes, COMMON_LVB_SBCSDBCS);
-                    outIter++;
-                    tempIter++;
-                }
-            }
-            else if (WI_AreAllFlagsClear(tempIter->Attributes, COMMON_LVB_SBCSDBCS))
+        const auto size = rectangle.Dimensions();
+        auto tempIter = tempBuffer.cbegin();
+        auto outIter = buffer.begin();
+
+        for (int i = 0; i < size.Y; i++)
+        {
+            for (int j = 0; j < size.X; j++)
             {
-                // If there are no leading/trailing pair flags, then we only have 1 ascii byte to try to fit the 
-                // 2 byte UTF-16 character into. Give it a go.
-                ConvertToOem(codepage, &tempIter->Char.UnicodeChar, 1, &outIter->Char.AsciiChar, 1);
-                outIter->Attributes = tempIter->Attributes;
-                outIter++;
-                tempIter++;
+                // Any time we see the lead flag, we presume there will be a trailing one following it.
+                // Giving us two bytes of space (one per cell in the ascii part of the character union)
+                // to fill with whatever this Unicode character converts into.
+                if (WI_IsFlagSet(tempIter->Attributes, COMMON_LVB_LEADING_BYTE))
+                {
+                    // As long as we're not looking at the exact last column of the buffer...
+                    if (j < size.X - 1)
+                    {
+                        // Walk forward one because we're about to consume two cells.
+                        j++;
+
+                        // Try to convert the unicode character (2 bytes) in the leading cell to the codepage.
+                        CHAR AsciiDbcs[2] = { 0 };
+                        UINT NumBytes = gsl::narrow<UINT>(sizeof(AsciiDbcs));
+                        NumBytes = ConvertToOem(codepage, &tempIter->Char.UnicodeChar, 1, &AsciiDbcs[0], NumBytes);
+
+                        // Fill the 1 byte (AsciiChar) portion of the leading and trailing cells with each of the bytes returned.
+                        outIter->Char.AsciiChar = AsciiDbcs[0];
+                        outIter->Attributes = tempIter->Attributes;
+                        outIter++;
+                        tempIter++;
+                        outIter->Char.AsciiChar = AsciiDbcs[1];
+                        outIter->Attributes = tempIter->Attributes;
+                        outIter++;
+                        tempIter++;
+                    }
+                    else
+                    {
+                        // When we're in the last column with only a leading byte, we can't return that without a trailing.
+                        // Instead, replace the output data with just a space and clear all flags.
+                        outIter->Char.AsciiChar = UNICODE_SPACE;
+                        outIter->Attributes = tempIter->Attributes;
+                        WI_ClearAllFlags(outIter->Attributes, COMMON_LVB_SBCSDBCS);
+                        outIter++;
+                        tempIter++;
+                    }
+                }
+                else if (WI_AreAllFlagsClear(tempIter->Attributes, COMMON_LVB_SBCSDBCS))
+                {
+                    // If there are no leading/trailing pair flags, then we only have 1 ascii byte to try to fit the 
+                    // 2 byte UTF-16 character into. Give it a go.
+                    ConvertToOem(codepage, &tempIter->Char.UnicodeChar, 1, &outIter->Char.AsciiChar, 1);
+                    outIter->Attributes = tempIter->Attributes;
+                    outIter++;
+                    tempIter++;
+                }
             }
         }
-    }
 
-    return S_OK;
+        return S_OK;
+    }
+    CATCH_RETURN();
 }
 
 // Routine Description:
 // - This is used when the app writes oem to the output buffer we want
 //   UnicodeOem or Unicode in the buffer, depending on font
+// Arguments:
+// - codepage - The relevant codepage for translation
+// - buffer - This is the buffer containing all of the character data to be converted
+// - rectangle - This is the rectangle describing the region that the buffer covers.
+// Return Value:
+// - Generally S_OK. Could be a memory or math error code.
 [[nodiscard]]
-NTSTATUS TranslateOutputToUnicode(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Size)
+static HRESULT _ConvertCellsToWInplace(const UINT codepage, gsl::span<CHAR_INFO> buffer, const Viewport& rectangle) noexcept
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    UINT const Codepage = gci.OutputCP;
-
-    for (int i = 0; i < Size.Y; i++)
+    try
     {
-        for (int j = 0; j < Size.X; j++)
+        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+        const auto size = rectangle.Dimensions();
+        auto outIter = buffer.begin();
+
+        for (int i = 0; i < size.Y; i++)
         {
-            WI_ClearAllFlags(OutputBuffer->Attributes, COMMON_LVB_SBCSDBCS);
-            if (IsDBCSLeadByteConsole(OutputBuffer->Char.AsciiChar, &gci.OutputCPInfo))
+            for (int j = 0; j < size.X; j++)
             {
-                if (j < Size.X - 1)
-                {   // -1 is safe DBCS in buffer
-                    j++;
-                    CHAR AsciiDbcs[2];
-                    AsciiDbcs[0] = OutputBuffer->Char.AsciiChar;
-                    AsciiDbcs[1] = (OutputBuffer + 1)->Char.AsciiChar;
+                // Clear lead/trailing flags. We'll determine it for ourselves versus the given codepage.
+                WI_ClearAllFlags(outIter->Attributes, COMMON_LVB_SBCSDBCS);
 
-                    WCHAR UnicodeDbcs[2];
-                    ConvertOutputToUnicode(Codepage, &AsciiDbcs[0], 2, &UnicodeDbcs[0], 2);
+                // If the 1 byte given is a lead in this codepage, we likely need two cells for the width.
+                if (IsDBCSLeadByteConsole(outIter->Char.AsciiChar, &gci.OutputCPInfo))
+                {
+                    // If we're not on the last column, we have two cells to use.
+                    if (j < size.X - 1)
+                    {
+                        // Mark we're consuming two cells.
+                        j++;
 
-                    OutputBuffer->Char.UnicodeChar = UnicodeDbcs[0];
-                    WI_SetFlag(OutputBuffer->Attributes, COMMON_LVB_LEADING_BYTE);
-                    OutputBuffer++;
-                    OutputBuffer->Char.UnicodeChar = UNICODE_DBCS_PADDING;
-                    WI_ClearAllFlags(OutputBuffer->Attributes, COMMON_LVB_SBCSDBCS);
-                    WI_SetFlag(OutputBuffer->Attributes, COMMON_LVB_TRAILING_BYTE);
-                    OutputBuffer++;
+                        // Grab the lead/trailing byte pair from this cell and the next one forward.
+                        CHAR AsciiDbcs[2];
+                        AsciiDbcs[0] = outIter->Char.AsciiChar;
+                        AsciiDbcs[1] = (outIter + 1)->Char.AsciiChar;
+
+                        // Convert it to UTF-16.
+                        WCHAR UnicodeDbcs[2];
+                        ConvertOutputToUnicode(codepage, &AsciiDbcs[0], 2, &UnicodeDbcs[0], 2);
+
+                        // Store the actual character in the first available position.
+                        outIter->Char.UnicodeChar = UnicodeDbcs[0];
+                        WI_ClearAllFlags(outIter->Attributes, COMMON_LVB_SBCSDBCS);
+                        WI_SetFlag(outIter->Attributes, COMMON_LVB_LEADING_BYTE);
+                        outIter++;
+
+                        // Put a padding character in the second position.
+                        outIter->Char.UnicodeChar = UNICODE_DBCS_PADDING;
+                        WI_ClearAllFlags(outIter->Attributes, COMMON_LVB_SBCSDBCS);
+                        WI_SetFlag(outIter->Attributes, COMMON_LVB_TRAILING_BYTE);
+                        outIter++;
+                    }
+                    else
+                    {
+                        // If we were on the last column, put in a space.
+                        outIter->Char.UnicodeChar = UNICODE_SPACE;
+                        WI_ClearAllFlags(outIter->Attributes, COMMON_LVB_SBCSDBCS);
+                        outIter++;
+                    }
                 }
                 else
                 {
-                    OutputBuffer->Char.UnicodeChar = UNICODE_SPACE;
-                    OutputBuffer++;
+                    // If it's not detected as a lead byte of a pair, then just convert it in place and move on.
+                    CHAR c = outIter->Char.AsciiChar;
+
+                    ConvertOutputToUnicode(codepage, &c, 1, &outIter->Char.UnicodeChar, 1);
+                    outIter++;
+                }
+            }
+        }
+
+        return S_OK;
+    }
+    CATCH_RETURN();
+}
+
+[[nodiscard]]
+static std::vector<CHAR_INFO> _ConvertCellsToMungedW(gsl::span<CHAR_INFO> buffer, const Viewport& rectangle)
+{
+    std::vector<CHAR_INFO> result;
+    result.reserve(buffer.size() * 2); // we estimate we'll need up to double the cells if they all expand.
+
+    const auto size = rectangle.Dimensions();
+    auto bufferIter = buffer.cbegin();
+
+    for (SHORT i = 0; i < size.Y; i++)
+    {
+        for (SHORT j = 0; j < size.X; j++)
+        {
+            // Prepare a candidate charinfo on the output side copying the colors but not the lead/trail information.
+            CHAR_INFO candidate;
+            candidate.Attributes = bufferIter->Attributes;
+            WI_ClearAllFlags(candidate.Attributes, COMMON_LVB_SBCSDBCS);
+
+            // If the glyph we're given is full width, it needs to take two cells.
+            if (IsGlyphFullWidth(bufferIter->Char.UnicodeChar))
+            {
+                // If we're not on the final cell of the row...
+                if (j < size.X - 1)
+                {
+                    // Mark that we're consuming two cells.
+                    j++;
+
+                    // Fill one cell with a copy of the color and character marked leading
+                    candidate.Char.UnicodeChar = bufferIter->Char.UnicodeChar;
+                    WI_SetFlag(candidate.Attributes, COMMON_LVB_LEADING_BYTE);
+                    result.push_back(candidate);
+
+                    // Fill a second cell with a copy of the color marked trailing and a padding character.
+                    candidate.Char.UnicodeChar = UNICODE_DBCS_PADDING;
+                    candidate.Attributes = bufferIter->Attributes;
+                    WI_ClearAllFlags(candidate.Attributes, COMMON_LVB_SBCSDBCS);
+                    WI_SetFlag(candidate.Attributes, COMMON_LVB_TRAILING_BYTE);
+
+                }
+                else
+                {
+                    // If we're on the final cell, this won't fit. Replace with a space.
+                    candidate.Char.UnicodeChar = UNICODE_SPACE;
                 }
             }
             else
             {
-                CHAR c = OutputBuffer->Char.AsciiChar;
-
-                ConvertOutputToUnicode(Codepage, &c, 1, &OutputBuffer->Char.UnicodeChar, 1);
-                OutputBuffer++;
+                // If we're not full-width, we're half-width. Just copy the character over.
+                candidate.Char.UnicodeChar = bufferIter->Char.UnicodeChar;
             }
+
+            // Push our candidate in.
+            result.push_back(candidate);
+
+            // Advance to read the next item.
+            bufferIter++;
         }
     }
-
-    return STATUS_SUCCESS;
-}
-
-[[nodiscard]]
-NTSTATUS TranslateOutputToPaddingUnicode(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Size, _Inout_ PCHAR_INFO OutputBufferR)
-{
-    DBGCHARS(("TranslateOutputToPaddingUnicode\n"));
-
-    for (SHORT i = 0; i < Size.Y; i++)
-    {
-        for (SHORT j = 0; j < Size.X; j++)
-        {
-            WCHAR wch = OutputBuffer->Char.UnicodeChar;
-
-            if (OutputBufferR)
-            {
-                OutputBufferR->Attributes = OutputBuffer->Attributes;
-                WI_ClearAllFlags(OutputBufferR->Attributes, COMMON_LVB_SBCSDBCS);
-                if (IsGlyphFullWidth(OutputBuffer->Char.UnicodeChar))
-                {
-                    if (j == Size.X - 1)
-                    {
-                        OutputBufferR->Char.UnicodeChar = UNICODE_SPACE;
-                    }
-                    else
-                    {
-                        OutputBufferR->Char.UnicodeChar = OutputBuffer->Char.UnicodeChar;
-                        WI_SetFlag(OutputBufferR->Attributes, COMMON_LVB_LEADING_BYTE);
-                        OutputBufferR++;
-                        OutputBufferR->Char.UnicodeChar = UNICODE_DBCS_PADDING;
-                        OutputBufferR->Attributes = OutputBuffer->Attributes;
-                        WI_ClearAllFlags(OutputBufferR->Attributes, COMMON_LVB_SBCSDBCS);
-                        WI_SetFlag(OutputBufferR->Attributes, COMMON_LVB_TRAILING_BYTE);
-                    }
-                }
-                else
-                {
-                    OutputBufferR->Char.UnicodeChar = OutputBuffer->Char.UnicodeChar;
-                }
-                OutputBufferR++;
-            }
-
-            if (IsGlyphFullWidth(wch))
-            {
-                if (j != Size.X - 1)
-                {
-                    j++;
-                }
-            }
-            OutputBuffer++;
-        }
-    }
-    return STATUS_SUCCESS;
+    return result;
 }
 
 [[nodiscard]]
@@ -759,11 +798,11 @@ static HRESULT _ReadConsoleOutputWImplHelper(const SCREEN_INFORMATION& context,
 {
     try
     {
-        const SCREEN_INFORMATION& activeScreenInfo = context.GetActiveBuffer();
-        const auto textBufferSize = activeScreenInfo.GetBufferSize().Dimensions();
+        const auto& storageBuffer = context.GetActiveBuffer();
+        const auto storageSize = storageBuffer.GetBufferSize().Dimensions();
 
         // TODO: 19543742 - validate that the rectangle restrictions are fully covered for requestRectangle
-        
+
         const auto targetDimensions = requestRectangle.Dimensions();
 
         // If either dimension of the request is too small, return an empty rectangle as read and exit early.
@@ -779,12 +818,12 @@ static HRESULT _ReadConsoleOutputWImplHelper(const SCREEN_INFORMATION& context,
         RETURN_HR_IF(E_INVALIDARG, targetArea < 0);
         RETURN_HR_IF(E_INVALIDARG, targetArea < targetBuffer.size());
 
-        // Clip the request rectangle to the size of the screen
+        // Clip the request rectangle to the size of the storage buffer
         SMALL_RECT clip = requestRectangle.ToExclusive();
-        clip.Right = std::min(clip.Right, textBufferSize.X);
-        clip.Bottom = std::min(clip.Bottom, textBufferSize.Y);
+        clip.Right = std::min(clip.Right, storageSize.X);
+        clip.Bottom = std::min(clip.Bottom, storageSize.Y);
 
-        // Find the target point (where to write the output buffer) 
+        // Find the target point (where to write the user's buffer) 
         // It will either be 0,0 or offset into the buffer by the inverse of the negative values.
         COORD targetPoint;
         targetPoint.X = clip.Left < 0 ? -clip.Left : 0;
@@ -808,7 +847,7 @@ static HRESULT _ReadConsoleOutputWImplHelper(const SCREEN_INFORMATION& context,
 
         // Get an iterator to the beginning of the request inside the screen buffer
         // This should walk exactly along every cell of the clipped request.
-        auto sourceIter = activeScreenInfo.GetCellDataAt(sourcePoint, clippedRequestRectangle);
+        auto sourceIter = storageBuffer.GetCellDataAt(sourcePoint, clippedRequestRectangle);
 
         // Walk through every cell of the target, advancing the buffer.
         // Validate that we always still have a valid iterator to the backgin store,
@@ -855,9 +894,12 @@ HRESULT ApiRoutines::ReadConsoleOutputAImpl(const SCREEN_INFORMATION& context,
 
     try
     {
+        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        const auto codepage = gci.OutputCP;
+
         RETURN_IF_FAILED(_ReadConsoleOutputWImplHelper(context, buffer, sourceRectangle, readRectangle));
 
-        LOG_IF_FAILED(TranslateOutputToOem(buffer, readRectangle));
+        LOG_IF_FAILED(_ConvertCellsToAInplace(codepage, buffer, readRectangle));
 
         return S_OK;
     }
@@ -881,7 +923,7 @@ HRESULT ApiRoutines::ReadConsoleOutputWImpl(const SCREEN_INFORMATION& context,
         {
             // For compatibility reasons, we must maintain the behavior that munges the data if we are writing while a raster font is enabled.
             // This can be removed when raster font support is removed.
-            UnicodeRasterFontCellMunge(buffer);
+            UnicodeRasterFontCellMungeOnRead(buffer);
         }
 
         return S_OK;
@@ -890,116 +932,90 @@ HRESULT ApiRoutines::ReadConsoleOutputWImpl(const SCREEN_INFORMATION& context,
 }
 
 [[nodiscard]]
-NTSTATUS SrvWriteConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
+static HRESULT _WriteConsoleOutputWImplHelper(SCREEN_INFORMATION& context,
+                                              gsl::span<CHAR_INFO> buffer,
+                                              const Viewport& requestRectangle,
+                                              Viewport& writtenRectangle) noexcept
 {
-    PCONSOLE_WRITECONSOLEOUTPUT_MSG const a = &m->u.consoleMsgL2.WriteConsoleOutput;
-
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::WriteConsoleOutput, a->Unicode);
-
-    PCHAR_INFO Buffer;
-    ULONG Size;
-    NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetInputBuffer((PVOID*)&Buffer, &Size));
-    if (!NT_SUCCESS(Status))
+    try
     {
-        return Status;
-    }
+        auto& storageBuffer = context.GetActiveBuffer();
+        const auto storageViewport = storageBuffer.GetBufferSize();
+        const auto storageSize = storageViewport.Dimensions();
 
+        // TODO: MSFT: 19549237, validate this is trimmed appropriately when we try to write outside the screen or
+        // using a negative value.
+
+        const auto sourceDimensions = requestRectangle.Dimensions();
+
+        // If either dimension of the request is too small, return an empty rectangle as the read and exit early.
+        if (sourceDimensions.X <= 0 || sourceDimensions.Y <= 0)
+        {
+            writtenRectangle = Viewport::FromDimensions(requestRectangle.Origin(), { 0, 0 });
+            return S_OK;
+        }
+
+        const auto charInfos = std::basic_string_view<CHAR_INFO>(buffer.data(), buffer.size());
+        OutputCellIterator it(charInfos);
+        storageBuffer.WriteRect(it, requestRectangle);
+
+        // Return the area written
+        writtenRectangle = requestRectangle;
+        storageViewport.Clamp(writtenRectangle);
+
+        return S_OK;
+    }
+    CATCH_RETURN();
+}
+
+[[nodiscard]]
+HRESULT ApiRoutines::WriteConsoleOutputAImpl(SCREEN_INFORMATION& context,
+                                             gsl::span<CHAR_INFO> buffer,
+                                             const Viewport& requestRectangle,
+                                             Viewport& writtenRectangle) noexcept
+{
     LockConsole();
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    ConsoleHandleData* HandleData = m->GetObjectHandle();
-    if (HandleData == nullptr)
+    try
     {
-        Status = STATUS_INVALID_HANDLE;
+        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        const auto codepage = gci.OutputCP;
+        LOG_IF_FAILED(_ConvertCellsToWInplace(codepage, buffer, requestRectangle));
+
+        RETURN_IF_FAILED(_WriteConsoleOutputWImplHelper(context, buffer, requestRectangle, writtenRectangle));
+
+        return S_OK;
     }
+    CATCH_RETURN();
+}
 
-    SCREEN_INFORMATION* pScreenInfo = nullptr;
-    if (NT_SUCCESS(Status))
+[[nodiscard]]
+HRESULT ApiRoutines::WriteConsoleOutputWImpl(SCREEN_INFORMATION& context,
+                                             gsl::span<CHAR_INFO> buffer,
+                                             const Viewport& requestRectangle,
+                                             Viewport& writtenRectangle) noexcept
+{
+    LockConsole();
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+    try
     {
-        Status = NTSTATUS_FROM_HRESULT(HandleData->GetScreenBuffer(GENERIC_WRITE, &pScreenInfo));
-    }
-    if (!NT_SUCCESS(Status))
-    {
-        // A region of zero size is indicated by the right and bottom coordinates being less than the left and top.
-        a->CharRegion.Right = (USHORT)(a->CharRegion.Left - 1);
-        a->CharRegion.Bottom = (USHORT)(a->CharRegion.Top - 1);
-    }
-    else
-    {
-        COORD BufferSize;
-        ULONG NumBytes;
-
-        BufferSize.X = (SHORT)(a->CharRegion.Right - a->CharRegion.Left + 1);
-        BufferSize.Y = (SHORT)(a->CharRegion.Bottom - a->CharRegion.Top + 1);
-        if (FAILED(ULongMult(BufferSize.X, BufferSize.Y, &NumBytes)) ||
-            FAILED(ULongMult(NumBytes, sizeof(*Buffer), &NumBytes)) ||
-            (Size < NumBytes))
-        {
-
-            UnlockConsole();
-            return STATUS_INVALID_PARAMETER;
-        }
-
-        SCREEN_INFORMATION& ScreenBufferInformation = pScreenInfo->GetActiveBuffer();
-
-        if (!a->Unicode)
-        {
-            LOG_IF_FAILED(TranslateOutputToUnicode(Buffer, BufferSize));
-            try
-            {
-                const auto charInfos = std::basic_string_view<CHAR_INFO>(Buffer, BufferSize.X * BufferSize.Y);
-                OutputCellIterator it(charInfos);
-                ScreenBufferInformation.WriteRect(it, Viewport::FromInclusive(a->CharRegion));
-            }
-            catch (...)
-            {
-                Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-            }
-        }
-        else if (!ScreenBufferInformation.GetTextBuffer().GetCurrentFont().IsTrueTypeFont())
+        if (!context.GetActiveBuffer().GetTextBuffer().GetCurrentFont().IsTrueTypeFont())
         {
             // For compatibility reasons, we must maintain the behavior that munges the data if we are writing while a raster font is enabled.
             // This can be removed when raster font support is removed.
-
-            PCHAR_INFO TransBuffer = nullptr;
-            int cBufferResult;
-            if (SUCCEEDED(Int32Mult(BufferSize.X, BufferSize.Y, &cBufferResult)))
-            {
-                if (SUCCEEDED(Int32Mult(cBufferResult, 2 * sizeof(CHAR_INFO), &cBufferResult)))
-                {
-                    TransBuffer = (PCHAR_INFO)new BYTE[cBufferResult];
-                }
-            }
-
-            if (TransBuffer == nullptr)
-            {
-                UnlockConsole();
-                return STATUS_NO_MEMORY;
-            }
-
-            LOG_IF_FAILED(TranslateOutputToPaddingUnicode(Buffer, BufferSize, &TransBuffer[0]));
-            try
-            {
-                const auto charInfos = std::basic_string_view<CHAR_INFO>(TransBuffer, BufferSize.X * BufferSize.Y);
-                OutputCellIterator it(charInfos);
-                ScreenBufferInformation.WriteRect(it, Viewport::FromInclusive(a->CharRegion));
-            }
-            catch (...)
-            {
-                Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-            }
-
-            delete[] TransBuffer;
+            auto translated = _ConvertCellsToMungedW(buffer, requestRectangle);
+            RETURN_IF_FAILED(_WriteConsoleOutputWImplHelper(context, translated, requestRectangle, writtenRectangle));
         }
         else
         {
-            const auto charInfos = std::basic_string_view<CHAR_INFO>(Buffer, BufferSize.X * BufferSize.Y);
-            OutputCellIterator it(charInfos);
-            ScreenBufferInformation.WriteRect(it, Viewport::FromInclusive(a->CharRegion));
+            RETURN_IF_FAILED(_WriteConsoleOutputWImplHelper(context, buffer, requestRectangle, writtenRectangle));
         }
-    }
 
-    UnlockConsole();
-    return Status;
+        return S_OK;
+    }
+    CATCH_RETURN();
 }
 
 [[nodiscard]]
