@@ -37,23 +37,21 @@ public:
     }
 
     constexpr TextAttribute(const WORD wLegacyAttr) noexcept :
-        _wAttrLegacy{ 0 },
-        _foreground{},
-        _background{},
+        _wAttrLegacy{ (WORD)(wLegacyAttr & META_ATTRS) },
+        _foreground{ (BYTE)(wLegacyAttr & FG_ATTRS) },
+        _background{ (BYTE)((wLegacyAttr & BG_ATTRS)>>4) },
         _isBold{ false }
     {
-        SetFromLegacy(wLegacyAttr);
     }
 
     constexpr TextAttribute(const COLORREF rgbForeground, const COLORREF rgbBackground) noexcept :
         _wAttrLegacy{ 0 },
-        _foreground{rgbForeground},
-        _background{rgbBackground},
+        _foreground{ rgbForeground },
+        _background{ rgbBackground },
         _isBold{ false }
     {
     }
 
-    // WORD GetLegacyAttributes() const noexcept;
     constexpr WORD TextAttribute::GetLegacyAttributes() const noexcept
     {
         // TODO: Should this take a defaultLegacy value, if the Default is set for either fg/bg?
@@ -67,8 +65,8 @@ public:
     COLORREF CalculateRgbForeground(std::basic_string_view<COLORREF> colorTable, COLORREF defaultColor) const;
     COLORREF CalculateRgbBackground(std::basic_string_view<COLORREF> colorTable, COLORREF defaultColor) const;
 
-    COLORREF GetRgbForeground(std::basic_string_view<COLORREF> colorTable, COLORREF defaultColor) const;
-    COLORREF GetRgbBackground(std::basic_string_view<COLORREF> colorTable, COLORREF defaultColor) const;
+    COLORREF _GetRgbForeground(std::basic_string_view<COLORREF> colorTable, COLORREF defaultColor) const;
+    COLORREF _GetRgbBackground(std::basic_string_view<COLORREF> colorTable, COLORREF defaultColor) const;
 
     bool IsLeadingByte() const noexcept;
     bool IsTrailingByte() const noexcept;
@@ -80,15 +78,12 @@ public:
     void SetLeftVerticalDisplayed(const bool isDisplayed) noexcept;
     void SetRightVerticalDisplayed(const bool isDisplayed) noexcept;
 
-    // void SetFromLegacy(const WORD wLegacy) noexcept;
-    constexpr void SetFromLegacy(const WORD wLegacy) noexcept
-    {
-        _wAttrLegacy = wLegacy;
-        BYTE fgIndex = (BYTE)(wLegacy & FG_ATTRS);
-        BYTE bgIndex = (BYTE)(wLegacy & BG_ATTRS) >> 4;
-        _foreground = TextColor(fgIndex);
-        _background = TextColor(bgIndex);
-    }
+    void SetFromLegacy(const WORD wLegacy) noexcept;
+
+    void SetLegacyAttributes(const WORD attrs,
+                             const bool setForeground,
+                             const bool setBackground,
+                             const bool setMeta);
 
     void SetMetaAttributes(const WORD wMeta) noexcept;
 
@@ -109,32 +104,24 @@ public:
     void SetBackground(const COLORREF rgbBackground);
     void SetColor(const COLORREF rgbColor, const bool fIsForeground);
 
-    void SetDefaultForeground(const COLORREF rgbForeground, const WORD wAttrDefault) noexcept;
-    void SetDefaultBackground(const COLORREF rgbBackground, const WORD wAttrDefault) noexcept;
+    void SetDefaultForeground() noexcept;
+    void SetDefaultBackground() noexcept;
 
     bool ForegroundIsDefault() const noexcept;
     bool BackgroundIsDefault() const noexcept;
 
 private:
-    // COLORREF _GetRgbForeground(std::basic_string_view<COLORREF>& colorTable, COLORREF defaultColor) const;
-    // COLORREF _GetRgbBackground(std::basic_string_view<COLORREF>& colorTable, COLORREF defaultColor) const;
-
     bool _IsReverseVideo() const noexcept;
-
     void _SetBoldness(const bool isBold) noexcept;
 
     WORD _wAttrLegacy;
-    // bool _fUseRgbColor;
-    // COLORREF _rgbForeground;
-    // COLORREF _rgbBackground;
     TextColor _foreground;
     TextColor _background;
     bool _isBold;
-    // bool _defaultFg;
-    // bool _defaultBg;
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;
+    template<typename TextAttribute> friend class WEX::TestExecution::VerifyOutputTraits;
 #endif
 };
 
@@ -193,14 +180,11 @@ namespace WEX {
             {
                 return WEX::Common::NoThrowString().Format(
                     // L"{IsLegacy:%d,GetLegacyAttributes:0x%02x,FG:0x%06x,BG:0x%06x,bold:%d,default:(%d,%d)}",
-                    L"{IsLegacy:%d,GetLegacyAttributes:0x%02x,FG:%s,BG:%s,bold:%d,default:(%d,%d)}",
-                    attr.IsLegacy(),
-                    attr.GetLegacyAttributes(),
-                    L"TODO",// attr.CalculateRgbForeground(),
-                    L"TODO",// attr.CalculateRgbBackground(),
+                    L"{FG:%s,BG:%s,bold:%d,wLegacy:(0x%04x)}",
+                    VerifyOutputTraits<TextColor>::ToString(attr._foreground).GetBuffer(),
+                    VerifyOutputTraits<TextColor>::ToString(attr._background).GetBuffer(),
                     attr.IsBold(),
-                    attr.ForegroundIsDefault(),
-                    attr.BackgroundIsDefault()
+                    attr._wAttrLegacy
                 );
             }
         };

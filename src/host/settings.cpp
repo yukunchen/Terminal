@@ -1116,16 +1116,21 @@ void Settings::SetDefaultBackgroundColor(const COLORREF defaultBackground) noexc
 
 TextAttribute Settings::GetDefaultAttributes() const noexcept
 {
-    TextAttribute attrs(_wFillAttribute);
-    if (_DefaultForeground != INVALID_COLOR)
-    {
-        attrs.SetDefaultForeground(_DefaultForeground, _wFillAttribute);
-    }
-    if (_DefaultBackground != INVALID_COLOR)
-    {
-        attrs.SetDefaultBackground(_DefaultBackground, _wFillAttribute);
-    }
-    return attrs;
+    // TextAttribute attrs{};
+    // TextAttribute attrs(_wFillAttribute);
+    // // if (_DefaultForeground != INVALID_COLOR)
+    // // {
+    // //     attrs.SetDefaultForeground(_DefaultForeground, _wFillAttribute);
+    // // }
+    // // if (_DefaultBackground != INVALID_COLOR)
+    // // {
+    // //     attrs.SetDefaultBackground(_DefaultBackground, _wFillAttribute);
+    // // }
+
+    // attrs.SetDefaultForeground();
+    // attrs.SetDefaultBackground();
+
+    return TextAttribute{};
 }
 
 bool Settings::IsTerminalScrolling() const noexcept
@@ -1176,11 +1181,11 @@ COLORREF Settings::CalculateDefaultBackground() const
 COLORREF Settings::GetForegroundColor(const TextAttribute& attr) const
 {
     const auto tableView = std::basic_string_view<COLORREF>(&GetColorTable()[0], GetColorTableSize());
-    return attr.GetRgbForeground(tableView, CalculateDefaultForeground());
+    return attr.CalculateRgbForeground(tableView, CalculateDefaultForeground());
 }
 
 COLORREF Settings::GetBackgroundColor(const TextAttribute& attr) const
 {
     const auto tableView = std::basic_string_view<COLORREF>(&GetColorTable()[0], GetColorTableSize());
-    return attr.GetRgbBackground(tableView, CalculateDefaultBackground());
+    return attr.CalculateRgbBackground(tableView, CalculateDefaultBackground());
 }

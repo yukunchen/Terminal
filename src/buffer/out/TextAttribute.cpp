@@ -20,7 +20,7 @@ bool TextAttribute::IsLegacy() const noexcept
 COLORREF TextAttribute::CalculateRgbForeground(std::basic_string_view<COLORREF> colorTable,
                                                COLORREF defaultColor) const
 {
-    return _IsReverseVideo() ? GetRgbBackground(colorTable, defaultColor) : GetRgbForeground(colorTable, defaultColor);
+    return _IsReverseVideo() ? _GetRgbBackground(colorTable, defaultColor) : _GetRgbForeground(colorTable, defaultColor);
 }
 
 // Routine Description:
@@ -32,7 +32,7 @@ COLORREF TextAttribute::CalculateRgbForeground(std::basic_string_view<COLORREF> 
 COLORREF TextAttribute::CalculateRgbBackground(std::basic_string_view<COLORREF> colorTable,
                                                COLORREF defaultColor) const
 {
-    return _IsReverseVideo() ? GetRgbForeground(colorTable, defaultColor) : GetRgbBackground(colorTable, defaultColor);
+    return _IsReverseVideo() ? _GetRgbForeground(colorTable, defaultColor) : _GetRgbBackground(colorTable, defaultColor);
 }
 
 // Routine Description:
@@ -42,7 +42,7 @@ COLORREF TextAttribute::CalculateRgbBackground(std::basic_string_view<COLORREF> 
 // - None
 // Return Value:
 // - color that is stored as the foreground color
-COLORREF TextAttribute::GetRgbForeground(std::basic_string_view<COLORREF> colorTable,
+COLORREF TextAttribute::_GetRgbForeground(std::basic_string_view<COLORREF> colorTable,
                                          COLORREF defaultColor) const
 {
     // TODO: GetRgbForeground should be affected by our boldness -
@@ -72,7 +72,7 @@ COLORREF TextAttribute::GetRgbForeground(std::basic_string_view<COLORREF> colorT
 // - None
 // Return Value:
 // - color that is stored as the background color
-COLORREF TextAttribute::GetRgbBackground(std::basic_string_view<COLORREF> colorTable,
+COLORREF TextAttribute::_GetRgbBackground(std::basic_string_view<COLORREF> colorTable,
                                          COLORREF defaultColor) const
 {
     return _background.GetColor(colorTable, defaultColor, false);
@@ -123,6 +123,36 @@ void TextAttribute::SetBackground(const COLORREF rgbBackground)
     //     // _rgbForeground = GetRgbForeground();
     // }
     // _fUseRgbColor = true;
+}
+
+void TextAttribute::SetFromLegacy(const WORD wLegacy) noexcept
+{
+    _wAttrLegacy = (WORD)(wLegacy & META_ATTRS);
+    BYTE fgIndex = (BYTE)(wLegacy & FG_ATTRS);
+    BYTE bgIndex = (BYTE)(wLegacy & BG_ATTRS) >> 4;
+    _foreground = TextColor(fgIndex);
+    _background = TextColor(bgIndex);
+}
+
+void TextAttribute::SetLegacyAttributes(const WORD attrs,
+                                        const bool setForeground,
+                                        const bool setBackground,
+                                        const bool setMeta)
+{
+    if (setForeground)
+    {
+        BYTE fgIndex = (BYTE)(attrs & FG_ATTRS);
+        _foreground = TextColor(fgIndex);
+    }
+    if (setBackground)
+    {
+        BYTE bgIndex = (BYTE)(attrs & BG_ATTRS) >> 4;
+        _background = TextColor(bgIndex);
+    }
+    if (setMeta)
+    {
+        SetMetaAttributes(attrs);
+    }
 }
 
 void TextAttribute::SetColor(const COLORREF rgbColor, const bool fIsForeground)
@@ -224,30 +254,14 @@ void TextAttribute::_SetBoldness(const bool isBold) noexcept
     _isBold = isBold;
 }
 
-void TextAttribute::SetDefaultForeground(const COLORREF /*rgbForeground*/, const WORD /*wAttrDefault*/) noexcept
+void TextAttribute::SetDefaultForeground() noexcept
 {
-    // TODO remove params from signature
     _foreground = TextColor();
-    // if(rgbForeground == INVALID_COLOR)
-    // {
-    //     return;
-    // }
-    // WI_UpdateFlagsInMask(_wAttrLegacy, FG_ATTRS, wAttrDefault);
-    // SetForeground(rgbForeground);
-    // _defaultFg = true;
 }
 
-void TextAttribute::SetDefaultBackground(const COLORREF /*rgbBackground*/, const WORD /*wAttrDefault*/) noexcept
+void TextAttribute::SetDefaultBackground() noexcept
 {
-    // TODO remove params from signature
     _background = TextColor();
-    // if(rgbBackground == INVALID_COLOR)
-    // {
-    //     return;
-    // }
-    // WI_UpdateFlagsInMask(_wAttrLegacy, BG_ATTRS, wAttrDefault);
-    // SetBackground(rgbBackground);
-    // _defaultBg = true;
 }
 
 // Method Description:

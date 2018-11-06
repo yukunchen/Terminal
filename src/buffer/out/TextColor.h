@@ -116,15 +116,15 @@ namespace WEX {
             {
                 if (color.IsDefault())
                 {
-                    return L"<default>";
+                    return L"{default}";
                 }
                 else if (color.IsRgb())
                 {
-                    return WEX::Common::NoThrowString().Format(L"RGB:0x%06x", color._GetRGB());
+                    return WEX::Common::NoThrowString().Format(L"{RGB:0x%06x}", color._GetRGB());
                 }
                 else
                 {
-                    return WEX::Common::NoThrowString().Format(L"index:0x%04x", color._red);
+                    return WEX::Common::NoThrowString().Format(L"{index:0x%04x}", color._red);
                 }
             }
         };

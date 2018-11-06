@@ -1155,15 +1155,6 @@ void TextBufferTests::TestReverseReset()
     stateMachine.ProcessString(&reset[0], reset.length());
 }
 
-// void LogTextAttribute(const TextAttribute& attr, const std::wstring& name)
-// {
-//     Log::Comment(NoThrowString().Format(
-//         L"%s={IsLegacy:%d, GetLegacyAttributes:0x%x, FG:0x%x, BG:0x%x}",
-//         name.c_str(),
-//         attr.IsLegacy(), attr.GetLegacyAttributes(), attr.CalculateRgbForeground(), attr.CalculateRgbBackground()
-//     ));
-// }
-
 void TextBufferTests::CopyLastAttr()
 {
     DisableVerifyExceptions disable;
