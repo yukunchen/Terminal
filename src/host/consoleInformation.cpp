@@ -10,8 +10,6 @@
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
-
-
 CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     // ProcessHandleList initializes itself
     pInputBuffer(nullptr),
@@ -34,7 +32,8 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     _cookedReadData(nullptr),
     ConsoleIme{},
     terminalMouseInput(HandleTerminalKeyEventCallback),
-    _vtIo()
+    _vtIo(),
+    _blinker{}
 {
     ZeroMemory((void*)&CPInfo, sizeof(CPInfo));
     ZeroMemory((void*)&OutputCPInfo, sizeof(OutputCPInfo));
@@ -283,4 +282,9 @@ const std::wstring& CONSOLE_INFORMATION::GetOriginalTitle() const noexcept
 const std::wstring& CONSOLE_INFORMATION::GetLinkTitle() const noexcept
 {
     return _LinkTitle;
+}
+
+Microsoft::Console::CursorBlinker& CONSOLE_INFORMATION::GetCursorBlinker()
+{
+    return _blinker;
 }

@@ -264,7 +264,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
         gci.Flags |= CONSOLE_HAS_FOCUS;
 
-        gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor().FocusStart();
+        gci.GetCursorBlinker().FocusStart();
 
         HandleFocusEvent(TRUE);
 
@@ -288,7 +288,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
         // turn it off when we lose focus.
         gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor().SetIsOn(false);
-        gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor().FocusEnd();
+        gci.GetCursorBlinker().FocusEnd();
 
         HandleFocusEvent(FALSE);
 
@@ -342,7 +342,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         WindowTheme theme;
         LOG_IF_FAILED(theme.TrySetDarkMode(hWnd));
 
-        gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor().SettingsChanged();
+        gci.GetCursorBlinker().SettingsChanged();
     }
     __fallthrough;
 

@@ -178,7 +178,7 @@ void Window::_UpdateSystemMetrics() const
     g.sVerticalScrollSize = (SHORT)dpiApi->GetSystemMetricsForDpi(SM_CXVSCROLL, g.dpi);
     g.sHorizontalScrollSize = (SHORT)dpiApi->GetSystemMetricsForDpi(SM_CYHSCROLL, g.dpi);
 
-    gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor().UpdateSystemMetrics();
+    gci.GetCursorBlinker().UpdateSystemMetrics();
 }
 
 // Routine Description:

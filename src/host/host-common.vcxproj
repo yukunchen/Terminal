@@ -9,6 +9,7 @@
     <ClCompile Include="..\CopyToCharPopup.cpp" />
     <ClCompile Include="..\conattrs.cpp" />
     <ClCompile Include="..\ConsoleArguments.cpp" />
+    <ClCompile Include="..\CursorBlinker.cpp" />
     <ClCompile Include="..\readDataCooked.cpp" />
     <ClCompile Include="..\conareainfo.cpp" />
     <ClCompile Include="..\conimeinfo.cpp" />
@@ -76,6 +77,7 @@
     <ClInclude Include="..\conserv.h" />
     <ClInclude Include="..\conv.h" />
     <ClInclude Include="..\conwinuserrefs.h" />
+    <ClInclude Include="..\CursorBlinker.hpp" />
     <ClInclude Include="..\dbcs.h" />
     <ClInclude Include="..\directio.h" />
     <ClInclude Include="..\getset.h" />

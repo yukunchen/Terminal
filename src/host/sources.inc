@@ -52,6 +52,7 @@ SOURCES = \
     ..\selectionState.cpp \
     ..\scrolling.cpp \
     ..\cmdline.cpp   \
+    ..\CursorBlinker.cpp   \
     ..\popup.cpp   \
     ..\alias.cpp   \
     ..\history.cpp   \

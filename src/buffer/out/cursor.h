@@ -44,11 +44,6 @@ public:
     Cursor(Cursor&&) = default;
     Cursor& operator=(Cursor&&) & = default;
 
-    void UpdateSystemMetrics();
-    void SettingsChanged();
-    void FocusStart();
-    void FocusEnd();
-
     bool HasMoved() const noexcept;
     bool IsVisible() const noexcept;
     bool IsOn() const noexcept;
@@ -86,7 +81,6 @@ public:
     void DecrementXPosition(const int DeltaX);
     void DecrementYPosition(const int DeltaY);
 
-    void TimerRoutine(SCREEN_INFORMATION& ScreenInfo);
     void CopyProperties(const Cursor& OtherCursor);
 
     void DelayEOLWrap(const COORD coordDelayedAt);
@@ -124,18 +118,9 @@ private:
 
     ULONG _ulSize;
 
-    // These use Timer Queues:
-    // https://msdn.microsoft.com/en-us/library/windows/desktop/ms687003(v=vs.85).aspx
-    HANDLE _hCaretBlinkTimer; // timer used to peridically blink the cursor
-    HANDLE _hCaretBlinkTimerQueue; // timer queue where the blink timer lives
-
-    void SetCaretTimer();
-    void KillCaretTimer();
-
     void _RedrawCursor();
     void _RedrawCursorAlways();
 
-    UINT _uCaretBlinkTime;
 
     CursorType _cursorType;
     bool _fUseColor;
