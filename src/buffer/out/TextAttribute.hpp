@@ -15,6 +15,7 @@ Revision History:
 - From components of output.h/.c
   by Therese Stowell (ThereseS) 1990-1991
 - Pulled into its own file from textBuffer.hpp/cpp (AustDi, 2017)
+- Pulled each of the fg/bg colors into their own abstraction (migrie, Nov 2018)
 --*/
 
 #pragma once
@@ -44,7 +45,8 @@ public:
     {
     }
 
-    constexpr TextAttribute(const COLORREF rgbForeground, const COLORREF rgbBackground) noexcept :
+    constexpr TextAttribute(const COLORREF rgbForeground,
+                            const COLORREF rgbBackground) noexcept :
         _wAttrLegacy{ 0 },
         _foreground{ rgbForeground },
         _background{ rgbBackground },
@@ -54,19 +56,16 @@ public:
 
     constexpr WORD TextAttribute::GetLegacyAttributes() const noexcept
     {
-        // TODO: Should this take a defaultLegacy value, if the Default is set for either fg/bg?
-        // Maybe
         BYTE fg = (_foreground.GetIndex() & FG_ATTRS);
         BYTE bg = (_background.GetIndex() & BG_ATTRS) << 4;
         WORD meta = (_wAttrLegacy & META_ATTRS);
         return (fg | bg | meta) | (_isBold ? FOREGROUND_INTENSITY : 0);
     }
 
-    COLORREF CalculateRgbForeground(std::basic_string_view<COLORREF> colorTable, COLORREF defaultColor) const;
-    COLORREF CalculateRgbBackground(std::basic_string_view<COLORREF> colorTable, COLORREF defaultColor) const;
-
-    COLORREF _GetRgbForeground(std::basic_string_view<COLORREF> colorTable, COLORREF defaultColor) const;
-    COLORREF _GetRgbBackground(std::basic_string_view<COLORREF> colorTable, COLORREF defaultColor) const;
+    COLORREF CalculateRgbForeground(std::basic_string_view<COLORREF> colorTable,
+                                    COLORREF defaultColor) const;
+    COLORREF CalculateRgbBackground(std::basic_string_view<COLORREF> colorTable,
+                                    COLORREF defaultColor) const;
 
     bool IsLeadingByte() const noexcept;
     bool IsTrailingByte() const noexcept;
@@ -111,6 +110,10 @@ public:
     bool BackgroundIsDefault() const noexcept;
 
 private:
+    COLORREF _GetRgbForeground(std::basic_string_view<COLORREF> colorTable,
+                               COLORREF defaultColor) const;
+    COLORREF _GetRgbBackground(std::basic_string_view<COLORREF> colorTable,
+                               COLORREF defaultColor) const;
     bool _IsReverseVideo() const noexcept;
     void _SetBoldness(const bool isBold) noexcept;
 
@@ -133,7 +136,6 @@ enum class TextAttributeBehavior
     StoredOnly, // only use the contained text attribute and skip the insertion of anything else
 };
 
-
 constexpr bool operator==(const TextAttribute& a, const TextAttribute& b) noexcept
 {
     return a._wAttrLegacy == b._wAttrLegacy &&
@@ -149,7 +151,6 @@ constexpr bool operator!=(const TextAttribute& a, const TextAttribute& b) noexce
 
 constexpr bool operator==(const TextAttribute& attr, const WORD& legacyAttr) noexcept
 {
-    // TODO: Does this still make sense?
     return attr.GetLegacyAttributes() == legacyAttr;
 }
 
@@ -179,7 +180,6 @@ namespace WEX {
             static WEX::Common::NoThrowString ToString(const TextAttribute& attr)
             {
                 return WEX::Common::NoThrowString().Format(
-                    // L"{IsLegacy:%d,GetLegacyAttributes:0x%02x,FG:0x%06x,BG:0x%06x,bold:%d,default:(%d,%d)}",
                     L"{FG:%s,BG:%s,bold:%d,wLegacy:(0x%04x)}",
                     VerifyOutputTraits<TextColor>::ToString(attr._foreground).GetBuffer(),
                     VerifyOutputTraits<TextColor>::ToString(attr._background).GetBuffer(),

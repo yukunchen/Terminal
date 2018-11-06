@@ -431,7 +431,7 @@ void DoSrvSetScreenBufferInfo(SCREEN_INFORMATION& screenInfo,
     const COORD newBufferSize = screenInfo.GetBufferSize().Dimensions();
 
     gci.SetColorTable(pInfo->ColorTable, ARRAYSIZE(pInfo->ColorTable));
-    SetScreenColors(screenInfo, pInfo->wAttributes, pInfo->wPopupAttributes, TRUE, gci.GetDefaultForegroundColor(), gci.GetDefaultBackgroundColor());
+    SetScreenColors(screenInfo, pInfo->wAttributes, pInfo->wPopupAttributes, TRUE);
 
     const Viewport requestedViewport = Viewport::FromExclusive(pInfo->srWindow);
 
@@ -680,9 +680,7 @@ HRESULT DoSrvScrollConsoleScreenBufferW(SCREEN_INFORMATION& screenInfo,
 void SetScreenColors(SCREEN_INFORMATION& screenInfo,
                      const WORD Attributes,
                      const WORD PopupAttributes,
-                     const BOOL UpdateWholeScreen,
-                     const COLORREF /*defaultForeground*/,
-                     const COLORREF /*defaultBackground*/)
+                     const BOOL UpdateWholeScreen)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
@@ -706,25 +704,11 @@ void SetScreenColors(SCREEN_INFORMATION& screenInfo,
     if (UpdateWholeScreen)
     {
         screenInfo.SetDefaultAttributes(NewPrimaryAttributes, NewPopupAttributes);
-
-        // Replace existing defaults with new defaults.
-        TextAttribute newDefaults = NewPrimaryAttributes;
-        // TODO: Now that the gci is the source of truth on what "default" colors means,
-        // make sure this still works.
-        // We were going through the buffer to make sure that if we had either
-        //      default fg/bg colors actually set, we'd replace the old default
-        //      attributes with whatever the new value is.
-        // Now, the attributes should still be marked as defaults, but we don't
-        //      care what their value was. The attributes have defaults, the GCI
-        //      is who cares if its a legacy defaults or a RGB default.
-        // TODO remove params from the function sig
-        newDefaults.SetDefaultForeground();
-        newDefaults.SetDefaultBackground();
-
-        screenInfo.ReplaceDefaultAttributes(oldPrimaryAttributes,
-                                            oldPopupAttributes,
-                                            newDefaults,
-                                            NewPopupAttributes);
+        // Any attributes that were in the buffer that were marked as "default"
+        //      are still defaults. When queried for their value, GCI will know
+        //      if the default should be a legacy attribute or an RGB one, and
+        //      will be able to get the value out correctly, without needing to
+        //      change the value of the attributes ourselves here.;
 
         auto& commandLine = CommandLine::Instance();
         if (commandLine.HasPopup())
@@ -759,14 +743,11 @@ HRESULT ApiRoutines::SetConsoleTextAttributeImpl(SCREEN_INFORMATION& Context,
 HRESULT DoSrvSetConsoleTextAttribute(SCREEN_INFORMATION& screenInfo, const WORD Attribute) noexcept
 {
     RETURN_HR_IF(E_INVALIDARG, WI_IsAnyFlagSet(Attribute, ~VALID_TEXT_ATTRIBUTES));
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     SetScreenColors(screenInfo,
                     Attribute,
                     screenInfo.GetPopupAttributes()->GetLegacyAttributes(),
-                    FALSE,
-                    gci.GetDefaultForegroundColor(),
-                    gci.GetDefaultBackgroundColor());
+                    FALSE);
     return S_OK;
 }
 

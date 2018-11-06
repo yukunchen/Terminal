@@ -1116,20 +1116,8 @@ void Settings::SetDefaultBackgroundColor(const COLORREF defaultBackground) noexc
 
 TextAttribute Settings::GetDefaultAttributes() const noexcept
 {
-    // TextAttribute attrs{};
-    // TextAttribute attrs(_wFillAttribute);
-    // // if (_DefaultForeground != INVALID_COLOR)
-    // // {
-    // //     attrs.SetDefaultForeground(_DefaultForeground, _wFillAttribute);
-    // // }
-    // // if (_DefaultBackground != INVALID_COLOR)
-    // // {
-    // //     attrs.SetDefaultBackground(_DefaultBackground, _wFillAttribute);
-    // // }
-
-    // attrs.SetDefaultForeground();
-    // attrs.SetDefaultBackground();
-
+    // The default constructor for TextAttribute will construct a text attribute
+    //      with both the foreground and background marked as "default" colors.
     return TextAttribute{};
 }
 
@@ -1152,7 +1140,7 @@ bool Settings::GetUseDx() const noexcept
 // - Return the default foreground color of the console. If the settings are
 //      configured to have a default foreground color (separate from the color
 //      table), this will return that value. Otherwise it will return the value
-//      from the colortable corresponding to our default attributes.
+//      from the colortable corresponding to our default legacy attributes.
 // Arguments:
 // - <none>
 // Return Value:
@@ -1167,7 +1155,7 @@ COLORREF Settings::CalculateDefaultForeground() const
 // - Return the default background color of the console. If the settings are
 //      configured to have a default background color (separate from the color
 //      table), this will return that value. Otherwise it will return the value
-//      from the colortable corresponding to our default attributes.
+//      from the colortable corresponding to our default legacy attributes.
 // Arguments:
 // - <none>
 // Return Value:
@@ -1178,12 +1166,26 @@ COLORREF Settings::CalculateDefaultBackground() const
     return bg != INVALID_COLOR ? bg : BackgroundColor(GetFillAttribute(), GetColorTable(), GetColorTableSize());
 }
 
+// Method Description:
+// - Get the foregroud color of a particular text attribute, using our color
+//      table, and our configured default attributes.
+// Arguments:
+// - attr: the TextAttribute to retrieve the foreground color of.
+// Return Value:
+// - The color value of the attribute's foreground TextColor.
 COLORREF Settings::GetForegroundColor(const TextAttribute& attr) const
 {
     const auto tableView = std::basic_string_view<COLORREF>(&GetColorTable()[0], GetColorTableSize());
     return attr.CalculateRgbForeground(tableView, CalculateDefaultForeground());
 }
 
+// Method Description:
+// - Get the background color of a particular text attribute, using our color
+//      table, and our configured default attributes.
+// Arguments:
+// - attr: the TextAttribute to retrieve the background color of.
+// Return Value:
+// - The color value of the attribute's background TextColor.
 COLORREF Settings::GetBackgroundColor(const TextAttribute& attr) const
 {
     const auto tableView = std::basic_string_view<COLORREF>(&GetColorTable()[0], GetColorTableSize());
