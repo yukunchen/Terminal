@@ -92,7 +92,6 @@ public:
     void SetType(const CursorType type);
 
 private:
-    Microsoft::Console::Interactivity::IAccessibilityNotifier* const _pAccessibilityNotifier;
     const TextBuffer& _parentBuffer;
 
     //TODO: seperate the rendering and text placement
@@ -120,7 +119,6 @@ private:
 
     void _RedrawCursor();
     void _RedrawCursorAlways();
-
 
     CursorType _cursorType;
     bool _fUseColor;

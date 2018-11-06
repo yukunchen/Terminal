@@ -10,7 +10,6 @@
 #include "../../types/inc/GlyphWidth.hpp"
 
 // TODO: Remove all of these.
-#include "../../host/scrolling.hpp"
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
 #pragma hdrstop
@@ -20,7 +19,6 @@
 // Arguments:
 // - ulSize - The height of the cursor within this buffer
 Cursor::Cursor(const ULONG ulSize, const TextBuffer& parentBuffer) :
-    _pAccessibilityNotifier{ THROW_IF_NULL_ALLOC(ServiceLocator::LocateAccessibilityNotifier()) },
     _parentBuffer{ parentBuffer },
     _cPosition{ 0 },
     _fHasMoved(false),
@@ -303,19 +301,6 @@ void Cursor::CopyProperties(const Cursor& OtherCursor)
 
     // Size will be handled seperately in the resize operation.
     //_ulSize                       = OtherCursor._ulSize;
-
-    // // This property is set only once on console startup, and might change
-    // // during the lifetime of the console, but is not set again anywhere when a
-    // // cursor is replaced during reflow. This wasn't necessary when this
-    // // property and the cursor timer were static.
-    // _uCaretBlinkTime              = OtherCursor._uCaretBlinkTime;
-
-    // // If there's a timer on the other one, then it was active for blinking.
-    // // Make sure we have a timer on our side too.
-    // if (OtherCursor._hCaretBlinkTimer != INVALID_HANDLE_VALUE)
-    // {
-    //     SetCaretTimer();
-    // }
 }
 
 void Cursor::DelayEOLWrap(const COORD coordDelayedAt)
@@ -357,8 +342,7 @@ void Cursor::EndDeferDrawing()
 
 const CursorType Cursor::GetType() const
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.GetCursorType();
+    return _cursorType;
 }
 
 const bool Cursor::IsUsingColor() const
@@ -368,18 +352,15 @@ const bool Cursor::IsUsingColor() const
 
 const COLORREF Cursor::GetColor() const
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.GetCursorColor();
+    return _color;
 }
 
 void Cursor::SetColor(const unsigned int color)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.SetCursorColor(color);
+    _color = (COLORREF)color;
 }
 
 void Cursor::SetType(const CursorType type)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.SetCursorType(type);
+    _cursorType = type;
 }
