@@ -10,7 +10,6 @@
 #include "../../types/inc/GlyphWidth.hpp"
 
 // TODO: Remove all of these.
-#include "../../host/handle.h"
 #include "../../host/scrolling.hpp"
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
@@ -367,7 +366,7 @@ void Cursor::TimerRoutine(SCREEN_INFORMATION& ScreenInfo)
                 flags = IAccessibilityNotifier::ConsoleCaretEventFlags::CaretVisible;
             }
 
-            _pAccessibilityNotifier->NotifyConsoleCaretEvent(flags, PACKCOORD(GetPosition()));
+            _pAccessibilityNotifier->NotifyConsoleCaretEvent(flags, MAKELONG(GetPosition().X, GetPosition().Y));
         }
     }
 
@@ -503,7 +502,9 @@ void CALLBACK CursorTimerRoutineWrapper(_In_ PVOID /* lpParam */, _In_ BOOL /* T
         Cursor& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
         cursor.TimerRoutine(gci.GetActiveOutputBuffer());
 
-        UnlockConsole();
+        // This was originally just UnlockConsole, not CONSOLE_INFORMATION::UnlockConsole
+        // Is there a reason it would need to be the global version?
+        gci.UnlockConsole();
     }
 }
 
