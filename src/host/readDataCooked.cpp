@@ -48,7 +48,7 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
                                    _In_ PWCHAR UserBuffer,
                                    _In_ ULONG CtrlWakeupMask,
                                    _In_ CommandHistory* CommandHistory,
-                                   const std::wstring& exeName
+                                   const std::wstring_view exeName
 ) :
     ReadData(pInputBuffer, pInputReadHandleData),
     _screenInfo{ screenInfo },

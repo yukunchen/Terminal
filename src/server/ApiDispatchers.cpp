@@ -275,6 +275,7 @@ HRESULT ApiDispatchers::ServerReadConsole(_Inout_ CONSOLE_API_MSG * const m, _In
         RETURN_IF_NULL_ALLOC(pwsExeName);
         RETURN_IF_FAILED(m->ReadMessageInput(0, pwsExeName.get(), cbExeName));
     }
+    const std::wstring_view exeView(pwsExeName.get(), cchExeName);
 
     // 2. Existing data in the buffer that was passed in.
     ULONG const cbInitialData = a->InitialNumBytes;
@@ -299,70 +300,54 @@ HRESULT ApiDispatchers::ServerReadConsole(_Inout_ CONSOLE_API_MSG * const m, _In
     // across multiple calls when we are simulating a command prompt input line for the client application.
     INPUT_READ_HANDLE_DATA* const pInputReadHandleData = HandleData->GetClientInput();
 
-    IWaitRoutine* pWaiter = nullptr;
+    std::unique_ptr<IWaitRoutine> waiter;
     size_t cbWritten;
 
     HRESULT hr;
     if (a->Unicode)
     {
-        wchar_t* const pwsInitialData = reinterpret_cast<wchar_t*>(pbInitialData.get());
-        size_t const cchInitialData = cbInitialData / sizeof(wchar_t);
-
-        wchar_t* const pwsOutputBuffer = reinterpret_cast<wchar_t*>(pvBuffer);
-        size_t const cchOutputBuffer = cbBufferSize / sizeof(wchar_t);
-        size_t cchOutputWritten;
-
-        hr = m->_pApiRoutines->ReadConsoleWImpl(pInputBuffer,
-                                                pwsOutputBuffer,
-                                                cchOutputBuffer,
-                                                &cchOutputWritten,
-                                                &pWaiter,
-                                                pwsInitialData,
-                                                cchInitialData,
-                                                pwsExeName.get(),
-                                                cchExeName,
-                                                pInputReadHandleData,
+        const std::string_view initialData(pbInitialData.get(), cbInitialData);
+        const gsl::span<char> outputBuffer(reinterpret_cast<char*>(pvBuffer), cbBufferSize);
+        hr = m->_pApiRoutines->ReadConsoleWImpl(*pInputBuffer,
+                                                outputBuffer,
+                                                cbWritten, // We must set the reply length in bytes.
+                                                waiter,
+                                                initialData,
+                                                exeView,
+                                                *pInputReadHandleData,
                                                 hConsoleClient,
                                                 a->CtrlWakeupMask,
-                                                &a->ControlKeyState);
+                                                a->ControlKeyState);
 
-        // We must set the reply length in bytes. Convert back from characters.
-        LOG_IF_FAILED(SizeTMult(cchOutputWritten, sizeof(wchar_t), &cbWritten));
+        
     }
     else
     {
-        char* const psOutputBuffer = reinterpret_cast<char*>(pvBuffer);
-        size_t const cchOutputBuffer = cbBufferSize;
-        size_t cchOutputWritten;
-
-        hr = m->_pApiRoutines->ReadConsoleAImpl(pInputBuffer,
-                                                psOutputBuffer,
-                                                cchOutputBuffer,
-                                                &cchOutputWritten,
-                                                &pWaiter,
-                                                pbInitialData.get(),
-                                                cbInitialData,
-                                                pwsExeName.get(),
-                                                cchExeName,
-                                                pInputReadHandleData,
+        const std::string_view initialData(pbInitialData.get(), cbInitialData);
+        const gsl::span<char> outputBuffer(reinterpret_cast<char*>(pvBuffer), cbBufferSize);
+        hr = m->_pApiRoutines->ReadConsoleAImpl(*pInputBuffer,
+                                                outputBuffer,
+                                                cbWritten, // We must set the reply length in bytes.
+                                                waiter,
+                                                initialData,
+                                                exeView,
+                                                *pInputReadHandleData,
                                                 hConsoleClient,
                                                 a->CtrlWakeupMask,
-                                                &a->ControlKeyState);
+                                                a->ControlKeyState);
 
-        cbWritten = cchOutputWritten;
     }
 
     LOG_IF_FAILED(SizeTToULong(cbWritten, &a->NumBytes));
 
-    if (nullptr != pWaiter)
+    if (nullptr != waiter.get())
     {
         // If we received a waiter, we need to queue the wait and not reply.
-        hr = ConsoleWaitQueue::s_CreateWait(m, pWaiter);
+        hr = ConsoleWaitQueue::s_CreateWait(m, waiter.release());
 
         if (FAILED(hr))
         {
-            delete pWaiter;
-            pWaiter = nullptr;
+            waiter.reset();
         }
         else
         {

@@ -80,34 +80,28 @@ public:
                                   std::unique_ptr<IWaitRoutine>& waiter) noexcept override;
 
     [[nodiscard]]
-    HRESULT ReadConsoleAImpl(_Inout_ IConsoleInputObject* const pInContext,
-                             _Out_writes_to_(cchTextBuffer, *pcchTextBufferWritten) char* const psTextBuffer,
-                             const size_t cchTextBuffer,
-                             _Out_ size_t* const pcchTextBufferWritten,
-                             _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter,
-                             _In_reads_opt_(cchInitialData) const char* const psInitialData,
-                             const size_t cchInitialData,
-                             _In_reads_opt_(cchExeName) const wchar_t* const pwsExeName,
-                             const size_t cchExeName,
-                             _In_ INPUT_READ_HANDLE_DATA* const pHandleData,
-                             const HANDLE hConsoleClient,
-                             const DWORD dwControlWakeupMask,
-                             _Out_ DWORD* const pdwControlKeyState) override;
+    HRESULT ReadConsoleAImpl(IConsoleInputObject& context,
+                             gsl::span<char> buffer,
+                             size_t& written,
+                             std::unique_ptr<IWaitRoutine>& waiter,
+                             const std::string_view initialData,
+                             const std::wstring_view exeName,
+                             INPUT_READ_HANDLE_DATA& readHandleState,
+                             const HANDLE clientHandle,
+                             const DWORD controlWakeupMask,
+                             DWORD& controlKeyState) noexcept override;
 
     [[nodiscard]]
-    HRESULT ReadConsoleWImpl(_Inout_ IConsoleInputObject* const pInContext,
-                             _Out_writes_to_(cchTextBuffer, *pcchTextBufferWritten) wchar_t* const pwsTextBuffer,
-                             const size_t cchTextBuffer,
-                             _Out_ size_t* const pcchTextBufferWritten,
-                             _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter,
-                             _In_reads_opt_(cchInitialData) const wchar_t* const pwsInitialData,
-                             const size_t cchInitialData,
-                             _In_reads_opt_(cchExeName) const wchar_t* const pwsExeName,
-                             const size_t cchExeName,
-                             _In_ INPUT_READ_HANDLE_DATA* const pHandleData,
-                             const HANDLE hConsoleClient,
-                             const DWORD dwControlWakeupMask,
-                             _Out_ DWORD* const pdwControlKeyState) override;
+    HRESULT ReadConsoleWImpl(IConsoleInputObject& context,
+                             gsl::span<char> buffer,
+                             size_t& written,
+                             std::unique_ptr<IWaitRoutine>& waiter,
+                             const std::string_view initialData,
+                             const std::wstring_view exeName,
+                             INPUT_READ_HANDLE_DATA& readHandleState,
+                             const HANDLE clientHandle,
+                             const DWORD controlWakeupMask,
+                             DWORD& controlKeyState) noexcept override;
 
     [[nodiscard]]
     HRESULT WriteConsoleAImpl(IConsoleOutputObject& context,
