@@ -66,9 +66,6 @@
     <ClCompile Include="..\ApiDispatchers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\ApiRoutinesBase.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\ApiDispatchersInternal.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

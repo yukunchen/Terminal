@@ -931,9 +931,49 @@ HRESULT ApiDispatchers::ServerWriteConsoleInput(_Inout_ CONSOLE_API_MSG * const 
 }
 
 [[nodiscard]]
-HRESULT ApiDispatchers::ServerWriteConsoleOutput(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
+HRESULT ApiDispatchers::ServerWriteConsoleOutput(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    RETURN_NTSTATUS(SrvWriteConsoleOutput(m, pbReplyPending));
+    PCONSOLE_WRITECONSOLEOUTPUT_MSG const a = &m->u.consoleMsgL2.WriteConsoleOutput;
+
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::WriteConsoleOutput, a->Unicode);
+
+    // Backup originalRegion and set the written area to a 0 size rectangle in case of failures.
+    const auto originalRegion = Microsoft::Console::Types::Viewport::FromInclusive(a->CharRegion);
+    auto writtenRegion = Microsoft::Console::Types::Viewport::FromDimensions(originalRegion.Origin(), { 0, 0 });
+    a->CharRegion = writtenRegion.ToInclusive();
+
+    // Get input parameter buffer
+    PVOID pvBuffer;
+    ULONG cbSize;
+    RETURN_IF_FAILED(m->GetInputBuffer(&pvBuffer, &cbSize));
+
+    // Make sure we have a valid screen buffer.
+    ConsoleHandleData* HandleData = m->GetObjectHandle();
+    RETURN_HR_IF_NULL(E_HANDLE, HandleData);
+    SCREEN_INFORMATION* pScreenInfo;
+    RETURN_IF_FAILED(HandleData->GetScreenBuffer(GENERIC_WRITE, &pScreenInfo));
+
+    // Validate parameters
+    size_t regionArea;
+    RETURN_IF_FAILED(SizeTMult(originalRegion.Dimensions().X, originalRegion.Dimensions().Y, &regionArea));
+    size_t regionBytes;
+    RETURN_IF_FAILED(SizeTMult(regionArea, sizeof(CHAR_INFO), &regionBytes));
+    RETURN_HR_IF(E_INVALIDARG, cbSize < regionBytes); // If given fewer bytes on input than we need to do this write, it's invalid.
+
+    const gsl::span<CHAR_INFO> buffer(reinterpret_cast<CHAR_INFO*>(pvBuffer), cbSize / sizeof(CHAR_INFO));
+    if (!a->Unicode)
+    {
+        RETURN_IF_FAILED(m->_pApiRoutines->WriteConsoleOutputAImpl(*pScreenInfo, buffer, originalRegion, writtenRegion));
+    }
+    else
+    {
+        RETURN_IF_FAILED(m->_pApiRoutines->WriteConsoleOutputWImpl(*pScreenInfo, buffer, originalRegion, writtenRegion));
+    }
+
+    // Update the written region if we were successful
+    a->CharRegion = writtenRegion.ToInclusive();
+
+    return S_OK;
 }
 
 [[nodiscard]]
@@ -1023,7 +1063,7 @@ HRESULT ApiDispatchers::ServerWriteConsoleOutputString(_Inout_ CONSOLE_API_MSG *
 }
 
 [[nodiscard]]
-HRESULT ApiDispatchers::ServerReadConsoleOutput(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
+HRESULT ApiDispatchers::ServerReadConsoleOutput(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const /*pbReplyPending*/)
 {
     RETURN_HR_IF(E_ACCESSDENIED, !m->GetProcessHandle()->GetPolicy().CanReadOutputBuffer());
 

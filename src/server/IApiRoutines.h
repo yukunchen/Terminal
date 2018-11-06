@@ -263,20 +263,16 @@ public:
                                            const bool append) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT WriteConsoleOutputAImpl(IConsoleOutputObject& OutContext,
-                                            _In_reads_(pTextBufferSize->X * pTextBufferSize->Y) const CHAR_INFO* const pTextBuffer,
-                                            const COORD* const pTextBufferSize,
-                                            const COORD* const pTextBufferSourceOrigin,
-                                            const SMALL_RECT* const pTargetRectangle,
-                                            _Out_ SMALL_RECT* const pAffectedRectangle);
+    virtual HRESULT WriteConsoleOutputAImpl(IConsoleOutputObject& context,
+                                            gsl::span<CHAR_INFO> buffer,
+                                            const Microsoft::Console::Types::Viewport& requestRectangle,
+                                            Microsoft::Console::Types::Viewport& writtenRectangle) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT WriteConsoleOutputWImpl(IConsoleOutputObject&  OutContext,
-                                            _In_reads_(pTextBufferSize->X * pTextBufferSize->Y) const CHAR_INFO* const pTextBuffer,
-                                            const COORD* const pTextBufferSize,
-                                            const COORD* const pTextBufferSourceOrigin,
-                                            const SMALL_RECT* const pTargetRectangle,
-                                            _Out_ SMALL_RECT* const pAffectedRectangle);
+    virtual HRESULT WriteConsoleOutputWImpl(IConsoleOutputObject& context,
+                                            gsl::span<CHAR_INFO> buffer,
+                                            const Microsoft::Console::Types::Viewport& requestRectangle,
+                                            Microsoft::Console::Types::Viewport& writtenRectangle) noexcept = 0;
 
     [[nodiscard]]
     virtual HRESULT WriteConsoleOutputAttributeImpl(IConsoleOutputObject& OutContext,

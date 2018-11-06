@@ -250,19 +250,17 @@ public:
                                    size_t& written,
                                    const bool append) noexcept override;
 
-    //HRESULT WriteConsoleOutputAImpl(_In_ SCREEN_INFORMATION* const pContext,
-    //                                        _In_reads_(pTextBufferSize->X * pTextBufferSize->Y) const CHAR_INFO* const pTextBuffer,
-    //                                        const COORD* const pTextBufferSize,
-    //                                        const COORD* const pTextBufferSourceOrigin,
-    //                                        const SMALL_RECT* const pTargetRectangle,
-    //                                        _Out_ SMALL_RECT* const pAffectedRectangle);
+    [[nodiscard]]
+    HRESULT WriteConsoleOutputAImpl(SCREEN_INFORMATION& context,
+                                    gsl::span<CHAR_INFO> buffer,
+                                    const Microsoft::Console::Types::Viewport& requestRectangle,
+                                    Microsoft::Console::Types::Viewport& writtenRectangle) noexcept override;
 
-    //HRESULT WriteConsoleOutputWImpl(_In_ SCREEN_INFORMATION* const pContext,
-    //                                        _In_reads_(pTextBufferSize->X * pTextBufferSize->Y) const CHAR_INFO* const pTextBuffer,
-    //                                        const COORD* const pTextBufferSize,
-    //                                        const COORD* const pTextBufferSourceOrigin,
-    //                                        const SMALL_RECT* const pTargetRectangle,
-    //                                        _Out_ SMALL_RECT* const pAffectedRectangle);
+    [[nodiscard]]
+    HRESULT WriteConsoleOutputWImpl(SCREEN_INFORMATION& context,
+                                    gsl::span<CHAR_INFO> buffer,
+                                    const Microsoft::Console::Types::Viewport& requestRectangle,
+                                    Microsoft::Console::Types::Viewport& writtenRectangle) noexcept override;
 
     [[nodiscard]]
     HRESULT WriteConsoleOutputAttributeImpl(IConsoleOutputObject& OutContext,
@@ -283,13 +281,13 @@ public:
                                              size_t& used) noexcept override;
 
     [[nodiscard]]
-    HRESULT ReadConsoleOutputAImpl(const IConsoleOutputObject& context,
+    HRESULT ReadConsoleOutputAImpl(const SCREEN_INFORMATION& context,
                                    gsl::span<CHAR_INFO> buffer,
                                    const Microsoft::Console::Types::Viewport& sourceRectangle,
                                    Microsoft::Console::Types::Viewport& readRectangle) noexcept override;
 
     [[nodiscard]]
-    HRESULT ReadConsoleOutputWImpl(const IConsoleOutputObject& context,
+    HRESULT ReadConsoleOutputWImpl(const SCREEN_INFORMATION& context,
                                    gsl::span<CHAR_INFO> buffer,
                                    const Microsoft::Console::Types::Viewport& sourceRectangle,
                                    Microsoft::Console::Types::Viewport& readRectangle) noexcept override;

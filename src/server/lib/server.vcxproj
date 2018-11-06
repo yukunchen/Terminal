@@ -6,7 +6,6 @@
     <ClCompile Include="..\ApiDispatchersInternal.cpp" />
     <ClCompile Include="..\ApiMessage.cpp" />
     <ClCompile Include="..\ApiMessageState.cpp" />
-    <ClCompile Include="..\ApiRoutinesBase.cpp" />
     <ClCompile Include="..\ApiSorter.cpp" />
     <ClCompile Include="..\DeviceComm.cpp" />
     <ClCompile Include="..\DeviceHandle.cpp" />

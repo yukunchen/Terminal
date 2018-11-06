@@ -20,20 +20,10 @@ Revision History:
 
 class SCREEN_INFORMATION;
 
-[[nodiscard]]
-NTSTATUS TranslateOutputToUnicode(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Size);
-[[nodiscard]]
-NTSTATUS TranslateOutputToPaddingUnicode(_Inout_ PCHAR_INFO OutputBuffer,
-                                         _In_ COORD Size,
-                                         _Inout_ PCHAR_INFO OutputBufferR);
-
 HRESULT DoSrvPrivateWriteConsoleInputW(_Inout_ InputBuffer* const pInputBuffer,
                                        _Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
                                        _Out_ size_t& eventsWritten,
                                        const bool append);
-
-[[nodiscard]]
-NTSTATUS SrvWriteConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
 
 [[nodiscard]]
 NTSTATUS ConsoleCreateScreenBuffer(std::unique_ptr<ConsoleHandleData>& handle,
