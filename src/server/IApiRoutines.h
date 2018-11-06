@@ -30,6 +30,7 @@ class INPUT_READ_HANDLE_DATA;
 #include <deque>
 #include <memory>
 #include "../types/inc/IInputEvent.hpp"
+#include "../types/inc/viewport.hpp"
 
 class IApiRoutines
 {
@@ -296,20 +297,16 @@ public:
                                                      size_t& used) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT ReadConsoleOutputA(const IConsoleOutputObject& OutContext,
-                                       _Out_writes_(pTextBufferSize->X * pTextBufferSize->Y) CHAR_INFO* const pTextBuffer,
-                                       const COORD* const pTextBufferSize,
-                                       const COORD* const pTextBufferTargetOrigin,
-                                       const SMALL_RECT* const pSourceRectangle,
-                                       _Out_ SMALL_RECT* const pReadRectangle);
+    virtual HRESULT ReadConsoleOutputAImpl(const IConsoleOutputObject& context,
+                                           gsl::span<CHAR_INFO> buffer,
+                                           const Microsoft::Console::Types::Viewport& sourceRectangle,
+                                           Microsoft::Console::Types::Viewport& readRectangle) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT ReadConsoleOutputW(const IConsoleOutputObject& OutContext,
-                                       _Out_writes_(pTextBufferSize->X * pTextBufferSize->Y) CHAR_INFO* const pTextBuffer,
-                                       const COORD* const pTextBufferSize,
-                                       const COORD* const pTextBufferTargetOrigin,
-                                       const SMALL_RECT* const pSourceRectangle,
-                                       _Out_ SMALL_RECT* const pReadRectangle);
+    virtual HRESULT ReadConsoleOutputWImpl(const IConsoleOutputObject& context,
+                                           gsl::span<CHAR_INFO> buffer,
+                                           const Microsoft::Console::Types::Viewport& sourceRectangle,
+                                           Microsoft::Console::Types::Viewport& readRectangle) noexcept = 0;
 
     [[nodiscard]]
     virtual HRESULT GetConsoleTitleAImpl(gsl::span<char> title,

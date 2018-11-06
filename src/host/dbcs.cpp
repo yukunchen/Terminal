@@ -52,12 +52,10 @@ bool CheckBisectStringA(_In_reads_bytes_(cbBuf) PCHAR pchBuf, _In_ DWORD cbBuf, 
 // Routine Description:
 // - This routine removes the double copies of characters used when storing DBCS/Double-wide characters in the text buffer.
 // Arguments:
-// - pciDst - Pointer to destination.
-// - pciSrc - Pointer to source.
-// - cch - Number of characters in buffer.
+// - buffer - The buffer to walk and fix
 // Return Value:
-// - The length of the destination buffer.
-DWORD RemoveDbcsMarkCell(_Out_writes_(cch) PCHAR_INFO pciDst, _In_reads_(cch) const CHAR_INFO * pciSrc, _In_ DWORD cch)
+// - The length of the final modified buffer.
+DWORD RemoveDbcsMarkCell(const gsl::span<CHAR_INFO> buffer)
 {
     // Walk through the source CHAR_INFO and copy each to the destination.
     // EXCEPT for trailing bytes (this will de-duplicate the leading/trailing byte double copies of the CHAR_INFOs as stored in the buffer).
@@ -66,13 +64,13 @@ DWORD RemoveDbcsMarkCell(_Out_writes_(cch) PCHAR_INFO pciDst, _In_reads_(cch) co
     DWORD iDst = 0;
 
     // Walk through every CHAR_INFO
-    for (DWORD iSrc = 0; iSrc < cch; iSrc++)
+    for (DWORD iSrc = 0; iSrc < buffer.size(); iSrc++)
     {
         // If it's not a trailing byte, copy it straight over, stripping out the Leading/Trailing flags from the attributes field.
-        if (!WI_IsFlagSet(pciSrc[iSrc].Attributes, COMMON_LVB_TRAILING_BYTE))
+        if (!WI_IsFlagSet(buffer.at(iSrc).Attributes, COMMON_LVB_TRAILING_BYTE))
         {
-            pciDst[iDst] = pciSrc[iSrc];
-            pciDst[iDst].Attributes &= ~COMMON_LVB_SBCSDBCS;
+            buffer.at(iDst) = buffer.at(iSrc);
+            buffer.at(iDst).Attributes &= ~COMMON_LVB_SBCSDBCS;
             iDst++;
         }
 
@@ -80,11 +78,11 @@ DWORD RemoveDbcsMarkCell(_Out_writes_(cch) PCHAR_INFO pciDst, _In_reads_(cch) co
     }
 
     // Zero out the remaining part of the destination buffer that we didn't use.
-    DWORD const cchDstToClear = cch - iDst;
+    DWORD const cchDstToClear = buffer.size() - iDst;
 
     if (cchDstToClear > 0)
     {
-        CHAR_INFO* const pciDstClearStart = pciDst + iDst;
+        CHAR_INFO* const pciDstClearStart = buffer.data() + iDst;
         ZeroMemory(pciDstClearStart, cchDstToClear * sizeof(CHAR_INFO));
     }
 
@@ -92,7 +90,7 @@ DWORD RemoveDbcsMarkCell(_Out_writes_(cch) PCHAR_INFO pciDst, _In_reads_(cch) co
     iDst += cchDstToClear;
 
     // now that we're done, we should have copied, left alone, or cleared the entire length.
-    FAIL_FAST_IF(!(iDst == cch));
+    FAIL_FAST_IF(!(iDst == buffer.size()));
 
     return iDst;
 }

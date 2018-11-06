@@ -282,19 +282,17 @@ public:
                                              const COORD target,
                                              size_t& used) noexcept override;
 
-    //HRESULT ReadConsoleOutputA(_In_ SCREEN_INFORMATION* const pContext,
-    //                                   _Out_writes_(pTextBufferSize->X * pTextBufferSize->Y) CHAR_INFO* const pTextBuffer,
-    //                                   const COORD* const pTextBufferSize,
-    //                                   const COORD* const pTextBufferTargetOrigin,
-    //                                   const SMALL_RECT* const pSourceRectangle,
-    //                                   _Out_ SMALL_RECT* const pReadRectangle);
+    [[nodiscard]]
+    HRESULT ReadConsoleOutputAImpl(const IConsoleOutputObject& context,
+                                   gsl::span<CHAR_INFO> buffer,
+                                   const Microsoft::Console::Types::Viewport& sourceRectangle,
+                                   Microsoft::Console::Types::Viewport& readRectangle) noexcept override;
 
-    //HRESULT ReadConsoleOutputW(_In_ SCREEN_INFORMATION* const pContext,
-    //                                   _Out_writes_(pTextBufferSize->X * pTextBufferSize->Y) CHAR_INFO* const pTextBuffer,
-    //                                   const COORD* const pTextBufferSize,
-    //                                   const COORD* const pTextBufferTargetOrigin,
-    //                                   const SMALL_RECT* const pSourceRectangle,
-    //                                   _Out_ SMALL_RECT* const pReadRectangle);
+    [[nodiscard]]
+    HRESULT ReadConsoleOutputWImpl(const IConsoleOutputObject& context,
+                                   gsl::span<CHAR_INFO> buffer,
+                                   const Microsoft::Console::Types::Viewport& sourceRectangle,
+                                   Microsoft::Console::Types::Viewport& readRectangle) noexcept override;
 
     [[nodiscard]]
     HRESULT GetConsoleTitleAImpl(gsl::span<char> title,

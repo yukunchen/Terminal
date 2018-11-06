@@ -33,8 +33,6 @@ HRESULT DoSrvPrivateWriteConsoleInputW(_Inout_ InputBuffer* const pInputBuffer,
                                        const bool append);
 
 [[nodiscard]]
-NTSTATUS SrvReadConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
-[[nodiscard]]
 NTSTATUS SrvWriteConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
 
 [[nodiscard]]

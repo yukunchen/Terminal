@@ -392,9 +392,9 @@ HRESULT ApiRoutines::ReadConsoleInputWImpl(_In_ IConsoleInputObject* const pInCo
 // - HRESULT indicating success or failure
 [[nodiscard]]
 static HRESULT _WriteConsoleInputWImplHelper(InputBuffer& context,
-                                            std::deque<std::unique_ptr<IInputEvent>>& events,
-                                            size_t& written,
-                                            const bool append) noexcept
+                                             std::deque<std::unique_ptr<IInputEvent>>& events,
+                                             size_t& written,
+                                             const bool append) noexcept
 {
     try
     {
@@ -572,76 +572,78 @@ HRESULT DoSrvPrivateWriteConsoleControlInput(_Inout_ InputBuffer* const /*pInput
 // Routine Description:
 // - This is used when the app reads oem from the output buffer the app wants
 //   real OEM characters. We have real Unicode or UnicodeOem.
+// Arguments:
+// - buffer - This is the buffer containing all of the character data to be converted
+// - rectangle - This is the rectangle describing the region that the buffer covers.
+// Return Value:
+// - Generally S_OK. Could be a memory or math error code.
 [[nodiscard]]
-NTSTATUS TranslateOutputToOem(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Size)
+HRESULT TranslateOutputToOem(const gsl::span<CHAR_INFO> buffer, const Viewport rectangle)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    ULONG NumBytes;
-    ULONG uX, uY;
-    if (FAILED(ShortToULong(Size.X, &uX)) ||
-        FAILED(ShortToULong(Size.Y, &uY)) ||
-        FAILED(ULongMult(uX, uY, &NumBytes)) ||
-        FAILED(ULongMult(NumBytes, 2 * sizeof(CHAR_INFO), &NumBytes)))
-    {
-        return STATUS_NO_MEMORY;
-    }
-    PCHAR_INFO TmpBuffer = (PCHAR_INFO) new(std::nothrow) BYTE[NumBytes];
-    PCHAR_INFO const SaveBuffer = TmpBuffer;
-    if (TmpBuffer == nullptr)
-    {
-        return STATUS_NO_MEMORY;
-    }
-    ZeroMemory(TmpBuffer, sizeof(BYTE) * NumBytes);
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto codepage = gci.OutputCP;
+    std::vector<CHAR_INFO> tempBuffer;
+    tempBuffer.reserve(buffer.size());
+    std::copy(buffer.cbegin(), buffer.cend(), tempBuffer.begin());
 
-    UINT const Codepage = gci.OutputCP;
+    const auto size = rectangle.Dimensions();
+    auto tempIter = tempBuffer.cbegin();
+    auto outIter = buffer.begin();
 
-    memmove(TmpBuffer, OutputBuffer, Size.X * Size.Y * sizeof(CHAR_INFO));
-
-#pragma prefast(push)
-#pragma prefast(disable:26019, "The buffer is the correct size for any given DBCS characters. No additional validation needed.")
-    for (int i = 0; i < Size.Y; i++)
+    for (int i = 0; i < size.Y; i++)
     {
-        for (int j = 0; j < Size.X; j++)
+        for (int j = 0; j < size.X; j++)
         {
-            if (WI_IsFlagSet(TmpBuffer->Attributes, COMMON_LVB_LEADING_BYTE))
+            // Any time we see the lead flag, we presume there will be a trailing one following it.
+            // Giving us two bytes of space (one per cell in the ascii part of the character union)
+            // to fill with whatever this Unicode character converts into.
+            if (WI_IsFlagSet(tempIter->Attributes, COMMON_LVB_LEADING_BYTE))
             {
-                if (j < Size.X - 1)
-                {   // -1 is safe DBCS in buffer
+                // As long as we're not looking at the exact last column of the buffer...
+                if (j < size.X - 1)
+                {
+                    // Walk forward one because we're about to consume two cells.
                     j++;
+                    
+                    // Try to convert the unicode character (2 bytes) in the leading cell to the codepage.
                     CHAR AsciiDbcs[2] = { 0 };
-                    NumBytes = sizeof(AsciiDbcs);
-                    NumBytes = ConvertToOem(Codepage, &TmpBuffer->Char.UnicodeChar, 1, &AsciiDbcs[0], NumBytes);
-                    OutputBuffer->Char.AsciiChar = AsciiDbcs[0];
-                    OutputBuffer->Attributes = TmpBuffer->Attributes;
-                    OutputBuffer++;
-                    TmpBuffer++;
-                    OutputBuffer->Char.AsciiChar = AsciiDbcs[1];
-                    OutputBuffer->Attributes = TmpBuffer->Attributes;
-                    OutputBuffer++;
-                    TmpBuffer++;
+                    auto NumBytes = sizeof(AsciiDbcs);
+                    NumBytes = ConvertToOem(codepage, &tempIter->Char.UnicodeChar, 1, &AsciiDbcs[0], NumBytes);
+
+                    // Fill the 1 byte (AsciiChar) portion of the leading and trailing cells with each of the bytes returned.
+                    outIter->Char.AsciiChar = AsciiDbcs[0];
+                    outIter->Attributes = tempIter->Attributes;
+                    outIter++;
+                    tempIter++;
+                    outIter->Char.AsciiChar = AsciiDbcs[1];
+                    outIter->Attributes = tempIter->Attributes;
+                    outIter++;
+                    tempIter++;
                 }
                 else
                 {
-                    OutputBuffer->Char.AsciiChar = ' ';
-                    OutputBuffer->Attributes = TmpBuffer->Attributes;
-                    WI_ClearAllFlags(OutputBuffer->Attributes, COMMON_LVB_SBCSDBCS);
-                    OutputBuffer++;
-                    TmpBuffer++;
+                    // When we're in the last column with only a leading byte, we can't return that without a trailing.
+                    // Instead, replace the output data with just a space and clear all flags.
+                    outIter->Char.AsciiChar = UNICODE_SPACE;
+                    outIter->Attributes = tempIter->Attributes;
+                    WI_ClearAllFlags(outIter->Attributes, COMMON_LVB_SBCSDBCS);
+                    outIter++;
+                    tempIter++;
                 }
             }
-            else if (WI_AreAllFlagsClear(TmpBuffer->Attributes, COMMON_LVB_SBCSDBCS))
+            else if (WI_AreAllFlagsClear(tempIter->Attributes, COMMON_LVB_SBCSDBCS))
             {
-                ConvertToOem(Codepage, &TmpBuffer->Char.UnicodeChar, 1, &OutputBuffer->Char.AsciiChar, 1);
-                OutputBuffer->Attributes = TmpBuffer->Attributes;
-                OutputBuffer++;
-                TmpBuffer++;
+                // If there are no leading/trailing pair flags, then we only have 1 ascii byte to try to fit the 
+                // 2 byte UTF-16 character into. Give it a go.
+                ConvertToOem(codepage, &tempIter->Char.UnicodeChar, 1, &outIter->Char.AsciiChar, 1);
+                outIter->Attributes = tempIter->Attributes;
+                outIter++;
+                tempIter++;
             }
         }
     }
-#pragma prefast(pop)
 
-    delete[] SaveBuffer;
-    return STATUS_SUCCESS;
+    return S_OK;
 }
 
 // Routine Description:
@@ -750,100 +752,141 @@ NTSTATUS TranslateOutputToPaddingUnicode(_Inout_ PCHAR_INFO OutputBuffer, _In_ C
 }
 
 [[nodiscard]]
-NTSTATUS SrvReadConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
+static HRESULT _ReadConsoleOutputWImplHelper(const SCREEN_INFORMATION& context,
+                                             gsl::span<CHAR_INFO> targetBuffer,
+                                             const Microsoft::Console::Types::Viewport& requestRectangle,
+                                             Microsoft::Console::Types::Viewport& readRectangle) noexcept
 {
-    PCONSOLE_READCONSOLEOUTPUT_MSG const a = &m->u.consoleMsgL2.ReadConsoleOutput;
-
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::ReadConsoleOutput, a->Unicode);
-
-    PCHAR_INFO Buffer;
-    ULONG cbBuffer;
-    NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetOutputBuffer((PVOID*)&Buffer, &cbBuffer));
-    if (!NT_SUCCESS(Status))
+    try
     {
-        return Status;
-    }
+        const SCREEN_INFORMATION& activeScreenInfo = context.GetActiveBuffer();
+        const auto textBufferSize = activeScreenInfo.GetBufferSize().Dimensions();
 
-    LockConsole();
+        // TODO: 19543742 - validate that the rectangle restrictions are fully covered for requestRectangle
+        
+        const auto targetDimensions = requestRectangle.Dimensions();
 
-    ConsoleHandleData* HandleData = m->GetObjectHandle();
-    if (HandleData == nullptr)
-    {
-        Status = STATUS_INVALID_HANDLE;
-    }
-
-    SCREEN_INFORMATION* pScreenInfo = nullptr;
-    if (NT_SUCCESS(Status))
-    {
-        Status = NTSTATUS_FROM_HRESULT(HandleData->GetScreenBuffer(GENERIC_READ, &pScreenInfo));
-    }
-
-    if (!NT_SUCCESS(Status))
-    {
-        // a region of zero size is indicated by the right and bottom coordinates being less than the left and top.
-        a->CharRegion.Right = (USHORT)(a->CharRegion.Left - 1);
-        a->CharRegion.Bottom = (USHORT)(a->CharRegion.Top - 1);
-    }
-    else
-    {
-        COORD BufferSize;
-        BufferSize.X = (SHORT)(a->CharRegion.Right - a->CharRegion.Left + 1);
-        BufferSize.Y = (SHORT)(a->CharRegion.Bottom - a->CharRegion.Top + 1);
-
-        if (((BufferSize.X > 0) && (BufferSize.Y > 0)) &&
-            ((BufferSize.X * BufferSize.Y > ULONG_MAX / sizeof(CHAR_INFO)) || (cbBuffer < BufferSize.X * BufferSize.Y * sizeof(CHAR_INFO))))
+        // If either dimension of the request is too small, return an empty rectangle as read and exit early.
+        if (targetDimensions.X <= 0 || targetDimensions.Y <= 0)
         {
-            UnlockConsole();
-            return STATUS_INVALID_PARAMETER;
+            readRectangle = Viewport::FromDimensions(requestRectangle.Origin(), { 0, 0 });
+            return S_OK;
         }
 
-        SCREEN_INFORMATION& activeScreenInfo = pScreenInfo->GetActiveBuffer();
+        // The buffer given should be big enough to hold the dimensions of the request.
+        SHORT targetArea;
+        RETURN_IF_FAILED(ShortMult(targetDimensions.X, targetDimensions.Y, &targetArea));
+        RETURN_HR_IF(E_INVALIDARG, targetArea < 0);
+        RETURN_HR_IF(E_INVALIDARG, targetArea < targetBuffer.size());
 
-        const COORD coordStart{ a->CharRegion.Left, a->CharRegion.Top };
+        // Clip the request rectangle to the size of the screen
+        SMALL_RECT clip = requestRectangle.ToExclusive();
+        clip.Right = std::min(clip.Right, textBufferSize.X);
+        clip.Bottom = std::min(clip.Bottom, textBufferSize.Y);
 
-        try
+        // Find the target point (where to write the output buffer) 
+        // It will either be 0,0 or offset into the buffer by the inverse of the negative values.
+        COORD targetPoint;
+        targetPoint.X = clip.Left < 0 ? -clip.Left : 0;
+        targetPoint.Y = clip.Top < 0 ? -clip.Top : 0;
+
+        // The clipped rect must be inside the buffer size, so it has a minimum value of 0. (max of itself and 0)
+        clip.Left = std::max(clip.Left, 0i16);
+        clip.Top = std::max(clip.Top, 0i16);
+
+        // The final "request rectangle" or the area inside the buffer we want to read, is the clipped dimensions.
+        const auto clippedRequestRectangle = Viewport::FromExclusive(clip);
+
+        // We will start reading the buffer at the point of the top left corner (origin) of the (potentially adjusted) request
+        const auto sourcePoint = clippedRequestRectangle.Origin();
+
+        // Get an iterator to the beginning of the return buffer
+        // We might have to seek this forward or skip around if we clipped the request.
+        auto targetIter = targetBuffer.begin();
+        COORD targetPos = { 0 };
+        const auto targetLimit = Viewport::FromDimensions(targetPoint, clippedRequestRectangle.Dimensions());
+
+        // Get an iterator to the beginning of the request inside the screen buffer
+        // This should walk exactly along every cell of the clipped request.
+        auto sourceIter = activeScreenInfo.GetCellDataAt(sourcePoint, clippedRequestRectangle);
+
+        // Walk through every cell of the target, advancing the buffer.
+        // Validate that we always still have a valid iterator to the backgin store,
+        // that we always are writing inside the user's buffer (before the end)
+        // and we're always targeting the user's buffer inside its original bounds.
+        while (sourceIter && targetIter < targetBuffer.end() && requestRectangle.IsInBounds(targetPos))
         {
-            const auto charInfoBuffer = gsl::make_span(Buffer, cbBuffer / sizeof(CHAR_INFO));
-            auto bufferPos = charInfoBuffer.begin();
-
-            auto cellIter = activeScreenInfo.GetCellDataAt(coordStart, Viewport::FromInclusive(a->CharRegion));
-            while (cellIter && bufferPos < charInfoBuffer.end())
+            // If the point we're trying to write is inside the limited buffer write zone...
+            if (targetLimit.IsInBounds(targetPos))
             {
-                *bufferPos++ = cellIter.AsCharInfo();
-                cellIter++;
+                // Copy the data into position and advance the read iterator.
+                *targetIter = sourceIter.AsCharInfo();
+                sourceIter++;
+            }
+
+            // Always advance the write iterator, we might have skipped it due to clipping.
+            targetIter++;
+
+            // Increment the target 
+            targetPos.X++;
+            if (targetPos.X >= targetDimensions.X)
+            {
+                targetPos.X = 0;
+                targetPos.Y++;
             }
         }
-        catch (...)
-        {
-            // Expecting the exception to be related to bounds of the span and/or the buffer size.
-            // Log the real exception here.
-            LOG_CAUGHT_EXCEPTION();
 
-            // API traditionally returns this value for buffer problems.
-            // So unlock and return this value like the above buffer size check.
-            UnlockConsole();
-            return STATUS_INVALID_PARAMETER;
-        }
+        // Reply with the region we read out of the backing buffer (potentially clipped)
+        readRectangle = clippedRequestRectangle;
 
-        if (!a->Unicode)
-        {
-            LOG_IF_FAILED(TranslateOutputToOem(Buffer, BufferSize));
-        }
-        else if (!activeScreenInfo.GetTextBuffer().GetCurrentFont().IsTrueTypeFont())
+        return S_OK;
+    }
+    CATCH_RETURN();
+}
+
+[[nodiscard]]
+HRESULT ApiRoutines::ReadConsoleOutputAImpl(const SCREEN_INFORMATION& context,
+                                            gsl::span<CHAR_INFO> buffer,
+                                            const Microsoft::Console::Types::Viewport& sourceRectangle,
+                                            Microsoft::Console::Types::Viewport& readRectangle) noexcept
+{
+    LockConsole();
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+    try
+    {
+        RETURN_IF_FAILED(_ReadConsoleOutputWImplHelper(context, buffer, sourceRectangle, readRectangle));
+
+        LOG_IF_FAILED(TranslateOutputToOem(buffer, readRectangle));
+
+        return S_OK;
+    }
+    CATCH_RETURN();
+}
+
+[[nodiscard]]
+HRESULT ApiRoutines::ReadConsoleOutputWImpl(const SCREEN_INFORMATION& context,
+                                            gsl::span<CHAR_INFO> buffer,
+                                            const Microsoft::Console::Types::Viewport& sourceRectangle,
+                                            Microsoft::Console::Types::Viewport& readRectangle) noexcept
+{
+    LockConsole();
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+    try
+    {
+        RETURN_IF_FAILED(_ReadConsoleOutputWImplHelper(context, buffer, sourceRectangle, readRectangle));
+
+        if (!context.GetActiveBuffer().GetTextBuffer().GetCurrentFont().IsTrueTypeFont())
         {
             // For compatibility reasons, we must maintain the behavior that munges the data if we are writing while a raster font is enabled.
             // This can be removed when raster font support is removed.
-            RemoveDbcsMarkCell(Buffer, Buffer, BufferSize.X * BufferSize.Y);
+            RemoveDbcsMarkCell(buffer);
         }
 
-        if (NT_SUCCESS(Status))
-        {
-            m->SetReplyInformation(CalcWindowSizeX(a->CharRegion) * CalcWindowSizeY(a->CharRegion) * sizeof(CHAR_INFO));
-        }
+        return S_OK;
     }
-
-    UnlockConsole();
-    return Status;
+    CATCH_RETURN();
 }
 
 [[nodiscard]]
