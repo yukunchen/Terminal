@@ -776,74 +776,11 @@ void DoSrvPrivateSetLegacyAttributes(SCREEN_INFORMATION& screenInfo,
                                      const bool fBackground,
                                      const bool fMeta)
 {
-    // const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const TextAttribute OldAttributes = screenInfo.GetAttributes();
     TextAttribute NewAttributes = OldAttributes;
 
-    // Always update the legacy component. This prevents the 1m in "^[[32m^[[1m"
-    //  from resetting the colors set by the 32m. (for example)
-    // WORD wNewLegacy = NewAttributes.GetLegacyAttributes();
-    // if (fForeground)
-    // {
-    //     WI_UpdateFlagsInMask(wNewLegacy, FG_ATTRS, Attribute);
-    // }
-    // if (fBackground)
-    // {
-    //     WI_UpdateFlagsInMask(wNewLegacy, BG_ATTRS, Attribute);
-    // }
-    // if (fMeta)
-    // {
-    //     WI_UpdateFlagsInMask(wNewLegacy, META_ATTRS, Attribute);
-    // }
     NewAttributes.SetLegacyAttributes(Attribute, fForeground, fBackground, fMeta);
 
-    // if (!OldAttributes.IsLegacy())
-    // {
-    //     // The previous call to SetFromLegacy is going to trash our RGB.
-    //     // Restore it.
-    //     // If the old attributes were "reversed", and the new ones aren't,
-    //     //  then flip the colors back.
-    //     bool resetReverse = fMeta &&
-    //         (WI_IsFlagClear(Attribute, COMMON_LVB_REVERSE_VIDEO)) &&
-    //         (WI_IsFlagSet(OldAttributes.GetLegacyAttributes(), COMMON_LVB_REVERSE_VIDEO));
-
-    //     if (OldAttributes.ForegroundIsDefault() && !fForeground)
-    //     {
-    //         NewAttributes.SetDefaultForeground(gci.CalculateDefaultForeground(), gci.GetFillAttribute());
-    //     }
-    //     if (OldAttributes.BackgroundIsDefault() && !fBackground)
-    //     {
-    //         NewAttributes.SetDefaultBackground(gci.CalculateDefaultBackground(), gci.GetFillAttribute());
-    //     }
-
-    //     if (resetReverse)
-    //     {
-    //         // TODO: Come back to this - I think this whole method's going to get way simpler.
-    //         NewAttributes.SetForeground(gci.GetBackgroundColor(OldAttributes));
-    //         NewAttributes.SetBackground(gci.GetForegroundColor(OldAttributes));
-    //     }
-    //     else
-    //     {
-    //         // TODO: Come back to this - I think this whole method's going to get way simpler.
-    //         NewAttributes.SetForeground(gci.GetForegroundColor(OldAttributes));
-    //         NewAttributes.SetBackground(gci.GetBackgroundColor(OldAttributes));
-    //     }
-
-    //     if (fForeground)
-    //     {
-    //         COLORREF rgbColor = gci.GetColorTableEntry((Attribute & FG_ATTRS) | (NewAttributes.IsBold() ? FOREGROUND_INTENSITY : 0));
-    //         NewAttributes.SetForeground(rgbColor);
-    //     }
-    //     if (fBackground)
-    //     {
-    //         COLORREF rgbColor = gci.GetColorTableEntry((Attribute >> 4) & FG_ATTRS);
-    //         NewAttributes.SetBackground(rgbColor);
-    //     }
-    //     if (fMeta)
-    //     {
-    //         NewAttributes.SetMetaAttributes(Attribute);
-    //     }
-    // }
 
     screenInfo.SetAttributes(NewAttributes);
 }
@@ -852,36 +789,14 @@ void DoSrvPrivateSetDefaultAttributes(SCREEN_INFORMATION& screenInfo,
                                       const bool fForeground,
                                       const bool fBackground)
 {
-    // const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    // const auto wFill = gci.GetFillAttribute();
-    // const auto defaultFG = gci.CalculateDefaultForeground();
-    // const auto defaultBG = gci.CalculateDefaultBackground();
-
     TextAttribute NewAttributes = screenInfo.GetAttributes();
     if (fForeground)
     {
         NewAttributes.SetDefaultForeground();
-        // if (defaultFG != INVALID_COLOR)
-        // {
-        //     screenInfo.SetAttributes(NewAttributes);
-        // }
-        // else
-        // {
-        //     DoSrvPrivateSetLegacyAttributes(screenInfo, wFill, true, false, false);
-        // }
     }
-    // NewAttributes = screenInfo.GetAttributes();
     if (fBackground)
     {
         NewAttributes.SetDefaultBackground();
-        // if (defaultBG != INVALID_COLOR)
-        // {
-        //     screenInfo.SetAttributes(NewAttributes);
-        // }
-        // else
-        // {
-        //     DoSrvPrivateSetLegacyAttributes(screenInfo, wFill, false, true, false);
-        // }
     }
     screenInfo.SetAttributes(NewAttributes);
 }

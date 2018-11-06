@@ -248,33 +248,9 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
 {
     for (auto& run : _list)
     {
-        // If the attributes are an exact match, this is easy, replace them.
-        // If the old attributes are "default" forground/background,
-        //      and we're trying to replace them with new defaults, then the
-        //      attributes won't match, but we should replace their values
-        //      anyways with the new default values.
         if (run.GetAttributes() == toBeReplacedAttr)
         {
             run.SetAttributes(replaceWith);
-        }
-        else if (run.GetAttributes().ForegroundIsDefault() && replaceWith.ForegroundIsDefault())
-        {
-            // TODO: I think I'll be able to take these branches out.
-            // They were for making sure that the replaced attrs were defaults
-            //  as well, but we'll be storing that in another bit now, so they
-            //  should just copy over with SetAttributes
-            // TextAttribute runAttrs = run.GetAttributes();
-            // runAttrs.SetDefaultForeground(replaceWith.GetRgbForeground(),
-            //                               runAttrs.GetLegacyAttributes());
-            // run.SetAttributes(runAttrs);
-        }
-        else if (run.GetAttributes().BackgroundIsDefault() && replaceWith.BackgroundIsDefault())
-        {
-            // TODO: above
-            // TextAttribute runAttrs = run.GetAttributes();
-            // runAttrs.SetDefaultBackground(replaceWith.GetRgbBackground(),
-            //                               runAttrs.GetLegacyAttributes());
-            // run.SetAttributes(runAttrs);
         }
     }
 }
