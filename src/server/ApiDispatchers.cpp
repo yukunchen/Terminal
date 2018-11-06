@@ -143,7 +143,7 @@ HRESULT ApiDispatchers::ServerGetConsoleInput(_Inout_ CONSOLE_API_MSG * const m,
 
     INPUT_READ_HANDLE_DATA* const pInputReadHandleData = pHandleData->GetClientInput();
 
-    IWaitRoutine* pWaiter = nullptr;
+    std::unique_ptr<IWaitRoutine> waiter;
     HRESULT hr;
     std::deque<std::unique_ptr<IInputEvent>> outEvents;
     size_t const eventsToRead = cRecords;
@@ -151,38 +151,22 @@ HRESULT ApiDispatchers::ServerGetConsoleInput(_Inout_ CONSOLE_API_MSG * const m,
     {
         if (fIsPeek)
         {
-            hr = m->_pApiRoutines->PeekConsoleInputWImpl(pInputBuffer,
-                                                         outEvents,
-                                                         eventsToRead,
-                                                         pInputReadHandleData,
-                                                         &pWaiter);
+            hr = m->_pApiRoutines->PeekConsoleInputWImpl(*pInputBuffer, outEvents, eventsToRead, *pInputReadHandleData, waiter);
         }
         else
         {
-            hr = m->_pApiRoutines->ReadConsoleInputWImpl(pInputBuffer,
-                                                         outEvents,
-                                                         eventsToRead,
-                                                         pInputReadHandleData,
-                                                         &pWaiter);
+            hr = m->_pApiRoutines->ReadConsoleInputWImpl(*pInputBuffer, outEvents, eventsToRead, *pInputReadHandleData, waiter);
         }
     }
     else
     {
         if (fIsPeek)
         {
-            hr = m->_pApiRoutines->PeekConsoleInputAImpl(pInputBuffer,
-                                                         outEvents,
-                                                         eventsToRead,
-                                                         pInputReadHandleData,
-                                                         &pWaiter);
+            hr = m->_pApiRoutines->PeekConsoleInputAImpl(*pInputBuffer, outEvents, eventsToRead, *pInputReadHandleData, waiter);
         }
         else
         {
-            hr = m->_pApiRoutines->ReadConsoleInputAImpl(pInputBuffer,
-                                                         outEvents,
-                                                         eventsToRead,
-                                                         pInputReadHandleData,
-                                                         &pWaiter);
+            hr = m->_pApiRoutines->ReadConsoleInputAImpl(*pInputBuffer, outEvents, eventsToRead, *pInputReadHandleData, waiter);
         }
     }
 
@@ -193,7 +177,7 @@ HRESULT ApiDispatchers::ServerGetConsoleInput(_Inout_ CONSOLE_API_MSG * const m,
     size_t cbWritten;
     LOG_IF_FAILED(SizeTMult(outEvents.size(), sizeof(INPUT_RECORD), &cbWritten));
 
-    if (nullptr != pWaiter)
+    if (nullptr != waiter.get())
     {
         // In some circumstances, the read may have told us to wait because it didn't have data,
         // but the client explicitly asked us to return immediate. In that case, we'll convert the
@@ -201,11 +185,10 @@ HRESULT ApiDispatchers::ServerGetConsoleInput(_Inout_ CONSOLE_API_MSG * const m,
 
         if (fIsWaitAllowed)
         {
-            hr = ConsoleWaitQueue::s_CreateWait(m, pWaiter);
+            hr = ConsoleWaitQueue::s_CreateWait(m, waiter.release());
             if (FAILED(hr))
             {
-                delete pWaiter;
-                pWaiter = nullptr;
+                waiter.reset();
             }
             else
             {
@@ -218,8 +201,7 @@ HRESULT ApiDispatchers::ServerGetConsoleInput(_Inout_ CONSOLE_API_MSG * const m,
             // If wait isn't allowed and the routine generated a
             // waiter, delete it and say there was nothing to be
             // retrieved right now.
-            delete pWaiter;
-            pWaiter = nullptr;
+            waiter.reset();
 
             cbWritten = 0;
             hr = S_OK;

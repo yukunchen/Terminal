@@ -68,32 +68,32 @@ public:
                                                       ULONG& events) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT PeekConsoleInputAImpl(_In_ IConsoleInputObject* const pInContext,
-                                          _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
+    virtual HRESULT PeekConsoleInputAImpl(IConsoleInputObject& context,
+                                          std::deque<std::unique_ptr<IInputEvent>>& outEvents,
                                           const size_t eventsToRead,
-                                          _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
-                                          _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter) = 0;
+                                          INPUT_READ_HANDLE_DATA& readHandleState,
+                                          std::unique_ptr<IWaitRoutine>& waiter) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT PeekConsoleInputWImpl(_In_ IConsoleInputObject* const pInContext,
-                                          _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
+    virtual HRESULT PeekConsoleInputWImpl(IConsoleInputObject& context,
+                                          std::deque<std::unique_ptr<IInputEvent>>& outEvents,
                                           const size_t eventsToRead,
-                                          _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
-                                          _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter) = 0;
+                                          INPUT_READ_HANDLE_DATA& readHandleState,
+                                          std::unique_ptr<IWaitRoutine>& waiter) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT ReadConsoleInputAImpl(_In_ IConsoleInputObject* const pInContext,
-                                          _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
+    virtual HRESULT ReadConsoleInputAImpl(IConsoleInputObject& context,
+                                          std::deque<std::unique_ptr<IInputEvent>>& outEvents,
                                           const size_t eventsToRead,
-                                          _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
-                                          _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter) = 0;
+                                          INPUT_READ_HANDLE_DATA& readHandleState,
+                                          std::unique_ptr<IWaitRoutine>& waiter) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT ReadConsoleInputWImpl(_In_ IConsoleInputObject* const pInContext,
-                                          _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
+    virtual HRESULT ReadConsoleInputWImpl(IConsoleInputObject& context,
+                                          std::deque<std::unique_ptr<IInputEvent>>& outEvents,
                                           const size_t eventsToRead,
-                                          _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
-                                          _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter) = 0;
+                                          INPUT_READ_HANDLE_DATA& readHandleState,
+                                          std::unique_ptr<IWaitRoutine>& waiter) noexcept = 0;
 
     [[nodiscard]]
     virtual HRESULT ReadConsoleAImpl(_Inout_ IConsoleInputObject* const pInContext,
