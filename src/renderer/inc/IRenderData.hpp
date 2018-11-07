@@ -19,7 +19,6 @@ Author(s):
 
 class TextBuffer;
 class Cursor;
-class SCREEN_INFORMATION;
 
 namespace Microsoft::Console::Render
 {
@@ -33,7 +32,10 @@ namespace Microsoft::Console::Render
         virtual const TextAttribute GetDefaultBrushColors() = 0;
         virtual const void GetColorTable(_Outptr_result_buffer_all_(*pcColors) COLORREF** const ppColorTable,
                                             _Out_ size_t* const pcColors) = 0;
+
         virtual const Cursor& GetCursor() = 0;
+        virtual const bool IsCursorDoubleWidth() const = 0;
+
         virtual const ConsoleImeInfo* GetImeData() = 0;
         virtual const TextBuffer& GetImeCompositionStringBuffer(_In_ size_t iIndex) = 0;
 

@@ -5,12 +5,8 @@
 ********************************************************/
 
 #include "precomp.h"
-
 #include "cursor.h"
-#include "../../types/inc/GlyphWidth.hpp"
-
-// TODO: Remove all of these.
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "TextBuffer.hpp"
 
 #pragma hdrstop
 
@@ -72,13 +68,6 @@ bool Cursor::IsBlinkingAllowed() const noexcept
 bool Cursor::IsDouble() const noexcept
 {
     return _fIsDouble;
-}
-
-bool Cursor::IsDoubleWidth() const
-{
-    // Check with the current screen buffer to see if the character under the cursor is double-width.
-    TextBufferTextIterator it(TextBufferCellIterator(_parentBuffer, _cPosition));
-    return IsGlyphFullWidth(*it);
 }
 
 bool Cursor::IsConversionArea() const noexcept
@@ -193,22 +182,9 @@ void Cursor::_RedrawCursor()
 // - <none>
 void Cursor::_RedrawCursorAlways()
 {
-    if (ServiceLocator::LocateGlobals().pRender != nullptr)
+    if (_parentBuffer.GetRenderTarget() != nullptr)
     {
-        // Always trigger update of the cursor as one character width
-        ServiceLocator::LocateGlobals().pRender->TriggerRedrawCursor(&_cPosition);
-
-        // In case of a double width character, we need to invalidate the spot one to the right of the cursor as well.
-        try
-        {
-            if (IsDoubleWidth())
-            {
-                COORD cExtra = _cPosition;
-                cExtra.X++;
-                ServiceLocator::LocateGlobals().pRender->TriggerRedrawCursor(&cExtra);
-            }
-        }
-        CATCH_LOG();
+        _parentBuffer.GetRenderTarget()->TriggerRedrawCursor(&_cPosition);
     }
 }
 

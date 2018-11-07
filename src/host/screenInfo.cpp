@@ -17,6 +17,7 @@
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/Viewport.hpp"
+#include "../types/inc/GlyphWidth.hpp"
 #include "../terminal/parser/OutputStateMachineEngine.hpp"
 
 #include "../types/inc/convert.hpp"
@@ -111,7 +112,7 @@ NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
         IAccessibilityNotifier *pNotifier = ServiceLocator::LocateAccessibilityNotifier();
         THROW_IF_NULL_ALLOC(pNotifier);
 
-        PSCREEN_INFORMATION const pScreen = new SCREEN_INFORMATION(pMetrics, pNotifier, defaultAttributes, popupAttributes);
+        SCREEN_INFORMATION* const pScreen = new SCREEN_INFORMATION(pMetrics, pNotifier, defaultAttributes, popupAttributes);
 
         // Set up viewport
         pScreen->_viewport = Viewport::FromDimensions({ 0, 0 },
@@ -123,6 +124,26 @@ NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
                                                             coordScreenBufferSize,
                                                             defaultAttributes,
                                                             uiCursorSize);
+
+        // Tell the newly created cursor to redraw using the global renderer
+        //      and the TriggerRedrawCursor method.
+        // pScreen->_textBuffer->GetCursor().SetRedrawCallback([&](){
+        //     auto m_pScreen = pScreen;
+        //     auto m_ppScreen = ppScreen;
+        //     auto& m_textBuffer = pScreen->GetTextBuffer();
+        //     m_pScreen;
+        //     m_ppScreen;
+        //     m_textBuffer;
+        //     auto* const pRenderer = ServiceLocator::LocateGlobals().pRender;
+        //     if (pRenderer != nullptr)
+        //     {
+        //         const auto position = pScreen->_textBuffer->GetCursor().GetPosition();
+        //         pRenderer->TriggerRedrawCursor(&position);
+        //     }
+        // });
+        DebugBreak();
+        pScreen->_textBuffer->SetRenderTarget(pScreen);
+
         const NTSTATUS status = pScreen->_InitializeOutputStateMachine();
 
         if (NT_SUCCESS(status))
@@ -197,8 +218,8 @@ void SCREEN_INFORMATION::s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pSc
     }
     else
     {
-        PSCREEN_INFORMATION Cur = gci.ScreenBuffers;
-        PSCREEN_INFORMATION Prev = Cur;
+        SCREEN_INFORMATION* Cur = gci.ScreenBuffers;
+        SCREEN_INFORMATION* Prev = Cur;
         while (Cur != nullptr)
         {
             if (pScreenInfo == Cur)
@@ -2117,8 +2138,11 @@ bool SCREEN_INFORMATION::AreTabsSet() const noexcept
 // - adds default tab stops for vt mode
 void SCREEN_INFORMATION::SetDefaultVtTabStops()
 {
+    if (_tabStops.size() > 100)
+        DebugBreak();
     _tabStops.clear();
     const int width = GetBufferSize().RightInclusive();
+    FAIL_FAST_IF(width < 0);
     for (int pos = 0; pos <= width; pos += TAB_SIZE)
     {
         _tabStops.push_back(gsl::narrow<short>(pos));
@@ -2683,4 +2707,112 @@ void SCREEN_INFORMATION::MoveToBottom()
 {
     const short newTop = _virtualBottom - _viewport.Height() + 1;
     LOG_IF_NTSTATUS_FAILED(SetViewportOrigin(true, { 0, newTop }, true));
+}
+
+bool SCREEN_INFORMATION::CursorIsDoubleWidth() const
+{
+    const auto& buffer = GetTextBuffer();
+    const auto position = buffer.GetCursor().GetPosition();
+    TextBufferTextIterator it(TextBufferCellIterator(buffer, position));
+    return IsGlyphFullWidth(*it);
+}
+
+void SCREEN_INFORMATION::TriggerRedraw(const Microsoft::Console::Types::Viewport& region)
+{
+    auto* const pRenderer = ServiceLocator::LocateGlobals().pRender;
+    const auto pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
+    if (pRenderer != nullptr && pActive == this)
+    {
+        pRenderer->TriggerRedraw(region);
+    }
+}
+
+void SCREEN_INFORMATION::TriggerRedraw(const COORD* const pcoord)
+{
+    auto* const pRenderer = ServiceLocator::LocateGlobals().pRender;
+    const auto pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
+    if (pRenderer != nullptr && pActive == this)
+    {
+        pRenderer->TriggerRedraw(pcoord);
+    }
+}
+
+void SCREEN_INFORMATION::TriggerRedrawCursor(const COORD* const pcoord)
+{
+    auto* const pRenderer = ServiceLocator::LocateGlobals().pRender;
+    const auto pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
+    if (pRenderer != nullptr && pActive == this)
+    {
+        pRenderer->TriggerRedrawCursor(pcoord);
+    }
+}
+
+void SCREEN_INFORMATION::TriggerRedrawAll()
+{
+    auto* const pRenderer = ServiceLocator::LocateGlobals().pRender;
+    const auto pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
+    if (pRenderer != nullptr && pActive == this)
+    {
+        pRenderer->TriggerRedrawAll();
+    }
+}
+
+void SCREEN_INFORMATION::TriggerTeardown()
+{
+    auto* const pRenderer = ServiceLocator::LocateGlobals().pRender;
+    const auto pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
+    if (pRenderer != nullptr && pActive == this)
+    {
+        pRenderer->TriggerTeardown();
+    }
+}
+
+void SCREEN_INFORMATION::TriggerSelection()
+{
+    auto* const pRenderer = ServiceLocator::LocateGlobals().pRender;
+    const auto pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
+    if (pRenderer != nullptr && pActive == this)
+    {
+        pRenderer->TriggerSelection();
+    }
+}
+
+void SCREEN_INFORMATION::TriggerScroll()
+{
+    auto* const pRenderer = ServiceLocator::LocateGlobals().pRender;
+    const auto pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
+    if (pRenderer != nullptr && pActive == this)
+    {
+        pRenderer->TriggerScroll();
+    }
+}
+
+void SCREEN_INFORMATION::TriggerScroll(const COORD* const pcoordDelta)
+{
+    auto* const pRenderer = ServiceLocator::LocateGlobals().pRender;
+    const auto pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
+    if (pRenderer != nullptr && pActive == this)
+    {
+        pRenderer->TriggerScroll(pcoordDelta);
+    }
+}
+
+void SCREEN_INFORMATION::TriggerCircling()
+{
+    auto* const pRenderer = ServiceLocator::LocateGlobals().pRender;
+    const auto pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
+    if (pRenderer != nullptr && pActive == this)
+    {
+        pRenderer->TriggerCircling();
+    }
+}
+
+void SCREEN_INFORMATION::TriggerTitleChange()
+{
+    auto* const pRenderer = ServiceLocator::LocateGlobals().pRender;
+    const auto pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
+    if (pRenderer != nullptr && pActive == this)
+    {
+        pRenderer->TriggerTitleChange();
+    }
 }

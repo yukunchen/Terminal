@@ -22,9 +22,6 @@ Revision History:
 
 // the following values are used to create the textmode cursor.
 #define CURSOR_SMALL_SIZE 25    // large enough to be one pixel on a six pixel font
-class SCREEN_INFORMATION;
-typedef SCREEN_INFORMATION *PSCREEN_INFORMATION;
-
 class TextBuffer;
 
 class Cursor final
@@ -49,7 +46,6 @@ public:
     bool IsOn() const noexcept;
     bool IsBlinkingAllowed() const noexcept;
     bool IsDouble() const noexcept;
-    bool IsDoubleWidth() const;
     bool IsConversionArea() const noexcept;
     bool IsPopupShown() const noexcept;
     bool GetDelay() const noexcept;

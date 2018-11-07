@@ -61,6 +61,12 @@ const Cursor& RenderData::GetCursor()
     return gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
 }
 
+const bool RenderData::IsCursorDoubleWidth() const
+{
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.GetActiveOutputBuffer().CursorIsDoubleWidth();
+}
+
 const ConsoleImeInfo* RenderData::GetImeData()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();

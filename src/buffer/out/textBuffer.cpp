@@ -40,7 +40,8 @@ TextBuffer::TextBuffer(const FontInfo fontInfo,
     _currentAttributes{ defaultAttributes },
     _cursor{ cursorSize, *this },
     _storage{},
-    _unicodeStorage{}
+    _unicodeStorage{},
+    _pRenderTarget{ nullptr }
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     _cursor.SetColor(gci.GetCursorColor());
@@ -929,4 +930,14 @@ ROW& TextBuffer::_GetPrevRowNoWrap(const ROW& Row)
 
     THROW_HR_IF(E_FAIL, Row.GetId() == _firstRow);
     return _storage[prevRowIndex];
+}
+
+void TextBuffer::SetRenderTarget(Microsoft::Console::Render::IRenderTarget* pRenderTarget)
+{
+    _pRenderTarget = pRenderTarget;
+}
+
+Microsoft::Console::Render::IRenderTarget* TextBuffer::GetRenderTarget() const
+{
+    return _pRenderTarget;
 }

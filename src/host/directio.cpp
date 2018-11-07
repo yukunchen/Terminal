@@ -1058,7 +1058,7 @@ NTSTATUS ConsoleCreateScreenBuffer(std::unique_ptr<ConsoleHandleData>& handle,
     // Create new screen buffer.
     COORD WindowSize = siExisting.GetViewport().Dimensions();
     const FontInfo& existingFont = siExisting.GetTextBuffer().GetCurrentFont();
-    PSCREEN_INFORMATION ScreenInfo = nullptr;
+    SCREEN_INFORMATION* ScreenInfo = nullptr;
     NTSTATUS Status = SCREEN_INFORMATION::CreateInstance(WindowSize,
                                                          existingFont,
                                                          WindowSize,

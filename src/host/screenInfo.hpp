@@ -37,6 +37,8 @@ Revision History:
 #include "../interactivity/inc/IConsoleWindow.hpp"
 #include "../interactivity/inc/IWindowMetrics.hpp"
 
+#include "../renderer/inc/IRenderTarget.hpp"
+
 #include "../inc/ITerminalOutputConnection.hpp"
 
 #include "../types/inc/Viewport.hpp"
@@ -46,7 +48,7 @@ using namespace Microsoft::Console::VirtualTerminal;
 
 class ConversionAreaInfo; // forward decl window. circular reference
 
-class SCREEN_INFORMATION
+class SCREEN_INFORMATION : public Microsoft::Console::Render::IRenderTarget
 {
 public:
 
@@ -149,6 +151,8 @@ public:
     TextBuffer& GetTextBuffer() noexcept;
     const TextBuffer& GetTextBuffer() const noexcept;
 
+    bool CursorIsDoubleWidth() const;
+
     DWORD OutputMode;
     WORD ResizingWindow;    // > 0 if we should ignore WM_SIZE messages
 
@@ -230,6 +234,17 @@ public:
 
     void UpdateBottom();
     void MoveToBottom();
+
+    void TriggerRedraw(const Microsoft::Console::Types::Viewport& region) override;
+    void TriggerRedraw(const COORD* const pcoord) override;
+    void TriggerRedrawCursor(const COORD* const pcoord) override;
+    void TriggerRedrawAll() override;
+    void TriggerTeardown() override;
+    void TriggerSelection() override;
+    void TriggerScroll() override;
+    void TriggerScroll(const COORD* const pcoordDelta) override;
+    void TriggerCircling() override;
+    void TriggerTitleChange() override;
 
 private:
     SCREEN_INFORMATION(_In_ IWindowMetrics *pMetrics,
