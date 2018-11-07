@@ -28,7 +28,7 @@ bool TextColor::IsLegacy() const noexcept
 // - true if this color is a default attribute
 bool TextColor::IsDefault() const noexcept
 {
-    return _meta[IS_DEFAULT_BIT];
+    return _meta == static_cast<BYTE>(ColorType::IsDefault);
 }
 
 // Method Description:
@@ -40,7 +40,7 @@ bool TextColor::IsDefault() const noexcept
 // - true if this color is a RGB attrbute
 bool TextColor::IsRgb() const noexcept
 {
-    return _meta[IS_RGB_BIT];
+    return _meta == static_cast<BYTE>(ColorType::IsRgb);
 }
 
 // Method Description:
@@ -52,7 +52,7 @@ bool TextColor::IsRgb() const noexcept
 // - <none>
 void TextColor::SetColor(const COLORREF rgbColor)
 {
-    _meta = IS_RGB;
+    _meta = static_cast<BYTE>(ColorType::IsRgb);
     _red = GetRValue(rgbColor);
     _green = GetGValue(rgbColor);
     _blue = GetBValue(rgbColor);
@@ -66,10 +66,8 @@ void TextColor::SetColor(const COLORREF rgbColor)
 // - <none>
 void TextColor::SetIndex(const BYTE index)
 {
-    _meta = IS_INDEX;
-    // _red is overloaded to contain either the Red commponent of an RGB color
-    //      or the index of the legacy-style attribute
-    _red = index;
+    _meta = static_cast<BYTE>(ColorType::IsIndex);
+    _index = index;
 }
 
 // Method Description:
@@ -81,7 +79,7 @@ void TextColor::SetIndex(const BYTE index)
 // - <none>
 void TextColor::SetDefault()
 {
-    _meta = IS_DEFAULT;
+    _meta = static_cast<BYTE>(ColorType::IsDefault);
 }
 
 // Method Description:
@@ -116,18 +114,18 @@ COLORREF TextColor::GetColor(std::basic_string_view<COLORREF> colorTable,
     }
     else
     {
-        FAIL_FAST_IF(colorTable.size() < _red);
+        FAIL_FAST_IF(colorTable.size() < _index);
         // If the color is already bright (it's in index [8,15] or it's a
         //       256color value [16,255], then boldness does nothing.
-        if (brighten && _red < 8)
+        if (brighten && _index < 8)
         {
             FAIL_FAST_IF(colorTable.size() < 16);
-            FAIL_FAST_IF(_red + 8 > colorTable.size());
-            return colorTable[_red + 8];
+            FAIL_FAST_IF(_index + 8 > colorTable.size());
+            return colorTable[_index + 8];
         }
         else
         {
-            return colorTable[_red];
+            return colorTable[_index];
         }
     }
 }

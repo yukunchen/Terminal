@@ -31,20 +31,27 @@ Revision History:
 --*/
 
 #pragma once
-#include <bitset>
 #ifdef UNIT_TESTING
 #include "WexTestClass.h"
 #endif
 
-class TextColor final
+#if (defined(_M_IX86) || defined(_M_AMD64))
+#pragma pack(push, 1)
+#endif
+
+enum class ColorType : BYTE
+{
+    IsIndex = 0x0,
+    IsDefault = 0x1,
+    IsRgb = 0x2
+};
+
+struct TextColor
 {
 public:
-    static const unsigned int IS_INDEX = 0x0;
-    static const unsigned int IS_DEFAULT = 0x1;
-    static const unsigned int IS_RGB = 0x2;
 
     constexpr TextColor() noexcept :
-        _meta{ IS_DEFAULT },
+        _meta{ static_cast<BYTE>(ColorType::IsDefault) },
         _red{ 0 },
         _green{ 0 },
         _blue{ 0 }
@@ -52,15 +59,15 @@ public:
     }
 
     constexpr TextColor(const BYTE wLegacyAttr) noexcept :
-        _meta{ IS_INDEX },
-        _red{ wLegacyAttr },
+        _meta{ static_cast<BYTE>(ColorType::IsIndex) },
+        _index{ wLegacyAttr },
         _green{ 0 },
         _blue{ 0 }
     {
     }
 
     constexpr TextColor(const COLORREF rgb) noexcept :
-        _meta{ IS_RGB },
+        _meta{ static_cast<BYTE>(ColorType::IsRgb) },
         _red{ GetRValue(rgb) },
         _green{ GetGValue(rgb) },
         _blue{ GetBValue(rgb) }
@@ -91,11 +98,12 @@ private:
     const static unsigned int IS_RGB_BIT = 1;
     // NOTE: If you make this longer, make sure to update operator== to include
     //      the added bits. (apparently the bitset == is not constexpr.)
-    std::bitset<2> _meta;
+    BYTE _meta : 2;
 
-    // _red is overloaded to contain either the Red commponent of an RGB
-    //      color or the index of the legacy-style attribute
-    BYTE _red;
+    union
+    {
+        BYTE _red, _index;
+    };
     BYTE _green;
     BYTE _blue;
     COLORREF _GetRGB() const;
@@ -106,11 +114,13 @@ private:
 #endif
 };
 
+#if (defined(_M_IX86) || defined(_M_AMD64))
+#pragma pack(pop)
+#endif
 
 bool constexpr operator==(const TextColor& a, const TextColor& b) noexcept
 {
-    return a._meta[0] == b._meta[0] &&
-           a._meta[1] == b._meta[1] &&
+    return a._meta == b._meta &&
            a._red == b._red &&
            a._green == b._green &&
            a._blue == b._blue;
@@ -148,3 +158,5 @@ namespace WEX {
     }
 }
 #endif
+
+static_assert(sizeof(TextColor) <= 4*sizeof(BYTE), "We should only need 4B for an entire TextColor. Any more than that is just waste");
