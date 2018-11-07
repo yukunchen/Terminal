@@ -58,7 +58,8 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     _Attributes{ defaultAttributes },
     _PopupAttributes{ popupAttributes },
     _tabStops{},
-    _virtualBottom{ 0 }
+    _virtualBottom{ 0 },
+    _renderTarget{ *this }
 {
     LineChar[0] = UNICODE_BOX_DRAW_LIGHT_DOWN_AND_RIGHT;
     LineChar[1] = UNICODE_BOX_DRAW_LIGHT_DOWN_AND_LEFT;
@@ -125,24 +126,7 @@ NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
                                                             defaultAttributes,
                                                             uiCursorSize);
 
-        // Tell the newly created cursor to redraw using the global renderer
-        //      and the TriggerRedrawCursor method.
-        // pScreen->_textBuffer->GetCursor().SetRedrawCallback([&](){
-        //     auto m_pScreen = pScreen;
-        //     auto m_ppScreen = ppScreen;
-        //     auto& m_textBuffer = pScreen->GetTextBuffer();
-        //     m_pScreen;
-        //     m_ppScreen;
-        //     m_textBuffer;
-        //     auto* const pRenderer = ServiceLocator::LocateGlobals().pRender;
-        //     if (pRenderer != nullptr)
-        //     {
-        //         const auto position = pScreen->_textBuffer->GetCursor().GetPosition();
-        //         pRenderer->TriggerRedrawCursor(&position);
-        //     }
-        // });
-        DebugBreak();
-        pScreen->_textBuffer->SetRenderTarget(pScreen);
+        pScreen->_textBuffer->SetRenderTarget(&pScreen->_renderTarget);
 
         const NTSTATUS status = pScreen->_InitializeOutputStateMachine();
 
@@ -2138,8 +2122,6 @@ bool SCREEN_INFORMATION::AreTabsSet() const noexcept
 // - adds default tab stops for vt mode
 void SCREEN_INFORMATION::SetDefaultVtTabStops()
 {
-    if (_tabStops.size() > 100)
-        DebugBreak();
     _tabStops.clear();
     const int width = GetBufferSize().RightInclusive();
     FAIL_FAST_IF(width < 0);
@@ -2715,104 +2697,4 @@ bool SCREEN_INFORMATION::CursorIsDoubleWidth() const
     const auto position = buffer.GetCursor().GetPosition();
     TextBufferTextIterator it(TextBufferCellIterator(buffer, position));
     return IsGlyphFullWidth(*it);
-}
-
-void SCREEN_INFORMATION::TriggerRedraw(const Microsoft::Console::Types::Viewport& region)
-{
-    auto* const pRenderer = ServiceLocator::LocateGlobals().pRender;
-    const auto pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
-    if (pRenderer != nullptr && pActive == this)
-    {
-        pRenderer->TriggerRedraw(region);
-    }
-}
-
-void SCREEN_INFORMATION::TriggerRedraw(const COORD* const pcoord)
-{
-    auto* const pRenderer = ServiceLocator::LocateGlobals().pRender;
-    const auto pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
-    if (pRenderer != nullptr && pActive == this)
-    {
-        pRenderer->TriggerRedraw(pcoord);
-    }
-}
-
-void SCREEN_INFORMATION::TriggerRedrawCursor(const COORD* const pcoord)
-{
-    auto* const pRenderer = ServiceLocator::LocateGlobals().pRender;
-    const auto pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
-    if (pRenderer != nullptr && pActive == this)
-    {
-        pRenderer->TriggerRedrawCursor(pcoord);
-    }
-}
-
-void SCREEN_INFORMATION::TriggerRedrawAll()
-{
-    auto* const pRenderer = ServiceLocator::LocateGlobals().pRender;
-    const auto pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
-    if (pRenderer != nullptr && pActive == this)
-    {
-        pRenderer->TriggerRedrawAll();
-    }
-}
-
-void SCREEN_INFORMATION::TriggerTeardown()
-{
-    auto* const pRenderer = ServiceLocator::LocateGlobals().pRender;
-    const auto pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
-    if (pRenderer != nullptr && pActive == this)
-    {
-        pRenderer->TriggerTeardown();
-    }
-}
-
-void SCREEN_INFORMATION::TriggerSelection()
-{
-    auto* const pRenderer = ServiceLocator::LocateGlobals().pRender;
-    const auto pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
-    if (pRenderer != nullptr && pActive == this)
-    {
-        pRenderer->TriggerSelection();
-    }
-}
-
-void SCREEN_INFORMATION::TriggerScroll()
-{
-    auto* const pRenderer = ServiceLocator::LocateGlobals().pRender;
-    const auto pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
-    if (pRenderer != nullptr && pActive == this)
-    {
-        pRenderer->TriggerScroll();
-    }
-}
-
-void SCREEN_INFORMATION::TriggerScroll(const COORD* const pcoordDelta)
-{
-    auto* const pRenderer = ServiceLocator::LocateGlobals().pRender;
-    const auto pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
-    if (pRenderer != nullptr && pActive == this)
-    {
-        pRenderer->TriggerScroll(pcoordDelta);
-    }
-}
-
-void SCREEN_INFORMATION::TriggerCircling()
-{
-    auto* const pRenderer = ServiceLocator::LocateGlobals().pRender;
-    const auto pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
-    if (pRenderer != nullptr && pActive == this)
-    {
-        pRenderer->TriggerCircling();
-    }
-}
-
-void SCREEN_INFORMATION::TriggerTitleChange()
-{
-    auto* const pRenderer = ServiceLocator::LocateGlobals().pRender;
-    const auto pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
-    if (pRenderer != nullptr && pActive == this)
-    {
-        pRenderer->TriggerTitleChange();
-    }
 }

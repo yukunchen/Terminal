@@ -19,25 +19,25 @@ Revision History:
 #pragma once
 
 #include "conapi.h"
-
 #include "settings.hpp"
+#include "outputStream.hpp"
+#include "ScreenBufferRenderTarget.hpp"
+
 #include "../buffer/out/OutputCellRect.hpp"
 #include "../buffer/out/TextAttribute.hpp"
 #include "../buffer/out/textBuffer.hpp"
 #include "../buffer/out/textBufferCellIterator.hpp"
 #include "../buffer/out/textBufferTextIterator.hpp"
 
-#include "outputStream.hpp"
 #include "../terminal/adapter/adaptDispatch.hpp"
 #include "../terminal/parser/stateMachine.hpp"
 #include "../terminal/parser/OutputStateMachineEngine.hpp"
+
 #include "../server/ObjectHeader.h"
 
 #include "../interactivity/inc/IAccessibilityNotifier.hpp"
 #include "../interactivity/inc/IConsoleWindow.hpp"
 #include "../interactivity/inc/IWindowMetrics.hpp"
-
-#include "../renderer/inc/IRenderTarget.hpp"
 
 #include "../inc/ITerminalOutputConnection.hpp"
 
@@ -48,7 +48,7 @@ using namespace Microsoft::Console::VirtualTerminal;
 
 class ConversionAreaInfo; // forward decl window. circular reference
 
-class SCREEN_INFORMATION : public Microsoft::Console::Render::IRenderTarget
+class SCREEN_INFORMATION
 {
 public:
 
@@ -235,16 +235,6 @@ public:
     void UpdateBottom();
     void MoveToBottom();
 
-    void TriggerRedraw(const Microsoft::Console::Types::Viewport& region) override;
-    void TriggerRedraw(const COORD* const pcoord) override;
-    void TriggerRedrawCursor(const COORD* const pcoord) override;
-    void TriggerRedrawAll() override;
-    void TriggerTeardown() override;
-    void TriggerSelection() override;
-    void TriggerScroll() override;
-    void TriggerScroll(const COORD* const pcoordDelta) override;
-    void TriggerCircling() override;
-    void TriggerTitleChange() override;
 
 private:
     SCREEN_INFORMATION(_In_ IWindowMetrics *pMetrics,
@@ -310,6 +300,8 @@ private:
     //  affected by the user scrolling the viewport, only when API calls cause
     //  the viewport to move (SetBufferInfo, WriteConsole, etc)
     short _virtualBottom;
+
+    ScreenBufferRenderTarget _renderTarget;
 
 #ifdef UNIT_TESTING
     friend class TextBufferIteratorTests;
