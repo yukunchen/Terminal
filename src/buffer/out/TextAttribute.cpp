@@ -6,7 +6,7 @@
 
 #include "precomp.h"
 #include "TextAttribute.hpp"
-#include "..\..\inc\conattrs.hpp"
+#include "../../inc/conattrs.hpp"
 
 bool TextAttribute::IsLegacy() const noexcept
 {

@@ -1043,8 +1043,8 @@ WORD Settings::GenerateLegacyAttributes(const TextAttribute attributes) const
     }
     // Get the Line drawing attributes and stash those, we'll need to preserve them.
     const WORD wNonColorAttributes = wLegacyOriginal & (~0xFF);
-    const COLORREF rgbForeground = GetForegroundColor(attributes);
-    const COLORREF rgbBackground = GetBackgroundColor(attributes);
+    const COLORREF rgbForeground = LookupForegroundColor(attributes);
+    const COLORREF rgbBackground = LookupBackgroundColor(attributes);
     const WORD wForegroundIndex = FindNearestTableIndex(rgbForeground);
     const WORD wBackgroundIndex = FindNearestTableIndex(rgbBackground);
     const WORD wCompleteAttr = (wNonColorAttributes) | (wBackgroundIndex << 4) | (wForegroundIndex);
@@ -1173,7 +1173,7 @@ COLORREF Settings::CalculateDefaultBackground() const
 // - attr: the TextAttribute to retrieve the foreground color of.
 // Return Value:
 // - The color value of the attribute's foreground TextColor.
-COLORREF Settings::GetForegroundColor(const TextAttribute& attr) const
+COLORREF Settings::LookupForegroundColor(const TextAttribute& attr) const
 {
     const auto tableView = std::basic_string_view<COLORREF>(&GetColorTable()[0], GetColorTableSize());
     return attr.CalculateRgbForeground(tableView, CalculateDefaultForeground());
@@ -1186,7 +1186,7 @@ COLORREF Settings::GetForegroundColor(const TextAttribute& attr) const
 // - attr: the TextAttribute to retrieve the background color of.
 // Return Value:
 // - The color value of the attribute's background TextColor.
-COLORREF Settings::GetBackgroundColor(const TextAttribute& attr) const
+COLORREF Settings::LookupBackgroundColor(const TextAttribute& attr) const
 {
     const auto tableView = std::basic_string_view<COLORREF>(&GetColorTable()[0], GetColorTableSize());
     return attr.CalculateRgbBackground(tableView, CalculateDefaultBackground());

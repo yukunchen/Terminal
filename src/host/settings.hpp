@@ -185,8 +185,8 @@ public:
 
     COLORREF CalculateDefaultForeground() const;
     COLORREF CalculateDefaultBackground() const;
-    COLORREF GetForegroundColor(const TextAttribute& attr) const;
-    COLORREF GetBackgroundColor(const TextAttribute& attr) const;
+    COLORREF LookupForegroundColor(const TextAttribute& attr) const;
+    COLORREF LookupBackgroundColor(const TextAttribute& attr) const;
 
 private:
     DWORD _dwHotKey;
