@@ -72,7 +72,7 @@ DWORD UnicodeRasterFontCellMungeOnRead(const gsl::span<CHAR_INFO> buffer)
         if (!WI_IsFlagSet(buffer.at(iSrc).Attributes, COMMON_LVB_TRAILING_BYTE))
         {
             buffer.at(iDst) = buffer.at(iSrc);
-            buffer.at(iDst).Attributes &= ~COMMON_LVB_SBCSDBCS;
+            WI_ClearAllFlags(buffer.at(iDst).Attributes, COMMON_LVB_SBCSDBCS);
             iDst++;
         }
 
