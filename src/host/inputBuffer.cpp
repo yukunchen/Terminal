@@ -182,7 +182,7 @@ void InputBuffer::TerminateRead(_In_ WaitTerminationReason Flag)
 // - The number of events currently in the input buffer.
 // Note:
 // - The console lock must be held when calling this routine.
-size_t InputBuffer::GetNumberOfReadyEvents() const
+size_t InputBuffer::GetNumberOfReadyEvents() const noexcept
 {
     return _storage.size();
 }

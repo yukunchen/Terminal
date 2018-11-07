@@ -20,10 +20,11 @@ Revision History:
 
 class SCREEN_INFORMATION;
 
+[[nodiscard]]
 HRESULT DoSrvPrivateWriteConsoleInputW(_Inout_ InputBuffer* const pInputBuffer,
                                        _Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
                                        _Out_ size_t& eventsWritten,
-                                       const bool append);
+                                       const bool append) noexcept;
 
 [[nodiscard]]
 NTSTATUS ConsoleCreateScreenBuffer(std::unique_ptr<ConsoleHandleData>& handle,

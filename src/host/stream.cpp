@@ -769,6 +769,7 @@ NTSTATUS DoReadConsole(InputBuffer& inputBuffer,
     CATCH_RETURN();
 }
 
+[[nodiscard]]
 HRESULT ApiRoutines::ReadConsoleAImpl(IConsoleInputObject& context,
                                       gsl::span<char> buffer,
                                       size_t& written,

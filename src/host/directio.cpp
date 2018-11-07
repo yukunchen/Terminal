@@ -154,94 +154,101 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 // block, this will be returned along with context in *ppWaiter.
 // - Or an out of memory/math/string error message in NTSTATUS format.
 [[nodiscard]]
-NTSTATUS DoGetConsoleInput(InputBuffer& inputBuffer,
-                           std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                           const size_t eventReadCount,
-                           INPUT_READ_HANDLE_DATA& readHandleState,
-                           const bool IsUnicode,
-                           const bool IsPeek,
-                           std::unique_ptr<IWaitRoutine>& waiter)
+static NTSTATUS _DoGetConsoleInput(InputBuffer& inputBuffer,
+                                   std::deque<std::unique_ptr<IInputEvent>>& outEvents,
+                                   const size_t eventReadCount,
+                                   INPUT_READ_HANDLE_DATA& readHandleState,
+                                   const bool IsUnicode,
+                                   const bool IsPeek,
+                                   std::unique_ptr<IWaitRoutine>& waiter) noexcept
 {
-    waiter.reset();
-
-    if (eventReadCount == 0)
+    try
     {
-        return STATUS_SUCCESS;
-    }
+        waiter.reset();
 
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-    std::deque<std::unique_ptr<IInputEvent>> partialEvents;
-    if (!IsUnicode)
-    {
-        if (inputBuffer.IsReadPartialByteSequenceAvailable())
+        if (eventReadCount == 0)
         {
-            partialEvents.push_back(inputBuffer.FetchReadPartialByteSequence(IsPeek));
+            return STATUS_SUCCESS;
         }
-    }
 
-    size_t amountToRead;
-    if (FAILED(SizeTSub(eventReadCount, partialEvents.size(), &amountToRead)))
-    {
-        return STATUS_INTEGER_OVERFLOW;
-    }
-    std::deque<std::unique_ptr<IInputEvent>> readEvents;
-    NTSTATUS Status = inputBuffer.Read(readEvents,
-                                       amountToRead,
-                                       IsPeek,
-                                       true,
-                                       IsUnicode);
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    if (CONSOLE_STATUS_WAIT == Status)
-    {
-        FAIL_FAST_IF(!(readEvents.empty()));
-        // If we're told to wait until later, move all of our context
-        // to the read data object and send it back up to the server.
-        waiter = std::make_unique<DirectReadData>(&inputBuffer,
-                                                  &readHandleState,
-                                                  eventReadCount,
-                                                  std::move(partialEvents));
-    }
-    else if (NT_SUCCESS(Status))
-    {
-        // split key events to oem chars if necessary
+        std::deque<std::unique_ptr<IInputEvent>> partialEvents;
         if (!IsUnicode)
         {
-            try
+            if (inputBuffer.IsReadPartialByteSequenceAvailable())
             {
-                SplitToOem(readEvents);
+                partialEvents.push_back(inputBuffer.FetchReadPartialByteSequence(IsPeek));
             }
-            CATCH_LOG();
         }
 
-        // combine partial and readEvents
-        while (!partialEvents.empty())
+        size_t amountToRead;
+        if (FAILED(SizeTSub(eventReadCount, partialEvents.size(), &amountToRead)))
         {
-            readEvents.push_front(std::move(partialEvents.back()));
-            partialEvents.pop_back();
+            return STATUS_INTEGER_OVERFLOW;
         }
+        std::deque<std::unique_ptr<IInputEvent>> readEvents;
+        NTSTATUS Status = inputBuffer.Read(readEvents,
+                                           amountToRead,
+                                           IsPeek,
+                                           true,
+                                           IsUnicode);
 
-        // move events over
-        for (size_t i = 0; i < eventReadCount; ++i)
+        if (CONSOLE_STATUS_WAIT == Status)
         {
-            if (readEvents.empty())
-            {
-                break;
-            }
-            outEvents.push_back(std::move(readEvents.front()));
-            readEvents.pop_front();
-        }
-
-        // store partial event if necessary
-        if (!readEvents.empty())
-        {
-            inputBuffer.StoreReadPartialByteSequence(std::move(readEvents.front()));
-            readEvents.pop_front();
             FAIL_FAST_IF(!(readEvents.empty()));
+            // If we're told to wait until later, move all of our context
+            // to the read data object and send it back up to the server.
+            waiter = std::make_unique<DirectReadData>(&inputBuffer,
+                                                      &readHandleState,
+                                                      eventReadCount,
+                                                      std::move(partialEvents));
         }
+        else if (NT_SUCCESS(Status))
+        {
+            // split key events to oem chars if necessary
+            if (!IsUnicode)
+            {
+                try
+                {
+                    SplitToOem(readEvents);
+                }
+                CATCH_LOG();
+            }
+
+            // combine partial and readEvents
+            while (!partialEvents.empty())
+            {
+                readEvents.push_front(std::move(partialEvents.back()));
+                partialEvents.pop_back();
+            }
+
+            // move events over
+            for (size_t i = 0; i < eventReadCount; ++i)
+            {
+                if (readEvents.empty())
+                {
+                    break;
+                }
+                outEvents.push_back(std::move(readEvents.front()));
+                readEvents.pop_front();
+            }
+
+            // store partial event if necessary
+            if (!readEvents.empty())
+            {
+                inputBuffer.StoreReadPartialByteSequence(std::move(readEvents.front()));
+                readEvents.pop_front();
+                FAIL_FAST_IF(!(readEvents.empty()));
+            }
+        }
+        return Status;
     }
-    return Status;
+    catch (...)
+    {
+        return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+    }
 }
 
 // Routine Description:
@@ -269,13 +276,13 @@ HRESULT ApiRoutines::PeekConsoleInputAImpl(IConsoleInputObject& context,
 {
     try
     {
-        RETURN_NTSTATUS(DoGetConsoleInput(context,
-                                          outEvents,
-                                          eventsToRead,
-                                          readHandleState,
-                                          false,
-                                          true,
-                                          waiter));
+        RETURN_NTSTATUS(_DoGetConsoleInput(context,
+                                           outEvents,
+                                           eventsToRead,
+                                           readHandleState,
+                                           false,
+                                           true,
+                                           waiter));
     }
     CATCH_RETURN();
 }
@@ -305,13 +312,13 @@ HRESULT ApiRoutines::PeekConsoleInputWImpl(IConsoleInputObject& context,
 {
     try
     {
-        RETURN_NTSTATUS(DoGetConsoleInput(context,
-                                          outEvents,
-                                          eventsToRead,
-                                          readHandleState,
-                                          true,
-                                          true,
-                                          waiter));
+        RETURN_NTSTATUS(_DoGetConsoleInput(context,
+                                           outEvents,
+                                           eventsToRead,
+                                           readHandleState,
+                                           true,
+                                           true,
+                                           waiter));
     }
     CATCH_RETURN();
 }
@@ -341,13 +348,13 @@ HRESULT ApiRoutines::ReadConsoleInputAImpl(IConsoleInputObject& context,
 {
     try
     {
-        RETURN_NTSTATUS(DoGetConsoleInput(context,
-                                          outEvents,
-                                          eventsToRead,
-                                          readHandleState,
-                                          false,
-                                          false,
-                                          waiter));
+        RETURN_NTSTATUS(_DoGetConsoleInput(context,
+                                           outEvents,
+                                           eventsToRead,
+                                           readHandleState,
+                                           false,
+                                           false,
+                                           waiter));
     }
     CATCH_RETURN();
 }
@@ -377,13 +384,13 @@ HRESULT ApiRoutines::ReadConsoleInputWImpl(IConsoleInputObject& context,
 {
     try
     {
-        RETURN_NTSTATUS(DoGetConsoleInput(context,
-                                          outEvents,
-                                          eventsToRead,
-                                          readHandleState,
-                                          true,
-                                          false,
-                                          waiter));
+        RETURN_NTSTATUS(_DoGetConsoleInput(context,
+                                           outEvents,
+                                           eventsToRead,
+                                           readHandleState,
+                                           true,
+                                           false,
+                                           waiter));
     }
     CATCH_RETURN();
 }
@@ -406,6 +413,8 @@ static HRESULT _WriteConsoleInputWImplHelper(InputBuffer& context,
 {
     try
     {
+        written = 0;
+
         // add to InputBuffer
         if (append)
         {
@@ -431,10 +440,11 @@ static HRESULT _WriteConsoleInputWImplHelper(InputBuffer& context,
 // buffer, false if they should be written to the front
 // Return Value:
 // - HRESULT indicating success or failure
+[[nodiscard]]
 HRESULT DoSrvPrivateWriteConsoleInputW(_Inout_ InputBuffer* const pInputBuffer,
                                        _Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
                                        _Out_ size_t& eventsWritten,
-                                       const bool append)
+                                       const bool append) noexcept
 {
     return _WriteConsoleInputWImplHelper(*pInputBuffer, events, eventsWritten, append);
 }

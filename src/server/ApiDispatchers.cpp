@@ -186,11 +186,7 @@ HRESULT ApiDispatchers::ServerGetConsoleInput(_Inout_ CONSOLE_API_MSG * const m,
         if (fIsWaitAllowed)
         {
             hr = ConsoleWaitQueue::s_CreateWait(m, waiter.release());
-            if (FAILED(hr))
-            {
-                waiter.reset();
-            }
-            else
+            if (SUCCEEDED(hr))
             {
                 *pbReplyPending = TRUE;
                 hr = CONSOLE_STATUS_WAIT;
@@ -199,9 +195,9 @@ HRESULT ApiDispatchers::ServerGetConsoleInput(_Inout_ CONSOLE_API_MSG * const m,
         else
         {
             // If wait isn't allowed and the routine generated a
-            // waiter, delete it and say there was nothing to be
+            // waiter, say there was nothing to be
             // retrieved right now.
-            waiter.reset();
+            // The waiter will be auto-freed in the smart pointer.
 
             cbWritten = 0;
             hr = S_OK;
@@ -345,11 +341,7 @@ HRESULT ApiDispatchers::ServerReadConsole(_Inout_ CONSOLE_API_MSG * const m, _In
         // If we received a waiter, we need to queue the wait and not reply.
         hr = ConsoleWaitQueue::s_CreateWait(m, waiter.release());
 
-        if (FAILED(hr))
-        {
-            waiter.reset();
-        }
-        else
+        if (SUCCEEDED(hr))
         {
             *pbReplyPending = TRUE;
         }
@@ -432,11 +424,7 @@ HRESULT ApiDispatchers::ServerWriteConsole(_Inout_ CONSOLE_API_MSG * const m, _I
     {
         // If we received a waiter, we need to queue the wait and not reply.
         hr = ConsoleWaitQueue::s_CreateWait(m, waiter.release());
-        if (FAILED(hr))
-        {
-            waiter.reset();
-        }
-        else
+        if (SUCCEEDED(hr))
         {
             *pbReplyPending = TRUE;
         }

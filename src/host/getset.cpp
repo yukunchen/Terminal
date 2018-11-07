@@ -34,6 +34,11 @@
 
 using namespace Microsoft::Console::Types;
 
+// Routine Description:
+// - Retrieves the console input mode (settings that apply when manipulating the input buffer)
+// Arguments:
+// - context - The input buffer concerned
+// - mode - Receives the mode flags set
 void ApiRoutines::GetConsoleInputModeImpl(InputBuffer& context, ULONG& mode) noexcept
 {
     try
@@ -56,6 +61,11 @@ void ApiRoutines::GetConsoleInputModeImpl(InputBuffer& context, ULONG& mode) noe
     CATCH_LOG();
 }
 
+// Routine Description:
+// - Retrieves the console output mode (settings that apply when manipulating the output buffer)
+// Arguments:
+// - context - The output buffer concerned
+// - mode - Receives the mode flags set
 void ApiRoutines::GetConsoleOutputModeImpl(SCREEN_INFORMATION& context, ULONG& mode) noexcept
 {
     try
@@ -68,6 +78,13 @@ void ApiRoutines::GetConsoleOutputModeImpl(SCREEN_INFORMATION& context, ULONG& m
     CATCH_LOG();
 }
 
+// Routine Description:
+// - Retrieves the number of console event items in the input queue right now
+// Arguments:
+// - context - The input buffer concerned
+// - event - The count of events in the queue
+// Return Value:
+//  - S_OK or math failure.
 [[nodiscard]]
 HRESULT ApiRoutines::GetNumberOfConsoleInputEventsImpl(const InputBuffer& context, ULONG& events) noexcept
 {
@@ -76,7 +93,7 @@ HRESULT ApiRoutines::GetNumberOfConsoleInputEventsImpl(const InputBuffer& contex
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-        size_t readyEventCount = context.GetNumberOfReadyEvents();
+        const auto readyEventCount = context.GetNumberOfReadyEvents();
         RETURN_IF_FAILED(SizeTToULong(readyEventCount, &events));
 
         return S_OK;
@@ -84,6 +101,11 @@ HRESULT ApiRoutines::GetNumberOfConsoleInputEventsImpl(const InputBuffer& contex
     CATCH_RETURN();
 }
 
+// Routine Description:
+// - Retrieves metadata associated with the output buffer (size, default colors, etc.)
+// Arguments:
+// - context - The output buffer concerned
+// - data - Receives structure filled with metadata about the output buffer
 void ApiRoutines::GetConsoleScreenBufferInfoExImpl(const SCREEN_INFORMATION& context,
                                                    CONSOLE_SCREEN_BUFFER_INFOEX& data) noexcept
 {
@@ -107,6 +129,12 @@ void ApiRoutines::GetConsoleScreenBufferInfoExImpl(const SCREEN_INFORMATION& con
     CATCH_LOG();
 }
 
+// Routine Description:
+// - Retrieves information about the console cursor's display state
+// Arguments:
+// - context - The output buffer concerned
+// - size - The size as a percentage of the total possible height (0-100 for percentages).
+// - isVisible - Whether the cursor is displayed or hidden
 void ApiRoutines::GetConsoleCursorInfoImpl(const SCREEN_INFORMATION& context,
                                            ULONG& size,
                                            bool& isVisible) noexcept
@@ -122,6 +150,10 @@ void ApiRoutines::GetConsoleCursorInfoImpl(const SCREEN_INFORMATION& context,
     CATCH_LOG();
 }
 
+// Routine Description:
+// - Retrieves information about the selected area in the console
+// Arguments:
+// - consoleSelectionInfo - contains flags, anchors, and area to describe selection area
 void ApiRoutines::GetConsoleSelectionInfoImpl(CONSOLE_SELECTION_INFO& consoleSelectionInfo) noexcept
 {
     try
@@ -129,15 +161,15 @@ void ApiRoutines::GetConsoleSelectionInfoImpl(CONSOLE_SELECTION_INFO& consoleSel
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-        const Selection* const pSelection = &Selection::Instance();
-        if (pSelection->IsInSelectingState())
+        const auto& selection = Selection::Instance();
+        if (selection.IsInSelectingState())
         {
-            consoleSelectionInfo.dwFlags = pSelection->GetPublicSelectionFlags();
+            consoleSelectionInfo.dwFlags = selection.GetPublicSelectionFlags();
 
             WI_SetFlag(consoleSelectionInfo.dwFlags, CONSOLE_SELECTION_IN_PROGRESS);
 
-            consoleSelectionInfo.dwSelectionAnchor = pSelection->GetSelectionAnchor();
-            consoleSelectionInfo.srSelection = pSelection->GetSelectionRectangle();
+            consoleSelectionInfo.dwSelectionAnchor = selection.GetSelectionAnchor();
+            consoleSelectionInfo.srSelection = selection.GetSelectionRectangle();
         }
         else
         {
@@ -147,6 +179,10 @@ void ApiRoutines::GetConsoleSelectionInfoImpl(CONSOLE_SELECTION_INFO& consoleSel
     CATCH_LOG();
 }
 
+// Routine Description:
+// - Retrieves the number of buttons on the mouse as reported by the system
+// Arguments:
+// - buttons - Count of buttons
 void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
 {
     try
@@ -159,6 +195,14 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
     CATCH_LOG();
 }
 
+// Routine Description:
+// - Retrieves information about the a known font based on index
+// Arguments:
+// - context - The output buffer concerned
+// - index - We only accept 0 now as we don't keep a list of fonts in memory.
+// - size - The X by Y pixel size of the font
+// Return Value:
+// - S_OK, E_INVALIDARG or code from thrown exception
 [[nodiscard]]
 HRESULT ApiRoutines::GetConsoleFontSizeImpl(const SCREEN_INFORMATION& context,
                                             const DWORD index,
@@ -185,6 +229,14 @@ HRESULT ApiRoutines::GetConsoleFontSizeImpl(const SCREEN_INFORMATION& context,
     CATCH_RETURN();
 }
 
+// Routine Description:
+// - Retrieves information about the console cursor's display state
+// Arguments:
+// - context - The output buffer concerned
+// - isForMaximumWindowSize - Returns the maximum number of characters in the largest window size if true. Otherwise, it's the size of the font.
+// - consoleFontInfoEx - structure containing font information like size, family, weight, etc.
+// Return Value:
+// - S_OK, string copy failure code or code from thrown exception
 [[nodiscard]]
 HRESULT ApiRoutines::GetCurrentConsoleFontExImpl(const SCREEN_INFORMATION& context,
                                                  const bool isForMaximumWindowSize,
@@ -221,6 +273,14 @@ HRESULT ApiRoutines::GetCurrentConsoleFontExImpl(const SCREEN_INFORMATION& conte
     CATCH_RETURN();
 }
 
+// Routine Description:
+// - Sets the current font to be used for drawing
+// Arguments:
+// - context - The output buffer concerned
+// - isForMaximumWindowSize - Obsolete.
+// - consoleFontInfoEx - structure containing font information like size, family, weight, etc.
+// Return Value:
+// - S_OK, string copy failure code or code from thrown exception
 [[nodiscard]]
 HRESULT ApiRoutines::SetCurrentConsoleFontExImpl(IConsoleOutputObject& context,
                                                  const bool /*isForMaximumWindowSize*/,
@@ -261,6 +321,13 @@ HRESULT ApiRoutines::SetCurrentConsoleFontExImpl(IConsoleOutputObject& context,
     CATCH_RETURN();
 }
 
+// Routine Description:
+// - Sets the input mode for the console
+// Arguments:
+// - context - The input buffer concerned
+// - mode - flags that change behavior of the buffer
+// Return Value:
+// - S_OK, E_INVALIDARG, or failure code from thrown exception
 [[nodiscard]]
 HRESULT ApiRoutines::SetConsoleInputModeImpl(InputBuffer& context, const ULONG mode) noexcept
 {
@@ -316,6 +383,13 @@ HRESULT ApiRoutines::SetConsoleInputModeImpl(InputBuffer& context, const ULONG m
     CATCH_RETURN();
 }
 
+// Routine Description:
+// - Sets the output mode for the console
+// Arguments:
+// - context - The output buffer concerned
+// - mode - flags that change behavior of the buffer
+// Return Value:
+// - S_OK, E_INVALIDARG, or failure code from thrown exception
 [[nodiscard]]
 HRESULT ApiRoutines::SetConsoleOutputModeImpl(SCREEN_INFORMATION& context, const ULONG mode) noexcept
 {
@@ -368,6 +442,10 @@ HRESULT ApiRoutines::SetConsoleOutputModeImpl(SCREEN_INFORMATION& context, const
     CATCH_RETURN();
 }
 
+// Routine Description:
+// - Sets the given output buffer as the active one
+// Arguments:
+// - context - The output buffer concerned
 void ApiRoutines::SetConsoleActiveScreenBufferImpl(SCREEN_INFORMATION& newContext) noexcept
 {
     try
@@ -380,6 +458,10 @@ void ApiRoutines::SetConsoleActiveScreenBufferImpl(SCREEN_INFORMATION& newContex
     CATCH_LOG();
 }
 
+// Routine Description:
+// - Clears all items out of the input buffer queue
+// Arguments:
+// - context - The input buffer concerned
 void ApiRoutines::FlushConsoleInputBuffer(InputBuffer& context) noexcept
 {
     try
@@ -392,6 +474,11 @@ void ApiRoutines::FlushConsoleInputBuffer(InputBuffer& context) noexcept
     CATCH_LOG();
 }
 
+// Routine Description:
+// - Gets the largest possible window size in characters.
+// Arguments:
+// - context - The output buffer concerned
+// - size - receives the size in character count (rows/columns)
 void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& context,
                                                   COORD& size) noexcept
 {
@@ -407,6 +494,13 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
     CATCH_LOG();
 }
 
+// Routine Description:
+// - Sets the size of the output buffer (screen buffer) in rows/columns
+// Arguments:
+// - context - The output buffer concerned
+// - size - size in character rows and columns
+// Return Value:
+// - S_OK, E_INVALIDARG, or failure code from thrown exception
 [[nodiscard]]
 HRESULT ApiRoutines::SetConsoleScreenBufferSizeImpl(SCREEN_INFORMATION& context,
                                                     const COORD size) noexcept
@@ -445,6 +539,13 @@ HRESULT ApiRoutines::SetConsoleScreenBufferSizeImpl(SCREEN_INFORMATION& context,
     CATCH_RETURN();
 }
 
+// Routine Description:
+// - Sets metadata information on the output buffer
+// Arguments:
+// - context - The output buffer concerned
+// - data - metadata information structure like buffer size, viewport size, colors, and more.
+// Return Value:
+// - S_OK, E_INVALIDARG, or failure code from thrown exception
 [[nodiscard]]
 HRESULT ApiRoutines::SetConsoleScreenBufferInfoExImpl(SCREEN_INFORMATION& context,
                                                       const CONSOLE_SCREEN_BUFFER_INFOEX& data) noexcept
@@ -518,6 +619,13 @@ HRESULT ApiRoutines::SetConsoleScreenBufferInfoExImpl(SCREEN_INFORMATION& contex
     CATCH_RETURN();
 }
 
+// Routine Description:
+// - Sets the cursor position in the given output buffer
+// Arguments:
+// - context - The output buffer concerned
+// - position - The X/Y (row/column) position in the buffer to place the cursor
+// Return Value:
+// - S_OK, E_INVALIDARG, or failure code from thrown exception
 [[nodiscard]]
 HRESULT ApiRoutines::SetConsoleCursorPositionImpl(SCREEN_INFORMATION& context,
                                                   const COORD position) noexcept
@@ -573,6 +681,14 @@ HRESULT ApiRoutines::SetConsoleCursorPositionImpl(SCREEN_INFORMATION& context,
     CATCH_RETURN();
 }
 
+// Routine Description:
+// - Sets metadata on the cursor 
+// Arguments:
+// - context - The output buffer concerned
+// - size - Height percentage of the displayed cursor (when visible)
+// - isVisible - Whether or not the cursor should be displayed
+// Return Value:
+// - S_OK, E_INVALIDARG, or failure code from thrown exception
 [[nodiscard]]
 HRESULT ApiRoutines::SetConsoleCursorInfoImpl(SCREEN_INFORMATION& context,
                                               const ULONG size,
@@ -596,6 +712,15 @@ HRESULT ApiRoutines::SetConsoleCursorInfoImpl(SCREEN_INFORMATION& context,
     CATCH_RETURN();
 }
 
+// Routine Description:
+// - Sets the viewport/window information for displaying a portion of the output buffer visually
+// Arguments:
+// - context - The output buffer concerned
+// - isAbsolute - Coordinates are based on the entire screen buffer (origin 0,0) if true. 
+//              - If false, coordinates are a delta from the existing viewport position
+// - windowRect - Updated viewport rectangle information
+// Return Value:
+// - S_OK, E_INVALIDARG, or failure code from thrown exception
 [[nodiscard]]
 HRESULT ApiRoutines::SetConsoleWindowInfoImpl(SCREEN_INFORMATION& context,
                                               const bool isAbsolute,
@@ -654,6 +779,17 @@ HRESULT ApiRoutines::SetConsoleWindowInfoImpl(SCREEN_INFORMATION& context,
     CATCH_RETURN();
 }
 
+// Routine Description:
+// - Moves a portion of text from one part of the output buffer to another
+// Arguments:
+// - context - The output buffer concerned
+// - source - The rectangular region to copy from
+// - target - The top left corner of the destination to paste the copy (source)
+// - clip - The rectangle inside which all operations should be bounded (or no bounds if not given)
+// - fillCharacter - Fills in the region left behind when the source is "lifted" out of its original location. The symbol to display.
+// - fillAttribute - Fills in the region left behind when the source is "lifted" out of its original location. The color to use.
+// Return Value:
+// - S_OK, E_INVALIDARG, or failure code from thrown exception
 [[nodiscard]]
 HRESULT ApiRoutines::ScrollConsoleScreenBufferAImpl(SCREEN_INFORMATION& context,
                                                     const SMALL_RECT& source,
@@ -671,7 +807,17 @@ HRESULT ApiRoutines::ScrollConsoleScreenBufferAImpl(SCREEN_INFORMATION& context,
     CATCH_RETURN();
 }
 
-
+// Routine Description:
+// - Moves a portion of text from one part of the output buffer to another
+// Arguments:
+// - context - The output buffer concerned
+// - source - The rectangular region to copy from
+// - target - The top left corner of the destination to paste the copy (source)
+// - clip - The rectangle inside which all operations should be bounded (or no bounds if not given)
+// - fillCharacter - Fills in the region left behind when the source is "lifted" out of its original location. The symbol to display.
+// - fillAttribute - Fills in the region left behind when the source is "lifted" out of its original location. The color to use.
+// Return Value:
+// - S_OK, E_INVALIDARG, or failure code from thrown exception
 [[nodiscard]]
 HRESULT ApiRoutines::ScrollConsoleScreenBufferWImpl(SCREEN_INFORMATION& context,
                                                     const SMALL_RECT& source,
@@ -696,6 +842,16 @@ HRESULT ApiRoutines::ScrollConsoleScreenBufferWImpl(SCREEN_INFORMATION& context,
     CATCH_RETURN();
 }
 
+// Routine Description:
+// - Updates the default colors (and the colors in the given buffer that matched the previous defaults)
+//   to the newly given color scheme
+// Arguments:
+// - context - The output buffer concerned
+// - Attributes - The new default colors for text data
+// - PopupAttributes - The new default colors for drawing interactive popups (cooked mode)
+// - UpdateWholeScreen - Run through the buffer and replace all of the cells that had the default color with the new default colors
+// - defaultForeground - ?
+// - defaultBackground - ?
 void SetScreenColors(SCREEN_INFORMATION& screenInfo,
                      const WORD Attributes,
                      const WORD PopupAttributes,
@@ -755,6 +911,13 @@ void SetScreenColors(SCREEN_INFORMATION& screenInfo,
 
 }
 
+// Routine Description:
+// - Adjusts the default color used for future text written to this output buffer
+// Arguments:
+// - context - The output buffer concerned
+// - attribute - Color information
+// Return Value:
+// - S_OK, E_INVALIDARG, or failure code from thrown exception
 [[nodiscard]]
 HRESULT ApiRoutines::SetConsoleTextAttributeImpl(SCREEN_INFORMATION& context,
                                                  const WORD attribute) noexcept
@@ -940,6 +1103,12 @@ void DoSrvPrivateBoldText(SCREEN_INFORMATION& screenInfo, const bool bolded)
     screenInfo.SetAttributes(attrs);
 }
 
+// Routine Description:
+// - Sets the codepage used for translating text when calling A versions of functions affecting the output buffer.
+// Arguments:
+// - codepage - The codepage 
+// Return Value:
+// - S_OK, E_INVALIDARG, or failure code from thrown exception
 [[nodiscard]]
 HRESULT ApiRoutines::SetConsoleOutputCodePageImpl(const ULONG codepage) noexcept
 {
@@ -966,6 +1135,12 @@ HRESULT ApiRoutines::SetConsoleOutputCodePageImpl(const ULONG codepage) noexcept
     CATCH_RETURN();
 }
 
+// Routine Description:
+// - Sets the codepage used for translating text when calling A versions of functions affecting the input buffer.
+// Arguments:
+// - codepage - The codepage 
+// Return Value:
+// - S_OK, E_INVALIDARG, or failure code from thrown exception
 [[nodiscard]]
 HRESULT ApiRoutines::SetConsoleInputCodePageImpl(const ULONG codepage) noexcept
 {
@@ -992,6 +1167,10 @@ HRESULT ApiRoutines::SetConsoleInputCodePageImpl(const ULONG codepage) noexcept
     CATCH_RETURN();
 }
 
+// Routine Description:
+// - Gets the codepage used for translating text when calling A versions of functions affecting the input buffer.
+// Arguments:
+// - codepage - The codepage 
 void ApiRoutines::GetConsoleInputCodePageImpl(ULONG& codepage) noexcept
 {
     try
@@ -1011,6 +1190,10 @@ void DoSrvGetConsoleOutputCodePage(_Out_ unsigned int* const pCodePage)
     *pCodePage = gci.OutputCP;
 }
 
+// Routine Description:
+// - Gets the codepage used for translating text when calling A versions of functions affecting the output buffer.
+// Arguments:
+// - codepage - The codepage 
 void ApiRoutines::GetConsoleOutputCodePageImpl(ULONG& codepage) noexcept
 {
     try
@@ -1024,6 +1207,10 @@ void ApiRoutines::GetConsoleOutputCodePageImpl(ULONG& codepage) noexcept
     CATCH_LOG();
 }
 
+// Routine Description:
+// - Gets the window handle ID for the console
+// Arguments:
+// - hwnd - The window handle ID
 void ApiRoutines::GetConsoleWindowImpl(HWND& hwnd) noexcept
 {
     try
@@ -1052,6 +1239,10 @@ void ApiRoutines::GetConsoleWindowImpl(HWND& hwnd) noexcept
     CATCH_LOG();
 }
 
+// Routine Description:
+// - Gets metadata about the storage of command history for cooked read modes
+// Arguments:
+// - consoleHistoryInformation - metadata pertaining to the number of history buffers and their size and modes.
 void ApiRoutines::GetConsoleHistoryInfoImpl(CONSOLE_HISTORY_INFO& consoleHistoryInfo) noexcept
 {
     try
@@ -1067,6 +1258,12 @@ void ApiRoutines::GetConsoleHistoryInfoImpl(CONSOLE_HISTORY_INFO& consoleHistory
     CATCH_LOG();
 }
 
+// Routine Description:
+// - Sets metadata about the storage of command history for cooked read modes
+// Arguments:
+// - consoleHistoryInformation - metadata pertaining to the number of history buffers and their size and modes.
+// Return Value:
+// - S_OK, E_INVALIDARG, or failure code from thrown exception
 HRESULT ApiRoutines::SetConsoleHistoryInfoImpl(const CONSOLE_HISTORY_INFO& consoleHistoryInfo) noexcept
 {
     try
@@ -1089,6 +1286,10 @@ HRESULT ApiRoutines::SetConsoleHistoryInfoImpl(const CONSOLE_HISTORY_INFO& conso
     CATCH_RETURN();
 }
 
+// Routine Description:
+// - Gets whether or not the console is full screen
+// Arguments:
+// - flags - Field contains full screen flag or doesn't.
 // NOTE: This was in private.c, but turns out to be a public API: http://msdn.microsoft.com/en-us/library/windows/desktop/ms683164(v=vs.85).aspx
 void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
 {
@@ -1621,6 +1822,16 @@ void DoSrvPrivateRefreshWindow(_In_ const SCREEN_INFORMATION& screenInfo)
     }
 }
 
+// Routine Description:
+// - Gets title information from the console. It can be truncated if the buffer is too small.
+// Arguments:
+// - title - If given, this buffer is filled with the title information requested.
+//         - Use nullopt to request buffer size required.
+// - written - The number of characters filled in the title buffer.
+// - needed - The number of characters we would need to completely write out the title.
+// - isOriginal - If true, gets the title when we booted up. If false, gets whatever it is set to right now.
+// Return Value:
+// - S_OK, E_INVALIDARG, or failure code from thrown exception
 [[nodiscard]]
 HRESULT GetConsoleTitleWImplHelper(std::optional<gsl::span<wchar_t>> title,
                                    size_t& written,
@@ -1673,6 +1884,17 @@ HRESULT GetConsoleTitleWImplHelper(std::optional<gsl::span<wchar_t>> title,
     }
     CATCH_RETURN();
 }
+
+// Routine Description:
+// - Gets title information from the console. It can be truncated if the buffer is too small.
+// Arguments:
+// - title - If given, this buffer is filled with the title information requested.
+//         - Use nullopt to request buffer size required.
+// - written - The number of characters filled in the title buffer.
+// - needed - The number of characters we would need to completely write out the title.
+// - isOriginal - If true, gets the title when we booted up. If false, gets whatever it is set to right now.
+// Return Value:
+// - S_OK, E_INVALIDARG, or failure code from thrown exception
 
 [[nodiscard]]
 HRESULT GetConsoleTitleAImplHelper(gsl::span<char> title,
@@ -1756,6 +1978,15 @@ HRESULT GetConsoleTitleAImplHelper(gsl::span<char> title,
 
 }
 
+// Routine Description:
+// - Gets title information from the console. It can be truncated if the buffer is too small.
+// Arguments:
+// - title - If given, this buffer is filled with the title information requested.
+//         - Use nullopt to request buffer size required.
+// - written - The number of characters filled in the title buffer.
+// - needed - The number of characters we would need to completely write out the title.
+// Return Value:
+// - S_OK, E_INVALIDARG, or failure code from thrown exception
 [[nodiscard]]
 HRESULT ApiRoutines::GetConsoleTitleAImpl(gsl::span<char> title,
                                           size_t& written,
@@ -1771,6 +2002,15 @@ HRESULT ApiRoutines::GetConsoleTitleAImpl(gsl::span<char> title,
     CATCH_RETURN();
 }
 
+// Routine Description:
+// - Gets title information from the console. It can be truncated if the buffer is too small.
+// Arguments:
+// - title - If given, this buffer is filled with the title information requested.
+//         - Use nullopt to request buffer size required.
+// - written - The number of characters filled in the title buffer.
+// - needed - The number of characters we would need to completely write out the title.
+// Return Value:
+// - S_OK, E_INVALIDARG, or failure code from thrown exception
 [[nodiscard]]
 HRESULT ApiRoutines::GetConsoleTitleWImpl(gsl::span<wchar_t> title,
                                           size_t& written,
@@ -1786,6 +2026,15 @@ HRESULT ApiRoutines::GetConsoleTitleWImpl(gsl::span<wchar_t> title,
     CATCH_RETURN();
 }
 
+// Routine Description:
+// - Gets title information from the console. It can be truncated if the buffer is too small.
+// Arguments:
+// - title - If given, this buffer is filled with the title information requested.
+//         - Use nullopt to request buffer size required.
+// - written - The number of characters filled in the title buffer.
+// - needed - The number of characters we would need to completely write out the title.
+// Return Value:
+// - S_OK, E_INVALIDARG, or failure code from thrown exception
 [[nodiscard]]
 HRESULT ApiRoutines::GetConsoleOriginalTitleAImpl(gsl::span<char> title,
                                                   size_t& written,
@@ -1801,6 +2050,15 @@ HRESULT ApiRoutines::GetConsoleOriginalTitleAImpl(gsl::span<char> title,
     CATCH_RETURN();
 }
 
+// Routine Description:
+// - Gets title information from the console. It can be truncated if the buffer is too small.
+// Arguments:
+// - title - If given, this buffer is filled with the title information requested.
+//         - Use nullopt to request buffer size required.
+// - written - The number of characters filled in the title buffer.
+// - needed - The number of characters we would need to completely write out the title.
+// Return Value:
+// - S_OK, E_INVALIDARG, or failure code from thrown exception
 [[nodiscard]]
 HRESULT ApiRoutines::GetConsoleOriginalTitleWImpl(gsl::span<wchar_t> title,
                                                   size_t& written,
@@ -1816,6 +2074,12 @@ HRESULT ApiRoutines::GetConsoleOriginalTitleWImpl(gsl::span<wchar_t> title,
     CATCH_RETURN();
 }
 
+// Routine Description:
+// - Sets title information from the console. 
+// Arguments:
+// - title - The new title to store and display on the console window.
+// Return Value:
+// - S_OK, E_INVALIDARG, or failure code from thrown exception
 [[nodiscard]]
 HRESULT ApiRoutines::SetConsoleTitleAImpl(const std::string_view title) noexcept
 {
@@ -1830,6 +2094,12 @@ HRESULT ApiRoutines::SetConsoleTitleAImpl(const std::string_view title) noexcept
     CATCH_RETURN();
 }
 
+// Routine Description:
+// - Sets title information from the console. 
+// Arguments:
+// - title - The new title to store and display on the console window.
+// Return Value:
+// - S_OK, E_INVALIDARG, or failure code from thrown exception
 [[nodiscard]]
 HRESULT ApiRoutines::SetConsoleTitleWImpl(const std::wstring_view title) noexcept
 {
