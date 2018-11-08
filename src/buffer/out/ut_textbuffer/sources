@@ -15,6 +15,7 @@ DLLDEF                  =
 SOURCES = \
     $(SOURCES) \
     TextColorTests.cpp \
+    TextAttributeTests.cpp \
     DefaultResource.rc \
 
 

@@ -57,7 +57,7 @@ public:
     constexpr WORD TextAttribute::GetLegacyAttributes() const noexcept
     {
         BYTE fg = (_foreground.GetIndex() & FG_ATTRS);
-        BYTE bg = (_background.GetIndex() & BG_ATTRS) << 4;
+        BYTE bg = (_background.GetIndex() << 4) & BG_ATTRS;
         WORD meta = (_wAttrLegacy & META_ATTRS);
         return (fg | bg | meta) | (_isBold ? FOREGROUND_INTENSITY : 0);
     }

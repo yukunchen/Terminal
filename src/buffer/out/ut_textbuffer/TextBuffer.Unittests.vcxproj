@@ -5,6 +5,7 @@
 
   <ItemGroup>
     <ClCompile Include="TextColorTests.cpp" />
+    <ClCompile Include="TextAttributeTests.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
