@@ -11,7 +11,14 @@
 // SetConsoleCursorPosition
 class CursorTests
 {
-    TEST_CLASS(CursorTests);
+    BEGIN_TEST_CLASS(CursorTests)
+        TEST_CLASS_PROPERTY(L"BinaryUnderTest", L"conhost.exe")
+        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincon.h")
+        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincontypes.h")
+        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl1.h")
+        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl2.h")
+        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl3.h")
+    END_TEST_CLASS()
 
     TEST_METHOD_SETUP(TestSetup);
     TEST_METHOD_CLEANUP(TestCleanup);
@@ -115,7 +122,7 @@ void TestSetConsoleCursorPositionImpl(WORD wCursorX, WORD wCursorY, BOOL bExpect
         // otherwise, it's at where it was before
         VERIFY_ARE_EQUAL(sbiInitial.dwCursorPosition, sbiTest.dwCursorPosition, L"If SET was FALSE, we expect the cursor to not have moved.");
     }
-    
+
     // Verify the viewport.
     bool fViewportMoveExpected = false;
 
