@@ -44,7 +44,7 @@ INCLUDES = \
 
 TARGETLIBS = \
     $(TARGETLIBS) \
-    $(MINCORE_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-ntuser-keyboard-l1.lib \
+    $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-ntuser-keyboard-l1.lib \
 
 DLOAD_ERROR_HANDLER     = kernelbase
 
