@@ -1116,12 +1116,22 @@ void Settings::SetDefaultBackgroundColor(const COLORREF defaultBackground) noexc
 
 TextAttribute Settings::GetDefaultAttributes() const noexcept
 {
-    // The default constructor for TextAttribute will construct a text attribute
-    //      with both the foreground and background marked as "default" colors.
-    if (_DefaultForeground != INVALID_COLOR || _DefaultBackground != INVALID_COLOR)
-        // Umm?????? I dont think this is right either
-        return TextAttribute{};
-    return TextAttribute{ _wFillAttribute };
+    auto attrs = TextAttribute{ _wFillAttribute };
+    if (_DefaultForeground != INVALID_COLOR)
+    {
+        attrs.SetDefaultForeground();
+    }
+    if (_DefaultBackground != INVALID_COLOR)
+    {
+        attrs.SetDefaultBackground();
+    }
+    return attrs;
+    // // The default constructor for TextAttribute will construct a text attribute
+    // //      with both the foreground and background marked as "default" colors.
+    // if (_DefaultForeground != INVALID_COLOR || _DefaultBackground != INVALID_COLOR)
+    //     // Umm?????? I dont think this is right either
+    //     return TextAttribute{};
+    // return TextAttribute{ _wFillAttribute };
 }
 
 bool Settings::IsTerminalScrolling() const noexcept
