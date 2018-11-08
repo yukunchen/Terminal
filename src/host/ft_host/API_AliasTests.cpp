@@ -12,7 +12,7 @@
 // 1. Turn on Unicode if it isn't on already (it really should be) and include the headers
 #ifndef UNICODE
 #define UNICODE
-#endif 
+#endif
 #ifndef _UNICODE
 #define _UNICODE
 #endif
@@ -33,7 +33,12 @@
 
 class AliasTests
 {
-    TEST_CLASS(AliasTests);
+    BEGIN_TEST_CLASS(AliasTests)
+        TEST_CLASS_PROPERTY(L"BinaryUnderTest", L"conhost.exe")
+        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincon.h")
+        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl1.h")
+        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl3.h")
+    END_TEST_CLASS()
 
     BEGIN_TEST_METHOD(TestGetConsoleAlias)
         TEST_METHOD_PROPERTY(L"Data:strSource", L"{g}")
@@ -44,7 +49,7 @@ class AliasTests
         TEST_METHOD_PROPERTY(L"Data:dwExeName", L"{0, 1}")
         TEST_METHOD_PROPERTY(L"Data:bUnicode", L"{FALSE, TRUE}")
         TEST_METHOD_PROPERTY(L"Data:bSetFirst", L"{FALSE, TRUE}")
-        END_TEST_METHOD()
+    END_TEST_METHOD()
 };
 
 // Caller must free ppsz if not null.
@@ -142,4 +147,3 @@ void AliasTests::TestGetConsoleAlias()
 
     }
 }
-

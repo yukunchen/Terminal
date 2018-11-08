@@ -9,7 +9,12 @@
 // GetConsoleTitle
 class TitleTests
 {
-    TEST_CLASS(TitleTests);
+    BEGIN_TEST_CLASS(TitleTests)
+        TEST_CLASS_PROPERTY(L"BinaryUnderTest", L"conhost.exe")
+        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincon.h")
+        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl1.h")
+        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl2.h")
+    END_TEST_CLASS()
 
     TEST_METHOD_SETUP(TestSetup);
     TEST_METHOD_CLEANUP(TestCleanup);
@@ -74,7 +79,7 @@ void TestGetConsoleTitleAPrepExpectedHelper(_In_reads_(cchTitle) const char* con
     {
         chReadExpected[0] = '\0';
     }
-    
+
 }
 
 void TestGetConsoleTitleWPrepExpectedHelper(_In_reads_(cchTitle) const wchar_t* const wchTitle,
@@ -334,5 +339,3 @@ void TitleTests::TestGetConsoleTitleW()
     // Run the call and test it out.
     TestGetConsoleTitleWVerifyHelper(nullptr, 0, 0, 0, S_OK, nullptr, 0);
 }
-
-

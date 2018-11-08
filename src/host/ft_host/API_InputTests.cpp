@@ -22,7 +22,13 @@
 // GetNumberOfConsoleMouseButtons
 class InputTests
 {
-    TEST_CLASS(InputTests);
+    BEGIN_TEST_CLASS(InputTests)
+        TEST_CLASS_PROPERTY(L"BinaryUnderTest", L"conhost.exe")
+        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincon.h")
+        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincontypes.h")
+        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl1.h")
+        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl2.h")
+    END_TEST_CLASS()
 
     TEST_CLASS_SETUP(TestSetup);
     TEST_CLASS_CLEANUP(TestCleanup);
@@ -46,7 +52,7 @@ class InputTests
     TEST_METHOD(TestMouseHorizWheelReadConsoleNoMouseInput);
     TEST_METHOD(TestMouseWheelReadConsoleInputQuickEdit);
     TEST_METHOD(TestMouseHorizWheelReadConsoleInputQuickEdit);
-    
+
     BEGIN_TEST_METHOD(TestVtInputGeneration)
         TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
     END_TEST_METHOD();
@@ -339,9 +345,9 @@ void InputTests::TestReadConsolePasswordScenario()
     FlushConsoleInputBuffer(hIn);
     WriteConsoleInputW(hIn, irBuffer.get(), cBuffer, &dwWritten);
 
-    
+
     // Press "enter" key on the window to signify the user pressing enter at the end of the password.
-    
+
     VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(PostMessageW(GetConsoleWindow(), WM_KEYDOWN, VK_RETURN, 0));
 
     // 3. Set up our read loop (mimicing password capture methodology from "net use" command.)
@@ -507,12 +513,12 @@ void InputTests::TestReadWaitOnHandle()
 
     // this will be signaled when we want the thread to start waiting on the input handle
     // It is an auto-reset.
-    wil::unique_event doWait; 
+    wil::unique_event doWait;
     doWait.create();
-    
+
     // the thread will signal this when it is done waiting on the input handle.
     // It is an auto-reset.
-    wil::unique_event doneWaiting; 
+    wil::unique_event doneWaiting;
     doneWaiting.create();
 
     std::thread bgThread([&] {
@@ -614,7 +620,7 @@ void InputTests::TestVtInputGeneration()
     Log::Comment(L"Writing events");
     VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleInput(hIn, rgInputRecords, 1, &dwWritten));
     VERIFY_ARE_EQUAL(dwWritten, (DWORD)1);
-    
+
     Log::Comment(L"Reading events");
     VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleInput(hIn, rgInputRecords, ARRAYSIZE(rgInputRecords), &dwRead));
     VERIFY_ARE_EQUAL(dwRead, (DWORD)1);
@@ -649,12 +655,12 @@ void InputTests::TestVtInputGeneration()
     VERIFY_ARE_EQUAL(rgInputRecords[0].Event.KeyEvent.bKeyDown, TRUE);
     VERIFY_ARE_EQUAL(rgInputRecords[0].Event.KeyEvent.wVirtualKeyCode, 0);
     VERIFY_ARE_EQUAL(rgInputRecords[0].Event.KeyEvent.uChar.UnicodeChar, L'\x1b');
-    
+
     VERIFY_ARE_EQUAL(rgInputRecords[1].EventType, KEY_EVENT);
     VERIFY_ARE_EQUAL(rgInputRecords[1].Event.KeyEvent.bKeyDown, TRUE);
     VERIFY_ARE_EQUAL(rgInputRecords[1].Event.KeyEvent.wVirtualKeyCode, 0);
     VERIFY_ARE_EQUAL(rgInputRecords[1].Event.KeyEvent.uChar.UnicodeChar, L'[');
-    
+
     VERIFY_ARE_EQUAL(rgInputRecords[2].EventType, KEY_EVENT);
     VERIFY_ARE_EQUAL(rgInputRecords[2].Event.KeyEvent.bKeyDown, TRUE);
     VERIFY_ARE_EQUAL(rgInputRecords[2].Event.KeyEvent.wVirtualKeyCode, 0);
