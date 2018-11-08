@@ -13,12 +13,6 @@ bool TextAttribute::IsLegacy() const noexcept
     return _foreground.IsLegacy() && _background.IsLegacy();
 }
 
-// bool TextAttribute::IsLegacyOrDefault() const noexcept
-// {
-//     return (_foreground.IsLegacy() || _foreground.IsDefault()) &&
-//             (_background.IsLegacy() || _background.IsDefault());
-// }
-
 // Arguments:
 // - None
 // Return Value:
@@ -49,7 +43,7 @@ COLORREF TextAttribute::CalculateRgbBackground(std::basic_string_view<COLORREF> 
 // Return Value:
 // - color that is stored as the foreground color
 COLORREF TextAttribute::_GetRgbForeground(std::basic_string_view<COLORREF> colorTable,
-                                         COLORREF defaultColor) const
+                                          COLORREF defaultColor) const
 {
     return _foreground.GetColor(colorTable, defaultColor, _isBold);
 }
@@ -62,7 +56,7 @@ COLORREF TextAttribute::_GetRgbForeground(std::basic_string_view<COLORREF> color
 // Return Value:
 // - color that is stored as the background color
 COLORREF TextAttribute::_GetRgbBackground(std::basic_string_view<COLORREF> colorTable,
-                                         COLORREF defaultColor) const
+                                          COLORREF defaultColor) const
 {
     return _background.GetColor(colorTable, defaultColor, false);
 }

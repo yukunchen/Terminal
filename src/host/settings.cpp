@@ -1126,12 +1126,6 @@ TextAttribute Settings::GetDefaultAttributes() const noexcept
         attrs.SetDefaultBackground();
     }
     return attrs;
-    // // The default constructor for TextAttribute will construct a text attribute
-    // //      with both the foreground and background marked as "default" colors.
-    // if (_DefaultForeground != INVALID_COLOR || _DefaultBackground != INVALID_COLOR)
-    //     // Umm?????? I dont think this is right either
-    //     return TextAttribute{};
-    // return TextAttribute{ _wFillAttribute };
 }
 
 bool Settings::IsTerminalScrolling() const noexcept

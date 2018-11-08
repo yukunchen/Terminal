@@ -226,7 +226,6 @@ HRESULT ApiRoutines::FillConsoleOutputAttributeImpl(IConsoleOutputObject& OutCon
     {
         TextAttribute useThisAttr(attribute);
 
-        if (attribute == 0x0) DebugBreak();
         // Here we're being a little clever -
         // Because RGB color can't roundtrip the API, certain VT sequences will forget the RGB color
         // because their first call to GetScreenBufferInfo returned a legacy attr.

@@ -66,10 +66,29 @@ void TextAttributeTests::TestRoundtripMetaBits()
 
 void TextAttributeTests::TestRoundtripExhaustive()
 {
-    for (WORD wLegacy = 0; wLegacy < (META_ATTRS|FG_ATTRS|BG_ATTRS); wLegacy++)
+    WORD allAttrs = (META_ATTRS | FG_ATTRS | BG_ATTRS);
+    // This test covers some 0xdfff test cases, printing out Verify: IsTrue for
+    //      each takes a lot longer than checking.
+    // Only VERIFY if the comparison actually fails to speed up the test.
+    Log::Comment(L"This test will check each possible legacy attribute to make "
+        "sure it roundtrips through the creation of a text attribute.");
+    Log::Comment(L"It will only log if it fails.");
+    for (WORD wLegacy = 0; wLegacy < allAttrs; wLegacy++)
     {
+        // 0x2000 is not an actual meta attribute
+        if (WI_IsFlagSet(wLegacy, 0x2000)) continue;
+
         auto attr = TextAttribute(wLegacy);
-        VERIFY_IS_TRUE(attr.IsLegacy());
-        VERIFY_ARE_EQUAL(wLegacy, attr.GetLegacyAttributes());
+
+        bool isLegacy = attr.IsLegacy();
+        bool areEqual = (wLegacy == attr.GetLegacyAttributes());
+        if (!(isLegacy && areEqual))
+        {
+            Log::Comment(NoThrowString().Format(
+                L"Failed on wLegacy=0x%x", wLegacy
+            ));
+            VERIFY_IS_TRUE(attr.IsLegacy());
+            VERIFY_ARE_EQUAL(wLegacy, attr.GetLegacyAttributes());
+        }
     }
 }
