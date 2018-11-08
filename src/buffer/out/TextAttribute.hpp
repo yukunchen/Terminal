@@ -38,7 +38,7 @@ public:
     }
 
     constexpr TextAttribute(const WORD wLegacyAttr) noexcept :
-        _wAttrLegacy{ (WORD)(wLegacyAttr & META_ATTRS) },
+        _wAttrLegacy{ (WORD)(wLegacyAttr/* & META_ATTRS*/) },
         _foreground{ (BYTE)(wLegacyAttr & FG_ATTRS) },
         _background{ (BYTE)((wLegacyAttr & BG_ATTRS)>>4) },
         _isBold{ false }
@@ -56,11 +56,24 @@ public:
 
     constexpr WORD TextAttribute::GetLegacyAttributes() const noexcept
     {
+        // if (!(_foreground.IsLegacy() && _background.IsLegacy())) DebugBreak();
+
         BYTE fg = (_foreground.GetIndex() & FG_ATTRS);
         BYTE bg = (_background.GetIndex() << 4) & BG_ATTRS;
-        WORD meta = (_wAttrLegacy & META_ATTRS);
+        WORD meta = (_wAttrLegacy/* & META_ATTRS*/);
         return (fg | bg | meta) | (_isBold ? FOREGROUND_INTENSITY : 0);
     }
+
+    // constexpr WORD TextAttribute::SmartGetLegacyAttributes(WORD wDefault) const noexcept
+    // {
+    //     // if (!(_foreground.IsLegacy() && _background.IsLegacy())) DebugBreak();
+    //     WORD result = 0;
+
+    //     BYTE fg = (_foreground.IsIndex() ? _foreground.GetIndex() : wDefault ) & FG_ATTRS;
+    //     BYTE bg = (_foreground.IsIndex() ? (_background.GetIndex() << 4) : wDefault) & BG_ATTRS;
+    //     WORD meta = (_wAttrLegacy/* & META_ATTRS*/);
+    //     return (fg | bg | meta) | (_isBold ? FOREGROUND_INTENSITY : 0);
+    // }
 
     COLORREF CalculateRgbForeground(std::basic_string_view<COLORREF> colorTable,
                                     COLORREF defaultColor) const;
@@ -97,6 +110,7 @@ public:
     friend constexpr bool operator!=(const WORD& legacyAttr, const TextAttribute& attr) noexcept;
 
     bool IsLegacy() const noexcept;
+    // bool IsLegacyOrDefault() const noexcept;
     bool IsBold() const noexcept;
 
     void SetForeground(const COLORREF rgbForeground);
@@ -124,6 +138,7 @@ private:
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;
+    friend class TextAttributeTests;
     template<typename TextAttribute> friend class WEX::TestExecution::VerifyOutputTraits;
 #endif
 };

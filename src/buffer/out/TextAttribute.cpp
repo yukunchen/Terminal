@@ -13,6 +13,12 @@ bool TextAttribute::IsLegacy() const noexcept
     return _foreground.IsLegacy() && _background.IsLegacy();
 }
 
+// bool TextAttribute::IsLegacyOrDefault() const noexcept
+// {
+//     return (_foreground.IsLegacy() || _foreground.IsDefault()) &&
+//             (_background.IsLegacy() || _background.IsDefault());
+// }
+
 // Arguments:
 // - None
 // Return Value:

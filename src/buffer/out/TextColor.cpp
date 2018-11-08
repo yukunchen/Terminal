@@ -7,41 +7,41 @@
 #include "precomp.h"
 #include "TextColor.h"
 
-// Method Description:
-// - Returns true if this attribute is a legacy style attribute - if it's an
-///     index into the color table.
-// Arguments:
-// - <none>
-// Return Value:
-// - true if this color is a legacy style attribute
-bool TextColor::IsLegacy() const noexcept
-{
-    return !(IsDefault() || IsRgb());
-}
+// // Method Description:
+// // - Returns true if this attribute is a legacy style attribute - if it's an
+// ///     index into the color table.
+// // Arguments:
+// // - <none>
+// // Return Value:
+// // - true if this color is a legacy style attribute
+// bool TextColor::IsLegacy() const noexcept
+// {
+//     return !(IsDefault() || IsRgb());
+// }
 
-// Method Description:
-// - Returns true if this attribute is a "default" attribute. It's up to the
-//      terminal to decide how to interpret what a default attribute means.
-// Arguments:
-// - <none>
-// Return Value:
-// - true if this color is a default attribute
-bool TextColor::IsDefault() const noexcept
-{
-    return _meta == static_cast<BYTE>(ColorType::IsDefault);
-}
+// // Method Description:
+// // - Returns true if this attribute is a "default" attribute. It's up to the
+// //      terminal to decide how to interpret what a default attribute means.
+// // Arguments:
+// // - <none>
+// // Return Value:
+// // - true if this color is a default attribute
+// bool TextColor::IsDefault() const noexcept
+// {
+//     return _meta == static_cast<BYTE>(ColorType::IsDefault);
+// }
 
-// Method Description:
-// - Returns true if this attribute is a RGB attribute, containing the full
-//      color information in itself.
-// Arguments:
-// - <none>
-// Return Value:
-// - true if this color is a RGB attrbute
-bool TextColor::IsRgb() const noexcept
-{
-    return _meta == static_cast<BYTE>(ColorType::IsRgb);
-}
+// // Method Description:
+// // - Returns true if this attribute is a RGB attribute, containing the full
+// //      color information in itself.
+// // Arguments:
+// // - <none>
+// // Return Value:
+// // - true if this color is a RGB attrbute
+// bool TextColor::IsRgb() const noexcept
+// {
+//     return _meta == static_cast<BYTE>(ColorType::IsRgb);
+// }
 
 // Method Description:
 // - Sets the color value of this attribute, and sets this color to be an RGB

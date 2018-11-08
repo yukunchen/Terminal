@@ -76,9 +76,22 @@ public:
 
     friend constexpr bool operator==(const TextColor& a, const TextColor& b) noexcept;
     friend constexpr bool operator!=(const TextColor& a, const TextColor& b) noexcept;
-    bool IsLegacy() const noexcept;
-    bool IsDefault() const noexcept;
-    bool IsRgb() const noexcept;
+
+    constexpr bool IsLegacy() const noexcept
+    {
+        return !(IsDefault() || IsRgb());
+    }
+
+    constexpr bool IsDefault() const noexcept
+    {
+        return _meta == static_cast<BYTE>(ColorType::IsDefault);
+    }
+
+    constexpr bool IsRgb() const noexcept
+    {
+        return _meta == static_cast<BYTE>(ColorType::IsRgb);
+    }
+
     void SetColor(const COLORREF rgbColor);
     void SetIndex(const BYTE index);
     void SetDefault();
@@ -89,23 +102,19 @@ public:
 
     constexpr BYTE TextColor::GetIndex() const
     {
-        return _red;
+        return _index;
     }
 
 
 private:
-    const static unsigned int IS_DEFAULT_BIT = 0;
-    const static unsigned int IS_RGB_BIT = 1;
-    // NOTE: If you make this longer, make sure to update operator== to include
-    //      the added bits. (apparently the bitset == is not constexpr.)
     BYTE _meta : 2;
-
     union
     {
         BYTE _red, _index;
     };
     BYTE _green;
     BYTE _blue;
+
     COLORREF _GetRGB() const;
 
 #ifdef UNIT_TESTING
