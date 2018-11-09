@@ -17,15 +17,13 @@ Revision History:
 
 class DbcsAttribute final
 {
-private:
+public:
     enum class Attribute : BYTE
     {
         Single = 0x00,
         Leading = 0x01,
         Trailing = 0x02
     };
-
-public:
 
     DbcsAttribute() noexcept :
         _attribute{ Attribute::Single },
