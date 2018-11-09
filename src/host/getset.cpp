@@ -154,7 +154,7 @@ HRESULT ApiRoutines::GetConsoleFontSizeImpl(_In_ const SCREEN_INFORMATION& Conte
     if (FontIndex == 0)
     {
         // As of the November 2015 renderer system, we only have a single font at index 0.
-        *pFontSize = Context.GetActiveBuffer().GetTextBuffer().GetCurrentFont().GetUnscaledSize();
+        *pFontSize = Context.GetActiveBuffer().GetCurrentFont().GetUnscaledSize();
         return S_OK;
     }
     else
@@ -182,13 +182,13 @@ HRESULT ApiRoutines::GetCurrentConsoleFontExImpl(const SCREEN_INFORMATION& Conte
     }
     else
     {
-        WindowSize = activeScreenInfo.GetTextBuffer().GetCurrentFont().GetUnscaledSize();
+        WindowSize = activeScreenInfo.GetCurrentFont().GetUnscaledSize();
     }
     pConsoleFontInfoEx->dwFontSize = WindowSize;
 
     pConsoleFontInfoEx->nFont = 0;
 
-    const FontInfo& fontInfo = activeScreenInfo.GetTextBuffer().GetCurrentFont();
+    const FontInfo& fontInfo = activeScreenInfo.GetCurrentFont();
     pConsoleFontInfoEx->FontFamily = fontInfo.GetFamily();
     pConsoleFontInfoEx->FontWeight = fontInfo.GetWeight();
 

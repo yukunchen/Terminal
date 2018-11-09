@@ -154,8 +154,7 @@ public:
         m_backupTextBufferInfo.swap(gci.pCurrentScreenBuffer->_textBuffer);
         try
         {
-            std::unique_ptr<TextBuffer> textBuffer = std::make_unique<TextBuffer>(*m_pFontInfo,
-                                                                                  coordScreenBufferSize,
+            std::unique_ptr<TextBuffer> textBuffer = std::make_unique<TextBuffer>(coordScreenBufferSize,
                                                                                   TextAttribute{FOREGROUND_BLUE | FOREGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY},
                                                                                   uiCursorSize,
                                                                                   gci.pCurrentScreenBuffer->GetRenderTarget());

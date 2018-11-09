@@ -260,8 +260,7 @@ void TextBufferTests::TestCopyProperties()
 {
     TextBuffer& otherTbi = GetTbi();
 
-    std::unique_ptr<TextBuffer> testTextBuffer = std::make_unique<TextBuffer>(otherTbi._currentFont,
-                                                                              otherTbi.GetSize().Dimensions(),
+    std::unique_ptr<TextBuffer> testTextBuffer = std::make_unique<TextBuffer>(otherTbi.GetSize().Dimensions(),
                                                                               otherTbi._currentAttributes,
                                                                               12,
                                                                               otherTbi._renderTarget);

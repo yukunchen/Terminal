@@ -39,7 +39,7 @@ const TextBuffer& RenderData::GetTextBuffer()
 const FontInfo* RenderData::GetFontInfo()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return &gci.GetActiveOutputBuffer().GetTextBuffer().GetCurrentFont();
+    return &gci.GetActiveOutputBuffer().GetCurrentFont();
 }
 
 const TextAttribute RenderData::GetDefaultBrushColors()

@@ -763,7 +763,7 @@ NTSTATUS SrvReadConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
         {
             LOG_IF_FAILED(TranslateOutputToOem(Buffer, BufferSize));
         }
-        else if (!activeScreenInfo.GetTextBuffer().GetCurrentFont().IsTrueTypeFont())
+        else if (!activeScreenInfo.GetCurrentFont().IsTrueTypeFont())
         {
             // For compatibility reasons, we must maintain the behavior that munges the data if we are writing while a raster font is enabled.
             // This can be removed when raster font support is removed.
@@ -846,7 +846,7 @@ NTSTATUS SrvWriteConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*Reply
                 Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
             }
         }
-        else if (!ScreenBufferInformation.GetTextBuffer().GetCurrentFont().IsTrueTypeFont())
+        else if (!ScreenBufferInformation.GetCurrentFont().IsTrueTypeFont())
         {
             // For compatibility reasons, we must maintain the behavior that munges the data if we are writing while a raster font is enabled.
             // This can be removed when raster font support is removed.
@@ -1057,7 +1057,7 @@ NTSTATUS ConsoleCreateScreenBuffer(std::unique_ptr<ConsoleHandleData>& handle,
 
     // Create new screen buffer.
     COORD WindowSize = siExisting.GetViewport().Dimensions();
-    const FontInfo& existingFont = siExisting.GetTextBuffer().GetCurrentFont();
+    const FontInfo& existingFont = siExisting.GetCurrentFont();
     SCREEN_INFORMATION* ScreenInfo = nullptr;
     NTSTATUS Status = SCREEN_INFORMATION::CreateInstance(WindowSize,
                                                          existingFont,

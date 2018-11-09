@@ -48,13 +48,6 @@ filling in the last row, and updating the screen.
 
 #pragma once
 
-#pragma warning(push)
-#pragma warning(disable: ALL_CPPCORECHECK_WARNINGS)
-#include "../renderer/inc/FontInfo.hpp"
-#include "../renderer/inc/FontInfoDesired.hpp"
-#include "../renderer/inc/IRenderTarget.hpp"
-#pragma warning(pop)
-
 #include "cursor.h"
 #include "Row.hpp"
 #include "TextAttribute.hpp"
@@ -64,11 +57,12 @@ filling in the last row, and updating the screen.
 #include "../buffer/out/textBufferCellIterator.hpp"
 #include "../buffer/out/textBufferTextIterator.hpp"
 
+#include "../renderer/inc/IRenderTarget.hpp"
+
 class TextBuffer final
 {
 public:
-    TextBuffer(const FontInfo fontInfo,
-               const COORD screenBufferSize,
+    TextBuffer(const COORD screenBufferSize,
                const TextAttribute defaultAttributes,
                const UINT cursorSize,
                Microsoft::Console::Render::IRenderTarget& renderTarget);
@@ -111,12 +105,6 @@ public:
 
     COORD GetLastNonSpaceCharacter() const;
 
-    FontInfo& GetCurrentFont() noexcept;
-    const FontInfo& GetCurrentFont() const noexcept;
-
-    FontInfoDesired& GetDesiredFont() noexcept;
-    const FontInfoDesired& GetDesiredFont() const noexcept;
-
     Cursor& GetCursor();
     const Cursor& GetCursor() const;
 
@@ -150,9 +138,6 @@ private:
     Cursor _cursor;
 
     SHORT _firstRow; // indexes top row (not necessarily 0)
-
-    FontInfo _currentFont;
-    FontInfoDesired _desiredFont;
 
     TextAttribute _currentAttributes;
 

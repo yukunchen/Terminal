@@ -46,14 +46,13 @@ void SetConsoleCPInfo(const BOOL fOutput)
         }
 
         SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
-        const auto& textBuffer = screenInfo.GetTextBuffer();
-        const FontInfo& fiOld = textBuffer.GetCurrentFont();
+        const FontInfo& fiOld = screenInfo.GetCurrentFont();
 
         // Use the desired face name when updating the font.
         // This ensures that if we had a fall back operation last time (the desired
         // face name didn't support the code page and we have a different less-desirable font currently)
         // that we'll now give it another shot to use the desired face name in the new code page.
-        FontInfo fiNew(textBuffer.GetDesiredFont().GetFaceName(),
+        FontInfo fiNew(screenInfo.GetDesiredFont().GetFaceName(),
                         fiOld.GetFamily(),
                         fiOld.GetWeight(),
                         fiOld.GetUnscaledSize(),

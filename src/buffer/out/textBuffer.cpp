@@ -30,13 +30,10 @@ using namespace Microsoft::Console::Types;
 // Return Value:
 // - constructed object
 // Note: may throw exception
-TextBuffer::TextBuffer(const FontInfo fontInfo,
-                       const COORD screenBufferSize,
+TextBuffer::TextBuffer(const COORD screenBufferSize,
                        const TextAttribute defaultAttributes,
                        const UINT cursorSize,
                        Microsoft::Console::Render::IRenderTarget& renderTarget) :
-    _currentFont{ fontInfo },
-    _desiredFont{ fontInfo },
     _firstRow{ 0 },
     _currentAttributes{ defaultAttributes },
     _cursor{ cursorSize, *this },
@@ -64,29 +61,7 @@ TextBuffer::TextBuffer(const FontInfo fontInfo,
 // - <none>
 void TextBuffer::CopyProperties(const TextBuffer& OtherBuffer)
 {
-    _currentFont = OtherBuffer.GetCurrentFont();
-
     GetCursor().CopyProperties(OtherBuffer.GetCursor());
-}
-
-FontInfo& TextBuffer::GetCurrentFont() noexcept
-{
-    return _currentFont;
-}
-
-const FontInfo& TextBuffer::GetCurrentFont() const noexcept
-{
-    return _currentFont;
-}
-
-FontInfoDesired& TextBuffer::GetDesiredFont() noexcept
-{
-    return _desiredFont;
-}
-
-const FontInfoDesired& TextBuffer::GetDesiredFont() const noexcept
-{
-    return _desiredFont;
 }
 
 // Routine Description:
