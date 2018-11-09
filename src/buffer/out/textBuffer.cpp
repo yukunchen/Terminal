@@ -9,11 +9,6 @@
 #include "textBuffer.hpp"
 #include "CharRow.hpp"
 
-#pragma warning(push)
-#pragma warning(disable: ALL_CPPCORECHECK_WARNINGS)
-#include "../interactivity/inc/ServiceLocator.hpp"
-#pragma warning(pop)
-
 #include "../types/inc/convert.hpp"
 
 #pragma hdrstop
@@ -41,9 +36,10 @@ TextBuffer::TextBuffer(const COORD screenBufferSize,
     _unicodeStorage{},
     _renderTarget{ renderTarget }
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    _cursor.SetColor(gci.GetCursorColor());
-    _cursor.SetType(gci.GetCursorType());
+    // TODO
+    // const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    // _cursor.SetColor(gci.GetCursorColor());
+    // _cursor.SetType(gci.GetCursorType());
 
     // initialize ROWs
     for (size_t i = 0; i < static_cast<size_t>(screenBufferSize.Y); ++i)
@@ -549,11 +545,7 @@ bool TextBuffer::IncrementCircularBuffer()
 {
     // FirstRow is at any given point in time the array index in the circular buffer that corresponds
     // to the logical position 0 in the window (cursor coordinates and all other coordinates).
-    auto& g = ServiceLocator::LocateGlobals();
-    if (g.pRender)
-    {
-        g.pRender->TriggerCircling();
-    }
+    _renderTarget.TriggerCircling();
 
     // First, clean out the old "first row" as it will become the "last row" of the buffer after the circle is performed.
     bool fSuccess = _storage.at(_firstRow).Reset(_currentAttributes);
@@ -861,19 +853,7 @@ UnicodeStorage& TextBuffer::GetUnicodeStorage()
 
 void TextBuffer::_NotifyPaint(const Viewport& viewport) const
 {
-    // If there's a render pointer...
-    const auto pRender = ServiceLocator::LocateGlobals().pRender;
-    if (pRender != nullptr)
-    {
-        // And we're the active text buffer (compare pointer to global state)
-        const auto pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer().GetTextBuffer();
-
-        if (pActive == this)
-        {
-            // Then call to trigger a redraw
-            pRender->TriggerRedraw(viewport);
-        }
-    }
+    _renderTarget.TriggerRedraw(viewport);
 }
 
 // Routine Description:
