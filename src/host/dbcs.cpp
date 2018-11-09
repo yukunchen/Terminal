@@ -7,9 +7,9 @@
 #include "precomp.h"
 #include "dbcs.h"
 #include "misc.h"
-#include "CodepointWidthDetector.hpp"
 
 #include "../types/inc/convert.hpp"
+#include "../types/inc/GlyphWidth.hpp"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 
@@ -226,16 +226,4 @@ ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
 
     delete[] TmpUni;
     return j;
-}
-
-static const CodepointWidthDetector widthDetector;
-
-bool IsGlyphFullWidth(const std::wstring_view glyph)
-{
-    return widthDetector.IsWide(glyph);
-}
-
-bool IsGlyphFullWidth(const wchar_t wch)
-{
-    return widthDetector.IsWide(wch);
 }

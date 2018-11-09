@@ -33,14 +33,16 @@ using namespace Microsoft::Console::Types;
 TextBuffer::TextBuffer(const FontInfo fontInfo,
                        const COORD screenBufferSize,
                        const TextAttribute defaultAttributes,
-                       const UINT cursorSize) :
+                       const UINT cursorSize,
+                       Microsoft::Console::Render::IRenderTarget& renderTarget) :
     _currentFont{ fontInfo },
     _desiredFont{ fontInfo },
     _firstRow{ 0 },
     _currentAttributes{ defaultAttributes },
     _cursor{ cursorSize, *this },
     _storage{},
-    _unicodeStorage{}
+    _unicodeStorage{},
+    _renderTarget{ renderTarget }
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     _cursor.SetColor(gci.GetCursorColor());
@@ -929,4 +931,15 @@ ROW& TextBuffer::_GetPrevRowNoWrap(const ROW& Row)
 
     THROW_HR_IF(E_FAIL, Row.GetId() == _firstRow);
     return _storage[prevRowIndex];
+}
+
+// Method Description:
+// - Retrieves this buffer's current render target.
+// Arguments:
+// - <none>
+// Return Value:
+// - This buffer's current render target.
+Microsoft::Console::Render::IRenderTarget& TextBuffer::GetRenderTarget() const
+{
+    return _renderTarget;
 }

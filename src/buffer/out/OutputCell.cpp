@@ -13,6 +13,7 @@
 #include "../interactivity/inc/ServiceLocator.hpp"
 #pragma warning(pop)
 
+#include "../../types/inc/GlyphWidth.hpp"
 #include "../../types/inc/convert.hpp"
 #include "../../inc/conattrs.hpp"
 #include "../../host/dbcs.h"
@@ -83,7 +84,7 @@ OutputCell::OutputCell(const std::wstring_view charData,
 OutputCell::OutputCell(const std::wstring_view charData,
                        const DbcsAttribute dbcsAttribute,
                        const TextAttribute textAttribute) :
-    _singleChar{ UNICODE_INVALID }, 
+    _singleChar{ UNICODE_INVALID },
     _dbcsAttribute{ dbcsAttribute },
     _textAttribute{ textAttribute },
     _behavior{ TextAttributeBehavior::Stored }
@@ -113,7 +114,7 @@ CHAR_INFO OutputCell::ToCharInfo()
     }
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     CHAR_INFO charInfo;
-    
+
     if (_useSingle())
     {
         charInfo.Char.UnicodeChar = _singleChar;

@@ -13,6 +13,7 @@
 #include "dbcs.h"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
+#include "../types/inc/GlyphWidth.hpp"
 #include "../types/inc/Utf16Parser.hpp"
 
 // Attributes flags:
@@ -450,7 +451,7 @@ void ConsoleImeInfo::_InsertConvertedString(const std::wstring_view text)
     auto& screenInfo = gci.GetActiveOutputBuffer();
     if (screenInfo.GetTextBuffer().GetCursor().IsOn())
     {
-        screenInfo.GetTextBuffer().GetCursor().TimerRoutine(screenInfo);
+        gci.GetCursorBlinker().TimerRoutine(screenInfo);
     }
 
     const DWORD dwControlKeyState = GetControlKeyState(0);

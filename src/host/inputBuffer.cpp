@@ -8,6 +8,7 @@
 #include "inputBuffer.hpp"
 #include "dbcs.h"
 #include "stream.h"
+#include "../types/inc/GlyphWidth.hpp"
 
 #include <functional>
 

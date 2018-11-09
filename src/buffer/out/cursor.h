@@ -22,9 +22,6 @@ Revision History:
 
 // the following values are used to create the textmode cursor.
 #define CURSOR_SMALL_SIZE 25    // large enough to be one pixel on a six pixel font
-class SCREEN_INFORMATION;
-typedef SCREEN_INFORMATION *PSCREEN_INFORMATION;
-
 class TextBuffer;
 
 class Cursor final
@@ -44,17 +41,11 @@ public:
     Cursor(Cursor&&) = default;
     Cursor& operator=(Cursor&&) & = default;
 
-    void UpdateSystemMetrics();
-    void SettingsChanged();
-    void FocusStart();
-    void FocusEnd();
-
     bool HasMoved() const noexcept;
     bool IsVisible() const noexcept;
     bool IsOn() const noexcept;
     bool IsBlinkingAllowed() const noexcept;
     bool IsDouble() const noexcept;
-    bool IsDoubleWidth() const;
     bool IsConversionArea() const noexcept;
     bool IsPopupShown() const noexcept;
     bool GetDelay() const noexcept;
@@ -86,7 +77,6 @@ public:
     void DecrementXPosition(const int DeltaX);
     void DecrementYPosition(const int DeltaY);
 
-    void TimerRoutine(SCREEN_INFORMATION& ScreenInfo);
     void CopyProperties(const Cursor& OtherCursor);
 
     void DelayEOLWrap(const COORD coordDelayedAt);
@@ -98,7 +88,6 @@ public:
     void SetType(const CursorType type);
 
 private:
-    Microsoft::Console::Interactivity::IAccessibilityNotifier* const _pAccessibilityNotifier;
     const TextBuffer& _parentBuffer;
 
     //TODO: seperate the rendering and text placement
@@ -124,18 +113,8 @@ private:
 
     ULONG _ulSize;
 
-    // These use Timer Queues:
-    // https://msdn.microsoft.com/en-us/library/windows/desktop/ms687003(v=vs.85).aspx
-    HANDLE _hCaretBlinkTimer; // timer used to peridically blink the cursor
-    HANDLE _hCaretBlinkTimerQueue; // timer queue where the blink timer lives
-
-    void SetCaretTimer();
-    void KillCaretTimer();
-
     void _RedrawCursor();
     void _RedrawCursorAlways();
-
-    UINT _uCaretBlinkTime;
 
     CursorType _cursorType;
     bool _fUseColor;

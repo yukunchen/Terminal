@@ -10,6 +10,7 @@
 #include "dbcs.h"
 
 #include "../types/inc/convert.hpp"
+#include "../types/inc/GlyphWidth.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 

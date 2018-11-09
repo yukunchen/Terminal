@@ -10,7 +10,8 @@
 
 #include "../../types/inc/convert.hpp"
 #include "../../types/inc/Utf16Parser.hpp"
-#include "../../host/dbcs.h"
+#include "../../types/inc/GlyphWidth.hpp"
+#include "../../inc/conattrs.hpp"
 
 static constexpr TextAttribute InvalidTextAttribute{ INVALID_COLOR, INVALID_COLOR };
 
@@ -338,7 +339,7 @@ const OutputCellView* OutputCellIterator::operator->() const
 
 // Routine Description:
 // - Checks the current view. If it is a leading half, it updates the current
-//   view to the trailing half of the same glyph. 
+//   view to the trailing half of the same glyph.
 // - This helps us to draw glyphs that are two columns wide by "doubling"
 //   the view that is returned so it will consume two cells.
 // Return Value:

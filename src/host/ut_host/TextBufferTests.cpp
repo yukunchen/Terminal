@@ -261,9 +261,10 @@ void TextBufferTests::TestCopyProperties()
     TextBuffer& otherTbi = GetTbi();
 
     std::unique_ptr<TextBuffer> testTextBuffer = std::make_unique<TextBuffer>(otherTbi._currentFont,
-                                                                                          otherTbi.GetSize().Dimensions(),
-                                                                                          otherTbi._currentAttributes,
-                                                                                          12);
+                                                                              otherTbi.GetSize().Dimensions(),
+                                                                              otherTbi._currentAttributes,
+                                                                              12,
+                                                                              otherTbi._renderTarget);
     VERIFY_IS_NOT_NULL(testTextBuffer.get());
 
     // set initial mapping values
