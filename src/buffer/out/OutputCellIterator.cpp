@@ -122,10 +122,12 @@ OutputCellIterator::OutputCellIterator(const std::wstring_view utf16Text, const 
 // - legacyAttrs - One legacy color item per cell
 // - unused - useless bool to change function signature for legacyAttrs constructor because the C++ compiler in
 //             razzle cannot distinguish between a std::wstring_view and a std::basic_string_view<WORD>
+// NOTE: This one internally casts to wchar_t because Razzle sees WORD and wchar_t as the same type
+//       despite that Visual Studio build can tell the difference.
 OutputCellIterator::OutputCellIterator(const std::basic_string_view<WORD> legacyAttrs, const bool /*unused*/) :
     _mode(Mode::LegacyAttr),
     _currentView(s_GenerateViewLegacyAttr(legacyAttrs.at(0))),
-    _run(legacyAttrs),
+    _run(std::wstring_view(reinterpret_cast<const wchar_t*>(legacyAttrs.data()), legacyAttrs.size())),
     _attr(InvalidTextAttribute),
     _distance(0),
     _pos(0),
@@ -203,7 +205,7 @@ OutputCellIterator::operator bool() const noexcept
         }
         case Mode::LegacyAttr:
         {
-            return _pos < std::get<std::basic_string_view<WORD>>(_run).length();
+            return _pos < std::get<std::wstring_view>(_run).length();
         }
         default:
             FAIL_FAST_HR(E_NOTIMPL);
@@ -292,7 +294,7 @@ OutputCellIterator& OutputCellIterator::operator++()
         _pos++;
         if (operator bool())
         {
-            _currentView = s_GenerateViewLegacyAttr(std::get<std::basic_string_view<WORD>>(_run).at(_pos));
+            _currentView = s_GenerateViewLegacyAttr(std::get<std::wstring_view>(_run).at(_pos));
         }
         break;
     }

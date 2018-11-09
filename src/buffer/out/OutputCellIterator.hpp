@@ -86,9 +86,10 @@ private:
     };
     Mode _mode;
 
+    std::basic_string_view<WORD> _legacyAttrs;
+
     std::variant<
         std::wstring_view, 
-        std::basic_string_view<WORD>, 
         std::basic_string_view<CHAR_INFO>, 
         std::basic_string_view<OutputCell>, 
         std::monostate> _run;
