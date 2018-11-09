@@ -38,7 +38,7 @@ public:
     }
 
     constexpr TextAttribute(const WORD wLegacyAttr) noexcept :
-        _wAttrLegacy{ wLegacyAttr & META_ATTRS },
+        _wAttrLegacy{ (WORD)(wLegacyAttr & META_ATTRS) },
         _foreground{ (BYTE)(wLegacyAttr & FG_ATTRS) },
         _background{ (BYTE)((wLegacyAttr & BG_ATTRS) >> 4) },
         _isBold{ false }
