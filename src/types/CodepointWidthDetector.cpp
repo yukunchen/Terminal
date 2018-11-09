@@ -133,13 +133,21 @@ unsigned int CodepointWidthDetector::_extractCodepoint(const std::wstring_view g
     }
 }
 
-
+// Method Description:
+// - Sets a function that should be used as the fallback mechanism for
+//      determining a particular glyph's width, should the glyph be an ambiguous
+//      width.
+//   A Terminal could hook in a Renderer's IsGlyphWideByFont method as the
+//      fallback to ask the renderer for the glyph's width (for example).
+// Arguments:
+// - pfnFallback - the function to use as the fallback method.
+// Return Value:
+// - <none>
 void CodepointWidthDetector::SetFallbackMethod(std::function<bool(const std::wstring_view)> pfnFallback)
 {
     _pfnFallbackMethod = pfnFallback;
     _hasFallback = true;
 }
-
 
 void CodepointWidthDetector::_populateUnicodeSearchMap()
 {

@@ -182,10 +182,7 @@ void Cursor::_RedrawCursor()
 // - <none>
 void Cursor::_RedrawCursorAlways()
 {
-    if (_parentBuffer.GetRenderTarget() != nullptr)
-    {
-        _parentBuffer.GetRenderTarget()->TriggerRedrawCursor(&_cPosition);
-    }
+    _parentBuffer.GetRenderTarget().TriggerRedrawCursor(&_cPosition);
 }
 
 void Cursor::SetPosition(const COORD cPosition)

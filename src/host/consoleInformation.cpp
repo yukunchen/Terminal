@@ -284,7 +284,13 @@ const std::wstring& CONSOLE_INFORMATION::GetLinkTitle() const noexcept
     return _LinkTitle;
 }
 
-Microsoft::Console::CursorBlinker& CONSOLE_INFORMATION::GetCursorBlinker()
+// Method Description:
+// - return a reference to the console's cursor blinker.
+// Arguments:
+// - <none>
+// Return Value:
+// - a reference to the console's cursor blinker.
+Microsoft::Console::CursorBlinker& CONSOLE_INFORMATION::GetCursorBlinker() noexcept
 {
     return _blinker;
 }

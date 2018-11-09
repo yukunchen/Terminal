@@ -10,7 +10,6 @@
 
 #include "../../types/inc/convert.hpp"
 #include "../../types/inc/Utf16Parser.hpp"
-// #include "../../host/dbcs.h"
 #include "../../types/inc/GlyphWidth.hpp"
 #include "../../inc/conattrs.hpp"
 

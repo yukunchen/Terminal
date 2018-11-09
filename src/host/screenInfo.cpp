@@ -25,6 +25,7 @@
 #pragma hdrstop
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Types;
+using namespace Microsoft::Console::Render;
 
 #pragma region Construct/Destruct
 
@@ -124,9 +125,8 @@ NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
         pScreen->_textBuffer = std::make_unique<TextBuffer>(fontInfo,
                                                             coordScreenBufferSize,
                                                             defaultAttributes,
-                                                            uiCursorSize);
-
-        pScreen->_textBuffer->SetRenderTarget(&pScreen->_renderTarget);
+                                                            uiCursorSize,
+                                                            pScreen->_renderTarget);
 
         const NTSTATUS status = pScreen->_InitializeOutputStateMachine();
 
@@ -202,8 +202,8 @@ void SCREEN_INFORMATION::s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pSc
     }
     else
     {
-        SCREEN_INFORMATION* Cur = gci.ScreenBuffers;
-        SCREEN_INFORMATION* Prev = Cur;
+        auto Cur = gci.ScreenBuffers;
+        auto Prev = Cur;
         while (Cur != nullptr)
         {
             if (pScreenInfo == Cur)
@@ -1323,7 +1323,8 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
         newTextBuffer = std::make_unique<TextBuffer>(_textBuffer->GetCurrentFont(),
                                                      coordNewScreenSize,
                                                      _Attributes,
-                                                     0); // temporarily set size to 0 so it won't render.
+                                                     0,
+                                                     _renderTarget); // temporarily set size to 0 so it won't render.
     }
     catch (...)
     {
@@ -2691,10 +2692,28 @@ void SCREEN_INFORMATION::MoveToBottom()
     LOG_IF_NTSTATUS_FAILED(SetViewportOrigin(true, { 0, newTop }, true));
 }
 
+// Method Description:
+// - Returns true if the character at the cursor's current position is wide.
+//   See IsGlyphFullWidth
+// Arguments:
+// - <none>
+// Return Value:
+// - true if the character at the cursor's current position is wide
 bool SCREEN_INFORMATION::CursorIsDoubleWidth() const
 {
     const auto& buffer = GetTextBuffer();
     const auto position = buffer.GetCursor().GetPosition();
     TextBufferTextIterator it(TextBufferCellIterator(buffer, position));
     return IsGlyphFullWidth(*it);
+}
+
+// Method Description:
+// - Retrieves this buffer's current render target.
+// Arguments:
+// - <none>
+// Return Value:
+// - This buffer's current render target.
+IRenderTarget& SCREEN_INFORMATION::GetRenderTarget() noexcept
+{
+    return _renderTarget;
 }

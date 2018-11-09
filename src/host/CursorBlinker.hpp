@@ -3,6 +3,9 @@ Copyright (c) Microsoft Corporation
 
 Module Name:
 - CursorBlinker.hpp
+Abstract:
+- Encapsulates all of the behavior needed to blink the cursor, and update the
+    blink rate to account for different system settings.
 */
 
 namespace Microsoft::Console
@@ -23,7 +26,7 @@ namespace Microsoft::Console
     private:
         // These use Timer Queues:
         // https://msdn.microsoft.com/en-us/library/windows/desktop/ms687003(v=vs.85).aspx
-        HANDLE _hCaretBlinkTimer; // timer used to peridically blink the cursor
+        HANDLE _hCaretBlinkTimer; // timer used to periodically blink the cursor
         HANDLE _hCaretBlinkTimerQueue; // timer queue where the blink timer lives
         UINT _uCaretBlinkTime;
         void SetCaretTimer();

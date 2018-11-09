@@ -145,7 +145,7 @@ public:
     friend void SetActiveScreenBuffer(_Inout_ SCREEN_INFORMATION& screenInfo);
     friend class SCREEN_INFORMATION;
     friend class CommonState;
-    Microsoft::Console::CursorBlinker& GetCursorBlinker();
+    Microsoft::Console::CursorBlinker& GetCursorBlinker() noexcept;
 
 private:
     CRITICAL_SECTION _csConsoleLock;   // serialize input and output using this

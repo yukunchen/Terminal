@@ -1003,49 +1003,23 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
 // - <none>
 void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
 {
-    const Cursor& cursor = _pData->GetCursor();
-
-    if (cursor.IsVisible() && cursor.IsOn() && !cursor.IsPopupShown())
+    if (_pData->IsCursorVisible())
     {
         // Get cursor position in buffer
-        COORD coordCursor = cursor.GetPosition();
-
-        Viewport view = _pData->GetViewport();
-
-        // Always attempt to paint the cursor, even if it's not within the
-        //      "dirty" part of the viewport.
-
-        // Determine cursor height
-        ULONG ulHeight = cursor.GetSize();
-
-        // Now adjust the height for the overwrite/insert mode. If we're in overwrite mode, IsDouble will be set.
-        // When IsDouble is set, we either need to double the height of the cursor, or if it's already too big,
-        // then we need to shrink it by half.
-        if (cursor.IsDouble())
-        {
-            if (ulHeight > 50) // 50 because 50 percent is half of 100 percent which is the max size.
-            {
-                ulHeight >>= 1;
-            }
-            else
-            {
-                ulHeight <<= 1;
-            }
-        }
-
-        // Determine cursor width
-        bool const fIsDoubleWidth = _pData->IsCursorDoubleWidth();
-
+        COORD coordCursor = _pData->GetCursorPosition();
         // Adjust cursor to viewport
+        Viewport view = _pData->GetViewport();
         view.ConvertToOrigin(&coordCursor);
 
+        COLORREF cursorColor = _pData->GetCursorColor();
+        bool useColor = cursorColor != INVALID_COLOR;
         // Draw it within the viewport
         LOG_IF_FAILED(pEngine->PaintCursor(coordCursor,
-                                           ulHeight,
-                                           fIsDoubleWidth,
-                                           cursor.GetType(),
-                                           cursor.IsUsingColor(),
-                                           cursor.GetColor()));
+                                           _pData->GetCursorHeight(),
+                                           _pData->IsCursorDoubleWidth(),
+                                           _pData->GetCursorStyle(),
+                                           useColor,
+                                           cursorColor));
     }
 }
 

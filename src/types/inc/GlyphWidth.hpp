@@ -2,7 +2,7 @@
 Copyright (c) Microsoft Corporation
 
 Module Name:
-- CodepointWidthDetector.hpp
+- GlyphWidth.hpp
 
 Abstract:
 - Helpers for determining the width of a particular string of chars.

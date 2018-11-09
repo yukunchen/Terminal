@@ -55,13 +55,69 @@ const void RenderData::GetColorTable(_Outptr_result_buffer_all_(*pcColors) COLOR
     *pcColors = gci.GetColorTableSize();
 }
 
-const Cursor& RenderData::GetCursor()
+// Method Description:
+// - Gets the cursor's position in the buffer, relative to the buffer origin.
+// Arguments:
+// - <none>
+// Return Value:
+// - the cursor's position in the buffer relative to the buffer origin.
+COORD RenderData::GetCursorPosition() const
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
+    const auto& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
+    return cursor.GetPosition();
 }
 
-const bool RenderData::IsCursorDoubleWidth() const
+bool RenderData::IsCursorVisible() const
+{
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
+    return cursor.IsVisible() && cursor.IsOn() && !cursor.IsPopupShown();
+
+}
+
+ULONG RenderData::GetCursorHeight() const
+{
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
+    // Determine cursor height
+    ULONG ulHeight = cursor.GetSize();
+
+    // Now adjust the height for the overwrite/insert mode. If we're in overwrite mode, IsDouble will be set.
+    // When IsDouble is set, we either need to double the height of the cursor, or if it's already too big,
+    // then we need to shrink it by half.
+    if (cursor.IsDouble())
+    {
+        if (ulHeight > 50) // 50 because 50 percent is half of 100 percent which is the max size.
+        {
+            ulHeight >>= 1;
+        }
+        else
+        {
+            ulHeight <<= 1;
+        }
+    }
+
+    return ulHeight;
+}
+
+CursorType RenderData::GetCursorStyle() const
+{
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
+    return cursor.GetType();
+
+}
+
+COLORREF RenderData::GetCursorColor() const
+{
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
+    return cursor.GetColor();
+}
+
+
+bool RenderData::IsCursorDoubleWidth() const
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetActiveOutputBuffer().CursorIsDoubleWidth();

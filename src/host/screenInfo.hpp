@@ -235,6 +235,7 @@ public:
     void UpdateBottom();
     void MoveToBottom();
 
+    Microsoft::Console::Render::IRenderTarget& GetRenderTarget() noexcept;
 
 private:
     SCREEN_INFORMATION(_In_ IWindowMetrics *pMetrics,

@@ -70,7 +70,8 @@ public:
     TextBuffer(const FontInfo fontInfo,
                const COORD screenBufferSize,
                const TextAttribute defaultAttributes,
-               const UINT cursorSize);
+               const UINT cursorSize,
+               Microsoft::Console::Render::IRenderTarget& renderTarget);
     TextBuffer(const TextBuffer& a) = delete;
 
     ~TextBuffer() = default;
@@ -141,8 +142,7 @@ public:
     const UnicodeStorage& GetUnicodeStorage() const;
     UnicodeStorage& GetUnicodeStorage();
 
-    void SetRenderTarget(Microsoft::Console::Render::IRenderTarget* pRenderTarget);
-    Microsoft::Console::Render::IRenderTarget* GetRenderTarget() const;
+    Microsoft::Console::Render::IRenderTarget& GetRenderTarget() const;
 
 private:
 
@@ -159,7 +159,7 @@ private:
     // storage location for glyphs that can't fit into the buffer normally
     UnicodeStorage _unicodeStorage;
 
-    Microsoft::Console::Render::IRenderTarget* _pRenderTarget;
+    Microsoft::Console::Render::IRenderTarget& _renderTarget;
 
     COORD _GetPreviousFromCursor() const;
 

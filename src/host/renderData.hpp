@@ -29,8 +29,12 @@ public:
     const TextAttribute GetDefaultBrushColors();
     const void GetColorTable(_Outptr_result_buffer_all_(*pcColors) COLORREF** const ppColorTable, _Out_ size_t* const pcColors);
 
-    const Cursor& GetCursor();
-    const bool IsCursorDoubleWidth() const override;
+    COORD GetCursorPosition() const override;
+    bool IsCursorVisible() const override;
+    ULONG GetCursorHeight() const override;
+    CursorType GetCursorStyle() const override;
+    COLORREF GetCursorColor() const override;
+    bool IsCursorDoubleWidth() const override;
 
     const ConsoleImeInfo* GetImeData();
     const TextBuffer& GetImeCompositionStringBuffer(_In_ size_t iIndex);
