@@ -204,8 +204,6 @@ SMALL_RECT Selection::s_BisectSelection(const short sStringLength,
         }
         else
         {
-            // TODO: MSFT: 19452170 - I'm pretty sure we can't have bisecting text inserted into the buffer
-            // so is this even necessary beyond the contrived scenario and test?
             if (coordTargetPoint.Y + 1 < screenInfo.GetBufferSize().Height())
             {
                 const auto nextLineIter = screenInfo.GetCellDataAt({ 0, coordTargetPoint.Y + 1 });
@@ -215,7 +213,6 @@ SMALL_RECT Selection::s_BisectSelection(const short sStringLength,
                 }
             }
         }
-
     }
     CATCH_LOG();
     

@@ -869,7 +869,7 @@ static HRESULT _ReadConsoleOutputWImplHelper(const SCREEN_INFORMATION& context,
         // Validate that we always still have a valid iterator to the backgin store,
         // that we always are writing inside the user's buffer (before the end)
         // and we're always targeting the user's buffer inside its original bounds.
-        while (sourceIter && targetIter < targetBuffer.end() && requestRectangle.IsInBounds(targetPos))
+        while (sourceIter && targetIter < targetBuffer.end())
         {
             // If the point we're trying to write is inside the limited buffer write zone...
             if (targetLimit.IsInBounds(targetPos))
