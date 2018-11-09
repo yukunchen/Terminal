@@ -544,11 +544,11 @@ static HRESULT _AdjustFontSize(const SHORT delta) noexcept
     CONSOLE_FONT_INFOEX font = { 0 };
     font.cbSize = sizeof(font);
 
-    RETURN_IF_FAILED(globals.api.GetCurrentConsoleFontExImpl(screenInfo, false, &font));
+    RETURN_IF_FAILED(globals.api.GetCurrentConsoleFontExImpl(screenInfo, false, font));
 
     font.dwFontSize.Y += delta;
 
-    RETURN_IF_FAILED(globals.api.SetCurrentConsoleFontExImpl(screenInfo, false, &font));
+    RETURN_IF_FAILED(globals.api.SetCurrentConsoleFontExImpl(screenInfo, false, font));
 
     return S_OK;
 }
