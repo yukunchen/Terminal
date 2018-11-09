@@ -154,102 +154,101 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 // block, this will be returned along with context in *ppWaiter.
 // - Or an out of memory/math/string error message in NTSTATUS format.
 [[nodiscard]]
-NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
-                           _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                           const size_t eventReadCount,
-                           _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
-                           const bool IsUnicode,
-                           const bool IsPeek,
-                           _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
+static NTSTATUS _DoGetConsoleInput(InputBuffer& inputBuffer,
+                                   std::deque<std::unique_ptr<IInputEvent>>& outEvents,
+                                   const size_t eventReadCount,
+                                   INPUT_READ_HANDLE_DATA& readHandleState,
+                                   const bool IsUnicode,
+                                   const bool IsPeek,
+                                   std::unique_ptr<IWaitRoutine>& waiter) noexcept
 {
-    *ppWaiter = nullptr;
-
-    if (eventReadCount == 0)
+    try
     {
-        return STATUS_SUCCESS;
-    }
+        waiter.reset();
 
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-    std::deque<std::unique_ptr<IInputEvent>> partialEvents;
-    if (!IsUnicode)
-    {
-        if (pInputBuffer->IsReadPartialByteSequenceAvailable())
+        if (eventReadCount == 0)
         {
-            partialEvents.push_back(pInputBuffer->FetchReadPartialByteSequence(IsPeek));
+            return STATUS_SUCCESS;
         }
-    }
 
-    size_t amountToRead;
-    if (FAILED(SizeTSub(eventReadCount, partialEvents.size(), &amountToRead)))
-    {
-        return STATUS_INTEGER_OVERFLOW;
-    }
-    std::deque<std::unique_ptr<IInputEvent>> readEvents;
-    NTSTATUS Status = pInputBuffer->Read(readEvents,
-                                         amountToRead,
-                                         IsPeek,
-                                         true,
-                                         IsUnicode);
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    if (CONSOLE_STATUS_WAIT == Status)
-    {
-        FAIL_FAST_IF(!(readEvents.empty()));
-        // If we're told to wait until later, move all of our context
-        // to the read data object and send it back up to the server.
-        try
-        {
-            *ppWaiter = new DirectReadData(pInputBuffer,
-                                           pInputReadHandleData,
-                                           eventReadCount,
-                                           std::move(partialEvents));
-        }
-        catch (...)
-        {
-            *ppWaiter = nullptr;
-            Status = STATUS_NO_MEMORY;
-        }
-    }
-    else if (NT_SUCCESS(Status))
-    {
-        // split key events to oem chars if necessary
+        std::deque<std::unique_ptr<IInputEvent>> partialEvents;
         if (!IsUnicode)
         {
-            try
+            if (inputBuffer.IsReadPartialByteSequenceAvailable())
             {
-                SplitToOem(readEvents);
+                partialEvents.push_back(inputBuffer.FetchReadPartialByteSequence(IsPeek));
             }
-            CATCH_LOG();
         }
 
-        // combine partial and readEvents
-        while (!partialEvents.empty())
+        size_t amountToRead;
+        if (FAILED(SizeTSub(eventReadCount, partialEvents.size(), &amountToRead)))
         {
-            readEvents.push_front(std::move(partialEvents.back()));
-            partialEvents.pop_back();
+            return STATUS_INTEGER_OVERFLOW;
         }
+        std::deque<std::unique_ptr<IInputEvent>> readEvents;
+        NTSTATUS Status = inputBuffer.Read(readEvents,
+                                           amountToRead,
+                                           IsPeek,
+                                           true,
+                                           IsUnicode);
 
-        // move events over
-        for (size_t i = 0; i < eventReadCount; ++i)
+        if (CONSOLE_STATUS_WAIT == Status)
         {
-            if (readEvents.empty())
-            {
-                break;
-            }
-            outEvents.push_back(std::move(readEvents.front()));
-            readEvents.pop_front();
-        }
-
-        // store partial event if necessary
-        if (!readEvents.empty())
-        {
-            pInputBuffer->StoreReadPartialByteSequence(std::move(readEvents.front()));
-            readEvents.pop_front();
             FAIL_FAST_IF(!(readEvents.empty()));
+            // If we're told to wait until later, move all of our context
+            // to the read data object and send it back up to the server.
+            waiter = std::make_unique<DirectReadData>(&inputBuffer,
+                                                      &readHandleState,
+                                                      eventReadCount,
+                                                      std::move(partialEvents));
         }
+        else if (NT_SUCCESS(Status))
+        {
+            // split key events to oem chars if necessary
+            if (!IsUnicode)
+            {
+                try
+                {
+                    SplitToOem(readEvents);
+                }
+                CATCH_LOG();
+            }
+
+            // combine partial and readEvents
+            while (!partialEvents.empty())
+            {
+                readEvents.push_front(std::move(partialEvents.back()));
+                partialEvents.pop_back();
+            }
+
+            // move events over
+            for (size_t i = 0; i < eventReadCount; ++i)
+            {
+                if (readEvents.empty())
+                {
+                    break;
+                }
+                outEvents.push_back(std::move(readEvents.front()));
+                readEvents.pop_front();
+            }
+
+            // store partial event if necessary
+            if (!readEvents.empty())
+            {
+                inputBuffer.StoreReadPartialByteSequence(std::move(readEvents.front()));
+                readEvents.pop_front();
+                FAIL_FAST_IF(!(readEvents.empty()));
+            }
+        }
+        return Status;
     }
-    return Status;
+    catch (...)
+    {
+        return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+    }
 }
 
 // Routine Description:
@@ -257,31 +256,35 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
 // - The peek version will NOT remove records when it copies them out.
 // - The A version will convert to W using the console's current Input codepage (see SetConsoleCP)
 // Arguments:
-// - pInContext - The input buffer to take records from to return to the client
+// - context - The input buffer to take records from to return to the client
 // - outEvents - storage location for read events
 // - eventsToRead - The number of input events to read
-// - pInputReadHandleData - A structure that will help us maintain
+// - readHandleState - A structure that will help us maintain
 // some input context across various calls on the same input
 // handle. Primarily used to restore the "other piece" of partially
 // returned strings (because client buffer wasn't big enough) on the
 // next call.
-// - ppWaiter - If we have to wait (not enough data to fill client
+// - waiter - If we have to wait (not enough data to fill client
 // buffer), this contains context that will allow the server to
 // restore this call later.
 [[nodiscard]]
-HRESULT ApiRoutines::PeekConsoleInputAImpl(_In_ IConsoleInputObject* const pInContext,
-                                           _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
+HRESULT ApiRoutines::PeekConsoleInputAImpl(IConsoleInputObject& context,
+                                           std::deque<std::unique_ptr<IInputEvent>>& outEvents,
                                            const size_t eventsToRead,
-                                           _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
-                                           _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
+                                           INPUT_READ_HANDLE_DATA& readHandleState,
+                                           std::unique_ptr<IWaitRoutine>& waiter) noexcept
 {
-    RETURN_NTSTATUS(DoGetConsoleInput(pInContext,
-                                      outEvents,
-                                      eventsToRead,
-                                      pInputReadHandleData,
-                                      false,
-                                      true,
-                                      ppWaiter));
+    try
+    {
+        RETURN_NTSTATUS(_DoGetConsoleInput(context,
+                                           outEvents,
+                                           eventsToRead,
+                                           readHandleState,
+                                           false,
+                                           true,
+                                           waiter));
+    }
+    CATCH_RETURN();
 }
 
 // Routine Description:
@@ -289,31 +292,35 @@ HRESULT ApiRoutines::PeekConsoleInputAImpl(_In_ IConsoleInputObject* const pInCo
 // - The peek version will NOT remove records when it copies them out.
 // - The W version accepts UCS-2 formatted characters (wide characters)
 // Arguments:
-// - pInContext - The input buffer to take records from to return to the client
+// - context - The input buffer to take records from to return to the client
 // - outEvents - storage location for read events
 // - eventsToRead - The number of input events to read
-// - pInputReadHandleData - A structure that will help us maintain
+// - readHandleState - A structure that will help us maintain
 // some input context across various calls on the same input
 // handle. Primarily used to restore the "other piece" of partially
 // returned strings (because client buffer wasn't big enough) on the
 // next call.
-// - ppWaiter - If we have to wait (not enough data to fill client
+// - waiter - If we have to wait (not enough data to fill client
 // buffer), this contains context that will allow the server to
 // restore this call later.
 [[nodiscard]]
-HRESULT ApiRoutines::PeekConsoleInputWImpl(_In_ IConsoleInputObject* const pInContext,
-                                           _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
+HRESULT ApiRoutines::PeekConsoleInputWImpl(IConsoleInputObject& context,
+                                           std::deque<std::unique_ptr<IInputEvent>>& outEvents,
                                            const size_t eventsToRead,
-                                           _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
-                                           _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
+                                           INPUT_READ_HANDLE_DATA& readHandleState,
+                                           std::unique_ptr<IWaitRoutine>& waiter) noexcept
 {
-    RETURN_NTSTATUS(DoGetConsoleInput(pInContext,
-                                      outEvents,
-                                      eventsToRead,
-                                      pInputReadHandleData,
-                                      true,
-                                      true,
-                                      ppWaiter));
+    try
+    {
+        RETURN_NTSTATUS(_DoGetConsoleInput(context,
+                                           outEvents,
+                                           eventsToRead,
+                                           readHandleState,
+                                           true,
+                                           true,
+                                           waiter));
+    }
+    CATCH_RETURN();
 }
 
 // Routine Description:
@@ -321,31 +328,35 @@ HRESULT ApiRoutines::PeekConsoleInputWImpl(_In_ IConsoleInputObject* const pInCo
 // - The read version WILL remove records when it copies them out.
 // - The A version will convert to W using the console's current Input codepage (see SetConsoleCP)
 // Arguments:
-// - pInContext - The input buffer to take records from to return to the client
+// - context - The input buffer to take records from to return to the client
 // - outEvents - storage location for read events
 // - eventsToRead - The number of input events to read
-// - pInputReadHandleData - A structure that will help us maintain
+// - readHandleState - A structure that will help us maintain
 // some input context across various calls on the same input
 // handle. Primarily used to restore the "other piece" of partially
 // returned strings (because client buffer wasn't big enough) on the
 // next call.
-// - ppWaiter - If we have to wait (not enough data to fill client
+// - waiter - If we have to wait (not enough data to fill client
 // buffer), this contains context that will allow the server to
 // restore this call later.
 [[nodiscard]]
-HRESULT ApiRoutines::ReadConsoleInputAImpl(_In_ IConsoleInputObject* const pInContext,
-                                           _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
+HRESULT ApiRoutines::ReadConsoleInputAImpl(IConsoleInputObject& context,
+                                           std::deque<std::unique_ptr<IInputEvent>>& outEvents,
                                            const size_t eventsToRead,
-                                           _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
-                                           _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
+                                           INPUT_READ_HANDLE_DATA& readHandleState,
+                                           std::unique_ptr<IWaitRoutine>& waiter) noexcept
 {
-    RETURN_NTSTATUS(DoGetConsoleInput(pInContext,
-                                      outEvents,
-                                      eventsToRead,
-                                      pInputReadHandleData,
-                                      false,
-                                      false,
-                                      ppWaiter));
+    try
+    {
+        RETURN_NTSTATUS(_DoGetConsoleInput(context,
+                                           outEvents,
+                                           eventsToRead,
+                                           readHandleState,
+                                           false,
+                                           false,
+                                           waiter));
+    }
+    CATCH_RETURN();
 }
 
 // Routine Description:
@@ -353,89 +364,164 @@ HRESULT ApiRoutines::ReadConsoleInputAImpl(_In_ IConsoleInputObject* const pInCo
 // - The read version WILL remove records when it copies them out.
 // - The W version accepts UCS-2 formatted characters (wide characters)
 // Arguments:
-// - pInContext - The input buffer to take records from to return to the client
+// - context - The input buffer to take records from to return to the client
 // - outEvents - storage location for read events
 // - eventsToRead - The number of input events to read
-// - pInputReadHandleData - A structure that will help us maintain
+// - readHandleState - A structure that will help us maintain
 // some input context across various calls on the same input
 // handle. Primarily used to restore the "other piece" of partially
 // returned strings (because client buffer wasn't big enough) on the
 // next call.
-// - ppWaiter - If we have to wait (not enough data to fill client
+// - waiter - If we have to wait (not enough data to fill client
 // buffer), this contains context that will allow the server to
 // restore this call later.
 [[nodiscard]]
-HRESULT ApiRoutines::ReadConsoleInputWImpl(_In_ IConsoleInputObject* const pInContext,
-                                           _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
+HRESULT ApiRoutines::ReadConsoleInputWImpl(IConsoleInputObject& context,
+                                           std::deque<std::unique_ptr<IInputEvent>>& outEvents,
                                            const size_t eventsToRead,
-                                           _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
-                                           _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
+                                           INPUT_READ_HANDLE_DATA& readHandleState,
+                                           std::unique_ptr<IWaitRoutine>& waiter) noexcept
 {
-    RETURN_NTSTATUS(DoGetConsoleInput(pInContext,
-                                      outEvents,
-                                      eventsToRead,
-                                      pInputReadHandleData,
-                                      true,
-                                      false,
-                                      ppWaiter));
+    try
+    {
+        RETURN_NTSTATUS(_DoGetConsoleInput(context,
+                                           outEvents,
+                                           eventsToRead,
+                                           readHandleState,
+                                           true,
+                                           false,
+                                           waiter));
+    }
+    CATCH_RETURN();
 }
 
 // Routine Description:
 // - Writes events to the input buffer
 // Arguments:
-// - pInputBuffer - the input buffer to write to
+// - context - the input buffer to write to
 // - events - the events to written
-// - eventsWritten - on output, the number of events written
-// - unicode - true if events are unicode char data
+// - written  - on output, the number of events written
 // - append - true if events should be written to the end of the input
 // buffer, false if they should be written to the front
 // Return Value:
 // - HRESULT indicating success or failure
 [[nodiscard]]
-HRESULT DoSrvWriteConsoleInput(_Inout_ InputBuffer* const pInputBuffer,
-                               _Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
-                               _Out_ size_t& eventsWritten,
-                               const bool unicode,
-                               const bool append)
+static HRESULT _WriteConsoleInputWImplHelper(InputBuffer& context,
+                                             std::deque<std::unique_ptr<IInputEvent>>& events,
+                                             size_t& written,
+                                             const bool append) noexcept
 {
+    try
+    {
+        written = 0;
+
+        // add to InputBuffer
+        if (append)
+        {
+            written = context.Write(events);
+        }
+        else
+        {
+            written = context.Prepend(events);
+        }
+
+        return S_OK;
+    }
+    CATCH_RETURN();
+}
+
+// Routine Description:
+// - Writes events to the input buffer already formed into IInputEvents (private call)
+// Arguments:
+// - context - the input buffer to write to
+// - events - the events to written
+// - written  - on output, the number of events written
+// - append - true if events should be written to the end of the input
+// buffer, false if they should be written to the front
+// Return Value:
+// - HRESULT indicating success or failure
+[[nodiscard]]
+HRESULT DoSrvPrivateWriteConsoleInputW(_Inout_ InputBuffer* const pInputBuffer,
+                                       _Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
+                                       _Out_ size_t& eventsWritten,
+                                       const bool append) noexcept
+{
+    return _WriteConsoleInputWImplHelper(*pInputBuffer, events, eventsWritten, append);
+}
+
+// Routine Description:
+// - Writes events to the input buffer, translating from codepage to unicode first
+// Arguments:
+// - context - the input buffer to write to
+// - buffer - the events to written
+// - written  - on output, the number of events written
+// - append - true if events should be written to the end of the input
+// buffer, false if they should be written to the front
+// Return Value:
+// - HRESULT indicating success or failure
+[[nodiscard]]
+HRESULT ApiRoutines::WriteConsoleInputAImpl(InputBuffer& context,
+                                            const std::basic_string_view<INPUT_RECORD> buffer,
+                                            size_t& written,
+                                            const bool append) noexcept
+{
+    written = 0;
+
     LockConsole();
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    eventsWritten = 0;
-
     try
     {
+        auto events = IInputEvent::Create(buffer);
+
         // add partial byte event if necessary
-        if (pInputBuffer->IsWritePartialByteSequenceAvailable())
+        if (context.IsWritePartialByteSequenceAvailable())
         {
-            events.push_front(pInputBuffer->FetchWritePartialByteSequence(false));
+            events.push_front(context.FetchWritePartialByteSequence(false));
         }
 
         // convert to unicode if necessary
-        if (!unicode)
-        {
-            std::unique_ptr<IInputEvent> partialEvent;
-            EventsToUnicode(events, partialEvent);
+        std::unique_ptr<IInputEvent> partialEvent;
+        EventsToUnicode(events, partialEvent);
 
-            if (partialEvent.get())
-            {
-                pInputBuffer->StoreWritePartialByteSequence(std::move(partialEvent));
-            }
+        if (partialEvent.get())
+        {
+            context.StoreWritePartialByteSequence(std::move(partialEvent));
         }
+
+        return _WriteConsoleInputWImplHelper(context, events, written, append);
     }
     CATCH_RETURN();
+}
 
-    // add to InputBuffer
-    if (append)
-    {
-        eventsWritten = static_cast<ULONG>(pInputBuffer->Write(events));
-    }
-    else
-    {
-        eventsWritten = static_cast<ULONG>(pInputBuffer->Prepend(events));
-    }
+// Routine Description:
+// - Writes events to the input buffer
+// Arguments:
+// - context - the input buffer to write to
+// - buffer - the events to written
+// - written  - on output, the number of events written
+// - append - true if events should be written to the end of the input
+// buffer, false if they should be written to the front
+// Return Value:
+// - HRESULT indicating success or failure
+[[nodiscard]]
+HRESULT ApiRoutines::WriteConsoleInputWImpl(InputBuffer& context,
+                                            const std::basic_string_view<INPUT_RECORD> buffer,
+                                            size_t& written,
+                                            const bool append) noexcept
+{
+    written = 0;
 
-    return S_OK;
+    LockConsole();
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+    try
+    {
+        auto events = IInputEvent::Create(buffer);
+
+        return _WriteConsoleInputWImplHelper(context, events, written, append);
+    }
+    CATCH_RETURN();
 }
 
 // Function Description:
@@ -502,524 +588,531 @@ HRESULT DoSrvPrivateWriteConsoleControlInput(_Inout_ InputBuffer* const /*pInput
 }
 
 // Routine Description:
-// - This is used when the app reads oem from the output buffer the app wants
-//   real OEM characters. We have real Unicode or UnicodeOem.
+// - This is used when the app is reading output as cells and needs them converted
+//   into a particular codepage on the way out.
+// Arguments:
+// - codepage - The relevant codepage for translation
+// - buffer - This is the buffer containing all of the character data to be converted
+// - rectangle - This is the rectangle describing the region that the buffer covers.
+// Return Value:
+// - Generally S_OK. Could be a memory or math error code.
 [[nodiscard]]
-NTSTATUS TranslateOutputToOem(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Size)
+static HRESULT _ConvertCellsToAInplace(const UINT codepage, const gsl::span<CHAR_INFO> buffer, const Viewport rectangle) noexcept
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    ULONG NumBytes;
-    ULONG uX, uY;
-    if (FAILED(ShortToULong(Size.X, &uX)) ||
-        FAILED(ShortToULong(Size.Y, &uY)) ||
-        FAILED(ULongMult(uX, uY, &NumBytes)) ||
-        FAILED(ULongMult(NumBytes, 2 * sizeof(CHAR_INFO), &NumBytes)))
+    try
     {
-        return STATUS_NO_MEMORY;
-    }
-    PCHAR_INFO TmpBuffer = (PCHAR_INFO) new(std::nothrow) BYTE[NumBytes];
-    PCHAR_INFO const SaveBuffer = TmpBuffer;
-    if (TmpBuffer == nullptr)
-    {
-        return STATUS_NO_MEMORY;
-    }
-    ZeroMemory(TmpBuffer, sizeof(BYTE) * NumBytes);
+        std::vector<CHAR_INFO> tempBuffer(buffer.cbegin(), buffer.cend());
 
-    UINT const Codepage = gci.OutputCP;
+        const auto size = rectangle.Dimensions();
+        auto tempIter = tempBuffer.cbegin();
+        auto outIter = buffer.begin();
 
-    memmove(TmpBuffer, OutputBuffer, Size.X * Size.Y * sizeof(CHAR_INFO));
-
-#pragma prefast(push)
-#pragma prefast(disable:26019, "The buffer is the correct size for any given DBCS characters. No additional validation needed.")
-    for (int i = 0; i < Size.Y; i++)
-    {
-        for (int j = 0; j < Size.X; j++)
+        for (int i = 0; i < size.Y; i++)
         {
-            if (WI_IsFlagSet(TmpBuffer->Attributes, COMMON_LVB_LEADING_BYTE))
+            for (int j = 0; j < size.X; j++)
             {
-                if (j < Size.X - 1)
-                {   // -1 is safe DBCS in buffer
-                    j++;
-                    CHAR AsciiDbcs[2] = { 0 };
-                    NumBytes = sizeof(AsciiDbcs);
-                    NumBytes = ConvertToOem(Codepage, &TmpBuffer->Char.UnicodeChar, 1, &AsciiDbcs[0], NumBytes);
-                    OutputBuffer->Char.AsciiChar = AsciiDbcs[0];
-                    OutputBuffer->Attributes = TmpBuffer->Attributes;
-                    OutputBuffer++;
-                    TmpBuffer++;
-                    OutputBuffer->Char.AsciiChar = AsciiDbcs[1];
-                    OutputBuffer->Attributes = TmpBuffer->Attributes;
-                    OutputBuffer++;
-                    TmpBuffer++;
-                }
-                else
+                // Any time we see the lead flag, we presume there will be a trailing one following it.
+                // Giving us two bytes of space (one per cell in the ascii part of the character union)
+                // to fill with whatever this Unicode character converts into.
+                if (WI_IsFlagSet(tempIter->Attributes, COMMON_LVB_LEADING_BYTE))
                 {
-                    OutputBuffer->Char.AsciiChar = ' ';
-                    OutputBuffer->Attributes = TmpBuffer->Attributes;
-                    WI_ClearAllFlags(OutputBuffer->Attributes, COMMON_LVB_SBCSDBCS);
-                    OutputBuffer++;
-                    TmpBuffer++;
+                    // As long as we're not looking at the exact last column of the buffer...
+                    if (j < size.X - 1)
+                    {
+                        // Walk forward one because we're about to consume two cells.
+                        j++;
+
+                        // Try to convert the unicode character (2 bytes) in the leading cell to the codepage.
+                        CHAR AsciiDbcs[2] = { 0 };
+                        UINT NumBytes = gsl::narrow<UINT>(sizeof(AsciiDbcs));
+                        NumBytes = ConvertToOem(codepage, &tempIter->Char.UnicodeChar, 1, &AsciiDbcs[0], NumBytes);
+
+                        // Fill the 1 byte (AsciiChar) portion of the leading and trailing cells with each of the bytes returned.
+                        outIter->Char.AsciiChar = AsciiDbcs[0];
+                        outIter->Attributes = tempIter->Attributes;
+                        outIter++;
+                        tempIter++;
+                        outIter->Char.AsciiChar = AsciiDbcs[1];
+                        outIter->Attributes = tempIter->Attributes;
+                        outIter++;
+                        tempIter++;
+                    }
+                    else
+                    {
+                        // When we're in the last column with only a leading byte, we can't return that without a trailing.
+                        // Instead, replace the output data with just a space and clear all flags.
+                        outIter->Char.AsciiChar = UNICODE_SPACE;
+                        outIter->Attributes = tempIter->Attributes;
+                        WI_ClearAllFlags(outIter->Attributes, COMMON_LVB_SBCSDBCS);
+                        outIter++;
+                        tempIter++;
+                    }
                 }
-            }
-            else if (WI_AreAllFlagsClear(TmpBuffer->Attributes, COMMON_LVB_SBCSDBCS))
-            {
-                ConvertToOem(Codepage, &TmpBuffer->Char.UnicodeChar, 1, &OutputBuffer->Char.AsciiChar, 1);
-                OutputBuffer->Attributes = TmpBuffer->Attributes;
-                OutputBuffer++;
-                TmpBuffer++;
+                else if (WI_AreAllFlagsClear(tempIter->Attributes, COMMON_LVB_SBCSDBCS))
+                {
+                    // If there are no leading/trailing pair flags, then we only have 1 ascii byte to try to fit the 
+                    // 2 byte UTF-16 character into. Give it a go.
+                    ConvertToOem(codepage, &tempIter->Char.UnicodeChar, 1, &outIter->Char.AsciiChar, 1);
+                    outIter->Attributes = tempIter->Attributes;
+                    outIter++;
+                    tempIter++;
+                }
             }
         }
-    }
-#pragma prefast(pop)
 
-    delete[] SaveBuffer;
-    return STATUS_SUCCESS;
+        return S_OK;
+    }
+    CATCH_RETURN();
 }
 
 // Routine Description:
 // - This is used when the app writes oem to the output buffer we want
 //   UnicodeOem or Unicode in the buffer, depending on font
+// Arguments:
+// - codepage - The relevant codepage for translation
+// - buffer - This is the buffer containing all of the character data to be converted
+// - rectangle - This is the rectangle describing the region that the buffer covers.
+// Return Value:
+// - Generally S_OK. Could be a memory or math error code.
 [[nodiscard]]
-NTSTATUS TranslateOutputToUnicode(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Size)
+static HRESULT _ConvertCellsToWInplace(const UINT codepage, gsl::span<CHAR_INFO> buffer, const Viewport& rectangle) noexcept
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    UINT const Codepage = gci.OutputCP;
-
-    for (int i = 0; i < Size.Y; i++)
+    try
     {
-        for (int j = 0; j < Size.X; j++)
+        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+        const auto size = rectangle.Dimensions();
+        auto outIter = buffer.begin();
+
+        for (int i = 0; i < size.Y; i++)
         {
-            WI_ClearAllFlags(OutputBuffer->Attributes, COMMON_LVB_SBCSDBCS);
-            if (IsDBCSLeadByteConsole(OutputBuffer->Char.AsciiChar, &gci.OutputCPInfo))
+            for (int j = 0; j < size.X; j++)
             {
-                if (j < Size.X - 1)
-                {   // -1 is safe DBCS in buffer
-                    j++;
-                    CHAR AsciiDbcs[2];
-                    AsciiDbcs[0] = OutputBuffer->Char.AsciiChar;
-                    AsciiDbcs[1] = (OutputBuffer + 1)->Char.AsciiChar;
+                // Clear lead/trailing flags. We'll determine it for ourselves versus the given codepage.
+                WI_ClearAllFlags(outIter->Attributes, COMMON_LVB_SBCSDBCS);
 
-                    WCHAR UnicodeDbcs[2];
-                    ConvertOutputToUnicode(Codepage, &AsciiDbcs[0], 2, &UnicodeDbcs[0], 2);
+                // If the 1 byte given is a lead in this codepage, we likely need two cells for the width.
+                if (IsDBCSLeadByteConsole(outIter->Char.AsciiChar, &gci.OutputCPInfo))
+                {
+                    // If we're not on the last column, we have two cells to use.
+                    if (j < size.X - 1)
+                    {
+                        // Mark we're consuming two cells.
+                        j++;
 
-                    OutputBuffer->Char.UnicodeChar = UnicodeDbcs[0];
-                    WI_SetFlag(OutputBuffer->Attributes, COMMON_LVB_LEADING_BYTE);
-                    OutputBuffer++;
-                    OutputBuffer->Char.UnicodeChar = UNICODE_DBCS_PADDING;
-                    WI_ClearAllFlags(OutputBuffer->Attributes, COMMON_LVB_SBCSDBCS);
-                    WI_SetFlag(OutputBuffer->Attributes, COMMON_LVB_TRAILING_BYTE);
-                    OutputBuffer++;
+                        // Grab the lead/trailing byte pair from this cell and the next one forward.
+                        CHAR AsciiDbcs[2];
+                        AsciiDbcs[0] = outIter->Char.AsciiChar;
+                        AsciiDbcs[1] = (outIter + 1)->Char.AsciiChar;
+
+                        // Convert it to UTF-16.
+                        WCHAR UnicodeDbcs[2];
+                        ConvertOutputToUnicode(codepage, &AsciiDbcs[0], 2, &UnicodeDbcs[0], 2);
+
+                        // Store the actual character in the first available position.
+                        outIter->Char.UnicodeChar = UnicodeDbcs[0];
+                        WI_ClearAllFlags(outIter->Attributes, COMMON_LVB_SBCSDBCS);
+                        WI_SetFlag(outIter->Attributes, COMMON_LVB_LEADING_BYTE);
+                        outIter++;
+
+                        // Put a padding character in the second position.
+                        outIter->Char.UnicodeChar = UNICODE_DBCS_PADDING;
+                        WI_ClearAllFlags(outIter->Attributes, COMMON_LVB_SBCSDBCS);
+                        WI_SetFlag(outIter->Attributes, COMMON_LVB_TRAILING_BYTE);
+                        outIter++;
+                    }
+                    else
+                    {
+                        // If we were on the last column, put in a space.
+                        outIter->Char.UnicodeChar = UNICODE_SPACE;
+                        WI_ClearAllFlags(outIter->Attributes, COMMON_LVB_SBCSDBCS);
+                        outIter++;
+                    }
                 }
                 else
                 {
-                    OutputBuffer->Char.UnicodeChar = UNICODE_SPACE;
-                    OutputBuffer++;
+                    // If it's not detected as a lead byte of a pair, then just convert it in place and move on.
+                    CHAR c = outIter->Char.AsciiChar;
+
+                    ConvertOutputToUnicode(codepage, &c, 1, &outIter->Char.UnicodeChar, 1);
+                    outIter++;
+                }
+            }
+        }
+
+        return S_OK;
+    }
+    CATCH_RETURN();
+}
+
+[[nodiscard]]
+static std::vector<CHAR_INFO> _ConvertCellsToMungedW(gsl::span<CHAR_INFO> buffer, const Viewport& rectangle)
+{
+    std::vector<CHAR_INFO> result;
+    result.reserve(buffer.size() * 2); // we estimate we'll need up to double the cells if they all expand.
+
+    const auto size = rectangle.Dimensions();
+    auto bufferIter = buffer.cbegin();
+
+    for (SHORT i = 0; i < size.Y; i++)
+    {
+        for (SHORT j = 0; j < size.X; j++)
+        {
+            // Prepare a candidate charinfo on the output side copying the colors but not the lead/trail information.
+            CHAR_INFO candidate;
+            candidate.Attributes = bufferIter->Attributes;
+            WI_ClearAllFlags(candidate.Attributes, COMMON_LVB_SBCSDBCS);
+
+            // If the glyph we're given is full width, it needs to take two cells.
+            if (IsGlyphFullWidth(bufferIter->Char.UnicodeChar))
+            {
+                // If we're not on the final cell of the row...
+                if (j < size.X - 1)
+                {
+                    // Mark that we're consuming two cells.
+                    j++;
+
+                    // Fill one cell with a copy of the color and character marked leading
+                    candidate.Char.UnicodeChar = bufferIter->Char.UnicodeChar;
+                    WI_SetFlag(candidate.Attributes, COMMON_LVB_LEADING_BYTE);
+                    result.push_back(candidate);
+
+                    // Fill a second cell with a copy of the color marked trailing and a padding character.
+                    candidate.Char.UnicodeChar = UNICODE_DBCS_PADDING;
+                    candidate.Attributes = bufferIter->Attributes;
+                    WI_ClearAllFlags(candidate.Attributes, COMMON_LVB_SBCSDBCS);
+                    WI_SetFlag(candidate.Attributes, COMMON_LVB_TRAILING_BYTE);
+
+                }
+                else
+                {
+                    // If we're on the final cell, this won't fit. Replace with a space.
+                    candidate.Char.UnicodeChar = UNICODE_SPACE;
                 }
             }
             else
             {
-                CHAR c = OutputBuffer->Char.AsciiChar;
-
-                ConvertOutputToUnicode(Codepage, &c, 1, &OutputBuffer->Char.UnicodeChar, 1);
-                OutputBuffer++;
+                // If we're not full-width, we're half-width. Just copy the character over.
+                candidate.Char.UnicodeChar = bufferIter->Char.UnicodeChar;
             }
+
+            // Push our candidate in.
+            result.push_back(candidate);
+
+            // Advance to read the next item.
+            bufferIter++;
         }
     }
-
-    return STATUS_SUCCESS;
+    return result;
 }
 
 [[nodiscard]]
-NTSTATUS TranslateOutputToPaddingUnicode(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Size, _Inout_ PCHAR_INFO OutputBufferR)
+static HRESULT _ReadConsoleOutputWImplHelper(const SCREEN_INFORMATION& context,
+                                             gsl::span<CHAR_INFO> targetBuffer,
+                                             const Microsoft::Console::Types::Viewport& requestRectangle,
+                                             Microsoft::Console::Types::Viewport& readRectangle) noexcept
 {
-    DBGCHARS(("TranslateOutputToPaddingUnicode\n"));
-
-    for (SHORT i = 0; i < Size.Y; i++)
+    try
     {
-        for (SHORT j = 0; j < Size.X; j++)
+        const auto& storageBuffer = context.GetActiveBuffer();
+        const auto storageSize = storageBuffer.GetBufferSize().Dimensions();
+
+        // TODO: 19543742 - validate that the rectangle restrictions are fully covered for requestRectangle
+
+        const auto targetDimensions = requestRectangle.Dimensions();
+
+        // If either dimension of the request is too small, return an empty rectangle as read and exit early.
+        if (targetDimensions.X <= 0 || targetDimensions.Y <= 0)
         {
-            WCHAR wch = OutputBuffer->Char.UnicodeChar;
-
-            if (OutputBufferR)
-            {
-                OutputBufferR->Attributes = OutputBuffer->Attributes;
-                WI_ClearAllFlags(OutputBufferR->Attributes, COMMON_LVB_SBCSDBCS);
-                if (IsGlyphFullWidth(OutputBuffer->Char.UnicodeChar))
-                {
-                    if (j == Size.X - 1)
-                    {
-                        OutputBufferR->Char.UnicodeChar = UNICODE_SPACE;
-                    }
-                    else
-                    {
-                        OutputBufferR->Char.UnicodeChar = OutputBuffer->Char.UnicodeChar;
-                        WI_SetFlag(OutputBufferR->Attributes, COMMON_LVB_LEADING_BYTE);
-                        OutputBufferR++;
-                        OutputBufferR->Char.UnicodeChar = UNICODE_DBCS_PADDING;
-                        OutputBufferR->Attributes = OutputBuffer->Attributes;
-                        WI_ClearAllFlags(OutputBufferR->Attributes, COMMON_LVB_SBCSDBCS);
-                        WI_SetFlag(OutputBufferR->Attributes, COMMON_LVB_TRAILING_BYTE);
-                    }
-                }
-                else
-                {
-                    OutputBufferR->Char.UnicodeChar = OutputBuffer->Char.UnicodeChar;
-                }
-                OutputBufferR++;
-            }
-
-            if (IsGlyphFullWidth(wch))
-            {
-                if (j != Size.X - 1)
-                {
-                    j++;
-                }
-            }
-            OutputBuffer++;
+            readRectangle = Viewport::FromDimensions(requestRectangle.Origin(), { 0, 0 });
+            return S_OK;
         }
+
+        // The buffer given should be big enough to hold the dimensions of the request.
+        SHORT targetArea;
+        RETURN_IF_FAILED(ShortMult(targetDimensions.X, targetDimensions.Y, &targetArea));
+        RETURN_HR_IF(E_INVALIDARG, targetArea < 0);
+        RETURN_HR_IF(E_INVALIDARG, targetArea < targetBuffer.size());
+
+        // Clip the request rectangle to the size of the storage buffer
+        SMALL_RECT clip = requestRectangle.ToExclusive();
+        clip.Right = std::min(clip.Right, storageSize.X);
+        clip.Bottom = std::min(clip.Bottom, storageSize.Y);
+
+        // Find the target point (where to write the user's buffer) 
+        // It will either be 0,0 or offset into the buffer by the inverse of the negative values.
+        COORD targetPoint;
+        targetPoint.X = clip.Left < 0 ? -clip.Left : 0;
+        targetPoint.Y = clip.Top < 0 ? -clip.Top : 0;
+
+        // The clipped rect must be inside the buffer size, so it has a minimum value of 0. (max of itself and 0)
+        clip.Left = std::max(clip.Left, 0i16);
+        clip.Top = std::max(clip.Top, 0i16);
+
+        // The final "request rectangle" or the area inside the buffer we want to read, is the clipped dimensions.
+        const auto clippedRequestRectangle = Viewport::FromExclusive(clip);
+
+        // We will start reading the buffer at the point of the top left corner (origin) of the (potentially adjusted) request
+        const auto sourcePoint = clippedRequestRectangle.Origin();
+
+        // Get an iterator to the beginning of the return buffer
+        // We might have to seek this forward or skip around if we clipped the request.
+        auto targetIter = targetBuffer.begin();
+        COORD targetPos = { 0 };
+        const auto targetLimit = Viewport::FromDimensions(targetPoint, clippedRequestRectangle.Dimensions());
+
+        // Get an iterator to the beginning of the request inside the screen buffer
+        // This should walk exactly along every cell of the clipped request.
+        auto sourceIter = storageBuffer.GetCellDataAt(sourcePoint, clippedRequestRectangle);
+
+        // Walk through every cell of the target, advancing the buffer.
+        // Validate that we always still have a valid iterator to the backgin store,
+        // that we always are writing inside the user's buffer (before the end)
+        // and we're always targeting the user's buffer inside its original bounds.
+        while (sourceIter && targetIter < targetBuffer.end() && requestRectangle.IsInBounds(targetPos))
+        {
+            // If the point we're trying to write is inside the limited buffer write zone...
+            if (targetLimit.IsInBounds(targetPos))
+            {
+                // Copy the data into position and advance the read iterator.
+                *targetIter = sourceIter.AsCharInfo();
+                sourceIter++;
+            }
+
+            // Always advance the write iterator, we might have skipped it due to clipping.
+            targetIter++;
+
+            // Increment the target 
+            targetPos.X++;
+            if (targetPos.X >= targetDimensions.X)
+            {
+                targetPos.X = 0;
+                targetPos.Y++;
+            }
+        }
+
+        // Reply with the region we read out of the backing buffer (potentially clipped)
+        readRectangle = clippedRequestRectangle;
+
+        return S_OK;
     }
-    return STATUS_SUCCESS;
+    CATCH_RETURN();
 }
 
 [[nodiscard]]
-NTSTATUS SrvReadConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
+HRESULT ApiRoutines::ReadConsoleOutputAImpl(const SCREEN_INFORMATION& context,
+                                            gsl::span<CHAR_INFO> buffer,
+                                            const Microsoft::Console::Types::Viewport& sourceRectangle,
+                                            Microsoft::Console::Types::Viewport& readRectangle) noexcept
 {
-    PCONSOLE_READCONSOLEOUTPUT_MSG const a = &m->u.consoleMsgL2.ReadConsoleOutput;
-
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::ReadConsoleOutput, a->Unicode);
-
-    PCHAR_INFO Buffer;
-    ULONG cbBuffer;
-    NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetOutputBuffer((PVOID*)&Buffer, &cbBuffer));
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-
     LockConsole();
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    ConsoleHandleData* HandleData = m->GetObjectHandle();
-    if (HandleData == nullptr)
+    try
     {
-        Status = STATUS_INVALID_HANDLE;
+        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        const auto codepage = gci.OutputCP;
+
+        RETURN_IF_FAILED(_ReadConsoleOutputWImplHelper(context, buffer, sourceRectangle, readRectangle));
+
+        LOG_IF_FAILED(_ConvertCellsToAInplace(codepage, buffer, readRectangle));
+
+        return S_OK;
     }
+    CATCH_RETURN();
+}
 
-    SCREEN_INFORMATION* pScreenInfo = nullptr;
-    if (NT_SUCCESS(Status))
+[[nodiscard]]
+HRESULT ApiRoutines::ReadConsoleOutputWImpl(const SCREEN_INFORMATION& context,
+                                            gsl::span<CHAR_INFO> buffer,
+                                            const Microsoft::Console::Types::Viewport& sourceRectangle,
+                                            Microsoft::Console::Types::Viewport& readRectangle) noexcept
+{
+    LockConsole();
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+    try
     {
-        Status = NTSTATUS_FROM_HRESULT(HandleData->GetScreenBuffer(GENERIC_READ, &pScreenInfo));
-    }
+        RETURN_IF_FAILED(_ReadConsoleOutputWImplHelper(context, buffer, sourceRectangle, readRectangle));
 
-    if (!NT_SUCCESS(Status))
-    {
-        // a region of zero size is indicated by the right and bottom coordinates being less than the left and top.
-        a->CharRegion.Right = (USHORT)(a->CharRegion.Left - 1);
-        a->CharRegion.Bottom = (USHORT)(a->CharRegion.Top - 1);
-    }
-    else
-    {
-        COORD BufferSize;
-        BufferSize.X = (SHORT)(a->CharRegion.Right - a->CharRegion.Left + 1);
-        BufferSize.Y = (SHORT)(a->CharRegion.Bottom - a->CharRegion.Top + 1);
-
-        if (((BufferSize.X > 0) && (BufferSize.Y > 0)) &&
-            ((BufferSize.X * BufferSize.Y > ULONG_MAX / sizeof(CHAR_INFO)) || (cbBuffer < BufferSize.X * BufferSize.Y * sizeof(CHAR_INFO))))
-        {
-            UnlockConsole();
-            return STATUS_INVALID_PARAMETER;
-        }
-
-        SCREEN_INFORMATION& activeScreenInfo = pScreenInfo->GetActiveBuffer();
-
-        const COORD coordStart{ a->CharRegion.Left, a->CharRegion.Top };
-
-        try
-        {
-            const auto charInfoBuffer = gsl::make_span(Buffer, cbBuffer / sizeof(CHAR_INFO));
-            auto bufferPos = charInfoBuffer.begin();
-
-            auto cellIter = activeScreenInfo.GetCellDataAt(coordStart, Viewport::FromInclusive(a->CharRegion));
-            while (cellIter && bufferPos < charInfoBuffer.end())
-            {
-                *bufferPos++ = cellIter.AsCharInfo();
-                cellIter++;
-            }
-        }
-        catch (...)
-        {
-            // Expecting the exception to be related to bounds of the span and/or the buffer size.
-            // Log the real exception here.
-            LOG_CAUGHT_EXCEPTION();
-
-            // API traditionally returns this value for buffer problems.
-            // So unlock and return this value like the above buffer size check.
-            UnlockConsole();
-            return STATUS_INVALID_PARAMETER;
-        }
-
-        if (!a->Unicode)
-        {
-            LOG_IF_FAILED(TranslateOutputToOem(Buffer, BufferSize));
-        }
-        else if (!activeScreenInfo.GetTextBuffer().GetCurrentFont().IsTrueTypeFont())
+        if (!context.GetActiveBuffer().GetTextBuffer().GetCurrentFont().IsTrueTypeFont())
         {
             // For compatibility reasons, we must maintain the behavior that munges the data if we are writing while a raster font is enabled.
             // This can be removed when raster font support is removed.
-            RemoveDbcsMarkCell(Buffer, Buffer, BufferSize.X * BufferSize.Y);
+            UnicodeRasterFontCellMungeOnRead(buffer);
         }
 
-        if (NT_SUCCESS(Status))
-        {
-            m->SetReplyInformation(CalcWindowSizeX(a->CharRegion) * CalcWindowSizeY(a->CharRegion) * sizeof(CHAR_INFO));
-        }
+        return S_OK;
     }
-
-    UnlockConsole();
-    return Status;
+    CATCH_RETURN();
 }
 
 [[nodiscard]]
-NTSTATUS SrvWriteConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
+static HRESULT _WriteConsoleOutputWImplHelper(SCREEN_INFORMATION& context,
+                                              gsl::span<CHAR_INFO> buffer,
+                                              const Viewport& requestRectangle,
+                                              Viewport& writtenRectangle) noexcept
 {
-    PCONSOLE_WRITECONSOLEOUTPUT_MSG const a = &m->u.consoleMsgL2.WriteConsoleOutput;
-
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::WriteConsoleOutput, a->Unicode);
-
-    PCHAR_INFO Buffer;
-    ULONG Size;
-    NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetInputBuffer((PVOID*)&Buffer, &Size));
-    if (!NT_SUCCESS(Status))
+    try
     {
-        return Status;
-    }
+        auto& storageBuffer = context.GetActiveBuffer();
+        const auto storageViewport = storageBuffer.GetBufferSize();
+        const auto storageSize = storageViewport.Dimensions();
 
+        // TODO: MSFT: 19549237, validate this is trimmed appropriately when we try to write outside the screen or
+        // using a negative value.
+
+        const auto sourceDimensions = requestRectangle.Dimensions();
+
+        // If either dimension of the request is too small, return an empty rectangle as the read and exit early.
+        if (sourceDimensions.X <= 0 || sourceDimensions.Y <= 0)
+        {
+            writtenRectangle = Viewport::FromDimensions(requestRectangle.Origin(), { 0, 0 });
+            return S_OK;
+        }
+
+        const auto charInfos = std::basic_string_view<CHAR_INFO>(buffer.data(), buffer.size());
+        OutputCellIterator it(charInfos);
+        storageBuffer.WriteRect(it, requestRectangle);
+
+        // Return the area written
+        writtenRectangle = requestRectangle;
+        storageViewport.Clamp(writtenRectangle);
+
+        return S_OK;
+    }
+    CATCH_RETURN();
+}
+
+[[nodiscard]]
+HRESULT ApiRoutines::WriteConsoleOutputAImpl(SCREEN_INFORMATION& context,
+                                             gsl::span<CHAR_INFO> buffer,
+                                             const Viewport& requestRectangle,
+                                             Viewport& writtenRectangle) noexcept
+{
     LockConsole();
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    ConsoleHandleData* HandleData = m->GetObjectHandle();
-    if (HandleData == nullptr)
+    try
     {
-        Status = STATUS_INVALID_HANDLE;
+        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        const auto codepage = gci.OutputCP;
+        LOG_IF_FAILED(_ConvertCellsToWInplace(codepage, buffer, requestRectangle));
+
+        RETURN_IF_FAILED(_WriteConsoleOutputWImplHelper(context, buffer, requestRectangle, writtenRectangle));
+
+        return S_OK;
     }
+    CATCH_RETURN();
+}
 
-    SCREEN_INFORMATION* pScreenInfo = nullptr;
-    if (NT_SUCCESS(Status))
+[[nodiscard]]
+HRESULT ApiRoutines::WriteConsoleOutputWImpl(SCREEN_INFORMATION& context,
+                                             gsl::span<CHAR_INFO> buffer,
+                                             const Viewport& requestRectangle,
+                                             Viewport& writtenRectangle) noexcept
+{
+    LockConsole();
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+    try
     {
-        Status = NTSTATUS_FROM_HRESULT(HandleData->GetScreenBuffer(GENERIC_WRITE, &pScreenInfo));
-    }
-    if (!NT_SUCCESS(Status))
-    {
-        // A region of zero size is indicated by the right and bottom coordinates being less than the left and top.
-        a->CharRegion.Right = (USHORT)(a->CharRegion.Left - 1);
-        a->CharRegion.Bottom = (USHORT)(a->CharRegion.Top - 1);
-    }
-    else
-    {
-        COORD BufferSize;
-        ULONG NumBytes;
-
-        BufferSize.X = (SHORT)(a->CharRegion.Right - a->CharRegion.Left + 1);
-        BufferSize.Y = (SHORT)(a->CharRegion.Bottom - a->CharRegion.Top + 1);
-        if (FAILED(ULongMult(BufferSize.X, BufferSize.Y, &NumBytes)) ||
-            FAILED(ULongMult(NumBytes, sizeof(*Buffer), &NumBytes)) ||
-            (Size < NumBytes))
-        {
-
-            UnlockConsole();
-            return STATUS_INVALID_PARAMETER;
-        }
-
-        SCREEN_INFORMATION& ScreenBufferInformation = pScreenInfo->GetActiveBuffer();
-
-        if (!a->Unicode)
-        {
-            LOG_IF_FAILED(TranslateOutputToUnicode(Buffer, BufferSize));
-            try
-            {
-                const auto charInfos = std::basic_string_view<CHAR_INFO>(Buffer, BufferSize.X * BufferSize.Y);
-                OutputCellIterator it(charInfos);
-                ScreenBufferInformation.WriteRect(it, Viewport::FromInclusive(a->CharRegion));
-            }
-            catch (...)
-            {
-                Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-            }
-        }
-        else if (!ScreenBufferInformation.GetTextBuffer().GetCurrentFont().IsTrueTypeFont())
+        if (!context.GetActiveBuffer().GetTextBuffer().GetCurrentFont().IsTrueTypeFont())
         {
             // For compatibility reasons, we must maintain the behavior that munges the data if we are writing while a raster font is enabled.
             // This can be removed when raster font support is removed.
-
-            PCHAR_INFO TransBuffer = nullptr;
-            int cBufferResult;
-            if (SUCCEEDED(Int32Mult(BufferSize.X, BufferSize.Y, &cBufferResult)))
-            {
-                if (SUCCEEDED(Int32Mult(cBufferResult, 2 * sizeof(CHAR_INFO), &cBufferResult)))
-                {
-                    TransBuffer = (PCHAR_INFO)new BYTE[cBufferResult];
-                }
-            }
-
-            if (TransBuffer == nullptr)
-            {
-                UnlockConsole();
-                return STATUS_NO_MEMORY;
-            }
-
-            LOG_IF_FAILED(TranslateOutputToPaddingUnicode(Buffer, BufferSize, &TransBuffer[0]));
-            try
-            {
-                const auto charInfos = std::basic_string_view<CHAR_INFO>(TransBuffer, BufferSize.X * BufferSize.Y);
-                OutputCellIterator it(charInfos);
-                ScreenBufferInformation.WriteRect(it, Viewport::FromInclusive(a->CharRegion));
-            }
-            catch (...)
-            {
-                Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-            }
-
-            delete[] TransBuffer;
+            auto translated = _ConvertCellsToMungedW(buffer, requestRectangle);
+            RETURN_IF_FAILED(_WriteConsoleOutputWImplHelper(context, translated, requestRectangle, writtenRectangle));
         }
         else
         {
-            const auto charInfos = std::basic_string_view<CHAR_INFO>(Buffer, BufferSize.X * BufferSize.Y);
-            OutputCellIterator it(charInfos);
-            ScreenBufferInformation.WriteRect(it, Viewport::FromInclusive(a->CharRegion));
+            RETURN_IF_FAILED(_WriteConsoleOutputWImplHelper(context, buffer, requestRectangle, writtenRectangle));
         }
-    }
 
-    UnlockConsole();
-    return Status;
+        return S_OK;
+    }
+    CATCH_RETURN();
 }
 
-
 [[nodiscard]]
-NTSTATUS SrvReadConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
+HRESULT ApiRoutines::ReadConsoleOutputAttributeImpl(const SCREEN_INFORMATION& context,
+                                                    const COORD origin,
+                                                    gsl::span<WORD> buffer,
+                                                    size_t& written) noexcept
 {
-    PCONSOLE_READCONSOLEOUTPUTSTRING_MSG const a = &m->u.consoleMsgL2.ReadConsoleOutputString;
-
-    switch (a->StringType)
-    {
-    case CONSOLE_ATTRIBUTE:
-        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::ReadConsoleOutputAttribute);
-        break;
-    case CONSOLE_ASCII:
-        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::ReadConsoleOutputCharacter, false);
-        break;
-    case CONSOLE_REAL_UNICODE:
-    case CONSOLE_FALSE_UNICODE:
-        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::ReadConsoleOutputCharacter, true);
-        break;
-    }
-
-    PVOID Buffer;
-    NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetOutputBuffer(&Buffer, &a->NumRecords));
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
+    written = 0;
 
     LockConsole();
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    ConsoleHandleData* HandleData = m->GetObjectHandle();
-    if (HandleData == nullptr)
+    try
     {
-        Status = NTSTATUS_FROM_WIN32(ERROR_INVALID_HANDLE);
-    }
+        const auto attrs = ReadOutputAttributes(context.GetActiveBuffer(), origin, buffer.size());
+        std::copy(attrs.cbegin(), attrs.cend(), buffer.begin());
+        written = attrs.size();
 
-    SCREEN_INFORMATION* pScreenInfo = nullptr;
-    if (NT_SUCCESS(Status))
-    {
-        Status = NTSTATUS_FROM_HRESULT(HandleData->GetScreenBuffer(GENERIC_READ, &pScreenInfo));
+        return S_OK;
     }
-    if (!NT_SUCCESS(Status))
+    CATCH_RETURN();
+}
+
+[[nodiscard]]
+HRESULT ApiRoutines::ReadConsoleOutputCharacterAImpl(const SCREEN_INFORMATION& context,
+                                                     const COORD origin,
+                                                     gsl::span<char> buffer,
+                                                     size_t& written) noexcept
+{
+    written = 0;
+
+    LockConsole();
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+    try
     {
-        // a region of zero size is indicated by the right and bottom coordinates being less than the left and top.
-        a->NumRecords = 0;
-    }
-    else
-    {
-        const ULONG bufferSize = a->NumRecords;
-        if (a->StringType == CONSOLE_ATTRIBUTE)
+        const auto chars = ReadOutputStringA(context.GetActiveBuffer(),
+                                             origin,
+                                             buffer.size());
+
+        // for compatibility reasons, if we receive more chars than can fit in the buffer
+            // then we don't send anything back.
+        if (chars.size() <= gsl::narrow<size_t>(buffer.size()))
         {
-            const ULONG amountToRead = bufferSize / sizeof(WORD);
-            try
-            {
-                const auto attrs = ReadOutputAttributes(pScreenInfo->GetActiveBuffer(),
-                                                        a->ReadCoord,
-                                                        amountToRead);
-                std::copy(attrs.begin(), attrs.end(), static_cast<WORD* const>(Buffer));
-                a->NumRecords = gsl::narrow<ULONG>(attrs.size());
-                Status = STATUS_SUCCESS;
-            }
-            catch (...)
-            {
-                Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-            }
-        }
-        else if (a->StringType == CONSOLE_REAL_UNICODE ||
-                 a->StringType == CONSOLE_FALSE_UNICODE)
-        {
-            const ULONG amountToRead = bufferSize / sizeof(wchar_t);
-            try
-            {
-                const auto chars = ReadOutputStringW(pScreenInfo->GetActiveBuffer(),
-                                                     a->ReadCoord,
-                                                     amountToRead);
-                if (chars.size() > amountToRead)
-                {
-                    a->NumRecords = 0;
-                }
-                else
-                {
-                    std::copy(chars.begin(), chars.end(), static_cast<wchar_t* const>(Buffer));
-                    a->NumRecords = gsl::narrow<ULONG>(chars.size());
-                }
-                Status = STATUS_SUCCESS;
-            }
-            catch (...)
-            {
-                Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-            }
-        }
-        else if (a->StringType == CONSOLE_ASCII)
-        {
-            const ULONG amountToRead = bufferSize / sizeof(char);
-            try
-            {
-                const std::vector<char> chars = ReadOutputStringA(pScreenInfo->GetActiveBuffer(),
-                                                                  a->ReadCoord,
-                                                                  amountToRead);
-                if (chars.size() > amountToRead)
-                {
-                    // for compatibility reasons, if we receive more chars than can fit in the buffer
-                    // then we don't send anything back.
-                    a->NumRecords = 0;
-                }
-                else
-                {
-                    std::copy(chars.begin(), chars.end(), static_cast<char* const>(Buffer));
-                    a->NumRecords = gsl::narrow<ULONG>(chars.size());
-                }
-                Status = STATUS_SUCCESS;
-            }
-            catch (...)
-            {
-                Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-            }
-        }
-        else
-        {
-            Status = STATUS_INVALID_PARAMETER;
+            std::copy(chars.cbegin(), chars.cend(), buffer.begin());
+            written = chars.size();
         }
 
-        if (NT_SUCCESS(Status))
-        {
-            m->SetReplyInformation(bufferSize);
-        }
+        return S_OK;
     }
+    CATCH_RETURN();
+}
 
-    UnlockConsole();
-    return Status;
+[[nodiscard]]
+HRESULT ApiRoutines::ReadConsoleOutputCharacterWImpl(const SCREEN_INFORMATION& context,
+                                                     const COORD origin,
+                                                     gsl::span<wchar_t> buffer,
+                                                     size_t& written) noexcept
+{
+    written = 0;
+
+    LockConsole();
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+    try
+    {
+        const auto chars = ReadOutputStringW(context.GetActiveBuffer(),
+                                             origin,
+                                             buffer.size());
+
+        // Only copy if the whole result will fit.
+        if (chars.size() <= gsl::narrow<size_t>(buffer.size()))
+        {
+            std::copy(chars.cbegin(), chars.cend(), buffer.begin());
+            written = chars.size();
+        }
+
+        return S_OK;
+    }
+    CATCH_RETURN();
 }
 
 // There used to be a text mode and a graphics mode flag.

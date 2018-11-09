@@ -1519,9 +1519,10 @@ void TextBufferTests::TestBackspaceStringsAPI()
     //      backspacing it with "\b \b".
     // Regardless of how we write those sequences of characters, the end result
     //      should be the same.
+    std::unique_ptr<WriteData> waiter;
 
     size_t aCb = 2;
-    VERIFY_SUCCEEDED(DoWriteConsole(L"a", &aCb, si, nullptr));
+    VERIFY_SUCCEEDED(DoWriteConsole(L"a", &aCb, si, waiter));
 
     size_t seqCb = 6;
     Log::Comment(NoThrowString().Format(
@@ -1537,9 +1538,9 @@ void TextBufferTests::TestBackspaceStringsAPI()
         Log::Comment(NoThrowString().Format(
             L"Using DoWriteConsole, write \\b \\b as a single string."
         ));
-        VERIFY_SUCCEEDED(DoWriteConsole(L"a", &aCb, si, nullptr));
+        VERIFY_SUCCEEDED(DoWriteConsole(L"a", &aCb, si, waiter));
 
-        VERIFY_SUCCEEDED(DoWriteConsole(str, &seqCb, si, nullptr));
+        VERIFY_SUCCEEDED(DoWriteConsole(str, &seqCb, si, waiter));
         VERIFY_ARE_EQUAL(cursor.GetPosition().X, x0);
         VERIFY_ARE_EQUAL(cursor.GetPosition().Y, y0);
     }
@@ -1550,10 +1551,10 @@ void TextBufferTests::TestBackspaceStringsAPI()
         L"Using DoWriteConsole, write \\b \\b as seperate strings."
     ));
 
-    VERIFY_SUCCEEDED(DoWriteConsole(L"a", &seqCb, si, nullptr));
-    VERIFY_SUCCEEDED(DoWriteConsole(L"\b", &seqCb, si, nullptr));
-    VERIFY_SUCCEEDED(DoWriteConsole(L" ", &seqCb, si, nullptr));
-    VERIFY_SUCCEEDED(DoWriteConsole(L"\b", &seqCb, si, nullptr));
+    VERIFY_SUCCEEDED(DoWriteConsole(L"a", &seqCb, si, waiter));
+    VERIFY_SUCCEEDED(DoWriteConsole(L"\b", &seqCb, si, waiter));
+    VERIFY_SUCCEEDED(DoWriteConsole(L" ", &seqCb, si, waiter));
+    VERIFY_SUCCEEDED(DoWriteConsole(L"\b", &seqCb, si, waiter));
 
     VERIFY_ARE_EQUAL(cursor.GetPosition().X, x0);
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, y0);

@@ -39,7 +39,7 @@ public:
                      _In_ PWCHAR UserBuffer,
                      _In_ ULONG CtrlWakeupMask,
                      _In_ CommandHistory* CommandHistory,
-                     const std::wstring& exeName
+                     const std::wstring_view exeName
         );
     ~COOKED_READ_DATA() override;
     COOKED_READ_DATA(COOKED_READ_DATA&&) = default;
