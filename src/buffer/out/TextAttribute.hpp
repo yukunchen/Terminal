@@ -46,6 +46,8 @@ public:
         _defaultFg{ false },
         _defaultBg{ false }
     {
+        // If we're given lead/trailing byte information with the legacy color, strip it.
+        WI_ClearAllFlags(_wAttrLegacy, COMMON_LVB_SBCSDBCS);
     }
 
     constexpr TextAttribute(const COLORREF rgbForeground, const COLORREF rgbBackground) noexcept :
