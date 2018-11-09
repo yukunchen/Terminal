@@ -25,7 +25,7 @@ class OutputCellView
 {
 public:
 
-    OutputCellView();
+    // OutputCellView();
 
     OutputCellView(const std::wstring_view view,
                    const DbcsAttribute dbcsAttr,

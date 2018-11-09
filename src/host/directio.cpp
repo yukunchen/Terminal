@@ -734,7 +734,7 @@ NTSTATUS SrvReadConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
         SCREEN_INFORMATION& activeScreenInfo = pScreenInfo->GetActiveBuffer();
 
         const COORD coordStart{ a->CharRegion.Left, a->CharRegion.Top };
-
+        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         try
         {
             const auto charInfoBuffer = gsl::make_span(Buffer, cbBuffer / sizeof(CHAR_INFO));
@@ -743,7 +743,16 @@ NTSTATUS SrvReadConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
             auto cellIter = activeScreenInfo.GetCellDataAt(coordStart, Viewport::FromInclusive(a->CharRegion));
             while (cellIter && bufferPos < charInfoBuffer.end())
             {
-                *bufferPos++ = cellIter.AsCharInfo();
+                *bufferPos = cellIter.AsCharInfo();
+                // If the current text attributes aren't legacy attributes, then
+                //    use gci to look up the correct legacy attributes to use
+                //    (for mapping RGB values to the nearest table value)
+                const auto& attr = cellIter->TextAttr();
+                if (!attr.IsLegacy())
+                {
+                    bufferPos->Attributes = gci.GenerateLegacyAttributes(attr);
+                }
+                bufferPos++;
                 cellIter++;
             }
         }

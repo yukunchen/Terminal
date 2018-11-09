@@ -8,17 +8,17 @@
 
 #include "OutputCellView.hpp"
 
-// Routine Description:
-// - Constructs a read-only view of data formatted as a single output buffer cell
-// - This constructor creates an empty default view.
-OutputCellView::OutputCellView() : 
-    _view{},
-    _dbcsAttr{},
-    _textAttr{},
-    _behavior{ TextAttributeBehavior::Default }
-{
+// // Routine Description:
+// // - Constructs a read-only view of data formatted as a single output buffer cell
+// // - This constructor creates an empty default view.
+// OutputCellView::OutputCellView() :
+//     _view{},
+//     _dbcsAttr{},
+//     _textAttr{},
+//     _behavior{ TextAttributeBehavior::Stored }
+// {
 
-}
+// }
 
 // Routine Description:
 // - Constructs a read-only view of data formatted as a single output buffer cell

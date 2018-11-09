@@ -13,8 +13,6 @@
 #include "../types/inc/convert.hpp"
 #include "../types/inc/viewport.hpp"
 
-#include "../interactivity/inc/ServiceLocator.hpp"
-
 #pragma hdrstop
 
 using namespace Microsoft::Console::Types;
@@ -41,6 +39,7 @@ TextBufferCellIterator::TextBufferCellIterator(const TextBuffer& buffer, COORD p
     _pRow(s_GetRow(buffer, pos)),
     _bounds(limits),
     _exceeded(false),
+    _view({}, {}, {}, TextAttributeBehavior::Stored),
     _attrIter(s_GetRow(buffer, pos)->GetAttrRow().cbegin())
 {
     // Throw if the bounds rectangle is not limited to the inside of the given buffer.
@@ -259,10 +258,8 @@ const CHAR_INFO TextBufferCellIterator::AsCharInfo() const
     CHAR_INFO ci;
     ci.Char.UnicodeChar = Utf16ToUcs2(_view.Chars());
 
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     ci.Attributes = _view.DbcsAttr().GeneratePublicApiAttributeFormat();
-    auto legacyAttrs = gci.GenerateLegacyAttributes(_view.TextAttr());
-    ci.Attributes |= legacyAttrs;
+    ci.Attributes |= _view.TextAttr().GetLegacyAttributes();
     return ci;
 }
 
