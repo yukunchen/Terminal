@@ -100,7 +100,6 @@ public:
     CPINFO CPInfo;
     CPINFO OutputCPInfo;
 
-
     ConsoleImeInfo ConsoleIme;
 
     Microsoft::Console::VirtualTerminal::MouseInput terminalMouseInput;
@@ -168,6 +167,5 @@ private:
 #define CONSOLE_STATUS_WAIT_NO_BLOCK 0xC0030003
 
 #include "..\server\ObjectHandle.h"
-
 
 void SetActiveScreenBuffer(SCREEN_INFORMATION& screenInfo);

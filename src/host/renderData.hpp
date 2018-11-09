@@ -36,6 +36,9 @@ public:
     COLORREF GetCursorColor() const override;
     bool IsCursorDoubleWidth() const override;
 
+    const COLORREF GetForegroundColor(const TextAttribute& attr) const override;
+    const COLORREF GetBackgroundColor(const TextAttribute& attr) const override;
+
     const ConsoleImeInfo* GetImeData();
     const TextBuffer& GetImeCompositionStringBuffer(_In_ size_t iIndex);
 

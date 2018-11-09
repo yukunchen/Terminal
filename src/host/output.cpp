@@ -569,10 +569,7 @@ void SetActiveScreenBuffer(SCREEN_INFORMATION& screenInfo)
     SetScreenColors(screenInfo,
                     screenInfo.GetAttributes().GetLegacyAttributes(),
                     screenInfo.GetPopupAttributes()->GetLegacyAttributes(),
-                    FALSE,
-                    gci.GetDefaultForegroundColor(),
-                    gci.GetDefaultBackgroundColor()
-                    );
+                    FALSE);
 
     // Set window size.
     screenInfo.PostUpdateWindowSize();

@@ -71,7 +71,7 @@ TextBufferCellIterator::operator bool() const noexcept
 // - True if it's the same text buffer and same cell position. False otherwise.
 bool TextBufferCellIterator::operator==(const TextBufferCellIterator& it) const noexcept
 {
-    return _pos == it._pos && 
+    return _pos == it._pos &&
         &_buffer == &it._buffer &&
         _exceeded == it._exceeded &&
         _bounds == it._bounds &&
@@ -261,7 +261,8 @@ const CHAR_INFO TextBufferCellIterator::AsCharInfo() const
 
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     ci.Attributes = _view.DbcsAttr().GeneratePublicApiAttributeFormat();
-    ci.Attributes |= gci.GenerateLegacyAttributes(_view.TextAttr());
+    auto legacyAttrs = gci.GenerateLegacyAttributes(_view.TextAttr());
+    ci.Attributes |= legacyAttrs;
     return ci;
 }
 

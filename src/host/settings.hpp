@@ -183,6 +183,11 @@ public:
 
     bool GetUseDx() const noexcept;
 
+    COLORREF CalculateDefaultForeground() const;
+    COLORREF CalculateDefaultBackground() const;
+    COLORREF LookupForegroundColor(const TextAttribute& attr) const;
+    COLORREF LookupBackgroundColor(const TextAttribute& attr) const;
+
 private:
     DWORD _dwHotKey;
     DWORD _dwStartupFlags;

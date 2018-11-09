@@ -577,7 +577,7 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
     gci.SetDefaultForegroundColor(pStateInfo->DefaultForeground);
     gci.SetDefaultBackgroundColor(pStateInfo->DefaultBackground);
 
-    SetScreenColors(ScreenInfo, pStateInfo->ScreenAttributes, pStateInfo->PopupAttributes, TRUE, gci.GetDefaultForegroundColor(), gci.GetDefaultBackgroundColor());
+    SetScreenColors(ScreenInfo, pStateInfo->ScreenAttributes, pStateInfo->PopupAttributes, TRUE);
 
     CommandHistory::s_ResizeAll(pStateInfo->HistoryBufferSize);
     gci.SetNumberOfHistoryBuffers(pStateInfo->NumberOfHistoryBuffers);

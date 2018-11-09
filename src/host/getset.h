@@ -55,9 +55,7 @@ void DoSrvPrivateSetDefaultAttributes(SCREEN_INFORMATION& screenInfo, const bool
 void SetScreenColors(SCREEN_INFORMATION& screenInfo,
                      const WORD Attributes,
                      const WORD PopupAttributes,
-                     const BOOL UpdateWholeScreen,
-                     const COLORREF defaultForeground,
-                     const COLORREF defaultBackground);
+                     const BOOL UpdateWholeScreen);
 
 [[nodiscard]]
 NTSTATUS DoSrvPrivateSetCursorKeysMode(_In_ bool fApplicationMode);

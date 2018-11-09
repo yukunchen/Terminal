@@ -199,7 +199,7 @@ HRESULT ApiRoutines::WriteConsoleOutputCharacterAImpl(IConsoleOutputObject& OutC
 // - S_OK or suitable HRESULT code from failure to write (memory issues, invalid arg, etc.)
 [[nodiscard]]
 HRESULT ApiRoutines::FillConsoleOutputAttributeImpl(IConsoleOutputObject& OutContext,
-                                                    const WORD attribute, 
+                                                    const WORD attribute,
                                                     const size_t lengthToWrite,
                                                     const COORD startingCoordinate,
                                                     size_t& cellsModified) noexcept
