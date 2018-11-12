@@ -99,4 +99,4 @@ NTSTATUS WriteChars(SCREEN_INFORMATION& screenInfo,
 NTSTATUS DoWriteConsole(_In_reads_bytes_(*pcbBuffer) PWCHAR pwchBuffer,
                         _In_ size_t* const pcbBuffer,
                         SCREEN_INFORMATION& screenInfo,
-                        _Outptr_result_maybenull_ WriteData** const ppWaiter);
+                        std::unique_ptr<WriteData>& waiter);

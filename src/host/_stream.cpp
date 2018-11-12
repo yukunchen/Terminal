@@ -986,17 +986,17 @@ NTSTATUS WriteChars(SCREEN_INFORMATION& screenInfo,
 NTSTATUS DoWriteConsole(_In_reads_bytes_(*pcbBuffer) PWCHAR pwchBuffer,
                         _Inout_ size_t* const pcbBuffer,
                         SCREEN_INFORMATION& screenInfo,
-                        _Outptr_result_maybenull_ WriteData** const ppWaiter)
+                        std::unique_ptr<WriteData>& waiter)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (WI_IsAnyFlagSet(gci.Flags, (CONSOLE_SUSPENDED | CONSOLE_SELECTING | CONSOLE_SCROLLBAR_TRACKING)))
     {
         try
         {
-            *ppWaiter = new WriteData(screenInfo,
-                (wchar_t*)pwchBuffer,
-                                      *pcbBuffer,
-                                      gci.OutputCP);
+            waiter = std::make_unique<WriteData>(screenInfo,
+                                                 pwchBuffer,
+                                                 *pcbBuffer,
+                                                 gci.OutputCP);
         }
         catch (...)
         {
@@ -1033,32 +1033,35 @@ NTSTATUS DoWriteConsole(_In_reads_bytes_(*pcbBuffer) PWCHAR pwchBuffer,
 // - S_OK if we need to wait (check if ppWaiter is not nullptr).
 // - Or a suitable HRESULT code for math/string/memory failures.
 [[nodiscard]]
-HRESULT WriteConsoleWImplHelper(_In_ IConsoleOutputObject& OutContext,
-                                _In_reads_(cchTextBufferLength) const wchar_t* const pwsTextBuffer,
-                                const size_t cchTextBufferLength,
-                                _Out_ size_t* const pcchTextBufferRead,
-                                _Outptr_result_maybenull_ WriteData** const ppWaiter)
+HRESULT WriteConsoleWImplHelper(IConsoleOutputObject& context,
+                                const std::wstring_view buffer,
+                                size_t& read,
+                                std::unique_ptr<WriteData>& waiter) noexcept
 {
-    // Set out variables in case we exit early.
-    *pcchTextBufferRead = 0;
-    *ppWaiter = nullptr;
-
-    // Convert characters to bytes to give to DoWriteConsole.
-    size_t cbTextBufferLength;
-    RETURN_IF_FAILED(SizeTMult(cchTextBufferLength, sizeof(wchar_t), &cbTextBufferLength));
-
-    NTSTATUS Status = DoWriteConsole(const_cast<wchar_t*>(pwsTextBuffer), &cbTextBufferLength, OutContext, ppWaiter);
-
-    // Convert back from bytes to characters for the resulting string length written.
-    *pcchTextBufferRead = cbTextBufferLength / sizeof(wchar_t);
-
-    if (Status == CONSOLE_STATUS_WAIT)
+    try
     {
-        FAIL_FAST_IF_NULL(ppWaiter);
-        Status = STATUS_SUCCESS;
-    }
+        // Set out variables in case we exit early.
+        read = 0;
+        waiter.reset();
 
-    RETURN_NTSTATUS(Status);
+        // Convert characters to bytes to give to DoWriteConsole.
+        size_t cbTextBufferLength;
+        RETURN_IF_FAILED(SizeTMult(buffer.size(), sizeof(wchar_t), &cbTextBufferLength));
+
+        NTSTATUS Status = DoWriteConsole(const_cast<wchar_t*>(buffer.data()), &cbTextBufferLength, context, waiter);
+
+        // Convert back from bytes to characters for the resulting string length written.
+        read = cbTextBufferLength / sizeof(wchar_t);
+
+        if (Status == CONSOLE_STATUS_WAIT)
+        {
+            FAIL_FAST_IF_NULL(waiter.get());
+            Status = STATUS_SUCCESS;
+        }
+
+        RETURN_NTSTATUS(Status);
+    }
+    CATCH_RETURN();
 }
 
 // Routine Description:
@@ -1067,244 +1070,246 @@ HRESULT WriteConsoleWImplHelper(_In_ IConsoleOutputObject& OutContext,
 //   It uses the current Output Codepage for conversions (set via SetConsoleOutputCP).
 // - NOTE: This may be blocked for various console states and will return a wait context pointer if necessary.
 // Arguments:
-// - pOutContext - the console output object to write the new text into
-// - psTextBuffer - char/byte text buffer provided by client application to insert
-// - cchTextBufferLength - text buffer counted in characters (which is equivalent to bytes because this is the A version)
-// - pcchTextBufferRead - character count of the number of characters (also bytes because A version) we were able to insert before returning
-// - ppWaiter - If we are blocked from writing now and need to wait, this is filled with contextual data for the server to restore the call later
+// - context - the console output object to write the new text into
+// - buffer - char/byte text buffer provided by client application to insert
+// - read - character count of the number of characters (also bytes because A version) we were able to insert before returning
+// - waiter - If we are blocked from writing now and need to wait, this is filled with contextual data for the server to restore the call later
 // Return Value:
 // - S_OK if successful.
 // - S_OK if we need to wait (check if ppWaiter is not nullptr).
 // - Or a suitable HRESULT code for math/string/memory failures.
 [[nodiscard]]
-HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject& OutContext,
-                                       _In_reads_(cchTextBufferLength) const char* const psTextBuffer,
-                                       const size_t cchTextBufferLength,
-                                       _Out_ size_t* const pcchTextBufferRead,
-                                       _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
+HRESULT ApiRoutines::WriteConsoleAImpl(IConsoleOutputObject& context,
+                                       const std::string_view buffer,
+                                       size_t& read,
+                                       std::unique_ptr<IWaitRoutine>& waiter) noexcept
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    // Ensure output variables are initialized.
-    *pcchTextBufferRead = 0;
-    *ppWaiter = nullptr;
-
-    bool fLeadByteCaptured = false;
-    bool fLeadByteConsumed = false;
-
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-    if (cchTextBufferLength == 0)
+    try
     {
-        return S_OK;
-    }
+        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        // Ensure output variables are initialized.
+        read = 0;
+        waiter.reset();
 
-    UINT const uiCodePage = gci.OutputCP;
+        bool fLeadByteCaptured = false;
+        bool fLeadByteConsumed = false;
 
-    // Convert our input parameters to Unicode
-    std::unique_ptr<wchar_t[]> wideCharBuffer{ nullptr };
-    static Utf8ToWideCharParser parser{ gci.OutputCP };
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    // update current codepage in case it was changed from last time
-    // this was called. We do this outside the UTF-8 check because the parser drops its state
-    // when the codepage changes.
-    parser.SetCodePage(gci.OutputCP);
-
-    SCREEN_INFORMATION& ScreenInfo = OutContext.GetActiveBuffer();
-    wchar_t* pwchBuffer;
-    size_t cchBuffer;
-    if (uiCodePage == CP_UTF8)
-    {
-        wideCharBuffer.release();
-        unsigned int charCount;
-        unsigned int charsConsumed;
-        unsigned int charsGenerated;
-        RETURN_IF_FAILED(SizeTToUInt(cchTextBufferLength, &charCount));
-        RETURN_IF_FAILED(parser.Parse(reinterpret_cast<const byte*>(psTextBuffer),
-                                      charCount,
-                                      charsConsumed,
-                                      wideCharBuffer,
-                                      charsGenerated));
-
-        pwchBuffer = reinterpret_cast<wchar_t*>(wideCharBuffer.get());
-        cchBuffer = charsGenerated;
-        *pcchTextBufferRead = charsConsumed;
-    }
-    else
-    {
-        NTSTATUS Status = STATUS_SUCCESS;
-        PWCHAR TransBuffer;
-        PWCHAR TransBufferOriginalLocation;
-        DWORD Length;
-        ULONG dbcsNumBytes = 0;
-        ULONG BufPtrNumBytes = 0;
-        const char* BufPtr = psTextBuffer;
-
-        // (cchTextBufferLength + 2) I think because we might be shoving another unicode char
-        // from ScreenInfo->WriteConsoleDbcsLeadByte in front
-        TransBuffer = new(std::nothrow) WCHAR[cchTextBufferLength + 2];
-        RETURN_IF_NULL_ALLOC(TransBuffer);
-        ZeroMemory(TransBuffer, sizeof(WCHAR) * (cchTextBufferLength + 2));
-
-        TransBufferOriginalLocation = TransBuffer;
-
-        unsigned int uiTextBufferLength;
-        RETURN_IF_FAILED(SizeTToUInt(cchTextBufferLength, &uiTextBufferLength));
-
-        if (!ScreenInfo.WriteConsoleDbcsLeadByte[0] || *(PUCHAR)BufPtr < (UCHAR) ' ')
+        if (buffer.size() == 0)
         {
-            dbcsNumBytes = 0;
-            BufPtrNumBytes = uiTextBufferLength;
+            return S_OK;
         }
-        else if (cchTextBufferLength)
+
+        const auto codepage = gci.OutputCP;
+
+        // Convert our input parameters to Unicode
+        std::unique_ptr<wchar_t[]> wideCharBuffer{ nullptr };
+        static Utf8ToWideCharParser parser{ gci.OutputCP };
+
+        // update current codepage in case it was changed from last time
+        // this was called. We do this outside the UTF-8 check because the parser drops its state
+        // when the codepage changes.
+        parser.SetCodePage(gci.OutputCP);
+
+        SCREEN_INFORMATION& ScreenInfo = context.GetActiveBuffer();
+        wchar_t* pwchBuffer;
+        size_t cchBuffer;
+        if (codepage == CP_UTF8)
         {
-            // there was a portion of a dbcs character stored from a previous
-            // call so we take the 2nd half from BufPtr[0], put them together
-            // and write the wide char to TransBuffer[0]
-            ScreenInfo.WriteConsoleDbcsLeadByte[1] = *(PCHAR)BufPtr;
+            wideCharBuffer.release();
+            unsigned int charCount;
+            unsigned int charsConsumed;
+            unsigned int charsGenerated;
+            RETURN_IF_FAILED(SizeTToUInt(buffer.size(), &charCount));
+            RETURN_IF_FAILED(parser.Parse(reinterpret_cast<const byte*>(buffer.data()),
+                                          charCount,
+                                          charsConsumed,
+                                          wideCharBuffer,
+                                          charsGenerated));
 
-            try
+            pwchBuffer = reinterpret_cast<wchar_t*>(wideCharBuffer.get());
+            cchBuffer = charsGenerated;
+            read = charsConsumed;
+        }
+        else
+        {
+            NTSTATUS Status = STATUS_SUCCESS;
+            PWCHAR TransBuffer;
+            PWCHAR TransBufferOriginalLocation;
+            DWORD Length;
+            ULONG dbcsNumBytes = 0;
+            ULONG BufPtrNumBytes = 0;
+            const char* BufPtr = buffer.data();
+
+            // (cchTextBufferLength + 2) I think because we might be shoving another unicode char
+            // from ScreenInfo->WriteConsoleDbcsLeadByte in front
+            TransBuffer = new WCHAR[buffer.size() + 2];
+            RETURN_IF_NULL_ALLOC(TransBuffer);
+            ZeroMemory(TransBuffer, sizeof(WCHAR) * (buffer.size() + 2));
+
+            TransBufferOriginalLocation = TransBuffer;
+
+            unsigned int uiTextBufferLength;
+            RETURN_IF_FAILED(SizeTToUInt(buffer.size(), &uiTextBufferLength));
+
+            if (!ScreenInfo.WriteConsoleDbcsLeadByte[0] || *(PUCHAR)BufPtr < (UCHAR) ' ')
             {
-                const std::string_view leadByte(reinterpret_cast<const char* const>(ScreenInfo.WriteConsoleDbcsLeadByte),
-                                                ARRAYSIZE(ScreenInfo.WriteConsoleDbcsLeadByte));
-
-                const std::wstring converted = ConvertToW(gci.OutputCP, leadByte);
-
-                FAIL_FAST_IF(converted.size() != 1);
-                dbcsNumBytes = sizeof(wchar_t);
-                TransBuffer[0] = converted.at(0);
-                BufPtr++;
-            }
-            catch (...)
-            {
-                Status = STATUS_UNSUCCESSFUL;
                 dbcsNumBytes = 0;
+                BufPtrNumBytes = uiTextBufferLength;
+            }
+            else if (buffer.size())
+            {
+                // there was a portion of a dbcs character stored from a previous
+                // call so we take the 2nd half from BufPtr[0], put them together
+                // and write the wide char to TransBuffer[0]
+                ScreenInfo.WriteConsoleDbcsLeadByte[1] = *(PCHAR)BufPtr;
+
+                try
+                {
+                    const std::string_view leadByte(reinterpret_cast<const char* const>(ScreenInfo.WriteConsoleDbcsLeadByte),
+                                                    ARRAYSIZE(ScreenInfo.WriteConsoleDbcsLeadByte));
+
+                    const std::wstring converted = ConvertToW(gci.OutputCP, leadByte);
+
+                    FAIL_FAST_IF(converted.size() != 1);
+                    dbcsNumBytes = sizeof(wchar_t);
+                    TransBuffer[0] = converted.at(0);
+                    BufPtr++;
+                }
+                catch (...)
+                {
+                    Status = STATUS_UNSUCCESSFUL;
+                    dbcsNumBytes = 0;
+                }
+
+                // this looks weird to be always incrementing even if the conversion failed, but this is the
+                // original behavior so it's left unchanged.
+                TransBuffer++;
+                BufPtrNumBytes = uiTextBufferLength - 1;
+
+                // Note that we used a stored lead byte from a previous call in order to complete this write
+                // Use this to offset the "number of bytes consumed" calculation at the end by -1 to account
+                // for using a byte we had internally, not off the stream.
+                fLeadByteConsumed = true;
+            }
+            else
+            {
+                // nothing in ScreenInfo->WriteConsoleDbcsLeadByte and nothing in BufPtr
+                BufPtrNumBytes = 0;
             }
 
-            // this looks weird to be always incrementing even if the conversion failed, but this is the
-            // original behavior so it's left unchanged.
-            TransBuffer++;
-            BufPtrNumBytes = uiTextBufferLength - 1;
+            ScreenInfo.WriteConsoleDbcsLeadByte[0] = 0;
 
-            // Note that we used a stored lead byte from a previous call in order to complete this write
-            // Use this to offset the "number of bytes consumed" calculation at the end by -1 to account
-            // for using a byte we had internally, not off the stream.
-            fLeadByteConsumed = true;
+            // if the last byte in BufPtr is a lead byte for the current code page,
+            // save it for the next time this function is called and we can piece it
+            // back together then
+            __analysis_assume(BufPtrNumBytes <= uiTextBufferLength);
+            if (BufPtrNumBytes && CheckBisectStringA((PCHAR)BufPtr, BufPtrNumBytes, &gci.OutputCPInfo))
+            {
+                ScreenInfo.WriteConsoleDbcsLeadByte[0] = *((PCHAR)BufPtr + BufPtrNumBytes - 1);
+                BufPtrNumBytes--;
+
+                // Note that we captured a lead byte during this call, but won't actually draw it until later.
+                // Use this to offset the "number of bytes consumed" calculation at the end by +1 to account
+                // for taking a byte off the stream.
+                fLeadByteCaptured = true;
+            }
+
+            if (BufPtrNumBytes != 0)
+            {
+                // convert the remaining bytes in BufPtr to wide chars
+                Length = sizeof(WCHAR) * MultiByteToWideChar(gci.OutputCP,
+                                                             0,
+                                                             (LPCCH)BufPtr,
+                                                             BufPtrNumBytes,
+                                                             TransBuffer,
+                                                             BufPtrNumBytes);
+
+                if (Length == 0)
+                {
+                    Status = STATUS_UNSUCCESSFUL;
+                }
+                BufPtrNumBytes = Length;
+            }
+
+            pwchBuffer = TransBufferOriginalLocation;
+            cchBuffer = (dbcsNumBytes + BufPtrNumBytes) / sizeof(wchar_t);
+        }
+
+        // Make the W version of the call
+        size_t cchBufferRead;
+
+        // Hold the specific version of the waiter locally so we can tinker with it if we must to store additional context.
+        std::unique_ptr<WriteData> writeDataWaiter;
+
+        HRESULT const hr = WriteConsoleWImplHelper(ScreenInfo, { pwchBuffer, cchBuffer }, cchBufferRead, writeDataWaiter);
+
+        // If there is no waiter, process the byte count now.
+        if (nullptr == writeDataWaiter.get())
+        {
+            // Calculate how many bytes of the original A buffer were consumed in the W version of the call to satisfy pcchTextBufferRead.
+            // For UTF-8 conversions, we've already returned this information above.
+            if (CP_UTF8 != codepage)
+            {
+                size_t cchTextBufferRead = 0;
+
+                // Start by counting the number of A bytes we used in printing our W string to the screen.
+                try
+                {
+                    cchTextBufferRead = GetALengthFromW(codepage, { pwchBuffer, cchBufferRead });
+                }
+                CATCH_LOG();
+
+                // If we captured a byte off the string this time around up above, it means we didn't feed
+                // it into the WriteConsoleW above, and therefore its consumption isn't accounted for
+                // in the count we just made. Add +1 to compensate.
+                if (fLeadByteCaptured)
+                {
+                    cchTextBufferRead++;
+                }
+
+                // If we consumed an internally-stored lead byte this time around up above, it means that we
+                // fed a byte into WriteConsoleW that wasn't a part of this particular call's request.
+                // We need to -1 to compensate and tell the caller the right number of bytes consumed this request.
+                if (fLeadByteConsumed)
+                {
+                    cchTextBufferRead--;
+                }
+
+                read = cchTextBufferRead;
+            }
         }
         else
         {
-            // nothing in ScreenInfo->WriteConsoleDbcsLeadByte and nothing in BufPtr
-            BufPtrNumBytes = 0;
-        }
-
-        ScreenInfo.WriteConsoleDbcsLeadByte[0] = 0;
-
-        // if the last byte in BufPtr is a lead byte for the current code page,
-        // save it for the next time this function is called and we can piece it
-        // back together then
-        __analysis_assume(BufPtrNumBytes <= uiTextBufferLength);
-        if (BufPtrNumBytes && CheckBisectStringA((PCHAR)BufPtr, BufPtrNumBytes, &gci.OutputCPInfo))
-        {
-            ScreenInfo.WriteConsoleDbcsLeadByte[0] = *((PCHAR)BufPtr + BufPtrNumBytes - 1);
-            BufPtrNumBytes--;
-
-            // Note that we captured a lead byte during this call, but won't actually draw it until later.
-            // Use this to offset the "number of bytes consumed" calculation at the end by +1 to account
-            // for taking a byte off the stream.
-            fLeadByteCaptured = true;
-        }
-
-        if (BufPtrNumBytes != 0)
-        {
-            // convert the remaining bytes in BufPtr to wide chars
-            Length = sizeof(WCHAR) * MultiByteToWideChar(gci.OutputCP,
-                                                         0,
-                                                         (LPCCH)BufPtr,
-                                                         BufPtrNumBytes,
-                                                         TransBuffer,
-                                                         BufPtrNumBytes);
-
-            if (Length == 0)
+            // If there is a waiter, then we need to stow some additional information in the wait structure so
+            // we can synthesize the correct byte count later when the wait routine is triggered.
+            if (CP_UTF8 != codepage)
             {
-                Status = STATUS_UNSUCCESSFUL;
+                // For non-UTF8 codepages, save the lead byte captured/consumed data so we can +1 or -1 the final decoded count
+                // in the WaitData::Notify method later.
+                writeDataWaiter->SetLeadByteAdjustmentStatus(fLeadByteCaptured, fLeadByteConsumed);
             }
-            BufPtrNumBytes = Length;
-        }
-
-        pwchBuffer = TransBufferOriginalLocation;
-        cchBuffer = (dbcsNumBytes + BufPtrNumBytes) / sizeof(wchar_t);
-    }
-
-    // Make the W version of the call
-    size_t cchBufferRead;
-
-    // Hold the specific version of the waiter locally so we can tinker with it if we must to store additional context.
-    WriteData* pWriteDataWaiter = nullptr;
-
-    HRESULT const hr = WriteConsoleWImplHelper(ScreenInfo, pwchBuffer, cchBuffer, &cchBufferRead, &pWriteDataWaiter);
-
-    // If there is no waiter, process the byte count now.
-    if (nullptr == pWriteDataWaiter)
-    {
-        // Calculate how many bytes of the original A buffer were consumed in the W version of the call to satisfy pcchTextBufferRead.
-        // For UTF-8 conversions, we've already returned this information above.
-        if (CP_UTF8 != uiCodePage)
-        {
-            size_t cchTextBufferRead = 0;
-
-            // Start by counting the number of A bytes we used in printing our W string to the screen.
-            try
+            else
             {
-                cchTextBufferRead = GetALengthFromW(uiCodePage, { pwchBuffer, cchBufferRead });
+                // For UTF8 codepages, just remember the consumption count from the UTF-8 parser.
+                writeDataWaiter->SetUtf8ConsumedCharacters(read);
             }
-            CATCH_LOG();
-
-            // If we captured a byte off the string this time around up above, it means we didn't feed
-            // it into the WriteConsoleW above, and therefore its consumption isn't accounted for
-            // in the count we just made. Add +1 to compensate.
-            if (fLeadByteCaptured)
-            {
-                cchTextBufferRead++;
-            }
-
-            // If we consumed an internally-stored lead byte this time around up above, it means that we
-            // fed a byte into WriteConsoleW that wasn't a part of this particular call's request.
-            // We need to -1 to compensate and tell the caller the right number of bytes consumed this request.
-            if (fLeadByteConsumed)
-            {
-                cchTextBufferRead--;
-            }
-
-            *pcchTextBufferRead = cchTextBufferRead;
         }
-    }
-    else
-    {
-        // If there is a waiter, then we need to stow some additional information in the wait structure so
-        // we can synthesize the correct byte count later when the wait routine is triggered.
-        if (CP_UTF8 != uiCodePage)
+
+        // Free remaining data
+        if (codepage != CP_UTF8)
         {
-            // For non-UTF8 codepages, save the lead byte captured/consumed data so we can +1 or -1 the final decoded count
-            // in the WaitData::Notify method later.
-            pWriteDataWaiter->SetLeadByteAdjustmentStatus(fLeadByteCaptured, fLeadByteConsumed);
+            delete[] pwchBuffer;
         }
-        else
-        {
-            // For UTF8 codepages, just remember the consumption count from the UTF-8 parser.
-            pWriteDataWaiter->SetUtf8ConsumedCharacters(*pcchTextBufferRead);
-        }
+
+        // Give back the waiter now that we're done with tinkering with it.
+        waiter.reset(writeDataWaiter.release());
+
+        return hr;
     }
-
-    // Free remaining data
-    if (uiCodePage != CP_UTF8)
-    {
-        delete[] pwchBuffer;
-    }
-
-    // Give back the waiter now that we're done with tinkering with it.
-    *ppWaiter = pWriteDataWaiter;
-
-    return hr;
+    CATCH_RETURN();
 }
 
 // Routine Description:
@@ -1321,18 +1326,23 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject& OutContext,
 // - S_OK if we need to wait (check if ppWaiter is not nullptr).
 // - Or a suitable HRESULT code for math/string/memory failures.
 [[nodiscard]]
-HRESULT ApiRoutines::WriteConsoleWImpl(_In_ IConsoleOutputObject& OutContext,
-                                       _In_reads_(cchTextBufferLength) const wchar_t* const pwsTextBuffer,
-                                       const size_t cchTextBufferLength,
-                                       _Out_ size_t* const pcchTextBufferRead,
-                                       _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
+HRESULT ApiRoutines::WriteConsoleWImpl(IConsoleOutputObject& context,
+                                       const std::wstring_view buffer,
+                                       size_t& read,
+                                       std::unique_ptr<IWaitRoutine>& waiter) noexcept
 {
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    try
+    {
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    return WriteConsoleWImplHelper(OutContext.GetActiveBuffer(),
-                                   pwsTextBuffer,
-                                   cchTextBufferLength,
-                                   pcchTextBufferRead,
-                                   reinterpret_cast<WriteData**>(ppWaiter));
+        std::unique_ptr<WriteData> writeDataWaiter;
+        RETURN_IF_FAILED(WriteConsoleWImplHelper(context.GetActiveBuffer(), buffer, read, writeDataWaiter));
+
+        // Transfer specific waiter pointer into the generic interface wrapper.
+        waiter.reset(writeDataWaiter.release());
+
+        return S_OK;
+    }
+    CATCH_RETURN();
 }

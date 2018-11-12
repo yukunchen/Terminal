@@ -23,12 +23,12 @@ HRESULT ApiDispatchers::ServerGetConsoleCP(_Inout_ CONSOLE_API_MSG * const m, _I
     if (a->Output)
     {
         Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleOutputCP);
-        m->_pApiRoutines->GetConsoleOutputCodePageImpl(&a->CodePage);
+        m->_pApiRoutines->GetConsoleOutputCodePageImpl(a->CodePage);
     }
     else
     {
         Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleCP);
-        m->_pApiRoutines->GetConsoleInputCodePageImpl(&a->CodePage);
+        m->_pApiRoutines->GetConsoleInputCodePageImpl(a->CodePage);
     }
     return S_OK;
 }
@@ -52,14 +52,14 @@ HRESULT ApiDispatchers::ServerGetConsoleMode(_Inout_ CONSOLE_API_MSG * const m, 
         handleType = L"input handle";
         InputBuffer* pObj;
         RETURN_IF_FAILED(pObjectHandle->GetInputBuffer(GENERIC_READ, &pObj));
-        m->_pApiRoutines->GetConsoleInputModeImpl(pObj, &a->Mode);
+        m->_pApiRoutines->GetConsoleInputModeImpl(*pObj, a->Mode);
     }
     else
     {
         handleType = L"output handle";
         SCREEN_INFORMATION* pObj;
         RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_READ, &pObj));
-        m->_pApiRoutines->GetConsoleOutputModeImpl(*pObj, &a->Mode);
+        m->_pApiRoutines->GetConsoleOutputModeImpl(*pObj, a->Mode);
     }
     return S_OK;
 }
@@ -76,7 +76,7 @@ HRESULT ApiDispatchers::ServerSetConsoleMode(_Inout_ CONSOLE_API_MSG * const m, 
     {
         InputBuffer* pObj;
         RETURN_IF_FAILED(pObjectHandle->GetInputBuffer(GENERIC_WRITE, &pObj));
-        return m->_pApiRoutines->SetConsoleInputModeImpl(pObj, a->Mode);
+        return m->_pApiRoutines->SetConsoleInputModeImpl(*pObj, a->Mode);
     }
     else
     {
@@ -98,7 +98,7 @@ HRESULT ApiDispatchers::ServerGetNumberOfInputEvents(_Inout_ CONSOLE_API_MSG * c
     InputBuffer* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetInputBuffer(GENERIC_READ, &pObj));
 
-    return m->_pApiRoutines->GetNumberOfConsoleInputEventsImpl(pObj, &a->ReadyEvents);
+    return m->_pApiRoutines->GetNumberOfConsoleInputEventsImpl(*pObj, a->ReadyEvents);
 }
 
 [[nodiscard]]
@@ -143,7 +143,7 @@ HRESULT ApiDispatchers::ServerGetConsoleInput(_Inout_ CONSOLE_API_MSG * const m,
 
     INPUT_READ_HANDLE_DATA* const pInputReadHandleData = pHandleData->GetClientInput();
 
-    IWaitRoutine* pWaiter = nullptr;
+    std::unique_ptr<IWaitRoutine> waiter;
     HRESULT hr;
     std::deque<std::unique_ptr<IInputEvent>> outEvents;
     size_t const eventsToRead = cRecords;
@@ -151,38 +151,22 @@ HRESULT ApiDispatchers::ServerGetConsoleInput(_Inout_ CONSOLE_API_MSG * const m,
     {
         if (fIsPeek)
         {
-            hr = m->_pApiRoutines->PeekConsoleInputWImpl(pInputBuffer,
-                                                         outEvents,
-                                                         eventsToRead,
-                                                         pInputReadHandleData,
-                                                         &pWaiter);
+            hr = m->_pApiRoutines->PeekConsoleInputWImpl(*pInputBuffer, outEvents, eventsToRead, *pInputReadHandleData, waiter);
         }
         else
         {
-            hr = m->_pApiRoutines->ReadConsoleInputWImpl(pInputBuffer,
-                                                         outEvents,
-                                                         eventsToRead,
-                                                         pInputReadHandleData,
-                                                         &pWaiter);
+            hr = m->_pApiRoutines->ReadConsoleInputWImpl(*pInputBuffer, outEvents, eventsToRead, *pInputReadHandleData, waiter);
         }
     }
     else
     {
         if (fIsPeek)
         {
-            hr = m->_pApiRoutines->PeekConsoleInputAImpl(pInputBuffer,
-                                                         outEvents,
-                                                         eventsToRead,
-                                                         pInputReadHandleData,
-                                                         &pWaiter);
+            hr = m->_pApiRoutines->PeekConsoleInputAImpl(*pInputBuffer, outEvents, eventsToRead, *pInputReadHandleData, waiter);
         }
         else
         {
-            hr = m->_pApiRoutines->ReadConsoleInputAImpl(pInputBuffer,
-                                                         outEvents,
-                                                         eventsToRead,
-                                                         pInputReadHandleData,
-                                                         &pWaiter);
+            hr = m->_pApiRoutines->ReadConsoleInputAImpl(*pInputBuffer, outEvents, eventsToRead, *pInputReadHandleData, waiter);
         }
     }
 
@@ -193,7 +177,7 @@ HRESULT ApiDispatchers::ServerGetConsoleInput(_Inout_ CONSOLE_API_MSG * const m,
     size_t cbWritten;
     LOG_IF_FAILED(SizeTMult(outEvents.size(), sizeof(INPUT_RECORD), &cbWritten));
 
-    if (nullptr != pWaiter)
+    if (nullptr != waiter.get())
     {
         // In some circumstances, the read may have told us to wait because it didn't have data,
         // but the client explicitly asked us to return immediate. In that case, we'll convert the
@@ -201,13 +185,8 @@ HRESULT ApiDispatchers::ServerGetConsoleInput(_Inout_ CONSOLE_API_MSG * const m,
 
         if (fIsWaitAllowed)
         {
-            hr = ConsoleWaitQueue::s_CreateWait(m, pWaiter);
-            if (FAILED(hr))
-            {
-                delete pWaiter;
-                pWaiter = nullptr;
-            }
-            else
+            hr = ConsoleWaitQueue::s_CreateWait(m, waiter.release());
+            if (SUCCEEDED(hr))
             {
                 *pbReplyPending = TRUE;
                 hr = CONSOLE_STATUS_WAIT;
@@ -216,10 +195,9 @@ HRESULT ApiDispatchers::ServerGetConsoleInput(_Inout_ CONSOLE_API_MSG * const m,
         else
         {
             // If wait isn't allowed and the routine generated a
-            // waiter, delete it and say there was nothing to be
+            // waiter, say there was nothing to be
             // retrieved right now.
-            delete pWaiter;
-            pWaiter = nullptr;
+            // The waiter will be auto-freed in the smart pointer.
 
             cbWritten = 0;
             hr = S_OK;
@@ -293,6 +271,7 @@ HRESULT ApiDispatchers::ServerReadConsole(_Inout_ CONSOLE_API_MSG * const m, _In
         RETURN_IF_NULL_ALLOC(pwsExeName);
         RETURN_IF_FAILED(m->ReadMessageInput(0, pwsExeName.get(), cbExeName));
     }
+    const std::wstring_view exeView(pwsExeName.get(), cchExeName);
 
     // 2. Existing data in the buffer that was passed in.
     ULONG const cbInitialData = a->InitialNumBytes;
@@ -317,72 +296,52 @@ HRESULT ApiDispatchers::ServerReadConsole(_Inout_ CONSOLE_API_MSG * const m, _In
     // across multiple calls when we are simulating a command prompt input line for the client application.
     INPUT_READ_HANDLE_DATA* const pInputReadHandleData = HandleData->GetClientInput();
 
-    IWaitRoutine* pWaiter = nullptr;
+    std::unique_ptr<IWaitRoutine> waiter;
     size_t cbWritten;
 
     HRESULT hr;
     if (a->Unicode)
     {
-        wchar_t* const pwsInitialData = reinterpret_cast<wchar_t*>(pbInitialData.get());
-        size_t const cchInitialData = cbInitialData / sizeof(wchar_t);
-
-        wchar_t* const pwsOutputBuffer = reinterpret_cast<wchar_t*>(pvBuffer);
-        size_t const cchOutputBuffer = cbBufferSize / sizeof(wchar_t);
-        size_t cchOutputWritten;
-
-        hr = m->_pApiRoutines->ReadConsoleWImpl(pInputBuffer,
-                                                pwsOutputBuffer,
-                                                cchOutputBuffer,
-                                                &cchOutputWritten,
-                                                &pWaiter,
-                                                pwsInitialData,
-                                                cchInitialData,
-                                                pwsExeName.get(),
-                                                cchExeName,
-                                                pInputReadHandleData,
+        const std::string_view initialData(pbInitialData.get(), cbInitialData);
+        const gsl::span<char> outputBuffer(reinterpret_cast<char*>(pvBuffer), cbBufferSize);
+        hr = m->_pApiRoutines->ReadConsoleWImpl(*pInputBuffer,
+                                                outputBuffer,
+                                                cbWritten, // We must set the reply length in bytes.
+                                                waiter,
+                                                initialData,
+                                                exeView,
+                                                *pInputReadHandleData,
                                                 hConsoleClient,
                                                 a->CtrlWakeupMask,
-                                                &a->ControlKeyState);
+                                                a->ControlKeyState);
 
-        // We must set the reply length in bytes. Convert back from characters.
-        LOG_IF_FAILED(SizeTMult(cchOutputWritten, sizeof(wchar_t), &cbWritten));
+        
     }
     else
     {
-        char* const psOutputBuffer = reinterpret_cast<char*>(pvBuffer);
-        size_t const cchOutputBuffer = cbBufferSize;
-        size_t cchOutputWritten;
-
-        hr = m->_pApiRoutines->ReadConsoleAImpl(pInputBuffer,
-                                                psOutputBuffer,
-                                                cchOutputBuffer,
-                                                &cchOutputWritten,
-                                                &pWaiter,
-                                                pbInitialData.get(),
-                                                cbInitialData,
-                                                pwsExeName.get(),
-                                                cchExeName,
-                                                pInputReadHandleData,
+        const std::string_view initialData(pbInitialData.get(), cbInitialData);
+        const gsl::span<char> outputBuffer(reinterpret_cast<char*>(pvBuffer), cbBufferSize);
+        hr = m->_pApiRoutines->ReadConsoleAImpl(*pInputBuffer,
+                                                outputBuffer,
+                                                cbWritten, // We must set the reply length in bytes.
+                                                waiter,
+                                                initialData,
+                                                exeView,
+                                                *pInputReadHandleData,
                                                 hConsoleClient,
                                                 a->CtrlWakeupMask,
-                                                &a->ControlKeyState);
+                                                a->ControlKeyState);
 
-        cbWritten = cchOutputWritten;
     }
 
     LOG_IF_FAILED(SizeTToULong(cbWritten, &a->NumBytes));
 
-    if (nullptr != pWaiter)
+    if (nullptr != waiter.get())
     {
         // If we received a waiter, we need to queue the wait and not reply.
-        hr = ConsoleWaitQueue::s_CreateWait(m, pWaiter);
+        hr = ConsoleWaitQueue::s_CreateWait(m, waiter.release());
 
-        if (FAILED(hr))
-        {
-            delete pWaiter;
-            pWaiter = nullptr;
-        }
-        else
+        if (SUCCEEDED(hr))
         {
             *pbReplyPending = TRUE;
         }
@@ -429,7 +388,7 @@ HRESULT ApiDispatchers::ServerWriteConsole(_Inout_ CONSOLE_API_MSG * const m, _I
     });
     RETURN_IF_FAILED(m->GetInputBuffer(&pvBuffer, &cbBufferSize));
 
-    IWaitRoutine* pWaiter = nullptr;
+    std::unique_ptr<IWaitRoutine> waiter;
     size_t cbRead;
 
     // We have to hold onto the HR from the call and return it.
@@ -439,30 +398,20 @@ HRESULT ApiDispatchers::ServerWriteConsole(_Inout_ CONSOLE_API_MSG * const m, _I
     HRESULT hr;
     if (a->Unicode)
     {
-        const wchar_t* const pwsInputBuffer = reinterpret_cast<wchar_t*>(pvBuffer);
-        size_t const cchInputBuffer = cbBufferSize / sizeof(wchar_t);
+        const std::wstring_view buffer(reinterpret_cast<wchar_t*>(pvBuffer), cbBufferSize / sizeof(wchar_t));
         size_t cchInputRead;
 
-        hr = m->_pApiRoutines->WriteConsoleWImpl(*pScreenInfo,
-                                                 pwsInputBuffer,
-                                                 cchInputBuffer,
-                                                 &cchInputRead,
-                                                 &pWaiter);
+        hr = m->_pApiRoutines->WriteConsoleWImpl(*pScreenInfo, buffer, cchInputRead, waiter);
 
         // We must set the reply length in bytes. Convert back from characters.
         LOG_IF_FAILED(SizeTMult(cchInputRead, sizeof(wchar_t), &cbRead));
     }
     else
     {
-        const char* const psInputBuffer = reinterpret_cast<char*>(pvBuffer);
-        size_t const cchInputBuffer = cbBufferSize;
+        const std::string_view buffer(reinterpret_cast<char*>(pvBuffer), cbBufferSize);
         size_t cchInputRead;
 
-        hr = m->_pApiRoutines->WriteConsoleAImpl(*pScreenInfo,
-                                                 psInputBuffer,
-                                                 cchInputBuffer,
-                                                 &cchInputRead,
-                                                 &pWaiter);
+        hr = m->_pApiRoutines->WriteConsoleAImpl(*pScreenInfo, buffer, cchInputRead, waiter);
 
         // Reply length is already in bytes (chars), don't need to convert.
         cbRead = cchInputRead;
@@ -471,16 +420,11 @@ HRESULT ApiDispatchers::ServerWriteConsole(_Inout_ CONSOLE_API_MSG * const m, _I
     // We must return the byte length of the read data in the message.
     LOG_IF_FAILED(SizeTToULong(cbRead, &a->NumBytes));
 
-    if (nullptr != pWaiter)
+    if (nullptr != waiter.get())
     {
         // If we received a waiter, we need to queue the wait and not reply.
-        hr = ConsoleWaitQueue::s_CreateWait(m, pWaiter);
-        if (FAILED(hr))
-        {
-            delete pWaiter;
-            pWaiter = nullptr;
-        }
-        else
+        hr = ConsoleWaitQueue::s_CreateWait(m, waiter.release());
+        if (SUCCEEDED(hr))
         {
             *pbReplyPending = TRUE;
         }
@@ -532,29 +476,29 @@ HRESULT ApiDispatchers::ServerFillConsoleOutput(_Inout_ CONSOLE_API_MSG * const 
     {
     case CONSOLE_ATTRIBUTE:
     {
-        hr = m->_pApiRoutines->FillConsoleOutputAttributeImpl(*pScreenInfo, 
-                                                              a->Element, 
-                                                              fill, 
-                                                              a->WriteCoord, 
+        hr = m->_pApiRoutines->FillConsoleOutputAttributeImpl(*pScreenInfo,
+                                                              a->Element,
+                                                              fill,
+                                                              a->WriteCoord,
                                                               amountWritten);
         break;
     }
     case CONSOLE_REAL_UNICODE:
     case CONSOLE_FALSE_UNICODE:
     {
-        hr = m->_pApiRoutines->FillConsoleOutputCharacterWImpl(*pScreenInfo, 
-                                                               a->Element, 
-                                                               fill, 
-                                                               a->WriteCoord, 
+        hr = m->_pApiRoutines->FillConsoleOutputCharacterWImpl(*pScreenInfo,
+                                                               a->Element,
+                                                               fill,
+                                                               a->WriteCoord,
                                                                amountWritten);
         break;
     }
     case CONSOLE_ASCII:
     {
-        hr = m->_pApiRoutines->FillConsoleOutputCharacterAImpl(*pScreenInfo, 
-                                                               static_cast<char>(a->Element), 
-                                                               fill, 
-                                                               a->WriteCoord, 
+        hr = m->_pApiRoutines->FillConsoleOutputCharacterAImpl(*pScreenInfo,
+                                                               static_cast<char>(a->Element),
+                                                               fill,
+                                                               a->WriteCoord,
                                                                amountWritten);
         break;
     }
@@ -591,7 +535,7 @@ HRESULT ApiDispatchers::ServerFlushConsoleInputBuffer(_Inout_ CONSOLE_API_MSG * 
     InputBuffer* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetInputBuffer(GENERIC_WRITE, &pObj));
 
-    m->_pApiRoutines->FlushConsoleInputBuffer(pObj);
+    m->_pApiRoutines->FlushConsoleInputBuffer(*pObj);
     return S_OK;
 }
 
@@ -625,7 +569,7 @@ HRESULT ApiDispatchers::ServerGetConsoleCursorInfo(_Inout_ CONSOLE_API_MSG * con
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
 
     bool visible = false;
-    m->_pApiRoutines->GetConsoleCursorInfoImpl(*pObj, &a->CursorSize, &visible);
+    m->_pApiRoutines->GetConsoleCursorInfoImpl(*pObj, a->CursorSize, visible);
     a->Visible = !!visible;
     return S_OK;
 }
@@ -665,7 +609,7 @@ HRESULT ApiDispatchers::ServerGetConsoleScreenBufferInfo(_Inout_ CONSOLE_API_MSG
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_READ, &pObj));
 
-    m->_pApiRoutines->GetConsoleScreenBufferInfoExImpl(*pObj, &ex);
+    m->_pApiRoutines->GetConsoleScreenBufferInfoExImpl(*pObj, ex);
 
     a->FullscreenSupported = !!ex.bFullscreenSupported;
     size_t const ColorTableSizeInBytes = RTL_NUMBER_OF_V2(ex.ColorTable) * sizeof(*ex.ColorTable);
@@ -711,7 +655,7 @@ HRESULT ApiDispatchers::ServerSetConsoleScreenBufferInfo(_Inout_ CONSOLE_API_MSG
     ex.wAttributes = a->Attributes;
     ex.wPopupAttributes = a->PopupAttributes;
 
-    return m->_pApiRoutines->SetConsoleScreenBufferInfoExImpl(*pObj, &ex);
+    return m->_pApiRoutines->SetConsoleScreenBufferInfoExImpl(*pObj, ex);
 }
 
 [[nodiscard]]
@@ -726,7 +670,7 @@ HRESULT ApiDispatchers::ServerSetConsoleScreenBufferSize(_Inout_ CONSOLE_API_MSG
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
 
-    return m->_pApiRoutines->SetConsoleScreenBufferSizeImpl(*pObj, &a->Size);
+    return m->_pApiRoutines->SetConsoleScreenBufferSizeImpl(*pObj, a->Size);
 }
 
 [[nodiscard]]
@@ -741,7 +685,7 @@ HRESULT ApiDispatchers::ServerSetConsoleCursorPosition(_Inout_ CONSOLE_API_MSG *
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
 
-    return m->_pApiRoutines->SetConsoleCursorPositionImpl(*pObj, &a->CursorPosition);
+    return m->_pApiRoutines->SetConsoleCursorPositionImpl(*pObj, a->CursorPosition);
 }
 
 [[nodiscard]]
@@ -756,7 +700,7 @@ HRESULT ApiDispatchers::ServerGetLargestConsoleWindowSize(_Inout_ CONSOLE_API_MS
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
 
-    m->_pApiRoutines->GetLargestConsoleWindowSizeImpl(*pObj, &a->Size);
+    m->_pApiRoutines->GetLargestConsoleWindowSizeImpl(*pObj, a->Size);
     return S_OK;
 }
 
@@ -775,18 +719,18 @@ HRESULT ApiDispatchers::ServerScrollConsoleScreenBuffer(_Inout_ CONSOLE_API_MSG 
     if (a->Unicode)
     {
         return m->_pApiRoutines->ScrollConsoleScreenBufferWImpl(*pObj,
-                                                                &a->ScrollRectangle,
-                                                                &a->DestinationOrigin,
-                                                                a->Clip ? &a->ClipRectangle : nullptr,
+                                                                a->ScrollRectangle,
+                                                                a->DestinationOrigin,
+                                                                a->Clip ? std::optional<SMALL_RECT>(a->ClipRectangle) : std::nullopt,
                                                                 a->Fill.Char.UnicodeChar,
                                                                 a->Fill.Attributes);
     }
     else
     {
         return m->_pApiRoutines->ScrollConsoleScreenBufferAImpl(*pObj,
-                                                                &a->ScrollRectangle,
-                                                                &a->DestinationOrigin,
-                                                                a->Clip ? &a->ClipRectangle : nullptr,
+                                                                a->ScrollRectangle,
+                                                                a->DestinationOrigin,
+                                                                a->Clip ? std::optional<SMALL_RECT>(a->ClipRectangle) : std::nullopt,
                                                                 a->Fill.Char.AsciiChar,
                                                                 a->Fill.Attributes);
     }
@@ -823,15 +767,74 @@ HRESULT ApiDispatchers::ServerSetConsoleWindowInfo(_Inout_ CONSOLE_API_MSG * con
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
 
-    return m->_pApiRoutines->SetConsoleWindowInfoImpl(*pObj, a->Absolute, &a->Window);
+    return m->_pApiRoutines->SetConsoleWindowInfoImpl(*pObj, a->Absolute, a->Window);
 }
 
 [[nodiscard]]
-HRESULT ApiDispatchers::ServerReadConsoleOutputString(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
+HRESULT ApiDispatchers::ServerReadConsoleOutputString(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const /*pbReplyPending*/)
 {
     RETURN_HR_IF(E_ACCESSDENIED, !m->GetProcessHandle()->GetPolicy().CanReadOutputBuffer());
 
-    RETURN_NTSTATUS(SrvReadConsoleOutputString(m, pbReplyPending));
+    CONSOLE_READCONSOLEOUTPUTSTRING_MSG* const a = &m->u.consoleMsgL2.ReadConsoleOutputString;
+
+    switch (a->StringType)
+    {
+    case CONSOLE_ATTRIBUTE:
+        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::ReadConsoleOutputAttribute);
+        break;
+    case CONSOLE_ASCII:
+        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::ReadConsoleOutputCharacter, false);
+        break;
+    case CONSOLE_REAL_UNICODE:
+    case CONSOLE_FALSE_UNICODE:
+        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::ReadConsoleOutputCharacter, true);
+        break;
+    }
+
+    a->NumRecords = 0; // Set to 0 records returned in case we have failures.
+
+    PVOID pvBuffer;
+    ULONG cbBuffer;
+    RETURN_IF_FAILED(m->GetOutputBuffer(&pvBuffer, &cbBuffer));
+
+    ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
+
+    SCREEN_INFORMATION* pScreenInfo;
+    RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_READ, &pScreenInfo));
+
+    size_t written;
+    switch (a->StringType)
+    {
+    case CONSOLE_ATTRIBUTE:
+    {
+        const gsl::span<WORD> buffer(reinterpret_cast<WORD*>(pvBuffer), cbBuffer / sizeof(WORD));
+        RETURN_IF_FAILED(m->_pApiRoutines->ReadConsoleOutputAttributeImpl(*pScreenInfo, a->ReadCoord, buffer, written));
+        break;
+    }
+    case CONSOLE_REAL_UNICODE:
+    case CONSOLE_FALSE_UNICODE:
+    {
+        const gsl::span<wchar_t> buffer(reinterpret_cast<wchar_t*>(pvBuffer), cbBuffer / sizeof(wchar_t));
+        RETURN_IF_FAILED(m->_pApiRoutines->ReadConsoleOutputCharacterWImpl(*pScreenInfo, a->ReadCoord, buffer, written));
+        break;
+    }
+    case CONSOLE_ASCII:
+    {
+        const gsl::span<char> buffer(reinterpret_cast<char*>(pvBuffer), cbBuffer);
+        RETURN_IF_FAILED(m->_pApiRoutines->ReadConsoleOutputCharacterAImpl(*pScreenInfo, a->ReadCoord, buffer, written));
+        break;
+    }
+    default:
+        return E_INVALIDARG;
+    }
+
+    // Report count of records now in the buffer (varies based on type)
+    RETURN_IF_FAILED(SizeTToULong(written, &a->NumRecords));
+
+    m->SetReplyInformation(cbBuffer); // Set the reply buffer size to what we were originally told the buffer size was (on the way in)
+
+    return S_OK;
 }
 
 [[nodiscard]]
@@ -845,11 +848,9 @@ HRESULT ApiDispatchers::ServerWriteConsoleInput(_Inout_ CONSOLE_API_MSG * const 
 
     RETURN_HR_IF(E_ACCESSDENIED, !m->GetProcessHandle()->GetPolicy().CanWriteInputBuffer());
 
-    INPUT_RECORD* Buffer;
-    ULONG Size;
-    RETURN_IF_FAILED(m->GetInputBuffer((PVOID*)&Buffer, &Size));
-
-    const size_t inputRecordCount = Size / sizeof(INPUT_RECORD);
+    PVOID pvBuffer;
+    ULONG cbSize;
+    RETURN_IF_FAILED(m->GetInputBuffer(&pvBuffer, &cbSize));
 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
@@ -857,24 +858,66 @@ HRESULT ApiDispatchers::ServerWriteConsoleInput(_Inout_ CONSOLE_API_MSG * const 
     InputBuffer* pInputBuffer;
     RETURN_IF_FAILED(pObjectHandle->GetInputBuffer(GENERIC_WRITE, &pInputBuffer));
 
-    std::deque<std::unique_ptr<IInputEvent>> events;
-    try
+    size_t written;
+    std::basic_string_view<INPUT_RECORD> buffer(reinterpret_cast<INPUT_RECORD*>(pvBuffer), cbSize / sizeof(INPUT_RECORD));
+    if (!a->Unicode)
     {
-        events = IInputEvent::Create(gsl::make_span(Buffer, inputRecordCount));
+        RETURN_IF_FAILED(m->_pApiRoutines->WriteConsoleInputAImpl(*pInputBuffer, buffer, written, !!a->Append));
     }
-    CATCH_RETURN();
+    else
+    {
+        RETURN_IF_FAILED(m->_pApiRoutines->WriteConsoleInputWImpl(*pInputBuffer, buffer, written, !!a->Append));
+    }
 
-    size_t eventsWritten;
-    RETURN_IF_FAILED(DoSrvWriteConsoleInput(pInputBuffer, events, eventsWritten, !!a->Unicode, !!a->Append));
-    a->NumRecords = static_cast<ULONG>(eventsWritten);
+    RETURN_IF_FAILED(SizeTToULong(written, &a->NumRecords));
 
     return S_OK;
 }
 
 [[nodiscard]]
-HRESULT ApiDispatchers::ServerWriteConsoleOutput(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
+HRESULT ApiDispatchers::ServerWriteConsoleOutput(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    RETURN_NTSTATUS(SrvWriteConsoleOutput(m, pbReplyPending));
+    PCONSOLE_WRITECONSOLEOUTPUT_MSG const a = &m->u.consoleMsgL2.WriteConsoleOutput;
+
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::WriteConsoleOutput, a->Unicode);
+
+    // Backup originalRegion and set the written area to a 0 size rectangle in case of failures.
+    const auto originalRegion = Microsoft::Console::Types::Viewport::FromInclusive(a->CharRegion);
+    auto writtenRegion = Microsoft::Console::Types::Viewport::FromDimensions(originalRegion.Origin(), { 0, 0 });
+    a->CharRegion = writtenRegion.ToInclusive();
+
+    // Get input parameter buffer
+    PVOID pvBuffer;
+    ULONG cbSize;
+    RETURN_IF_FAILED(m->GetInputBuffer(&pvBuffer, &cbSize));
+
+    // Make sure we have a valid screen buffer.
+    ConsoleHandleData* HandleData = m->GetObjectHandle();
+    RETURN_HR_IF_NULL(E_HANDLE, HandleData);
+    SCREEN_INFORMATION* pScreenInfo;
+    RETURN_IF_FAILED(HandleData->GetScreenBuffer(GENERIC_WRITE, &pScreenInfo));
+
+    // Validate parameters
+    size_t regionArea;
+    RETURN_IF_FAILED(SizeTMult(originalRegion.Dimensions().X, originalRegion.Dimensions().Y, &regionArea));
+    size_t regionBytes;
+    RETURN_IF_FAILED(SizeTMult(regionArea, sizeof(CHAR_INFO), &regionBytes));
+    RETURN_HR_IF(E_INVALIDARG, cbSize < regionBytes); // If given fewer bytes on input than we need to do this write, it's invalid.
+
+    const gsl::span<CHAR_INFO> buffer(reinterpret_cast<CHAR_INFO*>(pvBuffer), cbSize / sizeof(CHAR_INFO));
+    if (!a->Unicode)
+    {
+        RETURN_IF_FAILED(m->_pApiRoutines->WriteConsoleOutputAImpl(*pScreenInfo, buffer, originalRegion, writtenRegion));
+    }
+    else
+    {
+        RETURN_IF_FAILED(m->_pApiRoutines->WriteConsoleOutputWImpl(*pScreenInfo, buffer, originalRegion, writtenRegion));
+    }
+
+    // Update the written region if we were successful
+    a->CharRegion = writtenRegion.ToInclusive();
+
+    return S_OK;
 }
 
 [[nodiscard]]
@@ -922,7 +965,7 @@ HRESULT ApiDispatchers::ServerWriteConsoleOutputString(_Inout_ CONSOLE_API_MSG *
     case CONSOLE_ASCII:
     {
         const std::string_view text(reinterpret_cast<char*>(pvBuffer), cbBufferSize);
-        
+
         hr = m->_pApiRoutines->WriteConsoleOutputCharacterAImpl(*pScreenInfo,
                                                                 text,
                                                                 a->WriteCoord,
@@ -934,12 +977,12 @@ HRESULT ApiDispatchers::ServerWriteConsoleOutputString(_Inout_ CONSOLE_API_MSG *
     case CONSOLE_FALSE_UNICODE:
     {
         const std::wstring_view text(reinterpret_cast<wchar_t*>(pvBuffer), cbBufferSize / sizeof(wchar_t));
-     
+
         hr = m->_pApiRoutines->WriteConsoleOutputCharacterWImpl(*pScreenInfo,
                                                                 text,
                                                                 a->WriteCoord,
                                                                 used);
-        
+
         break;
     }
     case CONSOLE_ATTRIBUTE:
@@ -964,11 +1007,64 @@ HRESULT ApiDispatchers::ServerWriteConsoleOutputString(_Inout_ CONSOLE_API_MSG *
 }
 
 [[nodiscard]]
-HRESULT ApiDispatchers::ServerReadConsoleOutput(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
+HRESULT ApiDispatchers::ServerReadConsoleOutput(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const /*pbReplyPending*/)
 {
     RETURN_HR_IF(E_ACCESSDENIED, !m->GetProcessHandle()->GetPolicy().CanReadOutputBuffer());
 
-    RETURN_NTSTATUS(SrvReadConsoleOutput(m, pbReplyPending));
+    CONSOLE_READCONSOLEOUTPUT_MSG* const a = &m->u.consoleMsgL2.ReadConsoleOutput;
+
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::ReadConsoleOutput, a->Unicode);
+
+    // Backup data region passed and set it to a zero size region in case we exit early for failures.
+    const auto originalRegion = Microsoft::Console::Types::Viewport::FromInclusive(a->CharRegion);
+    const auto zeroRegion = Microsoft::Console::Types::Viewport::FromDimensions(originalRegion.Origin(), { 0, 0 });
+    a->CharRegion = zeroRegion.ToInclusive();
+
+    PVOID pvBuffer;
+    ULONG cbBuffer;
+    RETURN_IF_FAILED(m->GetOutputBuffer(&pvBuffer, &cbBuffer));
+
+    ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
+
+    SCREEN_INFORMATION* pScreenInfo;
+    RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_READ, &pScreenInfo));
+
+    // Validate parameters
+    size_t regionArea;
+    RETURN_IF_FAILED(SizeTMult(originalRegion.Dimensions().X, originalRegion.Dimensions().Y, &regionArea));
+    size_t regionBytes;
+    RETURN_IF_FAILED(SizeTMult(regionArea, sizeof(CHAR_INFO), &regionBytes));
+    RETURN_HR_IF(E_INVALIDARG, regionArea > 0 && ((regionArea > ULONG_MAX / sizeof(CHAR_INFO)) || (cbBuffer < regionBytes)));
+    
+    gsl::span<CHAR_INFO> buffer(reinterpret_cast<CHAR_INFO*>(pvBuffer), cbBuffer / sizeof(CHAR_INFO));
+    auto finalRegion = Microsoft::Console::Types::Viewport::Empty(); // the actual region read out of the buffer
+    if (!a->Unicode)
+    {
+        RETURN_IF_FAILED(m->_pApiRoutines->ReadConsoleOutputAImpl(*pScreenInfo,
+                                                                  buffer,
+                                                                  originalRegion,
+                                                                  finalRegion));
+    }
+    else
+    {
+        RETURN_IF_FAILED(m->_pApiRoutines->ReadConsoleOutputWImpl(*pScreenInfo,
+                                                                  buffer,
+                                                                  originalRegion,
+                                                                  finalRegion));
+    }
+
+    a->CharRegion = finalRegion.ToInclusive();
+
+    // Calculate the byte size of the final region
+    size_t finalRegionArea;
+    RETURN_IF_FAILED(SizeTMult(finalRegion.Dimensions().X, finalRegion.Dimensions().Y, &finalRegionArea));
+    size_t finalRegionBytes;
+    RETURN_IF_FAILED(SizeTMult(finalRegionArea, sizeof(CHAR_INFO), &finalRegionBytes));
+    
+    m->SetReplyInformation(finalRegionBytes); // Give back the byte length of the buffer that we will be returning
+
+    return S_OK;
 }
 
 [[nodiscard]]
@@ -984,57 +1080,45 @@ HRESULT ApiDispatchers::ServerGetConsoleTitle(_Inout_ CONSOLE_API_MSG * const m,
     HRESULT hr = S_OK;
     if (a->Unicode)
     {
-        wchar_t* const pwsBuffer = reinterpret_cast<wchar_t*>(pvBuffer);
-        size_t const cchBuffer = cbBuffer / sizeof(wchar_t);
-        size_t cchWritten;
-        size_t cchNeeded;
+        gsl::span<wchar_t> buffer(reinterpret_cast<wchar_t*>(pvBuffer), cbBuffer / sizeof(wchar_t));
+        size_t written;
+        size_t needed;
         if (a->Original)
         {
-            m->_pApiRoutines->GetConsoleOriginalTitleWImpl(pwsBuffer,
-                                                           cchBuffer,
-                                                           &cchWritten,
-                                                           &cchNeeded);
+            // This API traditionally doesn't return an HRESULT. Log and discard.
+            LOG_IF_FAILED(m->_pApiRoutines->GetConsoleOriginalTitleWImpl(buffer, written, needed));
         }
         else
         {
-            m->_pApiRoutines->GetConsoleTitleWImpl(pwsBuffer,
-                                                   cchBuffer,
-                                                   &cchWritten,
-                                                   &cchNeeded);
+            // This API traditionally doesn't return an HRESULT. Log and discard.
+            LOG_IF_FAILED(m->_pApiRoutines->GetConsoleTitleWImpl(buffer, written, needed));
         }
 
         // We must return the needed length of the title string in the TitleLength.
-        LOG_IF_FAILED(SizeTToULong(cchNeeded, &a->TitleLength));
+        LOG_IF_FAILED(SizeTToULong(needed, &a->TitleLength));
 
         // We must return the actually written length of the title string in the reply.
-        m->SetReplyInformation(cchWritten * sizeof(wchar_t));
+        m->SetReplyInformation(written * sizeof(wchar_t));
     }
     else
     {
-        char* const psBuffer = reinterpret_cast<char*>(pvBuffer);
-        size_t const cchBuffer = cbBuffer;
-        size_t cchWritten;
-        size_t cchNeeded;
+        gsl::span<char> buffer(reinterpret_cast<char*>(pvBuffer), cbBuffer);
+        size_t written;
+        size_t needed;
         if (a->Original)
         {
-            hr = m->_pApiRoutines->GetConsoleOriginalTitleAImpl(psBuffer,
-                                                                cchBuffer,
-                                                                &cchWritten,
-                                                                &cchNeeded);
+            hr = m->_pApiRoutines->GetConsoleOriginalTitleAImpl(buffer, written, needed);
         }
         else
         {
-            hr = m->_pApiRoutines->GetConsoleTitleAImpl(psBuffer,
-                                                        cchBuffer,
-                                                        &cchWritten,
-                                                        &cchNeeded);
+            hr = m->_pApiRoutines->GetConsoleTitleAImpl(buffer, written, needed);
         }
 
         // We must return the needed length of the title string in the TitleLength.
-        LOG_IF_FAILED(SizeTToULong(cchNeeded, &a->TitleLength));
+        LOG_IF_FAILED(SizeTToULong(needed, &a->TitleLength));
 
         // We must return the actually written length of the title string in the reply.
-        m->SetReplyInformation(cchWritten * sizeof(char));
+        m->SetReplyInformation(written * sizeof(char));
     }
 
     return hr;
@@ -1069,7 +1153,7 @@ HRESULT ApiDispatchers::ServerGetConsoleMouseInfo(_Inout_ CONSOLE_API_MSG * cons
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetNumberOfConsoleMouseButtons);
     CONSOLE_GETMOUSEINFO_MSG* const a = &m->u.consoleMsgL3.GetConsoleMouseInfo;
 
-    m->_pApiRoutines->GetNumberOfConsoleMouseButtonsImpl(&a->NumButtons);
+    m->_pApiRoutines->GetNumberOfConsoleMouseButtonsImpl(a->NumButtons);
     return S_OK;
 }
 
@@ -1085,7 +1169,7 @@ HRESULT ApiDispatchers::ServerGetConsoleFontSize(_Inout_ CONSOLE_API_MSG * const
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_READ, &pObj));
 
-    return m->_pApiRoutines->GetConsoleFontSizeImpl(*pObj, a->FontIndex, &a->FontSize);
+    return m->_pApiRoutines->GetConsoleFontSizeImpl(*pObj, a->FontIndex, a->FontSize);
 }
 
 [[nodiscard]]
@@ -1103,7 +1187,7 @@ HRESULT ApiDispatchers::ServerGetConsoleCurrentFont(_Inout_ CONSOLE_API_MSG * co
     CONSOLE_FONT_INFOEX FontInfo = { 0 };
     FontInfo.cbSize = sizeof(FontInfo);
 
-    RETURN_IF_FAILED(m->_pApiRoutines->GetCurrentConsoleFontExImpl(*pObj, a->MaximumWindow, &FontInfo));
+    RETURN_IF_FAILED(m->_pApiRoutines->GetCurrentConsoleFontExImpl(*pObj, a->MaximumWindow, FontInfo));
 
     CopyMemory(a->FaceName, FontInfo.FaceName, RTL_NUMBER_OF_V2(a->FaceName) * sizeof(a->FaceName[0]));
     a->FontFamily = FontInfo.FontFamily;
@@ -1126,7 +1210,7 @@ HRESULT ApiDispatchers::ServerSetConsoleDisplayMode(_Inout_ CONSOLE_API_MSG * co
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
 
-    return m->_pApiRoutines->SetConsoleDisplayModeImpl(*pObj, a->dwFlags, &a->ScreenBufferDimensions);
+    return m->_pApiRoutines->SetConsoleDisplayModeImpl(*pObj, a->dwFlags, a->ScreenBufferDimensions);
 }
 
 [[nodiscard]]
@@ -1137,7 +1221,7 @@ HRESULT ApiDispatchers::ServerGetConsoleDisplayMode(_Inout_ CONSOLE_API_MSG * co
 
     // Historically this has never checked the handles. It just returns global state.
 
-    m->_pApiRoutines->GetConsoleDisplayModeImpl(&a->ModeFlags);
+    m->_pApiRoutines->GetConsoleDisplayModeImpl(a->ModeFlags);
     return S_OK;
 }
 
@@ -1525,7 +1609,7 @@ HRESULT ApiDispatchers::ServerGetConsoleWindow(_Inout_ CONSOLE_API_MSG * const m
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleWindow);
     CONSOLE_GETCONSOLEWINDOW_MSG* const a = &m->u.consoleMsgL3.GetConsoleWindow;
 
-    m->_pApiRoutines->GetConsoleWindowImpl(&a->hwnd);
+    m->_pApiRoutines->GetConsoleWindowImpl(a->hwnd);
     return S_OK;
 }
 
@@ -1535,7 +1619,7 @@ HRESULT ApiDispatchers::ServerGetConsoleSelectionInfo(_Inout_ CONSOLE_API_MSG * 
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleSelectionInfo);
     CONSOLE_GETSELECTIONINFO_MSG* const a = &m->u.consoleMsgL3.GetConsoleSelectionInfo;
 
-    m->_pApiRoutines->GetConsoleSelectionInfoImpl(&a->SelectionInfo);
+    m->_pApiRoutines->GetConsoleSelectionInfoImpl(a->SelectionInfo);
     return S_OK;
 }
 
@@ -1548,7 +1632,7 @@ HRESULT ApiDispatchers::ServerGetConsoleHistory(_Inout_ CONSOLE_API_MSG * const 
     CONSOLE_HISTORY_INFO info;
     info.cbSize = sizeof(info);
 
-    m->_pApiRoutines->GetConsoleHistoryInfoImpl(&info);
+    m->_pApiRoutines->GetConsoleHistoryInfoImpl(info);
 
     a->dwFlags = info.dwFlags;
     a->HistoryBufferSize = info.HistoryBufferSize;
@@ -1569,7 +1653,7 @@ HRESULT ApiDispatchers::ServerSetConsoleHistory(_Inout_ CONSOLE_API_MSG * const 
     info.HistoryBufferSize = a->HistoryBufferSize;
     info.NumberOfHistoryBuffers = a->NumberOfHistoryBuffers;
 
-    return m->_pApiRoutines->SetConsoleHistoryInfoImpl(&info);
+    return m->_pApiRoutines->SetConsoleHistoryInfoImpl(info);
 }
 
 [[nodiscard]]
@@ -1591,5 +1675,5 @@ HRESULT ApiDispatchers::ServerSetConsoleCurrentFont(_Inout_ CONSOLE_API_MSG * co
     Info.FontFamily = a->FontFamily;
     Info.FontWeight = a->FontWeight;
 
-    return m->_pApiRoutines->SetCurrentConsoleFontExImpl(*pObj, a->MaximumWindow, &Info);
+    return m->_pApiRoutines->SetCurrentConsoleFontExImpl(*pObj, a->MaximumWindow, Info);
 }

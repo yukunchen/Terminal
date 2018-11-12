@@ -104,7 +104,7 @@ ConhostInternalGetSet::ConhostInternalGetSet(_In_ IIoProvider& io) :
 // - TRUE if successful (see DoSrvGetConsoleScreenBufferInfo). FALSE otherwise.
 BOOL ConhostInternalGetSet::GetConsoleScreenBufferInfoEx(_Out_ CONSOLE_SCREEN_BUFFER_INFOEX* const pConsoleScreenBufferInfoEx) const
 {
-    DoSrvGetConsoleScreenBufferInfo(_io.GetActiveOutputBuffer(), pConsoleScreenBufferInfoEx);
+    ServiceLocator::LocateGlobals().api.GetConsoleScreenBufferInfoExImpl(_io.GetActiveOutputBuffer(), *pConsoleScreenBufferInfoEx);
     return TRUE;
 }
 
@@ -116,8 +116,7 @@ BOOL ConhostInternalGetSet::GetConsoleScreenBufferInfoEx(_Out_ CONSOLE_SCREEN_BU
 // - TRUE if successful (see DoSrvSetConsoleScreenBufferInfo). FALSE otherwise.
 BOOL ConhostInternalGetSet::SetConsoleScreenBufferInfoEx(const CONSOLE_SCREEN_BUFFER_INFOEX* const pConsoleScreenBufferInfoEx)
 {
-    DoSrvSetScreenBufferInfo(_io.GetActiveOutputBuffer(), pConsoleScreenBufferInfoEx);
-    return TRUE;
+    return SUCCEEDED(ServiceLocator::LocateGlobals().api.SetConsoleScreenBufferInfoExImpl(_io.GetActiveOutputBuffer(), *pConsoleScreenBufferInfoEx));
 }
 
 // Routine Description:
@@ -128,7 +127,7 @@ BOOL ConhostInternalGetSet::SetConsoleScreenBufferInfoEx(const CONSOLE_SCREEN_BU
 // - TRUE if successful (see DoSrvSetConsoleCursorPosition). FALSE otherwise.
 BOOL ConhostInternalGetSet::SetConsoleCursorPosition(const COORD coordCursorPosition)
 {
-    return SUCCEEDED(DoSrvSetConsoleCursorPosition(_io.GetActiveOutputBuffer(), &coordCursorPosition));
+    return SUCCEEDED(ServiceLocator::LocateGlobals().api.SetConsoleCursorPositionImpl(_io.GetActiveOutputBuffer(), coordCursorPosition));
 }
 
 // Routine Description:
@@ -142,7 +141,7 @@ BOOL ConhostInternalGetSet::GetConsoleCursorInfo(_In_ CONSOLE_CURSOR_INFO* const
     bool bVisible;
     DWORD dwSize;
 
-    DoSrvGetConsoleCursorInfo(_io.GetActiveOutputBuffer(), &dwSize, &bVisible);
+    ServiceLocator::LocateGlobals().api.GetConsoleCursorInfoImpl(_io.GetActiveOutputBuffer(), dwSize, bVisible);
     pConsoleCursorInfo->bVisible = bVisible;
     pConsoleCursorInfo->dwSize = dwSize;
     return TRUE;
@@ -157,7 +156,7 @@ BOOL ConhostInternalGetSet::GetConsoleCursorInfo(_In_ CONSOLE_CURSOR_INFO* const
 BOOL ConhostInternalGetSet::SetConsoleCursorInfo(const CONSOLE_CURSOR_INFO* const pConsoleCursorInfo)
 {
     const bool visible = !!pConsoleCursorInfo->bVisible;
-    return SUCCEEDED(DoSrvSetConsoleCursorInfo(_io.GetActiveOutputBuffer(), pConsoleCursorInfo->dwSize, visible));
+    return SUCCEEDED(ServiceLocator::LocateGlobals().api.SetConsoleCursorInfoImpl(_io.GetActiveOutputBuffer(), pConsoleCursorInfo->dwSize, visible));
 }
 
 // Routine Description:
@@ -205,7 +204,7 @@ BOOL ConhostInternalGetSet::FillConsoleOutputAttribute(const WORD wAttribute, co
 // - TRUE if successful (see DoSrvSetConsoleTextAttribute). FALSE otherwise.
 BOOL ConhostInternalGetSet::SetConsoleTextAttribute(const WORD wAttr)
 {
-    return SUCCEEDED(DoSrvSetConsoleTextAttribute(_io.GetActiveOutputBuffer(), wAttr));
+    return SUCCEEDED(ServiceLocator::LocateGlobals().api.SetConsoleTextAttributeImpl(_io.GetActiveOutputBuffer(), wAttr));
 }
 
 // Routine Description:
@@ -284,15 +283,15 @@ BOOL ConhostInternalGetSet::PrivateBoldText(const bool bolded)
 // - eventsWritten - on output, the number of events written
 // Return Value:
 // - TRUE if successful (see DoSrvWriteConsoleInput). FALSE otherwise.
-BOOL ConhostInternalGetSet::WriteConsoleInputW(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
-                                               _Out_ size_t& eventsWritten)
+BOOL ConhostInternalGetSet::PrivateWriteConsoleInputW(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
+                                                      _Out_ size_t& eventsWritten)
 {
     eventsWritten = 0;
-    return SUCCEEDED(DoSrvWriteConsoleInput(_io.GetActiveInputBuffer(),
-                                            events,
-                                            eventsWritten,
-                                            true, // unicode
-                                            true)); // append
+
+    return SUCCEEDED(DoSrvPrivateWriteConsoleInputW(_io.GetActiveInputBuffer(),
+                                                    events,
+                                                    eventsWritten,
+                                                    true)); // append
 }
 
 // Routine Description:
@@ -309,12 +308,12 @@ BOOL ConhostInternalGetSet::ScrollConsoleScreenBufferW(const SMALL_RECT* pScroll
                                                        _In_ COORD coordDestinationOrigin,
                                                        const CHAR_INFO* pFill)
 {
-    return SUCCEEDED(DoSrvScrollConsoleScreenBufferW(_io.GetActiveOutputBuffer(),
-                                                     pScrollRectangle,
-                                                     &coordDestinationOrigin,
-                                                     pClipRectangle,
-                                                     pFill->Char.UnicodeChar,
-                                                     pFill->Attributes));
+    return SUCCEEDED(ServiceLocator::LocateGlobals().api.ScrollConsoleScreenBufferWImpl(_io.GetActiveOutputBuffer(),
+                                                                                        *pScrollRectangle,
+                                                                                        coordDestinationOrigin,
+                                                                                        pClipRectangle != nullptr ? std::optional<SMALL_RECT>(*pClipRectangle) : std::nullopt,
+                                                                                        pFill->Char.UnicodeChar,
+                                                                                        pFill->Attributes));
 }
 
 // Routine Description:
@@ -326,7 +325,7 @@ BOOL ConhostInternalGetSet::ScrollConsoleScreenBufferW(const SMALL_RECT* pScroll
 // - TRUE if successful (see DoSrvSetConsoleWindowInfo). FALSE otherwise.
 BOOL ConhostInternalGetSet::SetConsoleWindowInfo(const BOOL bAbsolute, const SMALL_RECT* const lpConsoleWindow)
 {
-    return SUCCEEDED(DoSrvSetConsoleWindowInfo(_io.GetActiveOutputBuffer(), !!bAbsolute, lpConsoleWindow));
+    return SUCCEEDED(ServiceLocator::LocateGlobals().api.SetConsoleWindowInfoImpl(_io.GetActiveOutputBuffer(), !!bAbsolute, *lpConsoleWindow));
 }
 
 // Routine Description:

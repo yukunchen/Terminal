@@ -245,6 +245,22 @@ class DbcsTests
 
     TEST_METHOD(TestDbcsBisect);
 
+    BEGIN_TEST_METHOD(TestDbcsBisectWriteCellsBeginW)
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+    END_TEST_METHOD()
+
+    BEGIN_TEST_METHOD(TestDbcsBisectWriteCellsEndW)
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+    END_TEST_METHOD()
+
+    BEGIN_TEST_METHOD(TestDbcsBisectWriteCellsBeginA)
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+    END_TEST_METHOD()
+
+    BEGIN_TEST_METHOD(TestDbcsBisectWriteCellsEndA)
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+    END_TEST_METHOD()
+
     BEGIN_TEST_METHOD(TestDbcsOneByOne)
         TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
     END_TEST_METHOD()
@@ -1948,6 +1964,9 @@ void DbcsTests::TestDbcsBisect()
 {
     HANDLE const hOut = GetStdOutputHandle();
 
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleCP(JAPANESE_CP));
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleOutputCP(JAPANESE_CP));
+
     UINT dwCP = GetConsoleCP();
     VERIFY_ARE_EQUAL(dwCP, JAPANESE_CP);
 
@@ -2054,6 +2073,175 @@ void DbcsTests::TestDbcsBisect()
             }
         }
     }
+}
+
+// The following W versions of the tests check that we can't insert a bisecting cell even 
+// when we try to force one in by writing cell-by-cell.
+// NOTE: This is a change in behavior from the legacy behavior.
+// V1 console would allow a lead byte to be stored in the final cell and then display it improperly.
+// It would also allow this data to be read back.
+// I believe this was a long standing bug because every other API entry fastidiously checked that it wasn't possible to
+// "bisect" a cell and all sorts of portions of the rest of the console code try to enforce that bisects across lines can't happen.
+// For the most recent revision of the V2 console (approx November 2018), we're trying to make sure that the TextBuffer's internal state
+// is always correct at insert (instead of correcting it on every read).
+// If it turns out that we are proven wrong in the future and this causes major problems, 
+// the legacy behavior is to just let it be stored and compensate for it later. (On read in every API but ReadConsoleOutput and in the selection).
+void DbcsTests::TestDbcsBisectWriteCellsEndW()
+{
+    const auto out = GetStdHandle(STD_OUTPUT_HANDLE);
+
+    CONSOLE_SCREEN_BUFFER_INFOEX info = { 0 };
+    info.cbSize = sizeof(info);
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleScreenBufferInfoEx(out, &info));
+
+    CHAR_INFO originalCell;
+    originalCell.Char.UnicodeChar = L'\x30a2'; // Japanese full-width katakana A
+    originalCell.Attributes = COMMON_LVB_LEADING_BYTE | FOREGROUND_RED;
+
+    SMALL_RECT writeRegion;
+    writeRegion.Top = 0;
+    writeRegion.Bottom = 0;
+    writeRegion.Left = info.dwSize.X - 1;
+    writeRegion.Right = info.dwSize.X - 1;
+
+    const auto originalWriteRegion = writeRegion;
+    VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleOutputW(out, &originalCell, { 1, 1 }, { 0, 0 }, &writeRegion));
+    VERIFY_ARE_EQUAL(originalWriteRegion, writeRegion);
+
+    SMALL_RECT readRegion = originalWriteRegion;
+    const auto originalReadRegion = readRegion;
+    CHAR_INFO readCell;
+
+    CHAR_INFO expectedCell;
+    expectedCell.Char.UnicodeChar = L' ';
+    expectedCell.Attributes = originalCell.Attributes;
+    WI_ClearAllFlags(expectedCell.Attributes, COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE);
+
+    VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputW(out, &readCell, { 1, 1 }, { 0, 0 }, &readRegion));
+    VERIFY_ARE_EQUAL(originalReadRegion, readRegion);
+
+    VERIFY_ARE_NOT_EQUAL(originalCell, readCell);
+    VERIFY_ARE_EQUAL(expectedCell, readCell);
+}
+
+// This test also reflects a change in the legacy behavior (see above)
+void DbcsTests::TestDbcsBisectWriteCellsBeginW()
+{
+    const auto out = GetStdHandle(STD_OUTPUT_HANDLE);
+
+    CONSOLE_SCREEN_BUFFER_INFOEX info = { 0 };
+    info.cbSize = sizeof(info);
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleScreenBufferInfoEx(out, &info));
+
+    CHAR_INFO originalCell;
+    originalCell.Char.UnicodeChar = L'\x30a2';
+    originalCell.Attributes = COMMON_LVB_TRAILING_BYTE | FOREGROUND_RED;
+
+    SMALL_RECT writeRegion;
+    writeRegion.Top = 0;
+    writeRegion.Bottom = 0;
+    writeRegion.Left = 0;
+    writeRegion.Right = 0;
+    const auto originalWriteRegion = writeRegion;
+    VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleOutputW(out, &originalCell, { 1, 1 }, { 0, 0 }, &writeRegion));
+    VERIFY_ARE_EQUAL(originalWriteRegion, writeRegion);
+
+    SMALL_RECT readRegion = originalWriteRegion;
+    const auto originalReadRegion = readRegion;
+    CHAR_INFO readCell;
+
+    CHAR_INFO expectedCell;
+    expectedCell.Char.UnicodeChar = L' ';
+    expectedCell.Attributes = originalCell.Attributes;
+    WI_ClearAllFlags(expectedCell.Attributes, COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE);
+
+    VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputW(out, &readCell, { 1, 1 }, { 0, 0 }, &readRegion));
+    VERIFY_ARE_EQUAL(originalReadRegion, readRegion);
+
+    VERIFY_ARE_NOT_EQUAL(originalCell, readCell);
+    VERIFY_ARE_EQUAL(expectedCell, readCell);
+}
+
+void DbcsTests::TestDbcsBisectWriteCellsEndA()
+{
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleCP(JAPANESE_CP));
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleOutputCP(JAPANESE_CP));
+
+    const auto out = GetStdHandle(STD_OUTPUT_HANDLE);
+
+    CONSOLE_SCREEN_BUFFER_INFOEX info = { 0 };
+    info.cbSize = sizeof(info);
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleScreenBufferInfoEx(out, &info));
+
+    CHAR_INFO originalCell;
+    originalCell.Char.AsciiChar = '\x82';
+    originalCell.Attributes = COMMON_LVB_LEADING_BYTE | FOREGROUND_RED;
+
+    SMALL_RECT writeRegion;
+    writeRegion.Top = 0;
+    writeRegion.Bottom = 0;
+    writeRegion.Left = info.dwSize.X - 1;
+    writeRegion.Right = info.dwSize.X - 1;
+    const auto originalWriteRegion = writeRegion;
+    VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleOutputA(out, &originalCell, { 1, 1 }, { 0, 0 }, &writeRegion));
+    VERIFY_ARE_EQUAL(originalWriteRegion, writeRegion);
+
+    SMALL_RECT readRegion = originalWriteRegion;
+    const auto originalReadRegion = readRegion;
+    CHAR_INFO readCell;
+
+    CHAR_INFO expectedCell;
+    expectedCell.Char.UnicodeChar = L' ';
+    expectedCell.Attributes = originalCell.Attributes;
+    WI_ClearAllFlags(expectedCell.Attributes, COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE);
+
+    VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputA(out, &readCell, { 1, 1 }, { 0, 0 }, &readRegion));
+    VERIFY_ARE_EQUAL(originalReadRegion, readRegion);
+
+    VERIFY_ARE_NOT_EQUAL(originalCell, readCell);
+    VERIFY_ARE_EQUAL(expectedCell, readCell);
+}
+
+// This test maintains the legacy behavior for the 932 A codepage route.
+void DbcsTests::TestDbcsBisectWriteCellsBeginA()
+{
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleCP(JAPANESE_CP));
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleOutputCP(JAPANESE_CP));
+
+    const auto out = GetStdHandle(STD_OUTPUT_HANDLE);
+
+    CONSOLE_SCREEN_BUFFER_INFOEX info = { 0 };
+    info.cbSize = sizeof(info);
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleScreenBufferInfoEx(out, &info));
+
+    CHAR_INFO originalCell;
+    originalCell.Char.AsciiChar = '\xA9';
+    originalCell.Attributes = COMMON_LVB_TRAILING_BYTE | FOREGROUND_RED;
+
+    SMALL_RECT writeRegion;
+    writeRegion.Top = 0;
+    writeRegion.Bottom = 0;
+    writeRegion.Left = 0;
+    writeRegion.Right = 0;
+    const auto originalWriteRegion = writeRegion;
+    VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleOutputA(out, &originalCell, { 1, 1 }, { 0, 0 }, &writeRegion));
+    VERIFY_ARE_EQUAL(originalWriteRegion, writeRegion);
+
+    SMALL_RECT readRegion = originalWriteRegion;
+    const auto originalReadRegion = readRegion;
+    CHAR_INFO readCell;
+
+    CHAR_INFO expectedCell;
+    expectedCell.Char.UnicodeChar = L'\xffff';
+    expectedCell.Char.AsciiChar = originalCell.Char.AsciiChar;
+    expectedCell.Attributes = originalCell.Attributes;
+    WI_ClearAllFlags(expectedCell.Attributes, COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE);
+
+    VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputA(out, &readCell, { 1, 1 }, { 0, 0 }, &readRegion));
+    VERIFY_ARE_EQUAL(originalReadRegion, readRegion);
+
+    VERIFY_ARE_NOT_EQUAL(originalCell, readCell);
+    VERIFY_ARE_EQUAL(expectedCell, readCell);
 }
 
 struct MultibyteInputData

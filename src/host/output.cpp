@@ -97,7 +97,7 @@ static void _CopyRectangle(SCREEN_INFORMATION& screenInfo,
 // - vector of attribute data
 std::vector<WORD> ReadOutputAttributes(const SCREEN_INFORMATION& screenInfo,
                                        const COORD coordRead,
-                                       const ULONG amountToRead)
+                                       const size_t amountToRead)
 {
     // Short circuit. If nothing to read, leave early.
     if (amountToRead == 0)
@@ -152,7 +152,7 @@ std::vector<WORD> ReadOutputAttributes(const SCREEN_INFORMATION& screenInfo,
 // - wstring
 std::wstring ReadOutputStringW(const SCREEN_INFORMATION& screenInfo,
                                const COORD coordRead,
-                               const ULONG amountToRead)
+                               const size_t amountToRead)
 {
     // Short circuit. If nothing to read, leave early.
     if (amountToRead == 0)
@@ -209,17 +209,15 @@ std::wstring ReadOutputStringW(const SCREEN_INFORMATION& screenInfo,
 // - coordRead - Screen buffer coordinate to begin reading from.
 // - amountToRead - the number of elements to read
 // Return Value:
-// - vector of char data
-std::vector<char> ReadOutputStringA(const SCREEN_INFORMATION& screenInfo,
-                                    const COORD coordRead,
-                                    const ULONG amountToRead)
+// - string of char data
+std::string ReadOutputStringA(const SCREEN_INFORMATION& screenInfo,
+                              const COORD coordRead,
+                              const size_t amountToRead)
 {
     const auto wstr = ReadOutputStringW(screenInfo, coordRead, amountToRead);
 
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto convertedChars = ConvertToA(gci.OutputCP, wstr);
-
-    return { convertedChars.begin(), convertedChars.end() };
+    return ConvertToA(gci.OutputCP, wstr);
 }
 
 void ScreenBufferSizeChange(const COORD coordNewSize)
