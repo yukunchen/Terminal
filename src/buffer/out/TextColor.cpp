@@ -16,7 +16,7 @@
 // - <none>
 void TextColor::SetColor(const COLORREF rgbColor)
 {
-    _meta = static_cast<BYTE>(ColorType::IsRgb);
+    _meta = ColorType::IsRgb;
     _red = GetRValue(rgbColor);
     _green = GetGValue(rgbColor);
     _blue = GetBValue(rgbColor);
@@ -30,7 +30,7 @@ void TextColor::SetColor(const COLORREF rgbColor)
 // - <none>
 void TextColor::SetIndex(const BYTE index)
 {
-    _meta = static_cast<BYTE>(ColorType::IsIndex);
+    _meta = ColorType::IsIndex;
     _index = index;
 }
 
@@ -43,7 +43,7 @@ void TextColor::SetIndex(const BYTE index)
 // - <none>
 void TextColor::SetDefault()
 {
-    _meta = static_cast<BYTE>(ColorType::IsDefault);
+    _meta = ColorType::IsDefault;
 }
 
 // Method Description:

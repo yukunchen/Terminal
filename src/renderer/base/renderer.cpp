@@ -967,7 +967,7 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
                                                 const size_t cchLine,
                                                 const COORD coordTarget)
 {
-    COLORREF rgb = _pData->GetForegroundColor(textAttribute);
+    const COLORREF rgb = _pData->GetForegroundColor(textAttribute);
 
     // Convert console grid line representations into rendering engine enum representations.
     IRenderEngine::GridLines lines = IRenderEngine::GridLines::None;

@@ -125,8 +125,8 @@ public:
     COOKED_READ_DATA& CookedReadData() noexcept;
     void SetCookedReadData(COOKED_READ_DATA* readData) noexcept;
 
-    COLORREF GetDefaultForeground() const;
-    COLORREF GetDefaultBackground() const;
+    COLORREF GetDefaultForeground() const noexcept;
+    COLORREF GetDefaultBackground() const noexcept;
 
     void SetTitle(const std::wstring_view newTitle);
     void SetTitlePrefix(const std::wstring& newTitlePrefix);

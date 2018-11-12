@@ -159,7 +159,7 @@ InputBuffer* const CONSOLE_INFORMATION::GetActiveInputBuffer() const
 // - <none>
 // Return Value:
 // - the default foreground color of the console.
-COLORREF CONSOLE_INFORMATION::GetDefaultForeground() const
+COLORREF CONSOLE_INFORMATION::GetDefaultForeground() const noexcept
 {
     return Settings::CalculateDefaultForeground();
 }
@@ -173,7 +173,7 @@ COLORREF CONSOLE_INFORMATION::GetDefaultForeground() const
 // - <none>
 // Return Value:
 // - the default background color of the console.
-COLORREF CONSOLE_INFORMATION::GetDefaultBackground() const
+COLORREF CONSOLE_INFORMATION::GetDefaultBackground() const noexcept
 {
     return Settings::CalculateDefaultBackground();
 }

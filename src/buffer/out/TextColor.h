@@ -35,9 +35,7 @@ Revision History:
 #include "WexTestClass.h"
 #endif
 
-#if (defined(_M_IX86) || defined(_M_AMD64))
 #pragma pack(push, 1)
-#endif
 
 enum class ColorType : BYTE
 {
@@ -51,7 +49,7 @@ struct TextColor
 public:
 
     constexpr TextColor() noexcept :
-        _meta{ static_cast<BYTE>(ColorType::IsDefault) },
+        _meta{ ColorType::IsDefault },
         _red{ 0 },
         _green{ 0 },
         _blue{ 0 }
@@ -59,7 +57,7 @@ public:
     }
 
     constexpr TextColor(const BYTE wLegacyAttr) noexcept :
-        _meta{ static_cast<BYTE>(ColorType::IsIndex) },
+        _meta{ ColorType::IsIndex },
         _index{ wLegacyAttr },
         _green{ 0 },
         _blue{ 0 }
@@ -67,7 +65,7 @@ public:
     }
 
     constexpr TextColor(const COLORREF rgb) noexcept :
-        _meta{ static_cast<BYTE>(ColorType::IsRgb) },
+        _meta{ ColorType::IsRgb },
         _red{ GetRValue(rgb) },
         _green{ GetGValue(rgb) },
         _blue{ GetBValue(rgb) }
@@ -84,12 +82,12 @@ public:
 
     constexpr bool IsDefault() const noexcept
     {
-        return _meta == static_cast<BYTE>(ColorType::IsDefault);
+        return _meta == ColorType::IsDefault;
     }
 
     constexpr bool IsRgb() const noexcept
     {
-        return _meta == static_cast<BYTE>(ColorType::IsRgb);
+        return _meta == ColorType::IsRgb;
     }
 
     void SetColor(const COLORREF rgbColor);
@@ -107,7 +105,7 @@ public:
 
 
 private:
-    BYTE _meta : 2;
+    ColorType _meta : 2;
     union
     {
         BYTE _red, _index;
@@ -123,9 +121,7 @@ private:
 #endif
 };
 
-#if (defined(_M_IX86) || defined(_M_AMD64))
 #pragma pack(pop)
-#endif
 
 bool constexpr operator==(const TextColor& a, const TextColor& b) noexcept
 {

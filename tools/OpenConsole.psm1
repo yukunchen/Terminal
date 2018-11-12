@@ -91,7 +91,7 @@ function Invoke-OpenConsoleTests()
         [switch]$FTOnly,
 
         [parameter(Mandatory=$false)]
-        [ValidateSet('host', 'interactivityWin32', 'terminal', 'adapter', 'feature', 'uia')]
+        [ValidateSet('host', 'interactivityWin32', 'terminal', 'adapter', 'feature', 'uia', 'textbuffer')]
         [string]$Test,
 
         [parameter(Mandatory=$false)]

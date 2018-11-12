@@ -261,8 +261,7 @@ const CHAR_INFO TextBufferCellIterator::AsCharInfo() const
 
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     ci.Attributes = _view.DbcsAttr().GeneratePublicApiAttributeFormat();
-    auto legacyAttrs = gci.GenerateLegacyAttributes(_view.TextAttr());
-    ci.Attributes |= legacyAttrs;
+    ci.Attributes |= gci.GenerateLegacyAttributes(_view.TextAttr());
     return ci;
 }
 

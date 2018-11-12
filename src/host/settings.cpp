@@ -1171,7 +1171,7 @@ bool Settings::GetUseDx() const noexcept
 // - <none>
 // Return Value:
 // - the default foreground color of the console.
-COLORREF Settings::CalculateDefaultForeground() const
+COLORREF Settings::CalculateDefaultForeground() const noexcept
 {
     const auto fg = GetDefaultForegroundColor();
     return fg != INVALID_COLOR ? fg : ForegroundColor(GetFillAttribute(), GetColorTable(), GetColorTableSize());
@@ -1186,7 +1186,7 @@ COLORREF Settings::CalculateDefaultForeground() const
 // - <none>
 // Return Value:
 // - the default background color of the console.
-COLORREF Settings::CalculateDefaultBackground() const
+COLORREF Settings::CalculateDefaultBackground() const noexcept
 {
     const auto bg = GetDefaultBackgroundColor();
     return bg != INVALID_COLOR ? bg : BackgroundColor(GetFillAttribute(), GetColorTable(), GetColorTableSize());
@@ -1199,7 +1199,7 @@ COLORREF Settings::CalculateDefaultBackground() const
 // - attr: the TextAttribute to retrieve the foreground color of.
 // Return Value:
 // - The color value of the attribute's foreground TextColor.
-COLORREF Settings::LookupForegroundColor(const TextAttribute& attr) const
+COLORREF Settings::LookupForegroundColor(const TextAttribute& attr) const noexcept
 {
     const auto tableView = std::basic_string_view<COLORREF>(&GetColorTable()[0], GetColorTableSize());
     return attr.CalculateRgbForeground(tableView, CalculateDefaultForeground());
@@ -1212,7 +1212,7 @@ COLORREF Settings::LookupForegroundColor(const TextAttribute& attr) const
 // - attr: the TextAttribute to retrieve the background color of.
 // Return Value:
 // - The color value of the attribute's background TextColor.
-COLORREF Settings::LookupBackgroundColor(const TextAttribute& attr) const
+COLORREF Settings::LookupBackgroundColor(const TextAttribute& attr) const noexcept
 {
     const auto tableView = std::basic_string_view<COLORREF>(&GetColorTable()[0], GetColorTableSize());
     return attr.CalculateRgbBackground(tableView, CalculateDefaultBackground());

@@ -531,8 +531,6 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
             }
 
             // line was wrapped if we're writing up to the end of the current row
-            // OutputCellIterator it(std::wstring_view(LocalBuffer, i), Attributes);
-            // Why does this one need `GetAttributes`, when all the others use `Attributes`??
             OutputCellIterator it(std::wstring_view(LocalBuffer, i), screenInfo.GetAttributes());
             screenInfo.Write(it);
 

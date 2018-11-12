@@ -79,9 +79,9 @@ void TextAttribute::SetBackground(const COLORREF rgbBackground)
 
 void TextAttribute::SetFromLegacy(const WORD wLegacy) noexcept
 {
-    _wAttrLegacy = (WORD)(wLegacy & META_ATTRS);
-    BYTE fgIndex = (BYTE)(wLegacy & FG_ATTRS);
-    BYTE bgIndex = (BYTE)(wLegacy & BG_ATTRS) >> 4;
+    _wAttrLegacy = static_cast<WORD>(wLegacy & META_ATTRS);
+    BYTE fgIndex = static_cast<BYTE>(wLegacy & FG_ATTRS);
+    BYTE bgIndex = static_cast<BYTE>(wLegacy & BG_ATTRS) >> 4;
     _foreground = TextColor(fgIndex);
     _background = TextColor(bgIndex);
 }
