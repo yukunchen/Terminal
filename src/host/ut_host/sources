@@ -30,6 +30,7 @@ SOURCES = \
     SelectionTests.cpp \
     Utf8ToWideCharParserTests.cpp \
     Utf16ParserTests.cpp \
+    OutputCellIteratorTests.cpp \
     InitTests.cpp \
     TitleTests.cpp \
     InputBufferTests.cpp \

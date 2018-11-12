@@ -9,7 +9,12 @@
 // to ensure that activation of the console still works.
 class CanaryTests
 {
-    TEST_CLASS(CanaryTests);
+    BEGIN_TEST_CLASS(CanaryTests)
+        TEST_CLASS_PROPERTY(L"BinaryUnderTest", L"conhost.exe")
+        TEST_CLASS_PROPERTY(L"BinaryUnderTest", L"conhostv1.dll")
+        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincon.h")
+        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl1.h")
+    END_TEST_CLASS()
 
     TEST_METHOD(LaunchV1Console);
 };
@@ -35,7 +40,7 @@ void CanaryTests::LaunchV1Console()
     // This will set the console to v1 mode, backing up the current state and restoring when it goes out of scope.
     CommonV1V2Helper SetV1ConsoleHelper(CommonV1V2Helper::ForceV2States::V1);
 
-    // Attempt to launch CMD.exe in a new window 
+    // Attempt to launch CMD.exe in a new window
     // Expand any environment variables present in the command line string.
     wistd::unique_ptr<wchar_t[]> CmdLineMutable;
     VERIFY_SUCCEEDED(ExpandPathToMutable(pwszCmdPath, CmdLineMutable));

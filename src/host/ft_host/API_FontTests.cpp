@@ -11,7 +11,13 @@ static const PCWSTR pwszLongFontPath = L"%WINDIR%\\Fonts\\ltype.ttf";
 
 class FontTests
 {
-    TEST_CLASS(FontTests)
+    BEGIN_TEST_CLASS(FontTests)
+        TEST_CLASS_PROPERTY(L"BinaryUnderTest", L"conhost.exe")
+        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincon.h")
+        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincontypes.h")
+        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl1.h")
+        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl3.h")
+    END_TEST_CLASS()
 
     TEST_METHOD_SETUP(TestSetup);
     TEST_METHOD_CLEANUP(TestCleanup);
@@ -21,7 +27,7 @@ class FontTests
         TEST_METHOD_PROPERTY(L"Data:bMaximumWindow", L"{TRUE, FALSE}")
         TEST_METHOD_PROPERTY(L"Data:strOperation", L"{Get, GetEx, SetEx}")
     END_TEST_METHOD();
-    
+
     BEGIN_TEST_METHOD(TestGetFontSizeInvalid)
         TEST_METHOD_PROPERTY(L"Data:dwConsoleOutput", L"{0, 0xFFFFFFFF}")
     END_TEST_METHOD();
@@ -99,7 +105,7 @@ void FontTests::TestCurrentFontAPIsInvalid()
 void FontTests::TestGetFontSizeInvalid()
 {
     DWORD dwConsoleOutput;
-    VERIFY_SUCCEEDED(TestData::TryGetValue(L"dwConsoleOutput", dwConsoleOutput), L"Get input handle value");    
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"dwConsoleOutput", dwConsoleOutput), L"Get input handle value");
 
     // Need to make sure that last error is cleared so that we can verify that lasterror was set by GetConsoleFontSize
     SetLastError(0);
@@ -259,7 +265,7 @@ void FontTests::TestSetFontAdjustsWindow()
     szConsolas.cx = rc.right - rc.left;
     szConsolas.cy = rc.bottom - rc.top;
     Log::Comment(NoThrowString().Format(L"Client rect size is (X: %d, Y: %d)", szConsolas.cx, szConsolas.cy));
-    
+
     Log::Comment(L"Adjust console window to Lucida Console 12.");
     wcscpy_s(cfiex.FaceName, L"Lucida Console");
     cfiex.dwFontSize.Y = 12;
@@ -285,7 +291,7 @@ void FontTests::TestSetFontAdjustsWindow()
     VERIFY_WIN32_BOOL_SUCCEEDED(GetClientRect(hwnd, &rc), L"Retrieve client rectangle size for Consolas 16.");
     szConsolas.cx = rc.right - rc.left;
     szConsolas.cy = rc.bottom - rc.top;
-    
+
     Log::Comment(NoThrowString().Format(L"Client rect size is (X: %d, Y: %d)", szConsolas.cx, szConsolas.cy));
     Log::Comment(L"Window should grow in size when going from Lucida 12 to Consolas 16.");
     VERIFY_IS_LESS_THAN(szLucida.cx, szConsolas.cx);

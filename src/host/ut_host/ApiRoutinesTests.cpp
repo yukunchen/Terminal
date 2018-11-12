@@ -86,7 +86,7 @@ class ApiRoutinesTests
         bool const fCursorDBModeExpected = ((!!_fPrevInsertMode) == fInsertModeExpected);
 
         // Call the API
-        HRESULT const hrActual = _pApiRoutines->SetConsoleInputModeImpl(pii, ulNewMode);
+        HRESULT const hrActual = _pApiRoutines->SetConsoleInputModeImpl(*pii, ulNewMode);
 
         // Now do verifications of final state.
         VERIFY_ARE_EQUAL(hrExpected, hrActual);
@@ -185,7 +185,7 @@ class ApiRoutinesTests
         Log::Comment(L"Verify that we cannot unset various extended flags without the ENABLE_EXTENDED_FLAGS flag.");
         PrepVerifySetConsoleInputModeImpl(ENABLE_INSERT_MODE | ENABLE_QUICK_EDIT_MODE | ENABLE_AUTO_POSITION);
         InputBuffer* const pii = gci.pInputBuffer;
-        HRESULT const hr = _pApiRoutines->SetConsoleInputModeImpl(pii, 0);
+        HRESULT const hr = _pApiRoutines->SetConsoleInputModeImpl(*pii, 0);
 
         VERIFY_ARE_EQUAL(S_OK, hr);
         VERIFY_ARE_EQUAL(true, !!gci.GetInsertMode());
@@ -231,7 +231,7 @@ class ApiRoutinesTests
         char pszTitle[MAX_PATH]; // most applications use MAX_PATH
         size_t cchWritten = 0;
         size_t cchNeeded = 0;
-        VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleTitleAImpl(pszTitle, ARRAYSIZE(pszTitle), &cchWritten, &cchNeeded));
+        VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleTitleAImpl(gsl::span<char>(pszTitle, ARRAYSIZE(pszTitle)), cchWritten, cchNeeded));
 
         VERIFY_ARE_NOT_EQUAL(0u, cchWritten);
         // NOTE: W version of API returns string length. A version of API returns buffer length (string + null).
@@ -248,7 +248,7 @@ class ApiRoutinesTests
         wchar_t pwszTitle[MAX_PATH]; // most applications use MAX_PATH
         size_t cchWritten = 0;
         size_t cchNeeded = 0;
-        _pApiRoutines->GetConsoleTitleWImpl(pwszTitle, ARRAYSIZE(pwszTitle), &cchWritten, &cchNeeded);
+        VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleTitleWImpl(gsl::span<wchar_t>(pwszTitle, ARRAYSIZE(pwszTitle)), cchWritten, cchNeeded));
 
         VERIFY_ARE_NOT_EQUAL(0u, cchWritten);
         // NOTE: W version of API returns string length. A version of API returns buffer length (string + null).
@@ -286,7 +286,7 @@ class ApiRoutinesTests
         char pszTitle[MAX_PATH]; // most applications use MAX_PATH
         size_t cchWritten = 0;
         size_t cchNeeded = 0;
-        VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleOriginalTitleAImpl(pszTitle, ARRAYSIZE(pszTitle), &cchWritten, &cchNeeded));
+        VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleOriginalTitleAImpl(gsl::span<char>(pszTitle, ARRAYSIZE(pszTitle)), cchWritten, cchNeeded));
 
         VERIFY_ARE_NOT_EQUAL(0u, cchWritten);
         // NOTE: W version of API returns string length. A version of API returns buffer length (string + null).
@@ -303,7 +303,7 @@ class ApiRoutinesTests
         wchar_t pwszTitle[MAX_PATH]; // most applications use MAX_PATH
         size_t cchWritten = 0;
         size_t cchNeeded = 0;
-        _pApiRoutines->GetConsoleOriginalTitleWImpl(pwszTitle, ARRAYSIZE(pwszTitle), &cchWritten, &cchNeeded);
+        VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleOriginalTitleWImpl(gsl::span<wchar_t>(pwszTitle, ARRAYSIZE(pwszTitle)), cchWritten, cchNeeded));
 
         VERIFY_ARE_NOT_EQUAL(0u, cchWritten);
         // NOTE: W version of API returns string length. A version of API returns buffer length (string + null).
@@ -380,23 +380,23 @@ class ApiRoutinesTests
             }
 
             size_t cchRead = 0;
-            IWaitRoutine* pWaiter = nullptr;
+            std::unique_ptr<IWaitRoutine> waiter;
 
             // The increment is either the specified length or the remaining text in the string (if that is smaller).
             const size_t cchWriteLength = std::min(cchIncrement, cchTestText - i);
 
             // Run the test method
-            const HRESULT hr = _pApiRoutines->WriteConsoleAImpl(si, pszTestText + i, cchWriteLength, &cchRead, &pWaiter);
+            const HRESULT hr = _pApiRoutines->WriteConsoleAImpl(si, { pszTestText + i, cchWriteLength }, cchRead, waiter);
 
             VERIFY_ARE_EQUAL(S_OK, hr, L"Successful result code from writing.");
             if (!fInduceWait)
             {
-                VERIFY_IS_NULL(pWaiter, L"We should have no waiter for this case.");
+                VERIFY_IS_NULL(waiter.get(), L"We should have no waiter for this case.");
                 VERIFY_ARE_EQUAL(cchWriteLength, cchRead, L"We should have the same character count back as 'written' that we gave in.");
             }
             else
             {
-                VERIFY_IS_NOT_NULL(pWaiter, L"We should have a waiter for this case.");
+                VERIFY_IS_NOT_NULL(waiter.get(), L"We should have a waiter for this case.");
                 // The cchRead is irrelevant at this point as it's not going to be returned until we're off the wait.
 
                 Log::Comment(L"Unblocking global output state so the wait can be serviced.");
@@ -406,7 +406,7 @@ class ApiRoutinesTests
                 size_t dwNumBytes = 0;
                 DWORD dwControlKeyState = 0; // unused but matches the pattern for read.
                 void* pOutputData = nullptr; // unused for writes but used for read.
-                const BOOL bNotifyResult = pWaiter->Notify(WaitTerminationReason::NoReason, FALSE, &Status, &dwNumBytes, &dwControlKeyState, &pOutputData);
+                const BOOL bNotifyResult = waiter->Notify(WaitTerminationReason::NoReason, FALSE, &Status, &dwNumBytes, &dwControlKeyState, &pOutputData);
 
                 VERIFY_IS_TRUE(!!bNotifyResult, L"Wait completion on notify should be successful.");
                 VERIFY_ARE_EQUAL(STATUS_SUCCESS, Status, L"We should have a successful return code to pass to the caller.");
@@ -432,8 +432,7 @@ class ApiRoutinesTests
         gci.LockConsole();
         auto Unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
 
-        PCWSTR pwszTestText = L"Test Text";
-        const size_t cchTestText = wcslen(pwszTestText);
+        const std::wstring testText(L"Test text");
 
         if (fInduceWait)
         {
@@ -442,18 +441,18 @@ class ApiRoutinesTests
         }
 
         size_t cchRead = 0;
-        IWaitRoutine* pWaiter = nullptr;
-        const HRESULT hr = _pApiRoutines->WriteConsoleWImpl(si, pwszTestText, cchTestText, &cchRead, &pWaiter);
+        std::unique_ptr<IWaitRoutine> waiter;
+        const HRESULT hr = _pApiRoutines->WriteConsoleWImpl(si, testText, cchRead, waiter);
 
         VERIFY_ARE_EQUAL(S_OK, hr, L"Successful result code from writing.");
         if (!fInduceWait)
         {
-            VERIFY_IS_NULL(pWaiter, L"We should have no waiter for this case.");
-            VERIFY_ARE_EQUAL(cchTestText, cchRead, L"We should have the same character count back as 'written' that we gave in.");
+            VERIFY_IS_NULL(waiter.get(), L"We should have no waiter for this case.");
+            VERIFY_ARE_EQUAL(testText.size(), cchRead, L"We should have the same character count back as 'written' that we gave in.");
         }
         else
         {
-            VERIFY_IS_NOT_NULL(pWaiter, L"We should have a waiter for this case.");
+            VERIFY_IS_NOT_NULL(waiter.get(), L"We should have a waiter for this case.");
             // The cchRead is irrelevant at this point as it's not going to be returned until we're off the wait.
 
             Log::Comment(L"Unblocking global output state so the wait can be serviced.");
@@ -463,12 +462,12 @@ class ApiRoutinesTests
             size_t dwNumBytes = 0;
             DWORD dwControlKeyState = 0; // unused but matches the pattern for read.
             void* pOutputData = nullptr; // unused for writes but used for read.
-            const BOOL bNotifyResult = pWaiter->Notify(WaitTerminationReason::NoReason, TRUE, &Status, &dwNumBytes, &dwControlKeyState, &pOutputData);
+            const BOOL bNotifyResult = waiter->Notify(WaitTerminationReason::NoReason, TRUE, &Status, &dwNumBytes, &dwControlKeyState, &pOutputData);
 
             VERIFY_IS_TRUE(!!bNotifyResult, L"Wait completion on notify should be successful.");
             VERIFY_ARE_EQUAL(STATUS_SUCCESS, Status, L"We should have a successful return code to pass to the caller.");
 
-            const size_t dwBytesExpected = cchTestText * sizeof(wchar_t);
+            const size_t dwBytesExpected = testText.size() * sizeof(wchar_t);
             VERIFY_ARE_EQUAL(dwBytesExpected, dwNumBytes, L"We should have the byte length of the string we put in as the returned value.");
         }
     }
@@ -579,7 +578,7 @@ class ApiRoutinesTests
         si.GetActiveBuffer().Write(OutputCellIterator(background), { 0, 0 }); // Fill entire screen with green Zs.
 
         // Scroll everything up and backfill with red As.
-        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, &scroll, &destination, nullptr, fill.Char.UnicodeChar, fill.Attributes));
+        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, std::nullopt, fill.Char.UnicodeChar, fill.Attributes));
         ValidateScreen(si, background, fill, destination);
      
         Log::Comment(L"Fill screen with green Zs. Scroll all down by two, backfilling with red As. Confirm every cell.");
@@ -589,7 +588,7 @@ class ApiRoutinesTests
 
         // Scroll everything down and backfill with red As.
         destination = { 0, 2 };
-        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, &scroll, &destination, nullptr, fill.Char.UnicodeChar, fill.Attributes));
+        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, std::nullopt, fill.Char.UnicodeChar, fill.Attributes));
         ValidateScreen(si, background, fill, destination);
 
         Log::Comment(L"Fill screen with green Zs. Scroll all left by two, backfilling with red As. Confirm every cell.");
@@ -599,7 +598,7 @@ class ApiRoutinesTests
 
         // Scroll everything left and backfill with red As.
         destination = { -2, 0 };
-        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, &scroll, &destination, nullptr, fill.Char.UnicodeChar, fill.Attributes));
+        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, std::nullopt, fill.Char.UnicodeChar, fill.Attributes));
         ValidateScreen(si, background, fill, destination);
 
         Log::Comment(L"Fill screen with green Zs. Scroll all right by two, backfilling with red As. Confirm every cell.");
@@ -609,7 +608,7 @@ class ApiRoutinesTests
 
         // Scroll everything right and backfill with red As.
         destination = { 2, 0 };
-        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, &scroll, &destination, nullptr, fill.Char.UnicodeChar, fill.Attributes));
+        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, std::nullopt, fill.Char.UnicodeChar, fill.Attributes));
         ValidateScreen(si, background, fill, destination);
 
         Log::Comment(L"Fill screen with green Zs. Move everything down and right by two, backfilling with red As. Confirm every cell.");
@@ -619,7 +618,7 @@ class ApiRoutinesTests
 
         // Scroll everything down and right and backfill with red As.
         destination = { 2, 2 };
-        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, &scroll, &destination, nullptr, fill.Char.UnicodeChar, fill.Attributes));
+        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, std::nullopt, fill.Char.UnicodeChar, fill.Attributes));
         ValidateScreen(si, background, fill, destination);
 
         Log::Comment(L"Fill screen with green Zs. Move everything up and left by two, backfilling with red As. Confirm every cell.");
@@ -629,7 +628,7 @@ class ApiRoutinesTests
 
         // Scroll everything up and left and backfill with red As.
         destination = { -2, -2 };
-        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, &scroll, &destination, nullptr, fill.Char.UnicodeChar, fill.Attributes));
+        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, std::nullopt, fill.Char.UnicodeChar, fill.Attributes));
         ValidateScreen(si, background, fill, destination);
 
         Log::Comment(L"Scroll everything completely off the screen.");
@@ -639,7 +638,7 @@ class ApiRoutinesTests
 
         // Scroll everything way off the screen.
         destination = { 0, -10 };
-        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, &scroll, &destination, nullptr, fill.Char.UnicodeChar, fill.Attributes));
+        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, std::nullopt, fill.Char.UnicodeChar, fill.Attributes));
         ValidateScreen(si, background, fill, destination);
 
         Log::Comment(L"Scroll everything completely off the screen but use a null fill and confirm it is replaced with default attribute spaces.");
@@ -651,7 +650,7 @@ class ApiRoutinesTests
 
         CHAR_INFO nullFill = { 0 };
 
-        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, &scroll, &destination, nullptr, nullFill.Char.UnicodeChar, nullFill.Attributes));
+        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, std::nullopt, nullFill.Char.UnicodeChar, nullFill.Attributes));
 
         CHAR_INFO fillExpected;
         fillExpected.Char.UnicodeChar = UNICODE_SPACE;
@@ -677,7 +676,7 @@ class ApiRoutinesTests
         destination = { scroll.Left + 1, scroll.Top + 1 };
 
         // Move rectangle and backfill with red As.
-        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, &scroll, &destination, nullptr, fill.Char.UnicodeChar, fill.Attributes));
+        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, std::nullopt, fill.Char.UnicodeChar, fill.Attributes));
 
         ValidateComplexScreen(si, background, fill, scrollRect, Viewport::FromInclusive(scroll), destination);
 
@@ -693,7 +692,7 @@ class ApiRoutinesTests
         destination = { scroll.Left + 2, scroll.Top + 2 };
 
         // Move rectangle and backfill with red As.
-        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, &scroll, &destination, nullptr, fill.Char.UnicodeChar, fill.Attributes));
+        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, std::nullopt, fill.Char.UnicodeChar, fill.Attributes));
 
         ValidateComplexScreen(si, background, fill, scrollRect, Viewport::FromInclusive(scroll), destination);
     }

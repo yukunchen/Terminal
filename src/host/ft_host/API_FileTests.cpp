@@ -19,6 +19,11 @@ class FileTests
     // the buffer and cursor position for each test. Launching a new OpenConsole is much quicker.
     BEGIN_TEST_CLASS(FileTests)
         TEST_CLASS_PROPERTY(L"IsolationLevel", L"Method")
+        TEST_CLASS_PROPERTY(L"BinaryUnderTest", L"conhost.exe")
+        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincon.h")
+        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincontypes.h")
+        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl1.h")
+        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl2.h")
     END_TEST_CLASS();
 
     TEST_METHOD(TestUtf8WriteFileInvalid);
@@ -163,7 +168,7 @@ void WriteFileHelper(HANDLE hOut,
     DWORD dwWritten = 0;
     VERIFY_WIN32_BOOL_SUCCEEDED(WriteFile(hOut, psTest, cchTest, &dwWritten, nullptr), L"Write text into buffer using WriteFile");
     VERIFY_ARE_EQUAL(cchTest, dwWritten, L"Verify all characters were written.");
-        
+
     csbiexAfter.cbSize = sizeof(csbiexAfter);
     VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleScreenBufferInfoEx(hOut, &csbiexAfter), L"Retrieve screen buffer properties after writing.");
 }
@@ -268,7 +273,7 @@ void FileTests::TestWriteFileProcessed()
         coordExpected = csbiexBefore.dwCursorPosition;
         coordExpected.X = 8;
         VERIFY_ARE_EQUAL(coordExpected, csbiexAfter.dwCursorPosition, L"Verify cursor moved forward to position 8 for tab.");
-        
+
         // Read back written data.
         ReadBackHelper(hOut, csbiexBefore.dwCursorPosition, cchReadBack, pszReadBack);
         VERIFY_ARE_EQUAL(String(pszReadBackExpected), String(pszReadBack.get()), L"Verify text matches what we expected to be written into the buffer.");
@@ -310,11 +315,11 @@ void FileTests::TestWriteFileProcessed()
         coordExpected.X = 0;
         VERIFY_ARE_EQUAL(coordExpected, csbiexAfter.dwCursorPosition, L"Verify cursor moved to beginning of line for carriage return character.");
 
-        // Read back text written from the 2nd line. 
+        // Read back text written from the 2nd line.
         ReadBackHelper(hOut, csbiexAfter.dwCursorPosition, cchReadBack, pszReadBack);
         VERIFY_ARE_EQUAL(String(pszReadBackExpected), String(pszReadBack.get()), L"Verify text matches what we expected to be written into the buffer.");
     }
-    
+
     // 6. Print a character over the top of the existing
     {
         // After the carriage return, try typing on top of the Q with a K
@@ -416,7 +421,7 @@ void FileTests::TestWriteFileVTProcessing()
 
     PCSTR pszTestString = "\x1b" "[14m";
     DWORD const cchTest = (DWORD)strlen(pszTestString);
-    
+
     CONSOLE_SCREEN_BUFFER_INFOEX csbiexBefore = { 0 };
     csbiexBefore.cbSize = sizeof(csbiexBefore);
     CONSOLE_SCREEN_BUFFER_INFOEX csbiexAfter = { 0 };
@@ -547,13 +552,13 @@ void FileTests::TestWriteFileSuspended()
 
     COORD const coordZero = { 0 };
     VERIFY_ARE_EQUAL(coordZero, csbiexOriginal.dwCursorPosition, L"Cursor should be at 0,0 in fresh buffer.");
-    
+
     VERIFY_WIN32_BOOL_SUCCEEDED(WriteFile(hOut, "abc", 3, nullptr, nullptr), L"Test first write success.");
     PauseHelper(hIn);
 
-    auto BlockedWrite = std::async([&] { 
-        Log::Comment(L"Background WriteFile scheduled."); 
-        VERIFY_WIN32_BOOL_SUCCEEDED(WriteFile(hOut, "def", 3, nullptr, nullptr), L"Test second write success.");  
+    auto BlockedWrite = std::async([&] {
+        Log::Comment(L"Background WriteFile scheduled.");
+        VERIFY_WIN32_BOOL_SUCCEEDED(WriteFile(hOut, "def", 3, nullptr, nullptr), L"Test second write success.");
     });
 
     UnpauseHelper(hIn);
@@ -574,7 +579,7 @@ void SendFullKeyStrokeHelper(HANDLE hIn, char ch)
     ir[0].Event.KeyEvent.wRepeatCount = 1;
     ir[1] = ir[0];
     ir[1].Event.KeyEvent.bKeyDown = FALSE;
-    
+
     DWORD dwWritten = 0;
     VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleInputA(hIn, ir, (DWORD)ARRAYSIZE(ir), &dwWritten), L"Writing key stroke.");
     VERIFY_ARE_EQUAL((DWORD)ARRAYSIZE(ir), dwWritten, L"Written matches expected.");
@@ -589,19 +594,19 @@ void FileTests::TestReadFileBasic()
     VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(hIn, dwMode), L"Set input mode for test.");
 
     VERIFY_WIN32_BOOL_SUCCEEDED(FlushConsoleInputBuffer(hIn), L"Flush input buffer in preparation for test.");
-    
+
     char ch = '\0';
     Log::Comment(L"Queue background blocking read file operation.");
-    auto BackgroundRead = std::async([&] { 
+    auto BackgroundRead = std::async([&] {
         DWORD dwRead = 0;
-        VERIFY_WIN32_BOOL_SUCCEEDED(ReadFile(hIn, &ch, 1, &dwRead, nullptr), L"Read file was successful."); 
+        VERIFY_WIN32_BOOL_SUCCEEDED(ReadFile(hIn, &ch, 1, &dwRead, nullptr), L"Read file was successful.");
         VERIFY_ARE_EQUAL(1u, dwRead, L"Verify we read 1 character.");
     });
 
     char const chExpected = 'a';
     Log::Comment(L"Send a key into the console.");
     SendFullKeyStrokeHelper(hIn, chExpected);
-        
+
     Log::Comment(L"Wait for background to unblock.");
     BackgroundRead.wait();
     VERIFY_ARE_EQUAL(chExpected, ch);
@@ -642,9 +647,9 @@ void FileTests::TestReadFileBasicEmpty()
 
     char ch = '\0';
     Log::Comment(L"Queue background blocking read file operation.");
-    auto BackgroundRead = std::async([&] { 
+    auto BackgroundRead = std::async([&] {
         DWORD dwRead = 0;
-        VERIFY_WIN32_BOOL_SUCCEEDED(ReadFile(hIn, &ch, 1, &dwRead, nullptr), L"Read file was successful."); 
+        VERIFY_WIN32_BOOL_SUCCEEDED(ReadFile(hIn, &ch, 1, &dwRead, nullptr), L"Read file was successful.");
         VERIFY_ARE_EQUAL(0u, dwRead, L"We should have read nothing back. It should just return from Ctrl+Z");
     });
 
@@ -669,9 +674,9 @@ void FileTests::TestReadFileLine()
 
     char ch = '\0';
     Log::Comment(L"Queue background blocking read file operation.");
-    auto BackgroundRead = std::async([&] { 
+    auto BackgroundRead = std::async([&] {
         DWORD dwRead = 0;
-        VERIFY_WIN32_BOOL_SUCCEEDED(ReadFile(hIn, &ch, 1, &dwRead, nullptr), L"Read file was successful."); 
+        VERIFY_WIN32_BOOL_SUCCEEDED(ReadFile(hIn, &ch, 1, &dwRead, nullptr), L"Read file was successful.");
         VERIFY_ARE_EQUAL(1u, dwRead, L"Verify we read 1 character.");
     });
 
@@ -749,9 +754,9 @@ void FileTests::TestReadFileEcho()
     if (fUseBlockedRead)
     {
         Log::Comment(L"Queue background blocking read file operation.");
-        BackgroundRead = std::async([&] { 
+        BackgroundRead = std::async([&] {
             DWORD dwRead = 0;
-            VERIFY_WIN32_BOOL_SUCCEEDED(ReadFile(hIn, &ch, 1, nullptr, nullptr), L"Read file was successful."); 
+            VERIFY_WIN32_BOOL_SUCCEEDED(ReadFile(hIn, &ch, 1, nullptr, nullptr), L"Read file was successful.");
             VERIFY_ARE_EQUAL(0u, dwRead, L"Verify we read 0 characters.");
         });
     }

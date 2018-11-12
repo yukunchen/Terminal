@@ -43,6 +43,8 @@ public:
         _background{ static_cast<BYTE>((wLegacyAttr & BG_ATTRS) >> 4) },
         _isBold{ false }
     {
+        // If we're given lead/trailing byte information with the legacy color, strip it.
+        WI_ClearAllFlags(_wAttrLegacy, COMMON_LVB_SBCSDBCS);
     }
 
     constexpr TextAttribute(const COLORREF rgbForeground,

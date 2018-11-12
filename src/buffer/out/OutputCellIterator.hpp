@@ -46,10 +46,7 @@ public:
     OutputCellIterator& operator=(const OutputCellIterator& it) = default;
 
     operator bool() const noexcept;
-
-    bool operator==(const OutputCellIterator& it) const;
-    bool operator!=(const OutputCellIterator& it) const;
-
+    
     ptrdiff_t GetCellDistance(OutputCellIterator other) const noexcept;
     ptrdiff_t GetInputDistance(OutputCellIterator other) const noexcept;
     friend ptrdiff_t operator-(OutputCellIterator one, OutputCellIterator two) = delete;
@@ -89,12 +86,15 @@ private:
     };
     Mode _mode;
 
-    std::wstring_view _utf16Run;
-    TextAttribute _singleAttribute;
     std::basic_string_view<WORD> _legacyAttrs;
-    std::basic_string_view<CHAR_INFO> _charInfos;
-    std::basic_string_view<OutputCell> _cells;
-    std::basic_string_view<OutputCellView> _views;
+
+    std::variant<
+        std::wstring_view, 
+        std::basic_string_view<CHAR_INFO>, 
+        std::basic_string_view<OutputCell>, 
+        std::monostate> _run;
+
+    TextAttribute _attr;
 
     bool _TryMoveTrailing();
 
