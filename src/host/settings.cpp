@@ -1041,13 +1041,32 @@ WORD Settings::GenerateLegacyAttributes(const TextAttribute attributes) const
     {
         return wLegacyOriginal;
     }
-    // Get the Line drawing attributes and stash those, we'll need to preserve them.
-    const WORD wNonColorAttributes = wLegacyOriginal & (~0xFF);
-    const COLORREF rgbForeground = LookupForegroundColor(attributes);
-    const COLORREF rgbBackground = LookupBackgroundColor(attributes);
-    const WORD wForegroundIndex = FindNearestTableIndex(rgbForeground);
-    const WORD wBackgroundIndex = FindNearestTableIndex(rgbBackground);
-    const WORD wCompleteAttr = (wNonColorAttributes) | (wBackgroundIndex << 4) | (wForegroundIndex);
+    // We need to construct the legacy attributes manually
+    // First start with whatever our default legacy attributes are
+    BYTE fgIndex = static_cast<BYTE>((_wFillAttribute & FG_ATTRS));
+    BYTE bgIndex = static_cast<BYTE>((_wFillAttribute & BG_ATTRS) >> 4);
+    // If the attributes have any RGB components, we need to match that RGB
+    //      color to a color table value.
+    if (attributes.IsRgb())
+    {
+        // If the attribute doesn't have a "default" colored *ground, look up
+        //  the nearest color table value for it's *ground.
+        const COLORREF rgbForeground = LookupForegroundColor(attributes);
+        fgIndex = attributes.ForegroundIsDefault() ?
+                             fgIndex :
+                             static_cast<BYTE>(FindNearestTableIndex(rgbForeground));
+
+        const COLORREF rgbBackground = LookupBackgroundColor(attributes);
+        bgIndex = attributes.BackgroundIsDefault() ?
+                             bgIndex :
+                             static_cast<BYTE>(FindNearestTableIndex(rgbBackground));
+    }
+
+    // TextAttribute::GetLegacyAttributes(BYTE, BYTE) will use the legacy value
+    //      it has if the component is a legacy index, otherwise it will use the
+    //      provided byte for each index. In this way, we can provide a value to
+    //      use should it not already have one.
+    const WORD wCompleteAttr = attributes.GetLegacyAttributes(fgIndex, bgIndex);
     return wCompleteAttr;
 }
 
@@ -1152,7 +1171,7 @@ bool Settings::GetUseDx() const noexcept
 // - <none>
 // Return Value:
 // - the default foreground color of the console.
-COLORREF Settings::CalculateDefaultForeground() const
+COLORREF Settings::CalculateDefaultForeground() const noexcept
 {
     const auto fg = GetDefaultForegroundColor();
     return fg != INVALID_COLOR ? fg : ForegroundColor(GetFillAttribute(), GetColorTable(), GetColorTableSize());
@@ -1167,7 +1186,7 @@ COLORREF Settings::CalculateDefaultForeground() const
 // - <none>
 // Return Value:
 // - the default background color of the console.
-COLORREF Settings::CalculateDefaultBackground() const
+COLORREF Settings::CalculateDefaultBackground() const noexcept
 {
     const auto bg = GetDefaultBackgroundColor();
     return bg != INVALID_COLOR ? bg : BackgroundColor(GetFillAttribute(), GetColorTable(), GetColorTableSize());
@@ -1180,7 +1199,7 @@ COLORREF Settings::CalculateDefaultBackground() const
 // - attr: the TextAttribute to retrieve the foreground color of.
 // Return Value:
 // - The color value of the attribute's foreground TextColor.
-COLORREF Settings::LookupForegroundColor(const TextAttribute& attr) const
+COLORREF Settings::LookupForegroundColor(const TextAttribute& attr) const noexcept
 {
     const auto tableView = std::basic_string_view<COLORREF>(&GetColorTable()[0], GetColorTableSize());
     return attr.CalculateRgbForeground(tableView, CalculateDefaultForeground());
@@ -1193,7 +1212,7 @@ COLORREF Settings::LookupForegroundColor(const TextAttribute& attr) const
 // - attr: the TextAttribute to retrieve the background color of.
 // Return Value:
 // - The color value of the attribute's background TextColor.
-COLORREF Settings::LookupBackgroundColor(const TextAttribute& attr) const
+COLORREF Settings::LookupBackgroundColor(const TextAttribute& attr) const noexcept
 {
     const auto tableView = std::basic_string_view<COLORREF>(&GetColorTable()[0], GetColorTableSize());
     return attr.CalculateRgbBackground(tableView, CalculateDefaultBackground());

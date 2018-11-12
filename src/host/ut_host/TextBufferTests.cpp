@@ -123,7 +123,6 @@ class TextBufferTests
 
     TEST_METHOD(CopyLastAttr);
 
-    TEST_METHOD(TestTextAttributeColorGetters);
     TEST_METHOD(TestRgbThenBold);
     TEST_METHOD(TestResetClearsBoldness);
 
@@ -735,7 +734,15 @@ void TextBufferTests::TestRgbEraseLine()
     //      Make sure that all the characters after the first have the rgb attrs
     //      BG = rgb(128;128;255)
     {
-        std::wstring sequence = L"\x1b[48;2;64;128;255mX\x1b[48;2;128;128;255m\x1b[KX";
+        std::wstring sequence = L"\x1b[48;2;64;128;255m";
+        stateMachine.ProcessString(&sequence[0], sequence.length());
+        sequence = L"X";
+        stateMachine.ProcessString(&sequence[0], sequence.length());
+        sequence = L"\x1b[48;2;128;128;255m";
+        stateMachine.ProcessString(&sequence[0], sequence.length());
+        sequence = L"\x1b[K";
+        stateMachine.ProcessString(&sequence[0], sequence.length());
+        sequence = L"X";
         stateMachine.ProcessString(&sequence[0], sequence.length());
 
         const auto x = cursor.GetPosition().X;
@@ -1281,35 +1288,6 @@ void TextBufferTests::CopyLastAttr()
     VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attr3C), solBg);
 
     stateMachine.ProcessString(&reset[0], reset.length());
-}
-
-void TextBufferTests::TestTextAttributeColorGetters()
-{
-    // TODO: Make sure this test still logically works, but w/o a dependency on gci.
-
-    // const COLORREF red = RGB(255, 0, 0);
-    // const COLORREF green = RGB(0, 255, 0);
-    // TextAttribute textAttribute(red, green);
-
-    // // verify that calculated foreground/background are the same as the direct values when reverse video is
-    // // not set
-    // VERIFY_IS_FALSE(textAttribute._IsReverseVideo());
-
-    // VERIFY_ARE_EQUAL(red, textAttribute.GetRgbForeground());
-    // VERIFY_ARE_EQUAL(red, textAttribute.CalculateRgbForeground());
-
-    // VERIFY_ARE_EQUAL(green, textAttribute.GetRgbBackground());
-    // VERIFY_ARE_EQUAL(green, textAttribute.CalculateRgbBackground());
-
-    // // with reverse video set, calucated foreground/background values should be switched while getters stay
-    // // the same
-    // textAttribute.SetMetaAttributes(COMMON_LVB_REVERSE_VIDEO);
-
-    // VERIFY_ARE_EQUAL(red, textAttribute.GetRgbForeground());
-    // VERIFY_ARE_EQUAL(green, textAttribute.CalculateRgbForeground());
-
-    // VERIFY_ARE_EQUAL(green, textAttribute.GetRgbBackground());
-    // VERIFY_ARE_EQUAL(red, textAttribute.CalculateRgbBackground());
 }
 
 void TextBufferTests::TestRgbThenBold()

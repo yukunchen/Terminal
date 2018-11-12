@@ -321,8 +321,8 @@ void SCREEN_INFORMATION::GetScreenBufferInformation(_Out_ PCOORD pcoordSize,
 
     *psrWindow = _viewport.ToInclusive();
 
-    *pwAttributes = _Attributes.GetLegacyAttributes();
-    *pwPopupAttributes = _PopupAttributes.GetLegacyAttributes();
+    *pwAttributes = gci.GenerateLegacyAttributes(_Attributes);
+    *pwPopupAttributes = gci.GenerateLegacyAttributes(_PopupAttributes);
 
     // the copy length must be constant for now to keep OACR happy with buffer overruns.
     memmove(lpColorTable, gci.GetColorTable(), COLOR_TABLE_SIZE * sizeof(COLORREF));
